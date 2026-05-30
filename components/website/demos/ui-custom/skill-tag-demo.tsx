@@ -11,7 +11,7 @@ import SearchIcon from "@atlaskit/icon/core/search";
 import StarIcon from "@atlaskit/icon/core/star-starred";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
 
-import { SkillTag, SkillTagGroup } from "@/components/ui-custom/skill-tag";
+import { SkillTag, SkillTagCount, SkillTagGroup } from "@/components/ui-custom/skill-tag";
 
 export default function SkillTagDemo() {
 	return (
@@ -116,6 +116,30 @@ export function SkillTagDemoGroup() {
 			<SkillTag icon={<DataFlowIcon label="" size="small" />} color="platform">
 				Data Flow
 			</SkillTag>
+		</SkillTagGroup>
+	);
+}
+
+export function SkillTagDemoCount() {
+	return (
+		<div className="flex flex-wrap items-center gap-2">
+			<SkillTagCount count={2} />
+			<SkillTagCount count={5} />
+			<SkillTagCount count={12} />
+		</div>
+	);
+}
+
+export function SkillTagDemoOverflow() {
+	return (
+		<SkillTagGroup>
+			<SkillTag icon={<SearchIcon label="" size="small" />} color="teamwork">
+				Search
+			</SkillTag>
+			<SkillTag icon={<AutomationIcon label="" size="small" />} color="software">
+				Automation
+			</SkillTag>
+			<SkillTagCount count={3} onClick={() => alert("Show 3 more skills")} />
 		</SkillTagGroup>
 	);
 }

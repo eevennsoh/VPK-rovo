@@ -72,10 +72,39 @@ function SkillTag({ children, icon, color = "default", onClick, onRemove, remove
 	);
 }
 
+interface SkillTagCountProps extends Omit<React.ComponentProps<"span">, "color"> {
+	count: number;
+}
+
+/**
+ * Compact overflow variant of SkillTag. Follows the same skewed parallelogram
+ * shape but drops the icon and colored slash bar, rendering only a "+N" count.
+ * Use when there are more skills than horizontal space allows.
+ */
+function SkillTagCount({ count, onClick, className, ...props }: Readonly<SkillTagCountProps>) {
+	const isInteractive = Boolean(onClick);
+
+	return (
+		<span
+			{...props}
+			onClick={onClick}
+			className={cn(
+				"inline-flex h-5 -skew-x-12 items-center justify-center rounded-sm bg-bg-neutral px-1.5 align-middle text-xs leading-4 font-normal text-text-subtle tabular-nums transition-colors",
+				isInteractive ? "cursor-pointer hover:bg-bg-neutral-hovered hover:text-text active:bg-bg-neutral-pressed" : "cursor-default",
+				className,
+			)}
+			data-slot="skill-tag-count"
+		>
+			{/* Counter-skew so the digits stay upright inside the slanted pill */}
+			<span className="skew-x-12 whitespace-nowrap">+{count}</span>
+		</span>
+	);
+}
+
 type SkillTagGroupProps = React.ComponentProps<"div">;
 
 function SkillTagGroup({ className, ...props }: Readonly<SkillTagGroupProps>) {
 	return <div data-slot="skill-tag-group" className={cn("flex flex-wrap gap-1", className)} {...props} />;
 }
 
-export { SkillTag, SkillTagGroup, type SkillTagProps, type SkillTagGroupProps, type SkillTagColor };
+export { SkillTag, SkillTagCount, SkillTagGroup, type SkillTagProps, type SkillTagCountProps, type SkillTagGroupProps, type SkillTagColor };
