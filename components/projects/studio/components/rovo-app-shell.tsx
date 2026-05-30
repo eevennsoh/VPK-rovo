@@ -11,6 +11,10 @@ import { ChatTimelineNavigator } from "@/components/blocks/chat-timeline/chat-ti
 import { CreateButton } from "@/components/blocks/top-navigation/components/create-button";
 import { AgentsDirectoryDialog } from "@/components/blocks/agents-directory";
 import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
+import {
+	DEMO_AGENT_TEMPLATES,
+	DEMO_AGENT_TEMPLATES_SESSION,
+} from "@/components/blocks/agent-templates/data/demo-template-agents";
 import { RovoAppBrowserArtifact } from "@/components/projects/studio/components/rovo-app-browser-artifact";
 import { RovoAppComposer } from "@/components/projects/studio/components/rovo-app-composer";
 import { RovoAppMessages } from "@/components/projects/studio/components/rovo-app-messages";
@@ -788,12 +792,10 @@ function HomeStarterBento({
 	onPreviewEnd,
 	onPreviewStart,
 	onSelect,
-	sessionAgents,
 }: Readonly<{
 	onPreviewEnd: () => void;
 	onPreviewStart: (prompt: string) => void;
 	onSelect: (prompt: string) => void;
-	sessionAgents: readonly RovoAgentProfile[];
 }>) {
 	const [activeCategory, setActiveCategory] = useState<HomeStarterCategory>(HOME_STARTER_DEFAULT_CATEGORY);
 	const [browseOpen, setBrowseOpen] = useState(false);
@@ -1102,10 +1104,12 @@ function HomeStarterBento({
 				) : null}
 			</div>
 			<AgentTemplatesDialog
+				key={activeCategory}
 				open={browseOpen}
 				onOpenChange={setBrowseOpen}
-				agents={ROVO_DIRECTORY_AGENT_PROFILES}
-				sessionAgents={sessionAgents}
+				agents={DEMO_AGENT_TEMPLATES}
+				initialCategoryId={activeCategory}
+				sessionAgents={DEMO_AGENT_TEMPLATES_SESSION}
 			/>
 		</div>
 	);
@@ -3802,7 +3806,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						onSelect={handleGallerySelect}
 						onPreviewStart={handleGalleryPreviewStart}
 						onPreviewEnd={handleGalleryPreviewEnd}
-						sessionAgents={studioAgentRegistry.sessionAgentEntries.map((entry) => entry.profile)}
 					/>
 				</motion.div>
 			) : null}
