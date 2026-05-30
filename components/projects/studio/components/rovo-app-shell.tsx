@@ -6,7 +6,7 @@ import { type CSSProperties, type PointerEvent as ReactPointerEvent, startTransi
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArtifactPanel } from "@/components/ui-custom/artifact";
-import { TwgToolSourceStack, type TwgToolSource } from "@/components/ui-custom/twg-tool";
+import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import { ChatTimelineNavigator } from "@/components/blocks/chat-timeline/chat-timeline-navigator";
 import { CreateButton } from "@/components/blocks/top-navigation/components/create-button";
 import { AgentsDirectoryDialog } from "@/components/blocks/agents-directory";
@@ -753,7 +753,7 @@ function HomeStarterHeroTile({
 								<span className="block text-xs font-semibold leading-4 text-text-subtle">
 									Works with
 								</span>
-								<TwgToolSourceStack
+								<TWGAppstack
 									className="justify-start"
 									iconSize="md"
 									maxVisible={6}

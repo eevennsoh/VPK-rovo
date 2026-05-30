@@ -1,12 +1,14 @@
 "use client";
 
+import { type MouseEvent } from "react";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
 import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SkillTag, SkillTagGroup } from "@/components/ui-custom/skill-tag";
-import { TwgToolSourceStack, type TwgToolSource } from "@/components/ui-custom/twg-tool";
+import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import { cn } from "@/lib/utils";
 
 import { CardDirectory } from "./card-directory";
@@ -23,6 +25,8 @@ import {
 	formatCompact,
 } from "./card-directory-parts";
 import { type CardDirectoryTemplateSkill } from "./card-directory-template";
+
+const MAX_VISIBLE_COLLABORATORS = 4;
 
 export interface CardDirectoryAgentExpandedProps {
 	name: string;
@@ -84,30 +88,41 @@ export function CardDirectoryAgentExpanded({
 	const showChats = !showStats && typeof chatCount === "number";
 	const showCollaborators = collaborators.length > 0;
 	const showFooter = showStats || showRating || showChats || showCollaborators;
+	const visibleCollaborators = collaborators.slice(0, MAX_VISIBLE_COLLABORATORS);
+	const hiddenCollaboratorCount =
+		Math.max(collaborators.length - MAX_VISIBLE_COLLABORATORS, 0) + (collaboratorOverflow ?? 0);
+	const showHiddenCollaboratorCount =
+		visibleCollaborators.length === MAX_VISIBLE_COLLABORATORS && hiddenCollaboratorCount > 0;
+	const handleUseTemplateClick = (event: MouseEvent<HTMLButtonElement>) => {
+		event.stopPropagation();
+		onSelect?.();
+	};
 
 	return (
-		<CardDirectory className={cn("gap-0", className)} onSelect={onSelect} selectLabel={`Select ${name}`}>
-			<CardDirectoryBanner avatarSrc={avatarSrc} backgroundColor={coverBackgroundColor} />
+		<CardDirectory className={cn("gap-0 overflow-clip p-0", className)} onSelect={onSelect} selectLabel={`Select ${name}`}>
+			<div className="shrink-0 bg-surface" data-slot="card-directory-sticky-header">
+				<CardDirectoryBanner avatarSrc={avatarSrc} backgroundColor={coverBackgroundColor} />
+				<div className="px-4 pt-3">
+					<CardDirectoryHeader
+						action={
+							onMoreActions ? (
+								<CardDirectoryMoreButton label={`More actions for ${name}`} onClick={onMoreActions} />
+							) : null
+						}
+						byline={<CardDirectoryByline publisher={publisher} verified={verified} />}
+						title={name}
+					/>
+					<CardDirectoryDescription>
+						{description ?? `Learn how ${name} can help your team work faster.`}
+					</CardDirectoryDescription>
+				</div>
+			</div>
 
-			{/* Scrollable body — banner stays pinned above, footer pinned below. */}
-			<div className="mt-3 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
-				<CardDirectoryHeader
-					action={
-						onMoreActions ? (
-							<CardDirectoryMoreButton label={`More actions for ${name}`} onClick={onMoreActions} />
-						) : null
-					}
-					byline={<CardDirectoryByline publisher={publisher} verified={verified} />}
-					title={name}
-				/>
-
-				<CardDirectoryDescription>
-					{description ?? `Learn how ${name} can help your team work faster.`}
-				</CardDirectoryDescription>
-
+			{/* Scrollable body — banner/header/description stay pinned above, footer pinned below. */}
+			<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-3">
 				{sources.length > 0 ? (
 					<CardDirectorySection label="Works with">
-						<TwgToolSourceStack className="justify-start" iconSize="md" maxVisible={6} sources={sources} />
+						<TWGAppstack animated={false} className="justify-start" iconSize="md" maxVisible={6} sources={sources} />
 					</CardDirectorySection>
 				) : null}
 
@@ -123,16 +138,18 @@ export function CardDirectoryAgentExpanded({
 					</CardDirectorySection>
 				) : null}
 
-				<Separator />
+				<div className="py-1.5">
+					<Separator />
+				</div>
 
-				<CardDirectoryCapabilities items={capabilities} label={capabilitiesLabel} />
+				<div className="pb-4">
+					<CardDirectoryCapabilities items={capabilities} label={capabilitiesLabel} />
+				</div>
 			</div>
 
 			{showFooter ? (
-				// Full-bleed footer band: cancel shell side/bottom padding so the divider
-				// and footer stay attached to the bottom edge of the expanded card.
-				<div className="-mx-4 -mb-4 shrink-0 border-t border-border bg-surface">
-					<CardDirectoryFooter className="justify-between px-4 py-3">
+				<div className="relative shrink-0 overflow-clip border-t border-border bg-surface">
+					<CardDirectoryFooter className="justify-between px-4 py-3 transition-opacity duration-fast ease-out group-hover/card:opacity-0 group-focus-within/card:opacity-0">
 						<div className="flex items-center gap-6">
 							{showStats ? (
 								stats.map((stat) => (
@@ -163,18 +180,29 @@ export function CardDirectoryAgentExpanded({
 						</div>
 						{showCollaborators ? (
 							<AvatarGroup label="Collaborators">
-								{collaborators.map((person) => (
+								{visibleCollaborators.map((person) => (
 									<Avatar key={person.src} size="sm">
 										<AvatarImage alt={person.name} src={person.src} />
 										<AvatarFallback>{person.name.slice(0, 2)}</AvatarFallback>
 									</Avatar>
 								))}
-								{typeof collaboratorOverflow === "number" ? (
-									<AvatarGroupCount>+{collaboratorOverflow}</AvatarGroupCount>
+								{showHiddenCollaboratorCount ? (
+									<AvatarGroupCount>+{hiddenCollaboratorCount}</AvatarGroupCount>
 								) : null}
 							</AvatarGroup>
 						) : null}
 					</CardDirectoryFooter>
+					<div className="pointer-events-none absolute inset-0 flex items-center px-4 py-2 opacity-0 transition-opacity duration-fast ease-out group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100">
+						<Button
+							className="w-full"
+							onClick={handleUseTemplateClick}
+							tabIndex={-1}
+							type="button"
+							variant="outline"
+						>
+							Use template
+						</Button>
+					</div>
 				</div>
 			) : null}
 		</CardDirectory>
