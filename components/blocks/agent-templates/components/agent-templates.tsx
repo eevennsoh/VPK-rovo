@@ -1,18 +1,11 @@
 "use client";
 
-import { type MouseEvent, type ReactElement, useMemo, useRef, useState } from "react";
-import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
-import ChartBarIcon from "@atlaskit/icon/core/chart-bar";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import ChevronLeftIcon from "@atlaskit/icon/core/chevron-left";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
-import CreditCardIcon from "@atlaskit/icon/core/credit-card";
 import CrossIcon from "@atlaskit/icon/core/cross";
-import HeadphonesIcon from "@atlaskit/icon/core/headphones";
-import PageIcon from "@atlaskit/icon/core/page";
-import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
-import ProjectIcon from "@atlaskit/icon/core/project";
-import SettingsIcon from "@atlaskit/icon/core/settings";
-import ShapesIcon from "@atlaskit/icon/core/shapes";
-import ShieldIcon from "@atlaskit/icon/core/shield";
 
 import {
 	type AgentBrowserAgent,
@@ -36,6 +29,7 @@ import { cn } from "@/lib/utils";
  * derives a publisher from `byline` and falls back gracefully when detail is absent.
  */
 export interface AgentTemplatesAgent extends AgentBrowserAgent {
+	categoryId?: AgentTemplatesCategoryId;
 	publisher?: string;
 	verified?: boolean;
 	capabilities?: readonly string[];
@@ -49,6 +43,7 @@ export type AgentTemplatesSidebarGroup = AgentBrowserSidebarGroup;
 
 export interface AgentTemplatesDialogProps {
 	agents: readonly AgentTemplatesAgent[];
+	initialCategoryId?: AgentTemplatesCategoryId;
 	onSelectAgent?: (agent: AgentTemplatesAgent) => void;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -58,27 +53,77 @@ export interface AgentTemplatesDialogProps {
 }
 
 const EMPTY_AGENT_TEMPLATES_AGENTS: readonly AgentTemplatesAgent[] = [];
-const AGENT_TEMPLATES_DEFAULT_TITLE = "Personal agents that run routines, organize your context, and help you follow through.";
 const AGENT_TEMPLATES_CARD_SCROLL_OFFSET = 376;
+const AGENT_TEMPLATES_MAX_VISIBLE_AGENTS = 8;
+const AGENT_TEMPLATES_SCROLL_EDGE_THRESHOLD = 2;
+const AGENT_TEMPLATES_CAROUSEL_CONTROL_TRANSITION = {
+	type: "spring",
+	bounce: 0,
+	visualDuration: 0.2,
+} as const;
+const AGENT_TEMPLATES_TAB_COPY_TRANSITION = {
+	type: "spring",
+	bounce: 0,
+	visualDuration: 0.26,
+} as const;
+const AGENT_TEMPLATES_TAB_CARDS_TRANSITION = {
+	type: "spring",
+	bounce: 0,
+	visualDuration: 0.3,
+} as const;
+const AGENT_TEMPLATES_TAB_COPY_INITIAL_OPACITY = 0.68;
+const AGENT_TEMPLATES_TAB_CARDS_INITIAL_OPACITY = 0.9;
+const AGENT_TEMPLATES_TAB_CARD_INITIAL_OPACITY = 0.82;
+const AGENT_TEMPLATES_MODAL_CARD_ENTER_OFFSET = 32;
+
+export type AgentTemplatesCategoryId = "brainstorm" | "analyze" | "review" | "summarize" | "create";
 
 type AgentTemplatesCategory = {
-	id: string;
+	id: AgentTemplatesCategoryId;
 	label: string;
-	icon: ReactElement;
-	iconClassName: string;
+	iconClassName?: string;
+	iconSrc: string;
+	titleLines: readonly [string, string];
 };
 
+const RICH_ICON_ROOT = "/illustration/rich-icon";
+
 const AGENT_TEMPLATES_CATEGORIES: readonly AgentTemplatesCategory[] = [
-	{ id: "projects", label: "Projects", icon: <ProjectIcon label="" size="small" color="currentColor" />, iconClassName: "text-icon-accent-blue" },
-	{ id: "admin", label: "Admin", icon: <SettingsIcon label="" size="small" color="currentColor" />, iconClassName: "text-icon-subtle" },
-	{ id: "content", label: "Content", icon: <PageIcon label="" size="small" color="currentColor" />, iconClassName: "text-icon-accent-teal" },
-	{ id: "analytics", label: "Analytics", icon: <ChartBarIcon label="" size="small" color="currentColor" />, iconClassName: "text-icon-accent-green" },
-	{ id: "development", label: "Development", icon: <AngleBracketsIcon label="" size="small" color="currentColor" />, iconClassName: "text-icon-discovery" },
-	{ id: "support", label: "Support", icon: <HeadphonesIcon label="" size="small" color="currentColor" />, iconClassName: "text-icon-accent-orange" },
-	{ id: "design", label: "Design", icon: <ShapesIcon label="" size="small" color="currentColor" />, iconClassName: "text-icon-accent-purple" },
-	{ id: "security", label: "Security", icon: <ShieldIcon label="" size="small" color="currentColor" />, iconClassName: "text-icon-success" },
-	{ id: "people", label: "People", icon: <PeopleGroupIcon label="" size="small" color="currentColor" />, iconClassName: "text-icon-warning" },
-	{ id: "sales", label: "Sales", icon: <CreditCardIcon label="" size="small" color="currentColor" />, iconClassName: "text-icon-accent-magenta" },
+	{
+		id: "brainstorm",
+		label: "Planning",
+		iconSrc: `${RICH_ICON_ROOT}/lightbulb/standard.svg`,
+		iconClassName: "-translate-y-px scale-[1.08]",
+		titleLines: ["Agents that turn rough ideas into plans,", "and help teams choose the next step."],
+	},
+	{
+		id: "analyze",
+		label: "Insights",
+		iconSrc: `${RICH_ICON_ROOT}/marketing/standard.svg`,
+		iconClassName: "scale-[1.08]",
+		titleLines: ["Agents that pull signal from context,", "and turn scattered data into decisions."],
+	},
+	{
+		id: "review",
+		label: "Operations",
+		iconSrc: `${RICH_ICON_ROOT}/product-management/standard.svg`,
+		iconClassName: "translate-x-0.5 -translate-y-0.5 scale-[1.14]",
+		titleLines: ["Agents that keep routines moving,", "and make follow-through easier to trust."],
+	},
+	{
+		id: "summarize",
+		label: "Writing",
+		iconSrc: `${RICH_ICON_ROOT}/illustrations/standard.svg`,
+		iconClassName: "-translate-y-px scale-[0.88]",
+		titleLines: ["Agents that draft, refine, and adapt writing,", "without losing the point."],
+	},
+	{
+		id: "create",
+		label: "Work management",
+		iconSrc: `${RICH_ICON_ROOT}/project-management/standard.svg`,
+		iconClassName: "scale-[1.08]",
+		titleLines: ["Agents that track the work that matters,", "and keep momentum visible."],
+	},
 ] as const;
 
 const EMPTY_CAPABILITIES: readonly string[] = [];
@@ -90,38 +135,118 @@ function deriveAgentPublisher(byline: string): string {
 
 export function AgentTemplatesDialog({
 	agents,
+	initialCategoryId = AGENT_TEMPLATES_CATEGORIES[0].id,
 	onSelectAgent,
 	open,
 	onOpenChange,
 	sessionAgents = EMPTY_AGENT_TEMPLATES_AGENTS,
 	sidebarGroups,
-	title = AGENT_TEMPLATES_DEFAULT_TITLE,
+	title,
 }: Readonly<AgentTemplatesDialogProps>) {
 	void sidebarGroups;
 
 	const scrollRef = useRef<HTMLDivElement>(null);
-	const [activeCategory, setActiveCategory] = useState(AGENT_TEMPLATES_CATEGORIES[0].id);
-	const templateAgents = useMemo(
+	const previousOpenRef = useRef(false);
+	const shouldReduceMotion = useReducedMotion();
+	const [activeCategory, setActiveCategory] = useState(initialCategoryId);
+	const [scrollControls, setScrollControls] = useState({ canScrollLeft: false, canScrollRight: false });
+	const shouldAnimateCardsFromLaunch = open && !previousOpenRef.current && !shouldReduceMotion;
+	const activeCategoryOption = AGENT_TEMPLATES_CATEGORIES.find((category) => category.id === activeCategory) ?? AGENT_TEMPLATES_CATEGORIES[0];
+	const allTemplateAgents = useMemo(
 		() => [...agents, ...sessionAgents],
 		[agents, sessionAgents],
 	);
+	const templateAgents = useMemo(() => {
+		const categoryAgents = allTemplateAgents.filter((agent) => agent.categoryId === activeCategory);
+		const visibleAgents = categoryAgents.length > 0 ? categoryAgents : allTemplateAgents;
+		return visibleAgents.slice(0, AGENT_TEMPLATES_MAX_VISIBLE_AGENTS);
+	}, [activeCategory, allTemplateAgents]);
 
-	const handleScrollNext = (event: MouseEvent<HTMLButtonElement>) => {
-		const scrollElement =
-			scrollRef.current ??
-			event.currentTarget.parentElement?.querySelector<HTMLDivElement>("[data-agent-templates-carousel]");
+	const updateScrollControls = useCallback(() => {
+		const scrollElement = scrollRef.current;
+		if (!scrollElement) {
+			setScrollControls((currentControls) => (
+				currentControls.canScrollLeft || currentControls.canScrollRight
+					? { canScrollLeft: false, canScrollRight: false }
+					: currentControls
+			));
+			return;
+		}
+
+		const maxScrollLeft = scrollElement.scrollWidth - scrollElement.clientWidth;
+		const canScrollLeft = scrollElement.scrollLeft > AGENT_TEMPLATES_SCROLL_EDGE_THRESHOLD;
+		const canScrollRight = scrollElement.scrollLeft < maxScrollLeft - AGENT_TEMPLATES_SCROLL_EDGE_THRESHOLD;
+
+		setScrollControls((currentControls) => (
+			currentControls.canScrollLeft === canScrollLeft && currentControls.canScrollRight === canScrollRight
+				? currentControls
+				: { canScrollLeft, canScrollRight }
+		));
+	}, []);
+
+	const setCarouselRef = useCallback((scrollElement: HTMLDivElement | null) => {
+		scrollRef.current = scrollElement;
+		if (scrollElement) {
+			window.requestAnimationFrame(updateScrollControls);
+		}
+	}, [updateScrollControls]);
+
+	useEffect(() => {
+		if (open) {
+			setActiveCategory(initialCategoryId);
+		}
+	}, [initialCategoryId, open]);
+
+	useEffect(() => {
+		previousOpenRef.current = open;
+	}, [open]);
+
+	useEffect(() => {
+		if (!open) {
+			setScrollControls((currentControls) => (
+				currentControls.canScrollLeft || currentControls.canScrollRight
+					? { canScrollLeft: false, canScrollRight: false }
+					: currentControls
+			));
+			return;
+		}
+
+		const scrollElement = scrollRef.current;
+		if (!scrollElement) return;
+
+		const animationFrameId = window.requestAnimationFrame(updateScrollControls);
+		const resizeObserver = new ResizeObserver(updateScrollControls);
+		resizeObserver.observe(scrollElement);
+
+		return () => {
+			window.cancelAnimationFrame(animationFrameId);
+			resizeObserver.disconnect();
+		};
+	}, [open, templateAgents.length, updateScrollControls]);
+
+	useEffect(() => {
+		const scrollElement = scrollRef.current;
+		if (!scrollElement) return;
+
+		scrollElement.scrollTo({ left: 0 });
+		window.requestAnimationFrame(updateScrollControls);
+	}, [activeCategory, templateAgents.length, updateScrollControls]);
+
+	const handleScrollBy = (direction: -1 | 1) => {
+		const scrollElement = scrollRef.current;
 		if (!scrollElement) return;
 
 		const previousScrollLeft = scrollElement.scrollLeft;
 		scrollElement.scrollBy({
-			left: AGENT_TEMPLATES_CARD_SCROLL_OFFSET,
+			left: AGENT_TEMPLATES_CARD_SCROLL_OFFSET * direction,
 			behavior: "smooth",
 		});
 		window.setTimeout(() => {
 			if (scrollElement.scrollLeft !== previousScrollLeft) return;
 			scrollElement.scrollBy({
-				left: AGENT_TEMPLATES_CARD_SCROLL_OFFSET,
+				left: AGENT_TEMPLATES_CARD_SCROLL_OFFSET * direction,
 			});
+			updateScrollControls();
 		}, 150);
 	};
 
@@ -131,65 +256,139 @@ export function AgentTemplatesDialog({
 				className="grid h-[min(725px,calc(100svh-2rem))] max-h-[calc(100svh-2rem)] w-[min(1248px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-xl border border-border bg-surface p-0 shadow-xl sm:max-w-[1248px]"
 				showCloseButton={false}
 			>
-				<header className="px-6 py-6">
-					<div className="flex h-8 items-center justify-between gap-4">
-						<div
-							aria-label="Template categories"
-							className="flex min-w-0 items-center gap-2 overflow-x-auto p-1 -m-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-							role="group"
-						>
-							{AGENT_TEMPLATES_CATEGORIES.map((category) => (
-								<AgentTemplatesCategoryButton
-									active={activeCategory === category.id}
-									category={category}
-									key={category.id}
-									onClick={() => setActiveCategory(category.id)}
-								/>
-							))}
-						</div>
-						<DialogClose render={<Button aria-label="Close agent templates" className="size-8 shrink-0" size="icon" variant="ghost" />}>
-							<CrossIcon label="" />
-						</DialogClose>
+				<header className="relative px-6 py-6">
+					<div
+						aria-label="Template categories"
+						className="flex flex-wrap justify-start gap-2"
+						role="group"
+					>
+						{AGENT_TEMPLATES_CATEGORIES.map((category) => (
+							<AgentTemplatesCategoryButton
+								active={activeCategory === category.id}
+								category={category}
+								key={category.id}
+								onClick={() => setActiveCategory(category.id)}
+							/>
+						))}
 					</div>
+					<DialogClose render={<Button aria-label="Close agent templates" className="absolute top-6 right-6 size-8 shrink-0" size="icon" variant="ghost" />}>
+						<CrossIcon label="" />
+					</DialogClose>
 					<DialogTitle
-						className="mt-4 text-text"
+						className="mt-6 text-text"
 						style={{ font: token("font.heading.xlarge") }}
 					>
-						{title}
+						<motion.span
+							animate={{ opacity: 1 }}
+							className="block"
+							initial={{ opacity: shouldReduceMotion ? 1 : AGENT_TEMPLATES_TAB_COPY_INITIAL_OPACITY }}
+							key={title ?? activeCategory}
+							transition={AGENT_TEMPLATES_TAB_COPY_TRANSITION}
+						>
+							{title ? (
+								title
+							) : (
+								<>
+									<span className="block">{activeCategoryOption.titleLines[0]}</span>
+									<span className="block">{activeCategoryOption.titleLines[1]}</span>
+								</>
+							)}
+						</motion.span>
 					</DialogTitle>
 				</header>
 
 				<div className="relative min-h-0 overflow-hidden">
 					<div
 						aria-label="Agent templates"
-						className="flex h-full gap-4 overflow-x-auto overflow-y-hidden px-6 pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+						className="h-full overflow-x-auto overflow-y-hidden px-6 pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 						data-agent-templates-carousel
-						ref={scrollRef}
+						onScroll={updateScrollControls}
+						ref={setCarouselRef}
 					>
-						{templateAgents.map((agent) => (
-							<AgentTemplateCard
-								agent={agent}
-								key={agent.id}
-								onSelectAgent={onSelectAgent}
-							/>
-						))}
+						<motion.div
+							animate={{ opacity: 1 }}
+							className="flex h-full gap-4"
+							initial={{ opacity: shouldReduceMotion ? 1 : AGENT_TEMPLATES_TAB_CARDS_INITIAL_OPACITY }}
+							key={activeCategory}
+							transition={AGENT_TEMPLATES_TAB_CARDS_TRANSITION}
+						>
+							{templateAgents.map((agent) => (
+								<motion.div
+									animate={{ opacity: 1, transform: "translateX(0px)" }}
+									className="h-full w-90 shrink-0"
+									initial={{
+										opacity: shouldReduceMotion ? 1 : AGENT_TEMPLATES_TAB_CARD_INITIAL_OPACITY,
+										transform: shouldAnimateCardsFromLaunch ? `translateX(${AGENT_TEMPLATES_MODAL_CARD_ENTER_OFFSET}px)` : "translateX(0px)",
+									}}
+									key={agent.id}
+									transition={AGENT_TEMPLATES_TAB_CARDS_TRANSITION}
+								>
+									<AgentTemplateCard
+										agent={agent}
+										onSelectAgent={onSelectAgent}
+									/>
+								</motion.div>
+							))}
+						</motion.div>
 					</div>
-					<Button
-						aria-label="Show next agent templates"
-						className="absolute top-1/2 right-3 z-10 size-12 -translate-y-1/2 rounded-md border border-border bg-surface-raised text-icon-subtle shadow-xl hover:bg-bg-neutral-subtle-hovered"
-						onClick={handleScrollNext}
-						size="icon"
-						type="button"
-						variant="ghost"
-					>
-						<Icon
-							className="pointer-events-none [&_*]:pointer-events-none"
-							render={<ChevronRightIcon label="" color="currentColor" />}
-						/>
-					</Button>
+					<AnimatePresence initial={false}>
+						{scrollControls.canScrollLeft ? (
+							<AgentTemplatesCarouselControl
+								direction="previous"
+								key="previous"
+								onClick={() => handleScrollBy(-1)}
+							/>
+						) : null}
+						{scrollControls.canScrollRight ? (
+							<AgentTemplatesCarouselControl
+								direction="next"
+								key="next"
+								onClick={() => handleScrollBy(1)}
+							/>
+						) : null}
+					</AnimatePresence>
 				</div>
 			</DialogContent>
 		</Dialog>
+	);
+}
+
+function AgentTemplatesCarouselControl({
+	direction,
+	onClick,
+}: Readonly<{
+	direction: "previous" | "next";
+	onClick: () => void;
+}>) {
+	const isPrevious = direction === "previous";
+	const hiddenTransform = `translateY(-50%) translateX(${isPrevious ? "-8px" : "8px"}) scale(0.96)`;
+
+	return (
+		<motion.div
+			animate={{ opacity: 1, transform: "translateY(-50%) translateX(0px) scale(1)" }}
+			className={cn(
+				"absolute top-1/2 z-10",
+				isPrevious ? "left-3" : "right-3",
+			)}
+			exit={{ opacity: 0, transform: hiddenTransform }}
+			initial={{ opacity: 0, transform: hiddenTransform }}
+			transition={AGENT_TEMPLATES_CAROUSEL_CONTROL_TRANSITION}
+		>
+			<Button
+				aria-label={isPrevious ? "Show previous agent templates" : "Show next agent templates"}
+				className="border-0 bg-surface-overlay text-icon-subtle opacity-100 hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed focus-visible:border-0"
+				onClick={onClick}
+				size="icon"
+				style={{ boxShadow: token("elevation.shadow.overlay") }}
+				type="button"
+				variant="ghost"
+			>
+				<Icon
+					className="pointer-events-none [&_*]:pointer-events-none"
+					render={isPrevious ? <ChevronLeftIcon label="" color="currentColor" /> : <ChevronRightIcon label="" color="currentColor" />}
+				/>
+			</Button>
+		</motion.div>
 	);
 }
 
@@ -203,20 +402,30 @@ function AgentTemplatesCategoryButton({
 	onClick: () => void;
 }>) {
 	return (
-		<Button
+		<button
 			aria-pressed={active}
-			className="shrink-0"
+			className={cn(
+				"relative isolate inline-flex h-8 shrink-0 items-center overflow-hidden rounded-md border px-3 text-sm font-medium leading-5 outline-none transition-[border-color,color,box-shadow] duration-fast ease-out focus-visible:ring-3 focus-visible:ring-ring/50",
+				active
+					? "border-border-selected bg-bg-selected text-text-selected"
+					: "border-border bg-background text-text-subtle hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
+			)}
 			onClick={onClick}
 			type="button"
-			variant="outline"
 		>
-			<Icon
-				className={cn("size-4 [&_svg]:size-4", category.iconClassName)}
-				data-icon="inline-start"
-				render={category.icon}
-			/>
-			{category.label}
-		</Button>
+			<span className="relative z-[2] inline-flex items-center gap-1.5">
+				<span aria-hidden className="inline-flex size-6 shrink-0 items-center justify-center">
+					<Image
+						alt=""
+						className={cn("size-6 object-contain", category.iconClassName)}
+						height={24}
+						src={category.iconSrc}
+						width={24}
+					/>
+				</span>
+				<span>{category.label}</span>
+			</span>
+		</button>
 	);
 }
 
@@ -227,13 +436,12 @@ function AgentTemplateCard({
 	agent: AgentTemplatesAgent;
 	onSelectAgent?: (agent: AgentTemplatesAgent) => void;
 }>) {
-	// Fixed 360px width keeps cards in step with AGENT_TEMPLATES_CARD_SCROLL_OFFSET (360 + 16 gap);
-	// `h-full` fills the carousel row, `shrink-0` stops the flex track from squeezing them.
+	// The motion wrapper owns the fixed carousel width; the card fills that frame.
 	return (
 		<CardDirectoryAgentExpanded
 			avatarSrc={agent.avatarSrc}
 			capabilities={agent.capabilities ?? EMPTY_CAPABILITIES}
-			className="h-full w-90 shrink-0"
+			className="h-full w-full"
 			collaboratorOverflow={agent.collaboratorOverflow}
 			collaborators={agent.collaborators}
 			description={agent.description}
