@@ -152,6 +152,7 @@ export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("prompt-input", "Prompt Input"),
 	customComponent("queue"),
 	customComponent("reasoning"),
+	customComponent("rovo-cursor", "Rovo Cursor"),
 	customComponent("rovo-generation", "Rovo Generation"),
 	customComponent("rovo-illustration", "Rovo Illustration"),
 	customComponent("sandbox"),
