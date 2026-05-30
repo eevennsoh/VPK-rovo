@@ -1,9 +1,7 @@
 "use client";
 
 import type { ComponentProps, CSSProperties, ReactNode } from "react";
-import Image from "next/image";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
-import { motion, useReducedMotion, type Transition } from "motion/react";
 
 import {
 	Collapsible,
@@ -11,25 +9,29 @@ import {
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icon";
-import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
+import { AtlassianLogo } from "@/components/ui/logo";
 import { Tile } from "@/components/ui/tile";
+import {
+	TwgToolSourceStack,
+	type TwgToolSource,
+} from "@/components/ui-custom/twg-appstack";
 import PatternTile, { type PatternStrokeOptions } from "@/components/website/demos/visual/pattern-tile";
 import { cn } from "@/lib/utils";
 
-export type TwgToolStatus = "active" | "complete" | "pending";
-export type TwgToolSourceIconSize = "sm" | "md";
-export type TwgToolThirdPartyProvider = "google-drive" | "salesforce";
-export type TwgToolSourceProvider =
-	| "twg"
-	| TwgToolThirdPartyProvider
-	| AtlassianLogoName;
+export {
+	TWGAppstack,
+	TwgToolSourceIcon,
+	TwgToolSourceStack,
+	type TWGAppstackProps,
+	type TwgToolSource,
+	type TwgToolSourceIconProps,
+	type TwgToolSourceIconSize,
+	type TwgToolSourceProvider,
+	type TwgToolSourceStackProps,
+	type TwgToolThirdPartyProvider,
+} from "@/components/ui-custom/twg-appstack";
 
-export interface TwgToolSource {
-	id: string;
-	label: string;
-	provider: TwgToolSourceProvider;
-	icon?: ReactNode;
-}
+export type TwgToolStatus = "active" | "complete" | "pending";
 
 export type TwgToolProps = Omit<ComponentProps<typeof Collapsible>, "children"> & {
 	title?: ReactNode;
@@ -40,17 +42,6 @@ export type TwgToolProps = Omit<ComponentProps<typeof Collapsible>, "children"> 
 	children?: ReactNode;
 };
 
-export type TwgToolSourceIconProps = Omit<ComponentProps<typeof Tile>, "children" | "label" | "size"> & {
-	source: TwgToolSource;
-	size?: TwgToolSourceIconSize;
-};
-
-export type TwgToolSourceStackProps = ComponentProps<"div"> & {
-	sources: ReadonlyArray<TwgToolSource>;
-	iconSize?: TwgToolSourceIconSize;
-	maxVisible?: number;
-};
-
 const bannerGridStroke = {
 	width: 1,
 } satisfies PatternStrokeOptions;
@@ -59,56 +50,6 @@ const bannerGridFadeStyle = {
 	backgroundImage:
 		"linear-gradient(90deg, var(--color-surface-raised) 0%, color-mix(in srgb, var(--color-surface-raised) 18%, transparent) 44%)",
 } satisfies CSSProperties;
-
-const SOURCE_STACK_ROTATIONS = [
-	0,
-	6,
-	0,
-	-8,
-] as const;
-const SOURCE_STACK_STAGGER_SECONDS = 0.18;
-const SOURCE_STACK_ENTER_OFFSET = 10;
-const SOURCE_STACK_ENTER_ROTATION_OFFSET = 18;
-
-function getSourceStackRotation(index: number) {
-	return SOURCE_STACK_ROTATIONS[index % SOURCE_STACK_ROTATIONS.length];
-}
-
-function getSourceStackDelay(index: number, itemCount: number) {
-	return (itemCount - index - 1) * SOURCE_STACK_STAGGER_SECONDS;
-}
-
-function getSourceStackInitialRotation(rotation: number) {
-	return rotation + (rotation < 0 ? SOURCE_STACK_ENTER_ROTATION_OFFSET : -SOURCE_STACK_ENTER_ROTATION_OFFSET);
-}
-
-function getSourceStackTransition(delay: number): Transition {
-	return {
-		filter: { duration: 0.36, ease: [0, 0.4, 0, 1], delay },
-		opacity: { duration: 0.32, ease: [0, 0.4, 0, 1], delay },
-		rotate: { type: "spring", stiffness: 260, damping: 30, mass: 0.85, delay: delay + 0.08 },
-		scale: { type: "spring", stiffness: 260, damping: 28, mass: 0.85, delay },
-		x: { type: "spring", stiffness: 260, damping: 28, mass: 0.85, delay },
-	};
-}
-
-function isThirdPartyProvider(
-	provider: TwgToolSourceProvider
-): provider is TwgToolThirdPartyProvider {
-	return provider === "google-drive" || provider === "salesforce";
-}
-
-function getThirdPartyIconPath(provider: TwgToolThirdPartyProvider, size: TwgToolSourceIconSize) {
-	return `/3p/${provider}/${size === "md" ? "24" : "16"}.svg`;
-}
-
-function getSourceTileSize(size: TwgToolSourceIconSize): ComponentProps<typeof Tile>["size"] {
-	return size === "md" ? "small" : "xxsmall";
-}
-
-function getSourceImageSize(size: TwgToolSourceIconSize) {
-	return size === "md" ? 24 : 16;
-}
 
 export function TwgToolBannerBackground() {
 	return (
@@ -124,175 +65,6 @@ export function TwgToolBannerBackground() {
 				opacity={0.72}
 			/>
 			<div className="absolute inset-0" style={bannerGridFadeStyle} />
-		</div>
-	);
-}
-
-export function TwgToolSourceIcon({
-	className,
-	source,
-	size = "md",
-	...props
-}: TwgToolSourceIconProps) {
-	const imageSize = getSourceImageSize(size);
-	const tileSize = getSourceTileSize(size);
-
-	if (source.icon) {
-		return (
-			<Tile
-				className={cn("shrink-0", className)}
-				isInset={false}
-				label={source.label}
-				size={tileSize}
-				variant="transparent"
-				{...props}
-			>
-				{source.icon}
-			</Tile>
-		);
-	}
-
-	if (source.provider === "twg") {
-		return (
-			<Tile
-				className={cn("shrink-0", className)}
-				isInset={false}
-				label={source.label}
-				size={tileSize}
-				variant="transparent"
-				{...props}
-			>
-				<span className="inline-flex size-full items-center justify-center">
-					<AtlassianLogo
-						name="jira-service-management"
-						hasBorder
-						label={source.label}
-						size={size === "md" ? "small" : "xxsmall"}
-						themeAware={false}
-					/>
-				</span>
-			</Tile>
-		);
-	}
-
-	if (isThirdPartyProvider(source.provider)) {
-		return (
-			<Tile
-				className={cn("shrink-0", className)}
-				isInset={false}
-				label={source.label}
-				size={tileSize}
-				variant="transparent"
-				{...props}
-			>
-				<Image
-					alt=""
-					aria-hidden
-					height={imageSize}
-					src={getThirdPartyIconPath(source.provider, size)}
-					width={imageSize}
-				/>
-			</Tile>
-		);
-	}
-
-	return (
-		<Tile
-			className={cn("shrink-0 text-icon-subtle", className)}
-			isInset={false}
-			label={source.label}
-			size={tileSize}
-			variant="transparent"
-			{...props}
-		>
-			<span className="inline-flex size-full items-center justify-center">
-				<AtlassianLogo
-					name={source.provider}
-					hasBorder
-					label={source.label}
-					size={size === "md" ? "small" : "xxsmall"}
-					themeAware={false}
-				/>
-			</span>
-		</Tile>
-	);
-}
-
-export function TwgToolSourceStack({
-	className,
-	iconSize = "md",
-	maxVisible = 6,
-	sources,
-	...props
-}: TwgToolSourceStackProps) {
-	const shouldReduceMotion = useReducedMotion();
-
-	if (sources.length === 0) {
-		return null;
-	}
-
-	const visibleSources = sources.slice(0, maxVisible);
-	const hiddenCount = Math.max(0, sources.length - visibleSources.length);
-	const itemCount = visibleSources.length + (hiddenCount > 0 ? 1 : 0);
-
-	return (
-		<div className={cn("flex shrink-0 items-center justify-end overflow-visible", className)} {...props}>
-			{visibleSources.map((source, index) => {
-				const rotation = getSourceStackRotation(index);
-				const delay = getSourceStackDelay(index, itemCount);
-
-				return (
-					<motion.div
-						key={source.id}
-						animate={{ filter: "blur(0px)", opacity: 1, rotate: rotation, scale: 1, x: 0 }}
-						className={cn("relative shrink-0", index > 0 && "-ml-1")}
-						initial={{
-							filter: shouldReduceMotion ? "blur(0px)" : "blur(6px)",
-							opacity: shouldReduceMotion ? 1 : 0,
-							rotate: shouldReduceMotion ? rotation : getSourceStackInitialRotation(rotation),
-							scale: shouldReduceMotion ? 1 : 0.96,
-							x: shouldReduceMotion ? 0 : SOURCE_STACK_ENTER_OFFSET,
-						}}
-						style={{ willChange: shouldReduceMotion ? undefined : "filter, transform, opacity" }}
-						transition={shouldReduceMotion ? { duration: 0 } : getSourceStackTransition(delay)}
-					>
-						<TwgToolSourceIcon
-							source={source}
-							size={iconSize}
-							className="relative"
-						/>
-					</motion.div>
-				);
-			})}
-			{hiddenCount > 0 ? (
-				<motion.div
-					key="hidden-source-count"
-					animate={{ filter: "blur(0px)", opacity: 1, rotate: 0, scale: 1, x: 0 }}
-					className="relative -ml-1 shrink-0"
-					initial={{
-						filter: shouldReduceMotion ? "blur(0px)" : "blur(6px)",
-						opacity: shouldReduceMotion ? 1 : 0,
-						rotate: shouldReduceMotion ? 0 : getSourceStackInitialRotation(0),
-						scale: shouldReduceMotion ? 1 : 0.96,
-						x: shouldReduceMotion ? 0 : SOURCE_STACK_ENTER_OFFSET,
-					}}
-					style={{ willChange: shouldReduceMotion ? undefined : "filter, transform, opacity" }}
-					transition={shouldReduceMotion ? { duration: 0 } : getSourceStackTransition(getSourceStackDelay(visibleSources.length, itemCount))}
-				>
-					<Tile
-						className={cn(
-							"shrink-0 text-[10px] font-medium text-text-subtle"
-						)}
-						hasBorder
-						isInset={false}
-						label={`${hiddenCount} more sources`}
-						size={getSourceTileSize(iconSize)}
-						variant="transparent"
-					>
-						+{hiddenCount}
-					</Tile>
-				</motion.div>
-			) : null}
 		</div>
 	);
 }

@@ -32,9 +32,8 @@ import {
 } from "@/components/ui-custom/model-selector";
 import {
 	TwgToolBannerBackground,
-	TwgToolSourceStack,
-	type TwgToolSource,
 } from "@/components/ui-custom/twg-tool";
+import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import {
 	type RichTextMentionItem,
 	type RichTextMentionSources,
@@ -563,7 +562,7 @@ function AgentKnowledgePanel() {
 						</Tile>
 						<span className="truncate text-sm font-medium text-text-subtle">Teamwork Graph</span>
 					</div>
-					<TwgToolSourceStack
+					<TWGAppstack
 						className="relative z-10 max-w-[42%]"
 						iconSize="md"
 						sources={AGENT_KNOWLEDGE_SOURCES}

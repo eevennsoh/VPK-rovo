@@ -166,6 +166,7 @@ export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("terminal"),
 	customComponent("test-results", "Test Results"),
 	customComponent("tool"),
+	customComponent("twg-appstack", "TWG Appstack"),
 	customComponent("twg-tool", "TWG Tool"),
 	customComponent("twg-loader", "TWG Loader"),
 	customComponent("toolbar"),

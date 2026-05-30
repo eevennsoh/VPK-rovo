@@ -4,7 +4,7 @@ import { type ReactNode } from "react";
 import Image from "next/image";
 
 import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
-import { TwgToolSourceStack, type TwgToolSource } from "@/components/ui-custom/twg-tool";
+import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 
 import { CardDirectory } from "./card-directory";
 import {
@@ -60,7 +60,7 @@ export function CardDirectoryTemplate({
 
 			{sources.length > 0 ? (
 				<CardDirectorySection label="Works with">
-					<TwgToolSourceStack className="justify-start" iconSize="md" maxVisible={6} sources={sources} />
+					<TWGAppstack animated={false} className="justify-start" iconSize="md" maxVisible={6} sources={sources} />
 				</CardDirectorySection>
 			) : null}
 

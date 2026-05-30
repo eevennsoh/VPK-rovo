@@ -173,14 +173,14 @@ export interface CardDirectoryBannerProps {
 
 /**
  * Full-bleed cover banner — a colored strip with a bleeding avatar and a hexagon-outlined
- * avatar overhanging the bottom edge. Bleeds the shell's `p-4` via negative margins.
+ * avatar overhanging the bottom edge. The parent card clips the top corners.
  */
 export function CardDirectoryBanner({ avatarSrc, backgroundColor }: Readonly<CardDirectoryBannerProps>) {
 	const coverColor = backgroundColor ?? getBannerCoverColor(avatarSrc);
 
 	return (
 		<div
-			className="relative -mx-4 -mt-4 overflow-hidden rounded-t-md bg-surface"
+			className="relative shrink-0 overflow-hidden bg-surface"
 			data-slot="card-directory-banner"
 		>
 			<div className="relative h-12 overflow-hidden" style={{ backgroundColor: coverColor }}>
@@ -230,9 +230,9 @@ export function CardDirectoryCapabilities({ label, items }: Readonly<CardDirecto
 	return (
 		<div className="flex flex-col gap-1" data-slot="card-directory-capabilities">
 			{label ? <span className="text-xs font-semibold leading-4 text-text-subtlest">{label}</span> : null}
-			<ul className="flex flex-col">
+			<ul className="flex flex-col gap-1">
 				{items.map((item) => (
-					<li key={item} className="flex items-center gap-3 py-1.5">
+					<li key={item} className="flex items-center gap-2">
 						<Tile aria-hidden className="shrink-0 text-icon-subtle" label="" size="small" variant="neutral">
 							<Icon render={<AiModelIcon label="" />} aria-hidden />
 						</Tile>

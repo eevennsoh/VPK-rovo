@@ -314,6 +314,9 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
     ssr: false,
   }),
   tool: dynamic(() => import("./demos/ui-custom/tool-demo"), { ssr: false }),
+  "twg-appstack": dynamic(() => import("./demos/ui-custom/twg-appstack-demo"), {
+    ssr: false,
+  }),
   "twg-tool": dynamic(() => import("./demos/ui-custom/twg-tool-demo"), {
     ssr: false,
   }),
@@ -6450,6 +6453,20 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/ui-custom/twg-tool-demo").then((mod) => ({
         default: mod.TwgToolDemoCompleted,
+      })),
+    { ssr: false },
+  ),
+  "twg-appstack-demo-static": dynamic(
+    () =>
+      import("./demos/ui-custom/twg-appstack-demo").then((mod) => ({
+        default: mod.TWGAppstackDemoStatic,
+      })),
+    { ssr: false },
+  ),
+  "twg-appstack-demo-overflow": dynamic(
+    () =>
+      import("./demos/ui-custom/twg-appstack-demo").then((mod) => ({
+        default: mod.TWGAppstackDemoOverflow,
       })),
     { ssr: false },
   ),

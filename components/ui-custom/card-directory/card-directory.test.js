@@ -41,10 +41,11 @@ test("interaction hook derives interactivity from onSelect and guards Enter/Spac
 	assert.match(INTERACTION_SOURCE, /event\.preventDefault\(\)/u);
 });
 
-test("interaction hook uses an animatable transparent border color for Motion", () => {
-	assert.match(INTERACTION_SOURCE, /const TRANSPARENT_BORDER_COLOR = "rgba\(0, 0, 0, 0\)"/u);
-	assert.match(INTERACTION_SOURCE, /borderColor: TRANSPARENT_BORDER_COLOR/u);
-	assert.doesNotMatch(INTERACTION_SOURCE, /borderColor: "transparent"/u);
+test("interaction hook keeps the card border visible while adding hover elevation", () => {
+	assert.match(INTERACTION_SOURCE, /boxShadow: OVERLAY_SHADOW/u);
+	assert.doesNotMatch(INTERACTION_SOURCE, /TRANSPARENT_BORDER_COLOR/u);
+	assert.doesNotMatch(INTERACTION_SOURCE, /borderColor/u);
+	assert.doesNotMatch(INTERACTION_SOURCE, /scale: 1\.006/u);
 });
 
 test("parts carry data-slot attributes for the shared shell pieces", () => {
@@ -67,8 +68,8 @@ test("header leading is optional and only renders the leading span when present"
 	assert.match(PARTS_SOURCE, /\{leading \? <span className="shrink-0">\{leading\}<\/span> : null\}/u);
 });
 
-test("banner part bleeds the shell padding and draws the hexagon-outlined cover avatar", () => {
-	assert.match(PARTS_SOURCE, /-mx-4 -mt-4 overflow-hidden rounded-t-md/u);
+test("banner part draws the full-bleed cover and hexagon-outlined cover avatar", () => {
+	assert.match(PARTS_SOURCE, /relative shrink-0 overflow-hidden bg-surface/u);
 	assert.match(PARTS_SOURCE, /backgroundColor: coverColor/u);
 	assert.match(PARTS_SOURCE, /getBannerCoverColor/u);
 	assert.match(PARTS_SOURCE, /stroke-surface/u);
@@ -76,8 +77,11 @@ test("banner part bleeds the shell padding and draws the hexagon-outlined cover 
 
 test("capabilities part renders a borderless icon-tile feature list (no inner scroll)", () => {
 	assert.match(PARTS_SOURCE, /@atlaskit\/icon-lab\/core\/ai-model/u);
+	assert.match(PARTS_SOURCE, /<ul className="flex flex-col gap-1">/u);
+	assert.match(PARTS_SOURCE, /className="flex items-center gap-2"/u);
 	assert.doesNotMatch(PARTS_SOURCE, /rounded-xl border border-border bg-bg-input/u);
 	assert.doesNotMatch(PARTS_SOURCE, /max-h-44/u);
+	assert.doesNotMatch(PARTS_SOURCE, /py-1\.5/u);
 });
 
 test("agent variant renders a hexagon avatar with rating and chat stats", () => {
@@ -98,27 +102,53 @@ test("expanded agent variant adds a cover banner and scrollable capabilities to 
 });
 
 test("expanded agent variant renders Works with sources and Skills tags", () => {
-	assert.match(AGENT_EXPANDED_SOURCE, /TwgToolSourceStack/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /TWGAppstack/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /<TWGAppstack animated=\{false\}/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /SkillTagGroup/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /label="Works with"/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /label="Skills"/u);
 });
 
 test("expanded agent variant divides content and renders a metadata + collaborator footer", () => {
-	assert.match(AGENT_EXPANDED_SOURCE, /<Separator \/>/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /<div className="py-1\.5">\s*<Separator \/>\s*<\/div>/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /<AvatarGroup/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /AvatarGroupCount/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /const MAX_VISIBLE_COLLABORATORS = 4/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /collaborators\.slice\(0, MAX_VISIBLE_COLLABORATORS\)/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /Math\.max\(collaborators\.length - MAX_VISIBLE_COLLABORATORS, 0\) \+ \(collaboratorOverflow \?\? 0\)/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /visibleCollaborators\.length === MAX_VISIBLE_COLLABORATORS && hiddenCollaboratorCount > 0/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /showHiddenCollaboratorCount \? \(/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /stats\?: ReadonlyArray/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /collaborators\?: ReadonlyArray/u);
 });
 
-test("expanded agent variant pins a full-bleed footer below a scrollable body region", () => {
-	// flex-1 + min-h-0 + overflow-y-auto gives a scrollable body so the footer stays pinned
-	assert.match(AGENT_EXPANDED_SOURCE, /mt-3 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto/u);
-	// footer region cancels the shell side/bottom padding so the band stays attached to the card bottom
-	assert.match(AGENT_EXPANDED_SOURCE, /className=\{cn\("gap-0", className\)\}/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /-mx-4 -mb-4 shrink-0 border-t border-border bg-surface/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /className="justify-between px-4 py-3"/u);
+test("expanded agent footer swaps to a Use template outline button on hover", () => {
+	assert.match(AGENT_EXPANDED_SOURCE, /import \{ Button \} from "@\/components\/ui\/button"/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /event\.stopPropagation\(\);\s*onSelect\?\.\(\);/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /group-hover\/card:opacity-0 group-focus-within\/card:opacity-0/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /group-hover\/card:pointer-events-auto group-hover\/card:opacity-100/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /variant="outline"[\s\S]*Use template/u);
+});
+
+test("expanded agent variant pins the header and footer around a scrollable body region", () => {
+	assert.match(AGENT_EXPANDED_SOURCE, /data-slot="card-directory-sticky-header"/u);
+	assert.match(
+		AGENT_EXPANDED_SOURCE,
+		/<CardDirectoryBanner[\s\S]*<div className="px-4 pt-3">[\s\S]*<CardDirectoryHeader[\s\S]*byline=\{<CardDirectoryByline publisher=\{publisher\} verified=\{verified\} \/>\}[\s\S]*title=\{name\}[\s\S]*<CardDirectoryDescription>[\s\S]*description \?\?[\s\S]*\{\/\* Scrollable body/u,
+	);
+	// flex-1 + min-h-0 + overflow-y-auto gives a scrollable body so the header/footer stay pinned
+	assert.match(AGENT_EXPANDED_SOURCE, /flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-3/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /<div className="pb-4">\s*<CardDirectoryCapabilities/u);
+	// the expanded shell owns clipping while body/footer restore their own padding
+	assert.match(AGENT_EXPANDED_SOURCE, /className=\{cn\("gap-0 overflow-clip p-0", className\)\}/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /shrink-0 overflow-clip border-t border-border bg-surface/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /className="justify-between px-4 py-3 transition-opacity/u);
+});
+
+test("expanded agent banner lets the parent card radius clip the cover", () => {
+	assert.match(PARTS_SOURCE, /className="relative shrink-0 overflow-hidden bg-surface"/u);
+	assert.doesNotMatch(PARTS_SOURCE, /rounded-t-md/u);
+	assert.doesNotMatch(PARTS_SOURCE, /-mx-4 -mt-4/u);
 });
 
 test("capabilities label is optional and omitted when not provided", () => {
@@ -142,7 +172,8 @@ test("tool variant uses an app-logo tile with tool and teammate counts", () => {
 });
 
 test("template variant renders Works with sources and Skills tags, no glow or stats", () => {
-	assert.match(TEMPLATE_SOURCE, /TwgToolSourceStack/u);
+	assert.match(TEMPLATE_SOURCE, /TWGAppstack/u);
+	assert.match(TEMPLATE_SOURCE, /animated=\{false\}/u);
 	assert.match(TEMPLATE_SOURCE, /SkillTagGroup/u);
 	assert.match(TEMPLATE_SOURCE, /label="Works with"/u);
 	assert.match(TEMPLATE_SOURCE, /label="Skills"/u);

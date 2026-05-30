@@ -66,6 +66,20 @@ test("hexagon avatars use a polygon stroke instead of a clipped rectangular bord
 	assert.match(AVATAR_SOURCE, /shape === "hexagon" \? <AvatarHexagonBorder \/> : null/);
 });
 
+test("avatar group overflow count uses 12px text and 14px text for large groups", () => {
+	assert.match(AVATAR_SOURCE, /data-slot="avatar-group-count"/);
+	assert.match(AVATAR_SOURCE, /rounded-full text-xs/);
+	assert.match(AVATAR_SOURCE, /group-has-data-\[size=lg\]\/avatar-group:text-sm/);
+	assert.doesNotMatch(AVATAR_SOURCE, /rounded-full text-sm/);
+});
+
+test("avatar group overflow icon scales down to 12px for small groups", () => {
+	assert.match(AVATAR_SOURCE, /\[&_\[data-slot=icon\]\]:size-4/);
+	assert.match(AVATAR_SOURCE, /\[&_svg\]:size-4/);
+	assert.match(AVATAR_SOURCE, /group-has-data-\[size=sm\]\/avatar-group:\[&_\[data-slot=icon\]\]:size-3/);
+	assert.match(AVATAR_SOURCE, /group-has-data-\[size=sm\]\/avatar-group:\[&_svg\]:size-3/);
+});
+
 test("avatar docs include only the base unassigned demo states", () => {
 	assert.match(AVATAR_DEMO_SOURCE, /export function AvatarDemoUnassigned\(\)/);
 	assert.match(AVATAR_DEMO_SOURCE, /<AvatarUnassigned \/>/);
