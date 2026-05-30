@@ -938,6 +938,45 @@ import {
 		],
 	},
 
+	"rovo-cursor": {
+		description:
+			"An inline agent-presence indicator that swaps animation per state: a blinking caret (cursor), bouncing dots (typing), a spinning brand ring (loading), and an equalizer (speaking). Rendered in the Rovo brand palette with pure CSS keyframes that respect prefers-reduced-motion.",
+		demoLayout: { previewContentWidth: "full" },
+		usage: `import { RovoCursor } from "@/components/ui-custom/rovo-cursor";
+
+<RovoCursor state="cursor" />
+<RovoCursor state="typing" size={20} />
+<RovoCursor state="loading" size={24} />
+<RovoCursor state="speaking" size={20} aria-label="Rovo is speaking" />`,
+		props: [
+			{
+				name: "state",
+				type: `"cursor" | "typing" | "loading" | "speaking"`,
+				default: `"cursor"`,
+				description: "Which animated state to render.",
+			},
+			{
+				name: "size",
+				type: "number",
+				default: "16",
+				description: "Glyph height in pixels (width scales per state).",
+			},
+			{
+				name: "aria-label",
+				type: "string",
+				description: "When provided the glyph becomes role=\"img\"; otherwise it is aria-hidden (decorative).",
+			},
+			{
+				name: "className",
+				type: "string",
+				description: "Additional CSS classes applied to the wrapper.",
+			},
+		],
+		examples: [
+			{ title: "Interactive", description: "Switch between cursor, typing, loading, and speaking states and adjust size.", demoSlug: "rovo-cursor-demo" },
+		],
+	},
+
 	"rovo-generation": {
 		description:
 			"A Rovo generation tile that moves from a default container into a rainbow glow/border state while generating, then returns to default after a configured duration.",

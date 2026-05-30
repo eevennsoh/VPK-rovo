@@ -336,6 +336,9 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
   "morphing-rovo": dynamic(() => import("./demos/ui-custom/morphing-rovo-demo"), {
     ssr: false,
   }),
+  "rovo-cursor": dynamic(() => import("./demos/ui-custom/rovo-cursor-demo"), {
+    ssr: false,
+  }),
   "rovo-generation": dynamic(
     () => import("./demos/ui-custom/rovo-generation-demo"),
     { ssr: false },
@@ -5359,6 +5362,10 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
   ),
   "animated-rovo-demo": dynamic(
     () => import("./demos/ui-custom/animated-rovo-demo"),
+    { ssr: false },
+  ),
+  "rovo-cursor-demo": dynamic(
+    () => import("./demos/ui-custom/rovo-cursor-demo"),
     { ssr: false },
   ),
   "twg-loader-demo-sizes": dynamic(
