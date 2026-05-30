@@ -5304,6 +5304,14 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/ui-custom/skill-tag-demo").then((mod) => ({ default: mod.SkillTagDemoInline })),
     { ssr: false },
   ),
+  "skill-tag-demo-count": dynamic(
+    () => import("./demos/ui-custom/skill-tag-demo").then((mod) => ({ default: mod.SkillTagDemoCount })),
+    { ssr: false },
+  ),
+  "skill-tag-demo-overflow": dynamic(
+    () => import("./demos/ui-custom/skill-tag-demo").then((mod) => ({ default: mod.SkillTagDemoOverflow })),
+    { ssr: false },
+  ),
   "audio-player-demo-full": dynamic(
     () =>
       import("./demos/ui-custom/audio-player-demo").then((mod) => ({

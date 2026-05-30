@@ -577,6 +577,18 @@ import SearchIcon from "@atlaskit/icon/core/search"
         description: "Tags inline with text.",
         demoSlug: "skill-tag-demo-inline",
       },
+      {
+        title: "Count",
+        description:
+          "SkillTagCount variant — same shape, no icon or slash bar, renders a +N count for overflow.",
+        demoSlug: "skill-tag-demo-count",
+      },
+      {
+        title: "Overflow",
+        description:
+          "Tags followed by a clickable SkillTagCount when there are more skills than space.",
+        demoSlug: "skill-tag-demo-overflow",
+      },
     ],
   },
 
