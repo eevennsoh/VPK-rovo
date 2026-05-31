@@ -249,17 +249,16 @@ function Cursor({ scale, animated }: Readonly<{ scale: number; animated: boolean
 
 /**
  * Microphone badge wearing a Rovo conic-gradient ring above a static caret
- * stick (16×32 at scale 1, mic icon `size="small"` = 12px). The ring uses the mask-composite border technique
+ * stick (20×36 at scale 1, mic icon `size="small"` = 12px). The ring uses the mask-composite border technique
  * and rotates when `animated`; the caret stick below the badge is a plain
  * rectangle (no radius, no animation) marking the typing insertion point.
  */
 function Typing({ scale, animated }: Readonly<{ scale: number; animated: boolean }>) {
-	// Badge fills the glyph footprint (16u) with a 12u small-sized microphone
-	// icon inside and a 2u padding gutter around it. The icon uses
-	// `@atlaskit/icon`'s `size="small"` (12px) so its intrinsic size matches
-	// the inner box at scale=1.
-	const badge = 16 * scale;
-	const padding = 2 * scale;
+	// 20u badge with a 12u small-sized microphone icon centered inside (4u
+	// padding per side). The icon uses `@atlaskit/icon`'s `size="small"`
+	// (12px) so its intrinsic size stays constant.
+	const badge = 20 * scale;
+	const padding = 4 * scale;
 	const ringWidth = Math.max(1, 0.6 * scale);
 	const ringMask: React.CSSProperties = {
 		WebkitMask:
