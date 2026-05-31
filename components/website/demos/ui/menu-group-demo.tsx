@@ -28,7 +28,7 @@ import {
 
 export default function MenuGroupDemo() {
 	return (
-		<div className="w-72 rounded-lg border bg-surface py-1 shadow-sm">
+		<div className="w-72 rounded-lg bg-popover py-1 shadow-2xl">
 			<MenuGroup>
 				<MenuSection>
 					<MenuLinkItem href="#" iconBefore={<ClockIcon label="" />}>
@@ -60,7 +60,7 @@ export default function MenuGroupDemo() {
 
 export function MenuGroupDemoDefault() {
 	return (
-		<div className="w-72 rounded-lg border bg-surface py-1 shadow-sm">
+		<div className="w-72 rounded-lg bg-popover py-1 shadow-2xl">
 			<MenuGroup>
 				<MenuSection title="Navigation">
 					<MenuLinkItem href="#">Dashboard</MenuLinkItem>
@@ -78,7 +78,7 @@ export function MenuGroupDemoDefault() {
 
 export function MenuGroupDemoMenuStructure() {
 	return (
-		<div className="w-72 rounded-lg border bg-surface py-1 shadow-sm">
+		<div className="w-72 rounded-lg bg-popover py-1 shadow-2xl">
 			<MenuGroup>
 				<MenuSection title="Navigation">
 					<MenuLinkItem href="#">Dashboard</MenuLinkItem>
@@ -105,7 +105,7 @@ export function MenuGroupDemoMenuStructure() {
 
 export function MenuGroupDemoButtonItem() {
 	return (
-		<div className="w-72 rounded-lg border bg-surface py-1 shadow-sm">
+		<div className="w-72 rounded-lg bg-popover py-1 shadow-2xl">
 			<MenuGroup>
 				<MenuSection>
 					<MenuItem description="Create a new project from scratch">
@@ -129,7 +129,7 @@ export function MenuGroupDemoButtonItem() {
 
 export function MenuGroupDemoLinkItem() {
 	return (
-		<div className="w-72 rounded-lg border bg-surface py-1 shadow-sm">
+		<div className="w-72 rounded-lg bg-popover py-1 shadow-2xl">
 			<MenuGroup>
 				<MenuSection>
 					<MenuLinkItem
@@ -165,7 +165,7 @@ export function MenuGroupDemoLinkItem() {
 
 export function MenuGroupDemoCustomItem() {
 	return (
-		<div className="w-72 rounded-lg border bg-surface py-1 shadow-sm">
+		<div className="w-72 rounded-lg bg-popover py-1 shadow-2xl">
 			<MenuGroup>
 				<MenuSection title="Recent projects">
 					<MenuItem
@@ -222,7 +222,7 @@ export function MenuGroupDemoCustomItem() {
 
 export function MenuGroupDemoSectionAndHeading() {
 	return (
-		<div className="w-72 rounded-lg border bg-surface py-1 shadow-sm">
+		<div className="w-72 rounded-lg bg-popover py-1 shadow-2xl">
 			<MenuGroup>
 				<MenuSection>
 					<MenuHeading>Starred</MenuHeading>
@@ -257,7 +257,7 @@ export function MenuGroupDemoSectionAndHeading() {
 export function MenuGroupDemoDensity() {
 	return (
 		<div className="flex flex-wrap gap-4">
-			<div className="w-56 rounded-lg border bg-surface py-1 shadow-sm">
+			<div className="w-56 rounded-lg bg-popover py-1 shadow-2xl">
 				<MenuGroup spacing="cozy">
 					<MenuSection title="Cozy">
 						<MenuItem iconBefore={<DashboardIcon label="" />}>Dashboard</MenuItem>
@@ -266,7 +266,7 @@ export function MenuGroupDemoDensity() {
 					</MenuSection>
 				</MenuGroup>
 			</div>
-			<div className="w-56 rounded-lg border bg-surface py-1 shadow-sm">
+			<div className="w-56 rounded-lg bg-popover py-1 shadow-2xl">
 				<MenuGroup spacing="compact">
 					<MenuSection title="Compact">
 						<MenuItem iconBefore={<DashboardIcon label="" />}>Dashboard</MenuItem>
@@ -285,7 +285,7 @@ export function MenuGroupDemoDensity() {
 
 export function MenuGroupDemoScrolling() {
 	return (
-		<div className="w-72 rounded-lg border bg-surface py-1 shadow-sm">
+		<div className="w-72 rounded-lg bg-popover py-1 shadow-2xl">
 			<MenuGroup className="max-h-48 overflow-y-auto">
 				<MenuSection title="All projects">
 					<MenuItem>Apollo</MenuItem>
@@ -310,7 +310,7 @@ export function MenuGroupDemoScrolling() {
 
 export function MenuGroupDemoLoading() {
 	return (
-		<div className="w-72 rounded-lg border bg-surface py-1 shadow-sm">
+		<div className="w-72 rounded-lg bg-popover py-1 shadow-2xl">
 			<MenuGroup>
 				<MenuSkeletonHeading />
 				<MenuSkeletonItem hasIcon />
