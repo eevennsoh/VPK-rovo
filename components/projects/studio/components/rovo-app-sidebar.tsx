@@ -134,9 +134,12 @@ function StudioSidebarNavItem({ icon, isExpanded, isSelected = false, label, onC
 	);
 }
 
+// Leading avatar for recent-agent rows. Always renders at 16x16 to match the
+// row's Atlaskit leading icons. `size` is accepted (and ignored) only because
+// `SidebarNavItem`'s `normalizeIconNode` injects it via `cloneElement` onto every
+// leading node — declaring it keeps the injected prop off the DOM.
 function StudioSidebarAgentAvatar({
 	label = "",
-	size = "small",
 	src,
 }: Readonly<{
 	label?: string;
@@ -147,7 +150,7 @@ function StudioSidebarAgentAvatar({
 		<Image
 			alt={label}
 			aria-hidden={label ? undefined : true}
-			className={cn(size === "small" ? "size-4" : "size-5", "object-contain")}
+			className="size-4 object-contain"
 			height={16}
 			src={src}
 			width={16}
@@ -357,7 +360,7 @@ function StudioSidebarNavigation({
 																	<AiAgentIcon label="" />
 																)
 															}
-															leadingSize="small"
+															leadingSize="medium"
 															isSelected={getRecentAgentItemSelected(recentAgent, activeThreadId, selectedAgentId)}
 															onClick={() => {
 																if (recentAgent.kind === "wip") {
@@ -394,7 +397,7 @@ function StudioSidebarNavigation({
 												<SidebarNavItem
 													label="View all agents"
 													leading={<MenuIcon label="" />}
-													leadingSize="small"
+													leadingSize="medium"
 													isSelected={isAgentsHomeActive && !hasSelectedRecentAgent}
 													onClick={onViewAllAgents}
 													className="min-h-7"
