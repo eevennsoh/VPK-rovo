@@ -58,12 +58,14 @@ const SCRATCH_SCRIBBLE_SHAPE: SvgTraceShape = {
 
 const SCRATCH_SCRIBBLE_CONFIG: SvgTraceConfig = {
 	...DEFAULT_SVG_TRACE_CONFIG,
-	duration: 1.8,
-	strokeWidth: 2.5,
+	duration: 0.9,
+	strokeWidth: 2,
 	colorStopCount: 6,
-	segmentCap: "round",
+	segmentCap: "butt",
+	easingId: "easeInOutCubic",
 	traceMode: "draw-eat",
-	loop: true,
+	loop: false,
+	repeatCount: 1,
 	showOutline: false,
 };
 const EMPTY_REALTIME_OUTPUT_WAVEFORM_BARS: number[] = [];
@@ -518,7 +520,7 @@ function RovoAppComposerInner({
 										// which would unmount this reveal mid-interaction.
 										onMouseDown={(event) => event.preventDefault()}
 										onClick={onStartFromScratch}
-										className="rounded-xs text-xs text-text-subtlest underline-offset-2 transition-colors hover:text-text-subtle hover:underline focus-visible:text-text-subtle focus-visible:underline focus-visible:outline-none"
+										className="rounded-xs text-xs text-text-subtlest transition-colors hover:text-text focus-visible:text-text focus-visible:outline-none"
 									>
 										Or start from{" "}
 										<span className="relative">
@@ -526,12 +528,12 @@ function RovoAppComposerInner({
 											{/* Decorative rainbow-traced doodle anchored under the word. */}
 											<span
 												aria-hidden
-												className="pointer-events-none absolute top-full left-1/2 w-20 -translate-x-1/2 pt-1"
+												className="pointer-events-none absolute top-full left-1/2 w-12 -translate-x-1/2 pt-1"
 											>
 												<SvgTracing
 													shape={SCRATCH_SCRIBBLE_SHAPE}
 													config={SCRATCH_SCRIBBLE_CONFIG}
-													svgClassName="h-5 w-full"
+													svgClassName="h-3.5 w-full"
 												/>
 											</span>
 										</span>
