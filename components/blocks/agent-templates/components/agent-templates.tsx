@@ -61,16 +61,18 @@ const AGENT_TEMPLATES_CAROUSEL_CONTROL_TRANSITION = {
 	bounce: 0,
 	visualDuration: 0.2,
 } as const;
-// Tab swaps play as a sequenced exit → enter via AnimatePresence `mode="wait"`:
-// the outgoing tab fully clears before the incoming tab animates in. ADS easing
-// maps cleanly here — `--ease-in` ("elements leaving view") drives the quick exit,
-// `--ease-out` ("elements entering view") drives the softer, slightly slower enter.
+// Tab swaps crossfade: the outgoing and incoming tab are stacked in one grid
+// cell and animate concurrently (no `mode="wait"`), so a tab is always painting
+// pixels — no blank gap between old and new. ADS easing keeps the overlap clean:
+// `--ease-in` ("leaving view") fades/slides the old out while `--ease-out`
+// ("entering view") brings the new in; ease-out's fast initial rise covers
+// ease-in's slow initial fall, so total visible opacity never dips to zero.
 const AGENT_TEMPLATES_TAB_ENTER_TRANSITION = {
 	duration: 0.25, // ADS --duration-slow
 	ease: cubicBezier(0, 0.4, 0, 1), // ADS --ease-out
 };
 const AGENT_TEMPLATES_TAB_EXIT_TRANSITION = {
-	duration: 0.15, // ADS --duration-normal
+	duration: 0.2, // ADS --duration-medium
 	ease: cubicBezier(0.6, 0.01, 0.8, 0.6), // ADS --ease-in
 };
 const AGENT_TEMPLATES_TAB_CARDS_TRANSITION = {
@@ -337,13 +339,13 @@ export function AgentTemplatesDialog({
 						<CrossIcon label="" />
 					</DialogClose>
 					<DialogTitle
-						className="mt-6 text-text"
+						className="mt-6 grid text-text"
 						style={{ font: token("font.heading.xlarge") }}
 					>
-						<AnimatePresence custom={tabMotionCustom} initial={false} mode="wait">
+						<AnimatePresence custom={tabMotionCustom} initial={false} mode="sync">
 							<motion.span
 								animate="center"
-								className="block"
+								className="block [grid-area:1/1]"
 								custom={tabMotionCustom}
 								exit="exit"
 								initial="enter"
@@ -367,15 +369,15 @@ export function AgentTemplatesDialog({
 				<div className="relative min-h-0 overflow-hidden px-6 pb-6">
 					<div
 						aria-label="Agent templates"
-						className="h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+						className="grid h-full [grid-template-columns:max-content] [grid-template-rows:minmax(0,1fr)] overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 						data-agent-templates-carousel
 						onScroll={updateScrollControls}
 						ref={setCarouselRef}
 					>
-						<AnimatePresence custom={tabMotionCustom} initial={false} mode="wait">
+						<AnimatePresence custom={tabMotionCustom} initial={false} mode="sync">
 							<motion.div
 								animate="center"
-								className="flex h-full gap-4"
+								className="flex h-full gap-4 [grid-area:1/1]"
 								custom={tabMotionCustom}
 								exit="exit"
 								initial="enter"
