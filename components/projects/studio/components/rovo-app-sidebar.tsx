@@ -181,7 +181,7 @@ function RecentAgentRowActions({
 				render={
 					<Button
 						aria-label={`More actions for ${label}`}
-						className="size-6 opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100"
+						className="size-6 opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:opacity-100 focus-visible:opacity-100 data-[popup-open]:opacity-100"
 						size="icon"
 						variant="ghost"
 						onClick={(event) => event.stopPropagation()}
