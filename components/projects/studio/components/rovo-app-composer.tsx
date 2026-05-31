@@ -68,6 +68,11 @@ const SCRATCH_SCRIBBLE_CONFIG: SvgTraceConfig = {
 	repeatCount: 1,
 	showOutline: false,
 };
+
+// Grace period before the hover reveal hides, so the pointer can travel from
+// the input down to the "Or start from scratch" link without it vanishing.
+const REVEAL_HIDE_DELAY_MS = 400;
+
 const EMPTY_REALTIME_OUTPUT_WAVEFORM_BARS: number[] = [];
 const EMPTY_QUEUED_PROMPTS: ReadonlyArray<RovoAppQueuedAction> = [];
 
@@ -163,9 +168,53 @@ function RovoAppComposerInner({
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 	const [highlightedIndex, setHighlightedIndex] = useState(0);
 	const [isInputFocused, setIsInputFocused] = useState(false);
+	const [isComposerHoverActive, setIsComposerHoverActive] = useState(false);
+	const [scribbleConsumed, setScribbleConsumed] = useState(false);
+	const revealHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const slashMenuRef = useRef<HTMLDivElement | null>(null);
 	const canSubmit = controller.textInput.value.trim().length > 0 || controller.attachments.files.length > 0;
 	const hasQueuedPrompts = queuedPrompts.length > 0;
+
+	const showReveal = useCallback(() => {
+		if (revealHideTimeoutRef.current) {
+			clearTimeout(revealHideTimeoutRef.current);
+			revealHideTimeoutRef.current = null;
+		}
+		setIsComposerHoverActive(true);
+	}, []);
+
+	const scheduleHideReveal = useCallback(() => {
+		if (revealHideTimeoutRef.current) {
+			clearTimeout(revealHideTimeoutRef.current);
+		}
+		revealHideTimeoutRef.current = setTimeout(() => {
+			setIsComposerHoverActive(false);
+			revealHideTimeoutRef.current = null;
+		}, REVEAL_HIDE_DELAY_MS);
+	}, []);
+
+	useEffect(() => {
+		return () => {
+			if (revealHideTimeoutRef.current) {
+				clearTimeout(revealHideTimeoutRef.current);
+			}
+		};
+	}, []);
+
+	// Reveal shows while the composer is hovered (with a close grace period so
+	// the pointer can reach the link below) or while the textarea is focused.
+	const isRevealVisible = isInputFocused || isComposerHoverActive;
+	// The scratch doodle traces itself only the first time the reveal appears.
+	const showScratchScribble = isRevealVisible && !scribbleConsumed;
+
+	useEffect(() => {
+		if (!showScratchScribble) return;
+		const timer = setTimeout(
+			() => setScribbleConsumed(true),
+			SCRATCH_SCRIBBLE_CONFIG.duration * 1000 + 200,
+		);
+		return () => clearTimeout(timer);
+	}, [showScratchScribble]);
 	const realtimeResponseGradientState = resolveRovoAppComposerResponseGradientState({
 		realtimeGenerationState,
 		realtimeVoiceState,
@@ -407,7 +456,11 @@ function RovoAppComposerInner({
 					</div>
 				) : null}
 
-				<div className="relative z-10">
+				<div
+					className="relative z-10"
+					onMouseEnter={showReveal}
+					onMouseLeave={scheduleHideReveal}
+				>
 					<FloatingComposer
 						allowOverflow
 						className="relative z-10"
@@ -502,7 +555,7 @@ function RovoAppComposerInner({
 
 					{onStartFromScratch ? (
 						<AnimatePresence>
-							{isInputFocused ? (
+							{isRevealVisible ? (
 								<motion.div
 									key="start-from-scratch"
 									initial={{ opacity: 0, y: -4 }}
@@ -525,17 +578,19 @@ function RovoAppComposerInner({
 										Or start from{" "}
 										<span className="relative">
 											scratch
-											{/* Decorative rainbow-traced doodle anchored under the word. */}
-											<span
-												aria-hidden
-												className="pointer-events-none absolute top-full left-1/2 w-9 -translate-x-1/2 pt-0.5"
-											>
-												<SvgTracing
-													shape={SCRATCH_SCRIBBLE_SHAPE}
-													config={SCRATCH_SCRIBBLE_CONFIG}
-													svgClassName="h-3 w-full"
-												/>
-											</span>
+											{/* Decorative rainbow-traced doodle — plays once on the first reveal. */}
+											{showScratchScribble ? (
+												<span
+													aria-hidden
+													className="pointer-events-none absolute top-full left-1/2 w-9 -translate-x-1/2 pt-0.5"
+												>
+													<SvgTracing
+														shape={SCRATCH_SCRIBBLE_SHAPE}
+														config={SCRATCH_SCRIBBLE_CONFIG}
+														svgClassName="h-3 w-full"
+													/>
+												</span>
+											) : null}
 										</span>
 									</button>
 								</motion.div>
