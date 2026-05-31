@@ -15,13 +15,14 @@ const STATE_OPTIONS = [
 export default function RovoCursorDemo() {
 	const [state, setState] = useState<RovoCursorState>("cursor");
 	const [size, setSize] = useState(48);
+	const [animated, setAnimated] = useState(true);
 
-	const config = useMemo(() => ({ state, size }), [state, size]);
+	const config = useMemo(() => ({ state, size, animated }), [state, size, animated]);
 
 	return (
 		<div className="grid h-full w-full gap-4 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-stretch">
 			<div className="flex h-full min-h-[350px] w-full items-center justify-center rounded-lg bg-surface p-12 text-text">
-				<RovoCursor state={state} size={size} />
+				<RovoCursor state={state} size={size} animated={animated} />
 			</div>
 			<GUI.Panel title="Rovo cursor controls" values={config}>
 				<GUI.Select
@@ -43,6 +44,13 @@ export default function RovoCursorDemo() {
 					step={1}
 					unit="px"
 					onChange={setSize}
+				/>
+				<GUI.Toggle
+					id="rovo-cursor-animated"
+					label="Animated rainbow"
+					description="Rotate the rainbow around the cursor arrow and typing ring."
+					checked={animated}
+					onChange={setAnimated}
 				/>
 			</GUI.Panel>
 		</div>

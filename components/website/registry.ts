@@ -2239,6 +2239,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "spinner-demo-rainbow": dynamic(
+    () =>
+      import("./demos/ui/spinner-demo").then((mod) => ({
+        default: mod.SpinnerDemoRainbow,
+      })),
+    { ssr: false },
+  ),
   "spinner-demo-basic": dynamic(
     () =>
       import("./demos/ui/spinner-demo").then((mod) => ({

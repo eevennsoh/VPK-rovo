@@ -5,6 +5,7 @@ import { memo } from "react";
 import MicrophoneIcon from "@atlaskit/icon/core/microphone";
 
 import { Icon } from "@/components/ui/icon";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -13,19 +14,16 @@ import { cn } from "@/lib/utils";
 
 /**
  * Rovo brand color wheel as a conic gradient — the exact stops from Figma
- * (saffron → lime → blue → purple, starting at 90°). Shared by the pointer
- * arrow (`cursor`) and the spinner (`loading`).
+ * (saffron → lime → blue → purple, starting at 90°). Painted through SVG masks
+ * to produce the rainbow stroke around the cursor arrow and the rainbow ring
+ * around the typing badge.
  */
 const ROVO_CONIC =
-	"conic-gradient(from 39deg, #FCA700 0deg, #FCA700 72.69deg, #6A9A23 72.73deg, #6A9A23 167.9deg, #1868DB 167.93deg, #1868DB 252.67deg, #AF59E1 252.7deg, #AF59E1 360deg)";
+	"conic-gradient(from 90deg, #FCA700 0deg, #FCA700 72.69deg, #6A9A23 72.73deg, #6A9A23 167.9deg, #1868DB 167.93deg, #1868DB 252.67deg, #AF59E1 252.7deg, #AF59E1 360deg)";
 
 /** Pointer-arrow glyph (Figma viewBox 14.7568², centroid-weighted teardrop). */
 const ARROW_PATH =
 	"M0.5999 2.38246C0.160828 1.26482 1.26482 0.160828 2.38246 0.5999L13.3845 4.92213C14.5955 5.39786 14.5296 7.13348 13.2861 7.51611L8.87375 8.87375L7.51611 13.2861C7.13348 14.5296 5.39786 14.5955 4.92213 13.3845L0.5999 2.38246Z";
-
-/** Spinner arc glyph (Figma viewBox 11.1662 × 11.88, open ~300° ring with rounded caps). */
-const SPINNER_PATH =
-	"M9.95645 3.25339L10.3912 3.00646L9.95645 3.25339ZM10.6658 5.99772L11.1658 6.00302L10.6658 5.99772ZM9.89838 8.72637L10.3278 8.98247L9.89838 8.72637ZM7.86242 10.6985L7.62012 10.2612L7.86242 10.6985ZM5.22615 0.5V1C6.09923 1 6.95671 1.23139 7.71127 1.6706L7.96279 1.23847L8.21432 0.806345C7.30702 0.278227 6.27596 0 5.22615 0V0.5ZM7.96279 1.23847L7.71127 1.6706C8.46582 2.10981 9.0905 2.74115 9.52168 3.50032L9.95645 3.25339L10.3912 3.00646C9.87276 2.09361 9.12163 1.33446 8.21432 0.806345L7.96279 1.23847ZM9.95645 3.25339L9.52168 3.50032C9.95286 4.2595 10.1751 5.11938 10.1659 5.99241L10.6658 5.99772L11.1658 6.00302C11.177 4.95327 10.9097 3.91931 10.3912 3.00646L9.95645 3.25339ZM10.6658 5.99772L10.1659 5.99241C10.1566 6.86544 9.91614 7.72042 9.46895 8.47027L9.89838 8.72637L10.3278 8.98247C10.8655 8.08082 11.1547 7.05277 11.1658 6.00302L10.6658 5.99772ZM9.89838 8.72637L9.46895 8.47027C9.02176 9.22013 8.38382 9.83807 7.62012 10.2612L7.86242 10.6985L8.10473 11.1359C9.02303 10.6272 9.7901 9.88412 10.3278 8.98247L9.89838 8.72637ZM7.86242 10.6985L7.62012 10.2612C6.85641 10.6843 5.99421 10.8974 5.12133 10.8789L5.11072 11.3788L5.10012 11.8787C6.14969 11.9009 7.18642 11.6447 8.10473 11.1359L7.86242 10.6985ZM5.11072 11.3788L5.12133 10.8789C4.24845 10.8604 3.39608 10.6108 2.65101 10.1557L2.39037 10.5824L2.12972 11.0091C3.02562 11.5563 4.05054 11.8564 5.10012 11.8787L5.11072 11.3788ZM2.39037 10.5824L2.65101 10.1557C1.90594 9.70059 1.2948 9.05614 0.879823 8.28799L0.439912 8.52564L0 8.76329C0.498977 9.68694 1.23383 10.4618 2.12972 11.0091L2.39037 10.5824Z";
 
 /** Speaking equalizer bars — exact Figma heights + Primary palette colors, left→right. */
 const SPEAKING_BARS = [
@@ -47,8 +45,21 @@ function maskOf(path: string, w: number, h: number) {
 	return `url("data:image/svg+xml,${svg.replace(/#/g, "%23").replace(/"/g, "'").replace(/\s+/g, " ")}")`;
 }
 
+/**
+ * Build a CSS `mask-image` whose visible region is the SVG path *dilated* by a
+ * stroke — i.e. the arrow's body plus a halo wide enough to host the rainbow
+ * stroke. Stacked behind the charcoal-body mask, only the dilation ring shows
+ * through, producing a crisp gradient outline around the arrow.
+ */
+function maskOfStroke(path: string, w: number, h: number, strokeWidth: number) {
+	const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'><path d='${path}' fill='%23000' stroke='%23000' stroke-width='${strokeWidth}' stroke-linejoin='round'/></svg>`;
+	return `url("data:image/svg+xml,${svg.replace(/#/g, "%23").replace(/"/g, "'").replace(/\s+/g, " ")}")`;
+}
+
 const ARROW_MASK = maskOf(ARROW_PATH, 14.7568, 14.7568);
-const SPINNER_MASK = maskOf(SPINNER_PATH, 11.1662, 11.88);
+/** ~10% of glyph width on each side, matching Figma's `inset[-3.64%]` outline. */
+const ARROW_STROKE_WIDTH = 1.5;
+const ARROW_STROKE_MASK = maskOfStroke(ARROW_PATH, 14.7568, 14.7568, ARROW_STROKE_WIDTH);
 
 /** Inline style that clips an element's paint (background/gradient) to an SVG mask shape. */
 function maskStyle(image: string) {
@@ -79,6 +90,13 @@ export interface RovoCursorProps {
 	 */
 	size?: number;
 	/**
+	 * Animate the rainbow on the `cursor` arrow and `typing` ring (rotating
+	 * conic gradient). The blinking caret, loading spinner, and speaking
+	 * equalizer always animate regardless of this flag, and motion is suppressed
+	 * under `prefers-reduced-motion`. @default true
+	 */
+	animated?: boolean;
+	/**
 	 * Accessible label. When provided the glyph is `role="img"`; otherwise it is
 	 * `aria-hidden` (decorative, sitting alongside visible text).
 	 */
@@ -93,13 +111,20 @@ export interface RovoCursorProps {
 
 /**
  * RovoCursor — an inline agent-presence indicator that swaps glyph per state:
- * a charcoal pointer with a Rovo-gradient glow (`cursor`), a microphone badge
- * over a blinking caret (`typing`), a spinning brand arc (`loading`), and a
- * 4-bar equalizer (`speaking`). Motion is pure CSS and honors
- * `prefers-reduced-motion`.
+ * a charcoal pointer wrapped in a Rovo-gradient stroke (`cursor`), a
+ * rainbow-ringed microphone badge over a blinking caret (`typing`), a
+ * rainbow indeterminate spinner (`loading`), and a 4-bar brand equalizer
+ * (`speaking`). The rainbow on `cursor` and `typing` can rotate (`animated`)
+ * or sit static. Motion is pure CSS and honors `prefers-reduced-motion`.
  */
 export const RovoCursor = memo(
-	({ state = "cursor", size = 16, className, ...props }: Readonly<RovoCursorProps>) => {
+	({
+		state = "cursor",
+		size = 16,
+		animated = true,
+		className,
+		...props
+	}: Readonly<RovoCursorProps>) => {
 		const label = props["aria-label"];
 		const a11y = label
 			? ({ role: "img", "aria-label": label } as const)
@@ -115,8 +140,8 @@ export const RovoCursor = memo(
 					className={cn("inline-flex shrink-0 items-center justify-center", className)}
 					{...a11y}
 				>
-					{state === "cursor" ? <Cursor scale={scale} /> : null}
-					{state === "typing" ? <Typing scale={scale} /> : null}
+					{state === "cursor" ? <Cursor scale={scale} animated={animated} /> : null}
+					{state === "typing" ? <Typing scale={scale} animated={animated} /> : null}
 					{state === "loading" ? <Loading scale={scale} /> : null}
 					{state === "speaking" ? <Speaking scale={scale} /> : null}
 				</span>
@@ -132,42 +157,92 @@ RovoCursor.displayName = "RovoCursor";
 // ---------------------------------------------------------------------------
 
 /**
- * Pointer arrow (16×16 at scale 1): a theme-aware charcoal body (`color.icon`)
- * wearing a fixed Rovo-brand gradient glow. Static.
+ * Pointer arrow (16×16 at scale 1): charcoal body (`color.icon`) wrapped in a
+ * Rovo-brand conic-gradient stroke. The stroke layer uses a dilated SVG mask,
+ * the body uses the original mask, and stacking the two leaves a crisp rainbow
+ * ring around the arrow.
  */
-function Cursor({ scale }: Readonly<{ scale: number }>) {
+function Cursor({ scale, animated }: Readonly<{ scale: number; animated: boolean }>) {
 	const s = 16 * scale;
-	const mask = maskStyle(ARROW_MASK);
+	const bodyMask = maskStyle(ARROW_MASK);
+	const strokeMask = maskStyle(ARROW_STROKE_MASK);
 	return (
 		<span style={{ position: "relative", display: "block", width: s, height: s }}>
+			{/* Rainbow stroke layer — the dilated mask is fixed; a larger inner
+			    span carries the conic gradient and rotates so the rainbow sweeps
+			    around the arrow without distorting the outline. */}
 			<span
+				aria-hidden
 				style={{
 					position: "absolute",
 					inset: 0,
-					background: ROVO_CONIC,
-					filter: `blur(${Math.max(1.5, s * 0.16)}px)`,
-					...mask,
+					overflow: "hidden",
+					...strokeMask,
 				}}
-			/>
-			<span className="bg-icon" style={{ position: "absolute", inset: 0, ...mask }} />
+			>
+				<span
+					className={animated ? "motion-reduce:[animation:none]" : undefined}
+					style={{
+						position: "absolute",
+						inset: "-50%",
+						background: ROVO_CONIC,
+						animation: animated ? "rovo-cursor-spin 2.4s linear infinite" : undefined,
+						willChange: animated ? "transform" : undefined,
+					}}
+				/>
+			</span>
+			<span className="bg-icon" style={{ position: "absolute", inset: 0, ...bodyMask }} />
 		</span>
 	);
 }
 
-/** Microphone badge (black, saffron ring) above a blinking caret leg (20×36 at scale 1). */
-function Typing({ scale }: Readonly<{ scale: number }>) {
+/**
+ * Microphone badge above a blinking caret leg (20×36 at scale 1). The badge
+ * wears a Rovo conic-gradient ring rendered with the mask-composite border
+ * technique; when `animated` the ring slowly rotates.
+ */
+function Typing({ scale, animated }: Readonly<{ scale: number; animated: boolean }>) {
 	const badge = 20 * scale;
 	const icon = 12 * scale;
+	const ringWidth = Math.max(1, 1.5 * scale);
+	const ringMask: React.CSSProperties = {
+		WebkitMask:
+			"linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+		mask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+		WebkitMaskComposite: "xor",
+		maskComposite: "exclude",
+	};
 	return (
 		<span className="inline-flex flex-col items-center" style={{ width: badge }}>
 			<span
-				className="box-border inline-flex items-center justify-center rounded-full border-solid border-[#fca700] bg-[#101214] text-white"
-				style={{ width: badge, height: badge, padding: 4 * scale, borderWidth: Math.max(1, 1.5 * scale) }}
+				className="relative box-border inline-flex items-center justify-center rounded-full bg-[#101214] text-white"
+				style={{ width: badge, height: badge, padding: 4 * scale }}
 			>
+				<span
+					aria-hidden
+					className="pointer-events-none absolute rounded-full"
+					style={{
+						inset: 0,
+						padding: ringWidth,
+						overflow: "hidden",
+						...ringMask,
+					}}
+				>
+					<span
+						className={animated ? "motion-reduce:[animation:none]" : undefined}
+						style={{
+							position: "absolute",
+							inset: "-50%",
+							background: ROVO_CONIC,
+							animation: animated ? "rovo-cursor-spin 3.6s linear infinite" : undefined,
+							willChange: animated ? "transform" : undefined,
+						}}
+					/>
+				</span>
 				<Icon
 					aria-hidden
 					render={<MicrophoneIcon label="" />}
-					className="[&_svg]:size-full"
+					className="relative [&_svg]:size-full"
 					style={{ width: icon, height: icon }}
 				/>
 			</span>
@@ -184,22 +259,13 @@ function Typing({ scale }: Readonly<{ scale: number }>) {
 	);
 }
 
-/** Indeterminate spinner — Rovo-gradient arc rotating (12×12 at scale 1). */
+/**
+ * Indeterminate spinner — delegates to the shared `Spinner` with the `rainbow`
+ * variant so the same brand-gradient arc is reused across the design system.
+ */
 function Loading({ scale }: Readonly<{ scale: number }>) {
-	return (
-		<span
-			className="motion-reduce:animate-none"
-			style={{
-				display: "block",
-				width: 12 * scale,
-				height: 12 * scale,
-				background: ROVO_CONIC,
-				animation: "rovo-cursor-spin 0.8s linear infinite",
-				willChange: "transform",
-				...maskStyle(SPINNER_MASK),
-			}}
-		/>
-	);
+	const s = 12 * scale;
+	return <Spinner variant="rainbow" className="size-auto" style={{ width: s, height: s }} />;
 }
 
 /** Four brand-colored bars pulsing their height out of phase (14×16 at scale 1). */

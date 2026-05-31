@@ -952,14 +952,15 @@ import {
 
 	"rovo-cursor": {
 		description:
-			"An inline agent-presence indicator that swaps animation per state: a blinking caret (cursor), bouncing dots (typing), a spinning brand ring (loading), and an equalizer (speaking). Rendered in the Rovo brand palette with pure CSS keyframes that respect prefers-reduced-motion.",
+			"An inline agent-presence indicator that swaps glyph per state: a charcoal pointer wrapped in a Rovo conic-gradient stroke (cursor), a rainbow-ringed microphone badge above a blinking caret (typing), a rainbow indeterminate spinner reused from `ui/spinner` (loading), and a 4-bar brand equalizer (speaking). The rainbow on `cursor` and `typing` can rotate or sit static via the `animated` prop, and all motion respects prefers-reduced-motion.",
 		demoLayout: { previewContentWidth: "full" },
 		usage: `import { RovoCursor } from "@/components/ui-custom/rovo-cursor";
 
 <RovoCursor state="cursor" />
 <RovoCursor state="typing" size={20} />
 <RovoCursor state="loading" size={24} />
-<RovoCursor state="speaking" size={20} aria-label="Rovo is speaking" />`,
+<RovoCursor state="speaking" size={20} aria-label="Rovo is speaking" />
+<RovoCursor state="cursor" animated={false} />`,
 		props: [
 			{
 				name: "state",
@@ -972,6 +973,13 @@ import {
 				type: "number",
 				default: "16",
 				description: "Glyph height in pixels (width scales per state).",
+			},
+			{
+				name: "animated",
+				type: "boolean",
+				default: "true",
+				description:
+					"Rotate the rainbow on the `cursor` arrow and `typing` ring. The blinking caret, loading spinner, and speaking equalizer always animate.",
 			},
 			{
 				name: "aria-label",
