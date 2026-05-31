@@ -319,8 +319,9 @@ function Loading({ scale }: Readonly<{ scale: number }>) {
 }
 
 /**
- * Four brand-colored bars pulsing their height out of phase (14×16 at scale
- * 1). Driven by Motion so each bar grows in from `height: 0` on mount —
+ * Four brand-colored bars pulsing their height out of phase, centered in a
+ * 16×16 box at scale 1 so all states share the same default footprint.
+ * Driven by Motion so each bar grows in from `height: 0` on mount —
  * avoiding the instant jump the previous CSS-keyframe approach caused when
  * the demo flipped to `state="speaking"` — and then loops through the
  * easing-based equalizer oscillation. We animate `height` directly (rather
@@ -334,7 +335,10 @@ function Speaking({ scale }: Readonly<{ scale: number }>) {
 	const reduced = useReducedMotion();
 	const barWidth = 2 * scale;
 	return (
-		<span className="inline-flex items-center" style={{ height: 16 * scale, gap: 2 * scale }}>
+		<span
+			className="inline-flex items-center justify-center"
+			style={{ width: 16 * scale, height: 16 * scale, gap: 2 * scale }}
+		>
 			{SPEAKING_BARS.map((bar) => {
 				const maxH = bar.height * scale;
 				// Clamp the bar's minimum animated height to its own width so it
