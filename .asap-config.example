@@ -1,8 +1,0 @@
-{
-  "kid": "your-use-case-id/timestamp",
-  "issuer": "your-use-case-id",
-  "audience": [],
-  "expiry": 60,
-  "privateKey": "your_private_key",
-  "publicKey": "your_public_key"
-}

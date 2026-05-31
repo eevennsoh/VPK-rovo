@@ -163,7 +163,7 @@ export function RovoAppSurfaceShell({ children }: Readonly<RovoAppSurfaceShellPr
 			>
 				<LeftNavigation
 					product="rovo"
-					windowWidth={nav.windowWidth}
+					availableWidth={nav.availableWidth}
 					isVisible={nav.isVisible}
 					isAppSwitcherOpen={nav.isAppSwitcherOpen}
 					isSidebarResizing={sidebarResize.isResizing}
@@ -243,7 +243,7 @@ export function RovoAppSurfaceShell({ children }: Readonly<RovoAppSurfaceShellPr
 					</div>
 					<RightNavigation
 						product="rovo"
-						windowWidth={nav.windowWidth}
+						availableWidth={nav.availableWidth}
 						onToggleChat={nav.toggleChat}
 						onToggleTheme={nav.toggleTheme}
 					/>

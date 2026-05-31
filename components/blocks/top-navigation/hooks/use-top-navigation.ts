@@ -2,25 +2,24 @@
 
 import { useCallback, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-import { useWindowWidth } from "@/components/hooks/use-window-width";
+import { useElementWidth } from "@/components/hooks/use-element-width";
 import { useClickOutside } from "@/components/hooks/use-click-outside";
 import { useSidebar } from "@/app/contexts/context-sidebar";
 import { useRovoChat } from "@/app/contexts";
 import { useTheme } from "@/components/utils/theme-wrapper";
 import { token } from "@/lib/tokens";
-import { TOP_NAV_PADDING_PX } from "../layout-constants";
 
 const TOP_NAV_CENTER_SECTION_MAX_WIDTH_PX = 762;
-const TOP_NAV_CENTER_SECTION_SIDE_RAIL_WIDTH_PX = 330;
-const TOP_NAV_COMPACT_SIDE_RAIL_WIDTH_PX = 284;
-const TOP_NAV_NARROW_SIDE_RAIL_WIDTH_PX = 220;
 
 export function useTopNavigation() {
 	const router = useRouter();
 	const [searchValue, setSearchValue] = useState("");
 	const [isAppSwitcherOpen, setIsAppSwitcherOpen] = useState(false);
 	const [isSearchFocused, setIsSearchFocused] = useState(false);
-	const windowWidth = useWindowWidth();
+	// Responsive breakpoints key off the nav's own rendered width, not the
+	// window — the nav is also rendered inside narrower preview frames, where
+	// window.innerWidth would overstate the available room and cause overlap.
+	const [navRef, availableWidth] = useElementWidth<HTMLDivElement>();
 	const { isVisible, toggleSidebar, setHovered } = useSidebar();
 	const { toggleChat, openChat, chatSurface } = useRovoChat();
 	const isSidebarChatOpen = chatSurface === "sidebar";
@@ -81,44 +80,32 @@ export function useTopNavigation() {
 	const handleHoverEnter = useCallback(() => setHovered(true), [setHovered]);
 	const handleHoverLeave = useCallback(() => setHovered(false), [setHovered]);
 
-	const centerSectionStyle = useMemo(() => {
-		const sideRailWidthPx =
-			windowWidth >= 1028
-				? TOP_NAV_CENTER_SECTION_SIDE_RAIL_WIDTH_PX
-				: windowWidth >= 768
-					? TOP_NAV_COMPACT_SIDE_RAIL_WIDTH_PX
-					: TOP_NAV_NARROW_SIDE_RAIL_WIDTH_PX;
-		const centeredWidthPx = windowWidth > 0
-			? Math.min(
-					TOP_NAV_CENTER_SECTION_MAX_WIDTH_PX,
-					Math.max(0, windowWidth - TOP_NAV_PADDING_PX * 2 - sideRailWidthPx * 2),
-				)
-			: TOP_NAV_CENTER_SECTION_MAX_WIDTH_PX;
-		const base = {
+	// The search + Create cluster fills the space between the left and right
+	// clusters instead of being pinned to the viewport center. It grows to take
+	// available room (capped at the max width) and shrinks freely when cramped,
+	// so the right cluster can never be overlapped at narrow widths.
+	const centerSectionStyle = useMemo(
+		() => ({
 			boxSizing: "border-box" as const,
 			display: "flex",
 			alignItems: "center",
 			gap: token("space.100"),
-			width: `${centeredWidthPx}px`,
+			flex: "1 1 auto" as const,
 			minWidth: 0,
 			maxWidth: `${TOP_NAV_CENTER_SECTION_MAX_WIDTH_PX}px`,
-			flex: "0 0 auto" as const,
 			paddingLeft: token("space.150"),
-			paddingRight: token("space.150"),
-		};
-
-		if (windowWidth >= 1028) {
-			return base;
-		}
-		return { ...base, maxWidth: "none", paddingLeft: token("space.100"), paddingRight: token("space.100") };
-	}, [windowWidth]);
+			paddingRight: 0,
+		}),
+		[],
+	);
 
 	return {
 		searchValue,
 		setSearchValue,
 		isAppSwitcherOpen,
 		isSearchFocused,
-		windowWidth,
+		navRef,
+		availableWidth,
 		isVisible,
 		toggleSidebar,
 		toggleChat,

@@ -1,5 +1,0 @@
-{
-  "setup-worktree": [
-    "bash .agents/hooks/setup-worktree.sh"
-  ]
-}
