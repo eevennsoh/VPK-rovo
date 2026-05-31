@@ -952,7 +952,7 @@ import {
 
 	"rovo-cursor": {
 		description:
-			"An inline agent-presence indicator that swaps glyph per state: a charcoal pointer wrapped in a Rovo conic-gradient stroke (cursor), a rainbow-ringed microphone badge above a blinking caret (typing), a rainbow indeterminate spinner reused from `ui/spinner` (loading), and a 4-bar brand equalizer (speaking). The rainbow on `cursor` and `typing` can rotate or sit static via the `animated` prop, and all motion respects prefers-reduced-motion.",
+			"An inline agent-presence indicator that swaps glyph per state: a charcoal pointer wrapped in a Rovo conic-gradient stroke (cursor), a rainbow-ringed microphone badge (typing), a rainbow indeterminate spinner reused from `ui/spinner` (loading), and a 4-bar brand equalizer (speaking). The rainbow on `cursor` and `typing` can rotate or sit static via the `animated` prop, and all motion respects prefers-reduced-motion.",
 		demoLayout: { previewContentWidth: "full" },
 		usage: `import { RovoCursor } from "@/components/ui-custom/rovo-cursor";
 
