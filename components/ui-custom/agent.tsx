@@ -453,13 +453,13 @@ function AgentAddValueButton({
 		<button
 			type="button"
 			className={cn(
-				"inline-flex h-5 items-center gap-0.5 rounded-xs text-xs font-medium text-text-subtle transition-colors hover:text-text hover:underline focus-visible:text-text focus-visible:underline focus-visible:outline-none",
+				"group/add-link inline-flex h-5 items-center gap-0.5 rounded-xs text-xs font-medium text-text-subtlest transition-colors hover:text-text focus-visible:text-text focus-visible:outline-none",
 				className
 			)}
 			onClick={onClick}
 		>
 			<span aria-hidden>+</span>
-			{label}
+			<span className="group-hover/add-link:underline group-focus-visible/add-link:underline">{label}</span>
 		</button>
 	);
 }
@@ -491,12 +491,14 @@ function AgentFilledSummaryRow({
 
 	return (
 		<div
-			className="group/agent-row -mx-2 grid items-center gap-x-5 gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:grid-cols-[8rem_minmax(0,1fr)]"
+			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-5"
 			data-agent-field={agentFieldName}
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
-			<AgentSectionLabel>{label}</AgentSectionLabel>
-			<div className="flex min-h-5 min-w-0 flex-wrap items-center gap-1.5">
+			<div className="sm:w-32 sm:shrink-0">
+				<AgentSectionLabel>{label}</AgentSectionLabel>
+			</div>
+			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
 				{items.map((item, index) => (
 					variant === "skill" ? (
 						<AgentSkillChip key={`${label}-${item}-${index}`} label={item} />
@@ -537,7 +539,7 @@ function AgentFilledConfigSummary({
 	const starterItems = getNonEmptyConfigItems(config.conversationStarters).slice(0, MAX_AGENT_CONVERSATION_STARTERS);
 
 	return (
-		<div>
+		<div className="flex flex-col gap-2">
 			<AgentFilledSummaryRow
 				addLabel="Add"
 				agentFieldName="trigger"
