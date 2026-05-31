@@ -81,8 +81,10 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(source, /AnimatePresence initial=\{false\}/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_COPY_VARIANTS/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_CARDS_VARIANTS/u);
-	assert.match(source, /AGENT_TEMPLATES_TAB_COPY_SWAP_OFFSET = 8/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET = 24/u);
+	assert.match(source, /<div className="relative min-h-0 overflow-hidden px-6 pb-6">/u);
+	assert.match(source, /className="h-full overflow-x-auto overflow-y-hidden \[scrollbar-width:none\]/u);
+	assert.match(source, /className="flex h-full gap-4"/u);
 	assert.match(source, /const \[tabMotionDirection, setTabMotionDirection\]/u);
 	assert.match(source, /getAgentTemplatesCategoryIndex\(categoryId\) > getAgentTemplatesCategoryIndex\(activeCategory\) \? 1 : -1/u);
 	assert.match(source, /custom=\{tabMotionCustom\}/u);

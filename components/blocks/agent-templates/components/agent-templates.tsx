@@ -75,7 +75,6 @@ const AGENT_TEMPLATES_TAB_COPY_INITIAL_OPACITY = 0.68;
 const AGENT_TEMPLATES_TAB_CARDS_INITIAL_OPACITY = 0.9;
 const AGENT_TEMPLATES_TAB_CARD_INITIAL_OPACITY = 0.82;
 const AGENT_TEMPLATES_MODAL_CARD_ENTER_OFFSET = 32;
-const AGENT_TEMPLATES_TAB_COPY_SWAP_OFFSET = 8;
 const AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET = 24;
 const NOOP_TEMPLATE_MORE_ACTIONS = () => undefined;
 
@@ -136,13 +135,11 @@ const AGENT_TEMPLATES_CATEGORIES: readonly AgentTemplatesCategory[] = [
 
 const EMPTY_CAPABILITIES: readonly string[] = [];
 const AGENT_TEMPLATES_TAB_COPY_VARIANTS = {
-	enter: ({ direction, shouldReduceMotion }: AgentTemplatesTabMotionCustom) => ({
+	enter: ({ shouldReduceMotion }: AgentTemplatesTabMotionCustom) => ({
 		opacity: shouldReduceMotion ? 1 : AGENT_TEMPLATES_TAB_COPY_INITIAL_OPACITY,
-		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${AGENT_TEMPLATES_TAB_COPY_SWAP_OFFSET * direction}px)`,
 	}),
 	center: {
 		opacity: 1,
-		transform: "translateX(0px)",
 	},
 } as const;
 const AGENT_TEMPLATES_TAB_CARDS_VARIANTS = {
@@ -344,10 +341,10 @@ export function AgentTemplatesDialog({
 					</DialogTitle>
 				</header>
 
-				<div className="relative min-h-0 overflow-hidden">
+				<div className="relative min-h-0 overflow-hidden px-6 pb-6">
 					<div
 						aria-label="Agent templates"
-						className="h-full overflow-x-auto overflow-y-hidden px-6 pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+						className="h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 						data-agent-templates-carousel
 						onScroll={updateScrollControls}
 						ref={setCarouselRef}

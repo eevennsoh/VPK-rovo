@@ -45,6 +45,14 @@ test("RovoAppShell starts Studio agent creation only from the default-agent home
 	assert.ok((SHELL_SOURCE.match(/creationMode: "agent"/gu) ?? []).length >= 1);
 });
 
+test("Studio start-from-scratch scribble replays on each composer hover reveal", () => {
+	assert.match(COMPOSER_SOURCE, /const \[scratchScribbleReplayKey, setScratchScribbleReplayKey\] = useState\(0\);/u);
+	assert.match(COMPOSER_SOURCE, /setScratchScribbleReplayKey\(\(currentKey\) => currentKey \+ 1\);/u);
+	assert.match(COMPOSER_SOURCE, /const showScratchScribble = isRevealVisible;/u);
+	assert.match(COMPOSER_SOURCE, /resetKey=\{scratchScribbleReplayKey\}/u);
+	assert.doesNotMatch(COMPOSER_SOURCE, /scribbleConsumed/u);
+});
+
 test("Studio home starters frame agent building instead of generic one-off tasks", () => {
 	assert.match(SHELL_SOURCE, /type HomeStarterCategory = "analyze" \| "brainstorm" \| "review" \| "summarize" \| "create";/u);
 	assert.match(SHELL_SOURCE, /const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyArray<HomeStarterTemplate>>>/u);
@@ -250,13 +258,15 @@ test("Studio clarification answers keep agent creation mode active", () => {
 	assert.match(SHELL_SOURCE, /onDismissQuestionCard: handleCancelClarificationQuestionSet/u);
 });
 
-test("Studio composer reveals 'Start from scratch' on focus and lands on a blank untitled agent config", () => {
-	// Composer reveals the focus-gated affordance underneath the prompt input.
+test("Studio composer reveals 'Start from scratch' on focus or hover and lands on a blank untitled agent config", () => {
+	// Composer reveals the affordance underneath the prompt input on focus or hover.
 	assert.match(COMPOSER_SOURCE, /onStartFromScratch\?: \(\) => void;/u);
 	assert.match(COMPOSER_SOURCE, /const \[isInputFocused, setIsInputFocused\] = useState\(false\);/u);
+	assert.match(COMPOSER_SOURCE, /const \[isComposerHoverActive, setIsComposerHoverActive\] = useState\(false\);/u);
 	assert.match(COMPOSER_SOURCE, /onFocus=\{\(\) => setIsInputFocused\(true\)\}/u);
 	assert.match(COMPOSER_SOURCE, /onBlur=\{\(\) => setIsInputFocused\(false\)\}/u);
-	assert.match(COMPOSER_SOURCE, /\{onStartFromScratch \? \([\s\S]*\{isInputFocused \?/u);
+	assert.match(COMPOSER_SOURCE, /const isRevealVisible = isInputFocused \|\| isComposerHoverActive;/u);
+	assert.match(COMPOSER_SOURCE, /\{onStartFromScratch \? \([\s\S]*\{isRevealVisible \?/u);
 	assert.match(COMPOSER_SOURCE, /Or start from scratch/u);
 	// Reveal is taken out of layout flow so it never reflows/recenters siblings.
 	assert.match(COMPOSER_SOURCE, /className="absolute inset-x-0 top-full/u);

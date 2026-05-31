@@ -169,7 +169,7 @@ function RovoAppComposerInner({
 	const [highlightedIndex, setHighlightedIndex] = useState(0);
 	const [isInputFocused, setIsInputFocused] = useState(false);
 	const [isComposerHoverActive, setIsComposerHoverActive] = useState(false);
-	const [scribbleConsumed, setScribbleConsumed] = useState(false);
+	const [scratchScribbleReplayKey, setScratchScribbleReplayKey] = useState(0);
 	const revealHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const slashMenuRef = useRef<HTMLDivElement | null>(null);
 	const canSubmit = controller.textInput.value.trim().length > 0 || controller.attachments.files.length > 0;
@@ -181,6 +181,7 @@ function RovoAppComposerInner({
 			revealHideTimeoutRef.current = null;
 		}
 		setIsComposerHoverActive(true);
+		setScratchScribbleReplayKey((currentKey) => currentKey + 1);
 	}, []);
 
 	const scheduleHideReveal = useCallback(() => {
@@ -204,17 +205,7 @@ function RovoAppComposerInner({
 	// Reveal shows while the composer is hovered (with a close grace period so
 	// the pointer can reach the link below) or while the textarea is focused.
 	const isRevealVisible = isInputFocused || isComposerHoverActive;
-	// The scratch doodle traces itself only the first time the reveal appears.
-	const showScratchScribble = isRevealVisible && !scribbleConsumed;
-
-	useEffect(() => {
-		if (!showScratchScribble) return;
-		const timer = setTimeout(
-			() => setScribbleConsumed(true),
-			SCRATCH_SCRIBBLE_CONFIG.duration * 1000 + 200,
-		);
-		return () => clearTimeout(timer);
-	}, [showScratchScribble]);
+	const showScratchScribble = isRevealVisible;
 	const realtimeResponseGradientState = resolveRovoAppComposerResponseGradientState({
 		realtimeGenerationState,
 		realtimeVoiceState,
@@ -579,7 +570,7 @@ function RovoAppComposerInner({
 										Or start from{" "}
 										<span className="relative">
 											scratch
-											{/* Decorative rainbow-traced doodle — plays once on the first reveal. */}
+											{/* Decorative rainbow-traced doodle. */}
 											{showScratchScribble ? (
 												<span
 													aria-hidden
@@ -588,6 +579,7 @@ function RovoAppComposerInner({
 													<SvgTracing
 														shape={SCRATCH_SCRIBBLE_SHAPE}
 														config={SCRATCH_SCRIBBLE_CONFIG}
+														resetKey={scratchScribbleReplayKey}
 														svgClassName="h-3 w-full"
 													/>
 												</span>
