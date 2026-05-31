@@ -78,6 +78,7 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(source, /AGENT_TEMPLATES_MAX_VISIBLE_AGENTS = 8/u);
 	assert.match(source, /agent\.categoryId === activeCategory/u);
 	assert.match(source, /visibleAgents\.slice\(0, AGENT_TEMPLATES_MAX_VISIBLE_AGENTS\)/u);
+	assert.match(source, /templatePrompt\?: string/u);
 	assert.match(source, /AnimatePresence initial=\{false\}/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_COPY_VARIANTS/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_CARDS_VARIANTS/u);
@@ -109,6 +110,8 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(pageSource, /DEMO_AGENT_TEMPLATES_SESSION/u);
 	assert.match(studioShellSource, /agents=\{DEMO_AGENT_TEMPLATES\}/u);
 	assert.match(studioShellSource, /initialCategoryId=\{activeCategory\}/u);
+	assert.match(studioShellSource, /onSelectAgent=\{handleTemplateAgentSelect\}/u);
+	assert.match(studioShellSource, /agent\.templatePrompt \?\? buildFallbackTemplatePrompt\(agent\)/u);
 	assert.match(studioShellSource, /sessionAgents=\{DEMO_AGENT_TEMPLATES_SESSION\}/u);
 	assert.match(studioShellSource, /function HomeStarterHeroTile[\s\S]*<TWGAppstack[\s\S]*animated=\{false\}/u);
 	assert.match(studioShellSource, /mx-auto grid w-full max-w-\[1280px\] grid-cols-1/u);
@@ -116,10 +119,15 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(source, /setActiveCategory\(initialCategoryId\)/u);
 	// Demo agents carry the expanded-card detail the cards render.
 	assert.match(demoAgentsSource, /capabilities:/u);
+	assert.match(demoAgentsSource, /templatePrompt:/u);
+	assert.match(demoAgentsSource, /Use the \$\{name\} template to create a Studio agent/u);
+	assert.match(demoAgentsSource, /ready for me to review before sending/u);
 	assert.match(demoAgentsSource, /sources:/u);
 	assert.match(demoAgentsSource, /skills:/u);
 	assert.match(demoAgentsSource, /attributionKind: "team"/u);
 	assert.match(demoAgentsSource, /attributionKind: "person"/u);
+	assert.match(demoAgentsSource, /attributionKind: "company"/u);
+	assert.match(demoAgentsSource, /publisherLogoSrc: "\/3p\/amplitude\/16\.svg"/u);
 	assert.match(demoAgentsSource, /name: "Decision Director"/u);
 	assert.match(demoAgentsSource, /name: "Customer Insights"/u);
 	assert.match(demoAgentsSource, /name: "Service Triage"/u);

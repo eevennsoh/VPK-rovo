@@ -5,6 +5,8 @@ export {
 	CardDirectoryByline,
 	type CardDirectoryBylineProps,
 	CardDirectoryCapabilities,
+	type CardDirectoryCapability,
+	type CardDirectoryCapabilityIcon,
 	type CardDirectoryCapabilitiesProps,
 	CardDirectoryDescription,
 	CardDirectoryFooter,

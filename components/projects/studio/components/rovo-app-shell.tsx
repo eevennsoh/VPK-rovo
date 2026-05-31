@@ -10,7 +10,7 @@ import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-apps
 import { ChatTimelineNavigator } from "@/components/blocks/chat-timeline/chat-timeline-navigator";
 import { CreateButton } from "@/components/blocks/top-navigation/components/create-button";
 import { AgentsDirectoryDialog } from "@/components/blocks/agents-directory";
-import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
+import { AgentTemplatesDialog, type AgentTemplatesAgent } from "@/components/blocks/agent-templates";
 import {
 	DEMO_AGENT_TEMPLATES,
 	DEMO_AGENT_TEMPLATES_SESSION,
@@ -644,6 +644,21 @@ function resetHomeStarterCardPointer(tile: HTMLElement) {
 	tile.style.setProperty("--card-glow-pointer-y", "-10");
 }
 
+function buildFallbackTemplatePrompt(agent: AgentTemplatesAgent): string {
+	const appList = agent.sources?.map((source) => source.label).join(", ");
+	const skillList = agent.skills?.map((skill) => skill.label).join(", ");
+	const featureList = agent.capabilities?.map((capability) => capability.label).join("; ");
+
+	return [
+		`Use the ${agent.name} template to create a Studio agent.`,
+		agent.description,
+		appList ? `Connect it to ${appList}.` : null,
+		skillList ? `Include skills for ${skillList}.` : null,
+		featureList ? `It should support these features: ${featureList}.` : null,
+		"Keep the prompt concise and ready for me to review before sending.",
+	].filter(Boolean).join(" ");
+}
+
 function HomeStarterCardGlowLayers({ iconSrc }: Readonly<{ iconSrc: string }>) {
 	return (
 		<>
@@ -912,6 +927,10 @@ function HomeStarterBento({
 			}
 		}
 	}, []);
+	const handleTemplateAgentSelect = useCallback((agent: AgentTemplatesAgent) => {
+		onSelect(agent.templatePrompt ?? buildFallbackTemplatePrompt(agent));
+		setBrowseOpen(false);
+	}, [onSelect]);
 
 	return (
 		<div
@@ -1110,6 +1129,7 @@ function HomeStarterBento({
 				onOpenChange={setBrowseOpen}
 				agents={DEMO_AGENT_TEMPLATES}
 				initialCategoryId={activeCategory}
+				onSelectAgent={handleTemplateAgentSelect}
 				sessionAgents={DEMO_AGENT_TEMPLATES_SESSION}
 			/>
 		</div>

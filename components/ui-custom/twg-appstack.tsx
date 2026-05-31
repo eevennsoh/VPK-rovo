@@ -20,6 +20,7 @@ export interface TwgToolSource {
 	label: string;
 	provider: TwgToolSourceProvider;
 	icon?: ReactNode;
+	iconSrc?: string;
 }
 
 export type TwgToolSourceIconProps = Omit<ComponentProps<typeof Tile>, "children" | "label" | "size"> & {
@@ -111,6 +112,27 @@ export function TwgToolSourceIcon({
 				{...props}
 			>
 				{source.icon}
+			</Tile>
+		);
+	}
+
+	if (source.iconSrc) {
+		return (
+			<Tile
+				className={cn("shrink-0", APPSTACK_TILE_FILL_CLASS, className)}
+				isInset={false}
+				label={source.label}
+				size={tileSize}
+				variant="transparent"
+				{...props}
+			>
+				<Image
+					alt=""
+					aria-hidden
+					height={imageSize}
+					src={source.iconSrc}
+					width={imageSize}
+				/>
 			</Tile>
 		);
 	}

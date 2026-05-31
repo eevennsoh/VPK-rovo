@@ -74,6 +74,8 @@ test("banner part draws the full-bleed cover and hexagon-outlined cover avatar",
 	assert.match(PARTS_SOURCE, /relative shrink-0 overflow-hidden bg-surface/u);
 	assert.match(PARTS_SOURCE, /backgroundColor: coverColor/u);
 	assert.match(PARTS_SOURCE, /getBannerCoverColor/u);
+	assert.match(PARTS_SOURCE, /avatarBadge\?: ReactNode/u);
+	assert.match(PARTS_SOURCE, /shape="hexagon"/u);
 	assert.match(PARTS_SOURCE, /stroke-surface/u);
 });
 
@@ -96,8 +98,9 @@ test("agent variant renders a hexagon avatar with rating and chat stats", () => 
 
 test("expanded agent variant adds a cover banner and scrollable capabilities to the agent layout", () => {
 	assert.match(AGENT_EXPANDED_SOURCE, /<CardDirectoryBanner/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /avatarBadge=\{avatarBadge\}/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /<CardDirectoryCapabilities/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /capabilities: readonly string\[\]/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /capabilities: readonly \(CardDirectoryCapability \| string\)\[\]/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /StarUnstarredIcon/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /AiChatIcon/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /<CardDirectoryByline/u);
@@ -107,6 +110,8 @@ test("expanded agent variant renders Works with sources and Skills tags", () => 
 	assert.match(AGENT_EXPANDED_SOURCE, /TWGAppstack/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /<TWGAppstack animated=\{false\}/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /SkillTagGroup/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /SkillTagCount/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /const MAX_VISIBLE_SKILLS = 4/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /label="Works with"/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /label="Skills"/u);
 });
@@ -136,7 +141,7 @@ test("expanded agent variant pins the header and footer around a scrollable body
 	assert.match(AGENT_EXPANDED_SOURCE, /data-slot="card-directory-sticky-header"/u);
 	assert.match(
 		AGENT_EXPANDED_SOURCE,
-		/<CardDirectoryBanner[\s\S]*<div className="px-4 pt-3">[\s\S]*<CardDirectoryHeader[\s\S]*byline=\{<CardDirectoryByline publisher=\{publisher\} verified=\{verified\} \/>\}[\s\S]*title=\{name\}[\s\S]*<CardDirectoryDescription className="mt-1 min-h-0">[\s\S]*description \?\?[\s\S]*\{\/\* Scrollable body/u,
+		/<CardDirectoryBanner[\s\S]*<div className="px-4 pt-3">[\s\S]*<CardDirectoryHeader[\s\S]*byline=\{<CardDirectoryByline publisher=\{publisher\} verified=\{verified\} \/>\}[\s\S]*title=\{name\}[\s\S]*<CardDirectoryDescription className="mt-1 line-clamp-3 min-h-15">[\s\S]*description \?\?[\s\S]*\{\/\* Scrollable body/u,
 	);
 	// flex-1 + min-h-0 + overflow-y-auto gives a scrollable body so the header/footer stay pinned
 	assert.match(AGENT_EXPANDED_SOURCE, /flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-2/u);

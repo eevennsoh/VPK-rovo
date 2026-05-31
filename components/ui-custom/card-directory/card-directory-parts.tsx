@@ -3,9 +3,22 @@
 import { type MouseEvent, type ReactElement, type ReactNode } from "react";
 import Image from "next/image";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
+import ArrowUpRightIcon from "@atlaskit/icon/core/arrow-up-right";
+import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
+import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
+import ClipboardIcon from "@atlaskit/icon/core/clipboard";
+import ClockIcon from "@atlaskit/icon/core/clock";
+import CommentIcon from "@atlaskit/icon/core/comment";
+import EditIcon from "@atlaskit/icon/core/edit";
+import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
+import FlagFilledIcon from "@atlaskit/icon/core/flag-filled";
+import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
+import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
+import TaskIcon from "@atlaskit/icon/core/task";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Tile } from "@/components/ui/tile";
@@ -175,13 +188,15 @@ export interface CardDirectoryBannerProps {
 	avatarSrc: string;
 	/** Override the avatar-category-derived cover color. */
 	backgroundColor?: string;
+	/** Optional badge overlaid on the foreground avatar. */
+	avatarBadge?: ReactNode;
 }
 
 /**
  * Full-bleed cover banner — a colored strip with a bleeding avatar and a hexagon-outlined
  * avatar overhanging the bottom edge. The parent card clips the top corners.
  */
-export function CardDirectoryBanner({ avatarSrc, backgroundColor }: Readonly<CardDirectoryBannerProps>) {
+export function CardDirectoryBanner({ avatarSrc, avatarBadge, backgroundColor }: Readonly<CardDirectoryBannerProps>) {
 	const coverColor = backgroundColor ?? getBannerCoverColor(avatarSrc);
 
 	return (
@@ -200,8 +215,14 @@ export function CardDirectoryBanner({ avatarSrc, backgroundColor }: Readonly<Car
 				/>
 			</div>
 			<div aria-hidden className="h-6" />
-			<div className="absolute top-6 left-4 size-12">
-				<Image alt="" aria-hidden className="h-12 w-[42px]" height={48} src={avatarSrc} width={42} />
+			<Avatar
+				aria-hidden
+				className="absolute top-6 left-4 h-12 w-[42px]"
+				shape="hexagon"
+				size="xl"
+			>
+				<AvatarImage alt="" aria-hidden className="object-contain" src={avatarSrc} />
+				<AvatarFallback />
 				<svg
 					aria-hidden="true"
 					className="pointer-events-none absolute top-0 left-0 h-12 w-[42px] overflow-visible"
@@ -216,16 +237,71 @@ export function CardDirectoryBanner({ avatarSrc, backgroundColor }: Readonly<Car
 						vectorEffect="non-scaling-stroke"
 					/>
 				</svg>
-			</div>
+				{avatarBadge}
+			</Avatar>
 		</div>
 	);
+}
+
+export type CardDirectoryCapabilityIcon =
+	| "action"
+	| "brief"
+	| "check"
+	| "clock"
+	| "comment"
+	| "draft"
+	| "goal"
+	| "people"
+	| "review"
+	| "search"
+	| "trend"
+	| "work";
+
+export interface CardDirectoryCapability {
+	icon?: CardDirectoryCapabilityIcon;
+	label: string;
 }
 
 export interface CardDirectoryCapabilitiesProps {
 	/** Optional section label above the list. Omit to render the bare list. */
 	label?: string;
 	/** Capability lines rendered as a scrollable icon-tile feature list. */
-	items: readonly string[];
+	items: readonly (string | CardDirectoryCapability)[];
+}
+
+function getCapabilityItem(item: string | CardDirectoryCapability): CardDirectoryCapability {
+	return typeof item === "string" ? { label: item } : item;
+}
+
+function getCapabilityIcon(icon: CardDirectoryCapabilityIcon | undefined): ReactElement {
+	switch (icon) {
+		case "action":
+			return <ArrowUpRightIcon label="" />;
+		case "brief":
+			return <ClipboardIcon label="" />;
+		case "check":
+			return <CheckCircleIcon label="" />;
+		case "clock":
+			return <ClockIcon label="" />;
+		case "comment":
+			return <CommentIcon label="" />;
+		case "draft":
+			return <EditIcon label="" />;
+		case "goal":
+			return <FlagFilledIcon label="" />;
+		case "people":
+			return <PeopleGroupIcon label="" />;
+		case "review":
+			return <EyeOpenIcon label="" />;
+		case "search":
+			return <SearchIcon label="" />;
+		case "trend":
+			return <ChartTrendUpIcon label="" />;
+		case "work":
+			return <TaskIcon label="" />;
+		default:
+			return <AiModelIcon label="" />;
+	}
 }
 
 /**
@@ -237,14 +313,18 @@ export function CardDirectoryCapabilities({ label, items }: Readonly<CardDirecto
 		<div className="flex flex-col gap-1" data-slot="card-directory-capabilities">
 			{label ? <span className="text-xs font-semibold leading-4 text-text-subtlest">{label}</span> : null}
 			<ul className="flex flex-col gap-1">
-				{items.map((item) => (
-					<li key={item} className="flex items-center gap-2">
-						<Tile aria-hidden className="shrink-0 text-icon-subtle" label="" size="small" variant="neutral">
-							<Icon render={<AiModelIcon label="" />} aria-hidden />
-						</Tile>
-						<span className="min-w-0 flex-1 truncate text-sm leading-5 text-text">{item}</span>
-					</li>
-				))}
+				{items.map((item) => {
+					const capability = getCapabilityItem(item);
+
+					return (
+						<li key={capability.label} className="flex items-center gap-2">
+							<Tile aria-hidden className="shrink-0 text-icon-subtle" label="" size="small" variant="neutral">
+								<Icon render={getCapabilityIcon(capability.icon)} aria-hidden />
+							</Tile>
+							<span className="min-w-0 flex-1 truncate text-sm leading-5 text-text">{capability.label}</span>
+						</li>
+					);
+				})}
 			</ul>
 		</div>
 	);
