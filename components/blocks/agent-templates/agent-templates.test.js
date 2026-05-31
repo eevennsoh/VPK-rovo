@@ -88,7 +88,7 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	// Sequenced swap (mode="wait"): quick exit, then a gradual staggered enter —
 	// each card fades + slides in, offset by AGENT_TEMPLATES_TAB_CARD_STAGGER.
 	assert.match(source, /className="h-full overflow-x-auto overflow-y-hidden \[scrollbar-width:none\]/u);
-	assert.match(source, /className="flex h-full gap-4 px-6 py-2"/u);
+	assert.match(source, /className="flex h-full gap-4 px-6 pt-2 pb-6"/u);
 	assert.match(source, /<AnimatePresence custom=\{tabMotionCustom\} initial=\{false\} mode="wait">/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_CARD_STAGGER = 0\.05/u);
 	assert.match(source, /templateAgents\.map\(\(agent, index\)/u);
@@ -140,6 +140,12 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(demoAgentsSource, /templatePrompt:/u);
 	assert.match(demoAgentsSource, /Use the \$\{name\} template to create a Studio agent/u);
 	assert.match(demoAgentsSource, /ready for me to review before sending/u);
+	assert.match(demoAgentsSource, /const MAX_VISIBLE_TEMPLATE_COLLABORATORS = 4/u);
+	assert.match(demoAgentsSource, /function pickCollaborators\(offset: number, count: number\)/u);
+	assert.match(demoAgentsSource, /const collaboratorMode = collaboratorSeed % 3/u);
+	assert.match(demoAgentsSource, /const visibleCollaboratorCount = collaboratorMode === 0 \? 3 : MAX_VISIBLE_TEMPLATE_COLLABORATORS/u);
+	assert.match(demoAgentsSource, /collaboratorMode === 2 \? 1 \+ \(collaboratorSeed % 8\) : undefined/u);
+	assert.match(demoAgentsSource, /collaborators: pickCollaborators\(peopleOffset, visibleCollaboratorCount\)/u);
 	assert.match(demoAgentsSource, /sources:/u);
 	assert.match(demoAgentsSource, /skills:/u);
 	assert.match(demoAgentsSource, /attributionKind: "team"/u);

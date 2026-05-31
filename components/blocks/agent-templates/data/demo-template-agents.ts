@@ -195,6 +195,7 @@ const SKILL_LABELS: Record<AgentTemplatesCategoryId, readonly string[]> = {
 };
 
 const PICK_STEPS = [7, 11, 13, 17, 19] as const;
+const MAX_VISIBLE_TEMPLATE_COLLABORATORS = 4;
 const DEFAULT_CAPABILITY_ICONS = ["brief", "search", "review", "action", "check"] satisfies readonly NonNullable<CardDirectoryCapability["icon"]>[];
 const CAPABILITY_ICON_SEQUENCES = [
 	DEFAULT_CAPABILITY_ICONS,
@@ -230,8 +231,8 @@ const PEOPLE: readonly DemoTemplateCollaborator[] = [
 	{ name: "Luna Delacour", src: "/avatar-human/luna-delacour.png" },
 ];
 
-function pickCollaborators(offset: number): readonly DemoTemplateCollaborator[] {
-	return [0, 1, 2].map((step) => PEOPLE[(offset + step) % PEOPLE.length]);
+function pickCollaborators(offset: number, count: number): readonly DemoTemplateCollaborator[] {
+	return Array.from({ length: count }, (_, step) => PEOPLE[(offset + step) % PEOPLE.length]);
 }
 
 function getTemplateSeed(value: string): number {
@@ -334,7 +335,7 @@ function demoTemplateAgent({
 	remix,
 	updated,
 	peopleOffset,
-	collaboratorOverflow = 3,
+	collaboratorOverflow,
 }: DemoTemplateConfig): AgentTemplatesAgent {
 	const resolvedSources = sources ?? defaultSources(id, categoryId);
 	const resolvedSkills = skills ?? defaultSkills(id, categoryId);
@@ -345,6 +346,12 @@ function demoTemplateAgent({
 		name,
 		sources: resolvedSources,
 	});
+	const collaboratorSeed = getTemplateSeed(`${categoryId}:${id}:collaborators`);
+	const collaboratorMode = collaboratorSeed % 3;
+	const visibleCollaboratorCount = collaboratorMode === 0 ? 3 : MAX_VISIBLE_TEMPLATE_COLLABORATORS;
+	const resolvedCollaboratorOverflow = collaboratorOverflow ?? (
+		collaboratorMode === 2 ? 1 + (collaboratorSeed % 8) : undefined
+	);
 
 	return {
 		id,
@@ -371,8 +378,8 @@ function demoTemplateAgent({
 			{ label: "Remix", value: remix },
 			{ label: "Last update", value: updated },
 		],
-		collaborators: pickCollaborators(peopleOffset),
-		collaboratorOverflow,
+		collaborators: pickCollaborators(peopleOffset, visibleCollaboratorCount),
+		...(resolvedCollaboratorOverflow ? { collaboratorOverflow: resolvedCollaboratorOverflow } : {}),
 	};
 }
 
