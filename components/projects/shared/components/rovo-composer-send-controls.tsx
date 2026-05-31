@@ -98,6 +98,7 @@ export interface RovoComposerActionButtonProps {
 	realtimeVoiceActive?: boolean;
 	screenAssistantTargetPrefix?: string;
 	showBackgroundStop?: boolean;
+	submitButtonClassName?: string;
 	submitDisabled?: boolean;
 	voiceStartButtonClassName?: string;
 }
@@ -112,6 +113,7 @@ export function RovoComposerActionButton({
 	realtimeVoiceActive = false,
 	screenAssistantTargetPrefix,
 	showBackgroundStop = false,
+	submitButtonClassName,
 	submitDisabled = false,
 	voiceStartButtonClassName,
 }: Readonly<RovoComposerActionButtonProps>): ReactElement {
@@ -220,7 +222,7 @@ export function RovoComposerActionButton({
 						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
 						style={{ willChange: "transform, opacity" }}
 					>
-						<PromptInputSubmit aria-label="Submit" className="hover:opacity-90 active:opacity-80" disabled={submitDisabled || !canSubmit} onStop={() => void onStop()} size="icon-sm" status={composerStatus}>
+						<PromptInputSubmit aria-label="Submit" className={cn("hover:opacity-90 active:opacity-80", submitButtonClassName)} disabled={submitDisabled || !canSubmit} onStop={() => void onStop()} size="icon-sm" status={composerStatus}>
 							<ArrowUpIcon label="" />
 						</PromptInputSubmit>
 					</motion.div>
