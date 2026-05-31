@@ -528,12 +528,12 @@ function RovoAppComposerInner({
 											{/* Decorative rainbow-traced doodle anchored under the word. */}
 											<span
 												aria-hidden
-												className="pointer-events-none absolute top-full left-1/2 w-12 -translate-x-1/2 pt-1"
+												className="pointer-events-none absolute top-full left-1/2 w-9 -translate-x-1/2 pt-0.5"
 											>
 												<SvgTracing
 													shape={SCRATCH_SCRIBBLE_SHAPE}
 													config={SCRATCH_SCRIBBLE_CONFIG}
-													svgClassName="h-3.5 w-full"
+													svgClassName="h-3 w-full"
 												/>
 											</span>
 										</span>
