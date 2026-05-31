@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { CircleAlertIcon } from "@/components/ui/vpk-icons";
+import { TriangleAlertIcon } from "@/components/ui/vpk-icons";
 import Link from "next/link";
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 
@@ -30,11 +30,13 @@ function ListItem({
 }: Readonly<{ title: string; href: string; children: ReactNode }>) {
 	return (
 		<li>
-			<NavigationMenuLink href={href}>
-				<div className="text-sm font-medium leading-none">{title}</div>
-				<p className="text-muted-foreground line-clamp-2 text-sm leading-snug">
-					{children}
-				</p>
+			<NavigationMenuLink render={<Link href={href} />}>
+				<div className="flex flex-col gap-1">
+					<div className="text-sm font-medium leading-none">{title}</div>
+					<p className="line-clamp-2 text-muted-foreground text-sm leading-snug">
+						{children}
+					</p>
+				</div>
 			</NavigationMenuLink>
 		</li>
 	);
@@ -115,27 +117,24 @@ export function NavigationMenuDemoBasic() {
 						<ul className="grid w-[200px]">
 							<li>
 								<NavigationMenuLink
-									render={
-										<Link href="#" className="flex-row items-center gap-2" />
-									}
+									className="flex-row items-center gap-2"
+									render={<Link href="#" />}
 								>
-									<CircleAlertIcon />
+									<TriangleAlertIcon className="text-icon-subtle" size="small" />
 									Backlog
 								</NavigationMenuLink>
 								<NavigationMenuLink
-									render={
-										<Link href="#" className="flex-row items-center gap-2" />
-									}
+									className="flex-row items-center gap-2"
+									render={<Link href="#" />}
 								>
-									<CircleAlertIcon />
+									<TriangleAlertIcon className="text-icon-subtle" size="small" />
 									To Do
 								</NavigationMenuLink>
 								<NavigationMenuLink
-									render={
-										<Link href="#" className="flex-row items-center gap-2" />
-									}
+									className="flex-row items-center gap-2"
+									render={<Link href="#" />}
 								>
-									<CircleAlertIcon />
+									<TriangleAlertIcon className="text-icon-subtle" size="small" />
 									Done
 								</NavigationMenuLink>
 							</li>

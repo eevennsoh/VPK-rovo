@@ -1,8 +1,8 @@
 import { NavigationMenu as NavigationMenuPrimitive } from "@base-ui/react/navigation-menu"
 import { cva } from "class-variance-authority"
 
+import { ChevronDownIcon } from "@/components/ui/vpk-icons"
 import { cn } from "@/lib/utils"
-import ChevronDownIcon from "@atlaskit/icon/core/chevron-down"
 
 function NavigationMenu({
   align = "start",
@@ -56,7 +56,7 @@ function NavigationMenuItem({
 }
 
 const navigationMenuTriggerStyle = cva(
-  "bg-background hover:bg-muted focus:bg-muted data-open:hover:bg-muted data-open:focus:bg-muted data-open:bg-muted/50 focus-visible:ring-ring/50 data-popup-open:bg-muted/50 data-popup-open:hover:bg-muted rounded-lg px-2.5 py-1.5 text-sm font-medium transition-all focus-visible:ring-3 focus-visible:outline-1 disabled:opacity-50 group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center disabled:pointer-events-none outline-none"
+  "bg-background text-foreground no-underline hover:no-underline focus:no-underline hover:bg-muted focus:bg-muted data-open:hover:bg-muted data-open:focus:bg-muted data-open:bg-muted/50 focus-visible:ring-ring/50 data-popup-open:bg-muted/50 data-popup-open:hover:bg-muted rounded-lg px-2.5 py-1.5 text-sm font-medium transition-all focus-visible:ring-3 focus-visible:outline-1 disabled:opacity-50 group/navigation-menu-trigger inline-flex h-9 w-max items-center justify-center disabled:pointer-events-none outline-none"
 )
 
 function NavigationMenuTrigger({
@@ -71,7 +71,10 @@ function NavigationMenuTrigger({
       {...props}
     >
       {children}{" "}
-      <span className="relative top-px ml-1 size-3 transition duration-medium group-data-open/navigation-menu-trigger:rotate-180 group-data-popup-open/navigation-menu-trigger:rotate-180" aria-hidden="true"><ChevronDownIcon label="" spacing="none" /></span>
+      <ChevronDownIcon
+        className="relative top-px ml-1 text-icon-subtle transition duration-medium group-data-open/navigation-menu-trigger:rotate-180 group-data-popup-open/navigation-menu-trigger:rotate-180"
+        size="small"
+      />
     </NavigationMenuPrimitive.Trigger>
   )
 }
@@ -134,7 +137,7 @@ function NavigationMenuLink({
   return (
     <Link
       data-slot="navigation-menu-link"
-      className={cn("data-active:focus:bg-muted data-active:hover:bg-muted data-active:bg-muted/50 focus-visible:ring-ring/50 hover:bg-muted focus:bg-muted flex items-center gap-2 rounded-lg p-2 text-sm transition-all outline-none focus-visible:ring-3 focus-visible:outline-1 in-data-[slot=navigation-menu-content]:rounded-md [&_svg:not([class*='size-'])]:size-4", className)}
+      className={cn("data-active:focus:bg-muted data-active:hover:bg-muted data-active:bg-muted/50 focus-visible:ring-ring/50 hover:bg-muted focus:bg-muted text-foreground no-underline hover:no-underline focus:no-underline flex flex-col gap-1 rounded-lg p-2 text-sm transition-all outline-none focus-visible:ring-3 focus-visible:outline-1 in-data-[slot=navigation-menu-content]:rounded-md [&_[data-slot=icon]]:text-icon-subtle [&_svg:not([class*='size-'])]:size-4", className)}
       render={render}
       {...props}
     />
