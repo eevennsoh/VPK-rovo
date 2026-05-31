@@ -181,7 +181,7 @@ function StudioSidebarAgentsLeadingIcon({ isExpanded }: Readonly<{ isExpanded: b
 				<AiAgentIcon label="" />
 			</span>
 			<span className="hidden items-center justify-center group-hover/sidebar-nav-item:flex">
-				{isExpanded ? <ChevronDownIcon label="" /> : <ChevronRightIcon label="" />}
+				{isExpanded ? <ChevronDownIcon label="" size="small" /> : <ChevronRightIcon label="" size="small" />}
 			</span>
 		</span>
 	);
