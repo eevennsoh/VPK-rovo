@@ -310,38 +310,45 @@ function Loading({ scale }: Readonly<{ scale: number }>) {
 
 /**
  * Four brand-colored bars pulsing their height out of phase (14×16 at scale
- * 1). Driven by Motion so each bar springs in from `scaleY(0)` on mount —
- * avoiding the instant height jump the previous CSS-keyframe approach caused
- * when the demo flipped to `state="speaking"` — and then loops through the
- * easing-based equalizer oscillation. Under `prefers-reduced-motion` the bars
- * settle to a steady mid-height with no loop.
+ * 1). Driven by Motion so each bar grows in from `height: 0` on mount —
+ * avoiding the instant jump the previous CSS-keyframe approach caused when
+ * the demo flipped to `state="speaking"` — and then loops through the
+ * easing-based equalizer oscillation. We animate `height` directly (rather
+ * than `scaleY`) so the min height can be floored at `barWidth`, guaranteeing
+ * every bar always renders at least as tall as it is wide: with
+ * `borderRadius: barWidth / 2`, that means a uniform pill cap on every bar at
+ * every animation phase. Under `prefers-reduced-motion` the bars settle to a
+ * steady mid-height with no loop.
  */
 function Speaking({ scale }: Readonly<{ scale: number }>) {
 	const reduced = useReducedMotion();
 	const barWidth = 2 * scale;
 	return (
 		<span className="inline-flex items-center" style={{ height: 16 * scale, gap: 2 * scale }}>
-			{SPEAKING_BARS.map((bar) => (
-				<motion.span
-					key={bar.color}
-					style={{
-						width: barWidth,
-						height: bar.height * scale,
-						// True pill: half the bar width, regardless of bar height.
-						borderRadius: barWidth / 2,
-						backgroundColor: bar.color,
-						transformOrigin: "center",
-						willChange: "transform",
-					}}
-					initial={{ scaleY: 0 }}
-					animate={reduced ? { scaleY: 0.7 } : { scaleY: [0.35, 1, 0.35] }}
-					transition={
-						reduced
-							? SPEAKING_MOUNT_TRANSITION
-							: { ...SPEAKING_LOOP_TRANSITION, delay: bar.delay }
-					}
-				/>
-			))}
+			{SPEAKING_BARS.map((bar) => {
+				const maxH = bar.height * scale;
+				// Clamp the bar's minimum animated height to its own width so it
+				// never collapses below a circle — the squashed-oval look on the
+				// shortest (saffron) bar at low `scaleY` was the radius bug.
+				const minH = Math.max(barWidth, maxH * 0.35);
+				return (
+					<motion.span
+						key={bar.color}
+						style={{
+							width: barWidth,
+							borderRadius: barWidth / 2,
+							backgroundColor: bar.color,
+						}}
+						initial={{ height: 0 }}
+						animate={reduced ? { height: (minH + maxH) / 2 } : { height: [minH, maxH, minH] }}
+						transition={
+							reduced
+								? SPEAKING_MOUNT_TRANSITION
+								: { ...SPEAKING_LOOP_TRANSITION, delay: bar.delay }
+						}
+					/>
+				);
+			})}
 		</span>
 	);
 }
