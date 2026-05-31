@@ -249,14 +249,16 @@ function Cursor({ scale, animated }: Readonly<{ scale: number; animated: boolean
 
 /**
  * Microphone badge wearing a Rovo conic-gradient ring above a static caret
- * stick (20×36 at scale 1). The ring uses the mask-composite border technique
+ * stick (8×24 at scale 1). The ring uses the mask-composite border technique
  * and rotates when `animated`; the caret stick below the badge is a plain
  * rectangle (no radius, no animation) marking the typing insertion point.
  */
 function Typing({ scale, animated }: Readonly<{ scale: number; animated: boolean }>) {
-	const badge = 20 * scale;
-	const icon = 12 * scale;
-	const ringWidth = Math.max(1, 1.5 * scale);
+	// Badge hugs the microphone tightly — 8u badge, 6u icon, 1u padding per
+	// side. Renders as 24×24 at the demo's default scale=3.
+	const badge = 8 * scale;
+	const icon = 6 * scale;
+	const ringWidth = Math.max(1, 0.6 * scale);
 	const ringMask: React.CSSProperties = {
 		WebkitMask:
 			"linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
@@ -268,7 +270,7 @@ function Typing({ scale, animated }: Readonly<{ scale: number; animated: boolean
 		<span className="inline-flex flex-col items-center" style={{ width: badge }}>
 			<span
 				className="relative box-border inline-flex items-center justify-center rounded-full bg-[#101214] text-white"
-				style={{ width: badge, height: badge, padding: 4 * scale }}
+				style={{ width: badge, height: badge, padding: 1 * scale }}
 			>
 				<span
 					aria-hidden
