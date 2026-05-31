@@ -7,13 +7,10 @@ import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
 import SwapIcon from "@atlaskit/icon-lab/core/swap";
 
+import { Avatar, AvatarCompanyBadge, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { AtlassianLogo } from "@/components/ui/logo";
-import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-
-const AVATAR_HEXAGON_PATH =
-	"M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
 
 const AGENT_CATEGORY_BANNER_COLOR: Record<string, string> = {
 	"dev-agents": "#82B536",
@@ -166,32 +163,15 @@ function AgentCard({
 				</div>
 			</div>
 
-			<div className="absolute top-6 left-4 size-12" aria-hidden={avatarAlt === ""}>
-				<Image
-					alt={avatarAlt}
-					className="h-12 w-[42px]"
-					height={48}
-					src={avatarSrc}
-					width={42}
-				/>
-				<svg
-					aria-hidden="true"
-					className="pointer-events-none absolute top-0 left-0 h-12 w-[42px] overflow-visible"
-					focusable="false"
-					viewBox="0 0 43 48"
-				>
-					<path
-						d={AVATAR_HEXAGON_PATH}
-						fill="none"
-						stroke="white"
-						strokeWidth={2}
-						vectorEffect="non-scaling-stroke"
-					/>
-				</svg>
-				<span
-					className="absolute right-px bottom-0 flex size-4 items-center justify-center overflow-hidden rounded-lg border-[1.5px] border-surface text-text-inverse [&_svg]:size-2"
-					style={{ backgroundColor: token("color.icon.brand") }}
-				>
+			<Avatar
+				aria-hidden={avatarAlt === ""}
+				className="absolute top-6 left-4"
+				shape="hexagon"
+				size="xl"
+			>
+				<AvatarImage alt={avatarAlt} src={avatarSrc} />
+				<AvatarFallback>{name.slice(0, 2)}</AvatarFallback>
+				<AvatarCompanyBadge>
 					<AtlassianLogo
 						appearance="inverse"
 						label=""
@@ -200,8 +180,8 @@ function AgentCard({
 						size="xxsmall"
 						themeAware={false}
 					/>
-				</span>
-			</div>
+				</AvatarCompanyBadge>
+			</Avatar>
 		</section>
 	);
 }

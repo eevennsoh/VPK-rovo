@@ -57,13 +57,16 @@ test("AvatarUnassigned exposes grey person and agent avatar states", () => {
 	assert.match(AVATAR_SOURCE, /type AvatarUnassignedProps,/);
 });
 
-test("hexagon avatars use a polygon stroke instead of a clipped rectangular border", () => {
+test("hexagon avatars clip an inner frame so corner overlays render unclipped", () => {
 	assert.match(AVATAR_SOURCE, /const HEXAGON_POINTS =/);
-	assert.match(AVATAR_SOURCE, /hexagon: `\$\{HEXAGON_CLIP\} after:border-0`/);
+	assert.match(AVATAR_SOURCE, /hexagon: "after:border-0"/);
+	assert.doesNotMatch(AVATAR_SOURCE, /hexagon: `\$\{HEXAGON_CLIP\} after:border-0`/);
+	assert.match(AVATAR_SOURCE, /<span className=\{cn\("relative flex size-full items-center justify-center", HEXAGON_CLIP\)\}>/);
+	assert.match(AVATAR_SOURCE, /const AVATAR_OVERLAY_TYPES: ReadonlySet<unknown> = new Set\(\[/);
 	assert.match(AVATAR_SOURCE, /function AvatarHexagonBorder\(\)/);
 	assert.match(AVATAR_SOURCE, /text-border!/);
 	assert.match(AVATAR_SOURCE, /<polygon[\s\S]*points=\{HEXAGON_POINTS\}[\s\S]*stroke="currentColor"/);
-	assert.match(AVATAR_SOURCE, /shape === "hexagon" \? <AvatarHexagonBorder \/> : null/);
+	assert.match(AVATAR_SOURCE, /<AvatarHexagonBorder \/>/);
 });
 
 test("avatar group overflow count uses 12px text and 14px text for large groups", () => {
@@ -88,6 +91,34 @@ test("avatar docs include only the base unassigned demo states", () => {
 	assert.match(AVATAR_DETAILS_SOURCE, /demoSlug: "avatar-demo-unassigned"/);
 	assert.match(REGISTRY_SOURCE, /"avatar-demo-unassigned"/);
 	assert.match(REGISTRY_SOURCE, /default: mod\.AvatarDemoUnassigned/);
+});
+
+test("AvatarCompanyBadge exposes a size-aware company-logo dot for agent avatars", () => {
+	assert.match(AVATAR_SOURCE, /function AvatarCompanyBadge\(/);
+	assert.match(AVATAR_SOURCE, /data-slot="avatar-company-badge"/);
+	assert.match(AVATAR_SOURCE, /"bg-primary text-primary-foreground ring-background/);
+	assert.match(AVATAR_SOURCE, /group-data-\[size=2xl\]\/avatar:\[&_svg\]:size-4/);
+	assert.match(AVATAR_SOURCE, /\tAvatarCompanyBadge,/);
+	assert.match(AVATAR_SOURCE, /type AvatarCompanyBadgeProps,/);
+	assert.match(AVATAR_DEMO_SOURCE, /export function AvatarDemoCompany\(\)/);
+	assert.match(AVATAR_DEMO_SOURCE, /<AvatarCompanyBadge>/);
+	assert.match(AVATAR_DETAILS_SOURCE, /demoSlug: "avatar-demo-company"/);
+	assert.match(REGISTRY_SOURCE, /"avatar-demo-company"/);
+	assert.match(REGISTRY_SOURCE, /default: mod\.AvatarDemoCompany/);
+});
+
+test("AvatarProjectBadge exposes a square project tile for team-created agents", () => {
+	assert.match(AVATAR_SOURCE, /function AvatarProjectBadge\(/);
+	assert.match(AVATAR_SOURCE, /data-slot="avatar-project-badge"/);
+	assert.match(AVATAR_SOURCE, /rounded-xs ring-2 select-none \[&_img\]:size-full \[&_img\]:object-cover/);
+	assert.match(AVATAR_SOURCE, /\tAvatarProjectBadge,/);
+	assert.match(AVATAR_SOURCE, /type AvatarProjectBadgeProps,/);
+	assert.match(AVATAR_DEMO_SOURCE, /export function AvatarDemoProject\(\)/);
+	assert.match(AVATAR_DEMO_SOURCE, /<AvatarProjectBadge>/);
+	assert.match(AVATAR_DEMO_SOURCE, /\/avatar-project\/group\.svg/);
+	assert.match(AVATAR_DETAILS_SOURCE, /demoSlug: "avatar-demo-project"/);
+	assert.match(REGISTRY_SOURCE, /"avatar-demo-project"/);
+	assert.match(REGISTRY_SOURCE, /default: mod\.AvatarDemoProject/);
 });
 
 test("primary avatar asset stays sized for rendered avatar slots", () => {

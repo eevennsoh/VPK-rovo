@@ -2585,6 +2585,16 @@ import { Textarea } from "@/components/ui/textarea";
         demoSlug: "avatar-demo-status",
       },
       {
+        title: "Company badge",
+        description: "Agent created by a company — hexagon avatar with a company logo dot.",
+        demoSlug: "avatar-demo-company",
+      },
+      {
+        title: "Project badge",
+        description: "Agent created by a team — hexagon avatar with a project square.",
+        demoSlug: "avatar-demo-project",
+      },
+      {
         title: "Disabled",
         description: "Disabled state across all shapes.",
         demoSlug: "avatar-demo-disabled",
