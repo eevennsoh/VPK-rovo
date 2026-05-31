@@ -38,14 +38,20 @@ interface SpinnerProps
 }
 
 /**
- * Rovo brand color stops, in saffron → lime → blue → purple order. Distributed
- * along the spinner's arc so the visible portion sweeps through every brand
- * hue regardless of where the indeterminate arc currently sits.
+ * Rovo brand color stops, in saffron → lime → blue → purple order, with each
+ * stop doubled at the same offset to produce hard color transitions instead
+ * of smooth interpolation. Band proportions match the Figma conic gradient
+ * the cursor stroke uses (saffron 0–20%, lime 20–46.6%, blue 46.6–70%, purple
+ * 70–100%) so the spinner reads as the same rainbow as the rest of the brand.
  */
 const ROVO_RAINBOW_STOPS = [
 	{ offset: "0%", color: "#FCA700" },
-	{ offset: "33%", color: "#6A9A23" },
-	{ offset: "66%", color: "#1868DB" },
+	{ offset: "20%", color: "#FCA700" },
+	{ offset: "20%", color: "#6A9A23" },
+	{ offset: "46.6%", color: "#6A9A23" },
+	{ offset: "46.6%", color: "#1868DB" },
+	{ offset: "70%", color: "#1868DB" },
+	{ offset: "70%", color: "#AF59E1" },
 	{ offset: "100%", color: "#AF59E1" },
 ] as const
 
@@ -80,8 +86,12 @@ function Spinner({
 						y2="1"
 						gradientUnits="objectBoundingBox"
 					>
-						{ROVO_RAINBOW_STOPS.map((stop) => (
-							<stop key={stop.offset} offset={stop.offset} stopColor={stop.color} />
+						{ROVO_RAINBOW_STOPS.map((stop, i) => (
+							<stop
+								key={`${stop.offset}-${i}`}
+								offset={stop.offset}
+								stopColor={stop.color}
+							/>
 						))}
 					</linearGradient>
 				</defs>
