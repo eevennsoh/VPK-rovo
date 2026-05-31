@@ -59,25 +59,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
 import SearchIcon from "@atlaskit/icon/core/search";
-import DashboardIcon from "@atlaskit/icon/core/dashboard";
-import EpicIcon from "@atlaskit/icon/core/epic";
-import TaskIcon from "@atlaskit/icon/core/task";
-import TasksIcon from "@atlaskit/icon/core/tasks";
-import NoteIcon from "@atlaskit/icon/core/note";
-import ClipboardIcon from "@atlaskit/icon/core/clipboard";
-import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
-import EditIcon from "@atlaskit/icon/core/edit";
-import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
-import CommentIcon from "@atlaskit/icon/core/comment";
-import CommentAddIcon from "@atlaskit/icon/core/comment-add";
-import PersonIcon from "@atlaskit/icon/core/person";
-import PersonAddIcon from "@atlaskit/icon/core/person-add";
-import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
-import SortAscendingIcon from "@atlaskit/icon/core/sort-ascending";
-import FlagFilledIcon from "@atlaskit/icon/core/flag-filled";
-import ArrowUpRightIcon from "@atlaskit/icon/core/arrow-up-right";
-import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
-import ClockIcon from "@atlaskit/icon/core/clock";
 import { SidebarProvider, SidebarResizeHandle } from "@/components/ui/sidebar";
 import { Footer } from "@/components/ui-custom/footer";
 import { useClicky } from "@/components/projects/studio/hooks/use-clicky";
@@ -266,27 +247,26 @@ const HOME_STARTER_CARD_BORDER_GLOW_STYLE: CSSProperties = {
 const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyArray<HomeStarterTemplate>>> = {
 	analyze: [
 		{
-			description: "Surface customer feedback themes from trusted sources.",
+			description: "Synthesize feedback into themes, customer needs, risks, and recommended product actions.",
 			iconSrc: "/avatar-agent/teamwork-agents/customer-insights.svg",
 			layoutClassName: "sm:col-span-2 lg:col-start-1 lg:col-span-1 lg:row-start-1",
 			prompt: "Build a Studio agent named Customer Insights that analyzes customer feedback from provided pages, links, or projects, then returns themes, needs, risks, and recommended actions.",
 			title: "Customer Insights",
 		},
 		{
-			description: "Group Jira work items into clear themes and epics.",
+			description: "Scan Jira work items to find themes, candidate epics, and patterns worth acting on.",
 			hero: {
 				bannerClassName: "bg-[#82B536]",
 				skills: [
-					{ color: "software", icon: <SearchIcon label="" size="small" />, label: "jql-search" },
-					{ color: "software", icon: <DashboardIcon label="" size="small" />, label: "theme-grouping" },
-					{ color: "teamwork", icon: <EpicIcon label="" size="small" />, label: "epic-suggestions" },
-					{ color: "teamwork", icon: <TaskIcon label="" size="small" />, label: "work-item-summary" },
-					{ color: "product", icon: <NoteIcon label="" size="small" />, label: "confluence-retrieval" },
+					{ color: "strategy", label: "theme-mining" },
+					{ color: "teamwork", label: "quote-selection" },
+					{ color: "software", label: "decision-brief" },
+					{ color: "service", label: "transcript-review" },
 				],
 				sources: [
 					{ id: "jira", label: "Jira", provider: "jira" },
 					{ id: "jira-product-discovery", label: "Jira Product Discovery", provider: "jira-product-discovery" },
-					{ id: "google-drive", label: "Google Drive", provider: "google-drive" },
+					{ id: "confluence", label: "Confluence", provider: "confluence" },
 				],
 			},
 			iconSrc: "/avatar-agent/dev-agents/code-reviewer.svg",
@@ -295,14 +275,14 @@ const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyArray<Hom
 			title: "Jira Theme Analyzer",
 		},
 		{
-			description: "Turn transcripts into insights and next actions.",
+			description: "Turn transcripts into decisions, insights, recommendations, owners, and follow-up actions.",
 			iconSrc: "/avatar-agent/strategy-agents/wildcard-1.svg",
 			layoutClassName: "sm:row-span-2 lg:col-start-4 lg:row-start-1",
 			prompt: "Build a Studio agent named Transcript Insights Reporter that turns meeting transcripts into decisions, insights, recommendations, owners, and follow-up action items.",
 			title: "Transcript Insights Reporter",
 		},
 		{
-			description: "Find decisions, action items, and highlights in meetings.",
+			description: "Find decisions, action items, highlights, and useful context across meeting notes.",
 			iconSrc: "/avatar-agent/product-agents/wildcard-6.svg",
 			layoutClassName: "sm:row-span-2 lg:col-start-5 lg:row-start-1",
 			prompt: "Build a Studio agent named Meeting Insights that searches meeting notes, transcripts, and summaries to surface decisions, action items, highlights, and useful context.",
@@ -323,7 +303,7 @@ const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyArray<Hom
 			title: "Sentiment Mapper",
 		},
 		{
-			description: "Trace where users drop off and why.",
+			description: "Trace product drop-offs, connect them to feedback, and suggest the next investigation.",
 			iconSrc: "/avatar-agent/product-agents/wildcard-5.svg",
 			layoutClassName: "",
 			prompt: "Build a Studio agent named Funnel Analyzer that examines event data and feedback to identify drop-off points, the most likely causes, and the next investigation step.",
@@ -339,29 +319,27 @@ const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyArray<Hom
 	],
 	brainstorm: [
 		{
-			description: "Clarify DACI decisions and close gaps.",
+			description: "Review DACI decisions, close context gaps, and suggest the next decision-ready resources.",
 			hero: {
 				bannerClassName: "bg-[#1868DB]",
 				skills: [
-					{ color: "strategy", icon: <ClipboardIcon label="" size="small" />, label: "daci-review" },
-					{ color: "teamwork", icon: <CheckCircleIcon label="" size="small" />, label: "context-gap-detection" },
-					{ color: "teamwork", icon: <EditIcon label="" size="small" />, label: "decision-drafting" },
-					{ color: "product", icon: <PeopleGroupIcon label="" size="small" />, label: "stakeholder-lookup" },
+					{ color: "platform", label: "stakeholder-input" },
+					{ color: "2p3p", label: "opportunity-sizing" },
+					{ color: "default", label: "option-mapping" },
+					{ color: "product", label: "risk-spotting" },
+					{ color: "strategy", label: "constraint-mapping" },
+					{ color: "teamwork", label: "rubric-building" },
+					{ color: "software", label: "evidence-gap-check" },
+					{ color: "service", label: "idea-ranking" },
 				],
 				sources: [
-					{
-						icon: <Image alt="" aria-hidden height={24} src="/3p/slack/24.svg" width={24} />,
-						id: "slack",
-						label: "Slack",
-						provider: "teams",
-					},
-					{ id: "google-drive", label: "Google Drive", provider: "google-drive" },
-					{
-						icon: <Image alt="" aria-hidden height={24} src="/3p/microsoft-teams/24.svg" width={24} />,
-						id: "microsoft-teams",
-						label: "Microsoft Teams",
-						provider: "teams",
-					},
+					{ id: "powerbi", label: "Power BI", provider: "teams", iconSrc: "/3p/powerbi/24.svg" },
+					{ id: "jira-service-management", label: "Jira Service Management", provider: "jira-service-management" },
+					{ id: "figma", label: "Figma", provider: "teams", iconSrc: "/3p/figma/24.svg" },
+					{ id: "jira", label: "Jira", provider: "jira" },
+					{ id: "microsoft-teams", label: "Microsoft Teams", provider: "teams", iconSrc: "/3p/microsoft-teams/24.svg" },
+					{ id: "salesforce", label: "Salesforce", provider: "salesforce" },
+					{ id: "slack", label: "Slack", provider: "teams", iconSrc: "/3p/slack/24.svg" },
 				],
 			},
 			iconSrc: "/avatar-agent/teamwork-agents/decision-director.svg",
@@ -370,7 +348,7 @@ const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyArray<Hom
 			title: "Decision Director",
 		},
 		{
-			description: "Create and review clear, consistent OKRs.",
+			description: "Create and review clear, measurable OKRs against examples, team priorities, and outcome guidance.",
 			iconSrc: "/avatar-agent/product-agents/wildcard-2.svg",
 			layoutClassName: "lg:col-start-3 lg:col-span-2 lg:row-start-1",
 			prompt: "Build a Studio agent named OKR Generator that creates effective OKRs from scratch, reviews draft OKRs, finds similar examples, and shares guidance for stronger objectives and key results.",
@@ -414,38 +392,30 @@ const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyArray<Hom
 	],
 	review: [
 		{
-			description: "Triage requests and surface field updates.",
+			description: "Triage service requests, recommend field updates, and ask for missing details when needed.",
 			iconSrc: "/avatar-agent/service-agents/service-triage.svg",
 			layoutClassName: "sm:col-span-2 lg:col-start-1 lg:col-span-1 lg:row-start-1 lg:row-span-2",
 			prompt: "Build a Studio agent named Service Triage that triages service requests, recommends field updates, explains automation-ready output, and asks for missing details when needed.",
 			title: "Service Triage",
 		},
 		{
-			description: "Draft support responses and suggest assignees.",
+			description: "Draft support responses, suggest assignees, and summarize requests for faster resolution.",
 			hero: {
 				bannerClassName: "bg-[#FCA700]",
 				skills: [
-					{ color: "service", icon: <CommentAddIcon label="" size="small" />, label: "response-drafting" },
-					{ color: "service", icon: <PersonAddIcon label="" size="small" />, label: "assignee-suggestion" },
-					{ color: "teamwork", icon: <ClipboardIcon label="" size="small" />, label: "request-summary" },
-					{ color: "product", icon: <SearchIcon label="" size="small" />, label: "similar-ticket-lookup" },
-					{ color: "service", icon: <ArrowUpRightIcon label="" size="small" />, label: "escalation-routing" },
+					{ color: "platform", label: "handoff" },
+					{ color: "2p3p", label: "postmortem-scan" },
+					{ color: "default", label: "incident-routing" },
+					{ color: "product", label: "readiness-review" },
+					{ color: "strategy", label: "escalation-drafting" },
+					{ color: "teamwork", label: "status-update" },
+					{ color: "software", label: "owner-mapping" },
+					{ color: "service", label: "compliance-note" },
 				],
 				sources: [
 					{ id: "jira-service-management", label: "Jira Service Management", provider: "jira-service-management" },
-					{
-						icon: <Image alt="" aria-hidden height={24} src="/3p/zendesk/24.svg" width={24} />,
-						id: "zendesk",
-						label: "Zendesk",
-						provider: "teams",
-					},
 					{ id: "salesforce", label: "Salesforce", provider: "salesforce" },
-					{
-						icon: <Image alt="" aria-hidden height={24} src="/3p/microsoft-teams/24.svg" width={24} />,
-						id: "microsoft-teams",
-						label: "Microsoft Teams",
-						provider: "teams",
-					},
+					{ id: "microsoft-teams", label: "Microsoft Teams", provider: "teams", iconSrc: "/3p/microsoft-teams/24.svg" },
 				],
 			},
 			iconSrc: "/avatar-agent/strategy-agents/strategic-insight.svg",
@@ -454,21 +424,21 @@ const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyArray<Hom
 			title: "Service Request Helper",
 		},
 		{
-			description: "Guide incident response and on-call operations.",
+			description: "Guide incident response, on-call actions, mitigation, status updates, and recovery.",
 			iconSrc: "/avatar-agent/dev-agents/code-standardizer.svg",
 			layoutClassName: "lg:col-start-4 lg:col-span-2 lg:row-start-1",
 			prompt: "Build a Studio agent named Rovo Ops that assists incident management, on-call duties, mitigation guidance, and faster detection, response, and recovery.",
 			title: "Rovo Ops",
 		},
 		{
-			description: "Answer setup questions and share Rovo guidance.",
+			description: "Answer Rovo setup and usage questions with concise guidance and helpful links.",
 			iconSrc: "/avatar-agent/product-agents/wildcard-3.svg",
 			layoutClassName: "lg:col-start-4 lg:row-start-2",
 			prompt: "Build a Studio agent named Rovo Expert that introduces Rovo features, answers setup and usage questions, and shares helpful links for unlocking organizational knowledge.",
 			title: "Rovo Expert",
 		},
 		{
-			description: "Help teammates document their working style.",
+			description: "Help teammates document working style, communication norms, and collaboration preferences.",
 			iconSrc: "/avatar-agent/teamwork-agents/user-manual-writer.svg",
 			layoutClassName: "lg:col-start-5 lg:row-start-2",
 			prompt: "Build a Studio agent named User Manual Writer that helps people write a friendly personal user manual covering working hours, preferred environments, communication norms, and collaboration tips.",
@@ -491,25 +461,27 @@ const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyArray<Hom
 	],
 	summarize: [
 		{
-			description: "Create and review PRDs with direct feedback.",
+			description: "Create and review PRDs with customer empathy, evidence, acceptance criteria, and direct feedback.",
 			hero: {
 				bannerClassName: "bg-[#BF63F3]",
 				skills: [
-					{ color: "product", icon: <EyeOpenIcon label="" size="small" />, label: "prd-review" },
-					{ color: "product", icon: <PersonIcon label="" size="small" />, label: "customer-evidence" },
-					{ color: "strategy", icon: <CommentIcon label="" size="small" />, label: "clarity-feedback" },
-					{ color: "teamwork", icon: <CheckCircleIcon label="" size="small" />, label: "acceptance-criteria" },
-					{ color: "strategy", icon: <ChartTrendUpIcon label="" size="small" />, label: "success-metrics" },
+					{ color: "default", label: "content-briefing" },
+					{ color: "product", label: "audience-fit" },
+					{ color: "strategy", label: "meeting-recap" },
+					{ color: "teamwork", label: "executive-summary" },
+					{ color: "software", label: "brand-review" },
+					{ color: "service", label: "translation-review" },
+					{ color: "platform", label: "clarity-pass" },
+					{ color: "2p3p", label: "prd-outline" },
+					{ color: "default", label: "action-extraction" },
+					{ color: "product", label: "changelog-writing" },
 				],
 				sources: [
-					{
-						icon: <Image alt="" aria-hidden height={24} src="/3p/figma/24.svg" width={24} />,
-						id: "figma",
-						label: "Figma",
-						provider: "teams",
-					},
-					{ id: "confluence", label: "Confluence", provider: "confluence" },
-					{ id: "google-drive", label: "Google Drive", provider: "google-drive" },
+					{ id: "figma", label: "Figma", provider: "teams", iconSrc: "/3p/figma/24.svg" },
+					{ id: "bitbucket", label: "Bitbucket", provider: "bitbucket" },
+					{ id: "github", label: "GitHub", provider: "teams", iconSrc: "/3p/github/24.svg" },
+					{ id: "salesforce", label: "Salesforce", provider: "salesforce" },
+					{ id: "jira-product-discovery", label: "Jira Product Discovery", provider: "jira-product-discovery" },
 				],
 			},
 			iconSrc: "/avatar-agent/product-agents/wildcard-1.svg",
@@ -518,28 +490,28 @@ const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyArray<Hom
 			title: "Product Requirements Guide",
 		},
 		{
-			description: "Turn Jira work items into clear release notes.",
+			description: "Convert Jira work items into grouped release notes for customers and stakeholders.",
 			iconSrc: "/avatar-agent/dev-agents/deployment-summarizer.svg",
 			layoutClassName: "lg:col-start-3 lg:row-start-1 lg:row-span-2",
 			prompt: "Build a Studio agent named Release Notes Drafter that summarizes up to 20 Jira work items, groups them into themes, and drafts clear release notes for stakeholders.",
 			title: "Release Notes Drafter",
 		},
 		{
-			description: "Review drafts against brand voice and tone.",
+			description: "Draft or review content against brand voice, tone guidance, and audience needs.",
 			iconSrc: "/avatar-agent/strategy-agents/wildcard-3.svg",
 			layoutClassName: "lg:col-start-4 lg:col-span-2 lg:row-start-1",
 			prompt: "Build a Studio agent named Brand Voice Crafter that reviews or generates content against supplied brand voice and tone guidelines to help produce consistent communications.",
 			title: "Brand Voice Crafter",
 		},
 		{
-			description: "Write social posts and improve engagement.",
+			description: "Draft social posts, improve engagement, and adapt messages by channel and audience.",
 			iconSrc: "/avatar-agent/service-agents/wildcard-4.svg",
 			layoutClassName: "lg:col-start-4 lg:row-start-2",
 			prompt: "Build a Studio agent named Social Media Writer that drafts social media posts, suggests more engaging variants, and adapts messaging for channel, audience, and tone.",
 			title: "Social Media Writer",
 		},
 		{
-			description: "Translate writing for broader accessibility.",
+			description: "Translate writing while preserving meaning, tone, accessibility, and audience context.",
 			iconSrc: "/avatar-agent/teamwork-agents/global-translator.svg",
 			layoutClassName: "lg:col-start-5 lg:row-start-2",
 			prompt: "Build a Studio agent named Global Translator that translates writing into most languages while preserving meaning, tone, and accessibility for speakers of other languages.",
@@ -562,25 +534,20 @@ const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyArray<Hom
 	],
 	create: [
 		{
-			description: "Break large work into actionable tasks.",
+			description: "Break large projects, epics, or workstreams into sequenced tasks, owners, and next steps.",
 			hero: {
 				bannerClassName: "bg-[#FFC716]",
 				skills: [
-					{ color: "strategy", icon: <TasksIcon label="" size="small" />, label: "work-breakdown" },
-					{ color: "strategy", icon: <SortAscendingIcon label="" size="small" />, label: "sequencing" },
-					{ color: "teamwork", icon: <PersonAddIcon label="" size="small" />, label: "owner-assignment" },
-					{ color: "software", icon: <FlagFilledIcon label="" size="small" />, label: "definition-of-ready" },
-					{ color: "strategy", icon: <ClockIcon label="" size="small" />, label: "effort-estimation" },
+					{ color: "teamwork", label: "dependency-map" },
+					{ color: "software", label: "workflow-design" },
+					{ color: "service", label: "blocker-scan" },
+					{ color: "platform", label: "acceptance-criteria" },
+					{ color: "2p3p", label: "prioritization" },
 				],
 				sources: [
-					{ id: "trello", label: "Trello", provider: "trello" },
-					{ id: "jira", label: "Jira", provider: "jira" },
-					{
-						icon: <Image alt="" aria-hidden height={24} src="/3p/monday/24.svg" width={24} />,
-						id: "monday",
-						label: "Monday",
-						provider: "teams",
-					},
+					{ id: "google-drive", label: "Google Drive", provider: "google-drive" },
+					{ id: "slack", label: "Slack", provider: "teams", iconSrc: "/3p/slack/24.svg" },
+					{ id: "loom", label: "Loom", provider: "loom" },
 				],
 			},
 			iconSrc: "/avatar-agent/service-agents/wildcard-2.svg",
@@ -589,42 +556,42 @@ const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyArray<Hom
 			title: "Work Item Planner",
 		},
 		{
-			description: "Find, move, update, and organize work items.",
+			description: "Find, move, update, and organize Jira work items across sprints, epics, and stale queues.",
 			iconSrc: "/avatar-agent/teamwork-agents/work-organizer.svg",
 			layoutClassName: "lg:col-start-1 lg:row-start-1 lg:row-span-2",
 			prompt: "Build a Studio agent named Work Item Organizer that finds and updates project work items, moves them into sprints, assigns epics, deletes stale items, and recommends cleanup actions.",
 			title: "Work Item Organizer",
 		},
 		{
-			description: "Write concise bug reports with the details triage needs.",
+			description: "Write concise bug reports with reproduction steps, impact, expected behavior, and triage notes.",
 			iconSrc: "/avatar-agent/dev-agents/code-vulnerability-scanner-npm-yarn.svg",
 			layoutClassName: "lg:col-start-2 lg:col-span-2 lg:row-start-1",
 			prompt: "Build a Studio agent named Bug Report Assistant that turns issue context into clear, concise bug reports with reproduction details, impact, expected behavior, and triage-ready notes.",
 			title: "Bug Report Assistant",
 		},
 		{
-			description: "Detect blocked work and explain the next move.",
+			description: "Detect blocked work, explain the evidence, and recommend the clearest unblocking move.",
 			iconSrc: "/avatar-agent/strategy-agents/wildcard-4.svg",
 			layoutClassName: "lg:col-start-2 lg:row-start-2",
 			prompt: "Build a Studio agent named Blocker Checker that detects work items likely to be blocked, explains the evidence, and recommends how to update or unblock the work.",
 			title: "Blocker Checker",
 		},
 		{
-			description: "Check whether work is ready to start.",
+			description: "Review work items against a team's definition of ready and suggest missing details.",
 			iconSrc: "/avatar-agent/product-agents/feedback-analyzer.svg",
 			layoutClassName: "lg:col-start-3 lg:row-start-2",
 			prompt: "Build a Studio agent named Readiness Checker that reviews a work item against a team's definition of ready and suggests fixes when required details are missing.",
 			title: "Readiness Checker",
 		},
 		{
-			description: "Show in-flight project priorities and progress.",
+			description: "Summarize in-flight projects, priorities, owners, progress, and work that needs attention.",
 			iconSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
 			layoutClassName: "sm:col-span-2",
 			prompt: "Build a Studio agent named Progress Tracker that gives teams a real-time overview of in-flight projects, current priorities, owners, and what should be prioritized next.",
 			title: "Progress Tracker",
 		},
 		{
-			description: "Plan sprints around realistic capacity and risk.",
+			description: "Recommend balanced sprint scope using capacity, velocity, issue size, and delivery risk.",
 			iconSrc: "/avatar-agent/product-agents/wildcard-2.svg",
 			layoutClassName: "",
 			prompt: "Build a Studio agent named Sprint Capacity Planner that recommends a balanced sprint scope based on team capacity, ticket sizes, prior velocity, and risk.",
