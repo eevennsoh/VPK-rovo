@@ -239,7 +239,7 @@ export function RovoAppSurfaceShell({ children }: Readonly<RovoAppSurfaceShellPr
 							/>
 						</div>
 
-						<CreateButton windowWidth={nav.windowWidth} />
+						<CreateButton />
 					</div>
 					<RightNavigation
 						product="rovo"
