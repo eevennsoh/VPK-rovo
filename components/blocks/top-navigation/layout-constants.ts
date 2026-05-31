@@ -5,5 +5,8 @@ export const TOP_NAV_COLLAPSED_CONTROL_STEP_PX =
 
 export const TOP_NAV_PADDING_PX = 12;
 export const TOP_NAV_LEFT_SECTION_WIDTH_PX = 230;
+// Below this window width the Create button collapses to an icon and the right
+// cluster collapses into a single "…" overflow popover (matches production).
+export const TOP_NAV_OVERFLOW_BREAKPOINT_PX = 768;
 export const ROVO_APP_SEPARATOR_LINE_OFFSET_PX = 320;
 export const TOP_NAV_SIDEBAR_TOGGLE_SEPARATOR_GAP_PX = 12;
