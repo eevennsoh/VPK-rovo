@@ -369,7 +369,7 @@ export function AgentTemplatesDialog({
 					</DialogTitle>
 				</header>
 
-				<div className="relative min-h-0 overflow-hidden px-6 pb-6">
+				<div className="relative min-h-0 overflow-hidden pb-6">
 					<div
 						aria-label="Agent templates"
 						className="grid h-full [grid-template-columns:max-content] [grid-template-rows:minmax(0,1fr)] overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -380,7 +380,7 @@ export function AgentTemplatesDialog({
 						<AnimatePresence custom={tabMotionCustom} initial={false} mode="sync">
 							<motion.div
 								animate="center"
-								className="flex h-full gap-4 [grid-area:1/1]"
+								className="flex h-full gap-4 px-6 [grid-area:1/1]"
 								custom={tabMotionCustom}
 								exit="exit"
 								initial="enter"
