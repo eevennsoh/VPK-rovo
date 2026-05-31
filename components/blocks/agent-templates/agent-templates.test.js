@@ -60,7 +60,7 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(source, /and keep momentum visible\./u);
 	assert.match(source, /activeCategoryOption\.titleLines\[0\]/u);
 	assert.match(source, /activeCategoryOption\.titleLines\[1\]/u);
-	assert.match(source, /className="mt-6 grid text-text"/u);
+	assert.match(source, /className="mt-6 text-text"/u);
 	assert.match(source, /\/illustration\/rich-icon/u);
 	assert.match(source, /\/lightbulb\/standard\.svg/u);
 	assert.match(source, /\/marketing\/standard\.svg/u);
@@ -83,12 +83,15 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(source, /AGENT_TEMPLATES_TAB_COPY_VARIANTS/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_CARDS_VARIANTS/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET = 24/u);
-	assert.match(source, /<div className="relative min-h-0 overflow-hidden px-6 pb-6">/u);
-	// Crossfade swap: outgoing + incoming decks stacked in one grid cell, animated
-	// concurrently (mode="sync") so there is no blank gap between tabs.
-	assert.match(source, /className="grid h-full \[grid-template-columns:max-content\] \[grid-template-rows:minmax\(0,1fr\)\] overflow-x-auto overflow-y-hidden \[scrollbar-width:none\]/u);
-	assert.match(source, /className="flex h-full gap-4 \[grid-area:1\/1\]"/u);
-	assert.match(source, /<AnimatePresence custom=\{tabMotionCustom\} initial=\{false\} mode="sync">/u);
+	assert.match(source, /<div className="relative min-h-0 overflow-hidden pb-6">/u);
+	// Sequenced swap (mode="wait"): quick exit, then a gradual staggered enter —
+	// each card fades + slides in, offset by AGENT_TEMPLATES_TAB_CARD_STAGGER.
+	assert.match(source, /className="h-full overflow-x-auto overflow-y-hidden \[scrollbar-width:none\]/u);
+	assert.match(source, /className="flex h-full gap-4 px-6"/u);
+	assert.match(source, /<AnimatePresence custom=\{tabMotionCustom\} initial=\{false\} mode="wait">/u);
+	assert.match(source, /AGENT_TEMPLATES_TAB_CARD_STAGGER = 0\.05/u);
+	assert.match(source, /templateAgents\.map\(\(agent, index\)/u);
+	assert.match(source, /delay: shouldReduceMotion \? 0 : index \* AGENT_TEMPLATES_TAB_CARD_STAGGER/u);
 	assert.match(source, /const \[tabMotionDirection, setTabMotionDirection\]/u);
 	assert.match(source, /getAgentTemplatesCategoryIndex\(categoryId\) > getAgentTemplatesCategoryIndex\(activeCategory\) \? 1 : -1/u);
 	assert.match(source, /custom=\{tabMotionCustom\}/u);

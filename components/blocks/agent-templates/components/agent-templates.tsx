@@ -64,29 +64,28 @@ const AGENT_TEMPLATES_CAROUSEL_CONTROL_TRANSITION = {
 	bounce: 0,
 	visualDuration: 0.2,
 } as const;
-// Tab swaps crossfade: the outgoing and incoming tab are stacked in one grid
-// cell and animate concurrently (no `mode="wait"`), so a tab is always painting
-// pixels — no blank gap between old and new. ADS easing keeps the overlap clean:
-// `--ease-in` ("leaving view") fades/slides the old out while `--ease-out`
-// ("entering view") brings the new in; ease-out's fast initial rise covers
-// ease-in's slow initial fall, so total visible opacity never dips to zero.
-const AGENT_TEMPLATES_TAB_ENTER_TRANSITION = {
-	duration: 0.25, // ADS --duration-slow
-	ease: cubicBezier(0, 0.4, 0, 1), // ADS --ease-out
-};
+// Tab swaps are sequenced via AnimatePresence `mode="wait"`: the current tab
+// exits quickly (ADS `--ease-in`, "leaving view"), then the incoming tab is
+// revealed gradually. The deck assembles one-by-one — each card fades + slides
+// in on a soft spring, offset by a per-card stagger delay — so the new tab
+// arrives with momentum rather than as a single block fade.
 const AGENT_TEMPLATES_TAB_EXIT_TRANSITION = {
-	duration: 0.2, // ADS --duration-medium
-	ease: cubicBezier(0.6, 0.01, 0.8, 0.6), // ADS --ease-in
+	duration: 0.13, // quick exit
+	ease: cubicBezier(0.6, 0.01, 0.8, 0.6), // ADS --ease-in ("leaving view")
 };
-const AGENT_TEMPLATES_TAB_CARDS_TRANSITION = {
+const AGENT_TEMPLATES_TAB_COPY_ENTER_TRANSITION = {
+	duration: 0.3, // gradual title entrance
+	ease: cubicBezier(0, 0.4, 0, 1), // ADS --ease-out ("entering view")
+};
+const AGENT_TEMPLATES_TAB_CARD_ENTER_TRANSITION = {
 	type: "spring",
 	bounce: 0,
-	visualDuration: 0.3,
+	visualDuration: 0.4, // soft, gradual per-card slide-in
 } as const;
-const AGENT_TEMPLATES_TAB_CARD_INITIAL_OPACITY = 0.82;
-const AGENT_TEMPLATES_MODAL_CARD_ENTER_OFFSET = 32;
+const AGENT_TEMPLATES_TAB_CARD_STAGGER = 0.05; // delay between consecutive cards
 const AGENT_TEMPLATES_TAB_COPY_SWAP_OFFSET = 16;
-const AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET = 24;
+const AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET = 24; // whole-deck slide distance on exit
+const AGENT_TEMPLATES_TAB_CARD_ENTER_OFFSET = 16; // per-card slide-in distance
 const NOOP_TEMPLATE_MORE_ACTIONS = () => undefined;
 
 export type AgentTemplatesCategoryId = "brainstorm" | "analyze" | "review" | "summarize" | "create";
@@ -153,7 +152,7 @@ const AGENT_TEMPLATES_TAB_COPY_VARIANTS = {
 	center: {
 		opacity: 1,
 		transform: "translateX(0px)",
-		transition: AGENT_TEMPLATES_TAB_ENTER_TRANSITION,
+		transition: AGENT_TEMPLATES_TAB_COPY_ENTER_TRANSITION,
 	},
 	exit: ({ direction, shouldReduceMotion }: AgentTemplatesTabMotionCustom) => ({
 		opacity: 0,
@@ -162,15 +161,10 @@ const AGENT_TEMPLATES_TAB_COPY_VARIANTS = {
 	}),
 } as const;
 const AGENT_TEMPLATES_TAB_CARDS_VARIANTS = {
-	enter: ({ direction, shouldReduceMotion }: AgentTemplatesTabMotionCustom) => ({
-		opacity: 0,
-		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET * direction}px)`,
-	}),
-	center: {
-		opacity: 1,
-		transform: "translateX(0px)",
-		transition: AGENT_TEMPLATES_TAB_ENTER_TRANSITION,
-	},
+	// The deck container appears instantly on enter; its cards stagger in via the
+	// per-card initial/animate below. On exit the whole deck fades + slides out fast.
+	enter: { opacity: 1 },
+	center: { opacity: 1 },
 	exit: ({ direction, shouldReduceMotion }: AgentTemplatesTabMotionCustom) => ({
 		opacity: 0,
 		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${-AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET * direction}px)`,
@@ -201,12 +195,10 @@ export function AgentTemplatesDialog({
 	void sidebarGroups;
 
 	const scrollRef = useRef<HTMLDivElement>(null);
-	const previousOpenRef = useRef(false);
 	const shouldReduceMotion = useReducedMotion();
 	const [activeCategory, setActiveCategory] = useState(initialCategoryId);
 	const [tabMotionDirection, setTabMotionDirection] = useState<AgentTemplatesTabMotionDirection>(1);
 	const [scrollControls, setScrollControls] = useState({ canScrollLeft: false, canScrollRight: false });
-	const shouldAnimateCardsFromLaunch = open && !previousOpenRef.current && !shouldReduceMotion;
 	const activeCategoryOption = AGENT_TEMPLATES_CATEGORIES.find((category) => category.id === activeCategory) ?? AGENT_TEMPLATES_CATEGORIES[0];
 	const tabMotionCustom = {
 		direction: tabMotionDirection,
@@ -256,10 +248,6 @@ export function AgentTemplatesDialog({
 			setActiveCategory(initialCategoryId);
 		}
 	}, [initialCategoryId, open]);
-
-	useEffect(() => {
-		previousOpenRef.current = open;
-	}, [open]);
 
 	useEffect(() => {
 		if (!open) {
@@ -342,13 +330,13 @@ export function AgentTemplatesDialog({
 						<CrossIcon label="" />
 					</DialogClose>
 					<DialogTitle
-						className="mt-6 grid text-text"
+						className="mt-6 text-text"
 						style={{ font: token("font.heading.xlarge") }}
 					>
-						<AnimatePresence custom={tabMotionCustom} initial={false} mode="sync">
+						<AnimatePresence custom={tabMotionCustom} initial={false} mode="wait">
 							<motion.span
 								animate="center"
-								className="block [grid-area:1/1]"
+								className="block"
 								custom={tabMotionCustom}
 								exit="exit"
 								initial="enter"
@@ -372,15 +360,15 @@ export function AgentTemplatesDialog({
 				<div className="relative min-h-0 overflow-hidden pb-6">
 					<div
 						aria-label="Agent templates"
-						className="grid h-full [grid-template-columns:max-content] [grid-template-rows:minmax(0,1fr)] overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+						className="h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 						data-agent-templates-carousel
 						onScroll={updateScrollControls}
 						ref={setCarouselRef}
 					>
-						<AnimatePresence custom={tabMotionCustom} initial={false} mode="sync">
+						<AnimatePresence custom={tabMotionCustom} initial={false} mode="wait">
 							<motion.div
 								animate="center"
-								className="flex h-full gap-4 px-6 [grid-area:1/1]"
+								className="flex h-full gap-4 px-6"
 								custom={tabMotionCustom}
 								exit="exit"
 								initial="enter"
@@ -388,16 +376,19 @@ export function AgentTemplatesDialog({
 								style={{ willChange: "transform, opacity" }}
 								variants={AGENT_TEMPLATES_TAB_CARDS_VARIANTS}
 							>
-								{templateAgents.map((agent) => (
+								{templateAgents.map((agent, index) => (
 									<motion.div
 										animate={{ opacity: 1, transform: "translateX(0px)" }}
-										className="h-full w-90 shrink-0"
+										className="h-full w-90 shrink-0 [will-change:transform,opacity]"
 										initial={{
-											opacity: shouldReduceMotion ? 1 : AGENT_TEMPLATES_TAB_CARD_INITIAL_OPACITY,
-											transform: shouldAnimateCardsFromLaunch ? `translateX(${AGENT_TEMPLATES_MODAL_CARD_ENTER_OFFSET}px)` : "translateX(0px)",
+											opacity: 0,
+											transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${tabMotionDirection * AGENT_TEMPLATES_TAB_CARD_ENTER_OFFSET}px)`,
 										}}
 										key={agent.id}
-										transition={AGENT_TEMPLATES_TAB_CARDS_TRANSITION}
+										transition={{
+											...AGENT_TEMPLATES_TAB_CARD_ENTER_TRANSITION,
+											delay: shouldReduceMotion ? 0 : index * AGENT_TEMPLATES_TAB_CARD_STAGGER,
+										}}
 									>
 										<AgentTemplateCard
 											agent={agent}
