@@ -46,12 +46,12 @@ interface SpinnerProps
  */
 const ROVO_RAINBOW_STOPS = [
 	{ offset: "0%", color: "#FCA700" },
-	{ offset: "20%", color: "#FCA700" },
-	{ offset: "20%", color: "#6A9A23" },
-	{ offset: "46.6%", color: "#6A9A23" },
-	{ offset: "46.6%", color: "#1868DB" },
-	{ offset: "70%", color: "#1868DB" },
-	{ offset: "70%", color: "#AF59E1" },
+	{ offset: "25%", color: "#FCA700" },
+	{ offset: "25%", color: "#6A9A23" },
+	{ offset: "50%", color: "#6A9A23" },
+	{ offset: "50%", color: "#1868DB" },
+	{ offset: "75%", color: "#1868DB" },
+	{ offset: "75%", color: "#AF59E1" },
 	{ offset: "100%", color: "#AF59E1" },
 ] as const
 
