@@ -6,6 +6,8 @@ import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AppsIcon from "@atlaskit/icon/core/apps";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import EditIcon from "@atlaskit/icon/core/edit";
 import MenuIcon from "@atlaskit/icon/core/menu";
@@ -38,6 +40,7 @@ interface RovoAppSidebarProps {
 	sessionAgentEntries?: ReadonlyArray<StudioSessionAgentEntry>;
 	onCancelThreadRun: (threadId: string) => Promise<void>;
 	hoverOpen?: boolean;
+	isAgentsHomeActive?: boolean;
 	isResizing?: boolean;
 	onDeleteAgent?: (agentId: string) => void;
 	onDeleteThread: (threadId: string) => Promise<void>;
@@ -161,6 +164,26 @@ function StudioSidebarAgentCreationIcon() {
 	return <MorphingRovo.Shape size={12} duration={0.8} blur={1.25} />;
 }
 
+// Leading icon for the "Agents" accordion header: shows `AiAgentIcon` at rest and
+// swaps to a chevron (down when expanded, right when collapsed) on row hover. The
+// swap is pure CSS via the row's `group/sidebar-nav-item` group — the same two-span
+// technique as `components/ui/accordion.tsx` — so no JS hover state is needed.
+// Defined as a wrapper so `SidebarNavItem`'s `normalizeIconNode` can `cloneElement`
+// it with `label`/`size` props; both are ignored here (the inner icons size via the
+// `Icon` wrapper's `[&_svg]:size-*`).
+function StudioSidebarAgentsLeadingIcon({ isExpanded }: Readonly<{ isExpanded: boolean }>) {
+	return (
+		<span className="flex items-center justify-center">
+			<span className="flex items-center justify-center group-hover/sidebar-nav-item:hidden">
+				<AiAgentIcon label="" />
+			</span>
+			<span className="hidden items-center justify-center group-hover/sidebar-nav-item:flex">
+				{isExpanded ? <ChevronDownIcon label="" /> : <ChevronRightIcon label="" />}
+			</span>
+		</span>
+	);
+}
+
 // Hover-reveal "..." menu mirroring `/rovo` chat history's `ChatHistoryThreadRow`:
 // the trigger stays at `opacity-0` and fades in on row hover/focus or while the
 // menu is open. It lives in `SidebarNavItem`'s `actions` slot — a sibling of the
@@ -219,6 +242,7 @@ function getRecentAgentItemSelected(
 function StudioSidebarNavigation({
 	activeThreadId,
 	agentCreationThreads = [],
+	isAgentsHomeActive = false,
 	onDeleteAgent,
 	onDeleteAgentCreationThread,
 	onNewChat,
@@ -230,6 +254,7 @@ function StudioSidebarNavigation({
 }: Readonly<{
 	activeThreadId: string | null;
 	agentCreationThreads?: ReadonlyArray<StudioAgentCreationThread>;
+	isAgentsHomeActive?: boolean;
 	onDeleteAgent?: (agentId: string) => void;
 	onDeleteAgentCreationThread?: (threadId: string) => void;
 	onNewChat?: () => void;
@@ -258,6 +283,11 @@ function StudioSidebarNavigation({
 	const hasSelectedRecentAgent = recentAgents.items.some((item) =>
 		getRecentAgentItemSelected(item, activeThreadId, selectedAgentId)
 	);
+	// Accordion state for the "Agents" header. Default open; force open whenever a
+	// recent agent is selected or being created so the active row is never hidden
+	// inside a collapsed list.
+	const [isAgentsExpanded, setIsAgentsExpanded] = React.useState(true);
+	const isAgentsExpandedEffective = isAgentsExpanded || hasSelectedRecentAgent;
 
 	return (
 		<nav aria-label="Studio" className="flex shrink-0 flex-col gap-3">
@@ -276,16 +306,32 @@ function StudioSidebarNavigation({
 							{section.items.map((item) => {
 								const isAgentsItem = item.label === "Agents";
 								const shouldShowRecentAgents = isAgentsItem && hasRecentAgents;
+								// With recent agents present, "Agents" becomes an accordion header:
+								// hover-swap chevron icon, click toggles open/closed, never selected.
+								// Without recent agents it keeps its original role of returning to
+								// the agents landing.
+								const leadingIcon = shouldShowRecentAgents ? (
+									<StudioSidebarAgentsLeadingIcon isExpanded={isAgentsExpandedEffective} />
+								) : (
+									item.icon
+								);
+								const isItemSelected = shouldShowRecentAgents ? false : isAgentsItem ? isAgentsHomeActive : item.isSelected;
+								const handleItemClick = shouldShowRecentAgents
+									? () => setIsAgentsExpanded((prev) => !prev)
+									: isAgentsItem
+										? onNewChat
+										: item.onClick;
 
 								return (
 									<React.Fragment key={item.label}>
 										<StudioSidebarNavItem
 											{...item}
-											isExpanded={shouldShowRecentAgents ? true : item.isExpanded}
-											isSelected={shouldShowRecentAgents && hasSelectedRecentAgent ? false : item.isSelected}
-											onClick={isAgentsItem ? onNewChat : item.onClick}
+											icon={leadingIcon}
+											isExpanded={shouldShowRecentAgents ? isAgentsExpandedEffective : item.isExpanded}
+											isSelected={isItemSelected}
+											onClick={handleItemClick}
 										/>
-										{shouldShowRecentAgents ? (
+										{shouldShowRecentAgents && isAgentsExpandedEffective ? (
 											<div className="flex flex-col pl-3">
 												{recentAgents.items.map((recentAgent) => {
 													const isCreating = recentAgent.kind === "wip";
@@ -343,15 +389,16 @@ function StudioSidebarNavigation({
 														/>
 													);
 												})}
-												{recentAgents.showViewAll ? (
-													<SidebarNavItem
-														label="View all agents"
-														leading={<MenuIcon label="" />}
-														leadingSize="small"
-														onClick={onViewAllAgents}
-														className="min-h-7"
-													/>
-												) : null}
+												{/* Persistent return-to-landing row. Selected when the agents
+												    landing is the active view and no recent agent is selected. */}
+												<SidebarNavItem
+													label="View all agents"
+													leading={<MenuIcon label="" />}
+													leadingSize="small"
+													isSelected={isAgentsHomeActive && !hasSelectedRecentAgent}
+													onClick={onViewAllAgents}
+													className="min-h-7"
+												/>
 											</div>
 										) : null}
 									</React.Fragment>
@@ -369,6 +416,7 @@ export function RovoAppSidebar({
 	activeThreadId,
 	agentCreationThreads,
 	hoverOpen = false,
+	isAgentsHomeActive = false,
 	isResizing,
 	selectedAgentId,
 	onDeleteAgent,
@@ -405,6 +453,7 @@ export function RovoAppSidebar({
 				<StudioSidebarNavigation
 					activeThreadId={activeThreadId}
 					agentCreationThreads={agentCreationThreads}
+					isAgentsHomeActive={isAgentsHomeActive}
 					onDeleteAgent={onDeleteAgent}
 					onDeleteAgentCreationThread={(threadId) => {
 						void onDeleteThread(threadId);
