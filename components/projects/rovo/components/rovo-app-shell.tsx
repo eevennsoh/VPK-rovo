@@ -2396,7 +2396,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				>
 					<LeftNavigation
 						product="rovo"
-						windowWidth={nav.windowWidth}
+						availableWidth={nav.availableWidth}
 						isVisible={nav.isVisible}
 						isAppSwitcherOpen={nav.isAppSwitcherOpen}
 						isSidebarResizing={sidebarResize.isResizing}
@@ -2468,7 +2468,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 							<CreateButton />
 						</div>
-						<RightNavigation product="rovo" windowWidth={nav.windowWidth} onToggleChat={nav.toggleChat} onToggleTheme={nav.toggleTheme} />
+						<RightNavigation product="rovo" availableWidth={nav.availableWidth} onToggleChat={nav.toggleChat} onToggleTheme={nav.toggleTheme} />
 					</div>
 				) : null}
 				<RovoAppHeader

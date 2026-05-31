@@ -11,6 +11,7 @@ const RIGHT_NAVIGATION_ACTIONS_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const LAYOUT_CONSTANTS_SOURCE = fs.readFileSync(path.join(__dirname, "layout-constants.ts"), "utf8");
+const CREATE_BUTTON_SOURCE = fs.readFileSync(path.join(__dirname, "components", "create-button.tsx"), "utf8");
 
 test("Ask Rovo button exposes sidebar chat open state as pressed state", () => {
 	assert.match(RIGHT_NAVIGATION_SOURCE, /isChatOpen = false/);
@@ -32,18 +33,42 @@ test("top navigation derives Ask Rovo pressed state from the sidebar chat surfac
 	assert.match(TOP_NAVIGATION_SOURCE, /isChatOpen=\{isSidebarChatOpen\}/);
 });
 
-test("top navigation centers search actions between equal side rails", () => {
-	assert.match(USE_TOP_NAVIGATION_SOURCE, /const TOP_NAV_CENTER_SECTION_SIDE_RAIL_WIDTH_PX = 330;/);
-	assert.match(USE_TOP_NAVIGATION_SOURCE, /width: `\$\{centeredWidthPx\}px`/);
-	assert.match(USE_TOP_NAVIGATION_SOURCE, /flex: "0 0 auto"/);
-	assert.match(TOP_NAVIGATION_SOURCE, /flex: "1 1 0", minWidth: 0/);
-	assert.match(TOP_NAVIGATION_SOURCE, /justifyContent: "flex-end"/);
+test("top navigation lets the search cluster fill available space without overlapping", () => {
+	// The old viewport-centering math (fixed pixel width derived from symmetric
+	// side rails) is gone — that fixed, non-shrinkable width is what caused the
+	// Create/Ask Rovo overlap at narrow widths.
+	assert.doesNotMatch(USE_TOP_NAVIGATION_SOURCE, /centeredWidthPx/);
+	assert.doesNotMatch(USE_TOP_NAVIGATION_SOURCE, /SIDE_RAIL_WIDTH_PX/);
+
+	// The center cluster now grows and shrinks to fill the gap between the side
+	// clusters.
+	assert.match(USE_TOP_NAVIGATION_SOURCE, /flex: "1 1 auto"/);
+
+	// Left and right clusters are content-sized; the right cluster is anchored to
+	// the trailing edge with an auto margin so it is never pushed off-screen.
+	assert.match(TOP_NAVIGATION_SOURCE, /flex: "0 0 auto", minWidth: 0/);
+	assert.match(TOP_NAVIGATION_SOURCE, /flex: "0 0 auto", marginLeft: "auto"/);
+});
+
+test("top navigation sizes its breakpoints from its own width, not the window", () => {
+	// The nav also renders inside narrow preview frames, so responsive decisions
+	// must be driven by the measured container width (ResizeObserver) rather than
+	// window.innerWidth, which overstates the available room and causes overlap.
+	assert.match(USE_TOP_NAVIGATION_SOURCE, /useElementWidth/);
+	assert.doesNotMatch(USE_TOP_NAVIGATION_SOURCE, /useWindowWidth/);
+	assert.match(USE_TOP_NAVIGATION_SOURCE, /\[navRef, availableWidth\] = useElementWidth/);
+	assert.match(TOP_NAVIGATION_SOURCE, /ref=\{navRef\}/);
+
+	// The Create button collapses to an icon from the same measured width instead
+	// of a viewport media query.
+	assert.match(CREATE_BUTTON_SOURCE, /collapsed/);
+	assert.doesNotMatch(CREATE_BUTTON_SOURCE, /max-md:/);
 });
 
 test("right navigation collapses into an overflow popover at narrow widths", () => {
 	assert.match(LAYOUT_CONSTANTS_SOURCE, /export const TOP_NAV_OVERFLOW_BREAKPOINT_PX = 768;/);
 	assert.match(RIGHT_NAVIGATION_SOURCE, /TOP_NAV_OVERFLOW_BREAKPOINT_PX/);
-	assert.match(RIGHT_NAVIGATION_SOURCE, /windowWidth < TOP_NAV_OVERFLOW_BREAKPOINT_PX/);
+	assert.match(RIGHT_NAVIGATION_SOURCE, /availableWidth < TOP_NAV_OVERFLOW_BREAKPOINT_PX/);
 	assert.match(RIGHT_NAVIGATION_SOURCE, /<Popover /);
 	assert.match(RIGHT_NAVIGATION_SOURCE, /ShowMoreHorizontalIcon/);
 	assert.match(RIGHT_NAVIGATION_SOURCE, /aria-label="More"/);

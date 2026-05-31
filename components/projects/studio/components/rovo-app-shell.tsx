@@ -4109,7 +4109,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				>
 					<LeftNavigation
 						product="studio"
-						windowWidth={nav.windowWidth}
+						availableWidth={nav.availableWidth}
 						isVisible={nav.isVisible}
 						isAppSwitcherOpen={nav.isAppSwitcherOpen}
 						isSidebarResizing={sidebarResize.isResizing}
@@ -4189,7 +4189,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						</div>
 						<RightNavigation
 							product="studio"
-							windowWidth={nav.windowWidth}
+							availableWidth={nav.availableWidth}
 							forceShowRovoAction={shouldShowAgentConfigPane}
 							isChatOpen={nav.isSidebarChatOpen}
 							onToggleChat={nav.toggleChat}

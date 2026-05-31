@@ -3,6 +3,7 @@
 import { useRef, useMemo, RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { token } from "@/lib/tokens";
+import { cn } from "@/lib/utils";
 import { useClickOutside } from "@/components/hooks/use-click-outside";
 import { AppSwitcherMenu } from "./app-switcher-menu";
 import { PRODUCT_CONFIG } from "../data/product-config";
@@ -21,7 +22,7 @@ type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "s
 
 interface LeftNavigationProps {
 	product: Product;
-	windowWidth: number;
+	availableWidth: number;
 	isVisible: boolean;
 	isAppSwitcherOpen: boolean;
 	/** While dragging the sidebar width: disables `left` transitions on nav controls and fades out the collapse toggle. */
@@ -38,7 +39,7 @@ interface LeftNavigationProps {
 
 export function LeftNavigation({
 	product,
-	windowWidth,
+	availableWidth,
 	isVisible,
 	isAppSwitcherOpen,
 	isSidebarResizing = false,
@@ -87,17 +88,17 @@ export function LeftNavigation({
 			height: "100%",
 		};
 
-		if (windowWidth >= 1028 && windowWidth < 1516) {
+		if (availableWidth >= 1028) {
 			return { ...base, flex: "0 0 330px", width: "330px" };
 		}
-		if (windowWidth < 1028 && !isVisible) {
+		if (availableWidth < 1028 && !isVisible) {
 			return { ...base, minWidth: "120px" };
 		}
-		if (windowWidth < 1028 && isVisible) {
+		if (availableWidth < 1028 && isVisible) {
 			return { ...base, minWidth: `${expandedNavMinWidthPx}px` };
 		}
 		return base;
-	}, [expandedNavMinWidthPx, windowWidth, isVisible]);
+	}, [expandedNavMinWidthPx, availableWidth, isVisible]);
 
 	return (
 		<div style={containerStyle}>
@@ -145,7 +146,13 @@ export function LeftNavigation({
 						<Icon variant="icon" size="small" />
 					</span>
 					<span
-						className="hidden min-[1028px]:inline max-w-[280px] truncate text-sm font-bold text-text"
+						className={cn(
+							"max-w-[280px] truncate text-sm font-bold text-text",
+							// Only show the product name once the left section has its full
+							// 330px reserve (same container-width breakpoint), otherwise the
+							// label spills into the search box.
+							availableWidth >= 1028 ? "inline" : "hidden",
+						)}
 						style={{ paddingRight: token("space.025") }}
 					>
 						{name}

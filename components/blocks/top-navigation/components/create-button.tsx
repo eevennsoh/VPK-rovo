@@ -1,17 +1,23 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import AddIcon from "@atlaskit/icon/core/add";
 
-export function CreateButton() {
+interface CreateButtonProps {
+	/** Collapse to an icon-only button when the nav runs low on horizontal space. */
+	collapsed?: boolean;
+}
+
+export function CreateButton({ collapsed = false }: Readonly<CreateButtonProps>) {
 	return (
 		<Button
 			variant="default"
 			aria-label="Create"
-			className="gap-2 max-md:size-8 max-md:gap-0 max-md:px-0"
+			className={cn("gap-2", collapsed && "size-8 gap-0 px-0")}
 		>
 			<AddIcon label="" size="small" />
-			<span className="max-md:hidden">Create</span>
+			<span className={cn(collapsed && "hidden")}>Create</span>
 		</Button>
 	);
 }

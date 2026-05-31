@@ -8,7 +8,7 @@ import { LeftNavigation } from "./components/left-navigation";
 import { RightNavigation } from "./components/right-navigation";
 import { CreateButton } from "./components/create-button";
 import { useTopNavigation } from "./hooks/use-top-navigation";
-import { TOP_NAV_LEFT_SECTION_WIDTH_PX, TOP_NAV_PADDING_PX } from "./layout-constants";
+import { TOP_NAV_LEFT_SECTION_WIDTH_PX, TOP_NAV_OVERFLOW_BREAKPOINT_PX, TOP_NAV_PADDING_PX } from "./layout-constants";
 import SearchIcon from "@atlaskit/icon/core/search";
 
 type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "search" | "studio";
@@ -29,7 +29,8 @@ export default function TopNavigation({
 		setSearchValue,
 		isAppSwitcherOpen,
 		isSearchFocused,
-		windowWidth,
+		navRef,
+		availableWidth,
 		isVisible,
 		toggleSidebar,
 		toggleChat,
@@ -52,6 +53,7 @@ export default function TopNavigation({
 
 	return (
 		<div
+			ref={navRef}
 			style={{
 				backgroundColor: token("elevation.surface"),
 				borderBottom: `1px solid ${token("color.border")}`,
@@ -69,7 +71,7 @@ export default function TopNavigation({
 					paddingRight: token("space.150"),
 					display: "flex",
 					alignItems: "center",
-					justifyContent: "space-between",
+					justifyContent: "flex-start",
 					position: "relative",
 				}}
 			>
@@ -87,10 +89,10 @@ export default function TopNavigation({
 					/>
 				)}
 
-				<div style={{ flex: "1 1 0", minWidth: 0 }}>
+				<div style={{ display: "flex", flex: "0 0 auto", minWidth: 0 }}>
 					<LeftNavigation
 						product={product}
-						windowWidth={windowWidth}
+						availableWidth={availableWidth}
 						isVisible={isVisible}
 						isAppSwitcherOpen={isAppSwitcherOpen}
 						separatorLineOffsetPx={TOP_NAV_LEFT_SECTION_WIDTH_PX - TOP_NAV_PADDING_PX}
@@ -151,14 +153,14 @@ export default function TopNavigation({
 							/>
 						</div>
 
-						<CreateButton />
+						<CreateButton collapsed={availableWidth > 0 && availableWidth < TOP_NAV_OVERFLOW_BREAKPOINT_PX} />
 					</div>
 				) : null}
 
-				<div style={{ display: "flex", flex: "1 1 0", justifyContent: "flex-end", minWidth: 0 }}>
+				<div style={{ display: "flex", flex: "0 0 auto", marginLeft: "auto" }}>
 					<RightNavigation
 						product={product}
-						windowWidth={windowWidth}
+						availableWidth={availableWidth}
 						hideRovoAction={hideRovoAction}
 						isChatOpen={isSidebarChatOpen}
 						onToggleChat={toggleChat}

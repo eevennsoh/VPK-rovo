@@ -12,7 +12,7 @@ type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "s
 
 interface RightNavigationProps {
 	product: Product;
-	windowWidth: number;
+	availableWidth: number;
 	hideRovoAction?: boolean;
 	forceShowRovoAction?: boolean;
 	isChatOpen?: boolean;
@@ -22,7 +22,7 @@ interface RightNavigationProps {
 
 export function RightNavigation({
 	product,
-	windowWidth,
+	availableWidth,
 	hideRovoAction = false,
 	forceShowRovoAction = false,
 	isChatOpen = false,
@@ -52,14 +52,17 @@ export function RightNavigation({
 
 	// Narrow widths: collapse the entire right cluster into a single "…" popover
 	// that renders the same actions in a horizontal row (matches production).
-	if (windowWidth < TOP_NAV_OVERFLOW_BREAKPOINT_PX) {
+	if (availableWidth < TOP_NAV_OVERFLOW_BREAKPOINT_PX) {
 		return (
 			<div style={containerStyle}>
 				<Popover open={isOverflowOpen} onOpenChange={setIsOverflowOpen}>
 					<PopoverTrigger
 						render={
-							<Button aria-label="More" size="icon" variant="ghost">
-								<ShowMoreHorizontalIcon label="" color={token("color.icon.subtle")} />
+							<Button aria-label="More" size="icon" variant="outline">
+								<ShowMoreHorizontalIcon
+									label=""
+									color={isOverflowOpen ? token("color.icon.selected") : token("color.icon.subtle")}
+								/>
 							</Button>
 						}
 					/>
