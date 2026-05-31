@@ -76,7 +76,14 @@ test("banner part draws the full-bleed cover and hexagon-outlined cover avatar",
 	assert.match(PARTS_SOURCE, /backgroundColor: coverColor/u);
 	assert.match(PARTS_SOURCE, /getBannerCoverColor/u);
 	assert.match(PARTS_SOURCE, /avatarBadge\?: ReactNode/u);
-	assert.match(PARTS_SOURCE, /shape="hexagon"/u);
+	// The cover avatar art is a full-bleed hexagon, so it is rendered directly with two
+	// concentric strokes sharing BANNER_HEXAGON_PATH — NOT routed through the Avatar hexagon
+	// clip, whose square-viewBox geometry floated the outline inset from the edge in this
+	// non-square box. `preserveAspectRatio="none"` keeps the strokes tracking the box.
+	assert.doesNotMatch(PARTS_SOURCE, /shape="hexagon"/u);
+	assert.match(PARTS_SOURCE, /group\/avatar absolute top-6 left-4 h-12 w-\[42px\]/u);
+	assert.match(PARTS_SOURCE, /data-size="xl"/u);
+	assert.match(PARTS_SOURCE, /preserveAspectRatio="none"/u);
 	assert.match(PARTS_SOURCE, /stroke-surface/u);
 });
 

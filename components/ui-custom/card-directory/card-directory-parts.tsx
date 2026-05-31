@@ -18,7 +18,6 @@ import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
 import TaskIcon from "@atlaskit/icon/core/task";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Tile } from "@/components/ui/tile";
@@ -215,32 +214,42 @@ export function CardDirectoryBanner({ avatarSrc, avatarBadge, backgroundColor }:
 				/>
 			</div>
 			<div aria-hidden className="h-6" />
-			<Avatar
-				aria-hidden
-				className="absolute top-6 left-4 h-12 w-[42px]"
-				shape="hexagon"
-				size="xl"
-			>
-				<AvatarImage alt="" aria-hidden className="object-contain" src={avatarSrc} />
-				<AvatarFallback />
+			{/* The avatar art (`public/avatar-agent/*`) is itself a full-bleed hexagon drawn with
+			    the exact same path as `BANNER_HEXAGON_PATH`, so we render it directly rather than
+			    routing it through the Avatar hexagon shape. That clip derives a narrower hexagon
+			    from a square viewBox and its outline uses `preserveAspectRatio="meet"`, which — in
+			    this non-square box — sliced the art and floated the border inset from the edge.
+			    Here the art and both strokes share one geometry so everything stays concentric: an
+			    inner subtle border hugs the edge, and an outer surface ring lifts the hexagon off
+			    the colored cover. `preserveAspectRatio="none"` makes the strokes track the box
+			    exactly like the stretched art. The wrapper recreates the `group/avatar` +
+			    `data-size` contract the badge sizes against. */}
+			<div aria-hidden className="group/avatar absolute top-6 left-4 h-12 w-[42px]" data-size="xl">
+				{/* Outer separator — behind the art at double width so only its outer half clears
+				    the opaque hexagon, reading as a clean surface-colored lift-off ring. */}
+				<svg
+					aria-hidden="true"
+					className="stroke-surface pointer-events-none absolute inset-0 size-full overflow-visible"
+					focusable="false"
+					preserveAspectRatio="none"
+					viewBox="0 0 43 48"
+				>
+					<path d={BANNER_HEXAGON_PATH} fill="none" strokeWidth={4} vectorEffect="non-scaling-stroke" />
+				</svg>
+				<Image alt="" aria-hidden className="absolute inset-0 size-full" height={48} src={avatarSrc} width={42} />
+				{/* Inner border — over the art so it hugs the hexagon edge, matching the subtle
+				    outline ADS shows on hexagon avatars. */}
+				<svg
+					aria-hidden="true"
+					className="pointer-events-none absolute inset-0 size-full overflow-visible text-border! mix-blend-darken dark:mix-blend-lighten"
+					focusable="false"
+					preserveAspectRatio="none"
+					viewBox="0 0 43 48"
+				>
+					<path d={BANNER_HEXAGON_PATH} fill="none" stroke="currentColor" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+				</svg>
 				{avatarBadge}
-			</Avatar>
-			{/* Surface ring sits over the avatar as an unclipped sibling — rendering it as an
-			    Avatar child would route it through the hexagon clip-path and slice the stroke. */}
-			<svg
-				aria-hidden="true"
-				className="pointer-events-none absolute top-6 left-4 h-12 w-[42px] overflow-visible"
-				focusable="false"
-				viewBox="0 0 43 48"
-			>
-				<path
-					className="stroke-surface"
-					d={BANNER_HEXAGON_PATH}
-					fill="none"
-					strokeWidth={2}
-					vectorEffect="non-scaling-stroke"
-				/>
-			</svg>
+			</div>
 		</div>
 	);
 }
