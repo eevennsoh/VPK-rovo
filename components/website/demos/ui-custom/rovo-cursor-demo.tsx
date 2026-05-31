@@ -14,7 +14,7 @@ const STATE_OPTIONS = [
 
 export default function RovoCursorDemo() {
 	const [state, setState] = useState<RovoCursorState>("cursor");
-	const [size, setSize] = useState(48);
+	const [size, setSize] = useState(16);
 	const [animated, setAnimated] = useState(true);
 
 	const config = useMemo(() => ({ state, size, animated }), [state, size, animated]);
@@ -38,7 +38,7 @@ export default function RovoCursorDemo() {
 					label="Size"
 					description="Glyph height in pixels (width scales per state)."
 					value={size}
-					defaultValue={48}
+					defaultValue={16}
 					min={12}
 					max={96}
 					step={1}
