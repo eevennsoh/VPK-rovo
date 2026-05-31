@@ -26,11 +26,15 @@ export function getAgentIdFromSearch(search: string | URLSearchParams): string |
  */
 export function withAgentParam(url: string, agentId: string | null): string {
 	// Parse against a dummy origin so relative URLs (the common case) work.
+	const isAbsoluteUrl = /^[a-z][a-z\d+\-.]*:/iu.test(url);
 	const parsed = new URL(url, "http://x");
 	if (agentId) {
 		parsed.searchParams.set(AGENT_QUERY_PARAM, agentId);
 	} else {
 		parsed.searchParams.delete(AGENT_QUERY_PARAM);
+	}
+	if (isAbsoluteUrl) {
+		return parsed.toString();
 	}
 	const query = parsed.searchParams.toString();
 	return `${parsed.pathname}${query ? `?${query}` : ""}${parsed.hash}`;
