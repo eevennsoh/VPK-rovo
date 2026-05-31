@@ -1,0 +1,106 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
+import { applyMarkdownFormat } from "./markdown-format.ts";
+
+function select(value: string, selectionStart: number, selectionEnd: number) {
+	return { value, selectionStart, selectionEnd };
+}
+
+test("bold wraps the selection and keeps the inner text selected", () => {
+	const result = applyMarkdownFormat("bold", select("the quick fox", 4, 9));
+	assert.equal(result.value, "the **quick** fox");
+	assert.equal(result.value.slice(result.selectionStart, result.selectionEnd), "quick");
+});
+
+test("bold unwraps a selection that already contains the markers", () => {
+	const result = applyMarkdownFormat("bold", select("the **quick** fox", 4, 13));
+	assert.equal(result.value, "the quick fox");
+	assert.equal(result.value.slice(result.selectionStart, result.selectionEnd), "quick");
+});
+
+test("bold unwraps when the markers sit just outside the selection", () => {
+	const result = applyMarkdownFormat("bold", select("the **quick** fox", 6, 11));
+	assert.equal(result.value, "the quick fox");
+	assert.equal(result.value.slice(result.selectionStart, result.selectionEnd), "quick");
+});
+
+test("italic on an empty selection inserts markers with the caret between them", () => {
+	const result = applyMarkdownFormat("italic", select("ab", 1, 1));
+	assert.equal(result.value, "a**b");
+	assert.equal(result.selectionStart, 2);
+	assert.equal(result.selectionEnd, 2);
+});
+
+test("strikethrough wraps with double tildes", () => {
+	const result = applyMarkdownFormat("strikethrough", select("done", 0, 4));
+	assert.equal(result.value, "~~done~~");
+});
+
+test("underline wraps with an HTML u tag", () => {
+	const result = applyMarkdownFormat("underline", select("word", 0, 4));
+	assert.equal(result.value, "<u>word</u>");
+});
+
+test("h1 prefixes the current line", () => {
+	const result = applyMarkdownFormat("h1", select("Title", 2, 2));
+	assert.equal(result.value, "# Title");
+	assert.equal(result.value.slice(result.selectionStart, result.selectionEnd), "# Title");
+});
+
+test("h2 replaces an existing heading prefix instead of stacking", () => {
+	const result = applyMarkdownFormat("h2", select("# Title", 3, 3));
+	assert.equal(result.value, "## Title");
+});
+
+test("h1 toggles off when the line is already that heading", () => {
+	const result = applyMarkdownFormat("h1", select("# Title", 3, 3));
+	assert.equal(result.value, "Title");
+});
+
+test("normal strips the leading block marker", () => {
+	const result = applyMarkdownFormat("normal", select("> quote line", 4, 4));
+	assert.equal(result.value, "quote line");
+});
+
+test("quote prefixes the line and toggles off again", () => {
+	const quoted = applyMarkdownFormat("quote", select("note", 0, 4));
+	assert.equal(quoted.value, "> note");
+	const unquoted = applyMarkdownFormat("quote", select(quoted.value, 0, quoted.value.length));
+	assert.equal(unquoted.value, "note");
+});
+
+test("bulleted list prefixes every selected line", () => {
+	const value = "one\ntwo\nthree";
+	const result = applyMarkdownFormat("bulletList", select(value, 0, value.length));
+	assert.equal(result.value, "- one\n- two\n- three");
+});
+
+test("numbered list numbers each selected line sequentially", () => {
+	const value = "one\ntwo\nthree";
+	const result = applyMarkdownFormat("orderedList", select(value, 0, value.length));
+	assert.equal(result.value, "1. one\n2. two\n3. three");
+});
+
+test("numbered list toggles off when all lines are already numbered", () => {
+	const value = "1. one\n2. two";
+	const result = applyMarkdownFormat("orderedList", select(value, 0, value.length));
+	assert.equal(result.value, "one\ntwo");
+});
+
+test("link wraps the selection and selects the link text", () => {
+	const result = applyMarkdownFormat(
+		"link",
+		select("see docs", 4, 8),
+		{ linkUrl: "https://x.dev" },
+	);
+	assert.equal(result.value, "see [docs](https://x.dev)");
+	assert.equal(result.value.slice(result.selectionStart, result.selectionEnd), "docs");
+});
+
+test("link without a URL is a no-op", () => {
+	const state = select("see docs", 4, 8);
+	const result = applyMarkdownFormat("link", state);
+	assert.deepEqual(result, state);
+});

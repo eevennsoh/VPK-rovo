@@ -7,6 +7,10 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import { cn } from "@/lib/utils";
 
 import { createRichTextEditorExtensions } from "./extensions";
+import {
+	applyMarkdownFormat,
+	type MarkdownFormatKind,
+} from "./markdown-format";
 import "./rich-text-editor.css";
 import {
 	RichTextEditorBubbleMenu,
@@ -58,6 +62,7 @@ export function RichTextEditor({
 	const mentionSourcesRef = useRef(mentionSources);
 	const onMarkdownChangeRef = useRef(onMarkdownChange);
 	const onPlainTextChangeRef = useRef(onPlainTextChange);
+	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const [isEmpty, setIsEmpty] = useState(() => !value?.trim());
 	const [isMarkdownMode, setIsMarkdownMode] = useState(false);
 	const [markdownSource, setMarkdownSource] = useState("");
@@ -142,6 +147,48 @@ export function RichTextEditor({
 		onPlainTextChangeRef.current?.(next);
 	}
 
+	function handleMarkdownFormat(kind: MarkdownFormatKind): void {
+		const textarea = textareaRef.current;
+
+		if (!textarea) {
+			return;
+		}
+
+		let linkUrl: string | undefined;
+
+		if (kind === "link") {
+			linkUrl = window.prompt("Enter URL") ?? undefined;
+
+			if (!linkUrl) {
+				return;
+			}
+		}
+
+		const result = applyMarkdownFormat(
+			kind,
+			{
+				value: textarea.value,
+				selectionStart: textarea.selectionStart,
+				selectionEnd: textarea.selectionEnd,
+			},
+			{ linkUrl },
+		);
+
+		handleMarkdownSourceChange(result.value);
+
+		// Restore focus + selection after React re-renders the controlled textarea.
+		requestAnimationFrame(() => {
+			const node = textareaRef.current;
+
+			if (!node) {
+				return;
+			}
+
+			node.focus();
+			node.setSelectionRange(result.selectionStart, result.selectionEnd);
+		});
+	}
+
 	return (
 		<div className={cn("space-y-2", className)} {...props}>
 			{showToolbar && editor ? (
@@ -152,6 +199,7 @@ export function RichTextEditor({
 					showMoreControl={showMoreControl}
 					isMarkdownMode={isMarkdownMode}
 					onToggleMarkdownMode={handleToggleMarkdownMode}
+					onMarkdownFormat={handleMarkdownFormat}
 				/>
 			) : null}
 			<div
@@ -167,6 +215,7 @@ export function RichTextEditor({
 				>
 				{isMarkdownMode ? (
 					<textarea
+						ref={textareaRef}
 						className={cn(
 							"min-h-24 w-full resize-none bg-transparent font-mono text-sm leading-relaxed text-text outline-none field-sizing-content",
 							editorClassName,

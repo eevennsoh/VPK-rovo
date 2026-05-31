@@ -199,9 +199,9 @@ test("Shared toolbar builds on/off controls with Toggle and ToggleGroup", () => 
 		/import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u,
 	);
 
-	// Bold and bulleted list are now editor-controlled Toggles, not variant Buttons.
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<Toggle[\s\S]*pressed=\{editor\.isActive\("bold"\)\}/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /pressed=\{editor\.isActive\("bulletList"\)\}/u);
+	// Bold and bulleted list are editor-controlled Toggles (unpressed in source mode).
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /pressed=\{!isMarkdownMode && editor\.isActive\("bold"\)\}/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /pressed=\{!isMarkdownMode && editor\.isActive\("bulletList"\)\}/u);
 	assert.doesNotMatch(
 		RICH_TEXT_TOOLBAR_SOURCE,
 		/variant=\{editor\.isActive\("bold"\) \? "secondary" : "ghost"\}/u,
@@ -222,9 +222,45 @@ test("Shared toolbar exposes a Markdown view toggle gated by a handler", () => {
 		RICH_TEXT_TOOLBAR_SOURCE,
 		/onToggleMarkdownMode \?\s*\([\s\S]*value="markdown"/u,
 	);
-	// Formatting controls disable while editing raw Markdown.
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /const formattingDisabled = isMarkdownMode;/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /disabled=\{formattingDisabled\}/u);
+});
+
+test("Source-mode toolbar controls apply Markdown syntax instead of disabling", () => {
+	// The toolbar dispatches a Markdown-format transform when in source mode.
+	assert.match(
+		RICH_TEXT_TOOLBAR_SOURCE,
+		/onMarkdownFormat\?: \(kind: MarkdownFormatKind\) => void;/u,
+	);
+	assert.match(
+		RICH_TEXT_TOOLBAR_SOURCE,
+		/function runFormat\(kind: MarkdownFormatKind, applyRich: \(\) => void\): void \{[\s\S]*onMarkdownFormat\?\.\(kind\)/u,
+	);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /runFormat\("bold",/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /runFormat\("italic",/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /runFormat\("bulletList",/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /runFormat\("orderedList",/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /TEXT_STYLE_TO_MARKDOWN/u);
+	// Only alignment + comment (no Markdown equivalent) stay disabled in source mode.
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /const markdownUnsupported = isMarkdownMode;/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /disabled=\{markdownUnsupported\}/u);
+	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /formattingDisabled/u);
+});
+
+test("Editor wires source-mode formatting through the Markdown-format util", () => {
+	assert.match(
+		RICH_TEXT_EDITOR_SOURCE,
+		/import \{\s*applyMarkdownFormat,\s*type MarkdownFormatKind,?\s*\} from "\.\/markdown-format";/u,
+	);
+	// Reads the textarea selection, applies the transform, and restores the caret.
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /const textareaRef = useRef<HTMLTextAreaElement>\(null\);/u);
+	assert.match(
+		RICH_TEXT_EDITOR_SOURCE,
+		/function handleMarkdownFormat\(kind: MarkdownFormatKind\): void \{[\s\S]*applyMarkdownFormat\(/u,
+	);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /window\.prompt\("Enter URL"\)/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /requestAnimationFrame\(/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /node\.setSelectionRange\(result\.selectionStart, result\.selectionEnd\)/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /ref=\{textareaRef\}/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /onMarkdownFormat=\{handleMarkdownFormat\}/u);
 });
 
 test("Markdown source toggle round-trips through the shared editor", () => {
