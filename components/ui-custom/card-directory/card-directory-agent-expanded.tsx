@@ -4,10 +4,11 @@ import { type CSSProperties, type MouseEvent, type UIEvent, useCallback, useStat
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
-import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarCompanyBadge, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage, AvatarProjectBadge } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { AtlassianLogo } from "@/components/ui/logo";
 import { Separator } from "@/components/ui/separator";
-import { SkillTag, SkillTagGroup } from "@/components/ui-custom/skill-tag";
+import { SkillTag, SkillTagCount, SkillTagGroup } from "@/components/ui-custom/skill-tag";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import { cn } from "@/lib/utils";
 
@@ -22,11 +23,13 @@ import {
 	CardDirectoryMoreButton,
 	CardDirectorySection,
 	CardDirectoryStat,
+	type CardDirectoryCapability,
 	formatCompact,
 } from "./card-directory-parts";
 import { type CardDirectoryTemplateSkill } from "./card-directory-template";
 
 const MAX_VISIBLE_COLLABORATORS = 4;
+const MAX_VISIBLE_SKILLS = 4;
 const CARD_DIRECTORY_SCROLL_MASK_IMAGE = [
 	"linear-gradient(to bottom, transparent 0, black var(--scroll-mask-fade-size), black 100%)",
 	"linear-gradient(black, black)",
@@ -51,9 +54,11 @@ export interface CardDirectoryAgentExpandedProps {
 	name: string;
 	avatarSrc: string;
 	publisher: string;
+	attributionKind?: "company" | "team" | "person";
+	publisherLogoSrc?: string;
 	description?: string;
 	/** Capability lines rendered as a scrollable list. */
-	capabilities: readonly string[];
+	capabilities: readonly (CardDirectoryCapability | string)[];
 	/** Optional label above the capabilities list. Omit to render the bare list. */
 	capabilitiesLabel?: string;
 	/** Connected data sources shown in the "Works with" section. */
@@ -85,6 +90,8 @@ export function CardDirectoryAgentExpanded({
 	name,
 	avatarSrc,
 	publisher,
+	attributionKind,
+	publisherLogoSrc,
 	description,
 	capabilities,
 	capabilitiesLabel,
@@ -108,6 +115,8 @@ export function CardDirectoryAgentExpanded({
 	const showCollaborators = collaborators.length > 0;
 	const showFooter = showStats || showRating || showChats || showCollaborators;
 	const [bodyScrolled, setBodyScrolled] = useState(false);
+	const visibleSkills = skills.slice(0, MAX_VISIBLE_SKILLS);
+	const hiddenSkillCount = Math.max(skills.length - visibleSkills.length, 0);
 	const visibleCollaborators = collaborators.slice(0, MAX_VISIBLE_COLLABORATORS);
 	const hiddenCollaboratorCount =
 		Math.max(collaborators.length - MAX_VISIBLE_COLLABORATORS, 0) + (collaboratorOverflow ?? 0);
@@ -123,6 +132,36 @@ export function CardDirectoryAgentExpanded({
 			currentBodyScrolled === nextBodyScrolled ? currentBodyScrolled : nextBodyScrolled
 		));
 	}, []);
+	const avatarBadge = (() => {
+		if (attributionKind === "company") {
+			return (
+				<AvatarCompanyBadge>
+					{publisherLogoSrc ? (
+						<img alt="" aria-hidden src={publisherLogoSrc} />
+					) : (
+						<AtlassianLogo
+							appearance="inverse"
+							label=""
+							name="atlassian"
+							shouldUseNewLogoDesign
+							size="xxsmall"
+							themeAware={false}
+						/>
+					)}
+				</AvatarCompanyBadge>
+			);
+		}
+
+		if (attributionKind === "team") {
+			return (
+				<AvatarProjectBadge>
+					<img alt="" aria-hidden src={publisherLogoSrc ?? "/1p/rovo.svg"} />
+				</AvatarProjectBadge>
+			);
+		}
+
+		return null;
+	})();
 
 	return (
 		<CardDirectory
@@ -134,7 +173,7 @@ export function CardDirectoryAgentExpanded({
 			selectLabel={`Select ${name}`}
 		>
 			<div className="shrink-0 bg-surface" data-slot="card-directory-sticky-header">
-				<CardDirectoryBanner avatarSrc={avatarSrc} backgroundColor={coverBackgroundColor} />
+				<CardDirectoryBanner avatarBadge={avatarBadge} avatarSrc={avatarSrc} backgroundColor={coverBackgroundColor} />
 				<div className="px-4 pt-3">
 					<CardDirectoryHeader
 						action={
@@ -145,7 +184,7 @@ export function CardDirectoryAgentExpanded({
 						byline={<CardDirectoryByline publisher={publisher} verified={verified} />}
 						title={name}
 					/>
-					<CardDirectoryDescription className="mt-1 min-h-0">
+					<CardDirectoryDescription className="mt-1 line-clamp-3 min-h-15">
 						{description ?? `Learn how ${name} can help your team work faster.`}
 					</CardDirectoryDescription>
 				</div>
@@ -166,11 +205,12 @@ export function CardDirectoryAgentExpanded({
 				{skills.length > 0 ? (
 					<CardDirectorySection label="Skills">
 						<SkillTagGroup>
-							{skills.map((skill) => (
+							{visibleSkills.map((skill) => (
 								<SkillTag color={skill.color ?? "default"} icon={skill.icon} key={skill.label}>
 									{skill.label}
 								</SkillTag>
 							))}
+							{hiddenSkillCount > 0 ? <SkillTagCount count={hiddenSkillCount} /> : null}
 						</SkillTagGroup>
 					</CardDirectorySection>
 				) : null}

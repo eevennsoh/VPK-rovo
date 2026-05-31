@@ -16,6 +16,7 @@ import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui
 import { Icon } from "@/components/ui/icon";
 import {
 	CardDirectoryAgentExpanded,
+	type CardDirectoryCapability,
 	type CardDirectoryTemplateSkill,
 } from "@/components/ui-custom/card-directory";
 import { type TwgToolSource } from "@/components/ui-custom/twg-tool";
@@ -31,8 +32,10 @@ import { cn } from "@/lib/utils";
 export interface AgentTemplatesAgent extends AgentBrowserAgent {
 	categoryId?: AgentTemplatesCategoryId;
 	publisher?: string;
+	publisherLogoSrc?: string;
+	templatePrompt?: string;
 	verified?: boolean;
-	capabilities?: readonly string[];
+	capabilities?: readonly CardDirectoryCapability[];
 	sources?: ReadonlyArray<TwgToolSource>;
 	skills?: ReadonlyArray<CardDirectoryTemplateSkill>;
 	stats?: ReadonlyArray<{ value: string; label: string }>;
@@ -139,7 +142,7 @@ const AGENT_TEMPLATES_CATEGORIES: readonly AgentTemplatesCategory[] = [
 	},
 ] as const;
 
-const EMPTY_CAPABILITIES: readonly string[] = [];
+const EMPTY_CAPABILITIES: readonly CardDirectoryCapability[] = [];
 const AGENT_TEMPLATES_TAB_COPY_VARIANTS = {
 	enter: ({ direction, shouldReduceMotion }: AgentTemplatesTabMotionCustom) => ({
 		opacity: 0,
@@ -512,6 +515,7 @@ function AgentTemplateCard({
 	return (
 		<CardDirectoryAgentExpanded
 			avatarSrc={agent.avatarSrc}
+			attributionKind={agent.attributionKind}
 			capabilities={agent.capabilities ?? EMPTY_CAPABILITIES}
 			className="h-full w-full"
 			collaboratorOverflow={agent.collaboratorOverflow}
@@ -521,6 +525,7 @@ function AgentTemplateCard({
 			onMoreActions={NOOP_TEMPLATE_MORE_ACTIONS}
 			onSelect={onSelectAgent ? () => onSelectAgent(agent) : undefined}
 			publisher={agent.publisher ?? deriveAgentPublisher(agent.byline)}
+			publisherLogoSrc={agent.publisherLogoSrc}
 			skills={agent.skills}
 			sources={agent.sources}
 			stats={agent.stats}
