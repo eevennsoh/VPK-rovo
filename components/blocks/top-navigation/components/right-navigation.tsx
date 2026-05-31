@@ -1,13 +1,12 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Image from "next/image";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { token } from "@/lib/tokens";
-import NotificationIcon from "@atlaskit/icon/core/notification";
-import QuestionCircleIcon from "@atlaskit/icon/core/question-circle";
-import SettingsIcon from "@atlaskit/icon/core/settings";
-import ThemeIcon from "@atlaskit/icon/core/theme";
+import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import { RightNavigationActions } from "./right-navigation-actions";
+import { TOP_NAV_OVERFLOW_BREAKPOINT_PX } from "../layout-constants";
 
 type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "search" | "studio";
 
@@ -30,6 +29,7 @@ export function RightNavigation({
 	onToggleChat,
 	onToggleTheme,
 }: Readonly<RightNavigationProps>) {
+	const [isOverflowOpen, setIsOverflowOpen] = useState(false);
 	const productSuppressesRovoAction = product === "rovo" || product === "studio";
 	const showRovoAction = !hideRovoAction && (!productSuppressesRovoAction || forceShowRovoAction);
 	const containerStyle = {
@@ -41,63 +41,40 @@ export function RightNavigation({
 		marginLeft: "8px",
 	};
 
-	return (
-		<div style={containerStyle}>
-			{/* Rovo chat button - suppressed on Rovo/Studio unless forceShowRovoAction overrides it */}
-			{showRovoAction ? (
-				<>
-					{windowWidth >= 768 ? (
-						<Button
-							variant="outline"
-							className="text-text-subtle"
-							aria-pressed={isChatOpen}
-							onClick={onToggleChat}
-						>
-							<Image src="/1p/rovo.svg" alt="" width={16} height={16} data-icon="inline-start" />
-							Ask Rovo
-						</Button>
-					) : (
-						<Button
-							aria-label="Ask Rovo"
-							size="icon"
-							variant="outline"
-							className="text-text-subtle"
-							aria-pressed={isChatOpen}
-							onClick={onToggleChat}
-						>
-							<Image src="/1p/rovo.svg" alt="" width={16} height={16} />
-						</Button>
-					)}
-				</>
-			) : null}
-
-			{/* Notifications */}
-			<Button aria-label="Notifications" size="icon" variant="ghost">
-				<NotificationIcon label="" color={token("color.icon.subtle")} />
-			</Button>
-
-			{/* Help */}
-			<Button aria-label="Help" size="icon" variant="ghost">
-				<QuestionCircleIcon label="" color={token("color.icon.subtle")} />
-			</Button>
-
-			{/* Settings */}
-			<Button aria-label="Settings" size="icon" variant="ghost">
-				<SettingsIcon label="" color={token("color.icon.subtle")} />
-			</Button>
-
-			{/* Theme Toggle */}
-			<Button aria-label="Toggle theme" size="icon" variant="ghost" onClick={onToggleTheme}>
-				<ThemeIcon label="" color={token("color.icon.subtle")} />
-			</Button>
-
-			{/* Profile */}
-			<div className="flex size-8 items-center justify-center">
-				<Avatar size="sm">
-					<AvatarImage src="/avatar-user/venn/venn.png" alt="Venn avatar" />
-					<AvatarFallback>VN</AvatarFallback>
-				</Avatar>
-			</div>
-		</div>
+	const actions = (
+		<RightNavigationActions
+			showRovoAction={showRovoAction}
+			isChatOpen={isChatOpen}
+			onToggleChat={onToggleChat}
+			onToggleTheme={onToggleTheme}
+		/>
 	);
+
+	// Narrow widths: collapse the entire right cluster into a single "…" popover
+	// that renders the same actions in a horizontal row (matches production).
+	if (windowWidth < TOP_NAV_OVERFLOW_BREAKPOINT_PX) {
+		return (
+			<div style={containerStyle}>
+				<Popover open={isOverflowOpen} onOpenChange={setIsOverflowOpen}>
+					<PopoverTrigger
+						render={
+							<Button aria-label="More" size="icon" variant="ghost">
+								<ShowMoreHorizontalIcon label="" color={token("color.icon.subtle")} />
+							</Button>
+						}
+					/>
+					<PopoverContent
+						side="bottom"
+						align="end"
+						sideOffset={8}
+						className="flex w-auto flex-row items-center gap-1 p-1"
+					>
+						{actions}
+					</PopoverContent>
+				</Popover>
+			</div>
+		);
+	}
+
+	return <div style={containerStyle}>{actions}</div>;
 }
