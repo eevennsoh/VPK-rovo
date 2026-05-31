@@ -549,6 +549,12 @@ import SearchIcon from "@atlaskit/icon/core/search"
         description:
           "Click handler. When provided, adds hover/active states and pointer cursor.",
       },
+      {
+        name: "maxRows",
+        type: "number",
+        description:
+          "SkillTagGroup-only prop. Collapses tags that would wrap past the row limit into the +N overflow tag.",
+      },
     ],
     examples: [
       { title: "Default", demoSlug: "skill-tag-demo-default" },
@@ -586,7 +592,7 @@ import SearchIcon from "@atlaskit/icon/core/search"
       {
         title: "Overflow",
         description:
-          "Tags followed by a clickable SkillTagCount when there are more skills than space.",
+          "SkillTagGroup with maxRows collapses extra wrapped tags into SkillTagCount.",
         demoSlug: "skill-tag-demo-overflow",
       },
     ],

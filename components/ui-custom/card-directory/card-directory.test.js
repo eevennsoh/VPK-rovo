@@ -14,6 +14,7 @@ const SKILL_SOURCE = read("card-directory-skill.tsx");
 const TOOL_SOURCE = read("card-directory-tool.tsx");
 const TEMPLATE_SOURCE = read("card-directory-template.tsx");
 const INDEX_SOURCE = read("index.ts");
+const SKILL_TAG_SOURCE = read(join("..", "skill-tag.tsx"));
 const AGENT_BROWSER_SOURCE = readFileSync(
 	join(__dirname, "..", "..", "blocks", "agent-browser", "components", "agent-browser.tsx"),
 	"utf8",
@@ -109,9 +110,8 @@ test("expanded agent variant adds a cover banner and scrollable capabilities to 
 test("expanded agent variant renders Works with sources and Skills tags", () => {
 	assert.match(AGENT_EXPANDED_SOURCE, /TWGAppstack/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /<TWGAppstack animated=\{false\}/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /SkillTagGroup/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /SkillTagCount/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /const MAX_VISIBLE_SKILLS = 10/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /<SkillTagGroup maxRows=\{2\}>/u);
+	assert.doesNotMatch(AGENT_EXPANDED_SOURCE, /MAX_VISIBLE_SKILLS/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /maxVisible=\{8\}/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /label="Works with"/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /label="Skills"/u);
@@ -189,11 +189,19 @@ test("tool variant uses an app-logo tile with tool and teammate counts", () => {
 test("template variant renders Works with sources and Skills tags, no glow or stats", () => {
 	assert.match(TEMPLATE_SOURCE, /TWGAppstack/u);
 	assert.match(TEMPLATE_SOURCE, /animated=\{false\}/u);
-	assert.match(TEMPLATE_SOURCE, /SkillTagGroup/u);
+	assert.match(TEMPLATE_SOURCE, /<SkillTagGroup maxRows=\{2\}>/u);
 	assert.match(TEMPLATE_SOURCE, /label="Works with"/u);
 	assert.match(TEMPLATE_SOURCE, /label="Skills"/u);
 	assert.doesNotMatch(TEMPLATE_SOURCE, /CardGlow|card-glow/u);
 	assert.doesNotMatch(TEMPLATE_SOURCE, /StarUnstarredIcon|AiChatIcon/u);
+});
+
+test("skill tag group collapses wrapped rows into the overflow count", () => {
+	assert.match(SKILL_TAG_SOURCE, /maxRows\?: number/u);
+	assert.match(SKILL_TAG_SOURCE, /calculateVisibleSkillTagCount/u);
+	assert.match(SKILL_TAG_SOURCE, /<SkillTagCount count=\{hiddenCount\} \/>/u);
+	assert.match(SKILL_TAG_SOURCE, /ResizeObserver/u);
+	assert.match(SKILL_TAG_SOURCE, /data-slot="skill-tag-group-measure"/u);
 });
 
 test("barrel exports the shell, parts, and variant wrappers", () => {
