@@ -60,7 +60,10 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	assert.match(AGENT_SOURCE, /function hasFilledAgentConfig\(config: AgentConfigFormValue\): boolean/u);
 	assert.match(AGENT_SOURCE, /const isFilledConfig = hasFilledAgentConfig\(config\);/u);
 	assert.match(AGENT_SOURCE, /<AgentFilledConfigSummary/u);
+	assert.match(AGENT_SOURCE, /function AgentMissingConfigActions/u);
+	assert.match(AGENT_SOURCE, /<AgentMissingConfigActions[\s\S]*config=\{config\}/u);
 	assert.match(AGENT_SOURCE, /getAgentTriggerItems\(config\)\.length > 0/u);
+	assert.match(AGENT_SOURCE, /MAX_AGENT_CONVERSATION_STARTERS = 3/u);
 
 	for (const label of [
 		"Triggers",
@@ -72,6 +75,22 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	]) {
 		assert.match(AGENT_SOURCE, new RegExp(`label="${label}"`, "u"));
 	}
+});
+
+test("Agent profile inline edit fields align to the profile content edge", () => {
+	assert.match(
+		AGENT_SOURCE,
+		/readViewClassName="h-auto px-0 py-1 text-2xl leading-7 font-semibold"/u,
+	);
+	assert.match(
+		AGENT_SOURCE,
+		/inputProps=\{\{ className: "h-auto px-0 py-1 text-2xl leading-7 font-semibold md:text-2xl" \}\}/u,
+	);
+	assert.match(AGENT_SOURCE, /readViewClassName="px-0"/u);
+	assert.match(
+		AGENT_SOURCE,
+		/textareaProps=\{\{ rows: 1, className: "min-h-10 bg-bg-neutral-subtle px-0/u,
+	);
 });
 
 test("Shared Tiptap editor is SSR-safe and emits markdown updates", () => {

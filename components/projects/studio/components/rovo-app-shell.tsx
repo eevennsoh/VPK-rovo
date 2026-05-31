@@ -120,6 +120,7 @@ const ROVO_APP_SIDEBAR_MOTION_DURATION = "--duration-medium";
 const ROVO_APP_SIDEBAR_MOTION_FALLBACK_MS = 200;
 const ROVO_APP_SIDEBAR_MIN_WIDTH = 240;
 const ROVO_APP_SIDEBAR_MAX_WIDTH = 480;
+const STUDIO_AGENT_MAX_CONVERSATION_STARTERS = 3;
 
 const DEFAULT_COMPOSER_PLACEHOLDER = "Describe the agent you want to build";
 const REALTIME_THREAD_SUMMARY_MAX_MESSAGES = 10;
@@ -1170,7 +1171,7 @@ function buildStudioAgentCreationContext(originalBrief: string): string {
 		"- byline: one-line tagline (e.g. \"Generated agent\")",
 		"- description: 1–2 sentence summary of what the agent does",
 		"- instructions: structured Markdown beginning with ## Instructions; use paragraphs, bullet lists with bold labels, and optional ## Knowledge, ## Triggers, and ## Validation sections",
-		"- conversationStarters: 2–4 starter prompts (strings)",
+		"- conversationStarters: 3 starter prompts (strings)",
 		"- avatarFallback: { initials: 2-letter shorthand derived from the name }",
 		"- action: \"create\"",
 		"Clarification rule: Use the existing ask_user_questions/question-card flow when needed; do not invent a separate Q&A format.",
@@ -1191,7 +1192,7 @@ function buildStudioAgentCreationContinuationContext(): string {
 		"- byline: one-line tagline (e.g. \"Generated agent\")",
 		"- description: 1–2 sentence summary of what the agent does",
 		"- instructions: structured Markdown beginning with ## Instructions; use paragraphs, bullet lists with bold labels, and optional ## Knowledge, ## Triggers, and ## Validation sections",
-		"- conversationStarters: 2–4 starter prompts (strings)",
+		"- conversationStarters: 3 starter prompts (strings)",
 		"- avatarFallback: { initials: 2-letter shorthand derived from the name }",
 		"- action: \"create\"",
 		"Clarification rule: If required profile fields are still missing, ask another concise question-card round using the existing ask_user_questions flow.",
@@ -1206,7 +1207,7 @@ function normalizeStudioAgentResult(agentResult: RovoDataParts["agent-result"]):
 	const summary = getNonEmptyString(agentResult.summary);
 	const description = getNonEmptyString(agentResult.description) ?? summary;
 	const conversationStarters = Array.isArray(agentResult.conversationStarters)
-		? agentResult.conversationStarters.map((starter) => starter.trim()).filter(Boolean).slice(0, 4)
+		? agentResult.conversationStarters.map((starter) => starter.trim()).filter(Boolean).slice(0, STUDIO_AGENT_MAX_CONVERSATION_STARTERS)
 		: [];
 
 	if (!id || !name || !description || conversationStarters.length === 0) {
