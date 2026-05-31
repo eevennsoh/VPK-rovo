@@ -19,7 +19,14 @@ type SvgTracingProps = Readonly<{
 	playing?: boolean;
 	resetKey?: number;
 	className?: string;
+	/**
+	 * Sizing/overflow classes for the inner `<svg>`. Defaults to the large
+	 * showcase sizing; pass something like `h-5 w-full` to embed inline.
+	 */
+	svgClassName?: string;
 }>;
+
+const DEFAULT_TRACE_SVG_CLASSNAME = "h-[min(56svh,25rem)] w-[min(88%,36rem)]";
 
 type TraceSegmentProps = Readonly<{
 	d: string;
@@ -282,6 +289,7 @@ export default function SvgTracing({
 	playing = true,
 	resetKey = 0,
 	className,
+	svgClassName,
 }: SvgTracingProps) {
 	const reducedMotion = usePrefersReducedMotion();
 	const progress = useMotionValue(0);
@@ -369,7 +377,7 @@ export default function SvgTracing({
 	return (
 		<div
 			className={cn(
-				"relative flex min-h-[320px] w-full items-center justify-center overflow-hidden",
+				"relative flex w-full items-center justify-center",
 				className,
 			)}
 		>
@@ -378,7 +386,7 @@ export default function SvgTracing({
 				role="img"
 				aria-label={`${shape.label} SVG tracing animation`}
 				preserveAspectRatio="xMidYMid meet"
-				className="relative z-10 h-[min(56svh,25rem)] w-[min(88%,36rem)] overflow-visible"
+				className={cn("relative z-10 overflow-visible", svgClassName ?? DEFAULT_TRACE_SVG_CLASSNAME)}
 			>
 				<g>
 					{shape.paths.map((path, pathIndex) => (
