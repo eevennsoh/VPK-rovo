@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 
 import {
@@ -11,8 +11,9 @@ import {
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
 } from "@/components/ui-custom/agent";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonProps } from "@/components/ui/button";
+import { Lozenge } from "@/components/ui/lozenge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type {
 	StudioAgentPublishStatus,
 	StudioSessionAgentEntry,
@@ -27,6 +28,7 @@ interface RovoAppAgentConfigPanelProps {
 	onClose?: () => void;
 	onCommitPublishReady: (profileId: string) => void;
 	onPublish: (profileId: string) => void;
+	onTest: (profileId: string) => void;
 	onUpdateDraft: (
 		profileId: string,
 		patch: Partial<AgentResult>,
@@ -69,13 +71,40 @@ function getMissingFieldWarnings(result: AgentResult): readonly string[] {
 }
 
 function getPublishLabel(status: StudioAgentPublishStatus): string {
-	return status === "published" ? "Published" : "Testing";
+	return status === "published" ? "Published" : "Draft";
 }
 
-function getPublishBadgeVariant(
-	status: StudioAgentPublishStatus,
-): "success" | "primary" {
-	return status === "published" ? "success" : "primary";
+type AgentConfigActionButtonProps = ButtonProps & {
+	children: ReactNode;
+	disabledTooltip?: string;
+};
+
+function AgentConfigActionButton({
+	children,
+	disabled,
+	disabledTooltip,
+	...props
+}: Readonly<AgentConfigActionButtonProps>) {
+	const button = (
+		<Button disabled={disabled} {...props}>
+			{children}
+		</Button>
+	);
+
+	if (!disabled || !disabledTooltip) {
+		return button;
+	}
+
+	return (
+		<Tooltip>
+			<TooltipTrigger render={<span className="inline-flex" />}>
+				{button}
+			</TooltipTrigger>
+			<TooltipContent side="bottom">
+				<p>{disabledTooltip}</p>
+			</TooltipContent>
+		</Tooltip>
+	);
 }
 
 export function RovoAppAgentConfigPanel({
@@ -83,6 +112,7 @@ export function RovoAppAgentConfigPanel({
 	onClose,
 	onCommitPublishReady,
 	onPublish,
+	onTest,
 	onUpdateDraft,
 	className,
 }: Readonly<RovoAppAgentConfigPanelProps>) {
@@ -200,8 +230,18 @@ export function RovoAppAgentConfigPanel({
 		onPublish(profileId);
 	}, [hasUpdateChanges, onCommitPublishReady, onPublish, profileId]);
 
+	const hasAgentInstructions = Boolean(draft.instructions?.trim());
+	const handleTest = useCallback(() => {
+		if (!hasAgentInstructions) {
+			return;
+		}
+		if (hasUpdateChanges) {
+			onCommitPublishReady(profileId);
+		}
+		onTest(profileId);
+	}, [hasAgentInstructions, hasUpdateChanges, onCommitPublishReady, onTest, profileId]);
+
 	const publishStatusLabel = getPublishLabel(entry.publishStatus);
-	const badgeVariant = getPublishBadgeVariant(entry.publishStatus);
 	const agentName = draft.name?.trim() || entry.profile.name || "Untitled agent";
 	// Mirror the avatar the sidebar nav renders for this agent (entry.profile.avatarSrc)
 	// so the header + profile cover match instead of falling back to the static default.
@@ -220,23 +260,39 @@ export function RovoAppAgentConfigPanel({
 					avatarSrc={agentAvatarSrc}
 					name={agentName}
 					badge={
-						<Badge variant={badgeVariant} data-testid="agent-config-status-lozenge">
+						<Lozenge
+							data-testid="agent-config-status-lozenge"
+							variant={entry.publishStatus === "published" ? "success" : undefined}
+						>
 							{publishStatusLabel}
-						</Badge>
+						</Lozenge>
 					}
 					actions={
 						<>
-							<Button
+							<AgentConfigActionButton
 								type="button"
 								size="default"
 								variant="ghost"
 								onClick={handleUpdate}
 								disabled={!hasUpdateChanges}
+								disabledTooltip="Make a change to the agent before updating the testing version."
 								data-testid="agent-config-update"
 								data-screen-assistant-target="studio-agent-config-update"
 							>
 								{justUpdatedAt ? "Updated" : "Update"}
-							</Button>
+							</AgentConfigActionButton>
+							<AgentConfigActionButton
+								type="button"
+								size="default"
+								variant="outline"
+								onClick={handleTest}
+								disabled={!hasAgentInstructions}
+								disabledTooltip="Add agent instructions before testing this agent."
+								data-testid="agent-config-test"
+								data-screen-assistant-target="studio-agent-config-test"
+							>
+								Test
+							</AgentConfigActionButton>
 							<Button
 								type="button"
 								size="default"

@@ -37,6 +37,7 @@ test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /RichTextEditor,[\s\S]*\} from "@\/components\/ui-custom\/rich-text-editor";/u);
 	assert.match(AGENT_SOURCE, /function AgentInstructionsComposer/u);
 	assert.match(AGENT_SOURCE, /<RichTextEditor[\s\S]*aria-label="Agent instructions"/u);
+	assert.match(AGENT_SOURCE, /editorClassName="agent-instructions-tiptap-editor text-text"/u);
 	assert.match(AGENT_SOURCE, /placeholder="Describe the agent’s role and what it should do\. @mention, or \/ for skills"/u);
 	assert.match(AGENT_SOURCE, /mentionSources=\{mentionSources\}/u);
 	assert.match(AGENT_SOURCE, /onMarkdownChange=\{onInstructionsChange\}/u);
@@ -80,11 +81,11 @@ test("Agent config renders filled summary rows once field data exists", () => {
 test("Agent profile inline edit fields align to the profile content edge", () => {
 	assert.match(
 		AGENT_SOURCE,
-		/readViewClassName="h-auto px-0 py-1 text-2xl leading-7 font-semibold"/u,
+		/readViewClassName="h-auto px-0 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"/u,
 	);
 	assert.match(
 		AGENT_SOURCE,
-		/inputProps=\{\{ className: "h-auto px-0 py-1 text-2xl leading-7 font-semibold md:text-2xl" \}\}/u,
+		/inputProps=\{\{ className: "h-auto border-2 px-0 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u,
 	);
 	assert.match(AGENT_SOURCE, /readViewClassName="px-0"/u);
 	assert.match(

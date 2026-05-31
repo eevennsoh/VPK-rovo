@@ -226,9 +226,26 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /Add conversation starters/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /Teamwork Graph/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /Describe the agent’s role and what it should do/u);
+	assert.match(UI_CUSTOM_AGENT_SOURCE, /readViewClassName="h-auto px-0 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"/u);
+	assert.match(UI_CUSTOM_AGENT_SOURCE, /inputProps=\{\{ className: "h-auto border-2 px-0 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u);
+	assert.match(UI_CUSTOM_AGENT_SOURCE, /textareaProps=\{\{ rows: 1, className: "min-h-10 bg-bg-neutral-subtle px-0 focus:border-2 focus:border-ring focus-visible:border-2 focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-\[variant=default\]:border-transparent data-\[variant=default\]:focus:border-ring data-\[variant=default\]:focus-visible:border-ring" \}\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentConfigFields/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /config=\{draft\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onTextChange=\{handleConfigTextChange\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /return status === "published" \? "Published" : "Draft";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<Lozenge[\s\S]*data-testid="agent-config-status-lozenge"[\s\S]*variant=\{entry\.publishStatus === "published" \? "success" : undefined\}[\s\S]*>\s*\{publishStatusLabel\}\s*<\/Lozenge>/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigActionButton/u);
+	assert.ok(AGENT_CONFIG_PANEL_SOURCE.includes('TooltipTrigger render={<span className="inline-flex" />}'));
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /disabledTooltip="Make a change to the agent before updating the testing version\."/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const hasAgentInstructions = Boolean\(draft\.instructions\?\.trim\(\)\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /data-testid="agent-config-test"/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /variant="outline"[\s\S]*onClick=\{handleTest\}[\s\S]*disabled=\{!hasAgentInstructions\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /disabledTooltip="Add agent instructions before testing this agent\."/u);
+	assert.match(SHELL_SOURCE, /const handleTestAgent = useCallback/u);
+	assert.match(SHELL_SOURCE, /studioAgentRegistry\.commitSessionAgentPublishReady\?\.\(profileId\);[\s\S]*nav\.openChat\("sidebar"\);/u);
+	assert.match(SHELL_SOURCE, /onTest=\{handleTestAgent\}/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /<Label htmlFor=\{`agent-\$\{profileId\}-name`\}/u);
 });
 
@@ -242,6 +259,7 @@ test("Studio screen assistant applies draft patches without publishing agents", 
 		applyAgentDraftPatchIndex,
 		SHELL_SOURCE.indexOf("default:", applyAgentDraftPatchIndex),
 	);
+	assert.match(screenAssistantHandlerSource, /case "apply_agent_draft_patch"/u);
 	assert.match(screenAssistantHandlerSource, /activeSessionAgentEntry\.profile\.id/u);
 	assert.doesNotMatch(screenAssistantHandlerSource, /publishSessionAgent/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /data-screen-assistant-target="studio-agent-config-panel"/u);
@@ -279,7 +297,15 @@ test("Studio composer reveals 'Start from scratch' on focus or hover and lands o
 
 	// Shell wires the affordance to a from-scratch agent registration that opens the config pane.
 	assert.match(SHELL_SOURCE, /const handleStartAgentFromScratch = useCallback\(\(\) => \{/u);
-	assert.match(SHELL_SOURCE, /action: "create",\s*\n\s*agentId: `untitled-agent-\$\{uniqueSuffix\}`/u);
+	assert.match(SHELL_SOURCE, /const START_FROM_SCRATCH_AGENT_AVATAR_SRCS = \[/u);
+	assert.match(SHELL_SOURCE, /"\/avatar-agent\/dev-agents\/wildcard-1\.svg"/u);
+	assert.match(SHELL_SOURCE, /"\/avatar-agent\/product-agents\/wildcard-1\.svg"/u);
+	assert.match(SHELL_SOURCE, /"\/avatar-agent\/service-agents\/wildcard-1\.svg"/u);
+	assert.match(SHELL_SOURCE, /"\/avatar-agent\/strategy-agents\/wildcard-1\.svg"/u);
+	assert.match(SHELL_SOURCE, /"\/avatar-agent\/teamwork-agents\/wildcard-1\.svg"/u);
+	assert.match(SHELL_SOURCE, /function getRandomStartFromScratchAgentAvatarSrc\(\): string/u);
+	assert.match(SHELL_SOURCE, /Math\.random\(\) \* START_FROM_SCRATCH_AGENT_AVATAR_SRCS\.length/u);
+	assert.match(SHELL_SOURCE, /action: "create",\s*\n\s*agentId: `untitled-agent-\$\{uniqueSuffix\}`,\s*\n\s*avatarSrc: getRandomStartFromScratchAgentAvatarSrc\(\)/u);
 	assert.match(SHELL_SOURCE, /studioAgentRegistry\.registerCreatedAgentFromResult\(blankAgentResult/u);
 	assert.match(SHELL_SOURCE, /onStartFromScratch=\{handleStartAgentFromScratch\}/u);
 	// The from-scratch handler opens the same config pane the AI-result flow uses.
