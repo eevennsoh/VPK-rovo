@@ -46,8 +46,9 @@ test("AvatarUnassigned exposes grey person and agent avatar states", () => {
 	assert.match(AVATAR_SOURCE, /function AvatarUnassigned\(/);
 	assert.match(
 		AVATAR_SOURCE,
-		/"items-center justify-center bg-muted text-icon-subtle after:border-border"/,
+		/"items-center justify-center text-icon-subtle after:border-border"/,
 	);
+	assert.match(AVATAR_SOURCE, /!isAgent && "bg-muted"/);
 	assert.match(AVATAR_SOURCE, /shape=\{isAgent \? "hexagon" : "circle"\}/);
 	assert.match(
 		AVATAR_SOURCE,
@@ -62,6 +63,8 @@ test("hexagon avatars clip an inner frame so corner overlays render unclipped", 
 	assert.match(AVATAR_SOURCE, /hexagon: "after:border-0"/);
 	assert.doesNotMatch(AVATAR_SOURCE, /hexagon: `\$\{HEXAGON_CLIP\} after:border-0`/);
 	assert.match(AVATAR_SOURCE, /<span className=\{cn\("relative flex size-full items-center justify-center", HEXAGON_CLIP\)\}>/);
+	assert.doesNotMatch(AVATAR_SOURCE, /isAgent && HEXAGON_CLIP/);
+	assert.match(AVATAR_SOURCE, /isAgent && "size-full bg-muted"/);
 	assert.match(AVATAR_SOURCE, /const AVATAR_OVERLAY_TYPES: ReadonlySet<unknown> = new Set\(\[/);
 	assert.match(AVATAR_SOURCE, /function AvatarHexagonBorder\(\)/);
 	assert.match(AVATAR_SOURCE, /text-border!/);

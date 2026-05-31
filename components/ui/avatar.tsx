@@ -197,8 +197,8 @@ function AvatarUnassigned({
 		<Avatar
 			data-unassigned={kind}
 			className={cn(
-				"items-center justify-center bg-muted text-icon-subtle after:border-border",
-				isAgent && HEXAGON_CLIP,
+				"items-center justify-center text-icon-subtle after:border-border",
+				!isAgent && "bg-muted",
 				className
 			)}
 			label={resolvedLabel}
@@ -206,17 +206,22 @@ function AvatarUnassigned({
 			size={resolvedSize}
 			{...props}
 		>
-			<Icon
-				aria-hidden
-				className="text-icon-subtle"
-				render={
-					<IconComponent
-						color="currentColor"
-						label=""
-						size={avatarUnassignedIconSizeMap[resolvedSize]}
-					/>
-				}
-			/>
+			<span className={cn(
+				"flex items-center justify-center text-icon-subtle",
+				isAgent && "size-full bg-muted"
+			)}>
+				<Icon
+					aria-hidden
+					className="text-icon-subtle"
+					render={
+						<IconComponent
+							color="currentColor"
+							label=""
+							size={avatarUnassignedIconSizeMap[resolvedSize]}
+						/>
+					}
+				/>
+			</span>
 			{children}
 		</Avatar>
 	)
