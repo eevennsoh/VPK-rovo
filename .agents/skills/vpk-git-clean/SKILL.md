@@ -1,17 +1,17 @@
 ---
-name: vpk-clean
-description: "Use for VPK-rovo git housekeeping: removing landed worktrees, deleting merged PR source branches, pruning stale tracking refs, and closing explicitly abandoned PRs. This is the deferred cleanup step that `vpk-git` intentionally does NOT run during a ship, because an agent cannot remove the worktree it is standing in — so cleanup is a separate, later sweep run from the main checkout. Use whenever the user says \"vpk-clean\", \"vpk-git --clean\", \"clean up worktrees\", \"clean up branches\", \"remove merged worktrees\", \"delete the branch after merge\", \"prune stale refs\", \"tidy worktrees\", \"sweep landed worktrees\", \"my worktrees are piling up\", \"remove this worktree\", or after a `vpk-git` ship reported a worktree was left active for follow-up removal. Run it from the main checkout, not from inside a worktree you want removed."
+name: vpk-git-clean
+description: "Use for VPK-rovo git housekeeping: removing landed worktrees, deleting merged PR source branches, pruning stale tracking refs, and closing explicitly abandoned PRs. This is the deferred cleanup step that `vpk-git-ship` intentionally does NOT run during a ship, because an agent cannot remove the worktree it is standing in — so cleanup is a separate, later sweep run from the main checkout. Use whenever the user says \"vpk-git-clean\", \"clean up worktrees\", \"clean up branches\", \"remove merged worktrees\", \"delete the branch after merge\", \"prune stale refs\", \"tidy worktrees\", \"sweep landed worktrees\", \"my worktrees are piling up\", \"remove this worktree\", or after a `vpk-git-ship` ship reported a worktree was left active for follow-up removal. Run it from the main checkout, not from inside a worktree you want removed."
 ---
 
-# VPK Clean
+# VPK Git Clean
 
 Repo-local git housekeeping for VPK-rovo. This skill removes only work that commands **prove** has already landed, and never touches anything still in flight. It is self-contained and interactive: run it on the user-approved scope, surface evidence before destroying state, and leave anything ambiguous alone.
 
 Do not use this for Symphony issue work inside the `vpk-symphony` landing flow; follow `vpk-symphony/references/git/land.md` there.
 
-## Why this is separate from `vpk-git`
+## Why this is separate from `vpk-git-ship`
 
-`vpk-git` ships work: it creates a PR, waits for CI, merges (deleting the remote branch server-side), and syncs `main`. It deliberately stops there. The reason is physical, not stylistic: VPK background agents (Codex, Claude) almost always run **inside** a `.claude/worktrees/<x>` checkout, and **an agent cannot remove the worktree its own shell is sitting in** — git refuses, and deleting the directory out from under a running process corrupts the session. So per-ship cleanup could never finish in the common case, and half-done cleanup is worse than none.
+`vpk-git-ship` ships work: it creates a PR, waits for CI, merges (deleting the remote branch server-side), and syncs `main`. It deliberately stops there. The reason is physical, not stylistic: VPK background agents (Codex, Claude) almost always run **inside** a `.claude/worktrees/<x>` checkout, and **an agent cannot remove the worktree its own shell is sitting in** — git refuses, and deleting the directory out from under a running process corrupts the session. So per-ship cleanup could never finish in the common case, and half-done cleanup is worse than none.
 
 Decoupling means the ship is predictable and side-effect-light, and the *local* tidying — worktree removal, local branch deletion, tracking-ref pruning — happens here, later, run from the **main checkout** where it can actually complete. This sweep discovers landed worktrees on its own (by ancestry and merged-PR evidence), so it does not need a hand-off list from the ship.
 
