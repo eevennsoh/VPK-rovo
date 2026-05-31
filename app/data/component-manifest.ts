@@ -127,6 +127,7 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	customComponent("confirmation"),
 	customComponent("connection"),
 	customComponent("context"),
+	customComponent("context-bar", "Context Bar"),
 	customComponent("controls"),
 	customComponent("conversation"),
 	customComponent("edge"),

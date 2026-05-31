@@ -244,6 +244,9 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
     ssr: false,
   }),
   context: dynamic(() => import("./demos/ui-custom/context-demo"), { ssr: false }),
+  "context-bar": dynamic(() => import("./demos/ui-custom/context-bar-demo"), {
+    ssr: false,
+  }),
   controls: dynamic(() => import("./demos/ui-custom/controls-demo"), {
     ssr: false,
   }),
@@ -5628,6 +5631,27 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/ui-custom/context-demo").then((mod) => ({
         default: mod.ContextDemoCustomTrigger,
+      })),
+    { ssr: false },
+  ),
+  "context-bar-demo-collapsible": dynamic(
+    () =>
+      import("./demos/ui-custom/context-bar-demo").then((mod) => ({
+        default: mod.ContextBarDemoCollapsible,
+      })),
+    { ssr: false },
+  ),
+  "context-bar-demo-dismissible": dynamic(
+    () =>
+      import("./demos/ui-custom/context-bar-demo").then((mod) => ({
+        default: mod.ContextBarDemoDismissible,
+      })),
+    { ssr: false },
+  ),
+  "context-bar-demo-trigger": dynamic(
+    () =>
+      import("./demos/ui-custom/context-bar-demo").then((mod) => ({
+        default: mod.ContextBarDemoTrigger,
       })),
     { ssr: false },
   ),

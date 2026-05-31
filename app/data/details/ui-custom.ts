@@ -2150,6 +2150,98 @@ import {
 		],
 	},
 
+	"context-bar": {
+		description:
+			"A contextual bar that sits above a composer or chat input to name the active context (an agent, artifact, board, or work item). Pairs a lead icon and label with a truncating tag chip and a dismiss affordance. The collapsible variant self-manages open state, shrinking to a pill trigger when dismissed and re-expanding when pressed.",
+		usage: `import {
+  CollapsibleContextBar,
+  ContextBar,
+  ContextBarLead,
+  ContextBarTag,
+  ContextBarTrigger,
+} from "@/components/ui-custom/context-bar";
+
+// Self-contained collapsible bar
+<CollapsibleContextBar
+  lead={<EditIcon label="" size="small" />}
+  leadLabel="Edit:"
+  collapsedIcon={<EditIcon label="" size="small" />}
+  collapsedLabel="Edit agent"
+  triggerAriaLabel="Edit agent: Research assistant"
+>
+  <ContextBarTag color="blue" title="Research assistant">
+    Research assistant
+  </ContextBarTag>
+</CollapsibleContextBar>
+
+// Or compose the pieces manually
+<ContextBar onDismiss={handleDismiss}>
+  <ContextBarLead icon={<LocationIcon label="" size="small" />}>
+    Context:
+  </ContextBarLead>
+  <ContextBarTag color="blue" title="Q3 launch plan">Q3 launch plan</ContextBarTag>
+</ContextBar>`,
+		props: [
+			{
+				name: "onDismiss",
+				type: "() => void",
+				description:
+					"ContextBar only. Dismiss handler. When omitted, a non-interactive placeholder keeps the layout stable.",
+			},
+			{
+				name: "dismissLabel",
+				type: "string",
+				default: '"Close"',
+				description: "Accessible label for the dismiss button.",
+			},
+			{
+				name: "leadLabel",
+				type: "string",
+				required: true,
+				description: "CollapsibleContextBar only. Prefix label shown before the tag (e.g. \"Edit:\").",
+			},
+			{
+				name: "collapsedLabel",
+				type: "string",
+				required: true,
+				description: "CollapsibleContextBar only. Label for the collapsed pill trigger.",
+			},
+			{
+				name: "lead",
+				type: "ReactNode",
+				description: "CollapsibleContextBar only. Lead icon rendered before the label.",
+			},
+			{
+				name: "collapsedIcon",
+				type: "ReactNode",
+				description: "CollapsibleContextBar only. Icon rendered inside the collapsed pill trigger.",
+			},
+			{
+				name: "defaultOpen",
+				type: "boolean",
+				default: "true",
+				description: "CollapsibleContextBar only. Whether the bar starts expanded. Remount with a key to reset.",
+			},
+			{
+				name: "triggerAriaLabel",
+				type: "string",
+				description: "CollapsibleContextBar only. Accessible label for the collapsed pill trigger.",
+			},
+		],
+		subComponents: [
+			{ name: "ContextBar", description: "Expanded bar above a composer. Renders children (lead + tag) on the left and the dismiss affordance on the right." },
+			{ name: "ContextBarLead", description: "Lead icon plus label (e.g. \"Edit:\" / \"Context:\") rendered inside ContextBar." },
+			{ name: "ContextBarTag", description: "Truncating chip naming the active context. Wraps the Tag primitive with overflow handling and an optional elemBefore icon or avatar." },
+			{ name: "ContextBarTrigger", description: "Collapsed pill that brings the bar back. A styled button accepting an icon and label." },
+			{ name: "CollapsibleContextBar", description: "Self-contained variant that owns its open state: starts expanded, collapses to ContextBarTrigger on dismiss, and re-expands when the trigger is pressed." },
+		],
+		examples: [
+			{ title: "Collapsible", description: "Self-contained bar that collapses to a pill on dismiss and re-expands when pressed.", demoSlug: "context-bar-demo-collapsible" },
+			{ title: "Dismissible", description: "Manually composed bar with lead, tag, and a dismiss handler.", demoSlug: "context-bar-demo-dismissible" },
+			{ title: "Trigger pill", description: "The standalone collapsed trigger pill on its own.", demoSlug: "context-bar-demo-trigger" },
+		],
+	},
+
 	image: {
 		description:
 			"Renders AI-generated images from the AI SDK's Experimental_GeneratedImage type. Converts base64-encoded image data into a responsive img element with data URI source.",
