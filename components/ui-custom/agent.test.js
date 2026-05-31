@@ -209,3 +209,65 @@ test("Shared toolbar carries the Confluence editor control set", () => {
 		assert.match(RICH_TEXT_TOOLBAR_SOURCE, new RegExp(command, "u"));
 	}
 });
+
+test("Shared toolbar builds on/off controls with Toggle and ToggleGroup", () => {
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /import MarkdownIcon from "@atlaskit\/icon\/core\/markdown";/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /import \{ Toggle \} from "@\/components\/ui\/toggle";/u);
+	assert.match(
+		RICH_TEXT_TOOLBAR_SOURCE,
+		/import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u,
+	);
+
+	// Bold and bulleted list are now editor-controlled Toggles, not variant Buttons.
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<Toggle[\s\S]*pressed=\{editor\.isActive\("bold"\)\}/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /pressed=\{editor\.isActive\("bulletList"\)\}/u);
+	assert.doesNotMatch(
+		RICH_TEXT_TOOLBAR_SOURCE,
+		/variant=\{editor\.isActive\("bold"\) \? "secondary" : "ghost"\}/u,
+	);
+
+	// Link + Markdown form one controlled multi-select ToggleGroup.
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<ToggleGroup\s+multiple/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<ToggleGroupItem\s+value="link"/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /value="markdown"/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<MarkdownIcon label="" size="small" \/>/u);
+});
+
+test("Shared toolbar exposes a Markdown view toggle gated by a handler", () => {
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /isMarkdownMode\?: boolean;/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /onToggleMarkdownMode\?: \(\) => void;/u);
+	// Markdown item only renders when a toggle handler is supplied (omitted in bubble/floating menus).
+	assert.match(
+		RICH_TEXT_TOOLBAR_SOURCE,
+		/onToggleMarkdownMode \?\s*\([\s\S]*value="markdown"/u,
+	);
+	// Formatting controls disable while editing raw Markdown.
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /const formattingDisabled = isMarkdownMode;/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /disabled=\{formattingDisabled\}/u);
+});
+
+test("Markdown source toggle round-trips through the shared editor", () => {
+	assert.match(
+		RICH_TEXT_EDITOR_SOURCE,
+		/const \[isMarkdownMode, setIsMarkdownMode\] = useState\(false\);/u,
+	);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /const \[markdownSource, setMarkdownSource\] = useState\(""\);/u);
+	// Entering source mode snapshots the rendered doc as Markdown.
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /setMarkdownSource\(editor\.getMarkdown\(\)\)/u);
+	// Leaving source mode re-parses the edited Markdown back into the editor.
+	assert.match(
+		RICH_TEXT_EDITOR_SOURCE,
+		/editor\.commands\.setContent\(markdownSource, \{[\s\S]*contentType: "markdown",[\s\S]*emitUpdate: false/u,
+	);
+	// Source mode renders an editable textarea instead of EditorContent.
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /isMarkdownMode \? \(\s*<textarea/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /data-rich-text-markdown-source/u);
+	// The parent stays live-synced while editing source.
+	assert.match(
+		RICH_TEXT_EDITOR_SOURCE,
+		/function handleMarkdownSourceChange\(next: string\): void \{[\s\S]*onMarkdownChangeRef\.current\?\.\(next\);/u,
+	);
+	// The toolbar receives the toggle wiring; bubble/floating menus hide in source mode.
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /onToggleMarkdownMode=\{handleToggleMarkdownMode\}/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /showBubbleMenu && editor && !isMarkdownMode/u);
+});
