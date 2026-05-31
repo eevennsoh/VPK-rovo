@@ -4185,7 +4185,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 								/>
 							</div>
 
-							<CreateButton windowWidth={nav.windowWidth} />
+							<CreateButton />
 						</div>
 						<RightNavigation
 							product="studio"

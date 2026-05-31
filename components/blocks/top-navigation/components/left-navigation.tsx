@@ -144,14 +144,12 @@ export function LeftNavigation({
 					<span className="inline-flex shrink-0 [&_svg]:!size-6">
 						<Icon variant="icon" size="small" />
 					</span>
-					{windowWidth >= 1028 ? (
-						<span
-							className="max-w-[280px] truncate text-sm font-bold text-text"
-							style={{ paddingRight: token("space.025") }}
-						>
-							{name}
-						</span>
-					) : null}
+					<span
+						className="hidden min-[1028px]:inline max-w-[280px] truncate text-sm font-bold text-text"
+						style={{ paddingRight: token("space.025") }}
+					>
+						{name}
+					</span>
 				</Button>
 			</div>
 		</div>
