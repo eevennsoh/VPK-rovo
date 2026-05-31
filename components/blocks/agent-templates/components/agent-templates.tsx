@@ -349,7 +349,7 @@ export function AgentTemplatesDialog({
 								) : (
 									<>
 										<span className="block">{activeCategoryOption.titleLines[0]}</span>
-										<span className="block">{activeCategoryOption.titleLines[1]}</span>
+										<span className="block text-text-subtlest">{activeCategoryOption.titleLines[1]}</span>
 									</>
 								)}
 							</motion.span>
