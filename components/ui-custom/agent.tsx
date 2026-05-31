@@ -406,7 +406,7 @@ function AgentMissingConfigActions({
 
 function AgentSectionLabel({ children }: Readonly<{ children: ReactNode }>) {
 	return (
-		<div className="flex h-8 items-center text-xs font-semibold leading-4 text-text-subtlest">
+		<div className="flex min-h-5 items-center text-xs font-semibold leading-4 text-text-subtlest">
 			{children}
 		</div>
 	);
@@ -450,15 +450,17 @@ function AgentAddValueButton({
 	onClick,
 }: Readonly<{ className?: string; label: string; onClick?: () => void }>) {
 	return (
-		<Button
-			className={cn("text-text-subtle", className)}
-			size="sm"
-			variant="ghost"
+		<button
+			type="button"
+			className={cn(
+				"inline-flex h-5 items-center gap-0.5 rounded-xs text-xs font-medium text-text-subtle transition-colors hover:text-text hover:underline focus-visible:text-text focus-visible:underline focus-visible:outline-none",
+				className
+			)}
 			onClick={onClick}
 		>
-			<AddIcon label="" size="small" />
+			<span aria-hidden>+</span>
 			{label}
-		</Button>
+		</button>
 	);
 }
 
@@ -489,12 +491,12 @@ function AgentFilledSummaryRow({
 
 	return (
 		<div
-			className="group/agent-row -mx-2 grid gap-x-5 gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:grid-cols-[8rem_minmax(0,1fr)]"
+			className="group/agent-row -mx-2 grid items-center gap-x-5 gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:grid-cols-[8rem_minmax(0,1fr)]"
 			data-agent-field={agentFieldName}
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
 			<AgentSectionLabel>{label}</AgentSectionLabel>
-			<div className="flex min-h-8 min-w-0 flex-wrap items-center gap-1.5">
+			<div className="flex min-h-5 min-w-0 flex-wrap items-center gap-1.5">
 				{items.map((item, index) => (
 					variant === "skill" ? (
 						<AgentSkillChip key={`${label}-${item}-${index}`} label={item} />
@@ -535,23 +537,23 @@ function AgentFilledConfigSummary({
 	const starterItems = getNonEmptyConfigItems(config.conversationStarters).slice(0, MAX_AGENT_CONVERSATION_STARTERS);
 
 	return (
-		<div className="space-y-2">
+		<div>
 			<AgentFilledSummaryRow
-				addLabel="Add triggers"
+				addLabel="Add"
 				agentFieldName="trigger"
 				items={triggerItems}
 				label="Triggers"
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
 			/>
 			<AgentFilledSummaryRow
-				addLabel="Add skills"
+				addLabel="Add"
 				items={skillItems}
 				label="Skills"
 				variant="skill"
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined}
 			/>
 			<AgentFilledSummaryRow
-				addLabel="Add tools"
+				addLabel="Add"
 				agentFieldName="tools"
 				items={toolItems}
 				label="Tools"
@@ -559,19 +561,19 @@ function AgentFilledConfigSummary({
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
 			/>
 			<AgentFilledSummaryRow
-				addLabel="Add subagents"
+				addLabel="Add"
 				items={subagentItems}
 				label="Subagents"
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
 			/>
 			<AgentFilledSummaryRow
-				addLabel="Add knowledge"
+				addLabel="Add"
 				items={knowledgeItems}
 				label="Knowledge"
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
 			/>
 			<AgentFilledSummaryRow
-				addLabel="Add conversation starters"
+				addLabel="Add"
 				agentFieldName="conversationStarters"
 				items={starterItems}
 				label="Conversation starters"
