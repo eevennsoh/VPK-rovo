@@ -286,7 +286,7 @@ function StudioSidebarNavigation({
 											onClick={isAgentsItem ? onNewChat : item.onClick}
 										/>
 										{shouldShowRecentAgents ? (
-											<div className="flex flex-col gap-0.5 pl-3">
+											<div className="flex flex-col pl-3">
 												{recentAgents.items.map((recentAgent) => {
 													const isCreating = recentAgent.kind === "wip";
 
