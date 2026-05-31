@@ -191,8 +191,6 @@ test("Shared toolbar carries the Confluence editor control set", () => {
 		"Bulleted list",
 		"Numbered list",
 		"Link",
-		"Comment",
-		"More options",
 	]) {
 		assert.match(RICH_TEXT_TOOLBAR_SOURCE, new RegExp(control, "u"));
 	}
@@ -211,7 +209,7 @@ test("Shared toolbar carries the Confluence editor control set", () => {
 	}
 });
 
-test("Shared toolbar builds on/off controls with Toggle and ToggleGroup", () => {
+test("Shared toolbar groups related split controls and keeps unrelated toggles independent", () => {
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /import MarkdownIcon from "@atlaskit\/icon\/core\/markdown";/u);
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /import \{ Toggle \} from "@\/components\/ui\/toggle";/u);
 	assert.match(
@@ -219,28 +217,57 @@ test("Shared toolbar builds on/off controls with Toggle and ToggleGroup", () => 
 		/import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u,
 	);
 
-	// Bold and bulleted list are editor-controlled Toggles (unpressed in source mode).
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /pressed=\{!isMarkdownMode && editor\.isActive\("bold"\)\}/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /pressed=\{!isMarkdownMode && editor\.isActive\("bulletList"\)\}/u);
+	// Bold + formatting and bulleted list + list options are related split controls.
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /const formattingValue = \[/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /const listValue = \[/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /value=\{formattingValue\}[\s\S]*value="bold"[\s\S]*value="formatting"/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /value=\{listValue\}[\s\S]*value="bulletList"[\s\S]*value="list"/u);
+
+	// Link and Markdown are separate Toggles because their states are unrelated.
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /pressed=\{!isMarkdownMode && editor\.isActive\("link"\)\}/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /aria-label="Link"[\s\S]*onPressedChange=\{handleLinkPressedChange\}/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /pressed=\{isMarkdownMode\}/u);
+	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /value="link"/u);
+	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /value="markdown"/u);
 	assert.doesNotMatch(
 		RICH_TEXT_TOOLBAR_SOURCE,
 		/variant=\{editor\.isActive\("bold"\) \? "secondary" : "ghost"\}/u,
 	);
-
-	// Link + Markdown form one controlled multi-select ToggleGroup.
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<ToggleGroup\s+multiple/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<ToggleGroupItem\s+value="link"/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /value="markdown"/u);
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<MarkdownIcon label="" size="small" \/>/u);
+});
+
+test("Shared rich text editor omits the placeholder Comment control", () => {
+	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /@atlaskit\/icon\/core\/comment/u);
+	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, />\s*Comment\s*</u);
+	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /showCommentControl/u);
+	assert.doesNotMatch(RICH_TEXT_EDITOR_SOURCE, /showCommentControl/u);
+});
+
+test("Shared rich text editor omits the trailing More options control", () => {
+	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /@atlaskit\/icon\/core\/show-more-horizontal/u);
+	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /aria-label="More options"/u);
+	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /showMoreControl/u);
+	assert.doesNotMatch(RICH_TEXT_EDITOR_SOURCE, /showMoreControl/u);
+});
+
+test("Shared toolbar dropdown menus avoid perimeter shadow strokes", () => {
+	assert.match(
+		RICH_TEXT_TOOLBAR_SOURCE,
+		/function DropdownMenuContainer[\s\S]*bg-popover p-1 text-popover-foreground shadow-2xl/u,
+	);
+	assert.doesNotMatch(
+		RICH_TEXT_TOOLBAR_SOURCE,
+		/function DropdownMenuContainer[\s\S]*bg-popover p-1 text-popover-foreground shadow-xl/u,
+	);
 });
 
 test("Shared toolbar exposes a Markdown view toggle gated by a handler", () => {
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /isMarkdownMode\?: boolean;/u);
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /onToggleMarkdownMode\?: \(\) => void;/u);
-	// Markdown item only renders when a toggle handler is supplied (omitted in bubble/floating menus).
+	// Markdown toggle only renders when a toggle handler is supplied (omitted in bubble/floating menus).
 	assert.match(
 		RICH_TEXT_TOOLBAR_SOURCE,
-		/onToggleMarkdownMode \?\s*\([\s\S]*value="markdown"/u,
+		/onToggleMarkdownMode \?\s*\([\s\S]*<Toggle[\s\S]*Show Markdown source/u,
 	);
 });
 
@@ -259,7 +286,7 @@ test("Source-mode toolbar controls apply Markdown syntax instead of disabling", 
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /runFormat\("bulletList",/u);
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /runFormat\("orderedList",/u);
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /TEXT_STYLE_TO_MARKDOWN/u);
-	// Only alignment + comment (no Markdown equivalent) stay disabled in source mode.
+	// Only alignment (no Markdown equivalent) stays disabled in source mode.
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /const markdownUnsupported = isMarkdownMode;/u);
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /disabled=\{markdownUnsupported\}/u);
 	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /formattingDisabled/u);
