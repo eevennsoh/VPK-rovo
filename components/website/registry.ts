@@ -4780,7 +4780,7 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  // Menu Group
+  // Menu
   "menu-group-demo-default": dynamic(
     () =>
       import("./demos/ui/menu-group-demo").then((mod) => ({

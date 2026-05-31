@@ -239,7 +239,7 @@ export const UI_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	uiComponent("label"),
 	uiComponent("logo", "Logo"),
 	uiComponent("lozenge"),
-	uiComponent("menu-group", "Menu Group"),
+	uiComponent("menu-group", "Menu"),
 	uiComponent("menubar"),
 	uiComponent("native-select", "Native Select"),
 	uiComponent("navigation-menu", "Navigation Menu"),

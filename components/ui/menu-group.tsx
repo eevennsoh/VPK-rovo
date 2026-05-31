@@ -2,6 +2,20 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+const menuLabelClassName =
+	"text-text-subtlest px-3 py-2 text-xs leading-4 font-semibold"
+
+const menuSeparatorClassName = "bg-border mx-1 my-1 h-px"
+
+const menuItemClassName =
+	"flex w-full items-center gap-3 rounded-sm px-3 py-2 text-left text-sm leading-5 transition-colors"
+
+const menuIconBeforeClassName =
+	"text-icon inline-flex size-6 shrink-0 items-center justify-center [&>svg]:size-4"
+
+const menuIconAfterClassName =
+	"text-icon-subtle inline-flex size-5 shrink-0 items-center justify-center [&>svg]:size-4"
+
 // ---------------------------------------------------------------------------
 // MenuGroup — root container
 // ---------------------------------------------------------------------------
@@ -32,9 +46,7 @@ function MenuGroup({
 			{...props}
 		>
 			{title ? (
-				<div className="text-text-subtle px-3 py-2 text-xs leading-4 font-medium">
-					{title}
-				</div>
+				<div className={menuLabelClassName}>{title}</div>
 			) : null}
 			{children}
 		</div>
@@ -60,21 +72,19 @@ function MenuSection({
 	...props
 }: Readonly<MenuSectionProps>) {
 	return (
-		<div
-			data-slot="menu-section"
-			role="group"
-			aria-label={title}
-			className={cn("p-1", className)}
-			{...props}
-		>
-			{hasSeparator ? <div className="bg-border mx-1 my-1 h-px" role="separator" /> : null}
-			{title ? (
-				<div className="text-text-subtle px-3 py-2 text-xs leading-4 font-medium">
-					{title}
-				</div>
-			) : null}
-			{children}
-		</div>
+		<>
+			{hasSeparator ? <div className={menuSeparatorClassName} role="separator" /> : null}
+			<div
+				data-slot="menu-section"
+				role="group"
+				aria-label={title}
+				className={cn("p-1", className)}
+				{...props}
+			>
+				{title ? <div className={menuLabelClassName}>{title}</div> : null}
+				{children}
+			</div>
+		</>
 	)
 }
 
@@ -112,7 +122,7 @@ function MenuItem({
 			aria-disabled={disabled || undefined}
 			disabled={disabled}
 			className={cn(
-				"flex w-full items-start gap-3 rounded-sm px-3 py-2 text-left text-[13px] leading-5 transition-colors",
+				menuItemClassName,
 				"hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
 				"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
 				"disabled:pointer-events-none disabled:opacity-(--opacity-disabled)",
@@ -123,9 +133,7 @@ function MenuItem({
 			{...props}
 		>
 			{iconBefore ? (
-				<span className="text-icon flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
-					{iconBefore}
-				</span>
+				<span className={menuIconBeforeClassName}>{iconBefore}</span>
 			) : null}
 			<span className="flex min-w-0 flex-1 flex-col">
 				<span className="text-text truncate">{children}</span>
@@ -136,9 +144,7 @@ function MenuItem({
 				) : null}
 			</span>
 			{iconAfter ? (
-				<span className="text-icon-subtle flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
-					{iconAfter}
-				</span>
+				<span className={menuIconAfterClassName}>{iconAfter}</span>
 			) : null}
 		</button>
 	)
@@ -170,7 +176,8 @@ function MenuLinkItem({
 			data-slot="menu-link-item"
 			role="menuitem"
 			className={cn(
-				"flex w-full items-start gap-3 rounded-sm px-3 py-2 text-left text-[13px] leading-5 no-underline transition-colors",
+				menuItemClassName,
+				"no-underline",
 				"hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
 				"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
 				"[div[data-spacing=compact]_&]:py-1",
@@ -179,9 +186,7 @@ function MenuLinkItem({
 			{...props}
 		>
 			{iconBefore ? (
-				<span className="text-icon flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
-					{iconBefore}
-				</span>
+				<span className={menuIconBeforeClassName}>{iconBefore}</span>
 			) : null}
 			<span className="flex min-w-0 flex-1 flex-col">
 				<span className="text-text truncate">{children}</span>
@@ -192,9 +197,7 @@ function MenuLinkItem({
 				) : null}
 			</span>
 			{iconAfter ? (
-				<span className="text-icon-subtle flex size-4 shrink-0 items-center justify-center [&>svg]:size-4">
-					{iconAfter}
-				</span>
+				<span className={menuIconAfterClassName}>{iconAfter}</span>
 			) : null}
 		</a>
 	)
@@ -212,7 +215,7 @@ function MenuHeading({ className, children, ...props }: Readonly<MenuHeadingProp
 			data-slot="menu-heading"
 			role="presentation"
 			className={cn(
-				"text-text-subtle px-3 py-2 text-xs leading-4 font-medium",
+				menuLabelClassName,
 				className,
 			)}
 			{...props}
