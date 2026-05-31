@@ -59,6 +59,8 @@ export function RichTextEditor({
 	const onMarkdownChangeRef = useRef(onMarkdownChange);
 	const onPlainTextChangeRef = useRef(onPlainTextChange);
 	const [isEmpty, setIsEmpty] = useState(() => !value?.trim());
+	const [isMarkdownMode, setIsMarkdownMode] = useState(false);
+	const [markdownSource, setMarkdownSource] = useState("");
 	const extensions = useMemo(
 		() => createRichTextEditorExtensions({
 			getMentionSources: () => mentionSourcesRef.current,
@@ -114,6 +116,32 @@ export function RichTextEditor({
 		setIsEmpty(!nextValue.trim());
 	}, [editor, value]);
 
+	function handleToggleMarkdownMode(): void {
+		if (!editor) {
+			return;
+		}
+
+		if (isMarkdownMode) {
+			editor.commands.setContent(markdownSource, {
+				contentType: "markdown",
+				emitUpdate: false,
+			});
+			setIsEmpty(!markdownSource.trim());
+			setIsMarkdownMode(false);
+			return;
+		}
+
+		setMarkdownSource(editor.getMarkdown());
+		setIsMarkdownMode(true);
+	}
+
+	function handleMarkdownSourceChange(next: string): void {
+		setMarkdownSource(next);
+		setIsEmpty(!next.trim());
+		onMarkdownChangeRef.current?.(next);
+		onPlainTextChangeRef.current?.(next);
+	}
+
 	return (
 		<div className={cn("space-y-2", className)} {...props}>
 			{showToolbar && editor ? (
@@ -122,6 +150,8 @@ export function RichTextEditor({
 					endSlot={toolbarEndSlot}
 					showCommentControl={showCommentControl}
 					showMoreControl={showMoreControl}
+					isMarkdownMode={isMarkdownMode}
+					onToggleMarkdownMode={handleToggleMarkdownMode}
 				/>
 			) : null}
 			<div
@@ -135,15 +165,29 @@ export function RichTextEditor({
 						: undefined
 					}
 				>
-				<EditorContent editor={editor} />
-				{showBubbleMenu && editor ? (
+				{isMarkdownMode ? (
+					<textarea
+						className={cn(
+							"min-h-24 w-full resize-none bg-transparent font-mono text-sm leading-relaxed text-text outline-none field-sizing-content",
+							editorClassName,
+						)}
+						aria-label={`${ariaLabel ?? "Rich text editor"} Markdown source`}
+						data-rich-text-markdown-source
+						placeholder={placeholder}
+						value={markdownSource}
+						onChange={(event) => handleMarkdownSourceChange(event.target.value)}
+					/>
+				) : (
+					<EditorContent editor={editor} />
+				)}
+				{showBubbleMenu && editor && !isMarkdownMode ? (
 					<RichTextEditorBubbleMenu
 						editor={editor}
 						showCommentControl={showCommentControl}
 						showMoreControl={showMoreControl}
 					/>
 				) : null}
-				{showFloatingMenu && editor ? (
+				{showFloatingMenu && editor && !isMarkdownMode ? (
 					<RichTextEditorFloatingMenu
 						editor={editor}
 						showCommentControl={showCommentControl}

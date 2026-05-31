@@ -13,6 +13,7 @@ import CommentIcon from "@atlaskit/icon/core/comment";
 import LinkIcon from "@atlaskit/icon/core/link";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import ListNumberedIcon from "@atlaskit/icon/core/list-numbered";
+import MarkdownIcon from "@atlaskit/icon/core/markdown";
 import QuotationMarkIcon from "@atlaskit/icon/core/quotation-mark";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import TextIcon from "@atlaskit/icon/core/text";
@@ -26,6 +27,8 @@ import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 
 import { useClickOutside } from "@/components/hooks/use-click-outside";
 import { Button } from "@/components/ui/button";
+import { Toggle } from "@/components/ui/toggle";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 
 type DropdownType = "textStyle" | "formatting" | "list" | "align" | null;
@@ -40,6 +43,8 @@ interface RichTextEditorToolbarProps {
 	endSlot?: ReactNode;
 	showCommentControl?: boolean;
 	showMoreControl?: boolean;
+	isMarkdownMode?: boolean;
+	onToggleMarkdownMode?: () => void;
 }
 
 interface RichTextEditorBubbleMenuProps {
@@ -203,6 +208,8 @@ export function RichTextEditorToolbar({
 	endSlot,
 	showCommentControl = true,
 	showMoreControl = true,
+	isMarkdownMode = false,
+	onToggleMarkdownMode,
 }: Readonly<RichTextEditorToolbarProps>) {
 	const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
 	const toolbarRef = useRef<HTMLDivElement>(null);
@@ -211,9 +218,20 @@ export function RichTextEditorToolbar({
 		[]
 	);
 	const alignment = getCurrentAlignment(editor);
+	const formattingDisabled = isMarkdownMode;
+	const actionValue = [
+		...(editor.isActive("link") ? ["link"] : []),
+		...(isMarkdownMode ? ["markdown"] : []),
+	];
 
 	useEditorTransactionRerender(editor);
 	useClickOutside(outsideRefs, () => setOpenDropdown(null), openDropdown !== null);
+
+	useEffect(() => {
+		if (isMarkdownMode) {
+			setOpenDropdown(null);
+		}
+	}, [isMarkdownMode]);
 
 	function toggleDropdown(dropdown: DropdownType): void {
 		setOpenDropdown((current) => (current === dropdown ? null : dropdown));
@@ -233,6 +251,24 @@ export function RichTextEditorToolbar({
 		closeDropdown();
 	}
 
+	function handleActionValueChange(next: string[]): void {
+		const linkNext = next.includes("link");
+
+		if (linkNext !== editor.isActive("link")) {
+			if (linkNext) {
+				addLink(editor);
+			} else {
+				editor.chain().focus().unsetLink().run();
+			}
+		}
+
+		const markdownNext = next.includes("markdown");
+
+		if (markdownNext !== isMarkdownMode) {
+			onToggleMarkdownMode?.();
+		}
+	}
+
 	return (
 		<div
 			ref={toolbarRef}
@@ -248,6 +284,7 @@ export function RichTextEditorToolbar({
 							aria-expanded={openDropdown === "textStyle"}
 							size="icon"
 							variant="ghost"
+							disabled={formattingDisabled}
 							onClick={() => toggleDropdown("textStyle")}
 						>
 							{renderCurrentTextStyleIcon(editor)}
@@ -292,21 +329,21 @@ export function RichTextEditorToolbar({
 					</div>
 
 					<div className="relative flex">
-						<Button
-							type="button"
+						<Toggle
 							aria-label="Bold"
-							size="icon"
-							variant={editor.isActive("bold") ? "secondary" : "ghost"}
-							onClick={() => editor.chain().focus().toggleBold().run()}
+							pressed={editor.isActive("bold")}
+							disabled={formattingDisabled}
+							onPressedChange={() => editor.chain().focus().toggleBold().run()}
 						>
 							<TextBoldIcon label="" size="small" />
-						</Button>
+						</Toggle>
 						<Button
 							type="button"
 							aria-label="More formatting options"
 							aria-expanded={openDropdown === "formatting"}
 							size="icon"
 							variant="ghost"
+							disabled={formattingDisabled}
 							onClick={() => toggleDropdown("formatting")}
 						>
 							<ChevronDownIcon label="" size="small" />
@@ -345,21 +382,21 @@ export function RichTextEditorToolbar({
 					</div>
 
 					<div className="relative flex">
-						<Button
-							type="button"
+						<Toggle
 							aria-label="Bulleted list"
-							size="icon"
-							variant={editor.isActive("bulletList") ? "secondary" : "ghost"}
-							onClick={() => editor.chain().focus().toggleBulletList().run()}
+							pressed={editor.isActive("bulletList")}
+							disabled={formattingDisabled}
+							onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
 						>
 							<ListBulletedIcon label="" size="small" />
-						</Button>
+						</Toggle>
 						<Button
 							type="button"
 							aria-label="More list options"
 							aria-expanded={openDropdown === "list"}
 							size="icon"
 							variant="ghost"
+							disabled={formattingDisabled}
 							onClick={() => toggleDropdown("list")}
 						>
 							<ChevronDownIcon label="" size="small" />
@@ -395,6 +432,7 @@ export function RichTextEditorToolbar({
 							aria-expanded={openDropdown === "align"}
 							size="icon"
 							variant="ghost"
+							disabled={formattingDisabled}
 							onClick={() => toggleDropdown("align")}
 						>
 							{renderCurrentAlignmentIcon(alignment)}
@@ -423,18 +461,39 @@ export function RichTextEditorToolbar({
 						) : null}
 					</div>
 
-					<Button
-						type="button"
-						aria-label="Link"
-						size="icon"
-						variant={editor.isActive("link") ? "secondary" : "ghost"}
-						onClick={() => addLink(editor)}
+					<ToggleGroup
+						multiple
+						value={actionValue}
+						onValueChange={handleActionValueChange}
 					>
-						<LinkIcon label="" size="small" />
-					</Button>
+						<ToggleGroupItem
+							value="link"
+							aria-label="Link"
+							disabled={formattingDisabled}
+						>
+							<LinkIcon label="" size="small" />
+						</ToggleGroupItem>
+						{onToggleMarkdownMode ? (
+							<ToggleGroupItem
+								value="markdown"
+								aria-label={
+									isMarkdownMode
+										? "Show rendered editor"
+										: "Show Markdown source"
+								}
+							>
+								<MarkdownIcon label="" size="small" />
+							</ToggleGroupItem>
+						) : null}
+					</ToggleGroup>
 
 					{showCommentControl ? (
-						<Button type="button" className="gap-2" variant="ghost">
+						<Button
+							type="button"
+							className="gap-2"
+							variant="ghost"
+							disabled={formattingDisabled}
+						>
 							<CommentIcon label="" size="small" />
 							Comment
 						</Button>
