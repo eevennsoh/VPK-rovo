@@ -127,6 +127,33 @@ const REALTIME_THREAD_SUMMARY_MAX_MESSAGES = 10;
 const REALTIME_RESULT_SUMMARY_MAX_CHARS = 500;
 const ROVO_APP_SPLIT_CHAT_PANEL_ID = "rovo-app-chat-pane";
 const ROVO_APP_SPLIT_ARTIFACT_PANEL_ID = "rovo-app-artifact-pane";
+const START_FROM_SCRATCH_AGENT_AVATAR_SRCS = [
+	"/avatar-agent/dev-agents/wildcard-1.svg",
+	"/avatar-agent/dev-agents/wildcard-2.svg",
+	"/avatar-agent/dev-agents/wildcard-3.svg",
+	"/avatar-agent/dev-agents/wildcard-4.svg",
+	"/avatar-agent/product-agents/wildcard-1.svg",
+	"/avatar-agent/product-agents/wildcard-2.svg",
+	"/avatar-agent/product-agents/wildcard-3.svg",
+	"/avatar-agent/product-agents/wildcard-4.svg",
+	"/avatar-agent/service-agents/wildcard-1.svg",
+	"/avatar-agent/service-agents/wildcard-2.svg",
+	"/avatar-agent/service-agents/wildcard-3.svg",
+	"/avatar-agent/service-agents/wildcard-4.svg",
+	"/avatar-agent/strategy-agents/wildcard-1.svg",
+	"/avatar-agent/strategy-agents/wildcard-2.svg",
+	"/avatar-agent/strategy-agents/wildcard-3.svg",
+	"/avatar-agent/strategy-agents/wildcard-4.svg",
+	"/avatar-agent/teamwork-agents/wildcard-1.svg",
+	"/avatar-agent/teamwork-agents/wildcard-2.svg",
+	"/avatar-agent/teamwork-agents/wildcard-3.svg",
+	"/avatar-agent/teamwork-agents/wildcard-4.svg",
+] as const;
+
+function getRandomStartFromScratchAgentAvatarSrc(): string {
+	const index = Math.floor(Math.random() * START_FROM_SCRATCH_AGENT_AVATAR_SRCS.length);
+	return START_FROM_SCRATCH_AGENT_AVATAR_SRCS[index] ?? START_FROM_SCRATCH_AGENT_AVATAR_SRCS[0];
+}
 
 type HomeStarterCategory = "analyze" | "brainstorm" | "review" | "summarize" | "create";
 
@@ -1764,6 +1791,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		const blankAgentResult: RovoDataParts["agent-result"] = {
 			action: "create",
 			agentId: `untitled-agent-${uniqueSuffix}`,
+			avatarSrc: getRandomStartFromScratchAgentAvatarSrc(),
 			name: "",
 			summary: "",
 		};
@@ -1822,6 +1850,16 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			studioAgentRegistry.commitSessionAgentPublishReady?.(profileId);
 		},
 		[studioAgentRegistry],
+	);
+
+	const handleTestAgent = useCallback(
+		(profileId: string) => {
+			studioAgentRegistry.commitSessionAgentPublishReady?.(profileId);
+			if (!embedded) {
+				nav.openChat("sidebar");
+			}
+		},
+		[embedded, nav, studioAgentRegistry],
 	);
 
 	const handlePublishAgent = useCallback(
@@ -3720,6 +3758,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			entry={activeSessionAgentEntry}
 			onCommitPublishReady={handleCommitAgentPublishReady}
 			onPublish={handlePublishAgent}
+			onTest={handleTestAgent}
 			onUpdateDraft={handleUpdateAgentDraft}
 		/>
 	) : null;

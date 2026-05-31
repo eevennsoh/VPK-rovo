@@ -139,6 +139,7 @@
 	--color-border-bold: var(--ds-border-bold); /* #7D818A */
 	--color-border-disabled: var(--ds-border-disabled); /* #0515240F */
 	--color-border-inverse: var(--ds-border-inverse); /* #FFFFFF */
+	--color-border-focused: var(--ds-border-focused); /* #4688EC */
 	--color-border-selected: var(--ds-border-selected); /* #1868DB */
 	--color-border-brand: var(--ds-border-brand); /* #1868DB */
 	--color-border-danger: var(--ds-border-danger); /* #E2483D */

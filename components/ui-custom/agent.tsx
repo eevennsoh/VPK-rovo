@@ -794,7 +794,7 @@ function AgentInstructionsComposer({
 				aria-label="Agent instructions"
 				className="space-y-2"
 				contentClassName="pt-2"
-				editorClassName="agent-instructions-tiptap-editor"
+				editorClassName="agent-instructions-tiptap-editor text-text"
 				placeholder="Describe the agent’s role and what it should do. @mention, or / for skills"
 				showBubbleMenu={false}
 				toolbarEndSlot={<AgentInstructionsModelSelector />}
@@ -855,8 +855,8 @@ export const AgentConfigFields = memo(
 							value={config.name ?? ""}
 							placeholder="Untitled agent"
 							editButtonLabel="Edit agent name"
-							readViewClassName="h-auto px-0 py-1 text-2xl leading-7 font-semibold"
-							inputProps={{ className: "h-auto px-0 py-1 text-2xl leading-7 font-semibold md:text-2xl" }}
+							readViewClassName="h-auto px-0 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"
+							inputProps={{ className: "h-auto border-2 px-0 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" }}
 							onConfirm={(value) => onTextChange?.("name", value)}
 						/>
 						<div
@@ -869,7 +869,7 @@ export const AgentConfigFields = memo(
 								editButtonLabel="Edit agent description"
 								multiline
 								readViewClassName="px-0"
-								textareaProps={{ rows: 1, className: "min-h-10 bg-bg-neutral-subtle px-0 focus-visible:ring-0 focus-visible:ring-offset-0 data-[variant=default]:border-transparent" }}
+								textareaProps={{ rows: 1, className: "min-h-10 bg-bg-neutral-subtle px-0 focus:border-2 focus:border-ring focus-visible:border-2 focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-[variant=default]:border-transparent data-[variant=default]:focus:border-ring data-[variant=default]:focus-visible:border-ring" }}
 								onConfirm={(value) => onTextChange?.("description", value)}
 							/>
 						</div>
