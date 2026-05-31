@@ -116,6 +116,12 @@ test("expanded agent variant renders Works with sources and Skills tags", () => 
 	assert.match(AGENT_EXPANDED_SOURCE, /label="Skills"/u);
 });
 
+test("expanded agent scroll mask only fades the sticky header edge", () => {
+	assert.match(AGENT_EXPANDED_SOURCE, /CARD_DIRECTORY_SCROLL_MASK_IMAGE/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /transparent 0, black var\(--scroll-mask-fade-size\), black 100%/u);
+	assert.doesNotMatch(AGENT_EXPANDED_SOURCE, /black calc\(100% - var\(--scroll-mask-fade-size\)\), transparent 100%/u);
+});
+
 test("expanded agent variant divides content and renders a metadata + collaborator footer", () => {
 	assert.match(AGENT_EXPANDED_SOURCE, /<div className="py-1\.5">\s*<Separator \/>\s*<\/div>/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /<AvatarGroup/u);
@@ -147,7 +153,8 @@ test("expanded agent variant pins the header and footer around a scrollable body
 	assert.match(AGENT_EXPANDED_SOURCE, /flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-2/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /<div className="pb-4">\s*<CardDirectoryCapabilities/u);
 	// the expanded shell owns clipping while body/footer restore their own padding
-	assert.match(AGENT_EXPANDED_SOURCE, /className=\{cn\("gap-0 overflow-clip p-0", className\)\}/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /border-0 p-0 after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:border after:border-border/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /hover:after:border-transparent focus-visible:after:border-transparent/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /shrink-0 overflow-clip border-t border-border bg-surface/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /className="justify-between px-4 py-3 transition-opacity/u);
 });

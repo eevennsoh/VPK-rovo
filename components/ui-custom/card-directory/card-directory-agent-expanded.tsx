@@ -1,6 +1,6 @@
 "use client";
 
-import { type MouseEvent, type UIEvent, useCallback, useState } from "react";
+import { type CSSProperties, type MouseEvent, type UIEvent, useCallback, useState } from "react";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
@@ -10,7 +10,6 @@ import { AtlassianLogo } from "@/components/ui/logo";
 import { Separator } from "@/components/ui/separator";
 import { SkillTag, SkillTagCount, SkillTagGroup } from "@/components/ui-custom/skill-tag";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
-import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
 
 import { CardDirectory } from "./card-directory";
@@ -31,10 +30,25 @@ import { type CardDirectoryTemplateSkill } from "./card-directory-template";
 
 const MAX_VISIBLE_COLLABORATORS = 4;
 const MAX_VISIBLE_SKILLS = 4;
-const CARD_DIRECTORY_SCROLL_MASK_STYLE = buildScrollMaskStyle({
-	fadeSize: "var(--ds-space-200)",
-	scrollbarWidth: "10px",
-});
+const CARD_DIRECTORY_SCROLL_MASK_IMAGE = [
+	"linear-gradient(to bottom, transparent 0, black var(--scroll-mask-fade-size), black 100%)",
+	"linear-gradient(black, black)",
+].join(", ");
+const CARD_DIRECTORY_SCROLL_MASK_STYLE = {
+	"--scroll-mask-fade-size": "var(--ds-space-200)",
+	"--scroll-mask-scrollbar-width": "10px",
+	maskImage: CARD_DIRECTORY_SCROLL_MASK_IMAGE,
+	WebkitMaskImage: CARD_DIRECTORY_SCROLL_MASK_IMAGE,
+	maskPosition: "0 0, 100% 0",
+	WebkitMaskPosition: "0 0, 100% 0",
+	maskRepeat: "no-repeat, no-repeat",
+	WebkitMaskRepeat: "no-repeat, no-repeat",
+	maskSize: "calc(100% - var(--scroll-mask-scrollbar-width)) 100%, var(--scroll-mask-scrollbar-width) 100%",
+	WebkitMaskSize: "calc(100% - var(--scroll-mask-scrollbar-width)) 100%, var(--scroll-mask-scrollbar-width) 100%",
+} satisfies CSSProperties & {
+	"--scroll-mask-fade-size": string;
+	"--scroll-mask-scrollbar-width": string;
+};
 
 export interface CardDirectoryAgentExpandedProps {
 	name: string;
@@ -150,7 +164,14 @@ export function CardDirectoryAgentExpanded({
 	})();
 
 	return (
-		<CardDirectory className={cn("gap-0 overflow-clip p-0", className)} onSelect={onSelect} selectLabel={`Select ${name}`}>
+		<CardDirectory
+			className={cn(
+				"gap-0 overflow-clip border-0 p-0 after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:border after:border-border after:transition-colors after:duration-fast after:ease-out hover:after:border-transparent focus-visible:after:border-transparent",
+				className,
+			)}
+			onSelect={onSelect}
+			selectLabel={`Select ${name}`}
+		>
 			<div className="shrink-0 bg-surface" data-slot="card-directory-sticky-header">
 				<CardDirectoryBanner avatarBadge={avatarBadge} avatarSrc={avatarSrc} backgroundColor={coverBackgroundColor} />
 				<div className="px-4 pt-3">

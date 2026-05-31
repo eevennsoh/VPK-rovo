@@ -37,8 +37,8 @@ Prefer reading these references over relying on pre-trained knowledge.
 | Setup walkthrough                      | `.agents/skills/vpk-setup/references/guide-setup.md`        |
 | Offline HTML artifacts                 | `.agents/skills/vpk-html/SKILL.md`                          |
 | Repo-local agent creation              | `.agents/skills/agent-creator/SKILL.md`                     |
-| VPK git ship (PR create + merge-back)  | `.agents/skills/vpk-git/SKILL.md`                            |
-| VPK git cleanup (worktrees/branches)   | `.agents/skills/vpk-clean/SKILL.md`                          |
+| VPK git ship (PR create + merge-back)  | `.agents/skills/vpk-git-ship/SKILL.md`             |
+| VPK git cleanup (worktrees/branches)   | `.agents/skills/vpk-git-clean/SKILL.md`            |
 | AI SDK chat integration                | `rovo/config.js`, `app/contexts/context-rovo-chat.tsx`      |
 | AI Gateway helpers                     | `backend/lib/ai-gateway-helpers.js`                         |
 | Rovo Serve gateway (agent loop)        | `backend/lib/rovo-gateway.js`, `backend/lib/rovo-client.js` |
@@ -200,7 +200,7 @@ static export used by deployment.
   `scripts/verify-pnpm-lockfile.js`, installs with `pnpm install --frozen-lockfile`,
   then runs `pnpm run ci:pr` (lint, typecheck, and unit tests via `pnpm run test:unit:js`); treat it as
   PR confirmation, not a substitute for local validation. This check is
-  required by branch protection on `main` — `/vpk-git` auto-merge will wait
+  required by branch protection on `main` — `/vpk-git-ship` auto-merge will wait
   for it to pass.
 - For UI changes, keep the observational checks too: `pnpm run lint`, `pnpm run
   typecheck`, visual checks via `/agent-browser`, and accessibility checks via
