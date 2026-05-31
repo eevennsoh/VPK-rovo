@@ -34,7 +34,7 @@ const avatarVariants = cva(
 			shape: {
 				circle: "rounded-full after:rounded-full",
 				square: "rounded-xs after:rounded-xs",
-				hexagon: `${HEXAGON_CLIP} after:border-0`,
+				hexagon: "after:border-0",
 			},
 		},
 		defaultVariants: {
@@ -83,23 +83,52 @@ function Avatar({
 	label,
 	...props
 }: Readonly<AvatarProps>) {
-	return (
-		<AvatarPrimitive.Root
-			data-slot="avatar"
+	const rootClassName = cn(
+		avatarVariants({ size, shape }),
+		disabled && "opacity-(--opacity-disabled) pointer-events-none grayscale",
+		className
+	)
+
+	// Hexagon avatars shape their content with a clip-path. A clip-path also clips
+	// every descendant, so corner overlays (badges, presence/status dots) would be
+	// sliced along the hexagon edge. Apply the clip to an inner frame that holds the
+	// content, and render overlays as unclipped siblings on the root.
+	if (shape === "hexagon") {
+		const childArray = React.Children.toArray(children)
+		const isOverlay = (child: React.ReactNode) =>
+			React.isValidElement(child) && AVATAR_OVERLAY_TYPES.has(child.type)
+
+		return (
+			<AvatarPrimitive.Root
+				data-slot="avatar"
 				data-size={size}
 				data-shape={shape}
 				aria-label={label}
 				aria-disabled={disabled || undefined}
-				className={cn(
-					avatarVariants({ size, shape }),
-					disabled && "opacity-(--opacity-disabled) pointer-events-none grayscale",
-					className
-				)}
+				className={rootClassName}
 				{...props}
 			>
-				{children}
-				{shape === "hexagon" ? <AvatarHexagonBorder /> : null}
+				<span className={cn("relative flex size-full items-center justify-center", HEXAGON_CLIP)}>
+					{childArray.filter((child) => !isOverlay(child))}
+				</span>
+				<AvatarHexagonBorder />
+				{childArray.filter(isOverlay)}
 			</AvatarPrimitive.Root>
+		)
+	}
+
+	return (
+		<AvatarPrimitive.Root
+			data-slot="avatar"
+			data-size={size}
+			data-shape={shape}
+			aria-label={label}
+			aria-disabled={disabled || undefined}
+			className={rootClassName}
+			{...props}
+		>
+			{children}
+		</AvatarPrimitive.Root>
 	)
 }
 
@@ -169,6 +198,7 @@ function AvatarUnassigned({
 			data-unassigned={kind}
 			className={cn(
 				"items-center justify-center bg-muted text-icon-subtle after:border-border",
+				isAgent && HEXAGON_CLIP,
 				className
 			)}
 			label={resolvedLabel}
@@ -247,6 +277,60 @@ function AvatarBadge({ className, ...props }: Readonly<AvatarBadgeProps>) {
 			)}
 			{...props}
 		/>
+	)
+}
+
+type AvatarCompanyBadgeProps = React.ComponentProps<"span">
+
+function AvatarCompanyBadge({
+	className,
+	children,
+	...props
+}: Readonly<AvatarCompanyBadgeProps>) {
+	return (
+		<span
+			data-slot="avatar-company-badge"
+			className={cn(
+				"bg-primary text-primary-foreground ring-background absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-lg ring-2 select-none",
+				"group-data-[size=xs]/avatar:size-2 group-data-[size=xs]/avatar:[&_svg]:hidden",
+				"group-data-[size=sm]/avatar:size-3 group-data-[size=sm]/avatar:[&_svg]:size-2",
+				"group-data-[size=default]/avatar:size-3.5 group-data-[size=default]/avatar:[&_svg]:size-2",
+				"group-data-[size=lg]/avatar:size-4 group-data-[size=lg]/avatar:[&_svg]:size-2.5",
+				"group-data-[size=xl]/avatar:size-4 group-data-[size=xl]/avatar:[&_svg]:size-2.5",
+				"group-data-[size=2xl]/avatar:size-6 group-data-[size=2xl]/avatar:[&_svg]:size-4",
+				className
+			)}
+			{...props}
+		>
+			{children}
+		</span>
+	)
+}
+
+type AvatarProjectBadgeProps = React.ComponentProps<"span">
+
+function AvatarProjectBadge({
+	className,
+	children,
+	...props
+}: Readonly<AvatarProjectBadgeProps>) {
+	return (
+		<span
+			data-slot="avatar-project-badge"
+			className={cn(
+				"bg-muted ring-background absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-xs ring-2 select-none [&_img]:size-full [&_img]:object-cover",
+				"group-data-[size=xs]/avatar:size-2 group-data-[size=xs]/avatar:[&_svg]:hidden",
+				"group-data-[size=sm]/avatar:size-3 group-data-[size=sm]/avatar:[&_svg]:size-2",
+				"group-data-[size=default]/avatar:size-3.5 group-data-[size=default]/avatar:[&_svg]:size-2",
+				"group-data-[size=lg]/avatar:size-4 group-data-[size=lg]/avatar:[&_svg]:size-2.5",
+				"group-data-[size=xl]/avatar:size-4 group-data-[size=xl]/avatar:[&_svg]:size-2.5",
+				"group-data-[size=2xl]/avatar:size-6 group-data-[size=2xl]/avatar:[&_svg]:size-4",
+				className
+			)}
+			{...props}
+		>
+			{children}
+		</span>
 	)
 }
 
@@ -331,6 +415,14 @@ function AvatarGroupCount({
 	)
 }
 
+const AVATAR_OVERLAY_TYPES: ReadonlySet<unknown> = new Set([
+	AvatarBadge,
+	AvatarCompanyBadge,
+	AvatarProjectBadge,
+	AvatarPresenceIndicator,
+	AvatarStatusIndicator,
+])
+
 export {
 	Avatar,
 	avatarVariants,
@@ -340,6 +432,8 @@ export {
 	AvatarGroup,
 	AvatarGroupCount,
 	AvatarBadge,
+	AvatarCompanyBadge,
+	AvatarProjectBadge,
 	AvatarPresenceIndicator,
 	AvatarStatusIndicator,
 	type AvatarProps,
@@ -348,6 +442,8 @@ export {
 	type AvatarUnassignedProps,
 	type AvatarUnassignedKind,
 	type AvatarBadgeProps,
+	type AvatarCompanyBadgeProps,
+	type AvatarProjectBadgeProps,
 	type AvatarGroupProps,
 	type AvatarGroupCountProps,
 	type AvatarPresenceIndicatorProps,

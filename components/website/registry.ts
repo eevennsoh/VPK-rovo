@@ -2373,6 +2373,20 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "avatar-demo-company": dynamic(
+    () =>
+      import("./demos/ui/avatar-demo").then((mod) => ({
+        default: mod.AvatarDemoCompany,
+      })),
+    { ssr: false },
+  ),
+  "avatar-demo-project": dynamic(
+    () =>
+      import("./demos/ui/avatar-demo").then((mod) => ({
+        default: mod.AvatarDemoProject,
+      })),
+    { ssr: false },
+  ),
   // Card
   "card-demo-default": dynamic(
     () =>

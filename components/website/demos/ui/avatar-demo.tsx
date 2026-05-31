@@ -1,8 +1,11 @@
 "use client";
 
+import Image from "next/image";
+
 import { CheckIcon, PlusIcon } from "@/components/ui/vpk-icons";
-import { Avatar, AvatarBadge, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage, AvatarPresenceIndicator, AvatarStatusIndicator, AvatarUnassigned } from "@/components/ui/avatar";
+import { Avatar, AvatarBadge, AvatarCompanyBadge, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage, AvatarPresenceIndicator, AvatarProjectBadge, AvatarStatusIndicator, AvatarUnassigned } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { AtlassianLogo } from "@/components/ui/logo";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 
 const PRIMARY_AVATAR_SRC = "/avatar-user/venn/venn.png";
@@ -483,6 +486,54 @@ export function AvatarDemoShapes() {
 				</Avatar>
 				<span className="text-xs text-text-subtle">Hexagon</span>
 			</div>
+		</div>
+	);
+}
+
+const AGENT_AVATAR_SRC = "/avatar-agent/dev-agents/code-planner.svg";
+const BADGE_SIZES = ["sm", "default", "lg", "xl", "2xl"] as const;
+
+export function AvatarDemoCompany() {
+	return (
+		<div className="flex flex-wrap items-end gap-4">
+			{BADGE_SIZES.map((size) => (
+				<div className="flex flex-col items-center gap-1" key={size}>
+					<Avatar shape="hexagon" size={size}>
+						<AvatarImage src={AGENT_AVATAR_SRC} alt="Code Planner" />
+						<AvatarFallback>CP</AvatarFallback>
+						<AvatarCompanyBadge>
+							<AtlassianLogo
+								appearance="inverse"
+								label=""
+								name="atlassian"
+								shouldUseNewLogoDesign
+								size="xxsmall"
+								themeAware={false}
+							/>
+						</AvatarCompanyBadge>
+					</Avatar>
+					<span className="text-xs text-text-subtle">{size}</span>
+				</div>
+			))}
+		</div>
+	);
+}
+
+export function AvatarDemoProject() {
+	return (
+		<div className="flex flex-wrap items-end gap-4">
+			{BADGE_SIZES.map((size) => (
+				<div className="flex flex-col items-center gap-1" key={size}>
+					<Avatar shape="hexagon" size={size}>
+						<AvatarImage src={AGENT_AVATAR_SRC} alt="Code Planner" />
+						<AvatarFallback>CP</AvatarFallback>
+						<AvatarProjectBadge>
+							<Image src="/avatar-project/group.svg" alt="" width={24} height={24} />
+						</AvatarProjectBadge>
+					</Avatar>
+					<span className="text-xs text-text-subtle">{size}</span>
+				</div>
+			))}
 		</div>
 	);
 }
