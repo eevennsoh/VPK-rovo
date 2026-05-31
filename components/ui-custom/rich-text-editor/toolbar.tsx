@@ -31,9 +31,19 @@ import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 
+import type { MarkdownFormatKind } from "./markdown-format";
+
 type DropdownType = "textStyle" | "formatting" | "list" | "align" | null;
 type TextStyleType = "normal" | "h1" | "h2" | "h3" | "quote";
 type Alignment = "left" | "center" | "right";
+
+const TEXT_STYLE_TO_MARKDOWN: Record<TextStyleType, MarkdownFormatKind> = {
+	normal: "normal",
+	h1: "h1",
+	h2: "h2",
+	h3: "h3",
+	quote: "quote",
+};
 
 interface RichTextEditorToolbarProps {
 	editor: Editor;
@@ -45,6 +55,7 @@ interface RichTextEditorToolbarProps {
 	showMoreControl?: boolean;
 	isMarkdownMode?: boolean;
 	onToggleMarkdownMode?: () => void;
+	onMarkdownFormat?: (kind: MarkdownFormatKind) => void;
 }
 
 interface RichTextEditorBubbleMenuProps {
@@ -210,6 +221,7 @@ export function RichTextEditorToolbar({
 	showMoreControl = true,
 	isMarkdownMode = false,
 	onToggleMarkdownMode,
+	onMarkdownFormat,
 }: Readonly<RichTextEditorToolbarProps>) {
 	const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
 	const toolbarRef = useRef<HTMLDivElement>(null);
@@ -218,9 +230,11 @@ export function RichTextEditorToolbar({
 		[]
 	);
 	const alignment = getCurrentAlignment(editor);
-	const formattingDisabled = isMarkdownMode;
+	// Alignment and comments have no raw-Markdown equivalent, so they stay disabled
+	// in source mode. Every other control rewrites the textarea selection instead.
+	const markdownUnsupported = isMarkdownMode;
 	const actionValue = [
-		...(editor.isActive("link") ? ["link"] : []),
+		...(!isMarkdownMode && editor.isActive("link") ? ["link"] : []),
 		...(isMarkdownMode ? ["markdown"] : []),
 	];
 
@@ -241,8 +255,19 @@ export function RichTextEditorToolbar({
 		setOpenDropdown(null);
 	}
 
+	// In source mode dispatch the Markdown-syntax transform; otherwise run the
+	// equivalent Tiptap command against the rendered document.
+	function runFormat(kind: MarkdownFormatKind, applyRich: () => void): void {
+		if (isMarkdownMode) {
+			onMarkdownFormat?.(kind);
+			return;
+		}
+
+		applyRich();
+	}
+
 	function handleTextStyle(style: TextStyleType): void {
-		setTextStyle(editor, style);
+		runFormat(TEXT_STYLE_TO_MARKDOWN[style], () => setTextStyle(editor, style));
 		closeDropdown();
 	}
 
@@ -252,10 +277,13 @@ export function RichTextEditorToolbar({
 	}
 
 	function handleActionValueChange(next: string[]): void {
+		const linkActive = !isMarkdownMode && editor.isActive("link");
 		const linkNext = next.includes("link");
 
-		if (linkNext !== editor.isActive("link")) {
-			if (linkNext) {
+		if (linkNext !== linkActive) {
+			if (isMarkdownMode) {
+				onMarkdownFormat?.("link");
+			} else if (linkNext) {
 				addLink(editor);
 			} else {
 				editor.chain().focus().unsetLink().run();
@@ -284,7 +312,6 @@ export function RichTextEditorToolbar({
 							aria-expanded={openDropdown === "textStyle"}
 							size="icon"
 							variant="ghost"
-							disabled={formattingDisabled}
 							onClick={() => toggleDropdown("textStyle")}
 						>
 							{renderCurrentTextStyleIcon(editor)}
@@ -331,9 +358,10 @@ export function RichTextEditorToolbar({
 					<div className="relative flex">
 						<Toggle
 							aria-label="Bold"
-							pressed={editor.isActive("bold")}
-							disabled={formattingDisabled}
-							onPressedChange={() => editor.chain().focus().toggleBold().run()}
+							pressed={!isMarkdownMode && editor.isActive("bold")}
+							onPressedChange={() =>
+								runFormat("bold", () => editor.chain().focus().toggleBold().run())
+							}
 						>
 							<TextBoldIcon label="" size="small" />
 						</Toggle>
@@ -343,7 +371,6 @@ export function RichTextEditorToolbar({
 							aria-expanded={openDropdown === "formatting"}
 							size="icon"
 							variant="ghost"
-							disabled={formattingDisabled}
 							onClick={() => toggleDropdown("formatting")}
 						>
 							<ChevronDownIcon label="" size="small" />
@@ -355,7 +382,7 @@ export function RichTextEditorToolbar({
 									label="Italic"
 									isSelected={editor.isActive("italic")}
 									onClick={() => {
-										editor.chain().focus().toggleItalic().run();
+										runFormat("italic", () => editor.chain().focus().toggleItalic().run());
 										closeDropdown();
 									}}
 								/>
@@ -364,7 +391,7 @@ export function RichTextEditorToolbar({
 									label="Underline"
 									isSelected={editor.isActive("underline")}
 									onClick={() => {
-										editor.chain().focus().toggleUnderline().run();
+										runFormat("underline", () => editor.chain().focus().toggleUnderline().run());
 										closeDropdown();
 									}}
 								/>
@@ -373,7 +400,7 @@ export function RichTextEditorToolbar({
 									label="Strikethrough"
 									isSelected={editor.isActive("strike")}
 									onClick={() => {
-										editor.chain().focus().toggleStrike().run();
+										runFormat("strikethrough", () => editor.chain().focus().toggleStrike().run());
 										closeDropdown();
 									}}
 								/>
@@ -384,9 +411,10 @@ export function RichTextEditorToolbar({
 					<div className="relative flex">
 						<Toggle
 							aria-label="Bulleted list"
-							pressed={editor.isActive("bulletList")}
-							disabled={formattingDisabled}
-							onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
+							pressed={!isMarkdownMode && editor.isActive("bulletList")}
+							onPressedChange={() =>
+								runFormat("bulletList", () => editor.chain().focus().toggleBulletList().run())
+							}
 						>
 							<ListBulletedIcon label="" size="small" />
 						</Toggle>
@@ -396,7 +424,6 @@ export function RichTextEditorToolbar({
 							aria-expanded={openDropdown === "list"}
 							size="icon"
 							variant="ghost"
-							disabled={formattingDisabled}
 							onClick={() => toggleDropdown("list")}
 						>
 							<ChevronDownIcon label="" size="small" />
@@ -408,7 +435,7 @@ export function RichTextEditorToolbar({
 									label="Bulleted list"
 									isSelected={editor.isActive("bulletList")}
 									onClick={() => {
-										editor.chain().focus().toggleBulletList().run();
+										runFormat("bulletList", () => editor.chain().focus().toggleBulletList().run());
 										closeDropdown();
 									}}
 								/>
@@ -417,7 +444,7 @@ export function RichTextEditorToolbar({
 									label="Numbered list"
 									isSelected={editor.isActive("orderedList")}
 									onClick={() => {
-										editor.chain().focus().toggleOrderedList().run();
+										runFormat("orderedList", () => editor.chain().focus().toggleOrderedList().run());
 										closeDropdown();
 									}}
 								/>
@@ -432,7 +459,7 @@ export function RichTextEditorToolbar({
 							aria-expanded={openDropdown === "align"}
 							size="icon"
 							variant="ghost"
-							disabled={formattingDisabled}
+							disabled={markdownUnsupported}
 							onClick={() => toggleDropdown("align")}
 						>
 							{renderCurrentAlignmentIcon(alignment)}
@@ -469,7 +496,6 @@ export function RichTextEditorToolbar({
 						<ToggleGroupItem
 							value="link"
 							aria-label="Link"
-							disabled={formattingDisabled}
 						>
 							<LinkIcon label="" size="small" />
 						</ToggleGroupItem>
@@ -492,7 +518,7 @@ export function RichTextEditorToolbar({
 							type="button"
 							className="gap-2"
 							variant="ghost"
-							disabled={formattingDisabled}
+							disabled={markdownUnsupported}
 						>
 							<CommentIcon label="" size="small" />
 							Comment
