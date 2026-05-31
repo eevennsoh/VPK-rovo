@@ -168,21 +168,21 @@ export function SidebarNavItemDemoWithDescription() {
 
 export function SidebarNavItemDemoNestedLevels() {
 	return (
-		<div className="flex w-[276px] flex-col gap-0.5">
+		<div className="flex w-[276px] flex-col">
 			<SidebarNavItem
 				label="Apps"
 				leading={<ChevronDownIcon label="" />}
 				leadingSize="small"
 				isExpanded
 			/>
-			<div className="flex flex-col gap-0.5 pl-3">
+			<div className="flex flex-col pl-3">
 				<SidebarNavItem
 					label="Dependency Mapper"
 					leading={<ProjectIcon label="" />}
 					leadingSize="medium"
 					isSelected
 				/>
-				<div className="flex flex-col gap-0.5 pl-3">
+				<div className="flex flex-col pl-3">
 					<SidebarNavItem
 						label="Data sources"
 						leading={<ChevronRightIcon label="" />}
