@@ -83,11 +83,12 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(source, /AGENT_TEMPLATES_TAB_COPY_VARIANTS/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_CARDS_VARIANTS/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET = 24/u);
+	assert.match(source, /h-\[min\(820px,calc\(100svh-1rem\)\)\]/u);
 	assert.match(source, /<div className="relative min-h-0 overflow-hidden pb-6">/u);
 	// Sequenced swap (mode="wait"): quick exit, then a gradual staggered enter —
 	// each card fades + slides in, offset by AGENT_TEMPLATES_TAB_CARD_STAGGER.
 	assert.match(source, /className="h-full overflow-x-auto overflow-y-hidden \[scrollbar-width:none\]/u);
-	assert.match(source, /className="flex h-full gap-4 px-6"/u);
+	assert.match(source, /className="flex h-full gap-4 px-6 py-2"/u);
 	assert.match(source, /<AnimatePresence custom=\{tabMotionCustom\} initial=\{false\} mode="wait">/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_CARD_STAGGER = 0\.05/u);
 	assert.match(source, /templateAgents\.map\(\(agent, index\)/u);
@@ -128,6 +129,14 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(source, /setActiveCategory\(initialCategoryId\)/u);
 	// Demo agents carry the expanded-card detail the cards render.
 	assert.match(demoAgentsSource, /capabilities:/u);
+	assert.match(demoAgentsSource, /const SOURCE_SEQUENCE/u);
+	assert.match(demoAgentsSource, /const SKILL_LABELS/u);
+	assert.match(demoAgentsSource, /const CAPABILITY_ICON_SEQUENCES/u);
+	assert.match(demoAgentsSource, /function defaultSources/u);
+	assert.match(demoAgentsSource, /const sourceCount = 2 \+ \(seed % 7\)/u);
+	assert.match(demoAgentsSource, /function defaultSkills/u);
+	assert.match(demoAgentsSource, /const skillCount = 3 \+ \(seed % 8\)/u);
+	assert.match(demoAgentsSource, /function defaultCapabilities/u);
 	assert.match(demoAgentsSource, /templatePrompt:/u);
 	assert.match(demoAgentsSource, /Use the \$\{name\} template to create a Studio agent/u);
 	assert.match(demoAgentsSource, /ready for me to review before sending/u);

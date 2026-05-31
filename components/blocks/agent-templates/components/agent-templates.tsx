@@ -308,7 +308,7 @@ export function AgentTemplatesDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent
-				className="grid h-[min(725px,calc(100svh-2rem))] max-h-[calc(100svh-2rem)] w-[min(1248px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-xl border border-border bg-surface p-0 shadow-xl sm:max-w-[1248px]"
+				className="grid h-[min(820px,calc(100svh-1rem))] max-h-[calc(100svh-1rem)] w-[min(1248px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-xl border border-border bg-surface p-0 shadow-xl sm:max-w-[1248px]"
 				showCloseButton={false}
 			>
 				<header className="relative px-6 py-6">
@@ -368,7 +368,7 @@ export function AgentTemplatesDialog({
 						<AnimatePresence custom={tabMotionCustom} initial={false} mode="wait">
 							<motion.div
 								animate="center"
-								className="flex h-full gap-4 px-6"
+								className="flex h-full gap-4 px-6 py-2"
 								custom={tabMotionCustom}
 								exit="exit"
 								initial="enter"

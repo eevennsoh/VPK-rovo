@@ -29,7 +29,7 @@ import {
 import { type CardDirectoryTemplateSkill } from "./card-directory-template";
 
 const MAX_VISIBLE_COLLABORATORS = 4;
-const MAX_VISIBLE_SKILLS = 4;
+const MAX_VISIBLE_SKILLS = 10;
 const CARD_DIRECTORY_SCROLL_MASK_IMAGE = [
 	"linear-gradient(to bottom, transparent 0, black var(--scroll-mask-fade-size), black 100%)",
 	"linear-gradient(black, black)",
@@ -184,7 +184,7 @@ export function CardDirectoryAgentExpanded({
 						byline={<CardDirectoryByline publisher={publisher} verified={verified} />}
 						title={name}
 					/>
-					<CardDirectoryDescription className="mt-1 line-clamp-3 min-h-15">
+					<CardDirectoryDescription className="mt-1">
 						{description ?? `Learn how ${name} can help your team work faster.`}
 					</CardDirectoryDescription>
 				</div>
@@ -198,7 +198,7 @@ export function CardDirectoryAgentExpanded({
 			>
 				{sources.length > 0 ? (
 					<CardDirectorySection label="Works with">
-						<TWGAppstack animated={false} className="justify-start" iconSize="md" maxVisible={6} sources={sources} />
+						<TWGAppstack animated={false} className="justify-start" iconSize="md" maxVisible={8} sources={sources} />
 					</CardDirectorySection>
 				) : null}
 

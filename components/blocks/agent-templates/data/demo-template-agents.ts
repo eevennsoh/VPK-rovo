@@ -49,50 +49,170 @@ const SOURCE = {
 	trello: { id: "trello", label: "Trello", provider: "trello" },
 } satisfies Record<string, DemoTemplateSource>;
 
-const CATEGORY_DEFAULTS: Record<AgentTemplatesCategoryId, {
-	sources: readonly DemoTemplateSource[];
-	skills: readonly DemoTemplateSkill[];
-}> = {
-	brainstorm: {
-		sources: [SOURCE.confluence, SOURCE.googleDrive, SOURCE.jira],
-		skills: [
-			{ color: "strategy", label: "decision-framing" },
-			{ color: "teamwork", label: "planning" },
-			{ color: "product", label: "rubric-building" },
-		],
-	},
-	analyze: {
-		sources: [SOURCE.jiraProductDiscovery, SOURCE.confluence, SOURCE.googleDrive],
-		skills: [
-			{ color: "product", label: "signal-detection" },
-			{ color: "strategy", label: "synthesis" },
-			{ color: "teamwork", label: "briefing" },
-		],
-	},
-	review: {
-		sources: [SOURCE.jiraServiceManagement, SOURCE.confluence, SOURCE.salesforce],
-		skills: [
-			{ color: "service", label: "triage" },
-			{ color: "teamwork", label: "handoff" },
-			{ color: "strategy", label: "risk-review" },
-		],
-	},
-	summarize: {
-		sources: [SOURCE.confluence, SOURCE.googleDrive, SOURCE.jira],
-		skills: [
-			{ color: "product", label: "drafting" },
-			{ color: "strategy", label: "editing" },
-			{ color: "teamwork", label: "audience-fit" },
-		],
-	},
-	create: {
-		sources: [SOURCE.jira, SOURCE.trello, SOURCE.confluence],
-		skills: [
-			{ color: "teamwork", label: "work-breakdown" },
-			{ color: "strategy", label: "sequencing" },
-			{ color: "software", label: "readiness" },
-		],
-	},
+const SOURCE_SEQUENCE: readonly DemoTemplateSource[] = [
+	SOURCE.jira,
+	SOURCE.confluence,
+	SOURCE.googleDrive,
+	SOURCE.slack,
+	SOURCE.loom,
+	SOURCE.figma,
+	SOURCE.bitbucket,
+	SOURCE.github,
+	SOURCE.salesforce,
+	SOURCE.jiraProductDiscovery,
+	SOURCE.jiraServiceManagement,
+	SOURCE.trello,
+	SOURCE.amplitude,
+	SOURCE.microsoftTeams,
+	SOURCE.pagerDuty,
+	SOURCE.powerBi,
+	SOURCE.smartSheet,
+	SOURCE.monday,
+];
+
+const SKILL_COLORS = [
+	"product",
+	"strategy",
+	"teamwork",
+	"software",
+	"service",
+	"platform",
+	"2p3p",
+	"default",
+] satisfies readonly NonNullable<DemoTemplateSkill["color"]>[];
+
+const SKILL_LABELS: Record<AgentTemplatesCategoryId, readonly string[]> = {
+	brainstorm: [
+		"decision-framing",
+		"planning",
+		"rubric-building",
+		"option-mapping",
+		"assumption-check",
+		"tradeoff-analysis",
+		"hypothesis-shaping",
+		"research-scan",
+		"idea-ranking",
+		"constraint-mapping",
+		"opportunity-sizing",
+		"confidence-scoring",
+		"concept-briefing",
+		"facilitation",
+		"next-step-planning",
+		"evidence-gap-check",
+		"risk-spotting",
+		"stakeholder-input",
+		"experiment-shaping",
+		"goal-alignment",
+	],
+	analyze: [
+		"signal-detection",
+		"synthesis",
+		"briefing",
+		"feedback-clustering",
+		"sentiment-mapping",
+		"theme-mining",
+		"transcript-review",
+		"funnel-diagnosis",
+		"research-synthesis",
+		"trend-analysis",
+		"evidence-linking",
+		"insight-prioritization",
+		"quote-selection",
+		"anomaly-scan",
+		"source-tracing",
+		"impact-mapping",
+		"segment-compare",
+		"need-finding",
+		"metric-context",
+		"decision-brief",
+	],
+	review: [
+		"triage",
+		"handoff",
+		"risk-review",
+		"incident-routing",
+		"queue-health",
+		"escalation-drafting",
+		"sla-check",
+		"owner-mapping",
+		"policy-lookup",
+		"process-review",
+		"service-summary",
+		"on-call-briefing",
+		"postmortem-scan",
+		"dependency-check",
+		"readiness-review",
+		"support-reply",
+		"status-update",
+		"runbook-match",
+		"compliance-note",
+		"knowledge-gap",
+	],
+	summarize: [
+		"drafting",
+		"editing",
+		"audience-fit",
+		"release-note-grouping",
+		"executive-summary",
+		"tone-matching",
+		"translation-review",
+		"social-adaptation",
+		"prd-outline",
+		"message-polish",
+		"changelog-writing",
+		"content-briefing",
+		"decision-summary",
+		"meeting-recap",
+		"stakeholder-update",
+		"brand-review",
+		"accessibility-copy",
+		"clarity-pass",
+		"narrative-structure",
+		"action-extraction",
+	],
+	create: [
+		"work-breakdown",
+		"sequencing",
+		"readiness",
+		"sprint-scope",
+		"blocker-scan",
+		"bug-reporting",
+		"epic-shaping",
+		"owner-routing",
+		"queue-cleanup",
+		"progress-summary",
+		"dependency-map",
+		"acceptance-criteria",
+		"task-slicing",
+		"milestone-planning",
+		"risk-log",
+		"handoff-plan",
+		"capacity-check",
+		"workflow-design",
+		"prioritization",
+		"status-drafting",
+	],
+};
+
+const PICK_STEPS = [7, 11, 13, 17, 19] as const;
+const DEFAULT_CAPABILITY_ICONS = ["brief", "search", "review", "action", "check"] satisfies readonly NonNullable<CardDirectoryCapability["icon"]>[];
+const CAPABILITY_ICON_SEQUENCES = [
+	DEFAULT_CAPABILITY_ICONS,
+	["goal", "comment", "trend", "people", "clock"],
+	["search", "work", "brief", "draft", "action"],
+	["trend", "review", "people", "check", "goal"],
+	["comment", "search", "clock", "draft", "work"],
+	["work", "goal", "review", "brief", "check"],
+	["draft", "people", "trend", "action", "search"],
+	["clock", "brief", "comment", "goal", "review"],
+] satisfies readonly (readonly NonNullable<CardDirectoryCapability["icon"]>[])[];
+
+const CATEGORY_CAPABILITY_DETAIL: Record<AgentTemplatesCategoryId, readonly [string, string]> = {
+	brainstorm: ["Compares options, confidence, constraints, and open questions", "Turns the strongest path into a facilitation-ready brief"],
+	analyze: ["Clusters patterns, quotes, anomalies, and measurable impact", "Packages the signal into a decision-ready insight brief"],
+	review: ["Flags risk, owners, service state, and handoff gaps", "Prepares the follow-through note for the right queue or team"],
+	summarize: ["Preserves audience, tone, source context, and decisions", "Shapes the summary into a polished stakeholder-ready draft"],
+	create: ["Breaks work into owners, scope, dependencies, and readiness", "Turns the plan into update-ready work items and next steps"],
 };
 
 const PEOPLE: readonly DemoTemplateCollaborator[] = [
@@ -114,13 +234,66 @@ function pickCollaborators(offset: number): readonly DemoTemplateCollaborator[] 
 	return [0, 1, 2].map((step) => PEOPLE[(offset + step) % PEOPLE.length]);
 }
 
-function defaultCapabilities(name: string, description: string): readonly CardDirectoryCapability[] {
+function getTemplateSeed(value: string): number {
+	return Array.from(value).reduce((hash, character) => (
+		(hash * 31 + character.charCodeAt(0)) % 9973
+	), 17);
+}
+
+function pickDeterministicItems<T>(items: readonly T[], seed: number, count: number): readonly T[] {
+	const step = PICK_STEPS[seed % PICK_STEPS.length] ?? 1;
+	const start = seed % items.length;
+
+	return Array.from({ length: count }, (_, index) => {
+		const item = items[(start + index * step) % items.length];
+		if (item === undefined) {
+			throw new Error("Template source data is empty.");
+		}
+		return item;
+	});
+}
+
+function defaultSources(id: string, categoryId: AgentTemplatesCategoryId): readonly DemoTemplateSource[] {
+	const seed = getTemplateSeed(`${categoryId}:${id}:sources`);
+	const sourceCount = 2 + (seed % 7);
+
+	return pickDeterministicItems(SOURCE_SEQUENCE, seed, sourceCount);
+}
+
+function defaultSkills(id: string, categoryId: AgentTemplatesCategoryId): readonly DemoTemplateSkill[] {
+	const seed = getTemplateSeed(`${categoryId}:${id}:skills`);
+	const skillCount = 3 + (seed % 8);
+
+	return pickDeterministicItems(SKILL_LABELS[categoryId], seed, skillCount).map((label, index) => ({
+		color: SKILL_COLORS[(seed + index) % SKILL_COLORS.length],
+		label,
+	}));
+}
+
+function defaultCapabilities({
+	categoryId,
+	description,
+	id,
+	name,
+	sources,
+}: {
+	categoryId: AgentTemplatesCategoryId;
+	description: string;
+	id: string;
+	name: string;
+	sources: readonly DemoTemplateSource[];
+}): readonly CardDirectoryCapability[] {
+	const seed = getTemplateSeed(`${categoryId}:${id}:capabilities`);
+	const icons = CAPABILITY_ICON_SEQUENCES[seed % CAPABILITY_ICON_SEQUENCES.length] ?? DEFAULT_CAPABILITY_ICONS;
+	const [categoryInsight, categoryOutput] = CATEGORY_CAPABILITY_DETAIL[categoryId];
+	const sourceLabel = sources[seed % sources.length]?.label ?? "trusted sources";
+
 	return [
-		{ icon: "brief", label: description.replace(/\.$/u, "") },
-		{ icon: "search", label: `Pulls trusted context for ${name}` },
-		{ icon: "review", label: "Highlights risks, owners, and gaps" },
-		{ icon: "action", label: "Recommends next actions with source context" },
-		{ icon: "check", label: "Formats output for fast team review" },
+		{ icon: icons[0], label: description.replace(/\.$/u, "") },
+		{ icon: icons[1], label: `Connects ${sourceLabel} context for ${name}` },
+		{ icon: icons[2], label: categoryInsight },
+		{ icon: icons[3], label: `Recommends next moves for ${name}` },
+		{ icon: icons[4], label: categoryOutput },
 	];
 }
 
@@ -163,9 +336,15 @@ function demoTemplateAgent({
 	peopleOffset,
 	collaboratorOverflow = 3,
 }: DemoTemplateConfig): AgentTemplatesAgent {
-	const resolvedSources = sources ?? CATEGORY_DEFAULTS[categoryId].sources;
-	const resolvedSkills = skills ?? CATEGORY_DEFAULTS[categoryId].skills;
-	const resolvedCapabilities = capabilities ?? defaultCapabilities(name, description);
+	const resolvedSources = sources ?? defaultSources(id, categoryId);
+	const resolvedSkills = skills ?? defaultSkills(id, categoryId);
+	const resolvedCapabilities = capabilities ?? defaultCapabilities({
+		categoryId,
+		description,
+		id,
+		name,
+		sources: resolvedSources,
+	});
 
 	return {
 		id,
