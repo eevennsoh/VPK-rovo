@@ -1,0 +1,59 @@
+#!/bin/zsh
+# status.sh — one-glance, read-only health check for vpk-system-clean.
+set -u
+setopt NULL_GLOB
+
+LABEL="com.$(id -un).vpk-system-clean"
+LOG="$HOME/Library/Logs/vpk-system-clean.log"
+SUDOERS="/etc/sudoers.d/vpk-system-clean"
+NEXT_CPU_HOT=150
+NEXT_DIRS=(
+	"$HOME/Documents/Labs/vpk-rovo/.next"
+	"$HOME"/.codex/worktrees/*/vpk-rovo/.next
+	"$HOME"/Documents/Labs/vpk-rovo/.claude/worktrees/*/.next
+)
+
+print -- "── dev servers (next-server) ──"
+np=( ${(f)"$(pgrep -f 'next-server' 2>/dev/null)"} )
+if (( ${#np} )); then
+	for p in $np; do
+		c=$(ps -o %cpu= -p "$p" 2>/dev/null | tr -d ' '); c=${c:-0}
+		flag=""; (( ${c%%.*} >= NEXT_CPU_HOT )) && flag="  ⚠ HOT — runaway; see doctor.sh --kill"
+		print -- "pid $p  ${c}% CPU$flag"
+	done
+else
+	print -- "(none running)"
+fi
+
+print -- "\n── launchd agent ──"
+if launchctl print "gui/$(id -u)/$LABEL" >/dev/null 2>&1; then
+	sched=$(launchctl print "gui/$(id -u)/$LABEL" 2>/dev/null | grep -iE "next firing|run interval" | head -1 | sed 's/^[[:space:]]*//')
+	print -- "loaded ✓   ${sched:-(scheduled)}"
+else
+	print -- "NOT loaded ✗   (run install.sh to fix)"
+fi
+
+print -- "\n── sudoers (fseventsd auto-reset) ──"
+[[ -f "$SUDOERS" ]] && print -- "present ✓" || print -- "missing ✗   (fseventsd reset disabled until added)"
+
+print -- "\n── fseventsd ──"
+fp=$(pgrep -x fseventsd | head -1)
+if [[ -n "$fp" ]]; then
+	mb=$(ps -o rss= -p "$fp" 2>/dev/null | awk '{print int($1/1024)}')
+	flag=""; (( ${mb:-0} > 2048 )) && flag="  ⚠ over 2GB — a reset would help"
+	print -- "RSS ${mb}MB$flag"
+fi
+
+print -- "\n── .next caches ──"
+any=0
+for nx in ${(u)NEXT_DIRS}; do
+	[[ -d "$nx" ]] || continue
+	any=1
+	gb=$(du -sg "$nx" 2>/dev/null | awk '{print $1}')
+	flag=""; (( ${gb:-0} >= 3 )) && flag="  ⚠ over threshold"
+	print -- "${gb}G  $nx$flag"
+done
+(( any == 0 )) && print -- "(none on disk)"
+
+print -- "\n── recent log (last 12 lines) ──"
+[[ -f "$LOG" ]] && tail -n 12 "$LOG" || print -- "(no log yet — never run)"
