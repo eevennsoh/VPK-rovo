@@ -113,10 +113,19 @@ test("expanded agent variant adds a cover banner and scrollable capabilities to 
 	assert.match(AGENT_EXPANDED_SOURCE, /<CardDirectoryByline/u);
 });
 
-test("expanded agent variant uses project-avatar fallback for team badges", () => {
+test("expanded agent variant uses stable project-avatar fallbacks for team badges", () => {
 	assert.match(AGENT_EXPANDED_SOURCE, /<AvatarProjectBadge>/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /publisherLogoSrc \?\? "\/avatar-project\/group\.svg"/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /const PROJECT_BADGE_AVATAR_SRCS = \[/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /function getProjectBadgeAvatarSrc\(seed: string\)/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /getProjectBadgeAvatarSrc\(`\$\{publisher\}:\$\{name\}`\)/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /publisherLogoSrc \?\? projectBadgeAvatarSrc/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /\/avatar-project\/battery\.svg/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /\/avatar-project\/loom-record\.svg/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /\/avatar-project\/rocket\.svg/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /\/avatar-project\/science\.svg/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /\/avatar-project\/support-wrench\.svg/u);
 	assert.doesNotMatch(AGENT_EXPANDED_SOURCE, /publisherLogoSrc \?\? "\/1p\/rovo\.svg"/u);
+	assert.doesNotMatch(AGENT_EXPANDED_SOURCE, /publisherLogoSrc \?\? "\/avatar-project\/group\.svg"/u);
 });
 
 test("expanded agent variant renders Works with sources and Skills tags", () => {
