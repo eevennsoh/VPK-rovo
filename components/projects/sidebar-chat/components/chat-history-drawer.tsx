@@ -241,7 +241,7 @@ function ChatHistoryThreadRow({
 					render={
 						<Button
 							aria-label={`More actions for ${thread.title}`}
-							className="absolute top-1/2 right-1.5 size-6 -translate-y-1/2 opacity-0 transition-opacity duration-normal ease-out group-hover/chat-history-thread:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100"
+							className="absolute top-1/2 right-1.5 size-6 -translate-y-1/2 opacity-0 transition-opacity duration-normal ease-out group-hover/chat-history-thread:opacity-100 focus-visible:opacity-100 data-[popup-open]:opacity-100"
 							size="icon"
 							variant="ghost"
 							onClick={(event) => event.stopPropagation()}
