@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 
@@ -101,10 +103,158 @@ function SkillTagCount({ count, onClick, className, ...props }: Readonly<SkillTa
 	);
 }
 
-type SkillTagGroupProps = React.ComponentProps<"div">;
+interface SkillTagGroupProps extends React.ComponentProps<"div"> {
+	/**
+	 * Maximum rendered rows before remaining tags collapse into a SkillTagCount.
+	 * Omit to render every child.
+	 */
+	maxRows?: number;
+}
 
-function SkillTagGroup({ className, ...props }: Readonly<SkillTagGroupProps>) {
-	return <div data-slot="skill-tag-group" className={cn("flex flex-wrap gap-1", className)} {...props} />;
+function getFlexColumnGap(element: HTMLElement): number {
+	const { columnGap, gap } = window.getComputedStyle(element);
+	const parsedGap = Number.parseFloat(columnGap === "normal" ? gap : columnGap);
+
+	return Number.isFinite(parsedGap) ? parsedGap : 0;
+}
+
+function getWrappedRowCount(widths: readonly number[], containerWidth: number, columnGap: number): number {
+	if (widths.length === 0) {
+		return 0;
+	}
+
+	let rows = 1;
+	let rowWidth = 0;
+
+	for (const width of widths) {
+		const nextWidth = rowWidth === 0 ? width : rowWidth + columnGap + width;
+
+		if (nextWidth <= containerWidth + 0.5) {
+			rowWidth = nextWidth;
+		} else {
+			rows += 1;
+			rowWidth = width;
+		}
+	}
+
+	return rows;
+}
+
+function calculateVisibleSkillTagCount({
+	childWidths,
+	containerWidth,
+	columnGap,
+	maxRows,
+	overflowWidth,
+}: {
+	childWidths: readonly number[];
+	containerWidth: number;
+	columnGap: number;
+	maxRows: number;
+	overflowWidth: number;
+}): number {
+	if (containerWidth <= 0 || childWidths.length === 0) {
+		return childWidths.length;
+	}
+
+	if (getWrappedRowCount(childWidths, containerWidth, columnGap) <= maxRows) {
+		return childWidths.length;
+	}
+
+	for (let visibleCount = childWidths.length - 1; visibleCount >= 0; visibleCount -= 1) {
+		const candidateWidths = [...childWidths.slice(0, visibleCount), overflowWidth];
+
+		if (getWrappedRowCount(candidateWidths, containerWidth, columnGap) <= maxRows) {
+			return visibleCount;
+		}
+	}
+
+	return 0;
+}
+
+function SkillTagGroup({ children, className, maxRows, ...props }: Readonly<SkillTagGroupProps>) {
+	const groupRef = React.useRef<HTMLDivElement>(null);
+	const measurementRef = React.useRef<HTMLDivElement>(null);
+	const childrenArray = React.useMemo(() => React.Children.toArray(children), [children]);
+	const shouldCollapse = typeof maxRows === "number" && Number.isFinite(maxRows) && maxRows > 0;
+	const [visibleCount, setVisibleCount] = React.useState(childrenArray.length);
+	const constrainedVisibleCount = shouldCollapse ? Math.min(visibleCount, childrenArray.length) : childrenArray.length;
+	const hiddenCount = shouldCollapse ? Math.max(childrenArray.length - constrainedVisibleCount, 0) : 0;
+
+	React.useLayoutEffect(() => {
+		if (!shouldCollapse) {
+			setVisibleCount(childrenArray.length);
+			return undefined;
+		}
+
+		const updateVisibleCount = () => {
+			const groupElement = groupRef.current;
+			const measurementElement = measurementRef.current;
+
+			if (!groupElement || !measurementElement) {
+				return;
+			}
+
+			const childElements = Array.from(
+				measurementElement.querySelectorAll<HTMLElement>('[data-slot="skill-tag-group-measure-item"]'),
+			);
+			const overflowElement = measurementElement.querySelector<HTMLElement>('[data-slot="skill-tag-group-measure-overflow"]');
+
+			if (!overflowElement) {
+				return;
+			}
+
+			const childWidths = childElements.map((element) => element.getBoundingClientRect().width);
+			const nextVisibleCount = calculateVisibleSkillTagCount({
+				childWidths,
+				containerWidth: groupElement.getBoundingClientRect().width,
+				columnGap: getFlexColumnGap(measurementElement),
+				maxRows,
+				overflowWidth: overflowElement.getBoundingClientRect().width,
+			});
+
+			setVisibleCount((currentVisibleCount) => (
+				currentVisibleCount === nextVisibleCount ? currentVisibleCount : nextVisibleCount
+			));
+		};
+
+		updateVisibleCount();
+
+		const resizeObserver = new ResizeObserver(updateVisibleCount);
+		const groupElement = groupRef.current;
+
+		if (groupElement) {
+			resizeObserver.observe(groupElement);
+		}
+
+		return () => {
+			resizeObserver.disconnect();
+		};
+	}, [childrenArray, maxRows, shouldCollapse]);
+
+	return (
+		<div ref={groupRef} data-slot="skill-tag-group" className={cn("relative flex flex-wrap gap-1", className)} {...props}>
+			{shouldCollapse ? childrenArray.slice(0, constrainedVisibleCount) : children}
+			{hiddenCount > 0 ? <SkillTagCount count={hiddenCount} /> : null}
+			{shouldCollapse ? (
+				<div
+					aria-hidden
+					className="invisible pointer-events-none absolute inset-x-0 top-0 flex flex-wrap gap-1"
+					data-slot="skill-tag-group-measure"
+					ref={measurementRef}
+				>
+					{childrenArray.map((child, index) => (
+						<span className="inline-flex" data-slot="skill-tag-group-measure-item" key={index}>
+							{child}
+						</span>
+					))}
+					<span className="inline-flex" data-slot="skill-tag-group-measure-overflow">
+						<SkillTagCount count={childrenArray.length} />
+					</span>
+				</div>
+			) : null}
+		</div>
+	);
 }
 
 export { SkillTag, SkillTagCount, SkillTagGroup, type SkillTagProps, type SkillTagCountProps, type SkillTagGroupProps, type SkillTagColor };

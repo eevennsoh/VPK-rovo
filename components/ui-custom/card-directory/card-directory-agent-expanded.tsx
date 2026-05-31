@@ -8,7 +8,7 @@ import { Avatar, AvatarCompanyBadge, AvatarFallback, AvatarGroup, AvatarGroupCou
 import { Button } from "@/components/ui/button";
 import { AtlassianLogo } from "@/components/ui/logo";
 import { Separator } from "@/components/ui/separator";
-import { SkillTag, SkillTagCount, SkillTagGroup } from "@/components/ui-custom/skill-tag";
+import { SkillTag, SkillTagGroup } from "@/components/ui-custom/skill-tag";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +29,6 @@ import {
 import { type CardDirectoryTemplateSkill } from "./card-directory-template";
 
 const MAX_VISIBLE_COLLABORATORS = 4;
-const MAX_VISIBLE_SKILLS = 10;
 const CARD_DIRECTORY_SCROLL_MASK_IMAGE = [
 	"linear-gradient(to bottom, transparent 0, black var(--scroll-mask-fade-size), black 100%)",
 	"linear-gradient(black, black)",
@@ -115,8 +114,6 @@ export function CardDirectoryAgentExpanded({
 	const showCollaborators = collaborators.length > 0;
 	const showFooter = showStats || showRating || showChats || showCollaborators;
 	const [bodyScrolled, setBodyScrolled] = useState(false);
-	const visibleSkills = skills.slice(0, MAX_VISIBLE_SKILLS);
-	const hiddenSkillCount = Math.max(skills.length - visibleSkills.length, 0);
 	const visibleCollaborators = collaborators.slice(0, MAX_VISIBLE_COLLABORATORS);
 	const hiddenCollaboratorCount =
 		Math.max(collaborators.length - MAX_VISIBLE_COLLABORATORS, 0) + (collaboratorOverflow ?? 0);
@@ -204,13 +201,12 @@ export function CardDirectoryAgentExpanded({
 
 				{skills.length > 0 ? (
 					<CardDirectorySection label="Skills">
-						<SkillTagGroup>
-							{visibleSkills.map((skill) => (
+						<SkillTagGroup maxRows={2}>
+							{skills.map((skill) => (
 								<SkillTag color={skill.color ?? "default"} icon={skill.icon} key={skill.label}>
 									{skill.label}
 								</SkillTag>
 							))}
-							{hiddenSkillCount > 0 ? <SkillTagCount count={hiddenSkillCount} /> : null}
 						</SkillTagGroup>
 					</CardDirectorySection>
 				) : null}

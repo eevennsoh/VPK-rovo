@@ -132,15 +132,28 @@ export function SkillTagDemoCount() {
 
 export function SkillTagDemoOverflow() {
 	return (
-		<SkillTagGroup>
-			<SkillTag icon={<SearchIcon label="" size="small" />} color="teamwork">
-				Search
-			</SkillTag>
-			<SkillTag icon={<AutomationIcon label="" size="small" />} color="software">
-				Automation
-			</SkillTag>
-			<SkillTagCount count={3} onClick={() => alert("Show 3 more skills")} />
-		</SkillTagGroup>
+		<div className="max-w-[220px]">
+			<SkillTagGroup maxRows={2}>
+				<SkillTag icon={<SearchIcon label="" size="small" />} color="teamwork">
+					Search
+				</SkillTag>
+				<SkillTag icon={<AutomationIcon label="" size="small" />} color="software">
+					Automation
+				</SkillTag>
+				<SkillTag icon={<LightbulbIcon label="" size="small" />} color="product">
+					Insights
+				</SkillTag>
+				<SkillTag icon={<DataFlowIcon label="" size="small" />} color="platform">
+					Data Flow
+				</SkillTag>
+				<SkillTag icon={<GlobeIcon label="" size="small" />} color="platform">
+					Web Browse
+				</SkillTag>
+				<SkillTag icon={<StarIcon label="" size="small" />} color="strategy">
+					Favorites
+				</SkillTag>
+			</SkillTagGroup>
+		</div>
 	);
 }
 
