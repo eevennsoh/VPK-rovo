@@ -17,7 +17,13 @@ test("Studio sidebar selects Agents by default instead of Insights", () => {
 });
 
 test("Studio sidebar recent agent children use one 12px indentation level without a section label", () => {
-	assert.match(SOURCE, /<div className="flex flex-col gap-0\.5 pl-3">\s*\{recentAgents\.items\.map/u);
+	assert.match(SOURCE, /<div className="flex flex-col pl-3">\s*\{recentAgents\.items\.map/u);
 	assert.doesNotMatch(SOURCE, /mt-0\.5 flex flex-col gap-0\.5 pl-7/u);
 	assert.doesNotMatch(SOURCE, />\s*Recent\s*<\/div>/u);
+});
+
+test("Studio sidebar recent agent avatar is 20px in the 24px leading slot", () => {
+	assert.match(SOURCE, /className="size-5 object-contain"/u);
+	assert.match(SOURCE, /height=\{20\}[\s\S]*width=\{20\}/u);
+	assert.match(SOURCE, /leadingSize="medium"/u);
 });
