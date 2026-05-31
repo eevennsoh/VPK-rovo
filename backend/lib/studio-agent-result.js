@@ -1,5 +1,6 @@
 const AGENT_RESULT_STREAM_PREFIX = "AGENT_RESULT:";
 const DEFAULT_GENERATED_AGENT_BYLINE = "Custom agent by You";
+const MAX_GENERATED_AGENT_CONVERSATION_STARTERS = 3;
 const MISSING_STUDIO_AGENT_RESULT_ERROR_CODE = "missing-agent-result";
 const STUDIO_AGENT_RESULT_WIDGET_TYPE = "agent-result";
 
@@ -167,6 +168,7 @@ function normalizeStudioAgentResult(value) {
 			definition.starters ||
 			definition.suggestedQuestions ||
 			definition.suggested_questions,
+		{ maxItems: MAX_GENERATED_AGENT_CONVERSATION_STARTERS },
 	);
 
 	if (!name || !description || !instructions || conversationStarters.length === 0) {
@@ -400,11 +402,11 @@ function buildCreationModeContextPrefix(creationMode) {
 		return `[AGENT CREATION MODE]
 You are in agent creation mode. Help the user create a session-local agent profile for Studio.
 This is a local agent definition - not a Confluence page, Jira ticket, or any Atlassian product content.
-Ask clarifying questions only when required profile fields are missing: name, description, instructions/context, and conversation starters.
+Ask clarifying questions only when required profile fields are missing: name, description, instructions/context, and three conversation starters.
 Do not call POST /api/plan/agents or any persistence endpoint; durable agent persistence is out of scope for this v1.
 Write instructions as structured Markdown matching repo-local agent definitions: start with ## Instructions, use clear paragraphs, bullet lists with bold labels, and include optional ## Knowledge, ## Triggers, and ## Validation sections only when relevant.
 When ready, emit exactly one structured result marker outside code fences:
-AGENT_RESULT: {"agentId":"stable-slug","name":"Display name","byline":"Custom agent by You","description":"Short profile summary","instructions":"## Instructions\\n\\nYou are Display name. Describe the role, scope, and operating style.\\n\\n- **Summary** Explain the agent's main responsibility.\\n- **Workflow** Describe how it should handle requests.\\n\\n## Validation\\n\\n- Confirm the output is ready for the user's next step.","conversationStarters":["Starter prompt 1","Starter prompt 2"],"avatarFallback":{"initials":"DA"},"action":"create"}
+AGENT_RESULT: {"agentId":"stable-slug","name":"Display name","byline":"Custom agent by You","description":"Short profile summary","instructions":"## Instructions\\n\\nYou are Display name. Describe the role, scope, and operating style.\\n\\n- **Summary** Explain the agent's main responsibility.\\n- **Workflow** Describe how it should handle requests.\\n\\n## Validation\\n\\n- Confirm the output is ready for the user's next step.","conversationStarters":["Starter prompt 1","Starter prompt 2","Starter prompt 3"],"avatarFallback":{"initials":"DA"},"action":"create"}
 Do not include edit, delete, approval, publishing, or real tool-binding controls in the result.
 [END AGENT CREATION MODE]`;
 	}

@@ -856,6 +856,7 @@ const SESSION_AGENT_DEFAULT_ID = "session-agent";
 const SESSION_AGENT_DEFAULT_NAME = "New agent";
 const SESSION_AGENT_DEFAULT_BYLINE = "Custom agent by You";
 const SESSION_AGENT_DEFAULT_AVATAR_SRC = "/avatar-agent/strategy-agents/wildcard-4.svg";
+const SESSION_AGENT_MAX_CONVERSATION_STARTERS = 3;
 
 type AgentResultPayload = RovoDataParts["agent-result"] & Record<string, unknown>;
 
@@ -895,7 +896,7 @@ function getAgentResultStarterLabel(value: unknown): string | null {
 	return getPayloadString(value, ["label", "prompt", "text", "title"]);
 }
 
-function getAgentResultStarterLabels(payload: AgentResultPayload): readonly string[] {
+function getAgentResultStarterLabels(payload: AgentResultPayload): string[] {
 	const rawStarters = payload.conversationStarters ?? payload.starters ?? payload.suggestions;
 	if (!Array.isArray(rawStarters)) {
 		return [];
@@ -916,9 +917,26 @@ function getAgentResultStarterLabels(payload: AgentResultPayload): readonly stri
 
 		seenLabels.add(normalizedLabel);
 		labels.push(label);
+		if (labels.length >= SESSION_AGENT_MAX_CONVERSATION_STARTERS) {
+			break;
+		}
 	}
 
 	return labels;
+}
+
+function normalizeSessionAgentResult(
+	result: RovoDataParts["agent-result"]
+): RovoDataParts["agent-result"] {
+	const conversationStarters = getAgentResultStarterLabels(result as AgentResultPayload);
+	if (!Array.isArray(result.conversationStarters) && conversationStarters.length === 0) {
+		return result;
+	}
+
+	return {
+		...result,
+		conversationStarters,
+	};
 }
 
 function getPayloadStringArray(
@@ -1088,7 +1106,8 @@ function createSessionAgentEntryFromResult(params: {
 		return null;
 	}
 
-	const payload = params.agentResult as AgentResultPayload;
+	const agentResult = normalizeSessionAgentResult(params.agentResult);
+	const payload = agentResult as AgentResultPayload;
 	const payloadResultKey = getCreatedAgentResultKey(payload);
 	const resultKey = params.sourceKey
 		? `${params.sourceKey}:${payloadResultKey}`
@@ -1118,7 +1137,7 @@ function createSessionAgentEntryFromResult(params: {
 	const id = getSuffixedSessionAgentId(baseId, reservedIds);
 	const name = getSuffixedSessionAgentName(baseName, reservedNames);
 	const profile = buildSessionAgentProfileFromResult({
-		agentResult: params.agentResult,
+		agentResult,
 		profileId: id,
 		profileName: name,
 	});
@@ -1126,10 +1145,10 @@ function createSessionAgentEntryFromResult(params: {
 	return {
 		profile,
 		resultKey,
-		sourceResult: params.agentResult,
-		draftResult: params.agentResult,
+		sourceResult: agentResult,
+		draftResult: agentResult,
 		lastTouchedAt: Date.now(),
-		publishReadyResult: params.agentResult,
+		publishReadyResult: agentResult,
 		publishedResult: null,
 		publishStatus: "testing",
 	};
@@ -1142,22 +1161,28 @@ function rehydrateSessionAgentEntriesFromStorage(): SessionAgentEntry[] {
 	}
 
 	return records.map((record) => {
+		const sourceResult = normalizeSessionAgentResult(record.sourceResult);
+		const draftResult = normalizeSessionAgentResult(record.draftResult);
+		const publishReadyResult = normalizeSessionAgentResult(record.publishReadyResult);
+		const publishedResult = record.publishedResult
+			? normalizeSessionAgentResult(record.publishedResult)
+			: null;
 		const fallbackName =
-			getNonEmptyString(record.sourceResult.name) ?? SESSION_AGENT_DEFAULT_NAME;
+			getNonEmptyString(sourceResult.name) ?? SESSION_AGENT_DEFAULT_NAME;
 		const profile = buildSessionAgentProfileFromResult({
-			agentResult: record.draftResult,
+			agentResult: draftResult,
 			profileId: record.profileId,
-			profileName: getNonEmptyString(record.draftResult.name) ?? fallbackName,
+			profileName: getNonEmptyString(draftResult.name) ?? fallbackName,
 		});
 
 		return {
 			profile,
 			resultKey: record.resultKey,
-			sourceResult: record.sourceResult,
-			draftResult: record.draftResult,
+			sourceResult,
+			draftResult,
 			lastTouchedAt: record.lastTouchedAt,
-			publishReadyResult: record.publishReadyResult,
-			publishedResult: record.publishedResult,
+			publishReadyResult,
+			publishedResult,
 			publishStatus: record.publishStatus,
 		};
 	});
@@ -2835,10 +2860,10 @@ export function RovoChatProvider({
 			}
 
 			const existing = current[index];
-			const nextDraftResult: RovoDataParts["agent-result"] = {
+			const nextDraftResult = normalizeSessionAgentResult({
 				...existing.draftResult,
 				...patch,
-			};
+			});
 
 			const nextProfile = buildSessionAgentProfileFromResult({
 				agentResult: nextDraftResult,

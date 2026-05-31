@@ -51,6 +51,7 @@ import { CodeBlock } from "./code-block";
 const AGENT_AVATAR_HEXAGON_PATH = "M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
 const AGENT_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg";
 const DEFAULT_AGENT_PROFILE_COVER_COLOR = "#1868DB";
+const MAX_AGENT_CONVERSATION_STARTERS = 3;
 const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
 	"dev-agents": "#82B536",
 	"product-agents": "#BF63F3",
@@ -296,6 +297,19 @@ interface AgentActionTileProps {
 	screenAssistantTargetId?: string;
 }
 
+interface AgentMissingConfigActionsProps {
+	config: AgentConfigFormValue;
+	onAppendListItem?: (field: AgentConfigListFieldName) => void;
+	screenAssistantTargetPrefix?: string;
+}
+
+interface AgentMissingConfigAction {
+	agentFieldName?: string;
+	label: string;
+	onClick?: () => void;
+	screenAssistantTargetId?: string;
+}
+
 function AgentIconTile({ children, label }: Readonly<{ children: ReactNode; label: string }>) {
 	return (
 		<Tile
@@ -328,6 +342,64 @@ function AgentActionTile({
 			</AgentIconTile>
 			<span className="min-w-0 truncate">{label}</span>
 		</button>
+	);
+}
+
+function AgentMissingConfigActions({
+	config,
+	onAppendListItem,
+	screenAssistantTargetPrefix,
+}: Readonly<AgentMissingConfigActionsProps>) {
+	const actions: ReadonlyArray<AgentMissingConfigAction | null> = [
+		getAgentTriggerItems(config).length === 0
+			? {
+					agentFieldName: "trigger",
+					label: "Add triggers",
+					screenAssistantTargetId: screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined,
+				}
+			: null,
+		getNonEmptyConfigItems(config.skills).length === 0
+			? {
+					agentFieldName: "skills",
+					label: "Add skills",
+					screenAssistantTargetId: screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined,
+				}
+			: null,
+		getNonEmptyConfigItems(config.tools).length === 0
+			? {
+					agentFieldName: "tools",
+					label: "Add tools",
+					onClick: () => onAppendListItem?.("tools"),
+					screenAssistantTargetId: screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined,
+				}
+			: null,
+		getNonEmptyConfigItems(config.conversationStarters).length === 0
+			? {
+					agentFieldName: "conversationStarters",
+					label: "Add conversation starters",
+					onClick: () => onAppendListItem?.("conversationStarters"),
+					screenAssistantTargetId: screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:conversation-starters` : undefined,
+				}
+			: null,
+	];
+	const visibleActions = actions.filter((action): action is AgentMissingConfigAction => action !== null);
+
+	if (visibleActions.length === 0) {
+		return null;
+	}
+
+	return (
+		<div className="grid grid-cols-2 gap-2">
+			{visibleActions.map((action) => (
+				<AgentActionTile
+					key={action.label}
+					agentFieldName={action.agentFieldName}
+					label={action.label}
+					onClick={action.onClick}
+					screenAssistantTargetId={action.screenAssistantTargetId}
+				/>
+			))}
+		</div>
 	);
 }
 
@@ -433,7 +505,7 @@ function AgentFilledConfigSummary({
 	const toolItems = getNonEmptyConfigItems(config.tools);
 	const subagentItems = getNonEmptyConfigItems(config.subagents);
 	const knowledgeItems = getNonEmptyConfigItems(config.knowledge);
-	const starterItems = getNonEmptyConfigItems(config.conversationStarters);
+	const starterItems = getNonEmptyConfigItems(config.conversationStarters).slice(0, MAX_AGENT_CONVERSATION_STARTERS);
 
 	return (
 		<div className="space-y-2">
@@ -783,8 +855,8 @@ export const AgentConfigFields = memo(
 							value={config.name ?? ""}
 							placeholder="Untitled agent"
 							editButtonLabel="Edit agent name"
-							readViewClassName="h-auto py-1 text-2xl leading-7 font-semibold"
-							inputProps={{ className: "h-auto py-1 text-2xl leading-7 font-semibold md:text-2xl" }}
+							readViewClassName="h-auto px-0 py-1 text-2xl leading-7 font-semibold"
+							inputProps={{ className: "h-auto px-0 py-1 text-2xl leading-7 font-semibold md:text-2xl" }}
 							onConfirm={(value) => onTextChange?.("name", value)}
 						/>
 						<div
@@ -796,7 +868,8 @@ export const AgentConfigFields = memo(
 								placeholder="Add a description"
 								editButtonLabel="Edit agent description"
 								multiline
-								textareaProps={{ rows: 1, className: "min-h-10 bg-bg-neutral-subtle focus-visible:ring-0 focus-visible:ring-offset-0 data-[variant=default]:border-transparent" }}
+								readViewClassName="px-0"
+								textareaProps={{ rows: 1, className: "min-h-10 bg-bg-neutral-subtle px-0 focus-visible:ring-0 focus-visible:ring-offset-0 data-[variant=default]:border-transparent" }}
 								onConfirm={(value) => onTextChange?.("description", value)}
 							/>
 						</div>
@@ -809,33 +882,20 @@ export const AgentConfigFields = memo(
 							config={config}
 							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 						/>
+						<AgentMissingConfigActions
+							config={config}
+							onAppendListItem={onAppendListItem}
+							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+						/>
 						<div className="h-px bg-border" />
 					</>
 				) : (
 					<>
-						<div className="grid grid-cols-2 gap-2">
-							<AgentActionTile
-								agentFieldName="trigger"
-								label="Add triggers"
-								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
-							/>
-							<AgentActionTile
-								label="Add skills"
-								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined}
-							/>
-							<AgentActionTile
-								agentFieldName="tools"
-								label="Add tools"
-								onClick={() => onAppendListItem?.("tools")}
-								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
-							/>
-							<AgentActionTile
-								agentFieldName="conversationStarters"
-								label="Add conversation starters"
-								onClick={() => onAppendListItem?.("conversationStarters")}
-								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:conversation-starters` : undefined}
-							/>
-						</div>
+						<AgentMissingConfigActions
+							config={config}
+							onAppendListItem={onAppendListItem}
+							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+						/>
 
 						<AgentKnowledgePanel />
 					</>

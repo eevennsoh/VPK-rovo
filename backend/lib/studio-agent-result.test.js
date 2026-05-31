@@ -22,6 +22,7 @@ test("normalizes a structured Studio agent definition into data-agent-result fie
 				{ label: "Create a launch brief from this context." },
 				{ prompt: "Summarize the top three research gaps." },
 				"Draft follow-up questions for stakeholders.",
+				"Map research blockers to action owners.",
 			],
 			avatarFallback: {
 				initials: "RB",

@@ -36,7 +36,8 @@ test("RovoAppShell starts Studio agent creation only from the default-agent home
 	assert.match(SHELL_SOURCE, /"Original user brief:"/u);
 	assert.match(SHELL_SOURCE, /Required agent profile fields/u);
 	assert.match(SHELL_SOURCE, /- agentId: stable kebab-case slug/u);
-	assert.match(SHELL_SOURCE, /- conversationStarters: 2.{1,3}4 starter prompts/u);
+	assert.match(SHELL_SOURCE, /- conversationStarters: 3 starter prompts/u);
+	assert.doesNotMatch(SHELL_SOURCE, /conversationStarters: 2.{1,3}4 starter prompts/u);
 	assert.match(SHELL_SOURCE, /Clarification rule: Use the existing ask_user_questions\/question-card flow/u);
 	assert.match(SHELL_SOURCE, /Expected output: build the agent profile now and emit exactly one structured AGENT_RESULT marker/u);
 	assert.match(SHELL_SOURCE, /const isDefaultAgentHomeState = showHomeState && !isCustomAgentSelected;/u);
@@ -232,14 +233,15 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 });
 
 test("Studio screen assistant applies draft patches without publishing agents", () => {
-	assert.match(SHELL_SOURCE, /onScreenAssistantResult/u);
+	assert.match(SHELL_SOURCE, /onToolCall: useCallback/u);
 	assert.match(SHELL_SOURCE, /normalizeAgentDraftPatch/u);
 	assert.match(SHELL_SOURCE, /studioAgentRegistry\.updateSessionAgentDraft/u);
+	const applyAgentDraftPatchIndex = SHELL_SOURCE.indexOf('case "apply_agent_draft_patch":');
+	assert.notEqual(applyAgentDraftPatchIndex, -1);
 	const screenAssistantHandlerSource = SHELL_SOURCE.slice(
-		SHELL_SOURCE.indexOf("onScreenAssistantResult: useCallback"),
-		SHELL_SOURCE.indexOf("chatMessages: chat.messages"),
+		applyAgentDraftPatchIndex,
+		SHELL_SOURCE.indexOf("default:", applyAgentDraftPatchIndex),
 	);
-	assert.match(screenAssistantHandlerSource, /lastScreenAssistantMutationTurnIdRef/u);
 	assert.match(screenAssistantHandlerSource, /activeSessionAgentEntry\.profile\.id/u);
 	assert.doesNotMatch(screenAssistantHandlerSource, /publishSessionAgent/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /data-screen-assistant-target="studio-agent-config-panel"/u);
