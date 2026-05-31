@@ -303,7 +303,7 @@ function Typing({ scale, animated }: Readonly<{ scale: number; animated: boolean
 			<span
 				aria-hidden
 				className="bg-icon"
-				style={{ width: Math.max(1, scale), height: 16 * scale }}
+				style={{ width: 1, height: 16 }}
 			/>
 		</span>
 	);
