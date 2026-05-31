@@ -92,14 +92,20 @@ export function CardDirectoryMoreButton({ label, onClick }: Readonly<CardDirecto
 			type="button"
 			variant="ghost"
 		>
-			<ShowMoreHorizontalIcon label="" size="small" />
+			<Icon render={<ShowMoreHorizontalIcon label="" size="small" color="currentColor" />} />
 		</Button>
 	);
 }
 
-export function CardDirectoryDescription({ children }: Readonly<{ children: ReactNode }>) {
+export function CardDirectoryDescription({
+	className,
+	children,
+}: Readonly<{ className?: string; children: ReactNode }>) {
 	return (
-		<p className="line-clamp-2 min-h-10 text-sm leading-5 text-text" data-slot="card-directory-description">
+		<p
+			className={cn("line-clamp-2 min-h-10 text-sm leading-5 text-text", className)}
+			data-slot="card-directory-description"
+		>
 			{children}
 		</p>
 	);

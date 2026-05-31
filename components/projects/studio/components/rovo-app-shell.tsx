@@ -758,6 +758,7 @@ function HomeStarterHeroTile({
 									Works with
 								</span>
 								<TWGAppstack
+									animated={false}
 									className="justify-start"
 									iconSize="md"
 									maxVisible={6}
@@ -980,7 +981,7 @@ function HomeStarterBento({
 					<AnimatePresence mode="wait" initial={false}>
 						<motion.div
 							key={activeCategory}
-							className="grid grid-cols-1 gap-3 auto-rows-[144px] sm:grid-cols-2 lg:grid-cols-5"
+							className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-3 auto-rows-[144px] sm:grid-cols-2 lg:grid-cols-5"
 							initial={shouldReduceMotion ? false : "hidden"}
 							animate="visible"
 							exit={shouldReduceMotion ? undefined : "exit"}

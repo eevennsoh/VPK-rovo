@@ -1,6 +1,6 @@
 "use client";
 
-import { type MouseEvent } from "react";
+import { type MouseEvent, type UIEvent, useCallback, useState } from "react";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SkillTag, SkillTagGroup } from "@/components/ui-custom/skill-tag";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
+import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { cn } from "@/lib/utils";
 
 import { CardDirectory } from "./card-directory";
@@ -27,6 +28,10 @@ import {
 import { type CardDirectoryTemplateSkill } from "./card-directory-template";
 
 const MAX_VISIBLE_COLLABORATORS = 4;
+const CARD_DIRECTORY_SCROLL_MASK_STYLE = buildScrollMaskStyle({
+	fadeSize: "var(--ds-space-200)",
+	scrollbarWidth: "10px",
+});
 
 export interface CardDirectoryAgentExpandedProps {
 	name: string;
@@ -88,6 +93,7 @@ export function CardDirectoryAgentExpanded({
 	const showChats = !showStats && typeof chatCount === "number";
 	const showCollaborators = collaborators.length > 0;
 	const showFooter = showStats || showRating || showChats || showCollaborators;
+	const [bodyScrolled, setBodyScrolled] = useState(false);
 	const visibleCollaborators = collaborators.slice(0, MAX_VISIBLE_COLLABORATORS);
 	const hiddenCollaboratorCount =
 		Math.max(collaborators.length - MAX_VISIBLE_COLLABORATORS, 0) + (collaboratorOverflow ?? 0);
@@ -97,6 +103,12 @@ export function CardDirectoryAgentExpanded({
 		event.stopPropagation();
 		onSelect?.();
 	};
+	const handleBodyScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
+		const nextBodyScrolled = event.currentTarget.scrollTop > 0;
+		setBodyScrolled((currentBodyScrolled) => (
+			currentBodyScrolled === nextBodyScrolled ? currentBodyScrolled : nextBodyScrolled
+		));
+	}, []);
 
 	return (
 		<CardDirectory className={cn("gap-0 overflow-clip p-0", className)} onSelect={onSelect} selectLabel={`Select ${name}`}>
@@ -112,14 +124,18 @@ export function CardDirectoryAgentExpanded({
 						byline={<CardDirectoryByline publisher={publisher} verified={verified} />}
 						title={name}
 					/>
-					<CardDirectoryDescription>
+					<CardDirectoryDescription className="mt-1 min-h-0">
 						{description ?? `Learn how ${name} can help your team work faster.`}
 					</CardDirectoryDescription>
 				</div>
 			</div>
 
 			{/* Scrollable body — banner/header/description stay pinned above, footer pinned below. */}
-			<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-3">
+			<div
+				className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-2 [scrollbar-gutter:stable]"
+				onScroll={handleBodyScroll}
+				style={bodyScrolled ? CARD_DIRECTORY_SCROLL_MASK_STYLE : undefined}
+			>
 				{sources.length > 0 ? (
 					<CardDirectorySection label="Works with">
 						<TWGAppstack animated={false} className="justify-start" iconSize="md" maxVisible={6} sources={sources} />

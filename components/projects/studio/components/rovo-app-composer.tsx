@@ -410,7 +410,7 @@ function RovoAppComposerInner({
 				<div className="relative z-10">
 					<FloatingComposer
 						allowOverflow
-						className="relative z-10"
+						className="relative z-10 mx-auto max-w-[600px]"
 						data-screen-assistant-target="studio-composer"
 						onSubmit={handlePromptSubmit}
 						addButton={

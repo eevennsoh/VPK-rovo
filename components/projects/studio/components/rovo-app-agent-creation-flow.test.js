@@ -280,5 +280,6 @@ test("Studio composer reveals 'Start from scratch' on focus and lands on a blank
 
 test("Studio composer overrides the live voice start button to neutral bold", () => {
 	assert.match(COMPOSER_SOURCE, /screenAssistantTargetPrefix="studio-composer"/u);
+	assert.match(COMPOSER_SOURCE, /className="relative z-10 mx-auto max-w-\[600px\]"/u);
 	assert.match(COMPOSER_SOURCE, /voiceStartButtonClassName="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u);
 });

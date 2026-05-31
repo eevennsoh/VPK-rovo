@@ -75,6 +75,7 @@ const AGENT_TEMPLATES_TAB_COPY_INITIAL_OPACITY = 0.68;
 const AGENT_TEMPLATES_TAB_CARDS_INITIAL_OPACITY = 0.9;
 const AGENT_TEMPLATES_TAB_CARD_INITIAL_OPACITY = 0.82;
 const AGENT_TEMPLATES_MODAL_CARD_ENTER_OFFSET = 32;
+const NOOP_TEMPLATE_MORE_ACTIONS = () => undefined;
 
 export type AgentTemplatesCategoryId = "brainstorm" | "analyze" | "review" | "summarize" | "create";
 
@@ -94,35 +95,35 @@ const AGENT_TEMPLATES_CATEGORIES: readonly AgentTemplatesCategory[] = [
 		label: "Planning",
 		iconSrc: `${RICH_ICON_ROOT}/lightbulb/standard.svg`,
 		iconClassName: "-translate-y-px scale-[1.08]",
-		titleLines: ["Agents that turn rough ideas into plans,", "and help teams choose the next step."],
+		titleLines: ["Turn rough ideas into plans,", "and choose the next step."],
 	},
 	{
 		id: "analyze",
 		label: "Insights",
 		iconSrc: `${RICH_ICON_ROOT}/marketing/standard.svg`,
 		iconClassName: "scale-[1.08]",
-		titleLines: ["Agents that pull signal from context,", "and turn scattered data into decisions."],
+		titleLines: ["Pull signal from context,", "and turn scattered data into decisions."],
 	},
 	{
 		id: "review",
 		label: "Operations",
 		iconSrc: `${RICH_ICON_ROOT}/product-management/standard.svg`,
 		iconClassName: "translate-x-0.5 -translate-y-0.5 scale-[1.14]",
-		titleLines: ["Agents that keep routines moving,", "and make follow-through easier to trust."],
+		titleLines: ["Keep routines moving,", "and make follow-through easier to trust."],
 	},
 	{
 		id: "summarize",
 		label: "Writing",
 		iconSrc: `${RICH_ICON_ROOT}/illustrations/standard.svg`,
 		iconClassName: "-translate-y-px scale-[0.88]",
-		titleLines: ["Agents that draft, refine, and adapt writing,", "without losing the point."],
+		titleLines: ["Draft, refine, and adapt writing,", "without losing the point."],
 	},
 	{
 		id: "create",
 		label: "Work management",
 		iconSrc: `${RICH_ICON_ROOT}/project-management/standard.svg`,
 		iconClassName: "scale-[1.08]",
-		titleLines: ["Agents that track the work that matters,", "and keep momentum visible."],
+		titleLines: ["Track the work that matters,", "and keep momentum visible."],
 	},
 ] as const;
 
@@ -446,6 +447,7 @@ function AgentTemplateCard({
 			collaborators={agent.collaborators}
 			description={agent.description}
 			name={agent.name}
+			onMoreActions={NOOP_TEMPLATE_MORE_ACTIONS}
 			onSelect={onSelectAgent ? () => onSelectAgent(agent) : undefined}
 			publisher={agent.publisher ?? deriveAgentPublisher(agent.byline)}
 			skills={agent.skills}

@@ -39,6 +39,7 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	const demoAgentsSource = readProjectFile("components/blocks/agent-templates/data/demo-template-agents.ts");
 	const defaultSidebarGroupsSource = readProjectFile("components/blocks/agent-templates/data/sidebar-groups.ts");
 	const studioShellSource = readProjectFile("components/projects/studio/components/rovo-app-shell.tsx");
+	const expandedCardSource = readProjectFile("components/ui-custom/card-directory/card-directory-agent-expanded.tsx");
 
 	assert.doesNotMatch(source, /AgentBrowserDialog/u);
 	assert.match(source, /AGENT_TEMPLATES_CATEGORIES/u);
@@ -47,15 +48,15 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(source, /label: "Operations"/u);
 	assert.match(source, /label: "Writing"/u);
 	assert.match(source, /label: "Work management"/u);
-	assert.match(source, /Agents that turn rough ideas into plans,/u);
-	assert.match(source, /and help teams choose the next step\./u);
-	assert.match(source, /Agents that pull signal from context,/u);
+	assert.match(source, /Turn rough ideas into plans,/u);
+	assert.match(source, /and choose the next step\./u);
+	assert.match(source, /Pull signal from context,/u);
 	assert.match(source, /and turn scattered data into decisions\./u);
-	assert.match(source, /Agents that keep routines moving,/u);
+	assert.match(source, /Keep routines moving,/u);
 	assert.match(source, /and make follow-through easier to trust\./u);
-	assert.match(source, /Agents that draft, refine, and adapt writing,/u);
+	assert.match(source, /Draft, refine, and adapt writing,/u);
 	assert.match(source, /without losing the point\./u);
-	assert.match(source, /Agents that track the work that matters,/u);
+	assert.match(source, /Track the work that matters,/u);
 	assert.match(source, /and keep momentum visible\./u);
 	assert.match(source, /activeCategoryOption\.titleLines\[0\]/u);
 	assert.match(source, /activeCategoryOption\.titleLines\[1\]/u);
@@ -71,12 +72,17 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	// Carousel cards now render via the card-directory expanded agent card.
 	assert.match(source, /AgentTemplateCard/u);
 	assert.match(source, /CardDirectoryAgentExpanded/u);
+	assert.match(source, /NOOP_TEMPLATE_MORE_ACTIONS/u);
+	assert.match(source, /onMoreActions=\{NOOP_TEMPLATE_MORE_ACTIONS\}/u);
 	assert.match(source, /deriveAgentPublisher/u);
 	assert.match(source, /AGENT_TEMPLATES_MAX_VISIBLE_AGENTS = 8/u);
 	assert.match(source, /agent\.categoryId === activeCategory/u);
 	assert.match(source, /visibleAgents\.slice\(0, AGENT_TEMPLATES_MAX_VISIBLE_AGENTS\)/u);
 	assert.match(source, /AnimatePresence initial=\{false\}/u);
 	assert.match(source, /AgentTemplatesCarouselControl/u);
+	assert.match(expandedCardSource, /buildScrollMaskStyle/u);
+	assert.match(expandedCardSource, /bodyScrolled \? CARD_DIRECTORY_SCROLL_MASK_STYLE : undefined/u);
+	assert.match(expandedCardSource, /\[scrollbar-gutter:stable\]/u);
 	assert.match(source, /setCarouselRef/u);
 	assert.match(source, /canScrollLeft/u);
 	assert.match(source, /canScrollRight/u);
@@ -93,6 +99,8 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(studioShellSource, /agents=\{DEMO_AGENT_TEMPLATES\}/u);
 	assert.match(studioShellSource, /initialCategoryId=\{activeCategory\}/u);
 	assert.match(studioShellSource, /sessionAgents=\{DEMO_AGENT_TEMPLATES_SESSION\}/u);
+	assert.match(studioShellSource, /function HomeStarterHeroTile[\s\S]*<TWGAppstack[\s\S]*animated=\{false\}/u);
+	assert.match(studioShellSource, /mx-auto grid w-full max-w-\[1280px\] grid-cols-1/u);
 	assert.match(source, /initialCategoryId\?: AgentTemplatesCategoryId/u);
 	assert.match(source, /setActiveCategory\(initialCategoryId\)/u);
 	// Demo agents carry the expanded-card detail the cards render.
