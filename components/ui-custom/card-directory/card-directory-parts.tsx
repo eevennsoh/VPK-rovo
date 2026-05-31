@@ -4,19 +4,59 @@ import { type MouseEvent, type ReactElement, type ReactNode } from "react";
 import Image from "next/image";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
 import ArrowUpRightIcon from "@atlaskit/icon/core/arrow-up-right";
+import BacklogIcon from "@atlaskit/icon/core/backlog";
+import BoardIcon from "@atlaskit/icon/core/board";
+import BookWithBookmarkIcon from "@atlaskit/icon/core/book-with-bookmark";
+import BranchIcon from "@atlaskit/icon/core/branch";
+import CalendarIcon from "@atlaskit/icon/core/calendar";
+import ChartBarIcon from "@atlaskit/icon/core/chart-bar";
+import ChartBubbleIcon from "@atlaskit/icon/core/chart-bubble";
+import ChartPieIcon from "@atlaskit/icon/core/chart-pie";
 import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
 import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
 import ClipboardIcon from "@atlaskit/icon/core/clipboard";
 import ClockIcon from "@atlaskit/icon/core/clock";
 import CommentIcon from "@atlaskit/icon/core/comment";
+import CompassIcon from "@atlaskit/icon/core/compass";
+import DashboardIcon from "@atlaskit/icon/core/dashboard";
+import DataNumberIcon from "@atlaskit/icon/core/data-number";
+import DiscoveryIcon from "@atlaskit/icon/core/discovery";
 import EditIcon from "@atlaskit/icon/core/edit";
+import EpicIcon from "@atlaskit/icon/core/epic";
 import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
+import FilterIcon from "@atlaskit/icon/core/filter";
 import FlagFilledIcon from "@atlaskit/icon/core/flag-filled";
+import HighlightIcon from "@atlaskit/icon/core/highlight";
+import IncidentIcon from "@atlaskit/icon/core/incident";
+import LightbulbIcon from "@atlaskit/icon/core/lightbulb";
+import LinkIcon from "@atlaskit/icon/core/link";
+import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
+import ListChecklistIcon from "@atlaskit/icon/core/list-checklist";
+import MegaphoneIcon from "@atlaskit/icon/core/megaphone";
+import ObjectiveIcon from "@atlaskit/icon/core/objective";
+import OnCallIcon from "@atlaskit/icon/core/on-call";
+import PageIcon from "@atlaskit/icon/core/page";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
+import PinIcon from "@atlaskit/icon/core/pin";
+import PulseIcon from "@atlaskit/icon/core/pulse";
+import QuestionCircleIcon from "@atlaskit/icon/core/question-circle";
+import QuotationMarkIcon from "@atlaskit/icon/core/quotation-mark";
+import RefreshIcon from "@atlaskit/icon/core/refresh";
+import RoadmapIcon from "@atlaskit/icon/core/roadmap";
+import ScalesIcon from "@atlaskit/icon/core/scales";
 import SearchIcon from "@atlaskit/icon/core/search";
+import ShieldIcon from "@atlaskit/icon/core/shield";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
+import SubtasksIcon from "@atlaskit/icon/core/subtasks";
+import SupportIcon from "@atlaskit/icon/core/support";
+import TargetIcon from "@atlaskit/icon/core/target";
 import TaskIcon from "@atlaskit/icon/core/task";
+import TextIcon from "@atlaskit/icon/core/text";
+import TimelineIcon from "@atlaskit/icon/core/timeline";
+import TransitionIcon from "@atlaskit/icon/core/transition";
+import TranslateIcon from "@atlaskit/icon/core/translate";
+import WarningIcon from "@atlaskit/icon/core/warning";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -240,15 +280,55 @@ export function CardDirectoryBanner({ avatarSrc, avatarBadge, backgroundColor }:
 
 export type CardDirectoryCapabilityIcon =
 	| "action"
+	| "alert"
+	| "board"
+	| "book"
+	| "branch"
 	| "brief"
+	| "bubble"
+	| "calendar"
+	| "chartBar"
+	| "chartPie"
 	| "check"
+	| "checklist"
 	| "clock"
 	| "comment"
+	| "compass"
+	| "dashboard"
+	| "data"
+	| "dependency"
+	| "discovery"
+	| "document"
 	| "draft"
+	| "epic"
+	| "filter"
 	| "goal"
+	| "handoff"
+	| "highlight"
+	| "incident"
+	| "lightbulb"
+	| "list"
+	| "megaphone"
+	| "milestone"
+	| "objective"
+	| "onCall"
 	| "people"
+	| "pulse"
+	| "queue"
+	| "question"
+	| "quote"
+	| "refresh"
 	| "review"
+	| "roadmap"
+	| "scales"
 	| "search"
+	| "shield"
+	| "subtasks"
+	| "support"
+	| "target"
+	| "text"
+	| "timeline"
+	| "translate"
 	| "trend"
 	| "work";
 
@@ -272,24 +352,104 @@ function getCapabilityIcon(icon: CardDirectoryCapabilityIcon | undefined): React
 	switch (icon) {
 		case "action":
 			return <ArrowUpRightIcon label="" />;
+		case "alert":
+			return <WarningIcon label="" />;
+		case "board":
+			return <BoardIcon label="" />;
+		case "book":
+			return <BookWithBookmarkIcon label="" />;
+		case "branch":
+			return <BranchIcon label="" />;
 		case "brief":
 			return <ClipboardIcon label="" />;
+		case "bubble":
+			return <ChartBubbleIcon label="" />;
+		case "calendar":
+			return <CalendarIcon label="" />;
+		case "chartBar":
+			return <ChartBarIcon label="" />;
+		case "chartPie":
+			return <ChartPieIcon label="" />;
 		case "check":
 			return <CheckCircleIcon label="" />;
+		case "checklist":
+			return <ListChecklistIcon label="" />;
 		case "clock":
 			return <ClockIcon label="" />;
 		case "comment":
 			return <CommentIcon label="" />;
+		case "compass":
+			return <CompassIcon label="" />;
+		case "dashboard":
+			return <DashboardIcon label="" />;
+		case "data":
+			return <DataNumberIcon label="" />;
+		case "dependency":
+			return <LinkIcon label="" />;
+		case "discovery":
+			return <DiscoveryIcon label="" />;
+		case "document":
+			return <PageIcon label="" />;
 		case "draft":
 			return <EditIcon label="" />;
+		case "epic":
+			return <EpicIcon label="" />;
+		case "filter":
+			return <FilterIcon label="" />;
 		case "goal":
 			return <FlagFilledIcon label="" />;
+		case "handoff":
+			return <TransitionIcon label="" />;
+		case "highlight":
+			return <HighlightIcon label="" />;
+		case "incident":
+			return <IncidentIcon label="" />;
+		case "lightbulb":
+			return <LightbulbIcon label="" />;
+		case "list":
+			return <ListBulletedIcon label="" />;
+		case "megaphone":
+			return <MegaphoneIcon label="" />;
+		case "milestone":
+			return <PinIcon label="" />;
+		case "objective":
+			return <ObjectiveIcon label="" />;
+		case "onCall":
+			return <OnCallIcon label="" />;
 		case "people":
 			return <PeopleGroupIcon label="" />;
+		case "pulse":
+			return <PulseIcon label="" />;
+		case "queue":
+			return <BacklogIcon label="" />;
+		case "question":
+			return <QuestionCircleIcon label="" />;
+		case "quote":
+			return <QuotationMarkIcon label="" />;
+		case "refresh":
+			return <RefreshIcon label="" />;
 		case "review":
 			return <EyeOpenIcon label="" />;
+		case "roadmap":
+			return <RoadmapIcon label="" />;
+		case "scales":
+			return <ScalesIcon label="" />;
 		case "search":
 			return <SearchIcon label="" />;
+		case "shield":
+			return <ShieldIcon label="" />;
+		case "subtasks":
+			return <SubtasksIcon label="" />;
+		case "support":
+			return <SupportIcon label="" />;
+		case "target":
+			return <TargetIcon label="" />;
+		case "text":
+			return <TextIcon label="" />;
+		case "timeline":
+			return <TimelineIcon label="" />;
+		case "translate":
+			return <TranslateIcon label="" />;
 		case "trend":
 			return <ChartTrendUpIcon label="" />;
 		case "work":

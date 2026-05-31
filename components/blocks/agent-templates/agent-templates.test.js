@@ -131,7 +131,7 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(demoAgentsSource, /capabilities:/u);
 	assert.match(demoAgentsSource, /const SOURCE_SEQUENCE/u);
 	assert.match(demoAgentsSource, /const SKILL_LABELS/u);
-	assert.match(demoAgentsSource, /const CAPABILITY_ICON_SEQUENCES/u);
+	assert.match(demoAgentsSource, /const CATEGORY_CAPABILITY_ICONS/u);
 	assert.match(demoAgentsSource, /function defaultSources/u);
 	assert.match(demoAgentsSource, /const sourceCount = 2 \+ \(seed % 7\)/u);
 	assert.match(demoAgentsSource, /function defaultSkills/u);
