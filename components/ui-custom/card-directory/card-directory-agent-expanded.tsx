@@ -155,7 +155,7 @@ export function CardDirectoryAgentExpanded({
 		if (attributionKind === "team") {
 			return (
 				<AvatarProjectBadge>
-					<img alt="" aria-hidden src={publisherLogoSrc ?? "/1p/rovo.svg"} />
+					<img alt="" aria-hidden src={publisherLogoSrc ?? "/avatar-project/group.svg"} />
 				</AvatarProjectBadge>
 			);
 		}
