@@ -249,15 +249,17 @@ function Cursor({ scale, animated }: Readonly<{ scale: number; animated: boolean
 
 /**
  * Microphone badge wearing a Rovo conic-gradient ring above a static caret
- * stick (8×24 at scale 1). The ring uses the mask-composite border technique
+ * stick (16×32 at scale 1, mic icon `size="small"` = 12px). The ring uses the mask-composite border technique
  * and rotates when `animated`; the caret stick below the badge is a plain
  * rectangle (no radius, no animation) marking the typing insertion point.
  */
 function Typing({ scale, animated }: Readonly<{ scale: number; animated: boolean }>) {
-	// Badge hugs the microphone tightly — 8u badge, 6u icon, 1u padding per
-	// side. Renders as 24×24 at the demo's default scale=3.
-	const badge = 8 * scale;
-	const icon = 6 * scale;
+	// Badge fills the glyph footprint (16u) with a 12u small-sized microphone
+	// icon inside and a 2u padding gutter around it. The icon uses
+	// `@atlaskit/icon`'s `size="small"` (12px) so its intrinsic size matches
+	// the inner box at scale=1.
+	const badge = 16 * scale;
+	const padding = 2 * scale;
 	const ringWidth = Math.max(1, 0.6 * scale);
 	const ringMask: React.CSSProperties = {
 		WebkitMask:
@@ -270,7 +272,7 @@ function Typing({ scale, animated }: Readonly<{ scale: number; animated: boolean
 		<span className="inline-flex flex-col items-center" style={{ width: badge }}>
 			<span
 				className="relative box-border inline-flex items-center justify-center rounded-full bg-[#101214] text-white"
-				style={{ width: badge, height: badge, padding: 1 * scale }}
+				style={{ width: badge, height: badge, padding }}
 			>
 				<span
 					aria-hidden
@@ -295,9 +297,8 @@ function Typing({ scale, animated }: Readonly<{ scale: number; animated: boolean
 				</span>
 				<Icon
 					aria-hidden
-					render={<MicrophoneIcon label="" />}
-					className="relative [&_svg]:size-full"
-					style={{ width: icon, height: icon }}
+					render={<MicrophoneIcon label="" size="small" />}
+					className="relative"
 				/>
 			</span>
 			<span
