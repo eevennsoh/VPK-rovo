@@ -106,6 +106,12 @@ test("expanded agent variant adds a cover banner and scrollable capabilities to 
 	assert.match(AGENT_EXPANDED_SOURCE, /<CardDirectoryByline/u);
 });
 
+test("expanded agent variant uses project-avatar fallback for team badges", () => {
+	assert.match(AGENT_EXPANDED_SOURCE, /<AvatarProjectBadge>/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /publisherLogoSrc \?\? "\/avatar-project\/group\.svg"/u);
+	assert.doesNotMatch(AGENT_EXPANDED_SOURCE, /publisherLogoSrc \?\? "\/1p\/rovo\.svg"/u);
+});
+
 test("expanded agent variant renders Works with sources and Skills tags", () => {
 	assert.match(AGENT_EXPANDED_SOURCE, /TWGAppstack/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /<TWGAppstack animated=\{false\}/u);
