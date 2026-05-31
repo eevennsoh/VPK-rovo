@@ -223,22 +223,24 @@ export function CardDirectoryBanner({ avatarSrc, avatarBadge, backgroundColor }:
 			>
 				<AvatarImage alt="" aria-hidden className="object-contain" src={avatarSrc} />
 				<AvatarFallback />
-				<svg
-					aria-hidden="true"
-					className="pointer-events-none absolute top-0 left-0 h-12 w-[42px] overflow-visible"
-					focusable="false"
-					viewBox="0 0 43 48"
-				>
-					<path
-						className="stroke-surface"
-						d={BANNER_HEXAGON_PATH}
-						fill="none"
-						strokeWidth={2}
-						vectorEffect="non-scaling-stroke"
-					/>
-				</svg>
 				{avatarBadge}
 			</Avatar>
+			{/* Surface ring sits over the avatar as an unclipped sibling — rendering it as an
+			    Avatar child would route it through the hexagon clip-path and slice the stroke. */}
+			<svg
+				aria-hidden="true"
+				className="pointer-events-none absolute top-6 left-4 h-12 w-[42px] overflow-visible"
+				focusable="false"
+				viewBox="0 0 43 48"
+			>
+				<path
+					className="stroke-surface"
+					d={BANNER_HEXAGON_PATH}
+					fill="none"
+					strokeWidth={2}
+					vectorEffect="non-scaling-stroke"
+				/>
+			</svg>
 		</div>
 	);
 }

@@ -368,7 +368,7 @@ export function AgentTemplatesDialog({
 						<AnimatePresence custom={tabMotionCustom} initial={false} mode="wait">
 							<motion.div
 								animate="center"
-								className="flex h-full gap-4 px-6 py-2"
+								className="flex h-full gap-4 px-6 pt-2 pb-6"
 								custom={tabMotionCustom}
 								exit="exit"
 								initial="enter"
