@@ -126,3 +126,14 @@ export function SpinnerDemoSizes() {
 		</div>
 	);
 }
+
+export function SpinnerDemoRainbow() {
+	return (
+		<div className="flex items-center gap-4">
+			<Spinner variant="rainbow" size="sm" />
+			<Spinner variant="rainbow" />
+			<Spinner variant="rainbow" size="lg" />
+			<Spinner variant="rainbow" size="xl" />
+		</div>
+	);
+}
