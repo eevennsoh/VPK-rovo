@@ -215,38 +215,22 @@ export function CardDirectoryBanner({ avatarSrc, avatarBadge, backgroundColor }:
 			</div>
 			<div aria-hidden className="h-6" />
 			{/* The avatar art (`public/avatar-agent/*`) is itself a full-bleed hexagon drawn with
-			    the exact same path as `BANNER_HEXAGON_PATH`, so we render it directly rather than
-			    routing it through the Avatar hexagon shape. That clip derives a narrower hexagon
-			    from a square viewBox and its outline uses `preserveAspectRatio="meet"`, which — in
-			    this non-square box — sliced the art and floated the border inset from the edge.
-			    Here the art and both strokes share one geometry so everything stays concentric: an
-			    inner subtle border hugs the edge, and an outer surface ring lifts the hexagon off
-			    the colored cover. `preserveAspectRatio="none"` makes the strokes track the box
-			    exactly like the stretched art. The wrapper recreates the `group/avatar` +
-			    `data-size` contract the badge sizes against. */}
+			    the exact `BANNER_HEXAGON_PATH`, so we render it directly (like `AgentProfileCover`)
+			    rather than routing it through the Avatar hexagon shape, whose square-derived clip
+			    sliced the art and floated its outline. The surface ring is drawn over the art and
+			    centered on the hexagon edge — its inner half sits on the avatar, its outer half
+			    lifts it off the colored cover. Art and stroke share one viewBox and the same
+			    default (meet) scaling so they stay flush. The wrapper recreates the `group/avatar`
+			    + `data-size` contract the badge sizes against. */}
 			<div aria-hidden className="group/avatar absolute top-6 left-4 h-12 w-[42px]" data-size="xl">
-				{/* Outer separator — behind the art at double width so only its outer half clears
-				    the opaque hexagon, reading as a clean surface-colored lift-off ring. */}
+				<Image alt="" aria-hidden className="absolute inset-0 size-full object-contain" height={48} src={avatarSrc} width={42} />
 				<svg
 					aria-hidden="true"
 					className="stroke-surface pointer-events-none absolute inset-0 size-full overflow-visible"
 					focusable="false"
-					preserveAspectRatio="none"
 					viewBox="0 0 43 48"
 				>
-					<path d={BANNER_HEXAGON_PATH} fill="none" strokeWidth={4} vectorEffect="non-scaling-stroke" />
-				</svg>
-				<Image alt="" aria-hidden className="absolute inset-0 size-full" height={48} src={avatarSrc} width={42} />
-				{/* Inner border — over the art so it hugs the hexagon edge, matching the subtle
-				    outline ADS shows on hexagon avatars. */}
-				<svg
-					aria-hidden="true"
-					className="pointer-events-none absolute inset-0 size-full overflow-visible text-border! mix-blend-darken dark:mix-blend-lighten"
-					focusable="false"
-					preserveAspectRatio="none"
-					viewBox="0 0 43 48"
-				>
-					<path d={BANNER_HEXAGON_PATH} fill="none" stroke="currentColor" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+					<path d={BANNER_HEXAGON_PATH} fill="none" strokeWidth={2} vectorEffect="non-scaling-stroke" />
 				</svg>
 				{avatarBadge}
 			</div>
