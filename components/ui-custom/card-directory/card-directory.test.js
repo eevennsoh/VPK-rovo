@@ -24,6 +24,8 @@ test("shell preserves the bordered surface and hover-elevation classes", () => {
 	assert.match(SHELL_SOURCE, /rounded-md border border-border bg-surface p-4/u);
 	assert.match(SHELL_SOURCE, /focus-visible:ring-3 focus-visible:ring-ring\/50/u);
 	assert.match(SHELL_SOURCE, /willChange: "transform"/u);
+	assert.doesNotMatch(SHELL_SOURCE, /hover:border-border-selected/u);
+	assert.doesNotMatch(SHELL_SOURCE, /hover:after:ring-border-selected/u);
 });
 
 test("shell exposes the keyboard-operable button contract when interactive", () => {
@@ -134,10 +136,10 @@ test("expanded agent variant pins the header and footer around a scrollable body
 	assert.match(AGENT_EXPANDED_SOURCE, /data-slot="card-directory-sticky-header"/u);
 	assert.match(
 		AGENT_EXPANDED_SOURCE,
-		/<CardDirectoryBanner[\s\S]*<div className="px-4 pt-3">[\s\S]*<CardDirectoryHeader[\s\S]*byline=\{<CardDirectoryByline publisher=\{publisher\} verified=\{verified\} \/>\}[\s\S]*title=\{name\}[\s\S]*<CardDirectoryDescription>[\s\S]*description \?\?[\s\S]*\{\/\* Scrollable body/u,
+		/<CardDirectoryBanner[\s\S]*<div className="px-4 pt-3">[\s\S]*<CardDirectoryHeader[\s\S]*byline=\{<CardDirectoryByline publisher=\{publisher\} verified=\{verified\} \/>\}[\s\S]*title=\{name\}[\s\S]*<CardDirectoryDescription className="mt-1 min-h-0">[\s\S]*description \?\?[\s\S]*\{\/\* Scrollable body/u,
 	);
 	// flex-1 + min-h-0 + overflow-y-auto gives a scrollable body so the header/footer stay pinned
-	assert.match(AGENT_EXPANDED_SOURCE, /flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-3/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-2/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /<div className="pb-4">\s*<CardDirectoryCapabilities/u);
 	// the expanded shell owns clipping while body/footer restore their own padding
 	assert.match(AGENT_EXPANDED_SOURCE, /className=\{cn\("gap-0 overflow-clip p-0", className\)\}/u);

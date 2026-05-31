@@ -75,9 +75,16 @@ const AGENT_TEMPLATES_TAB_COPY_INITIAL_OPACITY = 0.68;
 const AGENT_TEMPLATES_TAB_CARDS_INITIAL_OPACITY = 0.9;
 const AGENT_TEMPLATES_TAB_CARD_INITIAL_OPACITY = 0.82;
 const AGENT_TEMPLATES_MODAL_CARD_ENTER_OFFSET = 32;
+const AGENT_TEMPLATES_TAB_COPY_SWAP_OFFSET = 8;
+const AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET = 24;
 const NOOP_TEMPLATE_MORE_ACTIONS = () => undefined;
 
 export type AgentTemplatesCategoryId = "brainstorm" | "analyze" | "review" | "summarize" | "create";
+type AgentTemplatesTabMotionDirection = 1 | -1;
+type AgentTemplatesTabMotionCustom = {
+	direction: AgentTemplatesTabMotionDirection;
+	shouldReduceMotion: boolean;
+};
 
 type AgentTemplatesCategory = {
 	id: AgentTemplatesCategoryId;
@@ -128,10 +135,35 @@ const AGENT_TEMPLATES_CATEGORIES: readonly AgentTemplatesCategory[] = [
 ] as const;
 
 const EMPTY_CAPABILITIES: readonly string[] = [];
+const AGENT_TEMPLATES_TAB_COPY_VARIANTS = {
+	enter: ({ direction, shouldReduceMotion }: AgentTemplatesTabMotionCustom) => ({
+		opacity: shouldReduceMotion ? 1 : AGENT_TEMPLATES_TAB_COPY_INITIAL_OPACITY,
+		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${AGENT_TEMPLATES_TAB_COPY_SWAP_OFFSET * direction}px)`,
+	}),
+	center: {
+		opacity: 1,
+		transform: "translateX(0px)",
+	},
+} as const;
+const AGENT_TEMPLATES_TAB_CARDS_VARIANTS = {
+	enter: ({ direction, shouldReduceMotion }: AgentTemplatesTabMotionCustom) => ({
+		opacity: shouldReduceMotion ? 1 : AGENT_TEMPLATES_TAB_CARDS_INITIAL_OPACITY,
+		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET * direction}px)`,
+	}),
+	center: {
+		opacity: 1,
+		transform: "translateX(0px)",
+	},
+} as const;
 
 /** Pull the publisher from a byline like "Customer feedback insights by Atlassian" → "Atlassian". */
 function deriveAgentPublisher(byline: string): string {
 	return byline.match(/\bby\s+(.+)$/iu)?.[1].trim() ?? byline;
+}
+
+function getAgentTemplatesCategoryIndex(categoryId: AgentTemplatesCategoryId): number {
+	const categoryIndex = AGENT_TEMPLATES_CATEGORIES.findIndex((category) => category.id === categoryId);
+	return categoryIndex >= 0 ? categoryIndex : 0;
 }
 
 export function AgentTemplatesDialog({
@@ -150,9 +182,14 @@ export function AgentTemplatesDialog({
 	const previousOpenRef = useRef(false);
 	const shouldReduceMotion = useReducedMotion();
 	const [activeCategory, setActiveCategory] = useState(initialCategoryId);
+	const [tabMotionDirection, setTabMotionDirection] = useState<AgentTemplatesTabMotionDirection>(1);
 	const [scrollControls, setScrollControls] = useState({ canScrollLeft: false, canScrollRight: false });
 	const shouldAnimateCardsFromLaunch = open && !previousOpenRef.current && !shouldReduceMotion;
 	const activeCategoryOption = AGENT_TEMPLATES_CATEGORIES.find((category) => category.id === activeCategory) ?? AGENT_TEMPLATES_CATEGORIES[0];
+	const tabMotionCustom = {
+		direction: tabMotionDirection,
+		shouldReduceMotion,
+	};
 	const allTemplateAgents = useMemo(
 		() => [...agents, ...sessionAgents],
 		[agents, sessionAgents],
@@ -251,6 +288,13 @@ export function AgentTemplatesDialog({
 		}, 150);
 	};
 
+	const handleCategorySelect = (categoryId: AgentTemplatesCategoryId) => {
+		if (categoryId === activeCategory) return;
+
+		setTabMotionDirection(getAgentTemplatesCategoryIndex(categoryId) > getAgentTemplatesCategoryIndex(activeCategory) ? 1 : -1);
+		setActiveCategory(categoryId);
+	};
+
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent
@@ -268,7 +312,7 @@ export function AgentTemplatesDialog({
 								active={activeCategory === category.id}
 								category={category}
 								key={category.id}
-								onClick={() => setActiveCategory(category.id)}
+								onClick={() => handleCategorySelect(category.id)}
 							/>
 						))}
 					</div>
@@ -280,11 +324,13 @@ export function AgentTemplatesDialog({
 						style={{ font: token("font.heading.xlarge") }}
 					>
 						<motion.span
-							animate={{ opacity: 1 }}
+							animate="center"
 							className="block"
-							initial={{ opacity: shouldReduceMotion ? 1 : AGENT_TEMPLATES_TAB_COPY_INITIAL_OPACITY }}
+							custom={tabMotionCustom}
+							initial="enter"
 							key={title ?? activeCategory}
 							transition={AGENT_TEMPLATES_TAB_COPY_TRANSITION}
+							variants={AGENT_TEMPLATES_TAB_COPY_VARIANTS}
 						>
 							{title ? (
 								title
@@ -307,11 +353,13 @@ export function AgentTemplatesDialog({
 						ref={setCarouselRef}
 					>
 						<motion.div
-							animate={{ opacity: 1 }}
+							animate="center"
 							className="flex h-full gap-4"
-							initial={{ opacity: shouldReduceMotion ? 1 : AGENT_TEMPLATES_TAB_CARDS_INITIAL_OPACITY }}
+							custom={tabMotionCustom}
+							initial="enter"
 							key={activeCategory}
 							transition={AGENT_TEMPLATES_TAB_CARDS_TRANSITION}
+							variants={AGENT_TEMPLATES_TAB_CARDS_VARIANTS}
 						>
 							{templateAgents.map((agent) => (
 								<motion.div

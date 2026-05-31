@@ -2,25 +2,16 @@
 
 import { Button } from "@/components/ui/button";
 import AddIcon from "@atlaskit/icon/core/add";
-import { TOP_NAV_OVERFLOW_BREAKPOINT_PX } from "../layout-constants";
 
-interface CreateButtonProps {
-	windowWidth: number;
-}
-
-export function CreateButton({ windowWidth }: Readonly<CreateButtonProps>) {
-	if (windowWidth >= TOP_NAV_OVERFLOW_BREAKPOINT_PX) {
-		return (
-			<Button className="gap-2" variant="default">
-				<AddIcon label="" size="small" />
-				Create
-			</Button>
-		);
-	}
-
+export function CreateButton() {
 	return (
-		<Button aria-label="Create" size="icon" variant="default">
-			<AddIcon label="" />
+		<Button
+			variant="default"
+			aria-label="Create"
+			className="gap-2 max-md:size-8 max-md:gap-0 max-md:px-0"
+		>
+			<AddIcon label="" size="small" />
+			<span className="max-md:hidden">Create</span>
 		</Button>
 	);
 }

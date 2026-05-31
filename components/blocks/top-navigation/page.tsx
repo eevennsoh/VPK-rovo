@@ -151,7 +151,7 @@ export default function TopNavigation({
 							/>
 						</div>
 
-						<CreateButton windowWidth={windowWidth} />
+						<CreateButton />
 					</div>
 				) : null}
 
