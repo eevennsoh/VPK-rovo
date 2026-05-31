@@ -37,8 +37,35 @@ import { RovoAppPlanExecutionTracker } from "./rovo-app-plan-execution-tracker";
 import { RovoAppComposerResponseGradient } from "./rovo-app-composer-response-gradient";
 import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
+import SvgTracing from "@/components/visual/svg-tracing";
+import { DEFAULT_SVG_TRACE_CONFIG, type SvgTraceConfig } from "@/components/visual/svg-tracing/data";
+import type { SvgTraceShape } from "@/components/visual/svg-tracing/lib";
 
 const HIDDEN_COMPOSER_SKILL_IDS = new Set(["vpk-html"]);
+
+// Hand-drawn squiggle traced underneath the word "scratch" when the composer
+// is focused. The rainbow trace is supplied by the shared svg-tracing effect.
+const SCRATCH_SCRIBBLE_SHAPE: SvgTraceShape = {
+	id: "scratch-scribble",
+	label: "Scratch doodle",
+	viewBox: "0 0 200 44",
+	paths: [
+		{
+			d: "M8 30 C26 8 33 6 40 14 C47 22 44 40 56 40 C70 40 82 12 100 12 C112 12 116 28 132 26 C156 23 176 22 192 26",
+		},
+	],
+};
+
+const SCRATCH_SCRIBBLE_CONFIG: SvgTraceConfig = {
+	...DEFAULT_SVG_TRACE_CONFIG,
+	duration: 1.8,
+	strokeWidth: 2.5,
+	colorStopCount: 6,
+	segmentCap: "round",
+	traceMode: "draw-eat",
+	loop: true,
+	showOutline: false,
+};
 const EMPTY_REALTIME_OUTPUT_WAVEFORM_BARS: number[] = [];
 const EMPTY_QUEUED_PROMPTS: ReadonlyArray<RovoAppQueuedAction> = [];
 
@@ -493,7 +520,21 @@ function RovoAppComposerInner({
 										onClick={onStartFromScratch}
 										className="rounded-xs text-xs text-text-subtlest underline-offset-2 transition-colors hover:text-text-subtle hover:underline focus-visible:text-text-subtle focus-visible:underline focus-visible:outline-none"
 									>
-										Or start from scratch
+										Or start from{" "}
+										<span className="relative">
+											scratch
+											{/* Decorative rainbow-traced doodle anchored under the word. */}
+											<span
+												aria-hidden
+												className="pointer-events-none absolute top-full left-1/2 w-20 -translate-x-1/2 pt-1"
+											>
+												<SvgTracing
+													shape={SCRATCH_SCRIBBLE_SHAPE}
+													config={SCRATCH_SCRIBBLE_CONFIG}
+													svgClassName="h-5 w-full"
+												/>
+											</span>
+										</span>
 									</button>
 								</motion.div>
 							) : null}
