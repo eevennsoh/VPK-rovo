@@ -79,6 +79,17 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(source, /agent\.categoryId === activeCategory/u);
 	assert.match(source, /visibleAgents\.slice\(0, AGENT_TEMPLATES_MAX_VISIBLE_AGENTS\)/u);
 	assert.match(source, /AnimatePresence initial=\{false\}/u);
+	assert.match(source, /AGENT_TEMPLATES_TAB_COPY_VARIANTS/u);
+	assert.match(source, /AGENT_TEMPLATES_TAB_CARDS_VARIANTS/u);
+	assert.match(source, /AGENT_TEMPLATES_TAB_COPY_SWAP_OFFSET = 8/u);
+	assert.match(source, /AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET = 24/u);
+	assert.match(source, /const \[tabMotionDirection, setTabMotionDirection\]/u);
+	assert.match(source, /getAgentTemplatesCategoryIndex\(categoryId\) > getAgentTemplatesCategoryIndex\(activeCategory\) \? 1 : -1/u);
+	assert.match(source, /custom=\{tabMotionCustom\}/u);
+	assert.match(source, /initial="enter"/u);
+	assert.match(source, /animate="center"/u);
+	assert.match(source, /variants=\{AGENT_TEMPLATES_TAB_COPY_VARIANTS\}/u);
+	assert.match(source, /variants=\{AGENT_TEMPLATES_TAB_CARDS_VARIANTS\}/u);
 	assert.match(source, /AgentTemplatesCarouselControl/u);
 	assert.match(expandedCardSource, /buildScrollMaskStyle/u);
 	assert.match(expandedCardSource, /bodyScrolled \? CARD_DIRECTORY_SCROLL_MASK_STYLE : undefined/u);
