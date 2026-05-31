@@ -1794,6 +1794,21 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		[studioAgentRegistry],
 	);
 
+	// Returns to the "Agents" landing (bento). Shared by the sidebar's "Agents"
+	// header (when it has no recent agents to expand) and the "View all agents"
+	// row. Must clear all three view-model layers: the agent-config pane
+	// (activeAgentConfig), the selected custom agent (resetAgentToRovo flips
+	// isCustomAgentSelected), and the chat thread (openNewChat). Without the first
+	// two, openNewChat alone leaves the custom-agent screen open.
+	const handleReturnToAgentsHome = useCallback(() => {
+		setOptimisticUserMessage(null);
+		setActiveAgentConfig(null);
+		studioAgentRegistry.resetAgentToRovo();
+		startTransition(() => {
+			void chat.openNewChat();
+		});
+	}, [chat, studioAgentRegistry]);
+
 	const handleSidebarBrowseAgentSelect = useCallback(
 		(agent: { id: string }) => {
 			studioAgentRegistry.selectAgent(agent.id, { preserveCurrentThread: true });
@@ -4039,6 +4054,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				activeThreadId={chat.activeThreadId}
 				agentCreationThreads={studioAgentCreationThreads}
 				hoverOpen={isHoverOpen}
+				isAgentsHomeActive={isDefaultAgentHomeState}
 				isResizing={sidebarResize.isResizing}
 				onCancelThreadRun={async (threadId) => {
 					await chat.cancelThreadRun(threadId);
@@ -4060,19 +4076,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						void chat.deleteThread(threadId);
 					});
 				}}
-				onNewChat={() => {
-					setOptimisticUserMessage(null);
-					// Returning to the "Agents" home must clear all three view-model
-					// layers: the agent-config pane (activeAgentConfig), the selected
-					// custom agent (resetAgentToRovo flips isCustomAgentSelected), and
-					// the chat thread (openNewChat). Without the first two, openNewChat
-					// alone leaves the custom-agent screen open.
-					setActiveAgentConfig(null);
-					studioAgentRegistry.resetAgentToRovo();
-					startTransition(() => {
-						void chat.openNewChat();
-					});
-				}}
+				onNewChat={handleReturnToAgentsHome}
 				onSelectAgent={handleStudioSidebarAgentSelect}
 				onSelectThread={async (threadId) => {
 					setOptimisticUserMessage(null);
@@ -4086,7 +4090,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				}}
 				onSidebarMouseEnter={handleSidebarContentMouseEnter}
 				onSidebarMouseLeave={handleSidebarContentMouseLeave}
-				onViewAllAgents={() => setIsSidebarAgentBrowserOpen(true)}
+				onViewAllAgents={handleReturnToAgentsHome}
 				resizeHandle={
 					<SidebarResizeHandle
 						data-active={sidebarResize.isResizing ? "" : undefined}
@@ -4103,6 +4107,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				threadsLoaded={chat.threadsLoaded}
 				topOffset={!embedded}
 			/>
+			{/* Dormant: the sidebar no longer opens this directory dialog (its "View all agents" row now returns to the landing). Kept mounted to wire to another trigger later; nothing sets it open today. */}
 			<AgentsDirectoryDialog
 				open={isSidebarAgentBrowserOpen}
 				onOpenChange={setIsSidebarAgentBrowserOpen}
