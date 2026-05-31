@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, cubicBezier, motion, useReducedMotion } from "motion/react";
 import ChevronLeftIcon from "@atlaskit/icon/core/chevron-left";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CrossIcon from "@atlaskit/icon/core/cross";
@@ -61,20 +61,26 @@ const AGENT_TEMPLATES_CAROUSEL_CONTROL_TRANSITION = {
 	bounce: 0,
 	visualDuration: 0.2,
 } as const;
-const AGENT_TEMPLATES_TAB_COPY_TRANSITION = {
-	type: "spring",
-	bounce: 0,
-	visualDuration: 0.26,
-} as const;
+// Tab swaps play as a sequenced exit → enter via AnimatePresence `mode="wait"`:
+// the outgoing tab fully clears before the incoming tab animates in. ADS easing
+// maps cleanly here — `--ease-in` ("elements leaving view") drives the quick exit,
+// `--ease-out` ("elements entering view") drives the softer, slightly slower enter.
+const AGENT_TEMPLATES_TAB_ENTER_TRANSITION = {
+	duration: 0.25, // ADS --duration-slow
+	ease: cubicBezier(0, 0.4, 0, 1), // ADS --ease-out
+};
+const AGENT_TEMPLATES_TAB_EXIT_TRANSITION = {
+	duration: 0.15, // ADS --duration-normal
+	ease: cubicBezier(0.6, 0.01, 0.8, 0.6), // ADS --ease-in
+};
 const AGENT_TEMPLATES_TAB_CARDS_TRANSITION = {
 	type: "spring",
 	bounce: 0,
 	visualDuration: 0.3,
 } as const;
-const AGENT_TEMPLATES_TAB_COPY_INITIAL_OPACITY = 0.68;
-const AGENT_TEMPLATES_TAB_CARDS_INITIAL_OPACITY = 0.9;
 const AGENT_TEMPLATES_TAB_CARD_INITIAL_OPACITY = 0.82;
 const AGENT_TEMPLATES_MODAL_CARD_ENTER_OFFSET = 32;
+const AGENT_TEMPLATES_TAB_COPY_SWAP_OFFSET = 16;
 const AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET = 24;
 const NOOP_TEMPLATE_MORE_ACTIONS = () => undefined;
 
@@ -135,22 +141,36 @@ const AGENT_TEMPLATES_CATEGORIES: readonly AgentTemplatesCategory[] = [
 
 const EMPTY_CAPABILITIES: readonly string[] = [];
 const AGENT_TEMPLATES_TAB_COPY_VARIANTS = {
-	enter: ({ shouldReduceMotion }: AgentTemplatesTabMotionCustom) => ({
-		opacity: shouldReduceMotion ? 1 : AGENT_TEMPLATES_TAB_COPY_INITIAL_OPACITY,
+	enter: ({ direction, shouldReduceMotion }: AgentTemplatesTabMotionCustom) => ({
+		opacity: 0,
+		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${AGENT_TEMPLATES_TAB_COPY_SWAP_OFFSET * direction}px)`,
 	}),
 	center: {
 		opacity: 1,
+		transform: "translateX(0px)",
+		transition: AGENT_TEMPLATES_TAB_ENTER_TRANSITION,
 	},
+	exit: ({ direction, shouldReduceMotion }: AgentTemplatesTabMotionCustom) => ({
+		opacity: 0,
+		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${-AGENT_TEMPLATES_TAB_COPY_SWAP_OFFSET * direction}px)`,
+		transition: AGENT_TEMPLATES_TAB_EXIT_TRANSITION,
+	}),
 } as const;
 const AGENT_TEMPLATES_TAB_CARDS_VARIANTS = {
 	enter: ({ direction, shouldReduceMotion }: AgentTemplatesTabMotionCustom) => ({
-		opacity: shouldReduceMotion ? 1 : AGENT_TEMPLATES_TAB_CARDS_INITIAL_OPACITY,
+		opacity: 0,
 		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET * direction}px)`,
 	}),
 	center: {
 		opacity: 1,
 		transform: "translateX(0px)",
+		transition: AGENT_TEMPLATES_TAB_ENTER_TRANSITION,
 	},
+	exit: ({ direction, shouldReduceMotion }: AgentTemplatesTabMotionCustom) => ({
+		opacity: 0,
+		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${-AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET * direction}px)`,
+		transition: AGENT_TEMPLATES_TAB_EXIT_TRANSITION,
+	}),
 } as const;
 
 /** Pull the publisher from a byline like "Customer feedback insights by Atlassian" → "Atlassian". */
@@ -320,24 +340,27 @@ export function AgentTemplatesDialog({
 						className="mt-6 text-text"
 						style={{ font: token("font.heading.xlarge") }}
 					>
-						<motion.span
-							animate="center"
-							className="block"
-							custom={tabMotionCustom}
-							initial="enter"
-							key={title ?? activeCategory}
-							transition={AGENT_TEMPLATES_TAB_COPY_TRANSITION}
-							variants={AGENT_TEMPLATES_TAB_COPY_VARIANTS}
-						>
-							{title ? (
-								title
-							) : (
-								<>
-									<span className="block">{activeCategoryOption.titleLines[0]}</span>
-									<span className="block">{activeCategoryOption.titleLines[1]}</span>
-								</>
-							)}
-						</motion.span>
+						<AnimatePresence custom={tabMotionCustom} initial={false} mode="wait">
+							<motion.span
+								animate="center"
+								className="block"
+								custom={tabMotionCustom}
+								exit="exit"
+								initial="enter"
+								key={title ?? activeCategory}
+								style={{ willChange: "transform, opacity" }}
+								variants={AGENT_TEMPLATES_TAB_COPY_VARIANTS}
+							>
+								{title ? (
+									title
+								) : (
+									<>
+										<span className="block">{activeCategoryOption.titleLines[0]}</span>
+										<span className="block">{activeCategoryOption.titleLines[1]}</span>
+									</>
+								)}
+							</motion.span>
+						</AnimatePresence>
 					</DialogTitle>
 				</header>
 
@@ -349,33 +372,36 @@ export function AgentTemplatesDialog({
 						onScroll={updateScrollControls}
 						ref={setCarouselRef}
 					>
-						<motion.div
-							animate="center"
-							className="flex h-full gap-4"
-							custom={tabMotionCustom}
-							initial="enter"
-							key={activeCategory}
-							transition={AGENT_TEMPLATES_TAB_CARDS_TRANSITION}
-							variants={AGENT_TEMPLATES_TAB_CARDS_VARIANTS}
-						>
-							{templateAgents.map((agent) => (
-								<motion.div
-									animate={{ opacity: 1, transform: "translateX(0px)" }}
-									className="h-full w-90 shrink-0"
-									initial={{
-										opacity: shouldReduceMotion ? 1 : AGENT_TEMPLATES_TAB_CARD_INITIAL_OPACITY,
-										transform: shouldAnimateCardsFromLaunch ? `translateX(${AGENT_TEMPLATES_MODAL_CARD_ENTER_OFFSET}px)` : "translateX(0px)",
-									}}
-									key={agent.id}
-									transition={AGENT_TEMPLATES_TAB_CARDS_TRANSITION}
-								>
-									<AgentTemplateCard
-										agent={agent}
-										onSelectAgent={onSelectAgent}
-									/>
-								</motion.div>
-							))}
-						</motion.div>
+						<AnimatePresence custom={tabMotionCustom} initial={false} mode="wait">
+							<motion.div
+								animate="center"
+								className="flex h-full gap-4"
+								custom={tabMotionCustom}
+								exit="exit"
+								initial="enter"
+								key={activeCategory}
+								style={{ willChange: "transform, opacity" }}
+								variants={AGENT_TEMPLATES_TAB_CARDS_VARIANTS}
+							>
+								{templateAgents.map((agent) => (
+									<motion.div
+										animate={{ opacity: 1, transform: "translateX(0px)" }}
+										className="h-full w-90 shrink-0"
+										initial={{
+											opacity: shouldReduceMotion ? 1 : AGENT_TEMPLATES_TAB_CARD_INITIAL_OPACITY,
+											transform: shouldAnimateCardsFromLaunch ? `translateX(${AGENT_TEMPLATES_MODAL_CARD_ENTER_OFFSET}px)` : "translateX(0px)",
+										}}
+										key={agent.id}
+										transition={AGENT_TEMPLATES_TAB_CARDS_TRANSITION}
+									>
+										<AgentTemplateCard
+											agent={agent}
+											onSelectAgent={onSelectAgent}
+										/>
+									</motion.div>
+								))}
+							</motion.div>
+						</AnimatePresence>
 					</div>
 					<AnimatePresence initial={false}>
 						{scrollControls.canScrollLeft ? (
