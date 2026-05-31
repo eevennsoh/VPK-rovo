@@ -314,7 +314,7 @@ function Typing({ scale, animated }: Readonly<{ scale: number; animated: boolean
  * variant so the same brand-gradient arc is reused across the design system.
  */
 function Loading({ scale }: Readonly<{ scale: number }>) {
-	const s = 12 * scale;
+	const s = 16 * scale;
 	return <Spinner variant="rainbow" className="size-auto" style={{ width: s, height: s }} />;
 }
 
