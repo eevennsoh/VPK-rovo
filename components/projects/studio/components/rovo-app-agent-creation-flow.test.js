@@ -34,16 +34,12 @@ const COMPOSER_SOURCE = fs.readFileSync(
 
 test("RovoAppShell starts Studio agent creation only from the default-agent home composer", () => {
 	assert.match(SHELL_SOURCE, /const DEFAULT_COMPOSER_PLACEHOLDER = "Describe the agent you want to build";/u);
-	assert.match(SHELL_SOURCE, /function buildStudioAgentCreationContext\(originalBrief: string\): string/u);
-	assert.match(SHELL_SOURCE, /\[Studio Agent Creation Request\]/u);
-	assert.match(SHELL_SOURCE, /"Source: \/studio prompt input\."/u);
-	assert.match(SHELL_SOURCE, /"Original user brief:"/u);
-	assert.match(SHELL_SOURCE, /Required agent profile fields/u);
-	assert.match(SHELL_SOURCE, /- agentId: stable kebab-case slug/u);
-	assert.match(SHELL_SOURCE, /- conversationStarters: 3 starter prompts/u);
-	assert.doesNotMatch(SHELL_SOURCE, /conversationStarters: 2.{1,3}4 starter prompts/u);
-	assert.match(SHELL_SOURCE, /Clarification rule: Use the existing ask_user_questions\/question-card flow/u);
-	assert.match(SHELL_SOURCE, /Expected output: build the agent profile now and emit exactly one structured AGENT_RESULT marker/u);
+	// The creation-context builders moved to a testable lib (their prompt copy is
+	// asserted in studio-agent-creation-context.test.js). The shell imports them
+	// and calls the initial builder with the brief plus any template provenance.
+	assert.match(SHELL_SOURCE, /buildStudioAgentCreationContext,/u);
+	assert.match(SHELL_SOURCE, /from "@\/components\/projects\/studio\/lib\/studio-agent-creation-context";/u);
+	assert.match(SHELL_SOURCE, /buildStudioAgentCreationContext\(text, creationTemplate\)/u);
 	assert.match(SHELL_SOURCE, /const isDefaultAgentHomeState = showHomeState && !isCustomAgentSelected;/u);
 	assert.match(SHELL_SOURCE, /const shouldStartStudioAgentCreation = isDefaultAgentHomeStateRef\.current && !isRealtimeActive;/u);
 	assert.match(SHELL_SOURCE, /\.\.\.\(shouldStartStudioAgentCreation \? \{ creationMode: "agent" as const \} : \{\}\)/u);
@@ -306,14 +302,28 @@ test("Studio screen assistant applies draft patches without publishing agents", 
 });
 
 test("Studio clarification answers keep agent creation mode active", () => {
-	assert.match(SHELL_SOURCE, /function buildStudioAgentCreationContinuationContext\(\): string/u);
-	assert.match(SHELL_SOURCE, /Source: \/studio prompt input clarification answer\./u);
-	assert.match(SHELL_SOURCE, /Trigger: The user has answered the clarification questions/u);
-	assert.match(SHELL_SOURCE, /Expected output: otherwise, create the reusable custom agent now and emit exactly one structured AGENT_RESULT marker/u);
+	// Continuation context builder now lives in the lib; the shell looks up the
+	// per-thread template provenance and passes it into the continuation context.
+	assert.match(SHELL_SOURCE, /buildStudioAgentCreationContinuationContext\(threadTemplate\)/u);
 	assert.match(SHELL_SOURCE, /const getStudioAgentCreationClarificationOptions = useCallback/u);
 	assert.match(SHELL_SOURCE, /creationMode: "agent" as const/u);
 	assert.match(SHELL_SOURCE, /submitClarification\([\s\S]*activeQuestionCard,[\s\S]*answers,[\s\S]*getStudioAgentCreationClarificationOptions\(\),/u);
 	assert.match(SHELL_SOURCE, /onDismissQuestionCard: handleCancelClarificationQuestionSet/u);
+});
+
+test("Studio threads template provenance into agent creation contexts", () => {
+	// Browse-all dialog and bento starters both carry distilled template
+	// provenance into the gallery select handler.
+	assert.match(SHELL_SOURCE, /buildCreationTemplateContextFromAgent\(agent\)/u);
+	assert.match(SHELL_SOURCE, /onSelect\(template\.prompt, buildCreationTemplateContextFromStarter\(template\)\)/u);
+	assert.match(SHELL_SOURCE, /onSelect: \(prompt: string, template\?: StudioCreationTemplateContext\) => void;/u);
+	// The pending selection is held in a ref and consumed on submit; the active
+	// creation thread keeps its template for the clarification continuation.
+	assert.match(SHELL_SOURCE, /const creationTemplateRef = useRef<StudioCreationTemplateContext \| null>\(null\);/u);
+	assert.match(SHELL_SOURCE, /const creationTemplateByThreadRef = useRef<Record<string, StudioCreationTemplateContext>>\(\{\}\);/u);
+	assert.match(SHELL_SOURCE, /creationTemplateRef\.current = template \?\? null;/u);
+	assert.match(SHELL_SOURCE, /creationTemplateByThreadRef\.current\[chat\.runtimeThreadId\] = creationTemplate;/u);
+	assert.match(SHELL_SOURCE, /creationTemplateRef\.current = null;/u);
 });
 
 test("Studio composer reveals 'Start from scratch' on focus or hover and lands on a blank untitled agent config", () => {

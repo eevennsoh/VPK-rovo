@@ -44,6 +44,13 @@ import { deriveRovoAppTimelineItems } from "@/components/projects/studio/lib/rov
 import { buildComposerHermesContext, shouldResetComposerHermesSkillSelection } from "@/components/projects/studio/lib/rovo-app-hermes-skill-selection";
 import { buildRovoAppThreadPath } from "@/components/projects/studio/lib/rovo-app-thread-route-sync";
 import { createRovoAppUserMessage } from "@/components/projects/studio/lib/rovo-app-user-message";
+import {
+	buildCreationTemplateContextFromAgent,
+	buildCreationTemplateContextFromStarter,
+	buildStudioAgentCreationContext,
+	buildStudioAgentCreationContinuationContext,
+	type StudioCreationTemplateContext,
+} from "@/components/projects/studio/lib/studio-agent-creation-context";
 import { useLiveVoice } from "@/components/projects/studio/hooks/use-live-voice";
 import { type DelegationRequest, useRealtimeVoice } from "@/components/projects/studio/hooks/use-realtime-voice";
 import type { VoiceButtonState } from "@/components/ui-audio/voice-button";
@@ -825,7 +832,7 @@ function HomeStarterBento({
 }: Readonly<{
 	onPreviewEnd: () => void;
 	onPreviewStart: (prompt: string) => void;
-	onSelect: (prompt: string) => void;
+	onSelect: (prompt: string, template?: StudioCreationTemplateContext) => void;
 }>) {
 	const [activeCategory, setActiveCategory] = useState<HomeStarterCategory>(HOME_STARTER_DEFAULT_CATEGORY);
 	const [browseOpen, setBrowseOpen] = useState(false);
@@ -942,7 +949,10 @@ function HomeStarterBento({
 		}
 	}, []);
 	const handleTemplateAgentSelect = useCallback((agent: AgentTemplatesAgent) => {
-		onSelect(agent.templatePrompt ?? buildFallbackTemplatePrompt(agent));
+		onSelect(
+			agent.templatePrompt ?? buildFallbackTemplatePrompt(agent),
+			buildCreationTemplateContextFromAgent(agent),
+		);
 		setBrowseOpen(false);
 	}, [onSelect]);
 
@@ -1051,7 +1061,7 @@ function HomeStarterBento({
 											accentColor={accentColor}
 											key={template.title}
 											onBlur={handleTemplateBlur}
-											onClick={() => onSelect(template.prompt)}
+											onClick={() => onSelect(template.prompt, buildCreationTemplateContextFromStarter(template))}
 											onFocus={() => handleTemplateFocus(template.prompt)}
 											onMouseEnter={() => handleTemplateMouseEnter(template.prompt)}
 											onMouseLeave={handleTemplateMouseLeave}
@@ -1173,50 +1183,6 @@ function mergeContextDescriptions(...parts: Array<string | null | undefined>): s
 
 function getNonEmptyString(value: unknown): string | null {
 	return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
-}
-
-function buildStudioAgentCreationContext(originalBrief: string): string {
-	return [
-		"[Studio Agent Creation Request]",
-		"Source: /studio prompt input.",
-		"Surface: Studio home composer.",
-		"Trigger: User submitted a free-form brief describing the agent they want to build.",
-		"Original user brief:",
-		originalBrief.trim(),
-		"Required agent profile fields (infer reasonable values from the brief; only ask clarifying questions if the brief truly cannot be turned into a workable profile):",
-		"- agentId: stable kebab-case slug",
-		"- name: short display name",
-		"- byline: one-line tagline (e.g. \"Generated agent\")",
-		"- description: 1–2 sentence summary of what the agent does",
-		"- instructions: structured Markdown beginning with ## Instructions; use paragraphs, bullet lists with bold labels, and optional ## Knowledge, ## Triggers, and ## Validation sections",
-		"- conversationStarters: 3 starter prompts (strings)",
-		"- avatarFallback: { initials: 2-letter shorthand derived from the name }",
-		"- action: \"create\"",
-		"Clarification rule: Use the existing ask_user_questions/question-card flow when needed; do not invent a separate Q&A format.",
-		"Expected output: build the agent profile now and emit exactly one structured AGENT_RESULT marker on its own line OUTSIDE any code fence. Do not wrap the marker, its JSON, or the surrounding response inside ``` fences (no ```markdown, ```json, or other fences around the result). Keep assistant prose brief.",
-		"[End Studio Agent Creation Request]",
-	].join("\n");
-}
-
-function buildStudioAgentCreationContinuationContext(): string {
-	return [
-		"[Studio Agent Creation Request]",
-		"Source: /studio prompt input clarification answer.",
-		"Surface: Studio home composer.",
-		"Trigger: The user has answered the clarification questions for the agent they want to build.",
-		"Required agent profile fields (fill from the brief + clarification answers):",
-		"- agentId: stable kebab-case slug",
-		"- name: short display name",
-		"- byline: one-line tagline (e.g. \"Generated agent\")",
-		"- description: 1–2 sentence summary of what the agent does",
-		"- instructions: structured Markdown beginning with ## Instructions; use paragraphs, bullet lists with bold labels, and optional ## Knowledge, ## Triggers, and ## Validation sections",
-		"- conversationStarters: 3 starter prompts (strings)",
-		"- avatarFallback: { initials: 2-letter shorthand derived from the name }",
-		"- action: \"create\"",
-		"Clarification rule: If required profile fields are still missing, ask another concise question-card round using the existing ask_user_questions flow.",
-		"Expected output: otherwise, create the reusable custom agent now and emit exactly one structured AGENT_RESULT marker on its own line OUTSIDE any code fence. Do not wrap the marker, its JSON, or the surrounding response inside ``` fences (no ```markdown, ```json, or other fences around the result). Keep assistant prose brief.",
-		"[End Studio Agent Creation Request]",
-	].join("\n");
 }
 
 function normalizeStudioAgentResult(agentResult: RovoDataParts["agent-result"]): RovoAgentProfile | null {
@@ -2109,6 +2075,13 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		});
 	}, []);
 
+	// Provenance of the template a user started agent creation from. The ref holds
+	// the pending selection (set when a template/bento card is chosen, consumed +
+	// cleared on submit); the per-thread map keeps it available for the
+	// clarification continuation rounds on that creation thread.
+	const creationTemplateRef = useRef<StudioCreationTemplateContext | null>(null);
+	const creationTemplateByThreadRef = useRef<Record<string, StudioCreationTemplateContext>>({});
+
 	const handleGalleryPreviewStart = useCallback((prompt: string) => {
 		setPreviewPrompt(prompt);
 	}, []);
@@ -2117,9 +2090,10 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		setPreviewPrompt(null);
 	}, []);
 
-	const handleGallerySelect = useCallback((prompt: string) => {
+	const handleGallerySelect = useCallback((prompt: string, template?: StudioCreationTemplateContext) => {
 		setPrefillText(prompt);
 		setPreviewPrompt(null);
+		creationTemplateRef.current = template ?? null;
 	}, []);
 
 	const handleRovoAppSuggestionSelect = useCallback(
@@ -2146,12 +2120,18 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			studioAgentCreationThreadKeysRef.current.has(chat.runtimeThreadId) ||
 			(chat.activeThreadId ? studioAgentCreationThreadKeysRef.current.has(chat.activeThreadId) : false);
 
-		return isStudioAgentCreationThread
-			? {
-				contextDescription: buildStudioAgentCreationContinuationContext(),
-				creationMode: "agent" as const,
-			}
-			: undefined;
+		if (!isStudioAgentCreationThread) {
+			return undefined;
+		}
+
+		const threadTemplate =
+			creationTemplateByThreadRef.current[chat.runtimeThreadId] ??
+			(chat.activeThreadId ? creationTemplateByThreadRef.current[chat.activeThreadId] : undefined);
+
+		return {
+			contextDescription: buildStudioAgentCreationContinuationContext(threadTemplate),
+			creationMode: "agent" as const,
+		};
 	}, [chat.activeThreadId, chat.runtimeThreadId]);
 	const handleCancelClarificationQuestionSet = useCallback(
 		(questionCard: ParsedQuestionCardPayload) => {
@@ -3080,7 +3060,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			const realtimeChat = chatRef.current as RovoAppRealtimeShellAdapter;
 			const realtimeVoice = realtime as RealtimeVoiceShellResult;
 			const shouldStartStudioAgentCreation = isDefaultAgentHomeStateRef.current && !isRealtimeActive;
-			const studioAgentCreationContext = shouldStartStudioAgentCreation ? buildStudioAgentCreationContext(text) : undefined;
+			const creationTemplate = shouldStartStudioAgentCreation ? (creationTemplateRef.current ?? undefined) : undefined;
+			const studioAgentCreationContext = shouldStartStudioAgentCreation ? buildStudioAgentCreationContext(text, creationTemplate) : undefined;
 			const contextDescription = mergeContextDescriptions(annotationContextRef.current, studioAgentCreationContext);
 			const hermesPromptOptions = buildHermesPromptOptions(contextDescription);
 			const shouldClearHermesSkillSelection = Boolean(hermesPromptOptions.hermesContext);
@@ -3162,6 +3143,18 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				if (shouldStartStudioAgentCreation) {
 					markStudioAgentCreationThread(chat.runtimeThreadId);
 					markStudioAgentCreationThread(chat.activeThreadId);
+					// Keep the template provenance available for clarification rounds on
+					// this creation thread, then clear the pending selection so a later
+					// hand-typed brief isn't mislabeled as template-derived.
+					if (creationTemplate) {
+						if (chat.runtimeThreadId) {
+							creationTemplateByThreadRef.current[chat.runtimeThreadId] = creationTemplate;
+						}
+						if (chat.activeThreadId) {
+							creationTemplateByThreadRef.current[chat.activeThreadId] = creationTemplate;
+						}
+					}
+					creationTemplateRef.current = null;
 				}
 				const submitPrompt = realtimeChat.submitPrompt as (payload: StudioSubmitPromptPayload) => Promise<void>;
 				await submitPrompt({
