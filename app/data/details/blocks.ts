@@ -109,6 +109,7 @@ const agents: AgentsDirectoryAgent[] = [
   open={open}
   onOpenChange={setOpen}
   agents={agents}
+  onCreateAgent={() => console.log("Create agent")}
   onSelectAgent={(agent) => console.log(agent.id)}
 />`,
 		demoLayout: { previewHeight: "fixed" },
@@ -135,6 +136,11 @@ const agents: AgentsDirectoryAgent[] = [
 				type: "(open: boolean) => void",
 				required: true,
 				description: "Called when the dialog requests an open-state change.",
+			},
+			{
+				name: "onCreateAgent",
+				type: "() => void",
+				description: "Optional handler for the New agent action in the modal header.",
 			},
 			{
 				name: "onSelectAgent",
@@ -238,18 +244,24 @@ const agents: AgentTemplatesAgent[] = [
 		],
 	},
 	"tools-directory": {
-		description: "Dialog-based tools directory for browsing recommended, team, partner, and session-created tools.",
+		description: "Figma-matched tools directory for browsing app categories, inspecting a tool, and adding or removing it from an agent.",
 		importStatement: `import { ToolsDirectoryDialog } from "@/components/blocks/tools-directory";`,
 		usage: `import { ToolsDirectoryDialog } from "@/components/blocks/tools-directory";
 import type { ToolsDirectoryTool } from "@/components/blocks/tools-directory";
 
 const tools: ToolsDirectoryTool[] = [
   {
-    id: "google-drive",
-    name: "Google Drive",
-    byline: "File search by Google",
-    avatarSrc: "/3p/google-drive/24.svg",
-    description: "Searches your Drive for the most relevant document in context.",
+    id: "atlassian",
+    name: "Atlassian",
+    byline: "Collaboration tools by Atlassian",
+    avatarSrc: "/1p/atlassian.svg",
+    categoryId: "project-management",
+    description: "Specializes in collaboration tools designed primarily for software development and project management.",
+    logoName: "atlassian",
+    publisherName: "Atlassian",
+    toolCount: 36,
+    teammateCount: 258,
+    verified: true,
   },
 ];
 
@@ -257,6 +269,7 @@ const tools: ToolsDirectoryTool[] = [
   open={open}
   onOpenChange={setOpen}
   tools={tools}
+  defaultAddedToolIds={["atlassian"]}
   onSelectTool={(tool) => console.log(tool.id)}
 />`,
 		demoLayout: { previewHeight: "fixed" },
@@ -271,6 +284,26 @@ const tools: ToolsDirectoryTool[] = [
 				name: "sessionTools",
 				type: "readonly ToolsDirectoryTool[]",
 				description: "Runtime-created tools appended to the catalog.",
+			},
+			{
+				name: "addedToolIds",
+				type: "readonly string[]",
+				description: "Controlled list of tool IDs already added to the current agent.",
+			},
+			{
+				name: "defaultAddedToolIds",
+				type: "readonly string[]",
+				description: "Initial uncontrolled list of tool IDs already added to the current agent.",
+			},
+			{
+				name: "onAddedToolIdsChange",
+				type: "(toolIds: readonly string[]) => void",
+				description: "Called after Add to agent or Remove changes the selected tool's added state.",
+			},
+			{
+				name: "onCreateTool",
+				type: "() => void",
+				description: "Optional handler for the New tool action in the modal header.",
 			},
 			{
 				name: "open",
@@ -292,7 +325,7 @@ const tools: ToolsDirectoryTool[] = [
 			{
 				name: "sidebarGroups",
 				type: "readonly ToolsDirectorySidebarGroup[]",
-				description: "Optional sidebar grouping override. Defaults to the Studio directory grouping.",
+				description: "Optional legacy sidebar groups rendered below the category list.",
 			},
 			{
 				name: "title",
