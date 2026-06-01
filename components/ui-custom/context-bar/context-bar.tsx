@@ -7,6 +7,7 @@ import { useId, useLayoutEffect, useRef, useState } from "react";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -366,12 +367,14 @@ const PILL_CLASS = cn(
 );
 
 /**
- * Trailing "…" overflow button: same filled neutral pill family, narrowed to a
- * square icon footprint (`px-2`) and switched to icon-subtle coloring while
- * keeping the shared radius, height, transition, and focus ring.
+ * Trailing "…" overflow button: same filled neutral pill family, sized to a
+ * 40×40 square (`size-10`, matching the 40px pill height) with the ellipsis icon
+ * centered, and switched to icon-subtle coloring while keeping the shared radius,
+ * transition, and focus ring. The invisible measurement copy reuses this exact
+ * class so `computeContextBarOverflow` reserves the correct square width.
  */
 const OVERFLOW_BUTTON_CLASS =
-	"flex shrink-0 items-center justify-center rounded-xl bg-bg-neutral px-2 py-2 text-icon-subtle transition-colors duration-normal ease-out hover:bg-bg-neutral-hovered hover:text-icon active:bg-bg-neutral-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none";
+	"flex size-10 shrink-0 items-center justify-center rounded-xl bg-bg-neutral text-icon-subtle transition-colors duration-normal ease-out hover:bg-bg-neutral-hovered hover:text-icon active:bg-bg-neutral-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none";
 
 interface ContextBarPillProps extends React.ComponentProps<"button"> {
 	icon?: React.ReactNode;
@@ -515,16 +518,18 @@ export function ContextBarTagGroup({
 							<ShowMoreHorizontalIcon color="currentColor" label="" size="small" />
 						</span>
 					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" className="min-w-40">
-						{hiddenItems.map((item) => (
-							<DropdownMenuItem
-								elemBefore={item.icon}
-								key={item.id}
-								onSelect={item.onSelect}
-							>
-								{item.label}
-							</DropdownMenuItem>
-						))}
+					<DropdownMenuContent align="end">
+						<DropdownMenuGroup>
+							{hiddenItems.map((item) => (
+								<DropdownMenuItem
+									elemBefore={item.icon}
+									key={item.id}
+									onSelect={item.onSelect}
+								>
+									{item.label}
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuGroup>
 					</DropdownMenuContent>
 				</DropdownMenu>
 			) : null}
