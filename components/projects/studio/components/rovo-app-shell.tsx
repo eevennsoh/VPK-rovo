@@ -798,6 +798,16 @@ function HomeStarterHeroTile({
 
 const HOME_STARTER_CYCLE_DURATION_MS = 6000;
 
+// Bottom "more below" tease. Applied as an alpha mask on the grid wrapper (the
+// stable AnimatePresence host) rather than as a semi-transparent gradient
+// overlay: an overlay only hides content that is fully opaque, so during a tab
+// swap the exiting/entering tiles — whose own opacity is mid-animation — show
+// *through* the scrim. A mask clips the content layer's alpha at the source, so
+// transitioning tiles can never leak past the fade. Height matches the prior
+// `h-24` (96px) overlay. The "Browse all" pill stays a separate, unmasked
+// sibling so it keeps reading as a crisp affordance over the faded edge.
+const HOME_STARTER_BENTO_FADE_MASK = "linear-gradient(to bottom, #000 calc(100% - 96px), transparent)";
+
 function HomeStarterBento({
 	onPreviewEnd,
 	onPreviewStart,
@@ -990,7 +1000,14 @@ function HomeStarterBento({
 				onPointerMove={handleBentoPointerMove}
 				style={HOME_STARTER_CARD_GLOW_EFFECT_STYLE}
 			>
-				<div className="relative">
+				<div
+					className="relative"
+					style={
+						canShowMore
+							? { maskImage: HOME_STARTER_BENTO_FADE_MASK, WebkitMaskImage: HOME_STARTER_BENTO_FADE_MASK }
+							: undefined
+					}
+				>
 					<AnimatePresence mode="wait" initial={false}>
 						<motion.div
 							key={activeCategory}
@@ -1096,12 +1113,7 @@ function HomeStarterBento({
 					</AnimatePresence>
 				</div>
 				{canShowMore ? (
-					<>
-						<div
-							aria-hidden
-							className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-background"
-						/>
-						<div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-2">
+					<div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-2">
 						<Button
 							type="button"
 							aria-label="Browse all agents"
@@ -1114,7 +1126,6 @@ function HomeStarterBento({
 							Browse all
 						</Button>
 					</div>
-					</>
 				) : null}
 			</div>
 			<AgentTemplatesDialog
