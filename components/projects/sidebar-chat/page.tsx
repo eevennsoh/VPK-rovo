@@ -201,6 +201,12 @@ export default function ChatPanel({
 	const [containerWidthPx, setContainerWidthPx] = useState<number | null>(null);
 	const [viewportWidthPx, setViewportWidthPx] = useState<number | null>(null);
 	const [selectedReasoning, setSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
+	const isCollapsibleEditContextBar = Boolean(chatContextBar?.collapsible && chatContextBar.variant === "edit");
+	const [isContextBarOpen, setIsContextBarOpen] = useState(true);
+
+	useEffect(() => {
+		setIsContextBarOpen(true);
+	}, [chatContextBar?.signature]);
 
 	useEffect(() => {
 		const updateViewportWidth = () => {
@@ -546,6 +552,7 @@ export default function ChatPanel({
 	useEffect(() => releaseArtifactDialogFloatingPin, [releaseArtifactDialogFloatingPin]);
 
 	const hasMessages = messages.length > 0;
+	const resolvedGreeting = isCollapsibleEditContextBar && !isContextBarOpen ? undefined : greeting;
 	const shouldHugEmptyGreeting = !hasMessages && greeting?.showHero === false;
 	const shouldUseAutoMessageTrack = shouldHugEmptyGreeting && containerStyle?.display === "grid";
 	const resolvedContainerStyle = shouldUseAutoMessageTrack
@@ -698,13 +705,13 @@ export default function ChatPanel({
 				{messages.length === 0 ? (
 					<div className="w-full" style={chatStyles.emptyState}>
 						<ChatGreeting
-							heading={greeting?.heading}
-							illustrationSrc={greeting?.illustrationSrc}
-							illustrationDarkSrc={greeting?.illustrationDarkSrc}
+							heading={resolvedGreeting?.heading}
+							illustrationSrc={resolvedGreeting?.illustrationSrc}
+							illustrationDarkSrc={resolvedGreeting?.illustrationDarkSrc}
 							isMaxMode={selectedReasoning === "max"}
 							selectedAgent={selectedAgent}
-							showHero={greeting?.showHero}
-							suggestions={greeting?.suggestions}
+							showHero={resolvedGreeting?.showHero}
+							suggestions={resolvedGreeting?.suggestions}
 							onSuggestionClick={handleGreetingSuggestionClick}
 						/>
 					</div>
@@ -854,6 +861,7 @@ export default function ChatPanel({
 						realtimeVoiceActive={isRealtimeVoiceActive}
 						selectedReasoning={selectedReasoning}
 						chatContextBar={chatContextBar}
+						onContextBarOpenChange={setIsContextBarOpen}
 					/>
 				</>
 			)}

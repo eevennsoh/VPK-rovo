@@ -22,6 +22,7 @@ import type {
 interface ChatContextBarProps {
 	context: ChatContextBarDescriptor | null | undefined;
 	onDismiss?: () => void;
+	onOpenChange?: (open: boolean) => void;
 }
 
 const ICON_MAP: Record<ChatContextBarIconName, typeof BoardIcon> = {
@@ -34,6 +35,7 @@ const ICON_MAP: Record<ChatContextBarIconName, typeof BoardIcon> = {
 export default function ChatContextBar({
 	context,
 	onDismiss,
+	onOpenChange,
 }: Readonly<ChatContextBarProps>): React.ReactElement | null {
 	if (!context) {
 		return null;
@@ -74,6 +76,7 @@ export default function ChatContextBar({
 				dismissLabel={dismissLabel}
 				lead={<LeadIcon color={token("color.icon.subtle")} label="" size="small" />}
 				leadLabel={leadLabel}
+				onOpenChange={onOpenChange}
 				triggerAriaLabel={`${collapsedLabel}: ${context.label}`}
 			>
 				{tag}

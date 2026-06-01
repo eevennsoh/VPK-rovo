@@ -62,6 +62,7 @@ interface CollapsibleContextBarProps {
 	collapsedIcon?: React.ReactNode;
 	collapsedLabel: string;
 	triggerAriaLabel?: string;
+	onOpenChange?: (open: boolean) => void;
 }
 
 /**
@@ -181,11 +182,16 @@ export function CollapsibleContextBar({
 	collapsedIcon,
 	collapsedLabel,
 	triggerAriaLabel,
+	onOpenChange,
 }: Readonly<CollapsibleContextBarProps>): React.ReactElement {
 	const [open, setOpen] = useState(defaultOpen);
+	const updateOpen = (next: boolean) => {
+		setOpen(next);
+		onOpenChange?.(next);
+	};
 
 	return open ? (
-		<ContextBar dismissLabel={dismissLabel} onDismiss={() => setOpen(false)}>
+		<ContextBar dismissLabel={dismissLabel} onDismiss={() => updateOpen(false)}>
 			<ContextBarLead icon={lead}>{leadLabel}</ContextBarLead>
 			{children}
 		</ContextBar>
@@ -193,7 +199,7 @@ export function CollapsibleContextBar({
 		<ContextBarTrigger
 			aria-label={triggerAriaLabel}
 			icon={collapsedIcon}
-			onClick={() => setOpen(true)}
+			onClick={() => updateOpen(true)}
 		>
 			{collapsedLabel}
 		</ContextBarTrigger>
@@ -286,8 +292,13 @@ export function AnimatedCollapsibleContextBar({
 	collapsedIcon,
 	collapsedLabel,
 	triggerAriaLabel,
+	onOpenChange,
 }: Readonly<CollapsibleContextBarProps>): React.ReactElement {
 	const [open, setOpen] = useState(defaultOpen);
+	const updateOpen = (next: boolean) => {
+		setOpen(next);
+		onOpenChange?.(next);
+	};
 	const shouldReduceMotion = useReducedMotion();
 	const contentVariants = shouldReduceMotion ? CONTENT_VARIANTS_REDUCED : CONTENT_VARIANTS;
 
@@ -331,7 +342,7 @@ export function AnimatedCollapsibleContextBar({
 							<button
 								aria-label={dismissLabel}
 								className={DISMISS_BUTTON_CLASS}
-								onClick={() => setOpen(false)}
+								onClick={() => updateOpen(false)}
 								type="button"
 							>
 								<CrossIcon color="currentColor" label="" size="small" />
@@ -346,7 +357,7 @@ export function AnimatedCollapsibleContextBar({
 							initial="initial"
 							key="collapsed"
 							layout="position"
-							onClick={() => setOpen(true)}
+							onClick={() => updateOpen(true)}
 							transition={CONTENT_TRANSITION}
 							type="button"
 							variants={contentVariants}
