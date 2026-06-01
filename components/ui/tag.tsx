@@ -182,7 +182,7 @@ function Tag({
 					{elemBefore}
 				</span>
 			) : null}
-			<span className="min-w-0 grow truncate whitespace-nowrap text-box-trim" data-tag-text>
+			<span className="min-w-0 grow truncate whitespace-nowrap" data-tag-text>
 				{children}
 			</span>
 			{shouldShowVerifiedIcon ? (
