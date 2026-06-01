@@ -4,6 +4,18 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const AGENT_SOURCE = readFileSync(join(__dirname, "agent.tsx"), "utf8");
+const AGENT_DEMO_SOURCE = readFileSync(
+	join(__dirname, "..", "website", "demos", "ui-custom", "agent-demo.tsx"),
+	"utf8",
+);
+const UI_CUSTOM_DETAILS_SOURCE = readFileSync(
+	join(__dirname, "..", "..", "app", "data", "details", "ui-custom.ts"),
+	"utf8",
+);
+const WEBSITE_REGISTRY_SOURCE = readFileSync(
+	join(__dirname, "..", "website", "registry.ts"),
+	"utf8",
+);
 const RICH_TEXT_EDITOR_SOURCE = readFileSync(
 	join(__dirname, "rich-text-editor", "rich-text-editor.tsx"),
 	"utf8",
@@ -76,6 +88,21 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	]) {
 		assert.match(AGENT_SOURCE, new RegExp(`label="${label}"`, "u"));
 	}
+});
+
+test("Agent component page wires the compact layout variation", () => {
+	assert.match(AGENT_SOURCE, /layout\?: "default" \| "compact";/u);
+	assert.match(AGENT_SOURCE, /layout = "default"/u);
+	assert.match(AGENT_SOURCE, /data-agent-config-layout=\{layout\}/u);
+	assert.match(AGENT_SOURCE, /layout === "compact"/u);
+	assert.match(AGENT_SOURCE, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
+
+	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompact/u);
+	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-compact"/u);
+	assert.match(AGENT_DEMO_SOURCE, /layout="compact"/u);
+	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Compact"[\s\S]*demoSlug: "agent-demo-compact"/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-compact": dynamic/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /default: mod\.AgentDemoCompact/u);
 });
 
 test("Agent profile inline edit fields align to the profile content edge", () => {

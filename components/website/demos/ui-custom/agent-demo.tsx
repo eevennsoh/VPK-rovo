@@ -53,8 +53,8 @@ const filledAgentConfig: AgentConfigFormValue = {
 	action: "draft",
 };
 
-export function AgentDemoFull() {
-	const [config, setConfig] = useState<AgentConfigFormValue>(filledAgentConfig);
+function useAgentDemoConfig(initialConfig: AgentConfigFormValue) {
+	const [config, setConfig] = useState<AgentConfigFormValue>(initialConfig);
 
 	function handleTextChange(field: AgentConfigTextFieldName, value: string) {
 		setConfig((current) => ({
@@ -85,6 +85,24 @@ export function AgentDemoFull() {
 			return { ...current, [field]: [...items, ""] };
 		});
 	}
+
+	return {
+		config,
+		appendListItem,
+		handleTextChange,
+		removeListItem,
+		updateListItem,
+	};
+}
+
+export function AgentDemoFull() {
+	const {
+		appendListItem,
+		config,
+		handleTextChange,
+		removeListItem,
+		updateListItem,
+	} = useAgentDemoConfig(filledAgentConfig);
 
 	return (
 		<Agent className="mx-auto min-h-[852px] w-full max-w-[720px]">
@@ -107,37 +125,13 @@ export function AgentDemoFull() {
 }
 
 export function AgentDemoEmpty() {
-	const [config, setConfig] = useState<AgentConfigFormValue>(emptyAgentConfig);
-
-	function handleTextChange(field: AgentConfigTextFieldName, value: string) {
-		setConfig((current) => ({
-			...current,
-			[field]: value,
-			...(field === "description" ? { summary: value } : {}),
-		}));
-	}
-
-	function updateListItem(field: AgentConfigListFieldName, index: number, value: string) {
-		setConfig((current) => {
-			const items = Array.isArray(current[field]) ? [...current[field]] : [];
-			items[index] = value;
-			return { ...current, [field]: items };
-		});
-	}
-
-	function removeListItem(field: AgentConfigListFieldName, index: number) {
-		setConfig((current) => {
-			const items = Array.isArray(current[field]) ? current[field] : [];
-			return { ...current, [field]: items.filter((_, itemIndex) => itemIndex !== index) };
-		});
-	}
-
-	function appendListItem(field: AgentConfigListFieldName) {
-		setConfig((current) => {
-			const items = Array.isArray(current[field]) ? current[field] : [];
-			return { ...current, [field]: [...items, ""] };
-		});
-	}
+	const {
+		appendListItem,
+		config,
+		handleTextChange,
+		removeListItem,
+		updateListItem,
+	} = useAgentDemoConfig(emptyAgentConfig);
 
 	return (
 		<Agent className="mx-auto min-h-[852px] w-full max-w-[720px]">
@@ -149,6 +143,36 @@ export function AgentDemoEmpty() {
 				<AgentConfigFields
 					config={config}
 					idPrefix="agent-demo-empty"
+					onTextChange={handleTextChange}
+					onListItemChange={updateListItem}
+					onRemoveListItem={removeListItem}
+					onAppendListItem={appendListItem}
+				/>
+			</AgentContent>
+		</Agent>
+	);
+}
+
+export function AgentDemoCompact() {
+	const {
+		appendListItem,
+		config,
+		handleTextChange,
+		removeListItem,
+		updateListItem,
+	} = useAgentDemoConfig(filledAgentConfig);
+
+	return (
+		<Agent className="mx-auto min-h-[852px] w-full max-w-[960px]">
+			<AgentHeader
+				name={config.name?.trim() || "Untitled agent"}
+				model="Draft"
+			/>
+			<AgentContent>
+				<AgentConfigFields
+					config={config}
+					idPrefix="agent-demo-compact"
+					layout="compact"
 					onTextChange={handleTextChange}
 					onListItemChange={updateListItem}
 					onRemoveListItem={removeListItem}
