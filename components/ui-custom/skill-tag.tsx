@@ -22,19 +22,31 @@ interface SkillTagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	icon?: React.ReactNode;
 	color?: SkillTagColor;
 	onRemove?: () => void;
+	removeVariant?: "inline" | "overlay";
 	removeButtonLabel?: string;
 }
 
-function SkillTag({ children, icon, color = "default", onClick, onRemove, removeButtonLabel = "Remove", className, ...props }: Readonly<SkillTagProps>) {
+function SkillTag({
+	children,
+	icon,
+	color = "default",
+	onClick,
+	onRemove,
+	removeVariant = "inline",
+	removeButtonLabel = "Remove",
+	className,
+	...props
+}: Readonly<SkillTagProps>) {
 	const isInteractive = Boolean(onClick);
+	const isOverlayRemove = Boolean(onRemove) && removeVariant === "overlay";
 
 	return (
 		<span
 			{...props}
 			onClick={onClick}
 			className={cn(
-				"relative inline-flex h-5 -skew-x-12 items-center gap-1 rounded-sm bg-bg-neutral py-1 pl-2.5 align-middle text-xs leading-4 font-normal text-text transition-colors",
-				onRemove ? "pr-1" : "pr-1.5",
+				"group/skill-tag relative inline-flex h-5 -skew-x-12 items-center gap-1 rounded-sm bg-bg-neutral py-1 pl-2.5 align-middle text-xs leading-4 font-normal text-text transition-colors",
+				onRemove && !isOverlayRemove ? "pr-1" : "pr-1.5",
 				isInteractive ? "cursor-pointer hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed" : "cursor-default",
 				className,
 			)}
@@ -45,17 +57,30 @@ function SkillTag({ children, icon, color = "default", onClick, onRemove, remove
 
 			{/* Icon */}
 			{icon ? (
-				<span className={cn("flex size-3 shrink-0 skew-x-12 items-center justify-center [&>svg]:size-3", collectionStyles[color].icon)} data-slot="skill-tag-icon">
+				<span className={cn("relative z-[1] flex size-3 shrink-0 skew-x-12 items-center justify-center [&>svg]:size-3", collectionStyles[color].icon)} data-slot="skill-tag-icon">
 					{icon}
 				</span>
 			) : null}
 
 			{/* Label */}
-			<span className="skew-x-12 truncate whitespace-nowrap" data-slot="skill-tag-label">
+			<span
+				className={cn(
+					"relative z-[1] min-w-0 skew-x-12 truncate whitespace-nowrap",
+					isOverlayRemove && "group-hover/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-focus-within/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-hover/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-focus-within/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)]"
+				)}
+				data-slot="skill-tag-label"
+			>
 				{children}
 			</span>
 
-			{/* Remove button */}
+			{isOverlayRemove ? (
+				<span
+					aria-hidden
+					className="pointer-events-none absolute inset-y-0 end-0 z-[2] w-12 rounded-r-sm bg-linear-to-l from-bg-neutral from-55% to-transparent opacity-0 transition-opacity duration-fast ease-out group-hover/skill-tag:opacity-100 group-focus-within/skill-tag:opacity-100"
+					data-slot="skill-tag-remove-overlay-scrim"
+				/>
+			) : null}
+
 			{onRemove ? (
 				<button
 					type="button"
@@ -64,7 +89,12 @@ function SkillTag({ children, icon, color = "default", onClick, onRemove, remove
 						event.stopPropagation();
 						onRemove();
 					}}
-					className="inline-flex size-3.5 shrink-0 skew-x-12 items-center justify-center rounded-xs text-icon-subtle transition-colors hover:bg-bg-neutral-hovered hover:text-icon active:bg-bg-neutral-pressed"
+					className={cn(
+						"inline-flex size-3.5 shrink-0 skew-x-12 items-center justify-center rounded-xs text-icon-subtle transition-[opacity,background-color,color] duration-fast ease-out hover:bg-bg-neutral-hovered hover:text-icon active:bg-bg-neutral-pressed",
+						isOverlayRemove
+							? "pointer-events-none absolute end-1 top-1/2 z-[3] -translate-y-1/2 opacity-0 group-hover/skill-tag:pointer-events-auto group-hover/skill-tag:opacity-100 group-focus-within/skill-tag:pointer-events-auto group-focus-within/skill-tag:opacity-100"
+							: "opacity-100",
+					)}
 					data-slot="skill-tag-remove"
 				>
 					<CrossIcon label="" size="small" />

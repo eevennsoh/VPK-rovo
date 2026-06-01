@@ -157,7 +157,7 @@ function Tag({
 			onClick={onClick}
 			style={resolvedStyle}
 			className={cn(
-				"group relative inline-flex max-w-[11.25rem] min-w-0 shrink-0 self-start items-center border bg-bg-neutral-subtle text-xs leading-4 font-normal text-text transition-colors box-border",
+				"group/tag relative inline-flex max-w-[11.25rem] min-w-0 shrink-0 self-start items-center border bg-bg-neutral-subtle text-xs leading-4 font-normal text-text transition-colors box-border",
 				"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
 				colorClasses.border,
 				hasAvatarTagStyles
@@ -216,7 +216,7 @@ function Tag({
 						aria-hidden
 						data-slot="tag-remove-overlay-scrim"
 						className={cn(
-							"pointer-events-none absolute inset-y-px end-px w-9 rounded-[inherit] bg-linear-to-l from-surface from-45% to-transparent opacity-0 transition-opacity duration-fast ease-out group-hover:opacity-100 group-focus-within:opacity-100",
+							"pointer-events-none absolute inset-y-px end-px w-9 rounded-[inherit] bg-linear-to-l from-surface from-45% to-transparent opacity-0 transition-opacity duration-fast ease-out group-hover/tag:opacity-100 group-focus-within/tag:opacity-100",
 						)}
 					/>
 					<button
@@ -227,7 +227,7 @@ function Tag({
 						data-slot="tag-remove-overlay-button"
 						className={cn(
 							"absolute end-px top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center rounded-xs border-0 bg-transparent text-text opacity-0 transition-[opacity,background-color] duration-fast ease-out hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none",
-							"pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100",
+							"pointer-events-none group-hover/tag:pointer-events-auto group-hover/tag:opacity-100 group-focus-within/tag:pointer-events-auto group-focus-within/tag:opacity-100",
 						)}
 					>
 						<CrossIcon label="" size="small" color="currentColor" />

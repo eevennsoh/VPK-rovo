@@ -8,6 +8,14 @@ const INLINE_EDIT_SOURCE = readFileSync(
 	join(__dirname, "..", "ui", "inline-edit.tsx"),
 	"utf8",
 );
+const TAG_SOURCE = readFileSync(
+	join(__dirname, "..", "ui", "tag.tsx"),
+	"utf8",
+);
+const SKILL_TAG_SOURCE = readFileSync(
+	join(__dirname, "skill-tag.tsx"),
+	"utf8",
+);
 const AGENT_DEMO_SOURCE = readFileSync(
 	join(__dirname, "..", "website", "demos", "ui-custom", "agent-demo.tsx"),
 	"utf8",
@@ -40,6 +48,10 @@ const RICH_TEXT_TOOLBAR_SOURCE = readFileSync(
 	join(__dirname, "rich-text-editor", "toolbar.tsx"),
 	"utf8",
 );
+const MODEL_SELECTOR_SOURCE = readFileSync(
+	join(__dirname, "model-selector.tsx"),
+	"utf8",
+);
 const STUDIO_AGENT_RESULT_SOURCE = readFileSync(
 	join(__dirname, "..", "..", "backend", "lib", "studio-agent-result.js"),
 	"utf8",
@@ -53,11 +65,25 @@ test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /RichTextEditor,[\s\S]*\} from "@\/components\/ui-custom\/rich-text-editor";/u);
 	assert.match(AGENT_SOURCE, /function AgentInstructionsComposer/u);
 	assert.match(AGENT_SOURCE, /<RichTextEditor[\s\S]*aria-label="Agent instructions"/u);
-	assert.match(AGENT_SOURCE, /editorClassName="agent-instructions-tiptap-editor text-text"/u);
+	assert.match(AGENT_SOURCE, /editorClassName=\{cn\("agent-instructions-tiptap-editor text-text", editorClassName\)\}/u);
 	assert.match(AGENT_SOURCE, /placeholder="Describe the agent’s role and what it should do\. @mention, or \/ for skills"/u);
 	assert.match(AGENT_SOURCE, /mentionSources=\{mentionSources\}/u);
+	assert.match(AGENT_SOURCE, /toolbarBelowSlot=\{toolbarBelowSlot\}/u);
 	assert.match(AGENT_SOURCE, /onMarkdownChange=\{onInstructionsChange\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /AGENT_EDITOR_CONTROLS/u);
+});
+
+test("Agent instructions model selector labels the mode and keeps active rows neutral", () => {
+	assert.match(AGENT_SOURCE, /function AgentInstructionsModelSelector/u);
+	assert.match(AGENT_SOURCE, /useState<ReasoningModeValue>\("deep-auto"\)/u);
+	assert.match(AGENT_SOURCE, /const triggerLabel = current[\s\S]*current\.section === "Think deeper" && current\.value !== "deep-auto" \? current\.label : current\.section/u);
+	assert.match(AGENT_SOURCE, /render=\{<Button className="shrink-0 gap-1\.5 text-text-subtle" variant="ghost" \/>\}/u);
+	assert.match(AGENT_SOURCE, /<Icon render=\{<AiModelIcon label="" size="small" \/>\} aria-hidden \/>[\s\S]*\{triggerLabel\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /diagram-symbol-mind-map/u);
+	assert.doesNotMatch(AGENT_SOURCE, /`\$\{current\.section\}: \$\{current\.label\}`/u);
+	assert.match(MODEL_SELECTOR_SOURCE, /data-selected:bg-bg-neutral-subtle-hovered!/u);
+	assert.match(MODEL_SELECTOR_SOURCE, /data-\[checked=true\]:bg-bg-selected/u);
+	assert.doesNotMatch(MODEL_SELECTOR_SOURCE, /data-selected:bg-bg-selected!/u);
 });
 
 test("Agent config updates instructions as markdown strings", () => {
@@ -92,20 +118,120 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	]) {
 		assert.match(AGENT_SOURCE, new RegExp(`label="${label}"`, "u"));
 	}
+
+	assert.match(AGENT_SOURCE, /function AgentReferenceChip/u);
+	assert.match(AGENT_SOURCE, /removeVariant="overlay"/u);
+	assert.match(AGENT_SOURCE, /function AgentSkillChip\(\{ label, onRemove \}/u);
+	assert.match(AGENT_SOURCE, /onRemove=\{onRemove\}[\s\S]*removeVariant="overlay"[\s\S]*removeButtonLabel=\{`Remove \$\{label\}`\}/u);
+	for (const field of ["triggers", "skills", "tools", "subagents", "knowledge", "conversationStarters"]) {
+		assert.match(AGENT_SOURCE, new RegExp(`onRemoveListItem\\("${field}", index\\)`, "u"));
+	}
+	assert.match(TAG_SOURCE, /group\/tag relative inline-flex/u);
+	assert.match(TAG_SOURCE, /group-hover\/tag:opacity-100/u);
+	assert.doesNotMatch(TAG_SOURCE, /group-hover:opacity-100/u);
+	assert.match(SKILL_TAG_SOURCE, /removeVariant\?: "inline" \| "overlay";/u);
+	assert.match(SKILL_TAG_SOURCE, /removeVariant = "inline"/u);
+	assert.match(SKILL_TAG_SOURCE, /isOverlayRemove/u);
+	assert.match(SKILL_TAG_SOURCE, /group\/skill-tag relative inline-flex/u);
+	assert.match(SKILL_TAG_SOURCE, /className=\{cn\([\s\S]*"relative z-\[1\] min-w-0 skew-x-12 truncate whitespace-nowrap"[\s\S]*isOverlayRemove && "group-hover\/skill-tag:\[mask-image:linear-gradient\(to_right,#000_calc\(100%-3rem\),transparent\)\]/u);
+	assert.doesNotMatch(SKILL_TAG_SOURCE, /SKILL_TAG_OVERLAY_LABEL_MASK_STYLE/u);
+	assert.match(SKILL_TAG_SOURCE, /className="pointer-events-none absolute inset-y-0 end-0 z-\[2\] w-12[\s\S]*from-bg-neutral from-55% to-transparent[\s\S]*data-slot="skill-tag-remove-overlay-scrim"/u);
+	assert.match(SKILL_TAG_SOURCE, /absolute end-1 top-1\/2 z-\[3\][\s\S]*data-slot="skill-tag-remove"/u);
+	assert.match(SKILL_TAG_SOURCE, /opacity-0[\s\S]*group-hover\/skill-tag:opacity-100/u);
+	assert.match(UI_CUSTOM_DETAILS_SOURCE, /name: "removeVariant"[\s\S]*type: '"inline" \| "overlay"'/u);
+	assert.match(UI_CUSTOM_DETAILS_SOURCE, /demoSlug: "skill-tag-demo-removable"/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /"skill-tag-demo-removable": dynamic/u);
+	assert.doesNotMatch(AGENT_SOURCE, /data-slot=tag-after\]\]:opacity-0/u);
+});
+
+test("Agent header renders Test and Configure as an outline toggle group", () => {
+	assert.match(AGENT_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
+	assert.match(AGENT_SOURCE, /primaryActionLabel = "Configure"/u);
+	assert.match(AGENT_SOURCE, /secondaryActionLabel = "Test"/u);
+	assert.match(
+		AGENT_SOURCE,
+		/<ToggleGroup[\s\S]*defaultValue=\{\["configure"\]\}[\s\S]*multiple=\{false\}[\s\S]*size="sm"[\s\S]*variant="outline"[\s\S]*<ToggleGroupItem value="test">[\s\S]*\{secondaryActionLabel\}[\s\S]*<ToggleGroupItem value="configure">[\s\S]*\{primaryActionLabel\}/u,
+	);
+	assert.doesNotMatch(AGENT_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
+	assert.doesNotMatch(
+		AGENT_SOURCE,
+		/<Button size="default" variant="outline">[\s\S]*\{secondaryActionLabel\}[\s\S]*<Button size="default" variant="default">/u,
+	);
 });
 
 test("Agent component page wires compact filled and empty placeholder variations", () => {
+	const compactLayoutStart = AGENT_SOURCE.indexOf('{layout === "compact"');
+	const defaultLayoutStart = AGENT_SOURCE.indexOf("{/* Profile + config summary", compactLayoutStart);
+	const compactLayoutSource = AGENT_SOURCE.slice(compactLayoutStart, defaultLayoutStart);
+
 	assert.match(AGENT_SOURCE, /layout\?: "default" \| "compact";/u);
 	assert.match(AGENT_SOURCE, /layout = "default"/u);
 	assert.match(AGENT_SOURCE, /data-agent-config-layout=\{layout\}/u);
 	assert.match(AGENT_SOURCE, /layout === "compact"/u);
-	assert.match(AGENT_SOURCE, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
+	assert.match(compactLayoutSource, /<div className="flex min-w-0 flex-col gap-2">/u);
+	assert.doesNotMatch(compactLayoutSource, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
+	assert.match(compactLayoutSource, /bottomSlot=\{isFilledConfig \? undefined : <AgentCompactOperationsBento \/>\}/u);
+	assert.match(compactLayoutSource, /toolbarBelowSlot=\{\([\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow/u);
+	assert.doesNotMatch(AGENT_SOURCE, /showAddButtons=\{false\}/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactEmptyConfigNav/u);
+	assert.match(AGENT_SOURCE, /function getAgentCompactEmptyConfigNavItems/u);
+	assert.match(AGENT_SOURCE, /const visibleItems = getAgentCompactEmptyConfigNavItems\(config\);/u);
+	assert.match(AGENT_SOURCE, /case "tools":[\s\S]*return getNonEmptyConfigItems\(config\.tools\)\.length === 0/u);
+	assert.match(AGENT_SOURCE, /className="flex min-h-8 min-w-0 items-center gap-1"/u);
+	assert.match(AGENT_SOURCE, /hasVisibleAddOptions \? "pt-2" : "pt-4"/u);
+	assert.match(AGENT_SOURCE, /import \{ CheckIcon, PlusCircleIcon, PlusIcon \} from "@\/components\/ui\/vpk-icons";/u);
+	assert.match(AGENT_SOURCE, /aria-hidden="true"[\s\S]*data-slot="agent-compact-config-marker"[\s\S]*className="ml-1 inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle"[\s\S]*<PlusCircleIcon size="small" \/>/u);
+	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Add agent configuration"/u);
+	assert.match(AGENT_SOURCE, /export function AgentCompactHeaderNav/u);
+	assert.match(AGENT_SOURCE, /AGENT_COMPACT_HEADER_NAV_ITEMS = \[[\s\S]*label: "Details"[\s\S]*label: "Access"/u);
+	assert.match(AGENT_SOURCE, /<DashboardIcon label="" size="small" color="currentColor" \/>/u);
+	assert.match(AGENT_SOURCE, /<VideoPlayIcon label="" size="small" color="currentColor" \/>/u);
+	assert.match(AGENT_SOURCE, /import \{[\s\S]*DropdownMenu,[\s\S]*DropdownMenuContent,[\s\S]*DropdownMenuGroup,[\s\S]*DropdownMenuItem,[\s\S]*DropdownMenuTrigger,[\s\S]*\} from "@\/components\/ui\/dropdown-menu";/u);
+	assert.match(AGENT_SOURCE, /import \{ CheckIcon, MoreHorizontalIcon, PlusCircleIcon, PlusIcon \} from "@\/components\/ui\/vpk-icons";/u);
+	assert.match(AGENT_SOURCE, /computeContextBarOverflow\([\s\S]*AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH,[\s\S]*AGENT_COMPACT_HEADER_NAV_GAP/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_HEADER_NAV_GAP = 4;/u);
+	assert.match(AGENT_SOURCE, /className="relative flex min-w-0 flex-1 items-center overflow-hidden"[\s\S]*style=\{\{ gap: AGENT_COMPACT_HEADER_NAV_GAP \}\}/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH = 24;/u);
+	assert.match(AGENT_SOURCE, /<DropdownMenuTrigger[\s\S]*aria-label="More agent sections"[\s\S]*render=\{<Button className="size-6 rounded px-0" size="icon-xs" type="button" variant="ghost" \/>\}[\s\S]*<MoreHorizontalIcon size="small" \/>/u);
+	assert.match(AGENT_SOURCE, /hiddenItems\.map\(\(item\) => \([\s\S]*<DropdownMenuItem elemBefore=\{item\.icon\} key=\{item\.label\}>/u);
+	assert.match(AGENT_SOURCE, /<Avatar label="Agent" shape="hexagon" size="sm">[\s\S]*<AvatarImage alt="" src=\{avatarSrc\} \/>/u);
+	assert.match(AGENT_SOURCE, /aria-pressed=\{item\.isSelected \? true : undefined\}[\s\S]*variant=\{item\.isSelected \? "outline" : "ghost"\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /\[\&_svg\]:size-4!/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactOperationsBento/u);
+	assert.match(AGENT_SOURCE, /showSectionLabel=\{false\}/u);
+	assert.match(AGENT_SOURCE, /data-slot="agent-compact-operations-bento"/u);
+	assert.match(AGENT_SOURCE, /AGENT_COMPACT_BENTO_CARD_GLOW_EFFECT_STYLE/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactBentoCardGlowLayers/u);
+	assert.match(AGENT_SOURCE, /AGENT_COMPACT_BENTO_FADE_MASK/u);
+	assert.match(AGENT_SOURCE, /auto-rows-\[144px\][\s\S]*lg:grid-cols-5/u);
+	assert.match(AGENT_SOURCE, /<SkillTagGroup maxRows=\{2\}>/u);
+	assert.match(AGENT_SOURCE, /<TWGAppstack[\s\S]*iconSize="md"[\s\S]*sources=\{template\.hero\.sources\}/u);
+	assert.match(AGENT_SOURCE, /Browse all/u);
+	assert.doesNotMatch(AGENT_SOURCE, /Show more/u);
+	assert.match(AGENT_SOURCE, /title: "Service Triage"/u);
+	assert.match(AGENT_SOURCE, /title: "Service Request Helper"/u);
+	assert.match(AGENT_SOURCE, /title: "Rovo Ops"/u);
+	assert.match(
+		RICH_TEXT_EDITOR_SOURCE,
+		/toolbarBelowSlot\?: ReactNode;[\s\S]*data-slot="rich-text-editor-toolbar-below"/u,
+	);
 
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactFilled/u);
 	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-compact-filled"/u);
+	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactFilled[\s\S]*leadingContent=\{<AgentCompactHeaderNav \/>\}/u);
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactEmpty/u);
 	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-compact-empty"/u);
-	assert.doesNotMatch(AGENT_DEMO_SOURCE, /layout="compact"/u);
+	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactEmpty[\s\S]*leadingContent=\{<AgentCompactHeaderNav \/>\}/u);
+	assert.doesNotMatch(AGENT_DEMO_SOURCE, /showActions=\{false\}/u);
+	assert.match(
+		AGENT_DEMO_SOURCE,
+		/idPrefix="agent-demo-compact-filled"[\s\S]*layout="compact"/u,
+	);
+	assert.match(
+		AGENT_DEMO_SOURCE,
+		/idPrefix="agent-demo-compact-empty"[\s\S]*layout="compact"/u,
+	);
 	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Compact filled"[\s\S]*demoSlug: "agent-demo-compact-filled"/u);
 	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Compact empty"[\s\S]*demoSlug: "agent-demo-compact-empty"/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-compact-filled": dynamic/u);
@@ -118,28 +244,47 @@ test("Agent profile inline edit fields align to the profile content edge", () =>
 	assert.match(INLINE_EDIT_SOURCE, /import \{ motion, type MotionProps \} from "motion\/react"/u);
 	assert.match(
 		INLINE_EDIT_SOURCE,
-		/readViewMotionProps\?: Pick<MotionProps, "initial" \| "animate" \| "whileHover" \| "whileFocus" \| "transition">/u,
-	);
-	assert.match(INLINE_EDIT_SOURCE, /<motion\.button[\s\S]*\{\.\.\.readViewMotionProps\}/u);
-	assert.match(
-		AGENT_SOURCE,
-		/const AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS = \{[\s\S]*whileHover: \{ paddingLeft: 8, paddingRight: 8 \},[\s\S]*whileFocus: \{ paddingLeft: 8, paddingRight: 8 \},[\s\S]*visualDuration: 0\.18/u,
+		/readViewMotionProps\?: Pick<MotionProps, "initial" \| "animate" \| "whileHover" \| "whileFocus" \| "variants" \| "transition">/u,
 	);
 	assert.match(
+		INLINE_EDIT_SOURCE,
+		/readViewBackdropMotionProps\?: Pick<MotionProps, "variants" \| "transition">/u,
+	);
+	assert.match(INLINE_EDIT_SOURCE, /shouldAnimateReadViewReturn, setShouldAnimateReadViewReturn/u);
+	assert.match(INLINE_EDIT_SOURCE, /setShouldAnimateReadViewReturn\(true\)[\s\S]*setEditing\(false\)/u);
+	assert.match(
+		INLINE_EDIT_SOURCE,
+		/readViewReturnInitial = shouldAnimateReadViewReturn[\s\S]*readViewMotionProps\?\.whileFocus \?\? readViewMotionProps\?\.whileHover/u,
+	);
+	assert.match(INLINE_EDIT_SOURCE, /<motion\.button[\s\S]*\{\.\.\.resolvedReadViewMotionProps\}/u);
+	assert.match(INLINE_EDIT_SOURCE, /data-slot="inline-edit-read-view-backdrop"[\s\S]*\{\.\.\.readViewBackdropMotionProps\}/u);
+	assert.match(
 		AGENT_SOURCE,
-		/readViewClassName="h-auto px-0 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"/u,
+		/const AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS = \{[\s\S]*whileHover: "active",[\s\S]*whileFocus: "active",[\s\S]*rest: \{ paddingLeft: 0, paddingRight: 0 \},[\s\S]*active: \{ paddingLeft: "0\.375rem", paddingRight: "0\.375rem" \},[\s\S]*visualDuration: 0\.18/u,
+	);
+	assert.match(
+		AGENT_SOURCE,
+		/const AGENT_PROFILE_INLINE_EDIT_BACKDROP_MOTION_PROPS = \{[\s\S]*rest: \{ opacity: 0, scaleX: 0\.98 \},[\s\S]*active: \{ opacity: 1, scaleX: 1 \},[\s\S]*visualDuration: 0\.18/u,
+	);
+	assert.doesNotMatch(AGENT_SOURCE, /paddingLeft: 8|paddingRight: 8/u);
+	assert.match(
+		AGENT_SOURCE,
+		/readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"/u,
 	);
 	assert.match(AGENT_SOURCE, /readViewMotionProps=\{AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS\}/u);
+	assert.match(AGENT_SOURCE, /readViewBackdropClassName="-inset-0\.5 bg-bg-neutral-subtle-hovered"/u);
+	assert.doesNotMatch(AGENT_SOURCE, /readViewBackdropClassName="-inset-x-2/u);
+	assert.match(AGENT_SOURCE, /readViewBackdropMotionProps=\{AGENT_PROFILE_INLINE_EDIT_BACKDROP_MOTION_PROPS\}/u);
 	assert.match(
 		AGENT_SOURCE,
-		/inputProps=\{\{ className: "-mx-2 h-auto border-2 px-2 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u,
+		/inputProps=\{\{ className: "h-auto border-2 px-1\.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u,
 	);
-	assert.match(AGENT_SOURCE, /readViewClassName="px-0"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /readViewClassName="-mx-2/u);
 	assert.match(
 		AGENT_SOURCE,
-		/textareaProps=\{\{ rows: 1, className: "-mx-2 min-h-10 bg-bg-neutral-subtle px-2/u,
+		/textareaProps=\{\{ rows: 1, className: "min-h-10 border-2 bg-bg-neutral-subtle px-1\.5/u,
 	);
+	assert.doesNotMatch(AGENT_SOURCE, /className: "-mx-2/u);
 });
 
 test("Shared Tiptap editor is SSR-safe and emits markdown updates", () => {
@@ -264,12 +409,16 @@ test("Shared toolbar groups related split controls and keeps unrelated toggles i
 		RICH_TEXT_TOOLBAR_SOURCE,
 		/import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u,
 	);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /import \{ Separator \} from "@\/components\/ui\/separator";/u);
 
 	// Bold + formatting and bulleted list + list options are related split controls.
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /const TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME = "\*:data-\[slot=toggle-group-item\]:w-6! \*:data-\[slot=toggle-group-item\]:min-w-6! \*:data-\[slot=toggle-group-item\]:px-0!";/u);
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /const formattingValue = \[/u);
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /const listValue = \[/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /value=\{formattingValue\}[\s\S]*value="bold"[\s\S]*value="formatting"/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /value=\{listValue\}[\s\S]*value="bulletList"[\s\S]*value="list"/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /value=\{formattingValue\}[\s\S]*className=\{TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME\}[\s\S]*value="bold"[\s\S]*value="formatting"/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /value=\{listValue\}[\s\S]*className=\{TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME\}[\s\S]*value="bulletList"[\s\S]*value="list"/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /function ToolbarSeparator\(\)[\s\S]*orientation="vertical"[\s\S]*className="mx-2 h-4 self-center bg-border data-vertical:self-center"/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<ToolbarSeparator \/>\s*<div className="relative">[\s\S]*value=\{listValue\}/u);
 
 	// Link and Markdown are separate Toggles because their states are unrelated.
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /pressed=\{!isMarkdownMode && editor\.isActive\("link"\)\}/u);

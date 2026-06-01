@@ -1,14 +1,20 @@
 "use client";
 
 import type { Tool } from "ai";
-import type { MotionProps } from "motion/react";
-import type { ComponentProps, ReactNode } from "react";
-import { memo, useEffect, useMemo, useState } from "react";
+import { motion, useReducedMotion, type MotionProps } from "motion/react";
+import type { ComponentProps, CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 
 import AddIcon from "@atlaskit/icon/core/add";
+import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
+import DashboardIcon from "@atlaskit/icon/core/dashboard";
 import PageIcon from "@atlaskit/icon/core/page";
+import PersonIcon from "@atlaskit/icon/core/person";
+import ScorecardIcon from "@atlaskit/icon/core/scorecard";
+import VideoPlayIcon from "@atlaskit/icon/core/video-play";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
+import ViewsIcon from "@atlaskit/icon-lab/core/views";
 
 import { Accordion,
 	AccordionContent,
@@ -17,12 +23,21 @@ import { Accordion,
 } from "@/components/ui/accordion";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { Lozenge } from "@/components/ui/lozenge";
 import { Tag } from "@/components/ui/tag";
 import { Tile } from "@/components/ui/tile";
-import { CheckIcon } from "@/components/ui/vpk-icons";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { CheckIcon, MoreHorizontalIcon, PlusCircleIcon, PlusIcon } from "@/components/ui/vpk-icons";
+import { computeContextBarOverflow } from "@/components/ui-custom/context-bar/overflow";
 import {
 	ModelSelector,
 	ModelSelectorContent,
@@ -41,7 +56,8 @@ import {
 	type RichTextMentionSources,
 	RichTextEditor,
 } from "@/components/ui-custom/rich-text-editor";
-import { SkillTag } from "@/components/ui-custom/skill-tag";
+import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
+import { token } from "@/lib/tokens";
 import type {
 	HermesSkillSummary,
 	WikiMemoryExplorerResponse,
@@ -55,10 +71,23 @@ const AGENT_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg";
 const DEFAULT_AGENT_PROFILE_COVER_COLOR = "#1868DB";
 const MAX_AGENT_CONVERSATION_STARTERS = 3;
 const AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS = {
-	whileHover: { paddingLeft: 8, paddingRight: 8 },
-	whileFocus: { paddingLeft: 8, paddingRight: 8 },
+	initial: "rest",
+	animate: "rest",
+	whileHover: "active",
+	whileFocus: "active",
+	variants: {
+		rest: { paddingLeft: 0, paddingRight: 0 },
+		active: { paddingLeft: "0.375rem", paddingRight: "0.375rem" },
+	},
 	transition: { type: "spring", bounce: 0.08, visualDuration: 0.18 },
-} satisfies Pick<MotionProps, "whileHover" | "whileFocus" | "transition">;
+} satisfies Pick<MotionProps, "initial" | "animate" | "whileHover" | "whileFocus" | "variants" | "transition">;
+const AGENT_PROFILE_INLINE_EDIT_BACKDROP_MOTION_PROPS = {
+	variants: {
+		rest: { opacity: 0, scaleX: 0.98 },
+		active: { opacity: 1, scaleX: 1 },
+	},
+	transition: { type: "spring", bounce: 0.08, visualDuration: 0.18 },
+} satisfies Pick<MotionProps, "variants" | "transition">;
 const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
 	"dev-agents": "#82B536",
 	"product-agents": "#BF63F3",
@@ -75,6 +104,157 @@ const AGENT_KNOWLEDGE_SOURCES = [
 	{ id: "teams", label: "Microsoft Teams", provider: "teams" },
 	{ id: "salesforce", label: "Salesforce", provider: "salesforce" },
 ] as const satisfies readonly TwgToolSource[];
+
+const AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = [
+	{ agentFieldName: "trigger", label: "Triggers" },
+	{ agentFieldName: "skills", label: "Skills" },
+	{ agentFieldName: "tools", label: "Tools", listFieldName: "tools" },
+	{ agentFieldName: "subagents", label: "Subagents" },
+	{ agentFieldName: "knowledge", label: "Knowledge" },
+] as const;
+
+function getAgentCompactEmptyConfigNavItems(config?: AgentConfigFormValue) {
+	return AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS.filter((item) => {
+		if (!config) {
+			return true;
+		}
+
+		switch (item.agentFieldName) {
+			case "trigger":
+				return getAgentTriggerItems(config).length === 0;
+			case "skills":
+				return getNonEmptyConfigItems(config.skills).length === 0;
+			case "tools":
+				return getNonEmptyConfigItems(config.tools).length === 0;
+			case "subagents":
+				return getNonEmptyConfigItems(config.subagents).length === 0;
+			case "knowledge":
+				return getNonEmptyConfigItems(config.knowledge).length === 0;
+		}
+
+		return false;
+	});
+}
+
+interface AgentCompactBentoSkill {
+	color?: SkillTagColor;
+	icon?: ReactNode;
+	label: string;
+}
+
+interface AgentCompactBentoHero {
+	skills: ReadonlyArray<AgentCompactBentoSkill>;
+	sources: ReadonlyArray<TwgToolSource>;
+}
+
+interface AgentCompactBentoTemplate {
+	description: string;
+	hero?: AgentCompactBentoHero;
+	iconSrc: string;
+	layoutClassName: string;
+	title: string;
+}
+
+type AgentCompactBentoCardGlowCSSProperties = CSSProperties & Record<`--card-glow-${string}`, string | number>;
+
+const AGENT_COMPACT_OPERATIONS_TEMPLATES = [
+	{
+		description: "Triage service requests, recommend field updates, and ask for missing details when needed.",
+		iconSrc: "/avatar-agent/service-agents/service-triage.svg",
+		layoutClassName: "sm:col-span-2 lg:col-start-1 lg:col-span-1 lg:row-start-1",
+		title: "Service Triage",
+	},
+	{
+		description: "Draft support responses, suggest assignees, and summarize requests for faster resolution.",
+		hero: {
+			skills: [
+				{ color: "service", label: "request-triage" },
+				{ color: "teamwork", label: "response-draft" },
+				{ color: "software", label: "field-update" },
+				{ color: "strategy", label: "priority-signal" },
+			],
+			sources: [
+				{ id: "jira", label: "Jira", provider: "jira" },
+				{ id: "confluence", label: "Confluence", provider: "confluence" },
+				{ id: "teams", label: "Microsoft Teams", provider: "teams" },
+			],
+		},
+		iconSrc: "/avatar-agent/strategy-agents/strategic-insight.svg",
+		layoutClassName: "sm:col-span-2 sm:row-span-2 lg:col-start-2 lg:row-start-1",
+		title: "Service Request Helper",
+	},
+	{
+		description: "Guide incident response, on-call actions, mitigation, status updates, and recovery.",
+		iconSrc: "/avatar-agent/dev-agents/code-standardizer.svg",
+		layoutClassName: "sm:row-span-2 lg:col-start-4 lg:row-start-1",
+		title: "Rovo Ops",
+	},
+	{
+		description: "Answer Rovo setup and usage questions with concise guidance and helpful links.",
+		iconSrc: "/avatar-agent/product-agents/wildcard-3.svg",
+		layoutClassName: "sm:row-span-2 lg:col-start-5 lg:row-start-1",
+		title: "Rovo Expert",
+	},
+	{
+		description: "Help teammates document working style, communication norms, and collaboration preferences.",
+		iconSrc: "/avatar-agent/teamwork-agents/user-manual-writer.svg",
+		layoutClassName: "lg:col-start-1 lg:row-start-2",
+		title: "User Manual Writer",
+	},
+] as const satisfies ReadonlyArray<AgentCompactBentoTemplate>;
+
+const AGENT_COMPACT_BENTO_AVATAR_GROUP_ACCENTS: Readonly<Record<string, string>> = {
+	"dev-agents": "#82B536",
+	"product-agents": "#BF63F3",
+	"service-agents": "#FFC716",
+	"strategy-agents": "#FCA700",
+	"teamwork-agents": DEFAULT_AGENT_PROFILE_COVER_COLOR,
+};
+const AGENT_COMPACT_BENTO_CARD_GLOW_FALLBACK_ACCENT = DEFAULT_AGENT_PROFILE_COVER_COLOR;
+const AGENT_COMPACT_BENTO_CARD_GLOW_EFFECT_STYLE: AgentCompactBentoCardGlowCSSProperties = {
+	"--card-glow-border-core": 36,
+	"--card-glow-border-spread": 120,
+	"--card-glow-border-width": 1,
+	"--card-glow-icon-blur": 28,
+	"--card-glow-icon-brightness": 1.3,
+	"--card-glow-icon-contrast": 1.4,
+	"--card-glow-icon-opacity": 0.25,
+	"--card-glow-icon-saturate": 5,
+	"--card-glow-icon-scale": 3.4,
+};
+const AGENT_COMPACT_BENTO_CARD_GLOW_LAYER_STYLE: CSSProperties = {
+	filter: [
+		"blur(calc(var(--card-glow-icon-blur) * 1px))",
+		"saturate(var(--card-glow-icon-saturate))",
+		"brightness(var(--card-glow-icon-brightness))",
+		"contrast(var(--card-glow-icon-contrast))",
+	].join(" "),
+	scale: "var(--card-glow-icon-scale)",
+	translate: "calc(var(--card-glow-pointer-x, -10) * 50cqi) calc(var(--card-glow-pointer-y, -10) * 50cqh)",
+	willChange: "translate, scale, filter, opacity",
+};
+const AGENT_COMPACT_BENTO_CARD_BASE_BORDER_STYLE: CSSProperties = {
+	boxShadow: `inset 0 0 0 calc(var(--card-glow-border-width) * 1px) ${token("color.border")}`,
+};
+const AGENT_COMPACT_BENTO_CARD_BORDER_GLOW_STYLE: CSSProperties = {
+	background: [
+		"radial-gradient(",
+		"circle at ",
+		"calc((var(--card-glow-pointer-x, -10) + 1) * 50%) ",
+		"calc((var(--card-glow-pointer-y, -10) + 1) * 50%), ",
+		"var(--card-glow-tile-accent) 0 calc(var(--card-glow-border-core) * 1px), ",
+		"transparent calc(var(--card-glow-border-spread) * 1px)",
+		") border-box",
+	].join(""),
+	borderColor: "transparent",
+	borderWidth: "calc(var(--card-glow-border-width) * 1px)",
+	mask: "linear-gradient(#fff 0 100%) border-box, linear-gradient(#fff 0 100%) padding-box",
+	maskComposite: "exclude",
+	WebkitMask: "linear-gradient(#fff 0 100%) border-box, linear-gradient(#fff 0 100%) padding-box",
+	WebkitMaskComposite: "xor",
+};
+const AGENT_COMPACT_BENTO_FADE_MASK = "linear-gradient(to bottom, #000 calc(100% - 96px), transparent)";
+const AGENT_COMPACT_BENTO_CARD_DESCRIPTION_FADE_MASK = "linear-gradient(to bottom, #000 calc(100% - 1.25rem), transparent)";
 
 const MENTION_SOURCE_LIMIT = 24;
 
@@ -126,7 +306,13 @@ export type AgentConfigTextFieldName =
 	| "trigger"
 	| "guardrail";
 
-export type AgentConfigListFieldName = "tools" | "conversationStarters";
+export type AgentConfigListFieldName =
+	| "triggers"
+	| "skills"
+	| "tools"
+	| "subagents"
+	| "knowledge"
+	| "conversationStarters";
 
 export interface AgentConfigFormValue {
 	name?: string;
@@ -155,10 +341,125 @@ export const Agent = memo(({ className, ...props }: Readonly<AgentProps>) => (
 	/>
 ));
 
+const AGENT_COMPACT_HEADER_NAV_ITEMS = [
+	{ icon: <DashboardIcon label="" size="small" color="currentColor" />, isSelected: true, label: "Details" },
+	{ icon: <ChartTrendUpIcon label="" size="small" color="currentColor" />, isSelected: false, label: "Insights" },
+	{ icon: <ViewsIcon label="" size="small" color="currentColor" />, isSelected: false, label: "Surfaces" },
+	{ icon: <ScorecardIcon label="" size="small" color="currentColor" />, isSelected: false, label: "Evaluation" },
+	{ icon: <PersonIcon label="" size="small" color="currentColor" />, isSelected: false, label: "Users" },
+	{ icon: <VideoPlayIcon label="" size="small" color="currentColor" />, isSelected: false, label: "Access" },
+] as const;
+
+const AGENT_COMPACT_HEADER_NAV_GAP = 4;
+const AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH = 24;
+
+function AgentCompactHeaderNavButton({
+	item,
+}: Readonly<{
+	item: (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[number];
+}>) {
+	return (
+		<Button
+			type="button"
+			aria-pressed={item.isSelected ? true : undefined}
+			size="xs"
+			variant={item.isSelected ? "outline" : "ghost"}
+			className={cn(
+				"h-6 gap-1 rounded px-2 text-sm font-medium leading-5",
+				item.isSelected
+					? "border-border-selected bg-bg-selected text-text-selected [&_svg]:text-icon-selected"
+					: "text-text-subtle [&_svg]:text-icon-subtle"
+			)}
+		>
+			<Icon render={item.icon} aria-hidden />
+			{item.label}
+		</Button>
+	);
+}
+
+export function AgentCompactHeaderNav({
+	avatarSrc = AGENT_AVATAR_SRC,
+}: Readonly<{ avatarSrc?: string }>) {
+	const containerRef = useRef<HTMLDivElement>(null);
+	const measureRef = useRef<HTMLDivElement>(null);
+	const [visibleCount, setVisibleCount] = useState(AGENT_COMPACT_HEADER_NAV_ITEMS.length);
+	const visibleItems = AGENT_COMPACT_HEADER_NAV_ITEMS.slice(0, visibleCount);
+	const hiddenItems = AGENT_COMPACT_HEADER_NAV_ITEMS.slice(visibleCount);
+
+	useLayoutEffect(() => {
+		const container = containerRef.current;
+		const measure = measureRef.current;
+		if (!container || !measure) {
+			return;
+		}
+
+		function recompute(): void {
+			const widths = Array.from(measure!.children).map((node) => (node as HTMLElement).offsetWidth);
+			setVisibleCount(
+				computeContextBarOverflow(
+					widths,
+					container!.clientWidth,
+					AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH,
+					AGENT_COMPACT_HEADER_NAV_GAP,
+				),
+			);
+		}
+
+		recompute();
+		const observer = new ResizeObserver(recompute);
+		observer.observe(container);
+		return () => observer.disconnect();
+	}, []);
+
+	return (
+		<div className="flex min-w-0 flex-1 items-center gap-4">
+			<Avatar label="Agent" shape="hexagon" size="sm">
+				<AvatarImage alt="" src={avatarSrc} />
+			</Avatar>
+			<div
+				className="relative flex min-w-0 flex-1 items-center overflow-hidden"
+				ref={containerRef}
+				style={{ gap: AGENT_COMPACT_HEADER_NAV_GAP }}
+			>
+				<div aria-hidden className="pointer-events-none absolute top-0 left-0 h-0 w-0 overflow-clip">
+					<div className="invisible flex items-center" ref={measureRef} style={{ gap: AGENT_COMPACT_HEADER_NAV_GAP }}>
+						{AGENT_COMPACT_HEADER_NAV_ITEMS.map((item) => (
+							<AgentCompactHeaderNavButton item={item} key={`measure-${item.label}`} />
+						))}
+					</div>
+				</div>
+				{visibleItems.map((item) => (
+					<AgentCompactHeaderNavButton item={item} key={item.label} />
+				))}
+				{hiddenItems.length > 0 ? (
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							aria-label="More agent sections"
+							render={<Button className="size-6 rounded px-0" size="icon-xs" type="button" variant="ghost" />}
+						>
+							<MoreHorizontalIcon size="small" />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuGroup>
+								{hiddenItems.map((item) => (
+									<DropdownMenuItem elemBefore={item.icon} key={item.label}>
+										{item.label}
+									</DropdownMenuItem>
+								))}
+							</DropdownMenuGroup>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				) : null}
+			</div>
+		</div>
+	);
+}
+
 export type AgentHeaderProps = ComponentProps<"div"> & {
 	name: string;
 	avatarSrc?: string;
 	model?: string;
+	leadingContent?: ReactNode;
 	primaryActionLabel?: string;
 	secondaryActionLabel?: string;
 	showActions?: boolean;
@@ -170,9 +471,10 @@ export const AgentHeader = memo(
 	({
 		className,
 		avatarSrc = AGENT_AVATAR_SRC,
+		leadingContent,
 		model,
 		name,
-		primaryActionLabel = "Activate",
+		primaryActionLabel = "Configure",
 		secondaryActionLabel = "Test",
 		showActions = true,
 		actions,
@@ -186,29 +488,36 @@ export const AgentHeader = memo(
 			)}
 			{...props}
 		>
-			<div className="flex min-w-0 items-center gap-2">
-				<Avatar label="Agent" shape="hexagon" size="sm">
-					<AvatarImage alt="" src={avatarSrc} />
-				</Avatar>
-				<span className="truncate text-sm font-semibold leading-5 text-text">{name}</span>
-				{model ? (
-					<Lozenge>
-						{model}
-					</Lozenge>
-				) : null}
-				{badge}
-			</div>
+			{leadingContent ?? (
+				<div className="flex min-w-0 items-center gap-2">
+					<Avatar label="Agent" shape="hexagon" size="sm">
+						<AvatarImage alt="" src={avatarSrc} />
+					</Avatar>
+					<span className="truncate text-sm font-semibold leading-5 text-text">{name}</span>
+					{model ? (
+						<Lozenge>
+							{model}
+						</Lozenge>
+					) : null}
+					{badge}
+				</div>
+			)}
 			{showActions ? (
 				<div className="flex shrink-0 items-center gap-2">
 					{actions ?? (
-						<>
-							<Button size="default" variant="outline">
+						<ToggleGroup
+							defaultValue={["configure"]}
+							multiple={false}
+							size="sm"
+							variant="outline"
+						>
+							<ToggleGroupItem value="test">
 								{secondaryActionLabel}
-							</Button>
-							<Button size="default" variant="default">
+							</ToggleGroupItem>
+							<ToggleGroupItem value="configure">
 								{primaryActionLabel}
-							</Button>
-						</>
+							</ToggleGroupItem>
+						</ToggleGroup>
 					)}
 				</div>
 			) : null}
@@ -410,6 +719,255 @@ function AgentMissingConfigActions({
 	);
 }
 
+function AgentCompactEmptyConfigNav({
+	config,
+	onAppendListItem,
+	screenAssistantTargetPrefix,
+}: Readonly<{
+	config?: AgentConfigFormValue;
+	onAppendListItem?: (field: AgentConfigListFieldName) => void;
+	screenAssistantTargetPrefix?: string;
+}>) {
+	const visibleItems = getAgentCompactEmptyConfigNavItems(config);
+
+	if (visibleItems.length === 0) {
+		return null;
+	}
+
+	return (
+		<div className="flex min-h-8 min-w-0 items-center gap-1">
+			<span
+				aria-hidden="true"
+				data-slot="agent-compact-config-marker"
+				className="ml-1 inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle"
+			>
+				<PlusCircleIcon size="small" />
+			</span>
+			<div className="flex min-w-0 flex-wrap items-center gap-1">
+				{visibleItems.map((item) => (
+					<button
+						key={item.label}
+						type="button"
+						data-agent-field={item.agentFieldName}
+						data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:${item.agentFieldName}` : undefined}
+						className="inline-flex h-6 items-center rounded px-2 text-xs font-semibold leading-4 text-text-subtlest transition-colors hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-3 focus-visible:ring-ring/50"
+						onClick={
+							"listFieldName" in item
+								? () => onAppendListItem?.(item.listFieldName)
+								: undefined
+						}
+					>
+						{item.label}
+					</button>
+				))}
+			</div>
+		</div>
+	);
+}
+
+function getAgentCompactBentoCardGlowAccent(iconSrc: string): string {
+	const group = iconSrc.match(/\/avatar-agent\/([^/]+)\//)?.[1];
+	return (group && AGENT_COMPACT_BENTO_AVATAR_GROUP_ACCENTS[group]) || AGENT_COMPACT_BENTO_CARD_GLOW_FALLBACK_ACCENT;
+}
+
+function getAgentCompactBentoCardStyle(accentColor: string): AgentCompactBentoCardGlowCSSProperties {
+	return {
+		"--card-glow-tile-accent": accentColor,
+		containerType: "size",
+		willChange: "transform, opacity",
+	};
+}
+
+function resetAgentCompactBentoCardPointer(tile: HTMLElement) {
+	tile.style.setProperty("--card-glow-pointer-x", "-10");
+	tile.style.setProperty("--card-glow-pointer-y", "-10");
+}
+
+function AgentCompactBentoCardGlowLayers({ iconSrc }: Readonly<{ iconSrc: string }>) {
+	return (
+		<>
+			<span
+				aria-hidden
+				className="pointer-events-none absolute inset-0 z-0 grid place-items-center transform-gpu"
+				style={AGENT_COMPACT_BENTO_CARD_GLOW_LAYER_STYLE}
+			>
+				<Image
+					alt=""
+					aria-hidden
+					className="size-12 object-contain opacity-[var(--card-glow-icon-opacity)]"
+					height={48}
+					src={iconSrc}
+					width={48}
+				/>
+			</span>
+			<span
+				aria-hidden
+				className="pointer-events-none absolute inset-0 z-[1] rounded-[inherit]"
+				data-agent-compact-bento-card-base-border
+				style={AGENT_COMPACT_BENTO_CARD_BASE_BORDER_STYLE}
+			/>
+			<span
+				aria-hidden
+				className="pointer-events-none absolute inset-0 z-[2] overflow-hidden rounded-[inherit] border border-transparent"
+				data-agent-compact-bento-card-glow-border
+				style={AGENT_COMPACT_BENTO_CARD_BORDER_GLOW_STYLE}
+			/>
+		</>
+	);
+}
+
+function AgentCompactOperationsBento() {
+	const shouldReduceMotion = useReducedMotion();
+	const tileRefs = useRef<Array<HTMLButtonElement | null>>([]);
+	const handleBentoPointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+		for (const tile of tileRefs.current) {
+			if (!tile) {
+				continue;
+			}
+
+			const rect = tile.getBoundingClientRect();
+			const centerX = rect.left + rect.width / 2;
+			const centerY = rect.top + rect.height / 2;
+			const relativeX = event.clientX - centerX;
+			const relativeY = event.clientY - centerY;
+			const normalizedX = relativeX / (rect.width / 2);
+			const normalizedY = relativeY / (rect.height / 2);
+
+			tile.style.setProperty("--card-glow-pointer-x", normalizedX.toFixed(3));
+			tile.style.setProperty("--card-glow-pointer-y", normalizedY.toFixed(3));
+		}
+	}, []);
+	const resetBentoPointer = useCallback(() => {
+		for (const tile of tileRefs.current) {
+			if (tile) {
+				resetAgentCompactBentoCardPointer(tile);
+			}
+		}
+	}, []);
+
+	return (
+		<section
+			aria-label="Operations prompt starters"
+			data-slot="agent-compact-operations-bento"
+			className="@container/bento relative"
+			onPointerLeave={resetBentoPointer}
+			onPointerMove={handleBentoPointerMove}
+			style={AGENT_COMPACT_BENTO_CARD_GLOW_EFFECT_STYLE}
+		>
+			<div
+				className="relative"
+				style={{ maskImage: AGENT_COMPACT_BENTO_FADE_MASK, WebkitMaskImage: AGENT_COMPACT_BENTO_FADE_MASK }}
+			>
+				<div className="mx-auto grid w-full grid-cols-1 gap-3 auto-rows-[144px] sm:grid-cols-2 lg:grid-cols-5">
+					{AGENT_COMPACT_OPERATIONS_TEMPLATES.map((template, index) => {
+						const accentColor = getAgentCompactBentoCardGlowAccent(template.iconSrc);
+						const isHero = Boolean(template.hero);
+
+						return (
+							<motion.button
+								key={template.title}
+								type="button"
+								aria-label={`Use prompt starter: ${template.title}`}
+								className={cn(
+									"group group/agent-compact-bento-card relative isolate flex min-h-0 flex-col items-start gap-3 overflow-hidden rounded-lg bg-background p-4 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out hover:bg-bg-neutral-subtle focus-visible:ring-3 focus-visible:ring-ring/50",
+									template.layoutClassName
+								)}
+								ref={(node) => {
+									tileRefs.current[index] = node;
+								}}
+								style={getAgentCompactBentoCardStyle(accentColor)}
+								transition={{ duration: 0.2, ease: [0, 0.4, 0, 1] }}
+								whileHover={
+									shouldReduceMotion
+										? undefined
+										: { y: -2, transition: { type: "spring", stiffness: 400, damping: 22 } }
+								}
+								whileTap={shouldReduceMotion ? undefined : { scale: 0.98, transition: { duration: 0.05 } }}
+							>
+								<AgentCompactBentoCardGlowLayers iconSrc={template.iconSrc} />
+								<span className="relative z-[3] inline-flex size-8 shrink-0 items-center justify-center transition-opacity duration-fast ease-out group-hover/agent-compact-bento-card:opacity-90">
+									<Image
+										alt=""
+										aria-hidden
+										className="size-8 object-contain"
+										height={32}
+										src={template.iconSrc}
+										width={32}
+									/>
+								</span>
+								<span className="relative z-[3] flex w-full min-w-0 flex-1 flex-col gap-1">
+									<span className="block w-full min-w-0 text-sm font-semibold leading-5 text-text">
+										{template.title}
+									</span>
+									<span
+										className={cn(
+											"w-full min-w-0 overflow-hidden text-sm leading-5 text-text-subtle",
+											isHero ? "flex-none" : "flex-1 min-h-0"
+										)}
+										style={
+											isHero
+												? undefined
+												: {
+														maskImage: AGENT_COMPACT_BENTO_CARD_DESCRIPTION_FADE_MASK,
+														WebkitMaskImage: AGENT_COMPACT_BENTO_CARD_DESCRIPTION_FADE_MASK,
+													}
+										}
+									>
+										{template.description}
+									</span>
+								</span>
+								{template.hero ? (
+									<div className="relative z-[3] flex flex-col gap-4">
+										{template.hero.sources.length > 0 ? (
+											<div className="flex flex-col gap-1">
+												<span className="block text-xs font-semibold leading-4 text-text-subtle">
+													Works with
+												</span>
+												<TWGAppstack
+													animated={false}
+													className="justify-start"
+													iconSize="md"
+													maxVisible={template.hero.sources.length}
+													sources={template.hero.sources}
+												/>
+											</div>
+										) : null}
+										{template.hero.skills.length > 0 ? (
+											<div className="flex flex-col gap-1">
+												<span className="block text-xs font-semibold leading-4 text-text-subtle">
+													Skills
+												</span>
+												<SkillTagGroup maxRows={2}>
+													{template.hero.skills.map((skill) => (
+														<SkillTag color={skill.color ?? "default"} icon={skill.icon} key={skill.label}>
+															{skill.label}
+														</SkillTag>
+													))}
+												</SkillTagGroup>
+											</div>
+										) : null}
+									</div>
+								) : null}
+							</motion.button>
+						);
+					})}
+				</div>
+			</div>
+			<div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-2">
+				<Button
+					type="button"
+					variant="ghost"
+					size="xs"
+					className="pointer-events-auto h-7 rounded-full border-0 bg-surface px-3 text-sm leading-5 font-normal text-text-subtle hover:bg-surface-hovered"
+					style={{ boxShadow: token("elevation.shadow.overlay") }}
+				>
+					Browse all
+				</Button>
+			</div>
+		</section>
+	);
+}
+
 function AgentSectionLabel({ children }: Readonly<{ children: ReactNode }>) {
 	return (
 		<div className="flex min-h-5 items-center text-xs font-semibold leading-4 text-text-subtlest">
@@ -440,23 +998,22 @@ function AgentReferenceChip({ label, onRemove }: Readonly<{ label: string; onRem
 			color="blue"
 			elemBefore={<PageIcon label="" size="small" />}
 			onRemove={onRemove}
-			// Keep the remove button hidden until the tag is hovered or focused,
-			// so resting chips stay quiet. Targets Tag's internal `tag-after`
-			// slot via arbitrary variants since Tag owns that markup.
-			className={
-				onRemove
-					? "[&_[data-slot=tag-after]]:opacity-0 [&_[data-slot=tag-after]]:transition-opacity hover:[&_[data-slot=tag-after]]:opacity-100 focus-within:[&_[data-slot=tag-after]]:opacity-100"
-					: undefined
-			}
+			removeVariant="overlay"
 		>
 			{label}
 		</Tag>
 	);
 }
 
-function AgentSkillChip({ label }: Readonly<{ label: string }>) {
+function AgentSkillChip({ label, onRemove }: Readonly<{ label: string; onRemove?: () => void }>) {
 	return (
-		<SkillTag color="teamwork" icon={<CheckIcon size="small" />}>
+		<SkillTag
+			color="teamwork"
+			icon={<CheckIcon size="small" />}
+			onRemove={onRemove}
+			removeVariant="overlay"
+			removeButtonLabel={`Remove ${label}`}
+		>
 			{label}
 		</SkillTag>
 	);
@@ -476,7 +1033,7 @@ function AgentAddValueButton({
 			)}
 			onClick={onClick}
 		>
-			<span aria-hidden>+</span>
+			<PlusIcon size="small" />
 			<span className="group-hover/add-link:underline group-focus-visible/add-link:underline">{label}</span>
 		</button>
 	);
@@ -521,7 +1078,11 @@ function AgentFilledSummaryRow({
 			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
 				{items.map((item, index) => (
 					variant === "skill" ? (
-						<AgentSkillChip key={`${label}-${item}-${index}`} label={item} />
+						<AgentSkillChip
+							key={`${label}-${item}-${index}`}
+							label={item}
+							onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
+						/>
 					) : (
 						<AgentReferenceChip
 							key={`${label}-${item}-${index}`}
@@ -533,7 +1094,7 @@ function AgentFilledSummaryRow({
 				{addLabel ? (
 					<AgentAddValueButton
 						className={isEmpty
-							? "-ml-2"
+							? undefined
 							: "opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-focus-within/agent-row:opacity-100 focus-visible:opacity-100"}
 						label={addLabel}
 						onClick={onAdd}
@@ -548,16 +1109,24 @@ interface AgentFilledConfigSummaryProps {
 	config: AgentConfigFormValue;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
+	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	screenAssistantTargetPrefix?: string;
+	showAddButtons?: boolean;
 }
 
 function AgentFilledConfigSummary({
 	config,
 	onAppendListItem,
 	onRemoveListItem,
+	onTextChange,
 	screenAssistantTargetPrefix,
+	showAddButtons = true,
 }: Readonly<AgentFilledConfigSummaryProps>) {
 	const triggerItems = getAgentTriggerItems(config);
+	const triggerListItems = getNonEmptyConfigItems(config.triggers);
+	const removeTriggerItem = triggerListItems.length > 0
+		? (onRemoveListItem ? (index: number) => onRemoveListItem("triggers", index) : undefined)
+		: (onTextChange ? () => onTextChange("trigger", "") : undefined);
 	const skillItems = getNonEmptyConfigItems(config.skills);
 	const toolItems = getNonEmptyConfigItems(config.tools);
 	const subagentItems = getNonEmptyConfigItems(config.subagents);
@@ -565,23 +1134,25 @@ function AgentFilledConfigSummary({
 	const starterItems = getNonEmptyConfigItems(config.conversationStarters).slice(0, MAX_AGENT_CONVERSATION_STARTERS);
 
 	return (
-		<div className="flex flex-col gap-2">
+		<div className="flex flex-col gap-1">
 			<AgentFilledSummaryRow
-				addLabel="Add"
+				addLabel={showAddButtons ? "Add" : undefined}
 				agentFieldName="trigger"
 				items={triggerItems}
 				label="Triggers"
+				onRemoveItem={removeTriggerItem}
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
 			/>
 			<AgentFilledSummaryRow
-				addLabel="Add"
+				addLabel={showAddButtons ? "Add" : undefined}
 				items={skillItems}
 				label="Skills"
+				onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("skills", index) : undefined}
 				variant="skill"
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined}
 			/>
 			<AgentFilledSummaryRow
-				addLabel="Add"
+				addLabel={showAddButtons ? "Add" : undefined}
 				agentFieldName="tools"
 				items={toolItems}
 				label="Tools"
@@ -590,19 +1161,21 @@ function AgentFilledConfigSummary({
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
 			/>
 			<AgentFilledSummaryRow
-				addLabel="Add"
+				addLabel={showAddButtons ? "Add" : undefined}
 				items={subagentItems}
 				label="Subagents"
+				onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("subagents", index) : undefined}
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
 			/>
 			<AgentFilledSummaryRow
-				addLabel="Add"
+				addLabel={showAddButtons ? "Add" : undefined}
 				items={knowledgeItems}
 				label="Knowledge"
+				onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
 			/>
 			<AgentFilledSummaryRow
-				addLabel="Add"
+				addLabel={showAddButtons ? "Add" : undefined}
 				agentFieldName="conversationStarters"
 				items={starterItems}
 				label="Conversation starters"
@@ -756,27 +1329,26 @@ type ReasoningModeValue =
 	(typeof REASONING_MODE_SECTIONS)[number]["options"][number]["value"];
 
 function AgentInstructionsModelSelector() {
-	const [selected, setSelected] = useState<ReasoningModeValue>("quick-auto");
+	const [selected, setSelected] = useState<ReasoningModeValue>("deep-auto");
 	const current = REASONING_MODE_SECTIONS
 		.flatMap((section) =>
 			section.options.map((option) => ({
 				...option,
-				optionCount: section.options.length,
 				section: section.title,
 			}))
 		)
 		.find((option) => option.value === selected);
+	const triggerLabel = current
+		? `Model: ${current.section === "Think deeper" && current.value !== "deep-auto" ? current.label : current.section}`
+		: "Select mode";
 
 	return (
 		<ModelSelector>
 			<ModelSelectorTrigger
-				render={<Button className="shrink-0 text-text-subtle" variant="ghost" />}
+				render={<Button className="shrink-0 gap-1.5 text-text-subtle" variant="ghost" />}
 			>
-				{current
-					? current.optionCount === 1
-						? current.section
-						: `${current.section}: ${current.label}`
-					: "Select mode"}
+				<Icon render={<AiModelIcon label="" size="small" />} aria-hidden />
+				{triggerLabel}
 			</ModelSelectorTrigger>
 			<ModelSelectorContent className="w-[360px] max-w-[calc(100vw-2rem)]">
 				<ModelSelectorList>
@@ -804,13 +1376,27 @@ function AgentInstructionsModelSelector() {
 }
 
 function AgentInstructionsComposer({
+	bottomSlot,
+	bottomSlotClassName,
+	className,
+	contentClassName,
+	editorClassName,
 	instructions,
 	onInstructionsChange,
 	screenAssistantTargetId,
+	showSectionLabel = true,
+	toolbarBelowSlot,
 }: Readonly<{
+	bottomSlot?: ReactNode;
+	bottomSlotClassName?: string;
+	className?: string;
+	contentClassName?: string;
+	editorClassName?: string;
 	instructions?: string;
 	onInstructionsChange?: (value: string) => void;
 	screenAssistantTargetId?: string;
+	showSectionLabel?: boolean;
+	toolbarBelowSlot?: ReactNode;
 }>) {
 	const [skills, setSkills] = useState<RichTextMentionItem[]>([]);
 	const [memory, setMemory] = useState<RichTextMentionItem[]>([]);
@@ -852,23 +1438,31 @@ function AgentInstructionsComposer({
 
 	return (
 		<section
-			className="space-y-0"
+			className={cn("space-y-0", className)}
 			data-agent-field="instructions"
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
-			<AgentSectionLabel>Instructions</AgentSectionLabel>
+			{showSectionLabel ? (
+				<AgentSectionLabel>Instructions</AgentSectionLabel>
+			) : null}
 			<RichTextEditor
 				aria-label="Agent instructions"
 				className="space-y-2"
-				contentClassName="pt-2"
-				editorClassName="agent-instructions-tiptap-editor text-text"
+				contentClassName={cn("pt-2", contentClassName)}
+				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
 				placeholder="Describe the agent’s role and what it should do. @mention, or / for skills"
 				showBubbleMenu={false}
+				toolbarBelowSlot={toolbarBelowSlot}
 				toolbarEndSlot={<AgentInstructionsModelSelector />}
 				value={instructions}
 				mentionSources={mentionSources}
 				onMarkdownChange={onInstructionsChange}
 			/>
+			{bottomSlot ? (
+				<div className={bottomSlotClassName}>
+					{bottomSlot}
+				</div>
+			) : null}
 		</section>
 	);
 }
@@ -901,9 +1495,11 @@ function AgentConfigProfile({
 					value={config.name ?? ""}
 					placeholder="Untitled agent"
 					editButtonLabel="Edit agent name"
-					readViewClassName="h-auto px-0 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"
+					readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"
 					readViewMotionProps={AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS}
-					inputProps={{ className: "-mx-2 h-auto border-2 px-2 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" }}
+					readViewBackdropClassName="-inset-0.5 bg-bg-neutral-subtle-hovered"
+					readViewBackdropMotionProps={AGENT_PROFILE_INLINE_EDIT_BACKDROP_MOTION_PROPS}
+					inputProps={{ className: "h-auto border-2 px-1.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" }}
 					onConfirm={(value) => onTextChange?.("name", value)}
 				/>
 				<div
@@ -915,9 +1511,11 @@ function AgentConfigProfile({
 						placeholder="Add a description"
 						editButtonLabel="Edit agent description"
 						multiline
-						readViewClassName="px-0"
+						readViewClassName="relative overflow-visible border-2 bg-transparent px-0 hover:bg-transparent active:bg-transparent focus-visible:bg-transparent"
 						readViewMotionProps={AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS}
-						textareaProps={{ rows: 1, className: "-mx-2 min-h-10 bg-bg-neutral-subtle px-2 focus:border-2 focus:border-ring focus-visible:border-2 focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-[variant=default]:border-transparent data-[variant=default]:focus:border-ring data-[variant=default]:focus-visible:border-ring" }}
+						readViewBackdropClassName="-inset-0.5 bg-bg-neutral-subtle-hovered"
+						readViewBackdropMotionProps={AGENT_PROFILE_INLINE_EDIT_BACKDROP_MOTION_PROPS}
+						textareaProps={{ rows: 1, className: "min-h-10 border-2 bg-bg-neutral-subtle px-1.5 focus:border-ring focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-[variant=default]:border-transparent data-[variant=default]:focus:border-ring data-[variant=default]:focus-visible:border-ring" }}
 						onConfirm={(value) => onTextChange?.("description", value)}
 					/>
 				</div>
@@ -931,6 +1529,7 @@ interface AgentConfigSummaryProps {
 	isFilledConfig: boolean;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
+	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	screenAssistantTargetPrefix?: string;
 }
 
@@ -939,6 +1538,7 @@ function AgentConfigSummary({
 	isFilledConfig,
 	onAppendListItem,
 	onRemoveListItem,
+	onTextChange,
 	screenAssistantTargetPrefix,
 }: Readonly<AgentConfigSummaryProps>) {
 	return isFilledConfig ? (
@@ -946,6 +1546,7 @@ function AgentConfigSummary({
 			config={config}
 			onAppendListItem={onAppendListItem}
 			onRemoveListItem={onRemoveListItem}
+			onTextChange={onTextChange}
 			screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 		/>
 	) : (
@@ -954,6 +1555,36 @@ function AgentConfigSummary({
 			onAppendListItem={onAppendListItem}
 			screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 		/>
+	);
+}
+
+function AgentCompactConfigToolbarBelow({
+	config,
+	isFilledConfig,
+	onAppendListItem,
+	onRemoveListItem,
+	onTextChange,
+	screenAssistantTargetPrefix,
+}: Readonly<AgentConfigSummaryProps>) {
+	const hasVisibleAddOptions = getAgentCompactEmptyConfigNavItems(config).length > 0;
+
+	return (
+		<div className={cn("flex flex-col gap-6 border-t border-border", hasVisibleAddOptions ? "pt-2" : "pt-4")}>
+			<AgentCompactEmptyConfigNav
+				config={config}
+				onAppendListItem={onAppendListItem}
+				screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+			/>
+			{isFilledConfig ? (
+				<AgentFilledConfigSummary
+					config={config}
+					onAppendListItem={onAppendListItem}
+					onRemoveListItem={onRemoveListItem}
+					onTextChange={onTextChange}
+					screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+				/>
+			) : null}
+		</div>
 	);
 }
 
@@ -995,35 +1626,35 @@ export const AgentConfigFields = memo(
 				{...props}
 			>
 				{layout === "compact" ? (
-					<div className="grid gap-4 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
-						<div className="flex min-w-0 flex-col gap-4">
-							<div className="flex flex-col gap-4">
-								<AgentConfigProfile
-									config={config}
-									avatarSrc={avatarSrc}
-									onTextChange={onTextChange}
-									screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-								/>
-								<AgentConfigSummary
+					<div className="flex min-w-0 flex-col gap-2">
+						<div className="flex flex-col gap-4">
+							<AgentConfigProfile
+								config={config}
+								avatarSrc={avatarSrc}
+								onTextChange={onTextChange}
+								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+							/>
+						</div>
+						<AgentInstructionsComposer
+							bottomSlot={isFilledConfig ? undefined : <AgentCompactOperationsBento />}
+							bottomSlotClassName={isFilledConfig ? undefined : "mt-auto pt-8"}
+							className="flex min-h-[560px] flex-col"
+							contentClassName="min-h-[240px] pt-4"
+							instructions={config.instructions}
+							onInstructionsChange={(value) => onTextChange?.("instructions", value)}
+							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
+							showSectionLabel={false}
+							toolbarBelowSlot={(
+								<AgentCompactConfigToolbarBelow
 									config={config}
 									isFilledConfig={isFilledConfig}
 									onAppendListItem={onAppendListItem}
 									onRemoveListItem={onRemoveListItem}
+									onTextChange={onTextChange}
 									screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 								/>
-							</div>
-
-							{isFilledConfig ? null : (
-								<AgentKnowledgePanel />
 							)}
-						</div>
-						<div className="min-w-0">
-							<AgentInstructionsComposer
-								instructions={config.instructions}
-								onInstructionsChange={(value) => onTextChange?.("instructions", value)}
-								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
-							/>
-						</div>
+						/>
 					</div>
 				) : (
 					<>
@@ -1041,6 +1672,7 @@ export const AgentConfigFields = memo(
 								isFilledConfig={isFilledConfig}
 								onAppendListItem={onAppendListItem}
 								onRemoveListItem={onRemoveListItem}
+								onTextChange={onTextChange}
 								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 							/>
 						</div>
