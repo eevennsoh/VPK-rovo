@@ -103,3 +103,18 @@ test("Conversation gives its scroll viewport a constrained flex height", () => {
 		/className="h-full w-full overflow-x-hidden overflow-y-auto scrollbar-auto-hide"/,
 	);
 });
+
+test("Conversation only fades the bottom edge when content is hidden below", () => {
+	// The bottom fade must be gated on isAtBottom so it never covers the last
+	// message (e.g. the greeting) when the conversation fits or is scrolled down.
+	assert.match(
+		CONVERSATION_SOURCE,
+		/const maskImage = context\?\.isAtBottom\s*\?\s*undefined\s*:\s*"linear-gradient\(to bottom, black 92%, transparent 100%\)"/,
+	);
+	assert.match(CONVERSATION_SOURCE, /maskImage,\s+WebkitMaskImage: maskImage,/);
+	// Guard against reverting to an always-on mask in the inline style object.
+	assert.doesNotMatch(
+		CONVERSATION_SOURCE,
+		/maskImage: "linear-gradient\(to bottom, black 92%, transparent 100%\)"/,
+	);
+});

@@ -356,13 +356,20 @@ export function ConversationContent({
 		}
 	}, [context?.scrollRef])
 
+	// Only fade the bottom edge when there is hidden content below (i.e. the
+	// user is scrolled up). When the conversation fits or is scrolled to the
+	// bottom, the fade would otherwise cover the last message (e.g. the greeting).
+	const maskImage = context?.isAtBottom
+		? undefined
+		: "linear-gradient(to bottom, black 92%, transparent 100%)"
+
 	return (
 		<div
 			className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto scrollbar-auto-hide"
 			ref={context?.scrollRef}
 			style={{
-				maskImage: "linear-gradient(to bottom, black 92%, transparent 100%)",
-				WebkitMaskImage: "linear-gradient(to bottom, black 92%, transparent 100%)",
+				maskImage,
+				WebkitMaskImage: maskImage,
 			}}
 		>
 			<div
