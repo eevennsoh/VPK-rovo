@@ -61,7 +61,7 @@ test("realtime config defaults to the current realtime model", () => {
 	delete process.env.OPENAI_REALTIME_MODEL;
 
 	try {
-		assert.equal(getRealtimeConfig().model, "gpt-realtime-2");
+		assert.equal(getRealtimeConfig().model, "gpt-realtime");
 	} finally {
 		if (previousModel === undefined) {
 			delete process.env.OPENAI_REALTIME_MODEL;
