@@ -80,8 +80,14 @@ import {
 } from "@/components/projects/studio/lib/studio-screen-assistant";
 import { useSidebarResize } from "@/components/projects/studio/hooks/use-sidebar-resize";
 import { useSidebarResize as useStudioAskRovoChatResize } from "@/components/projects/rovo/hooks/use-sidebar-resize";
-import ChatPanel from "@/components/projects/sidebar-chat/page";
+import ChatPanel, { type ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-chat/lib/chat-context-bar";
+import {
+	AGENT_EDIT_GREETING_HEADING,
+	AGENT_EDIT_GREETING_ILLUSTRATION_DARK_SRC,
+	AGENT_EDIT_GREETING_ILLUSTRATION_SRC,
+	agentEditSuggestions,
+} from "@/components/projects/studio/data/agent-edit-greeting";
 import { clamp, cn, createId } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 import { getLatestDataPart, getLatestUserMessageId, getMessageAgentResult, getMessageArtifactResult, getMessageInterruption, getMessageText, type RovoDataParts } from "@/lib/rovo-ui-messages";
@@ -1878,6 +1884,19 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			collapsedLabel: "Edit agent",
 		};
 	}, [activeSessionAgentEntry]);
+	// When the "Edit agent" context bar is active, the Ask Rovo empty state pivots
+	// to an agent-improvement greeting; closing the bar reverts to the default.
+	const agentEditGreeting = useMemo<ChatPanelGreetingProps | undefined>(() => {
+		if (!agentEditContextBar) {
+			return undefined;
+		}
+		return {
+			heading: AGENT_EDIT_GREETING_HEADING,
+			illustrationSrc: AGENT_EDIT_GREETING_ILLUSTRATION_SRC,
+			illustrationDarkSrc: AGENT_EDIT_GREETING_ILLUSTRATION_DARK_SRC,
+			suggestions: agentEditSuggestions,
+		};
+	}, [agentEditContextBar]);
 	const askRovoChatResize = useStudioAskRovoChatResize({
 		defaultWidth: 400,
 		minWidth: 320,
@@ -1886,6 +1905,16 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	});
 	const askRovoChatPanelWidth = askRovoChatResize.sidebarWidth;
 	const isStudioAskRovoChatActive = !embedded && shouldShowAgentConfigPane && nav.isSidebarChatOpen;
+	// "Ask Rovo" must always talk to the default Rovo agent, not the custom agent
+	// being edited in the config pane. Reset the selected agent to Rovo when the
+	// chat is being opened (resetAgentToRovo no-ops when Rovo is already active,
+	// so reopening an existing Rovo session keeps its thread).
+	const handleToggleAskRovoChat = useCallback(() => {
+		if (!nav.isSidebarChatOpen) {
+			studioAgentRegistry.resetAgentToRovo();
+		}
+		nav.toggleChat();
+	}, [nav, studioAgentRegistry]);
 	// When the active agent disappears (e.g. provider remounts), clear the
 	// config pane so we don't keep a stale reference around.
 	useEffect(() => {
@@ -4255,7 +4284,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							windowWidth={nav.windowWidth}
 							forceShowRovoAction={shouldShowAgentConfigPane}
 							isChatOpen={nav.isSidebarChatOpen}
-							onToggleChat={nav.toggleChat}
+							onToggleChat={handleToggleAskRovoChat}
 							onToggleTheme={nav.toggleTheme}
 						/>
 					</div>
@@ -4330,6 +4359,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							onClose={nav.toggleChat}
 							abortOnUnmount={false}
 							chatContextBar={agentEditContextBar}
+							greeting={agentEditGreeting}
 							// No left border here: the SidebarResizeHandle below paints the divider.
 							// Keeping the panel's own `border-l` too would stack two translucent
 							// `color.border` lines into a darker double-edge.

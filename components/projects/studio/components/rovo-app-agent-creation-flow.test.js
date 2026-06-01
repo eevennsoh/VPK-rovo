@@ -275,8 +275,15 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(SHELL_SOURCE, /const agentConfigTestPanel = activeSessionAgentEntry \? \([\s\S]*<AgentTestPanel entry=\{activeSessionAgentEntry\} \/>/u);
 	assert.match(SHELL_SOURCE, /testPanel=\{agentConfigTestPanel\}/u);
 	assert.match(SHELL_SOURCE, /onTest=\{handleTestAgent\}/u);
-	assert.match(SHELL_SOURCE, /isChatOpen=\{nav\.isSidebarChatOpen\}[\s\S]*onToggleChat=\{nav\.toggleChat\}/u);
+	assert.match(SHELL_SOURCE, /isChatOpen=\{nav\.isSidebarChatOpen\}[\s\S]*onToggleChat=\{handleToggleAskRovoChat\}/u);
 	assert.match(SHELL_SOURCE, /const isStudioAskRovoChatActive = !embedded && shouldShowAgentConfigPane && nav\.isSidebarChatOpen;/u);
+	// "Ask Rovo" must open the default Rovo agent, not the custom agent being
+	// edited: opening the chat resets the selected agent back to Rovo.
+	const handleToggleAskRovoChatSource = SHELL_SOURCE.slice(
+		SHELL_SOURCE.indexOf("const handleToggleAskRovoChat = useCallback"),
+		SHELL_SOURCE.indexOf("// When the active agent disappears"),
+	);
+	assert.match(handleToggleAskRovoChatSource, /if \(!nav\.isSidebarChatOpen\) \{[\s\S]*studioAgentRegistry\.resetAgentToRovo\(\);[\s\S]*\}[\s\S]*nav\.toggleChat\(\);/u);
 	assert.match(SHELL_SOURCE, /<ChatPanel[\s\S]*onClose=\{nav\.toggleChat\}[\s\S]*abortOnUnmount=\{false\}[\s\S]*chatContextBar=\{agentEditContextBar\}[\s\S]*containerStyle=\{\{ borderRadius: 0, borderWidth: 0 \}\}[\s\S]*\/>/u);
 	assert.match(SHELL_SOURCE, /<SidebarResizeHandle[\s\S]*side="left"[\s\S]*askRovoChatResize\.onResizeHandlePointerDown/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /export function AgentTestPanel/u);
