@@ -174,6 +174,11 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(compactLayoutSource, /toolbarBelowSlot=\{\([\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow/u);
 	assert.doesNotMatch(AGENT_SOURCE, /showAddButtons=\{false\}/u);
+	// Compact toolbar surfaces empty fields as single-line nav buttons, so the
+	// filled summary must drop empty rows (no double-representation) while keeping
+	// the hover "Add" affordance on filled rows.
+	assert.match(AGENT_SOURCE, /<AgentFilledConfigSummary\s+config=\{config\}\s+hideEmptyRows/u);
+	assert.match(AGENT_SOURCE, /if \(isEmpty && \(hideWhenEmpty \|\| !addLabel\)\) \{/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactEmptyConfigNav/u);
 	assert.match(AGENT_SOURCE, /function getAgentCompactEmptyConfigNavItems/u);
 	assert.match(AGENT_SOURCE, /const visibleItems = getAgentCompactEmptyConfigNavItems\(config\);/u);

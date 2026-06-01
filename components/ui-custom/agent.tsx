@@ -1064,6 +1064,7 @@ interface AgentFilledSummaryRowProps {
 	agentFieldName?: string;
 	screenAssistantTargetId?: string;
 	addLabel?: string;
+	hideWhenEmpty?: boolean;
 	onAdd?: () => void;
 	onRemoveItem?: (index: number) => void;
 }
@@ -1071,6 +1072,7 @@ interface AgentFilledSummaryRowProps {
 function AgentFilledSummaryRow({
 	addLabel,
 	agentFieldName,
+	hideWhenEmpty = false,
 	items,
 	label,
 	onAdd,
@@ -1080,7 +1082,11 @@ function AgentFilledSummaryRow({
 }: Readonly<AgentFilledSummaryRowProps>) {
 	const isEmpty = items.length === 0;
 
-	if (isEmpty && !addLabel) {
+	// Empty rows render their inline "Add" affordance by default — in the default
+	// layout that's the only way to populate an empty field. In the compact layout
+	// empty fields are surfaced as single-line nav buttons instead, so
+	// `hideWhenEmpty` drops the redundant empty row to avoid double-representation.
+	if (isEmpty && (hideWhenEmpty || !addLabel)) {
 		return null;
 	}
 
@@ -1125,6 +1131,7 @@ function AgentFilledSummaryRow({
 
 interface AgentFilledConfigSummaryProps {
 	config: AgentConfigFormValue;
+	hideEmptyRows?: boolean;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
@@ -1134,6 +1141,7 @@ interface AgentFilledConfigSummaryProps {
 
 function AgentFilledConfigSummary({
 	config,
+	hideEmptyRows = false,
 	onAppendListItem,
 	onRemoveListItem,
 	onTextChange,
@@ -1155,6 +1163,7 @@ function AgentFilledConfigSummary({
 		<div className="flex flex-col gap-1">
 			<AgentFilledSummaryRow
 				addLabel={showAddButtons ? "Add" : undefined}
+				hideWhenEmpty={hideEmptyRows}
 				agentFieldName="trigger"
 				items={triggerItems}
 				label="Triggers"
@@ -1163,6 +1172,7 @@ function AgentFilledConfigSummary({
 			/>
 			<AgentFilledSummaryRow
 				addLabel={showAddButtons ? "Add" : undefined}
+				hideWhenEmpty={hideEmptyRows}
 				items={skillItems}
 				label="Skills"
 				onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("skills", index) : undefined}
@@ -1171,6 +1181,7 @@ function AgentFilledConfigSummary({
 			/>
 			<AgentFilledSummaryRow
 				addLabel={showAddButtons ? "Add" : undefined}
+				hideWhenEmpty={hideEmptyRows}
 				agentFieldName="tools"
 				items={toolItems}
 				label="Tools"
@@ -1180,6 +1191,7 @@ function AgentFilledConfigSummary({
 			/>
 			<AgentFilledSummaryRow
 				addLabel={showAddButtons ? "Add" : undefined}
+				hideWhenEmpty={hideEmptyRows}
 				items={subagentItems}
 				label="Subagents"
 				onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("subagents", index) : undefined}
@@ -1187,6 +1199,7 @@ function AgentFilledConfigSummary({
 			/>
 			<AgentFilledSummaryRow
 				addLabel={showAddButtons ? "Add" : undefined}
+				hideWhenEmpty={hideEmptyRows}
 				items={knowledgeItems}
 				label="Knowledge"
 				onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
@@ -1194,6 +1207,7 @@ function AgentFilledConfigSummary({
 			/>
 			<AgentFilledSummaryRow
 				addLabel={showAddButtons ? "Add" : undefined}
+				hideWhenEmpty={hideEmptyRows}
 				agentFieldName="conversationStarters"
 				items={starterItems}
 				label="Conversation starters"
@@ -1596,6 +1610,7 @@ function AgentCompactConfigToolbarBelow({
 			{isFilledConfig ? (
 				<AgentFilledConfigSummary
 					config={config}
+					hideEmptyRows
 					onAppendListItem={onAppendListItem}
 					onRemoveListItem={onRemoveListItem}
 					onTextChange={onTextChange}
