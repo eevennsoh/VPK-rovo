@@ -323,7 +323,7 @@ function CanvasToolbarAction({
 						aria-label={label}
 						aria-pressed={isSelected ? true : undefined}
 						disabled={disabled}
-						size="icon-sm"
+						size="icon"
 						variant="ghost"
 						onClick={onClick}
 					>
@@ -484,7 +484,7 @@ function VersionHistoryPanel({
 				))}
 			</div>
 			<div className="border-t border-border px-3 py-3">
-				<Button size="sm" variant="outline" className="w-full">
+				<Button size="default" variant="outline" className="w-full">
 					Show earlier versions
 				</Button>
 			</div>

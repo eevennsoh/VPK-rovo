@@ -95,7 +95,7 @@ export function HomeCatalogSection({
 				render={
 					<Button
 						variant="outline"
-						size="sm"
+						size="default"
 						className="w-fit gap-1.5"
 					/>
 				}

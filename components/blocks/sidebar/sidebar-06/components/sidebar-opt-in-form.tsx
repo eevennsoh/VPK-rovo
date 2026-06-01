@@ -22,7 +22,7 @@ export function SidebarOptInForm() {
           <SidebarInput type="email" placeholder="Email" />
           <Button
             className="w-full bg-sidebar-primary text-sidebar-primary-foreground shadow-none"
-            size="sm"
+            size="default"
           >
             Subscribe
           </Button>

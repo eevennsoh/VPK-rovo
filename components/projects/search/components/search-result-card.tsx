@@ -110,7 +110,7 @@ function HoverActions() {
 		<div className="flex shrink-0" style={{ gap: token("space.050") }}>
 			<Button
 				aria-label="Copy link"
-				size="icon-sm"
+				size="icon"
 				variant="secondary"
 				onClick={(e) => e.stopPropagation()}
 			>
@@ -118,7 +118,7 @@ function HoverActions() {
 			</Button>
 			<Button
 				className="gap-2"
-				size="sm"
+				size="default"
 				variant="secondary"
 				onClick={(e) => e.stopPropagation()}
 			>

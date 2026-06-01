@@ -523,7 +523,7 @@ export function MemoriesSurfacePage() {
 										</div>
 									</div>
 									<Button
-										size="sm"
+										size="default"
 										variant={filters.includeLinkedKnowledge ? "default" : "outline"}
 										onClick={() => setFilters((current) => ({ ...current, includeLinkedKnowledge: !current.includeLinkedKnowledge }))}
 									>
@@ -888,7 +888,7 @@ export function MemoriesSurfacePage() {
 												</div>
 												<Button
 													variant="destructive"
-													size="sm"
+													size="default"
 													onClick={() => {
 														const proposal = explorer?.nodes.find((node) => node.id === selectedNode.id);
 														if (proposal) {
@@ -937,7 +937,7 @@ export function MemoriesSurfacePage() {
 															<Badge variant="neutral">{block.charCount.toLocaleString()} chars</Badge>
 														</div>
 														<Button
-															size="sm"
+															size="default"
 															variant="destructive"
 															onClick={() => setPendingBlockRemove({ block, document: selectedCanonicalDocument })}
 															disabled={removingKey !== null}

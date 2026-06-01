@@ -55,53 +55,27 @@ export function ButtonDemoIconLeft() {
 	return (
 		<>
 			<div className="flex flex-wrap items-center gap-2">
-				<Button size="xs">
+				<Button size="compact">
 					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
 					Default
 				</Button>
-				<Button size="xs" variant="secondary">
+				<Button size="compact" variant="secondary">
 					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
 					Secondary
 				</Button>
-				<Button size="xs" variant="outline">
+				<Button size="compact" variant="outline">
 					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
 					Outline
 				</Button>
-				<Button size="xs" variant="ghost">
+				<Button size="compact" variant="ghost">
 					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
 					Ghost
 				</Button>
-				<Button size="xs" variant="destructive">
+				<Button size="compact" variant="destructive">
 					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
 					Destructive
 				</Button>
-				<Button size="xs" variant="link">
-					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
-					Link
-				</Button>
-			</div>
-			<div className="flex flex-wrap items-center gap-2">
-				<Button size="sm">
-					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
-					Default
-				</Button>
-				<Button size="sm" variant="secondary">
-					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
-					Secondary
-				</Button>
-				<Button size="sm" variant="outline">
-					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
-					Outline
-				</Button>
-				<Button size="sm" variant="ghost">
-					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
-					Ghost
-				</Button>
-				<Button size="sm" variant="destructive">
-					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
-					Destructive
-				</Button>
-				<Button size="sm" variant="link">
+				<Button size="compact" variant="link">
 					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
 					Link
 				</Button>
@@ -132,32 +106,6 @@ export function ButtonDemoIconLeft() {
 					Link
 				</Button>
 			</div>
-			<div className="flex flex-wrap items-center gap-2">
-				<Button size="lg">
-					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
-					Default
-				</Button>
-				<Button size="lg" variant="secondary">
-					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
-					Secondary
-				</Button>
-				<Button size="lg" variant="outline">
-					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
-					Outline
-				</Button>
-				<Button size="lg" variant="ghost">
-					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
-					Ghost
-				</Button>
-				<Button size="lg" variant="destructive">
-					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
-					Destructive
-				</Button>
-				<Button size="lg" variant="link">
-					<ArrowLeftCircleIcon data-icon="inline-start" />{" "}
-					Link
-				</Button>
-			</div>
 		</>
 	);
 }
@@ -166,42 +114,22 @@ export function ButtonDemoIconOnly() {
 	return (
 		<>
 			<div className="flex flex-wrap items-center gap-2">
-				<Button size="icon-xs">
+				<Button size="icon-compact">
 					<ArrowRightIcon />
 				</Button>
-				<Button size="icon-xs" variant="secondary">
+				<Button size="icon-compact" variant="secondary">
 					<ArrowRightIcon />
 				</Button>
-				<Button size="icon-xs" variant="outline">
+				<Button size="icon-compact" variant="outline">
 					<ArrowRightIcon />
 				</Button>
-				<Button size="icon-xs" variant="ghost">
+				<Button size="icon-compact" variant="ghost">
 					<ArrowRightIcon />
 				</Button>
-				<Button size="icon-xs" variant="destructive">
+				<Button size="icon-compact" variant="destructive">
 					<ArrowRightIcon />
 				</Button>
-				<Button size="icon-xs" variant="link">
-					<ArrowRightIcon />
-				</Button>
-			</div>
-			<div className="flex flex-wrap items-center gap-2">
-				<Button size="icon-sm">
-					<ArrowRightIcon />
-				</Button>
-				<Button size="icon-sm" variant="secondary">
-					<ArrowRightIcon />
-				</Button>
-				<Button size="icon-sm" variant="outline">
-					<ArrowRightIcon />
-				</Button>
-				<Button size="icon-sm" variant="ghost">
-					<ArrowRightIcon />
-				</Button>
-				<Button size="icon-sm" variant="destructive">
-					<ArrowRightIcon />
-				</Button>
-				<Button size="icon-sm" variant="link">
+				<Button size="icon-compact" variant="link">
 					<ArrowRightIcon />
 				</Button>
 			</div>
@@ -225,26 +153,6 @@ export function ButtonDemoIconOnly() {
 					<ArrowRightIcon />
 				</Button>
 			</div>
-			<div className="flex flex-wrap items-center gap-2">
-				<Button size="icon-lg">
-					<ArrowRightIcon />
-				</Button>
-				<Button size="icon-lg" variant="secondary">
-					<ArrowRightIcon />
-				</Button>
-				<Button size="icon-lg" variant="outline">
-					<ArrowRightIcon />
-				</Button>
-				<Button size="icon-lg" variant="ghost">
-					<ArrowRightIcon />
-				</Button>
-				<Button size="icon-lg" variant="destructive">
-					<ArrowRightIcon />
-				</Button>
-				<Button size="icon-lg" variant="link">
-					<ArrowRightIcon />
-				</Button>
-			</div>
 		</>
 	);
 }
@@ -253,53 +161,27 @@ export function ButtonDemoIconRight() {
 	return (
 		<>
 			<div className="flex flex-wrap items-center gap-2">
-				<Button size="xs">
+				<Button size="compact">
 					Default{" "}
 					<ArrowRightIcon data-icon="inline-end" />
 				</Button>
-				<Button size="xs" variant="secondary">
+				<Button size="compact" variant="secondary">
 					Secondary{" "}
 					<ArrowRightIcon data-icon="inline-end" />
 				</Button>
-				<Button size="xs" variant="outline">
+				<Button size="compact" variant="outline">
 					Outline{" "}
 					<ArrowRightIcon data-icon="inline-end" />
 				</Button>
-				<Button size="xs" variant="ghost">
+				<Button size="compact" variant="ghost">
 					Ghost{" "}
 					<ArrowRightIcon data-icon="inline-end" />
 				</Button>
-				<Button size="xs" variant="destructive">
+				<Button size="compact" variant="destructive">
 					Destructive{" "}
 					<ArrowRightIcon data-icon="inline-end" />
 				</Button>
-				<Button size="xs" variant="link">
-					Link{" "}
-					<ArrowRightIcon data-icon="inline-end" />
-				</Button>
-			</div>
-			<div className="flex flex-wrap items-center gap-2">
-				<Button size="sm">
-					Default
-					<ArrowRightIcon data-icon="inline-end" />
-				</Button>
-				<Button size="sm" variant="secondary">
-					Secondary{" "}
-					<ArrowRightIcon data-icon="inline-end" />
-				</Button>
-				<Button size="sm" variant="outline">
-					Outline{" "}
-					<ArrowRightIcon />
-				</Button>
-				<Button size="sm" variant="ghost">
-					Ghost{" "}
-					<ArrowRightIcon data-icon="inline-end" />
-				</Button>
-				<Button size="sm" variant="destructive">
-					Destructive{" "}
-					<ArrowRightIcon data-icon="inline-end" />
-				</Button>
-				<Button size="sm" variant="link">
+				<Button size="compact" variant="link">
 					Link{" "}
 					<ArrowRightIcon data-icon="inline-end" />
 				</Button>
@@ -330,32 +212,6 @@ export function ButtonDemoIconRight() {
 					<ArrowRightIcon data-icon="inline-end" />
 				</Button>
 			</div>
-			<div className="flex flex-wrap items-center gap-2">
-				<Button size="lg">
-					Default{" "}
-					<ArrowRightIcon data-icon="inline-end" />
-				</Button>
-				<Button size="lg" variant="secondary">
-					Secondary{" "}
-					<ArrowRightIcon data-icon="inline-end" />
-				</Button>
-				<Button size="lg" variant="outline">
-					Outline{" "}
-					<ArrowRightIcon data-icon="inline-end" />
-				</Button>
-				<Button size="lg" variant="ghost">
-					Ghost{" "}
-					<ArrowRightIcon data-icon="inline-end" />
-				</Button>
-				<Button size="lg" variant="destructive">
-					Destructive{" "}
-					<ArrowRightIcon data-icon="inline-end" />
-				</Button>
-				<Button size="lg" variant="link">
-					Link{" "}
-					<ArrowRightIcon data-icon="inline-end" />
-				</Button>
-			</div>
 		</>
 	);
 }
@@ -364,42 +220,22 @@ export function ButtonDemoInvalidStates() {
 	return (
 		<>
 			<div className="flex flex-wrap items-center gap-2">
-				<Button size="xs" aria-invalid="true">
+				<Button size="compact" aria-invalid="true">
 					Default
 				</Button>
-				<Button size="xs" variant="secondary" aria-invalid="true">
+				<Button size="compact" variant="secondary" aria-invalid="true">
 					Secondary
 				</Button>
-				<Button size="xs" variant="outline" aria-invalid="true">
+				<Button size="compact" variant="outline" aria-invalid="true">
 					Outline
 				</Button>
-				<Button size="xs" variant="ghost" aria-invalid="true">
+				<Button size="compact" variant="ghost" aria-invalid="true">
 					Ghost
 				</Button>
-				<Button size="xs" variant="destructive" aria-invalid="true">
+				<Button size="compact" variant="destructive" aria-invalid="true">
 					Destructive
 				</Button>
-				<Button size="xs" variant="link" aria-invalid="true">
-					Link
-				</Button>
-			</div>
-			<div className="flex flex-wrap items-center gap-2">
-				<Button size="sm" aria-invalid="true">
-					Default
-				</Button>
-				<Button size="sm" variant="secondary" aria-invalid="true">
-					Secondary
-				</Button>
-				<Button size="sm" variant="outline" aria-invalid="true">
-					Outline
-				</Button>
-				<Button size="sm" variant="ghost" aria-invalid="true">
-					Ghost
-				</Button>
-				<Button size="sm" variant="destructive" aria-invalid="true">
-					Destructive
-				</Button>
-				<Button size="sm" variant="link" aria-invalid="true">
+				<Button size="compact" variant="link" aria-invalid="true">
 					Link
 				</Button>
 			</div>
@@ -418,26 +254,6 @@ export function ButtonDemoInvalidStates() {
 					Destructive
 				</Button>
 				<Button variant="link" aria-invalid="true">
-					Link
-				</Button>
-			</div>
-			<div className="flex flex-wrap items-center gap-2">
-				<Button size="lg" aria-invalid="true">
-					Default
-				</Button>
-				<Button size="lg" variant="secondary" aria-invalid="true">
-					Secondary
-				</Button>
-				<Button size="lg" variant="outline" aria-invalid="true">
-					Outline
-				</Button>
-				<Button size="lg" variant="ghost" aria-invalid="true">
-					Ghost
-				</Button>
-				<Button size="lg" variant="destructive" aria-invalid="true">
-					Destructive
-				</Button>
-				<Button size="lg" variant="link" aria-invalid="true">
 					Link
 				</Button>
 			</div>
@@ -501,22 +317,14 @@ export function ButtonDemoSizes() {
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex flex-wrap items-center gap-2">
-				<Button size="xs">Extra small</Button>
-				<Button size="sm">Small</Button>
+				<Button size="compact">Compact</Button>
 				<Button size="default">Default</Button>
-				<Button size="lg">Large</Button>
 			</div>
 			<div className="flex flex-wrap items-center gap-2">
-				<Button size="icon-xs" variant="outline">
-					<AddIcon label="Add" />
-				</Button>
-				<Button size="icon-sm" variant="outline">
+				<Button size="icon-compact" variant="outline">
 					<AddIcon label="Add" />
 				</Button>
 				<Button size="icon" variant="outline">
-					<AddIcon label="Add" />
-				</Button>
-				<Button size="icon-lg" variant="outline">
 					<AddIcon label="Add" />
 				</Button>
 			</div>
@@ -551,38 +359,20 @@ export function ButtonDemoVariantsAndSizes() {
 	return (
 		<>
 			<div className="flex flex-wrap items-center gap-2">
-				<Button size="xs">Default</Button>
-				<Button size="xs" variant="secondary">
+				<Button size="compact">Default</Button>
+				<Button size="compact" variant="secondary">
 					Secondary
 				</Button>
-				<Button size="xs" variant="outline">
+				<Button size="compact" variant="outline">
 					Outline
 				</Button>
-				<Button size="xs" variant="ghost">
+				<Button size="compact" variant="ghost">
 					Ghost
 				</Button>
-				<Button size="xs" variant="destructive">
+				<Button size="compact" variant="destructive">
 					Destructive
 				</Button>
-				<Button size="xs" variant="link">
-					Link
-				</Button>
-			</div>
-			<div className="flex flex-wrap items-center gap-2">
-				<Button size="sm">Default</Button>
-				<Button size="sm" variant="secondary">
-					Secondary
-				</Button>
-				<Button size="sm" variant="outline">
-					Outline
-				</Button>
-				<Button size="sm" variant="ghost">
-					Ghost
-				</Button>
-				<Button size="sm" variant="destructive">
-					Destructive
-				</Button>
-				<Button size="sm" variant="link">
+				<Button size="compact" variant="link">
 					Link
 				</Button>
 			</div>
@@ -593,24 +383,6 @@ export function ButtonDemoVariantsAndSizes() {
 				<Button variant="ghost">Ghost</Button>
 				<Button variant="destructive">Destructive</Button>
 				<Button variant="link">Link</Button>
-			</div>
-			<div className="flex flex-wrap items-center gap-2">
-				<Button size="lg">Default</Button>
-				<Button size="lg" variant="secondary">
-					Secondary
-				</Button>
-				<Button size="lg" variant="outline">
-					Outline
-				</Button>
-				<Button size="lg" variant="ghost">
-					Ghost
-				</Button>
-				<Button size="lg" variant="destructive">
-					Destructive
-				</Button>
-				<Button size="lg" variant="link">
-					Link
-				</Button>
 			</div>
 		</>
 	);

@@ -66,7 +66,7 @@ function BarVisualizerPreview({
 								onClick={() => {
 									setState(nextState);
 								}}
-								size="sm"
+								size="default"
 								variant={state === nextState ? "default" : "outline"}
 							>
 								{formatStateLabel(nextState)}

@@ -121,7 +121,7 @@ export default function ColumnAgentAssignment({
 										)}
 										data-assigned={hasAssignedAgents || undefined}
 										data-open={open || undefined}
-										size={hasAssignedAgents ? "sm" : "icon"}
+										size={hasAssignedAgents ? "default" : "icon"}
 										variant="ghost"
 									/>
 								}

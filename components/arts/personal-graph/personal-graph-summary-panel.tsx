@@ -123,7 +123,7 @@ export function PersonalGraphSummaryPanel({
 									handleGenerate(option.value);
 								}
 							}}
-							size="sm"
+							size="default"
 							type="button"
 							variant="ghost"
 						>
@@ -177,7 +177,7 @@ export function PersonalGraphSummaryPanel({
 					disabled={isRunning}
 					isLoading={isRunning}
 					onClick={() => handleGenerate(summary.length, false)}
-					size="sm"
+					size="default"
 					type="button"
 				>
 					{hasArticle ? "Load cached" : "Generate"}
@@ -185,7 +185,7 @@ export function PersonalGraphSummaryPanel({
 				<Button
 					disabled={isRunning}
 					onClick={() => handleGenerate(summary.length, true)}
-					size="sm"
+					size="default"
 					type="button"
 					variant="outline"
 				>
@@ -195,7 +195,7 @@ export function PersonalGraphSummaryPanel({
 				{hasArticle ? (
 					<Button
 						onClick={() => downloadHtml(summary.exportFilename || `${node.slug || "personal-graph-summary"}.html`, summary.summaryHtml)}
-						size="sm"
+						size="default"
 						type="button"
 						variant="outline"
 					>

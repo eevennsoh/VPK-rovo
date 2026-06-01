@@ -36,7 +36,7 @@ export function PersonaDemoStates() {
 					<Button
 						key={s.value}
 						variant={state === s.value ? "default" : "outline"}
-						size="sm"
+						size="default"
 						onClick={() => setState(s.value)}
 					>
 						{s.label}

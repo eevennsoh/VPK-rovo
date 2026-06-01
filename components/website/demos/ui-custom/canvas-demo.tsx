@@ -260,13 +260,13 @@ function ToolbarNode({ data }: { data: WorkflowNodeData }) {
 	return (
 		<Node handles={data.handles}>
 			<Toolbar>
-				<Button size="sm" variant="ghost" aria-label="Edit">
+				<Button size="default" variant="ghost" aria-label="Edit">
 					<EditIcon label="" />
 				</Button>
-				<Button size="sm" variant="ghost" aria-label="Copy">
+				<Button size="default" variant="ghost" aria-label="Copy">
 					<CopyIcon label="" />
 				</Button>
-				<Button size="sm" variant="ghost" aria-label="Delete">
+				<Button size="default" variant="ghost" aria-label="Delete">
 					<DeleteIcon label="" />
 				</Button>
 			</Toolbar>

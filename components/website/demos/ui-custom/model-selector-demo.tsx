@@ -65,7 +65,7 @@ const REASONING_MODE_SECTIONS = [
 export default function ModelSelectorDemo() {
 	return (
 		<ModelSelector>
-			<ModelSelectorTrigger render={<Button variant="outline" size="sm" />}>
+			<ModelSelectorTrigger render={<Button variant="outline" size="default" />}>
 				Select model
 			</ModelSelectorTrigger>
 			<ModelSelectorContent>
@@ -91,7 +91,7 @@ export function ModelSelectorDemoWithSearch() {
 
 	return (
 		<ModelSelector>
-			<ModelSelectorTrigger render={<Button variant="outline" size="sm" />}>
+			<ModelSelectorTrigger render={<Button variant="outline" size="default" />}>
 				{ANTHROPIC_MODELS.concat(OPENAI_MODELS)
 					.concat(GOOGLE_MODELS)
 					.find((m) => m.value === selected)?.label ?? "Select model"}
@@ -167,7 +167,7 @@ export function ModelSelectorDemoWithLogos() {
 
 	return (
 		<ModelSelector>
-			<ModelSelectorTrigger render={<Button variant="outline" size="sm" className="gap-2" />}>
+			<ModelSelectorTrigger render={<Button variant="outline" size="default" className="gap-2" />}>
 				<ModelSelectorLogoGroup>
 					<ModelSelectorLogo provider={current?.provider ?? "anthropic"} />
 				</ModelSelectorLogoGroup>
@@ -257,7 +257,7 @@ export function ModelSelectorDemoMultiProvider() {
 
 	return (
 		<ModelSelector>
-			<ModelSelectorTrigger render={<Button variant="outline" size="sm" className="gap-2" />}>
+			<ModelSelectorTrigger render={<Button variant="outline" size="default" className="gap-2" />}>
 				<ModelSelectorLogoGroup>
 					<ModelSelectorLogo provider="anthropic" />
 					<ModelSelectorLogo provider="openai" />
@@ -341,7 +341,7 @@ export function ModelSelectorDemoReasoningModes() {
 
 	return (
 		<ModelSelector>
-			<ModelSelectorTrigger render={<Button variant="outline" size="sm" />}>
+			<ModelSelectorTrigger render={<Button variant="outline" size="default" />}>
 				{current
 					? current.optionCount === 1
 						? current.section

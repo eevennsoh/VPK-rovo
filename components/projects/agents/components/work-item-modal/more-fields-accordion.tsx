@@ -35,7 +35,7 @@ export function MoreFieldsAccordion() {
 					<Button
 						aria-label={state.isMoreFieldsOpen ? "Collapse" : "Expand"}
 						aria-expanded={state.isMoreFieldsOpen}
-						size="icon-xs"
+						size="icon-compact"
 						variant="ghost"
 						className="aria-expanded:!border-transparent aria-expanded:!bg-transparent aria-expanded:!text-text-subtle"
 						onClick={actions.toggleMoreFields}

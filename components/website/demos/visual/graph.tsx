@@ -434,7 +434,7 @@ function GraphDetailsPanel({
 					aria-label="Close graph details"
 					className="size-7 shrink-0 rounded-[2px] text-neutral-800 hover:bg-neutral-100"
 					onClick={onClose}
-					size="icon-sm"
+					size="icon"
 					variant="ghost"
 				>
 					<CrossIcon label="" />

@@ -31,10 +31,10 @@ export default function SourcesCarousel({ sources }: Readonly<SourcesCarouselPro
 					<Heading size="xxsmall">Sources</Heading>
 				</div>
 				<div className="flex gap-1">
-					<Button aria-label="Previous source" size="icon-sm" variant="ghost" onClick={scrollPrev}>
+					<Button aria-label="Previous source" size="icon" variant="ghost" onClick={scrollPrev}>
 						<ArrowLeftIcon label="" size="small" />
 					</Button>
-					<Button aria-label="Next source" size="icon-sm" variant="ghost" onClick={scrollNext}>
+					<Button aria-label="Next source" size="icon" variant="ghost" onClick={scrollNext}>
 						<ArrowRightIcon label="" size="small" />
 					</Button>
 				</div>

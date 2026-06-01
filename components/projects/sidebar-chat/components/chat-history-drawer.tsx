@@ -365,7 +365,7 @@ function ChatHistoryPanelView({
 							</EmptyDescription>
 						</EmptyHeader>
 						<EmptyContent>
-							<Button variant="outline" size="sm" onClick={handleNewChat}>
+							<Button variant="outline" size="default" onClick={handleNewChat}>
 								New chat
 							</Button>
 						</EmptyContent>

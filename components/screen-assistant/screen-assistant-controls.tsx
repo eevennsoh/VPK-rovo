@@ -48,7 +48,7 @@ export function ScreenAssistantControls({
 
 			<div className="flex flex-wrap gap-1.5">
 				<Button
-					size="sm"
+					size="default"
 					variant={assistant.isActive ? "default" : "outline"}
 					aria-pressed={assistant.isActive}
 					onClick={assistant.toggleCursor}
@@ -56,7 +56,7 @@ export function ScreenAssistantControls({
 					{assistant.isActive ? "AI cursor on" : "AI cursor off"}
 				</Button>
 				<Button
-					size="sm"
+					size="default"
 					variant={assistant.isRealtimeActive ? "default" : "outline"}
 					aria-pressed={assistant.isRealtimeActive}
 					onClick={assistant.toggleVoice}
@@ -78,7 +78,7 @@ export function ScreenAssistantControls({
 					placeholder="Send a message…"
 					className="h-7 flex-1 rounded-md border border-border bg-bg-neutral-subtle px-2 text-xs text-text outline-none placeholder:text-text-subtlest focus-visible:border-ring"
 				/>
-				<Button size="sm" onClick={handleSend} disabled={!draft.trim()}>
+				<Button size="default" onClick={handleSend} disabled={!draft.trim()}>
 					Send
 				</Button>
 			</div>
@@ -93,19 +93,19 @@ export function ScreenAssistantControls({
 						Offline harness
 					</span>
 					<div className="flex flex-wrap gap-1.5">
-						<Button size="xs" variant="secondary" onClick={assistant.simulate.listening}>
+						<Button size="compact" variant="secondary" onClick={assistant.simulate.listening}>
 							Listen
 						</Button>
-						<Button size="xs" variant="secondary" onClick={assistant.simulate.processing}>
+						<Button size="compact" variant="secondary" onClick={assistant.simulate.processing}>
 							Process
 						</Button>
-						<Button size="xs" variant="secondary" onClick={() => assistant.simulate.speaking()}>
+						<Button size="compact" variant="secondary" onClick={() => assistant.simulate.speaking()}>
 							Speak
 						</Button>
-						<Button size="xs" variant="secondary" onClick={assistant.simulate.point}>
+						<Button size="compact" variant="secondary" onClick={assistant.simulate.point}>
 							Point
 						</Button>
-						<Button size="xs" variant="ghost" onClick={assistant.clearTranscript}>
+						<Button size="compact" variant="ghost" onClick={assistant.clearTranscript}>
 							Clear
 						</Button>
 					</div>

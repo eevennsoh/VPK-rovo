@@ -53,7 +53,7 @@ function DiscoverHeader({ onClose }: Readonly<DiscoverHeaderProps>) {
 	return (
 		<div className="flex items-center justify-between">
 			<Heading size="medium">Discover more examples</Heading>
-			<Button className="gap-2" size="sm" variant="ghost" onClick={onClose}>
+			<Button className="gap-2" size="default" variant="ghost" onClick={onClose}>
 				<ChevronUpIcon label="" size="small" />
 				Less
 			</Button>

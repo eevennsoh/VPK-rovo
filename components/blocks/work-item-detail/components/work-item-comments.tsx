@@ -25,11 +25,11 @@ export function WorkItemComments({ comments }: WorkItemCommentsProps) {
 						</div>
 						<p className="text-sm text-text-subtle mb-3">{comment.text}</p>
 						<div className="flex gap-3">
-							<Button size="sm" variant="ghost" className="h-7 gap-1">
+							<Button size="default" variant="ghost" className="h-7 gap-1">
 								<ThumbsUpIcon label="" size="small" />
 								<span className="text-xs">{comment.likes}</span>
 							</Button>
-							<Button size="sm" variant="ghost" className="h-7">
+							<Button size="default" variant="ghost" className="h-7">
 								Reply
 							</Button>
 						</div>
@@ -49,10 +49,10 @@ export function WorkItemComments({ comments }: WorkItemCommentsProps) {
 							rows={3}
 						/>
 						<div className="flex gap-2 mt-2 justify-end">
-							<Button variant="secondary" size="sm">
+							<Button variant="secondary" size="default">
 								Cancel
 							</Button>
-							<Button size="sm">Comment</Button>
+							<Button size="default">Comment</Button>
 						</div>
 					</div>
 				</div>

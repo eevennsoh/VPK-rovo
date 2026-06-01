@@ -62,7 +62,7 @@ export function ItemDemoAsChild() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Share
 					</Button>
 				</ItemActions>
@@ -106,7 +106,7 @@ export function ItemDemoDefaultItemMediaImage() {
 					<ItemDescription>A document with metadata displayed.</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						View
 					</Button>
 				</ItemActions>
@@ -128,7 +128,7 @@ export function ItemDemoDefaultItemMediaImage() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Download</Button>
+					<Button size="default">Download</Button>
 				</ItemActions>
 			</Item>
 		</>
@@ -188,7 +188,7 @@ export function ItemDemoDefault() {
 					<ItemTitle>Media + Title + Button</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item>
@@ -216,7 +216,7 @@ export function ItemDemoDefault() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item>
@@ -227,10 +227,10 @@ export function ItemDemoDefault() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Cancel
 					</Button>
-					<Button size="sm">Confirm</Button>
+					<Button size="default">Confirm</Button>
 				</ItemActions>
 			</Item>
 		</>
@@ -250,7 +250,7 @@ export function ItemDemoExtraSmall() {
 					<ItemTitle>Title + Button</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Action
 					</Button>
 				</ItemActions>
@@ -271,7 +271,7 @@ export function ItemDemoExtraSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Action
 					</Button>
 				</ItemActions>
@@ -292,7 +292,7 @@ export function ItemDemoExtraSmall() {
 					<ItemTitle>Media + Title + Button</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item size="xs">
@@ -318,7 +318,7 @@ export function ItemDemoExtraSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item size="xs">
@@ -329,10 +329,10 @@ export function ItemDemoExtraSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Cancel
 					</Button>
-					<Button size="sm">Confirm</Button>
+					<Button size="default">Confirm</Button>
 				</ItemActions>
 			</Item>
 		</>
@@ -601,7 +601,7 @@ export function ItemDemoMutedAsChild() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Share
 					</Button>
 				</ItemActions>
@@ -623,7 +623,7 @@ export function ItemDemoMutedExtraSmall() {
 					<ItemTitle>Title + Button</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Action
 					</Button>
 				</ItemActions>
@@ -644,7 +644,7 @@ export function ItemDemoMutedExtraSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Action
 					</Button>
 				</ItemActions>
@@ -665,7 +665,7 @@ export function ItemDemoMutedExtraSmall() {
 					<ItemTitle>Media + Title + Button</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item variant="muted" size="xs">
@@ -691,7 +691,7 @@ export function ItemDemoMutedExtraSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item variant="muted" size="xs">
@@ -702,10 +702,10 @@ export function ItemDemoMutedExtraSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Cancel
 					</Button>
-					<Button size="sm">Confirm</Button>
+					<Button size="default">Confirm</Button>
 				</ItemActions>
 			</Item>
 		</>
@@ -721,7 +721,7 @@ export function ItemDemoMutedItemGroup() {
 					<ItemDescription>First item in muted group.</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Action
 					</Button>
 				</ItemActions>
@@ -732,7 +732,7 @@ export function ItemDemoMutedItemGroup() {
 					<ItemDescription>Second item in muted group.</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Action
 					</Button>
 				</ItemActions>
@@ -743,7 +743,7 @@ export function ItemDemoMutedItemGroup() {
 					<ItemDescription>Third item in muted group.</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Action
 					</Button>
 				</ItemActions>
@@ -787,7 +787,7 @@ export function ItemDemoMutedItemMediaImage() {
 					<ItemDescription>A document with metadata displayed.</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						View
 					</Button>
 				</ItemActions>
@@ -809,7 +809,7 @@ export function ItemDemoMutedItemMediaImage() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Download</Button>
+					<Button size="default">Download</Button>
 				</ItemActions>
 			</Item>
 		</>
@@ -829,7 +829,7 @@ export function ItemDemoMutedSmall() {
 					<ItemTitle>Title + Button</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Action
 					</Button>
 				</ItemActions>
@@ -850,7 +850,7 @@ export function ItemDemoMutedSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Action
 					</Button>
 				</ItemActions>
@@ -871,7 +871,7 @@ export function ItemDemoMutedSmall() {
 					<ItemTitle>Media + Title + Button</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item variant="muted" size="sm">
@@ -897,7 +897,7 @@ export function ItemDemoMutedSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item variant="muted" size="sm">
@@ -908,10 +908,10 @@ export function ItemDemoMutedSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Cancel
 					</Button>
-					<Button size="sm">Confirm</Button>
+					<Button size="default">Confirm</Button>
 				</ItemActions>
 			</Item>
 		</>
@@ -971,7 +971,7 @@ export function ItemDemoMuted() {
 					<ItemTitle>Media + Title + Button</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item variant="muted">
@@ -999,7 +999,7 @@ export function ItemDemoMuted() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item variant="muted">
@@ -1010,10 +1010,10 @@ export function ItemDemoMuted() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Cancel
 					</Button>
-					<Button size="sm">Confirm</Button>
+					<Button size="default">Confirm</Button>
 				</ItemActions>
 			</Item>
 		</>
@@ -1063,7 +1063,7 @@ export function ItemDemoOutlineAsChild() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Share
 					</Button>
 				</ItemActions>
@@ -1085,7 +1085,7 @@ export function ItemDemoOutlineExtraSmall() {
 					<ItemTitle>Title + Button</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Action
 					</Button>
 				</ItemActions>
@@ -1106,7 +1106,7 @@ export function ItemDemoOutlineExtraSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Action
 					</Button>
 				</ItemActions>
@@ -1127,7 +1127,7 @@ export function ItemDemoOutlineExtraSmall() {
 					<ItemTitle>Media + Title + Button</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item variant="outline" size="xs">
@@ -1153,7 +1153,7 @@ export function ItemDemoOutlineExtraSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item variant="outline" size="xs">
@@ -1164,10 +1164,10 @@ export function ItemDemoOutlineExtraSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Cancel
 					</Button>
-					<Button size="sm">Confirm</Button>
+					<Button size="default">Confirm</Button>
 				</ItemActions>
 			</Item>
 		</>
@@ -1239,7 +1239,7 @@ export function ItemDemoOutlineItemMediaImageExtraSmall() {
 					<ItemTitle>Document</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						View
 					</Button>
 				</ItemActions>
@@ -1258,7 +1258,7 @@ export function ItemDemoOutlineItemMediaImageExtraSmall() {
 					<ItemTitle>File Attachment</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Download</Button>
+					<Button size="default">Download</Button>
 				</ItemActions>
 			</Item>
 		</>
@@ -1300,7 +1300,7 @@ export function ItemDemoOutlineItemMediaImageSmall() {
 					<ItemDescription>A document with metadata displayed.</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						View
 					</Button>
 				</ItemActions>
@@ -1322,7 +1322,7 @@ export function ItemDemoOutlineItemMediaImageSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Download</Button>
+					<Button size="default">Download</Button>
 				</ItemActions>
 			</Item>
 		</>
@@ -1364,7 +1364,7 @@ export function ItemDemoOutlineItemMediaImage() {
 					<ItemDescription>A document with metadata displayed.</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						View
 					</Button>
 				</ItemActions>
@@ -1386,7 +1386,7 @@ export function ItemDemoOutlineItemMediaImage() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Download</Button>
+					<Button size="default">Download</Button>
 				</ItemActions>
 			</Item>
 		</>
@@ -1406,7 +1406,7 @@ export function ItemDemoOutlineSmall() {
 					<ItemTitle>Title + Button</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Action
 					</Button>
 				</ItemActions>
@@ -1427,7 +1427,7 @@ export function ItemDemoOutlineSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Action
 					</Button>
 				</ItemActions>
@@ -1448,7 +1448,7 @@ export function ItemDemoOutlineSmall() {
 					<ItemTitle>Media + Title + Button</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item variant="outline" size="sm">
@@ -1474,7 +1474,7 @@ export function ItemDemoOutlineSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item variant="outline" size="sm">
@@ -1485,10 +1485,10 @@ export function ItemDemoOutlineSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Cancel
 					</Button>
-					<Button size="sm">Confirm</Button>
+					<Button size="default">Confirm</Button>
 				</ItemActions>
 			</Item>
 		</>
@@ -1548,7 +1548,7 @@ export function ItemDemoOutline() {
 					<ItemTitle>Media + Title + Button</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item variant="outline">
@@ -1576,7 +1576,7 @@ export function ItemDemoOutline() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item variant="outline">
@@ -1587,10 +1587,10 @@ export function ItemDemoOutline() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Cancel
 					</Button>
-					<Button size="sm">Confirm</Button>
+					<Button size="default">Confirm</Button>
 				</ItemActions>
 			</Item>
 		</>
@@ -1610,7 +1610,7 @@ export function ItemDemoSmall() {
 					<ItemTitle>Title + Button</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Action
 					</Button>
 				</ItemActions>
@@ -1631,7 +1631,7 @@ export function ItemDemoSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Action
 					</Button>
 				</ItemActions>
@@ -1654,7 +1654,7 @@ export function ItemDemoSmall() {
 					<ItemTitle>Media + Title + Button</ItemTitle>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item size="sm">
@@ -1682,7 +1682,7 @@ export function ItemDemoSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button size="sm">Action</Button>
+					<Button size="default">Action</Button>
 				</ItemActions>
 			</Item>
 			<Item size="sm">
@@ -1693,10 +1693,10 @@ export function ItemDemoSmall() {
 					</ItemDescription>
 				</ItemContent>
 				<ItemActions>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Cancel
 					</Button>
-					<Button size="sm">Confirm</Button>
+					<Button size="default">Confirm</Button>
 				</ItemActions>
 			</Item>
 		</>

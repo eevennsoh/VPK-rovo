@@ -23,7 +23,7 @@ export default function TWGAppstackDemo() {
 				<Button
 					aria-label="Replay TWG app stack animation"
 					onClick={() => setReplayKey((currentKey) => currentKey + 1)}
-					size="sm"
+					size="default"
 					variant="outline"
 				>
 					<RefreshIcon label="" size="small" />

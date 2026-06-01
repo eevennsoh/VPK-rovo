@@ -120,7 +120,7 @@ export function DropdownMenuDemoDefault() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Actions
       </DropdownMenuTrigger>
@@ -139,7 +139,7 @@ export function DropdownMenuDemoAppearance() {
     <div className="flex flex-wrap items-center gap-3">
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="outline" size="sm" className="w-fit" />}
+          render={<Button variant="outline" size="default" className="w-fit" />}
         >
           Default appearance
         </DropdownMenuTrigger>
@@ -153,7 +153,7 @@ export function DropdownMenuDemoAppearance() {
       </DropdownMenu>
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="outline" size="sm" className="w-fit" />}
+          render={<Button variant="outline" size="default" className="w-fit" />}
         >
           Tall appearance
         </DropdownMenuTrigger>
@@ -174,7 +174,7 @@ export function DropdownMenuDemoDensity() {
     <div className="flex flex-wrap items-center gap-3">
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="outline" size="sm" className="w-fit" />}
+          render={<Button variant="outline" size="default" className="w-fit" />}
         >
           Cozy density
         </DropdownMenuTrigger>
@@ -188,7 +188,7 @@ export function DropdownMenuDemoDensity() {
       </DropdownMenu>
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="outline" size="sm" className="w-fit" />}
+          render={<Button variant="outline" size="default" className="w-fit" />}
         >
           Compact density
         </DropdownMenuTrigger>
@@ -213,7 +213,7 @@ export function DropdownMenuDemoTall() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Open tall menu
       </DropdownMenuTrigger>
@@ -265,7 +265,7 @@ export function DropdownMenuDemoUsingTrigger() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Open
       </DropdownMenuTrigger>
@@ -283,7 +283,7 @@ export function DropdownMenuDemoNestedDropdownMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Project actions
       </DropdownMenuTrigger>
@@ -318,7 +318,7 @@ export function DropdownMenuDemoStates() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Item states
       </DropdownMenuTrigger>
@@ -343,7 +343,7 @@ export function DropdownMenuDemoLoading() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Loading menu
       </DropdownMenuTrigger>
@@ -368,14 +368,14 @@ export function DropdownMenuDemoOpen() {
     <div className="flex items-center gap-3">
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger
-          render={<Button variant="outline" size="sm" className="w-fit" />}
+          render={<Button variant="outline" size="default" className="w-fit" />}
         >
           Controlled menu
         </DropdownMenuTrigger>
         <DemoActionsContent />
       </DropdownMenu>
       <Button
-        size="sm"
+        size="default"
         variant="outline"
         onClick={() => setOpen((previousOpen) => !previousOpen)}
       >
@@ -390,7 +390,7 @@ export function DropdownMenuDemoPositioning() {
     <div className="flex flex-wrap items-center gap-3">
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="outline" size="sm" className="w-fit" />}
+          render={<Button variant="outline" size="default" className="w-fit" />}
         >
           Bottom start
         </DropdownMenuTrigger>
@@ -402,7 +402,7 @@ export function DropdownMenuDemoPositioning() {
       </DropdownMenu>
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="outline" size="sm" className="w-fit" />}
+          render={<Button variant="outline" size="default" className="w-fit" />}
         >
           Top end
         </DropdownMenuTrigger>
@@ -420,7 +420,7 @@ export function DropdownMenuDemoDefaultPlacement() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Default placement
       </DropdownMenuTrigger>
@@ -464,7 +464,7 @@ export function DropdownMenuDemoPlacement() {
       {placements.map((placement) => (
         <DropdownMenu key={placement.side}>
           <DropdownMenuTrigger
-            render={<Button variant="outline" size="sm" className="w-fit" />}
+            render={<Button variant="outline" size="default" className="w-fit" />}
           >
             {placement.label}
           </DropdownMenuTrigger>
@@ -491,7 +491,7 @@ export function DropdownMenuDemoShouldFlip() {
       <div className="flex justify-end">
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={<Button variant="outline" size="sm" className="w-fit" />}
+            render={<Button variant="outline" size="default" className="w-fit" />}
           >
             Try flip
           </DropdownMenuTrigger>
@@ -515,7 +515,7 @@ export function DropdownMenuDemoZIndex() {
       <div className="relative z-10 flex justify-end">
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={<Button variant="outline" size="sm" className="w-fit" />}
+            render={<Button variant="outline" size="default" className="w-fit" />}
           >
             Menu over layer
           </DropdownMenuTrigger>
@@ -535,7 +535,7 @@ export function DropdownMenuDemoContentWithoutPortal() {
     <div className="w-80 overflow-hidden rounded-lg border p-4">
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="outline" size="sm" className="w-fit" />}
+          render={<Button variant="outline" size="default" className="w-fit" />}
         >
           Inline content
         </DropdownMenuTrigger>
@@ -560,7 +560,7 @@ export function DropdownMenuDemoFullWidthDropdownMenu() {
           render={
             <Button
               variant="outline"
-              size="sm"
+              size="default"
               className="w-full justify-start"
             />
           }
@@ -636,7 +636,7 @@ export function DropdownMenuDemoItemDescription() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Item description
       </DropdownMenuTrigger>
@@ -658,7 +658,7 @@ export function DropdownMenuDemoItemMultiline() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Multiline item
       </DropdownMenuTrigger>
@@ -678,7 +678,7 @@ export function DropdownMenuDemoItemStates() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Dropdown item states
       </DropdownMenuTrigger>
@@ -701,7 +701,7 @@ export function DropdownMenuDemoItemDisabled() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Disabled item
       </DropdownMenuTrigger>
@@ -719,7 +719,7 @@ export function DropdownMenuDemoItemWithElements() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         With elements
       </DropdownMenuTrigger>
@@ -757,7 +757,7 @@ export function DropdownMenuDemoItemElemBefore() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Elem before
       </DropdownMenuTrigger>
@@ -793,7 +793,7 @@ export function DropdownMenuDemoItemElemAfter() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Elem after
       </DropdownMenuTrigger>
@@ -819,7 +819,7 @@ export function DropdownMenuDemoItemCustomComponent() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Custom component
       </DropdownMenuTrigger>
@@ -846,7 +846,7 @@ export function DropdownMenuDemoCheckboxDefaultSelected() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Checkbox default selected
       </DropdownMenuTrigger>
@@ -871,7 +871,7 @@ export function DropdownMenuDemoCheckboxSelected() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Checkbox selected
       </DropdownMenuTrigger>
@@ -899,7 +899,7 @@ export function DropdownMenuDemoRadioDefaultSelected() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Radio default selected
       </DropdownMenuTrigger>
@@ -921,7 +921,7 @@ export function DropdownMenuDemoRadioSelected() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         Radio selected
       </DropdownMenuTrigger>
@@ -948,7 +948,7 @@ export function DropdownMenuDemoWithCheckbox() {
   return (
     <Popover>
       <PopoverTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         View options
       </PopoverTrigger>
@@ -979,7 +979,7 @@ export function DropdownMenuDemoWithRadioGroup() {
   return (
     <Popover>
       <PopoverTrigger
-        render={<Button variant="outline" size="sm" className="w-fit" />}
+        render={<Button variant="outline" size="default" className="w-fit" />}
       >
         View: {view}
       </PopoverTrigger>

@@ -2175,7 +2175,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				{realtimeStatusMessage ? <div className="px-1 text-text-subtle text-xs">{realtimeStatusMessage}</div> : null}
 				{shouldShowReopenBrowserPreviewControl ? (
 					<div className="flex justify-center px-1">
-						<Button onClick={handleOpenBrowserPreview} size="sm" type="button" variant="outline">
+						<Button onClick={handleOpenBrowserPreview} size="default" type="button" variant="outline">
 							Reopen browser preview
 						</Button>
 					</div>

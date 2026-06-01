@@ -114,7 +114,7 @@ export default function TwgToolDemo() {
 				<Button
 					aria-label="Replay TWG source stack animation"
 					onClick={() => setReplayKey((currentKey) => currentKey + 1)}
-					size="sm"
+					size="default"
 					variant="outline"
 				>
 					<RefreshIcon label="" size="small" />

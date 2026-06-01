@@ -83,7 +83,7 @@ export function BillingView() {
 										<Lozenge variant="success">{invoice.status}</Lozenge>
 									</TableCell>
 									<TableCell>
-										<Button size="sm" variant="ghost">
+										<Button size="default" variant="ghost">
 											<ADMIN_ICONS.download label="" />
 											Download
 										</Button>

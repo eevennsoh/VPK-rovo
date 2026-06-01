@@ -103,7 +103,7 @@ export function MicSelector({
         render={(
           <Button
             variant="ghost"
-            size="sm"
+            size="default"
             aria-label="Select microphone"
             className={cn(
               "flex w-48 items-center gap-1.5 text-text-subtle hover:bg-bg-neutral-subtle-hovered hover:text-text active:bg-bg-neutral-subtle-pressed",
@@ -149,7 +149,7 @@ export function MicSelector({
             <div className="flex items-center gap-2 p-2">
               <Button
                 variant="ghost"
-                size="sm"
+                size="default"
                 onClick={(e) => {
                   e.preventDefault()
                   toggleMute()

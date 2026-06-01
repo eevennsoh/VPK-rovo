@@ -298,7 +298,7 @@ export function SettingsSurfacePage() {
 										{PROVIDER_OPTIONS[surface].map((option) => (
 											<Button
 												key={option}
-												size="sm"
+												size="default"
 												variant={settings.providerRoutes[surface] === option ? "default" : "outline"}
 												onClick={() => updateRoute(surface, option)}
 											>
@@ -490,7 +490,7 @@ export function SettingsSurfacePage() {
 										{job ? (
 											<div className="flex items-center gap-2">
 												<Button
-													size="xs"
+													size="compact"
 													variant="outline"
 													isLoading={jobActionKey === `${job.id}:run`}
 													onClick={() => void handleJobAction(job.id, "run")}
@@ -498,7 +498,7 @@ export function SettingsSurfacePage() {
 													Run now
 												</Button>
 												<Button
-													size="xs"
+													size="compact"
 													variant="outline"
 													isLoading={jobActionKey === `${job.id}:${job.status === "paused" ? "resume" : "pause"}`}
 													onClick={() => void handleJobAction(job.id, job.status === "paused" ? "resume" : "pause")}

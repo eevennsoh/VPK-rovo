@@ -250,7 +250,7 @@ function ChatView() {
 				<div className="flex gap-1">
 					<Button
 						type="submit"
-						size="sm"
+						size="default"
 						disabled={!input.trim() || isStreaming}
 					>
 						<SendIcon className="size-4" />
@@ -259,7 +259,7 @@ function ChatView() {
 						<Button
 							type="button"
 							variant="outline"
-							size="sm"
+							size="default"
 							onClick={clear}
 							disabled={isStreaming}
 						>
@@ -375,7 +375,7 @@ export default function UIGenerationDemo(): ReactElement {
 						</div>
 						<Button
 							variant="outline"
-							size="sm"
+							size="default"
 							className="shrink-0"
 							onClick={() =>
 								setShowEditor((prev) => !prev)

@@ -16,7 +16,7 @@ export default function CollapsibleDemo() {
 		<Collapsible open={open} onOpenChange={setOpen} className="flex w-56 flex-col gap-2">
 			<div className="flex items-center justify-between">
 				<span className="text-sm font-medium">Collapsible</span>
-				<CollapsibleTrigger render={<Button variant="ghost" size="icon-sm" />}>
+				<CollapsibleTrigger render={<Button variant="ghost" size="icon" />}>
 					<ChevronsUpDownIcon className="size-4" />
 				</CollapsibleTrigger>
 			</div>
@@ -109,7 +109,7 @@ export function CollapsibleDemoFileTree() {
 						render={
 							<Button
 								variant="ghost"
-								size="sm"
+								size="default"
 								className="group hover:bg-accent hover:text-accent-foreground w-full justify-start transition-none"
 							/>
 						}
@@ -130,7 +130,7 @@ export function CollapsibleDemoFileTree() {
 			<Button
 				key={fileItem.name}
 				variant="link"
-				size="sm"
+				size="default"
 				className="text-foreground w-full justify-start gap-2"
 			>
 				<FileIcon />
@@ -233,7 +233,7 @@ export function CollapsibleDemoStyled() {
 		<Collapsible className="flex w-[340px] flex-col gap-2">
 			<div className="flex items-center justify-between rounded-lg border p-4">
 				<h4 className="text-sm font-semibold">3 items available</h4>
-				<CollapsibleTrigger render={<Button variant="ghost" size="sm">Toggle</Button>} />
+				<CollapsibleTrigger render={<Button variant="ghost" size="default">Toggle</Button>} />
 			</div>
 			<CollapsibleContent>
 				<div className="flex flex-col gap-2">

@@ -721,7 +721,7 @@ export function SkillsSurfacePage({
 													{hubTotalPages > 1 ? (
 														<div className="flex items-center justify-center gap-2 pt-2">
 															<Button
-																size="sm"
+																size="default"
 																variant="outline"
 																disabled={hubPage <= 1}
 																onClick={() => setHubPage((p) => Math.max(1, p - 1))}
@@ -732,7 +732,7 @@ export function SkillsSurfacePage({
 																{hubPage} / {hubTotalPages}
 															</span>
 															<Button
-																size="sm"
+																size="default"
 																variant="outline"
 																disabled={hubPage >= hubTotalPages}
 																onClick={() => setHubPage((p) => p + 1)}
@@ -1052,7 +1052,7 @@ export function SkillsSurfacePage({
 															{draftComparisonPaths.map((filePath) => (
 																<Button
 																	key={filePath}
-																	size="sm"
+																	size="default"
 																	variant={selectedDraftFilePath === filePath ? "default" : "outline"}
 																	onClick={() => setSelectedDraftFilePath(filePath)}
 																>

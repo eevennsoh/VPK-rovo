@@ -1142,7 +1142,7 @@ function HomeStarterBento({
 							type="button"
 							aria-label="Browse all agents"
 							variant="ghost"
-							size="xs"
+							size="compact"
 							className="pointer-events-auto h-7 rounded-full border-0 bg-surface px-3 text-sm leading-5 font-normal text-text-subtle hover:bg-surface-hovered"
 							style={{ boxShadow: token("elevation.shadow.overlay") }}
 							onClick={() => setBrowseOpen(true)}
@@ -3895,7 +3895,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				{realtimeStatusMessage ? <div className="px-1 text-text-subtle text-xs">{realtimeStatusMessage}</div> : null}
 				{shouldShowReopenBrowserPreviewControl ? (
 					<div className="flex justify-center px-1">
-						<Button onClick={handleOpenBrowserPreview} size="sm" type="button" variant="outline">
+						<Button onClick={handleOpenBrowserPreview} size="default" type="button" variant="outline">
 							Reopen browser preview
 						</Button>
 					</div>

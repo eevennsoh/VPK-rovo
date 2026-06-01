@@ -504,7 +504,7 @@ export function SelectDemoWithButton() {
 						</SelectGroup>
 					</SelectContent>
 				</Select>
-				<Button variant="outline" size="sm">
+				<Button variant="outline" size="default">
 					Submit
 				</Button>
 			</div>

@@ -40,16 +40,8 @@ const detectSpeechInputMode = (): SpeechInputMode => {
 };
 
 const resolveSpeechInputButtonSize = (size: SpeechInputProps["size"]): SpeechInputProps["size"] => {
-	if (size === "xs") {
-		return "icon-xs";
-	}
-
-	if (size === "sm") {
-		return "icon-sm";
-	}
-
-	if (size === "lg") {
-		return "icon-lg";
+	if (size === "compact") {
+		return "icon-compact";
 	}
 
 	if (size == null || size === "default") {
@@ -60,7 +52,7 @@ const resolveSpeechInputButtonSize = (size: SpeechInputProps["size"]): SpeechInp
 };
 
 const resolveSpeechInputIconSize = (size: SpeechInputProps["size"]): "small" | "medium" => {
-	if (size === "icon-xs" || size === "icon-sm") {
+	if (size === "icon-compact") {
 		return "small"; // 12px
 	}
 

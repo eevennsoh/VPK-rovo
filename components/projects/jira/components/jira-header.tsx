@@ -39,10 +39,10 @@ export default function JiraHeader({ selectedTab, onTabChange }: Readonly<JiraHe
 										style={{ width: "20px", height: "20px", borderRadius: token("radius.xsmall") }}
 									/>
 								<Heading size="medium">Vitafleet Q4 launch</Heading>
-								<Button aria-label="Teams" size="icon-sm" variant="ghost">
+								<Button aria-label="Teams" size="icon" variant="ghost">
 									<TeamsIcon label="" size="small" />
 								</Button>
-								<Button aria-label="More options" size="icon-sm" variant="ghost">
+								<Button aria-label="More options" size="icon" variant="ghost">
 									<ShowMoreHorizontalIcon label="" size="small" />
 								</Button>
 							</div>

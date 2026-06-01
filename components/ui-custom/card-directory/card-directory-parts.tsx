@@ -140,7 +140,7 @@ export function CardDirectoryMoreButton({ label, onClick }: Readonly<CardDirecto
 			aria-label={label}
 			className="size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100"
 			onClick={handleClick}
-			size="icon-xs"
+			size="icon-compact"
 			type="button"
 			variant="ghost"
 		>

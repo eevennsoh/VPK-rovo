@@ -62,7 +62,7 @@ export function JsxPreviewDemoStreaming() {
 				<Badge variant={isStreaming ? "default" : "secondary"}>
 					{isStreaming ? "Streaming" : "Complete"}
 				</Badge>
-				<Button variant="outline" size="sm" onClick={restart}>
+				<Button variant="outline" size="default" onClick={restart}>
 					Restart
 				</Button>
 			</div>

@@ -173,7 +173,7 @@ type PlanShowMoreButtonProps = {
 
 const PlanShowMoreButton = ({ label, onClick }: Readonly<PlanShowMoreButtonProps>) => (
 	<Button
-		size="xs"
+		size="compact"
 		variant="ghost"
 		className="h-7 rounded-full border-0 bg-surface px-3 text-sm leading-5 font-normal text-text-subtle hover:bg-surface-hovered"
 		style={{ boxShadow: token("elevation.shadow.overlay") }}

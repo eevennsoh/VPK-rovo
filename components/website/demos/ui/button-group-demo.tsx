@@ -12,9 +12,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 export default function ButtonGroupDemo() {
 	return (
 		<ButtonGroup>
-			<Button variant="outline" size="sm">Left</Button>
-			<Button variant="outline" size="sm">Center</Button>
-			<Button variant="outline" size="sm">Right</Button>
+			<Button variant="outline" size="default">Left</Button>
+			<Button variant="outline" size="default">Center</Button>
+			<Button variant="outline" size="default">Right</Button>
 		</ButtonGroup>
 	);
 }
@@ -87,27 +87,27 @@ export function ButtonGroupDemoPaginationSplit() {
 	return (
 		<ButtonGroup>
 			<ButtonGroup>
-				<Button variant="outline" size="sm">
+				<Button variant="outline" size="default">
 					1
 				</Button>
-				<Button variant="outline" size="sm">
+				<Button variant="outline" size="default">
 					2
 				</Button>
-				<Button variant="outline" size="sm">
+				<Button variant="outline" size="default">
 					3
 				</Button>
-				<Button variant="outline" size="sm">
+				<Button variant="outline" size="default">
 					4
 				</Button>
-				<Button variant="outline" size="sm">
+				<Button variant="outline" size="default">
 					5
 				</Button>
 			</ButtonGroup>
 			<ButtonGroup>
-				<Button variant="outline" size="icon-xs">
+				<Button variant="outline" size="icon-compact">
 					<ArrowLeftIcon />
 				</Button>
-				<Button variant="outline" size="icon-xs">
+				<Button variant="outline" size="icon-compact">
 					<ArrowRightIcon />
 				</Button>
 			</ButtonGroup>
@@ -118,26 +118,26 @@ export function ButtonGroupDemoPaginationSplit() {
 export function ButtonGroupDemoPagination() {
 	return (
 		<ButtonGroup>
-			<Button variant="outline" size="sm">
+			<Button variant="outline" size="default">
 				<ArrowLeftIcon data-icon="inline-start" />
 				Previous
 			</Button>
-			<Button variant="outline" size="sm">
+			<Button variant="outline" size="default">
 				1
 			</Button>
-			<Button variant="outline" size="sm">
+			<Button variant="outline" size="default">
 				2
 			</Button>
-			<Button variant="outline" size="sm">
+			<Button variant="outline" size="default">
 				3
 			</Button>
-			<Button variant="outline" size="sm">
+			<Button variant="outline" size="default">
 				4
 			</Button>
-			<Button variant="outline" size="sm">
+			<Button variant="outline" size="default">
 				5
 			</Button>
-			<Button variant="outline" size="sm">
+			<Button variant="outline" size="default">
 				Next
 				<ArrowRightIcon data-icon="inline-end" />
 			</Button>
@@ -150,16 +150,16 @@ export function ButtonGroupDemoTextAlignment() {
 		<Field>
 			<Label id="alignment-label">Text Alignment</Label>
 			<ButtonGroup aria-labelledby="alignment-label">
-				<Button variant="outline" size="sm">
+				<Button variant="outline" size="default">
 					Left
 				</Button>
-				<Button variant="outline" size="sm">
+				<Button variant="outline" size="default">
 					Center
 				</Button>
-				<Button variant="outline" size="sm">
+				<Button variant="outline" size="default">
 					Right
 				</Button>
-				<Button variant="outline" size="sm">
+				<Button variant="outline" size="default">
 					Justify
 				</Button>
 			</ButtonGroup>

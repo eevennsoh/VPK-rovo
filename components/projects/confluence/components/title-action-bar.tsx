@@ -34,48 +34,48 @@ export default function TitleActionBar({ isVisible }: Readonly<TitleActionBarPro
 		>
 			<div className="flex items-center">
 				{/* Alignment dropdown */}
-				<Button aria-label="Alignment options" className="gap-2" size="sm" variant="ghost">
+				<Button aria-label="Alignment options" className="gap-2" size="default" variant="ghost">
 					<AlignTextLeftIcon label="" size="small" />
 					<ChevronDownIcon label="" size="small" />
 				</Button>
 
 				{/* Remove emoji button */}
-				<Button className="gap-2" size="sm" variant="ghost">
+				<Button className="gap-2" size="default" variant="ghost">
 					<CrossIcon label="" size="small" />
 					Remove emoji
 				</Button>
 
 				{/* Status button */}
-				<Button className="gap-2" size="sm" variant="ghost">
+				<Button className="gap-2" size="default" variant="ghost">
 					<TaskToDoIcon label="" size="small" />
 					Status
 				</Button>
 
 				{/* Header image button */}
-				<Button className="gap-2" size="sm" variant="ghost">
+				<Button className="gap-2" size="default" variant="ghost">
 					<ImageIcon label="" size="small" />
 					Header image
 				</Button>
 
 				{/* Suggest title button */}
-				<Button className="gap-2" size="sm" variant="ghost">
+				<Button className="gap-2" size="default" variant="ghost">
 					<RovoIcon label="" size="small" />
 					Suggest title
 				</Button>
 
 				{/* Text density button */}
-				<Button aria-label="Text density" size="icon-sm" variant="ghost">
+				<Button aria-label="Text density" size="icon" variant="ghost">
 					<TextDensityCompressIcon label="" size="small" />
 				</Button>
 
 				{/* Width dropdown */}
-				<Button aria-label="Width options" className="gap-2" size="sm" variant="ghost">
+				<Button aria-label="Width options" className="gap-2" size="default" variant="ghost">
 					<GrowHorizontalIcon label="" size="small" />
 					<ChevronDownIcon label="" size="small" />
 				</Button>
 
 				{/* Voice typing button */}
-				<Button className="gap-2" size="sm" variant="ghost">
+				<Button className="gap-2" size="default" variant="ghost">
 					<MicrophoneIcon label="" size="small" />
 					Voice typing
 				</Button>

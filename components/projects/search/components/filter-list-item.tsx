@@ -91,7 +91,7 @@ export default function FilterListItem({ item, isSelected, onClick }: Readonly<F
 					{isHovered && !isSelected ? (
 						<Button
 							aria-label="More options"
-							size="icon-sm"
+							size="icon"
 							variant="ghost"
 							onClick={handleMoreClick}
 						>

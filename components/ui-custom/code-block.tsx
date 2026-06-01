@@ -586,7 +586,7 @@ export function CodeBlockDownloadButton({
     <Button
       className={cn("shrink-0 text-text-subtle hover:text-text", className)}
       onClick={downloadCode}
-      size={codeBlockSize === "sm" ? "icon-xs" : "icon"}
+      size={codeBlockSize === "sm" ? "icon-compact" : "icon"}
       variant="ghost"
       aria-label="Download code"
       {...props}
@@ -642,7 +642,7 @@ export function CodeBlockCopyButton({
     <Button
       className={cn("shrink-0 text-text-subtle hover:text-text", className)}
       onClick={copyToClipboard}
-      size={codeBlockSize === "sm" ? "icon-xs" : "icon"}
+      size={codeBlockSize === "sm" ? "icon-compact" : "icon"}
       variant="ghost"
       aria-label="Copy code"
       {...props}

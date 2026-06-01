@@ -312,7 +312,7 @@ function PersonalGraphInspector({
 						aria-label="Close graph details"
 						className="size-8 rounded-full bg-bg-neutral-subtle text-text shadow-none hover:bg-bg-neutral-subtle-hovered"
 						onClick={onClose}
-						size="icon-sm"
+						size="icon"
 						variant="ghost"
 					>
 						<CrossIcon label="" />
@@ -376,7 +376,7 @@ function PersonalGraphInspector({
 							aria-label="Copy node title"
 							className="size-8 rounded-full bg-bg-neutral-subtle text-text shadow-none hover:bg-bg-neutral-subtle-hovered"
 							onClick={() => void navigator.clipboard?.writeText(node.title)}
-							size="icon-sm"
+							size="icon"
 							variant="ghost"
 						>
 							<CopyIcon label="" />
@@ -386,7 +386,7 @@ function PersonalGraphInspector({
 								aria-label="Open node source"
 								className="size-8 rounded-full bg-bg-neutral-subtle text-text shadow-none hover:bg-bg-neutral-subtle-hovered"
 								onClick={() => window.open(node.externalUrl as string, "_blank", "noopener,noreferrer")}
-								size="icon-sm"
+								size="icon"
 								variant="ghost"
 							>
 								<LinkExternalIcon label="" />
@@ -396,7 +396,7 @@ function PersonalGraphInspector({
 								aria-label="Open node source"
 								className="size-8 rounded-full bg-bg-neutral-subtle text-text shadow-none hover:bg-bg-neutral-subtle-hovered"
 								onClick={() => window.open(`/api/personal-graph/page/${node.slug}`, "_blank", "noopener,noreferrer")}
-								size="icon-sm"
+								size="icon"
 								variant="ghost"
 							>
 								<LinkExternalIcon label="" />
@@ -406,7 +406,7 @@ function PersonalGraphInspector({
 					<Button
 						aria-label="More graph detail actions"
 						className="size-8 rounded-full bg-bg-neutral-subtle text-text shadow-none hover:bg-bg-neutral-subtle-hovered"
-						size="icon-sm"
+						size="icon"
 						variant="ghost"
 					>
 						<ShowMoreHorizontalIcon label="" />
@@ -1091,7 +1091,7 @@ export function PersonalGraphSurface({
 							aria-label="Clear chat filter"
 							className="rounded-full border-border bg-bg-neutral-subtle text-text shadow-none hover:bg-bg-neutral-subtle-hovered"
 							onClick={handleClearChatFilter}
-							size="sm"
+							size="default"
 							variant="outline"
 						>
 							Clear filter

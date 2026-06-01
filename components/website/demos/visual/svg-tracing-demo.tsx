@@ -156,7 +156,7 @@ export default function SvgTracingDemo() {
 						<Button
 							type="button"
 							variant="secondary"
-							size="sm"
+							size="default"
 							aria-pressed={playing}
 							onClick={() => setPlaying((current) => !current)}
 						>
@@ -165,7 +165,7 @@ export default function SvgTracingDemo() {
 						<Button
 							type="button"
 							variant="ghost"
-							size="sm"
+							size="default"
 							onClick={resetAnimation}
 						>
 							<RefreshIcon label="" size="small" />
@@ -209,7 +209,7 @@ export default function SvgTracingDemo() {
 							>
 								{pasteError ?? "Extracts viewBox and path d attributes only."}
 							</p>
-							<Button type="button" size="sm" variant="secondary" onClick={applyPastedSvg}>
+							<Button type="button" size="default" variant="secondary" onClick={applyPastedSvg}>
 								<UploadIcon label="" size="small" />
 								Apply
 							</Button>

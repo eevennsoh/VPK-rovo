@@ -273,7 +273,7 @@ export default function SoundGenerationDemo(): ReactElement {
 						<h2 className="text-sm font-medium text-muted-foreground">Debug Log</h2>
 						<Button
 							onClick={() => setLogs([])}
-							size="sm"
+							size="default"
 							type="button"
 							variant="ghost"
 						>

@@ -21,7 +21,7 @@ export function SpeechInputDemoWithTranscript() {
 export function SpeechInputDemoSizes() {
 	return (
 		<div className="flex items-center gap-4">
-			<SpeechInput size="sm" />
+			<SpeechInput size="default" />
 			<SpeechInput size="default" />
 		</div>
 	);

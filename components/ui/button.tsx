@@ -6,6 +6,14 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
 
+const defaultButtonSize =
+	"h-8 gap-1.5 px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2"
+const compactButtonSize =
+	"h-6 gap-1 rounded-md px-3 text-xs in-data-[slot=button-group]:rounded-md [&_svg:not([class*='size-'])]:size-3"
+const defaultIconButtonSize = "size-8"
+const compactIconButtonSize =
+	"size-6 rounded-md in-data-[slot=button-group]:rounded-md [&_svg:not([class*='size-'])]:size-3"
+
 const buttonVariants = cva(
 	"focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 aria-invalid:border-destructive rounded-md border border-transparent bg-clip-padding text-sm font-medium focus-visible:ring-3 aria-invalid:ring-3 [&_svg:not([class*='size-'])]:size-4 inline-flex items-center justify-center whitespace-nowrap text-box-trim transition-all [&_svg]:pointer-events-none shrink-0 [&_svg]:shrink-0 outline-none group/button select-none",
 	{
@@ -28,17 +36,10 @@ const buttonVariants = cva(
 					"bg-discovery text-discovery-foreground hover:bg-discovery-hovered active:bg-discovery-pressed aria-pressed:bg-bg-selected aria-pressed:text-text-selected aria-pressed:border-border-selected disabled:pointer-events-none disabled:bg-bg-disabled disabled:text-text-disabled",
 			},
 			size: {
-				default:
-					"h-8 gap-1.5 px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-				xs: "h-6 gap-1 rounded-md px-2 text-xs in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-				sm: "h-7 gap-1 rounded-md px-3 text-[0.8rem] in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
-				lg: "h-9 gap-1.5 px-3 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
-				icon: "size-8",
-				"icon-xs":
-					"size-6 rounded-md in-data-[slot=button-group]:rounded-md [&_svg:not([class*='size-'])]:size-3",
-				"icon-sm":
-					"size-7 rounded-md in-data-[slot=button-group]:rounded-md",
-				"icon-lg": "size-9",
+				default: defaultButtonSize,
+				compact: compactButtonSize,
+				icon: defaultIconButtonSize,
+				"icon-compact": compactIconButtonSize,
 			},
 			shape: {
 				square: "",

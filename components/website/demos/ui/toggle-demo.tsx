@@ -92,7 +92,7 @@ export function ToggleDemoWithButtonIconText() {
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex items-center gap-2">
-				<Button size="sm" variant="outline">
+				<Button size="default" variant="outline">
 					<BoldIcon data-icon="inline-start" />
 					Button
 				</Button>
@@ -118,7 +118,7 @@ export function ToggleDemoWithButtonIconText() {
 				</Toggle>
 			</div>
 			<div className="flex items-center gap-2">
-				<Button size="lg" variant="outline">
+				<Button size="default" variant="outline">
 					<UnderlineIcon data-icon="inline-start" />
 					Button
 				</Button>
@@ -136,7 +136,7 @@ export function ToggleDemoWithButtonIcon() {
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex items-center gap-2">
-				<Button variant="outline" size="icon-sm">
+				<Button variant="outline" size="icon">
 					<BoldIcon
 					/>
 				</Button>
@@ -160,7 +160,7 @@ export function ToggleDemoWithButtonIcon() {
 				</Toggle>
 			</div>
 			<div className="flex items-center gap-2">
-				<Button variant="outline" size="icon-lg">
+				<Button variant="outline" size="icon">
 					<UnderlineIcon
 					/>
 				</Button>
@@ -177,7 +177,7 @@ export function ToggleDemoWithButtonText() {
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex items-center gap-2">
-				<Button size="sm" variant="outline">
+				<Button size="default" variant="outline">
 					Button
 				</Button>
 				<Toggle variant="outline" aria-label="Toggle sm" size="sm">
@@ -193,7 +193,7 @@ export function ToggleDemoWithButtonText() {
 				</Toggle>
 			</div>
 			<div className="flex items-center gap-2">
-				<Button size="lg" variant="outline">
+				<Button size="default" variant="outline">
 					Button
 				</Button>
 				<Toggle variant="outline" aria-label="Toggle lg" size="lg">

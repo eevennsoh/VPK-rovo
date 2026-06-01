@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitl
 export default function PopoverDemo() {
 	return (
 		<Popover>
-			<PopoverTrigger render={<Button variant="outline" size="sm" />}>
+			<PopoverTrigger render={<Button variant="outline" size="default" />}>
 				Open popover
 			</PopoverTrigger>
 			<PopoverContent>
@@ -26,7 +26,7 @@ export function PopoverDemoAlignments() {
 	return (
 		<div className="flex gap-6">
 			<Popover>
-				<PopoverTrigger render={<Button variant="outline" size="sm" />}>
+				<PopoverTrigger render={<Button variant="outline" size="default" />}>
 					Start
 				</PopoverTrigger>
 				<PopoverContent align="start" className="w-40">
@@ -34,7 +34,7 @@ export function PopoverDemoAlignments() {
 				</PopoverContent>
 			</Popover>
 			<Popover>
-				<PopoverTrigger render={<Button variant="outline" size="sm" />}>
+				<PopoverTrigger render={<Button variant="outline" size="default" />}>
 					Center
 				</PopoverTrigger>
 				<PopoverContent align="center" className="w-40">
@@ -42,7 +42,7 @@ export function PopoverDemoAlignments() {
 				</PopoverContent>
 			</Popover>
 			<Popover>
-				<PopoverTrigger render={<Button variant="outline" size="sm" />}>
+				<PopoverTrigger render={<Button variant="outline" size="default" />}>
 					End
 				</PopoverTrigger>
 				<PopoverContent align="end" className="w-40">

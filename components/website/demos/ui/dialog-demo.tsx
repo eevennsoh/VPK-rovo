@@ -20,7 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 export default function DialogDemo() {
 	return (
 		<Dialog>
-			<DialogTrigger render={<Button variant="outline" size="sm" />}>
+			<DialogTrigger render={<Button variant="outline" size="default" />}>
 				Open dialog
 			</DialogTrigger>
 			<DialogContent>
@@ -358,7 +358,7 @@ export function DialogDemoChatSettings() {
 												Log out of your account on this device.
 											</FieldDescription>
 										</FieldContent>
-										<Button variant="outline" size="sm">
+										<Button variant="outline" size="default">
 											Log Out
 										</Button>
 									</Field>
@@ -372,7 +372,7 @@ export function DialogDemoChatSettings() {
 												changes to take effect.
 											</FieldDescription>
 										</FieldContent>
-										<Button variant="outline" size="sm">
+										<Button variant="outline" size="default">
 											Log Out All
 										</Button>
 									</Field>
@@ -679,7 +679,7 @@ export function DialogDemoWidths() {
 		<div className="flex flex-wrap items-center gap-2">
 			{sizes.map(({ value, label }) => (
 				<Dialog key={value}>
-					<DialogTrigger render={<Button variant="outline" size="sm" />}>
+					<DialogTrigger render={<Button variant="outline" size="default" />}>
 						{label}
 					</DialogTrigger>
 					<DialogContent size={value}>

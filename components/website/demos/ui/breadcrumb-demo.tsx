@@ -197,7 +197,7 @@ export function BreadcrumbDemoWithDropdown() {
 				<BreadcrumbItem>
 					<DropdownMenu>
 						<DropdownMenuTrigger
-							render={<Button size="icon-sm" variant="ghost" />}
+							render={<Button size="icon" variant="ghost" />}
 						>
 							<BreadcrumbEllipsis />
 							<span className="sr-only">Toggle menu</span>

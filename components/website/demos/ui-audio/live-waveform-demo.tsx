@@ -47,7 +47,7 @@ function LiveWaveformPreview({
 								return next;
 							});
 						}}
-						size="sm"
+						size="default"
 						variant={active ? "default" : "outline"}
 					>
 						{active ? "Stop Listening" : "Start Listening"}
@@ -62,7 +62,7 @@ function LiveWaveformPreview({
 								return next;
 							});
 						}}
-						size="sm"
+						size="default"
 						variant={processing ? "default" : "outline"}
 					>
 						{processing ? "Stop Processing" : "Show Processing"}
@@ -73,7 +73,7 @@ function LiveWaveformPreview({
 								current === "static" ? "scrolling" : "static"
 							);
 						}}
-						size="sm"
+						size="default"
 						variant="outline"
 					>
 						{mode === "static" ? "Use Scrolling Mode" : "Use Static Mode"}

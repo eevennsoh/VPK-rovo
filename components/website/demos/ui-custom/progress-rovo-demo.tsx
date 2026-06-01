@@ -39,7 +39,7 @@ export function ProgressRovoDemoTransition() {
 					<Button
 						key={s.label}
 						variant={i === stepIndex ? "default" : "outline"}
-						size="sm"
+						size="default"
 						onClick={() => setStepIndex(i)}
 					>
 						{s.label}

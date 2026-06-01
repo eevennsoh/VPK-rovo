@@ -19,13 +19,13 @@ import EditIcon from "@atlaskit/icon/core/edit";
 export default function ToolbarDemo() {
 	return (
 		<div className="flex items-center gap-1 rounded-sm border bg-background p-1.5">
-			<Button size="sm" variant="ghost" aria-label="Edit">
+			<Button size="default" variant="ghost" aria-label="Edit">
 				<EditIcon label="" />
 			</Button>
-			<Button size="sm" variant="ghost" aria-label="Copy">
+			<Button size="default" variant="ghost" aria-label="Copy">
 				<CopyIcon label="" />
 			</Button>
-			<Button size="sm" variant="ghost" aria-label="Delete">
+			<Button size="default" variant="ghost" aria-label="Delete">
 				<DeleteIcon label="" />
 			</Button>
 		</div>
@@ -44,13 +44,13 @@ function ToolbarNode({ data }: { data: ToolbarNodeData }) {
 	return (
 		<Node handles={data.handles}>
 			<Toolbar isVisible>
-				<Button size="sm" variant="ghost" aria-label="Edit">
+				<Button size="default" variant="ghost" aria-label="Edit">
 					<EditIcon label="" />
 				</Button>
-				<Button size="sm" variant="ghost" aria-label="Copy">
+				<Button size="default" variant="ghost" aria-label="Copy">
 					<CopyIcon label="" />
 				</Button>
-				<Button size="sm" variant="ghost" aria-label="Delete">
+				<Button size="default" variant="ghost" aria-label="Delete">
 					<DeleteIcon label="" />
 				</Button>
 			</Toolbar>

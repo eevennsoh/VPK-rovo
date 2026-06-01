@@ -56,7 +56,7 @@ const ELEVENLABS_VOICES: Voice[] = [
 export default function VoiceSelectorDemo() {
 	return (
 		<VoiceSelector>
-			<VoiceSelectorTrigger render={<Button variant="outline" size="sm" />}>
+			<VoiceSelectorTrigger render={<Button variant="outline" size="default" />}>
 				Select voice
 			</VoiceSelectorTrigger>
 			<VoiceSelectorContent>
@@ -84,7 +84,7 @@ export function VoiceSelectorDemoWithAttributes() {
 
 	return (
 		<VoiceSelector value={selected} onValueChange={(v) => setSelected(v ?? "")}>
-			<VoiceSelectorTrigger render={<Button variant="outline" size="sm" />}>
+			<VoiceSelectorTrigger render={<Button variant="outline" size="default" />}>
 				{OPENAI_VOICES.find((v) => v.id === selected)?.name ?? "Select voice"}
 			</VoiceSelectorTrigger>
 			<VoiceSelectorContent>
@@ -126,7 +126,7 @@ export function VoiceSelectorDemoMultiProvider() {
 
 	return (
 		<VoiceSelector value={selected} onValueChange={(v) => setSelected(v ?? "")}>
-			<VoiceSelectorTrigger render={<Button variant="outline" size="sm" />}>
+			<VoiceSelectorTrigger render={<Button variant="outline" size="default" />}>
 				{allVoices.find((v) => v.id === selected)?.name ?? "Select voice"}
 			</VoiceSelectorTrigger>
 			<VoiceSelectorContent>
@@ -191,7 +191,7 @@ export function VoiceSelectorDemoWithPreview() {
 
 	return (
 		<VoiceSelector value={selected} onValueChange={(v) => setSelected(v ?? "")}>
-			<VoiceSelectorTrigger render={<Button variant="outline" size="sm" />}>
+			<VoiceSelectorTrigger render={<Button variant="outline" size="default" />}>
 				{OPENAI_VOICES.find((v) => v.id === selected)?.name ?? "Select voice"}
 			</VoiceSelectorTrigger>
 			<VoiceSelectorContent>

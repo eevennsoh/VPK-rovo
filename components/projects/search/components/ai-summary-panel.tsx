@@ -56,7 +56,7 @@ export default function AISummaryPanel({ defaultExpanded = true }: Readonly<AISu
 				</div>
 				<Button
 					aria-label={isExpanded ? "Collapse" : "Expand"}
-					size="icon-sm"
+					size="icon"
 					variant="ghost"
 					onClick={handleToggle}
 				>

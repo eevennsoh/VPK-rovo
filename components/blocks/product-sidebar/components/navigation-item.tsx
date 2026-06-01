@@ -99,7 +99,7 @@ export function NavigationItem({
 						<>
 							<Button
 								aria-label="Add"
-								size="icon-sm"
+								size="icon"
 								variant="ghost"
 								onClick={(e) => {
 									e.stopPropagation();
@@ -109,7 +109,7 @@ export function NavigationItem({
 							</Button>
 							<Button
 								aria-label="More"
-								size="icon-sm"
+								size="icon"
 								variant="ghost"
 								onClick={(e) => {
 									e.stopPropagation();

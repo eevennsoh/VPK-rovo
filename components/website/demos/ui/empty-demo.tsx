@@ -134,7 +134,7 @@ export function EmptyDemoNarrow() {
 				</EmptyDescription>
 			</EmptyHeader>
 			<EmptyContent>
-				<Button variant="outline" size="sm">
+				<Button variant="outline" size="default">
 					Clear search
 				</Button>
 			</EmptyContent>

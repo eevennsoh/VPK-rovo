@@ -362,7 +362,7 @@ function AgentCompactHeaderNavButton({
 		<Button
 			type="button"
 			aria-pressed={item.isSelected ? true : undefined}
-			size="xs"
+			size="compact"
 			variant={item.isSelected ? "outline" : "ghost"}
 			className={cn(
 				"h-6 gap-1 rounded px-2 text-sm font-medium leading-5",
@@ -435,7 +435,7 @@ export function AgentCompactHeaderNav({
 					<DropdownMenu>
 						<DropdownMenuTrigger
 							aria-label="More agent sections"
-							render={<Button className="size-6 rounded px-0" size="icon-xs" type="button" variant="ghost" />}
+							render={<Button className="size-6 rounded px-0" size="icon-compact" type="button" variant="ghost" />}
 						>
 							<MoreHorizontalIcon size="small" />
 						</DropdownMenuTrigger>
@@ -957,7 +957,7 @@ function AgentCompactOperationsBento() {
 				<Button
 					type="button"
 					variant="ghost"
-					size="xs"
+					size="compact"
 					className="pointer-events-auto h-7 rounded-full border-0 bg-surface px-3 text-sm leading-5 font-normal text-text-subtle hover:bg-surface-hovered"
 					style={{ boxShadow: token("elevation.shadow.overlay") }}
 				>

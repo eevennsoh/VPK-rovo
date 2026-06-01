@@ -503,7 +503,7 @@ function WidgetErrorCard({
 			<p className={textClass}>{friendlyMessage}</p>
 			{widgetError.data.canRetry ? (
 				<div className="mt-2">
-					<Button onClick={onRetry} size="sm" type="button" variant="outline">
+					<Button onClick={onRetry} size="default" type="button" variant="outline">
 						Retry
 					</Button>
 				</div>
@@ -655,7 +655,7 @@ function AssistantMessage({
 			) : null}
 			{isLastAssistant ? (
 				<div>
-					<Button size="sm" type="button" variant="outline" onClick={onRegenerate}>
+					<Button size="default" type="button" variant="outline" onClick={onRegenerate}>
 						Retry
 					</Button>
 				</div>
@@ -730,11 +730,11 @@ function AssistantMessage({
 							<div className="flex flex-wrap gap-2">
 								{sources.map((source) =>
 										source.type === "source-url" && source.url ? (
-											<Button key={`${message.id}-${source.url}`} nativeButton={false} render={<a aria-label={source.title || source.url} href={source.url} rel="noreferrer" target="_blank" />} size="sm" type="button" variant="outline">
+											<Button key={`${message.id}-${source.url}`} nativeButton={false} render={<a aria-label={source.title || source.url} href={source.url} rel="noreferrer" target="_blank" />} size="default" type="button" variant="outline">
 												{source.title || source.url}
 										</Button>
 									) : (
-										<Button key={`${message.id}-${source.title ?? "source"}`} size="sm" type="button" variant="outline">
+										<Button key={`${message.id}-${source.title ?? "source"}`} size="default" type="button" variant="outline">
 											{source.title || "Source"}
 										</Button>
 									),

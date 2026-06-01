@@ -156,7 +156,7 @@ export function MessageAction({
 	children,
 	label,
 	variant = "ghost",
-	size = "icon-sm",
+	size = "icon",
 	...props
 }: Readonly<MessageActionProps>) {
 	const button = (
@@ -410,7 +410,7 @@ export function MessageBranchPrevious({
 			aria-label="Previous branch"
 			disabled={totalBranches <= 1}
 			onClick={goToPrevious}
-			size="icon-sm"
+			size="icon"
 			type="button"
 			variant="ghost"
 			{...props}
@@ -433,7 +433,7 @@ export function MessageBranchNext({
 			aria-label="Next branch"
 			disabled={totalBranches <= 1}
 			onClick={goToNext}
-			size="icon-sm"
+			size="icon"
 			type="button"
 			variant="ghost"
 			{...props}

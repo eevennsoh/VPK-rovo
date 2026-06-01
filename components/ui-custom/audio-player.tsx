@@ -107,7 +107,7 @@ export const AudioPlayerPlayButton = ({
   className,
   ...props
 }: AudioPlayerPlayButtonProps) => (
-  <Button nativeButton={false} size="icon-sm" variant="outline" render={<MediaPlayButton className={cn("bg-transparent", className)} data-slot="audio-player-play-button" {...props} />}></Button>
+  <Button nativeButton={false} size="icon" variant="outline" render={<MediaPlayButton className={cn("bg-transparent", className)} data-slot="audio-player-play-button" {...props} />}></Button>
 );
 
 export type AudioPlayerSeekBackwardButtonProps = ComponentProps<
@@ -118,7 +118,7 @@ export const AudioPlayerSeekBackwardButton = ({
   seekOffset = 10,
   ...props
 }: AudioPlayerSeekBackwardButtonProps) => (
-  <Button nativeButton={false} size="icon-sm" variant="outline" render={<MediaSeekBackwardButton data-slot="audio-player-seek-backward-button" seekOffset={seekOffset} {...props} />}></Button>
+  <Button nativeButton={false} size="icon" variant="outline" render={<MediaSeekBackwardButton data-slot="audio-player-seek-backward-button" seekOffset={seekOffset} {...props} />}></Button>
 );
 
 export type AudioPlayerSeekForwardButtonProps = ComponentProps<
@@ -129,7 +129,7 @@ export const AudioPlayerSeekForwardButton = ({
   seekOffset = 10,
   ...props
 }: AudioPlayerSeekForwardButtonProps) => (
-  <Button nativeButton={false} size="icon-sm" variant="outline" render={<MediaSeekForwardButton data-slot="audio-player-seek-forward-button" seekOffset={seekOffset} {...props} />}></Button>
+  <Button nativeButton={false} size="icon" variant="outline" render={<MediaSeekForwardButton data-slot="audio-player-seek-forward-button" seekOffset={seekOffset} {...props} />}></Button>
 );
 
 export type AudioPlayerTimeDisplayProps = ComponentProps<

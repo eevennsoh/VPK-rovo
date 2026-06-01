@@ -71,10 +71,10 @@ export function AttachmentsSection() {
 					<Badge>5</Badge>
 				</div>
 				<div style={{ display: "flex", gap: token("space.100") }}>
-					<Button aria-label="Manage" size="icon-sm" variant="ghost">
+					<Button aria-label="Manage" size="icon" variant="ghost">
 						<ShowMoreHorizontalIcon label="" size="small" />
 					</Button>
-					<Button aria-label="Add attachment" size="icon-sm" variant="ghost">
+					<Button aria-label="Add attachment" size="icon" variant="ghost">
 						<AddIcon label="" size="small" />
 					</Button>
 				</div>

@@ -25,8 +25,8 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
   Click me
 </Button>
 
-<Button variant="outline" size="sm">
-  Small outline
+<Button variant="outline" size="compact">
+  Compact outline
 </Button>
 
 <Button variant="ghost" size="icon" aria-label="Search">
@@ -45,9 +45,9 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
       },
       {
         name: "size",
-        type: '"default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg"',
+        type: '"default" | "compact" | "icon" | "icon-compact"',
         default: '"default"',
-        description: "Size of the button.",
+        description: "Size of the button. Default is 32px tall; compact is 24px tall.",
       },
       {
         name: "isLoading",
@@ -87,7 +87,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
       },
       {
         title: "Sizes",
-        description: "Text and icon button sizes.",
+        description: "Compact 24px and default 32px text and icon button sizes.",
         demoSlug: "button-demo-sizes",
       },
       {
@@ -112,17 +112,17 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
       },
       {
         title: "Icon left",
-        description: "Icon before text across all variants and sizes.",
+        description: "Icon before text across compact and default sizes.",
         demoSlug: "button-demo-icon-left",
       },
       {
         title: "Icon right",
-        description: "Icon after text across all variants and sizes.",
+        description: "Icon after text across compact and default sizes.",
         demoSlug: "button-demo-icon-right",
       },
       {
         title: "Icon only",
-        description: "Icon-only buttons across all variants and sizes.",
+        description: "Icon-only buttons across compact and default sizes.",
         demoSlug: "button-demo-icon-only",
       },
       {
@@ -142,7 +142,7 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
       },
       {
         title: "Variants and sizes",
-        description: "Full matrix of all variants across all sizes.",
+        description: "Full matrix of all variants across compact and default sizes.",
         demoSlug: "button-demo-variants-and-sizes",
       },
     ],
@@ -3232,7 +3232,7 @@ import { Textarea } from "@/components/ui/textarea";
 } from "@/components/ui/dropdown-menu";
 
 <DropdownMenu>
-  <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
+  <DropdownMenuTrigger render={<Button variant="outline" size="default" />}>
     Open
   </DropdownMenuTrigger>
   <DropdownMenuContent>

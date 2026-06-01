@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 export default function DrawerDemo() {
 	return (
 		<Drawer>
-			<DrawerTrigger render={<Button variant="outline" size="sm" />}>
+			<DrawerTrigger render={<Button variant="outline" size="default" />}>
 				Open drawer
 			</DrawerTrigger>
 			<DrawerContent>

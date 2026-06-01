@@ -3206,7 +3206,7 @@ const edgeTypes = {
 } from "@/components/ui-custom/model-selector";
 
 <ModelSelector>
-  <ModelSelectorTrigger render={<Button variant="outline" size="sm" className="gap-2" />}>
+  <ModelSelectorTrigger render={<Button variant="outline" size="default" className="gap-2" />}>
     <ModelSelectorLogoGroup>
       <ModelSelectorLogo provider="anthropic" />
     </ModelSelectorLogoGroup>
@@ -4525,10 +4525,10 @@ import { Button } from "@/components/ui/button";
 
 <Node handles={{ source: true, target: true }}>
   <Toolbar>
-    <Button size="sm" variant="ghost" aria-label="Edit">
+    <Button size="default" variant="ghost" aria-label="Edit">
       <EditIcon label="" />
     </Button>
-    <Button size="sm" variant="ghost" aria-label="Copy">
+    <Button size="default" variant="ghost" aria-label="Copy">
       <CopyIcon label="" />
     </Button>
   </Toolbar>
@@ -4643,7 +4643,7 @@ import { Button } from "@/components/ui/button";
 } from "@/components/ui-custom/voice-selector";
 
 <VoiceSelector>
-  <VoiceSelectorTrigger render={<Button variant="outline" size="sm" />}>
+  <VoiceSelectorTrigger render={<Button variant="outline" size="default" />}>
     Select voice
   </VoiceSelectorTrigger>
   <VoiceSelectorContent>

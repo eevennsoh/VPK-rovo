@@ -9,11 +9,11 @@ export default function SidebarDemo() {
 	return (
 		<div className="flex w-32 flex-col gap-1 rounded-md border p-2">
 			<span className="px-2 py-1 text-xs font-medium text-muted-foreground">Navigation</span>
-			<Button variant="ghost" size="sm" className="justify-start">
+			<Button variant="ghost" size="default" className="justify-start">
 				<LayoutDashboardIcon className="size-4" />
 				Dashboard
 			</Button>
-			<Button variant="ghost" size="sm" className="justify-start">
+			<Button variant="ghost" size="default" className="justify-start">
 				Settings
 			</Button>
 		</div>

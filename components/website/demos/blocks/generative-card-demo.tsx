@@ -271,7 +271,7 @@ export function GenerativeCardDemoArtifactCollapsed() {
 		>
 			<GenerativeCardHeader
 				action={(
-					<Button size="xs" type="button" variant="outline">
+					<Button size="compact" type="button" variant="outline">
 						Open sheet
 					</Button>
 				)}
@@ -860,7 +860,7 @@ export function GenerativeCardDemoAnimatedExample() {
 			<Button
 				type="button"
 				variant="outline"
-				size="sm"
+				size="default"
 				className="h-8"
 				onClick={() => setKey((prev) => prev + 1)}
 			>
@@ -926,7 +926,7 @@ export function GenerativeCardDemoTrace() {
 			<Button
 				type="button"
 				variant="outline"
-				size="sm"
+				size="default"
 				className="h-8"
 				onClick={() => {
 					setKey((prev) => prev + 1);
@@ -1003,7 +1003,7 @@ export function GenerativeCardDemoInnerGlow() {
 			<Button
 				type="button"
 				variant="outline"
-				size="sm"
+				size="default"
 				className="h-8"
 				onClick={() => {
 					setKey((prev) => prev + 1);

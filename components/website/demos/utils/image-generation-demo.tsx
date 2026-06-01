@@ -366,7 +366,7 @@ export default function ImageGenerationDemo(): ReactElement {
 						</h2>
 						<Button
 							onClick={() => setLogs([])}
-							size="sm"
+							size="default"
 							type="button"
 							variant="ghost"
 						>

@@ -10,7 +10,7 @@ export default function TooltipDemo() {
 	return (
 		<TooltipProvider>
 			<Tooltip>
-				<TooltipTrigger render={<Button variant="outline" size="sm" />}>
+				<TooltipTrigger render={<Button variant="outline" size="default" />}>
 					Hover me
 				</TooltipTrigger>
 				<TooltipContent>This is a tooltip</TooltipContent>
@@ -189,7 +189,7 @@ export function TooltipDemoWithIcon() {
 export function TooltipDemoWithKeyboardShortcut() {
 	return (
 		<Tooltip>
-			<TooltipTrigger render={<Button variant="outline" size="icon-sm" />}>
+			<TooltipTrigger render={<Button variant="outline" size="icon" />}>
 				<SaveIcon
 				/>
 			</TooltipTrigger>

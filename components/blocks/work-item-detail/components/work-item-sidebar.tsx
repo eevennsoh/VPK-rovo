@@ -26,7 +26,7 @@ export function WorkItemSidebar({ workItem }: Readonly<WorkItemSidebarProps>) {
 						<div className="w-3 h-3 rounded-full bg-color-icon-success" />
 						<span className="font-semibold text-text">{workItem.status}</span>
 					</div>
-					<Button variant="secondary" size="sm" className="w-full">
+					<Button variant="secondary" size="default" className="w-full">
 						<ChevronDownIcon label="" size="small" />
 						Change Status
 					</Button>
@@ -47,7 +47,7 @@ export function WorkItemSidebar({ workItem }: Readonly<WorkItemSidebarProps>) {
 							<div className="text-xs text-text-subtle">{workItem.assignee.role}</div>
 						</div>
 					</div>
-					<Button variant="secondary" size="sm" className="w-full">
+					<Button variant="secondary" size="default" className="w-full">
 						Change Assignee
 					</Button>
 				</div>
@@ -68,7 +68,7 @@ export function WorkItemSidebar({ workItem }: Readonly<WorkItemSidebarProps>) {
 					>
 						{workItem.priority}
 					</Badge>
-					<Button variant="secondary" size="sm" className="w-full">
+					<Button variant="secondary" size="default" className="w-full">
 						<ChevronDownIcon label="" size="small" />
 						Change Priority
 					</Button>
@@ -114,7 +114,7 @@ export function WorkItemSidebar({ workItem }: Readonly<WorkItemSidebarProps>) {
 								</Badge>
 							))}
 						</div>
-						<Button variant="secondary" size="sm" className="w-full">
+						<Button variant="secondary" size="default" className="w-full">
 							<AddIcon label="" size="small" />
 							Add Label
 						</Button>
@@ -124,11 +124,11 @@ export function WorkItemSidebar({ workItem }: Readonly<WorkItemSidebarProps>) {
 
 			{/* Actions */}
 			<div className="flex gap-2">
-				<Button size="sm" className="flex-1">
+				<Button size="default" className="flex-1">
 					<CheckmarkIcon label="" size="small" />
 					Resolve
 				</Button>
-				<Button size="sm" variant="ghost">
+				<Button size="default" variant="ghost">
 					<ShowMoreHorizontalIcon label="" size="small" />
 				</Button>
 			</div>
