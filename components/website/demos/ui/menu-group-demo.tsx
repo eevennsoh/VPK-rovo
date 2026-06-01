@@ -28,7 +28,7 @@ import {
 
 export default function MenuGroupDemo() {
 	return (
-		<div className="w-72 rounded-lg bg-popover py-1 shadow-2xl">
+		<div className="w-72 rounded-lg bg-popover shadow-2xl">
 			<MenuGroup>
 				<MenuSection>
 					<MenuLinkItem href="#" iconBefore={<ClockIcon label="" />}>

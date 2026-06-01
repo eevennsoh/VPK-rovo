@@ -378,21 +378,19 @@ export function MenubarDemoWithIcons() {
 			<MenubarMenu>
 				<MenubarTrigger>More</MenubarTrigger>
 				<MenubarContent>
-					<MenubarGroup>
-						<MenubarItem>
-							<CircleDashedIcon />
-							Settings
-						</MenubarItem>
-						<MenubarItem>
-							<CircleDashedIcon />
-							Help
-						</MenubarItem>
-						<MenubarSeparator />
-						<MenubarItem variant="destructive">
-							<CircleDashedIcon />
-							Delete
-						</MenubarItem>
-					</MenubarGroup>
+					<MenubarItem>
+						<CircleDashedIcon />
+						Settings
+					</MenubarItem>
+					<MenubarItem>
+						<CircleDashedIcon />
+						Help
+					</MenubarItem>
+					<MenubarSeparator />
+					<MenubarItem variant="destructive">
+						<CircleDashedIcon />
+						Delete
+					</MenubarItem>
 				</MenubarContent>
 			</MenubarMenu>
 		</Menubar>
