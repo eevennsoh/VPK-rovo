@@ -66,6 +66,9 @@ async function loadContextBarHarness() {
 				export function MotionConfig(props) {
 					return React.createElement(React.Fragment, null, props.children);
 				}
+				export function useReducedMotion() {
+					return false;
+				}
 			`,
 		],
 		[
