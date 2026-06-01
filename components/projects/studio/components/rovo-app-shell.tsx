@@ -21,6 +21,7 @@ import { RovoAppMessages } from "@/components/projects/studio/components/rovo-ap
 import { RovoAppHermesMemoryBar } from "@/components/projects/studio/components/rovo-app-hermes-memory-bar";
 import { RovoAppHermesSkillDraftBar } from "@/components/projects/studio/components/rovo-app-hermes-skill-draft-bar";
 import { RovoAppAgentConfigPanel, type AgentConfigView } from "@/components/projects/studio/components/rovo-app-agent-config-panel";
+import { AgentTestPanel } from "@/components/projects/studio/components/rovo-app-agent-test-panel";
 import { RovoAppShellPaneLayout } from "@/components/projects/studio/components/rovo-app-shell-pane-layout";
 import { RovoAppSidebar } from "@/components/projects/studio/components/rovo-app-sidebar";
 import { type RovoAppSteeringPhase } from "@/components/projects/studio/components/rovo-app-steering-lane";
@@ -71,6 +72,7 @@ import {
 	type StudioScreenAssistantTarget,
 } from "@/components/projects/studio/lib/studio-screen-assistant";
 import { useSidebarResize } from "@/components/projects/studio/hooks/use-sidebar-resize";
+import { useSidebarResize as useStudioAskRovoChatResize } from "@/components/projects/rovo/hooks/use-sidebar-resize";
 import ChatPanel from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-chat/lib/chat-context-bar";
 import { clamp, cn, createId } from "@/lib/utils";
@@ -1713,11 +1715,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					sourceMessageId: options?.sourceMessageId ?? null,
 				});
 				setActiveAgentConfigView("test");
-				// Once an agent finishes building, surface the embedded test chat so
-				// the freshly selected agent is ready to test — even before publishing.
-				if (!embedded) {
-					nav.openChat("sidebar");
-				}
 				return true;
 			}
 
@@ -1747,14 +1744,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				sourceMessageId: options?.sourceMessageId ?? null,
 			});
 			setActiveAgentConfigView("test");
-			// Once an agent finishes building, surface the embedded test chat so
-			// the freshly selected agent is ready to test — even before publishing.
-			if (!embedded) {
-				nav.openChat("sidebar");
-			}
 			return true;
 		},
-		[chat.activeThreadId, chat.runtimeThreadId, studioAgentRegistry, nav, embedded],
+		[chat.activeThreadId, chat.runtimeThreadId, studioAgentRegistry],
 	);
 
 	// "Start from scratch" — create a fresh, untitled session agent (no AI result
@@ -1790,10 +1782,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			sourceMessageId: null,
 		});
 		setActiveAgentConfigView("configure");
-		if (!embedded && nav.isSidebarChatOpen) {
-			nav.toggleChat();
-		}
-	}, [embedded, nav, studioAgentRegistry]);
+	}, [studioAgentRegistry]);
 
 	const handleStudioSidebarAgentSelect = useCallback(
 		(agentId: string) => {
@@ -1803,11 +1792,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				sourceMessageId: null,
 			});
 			setActiveAgentConfigView("configure");
-			if (!embedded && nav.isSidebarChatOpen) {
-				nav.toggleChat();
-			}
 		},
-		[embedded, nav, studioAgentRegistry],
+		[studioAgentRegistry],
 	);
 
 	// Returns to the "Agents" landing (bento). Shared by the sidebar's "Agents"
@@ -1835,16 +1821,13 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					sourceMessageId: null,
 				});
 				setActiveAgentConfigView("configure");
-				if (!embedded && nav.isSidebarChatOpen) {
-					nav.toggleChat();
-				}
 			} else {
 				setActiveAgentConfig(null);
 				setActiveAgentConfigView("configure");
 			}
 			setIsSidebarAgentBrowserOpen(false);
 		},
-		[embedded, nav, studioAgentRegistry],
+		[studioAgentRegistry],
 	);
 
 	const handleUpdateAgentDraft = useCallback(
@@ -1869,28 +1852,15 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			}
 			studioAgentRegistry.commitSessionAgentPublishReady?.(profileId);
 			setActiveAgentConfigView("test");
-			if (!embedded) {
-				nav.openChat("sidebar");
-			}
 		},
-		[embedded, nav, studioAgentRegistry],
+		[studioAgentRegistry],
 	);
 
 	const handleAgentConfigViewChange = useCallback(
 		(view: AgentConfigView) => {
 			setActiveAgentConfigView(view);
-			if (embedded) {
-				return;
-			}
-			if (view === "test") {
-				nav.openChat("sidebar");
-				return;
-			}
-			if (nav.isSidebarChatOpen) {
-				nav.toggleChat();
-			}
 		},
-		[embedded, nav],
+		[],
 	);
 
 	const handlePublishAgent = useCallback(
@@ -1930,6 +1900,14 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			collapsedLabel: "Edit agent",
 		};
 	}, [activeSessionAgentEntry]);
+	const askRovoChatResize = useStudioAskRovoChatResize({
+		defaultWidth: 400,
+		minWidth: 320,
+		maxWidth: 720,
+		direction: "rtl",
+	});
+	const askRovoChatPanelWidth = askRovoChatResize.sidebarWidth;
+	const isStudioAskRovoChatActive = !embedded && shouldShowAgentConfigPane && nav.isSidebarChatOpen;
 	// When the active agent disappears (e.g. provider remounts), clear the
 	// config pane so we don't keep a stale reference around.
 	useEffect(() => {
@@ -3777,14 +3755,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	}, [browserArtifactKey, chat]);
 
 	const agentConfigTestPanel = activeSessionAgentEntry ? (
-		<ChatPanel
-			onClose={() => handleAgentConfigViewChange("configure")}
-			abortOnUnmount={false}
-			chatContextBar={agentEditContextBar}
-			containerClassName="h-full min-h-0"
-			containerStyle={{ borderRadius: 0, borderWidth: 0 }}
-			hideHeader
-		/>
+		<AgentTestPanel entry={activeSessionAgentEntry} />
 	) : null;
 
 	const agentConfigPane = activeSessionAgentEntry ? (
@@ -4278,21 +4249,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							product="studio"
 							windowWidth={nav.windowWidth}
 							forceShowRovoAction={shouldShowAgentConfigPane}
-							isChatOpen={shouldShowAgentConfigPane ? activeAgentConfigView === "test" : nav.isSidebarChatOpen}
-							onToggleChat={
-								shouldShowAgentConfigPane
-									? () => {
-											if (!activeSessionAgentEntry) {
-												return;
-											}
-											if (activeAgentConfigView === "test") {
-												handleAgentConfigViewChange("configure");
-												return;
-											}
-											handleTestAgent(activeSessionAgentEntry.profile.id);
-										}
-									: nav.toggleChat
-							}
+							isChatOpen={nav.isSidebarChatOpen}
+							onToggleChat={nav.toggleChat}
 							onToggleTheme={nav.toggleTheme}
 						/>
 					</div>
@@ -4316,6 +4274,12 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						"relative flex min-h-0 min-w-0 flex-1 bg-background text-foreground",
 						!shouldShowAgentConfigPane && "px-3",
 					)}
+					style={{
+						marginRight: isStudioAskRovoChatActive ? `${askRovoChatPanelWidth}px` : "0px",
+						transition: askRovoChatResize.isResizing
+							? undefined
+							: "margin-right var(--duration-medium) var(--ease-in-out)",
+					}}
 				>
 					<RovoAppShellPaneLayout
 						agentConfigPane={agentConfigPane}
@@ -4335,6 +4299,47 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						splitChatPaneMaxSize={splitChatPaneMaxSize}
 					/>
 				</main>
+				{!embedded && shouldShowAgentConfigPane ? (
+					<div
+						data-shell-chrome=""
+						aria-hidden={!isStudioAskRovoChatActive}
+						{...(!isStudioAskRovoChatActive ? { inert: true } : {})}
+						style={{
+							position: "absolute",
+							top: 48,
+							right: 0,
+							bottom: 0,
+							width: `${askRovoChatPanelWidth}px`,
+							pointerEvents: isStudioAskRovoChatActive ? "auto" : "none",
+							transform: isStudioAskRovoChatActive
+								? "translateX(0)"
+								: `translateX(${askRovoChatPanelWidth}px)`,
+							transition: askRovoChatResize.isResizing
+								? undefined
+								: "transform var(--duration-medium) var(--ease-in-out)",
+							willChange: "transform",
+							zIndex: 90,
+						}}
+					>
+						<ChatPanel
+							onClose={nav.toggleChat}
+							abortOnUnmount={false}
+							chatContextBar={agentEditContextBar}
+							// No left border here: the SidebarResizeHandle below paints the divider.
+							// Keeping the panel's own `border-l` too would stack two translucent
+							// `color.border` lines into a darker double-edge.
+							containerStyle={{ borderRadius: 0, borderWidth: 0 }}
+						/>
+						<SidebarResizeHandle
+							side="left"
+							data-active={askRovoChatResize.isResizing ? "" : undefined}
+							onDoubleClick={askRovoChatResize.onResizeHandleDoubleClick}
+							onPointerDown={askRovoChatResize.onResizeHandlePointerDown}
+							onPointerEnter={askRovoChatResize.onResizeHandlePointerEnter}
+							onPointerLeave={askRovoChatResize.onResizeHandlePointerLeave}
+						/>
+					</div>
+				) : null}
 			</div>
 			<ClickyOverlay
 				state={clicky.state}
