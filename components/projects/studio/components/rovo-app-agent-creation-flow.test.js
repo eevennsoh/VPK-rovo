@@ -15,6 +15,10 @@ const AGENT_CONFIG_PANEL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-agent-config-panel.tsx"),
 	"utf8",
 );
+const AGENT_TEST_PANEL_SOURCE = fs.readFileSync(
+	path.join(__dirname, "rovo-app-agent-test-panel.tsx"),
+	"utf8",
+);
 const UI_CUSTOM_AGENT_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/ui-custom/agent.tsx"),
 	"utf8",
@@ -188,19 +192,24 @@ test("Studio agent results use guarded session-agent registration with preserve-
 	assert.doesNotMatch(SHELL_SOURCE, /rovo-app-agents-directory/u);
 });
 
-test("Studio opens the sidebar chat once an agent finishes building", () => {
-	// The navigation hook must expose a deterministic open (not just toggle),
-	// otherwise an already-open sidebar would be closed on build completion.
+test("Studio lands generated agents in the Test tab without opening Ask Rovo", () => {
+	// The navigation hook still exposes deterministic chat controls for the
+	// separate Ask Rovo surface, but generated-agent testing is tab-local now.
 	assert.match(NAV_HOOK_SOURCE, /const \{ toggleChat, openChat, chatSurface \} = useRovoChat\(\);/u);
 	assert.match(NAV_HOOK_SOURCE, /\n\t\topenChat,\n/u);
 
-	// The agent-result handler surfaces the sidebar chat (gated to non-embedded
-	// shells) so the freshly selected agent is ready to test before publishing.
+	// The agent-result handler selects the Test tab for both registration paths
+	// without opening the right-side edit chat.
 	assert.ok(
-		(SHELL_SOURCE.match(/if \(!embedded\) \{\s*nav\.openChat\("sidebar"\);\s*\}/gu) ?? []).length >= 2,
-		"both registration success paths should open the sidebar chat",
+		(SHELL_SOURCE.match(/setActiveAgentConfigView\("test"\);/gu) ?? []).length >= 2,
+		"both registration success paths should land in the Test tab",
 	);
-	assert.match(SHELL_SOURCE, /\[chat\.activeThreadId, chat\.runtimeThreadId, studioAgentRegistry, nav, embedded\]/u);
+	const agentResultSelectSource = SHELL_SOURCE.slice(
+		SHELL_SOURCE.indexOf("const handleStudioAgentResultSelect = useCallback"),
+		SHELL_SOURCE.indexOf("// \"Start from scratch\""),
+	);
+	assert.doesNotMatch(agentResultSelectSource, /nav\.openChat\("sidebar"\)|nav\.toggleChat/u);
+	assert.match(SHELL_SOURCE, /\[chat\.activeThreadId, chat\.runtimeThreadId, studioAgentRegistry\]/u);
 });
 
 test("RovoAppMessages renders the block agent result card after generation completes", () => {
@@ -252,10 +261,29 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(SHELL_SOURCE, /const \[activeAgentConfigView, setActiveAgentConfigView\] = useState<AgentConfigView>\("configure"\);/u);
 	assert.match(SHELL_SOURCE, /const handleTestAgent = useCallback/u);
 	assert.match(SHELL_SOURCE, /const entry = studioAgentRegistry\.getSessionAgentEntry\?\.\(profileId\);[\s\S]*if \(!entry\?\.draftResult\.instructions\?\.trim\(\)\) \{[\s\S]*return;[\s\S]*\}/u);
-	assert.match(SHELL_SOURCE, /studioAgentRegistry\.commitSessionAgentPublishReady\?\.\(profileId\);[\s\S]*setActiveAgentConfigView\("test"\);[\s\S]*nav\.openChat\("sidebar"\);/u);
-	assert.match(SHELL_SOURCE, /const agentConfigTestPanel = activeSessionAgentEntry \? \([\s\S]*<ChatPanel[\s\S]*abortOnUnmount=\{false\}[\s\S]*chatContextBar=\{agentEditContextBar\}[\s\S]*hideHeader/u);
+	const handleTestAgentSource = SHELL_SOURCE.slice(
+		SHELL_SOURCE.indexOf("const handleTestAgent = useCallback"),
+		SHELL_SOURCE.indexOf("const handleAgentConfigViewChange = useCallback"),
+	);
+	assert.match(handleTestAgentSource, /studioAgentRegistry\.commitSessionAgentPublishReady\?\.\(profileId\);[\s\S]*setActiveAgentConfigView\("test"\);/u);
+	assert.doesNotMatch(handleTestAgentSource, /nav\.openChat\("sidebar"\)|nav\.toggleChat/u);
+	const handleAgentConfigViewChangeSource = SHELL_SOURCE.slice(
+		SHELL_SOURCE.indexOf("const handleAgentConfigViewChange = useCallback"),
+		SHELL_SOURCE.indexOf("const handlePublishAgent = useCallback"),
+	);
+	assert.match(handleAgentConfigViewChangeSource, /setActiveAgentConfigView\(view\);/u);
+	assert.doesNotMatch(handleAgentConfigViewChangeSource, /nav\.openChat|nav\.toggleChat/u);
+	assert.match(SHELL_SOURCE, /import \{ AgentTestPanel \} from "@\/components\/projects\/studio\/components\/rovo-app-agent-test-panel";/u);
+	assert.match(SHELL_SOURCE, /const agentConfigTestPanel = activeSessionAgentEntry \? \([\s\S]*<AgentTestPanel entry=\{activeSessionAgentEntry\} \/>/u);
 	assert.match(SHELL_SOURCE, /testPanel=\{agentConfigTestPanel\}/u);
 	assert.match(SHELL_SOURCE, /onTest=\{handleTestAgent\}/u);
+	assert.match(SHELL_SOURCE, /isChatOpen=\{nav\.isSidebarChatOpen\}[\s\S]*onToggleChat=\{nav\.toggleChat\}/u);
+	assert.match(SHELL_SOURCE, /const isStudioAskRovoChatActive = !embedded && shouldShowAgentConfigPane && nav\.isSidebarChatOpen;/u);
+	assert.match(SHELL_SOURCE, /<ChatPanel[\s\S]*onClose=\{nav\.toggleChat\}[\s\S]*abortOnUnmount=\{false\}[\s\S]*chatContextBar=\{agentEditContextBar\}[\s\S]*containerStyle=\{\{ borderRadius: 0, borderWidth: 0 \}\}[\s\S]*\/>/u);
+	assert.match(SHELL_SOURCE, /<SidebarResizeHandle[\s\S]*side="left"[\s\S]*askRovoChatResize\.onResizeHandlePointerDown/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /export function AgentTestPanel/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /aria-label="Agent test"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /data-testid="agent-test-panel"/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /<Label htmlFor=\{`agent-\$\{profileId\}-name`\}/u);
 });
 
