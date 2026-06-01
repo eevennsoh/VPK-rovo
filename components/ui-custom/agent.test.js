@@ -168,7 +168,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /layout = "default"/u);
 	assert.match(AGENT_SOURCE, /data-agent-config-layout=\{layout\}/u);
 	assert.match(AGENT_SOURCE, /layout === "compact"/u);
-	assert.match(compactLayoutSource, /<div className="flex min-w-0 flex-col gap-2">/u);
+	assert.match(compactLayoutSource, /<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">/u);
 	assert.doesNotMatch(compactLayoutSource, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
 	assert.match(compactLayoutSource, /bottomSlot=\{isFilledConfig \? undefined : <AgentCompactOperationsBento \/>\}/u);
 	assert.match(compactLayoutSource, /toolbarBelowSlot=\{\([\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}/u);

@@ -852,7 +852,7 @@ function AgentCompactOperationsBento() {
 		<section
 			aria-label="Operations prompt starters"
 			data-slot="agent-compact-operations-bento"
-			className="@container/bento relative"
+			className="@container/bento relative flex min-h-0 flex-1 flex-col"
 			onPointerLeave={resetBentoPointer}
 			onPointerMove={handleBentoPointerMove}
 			style={AGENT_COMPACT_BENTO_CARD_GLOW_EFFECT_STYLE}
@@ -865,7 +865,7 @@ function AgentCompactOperationsBento() {
 				region; the negative margin pulls the box back so spacing is unchanged.
 			*/}
 			<div
-				className="relative -mt-2 pt-2"
+				className="relative -mt-2 min-h-0 flex-1 overflow-hidden pt-2"
 				style={{ maskImage: AGENT_COMPACT_BENTO_FADE_MASK, WebkitMaskImage: AGENT_COMPACT_BENTO_FADE_MASK }}
 			>
 				<div className="mx-auto grid w-full grid-cols-1 gap-3 auto-rows-[144px] sm:grid-cols-2 lg:grid-cols-5">
@@ -905,14 +905,14 @@ function AgentCompactOperationsBento() {
 										width={32}
 									/>
 								</span>
-								<span className="relative z-[3] flex w-full min-w-0 flex-1 flex-col gap-1">
+								<span className={cn("relative z-[3] flex w-full min-w-0 flex-col gap-1", isHero ? "flex-none" : "flex-1")}>
 									<span className="block w-full min-w-0 text-sm font-semibold leading-5 text-text">
 										{template.title}
 									</span>
 									<span
 										className={cn(
-											"w-full min-w-0 overflow-hidden text-sm leading-5 text-text-subtle",
-											isHero ? "flex-none" : "flex-1 min-h-0"
+											"w-full min-w-0 overflow-hidden text-sm leading-5",
+											isHero ? "flex-none text-text" : "flex-1 min-h-0 text-text-subtle"
 										)}
 										style={
 											isHero
@@ -1652,14 +1652,14 @@ export const AgentConfigFields = memo(
 
 		return (
 			<div
-				className={cn("flex flex-col gap-6", className)}
+				className={cn("flex flex-col gap-6", layout === "compact" && "min-h-0 flex-1", className)}
 				data-agent-config-id={idPrefix}
 				data-agent-config-layout={layout}
 				data-screen-assistant-target={screenAssistantTargetPrefix}
 				{...props}
 			>
 				{layout === "compact" ? (
-					<div className="flex min-w-0 flex-col gap-2">
+					<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
 						<div className="flex flex-col gap-4">
 							<AgentConfigProfile
 								config={config}
@@ -1670,8 +1670,8 @@ export const AgentConfigFields = memo(
 						</div>
 						<AgentInstructionsComposer
 							bottomSlot={isFilledConfig ? undefined : <AgentCompactOperationsBento />}
-							bottomSlotClassName={isFilledConfig ? undefined : "mt-auto pt-8"}
-							className="flex min-h-[560px] flex-col"
+							bottomSlotClassName={isFilledConfig ? undefined : "flex min-h-0 flex-1 flex-col pt-4"}
+							className={cn("flex flex-col", isFilledConfig ? "min-h-[560px]" : "min-h-0 flex-1")}
 							contentClassName="min-h-[240px] pt-4"
 							instructions={config.instructions}
 							onInstructionsChange={(value) => onTextChange?.("instructions", value)}
