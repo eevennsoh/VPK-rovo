@@ -302,39 +302,44 @@ const tools: ToolsDirectoryTool[] = [
 		],
 	},
 	"skills-directory": {
-		description: "Dialog-based skills directory duplicated from Agents Directory for browsing recommended, team, partner, and session-created entries.",
+		description: "Dialog-based “Browse skills” directory: a filterable left nav (All, My skills, Favourites, Category, By companies) beside a searchable grid of skill cards with publisher attribution and usage stats.",
 		importStatement: `import { SkillsDirectoryDialog } from "@/components/blocks/skills-directory";`,
 		usage: `import { SkillsDirectoryDialog } from "@/components/blocks/skills-directory";
-import type { SkillsDirectoryAgent } from "@/components/blocks/skills-directory";
+import type { SkillsDirectorySkill } from "@/components/blocks/skills-directory";
 
-const agents: SkillsDirectoryAgent[] = [
+const skills: SkillsDirectorySkill[] = [
   {
-    id: "feedback-analyzer",
-    name: "Feedback Analyzer",
-    byline: "Product agent by Atlassian",
-    avatarSrc: "/avatar-agent/product-agents/feedback-analyzer.svg",
-    description: "Clusters customer feedback and surfaces themes.",
+    id: "create-page",
+    name: "Create page",
+    description: "Create a new formatted, rich text document or page in Confluence.",
+    icon: "page",
+    iconColor: "text-blue-500",
+    publisher: "Atlassian",
+    publisherLogoSrc: "/1p/atlassian.svg",
+    starCount: 38,
+    viewCount: 6273,
+    category: "content-communication",
   },
 ];
 
 <SkillsDirectoryDialog
   open={open}
   onOpenChange={setOpen}
-  agents={agents}
-  onSelectAgent={(agent) => console.log(agent.id)}
+  skills={skills}
+  onSelectSkill={(skill) => console.log(skill.id)}
+  onNewSkill={() => console.log("new skill")}
 />`,
 		demoLayout: { previewHeight: "fixed" },
 		props: [
 			{
-				name: "agents",
-				type: "readonly SkillsDirectoryAgent[]",
-				required: true,
-				description: "Base catalog entries shown in the directory.",
+				name: "skills",
+				type: "readonly SkillsDirectorySkill[]",
+				description: "Skill catalog rendered in the grid. Defaults to the bundled demo skills.",
 			},
 			{
-				name: "sessionAgents",
-				type: "readonly SkillsDirectoryAgent[]",
-				description: "Runtime-created entries appended to the catalog.",
+				name: "sessionSkills",
+				type: "readonly SkillsDirectorySkill[]",
+				description: "Runtime-created skills appended after the catalog.",
 			},
 			{
 				name: "open",
@@ -349,19 +354,29 @@ const agents: SkillsDirectoryAgent[] = [
 				description: "Called when the dialog requests an open-state change.",
 			},
 			{
-				name: "onSelectAgent",
-				type: "(agent: SkillsDirectoryAgent) => void",
-				description: "Called when a card or sidebar entry is selected.",
+				name: "onSelectSkill",
+				type: "(skill: SkillsDirectorySkill) => void",
+				description: "Called when a skill card or favourite sidebar entry is selected.",
+			},
+			{
+				name: "onNewSkill",
+				type: "() => void",
+				description: "Called by the header “New skill” primary button.",
+			},
+			{
+				name: "primaryItems",
+				type: "readonly SkillsDirectoryPrimaryItem[]",
+				description: "Sectionless nav rows above the first group (All, My skills).",
 			},
 			{
 				name: "sidebarGroups",
 				type: "readonly SkillsDirectorySidebarGroup[]",
-				description: "Optional sidebar grouping override. Defaults to the duplicated directory grouping.",
+				description: "Optional left-nav grouping override. Defaults to the Browse skills grouping.",
 			},
 			{
 				name: "title",
 				type: "string",
-				description: "Optional dialog title. Defaults to the underlying browser dialog title.",
+				description: "Optional dialog title. Defaults to “Browse skills”.",
 			},
 		],
 	},

@@ -33,16 +33,35 @@ test("Skills Directory docs demo starts closed until the trigger is clicked", ()
 	);
 });
 
-test("Skills Directory duplicates the Agents Directory data and browser shell", () => {
+test("Skills Directory renders the Browse skills dialog with skill cards", () => {
 	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory.tsx");
+	const sidebarSource = readProjectFile("components/blocks/skills-directory/components/skills-directory-sidebar.tsx");
+	const skillsSource = readProjectFile("components/blocks/skills-directory/data/skills.tsx");
+	const sidebarGroupsSource = readProjectFile("components/blocks/skills-directory/data/sidebar-groups.ts");
 	const pageSource = readProjectFile("components/blocks/skills-directory/page.tsx");
-	const defaultSidebarGroupsSource = readProjectFile("components/blocks/skills-directory/data/sidebar-groups.ts");
 
-	assert.match(source, /AgentBrowserDialog/u);
-	assert.match(source, /DEFAULT_SKILLS_DIRECTORY_SIDEBAR_GROUPS/u);
-	assert.match(pageSource, /DEMO_AGENT_BROWSER_AGENTS/u);
-	assert.match(pageSource, /attributionKind: "team"/u);
-	assert.match(pageSource, /attributionKind: "person"/u);
-	assert.match(defaultSidebarGroupsSource, /title: "By teams"/u);
-	assert.match(defaultSidebarGroupsSource, /title: "By companies"/u);
+	// Skill card swapped in (matched to Figma: plain icon + hover-revealed stats).
+	assert.match(source, /CardDirectorySkill/u);
+	assert.match(source, /iconTile=\{false\}/u);
+	assert.match(source, /revealStatsOnHover/u);
+	// Browse skills chrome.
+	assert.match(source, /title = "Browse skills"/u);
+	assert.match(source, /New skill/u);
+	assert.match(source, /Search for a skill by name, or describe it/u);
+	// Figma left nav groups.
+	assert.match(sidebarGroupsSource, /title: "Favourites"/u);
+	assert.match(sidebarGroupsSource, /title: "Category"/u);
+	assert.match(sidebarGroupsSource, /title: "By companies"/u);
+	assert.match(sidebarSource, /SkillsDirectorySidebar/u);
+	// Skills data + demo wiring.
+	assert.match(skillsSource, /export const DEFAULT_SKILLS/u);
+	assert.match(pageSource, /sessionSkills=\{DEMO_SESSION_SKILLS\}/u);
+});
+
+test("Skills card primitive keeps the new props backward compatible", () => {
+	const cardSource = readProjectFile(
+		"components/ui-custom/card-directory/card-directory-skill.tsx",
+	);
+	assert.match(cardSource, /iconTile = true/u);
+	assert.match(cardSource, /revealStatsOnHover = false/u);
 });
