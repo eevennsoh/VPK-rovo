@@ -1,6 +1,7 @@
 "use client";
 
 import type { Tool } from "ai";
+import type { MotionProps } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
 import { memo, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
@@ -53,6 +54,11 @@ const AGENT_AVATAR_HEXAGON_PATH = "M19.01 0.922148C20.24 0.212148 21.76 0.212148
 const AGENT_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg";
 const DEFAULT_AGENT_PROFILE_COVER_COLOR = "#1868DB";
 const MAX_AGENT_CONVERSATION_STARTERS = 3;
+const AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS = {
+	whileHover: { paddingLeft: 8, paddingRight: 8 },
+	whileFocus: { paddingLeft: 8, paddingRight: 8 },
+	transition: { type: "spring", bounce: 0.08, visualDuration: 0.18 },
+} satisfies Pick<MotionProps, "whileHover" | "whileFocus" | "transition">;
 const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
 	"dev-agents": "#82B536",
 	"product-agents": "#BF63F3",
@@ -895,7 +901,8 @@ function AgentConfigProfile({
 					value={config.name ?? ""}
 					placeholder="Untitled agent"
 					editButtonLabel="Edit agent name"
-					readViewClassName="-mx-2 h-auto px-2 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"
+					readViewClassName="h-auto px-0 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"
+					readViewMotionProps={AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS}
 					inputProps={{ className: "-mx-2 h-auto border-2 px-2 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" }}
 					onConfirm={(value) => onTextChange?.("name", value)}
 				/>
@@ -908,7 +915,8 @@ function AgentConfigProfile({
 						placeholder="Add a description"
 						editButtonLabel="Edit agent description"
 						multiline
-						readViewClassName="-mx-2 px-2"
+						readViewClassName="px-0"
+						readViewMotionProps={AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS}
 						textareaProps={{ rows: 1, className: "-mx-2 min-h-10 bg-bg-neutral-subtle px-2 focus:border-2 focus:border-ring focus-visible:border-2 focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-[variant=default]:border-transparent data-[variant=default]:focus:border-ring data-[variant=default]:focus-visible:border-ring" }}
 						onConfirm={(value) => onTextChange?.("description", value)}
 					/>
