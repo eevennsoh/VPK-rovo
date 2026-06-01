@@ -361,22 +361,6 @@
 	initial-value: -10;
 }
 
-/* Text-box trim — remove the font's leading (half-leading above cap height
-   and below the alphabetic baseline) so a single line of text optically
-   centers against adjacent icons/avatars inside fixed-height, flex
-   `items-center` rows (lozenges, tags, buttons). Eliminates the "text sits
-   ~1px low" problem without magic margin hacks.
-
-   Longhand form (`text-box-trim` + `text-box-edge`) is used over the
-   `text-box` shorthand for broader tooling/parser recognition. Limited
-   availability (Chrome 133+, Safari 18.2+): unsupported browsers ignore
-   these declarations and fall back to the untrimmed line box — visually
-   identical to today, so this is purely additive. */
-@utility text-box-trim {
-	text-box-trim: trim-both;
-	text-box-edge: cap alphabetic;
-}
-
 /* Content-visibility: auto (Audit Theme B) — skip rendering work for
    subtrees that are off-screen. Browsers reserve `contain-intrinsic-size`
    so the page layout doesn't jump as content scrolls into view.

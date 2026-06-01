@@ -16,6 +16,8 @@ import VideoPlayIcon from "@atlaskit/icon/core/video-play";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
 import ViewsIcon from "@atlaskit/icon-lab/core/views";
 
+import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
+import { DEMO_AGENT_TEMPLATES } from "@/components/blocks/agent-templates/data/demo-template-agents";
 import { Accordion,
 	AccordionContent,
 	AccordionItem,
@@ -818,6 +820,7 @@ function AgentCompactBentoCardGlowLayers({ iconSrc }: Readonly<{ iconSrc: string
 
 function AgentCompactOperationsBento() {
 	const shouldReduceMotion = useReducedMotion();
+	const [browseOpen, setBrowseOpen] = useState(false);
 	const tileRefs = useRef<Array<HTMLButtonElement | null>>([]);
 	const handleBentoPointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
 		for (const tile of tileRefs.current) {
@@ -854,8 +857,15 @@ function AgentCompactOperationsBento() {
 			onPointerMove={handleBentoPointerMove}
 			style={AGENT_COMPACT_BENTO_CARD_GLOW_EFFECT_STYLE}
 		>
+			{/*
+				`-mt-2 pt-2` gives the masked content top headroom that nets to zero
+				visual shift: the bottom-fade mask clips its children to the box, so
+				tiles flush with the top edge would have their hover lift (`y: -2`) and
+				focus ring sliced off. The padding keeps that motion inside the opaque
+				region; the negative margin pulls the box back so spacing is unchanged.
+			*/}
 			<div
-				className="relative"
+				className="relative -mt-2 pt-2"
 				style={{ maskImage: AGENT_COMPACT_BENTO_FADE_MASK, WebkitMaskImage: AGENT_COMPACT_BENTO_FADE_MASK }}
 			>
 				<div className="mx-auto grid w-full grid-cols-1 gap-3 auto-rows-[144px] sm:grid-cols-2 lg:grid-cols-5">
@@ -956,14 +966,22 @@ function AgentCompactOperationsBento() {
 			<div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-2">
 				<Button
 					type="button"
+					aria-label="Browse all agents"
 					variant="ghost"
 					size="compact"
 					className="pointer-events-auto h-7 rounded-full border-0 bg-surface px-3 text-sm leading-5 font-normal text-text-subtle hover:bg-surface-hovered"
 					style={{ boxShadow: token("elevation.shadow.overlay") }}
+					onClick={() => setBrowseOpen(true)}
 				>
 					Browse all
 				</Button>
 			</div>
+			<AgentTemplatesDialog
+				agents={DEMO_AGENT_TEMPLATES}
+				open={browseOpen}
+				onOpenChange={setBrowseOpen}
+				onSelectAgent={() => setBrowseOpen(false)}
+			/>
 		</section>
 	);
 }
