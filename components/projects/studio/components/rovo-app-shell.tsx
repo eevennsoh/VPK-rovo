@@ -810,6 +810,14 @@ const HOME_STARTER_CYCLE_DURATION_MS = 6000;
 // sibling so it keeps reading as a crisp affordance over the faded edge.
 const HOME_STARTER_BENTO_FADE_MASK = "linear-gradient(to bottom, #000 calc(100% - 96px), transparent)";
 
+// Per-card description fade. The description is a flex-fill box whose bottom edge
+// always sits at the card's content bottom, so when the copy overflows the last
+// (partial) line fades instead of being sliced mid-glyph. One line height of fade
+// (`leading-5` = 1.25rem); when the copy is short the faded region is simply empty,
+// so this is a no-op rather than fading visible text.
+const HOME_STARTER_CARD_DESCRIPTION_FADE_MASK =
+	"linear-gradient(to bottom, #000 calc(100% - 1.25rem), transparent)";
+
 function HomeStarterBento({
 	onPreviewEnd,
 	onPreviewStart,
@@ -1049,15 +1057,6 @@ function HomeStarterBento({
 									);
 								}
 
-								const tallAtSm = template.layoutClassName.includes("sm:row-span-2");
-								const tallAtLg = template.layoutClassName.includes("lg:row-span-2");
-								const descriptionClampClass = cn(
-									"line-clamp-2",
-									tallAtSm && "sm:line-clamp-none",
-									!tallAtSm && tallAtLg && "lg:line-clamp-none",
-									!tallAtLg && "lg:line-clamp-1",
-								);
-
 								return (
 									<motion.button
 										key={template.title}
@@ -1100,11 +1099,17 @@ function HomeStarterBento({
 												width={32}
 											/>
 										</span>
-										<span className="relative z-[3] flex w-full min-w-0 flex-col gap-1">
+										<span className="relative z-[3] flex w-full min-w-0 flex-1 flex-col gap-1">
 											<span className="block w-full min-w-0 text-sm font-semibold leading-5 text-text">
 												{template.title}
 											</span>
-											<span className={cn("w-full min-w-0 text-sm leading-5 text-text-subtle", descriptionClampClass)}>
+											<span
+												className="w-full min-w-0 flex-1 min-h-0 overflow-hidden text-sm leading-5 text-text-subtle"
+												style={{
+													maskImage: HOME_STARTER_CARD_DESCRIPTION_FADE_MASK,
+													WebkitMaskImage: HOME_STARTER_CARD_DESCRIPTION_FADE_MASK,
+												}}
+											>
 												{template.description}
 											</span>
 										</span>
