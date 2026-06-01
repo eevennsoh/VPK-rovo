@@ -26,6 +26,7 @@ interface RichTextEditorProps
 	editorClassName?: string;
 	contentClassName?: string;
 	toolbarEndSlot?: ReactNode;
+	toolbarBelowSlot?: ReactNode;
 	mentionSources?: RichTextMentionSources;
 	onMarkdownChange?: (value: string) => void;
 	onPlainTextChange?: (value: string) => void;
@@ -46,6 +47,7 @@ export function RichTextEditor({
 	editorClassName,
 	contentClassName,
 	toolbarEndSlot,
+	toolbarBelowSlot,
 	mentionSources,
 	onMarkdownChange,
 	onPlainTextChange,
@@ -195,6 +197,11 @@ export function RichTextEditor({
 					onToggleMarkdownMode={handleToggleMarkdownMode}
 					onMarkdownFormat={handleMarkdownFormat}
 				/>
+			) : null}
+			{toolbarBelowSlot ? (
+				<div data-slot="rich-text-editor-toolbar-below">
+					{toolbarBelowSlot}
+				</div>
 			) : null}
 			<div
 				className={cn("rich-text-editor-content relative", contentClassName)}

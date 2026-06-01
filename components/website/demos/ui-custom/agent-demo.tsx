@@ -8,6 +8,7 @@ import {
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
 	AgentContent,
+	AgentCompactHeaderNav,
 	AgentHeader,
 } from "@/components/ui-custom/agent";
 
@@ -27,11 +28,9 @@ const initialAgentConfig: AgentConfigFormValue = {
 
 const emptyAgentConfig: AgentConfigFormValue = {
 	...initialAgentConfig,
-	name: "Customer Insights",
-	description:
-		"Analyzes customer feedback from pages, links, or projects and surfaces themes, needs, risks, and recommended actions.",
-	summary:
-		"Analyzes customer feedback from pages, links, or projects and surfaces themes, needs, risks, and recommended actions.",
+	name: "Untitled agent",
+	description: "",
+	summary: "",
 	agentId: "customer-insights",
 };
 
@@ -136,7 +135,7 @@ export function AgentDemoEmpty() {
 	return (
 		<Agent className="mx-auto min-h-[852px] w-full max-w-[720px]">
 			<AgentHeader
-				name={config.name?.trim() || "Customer Insights"}
+				name={config.name?.trim() || "Untitled agent"}
 				model="Draft"
 			/>
 			<AgentContent>
@@ -165,13 +164,14 @@ export function AgentDemoCompactFilled() {
 	return (
 		<Agent className="mx-auto min-h-[852px] w-full max-w-[720px]">
 			<AgentHeader
+				leadingContent={<AgentCompactHeaderNav />}
 				name={config.name?.trim() || "Untitled agent"}
-				model="Draft"
 			/>
 			<AgentContent>
 				<AgentConfigFields
 					config={config}
 					idPrefix="agent-demo-compact-filled"
+					layout="compact"
 					onTextChange={handleTextChange}
 					onListItemChange={updateListItem}
 					onRemoveListItem={removeListItem}
@@ -194,13 +194,14 @@ export function AgentDemoCompactEmpty() {
 	return (
 		<Agent className="mx-auto min-h-[852px] w-full max-w-[720px]">
 			<AgentHeader
-				name={config.name?.trim() || "Customer Insights"}
-				model="Draft"
+				leadingContent={<AgentCompactHeaderNav />}
+				name={config.name?.trim() || "Untitled agent"}
 			/>
 			<AgentContent>
 				<AgentConfigFields
 					config={config}
 					idPrefix="agent-demo-compact-empty"
+					layout="compact"
 					onTextChange={handleTextChange}
 					onListItemChange={updateListItem}
 					onRemoveListItem={removeListItem}

@@ -550,6 +550,19 @@ import SearchIcon from "@atlaskit/icon/core/search"
           "Click handler. When provided, adds hover/active states and pointer cursor.",
       },
       {
+        name: "onRemove",
+        type: "() => void",
+        description:
+          "Remove handler. When provided, renders an X button.",
+      },
+      {
+        name: "removeVariant",
+        type: '"inline" | "overlay"',
+        default: '"inline"',
+        description:
+          "Controls remove button treatment. Inline keeps the X persistently visible; overlay reveals it over the tag on hover or focus.",
+      },
+      {
         name: "maxRows",
         type: "number",
         description:
@@ -572,6 +585,11 @@ import SearchIcon from "@atlaskit/icon/core/search"
         title: "Interactive",
         description: "Clickable tags with hover/active states.",
         demoSlug: "skill-tag-demo-interactive",
+      },
+      {
+        title: "Removable",
+        description: "Persistent and overlay remove button variants.",
+        demoSlug: "skill-tag-demo-removable",
       },
       {
         title: "Group",
@@ -816,8 +834,8 @@ import {
 		examples: [
 			{ title: "Filled agent", description: "Agent strategy surface after configuration fields have been populated.", demoSlug: "agent-demo-full" },
 			{ title: "Empty agent", description: "Default setup state with add tiles before details are populated.", demoSlug: "agent-demo-empty" },
-			{ title: "Compact filled", description: "Compact placeholder that currently duplicates the filled agent example.", demoSlug: "agent-demo-compact-filled" },
-			{ title: "Compact empty", description: "Compact placeholder that currently duplicates the empty agent example.", demoSlug: "agent-demo-compact-empty" },
+			{ title: "Compact filled", description: "Compact layout with filled configuration details under the editor toolbar.", demoSlug: "agent-demo-compact-filled" },
+			{ title: "Compact empty", description: "Compact builder layout with quick configuration links and Operations prompt starters.", demoSlug: "agent-demo-compact-empty" },
 		],
 	},
 
