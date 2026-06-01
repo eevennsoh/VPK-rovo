@@ -69,6 +69,22 @@ test("derives stable defaults for generated Studio agent definitions", () => {
 	assert.equal(result.action, "create");
 });
 
+test("normalizes optional trigger and guardrail fields", () => {
+	const result = normalizeStudioAgentResult({
+		name: "Deploy Watcher",
+		description: "Watches deploys.",
+		instructions: "Watch deploy pipelines and alert on failures.",
+		conversationStarters: ["Check the latest deploy."],
+		tools: ["Bitbucket"],
+		trigger: "When a deploy fails",
+		guardrail: "Never trigger a rollback without confirmation",
+	});
+
+	assert.equal(result.trigger, "When a deploy fails");
+	assert.equal(result.guardrail, "Never trigger a rollback without confirmation");
+	assert.deepEqual(result.tools, ["Bitbucket"]);
+});
+
 test("extracts an AGENT_RESULT marker and removes it from visible text", () => {
 	const payload = {
 		name: "Ops Triage",
@@ -107,6 +123,15 @@ test("agent creation guidance uses structured result output instead of plan pers
 	assert.match(agentPrefix, /AGENT_RESULT:/u);
 	assert.match(agentPrefix, /Do not call POST \/api\/plan\/agents/u);
 	assert.doesNotMatch(agentPrefix, /Once ready, call POST \/api\/plan\/agents/u);
+	// Always run one focused clarification round (adaptive up to two), rather
+	// than only asking when fields are missing.
+	assert.match(agentPrefix, /run ONE focused clarification round FIRST using the ask_user_questions tool/u);
+	assert.match(agentPrefix, /never exceed 2 rounds/u);
+	assert.doesNotMatch(agentPrefix, /Ask clarifying questions only when required profile fields are missing/u);
+	// Richer agents: the result example must request tools, trigger, and guardrail.
+	assert.match(agentPrefix, /"tools":\["Jira","Confluence"\]/u);
+	assert.match(agentPrefix, /"trigger":/u);
+	assert.match(agentPrefix, /"guardrail":/u);
 	assert.match(skillPrefix, /Once ready, call POST \/api\/plan\/skills/u);
 });
 
