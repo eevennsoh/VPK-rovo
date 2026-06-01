@@ -308,7 +308,7 @@ export function AgentTemplatesDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent
-				className="grid max-h-[min(820px,calc(100svh-1rem))] w-[min(1248px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] grid-rows-[auto_minmax(0,auto)] gap-0 overflow-hidden rounded-xl border border-border bg-surface p-0 shadow-xl sm:max-w-[1248px]"
+				className="grid max-h-[min(744px,calc(100svh-1rem))] w-[min(1248px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] grid-rows-[auto_minmax(0,auto)] gap-0 overflow-hidden rounded-xl border border-border bg-surface p-0 shadow-xl sm:max-w-[1248px]"
 				showCloseButton={false}
 			>
 				<header className="relative px-6 py-6">
@@ -357,7 +357,10 @@ export function AgentTemplatesDialog({
 					</DialogTitle>
 				</header>
 
-				<div className="relative min-h-0 overflow-hidden pb-6">
+				{/* The deck's own `pb-6` (inside the overflow-clipped carousel) owns the single
+				    24px bottom gap and the hover-shadow room — so this region adds no extra
+				    bottom padding, otherwise the two stack into a ~48px gap. */}
+				<div className="relative min-h-0 overflow-hidden">
 					<div
 						aria-label="Agent templates"
 						className="h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -368,7 +371,11 @@ export function AgentTemplatesDialog({
 						<AnimatePresence custom={tabMotionCustom} initial={false} mode="wait">
 							<motion.div
 								animate="center"
-								className="flex h-full gap-4 px-6 pt-2 pb-6"
+								// `w-max` shrink-wraps the deck to its content so the trailing `px-6`
+								// is part of the scrollable width — otherwise an auto-width flex row
+								// in an overflow-x container drops its padding-right and the last card
+								// rests flush at max scroll instead of leaving the 24px end gap.
+								className="flex h-full w-max gap-4 px-6 pt-2 pb-6"
 								custom={tabMotionCustom}
 								exit="exit"
 								initial="enter"
