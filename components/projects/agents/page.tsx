@@ -700,7 +700,7 @@ function KanbanSelectionActionBar({
 					aria-label="Clear selection"
 					onClick={onClear}
 					shape="circle"
-					size="icon-sm"
+					size="icon"
 					variant="ghost"
 				>
 					<Icon render={<CrossIcon label="" size="small" />} />

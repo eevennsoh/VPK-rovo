@@ -366,7 +366,7 @@ export default function TaskProgress({
 										{runStatus === "completed" ? (
 											<Button
 												variant="ghost"
-												size="sm"
+												size="default"
 												className="[&_svg]:!text-icon-success"
 												onClick={(e) => {
 													e.stopPropagation();

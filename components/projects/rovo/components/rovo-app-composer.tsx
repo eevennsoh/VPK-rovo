@@ -505,7 +505,7 @@ function RovoAppComposerInner({
 												<Button
 													aria-label="Remove queued message"
 													onClick={() => onRemoveQueuedPrompt?.(queuedPrompt.id)}
-													size="icon-sm"
+													size="icon"
 													variant="ghost"
 													className="size-7 rounded-full text-icon-subtle opacity-0 transition-opacity group-hover:opacity-100"
 												>

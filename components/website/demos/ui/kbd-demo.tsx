@@ -86,7 +86,7 @@ export function KbdDemoModifierKeys() {
 export function KbdDemoTooltip() {
 	return (
 		<Tooltip>
-			<TooltipTrigger render={<Button size="icon-sm" variant="outline" />}>
+			<TooltipTrigger render={<Button size="icon" variant="outline" />}>
 				<SaveIcon />
 			</TooltipTrigger>
 			<TooltipContent className="pr-1.5">

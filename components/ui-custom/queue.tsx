@@ -133,7 +133,7 @@ export const QueueItemAction = ({ className, ...props }: QueueItemActionProps) =
 	<Button
 		className={cn("text-icon-subtlest opacity-0 transition-opacity duration-normal group-hover:opacity-100 [&_svg]:text-icon-subtlest", className)}
 		shape="circle"
-		size="icon-xs"
+		size="icon-compact"
 		type="button"
 		variant="ghost"
 		{...props}

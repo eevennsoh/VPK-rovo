@@ -31,7 +31,7 @@ function ActivityFilters() {
 						))}
 					</TabsList>
 				</Tabs>
-				<Button aria-label="Reverse sort order" className="ml-auto" size="icon-sm" variant="ghost">
+				<Button aria-label="Reverse sort order" className="ml-auto" size="icon" variant="ghost">
 					<SortDescendingIcon label="" size="small" />
 				</Button>
 			</div>

@@ -42,7 +42,7 @@ export function PersonalGraphIngestButton({ onDone, refreshKey }: Readonly<Perso
 				className="h-11 w-full rounded-full bg-bg-neutral-bold text-sm font-medium text-text-inverse shadow-none hover:bg-bg-neutral-bold-hovered disabled:bg-bg-disabled disabled:text-text-disabled"
 				disabled={paths.length === 0 || librarian.status === "running"}
 				onClick={() => paths[0] ? void librarian.start(paths[0]) : undefined}
-				size="sm"
+				size="default"
 			>
 				Ingest
 			</Button>
@@ -70,8 +70,8 @@ export function PersonalGraphIngestButton({ onDone, refreshKey }: Readonly<Perso
 					) : null}
 					{librarian.status === "awaiting-confirmation" ? (
 						<div className="flex gap-2">
-							<Button onClick={() => void librarian.confirm()} size="sm">Confirm</Button>
-							<Button onClick={librarian.discard} size="sm" variant="outline">Discard</Button>
+							<Button onClick={() => void librarian.confirm()} size="default">Confirm</Button>
+							<Button onClick={librarian.discard} size="default" variant="outline">Discard</Button>
 						</div>
 					) : null}
 				</div>

@@ -794,7 +794,7 @@ export const catalog = defineCatalog(schema, {
 			props: z.object({
 				label: z.string(),
 				variant: z.enum(["default", "destructive", "outline", "secondary", "ghost", "link", "warning", "discovery"]).nullable(),
-				size: z.enum(["default", "xs", "sm", "lg", "icon"]).nullable(),
+				size: z.enum(["default", "compact", "icon", "icon-compact"]).nullable(),
 				disabled: z.boolean().nullable(),
 			}),
 			slots: [],

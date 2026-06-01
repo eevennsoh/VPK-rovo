@@ -189,7 +189,7 @@ export function WebPreviewNavigationButton({
 										}
 									: undefined)
 							}
-							size="sm"
+							size="default"
 							variant="ghost"
 							{...props}
 						/>

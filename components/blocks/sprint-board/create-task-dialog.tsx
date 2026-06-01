@@ -126,7 +126,7 @@ export function CreateTaskDialog({
 			{!isControlled ? (
 				<DialogTrigger
 					id="sprint-board-create-task-trigger"
-					render={<Button variant="default" size="sm" className="gap-1.5" />}
+					render={<Button variant="default" size="default" className="gap-1.5" />}
 				>
 					<AddIcon label="" size="small" />
 					Add Task

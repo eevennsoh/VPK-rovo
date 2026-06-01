@@ -8,7 +8,7 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHe
 export default function SheetDemo() {
 	return (
 		<Sheet>
-			<SheetTrigger render={<Button variant="outline" size="sm" />}>
+			<SheetTrigger render={<Button variant="outline" size="default" />}>
 				Open sheet
 			</SheetTrigger>
 			<SheetContent>

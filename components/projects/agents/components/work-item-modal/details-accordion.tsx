@@ -51,7 +51,7 @@ export function DetailsAccordion() {
 					<Button
 						aria-label={state.isDetailsOpen ? "Collapse" : "Expand"}
 						aria-expanded={state.isDetailsOpen}
-						size="icon-xs"
+						size="icon-compact"
 						variant="ghost"
 						className="aria-expanded:!border-transparent aria-expanded:!bg-transparent aria-expanded:!text-text-subtle"
 						onClick={actions.toggleDetails}

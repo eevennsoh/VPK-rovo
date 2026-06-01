@@ -100,7 +100,7 @@ export default function RovoGenerationDemo() {
 					</div>
 					<button
 						type="button"
-						className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+						className={cn(buttonVariants({ variant: "outline", size: "default" }))}
 						onClick={handleRunGeneration}
 					>
 						{generating ? "Restart" : "Run"}

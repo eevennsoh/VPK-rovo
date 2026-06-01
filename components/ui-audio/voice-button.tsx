@@ -62,7 +62,7 @@ export interface VoiceButtonProps
    * Size of the button
    * @default "default"
    */
-  size?: "default" | "sm" | "lg" | "icon"
+  size?: "default" | "compact" | "icon" | "icon-compact"
 
   /**
    * Custom className for the button

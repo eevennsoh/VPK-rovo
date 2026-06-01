@@ -101,7 +101,7 @@ export function RovoAppHermesSkillDraftBar({
 					<Button
 						disabled={isSubmitting}
 						onClick={() => void onApprove(draft)}
-						size="sm"
+						size="default"
 						type="button"
 					>
 						Approve
@@ -109,7 +109,7 @@ export function RovoAppHermesSkillDraftBar({
 					<Button
 						disabled={isSubmitting}
 						onClick={() => void onReject(draft)}
-						size="sm"
+						size="default"
 						type="button"
 						variant="outline"
 					>
@@ -118,7 +118,7 @@ export function RovoAppHermesSkillDraftBar({
 					<Button
 						disabled={isSubmitting}
 						onClick={() => onOpenReview(draft)}
-						size="sm"
+						size="default"
 						type="button"
 						variant="ghost"
 					>
@@ -130,7 +130,7 @@ export function RovoAppHermesSkillDraftBar({
 							<Button
 								disabled={isSubmitting || activeIndex === 0}
 								onClick={() => onSelectIndex(Math.max(0, activeIndex - 1))}
-								size="sm"
+								size="default"
 								type="button"
 								variant="ghost"
 							>
@@ -139,7 +139,7 @@ export function RovoAppHermesSkillDraftBar({
 							<Button
 								disabled={isSubmitting || activeIndex >= totalDrafts - 1}
 								onClick={() => onSelectIndex(Math.min(totalDrafts - 1, activeIndex + 1))}
-								size="sm"
+								size="default"
 								type="button"
 								variant="ghost"
 							>

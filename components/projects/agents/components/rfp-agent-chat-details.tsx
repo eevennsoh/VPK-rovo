@@ -305,7 +305,7 @@ export function RfpAgentTriggerDetails({
 													aria-label="Delete trigger"
 													className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 focus-visible:opacity-100"
 													onClick={onClearTrigger}
-													size="icon-sm"
+													size="icon"
 													variant="ghost"
 												>
 													<DeleteIcon label="" size="small" />

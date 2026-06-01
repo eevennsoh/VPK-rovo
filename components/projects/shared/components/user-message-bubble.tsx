@@ -75,7 +75,7 @@ export function UserMessageBubble({
 					<Button
 						aria-label="Delete message"
 						variant="ghost"
-						size="icon-sm"
+						size="icon"
 						className="rounded-full text-icon-subtle [&_svg]:size-3"
 						onClick={onDelete}
 					>

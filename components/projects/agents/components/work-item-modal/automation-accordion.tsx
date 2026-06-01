@@ -36,7 +36,7 @@ export function AutomationAccordion() {
 					<Button
 						aria-label={state.isAutomationOpen ? "Collapse" : "Expand"}
 						aria-expanded={state.isAutomationOpen}
-						size="icon-xs"
+						size="icon-compact"
 						variant="ghost"
 						className="aria-expanded:!border-transparent aria-expanded:!bg-transparent aria-expanded:!text-text-subtle"
 						onClick={actions.toggleAutomation}

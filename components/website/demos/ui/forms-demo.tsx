@@ -1078,7 +1078,7 @@ export function FormDemoTanstackArray() {
 										<Button
 											type="button"
 											variant="outline"
-											size="sm"
+											size="default"
 											onClick={() => field.pushValue({ address: "" })}
 											disabled={field.state.value.length >= 5}
 										>

@@ -265,7 +265,7 @@ export function MemoryExplorerSigmaGraph({
 					<Badge variant="neutral">{explorer?.stats.nodeCount ?? 0} nodes</Badge>
 					<Badge variant="outline">{explorer?.stats.edgeCount ?? 0} edges</Badge>
 					<Button
-						size="sm"
+						size="default"
 						variant="outline"
 						onClick={() => {
 							if (sigmaRef.current) {

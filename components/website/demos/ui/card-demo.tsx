@@ -69,7 +69,7 @@ export function CardDemoFooterWithBorderSmall() {
 				<p>The footer has a border-t class applied, creating a visual separation between the content and footer sections.</p>
 			</CardContent>
 			<CardFooter className="border-t">
-				<Button variant="outline" size="sm" className="w-full">
+				<Button variant="outline" size="default" className="w-full">
 					Footer with Border
 				</Button>
 			</CardFooter>
@@ -173,7 +173,7 @@ export function CardDemoMeetingNotes() {
 				<CardTitle>Meeting Notes</CardTitle>
 				<CardDescription>Transcript from the meeting with the client.</CardDescription>
 				<CardAction>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						<CaptionsIcon data-icon="inline-start" />
 						Transcribe
 					</Button>
@@ -231,7 +231,7 @@ export function CardDemoSmallSize() {
 				<p>The card component supports a size prop that can be set to &quot;sm&quot; for a more compact appearance.</p>
 			</CardContent>
 			<CardFooter>
-				<Button variant="outline" size="sm" className="w-full">
+				<Button variant="outline" size="default" className="w-full">
 					Action
 				</Button>
 			</CardFooter>
@@ -260,7 +260,7 @@ export function CardDemoWithAction() {
 				<CardTitle>Card with Action</CardTitle>
 				<CardDescription>This card has an action button in the header</CardDescription>
 				<CardAction>
-					<Button variant="outline" size="sm">
+					<Button variant="outline" size="default">
 						Edit
 					</Button>
 				</CardAction>
@@ -290,7 +290,7 @@ export function CardDemoWithImageSmall() {
 				<CardDescription>A stunning view that captures the essence of natural beauty.</CardDescription>
 			</CardHeader>
 			<CardFooter>
-				<Button size="sm" className="w-full">
+				<Button size="default" className="w-full">
 					<PlusIcon data-icon="inline-start" />
 					Button
 				</Button>

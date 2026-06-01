@@ -100,7 +100,7 @@ function MonitorCard({
 			<AdminCardHeader
 				title={title}
 				action={
-					<Button aria-label={`More options for ${title}`} size="icon-sm" variant="ghost">
+					<Button aria-label={`More options for ${title}`} size="icon" variant="ghost">
 						<ADMIN_ICONS.showMoreHorizontal label="" color={token("color.icon.subtle")} />
 					</Button>
 				}

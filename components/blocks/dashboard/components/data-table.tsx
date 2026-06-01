@@ -482,7 +482,7 @@ export function DataTable({
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="outline" size="sm" />}
+              render={<Button variant="outline" size="default" />}
             >
               <ColumnsIcon />
               <span className="hidden lg:inline">Customize Columns</span>
@@ -513,7 +513,7 @@ export function DataTable({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="default">
             <PlusIcon />
             <span className="hidden lg:inline">Add Section</span>
           </Button>

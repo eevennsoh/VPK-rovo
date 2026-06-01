@@ -811,7 +811,7 @@ function ToolPermissionGroup({
 					</h3>
 					<Badge max={false}>{permissions.length}</Badge>
 				</div>
-				<Button disabled={!added} variant="ghost" size="sm" onClick={onCheckAll} type="button">
+				<Button disabled={!added} variant="ghost" size="default" onClick={onCheckAll} type="button">
 					Check all
 				</Button>
 			</div>

@@ -48,13 +48,13 @@ export default function SummaryFooter({
 			</div>
 
 			<div className="flex gap-1">
-				<Button aria-label="Helpful" size="icon-sm" variant="ghost" onClick={handleThumbsUp}>
+				<Button aria-label="Helpful" size="icon" variant="ghost" onClick={handleThumbsUp}>
 					<ThumbsUpIcon label="" size="small" />
 				</Button>
-				<Button aria-label="Not helpful" size="icon-sm" variant="ghost" onClick={handleThumbsDown}>
+				<Button aria-label="Not helpful" size="icon" variant="ghost" onClick={handleThumbsDown}>
 					<ThumbsDownIcon label="" size="small" />
 				</Button>
-				<Button aria-label="Copy" size="icon-sm" variant="ghost" onClick={handleCopy}>
+				<Button aria-label="Copy" size="icon" variant="ghost" onClick={handleCopy}>
 					<CopyIcon label="" size="small" />
 				</Button>
 			</div>

@@ -41,7 +41,7 @@ export default function RovoIllustrationDemo() {
 				<Button
 					aria-label="Replay illustration entrance animations"
 					onClick={() => setRefreshKey((currentKey) => currentKey + 1)}
-					size="sm"
+					size="default"
 					variant="outline"
 				>
 					<RefreshIcon label="" size="small" />

@@ -53,7 +53,7 @@ export function WorkItemLinks({ linkedItems }: WorkItemLinksProps) {
 			))}
 
 			<div className="pt-4 border-t border-border">
-				<Button variant="secondary" size="sm">
+				<Button variant="secondary" size="default">
 					<AddIcon label="" size="small" />
 					Link issue
 				</Button>

@@ -130,7 +130,7 @@ export function PersonalGraphSourcePicker({
 				className="rounded-full border-border bg-surface px-4 text-text shadow-none hover:bg-surface-hovered disabled:border-transparent disabled:bg-bg-disabled disabled:text-text-disabled [&_svg]:text-icon-subtle"
 				disabled={isBusy}
 				onClick={onPickVault}
-				size="sm"
+				size="default"
 				variant="outline"
 			>
 				<PixelVaultIcon />
@@ -144,7 +144,7 @@ export function PersonalGraphSourcePicker({
 				onClick={onPickTwg}
 				onMouseEnter={() => setIsTwgHovered(true)}
 				onMouseLeave={() => setIsTwgHovered(false)}
-				size="sm"
+				size="default"
 				variant="outline"
 			>
 				<TWGLoader

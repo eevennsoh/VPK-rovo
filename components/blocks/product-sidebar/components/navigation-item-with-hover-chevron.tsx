@@ -85,7 +85,7 @@ export function NavigationItemWithHoverChevron({
 				>
 					<Button
 						aria-label="Add"
-						size="icon-sm"
+						size="icon"
 						variant="ghost"
 						onClick={(e) => {
 							e.stopPropagation();
@@ -95,7 +95,7 @@ export function NavigationItemWithHoverChevron({
 					</Button>
 					<Button
 						aria-label="More"
-						size="icon-sm"
+						size="icon"
 						variant="ghost"
 						onClick={(e) => {
 							e.stopPropagation();

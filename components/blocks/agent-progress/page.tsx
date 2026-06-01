@@ -159,7 +159,7 @@ function TaskGroupRow({
 					{onRetry ? (
 						<Button
 							variant="ghost"
-							size="icon-xs"
+							size="icon-compact"
 							className="size-6 rounded-sm text-icon-subtle hover:text-icon"
 							disabled={isRetrying}
 							aria-label={retryLabel}

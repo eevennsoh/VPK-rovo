@@ -52,7 +52,7 @@ export default function SourceCard({ source }: Readonly<SourceCardProps>) {
 						<ConfluenceIcon size="xsmall" label="Confluence" />
 						<span className="text-xs text-text-subtle">{source.type}</span>
 					</div>
-					<Button size="sm" variant="secondary">
+					<Button size="default" variant="secondary">
 						Open preview
 					</Button>
 				</div>

@@ -48,10 +48,10 @@ export function ProgressIndicatorDemoInteraction() {
 		<div className="flex flex-col items-center gap-4">
 			<ProgressIndicator steps={total} currentStep={step} />
 			<div className="flex gap-2">
-				<Button variant="outline" size="sm" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
+				<Button variant="outline" size="default" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
 					Previous
 				</Button>
-				<Button variant="outline" size="sm" onClick={() => setStep((s) => Math.min(total - 1, s + 1))} disabled={step === total - 1}>
+				<Button variant="outline" size="default" onClick={() => setStep((s) => Math.min(total - 1, s + 1))} disabled={step === total - 1}>
 					Next
 				</Button>
 			</div>

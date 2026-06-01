@@ -40,7 +40,7 @@ export default function NotFound() {
 				className="no-underline hover:no-underline visited:text-primary-foreground active:text-primary-foreground"
 				nativeButton={false}
 				render={<Link href="/" />}
-				size="lg"
+				size="default"
 			>
 				Go home
 			</Button>

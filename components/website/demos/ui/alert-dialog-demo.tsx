@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 export default function AlertDialogDemo() {
 	return (
 		<AlertDialog>
-			<AlertDialogTrigger render={<Button variant="outline" size="sm" />}>
+			<AlertDialogTrigger render={<Button variant="outline" size="default" />}>
 				Delete
 			</AlertDialogTrigger>
 			<AlertDialogContent>

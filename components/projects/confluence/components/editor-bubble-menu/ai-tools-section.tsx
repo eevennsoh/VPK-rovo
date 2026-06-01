@@ -17,13 +17,13 @@ export function AIToolsSection(): React.ReactElement {
 			}}
 		>
 			<div className="flex items-center">
-				<Button className="gap-2" size="sm" variant="ghost">
+				<Button className="gap-2" size="default" variant="ghost">
 					<RovoIcon label="Rovo" size="xxsmall" />
 					Ask Rovo
 					<ChevronDownIcon label="" size="small" />
 				</Button>
 
-				<Button className="gap-2" size="sm" variant="ghost">
+				<Button className="gap-2" size="default" variant="ghost">
 					<MagicWandIcon label="" size="small" />
 					Improve writing
 				</Button>

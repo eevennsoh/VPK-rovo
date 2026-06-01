@@ -613,7 +613,7 @@ function SkillMoreMenu({ onLearnMore, skillName }: Readonly<{ onLearnMore: () =>
 						className="size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100"
 						onClick={stopPropagation}
 						onKeyDown={stopPropagation}
-						size="icon-xs"
+						size="icon-compact"
 						type="button"
 						variant="ghost"
 					>
@@ -663,18 +663,18 @@ function SelectedSkillsToolbar({
 			>
 				<Badge>{count}</Badge>
 				<span className="shrink-0 text-sm font-medium leading-5 text-text">selected</span>
-				<Button onClick={onAddSkills} size="sm" type="button">
+				<Button onClick={onAddSkills} size="default" type="button">
 					Add skills
 				</Button>
-				<Button onClick={onCreateShareLink} size="sm" type="button" variant="ghost">
+				<Button onClick={onCreateShareLink} size="default" type="button" variant="ghost">
 					<LinkIcon label="" />
 					Create link to share
 				</Button>
-				<Button onClick={onFavoriteSkills} size="sm" type="button" variant="ghost">
+				<Button onClick={onFavoriteSkills} size="default" type="button" variant="ghost">
 					<StarUnstarredIcon label="" />
 					Favorite
 				</Button>
-				<Button onClick={onDownloadSkills} size="sm" type="button" variant="ghost">
+				<Button onClick={onDownloadSkills} size="default" type="button" variant="ghost">
 					<DownloadIcon label="" />
 					Download
 				</Button>

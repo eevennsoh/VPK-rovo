@@ -82,7 +82,7 @@ export type ArtifactCloseProps = ComponentProps<typeof Button>;
 export const ArtifactClose = ({
   className,
   children,
-  size = "sm",
+  size = "default",
   variant = "ghost",
   ...props
 }: ArtifactCloseProps) => (
@@ -140,7 +140,7 @@ export const ArtifactAction = ({
   icon: Icon,
   children,
   className,
-  size = "sm",
+  size = "default",
   variant = "ghost",
   ...props
 }: ArtifactActionProps) => {
@@ -370,7 +370,7 @@ export function ArtifactCard({
 							<Button
 								aria-label={resolvedOpenLabel}
 								onClick={handleOpen}
-								size="xs"
+								size="compact"
 								type="button"
 								variant="outline"
 							>
@@ -502,7 +502,7 @@ function PendingAnnotationPopover({
 				</div>
 				<Button
 					onClick={onDismissSelection}
-					size="icon-xs"
+					size="icon-compact"
 					type="button"
 					variant="ghost"
 				>
@@ -525,7 +525,7 @@ function PendingAnnotationPopover({
 				<div className="flex items-center gap-2">
 					<Button
 						onClick={onDismissSelection}
-						size="sm"
+						size="default"
 						type="button"
 						variant="ghost"
 					>
@@ -534,7 +534,7 @@ function PendingAnnotationPopover({
 					<Button
 						disabled={commentDraft.trim().length === 0}
 						onClick={handleSubmitComment}
-						size="sm"
+						size="default"
 						type="button"
 					>
 						Add note
@@ -572,7 +572,7 @@ export function ArtifactAnnotationLayer({
 						"pointer-events-auto absolute size-7 rounded-full border border-border-selected bg-background px-0 text-[11px] font-semibold text-text shadow-sm",
 					)}
 					onClick={() => onRemoveAnnotation?.(annotation.id)}
-					size="icon-sm"
+					size="icon"
 					style={getAnnotationPinStyle(annotation.position)}
 					title={`Remove annotation #${annotation.index}: ${annotation.comment}`}
 					type="button"
@@ -719,7 +719,7 @@ function ArtifactVersionHistoryPanel({
 				))}
 			</div>
 			<div className="border-border border-t px-3 py-3">
-				<Button size="sm" type="button" variant="outline" className="w-full">
+				<Button size="default" type="button" variant="outline" className="w-full">
 					Show earlier versions
 				</Button>
 			</div>
@@ -879,7 +879,7 @@ export function ArtifactPanel({
 											aria-label="Version history"
 											aria-pressed={shouldShowVersionHistory ? true : undefined}
 											onClick={() => setVersionHistoryOpen((value) => !value)}
-											size="icon-sm"
+											size="icon"
 											type="button"
 											variant="ghost"
 										>
@@ -895,7 +895,7 @@ export function ArtifactPanel({
 					<Button
 						disabled={isStreaming}
 						onClick={() => onModeChange(mode === "preview" ? "edit" : "preview")}
-						size="icon-sm"
+						size="icon"
 						type="button"
 						variant="ghost"
 					>
@@ -907,7 +907,7 @@ export function ArtifactPanel({
 							aria-pressed={cursorMode}
 							disabled={isAnnotateDisabled}
 							onClick={() => onCursorModeChange?.(!cursorMode)}
-							size="icon-sm"
+							size="icon"
 							title="Dev-only annotation mode for the current artifact viewer surface."
 							type="button"
 							variant="ghost"
@@ -918,7 +918,7 @@ export function ArtifactPanel({
 					) : null}
 					<Button
 						onClick={() => void navigator.clipboard.writeText(previewContent)}
-						size="icon-sm"
+						size="icon"
 						type="button"
 						variant="ghost"
 					>
@@ -928,14 +928,14 @@ export function ArtifactPanel({
 					<Button
 						disabled={isStreaming}
 						onClick={() => void onDelete()}
-						size="icon-sm"
+						size="icon"
 						type="button"
 						variant="ghost"
 					>
 						<span className="sr-only">Delete artifact</span>
 						<Trash2Icon className="size-4" />
 					</Button>
-					<Button onClick={onClose} size="icon-sm" type="button" variant="ghost">
+					<Button onClick={onClose} size="icon" type="button" variant="ghost">
 						<span className="sr-only">Close artifact</span>
 						<XIcon className="size-4" />
 					</Button>
@@ -954,7 +954,7 @@ export function ArtifactPanel({
 							<p className="text-text-subtle text-xs">
 								Saving creates a new local version for this artifact.
 							</p>
-							<Button onClick={() => void onSave()} size="sm" type="button">
+							<Button onClick={() => void onSave()} size="default" type="button">
 								<SaveIcon className="size-4" />
 								Save version
 							</Button>
@@ -1001,7 +1001,7 @@ export function ArtifactPanel({
 					<Button
 						disabled={isStreaming}
 						onClick={() => onApplyAnnotations(annotations)}
-						size="sm"
+						size="default"
 						type="button"
 					>
 						Apply all

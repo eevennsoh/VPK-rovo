@@ -604,7 +604,7 @@ export function AudioPlayerSpeedButtonGroup({
         <Button
           key={speed}
           variant={currentSpeed === speed ? "default" : "outline"}
-          size="sm"
+          size="default"
           onClick={() => player.setPlaybackRate(speed)}
           className="min-w-[50px] font-mono text-xs"
         >

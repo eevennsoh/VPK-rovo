@@ -19,10 +19,10 @@ export function ChildItemsSection() {
 						Subtasks
 					</Heading>
 					<div className="flex gap-2">
-						<Button aria-label="Manage" size="icon-sm" variant="ghost">
+						<Button aria-label="Manage" size="icon" variant="ghost">
 							<ShowMoreHorizontalIcon label="" size="small" />
 						</Button>
-						<Button aria-label="Add work item" size="icon-sm" variant="ghost">
+						<Button aria-label="Add work item" size="icon" variant="ghost">
 							<AddIcon label="" size="small" />
 						</Button>
 					</div>

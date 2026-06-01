@@ -19,7 +19,7 @@ test("CodeBlock exposes an explicit 12px size option", () => {
 	assert.match(SOURCE, /<CodeBlockBody[\s\S]*size=\{size\}[\s\S]*tokenized=\{tokenized\}/);
 	assert.doesNotMatch(SOURCE, /"block px-4"/);
 	assert.match(SOURCE, /group-data-\[size=sm\]:py-1/);
-	assert.equal((SOURCE.match(/size=\{codeBlockSize === "sm" \? "icon-xs" : "icon"\}/g) ?? []).length, 2);
+	assert.equal((SOURCE.match(/size=\{codeBlockSize === "sm" \? "icon-compact" : "icon"\}/g) ?? []).length, 2);
 });
 
 test("CodeBlock demos use the size prop for compact code text", () => {

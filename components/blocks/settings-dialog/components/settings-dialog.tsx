@@ -34,7 +34,7 @@ export function SettingsDialog() {
 	const [open, setOpen] = useState(true)
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger render={<Button size="sm" />}>Open Dialog</DialogTrigger>
+			<DialogTrigger render={<Button size="default" />}>Open Dialog</DialogTrigger>
 			<DialogContent className="overflow-hidden p-0 md:max-h-[500px] md:max-w-[700px] lg:max-w-[800px]">
 				<DialogTitle className="sr-only">Settings</DialogTitle>
 				<DialogDescription className="sr-only">

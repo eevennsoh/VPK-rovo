@@ -19,11 +19,11 @@ function ActivityFilters() {
 		>
 			<div className="flex gap-1">
 				{ACTIVITY_FILTERS.map((filter) => (
-					<Button key={filter} size="sm" variant={filter === "Comments" ? "secondary" : "ghost"}>
+					<Button key={filter} size="default" variant={filter === "Comments" ? "secondary" : "ghost"}>
 						{filter}
 					</Button>
 				))}
-				<Button aria-label="Reverse sort order" size="icon-sm" variant="ghost">
+				<Button aria-label="Reverse sort order" size="icon" variant="ghost">
 					<SortDescendingIcon label="" size="small" />
 				</Button>
 			</div>

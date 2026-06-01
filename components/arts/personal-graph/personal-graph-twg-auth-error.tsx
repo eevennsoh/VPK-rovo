@@ -42,7 +42,7 @@ export function PersonalGraphTwgAuthError({
 						aria-label="Copy twg login command"
 						className="rounded-full border-border bg-bg-neutral-subtle text-text shadow-none hover:bg-bg-neutral-subtle-hovered"
 						onClick={handleCopy}
-						size="sm"
+						size="default"
 						variant="outline"
 					>
 						{copied ? "Copied" : "Copy command"}
@@ -53,7 +53,7 @@ export function PersonalGraphTwgAuthError({
 						disabled={isRetrying}
 						isLoading={isRetrying}
 						onClick={onRetry}
-						size="sm"
+						size="default"
 					>
 						Retry
 					</Button>

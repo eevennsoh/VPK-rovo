@@ -35,7 +35,7 @@ function OrbPreview() {
 						onClick={() => {
 							setState(option.value);
 						}}
-						size="sm"
+						size="default"
 						variant={state === option.value ? "default" : "outline"}
 					>
 						{option.label}

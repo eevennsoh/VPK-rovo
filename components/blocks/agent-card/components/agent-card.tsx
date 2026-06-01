@@ -107,7 +107,7 @@ function AgentCard({
 								aria-label={resolvedSwapActionLabel}
 								className="size-6 rounded-md bg-surface p-0 text-icon-subtle"
 								onClick={onSwapAction}
-								size="icon-xs"
+								size="icon-compact"
 								type="button"
 								variant="outline"
 							>
@@ -117,7 +117,7 @@ function AgentCard({
 								aria-label={resolvedMoreActionLabel}
 								className="size-6 rounded-md bg-surface p-0 text-icon-subtle"
 								onClick={onMoreAction}
-								size="icon-xs"
+								size="icon-compact"
 								type="button"
 								variant="outline"
 							>

@@ -454,7 +454,7 @@ export function JobsSurfacePage() {
 											</div>
 											<div className="mt-3 flex flex-wrap items-center gap-2">
 												<Button
-													size="sm"
+													size="default"
 													variant="outline"
 													onClick={(event) => {
 														event.stopPropagation();
@@ -465,7 +465,7 @@ export function JobsSurfacePage() {
 													Run now
 												</Button>
 												<Button
-													size="sm"
+													size="default"
 													variant="ghost"
 													onClick={(event) => {
 														event.stopPropagation();
@@ -476,7 +476,7 @@ export function JobsSurfacePage() {
 													{job.status === "paused" ? "Resume" : "Pause"}
 												</Button>
 												<Button
-													size="sm"
+													size="default"
 													variant="ghost"
 													onClick={(event) => {
 														event.stopPropagation();

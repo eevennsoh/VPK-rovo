@@ -257,7 +257,7 @@ export function QueueDemoPromptQueue() {
 		return (
 			<div className="flex w-full max-w-sm flex-col items-center gap-3">
 				<p className="text-sm text-muted-foreground">Queue empty</p>
-				<Button variant="outline" size="sm" onClick={handleReset}>
+				<Button variant="outline" size="default" onClick={handleReset}>
 					Reset queue
 				</Button>
 			</div>

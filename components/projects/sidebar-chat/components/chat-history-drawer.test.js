@@ -21,7 +21,7 @@ test("compact chat history drawer wires thread actions to the shared rovo provid
 	assert.match(source, /<Empty width="narrow" className="gap-4 px-3 py-0">/u);
 	assert.match(source, /<EmptyTitle style=\{\{ font: token\("font\.heading\.small"\) \}\}>No recent chats yet<\/EmptyTitle>/u);
 	assert.match(source, /<EmptyDescription>[\s\S]*Start a new chat to see it here\./u);
-	assert.match(source, /<Button variant="outline" size="sm" onClick=\{handleNewChat\}>[\s\S]*New chat/u);
+	assert.match(source, /<Button variant="outline" size="default" onClick=\{handleNewChat\}>[\s\S]*New chat/u);
 	assert.doesNotMatch(source, /rounded-lg border border-border/u);
 });
 

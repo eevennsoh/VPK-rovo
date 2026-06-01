@@ -78,7 +78,7 @@ export function NodeDemoWithAction() {
 						<NodeTitle>API Call</NodeTitle>
 						<NodeDescription>Fetch external data</NodeDescription>
 						<NodeAction>
-							<Button variant="ghost" size="icon-sm" aria-label="Copy">
+							<Button variant="ghost" size="icon" aria-label="Copy">
 								<CopyIcon label="" />
 							</Button>
 						</NodeAction>

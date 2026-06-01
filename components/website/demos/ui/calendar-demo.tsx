@@ -197,7 +197,7 @@ export function CalendarDemoDatePickerWithDropdowns() {
 					<div className="flex gap-2 border-t p-2">
 						<Button
 							variant="outline"
-							size="sm"
+							size="default"
 							className="w-full"
 							onClick={() => setOpen(false)}
 						>
@@ -390,7 +390,7 @@ export function CalendarDemoWithPresets() {
 					<Button
 						key={preset.value}
 						variant="outline"
-						size="sm"
+						size="default"
 						className="flex-1"
 						onClick={() => {
 							const newDate = addDays(new Date(), preset.value);

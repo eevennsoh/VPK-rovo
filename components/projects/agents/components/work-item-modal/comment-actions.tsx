@@ -10,19 +10,19 @@ import ThumbsUpIcon from "@atlaskit/icon/core/thumbs-up";
 export function CommentActions() {
 	return (
 		<div className="mt-2 flex gap-2">
-			<Button aria-label="Reply" size="icon-sm" variant="ghost">
+			<Button aria-label="Reply" size="icon" variant="ghost">
 				<ReplyLeftIcon label="" size="small" />
 			</Button>
-			<Button aria-label="Thumbs up" size="icon-sm" variant="ghost">
+			<Button aria-label="Thumbs up" size="icon" variant="ghost">
 				<ThumbsUpIcon label="" size="small" />
 			</Button>
-			<Button aria-label="Add reaction" size="icon-sm" variant="ghost">
+			<Button aria-label="Add reaction" size="icon" variant="ghost">
 				<EmojiAddIcon label="" size="small" />
 			</Button>
-			<Button aria-label="Edit" size="icon-sm" variant="ghost">
+			<Button aria-label="Edit" size="icon" variant="ghost">
 				<EditIcon label="" size="small" />
 			</Button>
-			<Button aria-label="More actions" size="icon-sm" variant="ghost">
+			<Button aria-label="More actions" size="icon" variant="ghost">
 				<ShowMoreHorizontalIcon label="" size="small" />
 			</Button>
 		</div>

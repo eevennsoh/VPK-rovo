@@ -39,7 +39,7 @@ export default function SonnerDemo() {
 			<Toaster id={toasterId} />
 			<Button
 				variant="outline"
-				size="sm"
+				size="default"
 				onClick={() =>
 					showDemoToast({
 						title: "Event has been created",

@@ -32,8 +32,8 @@ export function PageHeaderDemoWithActions() {
 			description="Track and manage issues across your projects."
 			actions={
 				<>
-					<Button variant="outline" size="sm">Export</Button>
-					<Button size="sm">Create issue</Button>
+					<Button variant="outline" size="default">Export</Button>
+					<Button size="default">Create issue</Button>
 				</>
 			}
 		/>
@@ -54,7 +54,7 @@ export function PageHeaderDemoWithBreadcrumbs() {
 					<span className="text-text">Sprint board</span>
 				</nav>
 			}
-			actions={<Button size="sm">Complete sprint</Button>}
+			actions={<Button size="default">Complete sprint</Button>}
 		/>
 	);
 }

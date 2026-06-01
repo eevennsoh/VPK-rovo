@@ -123,7 +123,7 @@ export function MicSelectorDemoWithCheckmark() {
 export function MicSelectorDemoCompact() {
 	return (
 		<MicSelector>
-			<MicSelectorTrigger className="w-[200px]" size="sm">
+			<MicSelectorTrigger className="w-[200px]" size="default">
 				<MicSelectorValue />
 			</MicSelectorTrigger>
 			<MicSelectorContent>

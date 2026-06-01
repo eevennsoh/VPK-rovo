@@ -185,7 +185,7 @@ function ToolApprovalStateful({
 						aria-pressed={activeDecision?.approved === true}
 						disabled={isSubmitting}
 						onClick={() => void submitDecision(true)}
-						size="sm"
+						size="default"
 						type="button"
 						variant={activeDecision?.approved === true ? "default" : "outline"}
 					>
@@ -195,7 +195,7 @@ function ToolApprovalStateful({
 						aria-pressed={activeDecision?.approved === false}
 						disabled={isSubmitting}
 						onClick={() => void submitDecision(false)}
-						size="sm"
+						size="default"
 						type="button"
 						variant={activeDecision?.approved === false ? "destructive" : "outline"}
 					>
@@ -207,7 +207,7 @@ function ToolApprovalStateful({
 							<Button
 								disabled={isSubmitting || activeIndex === 0}
 								onClick={() => setActiveIndex((currentIndex) => Math.max(0, currentIndex - 1))}
-								size="sm"
+								size="default"
 								type="button"
 								variant="ghost"
 							>
@@ -216,7 +216,7 @@ function ToolApprovalStateful({
 							<Button
 								disabled={isSubmitting || activeIndex >= items.length - 1}
 								onClick={() => setActiveIndex((currentIndex) => Math.min(items.length - 1, currentIndex + 1))}
-								size="sm"
+								size="default"
 								type="button"
 								variant="ghost"
 							>

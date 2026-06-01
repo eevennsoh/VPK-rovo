@@ -64,7 +64,7 @@ export function RovoAppHermesMemoryBar({
 								aria-label="Dismiss memory activity"
 								className="-mr-1 -mt-1"
 								onClick={onDismiss}
-								size="icon-xs"
+								size="icon-compact"
 								type="button"
 								variant="ghost"
 							>
@@ -102,7 +102,7 @@ export function RovoAppHermesMemoryBar({
 					<div className="text-xs text-text-subtle">
 						Open the memory explorer to inspect graph links, canonical blocks, and exports.
 					</div>
-					<Button size="sm" type="button" onClick={onOpenMemories}>
+					<Button size="default" type="button" onClick={onOpenMemories}>
 						Open memories
 					</Button>
 				</CardFooter>

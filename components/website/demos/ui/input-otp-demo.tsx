@@ -135,7 +135,7 @@ export function InputOtpDemoForm() {
 							<FieldLabel htmlFor="otp-verification">
 								Verification code
 							</FieldLabel>
-							<Button variant="outline" size="xs">
+							<Button variant="outline" size="compact">
 								<RefreshCwIcon data-icon="inline-start" />
 								Resend Code
 							</Button>

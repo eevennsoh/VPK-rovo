@@ -24,7 +24,7 @@ export default function DocumentMetadata({
 		<div style={{ marginLeft: token("space.negative.100") }}>
 			<div className="flex items-center">
 				{/* Author Button */}
-				<Button size="sm" variant="ghost">
+				<Button size="default" variant="ghost">
 					<span
 						style={{
 							fontWeight: token("font.weight.regular"),
@@ -51,7 +51,7 @@ export default function DocumentMetadata({
 				</Button>
 
 				{/* Read Time Button */}
-				<Button className="gap-1.5" size="sm" variant="ghost">
+				<Button className="gap-1.5" size="default" variant="ghost">
 					<BookOpenIcon label="Read time" size="small" />
 					<span
 						style={{
@@ -64,7 +64,7 @@ export default function DocumentMetadata({
 				</Button>
 
 				{/* Add Emoji Button */}
-				<Button className="gap-1.5" size="sm" variant="ghost">
+				<Button className="gap-1.5" size="default" variant="ghost">
 					<EmojiAddIcon label="Add emoji" size="small" />
 					<span
 						style={{

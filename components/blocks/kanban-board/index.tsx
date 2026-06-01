@@ -219,7 +219,7 @@ function ColumnAgentAssignment({
 										)}
 										data-assigned={hasAssignedAgents || undefined}
 										data-open={open || undefined}
-										size={hasAssignedAgents ? "sm" : "icon"}
+										size={hasAssignedAgents ? "default" : "icon"}
 										variant="ghost"
 									/>
 								}
@@ -337,7 +337,7 @@ function BoardColumn({
 			</div>
 
 			<div style={{ paddingTop: token("space.100"), paddingBottom: "8px", paddingLeft: token("space.150") }}>
-				<Button className="gap-2" size="sm" variant="ghost">
+				<Button className="gap-2" size="default" variant="ghost">
 					<Icon render={<AddIcon label="" size="small" />} />
 					Create
 				</Button>
