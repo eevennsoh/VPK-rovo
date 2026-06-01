@@ -713,6 +713,27 @@
 	}
 }
 
+@utility scroll-mask-top {
+	--scroll-mask-fade-size: var(--ds-space-300);
+	--scroll-mask-scrollbar-width: 10px;
+	mask-image:
+		linear-gradient(to bottom, transparent 0, black var(--scroll-mask-fade-size), black 100%),
+		linear-gradient(black, black);
+	mask-position: 0 0, 100% 0;
+	mask-repeat: no-repeat, no-repeat;
+	mask-size:
+		calc(100% - var(--scroll-mask-scrollbar-width)) 100%,
+		var(--scroll-mask-scrollbar-width) 100%;
+	-webkit-mask-image:
+		linear-gradient(to bottom, transparent 0, black var(--scroll-mask-fade-size), black 100%),
+		linear-gradient(black, black);
+	-webkit-mask-position: 0 0, 100% 0;
+	-webkit-mask-repeat: no-repeat, no-repeat;
+	-webkit-mask-size:
+		calc(100% - var(--scroll-mask-scrollbar-width)) 100%,
+		var(--scroll-mask-scrollbar-width) 100%;
+}
+
 @utility cot-icon-wash {
 	color: color-mix(in srgb, var(--color-muted-foreground) 10%, white);
 	mask-image: linear-gradient(

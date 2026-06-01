@@ -14,6 +14,7 @@ export type AgentsDirectorySidebarGroup = AgentBrowserSidebarGroup;
 
 export interface AgentsDirectoryDialogProps {
 	agents: readonly AgentsDirectoryAgent[];
+	onCreateAgent?: () => void;
 	onSelectAgent?: (agent: AgentsDirectoryAgent) => void;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -26,6 +27,7 @@ const EMPTY_AGENTS_DIRECTORY_AGENTS: readonly AgentsDirectoryAgent[] = [];
 
 export function AgentsDirectoryDialog({
 	agents,
+	onCreateAgent,
 	onSelectAgent,
 	open,
 	onOpenChange,
@@ -43,6 +45,8 @@ export function AgentsDirectoryDialog({
 			open={open}
 			onOpenChange={onOpenChange}
 			title={title}
+			primaryActionLabel="New agent"
+			onPrimaryAction={onCreateAgent}
 			agents={directoryAgents}
 			onSelectAgent={onSelectAgent}
 			sidebarGroups={sidebarGroups}

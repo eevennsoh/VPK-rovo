@@ -47,9 +47,23 @@ test("Agents Directory close button sits in the dialog header", () => {
 	assert.match(source, /import CrossIcon from "@atlaskit\/icon\/core\/cross";/u);
 	assert.match(
 		source,
-		/<DialogContent[\s\S]*showCloseButton=\{false\}[\s\S]*<div className="flex items-center justify-between px-6 pt-6 pb-4">[\s\S]*<DialogTitle[\s\S]*\{title\}[\s\S]*<\/DialogTitle>[\s\S]*<DialogClose render=\{<Button variant="ghost" size="icon" \/>\}>[\s\S]*<CrossIcon label="" \/>[\s\S]*<span className="sr-only">Close<\/span>[\s\S]*<\/DialogClose>/u,
+		/<DialogContent[\s\S]*showCloseButton=\{false\}[\s\S]*<div className="flex items-center justify-between px-6 pt-6 pb-4">[\s\S]*<DialogTitle[\s\S]*\{title\}[\s\S]*<\/DialogTitle>[\s\S]*<div className="flex items-center gap-2">[\s\S]*<DialogClose render=\{<Button variant="ghost" size="icon" \/>\}>[\s\S]*<CrossIcon label="" \/>[\s\S]*<span className="sr-only">Close<\/span>[\s\S]*<\/DialogClose>/u,
 	);
 	assert.doesNotMatch(source, /className="absolute top-4 right-4"/u);
+});
+
+test("Agents Directory renders a New agent header action", () => {
+	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
+	const agentsDirectorySource = readProjectFile("components/blocks/agents-directory/components/agents-directory.tsx");
+	const detailsSource = readProjectFile("app/data/details/blocks.ts");
+
+	assert.match(source, /primaryActionLabel\?: string;/u);
+	assert.match(source, /onPrimaryAction\?: \(\) => void;/u);
+	assert.match(source, /primaryActionLabel \? \([\s\S]*<Button onClick=\{onPrimaryAction\} type="button">[\s\S]*\{primaryActionLabel\}/u);
+	assert.match(agentsDirectorySource, /onCreateAgent\?: \(\) => void;/u);
+	assert.match(agentsDirectorySource, /primaryActionLabel="New agent"/u);
+	assert.match(agentsDirectorySource, /onPrimaryAction=\{onCreateAgent\}/u);
+	assert.match(detailsSource, /name: "onCreateAgent"[\s\S]*Optional handler for the New agent action/u);
 });
 
 test("Agents Directory sidebar nav uses the shared SidebarNavItem primitive", () => {
@@ -91,10 +105,24 @@ test("Agents Directory uses independent column scrolling without extra content p
 	assert.match(source, /className="grid h-\[min\(800px,calc\(100svh-2rem\)\)\] max-h-\[calc\(100svh-2rem\)\] grid-rows-\[auto_minmax\(0,1fr\)\] gap-0 overflow-hidden p-0 sm:max-w-\[1200px\]"/u);
 	assert.doesNotMatch(source, /max-h-\[85vh\]/u);
 	assert.doesNotMatch(source, /className="grid max-h-\[800px\] grid-rows-\[auto_minmax\(0,1fr\)\] gap-0 p-0 sm:max-w-\[1200px\]"/u);
-	assert.match(source, /<div className="min-h-0 overflow-hidden px-6">/u);
-	assert.match(source, /<div className="grid h-full min-h-0 grid-cols-1 gap-8 md:grid-cols-\[220px_minmax\(0,1fr\)\]">/u);
-	assert.match(source, /<div className="-mx-4 flex min-h-0 min-w-0 flex-col gap-5 overflow-y-auto px-4 pt-2 pb-6">/u);
-	assert.match(source, /<nav aria-label="Agent categories" className="hidden h-full min-h-0 w-\[220px\] shrink-0 flex-col gap-5 overflow-y-auto pt-1 md:flex">/u);
+	assert.match(source, /<div className="min-h-0 overflow-hidden">/u);
+	assert.match(source, /<div className="grid h-full min-h-0 grid-cols-1 md:grid-cols-\[280px_minmax\(0,1fr\)\]">/u);
+	assert.match(source, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
+	assert.match(source, /const contentOverflow = useHasVerticalOverflow<HTMLDivElement>\(\);/u);
+	assert.match(source, /ref=\{contentOverflow\.ref\}/u);
+	assert.match(source, /"flex min-h-0 min-w-0 flex-col gap-5 overflow-y-auto px-6 pb-6 md:pl-4"/u);
+	assert.match(source, /contentOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"/u);
+	assert.match(source, /<nav aria-label="Agent categories" className="hidden min-h-0 w-\[280px\] shrink-0 flex-col gap-5 overflow-y-auto pl-6 md:flex">/u);
+	assert.doesNotMatch(source, /Agent categories" className="scroll-mask-top/u);
+	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /scrollHeight - element\.clientHeight > 1/u);
+	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /scrollTop > 1/u);
+	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /showTopScrollMask: hasVerticalOverflow && hasScrolledFromTop/u);
+	assert.match(readProjectFile("app/tailwind-theme.css"), /@utility scroll-mask-top/u);
+	assert.doesNotMatch(source, /overflow-y-auto px-6 pt-6 pb-6/u);
+	assert.doesNotMatch(source, /overflow-y-auto pl-6 pt-6/u);
+	assert.match(source, /<ul className="flex w-64 flex-col">/u);
+	assert.doesNotMatch(source, /<ul className="[^"]*gap-0\.5/u);
+	assert.match(source, /<div className="flex w-64 flex-col gap-1\.5">/u);
 	assert.match(source, /import \{ token \} from "@\/lib\/tokens";/u);
 	assert.match(
 		source,
@@ -170,6 +198,7 @@ test("Agents Directory cards render the shared CardDirectoryAgent with overlay e
 	// Cards are delegated to the shared ui-custom component — no inlined shell duplication.
 	assert.match(source, /import \{ CardDirectoryAgent \} from "@\/components\/ui-custom\/card-directory";/u);
 	assert.match(source, /<CardDirectoryAgent[\s\S]*avatarImageClassName=\{getDirectoryCardAvatarClassName\(agent\)\}/u);
+	assert.match(source, /className="hover:border-transparent"/u);
 	assert.match(source, /onSelect=\{onSelectAgent \? \(\) => onSelectAgent\(agent\) : undefined\}/u);
 	assert.doesNotMatch(source, /AgentDirectoryCard/u);
 	assert.doesNotMatch(source, /AGENT_CARD_OVERLAY_SHADOW/u);
@@ -186,9 +215,10 @@ test("Agents Directory cards render the shared CardDirectoryAgent with overlay e
 	const agentWrapper = readProjectFile("components/ui-custom/card-directory/card-directory-agent.tsx");
 
 	assert.match(interaction, /token\("elevation\.shadow\.overlay"\)/u);
-	assert.match(interaction, /scale: 1\.006/u);
+	assert.match(interaction, /boxShadow: OVERLAY_SHADOW/u);
+	assert.doesNotMatch(interaction, /scale: 1\.006/u);
 	assert.match(interaction, /type: "spring",[\s\S]*bounce: 0\.16,[\s\S]*visualDuration: 0\.22/u);
-	assert.match(shell, /group\/card flex h-full w-full flex-col gap-3 rounded-md border border-border bg-surface p-4/u);
+	assert.match(shell, /group\/card relative flex h-full w-full flex-col gap-3 rounded-md border border-border bg-surface p-4/u);
 	assert.match(shell, /focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring\/50/u);
 	assert.match(shell, /willChange: "transform"/u);
 	assert.match(shell, /role="button"[\s\S]*tabIndex=\{0\}[\s\S]*whileTap=\{tapAnimation\}/u);

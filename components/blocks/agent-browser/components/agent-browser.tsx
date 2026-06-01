@@ -14,7 +14,9 @@ import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { CardDirectoryAgent } from "@/components/ui-custom/card-directory";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { token } from "@/lib/tokens";
+import { cn } from "@/lib/utils";
 
 export interface AgentBrowserAgent {
 	id: string;
@@ -51,8 +53,10 @@ export interface AgentBrowserProps {
 }
 
 export interface AgentBrowserDialogProps extends AgentBrowserProps {
+	onPrimaryAction?: () => void;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	primaryActionLabel?: string;
 	title?: string;
 }
 
@@ -134,8 +138,10 @@ function getDirectoryCardAvatarClassName(agent: AgentBrowserAgent): string {
 }
 
 export function AgentBrowserDialog({
+	onPrimaryAction,
 	open,
 	onOpenChange,
+	primaryActionLabel,
 	title = "Browse agents",
 	...browserProps
 }: Readonly<AgentBrowserDialogProps>) {
@@ -149,12 +155,19 @@ export function AgentBrowserDialog({
 					<DialogTitle className="text-base font-medium leading-5 text-text">
 						{title}
 					</DialogTitle>
-					<DialogClose render={<Button variant="ghost" size="icon" />}>
-						<CrossIcon label="" />
-						<span className="sr-only">Close</span>
-					</DialogClose>
+					<div className="flex items-center gap-2">
+						{primaryActionLabel ? (
+							<Button onClick={onPrimaryAction} type="button">
+								{primaryActionLabel}
+							</Button>
+						) : null}
+						<DialogClose render={<Button variant="ghost" size="icon" />}>
+							<CrossIcon label="" />
+							<span className="sr-only">Close</span>
+						</DialogClose>
+					</div>
 				</div>
-				<div className="min-h-0 overflow-hidden px-6">
+				<div className="min-h-0 overflow-hidden">
 					<AgentBrowser {...browserProps} />
 				</div>
 			</DialogContent>
@@ -171,11 +184,12 @@ export function AgentBrowser({
 	const initialCategory = categories[0]?.id ?? "all";
 	const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
 	const [query, setQuery] = useState("");
+	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
 
 	const filtered = useMemo(() => filterByQuery(agents, query), [agents, query]);
 
 	return (
-		<div className="grid h-full min-h-0 grid-cols-1 gap-8 md:grid-cols-[220px_minmax(0,1fr)]">
+		<div className="grid h-full min-h-0 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
 			<DirectorySidebar
 				categories={categories}
 				activeCategory={activeCategory}
@@ -185,7 +199,13 @@ export function AgentBrowser({
 				onSelectAgent={onSelectAgent}
 			/>
 
-			<div className="-mx-4 flex min-h-0 min-w-0 flex-col gap-5 overflow-y-auto px-4 pt-2 pb-6">
+			<div
+				ref={contentOverflow.ref}
+				className={cn(
+					"flex min-h-0 min-w-0 flex-col gap-5 overflow-y-auto px-6 pb-6 md:pl-4",
+					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
+				)}
+			>
 				<InputGroup>
 					<InputGroupAddon>
 						<SearchIcon label="" />
@@ -236,8 +256,8 @@ function DirectorySidebar({
 	onSelectAgent,
 }: Readonly<DirectorySidebarProps>) {
 	return (
-		<nav aria-label="Agent categories" className="hidden h-full min-h-0 w-[220px] shrink-0 flex-col gap-5 overflow-y-auto pt-1 md:flex">
-			<ul className="flex flex-col gap-0.5">
+		<nav aria-label="Agent categories" className="hidden min-h-0 w-[280px] shrink-0 flex-col gap-5 overflow-y-auto pl-6 md:flex">
+			<ul className="flex w-64 flex-col">
 				{categories.map((category) => (
 					<SidebarPrimaryItem
 						key={category.id}
@@ -286,11 +306,11 @@ interface SidebarGroupProps {
 function SidebarGroup({ title, items, agents, onSelectAgent, showAll = false }: Readonly<SidebarGroupProps>) {
 	if (items.length === 0) return null;
 	return (
-		<div className="flex flex-col gap-1.5">
+		<div className="flex w-64 flex-col gap-1.5">
 			<p style={{ font: token("font.heading.xxsmall") }} className="px-1.5 text-text-subtlest">
 				{title}
 			</p>
-			<ul className="flex flex-col gap-0.5">
+			<ul className="flex flex-col">
 				{items.map((item) => {
 					const agent = agents.find((candidate) => candidate.id === item.id);
 					return (
@@ -360,6 +380,7 @@ function AgentSection({ agents, onSelectAgent }: Readonly<AgentSectionProps>) {
 								avatarImageClassName={getDirectoryCardAvatarClassName(agent)}
 								avatarSrc={agent.avatarSrc}
 								chatCount={syntheticChats(agent.id)}
+								className="hover:border-transparent"
 								description={agent.description}
 								feedbackCount={syntheticFeedback(agent.id)}
 								name={agent.name}
