@@ -11,6 +11,9 @@ import {
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
 } from "@/components/ui-custom/agent";
+import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
+import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
+import { useRovoChat } from "@/app/contexts";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { Lozenge } from "@/components/ui/lozenge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -154,6 +157,13 @@ export function RovoAppAgentConfigPanel({
 	const draft = entry.draftResult;
 	const shouldReduceMotion = useReducedMotion();
 	const profileId = entry.profile.id;
+
+	// Floating Rovo chat launcher for the agent config screen. studio surfaces
+	// suppress the floating button by default (the shell owns chat), so we render
+	// it with product="home" — product only gates visibility, it has no visual
+	// effect — and pair it with the RovoFloatingChat surface the button opens,
+	// mirroring the components/projects/rovo-button demo.
+	const { chatSurface } = useRovoChat();
 
 	const updateDraft = useCallback(
 		(patch: Partial<AgentResult>) => {
@@ -303,13 +313,14 @@ export function RovoAppAgentConfigPanel({
 	const agentAvatarSrc = entry.profile.avatarSrc;
 
 	return (
-		<motion.div
-			className={cn("flex h-full w-full flex-col overflow-hidden bg-surface", className)}
-			data-screen-assistant-target="studio-agent-config-panel"
-			initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
-			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.24, ease: [0, 0.4, 0, 1] }}
-		>
+		<>
+			<motion.div
+				className={cn("flex h-full w-full flex-col overflow-hidden bg-surface", className)}
+				data-screen-assistant-target="studio-agent-config-panel"
+				initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ duration: 0.24, ease: [0, 0.4, 0, 1] }}
+			>
 			<Agent className="flex min-h-0 flex-1 flex-col">
 				<Tabs
 					aria-label="Agent config views"
@@ -417,5 +428,12 @@ export function RovoAppAgentConfigPanel({
 				</Tabs>
 			</Agent>
 		</motion.div>
+			{chatSurface === null ? (
+				<FloatingRovoButton ariaLabel="Open Rovo chat" product="home" />
+			) : null}
+			<AnimatePresence>
+				{chatSurface === "floating" ? <RovoFloatingChat key="floating-chat" /> : null}
+			</AnimatePresence>
+		</>
 	);
 }
