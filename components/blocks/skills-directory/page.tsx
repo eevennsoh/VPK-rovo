@@ -3,25 +3,32 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { SkillsDirectoryDialog, type SkillsDirectoryAgent } from "@/components/blocks/skills-directory";
-import { DEMO_AGENT_BROWSER_AGENTS } from "@/components/blocks/agent-browser/data/demo-agents";
+import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/blocks/skills-directory";
 
-const DEMO_SESSION_AGENTS: readonly SkillsDirectoryAgent[] = [
+const DEMO_SESSION_SKILLS: readonly SkillsDirectorySkill[] = [
 	{
-		id: "workflow-synthesizer",
-		name: "Workflow Synthesizer",
-		byline: "Workflow design by Revenue Operations",
-		attributionKind: "team",
-		avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
-		description: "Turns scattered requests into durable operating workflows.",
+		id: "draft-release-notes",
+		name: "Draft release notes",
+		description: "Turn a list of merged changes into customer-ready release notes.",
+		icon: "edit",
+		iconColor: "text-blue-500",
+		publisher: "Atlassian",
+		publisherLogoSrc: "/1p/atlassian.svg",
+		starCount: 12,
+		viewCount: 410,
+		category: "software-development",
 	},
 	{
-		id: "research-brief-writer",
-		name: "Research Brief Writer",
-		byline: "Research synthesis by Alex Kim",
-		attributionKind: "person",
-		avatarSrc: "/avatar-agent/teamwork-agents/wildcard-3.svg",
-		description: "Condenses long research inputs into crisp team-ready briefs.",
+		id: "triage-incident",
+		name: "Triage incident",
+		description: "Gather signals, assign severity, and page the right responders.",
+		icon: "search",
+		iconColor: "text-red-500",
+		publisher: "Atlassian",
+		publisherLogoSrc: "/1p/atlassian.svg",
+		starCount: 18,
+		viewCount: 632,
+		category: "software-development",
 	},
 ];
 
@@ -30,12 +37,11 @@ export default function SkillsDirectoryPage() {
 
 	return (
 		<div className="flex min-h-screen items-center justify-center p-4">
-			<Button onClick={() => setOpen(true)}>Open skills directory</Button>
+			<Button onClick={() => setOpen(true)}>Browse skills</Button>
 			<SkillsDirectoryDialog
 				open={open}
 				onOpenChange={setOpen}
-				agents={DEMO_AGENT_BROWSER_AGENTS}
-				sessionAgents={DEMO_SESSION_AGENTS}
+				sessionSkills={DEMO_SESSION_SKILLS}
 			/>
 		</div>
 	);
