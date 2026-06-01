@@ -37,6 +37,20 @@ export function TagDemoRemovable() {
 	return <Tag onRemove={() => setVisible(false)}>Removable</Tag>;
 }
 
+export function TagDemoRemovableOverlay() {
+	const [tags, setTags] = useState(["Design", "Engineering", "Product marketing strategy"]);
+	if (tags.length === 0) return <p className="text-sm text-text-subtle">All tags removed</p>;
+	return (
+		<div className="flex flex-wrap items-center gap-2">
+			{tags.map((label) => (
+				<Tag key={label} removeVariant="overlay" maxWidth={140} onRemove={() => setTags((prev) => prev.filter((t) => t !== label))}>
+					{label}
+				</Tag>
+			))}
+		</div>
+	);
+}
+
 export function TagDemoVariants() {
 	return (
 		<div className="flex flex-wrap items-center gap-2">

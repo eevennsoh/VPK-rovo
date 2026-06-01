@@ -5891,6 +5891,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
           "Callback when remove button is clicked. Shows remove button when provided.",
       },
       {
+        name: "removeVariant",
+        type: '"inline" | "overlay"',
+        default: '"inline"',
+        description:
+          "How the remove control occupies space. 'inline' reserves space after the label; 'overlay' floats the X over the trailing edge on hover/focus behind a gradient that fades into the label, so the label keeps full width.",
+      },
+      {
         name: "maxWidth",
         type: "string | number",
         description: "Maximum width before truncating tag text.",
@@ -5902,6 +5909,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
         title: "Removable",
         description: "Tag with remove button.",
         demoSlug: "tag-demo-removable",
+      },
+      {
+        title: "Removable (overlay)",
+        description:
+          "Hover or focus a tag to reveal the remove button. It floats over the trailing edge behind a gradient instead of reserving space.",
+        demoSlug: "tag-demo-removable-overlay",
       },
       {
         title: "Variants",
