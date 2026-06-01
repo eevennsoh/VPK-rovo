@@ -226,7 +226,7 @@ function Tag({
 						onClick={handleRemoveClick}
 						data-slot="tag-remove-overlay-button"
 						className={cn(
-							"absolute end-[3px] top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center rounded-xs border-0 bg-transparent text-text opacity-0 transition-[opacity,background-color] duration-fast ease-out hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none",
+							"absolute end-px top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center rounded-xs border-0 bg-transparent text-text opacity-0 transition-[opacity,background-color] duration-fast ease-out hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none",
 							"pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100",
 						)}
 					>
