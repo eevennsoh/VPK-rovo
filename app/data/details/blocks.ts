@@ -335,23 +335,26 @@ const tools: ToolsDirectoryTool[] = [
 		],
 	},
 	"skills-directory": {
-		description: "Dialog-based “Browse skills” directory: a filterable left nav (All, My skills, Favourites, Category, By companies) beside a searchable grid of skill cards with publisher attribution and usage stats.",
+		description: "Skill-specific directory modal with multi-select cards, bulk selected-skill actions, and a learn-more detail view for each skill.",
 		importStatement: `import { SkillsDirectoryDialog } from "@/components/blocks/skills-directory";`,
 		usage: `import { SkillsDirectoryDialog } from "@/components/blocks/skills-directory";
 import type { SkillsDirectorySkill } from "@/components/blocks/skills-directory";
 
 const skills: SkillsDirectorySkill[] = [
   {
-    id: "create-page",
-    name: "Create page",
-    description: "Create a new formatted, rich text document or page in Confluence.",
-    icon: "page",
-    iconColor: "text-blue-500",
-    publisher: "Atlassian",
-    publisherLogoSrc: "/1p/atlassian.svg",
+    id: "design-landing-page",
+    name: "Design landing page",
+    description: "Create high-converting, visually distinctive landing pages.",
+    icon: "paint-palette",
+    iconColor: "text-purple-500",
+    publisherName: "By you",
+    publisherAvatarSrc: "/avatar-human/maia-ma.png",
+    categoryId: "content-communication",
+    companyId: "you",
     starCount: 38,
     viewCount: 6273,
-    category: "content-communication",
+    tools: [{ id: "tool-1", name: "Tool1", icon: "page" }],
+    instructions: "# Design landing page\\n\\nCreate a distinctive landing page.",
   },
 ];
 
@@ -359,8 +362,10 @@ const skills: SkillsDirectorySkill[] = [
   open={open}
   onOpenChange={setOpen}
   skills={skills}
-  onSelectSkill={(skill) => console.log(skill.id)}
-  onNewSkill={() => console.log("new skill")}
+  defaultSelectedSkillIds={["design-landing-page"]}
+  onSelectedSkillIdsChange={(skillIds) => console.log(skillIds)}
+  onAddSkills={(skillIds) => console.log("add", skillIds)}
+  onCreateSkill={() => console.log("new skill")}
 />`,
 		demoLayout: { previewHeight: "fixed" },
 		props: [
@@ -373,6 +378,16 @@ const skills: SkillsDirectorySkill[] = [
 				name: "sessionSkills",
 				type: "readonly SkillsDirectorySkill[]",
 				description: "Runtime-created skills appended after the catalog.",
+			},
+			{
+				name: "selectedSkillIds",
+				type: "readonly string[]",
+				description: "Controlled multi-select state for selected skill cards.",
+			},
+			{
+				name: "defaultSelectedSkillIds",
+				type: "readonly string[]",
+				description: "Initial uncontrolled selected skill ids.",
 			},
 			{
 				name: "open",
@@ -389,27 +404,67 @@ const skills: SkillsDirectorySkill[] = [
 			{
 				name: "onSelectSkill",
 				type: "(skill: SkillsDirectorySkill) => void",
-				description: "Called when a skill card or favourite sidebar entry is selected.",
+				description: "Called when a skill card toggles selection.",
 			},
 			{
-				name: "onNewSkill",
+				name: "onSelectedSkillIdsChange",
+				type: "(skillIds: readonly string[]) => void",
+				description: "Called whenever the selected skill ids change.",
+			},
+			{
+				name: "onAddSkills",
+				type: "(skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => void",
+				description: "Called by the selected-skills toolbar Add skills action.",
+			},
+			{
+				name: "onCreateShareLink",
+				type: "(skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => void",
+				description: "Called by the selected-skills toolbar share action.",
+			},
+			{
+				name: "onFavoriteSkills",
+				type: "(skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => void",
+				description: "Called by the selected-skills toolbar favorite action.",
+			},
+			{
+				name: "onDownloadSkills",
+				type: "(skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => void",
+				description: "Called by the selected-skills toolbar download action.",
+			},
+			{
+				name: "onOpenSkill",
+				type: "(skill: SkillsDirectorySkill) => void",
+				description: "Called by the skill info page Open split button.",
+			},
+			{
+				name: "onTryInChat",
+				type: "(skill: SkillsDirectorySkill) => void",
+				description: "Called by the skill info page Try in chat action.",
+			},
+			{
+				name: "onCreateSkill",
 				type: "() => void",
-				description: "Called by the header “New skill” primary button.",
+				description: "Called by the New skill button.",
 			},
 			{
 				name: "primaryItems",
 				type: "readonly SkillsDirectoryPrimaryItem[]",
-				description: "Sectionless nav rows above the first group (All, My skills).",
+				description: "Sectionless nav rows above the category group (All skills, Favorite skills, Your skills).",
 			},
 			{
 				name: "sidebarGroups",
 				type: "readonly SkillsDirectorySidebarGroup[]",
-				description: "Optional left-nav grouping override. Defaults to the Browse skills grouping.",
+				description: "Optional left-nav grouping override. Defaults to Category and By companies groups.",
 			},
 			{
 				name: "title",
 				type: "string",
-				description: "Optional dialog title. Defaults to “Browse skills”.",
+				description: "Optional dialog title. Defaults to “Browse all”.",
+			},
+			{
+				name: "agents / sessionAgents / onSelectAgent",
+				type: "compatibility aliases",
+				description: "Legacy Agents Directory-style props are still accepted and normalized into skill records.",
 			},
 		],
 	},
