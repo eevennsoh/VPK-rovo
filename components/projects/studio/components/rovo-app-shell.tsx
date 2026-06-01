@@ -771,7 +771,7 @@ function HomeStarterHeroTile({
 									animated={false}
 									className="justify-start"
 									iconSize="md"
-									maxVisible={6}
+									maxVisible={hero.sources.length}
 									sources={hero.sources}
 								/>
 							</div>

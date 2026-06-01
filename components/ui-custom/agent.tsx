@@ -894,8 +894,8 @@ export const AgentConfigFields = memo(
 							value={config.name ?? ""}
 							placeholder="Untitled agent"
 							editButtonLabel="Edit agent name"
-							readViewClassName="h-auto px-0 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"
-							inputProps={{ className: "h-auto border-2 px-0 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" }}
+							readViewClassName="-mx-2 h-auto px-2 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"
+							inputProps={{ className: "-mx-2 h-auto border-2 px-2 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" }}
 							onConfirm={(value) => onTextChange?.("name", value)}
 						/>
 						<div
@@ -907,8 +907,8 @@ export const AgentConfigFields = memo(
 								placeholder="Add a description"
 								editButtonLabel="Edit agent description"
 								multiline
-								readViewClassName="px-0"
-								textareaProps={{ rows: 1, className: "min-h-10 bg-bg-neutral-subtle px-0 focus:border-2 focus:border-ring focus-visible:border-2 focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-[variant=default]:border-transparent data-[variant=default]:focus:border-ring data-[variant=default]:focus-visible:border-ring" }}
+								readViewClassName="-mx-2 px-2"
+								textareaProps={{ rows: 1, className: "-mx-2 min-h-10 bg-bg-neutral-subtle px-2 focus:border-2 focus:border-ring focus-visible:border-2 focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-[variant=default]:border-transparent data-[variant=default]:focus:border-ring data-[variant=default]:focus-visible:border-ring" }}
 								onConfirm={(value) => onTextChange?.("description", value)}
 							/>
 						</div>
