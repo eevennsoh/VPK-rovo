@@ -153,7 +153,7 @@ export function AgentDemoEmpty() {
 	);
 }
 
-export function AgentDemoCompact() {
+export function AgentDemoCompactFilled() {
 	const {
 		appendListItem,
 		config,
@@ -163,7 +163,7 @@ export function AgentDemoCompact() {
 	} = useAgentDemoConfig(filledAgentConfig);
 
 	return (
-		<Agent className="mx-auto min-h-[852px] w-full max-w-[960px]">
+		<Agent className="mx-auto min-h-[852px] w-full max-w-[720px]">
 			<AgentHeader
 				name={config.name?.trim() || "Untitled agent"}
 				model="Draft"
@@ -171,8 +171,36 @@ export function AgentDemoCompact() {
 			<AgentContent>
 				<AgentConfigFields
 					config={config}
-					idPrefix="agent-demo-compact"
-					layout="compact"
+					idPrefix="agent-demo-compact-filled"
+					onTextChange={handleTextChange}
+					onListItemChange={updateListItem}
+					onRemoveListItem={removeListItem}
+					onAppendListItem={appendListItem}
+				/>
+			</AgentContent>
+		</Agent>
+	);
+}
+
+export function AgentDemoCompactEmpty() {
+	const {
+		appendListItem,
+		config,
+		handleTextChange,
+		removeListItem,
+		updateListItem,
+	} = useAgentDemoConfig(emptyAgentConfig);
+
+	return (
+		<Agent className="mx-auto min-h-[852px] w-full max-w-[720px]">
+			<AgentHeader
+				name={config.name?.trim() || "Customer Insights"}
+				model="Draft"
+			/>
+			<AgentContent>
+				<AgentConfigFields
+					config={config}
+					idPrefix="agent-demo-compact-empty"
 					onTextChange={handleTextChange}
 					onListItemChange={updateListItem}
 					onRemoveListItem={removeListItem}

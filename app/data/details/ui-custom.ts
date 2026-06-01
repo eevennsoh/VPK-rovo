@@ -816,7 +816,8 @@ import {
 		examples: [
 			{ title: "Filled agent", description: "Agent strategy surface after configuration fields have been populated.", demoSlug: "agent-demo-full" },
 			{ title: "Empty agent", description: "Default setup state with add tiles before details are populated.", demoSlug: "agent-demo-empty" },
-			{ title: "Compact", description: "Alternate compact layout for repositioning the agent setup elements.", demoSlug: "agent-demo-compact" },
+			{ title: "Compact filled", description: "Compact placeholder that currently duplicates the filled agent example.", demoSlug: "agent-demo-compact-filled" },
+			{ title: "Compact empty", description: "Compact placeholder that currently duplicates the empty agent example.", demoSlug: "agent-demo-compact-empty" },
 		],
 	},
 
