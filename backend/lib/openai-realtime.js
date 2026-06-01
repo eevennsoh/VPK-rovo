@@ -450,12 +450,26 @@ class RealtimeSession {
 			this._plannedCloseReason = null;
 			this._clearSessionMaintenanceTimers();
 			this._clearManualTurnTranscription();
-			this._log("REALTIME", `OpenAI WS closed: ${code} ${reason}`);
+			const reasonText = Buffer.isBuffer(reason)
+				? reason.toString("utf8")
+				: typeof reason === "string"
+					? reason
+					: "";
+			this._log("REALTIME", `OpenAI WS closed: ${code} ${reasonText}`);
 			this._state = SESSION_STATE.CLOSED;
 			if (plannedCloseReason === null) {
+				// Surface the upstream close code/reason so the real failure is
+				// actionable client-side. A bare "connection closed" hides the
+				// true cause (e.g. invalid model, auth rejection, rate limit).
+				const detail = reasonText ? `${code}: ${reasonText}` : String(code);
 				this._sendToClient({
 					type: "error",
-					error: { message: "OpenAI connection closed", code: "connection_closed" },
+					error: {
+						message: `OpenAI connection closed (${detail})`,
+						code: "connection_closed",
+						closeCode: code,
+						closeReason: reasonText || undefined,
+					},
 				});
 			}
 			// Close the client WebSocket so the browser's onclose handler
@@ -481,6 +495,38 @@ class RealtimeSession {
 			this._sendToClient({
 				type: "error",
 				error: { message: err.message, code: "connection_error" },
+			});
+		});
+
+		// Fired when OpenAI/the gateway rejects the WebSocket upgrade with a
+		// non-101 HTTP response (e.g. 401 auth, 404 unknown model, 429 rate
+		// limit). The response body carries the actionable reason, which the
+		// generic `error`/`close` events do not expose. We mark the close as
+		// planned so the close handler does not also emit a vaguer error.
+		this._openaiWs.on("unexpected-response", (_req, res) => {
+			let body = "";
+			res.on("data", (chunk) => {
+				if (body.length < 2_000) {
+					body += chunk.toString("utf8");
+				}
+			});
+			res.on("end", () => {
+				const statusCode = res.statusCode;
+				const detail = body.trim().slice(0, 500) || res.statusMessage || "";
+				this._plannedCloseReason = "upstream_rejected";
+				this._log(
+					"REALTIME",
+					`OpenAI rejected upgrade: HTTP ${statusCode} ${detail}`,
+				);
+				this._state = SESSION_STATE.CLOSED;
+				this._sendToClient({
+					type: "error",
+					error: {
+						message: `OpenAI rejected the Realtime connection (HTTP ${statusCode})${detail ? `: ${detail}` : ""}`,
+						code: "connection_error",
+						statusCode,
+					},
+				});
 			});
 		});
 	}
