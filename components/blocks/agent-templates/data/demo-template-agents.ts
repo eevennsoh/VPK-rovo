@@ -196,17 +196,23 @@ const SKILL_LABELS: Record<AgentTemplatesCategoryId, readonly string[]> = {
 
 const PICK_STEPS = [7, 11, 13, 17, 19] as const;
 const MAX_VISIBLE_TEMPLATE_COLLABORATORS = 4;
-const DEFAULT_CAPABILITY_ICONS = ["brief", "search", "review", "action", "check"] satisfies readonly NonNullable<CardDirectoryCapability["icon"]>[];
-const CAPABILITY_ICON_SEQUENCES = [
-	DEFAULT_CAPABILITY_ICONS,
-	["goal", "comment", "trend", "people", "clock"],
-	["search", "work", "brief", "draft", "action"],
-	["trend", "review", "people", "check", "goal"],
-	["comment", "search", "clock", "draft", "work"],
-	["work", "goal", "review", "brief", "check"],
-	["draft", "people", "trend", "action", "search"],
-	["clock", "brief", "comment", "goal", "review"],
-] satisfies readonly (readonly NonNullable<CardDirectoryCapability["icon"]>[])[];
+type CapabilityIcon = NonNullable<CardDirectoryCapability["icon"]>;
+// Each tab draws capability icons from its own themed, diverse pool, so the whole
+// tab reads differently from the others (planning vs insights vs operations vs
+// writing vs work management). Every pool holds nine icons; capability icons are
+// assigned by tab position in `withTabVariedCapabilityIcons` so no two cards in a
+// tab share the same set.
+const CATEGORY_CAPABILITY_ICONS: Record<AgentTemplatesCategoryId, readonly CapabilityIcon[]> = {
+	brainstorm: ["lightbulb", "compass", "roadmap", "scales", "target", "question", "discovery", "branch", "objective"],
+	analyze: ["trend", "chartBar", "chartPie", "dashboard", "data", "filter", "search", "pulse", "bubble"],
+	review: ["check", "shield", "alert", "queue", "onCall", "incident", "handoff", "support", "refresh"],
+	summarize: ["draft", "document", "quote", "translate", "megaphone", "text", "book", "highlight", "list"],
+	create: ["work", "board", "epic", "subtasks", "timeline", "calendar", "checklist", "dependency", "milestone"],
+};
+// Walking each nine-icon pool by a stride coprime with the pool size gives every
+// card a distinct, well-spread set: the five picks never repeat within a card, and
+// consecutive cards in a tab share at most one icon.
+const CAPABILITY_ICON_STRIDE = 2;
 
 const CATEGORY_CAPABILITY_DETAIL: Record<AgentTemplatesCategoryId, readonly [string, string]> = {
 	brainstorm: ["Compares options, confidence, constraints, and open questions", "Turns the strongest path into a facilitation-ready brief"],
@@ -285,16 +291,17 @@ function defaultCapabilities({
 	sources: readonly DemoTemplateSource[];
 }): readonly CardDirectoryCapability[] {
 	const seed = getTemplateSeed(`${categoryId}:${id}:capabilities`);
-	const icons = CAPABILITY_ICON_SEQUENCES[seed % CAPABILITY_ICON_SEQUENCES.length] ?? DEFAULT_CAPABILITY_ICONS;
 	const [categoryInsight, categoryOutput] = CATEGORY_CAPABILITY_DETAIL[categoryId];
 	const sourceLabel = sources[seed % sources.length]?.label ?? "trusted sources";
 
+	// Labels only — capability icons are assigned per tab position by
+	// `withTabVariedCapabilityIcons` so every card in a tab looks distinct.
 	return [
-		{ icon: icons[0], label: description.replace(/\.$/u, "") },
-		{ icon: icons[1], label: `Connects ${sourceLabel} context for ${name}` },
-		{ icon: icons[2], label: categoryInsight },
-		{ icon: icons[3], label: `Recommends next moves for ${name}` },
-		{ icon: icons[4], label: categoryOutput },
+		{ label: description.replace(/\.$/u, "") },
+		{ label: `Connects ${sourceLabel} context for ${name}` },
+		{ label: categoryInsight },
+		{ label: `Recommends next moves for ${name}` },
+		{ label: categoryOutput },
 	];
 }
 
@@ -383,9 +390,38 @@ function demoTemplateAgent({
 	};
 }
 
+/**
+ * Assigns capability icons by each agent's position within its tab. Walking the
+ * category's themed icon pool by a coprime stride gives every card a distinct,
+ * well-spread icon set — so within a tab no two tiles look alike, and the themed
+ * pools keep each tab visually different from the others.
+ */
+function withTabVariedCapabilityIcons(
+	agents: readonly AgentTemplatesAgent[],
+): readonly AgentTemplatesAgent[] {
+	const tabPosition = new Map<AgentTemplatesCategoryId, number>();
+
+	return agents.map((agent) => {
+		const { categoryId, capabilities } = agent;
+		if (!categoryId || !capabilities) return agent;
+
+		const pool = CATEGORY_CAPABILITY_ICONS[categoryId];
+		const start = tabPosition.get(categoryId) ?? 0;
+		tabPosition.set(categoryId, start + 1);
+
+		return {
+			...agent,
+			capabilities: capabilities.map((capability, row) => ({
+				...capability,
+				icon: pool[(start + row * CAPABILITY_ICON_STRIDE) % pool.length],
+			})),
+		};
+	});
+}
+
 // Demo data aligned to the Studio HomeStarterBento buckets. Each active tab
 // renders up to eight expanded card-directory agents from its matching category.
-export const DEMO_AGENT_TEMPLATES: readonly AgentTemplatesAgent[] = [
+export const DEMO_AGENT_TEMPLATES: readonly AgentTemplatesAgent[] = withTabVariedCapabilityIcons([
 	demoTemplateAgent({
 		id: "decision-director",
 		categoryId: "brainstorm",
@@ -889,7 +925,7 @@ export const DEMO_AGENT_TEMPLATES: readonly AgentTemplatesAgent[] = [
 		updated: "3 days ago",
 		peopleOffset: 3,
 	}),
-];
+]);
 
 // Kept as a separate export for the docs demo API; tab content now lives in the
 // category-aligned catalog above so every tab can cap at eight expanded cards.

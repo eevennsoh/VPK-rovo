@@ -14,6 +14,7 @@ const SKILL_SOURCE = read("card-directory-skill.tsx");
 const TOOL_SOURCE = read("card-directory-tool.tsx");
 const TEMPLATE_SOURCE = read("card-directory-template.tsx");
 const INDEX_SOURCE = read("index.ts");
+const SKILL_TAG_SOURCE = read(join("..", "skill-tag.tsx"));
 const AGENT_BROWSER_SOURCE = readFileSync(
 	join(__dirname, "..", "..", "blocks", "agent-browser", "components", "agent-browser.tsx"),
 	"utf8",
@@ -75,7 +76,13 @@ test("banner part draws the full-bleed cover and hexagon-outlined cover avatar",
 	assert.match(PARTS_SOURCE, /backgroundColor: coverColor/u);
 	assert.match(PARTS_SOURCE, /getBannerCoverColor/u);
 	assert.match(PARTS_SOURCE, /avatarBadge\?: ReactNode/u);
-	assert.match(PARTS_SOURCE, /shape="hexagon"/u);
+	// The cover avatar art is a full-bleed hexagon, rendered directly with the surface ring
+	// drawn over it and centered on the hexagon edge — NOT routed through the Avatar hexagon
+	// clip, whose square-viewBox geometry floated the outline off the edge in this non-square
+	// box. Art and stroke share one viewBox and default scaling so they stay flush.
+	assert.doesNotMatch(PARTS_SOURCE, /shape="hexagon"/u);
+	assert.match(PARTS_SOURCE, /group\/avatar absolute top-6 left-4 h-12 w-\[42px\]/u);
+	assert.match(PARTS_SOURCE, /data-size="xl"/u);
 	assert.match(PARTS_SOURCE, /stroke-surface/u);
 });
 
@@ -106,18 +113,26 @@ test("expanded agent variant adds a cover banner and scrollable capabilities to 
 	assert.match(AGENT_EXPANDED_SOURCE, /<CardDirectoryByline/u);
 });
 
-test("expanded agent variant uses project-avatar fallback for team badges", () => {
+test("expanded agent variant uses stable project-avatar fallbacks for team badges", () => {
 	assert.match(AGENT_EXPANDED_SOURCE, /<AvatarProjectBadge>/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /publisherLogoSrc \?\? "\/avatar-project\/group\.svg"/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /const PROJECT_BADGE_AVATAR_SRCS = \[/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /function getProjectBadgeAvatarSrc\(seed: string\)/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /getProjectBadgeAvatarSrc\(`\$\{publisher\}:\$\{name\}`\)/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /publisherLogoSrc \?\? projectBadgeAvatarSrc/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /\/avatar-project\/battery\.svg/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /\/avatar-project\/loom-record\.svg/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /\/avatar-project\/rocket\.svg/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /\/avatar-project\/science\.svg/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /\/avatar-project\/support-wrench\.svg/u);
 	assert.doesNotMatch(AGENT_EXPANDED_SOURCE, /publisherLogoSrc \?\? "\/1p\/rovo\.svg"/u);
+	assert.doesNotMatch(AGENT_EXPANDED_SOURCE, /publisherLogoSrc \?\? "\/avatar-project\/group\.svg"/u);
 });
 
 test("expanded agent variant renders Works with sources and Skills tags", () => {
 	assert.match(AGENT_EXPANDED_SOURCE, /TWGAppstack/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /<TWGAppstack animated=\{false\}/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /SkillTagGroup/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /SkillTagCount/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /const MAX_VISIBLE_SKILLS = 10/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /<SkillTagGroup maxRows=\{2\}>/u);
+	assert.doesNotMatch(AGENT_EXPANDED_SOURCE, /MAX_VISIBLE_SKILLS/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /maxVisible=\{8\}/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /label="Works with"/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /label="Skills"/u);
@@ -195,11 +210,19 @@ test("tool variant uses an app-logo tile with tool and teammate counts", () => {
 test("template variant renders Works with sources and Skills tags, no glow or stats", () => {
 	assert.match(TEMPLATE_SOURCE, /TWGAppstack/u);
 	assert.match(TEMPLATE_SOURCE, /animated=\{false\}/u);
-	assert.match(TEMPLATE_SOURCE, /SkillTagGroup/u);
+	assert.match(TEMPLATE_SOURCE, /<SkillTagGroup maxRows=\{2\}>/u);
 	assert.match(TEMPLATE_SOURCE, /label="Works with"/u);
 	assert.match(TEMPLATE_SOURCE, /label="Skills"/u);
 	assert.doesNotMatch(TEMPLATE_SOURCE, /CardGlow|card-glow/u);
 	assert.doesNotMatch(TEMPLATE_SOURCE, /StarUnstarredIcon|AiChatIcon/u);
+});
+
+test("skill tag group collapses wrapped rows into the overflow count", () => {
+	assert.match(SKILL_TAG_SOURCE, /maxRows\?: number/u);
+	assert.match(SKILL_TAG_SOURCE, /calculateVisibleSkillTagCount/u);
+	assert.match(SKILL_TAG_SOURCE, /<SkillTagCount count=\{hiddenCount\} \/>/u);
+	assert.match(SKILL_TAG_SOURCE, /ResizeObserver/u);
+	assert.match(SKILL_TAG_SOURCE, /data-slot="skill-tag-group-measure"/u);
 });
 
 test("barrel exports the shell, parts, and variant wrappers", () => {

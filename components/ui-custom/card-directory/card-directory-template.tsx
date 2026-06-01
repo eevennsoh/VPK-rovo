@@ -66,7 +66,7 @@ export function CardDirectoryTemplate({
 
 			{skills.length > 0 ? (
 				<CardDirectorySection label="Skills">
-					<SkillTagGroup>
+					<SkillTagGroup maxRows={2}>
 						{skills.map((skill) => (
 							<SkillTag color={skill.color ?? "default"} icon={skill.icon} key={skill.label}>
 								{skill.label}

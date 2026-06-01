@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { Lozenge } from "@/components/ui/lozenge";
+import { Tag } from "@/components/ui/tag";
 import { Tile } from "@/components/ui/tile";
 import { CheckIcon } from "@/components/ui/vpk-icons";
 import {
@@ -56,7 +57,7 @@ const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
 	"dev-agents": "#82B536",
 	"product-agents": "#BF63F3",
 	"service-agents": "#FFC716",
-	"strategy-agents": "#FF9F1A",
+	"strategy-agents": "#FCA700",
 	"teamwork-agents": DEFAULT_AGENT_PROFILE_COVER_COLOR,
 };
 
@@ -405,7 +406,7 @@ function AgentMissingConfigActions({
 
 function AgentSectionLabel({ children }: Readonly<{ children: ReactNode }>) {
 	return (
-		<div className="flex h-8 items-center text-xs font-semibold leading-4 text-text-subtlest">
+		<div className="flex min-h-5 items-center text-xs font-semibold leading-4 text-text-subtlest">
 			{children}
 		</div>
 	);
@@ -429,26 +430,37 @@ function getAgentTriggerItems(config: AgentConfigFormValue): readonly string[] {
 
 function AgentReferenceChip({ label }: Readonly<{ label: string }>) {
 	return (
-		<span className="inline-flex h-7 max-w-full items-center gap-1 rounded-md border border-border bg-surface px-1.5 text-sm leading-5 text-link">
-			<Icon
-				render={<PageIcon label="" size="small" />}
-				aria-hidden
-				className="shrink-0 text-icon-selected"
-			/>
-			<span className="min-w-0 truncate">{label}</span>
-		</span>
+		<Tag color="blue" elemBefore={<PageIcon label="" size="small" />}>
+			{label}
+		</Tag>
 	);
 }
 
 function AgentSkillChip({ label }: Readonly<{ label: string }>) {
 	return (
-		<SkillTag
-			color="teamwork"
-			icon={<CheckIcon size="small" />}
-			className="h-7 max-w-full text-sm leading-5"
-		>
+		<SkillTag color="teamwork" icon={<CheckIcon size="small" />}>
 			{label}
 		</SkillTag>
+	);
+}
+
+function AgentAddValueButton({
+	className,
+	label,
+	onClick,
+}: Readonly<{ className?: string; label: string; onClick?: () => void }>) {
+	return (
+		<button
+			type="button"
+			className={cn(
+				"inline-flex h-5 items-center gap-0.5 rounded-xs text-xs font-medium text-text-subtle transition-colors hover:text-text hover:underline focus-visible:text-text focus-visible:underline focus-visible:outline-none",
+				className
+			)}
+			onClick={onClick}
+		>
+			<span aria-hidden>+</span>
+			{label}
+		</button>
 	);
 }
 
@@ -458,27 +470,33 @@ interface AgentFilledSummaryRowProps {
 	variant?: "reference" | "skill";
 	agentFieldName?: string;
 	screenAssistantTargetId?: string;
+	addLabel?: string;
+	onAdd?: () => void;
 }
 
 function AgentFilledSummaryRow({
+	addLabel,
 	agentFieldName,
 	items,
 	label,
+	onAdd,
 	screenAssistantTargetId,
 	variant = "reference",
 }: Readonly<AgentFilledSummaryRowProps>) {
-	if (items.length === 0) {
+	const isEmpty = items.length === 0;
+
+	if (isEmpty && !addLabel) {
 		return null;
 	}
 
 	return (
 		<div
-			className="grid gap-x-5 gap-y-1 sm:grid-cols-[8rem_minmax(0,1fr)]"
+			className="group/agent-row -mx-2 grid items-center gap-x-5 gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:grid-cols-[8rem_minmax(0,1fr)]"
 			data-agent-field={agentFieldName}
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
 			<AgentSectionLabel>{label}</AgentSectionLabel>
-			<div className="flex min-h-8 min-w-0 flex-wrap items-center gap-1.5">
+			<div className="flex min-h-5 min-w-0 flex-wrap items-center gap-1.5">
 				{items.map((item, index) => (
 					variant === "skill" ? (
 						<AgentSkillChip key={`${label}-${item}-${index}`} label={item} />
@@ -486,6 +504,15 @@ function AgentFilledSummaryRow({
 						<AgentReferenceChip key={`${label}-${item}-${index}`} label={item} />
 					)
 				))}
+				{addLabel ? (
+					<AgentAddValueButton
+						className={isEmpty
+							? "-ml-2"
+							: "opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-focus-within/agent-row:opacity-100 focus-visible:opacity-100"}
+						label={addLabel}
+						onClick={onAdd}
+					/>
+				) : null}
 			</div>
 		</div>
 	);
@@ -493,11 +520,13 @@ function AgentFilledSummaryRow({
 
 interface AgentFilledConfigSummaryProps {
 	config: AgentConfigFormValue;
+	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	screenAssistantTargetPrefix?: string;
 }
 
 function AgentFilledConfigSummary({
 	config,
+	onAppendListItem,
 	screenAssistantTargetPrefix,
 }: Readonly<AgentFilledConfigSummaryProps>) {
 	const triggerItems = getAgentTriggerItems(config);
@@ -508,39 +537,47 @@ function AgentFilledConfigSummary({
 	const starterItems = getNonEmptyConfigItems(config.conversationStarters).slice(0, MAX_AGENT_CONVERSATION_STARTERS);
 
 	return (
-		<div className="space-y-2">
+		<div>
 			<AgentFilledSummaryRow
+				addLabel="Add"
 				agentFieldName="trigger"
 				items={triggerItems}
 				label="Triggers"
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
 			/>
 			<AgentFilledSummaryRow
+				addLabel="Add"
 				items={skillItems}
 				label="Skills"
 				variant="skill"
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined}
 			/>
 			<AgentFilledSummaryRow
+				addLabel="Add"
 				agentFieldName="tools"
 				items={toolItems}
 				label="Tools"
+				onAdd={() => onAppendListItem?.("tools")}
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
 			/>
 			<AgentFilledSummaryRow
+				addLabel="Add"
 				items={subagentItems}
 				label="Subagents"
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
 			/>
 			<AgentFilledSummaryRow
+				addLabel="Add"
 				items={knowledgeItems}
 				label="Knowledge"
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
 			/>
 			<AgentFilledSummaryRow
+				addLabel="Add"
 				agentFieldName="conversationStarters"
 				items={starterItems}
 				label="Conversation starters"
+				onAdd={() => onAppendListItem?.("conversationStarters")}
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:conversation-starters` : undefined}
 			/>
 		</div>
@@ -879,10 +916,6 @@ export const AgentConfigFields = memo(
 				{isFilledConfig ? (
 					<>
 						<AgentFilledConfigSummary
-							config={config}
-							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-						/>
-						<AgentMissingConfigActions
 							config={config}
 							onAppendListItem={onAppendListItem}
 							screenAssistantTargetPrefix={screenAssistantTargetPrefix}

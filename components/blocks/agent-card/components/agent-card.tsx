@@ -16,7 +16,7 @@ const AGENT_CATEGORY_BANNER_COLOR: Record<string, string> = {
 	"dev-agents": "#82B536",
 	"product-agents": "#BF63F3",
 	"service-agents": "#FFC716",
-	"strategy-agents": "#FF9F1A",
+	"strategy-agents": "#FCA700",
 	"teamwork-agents": "#1868DB",
 };
 

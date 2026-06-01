@@ -32,8 +32,6 @@ interface RichTextEditorProps
 	showToolbar?: boolean;
 	showBubbleMenu?: boolean;
 	showFloatingMenu?: boolean;
-	showCommentControl?: boolean;
-	showMoreControl?: boolean;
 	"aria-label"?: string;
 }
 
@@ -54,8 +52,6 @@ export function RichTextEditor({
 	showToolbar = true,
 	showBubbleMenu = true,
 	showFloatingMenu = false,
-	showCommentControl = true,
-	showMoreControl = true,
 	"aria-label": ariaLabel,
 	...props
 }: Readonly<RichTextEditorProps>) {
@@ -195,8 +191,6 @@ export function RichTextEditor({
 				<RichTextEditorToolbar
 					editor={editor}
 					endSlot={toolbarEndSlot}
-					showCommentControl={showCommentControl}
-					showMoreControl={showMoreControl}
 					isMarkdownMode={isMarkdownMode}
 					onToggleMarkdownMode={handleToggleMarkdownMode}
 					onMarkdownFormat={handleMarkdownFormat}
@@ -232,15 +226,11 @@ export function RichTextEditor({
 				{showBubbleMenu && editor && !isMarkdownMode ? (
 					<RichTextEditorBubbleMenu
 						editor={editor}
-						showCommentControl={showCommentControl}
-						showMoreControl={showMoreControl}
 					/>
 				) : null}
 				{showFloatingMenu && editor && !isMarkdownMode ? (
 					<RichTextEditorFloatingMenu
 						editor={editor}
-						showCommentControl={showCommentControl}
-						showMoreControl={showMoreControl}
 					/>
 				) : null}
 			</div>

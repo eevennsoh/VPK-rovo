@@ -8,7 +8,7 @@ import { Avatar, AvatarCompanyBadge, AvatarFallback, AvatarGroup, AvatarGroupCou
 import { Button } from "@/components/ui/button";
 import { AtlassianLogo } from "@/components/ui/logo";
 import { Separator } from "@/components/ui/separator";
-import { SkillTag, SkillTagCount, SkillTagGroup } from "@/components/ui-custom/skill-tag";
+import { SkillTag, SkillTagGroup } from "@/components/ui-custom/skill-tag";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +29,58 @@ import {
 import { type CardDirectoryTemplateSkill } from "./card-directory-template";
 
 const MAX_VISIBLE_COLLABORATORS = 4;
-const MAX_VISIBLE_SKILLS = 10;
+const PROJECT_BADGE_AVATAR_SRCS = [
+	"/avatar-project/apple.svg",
+	"/avatar-project/bank.svg",
+	"/avatar-project/battery.svg",
+	"/avatar-project/boat.svg",
+	"/avatar-project/book.svg",
+	"/avatar-project/canvas.svg",
+	"/avatar-project/cat.svg",
+	"/avatar-project/celebration.svg",
+	"/avatar-project/cloud.svg",
+	"/avatar-project/code.svg",
+	"/avatar-project/compass.svg",
+	"/avatar-project/connie-blog.svg",
+	"/avatar-project/gears.svg",
+	"/avatar-project/government.svg",
+	"/avatar-project/graduation.svg",
+	"/avatar-project/graph.svg",
+	"/avatar-project/group.svg",
+	"/avatar-project/hr-badge.svg",
+	"/avatar-project/id.svg",
+	"/avatar-project/it.svg",
+	"/avatar-project/launch-ship.svg",
+	"/avatar-project/life-ring.svg",
+	"/avatar-project/light-bulb.svg",
+	"/avatar-project/lightning.svg",
+	"/avatar-project/loom-record.svg",
+	"/avatar-project/loom-video.svg",
+	"/avatar-project/magnifying-glass.svg",
+	"/avatar-project/mail.svg",
+	"/avatar-project/map.svg",
+	"/avatar-project/megaphone.svg",
+	"/avatar-project/palm-tree.svg",
+	"/avatar-project/paper-airplane.svg",
+	"/avatar-project/pencil.svg",
+	"/avatar-project/phone.svg",
+	"/avatar-project/pin.svg",
+	"/avatar-project/plant.svg",
+	"/avatar-project/rocket.svg",
+	"/avatar-project/science.svg",
+	"/avatar-project/service-bell.svg",
+	"/avatar-project/shield.svg",
+	"/avatar-project/shopping-cart.svg",
+	"/avatar-project/star.svg",
+	"/avatar-project/stopwatch.svg",
+	"/avatar-project/store-bag.svg",
+	"/avatar-project/storefront.svg",
+	"/avatar-project/sun.svg",
+	"/avatar-project/support-wrench.svg",
+	"/avatar-project/tracking.svg",
+	"/avatar-project/unicorn.svg",
+	"/avatar-project/video.svg",
+] as const;
 const CARD_DIRECTORY_SCROLL_MASK_IMAGE = [
 	"linear-gradient(to bottom, transparent 0, black var(--scroll-mask-fade-size), black 100%)",
 	"linear-gradient(black, black)",
@@ -49,6 +100,16 @@ const CARD_DIRECTORY_SCROLL_MASK_STYLE = {
 	"--scroll-mask-fade-size": string;
 	"--scroll-mask-scrollbar-width": string;
 };
+
+function getProjectBadgeAvatarSrc(seed: string) {
+	let hash = 0;
+
+	for (let index = 0; index < seed.length; index += 1) {
+		hash = ((hash * 31) + seed.charCodeAt(index)) >>> 0;
+	}
+
+	return PROJECT_BADGE_AVATAR_SRCS[hash % PROJECT_BADGE_AVATAR_SRCS.length];
+}
 
 export interface CardDirectoryAgentExpandedProps {
 	name: string;
@@ -115,8 +176,6 @@ export function CardDirectoryAgentExpanded({
 	const showCollaborators = collaborators.length > 0;
 	const showFooter = showStats || showRating || showChats || showCollaborators;
 	const [bodyScrolled, setBodyScrolled] = useState(false);
-	const visibleSkills = skills.slice(0, MAX_VISIBLE_SKILLS);
-	const hiddenSkillCount = Math.max(skills.length - visibleSkills.length, 0);
 	const visibleCollaborators = collaborators.slice(0, MAX_VISIBLE_COLLABORATORS);
 	const hiddenCollaboratorCount =
 		Math.max(collaborators.length - MAX_VISIBLE_COLLABORATORS, 0) + (collaboratorOverflow ?? 0);
@@ -132,6 +191,7 @@ export function CardDirectoryAgentExpanded({
 			currentBodyScrolled === nextBodyScrolled ? currentBodyScrolled : nextBodyScrolled
 		));
 	}, []);
+	const projectBadgeAvatarSrc = getProjectBadgeAvatarSrc(`${publisher}:${name}`);
 	const avatarBadge = (() => {
 		if (attributionKind === "company") {
 			return (
@@ -155,7 +215,7 @@ export function CardDirectoryAgentExpanded({
 		if (attributionKind === "team") {
 			return (
 				<AvatarProjectBadge>
-					<img alt="" aria-hidden src={publisherLogoSrc ?? "/avatar-project/group.svg"} />
+					<img alt="" aria-hidden src={publisherLogoSrc ?? projectBadgeAvatarSrc} />
 				</AvatarProjectBadge>
 			);
 		}
@@ -204,13 +264,12 @@ export function CardDirectoryAgentExpanded({
 
 				{skills.length > 0 ? (
 					<CardDirectorySection label="Skills">
-						<SkillTagGroup>
-							{visibleSkills.map((skill) => (
+						<SkillTagGroup maxRows={2}>
+							{skills.map((skill) => (
 								<SkillTag color={skill.color ?? "default"} icon={skill.icon} key={skill.label}>
 									{skill.label}
 								</SkillTag>
 							))}
-							{hiddenSkillCount > 0 ? <SkillTagCount count={hiddenSkillCount} /> : null}
 						</SkillTagGroup>
 					</CardDirectorySection>
 				) : null}

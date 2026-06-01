@@ -9,13 +9,11 @@ import AlignTextCenterIcon from "@atlaskit/icon/core/align-text-center";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AlignTextRightIcon from "@atlaskit/icon/core/align-text-right";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import CommentIcon from "@atlaskit/icon/core/comment";
 import LinkIcon from "@atlaskit/icon/core/link";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import ListNumberedIcon from "@atlaskit/icon/core/list-numbered";
 import MarkdownIcon from "@atlaskit/icon/core/markdown";
 import QuotationMarkIcon from "@atlaskit/icon/core/quotation-mark";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import TextIcon from "@atlaskit/icon/core/text";
 import TextBoldIcon from "@atlaskit/icon/core/text-bold";
 import TextItalicIcon from "@atlaskit/icon/core/text-italic";
@@ -51,8 +49,6 @@ interface RichTextEditorToolbarProps {
 	controlsClassName?: string;
 	leadingSlot?: ReactNode;
 	endSlot?: ReactNode;
-	showCommentControl?: boolean;
-	showMoreControl?: boolean;
 	isMarkdownMode?: boolean;
 	onToggleMarkdownMode?: () => void;
 	onMarkdownFormat?: (kind: MarkdownFormatKind) => void;
@@ -61,15 +57,11 @@ interface RichTextEditorToolbarProps {
 interface RichTextEditorBubbleMenuProps {
 	editor: Editor;
 	leadingSlot?: ReactNode;
-	showCommentControl?: boolean;
-	showMoreControl?: boolean;
 }
 
 interface RichTextEditorFloatingMenuProps {
 	editor: Editor;
 	leadingSlot?: ReactNode;
-	showCommentControl?: boolean;
-	showMoreControl?: boolean;
 }
 
 interface DropdownMenuItemProps {
@@ -134,7 +126,7 @@ function DropdownMenuContainer({
 	return (
 		<div
 			className={cn(
-				"absolute top-full z-50 mt-1 min-w-52 rounded-lg bg-popover p-1 text-popover-foreground shadow-xl",
+				"absolute top-full z-50 mt-1 min-w-52 rounded-lg bg-popover p-1 text-popover-foreground shadow-2xl",
 				align === "right" ? "right-0" : "left-0"
 			)}
 		>
@@ -217,8 +209,6 @@ export function RichTextEditorToolbar({
 	controlsClassName,
 	leadingSlot,
 	endSlot,
-	showCommentControl = true,
-	showMoreControl = true,
 	isMarkdownMode = false,
 	onToggleMarkdownMode,
 	onMarkdownFormat,
@@ -230,12 +220,16 @@ export function RichTextEditorToolbar({
 		[]
 	);
 	const alignment = getCurrentAlignment(editor);
-	// Alignment and comments have no raw-Markdown equivalent, so they stay disabled
-	// in source mode. Every other control rewrites the textarea selection instead.
+	// Alignment has no raw-Markdown equivalent, so it stays disabled in source
+	// mode. Every other control rewrites the textarea selection instead.
 	const markdownUnsupported = isMarkdownMode;
-	const actionValue = [
-		...(!isMarkdownMode && editor.isActive("link") ? ["link"] : []),
-		...(isMarkdownMode ? ["markdown"] : []),
+	const formattingValue = [
+		...(!isMarkdownMode && editor.isActive("bold") ? ["bold"] : []),
+		...(openDropdown === "formatting" ? ["formatting"] : []),
+	];
+	const listValue = [
+		...(!isMarkdownMode && editor.isActive("bulletList") ? ["bulletList"] : []),
+		...(openDropdown === "list" ? ["list"] : []),
 	];
 
 	useEditorTransactionRerender(editor);
@@ -276,24 +270,43 @@ export function RichTextEditorToolbar({
 		closeDropdown();
 	}
 
-	function handleActionValueChange(next: string[]): void {
-		const linkActive = !isMarkdownMode && editor.isActive("link");
-		const linkNext = next.includes("link");
+	function handleFormattingValueChange(next: string[]): void {
+		const boldActive = !isMarkdownMode && editor.isActive("bold");
+		const boldNext = next.includes("bold");
 
-		if (linkNext !== linkActive) {
-			if (isMarkdownMode) {
-				onMarkdownFormat?.("link");
-			} else if (linkNext) {
-				addLink(editor);
-			} else {
-				editor.chain().focus().unsetLink().run();
-			}
+		if (boldNext !== boldActive) {
+			runFormat("bold", () => editor.chain().focus().toggleBold().run());
 		}
 
-		const markdownNext = next.includes("markdown");
+		const formattingNext = next.includes("formatting");
 
-		if (markdownNext !== isMarkdownMode) {
-			onToggleMarkdownMode?.();
+		if (formattingNext !== (openDropdown === "formatting")) {
+			toggleDropdown("formatting");
+		}
+	}
+
+	function handleListValueChange(next: string[]): void {
+		const bulletListActive = !isMarkdownMode && editor.isActive("bulletList");
+		const bulletListNext = next.includes("bulletList");
+
+		if (bulletListNext !== bulletListActive) {
+			runFormat("bulletList", () => editor.chain().focus().toggleBulletList().run());
+		}
+
+		const listNext = next.includes("list");
+
+		if (listNext !== (openDropdown === "list")) {
+			toggleDropdown("list");
+		}
+	}
+
+	function handleLinkPressedChange(pressed: boolean): void {
+		if (isMarkdownMode) {
+			onMarkdownFormat?.("link");
+		} else if (pressed) {
+			addLink(editor);
+		} else {
+			editor.chain().focus().unsetLink().run();
 		}
 	}
 
@@ -355,26 +368,26 @@ export function RichTextEditorToolbar({
 						) : null}
 					</div>
 
-					<div className="relative flex">
-						<Toggle
-							aria-label="Bold"
-							pressed={!isMarkdownMode && editor.isActive("bold")}
-							onPressedChange={() =>
-								runFormat("bold", () => editor.chain().focus().toggleBold().run())
-							}
+					<div className="relative">
+						<ToggleGroup
+							multiple
+							value={formattingValue}
+							onValueChange={handleFormattingValueChange}
 						>
-							<TextBoldIcon label="" size="small" />
-						</Toggle>
-						<Button
-							type="button"
-							aria-label="More formatting options"
-							aria-expanded={openDropdown === "formatting"}
-							size="icon"
-							variant="ghost"
-							onClick={() => toggleDropdown("formatting")}
-						>
-							<ChevronDownIcon label="" size="small" />
-						</Button>
+							<ToggleGroupItem
+								value="bold"
+								aria-label="Bold"
+							>
+								<TextBoldIcon label="" size="small" />
+							</ToggleGroupItem>
+							<ToggleGroupItem
+								value="formatting"
+								aria-label="More formatting options"
+								aria-expanded={openDropdown === "formatting"}
+							>
+								<ChevronDownIcon label="" size="small" />
+							</ToggleGroupItem>
+						</ToggleGroup>
 						{openDropdown === "formatting" ? (
 							<DropdownMenuContainer>
 								<DropdownMenuItem
@@ -408,26 +421,26 @@ export function RichTextEditorToolbar({
 						) : null}
 					</div>
 
-					<div className="relative flex">
-						<Toggle
-							aria-label="Bulleted list"
-							pressed={!isMarkdownMode && editor.isActive("bulletList")}
-							onPressedChange={() =>
-								runFormat("bulletList", () => editor.chain().focus().toggleBulletList().run())
-							}
+					<div className="relative">
+						<ToggleGroup
+							multiple
+							value={listValue}
+							onValueChange={handleListValueChange}
 						>
-							<ListBulletedIcon label="" size="small" />
-						</Toggle>
-						<Button
-							type="button"
-							aria-label="More list options"
-							aria-expanded={openDropdown === "list"}
-							size="icon"
-							variant="ghost"
-							onClick={() => toggleDropdown("list")}
-						>
-							<ChevronDownIcon label="" size="small" />
-						</Button>
+							<ToggleGroupItem
+								value="bulletList"
+								aria-label="Bulleted list"
+							>
+								<ListBulletedIcon label="" size="small" />
+							</ToggleGroupItem>
+							<ToggleGroupItem
+								value="list"
+								aria-label="More list options"
+								aria-expanded={openDropdown === "list"}
+							>
+								<ChevronDownIcon label="" size="small" />
+							</ToggleGroupItem>
+						</ToggleGroup>
 						{openDropdown === "list" ? (
 							<DropdownMenuContainer>
 								<DropdownMenuItem
@@ -488,53 +501,27 @@ export function RichTextEditorToolbar({
 						) : null}
 					</div>
 
-					<ToggleGroup
-						multiple
-						value={actionValue}
-						onValueChange={handleActionValueChange}
+					<Toggle
+						aria-label="Link"
+						pressed={!isMarkdownMode && editor.isActive("link")}
+						onPressedChange={handleLinkPressedChange}
 					>
-						<ToggleGroupItem
-							value="link"
-							aria-label="Link"
+						<LinkIcon label="" size="small" />
+					</Toggle>
+					{onToggleMarkdownMode ? (
+						<Toggle
+							aria-label={
+								isMarkdownMode
+									? "Show rendered editor"
+									: "Show Markdown source"
+							}
+							pressed={isMarkdownMode}
+							onPressedChange={() => onToggleMarkdownMode()}
 						>
-							<LinkIcon label="" size="small" />
-						</ToggleGroupItem>
-						{onToggleMarkdownMode ? (
-							<ToggleGroupItem
-								value="markdown"
-								aria-label={
-									isMarkdownMode
-										? "Show rendered editor"
-										: "Show Markdown source"
-								}
-							>
-								<MarkdownIcon label="" size="small" />
-							</ToggleGroupItem>
-						) : null}
-					</ToggleGroup>
-
-					{showCommentControl ? (
-						<Button
-							type="button"
-							className="gap-2"
-							variant="ghost"
-							disabled={markdownUnsupported}
-						>
-							<CommentIcon label="" size="small" />
-							Comment
-						</Button>
+							<MarkdownIcon label="" size="small" />
+						</Toggle>
 					) : null}
 
-					{showMoreControl ? (
-						<Button
-							type="button"
-							aria-label="More options"
-							size="icon"
-							variant="ghost"
-						>
-							<ShowMoreHorizontalIcon label="" size="small" />
-						</Button>
-					) : null}
 				</div>
 			</div>
 			{endSlot ? <div className="shrink-0">{endSlot}</div> : null}
@@ -545,8 +532,6 @@ export function RichTextEditorToolbar({
 export function RichTextEditorBubbleMenu({
 	editor,
 	leadingSlot,
-	showCommentControl,
-	showMoreControl,
 }: Readonly<RichTextEditorBubbleMenuProps>) {
 	return (
 		<BubbleMenu
@@ -559,8 +544,6 @@ export function RichTextEditorBubbleMenu({
 			<RichTextEditorToolbar
 				editor={editor}
 				leadingSlot={leadingSlot}
-				showCommentControl={showCommentControl}
-				showMoreControl={showMoreControl}
 				className="gap-0"
 				controlsClassName="px-2 py-1"
 			/>
@@ -571,8 +554,6 @@ export function RichTextEditorBubbleMenu({
 export function RichTextEditorFloatingMenu({
 	editor,
 	leadingSlot,
-	showCommentControl,
-	showMoreControl,
 }: Readonly<RichTextEditorFloatingMenuProps>) {
 	return (
 		<FloatingMenu
@@ -582,8 +563,6 @@ export function RichTextEditorFloatingMenu({
 			<RichTextEditorToolbar
 				editor={editor}
 				leadingSlot={leadingSlot}
-				showCommentControl={showCommentControl}
-				showMoreControl={showMoreControl}
 				className="gap-0"
 				controlsClassName="px-2 py-1"
 			/>
