@@ -231,11 +231,13 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /Add conversation starters/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /Teamwork Graph/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /Describe the agent’s role and what it should do/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /readViewClassName="-mx-2 h-auto px-2 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /inputProps=\{\{ className: "-mx-2 h-auto border-2 px-2 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /textareaProps=\{\{ rows: 1, className: "-mx-2 min-h-10 bg-bg-neutral-subtle px-2 focus:border-2 focus:border-ring focus-visible:border-2 focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-\[variant=default\]:border-transparent data-\[variant=default\]:focus:border-ring data-\[variant=default\]:focus-visible:border-ring" \}\}/u);
+	assert.match(UI_CUSTOM_AGENT_SOURCE, /layout\?: "default" \| "compact";/u);
+	assert.match(UI_CUSTOM_AGENT_SOURCE, /readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"/u);
+	assert.match(UI_CUSTOM_AGENT_SOURCE, /inputProps=\{\{ className: "h-auto border-2 px-1\.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u);
+	assert.match(UI_CUSTOM_AGENT_SOURCE, /textareaProps=\{\{ rows: 1, className: "min-h-10 border-2 bg-bg-neutral-subtle px-1\.5 focus:border-ring focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-\[variant=default\]:border-transparent data-\[variant=default\]:focus:border-ring data-\[variant=default\]:focus-visible:border-ring" \}\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentConfigFields/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /config=\{draft\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /layout="compact"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onTextChange=\{handleConfigTextChange\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Tabs, TabsContent, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);

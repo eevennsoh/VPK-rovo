@@ -414,6 +414,7 @@ export function RovoAppAgentConfigPanel({
 								config={draft}
 								avatarSrc={agentAvatarSrc}
 								idPrefix={`agent-${profileId}`}
+								layout="compact"
 								onTextChange={handleConfigTextChange}
 								onListItemChange={updateListItem}
 								onRemoveListItem={removeListItem}
