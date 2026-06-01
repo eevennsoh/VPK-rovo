@@ -3,6 +3,7 @@
 import * as React from "react"
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark"
 import CrossIcon from "@atlaskit/icon/core/cross"
+import { motion, type MotionProps } from "motion/react"
 
 import { Button } from "@/components/ui/button"
 import { Icon } from "@/components/ui/icon"
@@ -25,6 +26,7 @@ export interface InlineEditProps {
 	keepEditViewOpenOnBlur?: boolean
 	readViewFitContainerWidth?: boolean
 	readViewClassName?: string
+	readViewMotionProps?: Pick<MotionProps, "initial" | "animate" | "whileHover" | "whileFocus" | "transition">
 	startWithEditViewOpen?: boolean
 	editButtonLabel?: string
 	confirmButtonLabel?: string
@@ -70,6 +72,7 @@ function InlineEdit({
 	keepEditViewOpenOnBlur = false,
 	readViewFitContainerWidth = true,
 	readViewClassName,
+	readViewMotionProps,
 	startWithEditViewOpen = false,
 	editButtonLabel = "Edit value",
 	confirmButtonLabel = "Confirm changes",
@@ -181,7 +184,7 @@ function InlineEdit({
 						{label}
 					</span>
 				) : null}
-				<button
+				<motion.button
 					type="button"
 					aria-labelledby={label ? `${labelId} ${inputId}` : undefined}
 					aria-label={label ? undefined : editButtonLabel}
@@ -195,6 +198,7 @@ function InlineEdit({
 						"disabled:pointer-events-none disabled:bg-bg-disabled disabled:text-text-disabled",
 						readViewClassName
 					)}
+					{...readViewMotionProps}
 					onClick={beginEditing}
 				>
 					<span
@@ -203,7 +207,7 @@ function InlineEdit({
 					>
 						{value || placeholder}
 					</span>
-				</button>
+				</motion.button>
 				{ariaMessage ? <span className="sr-only">{ariaMessage}</span> : null}
 			</div>
 		)

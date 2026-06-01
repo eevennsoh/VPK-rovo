@@ -4,6 +4,10 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const AGENT_SOURCE = readFileSync(join(__dirname, "agent.tsx"), "utf8");
+const INLINE_EDIT_SOURCE = readFileSync(
+	join(__dirname, "..", "ui", "inline-edit.tsx"),
+	"utf8",
+);
 const AGENT_DEMO_SOURCE = readFileSync(
 	join(__dirname, "..", "website", "demos", "ui-custom", "agent-demo.tsx"),
 	"utf8",
@@ -111,15 +115,27 @@ test("Agent component page wires compact filled and empty placeholder variations
 });
 
 test("Agent profile inline edit fields align to the profile content edge", () => {
+	assert.match(INLINE_EDIT_SOURCE, /import \{ motion, type MotionProps \} from "motion\/react"/u);
+	assert.match(
+		INLINE_EDIT_SOURCE,
+		/readViewMotionProps\?: Pick<MotionProps, "initial" \| "animate" \| "whileHover" \| "whileFocus" \| "transition">/u,
+	);
+	assert.match(INLINE_EDIT_SOURCE, /<motion\.button[\s\S]*\{\.\.\.readViewMotionProps\}/u);
 	assert.match(
 		AGENT_SOURCE,
-		/readViewClassName="-mx-2 h-auto px-2 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"/u,
+		/const AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS = \{[\s\S]*whileHover: \{ paddingLeft: 8, paddingRight: 8 \},[\s\S]*whileFocus: \{ paddingLeft: 8, paddingRight: 8 \},[\s\S]*visualDuration: 0\.18/u,
 	);
+	assert.match(
+		AGENT_SOURCE,
+		/readViewClassName="h-auto px-0 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"/u,
+	);
+	assert.match(AGENT_SOURCE, /readViewMotionProps=\{AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS\}/u);
 	assert.match(
 		AGENT_SOURCE,
 		/inputProps=\{\{ className: "-mx-2 h-auto border-2 px-2 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u,
 	);
-	assert.match(AGENT_SOURCE, /readViewClassName="-mx-2 px-2"/u);
+	assert.match(AGENT_SOURCE, /readViewClassName="px-0"/u);
+	assert.doesNotMatch(AGENT_SOURCE, /readViewClassName="-mx-2/u);
 	assert.match(
 		AGENT_SOURCE,
 		/textareaProps=\{\{ rows: 1, className: "-mx-2 min-h-10 bg-bg-neutral-subtle px-2/u,
