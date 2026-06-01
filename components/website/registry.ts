@@ -5330,6 +5330,10 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/ui-custom/skill-tag-demo").then((mod) => ({ default: mod.SkillTagDemoInteractive })),
     { ssr: false },
   ),
+  "skill-tag-demo-removable": dynamic(
+    () => import("./demos/ui-custom/skill-tag-demo").then((mod) => ({ default: mod.SkillTagDemoRemovable })),
+    { ssr: false },
+  ),
   "skill-tag-demo-group": dynamic(
     () => import("./demos/ui-custom/skill-tag-demo").then((mod) => ({ default: mod.SkillTagDemoGroup })),
     { ssr: false },

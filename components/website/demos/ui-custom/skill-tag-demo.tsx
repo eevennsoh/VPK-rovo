@@ -101,6 +101,24 @@ export function SkillTagDemoInteractive() {
 	);
 }
 
+export function SkillTagDemoRemovable() {
+	return (
+		<div className="flex flex-wrap items-center gap-2">
+			<SkillTag icon={<SearchIcon label="" size="small" />} color="teamwork" onRemove={() => {}}>
+				Persistent remove
+			</SkillTag>
+			<SkillTag
+				icon={<AutomationIcon label="" size="small" />}
+				color="software"
+				onRemove={() => {}}
+				removeVariant="overlay"
+			>
+				Overlay remove
+			</SkillTag>
+		</div>
+	);
+}
+
 export function SkillTagDemoGroup() {
 	return (
 		<SkillTagGroup>

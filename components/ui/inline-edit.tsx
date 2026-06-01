@@ -26,7 +26,9 @@ export interface InlineEditProps {
 	keepEditViewOpenOnBlur?: boolean
 	readViewFitContainerWidth?: boolean
 	readViewClassName?: string
-	readViewMotionProps?: Pick<MotionProps, "initial" | "animate" | "whileHover" | "whileFocus" | "transition">
+	readViewMotionProps?: Pick<MotionProps, "initial" | "animate" | "whileHover" | "whileFocus" | "variants" | "transition">
+	readViewBackdropClassName?: string
+	readViewBackdropMotionProps?: Pick<MotionProps, "variants" | "transition">
 	startWithEditViewOpen?: boolean
 	editButtonLabel?: string
 	confirmButtonLabel?: string
@@ -73,6 +75,8 @@ function InlineEdit({
 	readViewFitContainerWidth = true,
 	readViewClassName,
 	readViewMotionProps,
+	readViewBackdropClassName,
+	readViewBackdropMotionProps,
 	startWithEditViewOpen = false,
 	editButtonLabel = "Edit value",
 	confirmButtonLabel = "Confirm changes",
@@ -86,6 +90,7 @@ function InlineEdit({
 	const [draft, setDraft] = React.useState(value)
 	const [error, setError] = React.useState<string>()
 	const [ariaMessage, setAriaMessage] = React.useState("")
+	const [shouldAnimateReadViewReturn, setShouldAnimateReadViewReturn] = React.useState(false)
 	const rootRef = React.useRef<HTMLDivElement>(null)
 	const inputRef = React.useRef<HTMLInputElement>(null)
 	const textareaRef = React.useRef<HTMLTextAreaElement>(null)
@@ -118,6 +123,7 @@ function InlineEdit({
 			setError(undefined)
 			setAriaMessage("Changes saved.")
 			onConfirm?.(nextValue)
+			setShouldAnimateReadViewReturn(true)
 			setEditing(false)
 			return true
 		},
@@ -140,6 +146,7 @@ function InlineEdit({
 		setDraft(value)
 		setError(undefined)
 		setAriaMessage("Changes discarded.")
+		setShouldAnimateReadViewReturn(true)
 		setEditing(false)
 		onCancel?.()
 	}, [onCancel, value])
@@ -177,6 +184,16 @@ function InlineEdit({
 	}
 
 	if (!editing) {
+		const readViewReturnInitial = shouldAnimateReadViewReturn
+			? (readViewMotionProps?.whileFocus ?? readViewMotionProps?.whileHover ?? readViewMotionProps?.initial)
+			: readViewMotionProps?.initial
+		const resolvedReadViewMotionProps = readViewMotionProps
+			? {
+					...readViewMotionProps,
+					initial: readViewReturnInitial,
+				}
+			: undefined
+
 		return (
 			<div data-slot="inline-edit" className={cn("flex w-full flex-col gap-1", className)}>
 				{label ? (
@@ -198,12 +215,20 @@ function InlineEdit({
 						"disabled:pointer-events-none disabled:bg-bg-disabled disabled:text-text-disabled",
 						readViewClassName
 					)}
-					{...readViewMotionProps}
+					{...resolvedReadViewMotionProps}
 					onClick={beginEditing}
 				>
+					{readViewBackdropClassName || readViewBackdropMotionProps ? (
+						<motion.span
+							aria-hidden="true"
+							data-slot="inline-edit-read-view-backdrop"
+							className={cn("pointer-events-none absolute rounded-[inherit]", readViewBackdropClassName)}
+							{...readViewBackdropMotionProps}
+						/>
+					) : null}
 					<span
 						id={inputId}
-						className={cn("min-w-0 flex-1", multiline ? "whitespace-pre-wrap" : "truncate", value ? "text-text" : "text-text-subtle")}
+						className={cn("relative min-w-0 flex-1", multiline ? "whitespace-pre-wrap" : "truncate", value ? "text-text" : "text-text-subtle")}
 					>
 						{value || placeholder}
 					</span>

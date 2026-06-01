@@ -7,6 +7,7 @@ import CrossIcon from "@atlaskit/icon/core/cross";
 import {
 	Agent,
 	AgentConfigFields,
+	type AgentConfigFormValue,
 	AgentHeader,
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
@@ -26,6 +27,7 @@ import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { cn } from "@/lib/utils";
 
 type AgentResult = RovoDataParts["agent-result"];
+type AgentResultConfigLists = AgentResult & Pick<AgentConfigFormValue, AgentConfigListFieldName>;
 export type AgentConfigView = "configure" | "test";
 
 interface RovoAppAgentConfigPanelProps {
@@ -183,41 +185,39 @@ export function RovoAppAgentConfigPanel({
 		[updateDraft],
 	);
 
-	const tools = useMemo<readonly string[]>(() => {
-		return Array.isArray(draft.tools) ? draft.tools : [];
-	}, [draft.tools]);
-
-	const conversationStarters = useMemo<readonly string[]>(() => {
-		return Array.isArray(draft.conversationStarters)
-			? draft.conversationStarters
-			: [];
-	}, [draft.conversationStarters]);
+	const getDraftList = useCallback(
+		(field: AgentConfigListFieldName): readonly string[] => {
+			const value = (draft as AgentResultConfigLists)[field];
+			return Array.isArray(value) ? value : [];
+		},
+		[draft],
+	);
 
 	const updateListItem = useCallback(
 		(field: AgentConfigListFieldName, index: number, value: string) => {
-			const current = field === "tools" ? tools : conversationStarters;
+			const current = getDraftList(field);
 			const next = [...current];
 			next[index] = value;
 			updateDraft({ [field]: next } as Partial<AgentResult>);
 		},
-		[conversationStarters, tools, updateDraft],
+		[getDraftList, updateDraft],
 	);
 
 	const removeListItem = useCallback(
 		(field: AgentConfigListFieldName, index: number) => {
-			const current = field === "tools" ? tools : conversationStarters;
+			const current = getDraftList(field);
 			const next = current.filter((_, itemIndex) => itemIndex !== index);
 			updateDraft({ [field]: next } as Partial<AgentResult>);
 		},
-		[conversationStarters, tools, updateDraft],
+		[getDraftList, updateDraft],
 	);
 
 	const appendListItem = useCallback(
 		(field: AgentConfigListFieldName) => {
-			const current = field === "tools" ? tools : conversationStarters;
+			const current = getDraftList(field);
 			updateDraft({ [field]: [...current, ""] } as Partial<AgentResult>);
 		},
-		[conversationStarters, tools, updateDraft],
+		[getDraftList, updateDraft],
 	);
 
 	const hasUpdateChanges = useMemo(() => {

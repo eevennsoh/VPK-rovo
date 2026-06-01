@@ -25,6 +25,7 @@ import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 
 import { useClickOutside } from "@/components/hooks/use-click-outside";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,8 @@ import type { MarkdownFormatKind } from "./markdown-format";
 type DropdownType = "textStyle" | "formatting" | "list" | "align" | null;
 type TextStyleType = "normal" | "h1" | "h2" | "h3" | "quote";
 type Alignment = "left" | "center" | "right";
+
+const TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME = "*:data-[slot=toggle-group-item]:w-6! *:data-[slot=toggle-group-item]:min-w-6! *:data-[slot=toggle-group-item]:px-0!";
 
 const TEXT_STYLE_TO_MARKDOWN: Record<TextStyleType, MarkdownFormatKind> = {
 	normal: "normal",
@@ -201,6 +204,15 @@ function addLink(editor: Editor): void {
 	if (url) {
 		editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
 	}
+}
+
+function ToolbarSeparator() {
+	return (
+		<Separator
+			orientation="vertical"
+			className="mx-2 h-4 self-center bg-border data-vertical:self-center"
+		/>
+	);
 }
 
 export function RichTextEditorToolbar({
@@ -372,6 +384,7 @@ export function RichTextEditorToolbar({
 						<ToggleGroup
 							multiple
 							value={formattingValue}
+							className={TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME}
 							onValueChange={handleFormattingValueChange}
 						>
 							<ToggleGroupItem
@@ -421,10 +434,13 @@ export function RichTextEditorToolbar({
 						) : null}
 					</div>
 
+					<ToolbarSeparator />
+
 					<div className="relative">
 						<ToggleGroup
 							multiple
 							value={listValue}
+							className={TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME}
 							onValueChange={handleListValueChange}
 						>
 							<ToggleGroupItem
@@ -464,6 +480,8 @@ export function RichTextEditorToolbar({
 							</DropdownMenuContainer>
 						) : null}
 					</div>
+
+					<ToolbarSeparator />
 
 					<div className="relative">
 						<Button
