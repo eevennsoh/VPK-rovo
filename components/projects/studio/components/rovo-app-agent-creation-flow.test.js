@@ -160,7 +160,7 @@ test("Studio home bento keeps tab auto-cycle active after manual tab selection",
 });
 
 test("Studio chat header is hidden until a chat is active", () => {
-	assert.match(SHELL_SOURCE, /const shouldShowChatHeader = visibleMessages\.length > 0 \|\| hasActiveThreadRun \|\| chat\.isStreaming;/u);
+	assert.match(SHELL_SOURCE, /const shouldShowChatHeader = !shouldShowAgentConfigPane && \(visibleMessages\.length > 0 \|\| hasActiveThreadRun \|\| chat\.isStreaming\);/u);
 	assert.match(SHELL_SOURCE, /\{shouldShowChatHeader \? \(\s*<RovoAppHeader/u);
 	assert.doesNotMatch(SHELL_SOURCE, /\n\t\t\t\t<RovoAppHeader/u);
 });
