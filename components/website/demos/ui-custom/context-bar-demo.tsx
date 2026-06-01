@@ -1,15 +1,20 @@
 "use client";
 
+import BranchIcon from "@atlaskit/icon/core/branch";
 import EditIcon from "@atlaskit/icon/core/edit";
 import LocationIcon from "@atlaskit/icon/core/location";
 import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
+import PullRequestIcon from "@atlaskit/icon/core/pull-request";
 import { useState } from "react";
 import {
+	AnimatedCollapsibleContextBar,
 	CollapsibleContextBar,
 	ContextBar,
 	ContextBarLead,
+	ContextBarPill,
 	ContextBarTag,
+	ContextBarTagGroup,
 	ContextBarTrigger,
 } from "@/components/ui-custom/context-bar";
 import { token } from "@/lib/tokens";
@@ -87,6 +92,89 @@ export function ContextBarDemoTrigger() {
 			>
 				Edit agent
 			</ContextBarTrigger>
+		</div>
+	);
+}
+
+export function ContextBarDemoAnimated() {
+	return (
+		<div className="w-full max-w-md p-8">
+			<AnimatedCollapsibleContextBar
+				collapsedIcon={<EditIcon color={token("color.icon.subtle")} label="" size="small" />}
+				collapsedLabel="Edit agent"
+				defaultOpen={false}
+				dismissLabel="Close edit context"
+				lead={<EditIcon color={token("color.icon.subtle")} label="" size="small" />}
+				leadLabel="Edit:"
+				triggerAriaLabel="Edit agent: Research assistant"
+			>
+				<ContextBarTag
+					color="blue"
+					elemBefore={<PersonIcon color={token("color.icon.brand")} label="" size="small" />}
+					title="Research assistant"
+				>
+					Research assistant
+				</ContextBarTag>
+			</AnimatedCollapsibleContextBar>
+		</div>
+	);
+}
+
+export function ContextBarDemoMultiPill() {
+	const pills = [
+		{
+			id: "review",
+			content: (
+				<ContextBarPill>
+					Review{" "}
+					<span className="font-semibold text-green-500">+6</span>{" "}
+					<span className="font-semibold text-red-500">-3</span>
+				</ContextBarPill>
+			),
+		},
+		{
+			id: "move",
+			content: (
+				<ContextBarPill
+					icon={<LocationIcon color={token("color.icon.subtle")} label="" size="small" />}
+				>
+					Move to Local
+				</ContextBarPill>
+			),
+		},
+		{
+			id: "create-prs",
+			content: (
+				<ContextBarPill
+					icon={<PullRequestIcon color={token("color.icon.subtle")} label="" size="small" />}
+				>
+					Create PRs
+				</ContextBarPill>
+			),
+		},
+		{
+			id: "run-tests",
+			content: <ContextBarPill>Run tests</ContextBarPill>,
+		},
+		{
+			id: "new-branch",
+			content: (
+				<ContextBarPill
+					icon={<BranchIcon color={token("color.icon.subtle")} label="" size="small" />}
+				>
+					New branch
+				</ContextBarPill>
+			),
+		},
+		{
+			id: "share",
+			content: <ContextBarPill>Share link</ContextBarPill>,
+		},
+	];
+
+	return (
+		<div className="w-full max-w-md p-8">
+			<ContextBarTagGroup items={pills} overflowAriaLabel="Show more actions" />
 		</div>
 	);
 }

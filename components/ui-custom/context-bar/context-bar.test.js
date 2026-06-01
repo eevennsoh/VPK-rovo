@@ -29,6 +29,60 @@ async function loadContextBarHarness() {
 				}
 			`,
 		],
+		[
+			"@atlaskit/icon/core/show-more-horizontal",
+			`
+				import React from "react";
+				export default function ShowMoreHorizontalIcon(props) {
+					return React.createElement("svg", { "data-icon": "show-more-horizontal", "data-size": props.size });
+				}
+			`,
+		],
+		[
+			"motion/react",
+			`
+				import React from "react";
+				const MOTION_PROPS = new Set([
+					"layout", "initial", "animate", "exit", "transition",
+					"whileHover", "whileTap", "whileFocus", "variants", "drag",
+				]);
+				const handler = {
+					get(_target, tag) {
+						return function MotionComponent(props) {
+							const clean = {};
+							for (const key in props) {
+								if (key !== "children" && !MOTION_PROPS.has(key)) {
+									clean[key] = props[key];
+								}
+							}
+							return React.createElement(typeof tag === "string" ? tag : "div", clean, props.children);
+						};
+					},
+				};
+				export const motion = new Proxy({}, handler);
+				export function AnimatePresence(props) {
+					return React.createElement(React.Fragment, null, props.children);
+				}
+				export function MotionConfig(props) {
+					return React.createElement(React.Fragment, null, props.children);
+				}
+			`,
+		],
+		[
+			"@/components/ui/popover",
+			`
+				import React from "react";
+				export function Popover(props) {
+					return React.createElement(React.Fragment, null, props.children);
+				}
+				export function PopoverTrigger(props) {
+					return React.createElement("button", { ...props }, props.children);
+				}
+				export function PopoverContent(props) {
+					return React.createElement("div", { ...props }, props.children);
+				}
+			`,
+		],
 	]);
 
 	const result = await esbuild.build({
@@ -149,4 +203,40 @@ test("CollapsibleContextBar starts expanded and can collapse to a trigger", asyn
 	assert.match(collapsed, /data-context-bar-trigger/);
 	assert.match(collapsed, /Edit agent/);
 	assert.doesNotMatch(collapsed, /aria-label="Close it"/);
+});
+
+async function loadOverflowModule() {
+	const result = await esbuild.build({
+		entryPoints: [path.join(process.cwd(), "components/ui-custom/context-bar/overflow.ts")],
+		bundle: true,
+		format: "cjs",
+		platform: "node",
+		tsconfig: path.join(process.cwd(), "tsconfig.json"),
+		write: false,
+	});
+
+	return loadCjsModuleFromText(result.outputFiles[0].text);
+}
+
+test("computeContextBarOverflow shows everything when it all fits", async () => {
+	const { computeContextBarOverflow } = await loadOverflowModule();
+
+	// 3 items of 50px + 2 gaps of 8px = 166px, fits in 400px.
+	assert.equal(computeContextBarOverflow([50, 50, 50], 400, 32, 8), 3);
+});
+
+test("computeContextBarOverflow reserves room for the overflow button", async () => {
+	const { computeContextBarOverflow } = await loadOverflowModule();
+
+	// Items: 100,100,100,100 with gap 8 → full row 424px > 250px container, so an
+	// overflow button (32px) is required. Item 1: 100 + gap(8) + overflow(32) = 140 ≤ 250.
+	// Item 2: used 208 + gap(8) + overflow(32) = 248 ≤ 250. Item 3 would be 356 > 250.
+	assert.equal(computeContextBarOverflow([100, 100, 100, 100], 250, 32, 8), 2);
+});
+
+test("computeContextBarOverflow returns all items before measurement", async () => {
+	const { computeContextBarOverflow } = await loadOverflowModule();
+
+	assert.equal(computeContextBarOverflow([100, 100, 100], 0, 32, 8), 3);
+	assert.equal(computeContextBarOverflow([], 400, 32, 8), 0);
 });

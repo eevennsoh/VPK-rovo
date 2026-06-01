@@ -5662,6 +5662,20 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "context-bar-demo-animated": dynamic(
+    () =>
+      import("./demos/ui-custom/context-bar-demo").then((mod) => ({
+        default: mod.ContextBarDemoAnimated,
+      })),
+    { ssr: false },
+  ),
+  "context-bar-demo-multi-pill": dynamic(
+    () =>
+      import("./demos/ui-custom/context-bar-demo").then((mod) => ({
+        default: mod.ContextBarDemoMultiPill,
+      })),
+    { ssr: false },
+  ),
   "environment-variables-demo-with-copy": dynamic(
     () =>
       import("./demos/ui-custom/environment-variables-demo").then((mod) => ({
