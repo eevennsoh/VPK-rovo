@@ -131,7 +131,9 @@ test("expanded agent variant uses stable project-avatar fallbacks for team badge
 test("expanded agent variant renders Works with sources and Skills tags", () => {
 	assert.match(AGENT_EXPANDED_SOURCE, /TWGAppstack/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /<TWGAppstack animated=\{false\}/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /<SkillTagGroup maxRows=\{2\}>/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /const CARD_DIRECTORY_SKILLS_MAX_ROWS = 2/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /const CARD_DIRECTORY_SKILLS_GROUP_CLASS_NAME = "h-11 content-start overflow-hidden"/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /<SkillTagGroup className=\{CARD_DIRECTORY_SKILLS_GROUP_CLASS_NAME\} maxRows=\{CARD_DIRECTORY_SKILLS_MAX_ROWS\}>/u);
 	assert.doesNotMatch(AGENT_EXPANDED_SOURCE, /MAX_VISIBLE_SKILLS/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /maxVisible=\{8\}/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /label="Works with"/u);
