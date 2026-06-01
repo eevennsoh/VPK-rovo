@@ -428,9 +428,21 @@ function getAgentTriggerItems(config: AgentConfigFormValue): readonly string[] {
 	return trigger ? [trigger] : [];
 }
 
-function AgentReferenceChip({ label }: Readonly<{ label: string }>) {
+function AgentReferenceChip({ label, onRemove }: Readonly<{ label: string; onRemove?: () => void }>) {
 	return (
-		<Tag color="blue" elemBefore={<PageIcon label="" size="small" />}>
+		<Tag
+			color="blue"
+			elemBefore={<PageIcon label="" size="small" />}
+			onRemove={onRemove}
+			// Keep the remove button hidden until the tag is hovered or focused,
+			// so resting chips stay quiet. Targets Tag's internal `tag-after`
+			// slot via arbitrary variants since Tag owns that markup.
+			className={
+				onRemove
+					? "[&_[data-slot=tag-after]]:opacity-0 [&_[data-slot=tag-after]]:transition-opacity hover:[&_[data-slot=tag-after]]:opacity-100 focus-within:[&_[data-slot=tag-after]]:opacity-100"
+					: undefined
+			}
+		>
 			{label}
 		</Tag>
 	);
@@ -472,6 +484,7 @@ interface AgentFilledSummaryRowProps {
 	screenAssistantTargetId?: string;
 	addLabel?: string;
 	onAdd?: () => void;
+	onRemoveItem?: (index: number) => void;
 }
 
 function AgentFilledSummaryRow({
@@ -480,6 +493,7 @@ function AgentFilledSummaryRow({
 	items,
 	label,
 	onAdd,
+	onRemoveItem,
 	screenAssistantTargetId,
 	variant = "reference",
 }: Readonly<AgentFilledSummaryRowProps>) {
@@ -503,7 +517,11 @@ function AgentFilledSummaryRow({
 					variant === "skill" ? (
 						<AgentSkillChip key={`${label}-${item}-${index}`} label={item} />
 					) : (
-						<AgentReferenceChip key={`${label}-${item}-${index}`} label={item} />
+						<AgentReferenceChip
+							key={`${label}-${item}-${index}`}
+							label={item}
+							onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
+						/>
 					)
 				))}
 				{addLabel ? (
@@ -523,12 +541,14 @@ function AgentFilledSummaryRow({
 interface AgentFilledConfigSummaryProps {
 	config: AgentConfigFormValue;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
+	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	screenAssistantTargetPrefix?: string;
 }
 
 function AgentFilledConfigSummary({
 	config,
 	onAppendListItem,
+	onRemoveListItem,
 	screenAssistantTargetPrefix,
 }: Readonly<AgentFilledConfigSummaryProps>) {
 	const triggerItems = getAgentTriggerItems(config);
@@ -560,6 +580,7 @@ function AgentFilledConfigSummary({
 				items={toolItems}
 				label="Tools"
 				onAdd={() => onAppendListItem?.("tools")}
+				onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("tools", index) : undefined}
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
 			/>
 			<AgentFilledSummaryRow
@@ -580,6 +601,7 @@ function AgentFilledConfigSummary({
 				items={starterItems}
 				label="Conversation starters"
 				onAdd={() => onAppendListItem?.("conversationStarters")}
+				onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("conversationStarters", index) : undefined}
 				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:conversation-starters` : undefined}
 			/>
 		</div>
@@ -870,7 +892,6 @@ export const AgentConfigFields = memo(
 		...props
 	}: Readonly<AgentConfigFieldsProps>) => {
 		void onListItemChange;
-		void onRemoveListItem;
 		const isFilledConfig = hasFilledAgentConfig(config);
 
 		return (
@@ -922,6 +943,7 @@ export const AgentConfigFields = memo(
 						<AgentFilledConfigSummary
 							config={config}
 							onAppendListItem={onAppendListItem}
+							onRemoveListItem={onRemoveListItem}
 							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 						/>
 					) : (
