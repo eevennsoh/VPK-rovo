@@ -875,65 +875,68 @@ export const AgentConfigFields = memo(
 
 		return (
 			<div
-				className={cn("space-y-6", className)}
+				className={cn("flex flex-col gap-6", className)}
 				data-agent-config-id={idPrefix}
 				data-screen-assistant-target={screenAssistantTargetPrefix}
 				{...props}
 			>
-				<section
-					className="space-y-4 [&+*]:!mt-4"
-					data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:profile` : undefined}
-				>
-					<AgentProfileCover avatarSrc={avatarSrc} />
-					<div
-						className="space-y-1"
-						data-agent-field="name"
-						data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:name` : undefined}
+				{/* Profile + config summary share one flex column; this `gap-4` is
+				    the single knob for the agent description → summary rows gap. */}
+				<div className="flex flex-col gap-4">
+					<section
+						className="flex flex-col gap-4"
+						data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:profile` : undefined}
 					>
-						<InlineEdit
-							value={config.name ?? ""}
-							placeholder="Untitled agent"
-							editButtonLabel="Edit agent name"
-							readViewClassName="-mx-2 h-auto px-2 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"
-							inputProps={{ className: "-mx-2 h-auto border-2 px-2 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" }}
-							onConfirm={(value) => onTextChange?.("name", value)}
-						/>
+						<AgentProfileCover avatarSrc={avatarSrc} />
 						<div
-							data-agent-field="description"
-							data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:description` : undefined}
+							className="flex flex-col gap-1"
+							data-agent-field="name"
+							data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:name` : undefined}
 						>
 							<InlineEdit
-								value={config.description ?? config.summary ?? ""}
-								placeholder="Add a description"
-								editButtonLabel="Edit agent description"
-								multiline
-								readViewClassName="-mx-2 px-2"
-								textareaProps={{ rows: 1, className: "-mx-2 min-h-10 bg-bg-neutral-subtle px-2 focus:border-2 focus:border-ring focus-visible:border-2 focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-[variant=default]:border-transparent data-[variant=default]:focus:border-ring data-[variant=default]:focus-visible:border-ring" }}
-								onConfirm={(value) => onTextChange?.("description", value)}
+								value={config.name ?? ""}
+								placeholder="Untitled agent"
+								editButtonLabel="Edit agent name"
+								readViewClassName="-mx-2 h-auto px-2 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"
+								inputProps={{ className: "-mx-2 h-auto border-2 px-2 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" }}
+								onConfirm={(value) => onTextChange?.("name", value)}
 							/>
+							<div
+								data-agent-field="description"
+								data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:description` : undefined}
+							>
+								<InlineEdit
+									value={config.description ?? config.summary ?? ""}
+									placeholder="Add a description"
+									editButtonLabel="Edit agent description"
+									multiline
+									readViewClassName="-mx-2 px-2"
+									textareaProps={{ rows: 1, className: "-mx-2 min-h-10 bg-bg-neutral-subtle px-2 focus:border-2 focus:border-ring focus-visible:border-2 focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-[variant=default]:border-transparent data-[variant=default]:focus:border-ring data-[variant=default]:focus-visible:border-ring" }}
+									onConfirm={(value) => onTextChange?.("description", value)}
+								/>
+							</div>
 						</div>
-					</div>
-				</section>
+					</section>
 
-				{isFilledConfig ? (
-					<>
+					{isFilledConfig ? (
 						<AgentFilledConfigSummary
 							config={config}
 							onAppendListItem={onAppendListItem}
 							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 						/>
-						<div className="h-px bg-border" />
-					</>
-				) : (
-					<>
+					) : (
 						<AgentMissingConfigActions
 							config={config}
 							onAppendListItem={onAppendListItem}
 							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 						/>
+					)}
+				</div>
 
-						<AgentKnowledgePanel />
-					</>
+				{isFilledConfig ? (
+					<div className="h-px bg-border" />
+				) : (
+					<AgentKnowledgePanel />
 				)}
 				<AgentInstructionsComposer
 					instructions={config.instructions}

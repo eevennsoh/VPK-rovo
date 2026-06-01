@@ -81,16 +81,16 @@ test("Agent config renders filled summary rows once field data exists", () => {
 test("Agent profile inline edit fields align to the profile content edge", () => {
 	assert.match(
 		AGENT_SOURCE,
-		/readViewClassName="h-auto px-0 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"/u,
+		/readViewClassName="-mx-2 h-auto px-2 py-1 text-2xl leading-7 font-semibold focus:border-2 focus:border-border-focused focus-visible:border-2 focus-visible:border-border-focused"/u,
 	);
 	assert.match(
 		AGENT_SOURCE,
-		/inputProps=\{\{ className: "h-auto border-2 px-0 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u,
+		/inputProps=\{\{ className: "-mx-2 h-auto border-2 px-2 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u,
 	);
-	assert.match(AGENT_SOURCE, /readViewClassName="px-0"/u);
+	assert.match(AGENT_SOURCE, /readViewClassName="-mx-2 px-2"/u);
 	assert.match(
 		AGENT_SOURCE,
-		/textareaProps=\{\{ rows: 1, className: "min-h-10 bg-bg-neutral-subtle px-0/u,
+		/textareaProps=\{\{ rows: 1, className: "-mx-2 min-h-10 bg-bg-neutral-subtle px-2/u,
 	);
 });
 
