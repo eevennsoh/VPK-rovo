@@ -120,10 +120,18 @@ export function ContextBarDemoAnimated() {
 	);
 }
 
+/**
+ * Width-aware row of action pills. As many pills render inline as fit; the rest
+ * collapse behind a trailing "…" overflow button that opens a dropdown menu.
+ * Each item carries both a visible `content` (the pill) and a menu-friendly
+ * `label` (+ optional `icon`) so the hidden items render as real menu items
+ * rather than nested pill buttons inside the overflow surface.
+ */
 export function ContextBarDemoMultiPill() {
 	const pills = [
 		{
 			id: "review",
+			label: "Review +6 -3",
 			content: (
 				<ContextBarPill>
 					Review{" "}
@@ -134,6 +142,8 @@ export function ContextBarDemoMultiPill() {
 		},
 		{
 			id: "move",
+			label: "Move to Local",
+			icon: <LocationIcon color={token("color.icon.subtle")} label="" size="small" />,
 			content: (
 				<ContextBarPill
 					icon={<LocationIcon color={token("color.icon.subtle")} label="" size="small" />}
@@ -144,6 +154,8 @@ export function ContextBarDemoMultiPill() {
 		},
 		{
 			id: "create-prs",
+			label: "Create PRs",
+			icon: <PullRequestIcon color={token("color.icon.subtle")} label="" size="small" />,
 			content: (
 				<ContextBarPill
 					icon={<PullRequestIcon color={token("color.icon.subtle")} label="" size="small" />}
@@ -154,10 +166,13 @@ export function ContextBarDemoMultiPill() {
 		},
 		{
 			id: "run-tests",
+			label: "Run tests",
 			content: <ContextBarPill>Run tests</ContextBarPill>,
 		},
 		{
 			id: "new-branch",
+			label: "New branch",
+			icon: <BranchIcon color={token("color.icon.subtle")} label="" size="small" />,
 			content: (
 				<ContextBarPill
 					icon={<BranchIcon color={token("color.icon.subtle")} label="" size="small" />}
@@ -168,6 +183,7 @@ export function ContextBarDemoMultiPill() {
 		},
 		{
 			id: "share",
+			label: "Share link",
 			content: <ContextBarPill>Share link</ContextBarPill>,
 		},
 	];

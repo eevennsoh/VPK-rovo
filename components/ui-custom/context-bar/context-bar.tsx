@@ -5,10 +5,11 @@ import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import { AnimatePresence, MotionConfig, motion, useReducedMotion, type Variants } from "motion/react";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 import { computeContextBarOverflow } from "./overflow";
@@ -17,6 +18,16 @@ const DISMISS_BUTTON_CLASS =
 	"flex size-6 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-icon-subtle transition-colors duration-normal ease-out hover:bg-bg-neutral-hovered hover:text-icon active:bg-bg-neutral-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none";
 
 const LEAD_ICON_CLASS = "flex size-4 shrink-0 items-center justify-center text-icon-subtle";
+
+/**
+ * Shared visual recipe for the filled neutral context-bar pill: `ContextBarTrigger`,
+ * `ContextBarPill`, and the trailing overflow button all build on this so they stay
+ * in sync. `leading-6` matches the text line box to the 24px `h-6` icon span, so
+ * pills with and without a leading icon keep an identical 40px height in a row.
+ * Layout-only concerns (`mb-3`, `shrink-0`, `disabled:*`) are composed per call site.
+ */
+const CONTEXT_BAR_PILL_CLASS =
+	"flex w-fit items-center gap-1.5 rounded-xl bg-bg-neutral px-3 py-2 text-sm font-medium leading-6 text-text-subtle transition-colors duration-normal ease-out hover:bg-bg-neutral-hovered hover:text-text active:bg-bg-neutral-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none";
 
 interface ContextBarProps extends React.ComponentProps<"div"> {
 	onDismiss?: () => void;
@@ -143,10 +154,7 @@ export function ContextBarTrigger({
 }: Readonly<ContextBarTriggerProps>): React.ReactElement {
 	return (
 		<button
-			className={cn(
-				"mb-3 flex w-fit items-center gap-1.5 rounded-xl bg-bg-neutral px-3 py-2 text-sm font-medium text-text-subtle transition-colors duration-normal ease-out hover:bg-bg-neutral-hovered hover:text-text active:bg-bg-neutral-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
-				className,
-			)}
+			className={cn("mb-3", CONTEXT_BAR_PILL_CLASS, className)}
 			data-context-bar-trigger
 			type={type}
 			{...props}
@@ -286,10 +294,16 @@ export function AnimatedCollapsibleContextBar({
 		<MotionConfig reducedMotion="user">
 			<motion.div
 				className={cn(
-					"mb-3 flex min-w-0 items-center overflow-hidden bg-bg-neutral",
+					// Hover + color transition live on the single persistent container
+					// (not just the collapsed branch) so the hovered background survives
+					// the open/collapse morph while the pointer stays over the bar, then
+					// eases back to the resting `bg-bg-neutral` on mouseleave instead of
+					// flashing. Pressed/cursor affordances stay collapsed-only since the
+					// container itself is only clickable in the pill state.
+					"mb-3 flex min-w-0 items-center overflow-hidden bg-bg-neutral transition-colors duration-normal ease-out hover:bg-bg-neutral-hovered",
 					open
 						? "w-full justify-between"
-						: "w-fit cursor-pointer hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed",
+						: "w-fit cursor-pointer active:bg-bg-neutral-pressed",
 				)}
 				data-context-bar={open ? "" : undefined}
 				data-context-bar-trigger={open ? undefined : ""}
@@ -346,20 +360,28 @@ export function AnimatedCollapsibleContextBar({
 	);
 }
 
-const PILL_CLASS =
-	"flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-border-bold bg-transparent px-3 text-sm font-medium text-text-subtle transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered hover:text-text active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-(--opacity-disabled)";
+const PILL_CLASS = cn(
+	CONTEXT_BAR_PILL_CLASS,
+	"shrink-0 disabled:pointer-events-none disabled:opacity-(--opacity-disabled)",
+);
 
+/**
+ * Trailing "…" overflow button: same filled neutral pill family, narrowed to a
+ * square icon footprint (`px-2`) and switched to icon-subtle coloring while
+ * keeping the shared radius, height, transition, and focus ring.
+ */
 const OVERFLOW_BUTTON_CLASS =
-	"flex size-8 shrink-0 items-center justify-center rounded-full border border-border-bold bg-transparent text-icon-subtle transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered hover:text-icon active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none";
+	"flex shrink-0 items-center justify-center rounded-xl bg-bg-neutral px-2 py-2 text-icon-subtle transition-colors duration-normal ease-out hover:bg-bg-neutral-hovered hover:text-icon active:bg-bg-neutral-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none";
 
 interface ContextBarPillProps extends React.ComponentProps<"button"> {
 	icon?: React.ReactNode;
 }
 
 /**
- * Outlined, rounded-full action pill used inside `ContextBarTagGroup` (e.g.
- * "Review +6 -3", "Move to Local"). A thin wrapper around a button so the group
- * can measure and overflow arbitrary pill content.
+ * Filled neutral action pill used inside `ContextBarTagGroup` (e.g. "Review +6
+ * -3", "Move to Local"). Shares the `ContextBarTrigger` aesthetic via
+ * `CONTEXT_BAR_PILL_CLASS`; a thin wrapper around a button so the group can
+ * measure and overflow arbitrary pill content.
  */
 export function ContextBarPill({
 	icon,
@@ -370,11 +392,7 @@ export function ContextBarPill({
 }: Readonly<ContextBarPillProps>): React.ReactElement {
 	return (
 		<button className={cn(PILL_CLASS, className)} data-context-bar-pill type={type} {...props}>
-			{icon ? (
-				<span className="flex size-4 shrink-0 items-center justify-center text-icon-subtle">
-					{icon}
-				</span>
-			) : null}
+			{icon ? <span className={cn(LEAD_ICON_CLASS, "h-6")}>{icon}</span> : null}
 			{children}
 		</button>
 	);
@@ -382,7 +400,18 @@ export function ContextBarPill({
 
 interface ContextBarTagGroupItem {
 	id: string;
+	/** The visible pill rendered in the row (and measured for overflow). */
 	content: React.ReactNode;
+	/**
+	 * Menu-friendly representation shown inside the overflow dropdown when this
+	 * item is hidden. A plain string/node label — never a nested pill button — so
+	 * the overflow affordance renders as a proper `DropdownMenuItem`.
+	 */
+	label: React.ReactNode;
+	/** Optional leading icon for the dropdown menu item. */
+	icon?: React.ReactNode;
+	/** Invoked when the dropdown menu item is selected. */
+	onSelect?: () => void;
 }
 
 interface ContextBarTagGroupProps {
@@ -394,8 +423,9 @@ interface ContextBarTagGroupProps {
 
 /**
  * Width-aware row of context pills. Renders as many leading pills as fit, then
- * collapses the remainder behind a trailing circular "…" overflow button that
- * reveals the hidden pills in a popover. Widths are measured from an invisible
+ * collapses the remainder behind a trailing filled "…" overflow button that
+ * reveals the hidden items in a dropdown menu (one menu item per hidden item).
+ * Widths are measured from an invisible
  * sibling layer so the visible row can be sized synchronously (via
  * `useLayoutEffect`) without a flash of overflowing content; a `ResizeObserver`
  * keeps it in sync as the container resizes.
@@ -468,7 +498,9 @@ export function ContextBarTagGroup({
 				tabIndex={-1}
 				type="button"
 			>
-				<ShowMoreHorizontalIcon color="currentColor" label="" size="small" />
+				<span className={cn(LEAD_ICON_CLASS, "h-6")}>
+					<ShowMoreHorizontalIcon color="currentColor" label="" size="small" />
+				</span>
 			</button>
 
 			{visibleItems.map((item) => (
@@ -477,18 +509,24 @@ export function ContextBarTagGroup({
 				</div>
 			))}
 			{hiddenItems.length > 0 ? (
-				<Popover>
-					<PopoverTrigger aria-label={overflowAriaLabel} className={OVERFLOW_BUTTON_CLASS}>
-						<ShowMoreHorizontalIcon color="currentColor" label="" size="small" />
-					</PopoverTrigger>
-					<PopoverContent align="end" className="w-auto min-w-40 items-start gap-2">
+				<DropdownMenu>
+					<DropdownMenuTrigger aria-label={overflowAriaLabel} className={OVERFLOW_BUTTON_CLASS}>
+						<span className={cn(LEAD_ICON_CLASS, "h-6")}>
+							<ShowMoreHorizontalIcon color="currentColor" label="" size="small" />
+						</span>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="min-w-40">
 						{hiddenItems.map((item) => (
-							<div className="flex" key={item.id}>
-								{item.content}
-							</div>
+							<DropdownMenuItem
+								elemBefore={item.icon}
+								key={item.id}
+								onSelect={item.onSelect}
+							>
+								{item.label}
+							</DropdownMenuItem>
 						))}
-					</PopoverContent>
-				</Popover>
+					</DropdownMenuContent>
+				</DropdownMenu>
 			) : null}
 		</div>
 	);

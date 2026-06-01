@@ -72,16 +72,19 @@ async function loadContextBarHarness() {
 			`,
 		],
 		[
-			"@/components/ui/popover",
+			"@/components/ui/dropdown-menu",
 			`
 				import React from "react";
-				export function Popover(props) {
+				export function DropdownMenu(props) {
 					return React.createElement(React.Fragment, null, props.children);
 				}
-				export function PopoverTrigger(props) {
+				export function DropdownMenuTrigger(props) {
 					return React.createElement("button", { ...props }, props.children);
 				}
-				export function PopoverContent(props) {
+				export function DropdownMenuContent(props) {
+					return React.createElement("div", { ...props }, props.children);
+				}
+				export function DropdownMenuItem(props) {
 					return React.createElement("div", { ...props }, props.children);
 				}
 			`,
