@@ -50,6 +50,7 @@ interface ChatComposerProps {
 	realtimeVoiceActive?: boolean;
 	selectedReasoning?: string;
 	chatContextBar?: ChatContextBarDescriptor | null;
+	onContextBarOpenChange?: (open: boolean) => void;
 }
 
 interface ChatComposerSendControlsProps {
@@ -115,7 +116,7 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, micStream = null, clickyActive = false, onPromptChange, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, selectedReasoning: controlledSelectedReasoning, chatContextBar }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, micStream = null, clickyActive = false, onPromptChange, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, selectedReasoning: controlledSelectedReasoning, chatContextBar, onContextBarOpenChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -149,7 +150,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 
 	return (
 		<div className="relative min-w-0 px-3">
-			<ChatContextBar key={chatContextBar?.signature} context={chatContextBar} />
+			<ChatContextBar key={chatContextBar?.signature} context={chatContextBar} onOpenChange={onContextBarOpenChange} />
 			{hasQueuedPrompts ? (
 				<div className="pointer-events-none absolute bottom-full left-4 right-4 z-0">
 					<Queue className="pointer-events-auto rounded-b-none border-border border-b-0 bg-surface-raised px-2 pt-2 pb-2 shadow-none">

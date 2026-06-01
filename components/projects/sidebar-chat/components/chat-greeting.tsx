@@ -253,7 +253,7 @@ export default function ChatGreeting({
 						className="flex flex-col gap-6"
 						exit="exit"
 						initial="hidden"
-						key={`rovo-${heroKey}`}
+						key={`rovo-${heroKey}-${resolvedHeading}`}
 						variants={CHAT_GREETING_CONTAINER_VARIANTS}
 					>
 						{showHero ? (
