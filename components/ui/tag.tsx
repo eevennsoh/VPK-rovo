@@ -209,13 +209,14 @@ function Tag({
 			) : null}
 			{isOverlayRemove ? (
 				<>
-					{/* Decorative gradient: solid behind the icon, fading into the label so the X stays legible over text. */}
+					{/* Decorative gradient: solid behind the icon, fading toward the label so the X stays legible.
+					    Fades from the opaque app `surface` — the color the label visually sits on, since the tag's
+					    own `subtle` background is transparent — not from the (transparent) tag background token. */}
 					<span
 						aria-hidden
 						data-slot="tag-remove-overlay-scrim"
 						className={cn(
-							"pointer-events-none absolute inset-y-0 end-0 w-9 rounded-[inherit] bg-gradient-to-l from-40% to-transparent opacity-0 transition-opacity duration-fast ease-out group-hover:opacity-100 group-focus-within:opacity-100",
-							isInteractive ? "from-bg-neutral-subtle-hovered" : "from-bg-neutral-subtle",
+							"pointer-events-none absolute inset-y-px end-px w-9 rounded-[inherit] bg-linear-to-l from-surface from-45% to-transparent opacity-0 transition-opacity duration-fast ease-out group-hover:opacity-100 group-focus-within:opacity-100",
 						)}
 					/>
 					<button
