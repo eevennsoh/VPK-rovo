@@ -1010,8 +1010,15 @@ function HomeStarterBento({
 				onPointerMove={handleBentoPointerMove}
 				style={HOME_STARTER_CARD_GLOW_EFFECT_STYLE}
 			>
+				{/*
+					`-mt-2 pt-2` gives the masked content top headroom that nets to zero
+					visual shift: the bottom-fade mask clips its children to the box, so
+					tiles flush with the top edge would have their hover lift (`y: -2`) and
+					focus ring sliced off. The padding keeps that motion inside the opaque
+					region; the negative margin pulls the box back so spacing is unchanged.
+				*/}
 				<div
-					className="relative"
+					className="relative -mt-2 pt-2"
 					style={
 						canShowMore
 							? { maskImage: HOME_STARTER_BENTO_FADE_MASK, WebkitMaskImage: HOME_STARTER_BENTO_FADE_MASK }
