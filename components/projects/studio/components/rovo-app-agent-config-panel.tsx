@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ComponentProps, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 
 import {
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui-custom/agent";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { Lozenge } from "@/components/ui/lozenge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type {
 	StudioAgentPublishStatus,
@@ -22,13 +23,17 @@ import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { cn } from "@/lib/utils";
 
 type AgentResult = RovoDataParts["agent-result"];
+export type AgentConfigView = "configure" | "test";
 
 interface RovoAppAgentConfigPanelProps {
+	activeView: AgentConfigView;
 	entry: StudioSessionAgentEntry;
 	onClose?: () => void;
 	onCommitPublishReady: (profileId: string) => void;
 	onPublish: (profileId: string) => void;
 	onTest: (profileId: string) => void;
+	onViewChange: (view: AgentConfigView) => void;
+	testPanel: ReactNode;
 	onUpdateDraft: (
 		profileId: string,
 		patch: Partial<AgentResult>,
@@ -107,12 +112,42 @@ function AgentConfigActionButton({
 	);
 }
 
+type AgentConfigTabTriggerProps = ComponentProps<typeof TabsTrigger> & {
+	disabledTooltip?: string;
+};
+
+function AgentConfigTabTrigger({
+	disabled,
+	disabledTooltip,
+	...props
+}: Readonly<AgentConfigTabTriggerProps>) {
+	const trigger = <TabsTrigger disabled={disabled} {...props} />;
+
+	if (!disabled || !disabledTooltip) {
+		return trigger;
+	}
+
+	return (
+		<Tooltip>
+			<TooltipTrigger render={<span className="inline-flex" />}>
+				{trigger}
+			</TooltipTrigger>
+			<TooltipContent side="bottom">
+				<p>{disabledTooltip}</p>
+			</TooltipContent>
+		</Tooltip>
+	);
+}
+
 export function RovoAppAgentConfigPanel({
+	activeView,
 	entry,
 	onClose,
 	onCommitPublishReady,
 	onPublish,
 	onTest,
+	onViewChange,
+	testPanel,
 	onUpdateDraft,
 	className,
 }: Readonly<RovoAppAgentConfigPanelProps>) {
@@ -231,6 +266,12 @@ export function RovoAppAgentConfigPanel({
 	}, [hasUpdateChanges, onCommitPublishReady, onPublish, profileId]);
 
 	const hasAgentInstructions = Boolean(draft.instructions?.trim());
+	useEffect(() => {
+		if (activeView === "test" && !hasAgentInstructions) {
+			onViewChange("configure");
+		}
+	}, [activeView, hasAgentInstructions, onViewChange]);
+
 	const handleTest = useCallback(() => {
 		if (!hasAgentInstructions) {
 			return;
@@ -240,6 +281,20 @@ export function RovoAppAgentConfigPanel({
 		}
 		onTest(profileId);
 	}, [hasAgentInstructions, hasUpdateChanges, onCommitPublishReady, onTest, profileId]);
+
+	const handleViewChange = useCallback(
+		(value: string | null) => {
+			if (value !== "configure" && value !== "test") {
+				return;
+			}
+			if (value === "test") {
+				handleTest();
+				return;
+			}
+			onViewChange(value);
+		},
+		[handleTest, onViewChange],
+	);
 
 	const publishStatusLabel = getPublishLabel(entry.publishStatus);
 	const agentName = draft.name?.trim() || entry.profile.name || "Untitled agent";
@@ -256,94 +311,110 @@ export function RovoAppAgentConfigPanel({
 			transition={{ duration: 0.24, ease: [0, 0.4, 0, 1] }}
 		>
 			<Agent className="flex min-h-0 flex-1 flex-col">
-				<AgentHeader
-					avatarSrc={agentAvatarSrc}
-					name={agentName}
-					badge={
-						<Lozenge
-							data-testid="agent-config-status-lozenge"
-							variant={entry.publishStatus === "published" ? "success" : undefined}
-						>
-							{publishStatusLabel}
-						</Lozenge>
-					}
-					actions={
-						<>
-							<AgentConfigActionButton
-								type="button"
-								size="default"
-								variant="ghost"
-								onClick={handleUpdate}
-								disabled={!hasUpdateChanges}
-								disabledTooltip="Make a change to the agent before updating the testing version."
-								data-testid="agent-config-update"
-								data-screen-assistant-target="studio-agent-config-update"
+				<Tabs
+					aria-label="Agent config views"
+					className="min-h-0 flex-1"
+					onValueChange={handleViewChange}
+					value={activeView}
+				>
+					<AgentHeader
+						avatarSrc={agentAvatarSrc}
+						name={agentName}
+						badge={
+							<Lozenge
+								data-testid="agent-config-status-lozenge"
+								variant={entry.publishStatus === "published" ? "success" : undefined}
 							>
-								{justUpdatedAt ? "Updated" : "Update"}
-							</AgentConfigActionButton>
-							<AgentConfigActionButton
-								type="button"
-								size="default"
-								variant="outline"
-								onClick={handleTest}
-								disabled={!hasAgentInstructions}
-								disabledTooltip="Add agent instructions before testing this agent."
-								data-testid="agent-config-test"
-								data-screen-assistant-target="studio-agent-config-test"
-							>
-								Test
-							</AgentConfigActionButton>
-							<Button
-								type="button"
-								size="default"
-								variant="default"
-								onClick={handlePublish}
-								disabled={!hasPublishChanges}
-								data-testid="agent-config-publish"
-								data-screen-assistant-target="studio-agent-config-publish"
-							>
-								Publish
-							</Button>
-							{onClose ? (
+								{publishStatusLabel}
+							</Lozenge>
+						}
+						actions={
+							<>
+								<TabsList>
+									<TabsTrigger
+										value="configure"
+										data-testid="agent-config-configure"
+										data-screen-assistant-target="studio-agent-config-configure"
+									>
+										Configure
+									</TabsTrigger>
+									<AgentConfigTabTrigger
+										value="test"
+										disabled={!hasAgentInstructions}
+										disabledTooltip="Add agent instructions before testing this agent."
+										data-testid="agent-config-test"
+										data-screen-assistant-target="studio-agent-config-test"
+									>
+										Test
+									</AgentConfigTabTrigger>
+								</TabsList>
+								<AgentConfigActionButton
+									type="button"
+									size="default"
+									variant="ghost"
+									onClick={handleUpdate}
+									disabled={!hasUpdateChanges}
+									disabledTooltip="Make a change to the agent before updating the testing version."
+									data-testid="agent-config-update"
+									data-screen-assistant-target="studio-agent-config-update"
+								>
+									{justUpdatedAt ? "Updated" : "Update"}
+								</AgentConfigActionButton>
 								<Button
 									type="button"
-									size="icon"
-									variant="ghost"
-									onClick={onClose}
-									aria-label="Close agent config"
+									size="default"
+									variant="default"
+									onClick={handlePublish}
+									disabled={!hasPublishChanges}
+									data-testid="agent-config-publish"
+									data-screen-assistant-target="studio-agent-config-publish"
 								>
-									<CrossIcon label="" spacing="none" />
+									Publish
 								</Button>
-							) : null}
-						</>
-					}
-				/>
-				<div className="min-h-0 flex-1 overflow-y-auto">
-					<div className="w-full px-6 py-5">
-						<AnimatePresence>
-							{missingFields.length > 0 ? (
-								<motion.div
-									className="mb-4 rounded-md border border-border-warning bg-bg-warning-subtler px-3 py-2 text-text-warning-bolder text-xs"
-									initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
-									animate={{ opacity: 1, y: 0 }}
-									exit={{ opacity: 0, y: -4 }}
-								>
-									Generation looks partial — fill in {missingFields.join(", ")} before publishing.
-								</motion.div>
-							) : null}
-						</AnimatePresence>
-						<AgentConfigFields
-							config={draft}
-							avatarSrc={agentAvatarSrc}
-							idPrefix={`agent-${profileId}`}
-							onTextChange={handleConfigTextChange}
-							onListItemChange={updateListItem}
-							onRemoveListItem={removeListItem}
-							onAppendListItem={appendListItem}
-							screenAssistantTargetPrefix="studio-agent-config"
-						/>
-					</div>
-				</div>
+								{onClose ? (
+									<Button
+										type="button"
+										size="icon"
+										variant="ghost"
+										onClick={onClose}
+										aria-label="Close agent config"
+									>
+										<CrossIcon label="" spacing="none" />
+									</Button>
+								) : null}
+							</>
+						}
+					/>
+					<TabsContent value="configure" className="min-h-0 flex-1 overflow-y-auto data-[hidden]:hidden">
+						<div className="w-full px-6 py-5">
+							<AnimatePresence>
+								{missingFields.length > 0 ? (
+									<motion.div
+										className="mb-4 rounded-md border border-border-warning bg-bg-warning-subtler px-3 py-2 text-text-warning-bolder text-xs"
+										initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
+										animate={{ opacity: 1, y: 0 }}
+										exit={{ opacity: 0, y: -4 }}
+									>
+										Generation looks partial — fill in {missingFields.join(", ")} before publishing.
+									</motion.div>
+								) : null}
+							</AnimatePresence>
+							<AgentConfigFields
+								config={draft}
+								avatarSrc={agentAvatarSrc}
+								idPrefix={`agent-${profileId}`}
+								onTextChange={handleConfigTextChange}
+								onListItemChange={updateListItem}
+								onRemoveListItem={removeListItem}
+								onAppendListItem={appendListItem}
+								screenAssistantTargetPrefix="studio-agent-config"
+							/>
+						</div>
+					</TabsContent>
+					<TabsContent value="test" keepMounted={false} className="min-h-0 flex-1 data-[hidden]:hidden">
+						{testPanel}
+					</TabsContent>
+				</Tabs>
 			</Agent>
 		</motion.div>
 	);
