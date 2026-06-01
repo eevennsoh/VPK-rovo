@@ -781,7 +781,7 @@ function HomeStarterHeroTile({
 								<span className="block text-xs font-semibold leading-4 text-text-subtle">
 									Skills
 								</span>
-								<SkillTagGroup>
+								<SkillTagGroup maxRows={2}>
 									{hero.skills.map((skill) => (
 										<SkillTag color={skill.color ?? "default"} icon={skill.icon} key={skill.label}>
 											{skill.label}
