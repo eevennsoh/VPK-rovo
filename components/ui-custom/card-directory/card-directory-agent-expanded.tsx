@@ -252,7 +252,7 @@ export function CardDirectoryAgentExpanded({
 
 			{/* Scrollable body — banner/header/description stay pinned above, footer pinned below. */}
 			<div
-				className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-2 [scrollbar-gutter:stable]"
+				className="flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-2 [scrollbar-gutter:stable]"
 				onScroll={handleBodyScroll}
 				style={bodyScrolled ? CARD_DIRECTORY_SCROLL_MASK_STYLE : undefined}
 			>
