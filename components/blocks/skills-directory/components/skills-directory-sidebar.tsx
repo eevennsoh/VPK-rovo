@@ -41,7 +41,6 @@ function getNavIcon(icon: SkillNavIcon): ReactElement {
 	}
 }
 
-/** Gray square tile holding a 16px icon — ignores props injected by the nav-item leading slot. */
 function TileLeading({ children }: Readonly<{ children: ReactElement }>) {
 	return (
 		<Tile aria-hidden className="shrink-0 text-icon-subtle" label="" size="small" variant="neutral">
@@ -50,7 +49,6 @@ function TileLeading({ children }: Readonly<{ children: ReactElement }>) {
 	);
 }
 
-/** Square 24px company logo — mirrors the agent-browser sidebar avatar treatment. */
 function LogoLeading({ src }: Readonly<{ src: string }>) {
 	return (
 		<Avatar size="sm" shape="square" className="shrink-0 after:border-0">
@@ -60,45 +58,46 @@ function LogoLeading({ src }: Readonly<{ src: string }>) {
 }
 
 export interface SkillsDirectorySidebarProps {
-	primaryItems: readonly SkillsDirectoryPrimaryItem[];
 	activeItem: string;
-	onSelectPrimary: (id: string) => void;
 	groups: readonly SkillsDirectorySidebarGroup[];
+	onSelectItem: (id: string) => void;
+	primaryItems: readonly SkillsDirectoryPrimaryItem[];
 	skills: readonly SkillsDirectorySkill[];
-	onSelectSkill?: (skill: SkillsDirectorySkill) => void;
 }
 
 export function SkillsDirectorySidebar({
-	primaryItems,
 	activeItem,
-	onSelectPrimary,
 	groups,
+	onSelectItem,
+	primaryItems,
 	skills,
-	onSelectSkill,
 }: Readonly<SkillsDirectorySidebarProps>) {
 	return (
 		<nav
 			aria-label="Skill categories"
-			className="hidden h-full min-h-0 w-[220px] shrink-0 flex-col gap-5 overflow-y-auto pt-1 md:flex"
+			className="hidden min-h-0 w-[280px] shrink-0 flex-col overflow-y-auto pl-6 md:flex"
 		>
-			<ul className="flex flex-col gap-0.5">
+			<ul className="flex w-64 flex-col">
 				{primaryItems.map((item) => (
 					<li key={item.id}>
 						<SidebarNavItem
 							label={item.label}
 							isSelected={activeItem === item.id}
-							onClick={() => onSelectPrimary(item.id)}
+							onClick={() => onSelectItem(item.id)}
 						/>
 					</li>
 				))}
 			</ul>
 
+			<div className="h-3 w-64 shrink-0" />
+
 			{groups.map((group) => (
 				<SkillsSidebarGroup
 					key={group.title}
+					activeItem={activeItem}
 					group={group}
+					onSelectItem={onSelectItem}
 					skills={skills}
-					onSelectSkill={onSelectSkill}
 				/>
 			))}
 		</nav>
@@ -106,20 +105,28 @@ export function SkillsDirectorySidebar({
 }
 
 interface SkillsSidebarGroupProps {
+	activeItem: string;
 	group: SkillsDirectorySidebarGroup;
+	onSelectItem: (id: string) => void;
 	skills: readonly SkillsDirectorySkill[];
-	onSelectSkill?: (skill: SkillsDirectorySkill) => void;
 }
 
-function SkillsSidebarGroup({ group, skills, onSelectSkill }: Readonly<SkillsSidebarGroupProps>) {
+function SkillsSidebarGroup({
+	activeItem,
+	group,
+	onSelectItem,
+	skills,
+}: Readonly<SkillsSidebarGroupProps>) {
 	if (group.items.length === 0) return null;
 
 	return (
-		<div className="flex flex-col gap-1.5">
-			<p style={{ font: token("font.heading.xxsmall") }} className="px-1.5 text-text-subtlest">
-				{group.title}
-			</p>
-			<ul className="flex flex-col gap-0.5">
+		<div className="flex w-64 flex-col">
+			<div className="w-64 py-2 pl-1.5">
+				<p style={{ font: token("font.heading.xxsmall") }} className="text-text-subtlest">
+					{group.title}
+				</p>
+			</div>
+			<ul className="flex flex-col">
 				{group.items.map((item) => {
 					if (item.kind === "skill") {
 						const skill = getSkillById(skills, item.id);
@@ -130,7 +137,8 @@ function SkillsSidebarGroup({ group, skills, onSelectSkill }: Readonly<SkillsSid
 									label={skill.name}
 									leading={<TileLeading>{getSkillIcon(skill.icon)}</TileLeading>}
 									leadingSize="medium"
-									onClick={onSelectSkill ? () => onSelectSkill(skill) : undefined}
+									isSelected={activeItem === item.id}
+									onClick={() => onSelectItem(item.id)}
 								/>
 							</li>
 						);
@@ -143,6 +151,8 @@ function SkillsSidebarGroup({ group, skills, onSelectSkill }: Readonly<SkillsSid
 									label={item.label}
 									leading={<TileLeading>{getNavIcon(item.icon)}</TileLeading>}
 									leadingSize="medium"
+									isSelected={activeItem === item.id}
+									onClick={() => onSelectItem(item.id)}
 								/>
 							</li>
 						);
@@ -154,6 +164,8 @@ function SkillsSidebarGroup({ group, skills, onSelectSkill }: Readonly<SkillsSid
 								label={item.label}
 								leading={<LogoLeading src={item.logoSrc} />}
 								leadingSize="medium"
+								isSelected={activeItem === item.id}
+								onClick={() => onSelectItem(item.id)}
 							/>
 						</li>
 					);
@@ -164,10 +176,12 @@ function SkillsSidebarGroup({ group, skills, onSelectSkill }: Readonly<SkillsSid
 							label="Show all"
 							leading={<AlignTextLeftIcon label="" size="small" />}
 							leadingSize="medium"
+							onClick={() => onSelectItem("all-skills")}
 						/>
 					</li>
 				) : null}
 			</ul>
+			<div className="h-3 w-64 shrink-0" />
 		</div>
 	);
 }

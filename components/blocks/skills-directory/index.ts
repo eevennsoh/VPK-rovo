@@ -1,5 +1,6 @@
 export { SkillsDirectoryDialog } from "./components/skills-directory";
 export type {
+	SkillsDirectoryAgent,
 	SkillsDirectoryDialogProps,
 	SkillsDirectoryPrimaryItem,
 	SkillsDirectorySidebarGroup,

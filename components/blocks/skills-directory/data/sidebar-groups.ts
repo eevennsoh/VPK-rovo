@@ -46,18 +46,12 @@ export interface SkillsDirectorySidebarGroup {
 }
 
 export const DEFAULT_SKILLS_DIRECTORY_PRIMARY_ITEMS: readonly SkillsDirectoryPrimaryItem[] = [
-	{ id: "all", label: "All" },
-	{ id: "my-skills", label: "My skills" },
+	{ id: "all-skills", label: "All skills" },
+	{ id: "favorite-skills", label: "Favorite skills" },
+	{ id: "your-skills", label: "Your skills" },
 ];
 
 export const DEFAULT_SKILLS_DIRECTORY_SIDEBAR_GROUPS: readonly SkillsDirectorySidebarGroup[] = [
-	{
-		title: "Favourites",
-		items: [
-			{ kind: "skill", id: "create-page" },
-			{ kind: "skill", id: "review-pull-request" },
-		],
-	},
 	{
 		title: "Category",
 		showAll: true,
@@ -74,9 +68,9 @@ export const DEFAULT_SKILLS_DIRECTORY_SIDEBAR_GROUPS: readonly SkillsDirectorySi
 		showAll: true,
 		items: [
 			{ kind: "company", id: "atlassian", label: "Atlassian", logoSrc: "/1p/atlassian.svg" },
+			{ kind: "company", id: "stripe", label: "Stripe", logoSrc: "/3p/stripe/24.svg" },
+			{ kind: "company", id: "tempo", label: "Tempo", logoSrc: "/avatar-project/stopwatch.svg" },
 			{ kind: "company", id: "google", label: "Google", logoSrc: "/3p/google-drive/24.svg" },
-			{ kind: "company", id: "microsoft", label: "Microsoft", logoSrc: "/3p/microsoft-teams/24.svg" },
-			{ kind: "company", id: "slack", label: "Slack", logoSrc: "/3p/slack/24.svg" },
 			{ kind: "company", id: "notion", label: "Notion", logoSrc: "/3p/notion/24.svg" },
 		],
 	},

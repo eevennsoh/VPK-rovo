@@ -33,35 +33,82 @@ test("Skills Directory docs demo starts closed until the trigger is clicked", ()
 	);
 });
 
-test("Skills Directory renders the Browse skills dialog with skill cards", () => {
+test("Skills Directory owns a skill-specific modal instead of wrapping AgentBrowserDialog", () => {
 	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory.tsx");
-	const sidebarSource = readProjectFile("components/blocks/skills-directory/components/skills-directory-sidebar.tsx");
-	const skillsSource = readProjectFile("components/blocks/skills-directory/data/skills.tsx");
-	const sidebarGroupsSource = readProjectFile("components/blocks/skills-directory/data/sidebar-groups.ts");
-	const pageSource = readProjectFile("components/blocks/skills-directory/page.tsx");
 
-	// Skill card swapped in (matched to Figma: plain icon + hover-revealed stats).
-	assert.match(source, /CardDirectorySkill/u);
-	assert.match(source, /iconTile=\{false\}/u);
-	assert.match(source, /revealStatsOnHover/u);
-	// Browse skills chrome.
-	assert.match(source, /title = "Browse skills"/u);
-	assert.match(source, /New skill/u);
-	assert.match(source, /Search for a skill by name, or describe it/u);
-	// Figma left nav groups.
-	assert.match(sidebarGroupsSource, /title: "Favourites"/u);
-	assert.match(sidebarGroupsSource, /title: "Category"/u);
-	assert.match(sidebarGroupsSource, /title: "By companies"/u);
-	assert.match(sidebarSource, /SkillsDirectorySidebar/u);
-	// Skills data + demo wiring.
-	assert.match(skillsSource, /export const DEFAULT_SKILLS/u);
-	assert.match(pageSource, /sessionSkills=\{DEMO_SESSION_SKILLS\}/u);
+	assert.doesNotMatch(source, /AgentBrowserDialog/u);
+	assert.match(source, /<DialogContent/u);
+	assert.match(source, /sm:max-w-\[1200px\]/u);
+	assert.match(source, /md:grid-cols-\[280px_minmax\(0,1fr\)\]/u);
+	assert.match(source, /title = "Browse all"/u);
 });
 
-test("Skills card primitive keeps the new props backward compatible", () => {
-	const cardSource = readProjectFile(
-		"components/ui-custom/card-directory/card-directory-skill.tsx",
-	);
-	assert.match(cardSource, /iconTile = true/u);
-	assert.match(cardSource, /revealStatsOnHover = false/u);
+test("Skills Directory exposes canonical skill props and legacy agent compatibility", () => {
+	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory.tsx");
+	const indexSource = readProjectFile("components/blocks/skills-directory/index.ts");
+
+	assert.match(source, /export interface SkillsDirectoryDialogProps/u);
+	assert.match(source, /skills\?: readonly SkillsDirectorySkill\[\]/u);
+	assert.match(source, /sessionSkills\?: readonly SkillsDirectorySkill\[\]/u);
+	assert.match(source, /selectedSkillIds\?: readonly string\[\]/u);
+	assert.match(source, /defaultSelectedSkillIds\?: readonly string\[\]/u);
+	assert.match(source, /onSelectedSkillIdsChange\?: \(skillIds: readonly string\[\]\) => void/u);
+	assert.match(source, /onAddSkills\?: \(skillIds: readonly string\[\], skills: readonly SkillsDirectorySkill\[\]\) => void/u);
+	assert.match(source, /agents\?: readonly SkillsDirectoryAgent\[\]/u);
+	assert.match(source, /sessionAgents\?: readonly SkillsDirectoryAgent\[\]/u);
+	assert.match(source, /normalizeAgentSkill/u);
+	assert.match(indexSource, /SkillsDirectoryAgent/u);
+});
+
+test("Skills Directory uses multi-select cards, hover learn-more, and selected toolbar", () => {
+	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory.tsx");
+
+	assert.match(source, /<Checkbox/u);
+	assert.match(source, /border-border-selected/u);
+	assert.match(source, /hover:border-transparent/u);
+	assert.match(source, /function SkillMoreMenu/u);
+	assert.match(source, /event\.stopPropagation\(\);\s+onLearnMore\(\);/u);
+	assert.match(source, /Learn more/u);
+	assert.match(source, /function SelectedSkillsToolbar/u);
+	assert.match(source, /Add skills/u);
+	assert.match(source, /Create link to share/u);
+	assert.match(source, /Favorite/u);
+	assert.match(source, /Download/u);
+});
+
+test("Skills Directory renders skill info view with file tree and top scroll mask", () => {
+	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory.tsx");
+
+	assert.match(source, /function SkillDetailHeader/u);
+	assert.match(source, /<SplitButton/u);
+	assert.match(source, /Try in chat/u);
+	assert.match(source, /function SkillDetailView/u);
+	assert.match(source, /function SkillFileTreeSidebar/u);
+	assert.match(source, /SKILL\.md/u);
+	assert.match(source, /LICENSE\.txt/u);
+	assert.match(source, /references/u);
+	assert.match(source, /scripts/u);
+	assert.match(source, /contentOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"/u);
+	assert.doesNotMatch(source, /Skill categories"[\s\S]{0,160}scroll-mask-top/u);
+});
+
+test("Skills Directory demo and docs use skill-specific examples", () => {
+	const pageSource = readProjectFile("components/blocks/skills-directory/page.tsx");
+	const detailsSource = readProjectFile("app/data/details/blocks.ts");
+	const skillsSource = readProjectFile("components/blocks/skills-directory/data/skills.tsx");
+	const sidebarGroupsSource = readProjectFile("components/blocks/skills-directory/data/sidebar-groups.ts");
+
+	assert.match(pageSource, /defaultSelectedSkillIds=\{\[/u);
+	assert.match(pageSource, /"design-landing-page"/u);
+	assert.match(pageSource, /"develop-mobile-app-interface"/u);
+	assert.match(pageSource, /"create-brand-identity"/u);
+	assert.match(detailsSource, /onAddSkills/u);
+	assert.match(detailsSource, /onCreateSkill/u);
+	assert.match(skillsSource, /publisherName/u);
+	assert.match(skillsSource, /publisherAvatarSrc/u);
+	assert.match(skillsSource, /categoryId/u);
+	assert.match(skillsSource, /companyId/u);
+	assert.match(sidebarGroupsSource, /label: "All skills"/u);
+	assert.match(sidebarGroupsSource, /label: "Favorite skills"/u);
+	assert.match(sidebarGroupsSource, /label: "Your skills"/u);
 });

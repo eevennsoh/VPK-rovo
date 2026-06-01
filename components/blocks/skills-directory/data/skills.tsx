@@ -6,7 +6,9 @@ import CommentIcon from "@atlaskit/icon/core/comment";
 import CurlyBracketsIcon from "@atlaskit/icon/core/curly-brackets";
 import EditIcon from "@atlaskit/icon/core/edit";
 import LinkIcon from "@atlaskit/icon/core/link";
+import MegaphoneIcon from "@atlaskit/icon/core/megaphone";
 import PageIcon from "@atlaskit/icon/core/page";
+import PaintPaletteIcon from "@atlaskit/icon/core/paint-palette";
 import SearchIcon from "@atlaskit/icon/core/search";
 import VideoIcon from "@atlaskit/icon/core/video";
 
@@ -28,25 +30,62 @@ export type SkillIconKey =
 	| "angle-brackets"
 	| "link"
 	| "calendar"
+	| "megaphone"
+	| "paint-palette"
 	| "search";
+
+export interface SkillsDirectoryToolTag {
+	id: string;
+	name: string;
+	icon?: SkillIconKey;
+}
+
+export interface SkillsDirectoryFileTreeItem {
+	id: string;
+	label: string;
+	kind: "folder" | "file";
+	depth?: number;
+	expanded?: boolean;
+	selected?: boolean;
+}
 
 export interface SkillsDirectorySkill {
 	id: string;
 	name: string;
 	description: string;
-	icon: SkillIconKey;
+	icon?: SkillIconKey;
 	/** Decorative Tailwind text-color class applied to the leading icon. */
-	iconColor: string;
-	publisher: string;
-	/** Small publisher logo shown beside the publisher name in the card footer. */
-	publisherLogoSrc: string;
-	starCount: number;
-	viewCount: number;
-	category: SkillCategory;
+	iconColor?: string;
+	publisherName?: string;
+	publisherAvatarSrc?: string;
+	companyId?: string;
+	categoryId?: SkillCategory;
+	starCount?: number;
+	viewCount?: number;
+	tools?: readonly SkillsDirectoryToolTag[];
+	instructions?: string;
+	fileTreeItems?: readonly SkillsDirectoryFileTreeItem[];
+	favorite?: boolean;
+	/** Legacy aliases kept for existing Skills Directory callers. */
+	publisher?: string;
+	publisherLogoSrc?: string;
+	category?: SkillCategory;
+}
+
+export function getSkillPublisherName(skill: SkillsDirectorySkill): string {
+	return skill.publisherName ?? skill.publisher ?? "Atlassian";
+}
+
+export function getSkillPublisherAvatarSrc(skill: SkillsDirectorySkill): string {
+	return skill.publisherAvatarSrc ?? skill.publisherLogoSrc ?? ATLASSIAN_LOGO;
+}
+
+export function getSkillCategoryId(skill: SkillsDirectorySkill): SkillCategory | undefined {
+	return skill.categoryId ?? skill.category;
 }
 
 /** Resolves a skill icon key to a raw Atlaskit icon element (color inherits from the parent). */
-export function getSkillIcon(icon: SkillIconKey): ReactElement {
+export function getSkillIcon(icon: SkillIconKey = "page"): ReactElement {
 	switch (icon) {
 		case "comment":
 			return <CommentIcon label="" color="currentColor" />;
@@ -64,6 +103,10 @@ export function getSkillIcon(icon: SkillIconKey): ReactElement {
 			return <LinkIcon label="" color="currentColor" />;
 		case "calendar":
 			return <CalendarIcon label="" color="currentColor" />;
+		case "megaphone":
+			return <MegaphoneIcon label="" color="currentColor" />;
+		case "paint-palette":
+			return <PaintPaletteIcon label="" color="currentColor" />;
 		case "search":
 			return <SearchIcon label="" color="currentColor" />;
 		case "page":
@@ -74,158 +117,187 @@ export function getSkillIcon(icon: SkillIconKey): ReactElement {
 
 const ATLASSIAN_LOGO = "/1p/atlassian.svg";
 const GOOGLE_LOGO = "/3p/google-drive/16.svg";
-const MICROSOFT_LOGO = "/3p/microsoft-teams/16.svg";
 const NOTION_LOGO = "/3p/notion/16.svg";
 const SLACK_LOGO = "/3p/slack/16.svg";
+const STRIPE_LOGO = "/3p/stripe/16.svg";
+const YOU_AVATAR = "/avatar-human/maia-ma.png";
+
+const DESIGN_LANDING_INSTRUCTIONS = `# Design Landing Page
+
+This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic AI aesthetics. The goal is to implement real, working code with careful attention to aesthetic details and deliberate creative choices.
+
+The user provides frontend requirements: a component, page, application, or interface to build. They may include context about the purpose, audience, or technical constraints.
+
+---
+
+## Design Thinking
+
+Before coding, understand the context and commit to a bold aesthetic direction.`;
+
+const MOBILE_APP_INSTRUCTIONS = `# Develop Mobile App Interface
+
+Craft intuitive mobile app interfaces for iOS and Android. Use this skill for onboarding flows, productivity surfaces, detail views, and app experiences that need refined interaction patterns.
+
+Plan the primary task first, then design the smallest complete surface that lets a user accomplish it.`;
+
+const BRAND_IDENTITY_INSTRUCTIONS = `# Create Brand Identity
+
+Create cohesive brand systems with logo direction, color palette, typography, voice, and reusable visual rules.
+
+Use when a project needs a recognizable visual identity before product or marketing screens are built.`;
 
 export const DEFAULT_SKILLS: readonly SkillsDirectorySkill[] = [
 	{
-		id: "create-page",
-		name: "Create page",
-		description: "Create a new formatted, rich text document or page in Confluence.",
-		icon: "page",
-		iconColor: "text-blue-500",
-		publisher: "Atlassian",
-		publisherLogoSrc: ATLASSIAN_LOGO,
-		starCount: 38,
-		viewCount: 6273,
-		category: "content-communication",
-	},
-	{
-		id: "create-channel",
-		name: "Create channel",
-		description: "Create a new channel in Microsoft Teams.",
-		icon: "comment",
+		id: "design-landing-page",
+		name: "Design landing page",
+		description: "Create high-converting, visually distinctive landing pages from scratch or by refactoring existing pages. Use when the user asks to build, redesign, polish, or optimize a landing page.",
+		icon: "paint-palette",
 		iconColor: "text-purple-500",
-		publisher: "Microsoft",
-		publisherLogoSrc: MICROSOFT_LOGO,
-		starCount: 38,
-		viewCount: 6273,
-		category: "content-communication",
-	},
-	{
-		id: "create-doc",
-		name: "Create doc",
-		description: "Create and share documents with your team in Google Docs.",
-		icon: "page",
-		iconColor: "text-green-500",
-		publisher: "Google",
-		publisherLogoSrc: GOOGLE_LOGO,
-		starCount: 38,
-		viewCount: 6273,
-		category: "content-communication",
-	},
-	{
-		id: "edit-page",
-		name: "Edit page",
-		description: "Modify an existing document or page to update information or formatting.",
-		icon: "edit",
-		iconColor: "text-blue-500",
-		publisher: "Atlassian",
-		publisherLogoSrc: ATLASSIAN_LOGO,
-		starCount: 42,
-		viewCount: 6274,
-		category: "content-communication",
-	},
-	{
-		id: "view-page",
-		name: "View page",
-		description: "Access and read the content of a document or page shared in Confluence.",
-		icon: "page",
-		iconColor: "text-blue-500",
-		publisher: "Atlassian",
-		publisherLogoSrc: ATLASSIAN_LOGO,
-		starCount: 45,
-		viewCount: 6275,
-		category: "content-communication",
-	},
-	{
-		id: "share-code",
-		name: "Share code",
-		description: "Send a link to the repo or code to collaborators via email or messaging.",
-		icon: "curly-brackets",
-		iconColor: "text-green-500",
-		publisher: "Atlassian",
-		publisherLogoSrc: ATLASSIAN_LOGO,
+		publisherName: "By you",
+		publisherAvatarSrc: YOU_AVATAR,
+		companyId: "you",
+		categoryId: "content-communication",
 		starCount: 30,
-		viewCount: 6276,
-		category: "software-development",
+		viewCount: 6279,
+		favorite: true,
+		tools: [
+			{ id: "tool-1", name: "Tool1", icon: "page" },
+			{ id: "tool-2", name: "Tool2", icon: "page" },
+			{ id: "tool-3", name: "Tool3", icon: "page" },
+		],
+		instructions: DESIGN_LANDING_INSTRUCTIONS,
 	},
 	{
-		id: "delete-page",
-		name: "Delete page",
-		description: "Remove a document or page permanently from Confluence.",
-		icon: "page",
-		iconColor: "text-red-500",
-		publisher: "Atlassian",
-		publisherLogoSrc: ATLASSIAN_LOGO,
+		id: "develop-mobile-app-interface",
+		name: "Develop mobile app interface",
+		description: "Craft intuitive and engaging mobile app interfaces tailored for both iOS and Android platforms. Ideal for designing, enhancing, or refining app UI/UX.",
+		icon: "paint-palette",
+		iconColor: "text-blue-500",
+		publisherName: "By you",
+		publisherAvatarSrc: YOU_AVATAR,
+		companyId: "you",
+		categoryId: "software-development",
+		starCount: 45,
+		viewCount: 8345,
+		favorite: true,
+		tools: [
+			{ id: "wireframe", name: "Wireframe", icon: "page" },
+			{ id: "prototype", name: "Prototype", icon: "paint-palette" },
+		],
+		instructions: MOBILE_APP_INSTRUCTIONS,
+	},
+	{
+		id: "create-brand-identity",
+		name: "Create brand identity",
+		description: "Establish a cohesive brand identity through logo design, color palettes, typography, and visual style guidelines. Use this when creating or refreshing a brand.",
+		icon: "paint-palette",
+		iconColor: "text-teal-500",
+		publisherName: "By you",
+		publisherAvatarSrc: YOU_AVATAR,
+		companyId: "you",
+		categoryId: "content-communication",
+		starCount: 60,
+		viewCount: 4921,
+		favorite: true,
+		tools: [
+			{ id: "palette", name: "Palette", icon: "paint-palette" },
+			{ id: "guidelines", name: "Guidelines", icon: "page" },
+		],
+		instructions: BRAND_IDENTITY_INSTRUCTIONS,
+	},
+	{
+		id: "produce-marketing-materials",
+		name: "Produce marketing materials",
+		description: "Design eye-catching marketing collateral that resonates with target audiences, including brochures, posters, and social media graphics.",
+		icon: "edit",
+		iconColor: "text-text-subtle",
+		publisherName: "By you",
+		publisherAvatarSrc: YOU_AVATAR,
+		companyId: "you",
+		categoryId: "content-communication",
 		starCount: 25,
-		viewCount: 6277,
-		category: "content-communication",
-	},
-	{
-		id: "export-video",
-		name: "Export video",
-		description: "Download the video in various formats like MOV and MP4.",
-		icon: "video",
-		iconColor: "text-pink-500",
-		publisher: "Atlassian",
-		publisherLogoSrc: ATLASSIAN_LOGO,
-		starCount: 50,
-		viewCount: 6278,
-		category: "content-communication",
+		viewCount: 3810,
+		tools: [{ id: "campaign-kit", name: "Campaign kit", icon: "megaphone" }],
+		instructions: "Create polished campaign assets with clear hierarchy, strong brand fit, and production-ready copy blocks.",
 	},
 	{
 		id: "review-pull-request",
 		name: "Review pull request",
-		description: "Summarize diffs and surface review-worthy changes across a pull request.",
+		description: "Summarize diffs and surface review-worthy changes across a pull request before a teammate merges it.",
 		icon: "angle-brackets",
 		iconColor: "text-teal-500",
-		publisher: "Atlassian",
-		publisherLogoSrc: ATLASSIAN_LOGO,
+		publisherName: "Atlassian",
+		publisherAvatarSrc: ATLASSIAN_LOGO,
+		companyId: "atlassian",
+		categoryId: "software-development",
 		starCount: 61,
 		viewCount: 8120,
-		category: "software-development",
+		tools: [{ id: "bitbucket", name: "Bitbucket", icon: "angle-brackets" }],
+		instructions: "Inspect changed files, summarize behavioral risk, and produce actionable review comments.",
 	},
 	{
 		id: "summarize-thread",
 		name: "Summarize thread",
-		description: "Condense a long conversation into the decisions, owners, and next steps.",
+		description: "Condense a long conversation into the decisions, owners, and next steps that matter.",
 		icon: "comment",
 		iconColor: "text-purple-500",
-		publisher: "Slack",
-		publisherLogoSrc: SLACK_LOGO,
+		publisherName: "Slack",
+		publisherAvatarSrc: SLACK_LOGO,
+		companyId: "slack",
+		categoryId: "content-communication",
 		starCount: 54,
 		viewCount: 7045,
-		category: "content-communication",
+		tools: [{ id: "slack", name: "Slack", icon: "comment" }],
+		instructions: "Extract decisions, unresolved questions, and owner/date pairs from long Slack-style discussions.",
 	},
 	{
 		id: "schedule-meeting",
 		name: "Schedule meeting",
-		description: "Find a time that works for everyone and create a calendar invite.",
+		description: "Find a time that works for everyone and create a calendar invite with the right context.",
 		icon: "calendar",
 		iconColor: "text-orange-500",
-		publisher: "Google",
-		publisherLogoSrc: GOOGLE_LOGO,
+		publisherName: "Google",
+		publisherAvatarSrc: GOOGLE_LOGO,
+		companyId: "google",
+		categoryId: "administrative-tools",
 		starCount: 33,
 		viewCount: 5210,
-		category: "administrative-tools",
+		tools: [{ id: "calendar", name: "Calendar", icon: "calendar" }],
+		instructions: "Compare availability, propose meeting slots, and draft concise invites.",
 	},
 	{
 		id: "build-report",
 		name: "Build report",
-		description: "Turn raw metrics into a narrative report your stakeholders will read.",
+		description: "Turn raw metrics into a narrative report your stakeholders will actually read.",
 		icon: "chart-trend-up",
 		iconColor: "text-teal-500",
-		publisher: "Notion",
-		publisherLogoSrc: NOTION_LOGO,
+		publisherName: "Notion",
+		publisherAvatarSrc: NOTION_LOGO,
+		companyId: "notion",
+		categoryId: "data-analytics",
 		starCount: 47,
 		viewCount: 6940,
-		category: "data-analytics",
+		tools: [{ id: "notion", name: "Notion", icon: "page" }],
+		instructions: "Structure metric snapshots into a short, evidence-backed status report.",
+	},
+	{
+		id: "create-payment-flow",
+		name: "Create payment flow",
+		description: "Design checkout, billing, and account-update flows with clear states and recovery paths.",
+		icon: "link",
+		iconColor: "text-indigo-500",
+		publisherName: "Stripe",
+		publisherAvatarSrc: STRIPE_LOGO,
+		companyId: "stripe",
+		categoryId: "project-management",
+		starCount: 22,
+		viewCount: 3384,
+		tools: [{ id: "stripe", name: "Stripe", icon: "link" }],
+		instructions: "Map payment states, error recovery, and confirmation copy for checkout-like flows.",
 	},
 ];
 
-/** Convenience lookup for sidebar references (e.g. Favourites). */
+/** Convenience lookup for sidebar references. */
 export function getSkillById(
 	skills: readonly SkillsDirectorySkill[],
 	id: string,
