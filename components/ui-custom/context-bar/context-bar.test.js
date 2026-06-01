@@ -84,6 +84,9 @@ async function loadContextBarHarness() {
 				export function DropdownMenuContent(props) {
 					return React.createElement("div", { ...props }, props.children);
 				}
+				export function DropdownMenuGroup(props) {
+					return React.createElement("div", { ...props }, props.children);
+				}
 				export function DropdownMenuItem(props) {
 					return React.createElement("div", { ...props }, props.children);
 				}

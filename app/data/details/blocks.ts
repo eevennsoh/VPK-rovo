@@ -1,6 +1,27 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
+	"editor-palette": {
+		description: "Showcase of the rich text editor's two suggestion menus: the \"@\" Add context listbox and the \"/\" Basic blocks command listbox, plus a live editor where typing the trigger characters opens the real popups.",
+		importStatement: `import EditorPalette from "@/components/blocks/editor-palette/page";`,
+		usage: `import EditorPalette from "@/components/blocks/editor-palette/page";
+
+<EditorPalette />`,
+		demoLayout: { previewHeight: "default" },
+		props: [
+			{
+				name: "mentionSources",
+				type: "RichTextMentionSources",
+				description: "Mention categories that drive the \"@\" Add context menu counts.",
+			},
+			{
+				name: "showLiveEditor",
+				type: "boolean",
+				default: "true",
+				description: "Render a live editor where typing \"@\" or \"/\" opens the real menus.",
+			},
+		],
+	},
 	"agent-card": {
 		description: "Figma-matched Rovo agent profile card with cover art, avatar attribution, partner byline, description, title actions, and an AI input affordance.",
 		importStatement: `import { AgentCard } from "@/components/blocks/agent-card";`,

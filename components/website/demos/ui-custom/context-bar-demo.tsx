@@ -17,6 +17,7 @@ import {
 	ContextBarTagGroup,
 	ContextBarTrigger,
 } from "@/components/ui-custom/context-bar";
+import { Icon } from "@/components/ui/icon";
 import { token } from "@/lib/tokens";
 
 export default function ContextBarDemo() {
@@ -143,7 +144,7 @@ export function ContextBarDemoMultiPill() {
 		{
 			id: "move",
 			label: "Move to Local",
-			icon: <LocationIcon color={token("color.icon.subtle")} label="" size="small" />,
+			icon: <Icon render={<LocationIcon label="" />} label="Move to Local" />,
 			content: (
 				<ContextBarPill
 					icon={<LocationIcon color={token("color.icon.subtle")} label="" size="small" />}
@@ -155,7 +156,7 @@ export function ContextBarDemoMultiPill() {
 		{
 			id: "create-prs",
 			label: "Create PRs",
-			icon: <PullRequestIcon color={token("color.icon.subtle")} label="" size="small" />,
+			icon: <Icon render={<PullRequestIcon label="" />} label="Create PRs" />,
 			content: (
 				<ContextBarPill
 					icon={<PullRequestIcon color={token("color.icon.subtle")} label="" size="small" />}
@@ -172,7 +173,7 @@ export function ContextBarDemoMultiPill() {
 		{
 			id: "new-branch",
 			label: "New branch",
-			icon: <BranchIcon color={token("color.icon.subtle")} label="" size="small" />,
+			icon: <Icon render={<BranchIcon label="" />} label="New branch" />,
 			content: (
 				<ContextBarPill
 					icon={<BranchIcon color={token("color.icon.subtle")} label="" size="small" />}

@@ -46,7 +46,7 @@ export interface RichTextCommandItem {
 	run: (editor: Editor) => void;
 }
 
-interface RichTextSuggestionMenuItem {
+export interface RichTextSuggestionMenuItem {
 	id: string;
 	label: string;
 	description?: string;
@@ -279,7 +279,7 @@ function getCategoryIcon(category: RichTextMentionCategory): ReactNode {
 	}
 }
 
-function RichTextSuggestionMenu({
+export function RichTextSuggestionMenu({
 	emptyLabel,
 	items,
 	onBack,
@@ -499,6 +499,17 @@ function getCategoryItems(
 	category: RichTextMentionCategory,
 ): readonly RichTextMentionItem[] {
 	return getMergedMentionSources(sources)[category] ?? [];
+}
+
+export function getMentionContextMenuItems(
+	sources?: RichTextMentionSources,
+): readonly RichTextSuggestionMenuItem[] {
+	return CATEGORY_ORDER.map((category) => ({
+		description: `${getCategoryItems(sources, category).length} available`,
+		icon: getCategoryIcon(category),
+		id: category,
+		label: CATEGORY_LABELS[category],
+	}));
 }
 
 export function createMentionSuggestionRenderer(
