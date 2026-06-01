@@ -34,7 +34,7 @@ export function CardDirectory({
 
 	const cardMotionProps = {
 		className: cn(
-			"group/card relative flex h-full w-full flex-col gap-3 rounded-md border border-border bg-surface p-4 text-left outline-none transition-[border-color] duration-fast ease-out focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+			"group/card relative flex h-full w-full flex-col gap-3 rounded-md bg-surface p-4 text-left outline-none after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:border after:border-border after:transition-colors after:duration-fast after:ease-out hover:after:border-transparent focus-visible:after:border-transparent focus-visible:ring-3 focus-visible:ring-ring/50",
 			interactive && "cursor-pointer",
 			className,
 		),

@@ -22,9 +22,14 @@ const AGENT_BROWSER_SOURCE = readFileSync(
 
 test("shell preserves the bordered surface and hover-elevation classes", () => {
 	assert.match(SHELL_SOURCE, /group\/card/u);
-	assert.match(SHELL_SOURCE, /rounded-md border border-border bg-surface p-4/u);
+	assert.match(SHELL_SOURCE, /rounded-md bg-surface p-4/u);
 	assert.match(SHELL_SOURCE, /focus-visible:ring-3 focus-visible:ring-ring\/50/u);
 	assert.match(SHELL_SOURCE, /willChange: "transform"/u);
+	// The border is an overlay pseudo-element that fades out on hover/focus so only the
+	// elevation shadow remains — never a persistent real border that survives hover.
+	assert.doesNotMatch(SHELL_SOURCE, /\bborder border-border\b/u);
+	assert.match(SHELL_SOURCE, /after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:border after:border-border/u);
+	assert.match(SHELL_SOURCE, /hover:after:border-transparent focus-visible:after:border-transparent/u);
 	assert.doesNotMatch(SHELL_SOURCE, /hover:border-border-selected/u);
 	assert.doesNotMatch(SHELL_SOURCE, /hover:after:ring-border-selected/u);
 });
@@ -175,9 +180,10 @@ test("expanded agent variant pins the header and footer around a scrollable body
 	// unbounded, yet shrink + scroll (header/footer pinned) when a height is imposed
 	assert.match(AGENT_EXPANDED_SOURCE, /flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-2/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /<div className="pb-4">\s*<CardDirectoryCapabilities/u);
-	// the expanded shell owns clipping while body/footer restore their own padding
-	assert.match(AGENT_EXPANDED_SOURCE, /border-0 p-0 after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:border after:border-border/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /hover:after:border-transparent focus-visible:after:border-transparent/u);
+	// the expanded shell owns clipping while body/footer restore their own padding; the
+	// hover-fading after-border now comes from the base shell, so the variant only resets layout
+	assert.match(AGENT_EXPANDED_SOURCE, /gap-0 overflow-clip p-0/u);
+	assert.doesNotMatch(AGENT_EXPANDED_SOURCE, /border-0/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /shrink-0 overflow-clip border-t border-border bg-surface/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /className="justify-between px-4 py-3 transition-opacity/u);
 });

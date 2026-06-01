@@ -225,10 +225,7 @@ export function CardDirectoryAgentExpanded({
 
 	return (
 		<CardDirectory
-			className={cn(
-				"gap-0 overflow-clip border-0 p-0 after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:border after:border-border after:transition-colors after:duration-fast after:ease-out hover:after:border-transparent focus-visible:after:border-transparent",
-				className,
-			)}
+			className={cn("gap-0 overflow-clip p-0", className)}
 			onSelect={onSelect}
 			selectLabel={`Select ${name}`}
 		>
