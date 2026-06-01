@@ -180,7 +180,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /case "tools":[\s\S]*return getNonEmptyConfigItems\(config\.tools\)\.length === 0/u);
 	assert.match(AGENT_SOURCE, /className="flex min-h-8 min-w-0 items-center gap-1"/u);
 	assert.match(AGENT_SOURCE, /hasVisibleAddOptions \? "pt-2" : "pt-4"/u);
-	assert.match(AGENT_SOURCE, /import \{ CheckIcon, PlusCircleIcon, PlusIcon \} from "@\/components\/ui\/vpk-icons";/u);
+	assert.match(AGENT_SOURCE, /import \{ CheckIcon, MoreHorizontalIcon, PlusCircleIcon, PlusIcon \} from "@\/components\/ui\/vpk-icons";/u);
 	assert.match(AGENT_SOURCE, /aria-hidden="true"[\s\S]*data-slot="agent-compact-config-marker"[\s\S]*className="ml-1 inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle"[\s\S]*<PlusCircleIcon size="small" \/>/u);
 	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Add agent configuration"/u);
 	assert.match(AGENT_SOURCE, /export function AgentCompactHeaderNav/u);
@@ -193,11 +193,11 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_HEADER_NAV_GAP = 4;/u);
 	assert.match(AGENT_SOURCE, /className="relative flex min-w-0 flex-1 items-center overflow-hidden"[\s\S]*style=\{\{ gap: AGENT_COMPACT_HEADER_NAV_GAP \}\}/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH = 24;/u);
-	assert.match(AGENT_SOURCE, /<DropdownMenuTrigger[\s\S]*aria-label="More agent sections"[\s\S]*render=\{<Button className="size-6 rounded px-0" size="icon-xs" type="button" variant="ghost" \/>\}[\s\S]*<MoreHorizontalIcon size="small" \/>/u);
+	assert.match(AGENT_SOURCE, /<DropdownMenuTrigger[\s\S]*aria-label="More agent sections"[\s\S]*render=\{<Button className="size-6 rounded px-0" size="icon-compact" type="button" variant="ghost" \/>\}[\s\S]*<MoreHorizontalIcon size="small" \/>/u);
 	assert.match(AGENT_SOURCE, /hiddenItems\.map\(\(item\) => \([\s\S]*<DropdownMenuItem elemBefore=\{item\.icon\} key=\{item\.label\}>/u);
 	assert.match(AGENT_SOURCE, /<Avatar label="Agent" shape="hexagon" size="sm">[\s\S]*<AvatarImage alt="" src=\{avatarSrc\} \/>/u);
 	assert.match(AGENT_SOURCE, /aria-pressed=\{item\.isSelected \? true : undefined\}[\s\S]*variant=\{item\.isSelected \? "outline" : "ghost"\}/u);
-	assert.doesNotMatch(AGENT_SOURCE, /\[\&_svg\]:size-4!/u);
+	assert.doesNotMatch(AGENT_SOURCE, /\[&_svg\]:size-4!/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactOperationsBento/u);
 	assert.match(AGENT_SOURCE, /showSectionLabel=\{false\}/u);
 	assert.match(AGENT_SOURCE, /data-slot="agent-compact-operations-bento"/u);
@@ -368,11 +368,10 @@ test("Mention menu exposes Studio context categories and mention lozenges", () =
 });
 
 test("Agent creation guidance asks for structured markdown instructions", () => {
-	for (const source of [STUDIO_AGENT_RESULT_SOURCE, STUDIO_SHELL_SOURCE]) {
-		assert.match(source, /structured Markdown/u);
-		assert.match(source, /## Instructions/u);
-		assert.match(source, /bold labels/u);
-	}
+	assert.match(STUDIO_AGENT_RESULT_SOURCE, /structured Markdown/u);
+	assert.match(STUDIO_AGENT_RESULT_SOURCE, /## Instructions/u);
+	assert.match(STUDIO_AGENT_RESULT_SOURCE, /bold labels/u);
+	assert.match(STUDIO_SHELL_SOURCE, /buildStudioAgentCreationContext/u);
 
 	assert.match(STUDIO_AGENT_RESULT_SOURCE, /- \*\*Summary\*\*/u);
 	assert.match(STUDIO_AGENT_RESULT_SOURCE, /## Validation/u);
