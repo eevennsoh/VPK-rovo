@@ -329,6 +329,10 @@
 	color: var(--ds-text, #172b4d);
 }
 
+.rich-text-command-menu-borderless {
+	border-color: transparent;
+}
+
 .rich-text-command-menu-title {
 	border-bottom: 1px solid var(--ds-border, #dfe1e6);
 	padding: 8px 10px;
@@ -417,12 +421,19 @@
 }
 
 .rich-text-command-menu-shortcut {
-	border-radius: var(--ds-radius-small, 3px);
-	background-color: var(--ds-background-neutral, #091e420f);
-	padding: 1px 5px;
-	color: var(--ds-text-subtle, #44546f);
+	margin-left: auto;
+	flex-shrink: 0;
+	padding-left: 24px;
+	color: var(--ds-text-subtlest, #626f86);
 	font-size: 11px;
 	line-height: 16px;
+	letter-spacing: 0.025em;
+	text-align: right;
+}
+
+.rich-text-command-menu-item:hover .rich-text-command-menu-shortcut,
+.rich-text-command-menu-item-selected .rich-text-command-menu-shortcut {
+	color: var(--ds-text-subtle, #44546f);
 }
 
 .rich-text-command-menu-empty {

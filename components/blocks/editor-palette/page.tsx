@@ -43,6 +43,7 @@ export default function EditorPalette({
 			>
 				<PalettePanel trigger="@" caption="Add context">
 					<RichTextSuggestionMenu
+						className="rich-text-command-menu-borderless"
 						title="Add context"
 						emptyLabel="No mention categories found"
 						items={contextItems}
@@ -53,6 +54,7 @@ export default function EditorPalette({
 
 				<PalettePanel trigger="/" caption="Basic blocks">
 					<RichTextSuggestionMenu
+						className="rich-text-command-menu-borderless"
 						title="Basic blocks"
 						emptyLabel="No commands found"
 						items={SLASH_COMMANDS}

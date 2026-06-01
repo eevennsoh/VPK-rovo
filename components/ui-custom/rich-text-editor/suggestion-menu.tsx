@@ -56,6 +56,7 @@ export interface RichTextSuggestionMenuItem {
 }
 
 interface RichTextSuggestionMenuProps {
+	className?: string;
 	emptyLabel: string;
 	items: readonly RichTextSuggestionMenuItem[];
 	onBack?: () => void;
@@ -280,6 +281,7 @@ function getCategoryIcon(category: RichTextMentionCategory): ReactNode {
 }
 
 export function RichTextSuggestionMenu({
+	className,
 	emptyLabel,
 	items,
 	onBack,
@@ -288,7 +290,11 @@ export function RichTextSuggestionMenu({
 	title,
 }: Readonly<RichTextSuggestionMenuProps>) {
 	return (
-		<div className="rich-text-command-menu" role="listbox" aria-label={title}>
+		<div
+			className={cn("rich-text-command-menu", className)}
+			role="listbox"
+			aria-label={title}
+		>
 			<div className="rich-text-command-menu-title">{title}</div>
 			{onBack ? (
 				<button
