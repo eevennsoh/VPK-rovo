@@ -90,19 +90,24 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	}
 });
 
-test("Agent component page wires the compact layout variation", () => {
+test("Agent component page wires compact filled and empty placeholder variations", () => {
 	assert.match(AGENT_SOURCE, /layout\?: "default" \| "compact";/u);
 	assert.match(AGENT_SOURCE, /layout = "default"/u);
 	assert.match(AGENT_SOURCE, /data-agent-config-layout=\{layout\}/u);
 	assert.match(AGENT_SOURCE, /layout === "compact"/u);
 	assert.match(AGENT_SOURCE, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
 
-	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompact/u);
-	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-compact"/u);
-	assert.match(AGENT_DEMO_SOURCE, /layout="compact"/u);
-	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Compact"[\s\S]*demoSlug: "agent-demo-compact"/u);
-	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-compact": dynamic/u);
-	assert.match(WEBSITE_REGISTRY_SOURCE, /default: mod\.AgentDemoCompact/u);
+	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactFilled/u);
+	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-compact-filled"/u);
+	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactEmpty/u);
+	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-compact-empty"/u);
+	assert.doesNotMatch(AGENT_DEMO_SOURCE, /layout="compact"/u);
+	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Compact filled"[\s\S]*demoSlug: "agent-demo-compact-filled"/u);
+	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Compact empty"[\s\S]*demoSlug: "agent-demo-compact-empty"/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-compact-filled": dynamic/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /default: mod\.AgentDemoCompactFilled/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-compact-empty": dynamic/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /default: mod\.AgentDemoCompactEmpty/u);
 });
 
 test("Agent profile inline edit fields align to the profile content edge", () => {

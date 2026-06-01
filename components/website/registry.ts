@@ -5381,10 +5381,17 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  "agent-demo-compact": dynamic(
+  "agent-demo-compact-filled": dynamic(
     () =>
       import("./demos/ui-custom/agent-demo").then((mod) => ({
-        default: mod.AgentDemoCompact,
+        default: mod.AgentDemoCompactFilled,
+      })),
+    { ssr: false },
+  ),
+  "agent-demo-compact-empty": dynamic(
+    () =>
+      import("./demos/ui-custom/agent-demo").then((mod) => ({
+        default: mod.AgentDemoCompactEmpty,
       })),
     { ssr: false },
   ),
