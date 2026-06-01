@@ -29,6 +29,8 @@ import {
 import { type CardDirectoryTemplateSkill } from "./card-directory-template";
 
 const MAX_VISIBLE_COLLABORATORS = 4;
+const CARD_DIRECTORY_SKILLS_MAX_ROWS = 2;
+const CARD_DIRECTORY_SKILLS_GROUP_CLASS_NAME = "h-11 content-start overflow-hidden";
 const PROJECT_BADGE_AVATAR_SRCS = [
 	"/avatar-project/apple.svg",
 	"/avatar-project/bank.svg",
@@ -264,7 +266,7 @@ export function CardDirectoryAgentExpanded({
 
 				{skills.length > 0 ? (
 					<CardDirectorySection label="Skills">
-						<SkillTagGroup maxRows={2}>
+						<SkillTagGroup className={CARD_DIRECTORY_SKILLS_GROUP_CLASS_NAME} maxRows={CARD_DIRECTORY_SKILLS_MAX_ROWS}>
 							{skills.map((skill) => (
 								<SkillTag color={skill.color ?? "default"} icon={skill.icon} key={skill.label}>
 									{skill.label}
