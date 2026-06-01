@@ -283,7 +283,7 @@ export function CardGlowBento({ config }: Readonly<{ config: CardGlowConfig }>) 
 					<button
 						aria-label={tile.title}
 						className={cn(
-							"group/card-glow relative isolate flex min-h-0 flex-col items-start gap-3 overflow-hidden rounded-lg p-4 text-left outline-none transition-[background-color,box-shadow,translate,scale] duration-fast ease-out focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px active:scale-[0.99]",
+							"group/card-glow relative isolate flex min-h-0 flex-col items-start gap-3 overflow-hidden rounded-lg p-4 text-left outline-none transition-[background-color,box-shadow,translate,scale,--card-glow-pointer-x,--card-glow-pointer-y] duration-fast ease-out focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px active:scale-[0.99]",
 							getCardThemeClassName(config.theme),
 							tile.layoutClassName,
 						)}

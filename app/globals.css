@@ -121,6 +121,52 @@
 		outline-offset: 2px;
 	}
 
+	/* Touch & interaction tuning for interactive controls.
+	   - touch-action: manipulation removes the ~300ms double-tap-zoom delay
+	     on touch devices while preserving panning/pinch-zoom.
+	   - -webkit-tap-highlight-color: transparent suppresses the redundant
+	     native gray tap flash on mobile WebKit; the app already provides
+	     :active / :focus-visible affordances. Both are Baseline-safe and
+	     degrade silently where unsupported. `:where(...)` keeps zero
+	     specificity so per-component overrides win without effort. */
+	:where(button, [role="button"], a, input, select, textarea, summary, label, [tabindex]:not([tabindex="-1"])) {
+		touch-action: manipulation;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	/* Brand caret — color the text-insertion cursor with the link/brand blue
+	   on text entry fields. Resolves to a --ds-* token so it re-themes in
+	   light/dark via data-color-mode. */
+	input,
+	textarea {
+		caret-color: var(--color-link);
+	}
+
+	/* Autofill repaint — Chromium/WebKit lock the autofilled field's
+	   background-color to a pale UA yellow that ignores our theme (and never
+	   updates in dark mode). background-color can't be overridden during
+	   autofill, so we paint over the field with a large inset box-shadow and
+	   set the text color via -webkit-text-fill-color. The 9999s
+	   background-color transition defers the UA's yellow flash effectively
+	   forever. Keyed to ADS tokens so it tracks light/dark. */
+	input:-webkit-autofill,
+	input:-webkit-autofill:hover,
+	input:-webkit-autofill:focus,
+	input:-webkit-autofill:active,
+	textarea:-webkit-autofill,
+	textarea:-webkit-autofill:hover,
+	textarea:-webkit-autofill:focus,
+	textarea:-webkit-autofill:active,
+	select:-webkit-autofill,
+	select:-webkit-autofill:hover,
+	select:-webkit-autofill:focus,
+	select:-webkit-autofill:active {
+		-webkit-text-fill-color: var(--color-foreground);
+		caret-color: var(--color-link);
+		box-shadow: 0 0 0 1000px var(--color-bg-input) inset;
+		transition: background-color 9999s ease-in-out 0s;
+	}
+
 	h1 {
 		font: var(--ds-font-heading-xlarge);
 	}
@@ -144,8 +190,29 @@
 	h6 {
 		font: var(--ds-font-heading-xxsmall);
 	}
+	/* Branded text selection — replaces the OS default (usually blue) with the
+	   ADS "selected" pairing. Both sides resolve to --ds-* tokens, so the
+	   highlight re-themes automatically in light/dark via data-color-mode.
+	   ::selection only honors a small set of properties (color,
+	   background-color, text-decoration) — all safe here. */
+	::selection {
+		background-color: var(--color-bg-selected);
+		color: var(--color-text-selected);
+	}
+
 	html {
 		@apply font-sans;
+
+		/* Enable native animation to/from intrinsic size keywords (`auto`,
+		   `min-content`, `fit-content`). Lets any CSS-driven height/grid-row
+		   transition on disclosures, accordions and collapsibles (reasoning,
+		   chain-of-thought, *-accordion) ease open/closed without measuring
+		   `scrollHeight` in JS. Inherited, so setting it once on the root opts
+		   the whole tree in. Limited availability (Chrome 129+): unsupported
+		   browsers ignore it and keep the existing Motion-driven path as the
+		   fallback. Honored alongside the global prefers-reduced-motion reset
+		   below, which already collapses these transitions for those users. */
+		interpolate-size: allow-keywords;
 	}
 }
 
@@ -270,6 +337,44 @@
 	&[data-scrolling] {
 		scrollbar-color: color-mix(in oklab, currentColor 20%, transparent) transparent;
 	}
+}
+
+/* Registered custom properties — typed registration unlocks transitions on
+   custom properties that are otherwise un-animatable (the browser treats
+   unregistered custom props as discrete `<custom-ident>` and snaps between
+   values). These back the pointer-tracked glow in the card-glow bento: with
+   them registered as `<number>`, the glow eases/trails the cursor and fades
+   smoothly back to rest on pointer-leave instead of snapping. `inherits: true`
+   matches their usage (set on each tile, read by descendant glow layers); the
+   `-10` initial value matches the existing `var(..., -10)` off-screen rest
+   position. Unsupported browsers ignore @property and fall back to discrete
+   (snapping) behavior — identical to before. */
+@property --card-glow-pointer-x {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: -10;
+}
+
+@property --card-glow-pointer-y {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: -10;
+}
+
+/* Text-box trim — remove the font's leading (half-leading above cap height
+   and below the alphabetic baseline) so a single line of text optically
+   centers against adjacent icons/avatars inside fixed-height, flex
+   `items-center` rows (lozenges, tags, buttons). Eliminates the "text sits
+   ~1px low" problem without magic margin hacks.
+
+   Longhand form (`text-box-trim` + `text-box-edge`) is used over the
+   `text-box` shorthand for broader tooling/parser recognition. Limited
+   availability (Chrome 133+, Safari 18.2+): unsupported browsers ignore
+   these declarations and fall back to the untrimmed line box — visually
+   identical to today, so this is purely additive. */
+@utility text-box-trim {
+	text-box-trim: trim-both;
+	text-box-edge: cap alphabetic;
 }
 
 /* Content-visibility: auto (Audit Theme B) — skip rendering work for

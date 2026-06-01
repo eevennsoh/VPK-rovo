@@ -197,8 +197,8 @@ function LozengeContent({
 					{renderLozengeIcon(icon)}
 				</span>
 			) : null}
-			{children != null ? <span className="truncate">{children}</span> : null}
-			{metric != null ? <span className="shrink-0">{metric}</span> : null}
+			{children != null ? <span className="truncate text-box-trim">{children}</span> : null}
+			{metric != null ? <span className="shrink-0 text-box-trim">{metric}</span> : null}
 			{trailing}
 		</span>
 	)
