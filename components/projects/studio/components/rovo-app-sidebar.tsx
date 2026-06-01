@@ -286,11 +286,15 @@ function StudioSidebarNavigation({
 	const hasSelectedRecentAgent = recentAgents.items.some((item) =>
 		getRecentAgentItemSelected(item, activeThreadId, selectedAgentId)
 	);
-	// Accordion state for the "Agents" header. Default open; force open whenever a
-	// recent agent is selected or being created so the active row is never hidden
-	// inside a collapsed list.
+	// Accordion state for the "Agents" header. Default open, and auto-open when a
+	// recent agent becomes selected from outside the visible list; a direct header
+	// click can still collapse the group.
 	const [isAgentsExpanded, setIsAgentsExpanded] = React.useState(true);
-	const isAgentsExpandedEffective = isAgentsExpanded || hasSelectedRecentAgent;
+	React.useEffect(() => {
+		if (hasSelectedRecentAgent) {
+			setIsAgentsExpanded(true);
+		}
+	}, [activeThreadId, hasSelectedRecentAgent, selectedAgentId]);
 
 	return (
 		<nav aria-label="Studio" className="flex shrink-0 flex-col gap-3">
@@ -314,7 +318,7 @@ function StudioSidebarNavigation({
 								// Without recent agents it keeps its original role of returning to
 								// the agents landing.
 								const leadingIcon = shouldShowRecentAgents ? (
-									<StudioSidebarAgentsLeadingIcon isExpanded={isAgentsExpandedEffective} />
+									<StudioSidebarAgentsLeadingIcon isExpanded={isAgentsExpanded} />
 								) : (
 									item.icon
 								);
@@ -330,11 +334,11 @@ function StudioSidebarNavigation({
 										<StudioSidebarNavItem
 											{...item}
 											icon={leadingIcon}
-											isExpanded={shouldShowRecentAgents ? isAgentsExpandedEffective : item.isExpanded}
+											isExpanded={shouldShowRecentAgents ? isAgentsExpanded : item.isExpanded}
 											isSelected={isItemSelected}
 											onClick={handleItemClick}
 										/>
-										{shouldShowRecentAgents && isAgentsExpandedEffective ? (
+										{shouldShowRecentAgents && isAgentsExpanded ? (
 											<div className="flex flex-col pl-3">
 												{recentAgents.items.map((recentAgent) => {
 													const isCreating = recentAgent.kind === "wip";

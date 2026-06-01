@@ -27,3 +27,12 @@ test("Studio sidebar recent agent avatar is 20px in the 24px leading slot", () =
 	assert.match(SOURCE, /height=\{20\}[\s\S]*width=\{20\}/u);
 	assert.match(SOURCE, /leadingSize="medium"/u);
 });
+
+test("Studio sidebar Agents parent can collapse while a recent agent is selected", () => {
+	assert.doesNotMatch(SOURCE, /isAgentsExpanded\s*\|\|\s*hasSelectedRecentAgent/u);
+	assert.match(
+		SOURCE,
+		/React\.useEffect\(\(\) => \{\s*if \(hasSelectedRecentAgent\) \{\s*setIsAgentsExpanded\(true\);/u,
+	);
+	assert.match(SOURCE, /shouldShowRecentAgents && isAgentsExpanded \? \(/u);
+});
