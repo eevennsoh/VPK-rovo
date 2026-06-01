@@ -5,7 +5,13 @@
  */
 
 // Chat contexts
-export { RovoChatProvider, useRovoChat, useRovoSelectedAgent } from "./context-rovo-chat";
+export {
+	getStudioSessionAgentDisplayName,
+	getStudioSessionAgentResultDisplayName,
+	RovoChatProvider,
+	useRovoChat,
+	useRovoSelectedAgent,
+} from "./context-rovo-chat";
 export type {
 	QueuedPromptItem,
 	SendPromptOptions,

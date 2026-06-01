@@ -188,6 +188,15 @@ test("Studio agent results use guarded session-agent registration with preserve-
 	assert.doesNotMatch(SHELL_SOURCE, /rovo-app-agents-directory/u);
 });
 
+test("Studio agent edit surfaces share the session-agent display name", () => {
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /getStudioSessionAgentDisplayName/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const agentName = getStudioSessionAgentDisplayName\(entry\);/u);
+	assert.match(SHELL_SOURCE, /getStudioSessionAgentDisplayName/u);
+	assert.match(SHELL_SOURCE, /const agentName = getStudioSessionAgentDisplayName\(activeSessionAgentEntry\);/u);
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /draft\.name\?\.trim\(\) \|\| entry\.profile\.name/u);
+	assert.doesNotMatch(SHELL_SOURCE, /draftResult\?\.name\?\.trim\(\) \|\| profile\.name/u);
+});
+
 test("Studio lands generated agents in the Test tab without opening Ask Rovo", () => {
 	// The navigation hook still exposes deterministic chat controls for the
 	// separate Ask Rovo surface, but generated-agent testing is tab-local now.

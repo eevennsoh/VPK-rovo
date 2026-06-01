@@ -103,7 +103,7 @@ import { useDismissibleCards } from "@/components/projects/shared/hooks/use-dism
 import { approveSkillDraft, fetchWikiStatus, fetchSkillDraftDetail, fetchSkillDrafts, fetchSkills, rejectSkillDraft } from "@/components/projects/control-plane/lib/control-plane-api";
 import type { HermesSkillDraftDetail, HermesSkillDraftSummary, HermesSkillSummary, WikiStatus } from "@/lib/rovo-runtime-types";
 import type { RovoAppHermesContext } from "@/lib/rovo-app-types";
-import { useRovoSelectedAgent } from "@/app/contexts";
+import { getStudioSessionAgentDisplayName, useRovoSelectedAgent } from "@/app/contexts";
 import { ROVO_DIRECTORY_AGENT_PROFILES, getRovoAgentPromptContext, isRovoAgentProfile, type RovoAgentProfile } from "@/components/projects/studio/data/agent-profiles";
 
 interface RovoAppShellProps {
@@ -1872,8 +1872,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		if (!activeSessionAgentEntry) {
 			return null;
 		}
-		const { profile, draftResult } = activeSessionAgentEntry;
-		const agentName = draftResult?.name?.trim() || profile.name;
+		const { profile } = activeSessionAgentEntry;
+		const agentName = getStudioSessionAgentDisplayName(activeSessionAgentEntry);
 		return {
 			iconName: "agent",
 			label: agentName,

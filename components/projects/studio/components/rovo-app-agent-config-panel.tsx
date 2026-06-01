@@ -14,7 +14,7 @@ import {
 } from "@/components/ui-custom/agent";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
-import { useRovoChat } from "@/app/contexts";
+import { getStudioSessionAgentDisplayName, useRovoChat } from "@/app/contexts";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { Lozenge } from "@/components/ui/lozenge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -307,7 +307,7 @@ export function RovoAppAgentConfigPanel({
 	);
 
 	const publishStatusLabel = getPublishLabel(entry.publishStatus);
-	const agentName = draft.name?.trim() || entry.profile.name || "Untitled agent";
+	const agentName = getStudioSessionAgentDisplayName(entry);
 	// Mirror the avatar the sidebar nav renders for this agent (entry.profile.avatarSrc)
 	// so the header + profile cover match instead of falling back to the static default.
 	const agentAvatarSrc = entry.profile.avatarSrc;

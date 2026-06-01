@@ -853,7 +853,8 @@ function toAgentSelectorAgent(agent: Pick<RovoAgentProfile, "avatarSrc" | "bylin
 }
 
 const SESSION_AGENT_DEFAULT_ID = "session-agent";
-const SESSION_AGENT_DEFAULT_NAME = "New agent";
+const SESSION_AGENT_DEFAULT_NAME = "Untitled agent";
+const SESSION_AGENT_LEGACY_DEFAULT_NAME = "New agent";
 const SESSION_AGENT_DEFAULT_BYLINE = "Custom agent by You";
 const SESSION_AGENT_DEFAULT_AVATAR_SRC = "/avatar-agent/strategy-agents/wildcard-4.svg";
 const SESSION_AGENT_MAX_CONVERSATION_STARTERS = 3;
@@ -929,14 +930,37 @@ function normalizeSessionAgentResult(
 	result: RovoDataParts["agent-result"]
 ): RovoDataParts["agent-result"] {
 	const conversationStarters = getAgentResultStarterLabels(result as AgentResultPayload);
-	if (!Array.isArray(result.conversationStarters) && conversationStarters.length === 0) {
+	const name = getNonEmptyString(result.name) === SESSION_AGENT_LEGACY_DEFAULT_NAME
+		? ""
+		: result.name;
+	const shouldNormalizeName = name !== result.name;
+	if (
+		!shouldNormalizeName &&
+		!Array.isArray(result.conversationStarters) &&
+		conversationStarters.length === 0
+	) {
 		return result;
 	}
 
 	return {
 		...result,
-		conversationStarters,
+		name,
+		...(Array.isArray(result.conversationStarters) || conversationStarters.length > 0
+			? { conversationStarters }
+			: {}),
 	};
+}
+
+export function getStudioSessionAgentResultDisplayName(
+	result: RovoDataParts["agent-result"],
+): string {
+	return getNonEmptyString(result.name) ?? SESSION_AGENT_DEFAULT_NAME;
+}
+
+export function getStudioSessionAgentDisplayName(
+	entry: Pick<StudioSessionAgentEntry, "draftResult">,
+): string {
+	return getStudioSessionAgentResultDisplayName(normalizeSessionAgentResult(entry.draftResult));
 }
 
 function getPayloadStringArray(
@@ -1119,9 +1143,8 @@ function createSessionAgentEntryFromResult(params: {
 		return existingEntry;
 	}
 
-	const baseName =
-		getPayloadString(payload, ["name", "agentName", "title"]) ??
-		SESSION_AGENT_DEFAULT_NAME;
+	const explicitName = getPayloadString(payload, ["name", "agentName", "title"]);
+	const baseName = explicitName ?? SESSION_AGENT_DEFAULT_NAME;
 	const baseId = normalizeGeneratedAgentId(
 		getPayloadString(payload, ["agentId", "id"]) ?? baseName
 	);
@@ -1135,7 +1158,9 @@ function createSessionAgentEntryFromResult(params: {
 		reservedProfiles.map((profile) => profile.name.toLowerCase())
 	);
 	const id = getSuffixedSessionAgentId(baseId, reservedIds);
-	const name = getSuffixedSessionAgentName(baseName, reservedNames);
+	const name = explicitName
+		? getSuffixedSessionAgentName(baseName, reservedNames)
+		: SESSION_AGENT_DEFAULT_NAME;
 	const profile = buildSessionAgentProfileFromResult({
 		agentResult,
 		profileId: id,
@@ -1167,12 +1192,10 @@ function rehydrateSessionAgentEntriesFromStorage(): SessionAgentEntry[] {
 		const publishedResult = record.publishedResult
 			? normalizeSessionAgentResult(record.publishedResult)
 			: null;
-		const fallbackName =
-			getNonEmptyString(sourceResult.name) ?? SESSION_AGENT_DEFAULT_NAME;
 		const profile = buildSessionAgentProfileFromResult({
 			agentResult: draftResult,
 			profileId: record.profileId,
-			profileName: getNonEmptyString(draftResult.name) ?? fallbackName,
+			profileName: getStudioSessionAgentResultDisplayName(draftResult),
 		});
 
 		return {
@@ -1190,6 +1213,39 @@ function rehydrateSessionAgentEntriesFromStorage(): SessionAgentEntry[] {
 
 function persistSessionAgentEntries(entries: readonly SessionAgentEntry[]): void {
 	writeSessionAgentRecords(entries.map(toPersistedRecord));
+}
+
+function normalizeSessionAgentEntry(entry: SessionAgentEntry): SessionAgentEntry {
+	const sourceResult = normalizeSessionAgentResult(entry.sourceResult);
+	const draftResult = normalizeSessionAgentResult(entry.draftResult);
+	const publishReadyResult = normalizeSessionAgentResult(entry.publishReadyResult);
+	const publishedResult = entry.publishedResult
+		? normalizeSessionAgentResult(entry.publishedResult)
+		: null;
+	const profileName = getStudioSessionAgentResultDisplayName(draftResult);
+
+	if (
+		sourceResult === entry.sourceResult &&
+		draftResult === entry.draftResult &&
+		publishReadyResult === entry.publishReadyResult &&
+		publishedResult === entry.publishedResult &&
+		entry.profile.name === profileName
+	) {
+		return entry;
+	}
+
+	return {
+		...entry,
+		profile: buildSessionAgentProfileFromResult({
+			agentResult: draftResult,
+			profileId: entry.profile.id,
+			profileName,
+		}),
+		sourceResult,
+		draftResult,
+		publishReadyResult,
+		publishedResult,
+	};
 }
 
 export function RovoChatProvider({
@@ -1256,20 +1312,24 @@ export function RovoChatProvider({
 		() => agentProfiles ?? ROVO_AGENT_PROFILES,
 		[agentProfiles]
 	);
+	const normalizedSessionAgentEntries = useMemo(
+		() => sessionAgentEntries.map(normalizeSessionAgentEntry),
+		[sessionAgentEntries],
+	);
 	const agentProfileById = useMemo(() => {
 		const profiles = [
 			...staticAgentProfiles,
-			...sessionAgentEntries.map((entry) => entry.profile),
+			...normalizedSessionAgentEntries.map((entry) => entry.profile),
 		];
 		return new Map(profiles.map((agent) => [agent.id, agent]));
-	}, [sessionAgentEntries, staticAgentProfiles]);
+	}, [normalizedSessionAgentEntries, staticAgentProfiles]);
 	const selectableAgents = useMemo<readonly AgentSelectorAgent[]>(() => {
 		const staticAgents = agentProfiles ?? ROVO_AGENT_SELECTOR_AGENTS;
 		return [
 			...staticAgents.map(toAgentSelectorAgent),
-			...sessionAgentEntries.map((entry) => toAgentSelectorAgent(entry.profile)),
+			...normalizedSessionAgentEntries.map((entry) => toAgentSelectorAgent(entry.profile)),
 		];
-	}, [agentProfiles, sessionAgentEntries]);
+	}, [agentProfiles, normalizedSessionAgentEntries]);
 	const selectedAgent = useMemo(
 		() => agentProfileById.get(selectedAgentId) ?? getRovoAgentProfile(selectedAgentId),
 		[agentProfileById, selectedAgentId],
@@ -1283,13 +1343,13 @@ export function RovoChatProvider({
 	const sendChatMessageRef = useRef<(promptItem: QueuedPromptItem) => Promise<void>>(async () => {});
 
 	useEffect(() => {
-		sessionAgentEntriesRef.current = sessionAgentEntries;
+		sessionAgentEntriesRef.current = normalizedSessionAgentEntries;
 		if (!hasInitializedSessionAgentsRef.current) {
 			hasInitializedSessionAgentsRef.current = true;
 			return;
 		}
-		persistSessionAgentEntries(sessionAgentEntries);
-	}, [sessionAgentEntries]);
+		persistSessionAgentEntries(normalizedSessionAgentEntries);
+	}, [normalizedSessionAgentEntries]);
 
 	useEffect(() => {
 		if (hasRehydratedPublishedAgentsRef.current) {
@@ -2871,8 +2931,7 @@ export function RovoChatProvider({
 			const nextProfile = buildSessionAgentProfileFromResult({
 				agentResult: nextDraftResult,
 				profileId: existing.profile.id,
-				profileName:
-					getNonEmptyString(nextDraftResult.name) ?? existing.profile.name,
+				profileName: getStudioSessionAgentResultDisplayName(nextDraftResult),
 			});
 
 			// If this agent was published and the draft now diverges from the
@@ -3022,7 +3081,7 @@ export function RovoChatProvider({
 			isCustomAgentSelected,
 			selectAgent,
 			registerCreatedAgentFromResult,
-			sessionAgentEntries,
+			sessionAgentEntries: normalizedSessionAgentEntries,
 			getSessionAgentEntry,
 			updateSessionAgentDraft,
 			commitSessionAgentPublishReady,
@@ -3084,7 +3143,7 @@ export function RovoChatProvider({
 			isCustomAgentSelected,
 			selectAgent,
 			registerCreatedAgentFromResult,
-			sessionAgentEntries,
+			normalizedSessionAgentEntries,
 			getSessionAgentEntry,
 			updateSessionAgentDraft,
 			commitSessionAgentPublishReady,
