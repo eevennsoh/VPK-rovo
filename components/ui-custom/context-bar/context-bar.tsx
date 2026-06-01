@@ -481,30 +481,34 @@ export function ContextBarTagGroup({
 			style={{ gap }}
 		>
 			{/* Invisible measurement layer: holds every pill at its natural width plus a
-			    representative overflow button so widths are known before layout. */}
+			    representative overflow button so widths are known before layout. The
+			    off-layout ruler is wrapped in a zero-size, clipped container so its
+			    natural-width contents can never expand the group's scroll box (which
+			    would otherwise spill a stray horizontal scrollbar). `offsetWidth` is
+			    unaffected by ancestor clipping, so measurements stay correct. */}
 			<div
 				aria-hidden
-				className="pointer-events-none invisible absolute top-0 left-0 flex items-center"
-				ref={measureRef}
-				style={{ gap }}
+				className="pointer-events-none absolute top-0 left-0 h-0 w-0 overflow-clip"
 			>
-				{items.map((item) => (
-					<div className="shrink-0" key={`${reactId}-measure-${item.id}`}>
-						{item.content}
-					</div>
-				))}
+				<div className="invisible flex items-center" ref={measureRef} style={{ gap }}>
+					{items.map((item) => (
+						<div className="shrink-0" key={`${reactId}-measure-${item.id}`}>
+							{item.content}
+						</div>
+					))}
+				</div>
+				<button
+					aria-hidden
+					className={cn(OVERFLOW_BUTTON_CLASS, "invisible absolute top-0 left-0")}
+					ref={overflowMeasureRef}
+					tabIndex={-1}
+					type="button"
+				>
+					<span className={cn(LEAD_ICON_CLASS, "h-6")}>
+						<ShowMoreHorizontalIcon color="currentColor" label="" size="small" />
+					</span>
+				</button>
 			</div>
-			<button
-				aria-hidden
-				className={cn(OVERFLOW_BUTTON_CLASS, "pointer-events-none invisible absolute top-0 left-0")}
-				ref={overflowMeasureRef}
-				tabIndex={-1}
-				type="button"
-			>
-				<span className={cn(LEAD_ICON_CLASS, "h-6")}>
-					<ShowMoreHorizontalIcon color="currentColor" label="" size="small" />
-				</span>
-			</button>
 
 			{visibleItems.map((item) => (
 				<div className="flex shrink-0" key={item.id}>
