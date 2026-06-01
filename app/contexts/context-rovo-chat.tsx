@@ -2799,17 +2799,20 @@ export function RovoChatProvider({
 
 	const selectAgent = useCallback((agentId: string, options?: SelectAgentOptions) => {
 		const nextAgent = agentProfileById.get(agentId) ?? getRovoAgentProfile(agentId);
+		// Selecting an agent must not reorder the recent-agents nav list. That list
+		// is sorted by `lastTouchedAt` desc, so bumping the timestamp here would pin
+		// the clicked agent to the top. Leave `lastTouchedAt` untouched on select —
+		// only create/edit/test/publish bump it. The selected row is reflected via
+		// `selectedAgentId` (its highlighted state), independent of list order.
 		if (nextAgent.id === selectedAgentId) {
-			touchSessionAgent(nextAgent.id);
 			return;
 		}
 
-		touchSessionAgent(nextAgent.id);
 		setSelectedAgentId(nextAgent.id);
 		if (!options?.preserveCurrentThread) {
 			resetChat();
 		}
-	}, [agentProfileById, resetChat, selectedAgentId, touchSessionAgent]);
+	}, [agentProfileById, resetChat, selectedAgentId]);
 
 	const registerCreatedAgentFromResult = useCallback(
 		(
