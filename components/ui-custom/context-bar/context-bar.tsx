@@ -2,7 +2,7 @@
 
 import CrossIcon from "@atlaskit/icon/core/cross";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { AnimatePresence, MotionConfig, motion, useReducedMotion, type Variants } from "motion/react";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import {
 	Popover,
@@ -204,12 +204,69 @@ const CONTEXT_BAR_SPRING = {
 } as const;
 
 /**
+ * `rounded-xl` resolves to `--ds-radius-xlarge` (12px). The morphing container
+ * sets this radius through the `style` prop as a raw number so Motion's layout
+ * projection can read and inverse-correct it every frame — a Tailwind class or a
+ * `var()` string is opaque to that correction and the corners distort while the
+ * box resizes.
+ */
+const CONTEXT_BAR_RADIUS = 12;
+
+/**
+ * Content cross-fade timing. `filter` blur is non-numeric so it can't run on
+ * spring physics; a short duration-based tween keeps the blur-in/out snappy and
+ * predictable for a productivity surface, composed with the AnimatePresence
+ * opacity cross-fade.
+ */
+const CONTENT_TRANSITION = {
+	duration: 0.18,
+	ease: "easeOut",
+} as const;
+
+/**
+ * Blur-in / blur-out applied to the swapping content: it blurs out as it leaves
+ * and blurs in as it enters. Paired with `layout="position"` on the content so
+ * the parent's size morph never scales (stretches) the text.
+ */
+const CONTENT_VARIANTS: Variants = {
+	initial: { opacity: 0, filter: "blur(4px)" },
+	animate: { opacity: 1, filter: "blur(0px)" },
+	exit: { opacity: 0, filter: "blur(4px)" },
+};
+
+/**
+ * Reduced-motion fallback: drop the blur filter (and rely on AnimatePresence's
+ * plain opacity cross-fade) so visitors who prefer reduced motion never see the
+ * blur transition. `MotionConfig reducedMotion="user"` already neutralises the
+ * layout/transform morph, but filter animations are not transform-based and must
+ * be opted out explicitly.
+ */
+const CONTENT_VARIANTS_REDUCED: Variants = {
+	initial: { opacity: 0 },
+	animate: { opacity: 1 },
+	exit: { opacity: 0 },
+};
+
+/**
  * Animated sibling of `CollapsibleContextBar`. Instead of hard-swapping between
  * the pill trigger and the expanded bar, the shared container morphs its size
  * via a Motion `layout` spring while the inner content cross-fades through
  * `AnimatePresence` (`mode="popLayout"` so the exiting state never disturbs the
- * incoming layout). `MotionConfig reducedMotion="user"` disables the transform
- * and layout animation for visitors who prefer reduced motion.
+ * incoming layout).
+ *
+ * Two distortions intrinsic to layout-driven size morphs are corrected:
+ * - Corner radius: the container sets `borderRadius` via the `style` prop as a
+ *   raw number so Motion's layout projection inverse-corrects it (a Tailwind
+ *   class is opaque to that correction and the corners warp while resizing).
+ * - Text/content stretch: the swapping content uses `layout="position"`, so it
+ *   translates into place and is inverse-scaled rather than stretched by the
+ *   parent's size animation.
+ *
+ * Content also blurs out as it leaves and blurs in as it enters. `MotionConfig
+ * reducedMotion="user"` disables the transform/layout morph for visitors who
+ * prefer reduced motion, and the blur variants are dropped via
+ * `useReducedMotion` (filter is not transform-based, so it isn't covered by
+ * `MotionConfig` alone).
  */
 export function AnimatedCollapsibleContextBar({
 	children,
@@ -222,12 +279,14 @@ export function AnimatedCollapsibleContextBar({
 	triggerAriaLabel,
 }: Readonly<CollapsibleContextBarProps>): React.ReactElement {
 	const [open, setOpen] = useState(defaultOpen);
+	const shouldReduceMotion = useReducedMotion();
+	const contentVariants = shouldReduceMotion ? CONTENT_VARIANTS_REDUCED : CONTENT_VARIANTS;
 
 	return (
 		<MotionConfig reducedMotion="user">
 			<motion.div
 				className={cn(
-					"mb-3 flex min-w-0 items-center overflow-hidden rounded-xl bg-bg-neutral",
+					"mb-3 flex min-w-0 items-center overflow-hidden bg-bg-neutral",
 					open
 						? "w-full justify-between"
 						: "w-fit cursor-pointer hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed",
@@ -235,17 +294,20 @@ export function AnimatedCollapsibleContextBar({
 				data-context-bar={open ? "" : undefined}
 				data-context-bar-trigger={open ? undefined : ""}
 				layout
+				style={{ borderRadius: CONTEXT_BAR_RADIUS }}
 				transition={CONTEXT_BAR_SPRING}
 			>
 				<AnimatePresence initial={false} mode="popLayout">
 					{open ? (
 						<motion.div
-							animate={{ opacity: 1 }}
+							animate="animate"
 							className="flex min-w-0 flex-1 items-center justify-between gap-3 px-3 py-2"
-							exit={{ opacity: 0 }}
-							initial={{ opacity: 0 }}
+							exit="exit"
+							initial="initial"
 							key="expanded"
-							transition={{ duration: 0.15 }}
+							layout="position"
+							transition={CONTENT_TRANSITION}
+							variants={contentVariants}
 						>
 							<div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
 								<ContextBarLead icon={lead}>{leadLabel}</ContextBarLead>
@@ -262,15 +324,17 @@ export function AnimatedCollapsibleContextBar({
 						</motion.div>
 					) : (
 						<motion.button
-							animate={{ opacity: 1 }}
+							animate="animate"
 							aria-label={triggerAriaLabel}
 							className="flex w-fit items-center gap-1.5 px-3 py-2 text-sm font-medium text-text-subtle transition-colors duration-normal ease-out hover:text-text focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:ring-inset focus-visible:outline-none"
-							exit={{ opacity: 0 }}
-							initial={{ opacity: 0 }}
+							exit="exit"
+							initial="initial"
 							key="collapsed"
+							layout="position"
 							onClick={() => setOpen(true)}
-							transition={{ duration: 0.15 }}
+							transition={CONTENT_TRANSITION}
 							type="button"
+							variants={contentVariants}
 						>
 							<span className={cn(LEAD_ICON_CLASS, "h-6")}>{collapsedIcon}</span>
 							{collapsedLabel}
