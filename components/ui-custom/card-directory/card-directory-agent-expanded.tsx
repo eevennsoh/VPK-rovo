@@ -30,7 +30,12 @@ import { type CardDirectoryTemplateSkill } from "./card-directory-template";
 
 const MAX_VISIBLE_COLLABORATORS = 4;
 const CARD_DIRECTORY_SKILLS_MAX_ROWS = 2;
-const CARD_DIRECTORY_SKILLS_GROUP_CLASS_NAME = "h-11 content-start overflow-hidden";
+// Reserve two rows and clip a would-be third row, but use `overflow-clip` with a small
+// clip-margin instead of `overflow-hidden`: the tags are `-skew-x-12`, so their corners
+// overhang the group box by ~2px (bottom-left slash, top-right edge). A plain
+// `overflow-hidden` slices those skewed corners at the row edges; the 3px clip-margin
+// keeps them whole while a third row (which starts ~4px below the reserved box) stays clipped.
+const CARD_DIRECTORY_SKILLS_GROUP_CLASS_NAME = "h-11 content-start overflow-clip [overflow-clip-margin:3px]";
 const PROJECT_BADGE_AVATAR_SRCS = [
 	"/avatar-project/apple.svg",
 	"/avatar-project/bank.svg",
