@@ -48,7 +48,6 @@ import { WeatherIcon } from "./weather-icon";
 import {
 	WidgetCard,
 	WidgetGridOverlay,
-	WidgetScrewDots,
 } from "./widget-card";
 
 // Pool of preloaded <audio> elements keyed by src. Reusing the same element
@@ -646,8 +645,6 @@ interface ResponsiveSizes {
 	labelFontPx: number;
 	footnoteFontPx: number;
 	labelInsetPx: number;
-	screwInsetX: { time: number; humidity: number; temperature: number };
-	screwInsetY: number;
 }
 
 // Layout anchors describe the *target* sizes the design was authored
@@ -680,8 +677,6 @@ const GRID_ANCHOR_SMALL: SizeAnchor = {
 	labelFontPx: 9,
 	footnoteFontPx: 11,
 	labelInsetPx: 16,
-	screwInsetX: { time: 22, humidity: 14, temperature: 22 },
-	screwInsetY: 12,
 };
 
 const GRID_ANCHOR_LARGE: SizeAnchor = {
@@ -699,8 +694,6 @@ const GRID_ANCHOR_LARGE: SizeAnchor = {
 	labelFontPx: 10,
 	footnoteFontPx: 12,
 	labelInsetPx: 28,
-	screwInsetX: { time: 44, humidity: 28, temperature: 44 },
-	screwInsetY: 18,
 };
 
 // Horizontal anchors — used while the container is wide enough for the
@@ -724,8 +717,6 @@ const ROW_ANCHOR_SMALL: SizeAnchor = {
 	labelFontPx: 10,
 	footnoteFontPx: 12,
 	labelInsetPx: 28,
-	screwInsetX: { time: 44, humidity: 28, temperature: 44 },
-	screwInsetY: 18,
 };
 
 const ROW_ANCHOR_LARGE: SizeAnchor = {
@@ -744,8 +735,6 @@ const ROW_ANCHOR_LARGE: SizeAnchor = {
 	labelFontPx: 11,
 	footnoteFontPx: 13,
 	labelInsetPx: 40,
-	screwInsetX: { time: 60, humidity: 40, temperature: 60 },
-	screwInsetY: 24,
 };
 
 // Below this container width we drop back to the 2×2 grid layout.
@@ -787,16 +776,6 @@ function interpolateSizes(
 		labelFontPx: mix("labelFontPx"),
 		footnoteFontPx: mix("footnoteFontPx"),
 		labelInsetPx: mix("labelInsetPx"),
-		screwInsetX: {
-			time: lerp(a.screwInsetX.time, b.screwInsetX.time, t),
-			humidity: lerp(a.screwInsetX.humidity, b.screwInsetX.humidity, t),
-			temperature: lerp(
-				a.screwInsetX.temperature,
-				b.screwInsetX.temperature,
-				t,
-			),
-		},
-		screwInsetY: lerp(a.screwInsetY, b.screwInsetY, t),
 	};
 }
 
@@ -892,13 +871,11 @@ interface WeatherTimeCardProps {
 	noiseOpacity: number;
 	noiseColor: string;
 	shaderTextClass: string;
-	shaderScrewColor: string;
 	shaderLabelColor: string;
 	shaderFootnoteColor: string;
 	cutoutFillColor: string;
 	cutoutTextShadow: string;
 	debossTextShadow: string;
-	debossDotShadow: string;
 	shader: ShaderConfig;
 	particlesSpeedRef: React.RefObject<number>;
 }
@@ -916,13 +893,11 @@ function WeatherTimeCard({
 	noiseOpacity,
 	noiseColor,
 	shaderTextClass,
-	shaderScrewColor,
 	shaderLabelColor,
 	shaderFootnoteColor,
 	cutoutFillColor,
 	cutoutTextShadow,
 	debossTextShadow,
-	debossDotShadow,
 	shader,
 	particlesSpeedRef,
 }: SharedWeatherClockProps) {
@@ -969,12 +944,6 @@ function WeatherTimeCard({
 						blendMode={gridBlendMode}
 						opacity={0.42}
 						cellSize={sizes.gridCellSize}
-					/>
-					<WidgetScrewDots
-						color={shaderScrewColor}
-						insetX={sizes.screwInsetX.time}
-						insetY={sizes.screwInsetY}
-						boxShadow={debossDotShadow}
 					/>
 					<Noise
 						className="absolute inset-0"
@@ -1090,13 +1059,11 @@ function SelectedWeatherClock({
 	noiseOpacity,
 	noiseColor,
 	shaderTextClass,
-	shaderScrewColor,
 	shaderLabelColor,
 	shaderFootnoteColor,
 	cutoutFillColor,
 	cutoutTextShadow,
 	debossTextShadow,
-	debossDotShadow,
 	shader,
 	particlesSpeedRef,
 	timeClassName,
@@ -1132,13 +1099,11 @@ function SelectedWeatherClock({
 					noiseOpacity={noiseOpacity}
 					noiseColor={noiseColor}
 					shaderTextClass={shaderTextClass}
-					shaderScrewColor={shaderScrewColor}
 					shaderLabelColor={shaderLabelColor}
 					shaderFootnoteColor={shaderFootnoteColor}
 					cutoutFillColor={cutoutFillColor}
 					cutoutTextShadow={cutoutTextShadow}
 					debossTextShadow={debossTextShadow}
-					debossDotShadow={debossDotShadow}
 					shader={shader}
 					particlesSpeedRef={particlesSpeedRef}
 				/>
@@ -1492,7 +1457,6 @@ export default function Weather({
 	const gridColor = "color-mix(in srgb, var(--ds-text-inverse) 18%, transparent)";
 	const gridBlendMode = isDarkTheme ? "multiply" : "screen";
 	const shaderTextClass = "text-text-inverse";
-	const shaderScrewColor = "var(--ds-text-inverse)";
 	const shaderLabelColor = "color-mix(in srgb, var(--ds-text-inverse) 72%, transparent)";
 	const shaderFootnoteColor = "color-mix(in srgb, var(--ds-text-inverse) 60%, transparent)";
 	const cutoutFillColor = "var(--ds-surface)";
@@ -1542,8 +1506,6 @@ export default function Weather({
 		`drop-shadow(0.4px 0.4px 0 ${cutoutHighlightColorSmall})`,
 		`drop-shadow(0.75px 0.75px 1.25px ${cutoutAmbientColorSmall})`,
 	].join(" ");
-	const debossDotShadow =
-		"inset 0 1px 0.5px color-mix(in srgb, var(--ds-text) 45%, transparent), 0 1px 0 color-mix(in srgb, var(--ds-text-inverse) 40%, transparent)";
 
 	const temperature = formatTemperature(weather.temperatureCelsius);
 
@@ -1814,13 +1776,11 @@ export default function Weather({
 						noiseOpacity={noiseOpacity}
 						noiseColor={noiseColor}
 						shaderTextClass={shaderTextClass}
-						shaderScrewColor={shaderScrewColor}
 						shaderLabelColor={shaderLabelColor}
 						shaderFootnoteColor={shaderFootnoteColor}
 						cutoutFillColor={cutoutFillColor}
 						cutoutTextShadow={cutoutTextShadow}
 						debossTextShadow={debossTextShadow}
-						debossDotShadow={debossDotShadow}
 						shader={shaderConfig}
 						particlesSpeedRef={particlesSpeedRef}
 						timeClassName={isRowLayout ? "col-start-2 row-start-1" : "col-start-2 row-start-1"}
@@ -1861,12 +1821,6 @@ export default function Weather({
 									blendMode={gridBlendMode}
 									opacity={0.42}
 									cellSize={sizes.gridCellSize}
-								/>
-								<WidgetScrewDots
-									color={shaderScrewColor}
-									insetX={sizes.screwInsetX.humidity}
-									insetY={sizes.screwInsetY}
-									boxShadow={debossDotShadow}
 								/>
 								<Noise
 									className="absolute inset-0"
@@ -1967,12 +1921,6 @@ export default function Weather({
 									blendMode={gridBlendMode}
 									opacity={0.42}
 									cellSize={sizes.gridCellSize}
-								/>
-								<WidgetScrewDots
-									color={shaderScrewColor}
-									insetX={sizes.screwInsetX.temperature}
-									insetY={sizes.screwInsetY}
-									boxShadow={debossDotShadow}
 								/>
 								<Noise
 									className="absolute inset-0"
