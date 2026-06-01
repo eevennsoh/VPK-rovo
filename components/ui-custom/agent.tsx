@@ -157,7 +157,7 @@ interface AgentCompactBentoTemplate {
 
 type AgentCompactBentoCardGlowCSSProperties = CSSProperties & Record<`--card-glow-${string}`, string | number>;
 
-const AGENT_COMPACT_OPERATIONS_TEMPLATES = [
+const AGENT_COMPACT_OPERATIONS_TEMPLATES: ReadonlyArray<AgentCompactBentoTemplate> = [
 	{
 		description: "Triage service requests, recommend field updates, and ask for missing details when needed.",
 		iconSrc: "/avatar-agent/service-agents/service-triage.svg",
@@ -201,7 +201,7 @@ const AGENT_COMPACT_OPERATIONS_TEMPLATES = [
 		layoutClassName: "lg:col-start-1 lg:row-start-2",
 		title: "User Manual Writer",
 	},
-] as const satisfies ReadonlyArray<AgentCompactBentoTemplate>;
+] as const;
 
 const AGENT_COMPACT_BENTO_AVATAR_GROUP_ACCENTS: Readonly<Record<string, string>> = {
 	"dev-agents": "#82B536",
@@ -382,7 +382,7 @@ export function AgentCompactHeaderNav({
 }: Readonly<{ avatarSrc?: string }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const measureRef = useRef<HTMLDivElement>(null);
-	const [visibleCount, setVisibleCount] = useState(AGENT_COMPACT_HEADER_NAV_ITEMS.length);
+	const [visibleCount, setVisibleCount] = useState<number>(AGENT_COMPACT_HEADER_NAV_ITEMS.length);
 	const visibleItems = AGENT_COMPACT_HEADER_NAV_ITEMS.slice(0, visibleCount);
 	const hiddenItems = AGENT_COMPACT_HEADER_NAV_ITEMS.slice(visibleCount);
 
