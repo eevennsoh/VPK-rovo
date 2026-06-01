@@ -98,6 +98,13 @@ interface TagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	type?: TagType;
 	disabled?: boolean;
 	onRemove?: () => void;
+	/**
+	 * How the remove control occupies space.
+	 * - `"inline"` (default): the remove button is laid out after the label and reserves horizontal space.
+	 * - `"overlay"`: the remove button floats over the trailing edge and only appears on hover/focus,
+	 *   fading into the label behind a gradient backdrop. The label keeps its full width.
+	 */
+	removeVariant?: "inline" | "overlay";
 	removeButtonLabel?: string;
 	elemBefore?: React.ReactNode;
 	isVerified?: boolean;
@@ -112,6 +119,7 @@ function Tag({
 	type = "default",
 	disabled = false,
 	onRemove,
+	removeVariant = "inline",
 	removeButtonLabel = "Remove",
 	elemBefore,
 	isVerified = false,
@@ -130,6 +138,7 @@ function Tag({
 	const isRounded = shape === "rounded" || variant === "rounded";
 	const isInteractive = Boolean(onClick);
 	const shouldShowVerifiedIcon = isOtherAvatarTag && isVerified;
+	const isOverlayRemove = Boolean(onRemove) && removeVariant === "overlay";
 	const removeButtonShapeClass = isUserAvatarTag ? "rounded-full" : "rounded-xs";
 	const removeButtonMarginClass = hasAvatarTagStyles ? "mr-[-2px]" : "-mx-0.5";
 
@@ -137,13 +146,18 @@ function Tag({
 	const resolvedRemoveButtonLabel = childText ? `${removeButtonLabel} ${childText}` : removeButtonLabel;
 	const resolvedStyle = maxWidth !== undefined ? { ...style, maxWidth } : style;
 
+	const handleRemoveClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+		event.stopPropagation();
+		onRemove?.();
+	};
+
 	return (
 		<span
 			{...props}
 			onClick={onClick}
 			style={resolvedStyle}
 			className={cn(
-				"relative inline-flex max-w-[11.25rem] min-w-0 shrink-0 self-start items-center border bg-bg-neutral-subtle text-xs leading-4 font-normal text-text transition-colors box-border",
+				"group relative inline-flex max-w-[11.25rem] min-w-0 shrink-0 self-start items-center border bg-bg-neutral-subtle text-xs leading-4 font-normal text-text transition-colors box-border",
 				"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
 				colorClasses.border,
 				hasAvatarTagStyles
@@ -176,16 +190,13 @@ function Tag({
 					<StatusVerifiedIcon label="Verified" size="small" />
 				</span>
 			) : null}
-			{onRemove ? (
+			{onRemove && !isOverlayRemove ? (
 				<span className="inline-flex shrink-0 items-center" data-slot="tag-after">
 					<button
 						type="button"
 						aria-label={resolvedRemoveButtonLabel}
 						disabled={disabled}
-						onClick={(event) => {
-							event.stopPropagation();
-							onRemove();
-						}}
+						onClick={handleRemoveClick}
 						className={cn(
 							"inline-flex size-4 shrink-0 items-center justify-center border-0 bg-bg-neutral-subtle text-text transition-colors hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none",
 							removeButtonShapeClass,
@@ -195,6 +206,32 @@ function Tag({
 						<CrossIcon label="" size="small" color="currentColor" />
 					</button>
 				</span>
+			) : null}
+			{isOverlayRemove ? (
+				<>
+					{/* Decorative gradient: solid behind the icon, fading into the label so the X stays legible over text. */}
+					<span
+						aria-hidden
+						data-slot="tag-remove-overlay-scrim"
+						className={cn(
+							"pointer-events-none absolute inset-y-0 end-0 w-9 rounded-[inherit] bg-gradient-to-l from-40% to-transparent opacity-0 transition-opacity duration-fast ease-out group-hover:opacity-100 group-focus-within:opacity-100",
+							isInteractive ? "from-bg-neutral-subtle-hovered" : "from-bg-neutral-subtle",
+						)}
+					/>
+					<button
+						type="button"
+						aria-label={resolvedRemoveButtonLabel}
+						disabled={disabled}
+						onClick={handleRemoveClick}
+						data-slot="tag-remove-overlay-button"
+						className={cn(
+							"absolute end-[3px] top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center rounded-xs border-0 bg-transparent text-text opacity-0 transition-[opacity,background-color] duration-fast ease-out hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none",
+							"pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100",
+						)}
+					>
+						<CrossIcon label="" size="small" color="currentColor" />
+					</button>
+				</>
 			) : null}
 		</span>
 	);
