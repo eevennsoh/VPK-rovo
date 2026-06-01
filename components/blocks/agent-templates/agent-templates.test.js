@@ -83,12 +83,13 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(source, /AGENT_TEMPLATES_TAB_COPY_VARIANTS/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_CARDS_VARIANTS/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET = 24/u);
-	assert.match(source, /h-\[min\(820px,calc\(100svh-1rem\)\)\]/u);
+	assert.match(source, /max-h-\[min\(820px,calc\(100svh-1rem\)\)\]/u);
+	assert.match(source, /grid-rows-\[auto_minmax\(0,auto\)\]/u);
 	assert.match(source, /<div className="relative min-h-0 overflow-hidden pb-6">/u);
 	// Sequenced swap (mode="wait"): quick exit, then a gradual staggered enter —
 	// each card fades + slides in, offset by AGENT_TEMPLATES_TAB_CARD_STAGGER.
 	assert.match(source, /className="h-full overflow-x-auto overflow-y-hidden \[scrollbar-width:none\]/u);
-	assert.match(source, /className="flex h-full gap-4 px-6 py-2"/u);
+	assert.match(source, /className="flex h-full gap-4 px-6 pt-2 pb-6"/u);
 	assert.match(source, /<AnimatePresence custom=\{tabMotionCustom\} initial=\{false\} mode="wait">/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_CARD_STAGGER = 0\.05/u);
 	assert.match(source, /templateAgents\.map\(\(agent, index\)/u);

@@ -162,8 +162,9 @@ test("expanded agent variant pins the header and footer around a scrollable body
 		AGENT_EXPANDED_SOURCE,
 		/<CardDirectoryBanner[\s\S]*<div className="px-4 pt-3">[\s\S]*<CardDirectoryHeader[\s\S]*byline=\{<CardDirectoryByline publisher=\{publisher\} verified=\{verified\} \/>\}[\s\S]*title=\{name\}[\s\S]*<CardDirectoryDescription className="mt-1">[\s\S]*description \?\?[\s\S]*\{\/\* Scrollable body/u,
 	);
-	// flex-1 + min-h-0 + overflow-y-auto gives a scrollable body so the header/footer stay pinned
-	assert.match(AGENT_EXPANDED_SOURCE, /flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-2/u);
+	// flex-auto + min-h-0 + overflow-y-auto lets the body hug its content when the card is
+	// unbounded, yet shrink + scroll (header/footer pinned) when a height is imposed
+	assert.match(AGENT_EXPANDED_SOURCE, /flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-2/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /<div className="pb-4">\s*<CardDirectoryCapabilities/u);
 	// the expanded shell owns clipping while body/footer restore their own padding
 	assert.match(AGENT_EXPANDED_SOURCE, /border-0 p-0 after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:border after:border-border/u);
