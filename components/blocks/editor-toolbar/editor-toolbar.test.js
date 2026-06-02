@@ -63,3 +63,16 @@ test("Editor toolbar demo renders the block directly with an end slot", () => {
 	assert.match(demoSource, /import EditorToolbarPage from "@\/components\/blocks\/editor-toolbar\/page";/u);
 	assert.match(demoSource, /<EditorToolbarPage \/>/u);
 });
+
+test("Editor toolbar demo exposes the Markdown source toggle", () => {
+	const pageSource = readProjectFile("components/blocks/editor-toolbar/page.tsx");
+
+	assert.match(pageSource, /useState\(false\)/u);
+	assert.match(pageSource, /const \[markdownSource, setMarkdownSource\] = useState\(""\);/u);
+	assert.match(pageSource, /applyMarkdownFormat/u);
+	assert.match(pageSource, /function handleToggleMarkdownMode\(\): void/u);
+	assert.match(pageSource, /isMarkdownMode=\{isMarkdownMode\}/u);
+	assert.match(pageSource, /onToggleMarkdownMode=\{handleToggleMarkdownMode\}/u);
+	assert.match(pageSource, /onMarkdownFormat=\{handleMarkdownFormat\}/u);
+	assert.match(pageSource, /aria-label="Editor toolbar demo Markdown source"/u);
+});
