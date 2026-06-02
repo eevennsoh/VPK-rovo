@@ -2040,6 +2040,18 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const rovoAppSidebarStyle = {
 		"--sidebar-width": `${sidebarResize.sidebarWidth}px`,
 	} as CSSProperties;
+	// Gate the persistent chrome's width/border transition so it never plays on
+	// first paint. The chrome renders at its final geometry during hydration,
+	// but a post-mount state settle (the global-sidebar bridge syncing
+	// sidebarOpen, or a responsive width pass) would otherwise trigger the
+	// transition-[width,border-color] animation on every refresh — the chrome
+	// visibly slides into place. Flipping the flag a frame after mount lets that
+	// initial settle apply instantly; only user-driven toggles after load animate.
+	const [hasMountedChrome, setHasMountedChrome] = useState(false);
+	useEffect(() => {
+		const frame = requestAnimationFrame(() => setHasMountedChrome(true));
+		return () => cancelAnimationFrame(frame);
+	}, []);
 	const [steeringState, setSteeringState] = useState<{
 		phase: RovoAppSteeringPhase;
 		text: string | null;
@@ -4198,7 +4210,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			{!embedded ? (
 				<div
 					className={cn(
-						"fixed top-0 left-0 z-50 flex h-12 items-center px-3 transition-[width,border-color] duration-medium ease-in-out",
+						"fixed top-0 left-0 z-50 flex h-12 items-center px-3",
+						hasMountedChrome && !sidebarResize.isResizing && "transition-[width,border-color] duration-medium ease-in-out",
 						sidebarResize.isResizing && "transition-none",
 						chat.sidebarOpen
 							? cn(
