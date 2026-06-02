@@ -111,6 +111,7 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 	assert.match(AGENT_SOURCE, /<AgentKnowledgeRow[\s\S]*value=\{knowledgeMode\}/u);
 	assert.match(AGENT_SOURCE, /<AgentKnowledgeOverflowMenu[\s\S]*value=\{knowledgeMode\}/u);
 	assert.match(AGENT_SOURCE, /const isCustom = value === "custom";/u);
+	assert.match(AGENT_SOURCE, /<AgentReferenceChip label="Memory" \/>/u);
 });
 
 test("Filled config summary sorts empty rows to the bottom while preserving canonical order", () => {

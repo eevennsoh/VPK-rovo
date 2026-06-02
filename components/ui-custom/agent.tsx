@@ -1957,9 +1957,12 @@ function AgentKnowledgeRow({
 					value={value}
 					onValueChange={onValueChange}
 				/>
+				<div aria-hidden className="h-4 w-px shrink-0 bg-border" />
+				{/* Memory is a default, non-removable knowledge source that's always
+				    available regardless of the org-knowledge mode. */}
+				<AgentReferenceChip label="Memory" />
 				{isCustom ? (
 					<>
-						<div aria-hidden className="h-4 w-px shrink-0 bg-border" />
 						{items.map((item, index) => (
 							<AgentReferenceChip
 								key={`knowledge-${item}-${index}`}
