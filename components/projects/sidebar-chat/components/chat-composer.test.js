@@ -70,6 +70,21 @@ test("shared composer auto reasoning button opens a sources-free customize popov
 	assert.match(source, /aria-label="Submit"/u);
 });
 
+test("shared composer experimental dark CTA prop is opt-in and covers submit plus live voice", () => {
+	const source = readProjectFile("components/projects/shared/components/rovo-composer-send-controls.tsx");
+	const neutralBoldClass = "bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
+	const submitIndex = source.indexOf('<PromptInputSubmit aria-label="Submit"');
+	const voiceStartIndex = source.indexOf('aria-label="Start live voice"');
+
+	assert.match(source, /experimentalDarkCta\?: boolean/u);
+	assert.match(source, /experimentalDarkCta = false/u);
+	assert.match(source, new RegExp(`const EXPERIMENTAL_DARK_CTA_CLASS_NAME = "${neutralBoldClass}"`, "u"));
+	assert.notEqual(submitIndex, -1);
+	assert.notEqual(voiceStartIndex, -1);
+	assert.match(source.slice(submitIndex, source.indexOf("</PromptInputSubmit>", submitIndex)), /experimentalDarkCtaClassName/u);
+	assert.match(source.slice(voiceStartIndex, source.indexOf("</PromptInputButton>", voiceStartIndex)), /experimentalDarkCtaClassName/u);
+});
+
 test("Rovo composers default reasoning to Auto", () => {
 	const sharedMenuData = readProjectFile("components/blocks/shared-ui/data/customize-menu-data.tsx");
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
@@ -101,14 +116,19 @@ test("sidebar chat and Rovo app composers use the shared Auto plus CTA controls"
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
 	const rovoComposer = readProjectFile("components/projects/rovo/components/rovo-app-composer.tsx");
+	const rovoShell = readProjectFile("components/projects/rovo/components/rovo-app-shell.tsx");
 
 	for (const source of [sidebarComposer, rovoComposer]) {
 		assert.match(source, /RovoComposerSendControls/u);
 		assert.match(source, /onToggleRealtimeVoice=\{onToggleRealtimeVoice\}/u);
+		assert.match(source, /experimentalDarkCta = false/u);
+		assert.match(source, /experimentalDarkCta=\{experimentalDarkCta\}/u);
 		assert.doesNotMatch(source, /<PromptInputSendControls/u);
 	}
 
 	assert.match(sidebarPanel, /useRealtimeVoice/u);
+	assert.match(sidebarPanel, /experimentalDarkCta/u);
+	assert.match(rovoShell, /experimentalDarkCta/u);
 	assert.match(sidebarPanel, /micStream=\{realtime\.micStream\}/u);
 	assert.match(sidebarPanel, /realtimeVoiceActive=\{isRealtimeVoiceActive\}/u);
 });

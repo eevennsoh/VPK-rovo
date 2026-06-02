@@ -38,6 +38,7 @@ interface ChatComposerProps {
 	isStreaming: boolean;
 	hasInFlightTurn: boolean;
 	queuedPrompts: ReadonlyArray<QueuedPromptItem>;
+	experimentalDarkCta?: boolean;
 	hideSourceAndModelControls?: boolean;
 	micStream?: MediaStream | null;
 	clickyActive?: boolean;
@@ -57,6 +58,7 @@ interface ChatComposerProps {
 interface ChatComposerSendControlsProps {
 	companyKnowledgeEnabled: boolean;
 	composerStatus: ChatStatus;
+	experimentalDarkCta?: boolean;
 	hideReasoningSelector?: boolean;
 	isComposerBusy: boolean;
 	micStream: MediaStream | null;
@@ -80,6 +82,7 @@ function getQueuedPromptLabel(queuedPrompt: QueuedPromptItem): string {
 function ChatComposerSendControls({
 	companyKnowledgeEnabled,
 	composerStatus,
+	experimentalDarkCta = false,
 	hideReasoningSelector = false,
 	isComposerBusy,
 	micStream,
@@ -103,6 +106,7 @@ function ChatComposerSendControls({
 			canSubmit={canSubmit}
 			companyKnowledgeEnabled={companyKnowledgeEnabled}
 			composerStatus={composerStatus}
+			experimentalDarkCta={experimentalDarkCta}
 			hideReasoningSelector={hideReasoningSelector}
 			isComposerBusy={isComposerBusy}
 			micStream={micStream}
@@ -120,7 +124,7 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, hideSourceAndModelControls = false, micStream = null, clickyActive = false, onPromptChange, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, selectedReasoning: controlledSelectedReasoning, chatContextBar, onContextBarOpenChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, experimentalDarkCta = false, hideSourceAndModelControls = false, micStream = null, clickyActive = false, onPromptChange, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, selectedReasoning: controlledSelectedReasoning, chatContextBar, onContextBarOpenChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -247,6 +251,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 						<ChatComposerSendControls
 							companyKnowledgeEnabled={companyKnowledgeEnabled}
 							composerStatus={submitStatus}
+							experimentalDarkCta={experimentalDarkCta}
 							hideReasoningSelector={hideSourceAndModelControls}
 							isComposerBusy={isComposerBusy}
 							micStream={micStream}

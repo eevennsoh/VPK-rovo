@@ -383,8 +383,10 @@ test("Studio composer reveals 'Start from scratch' on focus or hover and lands o
 	assert.match(fromScratchHandlerSource, /setActiveAgentConfig\(\{\s*\n\s*profileId: registered\.id/u);
 });
 
-test("Studio composer overrides the live voice start button to neutral bold", () => {
+test("Studio composer opts into experimental dark composer CTAs", () => {
 	assert.match(COMPOSER_SOURCE, /screenAssistantTargetPrefix="studio-composer"/u);
 	assert.match(COMPOSER_SOURCE, /className="relative z-10 mx-auto max-w-\[600px\]"/u);
-	assert.match(COMPOSER_SOURCE, /voiceStartButtonClassName="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u);
+	assert.match(COMPOSER_SOURCE, /experimentalDarkCta/u);
+	assert.doesNotMatch(COMPOSER_SOURCE, /voiceStartButtonClassName="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u);
+	assert.doesNotMatch(COMPOSER_SOURCE, /submitButtonClassName="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u);
 });

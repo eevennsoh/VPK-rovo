@@ -2244,6 +2244,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									composerStatus={chat.composerStatus}
 									compact={isArtifactOpen}
 									errorMessage={chat.inputError}
+									experimentalDarkCta
 									galleryExpanded={galleryExpanded}
 									isPlanMode={chat.isPlanMode}
 									micStream={realtime.micStream}

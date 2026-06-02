@@ -21,6 +21,7 @@ import CrossIcon from "@atlaskit/icon/core/cross";
 import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
 
 const ROVO_COMPOSER_WAVEFORM_INTRO_MS = 500;
+const EXPERIMENTAL_DARK_CTA_CLASS_NAME = "bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
 
 const autoReasoningButtonClassName = [
 	"whitespace-nowrap",
@@ -91,6 +92,7 @@ export function RovoComposerReasoningSelector({
 export interface RovoComposerActionButtonProps {
 	canSubmit: boolean;
 	composerStatus: ChatStatus;
+	experimentalDarkCta?: boolean;
 	isComposerBusy?: boolean;
 	micStream?: MediaStream | null;
 	onStop: () => Promise<void> | void;
@@ -106,6 +108,7 @@ export interface RovoComposerActionButtonProps {
 export function RovoComposerActionButton({
 	canSubmit,
 	composerStatus,
+	experimentalDarkCta = false,
 	isComposerBusy,
 	micStream = null,
 	onStop,
@@ -134,6 +137,7 @@ export function RovoComposerActionButton({
 		realtimeVoiceActive,
 	});
 	const isRealtimeWaveformProcessing = realtimeWaveformState.processing;
+	const experimentalDarkCtaClassName = experimentalDarkCta ? EXPERIMENTAL_DARK_CTA_CLASS_NAME : undefined;
 
 	const clearRealtimeWaveformIntro = useCallback(() => {
 		if (realtimeWaveformIntroTimeoutRef.current !== null) {
@@ -222,7 +226,7 @@ export function RovoComposerActionButton({
 						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
 						style={{ willChange: "transform, opacity" }}
 					>
-						<PromptInputSubmit aria-label="Submit" className={cn("hover:opacity-90 active:opacity-80", submitButtonClassName)} disabled={submitDisabled || !canSubmit} onStop={() => void onStop()} size="icon-sm" status={composerStatus}>
+						<PromptInputSubmit aria-label="Submit" className={cn("hover:opacity-90 active:opacity-80", experimentalDarkCtaClassName, submitButtonClassName)} disabled={submitDisabled || !canSubmit} onStop={() => void onStop()} size="icon-sm" status={composerStatus}>
 							<ArrowUpIcon label="" />
 						</PromptInputSubmit>
 					</motion.div>
@@ -256,7 +260,7 @@ export function RovoComposerActionButton({
 						<PromptInputButton
 							variant="default"
 							aria-label="Start live voice"
-							className={cn("size-8 hover:opacity-90 active:opacity-80", voiceStartButtonClassName)}
+							className={cn("size-8 hover:opacity-90 active:opacity-80", experimentalDarkCtaClassName, voiceStartButtonClassName)}
 							data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:voice` : undefined}
 							onClick={handleToggleRealtimeVoice}
 							tooltip={{ content: "Live chat", delay: 0 }}
@@ -297,6 +301,7 @@ export function RovoComposerSendControls({
 	className,
 	companyKnowledgeEnabled,
 	composerStatus,
+	experimentalDarkCta,
 	hideReasoningSelector = false,
 	isComposerBusy,
 	micStream,
@@ -310,6 +315,7 @@ export function RovoComposerSendControls({
 	screenAssistantTargetPrefix,
 	selectedReasoning,
 	showBackgroundStop,
+	submitButtonClassName,
 	submitDisabled,
 	voiceStartButtonClassName,
 	webResultsEnabled,
@@ -333,6 +339,7 @@ export function RovoComposerSendControls({
 			<RovoComposerActionButton
 				canSubmit={canSubmit}
 				composerStatus={composerStatus}
+				experimentalDarkCta={experimentalDarkCta}
 				isComposerBusy={isComposerBusy}
 				micStream={micStream}
 				onStop={onStop}
@@ -340,6 +347,7 @@ export function RovoComposerSendControls({
 				realtimeVoiceActive={realtimeVoiceActive}
 				screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 				showBackgroundStop={showBackgroundStop}
+				submitButtonClassName={submitButtonClassName}
 				submitDisabled={submitDisabled}
 				voiceStartButtonClassName={voiceStartButtonClassName}
 			/>
