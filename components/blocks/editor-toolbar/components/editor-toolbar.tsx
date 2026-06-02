@@ -11,6 +11,7 @@ import AlignTextRightIcon from "@atlaskit/icon/core/align-text-right";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import LinkIcon from "@atlaskit/icon/core/link";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
+import ListChecklistIcon from "@atlaskit/icon/core/list-checklist";
 import ListNumberedIcon from "@atlaskit/icon/core/list-numbered";
 import MarkdownIcon from "@atlaskit/icon/core/markdown";
 import QuotationMarkIcon from "@atlaskit/icon/core/quotation-mark";
@@ -20,10 +21,15 @@ import TextBoldIcon from "@atlaskit/icon/core/text-bold";
 import TextItalicIcon from "@atlaskit/icon/core/text-italic";
 import TextStrikethroughIcon from "@atlaskit/icon/core/text-strikethrough";
 import TextUnderlineIcon from "@atlaskit/icon/core/text-underline";
+import DividerElementIcon from "@atlaskit/icon-lab/core/divider-element";
 import TerminalIcon from "@atlaskit/icon-lab/core/terminal";
+import TextHeadingFiveIcon from "@atlaskit/icon-lab/core/text-heading-five";
+import TextHeadingFourIcon from "@atlaskit/icon-lab/core/text-heading-four";
 import TextHeadingOneIcon from "@atlaskit/icon-lab/core/text-heading-one";
+import TextHeadingSixIcon from "@atlaskit/icon-lab/core/text-heading-six";
 import TextHeadingThreeIcon from "@atlaskit/icon-lab/core/text-heading-three";
 import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
+import ViewTypeTableHomeIcon from "@atlaskit/icon-lab/core/view-type-table-home";
 
 import { useClickOutside } from "@/components/hooks/use-click-outside";
 import { Button } from "@/components/ui/button";
@@ -35,8 +41,23 @@ import type { MarkdownFormatKind } from "@/components/ui-custom/rich-text-editor
 import { TextNormalIcon } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
 
-type DropdownType = "textStyle" | "formatting" | "list" | "align" | null;
-type TextStyleType = "normal" | "h1" | "h2" | "h3" | "quote" | "codeBlock";
+type DropdownType =
+	| "textStyle"
+	| "formatting"
+	| "list"
+	| "align"
+	| "insert"
+	| null;
+type TextStyleType =
+	| "normal"
+	| "h1"
+	| "h2"
+	| "h3"
+	| "h4"
+	| "h5"
+	| "h6"
+	| "quote"
+	| "codeBlock";
 type Alignment = "left" | "center" | "right";
 
 const TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME = "*:data-[slot=toggle-group-item]:w-6! *:data-[slot=toggle-group-item]:min-w-6! *:data-[slot=toggle-group-item]:px-0!";
@@ -46,6 +67,9 @@ const TEXT_STYLE_TO_MARKDOWN: Record<TextStyleType, MarkdownFormatKind> = {
 	h1: "h1",
 	h2: "h2",
 	h3: "h3",
+	h4: "h4",
+	h5: "h5",
+	h6: "h6",
 	quote: "quote",
 	codeBlock: "codeBlock",
 };
@@ -67,6 +91,7 @@ interface DropdownMenuItemProps {
 	isSelected: boolean;
 	onClick: () => void;
 	className?: string;
+	disabled?: boolean;
 }
 
 interface DropdownMenuContainerProps {
@@ -98,15 +123,18 @@ function DropdownMenuItem({
 	isSelected,
 	onClick,
 	className,
+	disabled = false,
 }: Readonly<DropdownMenuItemProps>) {
 	return (
 		<button
 			type="button"
 			aria-label={label}
 			aria-pressed={isSelected}
+			disabled={disabled}
 			className={cn(
 				"flex w-full items-center gap-2 rounded px-2 py-2 text-left text-sm text-text-subtle transition-colors hover:bg-bg-neutral-subtle-hovered",
 				isSelected && "bg-bg-selected text-text-selected",
+				disabled && "cursor-not-allowed opacity-50 hover:bg-transparent",
 				className,
 			)}
 			onClick={onClick}
@@ -137,6 +165,9 @@ function getCurrentTextStyle(editor: Editor): string {
 	if (editor.isActive("heading", { level: 1 })) return "Heading 1";
 	if (editor.isActive("heading", { level: 2 })) return "Heading 2";
 	if (editor.isActive("heading", { level: 3 })) return "Heading 3";
+	if (editor.isActive("heading", { level: 4 })) return "Heading 4";
+	if (editor.isActive("heading", { level: 5 })) return "Heading 5";
+	if (editor.isActive("heading", { level: 6 })) return "Heading 6";
 	if (editor.isActive("blockquote")) return "Quote";
 	if (editor.isActive("codeBlock")) return "Code block";
 	return "Normal text";
@@ -151,6 +182,15 @@ function renderCurrentTextStyleIcon(editor: Editor) {
 	}
 	if (editor.isActive("heading", { level: 3 })) {
 		return <TextHeadingThreeIcon label="" size="small" />;
+	}
+	if (editor.isActive("heading", { level: 4 })) {
+		return <TextHeadingFourIcon label="" size="small" />;
+	}
+	if (editor.isActive("heading", { level: 5 })) {
+		return <TextHeadingFiveIcon label="" size="small" />;
+	}
+	if (editor.isActive("heading", { level: 6 })) {
+		return <TextHeadingSixIcon label="" size="small" />;
 	}
 	if (editor.isActive("blockquote")) {
 		return <QuotationMarkIcon label="" size="small" />;
@@ -174,6 +214,15 @@ function setTextStyle(editor: Editor, style: TextStyleType): void {
 			break;
 		case "h3":
 			editor.chain().focus().toggleHeading({ level: 3 }).run();
+			break;
+		case "h4":
+			editor.chain().focus().toggleHeading({ level: 4 }).run();
+			break;
+		case "h5":
+			editor.chain().focus().toggleHeading({ level: 5 }).run();
+			break;
+		case "h6":
+			editor.chain().focus().toggleHeading({ level: 6 }).run();
 			break;
 		case "quote":
 			editor.chain().focus().toggleBlockquote().run();
@@ -326,7 +375,26 @@ export function EditorToolbar({
 	}
 
 	function handleAddContent(): void {
+		toggleDropdown("insert");
+	}
+
+	function handleInsertParagraph(): void {
 		editor.chain().focus().insertContent({ type: "paragraph" }).run();
+		closeDropdown();
+	}
+
+	function handleInsertTable(): void {
+		editor
+			.chain()
+			.focus()
+			.insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+			.run();
+		closeDropdown();
+	}
+
+	function handleInsertHorizontalRule(): void {
+		runFormat("horizontalRule", () => editor.chain().focus().setHorizontalRule().run());
+		closeDropdown();
 	}
 
 	return (
@@ -375,6 +443,27 @@ export function EditorToolbar({
 									label="Heading 3"
 									isSelected={editor.isActive("heading", { level: 3 })}
 									onClick={() => handleTextStyle("h3")}
+									className="font-semibold"
+								/>
+								<DropdownMenuItem
+									icon={<TextHeadingFourIcon label="Heading 4" size="small" />}
+									label="Heading 4"
+									isSelected={editor.isActive("heading", { level: 4 })}
+									onClick={() => handleTextStyle("h4")}
+									className="font-semibold"
+								/>
+								<DropdownMenuItem
+									icon={<TextHeadingFiveIcon label="Heading 5" size="small" />}
+									label="Heading 5"
+									isSelected={editor.isActive("heading", { level: 5 })}
+									onClick={() => handleTextStyle("h5")}
+									className="font-semibold"
+								/>
+								<DropdownMenuItem
+									icon={<TextHeadingSixIcon label="Heading 6" size="small" />}
+									label="Heading 6"
+									isSelected={editor.isActive("heading", { level: 6 })}
+									onClick={() => handleTextStyle("h6")}
 									className="font-semibold"
 								/>
 								<DropdownMenuItem
@@ -499,6 +588,16 @@ export function EditorToolbar({
 										closeDropdown();
 									}}
 								/>
+								<DropdownMenuItem
+									icon={<ListChecklistIcon label="Task list" size="small" />}
+									label="Task list"
+									isSelected={!isMarkdownMode && editor.isActive("taskList")}
+									disabled={isMarkdownMode}
+									onClick={() => {
+										editor.chain().focus().toggleTaskList().run();
+										closeDropdown();
+									}}
+								/>
 							</DropdownMenuContainer>
 						) : null}
 					</div>
@@ -548,16 +647,42 @@ export function EditorToolbar({
 					>
 						<LinkIcon label="" size="small" />
 					</Toggle>
-					<Button
-						type="button"
-						aria-label="Add content"
-						size="icon"
-						variant="ghost"
-						disabled={isMarkdownMode}
-						onClick={handleAddContent}
-					>
-						<AddIcon label="" size="small" />
-					</Button>
+					<div className="relative">
+						<Button
+							type="button"
+							aria-label="Add content"
+							aria-expanded={openDropdown === "insert"}
+							size="icon"
+							variant="ghost"
+							onClick={handleAddContent}
+						>
+							<AddIcon label="" size="small" />
+						</Button>
+						{openDropdown === "insert" ? (
+							<DropdownMenuContainer>
+								<DropdownMenuItem
+									icon={<TextIcon label="Paragraph" size="small" />}
+									label="Paragraph"
+									isSelected={false}
+									disabled={isMarkdownMode}
+									onClick={handleInsertParagraph}
+								/>
+								<DropdownMenuItem
+									icon={<ViewTypeTableHomeIcon label="Table" size="small" />}
+									label="Table"
+									isSelected={!isMarkdownMode && editor.isActive("table")}
+									disabled={isMarkdownMode}
+									onClick={handleInsertTable}
+								/>
+								<DropdownMenuItem
+									icon={<DividerElementIcon label="Horizontal rule" size="small" />}
+									label="Horizontal rule"
+									isSelected={false}
+									onClick={handleInsertHorizontalRule}
+								/>
+							</DropdownMenuContainer>
+						) : null}
+					</div>
 				</div>
 			</div>
 			{endSlot || showModeTabs ? (
