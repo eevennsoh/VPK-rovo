@@ -7,24 +7,26 @@ import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, Tabl
 
 export default function TableDemo() {
 	return (
-		<Table className="w-56">
-			<TableHeader>
-				<TableRow>
-					<TableHead>Name</TableHead>
-					<TableHead>Role</TableHead>
-				</TableRow>
-			</TableHeader>
-			<TableBody>
-				<TableRow>
-					<TableCell>Alice</TableCell>
-					<TableCell>Admin</TableCell>
-				</TableRow>
-				<TableRow>
-					<TableCell>Bob</TableCell>
-					<TableCell>User</TableCell>
-				</TableRow>
-			</TableBody>
-		</Table>
+		<div className="w-56">
+			<Table>
+				<TableHeader>
+					<TableRow>
+						<TableHead>Name</TableHead>
+						<TableHead>Role</TableHead>
+					</TableRow>
+				</TableHeader>
+				<TableBody>
+					<TableRow>
+						<TableCell>Alice</TableCell>
+						<TableCell>Admin</TableCell>
+					</TableRow>
+					<TableRow>
+						<TableCell>Bob</TableCell>
+						<TableCell>User</TableCell>
+					</TableRow>
+				</TableBody>
+			</Table>
+		</div>
 	);
 }
 

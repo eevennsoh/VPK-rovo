@@ -40,7 +40,7 @@ import {
 	shouldShowReopenRovoAppBrowserArtifactControl,
 } from "@/components/projects/studio/lib/rovo-app-browser-preview";
 import { resolveRovoAppComposerPlaceholder } from "@/components/projects/studio/lib/rovo-app-composer-placeholder";
-import { ROVO_APP_MAX_CHAT_PANE_WIDTH, ROVO_APP_MIN_ARTIFACT_PANE_WIDTH, ROVO_APP_MIN_CHAT_PANE_WIDTH, getRovoAppShellLayout } from "@/components/projects/studio/lib/rovo-app-shell-layout";
+import { ROVO_APP_MAX_CHAT_PANE_WIDTH, ROVO_APP_MIN_ARTIFACT_PANE_WIDTH, ROVO_APP_MIN_CHAT_PANE_WIDTH, ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS, getRovoAppShellLayout } from "@/components/projects/studio/lib/rovo-app-shell-layout";
 import { getRovoAppSmartGenerationLayoutContext } from "@/components/projects/studio/lib/rovo-app-smart-generation-layout";
 import { deriveRovoAppTimelineItems } from "@/components/projects/studio/lib/rovo-app-timeline";
 import { buildComposerHermesContext, shouldResetComposerHermesSkillSelection } from "@/components/projects/studio/lib/rovo-app-hermes-skill-selection";
@@ -1036,7 +1036,7 @@ function HomeStarterBento({
 							key={activeCategory}
 							ref={bentoCarouselRef}
 							style={getBentoEdgeMaskStyle(canScrollLeft, canScrollRight)}
-							className={cn(BENTO_CAROUSEL_CONTAINER_CLASS, "max-w-[1280px]")}
+							className={cn(BENTO_CAROUSEL_CONTAINER_CLASS, ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS)}
 							initial={shouldReduceMotion ? false : "hidden"}
 							animate="visible"
 							exit={shouldReduceMotion ? undefined : "exit"}
