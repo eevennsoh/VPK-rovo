@@ -107,7 +107,7 @@ test("Editor toolbar exposes block inserts and an Add content reference dropdown
 	assert.match(componentSource, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>[\s\S]*<div[^>]*>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>[\s\S]*<\/div>/u);
 	assert.match(componentSource, /function handleInsertReference\(/u);
 	assert.match(componentSource, /\.focus\(\)\s*\.insertContent\(\[\s*\{\s*type: "mention"/u);
-	for (const label of ["Knowledge", "Tools", "Skills", "Subagents"]) {
+	for (const label of ["Knowledge", "Memory", "Tools", "Skills", "Subagents"]) {
 		assert.match(componentSource, new RegExp(`label: "${label}"`, "u"));
 	}
 	assert.doesNotMatch(componentSource, /<\/div>\s*<ToolbarSeparator \/>\s*\{onToggleMarkdownMode/u);

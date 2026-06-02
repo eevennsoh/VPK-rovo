@@ -5,35 +5,36 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 
 import AddIcon from "@atlaskit/icon/core/add";
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AlignTextCenterIcon from "@atlaskit/icon/core/align-text-center";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AlignTextRightIcon from "@atlaskit/icon/core/align-text-right";
 import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
-import AppsIcon from "@atlaskit/icon/core/apps";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import LibraryIcon from "@atlaskit/icon/core/library";
 import LinkIcon from "@atlaskit/icon/core/link";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import ListChecklistIcon from "@atlaskit/icon/core/list-checklist";
 import ListNumberedIcon from "@atlaskit/icon/core/list-numbered";
 import MarkdownIcon from "@atlaskit/icon/core/markdown";
-import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import QuotationMarkIcon from "@atlaskit/icon/core/quotation-mark";
 import SnippetIcon from "@atlaskit/icon/core/snippet";
+import TableIcon from "@atlaskit/icon/core/table";
 import TextIcon from "@atlaskit/icon/core/text";
 import TextBoldIcon from "@atlaskit/icon/core/text-bold";
 import TextItalicIcon from "@atlaskit/icon/core/text-italic";
 import TextStrikethroughIcon from "@atlaskit/icon/core/text-strikethrough";
 import TextUnderlineIcon from "@atlaskit/icon/core/text-underline";
 import ToolsIcon from "@atlaskit/icon/core/tools";
+import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
+import BookOpenIcon from "@atlaskit/icon-lab/core/book-open";
 import DividerElementIcon from "@atlaskit/icon-lab/core/divider-element";
+import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import TextHeadingFiveIcon from "@atlaskit/icon-lab/core/text-heading-five";
 import TextHeadingFourIcon from "@atlaskit/icon-lab/core/text-heading-four";
 import TextHeadingOneIcon from "@atlaskit/icon-lab/core/text-heading-one";
 import TextHeadingSixIcon from "@atlaskit/icon-lab/core/text-heading-six";
 import TextHeadingThreeIcon from "@atlaskit/icon-lab/core/text-heading-three";
 import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
-import ViewTypeTableHomeIcon from "@atlaskit/icon-lab/core/view-type-table-home";
 
 import { useClickOutside } from "@/components/hooks/use-click-outside";
 import { Button } from "@/components/ui/button";
@@ -80,7 +81,12 @@ const TEXT_STYLE_TO_MARKDOWN: Record<TextStyleType, MarkdownFormatKind> = {
 // mention category whose `id` prefix drives the chip styling (see
 // `data-mention-category` rules in rich-text-editor.css) and reuses the same
 // category icons as the "@"/"/" suggestion menus.
-type InsertReferenceCategory = "knowledge" | "tool" | "skill" | "subagent";
+type InsertReferenceCategory =
+	| "knowledge"
+	| "memory"
+	| "tool"
+	| "skill"
+	| "subagent";
 
 const INSERT_REFERENCE_OPTIONS: ReadonlyArray<{
 	category: InsertReferenceCategory;
@@ -90,14 +96,19 @@ const INSERT_REFERENCE_OPTIONS: ReadonlyArray<{
 	{
 		category: "knowledge",
 		label: "Knowledge",
-		icon: <LibraryIcon label="" size="small" />,
+		icon: <BookOpenIcon label="" size="small" />,
+	},
+	{
+		category: "memory",
+		label: "Memory",
+		icon: <AiModelIcon label="" size="small" />,
 	},
 	{ category: "tool", label: "Tools", icon: <ToolsIcon label="" size="small" /> },
-	{ category: "skill", label: "Skills", icon: <AppsIcon label="" size="small" /> },
+	{ category: "skill", label: "Skills", icon: <SkillIcon label="" size="small" /> },
 	{
 		category: "subagent",
 		label: "Subagents",
-		icon: <PeopleGroupIcon label="" size="small" />,
+		icon: <AiAgentIcon label="" size="small" />,
 	},
 ];
 
@@ -718,7 +729,7 @@ export function EditorToolbar({
 						disabled={isMarkdownMode}
 						onClick={handleInsertTable}
 					>
-						<ViewTypeTableHomeIcon label="" size="small" />
+						<TableIcon label="" size="small" />
 					</Button>
 
 					<ToolbarSeparator />
