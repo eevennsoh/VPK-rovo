@@ -2,6 +2,7 @@
 
 export type RichTextMentionCategory =
 	| "skill"
+	| "subagent"
 	| "link"
 	| "memory"
 	| "trigger"

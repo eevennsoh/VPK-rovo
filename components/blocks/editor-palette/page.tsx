@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react";
 
+import AppsIcon from "@atlaskit/icon/core/apps";
+
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
 	RichTextEditor,
@@ -9,6 +11,7 @@ import {
 	SLASH_COMMANDS,
 	getMentionContextMenuItems,
 	type RichTextMentionSources,
+	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -31,19 +34,27 @@ export default function EditorPalette({
 	className,
 }: Readonly<EditorPaletteProps>) {
 	const contextItems = getMentionContextMenuItems(mentionSources);
+	const skillItems: readonly RichTextSuggestionMenuItem[] = (mentionSources.skill ?? []).map(
+		(item) => ({
+			description: item.description,
+			icon: <AppsIcon label="" size="small" />,
+			id: item.id,
+			label: item.label,
+		}),
+	);
 
 	return (
 		<div
-			className={cn("flex w-full max-w-[720px] flex-col", className)}
+			className={cn("flex w-full min-w-[1008px] max-w-[1120px] flex-col", className)}
 			style={{ gap: token("space.400") }}
 		>
 			<div
-				className="flex flex-wrap items-start justify-center"
+				className="flex w-full flex-nowrap items-start justify-start overflow-x-auto lg:justify-center"
 				style={{ gap: token("space.300") }}
 			>
 				<PalettePanel trigger="@" caption="Add context">
 					<RichTextSuggestionMenu
-						className="rich-text-command-menu-borderless"
+						className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
 						title="Add context"
 						emptyLabel="No mention categories found"
 						items={contextItems}
@@ -52,9 +63,21 @@ export default function EditorPalette({
 					/>
 				</PalettePanel>
 
+				<PalettePanel trigger="@" caption="Skills nested">
+					<RichTextSuggestionMenu
+						className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
+						title="Skills"
+						emptyLabel="No matching items"
+						items={skillItems}
+						selectedIndex={0}
+						onBack={noop}
+						onSelect={noop}
+					/>
+				</PalettePanel>
+
 				<PalettePanel trigger="/" caption="Basic blocks">
 					<RichTextSuggestionMenu
-						className="rich-text-command-menu-borderless"
+						className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
 						title="Basic blocks"
 						emptyLabel="No commands found"
 						items={SLASH_COMMANDS}
