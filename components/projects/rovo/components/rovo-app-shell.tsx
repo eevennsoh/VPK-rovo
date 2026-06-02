@@ -2391,7 +2391,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									// chrome; collapse intent stays on the handle (`data-will-collapse`).
 									sidebarResize.isResizing || sidebarResize.isResizeHandleHovered ? "border-border-selected" : "border-border",
 								)
-							: "w-40 border-b border-border",
+							: "w-24 border-b border-border",
 					)}
 					style={{ backgroundColor: token("elevation.surface"), viewTransitionName: "persistent-sidebar" as never }}
 				>
@@ -2416,7 +2416,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			<div className="flex min-h-0 min-w-0 flex-1 flex-col">
 				{!embedded ? (
 					<div
-						className={cn("flex h-12 shrink-0 items-center border-b px-3 transition-[padding] duration-medium ease-in-out", !chat.sidebarOpen && "pl-44")}
+						className={cn("flex h-12 shrink-0 items-center border-b px-3 transition-[padding] duration-medium ease-in-out", !chat.sidebarOpen && "pl-24")}
 						style={{
 							borderColor: token("color.border"),
 							backgroundColor: token("elevation.surface"),

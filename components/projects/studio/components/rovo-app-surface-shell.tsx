@@ -157,7 +157,7 @@ export function RovoAppSurfaceShell({ children }: Readonly<RovoAppSurfaceShellPr
 									? "border-border-selected"
 									: "border-border",
 							)
-						: "w-40 border-b border-border",
+						: "w-24 border-b border-border",
 				)}
 				style={{ backgroundColor: token("elevation.surface"), viewTransitionName: "persistent-sidebar" as never }}
 			>
@@ -184,7 +184,7 @@ export function RovoAppSurfaceShell({ children }: Readonly<RovoAppSurfaceShellPr
 				<div
 					className={cn(
 						"flex h-12 shrink-0 items-center border-b px-3 transition-[padding] duration-medium ease-in-out",
-						!sidebarOpen && "pl-44",
+						!sidebarOpen && "pl-24",
 					)}
 					style={{
 						borderColor: token("color.border"),
