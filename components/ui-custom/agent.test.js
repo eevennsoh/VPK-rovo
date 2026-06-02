@@ -261,12 +261,13 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /import \{ AnimatePresence, motion, useReducedMotion, type MotionProps \} from "motion\/react";/u);
 	assert.match(AGENT_SOURCE, /import ChevronDownIcon from "@atlaskit\/icon\/core\/chevron-down";/u);
 	assert.match(AGENT_SOURCE, /import ChevronUpIcon from "@atlaskit\/icon\/core\/chevron-up";/u);
-	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow\([\s\S]*const \[expanded, setExpanded\] = useState\(false\);[\s\S]*const shouldReduceMotion = useReducedMotion\(\);[\s\S]*const isExpanded = expanded && isFilledConfig;/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow\([\s\S]*const \[expanded, setExpanded\] = useState\(\(\) => !isFilledConfig\);[\s\S]*const shouldReduceMotion = useReducedMotion\(\);[\s\S]*const isExpanded = expanded;/u);
 	assert.match(AGENT_SOURCE, /<AnimatePresence initial=\{false\} mode="wait">/u);
 	assert.match(AGENT_SOURCE, /<motion\.div\s+key="expanded"/u);
 	assert.match(AGENT_SOURCE, /<motion\.div\s+key="collapsed"/u);
 	// Horizontal rule line spans the row; the chevron sits at the far right of
-	// the same row and stays mounted across both states.
+	// the same row and stays mounted across both states. Empty configs initialize
+	// expanded so first-run users see all supported capability rows.
 	assert.match(AGENT_SOURCE, /<div aria-hidden className="h-px flex-1 bg-border" \/>/u);
 	assert.match(AGENT_SOURCE, /aria-label=\{isExpanded \? "Collapse configuration" : "Expand configuration"\}/u);
 	assert.match(AGENT_SOURCE, /onClick=\{\(\) => setExpanded\(\(prev\) => !prev\)\}/u);
@@ -296,8 +297,9 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /data-slot="agent-compact-operations-bento"/u);
 	assert.match(AGENT_SOURCE, /AGENT_COMPACT_BENTO_CARD_GLOW_EFFECT_STYLE/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactBentoCardGlowLayers/u);
-	assert.match(AGENT_SOURCE, /AGENT_COMPACT_BENTO_FADE_MASK/u);
-	assert.match(AGENT_SOURCE, /auto-rows-\[144px\][\s\S]*lg:grid-cols-5/u);
+	assert.match(AGENT_SOURCE, /sm:bento-fade-bottom/u);
+	assert.match(AGENT_SOURCE, /<BentoCarousel arrowLabels=\{\{ next: "Show next agent templates", previous: "Show previous agent templates" \}\}>/u);
+	assert.match(AGENT_SOURCE, /BENTO_CAROUSEL_TILE_CLASS/u);
 	assert.match(AGENT_SOURCE, /<SkillTagGroup maxRows=\{2\}>/u);
 	assert.match(AGENT_SOURCE, /<TWGAppstack[\s\S]*iconSize="md"[\s\S]*sources=\{template\.hero\.sources\}/u);
 	assert.match(AGENT_SOURCE, /Browse all/u);
