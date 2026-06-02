@@ -28,6 +28,13 @@ test("Studio sidebar recent agent avatar is 20px in the 24px leading slot", () =
 	assert.match(SOURCE, /leadingSize="medium"/u);
 });
 
+test("Studio sidebar creation rows use the shared VPK spinner", () => {
+	assert.match(SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
+	assert.match(SOURCE, /function StudioSidebarAgentCreationIcon\(\) \{\s*return <Spinner variant="rainbow" size="xs" label="Creating agent" \/>;/u);
+	assert.doesNotMatch(SOURCE, /components\/ui-custom\/morphing-rovo/u);
+	assert.doesNotMatch(SOURCE, /<MorphingRovo\.Shape/u);
+});
+
 test("Studio sidebar Agents parent can collapse while a recent agent is selected", () => {
 	assert.doesNotMatch(SOURCE, /isAgentsExpanded\s*\|\|\s*hasSelectedRecentAgent/u);
 	assert.match(

@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
 	buildStudioAgentCreationTrace,
-	__internals: { detectMentionedTools, summarizeQAExchange, deriveAgentNameHint, truncate },
+	__internals: { detectMentionedTools, summarizeQAExchange, deriveAgentNameHint, deriveAgentBriefFocus, truncate },
 } = require("./studio-agent-trace");
 
 test("buildStudioAgentCreationTrace emits the fixed step skeleton with stable ordering", () => {
@@ -13,15 +13,17 @@ test("buildStudioAgentCreationTrace emits the fixed step skeleton with stable or
 
 	const labels = steps.map((step) => step.label);
 	assert.deepEqual(labels, [
-		"Reading your brief",
-		"Selecting tools",
-		"Drafting instructions",
-		"Naming the agent",
-		"Saving the agent profile",
+		"Reading agent brief",
+		"Selecting agent tools",
+		"Drafting agent instructions",
+		"Naming agent profile",
+		"Saving agent profile",
 	]);
+	assert.match(steps[0].content, /research agent/u);
+	assert.match(steps[3].content, /name, byline, and profile-card summary/u);
 });
 
-test("buildStudioAgentCreationTrace inserts 'Reviewing your answers' when a prior assistant question exists", () => {
+test("buildStudioAgentCreationTrace inserts 'Reviewing agent details' when a prior assistant question exists", () => {
 	const steps = buildStudioAgentCreationTrace({
 		userPrompt: "Frontend bugs, please.",
 		messages: [
@@ -32,27 +34,28 @@ test("buildStudioAgentCreationTrace inserts 'Reviewing your answers' when a prio
 
 	const labels = steps.map((step) => step.label);
 	assert.deepEqual(labels, [
-		"Reading your brief",
-		"Reviewing your answers",
-		"Selecting tools",
-		"Drafting instructions",
-		"Naming the agent",
-		"Saving the agent profile",
+		"Reading agent brief",
+		"Reviewing agent details",
+		"Selecting agent tools",
+		"Drafting agent instructions",
+		"Naming agent profile",
+		"Saving agent profile",
 	]);
 
 	const reviewStep = steps[1];
+	assert.match(reviewStep.content, /agent profile draft/u);
 	assert.match(reviewStep.outputPreview, /What domain/);
 	assert.match(reviewStep.outputPreview, /Frontend bugs/);
 });
 
-test("buildStudioAgentCreationTrace skips 'Reviewing your answers' when there is no prior assistant turn", () => {
+test("buildStudioAgentCreationTrace skips 'Reviewing agent details' when there is no prior assistant turn", () => {
 	const steps = buildStudioAgentCreationTrace({
 		userPrompt: "Make me an agent.",
 		messages: [{ role: "user", content: "Hi" }],
 	});
 
 	const labels = steps.map((step) => step.label);
-	assert.equal(labels.includes("Reviewing your answers"), false);
+	assert.equal(labels.includes("Reviewing agent details"), false);
 });
 
 test("each step has the shape writeThinkingTraceSteps consumes", () => {
@@ -90,7 +93,7 @@ test("Selecting tools step reflects detected integrations in the input + preview
 	const steps = buildStudioAgentCreationTrace({
 		userPrompt: "An agent that watches GitHub PRs and pings Slack on review requests.",
 	});
-	const selectStep = steps.find((s) => s.label === "Selecting tools");
+	const selectStep = steps.find((s) => s.label === "Selecting agent tools");
 	assert.ok(selectStep);
 	assert.deepEqual(selectStep.input.mentioned.sort(), ["GitHub", "Slack"].sort());
 	assert.match(selectStep.outputPreview, /GitHub/);
@@ -99,8 +102,8 @@ test("Selecting tools step reflects detected integrations in the input + preview
 
 test("Selecting tools step reports a sensible fallback when no integrations are mentioned", () => {
 	const steps = buildStudioAgentCreationTrace({ userPrompt: "Just a helpful tutor." });
-	const selectStep = steps.find((s) => s.label === "Selecting tools");
-	assert.match(selectStep.outputPreview, /No tool integrations/i);
+	const selectStep = steps.find((s) => s.label === "Selecting agent tools");
+	assert.match(selectStep.outputPreview, /tool-neutral/i);
 });
 
 test("deriveAgentNameHint extracts an explicit '<adjective> agent' phrase from the prompt", () => {
@@ -116,6 +119,15 @@ test("deriveAgentNameHint falls back to a verb-based summary when no explicit pa
 test("deriveAgentNameHint returns the generic placeholder when nothing matches", () => {
 	assert.equal(deriveAgentNameHint(""), "an agent");
 	assert.equal(deriveAgentNameHint(undefined), "an agent");
+});
+
+test("deriveAgentBriefFocus keeps trace copy contextual to the requested agent", () => {
+	assert.equal(deriveAgentBriefFocus("Build a Jira triage agent for support."), "Jira triage agent");
+	assert.match(
+		deriveAgentBriefFocus("Track weekly release readiness across the frontend platform team."),
+		/Track weekly release readiness/u,
+	);
+	assert.equal(deriveAgentBriefFocus(""), "a new Studio agent");
 });
 
 test("summarizeQAExchange combines the most recent assistant question and the user's current answer", () => {

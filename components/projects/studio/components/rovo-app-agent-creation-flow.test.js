@@ -46,6 +46,12 @@ test("RovoAppShell starts Studio agent creation only from the default-agent home
 	assert.ok((SHELL_SOURCE.match(/creationMode: "agent"/gu) ?? []).length >= 1);
 });
 
+test("RovoAppShell does not render the Hermes turn-state card", () => {
+	assert.doesNotMatch(SHELL_SOURCE, /Hermes turn state/u);
+	assert.doesNotMatch(SHELL_SOURCE, /Server-resolved skills and Hermes draft-review state/u);
+	assert.doesNotMatch(SHELL_SOURCE, /Auto-loaded on the last turn/u);
+});
+
 test("Studio start-from-scratch scribble replays on each composer hover reveal", () => {
 	assert.match(COMPOSER_SOURCE, /const \[scratchScribbleReplayKey, setScratchScribbleReplayKey\] = useState\(0\);/u);
 	assert.match(COMPOSER_SOURCE, /setScratchScribbleReplayKey\(\(currentKey\) => currentKey \+ 1\);/u);

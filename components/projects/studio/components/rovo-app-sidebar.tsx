@@ -25,8 +25,8 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
+import { Spinner } from "@/components/ui/spinner";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
-import { MorphingRovo } from "@/components/ui-custom/morphing-rovo";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
 import { getStudioSidebarRecentAgents, type StudioSidebarRecentAgentItem } from "@/components/projects/studio/lib/studio-sidebar-recent-agents";
@@ -158,13 +158,11 @@ function StudioSidebarAgentAvatar({
 	);
 }
 
-// Mirrors the `/rovo` chat's in-creation cue (`PreloadThinkingIndicator` →
-// `ChainOfThoughtHeader shimmer`): the morphing Rovo glyph stands in for a
-// spinner. Defined as a wrapper so `SidebarNavItem`'s `normalizeIconNode` can
-// `cloneElement` it with `label`/`size` props without breaking the numeric
-// `size` that `MorphingRovo.Shape` expects.
+// Defined as a wrapper so `SidebarNavItem`'s `normalizeIconNode` can
+// `cloneElement` it with `label`/`size` props while the spinner keeps its own
+// stable visual sizing inside the shared 24px leading slot.
 function StudioSidebarAgentCreationIcon() {
-	return <MorphingRovo.Shape size={12} duration={0.8} blur={1.25} />;
+	return <Spinner variant="rainbow" size="xs" label="Creating agent" />;
 }
 
 // Leading icon for the "Agents" accordion header: shows `AiAgentIcon` at rest and

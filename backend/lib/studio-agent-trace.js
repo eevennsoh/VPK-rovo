@@ -143,6 +143,20 @@ function deriveAgentNameHint(userPrompt) {
 	return "an agent";
 }
 
+function deriveAgentBriefFocus(userPrompt) {
+	if (typeof userPrompt !== "string" || userPrompt.trim().length === 0) {
+		return "a new Studio agent";
+	}
+
+	const truncated = truncate(userPrompt, 90);
+	const explicitAgent = deriveAgentNameHint(userPrompt);
+	if (explicitAgent !== "an agent" && !explicitAgent.startsWith("agent that ")) {
+		return explicitAgent;
+	}
+
+	return truncated;
+}
+
 /**
  * Build an ordered list of thinking-trace steps for a Studio agent-creation
  * turn on the AI Gateway path.
@@ -159,13 +173,14 @@ function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescriptio
 	const steps = [];
 
 	const briefPreview = truncate(promptText, MAX_PROMPT_PREVIEW_CHARS) || "User did not supply a brief.";
+	const agentFocus = deriveAgentBriefFocus(promptText);
 	steps.push({
 		toolName: "studio.read_brief",
 		toolCallId: `${traceIdPrefix}-read-brief`,
-		label: "Reading your brief",
-		content: "Parsing the prompt to understand what kind of agent to build.",
+		label: "Reading agent brief",
+		content: `Identifying the job, audience, and expected outcome for ${agentFocus}.`,
 		input: { prompt: briefPreview },
-		outputPreview: `Brief understood: ${briefPreview}`,
+		outputPreview: `Agent brief captured: ${briefPreview}`,
 	});
 
 	const qaSummary = summarizeQAExchange(messages, promptText);
@@ -175,22 +190,22 @@ function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescriptio
 		steps.push({
 			toolName: "studio.review_answers",
 			toolCallId: `${traceIdPrefix}-review-answers`,
-			label: "Reviewing your answers",
-			content: "Folding in the clarifications from earlier turns.",
+			label: "Reviewing agent details",
+			content: "Merging your latest answers into the agent profile draft.",
 			input: { exchange: qaSummary },
-			outputPreview: qaSummary,
+			outputPreview: `Clarifications applied: ${qaSummary}`,
 		});
 	}
 
 	const mentionedTools = detectMentionedTools(promptText);
 	const toolSelectionPreview = mentionedTools.length > 0
-		? `Selected: ${mentionedTools.join(", ")}`
-		: "No tool integrations called out — defaulting to the standard skill set.";
+		? `Agent tools matched: ${mentionedTools.join(", ")}`
+		: "No named integrations in the brief; keeping the agent profile tool-neutral.";
 	steps.push({
 		toolName: "studio.select_tools",
 		toolCallId: `${traceIdPrefix}-select-tools`,
-		label: "Selecting tools",
-		content: "Mapping the brief to available integrations and skills.",
+		label: "Selecting agent tools",
+		content: "Matching the requested workflow to relevant tools and skills.",
 		input: { mentioned: mentionedTools },
 		outputPreview: toolSelectionPreview,
 	});
@@ -198,28 +213,31 @@ function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescriptio
 	steps.push({
 		toolName: "studio.draft_instructions",
 		toolCallId: `${traceIdPrefix}-draft-instructions`,
-		label: "Drafting instructions",
-		content: "Writing the system prompt and behavior guardrails.",
-		input: { hasContext: typeof contextDescription === "string" && contextDescription.length > 0 },
-		outputPreview: "Drafted instructions covering role, scope, and tone.",
+		label: "Drafting agent instructions",
+		content: `Writing role, scope, and guardrails for ${agentFocus}.`,
+		input: {
+			focus: agentFocus,
+			hasContext: typeof contextDescription === "string" && contextDescription.length > 0,
+		},
+		outputPreview: "Instruction draft covers role, boundaries, tools, and tone.",
 	});
 
 	const nameHint = deriveAgentNameHint(promptText);
 	steps.push({
 		toolName: "studio.name_agent",
 		toolCallId: `${traceIdPrefix}-name-agent`,
-		label: "Naming the agent",
-		content: "Choosing a name and short description for the profile card.",
+		label: "Naming agent profile",
+		content: "Choosing a name, byline, and profile-card summary that match the brief.",
 		input: { hint: nameHint },
-		outputPreview: `Naming hint: ${nameHint}`,
+		outputPreview: `Profile naming cue: ${nameHint}`,
 	});
 
 	steps.push({
 		toolName: "studio.save_profile",
 		toolCallId: `${traceIdPrefix}-save-profile`,
-		label: "Saving the agent profile",
+		label: "Saving agent profile",
 		content: "Persisting the agent so it shows up in your Studio library.",
-		outputPreview: "Profile ready to surface.",
+		outputPreview: "Agent profile ready for Studio.",
 	});
 
 	return steps;
@@ -232,6 +250,7 @@ module.exports = {
 		detectMentionedTools,
 		summarizeQAExchange,
 		deriveAgentNameHint,
+		deriveAgentBriefFocus,
 		truncate,
 	},
 };

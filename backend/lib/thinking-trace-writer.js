@@ -12,7 +12,7 @@
  * `writeAgentsRfpDemoTrace` for the source pattern.
  */
 
-const DEFAULT_TOOL_CALL_DELAY_MS = 700;
+const DEFAULT_TOOL_CALL_DELAY_MS = 1400;
 
 function waitFor(delayMs, signal) {
 	if (typeof delayMs !== "number" || !Number.isFinite(delayMs) || delayMs <= 0) {
@@ -79,7 +79,7 @@ function createThinkingEventPart(step, phase) {
  * @param {object} writer        — UI message stream writer (must expose `.write()`)
  * @param {Array}  steps         — ordered list of step descriptors
  * @param {object} [options]
- * @param {number} [options.defaultDelayMs=700]  — per-step delay when step.delayMs is unset
+ * @param {number} [options.defaultDelayMs=1400] — per-step delay when step.delayMs is unset
  * @param {AbortSignal} [options.signal]         — abort to short-circuit the loop
  */
 async function writeThinkingTraceSteps(writer, steps, options = {}) {

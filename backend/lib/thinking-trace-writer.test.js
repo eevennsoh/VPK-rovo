@@ -18,7 +18,7 @@ function createCapturingWriter() {
 
 test("DEFAULT_TOOL_CALL_DELAY_MS is exported as a positive number", () => {
 	assert.equal(typeof DEFAULT_TOOL_CALL_DELAY_MS, "number");
-	assert.ok(DEFAULT_TOOL_CALL_DELAY_MS > 0);
+	assert.equal(DEFAULT_TOOL_CALL_DELAY_MS, 1400);
 });
 
 test("createThinkingEventPart builds a start-phase part with the step's input", () => {
@@ -26,7 +26,7 @@ test("createThinkingEventPart builds a start-phase part with the step's input", 
 		{
 			toolName: "studio.read_brief",
 			toolCallId: "abc-123",
-			label: "Reading your brief",
+			label: "Reading agent brief",
 			input: { prompt: "hi" },
 		},
 		"start",
@@ -35,7 +35,7 @@ test("createThinkingEventPart builds a start-phase part with the step's input", 
 	assert.equal(part.id, "abc-123-start");
 	assert.equal(part.data.phase, "start");
 	assert.equal(part.data.toolName, "studio.read_brief");
-	assert.equal(part.data.label, "Reading your brief");
+	assert.equal(part.data.label, "Reading agent brief");
 	assert.equal(part.data.toolCallId, "abc-123");
 	assert.deepEqual(part.data.input, { prompt: "hi" });
 	// Result-only fields should not be present.
@@ -48,7 +48,7 @@ test("createThinkingEventPart builds a result-phase part with output + outputPre
 		{
 			toolName: "studio.save_profile",
 			toolCallId: "save-1",
-			label: "Saving the agent profile",
+			label: "Saving agent profile",
 			outputPreview: "Profile ready.",
 		},
 		"result",
