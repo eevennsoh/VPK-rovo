@@ -28,8 +28,19 @@ import { getAgentIdFromSearch, withAgentParam } from "@/lib/agent-route-sync";
  *
  * Pass `enabled: false` to disable all syncing (e.g. embedded surfaces that must
  * not mutate the host page URL).
+ *
+ * `onAgentRestored` fires whenever the agent is reconciled *from the URL* — the
+ * one-shot mount seed and every back/forward `popstate` — with the restored
+ * agent id (or `null` for the default agent). Surfaces that open a per-agent view
+ * (e.g. the studio config pane) use this to restore that view on reload and deep
+ * links; without it a `?agent=` URL only re-selects the agent for chat and the
+ * config pane stays closed. In-page selections do not fire it (those surfaces set
+ * their own view state directly).
  */
-export function useAgentUrlSync({ enabled = true }: { enabled?: boolean } = {}) {
+export function useAgentUrlSync({
+	enabled = true,
+	onAgentRestored,
+}: { enabled?: boolean; onAgentRestored?: (agentId: string | null) => void } = {}) {
 	const { selectedAgentId, isCustomAgentSelected, selectableAgents, selectAgent } = useRovoSelectedAgent();
 
 	// Mirror live values into refs so the once-attached popstate handler reads
@@ -43,6 +54,8 @@ export function useAgentUrlSync({ enabled = true }: { enabled?: boolean } = {}) 
 	selectableAgentsRef.current = selectableAgents;
 	const selectAgentRef = useRef(selectAgent);
 	selectAgentRef.current = selectAgent;
+	const onAgentRestoredRef = useRef(onAgentRestored);
+	onAgentRestoredRef.current = onAgentRestored;
 
 	// The agent id the URL was last reconciled to (either direction); guards the
 	// write effect from echoing a change that originated from the URL.
@@ -74,9 +87,14 @@ export function useAgentUrlSync({ enabled = true }: { enabled?: boolean } = {}) 
 
 			if (nextAgentId) {
 				const isKnown = selectableAgentsRef.current.some((agent) => agent.id === nextAgentId);
-				if (isKnown && nextAgentId !== selectedAgentIdRef.current) {
-					lastReconciledAgentIdRef.current = nextAgentId;
-					selectAgentRef.current(nextAgentId, { preserveCurrentThread: true });
+				if (isKnown) {
+					if (nextAgentId !== selectedAgentIdRef.current) {
+						lastReconciledAgentIdRef.current = nextAgentId;
+						selectAgentRef.current(nextAgentId, { preserveCurrentThread: true });
+					}
+					// Restore the per-agent view even when the agent was already
+					// selected (e.g. config pane was closed, then Back).
+					onAgentRestoredRef.current?.(nextAgentId);
 				}
 				return;
 			}
@@ -85,6 +103,7 @@ export function useAgentUrlSync({ enabled = true }: { enabled?: boolean } = {}) 
 				lastReconciledAgentIdRef.current = null;
 				selectAgentRef.current(ROVO_AGENT_ID, { preserveCurrentThread: true });
 			}
+			onAgentRestoredRef.current?.(null);
 		}
 
 		window.addEventListener("popstate", handlePopState);
@@ -114,6 +133,9 @@ export function useAgentUrlSync({ enabled = true }: { enabled?: boolean } = {}) 
 				lastReconciledAgentIdRef.current = seedAgentId;
 				selectAgentRef.current(seedAgentId, { preserveCurrentThread: true });
 			}
+			// Restore the per-agent view (e.g. studio config pane) for the
+			// deep-linked / reloaded agent, mirroring an in-page selection.
+			onAgentRestoredRef.current?.(seedAgentId);
 		}
 	}, [enabled, selectableAgents, selectedAgentId, isCustomAgentSelected]);
 

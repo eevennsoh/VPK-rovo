@@ -1487,9 +1487,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		smartGenerationLayout,
 	});
 	useHmrReloadSuppression(chat.isStreaming);
-	// Mirror the selected/created agent into the URL (`?agent=`) so it is
-	// deep-linkable, survives reload, and works with browser back/forward.
-	useAgentUrlSync({ enabled: !embedded });
 	const chatRef = useRef(chat);
 	chatRef.current = chat;
 	const [wikiMemoryStatus, setWikiMemoryStatus] = useState<WikiStatus | null>(null);
@@ -1846,6 +1843,22 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		},
 		[],
 	);
+
+	// Restore (or clear) the agent config pane when the active agent is
+	// reconciled *from the URL* — deep link, reload, or browser back/forward.
+	// In-page selection sets `activeAgentConfig` in its own handler; this covers
+	// the URL-seed path, which otherwise only re-selects the agent for chat and
+	// would leave the studio on the agent's chat surface with no config pane.
+	const handleAgentRestoredFromUrl = useCallback((agentId: string | null) => {
+		setActiveAgentConfigView("configure");
+		setActiveAgentConfig(agentId ? { profileId: agentId, sourceMessageId: null } : null);
+	}, []);
+
+	// Mirror the selected/created agent into the URL (`?agent=`) so it is
+	// deep-linkable, survives reload, and works with browser back/forward.
+	// `onAgentRestoredFromUrl` re-opens the config pane for the URL-restored agent
+	// (otherwise a reloaded `?agent=` only re-selects it for chat).
+	useAgentUrlSync({ enabled: !embedded, onAgentRestored: handleAgentRestoredFromUrl });
 
 	const handlePublishAgent = useCallback(
 		(profileId: string) => {
