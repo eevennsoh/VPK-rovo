@@ -319,6 +319,8 @@
 }
 
 .rich-text-command-menu {
+	display: flex;
+	flex-direction: column;
 	width: 320px;
 	max-height: min(360px, calc(100vh - 48px));
 	overflow: hidden;
@@ -333,20 +335,25 @@
 	border-color: transparent;
 }
 
+.rich-text-command-menu-showcase {
+	max-height: none;
+}
+
 .rich-text-command-menu-title {
 	border-bottom: 1px solid var(--ds-border, #dfe1e6);
 	padding: 8px 10px;
-	color: var(--ds-text-subtle, #44546f);
-	font-size: 11px;
-	font-weight: 650;
-	letter-spacing: 0;
-	text-transform: uppercase;
 }
 
 .rich-text-command-menu-list {
+	min-height: 0;
 	max-height: 292px;
+	flex: 1 1 auto;
 	overflow-y: auto;
 	padding: 4px;
+}
+
+.rich-text-command-menu-showcase .rich-text-command-menu-list {
+	max-height: 312px;
 }
 
 .rich-text-command-menu-item {
@@ -383,22 +390,10 @@
 	color: var(--ds-text-subtle, #44546f);
 }
 
-.rich-text-command-menu-icon {
-	display: inline-flex;
-	width: 24px;
-	height: 24px;
-	align-items: center;
-	justify-content: center;
-	border-radius: var(--ds-radius-small, 3px);
-	background-color: var(--ds-background-neutral, #091e420f);
-	color: var(--ds-text-subtle, #44546f);
-}
-
 .rich-text-command-menu-copy {
 	display: flex;
 	min-width: 0;
 	flex-direction: column;
-	gap: 1px;
 }
 
 .rich-text-command-menu-label {
@@ -418,6 +413,16 @@
 	line-height: 16px;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+.rich-text-command-menu-description-hover {
+	opacity: 0;
+	transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.rich-text-command-menu-item:hover .rich-text-command-menu-description-hover,
+.rich-text-command-menu-item:focus-visible .rich-text-command-menu-description-hover {
+	opacity: 1;
 }
 
 .rich-text-command-menu-shortcut {

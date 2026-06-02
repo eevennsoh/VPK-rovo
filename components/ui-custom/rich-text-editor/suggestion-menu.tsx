@@ -19,6 +19,7 @@ import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AlignTextRightIcon from "@atlaskit/icon/core/align-text-right";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import ListNumberedIcon from "@atlaskit/icon/core/list-numbered";
+import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import QuotationMarkIcon from "@atlaskit/icon/core/quotation-mark";
 import TextIcon from "@atlaskit/icon/core/text";
 import TextBoldIcon from "@atlaskit/icon/core/text-bold";
@@ -29,6 +30,7 @@ import TextHeadingOneIcon from "@atlaskit/icon-lab/core/text-heading-one";
 import TextHeadingThreeIcon from "@atlaskit/icon-lab/core/text-heading-three";
 import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 
+import { IconTile } from "@/components/ui/icon-tile";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -50,6 +52,7 @@ export interface RichTextSuggestionMenuItem {
 	id: string;
 	label: string;
 	description?: string;
+	revealDescriptionOnHover?: boolean;
 	shortcut?: string;
 	icon: ReactNode;
 	disabled?: boolean;
@@ -72,6 +75,7 @@ interface SuggestionPopupState {
 
 const CATEGORY_LABELS: Record<RichTextMentionCategory, string> = {
 	skill: "Skills",
+	subagent: "Subagents",
 	link: "Links",
 	memory: "Memory",
 	trigger: "Triggers",
@@ -80,13 +84,40 @@ const CATEGORY_LABELS: Record<RichTextMentionCategory, string> = {
 
 const CATEGORY_ORDER: readonly RichTextMentionCategory[] = [
 	"skill",
+	"subagent",
 	"link",
 	"memory",
 	"trigger",
 	"tool",
 ];
 
+const HOVER_REVEALED_BYLINE_CATEGORIES = new Set<RichTextMentionCategory>([
+	"skill",
+	"subagent",
+	"tool",
+]);
+
 const STATIC_MENTION_ITEMS: RichTextMentionSources = {
+	subagent: [
+		{
+			category: "subagent",
+			id: "subagent:researcher",
+			label: "Researcher",
+			description: "Investigates open questions and gathers source context.",
+		},
+		{
+			category: "subagent",
+			id: "subagent:reviewer",
+			label: "Reviewer",
+			description: "Checks changes for regressions, risks, and missing tests.",
+		},
+		{
+			category: "subagent",
+			id: "subagent:designer",
+			label: "Designer",
+			description: "Explores UI polish, layout, and interaction refinements.",
+		},
+	],
 	link: [
 		{
 			category: "link",
@@ -269,6 +300,8 @@ function getCategoryIcon(category: RichTextMentionCategory): ReactNode {
 	switch (category) {
 		case "skill":
 			return <AppsIcon label="" size="small" />;
+		case "subagent":
+			return <PeopleGroupIcon label="" size="small" />;
 		case "link":
 			return <LinkIcon label="" size="small" />;
 		case "memory":
@@ -295,7 +328,9 @@ export function RichTextSuggestionMenu({
 			role="listbox"
 			aria-label={title}
 		>
-			<div className="rich-text-command-menu-title">{title}</div>
+			<div className="rich-text-command-menu-title text-xs font-semibold leading-4 text-text-subtlest">
+				{title}
+			</div>
 			{onBack ? (
 				<button
 					type="button"
@@ -323,11 +358,23 @@ export function RichTextSuggestionMenu({
 							onMouseDown={(event) => event.preventDefault()}
 							onClick={() => onSelect(item)}
 						>
-							<span className="rich-text-command-menu-icon">{item.icon}</span>
+							<IconTile
+								size="small"
+								label={item.label}
+								aria-hidden={true}
+								className="border border-border bg-surface text-icon-subtlest"
+								icon={item.icon}
+							/>
 							<span className="rich-text-command-menu-copy">
 								<span className="rich-text-command-menu-label">{item.label}</span>
 								{item.description ? (
-									<span className="rich-text-command-menu-description">
+									<span
+										className={cn(
+											"rich-text-command-menu-description",
+											item.revealDescriptionOnHover &&
+												"rich-text-command-menu-description-hover",
+										)}
+									>
 										{item.description}
 									</span>
 								) : null}
@@ -494,6 +541,7 @@ function getMergedMentionSources(
 	return {
 		...STATIC_MENTION_ITEMS,
 		...sources,
+		subagent: sources?.subagent ?? STATIC_MENTION_ITEMS.subagent,
 		link: sources?.link ?? STATIC_MENTION_ITEMS.link,
 		trigger: sources?.trigger ?? STATIC_MENTION_ITEMS.trigger,
 		tool: sources?.tool ?? STATIC_MENTION_ITEMS.tool,
@@ -515,6 +563,7 @@ export function getMentionContextMenuItems(
 		icon: getCategoryIcon(category),
 		id: category,
 		label: CATEGORY_LABELS[category],
+		revealDescriptionOnHover: HOVER_REVEALED_BYLINE_CATEGORIES.has(category),
 	}));
 }
 
@@ -533,6 +582,7 @@ export function createMentionSuggestionRenderer(
 			icon: getCategoryIcon(category),
 			id: category,
 			label: CATEGORY_LABELS[category],
+			revealDescriptionOnHover: HOVER_REVEALED_BYLINE_CATEGORIES.has(category),
 		}));
 		return filterItems(items, query);
 	}
