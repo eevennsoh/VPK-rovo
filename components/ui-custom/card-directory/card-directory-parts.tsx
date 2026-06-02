@@ -350,111 +350,111 @@ function getCapabilityItem(item: string | CardDirectoryCapability): CardDirector
 function getCapabilityIcon(icon: CardDirectoryCapabilityIcon | undefined): ReactElement {
 	switch (icon) {
 		case "action":
-			return <ArrowUpRightIcon label="" />;
+			return <ArrowUpRightIcon label="" size="small" />;
 		case "alert":
-			return <WarningIcon label="" />;
+			return <WarningIcon label="" size="small" />;
 		case "board":
-			return <BoardIcon label="" />;
+			return <BoardIcon label="" size="small" />;
 		case "book":
-			return <BookWithBookmarkIcon label="" />;
+			return <BookWithBookmarkIcon label="" size="small" />;
 		case "branch":
-			return <BranchIcon label="" />;
+			return <BranchIcon label="" size="small" />;
 		case "brief":
-			return <ClipboardIcon label="" />;
+			return <ClipboardIcon label="" size="small" />;
 		case "bubble":
-			return <ChartBubbleIcon label="" />;
+			return <ChartBubbleIcon label="" size="small" />;
 		case "calendar":
-			return <CalendarIcon label="" />;
+			return <CalendarIcon label="" size="small" />;
 		case "chartBar":
-			return <ChartBarIcon label="" />;
+			return <ChartBarIcon label="" size="small" />;
 		case "chartPie":
-			return <ChartPieIcon label="" />;
+			return <ChartPieIcon label="" size="small" />;
 		case "check":
-			return <CheckCircleIcon label="" />;
+			return <CheckCircleIcon label="" size="small" />;
 		case "checklist":
-			return <ListChecklistIcon label="" />;
+			return <ListChecklistIcon label="" size="small" />;
 		case "clock":
-			return <ClockIcon label="" />;
+			return <ClockIcon label="" size="small" />;
 		case "comment":
-			return <CommentIcon label="" />;
+			return <CommentIcon label="" size="small" />;
 		case "compass":
-			return <CompassIcon label="" />;
+			return <CompassIcon label="" size="small" />;
 		case "dashboard":
-			return <DashboardIcon label="" />;
+			return <DashboardIcon label="" size="small" />;
 		case "data":
-			return <DataNumberIcon label="" />;
+			return <DataNumberIcon label="" size="small" />;
 		case "dependency":
-			return <LinkIcon label="" />;
+			return <LinkIcon label="" size="small" />;
 		case "discovery":
-			return <DiscoveryIcon label="" />;
+			return <DiscoveryIcon label="" size="small" />;
 		case "document":
-			return <PageIcon label="" />;
+			return <PageIcon label="" size="small" />;
 		case "draft":
-			return <EditIcon label="" />;
+			return <EditIcon label="" size="small" />;
 		case "epic":
-			return <EpicIcon label="" />;
+			return <EpicIcon label="" size="small" />;
 		case "filter":
-			return <FilterIcon label="" />;
+			return <FilterIcon label="" size="small" />;
 		case "goal":
-			return <FlagFilledIcon label="" />;
+			return <FlagFilledIcon label="" size="small" />;
 		case "handoff":
-			return <TransitionIcon label="" />;
+			return <TransitionIcon label="" size="small" />;
 		case "highlight":
-			return <HighlightIcon label="" />;
+			return <HighlightIcon label="" size="small" />;
 		case "incident":
-			return <IncidentIcon label="" />;
+			return <IncidentIcon label="" size="small" />;
 		case "lightbulb":
-			return <LightbulbIcon label="" />;
+			return <LightbulbIcon label="" size="small" />;
 		case "list":
-			return <ListBulletedIcon label="" />;
+			return <ListBulletedIcon label="" size="small" />;
 		case "megaphone":
-			return <MegaphoneIcon label="" />;
+			return <MegaphoneIcon label="" size="small" />;
 		case "milestone":
-			return <PinIcon label="" />;
+			return <PinIcon label="" size="small" />;
 		case "objective":
-			return <ObjectiveIcon label="" />;
+			return <ObjectiveIcon label="" size="small" />;
 		case "onCall":
-			return <OnCallIcon label="" />;
+			return <OnCallIcon label="" size="small" />;
 		case "people":
-			return <PeopleGroupIcon label="" />;
+			return <PeopleGroupIcon label="" size="small" />;
 		case "pulse":
-			return <PulseIcon label="" />;
+			return <PulseIcon label="" size="small" />;
 		case "queue":
-			return <BacklogIcon label="" />;
+			return <BacklogIcon label="" size="small" />;
 		case "question":
-			return <QuestionCircleIcon label="" />;
+			return <QuestionCircleIcon label="" size="small" />;
 		case "quote":
-			return <QuotationMarkIcon label="" />;
+			return <QuotationMarkIcon label="" size="small" />;
 		case "refresh":
-			return <RefreshIcon label="" />;
+			return <RefreshIcon label="" size="small" />;
 		case "review":
-			return <EyeOpenIcon label="" />;
+			return <EyeOpenIcon label="" size="small" />;
 		case "roadmap":
-			return <RoadmapIcon label="" />;
+			return <RoadmapIcon label="" size="small" />;
 		case "scales":
-			return <ScalesIcon label="" />;
+			return <ScalesIcon label="" size="small" />;
 		case "search":
-			return <SearchIcon label="" />;
+			return <SearchIcon label="" size="small" />;
 		case "shield":
-			return <ShieldIcon label="" />;
+			return <ShieldIcon label="" size="small" />;
 		case "subtasks":
-			return <SubtasksIcon label="" />;
+			return <SubtasksIcon label="" size="small" />;
 		case "support":
-			return <SupportIcon label="" />;
+			return <SupportIcon label="" size="small" />;
 		case "target":
-			return <TargetIcon label="" />;
+			return <TargetIcon label="" size="small" />;
 		case "text":
-			return <TextIcon label="" />;
+			return <TextIcon label="" size="small" />;
 		case "timeline":
-			return <TimelineIcon label="" />;
+			return <TimelineIcon label="" size="small" />;
 		case "translate":
-			return <TranslateIcon label="" />;
+			return <TranslateIcon label="" size="small" />;
 		case "trend":
-			return <ChartTrendUpIcon label="" />;
+			return <ChartTrendUpIcon label="" size="small" />;
 		case "work":
-			return <TaskIcon label="" />;
+			return <TaskIcon label="" size="small" />;
 		default:
-			return <AiModelIcon label="" />;
+			return <AiModelIcon label="" size="small" />;
 	}
 }
 
@@ -475,7 +475,7 @@ export function CardDirectoryCapabilities({ label, items }: Readonly<CardDirecto
 						<li key={capability.label} className="flex items-center gap-2">
 							<Icon
 								aria-hidden
-								className="size-4 shrink-0 text-icon-subtle [&_svg]:size-4!"
+								className="size-4 shrink-0 text-icon-subtlest"
 								render={getCapabilityIcon(capability.icon)}
 							/>
 							<span className="min-w-0 flex-1 truncate text-sm leading-5 text-text">{capability.label}</span>
