@@ -442,6 +442,7 @@ export function PersonalGraphSurface({
 	...props
 }: Readonly<PersonalGraphSurfaceProps>) {
 	const {
+		error: vaultSettingsError,
 		isResetting: isVaultResetting,
 		isSelecting: isVaultSelecting,
 		resetFolder: resetVault,
@@ -449,6 +450,7 @@ export function PersonalGraphSurface({
 		settings: vaultSettings,
 	} = useVaultSettings();
 	const {
+		error: graphSourceError,
 		generatedAt: twgGeneratedAt,
 		isSwitching: isSourceSwitching,
 		refresh: refreshSource,
@@ -488,7 +490,13 @@ export function PersonalGraphSurface({
 	const isVaultReadyForLayout = isReady || isResetFlyoutCollapsing;
 	const shouldShowVaultOnboarding = Boolean(vaultSettings) && !isVaultReadyForLayout && !isTwgMode;
 	const shouldShowSourcePicker =
-		!isVaultReadyForLayout && !isTwgAuthError && (vaultSettings?.status === "unconfigured" || (isTwgMode && (!twgGeneratedAt || isTwgConnecting)));
+		!isVaultReadyForLayout &&
+		!isTwgAuthError &&
+		(vaultSettings === null ||
+			Boolean(vaultSettingsError) ||
+			vaultSettings.status === "unconfigured" ||
+			(isTwgMode && (!twgGeneratedAt || isTwgConnecting)));
+	const sourcePickerError = shouldShowSourcePicker ? (vaultSettingsError ?? graphSourceError) : null;
 	const isPostSettle = isVaultReadyForLayout && isIntroSettled;
 	const isSearchRevealed = isVaultReadyForLayout && (phase === "search" || phase === "graph" || phase === "done");
 	const isGraphRevealed = isSearchRevealed;
@@ -981,6 +989,11 @@ export function PersonalGraphSurface({
 									onPickTwg={handleConnectTwg}
 									onPickVault={handleChooseVault}
 								/>
+								{sourcePickerError ? (
+									<p className="mx-auto mt-2 max-w-[360px] text-center text-xs text-text-danger" role="alert">
+										{sourcePickerError.message}
+									</p>
+								) : null}
 							</motion.div>
 						) : null}
 						{isTwgAuthError ? (
