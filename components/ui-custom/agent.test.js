@@ -149,21 +149,22 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	assert.doesNotMatch(AGENT_SOURCE, /data-slot=tag-after\]\]:opacity-0/u);
 });
 
-test("Agent header renders Configure and Test as a self-contained Tabs control", () => {
-	// The default header now matches the latest compact agent config header
-	// (Configure/Test tabs) instead of the older outline ToggleGroup.
-	assert.match(AGENT_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
+test("Agent header renders Configure and Test as a self-contained compact ToggleGroup", () => {
+	// The default header uses a compact outline ToggleGroup (size="sm") instead
+	// of the Tabs control. Consumers that need controlled tabs still override
+	// via the `actions` prop.
+	assert.match(AGENT_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
 	assert.match(AGENT_SOURCE, /primaryActionLabel = "Configure"/u);
 	assert.match(AGENT_SOURCE, /secondaryActionLabel = "Test"/u);
-	// Base UI tab parts require an enclosing Tabs.Root, so the default actions
-	// own their Tabs context (consumers override via the `actions` prop).
+	// ToggleGroup carries its own context, so the default actions render it
+	// directly (compact: variant="outline" size="sm").
 	assert.match(
 		AGENT_SOURCE,
-		/\{actions \?\? \([\s\S]*<Tabs aria-label="Agent views" defaultValue="configure">[\s\S]*<TabsList>[\s\S]*<TabsTrigger value="configure">[\s\S]*\{primaryActionLabel\}[\s\S]*<TabsTrigger value="test">[\s\S]*\{secondaryActionLabel\}[\s\S]*<\/TabsList>[\s\S]*<\/Tabs>/u,
+		/\{actions \?\? \([\s\S]*<ToggleGroup[\s\S]*aria-label="Agent views"[\s\S]*defaultValue=\{\["configure"\]\}[\s\S]*variant="outline"[\s\S]*size="sm"[\s\S]*<ToggleGroupItem value="configure">[\s\S]*\{primaryActionLabel\}[\s\S]*<ToggleGroupItem value="test">[\s\S]*\{secondaryActionLabel\}[\s\S]*<\/ToggleGroup>/u,
 	);
-	// The older ToggleGroup-based header is fully retired.
-	assert.doesNotMatch(AGENT_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
-	assert.doesNotMatch(AGENT_SOURCE, /<ToggleGroupItem/u);
+	// The Tabs-based header is fully retired from the default actions.
+	assert.doesNotMatch(AGENT_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
+	assert.doesNotMatch(AGENT_SOURCE, /<TabsTrigger/u);
 });
 
 test("Agent component page wires compact filled and empty placeholder variations", () => {
