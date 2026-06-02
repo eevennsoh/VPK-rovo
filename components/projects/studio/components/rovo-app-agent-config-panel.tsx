@@ -54,32 +54,6 @@ function stringifyForComparison(value: unknown): string {
 	}
 }
 
-function isDraftEmpty(result: AgentResult): boolean {
-	const hasName = Boolean(result.name && result.name.trim().length > 0);
-	const hasDescription = Boolean(result.description || result.summary);
-	const hasInstructions = Boolean(result.instructions && result.instructions.trim().length > 0);
-	const hasStarters = Array.isArray(result.conversationStarters) && result.conversationStarters.length > 0;
-	const hasTools = Array.isArray(result.tools) && result.tools.length > 0;
-	return !hasName && !hasDescription && !hasInstructions && !hasStarters && !hasTools;
-}
-
-function getMissingFieldWarnings(result: AgentResult): readonly string[] {
-	const missing: string[] = [];
-	if (!result.name || result.name.trim().length === 0) {
-		missing.push("name");
-	}
-	if (!result.description && !result.summary) {
-		missing.push("description");
-	}
-	if (!result.instructions || result.instructions.trim().length === 0) {
-		missing.push("instructions");
-	}
-	if (!Array.isArray(result.conversationStarters) || result.conversationStarters.length === 0) {
-		missing.push("conversation starters");
-	}
-	return missing;
-}
-
 function getPublishLabel(status: StudioAgentPublishStatus): string {
 	return status === "published" ? "Published" : "Draft";
 }
@@ -237,14 +211,6 @@ export function RovoAppAgentConfigPanel({
 		);
 	}, [entry.publishReadyResult, entry.publishedResult]);
 
-	// Only warn about a partial generation once the agent has some content. A
-	// brand-new "start from scratch" agent has every field empty, and surfacing
-	// "Generation looks partial" there is noise — nothing was generated yet.
-	const missingFields = useMemo(
-		() => (isDraftEmpty(draft) ? [] : getMissingFieldWarnings(draft)),
-		[draft],
-	);
-
 	const [justUpdatedAt, setJustUpdatedAt] = useState<number | null>(null);
 	const justUpdatedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -398,18 +364,6 @@ export function RovoAppAgentConfigPanel({
 					/>
 					<TabsContent value="configure" className="min-h-0 flex-1 overflow-y-auto data-[hidden]:hidden">
 						<div className="flex h-full w-full flex-col px-6 py-5">
-							<AnimatePresence>
-								{missingFields.length > 0 ? (
-									<motion.div
-										className="mb-4 rounded-md border border-border-warning bg-bg-warning-subtler px-3 py-2 text-text-warning-bolder text-xs"
-										initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
-										animate={{ opacity: 1, y: 0 }}
-										exit={{ opacity: 0, y: -4 }}
-									>
-										Generation looks partial — fill in {missingFields.join(", ")} before publishing.
-									</motion.div>
-								) : null}
-							</AnimatePresence>
 							<AgentConfigFields
 								config={draft}
 								avatarSrc={agentAvatarSrc}

@@ -263,6 +263,7 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<TabsList>[\s\S]*<TabsTrigger[\s\S]*value="configure"[\s\S]*Configure[\s\S]*<\/TabsTrigger>[\s\S]*<AgentConfigTabTrigger[\s\S]*value="test"[\s\S]*disabled=\{!hasAgentInstructions\}[\s\S]*data-testid="agent-config-test"[\s\S]*Test[\s\S]*<\/AgentConfigTabTrigger>[\s\S]*<\/TabsList>/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<TabsContent value="configure"[\s\S]*<AgentConfigFields/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<TabsContent value="test"[\s\S]*\{testPanel\}/u);
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /Generation looks partial/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /variant="outline"[\s\S]*onClick=\{handleTest\}[\s\S]*disabled=\{!hasAgentInstructions\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /disabledTooltip="Add agent instructions before testing this agent\."/u);
 	assert.match(SHELL_SOURCE, /const \[activeAgentConfigView, setActiveAgentConfigView\] = useState<AgentConfigView>\("configure"\);/u);
