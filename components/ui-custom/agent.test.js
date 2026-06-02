@@ -118,6 +118,15 @@ test("Filled config summary sorts empty rows to the bottom while preserving cano
 	assert.match(AGENT_SOURCE, /const rows: ReadonlyArray<\{ key: string; isEmpty: boolean; node: ReactNode \}>/u);
 	assert.match(AGENT_SOURCE, /const orderedRows = rows[\s\S]*\.sort\(\(a, b\) => \{[\s\S]*if \(a\.isEmpty !== b\.isEmpty\) return a\.isEmpty \? 1 : -1;[\s\S]*return a\.index - b\.index;/u);
 	assert.match(AGENT_SOURCE, /isEmpty: hasKnowledgeSelector \? false : knowledgeItems\.length === 0/u);
+	// The rows array source order IS the canonical display order. Reasoning is
+	// rendered separately after this list, so it is not a row key here.
+	assert.match(
+		AGENT_SOURCE,
+		/key: "trigger"[\s\S]*key: "knowledge"[\s\S]*key: "tools"[\s\S]*key: "skills"[\s\S]*key: "subagents"[\s\S]*key: "memory"[\s\S]*key: "conversationStarters"/u,
+	);
+	// Memory is its own always-on row (never empty), not a chip inside Knowledge.
+	assert.match(AGENT_SOURCE, /function AgentMemoryRow/u);
+	assert.match(AGENT_SOURCE, /key: "memory",[\s\S]*isEmpty: false,/u);
 });
 
 test("Agent config updates instructions as markdown strings", () => {
@@ -179,18 +188,18 @@ test("Agent config renders filled summary rows once field data exists", () => {
 });
 
 test("Agent header renders Configure and Test as a self-contained compact ToggleGroup", () => {
-	// The default header uses a compact outline ToggleGroup (size="sm") instead
-	// of the Tabs control. Consumers that need controlled tabs still override
-	// via the `actions` prop.
+	// The default header uses an outline ToggleGroup at the default size (32px /
+	// h-8) instead of the Tabs control. Consumers that need controlled tabs still
+	// override via the `actions` prop.
 	assert.match(AGENT_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
 	assert.match(AGENT_SOURCE, /primaryActionLabel = "Configure"/u);
 	assert.match(AGENT_SOURCE, /secondaryActionLabel = "Test"/u);
 	assert.match(AGENT_SOURCE, /publishLabel = "Publish"/u);
 	// ToggleGroup carries its own context, so the default actions render it
-	// directly (compact: variant="outline" size="sm") alongside a Publish button.
+	// directly (variant="outline", default size) alongside a Publish button.
 	assert.match(
 		AGENT_SOURCE,
-		/\{actions \?\? \([\s\S]*<ToggleGroup[\s\S]*aria-label="Agent views"[\s\S]*defaultValue=\{\["configure"\]\}[\s\S]*variant="outline"[\s\S]*size="sm"[\s\S]*<ToggleGroupItem value="configure">[\s\S]*\{primaryActionLabel\}[\s\S]*<ToggleGroupItem value="test">[\s\S]*\{secondaryActionLabel\}[\s\S]*<\/ToggleGroup>[\s\S]*<Button[\s\S]*\{publishLabel\}[\s\S]*<\/Button>/u,
+		/\{actions \?\? \([\s\S]*<ToggleGroup[\s\S]*aria-label="Agent views"[\s\S]*defaultValue=\{\["configure"\]\}[\s\S]*variant="outline"[\s\S]*<ToggleGroupItem value="configure">[\s\S]*\{primaryActionLabel\}[\s\S]*<ToggleGroupItem value="test">[\s\S]*\{secondaryActionLabel\}[\s\S]*<\/ToggleGroup>[\s\S]*<Button[\s\S]*\{publishLabel\}[\s\S]*<\/Button>/u,
 	);
 	// The Tabs-based header is fully retired from the default actions.
 	assert.doesNotMatch(AGENT_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);

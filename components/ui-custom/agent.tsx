@@ -1283,6 +1283,12 @@ function AgentFilledConfigSummary({
 	// Rows declare their canonical order and whether they currently hold any user
 	// content. Empty rows get sorted to the bottom (preserving the canonical order
 	// within each group) so configured fields stay visually grouped at the top.
+	// Source order IS the canonical display order (assuming every row is filled):
+	// Triggers › Knowledge › Tools › Skills › Subagents › Memory › Conversation
+	// starters. Reasoning renders separately after this list, so it always sits
+	// last. `orderedRows` below preserves this order for filled rows, then sinks
+	// empty rows to the bottom in the same relative order — so the array order is
+	// the single source of truth for both groups. Reorder here, not in the sort.
 	const rows: ReadonlyArray<{ key: string; isEmpty: boolean; node: ReactNode }> = [
 		{
 			key: "trigger",
@@ -1297,64 +1303,6 @@ function AgentFilledConfigSummary({
 					onAdd={() => onAppendListItem?.("triggers")}
 					onRemoveItem={removeTriggerItem}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
-				/>
-			),
-		},
-		{
-			key: "skills",
-			isEmpty: skillItems.length === 0,
-			node: (
-				<AgentFilledSummaryRow
-					addLabel={showAddButtons ? "Add" : undefined}
-					hideWhenEmpty={hideEmptyRows}
-					items={skillItems}
-					label="Skills"
-					onAdd={() => onAppendListItem?.("skills")}
-					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("skills", index) : undefined}
-					variant="skill"
-					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined}
-				/>
-			),
-		},
-		{
-			key: "tools",
-			isEmpty: toolItems.length === 0,
-			node: (
-				<AgentFilledSummaryRow
-					addLabel={showAddButtons ? "Add" : undefined}
-					hideWhenEmpty={hideEmptyRows}
-					agentFieldName="tools"
-					items={toolItems}
-					label="Tools"
-					onAdd={() => onAppendListItem?.("tools")}
-					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("tools", index) : undefined}
-					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
-				/>
-			),
-		},
-		{
-			key: "subagents",
-			isEmpty: subagentItems.length === 0,
-			node: (
-				<AgentFilledSummaryRow
-					addLabel={showAddButtons ? "Add" : undefined}
-					hideWhenEmpty={hideEmptyRows}
-					items={subagentItems}
-					label="Subagents"
-					onAdd={() => onAppendListItem?.("subagents")}
-					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("subagents", index) : undefined}
-					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
-				/>
-			),
-		},
-		{
-			key: "memory",
-			// Memory is a default, always-on knowledge source, so this row is never
-			// empty and stays directly under Subagents among the filled rows.
-			isEmpty: false,
-			node: (
-				<AgentMemoryRow
-					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:memory` : undefined}
 				/>
 			),
 		},
@@ -1382,6 +1330,64 @@ function AgentFilledConfigSummary({
 					onAdd={() => onAppendListItem?.("knowledge")}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
+				/>
+			),
+		},
+		{
+			key: "tools",
+			isEmpty: toolItems.length === 0,
+			node: (
+				<AgentFilledSummaryRow
+					addLabel={showAddButtons ? "Add" : undefined}
+					hideWhenEmpty={hideEmptyRows}
+					agentFieldName="tools"
+					items={toolItems}
+					label="Tools"
+					onAdd={() => onAppendListItem?.("tools")}
+					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("tools", index) : undefined}
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
+				/>
+			),
+		},
+		{
+			key: "skills",
+			isEmpty: skillItems.length === 0,
+			node: (
+				<AgentFilledSummaryRow
+					addLabel={showAddButtons ? "Add" : undefined}
+					hideWhenEmpty={hideEmptyRows}
+					items={skillItems}
+					label="Skills"
+					onAdd={() => onAppendListItem?.("skills")}
+					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("skills", index) : undefined}
+					variant="skill"
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined}
+				/>
+			),
+		},
+		{
+			key: "subagents",
+			isEmpty: subagentItems.length === 0,
+			node: (
+				<AgentFilledSummaryRow
+					addLabel={showAddButtons ? "Add" : undefined}
+					hideWhenEmpty={hideEmptyRows}
+					items={subagentItems}
+					label="Subagents"
+					onAdd={() => onAppendListItem?.("subagents")}
+					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("subagents", index) : undefined}
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
+				/>
+			),
+		},
+		{
+			key: "memory",
+			// Memory is a default, always-on knowledge source, so this row is never
+			// empty and stays directly under Subagents among the filled rows.
+			isEmpty: false,
+			node: (
+				<AgentMemoryRow
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:memory` : undefined}
 				/>
 			),
 		},
