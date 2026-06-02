@@ -60,6 +60,10 @@ const STUDIO_SHELL_SOURCE = readFileSync(
 	join(__dirname, "..", "projects", "studio", "components", "rovo-app-shell.tsx"),
 	"utf8",
 );
+const HORIZONTAL_OVERFLOW_HOOK_SOURCE = readFileSync(
+	join(__dirname, "..", "hooks", "use-has-horizontal-overflow.ts"),
+	"utf8",
+);
 
 test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /RichTextEditor,[\s\S]*\} from "@\/components\/ui-custom\/rich-text-editor";/u);
@@ -341,6 +345,13 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(WEBSITE_REGISTRY_SOURCE, /default: mod\.AgentDemoCompactFilled/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-compact-empty": dynamic/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /default: mod\.AgentDemoCompactEmpty/u);
+});
+
+test("Bento carousel overflow hook reattaches listeners when the scroll node remounts", () => {
+	assert.match(HORIZONTAL_OVERFLOW_HOOK_SOURCE, /const \[element, setElement\] = useState<T \| null>\(null\);/u);
+	assert.match(HORIZONTAL_OVERFLOW_HOOK_SOURCE, /elementRef\.current = node;\s*setElement\(node\);/u);
+	assert.match(HORIZONTAL_OVERFLOW_HOOK_SOURCE, /useEffect\(\(\) => \{\s*if \(!element\) return undefined;[\s\S]*element\.addEventListener\("scroll", updateScrollState/u);
+	assert.match(HORIZONTAL_OVERFLOW_HOOK_SOURCE, /\}, \[element, updateScrollState\]\);/u);
 });
 
 test("Agent profile inline edit fields align to the profile content edge", () => {
