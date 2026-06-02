@@ -75,6 +75,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Lozenge } from "@/components/ui/lozenge"
 import {
   Select,
   SelectContent,
@@ -99,13 +100,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+import { getWorkflowLozengeVariant } from "@/lib/workflow-status"
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronsLeftIcon,
   ChevronsRightIcon,
-  CircleCheckIcon,
   Columns3Icon,
   EllipsisVerticalIcon,
   GripVerticalIcon,
@@ -225,15 +226,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <Badge variant="outline" className="text-muted-foreground px-1.5">
-        {row.original.status === "Done" ? (
-          <CircleCheckIcon className="fill-green-500 dark:fill-green-400" />
-        ) : (
-          <LoaderIcon
-          />
-        )}
+      <Lozenge variant={getWorkflowLozengeVariant(row.original.status)}>
         {row.original.status}
-      </Badge>
+      </Lozenge>
     ),
   },
   {

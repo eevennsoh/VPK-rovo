@@ -705,6 +705,30 @@ const LOZENGE_VARIANTS = new Set<NonNullable<LozengeProps["variant"]>>([
 	"accent-gray",
 ]);
 
+function isStatusTableColumn(column: { key: string; label: string }): boolean {
+	const normalizedKey = column.key.trim().toLowerCase();
+	const normalizedLabel = column.label.trim().toLowerCase();
+
+	return normalizedKey === "status" || normalizedLabel === "status";
+}
+
+function renderTableCellValue(
+	row: Record<string, unknown>,
+	column: { key: string; label: string },
+): ReactNode {
+	const cellText = toSafeText(row[column.key]);
+
+	if (isStatusTableColumn(column) && cellText.trim()) {
+		return (
+			<Lozenge variant={getWorkflowLozengeVariant(cellText)}>
+				{cellText}
+			</Lozenge>
+		);
+	}
+
+	return cellText;
+}
+
 // ── Grid column class mapping ─────────────────────────────────
 const GRID_COL_CLASSES: Record<string, string> = {
 	"1": "grid-cols-1",
@@ -1007,7 +1031,7 @@ export const { registry } = defineRegistry(catalog, {
 						{sortedData.map((row, i: number) => (
 							<TableRow key={i}>
 								{columns.map((col: { key: string; label: string }) => (
-									<TableCell key={col.key}>{String(row[col.key] ?? "")}</TableCell>
+									<TableCell key={col.key}>{renderTableCellValue(row, col)}</TableCell>
 								))}
 							</TableRow>
 						))}
