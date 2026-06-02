@@ -197,6 +197,23 @@ function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescriptio
 		});
 	}
 
+	// On the first turn (no prior assistant turn) the creation flow always
+	// opens with a clarification round, mirroring the `/agents` RFP demo's
+	// `ask_user_questions` step. Surfacing it here means the chain-of-thought
+	// reflects that questions are being asked instead of jumping straight to
+	// drafting. `ask_user_questions` already maps to QuestionCircleIcon in the
+	// trace renderer, so no frontend change is needed.
+	if (!hadPriorAssistantTurn) {
+		steps.push({
+			toolName: "ask_user_questions",
+			toolCallId: `${traceIdPrefix}-ask-questions`,
+			label: "Preparing clarification questions",
+			content: `Asking a few targeted questions to shape ${agentFocus} before drafting the profile.`,
+			input: { round: 1 },
+			outputPreview: "Clarification questions ready for your input.",
+		});
+	}
+
 	const mentionedTools = detectMentionedTools(promptText);
 	const toolSelectionPreview = mentionedTools.length > 0
 		? `Agent tools matched: ${mentionedTools.join(", ")}`
