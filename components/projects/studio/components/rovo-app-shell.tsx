@@ -27,6 +27,7 @@ import { RovoAppSidebar } from "@/components/projects/studio/components/rovo-app
 import { type RovoAppSteeringPhase } from "@/components/projects/studio/components/rovo-app-steering-lane";
 import { SmoothGradientWaveform } from "@/components/blocks/visual-waveform/smooth-gradient-waveform";
 import { useArtifactAnnotations } from "@/components/ui-custom/hooks/use-artifact-annotations";
+import { useBentoDescriptionClamp } from "@/components/ui-custom/hooks/use-bento-description-clamp";
 import { formatAnnotationsForVoiceContext } from "@/components/ui-custom/lib/artifact-annotations";
 import type { ArtifactAnnotation } from "@/components/ui-custom/lib/artifact-annotations";
 import { useRovoApp } from "@/components/projects/studio/hooks/use-rovo-app";
@@ -823,14 +824,6 @@ const HOME_STARTER_CYCLE_DURATION_MS = 6000;
 // sibling so it keeps reading as a crisp affordance over the faded edge.
 const HOME_STARTER_BENTO_FADE_MASK = "linear-gradient(to bottom, #000 calc(100% - 96px), transparent)";
 
-// Per-card description fade. The description is a flex-fill box whose bottom edge
-// always sits at the card's content bottom, so when the copy overflows the last
-// (partial) line fades instead of being sliced mid-glyph. One line height of fade
-// (`leading-5` = 1.25rem); when the copy is short the faded region is simply empty,
-// so this is a no-op rather than fading visible text.
-const HOME_STARTER_CARD_DESCRIPTION_FADE_MASK =
-	"linear-gradient(to bottom, #000 calc(100% - 1.25rem), transparent)";
-
 function HomeStarterBento({
 	onPreviewEnd,
 	onPreviewStart,
@@ -848,6 +841,7 @@ function HomeStarterBento({
 	const hoveredTemplatePromptRef = useRef<string | null>(null);
 	const bentoInteractingRef = useRef(false);
 	const tileRefs = useRef<Array<HTMLButtonElement | null>>([]);
+	const registerDescBox = useBentoDescriptionClamp();
 	const templates = HOME_STARTER_VIEWS[activeCategory];
 	const visibleTemplates = templates.slice(0, 5);
 	const canShowMore = templates.length > visibleTemplates.length;
@@ -1127,13 +1121,12 @@ function HomeStarterBento({
 												{template.title}
 											</span>
 											<span
-												className="w-full min-w-0 flex-1 min-h-0 overflow-hidden text-sm leading-5 text-text-subtle"
-												style={{
-													maskImage: HOME_STARTER_CARD_DESCRIPTION_FADE_MASK,
-													WebkitMaskImage: HOME_STARTER_CARD_DESCRIPTION_FADE_MASK,
-												}}
+												ref={registerDescBox}
+												className="block w-full min-w-0 flex-1 min-h-0 overflow-hidden"
 											>
-												{template.description}
+												<span className="text-sm leading-5 text-text-subtle line-clamp-2">
+													{template.description}
+												</span>
 											</span>
 										</span>
 									</motion.button>

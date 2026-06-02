@@ -59,6 +59,7 @@ import {
 	RichTextEditor,
 } from "@/components/ui-custom/rich-text-editor";
 import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
+import { useBentoDescriptionClamp } from "@/components/ui-custom/hooks/use-bento-description-clamp";
 import { token } from "@/lib/tokens";
 import type {
 	HermesSkillSummary,
@@ -868,40 +869,9 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 		}
 	}, []);
 
-	// Truncate each card description with an ellipsis sized to the space the card
-	// actually has (its box minus padding, owned by the flex-fill outer span):
-	// set `-webkit-line-clamp` to the whole number of lines that fit. A
-	// ResizeObserver re-runs this whenever a card resizes, so wider/taller cards
-	// reveal more lines and squeezed cards truncate — correct at every viewport.
-	const descBoxes = useRef<Set<HTMLElement>>(new Set());
-	const registerDescBox = useCallback((node: HTMLElement | null) => {
-		if (node) {
-			descBoxes.current.add(node);
-		}
-	}, []);
-	useEffect(() => {
-		if (typeof ResizeObserver === "undefined") {
-			return;
-		}
-		const applyClamp = (box: HTMLElement) => {
-			const text = box.firstElementChild as HTMLElement | null;
-			if (!text) {
-				return;
-			}
-			const lineHeight = parseFloat(getComputedStyle(text).lineHeight) || 20;
-			const lines = Math.max(1, Math.floor(box.clientHeight / lineHeight));
-			text.style.setProperty("-webkit-line-clamp", String(lines));
-		};
-		const observer = new ResizeObserver((entries) => {
-			for (const entry of entries) {
-				applyClamp(entry.target as HTMLElement);
-			}
-		});
-		for (const box of descBoxes.current) {
-			observer.observe(box);
-		}
-		return () => observer.disconnect();
-	}, []);
+	// Truncate each card description to the whole number of lines that fit its box;
+	// shared with the studio bento (`HomeStarterBento`) so both stay identical.
+	const registerDescBox = useBentoDescriptionClamp();
 
 	return (
 		<motion.section
