@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
 import { getStudioSessionAgentDisplayName } from "@/app/contexts";
+import { ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS } from "@/components/projects/studio/lib/rovo-app-shell-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -103,11 +104,11 @@ export function StudioCustomAgentsTable({
 	};
 
 	return (
-		<section aria-labelledby="studio-custom-agents-heading" className="mx-auto mt-10 w-full max-w-[1280px]">
+		<section aria-labelledby="studio-custom-agents-heading" className={`mx-auto mt-10 w-full ${ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS}`}>
 			<h2 id="studio-custom-agents-heading" className="sr-only">
 				Custom agents
 			</h2>
-			<Table className="min-w-[760px]">
+			<Table className="min-w-full table-fixed">
 				<TableHeader>
 					<TableRow className="hover:bg-transparent">
 						<TableHead className="w-full px-4">
@@ -116,15 +117,15 @@ export function StudioCustomAgentsTable({
 								<ArrowUpIcon label="" size="small" />
 							</span>
 						</TableHead>
-						<TableHead className="w-[120px] px-4">Active users</TableHead>
-						<TableHead className="w-[96px] px-4">Version</TableHead>
-						<TableHead className="w-[180px] px-4">
+						<TableHead className="w-[92px] px-2">Active users</TableHead>
+						<TableHead className="w-[72px] px-2">Version</TableHead>
+						<TableHead className="w-[132px] px-2">
 							<span className="inline-flex items-center gap-1">
 								Last modified
 								<ArrowUpIcon label="" size="small" />
 							</span>
 						</TableHead>
-						<TableHead className="w-[104px] px-2 text-right">
+						<TableHead className="w-[88px] px-2 text-right">
 							<span className="sr-only">Actions</span>
 						</TableHead>
 					</TableRow>
@@ -147,13 +148,13 @@ export function StudioCustomAgentsTable({
 										</span>
 									</div>
 								</TableCell>
-								<TableCell className="px-4 text-text-disabled">—</TableCell>
-								<TableCell className="px-4">
+								<TableCell className="px-2 text-text-disabled">—</TableCell>
+								<TableCell className="px-2">
 									<Lozenge variant={getVersionVariant(entry)}>
 										{getVersionLabel(entry)}
 									</Lozenge>
 								</TableCell>
-								<TableCell className="px-4">
+								<TableCell className="px-2">
 									<div className="flex items-center gap-2">
 										<Avatar aria-hidden="true" size="sm">
 											<AvatarImage alt="" src={STUDIO_CUSTOM_AGENT_OWNER_AVATAR_SRC} />
