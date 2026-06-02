@@ -24,6 +24,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
@@ -146,6 +147,10 @@ function StudioSidebarAgentAvatar({
 	size?: "small" | "medium";
 	src: string;
 }>) {
+	if (isAtlassianLogoSource(src)) {
+		return <AtlassianLogo name="atlassian" label={label || "Atlassian"} size="xsmall" />;
+	}
+
 	return (
 		<Image
 			alt={label}

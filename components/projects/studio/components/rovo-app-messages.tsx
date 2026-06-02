@@ -55,6 +55,7 @@ import { BrowserScreenshotPart } from "@/components/projects/studio/components/r
 import type { RovoAppDocument } from "@/lib/rovo-app-types";
 import type { RovoAppStreamingArtifact } from "@/components/projects/studio/lib/rovo-app-streaming-artifact";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/components/projects/studio/data/agent-profiles";
+import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import Image from "next/image";
 import { Component, Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnswerCard } from "@/components/blocks/answer-card/components/answer-card";
@@ -780,7 +781,11 @@ function RovoAppCustomAgentEmptyState({
 		>
 			<div className="flex max-w-[520px] flex-col items-center gap-3">
 				<motion.div variants={itemVariants}>
-					<Image alt="" aria-hidden className="size-10 object-contain" height={40} loading="eager" src={agent.avatarSrc} width={40} />
+					{isAtlassianLogoSource(agent.avatarSrc) ? (
+						<AtlassianLogo name="atlassian" label={agent.name} size="large" />
+					) : (
+						<Image alt="" aria-hidden className="size-10 object-contain" height={40} loading="eager" src={agent.avatarSrc} width={40} />
+					)}
 				</motion.div>
 				<motion.div className="flex flex-col items-center gap-2" variants={itemVariants}>
 					<Heading size="xlarge">{agent.name}</Heading>

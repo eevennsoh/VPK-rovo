@@ -28,6 +28,7 @@ import { Accordion,
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -427,7 +428,11 @@ export function AgentCompactHeaderNav({
 	return (
 		<div className="flex min-w-0 flex-1 items-center gap-4">
 			<Avatar label="Agent" shape="hexagon" size="sm">
-				<AvatarImage alt="" src={avatarSrc} />
+				{isAtlassianLogoSource(avatarSrc) ? (
+					<AtlassianLogo name="atlassian" label="Agent" size="small" />
+				) : (
+					<AvatarImage alt="" src={avatarSrc} />
+				)}
 			</Avatar>
 			<div
 				className="relative flex min-w-0 flex-1 items-center overflow-hidden"
@@ -506,7 +511,11 @@ export const AgentHeader = memo(
 			{leadingContent ?? (
 				<div className="flex min-w-0 items-center gap-2">
 					<Avatar label="Agent" shape="hexagon" size="sm">
-						<AvatarImage alt="" src={avatarSrc} />
+						{isAtlassianLogoSource(avatarSrc) ? (
+							<AtlassianLogo name="atlassian" label={name} size="small" />
+						) : (
+							<AvatarImage alt="" src={avatarSrc} />
+						)}
 					</Avatar>
 					<span className="truncate text-sm font-semibold leading-5 text-text">{name}</span>
 					{model ? (
@@ -1491,28 +1500,41 @@ function hasFilledAgentConfig(config: AgentConfigFormValue): boolean {
 
 function AgentProfileCover({ avatarSrc = AGENT_AVATAR_SRC }: Readonly<{ avatarSrc?: string }>) {
 	const coverBackgroundColor = getAgentProfileCoverBackgroundColor(avatarSrc);
+	const isAtlassianAvatar = isAtlassianLogoSource(avatarSrc);
 
 	return (
 		<div className="relative overflow-hidden rounded-t-xl bg-surface text-text">
 			<div className="relative h-12 overflow-hidden" style={{ backgroundColor: coverBackgroundColor }}>
-				<Image
-					alt=""
-					aria-hidden
-					className="absolute top-1/2 left-[88%] h-48 w-[168px] -translate-x-1/2 -translate-y-1/2 opacity-95"
-					height={192}
-					src={avatarSrc}
-					width={168}
-				/>
+				{isAtlassianAvatar ? (
+					<span className="absolute top-1/2 left-[88%] -translate-x-1/2 -translate-y-1/2 opacity-95">
+						<AtlassianLogo name="atlassian" label="Atlassian" size="xlarge" />
+					</span>
+				) : (
+					<Image
+						alt=""
+						aria-hidden
+						className="absolute top-1/2 left-[88%] h-48 w-[168px] -translate-x-1/2 -translate-y-1/2 opacity-95"
+						height={192}
+						src={avatarSrc}
+						width={168}
+					/>
+				)}
 			</div>
 			<div aria-hidden className="h-6" />
 			<div className="absolute top-6 left-4 size-12">
-				<Image
-					alt="Agent avatar"
-					className="h-12 w-[42px]"
-					height={48}
-					src={avatarSrc}
-					width={42}
-				/>
+				{isAtlassianAvatar ? (
+					<span className="flex h-12 w-[42px] items-center justify-center">
+						<AtlassianLogo name="atlassian" label="Agent avatar" size="large" />
+					</span>
+				) : (
+					<Image
+						alt="Agent avatar"
+						className="h-12 w-[42px]"
+						height={48}
+						src={avatarSrc}
+						width={42}
+					/>
+				)}
 				<svg
 					aria-hidden="true"
 					className="pointer-events-none absolute top-0 left-0 h-12 w-[42px] overflow-visible"

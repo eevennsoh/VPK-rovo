@@ -15,6 +15,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import {
 	isRovoAgentProfile,
 } from "@/components/projects/studio/data/agent-profiles";
@@ -157,13 +158,17 @@ export function RovoAppBrand() {
 							data-icon="inline-start"
 							variants={identityItemVariants}
 						>
-							<Image
-								src={selectedAgent.avatarSrc}
-								alt=""
-								className="size-4 object-contain"
-								width={16}
-								height={16}
-							/>
+							{isAtlassianLogoSource(selectedAgent.avatarSrc) ? (
+								<AtlassianLogo name="atlassian" label={selectedAgent.name} size="xxsmall" />
+							) : (
+								<Image
+									src={selectedAgent.avatarSrc}
+									alt=""
+									className="size-4 object-contain"
+									width={16}
+									height={16}
+								/>
+							)}
 						</motion.span>
 						<motion.span className="truncate font-semibold" variants={identityItemVariants}>{triggerLabel}</motion.span>
 					</motion.span>

@@ -8,6 +8,7 @@ import { useMemo, useState, type ReactElement, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Icon } from "@/components/ui/icon";
+import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import { cn } from "@/lib/utils";
 
 export interface AgentSelectorAgent {
@@ -63,6 +64,14 @@ function filterAgentsByQuery(
 }
 
 function AgentSelectorLogo({ agent }: Readonly<{ agent: AgentSelectorAgent }>): ReactElement {
+	if (isAtlassianLogoSource(agent.avatarSrc)) {
+		return (
+			<span className="grid size-6 shrink-0 place-items-center overflow-hidden rounded-sm">
+				<AtlassianLogo name="atlassian" label={agent.name} size="small" />
+			</span>
+		);
+	}
+
 	return (
 		<span className="grid size-6 shrink-0 place-items-center overflow-hidden rounded-sm">
 			<Image alt="" aria-hidden className="mx-auto block size-6 object-contain object-center" height={24} src={agent.avatarSrc} width={24} />

@@ -1,17 +1,25 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { type KeyboardEvent, type MouseEvent, useMemo, useState } from "react";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import SearchIcon from "@atlaskit/icon/core/search";
+import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { CardDirectoryAgent } from "@/components/ui-custom/card-directory";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
@@ -25,6 +33,7 @@ export interface AgentBrowserAgent {
 	attributionKind?: "company" | "team" | "person";
 	avatarSrc: string;
 	description?: string;
+	favorite?: boolean;
 }
 
 export interface AgentBrowserSidebarGroup {
@@ -62,6 +71,7 @@ export interface AgentBrowserDialogProps extends AgentBrowserProps {
 
 const DEFAULT_CATEGORIES: readonly AgentBrowserCategory[] = [
 	{ id: "all", label: "All" },
+	{ id: "favorite-agents", label: "Favourite agents" },
 	{ id: "my-agents", label: "My agents" },
 ] as const;
 
@@ -96,13 +106,16 @@ function syntheticFeedback(id: string): number {
 	return 50 + (hashString(`${id}-feedback`) % 2000);
 }
 
-function filterByQuery(
+function filterAgents(
 	agents: readonly AgentBrowserAgent[],
 	query: string,
+	activeCategory: string,
 ): readonly AgentBrowserAgent[] {
 	const normalized = query.trim().toLowerCase();
-	if (!normalized) return agents;
 	return agents.filter((agent) => {
+		if (activeCategory === "favorite-agents" && !agent.favorite) return false;
+		if (!normalized) return true;
+
 		const haystack = `${agent.name} ${agent.byline} ${agent.description ?? ""}`.toLowerCase();
 		return haystack.includes(normalized);
 	});
@@ -186,7 +199,7 @@ export function AgentBrowser({
 	const [query, setQuery] = useState("");
 	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
 
-	const filtered = useMemo(() => filterByQuery(agents, query), [agents, query]);
+	const filtered = useMemo(() => filterAgents(agents, query, activeCategory), [agents, query, activeCategory]);
 
 	return (
 		<div className="grid h-full min-h-0 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
@@ -339,6 +352,14 @@ function SidebarGroup({ title, items, agents, onSelectAgent, showAll = false }: 
 }
 
 function SidebarItemAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>) {
+	if (isAtlassianLogoSource(item.avatarSrc)) {
+		return (
+			<span className="flex size-6 shrink-0 items-center justify-center">
+				<AtlassianLogo name="atlassian" label={item.label} size="small" />
+			</span>
+		);
+	}
+
 	if (item.avatarSrc.startsWith("/avatar-project/")) {
 		return (
 			<span className="flex size-6 shrink-0 items-center justify-center">
@@ -376,24 +397,104 @@ function AgentSection({ agents, onSelectAgent }: Readonly<AgentSectionProps>) {
 					const publisher = derivePublisher(agent.byline);
 					return (
 						<li key={agent.id}>
-							<CardDirectoryAgent
-								avatarImageClassName={getDirectoryCardAvatarClassName(agent)}
-								avatarSrc={agent.avatarSrc}
-								chatCount={syntheticChats(agent.id)}
-								className="hover:border-transparent"
-								description={agent.description}
-								feedbackCount={syntheticFeedback(agent.id)}
-								name={agent.name}
-								onMoreActions={() => {}}
-								onSelect={onSelectAgent ? () => onSelectAgent(agent) : undefined}
+							<AgentCard
+								agent={agent}
+								onSelectAgent={onSelectAgent}
 								publisher={publisher}
-								rating={syntheticRating(agent.id)}
-								verified={isVerified(agent, publisher)}
 							/>
 						</li>
 					);
 				})}
 			</ul>
 		</section>
+	);
+}
+
+interface AgentCardProps {
+	agent: AgentBrowserAgent;
+	onSelectAgent?: (agent: AgentBrowserAgent) => void;
+	publisher: string;
+}
+
+function AgentCard({ agent, onSelectAgent, publisher }: Readonly<AgentCardProps>) {
+	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+	const selectAgent = onSelectAgent ? () => onSelectAgent(agent) : undefined;
+
+	return (
+		<CardDirectoryAgent
+			active={moreMenuOpen}
+			avatarImageClassName={getDirectoryCardAvatarClassName(agent)}
+			avatarSrc={agent.avatarSrc}
+			chatCount={syntheticChats(agent.id)}
+			className="hover:border-transparent"
+			description={agent.description}
+			feedbackCount={syntheticFeedback(agent.id)}
+			moreAction={
+				<DirectoryCardMoreMenu
+					label={`More actions for ${agent.name}`}
+					onLearnMore={selectAgent}
+					onOpenChange={setMoreMenuOpen}
+					open={moreMenuOpen}
+				/>
+			}
+			name={agent.name}
+			onSelect={selectAgent}
+			publisher={publisher}
+			rating={syntheticRating(agent.id)}
+			verified={isVerified(agent, publisher)}
+		/>
+	);
+}
+
+interface DirectoryCardMoreMenuProps {
+	label: string;
+	onLearnMore?: () => void;
+	onOpenChange: (open: boolean) => void;
+	open: boolean;
+}
+
+function DirectoryCardMoreMenu({
+	label,
+	onLearnMore,
+	onOpenChange,
+	open,
+}: Readonly<DirectoryCardMoreMenuProps>) {
+	function stopPropagation(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
+		event.stopPropagation();
+	}
+
+	return (
+		<DropdownMenu open={open} onOpenChange={onOpenChange}>
+			<DropdownMenuTrigger
+				render={
+					<Button
+						aria-label={label}
+						aria-pressed={open || undefined}
+						className={cn(
+							"size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
+							open && "opacity-100",
+						)}
+						onClick={stopPropagation}
+						onKeyDown={stopPropagation}
+						size="icon-compact"
+						type="button"
+						variant="ghost"
+					>
+						<Icon render={<ShowMoreHorizontalIcon label="" size="small" color="currentColor" />} />
+					</Button>
+				}
+			/>
+			<DropdownMenuContent align="end" onClick={stopPropagation} sideOffset={6}>
+				<DropdownMenuItem
+					onClick={stopPropagation}
+					onSelect={(event) => {
+						event.stopPropagation();
+						onLearnMore?.();
+					}}
+				>
+					Learn more
+				</DropdownMenuItem>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }

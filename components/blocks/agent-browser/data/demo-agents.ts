@@ -8,6 +8,7 @@ export const DEMO_AGENT_BROWSER_AGENTS: readonly AgentBrowserAgent[] = [
 		attributionKind: "company",
 		avatarSrc: "/avatar-agent/product-agents/feedback-analyzer.svg",
 		description: "Surfaces themes and sentiment from raw customer feedback in seconds.",
+		favorite: true,
 	},
 	{
 		id: "ai-insights-agent",
@@ -16,6 +17,7 @@ export const DEMO_AGENT_BROWSER_AGENTS: readonly AgentBrowserAgent[] = [
 		attributionKind: "team",
 		avatarSrc: "/avatar-agent/teamwork-agents/customer-insights.svg",
 		description: "Translates dashboards into narrative briefs your stakeholders will read.",
+		favorite: true,
 	},
 	{
 		id: "readiness-checker",
@@ -86,16 +88,12 @@ export const DEMO_AGENT_BROWSER_AGENTS: readonly AgentBrowserAgent[] = [
 		name: "Atlassian",
 		byline: "Teamwork search by Atlassian",
 		attributionKind: "company",
-		avatarSrc: "/1p/atlassian.svg",
+		avatarSrc: "atlassian",
 		description: "Connects work across Jira, Confluence, and the rest of your suite.",
 	},
 ];
 
 export const DEMO_AGENT_BROWSER_SIDEBAR_GROUPS: readonly AgentBrowserSidebarGroup[] = [
-	{
-		title: "Favourites",
-		agentIds: ["feedback-analyzer", "ai-insights-agent"],
-	},
 	{
 		title: "By teams",
 		showAll: true,

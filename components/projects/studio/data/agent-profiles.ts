@@ -175,7 +175,7 @@ export const ROVO_AGENT_PROFILES: readonly RovoAgentProfile[] = [
 		id: "atlassian",
 		name: "Atlassian",
 		byline: "by Atlassian",
-		avatarSrc: "/1p/atlassian.svg",
+		avatarSrc: "atlassian",
 		description: "Searches and connects work across Jira, Confluence, and the Teamwork Graph.",
 	}),
 	createProfile({

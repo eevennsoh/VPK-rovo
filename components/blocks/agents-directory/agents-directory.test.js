@@ -76,12 +76,15 @@ test("Agents Directory sidebar nav uses the shared SidebarNavItem primitive", ()
 	);
 	assert.match(source, /import AlignTextLeftIcon from "@atlaskit\/icon\/core\/align-text-left";/u);
 	assert.match(source, /import \{ Avatar, AvatarImage \} from "@\/components\/ui\/avatar";/u);
+	assert.match(source, /import \{ AtlassianLogo, isAtlassianLogoSource \} from "@\/components\/ui\/logo";/u);
+	assert.doesNotMatch(source, /import \{ Tile \} from "@\/components\/ui\/tile";/u);
 	assert.match(
 		source,
 		/<SidebarNavItem label=\{label\} isSelected=\{active\} onClick=\{onClick\} \/>/u,
 	);
 	assert.match(source, /<SidebarNavItem[\s\S]*label=\{item\.label\}[\s\S]*leading=\{<SidebarItemAvatar item=\{item\} \/>\}[\s\S]*onClick=\{agent \? \(\) => onSelectAgent\?\.\(agent\) : undefined\}/u);
 	assert.match(source, /function SidebarItemAvatar\(\{ item \}: Readonly<\{ item: AgentBrowserSidebarItem \}>\)/u);
+	assert.match(source, /if \(isAtlassianLogoSource\(item\.avatarSrc\)\)[\s\S]*<span className="flex size-6 shrink-0 items-center justify-center">[\s\S]*<AtlassianLogo name="atlassian" label=\{item\.label\} size="small" \/>[\s\S]*<\/span>/u);
 	assert.match(source, /if \(item\.avatarSrc\.startsWith\("\/avatar-project\/"\)\)/u);
 	assert.match(source, /<span className="flex size-6 shrink-0 items-center justify-center">[\s\S]*<Avatar size="sm" shape="square" label=\{item\.label\} className="size-5">[\s\S]*<AvatarImage alt="" aria-hidden src=\{item\.avatarSrc\} \/>/u);
 	assert.match(source, /<Avatar size="sm" shape="square" className="shrink-0 after:border-0">/u);
@@ -149,6 +152,9 @@ test("Agents Directory uses one unsegmented results grid and updated sidebar lab
 	const pageSource = readProjectFile("components/blocks/agents-directory/page.tsx");
 
 	assert.match(source, /<AgentSection agents=\{filtered\} onSelectAgent=\{onSelectAgent\} \/>/u);
+	assert.match(source, /favorite\?: boolean;/u);
+	assert.match(source, /label: "Favourite agents"/u);
+	assert.match(source, /if \(activeCategory === "favorite-agents" && !agent\.favorite\) return false;/u);
 	assert.match(source, /<section aria-label="Agents">/u);
 	assert.doesNotMatch(source, /recommendedCount/u);
 	assert.doesNotMatch(source, /DEFAULT_RECOMMENDED_COUNT/u);
@@ -159,6 +165,7 @@ test("Agents Directory uses one unsegmented results grid and updated sidebar lab
 	assert.doesNotMatch(source, />\s*\{title\}\s*<\/h2>/u);
 
 	for (const groupsSource of [defaultSidebarGroupsSource, demoSidebarGroupsSource]) {
+		assert.doesNotMatch(groupsSource, /title: "Favourites"/u);
 		assert.match(groupsSource, /title: "By teams"/u);
 		assert.match(groupsSource, /title: "By teams",\n\t\tshowAll: true/u);
 		assert.match(groupsSource, /label: "Product Experience"/u);
@@ -194,12 +201,19 @@ test("Agents Directory uses one unsegmented results grid and updated sidebar lab
 
 test("Agents Directory cards render the shared CardDirectoryAgent with overlay elevation", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
+	const cardDirectoryAgentSource = readProjectFile("components/ui-custom/card-directory/card-directory-agent.tsx");
 
 	// Cards are delegated to the shared ui-custom component — no inlined shell duplication.
 	assert.match(source, /import \{ CardDirectoryAgent \} from "@\/components\/ui-custom\/card-directory";/u);
-	assert.match(source, /<CardDirectoryAgent[\s\S]*avatarImageClassName=\{getDirectoryCardAvatarClassName\(agent\)\}/u);
+	assert.match(source, /function AgentCard\(\{ agent, onSelectAgent, publisher \}: Readonly<AgentCardProps>\)/u);
+	assert.match(source, /const \[moreMenuOpen, setMoreMenuOpen\] = useState\(false\);/u);
+	assert.match(source, /<CardDirectoryAgent[\s\S]*active=\{moreMenuOpen\}[\s\S]*avatarImageClassName=\{getDirectoryCardAvatarClassName\(agent\)\}/u);
 	assert.match(source, /className="hover:border-transparent"/u);
-	assert.match(source, /onSelect=\{onSelectAgent \? \(\) => onSelectAgent\(agent\) : undefined\}/u);
+	assert.match(source, /onSelect=\{selectAgent\}/u);
+	assert.match(source, /<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
+	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
+	assert.match(cardDirectoryAgentSource, /isAtlassianLogoSource\(avatarSrc\) \? \(/u);
+	assert.match(cardDirectoryAgentSource, /<AtlassianLogo name="atlassian" label=\{name\} size="medium" \/>/u);
 	assert.doesNotMatch(source, /AgentDirectoryCard/u);
 	assert.doesNotMatch(source, /AGENT_CARD_OVERLAY_SHADOW/u);
 	assert.doesNotMatch(source, /import \{ motion, useReducedMotion \}/u);
@@ -218,12 +232,17 @@ test("Agents Directory cards render the shared CardDirectoryAgent with overlay e
 	assert.match(interaction, /boxShadow: OVERLAY_SHADOW/u);
 	assert.doesNotMatch(interaction, /scale: 1\.006/u);
 	assert.match(interaction, /type: "spring",[\s\S]*bounce: 0\.16,[\s\S]*visualDuration: 0\.22/u);
-	assert.match(shell, /group\/card relative flex h-full w-full flex-col gap-3 rounded-md border border-border bg-surface p-4/u);
-	assert.match(shell, /focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring\/50/u);
+	assert.match(shell, /group\/card relative flex h-full w-full flex-col gap-3 rounded-md bg-surface p-4/u);
+	assert.match(shell, /after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:border after:border-border/u);
+	assert.match(shell, /focus-visible:after:border-transparent focus-visible:ring-3 focus-visible:ring-ring\/50/u);
 	assert.match(shell, /willChange: "transform"/u);
 	assert.match(shell, /role="button"[\s\S]*tabIndex=\{0\}[\s\S]*whileTap=\{tapAnimation\}/u);
 
 	assert.match(agentWrapper, /shape="hexagon"/u);
+	assert.match(agentWrapper, /<CardDirectory active=\{active\} className=\{cn\("gap-4", className\)\}/u);
+	assert.match(agentWrapper, /moreAction \?\? \(onMoreActions \? \(/u);
+	assert.match(agentWrapper, /<CardDirectoryMoreButton active=\{active\}/u);
+	assert.match(agentWrapper, /<div className="flex flex-col gap-2">[\s\S]*<CardDirectoryHeader[\s\S]*<CardDirectoryDescription>/u);
 	assert.match(agentWrapper, /<CardDirectoryByline/u);
 	assert.match(agentWrapper, /StarUnstarredIcon/u);
 	assert.match(agentWrapper, /AiChatIcon/u);

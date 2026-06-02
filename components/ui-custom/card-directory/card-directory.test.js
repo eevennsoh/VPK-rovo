@@ -30,6 +30,9 @@ test("shell preserves the bordered surface and hover-elevation classes", () => {
 	assert.doesNotMatch(SHELL_SOURCE, /\bborder border-border\b/u);
 	assert.match(SHELL_SOURCE, /after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:border after:border-border/u);
 	assert.match(SHELL_SOURCE, /hover:after:border-transparent focus-visible:after:border-transparent/u);
+	assert.match(SHELL_SOURCE, /active = false/u);
+	assert.match(SHELL_SOURCE, /active && "after:border-transparent"/u);
+	assert.match(SHELL_SOURCE, /animate: active \? hoverAnimation : \{ boxShadow: "none" \}/u);
 	assert.doesNotMatch(SHELL_SOURCE, /hover:border-border-selected/u);
 	assert.doesNotMatch(SHELL_SOURCE, /hover:after:ring-border-selected/u);
 });
@@ -211,6 +214,10 @@ test("skill variant uses an icon tile, publisher footer, and view count", () => 
 test("tool variant uses an app-logo tile with tool and teammate counts", () => {
 	assert.match(TOOL_SOURCE, /@atlaskit\/icon-lab\/core\/wrench/u);
 	assert.match(TOOL_SOURCE, /@atlaskit\/icon\/core\/people-group/u);
+	assert.match(TOOL_SOURCE, /active\?: boolean/u);
+	assert.match(TOOL_SOURCE, /moreAction\?: ReactNode/u);
+	assert.match(TOOL_SOURCE, /<CardDirectory active=\{active\}/u);
+	assert.match(TOOL_SOURCE, /<CardDirectoryMoreButton active=\{active\}/u);
 	assert.match(TOOL_SOURCE, /tools/u);
 	assert.match(TOOL_SOURCE, /teammates/u);
 	assert.doesNotMatch(TOOL_SOURCE, /CardDirectoryByline/u);
