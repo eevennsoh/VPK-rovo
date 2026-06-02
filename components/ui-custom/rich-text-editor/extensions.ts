@@ -4,7 +4,14 @@ import { Extension, mergeAttributes } from "@tiptap/core";
 import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Link from "@tiptap/extension-link";
+import { TaskItem, TaskList } from "@tiptap/extension-list";
 import Mention from "@tiptap/extension-mention";
+import {
+	Table,
+	TableCell,
+	TableHeader,
+	TableRow,
+} from "@tiptap/extension-table";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
@@ -88,6 +95,26 @@ export function createRichTextEditorExtensions(
 		Highlight.configure({
 			multicolor: true,
 		}),
+		TaskList.configure({
+			HTMLAttributes: {
+				class: "rich-text-task-list",
+			},
+		}),
+		TaskItem.configure({
+			nested: true,
+			HTMLAttributes: {
+				class: "rich-text-task-item",
+			},
+		}),
+		Table.configure({
+			resizable: true,
+			HTMLAttributes: {
+				class: "rich-text-table",
+			},
+		}),
+		TableRow,
+		TableHeader,
+		TableCell,
 		Mention.configure({
 			HTMLAttributes: {
 				class: "rich-text-mention",
