@@ -1,10 +1,25 @@
 "use client";
 
-import { type CSSProperties, useCallback, useEffect, useState } from "react";
+import {
+	type MouseEvent as ReactMouseEvent,
+	type PointerEvent as ReactPointerEvent,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import Image from "next/image";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import CrossIcon from "@atlaskit/icon/core/cross";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import {
+	AnimatePresence,
+	animate,
+	motion,
+	useMotionValue,
+	useReducedMotion,
+	type MotionStyle,
+} from "motion/react";
 import { useRovoChat } from "@/app/contexts";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -63,13 +78,126 @@ interface FloatingRovoButtonProps {
 
 const DEFAULT_BUTTON_RIGHT = "24px";
 const DEFAULT_BUTTON_BOTTOM = "24px";
+const FLOATING_ROVO_BUTTON_EDGE_GAP = 24;
+const FLOATING_ROVO_BUTTON_SNAP_GRID_SIZE = 4;
+const FLOATING_ROVO_BUTTON_DRAG_CLICK_THRESHOLD = 6;
+const FLOATING_ROVO_BUTTON_CLICK_SUPPRESSION_MS = 1000;
 const AGENT_AVATAR_HEXAGON_PATH = "M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
+
+interface FloatingRovoButtonSnapTarget {
+	left: number;
+	top: number;
+}
+
+interface FloatingRovoButtonDragConstraints {
+	bottom: number;
+	left: number;
+	right: number;
+	top: number;
+}
+
+interface FloatingRovoButtonDragStart {
+	offsetX: number;
+	offsetY: number;
+	pointerId: number | null;
+	x: number;
+	y: number;
+}
 
 function resolveFloatingRovoButtonPlacement(placement?: FloatingRovoButtonPlacement): Required<FloatingRovoButtonPlacement> {
 	return {
 		right: placement?.right ?? DEFAULT_BUTTON_RIGHT,
 		bottom: placement?.bottom ?? DEFAULT_BUTTON_BOTTOM,
 	};
+}
+
+function clampFloatingRovoButtonValue(value: number, min: number, max: number): number {
+	return Math.min(Math.max(value, min), max);
+}
+
+function getFloatingRovoButtonSafeBounds(rect: Pick<DOMRect, "width" | "height">, viewportWidth: number, viewportHeight: number) {
+	const minLeft = FLOATING_ROVO_BUTTON_EDGE_GAP;
+	const minTop = FLOATING_ROVO_BUTTON_EDGE_GAP;
+	const maxLeft = Math.max(minLeft, viewportWidth - rect.width - FLOATING_ROVO_BUTTON_EDGE_GAP);
+	const maxTop = Math.max(minTop, viewportHeight - rect.height - FLOATING_ROVO_BUTTON_EDGE_GAP);
+
+	return { minLeft, minTop, maxLeft, maxTop };
+}
+
+function getFloatingRovoButtonSnapTargets(
+	rect: Pick<DOMRect, "width" | "height">,
+	viewportWidth: number,
+	viewportHeight: number,
+): FloatingRovoButtonSnapTarget[] {
+	const { minLeft, minTop, maxLeft, maxTop } = getFloatingRovoButtonSafeBounds(rect, viewportWidth, viewportHeight);
+	const snapTargets: FloatingRovoButtonSnapTarget[] = [];
+
+	for (let rowIndex = 0; rowIndex < FLOATING_ROVO_BUTTON_SNAP_GRID_SIZE; rowIndex += 1) {
+		for (let columnIndex = 0; columnIndex < FLOATING_ROVO_BUTTON_SNAP_GRID_SIZE; columnIndex += 1) {
+			const left = minLeft + ((maxLeft - minLeft) * columnIndex) / (FLOATING_ROVO_BUTTON_SNAP_GRID_SIZE - 1);
+			const top = minTop + ((maxTop - minTop) * rowIndex) / (FLOATING_ROVO_BUTTON_SNAP_GRID_SIZE - 1);
+
+			snapTargets.push({ left, top });
+		}
+	}
+
+	return snapTargets;
+}
+
+function getDefaultFloatingRovoButtonSnapTarget(
+	rect: Pick<DOMRect, "width" | "height">,
+	viewportWidth: number,
+	viewportHeight: number,
+): FloatingRovoButtonSnapTarget {
+	const snapTargets = getFloatingRovoButtonSnapTargets(rect, viewportWidth, viewportHeight);
+
+	return snapTargets[snapTargets.length - 1];
+}
+
+function getNearestFloatingRovoButtonSnapTarget(rect: DOMRect, viewportWidth: number, viewportHeight: number) {
+	const snapTargets = getFloatingRovoButtonSnapTargets(rect, viewportWidth, viewportHeight);
+	const centerX = rect.left + rect.width / 2;
+	const centerY = rect.top + rect.height / 2;
+	let closestTarget = snapTargets[0];
+	let closestDistance = Infinity;
+
+	for (let snapIndex = 0; snapIndex < snapTargets.length; snapIndex += 1) {
+		const target = snapTargets[snapIndex];
+		const targetCenterX = target.left + rect.width / 2;
+		const targetCenterY = target.top + rect.height / 2;
+		const distance = Math.hypot(centerX - targetCenterX, centerY - targetCenterY);
+
+		if (distance < closestDistance) {
+			closestDistance = distance;
+			closestTarget = target;
+		}
+	}
+
+	return closestTarget;
+}
+
+function getFloatingRovoButtonDragConstraints(
+	origin: FloatingRovoButtonSnapTarget,
+	rect: Pick<DOMRect, "width" | "height">,
+	viewportWidth: number,
+	viewportHeight: number,
+): FloatingRovoButtonDragConstraints {
+	const { minLeft, minTop, maxLeft, maxTop } = getFloatingRovoButtonSafeBounds(rect, viewportWidth, viewportHeight);
+
+	return {
+		left: minLeft - origin.left,
+		top: minTop - origin.top,
+		right: maxLeft - origin.left,
+		bottom: maxTop - origin.top,
+	};
+}
+
+function getClampedFloatingRovoButtonTarget(rect: DOMRect, viewportWidth: number, viewportHeight: number): FloatingRovoButtonSnapTarget {
+	const { minLeft, minTop, maxLeft, maxTop } = getFloatingRovoButtonSafeBounds(rect, viewportWidth, viewportHeight);
+	const clampedLeft = clampFloatingRovoButtonValue(rect.left, minLeft, maxLeft);
+	const clampedTop = clampFloatingRovoButtonValue(rect.top, minTop, maxTop);
+
+	return { left: clampedLeft, top: clampedTop };
 }
 
 function FloatingRovoButtonNudge({
@@ -355,10 +483,14 @@ function FloatingRovoButtonOnboardingPanelInner({
 
 function FloatingRovoButtonInner({
 	onClick,
+	onDragMouseDown,
+	onDragPointerDown,
 	ariaLabel,
 	shouldReduceMotion,
 }: Readonly<{
 	onClick: () => void;
+	onDragMouseDown: (event: ReactMouseEvent<HTMLButtonElement>) => void;
+	onDragPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void;
 	ariaLabel: string;
 	shouldReduceMotion: boolean;
 }>) {
@@ -368,6 +500,8 @@ function FloatingRovoButtonInner({
 			aria-label={ariaLabel}
 			className="flex h-full w-full items-center justify-center bg-bg-neutral-bold"
 			onClick={onClick}
+			onMouseDownCapture={onDragMouseDown}
+			onPointerDownCapture={onDragPointerDown}
 			type="button"
 			initial={shouldReduceMotion
 				? { opacity: 0 }
@@ -385,7 +519,15 @@ function FloatingRovoButtonInner({
 				willChange: "opacity, filter",
 			}}
 		>
-			<Image src="/1p/rovo.svg" alt="" width={24} height={24} aria-hidden />
+			<Image
+				src="/1p/rovo.svg"
+				alt=""
+				width={24}
+				height={24}
+				aria-hidden
+				className="pointer-events-none select-none"
+				draggable={false}
+			/>
 		</motion.button>
 	);
 }
@@ -408,29 +550,292 @@ function FloatingRovoButtonSurface({
 	shouldReduceMotion: boolean;
 }>) {
 	const resolvedPlacement = resolveFloatingRovoButtonPlacement(placement);
+	const surfaceRef = useRef<HTMLDivElement | null>(null);
+	const buttonX = useMotionValue(0);
+	const buttonY = useMotionValue(0);
+	const [dragOrigin, setDragOrigin] = useState<FloatingRovoButtonSnapTarget | null>(null);
+	const [dragConstraints, setDragConstraints] = useState<FloatingRovoButtonDragConstraints>({
+		bottom: 0,
+		left: 0,
+		right: 0,
+		top: 0,
+	});
+	const hasInitializedPositionRef = useRef(false);
+	const skipNextSnapToGridRef = useRef(false);
+	const dragPointerStartRef = useRef<FloatingRovoButtonDragStart | null>(null);
+	const suppressDragClickRef = useRef(false);
+	const suppressDragClickTimeoutRef = useRef<number | null>(null);
 	const surfaceTransition = shouldReduceMotion
 		? { duration: 0 }
 		: { type: "spring" as const, bounce: 0, visualDuration: 0.28 };
 	const radiusTransition = shouldReduceMotion
 		? { duration: 0 }
 		: { duration: 0.28, ease: "linear" as const };
-	const surfaceStyle: CSSProperties = {
-		right: resolvedPlacement.right,
-		bottom: resolvedPlacement.bottom,
+	const surfaceStyle: MotionStyle = {
+		...(dragOrigin
+			? {
+					left: dragOrigin.left,
+					top: dragOrigin.top,
+				}
+			: {
+					right: resolvedPlacement.right,
+					bottom: resolvedPlacement.bottom,
+				}),
+		x: buttonX,
+		y: buttonY,
 		boxShadow: onboardingOpen ? token("elevation.shadow.overlay") : undefined,
 		transformOrigin: "center",
 		willChange: "transform, opacity",
 		backfaceVisibility: "hidden",
+		touchAction: onboardingOpen ? undefined : "none",
+		visibility: dragOrigin ? undefined : "hidden",
 	};
 	const hoverScale = !onboardingOpen && !shouldReduceMotion ? { scale: 1.1 } : undefined;
 	const tapScale = !onboardingOpen && !shouldReduceMotion ? { scale: 0.98 } : undefined;
+	const dragSnapTransition = useMemo(() => (
+		shouldReduceMotion
+			? { duration: 0 }
+			: { type: "spring" as const, bounce: 0, stiffness: 540, damping: 42, mass: 0.7 }
+	), [shouldReduceMotion]);
+	const scheduleDragClickSuppressionReset = useCallback(() => {
+		if (suppressDragClickTimeoutRef.current !== null) {
+			window.clearTimeout(suppressDragClickTimeoutRef.current);
+		}
+
+		suppressDragClickTimeoutRef.current = window.setTimeout(() => {
+			suppressDragClickRef.current = false;
+			suppressDragClickTimeoutRef.current = null;
+		}, FLOATING_ROVO_BUTTON_CLICK_SUPPRESSION_MS);
+	}, []);
+
+	useEffect(() => {
+		if (hasInitializedPositionRef.current) {
+			return;
+		}
+
+		const surface = surfaceRef.current;
+
+		if (!surface) {
+			return;
+		}
+
+		const rect = surface.getBoundingClientRect();
+		const target = placement
+			? getClampedFloatingRovoButtonTarget(rect, window.innerWidth, window.innerHeight)
+			: getDefaultFloatingRovoButtonSnapTarget(rect, window.innerWidth, window.innerHeight);
+
+		buttonX.set(0);
+		buttonY.set(0);
+		setDragOrigin(target);
+		setDragConstraints(getFloatingRovoButtonDragConstraints(target, rect, window.innerWidth, window.innerHeight));
+		hasInitializedPositionRef.current = true;
+		skipNextSnapToGridRef.current = true;
+	}, [buttonX, buttonY, placement]);
+
+	useEffect(() => {
+		return () => {
+			if (suppressDragClickTimeoutRef.current !== null) {
+				window.clearTimeout(suppressDragClickTimeoutRef.current);
+			}
+		};
+	}, []);
+
+	useEffect(() => {
+		const handleDocumentClick = (event: MouseEvent) => {
+			if (!suppressDragClickRef.current) {
+				return;
+			}
+
+			scheduleDragClickSuppressionReset();
+			event.preventDefault();
+			event.stopPropagation();
+		};
+
+		document.addEventListener("click", handleDocumentClick, true);
+
+		return () => {
+			document.removeEventListener("click", handleDocumentClick, true);
+		};
+	}, [scheduleDragClickSuppressionReset]);
+
+	useEffect(() => {
+		if (onboardingOpen) {
+			dragPointerStartRef.current = null;
+			suppressDragClickRef.current = false;
+		}
+	}, [onboardingOpen]);
+
+	const snapToNearestGridTarget = useCallback(() => {
+		if (!dragOrigin) {
+			return;
+		}
+
+		const surface = surfaceRef.current;
+
+		if (!surface) {
+			return;
+		}
+
+		const rect = surface.getBoundingClientRect();
+		const target = getNearestFloatingRovoButtonSnapTarget(rect, window.innerWidth, window.innerHeight);
+
+		setDragConstraints(getFloatingRovoButtonDragConstraints(dragOrigin, rect, window.innerWidth, window.innerHeight));
+		animate(buttonX, target.left - dragOrigin.left, dragSnapTransition);
+		animate(buttonY, target.top - dragOrigin.top, dragSnapTransition);
+	}, [buttonX, buttonY, dragOrigin, dragSnapTransition]);
+
+	useEffect(() => {
+		if (!dragOrigin) {
+			return;
+		}
+
+		if (skipNextSnapToGridRef.current) {
+			skipNextSnapToGridRef.current = false;
+			return;
+		}
+
+		snapToNearestGridTarget();
+	}, [dragOrigin, onboardingOpen, snapToNearestGridTarget]);
+
+	useEffect(() => {
+		if (!dragOrigin) {
+			return undefined;
+		}
+
+		const handleResize = () => {
+			snapToNearestGridTarget();
+		};
+
+		window.addEventListener("resize", handleResize);
+
+		return () => {
+			window.removeEventListener("resize", handleResize);
+		};
+	}, [dragOrigin, snapToNearestGridTarget]);
+
+	const handleDragPointerDown = useCallback((event: ReactPointerEvent<HTMLElement>) => {
+		if (onboardingOpen || !dragOrigin) {
+			return;
+		}
+
+		event.currentTarget.setPointerCapture(event.pointerId);
+		buttonX.stop();
+		buttonY.stop();
+
+		dragPointerStartRef.current = {
+			offsetX: buttonX.get(),
+			offsetY: buttonY.get(),
+			pointerId: event.pointerId,
+			x: event.clientX,
+			y: event.clientY,
+		};
+	}, [buttonX, buttonY, dragOrigin, onboardingOpen]);
+	const handleDragMouseDown = useCallback((event: ReactMouseEvent<HTMLElement>) => {
+		if (event.button !== 0 || onboardingOpen || !dragOrigin || dragPointerStartRef.current) {
+			return;
+		}
+
+		buttonX.stop();
+		buttonY.stop();
+
+		dragPointerStartRef.current = {
+			offsetX: buttonX.get(),
+			offsetY: buttonY.get(),
+			pointerId: null,
+			x: event.clientX,
+			y: event.clientY,
+		};
+	}, [buttonX, buttonY, dragOrigin, onboardingOpen]);
+	const updateDragPosition = useCallback((clientX: number, clientY: number, pointerId?: number) => {
+		const start = dragPointerStartRef.current;
+
+		if (!start || (pointerId !== undefined && start.pointerId !== null && pointerId !== start.pointerId)) {
+			return;
+		}
+
+		const deltaX = clientX - start.x;
+		const deltaY = clientY - start.y;
+		const dragDistance = Math.hypot(deltaX, deltaY);
+
+		if (dragDistance <= FLOATING_ROVO_BUTTON_DRAG_CLICK_THRESHOLD) {
+			return;
+		}
+
+		suppressDragClickRef.current = true;
+		buttonX.set(clampFloatingRovoButtonValue(start.offsetX + deltaX, dragConstraints.left, dragConstraints.right));
+		buttonY.set(clampFloatingRovoButtonValue(start.offsetY + deltaY, dragConstraints.top, dragConstraints.bottom));
+	}, [buttonX, buttonY, dragConstraints]);
+	const endDrag = useCallback((pointerId?: number) => {
+		const start = dragPointerStartRef.current;
+
+		if (!start || (pointerId !== undefined && start.pointerId !== null && pointerId !== start.pointerId)) {
+			return;
+		}
+
+		dragPointerStartRef.current = null;
+
+		if (!suppressDragClickRef.current) {
+			return;
+		}
+
+		scheduleDragClickSuppressionReset();
+		snapToNearestGridTarget();
+	}, [scheduleDragClickSuppressionReset, snapToNearestGridTarget]);
+
+	useEffect(() => {
+		const handleDocumentPointerMove = (event: PointerEvent) => {
+			updateDragPosition(event.clientX, event.clientY, event.pointerId);
+		};
+		const handleDocumentPointerEnd = (event: PointerEvent) => {
+			endDrag(event.pointerId);
+		};
+		const handleDocumentMouseMove = (event: MouseEvent) => {
+			updateDragPosition(event.clientX, event.clientY);
+		};
+		const handleDocumentMouseEnd = () => {
+			endDrag();
+		};
+
+		document.addEventListener("pointermove", handleDocumentPointerMove, true);
+		document.addEventListener("pointerup", handleDocumentPointerEnd, true);
+		document.addEventListener("pointercancel", handleDocumentPointerEnd, true);
+		document.addEventListener("mousemove", handleDocumentMouseMove, true);
+		document.addEventListener("mouseup", handleDocumentMouseEnd, true);
+
+		return () => {
+			document.removeEventListener("pointermove", handleDocumentPointerMove, true);
+			document.removeEventListener("pointerup", handleDocumentPointerEnd, true);
+			document.removeEventListener("pointercancel", handleDocumentPointerEnd, true);
+			document.removeEventListener("mousemove", handleDocumentMouseMove, true);
+			document.removeEventListener("mouseup", handleDocumentMouseEnd, true);
+		};
+	}, [endDrag, updateDragPosition]);
+	const handleClickCapture = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
+		if (!suppressDragClickRef.current) {
+			return;
+		}
+
+		scheduleDragClickSuppressionReset();
+		event.preventDefault();
+		event.stopPropagation();
+	}, [scheduleDragClickSuppressionReset]);
+	const handleButtonClick = useCallback(() => {
+		if (suppressDragClickRef.current) {
+			scheduleDragClickSuppressionReset();
+			return;
+		}
+
+		onButtonClick();
+	}, [onButtonClick, scheduleDragClickSuppressionReset]);
 
 	return (
 		<motion.div
+			ref={surfaceRef}
 			key="floating-rovo-button-surface"
 			layout
 			className={cn(
 				"fixed z-[510] bg-bg-neutral-bold",
+				!onboardingOpen ? "cursor-grab active:cursor-grabbing" : null,
 				onboardingOpen
 					? "w-[295px] max-w-[calc(100vw-32px)] overflow-hidden"
 					: "size-12",
@@ -446,6 +851,7 @@ function FloatingRovoButtonSurface({
 				borderRadius: radiusTransition,
 			}}
 			style={surfaceStyle}
+			onClickCapture={handleClickCapture}
 			whileHover={hoverScale}
 			whileTap={tapScale}
 		>
@@ -460,7 +866,9 @@ function FloatingRovoButtonSurface({
 				) : (
 					<FloatingRovoButtonInner
 						key="button"
-						onClick={onButtonClick}
+						onClick={handleButtonClick}
+						onDragMouseDown={handleDragMouseDown}
+						onDragPointerDown={handleDragPointerDown}
 						ariaLabel={ariaLabel}
 						shouldReduceMotion={shouldReduceMotion}
 					/>
