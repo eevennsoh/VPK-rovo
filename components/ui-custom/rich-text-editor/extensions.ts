@@ -21,10 +21,9 @@ import { Suggestion } from "@tiptap/suggestion";
 import StarterKit from "@tiptap/starter-kit";
 
 import {
-	SLASH_COMMANDS,
 	createMentionSuggestionRenderer,
 	createSlashSuggestionRenderer,
-	type RichTextCommandItem,
+	type RichTextSlashAction,
 } from "./suggestion-menu";
 import type {
 	RichTextEditorExtensionOptions,
@@ -37,27 +36,40 @@ const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 	name: "slashCommand",
 
 	addProseMirrorPlugins() {
+		const getMentionSources = this.options.getMentionSources;
+
 		return [
-			Suggestion<RichTextCommandItem, RichTextCommandItem>({
+			Suggestion<RichTextSlashAction, RichTextSlashAction>({
 				editor: this.editor,
 				char: "/",
 				pluginKey: slashCommandPluginKey,
-				items: ({ query }) => {
-					const normalizedQuery = query.trim().toLowerCase();
-					if (!normalizedQuery) {
-						return [...SLASH_COMMANDS];
+				// The renderer computes visible items from the slash command list and
+				// the live mention sources, so Tiptap does not need a static list.
+				items: () => [],
+				command: ({ editor, range, props }) => {
+					if (props.type === "mention") {
+						editor
+							.chain()
+							.focus()
+							.insertContentAt(range, [
+								{
+									type: "mention",
+									attrs: {
+										id: props.mention.id,
+										label: props.mention.label,
+										mentionSuggestionChar: "@",
+									},
+								},
+								{ type: "text", text: " " },
+							])
+							.run();
+						return;
 					}
 
-					return SLASH_COMMANDS.filter((item) => (
-						`${item.label} ${item.description ?? ""}`.toLowerCase()
-							.includes(normalizedQuery)
-					));
-				},
-				command: ({ editor, range, props }) => {
 					editor.chain().focus().deleteRange(range).run();
 					props.run(editor);
 				},
-				render: createSlashSuggestionRenderer,
+				render: () => createSlashSuggestionRenderer(getMentionSources),
 			}),
 		];
 	},

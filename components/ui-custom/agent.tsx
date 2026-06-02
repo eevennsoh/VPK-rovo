@@ -281,14 +281,14 @@ function mapSkillsToMentionItems(
 		}));
 }
 
-function mapMemoryToMentionItems(
+function mapMemoryToKnowledgeItems(
 	explorer: WikiMemoryExplorerResponse | null,
 ): RichTextMentionItem[] {
 	return (explorer?.nodes ?? [])
 		.slice(0, MENTION_SOURCE_LIMIT)
 		.map((node) => ({
-			category: "memory",
-			id: toMentionId("memory", node.id),
+			category: "knowledge",
+			id: toMentionId("knowledge", node.id),
 			label: node.title || node.label || node.id,
 			description: node.summary || node.kind,
 		}));
@@ -1489,18 +1489,18 @@ function AgentInstructionsComposer({
 	toolbarBelowSlot?: ReactNode;
 }>) {
 	const [skills, setSkills] = useState<RichTextMentionItem[]>([]);
-	const [memory, setMemory] = useState<RichTextMentionItem[]>([]);
+	const [knowledge, setKnowledge] = useState<RichTextMentionItem[]>([]);
 	const mentionSources = useMemo<RichTextMentionSources>(() => ({
 		skill: skills,
-		memory,
-	}), [memory, skills]);
+		knowledge,
+	}), [knowledge, skills]);
 
 	useEffect(() => {
 		const abortController = new AbortController();
 
 		async function loadMentionSources(): Promise<void> {
 			try {
-				const [skillsResponse, memoryResponse] = await Promise.all([
+				const [skillsResponse, knowledgeResponse] = await Promise.all([
 					fetch("/api/skills", { signal: abortController.signal }),
 					fetch("/api/wiki/memory-explorer", { signal: abortController.signal }),
 				]);
@@ -1510,9 +1510,9 @@ function AgentInstructionsComposer({
 					setSkills(mapSkillsToMentionItems(payload.skills));
 				}
 
-				if (memoryResponse.ok) {
-					const payload = await memoryResponse.json() as WikiMemoryExplorerResponse;
-					setMemory(mapMemoryToMentionItems(payload));
+				if (knowledgeResponse.ok) {
+					const payload = await knowledgeResponse.json() as WikiMemoryExplorerResponse;
+					setKnowledge(mapMemoryToKnowledgeItems(payload));
 				}
 			} catch (error) {
 				if (error instanceof DOMException && error.name === "AbortError") {
@@ -1540,7 +1540,7 @@ function AgentInstructionsComposer({
 				className="space-y-2"
 				contentClassName={cn("pt-2", contentClassName)}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
-				placeholder="Describe the agent’s role and what it should do. @mention, or / for skills"
+				placeholder="Describe the agent’s role and what it should do. @ to mention people and agents, or / for skills, tools, and knowledge"
 				showBubbleMenu={false}
 				toolbarBelowSlot={toolbarBelowSlot}
 				toolbarEndSlot={<AgentInstructionsModelSelector />}

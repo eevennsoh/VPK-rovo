@@ -412,7 +412,8 @@
 }
 
 .rich-text-command-menu-showcase .rich-text-command-menu-list {
-	max-height: 312px;
+	max-height: none;
+	overflow-y: visible;
 }
 
 .rich-text-command-menu-item {
@@ -534,22 +535,10 @@
 	color: var(--ds-text-accent-purple, #5e4db2);
 }
 
-.rich-text-mention[data-mention-category="link"] {
+.rich-text-mention[data-mention-category="knowledge"] {
 	border-color: var(--ds-border-accent-blue, #1d7afc);
 	background-color: var(--ds-background-accent-blue-subtlest, #e9f2ff);
 	color: var(--ds-text-accent-blue, #0c66e4);
-}
-
-.rich-text-mention[data-mention-category="memory"] {
-	border-color: var(--ds-border-accent-teal, #60c6d2);
-	background-color: var(--ds-background-accent-teal-subtlest, #e7f9fb);
-	color: var(--ds-text-accent-teal, #206b74);
-}
-
-.rich-text-mention[data-mention-category="trigger"] {
-	border-color: var(--ds-border-accent-yellow, #f5cd47);
-	background-color: var(--ds-background-accent-yellow-subtlest, #fff7d6);
-	color: var(--ds-text-accent-orange, #a54800);
 }
 
 .rich-text-mention[data-mention-category="tool"] {

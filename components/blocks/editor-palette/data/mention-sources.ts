@@ -40,6 +40,12 @@ const SKILL_ITEMS: readonly RichTextMentionItem[] = SKILL_LABELS.map((label) => 
 	label,
 }));
 
+/**
+ * Skill catalog that drives the live editor's "/" Skills submenu and the
+ * showcase's "Skills nested" card. The "@" mention targets (subagent/human/team)
+ * and the other "/" categories (tools/knowledge) come from the shared
+ * rich-text-editor primitive's built-in defaults.
+ */
 export const EDITOR_PALETTE_MENTION_SOURCES: RichTextMentionSources = {
 	skill: SKILL_ITEMS,
 };
