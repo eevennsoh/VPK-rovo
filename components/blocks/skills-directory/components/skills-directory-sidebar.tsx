@@ -14,7 +14,6 @@ import TimelineIcon from "@atlaskit/icon/core/timeline";
 import CartIcon from "@atlaskit/icon-lab/core/cart";
 import { useState, type ReactElement } from "react";
 
-import { Avatar } from "@/components/ui/avatar";
 import { AtlassianLogo } from "@/components/ui/logo";
 import { Tile } from "@/components/ui/tile";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
@@ -71,15 +70,27 @@ function TileLeading({ children }: Readonly<{ children: ReactElement }>) {
 }
 
 function LogoLeading({ item }: Readonly<{ item: SkillsDirectoryCompanyItem }>) {
-	return (
-		<Avatar size="sm" shape="square" className="shrink-0 after:border-0">
-			{item.logoName ? (
-				<AtlassianLogo name={item.logoName} size="small" themeAware label={item.label} />
-			) : item.logoSrc ? (
-				<Image alt="" aria-hidden className="size-full object-contain" height={24} src={item.logoSrc} width={24} />
-			) : null}
-		</Avatar>
-	);
+	const logo = item.logoName ? (
+		<AtlassianLogo name={item.logoName} size="small" themeAware label={item.label} />
+	) : item.logoSrc ? (
+		<Image alt="" aria-hidden className="size-full object-contain" height={24} src={item.logoSrc} width={24} />
+	) : null;
+
+	if (!logo) {
+		return null;
+	}
+
+	// Bare marks (no built-in tile/background) get a bordered VPK tile; logos
+	// that already ship their own tile render as a plain image.
+	if (item.needsTile) {
+		return (
+			<Tile aria-hidden className="shrink-0" hasBorder label={item.label} size="small" variant="transparent">
+				{logo}
+			</Tile>
+		);
+	}
+
+	return <span className="inline-flex size-6 shrink-0 items-center justify-center">{logo}</span>;
 }
 
 export interface SkillsDirectorySidebarProps {
