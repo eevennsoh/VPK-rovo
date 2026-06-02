@@ -294,6 +294,11 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 		SHELL_SOURCE.indexOf("// When the active agent disappears"),
 	);
 	assert.match(handleToggleAskRovoChatSource, /if \(!nav\.isSidebarChatOpen\) \{[\s\S]*studioAgentRegistry\.resetAgentToRovo\(\);[\s\S]*\}[\s\S]*nav\.toggleChat\(\);/u);
+	const agentEditContextBarSource = SHELL_SOURCE.slice(
+		SHELL_SOURCE.indexOf("const agentEditContextBar = useMemo"),
+		SHELL_SOURCE.indexOf("// When the \"Edit agent\" context bar is active"),
+	);
+	assert.match(agentEditContextBarSource, /if \(!activeSessionAgentEntry \|\| isCustomAgentSelected\) \{[\s\S]*return null;[\s\S]*\}/u);
 	assert.match(SHELL_SOURCE, /<ChatPanel[\s\S]*onClose=\{nav\.toggleChat\}[\s\S]*abortOnUnmount=\{false\}[\s\S]*chatContextBar=\{agentEditContextBar\}[\s\S]*containerStyle=\{\{ borderRadius: 0, borderWidth: 0 \}\}[\s\S]*\/>/u);
 	assert.match(SHELL_SOURCE, /<SidebarResizeHandle[\s\S]*side="left"[\s\S]*askRovoChatResize\.onResizeHandlePointerDown/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /export function AgentTestPanel/u);
