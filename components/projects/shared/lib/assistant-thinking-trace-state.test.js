@@ -276,6 +276,30 @@ test("tool icon resolver maps agents thinking tools to specific icons", () => {
 		resolveToolIcon({ toolName: "generate_pdf.render_document" }).iconComponent?.name,
 		/^TemplateIcon/u
 	);
+	assert.match(
+		resolveToolIcon({ toolName: "studio.read_brief" }).iconComponent?.name,
+		/^FileIcon/u
+	);
+	assert.match(
+		resolveToolIcon({ toolName: "studio.review_answers" }).iconComponent?.name,
+		/^QuestionCircleIcon/u
+	);
+	assert.match(
+		resolveToolIcon({ toolName: "studio.select_tools" }).iconComponent?.name,
+		/^ToolsIcon/u
+	);
+	assert.match(
+		resolveToolIcon({ toolName: "studio.draft_instructions" }).iconComponent?.name,
+		/^PencilIcon/u
+	);
+	assert.match(
+		resolveToolIcon({ toolName: "studio.name_agent" }).iconComponent?.name,
+		/^AiAgentIcon/u
+	);
+	assert.match(
+		resolveToolIcon({ toolName: "studio.save_profile" }).iconComponent?.name,
+		/^SaveIcon/u
+	);
 });
 
 test("collectAssistantThinkingTraceData preserves status content", () => {

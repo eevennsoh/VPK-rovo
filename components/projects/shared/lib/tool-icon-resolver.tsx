@@ -24,6 +24,7 @@ import TargetIcon from "@atlaskit/icon/core/target";
 import GlobeIcon from "@atlaskit/icon/core/globe";
 import WorkItemIcon from "@atlaskit/icon/core/work-item";
 import WorkItemsIcon from "@atlaskit/icon/core/work-items";
+import ToolsIcon from "@atlaskit/icon/core/tools";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import DiagramSymbolFrontendIcon from "@atlaskit/icon-lab/core/diagram-symbol-frontend";
 import TerminalIcon from "@atlaskit/icon-lab/core/terminal";
@@ -31,6 +32,8 @@ import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
 import WrenchIcon from "@atlaskit/icon-lab/core/wrench";
 import TeamworkGraphIcon from "@atlaskit/icon-lab/core/teamwork-graph";
 import TemplateIcon from "@atlaskit/icon-lab/core/template";
+import PencilIcon from "@atlaskit/icon-lab/core/pencil";
+import SaveIcon from "@atlaskit/icon-lab/core/save";
 import Image from "next/image";
 
 export type { AtlassianLogoName };
@@ -107,6 +110,12 @@ const NATIVE_TOOL_ICONS = new Map<string, (props: NewCoreIconProps) => ReactNode
 	[normalizeToken("agent.write_instructions")!, ClipboardIcon],
 	[normalizeToken("agent.define_rerun_policy")!, RoadmapIcon],
 	[normalizeToken("agent.persist_definition")!, AiAgentIcon],
+	[normalizeToken("studio.read_brief")!, FileIcon],
+	[normalizeToken("studio.review_answers")!, QuestionCircleIcon],
+	[normalizeToken("studio.select_tools")!, ToolsIcon],
+	[normalizeToken("studio.draft_instructions")!, PencilIcon],
+	[normalizeToken("studio.name_agent")!, AiAgentIcon],
+	[normalizeToken("studio.save_profile")!, SaveIcon],
 	[normalizeToken("vpk_html.distill_fields")!, ListChecklistIcon],
 	[normalizeToken("vpk_html.render_template")!, TemplateIcon],
 	[normalizeToken("vpk_html.validate_artifact")!, CheckCircleIcon],
