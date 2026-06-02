@@ -142,7 +142,7 @@ function StudioSidebarAgentsCreateAction({ onClick }: Readonly<{ onClick: () => 
 	return (
 		<Button
 			aria-label="Create agent"
-			className="size-6 text-icon-subtle opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:opacity-100 focus-visible:opacity-100 hover:text-icon"
+			className="size-6 text-icon-subtle opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:!opacity-100 focus-visible:opacity-100 hover:text-icon"
 			onClick={(event) => {
 				event.stopPropagation();
 				onClick();
@@ -188,7 +188,7 @@ function StudioSidebarAgentAvatar({
 // `cloneElement` it with `label`/`size` props while the spinner keeps its own
 // stable visual sizing inside the shared 24px leading slot.
 function StudioSidebarAgentCreationIcon() {
-	return <Spinner variant="rainbow" size="xs" label="Creating agent" />;
+	return <Spinner variant="rainbow" label="Creating agent" />;
 }
 
 // Leading icon for the "Agents" accordion header: shows `AiAgentIcon` at rest and
@@ -231,7 +231,7 @@ function RecentAgentRowActions({
 				render={
 					<Button
 						aria-label={`More actions for ${label}`}
-						className="size-6 opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:opacity-100 focus-visible:opacity-100 data-[popup-open]:opacity-100"
+						className="size-6 opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:!opacity-100 focus-visible:opacity-100 data-[popup-open]:opacity-100"
 						size="icon"
 						variant="ghost"
 						onClick={(event) => event.stopPropagation()}

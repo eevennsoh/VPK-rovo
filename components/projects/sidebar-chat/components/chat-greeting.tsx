@@ -6,8 +6,9 @@ import { token } from "@/lib/tokens";
 import Heading from "@/components/blocks/shared-ui/heading";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustration";
+import { CardIdentityTile } from "@/components/projects/shared/components/card-identity-tile";
 import { IconTile } from "@/components/ui/icon-tile";
-import { defaultSuggestions, type RovoSuggestion } from "@/lib/rovo-suggestions";
+import { defaultSuggestions, resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/components/projects/rovo/data/agent-profiles";
 import { cn } from "@/lib/utils";
 
@@ -156,6 +157,16 @@ function CustomAgentStarterItem({
 	onClick,
 }: Readonly<SkillListItemProps>) {
 	const IconComponent = suggestion.icon;
+	const visualIdentity =
+		suggestion.visualIdentity ??
+		(!suggestion.imageSrc && !IconComponent
+			? resolveConversationStarterVisualIdentity({
+					agentId: suggestion.id,
+					agentName: "",
+					byline: "",
+					label: suggestion.prompt ?? suggestion.label,
+				})
+			: null);
 
 	return (
 		<button
@@ -163,13 +174,34 @@ function CustomAgentStarterItem({
 			onClick={onClick}
 			type="button"
 		>
-			<IconTile
-				aria-hidden={true}
-				className="border border-border bg-surface"
-				icon={IconComponent ? <IconComponent label={suggestion.label} color={token("color.icon.subtle")} /> : null}
-				label={suggestion.label}
-				size="medium"
-			/>
+			{visualIdentity ? (
+				<CardIdentityTile
+					decorative
+					identity={visualIdentity}
+					label={suggestion.label}
+					size="medium"
+				/>
+			) : (
+				<IconTile
+					aria-hidden={true}
+					className="border border-border bg-surface"
+					icon={
+						suggestion.imageSrc ? (
+							<Image
+								src={suggestion.imageSrc}
+								alt={suggestion.label}
+								width={16}
+								height={16}
+								className="size-4 object-contain"
+							/>
+						) : IconComponent ? (
+							<IconComponent label={suggestion.label} color={token("color.icon.subtle")} />
+						) : null
+					}
+					label={suggestion.label}
+					size="medium"
+				/>
+			)}
 			<span className="text-left text-sm text-text-subtle">{suggestion.label}</span>
 		</button>
 	);

@@ -93,7 +93,7 @@ function HoverAddAction({ label, onClick }: Readonly<{ label: string; onClick?: 
 		<SidebarNavItemAction
 			aria-label={label}
 			onClick={onClick}
-			className="opacity-0 transition-opacity duration-fast ease-out group-hover/sidebar-nav-item:opacity-100 focus-visible:opacity-100"
+			className="opacity-0 transition-opacity duration-fast ease-out group-hover/sidebar-nav-item:!opacity-100 focus-visible:opacity-100"
 		>
 			<AddIcon label="" />
 		</SidebarNavItemAction>

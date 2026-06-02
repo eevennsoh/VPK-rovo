@@ -2,8 +2,10 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
 	DEFAULT_TOOL_CALL_DELAY_MS,
+	DEFAULT_TOOL_CALL_DELAY_RANGE_MS,
 	createThinkingEventPart,
 	writeThinkingTraceSteps,
+	__internals: { getRandomizedDelayMs, normalizeDelayRange, resolveToolCallDelayMs },
 } = require("./thinking-trace-writer");
 
 function createCapturingWriter() {
@@ -16,9 +18,46 @@ function createCapturingWriter() {
 	};
 }
 
-test("DEFAULT_TOOL_CALL_DELAY_MS is exported as a positive number", () => {
+test("default tool-call delay range is exported as a slower readable cadence", () => {
 	assert.equal(typeof DEFAULT_TOOL_CALL_DELAY_MS, "number");
-	assert.equal(DEFAULT_TOOL_CALL_DELAY_MS, 1400);
+	assert.equal(DEFAULT_TOOL_CALL_DELAY_MS, 2300);
+	assert.deepEqual(DEFAULT_TOOL_CALL_DELAY_RANGE_MS, { min: 1800, max: 2800 });
+});
+
+test("getRandomizedDelayMs picks a bounded duration from the configured range", () => {
+	assert.equal(getRandomizedDelayMs({ min: 1800, max: 2800 }, () => 0), 1800);
+	assert.equal(getRandomizedDelayMs({ min: 1800, max: 2800 }, () => 0.5), 2300);
+	assert.equal(getRandomizedDelayMs({ min: 1800, max: 2800 }, () => 1), 2800);
+});
+
+test("normalizeDelayRange accepts reversed bounds and rejects invalid ranges", () => {
+	assert.deepEqual(normalizeDelayRange({ min: 2800, max: 1800 }), { min: 1800, max: 2800 });
+	assert.equal(normalizeDelayRange({ min: 0, max: 1800 }), null);
+	assert.equal(normalizeDelayRange(null), null);
+});
+
+test("resolveToolCallDelayMs preserves explicit overrides before randomized defaults", () => {
+	assert.equal(
+		resolveToolCallDelayMs(
+			{ delayMs: 25 },
+			{ defaultDelayRangeMs: { min: 1800, max: 2800 }, random: () => 0.5 },
+		),
+		25,
+	);
+	assert.equal(
+		resolveToolCallDelayMs(
+			{},
+			{ defaultDelayMs: 50, defaultDelayRangeMs: { min: 1800, max: 2800 }, random: () => 0.5 },
+		),
+		50,
+	);
+	assert.equal(
+		resolveToolCallDelayMs(
+			{},
+			{ defaultDelayRangeMs: { min: 1800, max: 2800 }, random: () => 0.5 },
+		),
+		2300,
+	);
 });
 
 test("createThinkingEventPart builds a start-phase part with the step's input", () => {

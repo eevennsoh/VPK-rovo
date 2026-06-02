@@ -131,7 +131,7 @@ function SidebarNavItem({
 			) : null}
 
 			{actions ? (
-				<div data-slot="sidebar-nav-item-actions" className="flex shrink-0 items-center gap-1">
+				<div data-slot="sidebar-nav-item-actions" className="absolute top-1/2 right-1 z-10 flex -translate-y-1/2 items-center gap-1">
 					{actions}
 				</div>
 			) : null}

@@ -30,7 +30,7 @@ test("Studio sidebar recent agent avatar is 20px in the 24px leading slot", () =
 
 test("Studio sidebar creation rows use the shared VPK spinner", () => {
 	assert.match(SOURCE, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
-	assert.match(SOURCE, /function StudioSidebarAgentCreationIcon\(\) \{\s*return <Spinner variant="rainbow" size="xs" label="Creating agent" \/>;/u);
+	assert.match(SOURCE, /function StudioSidebarAgentCreationIcon\(\) \{\s*return <Spinner variant="rainbow" label="Creating agent" \/>;/u);
 	assert.doesNotMatch(SOURCE, /components\/ui-custom\/morphing-rovo/u);
 	assert.doesNotMatch(SOURCE, /<MorphingRovo\.Shape/u);
 });
@@ -47,7 +47,7 @@ test("Studio sidebar Agents parent can collapse while a recent agent is selected
 test("Studio sidebar Agents accordion keeps a create action on the parent row", () => {
 	assert.match(SOURCE, /import AddIcon from "@atlaskit\/icon\/core\/add";/u);
 	assert.match(SOURCE, /function StudioSidebarAgentsCreateAction\(\{ onClick \}: Readonly<\{ onClick: \(\) => void \}>\) \{/u);
-	assert.match(SOURCE, /className="size-6 text-icon-subtle opacity-0 transition-opacity duration-normal ease-out group-hover\/sidebar-nav-item:opacity-100 focus-visible:opacity-100 hover:text-icon"/u);
+	assert.match(SOURCE, /className="size-6 text-icon-subtle opacity-0 transition-opacity duration-normal ease-out group-hover\/sidebar-nav-item:!opacity-100 focus-visible:opacity-100 hover:text-icon"/u);
 	assert.match(SOURCE, /aria-label="Create agent"[\s\S]*event\.stopPropagation\(\);[\s\S]*onClick\(\);[\s\S]*<AddIcon label="" size="small" \/>/u);
 	assert.match(SOURCE, /const actions = shouldShowRecentAgents && onNewChat \? \([\s\S]*<StudioSidebarAgentsCreateAction onClick=\{onNewChat\} \/>[\s\S]*\) : item\.actions;/u);
 	assert.match(SOURCE, /<StudioSidebarNavItem[\s\S]*actions=\{actions\}[\s\S]*isExpanded=\{shouldShowRecentAgents \? isAgentsExpanded : item\.isExpanded\}/u);

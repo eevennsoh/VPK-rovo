@@ -3,9 +3,9 @@
 import Image from "next/image";
 import type { ComponentProps, ReactElement } from "react";
 
+import EditIcon from "@atlaskit/icon/core/edit";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
-import SwapIcon from "@atlaskit/icon-lab/core/swap";
 
 import { Avatar, AvatarCompanyBadge, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -37,10 +37,12 @@ export interface AgentCardProps extends Omit<ComponentProps<"section">, "childre
 	coverBackgroundColor?: string;
 	inputPlaceholder?: string;
 	inputActionLabel?: string;
+	editActionLabel?: string;
 	moreActionLabel?: string;
 	swapActionLabel?: string;
 	voiceActionLabel?: string;
 	onInputAction?: () => void;
+	onEditAction?: () => void;
 	onMoreAction?: () => void;
 	onSwapAction?: () => void;
 	onVoiceInput?: () => void;
@@ -56,10 +58,12 @@ function AgentCard({
 	coverBackgroundColor,
 	inputPlaceholder = "Ask, @mention, or / for actions",
 	inputActionLabel,
+	editActionLabel,
 	moreActionLabel,
 	swapActionLabel,
 	voiceActionLabel = "Start voice input",
 	onInputAction,
+	onEditAction,
 	onMoreAction,
 	onSwapAction,
 	onVoiceInput,
@@ -67,7 +71,8 @@ function AgentCard({
 	...props
 }: Readonly<AgentCardProps>): ReactElement {
 	const resolvedMoreActionLabel = moreActionLabel ?? `More actions for ${name}`;
-	const resolvedSwapActionLabel = swapActionLabel ?? `Swap ${name}`;
+	const resolvedSwapActionLabel = swapActionLabel ?? "Chat with agent";
+	const resolvedEditActionLabel = editActionLabel ?? `Edit ${name}`;
 	const resolvedCoverBackgroundColor =
 		coverBackgroundColor ?? getBannerColorFromAvatarSrc(avatarSrc);
 
@@ -105,13 +110,23 @@ function AgentCard({
 						<div className="flex items-center gap-2">
 							<Button
 								aria-label={resolvedSwapActionLabel}
-								className="size-6 rounded-md bg-surface p-0 text-icon-subtle"
+								className="bg-surface text-text-subtle"
 								onClick={onSwapAction}
+								size="compact"
+								type="button"
+								variant="outline"
+							>
+								{resolvedSwapActionLabel}
+							</Button>
+							<Button
+								aria-label={resolvedEditActionLabel}
+								className="size-6 rounded-md bg-surface p-0 text-icon-subtle"
+								onClick={onEditAction}
 								size="icon-compact"
 								type="button"
 								variant="outline"
 							>
-								<SwapIcon label="" size="small" />
+								<EditIcon label="" size="small" />
 							</Button>
 							<Button
 								aria-label={resolvedMoreActionLabel}
