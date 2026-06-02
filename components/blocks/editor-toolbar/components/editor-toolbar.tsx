@@ -14,11 +14,13 @@ import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import ListNumberedIcon from "@atlaskit/icon/core/list-numbered";
 import MarkdownIcon from "@atlaskit/icon/core/markdown";
 import QuotationMarkIcon from "@atlaskit/icon/core/quotation-mark";
+import SnippetIcon from "@atlaskit/icon/core/snippet";
 import TextIcon from "@atlaskit/icon/core/text";
 import TextBoldIcon from "@atlaskit/icon/core/text-bold";
 import TextItalicIcon from "@atlaskit/icon/core/text-italic";
 import TextStrikethroughIcon from "@atlaskit/icon/core/text-strikethrough";
 import TextUnderlineIcon from "@atlaskit/icon/core/text-underline";
+import TerminalIcon from "@atlaskit/icon-lab/core/terminal";
 import TextHeadingOneIcon from "@atlaskit/icon-lab/core/text-heading-one";
 import TextHeadingThreeIcon from "@atlaskit/icon-lab/core/text-heading-three";
 import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
@@ -32,7 +34,7 @@ import type { MarkdownFormatKind } from "@/components/ui-custom/rich-text-editor
 import { cn } from "@/lib/utils";
 
 type DropdownType = "textStyle" | "formatting" | "list" | "align" | null;
-type TextStyleType = "normal" | "h1" | "h2" | "h3" | "quote";
+type TextStyleType = "normal" | "h1" | "h2" | "h3" | "quote" | "codeBlock";
 type Alignment = "left" | "center" | "right";
 
 const TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME = "*:data-[slot=toggle-group-item]:w-6! *:data-[slot=toggle-group-item]:min-w-6! *:data-[slot=toggle-group-item]:px-0!";
@@ -43,6 +45,7 @@ const TEXT_STYLE_TO_MARKDOWN: Record<TextStyleType, MarkdownFormatKind> = {
 	h2: "h2",
 	h3: "h3",
 	quote: "quote",
+	codeBlock: "codeBlock",
 };
 
 export interface EditorToolbarProps {
@@ -133,6 +136,7 @@ function getCurrentTextStyle(editor: Editor): string {
 	if (editor.isActive("heading", { level: 2 })) return "Heading 2";
 	if (editor.isActive("heading", { level: 3 })) return "Heading 3";
 	if (editor.isActive("blockquote")) return "Quote";
+	if (editor.isActive("codeBlock")) return "Code block";
 	return "Normal text";
 }
 
@@ -148,6 +152,9 @@ function renderCurrentTextStyleIcon(editor: Editor) {
 	}
 	if (editor.isActive("blockquote")) {
 		return <QuotationMarkIcon label="" size="small" />;
+	}
+	if (editor.isActive("codeBlock")) {
+		return <TerminalIcon label="" size="small" />;
 	}
 	return <TextIcon label="" size="small" />;
 }
@@ -168,6 +175,9 @@ function setTextStyle(editor: Editor, style: TextStyleType): void {
 			break;
 		case "quote":
 			editor.chain().focus().toggleBlockquote().run();
+			break;
+		case "codeBlock":
+			editor.chain().focus().toggleCodeBlock().run();
 			break;
 	}
 }
@@ -370,6 +380,12 @@ export function EditorToolbar({
 									isSelected={editor.isActive("blockquote")}
 									onClick={() => handleTextStyle("quote")}
 								/>
+								<DropdownMenuItem
+									icon={<TerminalIcon label="Code block" size="small" />}
+									label="Code block"
+									isSelected={editor.isActive("codeBlock")}
+									onClick={() => handleTextStyle("codeBlock")}
+								/>
 							</DropdownMenuContainer>
 						) : null}
 					</div>
@@ -421,6 +437,15 @@ export function EditorToolbar({
 									isSelected={editor.isActive("strike")}
 									onClick={() => {
 										runFormat("strikethrough", () => editor.chain().focus().toggleStrike().run());
+										closeDropdown();
+									}}
+								/>
+								<DropdownMenuItem
+									icon={<SnippetIcon label="Code" size="small" />}
+									label="Code"
+									isSelected={editor.isActive("code")}
+									onClick={() => {
+										runFormat("inlineCode", () => editor.chain().focus().toggleCode().run());
 										closeDropdown();
 									}}
 								/>

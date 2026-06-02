@@ -104,3 +104,51 @@ test("link without a URL is a no-op", () => {
 	const result = applyMarkdownFormat("link", state);
 	assert.deepEqual(result, state);
 });
+
+test("inline code wraps the selection with backticks", () => {
+	const result = applyMarkdownFormat("inlineCode", select("call foo() now", 5, 10));
+	assert.equal(result.value, "call `foo()` now");
+	assert.equal(result.value.slice(result.selectionStart, result.selectionEnd), "foo()");
+});
+
+test("inline code unwraps a selection already wrapped with backticks", () => {
+	const result = applyMarkdownFormat("inlineCode", select("call `foo()` now", 5, 12));
+	assert.equal(result.value, "call foo() now");
+	assert.equal(result.value.slice(result.selectionStart, result.selectionEnd), "foo()");
+});
+
+test("h4/h5/h6 each prefix the current line with the matching ATX heading", () => {
+	const h4 = applyMarkdownFormat("h4", select("Notes", 0, 5));
+	assert.equal(h4.value, "#### Notes");
+
+	const h5 = applyMarkdownFormat("h5", select("Notes", 0, 5));
+	assert.equal(h5.value, "##### Notes");
+
+	const h6 = applyMarkdownFormat("h6", select("Notes", 0, 5));
+	assert.equal(h6.value, "###### Notes");
+});
+
+test("code block wraps the selected lines in fences", () => {
+	const value = "alpha\nbeta\ngamma";
+	const result = applyMarkdownFormat("codeBlock", select(value, 0, value.length));
+	assert.equal(result.value, "```\nalpha\nbeta\ngamma\n```");
+});
+
+test("code block strips the fences when the selection is already fenced", () => {
+	const value = "```\nalpha\nbeta\n```";
+	const result = applyMarkdownFormat("codeBlock", select(value, 0, value.length));
+	assert.equal(result.value, "alpha\nbeta");
+});
+
+test("horizontal rule inserts a `---` block surrounded by blank lines", () => {
+	const result = applyMarkdownFormat("horizontalRule", select("before", 6, 6));
+	assert.equal(result.value, "before\n\n---\n\n");
+	// The caret should land at the end of the inserted block.
+	assert.equal(result.selectionStart, result.value.length);
+	assert.equal(result.selectionEnd, result.value.length);
+});
+
+test("horizontal rule reuses an existing trailing newline", () => {
+	const result = applyMarkdownFormat("horizontalRule", select("before\n", 7, 7));
+	assert.equal(result.value, "before\n\n---\n\n");
+});
