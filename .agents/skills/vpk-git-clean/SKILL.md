@@ -1,6 +1,6 @@
 ---
 name: vpk-git-clean
-description: "Use for VPK-rovo git housekeeping: removing landed worktrees, deleting merged PR source branches, pruning stale tracking refs, and closing explicitly abandoned PRs. This is the deferred cleanup step that `vpk-git-ship` intentionally does NOT run during a ship, because an agent cannot remove the worktree it is standing in — so cleanup is a separate, later sweep run from the main checkout. Use whenever the user says \"vpk-git-clean\", \"clean up worktrees\", \"clean up branches\", \"remove merged worktrees\", \"delete the branch after merge\", \"prune stale refs\", \"tidy worktrees\", \"sweep landed worktrees\", \"my worktrees are piling up\", \"remove this worktree\", or after a `vpk-git-ship` ship reported a worktree was left active for follow-up removal. Run it from the main checkout, not from inside a worktree you want removed."
+description: "Use for VPK-rovo git housekeeping: removing landed worktrees, deleting merged PR source branches, pruning stale tracking refs, and closing explicitly abandoned PRs. This is the deferred cleanup step that `vpk-git-ship` intentionally does NOT run during a ship, because an agent cannot remove the worktree it is standing in — so cleanup is a separate, later sweep run from the main checkout. Use whenever the user says \"vpk-git-clean\", \"clean up worktrees\", \"clean up branches\", \"remove merged worktrees\", \"delete the branch after merge\", \"prune stale refs\", \"tidy worktrees\", \"sweep landed worktrees\", \"my worktrees are piling up\", \"remove this worktree\", \"free worktree ports\", \"kill the dev server for a worktree\", or after a `vpk-git-ship` ship reported a worktree was left active for follow-up removal. Run it from the main checkout, not from inside a worktree you want removed."
 ---
 
 # VPK Git Clean
@@ -71,7 +71,7 @@ For worktree and branch cleanup:
    - No open PR is backed by the branch name or head commit.
    - No process owns the exact path: `lsof +D <worktree>`.
 3. Remove only safe items:
-   - Use plain `git worktree remove <path>` for registered, clean, landed, process-safe worktrees.
+   - Stop the worktree's dev servers first (see Stop Worktree Dev Servers), then use plain `git worktree remove <path>` for registered, clean, landed, process-safe worktrees.
    - Use `git worktree prune --verbose` only for stale admin metadata after the path is already gone.
    - Use `git branch -d <branch>` only for merged local branches unused by any worktree.
    - Use `git push origin --delete <branch>` only for merged remote branches with no open PR by branch or head commit.
@@ -106,6 +106,8 @@ Use plain `git worktree remove <path>` only for registered worktrees that are:
 - process-safe;
 - proven landed by ancestry, merged PR evidence, or patch-equivalence fallback.
 
+Before removing such a worktree, stop its dev servers first (see Stop Worktree Dev Servers) so the deterministic port slot it held can be reused and `git worktree remove` does not trip over a live listener.
+
 Do not use `git worktree remove --force` for an existing worktree path. If plain removal fails because Git says force is required, skip the target and report the exact reason.
 
 If the worktree path is already gone but `git worktree list --porcelain` still reports stale admin metadata, run `git worktree prune --verbose` and re-check. This is metadata cleanup, not filesystem deletion. Preserve unregistered directories, paths whose Git admin metadata is missing, and any worktree whose status/HEAD/branch cannot be inspected.
@@ -132,6 +134,43 @@ For an otherwise eligible clean merged worktree with exact-path live processes:
 4. Send SIGKILL only to the same PID if it still owns the path.
 
 Do not kill processes for current, default, dirty, untracked, unmerged, unregistered, or ambiguous worktrees.
+
+When the owning processes are this worktree's dev servers, stop them with the canonical helper (see Stop Worktree Dev Servers) so the freed slot becomes reusable.
+
+## Stop Worktree Dev Servers
+
+A landed worktree often still owns a running dev stack — frontend, backend, and the Rovo Serve supervisor — bound to its deterministic port slot (`pnpm ports` shows the mapping). Stop that localhost dev before removing the worktree so the slot frees up and `git worktree remove` does not trip over a live listener.
+
+Stop dev servers only for a worktree that has already passed every removal check (non-current, non-default, clean, proven landed, process-safe) and is actually being removed. Do not stop processes for current, default, dirty, untracked, unmerged, unregistered, or ambiguous worktrees.
+
+### Preferred: the repo's canonical helper
+
+Use the repo's tested helper rather than a hand-rolled `lsof` sweep: `cleanupListeningProcessesForWorktree({ worktreePath })` in `scripts/lib/worktree-listener-cleanup.js`. It matches every TCP listener whose working directory is that exact worktree **plus** the Rovo supervisor process (`scripts/dev-rovo-port.js`), excludes the current process, and escalates SIGTERM → 2s grace → SIGKILL. Because it matches on each PID's cwd, it can never touch the main checkout's or another worktree's dev server. It is covered by `scripts/lib/worktree-listener-cleanup.test.js`.
+
+Run it from the main checkout, targeting each removable worktree by absolute path, before `git worktree remove`:
+
+```bash
+node -e 'require("./scripts/lib/worktree-listener-cleanup").cleanupListeningProcessesForWorktree({ worktreePath: process.argv[1], logger: console }).then((s) => console.log(JSON.stringify(s)))' <worktree>
+```
+
+The returned summary reports `matchedPids`, `signalledCount`, `gracefulCount`, and `forceKilledCount` — record the killed PIDs per worktree for the final report. The CLI wrapper `scripts/cleanup-worktree-listeners.js` does the same but hardcodes `process.cwd()`, so it only suits stopping the worktree you are standing in; the `node -e` form above is what targets a *different* worktree from the main checkout.
+
+### Fallback: port files
+
+If the helper is unavailable, fall back to the worktree's own port files — `.dev-frontend-port`, `.dev-backend-port`, `.dev-rovo-port` (legacy single), and `.dev-rovo-ports` (JSON array pool). Read them first, before `git worktree remove`, since they live inside the worktree, and free each port only when its listener's cwd is that exact worktree:
+
+```bash
+cat <worktree>/.dev-frontend-port <worktree>/.dev-backend-port 2>/dev/null
+cat <worktree>/.dev-rovo-port 2>/dev/null
+grep -oE '[0-9]+' <worktree>/.dev-rovo-ports 2>/dev/null
+lsof -ti:<port> -sTCP:LISTEN
+lsof -a -d cwd -p <pid> -Fn   # the `n` line must equal <worktree>
+kill <pid>        # SIGTERM
+kill -0 <pid>     # recheck; nonzero exit means it already exited
+kill -9 <pid>     # SIGKILL only if still alive and cwd still matches
+```
+
+Skip any port with no listener, or whose listener's cwd is not that worktree — that port belongs to a different checkout and must be left alone. Record the ports freed per worktree for the final report.
 
 ## Cleanup Validation
 
@@ -165,6 +204,7 @@ Stop and report instead of changing state when:
 Keep the final report concise:
 
 - Worktrees removed or left alone, with the reason for each (dirty, current, not proven landed, process-owned, ambiguous).
+- Dev servers stopped per removed worktree (matched/killed PIDs and freed ports), and any left running because the listener's cwd was a different checkout.
 - Local branches deleted, and any reported for manual force-deletion.
 - Remote branches deleted and stale tracking refs pruned.
 - PRs closed (only abandoned ones the user confirmed), with URLs.
