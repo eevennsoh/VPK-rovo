@@ -185,11 +185,12 @@ test("Agent header renders Configure and Test as a self-contained compact Toggle
 	assert.match(AGENT_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
 	assert.match(AGENT_SOURCE, /primaryActionLabel = "Configure"/u);
 	assert.match(AGENT_SOURCE, /secondaryActionLabel = "Test"/u);
+	assert.match(AGENT_SOURCE, /publishLabel = "Publish"/u);
 	// ToggleGroup carries its own context, so the default actions render it
-	// directly (compact: variant="outline" size="sm").
+	// directly (compact: variant="outline" size="sm") alongside a Publish button.
 	assert.match(
 		AGENT_SOURCE,
-		/\{actions \?\? \([\s\S]*<ToggleGroup[\s\S]*aria-label="Agent views"[\s\S]*defaultValue=\{\["configure"\]\}[\s\S]*variant="outline"[\s\S]*size="sm"[\s\S]*<ToggleGroupItem value="configure">[\s\S]*\{primaryActionLabel\}[\s\S]*<ToggleGroupItem value="test">[\s\S]*\{secondaryActionLabel\}[\s\S]*<\/ToggleGroup>/u,
+		/\{actions \?\? \([\s\S]*<ToggleGroup[\s\S]*aria-label="Agent views"[\s\S]*defaultValue=\{\["configure"\]\}[\s\S]*variant="outline"[\s\S]*size="sm"[\s\S]*<ToggleGroupItem value="configure">[\s\S]*\{primaryActionLabel\}[\s\S]*<ToggleGroupItem value="test">[\s\S]*\{secondaryActionLabel\}[\s\S]*<\/ToggleGroup>[\s\S]*<Button[\s\S]*\{publishLabel\}[\s\S]*<\/Button>/u,
 	);
 	// The Tabs-based header is fully retired from the default actions.
 	assert.doesNotMatch(AGENT_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
