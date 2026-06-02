@@ -126,10 +126,11 @@ export function CardDirectoryByline({ publisher, verified = false }: Readonly<Ca
 
 export interface CardDirectoryMoreButtonProps {
 	label: string;
+	active?: boolean;
 	onClick?: () => void;
 }
 
-export function CardDirectoryMoreButton({ label, onClick }: Readonly<CardDirectoryMoreButtonProps>) {
+export function CardDirectoryMoreButton({ label, active = false, onClick }: Readonly<CardDirectoryMoreButtonProps>) {
 	const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
 		event.stopPropagation();
 		onClick?.();
@@ -138,7 +139,11 @@ export function CardDirectoryMoreButton({ label, onClick }: Readonly<CardDirecto
 	return (
 		<Button
 			aria-label={label}
-			className="size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100"
+			aria-pressed={active || undefined}
+			className={cn(
+				"size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
+				active && "opacity-100",
+			)}
 			onClick={handleClick}
 			size="icon-compact"
 			type="button"

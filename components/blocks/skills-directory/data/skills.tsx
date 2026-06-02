@@ -1,9 +1,11 @@
 import { type ReactElement } from "react";
 import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
+import BranchIcon from "@atlaskit/icon/core/branch";
 import CalendarIcon from "@atlaskit/icon/core/calendar";
 import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
 import CommentIcon from "@atlaskit/icon/core/comment";
 import CurlyBracketsIcon from "@atlaskit/icon/core/curly-brackets";
+import DeviceMobileIcon from "@atlaskit/icon/core/device-mobile";
 import EditIcon from "@atlaskit/icon/core/edit";
 import LinkIcon from "@atlaskit/icon/core/link";
 import MegaphoneIcon from "@atlaskit/icon/core/megaphone";
@@ -18,14 +20,20 @@ import type { AtlassianLogoName } from "@/components/ui/logo";
 export type SkillCategory =
 	| "project-management"
 	| "administrative-tools"
-	| "content-communication"
-	| "data-analytics"
-	| "software-development";
+	| "content-and-communication"
+	| "data-and-analytics"
+	| "software-development"
+	| "it-support-and-service"
+	| "design-and-diagramming"
+	| "security-and-compliance"
+	| "hr-and-team-building"
+	| "sales-and-customer-relations";
 
 export type SkillIconKey =
 	| "page"
 	| "comment"
 	| "curly-brackets"
+	| "device-mobile"
 	| "video"
 	| "edit"
 	| "chart-trend-up"
@@ -34,6 +42,7 @@ export type SkillIconKey =
 	| "calendar"
 	| "megaphone"
 	| "paint-palette"
+	| "branch"
 	| "search";
 
 export interface SkillsDirectoryToolTag {
@@ -101,12 +110,16 @@ export function getSkillIcon(icon: SkillIconKey = "page"): ReactElement {
 			return <CommentIcon label="" color="currentColor" />;
 		case "curly-brackets":
 			return <CurlyBracketsIcon label="" color="currentColor" />;
+		case "device-mobile":
+			return <DeviceMobileIcon label="" color="currentColor" />;
 		case "video":
 			return <VideoIcon label="" color="currentColor" />;
 		case "edit":
 			return <EditIcon label="" color="currentColor" />;
 		case "chart-trend-up":
 			return <ChartTrendUpIcon label="" color="currentColor" />;
+		case "branch":
+			return <BranchIcon label="" color="currentColor" />;
 		case "angle-brackets":
 			return <AngleBracketsIcon label="" color="currentColor" />;
 		case "link":
@@ -161,11 +174,11 @@ export const DEFAULT_SKILLS: readonly SkillsDirectorySkill[] = [
 		name: "Design landing page",
 		description: "Create high-converting, visually distinctive landing pages from scratch or by refactoring existing pages. Use when the user asks to build, redesign, polish, or optimize a landing page.",
 		icon: "paint-palette",
-		iconColor: "text-purple-500",
+		iconColor: "text-icon-discovery",
 		publisherName: "By you",
 		publisherAvatarSrc: YOU_AVATAR,
 		companyId: "you",
-		categoryId: "content-communication",
+		categoryId: "content-and-communication",
 		starCount: 30,
 		viewCount: 6279,
 		favorite: true,
@@ -180,8 +193,8 @@ export const DEFAULT_SKILLS: readonly SkillsDirectorySkill[] = [
 		id: "develop-mobile-app-interface",
 		name: "Develop mobile app interface",
 		description: "Craft intuitive and engaging mobile app interfaces tailored for both iOS and Android platforms. Ideal for designing, enhancing, or refining app UI/UX.",
-		icon: "paint-palette",
-		iconColor: "text-blue-500",
+		icon: "device-mobile",
+		iconColor: "text-icon-success",
 		publisherName: "By you",
 		publisherAvatarSrc: YOU_AVATAR,
 		companyId: "you",
@@ -200,11 +213,11 @@ export const DEFAULT_SKILLS: readonly SkillsDirectorySkill[] = [
 		name: "Create brand identity",
 		description: "Establish a cohesive brand identity through logo design, color palettes, typography, and visual style guidelines. Use this when creating or refreshing a brand.",
 		icon: "paint-palette",
-		iconColor: "text-teal-500",
+		iconColor: "text-icon-brand",
 		publisherName: "By you",
 		publisherAvatarSrc: YOU_AVATAR,
 		companyId: "you",
-		categoryId: "content-communication",
+		categoryId: "content-and-communication",
 		starCount: 60,
 		viewCount: 4921,
 		favorite: true,
@@ -218,12 +231,12 @@ export const DEFAULT_SKILLS: readonly SkillsDirectorySkill[] = [
 		id: "produce-marketing-materials",
 		name: "Produce marketing materials",
 		description: "Design eye-catching marketing collateral that resonates with target audiences, including brochures, posters, and social media graphics.",
-		icon: "edit",
-		iconColor: "text-text-subtle",
+		icon: "megaphone",
+		iconColor: "text-icon-warning",
 		publisherName: "By you",
 		publisherAvatarSrc: YOU_AVATAR,
 		companyId: "you",
-		categoryId: "content-communication",
+		categoryId: "content-and-communication",
 		starCount: 25,
 		viewCount: 3810,
 		tools: [{ id: "campaign-kit", name: "Campaign kit", icon: "megaphone" }],
@@ -234,7 +247,7 @@ export const DEFAULT_SKILLS: readonly SkillsDirectorySkill[] = [
 		name: "Review pull request",
 		description: "Summarize diffs and surface review-worthy changes across a pull request before a teammate merges it.",
 		icon: "angle-brackets",
-		iconColor: "text-teal-500",
+		iconColor: "text-icon-success",
 		publisherName: "Atlassian",
 		companyId: "atlassian",
 		categoryId: "software-development",
@@ -248,11 +261,11 @@ export const DEFAULT_SKILLS: readonly SkillsDirectorySkill[] = [
 		name: "Summarize thread",
 		description: "Condense a long conversation into the decisions, owners, and next steps that matter.",
 		icon: "comment",
-		iconColor: "text-purple-500",
+		iconColor: "text-icon-brand",
 		publisherName: "Slack",
 		publisherAvatarSrc: SLACK_LOGO,
 		companyId: "slack",
-		categoryId: "content-communication",
+		categoryId: "content-and-communication",
 		starCount: 54,
 		viewCount: 7045,
 		tools: [{ id: "slack", name: "Slack", icon: "comment" }],
@@ -263,7 +276,7 @@ export const DEFAULT_SKILLS: readonly SkillsDirectorySkill[] = [
 		name: "Schedule meeting",
 		description: "Find a time that works for everyone and create a calendar invite with the right context.",
 		icon: "calendar",
-		iconColor: "text-orange-500",
+		iconColor: "text-yellow-400",
 		publisherName: "Google",
 		publisherAvatarSrc: GOOGLE_LOGO,
 		companyId: "google",
@@ -278,11 +291,11 @@ export const DEFAULT_SKILLS: readonly SkillsDirectorySkill[] = [
 		name: "Build report",
 		description: "Turn raw metrics into a narrative report your stakeholders will actually read.",
 		icon: "chart-trend-up",
-		iconColor: "text-teal-500",
+		iconColor: "text-icon-discovery",
 		publisherName: "Notion",
 		publisherAvatarSrc: NOTION_LOGO,
 		companyId: "notion",
-		categoryId: "data-analytics",
+		categoryId: "data-and-analytics",
 		starCount: 47,
 		viewCount: 6940,
 		tools: [{ id: "notion", name: "Notion", icon: "page" }],
@@ -293,7 +306,7 @@ export const DEFAULT_SKILLS: readonly SkillsDirectorySkill[] = [
 		name: "Create payment flow",
 		description: "Design checkout, billing, and account-update flows with clear states and recovery paths.",
 		icon: "link",
-		iconColor: "text-indigo-500",
+		iconColor: "text-icon-warning",
 		publisherName: "Stripe",
 		publisherAvatarSrc: STRIPE_LOGO,
 		companyId: "stripe",

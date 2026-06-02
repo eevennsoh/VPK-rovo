@@ -11,7 +11,7 @@ const DEMO_SESSION_SKILLS: readonly SkillsDirectorySkill[] = [
 		name: "Audit accessibility",
 		description: "Review interface structure, keyboard paths, and assistive technology labels before a release.",
 		icon: "search",
-		iconColor: "text-blue-500",
+		iconColor: "text-icon-success",
 		publisherName: "Atlassian",
 		companyId: "atlassian",
 		categoryId: "software-development",
@@ -25,10 +25,10 @@ const DEMO_SESSION_SKILLS: readonly SkillsDirectorySkill[] = [
 		name: "Draft release notes",
 		description: "Turn a list of merged changes into customer-ready release notes.",
 		icon: "edit",
-		iconColor: "text-green-500",
+		iconColor: "text-icon-brand",
 		publisherName: "Atlassian",
 		companyId: "atlassian",
-		categoryId: "content-communication",
+		categoryId: "content-and-communication",
 		starCount: 12,
 		viewCount: 410,
 		tools: [{ id: "changelog", name: "Changelog", icon: "page" }],
@@ -43,11 +43,6 @@ export default function SkillsDirectoryPage() {
 		<div className="flex min-h-screen items-center justify-center p-4">
 			<Button onClick={() => setOpen(true)}>Browse skills</Button>
 			<SkillsDirectoryDialog
-				defaultSelectedSkillIds={[
-					"design-landing-page",
-					"develop-mobile-app-interface",
-					"create-brand-identity",
-				]}
 				open={open}
 				onOpenChange={setOpen}
 				sessionSkills={DEMO_SESSION_SKILLS}

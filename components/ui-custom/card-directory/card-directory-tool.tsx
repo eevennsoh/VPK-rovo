@@ -5,6 +5,7 @@ import WrenchIcon from "@atlaskit/icon-lab/core/wrench";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 
 import { Tile } from "@/components/ui/tile";
+import { cn } from "@/lib/utils";
 
 import { CardDirectory } from "./card-directory";
 import {
@@ -22,6 +23,8 @@ export interface CardDirectoryToolProps {
 	description?: string;
 	toolCount?: number;
 	teammateCount?: number;
+	active?: boolean;
+	moreAction?: ReactNode;
 	onSelect?: () => void;
 	onMoreActions?: () => void;
 	className?: string;
@@ -34,6 +37,8 @@ export function CardDirectoryTool({
 	description,
 	toolCount,
 	teammateCount,
+	active = false,
+	moreAction,
 	onSelect,
 	onMoreActions,
 	className,
@@ -42,24 +47,26 @@ export function CardDirectoryTool({
 	const showTeammates = typeof teammateCount === "number";
 
 	return (
-		<CardDirectory className={className} onSelect={onSelect} selectLabel={`Select ${name}`}>
-			<CardDirectoryHeader
-				action={
-					onMoreActions ? (
-						<CardDirectoryMoreButton label={`More actions for ${name}`} onClick={onMoreActions} />
-					) : null
-				}
-				leading={
-					<Tile isInset={false} label={name} size="small" variant="transparent">
-						{appLogo}
-					</Tile>
-				}
-				title={name}
-			/>
+		<CardDirectory active={active} className={cn("gap-4", className)} onSelect={onSelect} selectLabel={`Select ${name}`}>
+			<div className="flex flex-col gap-2">
+				<CardDirectoryHeader
+					action={
+						moreAction ?? (onMoreActions ? (
+							<CardDirectoryMoreButton active={active} label={`More actions for ${name}`} onClick={onMoreActions} />
+						) : null)
+					}
+					leading={
+						<Tile isInset={false} label={name} size="small" variant="transparent">
+							{appLogo}
+						</Tile>
+					}
+					title={name}
+				/>
 
-			<CardDirectoryDescription>
-				{description ?? `Learn how ${name} can help your team work faster.`}
-			</CardDirectoryDescription>
+				<CardDirectoryDescription>
+					{description ?? `Learn how ${name} can help your team work faster.`}
+				</CardDirectoryDescription>
+			</div>
 
 			{showTools || showTeammates ? (
 				<CardDirectoryFooter>

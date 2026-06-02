@@ -16,6 +16,11 @@ import { ROVO_LOGO_PATHS, ROVO_LOGO_VIEWBOX } from "@/components/ui/data/rovo-lo
 export { ROVO_LOGO_DATA_URI } from "@/components/ui/data/rovo-logo";
 export type { AtlassianLogoName };
 export type LogoVariant = "icon" | "lockup";
+export const ATLASSIAN_LOGO_SOURCE = "atlassian";
+
+export function isAtlassianLogoSource(src: string | null | undefined): boolean {
+	return src === ATLASSIAN_LOGO_SOURCE;
+}
 
 export interface LogoProps extends AtlaskitLogoProps {
 	color?: string;

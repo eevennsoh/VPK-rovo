@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { type ReactNode } from "react";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
@@ -32,6 +33,8 @@ export interface CardDirectoryAgentProps {
 	chatCount?: number;
 	/** Extra classes applied to the avatar image (e.g. to scale a wide logo). */
 	avatarImageClassName?: string;
+	active?: boolean;
+	moreAction?: ReactNode;
 	onSelect?: () => void;
 	onMoreActions?: () => void;
 	className?: string;
@@ -49,44 +52,49 @@ export function CardDirectoryAgent({
 	feedbackCount,
 	chatCount,
 	avatarImageClassName,
+	active = false,
+	moreAction,
 	onSelect,
 	onMoreActions,
 	className,
 }: Readonly<CardDirectoryAgentProps>) {
 	const showRating = typeof rating === "number";
 	const showChats = typeof chatCount === "number";
+	const leadingAvatar = (
+		<Avatar size="default" shape="hexagon">
+			{logoName ? (
+				<AtlassianLogo name={logoName} size="medium" themeAware label={name} />
+			) : avatarSrc ? (
+				<Image
+					alt=""
+					aria-hidden
+					className={cn("size-full object-contain", avatarImageClassName)}
+					height={32}
+					src={avatarSrc}
+					width={32}
+				/>
+			) : null}
+		</Avatar>
+	);
 
 	return (
-		<CardDirectory className={className} onSelect={onSelect} selectLabel={`Select ${name}`}>
-			<CardDirectoryHeader
-				action={
-					onMoreActions ? (
-						<CardDirectoryMoreButton label={`More actions for ${name}`} onClick={onMoreActions} />
-					) : null
-				}
-				byline={<CardDirectoryByline publisher={publisher} verified={verified} />}
-				leading={
-					<Avatar size="default" shape="hexagon">
-						{logoName ? (
-							<AtlassianLogo name={logoName} size="medium" themeAware label={name} />
-						) : avatarSrc ? (
-							<Image
-								alt=""
-								aria-hidden
-								className={cn("size-full object-contain", avatarImageClassName)}
-								height={32}
-								src={avatarSrc}
-								width={32}
-							/>
-						) : null}
-					</Avatar>
-				}
-				title={name}
-			/>
+		<CardDirectory active={active} className={cn("gap-4", className)} onSelect={onSelect} selectLabel={`Select ${name}`}>
+			<div className="flex flex-col gap-2">
+				<CardDirectoryHeader
+					action={
+						moreAction ?? (onMoreActions ? (
+							<CardDirectoryMoreButton active={active} label={`More actions for ${name}`} onClick={onMoreActions} />
+						) : null)
+					}
+					byline={<CardDirectoryByline publisher={publisher} verified={verified} />}
+					leading={leadingAvatar}
+					title={name}
+				/>
 
-			<CardDirectoryDescription>
-				{description ?? `Learn how ${name} can help your team work faster.`}
-			</CardDirectoryDescription>
+				<CardDirectoryDescription>
+					{description ?? `Learn how ${name} can help your team work faster.`}
+				</CardDirectoryDescription>
+			</div>
 
 			{showRating || showChats ? (
 				<CardDirectoryFooter>

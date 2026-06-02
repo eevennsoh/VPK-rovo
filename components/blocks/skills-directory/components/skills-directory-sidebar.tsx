@@ -3,11 +3,16 @@
 import Image from "next/image";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
+import BranchIcon from "@atlaskit/icon/core/branch";
 import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
 import EditIcon from "@atlaskit/icon/core/edit";
+import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import SettingsIcon from "@atlaskit/icon/core/settings";
+import ShieldIcon from "@atlaskit/icon/core/shield";
+import SupportIcon from "@atlaskit/icon/core/support";
 import TimelineIcon from "@atlaskit/icon/core/timeline";
-import { type ReactElement } from "react";
+import CartIcon from "@atlaskit/icon-lab/core/cart";
+import { useState, type ReactElement } from "react";
 
 import { Avatar } from "@/components/ui/avatar";
 import { AtlassianLogo } from "@/components/ui/logo";
@@ -21,25 +26,39 @@ import {
 	type SkillsDirectorySkill,
 } from "../data/skills";
 import type {
+	SkillsDirectoryCategoryItem,
 	SkillNavIcon,
 	SkillsDirectoryCompanyItem,
 	SkillsDirectoryPrimaryItem,
 	SkillsDirectorySidebarGroup,
+	SkillsDirectorySidebarItem,
 } from "../data/sidebar-groups";
 
-function getNavIcon(icon: SkillNavIcon): ReactElement {
+const MAX_VISIBLE_CATEGORY_ITEMS = 5;
+
+function getCategoryNavIcon(icon: SkillNavIcon, label: string): ReactElement {
 	switch (icon) {
 		case "settings":
-			return <SettingsIcon label="" />;
+			return <SettingsIcon label={label} size="small" color="currentColor" />;
 		case "edit":
-			return <EditIcon label="" />;
+			return <EditIcon label={label} size="small" color="currentColor" />;
 		case "chart-trend-up":
-			return <ChartTrendUpIcon label="" />;
+			return <ChartTrendUpIcon label={label} size="small" color="currentColor" />;
 		case "angle-brackets":
-			return <AngleBracketsIcon label="" />;
+			return <AngleBracketsIcon label={label} size="small" color="currentColor" />;
+		case "support":
+			return <SupportIcon label={label} size="small" color="currentColor" />;
+		case "branch":
+			return <BranchIcon label={label} size="small" color="currentColor" />;
+		case "shield":
+			return <ShieldIcon label={label} size="small" color="currentColor" />;
+		case "people-group":
+			return <PeopleGroupIcon label={label} size="small" color="currentColor" />;
+		case "cart":
+			return <CartIcon label={label} size="small" color="currentColor" />;
 		case "timeline":
 		default:
-			return <TimelineIcon label="" />;
+			return <TimelineIcon label={label} size="small" color="currentColor" />;
 	}
 }
 
@@ -78,6 +97,9 @@ export function SkillsDirectorySidebar({
 	primaryItems,
 	skills,
 }: Readonly<SkillsDirectorySidebarProps>) {
+	const categoryGroup = groups.find(isCategorySidebarGroup);
+	const secondaryGroups = groups.filter((group) => group !== categoryGroup);
+
 	return (
 		<nav
 			aria-label="Skill categories"
@@ -97,16 +119,90 @@ export function SkillsDirectorySidebar({
 
 			<div className="h-3 w-64 shrink-0" />
 
-			{groups.map((group) => (
-				<SkillsSidebarGroup
-					key={group.title}
+			{categoryGroup ? (
+				<SkillsCategoryGroup
 					activeItem={activeItem}
-					group={group}
+					group={categoryGroup}
 					onSelectItem={onSelectItem}
-					skills={skills}
 				/>
-			))}
+			) : null}
+
+			{secondaryGroups.length > 0 ? (
+				<div className="mt-5 flex w-64 flex-col gap-5 pb-6">
+					{secondaryGroups.map((group) => (
+						<SkillsSidebarGroup
+							key={group.title}
+							activeItem={activeItem}
+							group={group}
+							onSelectItem={onSelectItem}
+							skills={skills}
+						/>
+					))}
+				</div>
+			) : null}
 		</nav>
+	);
+}
+
+function isCategorySidebarItem(item: SkillsDirectorySidebarItem): item is SkillsDirectoryCategoryItem {
+	return item.kind === "category";
+}
+
+function isCategorySidebarGroup(group: SkillsDirectorySidebarGroup): boolean {
+	return group.items.some(isCategorySidebarItem);
+}
+
+interface SkillsCategoryGroupProps {
+	activeItem: string;
+	group: SkillsDirectorySidebarGroup;
+	onSelectItem: (id: string) => void;
+}
+
+function SkillsCategoryGroup({
+	activeItem,
+	group,
+	onSelectItem,
+}: Readonly<SkillsCategoryGroupProps>) {
+	const [showAllCategories, setShowAllCategories] = useState(false);
+	const categoryItems = group.items.filter(isCategorySidebarItem);
+	const visibleCategoryItems = showAllCategories
+		? categoryItems
+		: categoryItems.slice(0, MAX_VISIBLE_CATEGORY_ITEMS);
+	const hasHiddenCategoryItems = !showAllCategories && categoryItems.length > MAX_VISIBLE_CATEGORY_ITEMS;
+
+	if (visibleCategoryItems.length === 0) return null;
+
+	return (
+		<>
+			<div className="w-64 py-2 pl-1.5">
+				<p className="text-text-subtlest" style={{ font: token("font.heading.xxsmall") }}>
+					{group.title}
+				</p>
+			</div>
+			<ul className="flex w-64 flex-col">
+				{visibleCategoryItems.map((item) => (
+					<li key={`category-${item.id}`}>
+						<SidebarNavItem
+							isSelected={activeItem === item.id}
+							label={item.label}
+							leading={getCategoryNavIcon(item.icon, item.label)}
+							leadingSize="medium"
+							onClick={() => onSelectItem(item.id)}
+						/>
+					</li>
+				))}
+				{hasHiddenCategoryItems ? (
+					<li>
+						<SidebarNavItem
+							label="Show all"
+							leading={<AlignTextLeftIcon label="" size="small" />}
+							leadingSize="medium"
+							onClick={() => setShowAllCategories(true)}
+						/>
+					</li>
+				) : null}
+			</ul>
+		</>
 	);
 }
 
@@ -126,12 +222,10 @@ function SkillsSidebarGroup({
 	if (group.items.length === 0) return null;
 
 	return (
-		<div className="flex w-64 flex-col">
-			<div className="w-64 py-2 pl-1.5">
-				<p style={{ font: token("font.heading.xxsmall") }} className="text-text-subtlest">
-					{group.title}
-				</p>
-			</div>
+		<div className="flex flex-col gap-1.5">
+			<p className="px-1.5 text-text-subtlest" style={{ font: token("font.heading.xxsmall") }}>
+				{group.title}
+			</p>
 			<ul className="flex flex-col">
 				{group.items.map((item) => {
 					if (item.kind === "skill") {
@@ -150,19 +244,7 @@ function SkillsSidebarGroup({
 						);
 					}
 
-					if (item.kind === "category") {
-						return (
-							<li key={`category-${item.id}`}>
-								<SidebarNavItem
-									label={item.label}
-									leading={<TileLeading>{getNavIcon(item.icon)}</TileLeading>}
-									leadingSize="medium"
-									isSelected={activeItem === item.id}
-									onClick={() => onSelectItem(item.id)}
-								/>
-							</li>
-						);
-					}
+					if (item.kind === "category") return null;
 
 					return (
 						<li key={`company-${item.id}`}>
@@ -187,7 +269,6 @@ function SkillsSidebarGroup({
 					</li>
 				) : null}
 			</ul>
-			<div className="h-3 w-64 shrink-0" />
 		</div>
 	);
 }

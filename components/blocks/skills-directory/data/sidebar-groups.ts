@@ -13,7 +13,12 @@ export type SkillNavIcon =
 	| "settings"
 	| "edit"
 	| "chart-trend-up"
-	| "angle-brackets";
+	| "angle-brackets"
+	| "support"
+	| "branch"
+	| "shield"
+	| "people-group"
+	| "cart";
 
 export interface SkillsDirectoryFavouriteItem {
 	kind: "skill";
@@ -50,7 +55,7 @@ export interface SkillsDirectorySidebarGroup {
 
 export const DEFAULT_SKILLS_DIRECTORY_PRIMARY_ITEMS: readonly SkillsDirectoryPrimaryItem[] = [
 	{ id: "all-skills", label: "All skills" },
-	{ id: "favorite-skills", label: "Favorite skills" },
+	{ id: "favorite-skills", label: "Favourite skills" },
 	{ id: "your-skills", label: "Your skills" },
 ];
 
@@ -61,9 +66,14 @@ export const DEFAULT_SKILLS_DIRECTORY_SIDEBAR_GROUPS: readonly SkillsDirectorySi
 		items: [
 			{ kind: "category", id: "project-management", label: "Project management", icon: "timeline" },
 			{ kind: "category", id: "administrative-tools", label: "Administrative tools", icon: "settings" },
-			{ kind: "category", id: "content-communication", label: "Content & communication", icon: "edit" },
-			{ kind: "category", id: "data-analytics", label: "Data & analytics", icon: "chart-trend-up" },
+			{ kind: "category", id: "content-and-communication", label: "Content and communication", icon: "edit" },
+			{ kind: "category", id: "data-and-analytics", label: "Data and analytics", icon: "chart-trend-up" },
 			{ kind: "category", id: "software-development", label: "Software development", icon: "angle-brackets" },
+			{ kind: "category", id: "it-support-and-service", label: "IT support and service", icon: "support" },
+			{ kind: "category", id: "design-and-diagramming", label: "Design and diagramming", icon: "branch" },
+			{ kind: "category", id: "security-and-compliance", label: "Security and compliance", icon: "shield" },
+			{ kind: "category", id: "hr-and-team-building", label: "HR and team building", icon: "people-group" },
+			{ kind: "category", id: "sales-and-customer-relations", label: "Sales and customer relations", icon: "cart" },
 		],
 	},
 	{
