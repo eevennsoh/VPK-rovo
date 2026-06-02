@@ -8,12 +8,16 @@ import AddIcon from "@atlaskit/icon/core/add";
 import AlignTextCenterIcon from "@atlaskit/icon/core/align-text-center";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AlignTextRightIcon from "@atlaskit/icon/core/align-text-right";
+import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
+import AppsIcon from "@atlaskit/icon/core/apps";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import LibraryIcon from "@atlaskit/icon/core/library";
 import LinkIcon from "@atlaskit/icon/core/link";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import ListChecklistIcon from "@atlaskit/icon/core/list-checklist";
 import ListNumberedIcon from "@atlaskit/icon/core/list-numbered";
 import MarkdownIcon from "@atlaskit/icon/core/markdown";
+import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import QuotationMarkIcon from "@atlaskit/icon/core/quotation-mark";
 import SnippetIcon from "@atlaskit/icon/core/snippet";
 import TextIcon from "@atlaskit/icon/core/text";
@@ -21,8 +25,8 @@ import TextBoldIcon from "@atlaskit/icon/core/text-bold";
 import TextItalicIcon from "@atlaskit/icon/core/text-italic";
 import TextStrikethroughIcon from "@atlaskit/icon/core/text-strikethrough";
 import TextUnderlineIcon from "@atlaskit/icon/core/text-underline";
+import ToolsIcon from "@atlaskit/icon/core/tools";
 import DividerElementIcon from "@atlaskit/icon-lab/core/divider-element";
-import TerminalIcon from "@atlaskit/icon-lab/core/terminal";
 import TextHeadingFiveIcon from "@atlaskit/icon-lab/core/text-heading-five";
 import TextHeadingFourIcon from "@atlaskit/icon-lab/core/text-heading-four";
 import TextHeadingOneIcon from "@atlaskit/icon-lab/core/text-heading-one";
@@ -56,8 +60,7 @@ type TextStyleType =
 	| "h4"
 	| "h5"
 	| "h6"
-	| "quote"
-	| "codeBlock";
+	| "quote";
 type Alignment = "left" | "center" | "right";
 
 const TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME = "*:data-[slot=toggle-group-item]:w-6! *:data-[slot=toggle-group-item]:min-w-6! *:data-[slot=toggle-group-item]:px-0!";
@@ -71,8 +74,32 @@ const TEXT_STYLE_TO_MARKDOWN: Record<TextStyleType, MarkdownFormatKind> = {
 	h5: "h5",
 	h6: "h6",
 	quote: "quote",
-	codeBlock: "codeBlock",
 };
+
+// The "+" button inserts a reference token at the caret. Each option maps to a
+// mention category whose `id` prefix drives the chip styling (see
+// `data-mention-category` rules in rich-text-editor.css) and reuses the same
+// category icons as the "@"/"/" suggestion menus.
+type InsertReferenceCategory = "knowledge" | "tool" | "skill" | "subagent";
+
+const INSERT_REFERENCE_OPTIONS: ReadonlyArray<{
+	category: InsertReferenceCategory;
+	label: string;
+	icon: ReactNode;
+}> = [
+	{
+		category: "knowledge",
+		label: "Knowledge",
+		icon: <LibraryIcon label="" size="small" />,
+	},
+	{ category: "tool", label: "Tools", icon: <ToolsIcon label="" size="small" /> },
+	{ category: "skill", label: "Skills", icon: <AppsIcon label="" size="small" /> },
+	{
+		category: "subagent",
+		label: "Subagents",
+		icon: <PeopleGroupIcon label="" size="small" />,
+	},
+];
 
 export interface EditorToolbarProps {
 	editor: Editor;
@@ -196,7 +223,7 @@ function renderCurrentTextStyleIcon(editor: Editor) {
 		return <QuotationMarkIcon label="" size="small" />;
 	}
 	if (editor.isActive("codeBlock")) {
-		return <TerminalIcon label="" size="small" />;
+		return <AngleBracketsIcon label="" size="small" />;
 	}
 	return <TextIcon label="" size="small" />;
 }
@@ -226,9 +253,6 @@ function setTextStyle(editor: Editor, style: TextStyleType): void {
 			break;
 		case "quote":
 			editor.chain().focus().toggleBlockquote().run();
-			break;
-		case "codeBlock":
-			editor.chain().focus().toggleCodeBlock().run();
 			break;
 	}
 }
@@ -378,9 +402,8 @@ export function EditorToolbar({
 		toggleDropdown("insert");
 	}
 
-	function handleInsertParagraph(): void {
-		editor.chain().focus().insertContent({ type: "paragraph" }).run();
-		closeDropdown();
+	function handleToggleCodeBlock(): void {
+		runFormat("codeBlock", () => editor.chain().focus().toggleCodeBlock().run());
 	}
 
 	function handleInsertTable(): void {
@@ -394,6 +417,33 @@ export function EditorToolbar({
 
 	function handleInsertHorizontalRule(): void {
 		runFormat("horizontalRule", () => editor.chain().focus().setHorizontalRule().run());
+		closeDropdown();
+	}
+
+	// Insert a category reference at the last caret position as a mention token.
+	// `focus()` restores the editor's previous selection (the toolbar steals
+	// focus on click), so the chip lands where the user last was typing. The id
+	// prefix (`knowledge:`, `tool:`, …) is what `getMentionCategory` reads to
+	// colour the chip.
+	function handleInsertReference(
+		category: InsertReferenceCategory,
+		label: string,
+	): void {
+		editor
+			.chain()
+			.focus()
+			.insertContent([
+				{
+					type: "mention",
+					attrs: {
+						id: `${category}:${category}`,
+						label,
+						mentionSuggestionChar: "@",
+					},
+				},
+				{ type: "text", text: " " },
+			])
+			.run();
 		closeDropdown();
 	}
 
@@ -471,12 +521,6 @@ export function EditorToolbar({
 									label="Quote"
 									isSelected={editor.isActive("blockquote")}
 									onClick={() => handleTextStyle("quote")}
-								/>
-								<DropdownMenuItem
-									icon={<TerminalIcon label="Code block" size="small" />}
-									label="Code block"
-									isSelected={editor.isActive("codeBlock")}
-									onClick={() => handleTextStyle("codeBlock")}
 								/>
 							</DropdownMenuContainer>
 						) : null}
@@ -647,6 +691,38 @@ export function EditorToolbar({
 					>
 						<LinkIcon label="" size="small" />
 					</Toggle>
+
+					<ToolbarSeparator />
+
+					<Toggle
+						aria-label="Code block"
+						pressed={!isMarkdownMode && editor.isActive("codeBlock")}
+						onPressedChange={handleToggleCodeBlock}
+					>
+						<AngleBracketsIcon label="" size="small" />
+					</Toggle>
+					<Button
+						type="button"
+						aria-label="Horizontal rule"
+						size="icon"
+						variant="ghost"
+						onClick={handleInsertHorizontalRule}
+					>
+						<DividerElementIcon label="" size="small" />
+					</Button>
+					<Button
+						type="button"
+						aria-label="Table"
+						size="icon"
+						variant="ghost"
+						disabled={isMarkdownMode}
+						onClick={handleInsertTable}
+					>
+						<ViewTypeTableHomeIcon label="" size="small" />
+					</Button>
+
+					<ToolbarSeparator />
+
 					<div className="relative">
 						<Button
 							type="button"
@@ -654,32 +730,24 @@ export function EditorToolbar({
 							aria-expanded={openDropdown === "insert"}
 							size="icon"
 							variant="ghost"
+							disabled={isMarkdownMode}
 							onClick={handleAddContent}
 						>
 							<AddIcon label="" size="small" />
 						</Button>
 						{openDropdown === "insert" ? (
-							<DropdownMenuContainer>
-								<DropdownMenuItem
-									icon={<TextIcon label="Paragraph" size="small" />}
-									label="Paragraph"
-									isSelected={false}
-									disabled={isMarkdownMode}
-									onClick={handleInsertParagraph}
-								/>
-								<DropdownMenuItem
-									icon={<ViewTypeTableHomeIcon label="Table" size="small" />}
-									label="Table"
-									isSelected={!isMarkdownMode && editor.isActive("table")}
-									disabled={isMarkdownMode}
-									onClick={handleInsertTable}
-								/>
-								<DropdownMenuItem
-									icon={<DividerElementIcon label="Horizontal rule" size="small" />}
-									label="Horizontal rule"
-									isSelected={false}
-									onClick={handleInsertHorizontalRule}
-								/>
+							<DropdownMenuContainer align="right">
+								{INSERT_REFERENCE_OPTIONS.map((option) => (
+									<DropdownMenuItem
+										key={option.category}
+										icon={option.icon}
+										label={option.label}
+										isSelected={false}
+										onClick={() =>
+											handleInsertReference(option.category, option.label)
+										}
+									/>
+								))}
 							</DropdownMenuContainer>
 						) : null}
 					</div>
