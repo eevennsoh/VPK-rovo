@@ -48,6 +48,10 @@ const RICH_TEXT_TOOLBAR_SOURCE = readFileSync(
 	join(__dirname, "rich-text-editor", "toolbar.tsx"),
 	"utf8",
 );
+const EDITOR_PALETTE_SOURCE = readFileSync(
+	join(__dirname, "..", "blocks", "editor-palette", "page.tsx"),
+	"utf8",
+);
 const EDITOR_TOOLBAR_SOURCE = readFileSync(
 	join(__dirname, "..", "blocks", "editor-toolbar", "components", "editor-toolbar.tsx"),
 	"utf8",
@@ -534,6 +538,15 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 });
 
 test("Slash command menu contains every toolbar command", () => {
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /"format"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /category === "format" \? "Format"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /getSlashCommandFormatItems/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /getSlashCommandCategoryItems\(mentionSources\)/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /getSlashCommandFormatItems\(\)/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /caption="Format nested"/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /title="Format"/u);
+	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /\.\.\.SLASH_COMMANDS/u);
+
 	for (const command of [
 		"Normal text",
 		"Heading 1",
@@ -563,6 +576,17 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	for (const idPrefix of ["human:", "team:", "tool:", "knowledge:"]) {
 		assert.match(RICH_TEXT_SUGGESTION_SOURCE, new RegExp(`id: "${idPrefix}`, "u"));
 	}
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /revealDescriptionOnHover/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /data-nested=\{isNested \? "true" : undefined\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /data-list-scrolled=\{isNested && hasScrolledList \? "true" : undefined\}/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \{\s*max-height: 400px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-showcase\[data-nested="true"\] \.rich-text-command-menu-list \{\s*overflow-y: auto;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\]\[data-list-scrolled="true"\] \.rich-text-command-menu-list \{\s*mask-image: linear-gradient\(to bottom, transparent 0, black 16px, black 100%\);/u);
+	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*border-bottom/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \.rich-text-command-menu-list \.rich-text-command-menu-item \{\s*height: 48px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \.rich-text-command-menu-list \.rich-text-command-menu-description \{\s*opacity: 0;/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /rich-text-command-menu-title/u);
+	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-title/u);
 	assert.match(AGENT_SOURCE, /toMentionId\("skill"/u);
 	assert.match(AGENT_SOURCE, /toMentionId\("knowledge"/u);
 

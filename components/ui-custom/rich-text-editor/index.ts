@@ -8,6 +8,7 @@ export { createRichTextEditorExtensions } from "./extensions";
 export {
 	RichTextSuggestionMenu,
 	SLASH_COMMANDS,
+	getSlashCommandFormatItems,
 	getMentionChildItems,
 	getMentionTargetItems,
 	getSlashCommandCategoryItems,
@@ -21,4 +22,5 @@ export type {
 	RichTextMentionItem,
 	RichTextMentionSources,
 	RichTextMentionTarget,
+	RichTextSlashCategory,
 } from "./types";

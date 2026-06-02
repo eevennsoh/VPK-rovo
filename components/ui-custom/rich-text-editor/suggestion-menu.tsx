@@ -1,6 +1,12 @@
 "use client";
 
-import type { ReactNode } from "react";
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+	type ReactNode,
+} from "react";
 import { ReactRenderer } from "@tiptap/react";
 import type { Editor } from "@tiptap/core";
 import type {
@@ -9,7 +15,6 @@ import type {
 } from "@tiptap/suggestion";
 
 import AppsIcon from "@atlaskit/icon/core/apps";
-import BranchIcon from "@atlaskit/icon/core/branch";
 import LibraryIcon from "@atlaskit/icon/core/library";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PersonIcon from "@atlaskit/icon/core/person";
@@ -40,6 +45,7 @@ import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 import ViewTypeTableHomeIcon from "@atlaskit/icon-lab/core/view-type-table-home";
 
 import { IconTile } from "@/components/ui/icon-tile";
+import { ArrowLeftIcon } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -48,6 +54,7 @@ import type {
 	RichTextMentionItem,
 	RichTextMentionSources,
 	RichTextMentionTarget,
+	RichTextSlashCategory,
 } from "./types";
 
 export interface RichTextCommandItem {
@@ -63,7 +70,6 @@ export interface RichTextSuggestionMenuItem {
 	id: string;
 	label: string;
 	description?: string;
-	revealDescriptionOnHover?: boolean;
 	shortcut?: string;
 	icon: ReactNode;
 	disabled?: boolean;
@@ -107,11 +113,10 @@ const COMMAND_CATEGORY_ORDER: readonly RichTextCommandCategory[] = [
 	"knowledge",
 ];
 
-const HOVER_REVEALED_BYLINE_CATEGORIES = new Set<RichTextMentionCategory>([
-	"skill",
-	"subagent",
-	"tool",
-]);
+const SLASH_CATEGORY_ORDER: readonly RichTextSlashCategory[] = [
+	...COMMAND_CATEGORY_ORDER,
+	"format",
+];
 
 const STATIC_MENTION_ITEMS: RichTextMentionSources = {
 	subagent: [
@@ -414,6 +419,16 @@ function getCategoryIcon(category: RichTextMentionCategory): ReactNode {
 	}
 }
 
+function getSlashCategoryIcon(category: RichTextSlashCategory): ReactNode {
+	return category === "format"
+		? <TextIcon label="" size="small" />
+		: getCategoryIcon(category);
+}
+
+function getSlashCategoryLabel(category: RichTextSlashCategory): string {
+	return category === "format" ? "Format" : CATEGORY_LABELS[category];
+}
+
 export function RichTextSuggestionMenu({
 	className,
 	emptyLabel,
@@ -423,15 +438,31 @@ export function RichTextSuggestionMenu({
 	selectedIndex,
 	title,
 }: Readonly<RichTextSuggestionMenuProps>) {
+	const listRef = useRef<HTMLDivElement | null>(null);
+	const [hasScrolledList, setHasScrolledList] = useState(false);
+	const isNested = Boolean(onBack);
+
+	const updateListScrollState = useCallback(() => {
+		const listElement = listRef.current;
+		setHasScrolledList(Boolean(listElement && listElement.scrollTop > 0));
+	}, []);
+
+	useEffect(() => {
+		const listElement = listRef.current;
+		if (listElement) {
+			listElement.scrollTop = 0;
+		}
+		updateListScrollState();
+	}, [isNested, title, updateListScrollState]);
+
 	return (
 		<div
 			className={cn("rich-text-command-menu", className)}
+			data-nested={isNested ? "true" : undefined}
+			data-list-scrolled={isNested && hasScrolledList ? "true" : undefined}
 			role="listbox"
 			aria-label={title}
 		>
-			<div className="rich-text-command-menu-title text-xs font-semibold leading-4 text-text-subtlest">
-				{title}
-			</div>
 			{onBack ? (
 				<button
 					type="button"
@@ -439,11 +470,19 @@ export function RichTextSuggestionMenu({
 					onMouseDown={(event) => event.preventDefault()}
 					onClick={onBack}
 				>
-					<BranchIcon label="" size="small" />
-					<span>Back</span>
+					<span className="inline-flex size-6 items-center justify-center">
+						<ArrowLeftIcon size="small" />
+					</span>
+					<span className="block text-xs font-semibold leading-4 text-text-subtle">
+						Back
+					</span>
 				</button>
 			) : null}
-			<div className="rich-text-command-menu-list">
+			<div
+				className="rich-text-command-menu-list"
+				ref={listRef}
+				onScroll={updateListScrollState}
+			>
 				{items.length > 0 ? (
 					items.map((item, index) => (
 						<button
@@ -469,13 +508,7 @@ export function RichTextSuggestionMenu({
 							<span className="rich-text-command-menu-copy">
 								<span className="rich-text-command-menu-label">{item.label}</span>
 								{item.description ? (
-									<span
-										className={cn(
-											"rich-text-command-menu-description",
-											item.revealDescriptionOnHover &&
-												"rich-text-command-menu-description-hover",
-										)}
-									>
+									<span className="rich-text-command-menu-description">
 										{item.description}
 									</span>
 								) : null}
@@ -542,11 +575,13 @@ export type RichTextSlashAction =
 	| { type: "command"; run: (editor: Editor) => void }
 	| { type: "mention"; mention: RichTextMentionItem };
 
-function isCommandCategoryId(id: string): id is RichTextCommandCategory {
-	return (COMMAND_CATEGORY_ORDER as readonly string[]).includes(id);
+function isSlashCategoryId(id: string): id is RichTextSlashCategory {
+	return (SLASH_CATEGORY_ORDER as readonly string[]).includes(id);
 }
 
-function getSlashCommandMenuItems(query: string): readonly RichTextSuggestionMenuItem[] {
+export function getSlashCommandFormatItems(
+	query = "",
+): readonly RichTextSuggestionMenuItem[] {
 	return filterItems(
 		SLASH_COMMANDS.map((command) => ({
 			description: command.description,
@@ -564,19 +599,20 @@ export function createSlashSuggestionRenderer(
 ) {
 	const popupState: SuggestionPopupState = { component: null, element: null };
 	let selectedIndex = 0;
-	let activeCategory: RichTextCommandCategory | null = null;
+	let activeCategory: RichTextSlashCategory | null = null;
 	let currentProps: SuggestionProps<RichTextSlashAction, RichTextSlashAction> | null = null;
 
 	function getTopLevelItems(query: string): readonly RichTextSuggestionMenuItem[] {
-		return [
-			...filterItems(getSlashCommandCategoryItems(getMentionSources?.()), query),
-			...getSlashCommandMenuItems(query),
-		];
+		return filterItems(getSlashCommandCategoryItems(getMentionSources?.()), query);
 	}
 
 	function getChildItems(query: string): readonly RichTextSuggestionMenuItem[] {
 		if (!activeCategory) {
 			return [];
+		}
+
+		if (activeCategory === "format") {
+			return getSlashCommandFormatItems(query);
 		}
 
 		return filterItems(getMentionChildItems(getMentionSources?.(), activeCategory), query);
@@ -603,7 +639,7 @@ export function createSlashSuggestionRenderer(
 				: undefined,
 			onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
 			selectedIndex,
-			title: activeCategory ? CATEGORY_LABELS[activeCategory] : "Commands",
+			title: activeCategory ? getSlashCategoryLabel(activeCategory) : "Commands",
 		});
 	}
 
@@ -613,8 +649,19 @@ export function createSlashSuggestionRenderer(
 		}
 
 		if (activeCategory) {
-			const mention = getCategoryItems(getMentionSources?.(), activeCategory)
-				.find((candidate) => candidate.id === item.id);
+			if (activeCategory === "format") {
+				const command = SLASH_COMMANDS.find((candidate) => candidate.id === item.id);
+				if (!command) {
+					return false;
+				}
+
+				currentProps.command({ type: "command", run: command.run });
+				return true;
+			}
+
+			const mention = getCategoryItems(getMentionSources?.(), activeCategory).find(
+				(candidate) => candidate.id === item.id,
+			);
 			if (!mention) {
 				return false;
 			}
@@ -623,20 +670,13 @@ export function createSlashSuggestionRenderer(
 			return true;
 		}
 
-		if (isCommandCategoryId(item.id)) {
+		if (isSlashCategoryId(item.id)) {
 			activeCategory = item.id;
 			selectedIndex = 0;
 			update(currentProps);
 			return true;
 		}
-
-		const command = SLASH_COMMANDS.find((candidate) => candidate.id === item.id);
-		if (!command) {
-			return false;
-		}
-
-		currentProps.command({ type: "command", run: command.run });
-		return true;
+		return false;
 	}
 
 	return {
@@ -729,7 +769,6 @@ function buildCategoryMenuItems(
 		icon: getCategoryIcon(category),
 		id: category,
 		label: CATEGORY_LABELS[category],
-		revealDescriptionOnHover: HOVER_REVEALED_BYLINE_CATEGORIES.has(category),
 	}));
 }
 
@@ -744,7 +783,14 @@ export function getMentionTargetItems(
 export function getSlashCommandCategoryItems(
 	sources?: RichTextMentionSources,
 ): readonly RichTextSuggestionMenuItem[] {
-	return buildCategoryMenuItems(COMMAND_CATEGORY_ORDER, sources);
+	return SLASH_CATEGORY_ORDER.map((category) => ({
+		description: category === "format"
+			? `${SLASH_COMMANDS.length} options`
+			: `${getCategoryItems(sources, category).length} available`,
+		icon: getSlashCategoryIcon(category),
+		id: category,
+		label: getSlashCategoryLabel(category),
+	}));
 }
 
 /** Nested reference items for a single category (e.g. the Skills submenu). */
