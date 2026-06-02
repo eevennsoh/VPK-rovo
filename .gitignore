@@ -84,6 +84,9 @@ cmux.json
 .dev-rovo-port
 .dev-rovo-ports
 .dev-rovo-token
+
+# Rovo-created git worktrees
+rovo/worktrees/
 .api-routes-backup
 .rovo/config.generated.yml
 .rovo/config.generated.yml.lock
