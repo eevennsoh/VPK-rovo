@@ -1,6 +1,5 @@
 "use client";
 
-import { type ImgHTMLAttributes } from "react";
 import {
 	AtlassianLogo,
 	CustomLogo,
@@ -27,6 +26,7 @@ import {
 	OpsgenieIcon,
 	ProjectsIcon,
 	RovoIcon,
+	RovoColorIcon,
 	RovoDevIcon,
 	RovoDevAgentIcon,
 	SearchIcon,
@@ -224,9 +224,8 @@ export function LogoDemoAppearances() {
 
 /* ── Demo: Custom Logo ────────────────────────────────────────── */
 
-function RovoSvg(props: ImgHTMLAttributes<HTMLImageElement>) {
-	// eslint-disable-next-line @next/next/no-img-element
-	return <img src="/1p/rovo.svg" alt="" {...props} />;
+function RovoSvg(props: { width?: number; height?: number; "aria-hidden"?: boolean }) {
+	return <RovoColorIcon {...props} />;
 }
 
 export function LogoDemoCustom() {
