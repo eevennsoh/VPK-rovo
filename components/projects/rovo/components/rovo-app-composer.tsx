@@ -67,6 +67,7 @@ interface RovoAppComposerProps {
 	composerStatus: ChatStatus;
 	compact?: boolean;
 	errorMessage?: string | null;
+	experimentalDarkCta?: boolean;
 	isPlanMode?: boolean;
 	micStream?: MediaStream | null;
 	queuedPrompts?: ReadonlyArray<RovoAppQueuedAction>;
@@ -115,6 +116,7 @@ function RovoAppComposerInner({
 	composerStatus,
 	compact = false,
 	errorMessage,
+	experimentalDarkCta = false,
 	galleryExpanded = false,
 	isPlanMode = false,
 	micStream,
@@ -638,6 +640,7 @@ function RovoAppComposerInner({
 								className="flex-1"
 								companyKnowledgeEnabled={companyKnowledgeEnabled}
 								composerStatus={composerStatus}
+								experimentalDarkCta={experimentalDarkCta}
 								isComposerBusy={isComposerBusy}
 								micStream={micStream}
 								onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}

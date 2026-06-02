@@ -851,6 +851,7 @@ export default function ChatPanel({
 						isStreaming={isStreamingLifecycleActive}
 						hasInFlightTurn={hasInFlightTurn}
 						queuedPrompts={queuedPrompts}
+						experimentalDarkCta
 						hideSourceAndModelControls={hideComposerSourceAndModelControls}
 						micStream={realtime.micStream}
 						clickyActive={isClickyActive}
