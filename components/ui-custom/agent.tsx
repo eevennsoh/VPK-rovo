@@ -2169,35 +2169,33 @@ function AgentCompactConfigToolbarBelow({
 	onTextChange,
 	screenAssistantTargetPrefix,
 }: Readonly<AgentConfigSummaryProps>) {
-	const [expanded, setExpanded] = useState(false);
+	const [expanded, setExpanded] = useState(() => !isFilledConfig);
 	const [reasoningValue, setReasoningValue] = useState<ReasoningModeValue>("deep-auto");
 	const [knowledgeMode, setKnowledgeMode] = useState<KnowledgeModeValue>(() =>
 		getNonEmptyConfigItems(config.knowledge).length > 0 ? "custom" : "all",
 	);
 	const shouldReduceMotion = useReducedMotion();
-	const isExpanded = expanded && isFilledConfig;
+	const isExpanded = expanded;
 	const transition = shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeOut" as const };
 
 	return (
 		<div className="flex flex-col">
 			<div className="flex items-center gap-2">
 				<div aria-hidden className="h-px flex-1 bg-border" />
-				{isFilledConfig ? (
-					<Button
-						aria-label={isExpanded ? "Collapse configuration" : "Expand configuration"}
-						className="size-6 rounded px-0"
-						onClick={() => setExpanded((prev) => !prev)}
-						size="icon-compact"
-						type="button"
-						variant="outline"
-					>
-						{isExpanded ? (
-							<ChevronDownIcon label="" size="small" />
-						) : (
-							<ChevronUpIcon label="" size="small" />
-						)}
-					</Button>
-				) : null}
+				<Button
+					aria-label={isExpanded ? "Collapse configuration" : "Expand configuration"}
+					className="size-6 rounded px-0"
+					onClick={() => setExpanded((prev) => !prev)}
+					size="icon-compact"
+					type="button"
+					variant="outline"
+				>
+					{isExpanded ? (
+						<ChevronDownIcon label="" size="small" />
+					) : (
+						<ChevronUpIcon label="" size="small" />
+					)}
+				</Button>
 			</div>
 			<AnimatePresence initial={false} mode="wait">
 				{isExpanded ? (
