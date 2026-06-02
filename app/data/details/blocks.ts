@@ -1121,6 +1121,43 @@ const messages: ChatTimelineMessage[] = [
 			},
 		],
 	},
+	subagents: {
+		description: "Agent builder surface that swaps between a master orchestrator configuration and subagent configurations from a floating mini-map switcher.",
+		usage: `import Subagents, { type SubagentsAgent } from "@/components/blocks/subagents/page";
+
+const agents: SubagentsAgent[] = [
+  {
+    id: "master-orchestrator",
+    kind: "master",
+    config: { name: "Policy Checker", subagents: ["Policy Researcher"] },
+  },
+  {
+    id: "policy-researcher",
+    kind: "subagent",
+    config: { name: "Policy Researcher" },
+  },
+];
+
+<Subagents initialAgents={agents} />`,
+		props: [
+			{
+				name: "initialAgents",
+				type: "ReadonlyArray<SubagentsAgent>",
+				default: "SUBAGENTS_DEMO_AGENTS",
+				description: "Initial master and subagent configs used by the switcher and active agent editor.",
+			},
+			{
+				name: "initialActiveAgentId",
+				type: "string",
+				description: "Optional agent id selected when the block first renders.",
+			},
+			{
+				name: "className",
+				type: "string",
+				description: "Optional className applied to the outer block container.",
+			},
+		],
+	},
 	"terminal-switch": {
 		description: "A switchable interface that toggles between Rovo Chat and a Rovo CLI terminal, demonstrating dual-mode AI interaction.",
 	},
