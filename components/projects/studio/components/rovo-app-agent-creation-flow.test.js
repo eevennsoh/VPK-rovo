@@ -248,13 +248,14 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /config=\{draft\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /layout="compact"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onTextChange=\{handleConfigTextChange\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentCompactHeaderNav,/u);
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Tabs, TabsContent \} from "@\/components\/ui\/tabs";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /export type AgentConfigView = "configure" \| "test";/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /return status === "published" \? "Published" : "Draft";/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<Lozenge[\s\S]*data-testid="agent-config-status-lozenge"[\s\S]*variant=\{entry\.publishStatus === "published" \? "success" : undefined\}[\s\S]*>\s*\{publishStatusLabel\}\s*<\/Lozenge>/u);
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function getPublishLabel/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /leadingContent=\{<AgentCompactHeaderNav avatarSrc=\{agentAvatarSrc\} \/>\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigActionButton/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigToggleItem/u);
 	assert.ok(AGENT_CONFIG_PANEL_SOURCE.includes('TooltipTrigger render={<span className="inline-flex" />}'));
