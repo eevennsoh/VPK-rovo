@@ -56,7 +56,7 @@ import {
 	type RichTextMentionSources,
 	RichTextEditor,
 } from "@/components/ui-custom/rich-text-editor";
-import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
+import { SkillTag } from "@/components/ui-custom/skill-tag";
 import { useBentoDescriptionClamp } from "@/components/ui-custom/hooks/use-bento-description-clamp";
 import { BENTO_CAROUSEL_TILE_CLASS, BentoCarousel } from "@/components/ui-custom/bento-carousel";
 import { token } from "@/lib/tokens";
@@ -152,22 +152,9 @@ function getAgentCompactEmptyConfigNavItems(config?: AgentConfigFormValue) {
 	});
 }
 
-interface AgentCompactBentoSkill {
-	color?: SkillTagColor;
-	icon?: ReactNode;
-	label: string;
-}
-
-interface AgentCompactBentoHero {
-	skills: ReadonlyArray<AgentCompactBentoSkill>;
-	sources: ReadonlyArray<TwgToolSource>;
-}
-
 interface AgentCompactBentoTemplate {
 	description: string;
-	hero?: AgentCompactBentoHero;
 	iconSrc: string;
-	layoutClassName: string;
 	title: string;
 }
 
@@ -177,44 +164,26 @@ const AGENT_COMPACT_OPERATIONS_TEMPLATES: ReadonlyArray<AgentCompactBentoTemplat
 	{
 		description: "Triage service requests, recommend field updates, and ask for missing details when needed.",
 		iconSrc: "/avatar-agent/service-agents/service-triage.svg",
-		layoutClassName: "sm:col-span-2 lg:col-start-1 lg:col-span-1 lg:row-start-1",
 		title: "Service Triage",
 	},
 	{
 		description: "Draft support responses, suggest assignees, and summarize requests for faster resolution.",
-		hero: {
-			skills: [
-				{ color: "service", label: "request-triage" },
-				{ color: "teamwork", label: "response-draft" },
-				{ color: "software", label: "field-update" },
-				{ color: "strategy", label: "priority-signal" },
-			],
-			sources: [
-				{ id: "jira", label: "Jira", provider: "jira" },
-				{ id: "confluence", label: "Confluence", provider: "confluence" },
-				{ id: "teams", label: "Microsoft Teams", provider: "teams" },
-			],
-		},
 		iconSrc: "/avatar-agent/strategy-agents/strategic-insight.svg",
-		layoutClassName: "sm:col-span-2 sm:row-span-2 lg:col-start-2 lg:row-start-1",
 		title: "Service Request Helper",
 	},
 	{
 		description: "Guide incident response, on-call actions, mitigation, status updates, and recovery.",
 		iconSrc: "/avatar-agent/dev-agents/code-standardizer.svg",
-		layoutClassName: "sm:row-span-2 lg:col-start-4 lg:row-start-1 lg:row-span-2",
 		title: "Rovo Ops",
 	},
 	{
 		description: "Answer Rovo setup and usage questions with concise guidance and helpful links.",
 		iconSrc: "/avatar-agent/product-agents/wildcard-3.svg",
-		layoutClassName: "sm:row-span-2 lg:col-start-5 lg:row-start-1 lg:row-span-2",
 		title: "Rovo Expert",
 	},
 	{
 		description: "Help teammates document working style, communication norms, and collaboration preferences.",
 		iconSrc: "/avatar-agent/teamwork-agents/user-manual-writer.svg",
-		layoutClassName: "lg:col-start-1 lg:row-start-2",
 		title: "User Manual Writer",
 	},
 ] as const;
@@ -1054,10 +1023,12 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 				region; the negative margin pulls the box back so spacing is unchanged.
 			*/}
 			<div className="relative -mt-2 min-h-0 pt-2 sm:flex-1 sm:overflow-hidden sm:bento-fade-bottom">
-				<BentoCarousel arrowLabels={{ next: "Show next agent templates", previous: "Show previous agent templates" }}>
+				<BentoCarousel
+					gridClassName="sm:grid-cols-5"
+					arrowLabels={{ next: "Show next agent templates", previous: "Show previous agent templates" }}
+				>
 					{AGENT_COMPACT_OPERATIONS_TEMPLATES.map((template, index) => {
 						const accentColor = getAgentCompactBentoCardGlowAccent(template.iconSrc);
-						const isHero = Boolean(template.hero);
 
 						return (
 							<motion.button
@@ -1066,8 +1037,7 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 								aria-label={`Use prompt starter: ${template.title}`}
 								className={cn(
 									"group group/agent-compact-bento-card relative isolate flex min-h-0 flex-col items-start gap-3 overflow-hidden rounded-lg bg-background p-4 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out hover:bg-bg-neutral-subtle focus-visible:ring-3 focus-visible:ring-ring/50",
-									BENTO_CAROUSEL_TILE_CLASS,
-									template.layoutClassName
+									BENTO_CAROUSEL_TILE_CLASS
 								)}
 								ref={(node) => {
 									tileRefs.current[index] = node;
@@ -1092,57 +1062,19 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 										width={32}
 									/>
 								</span>
-								<span className={cn("relative z-[3] flex w-full min-w-0 flex-col gap-1", isHero ? "flex-1 sm:flex-none" : "flex-1")}>
+								<span className="relative z-[3] flex w-full min-w-0 flex-1 flex-col gap-1">
 									<span className="block w-full min-w-0 text-sm font-semibold leading-5 text-text">
 										{template.title}
 									</span>
-									{isHero ? (
-										<span className="block w-full min-w-0 text-sm leading-5 text-text max-sm:line-clamp-2 max-sm:overflow-hidden">
+									<span
+										ref={registerDescBox}
+										className="block w-full min-w-0 flex-1 min-h-0 overflow-hidden"
+									>
+										<span className="text-sm leading-5 text-text-subtle line-clamp-2">
 											{template.description}
 										</span>
-									) : (
-										<span
-											ref={registerDescBox}
-											className="block w-full min-w-0 flex-1 min-h-0 overflow-hidden"
-										>
-											<span className="text-sm leading-5 text-text-subtle line-clamp-2">
-												{template.description}
-											</span>
-										</span>
-									)}
+									</span>
 								</span>
-								{template.hero ? (
-									<div className="relative z-[3] flex flex-col gap-4 max-sm:hidden">
-										{template.hero.sources.length > 0 ? (
-											<div className="flex flex-col gap-1">
-												<span className="block text-xs font-semibold leading-4 text-text-subtle">
-													Works with
-												</span>
-												<TWGAppstack
-													animated={false}
-													className="justify-start"
-													iconSize="md"
-													maxVisible={template.hero.sources.length}
-													sources={template.hero.sources}
-												/>
-											</div>
-										) : null}
-										{template.hero.skills.length > 0 ? (
-											<div className="flex flex-col gap-1">
-												<span className="block text-xs font-semibold leading-4 text-text-subtle">
-													Skills
-												</span>
-												<SkillTagGroup maxRows={2}>
-													{template.hero.skills.map((skill) => (
-														<SkillTag color={skill.color ?? "default"} icon={skill.icon} key={skill.label}>
-															{skill.label}
-														</SkillTag>
-													))}
-												</SkillTagGroup>
-											</div>
-										) : null}
-									</div>
-								) : null}
 							</motion.button>
 						);
 					})}
