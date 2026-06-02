@@ -11,13 +11,19 @@ export type MarkdownFormatKind =
 	| "italic"
 	| "underline"
 	| "strikethrough"
+	| "inlineCode"
 	| "normal"
 	| "h1"
 	| "h2"
 	| "h3"
+	| "h4"
+	| "h5"
+	| "h6"
 	| "quote"
 	| "bulletList"
 	| "orderedList"
+	| "codeBlock"
+	| "horizontalRule"
 	| "link";
 
 export interface MarkdownSelectionState {
@@ -42,13 +48,19 @@ const INLINE_MARKERS: Partial<Record<MarkdownFormatKind, InlineMarker>> = {
 	strikethrough: { open: "~~", close: "~~" },
 	// Markdown has no underline; `<u>` round-trips through @tiptap/markdown.
 	underline: { open: "<u>", close: "</u>" },
+	inlineCode: { open: "`", close: "`" },
 };
 
 const HEADING_PREFIX: Partial<Record<MarkdownFormatKind, string>> = {
 	h1: "# ",
 	h2: "## ",
 	h3: "### ",
+	h4: "#### ",
+	h5: "##### ",
+	h6: "###### ",
 };
+
+const CODE_FENCE = "```";
 
 // Matches a single leading block marker: ATX heading, blockquote, bullet, or
 // ordered-list item. Used to normalise a line before applying a new block style.
@@ -172,6 +184,63 @@ function applyBlock(
 	};
 }
 
+/**
+ * Toggle a fenced code block around the selected lines. When the surrounding
+ * lines already form a complete fenced block (opening + closing ``` lines), we
+ * strip the fences; otherwise we wrap with empty fence lines so the selected
+ * lines stay verbatim between them.
+ */
+function applyCodeBlock(state: MarkdownSelectionState): MarkdownSelectionState {
+	const { value, selectionStart, selectionEnd } = state;
+	const { lineStart, lineEnd } = getLineBounds(value, selectionStart, selectionEnd);
+	const beforeBlock = value.slice(0, lineStart);
+	const block = value.slice(lineStart, lineEnd);
+	const afterBlock = value.slice(lineEnd);
+	const lines = block.split("\n");
+
+	// Already fenced (first + last selected line are both ```): strip the fences.
+	if (
+		lines.length >= 2 &&
+		lines[0].trim().startsWith(CODE_FENCE) &&
+		lines[lines.length - 1].trim() === CODE_FENCE
+	) {
+		const inner = lines.slice(1, -1).join("\n");
+		return {
+			value: beforeBlock + inner + afterBlock,
+			selectionStart: lineStart,
+			selectionEnd: lineStart + inner.length,
+		};
+	}
+
+	const fenced = `${CODE_FENCE}\n${block}\n${CODE_FENCE}`;
+	return {
+		value: beforeBlock + fenced + afterBlock,
+		selectionStart: lineStart,
+		selectionEnd: lineStart + fenced.length,
+	};
+}
+
+/**
+ * Insert a `---` horizontal rule on its own line. The caret/selection lands on
+ * the blank line below the rule, ready to keep typing.
+ */
+function applyHorizontalRule(state: MarkdownSelectionState): MarkdownSelectionState {
+	const { value, selectionStart, selectionEnd } = state;
+	const before = value.slice(0, selectionEnd);
+	const after = value.slice(selectionEnd);
+	const needsLeadingNewlines = before.endsWith("\n\n") ? "" : before.endsWith("\n") ? "\n" : "\n\n";
+	const needsTrailingNewlines = after.startsWith("\n") ? "\n" : "\n\n";
+	const inserted = `${needsLeadingNewlines}---${needsTrailingNewlines}`;
+	const nextValue = before + inserted + after;
+	const caret = before.length + inserted.length;
+
+	return {
+		value: nextValue,
+		selectionStart: caret,
+		selectionEnd: caret,
+	};
+}
+
 function applyLink(
 	state: MarkdownSelectionState,
 	url: string,
@@ -205,6 +274,14 @@ export function applyMarkdownFormat(
 			return state;
 		}
 		return applyLink(state, options.linkUrl);
+	}
+
+	if (kind === "codeBlock") {
+		return applyCodeBlock(state);
+	}
+
+	if (kind === "horizontalRule") {
+		return applyHorizontalRule(state);
 	}
 
 	const marker = INLINE_MARKERS[kind];

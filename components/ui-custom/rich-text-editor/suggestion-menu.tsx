@@ -13,6 +13,7 @@ import BranchIcon from "@atlaskit/icon/core/branch";
 import LibraryIcon from "@atlaskit/icon/core/library";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PersonIcon from "@atlaskit/icon/core/person";
+import SnippetIcon from "@atlaskit/icon/core/snippet";
 import TeamsIcon from "@atlaskit/icon/core/teams";
 import ToolsIcon from "@atlaskit/icon/core/tools";
 import AlignTextCenterIcon from "@atlaskit/icon/core/align-text-center";
@@ -28,7 +29,12 @@ import TextBoldIcon from "@atlaskit/icon/core/text-bold";
 import TextItalicIcon from "@atlaskit/icon/core/text-italic";
 import TextStrikethroughIcon from "@atlaskit/icon/core/text-strikethrough";
 import TextUnderlineIcon from "@atlaskit/icon/core/text-underline";
+import DividerElementIcon from "@atlaskit/icon-lab/core/divider-element";
+import TerminalIcon from "@atlaskit/icon-lab/core/terminal";
+import TextHeadingFiveIcon from "@atlaskit/icon-lab/core/text-heading-five";
+import TextHeadingFourIcon from "@atlaskit/icon-lab/core/text-heading-four";
 import TextHeadingOneIcon from "@atlaskit/icon-lab/core/text-heading-one";
+import TextHeadingSixIcon from "@atlaskit/icon-lab/core/text-heading-six";
 import TextHeadingThreeIcon from "@atlaskit/icon-lab/core/text-heading-three";
 import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 import ViewTypeTableHomeIcon from "@atlaskit/icon-lab/core/view-type-table-home";
@@ -252,6 +258,27 @@ export const SLASH_COMMANDS: readonly RichTextCommandItem[] = [
 		run: (editor) => editor.chain().focus().toggleHeading({ level: 3 }).run(),
 	},
 	{
+		id: "heading-4",
+		label: "Heading 4",
+		shortcut: "####",
+		icon: <TextHeadingFourIcon label="" size="small" />,
+		run: (editor) => editor.chain().focus().toggleHeading({ level: 4 }).run(),
+	},
+	{
+		id: "heading-5",
+		label: "Heading 5",
+		shortcut: "#####",
+		icon: <TextHeadingFiveIcon label="" size="small" />,
+		run: (editor) => editor.chain().focus().toggleHeading({ level: 5 }).run(),
+	},
+	{
+		id: "heading-6",
+		label: "Heading 6",
+		shortcut: "######",
+		icon: <TextHeadingSixIcon label="" size="small" />,
+		run: (editor) => editor.chain().focus().toggleHeading({ level: 6 }).run(),
+	},
+	{
 		id: "quote",
 		label: "Quote",
 		icon: <QuotationMarkIcon label="" size="small" />,
@@ -280,6 +307,22 @@ export const SLASH_COMMANDS: readonly RichTextCommandItem[] = [
 		label: "Strikethrough",
 		icon: <TextStrikethroughIcon label="" size="small" />,
 		run: (editor) => editor.chain().focus().toggleStrike().run(),
+	},
+	{
+		id: "inline-code",
+		label: "Inline code",
+		description: "Render the selection in monospace (`code`).",
+		shortcut: "`",
+		icon: <SnippetIcon label="" size="small" />,
+		run: (editor) => editor.chain().focus().toggleCode().run(),
+	},
+	{
+		id: "code-block",
+		label: "Code block",
+		description: "Fenced code block with monospace text.",
+		shortcut: "```",
+		icon: <TerminalIcon label="" size="small" />,
+		run: (editor) => editor.chain().focus().toggleCodeBlock().run(),
 	},
 	{
 		id: "bulleted-list",
@@ -343,6 +386,14 @@ export const SLASH_COMMANDS: readonly RichTextCommandItem[] = [
 				editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
 			}
 		},
+	},
+	{
+		id: "horizontal-rule",
+		label: "Horizontal rule",
+		description: "Insert a thematic break (`---`).",
+		shortcut: "---",
+		icon: <DividerElementIcon label="" size="small" />,
+		run: (editor) => editor.chain().focus().setHorizontalRule().run(),
 	},
 ];
 
