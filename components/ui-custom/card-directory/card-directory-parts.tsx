@@ -60,7 +60,6 @@ import WarningIcon from "@atlaskit/icon/core/warning";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { Tile } from "@/components/ui/tile";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -460,8 +459,9 @@ function getCapabilityIcon(icon: CardDirectoryCapabilityIcon | undefined): React
 }
 
 /**
- * Feature list — borderless icon-tile rows (one per capability). Scrolling is
- * owned by the enclosing card body, so this list just flows at its natural height.
+ * Feature list — borderless rows (one per capability), each a plain 16px icon
+ * beside its label. Scrolling is owned by the enclosing card body, so this list
+ * just flows at its natural height.
  */
 export function CardDirectoryCapabilities({ label, items }: Readonly<CardDirectoryCapabilitiesProps>) {
 	return (
@@ -473,9 +473,11 @@ export function CardDirectoryCapabilities({ label, items }: Readonly<CardDirecto
 
 					return (
 						<li key={capability.label} className="flex items-center gap-2">
-							<Tile aria-hidden className="shrink-0 text-icon-subtle" label="" size="small" variant="neutral">
-								<Icon render={getCapabilityIcon(capability.icon)} aria-hidden />
-							</Tile>
+							<Icon
+								aria-hidden
+								className="size-4 shrink-0 text-icon-subtle [&_svg]:size-4!"
+								render={getCapabilityIcon(capability.icon)}
+							/>
 							<span className="min-w-0 flex-1 truncate text-sm leading-5 text-text">{capability.label}</span>
 						</li>
 					);
