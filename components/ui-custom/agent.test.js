@@ -430,12 +430,14 @@ test("Shared toolbar carries the Confluence editor control set", () => {
 test("Shared toolbar groups related split controls and keeps unrelated toggles independent", () => {
 	assert.match(EDITOR_TOOLBAR_SOURCE, /import AddIcon from "@atlaskit\/icon\/core\/add";/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /import MarkdownIcon from "@atlaskit\/icon\/core\/markdown";/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /import \{ Toggle \} from "@\/components\/ui\/toggle";/u);
 	assert.match(
 		EDITOR_TOOLBAR_SOURCE,
 		/import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u,
 	);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /import \{ Separator \} from "@\/components\/ui\/separator";/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /import \{ TextNormalIcon \} from "@\/components\/ui\/vpk-icons";/u);
 
 	// Bold + formatting and bulleted list + list options are related split controls.
 	assert.match(EDITOR_TOOLBAR_SOURCE, /const TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME = "\*:data-\[slot=toggle-group-item\]:w-6! \*:data-\[slot=toggle-group-item\]:min-w-6! \*:data-\[slot=toggle-group-item\]:px-0!";/u);
@@ -446,18 +448,19 @@ test("Shared toolbar groups related split controls and keeps unrelated toggles i
 	assert.match(EDITOR_TOOLBAR_SOURCE, /function ToolbarSeparator\(\)[\s\S]*orientation="vertical"[\s\S]*className="mx-2 h-4 self-center bg-border data-vertical:self-center"/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /<ToolbarSeparator \/>\s*<div className="relative">[\s\S]*value=\{listValue\}/u);
 
-	// Link and Markdown are separate Toggles because their states are unrelated.
+	// Link remains a separate Toggle; rendered/Markdown mode is a far-right Tabs control.
 	assert.match(EDITOR_TOOLBAR_SOURCE, /pressed=\{!isMarkdownMode && editor\.isActive\("link"\)\}/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Link"[\s\S]*onPressedChange=\{handleLinkPressedChange\}/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Add content"[\s\S]*onClick=\{handleAddContent\}/u);
-	assert.match(EDITOR_TOOLBAR_SOURCE, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>\s*\{onToggleMarkdownMode \? <ToolbarSeparator \/> : null\}/u);
-	assert.match(EDITOR_TOOLBAR_SOURCE, /pressed=\{isMarkdownMode\}/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>/u);
+	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /<AddIcon label="" size="small" \/>\s*<\/Button>\s*<ToolbarSeparator \/>/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<Tabs[\s\S]*value=\{isMarkdownMode \? "markdown" : "rendered"\}/u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /value="link"/u);
-	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /value="markdown"/u);
 	assert.doesNotMatch(
 		EDITOR_TOOLBAR_SOURCE,
 		/variant=\{editor\.isActive\("bold"\) \? "secondary" : "ghost"\}/u,
 	);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<TextNormalIcon size="small" \/>/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /<MarkdownIcon label="" size="small" \/>/u);
 });
 
@@ -486,14 +489,17 @@ test("Shared toolbar dropdown menus avoid perimeter shadow strokes", () => {
 	);
 });
 
-test("Shared toolbar exposes a Markdown view toggle gated by a handler", () => {
+test("Shared toolbar exposes far-right rendered and Markdown mode tabs gated by a handler", () => {
 	assert.match(EDITOR_TOOLBAR_SOURCE, /isMarkdownMode\?: boolean;/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /onToggleMarkdownMode\?: \(\) => void;/u);
-	// Markdown toggle only renders when a toggle handler is supplied (omitted in bubble/floating menus).
+	// Mode tabs only render when a toggle handler is supplied (omitted in bubble/floating menus).
 	assert.match(
 		EDITOR_TOOLBAR_SOURCE,
-		/onToggleMarkdownMode \?\s*\([\s\S]*<Toggle[\s\S]*Show Markdown source/u,
+		/const showModeTabs = Boolean\(onToggleMarkdownMode\);[\s\S]*\{endSlot \|\| showModeTabs \? \(/u,
 	);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<TabsTrigger value="rendered">[\s\S]*Rendered/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<TabsTrigger value="markdown">[\s\S]*Markdown/u);
+	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /Show Markdown source/u);
 });
 
 test("Source-mode toolbar controls apply Markdown syntax instead of disabling", () => {
@@ -535,7 +541,7 @@ test("Editor wires source-mode formatting through the Markdown-format util", () 
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onMarkdownFormat=\{handleMarkdownFormat\}/u);
 });
 
-test("Markdown source toggle round-trips through the shared editor", () => {
+test("Markdown source mode round-trips through the shared editor", () => {
 	assert.match(
 		RICH_TEXT_EDITOR_SOURCE,
 		/const \[isMarkdownMode, setIsMarkdownMode\] = useState\(false\);/u,

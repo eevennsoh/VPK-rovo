@@ -23,7 +23,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 		],
 	},
 	"editor-toolbar": {
-		description: "Reusable rich text editor toolbar with text style, formatting, list, alignment, link, Markdown source, and slot controls for Tiptap editor surfaces.",
+		description: "Reusable rich text editor toolbar with text style, formatting, list, alignment, link, add-content, rendered/Markdown mode tabs, and slot controls for Tiptap editor surfaces.",
 		importStatement: `import { EditorToolbar } from "@/components/blocks/editor-toolbar";`,
 		usage: `import { EditorToolbar } from "@/components/blocks/editor-toolbar";
 import type { Editor } from "@tiptap/react";
@@ -57,7 +57,7 @@ function FormattingToolbar({ editor }: { editor: Editor }) {
 			{
 				name: "endSlot",
 				type: "ReactNode",
-				description: "Optional content rendered at the end of the toolbar.",
+				description: "Optional content rendered at the end of the toolbar before the rendered/Markdown mode tabs.",
 			},
 			{
 				name: "isMarkdownMode",
@@ -68,7 +68,7 @@ function FormattingToolbar({ editor }: { editor: Editor }) {
 			{
 				name: "onToggleMarkdownMode",
 				type: "() => void",
-				description: "Called when the Markdown source toggle is selected. When omitted, the Markdown toggle is hidden.",
+				description: "Called when the rendered/Markdown mode tabs request a mode change. When omitted, the mode tabs are hidden.",
 			},
 			{
 				name: "onMarkdownFormat",

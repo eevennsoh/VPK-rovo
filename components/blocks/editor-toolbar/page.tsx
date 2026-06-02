@@ -5,7 +5,6 @@ import { EditorContent, useEditor } from "@tiptap/react";
 
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import { EditorToolbar } from "@/components/blocks/editor-toolbar";
-import { Button } from "@/components/ui/button";
 import { createRichTextEditorExtensions } from "@/components/ui-custom/rich-text-editor";
 import {
 	applyMarkdownFormat,
@@ -111,11 +110,6 @@ export default function EditorToolbarPage({
 					isMarkdownMode={isMarkdownMode}
 					onToggleMarkdownMode={handleToggleMarkdownMode}
 					onMarkdownFormat={handleMarkdownFormat}
-					endSlot={
-						<Button type="button" variant="ghost" size="compact">
-							Saved
-						</Button>
-					}
 				/>
 			) : null}
 			<div className="rich-text-editor-content rounded-md bg-surface-sunken p-3">
