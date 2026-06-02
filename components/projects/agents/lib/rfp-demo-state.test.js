@@ -37,6 +37,7 @@ async function loadRfpDemoStateHarness() {
 					selectRfpReportVersion,
 					setRfpDraftingAgentTrigger,
 				} from "./components/projects/agents/lib/rfp-demo-state";
+					export { ROVO_LOGO_DATA_URI } from "./components/ui/data/rovo-logo";
 			`,
 			loader: "ts",
 			resolveDir: process.cwd(),
@@ -248,7 +249,7 @@ test("agent creation is idempotent and assigns Drafting without retroactively as
 	assert.equal(twice.agent.description, harness.RFP_DRAFTING_AGENT_DESCRIPTION);
 	assert.deepEqual(twice.agent.conversationStarters, [...harness.RFP_DRAFTING_AGENT_CONVERSATION_STARTERS]);
 	assert.ok(harness.RFP_DRAFTING_AGENT_AVATAR_SRCS.includes(twice.agent.avatarSrc));
-	assert.notEqual(twice.agent.avatarSrc, "/1p/rovo.svg");
+	assert.notEqual(twice.agent.avatarSrc, harness.ROVO_LOGO_DATA_URI);
 	assert.equal(twice.agent.trigger.label, harness.RFP_DRAFTING_EVENT_TRIGGER_LABEL);
 	assert.deepEqual(harness.getRfpDemoColumnAgentAssignments(twice), {
 		Drafting: [harness.RFP_DRAFTING_AGENT_ID],

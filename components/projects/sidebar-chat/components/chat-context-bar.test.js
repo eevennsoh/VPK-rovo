@@ -253,7 +253,7 @@ test("ChatContextBar renders a collapsible agent edit bar with avatar", async ()
 		iconName: "agent",
 		signature: "studio-edit-agent:research-assistant",
 		variant: "edit",
-		avatarSrc: "/1p/rovo.svg",
+		avatarSrc: "/avatar-agent/service-agents/service-triage.svg",
 		collapsible: true,
 		collapsedLabel: "Edit agent",
 	});
@@ -263,7 +263,7 @@ test("ChatContextBar renders a collapsible agent edit bar with avatar", async ()
 	assert.match(markup, /Edit:/);
 	assert.match(markup, /Research assistant/);
 	assert.match(markup, /data-image="true"/);
-	assert.match(markup, /src="\/1p\/rovo\.svg"/);
+	assert.match(markup, /src="\/avatar-agent\/service-agents\/service-triage\.svg"/);
 	assert.match(markup, /<button/);
 	assert.doesNotMatch(markup, /data-icon="person"/);
 });

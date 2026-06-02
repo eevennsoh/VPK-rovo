@@ -2,7 +2,6 @@
 
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import EditIcon from "@atlaskit/icon/core/edit";
-import Image from "next/image";
 import { useState, type ReactElement } from "react";
 
 import { AgentSelector, type AgentSelectorAction } from "@/components/blocks/agent-selector";
@@ -14,6 +13,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import { RovoColorIcon } from "@/components/ui/logo";
 
 interface AgentSelectorPageProps {
 	variant?: "default" | "selected-agent-actions";
@@ -29,7 +29,7 @@ export default function AgentSelectorPage({ variant = "default" }: Readonly<Agen
 		? [
 			{
 				id: "chat-with-rovo",
-				icon: <Image alt="" aria-hidden className="mx-auto block size-4 object-contain object-center" height={16} src="/1p/rovo.svg" width={16} />,
+				icon: <RovoColorIcon aria-hidden className="mx-auto block" size="xxsmall" />,
 				label: "Chat with Rovo",
 				onSelect: () => setOpen(false),
 			},

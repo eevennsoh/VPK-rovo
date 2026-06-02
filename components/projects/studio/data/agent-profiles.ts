@@ -1,6 +1,7 @@
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 
 import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
+import { ROVO_LOGO_DATA_URI } from "@/components/ui/data/rovo-logo";
 import type { RovoSuggestion } from "@/lib/rovo-suggestions";
 
 export const ROVO_AGENT_ID = "rovo-dev";
@@ -91,7 +92,7 @@ export const ROVO_AGENT_PROFILES: readonly RovoAgentProfile[] = [
 		id: ROVO_AGENT_ID,
 		name: "Rovo Dev",
 		byline: "by Atlassian",
-		avatarSrc: "/1p/rovo.svg",
+		avatarSrc: ROVO_LOGO_DATA_URI,
 		starters: EMPTY_STARTERS,
 	}),
 	createProfile({

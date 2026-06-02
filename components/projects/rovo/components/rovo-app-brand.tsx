@@ -15,6 +15,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import { RovoColorIcon } from "@/components/ui/logo";
 import {
 	isRovoAgentProfile,
 } from "@/components/projects/rovo/data/agent-profiles";
@@ -99,7 +100,7 @@ export function RovoAppBrand() {
 		return [
 			{
 				id: "chat-with-rovo",
-				icon: <Image alt="" aria-hidden className="mx-auto block size-4 object-contain object-center" height={16} src="/1p/rovo.svg" width={16} />,
+				icon: <RovoColorIcon aria-hidden className="mx-auto block" size="xxsmall" />,
 				label: "Chat with Rovo",
 				onSelect: () => {
 					resetAgentToRovo();

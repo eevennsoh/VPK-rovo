@@ -6,6 +6,7 @@ import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useRovoChat } from "@/app/contexts";
+import { RovoColorIcon } from "@/components/ui/logo";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -385,7 +386,7 @@ function FloatingRovoButtonInner({
 				willChange: "opacity, filter",
 			}}
 		>
-			<Image src="/1p/rovo.svg" alt="" width={24} height={24} aria-hidden />
+			<RovoColorIcon size="small" />
 		</motion.button>
 	);
 }
