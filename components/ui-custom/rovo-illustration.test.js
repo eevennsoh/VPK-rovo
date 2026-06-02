@@ -11,6 +11,7 @@ function readRepoFile(...segments) {
 
 const INDEX_SOURCE = readRepoFile("components/ui-custom/rovo-illustration/index.tsx");
 const SPOT_SOURCE = readRepoFile("components/ui-custom/rovo-illustration/spot-illustration.tsx");
+const ASSETS_SOURCE = readRepoFile("components/ui-custom/rovo-illustration/assets.generated.ts");
 const DEMO_SOURCE = readRepoFile("components/website/demos/ui-custom/rovo-illustration-demo.tsx");
 const COMPONENTS_SOURCE = readRepoFile("app/data/components.ts");
 const MANIFEST_SOURCE = readRepoFile("app/data/component-manifest.ts");
@@ -41,4 +42,18 @@ test("Rovo Illustration is wired into the ui-custom catalog route", () => {
 	assert.ok(MANIFEST_SOURCE.includes('customComponent("rovo-illustration", "Rovo Illustration")'));
 	assert.match(DETAILS_SOURCE, /"rovo-illustration": \{/u);
 	assert.match(REGISTRY_SOURCE, /"rovo-illustration": dynamic\(\s*\(\) => import\("\.\/demos\/ui-custom\/rovo-illustration-demo"\)/u);
+});
+
+test("Rovo Illustration demo exposes Chat and Brainstorm animations", () => {
+	assert.match(SPOT_SOURCE, /id: "chat", label: "Chat"/u);
+	assert.match(SPOT_SOURCE, /id: "brainstorm", label: "Brainstorm"/u);
+	assert.match(SPOT_SOURCE, /'brainstorm': \{ grey: \[2, 3\], mosaic: \[1\], overlap: \[4\] \}/u);
+	assert.match(ASSETS_SOURCE, /"brainstorm": BRAINSTORM_LIGHT_SVG/u);
+	assert.match(ASSETS_SOURCE, /"brainstorm": BRAINSTORM_DARK_SVG/u);
+	assert.match(DEMO_SOURCE, /illusIds=\{SPOT_ILLUSTRATIONS\.map/u);
+	assert.match(DEMO_SOURCE, /SPOT_ILLUSTRATIONS\.map\(\(illustration\) => \(/u);
+	assert.doesNotMatch(DEMO_SOURCE, /FEATURED_ILLUSTRATIONS/u);
+	assert.doesNotMatch(DEMO_SOURCE, /SUPPORTING_ILLUSTRATIONS/u);
+	assert.doesNotMatch(DEMO_SOURCE, /id !== "chat"/u);
+	assert.doesNotMatch(DEMO_SOURCE, /id: "create", label: "Brainstorm"/u);
 });
