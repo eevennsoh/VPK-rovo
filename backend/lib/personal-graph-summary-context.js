@@ -113,10 +113,11 @@ function formatNodeForPrompt(node) {
 }
 
 function buildSummaryContextMarkdown(selection) {
+	const neighborsById = new Map(selection.neighbors.map((node) => [node.id, node]));
 	const edgeLines = selection.edges.length > 0
 		? selection.edges.map((edge) => {
 			const neighborId = edge.source === selection.selectedNode.id ? edge.target : edge.source;
-			const neighbor = selection.neighbors.find((node) => node.id === neighborId);
+			const neighbor = neighborsById.get(neighborId);
 			return `- ${cleanPromptText(edge.label, "related to")}: ${cleanPromptText(selection.selectedNode.title)} -> ${cleanPromptText(neighbor?.title ?? "Unknown neighbor")}`;
 		})
 		: ["- No one-hop graph neighbors."];
