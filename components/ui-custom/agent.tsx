@@ -826,35 +826,52 @@ function AgentCompactBentoCardGlowLayers({ iconSrc }: Readonly<{ iconSrc: string
 	);
 }
 
-// Hand-drawn curved arrow (open ~270° hook + V arrowhead) that points down
-// into the template grid. Traced with the Rovo rainbow `SvgTracing` so it
-// matches the Studio landing's tracing animation.
-const AGENT_COMPACT_BENTO_HINT_ARROW_SHAPE: SvgTraceShape = {
-	id: "agent-compact-templates-hint-arrow",
-	label: "Templates hint arrow",
-	viewBox: "0 0 100 100",
-	paths: [{ d: "M9 30 C30 8 72 18 77 52 C80 75 74 86 66 91 M66 91 L56 78 M66 91 L83 88" }],
+// Mirrors the Studio landing composer's "scratch scribble": the same squiggle
+// shape and rainbow draw-eat tracing. Looped here so it persists as a hint
+// underline beneath the word "templates".
+const AGENT_COMPACT_BENTO_HINT_SCRIBBLE_SHAPE: SvgTraceShape = {
+	id: "agent-compact-templates-hint-scribble",
+	label: "Templates hint scribble",
+	viewBox: "0 0 200 44",
+	paths: [
+		{
+			d: "M8 30 C26 8 33 6 40 14 C47 22 44 40 56 40 C70 40 82 12 100 12 C112 12 116 28 132 26 C156 23 176 22 192 26",
+		},
+	],
 };
 
-const AGENT_COMPACT_BENTO_HINT_ARROW_CONFIG: SvgTraceConfig = {
+const AGENT_COMPACT_BENTO_HINT_SCRIBBLE_CONFIG: SvgTraceConfig = {
 	...DEFAULT_SVG_TRACE_CONFIG,
-	strokeWidth: 3,
-	segmentCap: "round",
-	showOutline: true,
+	duration: 0.9,
+	strokeWidth: 2,
+	colorStopCount: 6,
+	segmentCap: "butt",
+	easingId: "easeInOutCubic",
+	traceMode: "draw-eat",
+	loop: true,
+	repeatCount: 1,
+	showOutline: false,
 };
 
 function AgentCompactBentoTemplatesHint() {
 	const shouldReduceMotion = useReducedMotion();
 
 	return (
-		<div className="relative z-[3] mb-3 flex items-center gap-1.5 pl-1">
-			<span className="text-xs font-medium text-text-subtle">Start with these agent templates</span>
-			<SvgTracing
-				shape={AGENT_COMPACT_BENTO_HINT_ARROW_SHAPE}
-				config={AGENT_COMPACT_BENTO_HINT_ARROW_CONFIG}
-				playing={!shouldReduceMotion}
-				svgClassName="h-9 w-9 shrink-0 overflow-visible"
-			/>
+		<div className="relative z-[3] mb-6 pl-1">
+			<span className="text-xs font-medium text-text-subtle">
+				Start with these agent{" "}
+				<span className="relative inline-block">
+					templates
+					<span className="pointer-events-none absolute inset-x-0 -bottom-5 block" aria-hidden="true">
+						<SvgTracing
+							shape={AGENT_COMPACT_BENTO_HINT_SCRIBBLE_SHAPE}
+							config={AGENT_COMPACT_BENTO_HINT_SCRIBBLE_CONFIG}
+							playing={!shouldReduceMotion}
+							svgClassName="h-3 w-full"
+						/>
+					</span>
+				</span>
+			</span>
 		</div>
 	);
 }
