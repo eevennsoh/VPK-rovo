@@ -2,7 +2,7 @@
 
 import type { FileUIPart } from "ai";
 import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, type AnimationPlaybackControls } from "motion/react";
-import { type CSSProperties, type PointerEvent as ReactPointerEvent, startTransition, useCallback, useEffect, useMemo, useRef, useState, ViewTransition } from "react";
+import { type CSSProperties, type PointerEvent as ReactPointerEvent, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, ViewTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArtifactPanel } from "@/components/ui-custom/artifact";
@@ -17,6 +17,7 @@ import {
 } from "@/components/blocks/agent-templates/data/demo-template-agents";
 import { RovoAppBrowserArtifact } from "@/components/projects/studio/components/rovo-app-browser-artifact";
 import { RovoAppComposer } from "@/components/projects/studio/components/rovo-app-composer";
+import { StudioCustomAgentsTable } from "@/components/projects/studio/components/rovo-app-custom-agents-table";
 import { RovoAppMessages } from "@/components/projects/studio/components/rovo-app-messages";
 import { RovoAppHermesSkillDraftBar } from "@/components/projects/studio/components/rovo-app-hermes-skill-draft-bar";
 import { RovoAppAgentConfigPanel, type AgentConfigView } from "@/components/projects/studio/components/rovo-app-agent-config-panel";
@@ -1747,6 +1748,20 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		[studioAgentRegistry],
 	);
 
+	const handleDeleteStudioAgent = useCallback(
+		(agentId: string) => {
+			// Close the config pane first so its draft editor cannot re-save a
+			// session agent after the registry entry is removed.
+			if (activeAgentConfig?.profileId === agentId) {
+				setActiveAgentConfig(null);
+			}
+			startTransition(() => {
+				studioAgentRegistry.removeSessionAgent(agentId);
+			});
+		},
+		[activeAgentConfig?.profileId, studioAgentRegistry],
+	);
+
 	// Returns to the "Agents" landing (bento). Shared by the sidebar's "Agents"
 	// header (when it has no recent agents to expand) and the "View all agents"
 	// row. Must clear all three view-model layers: the agent-config pane
@@ -3473,6 +3488,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const shouldShowChatHeader = !shouldShowAgentConfigPane && (visibleMessages.length > 0 || hasActiveThreadRun || chat.isStreaming);
 	const isDefaultAgentHomeState = showHomeState && !isCustomAgentSelected;
 	isDefaultAgentHomeStateRef.current = isDefaultAgentHomeState;
+	const shouldShowStudioCustomAgentsTable = isDefaultAgentHomeState && studioAgentRegistry.sessionAgentEntries.length > 0;
 	const shouldReduceMotion = useReducedMotion();
 	const shouldShowTimelineNavigator = !showHomeState && !isArtifactOpen && timelineItems.length > 1;
 	const composerPreviewState = resolveRovoAppComposerPlaceholder({
@@ -3527,8 +3543,10 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 	const shellRef = useRef<HTMLDivElement | null>(null);
 	const composerDockRef = useRef<HTMLDivElement | null>(null);
+	const defaultHomeTopSpacerRef = useRef<HTMLDivElement | null>(null);
 	const artifactCardOriginRef = useRef<DOMRect | null>(null);
 	const artifactPreviewOriginRef = useRef<Map<string, DOMRect>>(new Map());
+	const [defaultHomeTopSpacerMeasurement, setDefaultHomeTopSpacerMeasurement] = useState<{ key: string; height: number } | null>(null);
 	const [artifactOrigin, setArtifactOrigin] = useState({
 		left: 0,
 		top: 0,
@@ -3548,6 +3566,29 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const splitArtifactPaneDefaultSize = shouldSplitArtifactPane || (shouldShowAgentConfigPane && !isAgentConfigOverlayActive)
 		? Math.max(ROVO_APP_MIN_ARTIFACT_PANE_WIDTH, shellSize.width - splitChatPaneDefaultSize)
 		: ROVO_APP_MIN_ARTIFACT_PANE_WIDTH;
+	const defaultHomeTopSpacerMeasurementKey = isDefaultAgentHomeState ? `${shellSize.width}:${shellSize.height}` : null;
+	const defaultHomeTopSpacerHeight = defaultHomeTopSpacerMeasurement?.key === defaultHomeTopSpacerMeasurementKey
+		? defaultHomeTopSpacerMeasurement.height
+		: null;
+
+	useLayoutEffect(() => {
+		if (!defaultHomeTopSpacerMeasurementKey || !isDefaultAgentHomeState || shouldSplitArtifactPane || shouldShowAgentConfigPane || defaultHomeTopSpacerHeight !== null) {
+			return;
+		}
+
+		const spacerElement = defaultHomeTopSpacerRef.current;
+		if (!spacerElement) {
+			return;
+		}
+
+		const spacerHeight = Math.round(spacerElement.getBoundingClientRect().height);
+		if (spacerHeight > 0) {
+			setDefaultHomeTopSpacerMeasurement({
+				key: defaultHomeTopSpacerMeasurementKey,
+				height: spacerHeight,
+			});
+		}
+	}, [defaultHomeTopSpacerHeight, defaultHomeTopSpacerMeasurementKey, isDefaultAgentHomeState, shouldShowAgentConfigPane, shouldSplitArtifactPane]);
 
 	useEffect(() => {
 		if (!isRealtimeActive) {
@@ -4053,8 +4094,25 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					}}
 				/>
 			) : null}
-			{showHomeState && !shouldSplitArtifactPane && !shouldShowAgentConfigPane ? <div className="min-h-[40px] flex-1 shrink" /> : null}
+			{showHomeState && !shouldSplitArtifactPane && !shouldShowAgentConfigPane ? (
+				<div
+					ref={isDefaultAgentHomeState ? defaultHomeTopSpacerRef : undefined}
+					aria-hidden
+					className={cn(
+						"min-h-[40px]",
+						isDefaultAgentHomeState && defaultHomeTopSpacerHeight !== null ? "shrink-0" : "flex-1 shrink",
+					)}
+					style={isDefaultAgentHomeState && defaultHomeTopSpacerHeight !== null ? { flexBasis: defaultHomeTopSpacerHeight } : undefined}
+				/>
+			) : null}
 			{chatPane}
+			{shouldShowStudioCustomAgentsTable ? (
+				<StudioCustomAgentsTable
+					entries={studioAgentRegistry.sessionAgentEntries}
+					onDeleteAgent={handleDeleteStudioAgent}
+					onEditAgent={handleStudioSidebarAgentSelect}
+				/>
+			) : null}
 			{showHomeState && !shouldSplitArtifactPane ? (
 				<>
 					{!shouldShowAgentConfigPane ? <div className="flex-1 shrink" /> : null}
@@ -4075,18 +4133,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				onCancelThreadRun={async (threadId) => {
 					await chat.cancelThreadRun(threadId);
 				}}
-				onDeleteAgent={(agentId) => {
-					// Mirror `onNewChat`'s teardown for the removed agent: closing its
-					// config pane first stops the editor from re-saving a deleted agent,
-					// then `removeSessionAgent` drops the entry (and resets to Rovo if it
-					// was the selected agent).
-					if (activeAgentConfig?.profileId === agentId) {
-						setActiveAgentConfig(null);
-					}
-					startTransition(() => {
-						studioAgentRegistry.removeSessionAgent(agentId);
-					});
-				}}
+				onDeleteAgent={handleDeleteStudioAgent}
 				onDeleteThread={async (threadId) => {
 					startTransition(() => {
 						void chat.deleteThread(threadId);
