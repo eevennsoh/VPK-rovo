@@ -183,18 +183,15 @@ export function ToggleGroupDemoSort() {
 	return (
 		<ToggleGroup defaultValue={["newest"]} variant="outline" size="sm">
 			<ToggleGroupItem value="newest" aria-label="Newest">
-				<ArrowDownIcon
-				/>
+				<ArrowDownIcon size="small" />
 				Newest
 			</ToggleGroupItem>
 			<ToggleGroupItem value="oldest" aria-label="Oldest">
-				<ArrowUpIcon
-				/>
+				<ArrowUpIcon size="small" />
 				Oldest
 			</ToggleGroupItem>
 			<ToggleGroupItem value="popular" aria-label="Popular">
-				<TrendingUpIcon
-				/>
+				<TrendingUpIcon size="small" />
 				Popular
 			</ToggleGroupItem>
 		</ToggleGroup>
