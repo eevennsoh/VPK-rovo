@@ -30,6 +30,7 @@ export function useHasHorizontalOverflow<T extends HTMLElement>(
 	const edgeThreshold = options?.edgeThreshold ?? HORIZONTAL_OVERFLOW_EDGE_THRESHOLD;
 	const reduceMotion = options?.reduceMotion ?? false;
 	const elementRef = useRef<T | null>(null);
+	const [element, setElement] = useState<T | null>(null);
 	const [canScrollLeft, setCanScrollLeft] = useState(false);
 	const [canScrollRight, setCanScrollRight] = useState(false);
 
@@ -49,6 +50,7 @@ export function useHasHorizontalOverflow<T extends HTMLElement>(
 	const ref = useCallback<RefCallback<T>>(
 		(node) => {
 			elementRef.current = node;
+			setElement(node);
 			updateScrollState();
 			// Widths aren't laid out yet on first attach — recompute next frame.
 			if (node && typeof window !== "undefined") {
@@ -63,7 +65,6 @@ export function useHasHorizontalOverflow<T extends HTMLElement>(
 	});
 
 	useEffect(() => {
-		const element = elementRef.current;
 		if (!element) return undefined;
 
 		element.addEventListener("scroll", updateScrollState, { passive: true });
@@ -88,7 +89,7 @@ export function useHasHorizontalOverflow<T extends HTMLElement>(
 			element.removeEventListener("scroll", updateScrollState);
 			resizeObserver.disconnect();
 		};
-	}, [updateScrollState]);
+	}, [element, updateScrollState]);
 
 	const scrollByDir = useCallback(
 		(direction: -1 | 1) => {
