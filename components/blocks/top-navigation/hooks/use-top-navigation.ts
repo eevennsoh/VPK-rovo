@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useWindowWidth } from "@/components/hooks/use-window-width";
 import { useClickOutside } from "@/components/hooks/use-click-outside";
@@ -8,7 +8,7 @@ import { useSidebar } from "@/app/contexts/context-sidebar";
 import { useRovoChat } from "@/app/contexts";
 import { useTheme } from "@/components/utils/theme-wrapper";
 import { token } from "@/lib/tokens";
-import { TOP_NAV_PADDING_PX } from "../layout-constants";
+import { TOP_NAV_PADDING_PX, TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX } from "../layout-constants";
 
 const TOP_NAV_CENTER_SECTION_MAX_WIDTH_PX = 762;
 const TOP_NAV_CENTER_SECTION_SIDE_RAIL_WIDTH_PX = 330;
@@ -21,7 +21,7 @@ export function useTopNavigation() {
 	const [isAppSwitcherOpen, setIsAppSwitcherOpen] = useState(false);
 	const [isSearchFocused, setIsSearchFocused] = useState(false);
 	const windowWidth = useWindowWidth();
-	const { isVisible, toggleSidebar, setHovered } = useSidebar();
+	const { isVisible, toggleSidebar, setSidebarVisible, setHovered } = useSidebar();
 	const { toggleChat, openChat, chatSurface } = useRovoChat();
 	const isSidebarChatOpen = chatSurface === "sidebar";
 	const { setTheme, actualTheme } = useTheme();
@@ -31,6 +31,28 @@ export function useTopNavigation() {
 	const searchRefs = useMemo(() => [searchContainerRef, searchPanelRef], []);
 
 	useClickOutside(searchRefs, () => setIsSearchFocused(false), isSearchFocused);
+
+	// Smart sidebar pin release: below the small-viewport breakpoint a persistent
+	// (pinned) sidebar reserves horizontal space and overlaps the top navigation,
+	// so automatically un-pin it. We remember that we released a pinned sidebar so
+	// the prior pinned state is restored once the viewport grows back. `windowWidth`
+	// is 0 during SSR/first paint, so we wait for a real measurement before acting.
+	const didAutoReleaseSidebarRef = useRef(false);
+	useEffect(() => {
+		if (windowWidth === 0) {
+			return;
+		}
+		const isSmallViewport = windowWidth < TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX;
+		if (isSmallViewport) {
+			if (isVisible) {
+				didAutoReleaseSidebarRef.current = true;
+				setSidebarVisible(false);
+			}
+		} else if (didAutoReleaseSidebarRef.current) {
+			didAutoReleaseSidebarRef.current = false;
+			setSidebarVisible(true);
+		}
+	}, [windowWidth, isVisible, setSidebarVisible]);
 
 	const toggleTheme = useCallback(() => {
 		setTheme(actualTheme === "light" ? "dark" : "light");
