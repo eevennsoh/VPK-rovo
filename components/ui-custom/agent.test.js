@@ -52,6 +52,18 @@ const EDITOR_PALETTE_SOURCE = readFileSync(
 	join(__dirname, "..", "blocks", "editor-palette", "page.tsx"),
 	"utf8",
 );
+const EDITOR_PALETTE_MENTION_SOURCES = readFileSync(
+	join(__dirname, "..", "blocks", "editor-palette", "data", "mention-sources.ts"),
+	"utf8",
+);
+const EDITOR_PALETTE_DEMO_SOURCE = readFileSync(
+	join(__dirname, "..", "website", "demos", "blocks", "editor-palette-demo.tsx"),
+	"utf8",
+);
+const BLOCK_DETAILS_SOURCE = readFileSync(
+	join(__dirname, "..", "..", "app", "data", "details", "blocks.ts"),
+	"utf8",
+);
 const EDITOR_TOOLBAR_SOURCE = readFileSync(
 	join(__dirname, "..", "blocks", "editor-toolbar", "components", "editor-toolbar.tsx"),
 	"utf8",
@@ -559,11 +571,47 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /"format"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /category === "format" \? "Format"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /getSlashCommandFormatItems/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import TableIcon from "@atlaskit\/icon\/core\/table";/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /view-type-table-home/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function getMentionChildDescription\(item: RichTextMentionItem\): string/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /description: getMentionChildDescription\(item\)/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /description: "Use the default paragraph style for body copy\."/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /description: "Align the current block to the left edge\."/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /"people-team": "People and team"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /type RichTextMentionParentCategory = "subagent" \| "people-team";/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const MENTION_TARGET_ORDER: readonly RichTextMentionParentCategory\[\] = \[\s*"subagent",\s*"people-team",\s*\]/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /category === "people-team"[\s\S]*<PeopleGroupIcon label="" size="small" \/>[\s\S]*: getCategoryIcon\(category\)/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import BookOpenIcon from "@atlaskit\/icon-lab\/core\/book-open";/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /case "knowledge":[\s\S]*return <BookOpenIcon label="" size="small" \/>;/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /@atlaskit\/icon\/core\/library/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const PEOPLE_AVATAR_SRCS = \[[\s\S]*\/avatar-user\/andrea-wilson\/color\/asow-service-yellow\.png/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const TEAM_AVATAR_SRCS = \[[\s\S]*\/avatar-project\/rocket\.svg/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function getStableAssetIndex\(seed: string, assetCount: number\): number/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.category === "human"[\s\S]*shape: "circle"[\s\S]*PEOPLE_AVATAR_SRCS/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.category === "team"[\s\S]*shape: "square"[\s\S]*TEAM_AVATAR_SRCS/u);
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /const SKILL_METADATA: readonly Pick<RichTextMentionItem, "label" \| "description">\[\] = \[/u);
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /description: "Condense the active conversation into decisions and next steps\."/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /getSlashCommandCategoryItems\(mentionSources\)/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /getMentionChildItems\(mentionSources, category\)/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /NESTED_MENTION_SHOWCASES/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /getSlashCommandFormatItems\(\)/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /caption="Format nested"/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /title="Format"/u);
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /\.\.\.SLASH_COMMANDS/u);
+	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /min-w-\[1008px\]/u);
+	assert.doesNotMatch(EDITOR_PALETTE_DEMO_SOURCE, /min-w-\[1008px\]/u);
+	assert.match(EDITOR_PALETTE_DEMO_SOURCE, /className="flex w-full justify-center p-6"/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /"editor-palette": \{[\s\S]*demoLayout: \{ previewHeight: "fit" \}/u);
+
+	for (const caption of [
+		"Subagents nested",
+		"People and team nested",
+		"Skills nested",
+		"Tools nested",
+		"Knowledge nested",
+	]) {
+		assert.match(EDITOR_PALETTE_SOURCE, new RegExp(`caption: "${caption}"`, "u"));
+	}
 
 	for (const command of [
 		"Normal text",
@@ -587,9 +635,11 @@ test("Slash command menu contains every toolbar command", () => {
 });
 
 test("Mention menu exposes people/agent and command categories and mention lozenges", () => {
-	for (const category of ["Subagents", "Human", "A team", "Skills", "Tools", "Knowledge"]) {
+	for (const category of ["Subagents", "People and team", "Skills", "Tools", "Knowledge"]) {
 		assert.match(RICH_TEXT_SUGGESTION_SOURCE, new RegExp(category, "u"));
 	}
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /"Human nested"/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /"Team nested"/u);
 
 	for (const idPrefix of ["human:", "team:", "tool:", "knowledge:"]) {
 		assert.match(RICH_TEXT_SUGGESTION_SOURCE, new RegExp(`id: "${idPrefix}`, "u"));
@@ -597,12 +647,21 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /revealDescriptionOnHover/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /data-nested=\{isNested \? "true" : undefined\}/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /data-list-scrolled=\{isNested && hasScrolledList \? "true" : undefined\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ motion, type Variants \} from "motion\/react";/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const nestedCommandLabelVariants: Variants = \{/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const nestedCommandDescriptionVariants: Variants = \{[\s\S]*opacity: 0,[\s\S]*opacity: 1,/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /whileHover=\{canRevealMetadata \? "active" : undefined\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /whileFocus=\{canRevealMetadata \? "active" : undefined\}/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \{\s*max-height: 400px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-borderless \{\s*border: 0;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-avatar \{\s*width: 24px;\s*height: 24px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-showcase\[data-nested="true"\] \.rich-text-command-menu-list \{\s*overflow-y: auto;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\]\[data-list-scrolled="true"\] \.rich-text-command-menu-list \{\s*mask-image: linear-gradient\(to bottom, transparent 0, black 16px, black 100%\);/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*border-bottom/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \.rich-text-command-menu-list \.rich-text-command-menu-item \{\s*height: 48px;/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \.rich-text-command-menu-list \.rich-text-command-menu-description \{\s*opacity: 0;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-nested-copy \{\s*height: 34px;\s*justify-content: center;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-nested-copy-revealable \{\s*justify-content: flex-start;/u);
+	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item:hover \.rich-text-command-menu-description/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /rich-text-command-menu-title/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-title/u);
 	assert.match(AGENT_SOURCE, /toMentionId\("skill"/u);
