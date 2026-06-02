@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo, RefObject } from "react";
+import { useRef, useMemo, useState, useEffect, RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { token } from "@/lib/tokens";
 import { useClickOutside } from "@/components/hooks/use-click-outside";
@@ -71,7 +71,19 @@ export function LeftNavigation({
 		(hideAppSwitcher ? 0 : TOP_NAV_COLLAPSED_CONTROL_STEP_PX) +
 		(isVisible ? 0 : TOP_NAV_COLLAPSED_CONTROL_STEP_PX);
 
-	const absPositionTransition = isSidebarResizing
+	// Gate the nav controls' `left` transition so it never plays on first paint.
+	// `windowWidth` starts at 0 and `useWindowWidth` updates it to the real width
+	// after mount, which shifts every absolutely-positioned control's `left`
+	// offset. Without this gate, that one-time settle animates the controls
+	// sliding into place on every refresh. Enabling the flag a frame after mount
+	// lets the initial settle apply instantly; only user interactions animate.
+	const [hasMounted, setHasMounted] = useState(false);
+	useEffect(() => {
+		const frame = requestAnimationFrame(() => setHasMounted(true));
+		return () => cancelAnimationFrame(frame);
+	}, []);
+
+	const absPositionTransition = isSidebarResizing || !hasMounted
 		? "none"
 		: "left var(--duration-medium) var(--ease-in-out)";
 
