@@ -11,7 +11,6 @@ import { RovoAppHeader } from "@/components/projects/rovo/components/rovo-app-he
 import { RovoAppBrowserArtifact } from "@/components/projects/rovo/components/rovo-app-browser-artifact";
 import { RovoAppComposer } from "@/components/projects/rovo/components/rovo-app-composer";
 import { RovoAppMessages } from "@/components/projects/rovo/components/rovo-app-messages";
-import { RovoAppHermesMemoryBar } from "@/components/projects/rovo/components/rovo-app-hermes-memory-bar";
 import { RovoAppHermesSkillDraftBar } from "@/components/projects/rovo/components/rovo-app-hermes-skill-draft-bar";
 import { RovoAppShellPaneLayout } from "@/components/projects/rovo/components/rovo-app-shell-pane-layout";
 import { RovoAppSidebar } from "@/components/projects/rovo/components/rovo-app-sidebar";
@@ -67,8 +66,8 @@ import { getLatestQuestionCardPayload, type ClarificationAnswers } from "@/compo
 import type { PlanApprovalSelection } from "@/components/projects/shared/lib/plan-approval";
 import { getLatestPendingPlanWidget, type ParsedPlanWidgetPayload } from "@/components/projects/shared/lib/plan-widget";
 import { useDismissibleCards } from "@/components/projects/shared/hooks/use-dismissible-cards";
-import { approveSkillDraft, fetchWikiStatus, fetchSkillDraftDetail, fetchSkillDrafts, fetchSkills, rejectSkillDraft } from "@/components/projects/control-plane/lib/control-plane-api";
-import type { HermesSkillDraftDetail, HermesSkillDraftSummary, HermesSkillSummary, WikiStatus } from "@/lib/rovo-runtime-types";
+import { approveSkillDraft, fetchSkillDraftDetail, fetchSkillDrafts, fetchSkills, rejectSkillDraft } from "@/components/projects/control-plane/lib/control-plane-api";
+import type { HermesSkillDraftDetail, HermesSkillDraftSummary, HermesSkillSummary } from "@/lib/rovo-runtime-types";
 import type { RovoAppHermesContext } from "@/lib/rovo-app-types";
 import { useRovoSelectedAgent } from "@/app/contexts";
 import { getRovoAgentPromptContext, isRovoAgentProfile } from "@/components/projects/rovo/data/agent-profiles";
@@ -321,7 +320,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	useHmrReloadSuppression(chat.isStreaming);
 	const chatRef = useRef(chat);
 	chatRef.current = chat;
-	const [wikiMemoryStatus, setWikiMemoryStatus] = useState<WikiStatus | null>(null);
 	const [availableHermesSkills, setAvailableHermesSkills] = useState<HermesSkillSummary[]>([]);
 	const [skillDrafts, setSkillDrafts] = useState<HermesSkillDraftSummary[]>([]);
 	const [activePendingSkillDraftIndex, setActivePendingSkillDraftIndex] = useState(0);
@@ -338,44 +336,22 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		const pendingDraftIdSet = new Set(activeThreadRecord?.hermesContext?.pendingDraftIds ?? []);
 		return skillDrafts.filter((draft) => draft.status === "pending" && pendingDraftIdSet.has(draft.id));
 	}, [activeThreadRecord?.hermesContext?.pendingDraftIds, skillDrafts]);
-	const activeThreadMemoryProposals = useMemo(() => {
-		const threadId = activeThreadRecord?.id;
-		if (!threadId || !wikiMemoryStatus?.recentProposals) {
-			return [];
-		}
-
-		const recentProposalIdSet = new Set(activeThreadRecord?.hermesContext?.recentMemoryProposalIds ?? []);
-		const matchingById = wikiMemoryStatus.recentProposals.filter((proposal) => recentProposalIdSet.has(proposal.id));
-		if (matchingById.length > 0) {
-			return matchingById.slice(0, 3);
-		}
-
-		return wikiMemoryStatus.recentProposals
-			.filter((proposal) => proposal.sourceThreadId === threadId)
-			.slice(0, 3);
-	}, [activeThreadRecord?.hermesContext?.recentMemoryProposalIds, activeThreadRecord?.id, wikiMemoryStatus?.recentProposals]);
 	const activePendingSkillDraft = pendingThreadSkillDrafts[activePendingSkillDraftIndex] ?? pendingThreadSkillDrafts[0] ?? null;
 
 	const hermesSurfaceMountedRef = useRef(true);
-	const hermesSurfaceLastSerializedRef = useRef({ memory: "", skills: "", drafts: "" });
+	const hermesSurfaceLastSerializedRef = useRef({ skills: "", drafts: "" });
 	const loadHermesSurfaceData = useCallback(async () => {
 		if (typeof document !== "undefined" && document.visibilityState !== "visible") {
 			return;
 		}
-		const [memoryResult, skillsResult, draftsResult] = await Promise.allSettled([fetchWikiStatus(), fetchSkills(), fetchSkillDrafts("pending")]);
+		const [skillsResult, draftsResult] = await Promise.allSettled([fetchSkills(), fetchSkillDrafts("pending")]);
 		if (!hermesSurfaceMountedRef.current) {
 			return;
 		}
 
-		const nextMemory = memoryResult.status === "fulfilled" ? memoryResult.value : null;
 		const nextSkills = skillsResult.status === "fulfilled" ? skillsResult.value : [];
 		const nextDrafts = draftsResult.status === "fulfilled" ? draftsResult.value : [];
 
-		const memoryKey = JSON.stringify(nextMemory);
-		if (memoryKey !== hermesSurfaceLastSerializedRef.current.memory) {
-			hermesSurfaceLastSerializedRef.current.memory = memoryKey;
-			setWikiMemoryStatus(nextMemory);
-		}
 		const skillsKey = JSON.stringify(nextSkills);
 		if (skillsKey !== hermesSurfaceLastSerializedRef.current.skills) {
 			hermesSurfaceLastSerializedRef.current.skills = skillsKey;
@@ -681,7 +657,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	// Plan approval card support
 	const activePendingPlan = useMemo(() => getLatestPendingPlanWidget(chat.messages), [chat.messages]);
 	const [dismissedApprovalCardKey, setDismissedApprovalCardKey] = useState<string | null>(null);
-	const [dismissedMemoryBarThreadId, setDismissedMemoryBarThreadId] = useState<string | null>(null);
 	const [isSubmittingPlanApproval, setIsSubmittingPlanApproval] = useState(false);
 	const pendingPlanKey = activePendingPlan?.planWidget.deferredToolCallId ?? null;
 	const shouldShowApprovalCard = activePendingPlan !== null && pendingPlanKey !== dismissedApprovalCardKey && !shouldShowQuestionCard && !chat.isStreaming;
@@ -2204,16 +2179,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						</>
 					) : (
 						<>
-							{activeThreadRecord?.id && activeThreadMemoryProposals.length > 0 && dismissedMemoryBarThreadId !== activeThreadRecord.id ? (
-								<div className="mb-3">
-									<RovoAppHermesMemoryBar
-										onDismiss={() => setDismissedMemoryBarThreadId(activeThreadRecord.id)}
-										onOpenMemories={() => router.push(`/rovo/memories?threadId=${encodeURIComponent(activeThreadRecord.id)}`)}
-										proposals={activeThreadMemoryProposals}
-										threadId={activeThreadRecord.id}
-									/>
-								</div>
-							) : null}
 							{activePendingSkillDraft ? (
 								<div className="mb-3">
 									<RovoAppHermesSkillDraftBar
