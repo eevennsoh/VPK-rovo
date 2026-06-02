@@ -23,6 +23,10 @@ const AGENT_TEST_PANEL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-agent-test-panel.tsx"),
 	"utf8",
 );
+const CUSTOM_AGENTS_TABLE_SOURCE = fs.readFileSync(
+	path.join(__dirname, "rovo-app-custom-agents-table.tsx"),
+	"utf8",
+);
 const CHAT_PANEL_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/sidebar-chat/page.tsx"),
 	"utf8",
@@ -70,6 +74,40 @@ test("Studio landing empty state is title-only by default", () => {
 	assert.match(MESSAGES_SOURCE, /function hasRovoAppEmptyStateIllustration\(emptyState: RovoAppEmptyState\): emptyState is RovoAppIllustratedEmptyState \{[\s\S]*return "illustrationClassName" in emptyState;/u);
 	assert.match(MESSAGES_SOURCE, /const hasEmptyStateIllustration = hasRovoAppEmptyStateIllustration\(emptyState\);/u);
 	assert.match(MESSAGES_SOURCE, /\{hasEmptyStateIllustration \? \([\s\S]*<motion\.div className=\{cn\(emptyState\.illustrationClassName, "relative"\)/u);
+});
+
+test("Studio default landing prompt growth pushes below the initial home position", () => {
+	assert.match(SHELL_SOURCE, /const defaultHomeTopSpacerRef = useRef<HTMLDivElement \| null>\(null\);/u);
+	assert.match(SHELL_SOURCE, /const \[defaultHomeTopSpacerMeasurement, setDefaultHomeTopSpacerMeasurement\] = useState<\{ key: string; height: number \} \| null>\(null\);/u);
+	assert.match(SHELL_SOURCE, /const defaultHomeTopSpacerMeasurementKey = isDefaultAgentHomeState \? `\$\{shellSize\.width\}:\$\{shellSize\.height\}` : null;/u);
+	assert.match(SHELL_SOURCE, /const defaultHomeTopSpacerHeight = defaultHomeTopSpacerMeasurement\?\.key === defaultHomeTopSpacerMeasurementKey/u);
+	assert.match(SHELL_SOURCE, /useLayoutEffect\(\(\) => \{[\s\S]*spacerElement\.getBoundingClientRect\(\)\.height[\s\S]*setDefaultHomeTopSpacerMeasurement\(\{[\s\S]*key: defaultHomeTopSpacerMeasurementKey,[\s\S]*height: spacerHeight,[\s\S]*\}\);[\s\S]*\}, \[defaultHomeTopSpacerHeight, defaultHomeTopSpacerMeasurementKey, isDefaultAgentHomeState/u);
+	assert.match(SHELL_SOURCE, /ref=\{isDefaultAgentHomeState \? defaultHomeTopSpacerRef : undefined\}/u);
+	assert.match(SHELL_SOURCE, /isDefaultAgentHomeState && defaultHomeTopSpacerHeight !== null \? "shrink-0" : "flex-1 shrink"/u);
+	assert.match(SHELL_SOURCE, /style=\{isDefaultAgentHomeState && defaultHomeTopSpacerHeight !== null \? \{ flexBasis: defaultHomeTopSpacerHeight \} : undefined\}/u);
+});
+
+test("Studio default landing lists custom session agents below the composer", () => {
+	assert.match(SHELL_SOURCE, /import \{ StudioCustomAgentsTable \} from "@\/components\/projects\/studio\/components\/rovo-app-custom-agents-table";/u);
+	assert.match(SHELL_SOURCE, /const shouldShowStudioCustomAgentsTable = isDefaultAgentHomeState && studioAgentRegistry\.sessionAgentEntries\.length > 0;/u);
+	assert.match(SHELL_SOURCE, /const handleDeleteStudioAgent = useCallback\([\s\S]*studioAgentRegistry\.removeSessionAgent\(agentId\);[\s\S]*\},[\s\S]*\[activeAgentConfig\?\.profileId, studioAgentRegistry\]/u);
+	assert.match(SHELL_SOURCE, /<StudioCustomAgentsTable[\s\S]*entries=\{studioAgentRegistry\.sessionAgentEntries\}[\s\S]*onEditAgent=\{handleStudioSidebarAgentSelect\}/u);
+	assert.match(SHELL_SOURCE, /<StudioCustomAgentsTable[\s\S]*onDeleteAgent=\{handleDeleteStudioAgent\}/u);
+	assert.match(SHELL_SOURCE, /<RovoAppSidebar[\s\S]*onDeleteAgent=\{handleDeleteStudioAgent\}/u);
+
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /DropdownMenu,[\s\S]*DropdownMenuContent,[\s\S]*DropdownMenuGroup,[\s\S]*DropdownMenuItem,[\s\S]*DropdownMenuTrigger/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{[\s\S]*Table,[\s\S]*TableBody,[\s\S]*TableCell,[\s\S]*TableHead,[\s\S]*TableHeader,[\s\S]*TableRow,[\s\S]*\} from "@\/components\/ui\/table";/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<TableHead[\s\S]*Name[\s\S]*Active users[\s\S]*Version[\s\S]*Last modified/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /entry\.publishStatus === "published" \? "V1" : "Draft"/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /formatRelativeModifiedTime\(entry\.lastTouchedAt\)/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<DropdownMenuItem elemBefore=\{<EditIcon label="" \/>\} onSelect=\{\(\) => onEditAgent\(entry\.profile\.id\)\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<DropdownMenuItem variant="destructive" elemBefore=\{<DeleteIcon label="" \/>\} onSelect=\{\(\) => onDeleteAgent\(entry\.profile\.id\)\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /onClick=\{\(\) => onEditAgent\(entry\.profile\.id\)\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed=\{isPinned\}[\s\S]*render=\{isPinned \? <PinFilledIcon label="" size="small" \/> : <PinIcon label="" size="small" \/>\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:\[&_svg\]:text-icon-subtle!/u);
+	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /text-icon-selected/u);
 });
 
 test("Studio start-from-scratch scribble replays on each composer hover reveal", () => {
