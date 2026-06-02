@@ -1144,7 +1144,7 @@ function HomeStarterBento({
 					</AnimatePresence>
 				</div>
 				{canShowMore ? (
-					<div className="pointer-events-none z-10 flex justify-center max-sm:static max-sm:mt-2 sm:absolute sm:inset-x-0 sm:bottom-0 sm:pb-2">
+					<div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-2">
 						<Button
 							type="button"
 							aria-label="Browse all agents"
