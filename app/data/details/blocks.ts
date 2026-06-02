@@ -7,7 +7,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 		usage: `import EditorPalette from "@/components/blocks/editor-palette/page";
 
 <EditorPalette />`,
-		demoLayout: { previewHeight: "default" },
+		demoLayout: { previewHeight: "fit" },
 		props: [
 			{
 				name: "mentionSources",

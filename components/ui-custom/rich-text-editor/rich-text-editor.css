@@ -391,7 +391,7 @@
 }
 
 .rich-text-command-menu-borderless {
-	border-color: transparent;
+	border: 0;
 }
 
 .rich-text-command-menu-showcase {
@@ -449,6 +449,11 @@
 	cursor: not-allowed;
 }
 
+.rich-text-command-menu-avatar {
+	width: 24px;
+	height: 24px;
+}
+
 .rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .rich-text-command-menu-item {
 	height: 48px;
 	padding-top: 6px;
@@ -467,6 +472,16 @@
 	display: flex;
 	min-width: 0;
 	flex-direction: column;
+}
+
+.rich-text-command-menu-nested-copy {
+	height: 34px;
+	justify-content: center;
+	overflow: hidden;
+}
+
+.rich-text-command-menu-nested-copy-revealable {
+	justify-content: flex-start;
 }
 
 .rich-text-command-menu-label {
@@ -489,14 +504,7 @@
 }
 
 .rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .rich-text-command-menu-description {
-	opacity: 0;
-	transition: opacity var(--duration-fast) var(--ease-out);
-}
-
-.rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .rich-text-command-menu-item:hover .rich-text-command-menu-description,
-.rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .rich-text-command-menu-item:focus-visible .rich-text-command-menu-description,
-.rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .rich-text-command-menu-item-selected .rich-text-command-menu-description {
-	opacity: 1;
+	pointer-events: none;
 }
 
 .rich-text-command-menu-shortcut {

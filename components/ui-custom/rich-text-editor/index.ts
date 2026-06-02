@@ -13,6 +13,7 @@ export {
 	getMentionTargetItems,
 	getSlashCommandCategoryItems,
 	type RichTextCommandItem,
+	type RichTextMentionMenuCategory,
 	type RichTextSlashAction,
 	type RichTextSuggestionMenuItem,
 } from "./suggestion-menu";

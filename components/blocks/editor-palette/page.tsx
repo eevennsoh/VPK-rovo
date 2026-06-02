@@ -6,9 +6,11 @@ import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
 	RichTextEditor,
 	RichTextSuggestionMenu,
+	getMentionChildItems,
 	getMentionTargetItems,
 	getSlashCommandCategoryItems,
 	getSlashCommandFormatItems,
+	type RichTextMentionMenuCategory,
 	type RichTextMentionSources,
 } from "@/components/ui-custom/rich-text-editor";
 import { token } from "@/lib/tokens";
@@ -26,6 +28,19 @@ export interface EditorPaletteProps {
 
 function noop(): void {}
 
+const NESTED_MENTION_SHOWCASES: readonly {
+	category: RichTextMentionMenuCategory;
+	title: string;
+	trigger: "@" | "/";
+	caption: string;
+}[] = [
+	{ category: "subagent", title: "Subagents", trigger: "@", caption: "Subagents nested" },
+	{ category: "people-team", title: "People and team", trigger: "@", caption: "People and team nested" },
+	{ category: "skill", title: "Skills", trigger: "/", caption: "Skills nested" },
+	{ category: "tool", title: "Tools", trigger: "/", caption: "Tools nested" },
+	{ category: "knowledge", title: "Knowledge", trigger: "/", caption: "Knowledge nested" },
+];
+
 export default function EditorPalette({
 	mentionSources = EDITOR_PALETTE_MENTION_SOURCES,
 	showLiveEditor = true,
@@ -37,11 +52,11 @@ export default function EditorPalette({
 
 	return (
 		<div
-			className={cn("flex w-full min-w-[1008px] max-w-[1120px] flex-col", className)}
+			className={cn("flex w-full max-w-[1440px] flex-col", className)}
 			style={{ gap: token("space.400") }}
 		>
 			<div
-				className="flex w-full flex-nowrap items-start justify-start overflow-x-auto lg:justify-center"
+				className="grid w-full grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] items-start justify-items-center"
 				style={{ gap: token("space.300") }}
 			>
 				<PalettePanel trigger="@" caption="Mention">
@@ -65,6 +80,20 @@ export default function EditorPalette({
 						onSelect={noop}
 					/>
 				</PalettePanel>
+
+				{NESTED_MENTION_SHOWCASES.map(({ category, caption, title, trigger }) => (
+					<PalettePanel key={category} trigger={trigger} caption={caption}>
+						<RichTextSuggestionMenu
+							className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
+							title={title}
+							emptyLabel="No matching items"
+							items={getMentionChildItems(mentionSources, category)}
+							selectedIndex={0}
+							onBack={noop}
+							onSelect={noop}
+						/>
+					</PalettePanel>
+				))}
 
 				<PalettePanel trigger="/" caption="Format nested">
 					<RichTextSuggestionMenu
