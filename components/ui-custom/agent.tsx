@@ -1,7 +1,7 @@
 "use client";
 
 import type { Tool } from "ai";
-import { motion, useReducedMotion, type MotionProps } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion, type MotionProps } from "motion/react";
 import type { ComponentProps, CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
@@ -59,9 +59,6 @@ import {
 	RichTextEditor,
 } from "@/components/ui-custom/rich-text-editor";
 import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
-import SvgTracing from "@/components/visual/svg-tracing";
-import { DEFAULT_SVG_TRACE_CONFIG, type SvgTraceConfig } from "@/components/visual/svg-tracing/data";
-import type { SvgTraceShape } from "@/components/visual/svg-tracing/lib";
 import { token } from "@/lib/tokens";
 import type {
 	HermesSkillSummary,
@@ -826,57 +823,22 @@ function AgentCompactBentoCardGlowLayers({ iconSrc }: Readonly<{ iconSrc: string
 	);
 }
 
-// Mirrors the Studio landing composer's "scratch scribble": the same squiggle
-// shape and rainbow draw-eat tracing. Looped here so it persists as a hint
-// underline beneath the word "templates".
-const AGENT_COMPACT_BENTO_HINT_SCRIBBLE_SHAPE: SvgTraceShape = {
-	id: "agent-compact-templates-hint-scribble",
-	label: "Templates hint scribble",
-	viewBox: "0 0 200 44",
-	paths: [
-		{
-			d: "M8 30 C26 8 33 6 40 14 C47 22 44 40 56 40 C70 40 82 12 100 12 C112 12 116 28 132 26 C156 23 176 22 192 26",
-		},
-	],
-};
-
-const AGENT_COMPACT_BENTO_HINT_SCRIBBLE_CONFIG: SvgTraceConfig = {
-	...DEFAULT_SVG_TRACE_CONFIG,
-	duration: 0.9,
-	strokeWidth: 2,
-	colorStopCount: 6,
-	segmentCap: "butt",
-	easingId: "easeInOutCubic",
-	traceMode: "draw-eat",
-	loop: true,
-	repeatCount: 1,
-	showOutline: false,
-};
-
-function AgentCompactBentoTemplatesHint() {
-	const shouldReduceMotion = useReducedMotion();
-
+function AgentCompactBentoTemplatesHint({ onDismiss }: Readonly<{ onDismiss?: () => void }>) {
 	return (
-		<div className="relative z-[3] mb-6 pl-1">
-			<span className="text-xs font-medium text-text-subtle">
-				Start with these agent{" "}
-				<span className="relative inline-block">
-					templates
-					<span className="pointer-events-none absolute inset-x-0 -bottom-5 block" aria-hidden="true">
-						<SvgTracing
-							shape={AGENT_COMPACT_BENTO_HINT_SCRIBBLE_SHAPE}
-							config={AGENT_COMPACT_BENTO_HINT_SCRIBBLE_CONFIG}
-							playing={!shouldReduceMotion}
-							svgClassName="h-3 w-full"
-						/>
-					</span>
-				</span>
-			</span>
+		<div className="relative z-[3] mb-3 flex items-center justify-between gap-3 px-1">
+			<span className="text-xs font-medium text-text-subtle">Start with these agent templates</span>
+			<button
+				type="button"
+				onClick={onDismiss}
+				className="shrink-0 text-xs font-medium text-link underline-offset-2 hover:underline active:text-link-pressed focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+			>
+				Not now
+			</button>
 		</div>
 	);
 }
 
-function AgentCompactOperationsBento() {
+function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () => void }>) {
 	const shouldReduceMotion = useReducedMotion();
 	const [browseOpen, setBrowseOpen] = useState(false);
 	const tileRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -942,15 +904,19 @@ function AgentCompactOperationsBento() {
 	}, []);
 
 	return (
-		<section
+		<motion.section
 			aria-label="Operations prompt starters"
 			data-slot="agent-compact-operations-bento"
 			className="@container/bento relative flex min-h-0 flex-1 flex-col"
 			onPointerLeave={resetBentoPointer}
 			onPointerMove={handleBentoPointerMove}
-			style={AGENT_COMPACT_BENTO_CARD_GLOW_EFFECT_STYLE}
+			style={{ ...AGENT_COMPACT_BENTO_CARD_GLOW_EFFECT_STYLE, willChange: "transform, opacity" }}
+			initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+			animate={{ opacity: 1, y: 0 }}
+			exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
+			transition={{ duration: 0.24, ease: [0, 0.4, 0, 1] }}
 		>
-			<AgentCompactBentoTemplatesHint />
+			<AgentCompactBentoTemplatesHint onDismiss={onDismiss} />
 			{/*
 				`-mt-2 pt-2` gives the masked content top headroom that nets to zero
 				visual shift: the bottom-fade mask clips its children to the box, so
@@ -1074,7 +1040,7 @@ function AgentCompactOperationsBento() {
 				onOpenChange={setBrowseOpen}
 				onSelectAgent={() => setBrowseOpen(false)}
 			/>
-		</section>
+		</motion.section>
 	);
 }
 
@@ -1741,6 +1707,7 @@ export const AgentConfigFields = memo(
 	}: Readonly<AgentConfigFieldsProps>) => {
 		void onListItemChange;
 		const isFilledConfig = hasFilledAgentConfig(config);
+		const [templatesDismissed, setTemplatesDismissed] = useState(false);
 
 		return (
 			<div
@@ -1761,7 +1728,18 @@ export const AgentConfigFields = memo(
 							/>
 						</div>
 						<AgentInstructionsComposer
-							bottomSlot={isFilledConfig ? undefined : <AgentCompactOperationsBento />}
+							bottomSlot={
+								isFilledConfig ? undefined : (
+									<AnimatePresence>
+										{templatesDismissed ? null : (
+											<AgentCompactOperationsBento
+												key="agent-compact-operations-bento"
+												onDismiss={() => setTemplatesDismissed(true)}
+											/>
+										)}
+									</AnimatePresence>
+								)
+							}
 							bottomSlotClassName={isFilledConfig ? undefined : "mt-auto flex min-h-0 flex-col pt-4"}
 							className={cn("flex flex-col", isFilledConfig ? "min-h-[560px]" : "min-h-0 flex-1")}
 							contentClassName="min-h-[240px] pt-4"
