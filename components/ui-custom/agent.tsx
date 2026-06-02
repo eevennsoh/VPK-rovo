@@ -97,6 +97,7 @@ const AGENT_PROFILE_INLINE_EDIT_BACKDROP_MOTION_PROPS = {
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE = 24;
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP = 8;
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_REVEAL_DISTANCE = 72;
+const AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT = 88;
 
 const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
 	"dev-agents": "#82B536",
@@ -141,6 +142,20 @@ function getAgentFilledSummaryAddLabel(field: AgentConfigListFieldName, isEmpty:
 	}
 
 	return isEmpty ? AGENT_EMPTY_ROW_ADD_LABELS[field] ?? "Add" : "Add";
+}
+
+function openAgentDirectoryOrAppendListItem(
+	directory: AgentDirectoryKind,
+	field: AgentConfigListFieldName,
+	onOpenDirectory?: (directory: AgentDirectoryKind) => void,
+	onAppendListItem?: (field: AgentConfigListFieldName) => void,
+): void {
+	if (onOpenDirectory) {
+		onOpenDirectory(directory);
+		return;
+	}
+
+	onAppendListItem?.(field);
 }
 
 function getAgentCompactEmptyConfigNavItems(config?: AgentConfigFormValue) {
@@ -322,6 +337,8 @@ export type AgentConfigListFieldName =
 	| "subagents"
 	| "knowledge"
 	| "conversationStarters";
+
+export type AgentDirectoryKind = "knowledge" | "tools" | "skills";
 
 export interface AgentConfigFormValue {
 	name?: string;
@@ -645,6 +662,7 @@ interface AgentActionTileProps {
 interface AgentMissingConfigActionsProps {
 	config: AgentConfigFormValue;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
+	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
 	screenAssistantTargetPrefix?: string;
 }
 
@@ -693,6 +711,7 @@ function AgentActionTile({
 function AgentMissingConfigActions({
 	config,
 	onAppendListItem,
+	onOpenDirectory,
 	screenAssistantTargetPrefix,
 }: Readonly<AgentMissingConfigActionsProps>) {
 	const actions: ReadonlyArray<AgentMissingConfigAction | null> = [
@@ -707,6 +726,7 @@ function AgentMissingConfigActions({
 			? {
 					agentFieldName: "skills",
 					label: "Add skills",
+					onClick: () => openAgentDirectoryOrAppendListItem("skills", "skills", onOpenDirectory, onAppendListItem),
 					screenAssistantTargetId: screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined,
 				}
 			: null,
@@ -714,7 +734,7 @@ function AgentMissingConfigActions({
 			? {
 					agentFieldName: "tools",
 					label: "Add tools",
-					onClick: () => onAppendListItem?.("tools"),
+					onClick: () => openAgentDirectoryOrAppendListItem("tools", "tools", onOpenDirectory, onAppendListItem),
 					screenAssistantTargetId: screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined,
 				}
 			: null,
@@ -753,7 +773,16 @@ type AgentCompactConfigNavItem = ReturnType<typeof getAgentCompactEmptyConfigNav
 function getAgentCompactConfigNavItemOnClick(
 	item: AgentCompactConfigNavItem,
 	onAppendListItem?: (field: AgentConfigListFieldName) => void,
+	onOpenDirectory?: (directory: AgentDirectoryKind) => void,
 ): (() => void) | undefined {
+	if (item.agentFieldName === "tools") {
+		return () => openAgentDirectoryOrAppendListItem("tools", "tools", onOpenDirectory, onAppendListItem);
+	}
+
+	if (item.agentFieldName === "skills") {
+		return () => openAgentDirectoryOrAppendListItem("skills", "skills", onOpenDirectory, onAppendListItem);
+	}
+
 	if ("listFieldName" in item) {
 		return () => onAppendListItem?.(item.listFieldName);
 	}
@@ -786,6 +815,7 @@ function AgentCompactConfigNavButton({
 function AgentCompactEmptyConfigNav({
 	config,
 	onAppendListItem,
+	onOpenDirectory,
 	reasoningValue,
 	onReasoningValueChange,
 	knowledgeMode,
@@ -794,6 +824,7 @@ function AgentCompactEmptyConfigNav({
 }: Readonly<{
 	config?: AgentConfigFormValue;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
+	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
 	reasoningValue: ReasoningModeValue;
 	onReasoningValueChange: (next: ReasoningModeValue) => void;
 	knowledgeMode: KnowledgeModeValue;
@@ -882,7 +913,7 @@ function AgentCompactEmptyConfigNav({
 						<AgentCompactConfigNavButton
 							item={item}
 							key={item.agentFieldName}
-							onClick={getAgentCompactConfigNavItemOnClick(item, onAppendListItem)}
+							onClick={getAgentCompactConfigNavItemOnClick(item, onAppendListItem, onOpenDirectory)}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:${item.agentFieldName}` : undefined}
 						/>
 					);
@@ -920,7 +951,7 @@ function AgentCompactEmptyConfigNav({
 										<DropdownMenuItem
 											elemAfter={item.count > 0 ? <Badge>{item.count}</Badge> : undefined}
 											key={item.agentFieldName}
-											onClick={getAgentCompactConfigNavItemOnClick(item, onAppendListItem)}
+											onClick={getAgentCompactConfigNavItemOnClick(item, onAppendListItem, onOpenDirectory)}
 										>
 											{item.label}
 										</DropdownMenuItem>
@@ -1293,6 +1324,7 @@ interface AgentFilledConfigSummaryProps {
 	knowledgeMode?: KnowledgeModeValue;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onKnowledgeModeChange?: (next: KnowledgeModeValue) => void;
+	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	screenAssistantTargetPrefix?: string;
@@ -1305,6 +1337,7 @@ function AgentFilledConfigSummary({
 	knowledgeMode,
 	onAppendListItem,
 	onKnowledgeModeChange,
+	onOpenDirectory,
 	onRemoveListItem,
 	onTextChange,
 	screenAssistantTargetPrefix,
@@ -1357,7 +1390,7 @@ function AgentFilledConfigSummary({
 				<AgentKnowledgeRow
 					addLabel={showAddButtons ? "Add" : undefined}
 					items={knowledgeItems}
-					onAdd={() => onAppendListItem?.("knowledge")}
+					onAdd={() => openAgentDirectoryOrAppendListItem("knowledge", "knowledge", onOpenDirectory, onAppendListItem)}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
 					onValueChange={onKnowledgeModeChange}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
@@ -1369,7 +1402,7 @@ function AgentFilledConfigSummary({
 					hideWhenEmpty={hideEmptyRows}
 					items={knowledgeItems}
 					label="Knowledge"
-					onAdd={() => onAppendListItem?.("knowledge")}
+					onAdd={() => openAgentDirectoryOrAppendListItem("knowledge", "knowledge", onOpenDirectory, onAppendListItem)}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
 				/>
@@ -1385,7 +1418,7 @@ function AgentFilledConfigSummary({
 					agentFieldName="tools"
 					items={toolItems}
 					label="Tools"
-					onAdd={() => onAppendListItem?.("tools")}
+					onAdd={() => openAgentDirectoryOrAppendListItem("tools", "tools", onOpenDirectory, onAppendListItem)}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("tools", index) : undefined}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
 				/>
@@ -1400,7 +1433,7 @@ function AgentFilledConfigSummary({
 					hideWhenEmpty={hideEmptyRows}
 					items={skillItems}
 					label="Skills"
-					onAdd={() => onAppendListItem?.("skills")}
+					onAdd={() => openAgentDirectoryOrAppendListItem("skills", "skills", onOpenDirectory, onAppendListItem)}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("skills", index) : undefined}
 					variant="skill"
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined}
@@ -2031,6 +2064,7 @@ function AgentInstructionsComposer({
 	contentClassName,
 	editorClassName,
 	instructions,
+	onOpenDirectory,
 	onInstructionsChange,
 	screenAssistantTargetId,
 	showSectionLabel = true,
@@ -2042,6 +2076,7 @@ function AgentInstructionsComposer({
 	contentClassName?: string;
 	editorClassName?: string;
 	instructions?: string;
+	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
 	onInstructionsChange?: (value: string) => void;
 	screenAssistantTargetId?: string;
 	showSectionLabel?: boolean;
@@ -2054,6 +2089,22 @@ function AgentInstructionsComposer({
 		skill: skills,
 		knowledge,
 	}), [knowledge, skills]);
+	const handleInsertReferenceOption = useCallback((category: string): boolean => {
+		if (category === "knowledge") {
+			onOpenDirectory?.("knowledge");
+			return Boolean(onOpenDirectory);
+		}
+		if (category === "tool") {
+			onOpenDirectory?.("tools");
+			return Boolean(onOpenDirectory);
+		}
+		if (category === "skill") {
+			onOpenDirectory?.("skills");
+			return Boolean(onOpenDirectory);
+		}
+
+		return false;
+	}, [onOpenDirectory]);
 
 	useEffect(() => {
 		const abortController = new AbortController();
@@ -2113,7 +2164,7 @@ function AgentInstructionsComposer({
 						</button>
 					</p>
 				)}
-				showBubbleMenu={false}
+				onInsertReferenceOption={handleInsertReferenceOption}
 				toolbarBelowSlot={toolbarBelowSlot}
 				value={instructions}
 				mentionSources={mentionSources}
@@ -2195,6 +2246,7 @@ interface AgentConfigSummaryProps {
 	config: AgentConfigFormValue;
 	isFilledConfig: boolean;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
+	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	screenAssistantTargetPrefix?: string;
@@ -2204,6 +2256,7 @@ function AgentConfigSummary({
 	config,
 	isFilledConfig,
 	onAppendListItem,
+	onOpenDirectory,
 	onRemoveListItem,
 	onTextChange,
 	screenAssistantTargetPrefix,
@@ -2212,6 +2265,7 @@ function AgentConfigSummary({
 		<AgentFilledConfigSummary
 			config={config}
 			onAppendListItem={onAppendListItem}
+			onOpenDirectory={onOpenDirectory}
 			onRemoveListItem={onRemoveListItem}
 			onTextChange={onTextChange}
 			screenAssistantTargetPrefix={screenAssistantTargetPrefix}
@@ -2220,6 +2274,7 @@ function AgentConfigSummary({
 		<AgentMissingConfigActions
 			config={config}
 			onAppendListItem={onAppendListItem}
+			onOpenDirectory={onOpenDirectory}
 			screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 		/>
 	);
@@ -2229,6 +2284,7 @@ function AgentCompactConfigToolbarBelow({
 	config,
 	isFilledConfig,
 	onAppendListItem,
+	onOpenDirectory,
 	onRemoveListItem,
 	onTextChange,
 	screenAssistantTargetPrefix,
@@ -2327,6 +2383,7 @@ function AgentCompactConfigToolbarBelow({
 							knowledgeMode={knowledgeMode}
 							onKnowledgeModeChange={setKnowledgeMode}
 							onAppendListItem={onAppendListItem}
+							onOpenDirectory={onOpenDirectory}
 							onRemoveListItem={onRemoveListItem}
 							onTextChange={onTextChange}
 							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
@@ -2349,6 +2406,7 @@ function AgentCompactConfigToolbarBelow({
 						<AgentCompactEmptyConfigNav
 							config={config}
 							onAppendListItem={onAppendListItem}
+							onOpenDirectory={onOpenDirectory}
 							reasoningValue={reasoningValue}
 							onReasoningValueChange={setReasoningValue}
 							knowledgeMode={knowledgeMode}
@@ -2371,6 +2429,7 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	onListItemChange?: (field: AgentConfigListFieldName, index: number, value: string) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
+	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
 	screenAssistantTargetPrefix?: string;
 }
 
@@ -2383,14 +2442,70 @@ export const AgentConfigFields = memo(
 		layout = "default",
 		onListItemChange,
 		onAppendListItem,
+		onOpenDirectory,
 		onRemoveListItem,
 		onTextChange,
 		screenAssistantTargetPrefix,
 		...props
 	}: Readonly<AgentConfigFieldsProps>) => {
-		void onListItemChange;
 		const isFilledConfig = hasFilledAgentConfig(config);
 		const [templatesDismissed, setTemplatesDismissed] = useState(false);
+		const compactFooterOverlayRef = useRef<HTMLDivElement | null>(null);
+		const [compactFooterOverlayHeight, setCompactFooterOverlayHeight] = useState(AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT);
+		const compactBentoFooterOffset = Math.max(
+			0,
+			compactFooterOverlayHeight - AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT,
+		);
+		const dismissTemplateTiles = useCallback(() => {
+			setTemplatesDismissed(true);
+		}, []);
+		const handleTextChange = useCallback((field: AgentConfigTextFieldName, value: string) => {
+			dismissTemplateTiles();
+			onTextChange?.(field, value);
+		}, [dismissTemplateTiles, onTextChange]);
+		const handleListItemChange = useCallback((field: AgentConfigListFieldName, index: number, value: string) => {
+			dismissTemplateTiles();
+			onListItemChange?.(field, index, value);
+		}, [dismissTemplateTiles, onListItemChange]);
+		const handleRemoveListItem = useCallback((field: AgentConfigListFieldName, index: number) => {
+			dismissTemplateTiles();
+			onRemoveListItem?.(field, index);
+		}, [dismissTemplateTiles, onRemoveListItem]);
+		const handleAppendListItem = useCallback((field: AgentConfigListFieldName) => {
+			dismissTemplateTiles();
+			onAppendListItem?.(field);
+		}, [dismissTemplateTiles, onAppendListItem]);
+		const handleOpenDirectory = useCallback((directory: AgentDirectoryKind) => {
+			dismissTemplateTiles();
+			onOpenDirectory?.(directory);
+		}, [dismissTemplateTiles, onOpenDirectory]);
+
+		useLayoutEffect(() => {
+			if (layout !== "compact") {
+				return;
+			}
+
+			const node = compactFooterOverlayRef.current;
+
+			if (!node) {
+				return;
+			}
+
+			const updateFooterOverlayHeight = () => {
+				setCompactFooterOverlayHeight(Math.ceil(node.getBoundingClientRect().height));
+			};
+
+			updateFooterOverlayHeight();
+
+			if (typeof ResizeObserver === "undefined") {
+				return;
+			}
+
+			const resizeObserver = new ResizeObserver(updateFooterOverlayHeight);
+			resizeObserver.observe(node);
+
+			return () => resizeObserver.disconnect();
+		}, [layout]);
 
 		return (
 			<div
@@ -2401,46 +2516,56 @@ export const AgentConfigFields = memo(
 				{...props}
 			>
 				{layout === "compact" ? (
-					<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+					<div
+						className="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2"
+						style={{ paddingBottom: AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT }}
+					>
 						<div className="flex flex-col gap-4">
 							<AgentConfigProfile
 								config={config}
 								avatarSrc={avatarSrc}
-								onTextChange={onTextChange}
+								onTextChange={handleTextChange}
 								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 							/>
 						</div>
 						<AgentInstructionsComposer
-							bottomSlot={(
-								<>
-									{isFilledConfig ? null : (
-										<AnimatePresence>
-											{templatesDismissed ? null : (
-												<AgentCompactOperationsBento
-													key="agent-compact-operations-bento"
-													onDismiss={() => setTemplatesDismissed(true)}
-												/>
-											)}
-										</AnimatePresence>
-									)}
-									<AgentCompactConfigToolbarBelow
-										config={config}
-										isFilledConfig={isFilledConfig}
-										onAppendListItem={onAppendListItem}
-										onRemoveListItem={onRemoveListItem}
-										onTextChange={onTextChange}
-										screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-									/>
-								</>
+							bottomSlot={isFilledConfig ? null : (
+								<div
+									className="transition-[padding-bottom] duration-200 ease-out"
+									style={{ paddingBottom: compactBentoFooterOffset }}
+								>
+									<AnimatePresence>
+										{templatesDismissed ? null : (
+											<AgentCompactOperationsBento
+												key="agent-compact-operations-bento"
+												onDismiss={() => setTemplatesDismissed(true)}
+											/>
+										)}
+									</AnimatePresence>
+								</div>
 							)}
 							bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-4"
-							className={cn("flex flex-col", isFilledConfig ? "min-h-[560px]" : "min-h-0 flex-1")}
+							className={cn("relative flex flex-col", isFilledConfig ? "min-h-[560px]" : "min-h-0 flex-1")}
 							contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[8rem]")}
 							instructions={config.instructions}
-							onInstructionsChange={(value) => onTextChange?.("instructions", value)}
+							onOpenDirectory={handleOpenDirectory}
+							onInstructionsChange={(value) => handleTextChange("instructions", value)}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 							showSectionLabel={false}
 						/>
+						<div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-surface" ref={compactFooterOverlayRef}>
+							<div className="pointer-events-auto">
+								<AgentCompactConfigToolbarBelow
+									config={config}
+									isFilledConfig={isFilledConfig}
+									onAppendListItem={handleAppendListItem}
+									onOpenDirectory={handleOpenDirectory}
+									onRemoveListItem={handleRemoveListItem}
+									onTextChange={handleTextChange}
+									screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+								/>
+							</div>
+						</div>
 					</div>
 				) : (
 					<>
@@ -2450,15 +2575,16 @@ export const AgentConfigFields = memo(
 							<AgentConfigProfile
 								config={config}
 								avatarSrc={avatarSrc}
-								onTextChange={onTextChange}
+								onTextChange={handleTextChange}
 								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 							/>
 							<AgentConfigSummary
 								config={config}
 								isFilledConfig={isFilledConfig}
-								onAppendListItem={onAppendListItem}
-								onRemoveListItem={onRemoveListItem}
-								onTextChange={onTextChange}
+								onAppendListItem={handleAppendListItem}
+								onOpenDirectory={handleOpenDirectory}
+								onRemoveListItem={handleRemoveListItem}
+								onTextChange={handleTextChange}
 								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 							/>
 						</div>
@@ -2470,7 +2596,8 @@ export const AgentConfigFields = memo(
 						)}
 						<AgentInstructionsComposer
 							instructions={config.instructions}
-							onInstructionsChange={(value) => onTextChange?.("instructions", value)}
+							onOpenDirectory={handleOpenDirectory}
+							onInstructionsChange={(value) => handleTextChange("instructions", value)}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 						/>
 					</>

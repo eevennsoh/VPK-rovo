@@ -1,13 +1,20 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { type ReactNode, useCallback, useMemo } from "react";
+import { type ReactNode, useCallback, useMemo, useState } from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 
+import { KnowledgeDirectoryDialog, type KnowledgeDirectoryAddPayload } from "@/components/blocks/knowledge-directory";
+import { DEFAULT_KNOWLEDGE_APPS } from "@/components/blocks/knowledge-directory/data/apps";
+import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/blocks/skills-directory";
+import { DEFAULT_SKILLS } from "@/components/blocks/skills-directory/data/skills";
+import { ToolsDirectoryDialog } from "@/components/blocks/tools-directory";
+import { DEMO_SESSION_TOOLS, DEMO_TOOLS } from "@/components/blocks/tools-directory/data/demo-tools";
 import {
 	Agent,
 	AgentCompactHeaderNav,
 	AgentConfigFields,
+	type AgentDirectoryKind,
 	type AgentConfigFormValue,
 	AgentHeader,
 	type AgentConfigListFieldName,
@@ -15,6 +22,7 @@ import {
 } from "@/components/ui-custom/agent";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
+import type { ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-chat/lib/chat-context-bar";
 import { getStudioSessionAgentDisplayName, useRovoChat } from "@/app/contexts";
 import { Button } from "@/components/ui/button";
@@ -40,6 +48,7 @@ interface RovoAppAgentConfigPanelProps {
 	onViewChange: (view: AgentConfigView) => void;
 	testPanel: ReactNode;
 	chatContextBar?: ChatContextBarDescriptor | null;
+	chatGreeting?: ChatPanelGreetingProps;
 	onUpdateDraft: (
 		profileId: string,
 		patch: Partial<AgentResult>,
@@ -65,12 +74,16 @@ export function RovoAppAgentConfigPanel({
 	onViewChange,
 	testPanel,
 	chatContextBar,
+	chatGreeting,
 	onUpdateDraft,
 	className,
 }: Readonly<RovoAppAgentConfigPanelProps>) {
 	const draft = entry.draftResult;
 	const shouldReduceMotion = useReducedMotion();
 	const profileId = entry.profile.id;
+	const [activeDirectory, setActiveDirectory] = useState<AgentDirectoryKind | null>(null);
+	const [directoryToolIds, setDirectoryToolIds] = useState<readonly string[]>([]);
+	const [directorySkillIds, setDirectorySkillIds] = useState<readonly string[]>([]);
 
 	// Floating Rovo chat launcher for the agent config screen. studio surfaces
 	// suppress the floating button by default (the shell owns chat), so we render
@@ -130,6 +143,76 @@ export function RovoAppAgentConfigPanel({
 			updateDraft({ [field]: [...current, ""] } as Partial<AgentResult>);
 		},
 		[getDraftList, updateDraft],
+	);
+	const appendListValues = useCallback(
+		(field: AgentConfigListFieldName, values: readonly string[]) => {
+			const nextValues = values.map((value) => value.trim()).filter(Boolean);
+
+			if (nextValues.length === 0) {
+				return;
+			}
+
+			const current = getDraftList(field);
+			const existing = new Set(current.map((value) => value.trim().toLowerCase()));
+			const additions = nextValues.filter((value) => !existing.has(value.toLowerCase()));
+
+			if (additions.length === 0) {
+				return;
+			}
+
+			updateDraft({ [field]: [...current, ...additions] } as Partial<AgentResult>);
+		},
+		[getDraftList, updateDraft],
+	);
+	const handleOpenDirectory = useCallback((directory: AgentDirectoryKind) => {
+		setActiveDirectory(directory);
+	}, []);
+	const handleAddKnowledge = useCallback(
+		(payload: KnowledgeDirectoryAddPayload) => {
+			const app = DEFAULT_KNOWLEDGE_APPS.find((candidate) => candidate.id === payload.appId);
+
+			if (!app) {
+				return;
+			}
+
+			if (payload.contentIds === "all") {
+				appendListValues("knowledge", [`${app.name} - all content`]);
+			} else {
+				const contentById = new Map(app.contents.map((content) => [content.id, content.name]));
+				appendListValues(
+					"knowledge",
+					payload.contentIds.map((contentId) => contentById.get(contentId) ?? contentId),
+				);
+			}
+
+			setActiveDirectory(null);
+		},
+		[appendListValues],
+	);
+	const handleDirectoryToolIdsChange = useCallback(
+		(nextIds: readonly string[]) => {
+			const previousIds = new Set(directoryToolIds);
+			const addedIds = nextIds.filter((id) => !previousIds.has(id));
+			const toolsById = new Map([...DEMO_TOOLS, ...DEMO_SESSION_TOOLS].map((tool) => [tool.id, tool]));
+
+			setDirectoryToolIds(nextIds);
+			appendListValues(
+				"tools",
+				addedIds.map((toolId) => toolsById.get(toolId)?.name ?? toolId),
+			);
+
+			if (addedIds.length > 0) {
+				setActiveDirectory(null);
+			}
+		},
+		[appendListValues, directoryToolIds],
+	);
+	const handleAddSkills = useCallback(
+		(_skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => {
+			appendListValues("skills", skills.map((skill) => skill.name));
+			setActiveDirectory(null);
+		},
+		[appendListValues],
 	);
 
 	const hasUpdateChanges = useMemo(() => {
@@ -268,6 +351,7 @@ export function RovoAppAgentConfigPanel({
 								onListItemChange={updateListItem}
 								onRemoveListItem={removeListItem}
 								onAppendListItem={appendListItem}
+								onOpenDirectory={handleOpenDirectory}
 								screenAssistantTargetPrefix="studio-agent-config"
 							/>
 						</div>
@@ -286,10 +370,32 @@ export function RovoAppAgentConfigPanel({
 					<RovoFloatingChat
 						key="floating-chat"
 						chatContextBar={chatContextBar}
+						greeting={chatGreeting}
 						hideComposerSourceAndModelControls={Boolean(chatContextBar)}
 					/>
 				) : null}
 			</AnimatePresence>
+			<KnowledgeDirectoryDialog
+				open={activeDirectory === "knowledge"}
+				onOpenChange={(open) => setActiveDirectory(open ? "knowledge" : null)}
+				onAddKnowledge={handleAddKnowledge}
+			/>
+			<ToolsDirectoryDialog
+				addedToolIds={directoryToolIds}
+				open={activeDirectory === "tools"}
+				onAddedToolIdsChange={handleDirectoryToolIdsChange}
+				onOpenChange={(open) => setActiveDirectory(open ? "tools" : null)}
+				sessionTools={DEMO_SESSION_TOOLS}
+				tools={DEMO_TOOLS}
+			/>
+			<SkillsDirectoryDialog
+				onAddSkills={handleAddSkills}
+				onOpenChange={(open) => setActiveDirectory(open ? "skills" : null)}
+				onSelectedSkillIdsChange={setDirectorySkillIds}
+				open={activeDirectory === "skills"}
+				selectedSkillIds={directorySkillIds}
+				skills={DEFAULT_SKILLS}
+			/>
 		</>
 	);
 }

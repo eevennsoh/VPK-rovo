@@ -88,6 +88,8 @@ type InsertReferenceCategory =
 	| "skill"
 	| "subagent";
 
+export type EditorToolbarInsertReferenceCategory = InsertReferenceCategory;
+
 const INSERT_REFERENCE_OPTIONS: ReadonlyArray<{
 	category: InsertReferenceCategory;
 	label: string;
@@ -121,6 +123,7 @@ export interface EditorToolbarProps {
 	isMarkdownMode?: boolean;
 	onToggleMarkdownMode?: () => void;
 	onMarkdownFormat?: (kind: MarkdownFormatKind) => void;
+	onInsertReferenceOption?: (category: EditorToolbarInsertReferenceCategory, label: string) => boolean | void;
 }
 
 interface DropdownMenuItemProps {
@@ -310,6 +313,7 @@ export function EditorToolbar({
 	isMarkdownMode = false,
 	onToggleMarkdownMode,
 	onMarkdownFormat,
+	onInsertReferenceOption,
 }: Readonly<EditorToolbarProps>) {
 	const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
 	const toolbarRef = useRef<HTMLDivElement>(null);
@@ -440,6 +444,12 @@ export function EditorToolbar({
 		category: InsertReferenceCategory,
 		label: string,
 	): void {
+		const handledByConsumer = onInsertReferenceOption?.(category, label);
+		if (handledByConsumer !== false && typeof onInsertReferenceOption !== "undefined") {
+			closeDropdown();
+			return;
+		}
+
 		editor
 			.chain()
 			.focus()

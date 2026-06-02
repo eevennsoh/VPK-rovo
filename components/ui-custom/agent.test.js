@@ -52,6 +52,10 @@ const EDITOR_TOOLBAR_SOURCE = readFileSync(
 	join(__dirname, "..", "blocks", "editor-toolbar", "components", "editor-toolbar.tsx"),
 	"utf8",
 );
+const EDITOR_TOOLBAR_INDEX_SOURCE = readFileSync(
+	join(__dirname, "..", "blocks", "editor-toolbar", "index.ts"),
+	"utf8",
+);
 const STUDIO_AGENT_RESULT_SOURCE = readFileSync(
 	join(__dirname, "..", "..", "backend", "lib", "studio-agent-result.js"),
 	"utf8",
@@ -74,6 +78,9 @@ test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /placeholderSlot=\{\([\s\S]*start with a template[\s\S]*\)\}/u);
 	assert.match(AGENT_SOURCE, /onClick=\{\(\) => setTemplatesOpen\(true\)\}/u);
 	assert.match(AGENT_SOURCE, /<AgentTemplatesDialog[\s\S]*open=\{templatesOpen\}[\s\S]*onOpenChange=\{setTemplatesOpen\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /showBubbleMenu=\{false\}/u);
+	assert.match(AGENT_SOURCE, /const handleInsertReferenceOption = useCallback\(\(category: string\): boolean => \{[\s\S]*category === "knowledge"[\s\S]*onOpenDirectory\?\.\("knowledge"\)[\s\S]*category === "tool"[\s\S]*onOpenDirectory\?\.\("tools"\)[\s\S]*category === "skill"[\s\S]*onOpenDirectory\?\.\("skills"\)[\s\S]*return false;[\s\S]*\}, \[onOpenDirectory\]\);/u);
+	assert.match(AGENT_SOURCE, /onInsertReferenceOption=\{handleInsertReferenceOption\}/u);
 	assert.match(AGENT_SOURCE, /mentionSources=\{mentionSources\}/u);
 	assert.match(AGENT_SOURCE, /toolbarBelowSlot=\{toolbarBelowSlot\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /toolbarEndSlot=\{<AgentInstructionsModelSelector \/>\}/u);
@@ -148,7 +155,7 @@ test("Filled config summary sorts empty rows to the bottom while preserving cano
 test("Agent config updates instructions as markdown strings", () => {
 	assert.match(
 		AGENT_SOURCE,
-		/onInstructionsChange=\{\(value\) => onTextChange\?\.\("instructions", value\)\}/u,
+		/onInstructionsChange=\{\(value\) => handleTextChange\("instructions", value\)\}/u,
 	);
 	assert.match(AGENT_SOURCE, /fetch\("\/api\/skills"/u);
 	assert.match(AGENT_SOURCE, /fetch\("\/api\/wiki\/memory-explorer"/u);
@@ -226,6 +233,13 @@ test("Agent component page wires compact filled and empty placeholder variations
 	const compactLayoutStart = AGENT_SOURCE.indexOf('{layout === "compact"');
 	const defaultLayoutStart = AGENT_SOURCE.indexOf("{/* Profile + config summary", compactLayoutStart);
 	const compactLayoutSource = AGENT_SOURCE.slice(compactLayoutStart, defaultLayoutStart);
+	const compactBottomSlotSource = compactLayoutSource.slice(
+		compactLayoutSource.indexOf("bottomSlot="),
+		compactLayoutSource.indexOf("bottomSlotClassName="),
+	);
+	const compactFooterOverlaySource = compactLayoutSource.slice(
+		compactLayoutSource.indexOf('className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-surface"'),
+	);
 	const compactOperationsStart = AGENT_SOURCE.indexOf("function AgentCompactOperationsBento");
 	const sectionLabelStart = AGENT_SOURCE.indexOf("function AgentSectionLabel", compactOperationsStart);
 	const compactOperationsSource = AGENT_SOURCE.slice(compactOperationsStart, sectionLabelStart);
@@ -234,10 +248,24 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /layout = "default"/u);
 	assert.match(AGENT_SOURCE, /data-agent-config-layout=\{layout\}/u);
 	assert.match(AGENT_SOURCE, /layout === "compact"/u);
-	assert.match(compactLayoutSource, /<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT = 88;/u);
+	assert.match(AGENT_SOURCE, /const compactFooterOverlayRef = useRef<HTMLDivElement \| null>\(null\);/u);
+	assert.match(AGENT_SOURCE, /const \[compactFooterOverlayHeight, setCompactFooterOverlayHeight\] = useState\(AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT\);/u);
+	assert.match(AGENT_SOURCE, /const compactBentoFooterOffset = Math\.max\([\s\S]*compactFooterOverlayHeight - AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT/u);
+	assert.match(AGENT_SOURCE, /const dismissTemplateTiles = useCallback\(\(\) => \{[\s\S]*setTemplatesDismissed\(true\);[\s\S]*\}, \[\]\);/u);
+	assert.match(AGENT_SOURCE, /const handleTextChange = useCallback\(\(field: AgentConfigTextFieldName, value: string\) => \{[\s\S]*dismissTemplateTiles\(\);[\s\S]*onTextChange\?\.\(field, value\);/u);
+	assert.match(AGENT_SOURCE, /const handleAppendListItem = useCallback\(\(field: AgentConfigListFieldName\) => \{[\s\S]*dismissTemplateTiles\(\);[\s\S]*onAppendListItem\?\.\(field\);/u);
+	assert.match(AGENT_SOURCE, /const handleOpenDirectory = useCallback\(\(directory: AgentDirectoryKind\) => \{[\s\S]*dismissTemplateTiles\(\);[\s\S]*onOpenDirectory\?\.\(directory\);/u);
+	assert.match(AGENT_SOURCE, /const resizeObserver = new ResizeObserver\(updateFooterOverlayHeight\);[\s\S]*resizeObserver\.observe\(node\);[\s\S]*return \(\) => resizeObserver\.disconnect\(\);/u);
+	assert.match(compactLayoutSource, /<div\s+className="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2"\s+style=\{\{ paddingBottom: AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT \}\}/u);
 	assert.doesNotMatch(compactLayoutSource, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
-	assert.match(compactLayoutSource, /bottomSlot=\{\([\s\S]*isFilledConfig \? null : \([\s\S]*<AnimatePresence>[\s\S]*templatesDismissed \? null : \([\s\S]*<AgentCompactOperationsBento[\s\S]*onDismiss=\{\(\) => setTemplatesDismissed\(true\)\}[\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}/u);
+	assert.match(compactBottomSlotSource, /bottomSlot=\{isFilledConfig \? null : \([\s\S]*<div[\s\S]*className="transition-\[padding-bottom\] duration-200 ease-out"[\s\S]*style=\{\{ paddingBottom: compactBentoFooterOffset \}\}[\s\S]*<AnimatePresence>[\s\S]*templatesDismissed \? null : \([\s\S]*<AgentCompactOperationsBento[\s\S]*onDismiss=\{\(\) => setTemplatesDismissed\(true\)\}/u);
+	assert.doesNotMatch(compactBottomSlotSource, /AgentCompactConfigToolbarBelow/u);
 	assert.match(compactLayoutSource, /bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-4"/u);
+	assert.match(compactLayoutSource, /className=\{cn\("relative flex flex-col", isFilledConfig \? "min-h-\[560px\]" : "min-h-0 flex-1"\)\}/u);
+	assert.match(compactFooterOverlaySource, /className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-surface" ref=\{compactFooterOverlayRef\}[\s\S]*className="pointer-events-auto"[\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}/u);
+	assert.match(compactFooterOverlaySource, /onAppendListItem=\{handleAppendListItem\}[\s\S]*onOpenDirectory=\{handleOpenDirectory\}[\s\S]*onRemoveListItem=\{handleRemoveListItem\}[\s\S]*onTextChange=\{handleTextChange\}/u);
+	assert.match(compactLayoutSource, /onInstructionsChange=\{\(value\) => handleTextChange\("instructions", value\)\}/u);
 	assert.doesNotMatch(compactLayoutSource, /toolbarBelowSlot=\{\(\s*<AgentCompactConfigToolbarBelow/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow/u);
 	assert.doesNotMatch(AGENT_SOURCE, /showAddButtons=\{false\}/u);
@@ -260,17 +288,21 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /tools: "Add tools to extend what this agent can do"/u);
 	assert.match(AGENT_SOURCE, /subagents: "Add subagents to handle specific scenarios"/u);
 	assert.match(AGENT_SOURCE, /function getAgentFilledSummaryAddLabel\(field: AgentConfigListFieldName, isEmpty: boolean, showAddButtons: boolean\): string \| undefined \{[\s\S]*return isEmpty \? AGENT_EMPTY_ROW_ADD_LABELS\[field\] \?\? "Add" : "Add";[\s\S]*\}/u);
-	// Every list-field row wires its persistent +Add link to onAppendListItem.
+	// Every list-field row keeps a persistent +Add link. Directory-backed
+	// fields open their directory first and fall back to onAppendListItem when no
+	// directory opener is supplied.
+	assert.match(AGENT_SOURCE, /export type AgentDirectoryKind = "knowledge" \| "tools" \| "skills";/u);
+	assert.match(AGENT_SOURCE, /function openAgentDirectoryOrAppendListItem\([\s\S]*onOpenDirectory\?: \(directory: AgentDirectoryKind\) => void[\s\S]*onAppendListItem\?: \(field: AgentConfigListFieldName\) => void[\s\S]*onOpenDirectory\(directory\);[\s\S]*onAppendListItem\?\.\(field\);/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("triggers", triggerItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("skills", skillItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("tools", toolItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("subagents", subagentItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("conversationStarters", starterItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Triggers"\s+onAdd=\{\(\) => onAppendListItem\?\.\("triggers"\)\}/u);
-	assert.match(AGENT_SOURCE, /label="Skills"\s+onAdd=\{\(\) => onAppendListItem\?\.\("skills"\)\}/u);
-	assert.match(AGENT_SOURCE, /label="Tools"\s+onAdd=\{\(\) => onAppendListItem\?\.\("tools"\)\}/u);
+	assert.match(AGENT_SOURCE, /label="Skills"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("skills", "skills", onOpenDirectory, onAppendListItem\)\}/u);
+	assert.match(AGENT_SOURCE, /label="Tools"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("tools", "tools", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Subagents"\s+onAdd=\{\(\) => onAppendListItem\?\.\("subagents"\)\}/u);
-	assert.match(AGENT_SOURCE, /label="Knowledge"\s+onAdd=\{\(\) => onAppendListItem\?\.\("knowledge"\)\}/u);
+	assert.match(AGENT_SOURCE, /label="Knowledge"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("knowledge", "knowledge", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Conversation starters"\s+onAdd=\{\(\) => onAppendListItem\?\.\("conversationStarters"\)\}/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactEmptyConfigNav/u);
 	assert.match(AGENT_SOURCE, /function getAgentCompactEmptyConfigNavItems/u);
@@ -313,6 +345,8 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /const minCenterX = rect\.left \+ AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE \/ 2;/u);
 	assert.match(AGENT_SOURCE, /const maxCenterX = rect\.right - AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE \/ 2;/u);
 	assert.match(AGENT_SOURCE, /const targetCenterX = Math\.min\(Math\.max\(event\.clientX, minCenterX\), maxCenterX\);[\s\S]*expandButtonX\.set\(targetCenterX - restingCenterX\);/u);
+	assert.match(AGENT_SOURCE, /return \(\s*<div className="flex flex-col">/u);
+	assert.doesNotMatch(AGENT_SOURCE, /<div className="flex flex-col pb-6">/u);
 	assert.match(AGENT_SOURCE, /<AnimatePresence initial=\{false\} mode="wait">/u);
 	assert.match(AGENT_SOURCE, /<motion\.div\s+key="expanded"\s+className="mt-2"/u);
 	assert.match(AGENT_SOURCE, /<motion\.div\s+key="collapsed"\s+className="mt-2"/u);
@@ -558,6 +592,12 @@ test("Shared rich text toolbar delegates to the Editor toolbar block", () => {
 		/export function RichTextEditorToolbar\([\s\S]*return <EditorToolbar \{\.\.\.props\} \/>;/u,
 	);
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<EditorToolbar[\s\S]*controlsClassName="px-2 py-1"/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /export type EditorToolbarInsertReferenceCategory = InsertReferenceCategory;/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /onInsertReferenceOption\?: \(category: EditorToolbarInsertReferenceCategory, label: string\) => boolean \| void;/u);
+	assert.match(EDITOR_TOOLBAR_INDEX_SOURCE, /export type \{ EditorToolbarInsertReferenceCategory, EditorToolbarProps \} from "\.\/components\/editor-toolbar";/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /import type \{ EditorToolbarInsertReferenceCategory \} from "@\/components\/blocks\/editor-toolbar";/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /onInsertReferenceOption\?: \(category: EditorToolbarInsertReferenceCategory, label: string\) => boolean \| void;/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /onInsertReferenceOption=\{onInsertReferenceOption\}/u);
 });
 
 test("Shared toolbar carries the Confluence editor control set", () => {
@@ -609,6 +649,8 @@ test("Shared toolbar groups related split controls and keeps unrelated toggles i
 	assert.match(EDITOR_TOOLBAR_SOURCE, /pressed=\{!isMarkdownMode && editor\.isActive\("link"\)\}/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Link"[\s\S]*onPressedChange=\{handleLinkPressedChange\}/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Add content"[\s\S]*onClick=\{handleAddContent\}/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /const handledByConsumer = onInsertReferenceOption\?\.\(category, label\);/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /if \(handledByConsumer !== false && typeof onInsertReferenceOption !== "undefined"\) \{[\s\S]*closeDropdown\(\);[\s\S]*return;[\s\S]*\}[\s\S]*insertContent/u);
 	// The trailing `+` button is wrapped in a positioned div so it can anchor
 	// the Insert dropdown.
 	assert.match(EDITOR_TOOLBAR_SOURCE, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<ToolbarSeparator \/>/u);
@@ -652,6 +694,11 @@ test("Shared toolbar dropdown menus avoid perimeter shadow strokes", () => {
 test("Shared toolbar exposes far-right rendered and Markdown mode tabs gated by a handler", () => {
 	assert.match(EDITOR_TOOLBAR_SOURCE, /isMarkdownMode\?: boolean;/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /onToggleMarkdownMode\?: \(\) => void;/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /import \{ BubbleMenu, FloatingMenu \} from "@tiptap\/react\/menus";/u);
+	assert.match(
+		RICH_TEXT_TOOLBAR_SOURCE,
+		/<BubbleMenu[\s\S]*shouldShow=\{\(\{ editor: activeEditor, from, to \}\) =>[\s\S]*activeEditor\.isEditable && from !== to/u,
+	);
 	// Mode tabs only render when a toggle handler is supplied (omitted in bubble/floating menus).
 	assert.match(
 		EDITOR_TOOLBAR_SOURCE,

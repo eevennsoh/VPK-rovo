@@ -282,6 +282,22 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /config=\{draft\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /layout="compact"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onTextChange=\{handleConfigTextChange\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onAppendListItem=\{appendListItem\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onOpenDirectory=\{handleOpenDirectory\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ KnowledgeDirectoryDialog, type KnowledgeDirectoryAddPayload \} from "@\/components\/blocks\/knowledge-directory";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEFAULT_KNOWLEDGE_APPS \} from "@\/components\/blocks\/knowledge-directory\/data\/apps";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ SkillsDirectoryDialog, type SkillsDirectorySkill \} from "@\/components\/blocks\/skills-directory";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEFAULT_SKILLS \} from "@\/components\/blocks\/skills-directory\/data\/skills";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ ToolsDirectoryDialog \} from "@\/components\/blocks\/tools-directory";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEMO_SESSION_TOOLS, DEMO_TOOLS \} from "@\/components\/blocks\/tools-directory\/data\/demo-tools";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[activeDirectory, setActiveDirectory\] = useState<AgentDirectoryKind \| null>\(null\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenDirectory = useCallback\(\(directory: AgentDirectoryKind\) => \{[\s\S]*setActiveDirectory\(directory\);[\s\S]*\}, \[\]\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddKnowledge = useCallback\([\s\S]*payload: KnowledgeDirectoryAddPayload[\s\S]*DEFAULT_KNOWLEDGE_APPS\.find[\s\S]*appendListValues\("knowledge"/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleDirectoryToolIdsChange = useCallback\([\s\S]*const toolsById = new Map\(\[\.\.\.DEMO_TOOLS, \.\.\.DEMO_SESSION_TOOLS\][\s\S]*appendListValues\(\s*"tools"/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddSkills = useCallback\([\s\S]*skills: readonly SkillsDirectorySkill\[\][\s\S]*appendListValues\("skills", skills\.map\(\(skill\) => skill\.name\)\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<KnowledgeDirectoryDialog[\s\S]*open=\{activeDirectory === "knowledge"\}[\s\S]*onAddKnowledge=\{handleAddKnowledge\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<ToolsDirectoryDialog[\s\S]*addedToolIds=\{directoryToolIds\}[\s\S]*open=\{activeDirectory === "tools"\}[\s\S]*onAddedToolIdsChange=\{handleDirectoryToolIdsChange\}[\s\S]*sessionTools=\{DEMO_SESSION_TOOLS\}[\s\S]*tools=\{DEMO_TOOLS\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<SkillsDirectoryDialog[\s\S]*onAddSkills=\{handleAddSkills\}[\s\S]*open=\{activeDirectory === "skills"\}[\s\S]*selectedSkillIds=\{directorySkillIds\}[\s\S]*skills=\{DEFAULT_SKILLS\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentCompactHeaderNav,/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Tabs, TabsContent \} from "@\/components\/ui\/tabs";/u);
@@ -329,8 +345,7 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(SHELL_SOURCE, /const agentConfigTestPanel = activeSessionAgentEntry \? \([\s\S]*<AgentTestPanel entry=\{activeSessionAgentEntry\} \/>/u);
 	assert.match(SHELL_SOURCE, /testPanel=\{agentConfigTestPanel\}/u);
 	assert.match(SHELL_SOURCE, /onTest=\{handleTestAgent\}/u);
-	assert.match(SHELL_SOURCE, /<RovoAppAgentConfigPanel[\s\S]*testPanel=\{agentConfigTestPanel\}[\s\S]*chatContextBar=\{agentEditContextBar\}[\s\S]*onUpdateDraft=\{handleUpdateAgentDraft\}[\s\S]*\/>/u);
-	assert.doesNotMatch(SHELL_SOURCE, /<RovoAppAgentConfigPanel[\s\S]*chatGreeting=/u);
+	assert.match(SHELL_SOURCE, /<RovoAppAgentConfigPanel[\s\S]*testPanel=\{agentConfigTestPanel\}[\s\S]*chatContextBar=\{agentEditContextBar\}[\s\S]*chatGreeting=\{agentEditGreeting\}[\s\S]*onUpdateDraft=\{handleUpdateAgentDraft\}[\s\S]*\/>/u);
 	assert.match(SHELL_SOURCE, /isChatOpen=\{nav\.isSidebarChatOpen\}[\s\S]*onToggleChat=\{handleToggleAskRovoChat\}/u);
 	assert.match(SHELL_SOURCE, /const isStudioAskRovoChatActive = !embedded && shouldShowAgentConfigPane && nav\.isSidebarChatOpen;/u);
 	// "Ask Rovo" must open the default Rovo agent, not the custom agent being
@@ -349,8 +364,8 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \{ chatSurface, openChat, resetAgentToRovo \} = useRovoChat\(\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenFloatingRovoChat = useCallback\(\(\) => \{[\s\S]*resetAgentToRovo\(\);[\s\S]*openChat\("floating"\);[\s\S]*\}, \[openChat, resetAgentToRovo\]\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<FloatingRovoButton ariaLabel="Open Rovo chat" product="home" onButtonClick=\{handleOpenFloatingRovoChat\} \/>/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<RovoFloatingChat[\s\S]*chatContextBar=\{chatContextBar\}[\s\S]*hideComposerSourceAndModelControls=\{Boolean\(chatContextBar\)\}[\s\S]*\/>/u);
-	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /chatGreeting|greeting=\{chatGreeting\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /chatGreeting\?: ChatPanelGreetingProps;/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<RovoFloatingChat[\s\S]*chatContextBar=\{chatContextBar\}[\s\S]*greeting=\{chatGreeting\}[\s\S]*hideComposerSourceAndModelControls=\{Boolean\(chatContextBar\)\}[\s\S]*\/>/u);
 	assert.match(SHELL_SOURCE, /<SidebarResizeHandle[\s\S]*side="left"[\s\S]*askRovoChatResize\.onResizeHandlePointerDown/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /export function AgentTestPanel/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /aria-label="Agent test"/u);
