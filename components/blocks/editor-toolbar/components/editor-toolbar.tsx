@@ -26,9 +26,11 @@ import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 import { useClickOutside } from "@/components/hooks/use-click-outside";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { MarkdownFormatKind } from "@/components/ui-custom/rich-text-editor/markdown-format";
+import { TextNormalIcon } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
 
 type DropdownType = "textStyle" | "formatting" | "list" | "align" | null;
@@ -233,6 +235,7 @@ export function EditorToolbar({
 		...(!isMarkdownMode && editor.isActive("bulletList") ? ["bulletList"] : []),
 		...(openDropdown === "list" ? ["list"] : []),
 	];
+	const showModeTabs = Boolean(onToggleMarkdownMode);
 
 	useEditorTransactionRerender(editor);
 	useClickOutside(outsideRefs, () => setOpenDropdown(null), openDropdown !== null);
@@ -530,23 +533,36 @@ export function EditorToolbar({
 					>
 						<AddIcon label="" size="small" />
 					</Button>
-					{onToggleMarkdownMode ? <ToolbarSeparator /> : null}
-					{onToggleMarkdownMode ? (
-						<Toggle
-							aria-label={
-								isMarkdownMode
-									? "Show rendered editor"
-									: "Show Markdown source"
-							}
-							pressed={isMarkdownMode}
-							onPressedChange={() => onToggleMarkdownMode()}
-						>
-							<MarkdownIcon label="" size="small" />
-						</Toggle>
-					) : null}
 				</div>
 			</div>
-			{endSlot ? <div className="shrink-0">{endSlot}</div> : null}
+			{endSlot || showModeTabs ? (
+				<div className="flex shrink-0 items-center gap-2">
+					{endSlot}
+					{showModeTabs ? (
+						<Tabs
+							value={isMarkdownMode ? "markdown" : "rendered"}
+							onValueChange={(value) => {
+								const nextIsMarkdownMode = value === "markdown";
+
+								if (nextIsMarkdownMode !== isMarkdownMode) {
+									onToggleMarkdownMode?.();
+								}
+							}}
+						>
+							<TabsList>
+								<TabsTrigger value="rendered">
+									<TextNormalIcon size="small" />
+									Rendered
+								</TabsTrigger>
+								<TabsTrigger value="markdown">
+									<MarkdownIcon label="" size="small" />
+									Markdown
+								</TabsTrigger>
+							</TabsList>
+						</Tabs>
+					) : null}
+				</div>
+			) : null}
 		</div>
 	);
 }
