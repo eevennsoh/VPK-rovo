@@ -80,10 +80,14 @@ test("Editor toolbar demo exposes the Markdown source mode", () => {
 
 test("Editor toolbar places Add content after Link and mode tabs at the end", () => {
 	const componentSource = readProjectFile("components/blocks/editor-toolbar/components/editor-toolbar.tsx");
+	const vpkIconsSource = readProjectFile("components/ui/vpk-icons.tsx");
 
 	assert.match(componentSource, /import AddIcon from "@atlaskit\/icon\/core\/add";/u);
 	assert.match(componentSource, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
 	assert.match(componentSource, /import \{ TextNormalIcon \} from "@\/components\/ui\/vpk-icons";/u);
+	assert.match(vpkIconsSource, /import TextNormalIconGlyph from "@atlaskit\/icon-lab\/core\/text-normal";/u);
+	assert.match(vpkIconsSource, /export const TextNormalIcon = createUnsafeVpkIcon\(TextNormalIconGlyph\);/u);
+	assert.doesNotMatch(vpkIconsSource, /TextNormalIcon = createUnsafeVpkIcon\(TextIconGlyph\)/u);
 	assert.match(componentSource, /function handleAddContent\(\): void/u);
 	assert.match(componentSource, /aria-label="Add content"[\s\S]*onClick=\{handleAddContent\}/u);
 	assert.match(componentSource, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>/u);
