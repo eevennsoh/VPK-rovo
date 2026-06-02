@@ -500,7 +500,6 @@ export const AgentHeader = memo(
 								aria-label="Agent views"
 								defaultValue={["configure"]}
 								variant="outline"
-								size="sm"
 							>
 								<ToggleGroupItem value="configure">
 									{primaryActionLabel}
@@ -1349,6 +1348,17 @@ function AgentFilledConfigSummary({
 			),
 		},
 		{
+			key: "memory",
+			// Memory is a default, always-on knowledge source, so this row is never
+			// empty and stays directly under Subagents among the filled rows.
+			isEmpty: false,
+			node: (
+				<AgentMemoryRow
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:memory` : undefined}
+				/>
+			),
+		},
+		{
 			key: "knowledge",
 			// The new knowledge selector always renders its mode lozenge, so the row
 			// is never visually empty even when no custom items are configured.
@@ -1826,6 +1836,27 @@ function AgentKnowledgeOverflowMenu({
 	);
 }
 
+function AgentMemoryRow({
+	screenAssistantTargetId,
+}: Readonly<{ screenAssistantTargetId?: string }>) {
+	return (
+		<div
+			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-5"
+			data-agent-field="memory"
+			data-screen-assistant-target={screenAssistantTargetId}
+		>
+			<div className="sm:w-32 sm:shrink-0">
+				<AgentSectionLabel>Memory</AgentSectionLabel>
+			</div>
+			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
+				{/* Memory is a default, non-removable knowledge source that's always
+				    available regardless of the org-knowledge mode. */}
+				<AgentReferenceChip label="Memory" />
+			</div>
+		</div>
+	);
+}
+
 interface AgentKnowledgeRowProps {
 	value: KnowledgeModeValue;
 	onValueChange: (next: KnowledgeModeValue) => void;
@@ -1863,10 +1894,6 @@ function AgentKnowledgeRow({
 					value={value}
 					onValueChange={onValueChange}
 				/>
-				<div aria-hidden className="h-4 w-px shrink-0 bg-border" />
-				{/* Memory is a default, non-removable knowledge source that's always
-				    available regardless of the org-knowledge mode. */}
-				<AgentReferenceChip label="Memory" />
 				{isCustom ? (
 					<>
 						{items.map((item, index) => (
