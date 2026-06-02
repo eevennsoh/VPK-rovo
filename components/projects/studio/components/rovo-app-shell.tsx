@@ -1882,7 +1882,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	// Defaults to the expanded "Edit: <agent>" state; the bar itself owns the
 	// collapse-to-pill / re-expand affordance.
 	const agentEditContextBar = useMemo<ChatContextBarDescriptor | null>(() => {
-		if (!activeSessionAgentEntry) {
+		if (!activeSessionAgentEntry || isCustomAgentSelected) {
 			return null;
 		}
 		const { profile } = activeSessionAgentEntry;
@@ -1896,7 +1896,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			collapsible: true,
 			collapsedLabel: "Edit agent",
 		};
-	}, [activeSessionAgentEntry]);
+	}, [activeSessionAgentEntry, isCustomAgentSelected]);
 	// When the "Edit agent" context bar is active, the Ask Rovo empty state pivots
 	// to an agent-improvement greeting; closing the bar reverts to the default.
 	const agentEditGreeting = useMemo<ChatPanelGreetingProps | undefined>(() => {
