@@ -95,7 +95,7 @@ test("Rovo Canvas renders artefact identity text instead of an artefact dropdown
 
 test("Rovo Canvas header keeps Rovo as static text without the agent selector", () => {
 	assert.match(ROVO_CANVAS_HEADER_SOURCE, /function RovoCanvasBrand\(\): React\.ReactElement/u);
-	assert.match(ROVO_CANVAS_HEADER_SOURCE, /src="\/1p\/rovo\.svg"/u);
+	assert.match(ROVO_CANVAS_HEADER_SOURCE, /import \{ RovoColorIcon \} from "@\/components\/ui\/logo";[\s\S]*<RovoColorIcon size="xxsmall" \/>/u);
 	assert.match(ROVO_CANVAS_HEADER_SOURCE, /<span className="font-semibold">Rovo<\/span>/u);
 	assert.match(ROVO_CANVAS_HEADER_SOURCE, /<RovoCanvasBrand \/>/u);
 	assert.doesNotMatch(ROVO_CANVAS_HEADER_SOURCE, /RovoAppBrand/u);
@@ -159,11 +159,107 @@ test("Rovo Canvas main artefact frame uses a border without elevation", () => {
 test("floating Rovo button has an exit transition for canvas handoff", () => {
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/import \{ AnimatePresence, motion, useReducedMotion \} from "motion\/react";/u,
+		/import \{[\s\S]*AnimatePresence,[\s\S]*animate,[\s\S]*motion,[\s\S]*useMotionValue,[\s\S]*useReducedMotion,[\s\S]*type MotionStyle,[\s\S]*\} from "motion\/react";/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
 		/<motion\.button[\s\S]*exit=\{shouldReduceMotion \? \{ opacity: 0 \} : \{ opacity: 0, transition: \{ duration: 0\.08 \} \}\}/u,
+	);
+});
+
+test("floating Rovo button can be dragged and snapped to a 4x4 viewport grid", () => {
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const FLOATING_ROVO_BUTTON_EDGE_GAP = 24;/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const FLOATING_ROVO_BUTTON_SNAP_GRID_SIZE = 4;/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/function getFloatingRovoButtonSafeBounds\(rect: Pick<DOMRect, "width" \| "height">, viewportWidth: number, viewportHeight: number\)[\s\S]*const minLeft = FLOATING_ROVO_BUTTON_EDGE_GAP;[\s\S]*const maxLeft = Math\.max\(minLeft, viewportWidth - rect\.width - FLOATING_ROVO_BUTTON_EDGE_GAP\);[\s\S]*return \{ minLeft, minTop, maxLeft, maxTop \};/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/function getFloatingRovoButtonSnapTargets\([\s\S]*const snapTargets: FloatingRovoButtonSnapTarget\[\] = \[\];[\s\S]*for \(let rowIndex = 0; rowIndex < FLOATING_ROVO_BUTTON_SNAP_GRID_SIZE; rowIndex \+= 1\) \{[\s\S]*for \(let columnIndex = 0; columnIndex < FLOATING_ROVO_BUTTON_SNAP_GRID_SIZE; columnIndex \+= 1\) \{[\s\S]*const left = minLeft \+ \(\(maxLeft - minLeft\) \* columnIndex\) \/ \(FLOATING_ROVO_BUTTON_SNAP_GRID_SIZE - 1\);[\s\S]*const top = minTop \+ \(\(maxTop - minTop\) \* rowIndex\) \/ \(FLOATING_ROVO_BUTTON_SNAP_GRID_SIZE - 1\);[\s\S]*snapTargets\.push\(\{ left, top \}\);/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/function getDefaultFloatingRovoButtonSnapTarget\([\s\S]*return snapTargets\[snapTargets\.length - 1\];/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/function getNearestFloatingRovoButtonSnapTarget\(rect: DOMRect, viewportWidth: number, viewportHeight: number\)[\s\S]*const centerX = rect\.left \+ rect\.width \/ 2;[\s\S]*const centerY = rect\.top \+ rect\.height \/ 2;[\s\S]*const distance = Math\.hypot\(centerX - targetCenterX, centerY - targetCenterY\);[\s\S]*return closestTarget;/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/function getFloatingRovoButtonDragConstraints\([\s\S]*origin: FloatingRovoButtonSnapTarget,[\s\S]*return \{[\s\S]*left: minLeft - origin\.left,[\s\S]*top: minTop - origin\.top,[\s\S]*right: maxLeft - origin\.left,[\s\S]*bottom: maxTop - origin\.top,[\s\S]*\};/u,
+	);
+	assert.doesNotMatch(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/FLOATING_ROVO_BUTTON_HOT_CORNER_RADIUS|getFloatingRovoButtonDropTarget/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const surfaceRef = useRef<HTMLDivElement \| null>\(null\);[\s\S]*const buttonX = useMotionValue\(0\);[\s\S]*const buttonY = useMotionValue\(0\);[\s\S]*const \[dragOrigin, setDragOrigin\] = useState<FloatingRovoButtonSnapTarget \| null>\(null\);[\s\S]*const \[dragConstraints, setDragConstraints\] = useState<FloatingRovoButtonDragConstraints>\(\{[\s\S]*bottom: 0,[\s\S]*left: 0,[\s\S]*right: 0,[\s\S]*top: 0,[\s\S]*\}\);[\s\S]*const dragPointerStartRef = useRef<FloatingRovoButtonDragStart \| null>\(null\);[\s\S]*const suppressDragClickRef = useRef\(false\);[\s\S]*const suppressDragClickTimeoutRef = useRef<number \| null>\(null\);/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const surfaceStyle: MotionStyle = \{[\s\S]*left: dragOrigin\.left,[\s\S]*top: dragOrigin\.top,[\s\S]*right: resolvedPlacement\.right,[\s\S]*bottom: resolvedPlacement\.bottom,[\s\S]*visibility: dragOrigin \? undefined : "hidden",/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const target = placement[\s\S]*\? getClampedFloatingRovoButtonTarget\(rect, window\.innerWidth, window\.innerHeight\)[\s\S]*: getDefaultFloatingRovoButtonSnapTarget\(rect, window\.innerWidth, window\.innerHeight\);[\s\S]*buttonX\.set\(0\);[\s\S]*buttonY\.set\(0\);[\s\S]*setDragOrigin\(target\);[\s\S]*setDragConstraints\(getFloatingRovoButtonDragConstraints\(target, rect, window\.innerWidth, window\.innerHeight\)\);/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/function FloatingRovoButtonInner\(\{[\s\S]*onDragMouseDown,[\s\S]*onDragPointerDown,[\s\S]*\}: Readonly<\{[\s\S]*onDragMouseDown: \(event: ReactMouseEvent<HTMLButtonElement>\) => void;[\s\S]*onDragPointerDown: \(event: ReactPointerEvent<HTMLButtonElement>\) => void;[\s\S]*onMouseDownCapture=\{onDragMouseDown\}[\s\S]*onPointerDownCapture=\{onDragPointerDown\}/u,
+	);
+	assert.doesNotMatch(FLOATING_ROVO_BUTTON_SOURCE, /useDragControls|dragControls|dragListener=\{false\}|drag=\{!onboardingOpen\}|dragConstraints=\{dragConstraints\}/u);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/import \{ RovoColorIcon \} from "@\/components\/ui\/logo";[\s\S]*<RovoColorIcon size="small" \/>/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const handleDragPointerDown = useCallback\(\(event: ReactPointerEvent<HTMLElement>\) => \{[\s\S]*buttonX\.stop\(\);[\s\S]*buttonY\.stop\(\);[\s\S]*offsetX: buttonX\.get\(\),[\s\S]*offsetY: buttonY\.get\(\),/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const handleDragMouseDown = useCallback\(\(event: ReactMouseEvent<HTMLElement>\) => \{[\s\S]*pointerId: null,[\s\S]*x: event\.clientX,[\s\S]*y: event\.clientY,/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const updateDragPosition = useCallback\(\(clientX: number, clientY: number, pointerId\?: number\) => \{[\s\S]*const deltaX = clientX - start\.x;[\s\S]*const deltaY = clientY - start\.y;[\s\S]*dragDistance <= FLOATING_ROVO_BUTTON_DRAG_CLICK_THRESHOLD[\s\S]*suppressDragClickRef\.current = true;[\s\S]*buttonX\.set\(clampFloatingRovoButtonValue\(start\.offsetX \+ deltaX, dragConstraints\.left, dragConstraints\.right\)\);[\s\S]*buttonY\.set\(clampFloatingRovoButtonValue\(start\.offsetY \+ deltaY, dragConstraints\.top, dragConstraints\.bottom\)\);/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const endDrag = useCallback\(\(pointerId\?: number\) => \{[\s\S]*dragPointerStartRef\.current = null;[\s\S]*scheduleDragClickSuppressionReset\(\);[\s\S]*snapToNearestGridTarget\(\);/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/document\.addEventListener\("pointermove", handleDocumentPointerMove, true\);[\s\S]*document\.addEventListener\("mousemove", handleDocumentMouseMove, true\);[\s\S]*document\.removeEventListener\("pointermove", handleDocumentPointerMove, true\);[\s\S]*document\.removeEventListener\("mousemove", handleDocumentMouseMove, true\);/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const target = getNearestFloatingRovoButtonSnapTarget\(rect, window\.innerWidth, window\.innerHeight\);[\s\S]*setDragConstraints\(getFloatingRovoButtonDragConstraints\(dragOrigin, rect, window\.innerWidth, window\.innerHeight\)\);[\s\S]*animate\(buttonX, target\.left - dragOrigin\.left, dragSnapTransition\);[\s\S]*animate\(buttonY, target\.top - dragOrigin\.top, dragSnapTransition\);/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const handleButtonClick = useCallback\(\(\) => \{[\s\S]*if \(suppressDragClickRef\.current\) \{[\s\S]*scheduleDragClickSuppressionReset\(\);[\s\S]*return;[\s\S]*\}[\s\S]*onButtonClick\(\);/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/document\.addEventListener\("click", handleDocumentClick, true\);[\s\S]*document\.removeEventListener\("click", handleDocumentClick, true\);/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/ref=\{surfaceRef\}[\s\S]*onClickCapture=\{handleClickCapture\}[\s\S]*whileHover=\{hoverScale\}[\s\S]*whileTap=\{tapScale\}/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/<FloatingRovoButtonInner[\s\S]*onClick=\{handleButtonClick\}[\s\S]*onDragMouseDown=\{handleDragMouseDown\}[\s\S]*onDragPointerDown=\{handleDragPointerDown\}/u,
 	);
 });
 
@@ -217,14 +313,18 @@ test("floating Rovo button can render a collapsed proactive suggestion nudge", (
 	);
 });
 
-test("floating Rovo button supports demo placement while preserving default chat behavior", () => {
+test("floating Rovo button supports demo initial placement while preserving default chat behavior", () => {
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
 		/ariaLabel\?: string;[\s\S]*placement\?: FloatingRovoButtonPlacement;[\s\S]*onButtonClick\?: \(\) => void;/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/right: resolvedPlacement\.right,[\s\S]*bottom: resolvedPlacement\.bottom,/u,
+		/placement[\s\S]*\? getClampedFloatingRovoButtonTarget\(rect, window\.innerWidth, window\.innerHeight\)[\s\S]*: getDefaultFloatingRovoButtonSnapTarget\(rect, window\.innerWidth, window\.innerHeight\)/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/left: dragOrigin\.left,[\s\S]*top: dragOrigin\.top,[\s\S]*right: resolvedPlacement\.right,[\s\S]*bottom: resolvedPlacement\.bottom/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
