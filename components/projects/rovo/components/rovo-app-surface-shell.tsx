@@ -192,16 +192,16 @@ export function RovoAppSurfaceShell({ children }: Readonly<RovoAppSurfaceShellPr
 						viewTransitionName: "persistent-header" as never,
 					}}
 				>
-					<div className="relative flex min-w-0 flex-1 items-center justify-start gap-2">
+					<div className="relative flex min-w-0 flex-1 items-center justify-center gap-2">
 						<div
 							ref={nav.searchContainerRef}
-							className="relative flex h-9 w-full max-w-[680px] items-center"
+							className="relative flex h-9 w-full max-w-[762px] items-center"
 						>
 							<InputGroup
 								className={cn(
-									"h-7 rounded-md bg-bg-input shadow-none transition-[height,background-color,box-shadow] duration-medium ease-out hover:bg-bg-input-hovered",
+									"h-8 origin-center rounded-md bg-bg-input shadow-none transition-[transform,background-color,box-shadow] duration-medium ease-out hover:bg-bg-input-hovered",
 									"has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0",
-									nav.isSearchFocused && "h-9",
+									nav.isSearchFocused && "scale-y-[1.15]",
 									nav.isSearchFocused && "relative z-[1001]",
 								)}
 								style={
