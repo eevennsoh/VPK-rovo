@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { SkillTag, SkillTagGroup } from "@/components/ui-custom/skill-tag";
 import type { VoiceButtonState } from "@/components/ui-audio/voice-button";
 import ChatContextBar from "@/components/projects/sidebar-chat/components/chat-context-bar";
+import { ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS } from "@/components/projects/studio/lib/rovo-app-shell-layout";
 import { resolveRovoAppComposerResponseGradientState } from "@/components/projects/studio/lib/rovo-app-composer-response-gradient-state";
 import type { RealtimeGenerationState } from "@/components/projects/studio/hooks/use-realtime-voice";
 import { cn } from "@/lib/utils";
@@ -454,7 +455,7 @@ function RovoAppComposerInner({
 				>
 					<FloatingComposer
 						allowOverflow
-						className="relative z-10 mx-auto max-w-[600px]"
+						className={cn("relative z-10 mx-auto", ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS)}
 						data-screen-assistant-target="studio-composer"
 						onSubmit={handlePromptSubmit}
 						addButton={

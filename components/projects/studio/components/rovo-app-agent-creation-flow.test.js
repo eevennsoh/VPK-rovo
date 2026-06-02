@@ -96,6 +96,10 @@ test("Studio default landing lists custom session agents below the composer", ()
 	assert.match(SHELL_SOURCE, /<RovoAppSidebar[\s\S]*onDeleteAgent=\{handleDeleteStudioAgent\}/u);
 
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /DropdownMenu,[\s\S]*DropdownMenuContent,[\s\S]*DropdownMenuGroup,[\s\S]*DropdownMenuItem,[\s\S]*DropdownMenuTrigger/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className=\{`mx-auto mt-10 w-full \$\{ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\}`\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<Table className="min-w-full table-fixed">/u);
+	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /max-w-\[1280px\]|min-w-\[760px\]/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{[\s\S]*Table,[\s\S]*TableBody,[\s\S]*TableCell,[\s\S]*TableHead,[\s\S]*TableHeader,[\s\S]*TableRow,[\s\S]*\} from "@\/components\/ui\/table";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/u);
@@ -215,11 +219,14 @@ test("Studio home bento applies card glow pointer flow to starter tiles", () => 
 });
 
 test("Studio content surfaces share the bento max width", () => {
+	assert.match(SHELL_LAYOUT_SOURCE, /export const ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS = "max-w-\[600px\]";/u);
 	assert.match(SHELL_LAYOUT_SOURCE, /export const ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS = "max-w-\[1280px\]";/u);
 	assert.match(SHELL_SOURCE, /ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS/u);
 	assert.match(SHELL_SOURCE, /className=\{cn\(BENTO_CAROUSEL_CONTAINER_CLASS, ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS\)\}/u);
 	assert.match(MESSAGES_SOURCE, /import \{ ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS \} from "@\/components\/projects\/studio\/lib\/rovo-app-shell-layout";/u);
 	assert.match(MESSAGES_SOURCE, /compact \? "max-w-none" : ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS/u);
+	assert.match(COMPOSER_SOURCE, /ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS/u);
+	assert.match(COMPOSER_SOURCE, /className=\{cn\("relative z-10 mx-auto", ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\)\}/u);
 });
 
 test("Studio home bento keeps tab auto-cycle active after manual tab selection", () => {
@@ -499,7 +506,7 @@ test("Studio composer reveals 'Start from scratch' on focus or hover and lands o
 
 test("Studio composer opts into experimental dark composer CTAs", () => {
 	assert.match(COMPOSER_SOURCE, /screenAssistantTargetPrefix="studio-composer"/u);
-	assert.match(COMPOSER_SOURCE, /className="relative z-10 mx-auto max-w-\[600px\]"/u);
+	assert.match(COMPOSER_SOURCE, /className=\{cn\("relative z-10 mx-auto", ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\)\}/u);
 	assert.match(COMPOSER_SOURCE, /experimentalDarkCta/u);
 	assert.doesNotMatch(COMPOSER_SOURCE, /voiceStartButtonClassName="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u);
 	assert.doesNotMatch(COMPOSER_SOURCE, /submitButtonClassName="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u);
