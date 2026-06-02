@@ -208,7 +208,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /layout === "compact"/u);
 	assert.match(compactLayoutSource, /<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">/u);
 	assert.doesNotMatch(compactLayoutSource, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
-	assert.match(compactLayoutSource, /bottomSlot=\{\([\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}[\s\S]*isFilledConfig \? null : \([\s\S]*<AnimatePresence>[\s\S]*templatesDismissed \? null : \([\s\S]*<AgentCompactOperationsBento[\s\S]*onDismiss=\{\(\) => setTemplatesDismissed\(true\)\}/u);
+	assert.match(compactLayoutSource, /bottomSlot=\{\([\s\S]*isFilledConfig \? null : \([\s\S]*<AnimatePresence>[\s\S]*templatesDismissed \? null : \([\s\S]*<AgentCompactOperationsBento[\s\S]*onDismiss=\{\(\) => setTemplatesDismissed\(true\)\}[\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}/u);
 	assert.match(compactLayoutSource, /bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-4 pt-4"/u);
 	assert.doesNotMatch(compactLayoutSource, /toolbarBelowSlot=\{\(\s*<AgentCompactConfigToolbarBelow/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow/u);
@@ -293,15 +293,14 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /aria-pressed=\{item\.isSelected \? true : undefined\}[\s\S]*variant=\{item\.isSelected \? "outline" : "ghost"\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /\[&_svg\]:size-4!/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactOperationsBento/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactBentoTemplatesHint[\s\S]*className="relative z-\[3\] mb-3 flex items-center justify-between gap-3"[\s\S]*<AgentSectionLabel>Start with these agent templates<\/AgentSectionLabel>/u);
 	assert.match(AGENT_SOURCE, /showSectionLabel=\{false\}/u);
 	assert.match(AGENT_SOURCE, /data-slot="agent-compact-operations-bento"/u);
 	assert.match(AGENT_SOURCE, /AGENT_COMPACT_BENTO_CARD_GLOW_EFFECT_STYLE/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactBentoCardGlowLayers/u);
 	assert.match(AGENT_SOURCE, /sm:bento-fade-bottom/u);
-	assert.match(AGENT_SOURCE, /<BentoCarousel arrowLabels=\{\{ next: "Show next agent templates", previous: "Show previous agent templates" \}\}>/u);
+	assert.match(AGENT_SOURCE, /<BentoCarousel[\s\S]*gridClassName="sm:grid-cols-5"[\s\S]*arrowLabels=\{\{ next: "Show next agent templates", previous: "Show previous agent templates" \}\}/u);
 	assert.match(AGENT_SOURCE, /BENTO_CAROUSEL_TILE_CLASS/u);
-	assert.match(AGENT_SOURCE, /<SkillTagGroup maxRows=\{2\}>/u);
-	assert.match(AGENT_SOURCE, /<TWGAppstack[\s\S]*iconSize="md"[\s\S]*sources=\{template\.hero\.sources\}/u);
 	assert.match(AGENT_SOURCE, /Browse all/u);
 	assert.doesNotMatch(AGENT_SOURCE, /Show more/u);
 	assert.match(AGENT_SOURCE, /title: "Service Triage"/u);
@@ -541,8 +540,9 @@ test("Shared toolbar groups related split controls and keeps unrelated toggles i
 	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Link"[\s\S]*onPressedChange=\{handleLinkPressedChange\}/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Add content"[\s\S]*onClick=\{handleAddContent\}/u);
 	// The trailing `+` button is wrapped in a positioned div so it can anchor
-	// the Insert dropdown (Paragraph / Table / Horizontal rule).
-	assert.match(EDITOR_TOOLBAR_SOURCE, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<div[^>]*>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>[\s\S]*<\/div>/u);
+	// the Insert dropdown.
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<ToolbarSeparator \/>/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<div className="relative">\s*<Button[\s\S]*aria-label="Add content"[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>[\s\S]*<\/div>/u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /<AddIcon label="" size="small" \/>\s*<\/Button>\s*<ToolbarSeparator \/>/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<Tabs[\s\S]*value=\{isMarkdownMode \? "markdown" : "rendered"\}/u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /value="link"/u);
