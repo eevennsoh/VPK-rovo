@@ -30,14 +30,14 @@ test("AgentResultCard renders created agent profile description", () => {
 	assert.match(AGENT_RESULT_CARD_SOURCE, /return agent\?\.action === "create";/u);
 	assert.match(AGENT_RESULT_CARD_SOURCE, /if \(!isGeneratedAgentResult\(agent\)\) \{[\s\S]*return null;[\s\S]*\}/u);
 	assert.match(AGENT_RESULT_CARD_SOURCE, /function getAgentDescription\(agent: AgentResult\): string/u);
-	assert.match(AGENT_RESULT_CARD_SOURCE, /RFP Drafter monitors Drafting tickets, reads Jira context/u);
+	assert.match(AGENT_RESULT_CARD_SOURCE, /RFP Drafter monitors Drafting work items, reads Jira context/u);
 	assert.match(AGENT_RESULT_CARD_SOURCE, /DEFAULT_GENERATED_AGENT_AVATAR_SRC = "\/avatar-agent\/teamwork-agents\/blocker-checker\.svg";/u);
 	assert.match(AGENT_RESULT_CARD_SOURCE, /function getAgentDisplayName\(agent: AgentResult\): string/u);
 	assert.match(AGENT_RESULT_CARD_SOURCE, /const RFP_DRAFTING_AGENT_ID = "rfp-drafting-agent";/u);
 	assert.match(AGENT_RESULT_CARD_SOURCE, /agent\.agentId === RFP_DRAFTING_AGENT_ID \? "RFP Drafter" : agent\.name/u);
 	assert.match(
 		AGENT_RESULT_CARD_SOURCE,
-		/<AgentCard[\s\S]*avatarSrc=\{avatarSrc\}[\s\S]*coverSrc=\{avatarSrc\}[\s\S]*description=\{description\}[\s\S]*inputActionLabel=\{`Chat with \$\{displayName\}`\}[\s\S]*inputPlaceholder=\{`Chat with \$\{displayName\}`\}[\s\S]*name=\{displayName\}[\s\S]*onInputAction=\{handleSelectAgent\}[\s\S]*onVoiceInput=\{handleSelectAgent\}[\s\S]*partnerName=\{DEFAULT_AGENT_PARTNER_NAME\}[\s\S]*\/>/u,
+		/<AgentCard[\s\S]*avatarSrc=\{avatarSrc\}[\s\S]*coverSrc=\{avatarSrc\}[\s\S]*description=\{description\}[\s\S]*inputActionLabel=\{`Chat with \$\{displayName\}`\}[\s\S]*inputPlaceholder=\{`Chat with \$\{displayName\}`\}[\s\S]*name=\{displayName\}[\s\S]*editActionLabel=\{`Edit \$\{displayName\}`\}[\s\S]*onEditAction=\{handleSelectAgent\}[\s\S]*onInputAction=\{handleSelectAgent\}[\s\S]*onSwapAction=\{handleSelectAgent\}[\s\S]*onVoiceInput=\{handleSelectAgent\}[\s\S]*partnerName=\{DEFAULT_AGENT_PARTNER_NAME\}[\s\S]*swapActionLabel="Chat with agent"[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(AGENT_RESULT_CARD_SOURCE, /ArtifactCard/u);
 	assert.doesNotMatch(AGENT_RESULT_CARD_SOURCE, /SkillTag/u);

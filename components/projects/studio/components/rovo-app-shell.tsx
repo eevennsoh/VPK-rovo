@@ -25,6 +25,7 @@ import { AgentTestPanel } from "@/components/projects/studio/components/rovo-app
 import { RovoAppShellPaneLayout } from "@/components/projects/studio/components/rovo-app-shell-pane-layout";
 import { RovoAppSidebar } from "@/components/projects/studio/components/rovo-app-sidebar";
 import { type RovoAppSteeringPhase } from "@/components/projects/studio/components/rovo-app-steering-lane";
+import { isGeneratedAgentResult } from "@/components/projects/sidebar-chat/components/agent-result-card";
 import { SmoothGradientWaveform } from "@/components/blocks/visual-waveform/smooth-gradient-waveform";
 import { useArtifactAnnotations } from "@/components/ui-custom/hooks/use-artifact-annotations";
 import { useBentoDescriptionClamp } from "@/components/ui-custom/hooks/use-bento-description-clamp";
@@ -92,7 +93,7 @@ import {
 } from "@/components/projects/studio/data/agent-edit-greeting";
 import { clamp, cn, createId } from "@/lib/utils";
 import { token } from "@/lib/tokens";
-import { getLatestDataPart, getLatestUserMessageId, getMessageAgentResult, getMessageArtifactResult, getMessageInterruption, getMessageText, type RovoDataParts } from "@/lib/rovo-ui-messages";
+import { getLatestDataPart, getLatestUserMessageId, getMessageAgentResult, getMessageArtifactResult, getMessageInterruption, getMessageText, hasTurnCompleteSignal, type RovoDataParts } from "@/lib/rovo-ui-messages";
 import { getRovoAppArtifactKindLabel, getRovoAppArtifactTypeLabel, sortRovoAppArtifacts } from "@/components/projects/rovo/lib/rovo-app-artifacts";
 import { RovoAppHeader } from "@/components/projects/studio/components/rovo-app-header";
 import { ApprovalCard } from "@/components/blocks/approval-card/page";
@@ -1638,8 +1639,14 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		profileId: string;
 		sourceMessageId: string | null;
 	} | null>(null);
+	const activeAgentConfigRef = useRef(activeAgentConfig);
+	const setActiveAgentConfigState = useCallback((nextAgentConfig: typeof activeAgentConfig) => {
+		activeAgentConfigRef.current = nextAgentConfig;
+		setActiveAgentConfig(nextAgentConfig);
+	}, []);
 	const [activeAgentConfigView, setActiveAgentConfigView] = useState<AgentConfigView>("configure");
 	const [isSidebarAgentBrowserOpen, setIsSidebarAgentBrowserOpen] = useState(false);
+	const generatedAgentTestViewKeysRef = useRef<Set<string>>(new Set());
 
 	const handleStudioAgentResultSelect = useCallback(
 		(agentResult: RovoDataParts["agent-result"], options?: { sourceMessageId?: string; sourceKey?: string }): boolean => {
@@ -1662,7 +1669,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				if (!registered) {
 					return false;
 				}
-				setActiveAgentConfig({
+				setActiveAgentConfigState({
 					profileId: registered.id,
 					sourceMessageId: options?.sourceMessageId ?? null,
 				});
@@ -1691,14 +1698,14 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 			const agentId = resolveRegisteredStudioAgentId(registrationResult, normalizedAgent.id);
 			studioAgentRegistry.selectAgent(agentId, { preserveCurrentThread: true });
-			setActiveAgentConfig({
+			setActiveAgentConfigState({
 				profileId: agentId,
 				sourceMessageId: options?.sourceMessageId ?? null,
 			});
 			setActiveAgentConfigView("test");
 			return true;
 		},
-		[chat.activeThreadId, chat.runtimeThreadId, studioAgentRegistry],
+		[chat.activeThreadId, chat.runtimeThreadId, setActiveAgentConfigState, studioAgentRegistry],
 	);
 
 	// "Start from scratch" — create a fresh, untitled session agent (no AI result
@@ -1729,23 +1736,23 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			return;
 		}
 
-		setActiveAgentConfig({
+		setActiveAgentConfigState({
 			profileId: registered.id,
 			sourceMessageId: null,
 		});
 		setActiveAgentConfigView("configure");
-	}, [studioAgentRegistry]);
+	}, [setActiveAgentConfigState, studioAgentRegistry]);
 
 	const handleStudioSidebarAgentSelect = useCallback(
 		(agentId: string) => {
 			studioAgentRegistry.selectAgent(agentId, { preserveCurrentThread: true });
-			setActiveAgentConfig({
+			setActiveAgentConfigState({
 				profileId: agentId,
 				sourceMessageId: null,
 			});
 			setActiveAgentConfigView("configure");
 		},
-		[studioAgentRegistry],
+		[setActiveAgentConfigState, studioAgentRegistry],
 	);
 
 	const handleDeleteStudioAgent = useCallback(
@@ -1753,13 +1760,13 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			// Close the config pane first so its draft editor cannot re-save a
 			// session agent after the registry entry is removed.
 			if (activeAgentConfig?.profileId === agentId) {
-				setActiveAgentConfig(null);
+				setActiveAgentConfigState(null);
 			}
 			startTransition(() => {
 				studioAgentRegistry.removeSessionAgent(agentId);
 			});
 		},
-		[activeAgentConfig?.profileId, studioAgentRegistry],
+		[activeAgentConfig?.profileId, setActiveAgentConfigState, studioAgentRegistry],
 	);
 
 	// Returns to the "Agents" landing (bento). Shared by the sidebar's "Agents"
@@ -1770,30 +1777,30 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	// two, openNewChat alone leaves the custom-agent screen open.
 	const handleReturnToAgentsHome = useCallback(() => {
 		setOptimisticUserMessage(null);
-		setActiveAgentConfig(null);
+		setActiveAgentConfigState(null);
 		setActiveAgentConfigView("configure");
 		studioAgentRegistry.resetAgentToRovo();
 		startTransition(() => {
 			void chat.openNewChat();
 		});
-	}, [chat, studioAgentRegistry]);
+	}, [chat, setActiveAgentConfigState, studioAgentRegistry]);
 
 	const handleSidebarBrowseAgentSelect = useCallback(
 		(agent: { id: string }) => {
 			studioAgentRegistry.selectAgent(agent.id, { preserveCurrentThread: true });
 			if (studioAgentRegistry.getSessionAgentEntry?.(agent.id)) {
-				setActiveAgentConfig({
+				setActiveAgentConfigState({
 					profileId: agent.id,
 					sourceMessageId: null,
 				});
 				setActiveAgentConfigView("configure");
 			} else {
-				setActiveAgentConfig(null);
+				setActiveAgentConfigState(null);
 				setActiveAgentConfigView("configure");
 			}
 			setIsSidebarAgentBrowserOpen(false);
 		},
-		[studioAgentRegistry],
+		[setActiveAgentConfigState, studioAgentRegistry],
 	);
 
 	const handleUpdateAgentDraft = useCallback(
@@ -1831,9 +1838,11 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	// the URL-seed path, which otherwise only re-selects the agent for chat and
 	// would leave the studio on the agent's chat surface with no config pane.
 	const handleAgentRestoredFromUrl = useCallback((agentId: string | null) => {
-		setActiveAgentConfigView("configure");
-		setActiveAgentConfig(agentId ? { profileId: agentId, sourceMessageId: null } : null);
-	}, []);
+		if (activeAgentConfigRef.current?.profileId !== agentId) {
+			setActiveAgentConfigView("configure");
+		}
+		setActiveAgentConfigState(agentId ? { profileId: agentId, sourceMessageId: null } : null);
+	}, [setActiveAgentConfigState]);
 
 	// Mirror the selected/created agent into the URL (`?agent=`) so it is
 	// deep-linkable, survives reload, and works with browser back/forward.
@@ -1913,10 +1922,48 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	// config pane so we don't keep a stale reference around.
 	useEffect(() => {
 		if (activeAgentConfig && !activeSessionAgentEntry) {
-			setActiveAgentConfig(null);
+			if (studioAgentRegistry.getSessionAgentEntry?.(activeAgentConfig.profileId)) {
+				return;
+			}
+
+			setActiveAgentConfigState(null);
 			setActiveAgentConfigView("configure");
 		}
-	}, [activeAgentConfig, activeSessionAgentEntry]);
+	}, [activeAgentConfig, activeSessionAgentEntry, setActiveAgentConfigState, studioAgentRegistry]);
+
+	useEffect(() => {
+		if (
+			!activeAgentConfig ||
+			!activeSessionAgentEntry ||
+			activeAgentConfigView === "test"
+		) {
+			return;
+		}
+
+		for (const message of chat.messages.toReversed()) {
+			const agentResult = getMessageAgentResult(message);
+			if (!isGeneratedAgentResult(agentResult) || !hasTurnCompleteSignal(message)) {
+				continue;
+			}
+
+			const isActiveGeneratedAgent =
+				message.id === activeAgentConfig.sourceMessageId ||
+				agentResult.agentId === activeSessionAgentEntry.sourceResult.agentId ||
+				agentResult.agentId === activeSessionAgentEntry.draftResult.agentId ||
+				agentResult.agentId === activeSessionAgentEntry.publishReadyResult.agentId;
+
+			if (isActiveGeneratedAgent) {
+				const agentResultKey = `${chat.runtimeThreadId}:${message.id}:${agentResult.agentId}:${agentResult.action}`;
+				if (generatedAgentTestViewKeysRef.current.has(agentResultKey)) {
+					break;
+				}
+
+				generatedAgentTestViewKeysRef.current.add(agentResultKey);
+				setActiveAgentConfigView("test");
+				break;
+			}
+		}
+	}, [activeAgentConfig, activeAgentConfigView, activeSessionAgentEntry, chat.messages, chat.runtimeThreadId]);
 
 	// Bridge the global sidebar context (TopNavigation toggle) with the local
 	// shadcn SidebarProvider so the nav bar button controls the thread sidebar.
@@ -2690,6 +2737,12 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	>(null);
 	const prefillTextRef = useRef<string | null>(null);
 
+	const clearPrefillSources = useCallback(() => {
+		setPrefillText(null);
+		setVoiceTranscript(null);
+		prefillTextRef.current = null;
+	}, []);
+
 	const handleToggleClicky = useCallback(() => {
 		toggleClicky();
 	}, [toggleClicky]);
@@ -3101,6 +3154,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			const shouldClearHermesSkillSelection = Boolean(hermesPromptOptions.hermesContext);
 			const latestUserMessageIdBeforeSubmit = getLatestUserMessageId(chat.messages);
 
+			clearPrefillSources();
+
 			if (isRealtimeActive) {
 				if (typeof realtimeChat.submitRealtimeText === "function") {
 					queueTypedScrollAnchor("realtime", latestUserMessageIdBeforeSubmit);
@@ -3220,6 +3275,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			setOptimisticUserMessage,
 			buildHermesPromptOptions,
 			clearHermesSkillSelection,
+			clearPrefillSources,
 			markStudioAgentCreationThread,
 			chat.activeThreadId,
 			chat.sendMode,
@@ -3266,16 +3322,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		}
 	}, [chat.activeThreadId, chat.runtimeThreadId, markStudioAgentCreationThread]);
 	useEffect(() => {
-		if (
-			!studioAgentCreationThreadKeysRef.current.has(chat.runtimeThreadId) &&
-			(!chat.activeThreadId || !studioAgentCreationThreadKeysRef.current.has(chat.activeThreadId))
-		) {
-			return;
-		}
-
-		for (const message of chat.messages) {
+		for (const message of chat.messages.toReversed()) {
 			const agentResult = getMessageAgentResult(message);
-			if (!agentResult) {
+			if (!isGeneratedAgentResult(agentResult) || !hasTurnCompleteSignal(message)) {
 				continue;
 			}
 
@@ -3288,6 +3337,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				handledAgentResultKeysRef.current.add(agentResultKey);
 				unmarkStudioAgentCreationThread(chat.runtimeThreadId);
 				unmarkStudioAgentCreationThread(chat.activeThreadId);
+				break;
 			}
 		}
 	}, [chat.activeThreadId, chat.messages, chat.runtimeThreadId, handleStudioAgentResultSelect, unmarkStudioAgentCreationThread]);

@@ -12,7 +12,13 @@
  * `writeAgentsRfpDemoTrace` for the source pattern.
  */
 
-const DEFAULT_TOOL_CALL_DELAY_MS = 1400;
+const DEFAULT_TOOL_CALL_DELAY_RANGE_MS = Object.freeze({
+	min: 1800,
+	max: 2800,
+});
+const DEFAULT_TOOL_CALL_DELAY_MS = Math.round(
+	(DEFAULT_TOOL_CALL_DELAY_RANGE_MS.min + DEFAULT_TOOL_CALL_DELAY_RANGE_MS.max) / 2,
+);
 
 function waitFor(delayMs, signal) {
 	if (typeof delayMs !== "number" || !Number.isFinite(delayMs) || delayMs <= 0) {
@@ -67,23 +73,75 @@ function createThinkingEventPart(step, phase) {
 	return part;
 }
 
+function isPositiveFiniteNumber(value) {
+	return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+function normalizeDelayRange(range) {
+	if (!range || typeof range !== "object") {
+		return null;
+	}
+
+	const min = Number(range.min);
+	const max = Number(range.max);
+	if (!isPositiveFiniteNumber(min) || !isPositiveFiniteNumber(max)) {
+		return null;
+	}
+
+	return {
+		min: Math.min(min, max),
+		max: Math.max(min, max),
+	};
+}
+
+function getRandomizedDelayMs(range, random = Math.random) {
+	const normalizedRange = normalizeDelayRange(range);
+	if (!normalizedRange) {
+		return DEFAULT_TOOL_CALL_DELAY_MS;
+	}
+
+	if (normalizedRange.min === normalizedRange.max) {
+		return Math.round(normalizedRange.min);
+	}
+
+	const randomValue = typeof random === "function" ? random() : Math.random();
+	const clampedRandomValue = Math.min(1, Math.max(0, Number.isFinite(randomValue) ? randomValue : Math.random()));
+	return Math.round(normalizedRange.min + (normalizedRange.max - normalizedRange.min) * clampedRandomValue);
+}
+
+function resolveToolCallDelayMs(step, options = {}) {
+	if (isPositiveFiniteNumber(step?.delayMs)) {
+		return step.delayMs;
+	}
+	if (isPositiveFiniteNumber(options.defaultDelayMs)) {
+		return options.defaultDelayMs;
+	}
+
+	return getRandomizedDelayMs(
+		options.defaultDelayRangeMs ?? DEFAULT_TOOL_CALL_DELAY_RANGE_MS,
+		options.random,
+	);
+}
+
 /**
  * Write a sequence of scripted thinking steps to a UI message stream writer.
  *
  * For each step:
  * 1. Emit `data-thinking-status` (drives the collapsible trigger label).
  * 2. Emit `data-thinking-event` with phase=start (creates the ChainOfThoughtStep row in "running" state).
- * 3. Wait `step.delayMs` (or `defaultDelayMs`) — this is the "running" beat.
+ * 3. Wait `step.delayMs`, `defaultDelayMs`, or a randomized range — this is the "running" beat.
  * 4. If the step has output, emit `data-thinking-event` with phase=result (transitions the row to "completed").
  *
  * @param {object} writer        — UI message stream writer (must expose `.write()`)
  * @param {Array}  steps         — ordered list of step descriptors
  * @param {object} [options]
- * @param {number} [options.defaultDelayMs=1400] — per-step delay when step.delayMs is unset
+ * @param {number} [options.defaultDelayMs]      — exact per-step delay when step.delayMs is unset
+ * @param {{min:number,max:number}} [options.defaultDelayRangeMs] — randomized per-step delay range
+ * @param {() => number} [options.random]        — random source for tests
  * @param {AbortSignal} [options.signal]         — abort to short-circuit the loop
  */
 async function writeThinkingTraceSteps(writer, steps, options = {}) {
-	const { defaultDelayMs = DEFAULT_TOOL_CALL_DELAY_MS, signal } = options;
+	const { signal } = options;
 
 	if (!Array.isArray(steps) || steps.length === 0) {
 		return;
@@ -94,10 +152,7 @@ async function writeThinkingTraceSteps(writer, steps, options = {}) {
 			return;
 		}
 
-		const toolCallDelayMs =
-			typeof step.delayMs === "number" && Number.isFinite(step.delayMs) && step.delayMs > 0
-				? step.delayMs
-				: defaultDelayMs;
+		const toolCallDelayMs = resolveToolCallDelayMs(step, options);
 		const hasResult = step.output !== undefined || step.outputPreview;
 		const resultDelayMs = hasResult
 			? Math.round(toolCallDelayMs * 0.7)
@@ -130,6 +185,12 @@ async function writeThinkingTraceSteps(writer, steps, options = {}) {
 
 module.exports = {
 	DEFAULT_TOOL_CALL_DELAY_MS,
+	DEFAULT_TOOL_CALL_DELAY_RANGE_MS,
 	createThinkingEventPart,
 	writeThinkingTraceSteps,
+	__internals: {
+		getRandomizedDelayMs,
+		normalizeDelayRange,
+		resolveToolCallDelayMs,
+	},
 };

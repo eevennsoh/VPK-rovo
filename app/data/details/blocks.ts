@@ -128,9 +128,30 @@ function FormattingToolbar({ editor }: { editor: Editor }) {
 				description: "Accessible label for the input affordance when it is actionable.",
 			},
 			{
+				name: "swapActionLabel",
+				type: "string",
+				default: '"Chat with agent"',
+				description: "Visible label for the compact header chat action.",
+			},
+			{
+				name: "editActionLabel",
+				type: "string",
+				description: "Accessible label for the edit icon action.",
+			},
+			{
 				name: "onInputAction",
 				type: "() => void",
 				description: "Called when the input affordance is selected.",
+			},
+			{
+				name: "onSwapAction",
+				type: "() => void",
+				description: "Called when the compact header chat action is selected.",
+			},
+			{
+				name: "onEditAction",
+				type: "() => void",
+				description: "Called when the edit icon action is selected.",
 			},
 			{
 				name: "onMoreAction",

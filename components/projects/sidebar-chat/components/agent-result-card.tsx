@@ -78,9 +78,13 @@ export function AgentResultCard({
 				inputActionLabel={`Chat with ${displayName}`}
 				inputPlaceholder={`Chat with ${displayName}`}
 				name={displayName}
+				editActionLabel={`Edit ${displayName}`}
+				onEditAction={handleSelectAgent}
 				onInputAction={handleSelectAgent}
+				onSwapAction={handleSelectAgent}
 				onVoiceInput={handleSelectAgent}
 				partnerName={DEFAULT_AGENT_PARTNER_NAME}
+				swapActionLabel="Chat with agent"
 				voiceActionLabel={`Start voice input with ${displayName}`}
 			/>
 		</div>

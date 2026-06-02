@@ -5,6 +5,9 @@
  */
 
 import type { ComponentType } from "react";
+import type { GenerativeContentType } from "@/components/projects/shared/lib/generative-widget";
+import type { ResolvedCardIdentity } from "@/components/projects/shared/lib/visual-identity";
+import { resolveGenerativeCardIdentity } from "@/components/projects/shared/lib/visual-identity";
 
 // Icon imports - these will be used by consuming components
 import TimelineIcon from "@atlaskit/icon/core/timeline";
@@ -21,10 +24,85 @@ export interface RovoSuggestion {
 	icon?: ComponentType<any>;
 	/** Image path for prompts with rich illustrations */
 	imageSrc?: string;
+	/** Shared visual identity for generated/contextual suggestions. */
+	visualIdentity?: ResolvedCardIdentity;
 	/** Hidden context attached when this suggestion is submitted */
 	contextDescription?: string;
 	/** Indicates if this is a "skill" (icon) or "prompt" (rich illustration) */
 	type: "skill" | "prompt";
+}
+
+interface ConversationStarterVisualIdentityInput {
+	agentId: string;
+	agentName: string;
+	byline: string;
+	description?: string | null;
+	label: string;
+}
+
+function resolveConversationStarterIdentityHint(label: string): {
+	contentType: GenerativeContentType;
+	iconHint?: string;
+} {
+	const normalizedLabel = label.toLowerCase();
+
+	if (/\b(json|code|script|automation-ready|markdown|yaml|sql)\b/u.test(normalizedLabel)) {
+		return { contentType: "code", iconHint: "code" };
+	}
+
+	if (/\b(jira|jsm|request|ticket|issue|incident|priority|sla|routing|triage|escalat)/u.test(normalizedLabel)) {
+		return { contentType: "work-item", iconHint: "ticket" };
+	}
+
+	if (/\b(confluence|page|doc|document|wiki|rfp)\b/u.test(normalizedLabel)) {
+		return { contentType: "page", iconHint: "document" };
+	}
+
+	if (/\b(calendar|meeting|event|schedule|timeline|deadline|date)\b/u.test(normalizedLabel)) {
+		return { contentType: "calendar", iconHint: "calendar" };
+	}
+
+	if (/\b(chart|trend|metric|report|dashboard|analy[sz]e|insight|summary)\b/u.test(normalizedLabel)) {
+		return { contentType: "chart", iconHint: "chart" };
+	}
+
+	if (/\b(slack|message|reply|comment|chat|email)\b/u.test(normalizedLabel)) {
+		return { contentType: "message", iconHint: "chat" };
+	}
+
+	if (/\b(table|spreadsheet|dataset|batch|list)\b/u.test(normalizedLabel)) {
+		return { contentType: "table", iconHint: "table" };
+	}
+
+	if (/\b(translate|translation|language|locali[sz]e)\b/u.test(normalizedLabel)) {
+		return { contentType: "translation", iconHint: "translate" };
+	}
+
+	if (/\b(image|mockup|design|figma|visual)\b/u.test(normalizedLabel)) {
+		return { contentType: "image", iconHint: "image" };
+	}
+
+	if (/\b(skill|tool|integration|access)\b/u.test(normalizedLabel)) {
+		return { contentType: "skill", iconHint: "skill" };
+	}
+
+	return { contentType: "text", iconHint: "summary" };
+}
+
+export function resolveConversationStarterVisualIdentity(
+	input: Readonly<ConversationStarterVisualIdentityInput>,
+): ResolvedCardIdentity {
+	const hint = resolveConversationStarterIdentityHint(input.label);
+
+	return resolveGenerativeCardIdentity({
+		contentType: hint.contentType,
+		description: input.description ?? undefined,
+		hintText: input.label,
+		iconHint: hint.iconHint,
+		identitySeed: `${input.agentId}:${input.label}`,
+		sourceName: `${input.agentName} ${input.byline}`,
+		title: input.label,
+	});
 }
 
 const rovoSiteUrl =

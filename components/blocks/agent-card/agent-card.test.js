@@ -22,3 +22,22 @@ test("Agent Card preview uses a direct route instead of the generic dynamic prev
 	assert.match(source, /return <AgentCardPage \/>;/u);
 	assert.doesNotMatch(source, /RenderPreviewCategoryPage/u);
 });
+
+test("Agent Card title actions use chat label and edit icon controls", () => {
+	const source = readProjectFile("components/blocks/agent-card/components/agent-card.tsx");
+
+	assert.match(source, /import EditIcon from "@atlaskit\/icon\/core\/edit";/u);
+	assert.doesNotMatch(source, /SwapIcon/u);
+	assert.match(source, /editActionLabel\?: string;/u);
+	assert.match(source, /onEditAction\?: \(\) => void;/u);
+	assert.match(source, /const resolvedSwapActionLabel = swapActionLabel \?\? "Chat with agent";/u);
+	assert.match(source, /const resolvedEditActionLabel = editActionLabel \?\? `Edit \$\{name\}`;/u);
+	assert.match(
+		source,
+		/<Button[\s\S]*aria-label=\{resolvedSwapActionLabel\}[\s\S]*size="compact"[\s\S]*>\s*\{resolvedSwapActionLabel\}\s*<\/Button>/u,
+	);
+	assert.match(
+		source,
+		/<Button[\s\S]*aria-label=\{resolvedEditActionLabel\}[\s\S]*onClick=\{onEditAction\}[\s\S]*size="icon-compact"[\s\S]*<EditIcon label="" size="small" \/>/u,
+	);
+});

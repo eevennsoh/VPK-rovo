@@ -7,7 +7,7 @@ import ChatPanel from "@/components/projects/sidebar-chat/page";
 import type { RovoAgentProfile } from "@/components/projects/rovo/data/agent-profiles";
 import { cn } from "@/lib/utils";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
-import type { RovoSuggestion } from "@/lib/rovo-suggestions";
+import { resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
 
 const AGENT_TEST_MAX_CONVERSATION_STARTERS = 3;
 
@@ -104,13 +104,21 @@ function getConversationStarterLabels(payload: AgentResultPayload): string[] {
 function createAgentTestStarter(
 	agentId: string,
 	label: string,
-	index: number
+	index: number,
+	context: { agentName: string; byline: string; description?: string | null },
 ): RovoSuggestion {
 	return {
 		id: `${agentId}-starter-${index + 1}`,
 		label,
 		prompt: label,
 		type: "skill",
+		visualIdentity: resolveConversationStarterVisualIdentity({
+			agentId,
+			agentName: context.agentName,
+			byline: context.byline,
+			description: context.description ?? undefined,
+			label,
+		}),
 	};
 }
 
@@ -156,7 +164,11 @@ function buildAgentTestProfile(entry: StudioSessionAgentEntry): RovoAgentProfile
 		getPayloadString(payload, ["instructions", "contextDescription", "context", "systemPrompt", "prompt"]) ??
 		entry.profile.contextDescription;
 	const starters = getConversationStarterLabels(payload).map((starter, index) =>
-		createAgentTestStarter(id, starter, index)
+		createAgentTestStarter(id, starter, index, {
+			agentName: name,
+			byline,
+			description,
+		})
 	);
 
 	return {

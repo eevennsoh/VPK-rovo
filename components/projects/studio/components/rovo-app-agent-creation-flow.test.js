@@ -31,6 +31,18 @@ const CHAT_PANEL_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/sidebar-chat/page.tsx"),
 	"utf8",
 );
+const CHAT_GREETING_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/sidebar-chat/components/chat-greeting.tsx"),
+	"utf8",
+);
+const ROVO_CONTEXT_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "app/contexts/context-rovo-chat.tsx"),
+	"utf8",
+);
+const ROVO_SUGGESTIONS_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "lib/rovo-suggestions.ts"),
+	"utf8",
+);
 const UI_CUSTOM_AGENT_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/ui-custom/agent.tsx"),
 	"utf8",
@@ -116,6 +128,18 @@ test("Studio start-from-scratch scribble replays on each composer hover reveal",
 	assert.match(COMPOSER_SOURCE, /const showScratchScribble = isRevealVisible;/u);
 	assert.match(COMPOSER_SOURCE, /resetKey=\{scratchScribbleReplayKey\}/u);
 	assert.doesNotMatch(COMPOSER_SOURCE, /scribbleConsumed/u);
+});
+
+test("Studio composer clears shell-owned prefill sources when a prompt is submitted", () => {
+	assert.match(
+		SHELL_SOURCE,
+		/const clearPrefillSources = useCallback\(\(\) => \{\s*setPrefillText\(null\);\s*setVoiceTranscript\(null\);\s*prefillTextRef\.current = null;\s*\}, \[\]\);/u,
+	);
+	assert.match(
+		SHELL_SOURCE,
+		/const latestUserMessageIdBeforeSubmit = getLatestUserMessageId\(chat\.messages\);\s*clearPrefillSources\(\);\s*if \(isRealtimeActive\)/u,
+	);
+	assert.match(SHELL_SOURCE, /clearPrefillSources,/u);
 });
 
 test("Studio home starters frame agent building instead of generic one-off tasks", () => {
@@ -246,10 +270,15 @@ test("Studio agent results use guarded session-agent registration with preserve-
 	assert.match(SHELL_SOURCE, /studioAgentRegistry\.registerCreatedAgentFromResult\(agentResult, \{[\s\S]*preserveCurrentThread: true,[\s\S]*select: true,[\s\S]*sourceKey,/u);
 	assert.match(SHELL_SOURCE, /if \(!didRegisterAgent\) \{[\s\S]*return false;[\s\S]*\}/u);
 	assert.match(SHELL_SOURCE, /studioAgentRegistry\.selectAgent\(agentId, \{ preserveCurrentThread: true \}\);/u);
+	assert.match(SHELL_SOURCE, /import \{ isGeneratedAgentResult \} from "@\/components\/projects\/sidebar-chat\/components\/agent-result-card";/u);
+	assert.match(SHELL_SOURCE, /hasTurnCompleteSignal/u);
 	assert.match(SHELL_SOURCE, /const agentResult = getMessageAgentResult\(message\);/u);
+	assert.match(SHELL_SOURCE, /for \(const message of chat\.messages\.toReversed\(\)\) \{/u);
+	assert.match(SHELL_SOURCE, /if \(!isGeneratedAgentResult\(agentResult\) \|\| !hasTurnCompleteSignal\(message\)\) \{[\s\S]*continue;[\s\S]*\}/u);
 	assert.match(SHELL_SOURCE, /if \(handleStudioAgentResultSelect\(agentResult, \{ sourceMessageId: message\.id \}\)\) \{[\s\S]*handledAgentResultKeysRef\.current\.add\(agentResultKey\);/u);
+	assert.match(SHELL_SOURCE, /handledAgentResultKeysRef\.current\.add\(agentResultKey\);[\s\S]*unmarkStudioAgentCreationThread\(chat\.runtimeThreadId\);[\s\S]*unmarkStudioAgentCreationThread\(chat\.activeThreadId\);[\s\S]*break;/u);
 	assert.match(SHELL_SOURCE, /const unmarkStudioAgentCreationThread = useCallback[\s\S]*studioAgentCreationThreadKeysRef\.current\.delete\(threadId\);/u);
-	assert.match(SHELL_SOURCE, /unmarkStudioAgentCreationThread\(chat\.runtimeThreadId\);/u);
+	assert.doesNotMatch(SHELL_SOURCE, /!studioAgentCreationThreadKeysRef\.current\.has\(chat\.runtimeThreadId\) &&[\s\S]*return;[\s\S]*for \(const message of chat\.messages/u);
 	assert.match(SHELL_SOURCE, /import \{ AgentsDirectoryDialog \} from "@\/components\/blocks\/agents-directory";/u);
 	assert.match(SHELL_SOURCE, /sessionAgentEntries=\{studioAgentRegistry\.sessionAgentEntries\}/u);
 	assert.match(SHELL_SOURCE, /sessionAgents=\{studioAgentRegistry\.sessionAgentEntries\.map\(\(entry\) => entry\.profile\)\}/u);
@@ -286,7 +315,15 @@ test("Studio lands generated agents in the Test tab without opening Ask Rovo", (
 		SHELL_SOURCE.indexOf("// \"Start from scratch\""),
 	);
 	assert.doesNotMatch(agentResultSelectSource, /nav\.openChat\("sidebar"\)|nav\.toggleChat/u);
-	assert.match(SHELL_SOURCE, /\[chat\.activeThreadId, chat\.runtimeThreadId, studioAgentRegistry\]/u);
+	assert.match(SHELL_SOURCE, /\[chat\.activeThreadId, chat\.runtimeThreadId, setActiveAgentConfigState, studioAgentRegistry\]/u);
+	assert.match(SHELL_SOURCE, /const activeAgentConfigRef = useRef\(activeAgentConfig\);/u);
+	assert.match(SHELL_SOURCE, /const generatedAgentTestViewKeysRef = useRef<Set<string>>\(new Set\(\)\);/u);
+	assert.match(SHELL_SOURCE, /const setActiveAgentConfigState = useCallback\(\(nextAgentConfig: typeof activeAgentConfig\) => \{[\s\S]*activeAgentConfigRef\.current = nextAgentConfig;[\s\S]*setActiveAgentConfig\(nextAgentConfig\);[\s\S]*\}, \[\]\);/u);
+	assert.match(SHELL_SOURCE, /const handleAgentRestoredFromUrl = useCallback\(\(agentId: string \| null\) => \{[\s\S]*if \(activeAgentConfigRef\.current\?\.profileId !== agentId\) \{[\s\S]*setActiveAgentConfigView\("configure"\);[\s\S]*\}[\s\S]*setActiveAgentConfigState\(agentId \? \{ profileId: agentId, sourceMessageId: null \} : null\);/u);
+	assert.match(SHELL_SOURCE, /if \(activeAgentConfig && !activeSessionAgentEntry\) \{[\s\S]*if \(studioAgentRegistry\.getSessionAgentEntry\?\.\(activeAgentConfig\.profileId\)\) \{[\s\S]*return;[\s\S]*\}[\s\S]*setActiveAgentConfigState\(null\);[\s\S]*setActiveAgentConfigView\("configure"\);/u);
+	assert.match(SHELL_SOURCE, /!activeAgentConfig \|\|[\s\S]*!activeSessionAgentEntry \|\|[\s\S]*activeAgentConfigView === "test"/u);
+	assert.match(SHELL_SOURCE, /const isActiveGeneratedAgent =[\s\S]*message\.id === activeAgentConfig\.sourceMessageId \|\|[\s\S]*agentResult\.agentId === activeSessionAgentEntry\.sourceResult\.agentId \|\|[\s\S]*agentResult\.agentId === activeSessionAgentEntry\.draftResult\.agentId \|\|[\s\S]*agentResult\.agentId === activeSessionAgentEntry\.publishReadyResult\.agentId;/u);
+	assert.match(SHELL_SOURCE, /const agentResultKey = `\$\{chat\.runtimeThreadId\}:\$\{message\.id\}:\$\{agentResult\.agentId\}:\$\{agentResult\.action\}`;[\s\S]*if \(generatedAgentTestViewKeysRef\.current\.has\(agentResultKey\)\) \{[\s\S]*break;[\s\S]*\}[\s\S]*generatedAgentTestViewKeysRef\.current\.add\(agentResultKey\);[\s\S]*setActiveAgentConfigView\("test"\);/u);
 });
 
 test("RovoAppMessages renders the block agent result card after generation completes", () => {
@@ -416,6 +453,19 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /<Label htmlFor=\{`agent-\$\{profileId\}-name`\}/u);
 });
 
+test("Studio agent test conversation starters use contextual visual identity tiles", () => {
+	assert.match(ROVO_SUGGESTIONS_SOURCE, /export function resolveConversationStarterVisualIdentity/u);
+	assert.match(ROVO_SUGGESTIONS_SOURCE, /resolveGenerativeCardIdentity\(\{[\s\S]*contentType: hint\.contentType[\s\S]*iconHint: hint\.iconHint[\s\S]*title: input\.label[\s\S]*\}\)/u);
+	assert.match(ROVO_SUGGESTIONS_SOURCE, /automation-ready\|markdown\|yaml\|sql/u);
+	assert.match(ROVO_SUGGESTIONS_SOURCE, /jira\|jsm\|request\|ticket\|issue\|incident\|priority\|sla\|routing\|triage/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /resolveConversationStarterVisualIdentity/u);
+	assert.match(ROVO_CONTEXT_SOURCE, /resolveConversationStarterVisualIdentity/u);
+	assert.match(ROVO_CONTEXT_SOURCE, /visualIdentity: resolveConversationStarterVisualIdentity\(\{[\s\S]*agentName: context\.agentName[\s\S]*label,[\s\S]*\}\)/u);
+	assert.match(CHAT_GREETING_SOURCE, /import \{ CardIdentityTile \} from "@\/components\/projects\/shared\/components\/card-identity-tile";/u);
+	assert.match(CHAT_GREETING_SOURCE, /const visualIdentity =[\s\S]*suggestion\.visualIdentity \?\?[\s\S]*resolveConversationStarterVisualIdentity/u);
+	assert.match(CHAT_GREETING_SOURCE, /\{visualIdentity \? \([\s\S]*<CardIdentityTile[\s\S]*identity=\{visualIdentity\}[\s\S]*size="medium"[\s\S]*\) : \(/u);
+});
+
 test("Studio screen assistant applies draft patches without publishing agents", () => {
 	assert.match(SHELL_SOURCE, /onToolCall: useCallback/u);
 	assert.match(SHELL_SOURCE, /normalizeAgentDraftPatch/u);
@@ -494,7 +544,7 @@ test("Studio composer reveals 'Start from scratch' on focus or hover and lands o
 		SHELL_SOURCE.indexOf("const handleStartAgentFromScratch = useCallback"),
 		SHELL_SOURCE.indexOf("const handleStudioSidebarAgentSelect = useCallback"),
 	);
-	assert.match(fromScratchHandlerSource, /setActiveAgentConfig\(\{\s*\n\s*profileId: registered\.id/u);
+	assert.match(fromScratchHandlerSource, /setActiveAgentConfigState\(\{\s*\n\s*profileId: registered\.id/u);
 });
 
 test("Studio composer opts into experimental dark composer CTAs", () => {

@@ -79,7 +79,7 @@ import {
 	mergeHermesSkillIds,
 	VPK_HTML_SKILL_ID,
 } from "@/lib/work-item-report-intent";
-import type { RovoSuggestion } from "@/lib/rovo-suggestions";
+import { resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
 import {
 	isRateLimitError,
 	isChatInProgressError,
@@ -1027,13 +1027,21 @@ function getSuffixedSessionAgentName(
 function createSessionAgentStarter(
 	agentId: string,
 	label: string,
-	index: number
+	index: number,
+	context: { agentName: string; byline: string; description?: string | null },
 ): RovoSuggestion {
 	return {
 		id: `${agentId}-starter-${index + 1}`,
 		label,
 		prompt: label,
 		type: "skill",
+		visualIdentity: resolveConversationStarterVisualIdentity({
+			agentId,
+			agentName: context.agentName,
+			byline: context.byline,
+			description: context.description ?? undefined,
+			label,
+		}),
 	};
 }
 
@@ -1097,7 +1105,11 @@ function buildSessionAgentProfileFromResult(params: {
 		getPayloadString(payload, ["instructions", "contextDescription", "context", "systemPrompt", "prompt"]) ??
 		undefined;
 	const starters = getAgentResultStarterLabels(payload).map((starter, index) =>
-		createSessionAgentStarter(params.profileId, starter, index)
+		createSessionAgentStarter(params.profileId, starter, index, {
+			agentName: params.profileName,
+			byline,
+			description,
+		})
 	);
 
 	return {
