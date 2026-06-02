@@ -90,8 +90,10 @@ test("Editor toolbar places Add content after Link and mode tabs at the end", ()
 	assert.doesNotMatch(vpkIconsSource, /TextNormalIcon = createUnsafeVpkIcon\(TextIconGlyph\)/u);
 	assert.match(componentSource, /function handleAddContent\(\): void/u);
 	assert.match(componentSource, /aria-label="Add content"[\s\S]*onClick=\{handleAddContent\}/u);
-	assert.match(componentSource, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>/u);
-	assert.doesNotMatch(componentSource, /<AddIcon label="" size="small" \/>\s*<\/Button>\s*<ToolbarSeparator \/>/u);
+	// The trailing `+` button is wrapped in a positioned div so it can anchor
+	// the Insert dropdown (Paragraph / Table / Horizontal rule).
+	assert.match(componentSource, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<div[^>]*>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>[\s\S]*<\/div>/u);
+	assert.doesNotMatch(componentSource, /<\/div>\s*<ToolbarSeparator \/>\s*\{onToggleMarkdownMode/u);
 	assert.match(componentSource, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<Tabs[\s\S]*value=\{isMarkdownMode \? "markdown" : "rendered"\}/u);
 	assert.match(componentSource, /<TabsTrigger[\s\S]*aria-label="Rendered text"[\s\S]*value="rendered"[\s\S]*<TextNormalIcon size="small" \/>[\s\S]*<TabsTrigger[\s\S]*aria-label="Markdown source"[\s\S]*value="markdown"[\s\S]*<MarkdownIcon label="" size="small" \/>/u);
 	assert.doesNotMatch(componentSource, />\s*Rendered\s*</u);
