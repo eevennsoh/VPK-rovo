@@ -18,6 +18,7 @@ import AlignTextCenterIcon from "@atlaskit/icon/core/align-text-center";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AlignTextRightIcon from "@atlaskit/icon/core/align-text-right";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
+import ListChecklistIcon from "@atlaskit/icon/core/list-checklist";
 import ListNumberedIcon from "@atlaskit/icon/core/list-numbered";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import QuotationMarkIcon from "@atlaskit/icon/core/quotation-mark";
@@ -29,6 +30,7 @@ import TextUnderlineIcon from "@atlaskit/icon/core/text-underline";
 import TextHeadingOneIcon from "@atlaskit/icon-lab/core/text-heading-one";
 import TextHeadingThreeIcon from "@atlaskit/icon-lab/core/text-heading-three";
 import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
+import ViewTypeTableHomeIcon from "@atlaskit/icon-lab/core/view-type-table-home";
 
 import { IconTile } from "@/components/ui/icon-tile";
 import { cn } from "@/lib/utils";
@@ -264,6 +266,26 @@ export const SLASH_COMMANDS: readonly RichTextCommandItem[] = [
 		shortcut: "1.",
 		icon: <ListNumberedIcon label="" size="small" />,
 		run: (editor) => editor.chain().focus().toggleOrderedList().run(),
+	},
+	{
+		id: "task-list",
+		label: "Task list",
+		description: "Track items with checkable boxes (GFM).",
+		shortcut: "- [ ]",
+		icon: <ListChecklistIcon label="" size="small" />,
+		run: (editor) => editor.chain().focus().toggleTaskList().run(),
+	},
+	{
+		id: "table",
+		label: "Table",
+		description: "Insert a 3×3 table with a header row (GFM).",
+		icon: <ViewTypeTableHomeIcon label="" size="small" />,
+		run: (editor) =>
+			editor
+				.chain()
+				.focus()
+				.insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+				.run(),
 	},
 	{
 		id: "align-left",

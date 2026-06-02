@@ -16,7 +16,9 @@ catalog:
   '@tiptap/extension-color': 3.23.6
   '@tiptap/extension-highlight': 3.23.6
   '@tiptap/extension-link': 3.23.6
+  '@tiptap/extension-list': 3.23.6
   '@tiptap/extension-mention': 3.23.6
+  '@tiptap/extension-table': 3.23.6
   '@tiptap/extension-text-align': 3.23.6
   '@tiptap/extension-text-style': 3.23.6
   '@tiptap/extension-underline': 3.23.6

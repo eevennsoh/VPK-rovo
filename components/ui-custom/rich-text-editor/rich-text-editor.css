@@ -19,8 +19,16 @@
 	text-align: right;
 }
 
-.tiptap-editor h1 {
-	font-size: 32px;
+/*
+ * Headings follow GitHub-flavored markdown rendering: 600 weight, generous top
+ * margin, h1/h2 carry a bottom rule that separates the section from the body.
+ */
+.tiptap-editor h1,
+.tiptap-editor h2,
+.tiptap-editor h3,
+.tiptap-editor h4,
+.tiptap-editor h5,
+.tiptap-editor h6 {
 	font-weight: 600;
 	line-height: 1.25;
 	margin-top: 24px;
@@ -28,50 +36,46 @@
 	color: var(--ds-text, #172b4d);
 }
 
+.tiptap-editor h1 {
+	font-size: 2em;
+	padding-bottom: 0.3em;
+	border-bottom: 1px solid var(--ds-border, #dfe1e6);
+}
+
 .tiptap-editor h2 {
-	font-size: 24px;
-	font-weight: 600;
-	line-height: 1.33;
-	margin-top: 24px;
-	margin-bottom: 12px;
-	color: var(--ds-text, #172b4d);
+	font-size: 1.5em;
+	padding-bottom: 0.3em;
+	border-bottom: 1px solid var(--ds-border, #dfe1e6);
 }
 
 .tiptap-editor h3 {
-	font-size: 18px;
-	font-weight: 600;
-	line-height: 1.44;
-	margin-top: 20px;
-	margin-bottom: 8px;
-	color: var(--ds-text, #172b4d);
+	font-size: 1.25em;
 }
 
 .tiptap-editor h4 {
-	font-size: 16px;
-	font-weight: 600;
-	line-height: 1.5;
-	margin-top: 16px;
-	margin-bottom: 8px;
-	color: var(--ds-text, #172b4d);
+	font-size: 1em;
 }
 
-.tiptap-editor h5,
+.tiptap-editor h5 {
+	font-size: 0.875em;
+}
+
 .tiptap-editor h6 {
-	font-size: 14px;
-	font-weight: 600;
-	line-height: 1.5;
-	margin-top: 12px;
-	margin-bottom: 8px;
-	color: var(--ds-text, #172b4d);
+	font-size: 0.85em;
+	color: var(--ds-text-subtle, #6b778c);
 }
 
 .tiptap-editor h1:first-child,
 .tiptap-editor h2:first-child,
-.tiptap-editor h3:first-child {
+.tiptap-editor h3:first-child,
+.tiptap-editor h4:first-child,
+.tiptap-editor h5:first-child,
+.tiptap-editor h6:first-child {
 	margin-top: 0;
 }
 
 .tiptap-editor p {
+	margin-top: 0;
 	margin-bottom: 16px;
 }
 
@@ -81,7 +85,8 @@
 
 .tiptap-editor ul,
 .tiptap-editor ol {
-	padding-left: 24px;
+	padding-left: 2em;
+	margin-top: 0;
 	margin-bottom: 16px;
 }
 
@@ -93,15 +98,15 @@
 	list-style-type: decimal;
 }
 
-.tiptap-editor li {
-	margin-bottom: 4px;
+.tiptap-editor li + li {
+	margin-top: 0.25em;
 }
 
 .tiptap-editor li > p {
 	margin-bottom: 4px;
 }
 
-.tiptap-editor li:last-child {
+.tiptap-editor li > p:last-child {
 	margin-bottom: 0;
 }
 
@@ -120,61 +125,73 @@
 	list-style-type: lower-alpha;
 }
 
+/*
+ * GitHub renders fenced code blocks on a subtle gray surface with a 6px radius
+ * and no border. Inline code reuses the same surface at a smaller size.
+ */
 .tiptap-editor pre {
-	background-color: var(--ds-surface-raised, #f4f5f7);
-	border: 1px solid var(--ds-border, #dfe1e6);
-	border-radius: var(--ds-radius-medium);
+	background-color: var(--ds-surface-sunken, #f6f8fa);
+	border: none;
+	border-radius: 6px;
 	padding: 16px;
+	margin-top: 0;
 	margin-bottom: 16px;
-	overflow-x: auto;
-	font-family: "SFMono-Medium", "SF Mono", "Segoe UI Mono", "Roboto Mono", "Ubuntu Mono", Menlo, Consolas, Courier, monospace;
-	font-size: 13px;
-	line-height: 1.5;
+	overflow: auto;
+	font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+	font-size: 85%;
+	line-height: 1.45;
 }
 
 .tiptap-editor pre code {
-	background: none;
+	background: transparent;
 	padding: 0;
 	border: none;
-	color: var(--ds-text, #172b4d);
+	border-radius: 0;
+	font-size: 100%;
+	color: inherit;
+	white-space: pre;
 }
 
 .tiptap-editor code {
-	background-color: var(--ds-surface-raised, #f4f5f7);
-	border: 1px solid var(--ds-border, #dfe1e6);
-	border-radius: var(--ds-radius-medium);
-	padding: 2px 4px;
-	font-family: "SFMono-Medium", "SF Mono", "Segoe UI Mono", "Roboto Mono", "Ubuntu Mono", Menlo, Consolas, Courier, monospace;
-	font-size: 0.9em;
-	color: var(--ds-text-accent-red, #bf2600);
+	background-color: var(--ds-background-neutral, rgba(175, 184, 193, 0.2));
+	border: none;
+	border-radius: 6px;
+	padding: 0.2em 0.4em;
+	margin: 0;
+	font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+	font-size: 85%;
+	color: var(--ds-text, #1f2328);
 }
 
+/*
+ * GFM blockquote: gray left rule, muted text, no italic. GitHub trims the
+ * outer margins of children so the quote renders tight against its border.
+ */
 .tiptap-editor blockquote {
-	border-left: 4px solid var(--ds-border-accent-blue, #0065ff);
-	padding-left: 16px;
-	margin-left: 0;
-	margin-bottom: 16px;
-	color: var(--ds-text-subtle, #6b778c);
-	font-style: italic;
+	border-left: 0.25em solid var(--ds-border, #d0d7de);
+	padding: 0 1em;
+	margin: 0 0 16px 0;
+	color: var(--ds-text-subtle, #656d76);
+	font-style: normal;
 }
 
-.tiptap-editor blockquote p {
-	margin-bottom: 8px;
+.tiptap-editor blockquote > :first-child {
+	margin-top: 0;
 }
 
-.tiptap-editor blockquote p:last-child {
+.tiptap-editor blockquote > :last-child {
 	margin-bottom: 0;
 }
 
 .tiptap-editor a,
 .tiptap-editor .editor-link {
-	color: var(--ds-link, #0052cc);
+	color: var(--ds-link, #0969da);
 	text-decoration: none;
 }
 
 .tiptap-editor a:hover,
 .tiptap-editor .editor-link:hover {
-	color: var(--ds-link-hover, #0065ff);
+	color: var(--ds-link-hover, #0969da);
 	text-decoration: underline;
 }
 
@@ -190,14 +207,110 @@
 	text-decoration: underline;
 }
 
-.tiptap-editor s {
+.tiptap-editor s,
+.tiptap-editor del {
 	text-decoration: line-through;
 }
 
 .tiptap-editor hr {
-	border: none;
-	border-top: 2px solid var(--ds-border, #dfe1e6);
+	height: 0.25em;
+	padding: 0;
 	margin: 24px 0;
+	background-color: var(--ds-border, #d0d7de);
+	border: 0;
+}
+
+/*
+ * GFM tables: scrollable container, alternating row stripes, bordered cells.
+ * `display: block` mirrors GitHub's overflow behavior on narrow viewports.
+ */
+.tiptap-editor table,
+.tiptap-editor .rich-text-table {
+	display: block;
+	width: max-content;
+	max-width: 100%;
+	margin-top: 0;
+	margin-bottom: 16px;
+	overflow: auto;
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+.tiptap-editor table tr {
+	background-color: var(--ds-surface, #ffffff);
+	border-top: 1px solid var(--ds-border, #d0d7de);
+}
+
+.tiptap-editor table tr:nth-child(2n) {
+	background-color: var(--ds-surface-sunken, #f6f8fa);
+}
+
+.tiptap-editor table th,
+.tiptap-editor table td {
+	padding: 6px 13px;
+	border: 1px solid var(--ds-border, #d0d7de);
+	vertical-align: top;
+}
+
+.tiptap-editor table th {
+	font-weight: 600;
+	background-color: var(--ds-surface-sunken, #f6f8fa);
+}
+
+.tiptap-editor table th > *,
+.tiptap-editor table td > * {
+	margin-bottom: 0;
+}
+
+/* Tiptap's resizable table extension wraps the <table> in this element. */
+.tiptap-editor .tableWrapper {
+	margin-bottom: 16px;
+	overflow-x: auto;
+}
+
+.tiptap-editor .tableWrapper > table {
+	margin-bottom: 0;
+}
+
+/*
+ * GFM task lists: no bullet, checkbox aligned to the first line of text.
+ * Clicking the checkbox toggles `data-checked` on the surrounding list item.
+ */
+.tiptap-editor ul.rich-text-task-list,
+.tiptap-editor .rich-text-task-list {
+	list-style: none;
+	padding-left: 0;
+}
+
+.tiptap-editor .rich-text-task-list .rich-text-task-list {
+	padding-left: 1.5em;
+}
+
+.tiptap-editor .rich-text-task-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5em;
+	margin-top: 0;
+}
+
+.tiptap-editor .rich-text-task-item > label {
+	flex: 0 0 auto;
+	margin-top: 0.25em;
+	user-select: none;
+}
+
+.tiptap-editor .rich-text-task-item > div {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.tiptap-editor .rich-text-task-item > div > p {
+	margin-bottom: 0;
+}
+
+.tiptap-editor .rich-text-task-item[data-checked="true"] > div {
+	color: var(--ds-text-subtle, #656d76);
+	text-decoration: line-through;
 }
 
 .tiptap-editor:focus {
@@ -231,39 +344,12 @@
 	min-height: 128px;
 }
 
-.agent-instructions-tiptap-editor h1 {
-	font-size: 22px;
-	font-weight: 650;
-	line-height: 1.25;
-	margin-top: 16px;
-	margin-bottom: 8px;
-	color: var(--ds-text, #172b4d);
-}
-
-.agent-instructions-tiptap-editor h2 {
-	font-size: 18px;
-	font-weight: 650;
-	line-height: 1.35;
-	margin-top: 16px;
-	margin-bottom: 6px;
-	color: var(--ds-text, #172b4d);
-}
-
-.agent-instructions-tiptap-editor h3 {
-	font-size: 15px;
-	font-weight: 650;
-	line-height: 1.4;
-	margin-top: 14px;
-	margin-bottom: 4px;
-	color: var(--ds-text, #172b4d);
-}
-
-.agent-instructions-tiptap-editor h1:first-child,
-.agent-instructions-tiptap-editor h2:first-child,
-.agent-instructions-tiptap-editor h3:first-child {
-	margin-top: 0;
-}
-
+/*
+ * The agent instructions composer renders the same GitHub-styled editor at a
+ * slightly tighter scale. We keep only the size/spacing tweaks here — colors,
+ * heading borders, blockquote, and code styling come from `.tiptap-editor` so
+ * the markdown rendering stays consistent with the editor-toolbar demo.
+ */
 .agent-instructions-tiptap-editor p,
 .agent-instructions-tiptap-editor ul,
 .agent-instructions-tiptap-editor ol,
@@ -272,14 +358,8 @@
 	margin-bottom: 10px;
 }
 
-.agent-instructions-tiptap-editor ul,
-.agent-instructions-tiptap-editor ol {
-	padding-left: 20px;
-}
-
-.agent-instructions-tiptap-editor li {
-	margin-bottom: 3px;
-	padding-left: 2px;
+.agent-instructions-tiptap-editor li + li {
+	margin-top: 3px;
 }
 
 .agent-instructions-tiptap-editor li::marker {
@@ -289,27 +369,6 @@
 .agent-instructions-tiptap-editor strong {
 	font-weight: 650;
 	color: var(--ds-text, #172b4d);
-}
-
-.agent-instructions-tiptap-editor code {
-	border-color: var(--ds-border, #dfe1e6);
-	background-color: var(--ds-surface-sunken, #f7f8f9);
-	color: var(--ds-text-accent-magenta, #943d73);
-}
-
-.agent-instructions-tiptap-editor pre {
-	border-color: var(--ds-border, #dfe1e6);
-	background-color: var(--ds-surface-sunken, #f7f8f9);
-	padding: 12px;
-}
-
-.agent-instructions-tiptap-editor blockquote {
-	border-left-color: var(--ds-border-accent-blue, #1d7afc);
-	background-color: var(--ds-background-neutral-subtle, #f7f8f9);
-	padding: 8px 12px;
-	border-radius: var(--ds-radius-small, 3px);
-	color: var(--ds-text-subtle, #44546f);
-	font-style: normal;
 }
 
 .rich-text-command-menu-popover {
