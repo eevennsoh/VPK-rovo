@@ -87,7 +87,7 @@ export default function TopNavigation({
 					/>
 				)}
 
-				<div style={{ flex: "1 1 0", minWidth: 0 }}>
+				<div style={{ flex: "0 1 auto", minWidth: 0 }}>
 					<LeftNavigation
 						product={product}
 						windowWidth={windowWidth}
@@ -112,9 +112,9 @@ export default function TopNavigation({
 						>
 							<InputGroup
 								className={cn(
-									"h-7 rounded-md bg-bg-input shadow-none transition-[height,background-color,box-shadow] duration-medium ease-out hover:bg-bg-input-hovered",
+									"h-8 origin-center rounded-md bg-bg-input shadow-none transition-[transform,background-color,box-shadow] duration-medium ease-out hover:bg-bg-input-hovered",
 									"has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0",
-									isSearchFocused && "h-9 relative z-[1001]",
+									isSearchFocused && "relative z-[1001] scale-y-[1.15]",
 								)}
 								style={
 									isSearchFocused
@@ -155,7 +155,7 @@ export default function TopNavigation({
 					</div>
 				) : null}
 
-				<div style={{ display: "flex", flex: "1 1 0", justifyContent: "flex-end", minWidth: 0 }}>
+				<div style={{ display: "flex", flex: "0 1 auto", justifyContent: "flex-end", minWidth: 0 }}>
 					<RightNavigation
 						product={product}
 						windowWidth={windowWidth}
