@@ -2,10 +2,6 @@ import type { AgentBrowserSidebarGroup } from "@/components/blocks/agent-browser
 
 export const DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS: readonly AgentBrowserSidebarGroup[] = [
 	{
-		title: "Favourites",
-		agentIds: ["feedback-analyzer", "ai-insights-agent"],
-	},
-	{
 		title: "By teams",
 		showAll: true,
 		items: [

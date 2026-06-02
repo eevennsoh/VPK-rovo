@@ -120,7 +120,7 @@ function getProjectBadgeAvatarSrc(seed: string) {
 
 export interface CardDirectoryAgentExpandedProps {
 	name: string;
-	avatarSrc: string;
+	avatarSrc?: string;
 	publisher: string;
 	attributionKind?: "company" | "team" | "person";
 	publisherLogoSrc?: string;

@@ -1,10 +1,10 @@
-import Image from "next/image";
 import {
 	AdminIcon,
 	HomeIcon,
 	JiraIcon,
 	ConfluenceIcon,
 	ProjectsIcon,
+	RovoColorIcon,
 	SearchIcon as SearchLogo,
 	StudioIcon,
 } from "@/components/ui/logo";
@@ -19,7 +19,7 @@ interface ProductConfig {
 function VpkRovoIcon() {
 	return (
 		<span className="inline-flex shrink-0 items-center">
-			<Image src="/1p/rovo.svg" alt="" width={20} height={20} />
+			<RovoColorIcon size="xsmall" />
 		</span>
 	);
 }

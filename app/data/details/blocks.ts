@@ -309,7 +309,6 @@ const tools: ToolsDirectoryTool[] = [
     id: "atlassian",
     name: "Atlassian",
     byline: "Collaboration tools by Atlassian",
-    avatarSrc: "/1p/atlassian.svg",
     categoryId: "project-management",
     description: "Specializes in collaboration tools designed primarily for software development and project management.",
     logoName: "atlassian",
@@ -404,7 +403,7 @@ const skills: SkillsDirectorySkill[] = [
     iconColor: "text-purple-500",
     publisherName: "By you",
     publisherAvatarSrc: "/avatar-human/maia-ma.png",
-    categoryId: "content-communication",
+    categoryId: "content-and-communication",
     companyId: "you",
     starCount: 38,
     viewCount: 6273,
@@ -417,7 +416,6 @@ const skills: SkillsDirectorySkill[] = [
   open={open}
   onOpenChange={setOpen}
   skills={skills}
-  defaultSelectedSkillIds={["design-landing-page"]}
   onSelectedSkillIdsChange={(skillIds) => console.log(skillIds)}
   onAddSkills={(skillIds) => console.log("add", skillIds)}
   onCreateSkill={() => console.log("new skill")}
@@ -504,7 +502,7 @@ const skills: SkillsDirectorySkill[] = [
 			{
 				name: "primaryItems",
 				type: "readonly SkillsDirectoryPrimaryItem[]",
-				description: "Sectionless nav rows above the category group (All skills, Favorite skills, Your skills).",
+				description: "Sectionless nav rows above the category group (All skills, Favourite skills, Your skills).",
 			},
 			{
 				name: "sidebarGroups",

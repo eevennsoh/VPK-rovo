@@ -35,6 +35,7 @@ test("Tools Directory docs demo starts closed until the trigger is clicked", () 
 
 test("Tools Directory owns the Figma modal instead of wrapping AgentBrowserDialog", () => {
 	const source = readProjectFile("components/blocks/tools-directory/components/tools-directory.tsx");
+	const cardDirectoryToolSource = readProjectFile("components/ui-custom/card-directory/card-directory-tool.tsx");
 
 	assert.doesNotMatch(source, /AgentBrowserDialog/u);
 	assert.match(source, /className="grid h-\[min\(768px,calc\(100svh-2rem\)\)\][\s\S]*sm:!max-w-\[1200px\]"/u);
@@ -42,8 +43,14 @@ test("Tools Directory owns the Figma modal instead of wrapping AgentBrowserDialo
 	assert.match(source, /Search for a tool by name, or describe it/u);
 	assert.match(source, /Sort by latest/u);
 	assert.match(source, /Showing \{filteredTools\.length\.toLocaleString\("en-US"\)\} results/u);
+	assert.match(source, /<ToolCard onSelectTool=\{onSelectTool\} tool=\{tool\} \/>/u);
+	assert.match(source, /const \[moreMenuOpen, setMoreMenuOpen\] = useState\(false\);/u);
+	assert.match(source, /<CardDirectoryTool[\s\S]*active=\{moreMenuOpen\}[\s\S]*moreAction=\{[\s\S]*<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
+	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
 	assert.match(source, /className="min-h-\[102px\] hover:border-transparent"/u);
-	assert.match(source, /src=\{tool\.logoSrc \?\? tool\.avatarSrc\}/u);
+	assert.match(source, /<AtlassianLogo[\s\S]*label=\{tool\.name\}[\s\S]*name=\{tool\.logoName \?\? "atlassian"\}[\s\S]*size="small"/u);
+	assert.match(source, /tool\.logoName \|\| tool\.id === "atlassian"/u);
+	assert.match(source, /const src = tool\.logoSrc \?\? tool\.avatarSrc;/u);
 	assert.match(source, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
 	assert.match(source, /const contentOverflow = useHasVerticalOverflow<HTMLDivElement>\(\);/u);
 	assert.match(source, /ref=\{contentOverflow\.ref\}/u);
@@ -53,6 +60,10 @@ test("Tools Directory owns the Figma modal instead of wrapping AgentBrowserDialo
 	assert.match(source, /className="hidden min-h-0 w-\[280px\] shrink-0 flex-col overflow-y-auto pl-6 md:flex"/u);
 	assert.match(source, /className="hidden min-h-0 w-\[280px\] shrink-0 overflow-y-auto pl-6 md:block"/u);
 	assert.doesNotMatch(source, /Tool categories"[\s\S]{0,120}scroll-mask-top/u);
+	assert.match(cardDirectoryToolSource, /<CardDirectory active=\{active\} className=\{cn\("gap-4", className\)\}/u);
+	assert.match(cardDirectoryToolSource, /moreAction \?\? \(onMoreActions \? \(/u);
+	assert.match(cardDirectoryToolSource, /<CardDirectoryMoreButton active=\{active\}/u);
+	assert.match(cardDirectoryToolSource, /<div className="flex flex-col gap-2">[\s\S]*<CardDirectoryHeader[\s\S]*<CardDirectoryDescription>/u);
 	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /scrollTop > 1/u);
 	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /showTopScrollMask: hasVerticalOverflow && hasScrolledFromTop/u);
 	assert.match(readProjectFile("app/tailwind-theme.css"), /@utility scroll-mask-top/u);
@@ -71,6 +82,7 @@ test("Tools Directory keeps compatible types while adding tool detail fields", (
 		"lastUpdatedLabel",
 		"publisherName",
 		"verified",
+		"favorite",
 		"readOnlyTools",
 		"writeDeleteTools",
 	]) {
@@ -114,9 +126,23 @@ test("Tools Directory category data follows the requested category content", () 
 
 test("Tools Directory docs demo includes added and non-added detail states", () => {
 	const source = readProjectFile("components/blocks/tools-directory/page.tsx");
+	const componentSource = readProjectFile("components/blocks/tools-directory/components/tools-directory.tsx");
+	const sidebarGroupsSource = readProjectFile("components/blocks/tools-directory/data/sidebar-groups.ts");
 
 	assert.match(source, /defaultAddedToolIds=\{\["atlassian"\]\}/u);
+	assert.match(source, /logoName: "atlassian"/u);
+	assert.match(source, /favorite: true/u);
 	assert.match(source, /categoryId: "project-management"/u);
 	assert.match(source, /categoryId: "software-development"/u);
 	assert.match(source, /categoryId: "security-and-compliance"/u);
+	assert.match(componentSource, /label: "Favourite tools"/u);
+	assert.match(componentSource, /if \(activeCategory === "favorite-tools" && !tool\.favorite\) return false;/u);
+	assert.match(componentSource, /const MAX_VISIBLE_CATEGORY_ITEMS = 5;/u);
+	assert.match(componentSource, /const \[showAllCategories, setShowAllCategories\] = useState\(false\);/u);
+	assert.match(componentSource, /TOOLS_DIRECTORY_CATEGORIES\.slice\(0, MAX_VISIBLE_CATEGORY_ITEMS\)/u);
+	assert.match(componentSource, /label="Show all"[\s\S]*onClick=\{\(\) => setShowAllCategories\(true\)\}/u);
+	assert.match(componentSource, /sidebarGroups = DEFAULT_TOOLS_DIRECTORY_SIDEBAR_GROUPS/u);
+	assert.match(sidebarGroupsSource, /title: "By companies"/u);
+	assert.doesNotMatch(sidebarGroupsSource, /title: "By teams"/u);
+	assert.doesNotMatch(sidebarGroupsSource, /title: "Favourites"/u);
 });

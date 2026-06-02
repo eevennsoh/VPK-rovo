@@ -14,13 +14,52 @@ test("buildStudioAgentCreationTrace emits the fixed step skeleton with stable or
 	const labels = steps.map((step) => step.label);
 	assert.deepEqual(labels, [
 		"Reading agent brief",
+		"Preparing clarification questions",
 		"Selecting agent tools",
 		"Drafting agent instructions",
 		"Naming agent profile",
 		"Saving agent profile",
 	]);
 	assert.match(steps[0].content, /research agent/u);
-	assert.match(steps[3].content, /name, byline, and profile-card summary/u);
+	const nameStep = steps.find((step) => step.label === "Naming agent profile");
+	assert.match(nameStep.content, /name, byline, and profile-card summary/u);
+});
+
+test("first turn includes an ask_user_questions clarification step", () => {
+	const steps = buildStudioAgentCreationTrace({
+		userPrompt: "Build a research agent.",
+		messages: [{ role: "user", content: "Build a research agent." }],
+	});
+
+	const clarifyStep = steps.find(
+		(step) => step.label === "Preparing clarification questions",
+	);
+	assert.ok(clarifyStep, "expected a clarification step on the first turn");
+	assert.equal(clarifyStep.toolName, "ask_user_questions");
+	// Clarification comes right after reading the brief, before drafting.
+	const labels = steps.map((step) => step.label);
+	assert.ok(
+		labels.indexOf("Preparing clarification questions") <
+			labels.indexOf("Drafting agent instructions"),
+		"clarification step should precede drafting",
+	);
+});
+
+test("follow-up turns omit the ask_user_questions clarification step", () => {
+	const steps = buildStudioAgentCreationTrace({
+		userPrompt: "AI research, focused on papers.",
+		messages: [
+			{ role: "user", content: "Build a research agent." },
+			{ role: "assistant", content: "What domain should it focus on?" },
+		],
+	});
+
+	const labels = steps.map((step) => step.label);
+	assert.equal(labels.includes("Preparing clarification questions"), false);
+	assert.equal(
+		steps.some((step) => step.toolName === "ask_user_questions"),
+		false,
+	);
 });
 
 test("buildStudioAgentCreationTrace inserts 'Reviewing agent details' when a prior assistant question exists", () => {

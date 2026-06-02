@@ -12,6 +12,8 @@ export interface CardDirectoryProps {
 	onSelect?: () => void;
 	/** Accessible label for the button role when interactive. */
 	selectLabel?: string;
+	/** Keeps the hover visual treatment active while a child popup/menu is open. */
+	active?: boolean;
 	className?: string;
 	children: ReactNode;
 }
@@ -26,6 +28,7 @@ export interface CardDirectoryProps {
 export function CardDirectory({
 	onSelect,
 	selectLabel = "Select item",
+	active = false,
 	className,
 	children,
 }: Readonly<CardDirectoryProps>) {
@@ -35,10 +38,12 @@ export function CardDirectory({
 	const cardMotionProps = {
 		className: cn(
 			"group/card relative flex h-full w-full flex-col gap-3 rounded-md bg-surface p-4 text-left outline-none after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:border after:border-border after:transition-colors after:duration-fast after:ease-out hover:after:border-transparent focus-visible:after:border-transparent focus-visible:ring-3 focus-visible:ring-ring/50",
+			active && "after:border-transparent",
 			interactive && "cursor-pointer",
 			className,
 		),
 		style: { willChange: "transform" },
+		animate: active ? hoverAnimation : { boxShadow: "none" },
 		transition: CARD_HOVER_TRANSITION,
 		whileHover: hoverAnimation,
 	};

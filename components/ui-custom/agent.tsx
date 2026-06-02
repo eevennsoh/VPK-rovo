@@ -28,6 +28,7 @@ import { Accordion,
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -396,7 +397,11 @@ export function AgentCompactHeaderNav({
 	return (
 		<div className="flex min-w-0 flex-1 items-center gap-4">
 			<Avatar label="Agent" shape="hexagon" size="sm">
-				<AvatarImage alt="" src={avatarSrc} />
+				{isAtlassianLogoSource(avatarSrc) ? (
+					<AtlassianLogo name="atlassian" label="Agent" size="small" />
+				) : (
+					<AvatarImage alt="" src={avatarSrc} />
+				)}
 			</Avatar>
 			<div
 				className="relative flex min-w-0 flex-1 items-center overflow-hidden"
@@ -475,7 +480,11 @@ export const AgentHeader = memo(
 			{leadingContent ?? (
 				<div className="flex min-w-0 items-center gap-2">
 					<Avatar label="Agent" shape="hexagon" size="sm">
-						<AvatarImage alt="" src={avatarSrc} />
+						{isAtlassianLogoSource(avatarSrc) ? (
+							<AtlassianLogo name="atlassian" label={name} size="small" />
+						) : (
+							<AvatarImage alt="" src={avatarSrc} />
+						)}
 					</Avatar>
 					<span className="truncate text-sm font-semibold leading-5 text-text">{name}</span>
 					{model ? (
@@ -500,7 +509,6 @@ export const AgentHeader = memo(
 								aria-label="Agent views"
 								defaultValue={["configure"]}
 								variant="outline"
-								size="sm"
 							>
 								<ToggleGroupItem value="configure">
 									{primaryActionLabel}
@@ -954,8 +962,8 @@ function AgentCompactBentoCardGlowLayers({ iconSrc }: Readonly<{ iconSrc: string
 
 function AgentCompactBentoTemplatesHint({ onDismiss }: Readonly<{ onDismiss?: () => void }>) {
 	return (
-		<div className="relative z-[3] mb-3 flex items-center justify-between gap-3 px-1">
-			<span className="text-xs font-medium text-text-subtle">Start with these agent templates</span>
+		<div className="relative z-[3] mb-3 flex items-center justify-between gap-3">
+			<AgentSectionLabel>Start with these agent templates</AgentSectionLabel>
 			<button
 				type="button"
 				onClick={onDismiss}
@@ -1022,7 +1030,7 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 				focus ring sliced off. The padding keeps that motion inside the opaque
 				region; the negative margin pulls the box back so spacing is unchanged.
 			*/}
-			<div className="relative -mt-2 min-h-0 pt-2 sm:flex-1 sm:overflow-hidden sm:bento-fade-bottom">
+			<div className="relative -mt-2 min-h-0 pt-2 sm:min-h-[9.5rem] sm:flex-1 sm:overflow-hidden sm:bento-fade-bottom sm:[--bento-fade-height:32px] sm:[--bento-fade-end:14px]">
 				<BentoCarousel
 					gridClassName="sm:grid-cols-5"
 					arrowLabels={{ next: "Show next agent templates", previous: "Show previous agent templates" }}
@@ -1284,6 +1292,12 @@ function AgentFilledConfigSummary({
 	// Rows declare their canonical order and whether they currently hold any user
 	// content. Empty rows get sorted to the bottom (preserving the canonical order
 	// within each group) so configured fields stay visually grouped at the top.
+	// Source order IS the canonical display order (assuming every row is filled):
+	// Triggers › Knowledge › Tools › Skills › Subagents › Memory › Conversation
+	// starters. Reasoning renders separately after this list, so it always sits
+	// last. `orderedRows` below preserves this order for filled rows, then sinks
+	// empty rows to the bottom in the same relative order — so the array order is
+	// the single source of truth for both groups. Reorder here, not in the sort.
 	const rows: ReadonlyArray<{ key: string; isEmpty: boolean; node: ReactNode }> = [
 		{
 			key: "trigger",
@@ -1298,53 +1312,6 @@ function AgentFilledConfigSummary({
 					onAdd={() => onAppendListItem?.("triggers")}
 					onRemoveItem={removeTriggerItem}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
-				/>
-			),
-		},
-		{
-			key: "skills",
-			isEmpty: skillItems.length === 0,
-			node: (
-				<AgentFilledSummaryRow
-					addLabel={showAddButtons ? "Add" : undefined}
-					hideWhenEmpty={hideEmptyRows}
-					items={skillItems}
-					label="Skills"
-					onAdd={() => onAppendListItem?.("skills")}
-					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("skills", index) : undefined}
-					variant="skill"
-					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined}
-				/>
-			),
-		},
-		{
-			key: "tools",
-			isEmpty: toolItems.length === 0,
-			node: (
-				<AgentFilledSummaryRow
-					addLabel={showAddButtons ? "Add" : undefined}
-					hideWhenEmpty={hideEmptyRows}
-					agentFieldName="tools"
-					items={toolItems}
-					label="Tools"
-					onAdd={() => onAppendListItem?.("tools")}
-					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("tools", index) : undefined}
-					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
-				/>
-			),
-		},
-		{
-			key: "subagents",
-			isEmpty: subagentItems.length === 0,
-			node: (
-				<AgentFilledSummaryRow
-					addLabel={showAddButtons ? "Add" : undefined}
-					hideWhenEmpty={hideEmptyRows}
-					items={subagentItems}
-					label="Subagents"
-					onAdd={() => onAppendListItem?.("subagents")}
-					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("subagents", index) : undefined}
-					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
 				/>
 			),
 		},
@@ -1372,6 +1339,64 @@ function AgentFilledConfigSummary({
 					onAdd={() => onAppendListItem?.("knowledge")}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
+				/>
+			),
+		},
+		{
+			key: "tools",
+			isEmpty: toolItems.length === 0,
+			node: (
+				<AgentFilledSummaryRow
+					addLabel={showAddButtons ? "Add" : undefined}
+					hideWhenEmpty={hideEmptyRows}
+					agentFieldName="tools"
+					items={toolItems}
+					label="Tools"
+					onAdd={() => onAppendListItem?.("tools")}
+					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("tools", index) : undefined}
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
+				/>
+			),
+		},
+		{
+			key: "skills",
+			isEmpty: skillItems.length === 0,
+			node: (
+				<AgentFilledSummaryRow
+					addLabel={showAddButtons ? "Add" : undefined}
+					hideWhenEmpty={hideEmptyRows}
+					items={skillItems}
+					label="Skills"
+					onAdd={() => onAppendListItem?.("skills")}
+					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("skills", index) : undefined}
+					variant="skill"
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined}
+				/>
+			),
+		},
+		{
+			key: "subagents",
+			isEmpty: subagentItems.length === 0,
+			node: (
+				<AgentFilledSummaryRow
+					addLabel={showAddButtons ? "Add" : undefined}
+					hideWhenEmpty={hideEmptyRows}
+					items={subagentItems}
+					label="Subagents"
+					onAdd={() => onAppendListItem?.("subagents")}
+					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("subagents", index) : undefined}
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
+				/>
+			),
+		},
+		{
+			key: "memory",
+			// Memory is a default, always-on knowledge source, so this row is never
+			// empty and stays directly under Subagents among the filled rows.
+			isEmpty: false,
+			node: (
+				<AgentMemoryRow
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:memory` : undefined}
 				/>
 			),
 		},
@@ -1423,28 +1448,41 @@ function hasFilledAgentConfig(config: AgentConfigFormValue): boolean {
 
 function AgentProfileCover({ avatarSrc = AGENT_AVATAR_SRC }: Readonly<{ avatarSrc?: string }>) {
 	const coverBackgroundColor = getAgentProfileCoverBackgroundColor(avatarSrc);
+	const isAtlassianAvatar = isAtlassianLogoSource(avatarSrc);
 
 	return (
 		<div className="relative overflow-hidden rounded-t-xl bg-surface text-text">
 			<div className="relative h-12 overflow-hidden" style={{ backgroundColor: coverBackgroundColor }}>
-				<Image
-					alt=""
-					aria-hidden
-					className="absolute top-1/2 left-[88%] h-48 w-[168px] -translate-x-1/2 -translate-y-1/2 opacity-95"
-					height={192}
-					src={avatarSrc}
-					width={168}
-				/>
+				{isAtlassianAvatar ? (
+					<span className="absolute top-1/2 left-[88%] -translate-x-1/2 -translate-y-1/2 opacity-95">
+						<AtlassianLogo name="atlassian" label="Atlassian" size="xlarge" />
+					</span>
+				) : (
+					<Image
+						alt=""
+						aria-hidden
+						className="absolute top-1/2 left-[88%] h-48 w-[168px] -translate-x-1/2 -translate-y-1/2 opacity-95"
+						height={192}
+						src={avatarSrc}
+						width={168}
+					/>
+				)}
 			</div>
 			<div aria-hidden className="h-6" />
 			<div className="absolute top-6 left-4 size-12">
-				<Image
-					alt="Agent avatar"
-					className="h-12 w-[42px]"
-					height={48}
-					src={avatarSrc}
-					width={42}
-				/>
+				{isAtlassianAvatar ? (
+					<span className="flex h-12 w-[42px] items-center justify-center">
+						<AtlassianLogo name="atlassian" label="Agent avatar" size="large" />
+					</span>
+				) : (
+					<Image
+						alt="Agent avatar"
+						className="h-12 w-[42px]"
+						height={48}
+						src={avatarSrc}
+						width={42}
+					/>
+				)}
 				<svg
 					aria-hidden="true"
 					className="pointer-events-none absolute top-0 left-0 h-12 w-[42px] overflow-visible"
@@ -1826,6 +1864,27 @@ function AgentKnowledgeOverflowMenu({
 	);
 }
 
+function AgentMemoryRow({
+	screenAssistantTargetId,
+}: Readonly<{ screenAssistantTargetId?: string }>) {
+	return (
+		<div
+			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-5"
+			data-agent-field="memory"
+			data-screen-assistant-target={screenAssistantTargetId}
+		>
+			<div className="sm:w-32 sm:shrink-0">
+				<AgentSectionLabel>Memory</AgentSectionLabel>
+			</div>
+			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
+				{/* Memory is a default, non-removable knowledge source that's always
+				    available regardless of the org-knowledge mode. */}
+				<AgentReferenceChip label="Memory" />
+			</div>
+		</div>
+	);
+}
+
 interface AgentKnowledgeRowProps {
 	value: KnowledgeModeValue;
 	onValueChange: (next: KnowledgeModeValue) => void;
@@ -1863,10 +1922,6 @@ function AgentKnowledgeRow({
 					value={value}
 					onValueChange={onValueChange}
 				/>
-				<div aria-hidden className="h-4 w-px shrink-0 bg-border" />
-				{/* Memory is a default, non-removable knowledge source that's always
-				    available regardless of the org-knowledge mode. */}
-				<AgentReferenceChip label="Memory" />
 				{isCustom ? (
 					<>
 						{items.map((item, index) => (
@@ -2101,35 +2156,33 @@ function AgentCompactConfigToolbarBelow({
 	onTextChange,
 	screenAssistantTargetPrefix,
 }: Readonly<AgentConfigSummaryProps>) {
-	const [expanded, setExpanded] = useState(false);
+	const [expanded, setExpanded] = useState(() => !isFilledConfig);
 	const [reasoningValue, setReasoningValue] = useState<ReasoningModeValue>("deep-auto");
 	const [knowledgeMode, setKnowledgeMode] = useState<KnowledgeModeValue>(() =>
 		getNonEmptyConfigItems(config.knowledge).length > 0 ? "custom" : "all",
 	);
 	const shouldReduceMotion = useReducedMotion();
-	const isExpanded = expanded && isFilledConfig;
+	const isExpanded = expanded;
 	const transition = shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeOut" as const };
 
 	return (
 		<div className="flex flex-col">
 			<div className="flex items-center gap-2">
 				<div aria-hidden className="h-px flex-1 bg-border" />
-				{isFilledConfig ? (
-					<Button
-						aria-label={isExpanded ? "Collapse configuration" : "Expand configuration"}
-						className="size-6 rounded px-0"
-						onClick={() => setExpanded((prev) => !prev)}
-						size="icon-compact"
-						type="button"
-						variant="outline"
-					>
-						{isExpanded ? (
-							<ChevronDownIcon label="" size="small" />
-						) : (
-							<ChevronUpIcon label="" size="small" />
-						)}
-					</Button>
-				) : null}
+				<Button
+					aria-label={isExpanded ? "Collapse configuration" : "Expand configuration"}
+					className="size-6 rounded px-0"
+					onClick={() => setExpanded((prev) => !prev)}
+					size="icon-compact"
+					type="button"
+					variant="outline"
+				>
+					{isExpanded ? (
+						<ChevronDownIcon label="" size="small" />
+					) : (
+						<ChevronUpIcon label="" size="small" />
+					)}
+				</Button>
 			</div>
 			<AnimatePresence initial={false} mode="wait">
 				{isExpanded ? (
@@ -2230,14 +2283,6 @@ export const AgentConfigFields = memo(
 						<AgentInstructionsComposer
 							bottomSlot={(
 								<>
-									<AgentCompactConfigToolbarBelow
-										config={config}
-										isFilledConfig={isFilledConfig}
-										onAppendListItem={onAppendListItem}
-										onRemoveListItem={onRemoveListItem}
-										onTextChange={onTextChange}
-										screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-									/>
 									{isFilledConfig ? null : (
 										<AnimatePresence>
 											{templatesDismissed ? null : (
@@ -2248,6 +2293,14 @@ export const AgentConfigFields = memo(
 											)}
 										</AnimatePresence>
 									)}
+									<AgentCompactConfigToolbarBelow
+										config={config}
+										isFilledConfig={isFilledConfig}
+										onAppendListItem={onAppendListItem}
+										onRemoveListItem={onRemoveListItem}
+										onTextChange={onTextChange}
+										screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+									/>
 								</>
 							)}
 							bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-4 pt-4"

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
@@ -15,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DialogTitle } from "@/components/ui/dialog";
 import { Icon as VpkIcon } from "@/components/ui/icon";
+import { RovoColorIcon } from "@/components/ui/logo";
 
 interface RovoCanvasHeaderProps {
 	title: string;
@@ -31,12 +31,7 @@ function RovoCanvasBrand(): React.ReactElement {
 				data-icon="inline-start"
 				className="flex size-4 items-center justify-center"
 			>
-				<Image
-					src="/1p/rovo.svg"
-					alt=""
-					width={16}
-					height={16}
-				/>
+				<RovoColorIcon size="xxsmall" />
 			</span>
 			<span className="font-semibold">Rovo</span>
 		</div>

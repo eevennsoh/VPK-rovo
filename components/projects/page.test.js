@@ -95,7 +95,7 @@ test("Rovo Canvas renders artefact identity text instead of an artefact dropdown
 
 test("Rovo Canvas header keeps Rovo as static text without the agent selector", () => {
 	assert.match(ROVO_CANVAS_HEADER_SOURCE, /function RovoCanvasBrand\(\): React\.ReactElement/u);
-	assert.match(ROVO_CANVAS_HEADER_SOURCE, /src="\/1p\/rovo\.svg"/u);
+	assert.match(ROVO_CANVAS_HEADER_SOURCE, /import \{ RovoColorIcon \} from "@\/components\/ui\/logo";[\s\S]*<RovoColorIcon size="xxsmall" \/>/u);
 	assert.match(ROVO_CANVAS_HEADER_SOURCE, /<span className="font-semibold">Rovo<\/span>/u);
 	assert.match(ROVO_CANVAS_HEADER_SOURCE, /<RovoCanvasBrand \/>/u);
 	assert.doesNotMatch(ROVO_CANVAS_HEADER_SOURCE, /RovoAppBrand/u);
@@ -219,7 +219,7 @@ test("floating Rovo button can be dragged and snapped to a 4x4 viewport grid", (
 	assert.doesNotMatch(FLOATING_ROVO_BUTTON_SOURCE, /useDragControls|dragControls|dragListener=\{false\}|drag=\{!onboardingOpen\}|dragConstraints=\{dragConstraints\}/u);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/<Image[\s\S]*src="\/1p\/rovo\.svg"[\s\S]*className="pointer-events-none select-none"[\s\S]*draggable=\{false\}/u,
+		/import \{ RovoColorIcon \} from "@\/components\/ui\/logo";[\s\S]*<RovoColorIcon size="small" \/>/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,

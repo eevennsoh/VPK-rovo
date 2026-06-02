@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { AtlassianLogo } from "@/components/ui/logo";
 import { SplitButton } from "@/components/ui/split-button";
 import { Tile } from "@/components/ui/tile";
 import {
@@ -54,6 +55,7 @@ import {
 	getSkillCategoryId,
 	getSkillIcon,
 	getSkillPublisherAvatarSrc,
+	getSkillPublisherLogoName,
 	getSkillPublisherName,
 	type SkillCategory,
 	type SkillIconKey,
@@ -118,7 +120,7 @@ function normalizeAgentSkill(agent: SkillsDirectoryAgent): SkillsDirectorySkill 
 		name: agent.name,
 		description: agent.description ?? agent.byline,
 		icon: "page",
-		iconColor: "text-blue-500",
+		iconColor: "text-icon-success",
 		publisherName: deriveAgentPublisher(agent),
 		publisherAvatarSrc: agent.avatarSrc,
 		companyId: agent.attributionKind === "person" || agent.attributionKind === "team" ? "you" : undefined,
@@ -141,9 +143,14 @@ function isCategoryItem(value: string): value is SkillCategory {
 	return [
 		"project-management",
 		"administrative-tools",
-		"content-communication",
-		"data-analytics",
+		"content-and-communication",
+		"data-and-analytics",
 		"software-development",
+		"it-support-and-service",
+		"design-and-diagramming",
+		"security-and-compliance",
+		"hr-and-team-building",
+		"sales-and-customer-relations",
 	].includes(value);
 }
 
@@ -341,6 +348,7 @@ export function SkillsDirectoryDialog({
 					/>
 				) : (
 					<SkillsDirectoryHeader
+						onCreateSkill={createSkillHandler}
 						title={title}
 					/>
 				)}
@@ -357,7 +365,6 @@ export function SkillsDirectoryDialog({
 							onSelectSkill={handleSelectSkill}
 							primaryItems={primaryItems}
 							query={query}
-							onCreateSkill={createSkillHandler}
 							selectedIds={selectedIdSet}
 							setQuery={setQuery}
 							sidebarGroups={sidebarGroups}
@@ -381,16 +388,20 @@ export function SkillsDirectoryDialog({
 }
 
 interface SkillsDirectoryHeaderProps {
+	onCreateSkill?: () => void;
 	title: string;
 }
 
-function SkillsDirectoryHeader({ title }: Readonly<SkillsDirectoryHeaderProps>) {
+function SkillsDirectoryHeader({ onCreateSkill, title }: Readonly<SkillsDirectoryHeaderProps>) {
 	return (
-		<div className="flex items-center justify-between border-b border-border px-6 py-6">
-			<DialogTitle className="text-xl font-semibold leading-6 text-text">
+		<div className="flex items-center justify-between px-6 pt-6 pb-4">
+			<DialogTitle className="text-base font-medium leading-5 text-text">
 				{title}
 			</DialogTitle>
 			<div className="flex items-center gap-2">
+				<Button onClick={onCreateSkill} type="button">
+					New skill
+				</Button>
 				<DialogClose render={<Button variant="ghost" size="icon" />}>
 					<CrossIcon label="" />
 					<span className="sr-only">Close</span>
@@ -405,7 +416,6 @@ interface SkillsDirectoryViewProps {
 	filteredSkills: readonly SkillsDirectorySkill[];
 	hasSelection: boolean;
 	onLearnMore: (skill: SkillsDirectorySkill) => void;
-	onCreateSkill?: () => void;
 	onSelectItem: (id: string) => void;
 	onSelectSkill: (skill: SkillsDirectorySkill, checked?: boolean) => void;
 	primaryItems: readonly SkillsDirectoryPrimaryItem[];
@@ -421,7 +431,6 @@ function SkillsDirectoryView({
 	filteredSkills,
 	hasSelection,
 	onLearnMore,
-	onCreateSkill,
 	onSelectItem,
 	onSelectSkill,
 	primaryItems,
@@ -468,9 +477,9 @@ function SkillsDirectoryView({
 						Sort by latest
 						<Icon render={<ChevronDownIcon label="" size="small" color="currentColor" />} />
 					</Button>
-					<Button onClick={onCreateSkill} type="button">
-						New skill
-					</Button>
+					<p className="text-sm leading-5 text-text-subtle">
+						Showing {filteredSkills.length.toLocaleString("en-US")} results
+					</p>
 				</div>
 
 				{filteredSkills.length === 0 ? (
@@ -529,9 +538,29 @@ interface SkillCardProps {
 	skill: SkillsDirectorySkill;
 }
 
+/** Publisher avatar — ADS brand logo when no custom image is set, else the image. */
+function SkillPublisherAvatar({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
+	const logoName = getSkillPublisherLogoName(skill);
+	if (logoName) {
+		return <AtlassianLogo name={logoName} size="xsmall" themeAware label={getSkillPublisherName(skill)} />;
+	}
+
+	const src = getSkillPublisherAvatarSrc(skill);
+	return src ? (
+		<Image
+			alt=""
+			aria-hidden
+			className="size-4 shrink-0 rounded-full object-cover"
+			height={16}
+			src={src}
+			width={16}
+		/>
+	) : null;
+}
+
 function SkillCard({ onLearnMore, onSelect, selected, skill }: Readonly<SkillCardProps>) {
+	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 	const publisher = getSkillPublisherName(skill);
-	const publisherAvatarSrc = getSkillPublisherAvatarSrc(skill);
 
 	function stopInteractivePropagation(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
 		event.stopPropagation();
@@ -539,6 +568,7 @@ function SkillCard({ onLearnMore, onSelect, selected, skill }: Readonly<SkillCar
 
 	return (
 		<CardDirectory
+			active={moreMenuOpen}
 			className={cn(
 				"min-h-[112px] gap-4 hover:border-transparent",
 				selected && "border-border-selected hover:border-border-selected",
@@ -546,39 +576,64 @@ function SkillCard({ onLearnMore, onSelect, selected, skill }: Readonly<SkillCar
 			onSelect={() => onSelect()}
 			selectLabel={`${selected ? "Deselect" : "Select"} ${skill.name}`}
 		>
-			<div className="flex items-center gap-2">
-				<Checkbox
-					aria-label={`${selected ? "Deselect" : "Select"} ${skill.name}`}
-					checked={selected}
-					onCheckedChange={(checked) => onSelect(Boolean(checked))}
-					onClick={stopInteractivePropagation}
-					onKeyDown={stopInteractivePropagation}
-				/>
-				<div className="min-w-0 flex-1">
-					<h3 className="truncate text-text" style={{ font: token("font.heading.xsmall") }}>
-						{skill.name}
-					</h3>
+			<div className="flex flex-col gap-2">
+				<div className="flex items-center gap-2">
+					<span className="relative size-6 shrink-0">
+						<span
+							aria-hidden
+							className={cn(
+								"absolute inset-0 flex items-center justify-center text-icon-subtle transition-opacity duration-fast ease-out [&>svg]:size-4",
+								skill.iconColor,
+								selected
+									? "opacity-0"
+									: "opacity-100 group-hover/card:opacity-0",
+							)}
+						>
+							{getSkillIcon(skill.icon)}
+						</span>
+						<Checkbox
+							aria-label={`${selected ? "Deselect" : "Select"} ${skill.name}`}
+							checked={selected}
+							className={cn(
+								"absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-fast ease-out focus-visible:pointer-events-auto focus-visible:opacity-100",
+								selected
+									? "pointer-events-auto opacity-100"
+									: "pointer-events-none group-hover/card:pointer-events-auto group-hover/card:opacity-100",
+							)}
+							onCheckedChange={(checked) => onSelect(Boolean(checked))}
+							onClick={stopInteractivePropagation}
+							onKeyDown={stopInteractivePropagation}
+						/>
+					</span>
+					<div className="min-w-0 flex-1">
+						<h3 className="truncate text-text" style={{ font: token("font.heading.xsmall") }}>
+							{skill.name}
+						</h3>
+					</div>
+					<SkillMoreMenu
+						onLearnMore={onLearnMore}
+						onOpenChange={setMoreMenuOpen}
+						open={moreMenuOpen}
+						skillName={skill.name}
+					/>
 				</div>
-				<SkillMoreMenu onLearnMore={onLearnMore} skillName={skill.name} />
-			</div>
 
-			<CardDirectoryDescription className="text-text">
-				{skill.description}
-			</CardDirectoryDescription>
+				<CardDirectoryDescription className="text-text">
+					{skill.description}
+				</CardDirectoryDescription>
+			</div>
 
 			<CardDirectoryFooter className="justify-between">
 				<span className="inline-flex min-w-0 items-center gap-1 text-text-subtle">
-					<Image
-						alt=""
-						aria-hidden
-						className="size-4 shrink-0 rounded-full object-cover"
-						height={16}
-						src={publisherAvatarSrc}
-						width={16}
-					/>
+					<SkillPublisherAvatar skill={skill} />
 					<span className="truncate">{publisher}</span>
 				</span>
-				<span className="inline-flex shrink-0 items-center gap-4 opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100">
+				<span
+					className={cn(
+						"inline-flex shrink-0 items-center gap-4 opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
+						moreMenuOpen && "opacity-100",
+					)}
+				>
 					{typeof skill.starCount === "number" ? (
 						<CardDirectoryStat
 							icon={<StarUnstarredIcon label="" size="small" spacing="none" color="currentColor" />}
@@ -599,18 +654,32 @@ function SkillCard({ onLearnMore, onSelect, selected, skill }: Readonly<SkillCar
 	);
 }
 
-function SkillMoreMenu({ onLearnMore, skillName }: Readonly<{ onLearnMore: () => void; skillName: string }>) {
+function SkillMoreMenu({
+	onLearnMore,
+	onOpenChange,
+	open,
+	skillName,
+}: Readonly<{
+	onLearnMore: () => void;
+	onOpenChange: (open: boolean) => void;
+	open: boolean;
+	skillName: string;
+}>) {
 	function stopPropagation(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
 		event.stopPropagation();
 	}
 
 	return (
-		<DropdownMenu>
+		<DropdownMenu open={open} onOpenChange={onOpenChange}>
 			<DropdownMenuTrigger
 				render={
 					<Button
 						aria-label={`More actions for ${skillName}`}
-						className="size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100"
+						aria-pressed={open || undefined}
+						className={cn(
+							"size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
+							open && "opacity-100",
+						)}
 						onClick={stopPropagation}
 						onKeyDown={stopPropagation}
 						size="icon-compact"
@@ -660,12 +729,10 @@ function SelectedSkillsToolbar({
 				aria-live="polite"
 				className="pointer-events-auto flex max-w-full items-center gap-2 overflow-x-auto rounded-lg bg-surface-overlay px-4 py-2 shadow-overlay"
 				role="toolbar"
+				style={{ boxShadow: token("elevation.shadow.overlay") }}
 			>
 				<Badge>{count}</Badge>
 				<span className="shrink-0 text-sm font-medium leading-5 text-text">selected</span>
-				<Button onClick={onAddSkills} size="default" type="button">
-					Add skills
-				</Button>
 				<Button onClick={onCreateShareLink} size="default" type="button" variant="ghost">
 					<LinkIcon label="" />
 					Create link to share
@@ -677,6 +744,9 @@ function SelectedSkillsToolbar({
 				<Button onClick={onDownloadSkills} size="default" type="button" variant="ghost">
 					<DownloadIcon label="" />
 					Download
+				</Button>
+				<Button onClick={onAddSkills} size="default" type="button">
+					Add skills
 				</Button>
 				<Button aria-label="Clear selected skills" onClick={onClear} size="icon" type="button" variant="ghost">
 					<CrossIcon label="" />
@@ -829,7 +899,6 @@ function SkillFileTreeSidebar({ skill }: Readonly<{ skill: SkillsDirectorySkill 
 
 function SkillDetailSummary({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
 	const publisher = getSkillPublisherName(skill);
-	const publisherAvatarSrc = getSkillPublisherAvatarSrc(skill);
 
 	return (
 		<section className="flex flex-col gap-6" aria-labelledby="skill-detail-title">
@@ -850,14 +919,7 @@ function SkillDetailSummary({ skill }: Readonly<{ skill: SkillsDirectorySkill }>
 					{skill.name}
 				</h2>
 				<p className="flex items-center gap-1 text-xs leading-4 text-text-subtle">
-					<Image
-						alt=""
-						aria-hidden
-						className="size-4 rounded-full object-cover"
-						height={16}
-						src={publisherAvatarSrc}
-						width={16}
-					/>
+					<SkillPublisherAvatar skill={skill} />
 					{publisher}
 				</p>
 			</div>

@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState, type ReactNode } from "react";
+import { type KeyboardEvent, type MouseEvent, useMemo, useState, type ReactNode } from "react";
+import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import BranchIcon from "@atlaskit/icon/core/branch";
@@ -16,6 +17,7 @@ import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import SearchIcon from "@atlaskit/icon/core/search";
 import SettingsIcon from "@atlaskit/icon/core/settings";
 import ShieldIcon from "@atlaskit/icon/core/shield";
+import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
 import SupportIcon from "@atlaskit/icon/core/support";
 import TimelineIcon from "@atlaskit/icon/core/timeline";
@@ -27,12 +29,19 @@ import type {
 	AgentBrowserSidebarItem,
 } from "@/components/blocks/agent-browser";
 import { TOOLS_DIRECTORY_CATEGORIES } from "@/components/blocks/tools-directory/data/categories";
+import { DEFAULT_TOOLS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/tools-directory/data/sidebar-groups";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
+import { AtlassianLogo } from "@/components/ui/logo";
 import { Switch } from "@/components/ui/switch";
 import { Tile } from "@/components/ui/tile";
 import { CardDirectoryTool } from "@/components/ui-custom/card-directory";
@@ -51,8 +60,8 @@ export interface ToolsDirectoryPermission {
 
 export interface ToolsDirectoryTool extends AgentBrowserAgent {
 	categoryId?: string;
+	favorite?: boolean;
 	lastUpdatedLabel?: string;
-	logoName?: AtlassianLogoName;
 	logoSrc?: string;
 	publisherName?: string;
 	readOnlyTools?: readonly ToolsDirectoryPermission[];
@@ -79,10 +88,11 @@ export interface ToolsDirectoryDialogProps {
 }
 
 const EMPTY_TOOLS_DIRECTORY_TOOLS: readonly ToolsDirectoryTool[] = [];
-const EMPTY_TOOLS_DIRECTORY_SIDEBAR_GROUPS: readonly ToolsDirectorySidebarGroup[] = [];
+const MAX_VISIBLE_CATEGORY_ITEMS = 5;
 
 const PRIMARY_CATEGORIES = [
 	{ id: "all", label: "All" },
+	{ id: "favorite-tools", label: "Favourite tools" },
 	{ id: "my-tools", label: "My tools" },
 ] as const;
 
@@ -189,9 +199,11 @@ function filterTools(
 	const normalizedQuery = query.trim().toLowerCase();
 
 	return tools.filter((tool) => {
+		if (activeCategory === "favorite-tools" && !tool.favorite) return false;
 		if (activeCategory === "my-tools" && !addedIds.has(tool.id)) return false;
 		if (
 			activeCategory !== "all" &&
+			activeCategory !== "favorite-tools" &&
 			activeCategory !== "my-tools" &&
 			tool.categoryId !== activeCategory
 		) {
@@ -230,20 +242,33 @@ function getSidebarGroupItems(
 			id: tool.id,
 			label: tool.name,
 			avatarSrc: tool.avatarSrc,
+			logoName: tool.logoName,
 		}));
 }
 
 function getToolLogo(tool: ToolsDirectoryTool): ReactNode {
-	return (
+	if (tool.logoName || tool.id === "atlassian") {
+		return (
+			<AtlassianLogo
+				label={tool.name}
+				name={tool.logoName ?? "atlassian"}
+				size="small"
+				themeAware
+			/>
+		);
+	}
+
+	const src = tool.logoSrc ?? tool.avatarSrc;
+	return src ? (
 		<Image
 			alt=""
 			aria-hidden
 			className="size-full object-contain"
 			height={24}
-			src={tool.logoSrc ?? tool.avatarSrc}
+			src={src}
 			width={24}
 		/>
-	);
+	) : null;
 }
 
 function getDetailLogo(tool: ToolsDirectoryTool): ReactNode {
@@ -258,16 +283,17 @@ function getDetailLogo(tool: ToolsDirectoryTool): ReactNode {
 		);
 	}
 
-	return (
+	const src = tool.logoSrc ?? tool.avatarSrc;
+	return src ? (
 		<Image
 			alt=""
 			aria-hidden
 			className="size-16 object-contain"
 			height={64}
-			src={tool.logoSrc ?? tool.avatarSrc}
+			src={src}
 			width={64}
 		/>
-	);
+	) : null;
 }
 
 function getPermissionGroups(tool: ToolsDirectoryTool) {
@@ -294,7 +320,7 @@ export function ToolsDirectoryDialog({
 	onSelectTool,
 	open,
 	sessionTools = EMPTY_TOOLS_DIRECTORY_TOOLS,
-	sidebarGroups = EMPTY_TOOLS_DIRECTORY_SIDEBAR_GROUPS,
+	sidebarGroups = DEFAULT_TOOLS_DIRECTORY_SIDEBAR_GROUPS,
 	title,
 	tools,
 }: Readonly<ToolsDirectoryDialogProps>) {
@@ -513,21 +539,97 @@ function ToolsDirectoryView({
 					<ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
 						{filteredTools.map((tool) => (
 							<li key={tool.id}>
-								<CardDirectoryTool
-									appLogo={getToolLogo(tool)}
-									className="min-h-[102px] hover:border-transparent"
-									description={tool.description ?? "Short description about the app."}
-									name={tool.name}
-									onSelect={() => onSelectTool(tool)}
-									teammateCount={tool.teammateCount ?? 258}
-									toolCount={tool.toolCount ?? 36}
-								/>
+								<ToolCard onSelectTool={onSelectTool} tool={tool} />
 							</li>
 						))}
 					</ul>
 				)}
 			</div>
 		</div>
+	);
+}
+
+interface ToolCardProps {
+	onSelectTool: (tool: ToolsDirectoryTool) => void;
+	tool: ToolsDirectoryTool;
+}
+
+function ToolCard({ onSelectTool, tool }: Readonly<ToolCardProps>) {
+	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+	const selectTool = () => onSelectTool(tool);
+
+	return (
+		<CardDirectoryTool
+			active={moreMenuOpen}
+			appLogo={getToolLogo(tool)}
+			className="min-h-[102px] hover:border-transparent"
+			description={tool.description ?? "Short description about the app."}
+			moreAction={
+				<DirectoryCardMoreMenu
+					label={`More actions for ${tool.name}`}
+					onLearnMore={selectTool}
+					onOpenChange={setMoreMenuOpen}
+					open={moreMenuOpen}
+				/>
+			}
+			name={tool.name}
+			onSelect={selectTool}
+			teammateCount={tool.teammateCount ?? 258}
+			toolCount={tool.toolCount ?? 36}
+		/>
+	);
+}
+
+interface DirectoryCardMoreMenuProps {
+	label: string;
+	onLearnMore?: () => void;
+	onOpenChange: (open: boolean) => void;
+	open: boolean;
+}
+
+function DirectoryCardMoreMenu({
+	label,
+	onLearnMore,
+	onOpenChange,
+	open,
+}: Readonly<DirectoryCardMoreMenuProps>) {
+	function stopPropagation(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
+		event.stopPropagation();
+	}
+
+	return (
+		<DropdownMenu open={open} onOpenChange={onOpenChange}>
+			<DropdownMenuTrigger
+				render={
+					<Button
+						aria-label={label}
+						aria-pressed={open || undefined}
+						className={cn(
+							"size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
+							open && "opacity-100",
+						)}
+						onClick={stopPropagation}
+						onKeyDown={stopPropagation}
+						size="icon-compact"
+						type="button"
+						variant="ghost"
+					>
+						<Icon render={<ShowMoreHorizontalIcon label="" size="small" color="currentColor" />} />
+					</Button>
+				}
+			/>
+			<DropdownMenuContent align="end" onClick={stopPropagation} sideOffset={6}>
+				<DropdownMenuItem
+					onClick={stopPropagation}
+					onSelect={(event) => {
+						event.stopPropagation();
+						onLearnMore?.();
+					}}
+				>
+					Learn more
+				</DropdownMenuItem>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }
 
@@ -548,6 +650,13 @@ function ToolsDirectorySidebar({
 	sidebarGroups,
 	tools,
 }: Readonly<ToolsDirectorySidebarProps>) {
+	const [showAllCategories, setShowAllCategories] = useState(false);
+	const visibleCategoryItems = showAllCategories
+		? TOOLS_DIRECTORY_CATEGORIES
+		: TOOLS_DIRECTORY_CATEGORIES.slice(0, MAX_VISIBLE_CATEGORY_ITEMS);
+	const hasHiddenCategoryItems =
+		!showAllCategories && TOOLS_DIRECTORY_CATEGORIES.length > MAX_VISIBLE_CATEGORY_ITEMS;
+
 	return (
 		<nav
 			aria-label="Tool categories"
@@ -571,7 +680,7 @@ function ToolsDirectorySidebar({
 				</p>
 			</div>
 			<ul className="flex w-64 flex-col">
-				{TOOLS_DIRECTORY_CATEGORIES.map((category) => (
+				{visibleCategoryItems.map((category) => (
 					<li key={category.id}>
 						<SidebarNavItem
 							isSelected={activeCategory === category.id}
@@ -582,6 +691,16 @@ function ToolsDirectorySidebar({
 						/>
 					</li>
 				))}
+				{hasHiddenCategoryItems ? (
+					<li>
+						<SidebarNavItem
+							label="Show all"
+							leading={<AlignTextLeftIcon label="" size="small" />}
+							leadingSize="medium"
+							onClick={() => setShowAllCategories(true)}
+						/>
+					</li>
+				) : null}
 			</ul>
 			{sidebarGroups.length > 0 ? (
 				<div className="mt-5 flex w-64 flex-col gap-5 pb-6">
@@ -590,6 +709,7 @@ function ToolsDirectorySidebar({
 							key={group.title}
 							addedIds={addedIds}
 							group={group}
+							onSelectCategory={onSelectCategory}
 							onSelectTool={onSelectTool}
 							tools={tools}
 						/>
@@ -603,6 +723,7 @@ function ToolsDirectorySidebar({
 interface ToolsDirectorySidebarGroupProps {
 	addedIds: ReadonlySet<string>;
 	group: ToolsDirectorySidebarGroup;
+	onSelectCategory: (categoryId: string) => void;
 	onSelectTool: (tool: ToolsDirectoryTool) => void;
 	tools: readonly ToolsDirectoryTool[];
 }
@@ -610,6 +731,7 @@ interface ToolsDirectorySidebarGroupProps {
 function ToolsDirectorySidebarGroup({
 	addedIds,
 	group,
+	onSelectCategory,
 	onSelectTool,
 	tools,
 }: Readonly<ToolsDirectorySidebarGroupProps>) {
@@ -637,13 +759,27 @@ function ToolsDirectorySidebarGroup({
 						</li>
 					);
 				})}
+				{group.showAll ? (
+					<li>
+						<SidebarNavItem
+							label="Show all"
+							leading={<AlignTextLeftIcon label="" size="small" />}
+							leadingSize="medium"
+							onClick={() => onSelectCategory("all")}
+						/>
+					</li>
+				) : null}
 			</ul>
 		</div>
 	);
 }
 
 function SidebarToolAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>) {
-	return (
+	if (item.logoName) {
+		return <AtlassianLogo name={item.logoName} size="xsmall" themeAware label={item.label} />;
+	}
+
+	return item.avatarSrc ? (
 		<Image
 			alt=""
 			aria-hidden
@@ -652,7 +788,7 @@ function SidebarToolAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 			src={item.avatarSrc}
 			width={16}
 		/>
-	);
+	) : null;
 }
 
 interface ToolDetailViewProps {

@@ -1,8 +1,8 @@
 "use client";
 
 import type { ReactElement } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { RovoColorIcon } from "@/components/ui/logo";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import EditIcon from "@atlaskit/icon/core/edit";
 
@@ -17,7 +17,7 @@ export default function ChatHeader({ onClose }: Readonly<ChatHeaderProps>): Reac
 		<div className="px-3 py-3">
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<Image src="/1p/rovo.svg" alt="Rovo" width={16} height={16} />
+					<RovoColorIcon size="xxsmall" />
 					<span className="text-sm font-semibold text-text">Rovo</span>
 				</div>
 

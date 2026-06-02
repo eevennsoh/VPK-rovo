@@ -21,6 +21,7 @@ import {
 	type MotionStyle,
 } from "motion/react";
 import { useRovoChat } from "@/app/contexts";
+import { RovoColorIcon } from "@/components/ui/logo";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -519,15 +520,7 @@ function FloatingRovoButtonInner({
 				willChange: "opacity, filter",
 			}}
 		>
-			<Image
-				src="/1p/rovo.svg"
-				alt=""
-				width={24}
-				height={24}
-				aria-hidden
-				className="pointer-events-none select-none"
-				draggable={false}
-			/>
+			<RovoColorIcon size="small" />
 		</motion.button>
 	);
 }

@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 import { token } from "@/lib/tokens";
 import Heading from "@/components/blocks/shared-ui/heading";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { IconTile } from "@/components/ui/icon-tile";
 import { defaultSuggestions, type RovoSuggestion } from "@/lib/rovo-suggestions";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/components/projects/rovo/data/agent-profiles";
@@ -191,7 +192,7 @@ function CustomAgentGreeting({
 		>
 			<div className="flex max-w-[360px] flex-col items-center gap-3">
 				<motion.div variants={itemVariants}>
-					<Image alt="" aria-hidden className="size-10 object-contain" height={40} loading="eager" src={agent.avatarSrc} width={40} />
+					<AgentAvatarVisual avatarSrc={agent.avatarSrc} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
 				</motion.div>
 				<motion.div className="flex flex-col items-center gap-2" variants={itemVariants}>
 					<Heading size="large" className="text-center">{agent.name}</Heading>
