@@ -17,7 +17,8 @@ import RovoFloatingChat from "@/components/projects/rovo-floating-chat/component
 import { getStudioSessionAgentDisplayName, useRovoChat } from "@/app/contexts";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { Lozenge } from "@/components/ui/lozenge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type {
 	StudioAgentPublishStatus,
@@ -91,25 +92,25 @@ function AgentConfigActionButton({
 	);
 }
 
-type AgentConfigTabTriggerProps = ComponentProps<typeof TabsTrigger> & {
+type AgentConfigToggleItemProps = ComponentProps<typeof ToggleGroupItem> & {
 	disabledTooltip?: string;
 };
 
-function AgentConfigTabTrigger({
+function AgentConfigToggleItem({
 	disabled,
 	disabledTooltip,
 	...props
-}: Readonly<AgentConfigTabTriggerProps>) {
-	const trigger = <TabsTrigger disabled={disabled} {...props} />;
+}: Readonly<AgentConfigToggleItemProps>) {
+	const item = <ToggleGroupItem disabled={disabled} {...props} />;
 
 	if (!disabled || !disabledTooltip) {
-		return trigger;
+		return item;
 	}
 
 	return (
 		<Tooltip>
 			<TooltipTrigger render={<span className="inline-flex" />}>
-				{trigger}
+				{item}
 			</TooltipTrigger>
 			<TooltipContent side="bottom">
 				<p>{disabledTooltip}</p>
@@ -289,7 +290,6 @@ export function RovoAppAgentConfigPanel({
 			>
 			<Agent className="flex min-h-0 flex-1 flex-col">
 				<Tabs
-					aria-label="Agent config views"
 					className="min-h-0 flex-1"
 					onValueChange={handleViewChange}
 					value={activeView}
@@ -298,33 +298,16 @@ export function RovoAppAgentConfigPanel({
 						avatarSrc={agentAvatarSrc}
 						name={agentName}
 						badge={
-							<Lozenge
-								data-testid="agent-config-status-lozenge"
-								variant={entry.publishStatus === "published" ? "success" : undefined}
-							>
-								{publishStatusLabel}
-							</Lozenge>
-						}
-						actions={
+							// Header left meta slot: status lozenge plus the Update
+							// action sit beside the agent name; the view switcher and
+							// Publish live on the right.
 							<>
-								<TabsList>
-									<TabsTrigger
-										value="configure"
-										data-testid="agent-config-configure"
-										data-screen-assistant-target="studio-agent-config-configure"
-									>
-										Configure
-									</TabsTrigger>
-									<AgentConfigTabTrigger
-										value="test"
-										disabled={!hasAgentInstructions}
-										disabledTooltip="Add agent instructions before testing this agent."
-										data-testid="agent-config-test"
-										data-screen-assistant-target="studio-agent-config-test"
-									>
-										Test
-									</AgentConfigTabTrigger>
-								</TabsList>
+								<Lozenge
+									data-testid="agent-config-status-lozenge"
+									variant={entry.publishStatus === "published" ? "success" : undefined}
+								>
+									{publishStatusLabel}
+								</Lozenge>
 								<AgentConfigActionButton
 									type="button"
 									size="default"
@@ -337,6 +320,36 @@ export function RovoAppAgentConfigPanel({
 								>
 									{justUpdatedAt ? "Updated" : "Update"}
 								</AgentConfigActionButton>
+							</>
+						}
+						actions={
+							<>
+								<ToggleGroup
+									aria-label="Agent config views"
+									variant="outline"
+									size="sm"
+									value={[activeView]}
+									onValueChange={(value) =>
+										handleViewChange((value[0] as AgentConfigView | undefined) ?? null)
+									}
+								>
+									<ToggleGroupItem
+										value="configure"
+										data-testid="agent-config-configure"
+										data-screen-assistant-target="studio-agent-config-configure"
+									>
+										Configure
+									</ToggleGroupItem>
+									<AgentConfigToggleItem
+										value="test"
+										disabled={!hasAgentInstructions}
+										disabledTooltip="Add agent instructions before testing this agent."
+										data-testid="agent-config-test"
+										data-screen-assistant-target="studio-agent-config-test"
+									>
+										Test
+									</AgentConfigToggleItem>
+								</ToggleGroup>
 								<Button
 									type="button"
 									size="default"
