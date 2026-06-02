@@ -19,11 +19,9 @@ import {
 	Table,
 	TableBody,
 	TableCell,
-	TableHead,
-	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
+import { cn } from "@/lib/utils";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import EditIcon from "@atlaskit/icon/core/edit";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
@@ -80,6 +78,7 @@ export function StudioCustomAgentsTable({
 	onEditAgent,
 }: Readonly<StudioCustomAgentsTableProps>) {
 	const [pinnedAgentIds, setPinnedAgentIds] = useState<ReadonlySet<string>>(() => new Set());
+	const [openMenuAgentId, setOpenMenuAgentId] = useState<string | null>(null);
 	const sortedEntries = useMemo(() => {
 		return [...entries].sort((a, b) => {
 			const aPinned = pinnedAgentIds.has(a.profile.id);
@@ -104,39 +103,28 @@ export function StudioCustomAgentsTable({
 	};
 
 	return (
-		<section aria-labelledby="studio-custom-agents-heading" className={`mx-auto mt-10 w-full ${ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS}`}>
+		<section aria-labelledby="studio-custom-agents-heading" className={`mx-auto mt-20 w-full ${ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS}`}>
 			<h2 id="studio-custom-agents-heading" className="sr-only">
 				Custom agents
 			</h2>
 			<Table className="min-w-full table-fixed">
-				<TableHeader>
-					<TableRow className="hover:bg-transparent">
-						<TableHead className="w-full px-4">
-							<span className="inline-flex items-center gap-1">
-								Name
-								<ArrowUpIcon label="" size="small" />
-							</span>
-						</TableHead>
-						<TableHead className="w-[92px] px-2">Active users</TableHead>
-						<TableHead className="w-[72px] px-2">Version</TableHead>
-						<TableHead className="w-[132px] px-2">
-							<span className="inline-flex items-center gap-1">
-								Last modified
-								<ArrowUpIcon label="" size="small" />
-							</span>
-						</TableHead>
-						<TableHead className="w-[88px] px-2 text-right">
-							<span className="sr-only">Actions</span>
-						</TableHead>
-					</TableRow>
-				</TableHeader>
+				<colgroup>
+					<col />
+					<col className="w-[92px]" />
+					<col className="w-[72px]" />
+					<col className="w-[132px]" />
+					<col className="w-[88px]" />
+				</colgroup>
 				<TableBody>
 					{sortedEntries.map((entry) => {
 						const agentName = getStudioSessionAgentDisplayName(entry);
 						const isPinned = pinnedAgentIds.has(entry.profile.id);
+						const isMenuOpen = openMenuAgentId === entry.profile.id;
+						const revealOnHover =
+							"opacity-0 transition-opacity duration-fast group-hover/row:opacity-100 focus-visible:opacity-100";
 
 						return (
-							<TableRow key={entry.profile.id} className="h-14">
+							<TableRow key={entry.profile.id} className="group/row h-14 border-disabled">
 								<TableCell className="px-4">
 									<div className="flex min-w-0 items-center gap-3">
 										<Avatar aria-hidden="true" shape="hexagon" size="sm" className="shrink-0 after:border-0">
@@ -155,7 +143,7 @@ export function StudioCustomAgentsTable({
 									</Lozenge>
 								</TableCell>
 								<TableCell className="px-2">
-									<div className="flex items-center gap-2">
+									<div className="flex items-center gap-1">
 										<Avatar aria-hidden="true" size="sm">
 											<AvatarImage alt="" src={STUDIO_CUSTOM_AGENT_OWNER_AVATAR_SRC} />
 											<AvatarFallback>V</AvatarFallback>
@@ -167,10 +155,14 @@ export function StudioCustomAgentsTable({
 								</TableCell>
 								<TableCell className="px-2">
 									<div className="flex justify-end gap-1">
-										<DropdownMenu modal={false}>
+										<DropdownMenu
+											modal={false}
+											open={isMenuOpen}
+											onOpenChange={(open) => setOpenMenuAgentId(open ? entry.profile.id : null)}
+										>
 											<DropdownMenuTrigger
 												render={
-													<Button aria-label={`More actions for ${agentName || "Untitled agent"}`} className="size-7" size="icon" type="button" variant="ghost" />
+													<Button aria-label={`More actions for ${agentName || "Untitled agent"}`} className={cn("size-7", revealOnHover, isMenuOpen && "opacity-100")} size="icon" type="button" variant="ghost" />
 												}
 											>
 												<Icon aria-hidden render={<ShowMoreHorizontalIcon label="" size="small" />} />
@@ -186,13 +178,16 @@ export function StudioCustomAgentsTable({
 												</DropdownMenuGroup>
 											</DropdownMenuContent>
 										</DropdownMenu>
-										<Button aria-label={`Edit ${agentName || "Untitled agent"}`} className="size-7" onClick={() => onEditAgent(entry.profile.id)} size="icon" type="button" variant="ghost">
+										<Button aria-label={`Edit ${agentName || "Untitled agent"}`} className={cn("size-7", revealOnHover, isMenuOpen && "opacity-100")} onClick={() => onEditAgent(entry.profile.id)} size="icon" type="button" variant="ghost">
 											<Icon aria-hidden render={<EditIcon label="" size="small" />} />
 										</Button>
 										<Button
 											aria-label={`${isPinned ? "Unpin" : "Pin"} ${agentName || "Untitled agent"}`}
 											aria-pressed={isPinned}
-											className="size-7 aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:[&_svg]:text-icon-subtle!"
+											className={cn(
+												"size-7 aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:[&_svg]:text-icon-subtle!",
+												isPinned ? "opacity-100" : cn(revealOnHover, isMenuOpen && "opacity-100"),
+											)}
 											onClick={() => togglePinned(entry.profile.id)}
 											size="icon"
 											type="button"
