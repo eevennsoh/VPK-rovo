@@ -132,7 +132,12 @@ test("Skills Directory uses multi-select cards, hover learn-more, and selected t
 	assert.match(source, /style=\{\{ boxShadow: token\("elevation\.shadow\.overlay"\) \}\}/u);
 	assert.match(source, /function SkillPublisherAvatar/u);
 	assert.match(source, /getSkillPublisherLogoName\(skill\)/u);
-	assert.match(source, /<AtlassianLogo name=\{logoName\} size="xsmall" themeAware label=\{getSkillPublisherName\(skill\)\} \/>/u);
+	// Attribution marks are a uniform 16x16: brand logo uses the xxsmall (16px) size.
+	assert.match(source, /<AtlassianLogo name=\{logoName\} size="xxsmall" themeAware label=\{getSkillPublisherName\(skill\)\} \/>/u);
+	assert.doesNotMatch(source, /size="xsmall" themeAware label=\{getSkillPublisherName/u);
+	// Only human avatars are rounded; company logos stay square.
+	assert.match(source, /const isPerson = isSkillPublisherPerson\(skill\);/u);
+	assert.match(source, /isPerson \? "rounded-full object-cover" : "object-contain"/u);
 	assert.match(source, /Add skills/u);
 	assert.match(source, /Create link to share/u);
 	assert.match(source, /Favorite/u);

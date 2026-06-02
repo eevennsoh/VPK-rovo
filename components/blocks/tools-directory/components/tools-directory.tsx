@@ -618,7 +618,7 @@ function DirectoryCardMoreMenu({
 					</Button>
 				}
 			/>
-			<DropdownMenuContent align="end" onClick={stopPropagation} sideOffset={6}>
+			<DropdownMenuContent align="end" className="min-w-fit" onClick={stopPropagation} sideOffset={6}>
 				<DropdownMenuItem
 					onClick={stopPropagation}
 					onSelect={(event) => {
@@ -775,15 +775,21 @@ function ToolsDirectorySidebarGroup({
 }
 
 function SidebarToolAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>) {
+	// Bare brand marks (logoName) have no built-in tile, so wrap them in a
+	// bordered VPK tile. Image logos ship their own tile and render plain.
 	if (item.logoName) {
-		return <AtlassianLogo name={item.logoName} size="xsmall" themeAware label={item.label} />;
+		return (
+			<Tile aria-hidden className="shrink-0" hasBorder label={item.label} size="small" variant="transparent">
+				<AtlassianLogo name={item.logoName} size="xxsmall" themeAware label={item.label} />
+			</Tile>
+		);
 	}
 
 	return item.avatarSrc ? (
 		<Image
 			alt=""
 			aria-hidden
-			className="size-4 object-contain"
+			className="size-4 shrink-0 object-contain"
 			height={16}
 			src={item.avatarSrc}
 			width={16}

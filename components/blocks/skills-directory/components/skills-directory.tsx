@@ -57,6 +57,7 @@ import {
 	getSkillPublisherAvatarSrc,
 	getSkillPublisherLogoName,
 	getSkillPublisherName,
+	isSkillPublisherPerson,
 	type SkillCategory,
 	type SkillIconKey,
 	type SkillsDirectoryFileTreeItem,
@@ -542,20 +543,33 @@ interface SkillCardProps {
 function SkillPublisherAvatar({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
 	const logoName = getSkillPublisherLogoName(skill);
 	if (logoName) {
-		return <AtlassianLogo name={logoName} size="xsmall" themeAware label={getSkillPublisherName(skill)} />;
+		return (
+			<span className="inline-flex size-4 shrink-0 items-center justify-center">
+				<AtlassianLogo name={logoName} size="xxsmall" themeAware label={getSkillPublisherName(skill)} />
+			</span>
+		);
 	}
 
 	const src = getSkillPublisherAvatarSrc(skill);
-	return src ? (
+	if (!src) {
+		return null;
+	}
+
+	// Human avatars are rounded circles; company logos stay square and uncropped.
+	const isPerson = isSkillPublisherPerson(skill);
+	return (
 		<Image
 			alt=""
 			aria-hidden
-			className="size-4 shrink-0 rounded-full object-cover"
+			className={cn(
+				"size-4 shrink-0",
+				isPerson ? "rounded-full object-cover" : "object-contain",
+			)}
 			height={16}
 			src={src}
 			width={16}
 		/>
-	) : null;
+	);
 }
 
 function SkillCard({ onLearnMore, onSelect, selected, skill }: Readonly<SkillCardProps>) {
@@ -690,7 +704,7 @@ function SkillMoreMenu({
 					</Button>
 				}
 			/>
-			<DropdownMenuContent align="end" onClick={stopPropagation} sideOffset={6}>
+			<DropdownMenuContent align="end" className="min-w-fit" onClick={stopPropagation} sideOffset={6}>
 				<DropdownMenuItem
 					onClick={stopPropagation}
 					onSelect={(event) => {

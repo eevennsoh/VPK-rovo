@@ -92,6 +92,14 @@ export function getSkillPublisherAvatarSrc(skill: SkillsDirectorySkill): string 
 }
 
 /**
+ * Whether the publisher is a person (human avatar) rather than a company.
+ * Human avatars render as rounded circles; company logos render square.
+ */
+export function isSkillPublisherPerson(skill: SkillsDirectorySkill): boolean {
+	return skill.companyId === "you";
+}
+
+/**
  * Publishers default to the Atlassian brand mark when no custom avatar image is
  * set, rendered via the ADS logo component rather than a static asset.
  */

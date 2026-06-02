@@ -55,13 +55,16 @@ const tileVariants = cva(
 	}
 )
 
+// Content (child) sizes per tile size. `span`/`img`/`svg` are boxed to the
+// target dimensions; emoji and other text nodes are scaled to fit the same
+// box via a matching font-size + line-height so they render centered.
 const INSET_CHILD_SIZES = {
-	xxsmall: "[&_span]:size-2.5! [&_img]:size-2.5! [&_svg]:size-2.5!",
-	xsmall: "[&_span]:size-3! [&_img]:size-3! [&_svg]:size-3!",
-	small: "[&_span]:size-3.5! [&_img]:size-3.5! [&_svg]:size-3.5!",
-	medium: "[&_span]:size-4! [&_img]:size-4! [&_svg]:size-4!",
-	large: "[&_span]:size-5! [&_img]:size-5! [&_svg]:size-5!",
-	xlarge: "[&_span]:size-6! [&_img]:size-6! [&_svg]:size-6!",
+	xxsmall: "[&_span]:size-2.5! [&_img]:size-2.5! [&_svg]:size-2.5! text-[10px]/[10px]",
+	xsmall: "[&_span]:size-3! [&_img]:size-3! [&_svg]:size-3! text-[12px]/[12px]",
+	small: "[&_span]:size-3.5! [&_img]:size-3.5! [&_svg]:size-3.5! text-[14px]/[14px]",
+	medium: "[&_span]:size-4! [&_img]:size-4! [&_svg]:size-4! text-[16px]/[16px]",
+	large: "[&_span]:size-5! [&_img]:size-5! [&_svg]:size-5! text-[20px]/[20px]",
+	xlarge: "[&_span]:size-6! [&_img]:size-6! [&_svg]:size-6! text-[24px]/[24px]",
 } as const satisfies Record<string, string>
 
 export interface TileProps
