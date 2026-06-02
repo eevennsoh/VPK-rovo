@@ -9,11 +9,12 @@ import type {
 } from "@tiptap/suggestion";
 
 import AppsIcon from "@atlaskit/icon/core/apps";
-import AutomationIcon from "@atlaskit/icon/core/automation";
-import BookWithBookmarkIcon from "@atlaskit/icon/core/book-with-bookmark";
 import BranchIcon from "@atlaskit/icon/core/branch";
+import LibraryIcon from "@atlaskit/icon/core/library";
 import LinkIcon from "@atlaskit/icon/core/link";
+import PersonIcon from "@atlaskit/icon/core/person";
 import SnippetIcon from "@atlaskit/icon/core/snippet";
+import TeamsIcon from "@atlaskit/icon/core/teams";
 import ToolsIcon from "@atlaskit/icon/core/tools";
 import AlignTextCenterIcon from "@atlaskit/icon/core/align-text-center";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
@@ -42,9 +43,11 @@ import { IconTile } from "@/components/ui/icon-tile";
 import { cn } from "@/lib/utils";
 
 import type {
+	RichTextCommandCategory,
 	RichTextMentionCategory,
 	RichTextMentionItem,
 	RichTextMentionSources,
+	RichTextMentionTarget,
 } from "./types";
 
 export interface RichTextCommandItem {
@@ -82,21 +85,26 @@ interface SuggestionPopupState {
 }
 
 const CATEGORY_LABELS: Record<RichTextMentionCategory, string> = {
-	skill: "Skills",
 	subagent: "Subagents",
-	link: "Links",
-	memory: "Memory",
-	trigger: "Triggers",
+	human: "Human",
+	team: "A team",
+	skill: "Skills",
 	tool: "Tools",
+	knowledge: "Knowledge",
 };
 
-const CATEGORY_ORDER: readonly RichTextMentionCategory[] = [
-	"skill",
+/** "@" mention surface: people and agents only. */
+const MENTION_TARGET_ORDER: readonly RichTextMentionTarget[] = [
 	"subagent",
-	"link",
-	"memory",
-	"trigger",
+	"human",
+	"team",
+];
+
+/** "/" command surface: everything else, each opening a nested item list. */
+const COMMAND_CATEGORY_ORDER: readonly RichTextCommandCategory[] = [
+	"skill",
 	"tool",
+	"knowledge",
 ];
 
 const HOVER_REVEALED_BYLINE_CATEGORIES = new Set<RichTextMentionCategory>([
@@ -126,44 +134,64 @@ const STATIC_MENTION_ITEMS: RichTextMentionSources = {
 			description: "Explores UI polish, layout, and interaction refinements.",
 		},
 	],
-	link: [
+	human: [
 		{
-			category: "link",
-			id: "link:agent-definition",
+			category: "human",
+			id: "human:teammate",
+			label: "Teammate",
+			description: "Mention a specific person on your team.",
+		},
+		{
+			category: "human",
+			id: "human:reviewer",
+			label: "Reviewer",
+			description: "Loop in a human reviewer for sign-off.",
+		},
+		{
+			category: "human",
+			id: "human:stakeholder",
+			label: "Stakeholder",
+			description: "Notify a project stakeholder.",
+		},
+	],
+	team: [
+		{
+			category: "team",
+			id: "team:engineering",
+			label: "Engineering",
+			description: "Mention the engineering team.",
+		},
+		{
+			category: "team",
+			id: "team:design",
+			label: "Design",
+			description: "Mention the design team.",
+		},
+		{
+			category: "team",
+			id: "team:support",
+			label: "Support",
+			description: "Mention the support team.",
+		},
+	],
+	knowledge: [
+		{
+			category: "knowledge",
+			id: "knowledge:agent-definition",
 			label: "Agent definition",
 			description: "Reference the canonical generated agent profile.",
 		},
 		{
-			category: "link",
-			id: "link:studio-thread",
+			category: "knowledge",
+			id: "knowledge:studio-thread",
 			label: "Studio thread",
 			description: "Reference the active Studio conversation.",
 		},
 		{
-			category: "link",
-			id: "link:work-item",
+			category: "knowledge",
+			id: "knowledge:work-item",
 			label: "Work item",
 			description: "Reference a Jira or project work item.",
-		},
-	],
-	trigger: [
-		{
-			category: "trigger",
-			id: "trigger:manual",
-			label: "Manual run",
-			description: "Run only when a user starts the agent.",
-		},
-		{
-			category: "trigger",
-			id: "trigger:ticket-enters-column",
-			label: "Ticket enters column",
-			description: "Run when a work item moves into a configured column.",
-		},
-		{
-			category: "trigger",
-			id: "trigger:schedule",
-			label: "Schedule",
-			description: "Run on a reviewed recurring schedule.",
 		},
 	],
 	tool: [
@@ -371,18 +399,18 @@ export const SLASH_COMMANDS: readonly RichTextCommandItem[] = [
 
 function getCategoryIcon(category: RichTextMentionCategory): ReactNode {
 	switch (category) {
-		case "skill":
-			return <AppsIcon label="" size="small" />;
 		case "subagent":
 			return <PeopleGroupIcon label="" size="small" />;
-		case "link":
-			return <LinkIcon label="" size="small" />;
-		case "memory":
-			return <BookWithBookmarkIcon label="" size="small" />;
-		case "trigger":
-			return <AutomationIcon label="" size="small" />;
+		case "human":
+			return <PersonIcon label="" size="small" />;
+		case "team":
+			return <TeamsIcon label="" size="small" />;
+		case "skill":
+			return <AppsIcon label="" size="small" />;
 		case "tool":
 			return <ToolsIcon label="" size="small" />;
+		case "knowledge":
+			return <LibraryIcon label="" size="small" />;
 	}
 }
 
@@ -506,65 +534,122 @@ function positionPopup(
 	element.style.top = `${rect.bottom + 6}px`;
 }
 
-export function createSlashSuggestionRenderer() {
+/**
+ * A "/" selection is either a basic-block command to run or a reference item to
+ * insert as a mention token (the migrated Skills/Tools/Knowledge categories).
+ */
+export type RichTextSlashAction =
+	| { type: "command"; run: (editor: Editor) => void }
+	| { type: "mention"; mention: RichTextMentionItem };
+
+function isCommandCategoryId(id: string): id is RichTextCommandCategory {
+	return (COMMAND_CATEGORY_ORDER as readonly string[]).includes(id);
+}
+
+function getSlashCommandMenuItems(query: string): readonly RichTextSuggestionMenuItem[] {
+	return filterItems(
+		SLASH_COMMANDS.map((command) => ({
+			description: command.description,
+			icon: command.icon,
+			id: command.id,
+			label: command.label,
+			shortcut: command.shortcut,
+		})),
+		query,
+	);
+}
+
+export function createSlashSuggestionRenderer(
+	getMentionSources?: () => RichTextMentionSources | undefined,
+) {
 	const popupState: SuggestionPopupState = { component: null, element: null };
 	let selectedIndex = 0;
-	let currentProps: SuggestionProps<RichTextCommandItem, RichTextCommandItem> | null = null;
+	let activeCategory: RichTextCommandCategory | null = null;
+	let currentProps: SuggestionProps<RichTextSlashAction, RichTextSlashAction> | null = null;
 
-	function getMenuItems(props: SuggestionProps<RichTextCommandItem, RichTextCommandItem>) {
-		return props.items.map((item) => ({
-			description: item.description,
-			icon: item.icon,
-			id: item.id,
-			label: item.label,
-			shortcut: item.shortcut,
-		}));
+	function getTopLevelItems(query: string): readonly RichTextSuggestionMenuItem[] {
+		return [
+			...filterItems(getSlashCommandCategoryItems(getMentionSources?.()), query),
+			...getSlashCommandMenuItems(query),
+		];
 	}
 
-	function selectItem(index: number): boolean {
-		if (!currentProps) {
-			return false;
+	function getChildItems(query: string): readonly RichTextSuggestionMenuItem[] {
+		if (!activeCategory) {
+			return [];
 		}
 
-		const item = currentProps.items[index];
-		if (!item) {
-			return false;
-		}
-
-		currentProps.command(item);
-		return true;
+		return filterItems(getMentionChildItems(getMentionSources?.(), activeCategory), query);
 	}
 
-	function update(props: SuggestionProps<RichTextCommandItem, RichTextCommandItem>) {
+	function getVisibleItems(query: string): readonly RichTextSuggestionMenuItem[] {
+		return activeCategory ? getChildItems(query) : getTopLevelItems(query);
+	}
+
+	function update(props: SuggestionProps<RichTextSlashAction, RichTextSlashAction>) {
 		currentProps = props;
-		selectedIndex = Math.min(selectedIndex, Math.max(props.items.length - 1, 0));
+		const items = getVisibleItems(props.query);
+		selectedIndex = Math.min(selectedIndex, Math.max(items.length - 1, 0));
 		positionPopup(popupState.element, props.clientRect);
 		popupState.component?.updateProps({
-			emptyLabel: "No commands found",
-			items: getMenuItems(props),
-			onSelect: (item: RichTextSuggestionMenuItem) => {
-				const nextIndex = props.items.findIndex((candidate) => candidate.id === item.id);
-				selectItem(Math.max(nextIndex, 0));
-			},
+			emptyLabel: activeCategory ? "No matching items" : "No commands found",
+			items,
+			onBack: activeCategory
+				? () => {
+						activeCategory = null;
+						selectedIndex = 0;
+						update(props);
+					}
+				: undefined,
+			onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
 			selectedIndex,
-			title: "Basic blocks",
+			title: activeCategory ? CATEGORY_LABELS[activeCategory] : "Commands",
 		});
 	}
 
+	function selectItem(item: RichTextSuggestionMenuItem | undefined): boolean {
+		if (!item || !currentProps) {
+			return false;
+		}
+
+		if (activeCategory) {
+			const mention = getCategoryItems(getMentionSources?.(), activeCategory)
+				.find((candidate) => candidate.id === item.id);
+			if (!mention) {
+				return false;
+			}
+
+			currentProps.command({ type: "mention", mention });
+			return true;
+		}
+
+		if (isCommandCategoryId(item.id)) {
+			activeCategory = item.id;
+			selectedIndex = 0;
+			update(currentProps);
+			return true;
+		}
+
+		const command = SLASH_COMMANDS.find((candidate) => candidate.id === item.id);
+		if (!command) {
+			return false;
+		}
+
+		currentProps.command({ type: "command", run: command.run });
+		return true;
+	}
+
 	return {
-		onStart: (props: SuggestionProps<RichTextCommandItem, RichTextCommandItem>) => {
+		onStart: (props: SuggestionProps<RichTextSlashAction, RichTextSlashAction>) => {
 			popupState.element = createPopup();
 			popupState.component = new ReactRenderer(RichTextSuggestionMenu, {
 				editor: props.editor,
 				props: {
 					emptyLabel: "No commands found",
-					items: getMenuItems(props),
-					onSelect: (item: RichTextSuggestionMenuItem) => {
-						const nextIndex = props.items.findIndex((candidate) => candidate.id === item.id);
-						selectItem(Math.max(nextIndex, 0));
-					},
+					items: getVisibleItems(props.query),
+					onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
 					selectedIndex,
-					title: "Basic blocks",
+					title: "Commands",
 				},
 			});
 			popupState.element.appendChild(popupState.component.element);
@@ -575,22 +660,27 @@ export function createSlashSuggestionRenderer() {
 			if (!currentProps) {
 				return false;
 			}
+			const items = getVisibleItems(currentProps.query);
 			if (event.key === "ArrowDown") {
-				selectedIndex = currentProps.items.length > 0
-					? (selectedIndex + 1) % currentProps.items.length
-					: 0;
+				selectedIndex = items.length > 0 ? (selectedIndex + 1) % items.length : 0;
 				update(currentProps);
 				return true;
 			}
 			if (event.key === "ArrowUp") {
-				selectedIndex = currentProps.items.length > 0
-					? (selectedIndex + currentProps.items.length - 1) % currentProps.items.length
+				selectedIndex = items.length > 0
+					? (selectedIndex + items.length - 1) % items.length
 					: 0;
 				update(currentProps);
 				return true;
 			}
 			if (event.key === "Enter") {
-				return selectItem(selectedIndex);
+				return selectItem(items[selectedIndex]);
+			}
+			if (event.key === "Backspace" && activeCategory) {
+				activeCategory = null;
+				selectedIndex = 0;
+				update(currentProps);
+				return true;
 			}
 			if (event.key === "Escape") {
 				return false;
@@ -604,6 +694,7 @@ export function createSlashSuggestionRenderer() {
 			popupState.element = null;
 			currentProps = null;
 			selectedIndex = 0;
+			activeCategory = null;
 		},
 	};
 }
@@ -615,9 +706,10 @@ function getMergedMentionSources(
 		...STATIC_MENTION_ITEMS,
 		...sources,
 		subagent: sources?.subagent ?? STATIC_MENTION_ITEMS.subagent,
-		link: sources?.link ?? STATIC_MENTION_ITEMS.link,
-		trigger: sources?.trigger ?? STATIC_MENTION_ITEMS.trigger,
+		human: sources?.human ?? STATIC_MENTION_ITEMS.human,
+		team: sources?.team ?? STATIC_MENTION_ITEMS.team,
 		tool: sources?.tool ?? STATIC_MENTION_ITEMS.tool,
+		knowledge: sources?.knowledge ?? STATIC_MENTION_ITEMS.knowledge,
 	};
 }
 
@@ -628,10 +720,11 @@ function getCategoryItems(
 	return getMergedMentionSources(sources)[category] ?? [];
 }
 
-export function getMentionContextMenuItems(
-	sources?: RichTextMentionSources,
+function buildCategoryMenuItems(
+	order: readonly RichTextMentionCategory[],
+	sources: RichTextMentionSources | undefined,
 ): readonly RichTextSuggestionMenuItem[] {
-	return CATEGORY_ORDER.map((category) => ({
+	return order.map((category) => ({
 		description: `${getCategoryItems(sources, category).length} available`,
 		icon: getCategoryIcon(category),
 		id: category,
@@ -640,24 +733,43 @@ export function getMentionContextMenuItems(
 	}));
 }
 
+/** Parent entries for the "@" mention surface: subagents, human, a team. */
+export function getMentionTargetItems(
+	sources?: RichTextMentionSources,
+): readonly RichTextSuggestionMenuItem[] {
+	return buildCategoryMenuItems(MENTION_TARGET_ORDER, sources);
+}
+
+/** Parent entries for the "/" command surface: skills, tools, knowledge. */
+export function getSlashCommandCategoryItems(
+	sources?: RichTextMentionSources,
+): readonly RichTextSuggestionMenuItem[] {
+	return buildCategoryMenuItems(COMMAND_CATEGORY_ORDER, sources);
+}
+
+/** Nested reference items for a single category (e.g. the Skills submenu). */
+export function getMentionChildItems(
+	sources: RichTextMentionSources | undefined,
+	category: RichTextMentionCategory,
+): readonly RichTextSuggestionMenuItem[] {
+	return getCategoryItems(sources, category).map((item) => ({
+		description: item.description,
+		icon: getCategoryIcon(item.category),
+		id: item.id,
+		label: item.label,
+	}));
+}
+
 export function createMentionSuggestionRenderer(
 	getMentionSources?: () => RichTextMentionSources | undefined,
 ) {
 	const popupState: SuggestionPopupState = { component: null, element: null };
 	let selectedIndex = 0;
-	let activeCategory: RichTextMentionCategory | null = null;
+	let activeCategory: RichTextMentionTarget | null = null;
 	let currentProps: SuggestionProps<RichTextMentionItem, RichTextMentionItem> | null = null;
 
 	function getParentItems(query: string): readonly RichTextSuggestionMenuItem[] {
-		const sources = getMentionSources?.();
-		const items = CATEGORY_ORDER.map((category) => ({
-			description: `${getCategoryItems(sources, category).length} available`,
-			icon: getCategoryIcon(category),
-			id: category,
-			label: CATEGORY_LABELS[category],
-			revealDescriptionOnHover: HOVER_REVEALED_BYLINE_CATEGORIES.has(category),
-		}));
-		return filterItems(items, query);
+		return filterItems(getMentionTargetItems(getMentionSources?.()), query);
 	}
 
 	function getChildItems(query: string): readonly RichTextSuggestionMenuItem[] {
@@ -688,7 +800,7 @@ export function createMentionSuggestionRenderer(
 		selectedIndex = Math.min(selectedIndex, Math.max(items.length - 1, 0));
 		positionPopup(popupState.element, props.clientRect);
 		popupState.component?.updateProps({
-			emptyLabel: activeCategory ? "No matching items" : "No mention categories found",
+			emptyLabel: activeCategory ? "No matching items" : "No people or agents found",
 			items,
 			onBack: activeCategory
 				? () => {
@@ -699,7 +811,7 @@ export function createMentionSuggestionRenderer(
 				: undefined,
 			onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
 			selectedIndex,
-			title: activeCategory ? CATEGORY_LABELS[activeCategory] : "Add context",
+			title: activeCategory ? CATEGORY_LABELS[activeCategory] : "Mention",
 		});
 	}
 
@@ -709,7 +821,7 @@ export function createMentionSuggestionRenderer(
 		}
 
 		if (!activeCategory) {
-			activeCategory = item.id as RichTextMentionCategory;
+			activeCategory = item.id as RichTextMentionTarget;
 			selectedIndex = 0;
 			update(currentProps);
 			return true;
@@ -731,11 +843,11 @@ export function createMentionSuggestionRenderer(
 			popupState.component = new ReactRenderer(RichTextSuggestionMenu, {
 				editor: props.editor,
 				props: {
-					emptyLabel: "No mention categories found",
+					emptyLabel: "No people or agents found",
 					items: getVisibleItems(props),
 					onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
 					selectedIndex,
-					title: "Add context",
+					title: "Mention",
 				},
 			});
 			popupState.element.appendChild(popupState.component.element);

@@ -66,7 +66,7 @@ test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /function AgentInstructionsComposer/u);
 	assert.match(AGENT_SOURCE, /<RichTextEditor[\s\S]*aria-label="Agent instructions"/u);
 	assert.match(AGENT_SOURCE, /editorClassName=\{cn\("agent-instructions-tiptap-editor text-text", editorClassName\)\}/u);
-	assert.match(AGENT_SOURCE, /placeholder="Describe the agent’s role and what it should do\. @mention, \/ for skills, or start with a template"/u);
+	assert.match(AGENT_SOURCE, /placeholder="Describe the agent’s role and what it should do\. @ to mention people and agents, \/ for skills, tools, and knowledge, or start with a template"/u);
 	assert.match(AGENT_SOURCE, /placeholderSlot=\{\([\s\S]*start with a template[\s\S]*\)\}/u);
 	assert.match(AGENT_SOURCE, /onClick=\{\(\) => setTemplatesOpen\(true\)\}/u);
 	assert.match(AGENT_SOURCE, /<AgentTemplatesDialog[\s\S]*open=\{templatesOpen\}[\s\S]*onOpenChange=\{setTemplatesOpen\}/u);
@@ -128,7 +128,7 @@ test("Agent config updates instructions as markdown strings", () => {
 	assert.match(AGENT_SOURCE, /fetch\("\/api\/skills"/u);
 	assert.match(AGENT_SOURCE, /fetch\("\/api\/wiki\/memory-explorer"/u);
 	assert.match(AGENT_SOURCE, /toMentionId\("skill"/u);
-	assert.match(AGENT_SOURCE, /toMentionId\("memory"/u);
+	assert.match(AGENT_SOURCE, /toMentionId\("knowledge"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /getHTML\(/u);
 	assert.doesNotMatch(AGENT_SOURCE, /instructionsHtml|richInstructions/u);
 });
@@ -420,7 +420,7 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 	}
 
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /const SlashCommand = Extension\.create/u);
-	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /Suggestion<RichTextCommandItem/u);
+	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /Suggestion<RichTextSlashAction/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /char: "\/"/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /Mention\.configure/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /data-type": "mention"/u);
@@ -449,20 +449,20 @@ test("Slash command menu contains every toolbar command", () => {
 	}
 });
 
-test("Mention menu exposes Studio context categories and mention lozenges", () => {
-	for (const category of ["Skills", "Links", "Memory", "Triggers", "Tools"]) {
+test("Mention menu exposes people/agent and command categories and mention lozenges", () => {
+	for (const category of ["Subagents", "Human", "A team", "Skills", "Tools", "Knowledge"]) {
 		assert.match(RICH_TEXT_SUGGESTION_SOURCE, new RegExp(category, "u"));
 	}
 
-	for (const idPrefix of ["link:", "trigger:", "tool:"]) {
+	for (const idPrefix of ["human:", "team:", "tool:", "knowledge:"]) {
 		assert.match(RICH_TEXT_SUGGESTION_SOURCE, new RegExp(`id: "${idPrefix}`, "u"));
 	}
 	assert.match(AGENT_SOURCE, /toMentionId\("skill"/u);
-	assert.match(AGENT_SOURCE, /toMentionId\("memory"/u);
+	assert.match(AGENT_SOURCE, /toMentionId\("knowledge"/u);
 
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-mention/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\[data-mention-category="skill"\]/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\[data-mention-category="memory"\]/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\[data-mention-category="knowledge"\]/u);
 });
 
 test("Agent creation guidance asks for structured markdown instructions", () => {
@@ -537,7 +537,9 @@ test("Shared toolbar groups related split controls and keeps unrelated toggles i
 	assert.match(EDITOR_TOOLBAR_SOURCE, /pressed=\{!isMarkdownMode && editor\.isActive\("link"\)\}/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Link"[\s\S]*onPressedChange=\{handleLinkPressedChange\}/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Add content"[\s\S]*onClick=\{handleAddContent\}/u);
-	assert.match(EDITOR_TOOLBAR_SOURCE, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>/u);
+	// The trailing `+` button is wrapped in a positioned div so it can anchor
+	// the Insert dropdown (Paragraph / Table / Horizontal rule).
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<div[^>]*>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>[\s\S]*<\/div>/u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /<AddIcon label="" size="small" \/>\s*<\/Button>\s*<ToolbarSeparator \/>/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<Tabs[\s\S]*value=\{isMarkdownMode \? "markdown" : "rendered"\}/u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /value="link"/u);

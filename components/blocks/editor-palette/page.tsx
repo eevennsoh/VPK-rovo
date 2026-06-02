@@ -2,14 +2,14 @@
 
 import type { ReactNode } from "react";
 
-import AppsIcon from "@atlaskit/icon/core/apps";
-
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
 	RichTextEditor,
 	RichTextSuggestionMenu,
 	SLASH_COMMANDS,
-	getMentionContextMenuItems,
+	getMentionChildItems,
+	getMentionTargetItems,
+	getSlashCommandCategoryItems,
 	type RichTextMentionSources,
 	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { EDITOR_PALETTE_MENTION_SOURCES } from "./data/mention-sources";
 
 export interface EditorPaletteProps {
-	/** Mention categories that drive the "@" Add context menu counts. */
+	/** Skill catalog that drives the live editor's "/" Skills submenu counts. */
 	mentionSources?: RichTextMentionSources;
 	/** Render a live editor where typing "@" or "/" opens the real menus. */
 	showLiveEditor?: boolean;
@@ -33,15 +33,12 @@ export default function EditorPalette({
 	showLiveEditor = true,
 	className,
 }: Readonly<EditorPaletteProps>) {
-	const contextItems = getMentionContextMenuItems(mentionSources);
-	const skillItems: readonly RichTextSuggestionMenuItem[] = (mentionSources.skill ?? []).map(
-		(item) => ({
-			description: item.description,
-			icon: <AppsIcon label="" size="small" />,
-			id: item.id,
-			label: item.label,
-		}),
-	);
+	const mentionItems = getMentionTargetItems(mentionSources);
+	const commandItems: readonly RichTextSuggestionMenuItem[] = [
+		...getSlashCommandCategoryItems(mentionSources),
+		...SLASH_COMMANDS,
+	];
+	const skillItems = getMentionChildItems(mentionSources, "skill");
 
 	return (
 		<div
@@ -52,18 +49,29 @@ export default function EditorPalette({
 				className="flex w-full flex-nowrap items-start justify-start overflow-x-auto lg:justify-center"
 				style={{ gap: token("space.300") }}
 			>
-				<PalettePanel trigger="@" caption="Add context">
+				<PalettePanel trigger="@" caption="Mention">
 					<RichTextSuggestionMenu
 						className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
-						title="Add context"
-						emptyLabel="No mention categories found"
-						items={contextItems}
+						title="Mention"
+						emptyLabel="No people or agents found"
+						items={mentionItems}
 						selectedIndex={0}
 						onSelect={noop}
 					/>
 				</PalettePanel>
 
-				<PalettePanel trigger="@" caption="Skills nested">
+				<PalettePanel trigger="/" caption="Commands">
+					<RichTextSuggestionMenu
+						className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
+						title="Commands"
+						emptyLabel="No commands found"
+						items={commandItems}
+						selectedIndex={0}
+						onSelect={noop}
+					/>
+				</PalettePanel>
+
+				<PalettePanel trigger="/" caption="Skills nested">
 					<RichTextSuggestionMenu
 						className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
 						title="Skills"
@@ -71,17 +79,6 @@ export default function EditorPalette({
 						items={skillItems}
 						selectedIndex={0}
 						onBack={noop}
-						onSelect={noop}
-					/>
-				</PalettePanel>
-
-				<PalettePanel trigger="/" caption="Basic blocks">
-					<RichTextSuggestionMenu
-						className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
-						title="Basic blocks"
-						emptyLabel="No commands found"
-						items={SLASH_COMMANDS}
-						selectedIndex={0}
 						onSelect={noop}
 					/>
 				</PalettePanel>
@@ -94,7 +91,7 @@ export default function EditorPalette({
 				>
 					<RichTextEditor
 						mentionSources={mentionSources}
-						placeholder="Type @ to add context, or / for basic blocks…"
+						placeholder="Type @ to mention people and agents, or / for commands…"
 						showToolbar={false}
 						showBubbleMenu={false}
 						aria-label="Editor palette demo"

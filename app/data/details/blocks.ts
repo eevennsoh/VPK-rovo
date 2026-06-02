@@ -2,7 +2,7 @@ import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 	"editor-palette": {
-		description: "Showcase of the rich text editor's two suggestion menus: the \"@\" Add context listbox and the \"/\" Basic blocks command listbox, plus a live editor where typing the trigger characters opens the real popups.",
+		description: "Showcase of the rich text editor's two suggestion menus: the \"@\" Mention listbox for people and agents and the \"/\" Commands listbox for skills, tools, knowledge, and basic blocks, plus a live editor where typing the trigger characters opens the real popups.",
 		importStatement: `import EditorPalette from "@/components/blocks/editor-palette/page";`,
 		usage: `import EditorPalette from "@/components/blocks/editor-palette/page";
 
@@ -12,7 +12,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 			{
 				name: "mentionSources",
 				type: "RichTextMentionSources",
-				description: "Mention categories that drive the \"@\" Add context menu counts.",
+				description: "Skill catalog that drives the live editor's \"/\" Skills submenu counts.",
 			},
 			{
 				name: "showLiveEditor",
