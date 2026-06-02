@@ -774,12 +774,12 @@ function HomeStarterHeroTile({
 					<span className="block w-full min-w-0 text-sm font-semibold leading-5 text-text">
 						{template.title}
 					</span>
-					<span className="block w-full min-w-0 text-sm leading-5 text-text max-sm:line-clamp-2 max-sm:overflow-hidden">
+					<span className="block w-full min-w-0 text-sm leading-5 text-text max-lg:line-clamp-2 max-lg:overflow-hidden">
 						{template.description}
 					</span>
 				</div>
 				{hero.sources.length > 0 || hero.skills.length > 0 ? (
-					<div className="flex flex-col gap-4 max-sm:hidden">
+					<div className="flex flex-col gap-4 max-lg:hidden">
 						{hero.sources.length > 0 ? (
 							<div className="flex flex-col gap-1">
 								<span className="block text-xs font-semibold leading-4 text-text-subtle">
@@ -1031,7 +1031,7 @@ function HomeStarterBento({
 					region; the negative margin pulls the box back so spacing is unchanged.
 				*/}
 				<div
-					className={cn("relative -mt-2 pt-2", canShowMore && "sm:bento-fade-bottom")}
+					className={cn("relative -mt-2 pt-2", canShowMore && "lg:bento-fade-bottom")}
 				>
 					<AnimatePresence mode="wait" initial={false}>
 						<motion.div
@@ -4110,7 +4110,17 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	);
 
 	const chatPaneContainer = (
-		<div className="overscroll-behavior-contain relative z-10 flex h-full min-w-0 flex-1 flex-col touch-pan-y bg-background">
+		<div
+			className={cn(
+				"overscroll-behavior-contain relative z-10 flex h-full min-h-0 min-w-0 flex-1 flex-col touch-pan-y bg-background",
+				// Home landing stacks bento + composer + agents table + footer in a
+				// centered (flex-1 spacers) column. Without a scrollport the spacers
+				// can't collapse far enough on short viewports and the bottom (the
+				// agents table) gets clipped with no way to reach it. Chat state is
+				// excluded: RovoAppMessages owns its own scroll there.
+				showHomeState && "overflow-y-auto",
+			)}
+		>
 			{shouldShowAgentConfigPane && activeSessionAgentEntry ? (
 				<div
 					className="absolute left-3 top-3 z-20 hidden items-center gap-2 rounded-md border border-border bg-surface px-2 py-1 text-xs md:flex"

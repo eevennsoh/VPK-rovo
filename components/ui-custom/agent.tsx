@@ -1095,7 +1095,7 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 		<motion.section
 			aria-label="Operations prompt starters"
 			data-slot="agent-compact-operations-bento"
-			className="@container/bento relative flex min-h-0 flex-1 flex-col sm:min-h-[11.5rem]"
+			className="@container/bento relative flex min-h-0 flex-1 flex-col lg:min-h-[11.5rem]"
 			onPointerLeave={resetBentoPointer}
 			onPointerMove={handleBentoPointerMove}
 			style={{ ...AGENT_COMPACT_BENTO_CARD_GLOW_EFFECT_STYLE, willChange: "transform, opacity" }}
@@ -1112,9 +1112,9 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 				border sliced off. The padding keeps those effects inside the opaque
 				region; the negative margin pulls the box back so spacing is unchanged.
 			*/}
-			<div className="relative -mt-2 min-h-0 pt-2 sm:flex-1 sm:overflow-hidden sm:bento-fade-bottom">
+			<div className="relative -mt-2 min-h-0 pt-2 lg:flex-1 lg:overflow-hidden lg:bento-fade-bottom">
 				<BentoCarousel
-					gridClassName="sm:grid-cols-5"
+					gridClassName="lg:grid-cols-5"
 					arrowLabels={{ next: "Show next agent templates", previous: "Show previous agent templates" }}
 				>
 					{AGENT_COMPACT_OPERATIONS_TEMPLATES.map((template, index) => {

@@ -11,17 +11,17 @@ import { Icon } from "@/components/ui/icon";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-// Below `sm` (<640px) the bento switches from its desktop grid to a horizontal
+// Below `lg` (<1024px) the bento switches from its desktop grid to a horizontal
 // scroll carousel: equal-size cards (~2 visible + a peek), reactive edge fades, a
 // constant bottom fade (so cards dissolve into the page edge rather than ending on
 // a hard border — mirrors the desktop grid's `bento-fade-bottom`), and prev/next
 // arrows. The horizontal + bottom gradients are two layers of one mask composited
 // with `intersect`: a pixel survives only where BOTH are opaque, so the top-center
 // stays solid while the left/right (when scrollable) and bottom edges fade. At
-// `sm:`+ these `max-sm:` rules go inert and the existing grid (moved to `sm:`)
+// `lg:`+ these `max-lg:` rules go inert and the existing grid (moved to `lg:`)
 // takes over. Shared by both bentos so they stay aligned.
 export const BENTO_CAROUSEL_CONTAINER_CLASS =
-	"mx-auto w-full gap-3 max-sm:flex max-sm:snap-x max-sm:snap-proximity max-sm:scroll-px-2 max-sm:overflow-x-auto max-sm:overflow-y-hidden max-sm:px-2 max-sm:pt-2 max-sm:pb-0 max-sm:[scrollbar-width:none] max-sm:[&::-webkit-scrollbar]:hidden max-sm:[mask-image:var(--bento-edge-mask)] max-sm:[-webkit-mask-image:var(--bento-edge-mask)] max-sm:[mask-composite:intersect] max-sm:[-webkit-mask-composite:source-in] sm:grid sm:grid-cols-2 sm:auto-rows-[144px] lg:grid-cols-5";
+	"mx-auto w-full gap-3 max-lg:flex max-lg:snap-x max-lg:snap-proximity max-lg:scroll-px-2 max-lg:overflow-x-auto max-lg:overflow-y-hidden max-lg:px-2 max-lg:pt-2 max-lg:pb-0 max-lg:[scrollbar-width:none] max-lg:[&::-webkit-scrollbar]:hidden max-lg:[mask-image:var(--bento-edge-mask)] max-lg:[-webkit-mask-image:var(--bento-edge-mask)] max-lg:[mask-composite:intersect] max-lg:[-webkit-mask-composite:source-in] lg:grid lg:grid-cols-5 lg:auto-rows-[144px]";
 
 // Per card: equal height (taller than the desktop `auto-rows-[144px]` so the
 // constant bottom fade has room to read as the card bleeding off the edge) and
@@ -29,7 +29,7 @@ export const BENTO_CAROUSEL_CONTAINER_CLASS =
 // (track − the two 12px inter-card gaps) / 2.25 → exactly 2 cards + 2 gaps + a
 // quarter-card peek.
 export const BENTO_CAROUSEL_TILE_CLASS =
-	"max-sm:h-48 max-sm:w-[calc((100%_-_24px)/2.25)] max-sm:shrink-0 max-sm:snap-start";
+	"max-lg:h-48 max-lg:w-[calc((100%_-_24px)/2.25)] max-lg:shrink-0 max-lg:snap-start";
 
 const EDGE_FADE = "48px";
 // Bottom dissolve distance for the carousel. Matches the spirit of the desktop
@@ -44,7 +44,7 @@ type BentoEdgeMaskStyle = CSSProperties & Record<"--bento-edge-mask", string>;
  * Build the carousel mask: a reactive horizontal edge fade (fading only the
  * side[s] with more content) plus a constant bottom fade, as two comma-separated
  * gradient layers. Consumed via the `--bento-edge-mask` var by the
- * `max-sm:[mask-image:var(--bento-edge-mask)]` + `[mask-composite:intersect]`
+ * `max-lg:[mask-image:var(--bento-edge-mask)]` + `[mask-composite:intersect]`
  * classes (base only). The horizontal "none" state is fully opaque so SSR /
  * no-overflow renders without a side flash; the bottom layer is always present so
  * cards consistently dissolve at the bottom edge.
@@ -86,7 +86,7 @@ export function CarouselArrow({ direction, onClick, label, className }: Readonly
 	return (
 		<motion.div
 			animate={{ opacity: 1, transform: "translateY(-50%) translateX(0px) scale(1)" }}
-			className={cn("absolute top-1/2 z-10 sm:hidden", isPrevious ? "left-3" : "right-3", className)}
+			className={cn("absolute top-1/2 z-10 lg:hidden", isPrevious ? "left-3" : "right-3", className)}
 			exit={{ opacity: 0, transform: hiddenTransform }}
 			initial={{ opacity: 0, transform: hiddenTransform }}
 			transition={shouldReduceMotion ? { duration: 0.1 } : CAROUSEL_ARROW_TRANSITION}
