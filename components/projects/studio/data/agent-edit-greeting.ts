@@ -6,7 +6,7 @@ import BookOpenIcon from "@atlaskit/icon-lab/core/book-open";
 import SuggestedEditIcon from "@atlaskit/icon-lab/core/suggested-edit";
 import type { RovoSuggestion } from "@/lib/rovo-suggestions";
 
-export const AGENT_EDIT_GREETING_HEADING = "How should we improve this agent?";
+export const AGENT_EDIT_GREETING_HEADING = "Improve your agent?";
 export const AGENT_EDIT_GREETING_ILLUSTRATION_SRC = "/illustration-ai/ai/light.svg";
 export const AGENT_EDIT_GREETING_ILLUSTRATION_DARK_SRC = "/illustration-ai/ai/dark.svg";
 
