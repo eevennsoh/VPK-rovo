@@ -57,6 +57,8 @@ import {
 	RichTextEditor,
 } from "@/components/ui-custom/rich-text-editor";
 import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
+import { useBentoDescriptionClamp } from "@/components/ui-custom/hooks/use-bento-description-clamp";
+import { BENTO_CAROUSEL_TILE_CLASS, BentoCarousel } from "@/components/ui-custom/bento-carousel";
 import { token } from "@/lib/tokens";
 import type {
 	HermesSkillSummary,
@@ -267,8 +269,6 @@ const AGENT_COMPACT_BENTO_CARD_BORDER_GLOW_STYLE: CSSProperties = {
 	WebkitMask: "linear-gradient(#fff 0 100%) border-box, linear-gradient(#fff 0 100%) padding-box",
 	WebkitMaskComposite: "xor",
 };
-const AGENT_COMPACT_BENTO_FADE_MASK = "linear-gradient(to bottom, #000 calc(100% - 96px), transparent)";
-
 const MENTION_SOURCE_LIMIT = 24;
 
 interface AgentSkillMentionResponse {
@@ -1028,40 +1028,9 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 		}
 	}, []);
 
-	// Truncate each card description with an ellipsis sized to the space the card
-	// actually has (its box minus padding, owned by the flex-fill outer span):
-	// set `-webkit-line-clamp` to the whole number of lines that fit. A
-	// ResizeObserver re-runs this whenever a card resizes, so wider/taller cards
-	// reveal more lines and squeezed cards truncate — correct at every viewport.
-	const descBoxes = useRef<Set<HTMLElement>>(new Set());
-	const registerDescBox = useCallback((node: HTMLElement | null) => {
-		if (node) {
-			descBoxes.current.add(node);
-		}
-	}, []);
-	useEffect(() => {
-		if (typeof ResizeObserver === "undefined") {
-			return;
-		}
-		const applyClamp = (box: HTMLElement) => {
-			const text = box.firstElementChild as HTMLElement | null;
-			if (!text) {
-				return;
-			}
-			const lineHeight = parseFloat(getComputedStyle(text).lineHeight) || 20;
-			const lines = Math.max(1, Math.floor(box.clientHeight / lineHeight));
-			text.style.setProperty("-webkit-line-clamp", String(lines));
-		};
-		const observer = new ResizeObserver((entries) => {
-			for (const entry of entries) {
-				applyClamp(entry.target as HTMLElement);
-			}
-		});
-		for (const box of descBoxes.current) {
-			observer.observe(box);
-		}
-		return () => observer.disconnect();
-	}, []);
+	// Truncate each card description to the whole number of lines that fit its box;
+	// shared with the studio bento (`HomeStarterBento`) so both stay identical.
+	const registerDescBox = useBentoDescriptionClamp();
 
 	return (
 		<motion.section
@@ -1084,11 +1053,8 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 				focus ring sliced off. The padding keeps that motion inside the opaque
 				region; the negative margin pulls the box back so spacing is unchanged.
 			*/}
-			<div
-				className="relative -mt-2 min-h-0 flex-1 overflow-hidden pt-2"
-				style={{ maskImage: AGENT_COMPACT_BENTO_FADE_MASK, WebkitMaskImage: AGENT_COMPACT_BENTO_FADE_MASK }}
-			>
-				<div className="mx-auto grid w-full grid-cols-1 gap-3 auto-rows-[144px] sm:grid-cols-2 lg:grid-cols-5">
+			<div className="relative -mt-2 min-h-0 pt-2 sm:flex-1 sm:overflow-hidden sm:bento-fade-bottom">
+				<BentoCarousel arrowLabels={{ next: "Show next agent templates", previous: "Show previous agent templates" }}>
 					{AGENT_COMPACT_OPERATIONS_TEMPLATES.map((template, index) => {
 						const accentColor = getAgentCompactBentoCardGlowAccent(template.iconSrc);
 						const isHero = Boolean(template.hero);
@@ -1100,6 +1066,7 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 								aria-label={`Use prompt starter: ${template.title}`}
 								className={cn(
 									"group group/agent-compact-bento-card relative isolate flex min-h-0 flex-col items-start gap-3 overflow-hidden rounded-lg bg-background p-4 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out hover:bg-bg-neutral-subtle focus-visible:ring-3 focus-visible:ring-ring/50",
+									BENTO_CAROUSEL_TILE_CLASS,
 									template.layoutClassName
 								)}
 								ref={(node) => {
@@ -1125,12 +1092,12 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 										width={32}
 									/>
 								</span>
-								<span className={cn("relative z-[3] flex w-full min-w-0 flex-col gap-1", isHero ? "flex-none" : "flex-1")}>
+								<span className={cn("relative z-[3] flex w-full min-w-0 flex-col gap-1", isHero ? "flex-1 sm:flex-none" : "flex-1")}>
 									<span className="block w-full min-w-0 text-sm font-semibold leading-5 text-text">
 										{template.title}
 									</span>
 									{isHero ? (
-										<span className="block w-full min-w-0 text-sm leading-5 text-text">
+										<span className="block w-full min-w-0 text-sm leading-5 text-text max-sm:line-clamp-2 max-sm:overflow-hidden">
 											{template.description}
 										</span>
 									) : (
@@ -1145,7 +1112,7 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 									)}
 								</span>
 								{template.hero ? (
-									<div className="relative z-[3] flex flex-col gap-4">
+									<div className="relative z-[3] flex flex-col gap-4 max-sm:hidden">
 										{template.hero.sources.length > 0 ? (
 											<div className="flex flex-col gap-1">
 												<span className="block text-xs font-semibold leading-4 text-text-subtle">
@@ -1179,9 +1146,9 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 							</motion.button>
 						);
 					})}
-				</div>
+				</BentoCarousel>
 			</div>
-			<div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-2">
+			<div className="pointer-events-none z-10 flex justify-center max-sm:static max-sm:mt-2 sm:absolute sm:inset-x-0 sm:bottom-0 sm:pb-2">
 				<Button
 					type="button"
 					aria-label="Browse all agents"

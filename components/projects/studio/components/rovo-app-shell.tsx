@@ -27,6 +27,9 @@ import { RovoAppSidebar } from "@/components/projects/studio/components/rovo-app
 import { type RovoAppSteeringPhase } from "@/components/projects/studio/components/rovo-app-steering-lane";
 import { SmoothGradientWaveform } from "@/components/blocks/visual-waveform/smooth-gradient-waveform";
 import { useArtifactAnnotations } from "@/components/ui-custom/hooks/use-artifact-annotations";
+import { useBentoDescriptionClamp } from "@/components/ui-custom/hooks/use-bento-description-clamp";
+import { useHasHorizontalOverflow } from "@/components/hooks/use-has-horizontal-overflow";
+import { BENTO_CAROUSEL_CONTAINER_CLASS, BENTO_CAROUSEL_TILE_CLASS, CarouselArrow, getBentoEdgeMaskStyle } from "@/components/ui-custom/bento-carousel";
 import { formatAnnotationsForVoiceContext } from "@/components/ui-custom/lib/artifact-annotations";
 import type { ArtifactAnnotation } from "@/components/ui-custom/lib/artifact-annotations";
 import { useRovoApp } from "@/components/projects/studio/hooks/use-rovo-app";
@@ -734,6 +737,7 @@ function HomeStarterHeroTile({
 			aria-label={`Use prompt starter: ${template.title}`}
 			className={cn(
 				"group group/home-starter-card relative isolate flex min-h-0 flex-col items-start gap-3 overflow-hidden rounded-lg bg-background p-4 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out hover:bg-bg-neutral-subtle focus-visible:ring-3 focus-visible:ring-ring/50",
+				BENTO_CAROUSEL_TILE_CLASS,
 				template.layoutClassName,
 			)}
 			onBlur={onBlur}
@@ -769,12 +773,12 @@ function HomeStarterHeroTile({
 					<span className="block w-full min-w-0 text-sm font-semibold leading-5 text-text">
 						{template.title}
 					</span>
-					<span className="block w-full min-w-0 text-sm leading-5 text-text">
+					<span className="block w-full min-w-0 text-sm leading-5 text-text max-sm:line-clamp-2 max-sm:overflow-hidden">
 						{template.description}
 					</span>
 				</div>
 				{hero.sources.length > 0 || hero.skills.length > 0 ? (
-					<div className="flex flex-col gap-4">
+					<div className="flex flex-col gap-4 max-sm:hidden">
 						{hero.sources.length > 0 ? (
 							<div className="flex flex-col gap-1">
 								<span className="block text-xs font-semibold leading-4 text-text-subtle">
@@ -820,15 +824,6 @@ const HOME_STARTER_CYCLE_DURATION_MS = 6000;
 // transitioning tiles can never leak past the fade. Height matches the prior
 // `h-24` (96px) overlay. The "Browse all" pill stays a separate, unmasked
 // sibling so it keeps reading as a crisp affordance over the faded edge.
-const HOME_STARTER_BENTO_FADE_MASK = "linear-gradient(to bottom, #000 calc(100% - 96px), transparent)";
-
-// Per-card description fade. The description is a flex-fill box whose bottom edge
-// always sits at the card's content bottom, so when the copy overflows the last
-// (partial) line fades instead of being sliced mid-glyph. One line height of fade
-// (`leading-5` = 1.25rem); when the copy is short the faded region is simply empty,
-// so this is a no-op rather than fading visible text.
-const HOME_STARTER_CARD_DESCRIPTION_FADE_MASK =
-	"linear-gradient(to bottom, #000 calc(100% - 1.25rem), transparent)";
 
 function HomeStarterBento({
 	onPreviewEnd,
@@ -847,6 +842,8 @@ function HomeStarterBento({
 	const hoveredTemplatePromptRef = useRef<string | null>(null);
 	const bentoInteractingRef = useRef(false);
 	const tileRefs = useRef<Array<HTMLButtonElement | null>>([]);
+	const registerDescBox = useBentoDescriptionClamp();
+	const { ref: bentoCarouselRef, canScrollLeft, canScrollRight, scrollByDir } = useHasHorizontalOverflow<HTMLDivElement>({ reduceMotion: shouldReduceMotion ?? false });
 	const templates = HOME_STARTER_VIEWS[activeCategory];
 	const visibleTemplates = templates.slice(0, 5);
 	const canShowMore = templates.length > visibleTemplates.length;
@@ -1033,17 +1030,14 @@ function HomeStarterBento({
 					region; the negative margin pulls the box back so spacing is unchanged.
 				*/}
 				<div
-					className="relative -mt-2 pt-2"
-					style={
-						canShowMore
-							? { maskImage: HOME_STARTER_BENTO_FADE_MASK, WebkitMaskImage: HOME_STARTER_BENTO_FADE_MASK }
-							: undefined
-					}
+					className={cn("relative -mt-2 pt-2", canShowMore && "sm:bento-fade-bottom")}
 				>
 					<AnimatePresence mode="wait" initial={false}>
 						<motion.div
 							key={activeCategory}
-							className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-3 auto-rows-[144px] sm:grid-cols-2 lg:grid-cols-5"
+							ref={bentoCarouselRef}
+							style={getBentoEdgeMaskStyle(canScrollLeft, canScrollRight)}
+							className={cn(BENTO_CAROUSEL_CONTAINER_CLASS, "max-w-[1280px]")}
 							initial={shouldReduceMotion ? false : "hidden"}
 							animate="visible"
 							exit={shouldReduceMotion ? undefined : "exit"}
@@ -1091,6 +1085,7 @@ function HomeStarterBento({
 										onBlur={handleTemplateBlur}
 										className={cn(
 											"group group/home-starter-card relative isolate flex min-h-0 flex-col items-start gap-3 overflow-hidden rounded-lg bg-background p-4 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out hover:bg-bg-neutral-subtle focus-visible:ring-3 focus-visible:ring-ring/50",
+											BENTO_CAROUSEL_TILE_CLASS,
 											template.layoutClassName,
 										)}
 										ref={(node) => {
@@ -1126,13 +1121,12 @@ function HomeStarterBento({
 												{template.title}
 											</span>
 											<span
-												className="w-full min-w-0 flex-1 min-h-0 overflow-hidden text-sm leading-5 text-text-subtle"
-												style={{
-													maskImage: HOME_STARTER_CARD_DESCRIPTION_FADE_MASK,
-													WebkitMaskImage: HOME_STARTER_CARD_DESCRIPTION_FADE_MASK,
-												}}
+												ref={registerDescBox}
+												className="block w-full min-w-0 flex-1 min-h-0 overflow-hidden"
 											>
-												{template.description}
+												<span className="text-sm leading-5 text-text-subtle line-clamp-2">
+													{template.description}
+												</span>
 											</span>
 										</span>
 									</motion.button>
@@ -1140,9 +1134,17 @@ function HomeStarterBento({
 							})}
 						</motion.div>
 					</AnimatePresence>
+					<AnimatePresence initial={false}>
+						{canScrollLeft ? (
+							<CarouselArrow direction="previous" key="previous" label="Show previous prompt starters" onClick={() => scrollByDir(-1)} />
+						) : null}
+						{canScrollRight ? (
+							<CarouselArrow direction="next" key="next" label="Show next prompt starters" onClick={() => scrollByDir(1)} />
+						) : null}
+					</AnimatePresence>
 				</div>
 				{canShowMore ? (
-					<div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-2">
+					<div className="pointer-events-none z-10 flex justify-center max-sm:static max-sm:mt-2 sm:absolute sm:inset-x-0 sm:bottom-0 sm:pb-2">
 						<Button
 							type="button"
 							aria-label="Browse all agents"

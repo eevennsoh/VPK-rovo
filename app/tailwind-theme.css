@@ -734,6 +734,11 @@
 		var(--scroll-mask-scrollbar-width) 100%;
 }
 
+@utility bento-fade-bottom {
+	mask-image: linear-gradient(to bottom, #000 calc(100% - 96px), transparent);
+	-webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 96px), transparent);
+}
+
 @utility cot-icon-wash {
 	color: color-mix(in srgb, var(--color-muted-foreground) 10%, white);
 	mask-image: linear-gradient(
