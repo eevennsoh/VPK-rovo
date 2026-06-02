@@ -4373,6 +4373,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							abortOnUnmount={false}
 							chatContextBar={agentEditContextBar}
 							greeting={agentEditGreeting}
+							hideComposerSourceAndModelControls={Boolean(agentEditContextBar)}
 							// No left border here: the SidebarResizeHandle below paints the divider.
 							// Keeping the panel's own `border-l` too would stack two translucent
 							// `color.border` lines into a darker double-edge.
