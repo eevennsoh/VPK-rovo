@@ -25,6 +25,7 @@ import {
 } from "@/components/projects/studio/lib/rovo-app-message-display";
 import { resolveRovoAppPendingAssistantDisplayState, resolveRovoAppStreamingAssistantMessageId } from "@/components/projects/studio/lib/rovo-app-streaming-assistant";
 import { resolveRovoAppScrollAnchorLayout } from "@/components/projects/studio/lib/rovo-app-scroll-anchor";
+import { ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS } from "@/components/projects/studio/lib/rovo-app-shell-layout";
 import { GenerativeWidgetCard } from "@/components/projects/shared/components/generative-widget-card";
 import { AssistantSuggestionsSection } from "@/components/projects/shared/components/assistant-suggestions-section";
 import { PlanWidgetInlineCard } from "@/components/projects/shared/components/plan-widget-inline-card";
@@ -1049,7 +1050,7 @@ export function RovoAppMessages({
 				className={cn(
 					"mx-auto flex min-w-0 flex-col gap-4 py-6 md:gap-6",
 					extraHorizontalPaddingWhenCompact && compact ? "px-9" : "px-4",
-					compact ? "max-w-none" : "max-w-[800px]",
+					compact ? "max-w-none" : ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS,
 					shouldShowEmptyConversationState && "hidden",
 				)}
 			>

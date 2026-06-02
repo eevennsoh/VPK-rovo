@@ -11,6 +11,10 @@ const MESSAGES_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-messages.tsx"),
 	"utf8",
 );
+const SHELL_LAYOUT_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "lib", "rovo-app-shell-layout.ts"),
+	"utf8",
+);
 const AGENT_CONFIG_PANEL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-agent-config-panel.tsx"),
 	"utf8",
@@ -170,6 +174,14 @@ test("Studio home bento applies card glow pointer flow to starter tiles", () => 
 	assert.doesNotMatch(SHELL_SOURCE, /hover:border-border-bold/u);
 	assert.doesNotMatch(SHELL_SOURCE, /color-mix\(in srgb, var\(--card-glow-tile-accent\) 92%, white\)/u);
 	assert.doesNotMatch(SHELL_SOURCE, /rounded-lg border border-border bg-background/u);
+});
+
+test("Studio content surfaces share the bento max width", () => {
+	assert.match(SHELL_LAYOUT_SOURCE, /export const ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS = "max-w-\[1280px\]";/u);
+	assert.match(SHELL_SOURCE, /ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS/u);
+	assert.match(SHELL_SOURCE, /className=\{cn\(BENTO_CAROUSEL_CONTAINER_CLASS, ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS\)\}/u);
+	assert.match(MESSAGES_SOURCE, /import \{ ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS \} from "@\/components\/projects\/studio\/lib\/rovo-app-shell-layout";/u);
+	assert.match(MESSAGES_SOURCE, /compact \? "max-w-none" : ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS/u);
 });
 
 test("Studio home bento keeps tab auto-cycle active after manual tab selection", () => {

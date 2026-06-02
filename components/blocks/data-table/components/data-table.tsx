@@ -86,6 +86,7 @@ import {
 } from "@/components/ui/select"
 import { SonnerToast } from "@/components/ui/sonner"
 import { Separator } from "@/components/ui/separator"
+import { Tag } from "@/components/ui/tag"
 import {
   Table,
   TableBody,
@@ -216,9 +217,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     header: "Section Type",
     cell: ({ row }) => (
       <div className="w-32">
-        <Badge variant="outline" className="text-muted-foreground px-1.5">
+        <Tag color="gray" maxWidth="100%">
           {row.original.type}
-        </Badge>
+        </Tag>
       </div>
     ),
   },
@@ -568,7 +569,7 @@ export function DataTable({
             </Table>
           </DndContext>
         </div>
-        <div className="flex items-center justify-between px-4">
+        <div className="flex items-center justify-between">
           <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
             {table.getFilteredRowModel().rows.length} row(s) selected.
