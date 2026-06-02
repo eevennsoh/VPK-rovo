@@ -32,11 +32,15 @@ test("top navigation derives Ask Rovo pressed state from the sidebar chat surfac
 	assert.match(TOP_NAVIGATION_SOURCE, /isChatOpen=\{isSidebarChatOpen\}/);
 });
 
-test("top navigation centers search actions between equal side rails", () => {
-	assert.match(USE_TOP_NAVIGATION_SOURCE, /const TOP_NAV_CENTER_SECTION_SIDE_RAIL_WIDTH_PX = 330;/);
-	assert.match(USE_TOP_NAVIGATION_SOURCE, /width: `\$\{centeredWidthPx\}px`/);
-	assert.match(USE_TOP_NAVIGATION_SOURCE, /flex: "0 0 auto"/);
-	assert.match(TOP_NAVIGATION_SOURCE, /flex: "1 1 0", minWidth: 0/);
+test("top navigation grows the capped center search section between balanced side rails", () => {
+	// The center search section grows to fill available width but caps at a max,
+	// and the parent's space-between plus content-sized side sections keep it
+	// centered on wide layouts (replaced the old fixed side-rail computation).
+	assert.match(USE_TOP_NAVIGATION_SOURCE, /const TOP_NAV_CENTER_SECTION_MAX_WIDTH_PX = 762;/);
+	assert.match(USE_TOP_NAVIGATION_SOURCE, /flex: "1 1 auto"/);
+	assert.match(USE_TOP_NAVIGATION_SOURCE, /maxWidth: `\$\{TOP_NAV_CENTER_SECTION_MAX_WIDTH_PX\}px`/);
+	assert.match(TOP_NAVIGATION_SOURCE, /flex: "0 1 auto", minWidth: 0/);
+	assert.match(TOP_NAVIGATION_SOURCE, /justifyContent: "space-between"/);
 	assert.match(TOP_NAVIGATION_SOURCE, /justifyContent: "flex-end"/);
 });
 
@@ -67,4 +71,9 @@ test("right navigation collapses into an overflow popover at narrow widths", () 
 	assert.match(RIGHT_NAVIGATION_SOURCE, /<Popover /);
 	assert.match(RIGHT_NAVIGATION_SOURCE, /ShowMoreHorizontalIcon/);
 	assert.match(RIGHT_NAVIGATION_SOURCE, /aria-label="More"/);
+
+	// The collapse is gated on mount so the SSR/first-paint width of 0 does not
+	// briefly render the overflow popover before the real width arrives.
+	assert.match(RIGHT_NAVIGATION_SOURCE, /useIsMounted/);
+	assert.match(RIGHT_NAVIGATION_SOURCE, /isMounted && windowWidth < TOP_NAV_OVERFLOW_BREAKPOINT_PX/);
 });
