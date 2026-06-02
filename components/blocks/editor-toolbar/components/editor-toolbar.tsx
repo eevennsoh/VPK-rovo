@@ -4,6 +4,7 @@ import type { ReactNode, RefObject } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 
+import AddIcon from "@atlaskit/icon/core/add";
 import AlignTextCenterIcon from "@atlaskit/icon/core/align-text-center";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AlignTextRightIcon from "@atlaskit/icon/core/align-text-right";
@@ -311,6 +312,10 @@ export function EditorToolbar({
 		}
 	}
 
+	function handleAddContent(): void {
+		editor.chain().focus().insertContent({ type: "paragraph" }).run();
+	}
+
 	return (
 		<div
 			ref={toolbarRef}
@@ -515,6 +520,17 @@ export function EditorToolbar({
 					>
 						<LinkIcon label="" size="small" />
 					</Toggle>
+					<Button
+						type="button"
+						aria-label="Add content"
+						size="icon"
+						variant="ghost"
+						disabled={isMarkdownMode}
+						onClick={handleAddContent}
+					>
+						<AddIcon label="" size="small" />
+					</Button>
+					{onToggleMarkdownMode ? <ToolbarSeparator /> : null}
 					{onToggleMarkdownMode ? (
 						<Toggle
 							aria-label={

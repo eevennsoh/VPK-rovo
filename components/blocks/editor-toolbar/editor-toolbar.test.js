@@ -76,3 +76,12 @@ test("Editor toolbar demo exposes the Markdown source toggle", () => {
 	assert.match(pageSource, /onMarkdownFormat=\{handleMarkdownFormat\}/u);
 	assert.match(pageSource, /aria-label="Editor toolbar demo Markdown source"/u);
 });
+
+test("Editor toolbar places Add content between Link and Markdown controls", () => {
+	const componentSource = readProjectFile("components/blocks/editor-toolbar/components/editor-toolbar.tsx");
+
+	assert.match(componentSource, /import AddIcon from "@atlaskit\/icon\/core\/add";/u);
+	assert.match(componentSource, /function handleAddContent\(\): void/u);
+	assert.match(componentSource, /aria-label="Add content"[\s\S]*onClick=\{handleAddContent\}/u);
+	assert.match(componentSource, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>\s*\{onToggleMarkdownMode \? <ToolbarSeparator \/> : null\}\s*\{onToggleMarkdownMode \? \(/u);
+});

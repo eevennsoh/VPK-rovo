@@ -428,6 +428,7 @@ test("Shared toolbar carries the Confluence editor control set", () => {
 });
 
 test("Shared toolbar groups related split controls and keeps unrelated toggles independent", () => {
+	assert.match(EDITOR_TOOLBAR_SOURCE, /import AddIcon from "@atlaskit\/icon\/core\/add";/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /import MarkdownIcon from "@atlaskit\/icon\/core\/markdown";/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /import \{ Toggle \} from "@\/components\/ui\/toggle";/u);
 	assert.match(
@@ -448,6 +449,8 @@ test("Shared toolbar groups related split controls and keeps unrelated toggles i
 	// Link and Markdown are separate Toggles because their states are unrelated.
 	assert.match(EDITOR_TOOLBAR_SOURCE, /pressed=\{!isMarkdownMode && editor\.isActive\("link"\)\}/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Link"[\s\S]*onPressedChange=\{handleLinkPressedChange\}/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Add content"[\s\S]*onClick=\{handleAddContent\}/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>\s*\{onToggleMarkdownMode \? <ToolbarSeparator \/> : null\}/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /pressed=\{isMarkdownMode\}/u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /value="link"/u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /value="markdown"/u);
