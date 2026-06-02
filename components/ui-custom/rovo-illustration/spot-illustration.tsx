@@ -44,6 +44,7 @@ const gestureLines: GestureData = {"id":"eyelash","label":"Eyelash","viewBox":"-
 
 export const SPOT_ILLUSTRATIONS = [
   { id: "chat", label: "Chat" },
+  { id: "brainstorm", label: "Brainstorm" },
   { id: "ai", label: "AI" },
   { id: "create", label: "Create" },
   { id: "deep-research", label: "Deep Research" },
@@ -75,6 +76,7 @@ function resolveCycleConfig(illusIds: string[] | undefined): { cycleIds: string[
 }
 
 export const ILLUS_HAND_DRAWN: Record<string, number[][]> = {
+  'brainstorm': [[3]],
   'write': [[4], [5]],
   'search': [[4], [5], [6]],
   'deep-research': [[6, 7, 8], [9, 10], [11, 12]],
@@ -85,6 +87,7 @@ export const ILLUS_HAND_DRAWN: Record<string, number[][]> = {
 };
 
 export const ILLUS_ELEMENTS: Record<string, { grey: number[]; mosaic: number[]; overlap: number[]; greyBack?: number[]; mosaicTop?: number[] }> = {
+  'brainstorm': { grey: [2, 3], mosaic: [1], overlap: [4] },
   'ai': { grey: [0, 3], mosaic: [2], overlap: [4] },
   'create': { grey: [0, 4], mosaic: [1, 2, 6, 11], overlap: [3, 7], mosaicTop: [8, 9] },
   'write': { grey: [0, 4, 5], mosaic: [2], overlap: [3] },
@@ -129,6 +132,21 @@ export const ILLUS_MOTION: Record<string, ILLUS_MOTION_TYPE> = {
     overlapTrack: 'mosaic',
   },
   'create': {
+    greyEnterFrom: { x: 0, y: 0 },
+    mosaicEnterFrom: { x: 0, y: 0 },
+    greyExitTo: { x: 0, y: 0 },
+    mosaicExitTo: { x: 0, y: 0 },
+    overlapTrack: 'mosaic',
+    enterTX: -14,
+    enterTY: 14,
+    enterScale: 0.75,
+    enterRotation: -5,
+    exitTX: 12,
+    exitTY: -10,
+    exitScale: 0.75,
+    exitRotation: 5,
+  },
+  'brainstorm': {
     greyEnterFrom: { x: 0, y: 0 },
     mosaicEnterFrom: { x: 0, y: 0 },
     greyExitTo: { x: 0, y: 0 },

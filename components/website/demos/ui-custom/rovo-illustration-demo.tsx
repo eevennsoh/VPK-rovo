@@ -11,10 +11,6 @@ import {
 	SPOT_ILLUSTRATIONS,
 } from "@/components/ui-custom/rovo-illustration";
 
-const NON_CHAT_ILLUSTRATIONS = SPOT_ILLUSTRATIONS.filter(
-	(illustration) => illustration.id !== "chat",
-);
-
 function IllustrationStage({
 	children,
 	label,
@@ -51,11 +47,11 @@ export default function RovoIllustrationDemo() {
 			<div key={refreshKey} className="flex flex-col gap-4">
 				<div className="grid gap-4">
 					<IllustrationStage label="Default loop">
-						<RovoIllustration illusIds={NON_CHAT_ILLUSTRATIONS.map((illustration) => illustration.id)} size={220} />
+						<RovoIllustration illusIds={SPOT_ILLUSTRATIONS.map((illustration) => illustration.id)} size={220} />
 					</IllustrationStage>
 				</div>
 				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-					{NON_CHAT_ILLUSTRATIONS.map((illustration) => (
+					{SPOT_ILLUSTRATIONS.map((illustration) => (
 						<IllustrationStage key={illustration.id} label={illustration.label}>
 							<ControlledRovoIllustration illusId={illustration.id} size={180} />
 						</IllustrationStage>
