@@ -241,8 +241,8 @@ test("Agent component page wires compact filled and empty placeholder variations
 		compactLayoutSource.indexOf("bottomSlot="),
 		compactLayoutSource.indexOf("bottomSlotClassName="),
 	);
-	const compactFooterOverlaySource = compactLayoutSource.slice(
-		compactLayoutSource.indexOf('className="pointer-events-none sticky inset-x-0 bottom-0 z-20 bg-surface"'),
+	const compactFooterSource = compactLayoutSource.slice(
+		compactLayoutSource.indexOf('<div className="shrink-0">'),
 	);
 	const compactOperationsStart = AGENT_SOURCE.indexOf("function AgentCompactOperationsBento");
 	const sectionLabelStart = AGENT_SOURCE.indexOf("function AgentSectionLabel", compactOperationsStart);
@@ -252,24 +252,39 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /layout = "default"/u);
 	assert.match(AGENT_SOURCE, /data-agent-config-layout=\{layout\}/u);
 	assert.match(AGENT_SOURCE, /layout === "compact"/u);
-	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT = 88;/u);
-	assert.match(AGENT_SOURCE, /const compactFooterOverlayRef = useRef<HTMLDivElement \| null>\(null\);/u);
-	assert.match(AGENT_SOURCE, /const \[compactFooterOverlayHeight, setCompactFooterOverlayHeight\] = useState\(AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT\);/u);
-	assert.match(AGENT_SOURCE, /const compactBentoFooterOffset = Math\.max\([\s\S]*compactFooterOverlayHeight - AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT/u);
+	// The compact footer is now a true bottom-anchored solid footer, not a
+	// sticky overlay pulled up by negative margin. The old reserved-height
+	// constant, footer-height ref/state, and ResizeObserver machinery are gone.
+	assert.doesNotMatch(AGENT_SOURCE, /AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT/u);
+	assert.doesNotMatch(AGENT_SOURCE, /compactFooterOverlayRef/u);
+	assert.doesNotMatch(AGENT_SOURCE, /compactFooterOverlayHeight/u);
+	assert.doesNotMatch(AGENT_SOURCE, /compactBentoFooterOffset/u);
 	assert.match(AGENT_SOURCE, /const dismissTemplateTiles = useCallback\(\(\) => \{[\s\S]*setTemplatesDismissed\(true\);[\s\S]*\}, \[\]\);/u);
 	assert.match(AGENT_SOURCE, /const handleTextChange = useCallback\(\(field: AgentConfigTextFieldName, value: string\) => \{[\s\S]*dismissTemplateTiles\(\);[\s\S]*onTextChange\?\.\(field, value\);/u);
 	assert.match(AGENT_SOURCE, /const handleAppendListItem = useCallback\(\(field: AgentConfigListFieldName\) => \{[\s\S]*dismissTemplateTiles\(\);[\s\S]*onAppendListItem\?\.\(field\);/u);
 	assert.match(AGENT_SOURCE, /const handleOpenDirectory = useCallback\(\(directory: AgentDirectoryKind\) => \{[\s\S]*dismissTemplateTiles\(\);[\s\S]*onOpenDirectory\?\.\(directory\);/u);
-	assert.match(AGENT_SOURCE, /const resizeObserver = new ResizeObserver\(updateFooterOverlayHeight\);[\s\S]*resizeObserver\.observe\(node\);[\s\S]*return \(\) => resizeObserver\.disconnect\(\);/u);
-	assert.match(compactLayoutSource, /<div\s+className="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2"\s+style=\{\{ paddingBottom: AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT \}\}/u);
+	// No ResizeObserver footer-measuring effect remains.
+	assert.doesNotMatch(AGENT_SOURCE, /updateFooterOverlayHeight/u);
+	// Compact wrapper splits into a scrollable region + an anchored footer; it no
+	// longer reserves bottom padding for an overlay.
+	assert.match(compactLayoutSource, /<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">/u);
+	assert.match(compactLayoutSource, /<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">/u);
+	assert.doesNotMatch(compactLayoutSource, /paddingBottom/u);
 	assert.doesNotMatch(compactLayoutSource, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
-	assert.match(compactBottomSlotSource, /bottomSlot=\{isFilledConfig \? null : \([\s\S]*<div[\s\S]*className="transition-\[padding-bottom\] duration-200 ease-out"[\s\S]*style=\{\{ paddingBottom: compactBentoFooterOffset \}\}[\s\S]*<AnimatePresence>[\s\S]*templatesDismissed \? null : \([\s\S]*<AgentCompactOperationsBento[\s\S]*onDismiss=\{\(\) => setTemplatesDismissed\(true\)\}/u);
+	assert.match(compactBottomSlotSource, /bottomSlot=\{isFilledConfig \? null : \([\s\S]*<AnimatePresence>[\s\S]*templatesDismissed \? null : \([\s\S]*<AgentCompactOperationsBento[\s\S]*onDismiss=\{\(\) => setTemplatesDismissed\(true\)\}/u);
 	assert.doesNotMatch(compactBottomSlotSource, /AgentCompactConfigToolbarBelow/u);
 	assert.match(compactLayoutSource, /bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-4"/u);
-	assert.match(compactLayoutSource, /className=\{cn\("relative flex flex-col", isFilledConfig \? "min-h-\[560px\]" : "min-h-0 flex-1"\)\}/u);
-	assert.match(compactFooterOverlaySource, /className="pointer-events-none sticky inset-x-0 bottom-0 z-20 bg-surface"[\s\S]*ref=\{compactFooterOverlayRef\}[\s\S]*style=\{\{ marginTop: -compactFooterOverlayHeight \}\}[\s\S]*className="pointer-events-auto"[\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}/u);
-	assert.doesNotMatch(compactFooterOverlaySource, /pointer-events-none absolute inset-x-0 bottom-0/u);
-	assert.match(compactFooterOverlaySource, /onAppendListItem=\{handleAppendListItem\}[\s\S]*onOpenDirectory=\{handleOpenDirectory\}[\s\S]*onRemoveListItem=\{handleRemoveListItem\}[\s\S]*onTextChange=\{handleTextChange\}/u);
+	assert.match(compactLayoutSource, /className="relative flex min-h-0 flex-1 flex-col"/u);
+	// No fixed 560px min-height — the composer fills available space instead.
+	assert.doesNotMatch(compactLayoutSource, /min-h-\[560px\]/u);
+	// The toolbar lives in a bottom-anchored footer (no overlay). The wrapper
+	// itself is transparent so the separator/expand row shows content scrolling
+	// behind it; the opaque surface lives on the field rows inside the toolbar.
+	assert.match(compactFooterSource, /<div className="shrink-0">[\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}/u);
+	assert.doesNotMatch(compactFooterSource, /shrink-0 bg-surface/u);
+	assert.doesNotMatch(compactFooterSource, /sticky/u);
+	assert.doesNotMatch(compactFooterSource, /marginTop/u);
+	assert.match(compactFooterSource, /onAppendListItem=\{handleAppendListItem\}[\s\S]*onOpenDirectory=\{handleOpenDirectory\}[\s\S]*onRemoveListItem=\{handleRemoveListItem\}[\s\S]*onTextChange=\{handleTextChange\}/u);
 	assert.match(compactLayoutSource, /onInstructionsChange=\{\(value\) => handleTextChange\("instructions", value\)\}/u);
 	assert.doesNotMatch(compactLayoutSource, /toolbarBelowSlot=\{\(\s*<AgentCompactConfigToolbarBelow/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow/u);
@@ -353,8 +368,10 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /return \(\s*<div className="flex flex-col">/u);
 	assert.doesNotMatch(AGENT_SOURCE, /<div className="flex flex-col pb-6">/u);
 	assert.match(AGENT_SOURCE, /<AnimatePresence initial=\{false\} mode="wait">/u);
-	assert.match(AGENT_SOURCE, /<motion\.div\s+key="expanded"\s+className="mt-2"/u);
-	assert.match(AGENT_SOURCE, /<motion\.div\s+key="collapsed"\s+className="mt-2"/u);
+	// The field-row blocks carry the opaque surface so they stay readable over
+	// scrolling content, while the separator/expand row above stays transparent.
+	assert.match(AGENT_SOURCE, /<motion\.div\s+key="expanded"\s+className="bg-surface pt-2"/u);
+	assert.match(AGENT_SOURCE, /<motion\.div\s+key="collapsed"\s+className="bg-surface pt-2"/u);
 	// Horizontal rule line spans the row; the chevron sits at the far right of
 	// the same row and stays mounted across both states. Empty configs initialize
 	// expanded so first-run users see all supported capability rows.

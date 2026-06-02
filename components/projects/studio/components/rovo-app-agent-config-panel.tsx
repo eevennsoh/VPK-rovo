@@ -340,8 +340,8 @@ export function RovoAppAgentConfigPanel({
 							</>
 						}
 					/>
-					<TabsContent value="configure" className="min-h-0 flex-1 overflow-y-auto data-[hidden]:hidden">
-						<div className="flex h-full w-full flex-col px-6 py-5">
+					<TabsContent value="configure" className="min-h-0 flex-1 overflow-hidden data-[hidden]:hidden">
+						<div className="flex h-full min-h-0 w-full flex-col px-6 py-5">
 							<AgentConfigFields
 								config={draft}
 								avatarSrc={agentAvatarSrc}

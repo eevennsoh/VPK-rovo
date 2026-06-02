@@ -7,6 +7,7 @@ import Heading from "@/components/blocks/shared-ui/heading";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustration";
 import { CardIdentityTile } from "@/components/projects/shared/components/card-identity-tile";
+import { VisualIdentityTile } from "@/components/projects/shared/components/visual-identity-tile";
 import { IconTile } from "@/components/ui/icon-tile";
 import { defaultSuggestions, resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/components/projects/rovo/data/agent-profiles";
@@ -174,7 +175,17 @@ function CustomAgentStarterItem({
 			onClick={onClick}
 			type="button"
 		>
-			{visualIdentity ? (
+			{visualIdentity && visualIdentity.kind === "icon-tile" ? (
+				// Keep the meaningful glyph but force the neutral surface treatment
+				// (bordered white tile + subtle icon) instead of a colored variant.
+				<VisualIdentityTile
+					className="border border-border bg-surface"
+					decorative
+					label={suggestion.label}
+					size="medium"
+					visualIdentity={{ iconName: visualIdentity.iconName, tileVariant: "gray" }}
+				/>
+			) : visualIdentity ? (
 				<CardIdentityTile
 					decorative
 					identity={visualIdentity}

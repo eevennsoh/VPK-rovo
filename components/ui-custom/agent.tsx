@@ -97,8 +97,6 @@ const AGENT_PROFILE_INLINE_EDIT_BACKDROP_MOTION_PROPS = {
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE = 24;
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP = 8;
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_REVEAL_DISTANCE = 72;
-const AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT = 88;
-
 const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
 	"dev-agents": "#82B536",
 	"product-agents": "#BF63F3",
@@ -2372,7 +2370,7 @@ function AgentCompactConfigToolbarBelow({
 				{isExpanded ? (
 					<motion.div
 						key="expanded"
-						className="mt-2"
+						className="bg-surface pt-2"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
@@ -2397,7 +2395,7 @@ function AgentCompactConfigToolbarBelow({
 				) : (
 					<motion.div
 						key="collapsed"
-						className="mt-2"
+						className="bg-surface pt-2"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
@@ -2450,12 +2448,6 @@ export const AgentConfigFields = memo(
 	}: Readonly<AgentConfigFieldsProps>) => {
 		const isFilledConfig = hasFilledAgentConfig(config);
 		const [templatesDismissed, setTemplatesDismissed] = useState(false);
-		const compactFooterOverlayRef = useRef<HTMLDivElement | null>(null);
-		const [compactFooterOverlayHeight, setCompactFooterOverlayHeight] = useState(AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT);
-		const compactBentoFooterOffset = Math.max(
-			0,
-			compactFooterOverlayHeight - AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT,
-		);
 		const dismissTemplateTiles = useCallback(() => {
 			setTemplatesDismissed(true);
 		}, []);
@@ -2480,33 +2472,6 @@ export const AgentConfigFields = memo(
 			onOpenDirectory?.(directory);
 		}, [dismissTemplateTiles, onOpenDirectory]);
 
-		useLayoutEffect(() => {
-			if (layout !== "compact") {
-				return;
-			}
-
-			const node = compactFooterOverlayRef.current;
-
-			if (!node) {
-				return;
-			}
-
-			const updateFooterOverlayHeight = () => {
-				setCompactFooterOverlayHeight(Math.ceil(node.getBoundingClientRect().height));
-			};
-
-			updateFooterOverlayHeight();
-
-			if (typeof ResizeObserver === "undefined") {
-				return;
-			}
-
-			const resizeObserver = new ResizeObserver(updateFooterOverlayHeight);
-			resizeObserver.observe(node);
-
-			return () => resizeObserver.disconnect();
-		}, [layout]);
-
 		return (
 			<div
 				className={cn("flex flex-col gap-6", layout === "compact" && "min-h-0 flex-1", className)}
@@ -2516,24 +2481,20 @@ export const AgentConfigFields = memo(
 				{...props}
 			>
 				{layout === "compact" ? (
-					<div
-						className="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2"
-						style={{ paddingBottom: AGENT_COMPACT_CONFIG_FOOTER_RESERVED_HEIGHT }}
-					>
-						<div className="flex flex-col gap-4">
-							<AgentConfigProfile
-								config={config}
-								avatarSrc={avatarSrc}
-								onTextChange={handleTextChange}
-								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-							/>
-						</div>
-						<AgentInstructionsComposer
-							bottomSlot={isFilledConfig ? null : (
-								<div
-									className="transition-[padding-bottom] duration-200 ease-out"
-									style={{ paddingBottom: compactBentoFooterOffset }}
-								>
+					<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+						{/* Scrollable region: profile + instructions grow to fill, the
+						    sibling footer below stays anchored to the panel bottom. */}
+						<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+							<div className="flex flex-col gap-4">
+								<AgentConfigProfile
+									config={config}
+									avatarSrc={avatarSrc}
+									onTextChange={handleTextChange}
+									screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+								/>
+							</div>
+							<AgentInstructionsComposer
+								bottomSlot={isFilledConfig ? null : (
 									<AnimatePresence>
 										{templatesDismissed ? null : (
 											<AgentCompactOperationsBento
@@ -2542,33 +2503,30 @@ export const AgentConfigFields = memo(
 											/>
 										)}
 									</AnimatePresence>
-								</div>
-							)}
-							bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-4"
-							className={cn("relative flex flex-col", isFilledConfig ? "min-h-[560px]" : "min-h-0 flex-1")}
-							contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[8rem]")}
-							instructions={config.instructions}
-							onOpenDirectory={handleOpenDirectory}
-							onInstructionsChange={(value) => handleTextChange("instructions", value)}
-							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
-							showSectionLabel={false}
-						/>
-						<div
-							className="pointer-events-none sticky inset-x-0 bottom-0 z-20 bg-surface"
-							ref={compactFooterOverlayRef}
-							style={{ marginTop: -compactFooterOverlayHeight }}
-						>
-							<div className="pointer-events-auto">
-								<AgentCompactConfigToolbarBelow
-									config={config}
-									isFilledConfig={isFilledConfig}
-									onAppendListItem={handleAppendListItem}
-									onOpenDirectory={handleOpenDirectory}
-									onRemoveListItem={handleRemoveListItem}
-									onTextChange={handleTextChange}
-									screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-								/>
-							</div>
+								)}
+								bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-4"
+								className="relative flex min-h-0 flex-1 flex-col"
+								contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[8rem]")}
+								instructions={config.instructions}
+								onOpenDirectory={handleOpenDirectory}
+								onInstructionsChange={(value) => handleTextChange("instructions", value)}
+								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
+								showSectionLabel={false}
+							/>
+						</div>
+						{/* Bottom-anchored footer: always flush to the panel bottom. The
+						    separator/expand row stays transparent so content scrolls
+						    visibly behind it; only the field rows carry a solid surface. */}
+						<div className="shrink-0">
+							<AgentCompactConfigToolbarBelow
+								config={config}
+								isFilledConfig={isFilledConfig}
+								onAppendListItem={handleAppendListItem}
+								onOpenDirectory={handleOpenDirectory}
+								onRemoveListItem={handleRemoveListItem}
+								onTextChange={handleTextChange}
+								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+							/>
 						</div>
 					</div>
 				) : (
