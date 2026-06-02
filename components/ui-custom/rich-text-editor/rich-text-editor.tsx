@@ -17,6 +17,7 @@ import {
 	RichTextEditorFloatingMenu,
 	RichTextEditorToolbar,
 } from "./toolbar";
+import type { EditorToolbarInsertReferenceCategory } from "@/components/blocks/editor-toolbar";
 import type { RichTextMentionSources } from "./types";
 
 interface RichTextEditorProps
@@ -31,6 +32,7 @@ interface RichTextEditorProps
 	mentionSources?: RichTextMentionSources;
 	onMarkdownChange?: (value: string) => void;
 	onPlainTextChange?: (value: string) => void;
+	onInsertReferenceOption?: (category: EditorToolbarInsertReferenceCategory, label: string) => boolean | void;
 	showToolbar?: boolean;
 	showBubbleMenu?: boolean;
 	showFloatingMenu?: boolean;
@@ -53,6 +55,7 @@ export function RichTextEditor({
 	mentionSources,
 	onMarkdownChange,
 	onPlainTextChange,
+	onInsertReferenceOption,
 	showToolbar = true,
 	showBubbleMenu = true,
 	showFloatingMenu = false,
@@ -198,6 +201,7 @@ export function RichTextEditor({
 					isMarkdownMode={isMarkdownMode}
 					onToggleMarkdownMode={handleToggleMarkdownMode}
 					onMarkdownFormat={handleMarkdownFormat}
+					onInsertReferenceOption={onInsertReferenceOption}
 				/>
 			) : null}
 			{toolbarBelowSlot ? (

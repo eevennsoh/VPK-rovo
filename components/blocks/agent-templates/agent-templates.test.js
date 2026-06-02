@@ -72,6 +72,8 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	// Carousel cards now render via the card-directory expanded agent card.
 	assert.match(source, /AgentTemplateCard/u);
 	assert.match(source, /CardDirectoryAgentExpanded/u);
+	assert.match(source, /className="h-\[400px\] w-90 shrink-0 \[will-change:transform,opacity\]"/u);
+	assert.match(source, /className="h-full w-full"/u);
 	assert.match(source, /NOOP_TEMPLATE_MORE_ACTIONS/u);
 	assert.match(source, /onMoreActions=\{NOOP_TEMPLATE_MORE_ACTIONS\}/u);
 	assert.match(source, /deriveAgentPublisher/u);
@@ -83,13 +85,13 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(source, /AGENT_TEMPLATES_TAB_COPY_VARIANTS/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_CARDS_VARIANTS/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_CARDS_SWAP_OFFSET = 24/u);
-	assert.match(source, /max-h-\[min\(820px,calc\(100svh-1rem\)\)\]/u);
+	assert.match(source, /max-h-\[min\(744px,calc\(100svh-1rem\)\)\]/u);
 	assert.match(source, /grid-rows-\[auto_minmax\(0,auto\)\]/u);
-	assert.match(source, /<div className="relative min-h-0 overflow-hidden pb-6">/u);
+	assert.match(source, /<div className="relative min-h-0 overflow-hidden">/u);
 	// Sequenced swap (mode="wait"): quick exit, then a gradual staggered enter —
 	// each card fades + slides in, offset by AGENT_TEMPLATES_TAB_CARD_STAGGER.
 	assert.match(source, /className="h-full overflow-x-auto overflow-y-hidden \[scrollbar-width:none\]/u);
-	assert.match(source, /className="flex h-full gap-4 px-6 pt-2 pb-6"/u);
+	assert.match(source, /className="flex h-full w-max gap-4 px-6 pt-2 pb-6"/u);
 	assert.match(source, /<AnimatePresence custom=\{tabMotionCustom\} initial=\{false\} mode="wait">/u);
 	assert.match(source, /AGENT_TEMPLATES_TAB_CARD_STAGGER = 0\.05/u);
 	assert.match(source, /templateAgents\.map\(\(agent, index\)/u);
@@ -125,7 +127,7 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(studioShellSource, /agent\.templatePrompt \?\? buildFallbackTemplatePrompt\(agent\)/u);
 	assert.match(studioShellSource, /sessionAgents=\{DEMO_AGENT_TEMPLATES_SESSION\}/u);
 	assert.match(studioShellSource, /function HomeStarterHeroTile[\s\S]*<TWGAppstack[\s\S]*animated=\{false\}/u);
-	assert.match(studioShellSource, /mx-auto grid w-full max-w-\[1280px\] grid-cols-1/u);
+	assert.match(studioShellSource, /className=\{cn\(BENTO_CAROUSEL_CONTAINER_CLASS, "max-w-\[1280px\]"\)\}/u);
 	assert.match(source, /initialCategoryId\?: AgentTemplatesCategoryId/u);
 	assert.match(source, /setActiveCategory\(initialCategoryId\)/u);
 	// Demo agents carry the expanded-card detail the cards render.

@@ -127,14 +127,16 @@ test("Tools Directory category data follows the requested category content", () 
 test("Tools Directory docs demo includes added and non-added detail states", () => {
 	const source = readProjectFile("components/blocks/tools-directory/page.tsx");
 	const componentSource = readProjectFile("components/blocks/tools-directory/components/tools-directory.tsx");
+	const demoToolsSource = readProjectFile("components/blocks/tools-directory/data/demo-tools.ts");
 	const sidebarGroupsSource = readProjectFile("components/blocks/tools-directory/data/sidebar-groups.ts");
 
+	assert.match(source, /import \{ DEMO_SESSION_TOOLS, DEMO_TOOLS \} from "@\/components\/blocks\/tools-directory\/data\/demo-tools";/u);
 	assert.match(source, /defaultAddedToolIds=\{\["atlassian"\]\}/u);
-	assert.match(source, /logoName: "atlassian"/u);
-	assert.match(source, /favorite: true/u);
-	assert.match(source, /categoryId: "project-management"/u);
-	assert.match(source, /categoryId: "software-development"/u);
-	assert.match(source, /categoryId: "security-and-compliance"/u);
+	assert.match(demoToolsSource, /logoName: "atlassian"/u);
+	assert.match(demoToolsSource, /favorite: true/u);
+	assert.match(demoToolsSource, /categoryId: "project-management"/u);
+	assert.match(demoToolsSource, /categoryId: "software-development"/u);
+	assert.match(demoToolsSource, /categoryId: "security-and-compliance"/u);
 	assert.match(componentSource, /label: "Favourite tools"/u);
 	assert.match(componentSource, /if \(activeCategory === "favorite-tools" && !tool\.favorite\) return false;/u);
 	assert.match(componentSource, /const MAX_VISIBLE_CATEGORY_ITEMS = 5;/u);

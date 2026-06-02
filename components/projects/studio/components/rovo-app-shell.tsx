@@ -3792,6 +3792,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			onViewChange={handleAgentConfigViewChange}
 			testPanel={agentConfigTestPanel}
 			chatContextBar={agentEditContextBar}
+			chatGreeting={agentEditGreeting}
 			onUpdateDraft={handleUpdateAgentDraft}
 		/>
 	) : null;

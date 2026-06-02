@@ -384,9 +384,9 @@ export function AgentTemplatesDialog({
 								variants={AGENT_TEMPLATES_TAB_CARDS_VARIANTS}
 							>
 								{templateAgents.map((agent, index) => (
-									<motion.div
-										animate={{ opacity: 1, transform: "translateX(0px)" }}
-										className="h-full w-90 shrink-0 [will-change:transform,opacity]"
+										<motion.div
+											animate={{ opacity: 1, transform: "translateX(0px)" }}
+											className="h-[400px] w-90 shrink-0 [will-change:transform,opacity]"
 										initial={{
 											opacity: 0,
 											transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${tabMotionDirection * AGENT_TEMPLATES_TAB_CARD_ENTER_OFFSET}px)`,
