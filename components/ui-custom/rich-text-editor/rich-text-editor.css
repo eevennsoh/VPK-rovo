@@ -398,9 +398,8 @@
 	max-height: none;
 }
 
-.rich-text-command-menu-title {
-	border-bottom: 1px solid var(--ds-border, #dfe1e6);
-	padding: 8px 10px;
+.rich-text-command-menu[data-nested="true"] {
+	max-height: 400px;
 }
 
 .rich-text-command-menu-list {
@@ -414,6 +413,15 @@
 .rich-text-command-menu-showcase .rich-text-command-menu-list {
 	max-height: none;
 	overflow-y: visible;
+}
+
+.rich-text-command-menu-showcase[data-nested="true"] .rich-text-command-menu-list {
+	overflow-y: auto;
+}
+
+.rich-text-command-menu[data-nested="true"][data-list-scrolled="true"] .rich-text-command-menu-list {
+	mask-image: linear-gradient(to bottom, transparent 0, black 16px, black 100%);
+	-webkit-mask-image: linear-gradient(to bottom, transparent 0, black 16px, black 100%);
 }
 
 .rich-text-command-menu-item {
@@ -441,10 +449,15 @@
 	cursor: not-allowed;
 }
 
+.rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .rich-text-command-menu-item {
+	height: 48px;
+	padding-top: 6px;
+	padding-bottom: 6px;
+}
+
 .rich-text-command-menu-back {
 	display: flex;
 	grid-template-columns: none;
-	border-bottom: 1px solid var(--ds-border, #dfe1e6);
 	border-radius: 0;
 	padding: 8px 10px;
 	color: var(--ds-text-subtle, #44546f);
@@ -475,13 +488,14 @@
 	white-space: nowrap;
 }
 
-.rich-text-command-menu-description-hover {
+.rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .rich-text-command-menu-description {
 	opacity: 0;
 	transition: opacity var(--duration-fast) var(--ease-out);
 }
 
-.rich-text-command-menu-item:hover .rich-text-command-menu-description-hover,
-.rich-text-command-menu-item:focus-visible .rich-text-command-menu-description-hover {
+.rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .rich-text-command-menu-item:hover .rich-text-command-menu-description,
+.rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .rich-text-command-menu-item:focus-visible .rich-text-command-menu-description,
+.rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .rich-text-command-menu-item-selected .rich-text-command-menu-description {
 	opacity: 1;
 }
 

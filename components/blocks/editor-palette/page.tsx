@@ -6,12 +6,10 @@ import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
 	RichTextEditor,
 	RichTextSuggestionMenu,
-	SLASH_COMMANDS,
-	getMentionChildItems,
 	getMentionTargetItems,
 	getSlashCommandCategoryItems,
+	getSlashCommandFormatItems,
 	type RichTextMentionSources,
-	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -34,11 +32,8 @@ export default function EditorPalette({
 	className,
 }: Readonly<EditorPaletteProps>) {
 	const mentionItems = getMentionTargetItems(mentionSources);
-	const commandItems: readonly RichTextSuggestionMenuItem[] = [
-		...getSlashCommandCategoryItems(mentionSources),
-		...SLASH_COMMANDS,
-	];
-	const skillItems = getMentionChildItems(mentionSources, "skill");
+	const commandItems = getSlashCommandCategoryItems(mentionSources);
+	const formatItems = getSlashCommandFormatItems();
 
 	return (
 		<div
@@ -71,12 +66,12 @@ export default function EditorPalette({
 					/>
 				</PalettePanel>
 
-				<PalettePanel trigger="/" caption="Skills nested">
+				<PalettePanel trigger="/" caption="Format nested">
 					<RichTextSuggestionMenu
 						className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
-						title="Skills"
+						title="Format"
 						emptyLabel="No matching items"
-						items={skillItems}
+						items={formatItems}
 						selectedIndex={0}
 						onBack={noop}
 						onSelect={noop}

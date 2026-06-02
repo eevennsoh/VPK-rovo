@@ -13,6 +13,12 @@ export type RichTextMentionTarget = "subagent" | "human" | "team";
 export type RichTextCommandCategory = "skill" | "tool" | "knowledge";
 
 /**
+ * "/" parent categories. Format is a command-only category whose children run
+ * editor formatting commands instead of inserting mention/reference tokens.
+ */
+export type RichTextSlashCategory = RichTextCommandCategory | "format";
+
+/**
  * Every inserted mention/reference token belongs to one of these categories,
  * spanning both the "@" mention surface and the "/" command surface.
  */
