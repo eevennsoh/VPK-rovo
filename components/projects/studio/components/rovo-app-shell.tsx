@@ -4190,7 +4190,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					<LeftNavigation
 						product="studio"
 						windowWidth={nav.windowWidth}
-						isVisible={nav.isVisible}
+						isVisible={chat.sidebarOpen}
 						isAppSwitcherOpen={nav.isAppSwitcherOpen}
 						isSidebarResizing={sidebarResize.isResizing}
 						hideAppSwitcher
@@ -4215,10 +4215,10 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							viewTransitionName: "persistent-header" as never,
 						}}
 					>
-						<div className="relative flex min-w-0 flex-1 items-center justify-center gap-2">
+						<div className="relative flex min-w-0 flex-1 items-center justify-start gap-2">
 							<div
 									ref={nav.searchContainerRef}
-									className="relative flex h-9 w-full max-w-[762px] items-center"
+									className="relative flex h-9 w-full max-w-[762px] items-center ps-2"
 								>
 								<InputGroup
 									className={cn(
