@@ -35,9 +35,9 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { Lozenge } from "@/components/ui/lozenge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
 import { Tile } from "@/components/ui/tile";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CheckIcon, MoreHorizontalIcon, PlusCircleIcon, PlusIcon } from "@/components/ui/vpk-icons";
 import { computeContextBarOverflow } from "@/components/ui-custom/context-bar/overflow";
 import {
@@ -507,19 +507,22 @@ export const AgentHeader = memo(
 			{showActions ? (
 				<div className="flex shrink-0 items-center gap-2">
 					{actions ?? (
-						<ToggleGroup
-							defaultValue={["configure"]}
-							multiple={false}
-							size="sm"
-							variant="outline"
-						>
-							<ToggleGroupItem value="test">
-								{secondaryActionLabel}
-							</ToggleGroupItem>
-							<ToggleGroupItem value="configure">
-								{primaryActionLabel}
-							</ToggleGroupItem>
-						</ToggleGroup>
+						// Self-contained Tabs context so the default Configure/Test
+						// header works standalone. Consumers that need controlled tabs
+						// (e.g. the compact agent config panel) wrap AgentHeader in their
+						// own <Tabs> and pass `actions` to supply tab parts with that
+						// outer context instead. Base UI tab parts throw
+						// "TabsRootContext is missing" without an enclosing Tabs.Root.
+						<Tabs aria-label="Agent views" defaultValue="configure">
+							<TabsList>
+								<TabsTrigger value="configure">
+									{primaryActionLabel}
+								</TabsTrigger>
+								<TabsTrigger value="test">
+									{secondaryActionLabel}
+								</TabsTrigger>
+							</TabsList>
+						</Tabs>
 					)}
 				</div>
 			) : null}
