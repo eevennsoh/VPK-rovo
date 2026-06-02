@@ -954,8 +954,8 @@ function AgentCompactBentoCardGlowLayers({ iconSrc }: Readonly<{ iconSrc: string
 
 function AgentCompactBentoTemplatesHint({ onDismiss }: Readonly<{ onDismiss?: () => void }>) {
 	return (
-		<div className="relative z-[3] mb-3 flex items-center justify-between gap-3 px-1">
-			<span className="text-xs font-medium text-text-subtle">Start with these agent templates</span>
+		<div className="relative z-[3] mb-3 flex items-center justify-between gap-3">
+			<AgentSectionLabel>Start with these agent templates</AgentSectionLabel>
 			<button
 				type="button"
 				onClick={onDismiss}
@@ -2228,14 +2228,6 @@ export const AgentConfigFields = memo(
 						<AgentInstructionsComposer
 							bottomSlot={(
 								<>
-									<AgentCompactConfigToolbarBelow
-										config={config}
-										isFilledConfig={isFilledConfig}
-										onAppendListItem={onAppendListItem}
-										onRemoveListItem={onRemoveListItem}
-										onTextChange={onTextChange}
-										screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-									/>
 									{isFilledConfig ? null : (
 										<AnimatePresence>
 											{templatesDismissed ? null : (
@@ -2246,6 +2238,14 @@ export const AgentConfigFields = memo(
 											)}
 										</AnimatePresence>
 									)}
+									<AgentCompactConfigToolbarBelow
+										config={config}
+										isFilledConfig={isFilledConfig}
+										onAppendListItem={onAppendListItem}
+										onRemoveListItem={onRemoveListItem}
+										onTextChange={onTextChange}
+										screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+									/>
 								</>
 							)}
 							bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-4 pt-4"
