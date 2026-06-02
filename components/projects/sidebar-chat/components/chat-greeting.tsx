@@ -5,6 +5,7 @@ import Image from "next/image";
 import { token } from "@/lib/tokens";
 import Heading from "@/components/blocks/shared-ui/heading";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustration";
 import { IconTile } from "@/components/ui/icon-tile";
 import { defaultSuggestions, type RovoSuggestion } from "@/lib/rovo-suggestions";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/components/projects/rovo/data/agent-profiles";
@@ -12,6 +13,8 @@ import { cn } from "@/lib/utils";
 
 const DEFAULT_ILLUSTRATION_SRC = "/illustration-ai/chat/light.svg";
 const DEFAULT_ILLUSTRATION_DARK_SRC = "/illustration-ai/chat/dark.svg";
+const AGENT_ILLUSTRATION_SRC = "/illustration-ai/ai/light.svg";
+const AGENT_ILLUSTRATION_DARK_SRC = "/illustration-ai/ai/dark.svg";
 const LIGHT_SVG_SUFFIX = "/light.svg";
 const MAX_MODE_HEADING = "Let's plan your next move";
 const MAX_MODE_ILLUSTRATION_SRC = "/illustration-ai/max/light.gif";
@@ -235,6 +238,10 @@ export default function ChatGreeting({
 	const resolvedIllustrationDarkSrc = isMaxMode
 		? MAX_MODE_ILLUSTRATION_DARK_SRC
 		: illustrationDarkSrc ?? getPairedDarkIllustrationSrc(illustrationSrc);
+	const shouldUseControlledAgentIllustration =
+		!isMaxMode &&
+		resolvedIllustrationSrc === AGENT_ILLUSTRATION_SRC &&
+		resolvedIllustrationDarkSrc === AGENT_ILLUSTRATION_DARK_SRC;
 	const heroKey = isMaxMode ? "max" : "default";
 	const itemVariants = shouldReduceMotion ? CHAT_GREETING_REDUCED_ITEM_VARIANTS : CHAT_GREETING_ITEM_VARIANTS;
 
@@ -263,22 +270,28 @@ export default function ChatGreeting({
 								variants={CHAT_GREETING_CONTAINER_VARIANTS}
 							>
 								<motion.div className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative")} style={{ willChange: "transform, opacity" }} variants={itemVariants}>
-									<Image
-										src={resolvedIllustrationSrc}
-										alt=""
-										width={74}
-										height={67}
-										priority
-										className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "object-contain dark:hidden [[data-color-mode=dark]_&]:hidden")}
-									/>
-									<Image
-										src={resolvedIllustrationDarkSrc}
-										alt=""
-										width={74}
-										height={67}
-										priority
-										className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "hidden object-contain dark:block [[data-color-mode=dark]_&]:block")}
-									/>
+									{shouldUseControlledAgentIllustration ? (
+										<ControlledRovoIllustration illusId="ai" size={74} />
+									) : (
+										<>
+											<Image
+												src={resolvedIllustrationSrc}
+												alt=""
+												width={74}
+												height={67}
+												priority
+												className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "object-contain dark:hidden [[data-color-mode=dark]_&]:hidden")}
+											/>
+											<Image
+												src={resolvedIllustrationDarkSrc}
+												alt=""
+												width={74}
+												height={67}
+												priority
+												className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "hidden object-contain dark:block [[data-color-mode=dark]_&]:block")}
+											/>
+										</>
+									)}
 								</motion.div>
 								<motion.div style={{ willChange: "transform, opacity" }} variants={itemVariants}>
 									<Heading size="large" className="text-center">{resolvedHeading}</Heading>

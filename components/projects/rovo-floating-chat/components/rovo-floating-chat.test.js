@@ -101,6 +101,7 @@ async function loadRovoFloatingChatHarness() {
 							"data-context-icon": props.chatContextBar?.iconName ?? "",
 							"data-greeting-labels": props.greeting?.suggestions?.map((suggestion) => suggestion.label).join("|") ?? "",
 							"data-greeting-hero": String(props.greeting?.showHero),
+							"data-hide-composer-controls": String(props.hideComposerSourceAndModelControls),
 							"data-has-custom-agent-tabs": String(Boolean(props.customAgentTabs)),
 							"data-has-artifact-dialog-open": String(typeof props.onArtifactDialogOpen === "function"),
 							"data-preserve-artifact-dialog": String(props.preserveFloatingSurfaceOnArtifactDialogOpen),
@@ -144,6 +145,12 @@ async function loadRovoFloatingChatHarness() {
 							iconName: "work-item",
 							signature: "agents-work-item:RFP-101",
 						},
+					}));
+				}
+
+				export function renderFloatingChatWithHiddenComposerControls() {
+					return renderToStaticMarkup(React.createElement(RovoFloatingChat, {
+						hideComposerSourceAndModelControls: true,
 					}));
 				}
 
@@ -250,6 +257,17 @@ test("RovoFloatingChat forwards context bar descriptor to the shared chat panel"
 	assert.match(markup, /data-context-icon="work-item"/);
 });
 
+test("RovoFloatingChat forwards composer source and model control visibility to the shared chat panel", async () => {
+	const harness = await loadRovoFloatingChatHarness();
+	const defaultMarkup = harness.renderFloatingChat();
+	const hiddenControlsMarkup = harness.renderFloatingChatWithHiddenComposerControls();
+
+	assert.match(defaultMarkup, /data-hide-composer-controls="false"/);
+	assert.match(hiddenControlsMarkup, /data-hide-composer-controls="true"/);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /hideComposerSourceAndModelControls\?: boolean;/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /hideComposerSourceAndModelControls=\{hideComposerSourceAndModelControls\}/u);
+});
+
 test("RovoFloatingChat forwards custom agent tab content to the shared chat panel", async () => {
 	const harness = await loadRovoFloatingChatHarness();
 	const markup = harness.renderFloatingChatWithCustomAgentTabs();
@@ -267,12 +285,12 @@ test("RovoFloatingChat forwards artifact dialog lifecycle to the shared chat pan
 	assert.match(markup, /data-preserve-artifact-dialog="true"/);
 });
 
-test("RovoFloatingChat forwards custom suggestions while keeping compact greeting chrome", async () => {
+test("RovoFloatingChat forwards greeting unchanged to the shared chat panel", async () => {
 	const harness = await loadRovoFloatingChatHarness();
 	const markup = harness.renderFloatingChatWithGreeting();
 
 	assert.match(markup, /data-greeting-labels="Find related RFPs"/);
-	assert.match(markup, /data-greeting-hero="false"/);
+	assert.match(markup, /data-greeting-hero="true"/);
 });
 
 test("Floating chat shell hugs content until it reaches the viewport-bounded max-height", () => {

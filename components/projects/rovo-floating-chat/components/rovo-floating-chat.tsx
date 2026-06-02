@@ -15,6 +15,7 @@ interface RovoFloatingChatProps {
 	chatContextBar?: ChatContextBarDescriptor | null;
 	greeting?: ChatPanelGreetingProps;
 	customAgentTabs?: ChatPanelCustomAgentTabs;
+	hideComposerSourceAndModelControls?: boolean;
 	onArtifactDialogOpen?: () => void;
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
 }
@@ -24,6 +25,7 @@ export default function RovoFloatingChat({
 	chatContextBar,
 	greeting,
 	customAgentTabs,
+	hideComposerSourceAndModelControls = false,
 	onArtifactDialogOpen,
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
 }: Readonly<RovoFloatingChatProps>) {
@@ -63,11 +65,9 @@ export default function RovoFloatingChat({
 						height: "auto",
 						maxHeight: "calc(min(720px, calc(100dvh - 96px)) - 56px)",
 					}}
-					greeting={{
-						...greeting,
-						showHero: false,
-					}}
+					greeting={greeting}
 					customAgentTabs={customAgentTabs}
+					hideComposerSourceAndModelControls={hideComposerSourceAndModelControls}
 					onSurfaceSwitch={onSurfaceSwitch}
 					chatContextBar={chatContextBar}
 					onArtifactDialogOpen={onArtifactDialogOpen}

@@ -6,7 +6,6 @@ import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Attachment, AttachmentPreview, Attachments } from "@/components/ui-custom/attachments";
 import { Conversation, ConversationContent, ConversationScrollButton, type ConversationFollowMode, useConversationContext } from "@/components/ui-custom/conversation";
 import { Message, MessageActions, MessageContent, MessageCopyAction, MessageEditAction, MessageRegenerateAction, MessageResponse, MessageVoteActions } from "@/components/ui-custom/message";
-import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustration";
 import { ArtifactCard, type ArtifactKind } from "@/components/ui-custom/artifact";
 import { AdsReasoningTrigger, Reasoning, ReasoningContent } from "@/components/ui-custom/reasoning";
 import { Button } from "@/components/ui/button";
@@ -97,11 +96,8 @@ interface RovoAppMessagesProps {
 const ROVO_APP_SCROLL_ANCHOR_SELECTOR = "[data-rovo-app-scroll-anchor='true']";
 const ROVO_APP_EMPTY_STATE = {
 	default: {
-		heading: "Keep work moving with agents",
+		heading: "Move work forward with agents",
 		id: "default",
-		illustrationClassName: "h-[110px] w-[110px]",
-		rovoIllustrationId: "ai",
-		rovoIllustrationSize: 110,
 	},
 	max: {
 		alt: "Max",
@@ -114,6 +110,9 @@ const ROVO_APP_EMPTY_STATE = {
 		width: 74,
 	},
 } as const;
+type RovoAppEmptyState = typeof ROVO_APP_EMPTY_STATE[keyof typeof ROVO_APP_EMPTY_STATE];
+type RovoAppIllustratedEmptyState = Extract<RovoAppEmptyState, { illustrationClassName: string }>;
+type RovoAppImageIllustrationEmptyState = Extract<RovoAppIllustratedEmptyState, { lightIllustrationSrc: string }>;
 const ROVO_APP_EMPTY_STATE_MODE_TRANSITION = {
 	type: "spring",
 	bounce: 0,
@@ -169,6 +168,14 @@ const ROVO_APP_EMPTY_STATE_REDUCED_ITEM_VARIANTS = {
 	},
 } as const;
 type RovoAppEmptyStateItemVariants = typeof ROVO_APP_EMPTY_STATE_ITEM_VARIANTS | typeof ROVO_APP_EMPTY_STATE_REDUCED_ITEM_VARIANTS;
+
+function hasRovoAppEmptyStateIllustration(emptyState: RovoAppEmptyState): emptyState is RovoAppIllustratedEmptyState {
+	return "illustrationClassName" in emptyState;
+}
+
+function usesRovoAppEmptyStateImageIllustration(emptyState: RovoAppIllustratedEmptyState): emptyState is RovoAppImageIllustrationEmptyState {
+	return "lightIllustrationSrc" in emptyState;
+}
 
 function isHermesContextTranscriptMessage(message: Pick<RovoUIMessage, "id" | "role" | "parts">): boolean {
 	if (message.role !== "assistant") {
@@ -974,7 +981,7 @@ export function RovoAppMessages({
 	const customAgent = selectedAgent !== null && !isRovoAgentProfile(selectedAgent) ? selectedAgent : null;
 	const emptyState = isMaxMode ? ROVO_APP_EMPTY_STATE.max : ROVO_APP_EMPTY_STATE.default;
 	const emptyStateItemVariants = shouldReduceMotion ? ROVO_APP_EMPTY_STATE_REDUCED_ITEM_VARIANTS : ROVO_APP_EMPTY_STATE_ITEM_VARIANTS;
-	const usesRovoIllustration = "rovoIllustrationId" in emptyState;
+	const hasEmptyStateIllustration = hasRovoAppEmptyStateIllustration(emptyState);
 	const handleTargetScrollTop = useCallback((defaultTargetTop: number, { scrollElement }: { scrollElement: HTMLElement }) => {
 		return computeRovoAppAnchorScrollTop(defaultTargetTop, scrollElement, scrollSpacerRef);
 	}, []);
@@ -1019,16 +1026,16 @@ export function RovoAppMessages({
 								key={emptyState.id}
 								variants={ROVO_APP_EMPTY_STATE_CONTAINER_VARIANTS}
 							>
-								<motion.div className={cn(emptyState.illustrationClassName, "relative")} style={{ willChange: "transform, opacity" }} variants={emptyStateItemVariants}>
-									{usesRovoIllustration ? (
-										<ControlledRovoIllustration illusId={emptyState.rovoIllustrationId} size={emptyState.rovoIllustrationSize} />
-									) : (
-										<>
-											<Image alt={emptyState.alt} className={cn(emptyState.illustrationClassName, "object-contain dark:hidden [[data-color-mode=dark]_&]:hidden")} height={emptyState.height} priority src={emptyState.lightIllustrationSrc} width={emptyState.width} />
-											<Image alt={emptyState.alt} className={cn(emptyState.illustrationClassName, "hidden object-contain dark:block [[data-color-mode=dark]_&]:block")} height={emptyState.height} priority src={emptyState.darkIllustrationSrc} width={emptyState.width} />
-										</>
-									)}
-								</motion.div>
+								{hasEmptyStateIllustration ? (
+									<motion.div className={cn(emptyState.illustrationClassName, "relative")} style={{ willChange: "transform, opacity" }} variants={emptyStateItemVariants}>
+										{usesRovoAppEmptyStateImageIllustration(emptyState) ? (
+											<>
+												<Image alt={emptyState.alt} className={cn(emptyState.illustrationClassName, "object-contain dark:hidden [[data-color-mode=dark]_&]:hidden")} height={emptyState.height} priority src={emptyState.lightIllustrationSrc} width={emptyState.width} />
+												<Image alt={emptyState.alt} className={cn(emptyState.illustrationClassName, "hidden object-contain dark:block [[data-color-mode=dark]_&]:block")} height={emptyState.height} priority src={emptyState.darkIllustrationSrc} width={emptyState.width} />
+											</>
+										) : null}
+									</motion.div>
+								) : null}
 								<motion.div style={{ willChange: "transform, opacity" }} variants={emptyStateItemVariants}>
 									<Heading size="xlarge">{emptyState.heading}</Heading>
 								</motion.div>

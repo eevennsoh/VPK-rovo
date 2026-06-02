@@ -236,8 +236,8 @@ function AgentTestChatPanel({
 		<ChatPanel
 			onClose={() => {}}
 			abortOnUnmount={false}
-			containerClassName="h-full min-h-0"
-			containerStyle={{ borderRadius: 0, borderWidth: 0 }}
+			containerClassName="mx-auto h-full min-h-0 w-full max-w-[800px] overflow-visible py-4"
+			containerStyle={{ borderRadius: 0, borderWidth: 0, overflow: "visible" }}
 			customAgentTabs={{
 				trigger: <AgentTestTriggerView entry={entry} />,
 				activity: <AgentTestActivityView entry={entry} />,
@@ -246,6 +246,7 @@ function AgentTestChatPanel({
 				heading: testAgentProfile.name,
 				suggestions: testAgentProfile.starters,
 			}}
+			greetingSelectedAgent={testAgentProfile}
 			hideComposerSourceAndModelControls
 			hideHeader
 		/>

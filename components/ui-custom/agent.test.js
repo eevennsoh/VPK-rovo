@@ -87,13 +87,14 @@ test("Reasoning selector lives in the compact toolbar and shares state across co
 	assert.match(AGENT_SOURCE, /function AgentReasoningSelector/u);
 	assert.match(AGENT_SOURCE, /function AgentReasoningRow/u);
 	assert.match(AGENT_SOURCE, /function AgentReasoningOverflowMenu/u);
-	assert.match(AGENT_SOURCE, /const \[reasoningValue, setReasoningValue\] = useState<ReasoningModeValue>\("deep-auto"\);/u);
+	assert.match(AGENT_SOURCE, /const \[reasoningValue, setReasoningValue\] = useState<ReasoningModeValue>\("quick-auto"\);/u);
 	assert.match(AGENT_SOURCE, /\{ agentFieldName: "reasoning", label: "Reasoning", kind: "reasoning" \}/u);
 	assert.match(AGENT_SOURCE, /case "reasoning":[\s\S]*count = 0;/u);
 	assert.match(AGENT_SOURCE, /render="nav-button"[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{onReasoningValueChange\}/u);
 	assert.match(AGENT_SOURCE, /<AgentReasoningRow[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{setReasoningValue\}/u);
 	assert.match(AGENT_SOURCE, /<AgentReasoningOverflowMenu[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{onReasoningValueChange\}/u);
-	assert.match(AGENT_SOURCE, /render=\{<LozengeDropdownTrigger aria-label="Reasoning mode" \/>\}/u);
+	assert.match(AGENT_SOURCE, /import AiComputeIcon from "@atlaskit\/icon-lab\/core\/ai-compute";/u);
+	assert.match(AGENT_SOURCE, /render=\{<LozengeDropdownTrigger aria-label="Reasoning mode" icon=\{<AiComputeIcon label="" size="small" \/>\} \/>\}/u);
 	assert.match(AGENT_SOURCE, /<Tag>\{current\?\.label \?\? "Recommended"\}<\/Tag>/u);
 	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Think deeper option"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /from "@\/components\/ui-custom\/model-selector"/u);
@@ -111,11 +112,22 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 	assert.match(AGENT_SOURCE, /\{ agentFieldName: "knowledge", label: "Knowledge", kind: "knowledge" \}/u);
 	assert.match(AGENT_SOURCE, /case "knowledge":[\s\S]*count = 0;/u);
 	assert.match(AGENT_SOURCE, /const \[knowledgeMode, setKnowledgeMode\] = useState<KnowledgeModeValue>/u);
-	assert.match(AGENT_SOURCE, /render=\{<LozengeDropdownTrigger aria-label="Knowledge mode" \/>\}/u);
 	assert.match(AGENT_SOURCE, /<AgentKnowledgeRow[\s\S]*value=\{knowledgeMode\}/u);
 	assert.match(AGENT_SOURCE, /<AgentKnowledgeOverflowMenu[\s\S]*value=\{knowledgeMode\}/u);
 	assert.match(AGENT_SOURCE, /const isCustom = value === "custom";/u);
-	assert.match(AGENT_SOURCE, /<AgentReferenceChip label="Memory" \/>/u);
+	assert.match(AGENT_SOURCE, /import BookOpenIcon from "@atlaskit\/icon-lab\/core\/book-open";/u);
+	assert.match(AGENT_SOURCE, /render=\{<LozengeDropdownTrigger aria-label="Knowledge mode" icon=\{<BookOpenIcon label="" size="small" \/>\} \/>\}/u);
+	assert.match(AGENT_SOURCE, /const MEMORY_MODE_OPTIONS = \[/u);
+	assert.match(AGENT_SOURCE, /\{ value: "on", label: "On" \}/u);
+	assert.match(AGENT_SOURCE, /\{ value: "off", label: "Off" \}/u);
+	assert.match(AGENT_SOURCE, /function AgentMemorySelector/u);
+	assert.match(AGENT_SOURCE, /const selectedOption = MEMORY_MODE_OPTIONS\.find\(\(option\) => option\.value === value\) \?\? MEMORY_MODE_OPTIONS\[0\];/u);
+	assert.match(AGENT_SOURCE, /render=\{\(\s*<LozengeDropdownTrigger[\s\S]*aria-label="Memory mode"[\s\S]*icon=\{<AiModelIcon label="" size="small" \/>\}/u);
+	assert.match(AGENT_SOURCE, /\{`Memory \$\{selectedOption\.label\.toLowerCase\(\)\}`\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Memory mode"[\s\S]{0,180}variant="information"/u);
+	assert.match(AGENT_SOURCE, /<DropdownMenuSeparator \/>[\s\S]*Configure memory/u);
+	assert.match(AGENT_SOURCE, /<AgentMemorySelector \/>/u);
+	assert.doesNotMatch(AGENT_SOURCE, /<AgentReferenceChip label="Memory" \/>/u);
 });
 
 test("Filled config summary sorts empty rows to the bottom while preserving canonical order", () => {
@@ -214,6 +226,9 @@ test("Agent component page wires compact filled and empty placeholder variations
 	const compactLayoutStart = AGENT_SOURCE.indexOf('{layout === "compact"');
 	const defaultLayoutStart = AGENT_SOURCE.indexOf("{/* Profile + config summary", compactLayoutStart);
 	const compactLayoutSource = AGENT_SOURCE.slice(compactLayoutStart, defaultLayoutStart);
+	const compactOperationsStart = AGENT_SOURCE.indexOf("function AgentCompactOperationsBento");
+	const sectionLabelStart = AGENT_SOURCE.indexOf("function AgentSectionLabel", compactOperationsStart);
+	const compactOperationsSource = AGENT_SOURCE.slice(compactOperationsStart, sectionLabelStart);
 
 	assert.match(AGENT_SOURCE, /layout\?: "default" \| "compact";/u);
 	assert.match(AGENT_SOURCE, /layout = "default"/u);
@@ -222,7 +237,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(compactLayoutSource, /<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">/u);
 	assert.doesNotMatch(compactLayoutSource, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
 	assert.match(compactLayoutSource, /bottomSlot=\{\([\s\S]*isFilledConfig \? null : \([\s\S]*<AnimatePresence>[\s\S]*templatesDismissed \? null : \([\s\S]*<AgentCompactOperationsBento[\s\S]*onDismiss=\{\(\) => setTemplatesDismissed\(true\)\}[\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}/u);
-	assert.match(compactLayoutSource, /bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-4 pt-4"/u);
+	assert.match(compactLayoutSource, /bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-4"/u);
 	assert.doesNotMatch(compactLayoutSource, /toolbarBelowSlot=\{\(\s*<AgentCompactConfigToolbarBelow/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow/u);
 	assert.doesNotMatch(AGENT_SOURCE, /showAddButtons=\{false\}/u);
@@ -235,8 +250,22 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /if \(isEmpty && \(hideWhenEmpty \|\| !addLabel\)\) \{/u);
 	// Empty-row "+ Add" link is always visible; for filled rows the same
 	// AgentAddValueButton fades in on hover via the opacity-0 group class.
+	assert.match(AGENT_SOURCE, /"group\/add-link inline-flex h-5 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest/u);
+	assert.doesNotMatch(AGENT_SOURCE, /group\/add-link inline-flex h-5 items-center gap-0\.5/u);
 	assert.match(AGENT_SOURCE, /<AgentAddValueButton[\s\S]*className=\{isEmpty\s*\?\s*undefined\s*:\s*"opacity-0 transition-opacity group-hover\/agent-row:opacity-100/u);
+	assert.match(AGENT_SOURCE, /const AGENT_EMPTY_ROW_ADD_LABELS: Partial<Record<AgentConfigListFieldName, string>> = \{/u);
+	assert.match(AGENT_SOURCE, /triggers: "Add rules for when this agent runs"/u);
+	assert.match(AGENT_SOURCE, /conversationStarters: "Add prompts to help people start"/u);
+	assert.match(AGENT_SOURCE, /skills: "Add skills to guide specialized tasks"/u);
+	assert.match(AGENT_SOURCE, /tools: "Add tools to extend what this agent can do"/u);
+	assert.match(AGENT_SOURCE, /subagents: "Add subagents to handle specific scenarios"/u);
+	assert.match(AGENT_SOURCE, /function getAgentFilledSummaryAddLabel\(field: AgentConfigListFieldName, isEmpty: boolean, showAddButtons: boolean\): string \| undefined \{[\s\S]*return isEmpty \? AGENT_EMPTY_ROW_ADD_LABELS\[field\] \?\? "Add" : "Add";[\s\S]*\}/u);
 	// Every list-field row wires its persistent +Add link to onAppendListItem.
+	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("triggers", triggerItems\.length === 0, showAddButtons\)\}/u);
+	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("skills", skillItems\.length === 0, showAddButtons\)\}/u);
+	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("tools", toolItems\.length === 0, showAddButtons\)\}/u);
+	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("subagents", subagentItems\.length === 0, showAddButtons\)\}/u);
+	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("conversationStarters", starterItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Triggers"\s+onAdd=\{\(\) => onAppendListItem\?\.\("triggers"\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Skills"\s+onAdd=\{\(\) => onAppendListItem\?\.\("skills"\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Tools"\s+onAdd=\{\(\) => onAppendListItem\?\.\("tools"\)\}/u);
@@ -271,17 +300,32 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.doesNotMatch(AGENT_SOURCE, /hasVisibleAddOptions/u);
 	assert.doesNotMatch(AGENT_SOURCE, /border-t border-border pt-2/u);
 	assert.doesNotMatch(AGENT_SOURCE, /mx-1 h-4 w-px shrink-0 bg-border/u);
-	assert.match(AGENT_SOURCE, /import \{ AnimatePresence, motion, useReducedMotion, type MotionProps \} from "motion\/react";/u);
+	assert.match(AGENT_SOURCE, /import \{ AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform, type MotionProps \} from "motion\/react";/u);
 	assert.match(AGENT_SOURCE, /import ChevronDownIcon from "@atlaskit\/icon\/core\/chevron-down";/u);
 	assert.match(AGENT_SOURCE, /import ChevronUpIcon from "@atlaskit\/icon\/core\/chevron-up";/u);
-	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow\([\s\S]*const \[expanded, setExpanded\] = useState\(\(\) => !isFilledConfig\);[\s\S]*const shouldReduceMotion = useReducedMotion\(\);[\s\S]*const isExpanded = expanded;/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE = 24;/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_REVEAL_DISTANCE = 72;/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow\([\s\S]*const \[expanded, setExpanded\] = useState\(\(\) => !isFilledConfig\);[\s\S]*const shouldReduceMotion = useReducedMotion\(\);[\s\S]*const expandButtonRowRef = useRef<HTMLDivElement \| null>\(null\);[\s\S]*const expandButtonX = useMotionValue\(0\);[\s\S]*const expandButtonPaddingRight = useTransform\(expandButtonX, \(latest\): number =>[\s\S]*Math\.abs\(latest\) > 0\.5 \? AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP : 0,[\s\S]*\);[\s\S]*const expandButtonVisualX = useTransform\(expandButtonX, \(latest\): number =>[\s\S]*latest \+ \(Math\.abs\(latest\) > 0\.5 \? AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP : 0\),[\s\S]*\);[\s\S]*const isExpanded = expanded;/u);
+	assert.match(AGENT_SOURCE, /window\.addEventListener\("pointermove", handlePointerMove, true\);[\s\S]*window\.removeEventListener\("pointermove", handlePointerMove, true\);/u);
+	assert.match(AGENT_SOURCE, /const isNearBottom = pointerDistanceFromBottom >= -AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE[\s\S]*pointerDistanceFromBottom <= AGENT_COMPACT_CONFIG_EXPAND_BUTTON_REVEAL_DISTANCE;/u);
+	assert.doesNotMatch(AGENT_SOURCE, /clampFloatingRovoButtonValue/u);
+	assert.match(AGENT_SOURCE, /const restingCenterX = rect\.right - AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE \/ 2;/u);
+	assert.match(AGENT_SOURCE, /const minCenterX = rect\.left \+ AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE \/ 2;/u);
+	assert.match(AGENT_SOURCE, /const maxCenterX = rect\.right - AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE \/ 2;/u);
+	assert.match(AGENT_SOURCE, /const targetCenterX = Math\.min\(Math\.max\(event\.clientX, minCenterX\), maxCenterX\);[\s\S]*expandButtonX\.set\(targetCenterX - restingCenterX\);/u);
 	assert.match(AGENT_SOURCE, /<AnimatePresence initial=\{false\} mode="wait">/u);
-	assert.match(AGENT_SOURCE, /<motion\.div\s+key="expanded"/u);
-	assert.match(AGENT_SOURCE, /<motion\.div\s+key="collapsed"/u);
+	assert.match(AGENT_SOURCE, /<motion\.div\s+key="expanded"\s+className="mt-2"/u);
+	assert.match(AGENT_SOURCE, /<motion\.div\s+key="collapsed"\s+className="mt-2"/u);
 	// Horizontal rule line spans the row; the chevron sits at the far right of
 	// the same row and stays mounted across both states. Empty configs initialize
 	// expanded so first-run users see all supported capability rows.
-	assert.match(AGENT_SOURCE, /<div aria-hidden className="h-px flex-1 bg-border" \/>/u);
+	assert.match(AGENT_SOURCE, /<div className="relative flex h-6 items-center" ref=\{expandButtonRowRef\}>[\s\S]*<div aria-hidden className="absolute inset-x-0 top-1\/2 h-px -translate-y-1\/2 bg-border" \/>/u);
+	assert.match(AGENT_SOURCE, /<motion\.div[\s\S]*className="relative z-10 ml-auto bg-surface pl-2"[\s\S]*style=\{\{ paddingRight: expandButtonPaddingRight, x: expandButtonVisualX \}\}[\s\S]*>/u);
+	assert.match(AGENT_SOURCE, /className="size-6 rounded border-border bg-surface-overlay px-0 text-icon-subtle hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"/u);
+	assert.doesNotMatch(AGENT_SOURCE, /aria-label=\{isExpanded \? "Collapse configuration" : "Expand configuration"\}[\s\S]{0,260}boxShadow/u);
+	assert.doesNotMatch(AGENT_SOURCE, /style=\{\{ boxShadow: token\("elevation\.shadow\.raised"\) \}\}/u);
+	assert.match(AGENT_SOURCE, /aria-label=\{isExpanded \? "Collapse configuration" : "Expand configuration"\}[\s\S]*variant="ghost"/u);
+	assert.doesNotMatch(AGENT_SOURCE, /aria-label=\{isExpanded \? "Collapse configuration" : "Expand configuration"\}[\s\S]*variant="outline"/u);
 	assert.match(AGENT_SOURCE, /aria-label=\{isExpanded \? "Collapse configuration" : "Expand configuration"\}/u);
 	assert.match(AGENT_SOURCE, /onClick=\{\(\) => setExpanded\(\(prev\) => !prev\)\}/u);
 	assert.match(AGENT_SOURCE, /isExpanded \? \(\s*<ChevronDownIcon label="" size="small" \/>\s*\) : \(\s*<ChevronUpIcon label="" size="small" \/>\s*\)/u);
@@ -306,15 +350,21 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /aria-pressed=\{item\.isSelected \? true : undefined\}[\s\S]*variant=\{item\.isSelected \? "outline" : "ghost"\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /\[&_svg\]:size-4!/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactOperationsBento/u);
-	assert.match(AGENT_SOURCE, /function AgentCompactBentoTemplatesHint[\s\S]*className="relative z-\[3\] mb-3 flex items-center justify-between gap-3"[\s\S]*<AgentSectionLabel>Start with these agent templates<\/AgentSectionLabel>/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactBentoTemplatesHint[\s\S]*onBrowseAll\?: \(\) => void;[\s\S]*<AgentSectionLabel>[\s\S]*<span>Start with these agent templates<\/span>[\s\S]*·[\s\S]*onClick=\{onBrowseAll\}[\s\S]*Browse all/u);
 	assert.match(AGENT_SOURCE, /showSectionLabel=\{false\}/u);
 	assert.match(AGENT_SOURCE, /data-slot="agent-compact-operations-bento"/u);
 	assert.match(AGENT_SOURCE, /AGENT_COMPACT_BENTO_CARD_GLOW_EFFECT_STYLE/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactBentoCardGlowLayers/u);
-	assert.match(AGENT_SOURCE, /sm:bento-fade-bottom/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_BENTO_CARD_BORDER_FADE_STYLE: CSSProperties = \{[\s\S]*maskImage: "linear-gradient\(to bottom, #000 calc\(100% - 64px\), transparent 100%\)",[\s\S]*WebkitMaskImage: "linear-gradient\(to bottom, #000 calc\(100% - 64px\), transparent 100%\)",[\s\S]*\};/u);
+	assert.match(AGENT_SOURCE, /data-agent-compact-bento-card-border-fade[\s\S]*style=\{AGENT_COMPACT_BENTO_CARD_BORDER_FADE_STYLE\}[\s\S]*data-agent-compact-bento-card-base-border[\s\S]*data-agent-compact-bento-card-glow-border[\s\S]*<\/span>/u);
+	assert.match(AGENT_SOURCE, /<AgentCompactBentoCardGlowLayers iconSrc=\{template\.iconSrc\} \/>[\s\S]*<span className="relative z-\[3\] inline-flex size-8/u);
+	assert.match(AGENT_SOURCE, /className="relative -mt-2 min-h-0 pt-2 sm:flex-1 sm:overflow-hidden sm:bento-fade-bottom"/u);
+	assert.doesNotMatch(AGENT_SOURCE, /sm:\[--bento-fade-end:64px\]/u);
 	assert.match(AGENT_SOURCE, /<BentoCarousel[\s\S]*gridClassName="sm:grid-cols-5"[\s\S]*arrowLabels=\{\{ next: "Show next agent templates", previous: "Show previous agent templates" \}\}/u);
 	assert.match(AGENT_SOURCE, /BENTO_CAROUSEL_TILE_CLASS/u);
-	assert.match(AGENT_SOURCE, /Browse all/u);
+	assert.doesNotMatch(compactOperationsSource, /whileHover=\{/u);
+	assert.match(AGENT_SOURCE, /<AgentCompactBentoTemplatesHint onBrowseAll=\{\(\) => setBrowseOpen\(true\)\} onDismiss=\{onDismiss\} \/>/u);
+	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Browse all agents"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /Show more/u);
 	assert.match(AGENT_SOURCE, /title: "Service Triage"/u);
 	assert.match(AGENT_SOURCE, /title: "Service Request Helper"/u);

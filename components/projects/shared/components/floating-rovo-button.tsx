@@ -673,6 +673,8 @@ function FloatingRovoButtonSurface({
 		const target = getNearestFloatingRovoButtonSnapTarget(rect, window.innerWidth, window.innerHeight);
 
 		setDragConstraints(getFloatingRovoButtonDragConstraints(dragOrigin, rect, window.innerWidth, window.innerHeight));
+		buttonX.jump(buttonX.get());
+		buttonY.jump(buttonY.get());
 		animate(buttonX, target.left - dragOrigin.left, dragSnapTransition);
 		animate(buttonY, target.top - dragOrigin.top, dragSnapTransition);
 	}, [buttonX, buttonY, dragOrigin, dragSnapTransition]);
@@ -780,12 +782,14 @@ function FloatingRovoButtonSurface({
 			updateDragPosition(event.clientX, event.clientY, event.pointerId);
 		};
 		const handleDocumentPointerEnd = (event: PointerEvent) => {
+			updateDragPosition(event.clientX, event.clientY, event.pointerId);
 			endDrag(event.pointerId);
 		};
 		const handleDocumentMouseMove = (event: MouseEvent) => {
 			updateDragPosition(event.clientX, event.clientY);
 		};
-		const handleDocumentMouseEnd = () => {
+		const handleDocumentMouseEnd = (event: MouseEvent) => {
+			updateDragPosition(event.clientX, event.clientY);
 			endDrag();
 		};
 

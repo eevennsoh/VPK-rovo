@@ -1,7 +1,7 @@
 "use client";
 
 import type { Tool } from "ai";
-import { AnimatePresence, motion, useReducedMotion, type MotionProps } from "motion/react";
+import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform, type MotionProps } from "motion/react";
 import type { ComponentProps, CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
@@ -15,7 +15,9 @@ import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
 import ScorecardIcon from "@atlaskit/icon/core/scorecard";
 import VideoPlayIcon from "@atlaskit/icon/core/video-play";
+import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
+import BookOpenIcon from "@atlaskit/icon-lab/core/book-open";
 import ViewsIcon from "@atlaskit/icon-lab/core/views";
 
 import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
@@ -35,6 +37,7 @@ import {
 	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
+	DropdownMenuSeparator,
 	DropdownMenuSub,
 	DropdownMenuSubContent,
 	DropdownMenuSubTrigger,
@@ -91,6 +94,10 @@ const AGENT_PROFILE_INLINE_EDIT_BACKDROP_MOTION_PROPS = {
 	},
 	transition: { type: "spring", bounce: 0.08, visualDuration: 0.18 },
 } satisfies Pick<MotionProps, "variants" | "transition">;
+const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE = 24;
+const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP = 8;
+const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_REVEAL_DISTANCE = 72;
+
 const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
 	"dev-agents": "#82B536",
 	"product-agents": "#BF63F3",
@@ -120,6 +127,21 @@ const AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = [
 
 const AGENT_COMPACT_CONFIG_NAV_GAP = 4;
 const AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH = 24;
+const AGENT_EMPTY_ROW_ADD_LABELS: Partial<Record<AgentConfigListFieldName, string>> = {
+	conversationStarters: "Add prompts to help people start",
+	skills: "Add skills to guide specialized tasks",
+	subagents: "Add subagents to handle specific scenarios",
+	tools: "Add tools to extend what this agent can do",
+	triggers: "Add rules for when this agent runs",
+};
+
+function getAgentFilledSummaryAddLabel(field: AgentConfigListFieldName, isEmpty: boolean, showAddButtons: boolean): string | undefined {
+	if (!showAddButtons) {
+		return undefined;
+	}
+
+	return isEmpty ? AGENT_EMPTY_ROW_ADD_LABELS[field] ?? "Add" : "Add";
+}
 
 function getAgentCompactEmptyConfigNavItems(config?: AgentConfigFormValue) {
 	return AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS.map((item) => {
@@ -218,6 +240,10 @@ const AGENT_COMPACT_BENTO_CARD_GLOW_LAYER_STYLE: CSSProperties = {
 	scale: "var(--card-glow-icon-scale)",
 	translate: "calc(var(--card-glow-pointer-x, -10) * 50cqi) calc(var(--card-glow-pointer-y, -10) * 50cqh)",
 	willChange: "translate, scale, filter, opacity",
+};
+const AGENT_COMPACT_BENTO_CARD_BORDER_FADE_STYLE: CSSProperties = {
+	maskImage: "linear-gradient(to bottom, #000 calc(100% - 64px), transparent 100%)",
+	WebkitMaskImage: "linear-gradient(to bottom, #000 calc(100% - 64px), transparent 100%)",
 };
 const AGENT_COMPACT_BENTO_CARD_BASE_BORDER_STYLE: CSSProperties = {
 	boxShadow: `inset 0 0 0 calc(var(--card-glow-border-width) * 1px) ${token("color.border")}`,
@@ -947,23 +973,48 @@ function AgentCompactBentoCardGlowLayers({ iconSrc }: Readonly<{ iconSrc: string
 			<span
 				aria-hidden
 				className="pointer-events-none absolute inset-0 z-[1] rounded-[inherit]"
-				data-agent-compact-bento-card-base-border
-				style={AGENT_COMPACT_BENTO_CARD_BASE_BORDER_STYLE}
-			/>
-			<span
-				aria-hidden
-				className="pointer-events-none absolute inset-0 z-[2] overflow-hidden rounded-[inherit] border border-transparent"
-				data-agent-compact-bento-card-glow-border
-				style={AGENT_COMPACT_BENTO_CARD_BORDER_GLOW_STYLE}
-			/>
+				data-agent-compact-bento-card-border-fade
+				style={AGENT_COMPACT_BENTO_CARD_BORDER_FADE_STYLE}
+			>
+				<span
+					aria-hidden
+					className="pointer-events-none absolute inset-0 rounded-[inherit]"
+					data-agent-compact-bento-card-base-border
+					style={AGENT_COMPACT_BENTO_CARD_BASE_BORDER_STYLE}
+				/>
+				<span
+					aria-hidden
+					className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit] border border-transparent"
+					data-agent-compact-bento-card-glow-border
+					style={AGENT_COMPACT_BENTO_CARD_BORDER_GLOW_STYLE}
+				/>
+			</span>
 		</>
 	);
 }
 
-function AgentCompactBentoTemplatesHint({ onDismiss }: Readonly<{ onDismiss?: () => void }>) {
+function AgentCompactBentoTemplatesHint({
+	onBrowseAll,
+	onDismiss,
+}: Readonly<{
+	onBrowseAll?: () => void;
+	onDismiss?: () => void;
+}>) {
 	return (
 		<div className="relative z-[3] mb-3 flex items-center justify-between gap-3">
-			<AgentSectionLabel>Start with these agent templates</AgentSectionLabel>
+			<AgentSectionLabel>
+				<span>Start with these agent templates</span>
+				<span aria-hidden="true" className="mx-1">
+					·
+				</span>
+				<button
+					type="button"
+					onClick={onBrowseAll}
+					className="font-medium text-link underline-offset-2 hover:underline active:text-link-pressed focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				>
+					Browse all
+				</button>
+			</AgentSectionLabel>
 			<button
 				type="button"
 				onClick={onDismiss}
@@ -1022,15 +1073,15 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 			exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
 			transition={{ duration: 0.24, ease: [0, 0.4, 0, 1] }}
 		>
-			<AgentCompactBentoTemplatesHint onDismiss={onDismiss} />
+			<AgentCompactBentoTemplatesHint onBrowseAll={() => setBrowseOpen(true)} onDismiss={onDismiss} />
 			{/*
 				`-mt-2 pt-2` gives the masked content top headroom that nets to zero
 				visual shift: the bottom-fade mask clips its children to the box, so
-				tiles flush with the top edge would have their hover lift (`y: -2`) and
-				focus ring sliced off. The padding keeps that motion inside the opaque
+				tiles flush with the top edge would have their focus ring and glow
+				border sliced off. The padding keeps those effects inside the opaque
 				region; the negative margin pulls the box back so spacing is unchanged.
 			*/}
-			<div className="relative -mt-2 min-h-0 pt-2 sm:flex-1 sm:overflow-hidden sm:bento-fade-bottom sm:[--bento-fade-height:32px] sm:[--bento-fade-end:14px]">
+			<div className="relative -mt-2 min-h-0 pt-2 sm:flex-1 sm:overflow-hidden sm:bento-fade-bottom">
 				<BentoCarousel
 					gridClassName="sm:grid-cols-5"
 					arrowLabels={{ next: "Show next agent templates", previous: "Show previous agent templates" }}
@@ -1052,11 +1103,6 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 								}}
 								style={getAgentCompactBentoCardStyle(accentColor)}
 								transition={{ duration: 0.2, ease: [0, 0.4, 0, 1] }}
-								whileHover={
-									shouldReduceMotion
-										? undefined
-										: { y: -2, transition: { type: "spring", stiffness: 400, damping: 22 } }
-								}
 								whileTap={shouldReduceMotion ? undefined : { scale: 0.98, transition: { duration: 0.05 } }}
 							>
 								<AgentCompactBentoCardGlowLayers iconSrc={template.iconSrc} />
@@ -1087,19 +1133,6 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 						);
 					})}
 				</BentoCarousel>
-			</div>
-			<div className="pointer-events-none z-10 flex justify-center max-sm:static max-sm:mt-2 sm:absolute sm:inset-x-0 sm:bottom-0 sm:pb-2">
-				<Button
-					type="button"
-					aria-label="Browse all agents"
-					variant="ghost"
-					size="compact"
-					className="pointer-events-auto h-7 rounded-full border-0 bg-surface px-3 text-sm leading-5 font-normal text-text-subtle hover:bg-surface-hovered"
-					style={{ boxShadow: token("elevation.shadow.overlay") }}
-					onClick={() => setBrowseOpen(true)}
-				>
-					Browse all
-				</Button>
 			</div>
 			<AgentTemplatesDialog
 				agents={DEMO_AGENT_TEMPLATES}
@@ -1171,7 +1204,7 @@ function AgentAddValueButton({
 		<button
 			type="button"
 			className={cn(
-				"group/add-link inline-flex h-5 items-center gap-0.5 rounded-xs text-xs font-medium text-text-subtlest transition-colors hover:text-text focus-visible:text-text focus-visible:outline-none",
+				"group/add-link inline-flex h-5 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest transition-colors hover:text-text focus-visible:text-text focus-visible:outline-none",
 				className
 			)}
 			onClick={onClick}
@@ -1304,7 +1337,7 @@ function AgentFilledConfigSummary({
 			isEmpty: triggerItems.length === 0,
 			node: (
 				<AgentFilledSummaryRow
-					addLabel={showAddButtons ? "Add" : undefined}
+					addLabel={getAgentFilledSummaryAddLabel("triggers", triggerItems.length === 0, showAddButtons)}
 					hideWhenEmpty={hideEmptyRows}
 					agentFieldName="trigger"
 					items={triggerItems}
@@ -1347,7 +1380,7 @@ function AgentFilledConfigSummary({
 			isEmpty: toolItems.length === 0,
 			node: (
 				<AgentFilledSummaryRow
-					addLabel={showAddButtons ? "Add" : undefined}
+					addLabel={getAgentFilledSummaryAddLabel("tools", toolItems.length === 0, showAddButtons)}
 					hideWhenEmpty={hideEmptyRows}
 					agentFieldName="tools"
 					items={toolItems}
@@ -1363,7 +1396,7 @@ function AgentFilledConfigSummary({
 			isEmpty: skillItems.length === 0,
 			node: (
 				<AgentFilledSummaryRow
-					addLabel={showAddButtons ? "Add" : undefined}
+					addLabel={getAgentFilledSummaryAddLabel("skills", skillItems.length === 0, showAddButtons)}
 					hideWhenEmpty={hideEmptyRows}
 					items={skillItems}
 					label="Skills"
@@ -1379,7 +1412,7 @@ function AgentFilledConfigSummary({
 			isEmpty: subagentItems.length === 0,
 			node: (
 				<AgentFilledSummaryRow
-					addLabel={showAddButtons ? "Add" : undefined}
+					addLabel={getAgentFilledSummaryAddLabel("subagents", subagentItems.length === 0, showAddButtons)}
 					hideWhenEmpty={hideEmptyRows}
 					items={subagentItems}
 					label="Subagents"
@@ -1405,7 +1438,7 @@ function AgentFilledConfigSummary({
 			isEmpty: starterItems.length === 0,
 			node: (
 				<AgentFilledSummaryRow
-					addLabel={showAddButtons ? "Add" : undefined}
+					addLabel={getAgentFilledSummaryAddLabel("conversationStarters", starterItems.length === 0, showAddButtons)}
 					hideWhenEmpty={hideEmptyRows}
 					agentFieldName="conversationStarters"
 					items={starterItems}
@@ -1676,7 +1709,7 @@ function AgentReasoningSelector({
 		<>
 			<DropdownMenu>
 				<DropdownMenuTrigger
-					render={<LozengeDropdownTrigger aria-label="Reasoning mode" />}
+					render={<LozengeDropdownTrigger aria-label="Reasoning mode" icon={<AiComputeIcon label="" size="small" />} />}
 				>
 					{sectionLabel}
 				</DropdownMenuTrigger>
@@ -1828,7 +1861,7 @@ function AgentKnowledgeSelector({
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
-				render={<LozengeDropdownTrigger aria-label="Knowledge mode" />}
+				render={<LozengeDropdownTrigger aria-label="Knowledge mode" icon={<BookOpenIcon label="" size="small" />} />}
 			>
 				{label}
 			</DropdownMenuTrigger>
@@ -1864,6 +1897,52 @@ function AgentKnowledgeOverflowMenu({
 	);
 }
 
+const MEMORY_MODE_OPTIONS = [
+	{ value: "on", label: "On" },
+	{ value: "off", label: "Off" },
+] as const;
+
+type MemoryModeValue = (typeof MEMORY_MODE_OPTIONS)[number]["value"];
+
+function AgentMemorySelector() {
+	const [value, setValue] = useState<MemoryModeValue>("on");
+	const selectedOption = MEMORY_MODE_OPTIONS.find((option) => option.value === value) ?? MEMORY_MODE_OPTIONS[0];
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger
+				render={(
+					<LozengeDropdownTrigger
+						aria-label="Memory mode"
+						icon={<AiModelIcon label="" size="small" />}
+					/>
+				)}
+			>
+				{`Memory ${selectedOption.label.toLowerCase()}`}
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="start">
+				<DropdownMenuGroup>
+					{MEMORY_MODE_OPTIONS.map((option) => (
+						<DropdownMenuItem
+							elemAfter={value === option.value ? <CheckIcon size="small" /> : undefined}
+							key={option.value}
+							onClick={() => setValue(option.value)}
+						>
+							{option.label}
+						</DropdownMenuItem>
+					))}
+				</DropdownMenuGroup>
+				<DropdownMenuSeparator />
+				<DropdownMenuGroup>
+					<DropdownMenuItem>
+						Configure memory
+					</DropdownMenuItem>
+				</DropdownMenuGroup>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
 function AgentMemoryRow({
 	screenAssistantTargetId,
 }: Readonly<{ screenAssistantTargetId?: string }>) {
@@ -1877,9 +1956,7 @@ function AgentMemoryRow({
 				<AgentSectionLabel>Memory</AgentSectionLabel>
 			</div>
 			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
-				{/* Memory is a default, non-removable knowledge source that's always
-				    available regardless of the org-knowledge mode. */}
-				<AgentReferenceChip label="Memory" />
+				<AgentMemorySelector />
 			</div>
 		</div>
 	);
@@ -2157,37 +2234,89 @@ function AgentCompactConfigToolbarBelow({
 	screenAssistantTargetPrefix,
 }: Readonly<AgentConfigSummaryProps>) {
 	const [expanded, setExpanded] = useState(() => !isFilledConfig);
-	const [reasoningValue, setReasoningValue] = useState<ReasoningModeValue>("deep-auto");
+	const [reasoningValue, setReasoningValue] = useState<ReasoningModeValue>("quick-auto");
 	const [knowledgeMode, setKnowledgeMode] = useState<KnowledgeModeValue>(() =>
 		getNonEmptyConfigItems(config.knowledge).length > 0 ? "custom" : "all",
 	);
 	const shouldReduceMotion = useReducedMotion();
+	const expandButtonRowRef = useRef<HTMLDivElement | null>(null);
+	const expandButtonX = useMotionValue(0);
+	const expandButtonPaddingRight = useTransform(expandButtonX, (latest): number =>
+		Math.abs(latest) > 0.5 ? AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP : 0,
+	);
+	const expandButtonVisualX = useTransform(expandButtonX, (latest): number =>
+		latest + (Math.abs(latest) > 0.5 ? AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP : 0),
+	);
 	const isExpanded = expanded;
 	const transition = shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeOut" as const };
 
+	useEffect(() => {
+		const handlePointerMove = (event: PointerEvent) => {
+			const row = expandButtonRowRef.current;
+
+			if (!row) {
+				return;
+			}
+
+			const rect = row.getBoundingClientRect();
+			const pointerDistanceFromBottom = rect.bottom - event.clientY;
+			const isNearBottom = pointerDistanceFromBottom >= -AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE
+				&& pointerDistanceFromBottom <= AGENT_COMPACT_CONFIG_EXPAND_BUTTON_REVEAL_DISTANCE;
+
+			if (!isNearBottom) {
+				expandButtonX.set(0);
+				return;
+			}
+
+			const restingCenterX = rect.right - AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE / 2;
+			const minCenterX = rect.left + AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE / 2;
+			const maxCenterX = rect.right - AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE / 2;
+			const targetCenterX = Math.min(Math.max(event.clientX, minCenterX), maxCenterX);
+
+			expandButtonX.set(targetCenterX - restingCenterX);
+		};
+		const handlePointerLeave = () => {
+			expandButtonX.set(0);
+		};
+
+		window.addEventListener("pointermove", handlePointerMove, true);
+		window.addEventListener("pointerleave", handlePointerLeave);
+
+		return () => {
+			window.removeEventListener("pointermove", handlePointerMove, true);
+			window.removeEventListener("pointerleave", handlePointerLeave);
+		};
+	}, [expandButtonX]);
+
 	return (
 		<div className="flex flex-col">
-			<div className="flex items-center gap-2">
-				<div aria-hidden className="h-px flex-1 bg-border" />
-				<Button
-					aria-label={isExpanded ? "Collapse configuration" : "Expand configuration"}
-					className="size-6 rounded px-0"
-					onClick={() => setExpanded((prev) => !prev)}
-					size="icon-compact"
-					type="button"
-					variant="outline"
+			<div className="relative flex h-6 items-center" ref={expandButtonRowRef}>
+				<div aria-hidden className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border" />
+				<motion.div
+					className="relative z-10 ml-auto bg-surface pl-2"
+					style={{ paddingRight: expandButtonPaddingRight, x: expandButtonVisualX }}
 				>
-					{isExpanded ? (
-						<ChevronDownIcon label="" size="small" />
-					) : (
-						<ChevronUpIcon label="" size="small" />
-					)}
-				</Button>
+					<Button
+						aria-label={isExpanded ? "Collapse configuration" : "Expand configuration"}
+						className="size-6 rounded border-border bg-surface-overlay px-0 text-icon-subtle hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"
+						onClick={() => setExpanded((prev) => !prev)}
+						size="icon-compact"
+						type="button"
+						variant="ghost"
+					>
+						{isExpanded ? (
+							<ChevronDownIcon label="" size="small" />
+						) : (
+							<ChevronUpIcon label="" size="small" />
+						)}
+					</Button>
+				</motion.div>
 			</div>
 			<AnimatePresence initial={false} mode="wait">
 				{isExpanded ? (
 					<motion.div
 						key="expanded"
+						className="mt-2"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
@@ -2211,6 +2340,7 @@ function AgentCompactConfigToolbarBelow({
 				) : (
 					<motion.div
 						key="collapsed"
+						className="mt-2"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
@@ -2303,7 +2433,7 @@ export const AgentConfigFields = memo(
 									/>
 								</>
 							)}
-							bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-4 pt-4"
+							bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-4"
 							className={cn("flex flex-col", isFilledConfig ? "min-h-[560px]" : "min-h-0 flex-1")}
 							contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[8rem]")}
 							instructions={config.instructions}
