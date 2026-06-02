@@ -475,7 +475,9 @@ export function CardDirectoryCapabilities({ label, items }: Readonly<CardDirecto
 
 						return (
 							// Labels truncate in the fixed-width card body, so surface the full
-							// string on hover. Screen readers already get it from the DOM text.
+							// string on hover. Anchor the tooltip to the side (not top/bottom) so it
+							// never sits in the path of the user's vertical cursor travel between rows.
+							// Screen readers already get the label from the DOM text.
 							<Tooltip key={capability.label}>
 								<TooltipTrigger render={<li className="flex items-center gap-2" />}>
 									<Icon
@@ -485,7 +487,7 @@ export function CardDirectoryCapabilities({ label, items }: Readonly<CardDirecto
 									/>
 									<span className="min-w-0 flex-1 truncate text-sm leading-5 text-text">{capability.label}</span>
 								</TooltipTrigger>
-								<TooltipContent>{capability.label}</TooltipContent>
+								<TooltipContent side="right">{capability.label}</TooltipContent>
 							</Tooltip>
 						);
 					})}
