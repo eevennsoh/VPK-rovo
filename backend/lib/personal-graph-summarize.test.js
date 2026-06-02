@@ -233,6 +233,43 @@ test("summary prompt uses editorial article contract without raw graph metadata"
 	assert.match(contextMarkdown, /supports: Selected -> Neighbor/u);
 });
 
+test("summary context resolves relationship neighbor titles by id", () => {
+	const selectedNode = {
+		bodyPreview: "Selected body.",
+		id: "node:selected",
+		kind: "source",
+		provider: "vault",
+		title: "Selected",
+	};
+	const selection = {
+		selectedNode,
+		neighbors: [
+			{
+				bodyPreview: "Beta body.",
+				id: "node:beta",
+				kind: "concept",
+				provider: "vault",
+				title: "Beta",
+			},
+			{
+				bodyPreview: "Alpha body.",
+				id: "node:alpha",
+				kind: "concept",
+				provider: "vault",
+				title: "Alpha",
+			},
+		],
+		edges: [
+			{ label: "supports", source: selectedNode.id, target: "node:alpha" },
+			{ label: "depends on", source: "node:beta", target: selectedNode.id },
+		],
+	};
+	const contextMarkdown = buildSummaryContextMarkdown(selection);
+
+	assert.match(contextMarkdown, /supports: Selected -> Alpha/u);
+	assert.match(contextMarkdown, /depends on: Selected -> Beta/u);
+});
+
 test("source fingerprint changes by length-independent source context", () => {
 	const baseNode = {
 		bodyPreview: "Selected body",
