@@ -322,20 +322,37 @@ export function RovoComposerSendControls({
 	onWebResultsChange,
 	...props
 }: Readonly<RovoComposerSendControlsProps>): ReactElement {
+	useEffect(() => {
+		if (hideReasoningSelector && open) {
+			onOpenChange?.(false);
+		}
+	}, [hideReasoningSelector, onOpenChange, open]);
+
 	return (
 		<div className={cn("flex h-8 min-w-0 shrink-0 items-center justify-end gap-1.5", className)} {...props}>
-			{hideReasoningSelector ? null : (
-				<RovoComposerReasoningSelector
-					companyKnowledgeEnabled={companyKnowledgeEnabled}
-					onCompanyKnowledgeChange={onCompanyKnowledgeChange}
-					onReasoningChange={onReasoningChange}
-					onOpenChange={onOpenChange}
-					open={open}
-					selectedReasoning={selectedReasoning}
-					webResultsEnabled={webResultsEnabled}
-					onWebResultsChange={onWebResultsChange}
-				/>
-			)}
+			<AnimatePresence initial={false} mode="popLayout">
+				{hideReasoningSelector ? null : (
+					<motion.div
+						key="reasoning-selector"
+						initial={{ opacity: 0, transform: "scale(0.8)" }}
+						animate={{ opacity: 1, transform: "scale(1)" }}
+						exit={{ opacity: 0, transform: "scale(0.8)" }}
+						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
+						style={{ willChange: "transform, opacity" }}
+					>
+						<RovoComposerReasoningSelector
+							companyKnowledgeEnabled={companyKnowledgeEnabled}
+							onCompanyKnowledgeChange={onCompanyKnowledgeChange}
+							onReasoningChange={onReasoningChange}
+							onOpenChange={onOpenChange}
+							open={open}
+							selectedReasoning={selectedReasoning}
+							webResultsEnabled={webResultsEnabled}
+							onWebResultsChange={onWebResultsChange}
+						/>
+					</motion.div>
+				)}
+			</AnimatePresence>
 			<RovoComposerActionButton
 				canSubmit={canSubmit}
 				composerStatus={composerStatus}

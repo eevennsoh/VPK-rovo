@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
+import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AppsIcon from "@atlaskit/icon/core/apps";
 import AutomationIcon from "@atlaskit/icon/core/automation";
@@ -58,6 +59,7 @@ interface RovoAppSidebarProps {
 }
 
 interface StudioSidebarNavItem {
+	actions?: React.ReactNode;
 	icon: React.ReactNode;
 	isExpanded?: boolean;
 	isSelected?: boolean;
@@ -122,9 +124,10 @@ interface StudioAgentCreationThread {
 	title: string;
 }
 
-function StudioSidebarNavItem({ icon, isExpanded, isSelected = false, label, onClick }: Readonly<StudioSidebarNavItem>) {
+function StudioSidebarNavItem({ actions, icon, isExpanded, isSelected = false, label, onClick }: Readonly<StudioSidebarNavItem>) {
 	return (
 		<SidebarNavItem
+			actions={actions}
 			label={label}
 			leading={icon}
 			leadingSize="medium"
@@ -132,6 +135,24 @@ function StudioSidebarNavItem({ icon, isExpanded, isSelected = false, label, onC
 			isSelected={isSelected}
 			onClick={onClick}
 		/>
+	);
+}
+
+function StudioSidebarAgentsCreateAction({ onClick }: Readonly<{ onClick: () => void }>) {
+	return (
+		<Button
+			aria-label="Create agent"
+			className="size-6 text-icon-subtle opacity-0 transition-opacity duration-normal ease-out group-hover/sidebar-nav-item:opacity-100 focus-visible:opacity-100 hover:text-icon"
+			onClick={(event) => {
+				event.stopPropagation();
+				onClick();
+			}}
+			size="icon"
+			type="button"
+			variant="ghost"
+		>
+			<AddIcon label="" size="small" />
+		</Button>
 	);
 }
 
@@ -331,11 +352,15 @@ function StudioSidebarNavigation({
 									: isAgentsItem
 										? onNewChat
 										: item.onClick;
+								const actions = shouldShowRecentAgents && onNewChat ? (
+									<StudioSidebarAgentsCreateAction onClick={onNewChat} />
+								) : item.actions;
 
 								return (
 									<React.Fragment key={item.label}>
 										<StudioSidebarNavItem
 											{...item}
+											actions={actions}
 											icon={leadingIcon}
 											isExpanded={shouldShowRecentAgents ? isAgentsExpanded : item.isExpanded}
 											isSelected={isItemSelected}

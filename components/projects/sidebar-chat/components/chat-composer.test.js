@@ -24,6 +24,18 @@ test("compact chat sources selector opens a reasoning-free customize popover", (
 	assert.doesNotMatch(source.slice(customizeMenuIndex, sendControlsIndex), /showSources=\{false\}/u);
 });
 
+test("compact chat animates sources and model selectors when edit-agent context toggles", () => {
+	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
+	const sharedSendControls = readProjectFile("components/projects/shared/components/rovo-composer-send-controls.tsx");
+
+	assert.match(sidebarComposer, /import \{ AnimatePresence, motion \} from "motion\/react";/u);
+	assert.match(sidebarComposer, /setIsCustomizeMenuOpen\(false\);[\s\S]*setIsAutoMenuOpen\(false\);/u);
+	assert.match(sidebarComposer, /<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="sources-selector"[\s\S]*initial=\{\{ opacity: 0, transform: "scale\(0\.8\)" \}\}[\s\S]*animate=\{\{ opacity: 1, transform: "scale\(1\)" \}\}[\s\S]*exit=\{\{ opacity: 0, transform: "scale\(0\.8\)" \}\}[\s\S]*<Popover open=\{isCustomizeMenuOpen\}/u);
+	assert.match(sharedSendControls, /if \(hideReasoningSelector && open\) \{[\s\S]*onOpenChange\?\.\(false\);[\s\S]*\}/u);
+	assert.match(sharedSendControls, /<AnimatePresence initial=\{false\} mode="popLayout">[\s\S]*key="reasoning-selector"[\s\S]*initial=\{\{ opacity: 0, transform: "scale\(0\.8\)" \}\}[\s\S]*animate=\{\{ opacity: 1, transform: "scale\(1\)" \}\}[\s\S]*exit=\{\{ opacity: 0, transform: "scale\(0\.8\)" \}\}[\s\S]*<RovoComposerReasoningSelector/u);
+	assert.match(sharedSendControls, /style=\{\{ willChange: "transform, opacity" \}\}/u);
+});
+
 test("Rovo app sources selector opens a reasoning-free customize popover", () => {
 	const source = readProjectFile("components/projects/rovo/components/rovo-app-composer.tsx");
 	const popoverIndex = source.indexOf("<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>");

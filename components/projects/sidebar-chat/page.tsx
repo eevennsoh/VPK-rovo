@@ -45,6 +45,7 @@ import { QuestionCardShortcutsFooter } from "@/components/projects/shared/compon
 import { ApprovalCard } from "@/components/blocks/approval-card/page";
 import { useDismissibleCards } from "@/components/projects/shared/hooks/use-dismissible-cards";
 import type { RovoSuggestion } from "@/lib/rovo-suggestions";
+import type { RovoAgentProfile } from "@/components/projects/rovo/data/agent-profiles";
 import ChatHeader from "./components/chat-header";
 import { ChatHistoryDrawer } from "./components/chat-history-drawer";
 import ChatGreeting from "./components/chat-greeting";
@@ -95,6 +96,7 @@ interface ChatPanelProps {
 	cards?: ChatPanelCardsProps;
 	greeting?: ChatPanelGreetingProps;
 	customAgentTabs?: ChatPanelCustomAgentTabs;
+	greetingSelectedAgent?: RovoAgentProfile | null;
 	hideComposerSourceAndModelControls?: boolean;
 	hideHeader?: boolean;
 	headerVariant?: "default" | "minimal";
@@ -163,6 +165,7 @@ export default function ChatPanel({
 	enableSmartWidgets = false,
 	cards,
 	greeting,
+	greetingSelectedAgent,
 	customAgentTabs,
 	hideComposerSourceAndModelControls = false,
 	hideHeader = false,
@@ -711,7 +714,7 @@ export default function ChatPanel({
 							illustrationSrc={resolvedGreeting?.illustrationSrc}
 							illustrationDarkSrc={resolvedGreeting?.illustrationDarkSrc}
 							isMaxMode={selectedReasoning === "max"}
-							selectedAgent={selectedAgent}
+							selectedAgent={greetingSelectedAgent ?? selectedAgent}
 							showHero={resolvedGreeting?.showHero}
 							suggestions={resolvedGreeting?.suggestions}
 							onSuggestionClick={handleGreetingSuggestionClick}

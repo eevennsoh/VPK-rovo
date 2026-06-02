@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ChatStatus } from "ai";
+import { AnimatePresence, motion } from "motion/react";
 import type { QueuedPromptItem } from "@/app/contexts";
 import CustomizeMenu from "@/components/blocks/shared-ui/customize-menu";
 import { DEFAULT_REASONING_OPTION_ID } from "@/components/blocks/shared-ui/data/customize-menu-data";
@@ -156,6 +157,15 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 		onReasoningChange?.(value);
 	};
 
+	useEffect(() => {
+		if (!hideSourceAndModelControls) {
+			return;
+		}
+
+		setIsCustomizeMenuOpen(false);
+		setIsAutoMenuOpen(false);
+	}, [hideSourceAndModelControls]);
+
 	return (
 		<div className="relative min-w-0 px-3">
 			<ChatContextBar key={chatContextBar?.signature} context={chatContextBar} onOpenChange={onContextBarOpenChange} />
@@ -228,24 +238,35 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 								<CursorIcon label="" />
 							</PromptInputButton>
 
-							{hideSourceAndModelControls ? null : (
-								<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
-									<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />
-									<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-2">
-										<PopoverTitle className="sr-only">Customize sources</PopoverTitle>
-										<CustomizeMenu
-											selectedReasoning={selectedReasoning}
-											onReasoningChange={handleReasoningChange}
-											showReasoning={false}
-											webResultsEnabled={webResultsEnabled}
-											onWebResultsChange={setWebResultsEnabled}
-											companyKnowledgeEnabled={companyKnowledgeEnabled}
-											onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
-											onClose={() => setIsCustomizeMenuOpen(false)}
-										/>
-									</PopoverContent>
-								</Popover>
-							)}
+							<AnimatePresence initial={false} mode="popLayout">
+								{hideSourceAndModelControls ? null : (
+									<motion.div
+										key="sources-selector"
+										initial={{ opacity: 0, transform: "scale(0.8)" }}
+										animate={{ opacity: 1, transform: "scale(1)" }}
+										exit={{ opacity: 0, transform: "scale(0.8)" }}
+										transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
+										style={{ willChange: "transform, opacity" }}
+									>
+										<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
+											<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />
+											<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-2">
+												<PopoverTitle className="sr-only">Customize sources</PopoverTitle>
+												<CustomizeMenu
+													selectedReasoning={selectedReasoning}
+													onReasoningChange={handleReasoningChange}
+													showReasoning={false}
+													webResultsEnabled={webResultsEnabled}
+													onWebResultsChange={setWebResultsEnabled}
+													companyKnowledgeEnabled={companyKnowledgeEnabled}
+													onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
+													onClose={() => setIsCustomizeMenuOpen(false)}
+												/>
+											</PopoverContent>
+										</Popover>
+									</motion.div>
+								)}
+							</AnimatePresence>
 						</PromptInputTools>
 
 						<ChatComposerSendControls

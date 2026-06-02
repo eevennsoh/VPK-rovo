@@ -70,6 +70,34 @@ async function loadChatGreetingHarness() {
 			`,
 		],
 		[
+			"@/components/ui-custom/rovo-illustration",
+			`
+				import React from "react";
+
+				export function ControlledRovoIllustration(props) {
+					return React.createElement("div", {
+						"data-testid": "controlled-rovo-illustration",
+						"data-illus-id": props.illusId,
+						"data-size": String(props.size),
+					});
+				}
+			`,
+		],
+		[
+			"@/components/ui-custom/agent-avatar-visual",
+			`
+				import React from "react";
+
+				export function AgentAvatarVisual(props) {
+					return React.createElement("img", {
+						alt: "",
+						"data-testid": "agent-avatar-visual",
+						src: props.avatarSrc ?? "",
+					});
+				}
+			`,
+		],
+		[
 			"@atlaskit/icon/core/ai-chat",
 			`
 				import React from "react";
@@ -99,6 +127,15 @@ async function loadChatGreetingHarness() {
 					return renderToStaticMarkup(React.createElement(ChatGreeting, {
 						heading: "What should we change?",
 						illustrationSrc: "/illustration-ai/write/light.svg",
+						suggestions: [],
+					}));
+				}
+
+				export function renderAgentIllustrationGreeting() {
+					return renderToStaticMarkup(React.createElement(ChatGreeting, {
+						heading: "Improve your agent?",
+						illustrationSrc: "/illustration-ai/ai/light.svg",
+						illustrationDarkSrc: "/illustration-ai/ai/dark.svg",
 						suggestions: [],
 					}));
 				}
@@ -163,6 +200,18 @@ test("ChatGreeting derives the dark illustration from a custom light SVG", async
 	assert.match(markup, /src="\/illustration-ai\/write\/light\.svg"/u);
 	assert.match(markup, /src="\/illustration-ai\/write\/dark\.svg"/u);
 	assert.doesNotMatch(markup, /src="\/illustration-ai\/chat\/dark\.svg"/u);
+});
+
+test("ChatGreeting uses the Studio controlled agent illustration for the AI greeting asset", async () => {
+	const harness = await loadChatGreetingHarness();
+	const markup = harness.renderAgentIllustrationGreeting();
+
+	assert.match(CHAT_GREETING_SOURCE, /import \{ ControlledRovoIllustration \} from "@\/components\/ui-custom\/rovo-illustration";/u);
+	assert.match(CHAT_GREETING_SOURCE, /resolvedIllustrationSrc === AGENT_ILLUSTRATION_SRC/u);
+	assert.match(markup, /data-testid="controlled-rovo-illustration"/u);
+	assert.match(markup, /data-illus-id="ai"/u);
+	assert.match(markup, /data-size="74"/u);
+	assert.doesNotMatch(markup, /src="\/illustration-ai\/ai\/light\.svg"/u);
 });
 
 test("ChatGreeting switches theme illustrations for local data-color-mode dark containers", () => {

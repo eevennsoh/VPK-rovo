@@ -243,7 +243,11 @@ test("floating Rovo button can be dragged and snapped to a 4x4 viewport grid", (
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
-		/const target = getNearestFloatingRovoButtonSnapTarget\(rect, window\.innerWidth, window\.innerHeight\);[\s\S]*setDragConstraints\(getFloatingRovoButtonDragConstraints\(dragOrigin, rect, window\.innerWidth, window\.innerHeight\)\);[\s\S]*animate\(buttonX, target\.left - dragOrigin\.left, dragSnapTransition\);[\s\S]*animate\(buttonY, target\.top - dragOrigin\.top, dragSnapTransition\);/u,
+		/const handleDocumentPointerEnd = \(event: PointerEvent\) => \{[\s\S]*updateDragPosition\(event\.clientX, event\.clientY, event\.pointerId\);[\s\S]*endDrag\(event\.pointerId\);[\s\S]*const handleDocumentMouseEnd = \(event: MouseEvent\) => \{[\s\S]*updateDragPosition\(event\.clientX, event\.clientY\);[\s\S]*endDrag\(\);/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/const target = getNearestFloatingRovoButtonSnapTarget\(rect, window\.innerWidth, window\.innerHeight\);[\s\S]*setDragConstraints\(getFloatingRovoButtonDragConstraints\(dragOrigin, rect, window\.innerWidth, window\.innerHeight\)\);[\s\S]*buttonX\.jump\(buttonX\.get\(\)\);[\s\S]*buttonY\.jump\(buttonY\.get\(\)\);[\s\S]*animate\(buttonX, target\.left - dragOrigin\.left, dragSnapTransition\);[\s\S]*animate\(buttonY, target\.top - dragOrigin\.top, dragSnapTransition\);/u,
 	);
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,

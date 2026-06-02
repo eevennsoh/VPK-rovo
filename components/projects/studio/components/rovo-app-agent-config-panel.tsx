@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { type ReactNode, useCallback, useEffect, useMemo } from "react";
+import { type ReactNode, useCallback, useMemo } from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 
 import {
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui-custom/agent";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
+import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-chat/lib/chat-context-bar";
 import { getStudioSessionAgentDisplayName, useRovoChat } from "@/app/contexts";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -38,6 +39,7 @@ interface RovoAppAgentConfigPanelProps {
 	onTest: (profileId: string) => void;
 	onViewChange: (view: AgentConfigView) => void;
 	testPanel: ReactNode;
+	chatContextBar?: ChatContextBarDescriptor | null;
 	onUpdateDraft: (
 		profileId: string,
 		patch: Partial<AgentResult>,
@@ -62,6 +64,7 @@ export function RovoAppAgentConfigPanel({
 	onTest,
 	onViewChange,
 	testPanel,
+	chatContextBar,
 	onUpdateDraft,
 	className,
 }: Readonly<RovoAppAgentConfigPanelProps>) {
@@ -74,7 +77,7 @@ export function RovoAppAgentConfigPanel({
 	// it with product="home" — product only gates visibility, it has no visual
 	// effect — and pair it with the RovoFloatingChat surface the button opens,
 	// mirroring the components/projects/rovo-button demo.
-	const { chatSurface } = useRovoChat();
+	const { chatSurface, openChat, resetAgentToRovo } = useRovoChat();
 
 	const updateDraft = useCallback(
 		(patch: Partial<AgentResult>) => {
@@ -154,22 +157,16 @@ export function RovoAppAgentConfigPanel({
 		onPublish(profileId);
 	}, [hasUpdateChanges, onCommitPublishReady, onPublish, profileId]);
 
-	const hasAgentInstructions = Boolean(draft.instructions?.trim());
-	useEffect(() => {
-		if (activeView === "test" && !hasAgentInstructions) {
-			onViewChange("configure");
-		}
-	}, [activeView, hasAgentInstructions, onViewChange]);
-
 	const handleTest = useCallback(() => {
-		if (!hasAgentInstructions) {
-			return;
-		}
 		if (hasUpdateChanges) {
 			onCommitPublishReady(profileId);
 		}
 		onTest(profileId);
-	}, [hasAgentInstructions, hasUpdateChanges, onCommitPublishReady, onTest, profileId]);
+	}, [hasUpdateChanges, onCommitPublishReady, onTest, profileId]);
+	const handleOpenFloatingRovoChat = useCallback(() => {
+		resetAgentToRovo();
+		openChat("floating");
+	}, [openChat, resetAgentToRovo]);
 
 	const handleViewChange = useCallback(
 		(value: string | null) => {
@@ -215,7 +212,6 @@ export function RovoAppAgentConfigPanel({
 								<ToggleGroup
 									aria-label="Agent config views"
 									variant="outline"
-									size="sm"
 									value={[activeView]}
 									onValueChange={(value) =>
 										handleViewChange((value[0] as AgentConfigView | undefined) ?? null)
@@ -230,7 +226,6 @@ export function RovoAppAgentConfigPanel({
 									</ToggleGroupItem>
 									<ToggleGroupItem
 										value="test"
-										disabled={!hasAgentInstructions}
 										data-testid="agent-config-test"
 										data-screen-assistant-target="studio-agent-config-test"
 									>
@@ -284,10 +279,16 @@ export function RovoAppAgentConfigPanel({
 			</Agent>
 		</motion.div>
 			{chatSurface === null ? (
-				<FloatingRovoButton ariaLabel="Open Rovo chat" product="home" />
+				<FloatingRovoButton ariaLabel="Open Rovo chat" product="home" onButtonClick={handleOpenFloatingRovoChat} />
 			) : null}
 			<AnimatePresence>
-				{chatSurface === "floating" ? <RovoFloatingChat key="floating-chat" /> : null}
+				{chatSurface === "floating" ? (
+					<RovoFloatingChat
+						key="floating-chat"
+						chatContextBar={chatContextBar}
+						hideComposerSourceAndModelControls={Boolean(chatContextBar)}
+					/>
+				) : null}
 			</AnimatePresence>
 		</>
 	);

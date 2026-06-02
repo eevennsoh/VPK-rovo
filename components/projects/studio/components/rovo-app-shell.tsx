@@ -1797,10 +1797,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 	const handleTestAgent = useCallback(
 		(profileId: string) => {
-			const entry = studioAgentRegistry.getSessionAgentEntry?.(profileId);
-			if (!entry?.draftResult.instructions?.trim()) {
-				return;
-			}
 			studioAgentRegistry.commitSessionAgentPublishReady?.(profileId);
 			setActiveAgentConfigView("test");
 		},
@@ -3795,6 +3791,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			onTest={handleTestAgent}
 			onViewChange={handleAgentConfigViewChange}
 			testPanel={agentConfigTestPanel}
+			chatContextBar={agentEditContextBar}
 			onUpdateDraft={handleUpdateAgentDraft}
 		/>
 	) : null;
