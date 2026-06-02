@@ -2553,7 +2553,11 @@ export const AgentConfigFields = memo(
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 							showSectionLabel={false}
 						/>
-						<div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-surface" ref={compactFooterOverlayRef}>
+						<div
+							className="pointer-events-none sticky inset-x-0 bottom-0 z-20 bg-surface"
+							ref={compactFooterOverlayRef}
+							style={{ marginTop: -compactFooterOverlayHeight }}
+						>
 							<div className="pointer-events-auto">
 								<AgentCompactConfigToolbarBelow
 									config={config}

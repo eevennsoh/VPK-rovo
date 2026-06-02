@@ -238,7 +238,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 		compactLayoutSource.indexOf("bottomSlotClassName="),
 	);
 	const compactFooterOverlaySource = compactLayoutSource.slice(
-		compactLayoutSource.indexOf('className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-surface"'),
+		compactLayoutSource.indexOf('className="pointer-events-none sticky inset-x-0 bottom-0 z-20 bg-surface"'),
 	);
 	const compactOperationsStart = AGENT_SOURCE.indexOf("function AgentCompactOperationsBento");
 	const sectionLabelStart = AGENT_SOURCE.indexOf("function AgentSectionLabel", compactOperationsStart);
@@ -263,7 +263,8 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.doesNotMatch(compactBottomSlotSource, /AgentCompactConfigToolbarBelow/u);
 	assert.match(compactLayoutSource, /bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-4"/u);
 	assert.match(compactLayoutSource, /className=\{cn\("relative flex flex-col", isFilledConfig \? "min-h-\[560px\]" : "min-h-0 flex-1"\)\}/u);
-	assert.match(compactFooterOverlaySource, /className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-surface" ref=\{compactFooterOverlayRef\}[\s\S]*className="pointer-events-auto"[\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}/u);
+	assert.match(compactFooterOverlaySource, /className="pointer-events-none sticky inset-x-0 bottom-0 z-20 bg-surface"[\s\S]*ref=\{compactFooterOverlayRef\}[\s\S]*style=\{\{ marginTop: -compactFooterOverlayHeight \}\}[\s\S]*className="pointer-events-auto"[\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}/u);
+	assert.doesNotMatch(compactFooterOverlaySource, /pointer-events-none absolute inset-x-0 bottom-0/u);
 	assert.match(compactFooterOverlaySource, /onAppendListItem=\{handleAppendListItem\}[\s\S]*onOpenDirectory=\{handleOpenDirectory\}[\s\S]*onRemoveListItem=\{handleRemoveListItem\}[\s\S]*onTextChange=\{handleTextChange\}/u);
 	assert.match(compactLayoutSource, /onInstructionsChange=\{\(value\) => handleTextChange\("instructions", value\)\}/u);
 	assert.doesNotMatch(compactLayoutSource, /toolbarBelowSlot=\{\(\s*<AgentCompactConfigToolbarBelow/u);
