@@ -555,7 +555,7 @@ export function EditorToolbar({
 									value="rendered"
 									className="px-2"
 								>
-									<TextNormalIcon label="Text normal" size="small" />
+									<TextNormalIcon size="small" />
 								</TabsTrigger>
 								<TabsTrigger
 									aria-label="Markdown source"

@@ -89,7 +89,7 @@ test("Editor toolbar places Add content after Link and mode tabs at the end", ()
 	assert.match(componentSource, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>/u);
 	assert.doesNotMatch(componentSource, /<AddIcon label="" size="small" \/>\s*<\/Button>\s*<ToolbarSeparator \/>/u);
 	assert.match(componentSource, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<Tabs[\s\S]*value=\{isMarkdownMode \? "markdown" : "rendered"\}/u);
-	assert.match(componentSource, /<TabsTrigger[\s\S]*aria-label="Rendered text"[\s\S]*value="rendered"[\s\S]*<TextNormalIcon label="Text normal" size="small" \/>[\s\S]*<TabsTrigger[\s\S]*aria-label="Markdown source"[\s\S]*value="markdown"[\s\S]*<MarkdownIcon label="" size="small" \/>/u);
+	assert.match(componentSource, /<TabsTrigger[\s\S]*aria-label="Rendered text"[\s\S]*value="rendered"[\s\S]*<TextNormalIcon size="small" \/>[\s\S]*<TabsTrigger[\s\S]*aria-label="Markdown source"[\s\S]*value="markdown"[\s\S]*<MarkdownIcon label="" size="small" \/>/u);
 	assert.doesNotMatch(componentSource, />\s*Rendered\s*</u);
 	assert.doesNotMatch(componentSource, />\s*Markdown\s*</u);
 });

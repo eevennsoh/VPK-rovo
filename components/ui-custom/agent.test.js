@@ -460,7 +460,7 @@ test("Shared toolbar groups related split controls and keeps unrelated toggles i
 		EDITOR_TOOLBAR_SOURCE,
 		/variant=\{editor\.isActive\("bold"\) \? "secondary" : "ghost"\}/u,
 	);
-	assert.match(EDITOR_TOOLBAR_SOURCE, /<TextNormalIcon label="Text normal" size="small" \/>/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<TextNormalIcon size="small" \/>/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /<MarkdownIcon label="" size="small" \/>/u);
 });
 
