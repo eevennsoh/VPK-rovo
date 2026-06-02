@@ -127,7 +127,7 @@ export default function ChatTimeline({
 	return (
 		<div
 			className={cn(
-				"relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-background",
+				"relative flex h-full flex-col overflow-hidden rounded-xl bg-background",
 				className,
 			)}
 		>

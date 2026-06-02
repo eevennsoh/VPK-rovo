@@ -6683,6 +6683,9 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
   "chat-timeline": dynamic(() => import("./demos/blocks/chat-timeline-demo"), {
     ssr: false,
   }),
+  subagents: dynamic(() => import("./demos/blocks/subagents-demo"), {
+    ssr: false,
+  }),
   "app-sidebar": dynamic(() => import("./demos/blocks/app-sidebar-demo"), {
     ssr: false,
   }),
