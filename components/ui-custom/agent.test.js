@@ -52,10 +52,6 @@ const EDITOR_TOOLBAR_SOURCE = readFileSync(
 	join(__dirname, "..", "blocks", "editor-toolbar", "components", "editor-toolbar.tsx"),
 	"utf8",
 );
-const MODEL_SELECTOR_SOURCE = readFileSync(
-	join(__dirname, "model-selector.tsx"),
-	"utf8",
-);
 const STUDIO_AGENT_RESULT_SOURCE = readFileSync(
 	join(__dirname, "..", "..", "backend", "lib", "studio-agent-result.js"),
 	"utf8",
@@ -70,25 +66,58 @@ test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /function AgentInstructionsComposer/u);
 	assert.match(AGENT_SOURCE, /<RichTextEditor[\s\S]*aria-label="Agent instructions"/u);
 	assert.match(AGENT_SOURCE, /editorClassName=\{cn\("agent-instructions-tiptap-editor text-text", editorClassName\)\}/u);
-	assert.match(AGENT_SOURCE, /placeholder="Describe the agent’s role and what it should do\. @mention, or \/ for skills"/u);
+	assert.match(AGENT_SOURCE, /placeholder="Describe the agent’s role and what it should do\. @mention, \/ for skills, or start with a template"/u);
+	assert.match(AGENT_SOURCE, /placeholderSlot=\{\([\s\S]*start with a template[\s\S]*\)\}/u);
+	assert.match(AGENT_SOURCE, /onClick=\{\(\) => setTemplatesOpen\(true\)\}/u);
+	assert.match(AGENT_SOURCE, /<AgentTemplatesDialog[\s\S]*open=\{templatesOpen\}[\s\S]*onOpenChange=\{setTemplatesOpen\}/u);
 	assert.match(AGENT_SOURCE, /mentionSources=\{mentionSources\}/u);
 	assert.match(AGENT_SOURCE, /toolbarBelowSlot=\{toolbarBelowSlot\}/u);
-	assert.match(AGENT_SOURCE, /toolbarEndSlot=\{<AgentInstructionsModelSelector \/>\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /toolbarEndSlot=\{<AgentInstructionsModelSelector \/>\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /function AgentInstructionsModelSelector/u);
 	assert.match(AGENT_SOURCE, /onMarkdownChange=\{onInstructionsChange\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /AGENT_EDITOR_CONTROLS/u);
 });
 
-test("Agent instructions model selector labels the mode and keeps active rows neutral", () => {
-	assert.match(AGENT_SOURCE, /function AgentInstructionsModelSelector/u);
-	assert.match(AGENT_SOURCE, /useState<ReasoningModeValue>\("deep-auto"\)/u);
-	assert.match(AGENT_SOURCE, /const triggerLabel = current[\s\S]*current\.section === "Think deeper" && current\.value !== "deep-auto" \? current\.label : current\.section/u);
-	assert.match(AGENT_SOURCE, /render=\{<Button className="shrink-0 gap-1\.5 text-text-subtle" variant="ghost" \/>\}/u);
-	assert.match(AGENT_SOURCE, /<Icon render=\{<AiModelIcon label="" size="small" \/>\} aria-hidden \/>[\s\S]*\{triggerLabel\}/u);
-	assert.doesNotMatch(AGENT_SOURCE, /diagram-symbol-mind-map/u);
-	assert.doesNotMatch(AGENT_SOURCE, /`\$\{current\.section\}: \$\{current\.label\}`/u);
-	assert.match(MODEL_SELECTOR_SOURCE, /data-selected:bg-bg-neutral-subtle-hovered!/u);
-	assert.match(MODEL_SELECTOR_SOURCE, /data-\[checked=true\]:bg-bg-selected/u);
-	assert.doesNotMatch(MODEL_SELECTOR_SOURCE, /data-selected:bg-bg-selected!/u);
+test("Reasoning selector lives in the compact toolbar and shares state across collapsed and expanded views", () => {
+	assert.match(AGENT_SOURCE, /import \{ Lozenge, LozengeDropdownTrigger \} from "@\/components\/ui\/lozenge";/u);
+	assert.match(AGENT_SOURCE, /function AgentReasoningSelector/u);
+	assert.match(AGENT_SOURCE, /function AgentReasoningRow/u);
+	assert.match(AGENT_SOURCE, /function AgentReasoningOverflowMenu/u);
+	assert.match(AGENT_SOURCE, /const \[reasoningValue, setReasoningValue\] = useState<ReasoningModeValue>\("deep-auto"\);/u);
+	assert.match(AGENT_SOURCE, /\{ agentFieldName: "reasoning", label: "Reasoning", kind: "reasoning" \}/u);
+	assert.match(AGENT_SOURCE, /case "reasoning":[\s\S]*count = 0;/u);
+	assert.match(AGENT_SOURCE, /render="nav-button"[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{onReasoningValueChange\}/u);
+	assert.match(AGENT_SOURCE, /<AgentReasoningRow[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{setReasoningValue\}/u);
+	assert.match(AGENT_SOURCE, /<AgentReasoningOverflowMenu[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{onReasoningValueChange\}/u);
+	assert.match(AGENT_SOURCE, /render=\{<LozengeDropdownTrigger aria-label="Reasoning mode" \/>\}/u);
+	assert.match(AGENT_SOURCE, /<Tag>\{current\?\.label \?\? "Recommended"\}<\/Tag>/u);
+	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Think deeper option"/u);
+	assert.doesNotMatch(AGENT_SOURCE, /from "@\/components\/ui-custom\/model-selector"/u);
+	assert.match(AGENT_SOURCE, /<AgentSectionLabel>Reasoning<\/AgentSectionLabel>/u);
+});
+
+test("Knowledge selector mirrors reasoning with mode dropdown and custom tag list", () => {
+	assert.match(AGENT_SOURCE, /const KNOWLEDGE_MODE_OPTIONS = \[/u);
+	assert.match(AGENT_SOURCE, /\{ value: "all", label: "All organizational knowledge" \}/u);
+	assert.match(AGENT_SOURCE, /\{ value: "custom", label: "Custom knowledge" \}/u);
+	assert.match(AGENT_SOURCE, /\{ value: "none", label: "No organizational knowledge" \}/u);
+	assert.match(AGENT_SOURCE, /function AgentKnowledgeSelector/u);
+	assert.match(AGENT_SOURCE, /function AgentKnowledgeRow/u);
+	assert.match(AGENT_SOURCE, /function AgentKnowledgeOverflowMenu/u);
+	assert.match(AGENT_SOURCE, /\{ agentFieldName: "knowledge", label: "Knowledge", kind: "knowledge" \}/u);
+	assert.match(AGENT_SOURCE, /case "knowledge":[\s\S]*count = 0;/u);
+	assert.match(AGENT_SOURCE, /const \[knowledgeMode, setKnowledgeMode\] = useState<KnowledgeModeValue>/u);
+	assert.match(AGENT_SOURCE, /render=\{<LozengeDropdownTrigger aria-label="Knowledge mode" \/>\}/u);
+	assert.match(AGENT_SOURCE, /<AgentKnowledgeRow[\s\S]*value=\{knowledgeMode\}/u);
+	assert.match(AGENT_SOURCE, /<AgentKnowledgeOverflowMenu[\s\S]*value=\{knowledgeMode\}/u);
+	assert.match(AGENT_SOURCE, /const isCustom = value === "custom";/u);
+	assert.match(AGENT_SOURCE, /<AgentReferenceChip label="Memory" \/>/u);
+});
+
+test("Filled config summary sorts empty rows to the bottom while preserving canonical order", () => {
+	assert.match(AGENT_SOURCE, /const rows: ReadonlyArray<\{ key: string; isEmpty: boolean; node: ReactNode \}>/u);
+	assert.match(AGENT_SOURCE, /const orderedRows = rows[\s\S]*\.sort\(\(a, b\) => \{[\s\S]*if \(a\.isEmpty !== b\.isEmpty\) return a\.isEmpty \? 1 : -1;[\s\S]*return a\.index - b\.index;/u);
+	assert.match(AGENT_SOURCE, /isEmpty: hasKnowledgeSelector \? false : knowledgeItems\.length === 0/u);
 });
 
 test("Agent config updates instructions as markdown strings", () => {
@@ -178,30 +207,80 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /layout === "compact"/u);
 	assert.match(compactLayoutSource, /<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">/u);
 	assert.doesNotMatch(compactLayoutSource, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
-	assert.match(compactLayoutSource, /bottomSlot=\{[\s\S]*isFilledConfig \? undefined : \([\s\S]*<AnimatePresence>[\s\S]*templatesDismissed \? null : \([\s\S]*<AgentCompactOperationsBento[\s\S]*onDismiss=\{\(\) => setTemplatesDismissed\(true\)\}/u);
-	assert.match(compactLayoutSource, /toolbarBelowSlot=\{\([\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}/u);
+	assert.match(compactLayoutSource, /bottomSlot=\{\([\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}[\s\S]*isFilledConfig \? null : \([\s\S]*<AnimatePresence>[\s\S]*templatesDismissed \? null : \([\s\S]*<AgentCompactOperationsBento[\s\S]*onDismiss=\{\(\) => setTemplatesDismissed\(true\)\}/u);
+	assert.match(compactLayoutSource, /bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-4 pt-4"/u);
+	assert.doesNotMatch(compactLayoutSource, /toolbarBelowSlot=\{\(\s*<AgentCompactConfigToolbarBelow/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow/u);
 	assert.doesNotMatch(AGENT_SOURCE, /showAddButtons=\{false\}/u);
-	// Compact toolbar surfaces empty fields as single-line nav buttons, so the
-	// filled summary must drop empty rows (no double-representation) while keeping
-	// the hover "Add" affordance on filled rows.
-	assert.match(AGENT_SOURCE, /<AgentFilledConfigSummary\s+config=\{config\}\s+hideEmptyRows/u);
+	// The expanded compact toolbar now shows every supported field row, with a
+	// persistent "+ Add" affordance for empty rows. No call site of
+	// AgentFilledConfigSummary passes hideEmptyRows anymore.
+	assert.doesNotMatch(AGENT_SOURCE, /<AgentFilledConfigSummary[\s\S]{0,400}hideEmptyRows/u);
+	// The row-level skip guard for empty rows still drops rows that lack an
+	// addLabel, but with addLabel set (the default) every row renders.
 	assert.match(AGENT_SOURCE, /if \(isEmpty && \(hideWhenEmpty \|\| !addLabel\)\) \{/u);
+	// Empty-row "+ Add" link is always visible; for filled rows the same
+	// AgentAddValueButton fades in on hover via the opacity-0 group class.
+	assert.match(AGENT_SOURCE, /<AgentAddValueButton[\s\S]*className=\{isEmpty\s*\?\s*undefined\s*:\s*"opacity-0 transition-opacity group-hover\/agent-row:opacity-100/u);
+	// Every list-field row wires its persistent +Add link to onAppendListItem.
+	assert.match(AGENT_SOURCE, /label="Triggers"\s+onAdd=\{\(\) => onAppendListItem\?\.\("triggers"\)\}/u);
+	assert.match(AGENT_SOURCE, /label="Skills"\s+onAdd=\{\(\) => onAppendListItem\?\.\("skills"\)\}/u);
+	assert.match(AGENT_SOURCE, /label="Tools"\s+onAdd=\{\(\) => onAppendListItem\?\.\("tools"\)\}/u);
+	assert.match(AGENT_SOURCE, /label="Subagents"\s+onAdd=\{\(\) => onAppendListItem\?\.\("subagents"\)\}/u);
+	assert.match(AGENT_SOURCE, /label="Knowledge"\s+onAdd=\{\(\) => onAppendListItem\?\.\("knowledge"\)\}/u);
+	assert.match(AGENT_SOURCE, /label="Conversation starters"\s+onAdd=\{\(\) => onAppendListItem\?\.\("conversationStarters"\)\}/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactEmptyConfigNav/u);
 	assert.match(AGENT_SOURCE, /function getAgentCompactEmptyConfigNavItems/u);
-	assert.match(AGENT_SOURCE, /const visibleItems = getAgentCompactEmptyConfigNavItems\(config\);/u);
-	assert.match(AGENT_SOURCE, /case "tools":[\s\S]*return getNonEmptyConfigItems\(config\.tools\)\.length === 0/u);
-	assert.match(AGENT_SOURCE, /className="flex min-h-8 min-w-0 items-center gap-1"/u);
-	assert.match(AGENT_SOURCE, /hasVisibleAddOptions \? "pt-2" : "pt-4"/u);
-	assert.match(AGENT_SOURCE, /import \{ CheckIcon, MoreHorizontalIcon, PlusCircleIcon, PlusIcon \} from "@\/components\/ui\/vpk-icons";/u);
-	assert.match(AGENT_SOURCE, /aria-hidden="true"[\s\S]*data-slot="agent-compact-config-marker"[\s\S]*className="ml-1 inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle"[\s\S]*<PlusCircleIcon size="small" \/>/u);
+	assert.match(AGENT_SOURCE, /const items = getAgentCompactEmptyConfigNavItems\(config\);/u);
+	// Toolbar now always renders every supported field; counts come from the
+	// existing helpers and a neutral Badge appears when count > 0.
+	assert.match(AGENT_SOURCE, /case "tools":[\s\S]*count = getNonEmptyConfigItems\(config\.tools\)\.length/u);
+	assert.match(AGENT_SOURCE, /case "conversationStarters":[\s\S]*count = getNonEmptyConfigItems\(config\.conversationStarters\)\.length/u);
+	assert.match(AGENT_SOURCE, /agentFieldName: "conversationStarters",\s*label: "Conversation starters",\s*listFieldName: "conversationStarters"/u);
+	assert.match(AGENT_SOURCE, /item\.count > 0 \? <Badge>\{item\.count\}<\/Badge> : null/u);
+	assert.match(AGENT_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/u);
+	assert.match(AGENT_SOURCE, /className="flex min-h-8 min-w-0 items-center"/u);
+	// Nav now rolls overflow into a "..." DropdownMenu instead of wrapping onto
+	// multiple lines (mirrors AgentCompactHeaderNav).
+	assert.doesNotMatch(AGENT_SOURCE, /flex min-w-0 flex-wrap items-center gap-1/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_GAP = 4;/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH = 24;/u);
+	assert.match(AGENT_SOURCE, /computeContextBarOverflow\([\s\S]*AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH,[\s\S]*AGENT_COMPACT_CONFIG_NAV_GAP/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactConfigNavButton\(/u);
+	assert.match(AGENT_SOURCE, /<DropdownMenuTrigger\s+aria-label="More configuration options"[\s\S]*<MoreHorizontalIcon size="small" \/>/u);
+	assert.match(AGENT_SOURCE, /<DropdownMenuItem\s+elemAfter=\{item\.count > 0 \? <Badge>\{item\.count\}<\/Badge> : undefined\}/u);
+	assert.match(AGENT_SOURCE, /className="relative flex min-w-0 flex-1 items-center overflow-hidden"[\s\S]*style=\{\{ gap: AGENT_COMPACT_CONFIG_NAV_GAP \}\}/u);
+	assert.match(AGENT_SOURCE, /<div className="invisible flex items-center" ref=\{measureRef\}/u);
+	// Collapsible toolbar: outer wrapper now stacks a "rule row" (horizontal
+	// line + chevron at the far right) above an AnimatePresence crossfade that
+	// swaps between the collapsed nav and the expanded filled summary.
+	assert.doesNotMatch(AGENT_SOURCE, /hasVisibleAddOptions/u);
+	assert.doesNotMatch(AGENT_SOURCE, /border-t border-border pt-2/u);
+	assert.doesNotMatch(AGENT_SOURCE, /mx-1 h-4 w-px shrink-0 bg-border/u);
+	assert.match(AGENT_SOURCE, /import \{ AnimatePresence, motion, useReducedMotion, type MotionProps \} from "motion\/react";/u);
+	assert.match(AGENT_SOURCE, /import ChevronDownIcon from "@atlaskit\/icon\/core\/chevron-down";/u);
+	assert.match(AGENT_SOURCE, /import ChevronUpIcon from "@atlaskit\/icon\/core\/chevron-up";/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow\([\s\S]*const \[expanded, setExpanded\] = useState\(false\);[\s\S]*const shouldReduceMotion = useReducedMotion\(\);[\s\S]*const isExpanded = expanded && isFilledConfig;/u);
+	assert.match(AGENT_SOURCE, /<AnimatePresence initial=\{false\} mode="wait">/u);
+	assert.match(AGENT_SOURCE, /<motion\.div\s+key="expanded"/u);
+	assert.match(AGENT_SOURCE, /<motion\.div\s+key="collapsed"/u);
+	// Horizontal rule line spans the row; the chevron sits at the far right of
+	// the same row and stays mounted across both states.
+	assert.match(AGENT_SOURCE, /<div aria-hidden className="h-px flex-1 bg-border" \/>/u);
+	assert.match(AGENT_SOURCE, /aria-label=\{isExpanded \? "Collapse configuration" : "Expand configuration"\}/u);
+	assert.match(AGENT_SOURCE, /onClick=\{\(\) => setExpanded\(\(prev\) => !prev\)\}/u);
+	assert.match(AGENT_SOURCE, /isExpanded \? \(\s*<ChevronDownIcon label="" size="small" \/>\s*\) : \(\s*<ChevronUpIcon label="" size="small" \/>\s*\)/u);
+	// Reduced motion drops the animation duration.
+	assert.match(AGENT_SOURCE, /shouldReduceMotion \? \{ duration: 0 \} : \{ duration: 0\.2, ease: "easeOut" as const \}/u);
+	assert.match(AGENT_SOURCE, /import \{ CheckIcon, MoreHorizontalIcon, PlusIcon \} from "@\/components\/ui\/vpk-icons";/u);
+	assert.doesNotMatch(AGENT_SOURCE, /PlusCircleIcon/u);
+	assert.doesNotMatch(AGENT_SOURCE, /agent-compact-config-marker/u);
 	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Add agent configuration"/u);
 	assert.match(AGENT_SOURCE, /export function AgentCompactHeaderNav/u);
 	assert.match(AGENT_SOURCE, /AGENT_COMPACT_HEADER_NAV_ITEMS = \[[\s\S]*label: "Details"[\s\S]*label: "Access"/u);
 	assert.match(AGENT_SOURCE, /<DashboardIcon label="" size="small" color="currentColor" \/>/u);
 	assert.match(AGENT_SOURCE, /<VideoPlayIcon label="" size="small" color="currentColor" \/>/u);
 	assert.match(AGENT_SOURCE, /import \{[\s\S]*DropdownMenu,[\s\S]*DropdownMenuContent,[\s\S]*DropdownMenuGroup,[\s\S]*DropdownMenuItem,[\s\S]*DropdownMenuTrigger,[\s\S]*\} from "@\/components\/ui\/dropdown-menu";/u);
-	assert.match(AGENT_SOURCE, /import \{ CheckIcon, MoreHorizontalIcon, PlusCircleIcon, PlusIcon \} from "@\/components\/ui\/vpk-icons";/u);
 	assert.match(AGENT_SOURCE, /computeContextBarOverflow\([\s\S]*AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH,[\s\S]*AGENT_COMPACT_HEADER_NAV_GAP/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_HEADER_NAV_GAP = 4;/u);
 	assert.match(AGENT_SOURCE, /className="relative flex min-w-0 flex-1 items-center overflow-hidden"[\s\S]*style=\{\{ gap: AGENT_COMPACT_HEADER_NAV_GAP \}\}/u);
@@ -305,6 +384,12 @@ test("Shared Tiptap editor is SSR-safe and emits markdown updates", () => {
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /contentType: "markdown"/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /immediatelyRender: false/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /"--rich-text-placeholder": toCssString\(placeholder\)/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /placeholder && !placeholderSlot/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /placeholderSlot\?: ReactNode;/u);
+	assert.match(
+		RICH_TEXT_EDITOR_SOURCE,
+		/placeholderSlot && isEmpty && !isMarkdownMode[\s\S]*data-slot="rich-text-editor-placeholder"[\s\S]*pointer-events-none absolute inset-0/u,
+	);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /data-empty=\{isEmpty \? "true" : undefined\}/u);
 	assert.match(
 		RICH_TEXT_EDITOR_SOURCE,
