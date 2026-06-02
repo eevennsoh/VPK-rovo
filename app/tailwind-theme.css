@@ -735,8 +735,13 @@
 }
 
 @utility bento-fade-bottom {
-	mask-image: linear-gradient(to bottom, #000 calc(100% - 96px), transparent);
-	-webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 96px), transparent);
+	/* Height of the soft bottom edge. Defaults to 96px (Studio bento); the agent
+	   compact bento overrides `--bento-fade-height` to a smaller value so its
+	   vertically-squeezed tiles reveal the card descriptions instead of fading
+	   them out. */
+	--bento-fade-height: 96px;
+	mask-image: linear-gradient(to bottom, #000 calc(100% - var(--bento-fade-height)), transparent);
+	-webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--bento-fade-height)), transparent);
 }
 
 @utility cot-icon-wash {
