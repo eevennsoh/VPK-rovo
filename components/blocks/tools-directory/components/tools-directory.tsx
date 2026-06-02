@@ -789,10 +789,10 @@ function SidebarToolAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 		<Image
 			alt=""
 			aria-hidden
-			className="size-4 shrink-0 object-contain"
-			height={16}
+			className="size-6 shrink-0 object-contain"
+			height={24}
 			src={item.avatarSrc}
-			width={16}
+			width={24}
 		/>
 	) : null;
 }

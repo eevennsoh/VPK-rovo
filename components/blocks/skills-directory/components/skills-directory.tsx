@@ -637,17 +637,12 @@ function SkillCard({ onLearnMore, onSelect, selected, skill }: Readonly<SkillCar
 				</CardDirectoryDescription>
 			</div>
 
-			<CardDirectoryFooter className="justify-between">
+			<CardDirectoryFooter>
 				<span className="inline-flex min-w-0 items-center gap-1 text-text-subtle">
 					<SkillPublisherAvatar skill={skill} />
 					<span className="truncate">{publisher}</span>
 				</span>
-				<span
-					className={cn(
-						"inline-flex shrink-0 items-center gap-4 opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
-						moreMenuOpen && "opacity-100",
-					)}
-				>
+				<span className="inline-flex shrink-0 items-center gap-4">
 					{typeof skill.starCount === "number" ? (
 						<CardDirectoryStat
 							icon={<StarUnstarredIcon label="" size="small" spacing="none" color="currentColor" />}
