@@ -3,11 +3,13 @@
 import type { Tool } from "ai";
 import { AnimatePresence, motion, useReducedMotion, type MotionProps } from "motion/react";
 import type { ComponentProps, CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 
 import AddIcon from "@atlaskit/icon/core/add";
 import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 import DashboardIcon from "@atlaskit/icon/core/dashboard";
 import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
@@ -24,31 +26,27 @@ import { Accordion,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuGroup,
 	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { InlineEdit } from "@/components/ui/inline-edit";
-import { Lozenge } from "@/components/ui/lozenge";
+import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import { Tag } from "@/components/ui/tag";
 import { Tile } from "@/components/ui/tile";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { CheckIcon, MoreHorizontalIcon, PlusCircleIcon, PlusIcon } from "@/components/ui/vpk-icons";
+import { CheckIcon, MoreHorizontalIcon, PlusIcon } from "@/components/ui/vpk-icons";
 import { computeContextBarOverflow } from "@/components/ui-custom/context-bar/overflow";
-import {
-	ModelSelector,
-	ModelSelectorContent,
-	ModelSelectorGroup,
-	ModelSelectorItem,
-	ModelSelectorList,
-	ModelSelectorName,
-	ModelSelectorTrigger,
-} from "@/components/ui-custom/model-selector";
 import {
 	TwgToolBannerBackground,
 } from "@/components/ui-custom/twg-tool";
@@ -109,32 +107,46 @@ const AGENT_KNOWLEDGE_SOURCES = [
 
 const AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = [
 	{ agentFieldName: "trigger", label: "Triggers" },
-	{ agentFieldName: "skills", label: "Skills" },
+	{ agentFieldName: "skills", label: "Skills", listFieldName: "skills" },
 	{ agentFieldName: "tools", label: "Tools", listFieldName: "tools" },
-	{ agentFieldName: "subagents", label: "Subagents" },
-	{ agentFieldName: "knowledge", label: "Knowledge" },
+	{ agentFieldName: "subagents", label: "Subagents", listFieldName: "subagents" },
+	{ agentFieldName: "knowledge", label: "Knowledge", kind: "knowledge" },
+	{ agentFieldName: "conversationStarters", label: "Conversation starters", listFieldName: "conversationStarters" },
+	{ agentFieldName: "reasoning", label: "Reasoning", kind: "reasoning" },
 ] as const;
 
+const AGENT_COMPACT_CONFIG_NAV_GAP = 4;
+const AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH = 24;
+
 function getAgentCompactEmptyConfigNavItems(config?: AgentConfigFormValue) {
-	return AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS.filter((item) => {
-		if (!config) {
-			return true;
+	return AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS.map((item) => {
+		let count = 0;
+		if (config) {
+			switch (item.agentFieldName) {
+				case "trigger":
+					count = getAgentTriggerItems(config).length;
+					break;
+				case "skills":
+					count = getNonEmptyConfigItems(config.skills).length;
+					break;
+				case "tools":
+					count = getNonEmptyConfigItems(config.tools).length;
+					break;
+				case "subagents":
+					count = getNonEmptyConfigItems(config.subagents).length;
+					break;
+				case "knowledge":
+					count = 0;
+					break;
+				case "conversationStarters":
+					count = getNonEmptyConfigItems(config.conversationStarters).length;
+					break;
+				case "reasoning":
+					count = 0;
+					break;
+			}
 		}
-
-		switch (item.agentFieldName) {
-			case "trigger":
-				return getAgentTriggerItems(config).length === 0;
-			case "skills":
-				return getNonEmptyConfigItems(config.skills).length === 0;
-			case "tools":
-				return getNonEmptyConfigItems(config.tools).length === 0;
-			case "subagents":
-				return getNonEmptyConfigItems(config.subagents).length === 0;
-			case "knowledge":
-				return getNonEmptyConfigItems(config.knowledge).length === 0;
-		}
-
-		return false;
+		return { ...item, count };
 	});
 }
 
@@ -726,47 +738,188 @@ function AgentMissingConfigActions({
 	);
 }
 
+type AgentCompactConfigNavItem = ReturnType<typeof getAgentCompactEmptyConfigNavItems>[number];
+
+function getAgentCompactConfigNavItemOnClick(
+	item: AgentCompactConfigNavItem,
+	onAppendListItem?: (field: AgentConfigListFieldName) => void,
+): (() => void) | undefined {
+	if ("listFieldName" in item) {
+		return () => onAppendListItem?.(item.listFieldName);
+	}
+	return undefined;
+}
+
+function AgentCompactConfigNavButton({
+	item,
+	onClick,
+	screenAssistantTargetId,
+}: Readonly<{
+	item: AgentCompactConfigNavItem;
+	onClick?: () => void;
+	screenAssistantTargetId?: string;
+}>) {
+	return (
+		<button
+			type="button"
+			data-agent-field={item.agentFieldName}
+			data-screen-assistant-target={screenAssistantTargetId}
+			className="inline-flex h-6 shrink-0 items-center gap-1 rounded px-2 text-xs font-semibold leading-4 text-text-subtlest transition-colors hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-3 focus-visible:ring-ring/50"
+			onClick={onClick}
+		>
+			{item.label}
+			{item.count > 0 ? <Badge>{item.count}</Badge> : null}
+		</button>
+	);
+}
+
 function AgentCompactEmptyConfigNav({
 	config,
 	onAppendListItem,
+	reasoningValue,
+	onReasoningValueChange,
+	knowledgeMode,
+	onKnowledgeModeChange,
 	screenAssistantTargetPrefix,
 }: Readonly<{
 	config?: AgentConfigFormValue;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
+	reasoningValue: ReasoningModeValue;
+	onReasoningValueChange: (next: ReasoningModeValue) => void;
+	knowledgeMode: KnowledgeModeValue;
+	onKnowledgeModeChange: (next: KnowledgeModeValue) => void;
 	screenAssistantTargetPrefix?: string;
 }>) {
-	const visibleItems = getAgentCompactEmptyConfigNavItems(config);
+	const items = getAgentCompactEmptyConfigNavItems(config);
+	// Re-measure whenever counts change since a count Badge appearing/disappearing
+	// changes a button's natural width. ResizeObserver alone only catches
+	// container width changes.
+	const itemsSignature = items.map((item) => `${item.agentFieldName}:${item.count}`).join("|");
+	const containerRef = useRef<HTMLDivElement>(null);
+	const measureRef = useRef<HTMLDivElement>(null);
+	const [visibleCount, setVisibleCount] = useState<number>(items.length);
 
-	if (visibleItems.length === 0) {
+	useLayoutEffect(() => {
+		const container = containerRef.current;
+		const measure = measureRef.current;
+		if (!container || !measure) {
+			return;
+		}
+
+		function recompute(): void {
+			const widths = Array.from(measure!.children).map((node) => (node as HTMLElement).offsetWidth);
+			setVisibleCount(
+				computeContextBarOverflow(
+					widths,
+					container!.clientWidth,
+					AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH,
+					AGENT_COMPACT_CONFIG_NAV_GAP,
+				),
+			);
+		}
+
+		recompute();
+		const observer = new ResizeObserver(recompute);
+		observer.observe(container);
+		return () => observer.disconnect();
+	}, [itemsSignature]);
+
+	if (items.length === 0) {
 		return null;
 	}
 
+	const visibleItems = items.slice(0, visibleCount);
+	const hiddenItems = items.slice(visibleCount);
+
 	return (
-		<div className="flex min-h-8 min-w-0 items-center gap-1">
-			<span
-				aria-hidden="true"
-				data-slot="agent-compact-config-marker"
-				className="ml-1 inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle"
+		<div className="flex min-h-8 min-w-0 items-center">
+			<div
+				className="relative flex min-w-0 flex-1 items-center overflow-hidden"
+				ref={containerRef}
+				style={{ gap: AGENT_COMPACT_CONFIG_NAV_GAP }}
 			>
-				<PlusCircleIcon size="small" />
-			</span>
-			<div className="flex min-w-0 flex-wrap items-center gap-1">
-				{visibleItems.map((item) => (
-					<button
-						key={item.label}
-						type="button"
-						data-agent-field={item.agentFieldName}
-						data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:${item.agentFieldName}` : undefined}
-						className="inline-flex h-6 items-center rounded px-2 text-xs font-semibold leading-4 text-text-subtlest transition-colors hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-3 focus-visible:ring-ring/50"
-						onClick={
-							"listFieldName" in item
-								? () => onAppendListItem?.(item.listFieldName)
-								: undefined
-						}
-					>
-						{item.label}
-					</button>
-				))}
+				<div aria-hidden className="pointer-events-none absolute top-0 left-0 h-0 w-0 overflow-clip">
+					<div className="invisible flex items-center" ref={measureRef} style={{ gap: AGENT_COMPACT_CONFIG_NAV_GAP }}>
+						{items.map((item) => (
+							<AgentCompactConfigNavButton item={item} key={`measure-${item.agentFieldName}`} />
+						))}
+					</div>
+				</div>
+				{visibleItems.map((item) => {
+					if (item.agentFieldName === "reasoning") {
+						return (
+							<AgentReasoningSelector
+								key={item.agentFieldName}
+								render="nav-button"
+								value={reasoningValue}
+								onValueChange={onReasoningValueChange}
+								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:reasoning` : undefined}
+							/>
+						);
+					}
+					if (item.agentFieldName === "knowledge") {
+						return (
+							<AgentKnowledgeSelector
+								key={item.agentFieldName}
+								render="nav-button"
+								value={knowledgeMode}
+								onValueChange={onKnowledgeModeChange}
+								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
+							/>
+						);
+					}
+					return (
+						<AgentCompactConfigNavButton
+							item={item}
+							key={item.agentFieldName}
+							onClick={getAgentCompactConfigNavItemOnClick(item, onAppendListItem)}
+							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:${item.agentFieldName}` : undefined}
+						/>
+					);
+				})}
+				{hiddenItems.length > 0 ? (
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							aria-label="More configuration options"
+							render={<Button className="size-6 rounded px-0" size="icon-compact" type="button" variant="ghost" />}
+						>
+							<MoreHorizontalIcon size="small" />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuGroup>
+								{hiddenItems.map((item) => {
+									if (item.agentFieldName === "reasoning") {
+										return (
+											<AgentReasoningOverflowMenu
+												key={item.agentFieldName}
+												value={reasoningValue}
+												onValueChange={onReasoningValueChange}
+											/>
+										);
+									}
+									if (item.agentFieldName === "knowledge") {
+										return (
+											<AgentKnowledgeOverflowMenu
+												key={item.agentFieldName}
+												value={knowledgeMode}
+												onValueChange={onKnowledgeModeChange}
+											/>
+										);
+									}
+									return (
+										<DropdownMenuItem
+											elemAfter={item.count > 0 ? <Badge>{item.count}</Badge> : undefined}
+											key={item.agentFieldName}
+											onClick={getAgentCompactConfigNavItemOnClick(item, onAppendListItem)}
+										>
+											{item.label}
+										</DropdownMenuItem>
+									);
+								})}
+							</DropdownMenuGroup>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				) : null}
 			</div>
 		</div>
 	);
@@ -1190,7 +1343,9 @@ function AgentFilledSummaryRow({
 interface AgentFilledConfigSummaryProps {
 	config: AgentConfigFormValue;
 	hideEmptyRows?: boolean;
+	knowledgeMode?: KnowledgeModeValue;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
+	onKnowledgeModeChange?: (next: KnowledgeModeValue) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	screenAssistantTargetPrefix?: string;
@@ -1200,7 +1355,9 @@ interface AgentFilledConfigSummaryProps {
 function AgentFilledConfigSummary({
 	config,
 	hideEmptyRows = false,
+	knowledgeMode,
 	onAppendListItem,
+	onKnowledgeModeChange,
 	onRemoveListItem,
 	onTextChange,
 	screenAssistantTargetPrefix,
@@ -1217,62 +1374,132 @@ function AgentFilledConfigSummary({
 	const knowledgeItems = getNonEmptyConfigItems(config.knowledge);
 	const starterItems = getNonEmptyConfigItems(config.conversationStarters).slice(0, MAX_AGENT_CONVERSATION_STARTERS);
 
+	const hasKnowledgeSelector = Boolean(knowledgeMode && onKnowledgeModeChange);
+	// Rows declare their canonical order and whether they currently hold any user
+	// content. Empty rows get sorted to the bottom (preserving the canonical order
+	// within each group) so configured fields stay visually grouped at the top.
+	const rows: ReadonlyArray<{ key: string; isEmpty: boolean; node: ReactNode }> = [
+		{
+			key: "trigger",
+			isEmpty: triggerItems.length === 0,
+			node: (
+				<AgentFilledSummaryRow
+					addLabel={showAddButtons ? "Add" : undefined}
+					hideWhenEmpty={hideEmptyRows}
+					agentFieldName="trigger"
+					items={triggerItems}
+					label="Triggers"
+					onAdd={() => onAppendListItem?.("triggers")}
+					onRemoveItem={removeTriggerItem}
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
+				/>
+			),
+		},
+		{
+			key: "skills",
+			isEmpty: skillItems.length === 0,
+			node: (
+				<AgentFilledSummaryRow
+					addLabel={showAddButtons ? "Add" : undefined}
+					hideWhenEmpty={hideEmptyRows}
+					items={skillItems}
+					label="Skills"
+					onAdd={() => onAppendListItem?.("skills")}
+					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("skills", index) : undefined}
+					variant="skill"
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined}
+				/>
+			),
+		},
+		{
+			key: "tools",
+			isEmpty: toolItems.length === 0,
+			node: (
+				<AgentFilledSummaryRow
+					addLabel={showAddButtons ? "Add" : undefined}
+					hideWhenEmpty={hideEmptyRows}
+					agentFieldName="tools"
+					items={toolItems}
+					label="Tools"
+					onAdd={() => onAppendListItem?.("tools")}
+					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("tools", index) : undefined}
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
+				/>
+			),
+		},
+		{
+			key: "subagents",
+			isEmpty: subagentItems.length === 0,
+			node: (
+				<AgentFilledSummaryRow
+					addLabel={showAddButtons ? "Add" : undefined}
+					hideWhenEmpty={hideEmptyRows}
+					items={subagentItems}
+					label="Subagents"
+					onAdd={() => onAppendListItem?.("subagents")}
+					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("subagents", index) : undefined}
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
+				/>
+			),
+		},
+		{
+			key: "knowledge",
+			// The new knowledge selector always renders its mode lozenge, so the row
+			// is never visually empty even when no custom items are configured.
+			isEmpty: hasKnowledgeSelector ? false : knowledgeItems.length === 0,
+			node: hasKnowledgeSelector && knowledgeMode && onKnowledgeModeChange ? (
+				<AgentKnowledgeRow
+					addLabel={showAddButtons ? "Add" : undefined}
+					items={knowledgeItems}
+					onAdd={() => onAppendListItem?.("knowledge")}
+					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
+					onValueChange={onKnowledgeModeChange}
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
+					value={knowledgeMode}
+				/>
+			) : (
+				<AgentFilledSummaryRow
+					addLabel={showAddButtons ? "Add" : undefined}
+					hideWhenEmpty={hideEmptyRows}
+					items={knowledgeItems}
+					label="Knowledge"
+					onAdd={() => onAppendListItem?.("knowledge")}
+					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
+				/>
+			),
+		},
+		{
+			key: "conversationStarters",
+			isEmpty: starterItems.length === 0,
+			node: (
+				<AgentFilledSummaryRow
+					addLabel={showAddButtons ? "Add" : undefined}
+					hideWhenEmpty={hideEmptyRows}
+					agentFieldName="conversationStarters"
+					items={starterItems}
+					label="Conversation starters"
+					onAdd={() => onAppendListItem?.("conversationStarters")}
+					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("conversationStarters", index) : undefined}
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:conversation-starters` : undefined}
+				/>
+			),
+		},
+	];
+	// Map then sort by index to keep the sort stable across runtimes (Array#sort
+	// only became stable in V8 in 2018, but other engines may differ).
+	const orderedRows = rows
+		.map((row, index) => ({ ...row, index }))
+		.sort((a, b) => {
+			if (a.isEmpty !== b.isEmpty) return a.isEmpty ? 1 : -1;
+			return a.index - b.index;
+		});
+
 	return (
 		<div className="flex flex-col gap-1">
-			<AgentFilledSummaryRow
-				addLabel={showAddButtons ? "Add" : undefined}
-				hideWhenEmpty={hideEmptyRows}
-				agentFieldName="trigger"
-				items={triggerItems}
-				label="Triggers"
-				onRemoveItem={removeTriggerItem}
-				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
-			/>
-			<AgentFilledSummaryRow
-				addLabel={showAddButtons ? "Add" : undefined}
-				hideWhenEmpty={hideEmptyRows}
-				items={skillItems}
-				label="Skills"
-				onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("skills", index) : undefined}
-				variant="skill"
-				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined}
-			/>
-			<AgentFilledSummaryRow
-				addLabel={showAddButtons ? "Add" : undefined}
-				hideWhenEmpty={hideEmptyRows}
-				agentFieldName="tools"
-				items={toolItems}
-				label="Tools"
-				onAdd={() => onAppendListItem?.("tools")}
-				onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("tools", index) : undefined}
-				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
-			/>
-			<AgentFilledSummaryRow
-				addLabel={showAddButtons ? "Add" : undefined}
-				hideWhenEmpty={hideEmptyRows}
-				items={subagentItems}
-				label="Subagents"
-				onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("subagents", index) : undefined}
-				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
-			/>
-			<AgentFilledSummaryRow
-				addLabel={showAddButtons ? "Add" : undefined}
-				hideWhenEmpty={hideEmptyRows}
-				items={knowledgeItems}
-				label="Knowledge"
-				onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
-				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
-			/>
-			<AgentFilledSummaryRow
-				addLabel={showAddButtons ? "Add" : undefined}
-				hideWhenEmpty={hideEmptyRows}
-				agentFieldName="conversationStarters"
-				items={starterItems}
-				label="Conversation starters"
-				onAdd={() => onAppendListItem?.("conversationStarters")}
-				onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("conversationStarters", index) : undefined}
-				screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:conversation-starters` : undefined}
-			/>
+			{orderedRows.map((row) => (
+				<Fragment key={row.key}>{row.node}</Fragment>
+			))}
 		</div>
 	);
 }
@@ -1418,50 +1645,344 @@ const REASONING_MODE_SECTIONS = [
 type ReasoningModeValue =
 	(typeof REASONING_MODE_SECTIONS)[number]["options"][number]["value"];
 
-function AgentInstructionsModelSelector() {
-	const [selected, setSelected] = useState<ReasoningModeValue>("deep-auto");
-	const current = REASONING_MODE_SECTIONS
-		.flatMap((section) =>
-			section.options.map((option) => ({
-				...option,
-				section: section.title,
-			}))
-		)
-		.find((option) => option.value === selected);
-	const triggerLabel = current
-		? `Model: ${current.section === "Think deeper" && current.value !== "deep-auto" ? current.label : current.section}`
-		: "Select mode";
+type ReasoningModeSectionTitle =
+	(typeof REASONING_MODE_SECTIONS)[number]["title"];
+
+const REASONING_MODE_FLAT_OPTIONS = REASONING_MODE_SECTIONS.flatMap((section) =>
+	section.options.map((option) => ({
+		...option,
+		section: section.title,
+	})),
+);
+
+function findReasoningModeOption(value: ReasoningModeValue) {
+	return REASONING_MODE_FLAT_OPTIONS.find((option) => option.value === value);
+}
+
+function getReasoningSectionDefaultValue(section: ReasoningModeSectionTitle): ReasoningModeValue {
+	const match = REASONING_MODE_SECTIONS.find((entry) => entry.title === section);
+	return (match?.options[0]?.value ?? "deep-auto") as ReasoningModeValue;
+}
+
+function AgentReasoningSelectorMenu({
+	value,
+	onValueChange,
+}: Readonly<{
+	value: ReasoningModeValue;
+	onValueChange: (next: ReasoningModeValue) => void;
+}>) {
+	return (
+		<DropdownMenuContent align="start" className="min-w-[280px]">
+			{REASONING_MODE_SECTIONS.map((section) => (
+				<DropdownMenuGroup key={section.title}>
+					<DropdownMenuLabel>{section.title}</DropdownMenuLabel>
+					{section.options.map((option) => (
+						<DropdownMenuItem
+							elemAfter={value === option.value ? <CheckIcon size="small" /> : undefined}
+							key={option.value}
+							onClick={() => onValueChange(option.value as ReasoningModeValue)}
+						>
+							{option.label}
+						</DropdownMenuItem>
+					))}
+				</DropdownMenuGroup>
+			))}
+		</DropdownMenuContent>
+	);
+}
+
+interface AgentReasoningSelectorProps {
+	value: ReasoningModeValue;
+	onValueChange: (next: ReasoningModeValue) => void;
+	render: "nav-button" | "row";
+	screenAssistantTargetId?: string;
+}
+
+function AgentReasoningSelector({
+	value,
+	onValueChange,
+	render,
+	screenAssistantTargetId,
+}: Readonly<AgentReasoningSelectorProps>) {
+	const current = findReasoningModeOption(value);
+	const sectionLabel = current?.section ?? "Reasoning";
+	const isThinkDeeper = current?.section === "Think deeper";
+
+	if (render === "nav-button") {
+		return (
+			<DropdownMenu>
+				<DropdownMenuTrigger
+					render={(
+						<button
+							type="button"
+							data-agent-field="reasoning"
+							data-screen-assistant-target={screenAssistantTargetId}
+							className="inline-flex h-6 shrink-0 items-center gap-1 rounded px-2 text-xs font-semibold leading-4 text-text-subtlest transition-colors hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-3 focus-visible:ring-ring/50"
+						/>
+					)}
+				>
+					Reasoning
+				</DropdownMenuTrigger>
+				<AgentReasoningSelectorMenu value={value} onValueChange={onValueChange} />
+			</DropdownMenu>
+		);
+	}
 
 	return (
-		<ModelSelector>
-			<ModelSelectorTrigger
-				render={<Button className="shrink-0 gap-1.5 text-text-subtle" variant="ghost" />}
+		<>
+			<DropdownMenu>
+				<DropdownMenuTrigger
+					render={<LozengeDropdownTrigger aria-label="Reasoning mode" />}
+				>
+					{sectionLabel}
+				</DropdownMenuTrigger>
+				<AgentReasoningSelectorMenu value={value} onValueChange={onValueChange} />
+			</DropdownMenu>
+			{isThinkDeeper ? (
+				<>
+					<div aria-hidden className="h-4 w-px shrink-0 bg-border" />
+					<Tag>{current?.label ?? "Recommended"}</Tag>
+				</>
+			) : null}
+		</>
+	);
+}
+
+function AgentReasoningOverflowMenu({
+	value,
+	onValueChange,
+}: Readonly<{
+	value: ReasoningModeValue;
+	onValueChange: (next: ReasoningModeValue) => void;
+}>) {
+	return (
+		<DropdownMenuSub>
+			<DropdownMenuSubTrigger>Reasoning</DropdownMenuSubTrigger>
+			<DropdownMenuSubContent>
+				{REASONING_MODE_SECTIONS.map((section) => (
+					<DropdownMenuGroup key={section.title}>
+						<DropdownMenuLabel>{section.title}</DropdownMenuLabel>
+						{section.options.map((option) => (
+							<DropdownMenuItem
+								elemAfter={value === option.value ? <CheckIcon size="small" /> : undefined}
+								key={option.value}
+								onClick={() => onValueChange(option.value as ReasoningModeValue)}
+							>
+								{option.label}
+							</DropdownMenuItem>
+						))}
+					</DropdownMenuGroup>
+				))}
+			</DropdownMenuSubContent>
+		</DropdownMenuSub>
+	);
+}
+
+interface AgentReasoningRowProps {
+	value: ReasoningModeValue;
+	onValueChange: (next: ReasoningModeValue) => void;
+	screenAssistantTargetId?: string;
+}
+
+function AgentReasoningRow({
+	value,
+	onValueChange,
+	screenAssistantTargetId,
+}: Readonly<AgentReasoningRowProps>) {
+	return (
+		<div
+			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-5"
+			data-agent-field="reasoning"
+			data-screen-assistant-target={screenAssistantTargetId}
+		>
+			<div className="sm:w-32 sm:shrink-0">
+				<AgentSectionLabel>Reasoning</AgentSectionLabel>
+			</div>
+			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
+				<AgentReasoningSelector
+					render="row"
+					value={value}
+					onValueChange={onValueChange}
+				/>
+			</div>
+		</div>
+	);
+}
+
+const KNOWLEDGE_MODE_OPTIONS = [
+	{ value: "all", label: "All organizational knowledge" },
+	{ value: "custom", label: "Custom knowledge" },
+	{ value: "none", label: "No organizational knowledge" },
+] as const;
+
+type KnowledgeModeValue = (typeof KNOWLEDGE_MODE_OPTIONS)[number]["value"];
+
+function findKnowledgeModeOption(value: KnowledgeModeValue) {
+	return KNOWLEDGE_MODE_OPTIONS.find((option) => option.value === value);
+}
+
+function AgentKnowledgeSelectorMenu({
+	value,
+	onValueChange,
+}: Readonly<{
+	value: KnowledgeModeValue;
+	onValueChange: (next: KnowledgeModeValue) => void;
+}>) {
+	return (
+		<DropdownMenuContent align="start" className="min-w-[280px]">
+			<DropdownMenuGroup>
+				{KNOWLEDGE_MODE_OPTIONS.map((option) => (
+					<DropdownMenuItem
+						elemAfter={value === option.value ? <CheckIcon size="small" /> : undefined}
+						key={option.value}
+						onClick={() => onValueChange(option.value)}
+					>
+						{option.label}
+					</DropdownMenuItem>
+				))}
+			</DropdownMenuGroup>
+		</DropdownMenuContent>
+	);
+}
+
+interface AgentKnowledgeSelectorProps {
+	value: KnowledgeModeValue;
+	onValueChange: (next: KnowledgeModeValue) => void;
+	render: "nav-button" | "row";
+	screenAssistantTargetId?: string;
+}
+
+function AgentKnowledgeSelector({
+	value,
+	onValueChange,
+	render,
+	screenAssistantTargetId,
+}: Readonly<AgentKnowledgeSelectorProps>) {
+	const current = findKnowledgeModeOption(value);
+	const label = current?.label ?? "Knowledge";
+
+	if (render === "nav-button") {
+		return (
+			<DropdownMenu>
+				<DropdownMenuTrigger
+					render={(
+						<button
+							type="button"
+							data-agent-field="knowledge"
+							data-screen-assistant-target={screenAssistantTargetId}
+							className="inline-flex h-6 shrink-0 items-center gap-1 rounded px-2 text-xs font-semibold leading-4 text-text-subtlest transition-colors hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-3 focus-visible:ring-ring/50"
+						/>
+					)}
+				>
+					Knowledge
+				</DropdownMenuTrigger>
+				<AgentKnowledgeSelectorMenu value={value} onValueChange={onValueChange} />
+			</DropdownMenu>
+		);
+	}
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger
+				render={<LozengeDropdownTrigger aria-label="Knowledge mode" />}
 			>
-				<Icon render={<AiModelIcon label="" size="small" />} aria-hidden />
-				{triggerLabel}
-			</ModelSelectorTrigger>
-			<ModelSelectorContent className="w-[360px] max-w-[calc(100vw-2rem)]">
-				<ModelSelectorList>
-					{REASONING_MODE_SECTIONS.map((section) => (
-						<ModelSelectorGroup key={section.title} heading={section.title}>
-							{section.options.map((option) => (
-								<ModelSelectorItem
-									key={option.value}
-									data-checked={selected === option.value}
-									value={option.value}
-									onSelect={() => setSelected(option.value)}
-								>
-									<ModelSelectorName>{option.label}</ModelSelectorName>
-									{selected === option.value ? (
-										<CheckIcon size="small" className="ml-auto text-text-selected" />
-									) : null}
-								</ModelSelectorItem>
-							))}
-						</ModelSelectorGroup>
+				{label}
+			</DropdownMenuTrigger>
+			<AgentKnowledgeSelectorMenu value={value} onValueChange={onValueChange} />
+		</DropdownMenu>
+	);
+}
+
+function AgentKnowledgeOverflowMenu({
+	value,
+	onValueChange,
+}: Readonly<{
+	value: KnowledgeModeValue;
+	onValueChange: (next: KnowledgeModeValue) => void;
+}>) {
+	return (
+		<DropdownMenuSub>
+			<DropdownMenuSubTrigger>Knowledge</DropdownMenuSubTrigger>
+			<DropdownMenuSubContent>
+				<DropdownMenuGroup>
+					{KNOWLEDGE_MODE_OPTIONS.map((option) => (
+						<DropdownMenuItem
+							elemAfter={value === option.value ? <CheckIcon size="small" /> : undefined}
+							key={option.value}
+							onClick={() => onValueChange(option.value)}
+						>
+							{option.label}
+						</DropdownMenuItem>
 					))}
-				</ModelSelectorList>
-			</ModelSelectorContent>
-		</ModelSelector>
+				</DropdownMenuGroup>
+			</DropdownMenuSubContent>
+		</DropdownMenuSub>
+	);
+}
+
+interface AgentKnowledgeRowProps {
+	value: KnowledgeModeValue;
+	onValueChange: (next: KnowledgeModeValue) => void;
+	items: readonly string[];
+	addLabel?: string;
+	onAdd?: () => void;
+	onRemoveItem?: (index: number) => void;
+	screenAssistantTargetId?: string;
+}
+
+function AgentKnowledgeRow({
+	value,
+	onValueChange,
+	items,
+	addLabel,
+	onAdd,
+	onRemoveItem,
+	screenAssistantTargetId,
+}: Readonly<AgentKnowledgeRowProps>) {
+	const isCustom = value === "custom";
+	const isEmpty = items.length === 0;
+
+	return (
+		<div
+			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-5"
+			data-agent-field="knowledge"
+			data-screen-assistant-target={screenAssistantTargetId}
+		>
+			<div className="sm:w-32 sm:shrink-0">
+				<AgentSectionLabel>Knowledge</AgentSectionLabel>
+			</div>
+			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
+				<AgentKnowledgeSelector
+					render="row"
+					value={value}
+					onValueChange={onValueChange}
+				/>
+				<div aria-hidden className="h-4 w-px shrink-0 bg-border" />
+				{/* Memory is a default, non-removable knowledge source that's always
+				    available regardless of the org-knowledge mode. */}
+				<AgentReferenceChip label="Memory" />
+				{isCustom ? (
+					<>
+						{items.map((item, index) => (
+							<AgentReferenceChip
+								key={`knowledge-${item}-${index}`}
+								label={item}
+								onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
+							/>
+						))}
+						{addLabel ? (
+							<AgentAddValueButton
+								className={isEmpty
+									? undefined
+									: "opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-focus-within/agent-row:opacity-100 focus-visible:opacity-100"}
+								label={addLabel}
+								onClick={onAdd}
+							/>
+						) : null}
+					</>
+				) : null}
+			</div>
+		</div>
 	);
 }
 
@@ -1490,6 +2011,7 @@ function AgentInstructionsComposer({
 }>) {
 	const [skills, setSkills] = useState<RichTextMentionItem[]>([]);
 	const [knowledge, setKnowledge] = useState<RichTextMentionItem[]>([]);
+	const [templatesOpen, setTemplatesOpen] = useState(false);
 	const mentionSources = useMemo<RichTextMentionSources>(() => ({
 		skill: skills,
 		knowledge,
@@ -1540,10 +2062,21 @@ function AgentInstructionsComposer({
 				className="space-y-2"
 				contentClassName={cn("pt-2", contentClassName)}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
-				placeholder="Describe the agent’s role and what it should do. @ to mention people and agents, or / for skills, tools, and knowledge"
+				placeholder="Describe the agent’s role and what it should do. @ to mention people and agents, / for skills, tools, and knowledge, or start with a template"
+				placeholderSlot={(
+					<p className="text-sm leading-[1.55] text-text-subtlest">
+						Describe the agent’s role and what it should do. @ to mention people and agents, / for skills, tools, and knowledge, or{" "}
+						<button
+							type="button"
+							className="pointer-events-auto cursor-pointer rounded-sm text-link no-underline underline-offset-2 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+							onClick={() => setTemplatesOpen(true)}
+						>
+							start with a template
+						</button>
+					</p>
+				)}
 				showBubbleMenu={false}
 				toolbarBelowSlot={toolbarBelowSlot}
-				toolbarEndSlot={<AgentInstructionsModelSelector />}
 				value={instructions}
 				mentionSources={mentionSources}
 				onMarkdownChange={onInstructionsChange}
@@ -1553,6 +2086,12 @@ function AgentInstructionsComposer({
 					{bottomSlot}
 				</div>
 			) : null}
+			<AgentTemplatesDialog
+				agents={DEMO_AGENT_TEMPLATES}
+				open={templatesOpen}
+				onOpenChange={setTemplatesOpen}
+				onSelectAgent={() => setTemplatesOpen(false)}
+			/>
 		</section>
 	);
 }
@@ -1656,25 +2195,80 @@ function AgentCompactConfigToolbarBelow({
 	onTextChange,
 	screenAssistantTargetPrefix,
 }: Readonly<AgentConfigSummaryProps>) {
-	const hasVisibleAddOptions = getAgentCompactEmptyConfigNavItems(config).length > 0;
+	const [expanded, setExpanded] = useState(false);
+	const [reasoningValue, setReasoningValue] = useState<ReasoningModeValue>("deep-auto");
+	const [knowledgeMode, setKnowledgeMode] = useState<KnowledgeModeValue>(() =>
+		getNonEmptyConfigItems(config.knowledge).length > 0 ? "custom" : "all",
+	);
+	const shouldReduceMotion = useReducedMotion();
+	const isExpanded = expanded && isFilledConfig;
+	const transition = shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeOut" as const };
 
 	return (
-		<div className={cn("flex flex-col gap-6 border-t border-border", hasVisibleAddOptions ? "pt-2" : "pt-4")}>
-			<AgentCompactEmptyConfigNav
-				config={config}
-				onAppendListItem={onAppendListItem}
-				screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-			/>
-			{isFilledConfig ? (
-				<AgentFilledConfigSummary
-					config={config}
-					hideEmptyRows
-					onAppendListItem={onAppendListItem}
-					onRemoveListItem={onRemoveListItem}
-					onTextChange={onTextChange}
-					screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-				/>
-			) : null}
+		<div className="flex flex-col">
+			<div className="flex items-center gap-2">
+				<div aria-hidden className="h-px flex-1 bg-border" />
+				{isFilledConfig ? (
+					<Button
+						aria-label={isExpanded ? "Collapse configuration" : "Expand configuration"}
+						className="size-6 rounded px-0"
+						onClick={() => setExpanded((prev) => !prev)}
+						size="icon-compact"
+						type="button"
+						variant="outline"
+					>
+						{isExpanded ? (
+							<ChevronDownIcon label="" size="small" />
+						) : (
+							<ChevronUpIcon label="" size="small" />
+						)}
+					</Button>
+				) : null}
+			</div>
+			<AnimatePresence initial={false} mode="wait">
+				{isExpanded ? (
+					<motion.div
+						key="expanded"
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						exit={{ opacity: 0 }}
+						transition={transition}
+					>
+						<AgentFilledConfigSummary
+							config={config}
+							knowledgeMode={knowledgeMode}
+							onKnowledgeModeChange={setKnowledgeMode}
+							onAppendListItem={onAppendListItem}
+							onRemoveListItem={onRemoveListItem}
+							onTextChange={onTextChange}
+							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+						/>
+						<AgentReasoningRow
+							value={reasoningValue}
+							onValueChange={setReasoningValue}
+							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:reasoning` : undefined}
+						/>
+					</motion.div>
+				) : (
+					<motion.div
+						key="collapsed"
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						exit={{ opacity: 0 }}
+						transition={transition}
+					>
+						<AgentCompactEmptyConfigNav
+							config={config}
+							onAppendListItem={onAppendListItem}
+							reasoningValue={reasoningValue}
+							onReasoningValueChange={setReasoningValue}
+							knowledgeMode={knowledgeMode}
+							onKnowledgeModeChange={setKnowledgeMode}
+							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+						/>
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }
@@ -1728,35 +2322,35 @@ export const AgentConfigFields = memo(
 							/>
 						</div>
 						<AgentInstructionsComposer
-							bottomSlot={
-								isFilledConfig ? undefined : (
-									<AnimatePresence>
-										{templatesDismissed ? null : (
-											<AgentCompactOperationsBento
-												key="agent-compact-operations-bento"
-												onDismiss={() => setTemplatesDismissed(true)}
-											/>
-										)}
-									</AnimatePresence>
-								)
-							}
-							bottomSlotClassName={isFilledConfig ? undefined : "mt-auto flex min-h-0 flex-col pt-4"}
+							bottomSlot={(
+								<>
+									<AgentCompactConfigToolbarBelow
+										config={config}
+										isFilledConfig={isFilledConfig}
+										onAppendListItem={onAppendListItem}
+										onRemoveListItem={onRemoveListItem}
+										onTextChange={onTextChange}
+										screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+									/>
+									{isFilledConfig ? null : (
+										<AnimatePresence>
+											{templatesDismissed ? null : (
+												<AgentCompactOperationsBento
+													key="agent-compact-operations-bento"
+													onDismiss={() => setTemplatesDismissed(true)}
+												/>
+											)}
+										</AnimatePresence>
+									)}
+								</>
+							)}
+							bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-4 pt-4"
 							className={cn("flex flex-col", isFilledConfig ? "min-h-[560px]" : "min-h-0 flex-1")}
 							contentClassName="min-h-[240px] pt-4"
 							instructions={config.instructions}
 							onInstructionsChange={(value) => onTextChange?.("instructions", value)}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 							showSectionLabel={false}
-							toolbarBelowSlot={(
-								<AgentCompactConfigToolbarBelow
-									config={config}
-									isFilledConfig={isFilledConfig}
-									onAppendListItem={onAppendListItem}
-									onRemoveListItem={onRemoveListItem}
-									onTextChange={onTextChange}
-									screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-								/>
-							)}
 						/>
 					</div>
 				) : (

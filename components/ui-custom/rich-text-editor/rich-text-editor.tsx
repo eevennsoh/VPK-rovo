@@ -23,6 +23,7 @@ interface RichTextEditorProps
 	extends Omit<ComponentProps<"div">, "onChange"> {
 	value?: string;
 	placeholder?: string;
+	placeholderSlot?: ReactNode;
 	editorClassName?: string;
 	contentClassName?: string;
 	toolbarEndSlot?: ReactNode;
@@ -43,6 +44,7 @@ function toCssString(value: string): string {
 export function RichTextEditor({
 	value,
 	placeholder,
+	placeholderSlot,
 	className,
 	editorClassName,
 	contentClassName,
@@ -207,7 +209,7 @@ export function RichTextEditor({
 				className={cn("rich-text-editor-content relative", contentClassName)}
 				data-empty={isEmpty ? "true" : undefined}
 				style={
-					placeholder
+					placeholder && !placeholderSlot
 						? ({
 								"--rich-text-placeholder": toCssString(placeholder),
 							} as CSSProperties)
@@ -230,6 +232,15 @@ export function RichTextEditor({
 				) : (
 					<EditorContent editor={editor} />
 				)}
+				{placeholderSlot && isEmpty && !isMarkdownMode ? (
+					<div
+						aria-hidden="true"
+						data-slot="rich-text-editor-placeholder"
+						className={cn("pointer-events-none absolute inset-0", contentClassName)}
+					>
+						{placeholderSlot}
+					</div>
+				) : null}
 				{showBubbleMenu && editor && !isMarkdownMode ? (
 					<RichTextEditorBubbleMenu
 						editor={editor}

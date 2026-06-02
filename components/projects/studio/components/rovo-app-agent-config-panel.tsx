@@ -6,6 +6,7 @@ import CrossIcon from "@atlaskit/icon/core/cross";
 
 import {
 	Agent,
+	AgentCompactHeaderNav,
 	AgentConfigFields,
 	type AgentConfigFormValue,
 	AgentHeader,
@@ -16,12 +17,10 @@ import FloatingRovoButton from "@/components/projects/shared/components/floating
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import { getStudioSessionAgentDisplayName, useRovoChat } from "@/app/contexts";
 import { Button, type ButtonProps } from "@/components/ui/button";
-import { Lozenge } from "@/components/ui/lozenge";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type {
-	StudioAgentPublishStatus,
 	StudioSessionAgentEntry,
 } from "@/app/contexts/context-rovo-chat";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
@@ -53,10 +52,6 @@ function stringifyForComparison(value: unknown): string {
 	} catch {
 		return String(value);
 	}
-}
-
-function getPublishLabel(status: StudioAgentPublishStatus): string {
-	return status === "published" ? "Published" : "Draft";
 }
 
 type AgentConfigActionButtonProps = ButtonProps & {
@@ -273,11 +268,12 @@ export function RovoAppAgentConfigPanel({
 		[handleTest, onViewChange],
 	);
 
-	const publishStatusLabel = getPublishLabel(entry.publishStatus);
-	const agentName = getStudioSessionAgentDisplayName(entry);
 	// Mirror the avatar the sidebar nav renders for this agent (entry.profile.avatarSrc)
 	// so the header + profile cover match instead of falling back to the static default.
 	const agentAvatarSrc = entry.profile.avatarSrc;
+	// `name` is still required by AgentHeader (accessibility/fallback); the compact
+	// nav supplied via `leadingContent` is what actually renders on the left.
+	const agentName = getStudioSessionAgentDisplayName(entry);
 
 	return (
 		<>
@@ -295,16 +291,8 @@ export function RovoAppAgentConfigPanel({
 					value={activeView}
 				>
 					<AgentHeader
-						avatarSrc={agentAvatarSrc}
 						name={agentName}
-						badge={
-							<Lozenge
-								data-testid="agent-config-status-lozenge"
-								variant={entry.publishStatus === "published" ? "success" : undefined}
-							>
-								{publishStatusLabel}
-							</Lozenge>
-						}
+						leadingContent={<AgentCompactHeaderNav avatarSrc={agentAvatarSrc} />}
 						actions={
 							<>
 								<ToggleGroup
