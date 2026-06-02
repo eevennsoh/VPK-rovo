@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
  */
 export const dropdownStyles = {
   popup:
-    "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2 bg-popover text-popover-foreground z-50 max-h-(--available-height) min-w-56 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg shadow-xl outline-none duration-fast data-closed:overflow-hidden",
+    "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2 bg-popover text-popover-foreground z-[200] max-h-(--available-height) min-w-56 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg shadow-xl outline-none duration-fast data-closed:overflow-hidden",
   group: "p-1",
   selectableItem:
     "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center rounded-sm py-2 pr-3 pl-8 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
@@ -75,9 +75,11 @@ interface DropdownMenuContentProps
   portalled?: boolean;
   portalContainer?: MenuPrimitive.Portal.Props["container"];
   /**
-   * Class merged onto the Positioner. Use to override the default `z-50`
-   * when the trigger lives inside an overlay with a higher stacking z-index
-   * (e.g. floating chat at z-[510], sidebar chat panel at z-90).
+   * Class merged onto the Positioner. Use to override the default `z-[200]`
+   * (the shared overlay tier, which sits above persistent chrome like the
+   * top nav, product sidebar, and sidebar chat panel) when the trigger lives
+   * inside an overlay with an even higher stacking z-index (e.g. floating
+   * chat at z-[510]).
    */
   positionerClassName?: string;
 }
@@ -96,7 +98,7 @@ function DropdownMenuContent({
   const inlinePortalContainerRef = React.useRef<HTMLSpanElement | null>(null);
   const content = (
     <MenuPrimitive.Positioner
-      className={cn("z-50 outline-none", positionerClassName)}
+      className={cn("z-[200] outline-none", positionerClassName)}
       align={align}
       alignOffset={alignOffset}
       side={side}

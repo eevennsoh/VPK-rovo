@@ -62,6 +62,7 @@ import {
 } from "@/components/ui-custom/rich-text-editor";
 import { SkillTag } from "@/components/ui-custom/skill-tag";
 import { useBentoDescriptionClamp } from "@/components/ui-custom/hooks/use-bento-description-clamp";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { BENTO_CAROUSEL_TILE_CLASS, BentoCarousel } from "@/components/ui-custom/bento-carousel";
 import { token } from "@/lib/tokens";
 import type {
@@ -1287,26 +1288,47 @@ function AgentFilledSummaryRow({
 				<AgentSectionLabel>{label}</AgentSectionLabel>
 			</div>
 			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
-				{items.map((item, index) => (
-					variant === "skill" ? (
-						<AgentSkillChip
-							key={`${label}-${item}-${index}`}
-							label={item}
-							onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
-						/>
-					) : (
-						<AgentReferenceChip
-							key={`${label}-${item}-${index}`}
-							label={item}
-							onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
-						/>
-					)
-				))}
-				{addLabel ? (
+				{items.map((item, index) => {
+					// Pair the final chip with the inline "Add" affordance inside a single
+					// non-wrapping group so they reflow to the next line together. Without
+					// this, a row-filling set of chips pushes "Add" onto its own line and
+					// leaves an awkward gap beside the last chip.
+					const isLastItem = index === items.length - 1;
+					const chip =
+						variant === "skill" ? (
+							<AgentSkillChip
+								key={`${label}-${item}-${index}`}
+								label={item}
+								onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
+							/>
+						) : (
+							<AgentReferenceChip
+								key={`${label}-${item}-${index}`}
+								label={item}
+								onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
+							/>
+						);
+
+					if (isLastItem && addLabel) {
+						return (
+							<div
+								key={`${label}-${item}-${index}-group`}
+								className="inline-flex max-w-full items-center gap-1.5"
+							>
+								{chip}
+								<AgentAddValueButton
+									className="shrink-0 opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-focus-within/agent-row:opacity-100 focus-visible:opacity-100"
+									label={addLabel}
+									onClick={onAdd}
+								/>
+							</div>
+						);
+					}
+
+					return chip;
+				})}
+				{isEmpty && addLabel ? (
 					<AgentAddValueButton
-						className={isEmpty
-							? undefined
-							: "opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-focus-within/agent-row:opacity-100 focus-visible:opacity-100"}
 						label={addLabel}
 						onClick={onAdd}
 					/>
@@ -2447,6 +2469,7 @@ export const AgentConfigFields = memo(
 		...props
 	}: Readonly<AgentConfigFieldsProps>) => {
 		const isFilledConfig = hasFilledAgentConfig(config);
+		const compactScrollOverflow = useHasVerticalOverflow<HTMLDivElement>();
 		const [templatesDismissed, setTemplatesDismissed] = useState(false);
 		const dismissTemplateTiles = useCallback(() => {
 			setTemplatesDismissed(true);
@@ -2483,8 +2506,16 @@ export const AgentConfigFields = memo(
 				{layout === "compact" ? (
 					<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 						{/* Scrollable region: profile + instructions grow to fill, the
-						    sibling footer below stays anchored to the panel bottom. */}
-						<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+						    sibling footer below stays anchored to the panel bottom. The
+						    bottom scroll mask fades content into the footer while there's
+						    more below, and clears once the region is scrolled to the end. */}
+						<div
+							ref={compactScrollOverflow.ref}
+							className={cn(
+								"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto",
+								compactScrollOverflow.showBottomScrollMask && "scroll-mask-bottom",
+							)}
+						>
 							<div className="flex flex-col gap-4">
 								<AgentConfigProfile
 									config={config}

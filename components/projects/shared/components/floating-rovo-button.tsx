@@ -24,6 +24,12 @@ import { useRovoChat } from "@/app/contexts";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
+import {
+	armClickSuppression,
+	createInitialClickSuppressionState,
+	handleClickWithSuppression,
+	type FloatingRovoButtonClickSuppressionState,
+} from "./floating-rovo-button-click-suppression";
 
 type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "search" | "studio";
 export type FloatingRovoButtonOnboardingStatus = "idle" | "creating" | "created";
@@ -556,7 +562,9 @@ function FloatingRovoButtonSurface({
 	const hasInitializedPositionRef = useRef(false);
 	const skipNextSnapToGridRef = useRef(false);
 	const dragPointerStartRef = useRef<FloatingRovoButtonDragStart | null>(null);
-	const suppressDragClickRef = useRef(false);
+	const suppressDragClickStateRef = useRef<FloatingRovoButtonClickSuppressionState>(
+		createInitialClickSuppressionState(),
+	);
 	const suppressDragClickTimeoutRef = useRef<number | null>(null);
 	const surfaceTransition = shouldReduceMotion
 		? { duration: 0 }
@@ -590,16 +598,43 @@ function FloatingRovoButtonSurface({
 			? { duration: 0 }
 			: { type: "spring" as const, bounce: 0, stiffness: 540, damping: 42, mass: 0.7 }
 	), [shouldReduceMotion]);
-	const scheduleDragClickSuppressionReset = useCallback(() => {
+	const clearDragClickSuppressionTimeout = useCallback(() => {
 		if (suppressDragClickTimeoutRef.current !== null) {
 			window.clearTimeout(suppressDragClickTimeoutRef.current);
+			suppressDragClickTimeoutRef.current = null;
 		}
+	}, []);
+	// Arm suppression when a drag actually moves the button.
+	const armDragClickSuppression = useCallback(() => {
+		suppressDragClickStateRef.current = armClickSuppression();
+	}, []);
+	// Safety net armed at drag end: if no trailing click ever arrives (e.g. the
+	// drag ends away from the button), the suppression state still clears on its
+	// own. It is intentionally NOT re-armed by clicks — see handleSuppressibleClick.
+	const scheduleDragClickSuppressionReset = useCallback(() => {
+		clearDragClickSuppressionTimeout();
 
 		suppressDragClickTimeoutRef.current = window.setTimeout(() => {
-			suppressDragClickRef.current = false;
+			suppressDragClickStateRef.current = createInitialClickSuppressionState();
 			suppressDragClickTimeoutRef.current = null;
 		}, FLOATING_ROVO_BUTTON_CLICK_SUPPRESSION_MS);
-	}, []);
+	}, [clearDragClickSuppressionTimeout]);
+	// Run a click through the one-shot suppression state machine. The browser
+	// fires exactly one synthetic click at the end of a drag gesture; that single
+	// click is swallowed and suppression is immediately cleared so the very next
+	// click works normally. Re-arming the timer here would let rapid repeated
+	// clicks keep suppression alive forever, which made the dragged button
+	// impossible to open.
+	const handleSuppressibleClick = useCallback(() => {
+		const decision = handleClickWithSuppression(suppressDragClickStateRef.current);
+		suppressDragClickStateRef.current = decision.next;
+
+		if (decision.suppress) {
+			clearDragClickSuppressionTimeout();
+		}
+
+		return decision.suppress;
+	}, [clearDragClickSuppressionTimeout]);
 
 	useEffect(() => {
 		if (hasInitializedPositionRef.current) {
@@ -635,13 +670,10 @@ function FloatingRovoButtonSurface({
 
 	useEffect(() => {
 		const handleDocumentClick = (event: MouseEvent) => {
-			if (!suppressDragClickRef.current) {
-				return;
+			if (handleSuppressibleClick()) {
+				event.preventDefault();
+				event.stopPropagation();
 			}
-
-			scheduleDragClickSuppressionReset();
-			event.preventDefault();
-			event.stopPropagation();
 		};
 
 		document.addEventListener("click", handleDocumentClick, true);
@@ -649,14 +681,15 @@ function FloatingRovoButtonSurface({
 		return () => {
 			document.removeEventListener("click", handleDocumentClick, true);
 		};
-	}, [scheduleDragClickSuppressionReset]);
+	}, [handleSuppressibleClick]);
 
 	useEffect(() => {
 		if (onboardingOpen) {
 			dragPointerStartRef.current = null;
-			suppressDragClickRef.current = false;
+			suppressDragClickStateRef.current = createInitialClickSuppressionState();
+			clearDragClickSuppressionTimeout();
 		}
-	}, [onboardingOpen]);
+	}, [clearDragClickSuppressionTimeout, onboardingOpen]);
 
 	const snapToNearestGridTarget = useCallback(() => {
 		if (!dragOrigin) {
@@ -756,10 +789,10 @@ function FloatingRovoButtonSurface({
 			return;
 		}
 
-		suppressDragClickRef.current = true;
+		armDragClickSuppression();
 		buttonX.set(clampFloatingRovoButtonValue(start.offsetX + deltaX, dragConstraints.left, dragConstraints.right));
 		buttonY.set(clampFloatingRovoButtonValue(start.offsetY + deltaY, dragConstraints.top, dragConstraints.bottom));
-	}, [buttonX, buttonY, dragConstraints]);
+	}, [armDragClickSuppression, buttonX, buttonY, dragConstraints]);
 	const endDrag = useCallback((pointerId?: number) => {
 		const start = dragPointerStartRef.current;
 
@@ -769,7 +802,7 @@ function FloatingRovoButtonSurface({
 
 		dragPointerStartRef.current = null;
 
-		if (!suppressDragClickRef.current) {
+		if (!suppressDragClickStateRef.current.active) {
 			return;
 		}
 
@@ -808,22 +841,18 @@ function FloatingRovoButtonSurface({
 		};
 	}, [endDrag, updateDragPosition]);
 	const handleClickCapture = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
-		if (!suppressDragClickRef.current) {
-			return;
+		if (handleSuppressibleClick()) {
+			event.preventDefault();
+			event.stopPropagation();
 		}
-
-		scheduleDragClickSuppressionReset();
-		event.preventDefault();
-		event.stopPropagation();
-	}, [scheduleDragClickSuppressionReset]);
+	}, [handleSuppressibleClick]);
 	const handleButtonClick = useCallback(() => {
-		if (suppressDragClickRef.current) {
-			scheduleDragClickSuppressionReset();
+		if (handleSuppressibleClick()) {
 			return;
 		}
 
 		onButtonClick();
-	}, [onButtonClick, scheduleDragClickSuppressionReset]);
+	}, [handleSuppressibleClick, onButtonClick]);
 
 	return (
 		<motion.div

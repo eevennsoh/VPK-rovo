@@ -734,6 +734,27 @@
 		var(--scroll-mask-scrollbar-width) 100%;
 }
 
+@utility scroll-mask-bottom {
+	--scroll-mask-fade-size: var(--ds-space-300);
+	--scroll-mask-scrollbar-width: 10px;
+	mask-image:
+		linear-gradient(to bottom, black 0, black calc(100% - var(--scroll-mask-fade-size)), transparent 100%),
+		linear-gradient(black, black);
+	mask-position: 0 0, 100% 0;
+	mask-repeat: no-repeat, no-repeat;
+	mask-size:
+		calc(100% - var(--scroll-mask-scrollbar-width)) 100%,
+		var(--scroll-mask-scrollbar-width) 100%;
+	-webkit-mask-image:
+		linear-gradient(to bottom, black 0, black calc(100% - var(--scroll-mask-fade-size)), transparent 100%),
+		linear-gradient(black, black);
+	-webkit-mask-position: 0 0, 100% 0;
+	-webkit-mask-repeat: no-repeat, no-repeat;
+	-webkit-mask-size:
+		calc(100% - var(--scroll-mask-scrollbar-width)) 100%,
+		var(--scroll-mask-scrollbar-width) 100%;
+}
+
 @utility bento-fade-bottom {
 	/* Height of the soft bottom edge shared by Studio bento surfaces. */
 	--bento-fade-height: 96px;

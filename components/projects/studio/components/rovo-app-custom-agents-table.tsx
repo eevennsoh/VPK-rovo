@@ -6,13 +6,6 @@ import { getStudioSessionAgentDisplayName } from "@/app/contexts";
 import { ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS } from "@/components/projects/studio/lib/rovo-app-shell-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { Lozenge } from "@/components/ui/lozenge";
 import {
@@ -22,17 +15,16 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import DeleteIcon from "@atlaskit/icon/core/delete";
 import EditIcon from "@atlaskit/icon/core/edit";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
 import PinIcon from "@atlaskit/icon/core/pin";
-import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 const STUDIO_CUSTOM_AGENT_OWNER_AVATAR_SRC = "/avatar-user/venn/venn.png";
 
 interface StudioCustomAgentsTableProps {
 	entries: readonly StudioSessionAgentEntry[];
-	onDeleteAgent: (agentId: string) => void;
+	/** Accepted for API compatibility with the shell; the table no longer renders a delete action. */
+	onDeleteAgent?: (agentId: string) => void;
 	onEditAgent: (agentId: string) => void;
 }
 
@@ -85,11 +77,9 @@ function getVersionVariant(entry: StudioSessionAgentEntry): "success" | "neutral
 
 export function StudioCustomAgentsTable({
 	entries,
-	onDeleteAgent,
 	onEditAgent,
 }: Readonly<StudioCustomAgentsTableProps>) {
 	const [pinnedAgentIds, setPinnedAgentIds] = useState<ReadonlySet<string>>(() => new Set());
-	const [openMenuAgentId, setOpenMenuAgentId] = useState<string | null>(null);
 	const sortedEntries = useMemo(() => {
 		return [...entries].sort((a, b) => {
 			const aPinned = pinnedAgentIds.has(a.profile.id);
@@ -114,7 +104,7 @@ export function StudioCustomAgentsTable({
 	};
 
 	return (
-		<section aria-labelledby="studio-custom-agents-heading" className={`mx-auto mt-20 w-full ${ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS}`}>
+		<section aria-labelledby="studio-custom-agents-heading" className={`mx-auto mt-12 w-full ${ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS}`}>
 			<h2 id="studio-custom-agents-heading" className="sr-only">
 				Custom agents
 			</h2>
@@ -123,14 +113,13 @@ export function StudioCustomAgentsTable({
 					<col />
 					<col className="w-[92px]" />
 					<col className="w-[72px]" />
-					<col className="w-[132px]" />
-					<col className="w-[88px]" />
+					<col className="w-[116px]" />
+					<col className="w-[72px]" />
 				</colgroup>
 				<TableBody>
 					{sortedEntries.map((entry) => {
 						const agentName = getStudioSessionAgentDisplayName(entry);
 						const isPinned = pinnedAgentIds.has(entry.profile.id);
-						const isMenuOpen = openMenuAgentId === entry.profile.id;
 						const revealOnHover =
 							"opacity-0 transition-opacity duration-fast group-hover/row:opacity-100 focus-visible:opacity-100";
 
@@ -168,30 +157,7 @@ export function StudioCustomAgentsTable({
 								</TableCell>
 								<TableCell className="px-2">
 									<div className="flex justify-end gap-1">
-										<DropdownMenu
-											modal={false}
-											open={isMenuOpen}
-											onOpenChange={(open) => setOpenMenuAgentId(open ? entry.profile.id : null)}
-										>
-											<DropdownMenuTrigger
-												render={
-													<Button aria-label={`More actions for ${agentName || "Untitled agent"}`} className={cn("size-7", revealOnHover, isMenuOpen && "opacity-100")} size="icon" type="button" variant="ghost" />
-												}
-											>
-												<Icon aria-hidden render={<ShowMoreHorizontalIcon label="" size="small" />} />
-											</DropdownMenuTrigger>
-											<DropdownMenuContent align="end" positionerClassName="z-[760]">
-												<DropdownMenuGroup>
-													<DropdownMenuItem elemBefore={<EditIcon label="" />} onSelect={() => onEditAgent(entry.profile.id)}>
-														Edit agent
-													</DropdownMenuItem>
-													<DropdownMenuItem variant="destructive" elemBefore={<DeleteIcon label="" />} onSelect={() => onDeleteAgent(entry.profile.id)}>
-														Delete agent
-													</DropdownMenuItem>
-												</DropdownMenuGroup>
-											</DropdownMenuContent>
-										</DropdownMenu>
-										<Button aria-label={`Edit ${agentName || "Untitled agent"}`} className={cn("size-7", revealOnHover, isMenuOpen && "opacity-100")} onClick={() => onEditAgent(entry.profile.id)} size="icon" type="button" variant="ghost">
+										<Button aria-label={`Edit ${agentName || "Untitled agent"}`} className={cn("size-7", revealOnHover)} onClick={() => onEditAgent(entry.profile.id)} size="icon" type="button" variant="ghost">
 											<Icon aria-hidden render={<EditIcon label="" size="small" />} />
 										</Button>
 										<Button
@@ -199,7 +165,7 @@ export function StudioCustomAgentsTable({
 											aria-pressed={isPinned}
 											className={cn(
 												"size-7 aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:[&_svg]:text-icon-subtle!",
-												isPinned ? "opacity-100" : cn(revealOnHover, isMenuOpen && "opacity-100"),
+												isPinned ? "opacity-100" : revealOnHover,
 											)}
 											onClick={() => togglePinned(entry.profile.id)}
 											size="icon"

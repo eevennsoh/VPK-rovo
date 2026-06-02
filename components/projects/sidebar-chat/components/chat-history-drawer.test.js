@@ -126,7 +126,7 @@ test("chat history drawer uses a contained left sheet with a local blanket", () 
 	assert.match(source, /overlayClassName="z-20"/u);
 	assert.match(source, /className="z-30[^"]*w-80[^"]*max-w-\[calc\(100%_-_40px\)\][^"]*bg-surface-overlay/u);
 	assert.match(sheetSource, /portalContainer/u);
-	assert.match(sheetSource, /contained \? "absolute z-20" : "fixed z-50"/u);
+	assert.match(sheetSource, /contained \? "absolute z-20" : "fixed z-\[200\]"/u);
 	assert.match(source, /<SheetClose/u);
 	assert.match(source, /buttonVariants\(\{ variant: "ghost", size: "icon", shape: "circle" \}\)/u);
 	assert.match(source, /<Icon aria-hidden label="" render=\{<CrossIcon label="" \/>\} \/>/u);

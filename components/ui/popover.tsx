@@ -35,12 +35,12 @@ function PopoverContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        className={cn("isolate z-50", positionerClassName)}
+        className={cn("isolate z-[200]", positionerClassName)}
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           className={cn(
-            "bg-popover text-popover-foreground flex flex-col gap-2.5 rounded-lg p-2.5 text-sm shadow-[0_8px_12px_rgb(9_30_66_/_0.15)] z-50 w-72 origin-(--transform-origin) outline-hidden dark:shadow-[0_8px_12px_rgb(1_4_4_/_0.36)] [[data-color-mode=dark]_&]:shadow-[0_8px_12px_rgb(1_4_4_/_0.36)] transition-[opacity,scale,translate] duration-fast ease-out data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95 data-[side=bottom]:data-starting-style:-translate-y-1 data-[side=top]:data-starting-style:translate-y-1 data-[side=left]:data-starting-style:translate-x-1 data-[side=right]:data-starting-style:-translate-x-1 data-[side=inline-start]:data-starting-style:translate-x-1 data-[side=inline-end]:data-starting-style:-translate-x-1 data-[side=bottom]:data-ending-style:-translate-y-1 data-[side=top]:data-ending-style:translate-y-1 data-[side=left]:data-ending-style:translate-x-1 data-[side=right]:data-ending-style:-translate-x-1 data-[side=inline-start]:data-ending-style:translate-x-1 data-[side=inline-end]:data-ending-style:-translate-x-1",
+            "bg-popover text-popover-foreground flex flex-col gap-2.5 rounded-lg p-2.5 text-sm shadow-[0_8px_12px_rgb(9_30_66_/_0.15)] z-[200] w-72 origin-(--transform-origin) outline-hidden dark:shadow-[0_8px_12px_rgb(1_4_4_/_0.36)] [[data-color-mode=dark]_&]:shadow-[0_8px_12px_rgb(1_4_4_/_0.36)] transition-[opacity,scale,translate] duration-fast ease-out data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95 data-[side=bottom]:data-starting-style:-translate-y-1 data-[side=top]:data-starting-style:translate-y-1 data-[side=left]:data-starting-style:translate-x-1 data-[side=right]:data-starting-style:-translate-x-1 data-[side=inline-start]:data-starting-style:translate-x-1 data-[side=inline-end]:data-starting-style:-translate-x-1 data-[side=bottom]:data-ending-style:-translate-y-1 data-[side=top]:data-ending-style:translate-y-1 data-[side=left]:data-ending-style:translate-x-1 data-[side=right]:data-ending-style:-translate-x-1 data-[side=inline-start]:data-ending-style:translate-x-1 data-[side=inline-end]:data-ending-style:-translate-x-1",
             className
           )}
           {...props}

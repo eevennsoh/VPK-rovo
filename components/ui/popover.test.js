@@ -12,6 +12,6 @@ test("popover content supports overriding the portal positioner layer", () => {
 	assert.match(source, /positionerClassName\?: string/u);
 	assert.match(
 		source,
-		/className=\{cn\("isolate z-50", positionerClassName\)\}/u,
+		/className=\{cn\("isolate z-\[200\]", positionerClassName\)\}/u,
 	);
 });

@@ -35,7 +35,7 @@ function SheetOverlay({
       data-slot="sheet-overlay"
       className={cn(
         "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 bg-blanket duration-medium data-ending-style:opacity-0 data-starting-style:opacity-0 inset-0",
-        contained ? "absolute z-20" : "fixed z-50",
+        contained ? "absolute z-20" : "fixed z-[200]",
         className
       )}
       {...props}
@@ -71,7 +71,7 @@ function SheetContent({
   const widthClass = side === "left" || side === "right" ? sizeClasses[size] : ""
   const positionClass = contained
     ? "absolute z-30"
-    : "fixed z-50"
+    : "fixed z-[200]"
 
   const content = (
     <>

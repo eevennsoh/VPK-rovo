@@ -312,7 +312,12 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// AgentAddValueButton fades in on hover via the opacity-0 group class.
 	assert.match(AGENT_SOURCE, /"group\/add-link inline-flex h-5 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest/u);
 	assert.doesNotMatch(AGENT_SOURCE, /group\/add-link inline-flex h-5 items-center gap-0\.5/u);
-	assert.match(AGENT_SOURCE, /<AgentAddValueButton[\s\S]*className=\{isEmpty\s*\?\s*undefined\s*:\s*"opacity-0 transition-opacity group-hover\/agent-row:opacity-100/u);
+	// The final chip and the inline +Add link share a single non-wrapping group so
+	// they reflow to the next line together instead of leaving a gap when chips
+	// fill the row. The empty-row +Add link renders separately and stays visible.
+	assert.match(AGENT_SOURCE, /const isLastItem = index === items\.length - 1;/u);
+	assert.match(AGENT_SOURCE, /if \(isLastItem && addLabel\) \{[\s\S]*className="inline-flex max-w-full items-center gap-1\.5"[\s\S]*<AgentAddValueButton[\s\S]*className="shrink-0 opacity-0 transition-opacity group-hover\/agent-row:opacity-100/u);
+	assert.match(AGENT_SOURCE, /\{isEmpty && addLabel \? \(\s*<AgentAddValueButton\s*label=\{addLabel\}/u);
 	assert.match(AGENT_SOURCE, /const AGENT_EMPTY_ROW_ADD_LABELS: Partial<Record<AgentConfigListFieldName, string>> = \{/u);
 	assert.match(AGENT_SOURCE, /triggers: "Add rules for when this agent runs"/u);
 	assert.match(AGENT_SOURCE, /conversationStarters: "Add prompts to help people start"/u);
