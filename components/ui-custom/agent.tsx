@@ -188,13 +188,13 @@ const AGENT_COMPACT_OPERATIONS_TEMPLATES: ReadonlyArray<AgentCompactBentoTemplat
 	{
 		description: "Guide incident response, on-call actions, mitigation, status updates, and recovery.",
 		iconSrc: "/avatar-agent/dev-agents/code-standardizer.svg",
-		layoutClassName: "sm:row-span-2 lg:col-start-4 lg:row-start-1",
+		layoutClassName: "sm:row-span-2 lg:col-start-4 lg:row-start-1 lg:row-span-2",
 		title: "Rovo Ops",
 	},
 	{
 		description: "Answer Rovo setup and usage questions with concise guidance and helpful links.",
 		iconSrc: "/avatar-agent/product-agents/wildcard-3.svg",
-		layoutClassName: "sm:row-span-2 lg:col-start-5 lg:row-start-1",
+		layoutClassName: "sm:row-span-2 lg:col-start-5 lg:row-start-1 lg:row-span-2",
 		title: "Rovo Expert",
 	},
 	{
@@ -256,7 +256,6 @@ const AGENT_COMPACT_BENTO_CARD_BORDER_GLOW_STYLE: CSSProperties = {
 	WebkitMaskComposite: "xor",
 };
 const AGENT_COMPACT_BENTO_FADE_MASK = "linear-gradient(to bottom, #000 calc(100% - 96px), transparent)";
-const AGENT_COMPACT_BENTO_CARD_DESCRIPTION_FADE_MASK = "linear-gradient(to bottom, #000 calc(100% - 1.25rem), transparent)";
 
 const MENTION_SOURCE_LIMIT = 24;
 
@@ -851,6 +850,41 @@ function AgentCompactOperationsBento() {
 		}
 	}, []);
 
+	// Truncate each card description with an ellipsis sized to the space the card
+	// actually has (its box minus padding, owned by the flex-fill outer span):
+	// set `-webkit-line-clamp` to the whole number of lines that fit. A
+	// ResizeObserver re-runs this whenever a card resizes, so wider/taller cards
+	// reveal more lines and squeezed cards truncate — correct at every viewport.
+	const descBoxes = useRef<Set<HTMLElement>>(new Set());
+	const registerDescBox = useCallback((node: HTMLElement | null) => {
+		if (node) {
+			descBoxes.current.add(node);
+		}
+	}, []);
+	useEffect(() => {
+		if (typeof ResizeObserver === "undefined") {
+			return;
+		}
+		const applyClamp = (box: HTMLElement) => {
+			const text = box.firstElementChild as HTMLElement | null;
+			if (!text) {
+				return;
+			}
+			const lineHeight = parseFloat(getComputedStyle(text).lineHeight) || 20;
+			const lines = Math.max(1, Math.floor(box.clientHeight / lineHeight));
+			text.style.setProperty("-webkit-line-clamp", String(lines));
+		};
+		const observer = new ResizeObserver((entries) => {
+			for (const entry of entries) {
+				applyClamp(entry.target as HTMLElement);
+			}
+		});
+		for (const box of descBoxes.current) {
+			observer.observe(box);
+		}
+		return () => observer.disconnect();
+	}, []);
+
 	return (
 		<section
 			aria-label="Operations prompt starters"
@@ -912,22 +946,20 @@ function AgentCompactOperationsBento() {
 									<span className="block w-full min-w-0 text-sm font-semibold leading-5 text-text">
 										{template.title}
 									</span>
-									<span
-										className={cn(
-											"w-full min-w-0 overflow-hidden text-sm leading-5",
-											isHero ? "flex-none text-text" : "flex-1 min-h-0 text-text-subtle"
-										)}
-										style={
-											isHero
-												? undefined
-												: {
-														maskImage: AGENT_COMPACT_BENTO_CARD_DESCRIPTION_FADE_MASK,
-														WebkitMaskImage: AGENT_COMPACT_BENTO_CARD_DESCRIPTION_FADE_MASK,
-													}
-										}
-									>
-										{template.description}
-									</span>
+									{isHero ? (
+										<span className="block w-full min-w-0 text-sm leading-5 text-text">
+											{template.description}
+										</span>
+									) : (
+										<span
+											ref={registerDescBox}
+											className="block w-full min-w-0 flex-1 min-h-0 overflow-hidden"
+										>
+											<span className="text-sm leading-5 text-text-subtle line-clamp-2">
+												{template.description}
+											</span>
+										</span>
+									)}
 								</span>
 								{template.hero ? (
 									<div className="relative z-[3] flex flex-col gap-4">
@@ -1673,7 +1705,7 @@ export const AgentConfigFields = memo(
 						</div>
 						<AgentInstructionsComposer
 							bottomSlot={isFilledConfig ? undefined : <AgentCompactOperationsBento />}
-							bottomSlotClassName={isFilledConfig ? undefined : "flex min-h-0 flex-1 flex-col pt-4"}
+							bottomSlotClassName={isFilledConfig ? undefined : "mt-auto flex min-h-0 flex-col pt-4"}
 							className={cn("flex flex-col", isFilledConfig ? "min-h-[560px]" : "min-h-0 flex-1")}
 							contentClassName="min-h-[240px] pt-4"
 							instructions={config.instructions}

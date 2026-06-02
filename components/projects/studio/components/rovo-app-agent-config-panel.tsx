@@ -397,7 +397,7 @@ export function RovoAppAgentConfigPanel({
 						}
 					/>
 					<TabsContent value="configure" className="min-h-0 flex-1 overflow-y-auto data-[hidden]:hidden">
-						<div className="flex min-h-full w-full flex-col px-6 py-5">
+						<div className="flex h-full w-full flex-col px-6 py-5">
 							<AnimatePresence>
 								{missingFields.length > 0 ? (
 									<motion.div
