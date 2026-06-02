@@ -288,13 +288,16 @@ export function RovoComposerActionButton({
 
 export type RovoComposerSendControlsProps = HTMLAttributes<HTMLDivElement> &
 	RovoComposerReasoningSelectorProps &
-	RovoComposerActionButtonProps;
+	RovoComposerActionButtonProps & {
+		hideReasoningSelector?: boolean;
+	};
 
 export function RovoComposerSendControls({
 	canSubmit,
 	className,
 	companyKnowledgeEnabled,
 	composerStatus,
+	hideReasoningSelector = false,
 	isComposerBusy,
 	micStream,
 	onCompanyKnowledgeChange,
@@ -315,16 +318,18 @@ export function RovoComposerSendControls({
 }: Readonly<RovoComposerSendControlsProps>): ReactElement {
 	return (
 		<div className={cn("flex h-8 min-w-0 shrink-0 items-center justify-end gap-1.5", className)} {...props}>
-			<RovoComposerReasoningSelector
-				companyKnowledgeEnabled={companyKnowledgeEnabled}
-				onCompanyKnowledgeChange={onCompanyKnowledgeChange}
-				onReasoningChange={onReasoningChange}
-				onOpenChange={onOpenChange}
-				open={open}
-				selectedReasoning={selectedReasoning}
-				webResultsEnabled={webResultsEnabled}
-				onWebResultsChange={onWebResultsChange}
-			/>
+			{hideReasoningSelector ? null : (
+				<RovoComposerReasoningSelector
+					companyKnowledgeEnabled={companyKnowledgeEnabled}
+					onCompanyKnowledgeChange={onCompanyKnowledgeChange}
+					onReasoningChange={onReasoningChange}
+					onOpenChange={onOpenChange}
+					open={open}
+					selectedReasoning={selectedReasoning}
+					webResultsEnabled={webResultsEnabled}
+					onWebResultsChange={onWebResultsChange}
+				/>
+			)}
 			<RovoComposerActionButton
 				canSubmit={canSubmit}
 				composerStatus={composerStatus}
