@@ -2305,7 +2305,7 @@ export const AgentConfigFields = memo(
 							)}
 							bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-4 pt-4"
 							className={cn("flex flex-col", isFilledConfig ? "min-h-[560px]" : "min-h-0 flex-1")}
-							contentClassName="min-h-[240px] pt-4"
+							contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[8rem]")}
 							instructions={config.instructions}
 							onInstructionsChange={(value) => onTextChange?.("instructions", value)}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
