@@ -475,6 +475,7 @@ export type AgentHeaderProps = ComponentProps<"div"> & {
 	leadingContent?: ReactNode;
 	primaryActionLabel?: string;
 	secondaryActionLabel?: string;
+	publishLabel?: string;
 	showActions?: boolean;
 	actions?: ReactNode;
 	badge?: ReactNode;
@@ -489,6 +490,7 @@ export const AgentHeader = memo(
 		name,
 		primaryActionLabel = "Configure",
 		secondaryActionLabel = "Test",
+		publishLabel = "Publish",
 		showActions = true,
 		actions,
 		badge,
@@ -524,19 +526,24 @@ export const AgentHeader = memo(
 						// `actions` to supply their own tab parts wired to outer state
 						// instead. ToggleGroup carries its own context, so no wrapper
 						// is required here.
-						<ToggleGroup
-							aria-label="Agent views"
-							defaultValue={["configure"]}
-							variant="outline"
-							size="sm"
-						>
-							<ToggleGroupItem value="configure">
-								{primaryActionLabel}
-							</ToggleGroupItem>
-							<ToggleGroupItem value="test">
-								{secondaryActionLabel}
-							</ToggleGroupItem>
-						</ToggleGroup>
+						<>
+							<ToggleGroup
+								aria-label="Agent views"
+								defaultValue={["configure"]}
+								variant="outline"
+								size="sm"
+							>
+								<ToggleGroupItem value="configure">
+									{primaryActionLabel}
+								</ToggleGroupItem>
+								<ToggleGroupItem value="test">
+									{secondaryActionLabel}
+								</ToggleGroupItem>
+							</ToggleGroup>
+							<Button type="button" size="default" variant="default">
+								{publishLabel}
+							</Button>
+						</>
 					)}
 				</div>
 			) : null}

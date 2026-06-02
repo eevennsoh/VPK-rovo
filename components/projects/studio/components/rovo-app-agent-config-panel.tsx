@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { type ComponentProps, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ComponentProps, type ReactNode, useCallback, useEffect, useMemo } from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 
 import {
@@ -16,7 +16,7 @@ import {
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import { getStudioSessionAgentDisplayName, useRovoChat } from "@/app/contexts";
-import { Button, type ButtonProps } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -52,39 +52,6 @@ function stringifyForComparison(value: unknown): string {
 	} catch {
 		return String(value);
 	}
-}
-
-type AgentConfigActionButtonProps = ButtonProps & {
-	children: ReactNode;
-	disabledTooltip?: string;
-};
-
-function AgentConfigActionButton({
-	children,
-	disabled,
-	disabledTooltip,
-	...props
-}: Readonly<AgentConfigActionButtonProps>) {
-	const button = (
-		<Button disabled={disabled} {...props}>
-			{children}
-		</Button>
-	);
-
-	if (!disabled || !disabledTooltip) {
-		return button;
-	}
-
-	return (
-		<Tooltip>
-			<TooltipTrigger render={<span className="inline-flex" />}>
-				{button}
-			</TooltipTrigger>
-			<TooltipContent side="bottom">
-				<p>{disabledTooltip}</p>
-			</TooltipContent>
-		</Tooltip>
-	);
 }
 
 type AgentConfigToggleItemProps = ComponentProps<typeof ToggleGroupItem> & {
@@ -207,28 +174,6 @@ export function RovoAppAgentConfigPanel({
 		);
 	}, [entry.publishReadyResult, entry.publishedResult]);
 
-	const [justUpdatedAt, setJustUpdatedAt] = useState<number | null>(null);
-	const justUpdatedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-	useEffect(() => {
-		return () => {
-			if (justUpdatedTimerRef.current) {
-				clearTimeout(justUpdatedTimerRef.current);
-			}
-		};
-	}, []);
-
-	const handleUpdate = useCallback(() => {
-		onCommitPublishReady(profileId);
-		setJustUpdatedAt(Date.now());
-		if (justUpdatedTimerRef.current) {
-			clearTimeout(justUpdatedTimerRef.current);
-		}
-		justUpdatedTimerRef.current = setTimeout(() => {
-			setJustUpdatedAt(null);
-		}, 1500);
-	}, [onCommitPublishReady, profileId]);
-
 	const handlePublish = useCallback(() => {
 		// Ensure publish-ready snapshot reflects current draft before publishing.
 		if (hasUpdateChanges) {
@@ -321,18 +266,6 @@ export function RovoAppAgentConfigPanel({
 										Test
 									</AgentConfigToggleItem>
 								</ToggleGroup>
-								<AgentConfigActionButton
-									type="button"
-									size="default"
-									variant="ghost"
-									onClick={handleUpdate}
-									disabled={!hasUpdateChanges}
-									disabledTooltip="Make a change to the agent before updating the testing version."
-									data-testid="agent-config-update"
-									data-screen-assistant-target="studio-agent-config-update"
-								>
-									{justUpdatedAt ? "Updated" : "Update"}
-								</AgentConfigActionButton>
 								<Button
 									type="button"
 									size="default"

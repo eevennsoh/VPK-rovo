@@ -256,10 +256,13 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /export type AgentConfigView = "configure" \| "test";/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function getPublishLabel/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /leadingContent=\{<AgentCompactHeaderNav avatarSrc=\{agentAvatarSrc\} \/>\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigActionButton/u);
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigActionButton/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigToggleItem/u);
 	assert.ok(AGENT_CONFIG_PANEL_SOURCE.includes('TooltipTrigger render={<span className="inline-flex" />}'));
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /disabledTooltip="Make a change to the agent before updating the testing version\."/u);
+	// The Update button is removed from the studio header; only the Configure/Test
+	// toggle group and Publish remain (consistent with the reusable AgentHeader).
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /disabledTooltip="Make a change to the agent before updating the testing version\."/u);
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /data-testid="agent-config-update"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const hasAgentInstructions = Boolean\(draft\.instructions\?\.trim\(\)\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<Tabs[\s\S]*onValueChange=\{handleViewChange\}[\s\S]*value=\{activeView\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<ToggleGroup[\s\S]*variant="outline"[\s\S]*size="sm"[\s\S]*value=\{\[activeView\]\}[\s\S]*<ToggleGroupItem[\s\S]*value="configure"[\s\S]*Configure[\s\S]*<\/ToggleGroupItem>[\s\S]*<AgentConfigToggleItem[\s\S]*value="test"[\s\S]*disabled=\{!hasAgentInstructions\}[\s\S]*data-testid="agent-config-test"[\s\S]*Test[\s\S]*<\/AgentConfigToggleItem>[\s\S]*<\/ToggleGroup>/u);
