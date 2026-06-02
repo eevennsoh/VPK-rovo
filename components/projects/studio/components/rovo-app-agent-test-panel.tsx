@@ -246,6 +246,7 @@ function AgentTestChatPanel({
 				heading: testAgentProfile.name,
 				suggestions: testAgentProfile.starters,
 			}}
+			hideComposerSourceAndModelControls
 			hideHeader
 		/>
 	);

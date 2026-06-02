@@ -95,6 +95,7 @@ interface ChatPanelProps {
 	cards?: ChatPanelCardsProps;
 	greeting?: ChatPanelGreetingProps;
 	customAgentTabs?: ChatPanelCustomAgentTabs;
+	hideComposerSourceAndModelControls?: boolean;
 	hideHeader?: boolean;
 	headerVariant?: "default" | "minimal";
 	abortOnUnmount?: boolean;
@@ -163,6 +164,7 @@ export default function ChatPanel({
 	cards,
 	greeting,
 	customAgentTabs,
+	hideComposerSourceAndModelControls = false,
 	hideHeader = false,
 	headerVariant = "default",
 	abortOnUnmount = true,
@@ -849,6 +851,7 @@ export default function ChatPanel({
 						isStreaming={isStreamingLifecycleActive}
 						hasInFlightTurn={hasInFlightTurn}
 						queuedPrompts={queuedPrompts}
+						hideSourceAndModelControls={hideComposerSourceAndModelControls}
 						micStream={realtime.micStream}
 						clickyActive={isClickyActive}
 						onPromptChange={setPrompt}

@@ -38,6 +38,7 @@ interface ChatComposerProps {
 	isStreaming: boolean;
 	hasInFlightTurn: boolean;
 	queuedPrompts: ReadonlyArray<QueuedPromptItem>;
+	hideSourceAndModelControls?: boolean;
 	micStream?: MediaStream | null;
 	clickyActive?: boolean;
 	onPromptChange: (value: string) => void;
@@ -56,6 +57,7 @@ interface ChatComposerProps {
 interface ChatComposerSendControlsProps {
 	companyKnowledgeEnabled: boolean;
 	composerStatus: ChatStatus;
+	hideReasoningSelector?: boolean;
 	isComposerBusy: boolean;
 	micStream: MediaStream | null;
 	onCompanyKnowledgeChange: (value: boolean) => void;
@@ -78,6 +80,7 @@ function getQueuedPromptLabel(queuedPrompt: QueuedPromptItem): string {
 function ChatComposerSendControls({
 	companyKnowledgeEnabled,
 	composerStatus,
+	hideReasoningSelector = false,
 	isComposerBusy,
 	micStream,
 	onCompanyKnowledgeChange,
@@ -100,6 +103,7 @@ function ChatComposerSendControls({
 			canSubmit={canSubmit}
 			companyKnowledgeEnabled={companyKnowledgeEnabled}
 			composerStatus={composerStatus}
+			hideReasoningSelector={hideReasoningSelector}
 			isComposerBusy={isComposerBusy}
 			micStream={micStream}
 			onCompanyKnowledgeChange={onCompanyKnowledgeChange}
@@ -116,7 +120,7 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, micStream = null, clickyActive = false, onPromptChange, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, selectedReasoning: controlledSelectedReasoning, chatContextBar, onContextBarOpenChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, hideSourceAndModelControls = false, micStream = null, clickyActive = false, onPromptChange, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, selectedReasoning: controlledSelectedReasoning, chatContextBar, onContextBarOpenChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -220,27 +224,30 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 								<CursorIcon label="" />
 							</PromptInputButton>
 
-							<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
-								<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />
-								<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-2">
-									<PopoverTitle className="sr-only">Customize sources</PopoverTitle>
-									<CustomizeMenu
-										selectedReasoning={selectedReasoning}
-										onReasoningChange={handleReasoningChange}
-										showReasoning={false}
-										webResultsEnabled={webResultsEnabled}
-										onWebResultsChange={setWebResultsEnabled}
-										companyKnowledgeEnabled={companyKnowledgeEnabled}
-										onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
-										onClose={() => setIsCustomizeMenuOpen(false)}
-									/>
-								</PopoverContent>
-							</Popover>
+							{hideSourceAndModelControls ? null : (
+								<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
+									<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />
+									<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-2">
+										<PopoverTitle className="sr-only">Customize sources</PopoverTitle>
+										<CustomizeMenu
+											selectedReasoning={selectedReasoning}
+											onReasoningChange={handleReasoningChange}
+											showReasoning={false}
+											webResultsEnabled={webResultsEnabled}
+											onWebResultsChange={setWebResultsEnabled}
+											companyKnowledgeEnabled={companyKnowledgeEnabled}
+											onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
+											onClose={() => setIsCustomizeMenuOpen(false)}
+										/>
+									</PopoverContent>
+								</Popover>
+							)}
 						</PromptInputTools>
 
 						<ChatComposerSendControls
 							companyKnowledgeEnabled={companyKnowledgeEnabled}
 							composerStatus={submitStatus}
+							hideReasoningSelector={hideSourceAndModelControls}
 							isComposerBusy={isComposerBusy}
 							micStream={micStream}
 							onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
