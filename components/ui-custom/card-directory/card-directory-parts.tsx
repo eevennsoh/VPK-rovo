@@ -224,7 +224,7 @@ function getBannerCoverColor(avatarSrc: string | undefined): string {
 }
 
 export interface CardDirectoryBannerProps {
-	avatarSrc: string;
+	avatarSrc?: string;
 	/** Override the avatar-category-derived cover color. */
 	backgroundColor?: string;
 	/** Optional badge overlaid on the foreground avatar. */
@@ -244,14 +244,16 @@ export function CardDirectoryBanner({ avatarSrc, avatarBadge, backgroundColor }:
 			data-slot="card-directory-banner"
 		>
 			<div className="relative h-12 overflow-hidden" style={{ backgroundColor: coverColor }}>
-				<Image
-					alt=""
-					aria-hidden
-					className="absolute top-1/2 left-[88%] h-48 w-[168px] -translate-x-1/2 -translate-y-1/2 opacity-95"
-					height={192}
-					src={avatarSrc}
-					width={168}
-				/>
+				{avatarSrc ? (
+					<Image
+						alt=""
+						aria-hidden
+						className="absolute top-1/2 left-[88%] h-48 w-[168px] -translate-x-1/2 -translate-y-1/2 opacity-95"
+						height={192}
+						src={avatarSrc}
+						width={168}
+					/>
+				) : null}
 			</div>
 			<div aria-hidden className="h-6" />
 			{/* The avatar art (`public/avatar-agent/*`) is itself a full-bleed hexagon drawn with
@@ -263,7 +265,9 @@ export function CardDirectoryBanner({ avatarSrc, avatarBadge, backgroundColor }:
 			    default (meet) scaling so they stay flush. The wrapper recreates the `group/avatar`
 			    + `data-size` contract the badge sizes against. */}
 			<div aria-hidden className="group/avatar absolute top-6 left-4 h-12 w-[42px]" data-size="xl">
-				<Image alt="" aria-hidden className="absolute inset-0 size-full object-contain" height={48} src={avatarSrc} width={42} />
+				{avatarSrc ? (
+					<Image alt="" aria-hidden className="absolute inset-0 size-full object-contain" height={48} src={avatarSrc} width={42} />
+				) : null}
 				<svg
 					aria-hidden="true"
 					className="stroke-surface pointer-events-none absolute inset-0 size-full overflow-visible"

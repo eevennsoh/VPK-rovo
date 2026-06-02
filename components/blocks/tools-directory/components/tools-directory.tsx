@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
+import { AtlassianLogo } from "@/components/ui/logo";
 import { Switch } from "@/components/ui/switch";
 import { Tile } from "@/components/ui/tile";
 import { CardDirectoryTool } from "@/components/ui-custom/card-directory";
@@ -52,7 +52,6 @@ export interface ToolsDirectoryPermission {
 export interface ToolsDirectoryTool extends AgentBrowserAgent {
 	categoryId?: string;
 	lastUpdatedLabel?: string;
-	logoName?: AtlassianLogoName;
 	logoSrc?: string;
 	publisherName?: string;
 	readOnlyTools?: readonly ToolsDirectoryPermission[];
@@ -230,20 +229,28 @@ function getSidebarGroupItems(
 			id: tool.id,
 			label: tool.name,
 			avatarSrc: tool.avatarSrc,
+			logoName: tool.logoName,
 		}));
 }
 
 function getToolLogo(tool: ToolsDirectoryTool): ReactNode {
-	return (
+	if (tool.logoName || tool.id === "atlassian") {
+		return (
+			<AtlassianLogo label={tool.name} name={tool.logoName ?? "atlassian"} size="small" themeAware />
+		);
+	}
+
+	const src = tool.logoSrc ?? tool.avatarSrc;
+	return src ? (
 		<Image
 			alt=""
 			aria-hidden
 			className="size-full object-contain"
 			height={24}
-			src={tool.logoSrc ?? tool.avatarSrc}
+			src={src}
 			width={24}
 		/>
-	);
+	) : null;
 }
 
 function getDetailLogo(tool: ToolsDirectoryTool): ReactNode {
@@ -258,16 +265,17 @@ function getDetailLogo(tool: ToolsDirectoryTool): ReactNode {
 		);
 	}
 
-	return (
+	const src = tool.logoSrc ?? tool.avatarSrc;
+	return src ? (
 		<Image
 			alt=""
 			aria-hidden
 			className="size-16 object-contain"
 			height={64}
-			src={tool.logoSrc ?? tool.avatarSrc}
+			src={src}
 			width={64}
 		/>
-	);
+	) : null;
 }
 
 function getPermissionGroups(tool: ToolsDirectoryTool) {
@@ -643,7 +651,11 @@ function ToolsDirectorySidebarGroup({
 }
 
 function SidebarToolAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>) {
-	return (
+	if (item.logoName) {
+		return <AtlassianLogo name={item.logoName} size="xsmall" themeAware label={item.label} />;
+	}
+
+	return item.avatarSrc ? (
 		<Image
 			alt=""
 			aria-hidden
@@ -652,7 +664,7 @@ function SidebarToolAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 			src={item.avatarSrc}
 			width={16}
 		/>
-	);
+	) : null;
 }
 
 interface ToolDetailViewProps {

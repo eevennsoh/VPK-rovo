@@ -11,7 +11,6 @@ const DEMO_TOOLS: readonly ToolsDirectoryTool[] = [
 		name: "Atlassian",
 		byline: "Collaboration tools by Atlassian",
 		attributionKind: "company",
-		avatarSrc: "/1p/atlassian.svg",
 		categoryId: "project-management",
 		description:
 			"Specializes in collaboration tools designed primarily for software development and project management.",

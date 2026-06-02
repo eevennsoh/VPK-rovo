@@ -86,7 +86,7 @@ export const DEMO_AGENT_BROWSER_AGENTS: readonly AgentBrowserAgent[] = [
 		name: "Atlassian",
 		byline: "Teamwork search by Atlassian",
 		attributionKind: "company",
-		avatarSrc: "/1p/atlassian.svg",
+		logoName: "atlassian",
 		description: "Connects work across Jira, Confluence, and the rest of your suite.",
 	},
 ];

@@ -1,4 +1,5 @@
 import type { SkillCategory } from "./skills";
+import type { AtlassianLogoName } from "@/components/ui/logo";
 
 /** Primary (sectionless) nav rows shown above the first group heading. */
 export interface SkillsDirectoryPrimaryItem {
@@ -31,7 +32,9 @@ export interface SkillsDirectoryCompanyItem {
 	kind: "company";
 	id: string;
 	label: string;
-	logoSrc: string;
+	logoSrc?: string;
+	/** When set, renders the ADS brand logo instead of a `logoSrc` image. */
+	logoName?: AtlassianLogoName;
 }
 
 export type SkillsDirectorySidebarItem =
@@ -67,7 +70,7 @@ export const DEFAULT_SKILLS_DIRECTORY_SIDEBAR_GROUPS: readonly SkillsDirectorySi
 		title: "By companies",
 		showAll: true,
 		items: [
-			{ kind: "company", id: "atlassian", label: "Atlassian", logoSrc: "/1p/atlassian.svg" },
+			{ kind: "company", id: "atlassian", label: "Atlassian", logoName: "atlassian" },
 			{ kind: "company", id: "stripe", label: "Stripe", logoSrc: "/3p/stripe/24.svg" },
 			{ kind: "company", id: "tempo", label: "Tempo", logoSrc: "/avatar-project/stopwatch.svg" },
 			{ kind: "company", id: "google", label: "Google", logoSrc: "/3p/google-drive/24.svg" },

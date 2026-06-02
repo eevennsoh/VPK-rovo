@@ -309,7 +309,6 @@ const tools: ToolsDirectoryTool[] = [
     id: "atlassian",
     name: "Atlassian",
     byline: "Collaboration tools by Atlassian",
-    avatarSrc: "/1p/atlassian.svg",
     categoryId: "project-management",
     description: "Specializes in collaboration tools designed primarily for software development and project management.",
     logoName: "atlassian",

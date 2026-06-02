@@ -43,7 +43,7 @@ test("Tools Directory owns the Figma modal instead of wrapping AgentBrowserDialo
 	assert.match(source, /Sort by latest/u);
 	assert.match(source, /Showing \{filteredTools\.length\.toLocaleString\("en-US"\)\} results/u);
 	assert.match(source, /className="min-h-\[102px\] hover:border-transparent"/u);
-	assert.match(source, /src=\{tool\.logoSrc \?\? tool\.avatarSrc\}/u);
+	assert.match(source, /const src = tool\.logoSrc \?\? tool\.avatarSrc;/u);
 	assert.match(source, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
 	assert.match(source, /const contentOverflow = useHasVerticalOverflow<HTMLDivElement>\(\);/u);
 	assert.match(source, /ref=\{contentOverflow\.ref\}/u);
