@@ -1144,7 +1144,7 @@ function HomeStarterBento({
 					</AnimatePresence>
 				</div>
 				{canShowMore ? (
-					<div className="pointer-events-none z-10 flex justify-center max-sm:static max-sm:mt-2 sm:absolute sm:inset-x-0 sm:bottom-0 sm:pb-2">
+					<div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-2">
 						<Button
 							type="button"
 							aria-label="Browse all agents"
@@ -4183,14 +4183,14 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									// chrome; collapse intent stays on the handle (`data-will-collapse`).
 									sidebarResize.isResizing || sidebarResize.isResizeHandleHovered ? "border-border-selected" : "border-border",
 								)
-							: "w-40 border-b border-border",
+							: "w-24 border-b border-border",
 					)}
 					style={{ backgroundColor: token("elevation.surface"), viewTransitionName: "persistent-sidebar" as never }}
 				>
 					<LeftNavigation
 						product="studio"
 						windowWidth={nav.windowWidth}
-						isVisible={nav.isVisible}
+						isVisible={chat.sidebarOpen}
 						isAppSwitcherOpen={nav.isAppSwitcherOpen}
 						isSidebarResizing={sidebarResize.isResizing}
 						hideAppSwitcher
@@ -4208,17 +4208,17 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 				{!embedded ? (
 					<div
-						className={cn("flex h-12 shrink-0 items-center border-b px-3 transition-[padding] duration-medium ease-in-out", !chat.sidebarOpen && "pl-44")}
+						className={cn("flex h-12 shrink-0 items-center border-b px-3 transition-[padding] duration-medium ease-in-out", !chat.sidebarOpen && "pl-24")}
 						style={{
 							borderColor: token("color.border"),
 							backgroundColor: token("elevation.surface"),
 							viewTransitionName: "persistent-header" as never,
 						}}
 					>
-						<div className="relative flex min-w-0 flex-1 items-center justify-center gap-2">
+						<div className="relative flex min-w-0 flex-1 items-center justify-start gap-2">
 							<div
 									ref={nav.searchContainerRef}
-									className="relative flex h-9 w-full max-w-[762px] items-center"
+									className="relative flex h-9 w-full items-center ps-2"
 								>
 								<InputGroup
 									className={cn(

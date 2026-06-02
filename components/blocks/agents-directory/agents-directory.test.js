@@ -76,7 +76,7 @@ test("Agents Directory sidebar nav uses the shared SidebarNavItem primitive", ()
 	);
 	assert.match(source, /import AlignTextLeftIcon from "@atlaskit\/icon\/core\/align-text-left";/u);
 	assert.match(source, /import \{ Avatar, AvatarImage \} from "@\/components\/ui\/avatar";/u);
-	assert.match(source, /import \{ AtlassianLogo, isAtlassianLogoSource \} from "@\/components\/ui\/logo";/u);
+	assert.match(source, /import \{ AtlassianLogo, type AtlassianLogoName \} from "@\/components\/ui\/logo";/u);
 	assert.doesNotMatch(source, /import \{ Tile \} from "@\/components\/ui\/tile";/u);
 	assert.match(
 		source,
@@ -84,8 +84,8 @@ test("Agents Directory sidebar nav uses the shared SidebarNavItem primitive", ()
 	);
 	assert.match(source, /<SidebarNavItem[\s\S]*label=\{item\.label\}[\s\S]*leading=\{<SidebarItemAvatar item=\{item\} \/>\}[\s\S]*onClick=\{agent \? \(\) => onSelectAgent\?\.\(agent\) : undefined\}/u);
 	assert.match(source, /function SidebarItemAvatar\(\{ item \}: Readonly<\{ item: AgentBrowserSidebarItem \}>\)/u);
-	assert.match(source, /if \(isAtlassianLogoSource\(item\.avatarSrc\)\)[\s\S]*<span className="flex size-6 shrink-0 items-center justify-center">[\s\S]*<AtlassianLogo name="atlassian" label=\{item\.label\} size="small" \/>[\s\S]*<\/span>/u);
-	assert.match(source, /if \(item\.avatarSrc\.startsWith\("\/avatar-project\/"\)\)/u);
+	assert.match(source, /if \(item\.logoName\)[\s\S]*<span className="flex size-6 shrink-0 items-center justify-center">[\s\S]*<AtlassianLogo name=\{item\.logoName\} label=\{item\.label\} size="small" themeAware \/>[\s\S]*<\/span>/u);
+	assert.match(source, /if \(item\.avatarSrc\?\.startsWith\("\/avatar-project\/"\)\)/u);
 	assert.match(source, /<span className="flex size-6 shrink-0 items-center justify-center">[\s\S]*<Avatar size="sm" shape="square" label=\{item\.label\} className="size-5">[\s\S]*<AvatarImage alt="" aria-hidden src=\{item\.avatarSrc\} \/>/u);
 	assert.match(source, /<Avatar size="sm" shape="square" className="shrink-0 after:border-0">/u);
 	assert.match(source, /export interface AgentBrowserSidebarItem/u);
@@ -212,8 +212,8 @@ test("Agents Directory cards render the shared CardDirectoryAgent with overlay e
 	assert.match(source, /onSelect=\{selectAgent\}/u);
 	assert.match(source, /<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
 	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
-	assert.match(cardDirectoryAgentSource, /isAtlassianLogoSource\(avatarSrc\) \? \(/u);
-	assert.match(cardDirectoryAgentSource, /<AtlassianLogo name="atlassian" label=\{name\} size="medium" \/>/u);
+	assert.match(cardDirectoryAgentSource, /logoName\?: AtlassianLogoName;/u);
+	assert.match(cardDirectoryAgentSource, /<AtlassianLogo name=\{logoName\} size="medium" themeAware label=\{name\} \/>/u);
 	assert.doesNotMatch(source, /AgentDirectoryCard/u);
 	assert.doesNotMatch(source, /AGENT_CARD_OVERLAY_SHADOW/u);
 	assert.doesNotMatch(source, /import \{ motion, useReducedMotion \}/u);

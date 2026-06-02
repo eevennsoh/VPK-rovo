@@ -48,9 +48,9 @@ test("Tools Directory owns the Figma modal instead of wrapping AgentBrowserDialo
 	assert.match(source, /<CardDirectoryTool[\s\S]*active=\{moreMenuOpen\}[\s\S]*moreAction=\{[\s\S]*<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
 	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
 	assert.match(source, /className="min-h-\[102px\] hover:border-transparent"/u);
-	assert.match(source, /import \{ AtlassianLogo, isAtlassianLogoSource, type AtlassianLogoName \} from "@\/components\/ui\/logo";/u);
-	assert.match(source, /tool\.logoName \|\| tool\.id === "atlassian" \|\| isAtlassianLogoSource\(tool\.avatarSrc\)/u);
 	assert.match(source, /<AtlassianLogo[\s\S]*label=\{tool\.name\}[\s\S]*name=\{tool\.logoName \?\? "atlassian"\}[\s\S]*size="small"/u);
+	assert.match(source, /tool\.logoName \|\| tool\.id === "atlassian"/u);
+	assert.match(source, /const src = tool\.logoSrc \?\? tool\.avatarSrc;/u);
 	assert.match(source, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
 	assert.match(source, /const contentOverflow = useHasVerticalOverflow<HTMLDivElement>\(\);/u);
 	assert.match(source, /ref=\{contentOverflow\.ref\}/u);
@@ -130,7 +130,7 @@ test("Tools Directory docs demo includes added and non-added detail states", () 
 	const sidebarGroupsSource = readProjectFile("components/blocks/tools-directory/data/sidebar-groups.ts");
 
 	assert.match(source, /defaultAddedToolIds=\{\["atlassian"\]\}/u);
-	assert.match(source, /avatarSrc: "atlassian"/u);
+	assert.match(source, /logoName: "atlassian"/u);
 	assert.match(source, /favorite: true/u);
 	assert.match(source, /categoryId: "project-management"/u);
 	assert.match(source, /categoryId: "software-development"/u);

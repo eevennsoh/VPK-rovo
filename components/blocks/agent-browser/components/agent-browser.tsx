@@ -9,6 +9,7 @@ import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -19,7 +20,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { CardDirectoryAgent } from "@/components/ui-custom/card-directory";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
@@ -31,7 +31,9 @@ export interface AgentBrowserAgent {
 	name: string;
 	byline: string;
 	attributionKind?: "company" | "team" | "person";
-	avatarSrc: string;
+	avatarSrc?: string;
+	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
+	logoName?: AtlassianLogoName;
 	description?: string;
 	favorite?: boolean;
 }
@@ -46,7 +48,9 @@ export interface AgentBrowserSidebarGroup {
 export interface AgentBrowserSidebarItem {
 	id: string;
 	label: string;
-	avatarSrc: string;
+	avatarSrc?: string;
+	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
+	logoName?: AtlassianLogoName;
 }
 
 export interface AgentBrowserCategory {
@@ -139,6 +143,7 @@ function getSidebarGroupItems(
 		id: agent.id,
 		label: agent.name,
 		avatarSrc: agent.avatarSrc,
+		logoName: agent.logoName,
 	}));
 }
 
@@ -352,15 +357,15 @@ function SidebarGroup({ title, items, agents, onSelectAgent, showAll = false }: 
 }
 
 function SidebarItemAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>) {
-	if (isAtlassianLogoSource(item.avatarSrc)) {
+	if (item.logoName) {
 		return (
 			<span className="flex size-6 shrink-0 items-center justify-center">
-				<AtlassianLogo name="atlassian" label={item.label} size="small" />
+				<AtlassianLogo name={item.logoName} label={item.label} size="small" themeAware />
 			</span>
 		);
 	}
 
-	if (item.avatarSrc.startsWith("/avatar-project/")) {
+	if (item.avatarSrc?.startsWith("/avatar-project/")) {
 		return (
 			<span className="flex size-6 shrink-0 items-center justify-center">
 				<Avatar size="sm" shape="square" label={item.label} className="size-5">
@@ -372,14 +377,16 @@ function SidebarItemAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 
 	return (
 		<Avatar size="sm" shape="square" className="shrink-0 after:border-0">
-			<Image
-				alt=""
-				aria-hidden
-				className="size-full object-contain"
-				height={24}
-				src={item.avatarSrc}
-				width={24}
-			/>
+			{item.avatarSrc ? (
+				<Image
+					alt=""
+					aria-hidden
+					className="size-full object-contain"
+					height={24}
+					src={item.avatarSrc}
+					width={24}
+				/>
+			) : null}
 		</Avatar>
 	);
 }
@@ -429,6 +436,7 @@ function AgentCard({ agent, onSelectAgent, publisher }: Readonly<AgentCardProps>
 			className="hover:border-transparent"
 			description={agent.description}
 			feedbackCount={syntheticFeedback(agent.id)}
+			logoName={agent.logoName}
 			moreAction={
 				<DirectoryCardMoreMenu
 					label={`More actions for ${agent.name}`}

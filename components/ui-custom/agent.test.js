@@ -118,6 +118,15 @@ test("Filled config summary sorts empty rows to the bottom while preserving cano
 	assert.match(AGENT_SOURCE, /const rows: ReadonlyArray<\{ key: string; isEmpty: boolean; node: ReactNode \}>/u);
 	assert.match(AGENT_SOURCE, /const orderedRows = rows[\s\S]*\.sort\(\(a, b\) => \{[\s\S]*if \(a\.isEmpty !== b\.isEmpty\) return a\.isEmpty \? 1 : -1;[\s\S]*return a\.index - b\.index;/u);
 	assert.match(AGENT_SOURCE, /isEmpty: hasKnowledgeSelector \? false : knowledgeItems\.length === 0/u);
+	// The rows array source order IS the canonical display order. Reasoning is
+	// rendered separately after this list, so it is not a row key here.
+	assert.match(
+		AGENT_SOURCE,
+		/key: "trigger"[\s\S]*key: "knowledge"[\s\S]*key: "tools"[\s\S]*key: "skills"[\s\S]*key: "subagents"[\s\S]*key: "memory"[\s\S]*key: "conversationStarters"/u,
+	);
+	// Memory is its own always-on row (never empty), not a chip inside Knowledge.
+	assert.match(AGENT_SOURCE, /function AgentMemoryRow/u);
+	assert.match(AGENT_SOURCE, /key: "memory",[\s\S]*isEmpty: false,/u);
 });
 
 test("Agent config updates instructions as markdown strings", () => {
@@ -179,18 +188,18 @@ test("Agent config renders filled summary rows once field data exists", () => {
 });
 
 test("Agent header renders Configure and Test as a self-contained compact ToggleGroup", () => {
-	// The default header uses a compact outline ToggleGroup (size="sm") instead
-	// of the Tabs control. Consumers that need controlled tabs still override
-	// via the `actions` prop.
+	// The default header uses an outline ToggleGroup at the default size (32px /
+	// h-8) instead of the Tabs control. Consumers that need controlled tabs still
+	// override via the `actions` prop.
 	assert.match(AGENT_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
 	assert.match(AGENT_SOURCE, /primaryActionLabel = "Configure"/u);
 	assert.match(AGENT_SOURCE, /secondaryActionLabel = "Test"/u);
 	assert.match(AGENT_SOURCE, /publishLabel = "Publish"/u);
 	// ToggleGroup carries its own context, so the default actions render it
-	// directly (compact: variant="outline" size="sm") alongside a Publish button.
+	// directly (variant="outline", default size) alongside a Publish button.
 	assert.match(
 		AGENT_SOURCE,
-		/\{actions \?\? \([\s\S]*<ToggleGroup[\s\S]*aria-label="Agent views"[\s\S]*defaultValue=\{\["configure"\]\}[\s\S]*variant="outline"[\s\S]*size="sm"[\s\S]*<ToggleGroupItem value="configure">[\s\S]*\{primaryActionLabel\}[\s\S]*<ToggleGroupItem value="test">[\s\S]*\{secondaryActionLabel\}[\s\S]*<\/ToggleGroup>[\s\S]*<Button[\s\S]*\{publishLabel\}[\s\S]*<\/Button>/u,
+		/\{actions \?\? \([\s\S]*<ToggleGroup[\s\S]*aria-label="Agent views"[\s\S]*defaultValue=\{\["configure"\]\}[\s\S]*variant="outline"[\s\S]*<ToggleGroupItem value="configure">[\s\S]*\{primaryActionLabel\}[\s\S]*<ToggleGroupItem value="test">[\s\S]*\{secondaryActionLabel\}[\s\S]*<\/ToggleGroup>[\s\S]*<Button[\s\S]*\{publishLabel\}[\s\S]*<\/Button>/u,
 	);
 	// The Tabs-based header is fully retired from the default actions.
 	assert.doesNotMatch(AGENT_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
@@ -208,7 +217,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /layout === "compact"/u);
 	assert.match(compactLayoutSource, /<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">/u);
 	assert.doesNotMatch(compactLayoutSource, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
-	assert.match(compactLayoutSource, /bottomSlot=\{\([\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}[\s\S]*isFilledConfig \? null : \([\s\S]*<AnimatePresence>[\s\S]*templatesDismissed \? null : \([\s\S]*<AgentCompactOperationsBento[\s\S]*onDismiss=\{\(\) => setTemplatesDismissed\(true\)\}/u);
+	assert.match(compactLayoutSource, /bottomSlot=\{\([\s\S]*isFilledConfig \? null : \([\s\S]*<AnimatePresence>[\s\S]*templatesDismissed \? null : \([\s\S]*<AgentCompactOperationsBento[\s\S]*onDismiss=\{\(\) => setTemplatesDismissed\(true\)\}[\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}/u);
 	assert.match(compactLayoutSource, /bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-4 pt-4"/u);
 	assert.doesNotMatch(compactLayoutSource, /toolbarBelowSlot=\{\(\s*<AgentCompactConfigToolbarBelow/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow/u);
@@ -261,12 +270,13 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /import \{ AnimatePresence, motion, useReducedMotion, type MotionProps \} from "motion\/react";/u);
 	assert.match(AGENT_SOURCE, /import ChevronDownIcon from "@atlaskit\/icon\/core\/chevron-down";/u);
 	assert.match(AGENT_SOURCE, /import ChevronUpIcon from "@atlaskit\/icon\/core\/chevron-up";/u);
-	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow\([\s\S]*const \[expanded, setExpanded\] = useState\(false\);[\s\S]*const shouldReduceMotion = useReducedMotion\(\);[\s\S]*const isExpanded = expanded && isFilledConfig;/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow\([\s\S]*const \[expanded, setExpanded\] = useState\(\(\) => !isFilledConfig\);[\s\S]*const shouldReduceMotion = useReducedMotion\(\);[\s\S]*const isExpanded = expanded;/u);
 	assert.match(AGENT_SOURCE, /<AnimatePresence initial=\{false\} mode="wait">/u);
 	assert.match(AGENT_SOURCE, /<motion\.div\s+key="expanded"/u);
 	assert.match(AGENT_SOURCE, /<motion\.div\s+key="collapsed"/u);
 	// Horizontal rule line spans the row; the chevron sits at the far right of
-	// the same row and stays mounted across both states.
+	// the same row and stays mounted across both states. Empty configs initialize
+	// expanded so first-run users see all supported capability rows.
 	assert.match(AGENT_SOURCE, /<div aria-hidden className="h-px flex-1 bg-border" \/>/u);
 	assert.match(AGENT_SOURCE, /aria-label=\{isExpanded \? "Collapse configuration" : "Expand configuration"\}/u);
 	assert.match(AGENT_SOURCE, /onClick=\{\(\) => setExpanded\(\(prev\) => !prev\)\}/u);
@@ -292,14 +302,14 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /aria-pressed=\{item\.isSelected \? true : undefined\}[\s\S]*variant=\{item\.isSelected \? "outline" : "ghost"\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /\[&_svg\]:size-4!/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactOperationsBento/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactBentoTemplatesHint[\s\S]*className="relative z-\[3\] mb-3 flex items-center justify-between gap-3"[\s\S]*<AgentSectionLabel>Start with these agent templates<\/AgentSectionLabel>/u);
 	assert.match(AGENT_SOURCE, /showSectionLabel=\{false\}/u);
 	assert.match(AGENT_SOURCE, /data-slot="agent-compact-operations-bento"/u);
 	assert.match(AGENT_SOURCE, /AGENT_COMPACT_BENTO_CARD_GLOW_EFFECT_STYLE/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactBentoCardGlowLayers/u);
-	assert.match(AGENT_SOURCE, /AGENT_COMPACT_BENTO_FADE_MASK/u);
-	assert.match(AGENT_SOURCE, /auto-rows-\[144px\][\s\S]*lg:grid-cols-5/u);
-	assert.match(AGENT_SOURCE, /<SkillTagGroup maxRows=\{2\}>/u);
-	assert.match(AGENT_SOURCE, /<TWGAppstack[\s\S]*iconSize="md"[\s\S]*sources=\{template\.hero\.sources\}/u);
+	assert.match(AGENT_SOURCE, /sm:bento-fade-bottom/u);
+	assert.match(AGENT_SOURCE, /<BentoCarousel[\s\S]*gridClassName="sm:grid-cols-5"[\s\S]*arrowLabels=\{\{ next: "Show next agent templates", previous: "Show previous agent templates" \}\}/u);
+	assert.match(AGENT_SOURCE, /BENTO_CAROUSEL_TILE_CLASS/u);
 	assert.match(AGENT_SOURCE, /Browse all/u);
 	assert.doesNotMatch(AGENT_SOURCE, /Show more/u);
 	assert.match(AGENT_SOURCE, /title: "Service Triage"/u);
@@ -539,8 +549,9 @@ test("Shared toolbar groups related split controls and keeps unrelated toggles i
 	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Link"[\s\S]*onPressedChange=\{handleLinkPressedChange\}/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Add content"[\s\S]*onClick=\{handleAddContent\}/u);
 	// The trailing `+` button is wrapped in a positioned div so it can anchor
-	// the Insert dropdown (Paragraph / Table / Horizontal rule).
-	assert.match(EDITOR_TOOLBAR_SOURCE, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<div[^>]*>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>[\s\S]*<\/div>/u);
+	// the Insert dropdown.
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<ToolbarSeparator \/>/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<div className="relative">\s*<Button[\s\S]*aria-label="Add content"[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>[\s\S]*<\/div>/u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /<AddIcon label="" size="small" \/>\s*<\/Button>\s*<ToolbarSeparator \/>/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<Tabs[\s\S]*value=\{isMarkdownMode \? "markdown" : "rendered"\}/u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /value="link"/u);

@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { Tile } from "@/components/ui/tile";
+import { RovoColorIcon } from "@/components/ui/logo";
 
 export default function TileDemo() {
 	return (
@@ -120,7 +120,7 @@ export function TileDemoInset() {
 			<div className="flex items-end gap-3">
 				{(["xxsmall", "xsmall", "small", "medium", "large", "xlarge"] as const).map((size) => (
 					<Tile key={size} label={`Rovo ${size} inset`} variant="neutral" size={size} isInset>
-						<Image src="/1p/rovo.svg" alt="Rovo" width={48} height={48} />
+						<RovoColorIcon size="xlarge" />
 					</Tile>
 				))}
 				<p className="text-xs text-text-subtle self-center">Inset (default)</p>
@@ -128,7 +128,7 @@ export function TileDemoInset() {
 			<div className="flex items-end gap-3">
 				{(["xxsmall", "xsmall", "small", "medium", "large", "xlarge"] as const).map((size) => (
 					<Tile key={size} label={`Rovo ${size} no inset`} variant="neutral" size={size} isInset={false}>
-						<Image src="/1p/rovo.svg" alt="Rovo" width={48} height={48} />
+						<RovoColorIcon size="xlarge" />
 					</Tile>
 				))}
 				<p className="text-xs text-text-subtle self-center">No inset</p>

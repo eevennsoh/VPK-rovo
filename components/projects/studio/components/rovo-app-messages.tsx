@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { ErrorInfo, ReactNode, RefObject } from "react";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Attachment, AttachmentPreview, Attachments } from "@/components/ui-custom/attachments";
 import { Conversation, ConversationContent, ConversationScrollButton, type ConversationFollowMode, useConversationContext } from "@/components/ui-custom/conversation";
 import { Message, MessageActions, MessageContent, MessageCopyAction, MessageEditAction, MessageRegenerateAction, MessageResponse, MessageVoteActions } from "@/components/ui-custom/message";
@@ -55,7 +56,6 @@ import { BrowserScreenshotPart } from "@/components/projects/studio/components/r
 import type { RovoAppDocument } from "@/lib/rovo-app-types";
 import type { RovoAppStreamingArtifact } from "@/components/projects/studio/lib/rovo-app-streaming-artifact";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/components/projects/studio/data/agent-profiles";
-import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import Image from "next/image";
 import { Component, Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnswerCard } from "@/components/blocks/answer-card/components/answer-card";
@@ -781,11 +781,7 @@ function RovoAppCustomAgentEmptyState({
 		>
 			<div className="flex max-w-[520px] flex-col items-center gap-3">
 				<motion.div variants={itemVariants}>
-					{isAtlassianLogoSource(agent.avatarSrc) ? (
-						<AtlassianLogo name="atlassian" label={agent.name} size="large" />
-					) : (
-						<Image alt="" aria-hidden className="size-10 object-contain" height={40} loading="eager" src={agent.avatarSrc} width={40} />
-					)}
+					<AgentAvatarVisual avatarSrc={agent.avatarSrc} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
 				</motion.div>
 				<motion.div className="flex flex-col items-center gap-2" variants={itemVariants}>
 					<Heading size="xlarge">{agent.name}</Heading>

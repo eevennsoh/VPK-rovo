@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useIsMounted } from "@/components/hooks/use-is-mounted";
 import { token } from "@/lib/tokens";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import { RightNavigationActions } from "./right-navigation-actions";
@@ -30,6 +31,12 @@ export function RightNavigation({
 	onToggleTheme,
 }: Readonly<RightNavigationProps>) {
 	const [isOverflowOpen, setIsOverflowOpen] = useState(false);
+	// Gate the responsive collapse on mount: `windowWidth` is 0 during SSR and the
+	// first client paint, so `0 < BREAKPOINT` would briefly render the "…" overflow
+	// before the real width arrives (a flash on desktop). Until mounted, render the
+	// full inline cluster (server + first client render agree → no hydration
+	// mismatch); only collapse once we have a real, genuinely-narrow measurement.
+	const isMounted = useIsMounted();
 	const productSuppressesRovoAction = product === "rovo" || product === "studio";
 	const showRovoAction = !hideRovoAction && (!productSuppressesRovoAction || forceShowRovoAction);
 	const containerStyle = {
@@ -52,7 +59,7 @@ export function RightNavigation({
 
 	// Narrow widths: collapse the entire right cluster into a single "…" popover
 	// that renders the same actions in a horizontal row (matches production).
-	if (windowWidth < TOP_NAV_OVERFLOW_BREAKPOINT_PX) {
+	if (isMounted && windowWidth < TOP_NAV_OVERFLOW_BREAKPOINT_PX) {
 		return (
 			<div style={containerStyle}>
 				<Popover open={isOverflowOpen} onOpenChange={setIsOverflowOpen}>

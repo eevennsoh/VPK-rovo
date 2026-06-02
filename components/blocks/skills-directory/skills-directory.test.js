@@ -82,8 +82,8 @@ test("Skills Directory sidebar uses Tools Directory category treatment", () => {
 	assert.match(source, /leading=\{getCategoryNavIcon\(item\.icon, item\.label\)\}/u);
 	assert.match(source, /label="Show all"/u);
 	assert.match(source, /onClick=\{\(\) => setShowAllCategories\(true\)\}/u);
-	assert.match(source, /import \{ AtlassianLogo, isAtlassianLogoSource \} from "@\/components\/ui\/logo";/u);
-	assert.match(source, /if \(isAtlassianLogoSource\(src\)\)[\s\S]*<AtlassianLogo name="atlassian" label="Atlassian" size="small" \/>/u);
+	assert.match(source, /import \{ AtlassianLogo \} from "@\/components\/ui\/logo";/u);
+	assert.match(source, /item\.logoName \? \([\s\S]*<AtlassianLogo name=\{item\.logoName\} size="small" themeAware label=\{item\.label\} \/>/u);
 	assert.match(source, /<SettingsIcon label=\{label\} size="small" color="currentColor" \/>/u);
 	assert.match(source, /<SupportIcon label=\{label\} size="small" color="currentColor" \/>/u);
 	assert.match(source, /<CartIcon label=\{label\} size="small" color="currentColor" \/>/u);
@@ -130,8 +130,9 @@ test("Skills Directory uses multi-select cards, hover learn-more, and selected t
 	assert.match(source, /Learn more/u);
 	assert.match(source, /function SelectedSkillsToolbar/u);
 	assert.match(source, /style=\{\{ boxShadow: token\("elevation\.shadow\.overlay"\) \}\}/u);
-	assert.match(source, /isAtlassianLogoSource\(publisherAvatarSrc\) \? \(/u);
-	assert.match(source, /<AtlassianLogo name="atlassian" label=\{publisher\} size="xxsmall" \/>/u);
+	assert.match(source, /function SkillPublisherAvatar/u);
+	assert.match(source, /getSkillPublisherLogoName\(skill\)/u);
+	assert.match(source, /<AtlassianLogo name=\{logoName\} size="xsmall" themeAware label=\{getSkillPublisherName\(skill\)\} \/>/u);
 	assert.match(source, /Add skills/u);
 	assert.match(source, /Create link to share/u);
 	assert.match(source, /Favorite/u);
@@ -178,8 +179,8 @@ test("Skills Directory demo and docs use skill-specific examples", () => {
 	]) {
 		assert.match(skillsSource, new RegExp(colorClass, "u"));
 	}
-	assert.match(skillsSource, /const ATLASSIAN_LOGO = "atlassian";/u);
-	assert.match(sidebarGroupsSource, /logoSrc: "atlassian"/u);
+	assert.match(skillsSource, /function getSkillPublisherLogoName/u);
+	assert.match(sidebarGroupsSource, /logoName: "atlassian"/u);
 	assert.match(detailsSource, /onAddSkills/u);
 	assert.match(detailsSource, /onCreateSkill/u);
 	assert.match(skillsSource, /publisherName/u);

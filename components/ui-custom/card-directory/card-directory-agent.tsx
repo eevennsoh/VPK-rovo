@@ -6,7 +6,7 @@ import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
 import { Avatar } from "@/components/ui/avatar";
-import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
+import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import { cn } from "@/lib/utils";
 
 import { CardDirectory } from "./card-directory";
@@ -22,7 +22,9 @@ import {
 
 export interface CardDirectoryAgentProps {
 	name: string;
-	avatarSrc: string;
+	avatarSrc?: string;
+	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
+	logoName?: AtlassianLogoName;
 	publisher: string;
 	description?: string;
 	verified?: boolean;
@@ -42,6 +44,7 @@ export interface CardDirectoryAgentProps {
 export function CardDirectoryAgent({
 	name,
 	avatarSrc,
+	logoName,
 	publisher,
 	description,
 	verified = false,
@@ -57,20 +60,20 @@ export function CardDirectoryAgent({
 }: Readonly<CardDirectoryAgentProps>) {
 	const showRating = typeof rating === "number";
 	const showChats = typeof chatCount === "number";
-	const leadingAvatar = isAtlassianLogoSource(avatarSrc) ? (
-		<Avatar size="default" shape="hexagon" className="items-center justify-center bg-surface">
-			<AtlassianLogo name="atlassian" label={name} size="medium" />
-		</Avatar>
-	) : (
+	const leadingAvatar = (
 		<Avatar size="default" shape="hexagon">
-			<Image
-				alt=""
-				aria-hidden
-				className={cn("size-full object-contain", avatarImageClassName)}
-				height={32}
-				src={avatarSrc}
-				width={32}
-			/>
+			{logoName ? (
+				<AtlassianLogo name={logoName} size="medium" themeAware label={name} />
+			) : avatarSrc ? (
+				<Image
+					alt=""
+					aria-hidden
+					className={cn("size-full object-contain", avatarImageClassName)}
+					height={32}
+					src={avatarSrc}
+					width={32}
+				/>
+			) : null}
 		</Avatar>
 	);
 

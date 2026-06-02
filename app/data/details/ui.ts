@@ -261,14 +261,15 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 
   logo: {
     description:
-      "Unified Atlassian product/app logo wrapper built on @atlaskit/logo with theme-aware defaults for light and dark mode. Supports icon-only and lockup (icon + wordmark) variants, plus a CustomLogo for rendering your own SVG.",
+      "Unified Atlassian product/app logo wrapper built on @atlaskit/logo with theme-aware defaults for light and dark mode. Supports icon-only and lockup (icon + wordmark) variants, a CustomLogo for rendering your own SVG, and a RovoColorIcon for the full-color Rovo brand mark.",
     adsUrl: "https://atlassian.design/components/logo",
-    usage: `import { AtlassianLogo, JiraIcon, CustomLogo } from "@/components/ui/logo";
+    usage: `import { AtlassianLogo, JiraIcon, CustomLogo, RovoColorIcon } from "@/components/ui/logo";
 
 <AtlassianLogo name="jira" label="Jira" size="small" />
 <AtlassianLogo name="jira" label="Jira" variant="lockup" size="small" />
 <JiraIcon label="Jira" size="small" variant="lockup" />
-<CustomLogo svg={<MySvg />} wordmark="Acme" size="small" label="Acme" />`,
+<CustomLogo svg={<MySvg />} wordmark="Acme" size="small" label="Acme" />
+<RovoColorIcon size="small" label="Rovo" />`,
     props: [
       {
         name: "name",

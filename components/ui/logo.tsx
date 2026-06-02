@@ -11,7 +11,9 @@ import {
 	LOGO_LOCKUP_COMPONENTS,
 	CUSTOM_LOGO_SIZES,
 } from "@/components/ui/data/logo-data";
+import { ROVO_LOGO_PATHS, ROVO_LOGO_VIEWBOX } from "@/components/ui/data/rovo-logo";
 
+export { ROVO_LOGO_DATA_URI } from "@/components/ui/data/rovo-logo";
 export type { AtlassianLogoName };
 export type LogoVariant = "icon" | "lockup";
 export const ATLASSIAN_LOGO_SOURCE = "atlassian";
@@ -163,6 +165,60 @@ export function CustomLogo({
 		</span>
 	);
 }
+
+/* -- Rovo color mark --------------------------------------------- */
+
+export interface RovoColorIconProps extends Omit<React.ComponentProps<"svg">, "size"> {
+	/** Logo size — same scale as the other logo components. */
+	size?: LogoProps["size"];
+	/**
+	 * Accessible label. When provided the svg is exposed as an image with this
+	 * name; when omitted it is hidden from assistive tech (decorative).
+	 */
+	label?: string;
+}
+
+/**
+ * The special multi-color Rovo brand mark (yellow / blue / purple / green),
+ * inlined from `data/rovo-logo.ts`. Unlike `RovoIcon`/`RovoLogo` (the ADS
+ * single-tone marks from `@atlaskit/logo`), this renders the full-color brand
+ * artwork that used to live at `public/1p/rovo.svg`.
+ */
+export function RovoColorIcon({
+	size = "small",
+	label,
+	className,
+	...props
+}: Readonly<RovoColorIconProps>) {
+	const px = getLogoSizePx(size);
+
+	return (
+		<svg
+			width={px}
+			height={px}
+			viewBox={ROVO_LOGO_VIEWBOX}
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+			role={label ? "img" : undefined}
+			aria-label={label}
+			aria-hidden={label ? undefined : true}
+			className={cn("inline-block shrink-0", className)}
+			{...props}
+		>
+			{ROVO_LOGO_PATHS.map((path) => (
+				<path
+					key={path.fill + path.d}
+					d={path.d}
+					fill={path.fill}
+					fillRule={path.evenOdd ? "evenodd" : undefined}
+					clipRule={path.evenOdd ? "evenodd" : undefined}
+				/>
+			))}
+		</svg>
+	);
+}
+
+export const RovoColorLogo = RovoColorIcon;
 
 /* -- Named product exports --------------------------------------- */
 

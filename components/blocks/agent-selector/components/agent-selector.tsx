@@ -8,14 +8,16 @@ import { useMemo, useState, type ReactElement, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Icon } from "@/components/ui/icon";
-import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
+import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import { cn } from "@/lib/utils";
 
 export interface AgentSelectorAgent {
 	id: string;
 	name: string;
 	byline: string;
-	avatarSrc: string;
+	avatarSrc?: string;
+	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
+	logoName?: AtlassianLogoName;
 }
 
 export interface AgentSelectorAction {
@@ -64,17 +66,13 @@ function filterAgentsByQuery(
 }
 
 function AgentSelectorLogo({ agent }: Readonly<{ agent: AgentSelectorAgent }>): ReactElement {
-	if (isAtlassianLogoSource(agent.avatarSrc)) {
-		return (
-			<span className="grid size-6 shrink-0 place-items-center overflow-hidden rounded-sm">
-				<AtlassianLogo name="atlassian" label={agent.name} size="small" />
-			</span>
-		);
-	}
-
 	return (
 		<span className="grid size-6 shrink-0 place-items-center overflow-hidden rounded-sm">
-			<Image alt="" aria-hidden className="mx-auto block size-6 object-contain object-center" height={24} src={agent.avatarSrc} width={24} />
+			{agent.logoName ? (
+				<AtlassianLogo name={agent.logoName} size="small" themeAware label={agent.name} />
+			) : agent.avatarSrc ? (
+				<Image alt="" aria-hidden className="mx-auto block size-6 object-contain object-center" height={24} src={agent.avatarSrc} width={24} />
+			) : null}
 		</span>
 	);
 }

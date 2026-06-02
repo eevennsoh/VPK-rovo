@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { ErrorInfo, ReactNode, RefObject } from "react";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Attachment, AttachmentPreview, Attachments } from "@/components/ui-custom/attachments";
 import { Conversation, ConversationContent, ConversationScrollButton, type ConversationFollowMode, useConversationContext } from "@/components/ui-custom/conversation";
 import { Message, MessageActions, MessageContent, MessageCopyAction, MessageEditAction, MessageRegenerateAction, MessageResponse, MessageVoteActions } from "@/components/ui-custom/message";
@@ -778,7 +779,7 @@ function RovoAppCustomAgentEmptyState({
 		>
 			<div className="flex max-w-[520px] flex-col items-center gap-3">
 				<motion.div variants={itemVariants}>
-					<Image alt="" aria-hidden className="size-10 object-contain" height={40} loading="eager" src={agent.avatarSrc} width={40} />
+					<AgentAvatarVisual avatarSrc={agent.avatarSrc} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
 				</motion.div>
 				<motion.div className="flex flex-col items-center gap-2" variants={itemVariants}>
 					<Heading size="xlarge">{agent.name}</Heading>

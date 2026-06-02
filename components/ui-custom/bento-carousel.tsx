@@ -12,33 +12,49 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 // Below `sm` (<640px) the bento switches from its desktop grid to a horizontal
-// scroll carousel: equal-size cards (~2 visible + a peek), reactive edge fades,
-// and prev/next arrows. At `sm:`+ these `max-sm:` rules go inert and the existing
-// grid (moved to `sm:`) takes over. Shared by both bentos so they stay aligned.
+// scroll carousel: equal-size cards (~2 visible + a peek), reactive edge fades, a
+// constant bottom fade (so cards dissolve into the page edge rather than ending on
+// a hard border — mirrors the desktop grid's `bento-fade-bottom`), and prev/next
+// arrows. The horizontal + bottom gradients are two layers of one mask composited
+// with `intersect`: a pixel survives only where BOTH are opaque, so the top-center
+// stays solid while the left/right (when scrollable) and bottom edges fade. At
+// `sm:`+ these `max-sm:` rules go inert and the existing grid (moved to `sm:`)
+// takes over. Shared by both bentos so they stay aligned.
 export const BENTO_CAROUSEL_CONTAINER_CLASS =
-	"mx-auto w-full gap-3 max-sm:flex max-sm:snap-x max-sm:snap-proximity max-sm:scroll-px-2 max-sm:overflow-x-auto max-sm:overflow-y-hidden max-sm:px-2 max-sm:py-2 max-sm:[scrollbar-width:none] max-sm:[&::-webkit-scrollbar]:hidden max-sm:[mask-image:var(--bento-edge-mask)] max-sm:[-webkit-mask-image:var(--bento-edge-mask)] sm:grid sm:grid-cols-2 sm:auto-rows-[144px] lg:grid-cols-5";
+	"mx-auto w-full gap-3 max-sm:flex max-sm:snap-x max-sm:snap-proximity max-sm:scroll-px-2 max-sm:overflow-x-auto max-sm:overflow-y-hidden max-sm:px-2 max-sm:pt-2 max-sm:pb-0 max-sm:[scrollbar-width:none] max-sm:[&::-webkit-scrollbar]:hidden max-sm:[mask-image:var(--bento-edge-mask)] max-sm:[-webkit-mask-image:var(--bento-edge-mask)] max-sm:[mask-composite:intersect] max-sm:[-webkit-mask-composite:source-in] sm:grid sm:grid-cols-2 sm:auto-rows-[144px] lg:grid-cols-5";
 
-// Per card: equal height (matches desktop `auto-rows-[144px]`) and equal width
-// sized so two cards show fully with the third peeking. Width = (track − the two
-// 12px inter-card gaps) / 2.25 → exactly 2 cards + 2 gaps + a quarter-card peek.
+// Per card: equal height (taller than the desktop `auto-rows-[144px]` so the
+// constant bottom fade has room to read as the card bleeding off the edge) and
+// equal width sized so two cards show fully with the third peeking. Width =
+// (track − the two 12px inter-card gaps) / 2.25 → exactly 2 cards + 2 gaps + a
+// quarter-card peek.
 export const BENTO_CAROUSEL_TILE_CLASS =
-	"max-sm:h-36 max-sm:w-[calc((100%_-_24px)/2.25)] max-sm:shrink-0 max-sm:snap-start";
+	"max-sm:h-48 max-sm:w-[calc((100%_-_24px)/2.25)] max-sm:shrink-0 max-sm:snap-start";
 
 const EDGE_FADE = "48px";
+// Bottom dissolve distance for the carousel. Matches the spirit of the desktop
+// grid's 96px `bento-fade-bottom` but shorter, since these are single-row tiles
+// rather than a multi-row grid whose last row is being teased.
+const BOTTOM_FADE = "64px";
 const CAROUSEL_ARROW_TRANSITION = { type: "spring", bounce: 0, visualDuration: 0.2 } as const;
 
 type BentoEdgeMaskStyle = CSSProperties & Record<"--bento-edge-mask", string>;
 
 /**
- * Build the horizontal edge-fade gradient for the scroll container, fading only
- * the side(s) that have more content. Consumed via the `--bento-edge-mask` var by
- * the `max-sm:[mask-image:var(--bento-edge-mask)]` class (base only). The "none"
- * state is fully opaque so SSR / no-overflow renders without a fade flash.
+ * Build the carousel mask: a reactive horizontal edge fade (fading only the
+ * side[s] with more content) plus a constant bottom fade, as two comma-separated
+ * gradient layers. Consumed via the `--bento-edge-mask` var by the
+ * `max-sm:[mask-image:var(--bento-edge-mask)]` + `[mask-composite:intersect]`
+ * classes (base only). The horizontal "none" state is fully opaque so SSR /
+ * no-overflow renders without a side flash; the bottom layer is always present so
+ * cards consistently dissolve at the bottom edge.
  */
 export function buildHorizontalEdgeMask(canScrollLeft: boolean, canScrollRight: boolean): string {
 	const left = canScrollLeft ? `transparent 0, #000 ${EDGE_FADE}` : "#000 0";
 	const right = canScrollRight ? `#000 calc(100% - ${EDGE_FADE}), transparent 100%` : "#000 100%";
-	return `linear-gradient(to right, ${left}, ${right})`;
+	const horizontal = `linear-gradient(to right, ${left}, ${right})`;
+	const bottom = `linear-gradient(to bottom, #000 calc(100% - ${BOTTOM_FADE}), transparent)`;
+	return `${horizontal}, ${bottom}`;
 }
 
 /** Inline `style` carrying the edge-mask var; apply to the scroll container. */

@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { type ComponentProps, type ReactNode, useCallback, useEffect, useMemo } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo } from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 
 import {
@@ -19,7 +19,6 @@ import { getStudioSessionAgentDisplayName, useRovoChat } from "@/app/contexts";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type {
 	StudioSessionAgentEntry,
 } from "@/app/contexts/context-rovo-chat";
@@ -52,33 +51,6 @@ function stringifyForComparison(value: unknown): string {
 	} catch {
 		return String(value);
 	}
-}
-
-type AgentConfigToggleItemProps = ComponentProps<typeof ToggleGroupItem> & {
-	disabledTooltip?: string;
-};
-
-function AgentConfigToggleItem({
-	disabled,
-	disabledTooltip,
-	...props
-}: Readonly<AgentConfigToggleItemProps>) {
-	const item = <ToggleGroupItem disabled={disabled} {...props} />;
-
-	if (!disabled || !disabledTooltip) {
-		return item;
-	}
-
-	return (
-		<Tooltip>
-			<TooltipTrigger render={<span className="inline-flex" />}>
-				{item}
-			</TooltipTrigger>
-			<TooltipContent side="bottom">
-				<p>{disabledTooltip}</p>
-			</TooltipContent>
-		</Tooltip>
-	);
 }
 
 export function RovoAppAgentConfigPanel({
@@ -256,15 +228,14 @@ export function RovoAppAgentConfigPanel({
 									>
 										Configure
 									</ToggleGroupItem>
-									<AgentConfigToggleItem
+									<ToggleGroupItem
 										value="test"
 										disabled={!hasAgentInstructions}
-										disabledTooltip="Add agent instructions before testing this agent."
 										data-testid="agent-config-test"
 										data-screen-assistant-target="studio-agent-config-test"
 									>
 										Test
-									</AgentConfigToggleItem>
+									</ToggleGroupItem>
 								</ToggleGroup>
 								<Button
 									type="button"

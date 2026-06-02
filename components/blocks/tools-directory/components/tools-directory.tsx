@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { AtlassianLogo, isAtlassianLogoSource, type AtlassianLogoName } from "@/components/ui/logo";
+import { AtlassianLogo } from "@/components/ui/logo";
 import { Switch } from "@/components/ui/switch";
 import { Tile } from "@/components/ui/tile";
 import { CardDirectoryTool } from "@/components/ui-custom/card-directory";
@@ -62,7 +62,6 @@ export interface ToolsDirectoryTool extends AgentBrowserAgent {
 	categoryId?: string;
 	favorite?: boolean;
 	lastUpdatedLabel?: string;
-	logoName?: AtlassianLogoName;
 	logoSrc?: string;
 	publisherName?: string;
 	readOnlyTools?: readonly ToolsDirectoryPermission[];
@@ -243,11 +242,12 @@ function getSidebarGroupItems(
 			id: tool.id,
 			label: tool.name,
 			avatarSrc: tool.avatarSrc,
+			logoName: tool.logoName,
 		}));
 }
 
 function getToolLogo(tool: ToolsDirectoryTool): ReactNode {
-	if (tool.logoName || tool.id === "atlassian" || isAtlassianLogoSource(tool.avatarSrc)) {
+	if (tool.logoName || tool.id === "atlassian") {
 		return (
 			<AtlassianLogo
 				label={tool.name}
@@ -258,16 +258,17 @@ function getToolLogo(tool: ToolsDirectoryTool): ReactNode {
 		);
 	}
 
-	return (
+	const src = tool.logoSrc ?? tool.avatarSrc;
+	return src ? (
 		<Image
 			alt=""
 			aria-hidden
 			className="size-full object-contain"
 			height={24}
-			src={tool.logoSrc ?? tool.avatarSrc}
+			src={src}
 			width={24}
 		/>
-	);
+	) : null;
 }
 
 function getDetailLogo(tool: ToolsDirectoryTool): ReactNode {
@@ -282,16 +283,17 @@ function getDetailLogo(tool: ToolsDirectoryTool): ReactNode {
 		);
 	}
 
-	return (
+	const src = tool.logoSrc ?? tool.avatarSrc;
+	return src ? (
 		<Image
 			alt=""
 			aria-hidden
 			className="size-16 object-contain"
 			height={64}
-			src={tool.logoSrc ?? tool.avatarSrc}
+			src={src}
 			width={64}
 		/>
-	);
+	) : null;
 }
 
 function getPermissionGroups(tool: ToolsDirectoryTool) {
@@ -773,11 +775,11 @@ function ToolsDirectorySidebarGroup({
 }
 
 function SidebarToolAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>) {
-	if (isAtlassianLogoSource(item.avatarSrc)) {
-		return <AtlassianLogo name="atlassian" label={item.label} size="xxsmall" />;
+	if (item.logoName) {
+		return <AtlassianLogo name={item.logoName} size="xsmall" themeAware label={item.label} />;
 	}
 
-	return (
+	return item.avatarSrc ? (
 		<Image
 			alt=""
 			aria-hidden
@@ -786,7 +788,7 @@ function SidebarToolAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 			src={item.avatarSrc}
 			width={16}
 		/>
-	);
+	) : null;
 }
 
 interface ToolDetailViewProps {

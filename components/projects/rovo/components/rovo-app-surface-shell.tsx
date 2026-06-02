@@ -157,14 +157,14 @@ export function RovoAppSurfaceShell({ children }: Readonly<RovoAppSurfaceShellPr
 									? "border-border-selected"
 									: "border-border",
 							)
-						: "w-40 border-b border-border",
+						: "w-24 border-b border-border",
 				)}
 				style={{ backgroundColor: token("elevation.surface"), viewTransitionName: "persistent-sidebar" as never }}
 			>
 				<LeftNavigation
 					product="rovo"
 					windowWidth={nav.windowWidth}
-					isVisible={nav.isVisible}
+					isVisible={sidebarOpen}
 					isAppSwitcherOpen={nav.isAppSwitcherOpen}
 					isSidebarResizing={sidebarResize.isResizing}
 					hideAppSwitcher
@@ -184,7 +184,7 @@ export function RovoAppSurfaceShell({ children }: Readonly<RovoAppSurfaceShellPr
 				<div
 					className={cn(
 						"flex h-12 shrink-0 items-center border-b px-3 transition-[padding] duration-medium ease-in-out",
-						!sidebarOpen && "pl-44",
+						!sidebarOpen && "pl-24",
 					)}
 					style={{
 						borderColor: token("color.border"),
@@ -192,10 +192,10 @@ export function RovoAppSurfaceShell({ children }: Readonly<RovoAppSurfaceShellPr
 						viewTransitionName: "persistent-header" as never,
 					}}
 				>
-					<div className="relative flex min-w-0 flex-1 items-center justify-center gap-2">
+					<div className="relative flex min-w-0 flex-1 items-center justify-start gap-2">
 						<div
 							ref={nav.searchContainerRef}
-							className="relative flex h-9 w-full max-w-[762px] items-center"
+							className="relative flex h-9 w-full items-center ps-2"
 						>
 							<InputGroup
 								className={cn(

@@ -1,8 +1,8 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { RovoColorIcon } from "@/components/ui/logo";
 import { token } from "@/lib/tokens";
 import NotificationIcon from "@atlaskit/icon/core/notification";
 import QuestionCircleIcon from "@atlaskit/icon/core/question-circle";
@@ -35,7 +35,7 @@ export function RightNavigationActions({
 					aria-pressed={isChatOpen}
 					onClick={onToggleChat}
 				>
-					<Image src="/1p/rovo.svg" alt="" width={16} height={16} data-icon="inline-start" />
+					<RovoColorIcon size="xxsmall" data-icon="inline-start" />
 					Ask Rovo
 				</Button>
 			) : null}

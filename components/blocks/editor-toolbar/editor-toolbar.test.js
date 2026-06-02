@@ -78,7 +78,7 @@ test("Editor toolbar demo exposes the Markdown source mode", () => {
 	assert.match(pageSource, /aria-label="Editor toolbar demo Markdown source"/u);
 });
 
-test("Editor toolbar places Add content after Link and mode tabs at the end", () => {
+test("Editor toolbar exposes block inserts and an Add content reference dropdown", () => {
 	const componentSource = readProjectFile("components/blocks/editor-toolbar/components/editor-toolbar.tsx");
 	const vpkIconsSource = readProjectFile("components/ui/vpk-icons.tsx");
 
@@ -90,9 +90,26 @@ test("Editor toolbar places Add content after Link and mode tabs at the end", ()
 	assert.doesNotMatch(vpkIconsSource, /TextNormalIcon = createUnsafeVpkIcon\(TextIconGlyph\)/u);
 	assert.match(componentSource, /function handleAddContent\(\): void/u);
 	assert.match(componentSource, /aria-label="Add content"[\s\S]*onClick=\{handleAddContent\}/u);
-	// The trailing `+` button is wrapped in a positioned div so it can anchor
-	// the Insert dropdown (Paragraph / Table / Horizontal rule).
-	assert.match(componentSource, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<div[^>]*>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>[\s\S]*<\/div>/u);
+	// Code block, Horizontal rule, and Table are exposed directly on the toolbar
+	// as dedicated controls. Code block toggles (and is removed from the text
+	// style dropdown); there is no separate Paragraph control because "Normal
+	// text" already sets a paragraph.
+	assert.match(componentSource, /aria-label="Code block"[\s\S]*onPressedChange=\{handleToggleCodeBlock\}/u);
+	assert.match(componentSource, /import AngleBracketsIcon from "@atlaskit\/icon\/core\/angle-brackets";/u);
+	assert.match(componentSource, /aria-label="Table"[\s\S]*onClick=\{handleInsertTable\}/u);
+	assert.match(componentSource, /aria-label="Horizontal rule"[\s\S]*onClick=\{handleInsertHorizontalRule\}/u);
+	assert.doesNotMatch(componentSource, /aria-label="Paragraph"/u);
+	// Code block must no longer be selectable from the text style dropdown.
+	assert.doesNotMatch(componentSource, /label="Code block"\s*\n\s*isSelected=\{editor\.isActive\("codeBlock"\)\}/u);
+	// The `+` button is wrapped in a positioned div so it can anchor the Insert
+	// dropdown, which now offers reference categories (Knowledge / Tools /
+	// Skills / Subagents) inserted as mention tokens at the caret.
+	assert.match(componentSource, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>[\s\S]*<div[^>]*>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>[\s\S]*<\/div>/u);
+	assert.match(componentSource, /function handleInsertReference\(/u);
+	assert.match(componentSource, /\.focus\(\)\s*\.insertContent\(\[\s*\{\s*type: "mention"/u);
+	for (const label of ["Knowledge", "Memory", "Tools", "Skills", "Subagents"]) {
+		assert.match(componentSource, new RegExp(`label: "${label}"`, "u"));
+	}
 	assert.doesNotMatch(componentSource, /<\/div>\s*<ToolbarSeparator \/>\s*\{onToggleMarkdownMode/u);
 	assert.match(componentSource, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<Tabs[\s\S]*value=\{isMarkdownMode \? "markdown" : "rendered"\}/u);
 	assert.match(componentSource, /<TabsTrigger[\s\S]*aria-label="Rendered text"[\s\S]*value="rendered"[\s\S]*<TextNormalIcon size="small" \/>[\s\S]*<TabsTrigger[\s\S]*aria-label="Markdown source"[\s\S]*value="markdown"[\s\S]*<MarkdownIcon label="" size="small" \/>/u);

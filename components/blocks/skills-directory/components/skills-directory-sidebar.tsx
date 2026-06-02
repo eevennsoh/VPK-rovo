@@ -15,7 +15,7 @@ import CartIcon from "@atlaskit/icon-lab/core/cart";
 import { useState, type ReactElement } from "react";
 
 import { Avatar } from "@/components/ui/avatar";
-import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
+import { AtlassianLogo } from "@/components/ui/logo";
 import { Tile } from "@/components/ui/tile";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { token } from "@/lib/tokens";
@@ -28,6 +28,7 @@ import {
 import type {
 	SkillsDirectoryCategoryItem,
 	SkillNavIcon,
+	SkillsDirectoryCompanyItem,
 	SkillsDirectoryPrimaryItem,
 	SkillsDirectorySidebarGroup,
 	SkillsDirectorySidebarItem,
@@ -69,18 +70,14 @@ function TileLeading({ children }: Readonly<{ children: ReactElement }>) {
 	);
 }
 
-function LogoLeading({ src }: Readonly<{ src: string }>) {
-	if (isAtlassianLogoSource(src)) {
-		return (
-			<span className="flex size-6 shrink-0 items-center justify-center">
-				<AtlassianLogo name="atlassian" label="Atlassian" size="small" />
-			</span>
-		);
-	}
-
+function LogoLeading({ item }: Readonly<{ item: SkillsDirectoryCompanyItem }>) {
 	return (
 		<Avatar size="sm" shape="square" className="shrink-0 after:border-0">
-			<Image alt="" aria-hidden className="size-full object-contain" height={24} src={src} width={24} />
+			{item.logoName ? (
+				<AtlassianLogo name={item.logoName} size="small" themeAware label={item.label} />
+			) : item.logoSrc ? (
+				<Image alt="" aria-hidden className="size-full object-contain" height={24} src={item.logoSrc} width={24} />
+			) : null}
 		</Avatar>
 	);
 }
@@ -253,7 +250,7 @@ function SkillsSidebarGroup({
 						<li key={`company-${item.id}`}>
 							<SidebarNavItem
 								label={item.label}
-								leading={<LogoLeading src={item.logoSrc} />}
+								leading={<LogoLeading item={item} />}
 								leadingSize="medium"
 								isSelected={activeItem === item.id}
 								onClick={() => onSelectItem(item.id)}
