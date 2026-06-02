@@ -1,8 +1,8 @@
 export { KnowledgeDirectoryDialog } from "./components/knowledge-directory";
 export type {
-	KnowledgeDirectoryAgent,
+	KnowledgeDirectoryAddPayload,
+	KnowledgeDirectoryApp,
+	KnowledgeDirectoryContent,
 	KnowledgeDirectoryDialogProps,
-	KnowledgeDirectoryPrimaryItem,
-	KnowledgeDirectorySidebarGroup,
-	KnowledgeDirectorySkill,
+	KnowledgeDirectoryMode,
 } from "./components/knowledge-directory";

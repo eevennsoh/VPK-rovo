@@ -524,59 +524,72 @@ const skills: SkillsDirectorySkill[] = [
 		],
 	},
 	"knowledge-directory": {
-		description: "Knowledge directory block duplicated from Skills Directory with multi-select cards, bulk selected-skill actions, and a learn-more detail view for each skill.",
+		description: "Knowledge directory block for connecting external knowledge apps, choosing all content, or narrowing to selected content rows.",
 		importStatement: `import { KnowledgeDirectoryDialog } from "@/components/blocks/knowledge-directory";`,
 		usage: `import { KnowledgeDirectoryDialog } from "@/components/blocks/knowledge-directory";
-import type { KnowledgeDirectorySkill } from "@/components/blocks/knowledge-directory";
+import { ConfluenceIcon } from "@/components/ui/logo";
+import type { KnowledgeDirectoryApp } from "@/components/blocks/knowledge-directory";
 
-const skills: KnowledgeDirectorySkill[] = [
+const apps: KnowledgeDirectoryApp[] = [
   {
-    id: "design-landing-page",
-    name: "Design landing page",
-    description: "Create high-converting, visually distinctive landing pages.",
-    icon: "paint-palette",
-    iconColor: "text-purple-500",
-    publisherName: "By you",
-    publisherAvatarSrc: "/avatar-human/maia-ma.png",
-    categoryId: "content-communication",
-    companyId: "you",
-    starCount: 38,
-    viewCount: 6273,
-    tools: [{ id: "tool-1", name: "Tool1", icon: "page" }],
-    instructions: "# Design landing page\\n\\nCreate a distinctive landing page.",
+    id: "confluence",
+    name: "Confluence",
+    description: "Create, organize, and reuse rich pages and decisions.",
+    providerName: "Atlassian",
+    icon: <ConfluenceIcon label="" size="small" />,
+    contents: [
+      {
+        id: "product-requirements",
+        name: "Product requirements",
+        description: "Specs, goals, and release criteria.",
+      },
+    ],
   },
 ];
 
 <KnowledgeDirectoryDialog
   open={open}
   onOpenChange={setOpen}
-  skills={skills}
-  defaultSelectedSkillIds={["design-landing-page"]}
-  onSelectedSkillIdsChange={(skillIds) => console.log(skillIds)}
-  onAddSkills={(skillIds) => console.log("add", skillIds)}
-  onCreateSkill={() => console.log("new skill")}
+  apps={apps}
+  onBrowseFiles={() => console.log("browse files")}
+  onAddKnowledge={(payload) => console.log("add knowledge", payload)}
 />`,
 		demoLayout: { previewHeight: "fixed" },
 		props: [
 			{
-				name: "skills",
-				type: "readonly KnowledgeDirectorySkill[]",
-				description: "Skill catalog rendered in the grid. Defaults to the bundled demo skills.",
+				name: "apps",
+				type: "readonly KnowledgeDirectoryApp[]",
+				description: "Knowledge connector apps rendered in the app grid. Defaults to the bundled demo connectors.",
 			},
 			{
-				name: "sessionSkills",
-				type: "readonly KnowledgeDirectorySkill[]",
-				description: "Runtime-created skills appended after the catalog.",
+				name: "selectedAppId",
+				type: "string | null",
+				description: "Controlled selected connector id. When null, the dialog shows the app list.",
 			},
 			{
-				name: "selectedSkillIds",
+				name: "defaultSelectedAppId",
+				type: "string | null",
+				description: "Initial uncontrolled connector id.",
+			},
+			{
+				name: "selectedMode",
+				type: "\"all\" | \"custom\"",
+				description: "Controlled content scope mode.",
+			},
+			{
+				name: "defaultSelectedMode",
+				type: "\"all\" | \"custom\"",
+				description: "Initial uncontrolled content scope mode. Defaults to \"all\".",
+			},
+			{
+				name: "selectedContentIds",
 				type: "readonly string[]",
-				description: "Controlled multi-select state for selected skill cards.",
+				description: "Controlled selected content ids for custom content mode.",
 			},
 			{
-				name: "defaultSelectedSkillIds",
+				name: "defaultSelectedContentIds",
 				type: "readonly string[]",
-				description: "Initial uncontrolled selected skill ids.",
+				description: "Initial uncontrolled selected content ids for custom content mode.",
 			},
 			{
 				name: "open",
@@ -591,69 +604,39 @@ const skills: KnowledgeDirectorySkill[] = [
 				description: "Called when the dialog requests an open-state change.",
 			},
 			{
-				name: "onSelectSkill",
-				type: "(skill: KnowledgeDirectorySkill) => void",
-				description: "Called when a skill card toggles selection.",
-			},
-			{
-				name: "onSelectedSkillIdsChange",
-				type: "(skillIds: readonly string[]) => void",
-				description: "Called whenever the selected skill ids change.",
-			},
-			{
-				name: "onAddSkills",
-				type: "(skillIds: readonly string[], skills: readonly KnowledgeDirectorySkill[]) => void",
-				description: "Called by the selected-skills toolbar Add skills action.",
-			},
-			{
-				name: "onCreateShareLink",
-				type: "(skillIds: readonly string[], skills: readonly KnowledgeDirectorySkill[]) => void",
-				description: "Called by the selected-skills toolbar share action.",
-			},
-			{
-				name: "onFavoriteSkills",
-				type: "(skillIds: readonly string[], skills: readonly KnowledgeDirectorySkill[]) => void",
-				description: "Called by the selected-skills toolbar favorite action.",
-			},
-			{
-				name: "onDownloadSkills",
-				type: "(skillIds: readonly string[], skills: readonly KnowledgeDirectorySkill[]) => void",
-				description: "Called by the selected-skills toolbar download action.",
-			},
-			{
-				name: "onOpenSkill",
-				type: "(skill: KnowledgeDirectorySkill) => void",
-				description: "Called by the skill info page Open split button.",
-			},
-			{
-				name: "onTryInChat",
-				type: "(skill: KnowledgeDirectorySkill) => void",
-				description: "Called by the skill info page Try in chat action.",
-			},
-			{
-				name: "onCreateSkill",
+				name: "onBrowseFiles",
 				type: "() => void",
-				description: "Called by the New skill button.",
+				description: "Optional file browser callback for the upload-zone button.",
 			},
 			{
-				name: "primaryItems",
-				type: "readonly KnowledgeDirectoryPrimaryItem[]",
-				description: "Sectionless nav rows above the category group (All skills, Favorite skills, Your skills).",
+				name: "onSelectApp",
+				type: "(app: KnowledgeDirectoryApp) => void",
+				description: "Called when a connector app is selected.",
 			},
 			{
-				name: "sidebarGroups",
-				type: "readonly KnowledgeDirectorySidebarGroup[]",
-				description: "Optional left-nav grouping override. Defaults to Category and By companies groups.",
+				name: "onSelectedAppIdChange",
+				type: "(appId: string | null) => void",
+				description: "Called whenever the selected connector id changes.",
+			},
+			{
+				name: "onSelectMode",
+				type: "(mode: KnowledgeDirectoryMode) => void",
+				description: "Called when the user chooses all content or custom content.",
+			},
+			{
+				name: "onSelectedContentIdsChange",
+				type: "(contentIds: readonly string[]) => void",
+				description: "Called whenever custom selected content ids change.",
+			},
+			{
+				name: "onAddKnowledge",
+				type: "(payload: { appId: string; mode: KnowledgeDirectoryMode; contentIds: \"all\" | readonly string[] }) => void",
+				description: "Called by the Add button with the selected app and content scope.",
 			},
 			{
 				name: "title",
 				type: "string",
-				description: "Optional dialog title. Defaults to “Browse all”.",
-			},
-			{
-				name: "agents / sessionAgents / onSelectAgent",
-				type: "compatibility aliases",
-				description: "Legacy Agents Directory-style props are still accepted and normalized into skill records.",
+				description: "Optional dialog title. Defaults to “Browse knowledge”.",
 			},
 		],
 	},

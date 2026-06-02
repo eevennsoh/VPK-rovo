@@ -7,6 +7,17 @@ function readProjectFile(relativePath) {
 	return fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
 }
 
+function readKnowledgeDetailsSection() {
+	const source = readProjectFile("app/data/details/blocks.ts");
+	const start = source.indexOf('\t"knowledge-directory": {');
+	const end = source.indexOf('\t"mermaid-diagram": {', start);
+
+	assert.notEqual(start, -1);
+	assert.notEqual(end, -1);
+
+	return source.slice(start, end);
+}
+
 test("Knowledge Directory is exposed as a website block", () => {
 	assert.match(
 		readProjectFile("app/data/components.ts"),
@@ -27,88 +38,99 @@ test("Knowledge Directory is exposed as a website block", () => {
 });
 
 test("Knowledge Directory docs demo starts closed until the trigger is clicked", () => {
-	assert.match(
-		readProjectFile("components/blocks/knowledge-directory/page.tsx"),
-		/const \[open, setOpen\] = useState\(false\);/u,
-	);
+	const source = readProjectFile("components/blocks/knowledge-directory/page.tsx");
+
+	assert.match(source, /const \[open, setOpen\] = useState\(false\);/u);
+	assert.match(source, /Browse knowledge/u);
+	assert.doesNotMatch(source, /Browse skills/u);
 });
 
-test("Knowledge Directory owns a skill-specific modal instead of wrapping AgentBrowserDialog", () => {
+test("Knowledge Directory owns a knowledge-specific modal without the copied sidebar", () => {
 	const source = readProjectFile("components/blocks/knowledge-directory/components/knowledge-directory.tsx");
 
 	assert.doesNotMatch(source, /AgentBrowserDialog/u);
+	assert.doesNotMatch(source, /KnowledgeDirectorySidebar/u);
+	assert.doesNotMatch(source, /SkillDirectorySidebar/u);
 	assert.match(source, /<DialogContent/u);
-	assert.match(source, /sm:max-w-\[1200px\]/u);
-	assert.match(source, /md:grid-cols-\[280px_minmax\(0,1fr\)\]/u);
-	assert.match(source, /title = "Browse all"/u);
+	assert.match(source, /sm:max-w-\[960px\]/u);
+	assert.match(source, /sm:max-w-\[640px\]/u);
+	assert.match(source, /title = "Browse knowledge"/u);
 });
 
-test("Knowledge Directory exposes canonical skill props and legacy agent compatibility", () => {
+test("Knowledge Directory exposes app, content, and callback props", () => {
 	const source = readProjectFile("components/blocks/knowledge-directory/components/knowledge-directory.tsx");
 	const indexSource = readProjectFile("components/blocks/knowledge-directory/index.ts");
 
 	assert.match(source, /export interface KnowledgeDirectoryDialogProps/u);
-	assert.match(source, /skills\?: readonly KnowledgeDirectorySkill\[\]/u);
-	assert.match(source, /sessionSkills\?: readonly KnowledgeDirectorySkill\[\]/u);
-	assert.match(source, /selectedSkillIds\?: readonly string\[\]/u);
-	assert.match(source, /defaultSelectedSkillIds\?: readonly string\[\]/u);
-	assert.match(source, /onSelectedSkillIdsChange\?: \(skillIds: readonly string\[\]\) => void/u);
-	assert.match(source, /onAddSkills\?: \(skillIds: readonly string\[\], skills: readonly KnowledgeDirectorySkill\[\]\) => void/u);
-	assert.match(source, /agents\?: readonly KnowledgeDirectoryAgent\[\]/u);
-	assert.match(source, /sessionAgents\?: readonly KnowledgeDirectoryAgent\[\]/u);
-	assert.match(source, /normalizeAgentSkill/u);
-	assert.match(indexSource, /KnowledgeDirectoryAgent/u);
+	assert.match(source, /apps\?: readonly KnowledgeDirectoryApp\[\]/u);
+	assert.match(source, /selectedAppId\?: string \| null/u);
+	assert.match(source, /defaultSelectedAppId\?: string \| null/u);
+	assert.match(source, /selectedMode\?: KnowledgeDirectoryMode/u);
+	assert.match(source, /defaultSelectedMode\?: KnowledgeDirectoryMode/u);
+	assert.match(source, /selectedContentIds\?: readonly string\[\]/u);
+	assert.match(source, /defaultSelectedContentIds\?: readonly string\[\]/u);
+	assert.match(source, /onBrowseFiles\?: \(\) => void/u);
+	assert.match(source, /onAddKnowledge\?: \(payload: KnowledgeDirectoryAddPayload\) => void/u);
+	assert.match(source, /onSelectApp\?: \(app: KnowledgeDirectoryApp\) => void/u);
+	assert.match(source, /onSelectMode\?: \(mode: KnowledgeDirectoryMode\) => void/u);
+	assert.match(source, /onSelectedContentIdsChange\?: \(contentIds: readonly string\[\]\) => void/u);
+	assert.match(indexSource, /KnowledgeDirectoryAddPayload/u);
+	assert.match(indexSource, /KnowledgeDirectoryApp/u);
+	assert.match(indexSource, /KnowledgeDirectoryContent/u);
+	assert.match(indexSource, /KnowledgeDirectoryMode/u);
+	assert.doesNotMatch(indexSource, /KnowledgeDirectorySkill/u);
 });
 
-test("Knowledge Directory uses multi-select cards, hover learn-more, and selected toolbar", () => {
+test("Knowledge Directory includes real connector defaults", () => {
+	const source = readProjectFile("components/blocks/knowledge-directory/data/apps.tsx");
+
+	assert.match(source, /name: "Confluence"/u);
+	assert.match(source, /name: "Google Drive"/u);
+	assert.match(source, /name: "Microsoft Teams"/u);
+	assert.match(source, /name: "Microsoft SharePoint"/u);
+	assert.match(source, /name: "GitHub"/u);
+	assert.match(source, /name: "Loom"/u);
+	assert.match(source, /contents: \[/u);
+});
+
+test("Knowledge Directory implements app selection and content-scope actions", () => {
 	const source = readProjectFile("components/blocks/knowledge-directory/components/knowledge-directory.tsx");
 
-	assert.match(source, /<Checkbox/u);
-	assert.match(source, /border-border-selected/u);
-	assert.match(source, /hover:border-transparent/u);
-	assert.match(source, /function SkillMoreMenu/u);
-	assert.match(source, /event\.stopPropagation\(\);\s+onLearnMore\(\);/u);
-	assert.match(source, /Learn more/u);
-	assert.match(source, /function SelectedSkillsToolbar/u);
-	assert.match(source, /Add skills/u);
-	assert.match(source, /Create link to share/u);
-	assert.match(source, /Favorite/u);
-	assert.match(source, /Download/u);
+	assert.match(source, /function BrowseAppsStep/u);
+	assert.match(source, /function KnowledgeAppCard/u);
+	assert.match(source, /function AppContentStep/u);
+	assert.match(source, /function ContentModeSelector/u);
+	assert.match(source, /All content/u);
+	assert.match(source, /Custom content/u);
+	assert.match(source, /Select content/u);
+	assert.match(source, /onSelectApp\(app\)/u);
+	assert.match(source, /commitMode\("all"\)/u);
+	assert.match(source, /commitContentIds\(getContentIds\(app\)\)/u);
+	assert.match(source, /contentIds: resolvedMode === "all" \? "all" : resolvedContentIds/u);
 });
 
-test("Knowledge Directory renders skill info view with file tree and top scroll mask", () => {
+test("Knowledge Directory custom content can be searched and removed", () => {
 	const source = readProjectFile("components/blocks/knowledge-directory/components/knowledge-directory.tsx");
 
-	assert.match(source, /function SkillDetailHeader/u);
-	assert.match(source, /<SplitButton/u);
-	assert.match(source, /Try in chat/u);
-	assert.match(source, /function SkillDetailView/u);
-	assert.match(source, /function SkillFileTreeSidebar/u);
-	assert.match(source, /SKILL\.md/u);
-	assert.match(source, /LICENSE\.txt/u);
-	assert.match(source, /references/u);
-	assert.match(source, /scripts/u);
-	assert.match(source, /contentOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"/u);
-	assert.doesNotMatch(source, /Skill categories"[\s\S]{0,160}scroll-mask-top/u);
+	assert.match(source, /function filterContent/u);
+	assert.match(source, /selectedIdSet\.has\(content\.id\)/u);
+	assert.match(source, /function SelectedContentList/u);
+	assert.match(source, /onRemoveContent/u);
+	assert.match(source, /DeleteIcon/u);
+	assert.match(source, /Remove \$\{content\.name\}/u);
+	assert.match(source, /No custom content selected\./u);
 });
 
-test("Knowledge Directory demo and docs use skill-specific examples", () => {
+test("Knowledge Directory demo and docs use knowledge-specific examples", () => {
 	const pageSource = readProjectFile("components/blocks/knowledge-directory/page.tsx");
-	const detailsSource = readProjectFile("app/data/details/blocks.ts");
-	const skillsSource = readProjectFile("components/blocks/knowledge-directory/data/skills.tsx");
-	const sidebarGroupsSource = readProjectFile("components/blocks/knowledge-directory/data/sidebar-groups.ts");
+	const detailsSource = readKnowledgeDetailsSection();
 
-	assert.match(pageSource, /defaultSelectedSkillIds=\{\[/u);
-	assert.match(pageSource, /"design-landing-page"/u);
-	assert.match(pageSource, /"develop-mobile-app-interface"/u);
-	assert.match(pageSource, /"create-brand-identity"/u);
-	assert.match(detailsSource, /onAddSkills/u);
-	assert.match(detailsSource, /onCreateSkill/u);
-	assert.match(skillsSource, /publisherName/u);
-	assert.match(skillsSource, /publisherAvatarSrc/u);
-	assert.match(skillsSource, /categoryId/u);
-	assert.match(skillsSource, /companyId/u);
-	assert.match(sidebarGroupsSource, /label: "All skills"/u);
-	assert.match(sidebarGroupsSource, /label: "Favorite skills"/u);
-	assert.match(sidebarGroupsSource, /label: "Your skills"/u);
+	assert.doesNotMatch(pageSource, /defaultSelectedSkillIds/u);
+	assert.doesNotMatch(pageSource, /sessionSkills/u);
+	assert.match(detailsSource, /KnowledgeDirectoryApp/u);
+	assert.match(detailsSource, /apps=\{apps\}/u);
+	assert.match(detailsSource, /onBrowseFiles/u);
+	assert.match(detailsSource, /onAddKnowledge/u);
+	assert.doesNotMatch(detailsSource, /KnowledgeDirectorySkill/u);
+	assert.doesNotMatch(detailsSource, /onAddSkills/u);
 });
