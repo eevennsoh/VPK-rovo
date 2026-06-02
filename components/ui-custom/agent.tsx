@@ -820,6 +820,43 @@ function AgentCompactBentoCardGlowLayers({ iconSrc }: Readonly<{ iconSrc: string
 	);
 }
 
+// Hand-drawn curved arrow (single stroke: swoop + two-line arrowhead) that
+// points down into the template grid. Drawn as one path so a single
+// `pathLength` trace covers the whole shape.
+const AGENT_COMPACT_BENTO_HINT_ARROW_PATH = "M5 9C28 1 60 12 48 46 M48 46 L39 41 M48 46 L54 34";
+
+function AgentCompactBentoTemplatesHint() {
+	const shouldReduceMotion = useReducedMotion();
+
+	return (
+		<div className="relative z-[3] mb-3 flex items-center gap-2 pl-1">
+			<span className="text-xs font-medium text-text-subtle">Start with these agent templates</span>
+			<svg aria-hidden="true" viewBox="0 0 60 52" fill="none" className="h-6 w-7 shrink-0 text-text-subtlest">
+				<motion.path
+					d={AGENT_COMPACT_BENTO_HINT_ARROW_PATH}
+					stroke="currentColor"
+					strokeWidth={3}
+					strokeLinecap="round"
+					strokeLinejoin="round"
+					initial={shouldReduceMotion ? false : { pathLength: 0 }}
+					animate={shouldReduceMotion ? { pathLength: 1 } : { pathLength: [0, 1, 1, 0] }}
+					transition={
+						shouldReduceMotion
+							? undefined
+							: {
+									duration: 2.6,
+									ease: "easeInOut",
+									times: [0, 0.4, 0.82, 1],
+									repeat: Infinity,
+									repeatDelay: 0.5,
+								}
+					}
+				/>
+			</svg>
+		</div>
+	);
+}
+
 function AgentCompactOperationsBento() {
 	const shouldReduceMotion = useReducedMotion();
 	const [browseOpen, setBrowseOpen] = useState(false);
@@ -894,6 +931,7 @@ function AgentCompactOperationsBento() {
 			onPointerMove={handleBentoPointerMove}
 			style={AGENT_COMPACT_BENTO_CARD_GLOW_EFFECT_STYLE}
 		>
+			<AgentCompactBentoTemplatesHint />
 			{/*
 				`-mt-2 pt-2` gives the masked content top headroom that nets to zero
 				visual shift: the bottom-fade mask clips its children to the box, so
