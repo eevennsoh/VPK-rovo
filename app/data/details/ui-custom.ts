@@ -823,7 +823,7 @@ import {
 			},
 		],
 		subComponents: [
-			{ name: "AgentHeader", description: "Top app bar with agent avatar, name, status lozenge, and test/activate actions." },
+			{ name: "AgentHeader", description: "Top app bar with agent avatar, name, status lozenge, and Configure/Test tabs (override via the `actions` prop)." },
 			{ name: "AgentContent", description: "Body container for the agent configuration surface." },
 			{ name: "AgentConfigFields", description: "Shared Figma-style agent strategy surface used by the catalog preview and Studio panel." },
 			{ name: "AgentInstructions", description: "Instruction text block with label." },
