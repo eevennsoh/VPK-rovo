@@ -98,17 +98,17 @@ const INSERT_REFERENCE_OPTIONS: ReadonlyArray<{
 		label: "Knowledge",
 		icon: <BookOpenIcon label="" size="small" />,
 	},
-	{
-		category: "memory",
-		label: "Memory",
-		icon: <AiModelIcon label="" size="small" />,
-	},
 	{ category: "tool", label: "Tools", icon: <ToolsIcon label="" size="small" /> },
 	{ category: "skill", label: "Skills", icon: <SkillIcon label="" size="small" /> },
 	{
 		category: "subagent",
 		label: "Subagents",
 		icon: <AiAgentIcon label="" size="small" />,
+	},
+	{
+		category: "memory",
+		label: "Memory",
+		icon: <AiModelIcon label="" size="small" />,
 	},
 ];
 
