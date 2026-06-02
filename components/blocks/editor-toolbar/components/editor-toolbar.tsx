@@ -20,6 +20,7 @@ import MarkdownIcon from "@atlaskit/icon/core/markdown";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import QuotationMarkIcon from "@atlaskit/icon/core/quotation-mark";
 import SnippetIcon from "@atlaskit/icon/core/snippet";
+import TableIcon from "@atlaskit/icon/core/table";
 import TextIcon from "@atlaskit/icon/core/text";
 import TextBoldIcon from "@atlaskit/icon/core/text-bold";
 import TextItalicIcon from "@atlaskit/icon/core/text-italic";
@@ -33,7 +34,6 @@ import TextHeadingOneIcon from "@atlaskit/icon-lab/core/text-heading-one";
 import TextHeadingSixIcon from "@atlaskit/icon-lab/core/text-heading-six";
 import TextHeadingThreeIcon from "@atlaskit/icon-lab/core/text-heading-three";
 import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
-import ViewTypeTableHomeIcon from "@atlaskit/icon-lab/core/view-type-table-home";
 
 import { useClickOutside } from "@/components/hooks/use-click-outside";
 import { Button } from "@/components/ui/button";
@@ -718,7 +718,7 @@ export function EditorToolbar({
 						disabled={isMarkdownMode}
 						onClick={handleInsertTable}
 					>
-						<ViewTypeTableHomeIcon label="" size="small" />
+						<TableIcon label="" size="small" />
 					</Button>
 
 					<ToolbarSeparator />
