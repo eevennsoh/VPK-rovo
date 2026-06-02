@@ -10,6 +10,7 @@ import TimelineIcon from "@atlaskit/icon/core/timeline";
 import { type ReactElement } from "react";
 
 import { Avatar } from "@/components/ui/avatar";
+import { AtlassianLogo } from "@/components/ui/logo";
 import { Tile } from "@/components/ui/tile";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { token } from "@/lib/tokens";
@@ -21,6 +22,7 @@ import {
 } from "../data/skills";
 import type {
 	SkillNavIcon,
+	SkillsDirectoryCompanyItem,
 	SkillsDirectoryPrimaryItem,
 	SkillsDirectorySidebarGroup,
 } from "../data/sidebar-groups";
@@ -49,10 +51,14 @@ function TileLeading({ children }: Readonly<{ children: ReactElement }>) {
 	);
 }
 
-function LogoLeading({ src }: Readonly<{ src: string }>) {
+function LogoLeading({ item }: Readonly<{ item: SkillsDirectoryCompanyItem }>) {
 	return (
 		<Avatar size="sm" shape="square" className="shrink-0 after:border-0">
-			<Image alt="" aria-hidden className="size-full object-contain" height={24} src={src} width={24} />
+			{item.logoName ? (
+				<AtlassianLogo name={item.logoName} size="small" themeAware label={item.label} />
+			) : item.logoSrc ? (
+				<Image alt="" aria-hidden className="size-full object-contain" height={24} src={item.logoSrc} width={24} />
+			) : null}
 		</Avatar>
 	);
 }
@@ -162,7 +168,7 @@ function SkillsSidebarGroup({
 						<li key={`company-${item.id}`}>
 							<SidebarNavItem
 								label={item.label}
-								leading={<LogoLeading src={item.logoSrc} />}
+								leading={<LogoLeading item={item} />}
 								leadingSize="medium"
 								isSelected={activeItem === item.id}
 								onClick={() => onSelectItem(item.id)}

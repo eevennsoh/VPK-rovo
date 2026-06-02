@@ -12,6 +12,8 @@ import PaintPaletteIcon from "@atlaskit/icon/core/paint-palette";
 import SearchIcon from "@atlaskit/icon/core/search";
 import VideoIcon from "@atlaskit/icon/core/video";
 
+import type { AtlassianLogoName } from "@/components/ui/logo";
+
 /** Stable category ids, mirrored by the `Category` sidebar group. */
 export type SkillCategory =
 	| "project-management"
@@ -76,8 +78,16 @@ export function getSkillPublisherName(skill: SkillsDirectorySkill): string {
 	return skill.publisherName ?? skill.publisher ?? "Atlassian";
 }
 
-export function getSkillPublisherAvatarSrc(skill: SkillsDirectorySkill): string {
-	return skill.publisherAvatarSrc ?? skill.publisherLogoSrc ?? ATLASSIAN_LOGO;
+export function getSkillPublisherAvatarSrc(skill: SkillsDirectorySkill): string | undefined {
+	return skill.publisherAvatarSrc ?? skill.publisherLogoSrc;
+}
+
+/**
+ * Publishers default to the Atlassian brand mark when no custom avatar image is
+ * set, rendered via the ADS logo component rather than a static asset.
+ */
+export function getSkillPublisherLogoName(skill: SkillsDirectorySkill): AtlassianLogoName | undefined {
+	return getSkillPublisherAvatarSrc(skill) ? undefined : "atlassian";
 }
 
 export function getSkillCategoryId(skill: SkillsDirectorySkill): SkillCategory | undefined {
@@ -115,7 +125,6 @@ export function getSkillIcon(icon: SkillIconKey = "page"): ReactElement {
 	}
 }
 
-const ATLASSIAN_LOGO = "/1p/atlassian.svg";
 const GOOGLE_LOGO = "/3p/google-drive/16.svg";
 const NOTION_LOGO = "/3p/notion/16.svg";
 const SLACK_LOGO = "/3p/slack/16.svg";
@@ -227,7 +236,6 @@ export const DEFAULT_SKILLS: readonly SkillsDirectorySkill[] = [
 		icon: "angle-brackets",
 		iconColor: "text-teal-500",
 		publisherName: "Atlassian",
-		publisherAvatarSrc: ATLASSIAN_LOGO,
 		companyId: "atlassian",
 		categoryId: "software-development",
 		starCount: 61,

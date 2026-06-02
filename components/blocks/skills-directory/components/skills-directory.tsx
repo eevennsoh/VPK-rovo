@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { AtlassianLogo } from "@/components/ui/logo";
 import { SplitButton } from "@/components/ui/split-button";
 import { Tile } from "@/components/ui/tile";
 import {
@@ -54,6 +55,7 @@ import {
 	getSkillCategoryId,
 	getSkillIcon,
 	getSkillPublisherAvatarSrc,
+	getSkillPublisherLogoName,
 	getSkillPublisherName,
 	type SkillCategory,
 	type SkillIconKey,
@@ -529,9 +531,28 @@ interface SkillCardProps {
 	skill: SkillsDirectorySkill;
 }
 
+/** Publisher avatar — ADS brand logo when no custom image is set, else the image. */
+function SkillPublisherAvatar({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
+	const logoName = getSkillPublisherLogoName(skill);
+	if (logoName) {
+		return <AtlassianLogo name={logoName} size="xsmall" themeAware label={getSkillPublisherName(skill)} />;
+	}
+
+	const src = getSkillPublisherAvatarSrc(skill);
+	return src ? (
+		<Image
+			alt=""
+			aria-hidden
+			className="size-4 shrink-0 rounded-full object-cover"
+			height={16}
+			src={src}
+			width={16}
+		/>
+	) : null;
+}
+
 function SkillCard({ onLearnMore, onSelect, selected, skill }: Readonly<SkillCardProps>) {
 	const publisher = getSkillPublisherName(skill);
-	const publisherAvatarSrc = getSkillPublisherAvatarSrc(skill);
 
 	function stopInteractivePropagation(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
 		event.stopPropagation();
@@ -568,14 +589,7 @@ function SkillCard({ onLearnMore, onSelect, selected, skill }: Readonly<SkillCar
 
 			<CardDirectoryFooter className="justify-between">
 				<span className="inline-flex min-w-0 items-center gap-1 text-text-subtle">
-					<Image
-						alt=""
-						aria-hidden
-						className="size-4 shrink-0 rounded-full object-cover"
-						height={16}
-						src={publisherAvatarSrc}
-						width={16}
-					/>
+					<SkillPublisherAvatar skill={skill} />
 					<span className="truncate">{publisher}</span>
 				</span>
 				<span className="inline-flex shrink-0 items-center gap-4 opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100">
@@ -829,7 +843,6 @@ function SkillFileTreeSidebar({ skill }: Readonly<{ skill: SkillsDirectorySkill 
 
 function SkillDetailSummary({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
 	const publisher = getSkillPublisherName(skill);
-	const publisherAvatarSrc = getSkillPublisherAvatarSrc(skill);
 
 	return (
 		<section className="flex flex-col gap-6" aria-labelledby="skill-detail-title">
@@ -850,14 +863,7 @@ function SkillDetailSummary({ skill }: Readonly<{ skill: SkillsDirectorySkill }>
 					{skill.name}
 				</h2>
 				<p className="flex items-center gap-1 text-xs leading-4 text-text-subtle">
-					<Image
-						alt=""
-						aria-hidden
-						className="size-4 rounded-full object-cover"
-						height={16}
-						src={publisherAvatarSrc}
-						width={16}
-					/>
+					<SkillPublisherAvatar skill={skill} />
 					{publisher}
 				</p>
 			</div>

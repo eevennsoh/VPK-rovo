@@ -8,6 +8,7 @@ import CrossIcon from "@atlaskit/icon/core/cross";
 import SearchIcon from "@atlaskit/icon/core/search";
 
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/icon";
@@ -23,7 +24,9 @@ export interface AgentBrowserAgent {
 	name: string;
 	byline: string;
 	attributionKind?: "company" | "team" | "person";
-	avatarSrc: string;
+	avatarSrc?: string;
+	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
+	logoName?: AtlassianLogoName;
 	description?: string;
 }
 
@@ -37,7 +40,9 @@ export interface AgentBrowserSidebarGroup {
 export interface AgentBrowserSidebarItem {
 	id: string;
 	label: string;
-	avatarSrc: string;
+	avatarSrc?: string;
+	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
+	logoName?: AtlassianLogoName;
 }
 
 export interface AgentBrowserCategory {
@@ -126,6 +131,7 @@ function getSidebarGroupItems(
 		id: agent.id,
 		label: agent.name,
 		avatarSrc: agent.avatarSrc,
+		logoName: agent.logoName,
 	}));
 }
 
@@ -339,7 +345,15 @@ function SidebarGroup({ title, items, agents, onSelectAgent, showAll = false }: 
 }
 
 function SidebarItemAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>) {
-	if (item.avatarSrc.startsWith("/avatar-project/")) {
+	if (item.logoName) {
+		return (
+			<Avatar size="sm" shape="square" className="shrink-0 after:border-0">
+				<AtlassianLogo name={item.logoName} size="small" themeAware label={item.label} />
+			</Avatar>
+		);
+	}
+
+	if (item.avatarSrc?.startsWith("/avatar-project/")) {
 		return (
 			<span className="flex size-6 shrink-0 items-center justify-center">
 				<Avatar size="sm" shape="square" label={item.label} className="size-5">
@@ -351,14 +365,16 @@ function SidebarItemAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 
 	return (
 		<Avatar size="sm" shape="square" className="shrink-0 after:border-0">
-			<Image
-				alt=""
-				aria-hidden
-				className="size-full object-contain"
-				height={24}
-				src={item.avatarSrc}
-				width={24}
-			/>
+			{item.avatarSrc ? (
+				<Image
+					alt=""
+					aria-hidden
+					className="size-full object-contain"
+					height={24}
+					src={item.avatarSrc}
+					width={24}
+				/>
+			) : null}
 		</Avatar>
 	);
 }
@@ -379,6 +395,7 @@ function AgentSection({ agents, onSelectAgent }: Readonly<AgentSectionProps>) {
 							<CardDirectoryAgent
 								avatarImageClassName={getDirectoryCardAvatarClassName(agent)}
 								avatarSrc={agent.avatarSrc}
+								logoName={agent.logoName}
 								chatCount={syntheticChats(agent.id)}
 								className="hover:border-transparent"
 								description={agent.description}

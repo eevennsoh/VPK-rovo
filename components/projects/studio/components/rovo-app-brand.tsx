@@ -2,12 +2,12 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import Image from "next/image";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import EditIcon from "@atlaskit/icon/core/edit";
 
 import { useRovoSelectedAgent } from "@/app/contexts";
 import { AgentSelector, type AgentSelectorAction } from "@/components/blocks/agent-selector";
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -158,12 +158,12 @@ export function RovoAppBrand() {
 							data-icon="inline-start"
 							variants={identityItemVariants}
 						>
-							<Image
-								src={selectedAgent.avatarSrc}
-								alt=""
+							<AgentAvatarVisual
+								avatarSrc={selectedAgent.avatarSrc}
+								logoName={selectedAgent.logoName}
+								label={selectedAgent.name}
+								sizePx={16}
 								className="size-4 object-contain"
-								width={16}
-								height={16}
 							/>
 						</motion.span>
 						<motion.span className="truncate font-semibold" variants={identityItemVariants}>{triggerLabel}</motion.span>
