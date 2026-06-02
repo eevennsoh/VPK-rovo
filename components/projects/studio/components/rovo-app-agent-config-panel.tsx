@@ -298,29 +298,12 @@ export function RovoAppAgentConfigPanel({
 						avatarSrc={agentAvatarSrc}
 						name={agentName}
 						badge={
-							// Header left meta slot: status lozenge plus the Update
-							// action sit beside the agent name; the view switcher and
-							// Publish live on the right.
-							<>
-								<Lozenge
-									data-testid="agent-config-status-lozenge"
-									variant={entry.publishStatus === "published" ? "success" : undefined}
-								>
-									{publishStatusLabel}
-								</Lozenge>
-								<AgentConfigActionButton
-									type="button"
-									size="default"
-									variant="ghost"
-									onClick={handleUpdate}
-									disabled={!hasUpdateChanges}
-									disabledTooltip="Make a change to the agent before updating the testing version."
-									data-testid="agent-config-update"
-									data-screen-assistant-target="studio-agent-config-update"
-								>
-									{justUpdatedAt ? "Updated" : "Update"}
-								</AgentConfigActionButton>
-							</>
+							<Lozenge
+								data-testid="agent-config-status-lozenge"
+								variant={entry.publishStatus === "published" ? "success" : undefined}
+							>
+								{publishStatusLabel}
+							</Lozenge>
 						}
 						actions={
 							<>
@@ -350,6 +333,18 @@ export function RovoAppAgentConfigPanel({
 										Test
 									</AgentConfigToggleItem>
 								</ToggleGroup>
+								<AgentConfigActionButton
+									type="button"
+									size="default"
+									variant="ghost"
+									onClick={handleUpdate}
+									disabled={!hasUpdateChanges}
+									disabledTooltip="Make a change to the agent before updating the testing version."
+									data-testid="agent-config-update"
+									data-screen-assistant-target="studio-agent-config-update"
+								>
+									{justUpdatedAt ? "Updated" : "Update"}
+								</AgentConfigActionButton>
 								<Button
 									type="button"
 									size="default"
