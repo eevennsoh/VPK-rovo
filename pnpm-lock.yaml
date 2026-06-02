@@ -581,17 +581,17 @@ packages:
     resolution: {integrity: sha512-srKJmOSV0EeCuQ4atPs0Dsap5msJUabBLVMMhK9F5M2bMDpcgNXmL8a0h+LmCINyxevFhcIEjDhKoJnMkgRJ/w==, tarball: https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/feature-gate-js-client/-/feature-gate-js-client-5.7.1.tgz}
 
   '@atlaskit/icon-lab@6.12.0':
-    resolution: {integrity: sha512-t1PsNKT2oUqQo2QukfrElFxyeMSnY9mx6fXCk0BC4JmoUHa0NMSLfMWDivXMdMe2aStQEV2nCRpLQvlOXkbpQA==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/icon-lab/-/@atlaskit/icon-lab-6.12.0.tgz}
+    resolution: {integrity: sha512-t1PsNKT2oUqQo2QukfrElFxyeMSnY9mx6fXCk0BC4JmoUHa0NMSLfMWDivXMdMe2aStQEV2nCRpLQvlOXkbpQA==}
     peerDependencies:
       react: ^18.2.0
 
   '@atlaskit/icon@35.3.0':
-    resolution: {integrity: sha512-s0rKUSJTZUycBSvL8DGibyVquajMwT1RBEJ6v+BWMSFsBQMHQbMLCA5TOUoICSTq5ewELAYq8FWulfnKZZnv1A==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/icon/-/@atlaskit/icon-35.3.0.tgz}
+    resolution: {integrity: sha512-s0rKUSJTZUycBSvL8DGibyVquajMwT1RBEJ6v+BWMSFsBQMHQbMLCA5TOUoICSTq5ewELAYq8FWulfnKZZnv1A==}
     peerDependencies:
       react: ^18.2.0
 
   '@atlaskit/logo@20.1.2':
-    resolution: {integrity: sha512-FLtfqUswfUaEb9bSWuRPSyLIBIP0SJnmndG8SKfxWYp65Y67M1f5rVTLXfhRQWgX/o6PTrojR+vTxgRwU4letw==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/logo/-/@atlaskit/logo-20.1.2.tgz}
+    resolution: {integrity: sha512-FLtfqUswfUaEb9bSWuRPSyLIBIP0SJnmndG8SKfxWYp65Y67M1f5rVTLXfhRQWgX/o6PTrojR+vTxgRwU4letw==}
     peerDependencies:
       react: ^18.2.0
 
@@ -614,7 +614,7 @@ packages:
       react: ^18.2.0
 
   '@atlaskit/tokens@13.1.0':
-    resolution: {integrity: sha512-P9VUWZDFY6Rsm7R1GINAkkIMgj/uwxdxgKfdF6iDIBTD6ffVPID4cubal6lsdFZ3JxWZ6W7wQnw/fO3If0H0dw==, tarball: https://packages.atlassian.com/api/npm/atlassian-npm/@atlaskit/tokens/-/@atlaskit/tokens-13.1.0.tgz}
+    resolution: {integrity: sha512-P9VUWZDFY6Rsm7R1GINAkkIMgj/uwxdxgKfdF6iDIBTD6ffVPID4cubal6lsdFZ3JxWZ6W7wQnw/fO3If0H0dw==}
     peerDependencies:
       react: ^18.2.0 || ^19.0.0
 
