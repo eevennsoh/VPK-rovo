@@ -460,7 +460,7 @@ test("Shared toolbar groups related split controls and keeps unrelated toggles i
 		EDITOR_TOOLBAR_SOURCE,
 		/variant=\{editor\.isActive\("bold"\) \? "secondary" : "ghost"\}/u,
 	);
-	assert.match(EDITOR_TOOLBAR_SOURCE, /<TextNormalIcon size="small" \/>/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<TextNormalIcon label="Text normal" size="small" \/>/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /<MarkdownIcon label="" size="small" \/>/u);
 });
 
@@ -497,8 +497,10 @@ test("Shared toolbar exposes far-right rendered and Markdown mode tabs gated by 
 		EDITOR_TOOLBAR_SOURCE,
 		/const showModeTabs = Boolean\(onToggleMarkdownMode\);[\s\S]*\{endSlot \|\| showModeTabs \? \(/u,
 	);
-	assert.match(EDITOR_TOOLBAR_SOURCE, /<TabsTrigger value="rendered">[\s\S]*Rendered/u);
-	assert.match(EDITOR_TOOLBAR_SOURCE, /<TabsTrigger value="markdown">[\s\S]*Markdown/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<TabsTrigger[\s\S]*aria-label="Rendered text"[\s\S]*value="rendered"/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<TabsTrigger[\s\S]*aria-label="Markdown source"[\s\S]*value="markdown"/u);
+	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, />\s*Rendered\s*</u);
+	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, />\s*Markdown\s*</u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /Show Markdown source/u);
 });
 

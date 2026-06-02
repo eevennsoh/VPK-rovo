@@ -550,13 +550,19 @@ export function EditorToolbar({
 							}}
 						>
 							<TabsList>
-								<TabsTrigger value="rendered">
-									<TextNormalIcon size="small" />
-									Rendered
+								<TabsTrigger
+									aria-label="Rendered text"
+									value="rendered"
+									className="px-2"
+								>
+									<TextNormalIcon label="Text normal" size="small" />
 								</TabsTrigger>
-								<TabsTrigger value="markdown">
+								<TabsTrigger
+									aria-label="Markdown source"
+									value="markdown"
+									className="px-2"
+								>
 									<MarkdownIcon label="" size="small" />
-									Markdown
 								</TabsTrigger>
 							</TabsList>
 						</Tabs>
