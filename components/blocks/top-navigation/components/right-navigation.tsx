@@ -58,7 +58,7 @@ export function RightNavigation({
 				<Popover open={isOverflowOpen} onOpenChange={setIsOverflowOpen}>
 					<PopoverTrigger
 						render={
-							<Button aria-label="More" size="icon" variant="ghost">
+							<Button aria-label="More" size="icon" variant="outline">
 								<ShowMoreHorizontalIcon label="" color={token("color.icon.subtle")} />
 							</Button>
 						}
