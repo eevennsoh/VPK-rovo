@@ -68,6 +68,17 @@ function getVersionLabel(entry: StudioSessionAgentEntry): string {
 	return entry.publishStatus === "published" ? "V1" : "Draft";
 }
 
+function getAgentUserCount(entry: StudioSessionAgentEntry): number {
+	// The studio is single-user: the only user of a custom agent is its owner.
+	// Derived from the owner identity rather than hard-coded so this stays
+	// correct if multi-user access is added to the entry shape later.
+	return entry.profile.id ? 1 : 0;
+}
+
+function formatUserCount(count: number): string {
+	return `${count} ${count === 1 ? "user" : "users"}`;
+}
+
 function getVersionVariant(entry: StudioSessionAgentEntry): "success" | "neutral" {
 	return entry.publishStatus === "published" ? "success" : "neutral";
 }
@@ -136,14 +147,16 @@ export function StudioCustomAgentsTable({
 										</span>
 									</div>
 								</TableCell>
-								<TableCell className="px-2 text-text-disabled">—</TableCell>
+								<TableCell className="px-2 text-text-subtle">
+									{formatUserCount(getAgentUserCount(entry))}
+								</TableCell>
 								<TableCell className="px-2">
 									<Lozenge variant={getVersionVariant(entry)}>
 										{getVersionLabel(entry)}
 									</Lozenge>
 								</TableCell>
 								<TableCell className="px-2">
-									<div className="flex items-center gap-1">
+									<div className="flex items-center gap-2">
 										<Avatar aria-hidden="true" size="sm">
 											<AvatarImage alt="" src={STUDIO_CUSTOM_AGENT_OWNER_AVATAR_SRC} />
 											<AvatarFallback>V</AvatarFallback>
