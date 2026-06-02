@@ -6842,6 +6842,9 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
   "editor-palette": dynamic(() => import("./demos/blocks/editor-palette-demo"), {
     ssr: false,
   }),
+  "editor-toolbar": dynamic(() => import("./demos/blocks/editor-toolbar-demo"), {
+    ssr: false,
+  }),
 };
 
 const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {

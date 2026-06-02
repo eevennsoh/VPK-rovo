@@ -292,6 +292,7 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("cursor", "Cursor"),
 	blockComponent("dashboard", "Dashboard"),
 	blockComponent("editor-palette", "Editor palette"),
+	blockComponent("editor-toolbar", "Editor toolbar"),
 	blockComponent("data-table", "Data Table"),
 	blockComponent("generative-card", "Generative Card"),
 	blockComponent("generative", "Generative UI"),

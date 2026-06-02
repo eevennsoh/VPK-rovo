@@ -22,6 +22,61 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 			},
 		],
 	},
+	"editor-toolbar": {
+		description: "Reusable rich text editor toolbar with text style, formatting, list, alignment, link, Markdown source, and slot controls for Tiptap editor surfaces.",
+		importStatement: `import { EditorToolbar } from "@/components/blocks/editor-toolbar";`,
+		usage: `import { EditorToolbar } from "@/components/blocks/editor-toolbar";
+import type { Editor } from "@tiptap/react";
+
+function FormattingToolbar({ editor }: { editor: Editor }) {
+  return <EditorToolbar editor={editor} />;
+}`,
+		demoLayout: { previewHeight: "default" },
+		props: [
+			{
+				name: "editor",
+				type: "Editor",
+				required: true,
+				description: "Tiptap editor instance that receives formatting commands and reports active selection state.",
+			},
+			{
+				name: "className",
+				type: "string",
+				description: "Optional class names applied to the toolbar root.",
+			},
+			{
+				name: "controlsClassName",
+				type: "string",
+				description: "Optional class names applied to the inner controls row.",
+			},
+			{
+				name: "leadingSlot",
+				type: "ReactNode",
+				description: "Optional content rendered before the toolbar controls.",
+			},
+			{
+				name: "endSlot",
+				type: "ReactNode",
+				description: "Optional content rendered at the end of the toolbar.",
+			},
+			{
+				name: "isMarkdownMode",
+				type: "boolean",
+				default: "false",
+				description: "Marks the toolbar as controlling a Markdown source editor instead of the rendered Tiptap document.",
+			},
+			{
+				name: "onToggleMarkdownMode",
+				type: "() => void",
+				description: "Called when the Markdown source toggle is selected. When omitted, the Markdown toggle is hidden.",
+			},
+			{
+				name: "onMarkdownFormat",
+				type: "(kind: MarkdownFormatKind) => void",
+				description: "Called for formatting actions while Markdown source mode is active.",
+			},
+		],
+	},
 	"agent-card": {
 		description: "Figma-matched Rovo agent profile card with cover art, avatar attribution, partner byline, description, title actions, and an AI input affordance.",
 		importStatement: `import { AgentCard } from "@/components/blocks/agent-card";`,

@@ -48,6 +48,10 @@ const RICH_TEXT_TOOLBAR_SOURCE = readFileSync(
 	join(__dirname, "rich-text-editor", "toolbar.tsx"),
 	"utf8",
 );
+const EDITOR_TOOLBAR_SOURCE = readFileSync(
+	join(__dirname, "..", "blocks", "editor-toolbar", "components", "editor-toolbar.tsx"),
+	"utf8",
+);
 const MODEL_SELECTOR_SOURCE = readFileSync(
 	join(__dirname, "model-selector.tsx"),
 	"utf8",
@@ -69,6 +73,7 @@ test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /placeholder="Describe the agent’s role and what it should do\. @mention, or \/ for skills"/u);
 	assert.match(AGENT_SOURCE, /mentionSources=\{mentionSources\}/u);
 	assert.match(AGENT_SOURCE, /toolbarBelowSlot=\{toolbarBelowSlot\}/u);
+	assert.match(AGENT_SOURCE, /toolbarEndSlot=\{<AgentInstructionsModelSelector \/>\}/u);
 	assert.match(AGENT_SOURCE, /onMarkdownChange=\{onInstructionsChange\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /AGENT_EDITOR_CONTROLS/u);
 });
@@ -384,6 +389,19 @@ test("Agent creation guidance asks for structured markdown instructions", () => 
 	assert.match(STUDIO_AGENT_RESULT_SOURCE, /## Validation/u);
 });
 
+test("Shared rich text toolbar delegates to the Editor toolbar block", () => {
+	assert.match(
+		RICH_TEXT_TOOLBAR_SOURCE,
+		/import \{\s*EditorToolbar,\s*type EditorToolbarProps,?\s*\} from "@\/components\/blocks\/editor-toolbar";/u,
+	);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /export type RichTextEditorToolbarProps = EditorToolbarProps;/u);
+	assert.match(
+		RICH_TEXT_TOOLBAR_SOURCE,
+		/export function RichTextEditorToolbar\([\s\S]*return <EditorToolbar \{\.\.\.props\} \/>;/u,
+	);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<EditorToolbar[\s\S]*controlsClassName="px-2 py-1"/u);
+});
+
 test("Shared toolbar carries the Confluence editor control set", () => {
 	for (const control of [
 		"Text alignment",
@@ -391,7 +409,7 @@ test("Shared toolbar carries the Confluence editor control set", () => {
 		"Numbered list",
 		"Link",
 	]) {
-		assert.match(RICH_TEXT_TOOLBAR_SOURCE, new RegExp(control, "u"));
+		assert.match(EDITOR_TOOLBAR_SOURCE, new RegExp(control, "u"));
 	}
 
 	for (const command of [
@@ -404,72 +422,72 @@ test("Shared toolbar carries the Confluence editor control set", () => {
 		"setTextAlign",
 		"setLink",
 	]) {
-		assert.match(RICH_TEXT_TOOLBAR_SOURCE, new RegExp(command, "u"));
+		assert.match(EDITOR_TOOLBAR_SOURCE, new RegExp(command, "u"));
 	}
 });
 
 test("Shared toolbar groups related split controls and keeps unrelated toggles independent", () => {
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /import MarkdownIcon from "@atlaskit\/icon\/core\/markdown";/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /import \{ Toggle \} from "@\/components\/ui\/toggle";/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /import MarkdownIcon from "@atlaskit\/icon\/core\/markdown";/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /import \{ Toggle \} from "@\/components\/ui\/toggle";/u);
 	assert.match(
-		RICH_TEXT_TOOLBAR_SOURCE,
+		EDITOR_TOOLBAR_SOURCE,
 		/import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u,
 	);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /import \{ Separator \} from "@\/components\/ui\/separator";/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /import \{ Separator \} from "@\/components\/ui\/separator";/u);
 
 	// Bold + formatting and bulleted list + list options are related split controls.
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /const TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME = "\*:data-\[slot=toggle-group-item\]:w-6! \*:data-\[slot=toggle-group-item\]:min-w-6! \*:data-\[slot=toggle-group-item\]:px-0!";/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /const formattingValue = \[/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /const listValue = \[/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /value=\{formattingValue\}[\s\S]*className=\{TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME\}[\s\S]*value="bold"[\s\S]*value="formatting"/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /value=\{listValue\}[\s\S]*className=\{TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME\}[\s\S]*value="bulletList"[\s\S]*value="list"/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /function ToolbarSeparator\(\)[\s\S]*orientation="vertical"[\s\S]*className="mx-2 h-4 self-center bg-border data-vertical:self-center"/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<ToolbarSeparator \/>\s*<div className="relative">[\s\S]*value=\{listValue\}/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /const TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME = "\*:data-\[slot=toggle-group-item\]:w-6! \*:data-\[slot=toggle-group-item\]:min-w-6! \*:data-\[slot=toggle-group-item\]:px-0!";/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /const formattingValue = \[/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /const listValue = \[/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /value=\{formattingValue\}[\s\S]*className=\{TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME\}[\s\S]*value="bold"[\s\S]*value="formatting"/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /value=\{listValue\}[\s\S]*className=\{TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME\}[\s\S]*value="bulletList"[\s\S]*value="list"/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /function ToolbarSeparator\(\)[\s\S]*orientation="vertical"[\s\S]*className="mx-2 h-4 self-center bg-border data-vertical:self-center"/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<ToolbarSeparator \/>\s*<div className="relative">[\s\S]*value=\{listValue\}/u);
 
 	// Link and Markdown are separate Toggles because their states are unrelated.
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /pressed=\{!isMarkdownMode && editor\.isActive\("link"\)\}/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /aria-label="Link"[\s\S]*onPressedChange=\{handleLinkPressedChange\}/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /pressed=\{isMarkdownMode\}/u);
-	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /value="link"/u);
-	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /value="markdown"/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /pressed=\{!isMarkdownMode && editor\.isActive\("link"\)\}/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Link"[\s\S]*onPressedChange=\{handleLinkPressedChange\}/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /pressed=\{isMarkdownMode\}/u);
+	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /value="link"/u);
+	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /value="markdown"/u);
 	assert.doesNotMatch(
-		RICH_TEXT_TOOLBAR_SOURCE,
+		EDITOR_TOOLBAR_SOURCE,
 		/variant=\{editor\.isActive\("bold"\) \? "secondary" : "ghost"\}/u,
 	);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<MarkdownIcon label="" size="small" \/>/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<MarkdownIcon label="" size="small" \/>/u);
 });
 
 test("Shared rich text editor omits the placeholder Comment control", () => {
-	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /@atlaskit\/icon\/core\/comment/u);
-	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, />\s*Comment\s*</u);
-	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /showCommentControl/u);
+	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /@atlaskit\/icon\/core\/comment/u);
+	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, />\s*Comment\s*</u);
+	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /showCommentControl/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_SOURCE, /showCommentControl/u);
 });
 
 test("Shared rich text editor omits the trailing More options control", () => {
-	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /@atlaskit\/icon\/core\/show-more-horizontal/u);
-	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /aria-label="More options"/u);
-	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /showMoreControl/u);
+	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /@atlaskit\/icon\/core\/show-more-horizontal/u);
+	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /aria-label="More options"/u);
+	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /showMoreControl/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_SOURCE, /showMoreControl/u);
 });
 
 test("Shared toolbar dropdown menus avoid perimeter shadow strokes", () => {
 	assert.match(
-		RICH_TEXT_TOOLBAR_SOURCE,
+		EDITOR_TOOLBAR_SOURCE,
 		/function DropdownMenuContainer[\s\S]*bg-popover p-1 text-popover-foreground shadow-2xl/u,
 	);
 	assert.doesNotMatch(
-		RICH_TEXT_TOOLBAR_SOURCE,
+		EDITOR_TOOLBAR_SOURCE,
 		/function DropdownMenuContainer[\s\S]*bg-popover p-1 text-popover-foreground shadow-xl/u,
 	);
 });
 
 test("Shared toolbar exposes a Markdown view toggle gated by a handler", () => {
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /isMarkdownMode\?: boolean;/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /onToggleMarkdownMode\?: \(\) => void;/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /isMarkdownMode\?: boolean;/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /onToggleMarkdownMode\?: \(\) => void;/u);
 	// Markdown toggle only renders when a toggle handler is supplied (omitted in bubble/floating menus).
 	assert.match(
-		RICH_TEXT_TOOLBAR_SOURCE,
+		EDITOR_TOOLBAR_SOURCE,
 		/onToggleMarkdownMode \?\s*\([\s\S]*<Toggle[\s\S]*Show Markdown source/u,
 	);
 });
@@ -477,22 +495,22 @@ test("Shared toolbar exposes a Markdown view toggle gated by a handler", () => {
 test("Source-mode toolbar controls apply Markdown syntax instead of disabling", () => {
 	// The toolbar dispatches a Markdown-format transform when in source mode.
 	assert.match(
-		RICH_TEXT_TOOLBAR_SOURCE,
+		EDITOR_TOOLBAR_SOURCE,
 		/onMarkdownFormat\?: \(kind: MarkdownFormatKind\) => void;/u,
 	);
 	assert.match(
-		RICH_TEXT_TOOLBAR_SOURCE,
+		EDITOR_TOOLBAR_SOURCE,
 		/function runFormat\(kind: MarkdownFormatKind, applyRich: \(\) => void\): void \{[\s\S]*onMarkdownFormat\?\.\(kind\)/u,
 	);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /runFormat\("bold",/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /runFormat\("italic",/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /runFormat\("bulletList",/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /runFormat\("orderedList",/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /TEXT_STYLE_TO_MARKDOWN/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /runFormat\("bold",/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /runFormat\("italic",/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /runFormat\("bulletList",/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /runFormat\("orderedList",/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /TEXT_STYLE_TO_MARKDOWN/u);
 	// Only alignment (no Markdown equivalent) stays disabled in source mode.
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /const markdownUnsupported = isMarkdownMode;/u);
-	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /disabled=\{markdownUnsupported\}/u);
-	assert.doesNotMatch(RICH_TEXT_TOOLBAR_SOURCE, /formattingDisabled/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /const markdownUnsupported = isMarkdownMode;/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /disabled=\{markdownUnsupported\}/u);
+	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /formattingDisabled/u);
 });
 
 test("Editor wires source-mode formatting through the Markdown-format util", () => {
