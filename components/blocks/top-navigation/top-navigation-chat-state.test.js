@@ -40,6 +40,26 @@ test("top navigation centers search actions between equal side rails", () => {
 	assert.match(TOP_NAVIGATION_SOURCE, /justifyContent: "flex-end"/);
 });
 
+test("top navigation auto-releases the pinned sidebar at small viewports", () => {
+	// A dedicated, well-named breakpoint drives the release (reusing the overflow
+	// breakpoint value so the sidebar un-pins exactly when the right cluster
+	// overflows and the sidebar becomes a mobile overlay).
+	assert.match(
+		LAYOUT_CONSTANTS_SOURCE,
+		/export const TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX = TOP_NAV_OVERFLOW_BREAKPOINT_PX;/,
+	);
+
+	// The hook releases the pin below the breakpoint and remembers it did so.
+	assert.match(USE_TOP_NAVIGATION_SOURCE, /setSidebarVisible/);
+	assert.match(USE_TOP_NAVIGATION_SOURCE, /windowWidth < TOP_NAV_SIDEBAR_PIN_RELEASE_BREAKPOINT_PX/);
+	assert.match(USE_TOP_NAVIGATION_SOURCE, /didAutoReleaseSidebarRef/);
+	assert.match(USE_TOP_NAVIGATION_SOURCE, /setSidebarVisible\(false\)/);
+	// And restores the prior pinned state when the viewport grows back.
+	assert.match(USE_TOP_NAVIGATION_SOURCE, /setSidebarVisible\(true\)/);
+	// Guard against acting on the SSR/first-paint measurement.
+	assert.match(USE_TOP_NAVIGATION_SOURCE, /if \(windowWidth === 0\)/);
+});
+
 test("right navigation collapses into an overflow popover at narrow widths", () => {
 	assert.match(LAYOUT_CONSTANTS_SOURCE, /export const TOP_NAV_OVERFLOW_BREAKPOINT_PX = 768;/);
 	assert.match(RIGHT_NAVIGATION_SOURCE, /TOP_NAV_OVERFLOW_BREAKPOINT_PX/);
