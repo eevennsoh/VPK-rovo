@@ -2424,7 +2424,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						}}
 					>
 						<div className="relative flex min-w-0 flex-1 items-center justify-start gap-2">
-							<div ref={nav.searchContainerRef} className="relative flex h-9 w-full max-w-[762px] items-center ps-2">
+							<div ref={nav.searchContainerRef} className="relative flex h-9 w-full items-center ps-2">
 								<InputGroup
 									className={cn(
 										"h-8 origin-center rounded-md bg-bg-input shadow-none transition-[transform,background-color,box-shadow] duration-medium ease-out hover:bg-bg-input-hovered",
