@@ -60,6 +60,7 @@ import WarningIcon from "@atlaskit/icon/core/warning";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -467,22 +468,29 @@ export function CardDirectoryCapabilities({ label, items }: Readonly<CardDirecto
 	return (
 		<div className="flex flex-col gap-1" data-slot="card-directory-capabilities">
 			{label ? <span className="text-xs font-semibold leading-4 text-text-subtlest">{label}</span> : null}
-			<ul className="flex flex-col gap-1">
-				{items.map((item) => {
-					const capability = getCapabilityItem(item);
+			<TooltipProvider>
+				<ul className="flex flex-col gap-1">
+					{items.map((item) => {
+						const capability = getCapabilityItem(item);
 
-					return (
-						<li key={capability.label} className="flex items-center gap-2">
-							<Icon
-								aria-hidden
-								className="size-4 shrink-0 text-icon-subtlest"
-								render={getCapabilityIcon(capability.icon)}
-							/>
-							<span className="min-w-0 flex-1 truncate text-sm leading-5 text-text">{capability.label}</span>
-						</li>
-					);
-				})}
-			</ul>
+						return (
+							// Labels truncate in the fixed-width card body, so surface the full
+							// string on hover. Screen readers already get it from the DOM text.
+							<Tooltip key={capability.label}>
+								<TooltipTrigger render={<li className="flex items-center gap-2" />}>
+									<Icon
+										aria-hidden
+										className="size-4 shrink-0 text-icon-subtlest"
+										render={getCapabilityIcon(capability.icon)}
+									/>
+									<span className="min-w-0 flex-1 truncate text-sm leading-5 text-text">{capability.label}</span>
+								</TooltipTrigger>
+								<TooltipContent>{capability.label}</TooltipContent>
+							</Tooltip>
+						);
+					})}
+				</ul>
+			</TooltipProvider>
 		</div>
 	);
 }
