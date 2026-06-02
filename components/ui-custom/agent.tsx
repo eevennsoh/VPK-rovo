@@ -1021,7 +1021,7 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 				focus ring sliced off. The padding keeps that motion inside the opaque
 				region; the negative margin pulls the box back so spacing is unchanged.
 			*/}
-			<div className="relative -mt-2 min-h-0 pt-2 sm:flex-1 sm:overflow-hidden sm:bento-fade-bottom sm:[--bento-fade-height:32px] sm:[--bento-fade-end:14px]">
+			<div className="relative -mt-2 min-h-0 pt-2 sm:min-h-[9.5rem] sm:flex-1 sm:overflow-hidden sm:bento-fade-bottom sm:[--bento-fade-height:32px] sm:[--bento-fade-end:14px]">
 				<BentoCarousel
 					gridClassName="sm:grid-cols-5"
 					arrowLabels={{ next: "Show next agent templates", previous: "Show previous agent templates" }}
