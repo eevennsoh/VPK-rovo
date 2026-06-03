@@ -50,6 +50,16 @@ test("compact chat can hide the AI cursor control without changing the default",
 	assert.match(sidebarComposer, /\{hideAiCursor \? null : \([\s\S]*aria-label="Rovo AI cursor"/u);
 });
 
+test("compact chat composer padding can be overridden by opt-in surfaces", () => {
+	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
+
+	assert.match(sidebarPanel, /composerContainerClassName\?: string;/u);
+	assert.match(sidebarPanel, /containerClassName=\{composerContainerClassName\}/u);
+	assert.match(sidebarComposer, /containerClassName\?: string;/u);
+	assert.match(sidebarComposer, /className=\{cn\("relative min-w-0 px-3", containerClassName\)\}/u);
+});
+
 test("Rovo app sources selector opens a reasoning-free customize popover", () => {
 	const source = readProjectFile("components/projects/rovo/components/rovo-app-composer.tsx");
 	const popoverIndex = source.indexOf("<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>");

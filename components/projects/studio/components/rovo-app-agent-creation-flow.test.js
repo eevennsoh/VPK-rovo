@@ -494,7 +494,11 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_TEST_PANEL_SOURCE, /export function AgentTestPanel/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /aria-label="Agent test"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /data-testid="agent-test-panel"/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /containerClassName="mx-auto h-full min-h-0 w-full max-w-\[800px\] overflow-visible"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /className=\{cn\("h-full min-h-0 px-6", className\)\}/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /containerClassName="h-full min-h-0 w-full overflow-visible"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /composerContainerClassName="px-0"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /conversationContentClassName="px-0"/u);
+	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /containerClassName="mx-auto h-full min-h-0 w-full max-w-\[800px\] overflow-visible"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /containerStyle=\{\{ borderRadius: 0, borderWidth: 0, overflow: "visible" \}\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /greetingSelectedAgent=\{testAgentProfile\}/u);
 	assert.match(CHAT_PANEL_SOURCE, /greetingSelectedAgent\?: RovoAgentProfile \| null;/u);
