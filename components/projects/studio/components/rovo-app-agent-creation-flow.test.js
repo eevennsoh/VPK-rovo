@@ -102,25 +102,29 @@ test("Studio default landing prompt growth pushes below the initial home positio
 test("Studio default landing lists custom session agents below the composer", () => {
 	assert.match(SHELL_SOURCE, /import \{ StudioCustomAgentsTable \} from "@\/components\/projects\/studio\/components\/rovo-app-custom-agents-table";/u);
 	assert.match(SHELL_SOURCE, /const shouldShowStudioCustomAgentsTable = isDefaultAgentHomeState && studioAgentRegistry\.sessionAgentEntries\.length > 0;/u);
-	assert.match(SHELL_SOURCE, /const handleDeleteStudioAgent = useCallback\([\s\S]*studioAgentRegistry\.removeSessionAgent\(agentId\);[\s\S]*\},[\s\S]*\[activeAgentConfig\?\.profileId, studioAgentRegistry\]/u);
+	assert.match(SHELL_SOURCE, /const handleDeleteStudioAgent = useCallback\([\s\S]*studioAgentRegistry\.removeSessionAgent\(agentId\);[\s\S]*\},[\s\S]*\[activeAgentConfig\?\.profileId, setActiveAgentConfigState, studioAgentRegistry\]/u);
 	assert.match(SHELL_SOURCE, /<StudioCustomAgentsTable[\s\S]*entries=\{studioAgentRegistry\.sessionAgentEntries\}[\s\S]*onEditAgent=\{handleStudioSidebarAgentSelect\}/u);
 	assert.match(SHELL_SOURCE, /<StudioCustomAgentsTable[\s\S]*onDeleteAgent=\{handleDeleteStudioAgent\}/u);
 	assert.match(SHELL_SOURCE, /<RovoAppSidebar[\s\S]*onDeleteAgent=\{handleDeleteStudioAgent\}/u);
 
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /DropdownMenu,[\s\S]*DropdownMenuContent,[\s\S]*DropdownMenuGroup,[\s\S]*DropdownMenuItem,[\s\S]*DropdownMenuTrigger/u);
+	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /DropdownMenu/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className=\{`mx-auto mt-10 w-full \$\{ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\}`\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className=\{`mx-auto mt-12 w-full \$\{ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\}`\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<Table className="min-w-full table-fixed">/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /max-w-\[1280px\]|min-w-\[760px\]/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{[\s\S]*Table,[\s\S]*TableBody,[\s\S]*TableCell,[\s\S]*TableHead,[\s\S]*TableHeader,[\s\S]*TableRow,[\s\S]*\} from "@\/components\/ui\/table";/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Button \} from "@\/components\/ui\/button";/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Icon \} from "@\/components\/ui\/icon";/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{[\s\S]*Table,[\s\S]*TableBody,[\s\S]*TableCell,[\s\S]*TableRow,[\s\S]*\} from "@\/components\/ui\/table";/u);
+	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /TableHead|TableHeader/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<TableHead[\s\S]*Name[\s\S]*Active users[\s\S]*Version[\s\S]*Last modified/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /entry\.publishStatus === "published" \? "V1" : "Draft"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /formatRelativeModifiedTime\(entry\.lastTouchedAt\)/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<DropdownMenuItem elemBefore=\{<EditIcon label="" \/>\} onSelect=\{\(\) => onEditAgent\(entry\.profile\.id\)\}/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<DropdownMenuItem variant="destructive" elemBefore=\{<DeleteIcon label="" \/>\} onSelect=\{\(\) => onDeleteAgent\(entry\.profile\.id\)\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /STUDIO_PINNED_AGENTS_STORAGE_KEY/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /onClick=\{\(\) => onEditAgent\(entry\.profile\.id\)\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-label=\{`Edit \$\{agentName \|\| "Untitled agent"\}`\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-label=\{`\$\{isPinned \? "Unpin" : "Pin"\} \$\{agentName \|\| "Untitled agent"\}`\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /onClick=\{\(\) => togglePinned\(entry\.profile\.id\)\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed=\{isPinned\}[\s\S]*render=\{isPinned \? <PinFilledIcon label="" size="small" \/> : <PinIcon label="" size="small" \/>\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:\[&_svg\]:text-icon-subtle!/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /text-icon-selected/u);
@@ -242,13 +246,12 @@ test("Studio home bento applies card glow pointer flow to starter tiles", () => 
 	assert.doesNotMatch(SHELL_SOURCE, /rounded-lg border border-border bg-background/u);
 });
 
-test("Studio content surfaces share the bento max width", () => {
+test("Studio content surfaces keep their intended max widths", () => {
 	assert.match(SHELL_LAYOUT_SOURCE, /export const ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS = "max-w-\[600px\]";/u);
 	assert.match(SHELL_LAYOUT_SOURCE, /export const ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS = "max-w-\[1280px\]";/u);
 	assert.match(SHELL_SOURCE, /ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS/u);
 	assert.match(SHELL_SOURCE, /className=\{cn\(BENTO_CAROUSEL_CONTAINER_CLASS, ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS\)\}/u);
-	assert.match(MESSAGES_SOURCE, /import \{ ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS \} from "@\/components\/projects\/studio\/lib\/rovo-app-shell-layout";/u);
-	assert.match(MESSAGES_SOURCE, /compact \? "max-w-none" : ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS/u);
+	assert.match(MESSAGES_SOURCE, /compact \? "max-w-none" : "max-w-\[800px\]"/u);
 	assert.match(COMPOSER_SOURCE, /ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS/u);
 	assert.match(COMPOSER_SOURCE, /className=\{cn\("relative z-10 mx-auto", ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\)\}/u);
 });
@@ -455,7 +458,7 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_TEST_PANEL_SOURCE, /export function AgentTestPanel/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /aria-label="Agent test"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /data-testid="agent-test-panel"/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /containerClassName="mx-auto h-full min-h-0 w-full max-w-\[800px\] overflow-visible py-4"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /containerClassName="mx-auto h-full min-h-0 w-full max-w-\[800px\] overflow-visible"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /containerStyle=\{\{ borderRadius: 0, borderWidth: 0, overflow: "visible" \}\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /greetingSelectedAgent=\{testAgentProfile\}/u);
 	assert.match(CHAT_PANEL_SOURCE, /greetingSelectedAgent\?: RovoAgentProfile \| null;/u);
@@ -508,6 +511,7 @@ test("Studio clarification answers keep agent creation mode active", () => {
 	// per-thread template provenance and passes it into the continuation context.
 	assert.match(SHELL_SOURCE, /buildStudioAgentCreationContinuationContext\(threadTemplate\)/u);
 	assert.match(SHELL_SOURCE, /const getStudioAgentCreationClarificationOptions = useCallback/u);
+	assert.match(SHELL_SOURCE, /activeQuestionCard\?\.creationMode === "agent" \|\|[\s\S]*studioAgentCreationThreadKeysRef\.current\.has\(chat\.runtimeThreadId\)/u);
 	assert.match(SHELL_SOURCE, /creationMode: "agent" as const/u);
 	assert.match(SHELL_SOURCE, /submitClarification\([\s\S]*activeQuestionCard,[\s\S]*answers,[\s\S]*getStudioAgentCreationClarificationOptions\(\),/u);
 	assert.match(SHELL_SOURCE, /onDismissQuestionCard: handleCancelClarificationQuestionSet/u);

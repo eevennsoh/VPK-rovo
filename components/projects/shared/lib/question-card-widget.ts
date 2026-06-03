@@ -40,6 +40,7 @@ export interface ParsedQuestionCardPayload {
 	sessionId: string;
 	round: number;
 	maxRounds: number;
+	creationMode?: "skill" | "agent";
 	title: string;
 	description?: string;
 	directive?: string;
@@ -297,6 +298,10 @@ export function parseQuestionCardPayload(
 		sessionId: getNonEmptyString(record.sessionId) ?? DEFAULT_SESSION_ID,
 		round: getPositiveInteger(record.round) ?? 1,
 		maxRounds: getPositiveInteger(record.maxRounds) ?? DEFAULT_MAX_ROUNDS,
+		creationMode:
+			record.creationMode === "agent" || record.creationMode === "skill"
+				? record.creationMode
+				: undefined,
 		title: getNonEmptyString(record.title) ?? DEFAULT_TITLE,
 		description: getNonEmptyString(record.description) ?? undefined,
 		directive: getNonEmptyString(record.directive) ?? undefined,

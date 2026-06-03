@@ -475,6 +475,24 @@ test("parseQuestionCardPayload caps generated options at three", () => {
 	);
 });
 
+test("parseQuestionCardPayload preserves creation mode metadata", () => {
+	const payload = parseQuestionCardPayload({
+		type: "question-card",
+		creationMode: "agent",
+		sessionId: "agent-creation-questions",
+		questions: [
+			{
+				id: "q-1",
+				label: "Who is the agent for?",
+				options: [{ label: "Engineering" }],
+			},
+		],
+	});
+
+	assert.ok(payload);
+	assert.equal(payload.creationMode, "agent");
+});
+
 test("getLatestQuestionCardPayload finds a question card even if another widget follows", () => {
 	const payload = getLatestQuestionCardPayload([
 		{

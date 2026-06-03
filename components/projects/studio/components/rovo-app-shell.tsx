@@ -2207,6 +2207,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const { acceptPlanReview, submitClarification } = chat;
 	const getStudioAgentCreationClarificationOptions = useCallback(() => {
 		const isStudioAgentCreationThread =
+			activeQuestionCard?.creationMode === "agent" ||
 			studioAgentCreationThreadKeysRef.current.has(chat.runtimeThreadId) ||
 			(chat.activeThreadId ? studioAgentCreationThreadKeysRef.current.has(chat.activeThreadId) : false);
 
@@ -2222,7 +2223,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			contextDescription: buildStudioAgentCreationContinuationContext(threadTemplate),
 			creationMode: "agent" as const,
 		};
-	}, [chat.activeThreadId, chat.runtimeThreadId]);
+	}, [activeQuestionCard?.creationMode, chat.activeThreadId, chat.runtimeThreadId]);
 	const handleCancelClarificationQuestionSet = useCallback(
 		(questionCard: ParsedQuestionCardPayload) => {
 			return chat.cancelClarificationQuestionSet(questionCard, getStudioAgentCreationClarificationOptions());

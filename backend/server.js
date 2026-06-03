@@ -8785,6 +8785,9 @@ async function handleChatSdkRequest(req, res) {
 								type: "question-card",
 								payload: {
 									...questionCardPayload,
+									...(creationMode === "agent" || creationMode === "skill"
+										? { creationMode }
+										: {}),
 									sessionId,
 									round: 1,
 									toolCallId,
@@ -9802,6 +9805,9 @@ async function handleChatSdkRequest(req, res) {
 							type: CLARIFICATION_WIDGET_TYPE,
 							payload: {
 								...payload,
+								...(creationMode === "agent" || creationMode === "skill"
+									? { creationMode }
+									: {}),
 								tool_call_id: normalizedToolCallId || undefined,
 							},
 						},
@@ -10053,7 +10059,13 @@ async function handleChatSdkRequest(req, res) {
 										type: resolvedWidgetType,
 										payload: withCanonicalPreviewBody(
 											resolvedWidgetType,
-											parsedWidget,
+											resolvedWidgetType === CLARIFICATION_WIDGET_TYPE &&
+												(creationMode === "agent" || creationMode === "skill")
+												? {
+														...parsedWidget,
+														creationMode,
+													}
+												: parsedWidget,
 										),
 									},
 								});
