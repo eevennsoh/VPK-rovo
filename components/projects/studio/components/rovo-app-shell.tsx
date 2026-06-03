@@ -21,7 +21,7 @@ import { StudioCustomAgentsTable } from "@/components/projects/studio/components
 import { RovoAppMessages } from "@/components/projects/studio/components/rovo-app-messages";
 import { RovoAppHermesSkillDraftBar } from "@/components/projects/studio/components/rovo-app-hermes-skill-draft-bar";
 import { RovoAppAgentConfigPanel, type AgentConfigView } from "@/components/projects/studio/components/rovo-app-agent-config-panel";
-import { AgentTestActivityView, AgentTestPanel, AgentTestTriggerView } from "@/components/projects/studio/components/rovo-app-agent-test-panel";
+import { AgentTestPanel } from "@/components/projects/studio/components/rovo-app-agent-test-panel";
 import { RovoAppShellPaneLayout } from "@/components/projects/studio/components/rovo-app-shell-pane-layout";
 import { RovoAppSidebar } from "@/components/projects/studio/components/rovo-app-sidebar";
 import { type RovoAppSteeringPhase } from "@/components/projects/studio/components/rovo-app-steering-lane";
@@ -89,7 +89,7 @@ import {
 } from "@/components/projects/studio/lib/studio-screen-assistant";
 import { useSidebarResize } from "@/components/projects/studio/hooks/use-sidebar-resize";
 import { useSidebarResize as useStudioAskRovoChatResize } from "@/components/projects/rovo/hooks/use-sidebar-resize";
-import ChatPanel, { type ChatPanelCustomAgentTabs, type ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
+import ChatPanel, { type ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-chat/lib/chat-context-bar";
 import {
 	AGENT_EDIT_GREETING_HEADING,
@@ -1934,21 +1934,10 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			suggestions: agentEditSuggestions,
 		};
 	}, [agentEditContextBar]);
-	// The Ask Rovo edit panel is a custom-agent surface, so it renders the
-	// Chat / Trigger / Activity tab header at the top — but WITHOUT the
-	// Test-mode-only controls (version dropdown + new-chat button). Omitting
-	// `showAgentTestControls` on the ChatPanel keeps those hidden and renders
-	// the tab list full width, while these tab bodies mirror the Test panel's
-	// Trigger/Activity views for the agent currently being edited.
-	const askRovoCustomAgentTabs = useMemo<ChatPanelCustomAgentTabs | undefined>(() => {
-		if (!activeSessionAgentEntry) {
-			return undefined;
-		}
-		return {
-			trigger: <AgentTestTriggerView entry={activeSessionAgentEntry} />,
-			activity: <AgentTestActivityView entry={activeSessionAgentEntry} />,
-		};
-	}, [activeSessionAgentEntry]);
+	// The Ask Rovo edit panel always talks to the default Rovo agent (it's a
+	// build/improve helper), so it renders as a plain default-Rovo chat without
+	// the custom-agent Chat / Trigger / Activity tab header. Those tabs belong to
+	// the left-hand Test panel, which is the surface scoped to the custom agent.
 	const askRovoChatResize = useStudioAskRovoChatResize({
 		defaultWidth: 400,
 		minWidth: 320,
@@ -4145,7 +4134,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									onDismissPlanExecutionTracker={chat.dismissPlanExecutionTracker}
 									onRemoveHermesSkill={selectHermesSkill}
 									onSelectHermesSkill={selectHermesSkill}
-									onStartFromScratch={handleStartAgentFromScratch}
+									onStartFromScratch={isDefaultAgentHomeState ? handleStartAgentFromScratch : undefined}
 									onStop={handleStop}
 									onRemoveQueuedPrompt={chat.removeQueuedPrompt}
 									onSendQueuedPromptNow={chat.sendQueuedPromptNow}
@@ -4493,7 +4482,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							onClose={nav.toggleChat}
 							abortOnUnmount={false}
 							chatContextBar={agentEditContextBar}
-							customAgentTabs={askRovoCustomAgentTabs}
 							greeting={agentEditGreeting}
 							hideComposerSourceAndModelControls={Boolean(agentEditContextBar)}
 							// No left border here: the SidebarResizeHandle below paints the divider.

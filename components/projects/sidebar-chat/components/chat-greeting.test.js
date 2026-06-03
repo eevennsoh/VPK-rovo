@@ -145,6 +145,12 @@ async function loadChatGreetingHarness() {
 					}));
 				}
 
+				export function renderDefaultGreeting() {
+					return renderToStaticMarkup(React.createElement(ChatGreeting, {
+						suggestions: [],
+					}));
+				}
+
 				export function renderAgentIllustrationGreeting() {
 					return renderToStaticMarkup(React.createElement(ChatGreeting, {
 						heading: "Improve your agent?",
@@ -213,6 +219,19 @@ test("ChatGreeting derives the dark illustration from a custom light SVG", async
 
 	assert.match(markup, /src="\/illustration-ai\/write\/light\.svg"/u);
 	assert.match(markup, /src="\/illustration-ai\/write\/dark\.svg"/u);
+	assert.doesNotMatch(markup, /src="\/illustration-ai\/chat\/dark\.svg"/u);
+});
+
+test("ChatGreeting uses the animated controlled chat illustration for the default Rovo greeting", async () => {
+	const harness = await loadChatGreetingHarness();
+	const markup = harness.renderDefaultGreeting();
+
+	assert.match(CHAT_GREETING_SOURCE, /resolvedIllustrationSrc === DEFAULT_ILLUSTRATION_SRC/u);
+	assert.match(markup, /data-testid="controlled-rovo-illustration"/u);
+	assert.match(markup, /data-illus-id="chat"/u);
+	assert.match(markup, /data-size="74"/u);
+	// The static chat SVG must no longer render for the default greeting.
+	assert.doesNotMatch(markup, /src="\/illustration-ai\/chat\/light\.svg"/u);
 	assert.doesNotMatch(markup, /src="\/illustration-ai\/chat\/dark\.svg"/u);
 });
 

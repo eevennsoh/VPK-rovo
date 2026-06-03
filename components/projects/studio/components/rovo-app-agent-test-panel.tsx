@@ -251,6 +251,7 @@ function AgentTestChatPanel({
 			containerClassName="h-full min-h-0 w-full overflow-visible"
 			containerStyle={{ borderRadius: 0, borderWidth: 0, overflow: "visible" }}
 			composerContainerClassName="px-0"
+			composerReservesContextBarSpace
 			conversationContentClassName="px-0"
 			customAgentTabs={{
 				trigger: <AgentTestTriggerView entry={entry} />,
