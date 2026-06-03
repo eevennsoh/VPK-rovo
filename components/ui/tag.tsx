@@ -92,6 +92,7 @@ const tagColorClasses: Record<ResolvedTagColor, { border: string; icon: string }
 };
 
 interface TagProps extends Omit<React.ComponentProps<"span">, "color"> {
+	as?: React.ElementType;
 	children: React.ReactNode;
 	variant?: TagVariant;
 	color?: TagColor;
@@ -113,7 +114,8 @@ interface TagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	maxWidth?: React.CSSProperties["maxWidth"];
 }
 
-function Tag({
+const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
+	as,
 	children,
 	variant = "default",
 	color,
@@ -130,7 +132,9 @@ function Tag({
 	style,
 	onClick,
 	...props
-}: Readonly<TagProps>) {
+}: Readonly<TagProps>, ref) {
+	void as;
+
 	const resolvedColor = colorAliases[color ?? legacyVariantToColor[variant]];
 	const colorClasses = tagColorClasses[resolvedColor];
 	const hasAvatarTagStyles = type !== "default" && Boolean(elemBefore);
@@ -156,6 +160,7 @@ function Tag({
 	return (
 		<span
 			{...props}
+			ref={ref}
 			onClick={onClick}
 			style={resolvedStyle}
 			className={cn(
@@ -163,7 +168,7 @@ function Tag({
 				"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
 				colorClasses.border,
 				hasAvatarTagStyles
-					? cn("h-6 gap-1 py-0 ps-0.5", isUserAvatarTag && "rounded-full pe-1.5", isOtherAvatarTag && "rounded-sm pe-1", isAgentAvatarTag && "rounded-sm pe-1")
+					? cn("h-5 gap-1 py-0 ps-0.5", isUserAvatarTag && "rounded-full pe-1.5", isOtherAvatarTag && "rounded-sm pe-1", isAgentAvatarTag && "rounded-sm pe-1")
 					: cn("h-5 gap-1 px-[3px] py-0.5", isRounded ? "rounded-full" : "rounded-sm"),
 				isInteractive ? "cursor-pointer hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed" : "cursor-default",
 				disabled && "pointer-events-none opacity-(--opacity-disabled)",
@@ -238,7 +243,7 @@ function Tag({
 			) : null}
 		</span>
 	);
-}
+});
 
 type TagGroupProps = React.ComponentProps<"div">;
 

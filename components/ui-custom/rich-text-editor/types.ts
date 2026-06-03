@@ -1,5 +1,9 @@
 "use client";
 
+import type { ReactElement } from "react";
+
+import type { AtlassianLogoName } from "@/components/ui/logo";
+
 /**
  * "@" mentions people and agents only.
  */
@@ -31,7 +35,24 @@ export interface RichTextMentionItem {
 	id: string;
 	label: string;
 	description?: string;
+	visual?: RichTextMentionVisual;
 }
+
+export type RichTextMentionVisual =
+	| {
+			kind: "avatar" | "image";
+			shape?: "circle" | "square" | "hexagon";
+			src: string;
+		}
+	| {
+			kind: "logo";
+			logoName: AtlassianLogoName;
+		}
+	| {
+			kind: "icon";
+			icon: ReactElement;
+			iconKey?: string;
+	};
 
 export interface RichTextMentionRemovalRequest {
 	category: RichTextReferenceCategory;

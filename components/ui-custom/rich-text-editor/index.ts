@@ -24,6 +24,12 @@ export {
 	isRichTextReferenceCategory,
 	type RichTextReferenceCategoryOption,
 } from "./reference-categories";
+export {
+	RichTextMentionVisualMark,
+	getRichTextMentionTagType,
+	getRichTextMentionVisualAttrs,
+	getRichTextMentionVisualFromAttrs,
+} from "./mention-visual";
 export type {
 	RichTextCommandCategory,
 	RichTextMentionCategory,
@@ -31,6 +37,7 @@ export type {
 	RichTextMentionRemovalRequest,
 	RichTextMentionSources,
 	RichTextMentionTarget,
+	RichTextMentionVisual,
 	RichTextReferenceCategory,
 	RichTextSlashCategory,
 } from "./types";

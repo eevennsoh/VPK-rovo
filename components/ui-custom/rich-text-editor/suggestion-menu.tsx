@@ -42,11 +42,11 @@ import TextHeadingSixIcon from "@atlaskit/icon-lab/core/text-heading-six";
 import TextHeadingThreeIcon from "@atlaskit/icon-lab/core/text-heading-three";
 import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { IconTile } from "@/components/ui/icon-tile";
 import { ArrowLeftIcon } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
 
+import { RichTextMentionVisualMark } from "./mention-visual";
 import {
 	RICH_TEXT_REFERENCE_CATEGORY_OPTIONS,
 	getRichTextReferenceCategoryIcon,
@@ -58,6 +58,7 @@ import type {
 	RichTextMentionCategory,
 	RichTextMentionItem,
 	RichTextMentionSources,
+	RichTextMentionVisual,
 	RichTextReferenceCategory,
 	RichTextSlashCategory,
 } from "./types";
@@ -77,14 +78,8 @@ export interface RichTextSuggestionMenuItem {
 	description?: string;
 	shortcut?: string;
 	icon: ReactNode;
-	visual?: RichTextSuggestionMenuVisual;
+	visual?: RichTextMentionVisual;
 	disabled?: boolean;
-}
-
-interface RichTextSuggestionMenuVisual {
-	kind: "avatar";
-	shape: "circle" | "square" | "hexagon";
-	src: string;
 }
 
 interface RichTextSuggestionMenuProps {
@@ -725,16 +720,14 @@ function RichTextSuggestionMenuOption({
 function RichTextSuggestionMenuItemVisual({
 	item,
 }: Readonly<{ item: RichTextSuggestionMenuItem }>) {
-	if (item.visual?.kind === "avatar") {
+	if (item.visual) {
 		return (
-			<Avatar
-				aria-hidden={true}
-				className="rich-text-command-menu-avatar after:border-0"
-				shape={item.visual.shape}
-				size="sm"
-			>
-				<AvatarImage alt="" aria-hidden={true} src={item.visual.src} />
-			</Avatar>
+			<RichTextMentionVisualMark
+				className="rich-text-command-menu-avatar"
+				label={item.label}
+				size="menu"
+				visual={item.visual}
+			/>
 		);
 	}
 
@@ -1061,7 +1054,11 @@ function getStableAssetIndex(seed: string, assetCount: number): number {
 
 function getMentionChildVisual(
 	item: RichTextMentionItem,
-): RichTextSuggestionMenuVisual | undefined {
+): RichTextMentionVisual | undefined {
+	if (item.visual) {
+		return item.visual;
+	}
+
 	if (item.category === "human") {
 		const nameSlug = item.label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 		const matchedByName = PEOPLE_AVATAR_SRCS.find((src) =>

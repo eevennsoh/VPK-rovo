@@ -24,6 +24,10 @@ import ViewsIcon from "@atlaskit/icon-lab/core/views";
 
 import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
 import { DEMO_AGENT_TEMPLATES } from "@/components/blocks/agent-templates/data/demo-template-agents";
+import {
+	EDITOR_PALETTE_MENTION_SOURCES,
+	getDirectoryMentionItemOrFallback,
+} from "@/components/blocks/editor-palette/data/mention-sources";
 import { Accordion,
 	AccordionContent,
 	AccordionItem,
@@ -62,16 +66,16 @@ import {
 	type RichTextMentionRemovalRequest,
 	type RichTextMentionSources,
 	type RichTextReferenceCategory,
+	RichTextMentionVisualMark,
 	RichTextEditor,
+	getRichTextMentionTagType,
 	isRichTextReferenceCategory,
 } from "@/components/ui-custom/rich-text-editor";
-import { SkillTag } from "@/components/ui-custom/skill-tag";
 import { useBentoDescriptionClamp } from "@/components/ui-custom/hooks/use-bento-description-clamp";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { BENTO_CAROUSEL_TILE_CLASS, BentoCarousel } from "@/components/ui-custom/bento-carousel";
 import { token } from "@/lib/tokens";
 import type {
-	HermesSkillSummary,
 	WikiMemoryExplorerResponse,
 } from "@/lib/rovo-runtime-types";
 import { cn } from "@/lib/utils";
@@ -286,10 +290,6 @@ const AGENT_COMPACT_BENTO_CARD_BORDER_GLOW_STYLE: CSSProperties = {
 };
 const MENTION_SOURCE_LIMIT = 24;
 
-interface AgentSkillMentionResponse {
-	skills?: HermesSkillSummary[];
-}
-
 function toMentionId(category: RichTextMentionItem["category"], id: string): string {
 	return `${category}:${id.trim().replace(/\s+/g, "-")}`;
 }
@@ -345,25 +345,9 @@ function mapConfigValuesToMentionItems(
 	category: RichTextReferenceCategory,
 	values: readonly string[] | undefined,
 ): RichTextMentionItem[] {
-	return getNonEmptyConfigItems(values).map((value) => ({
-		category,
-		id: toMentionId(category, value),
-		label: value,
-	}));
-}
-
-function mapSkillsToMentionItems(
-	skills: readonly HermesSkillSummary[] | undefined,
-): RichTextMentionItem[] {
-	return (skills ?? [])
-		.filter((skill) => !skill.disabled)
-		.slice(0, MENTION_SOURCE_LIMIT)
-		.map((skill) => ({
-			category: "skill",
-			id: toMentionId("skill", skill.id || `${skill.category}/${skill.name}`),
-			label: skill.title || skill.name,
-			description: skill.description ?? `${skill.category} skill`,
-		}));
+	return getNonEmptyConfigItems(values).map((value) =>
+		getDirectoryMentionItemOrFallback(category, value)
+	);
 }
 
 function mapMemoryToKnowledgeItems(
@@ -1327,30 +1311,37 @@ function getAgentTriggerItems(config: AgentConfigFormValue): readonly string[] {
 	return trigger ? [trigger] : [];
 }
 
-function AgentReferenceChip({ label, onRemove }: Readonly<{ label: string; onRemove?: () => void }>) {
+function AgentReferenceChip({
+	category,
+	label,
+	onRemove,
+}: Readonly<{
+	category?: RichTextReferenceCategory;
+	label: string;
+	onRemove?: () => void;
+}>) {
+	const item = category ? getDirectoryMentionItemOrFallback(category, label) : undefined;
+	const visual = item?.visual;
+
 	return (
 		<Tag
-			color="blue"
-			elemBefore={<PageIcon label="" size="small" />}
+			color="gray"
+			elemBefore={visual ? (
+				<RichTextMentionVisualMark
+					category={category}
+					label={label}
+					visual={visual}
+				/>
+			) : (
+				<PageIcon label="" size="small" />
+			)}
 			onRemove={onRemove}
+			removeButtonLabel={`Remove ${label}`}
 			removeVariant="overlay"
+			type={getRichTextMentionTagType(visual)}
 		>
 			{label}
 		</Tag>
-	);
-}
-
-function AgentSkillChip({ label, onRemove }: Readonly<{ label: string; onRemove?: () => void }>) {
-	return (
-		<SkillTag
-			color="teamwork"
-			icon={<CheckIcon size="small" />}
-			onRemove={onRemove}
-			removeVariant="overlay"
-			removeButtonLabel={`Remove ${label}`}
-		>
-			{label}
-		</SkillTag>
 	);
 }
 
@@ -1377,7 +1368,7 @@ function AgentAddValueButton({
 interface AgentFilledSummaryRowProps {
 	label: string;
 	items: readonly string[];
-	variant?: "reference" | "skill";
+	referenceCategory?: RichTextReferenceCategory;
 	agentFieldName?: string;
 	screenAssistantTargetId?: string;
 	addLabel?: string;
@@ -1394,8 +1385,8 @@ function AgentFilledSummaryRow({
 	label,
 	onAdd,
 	onRemoveItem,
+	referenceCategory,
 	screenAssistantTargetId,
-	variant = "reference",
 }: Readonly<AgentFilledSummaryRowProps>) {
 	const isEmpty = items.length === 0;
 
@@ -1423,20 +1414,14 @@ function AgentFilledSummaryRow({
 					// this, a row-filling set of chips pushes "Add" onto its own line and
 					// leaves an awkward gap beside the last chip.
 					const isLastItem = index === items.length - 1;
-					const chip =
-						variant === "skill" ? (
-							<AgentSkillChip
-								key={`${label}-${item}-${index}`}
-								label={item}
-								onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
-							/>
-						) : (
-							<AgentReferenceChip
-								key={`${label}-${item}-${index}`}
-								label={item}
-								onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
-							/>
-						);
+					const chip = (
+						<AgentReferenceChip
+							category={referenceCategory}
+							key={`${label}-${item}-${index}`}
+							label={item}
+							onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
+						/>
+					);
 
 					if (isLastItem && addLabel) {
 						return (
@@ -1553,6 +1538,7 @@ function AgentFilledConfigSummary({
 					label="Knowledge"
 					onAdd={() => openAgentDirectoryOrAppendListItem("knowledge", "knowledge", onOpenDirectory, onAppendListItem)}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
+					referenceCategory="knowledge"
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
 				/>
 			),
@@ -1569,6 +1555,7 @@ function AgentFilledConfigSummary({
 					label="Tools"
 					onAdd={() => openAgentDirectoryOrAppendListItem("tools", "tools", onOpenDirectory, onAppendListItem)}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("tools", index) : undefined}
+					referenceCategory="tool"
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
 				/>
 			),
@@ -1584,7 +1571,7 @@ function AgentFilledConfigSummary({
 					label="Skills"
 					onAdd={() => openAgentDirectoryOrAppendListItem("skills", "skills", onOpenDirectory, onAppendListItem)}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("skills", index) : undefined}
-					variant="skill"
+					referenceCategory="skill"
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined}
 				/>
 			),
@@ -1600,6 +1587,7 @@ function AgentFilledConfigSummary({
 					label="Subagents"
 					onAdd={() => onAppendListItem?.("subagents")}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("subagents", index) : undefined}
+					referenceCategory="subagent"
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
 				/>
 			),
@@ -2185,6 +2173,7 @@ function AgentKnowledgeRow({
 					<>
 						{items.map((item, index) => (
 							<AgentReferenceChip
+								category="knowledge"
 								key={`knowledge-${item}-${index}`}
 								label={item}
 								onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
@@ -2241,7 +2230,6 @@ function AgentInstructionsComposer({
 	showSectionLabel?: boolean;
 	toolbarBelowSlot?: ReactNode;
 }>) {
-	const [skills, setSkills] = useState<RichTextMentionItem[]>([]);
 	const [knowledge, setKnowledge] = useState<RichTextMentionItem[]>([]);
 	const [templatesOpen, setTemplatesOpen] = useState(false);
 	const inlineManagedReferenceKeysRef = useRef(new Set<string>());
@@ -2251,11 +2239,24 @@ function AgentInstructionsComposer({
 		label: string;
 	}>());
 	const mentionSources = useMemo<RichTextMentionSources>(() => ({
-		subagent: mapConfigValuesToMentionItems("subagent", config.subagents),
-		skill: mergeMentionItems(mapConfigValuesToMentionItems("skill", config.skills), skills),
-		tool: mapConfigValuesToMentionItems("tool", config.tools),
-		knowledge: mergeMentionItems(mapConfigValuesToMentionItems("knowledge", config.knowledge), knowledge),
-	}), [config.knowledge, config.skills, config.subagents, config.tools, knowledge, skills]);
+		subagent: mergeMentionItems(
+			mapConfigValuesToMentionItems("subagent", config.subagents),
+			EDITOR_PALETTE_MENTION_SOURCES.subagent,
+		),
+		skill: mergeMentionItems(
+			mapConfigValuesToMentionItems("skill", config.skills),
+			EDITOR_PALETTE_MENTION_SOURCES.skill,
+		),
+		tool: mergeMentionItems(
+			mapConfigValuesToMentionItems("tool", config.tools),
+			EDITOR_PALETTE_MENTION_SOURCES.tool,
+		),
+		knowledge: mergeMentionItems(
+			mapConfigValuesToMentionItems("knowledge", config.knowledge),
+			EDITOR_PALETTE_MENTION_SOURCES.knowledge,
+			knowledge,
+		),
+	}), [config.knowledge, config.skills, config.subagents, config.tools, knowledge]);
 	const handleInsertReferenceOption = useCallback((category: RichTextReferenceCategory, label: string): false => {
 		const field = AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY[category];
 		const key = getAgentReferenceKey(field, label);
@@ -2318,16 +2319,7 @@ function AgentInstructionsComposer({
 
 		async function loadMentionSources(): Promise<void> {
 			try {
-				const [skillsResponse, knowledgeResponse] = await Promise.all([
-					fetch("/api/skills", { signal: abortController.signal }),
-					fetch("/api/wiki/memory-explorer", { signal: abortController.signal }),
-				]);
-
-				if (skillsResponse.ok) {
-					const payload = await skillsResponse.json() as AgentSkillMentionResponse;
-					setSkills(mapSkillsToMentionItems(payload.skills));
-				}
-
+				const knowledgeResponse = await fetch("/api/wiki/memory-explorer", { signal: abortController.signal });
 				if (knowledgeResponse.ok) {
 					const payload = await knowledgeResponse.json() as WikiMemoryExplorerResponse;
 					setKnowledge(mapMemoryToKnowledgeItems(payload));
