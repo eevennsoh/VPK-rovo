@@ -244,6 +244,7 @@ const {
 } = require("./lib/studio-agent-result");
 const {
 	buildAgentDataFlowMermaid,
+	normalizeAgentDataFlowConfig,
 	refineAgentDataFlowMermaid,
 } = require("../lib/studio-agent-data-flow");
 const {
@@ -5998,7 +5999,11 @@ app.post("/api/rovo/suggestions", async (req, res) => {
 
 app.post("/api/studio/agent-data-flow", async (req, res) => {
 	const { abortController, cleanup } = createAbortControllerFromRequest(req, res);
-	const { config = {}, baselineMermaid } = req.body || {};
+	const requestBody = req.body && typeof req.body === "object" && !Array.isArray(req.body)
+		? req.body
+		: {};
+	const config = normalizeAgentDataFlowConfig(requestBody.config);
+	const { baselineMermaid } = requestBody;
 	const baseline = typeof baselineMermaid === "string" && baselineMermaid.trim()
 		? baselineMermaid
 		: buildAgentDataFlowMermaid(config);
