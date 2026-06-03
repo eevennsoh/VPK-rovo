@@ -38,8 +38,8 @@ catalog:
   '@json-render/remotion': 0.19.0
   '@json-render/yaml': 0.19.0
   # remotion - remotion + every @remotion/* must match exactly
-  'remotion': 4.0.468
-  '@remotion/player': 4.0.468
+  'remotion': 4.0.470
+  '@remotion/player': 4.0.470
 overrides:
   '@hono/node-server': ^1.19.10
   dompurify: ^3.3.2
