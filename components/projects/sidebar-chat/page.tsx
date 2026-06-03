@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useCallback, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useCallback, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { DEFAULT_REASONING_OPTION_ID } from "@/components/blocks/shared-ui/data/customize-menu-data";
 import { useRovoChat } from "@/app/contexts";
 import type { SendPromptOptions } from "@/app/contexts";
@@ -13,8 +13,17 @@ import {
 } from "@/components/ui-custom/conversation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { SplitButton } from "@/components/ui/split-button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Lozenge } from "@/components/ui/lozenge";
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import EditIcon from "@atlaskit/icon/core/edit";
 import { MessageTurns } from "@/components/projects/shared/message-turns";
 import {
@@ -116,6 +125,13 @@ interface ChatPanelProps {
 	 * header). Shared chat surfaces omit this to keep the default `px-4`.
 	 */
 	conversationContentClassName?: string;
+	/**
+	 * Optional override appended to the compact chat composer wrapper. Shared
+	 * chat surfaces omit this to keep the default `px-3`; the Studio agent Test
+	 * panel passes `px-0` because the surrounding panel already supplies the
+	 * 24px horizontal inset.
+	 */
+	composerContainerClassName?: string;
 	greetingSelectedAgent?: RovoAgentProfile | null;
 	hideAiCursor?: boolean;
 	hideComposerSourceAndModelControls?: boolean;
@@ -190,6 +206,7 @@ export default function ChatPanel({
 	customAgentTabs,
 	showAgentTestControls = false,
 	conversationContentClassName,
+	composerContainerClassName,
 	hideAiCursor = false,
 	hideComposerSourceAndModelControls = false,
 	hideHeader = false,
@@ -594,8 +611,10 @@ export default function ChatPanel({
 
 	const hasMessages = messages.length > 0;
 	const resolvedGreeting = isCollapsibleEditContextBar && !isContextBarOpen ? undefined : greeting;
+	const shouldCenterAgentTestEmptyState = showAgentTestControls && !hasMessages;
 	const shouldHugEmptyGreeting = !hasMessages && greeting?.showHero === false;
-	const shouldUseAutoMessageTrack = shouldHugEmptyGreeting && containerStyle?.display === "grid";
+	const shouldUseNaturalEmptyGreeting = shouldHugEmptyGreeting || shouldCenterAgentTestEmptyState;
+	const shouldUseAutoMessageTrack = shouldUseNaturalEmptyGreeting && containerStyle?.display === "grid";
 	const resolvedContainerStyle = shouldUseAutoMessageTrack
 		? { ...containerStyle, gridTemplateRows: "auto auto" }
 		: containerStyle;
@@ -722,16 +741,19 @@ export default function ChatPanel({
 	const messagesContainerStyle = {
 		display: chatStyles.messagesContainer.display,
 		flexDirection: chatStyles.messagesContainer.flexDirection,
-		justifyContent: hasMessages || shouldHugEmptyGreeting ? "flex-start" : "flex-end",
-		flex: hasMessages || shouldHugEmptyGreeting ? "0 0 auto" : chatStyles.messagesContainer.flex,
-		minHeight: shouldHugEmptyGreeting ? "auto" : "100%",
+		justifyContent: hasMessages || shouldUseNaturalEmptyGreeting ? "flex-start" : "flex-end",
+		flex: hasMessages || shouldUseNaturalEmptyGreeting ? "0 0 auto" : chatStyles.messagesContainer.flex,
+		minHeight: shouldUseNaturalEmptyGreeting ? "auto" : "100%",
 	};
 	const isHeaderHistoryEnabled = !hideHeader && headerVariant === "default";
 	const shouldRenderHeaderHistory = isHeaderHistoryEnabled && chatSurface !== "floating";
 	const shouldRenderCustomAgentTabs = Boolean(customAgentTabs) || (isCustomAgentSelected && isCustomAgentTabsProfile(selectedAgent));
 	const chatConversationBody = (
 		<Conversation
-			className="min-h-0 min-w-0 flex-1"
+			className={cn(
+				"min-h-0 min-w-0",
+				shouldCenterAgentTestEmptyState ? "flex-none overflow-visible" : "flex-1",
+			)}
 			contextRef={conversationContextRef}
 			followMode={scrollFollowMode}
 			initial={false}
@@ -894,6 +916,7 @@ export default function ChatPanel({
 						hasInFlightTurn={hasInFlightTurn}
 						queuedPrompts={queuedPrompts}
 						experimentalDarkCta
+						containerClassName={composerContainerClassName}
 						hideAiCursor={hideAiCursor}
 						hideSourceAndModelControls={hideComposerSourceAndModelControls}
 						micStream={realtime.micStream}
@@ -938,7 +961,14 @@ export default function ChatPanel({
 			)}
 			{shouldRenderCustomAgentTabs ? (
 				<>
-					<Tabs defaultValue="chat" aria-label="Custom agent views" className="min-h-0 min-w-0 flex-1">
+					<Tabs
+						defaultValue="chat"
+						aria-label="Custom agent views"
+						className={cn(
+							"min-h-0 min-w-0 flex-1",
+							shouldCenterAgentTestEmptyState && "flex flex-col",
+						)}
+					>
 						<div
 							className={cn(
 								"flex shrink-0 items-center gap-2 pt-3 pb-3",
@@ -957,26 +987,41 @@ export default function ChatPanel({
 							)}
 						>
 							{showAgentTestControls ? (
-								<SplitButton
-									variant="outline"
-									label={
+								<DropdownMenu>
+									<DropdownMenuTrigger
+										render={
+											<Button
+												aria-label="Switch version"
+												className="h-8 shrink-0 gap-1.5 px-2 text-sm font-medium text-text"
+												type="button"
+												variant="ghost"
+											/>
+										}
+									>
 										<Lozenge variant={selectedAgentVersion === "Draft" ? "neutral" : "success"}>
 											{selectedAgentVersion}
 										</Lozenge>
-									}
-									menuLabel="Switch version"
-									items={AGENT_VERSION_OPTIONS.map((version, versionIndex) => ({
-										key: version,
-										label: <Lozenge variant={version === "Draft" ? "neutral" : "success"}>{version}</Lozenge>,
-										// Check-mark the version that is currently active.
-										selected: version === selectedAgentVersion,
-										// Pin Draft to the top so it stays visible as versions scroll.
-										sticky: version === "Draft",
-										// Divider between the Draft entry and the published versions.
-										separatorBefore: version !== "Draft" && AGENT_VERSION_OPTIONS[versionIndex - 1] === "Draft",
-										onSelect: () => setSelectedAgentVersion(version),
-									}))}
-								/>
+										<ChevronDownIcon label="" size="small" spacing="none" />
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="start" sideOffset={8}>
+										<DropdownMenuGroup>
+											{AGENT_VERSION_OPTIONS.map((version, versionIndex) => (
+												<Fragment key={version}>
+													{version !== "Draft" && AGENT_VERSION_OPTIONS[versionIndex - 1] === "Draft" ? (
+														<DropdownMenuSeparator />
+													) : null}
+													<DropdownMenuItem
+														onSelect={() => setSelectedAgentVersion(version)}
+														className={cn(version === "Draft" && "bg-popover sticky top-0 z-10")}
+														elemAfter={version === selectedAgentVersion ? <CheckMarkIcon label="Selected" /> : undefined}
+													>
+														<Lozenge variant={version === "Draft" ? "neutral" : "success"}>{version}</Lozenge>
+													</DropdownMenuItem>
+												</Fragment>
+											))}
+										</DropdownMenuGroup>
+									</DropdownMenuContent>
+								</DropdownMenu>
 							) : null}
 							<div className={cn("flex flex-1", showAgentTestControls ? "justify-center" : null)}>
 								<TabsList
@@ -992,13 +1037,27 @@ export default function ChatPanel({
 								</TabsList>
 							</div>
 							{showAgentTestControls ? (
-								<Button aria-label="New chat" size="icon" variant="outline" onClick={resetChat}>
+								<Button aria-label="New chat" size="icon" variant="ghost" onClick={resetChat}>
 									<EditIcon label="" />
 								</Button>
 							) : null}
 						</div>
-						<TabsContent value="chat" keepMounted className="min-h-0 flex flex-1 flex-col data-[hidden]:hidden">
-							{chatConversationBody}
+						<TabsContent
+							value="chat"
+							keepMounted
+							className={cn(
+								"min-h-0 flex flex-1 flex-col data-[hidden]:hidden",
+								shouldCenterAgentTestEmptyState && "justify-center",
+							)}
+						>
+							{shouldCenterAgentTestEmptyState ? (
+								<div className="mx-auto flex w-full flex-col gap-3">
+									{chatConversationBody}
+									{chatComposerBody}
+								</div>
+							) : (
+								chatConversationBody
+							)}
 						</TabsContent>
 						<TabsContent value="trigger" className="min-h-0 flex-1 overflow-y-auto px-4 py-5 data-[hidden]:hidden">
 							{customAgentTabs?.trigger ?? (
@@ -1017,7 +1076,7 @@ export default function ChatPanel({
 							)}
 						</TabsContent>
 					</Tabs>
-					{chatComposerBody}
+					{shouldCenterAgentTestEmptyState ? null : chatComposerBody}
 				</>
 			) : (
 				chatPanelBody

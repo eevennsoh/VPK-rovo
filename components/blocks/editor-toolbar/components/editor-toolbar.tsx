@@ -10,6 +10,7 @@ import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AlignTextRightIcon from "@atlaskit/icon/core/align-text-right";
 import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import DataFlowIcon from "@atlaskit/icon/core/data-flow";
 import LinkIcon from "@atlaskit/icon/core/link";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import ListChecklistIcon from "@atlaskit/icon/core/list-checklist";
@@ -88,6 +89,7 @@ const TEXT_STYLE_TO_MARKDOWN: Record<TextStyleType, MarkdownFormatKind> = {
 type InsertReferenceCategory = RichTextReferenceCategory;
 
 export type EditorToolbarInsertReferenceCategory = InsertReferenceCategory;
+export type EditorToolbarViewMode = "rendered" | "markdown" | "data-flow";
 
 export interface EditorToolbarProps {
 	editor: Editor;
@@ -96,7 +98,10 @@ export interface EditorToolbarProps {
 	leadingSlot?: ReactNode;
 	endSlot?: ReactNode;
 	isMarkdownMode?: boolean;
+	mode?: EditorToolbarViewMode;
+	showDataFlowMode?: boolean;
 	onToggleMarkdownMode?: () => void;
+	onModeChange?: (mode: EditorToolbarViewMode) => void;
 	onMarkdownFormat?: (kind: MarkdownFormatKind) => void;
 	onInsertReferenceOption?: (category: EditorToolbarInsertReferenceCategory, label: string) => boolean | void;
 }
@@ -292,7 +297,10 @@ export function EditorToolbar({
 	leadingSlot,
 	endSlot,
 	isMarkdownMode = false,
+	mode,
+	showDataFlowMode = false,
 	onToggleMarkdownMode,
+	onModeChange,
 	onMarkdownFormat,
 	onInsertReferenceOption,
 }: Readonly<EditorToolbarProps>) {
@@ -303,14 +311,16 @@ export function EditorToolbar({
 		[],
 	);
 	const alignment = getCurrentAlignment(editor);
+	const currentMode = mode ?? (isMarkdownMode ? "markdown" : "rendered");
+	const controlsDisabled = currentMode === "data-flow";
 	// Alignment has no raw-Markdown equivalent, so it stays disabled in source
 	// mode. Every other control rewrites the textarea selection instead.
-	const markdownUnsupported = isMarkdownMode;
+	const markdownUnsupported = currentMode === "markdown" || controlsDisabled;
 	// Block/mark active state should only surface once the caret actually lives
 	// inside the editor. Tiptap seeds the selection at the document start before
 	// the user focuses, so reading `isActive` eagerly would, for content that
 	// begins with a list, render the bullet toggle pre-pressed by "default".
-	const reflectsActiveState = !isMarkdownMode && editor.isFocused;
+	const reflectsActiveState = currentMode === "rendered" && editor.isFocused;
 	const formattingValue = [
 		...(reflectsActiveState && editor.isActive("bold") ? ["bold"] : []),
 		...(openDropdown === "formatting" ? ["formatting"] : []),
@@ -319,7 +329,7 @@ export function EditorToolbar({
 		...(reflectsActiveState && editor.isActive("bulletList") ? ["bulletList"] : []),
 		...(openDropdown === "list" ? ["list"] : []),
 	];
-	const showModeTabs = Boolean(onToggleMarkdownMode);
+	const showModeTabs = Boolean(onToggleMarkdownMode || onModeChange);
 
 	// The five separator-bounded control groups fold (right-to-left) into the
 	// "+" insert dropdown when the toolbar runs out of horizontal room. The "+"
@@ -334,10 +344,10 @@ export function EditorToolbar({
 	useClickOutside(outsideRefs, () => setOpenDropdown(null), openDropdown !== null);
 
 	useEffect(() => {
-		if (isMarkdownMode) {
+		if (currentMode !== "rendered") {
 			setOpenDropdown(null);
 		}
-	}, [isMarkdownMode]);
+	}, [currentMode]);
 
 	function toggleDropdown(dropdown: DropdownType): void {
 		setOpenDropdown((current) => (current === dropdown ? null : dropdown));
@@ -345,6 +355,30 @@ export function EditorToolbar({
 
 	function closeDropdown(): void {
 		setOpenDropdown(null);
+	}
+
+	function handleModeChange(value: string | null): void {
+		if (
+			value !== "rendered" &&
+			value !== "markdown" &&
+			value !== "data-flow"
+		) {
+			return;
+		}
+
+		if (value === "data-flow" && !showDataFlowMode) {
+			return;
+		}
+
+		if (onModeChange) {
+			onModeChange(value);
+			return;
+		}
+
+		const nextIsMarkdownMode = value === "markdown";
+		if (nextIsMarkdownMode !== isMarkdownMode) {
+			onToggleMarkdownMode?.();
+		}
 	}
 
 	// In source mode dispatch the Markdown-syntax transform; otherwise run the
@@ -577,7 +611,7 @@ export function EditorToolbar({
 						<DropdownMenuItem
 							icon={<ListChecklistIcon label="Task list" size="small" />}
 							label="Task list"
-							isSelected={!isMarkdownMode && editor.isActive("taskList")}
+							isSelected={currentMode === "rendered" && editor.isActive("taskList")}
 							disabled={isMarkdownMode}
 							onClick={() => {
 								editor.chain().focus().toggleTaskList().run();
@@ -613,9 +647,9 @@ export function EditorToolbar({
 						<DropdownMenuItem
 							icon={<LinkIcon label="Link" size="small" />}
 							label="Link"
-							isSelected={!isMarkdownMode && editor.isActive("link")}
+							isSelected={currentMode === "rendered" && editor.isActive("link")}
 							onClick={() => {
-								handleLinkPressedChange(!(!isMarkdownMode && editor.isActive("link")));
+								handleLinkPressedChange(!(currentMode === "rendered" && editor.isActive("link")));
 								closeDropdown();
 							}}
 						/>
@@ -627,7 +661,7 @@ export function EditorToolbar({
 						<DropdownMenuItem
 							icon={<AngleBracketsIcon label="Code block" size="small" />}
 							label="Code block"
-							isSelected={!isMarkdownMode && editor.isActive("codeBlock")}
+							isSelected={currentMode === "rendered" && editor.isActive("codeBlock")}
 							onClick={() => {
 								handleToggleCodeBlock();
 								closeDropdown();
@@ -683,6 +717,7 @@ export function EditorToolbar({
 							aria-expanded={openDropdown === "textStyle"}
 							size="icon"
 							variant="ghost"
+							disabled={controlsDisabled}
 							onClick={() => toggleDropdown("textStyle")}
 						>
 							{renderCurrentTextStyleIcon(editor)}
@@ -761,6 +796,7 @@ export function EditorToolbar({
 							<ToggleGroupItem
 								value="bold"
 								aria-label="Bold"
+								disabled={controlsDisabled}
 							>
 								<TextBoldIcon label="" size="small" />
 							</ToggleGroupItem>
@@ -768,6 +804,7 @@ export function EditorToolbar({
 								value="formatting"
 								aria-label="More formatting options"
 								aria-expanded={openDropdown === "formatting"}
+								disabled={controlsDisabled}
 							>
 								<ChevronDownIcon label="" size="small" />
 							</ToggleGroupItem>
@@ -829,6 +866,7 @@ export function EditorToolbar({
 							<ToggleGroupItem
 								value="bulletList"
 								aria-label="Bulleted list"
+								disabled={controlsDisabled}
 							>
 								<ListBulletedIcon label="" size="small" />
 							</ToggleGroupItem>
@@ -836,6 +874,7 @@ export function EditorToolbar({
 								value="list"
 								aria-label="More list options"
 								aria-expanded={openDropdown === "list"}
+								disabled={controlsDisabled}
 							>
 								<ChevronDownIcon label="" size="small" />
 							</ToggleGroupItem>
@@ -918,7 +957,8 @@ export function EditorToolbar({
 
 						<Toggle
 							aria-label="Link"
-							pressed={!isMarkdownMode && editor.isActive("link")}
+							pressed={currentMode === "rendered" && editor.isActive("link")}
+							disabled={controlsDisabled}
 							onPressedChange={handleLinkPressedChange}
 						>
 							<LinkIcon label="" size="small" />
@@ -933,7 +973,8 @@ export function EditorToolbar({
 						<ToolbarSeparator />
 						<Toggle
 							aria-label="Code block"
-							pressed={!isMarkdownMode && editor.isActive("codeBlock")}
+							pressed={currentMode === "rendered" && editor.isActive("codeBlock")}
+							disabled={controlsDisabled}
 							onPressedChange={handleToggleCodeBlock}
 						>
 							<AngleBracketsIcon label="" size="small" />
@@ -943,6 +984,7 @@ export function EditorToolbar({
 							aria-label="Horizontal rule"
 							size="icon"
 							variant="ghost"
+							disabled={controlsDisabled}
 							onClick={handleInsertHorizontalRule}
 						>
 							<DividerElementIcon label="" size="small" />
@@ -952,7 +994,7 @@ export function EditorToolbar({
 							aria-label="Table"
 							size="icon"
 							variant="ghost"
-							disabled={isMarkdownMode}
+							disabled={isMarkdownMode || controlsDisabled}
 							onClick={handleInsertTable}
 						>
 							<TableIcon label="" size="small" />
@@ -967,7 +1009,7 @@ export function EditorToolbar({
 							aria-expanded={openDropdown === "insert"}
 							size="icon"
 							variant="ghost"
-							disabled={isMarkdownMode}
+							disabled={isMarkdownMode || controlsDisabled}
 							onClick={handleAddContent}
 						>
 							<AddIcon label="" size="small" />
@@ -1001,14 +1043,8 @@ export function EditorToolbar({
 					{endSlot}
 					{showModeTabs ? (
 						<Tabs
-							value={isMarkdownMode ? "markdown" : "rendered"}
-							onValueChange={(value) => {
-								const nextIsMarkdownMode = value === "markdown";
-
-								if (nextIsMarkdownMode !== isMarkdownMode) {
-									onToggleMarkdownMode?.();
-								}
-							}}
+							value={currentMode}
+							onValueChange={handleModeChange}
 						>
 							<TabsList>
 								<TabsTrigger
@@ -1025,6 +1061,15 @@ export function EditorToolbar({
 								>
 									<MarkdownIcon label="" size="small" />
 								</TabsTrigger>
+								{showDataFlowMode ? (
+									<TabsTrigger
+										aria-label="Data flow diagram"
+										value="data-flow"
+										className="px-2"
+									>
+										<DataFlowIcon label="" size="small" />
+									</TabsTrigger>
+								) : null}
 							</TabsList>
 						</Tabs>
 					) : null}

@@ -659,6 +659,92 @@ const apps: KnowledgeDirectoryApp[] = [
 			},
 		],
 	},
+	"conversation-starters": {
+		description: "Modal for editing an agent's conversation starters: a fixed set of up to maxStarters (default 3) rows you can reorder by dragging, give each its own icon, clear, or fill all at once with “Generate for me”.",
+		importStatement: `import { ConversationStartersDialog } from "@/components/blocks/conversation-starters";`,
+		usage: `import { ConversationStartersDialog } from "@/components/blocks/conversation-starters";
+import type { ConversationStarter } from "@/components/blocks/conversation-starters";
+
+const [open, setOpen] = useState(false);
+const [starters, setStarters] = useState<readonly ConversationStarter[]>([
+  { id: "s1", text: "Summarize this project's status", icon: "ai-sparkle" },
+  { id: "s2", text: "What are the open risks?", icon: "question-circle" },
+]);
+
+<ConversationStartersDialog
+  open={open}
+  onOpenChange={setOpen}
+  starters={starters}
+  maxStarters={3}
+  onSave={setStarters}
+  onGenerate={async () => fetchSuggestedStarters()}
+/>`,
+		demoLayout: { previewHeight: "fixed" },
+		props: [
+			{
+				name: "open",
+				type: "boolean",
+				required: true,
+				description: "Controlled dialog open state.",
+			},
+			{
+				name: "onOpenChange",
+				type: "(open: boolean) => void",
+				required: true,
+				description: "Called when the dialog requests an open-state change (Cancel, close, or after Save).",
+			},
+			{
+				name: "starters",
+				type: "readonly ConversationStarter[]",
+				description: "Controlled starter list. The dialog seeds an internal draft from this each time it opens.",
+			},
+			{
+				name: "defaultStarters",
+				type: "readonly ConversationStarter[]",
+				description: "Initial uncontrolled starter list when `starters` is omitted.",
+			},
+			{
+				name: "onSave",
+				type: "(starters: readonly ConversationStarter[]) => void",
+				description: "Called by the primary (Add) button with the trimmed, non-empty starters.",
+			},
+			{
+				name: "onStartersChange",
+				type: "(starters: readonly ConversationStarter[]) => void",
+				description: "Called alongside save with the committed starters; use for uncontrolled persistence.",
+			},
+			{
+				name: "onGenerate",
+				type: "() => readonly ConversationStarter[] | Promise<readonly ConversationStarter[]>",
+				description: "Backs the “Generate for me” button. When omitted, a built-in sample set is used. The button shows a loading state while awaiting an async result.",
+			},
+			{
+				name: "maxStarters",
+				type: "number",
+				description: "Number of starter rows always shown. Defaults to 3.",
+			},
+			{
+				name: "iconOptions",
+				type: "readonly StarterIconOption[]",
+				description: "Override the icon set shown in the per-starter picker. Defaults to STARTER_ICON_OPTIONS.",
+			},
+			{
+				name: "title",
+				type: "string",
+				description: "Optional dialog title. Defaults to “Conversation starters”.",
+			},
+			{
+				name: "saveLabel",
+				type: "string",
+				description: "Optional primary button label. Defaults to “Add”.",
+			},
+			{
+				name: "placeholder",
+				type: "string",
+				description: "Optional input placeholder. Defaults to “Write a new conversation starter”.",
+			},
+		],
+	},
 	"mermaid-diagram": {
 		description: "Dedicated Mermaid diagram block rendered through Streamdown’s Mermaid plugin so fenced mermaid content becomes an interactive SVG diagram instead of a plain code block.",
 		usage: `import MermaidDiagram from "@/components/blocks/mermaid-diagram/page";
@@ -884,6 +970,61 @@ const agents: AgentSelectorAgent[] = [
 			{ title: "Early progress", description: "Run just started with mostly todo tasks.", demoSlug: "task-progress-demo-early-progress" },
 			{ title: "Multiple runs", description: "Progress tracker showing multiple run count.", demoSlug: "task-progress-demo-multiple-runs" },
 			{ title: "All states", description: "Running, completed, and failed states side by side.", demoSlug: "task-progress-demo-all-states" },
+		],
+	},
+	triggers: {
+		description:
+			"Event-trigger editor card. Shows an automation trigger row (\"Status changed to <status> in <board>\") with its prompt and a delete control, plus an affordance to add another trigger. Falls back to an add-only empty state.",
+		usage: `import Triggers from "@/components/blocks/triggers/page";
+
+<Triggers />
+<Triggers statusLabel="Drafting" boardLabel="Enterprise RFP Response" prompt="When a ticket enters Drafting…" />
+<Triggers hasTrigger={false} />`,
+		props: [
+			{
+				name: "hasTrigger",
+				type: "boolean",
+				default: "true",
+				description: "When false, only the \"Add Trigger\" affordance is shown (empty state).",
+			},
+			{
+				name: "statusLabel",
+				type: "string",
+				default: '"Drafting"',
+				description: "Status/column the trigger watches.",
+			},
+			{
+				name: "boardLabel",
+				type: "string",
+				default: '"Enterprise RFP Response"',
+				description: "Board the trigger is scoped to.",
+			},
+			{
+				name: "boardAvatarSrc",
+				type: "string",
+				default: '"/avatar-project/rocket.svg"',
+				description: "Project avatar shown beside the board name. Omit to hide the avatar.",
+			},
+			{
+				name: "prompt",
+				type: "string",
+				description: "Natural-language prompt run when the trigger fires.",
+			},
+			{
+				name: "addTriggerLabel",
+				type: "string",
+				default: '"Add Trigger"',
+				description: "Label for the add-trigger affordance.",
+			},
+			{
+				name: "onClearTrigger",
+				type: "() => void",
+				description: "Invoked when the trigger's delete button is pressed.",
+			},
+		],
+		examples: [
+			{ title: "Configured", description: "Trigger row with status, board, and prompt.", demoSlug: "triggers-demo-configured" },
+			{ title: "Empty", description: "Add-only state with no trigger configured.", demoSlug: "triggers-demo-empty" },
 		],
 	},
 	"app-sidebar": {

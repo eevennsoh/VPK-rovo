@@ -381,6 +381,7 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /Add conversation starters/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /Teamwork Graph/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /Describe the agent’s role and what it should do/u);
+	assert.match(UI_CUSTOM_AGENT_SOURCE, /dataFlowConfig=\{config\}/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /layout\?: "default" \| "compact";/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /inputProps=\{\{ className: "h-auto border-2 px-1\.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u);
@@ -450,7 +451,7 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	);
 	assert.match(handleAgentConfigViewChangeSource, /setActiveAgentConfigView\(view\);/u);
 	assert.doesNotMatch(handleAgentConfigViewChangeSource, /nav\.openChat|nav\.toggleChat/u);
-	assert.match(SHELL_SOURCE, /import \{ AgentTestPanel \} from "@\/components\/projects\/studio\/components\/rovo-app-agent-test-panel";/u);
+	assert.match(SHELL_SOURCE, /import \{ AgentTestActivityView, AgentTestPanel, AgentTestTriggerView \} from "@\/components\/projects\/studio\/components\/rovo-app-agent-test-panel";/u);
 	assert.match(SHELL_SOURCE, /const agentConfigTestPanel = activeSessionAgentEntry \? \([\s\S]*<AgentTestPanel entry=\{activeSessionAgentEntry\} \/>/u);
 	assert.match(SHELL_SOURCE, /testPanel=\{agentConfigTestPanel\}/u);
 	assert.match(SHELL_SOURCE, /onTest=\{handleTestAgent\}/u);
@@ -469,7 +470,23 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 		SHELL_SOURCE.indexOf("// When the \"Edit agent\" context bar is active"),
 	);
 	assert.match(agentEditContextBarSource, /if \(!activeSessionAgentEntry \|\| isCustomAgentSelected\) \{[\s\S]*return null;[\s\S]*\}/u);
-	assert.match(SHELL_SOURCE, /<ChatPanel[\s\S]*onClose=\{nav\.toggleChat\}[\s\S]*abortOnUnmount=\{false\}[\s\S]*chatContextBar=\{agentEditContextBar\}[\s\S]*containerStyle=\{\{ borderRadius: 0, borderWidth: 0 \}\}[\s\S]*\/>/u);
+	assert.match(SHELL_SOURCE, /<ChatPanel[\s\S]*onClose=\{nav\.toggleChat\}[\s\S]*abortOnUnmount=\{false\}[\s\S]*chatContextBar=\{agentEditContextBar\}[\s\S]*customAgentTabs=\{askRovoCustomAgentTabs\}[\s\S]*containerStyle=\{\{ borderRadius: 0, borderWidth: 0 \}\}[\s\S]*\/>/u);
+	// The Ask Rovo edit panel renders the custom-agent tab header (Chat /
+	// Trigger / Activity) for the agent being edited, but must NOT opt into the
+	// Test-mode-only controls (version dropdown + new-chat button); leaving
+	// showAgentTestControls off keeps them hidden and the tab list full width.
+	const askRovoCustomAgentTabsSource = SHELL_SOURCE.slice(
+		SHELL_SOURCE.indexOf("const askRovoCustomAgentTabs = useMemo"),
+		SHELL_SOURCE.indexOf("const askRovoChatResize"),
+	);
+	assert.match(askRovoCustomAgentTabsSource, /if \(!activeSessionAgentEntry\) \{[\s\S]*return undefined;[\s\S]*\}/u);
+	assert.match(askRovoCustomAgentTabsSource, /trigger: <AgentTestTriggerView entry=\{activeSessionAgentEntry\} \/>/u);
+	assert.match(askRovoCustomAgentTabsSource, /activity: <AgentTestActivityView entry=\{activeSessionAgentEntry\} \/>/u);
+	const askRovoChatPanelSource = SHELL_SOURCE.slice(
+		SHELL_SOURCE.indexOf("<ChatPanel\n"),
+		SHELL_SOURCE.indexOf("<SidebarResizeHandle"),
+	);
+	assert.doesNotMatch(askRovoChatPanelSource, /showAgentTestControls/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \{ chatSurface, openChat, resetAgentToRovo \} = useRovoChat\(\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenFloatingRovoChat = useCallback\(\(\) => \{[\s\S]*resetAgentToRovo\(\);[\s\S]*openChat\("floating"\);[\s\S]*\}, \[openChat, resetAgentToRovo\]\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<FloatingRovoButton ariaLabel="Open Rovo chat" product="home" onButtonClick=\{handleOpenFloatingRovoChat\} \/>/u);
@@ -479,7 +496,11 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_TEST_PANEL_SOURCE, /export function AgentTestPanel/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /aria-label="Agent test"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /data-testid="agent-test-panel"/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /containerClassName="mx-auto h-full min-h-0 w-full max-w-\[800px\] overflow-visible"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /className=\{cn\("h-full min-h-0 px-6", className\)\}/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /containerClassName="h-full min-h-0 w-full overflow-visible"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /composerContainerClassName="px-0"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /conversationContentClassName="px-0"/u);
+	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /containerClassName="mx-auto h-full min-h-0 w-full max-w-\[800px\] overflow-visible"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /containerStyle=\{\{ borderRadius: 0, borderWidth: 0, overflow: "visible" \}\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /greetingSelectedAgent=\{testAgentProfile\}/u);
 	assert.match(CHAT_PANEL_SOURCE, /greetingSelectedAgent\?: RovoAgentProfile \| null;/u);

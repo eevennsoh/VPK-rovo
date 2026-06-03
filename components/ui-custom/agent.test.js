@@ -568,7 +568,7 @@ test("Shared Tiptap editor is SSR-safe and emits markdown updates", () => {
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /placeholderSlot\?: ReactNode;/u);
 	assert.match(
 		RICH_TEXT_EDITOR_SOURCE,
-		/placeholderSlot && isEmpty && !isMarkdownMode[\s\S]*data-slot="rich-text-editor-placeholder"[\s\S]*pointer-events-none absolute inset-0/u,
+		/placeholderSlot && isEmpty && viewMode === "rendered"[\s\S]*data-slot="rich-text-editor-placeholder"[\s\S]*pointer-events-none absolute inset-0/u,
 	);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /data-empty=\{isEmpty \? "true" : undefined\}/u);
 	assert.match(
@@ -752,9 +752,10 @@ test("Shared rich text toolbar delegates to the Editor toolbar block", () => {
 	);
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<EditorToolbar[\s\S]*controlsClassName="px-2 py-1"/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /export type EditorToolbarInsertReferenceCategory = InsertReferenceCategory;/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /export type EditorToolbarViewMode = "rendered" \| "markdown" \| "data-flow";/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /onInsertReferenceOption\?: \(category: EditorToolbarInsertReferenceCategory, label: string\) => boolean \| void;/u);
-	assert.match(EDITOR_TOOLBAR_INDEX_SOURCE, /export type \{ EditorToolbarInsertReferenceCategory, EditorToolbarProps \} from "\.\/components\/editor-toolbar";/u);
-	assert.match(RICH_TEXT_EDITOR_SOURCE, /import type \{ EditorToolbarInsertReferenceCategory \} from "@\/components\/blocks\/editor-toolbar";/u);
+	assert.match(EDITOR_TOOLBAR_INDEX_SOURCE, /export type \{ EditorToolbarInsertReferenceCategory, EditorToolbarProps, EditorToolbarViewMode \} from "\.\/components\/editor-toolbar";/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /import type \{ EditorToolbarInsertReferenceCategory, EditorToolbarViewMode \} from "@\/components\/blocks\/editor-toolbar";/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onInsertReferenceOption\?: \(category: EditorToolbarInsertReferenceCategory, label: string\) => boolean \| void;/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onInsertReferenceOption=\{onInsertReferenceOption\}/u);
 });
@@ -799,6 +800,7 @@ test("Shared toolbar carries the Confluence editor control set", () => {
 
 test("Shared toolbar groups related split controls and keeps unrelated toggles independent", () => {
 	assert.match(EDITOR_TOOLBAR_SOURCE, /import AddIcon from "@atlaskit\/icon\/core\/add";/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /import DataFlowIcon from "@atlaskit\/icon\/core\/data-flow";/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /import MarkdownIcon from "@atlaskit\/icon\/core\/markdown";/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /import \{ Toggle \} from "@\/components\/ui\/toggle";/u);
@@ -822,7 +824,7 @@ test("Shared toolbar groups related split controls and keeps unrelated toggles i
 	assert.match(EDITOR_TOOLBAR_SOURCE, /data-toolbar-group[\s\S]*<ToolbarSeparator \/>\s*<ToggleGroup[\s\S]*value=\{listValue\}/u);
 
 	// Link remains a separate Toggle; rendered/Markdown mode is a far-right Tabs control.
-	assert.match(EDITOR_TOOLBAR_SOURCE, /pressed=\{!isMarkdownMode && editor\.isActive\("link"\)\}/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /pressed=\{currentMode === "rendered" && editor\.isActive\("link"\)\}/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Link"[\s\S]*onPressedChange=\{handleLinkPressedChange\}/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Add content"[\s\S]*onClick=\{handleAddContent\}/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /const handledByConsumer = onInsertReferenceOption\?\.\(category, label\);/u);
@@ -833,7 +835,7 @@ test("Shared toolbar groups related split controls and keeps unrelated toggles i
 	assert.match(EDITOR_TOOLBAR_SOURCE, /<div data-toolbar-anchor className="relative flex items-center gap-1">/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /\{hasFoldedGroups \? <ToolbarSeparator \/> : null\}\s*<Button[\s\S]*aria-label="Add content"[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>[\s\S]*<\/div>/u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /<AddIcon label="" size="small" \/>\s*<\/Button>\s*<ToolbarSeparator \/>/u);
-	assert.match(EDITOR_TOOLBAR_SOURCE, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<Tabs[\s\S]*value=\{isMarkdownMode \? "markdown" : "rendered"\}/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<Tabs[\s\S]*value=\{currentMode\}/u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /value="link"/u);
 	assert.doesNotMatch(
 		EDITOR_TOOLBAR_SOURCE,
@@ -870,7 +872,10 @@ test("Shared toolbar dropdown menus avoid perimeter shadow strokes", () => {
 
 test("Shared toolbar exposes far-right rendered and Markdown mode tabs gated by a handler", () => {
 	assert.match(EDITOR_TOOLBAR_SOURCE, /isMarkdownMode\?: boolean;/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /mode\?: EditorToolbarViewMode;/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /showDataFlowMode\?: boolean;/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /onToggleMarkdownMode\?: \(\) => void;/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /onModeChange\?: \(mode: EditorToolbarViewMode\) => void;/u);
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /import \{ BubbleMenu, FloatingMenu \} from "@tiptap\/react\/menus";/u);
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /function getRichTextEditorMenuAppendTarget\(\): HTMLElement \{[\s\S]*return document\.body;[\s\S]*\}/u);
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<BubbleMenu[\s\S]*appendTo=\{getRichTextEditorMenuAppendTarget\}/u);
@@ -882,13 +887,18 @@ test("Shared toolbar exposes far-right rendered and Markdown mode tabs gated by 
 	// Mode tabs only render when a toggle handler is supplied (omitted in bubble/floating menus).
 	assert.match(
 		EDITOR_TOOLBAR_SOURCE,
-		/const showModeTabs = Boolean\(onToggleMarkdownMode\);[\s\S]*\{endSlot \|\| showModeTabs \? \(/u,
+		/const showModeTabs = Boolean\(onToggleMarkdownMode \|\| onModeChange\);[\s\S]*\{endSlot \|\| showModeTabs \? \(/u,
 	);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /<TabsTrigger[\s\S]*aria-label="Rendered text"[\s\S]*value="rendered"/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /<TabsTrigger[\s\S]*aria-label="Markdown source"[\s\S]*value="markdown"/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<TabsTrigger[\s\S]*aria-label="Data flow diagram"[\s\S]*value="data-flow"[\s\S]*<DataFlowIcon label="" size="small" \/>/u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, />\s*Rendered\s*</u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, />\s*Markdown\s*</u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /Show Markdown source/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /dataFlowConfig\?: StudioAgentDataFlowConfig;/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /mode=\{viewMode\}/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /showDataFlowMode=\{Boolean\(dataFlowConfig\)\}/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /data-rich-text-data-flow-diagram/u);
 });
 
 test("Source-mode toolbar controls apply Markdown syntax instead of disabling", () => {
@@ -907,8 +917,10 @@ test("Source-mode toolbar controls apply Markdown syntax instead of disabling", 
 	assert.match(EDITOR_TOOLBAR_SOURCE, /runFormat\("orderedList",/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /TEXT_STYLE_TO_MARKDOWN/u);
 	// Only alignment (no Markdown equivalent) stays disabled in source mode.
-	assert.match(EDITOR_TOOLBAR_SOURCE, /const markdownUnsupported = isMarkdownMode;/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /const controlsDisabled = currentMode === "data-flow";/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /const markdownUnsupported = currentMode === "markdown" \|\| controlsDisabled;/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /disabled=\{markdownUnsupported\}/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /disabled=\{controlsDisabled\}/u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /formattingDisabled/u);
 });
 
@@ -933,8 +945,9 @@ test("Editor wires source-mode formatting through the Markdown-format util", () 
 test("Markdown source mode round-trips through the shared editor", () => {
 	assert.match(
 		RICH_TEXT_EDITOR_SOURCE,
-		/const \[isMarkdownMode, setIsMarkdownMode\] = useState\(false\);/u,
+		/const \[viewMode, setViewMode\] = useState<EditorToolbarViewMode>\("rendered"\);/u,
 	);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /const isMarkdownMode = viewMode === "markdown";/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /const \[markdownSource, setMarkdownSource\] = useState\(""\);/u);
 	// Entering source mode snapshots the rendered doc as Markdown.
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /setMarkdownSource\(editor\.getMarkdown\(\)\)/u);
@@ -944,7 +957,7 @@ test("Markdown source mode round-trips through the shared editor", () => {
 		/editor\.commands\.setContent\(markdownSource, \{[\s\S]*contentType: "markdown",[\s\S]*emitUpdate: false/u,
 	);
 	// Source mode renders the syntax-highlighted Markdown source editor instead of EditorContent.
-	assert.match(RICH_TEXT_EDITOR_SOURCE, /isMarkdownMode \? \(\s*<MarkdownSourceEditor/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /isDataFlowMode && dataFlowMermaid \? \([\s\S]*\) : isMarkdownMode \? \(\s*<MarkdownSourceEditor/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /data-rich-text-markdown-source/u);
 	// The parent stays live-synced while editing source.
 	assert.match(
@@ -953,5 +966,5 @@ test("Markdown source mode round-trips through the shared editor", () => {
 	);
 	// The toolbar receives the toggle wiring; bubble/floating menus hide in source mode.
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onToggleMarkdownMode=\{handleToggleMarkdownMode\}/u);
-	assert.match(RICH_TEXT_EDITOR_SOURCE, /showBubbleMenu && editor && !isMarkdownMode/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /showBubbleMenu && editor && viewMode === "rendered"/u);
 });

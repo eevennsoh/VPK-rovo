@@ -243,6 +243,10 @@ const {
 	shouldSurfaceMissingStudioAgentResultFailure,
 } = require("./lib/studio-agent-result");
 const {
+	buildAgentDataFlowMermaid,
+	refineAgentDataFlowMermaid,
+} = require("../lib/studio-agent-data-flow");
+const {
 	buildStudioAgentCreationTrace,
 } = require("./lib/studio-agent-trace");
 const {
@@ -5987,6 +5991,39 @@ app.post("/api/rovo/suggestions", async (req, res) => {
 
 		console.error("[SUGGESTIONS] Rovo suggestions request failed:", error);
 		return res.status(200).json({ questions: [] });
+	} finally {
+		cleanup();
+	}
+});
+
+app.post("/api/studio/agent-data-flow", async (req, res) => {
+	const { abortController, cleanup } = createAbortControllerFromRequest(req, res);
+	const { config = {}, baselineMermaid } = req.body || {};
+	const baseline = typeof baselineMermaid === "string" && baselineMermaid.trim()
+		? baselineMermaid
+		: buildAgentDataFlowMermaid(config);
+
+	try {
+		const result = await refineAgentDataFlowMermaid({
+			config,
+			baselineMermaid: baseline,
+			generateText: (options) => aiGatewayProvider.generateText(options),
+			signal: abortController.signal,
+		});
+
+		return res.status(200).json(result);
+	} catch (error) {
+		const isAbortError =
+			typeof error === "object" &&
+			error !== null &&
+			"name" in error &&
+			error.name === "AbortError";
+		if (isAbortError && (abortController.signal.aborted || req.aborted || res.destroyed)) {
+			return;
+		}
+
+		console.warn("[STUDIO] Agent data-flow refinement unavailable:", error?.message || error);
+		return res.status(200).json({ mermaid: baseline });
 	} finally {
 		cleanup();
 	}

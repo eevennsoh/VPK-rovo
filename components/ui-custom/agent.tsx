@@ -420,7 +420,7 @@ export type AgentConfigListFieldName =
 	| "knowledge"
 	| "conversationStarters";
 
-export type AgentDirectoryKind = "knowledge" | "tools" | "skills";
+export type AgentDirectoryKind = "knowledge" | "tools" | "skills" | "conversationStarters";
 
 export interface AgentConfigFormValue {
 	name?: string;
@@ -436,6 +436,7 @@ export interface AgentConfigFormValue {
 	subagents?: readonly string[];
 	knowledge?: readonly string[];
 	conversationStarters?: readonly string[];
+	conversationStarterIcons?: readonly string[];
 	agentId?: string;
 	action?: string;
 }
@@ -865,7 +866,7 @@ function AgentMissingConfigActions({
 			? {
 					agentFieldName: "conversationStarters",
 					label: "Add conversation starters",
-					onClick: () => onAppendListItem?.("conversationStarters"),
+					onClick: () => openAgentDirectoryOrAppendListItem("conversationStarters", "conversationStarters", onOpenDirectory, onAppendListItem),
 					screenAssistantTargetId: screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:conversation-starters` : undefined,
 				}
 			: null,
@@ -904,6 +905,10 @@ function getAgentCompactConfigNavItemOnClick(
 
 	if (item.agentFieldName === "skills") {
 		return () => openAgentDirectoryOrAppendListItem("skills", "skills", onOpenDirectory, onAppendListItem);
+	}
+
+	if (item.agentFieldName === "conversationStarters") {
+		return () => openAgentDirectoryOrAppendListItem("conversationStarters", "conversationStarters", onOpenDirectory, onAppendListItem);
 	}
 
 	if ("listFieldName" in item) {
@@ -1620,7 +1625,7 @@ function AgentFilledConfigSummary({
 					agentFieldName="conversationStarters"
 					items={starterItems}
 					label="Conversation starters"
-					onAdd={() => onAppendListItem?.("conversationStarters")}
+					onAdd={() => openAgentDirectoryOrAppendListItem("conversationStarters", "conversationStarters", onOpenDirectory, onAppendListItem)}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("conversationStarters", index) : undefined}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:conversation-starters` : undefined}
 				/>
@@ -2374,6 +2379,7 @@ function AgentInstructionsComposer({
 				onInsertReferenceOption={handleInsertReferenceOption}
 				toolbarBelowSlot={toolbarBelowSlot}
 				value={instructions}
+				dataFlowConfig={config}
 				mentionSources={mentionSources}
 				mentionRemovalRequest={mentionRemovalRequest}
 				onMarkdownChange={onInstructionsChange}

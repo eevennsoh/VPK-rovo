@@ -164,6 +164,7 @@ export type RovoDataParts = {
 		instructions?: string;
 		contextDescription?: string;
 		conversationStarters?: string[];
+		conversationStarterIcons?: string[];
 		avatarSrc?: string;
 		avatarFallback?: {
 			initials?: string;
