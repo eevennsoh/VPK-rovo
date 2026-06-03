@@ -8,6 +8,75 @@ function debugLog(section, message, data) {
 	}
 }
 
+// Transient gateway responses worth retrying: 429 (use-case quota breach) and
+// 503 (upstream briefly unavailable). The shared AI Gateway use-case quota can
+// be momentarily exceeded when several dev stacks share it, which otherwise
+// kills the whole turn (e.g. Studio agent creation produces no result).
+const GATEWAY_RETRYABLE_STATUSES = new Set([429, 503]);
+const DEFAULT_GATEWAY_MAX_ATTEMPTS = 4;
+const DEFAULT_GATEWAY_BASE_DELAY_MS = 750;
+const MAX_GATEWAY_RETRY_DELAY_MS = 8000;
+
+function sleep(ms) {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Resolve a `Retry-After` header (delta-seconds or HTTP-date) to milliseconds.
+// Returns null when absent/unparseable so the caller falls back to backoff.
+function parseRetryAfterMs(headerValue) {
+	if (!headerValue) {
+		return null;
+	}
+	const seconds = Number(headerValue);
+	if (Number.isFinite(seconds) && seconds >= 0) {
+		return Math.min(seconds * 1000, MAX_GATEWAY_RETRY_DELAY_MS);
+	}
+	const dateMs = Date.parse(headerValue);
+	if (Number.isFinite(dateMs)) {
+		const delta = dateMs - Date.now();
+		return delta > 0 ? Math.min(delta, MAX_GATEWAY_RETRY_DELAY_MS) : 0;
+	}
+	return null;
+}
+
+/**
+ * Issues a gateway request with bounded retry on transient rate-limit/unavailable
+ * responses. Retrying with exponential backoff (honoring `Retry-After` when
+ * present) converts a momentary quota breach into a short delay instead of a
+ * hard turn failure. Only the request/status step is retried — safe because a
+ * 429/503 is returned before any SSE body is read.
+ *
+ * `doFetch` must return a Fetch `Response`. Non-retryable responses (success or
+ * other error statuses) are returned unchanged so existing error handling and
+ * streaming continue to apply.
+ *
+ * @param {() => Promise<Response>} doFetch
+ * @param {{maxAttempts?: number, baseDelayMs?: number, sleepFn?: (ms:number)=>Promise<void>}} [options]
+ * @returns {Promise<Response>}
+ */
+async function fetchGatewayWithRateLimitRetry(
+	doFetch,
+	{ maxAttempts = DEFAULT_GATEWAY_MAX_ATTEMPTS, baseDelayMs = DEFAULT_GATEWAY_BASE_DELAY_MS, sleepFn = sleep } = {},
+) {
+	let attempt = 0;
+	let response = await doFetch();
+	while (GATEWAY_RETRYABLE_STATUSES.has(response.status) && attempt < maxAttempts - 1) {
+		const retryAfterMs = parseRetryAfterMs(
+			typeof response.headers?.get === "function" ? response.headers.get("retry-after") : null,
+		);
+		const backoffMs = Math.min(baseDelayMs * 2 ** attempt, MAX_GATEWAY_RETRY_DELAY_MS);
+		const delayMs = retryAfterMs == null ? backoffMs : retryAfterMs;
+		debugLog(
+			"GATEWAY_RETRY",
+			`status ${response.status}; retrying in ${delayMs}ms (attempt ${attempt + 1}/${maxAttempts - 1})`,
+		);
+		await sleepFn(delayMs);
+		attempt += 1;
+		response = await doFetch();
+	}
+	return response;
+}
+
 
 function getEnvVars() {
 	return {
@@ -300,11 +369,12 @@ async function streamBedrockGatewayManualSse({ gatewayUrl, envVars, system, prom
 
 	debugLog("BEDROCK_SSE", `Streaming to: ${gatewayUrl}`);
 
-	const response = await fetch(gatewayUrl, {
+	const requestInit = {
 		method: "POST",
 		headers: getGatewayHeaders(envVars, token, true),
 		body: JSON.stringify(payload),
-	});
+	};
+	const response = await fetchGatewayWithRateLimitRetry(() => fetch(gatewayUrl, requestInit));
 
 	if (!response.ok) {
 		const errorText = await response.text();
@@ -421,12 +491,14 @@ async function streamGoogleGatewayManualSse({
 		}
 	}
 
-	const response = await fetch(gatewayUrl, {
-		method: "POST",
-		headers: getGatewayHeaders(envVars, token, true),
-		body: JSON.stringify(payload),
-		signal,
-	});
+	const response = await fetchGatewayWithRateLimitRetry(() =>
+		fetch(gatewayUrl, {
+			method: "POST",
+			headers: getGatewayHeaders(envVars, token, true),
+			body: JSON.stringify(payload),
+			signal,
+		}),
+	);
 
 	if (!response.ok) {
 		const errorText = await response.text();
@@ -532,4 +604,6 @@ module.exports = {
 	streamBedrockGatewayManualSse,
 	streamGoogleGatewayManualSse,
 	getRealtimeConfig,
+	fetchGatewayWithRateLimitRetry,
+	parseRetryAfterMs,
 };
