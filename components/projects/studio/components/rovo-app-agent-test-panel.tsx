@@ -191,7 +191,7 @@ function buildAgentTestProfile(entry: StudioSessionAgentEntry): RovoAgentProfile
 	};
 }
 
-function AgentTestTriggerView({
+export function AgentTestTriggerView({
 	entry,
 }: Readonly<{
 	entry: StudioSessionAgentEntry;
@@ -210,7 +210,7 @@ function AgentTestTriggerView({
 	);
 }
 
-function AgentTestActivityView({
+export function AgentTestActivityView({
 	entry,
 }: Readonly<{
 	entry: StudioSessionAgentEntry;
