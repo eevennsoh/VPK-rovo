@@ -121,7 +121,7 @@ type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
   size?: CodeBlockSize;
 };
 
-interface TokenizedCode {
+export interface TokenizedCode {
   tokens: ThemedToken[][];
   fg: string;
   bg: string;
@@ -151,7 +151,7 @@ const tokensCache = new Map<string, TokenizedCode>();
 // Subscribers for async token updates
 const subscribers = new Map<string, Set<(result: TokenizedCode) => void>>();
 
-const getTokensCacheKey = (code: string, language: BundledLanguage) => {
+export const getTokensCacheKey = (code: string, language: BundledLanguage) => {
   const start = code.slice(0, 100);
   const end = code.length > 100 ? code.slice(-100) : "";
   return `${language}:${code.length}:${start}:${end}`;
@@ -175,7 +175,7 @@ const getHighlighter = (
 };
 
 // Create raw tokens for immediate display while highlighting loads
-const createRawTokens = (code: string): TokenizedCode => ({
+export const createRawTokens = (code: string): TokenizedCode => ({
   bg: "transparent",
   fg: "inherit",
   tokens: code.split("\n").map((line) =>
@@ -191,7 +191,7 @@ const createRawTokens = (code: string): TokenizedCode => ({
 });
 
 // Synchronous highlight with callback for async results
-const highlightCode = (
+export const highlightCode = (
   code: string,
   language: BundledLanguage,
   // oxlint-disable-next-line eslint-plugin-promise(prefer-await-to-callbacks)

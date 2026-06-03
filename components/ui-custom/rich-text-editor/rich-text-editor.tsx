@@ -12,6 +12,7 @@ import {
 	applyMarkdownFormat,
 	type MarkdownFormatKind,
 } from "./markdown-format";
+import { MarkdownSourceEditor } from "./markdown-source-editor";
 import "./rich-text-editor.css";
 import {
 	RichTextEditorBubbleMenu,
@@ -224,17 +225,14 @@ export function RichTextEditor({
 					}
 				>
 				{isMarkdownMode ? (
-					<textarea
+					<MarkdownSourceEditor
 						ref={textareaRef}
-						className={cn(
-							"min-h-24 w-full resize-none bg-transparent font-mono text-sm leading-relaxed text-text outline-none field-sizing-content",
-							editorClassName,
-						)}
 						aria-label={`${ariaLabel ?? "Rich text editor"} Markdown source`}
 						data-rich-text-markdown-source
 						placeholder={placeholder}
+						textareaClassName="min-h-24"
 						value={markdownSource}
-						onChange={(event) => handleMarkdownSourceChange(event.target.value)}
+						onValueChange={handleMarkdownSourceChange}
 					/>
 				) : (
 					<EditorContent editor={editor} />

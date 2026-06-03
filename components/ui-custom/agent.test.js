@@ -888,8 +888,8 @@ test("Markdown source mode round-trips through the shared editor", () => {
 		RICH_TEXT_EDITOR_SOURCE,
 		/editor\.commands\.setContent\(markdownSource, \{[\s\S]*contentType: "markdown",[\s\S]*emitUpdate: false/u,
 	);
-	// Source mode renders an editable textarea instead of EditorContent.
-	assert.match(RICH_TEXT_EDITOR_SOURCE, /isMarkdownMode \? \(\s*<textarea/u);
+	// Source mode renders the syntax-highlighted Markdown source editor instead of EditorContent.
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /isMarkdownMode \? \(\s*<MarkdownSourceEditor/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /data-rich-text-markdown-source/u);
 	// The parent stays live-synced while editing source.
 	assert.match(

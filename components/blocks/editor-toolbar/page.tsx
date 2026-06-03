@@ -6,6 +6,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import { EditorToolbar } from "@/components/blocks/editor-toolbar";
 import { createRichTextEditorExtensions } from "@/components/ui-custom/rich-text-editor";
+import { MarkdownSourceEditor } from "@/components/ui-custom/rich-text-editor/markdown-source-editor";
 import {
 	applyMarkdownFormat,
 	type MarkdownFormatKind,
@@ -114,12 +115,12 @@ export default function EditorToolbarPage({
 			) : null}
 			<div className="rich-text-editor-content rounded-md bg-surface-sunken p-3">
 				{isMarkdownMode ? (
-					<textarea
+					<MarkdownSourceEditor
 						ref={textareaRef}
 						aria-label="Editor toolbar demo Markdown source"
-						className="min-h-24 w-full resize-none bg-transparent font-mono text-sm leading-relaxed text-text outline-none field-sizing-content"
+						textareaClassName="min-h-24"
 						value={markdownSource}
-						onChange={(event) => handleMarkdownSourceChange(event.target.value)}
+						onValueChange={handleMarkdownSourceChange}
 					/>
 				) : editor ? (
 					<EditorContent editor={editor} />
