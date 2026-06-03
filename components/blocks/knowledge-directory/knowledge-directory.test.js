@@ -90,6 +90,8 @@ test("Knowledge Directory includes real connector defaults", () => {
 	assert.match(source, /name: "Microsoft SharePoint"/u);
 	assert.match(source, /name: "GitHub"/u);
 	assert.match(source, /name: "Loom"/u);
+	assert.match(source, /visual: \{ kind: "logo", logoName: "confluence" \}/u);
+	assert.match(source, /visual: \{ kind: "image", shape: "square", src: "\/3p\/google-drive\/20\.svg" \}/u);
 	assert.match(source, /contents: \[/u);
 });
 

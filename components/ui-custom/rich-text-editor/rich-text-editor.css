@@ -538,38 +538,52 @@
 	display: inline-flex;
 	max-width: 100%;
 	align-items: center;
+	gap: 4px;
 	vertical-align: baseline;
 	border: 1px solid var(--ds-border, #dfe1e6);
 	border-radius: var(--ds-radius-small, 3px);
 	background-color: var(--ds-background-neutral, #091e420f);
-	padding: 0 5px;
-	color: var(--ds-text-subtle, #44546f);
+	padding: 1px 5px 1px 2px;
+	color: var(--ds-text, #172b4d);
 	font-size: 0.9em;
 	font-weight: 600;
 	line-height: 1.5;
 	white-space: nowrap;
 }
 
-.rich-text-mention::before {
-	content: "@";
-	margin-right: 2px;
+.rich-text-mention-trigger {
+	margin-left: 3px;
+	color: var(--ds-text-subtle, #44546f);
 	opacity: 0.72;
 }
 
-.rich-text-mention[data-mention-category="skill"] {
-	border-color: var(--ds-border-accent-purple, #8270db);
-	background-color: var(--ds-background-accent-purple-subtlest, #f3f0ff);
-	color: var(--ds-text-accent-purple, #5e4db2);
+.rich-text-mention-visual {
+	display: inline-flex;
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	border-radius: var(--ds-radius-small, 3px);
 }
 
-.rich-text-mention[data-mention-category="knowledge"] {
-	border-color: var(--ds-border-accent-blue, #1d7afc);
-	background-color: var(--ds-background-accent-blue-subtlest, #e9f2ff);
-	color: var(--ds-text-accent-blue, #0c66e4);
+.rich-text-mention-visual[data-visual-shape="circle"] {
+	border-radius: 999px;
 }
 
-.rich-text-mention[data-mention-category="tool"] {
-	border-color: var(--ds-border-accent-green, #4bce97);
-	background-color: var(--ds-background-accent-green-subtlest, #dcfff1);
-	color: var(--ds-text-accent-green, #216e4e);
+.rich-text-mention-visual[data-visual-shape="hexagon"] {
+	clip-path: polygon(45% 1.34%,46.58% 0.6%,48.26% 0.15%,50% 0%,51.74% 0.15%,53.42% 0.6%,55% 1.34%,89.64% 21.34%,91.07% 22.34%,92.3% 23.57%,93.3% 25%,94.04% 26.58%,94.49% 28.26%,94.64% 30%,94.64% 70%,94.49% 71.74%,94.04% 73.42%,93.3% 75%,92.3% 76.43%,91.07% 77.66%,89.64% 78.66%,55% 98.66%,53.42% 99.4%,51.74% 99.85%,50% 100%,48.26% 99.85%,46.58% 99.4%,45% 98.66%,10.36% 78.66%,8.93% 77.66%,7.7% 76.43%,6.7% 75%,5.96% 73.42%,5.51% 71.74%,5.36% 70%,5.36% 30%,5.51% 28.26%,5.96% 26.58%,6.7% 25%,7.7% 23.57%,8.93% 22.34%,10.36% 21.34%);
+}
+
+.rich-text-mention-visual > img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+.rich-text-mention-label {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }

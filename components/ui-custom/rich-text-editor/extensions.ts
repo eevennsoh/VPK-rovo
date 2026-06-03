@@ -19,7 +19,14 @@ import { Markdown } from "@tiptap/markdown";
 import { PluginKey } from "@tiptap/pm/state";
 import { Suggestion } from "@tiptap/suggestion";
 import StarterKit from "@tiptap/starter-kit";
+import { ReactNodeViewRenderer } from "@tiptap/react";
 
+import { RichTextMentionNodeView } from "./mention-node-view";
+import {
+	getRichTextMentionVisualAttrs,
+	getRichTextMentionVisualDOMSpec,
+	getRichTextMentionVisualFromAttrs,
+} from "./mention-visual";
 import {
 	createMentionSuggestionRenderer,
 	createSlashSuggestionRenderer,
@@ -31,6 +38,77 @@ import type {
 } from "./types";
 
 const slashCommandPluginKey = new PluginKey("rich-text-slash-command");
+
+function getMentionCategory(id: unknown): string {
+	if (typeof id !== "string") {
+		return "context";
+	}
+
+	return id.split(":")[0] || "context";
+}
+
+function getMentionNodeAttrs(mention: RichTextMentionItem) {
+	return {
+		category: mention.category,
+		id: mention.id,
+		label: mention.label,
+		mentionSuggestionChar: "@",
+		...getRichTextMentionVisualAttrs(mention.visual),
+	};
+}
+
+const RichTextMention = Mention.extend({
+	addAttributes() {
+		return {
+			...(this.parent?.() ?? {}),
+			category: {
+				default: null,
+				parseHTML: (element: HTMLElement) => element.getAttribute("data-mention-category"),
+				renderHTML: (attributes: Record<string, unknown>) => (
+					attributes.category ? { "data-mention-category": attributes.category } : {}
+				),
+			},
+			visualIconKey: {
+				default: null,
+				parseHTML: (element: HTMLElement) => element.getAttribute("data-visual-icon-key"),
+				renderHTML: (attributes: Record<string, unknown>) => (
+					attributes.visualIconKey ? { "data-visual-icon-key": attributes.visualIconKey } : {}
+				),
+			},
+			visualKind: {
+				default: null,
+				parseHTML: (element: HTMLElement) => element.getAttribute("data-visual-kind"),
+				renderHTML: (attributes: Record<string, unknown>) => (
+					attributes.visualKind ? { "data-visual-kind": attributes.visualKind } : {}
+				),
+			},
+			visualLogoName: {
+				default: null,
+				parseHTML: (element: HTMLElement) => element.getAttribute("data-visual-logo-name"),
+				renderHTML: (attributes: Record<string, unknown>) => (
+					attributes.visualLogoName ? { "data-visual-logo-name": attributes.visualLogoName } : {}
+				),
+			},
+			visualShape: {
+				default: null,
+				parseHTML: (element: HTMLElement) => element.getAttribute("data-visual-shape"),
+				renderHTML: (attributes: Record<string, unknown>) => (
+					attributes.visualShape ? { "data-visual-shape": attributes.visualShape } : {}
+				),
+			},
+			visualSrc: {
+				default: null,
+				parseHTML: (element: HTMLElement) => element.getAttribute("data-visual-src"),
+				renderHTML: (attributes: Record<string, unknown>) => (
+					attributes.visualSrc ? { "data-visual-src": attributes.visualSrc } : {}
+				),
+			},
+		};
+	},
+	addNodeView() {
+		return ReactNodeViewRenderer(RichTextMentionNodeView);
+	},
+});
 
 const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 	name: "slashCommand",
@@ -54,11 +132,7 @@ const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 							.insertContentAt(range, [
 								{
 									type: "mention",
-									attrs: {
-										id: props.mention.id,
-										label: props.mention.label,
-										mentionSuggestionChar: "@",
-									},
+									attrs: getMentionNodeAttrs(props.mention),
 								},
 								{ type: "text", text: " " },
 							])
@@ -74,14 +148,6 @@ const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 		];
 	},
 });
-
-function getMentionCategory(id: unknown): string {
-	if (typeof id !== "string") {
-		return "context";
-	}
-
-	return id.split(":")[0] || "context";
-}
 
 export function createRichTextEditorExtensions(
 	options: RichTextEditorExtensionOptions = {},
@@ -127,7 +193,7 @@ export function createRichTextEditorExtensions(
 		TableRow,
 		TableHeader,
 		TableCell,
-		Mention.configure({
+		RichTextMention.configure({
 			HTMLAttributes: {
 				class: "rich-text-mention",
 			},
@@ -138,11 +204,22 @@ export function createRichTextEditorExtensions(
 				mergeAttributes(
 					mentionOptions.HTMLAttributes,
 					{
-						"data-mention-category": getMentionCategory(node.attrs.id),
+						"data-mention-category": node.attrs.category ?? getMentionCategory(node.attrs.id),
 						"data-type": "mention",
 					},
 				),
-				node.attrs.label ?? node.attrs.id,
+				...[
+					getRichTextMentionVisualDOMSpec(getRichTextMentionVisualFromAttrs(node.attrs)) ?? [
+						"span",
+						{ "aria-hidden": "true", class: "rich-text-mention-trigger" },
+						"@",
+					],
+					[
+						"span",
+						{ class: "rich-text-mention-label" },
+						node.attrs.label ?? node.attrs.id,
+					],
+				],
 			],
 			suggestion: {
 				char: "@",
@@ -155,11 +232,7 @@ export function createRichTextEditorExtensions(
 						.insertContentAt(range, [
 							{
 								type: "mention",
-								attrs: {
-									id: mention.id,
-									label: mention.label,
-									mentionSuggestionChar: "@",
-								},
+								attrs: getMentionNodeAttrs(mention),
 							},
 							{ type: "text", text: " " },
 						])

@@ -40,6 +40,14 @@ const RICH_TEXT_EXTENSIONS_SOURCE = readFileSync(
 	join(__dirname, "rich-text-editor", "extensions.ts"),
 	"utf8",
 );
+const RICH_TEXT_MENTION_NODE_VIEW_SOURCE = readFileSync(
+	join(__dirname, "rich-text-editor", "mention-node-view.tsx"),
+	"utf8",
+);
+const RICH_TEXT_MENTION_VISUAL_SOURCE = readFileSync(
+	join(__dirname, "rich-text-editor", "mention-visual.tsx"),
+	"utf8",
+);
 const RICH_TEXT_SUGGESTION_SOURCE = readFileSync(
 	join(__dirname, "rich-text-editor", "suggestion-menu.tsx"),
 	"utf8",
@@ -183,9 +191,9 @@ test("Agent config updates instructions as markdown strings", () => {
 		AGENT_SOURCE,
 		/onInstructionsChange=\{\(value\) => handleTextChange\("instructions", value\)\}/u,
 	);
-	assert.match(AGENT_SOURCE, /fetch\("\/api\/skills"/u);
 	assert.match(AGENT_SOURCE, /fetch\("\/api\/wiki\/memory-explorer"/u);
-	assert.match(AGENT_SOURCE, /toMentionId\("skill"/u);
+	assert.doesNotMatch(AGENT_SOURCE, /fetch\("\/api\/skills"/u);
+	assert.doesNotMatch(AGENT_SOURCE, /mapSkillsToMentionItems/u);
 	assert.match(AGENT_SOURCE, /toMentionId\("knowledge"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /getHTML\(/u);
 	assert.doesNotMatch(AGENT_SOURCE, /instructionsHtml|richInstructions/u);
@@ -196,10 +204,11 @@ test("Agent config syncs reference mentions with selected panel values", () => {
 	assert.match(AGENT_SOURCE, /const AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY: Record<RichTextReferenceCategory, AgentConfigReferenceListFieldName>/u);
 	assert.match(AGENT_SOURCE, /const AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD: Record<AgentConfigReferenceListFieldName, RichTextReferenceCategory>/u);
 	assert.match(AGENT_SOURCE, /function mapConfigValuesToMentionItems\(/u);
-	assert.match(AGENT_SOURCE, /subagent: mapConfigValuesToMentionItems\("subagent", config\.subagents\)/u);
-	assert.match(AGENT_SOURCE, /skill: mergeMentionItems\(mapConfigValuesToMentionItems\("skill", config\.skills\), skills\)/u);
-	assert.match(AGENT_SOURCE, /tool: mapConfigValuesToMentionItems\("tool", config\.tools\)/u);
-	assert.match(AGENT_SOURCE, /knowledge: mergeMentionItems\(mapConfigValuesToMentionItems\("knowledge", config\.knowledge\), knowledge\)/u);
+	assert.match(AGENT_SOURCE, /getDirectoryMentionItemOrFallback\(category, value\)/u);
+	assert.match(AGENT_SOURCE, /subagent: mergeMentionItems\([\s\S]*mapConfigValuesToMentionItems\("subagent", config\.subagents\),[\s\S]*EDITOR_PALETTE_MENTION_SOURCES\.subagent/u);
+	assert.match(AGENT_SOURCE, /skill: mergeMentionItems\([\s\S]*mapConfigValuesToMentionItems\("skill", config\.skills\),[\s\S]*EDITOR_PALETTE_MENTION_SOURCES\.skill[\s\S]*\),/u);
+	assert.match(AGENT_SOURCE, /tool: mergeMentionItems\([\s\S]*mapConfigValuesToMentionItems\("tool", config\.tools\),[\s\S]*EDITOR_PALETTE_MENTION_SOURCES\.tool/u);
+	assert.match(AGENT_SOURCE, /knowledge: mergeMentionItems\([\s\S]*mapConfigValuesToMentionItems\("knowledge", config\.knowledge\),[\s\S]*EDITOR_PALETTE_MENTION_SOURCES\.knowledge,[\s\S]*knowledge/u);
 	assert.match(AGENT_SOURCE, /onAddListValues\?: \(field: AgentConfigReferenceListFieldName, values: readonly string\[\]\) => void;/u);
 	assert.match(AGENT_SOURCE, /setMentionRemovalRequest\(\{[\s\S]*category: AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD\[field\][\s\S]*label: removedValue/u);
 	assert.match(AGENT_SOURCE, /const handleRemoveReferenceValue = useCallback\(\(field: AgentConfigReferenceListFieldName, value: string\) => \{[\s\S]*onRemoveListItem\?\.\(field, index\);/u);
@@ -229,13 +238,30 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	}
 
 	assert.match(AGENT_SOURCE, /function AgentReferenceChip/u);
+	assert.match(AGENT_SOURCE, /getDirectoryMentionItemOrFallback\(category, label\)/u);
+	assert.match(AGENT_SOURCE, /<RichTextMentionVisualMark/u);
+	assert.match(AGENT_SOURCE, /type=\{getRichTextMentionTagType\(visual\)\}/u);
 	assert.match(AGENT_SOURCE, /removeVariant="overlay"/u);
-	assert.match(AGENT_SOURCE, /function AgentSkillChip\(\{ label, onRemove \}/u);
-	assert.match(AGENT_SOURCE, /onRemove=\{onRemove\}[\s\S]*removeVariant="overlay"[\s\S]*removeButtonLabel=\{`Remove \$\{label\}`\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /function AgentSkillChip/u);
+	assert.match(AGENT_SOURCE, /onRemove=\{onRemove\}[\s\S]*removeButtonLabel=\{`Remove \$\{label\}`\}[\s\S]*removeVariant="overlay"/u);
+	for (const [rowLabel, category] of [
+		["Knowledge", "knowledge"],
+		["Tools", "tool"],
+		["Skills", "skill"],
+		["Subagents", "subagent"],
+	]) {
+		assert.match(
+			AGENT_SOURCE,
+			new RegExp(`label="${rowLabel}"[\\s\\S]*referenceCategory="${category}"`, "u"),
+		);
+	}
 	for (const field of ["triggers", "skills", "tools", "subagents", "knowledge", "conversationStarters"]) {
 		assert.match(AGENT_SOURCE, new RegExp(`onRemoveListItem\\("${field}", index\\)`, "u"));
 	}
 	assert.match(TAG_SOURCE, /group\/tag relative inline-flex/u);
+	assert.match(TAG_SOURCE, /hasAvatarTagStyles\s*\?\s*cn\("h-5 gap-1 py-0 ps-0\.5"/u);
+	assert.doesNotMatch(TAG_SOURCE, /hasAvatarTagStyles\s*\?\s*cn\("h-6/u);
+	assert.match(TAG_SOURCE, /hasAvatarTagStyles \? cn\("size-5 overflow-hidden border border-transparent -ml-px \[&>\*\]:size-full"\)/u);
 	assert.match(TAG_SOURCE, /group-hover\/tag:opacity-100/u);
 	assert.doesNotMatch(TAG_SOURCE, /group-hover:opacity-100/u);
 	assert.match(SKILL_TAG_SOURCE, /removeVariant\?: "inline" \| "overlay";/u);
@@ -363,7 +389,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// Every list-field row keeps a persistent +Add link. Directory-backed
 	// fields open their directory first and fall back to onAppendListItem when no
 	// directory opener is supplied.
-	assert.match(AGENT_SOURCE, /export type AgentDirectoryKind = "knowledge" \| "tools" \| "skills";/u);
+	assert.match(AGENT_SOURCE, /export type AgentDirectoryKind = "knowledge" \| "tools" \| "skills" \| "conversationStarters";/u);
 	assert.match(AGENT_SOURCE, /function openAgentDirectoryOrAppendListItem\([\s\S]*onOpenDirectory\?: \(directory: AgentDirectoryKind\) => void[\s\S]*onAppendListItem\?: \(field: AgentConfigListFieldName\) => void[\s\S]*onOpenDirectory\(directory\);[\s\S]*onAppendListItem\?\.\(field\);/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("triggers", triggerItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("skills", skillItems\.length === 0, showAddButtons\)\}/u);
@@ -375,7 +401,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /label="Tools"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("tools", "tools", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Subagents"\s+onAdd=\{\(\) => onAppendListItem\?\.\("subagents"\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Knowledge"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("knowledge", "knowledge", onOpenDirectory, onAppendListItem\)\}/u);
-	assert.match(AGENT_SOURCE, /label="Conversation starters"\s+onAdd=\{\(\) => onAppendListItem\?\.\("conversationStarters"\)\}/u);
+	assert.match(AGENT_SOURCE, /label="Conversation starters"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("conversationStarters", "conversationStarters", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactEmptyConfigNav/u);
 	assert.match(AGENT_SOURCE, /function getAgentCompactEmptyConfigNavItems/u);
 	assert.match(AGENT_SOURCE, /const items = getAgentCompactEmptyConfigNavItems\(config\);/u);
@@ -615,7 +641,16 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /Suggestion<RichTextSlashAction/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /char: "\/"/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /Mention\.configure/u);
+	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /const RichTextMention = Mention\.extend/u);
+	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /ReactNodeViewRenderer\(RichTextMentionNodeView\)/u);
+	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /getRichTextMentionVisualAttrs\(mention\.visual\)/u);
+	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /visualSrc/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /data-type": "mention"/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ Tag \} from "@\/components\/ui\/tag";/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /<NodeViewWrapper[\s\S]*as=\{Tag\}[\s\S]*elemBefore=\{visual \? \(/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /type=\{getRichTextMentionTagType\(visual\)\}/u);
+	assert.doesNotMatch(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /className="rich-text-mention"/u);
+	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /const logoSize = size === "menu" \? "small" : "xxsmall";/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /Markdown\.configure/u);
 });
 
@@ -645,8 +680,12 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.category === "team"[\s\S]*shape: "square"[\s\S]*TEAM_AVATAR_SRCS/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const AGENT_AVATAR_SRCS = \[[\s\S]*\/avatar-agent\/dev-agents\/code-planner\.svg/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.category === "subagent"[\s\S]*shape: "hexagon"[\s\S]*AGENT_AVATAR_SRCS/u);
-	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /const SKILL_METADATA: readonly Pick<RichTextMentionItem, "label" \| "description">\[\] = \[/u);
-	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /description: "Condense the active conversation into decisions and next steps\."/u);
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /import \{ DEMO_AGENT_BROWSER_AGENTS \} from "@\/components\/blocks\/agent-browser\/data\/demo-agents";/u);
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /import \{ DEFAULT_KNOWLEDGE_APPS \} from "@\/components\/blocks\/knowledge-directory\/data\/apps";/u);
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /DEFAULT_SKILLS\.map\(mapSkillToMentionItem\)/u);
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /\[\.\.\.DEMO_TOOLS, \.\.\.DEMO_SESSION_TOOLS\]\.map\(mapToolToMentionItem\)/u);
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /getDirectoryMentionItemOrFallback/u);
+	assert.doesNotMatch(EDITOR_PALETTE_MENTION_SOURCES, /SKILL_METADATA/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /getSlashCommandCategoryItems\(mentionSources\)/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /getMentionChildItems\(mentionSources, category\)/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /NESTED_MENTION_SHOWCASES/u);
@@ -722,12 +761,14 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item:hover \.rich-text-command-menu-description/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /rich-text-command-menu-title/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-title/u);
-	assert.match(AGENT_SOURCE, /toMentionId\("skill"/u);
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /toMentionId\("skill"/u);
 	assert.match(AGENT_SOURCE, /toMentionId\("knowledge"/u);
 
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-mention/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\[data-mention-category="skill"\]/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\[data-mention-category="knowledge"\]/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-mention-visual/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-mention-label/u);
+	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\[data-mention-category="skill"\]/u);
+	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\[data-mention-category="knowledge"\]/u);
 });
 
 test("Agent creation guidance asks for structured markdown instructions", () => {

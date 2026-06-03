@@ -6,6 +6,7 @@ import {
 	ConfluenceIcon,
 	LoomIcon,
 } from "@/components/ui/logo";
+import type { RichTextMentionVisual } from "@/components/ui-custom/rich-text-editor";
 
 export type KnowledgeDirectoryMode = "all" | "custom";
 
@@ -21,6 +22,7 @@ export interface KnowledgeDirectoryApp {
 	description: string;
 	providerName: string;
 	icon: ReactNode;
+	visual: RichTextMentionVisual;
 	contents: readonly KnowledgeDirectoryContent[];
 }
 
@@ -41,6 +43,7 @@ export const DEFAULT_KNOWLEDGE_APPS: readonly KnowledgeDirectoryApp[] = [
 		description: "Create, organize, and reuse rich pages, decisions, and project documentation.",
 		providerName: "Atlassian",
 		icon: <ConfluenceIcon label="" size="small" />,
+		visual: { kind: "logo", logoName: "confluence" },
 		contents: [
 			{ id: "product-requirements", name: "Product requirements", description: "Specs, goals, and release criteria across product spaces." },
 			{ id: "team-decisions", name: "Team decisions", description: "Decision logs and supporting context from project pages." },
@@ -54,6 +57,7 @@ export const DEFAULT_KNOWLEDGE_APPS: readonly KnowledgeDirectoryApp[] = [
 		description: "Connect shared documents, folders, spreadsheets, and team files from Drive.",
 		providerName: "Google",
 		icon: <ThirdPartyLogo src="/3p/google-drive/20.svg" />,
+		visual: { kind: "image", shape: "square", src: "/3p/google-drive/20.svg" },
 		contents: [
 			{ id: "strategy-folder", name: "Strategy folder", description: "Planning docs and team strategy materials." },
 			{ id: "research-notes", name: "Research notes", description: "Collaborative notes and interview synthesis." },
@@ -67,6 +71,7 @@ export const DEFAULT_KNOWLEDGE_APPS: readonly KnowledgeDirectoryApp[] = [
 		description: "Reuse channel conversations, shared decisions, and collaboration history.",
 		providerName: "Microsoft",
 		icon: <ThirdPartyLogo src="/3p/microsoft-teams/20.svg" />,
+		visual: { kind: "image", shape: "square", src: "/3p/microsoft-teams/20.svg" },
 		contents: [
 			{ id: "engineering-channel", name: "Engineering channel", description: "Implementation threads and technical decisions." },
 			{ id: "support-channel", name: "Support channel", description: "Customer issues, resolutions, and escalation notes." },
@@ -80,6 +85,7 @@ export const DEFAULT_KNOWLEDGE_APPS: readonly KnowledgeDirectoryApp[] = [
 		description: "Connect team sites, policies, and document libraries from SharePoint.",
 		providerName: "Microsoft",
 		icon: <ThirdPartyLogo src="/3p/microsoft-sharepoint/20.svg" />,
+		visual: { kind: "image", shape: "square", src: "/3p/microsoft-sharepoint/20.svg" },
 		contents: [
 			{ id: "policy-library", name: "Policy library", description: "Governance, security, and compliance documents." },
 			{ id: "team-site", name: "Team site", description: "Department resources and operating procedures." },
@@ -93,6 +99,7 @@ export const DEFAULT_KNOWLEDGE_APPS: readonly KnowledgeDirectoryApp[] = [
 		description: "Connect issues, pull requests, code discussions, and repository documentation.",
 		providerName: "GitHub",
 		icon: <ThirdPartyLogo src="/3p/github/20.svg" />,
+		visual: { kind: "image", shape: "square", src: "/3p/github/20.svg" },
 		contents: [
 			{ id: "repository-readme", name: "Repository README", description: "Project overview, setup, and contribution guidance." },
 			{ id: "open-issues", name: "Open issues", description: "Prioritized bug reports and feature requests." },
@@ -106,6 +113,7 @@ export const DEFAULT_KNOWLEDGE_APPS: readonly KnowledgeDirectoryApp[] = [
 		description: "Use recorded walkthroughs, async updates, and product demos as knowledge.",
 		providerName: "Atlassian",
 		icon: <LoomIcon label="" size="small" />,
+		visual: { kind: "logo", logoName: "loom" },
 		contents: [
 			{ id: "product-walkthroughs", name: "Product walkthroughs", description: "Recorded feature tours and demo flows." },
 			{ id: "customer-demos", name: "Customer demos", description: "Discovery calls and solution walkthroughs." },
