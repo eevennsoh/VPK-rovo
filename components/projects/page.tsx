@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { AnimatePresence } from "motion/react";
 import { token } from "@/lib/tokens";
 import TopNavigation from "@/components/blocks/top-navigation/page";
+import { TOP_NAV_HEADER_HEIGHT_PX } from "@/components/blocks/top-navigation/layout-constants";
 import Sidebar from "@/components/blocks/product-sidebar/page";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import type {
@@ -155,21 +156,25 @@ export default function AppLayout({
 	const showFloatingChat = !isEmbedded && !hideFloatingRovo && !shouldHideRovoAction && isFloatingChatActive;
 	const showFloatingRovoButton = !isEmbedded && !hideFloatingRovo && !shouldHideRovoAction;
 	const sidebarWidth = isEmbedded || !isVisible ? "0px" : "230px";
+	// The non-embedded shell reserves space for the sticky TopNavigation header
+	// bar (rendered as `variant="header"`). Keep this in lockstep with the bar's
+	// own height so the content area below it isn't pushed off-screen.
+	const headerOffset = `${TOP_NAV_HEADER_HEIGHT_PX}px`;
 	const shellViewportHeight = isEmbedded ? "100dvh" : "100vh";
-	const shellContentHeight = isEmbedded ? "100dvh" : "calc(100vh - 48px)";
+	const shellContentHeight = isEmbedded ? "100dvh" : `calc(100vh - ${headerOffset})`;
 	const shellStyle = {
 		minHeight: shellViewportHeight,
 		height: shellViewportHeight,
 		backgroundColor: token("color.background.neutral.subtle"),
 		overflow: "hidden",
 		"--vpk-project-shell-content-height": shellContentHeight,
-		"--vpk-project-shell-top-offset": isEmbedded ? "0px" : "48px",
+		"--vpk-project-shell-top-offset": isEmbedded ? "0px" : headerOffset,
 	} as React.CSSProperties;
 
 	return (
 		<div style={shellStyle}>
 			<div data-shell-chrome="">
-				{!isEmbedded ? <TopNavigation product={product} hideRovoAction={shouldHideRovoAction} /> : null}
+				{!isEmbedded ? <TopNavigation product={product} variant="header" hideRovoAction={shouldHideRovoAction} /> : null}
 			</div>
 
 			<div style={{ display: "flex", height: shellContentHeight, position: "relative" }}>

@@ -23,6 +23,7 @@ import {
 	ROVO_APP_SIDEBAR_MAX_WIDTH_PX,
 	ROVO_APP_SIDEBAR_MIN_WIDTH_PX,
 	TOP_NAV_HEADER_HEIGHT_PX,
+	TOP_NAV_LEFT_SECTION_WIDTH_PX,
 	TOP_NAV_PADDING_PX,
 	TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX,
 	TOP_NAV_SEARCH_ICON_BREAKPOINT_PX,
@@ -43,6 +44,19 @@ interface TopNavigationProps {
 	 * Ask Rovo in the right cluster, so the standalone block demo opts in.
 	 */
 	forceShowRovoAction?: boolean;
+	/**
+	 * Rendering mode.
+	 *
+	 * - `"shell"` (default): full studio application shell — owns its own
+	 *   resizable `StudioSidebar`, a 56px header, and a placeholder body. Used by
+	 *   the standalone top-navigation block demo.
+	 * - `"header"`: header bar only (no `StudioSidebar`, no `h-svh` wrapper, no
+	 *   placeholder body). Renders in normal flow as a 56px sticky bar so a host
+	 *   layout (e.g. `AppLayout`) can supply its own sidebar + content beneath it.
+	 *   The sidebar toggle drives the shared `context-sidebar` instead of a
+	 *   private shell state.
+	 */
+	variant?: "shell" | "header";
 }
 
 /**
@@ -60,6 +74,7 @@ export default function TopNavigation({
 	showSearch = true,
 	hideRovoAction = false,
 	forceShowRovoAction = false,
+	variant = "shell",
 }: Readonly<TopNavigationProps>) {
 	const nav = useTopNavigation();
 
@@ -111,6 +126,136 @@ export default function TopNavigation({
 	const headerHeightStyle: CSSProperties = {
 		height: `${TOP_NAV_HEADER_HEIGHT_PX}px`,
 	};
+
+	// Middle zone (search + Create) and right cluster (Ask Rovo, notifications,
+	// help, settings, avatar) are identical across variants — define once and
+	// reuse in both the standalone shell and the embedded header bar.
+	const middleZone = (
+		<div
+			className={cn(
+				"flex min-w-0 flex-1 items-center gap-2",
+				centerSearch ? "justify-center" : "justify-start",
+			)}
+		>
+			{showSearch ? (
+				showSearchField ? (
+					<div
+						ref={nav.searchContainerRef}
+						className="relative flex h-9 min-w-0 grow items-center"
+						style={{
+							// Preferred width is the min; the search grows to the cap when
+							// there's room and shrinks below the preferred width under
+							// pressure (narrow pinned viewports) so it absorbs the squeeze
+							// instead of clipping the right cluster off-screen.
+							flexBasis: `${TOP_NAV_SEARCH_MIN_WIDTH_PX}px`,
+							maxWidth: `${TOP_NAV_SEARCH_MAX_WIDTH_PX}px`,
+						}}
+					>
+						<InputGroup
+							className={cn(
+								"h-8 origin-center rounded-md bg-bg-input shadow-none transition-[transform,background-color,box-shadow] duration-medium ease-out hover:bg-bg-input-hovered",
+								"has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0",
+								nav.isSearchFocused && "relative z-[1001] scale-y-[1.15]",
+							)}
+							style={
+								nav.isSearchFocused
+									? {
+											backgroundColor: token("elevation.surface.overlay"),
+											boxShadow: token("elevation.shadow.overlay"),
+										}
+									: undefined
+							}
+						>
+							<InputGroupAddon align="inline-start">
+								<span className="size-4 shrink-0 text-icon-subtle">
+									<SearchIcon label="" spacing="none" />
+								</span>
+							</InputGroupAddon>
+							<InputGroupInput
+								type="search"
+								aria-label="Search"
+								autoFocus={isSearchIconExpanded}
+								value={nav.searchValue}
+								onChange={(event) => nav.setSearchValue(event.currentTarget.value)}
+								onFocus={nav.handleFocusSearch}
+								onKeyDown={nav.handleSearchKeyDown}
+								placeholder="Search"
+								className="h-full text-sm placeholder:text-sm [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden [&::-webkit-search-results-decoration]:hidden"
+							/>
+						</InputGroup>
+						<SearchSuggestionsPanel
+							anchorRef={nav.searchContainerRef}
+							isVisible={nav.isSearchFocused}
+							onSearchAllApps={nav.handleSearchAllApps}
+							onRecentItemClick={nav.handleRecentItemClick}
+							onRecentSearchClick={nav.handleRecentSearchClick}
+							panelRef={nav.searchPanelRef}
+						/>
+					</div>
+				) : (
+					<Button
+						aria-label="Search"
+						size="icon"
+						variant="ghost"
+						onClick={handleExpandSearchIcon}
+					>
+						<SearchIcon label="" color={token("color.icon.subtle")} />
+					</Button>
+				)
+			) : null}
+
+			<CreateButton />
+		</div>
+	);
+
+	const rightCluster = (
+		<RightNavigation
+			product={product}
+			windowWidth={nav.windowWidth}
+			hideRovoAction={hideRovoAction}
+			forceShowRovoAction={forceShowRovoAction}
+			isChatOpen={nav.isSidebarChatOpen}
+			onToggleChat={nav.toggleChat}
+		/>
+	);
+
+	// Header-only variant: a 56px sticky bar in normal flow. The host layout
+	// (e.g. `AppLayout`) supplies the sidebar + content beneath it, so the
+	// left chrome lives inline in the bar and the sidebar toggle drives the
+	// shared `context-sidebar` (via `nav.toggleSidebar`/`nav.isVisible`).
+	if (variant === "header") {
+		return (
+			<header
+				className="flex shrink-0 items-center gap-2 border-b px-3"
+				style={{
+					...headerHeightStyle,
+					position: "sticky",
+					top: 0,
+					zIndex: 100,
+					borderColor: token("color.border"),
+					backgroundColor: token("elevation.surface"),
+				}}
+			>
+				<div style={{ flex: "0 1 auto", minWidth: 0 }}>
+					<LeftNavigation
+						product={product}
+						windowWidth={nav.windowWidth}
+						isVisible={nav.isVisible}
+						isAppSwitcherOpen={nav.isAppSwitcherOpen}
+						separatorLineOffsetPx={TOP_NAV_LEFT_SECTION_WIDTH_PX - TOP_NAV_PADDING_PX}
+						onToggleSidebar={nav.toggleSidebar}
+						onToggleAppSwitcher={nav.handleToggleAppSwitcher}
+						onCloseAppSwitcher={nav.handleCloseAppSwitcher}
+						onNavigate={nav.handleNavigate}
+						onHoverEnter={nav.handleHoverEnter}
+						onHoverLeave={nav.handleHoverLeave}
+					/>
+				</div>
+				{middleZone}
+				{rightCluster}
+			</header>
+		);
+	}
 
 	return (
 		<SidebarProvider
@@ -189,91 +334,8 @@ export default function TopNavigation({
 						viewTransitionName: "persistent-header" as never,
 					}}
 				>
-					{/* Middle zone: search + Create. Centered at wide widths, left at narrow. */}
-					<div
-						className={cn(
-							"flex min-w-0 flex-1 items-center gap-2",
-							centerSearch ? "justify-center" : "justify-start",
-						)}
-					>
-						{showSearch ? (
-							showSearchField ? (
-								<div
-									ref={nav.searchContainerRef}
-									className="relative flex h-9 min-w-0 grow items-center"
-									style={{
-										// Preferred width is the min; the search grows to the cap when
-										// there's room and shrinks below the preferred width under
-										// pressure (narrow pinned viewports) so it absorbs the squeeze
-										// instead of clipping the right cluster off-screen.
-										flexBasis: `${TOP_NAV_SEARCH_MIN_WIDTH_PX}px`,
-										maxWidth: `${TOP_NAV_SEARCH_MAX_WIDTH_PX}px`,
-									}}
-								>
-									<InputGroup
-										className={cn(
-											"h-8 origin-center rounded-md bg-bg-input shadow-none transition-[transform,background-color,box-shadow] duration-medium ease-out hover:bg-bg-input-hovered",
-											"has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0",
-											nav.isSearchFocused && "relative z-[1001] scale-y-[1.15]",
-										)}
-										style={
-											nav.isSearchFocused
-												? {
-														backgroundColor: token("elevation.surface.overlay"),
-														boxShadow: token("elevation.shadow.overlay"),
-													}
-												: undefined
-										}
-									>
-										<InputGroupAddon align="inline-start">
-											<span className="size-4 shrink-0 text-icon-subtle">
-												<SearchIcon label="" spacing="none" />
-											</span>
-										</InputGroupAddon>
-										<InputGroupInput
-											type="search"
-											aria-label="Search"
-											autoFocus={isSearchIconExpanded}
-											value={nav.searchValue}
-											onChange={(event) => nav.setSearchValue(event.currentTarget.value)}
-											onFocus={nav.handleFocusSearch}
-											onKeyDown={nav.handleSearchKeyDown}
-											placeholder="Search"
-											className="h-full text-sm placeholder:text-sm [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden [&::-webkit-search-results-decoration]:hidden"
-										/>
-									</InputGroup>
-									<SearchSuggestionsPanel
-										anchorRef={nav.searchContainerRef}
-										isVisible={nav.isSearchFocused}
-										onSearchAllApps={nav.handleSearchAllApps}
-										onRecentItemClick={nav.handleRecentItemClick}
-										onRecentSearchClick={nav.handleRecentSearchClick}
-										panelRef={nav.searchPanelRef}
-									/>
-								</div>
-							) : (
-								<Button
-									aria-label="Search"
-									size="icon"
-									variant="ghost"
-									onClick={handleExpandSearchIcon}
-								>
-									<SearchIcon label="" color={token("color.icon.subtle")} />
-								</Button>
-							)
-						) : null}
-
-						<CreateButton />
-					</div>
-
-					<RightNavigation
-						product={product}
-						windowWidth={nav.windowWidth}
-						hideRovoAction={hideRovoAction}
-						forceShowRovoAction={forceShowRovoAction}
-						isChatOpen={nav.isSidebarChatOpen}
-						onToggleChat={nav.toggleChat}
-					/>
+					{middleZone}
+					{rightCluster}
 				</div>
 
 				{/* Placeholder content area so the chrome has a body to frame. */}
