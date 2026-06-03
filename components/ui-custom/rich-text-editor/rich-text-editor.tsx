@@ -4,7 +4,14 @@ import type { ComponentProps, CSSProperties, ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { EditorContent, useEditor } from "@tiptap/react";
+import { mermaid } from "@streamdown/mermaid";
+import { Streamdown } from "streamdown";
 
+import {
+	buildAgentDataFlowMermaid,
+	isValidAgentDataFlowMermaid,
+	type StudioAgentDataFlowConfig,
+} from "@/lib/studio-agent-data-flow";
 import { cn } from "@/lib/utils";
 
 import { createRichTextEditorExtensions } from "./extensions";
@@ -19,14 +26,17 @@ import {
 	RichTextEditorFloatingMenu,
 	RichTextEditorToolbar,
 } from "./toolbar";
-import type { EditorToolbarInsertReferenceCategory } from "@/components/blocks/editor-toolbar";
+import type { EditorToolbarInsertReferenceCategory, EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import type { RichTextMentionSources } from "./types";
+
+const dataFlowStreamdownPlugins = { mermaid };
 
 interface RichTextEditorProps
 	extends Omit<ComponentProps<"div">, "onChange"> {
 	value?: string;
 	placeholder?: string;
 	placeholderSlot?: ReactNode;
+	dataFlowConfig?: StudioAgentDataFlowConfig;
 	editorClassName?: string;
 	contentClassName?: string;
 	toolbarEndSlot?: ReactNode;
@@ -46,10 +56,43 @@ function toCssString(value: string): string {
 	return JSON.stringify(value);
 }
 
+function DataFlowDiagramView({
+	isRefining,
+	mermaidCode,
+}: Readonly<{
+	isRefining: boolean;
+	mermaidCode: string;
+}>) {
+	const mermaidMarkdown = ["```mermaid", mermaidCode.trim(), "```"].join("\n");
+
+	return (
+		<div
+			className="rounded-lg border border-border bg-surface-overlay p-3 text-sm text-text"
+			data-rich-text-data-flow-diagram
+		>
+			<div className="mb-2 flex min-h-5 items-center justify-between gap-3 text-xs text-text-subtle">
+				<span>Agent data flow</span>
+				{isRefining ? (
+					<span aria-live="polite">Refining diagram...</span>
+				) : null}
+			</div>
+			<Streamdown
+				className="[&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_[data-streamdown=mermaid-block]]:overflow-hidden [&_[data-streamdown=mermaid-block]]:rounded-md [&_[data-streamdown=mermaid-block]]:border [&_[data-streamdown=mermaid-block]]:border-border"
+				controls
+				mode="static"
+				plugins={dataFlowStreamdownPlugins}
+			>
+				{mermaidMarkdown}
+			</Streamdown>
+		</div>
+	);
+}
+
 export function RichTextEditor({
 	value,
 	placeholder,
 	placeholderSlot,
+	dataFlowConfig,
 	className,
 	editorClassName,
 	contentClassName,
@@ -71,8 +114,16 @@ export function RichTextEditor({
 	const onPlainTextChangeRef = useRef(onPlainTextChange);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const [isEmpty, setIsEmpty] = useState(() => !value?.trim());
-	const [isMarkdownMode, setIsMarkdownMode] = useState(false);
+	const [viewMode, setViewMode] = useState<EditorToolbarViewMode>("rendered");
 	const [markdownSource, setMarkdownSource] = useState("");
+	const baselineDataFlowMermaid = useMemo(
+		() => dataFlowConfig ? buildAgentDataFlowMermaid(dataFlowConfig) : "",
+		[dataFlowConfig],
+	);
+	const [dataFlowMermaid, setDataFlowMermaid] = useState(baselineDataFlowMermaid);
+	const [isRefiningDataFlow, setIsRefiningDataFlow] = useState(false);
+	const isMarkdownMode = viewMode === "markdown";
+	const isDataFlowMode = viewMode === "data-flow";
 	const extensions = useMemo(
 		() => createRichTextEditorExtensions({
 			getMentionSources: () => mentionSourcesRef.current,
@@ -128,23 +179,91 @@ export function RichTextEditor({
 		setIsEmpty(!nextValue.trim());
 	}, [editor, value]);
 
-	function handleToggleMarkdownMode(): void {
+	useEffect(() => {
+		setDataFlowMermaid(baselineDataFlowMermaid);
+	}, [baselineDataFlowMermaid]);
+
+	useEffect(() => {
+		if (!isDataFlowMode || !dataFlowConfig || !baselineDataFlowMermaid) {
+			setIsRefiningDataFlow(false);
+			return;
+		}
+
+		const abortController = new AbortController();
+		const timeoutId = window.setTimeout(() => {
+			setIsRefiningDataFlow(true);
+			void fetch("/api/studio/agent-data-flow", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					config: dataFlowConfig,
+					baselineMermaid: baselineDataFlowMermaid,
+				}),
+				signal: abortController.signal,
+			})
+				.then(async (response) => {
+					if (!response.ok) {
+						return null;
+					}
+					return await response.json() as { mermaid?: unknown };
+				})
+				.then((payload) => {
+					const refinedMermaid = typeof payload?.mermaid === "string"
+						? payload.mermaid
+						: "";
+					if (isValidAgentDataFlowMermaid(refinedMermaid)) {
+						setDataFlowMermaid(refinedMermaid.trim());
+					}
+				})
+				.catch((error) => {
+					if (error instanceof DOMException && error.name === "AbortError") {
+						return;
+					}
+				})
+				.finally(() => {
+					if (!abortController.signal.aborted) {
+						setIsRefiningDataFlow(false);
+					}
+				});
+		}, 500);
+
+		return () => {
+			window.clearTimeout(timeoutId);
+			abortController.abort();
+			setIsRefiningDataFlow(false);
+		};
+	}, [baselineDataFlowMermaid, dataFlowConfig, isDataFlowMode]);
+
+	function handleModeChange(nextMode: EditorToolbarViewMode): void {
 		if (!editor) {
 			return;
 		}
 
-		if (isMarkdownMode) {
+		if (viewMode === nextMode) {
+			return;
+		}
+
+		if (isMarkdownMode && nextMode !== "markdown") {
 			editor.commands.setContent(markdownSource, {
 				contentType: "markdown",
 				emitUpdate: false,
 			});
 			setIsEmpty(!markdownSource.trim());
-			setIsMarkdownMode(false);
+			setViewMode(nextMode);
 			return;
 		}
 
-		setMarkdownSource(editor.getMarkdown());
-		setIsMarkdownMode(true);
+		if (nextMode === "markdown") {
+			setMarkdownSource(editor.getMarkdown());
+		}
+
+		setViewMode(nextMode);
+	}
+
+	function handleToggleMarkdownMode(): void {
+		handleModeChange(isMarkdownMode ? "rendered" : "markdown");
 	}
 
 	function handleMarkdownSourceChange(next: string): void {
@@ -203,6 +322,9 @@ export function RichTextEditor({
 					editor={editor}
 					endSlot={toolbarEndSlot}
 					isMarkdownMode={isMarkdownMode}
+					mode={viewMode}
+					showDataFlowMode={Boolean(dataFlowConfig)}
+					onModeChange={handleModeChange}
 					onToggleMarkdownMode={handleToggleMarkdownMode}
 					onMarkdownFormat={handleMarkdownFormat}
 					onInsertReferenceOption={onInsertReferenceOption}
@@ -224,7 +346,12 @@ export function RichTextEditor({
 						: undefined
 					}
 				>
-				{isMarkdownMode ? (
+				{isDataFlowMode && dataFlowMermaid ? (
+					<DataFlowDiagramView
+						isRefining={isRefiningDataFlow}
+						mermaidCode={dataFlowMermaid}
+					/>
+				) : isMarkdownMode ? (
 					<MarkdownSourceEditor
 						ref={textareaRef}
 						aria-label={`${ariaLabel ?? "Rich text editor"} Markdown source`}
@@ -237,7 +364,7 @@ export function RichTextEditor({
 				) : (
 					<EditorContent editor={editor} />
 				)}
-				{placeholderSlot && isEmpty && !isMarkdownMode ? (
+				{placeholderSlot && isEmpty && viewMode === "rendered" ? (
 					<div
 						aria-hidden="true"
 						data-slot="rich-text-editor-placeholder"
@@ -246,13 +373,13 @@ export function RichTextEditor({
 						{placeholderSlot}
 					</div>
 				) : null}
-				{showBubbleMenu && editor && !isMarkdownMode ? (
+				{showBubbleMenu && editor && viewMode === "rendered" ? (
 					<RichTextEditorBubbleMenu
 						editor={editor}
 						onAskRovo={onAskRovo}
 					/>
 				) : null}
-				{showFloatingMenu && editor && !isMarkdownMode ? (
+				{showFloatingMenu && editor && viewMode === "rendered" ? (
 					<RichTextEditorFloatingMenu
 						editor={editor}
 					/>
