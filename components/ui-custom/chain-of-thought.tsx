@@ -296,7 +296,7 @@ export const ChainOfThoughtStep = memo(
 		description,
 		status = "complete",
 		collapsible = false,
-		defaultOpen = true,
+		defaultOpen = false,
 		open,
 		onOpenChange,
 		children,

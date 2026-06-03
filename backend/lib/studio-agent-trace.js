@@ -143,18 +143,93 @@ function deriveAgentNameHint(userPrompt) {
 	return "an agent";
 }
 
+// Follow-up turns arrive as a structured clarification-answers payload rather
+// than a fresh brief (e.g. `Here are my clarification answers for "…": …`).
+// That text is not a usable agent focus, so it must never be spliced into the
+// trace subtitles verbatim.
+const CLARIFICATION_ANSWERS_PATTERN = /^\s*here are my clarification answers\b/i;
+
+// Keep the focus short enough to read as a single-line subtitle once a prefix
+// like "Writing role, scope, and guardrails for " is prepended.
+const MAX_FOCUS_CHARS = 48;
+
+// Generic focus used whenever the prompt doesn't yield a clean, short agent
+// descriptor. Splicing raw prompt text into subtitles risks leaking long or
+// structured payloads (clarification answers, pasted briefs), so we fall back
+// to this instead of truncating arbitrary prose mid-sentence.
+const GENERIC_AGENT_FOCUS = "the agent";
+
+// Only reuse the raw prompt as a focus when it reads like a short, single-clause
+// brief. Anything longer or multi-sentence/structured falls back to the generic
+// focus so trace subtitles never show a truncated dump.
+function isUsableRawFocus(text) {
+	if (text.length === 0 || text.length > MAX_FOCUS_CHARS) {
+		return false;
+	}
+	// Reject multi-sentence or list-like payloads (newlines, bullet markers,
+	// or multiple sentence terminators) — these are never a clean focus.
+	if (/[\n\r]/.test(text) || /[•\-*]\s/.test(text)) {
+		return false;
+	}
+	const sentenceTerminators = text.match(/[.!?](?:\s|$)/g);
+	return !sentenceTerminators || sentenceTerminators.length <= 1;
+}
+
 function deriveAgentBriefFocus(userPrompt) {
 	if (typeof userPrompt !== "string" || userPrompt.trim().length === 0) {
-		return "a new Studio agent";
+		return GENERIC_AGENT_FOCUS;
 	}
 
-	const truncated = truncate(userPrompt, 90);
+	if (CLARIFICATION_ANSWERS_PATTERN.test(userPrompt)) {
+		return GENERIC_AGENT_FOCUS;
+	}
+
 	const explicitAgent = deriveAgentNameHint(userPrompt);
 	if (explicitAgent !== "an agent" && !explicitAgent.startsWith("agent that ")) {
-		return explicitAgent;
+		return truncate(explicitAgent, MAX_FOCUS_CHARS);
 	}
 
-	return truncated;
+	const normalized = userPrompt.trim().replace(/\s+/g, " ");
+	return isUsableRawFocus(normalized) ? normalized : GENERIC_AGENT_FOCUS;
+}
+
+// Each trace step shows a randomized 1–4 stacked narration rows so the demo
+// reads as believable, dynamic progression rather than a single static line.
+const MIN_PROGRESSION_ROWS = 1;
+const MAX_PROGRESSION_ROWS = 4;
+
+function randomInt(min, max, random) {
+	const source = typeof random === "function" ? random() : Math.random();
+	const clamped = Math.min(1, Math.max(0, Number.isFinite(source) ? source : Math.random()));
+	// Clamp the result so a source of exactly 1.0 doesn't overshoot `max`.
+	return Math.min(max, min + Math.floor(clamped * (max - min + 1)));
+}
+
+/**
+ * Build the stacked narration rows for a step. Each row is its own collapsible
+ * sub-step: `{ content, input, outputPreview }`. The first row (`primary`)
+ * always leads; then a randomized number of the supplied `detail` rows (in
+ * order) are appended so the total is between 1 and 4 rows. Detail rows without
+ * usable `content` are skipped so the count never silently collapses.
+ *
+ * @param {{content:string,input?:unknown,outputPreview?:string}} primary
+ * @param {Array<{content:string,input?:unknown,outputPreview?:string}>} [detail]
+ * @param {() => number} [random]        — random source (injectable for tests)
+ * @returns {Array<{content:string,input?:unknown,outputPreview?:string}>} 1–4 rows
+ */
+function buildProgressionRows(primary, detail = [], random) {
+	const rows = [primary];
+	const usableDetail = detail.filter(
+		(row) => row && typeof row.content === "string" && row.content.trim().length > 0,
+	);
+	if (usableDetail.length === 0) {
+		return rows;
+	}
+
+	const maxExtra = Math.min(usableDetail.length, MAX_PROGRESSION_ROWS - MIN_PROGRESSION_ROWS);
+	const extraCount = randomInt(0, maxExtra, random);
+	rows.push(...usableDetail.slice(0, extraCount));
+	return rows;
 }
 
 /**
@@ -167,34 +242,98 @@ function deriveAgentBriefFocus(userPrompt) {
  * @param {string} [params.contextDescription]  — optional hidden context (unused for output but kept for future heuristics)
  * @returns {Array<object>} step descriptors consumable by `writeThinkingTraceSteps`
  */
-function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescription } = {}) {
+function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescription, random } = {}) {
 	const promptText = typeof userPrompt === "string" ? userPrompt : "";
 	const traceIdPrefix = `studio-agent-trace-${Date.now()}`;
 	const steps = [];
 
+	// Attaches randomized 1–4 stacked narration rows to a step. Each row is its
+	// own collapsible sub-step with its own Parameters/Result. `content` mirrors
+	// the lead row for single-string consumers; `contentRows` carries the full
+	// stack the trace writer streams progressively, and the step's top-level
+	// `input`/`outputPreview` mirror the lead row so the step's own detail block
+	// matches the first sub-step.
+	const withProgression = (step, primary, detail) => {
+		const contentRows = buildProgressionRows(primary, detail, random);
+		const leadRow = contentRows[0];
+		return {
+			...step,
+			content: leadRow.content,
+			input: leadRow.input,
+			outputPreview: leadRow.outputPreview,
+			contentRows,
+		};
+	};
+
 	const briefPreview = truncate(promptText, MAX_PROMPT_PREVIEW_CHARS) || "User did not supply a brief.";
 	const agentFocus = deriveAgentBriefFocus(promptText);
-	steps.push({
-		toolName: "studio.read_brief",
-		toolCallId: `${traceIdPrefix}-read-brief`,
-		label: "Reading agent brief",
-		content: `Identifying the job, audience, and expected outcome for ${agentFocus}.`,
-		input: { prompt: briefPreview },
-		outputPreview: `Agent brief captured: ${briefPreview}`,
-	});
+	steps.push(
+		withProgression(
+			{
+				toolName: "studio.read_brief",
+				toolCallId: `${traceIdPrefix}-read-brief`,
+				label: "Reading agent brief",
+			},
+			{
+				content: `Identifying the job, audience, and expected outcome for ${agentFocus}.`,
+				input: { prompt: briefPreview },
+				outputPreview: `Agent brief captured: ${briefPreview}`,
+			},
+			[
+				{
+					content: "Parsing the brief for the core task and success criteria.",
+					input: { step: "parse_task" },
+					outputPreview: "Core task and success criteria extracted.",
+				},
+				{
+					content: "Noting the intended audience and tone.",
+					input: { step: "audience_tone" },
+					outputPreview: "Audience and tone recorded.",
+				},
+				{
+					content: "Flagging any constraints to respect while drafting.",
+					input: { step: "constraints" },
+					outputPreview: "Constraints flagged for the draft.",
+				},
+			],
+		),
+	);
 
 	const qaSummary = summarizeQAExchange(messages, promptText);
 	const hadPriorAssistantTurn = Array.isArray(messages)
 		&& messages.some((m) => getMessageRole(m) === "assistant" && getMessageText(m).trim().length > 0);
 	if (hadPriorAssistantTurn && qaSummary) {
-		steps.push({
-			toolName: "studio.review_answers",
-			toolCallId: `${traceIdPrefix}-review-answers`,
-			label: "Reviewing agent details",
-			content: "Merging your latest answers into the agent profile draft.",
-			input: { exchange: qaSummary },
-			outputPreview: `Clarifications applied: ${qaSummary}`,
-		});
+		steps.push(
+			withProgression(
+				{
+					toolName: "studio.review_answers",
+					toolCallId: `${traceIdPrefix}-review-answers`,
+					label: "Reviewing agent details",
+				},
+				{
+					content: "Merging your latest answers into the agent profile draft.",
+					input: { exchange: qaSummary },
+					outputPreview: `Clarifications applied: ${qaSummary}`,
+				},
+				[
+					{
+						content: "Reconciling new answers with the original brief.",
+						input: { step: "reconcile" },
+						outputPreview: "Answers reconciled with the brief.",
+					},
+					{
+						content: "Resolving any conflicting preferences.",
+						input: { step: "resolve_conflicts" },
+						outputPreview: "Conflicting preferences resolved.",
+					},
+					{
+						content: "Locking in the confirmed direction.",
+						input: { step: "lock_direction" },
+						outputPreview: "Direction confirmed.",
+					},
+				],
+			),
+		);
 	}
 
 	// On the first turn (no prior assistant turn) the creation flow always
@@ -204,58 +343,173 @@ function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescriptio
 	// drafting. `ask_user_questions` already maps to QuestionCircleIcon in the
 	// trace renderer, so no frontend change is needed.
 	if (!hadPriorAssistantTurn) {
-		steps.push({
-			toolName: "ask_user_questions",
-			toolCallId: `${traceIdPrefix}-ask-questions`,
-			label: "Preparing clarification questions",
-			content: `Asking a few targeted questions to shape ${agentFocus} before drafting the profile.`,
-			input: { round: 1 },
-			outputPreview: "Clarification questions ready for your input.",
-		});
+		steps.push(
+			withProgression(
+				{
+					toolName: "ask_user_questions",
+					toolCallId: `${traceIdPrefix}-ask-questions`,
+					label: "Preparing clarification questions",
+				},
+				{
+					content: `Asking a few targeted questions to shape ${agentFocus} before drafting the profile.`,
+					input: { round: 1 },
+					outputPreview: "Clarification questions ready for your input.",
+				},
+				[
+					{
+						content: "Spotting the gaps that would change the design.",
+						input: { step: "find_gaps" },
+						outputPreview: "Key gaps identified.",
+					},
+					{
+						content: "Phrasing each question to be quick to answer.",
+						input: { step: "phrase_questions" },
+						outputPreview: "Questions phrased concisely.",
+					},
+					{
+						content: "Ordering questions from most to least impactful.",
+						input: { step: "order_questions" },
+						outputPreview: "Questions ordered by impact.",
+					},
+				],
+			),
+		);
 	}
 
 	const mentionedTools = detectMentionedTools(promptText);
 	const toolSelectionPreview = mentionedTools.length > 0
 		? `Agent tools matched: ${mentionedTools.join(", ")}`
 		: "No named integrations in the brief; keeping the agent profile tool-neutral.";
-	steps.push({
-		toolName: "studio.select_tools",
-		toolCallId: `${traceIdPrefix}-select-tools`,
-		label: "Selecting agent tools",
-		content: "Matching the requested workflow to relevant tools and skills.",
-		input: { mentioned: mentionedTools },
-		outputPreview: toolSelectionPreview,
-	});
+	steps.push(
+		withProgression(
+			{
+				toolName: "studio.select_tools",
+				toolCallId: `${traceIdPrefix}-select-tools`,
+				label: "Selecting agent tools",
+			},
+			{
+				content: "Matching the requested workflow to relevant tools and skills.",
+				input: { mentioned: mentionedTools },
+				outputPreview: toolSelectionPreview,
+			},
+			[
+				{
+					content: "Scanning the brief for named integrations.",
+					input: { step: "scan_integrations" },
+					outputPreview: `Integrations found: ${mentionedTools.length > 0 ? mentionedTools.join(", ") : "none"}.`,
+				},
+				{
+					content: "Mapping each task to a capable tool or skill.",
+					input: { step: "map_tasks" },
+					outputPreview: "Tasks mapped to tools.",
+				},
+				{
+					content: "Dropping tools that add no value to the workflow.",
+					input: { step: "prune_tools" },
+					outputPreview: "Tool set pruned to essentials.",
+				},
+			],
+		),
+	);
 
-	steps.push({
-		toolName: "studio.draft_instructions",
-		toolCallId: `${traceIdPrefix}-draft-instructions`,
-		label: "Drafting agent instructions",
-		content: `Writing role, scope, and guardrails for ${agentFocus}.`,
-		input: {
-			focus: agentFocus,
-			hasContext: typeof contextDescription === "string" && contextDescription.length > 0,
-		},
-		outputPreview: "Instruction draft covers role, boundaries, tools, and tone.",
-	});
+	steps.push(
+		withProgression(
+			{
+				toolName: "studio.draft_instructions",
+				toolCallId: `${traceIdPrefix}-draft-instructions`,
+				label: "Drafting agent instructions",
+			},
+			{
+				content: `Writing role, scope, and guardrails for ${agentFocus}.`,
+				input: {
+					focus: agentFocus,
+					hasContext: typeof contextDescription === "string" && contextDescription.length > 0,
+				},
+				outputPreview: "Instruction draft covers role, boundaries, tools, and tone.",
+			},
+			[
+				{
+					content: "Defining what the agent should and shouldn't do.",
+					input: { step: "define_scope" },
+					outputPreview: "Scope boundaries defined.",
+				},
+				{
+					content: "Setting the tone and response style.",
+					input: { step: "set_tone" },
+					outputPreview: "Tone and style set.",
+				},
+				{
+					content: "Adding guardrails for edge cases.",
+					input: { step: "add_guardrails" },
+					outputPreview: "Guardrails added.",
+				},
+			],
+		),
+	);
 
 	const nameHint = deriveAgentNameHint(promptText);
-	steps.push({
-		toolName: "studio.name_agent",
-		toolCallId: `${traceIdPrefix}-name-agent`,
-		label: "Naming agent profile",
-		content: "Choosing a name, byline, and profile-card summary that match the brief.",
-		input: { hint: nameHint },
-		outputPreview: `Profile naming cue: ${nameHint}`,
-	});
+	steps.push(
+		withProgression(
+			{
+				toolName: "studio.name_agent",
+				toolCallId: `${traceIdPrefix}-name-agent`,
+				label: "Naming agent profile",
+			},
+			{
+				content: "Choosing a name, byline, and profile-card summary that match the brief.",
+				input: { hint: nameHint },
+				outputPreview: `Profile naming cue: ${nameHint}`,
+			},
+			[
+				{
+					content: "Brainstorming names that signal the agent's purpose.",
+					input: { step: "brainstorm_names" },
+					outputPreview: "Candidate names generated.",
+				},
+				{
+					content: "Writing a one-line byline.",
+					input: { step: "write_byline" },
+					outputPreview: "Byline drafted.",
+				},
+				{
+					content: "Summarizing the agent for its profile card.",
+					input: { step: "summarize_card" },
+					outputPreview: "Profile-card summary written.",
+				},
+			],
+		),
+	);
 
-	steps.push({
-		toolName: "studio.save_profile",
-		toolCallId: `${traceIdPrefix}-save-profile`,
-		label: "Saving agent profile",
-		content: "Persisting the agent so it shows up in your Studio library.",
-		outputPreview: "Agent profile ready for Studio.",
-	});
+	steps.push(
+		withProgression(
+			{
+				toolName: "studio.save_profile",
+				toolCallId: `${traceIdPrefix}-save-profile`,
+				label: "Saving agent profile",
+			},
+			{
+				content: "Persisting the agent so it shows up in your Studio library.",
+				outputPreview: "Agent profile ready for Studio.",
+			},
+			[
+				{
+					content: "Validating the profile before saving.",
+					input: { step: "validate" },
+					outputPreview: "Profile validated.",
+				},
+				{
+					content: "Writing the agent to your Studio library.",
+					input: { step: "persist" },
+					outputPreview: "Agent saved to the library.",
+				},
+				{
+					content: "Confirming it's ready to use.",
+					input: { step: "confirm" },
+					outputPreview: "Agent ready to use.",
+				},
+			],
+		),
+	);
 
 	return steps;
 }
@@ -268,6 +522,9 @@ module.exports = {
 		summarizeQAExchange,
 		deriveAgentNameHint,
 		deriveAgentBriefFocus,
+		buildProgressionRows,
+		MIN_PROGRESSION_ROWS,
+		MAX_PROGRESSION_ROWS,
 		truncate,
 	},
 };

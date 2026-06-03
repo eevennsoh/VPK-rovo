@@ -16,6 +16,10 @@ const DEFAULT_TOOL_CALL_DELAY_RANGE_MS = Object.freeze({
 	min: 1800,
 	max: 2800,
 });
+
+// Stagger between stacked narration rows within a single step so they appear
+// one-by-one as believable progression instead of all at once.
+const DEFAULT_NARRATION_ROW_DELAY_MS = 550;
 const DEFAULT_TOOL_CALL_DELAY_MS = Math.round(
 	(DEFAULT_TOOL_CALL_DELAY_RANGE_MS.min + DEFAULT_TOOL_CALL_DELAY_RANGE_MS.max) / 2,
 );
@@ -73,6 +77,37 @@ function createThinkingEventPart(step, phase) {
 	return part;
 }
 
+/**
+ * Resolve the ordered narration rows for a step as normalized
+ * `{ content, input, output }` objects. Prefers `step.contentRows` (the stacked
+ * multi-row form, where each row may carry its own `input`/`outputPreview`) and
+ * falls back to the legacy single `step.content` string. Returns an empty array
+ * when the step has no narration.
+ */
+function getStepNarrationRows(step) {
+	if (Array.isArray(step?.contentRows)) {
+		return step.contentRows
+			.map((row) => {
+				if (typeof row === "string") {
+					return row.trim().length > 0 ? { content: row.trim() } : null;
+				}
+				if (row && typeof row.content === "string" && row.content.trim().length > 0) {
+					return {
+						content: row.content.trim(),
+						input: row.input,
+						output: row.output ?? row.outputPreview,
+					};
+				}
+				return null;
+			})
+			.filter((row) => row !== null);
+	}
+	if (typeof step?.content === "string" && step.content.trim().length > 0) {
+		return [{ content: step.content.trim() }];
+	}
+	return [];
+}
+
 function isPositiveFiniteNumber(value) {
 	return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
@@ -123,20 +158,34 @@ function resolveToolCallDelayMs(step, options = {}) {
 	);
 }
 
+function resolveNarrationRowDelayMs(options = {}) {
+	if (isPositiveFiniteNumber(options.narrationRowDelayMs)) {
+		return options.narrationRowDelayMs;
+	}
+	return DEFAULT_NARRATION_ROW_DELAY_MS;
+}
+
 /**
  * Write a sequence of scripted thinking steps to a UI message stream writer.
  *
  * For each step:
- * 1. Emit `data-thinking-status` (drives the collapsible trigger label).
- * 2. Emit `data-thinking-event` with phase=start (creates the ChainOfThoughtStep row in "running" state).
- * 3. Wait `step.delayMs`, `defaultDelayMs`, or a randomized range — this is the "running" beat.
- * 4. If the step has output, emit `data-thinking-event` with phase=result (transitions the row to "completed").
+ * 1. Emit the first `data-thinking-status` row (drives the collapsible trigger
+ *    label) followed immediately by `data-thinking-event` phase=start (creates
+ *    the ChainOfThoughtStep row in "running" state).
+ * 2. Stream any remaining narration rows (`step.contentRows`) one at a time with
+ *    a short stagger, so a step shows believable multi-row progression. These
+ *    post-start rows associate with the active tool call (see
+ *    `buildThinkingNarrationMap`).
+ * 3. Wait out the remaining "running" beat.
+ * 4. If the step has output, emit `data-thinking-event` phase=result
+ *    (transitions the row to "completed").
  *
  * @param {object} writer        — UI message stream writer (must expose `.write()`)
  * @param {Array}  steps         — ordered list of step descriptors
  * @param {object} [options]
  * @param {number} [options.defaultDelayMs]      — exact per-step delay when step.delayMs is unset
  * @param {{min:number,max:number}} [options.defaultDelayRangeMs] — randomized per-step delay range
+ * @param {number} [options.narrationRowDelayMs] — stagger between stacked narration rows
  * @param {() => number} [options.random]        — random source for tests
  * @param {AbortSignal} [options.signal]         — abort to short-circuit the loop
  */
@@ -147,32 +196,77 @@ async function writeThinkingTraceSteps(writer, steps, options = {}) {
 		return;
 	}
 
+	const narrationRowDelayMs = resolveNarrationRowDelayMs(options);
+
 	for (const step of steps) {
 		if (signal?.aborted) {
 			return;
 		}
 
+		const narrationRows = getStepNarrationRows(step);
 		const toolCallDelayMs = resolveToolCallDelayMs(step, options);
 		const hasResult = step.output !== undefined || step.outputPreview;
-		const resultDelayMs = hasResult
-			? Math.round(toolCallDelayMs * 0.7)
-			: toolCallDelayMs;
-		const resultHoldDelayMs = hasResult
-			? Math.max(0, toolCallDelayMs - resultDelayMs)
-			: 0;
 
-		writer.write({
-			type: "data-thinking-status",
-			id: `${step.toolCallId}-status`,
-			data: {
+		const writeNarrationRow = (row, rowIndex) => {
+			const data = {
 				label: step.label,
-				content: step.content,
+				content: row.content,
+				// Stamp the owning tool call so the narration map groups this
+				// row deterministically, even though it streams before/after
+				// the step's own start event.
+				toolCallId: step.toolCallId,
 				activity: "data",
 				source: "backend",
 				timestamp: new Date().toISOString(),
-			},
-		});
+			};
+			// Per-row Parameters/Result so each row renders as its own sub-step.
+			if (row.input !== undefined) {
+				data.input = row.input;
+			}
+			if (row.output !== undefined) {
+				data.output = row.output;
+			}
+			writer.write({
+				type: "data-thinking-status",
+				id: `${step.toolCallId}-status-${rowIndex}`,
+				data,
+			});
+		};
+
+		// Emit the first narration row + start event so the step row appears,
+		// then stream the rest progressively.
+		const [firstRow, ...restRows] = narrationRows;
+		if (firstRow !== undefined) {
+			writeNarrationRow(firstRow, 0);
+		}
 		writer.write(createThinkingEventPart(step, "start"));
+
+		// Budget: stagger the extra rows, then spend the rest of the running beat
+		// before the result. Never let the narration stagger exceed the step's
+		// own running window.
+		const narrationBudgetMs = Math.min(
+			restRows.length * narrationRowDelayMs,
+			Math.round(toolCallDelayMs * 0.6),
+		);
+		const perRowDelayMs = restRows.length > 0
+			? Math.round(narrationBudgetMs / restRows.length)
+			: 0;
+
+		for (const [offset, row] of restRows.entries()) {
+			if (signal?.aborted) {
+				return;
+			}
+			await waitFor(perRowDelayMs, signal);
+			if (signal?.aborted) {
+				return;
+			}
+			writeNarrationRow(row, offset + 1);
+		}
+
+		const remainingRunMs = Math.max(0, toolCallDelayMs - narrationBudgetMs);
+		const resultDelayMs = hasResult ? Math.round(remainingRunMs * 0.7) : remainingRunMs;
+		const resultHoldDelayMs = hasResult ? Math.max(0, remainingRunMs - resultDelayMs) : 0;
+
 		await waitFor(resultDelayMs, signal);
 		if (hasResult && !signal?.aborted) {
 			writer.write(createThinkingEventPart(step, "result"));
@@ -192,5 +286,8 @@ module.exports = {
 		getRandomizedDelayMs,
 		normalizeDelayRange,
 		resolveToolCallDelayMs,
+		resolveNarrationRowDelayMs,
+		getStepNarrationRows,
+		DEFAULT_NARRATION_ROW_DELAY_MS,
 	},
 };

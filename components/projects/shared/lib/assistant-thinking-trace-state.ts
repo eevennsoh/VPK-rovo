@@ -1,5 +1,6 @@
 import type { ReasoningPhase } from "../hooks/use-reasoning-phase";
 import {
+	buildThinkingNarrationDetailMap,
 	buildThinkingNarrationMap,
 	getAgentExecutionSummaries,
 	getAllDataParts,
@@ -9,6 +10,7 @@ import {
 	type AgentExecutionSummary,
 	type RovoDataPart,
 	type RovoUIMessage,
+	type ThinkingNarrationDetailMap,
 	type ThinkingNarrationMap,
 	type ThinkingToolCallSummary,
 } from "../../../../lib/rovo-ui-messages";
@@ -76,6 +78,7 @@ export interface AssistantThinkingTraceData {
 	lastThinkingStatusPart: RovoDataPart<"thinking-status"> | null;
 	thinkingEventParts: RovoDataPart<"thinking-event">[];
 	thinkingNarrationMap: ThinkingNarrationMap;
+	thinkingNarrationDetailMap: ThinkingNarrationDetailMap;
 	thinkingStatusParts: RovoDataPart<"thinking-status">[];
 	thinkingToolCalls: ThinkingToolCallSummary[];
 	todoProgressItems: RovoAppTodoProgressItem[];
@@ -98,10 +101,10 @@ interface ResolveThinkingToolCallStepOpenOptions {
 	toolCallId: string;
 	manuallyOpenedToolCallIds: ReadonlySet<string>;
 	/**
-	 * Whether this tool call is the most recent one in the trace. The latest tool
-	 * call (in-flight or just completed) stays expanded; earlier ones collapse
-	 * once a newer tool call has appeared, so the next invocation can fade in
-	 * while the previous metadata is still collapsing.
+	 * Whether this tool call is the most recent one in the trace. Retained for
+	 * callers (it still drives byline/overlap animation timing upstream), but it
+	 * no longer affects the open state: tool-call steps now stay collapsed by
+	 * default and only expand when the user opens them via the chevron.
 	 */
 	isLatestToolCall?: boolean;
 }
@@ -194,16 +197,10 @@ function shouldRenderThinkingToolCall(
 export function resolveThinkingToolCallStepOpen({
 	toolCallId,
 	manuallyOpenedToolCallIds,
-	isLatestToolCall = false,
 }: Readonly<ResolveThinkingToolCallStepOpenOptions>): boolean {
-	if (manuallyOpenedToolCallIds.has(toolCallId)) {
-		return true;
-	}
-
-	// The latest tool call (in-flight or most recently completed) stays expanded
-	// so its invocation and metadata are visible. Earlier tool calls collapse
-	// once a newer one appears.
-	return isLatestToolCall;
+	// Tool-call steps start collapsed by default; only steps the user has
+	// explicitly expanded via the chevron stay open.
+	return manuallyOpenedToolCallIds.has(toolCallId);
 }
 
 export function resolveAssistantThinkingTraceOpen({
@@ -320,6 +317,7 @@ export function collectAssistantThinkingTraceData(
 		shouldRenderThinkingToolCall,
 	);
 	const thinkingNarrationMap = buildThinkingNarrationMap(message);
+	const thinkingNarrationDetailMap = buildThinkingNarrationDetailMap(message);
 	const latestTodoProgress = getLatestRovoAppTodoProgress(thinkingToolCalls);
 	const todoProgressItems = latestTodoProgress?.items ?? [];
 	const latestTodoQueue = getLatestTodoQueue(message);
@@ -367,6 +365,7 @@ export function collectAssistantThinkingTraceData(
 		lastThinkingStatusPart,
 		thinkingEventParts,
 		thinkingNarrationMap,
+		thinkingNarrationDetailMap,
 		thinkingStatusParts,
 		thinkingToolCalls,
 		todoProgressItems,

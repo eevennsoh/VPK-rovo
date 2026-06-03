@@ -363,6 +363,67 @@ test("collectAssistantThinkingTraceData associates narration with tool calls", (
 	]);
 });
 
+test("collectAssistantThinkingTraceData groups stacked rows by explicit toolCallId without bleeding across steps", () => {
+	const data = collectAssistantThinkingTraceData({
+		parts: [
+			// Step 1: lead row (before its start) + an extra row (after its start),
+			// both stamped with tool-1.
+			{ type: "data-thinking-status", data: { label: "A", content: "A lead", toolCallId: "tool-1" } },
+			{ type: "data-thinking-event", data: { eventId: "e1", phase: "start", toolName: "a", toolCallId: "tool-1" } },
+			{ type: "data-thinking-status", data: { label: "A", content: "A extra", toolCallId: "tool-1" } },
+			{ type: "data-thinking-event", data: { eventId: "e2", phase: "result", toolName: "a", toolCallId: "tool-1", outputPreview: "ok" } },
+			// Step 2: its own lead row stamped with tool-2 must NOT attach to tool-1.
+			{ type: "data-thinking-status", data: { label: "B", content: "B lead", toolCallId: "tool-2" } },
+			{ type: "data-thinking-event", data: { eventId: "e3", phase: "start", toolName: "b", toolCallId: "tool-2" } },
+		],
+	});
+
+	assert.deepEqual(data.thinkingNarrationMap.byToolCallId.get("tool-1"), ["A lead", "A extra"]);
+	assert.deepEqual(data.thinkingNarrationMap.byToolCallId.get("tool-2"), ["B lead"]);
+	assert.deepEqual(data.thinkingNarrationMap.unassociated, []);
+});
+
+test("collectAssistantThinkingTraceData builds per-row detail rows with their own input/output", () => {
+	const data = collectAssistantThinkingTraceData({
+		parts: [
+			// Row 1 carries its own Parameters + Result.
+			{
+				type: "data-thinking-status",
+				data: {
+					label: "A",
+					content: "Reading the brief",
+					toolCallId: "tool-1",
+					input: { step: "read" },
+					output: "Brief loaded",
+				},
+			},
+			{ type: "data-thinking-event", data: { eventId: "e1", phase: "start", toolName: "a", toolCallId: "tool-1" } },
+			// Row 2 carries different detail; it must be its own row, not merged.
+			{
+				type: "data-thinking-status",
+				data: {
+					label: "A",
+					content: "Checking missing details",
+					toolCallId: "tool-1",
+					input: { step: "check" },
+					output: "2 gaps found",
+				},
+			},
+			// A plain progression row with no detail stays detail-free.
+			{
+				type: "data-thinking-status",
+				data: { label: "A", content: "Shaping the agent", toolCallId: "tool-1" },
+			},
+		],
+	});
+
+	const rows = data.thinkingNarrationDetailMap.byToolCallId.get("tool-1");
+	assert.equal(rows.length, 3);
+	assert.deepEqual(rows[0], { content: "Reading the brief", input: { step: "read" }, output: "Brief loaded" });
+	assert.deepEqual(rows[1], { content: "Checking missing details", input: { step: "check" }, output: "2 gaps found" });
+	assert.deepEqual(rows[2], { content: "Shaping the agent" });
+});
+
 test("collectAssistantThinkingTraceData accepts filtered thinking tool calls", () => {
 	const data = collectAssistantThinkingTraceData(
 		{
@@ -472,10 +533,10 @@ test("collectAssistantThinkingTraceData extracts update_todo progress", () => {
 	assert.equal(data.todoProgressItems[0].label, "Unify trace");
 });
 
-test("resolveThinkingToolCallStepOpen keeps the latest tool call expanded and collapses earlier ones", () => {
+test("resolveThinkingToolCallStepOpen collapses every tool call unless manually expanded", () => {
 	const manuallyOpenedToolCallIds = new Set(["call:manual"]);
 
-	// Earlier (non-latest) tool calls collapse so the next invocation can take over.
+	// Earlier (non-latest) tool calls stay collapsed.
 	assert.equal(
 		resolveThinkingToolCallStepOpen({
 			toolCallId: "call:previous",
@@ -484,16 +545,16 @@ test("resolveThinkingToolCallStepOpen keeps the latest tool call expanded and co
 		}),
 		false,
 	);
-	// The latest tool call (in-flight or most recent) stays expanded.
+	// The latest tool call also stays collapsed by default now.
 	assert.equal(
 		resolveThinkingToolCallStepOpen({
 			toolCallId: "call:latest",
 			manuallyOpenedToolCallIds,
 			isLatestToolCall: true,
 		}),
-		true,
+		false,
 	);
-	// A manually opened tool call stays expanded even when it is no longer latest.
+	// A manually opened tool call stays expanded regardless of latest status.
 	assert.equal(
 		resolveThinkingToolCallStepOpen({
 			toolCallId: "call:manual",
@@ -502,7 +563,16 @@ test("resolveThinkingToolCallStepOpen keeps the latest tool call expanded and co
 		}),
 		true,
 	);
-	// isLatestToolCall defaults to false (collapsed) when omitted.
+	// A manually opened tool call stays expanded even when it is the latest.
+	assert.equal(
+		resolveThinkingToolCallStepOpen({
+			toolCallId: "call:manual",
+			manuallyOpenedToolCallIds,
+			isLatestToolCall: true,
+		}),
+		true,
+	);
+	// Defaults to collapsed when isLatestToolCall is omitted.
 	assert.equal(
 		resolveThinkingToolCallStepOpen({
 			toolCallId: "call:no-flag",

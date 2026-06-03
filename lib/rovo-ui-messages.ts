@@ -205,6 +205,20 @@ export type RovoDataParts = {
 	"thinking-status": {
 		label: string;
 		content?: string;
+		/**
+		 * Explicit tool-call association for this narration row. When present it
+		 * is authoritative; the narration map groups the row directly under this
+		 * id instead of inferring it from chronological position. Lets a step
+		 * stream multiple stacked rows without bleeding into adjacent steps.
+		 */
+		toolCallId?: string;
+		/**
+		 * Optional per-row detail. When present, the row renders as its own
+		 * collapsible sub-step with these Parameters (`input`) and Result
+		 * (`output`) instead of sharing the tool call's single detail block.
+		 */
+		input?: unknown;
+		output?: unknown;
 		activity?: ThinkingStatusActivity;
 		source?: ThinkingStatusSource;
 		timestamp?: string;
@@ -644,14 +658,75 @@ export interface ThinkingNarrationMap {
 	unassociated: string[];
 }
 
+/** A single narration row with optional per-row Parameters/Result detail. */
+export interface ThinkingNarrationDetailRow {
+	content: string;
+	input?: unknown;
+	output?: unknown;
+}
+
+export interface ThinkingNarrationDetailMap {
+	/** Detail rows keyed by toolCallId, in chronological (streamed) order */
+	byToolCallId: Map<string, ThinkingNarrationDetailRow[]>;
+}
+
+/**
+ * Build a structured per-row narration map: each `data-thinking-status` part
+ * that carries an explicit `toolCallId` becomes a {@link ThinkingNarrationDetailRow}
+ * (content plus any per-row `input`/`output`) appended under that tool call.
+ * Status parts without a `toolCallId` are skipped — the detail view is opt-in
+ * and only the scripted demo trace stamps the id.
+ */
+export function buildThinkingNarrationDetailMap(
+	message: Pick<RovoUIMessage, "parts">,
+): ThinkingNarrationDetailMap {
+	const byToolCallId = new Map<string, ThinkingNarrationDetailRow[]>();
+
+	for (const part of message.parts) {
+		if (part.type !== "data-thinking-status") {
+			continue;
+		}
+		const data = (part as RovoDataPart<"thinking-status">).data;
+		const toolCallId =
+			typeof data.toolCallId === "string" && data.toolCallId.trim()
+				? data.toolCallId.trim()
+				: undefined;
+		if (!toolCallId || typeof data.content !== "string" || !data.content.trim()) {
+			continue;
+		}
+
+		const row: ThinkingNarrationDetailRow = { content: data.content.trim() };
+		if (data.input !== undefined) {
+			row.input = data.input;
+		}
+		if (data.output !== undefined) {
+			row.output = data.output;
+		}
+
+		const existing = byToolCallId.get(toolCallId) ?? [];
+		existing.push(row);
+		byToolCallId.set(toolCallId, existing);
+	}
+
+	return { byToolCallId };
+}
+
 /**
  * Walk `message.parts` in chronological order to associate narration
- * (`data-thinking-status` content) with the tool call it precedes.
+ * (`data-thinking-status` content) with the tool call it belongs to.
  *
- * Buffer consecutive status parts. When a `data-thinking-event` with
- * `phase === "start"` appears, flush the buffer into that event's
- * `toolCallId` bucket. Any leftover narration that doesn't precede a
- * tool call is returned as `unassociated`.
+ * Two association modes coexist:
+ *
+ * 1. **Explicit** — when a status part carries its own `toolCallId`, the row is
+ *    grouped directly under that id. This is authoritative and order-independent,
+ *    so a step can stream several stacked rows (emitted before *and* after its
+ *    own `start` event) without bleeding into adjacent steps.
+ * 2. **Positional fallback** — for status parts without a `toolCallId` (real
+ *    backends today), buffer consecutive rows and flush them into the next
+ *    `data-thinking-event` `phase === "start"` bucket, matching the original
+ *    behavior.
+ *
+ * Any leftover narration that never reaches a tool call is `unassociated`.
  */
 export function buildThinkingNarrationMap(
 	message: Pick<RovoUIMessage, "parts">,
@@ -659,11 +734,30 @@ export function buildThinkingNarrationMap(
 	const byToolCallId = new Map<string, string[]>();
 	let buffer: string[] = [];
 
+	const appendToToolCall = (toolCallId: string, lines: string[]) => {
+		if (lines.length === 0) {
+			return;
+		}
+		const existing = byToolCallId.get(toolCallId) ?? [];
+		existing.push(...lines);
+		byToolCallId.set(toolCallId, existing);
+	};
+
 	for (const part of message.parts) {
 		if (part.type === "data-thinking-status") {
 			const data = (part as RovoDataPart<"thinking-status">).data;
-			if (typeof data.content === "string" && data.content.trim()) {
-				buffer.push(data.content.trim());
+			if (typeof data.content !== "string" || !data.content.trim()) {
+				continue;
+			}
+			const line = data.content.trim();
+			const explicitToolCallId =
+				typeof data.toolCallId === "string" && data.toolCallId.trim()
+					? data.toolCallId.trim()
+					: undefined;
+			if (explicitToolCallId) {
+				appendToToolCall(explicitToolCallId, [line]);
+			} else {
+				buffer.push(line);
 			}
 			continue;
 		}
@@ -676,9 +770,7 @@ export function buildThinkingNarrationMap(
 						? data.toolCallId.trim()
 						: undefined;
 				if (toolCallId) {
-					const existing = byToolCallId.get(toolCallId) ?? [];
-					existing.push(...buffer);
-					byToolCallId.set(toolCallId, existing);
+					appendToToolCall(toolCallId, buffer);
 					buffer = [];
 				}
 			}

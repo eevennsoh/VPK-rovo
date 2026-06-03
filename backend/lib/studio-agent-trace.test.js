@@ -2,7 +2,16 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
 	buildStudioAgentCreationTrace,
-	__internals: { detectMentionedTools, summarizeQAExchange, deriveAgentNameHint, deriveAgentBriefFocus, truncate },
+	__internals: {
+		detectMentionedTools,
+		summarizeQAExchange,
+		deriveAgentNameHint,
+		deriveAgentBriefFocus,
+		buildProgressionRows,
+		MIN_PROGRESSION_ROWS,
+		MAX_PROGRESSION_ROWS,
+		truncate,
+	},
 } = require("./studio-agent-trace");
 
 test("buildStudioAgentCreationTrace emits the fixed step skeleton with stable ordering", () => {
@@ -162,11 +171,95 @@ test("deriveAgentNameHint returns the generic placeholder when nothing matches",
 
 test("deriveAgentBriefFocus keeps trace copy contextual to the requested agent", () => {
 	assert.equal(deriveAgentBriefFocus("Build a Jira triage agent for support."), "Jira triage agent");
-	assert.match(
-		deriveAgentBriefFocus("Track weekly release readiness across the frontend platform team."),
-		/Track weekly release readiness/u,
+	// A short, single-clause brief with no explicit "X agent" name is reused as-is.
+	assert.equal(
+		deriveAgentBriefFocus("Track weekly release readiness"),
+		"Track weekly release readiness",
 	);
-	assert.equal(deriveAgentBriefFocus(""), "a new Studio agent");
+	assert.equal(deriveAgentBriefFocus(""), "the agent");
+});
+
+test("deriveAgentBriefFocus falls back to a generic focus for long or structured briefs", () => {
+	// Too long to read as a single-line subtitle → generic focus, not a truncated dump.
+	assert.equal(
+		deriveAgentBriefFocus(
+			"Track weekly release readiness across the frontend platform team and surface blockers early.",
+		),
+		"the agent",
+	);
+	// Multi-sentence prose → generic focus.
+	assert.equal(
+		deriveAgentBriefFocus("Do this thing. Then do that thing."),
+		"the agent",
+	);
+});
+
+test("deriveAgentBriefFocus stays short enough for a single-line subtitle", () => {
+	const focus = deriveAgentBriefFocus(
+		"Track weekly release readiness across the frontend platform team and surface blockers early.",
+	);
+	assert.ok(focus.length <= 48, `expected focus <= 48 chars, got ${focus.length}: ${focus}`);
+});
+
+test("deriveAgentBriefFocus ignores the clarification-answers payload from follow-up turns", () => {
+	const followUp =
+		'Here are my clarification answers for "Answer these questions to continue": - Who is the audience? Support agents. - Tone? Friendly.';
+	assert.equal(deriveAgentBriefFocus(followUp), "the agent");
+});
+
+test("buildProgressionRows always leads with the primary row and appends in order", () => {
+	const primary = { content: "primary" };
+	const detail = [{ content: "A" }, { content: "B" }, { content: "C" }];
+	// random() = 0 → 0 extra rows
+	assert.deepEqual(buildProgressionRows(primary, detail, () => 0), [primary]);
+	// random() ≈ 1 → max extra rows (capped at 3 so total ≤ 4)
+	assert.deepEqual(buildProgressionRows(primary, detail, () => 0.999), [
+		primary,
+		{ content: "A" },
+		{ content: "B" },
+		{ content: "C" },
+	]);
+	// Empty detail → only the primary row.
+	assert.deepEqual(buildProgressionRows(primary, [], () => 0.999), [primary]);
+	// Blank/invalid detail rows are skipped, never shrinking below the primary.
+	assert.deepEqual(
+		buildProgressionRows(primary, [{ content: "" }, { content: "  " }], () => 0.999),
+		[primary],
+	);
+});
+
+test("buildProgressionRows never exceeds the 1–4 row bounds across the random range", () => {
+	const primary = { content: "primary" };
+	const detail = ["A", "B", "C", "D", "E", "F"].map((content) => ({ content }));
+	for (let i = 0; i <= 20; i += 1) {
+		const rows = buildProgressionRows(primary, detail, () => i / 20);
+		assert.ok(
+			rows.length >= MIN_PROGRESSION_ROWS && rows.length <= MAX_PROGRESSION_ROWS,
+			`row count ${rows.length} out of bounds for random ${i / 20}`,
+		);
+		assert.equal(rows[0], primary);
+	}
+});
+
+test("buildStudioAgentCreationTrace attaches 1–4 stacked contentRows per step", () => {
+	const steps = buildStudioAgentCreationTrace({
+		userPrompt: "Build a Jira triage agent",
+		random: () => 0.999,
+	});
+	for (const step of steps) {
+		assert.ok(Array.isArray(step.contentRows), `${step.label} should have contentRows`);
+		assert.ok(
+			step.contentRows.length >= 1 && step.contentRows.length <= 4,
+			`${step.label} contentRows out of bounds: ${step.contentRows.length}`,
+		);
+		// Each row is a structured { content, ... } object.
+		for (const row of step.contentRows) {
+			assert.equal(typeof row.content, "string");
+			assert.ok(row.content.trim().length > 0, `${step.label} has a blank row`);
+		}
+		// content stays in sync with the lead row's text for single-string consumers.
+		assert.equal(step.content, step.contentRows[0].content);
+	}
 });
 
 test("summarizeQAExchange combines the most recent assistant question and the user's current answer", () => {
