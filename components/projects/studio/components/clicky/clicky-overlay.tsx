@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, useMotionValue, useSpring } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { ClickyState, ClickyPointTarget, ClickyExchange, ClickyScreenshotDimensions } from "@/components/projects/studio/hooks/use-clicky";
 import { ClickyCursor } from "./clicky-cursor";
 import { ClickySpeechBubble } from "./clicky-speech-bubble";
@@ -152,6 +153,16 @@ export function ClickyOverlay({
 	screenshotDimensions = null,
 	onReturnToIdle,
 }: Readonly<ClickyOverlayProps>) {
+	// The overlay is `position: fixed` and tracks the mouse in viewport
+	// coordinates. Rendering it through a portal on `document.body` keeps it out
+	// of any transformed/`will-change` ancestor (e.g. animated chat panels),
+	// which would otherwise become the containing block for the fixed layer and
+	// push the cursor away from the real pointer.
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => {
+		setMounted(true);
+	}, []);
+
 	const x = useMotionValue(0);
 	const y = useMotionValue(0);
 	const springX = useSpring(x, FOLLOW_SPRING);
@@ -408,7 +419,11 @@ export function ClickyOverlay({
 	const showNavBubble = (flightPhase === "holding" || flightPhase === "fading") && isPointing;
 	const showResponseOverlay = (isPointing || isSpeaking) && responseText;
 
-	return (
+	if (!mounted) {
+		return null;
+	}
+
+	return createPortal(
 		<AnimatePresence>
 			{isActive ? (
 				<motion.div
@@ -488,6 +503,7 @@ export function ClickyOverlay({
 					) : null}
 				</motion.div>
 			) : null}
-		</AnimatePresence>
+		</AnimatePresence>,
+		document.body,
 	);
 }
