@@ -6665,6 +6665,10 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/blocks/knowledge-directory-demo"),
     { ssr: false },
   ),
+  "conversation-starters": dynamic(
+    () => import("./demos/blocks/conversation-starters-demo"),
+    { ssr: false },
+  ),
   "agent-progress": dynamic(
     () => import("./demos/blocks/agent-progress-demo"),
     { ssr: false },

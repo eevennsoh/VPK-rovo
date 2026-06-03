@@ -11,6 +11,12 @@ import { DEFAULT_SKILLS } from "@/components/blocks/skills-directory/data/skills
 import { ToolsDirectoryDialog } from "@/components/blocks/tools-directory";
 import { DEMO_SESSION_TOOLS, DEMO_TOOLS } from "@/components/blocks/tools-directory/data/demo-tools";
 import {
+	ConversationStartersDialog,
+	DEFAULT_STARTER_ICON,
+	type ConversationStarter,
+	type StarterIconKey,
+} from "@/components/blocks/conversation-starters";
+import {
 	Agent,
 	AgentCompactHeaderNav,
 	AgentConfigFields,
@@ -216,6 +222,29 @@ export function RovoAppAgentConfigPanel({
 		[appendListValues],
 	);
 
+	// Conversation starters are edited as a whole set in a dedicated dialog
+	// (reorder / icon / generate), unlike the append-only directories. Seed the
+	// dialog from the draft's text + parallel icon array, defaulting the icon.
+	const conversationStarterDialogValue = useMemo<readonly ConversationStarter[]>(() => {
+		const texts = getDraftList("conversationStarters");
+		const icons = Array.isArray(draft.conversationStarterIcons) ? draft.conversationStarterIcons : [];
+		return texts.map((text, index) => ({
+			id: `starter-${index}`,
+			text,
+			icon: (icons[index] as StarterIconKey | undefined) ?? DEFAULT_STARTER_ICON,
+		}));
+	}, [draft, getDraftList]);
+	const handleSaveConversationStarters = useCallback(
+		(starters: readonly ConversationStarter[]) => {
+			updateDraft({
+				conversationStarters: starters.map((starter) => starter.text),
+				conversationStarterIcons: starters.map((starter) => starter.icon),
+			} as Partial<AgentResult>);
+			setActiveDirectory(null);
+		},
+		[updateDraft],
+	);
+
 	const hasUpdateChanges = useMemo(() => {
 		return (
 			stringifyForComparison(entry.draftResult) !==
@@ -398,6 +427,13 @@ export function RovoAppAgentConfigPanel({
 				open={activeDirectory === "skills"}
 				selectedSkillIds={directorySkillIds}
 				skills={DEFAULT_SKILLS}
+			/>
+			<ConversationStartersDialog
+				open={activeDirectory === "conversationStarters"}
+				onOpenChange={(open) => setActiveDirectory(open ? "conversationStarters" : null)}
+				starters={conversationStarterDialogValue}
+				maxStarters={3}
+				onSave={handleSaveConversationStarters}
 			/>
 		</>
 	);
