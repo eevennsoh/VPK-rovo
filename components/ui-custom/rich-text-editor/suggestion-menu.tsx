@@ -15,13 +15,10 @@ import type {
 } from "@tiptap/suggestion";
 import { motion, type Variants } from "motion/react";
 
-import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
-import AppsIcon from "@atlaskit/icon/core/apps";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PersonIcon from "@atlaskit/icon/core/person";
 import SnippetIcon from "@atlaskit/icon/core/snippet";
 import TeamsIcon from "@atlaskit/icon/core/teams";
-import ToolsIcon from "@atlaskit/icon/core/tools";
 import AlignTextCenterIcon from "@atlaskit/icon/core/align-text-center";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AlignTextRightIcon from "@atlaskit/icon/core/align-text-right";
@@ -36,7 +33,6 @@ import TextItalicIcon from "@atlaskit/icon/core/text-italic";
 import TextStrikethroughIcon from "@atlaskit/icon/core/text-strikethrough";
 import TextUnderlineIcon from "@atlaskit/icon/core/text-underline";
 import TableIcon from "@atlaskit/icon/core/table";
-import BookOpenIcon from "@atlaskit/icon-lab/core/book-open";
 import DividerElementIcon from "@atlaskit/icon-lab/core/divider-element";
 import TerminalIcon from "@atlaskit/icon-lab/core/terminal";
 import TextHeadingFiveIcon from "@atlaskit/icon-lab/core/text-heading-five";
@@ -51,11 +47,18 @@ import { IconTile } from "@/components/ui/icon-tile";
 import { ArrowLeftIcon } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
 
+import {
+	RICH_TEXT_REFERENCE_CATEGORY_OPTIONS,
+	getRichTextReferenceCategoryIcon,
+	getRichTextReferenceCategoryLabel,
+	isRichTextReferenceCategory,
+} from "./reference-categories";
 import type {
 	RichTextCommandCategory,
 	RichTextMentionCategory,
 	RichTextMentionItem,
 	RichTextMentionSources,
+	RichTextReferenceCategory,
 	RichTextSlashCategory,
 } from "./types";
 
@@ -124,15 +127,6 @@ const nestedCommandDescriptionVariants: Variants = {
 		transform: "translateY(0px)",
 		transition: { delay: 0.02, duration: 0.16, ease: [0, 0.4, 0, 1] },
 	},
-};
-
-const CATEGORY_LABELS: Record<RichTextMentionCategory, string> = {
-	subagent: "Subagents",
-	human: "Human",
-	team: "A team",
-	skill: "Skills",
-	tool: "Tools",
-	knowledge: "Knowledge",
 };
 
 const PEOPLE_AVATAR_SRCS = [
@@ -225,7 +219,7 @@ const AGENT_AVATAR_SRCS = [
 ] as const;
 
 const MENTION_PARENT_LABELS: Record<RichTextMentionParentCategory, string> = {
-	subagent: "Subagents",
+	subagent: getRichTextReferenceCategoryLabel("subagent"),
 	"people-team": "People and team",
 };
 
@@ -236,11 +230,7 @@ const MENTION_TARGET_ORDER: readonly RichTextMentionParentCategory[] = [
 ];
 
 /** "/" command surface: everything else, each opening a nested item list. */
-const COMMAND_CATEGORY_ORDER: readonly RichTextCommandCategory[] = [
-	"skill",
-	"tool",
-	"knowledge",
-];
+const COMMAND_CATEGORY_ORDER: readonly RichTextCommandCategory[] = RICH_TEXT_REFERENCE_CATEGORY_OPTIONS.map((option) => option.category);
 
 const SLASH_CATEGORY_ORDER: readonly RichTextSlashCategory[] = [
 	...COMMAND_CATEGORY_ORDER,
@@ -544,19 +534,15 @@ export const SLASH_COMMANDS: readonly RichTextCommandItem[] = [
 ];
 
 function getCategoryIcon(category: RichTextMentionCategory): ReactNode {
+	if (isRichTextReferenceCategory(category)) {
+		return getRichTextReferenceCategoryIcon(category);
+	}
+
 	switch (category) {
-		case "subagent":
-			return <AiAgentIcon label="" size="small" />;
 		case "human":
 			return <PersonIcon label="" size="small" />;
 		case "team":
 			return <TeamsIcon label="" size="small" />;
-		case "skill":
-			return <AppsIcon label="" size="small" />;
-		case "tool":
-			return <ToolsIcon label="" size="small" />;
-		case "knowledge":
-			return <BookOpenIcon label="" size="small" />;
 	}
 }
 
@@ -567,7 +553,7 @@ function getSlashCategoryIcon(category: RichTextSlashCategory): ReactNode {
 }
 
 function getSlashCategoryLabel(category: RichTextSlashCategory): string {
-	return category === "format" ? "Format" : CATEGORY_LABELS[category];
+	return category === "format" ? "Format" : getRichTextReferenceCategoryLabel(category);
 }
 
 export function RichTextSuggestionMenu({
@@ -978,14 +964,29 @@ export function createSlashSuggestionRenderer(
 function getMergedMentionSources(
 	sources: RichTextMentionSources | undefined,
 ): RichTextMentionSources {
+	const mergeCategoryItems = (category: RichTextMentionCategory): readonly RichTextMentionItem[] => {
+		const merged = [...(sources?.[category] ?? []), ...(STATIC_MENTION_ITEMS[category] ?? [])];
+		const seen = new Set<string>();
+
+		return merged.filter((item) => {
+			const key = `${item.category}:${item.id}:${item.label.trim().toLowerCase()}`;
+			if (seen.has(key)) {
+				return false;
+			}
+			seen.add(key);
+			return true;
+		});
+	};
+
 	return {
 		...STATIC_MENTION_ITEMS,
 		...sources,
-		subagent: sources?.subagent ?? STATIC_MENTION_ITEMS.subagent,
-		human: sources?.human ?? STATIC_MENTION_ITEMS.human,
-		team: sources?.team ?? STATIC_MENTION_ITEMS.team,
-		tool: sources?.tool ?? STATIC_MENTION_ITEMS.tool,
-		knowledge: sources?.knowledge ?? STATIC_MENTION_ITEMS.knowledge,
+		subagent: mergeCategoryItems("subagent"),
+		human: mergeCategoryItems("human"),
+		team: mergeCategoryItems("team"),
+		skill: mergeCategoryItems("skill"),
+		tool: mergeCategoryItems("tool"),
+		knowledge: mergeCategoryItems("knowledge"),
 	};
 }
 
@@ -1122,7 +1123,7 @@ export function getMentionTargetItems(
 	return buildCategoryMenuItems(MENTION_TARGET_ORDER, sources);
 }
 
-/** Parent entries for the "/" command surface: skills, tools, knowledge. */
+/** Parent entries for the "/" command surface: subagents, skills, tools, knowledge. */
 export function getSlashCommandCategoryItems(
 	sources?: RichTextMentionSources,
 ): readonly RichTextSuggestionMenuItem[] {

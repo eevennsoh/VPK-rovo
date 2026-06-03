@@ -59,8 +59,11 @@ import {
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import {
 	type RichTextMentionItem,
+	type RichTextMentionRemovalRequest,
 	type RichTextMentionSources,
+	type RichTextReferenceCategory,
 	RichTextEditor,
+	isRichTextReferenceCategory,
 } from "@/components/ui-custom/rich-text-editor";
 import { SkillTag } from "@/components/ui-custom/skill-tag";
 import { useBentoDescriptionClamp } from "@/components/ui-custom/hooks/use-bento-description-clamp";
@@ -291,6 +294,64 @@ function toMentionId(category: RichTextMentionItem["category"], id: string): str
 	return `${category}:${id.trim().replace(/\s+/g, "-")}`;
 }
 
+export type AgentConfigReferenceListFieldName = Extract<
+	AgentConfigListFieldName,
+	"knowledge" | "skills" | "subagents" | "tools"
+>;
+
+const AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY: Record<RichTextReferenceCategory, AgentConfigReferenceListFieldName> = {
+	knowledge: "knowledge",
+	skill: "skills",
+	subagent: "subagents",
+	tool: "tools",
+};
+
+const AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD: Record<AgentConfigReferenceListFieldName, RichTextReferenceCategory> = {
+	knowledge: "knowledge",
+	skills: "skill",
+	subagents: "subagent",
+	tools: "tool",
+};
+
+function isAgentConfigReferenceListField(
+	field: AgentConfigListFieldName,
+): field is AgentConfigReferenceListFieldName {
+	return field in AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD;
+}
+
+function getNormalizedAgentReferenceValue(value: string): string {
+	return value.trim().toLowerCase();
+}
+
+function getAgentReferenceKey(
+	field: AgentConfigReferenceListFieldName,
+	value: string,
+): string {
+	return `${field}:${getNormalizedAgentReferenceValue(value)}`;
+}
+
+function hasAgentReferenceValue(
+	config: AgentConfigFormValue,
+	field: AgentConfigReferenceListFieldName,
+	value: string,
+): boolean {
+	const normalizedValue = getNormalizedAgentReferenceValue(value);
+	return getNonEmptyConfigItems(config[field]).some(
+		(item) => getNormalizedAgentReferenceValue(item) === normalizedValue,
+	);
+}
+
+function mapConfigValuesToMentionItems(
+	category: RichTextReferenceCategory,
+	values: readonly string[] | undefined,
+): RichTextMentionItem[] {
+	return getNonEmptyConfigItems(values).map((value) => ({
+		category,
+		id: toMentionId(category, value),
+		label: value,
+	}));
+}
+
 function mapSkillsToMentionItems(
 	skills: readonly HermesSkillSummary[] | undefined,
 ): RichTextMentionItem[] {
@@ -316,6 +377,26 @@ function mapMemoryToKnowledgeItems(
 			label: node.title || node.label || node.id,
 			description: node.summary || node.kind,
 		}));
+}
+
+function mergeMentionItems(
+	...groups: ReadonlyArray<readonly RichTextMentionItem[] | undefined>
+): RichTextMentionItem[] {
+	const seen = new Set<string>();
+	const items: RichTextMentionItem[] = [];
+
+	for (const group of groups) {
+		for (const item of group ?? []) {
+			const key = `${item.category}:${item.id}:${getNormalizedAgentReferenceValue(item.label)}`;
+			if (seen.has(key)) {
+				continue;
+			}
+			seen.add(key);
+			items.push(item);
+		}
+	}
+
+	return items;
 }
 
 function getAgentProfileCoverBackgroundColor(avatarSrc: string | undefined): string {
@@ -2133,8 +2214,11 @@ function AgentInstructionsComposer({
 	contentClassName,
 	editorClassName,
 	instructions,
-	onOpenDirectory,
+	mentionRemovalRequest,
+	onAddListValues,
+	onMentionRemovalRequestHandled,
 	onInstructionsChange,
+	onRemoveReferenceValue,
 	onStartWithTemplate,
 	screenAssistantTargetId,
 	showSectionLabel = true,
@@ -2143,40 +2227,91 @@ function AgentInstructionsComposer({
 	bottomSlot?: ReactNode;
 	bottomSlotClassName?: string;
 	className?: string;
+	config: AgentConfigFormValue;
 	contentClassName?: string;
 	editorClassName?: string;
 	instructions?: string;
-	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
+	mentionRemovalRequest?: RichTextMentionRemovalRequest | null;
+	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
+	onMentionRemovalRequestHandled?: (key: string) => void;
 	onInstructionsChange?: (value: string) => void;
+	onRemoveReferenceValue?: (field: AgentConfigReferenceListFieldName, value: string) => void;
 	onStartWithTemplate?: () => void;
 	screenAssistantTargetId?: string;
 	showSectionLabel?: boolean;
 	toolbarBelowSlot?: ReactNode;
-	config?: AgentConfigFormValue;
 }>) {
 	const [skills, setSkills] = useState<RichTextMentionItem[]>([]);
 	const [knowledge, setKnowledge] = useState<RichTextMentionItem[]>([]);
 	const [templatesOpen, setTemplatesOpen] = useState(false);
+	const inlineManagedReferenceKeysRef = useRef(new Set<string>());
+	const mentionInventoryCountsRef = useRef(new Map<string, {
+		count: number;
+		field: AgentConfigReferenceListFieldName;
+		label: string;
+	}>());
 	const mentionSources = useMemo<RichTextMentionSources>(() => ({
-		skill: skills,
-		knowledge,
-	}), [knowledge, skills]);
-	const handleInsertReferenceOption = useCallback((category: string): boolean => {
-		if (category === "knowledge") {
-			onOpenDirectory?.("knowledge");
-			return Boolean(onOpenDirectory);
-		}
-		if (category === "tool") {
-			onOpenDirectory?.("tools");
-			return Boolean(onOpenDirectory);
-		}
-		if (category === "skill") {
-			onOpenDirectory?.("skills");
-			return Boolean(onOpenDirectory);
+		subagent: mapConfigValuesToMentionItems("subagent", config.subagents),
+		skill: mergeMentionItems(mapConfigValuesToMentionItems("skill", config.skills), skills),
+		tool: mapConfigValuesToMentionItems("tool", config.tools),
+		knowledge: mergeMentionItems(mapConfigValuesToMentionItems("knowledge", config.knowledge), knowledge),
+	}), [config.knowledge, config.skills, config.subagents, config.tools, knowledge, skills]);
+	const handleInsertReferenceOption = useCallback((category: RichTextReferenceCategory, label: string): false => {
+		const field = AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY[category];
+		const key = getAgentReferenceKey(field, label);
+
+		inlineManagedReferenceKeysRef.current.add(key);
+		if (!hasAgentReferenceValue(config, field, label)) {
+			onAddListValues?.(field, [label]);
 		}
 
 		return false;
-	}, [onOpenDirectory]);
+	}, [config, onAddListValues]);
+	const handleMentionInventoryChange = useCallback((mentions: readonly RichTextMentionItem[]): void => {
+		const nextCounts = new Map<string, {
+			count: number;
+			field: AgentConfigReferenceListFieldName;
+			label: string;
+		}>();
+
+		for (const mention of mentions) {
+			if (!isRichTextReferenceCategory(mention.category)) {
+				continue;
+			}
+
+			const field = AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY[mention.category];
+			const key = getAgentReferenceKey(field, mention.label);
+			const current = nextCounts.get(key);
+			nextCounts.set(key, {
+				count: (current?.count ?? 0) + 1,
+				field,
+				label: mention.label,
+			});
+		}
+
+		for (const [key, next] of nextCounts) {
+			const previousCount = mentionInventoryCountsRef.current.get(key)?.count ?? 0;
+			if (next.count <= previousCount) {
+				continue;
+			}
+
+			inlineManagedReferenceKeysRef.current.add(key);
+			if (!hasAgentReferenceValue(config, next.field, next.label)) {
+				onAddListValues?.(next.field, [next.label]);
+			}
+		}
+
+		for (const [key, previous] of mentionInventoryCountsRef.current) {
+			if (nextCounts.has(key) || !inlineManagedReferenceKeysRef.current.has(key)) {
+				continue;
+			}
+
+			inlineManagedReferenceKeysRef.current.delete(key);
+			onRemoveReferenceValue?.(previous.field, previous.label);
+		}
+
+		mentionInventoryCountsRef.current = nextCounts;
+	}, [config, onAddListValues, onRemoveReferenceValue]);
 
 	useEffect(() => {
 		const abortController = new AbortController();
@@ -2246,7 +2381,10 @@ function AgentInstructionsComposer({
 				value={instructions}
 				dataFlowConfig={config}
 				mentionSources={mentionSources}
+				mentionRemovalRequest={mentionRemovalRequest}
 				onMarkdownChange={onInstructionsChange}
+				onMentionInventoryChange={handleMentionInventoryChange}
+				onMentionRemovalRequestHandled={onMentionRemovalRequestHandled}
 			/>
 			{bottomSlot ? (
 				<div className={bottomSlotClassName}>
@@ -2507,6 +2645,7 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	onListItemChange?: (field: AgentConfigListFieldName, index: number, value: string) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
+	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
 	screenAssistantTargetPrefix?: string;
@@ -2521,6 +2660,7 @@ export const AgentConfigFields = memo(
 		idPrefix,
 		layout = "default",
 		onListItemChange,
+		onAddListValues,
 		onAppendListItem,
 		onOpenDirectory,
 		onRemoveListItem,
@@ -2531,6 +2671,7 @@ export const AgentConfigFields = memo(
 		const isFilledConfig = hasFilledAgentConfig(config);
 		const compactScrollOverflow = useHasVerticalOverflow<HTMLDivElement>();
 		const [templatesDismissed, setTemplatesDismissed] = useState(false);
+		const [mentionRemovalRequest, setMentionRemovalRequest] = useState<RichTextMentionRemovalRequest | null>(null);
 		const dismissTemplateTiles = useCallback(() => {
 			setTemplatesDismissed(true);
 		}, []);
@@ -2543,9 +2684,38 @@ export const AgentConfigFields = memo(
 			onListItemChange?.(field, index, value);
 		}, [dismissTemplateTiles, onListItemChange]);
 		const handleRemoveListItem = useCallback((field: AgentConfigListFieldName, index: number) => {
+			const removedValue = config[field]?.[index]?.trim();
+
 			dismissTemplateTiles();
 			onRemoveListItem?.(field, index);
-		}, [dismissTemplateTiles, onRemoveListItem]);
+			if (removedValue && isAgentConfigReferenceListField(field)) {
+				setMentionRemovalRequest({
+					category: AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD[field],
+					key: `${field}:${index}:${removedValue}:${Date.now()}`,
+					label: removedValue,
+				});
+			}
+		}, [config, dismissTemplateTiles, onRemoveListItem]);
+		const handleAddListValues = useCallback((field: AgentConfigReferenceListFieldName, values: readonly string[]) => {
+			dismissTemplateTiles();
+			onAddListValues?.(field, values);
+		}, [dismissTemplateTiles, onAddListValues]);
+		const handleRemoveReferenceValue = useCallback((field: AgentConfigReferenceListFieldName, value: string) => {
+			const normalizedValue = getNormalizedAgentReferenceValue(value);
+			const index = (config[field] ?? []).findIndex(
+				(item) => getNormalizedAgentReferenceValue(item) === normalizedValue,
+			);
+
+			if (index < 0) {
+				return;
+			}
+
+			dismissTemplateTiles();
+			onRemoveListItem?.(field, index);
+		}, [config, dismissTemplateTiles, onRemoveListItem]);
+		const handleMentionRemovalRequestHandled = useCallback((key: string) => {
+			setMentionRemovalRequest((current) => current?.key === key ? null : current);
+		}, []);
 		const handleAppendListItem = useCallback((field: AgentConfigListFieldName) => {
 			dismissTemplateTiles();
 			onAppendListItem?.(field);
@@ -2602,8 +2772,11 @@ export const AgentConfigFields = memo(
 								contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]")}
 								editorClassName={isFilledConfig ? undefined : "agent-instructions-tiptap-editor-compact-empty"}
 								instructions={config.instructions}
-								onOpenDirectory={handleOpenDirectory}
+								mentionRemovalRequest={mentionRemovalRequest}
+								onAddListValues={handleAddListValues}
 								onInstructionsChange={(value) => handleTextChange("instructions", value)}
+								onMentionRemovalRequestHandled={handleMentionRemovalRequestHandled}
+								onRemoveReferenceValue={handleRemoveReferenceValue}
 								onStartWithTemplate={dismissTemplateTiles}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 								showSectionLabel={false}
@@ -2654,8 +2827,11 @@ export const AgentConfigFields = memo(
 						<AgentInstructionsComposer
 							config={config}
 							instructions={config.instructions}
-							onOpenDirectory={handleOpenDirectory}
+							mentionRemovalRequest={mentionRemovalRequest}
+							onAddListValues={handleAddListValues}
 							onInstructionsChange={(value) => handleTextChange("instructions", value)}
+							onMentionRemovalRequestHandled={handleMentionRemovalRequestHandled}
+							onRemoveReferenceValue={handleRemoveReferenceValue}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 						/>
 					</>

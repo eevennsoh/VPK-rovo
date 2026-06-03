@@ -5,12 +5,14 @@
  */
 export type RichTextMentionTarget = "subagent" | "human" | "team";
 
+export type RichTextReferenceCategory = "subagent" | "skill" | "tool" | "knowledge";
+
 /**
  * "/" command categories. Each opens a nested list of reference items and is
  * inserted as a mention token. "knowledge" is the former "link" category;
  * "memory" folded into "knowledge" and "trigger" was retired.
  */
-export type RichTextCommandCategory = "skill" | "tool" | "knowledge";
+export type RichTextCommandCategory = RichTextReferenceCategory;
 
 /**
  * "/" parent categories. Format is a command-only category whose children run
@@ -29,6 +31,13 @@ export interface RichTextMentionItem {
 	id: string;
 	label: string;
 	description?: string;
+}
+
+export interface RichTextMentionRemovalRequest {
+	category: RichTextReferenceCategory;
+	id?: string;
+	key: string;
+	label?: string;
 }
 
 export type RichTextMentionSources = Partial<
