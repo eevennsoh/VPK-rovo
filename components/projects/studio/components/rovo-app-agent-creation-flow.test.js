@@ -64,7 +64,7 @@ test("RovoAppShell starts Studio agent creation only from the default-agent home
 	assert.match(SHELL_SOURCE, /buildStudioAgentCreationContext,/u);
 	assert.match(SHELL_SOURCE, /from "@\/components\/projects\/studio\/lib\/studio-agent-creation-context";/u);
 	assert.match(SHELL_SOURCE, /buildStudioAgentCreationContext\(text, creationTemplate\)/u);
-	assert.match(SHELL_SOURCE, /const isDefaultAgentHomeState = showHomeState && !isCustomAgentSelected;/u);
+	assert.match(SHELL_SOURCE, /const isDefaultAgentHomeState = showHomeState && !isCustomAgentSelected && !shouldShowAgentConfigPane;/u);
 	assert.match(SHELL_SOURCE, /const shouldStartStudioAgentCreation = isDefaultAgentHomeStateRef\.current && !isRealtimeActive;/u);
 	assert.match(SHELL_SOURCE, /\.\.\.\(shouldStartStudioAgentCreation \? \{ creationMode: "agent" as const \} : \{\}\)/u);
 	assert.ok((SHELL_SOURCE.match(/creationMode: "agent"/gu) ?? []).length >= 1);
@@ -109,7 +109,7 @@ test("Studio default landing lists custom session agents below the composer", ()
 
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /DropdownMenu/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className=\{`mx-auto mt-12 w-full \$\{ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\}`\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className=\{`mx-auto mt-12 flex w-full flex-col gap-2 \$\{ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\}`\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<Table className="min-w-full table-fixed">/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /max-w-\[1280px\]|min-w-\[760px\]/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Button \} from "@\/components\/ui\/button";/u);
@@ -128,6 +128,15 @@ test("Studio default landing lists custom session agents below the composer", ()
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed=\{isPinned\}[\s\S]*render=\{isPinned \? <PinFilledIcon label="" size="small" \/> : <PinIcon label="" size="small" \/>\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:\[&_svg\]:text-icon-subtle!/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /text-icon-selected/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /sortedEntries\.map\(\(entry, entryIndex\) => \{/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /const isFirstRow = entryIndex === 0;/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /const isLastRow = entryIndex === sortedEntries\.length - 1;/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /isFirstRow && "rounded-tl-\[12px\]"[\s\S]*isLastRow && "rounded-bl-\[12px\]"/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /isFirstRow && "rounded-tr-\[12px\]"[\s\S]*isLastRow && "rounded-br-\[12px\]"/u);
+	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /rounded-l-\[12px\]|rounded-r-\[12px\]/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<TableCell className=\{cn\("px-2", firstColumnRadiusClass/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<TableCell className=\{cn\("px-2", lastColumnRadiusClass/u);
+	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /<TableCell className=\{cn\("px-[04]/u);
 });
 
 test("Studio start-from-scratch scribble replays on each composer hover reveal", () => {
@@ -293,10 +302,21 @@ test("Studio agent results use guarded session-agent registration with preserve-
 	assert.match(SHELL_SOURCE, /sessionAgentEntries=\{studioAgentRegistry\.sessionAgentEntries\}/u);
 	assert.match(SHELL_SOURCE, /sessionAgents=\{studioAgentRegistry\.sessionAgentEntries\.map\(\(entry\) => entry\.profile\)\}/u);
 	assert.match(SHELL_SOURCE, /agents=\{ROVO_DIRECTORY_AGENT_PROFILES\}/u);
-	assert.match(SHELL_SOURCE, /selectedAgentId=\{studioAgentRegistry\.selectedAgentId\}/u);
+	assert.match(SHELL_SOURCE, /selectedAgentId=\{activeSessionAgentEntry\?\.profile\.id \?\? studioAgentRegistry\.selectedAgentId\}/u);
 	assert.match(SHELL_SOURCE, /onSelectAgent=\{handleStudioSidebarAgentSelect\}/u);
 	assert.match(SHELL_SOURCE, /onViewAllAgents=\{handleReturnToAgentsHome\}/u);
 	assert.doesNotMatch(SHELL_SOURCE, /rovo-app-agents-directory/u);
+});
+
+test("Studio custom agent config is not treated as the agents landing", () => {
+	assert.match(
+		SHELL_SOURCE,
+		/const isDefaultAgentHomeState = showHomeState && !isCustomAgentSelected && !shouldShowAgentConfigPane;/u,
+	);
+	assert.match(
+		SHELL_SOURCE,
+		/selectedAgentId=\{activeSessionAgentEntry\?\.profile\.id \?\? studioAgentRegistry\.selectedAgentId\}/u,
+	);
 });
 
 test("Studio agent edit surfaces share the session-agent display name", () => {

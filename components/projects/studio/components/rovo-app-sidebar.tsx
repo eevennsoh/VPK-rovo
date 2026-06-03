@@ -298,6 +298,9 @@ function StudioSidebarNavigation({
 	const hasSelectedRecentAgent = recentAgents.items.some((item) =>
 		getStudioSidebarRecentAgentSelected(item, recentAgents.items, activeThreadId, selectedAgentId)
 	);
+	const hasSelectedSessionAgent = selectedAgentId
+		? sessionAgentEntries.some((entry) => entry.profile.id === selectedAgentId)
+		: false;
 	// Accordion state for the "Agents" header. Default open, and auto-open when a
 	// recent agent becomes selected from outside the visible list; a direct header
 	// click can still collapse the group.
@@ -418,7 +421,7 @@ function StudioSidebarNavigation({
 													label="View all agents"
 													leading={<MenuIcon label="" />}
 													leadingSize="medium"
-													isSelected={isAgentsHomeActive && !hasSelectedRecentAgent}
+													isSelected={isAgentsHomeActive && !hasSelectedRecentAgent && !hasSelectedSessionAgent}
 													onClick={onViewAllAgents}
 													className="min-h-7"
 												/>

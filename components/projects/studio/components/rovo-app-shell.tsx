@@ -3577,7 +3577,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const hasActiveThreadRun = typeof chat.activeThreadId === "string" && chat.backgroundStreamThreadIds.has(chat.activeThreadId);
 	const showHomeState = !chat.isLoadingThread && !isArtifactOpen && !hasActiveThreadRun && visibleMessages.length === 0;
 	const shouldShowChatHeader = !shouldShowAgentConfigPane && (visibleMessages.length > 0 || hasActiveThreadRun || chat.isStreaming);
-	const isDefaultAgentHomeState = showHomeState && !isCustomAgentSelected;
+	const isDefaultAgentHomeState = showHomeState && !isCustomAgentSelected && !shouldShowAgentConfigPane;
 	isDefaultAgentHomeStateRef.current = isDefaultAgentHomeState;
 	const shouldShowStudioCustomAgentsTable = isDefaultAgentHomeState && studioAgentRegistry.sessionAgentEntries.length > 0;
 	const shouldReduceMotion = useReducedMotion();
@@ -4272,7 +4272,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						onPointerLeave={sidebarResize.onResizeHandlePointerLeave}
 					/>
 				}
-				selectedAgentId={studioAgentRegistry.selectedAgentId}
+				selectedAgentId={activeSessionAgentEntry?.profile.id ?? studioAgentRegistry.selectedAgentId}
 				sessionAgentEntries={studioAgentRegistry.sessionAgentEntries}
 				threads={chat.threads}
 				threadsLoaded={chat.threadsLoaded}
