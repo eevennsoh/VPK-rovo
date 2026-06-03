@@ -4145,7 +4145,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									onDismissPlanExecutionTracker={chat.dismissPlanExecutionTracker}
 									onRemoveHermesSkill={selectHermesSkill}
 									onSelectHermesSkill={selectHermesSkill}
-									onStartFromScratch={handleStartAgentFromScratch}
+									onStartFromScratch={isDefaultAgentHomeState ? handleStartAgentFromScratch : undefined}
 									onStop={handleStop}
 									onRemoveQueuedPrompt={chat.removeQueuedPrompt}
 									onSendQueuedPromptNow={chat.sendQueuedPromptNow}

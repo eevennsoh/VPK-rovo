@@ -111,6 +111,28 @@ function migrateLegacyRecord(record: LegacyPublishedAgentRecord): PersistedSessi
 	};
 }
 
+// Collapse records that share a profileId, keeping the freshest (highest
+// lastTouchedAt) for each. Two records with the same profileId would hydrate
+// into two session-agent entries with the same identity, which then render
+// under the same React key in the sidebar recent-agents list and the "My
+// agents" table. React's keyed reconciler can't tell same-key siblings apart,
+// so when the list shrinks (e.g. deleting one of the duplicates) it leaves a
+// stale DOM node behind — the deleted agent appears to linger on screen.
+// Deduping at the storage read boundary keeps that corruption out of state and
+// rewrites clean records on the next persist.
+export function dedupeSessionAgentRecordsByProfileId(
+	records: readonly PersistedSessionAgentRecord[],
+): PersistedSessionAgentRecord[] {
+	const byProfileId = new Map<string, PersistedSessionAgentRecord>();
+	for (const record of records) {
+		const existing = byProfileId.get(record.profileId);
+		if (!existing || record.lastTouchedAt > existing.lastTouchedAt) {
+			byProfileId.set(record.profileId, record);
+		}
+	}
+	return Array.from(byProfileId.values());
+}
+
 export function readSessionAgentRecords(): PersistedSessionAgentRecord[] {
 	if (!isStorageAvailable()) {
 		return [];
@@ -120,7 +142,9 @@ export function readSessionAgentRecords(): PersistedSessionAgentRecord[] {
 		const storage = window.localStorage;
 		const currentRaw = storage.getItem(STUDIO_SESSION_AGENTS_STORAGE_KEY);
 		if (currentRaw !== null) {
-			return parseStoredArray(currentRaw, isPersistedSessionAgentRecord);
+			return dedupeSessionAgentRecordsByProfileId(
+				parseStoredArray(currentRaw, isPersistedSessionAgentRecord),
+			);
 		}
 
 		const legacyRaw = storage.getItem(LEGACY_PUBLISHED_AGENTS_STORAGE_KEY);
@@ -129,7 +153,9 @@ export function readSessionAgentRecords(): PersistedSessionAgentRecord[] {
 		}
 
 		const legacyRecords = parseStoredArray(legacyRaw, isLegacyPublishedAgentRecord);
-		const migrated = legacyRecords.map(migrateLegacyRecord);
+		const migrated = dedupeSessionAgentRecordsByProfileId(
+			legacyRecords.map(migrateLegacyRecord),
+		);
 
 		// Persist the migrated payload, then delete the legacy key only if the
 		// write succeeded. If setItem throws (quota, serialization), keep the
