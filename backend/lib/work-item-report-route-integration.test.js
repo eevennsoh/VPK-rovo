@@ -95,3 +95,18 @@ test("RFP demo agent creation emits an agent result instead of an artifact resul
 		/if \(turn === "agent-creation"\) \{[\s\S]*writeAgentsRfpDemoAgentResult\(writer, \{ selectedKnowledge \}\);[\s\S]*writeAgentsRfpDemoTurnComplete\(writer\);[\s\S]*return;\s*\}\s*if \(turn === "qualification-answer"\)/u,
 	);
 });
+
+test("backend clarification question cards preserve creation mode metadata", () => {
+	assert.match(
+		SERVER_SOURCE,
+		/payload: \{\s*\.\.\.questionCardPayload,[\s\S]*\.\.\.\(creationMode === "agent" \|\| creationMode === "skill"[\s\S]*\? \{ creationMode \}/u,
+	);
+	assert.match(
+		SERVER_SOURCE,
+		/payload: \{\s*\.\.\.payload,[\s\S]*\.\.\.\(creationMode === "agent" \|\| creationMode === "skill"[\s\S]*\? \{ creationMode \}/u,
+	);
+	assert.match(
+		SERVER_SOURCE,
+		/resolvedWidgetType === CLARIFICATION_WIDGET_TYPE &&[\s\S]*\(creationMode === "agent" \|\| creationMode === "skill"\)[\s\S]*\.\.\.parsedWidget,[\s\S]*creationMode/u,
+	);
+});
