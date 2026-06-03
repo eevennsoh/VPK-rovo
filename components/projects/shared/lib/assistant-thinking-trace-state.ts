@@ -97,6 +97,13 @@ interface CollectAssistantThinkingTraceDataOptions {
 interface ResolveThinkingToolCallStepOpenOptions {
 	toolCallId: string;
 	manuallyOpenedToolCallIds: ReadonlySet<string>;
+	/**
+	 * Whether this tool call is the most recent one in the trace. The latest tool
+	 * call (in-flight or just completed) stays expanded; earlier ones collapse
+	 * once a newer tool call has appeared, so the next invocation can fade in
+	 * while the previous metadata is still collapsing.
+	 */
+	isLatestToolCall?: boolean;
 }
 
 const QUESTIONS_ANSWERED_OUTPUT = "Questions answered.";
@@ -187,8 +194,16 @@ function shouldRenderThinkingToolCall(
 export function resolveThinkingToolCallStepOpen({
 	toolCallId,
 	manuallyOpenedToolCallIds,
+	isLatestToolCall = false,
 }: Readonly<ResolveThinkingToolCallStepOpenOptions>): boolean {
-	return manuallyOpenedToolCallIds.has(toolCallId);
+	if (manuallyOpenedToolCallIds.has(toolCallId)) {
+		return true;
+	}
+
+	// The latest tool call (in-flight or most recently completed) stays expanded
+	// so its invocation and metadata are visible. Earlier tool calls collapse
+	// once a newer one appears.
+	return isLatestToolCall;
 }
 
 export function resolveAssistantThinkingTraceOpen({
