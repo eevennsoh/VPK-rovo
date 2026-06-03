@@ -45,7 +45,13 @@ import { LeftNavigation } from "@/components/blocks/top-navigation/components/le
 import { RightNavigation } from "@/components/blocks/top-navigation/components/right-navigation";
 import SearchSuggestionsPanel from "@/components/blocks/top-navigation/components/search-suggestions-panel";
 import { useTopNavigation } from "@/components/blocks/top-navigation/hooks/use-top-navigation";
-import { ROVO_APP_SEPARATOR_LINE_OFFSET_PX, TOP_NAV_PADDING_PX } from "@/components/blocks/top-navigation/layout-constants";
+import {
+	ROVO_APP_SEPARATOR_LINE_OFFSET_PX,
+	TOP_NAV_COLLAPSED_HEADER_PADDING_PX,
+	TOP_NAV_COLLAPSED_LEFT_SECTION_WIDTH_PX,
+	TOP_NAV_HEADER_HEIGHT_PX,
+	TOP_NAV_PADDING_PX,
+} from "@/components/blocks/top-navigation/layout-constants";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
 import SearchIcon from "@atlaskit/icon/core/search";
@@ -567,6 +573,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const rovoAppSidebarStyle = {
 		"--sidebar-width": `${sidebarResize.sidebarWidth}px`,
 	} as CSSProperties;
+	const headerHeightStyle: CSSProperties = {
+		height: `${TOP_NAV_HEADER_HEIGHT_PX}px`,
+	};
 	const [steeringState, setSteeringState] = useState<{
 		phase: RovoAppSteeringPhase;
 		text: string | null;
@@ -2346,7 +2355,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			{!embedded ? (
 				<div
 					className={cn(
-						"fixed top-0 left-0 z-50 flex h-12 items-center px-3 transition-[width,border-color] duration-medium ease-in-out",
+						"fixed top-0 left-0 z-50 flex items-center px-3 transition-[width,border-color] duration-medium ease-in-out",
 						sidebarResize.isResizing && "transition-none",
 						chat.sidebarOpen
 							? cn(
@@ -2356,9 +2365,14 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									// chrome; collapse intent stays on the handle (`data-will-collapse`).
 									sidebarResize.isResizing || sidebarResize.isResizeHandleHovered ? "border-border-selected" : "border-border",
 								)
-							: "w-24 border-b border-border",
+							: "border-b border-border",
 					)}
-					style={{ backgroundColor: token("elevation.surface"), viewTransitionName: "persistent-sidebar" as never }}
+					style={{
+						...headerHeightStyle,
+						width: chat.sidebarOpen ? undefined : `${TOP_NAV_COLLAPSED_LEFT_SECTION_WIDTH_PX}px`,
+						backgroundColor: token("elevation.surface"),
+						viewTransitionName: "persistent-sidebar" as never,
+					}}
 				>
 					<LeftNavigation
 						product="rovo"
@@ -2381,8 +2395,10 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			<div className="flex min-h-0 min-w-0 flex-1 flex-col">
 				{!embedded ? (
 					<div
-						className={cn("flex h-12 shrink-0 items-center border-b px-3 transition-[padding] duration-medium ease-in-out", !chat.sidebarOpen && "pl-24")}
+						className="flex shrink-0 items-center border-b px-3 transition-[padding] duration-medium ease-in-out"
 						style={{
+							...headerHeightStyle,
+							paddingLeft: chat.sidebarOpen ? undefined : `${TOP_NAV_COLLAPSED_HEADER_PADDING_PX}px`,
 							borderColor: token("color.border"),
 							backgroundColor: token("elevation.surface"),
 							viewTransitionName: "persistent-header" as never,

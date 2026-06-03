@@ -5,6 +5,8 @@ export const TOP_NAV_COLLAPSED_CONTROL_STEP_PX =
 
 export const TOP_NAV_PADDING_PX = 12;
 export const TOP_NAV_LEFT_SECTION_WIDTH_PX = 230;
+export const TOP_NAV_COLLAPSED_LEFT_SECTION_WIDTH_PX = 144;
+export const TOP_NAV_COLLAPSED_HEADER_PADDING_PX = 160;
 // Below this window width the right cluster (Ask Rovo, notifications, help,
 // settings, avatar) collapses into a single "…" overflow popover. Matches the
 // Figma frames: 768 still shows the full inline cluster, 480 collapses it. The

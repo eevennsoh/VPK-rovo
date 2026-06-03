@@ -6,11 +6,13 @@ import { token } from "@/lib/tokens";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import type { RovoAppThread } from "@/lib/rovo-app-types";
 import { cn } from "@/lib/utils";
+import { TOP_NAV_HEADER_HEIGHT_PX } from "@/components/blocks/top-navigation/layout-constants";
 
 interface RovoAppSidebarProps {
 	activeThreadId: string | null;
 	onCancelThreadRun: (threadId: string) => Promise<void>;
 	hoverOpen?: boolean;
+	headerOffsetPx?: number;
 	isResizing?: boolean;
 	onDeleteThread: (threadId: string) => Promise<void>;
 	onNewChat: () => void;
@@ -27,6 +29,7 @@ export function RovoAppSidebar({
 	activeThreadId,
 	onCancelThreadRun,
 	hoverOpen = false,
+	headerOffsetPx = TOP_NAV_HEADER_HEIGHT_PX,
 	isResizing,
 	onDeleteThread,
 	onNewChat,
@@ -50,14 +53,22 @@ export function RovoAppSidebar({
 				"bg-sidebar !px-0 !pb-0",
 				// Resize handle paints the divider; container border-r would stack to a 2px edge.
 				!resizeHandle && "group-data-[state=expanded]:group-data-[side=left]:border-r group-data-[state=expanded]:group-data-[side=left]:border-border",
-				topOffset && "!top-12 !h-[calc(100svh-3rem)]",
 			)}
 			isResizing={isResizing}
 			onMouseEnter={onSidebarMouseEnter}
 			onMouseLeave={onSidebarMouseLeave}
 			resizeHandle={resizeHandle}
 			role="complementary"
-			style={hoverOpen ? { left: 0, zIndex: 50, boxShadow: token("elevation.shadow.overlay") } : { zIndex: 50 }}
+			style={{
+				zIndex: 50,
+				...(topOffset
+					? {
+							top: `${headerOffsetPx}px`,
+							height: `calc(100svh - ${headerOffsetPx}px)`,
+						}
+					: {}),
+				...(hoverOpen ? { left: 0, boxShadow: token("elevation.shadow.overlay") } : {}),
+			}}
 			variant="inset"
 		>
 			<SidebarContent className="gap-3 overflow-hidden bg-sidebar px-3">

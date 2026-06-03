@@ -22,6 +22,8 @@ import {
 	ROVO_APP_SEPARATOR_LINE_OFFSET_PX,
 	ROVO_APP_SIDEBAR_MAX_WIDTH_PX,
 	ROVO_APP_SIDEBAR_MIN_WIDTH_PX,
+	TOP_NAV_COLLAPSED_HEADER_PADDING_PX,
+	TOP_NAV_COLLAPSED_LEFT_SECTION_WIDTH_PX,
 	TOP_NAV_HEADER_HEIGHT_PX,
 	TOP_NAV_PADDING_PX,
 	TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX,
@@ -137,7 +139,7 @@ export default function TopNavigation({
 			/>
 
 			{/* Persistent side-nav chrome: aligns to the sidebar width when open and
-			    collapses to a 24-unit rail when closed. Hosts the sidebar toggle,
+			    collapses to the shared left chrome width when closed. Hosts the sidebar toggle,
 			    app switcher, and product logo. */}
 			<div
 				className={cn(
@@ -151,10 +153,11 @@ export default function TopNavigation({
 									? "border-border-selected"
 									: "border-border",
 							)
-						: "w-36 border-b border-border",
+						: "border-b border-border",
 				)}
 				style={{
 					...headerHeightStyle,
+					width: sidebarOpen ? undefined : `${TOP_NAV_COLLAPSED_LEFT_SECTION_WIDTH_PX}px`,
 					backgroundColor: token("elevation.surface"),
 					viewTransitionName: "persistent-sidebar" as never,
 				}}
@@ -178,12 +181,10 @@ export default function TopNavigation({
 			<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 				{/* Top navigation bar */}
 				<div
-					className={cn(
-						"flex shrink-0 items-center gap-2 border-b px-3 transition-[padding] duration-medium ease-in-out",
-						!sidebarOpen && "pl-40",
-					)}
+					className="flex shrink-0 items-center gap-2 border-b px-3 transition-[padding] duration-medium ease-in-out"
 					style={{
 						...headerHeightStyle,
+						paddingLeft: sidebarOpen ? undefined : `${TOP_NAV_COLLAPSED_HEADER_PADDING_PX}px`,
 						borderColor: token("color.border"),
 						backgroundColor: token("elevation.surface"),
 						viewTransitionName: "persistent-header" as never,
