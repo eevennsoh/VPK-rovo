@@ -5785,6 +5785,12 @@ const steps: ProgressTrackerStep[] = [
         description: "All steps pending.",
         demoSlug: "progress-tracker-demo-all-todo",
       },
+      {
+        title: "Activity timeline",
+        description:
+          "Agent activity feed with timestamp bylines, Rovo thread-link tags, and mixed running, completed, and failed states.",
+        demoSlug: "progress-tracker-demo-activity-timeline",
+      },
     ],
   },
 
