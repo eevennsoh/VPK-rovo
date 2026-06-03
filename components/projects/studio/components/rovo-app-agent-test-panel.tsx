@@ -255,6 +255,7 @@ function AgentTestChatPanel({
 				trigger: <AgentTestTriggerView entry={entry} />,
 				activity: <AgentTestActivityView entry={entry} />,
 			}}
+			showAgentTestControls
 			greeting={{
 				heading: testAgentProfile.name,
 				suggestions: testAgentProfile.starters,

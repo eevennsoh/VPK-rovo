@@ -219,6 +219,7 @@ export default function AppLayout({
 							chatContextBar={chatContextBar}
 							greeting={chatGreeting}
 							customAgentTabs={customAgentTabs}
+							fullWidthAgentTabs
 							onArtifactDialogOpen={onArtifactDialogOpen}
 							preserveFloatingSurfaceOnArtifactDialogOpen={preserveFloatingSurfaceOnArtifactDialogOpen}
 							containerStyle={

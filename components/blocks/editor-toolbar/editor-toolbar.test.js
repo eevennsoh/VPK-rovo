@@ -101,10 +101,17 @@ test("Editor toolbar exposes block inserts and an Add content reference dropdown
 	assert.doesNotMatch(componentSource, /aria-label="Paragraph"/u);
 	// Code block must no longer be selectable from the text style dropdown.
 	assert.doesNotMatch(componentSource, /label="Code block"\s*\n\s*isSelected=\{editor\.isActive\("codeBlock"\)\}/u);
-	// The `+` button is wrapped in a positioned div so it can anchor the Insert
-	// dropdown, which now offers reference categories (Knowledge / Tools /
-	// Skills / Subagents) inserted as mention tokens at the caret.
-	assert.match(componentSource, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>[\s\S]*<div[^>]*>\s*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>[\s\S]*<\/div>/u);
+	// The `+` button is wrapped in a positioned, pinned anchor div (it never
+	// folds) so it can anchor the Insert dropdown, which offers reference
+	// categories (Knowledge / Tools / Skills / Subagents) inserted as mention
+	// tokens at the caret. When the toolbar is space-constrained, foldable
+	// control groups collapse into this same dropdown above the references.
+	assert.match(componentSource, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>[\s\S]*<div data-toolbar-anchor[^>]*>[\s\S]*<Button[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>[\s\S]*<\/div>/u);
+	// Foldable groups are measured and collapse into the "+" dropdown via the
+	// overflow hook; the anchored "+" group carries the marker attribute.
+	assert.match(componentSource, /useToolbarOverflow/u);
+	assert.match(componentSource, /data-toolbar-group/u);
+	assert.match(componentSource, /data-toolbar-anchor/u);
 	assert.match(componentSource, /function handleInsertReference\(/u);
 	assert.match(componentSource, /\.focus\(\)\s*\.insertContent\(\[\s*\{\s*type: "mention"/u);
 	for (const label of ["Knowledge", "Memory", "Tools", "Skills", "Subagents"]) {

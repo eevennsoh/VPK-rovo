@@ -37,6 +37,7 @@ import TextHeadingThreeIcon from "@atlaskit/icon-lab/core/text-heading-three";
 import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 
 import { useClickOutside } from "@/components/hooks/use-click-outside";
+import { useToolbarOverflow } from "@/components/blocks/editor-toolbar/hooks/use-toolbar-overflow";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -65,6 +66,12 @@ type TextStyleType =
 type Alignment = "left" | "center" | "right";
 
 const TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME = "*:data-[slot=toggle-group-item]:w-6! *:data-[slot=toggle-group-item]:min-w-6! *:data-[slot=toggle-group-item]:px-0!";
+
+// Number of separator-bounded control groups that can fold into the "+" insert
+// dropdown when space is tight: 0 text style, 1 inline formatting, 2 lists,
+// 3 alignment + link, 4 code block + rule + table. The "+" insert group is the
+// pinned anchor and is intentionally not counted here.
+const FOLDABLE_GROUP_COUNT = 5;
 
 const TEXT_STYLE_TO_MARKDOWN: Record<TextStyleType, MarkdownFormatKind> = {
 	normal: "normal",
@@ -346,6 +353,15 @@ export function EditorToolbar({
 	];
 	const showModeTabs = Boolean(onToggleMarkdownMode);
 
+	// The five separator-bounded control groups fold (right-to-left) into the
+	// "+" insert dropdown when the toolbar runs out of horizontal room. The "+"
+	// button is the pinned anchor and never folds.
+	const { containerRef, visibleCount } = useToolbarOverflow(
+		FOLDABLE_GROUP_COUNT,
+	);
+	const isGroupFolded = (index: number): boolean => index >= visibleCount;
+	const hasFoldedGroups = visibleCount < FOLDABLE_GROUP_COUNT;
+
 	useEditorTransactionRerender(editor);
 	useClickOutside(outsideRefs, () => setOpenDropdown(null), openDropdown !== null);
 
@@ -479,6 +495,204 @@ export function EditorToolbar({
 		closeDropdown();
 	}
 
+	// Menu mirror of a foldable group's controls, shown inside the "+" insert
+	// dropdown when that group is hidden by the overflow measurement. Each item
+	// reuses the same handler as its inline counterpart so behavior is identical.
+	function renderFoldedGroupItems(groupIndex: number): ReactNode {
+		switch (groupIndex) {
+			case 0:
+				return (
+					<div key="folded-textStyle">
+						<DropdownMenuItem
+							icon={<TextIcon label="Normal text" size="small" />}
+							label="Normal text"
+							isSelected={editor.isActive("paragraph")}
+							onClick={() => handleTextStyle("normal")}
+						/>
+						<DropdownMenuItem
+							icon={<TextHeadingOneIcon label="Heading 1" size="small" />}
+							label="Heading 1"
+							isSelected={editor.isActive("heading", { level: 1 })}
+							onClick={() => handleTextStyle("h1")}
+						/>
+						<DropdownMenuItem
+							icon={<TextHeadingTwoIcon label="Heading 2" size="small" />}
+							label="Heading 2"
+							isSelected={editor.isActive("heading", { level: 2 })}
+							onClick={() => handleTextStyle("h2")}
+						/>
+						<DropdownMenuItem
+							icon={<TextHeadingThreeIcon label="Heading 3" size="small" />}
+							label="Heading 3"
+							isSelected={editor.isActive("heading", { level: 3 })}
+							onClick={() => handleTextStyle("h3")}
+						/>
+						<DropdownMenuItem
+							icon={<QuotationMarkIcon label="Quote" size="small" />}
+							label="Quote"
+							isSelected={editor.isActive("blockquote")}
+							onClick={() => handleTextStyle("quote")}
+						/>
+					</div>
+				);
+			case 1:
+				return (
+					<div key="folded-formatting">
+						<DropdownMenuItem
+							icon={<TextBoldIcon label="Bold" size="small" />}
+							label="Bold"
+							isSelected={reflectsActiveState && editor.isActive("bold")}
+							onClick={() => {
+								runFormat("bold", () => editor.chain().focus().toggleBold().run());
+								closeDropdown();
+							}}
+						/>
+						<DropdownMenuItem
+							icon={<TextItalicIcon label="Italic" size="small" />}
+							label="Italic"
+							isSelected={editor.isActive("italic")}
+							onClick={() => {
+								runFormat("italic", () => editor.chain().focus().toggleItalic().run());
+								closeDropdown();
+							}}
+						/>
+						<DropdownMenuItem
+							icon={<TextUnderlineIcon label="Underline" size="small" />}
+							label="Underline"
+							isSelected={editor.isActive("underline")}
+							onClick={() => {
+								runFormat("underline", () => editor.chain().focus().toggleUnderline().run());
+								closeDropdown();
+							}}
+						/>
+						<DropdownMenuItem
+							icon={<TextStrikethroughIcon label="Strikethrough" size="small" />}
+							label="Strikethrough"
+							isSelected={editor.isActive("strike")}
+							onClick={() => {
+								runFormat("strikethrough", () => editor.chain().focus().toggleStrike().run());
+								closeDropdown();
+							}}
+						/>
+						<DropdownMenuItem
+							icon={<SnippetIcon label="Code" size="small" />}
+							label="Code"
+							isSelected={editor.isActive("code")}
+							onClick={() => {
+								runFormat("inlineCode", () => editor.chain().focus().toggleCode().run());
+								closeDropdown();
+							}}
+						/>
+					</div>
+				);
+			case 2:
+				return (
+					<div key="folded-list">
+						<DropdownMenuItem
+							icon={<ListBulletedIcon label="Bulleted list" size="small" />}
+							label="Bulleted list"
+							isSelected={editor.isActive("bulletList")}
+							onClick={() => {
+								runFormat("bulletList", () => editor.chain().focus().toggleBulletList().run());
+								closeDropdown();
+							}}
+						/>
+						<DropdownMenuItem
+							icon={<ListNumberedIcon label="Numbered list" size="small" />}
+							label="Numbered list"
+							isSelected={editor.isActive("orderedList")}
+							onClick={() => {
+								runFormat("orderedList", () => editor.chain().focus().toggleOrderedList().run());
+								closeDropdown();
+							}}
+						/>
+						<DropdownMenuItem
+							icon={<ListChecklistIcon label="Task list" size="small" />}
+							label="Task list"
+							isSelected={!isMarkdownMode && editor.isActive("taskList")}
+							disabled={isMarkdownMode}
+							onClick={() => {
+								editor.chain().focus().toggleTaskList().run();
+								closeDropdown();
+							}}
+						/>
+					</div>
+				);
+			case 3:
+				return (
+					<div key="folded-align">
+						<DropdownMenuItem
+							icon={<AlignTextLeftIcon label="Align left" size="small" />}
+							label="Align left"
+							isSelected={alignment === "left"}
+							disabled={markdownUnsupported}
+							onClick={() => handleAlignment("left")}
+						/>
+						<DropdownMenuItem
+							icon={<AlignTextCenterIcon label="Align center" size="small" />}
+							label="Align center"
+							isSelected={alignment === "center"}
+							disabled={markdownUnsupported}
+							onClick={() => handleAlignment("center")}
+						/>
+						<DropdownMenuItem
+							icon={<AlignTextRightIcon label="Align right" size="small" />}
+							label="Align right"
+							isSelected={alignment === "right"}
+							disabled={markdownUnsupported}
+							onClick={() => handleAlignment("right")}
+						/>
+						<DropdownMenuItem
+							icon={<LinkIcon label="Link" size="small" />}
+							label="Link"
+							isSelected={!isMarkdownMode && editor.isActive("link")}
+							onClick={() => {
+								handleLinkPressedChange(!(!isMarkdownMode && editor.isActive("link")));
+								closeDropdown();
+							}}
+						/>
+					</div>
+				);
+			case 4:
+				return (
+					<div key="folded-blocks">
+						<DropdownMenuItem
+							icon={<AngleBracketsIcon label="Code block" size="small" />}
+							label="Code block"
+							isSelected={!isMarkdownMode && editor.isActive("codeBlock")}
+							onClick={() => {
+								handleToggleCodeBlock();
+								closeDropdown();
+							}}
+						/>
+						<DropdownMenuItem
+							icon={<DividerElementIcon label="Horizontal rule" size="small" />}
+							label="Horizontal rule"
+							isSelected={false}
+							onClick={handleInsertHorizontalRule}
+						/>
+						<DropdownMenuItem
+							icon={<TableIcon label="Table" size="small" />}
+							label="Table"
+							isSelected={false}
+							disabled={isMarkdownMode}
+							onClick={handleInsertTable}
+						/>
+					</div>
+				);
+			default:
+				return null;
+		}
+	}
+
+	function renderFoldedControls(): ReactNode {
+		const items: ReactNode[] = [];
+		for (let index = visibleCount; index < FOLDABLE_GROUP_COUNT; index += 1) {
+			items.push(renderFoldedGroupItems(index));
+		}
+		return items;
+	}
+
 	return (
 		<div
 			ref={toolbarRef}
@@ -486,8 +700,15 @@ export function EditorToolbar({
 		>
 			<div className="flex min-w-0 items-center gap-1">
 				{leadingSlot}
-				<div className={cn("flex min-w-0 items-center gap-1", controlsClassName)}>
-					<div className="relative">
+				<div
+					ref={containerRef}
+					className={cn("flex min-w-0 flex-1 items-center gap-1", controlsClassName)}
+				>
+					<div
+						data-toolbar-group
+						data-toolbar-folded={isGroupFolded(0) ? "true" : undefined}
+						className={cn("relative flex items-center gap-1", isGroupFolded(0) && "hidden")}
+					>
 						<Button
 							type="button"
 							aria-label={getCurrentTextStyle(editor)}
@@ -558,7 +779,11 @@ export function EditorToolbar({
 						) : null}
 					</div>
 
-					<div className="relative">
+					<div
+						data-toolbar-group
+						data-toolbar-folded={isGroupFolded(1) ? "true" : undefined}
+						className={cn("relative flex items-center gap-1", isGroupFolded(1) && "hidden")}
+					>
 						<ToggleGroup
 							multiple
 							value={formattingValue}
@@ -621,9 +846,12 @@ export function EditorToolbar({
 						) : null}
 					</div>
 
-					<ToolbarSeparator />
-
-					<div className="relative">
+					<div
+						data-toolbar-group
+						data-toolbar-folded={isGroupFolded(2) ? "true" : undefined}
+						className={cn("relative flex items-center gap-1", isGroupFolded(2) && "hidden")}
+					>
+						<ToolbarSeparator />
 						<ToggleGroup
 							multiple
 							value={listValue}
@@ -678,84 +906,93 @@ export function EditorToolbar({
 						) : null}
 					</div>
 
-					<ToolbarSeparator />
+					<div
+						data-toolbar-group
+						data-toolbar-folded={isGroupFolded(3) ? "true" : undefined}
+						className={cn("flex items-center gap-1", isGroupFolded(3) && "hidden")}
+					>
+						<ToolbarSeparator />
+						<div className="relative">
+							<Button
+								type="button"
+								aria-label="Text alignment"
+								aria-expanded={openDropdown === "align"}
+								size="icon"
+								variant="ghost"
+								disabled={markdownUnsupported}
+								onClick={() => toggleDropdown("align")}
+							>
+								{renderCurrentAlignmentIcon(alignment)}
+							</Button>
+							{openDropdown === "align" ? (
+								<DropdownMenuContainer>
+									<DropdownMenuItem
+										icon={<AlignTextLeftIcon label="Align left" size="small" />}
+										label="Align left"
+										isSelected={alignment === "left"}
+										onClick={() => handleAlignment("left")}
+									/>
+									<DropdownMenuItem
+										icon={<AlignTextCenterIcon label="Align center" size="small" />}
+										label="Align center"
+										isSelected={alignment === "center"}
+										onClick={() => handleAlignment("center")}
+									/>
+									<DropdownMenuItem
+										icon={<AlignTextRightIcon label="Align right" size="small" />}
+										label="Align right"
+										isSelected={alignment === "right"}
+										onClick={() => handleAlignment("right")}
+									/>
+								</DropdownMenuContainer>
+							) : null}
+						</div>
 
-					<div className="relative">
-						<Button
-							type="button"
-							aria-label="Text alignment"
-							aria-expanded={openDropdown === "align"}
-							size="icon"
-							variant="ghost"
-							disabled={markdownUnsupported}
-							onClick={() => toggleDropdown("align")}
+						<Toggle
+							aria-label="Link"
+							pressed={!isMarkdownMode && editor.isActive("link")}
+							onPressedChange={handleLinkPressedChange}
 						>
-							{renderCurrentAlignmentIcon(alignment)}
-						</Button>
-						{openDropdown === "align" ? (
-							<DropdownMenuContainer>
-								<DropdownMenuItem
-									icon={<AlignTextLeftIcon label="Align left" size="small" />}
-									label="Align left"
-									isSelected={alignment === "left"}
-									onClick={() => handleAlignment("left")}
-								/>
-								<DropdownMenuItem
-									icon={<AlignTextCenterIcon label="Align center" size="small" />}
-									label="Align center"
-									isSelected={alignment === "center"}
-									onClick={() => handleAlignment("center")}
-								/>
-								<DropdownMenuItem
-									icon={<AlignTextRightIcon label="Align right" size="small" />}
-									label="Align right"
-									isSelected={alignment === "right"}
-									onClick={() => handleAlignment("right")}
-								/>
-							</DropdownMenuContainer>
-						) : null}
+							<LinkIcon label="" size="small" />
+						</Toggle>
 					</div>
 
-					<Toggle
-						aria-label="Link"
-						pressed={!isMarkdownMode && editor.isActive("link")}
-						onPressedChange={handleLinkPressedChange}
+					<div
+						data-toolbar-group
+						data-toolbar-folded={isGroupFolded(4) ? "true" : undefined}
+						className={cn("flex items-center gap-1", isGroupFolded(4) && "hidden")}
 					>
-						<LinkIcon label="" size="small" />
-					</Toggle>
+						<ToolbarSeparator />
+						<Toggle
+							aria-label="Code block"
+							pressed={!isMarkdownMode && editor.isActive("codeBlock")}
+							onPressedChange={handleToggleCodeBlock}
+						>
+							<AngleBracketsIcon label="" size="small" />
+						</Toggle>
+						<Button
+							type="button"
+							aria-label="Horizontal rule"
+							size="icon"
+							variant="ghost"
+							onClick={handleInsertHorizontalRule}
+						>
+							<DividerElementIcon label="" size="small" />
+						</Button>
+						<Button
+							type="button"
+							aria-label="Table"
+							size="icon"
+							variant="ghost"
+							disabled={isMarkdownMode}
+							onClick={handleInsertTable}
+						>
+							<TableIcon label="" size="small" />
+						</Button>
+					</div>
 
-					<ToolbarSeparator />
-
-					<Toggle
-						aria-label="Code block"
-						pressed={!isMarkdownMode && editor.isActive("codeBlock")}
-						onPressedChange={handleToggleCodeBlock}
-					>
-						<AngleBracketsIcon label="" size="small" />
-					</Toggle>
-					<Button
-						type="button"
-						aria-label="Horizontal rule"
-						size="icon"
-						variant="ghost"
-						onClick={handleInsertHorizontalRule}
-					>
-						<DividerElementIcon label="" size="small" />
-					</Button>
-					<Button
-						type="button"
-						aria-label="Table"
-						size="icon"
-						variant="ghost"
-						disabled={isMarkdownMode}
-						onClick={handleInsertTable}
-					>
-						<TableIcon label="" size="small" />
-					</Button>
-
-					<ToolbarSeparator />
-
-					<div className="relative">
+					<div data-toolbar-anchor className="relative flex items-center gap-1">
+						{hasFoldedGroups ? <ToolbarSeparator /> : null}
 						<Button
 							type="button"
 							aria-label="Add content"
@@ -769,6 +1006,12 @@ export function EditorToolbar({
 						</Button>
 						{openDropdown === "insert" ? (
 							<DropdownMenuContainer align="right">
+								{hasFoldedGroups ? (
+									<>
+										{renderFoldedControls()}
+										<Separator className="my-1 bg-border" />
+									</>
+								) : null}
 								{INSERT_REFERENCE_OPTIONS.map((option) => (
 									<DropdownMenuItem
 										key={option.category}

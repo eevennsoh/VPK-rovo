@@ -101,6 +101,20 @@ interface ChatPanelProps {
 	greeting?: ChatPanelGreetingProps;
 	customAgentTabs?: ChatPanelCustomAgentTabs;
 	/**
+	 * When true, renders the agent Test-mode-only controls in the custom
+	 * agent tab header: the version dropdown and the new-chat/edit button.
+	 * Other custom-agent tab surfaces (e.g. the RFP report canvas) keep these
+	 * hidden, so this must only be set by the agent Test panel.
+	 */
+	showAgentTestControls?: boolean;
+	/**
+	 * When true, the custom agent tab list (Chat / Trigger / Activity) stretches
+	 * to fill the header row instead of sitting as a centered pill. Only the
+	 * sidebar chat surface opts in; other surfaces keep the centered default so
+	 * this styling does not leak across the shared ChatPanel.
+	 */
+	fullWidthAgentTabs?: boolean;
+	/**
 	 * Optional override appended to the scrollable conversation content
 	 * wrapper. Used to align the conversation body's horizontal padding with
 	 * a surrounding header (e.g. the agent Test panel matches its `px-6`
@@ -179,6 +193,8 @@ export default function ChatPanel({
 	greeting,
 	greetingSelectedAgent,
 	customAgentTabs,
+	showAgentTestControls = false,
+	fullWidthAgentTabs = false,
 	conversationContentClassName,
 	hideAiCursor = false,
 	hideComposerSourceAndModelControls = false,
@@ -930,30 +946,34 @@ export default function ChatPanel({
 				<>
 					<Tabs defaultValue="chat" aria-label="Custom agent views" className="min-h-0 min-w-0 flex-1">
 						<div className={cn("flex shrink-0 items-center gap-2 px-3 pb-3", hideHeader ? "pt-3" : null)}>
-							<SplitButton
-								variant="outline"
-								label={<Lozenge variant="neutral">{selectedAgentVersion}</Lozenge>}
-								menuLabel="Switch version"
-								items={AGENT_VERSION_OPTIONS.map((version, versionIndex) => ({
-									key: version,
-									label: <Lozenge variant="neutral">{version}</Lozenge>,
-									// Pin Draft to the top so it stays visible as versions scroll.
-									sticky: version === "Draft",
-									// Divider between the Draft entry and the published versions.
-									separatorBefore: version !== "Draft" && AGENT_VERSION_OPTIONS[versionIndex - 1] === "Draft",
-									onSelect: () => setSelectedAgentVersion(version),
-								}))}
-							/>
-							<div className="flex flex-1 justify-center">
-								<TabsList>
+							{showAgentTestControls ? (
+								<SplitButton
+									variant="outline"
+									label={<Lozenge variant="neutral">{selectedAgentVersion}</Lozenge>}
+									menuLabel="Switch version"
+									items={AGENT_VERSION_OPTIONS.map((version, versionIndex) => ({
+										key: version,
+										label: <Lozenge variant="neutral">{version}</Lozenge>,
+										// Pin Draft to the top so it stays visible as versions scroll.
+										sticky: version === "Draft",
+										// Divider between the Draft entry and the published versions.
+										separatorBefore: version !== "Draft" && AGENT_VERSION_OPTIONS[versionIndex - 1] === "Draft",
+										onSelect: () => setSelectedAgentVersion(version),
+									}))}
+								/>
+							) : null}
+							<div className={cn("flex flex-1", fullWidthAgentTabs ? null : "justify-center")}>
+								<TabsList className={cn(fullWidthAgentTabs ? "w-full" : null)}>
 									<TabsTrigger value="chat">Chat</TabsTrigger>
 									<TabsTrigger value="trigger">Trigger</TabsTrigger>
 									<TabsTrigger value="activity">Activity</TabsTrigger>
 								</TabsList>
 							</div>
-							<Button aria-label="New chat" size="icon" variant="outline" onClick={resetChat}>
-								<EditIcon label="" />
-							</Button>
+							{showAgentTestControls ? (
+								<Button aria-label="New chat" size="icon" variant="outline" onClick={resetChat}>
+									<EditIcon label="" />
+								</Button>
+							) : null}
 						</div>
 						<TabsContent value="chat" keepMounted className="min-h-0 flex flex-1 flex-col data-[hidden]:hidden">
 							{chatConversationBody}
