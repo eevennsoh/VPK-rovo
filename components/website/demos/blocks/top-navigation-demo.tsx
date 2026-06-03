@@ -8,7 +8,7 @@ export default function NavigationDemo() {
 	return (
 		<SidebarProvider>
 			<RovoChatProvider>
-				<TopNavigation product="jira" />
+				<TopNavigation product="studio" forceShowRovoAction />
 			</RovoChatProvider>
 		</SidebarProvider>
 	);

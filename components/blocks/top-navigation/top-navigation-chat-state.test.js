@@ -11,6 +11,11 @@ const RIGHT_NAVIGATION_ACTIONS_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const LAYOUT_CONSTANTS_SOURCE = fs.readFileSync(path.join(__dirname, "layout-constants.ts"), "utf8");
+const CREATE_BUTTON_SOURCE = fs.readFileSync(path.join(__dirname, "components", "create-button.tsx"), "utf8");
+const TOP_NAVIGATION_DEMO_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "..", "website", "demos", "blocks", "top-navigation-demo.tsx"),
+	"utf8",
+);
 
 test("Ask Rovo button exposes sidebar chat open state as pressed state", () => {
 	assert.match(RIGHT_NAVIGATION_SOURCE, /isChatOpen = false/);
@@ -29,19 +34,54 @@ test("top navigation derives Ask Rovo pressed state from the sidebar chat surfac
 	assert.match(USE_TOP_NAVIGATION_SOURCE, /toggleChat,.*chatSurface.*\} = useRovoChat\(\);/);
 	assert.match(USE_TOP_NAVIGATION_SOURCE, /const isSidebarChatOpen = chatSurface === "sidebar";/);
 	assert.match(USE_TOP_NAVIGATION_SOURCE, /isSidebarChatOpen,/);
-	assert.match(TOP_NAVIGATION_SOURCE, /isChatOpen=\{isSidebarChatOpen\}/);
+	assert.match(TOP_NAVIGATION_SOURCE, /isChatOpen=\{nav\.isSidebarChatOpen\}/);
 });
 
-test("top navigation grows the capped center search section between balanced side rails", () => {
-	// The center search section grows to fill available width but caps at a max,
-	// and the parent's space-between plus content-sized side sections keep it
-	// centered on wide layouts (replaced the old fixed side-rail computation).
-	assert.match(USE_TOP_NAVIGATION_SOURCE, /const TOP_NAV_CENTER_SECTION_MAX_WIDTH_PX = 762;/);
-	assert.match(USE_TOP_NAVIGATION_SOURCE, /flex: "1 1 auto"/);
-	assert.match(USE_TOP_NAVIGATION_SOURCE, /maxWidth: `\$\{TOP_NAV_CENTER_SECTION_MAX_WIDTH_PX\}px`/);
-	assert.match(TOP_NAVIGATION_SOURCE, /flex: "0 1 auto", minWidth: 0/);
-	assert.match(TOP_NAVIGATION_SOURCE, /justifyContent: "space-between"/);
-	assert.match(TOP_NAVIGATION_SOURCE, /justifyContent: "flex-end"/);
+test("top navigation centers the capped search at wide widths and left-aligns it below the breakpoint", () => {
+	// The search lives in a middle zone that grows but caps at a max / floors at a
+	// min width, centering at wide widths (Figma) and left-aligning below the
+	// center breakpoint.
+	assert.match(
+		LAYOUT_CONSTANTS_SOURCE,
+		/export const TOP_NAV_SEARCH_MAX_WIDTH_PX = 780;/,
+	);
+	assert.match(
+		LAYOUT_CONSTANTS_SOURCE,
+		/export const TOP_NAV_SEARCH_MIN_WIDTH_PX = 180;/,
+	);
+	assert.match(
+		LAYOUT_CONSTANTS_SOURCE,
+		/export const TOP_NAV_SEARCH_CENTER_BREAKPOINT_PX = 1200;/,
+	);
+	assert.match(
+		LAYOUT_CONSTANTS_SOURCE,
+		/export const TOP_NAV_SEARCH_ICON_BREAKPOINT_PX = 360;/,
+	);
+	assert.match(
+		LAYOUT_CONSTANTS_SOURCE,
+		/export const TOP_NAV_HEADER_HEIGHT_PX = 56;/,
+	);
+	// Page wires the center/left alignment and the capped search width. The search
+	// grows to the cap but uses its min as a flex-basis (not a hard floor) so it
+	// shrinks under pressure instead of clipping the right cluster.
+	assert.match(TOP_NAVIGATION_SOURCE, /centerSearch \? "justify-center" : "justify-start"/);
+	assert.match(TOP_NAVIGATION_SOURCE, /maxWidth: `\$\{TOP_NAV_SEARCH_MAX_WIDTH_PX\}px`/);
+	assert.match(TOP_NAVIGATION_SOURCE, /flexBasis: `\$\{TOP_NAV_SEARCH_MIN_WIDTH_PX\}px`/);
+});
+
+test("top navigation collapses the search to an icon button on very narrow viewports", () => {
+	assert.match(TOP_NAVIGATION_SOURCE, /TOP_NAV_SEARCH_ICON_BREAKPOINT_PX/);
+	assert.match(TOP_NAVIGATION_SOURCE, /isSearchCollapsible/);
+	assert.match(TOP_NAVIGATION_SOURCE, /handleExpandSearchIcon/);
+});
+
+test("top navigation block omits the theme toggle (matches the Figma cluster)", () => {
+	// The Figma global top navigation cluster is Ask Rovo + notifications + help +
+	// settings + avatar — no theme toggle. The shared cluster keeps the toggle as
+	// an opt-in prop (other shells use it), so the invariant is that the block's
+	// page does NOT pass onToggleTheme, and the toggle is conditionally rendered.
+	assert.doesNotMatch(TOP_NAVIGATION_SOURCE, /onToggleTheme/);
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /onToggleTheme \?/);
 });
 
 test("top navigation auto-releases the pinned sidebar at small viewports", () => {
@@ -76,4 +116,21 @@ test("right navigation collapses into an overflow popover at narrow widths", () 
 	// briefly render the overflow popover before the real width arrives.
 	assert.match(RIGHT_NAVIGATION_SOURCE, /useIsMounted/);
 	assert.match(RIGHT_NAVIGATION_SOURCE, /isMounted && windowWidth < TOP_NAV_OVERFLOW_BREAKPOINT_PX/);
+});
+
+test("Create button keeps its full label at every breakpoint (Figma 1768 → 320)", () => {
+	// Figma shows the labelled "+ Create" pill at every frame down to 320, so the
+	// button must never collapse to an icon-only state (no `max-md` hide/shrink).
+	assert.match(CREATE_BUTTON_SOURCE, /<span>Create<\/span>/);
+	assert.doesNotMatch(CREATE_BUTTON_SOURCE, /max-md:hidden/);
+	assert.doesNotMatch(CREATE_BUTTON_SOURCE, /max-md:size-8/);
+});
+
+test("block demo forces the Ask Rovo pill so the right cluster matches Figma", () => {
+	// The Figma global top navigation always renders Ask Rovo in the right
+	// cluster. Studio normally suppresses it, so the standalone block demo opts in
+	// via forceShowRovoAction, which the page threads through to RightNavigation.
+	assert.match(TOP_NAVIGATION_DEMO_SOURCE, /forceShowRovoAction/);
+	assert.match(TOP_NAVIGATION_SOURCE, /forceShowRovoAction = false/);
+	assert.match(TOP_NAVIGATION_SOURCE, /forceShowRovoAction=\{forceShowRovoAction\}/);
 });

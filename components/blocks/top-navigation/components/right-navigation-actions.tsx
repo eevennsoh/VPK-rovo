@@ -13,7 +13,8 @@ interface RightNavigationActionsProps {
 	showRovoAction: boolean;
 	isChatOpen: boolean;
 	onToggleChat: () => void;
-	onToggleTheme: () => void;
+	/** When provided, renders a theme-toggle button. Omitted in the Figma cluster. */
+	onToggleTheme?: () => void;
 }
 
 // The shared cluster of right-side actions, rendered both inline (wide widths)
@@ -55,10 +56,12 @@ export function RightNavigationActions({
 				<SettingsIcon label="" color={token("color.icon.subtle")} />
 			</Button>
 
-			{/* Theme Toggle */}
-			<Button aria-label="Toggle theme" size="icon" variant="ghost" onClick={onToggleTheme}>
-				<ThemeIcon label="" color={token("color.icon.subtle")} />
-			</Button>
+			{/* Theme Toggle (opt-in; omitted in the Figma cluster) */}
+			{onToggleTheme ? (
+				<Button aria-label="Toggle theme" size="icon" variant="ghost" onClick={onToggleTheme}>
+					<ThemeIcon label="" color={token("color.icon.subtle")} />
+				</Button>
+			) : null}
 
 			{/* Profile */}
 			<div className="flex size-8 items-center justify-center">

@@ -1469,7 +1469,7 @@ import { SheetIcon } from "@/components/ui/vpk-icons";
 		],
 	},
 	"top-navigation": {
-		description: "ADS-inspired top navigation bar with app switcher and contextual actions.",
+		description: "Studio-style application shell with a resizable, collapsible pinned side-nav and a top navigation bar (full-width search, create, and contextual actions).",
 	},
 	"chat-gallery": {
 		description: "Standalone clone of the prompt gallery block for separate chat-focused iteration with quick chips, hover previews, and discover-more examples.",

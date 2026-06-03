@@ -18,7 +18,8 @@ interface RightNavigationProps {
 	forceShowRovoAction?: boolean;
 	isChatOpen?: boolean;
 	onToggleChat: () => void;
-	onToggleTheme: () => void;
+	/** When provided, renders a theme-toggle button. Omitted in the Figma cluster. */
+	onToggleTheme?: () => void;
 }
 
 export function RightNavigation({
