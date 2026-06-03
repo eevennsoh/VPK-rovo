@@ -13,6 +13,7 @@ import {
 	type StudioAgentDataFlowConfig,
 } from "@/lib/studio-agent-data-flow";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 
 import { createRichTextEditorExtensions } from "./extensions";
 import {
@@ -163,16 +164,7 @@ function DataFlowDiagramView({
 	const mermaidMarkdown = ["```mermaid", mermaidCode.trim(), "```"].join("\n");
 
 	return (
-		<div
-			className="rounded-lg border border-border bg-surface-overlay p-3 text-sm text-text"
-			data-rich-text-data-flow-diagram
-		>
-			<div className="mb-2 flex min-h-5 items-center justify-between gap-3 text-xs text-text-subtle">
-				<span>Agent data flow</span>
-				{isRefining ? (
-					<span aria-live="polite">Refining diagram...</span>
-				) : null}
-			</div>
+		<div className="relative" data-rich-text-data-flow-diagram>
 			<Streamdown
 				className="[&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_[data-streamdown=mermaid-block]]:overflow-hidden [&_[data-streamdown=mermaid-block]]:rounded-md [&_[data-streamdown=mermaid-block]]:border [&_[data-streamdown=mermaid-block]]:border-border"
 				controls
@@ -181,6 +173,21 @@ function DataFlowDiagramView({
 			>
 				{mermaidMarkdown}
 			</Streamdown>
+			{isRefining ? (
+				<div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-8 items-center justify-end">
+					<span className="flex items-center gap-1.5 text-sm text-text-subtle">
+						<Spinner size="sm" label="Refining diagram" />
+						Refining diagram...
+					</span>
+					{/*
+						Reserve the streamdown zoom/copy/download pill footprint so the
+						label lands just to its left. The pill is flush to the right edge
+						and measures ~96px: 3 × 22px icon buttons (14px icon + p-1) +
+						2 × 8px gaps + 12px padding (px-1.5) + 2px border.
+					*/}
+					<span aria-hidden className="ml-2 w-24 shrink-0" />
+				</div>
+			) : null}
 		</div>
 	);
 }
