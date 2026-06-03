@@ -512,6 +512,8 @@ test("Studio clarification answers keep agent creation mode active", () => {
 	assert.match(SHELL_SOURCE, /buildStudioAgentCreationContinuationContext\(threadTemplate\)/u);
 	assert.match(SHELL_SOURCE, /const getStudioAgentCreationClarificationOptions = useCallback/u);
 	assert.match(SHELL_SOURCE, /activeQuestionCard\?\.creationMode === "agent" \|\|[\s\S]*studioAgentCreationThreadKeysRef\.current\.has\(chat\.runtimeThreadId\)/u);
+	assert.match(SHELL_SOURCE, /hasPersistedAgentCreationPrompt/u);
+	assert.match(SHELL_SOURCE, /message\.metadata\?\.creationMode === "agent"/u);
 	assert.match(SHELL_SOURCE, /creationMode: "agent" as const/u);
 	assert.match(SHELL_SOURCE, /submitClarification\([\s\S]*activeQuestionCard,[\s\S]*answers,[\s\S]*getStudioAgentCreationClarificationOptions\(\),/u);
 	assert.match(SHELL_SOURCE, /onDismissQuestionCard: handleCancelClarificationQuestionSet/u);
@@ -569,6 +571,34 @@ test("Studio composer reveals 'Start from scratch' on focus or hover and lands o
 	);
 	assert.match(fromScratchHandlerSource, /setActiveAgentConfigState\(\{\s*\n\s*profileId: registered\.id/u);
 	assert.match(fromScratchHandlerSource, /setActiveAgentConfigView\("configure"\);[\s\S]*openAgentCreationAskRovoChat\(\);/u);
+});
+
+// Regression: re-opening a custom agent (sidebar row / "Edit") must NOT point
+// chat at the custom agent. It opens the config pane only and leaves the Ask Rovo
+// build helper on the default Rovo agent, exactly like create-from-scratch — so
+// the panel no longer "swaps" onto the custom agent on the second click.
+test("Studio re-selecting a custom agent edits it without selecting it for chat", () => {
+	const sidebarSelectSource = SHELL_SOURCE.slice(
+		SHELL_SOURCE.indexOf("const handleStudioSidebarAgentSelect = useCallback"),
+		SHELL_SOURCE.indexOf("const handleDeleteStudioAgent = useCallback"),
+	);
+	// Opens the config pane on the agent...
+	assert.match(sidebarSelectSource, /setActiveAgentConfigState\(\{\s*\n\s*profileId: agentId,/u);
+	assert.match(sidebarSelectSource, /setActiveAgentConfigView\("configure"\);/u);
+	// ...but never selects it for chat.
+	assert.doesNotMatch(sidebarSelectSource, /selectAgent/u);
+
+	// The browse picker only selects-for-chat on the non-editable branch (a
+	// genuine "chat with this built-in agent"); editable custom agents open the
+	// config pane and keep the Ask Rovo helper.
+	const browseSelectSource = SHELL_SOURCE.slice(
+		SHELL_SOURCE.indexOf("const handleSidebarBrowseAgentSelect = useCallback"),
+		SHELL_SOURCE.indexOf("const handleUpdateAgentDraft = useCallback"),
+	);
+	assert.match(
+		browseSelectSource,
+		/if \(studioAgentRegistry\.getSessionAgentEntry\?\.\(agent\.id\)\) \{[\s\S]*setActiveAgentConfigState\(\{[\s\S]*\} else \{[\s\S]*studioAgentRegistry\.selectAgent\(agent\.id, \{ preserveCurrentThread: true \}\);/u,
+	);
 });
 
 test("Studio composer opts into experimental dark composer CTAs", () => {

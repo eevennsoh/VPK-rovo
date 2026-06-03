@@ -1752,14 +1752,19 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 	const handleStudioSidebarAgentSelect = useCallback(
 		(agentId: string) => {
-			studioAgentRegistry.selectAgent(agentId, { preserveCurrentThread: true });
+			// Open the agent for editing WITHOUT pointing chat at the custom
+			// agent. The right-hand "Ask Rovo" panel must stay on the default Rovo
+			// build helper (with the "Edit: <agent>" bar), exactly like the
+			// create-from-scratch path. Selecting the custom agent here is what
+			// caused the panel to "swap" onto the custom agent on the second
+			// click. `activeAgentConfig` drives both the config pane and `?agent=`.
 			setActiveAgentConfigState({
 				profileId: agentId,
 				sourceMessageId: null,
 			});
 			setActiveAgentConfigView("configure");
 		},
-		[setActiveAgentConfigState, studioAgentRegistry],
+		[setActiveAgentConfigState],
 	);
 
 	const handleDeleteStudioAgent = useCallback(
@@ -1794,14 +1799,19 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 	const handleSidebarBrowseAgentSelect = useCallback(
 		(agent: { id: string }) => {
-			studioAgentRegistry.selectAgent(agent.id, { preserveCurrentThread: true });
 			if (studioAgentRegistry.getSessionAgentEntry?.(agent.id)) {
+				// Editable custom agent: open the config pane and keep the
+				// Ask Rovo build helper (do NOT select it for chat), matching the
+				// create + sidebar-select paths so nothing "swaps" on re-entry.
 				setActiveAgentConfigState({
 					profileId: agent.id,
 					sourceMessageId: null,
 				});
 				setActiveAgentConfigView("configure");
 			} else {
+				// Non-editable (built-in/published) agent: there is no config pane
+				// to edit, so this is a genuine "chat with this agent" action.
+				studioAgentRegistry.selectAgent(agent.id, { preserveCurrentThread: true });
 				setActiveAgentConfigState(null);
 				setActiveAgentConfigView("configure");
 			}
@@ -1851,11 +1861,22 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		setActiveAgentConfigState(agentId ? { profileId: agentId, sourceMessageId: null } : null);
 	}, [setActiveAgentConfigState]);
 
-	// Mirror the selected/created agent into the URL (`?agent=`) so it is
-	// deep-linkable, survives reload, and works with browser back/forward.
-	// `onAgentRestoredFromUrl` re-opens the config pane for the URL-restored agent
-	// (otherwise a reloaded `?agent=` only re-selects it for chat).
-	useAgentUrlSync({ enabled: !embedded, onAgentRestored: handleAgentRestoredFromUrl });
+	// Mirror the agent being EDITED (the open config pane / `activeAgentConfig`)
+	// into the URL (`?agent=`) so it is deep-linkable, survives reload, and works
+	// with browser back/forward. This intentionally tracks the edited agent, not
+	// the chat-selected agent: the Ask Rovo panel stays on the default Rovo build
+	// helper while editing, so URL identity must follow the config pane.
+	// `onAgentRestoredFromUrl` re-opens the config pane for the URL-restored agent.
+	const selectableAgentIds = useMemo(
+		() => studioAgentRegistry.selectableAgents.map((agent) => agent.id),
+		[studioAgentRegistry.selectableAgents],
+	);
+	useAgentUrlSync({
+		enabled: !embedded,
+		editingAgentId: activeAgentConfig?.profileId ?? null,
+		selectableAgentIds,
+		onAgentRestored: handleAgentRestoredFromUrl,
+	});
 
 	const handlePublishAgent = useCallback(
 		(profileId: string) => {
@@ -2204,10 +2225,15 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 	// Question card / clarification support
 	const activeQuestionCard = useMemo(() => getLatestQuestionCardPayload(chat.messages), [chat.messages]);
+	const hasPersistedAgentCreationPrompt = useMemo(
+		() => chat.messages.some((message) => message.metadata?.creationMode === "agent"),
+		[chat.messages],
+	);
 	const { acceptPlanReview, submitClarification } = chat;
 	const getStudioAgentCreationClarificationOptions = useCallback(() => {
 		const isStudioAgentCreationThread =
 			activeQuestionCard?.creationMode === "agent" ||
+			hasPersistedAgentCreationPrompt ||
 			studioAgentCreationThreadKeysRef.current.has(chat.runtimeThreadId) ||
 			(chat.activeThreadId ? studioAgentCreationThreadKeysRef.current.has(chat.activeThreadId) : false);
 
@@ -2223,7 +2249,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			contextDescription: buildStudioAgentCreationContinuationContext(threadTemplate),
 			creationMode: "agent" as const,
 		};
-	}, [activeQuestionCard?.creationMode, chat.activeThreadId, chat.runtimeThreadId]);
+	}, [activeQuestionCard?.creationMode, chat.activeThreadId, chat.runtimeThreadId, hasPersistedAgentCreationPrompt]);
 	const handleCancelClarificationQuestionSet = useCallback(
 		(questionCard: ParsedQuestionCardPayload) => {
 			return chat.cancelClarificationQuestionSet(questionCard, getStudioAgentCreationClarificationOptions());
@@ -2248,7 +2274,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				activeQuestionCard,
 				answers,
 				getStudioAgentCreationClarificationOptions(),
-			);
+			).catch(() => {
+				// submitClarification owns the user-facing error state.
+			});
 		},
 		[activeQuestionCard, getStudioAgentCreationClarificationOptions, submitClarification],
 	);
@@ -2265,6 +2293,10 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const [isSubmittingPlanApproval, setIsSubmittingPlanApproval] = useState(false);
 	const pendingPlanKey = activePendingPlan?.planWidget.deferredToolCallId ?? null;
 	const shouldShowApprovalCard = activePendingPlan !== null && pendingPlanKey !== dismissedApprovalCardKey && !shouldShowQuestionCard && !chat.isStreaming;
+	// True when the composer dock renders a shadowed card (question or approval)
+	// rather than the regular composer. Used to reserve room for the card's soft
+	// shadow so the home-state scrollport doesn't clip it.
+	const isShowingDockCard = (shouldShowQuestionCard && activeQuestionCard !== null) || (shouldShowApprovalCard && activePendingPlan !== null);
 
 	useEffect(() => {
 		setDismissedApprovalCardKey(null);
@@ -4011,6 +4043,13 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					"relative z-10 mx-auto flex min-w-0 w-full flex-col gap-3 overflow-visible",
 					!showHomeState && "sticky bottom-0 bg-background/90 backdrop-blur",
 					isArtifactOpen || shouldShowAgentConfigPane ? "max-w-none px-3" : "max-w-[800px]",
+					// The question/approval card carries a soft 50px-blur shadow that the
+					// home-state scrollport (chatPaneContainer overflow-y-auto) clips on the
+					// left/right/bottom. When a card is shown, reserve room for that blur with
+					// inner padding and bump max-w by the same amount so the card content width
+					// is unchanged. Padding is scoped to the card case so the regular sticky
+					// composer keeps its flush bottom alignment.
+					isShowingDockCard && !(isArtifactOpen || shouldShowAgentConfigPane) && "max-w-[848px] px-6 pb-6",
 				)}
 			>
 				{realtimeStatusMessage ? <div className="px-1 text-text-subtle text-xs">{realtimeStatusMessage}</div> : null}

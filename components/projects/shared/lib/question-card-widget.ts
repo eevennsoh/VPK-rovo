@@ -477,6 +477,7 @@ export function buildClarificationMessageMetadata(
 	questionCard: ParsedQuestionCardPayload,
 	options: Readonly<{
 		answers?: ClarificationAnswers;
+		creationMode?: "skill" | "agent";
 		status?: ClarificationStatus;
 		visibility?: "visible" | "hidden";
 	}>
@@ -489,6 +490,10 @@ export function buildClarificationMessageMetadata(
 		clarificationRound: questionCard.round,
 		clarificationStatus: options.status ?? "answered",
 	};
+
+	if (options.creationMode) {
+		metadata.creationMode = options.creationMode;
+	}
 
 	if (options.visibility) {
 		metadata.visibility = options.visibility;
