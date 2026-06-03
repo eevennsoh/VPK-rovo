@@ -4962,6 +4962,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "progress-tracker-demo-activity-timeline": dynamic(
+    () =>
+      import("./demos/ui/progress-tracker-demo").then((mod) => ({
+        default: mod.ProgressTrackerDemoActivityTimeline,
+      })),
+    { ssr: false },
+  ),
   // Split Button
   "split-button-demo-default": dynamic(
     () =>
@@ -6677,6 +6684,9 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/blocks/task-progress-demo"),
     { ssr: false },
   ),
+  triggers: dynamic(() => import("./demos/blocks/triggers-demo"), {
+    ssr: false,
+  }),
   "answer-card": dynamic(() => import("./demos/blocks/answer-card-demo"), {
     ssr: false,
   }),
@@ -6990,6 +7000,22 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/blocks/task-progress-demo").then((mod) => ({
         default: mod.TaskProgressDemoAllStates,
+      })),
+    { ssr: false },
+  ),
+
+  // Triggers
+  "triggers-demo-configured": dynamic(
+    () =>
+      import("./demos/blocks/triggers-demo").then((mod) => ({
+        default: mod.TriggersDemoConfigured,
+      })),
+    { ssr: false },
+  ),
+  "triggers-demo-empty": dynamic(
+    () =>
+      import("./demos/blocks/triggers-demo").then((mod) => ({
+        default: mod.TriggersDemoEmpty,
       })),
     { ssr: false },
   ),

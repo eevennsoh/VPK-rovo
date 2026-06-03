@@ -886,6 +886,61 @@ const agents: AgentSelectorAgent[] = [
 			{ title: "All states", description: "Running, completed, and failed states side by side.", demoSlug: "task-progress-demo-all-states" },
 		],
 	},
+	triggers: {
+		description:
+			"Event-trigger editor card. Shows an automation trigger row (\"Status changed to <status> in <board>\") with its prompt and a delete control, plus an affordance to add another trigger. Falls back to an add-only empty state.",
+		usage: `import Triggers from "@/components/blocks/triggers/page";
+
+<Triggers />
+<Triggers statusLabel="Drafting" boardLabel="Enterprise RFP Response" prompt="When a ticket enters Drafting…" />
+<Triggers hasTrigger={false} />`,
+		props: [
+			{
+				name: "hasTrigger",
+				type: "boolean",
+				default: "true",
+				description: "When false, only the \"Add Trigger\" affordance is shown (empty state).",
+			},
+			{
+				name: "statusLabel",
+				type: "string",
+				default: '"Drafting"',
+				description: "Status/column the trigger watches.",
+			},
+			{
+				name: "boardLabel",
+				type: "string",
+				default: '"Enterprise RFP Response"',
+				description: "Board the trigger is scoped to.",
+			},
+			{
+				name: "boardAvatarSrc",
+				type: "string",
+				default: '"/avatar-project/rocket.svg"',
+				description: "Project avatar shown beside the board name. Omit to hide the avatar.",
+			},
+			{
+				name: "prompt",
+				type: "string",
+				description: "Natural-language prompt run when the trigger fires.",
+			},
+			{
+				name: "addTriggerLabel",
+				type: "string",
+				default: '"Add Trigger"',
+				description: "Label for the add-trigger affordance.",
+			},
+			{
+				name: "onClearTrigger",
+				type: "() => void",
+				description: "Invoked when the trigger's delete button is pressed.",
+			},
+		],
+		examples: [
+			{ title: "Configured", description: "Trigger row with status, board, and prompt.", demoSlug: "triggers-demo-configured" },
+			{ title: "Empty", description: "Add-only state with no trigger configured.", demoSlug: "triggers-demo-empty" },
+		],
+	},
 	"app-sidebar": {
 		description: "Application sidebar with main navigation, documents, secondary nav, and user menu.",
 	},

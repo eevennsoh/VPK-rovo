@@ -290,6 +290,7 @@ export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("knowledge-directory", "Knowledge Directory"),
 	blockComponent("skills-directory", "Skills Directory"),
 	blockComponent("task-progress", "Task Progress"),
+	blockComponent("triggers", "Triggers"),
 	blockComponent("answer-card", "Answer Card"),
 	blockComponent("approval-card", "Approval Card"),
 	blockComponent("chat-timeline", "Chat Timeline"),
