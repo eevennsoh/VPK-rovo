@@ -7,12 +7,14 @@ import { ButtonGroup } from "@/components/ui/button-group"
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down"
+import CheckMarkIcon from "@atlaskit/icon/core/check-mark"
 
 export interface SplitButtonItem {
 	label: React.ReactNode
@@ -29,6 +31,11 @@ export interface SplitButtonItem {
 	 * while the remaining items scroll beneath it.
 	 */
 	sticky?: boolean
+	/**
+	 * Marks this item as the currently-selected option. Renders a trailing
+	 * check-mark icon, matching the standard dropdown selected-item visual.
+	 */
+	selected?: boolean
 	onSelect?: () => void
 	disabled?: boolean
 }
@@ -105,22 +112,25 @@ function SplitButton({
 					}
 				/>
 				<DropdownMenuContent>
-					{items.map((item, index) => {
-						const itemKey = item.key ?? (typeof item.label === "string" ? item.label : index)
+					<DropdownMenuGroup>
+						{items.map((item, index) => {
+							const itemKey = item.key ?? (typeof item.label === "string" ? item.label : index)
 
-						return (
-							<React.Fragment key={itemKey}>
-								{item.separatorBefore && index > 0 ? <DropdownMenuSeparator /> : null}
-								<DropdownMenuItem
-									onSelect={item.onSelect}
-									disabled={item.disabled}
-									className={cn(item.sticky && "bg-popover sticky top-0 z-10")}
-								>
-									{item.label}
-								</DropdownMenuItem>
-							</React.Fragment>
-						)
-					})}
+							return (
+								<React.Fragment key={itemKey}>
+									{item.separatorBefore && index > 0 ? <DropdownMenuSeparator /> : null}
+									<DropdownMenuItem
+										onSelect={item.onSelect}
+										disabled={item.disabled}
+										className={cn(item.sticky && "bg-popover sticky top-0 z-10")}
+										elemAfter={item.selected ? <CheckMarkIcon label="Selected" /> : undefined}
+									>
+										{item.label}
+									</DropdownMenuItem>
+								</React.Fragment>
+							)
+						})}
+					</DropdownMenuGroup>
 				</DropdownMenuContent>
 			</DropdownMenu>
 		</ButtonGroup>

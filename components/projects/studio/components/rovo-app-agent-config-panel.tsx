@@ -17,6 +17,7 @@ import {
 	type AgentDirectoryKind,
 	type AgentConfigFormValue,
 	AgentHeader,
+	AgentMoreOptionsMenu,
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
 } from "@/components/ui-custom/agent";
@@ -292,6 +293,7 @@ export function RovoAppAgentConfigPanel({
 						leadingContent={<AgentCompactHeaderNav avatarSrc={agentAvatarSrc} />}
 						actions={
 							<>
+								<AgentMoreOptionsMenu />
 								<ToggleGroup
 									aria-label="Agent config views"
 									variant="outline"

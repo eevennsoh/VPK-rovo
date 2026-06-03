@@ -345,6 +345,10 @@
 	min-height: 128px;
 }
 
+.agent-instructions-tiptap-editor.agent-instructions-tiptap-editor-compact-empty {
+	min-height: 32px;
+}
+
 /*
  * The agent instructions composer renders the same GitHub-styled editor at a
  * slightly tighter scale. We keep only the size/spacing tweaks here — colors,

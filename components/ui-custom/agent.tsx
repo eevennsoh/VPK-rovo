@@ -8,6 +8,7 @@ import Image from "next/image";
 
 import AddIcon from "@atlaskit/icon/core/add";
 import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
+import DeleteIcon from "@atlaskit/icon/core/delete";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 import DashboardIcon from "@atlaskit/icon/core/dashboard";
@@ -498,6 +499,46 @@ export type AgentHeaderProps = ComponentProps<"div"> & {
 	badge?: ReactNode;
 };
 
+export type AgentMoreOptionsMenuProps = {
+	deleteLabel?: string;
+	triggerLabel?: string;
+	onDelete?: () => void;
+};
+
+export function AgentMoreOptionsMenu({
+	deleteLabel = "Delete agent",
+	triggerLabel = "More options",
+	onDelete,
+}: Readonly<AgentMoreOptionsMenuProps>) {
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger
+				aria-label={triggerLabel}
+				render={(
+					<Button
+						type="button"
+						size="icon"
+						variant="outline"
+					/>
+				)}
+			>
+				<Icon render={<ShowMoreHorizontalIcon label="" color="currentColor" />} aria-hidden />
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end">
+				<DropdownMenuGroup>
+					<DropdownMenuItem
+						variant="destructive"
+						elemBefore={<Icon render={<DeleteIcon label="" size="small" />} aria-hidden />}
+						onClick={onDelete}
+					>
+						{deleteLabel}
+					</DropdownMenuItem>
+				</DropdownMenuGroup>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
 export const AgentHeader = memo(
 	({
 		className,
@@ -548,14 +589,7 @@ export const AgentHeader = memo(
 						// instead. ToggleGroup carries its own context, so no wrapper
 						// is required here.
 						<>
-							<Button
-								type="button"
-								size="icon"
-								variant="outline"
-								aria-label="More options"
-							>
-								<Icon render={<ShowMoreHorizontalIcon label="" color="currentColor" />} aria-hidden />
-							</Button>
+							<AgentMoreOptionsMenu />
 							<ToggleGroup
 								aria-label="Agent views"
 								defaultValue={["configure"]}
@@ -1040,7 +1074,7 @@ function AgentCompactBentoTemplatesHint({
 	onDismiss?: () => void;
 }>) {
 	return (
-		<div className="relative z-[3] mb-3 flex items-center justify-between gap-3">
+		<div className="relative z-[3] mb-1 flex items-center justify-between gap-3">
 			<AgentSectionLabel>
 				<span>Start with these agent templates</span>
 				<span aria-hidden="true" className="mx-1">
@@ -1103,7 +1137,7 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 		<motion.section
 			aria-label="Operations prompt starters"
 			data-slot="agent-compact-operations-bento"
-			className="@container/bento relative flex min-h-0 flex-1 flex-col lg:min-h-[11.5rem]"
+			className="@container/bento relative flex min-h-0 flex-1 flex-col lg:min-h-[6.75rem]"
 			onPointerLeave={resetBentoPointer}
 			onPointerMove={handleBentoPointerMove}
 			style={{ ...AGENT_COMPACT_BENTO_CARD_GLOW_EFFECT_STYLE, willChange: "transform, opacity" }}
@@ -1122,7 +1156,7 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 			*/}
 			<div className="relative -mt-2 min-h-0 pt-2 lg:flex-1 lg:overflow-hidden lg:bento-fade-bottom">
 				<BentoCarousel
-					gridClassName="lg:grid-cols-5"
+					gridClassName="lg:auto-rows-[72px] lg:grid-cols-5"
 					arrowLabels={{ next: "Show next agent templates", previous: "Show previous agent templates" }}
 				>
 					{AGENT_COMPACT_OPERATIONS_TEMPLATES.map((template, index) => {
@@ -1134,7 +1168,7 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 								type="button"
 								aria-label={`Use prompt starter: ${template.title}`}
 								className={cn(
-									"group group/agent-compact-bento-card relative isolate flex min-h-0 flex-col items-start gap-3 overflow-hidden rounded-lg bg-background p-4 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out hover:bg-bg-neutral-subtle focus-visible:ring-3 focus-visible:ring-ring/50",
+									"group group/agent-compact-bento-card relative isolate flex min-h-0 flex-row items-center gap-2 overflow-hidden rounded-lg bg-background p-3 text-left outline-none transition-[background-color,box-shadow] duration-fast ease-out hover:bg-bg-neutral-subtle focus-visible:ring-3 focus-visible:ring-ring/50",
 									BENTO_CAROUSEL_TILE_CLASS
 								)}
 								ref={(node) => {
@@ -1145,25 +1179,25 @@ function AgentCompactOperationsBento({ onDismiss }: Readonly<{ onDismiss?: () =>
 								whileTap={shouldReduceMotion ? undefined : { scale: 0.98, transition: { duration: 0.05 } }}
 							>
 								<AgentCompactBentoCardGlowLayers iconSrc={template.iconSrc} />
-								<span className="relative z-[3] inline-flex size-8 shrink-0 items-center justify-center transition-opacity duration-fast ease-out group-hover/agent-compact-bento-card:opacity-90">
+								<span className="relative z-[3] inline-flex size-6 shrink-0 items-center justify-center transition-opacity duration-fast ease-out group-hover/agent-compact-bento-card:opacity-90">
 									<Image
 										alt=""
 										aria-hidden
-										className="size-8 object-contain"
-										height={32}
+										className="size-6 object-contain"
+										height={24}
 										src={template.iconSrc}
-										width={32}
+										width={24}
 									/>
 								</span>
-								<span className="relative z-[3] flex w-full min-w-0 flex-1 flex-col gap-1">
-									<span className="block w-full min-w-0 text-sm font-semibold leading-5 text-text">
+								<span className="relative z-[3] flex min-w-0 flex-1 flex-col gap-0.5">
+									<span className="block w-full min-w-0 truncate text-xs font-semibold leading-4 text-text">
 										{template.title}
 									</span>
 									<span
 										ref={registerDescBox}
 										className="block w-full min-w-0 flex-1 min-h-0 overflow-hidden"
 									>
-										<span className="text-sm leading-5 text-text-subtle line-clamp-2">
+										<span className="text-xs leading-4 text-text-subtle line-clamp-1">
 											{template.description}
 										</span>
 									</span>
@@ -2554,9 +2588,10 @@ export const AgentConfigFields = memo(
 										)}
 									</AnimatePresence>
 								)}
-								bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-4"
+								bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-0"
 								className="relative flex min-h-0 flex-1 flex-col"
-								contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[8rem]")}
+								contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]")}
+								editorClassName={isFilledConfig ? undefined : "agent-instructions-tiptap-editor-compact-empty"}
 								instructions={config.instructions}
 								onOpenDirectory={handleOpenDirectory}
 								onInstructionsChange={(value) => handleTextChange("instructions", value)}

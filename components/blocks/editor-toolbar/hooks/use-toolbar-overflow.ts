@@ -58,6 +58,16 @@ export function useToolbarOverflow(groupCount: number): ToolbarOverflowResult {
 			}
 		});
 
+		// If we have not yet captured any natural widths (first paint before
+		// fonts/layout settle), keep everything visible. Folding off zero-width
+		// measurements would collapse the container and trap it folded, because
+		// a fully-folded row shrinks to just the anchor and can never recover.
+		const haveWidths = widths.slice(0, groupCount).some((width) => width > 0);
+		if (!haveWidths) {
+			setVisibleCount(groupCount);
+			return;
+		}
+
 		// Reserve room for the always-visible anchor ("+" button).
 		const budget = container.clientWidth - anchorWidth;
 

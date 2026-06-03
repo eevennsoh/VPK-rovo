@@ -250,7 +250,7 @@ function AgentTestChatPanel({
 			abortOnUnmount={false}
 			containerClassName="mx-auto h-full min-h-0 w-full max-w-[800px] overflow-visible"
 			containerStyle={{ borderRadius: 0, borderWidth: 0, overflow: "visible" }}
-			conversationContentClassName="px-6"
+			conversationContentClassName="px-0"
 			customAgentTabs={{
 				trigger: <AgentTestTriggerView entry={entry} />,
 				activity: <AgentTestActivityView entry={entry} />,
@@ -280,7 +280,9 @@ export function AgentTestPanel({
 		<section
 			aria-label="Agent test"
 			data-testid="agent-test-panel"
-			className={cn("h-full min-h-0", className)}
+			// Match the agent header / Configure tab inset (px-6) so the test
+			// chat tab strip and composer align with the header above.
+			className={cn("h-full min-h-0 px-6", className)}
 		>
 			<RovoChatProvider
 				key={snapshotKey}

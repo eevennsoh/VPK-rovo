@@ -287,10 +287,16 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.doesNotMatch(compactLayoutSource, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
 	assert.match(compactBottomSlotSource, /bottomSlot=\{isFilledConfig \? null : \([\s\S]*<AnimatePresence>[\s\S]*templatesDismissed \? null : \([\s\S]*<AgentCompactOperationsBento[\s\S]*onDismiss=\{\(\) => setTemplatesDismissed\(true\)\}/u);
 	assert.doesNotMatch(compactBottomSlotSource, /AgentCompactConfigToolbarBelow/u);
-	assert.match(compactLayoutSource, /bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-4"/u);
+	assert.match(compactLayoutSource, /bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-0"/u);
 	assert.match(compactLayoutSource, /className="relative flex min-h-0 flex-1 flex-col"/u);
 	// No fixed 560px min-height — the composer fills available space instead.
 	assert.doesNotMatch(compactLayoutSource, /min-h-\[560px\]/u);
+	// Empty compact agents start without unnecessary vertical scroll: the
+	// instructions editor gets a shorter empty-state minimum, while filled
+	// configs keep the larger editing surface.
+	assert.match(compactLayoutSource, /contentClassName=\{cn\("pt-4", isFilledConfig \? "min-h-\[240px\]" : "min-h-\[2rem\]"\)\}/u);
+	assert.match(compactLayoutSource, /editorClassName=\{isFilledConfig \? undefined : "agent-instructions-tiptap-editor-compact-empty"\}/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.agent-instructions-tiptap-editor\.agent-instructions-tiptap-editor-compact-empty \{\s*min-height: 32px;\s*\}/u);
 	// The toolbar lives in a bottom-anchored footer (no overlay). The wrapper
 	// itself is transparent so the separator/expand row shows content scrolling
 	// behind it; the opaque surface lives on the field rows inside the toolbar.
@@ -432,10 +438,10 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /function AgentCompactBentoCardGlowLayers/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_BENTO_CARD_BORDER_FADE_STYLE: CSSProperties = \{[\s\S]*maskImage: "linear-gradient\(to bottom, #000 calc\(100% - 64px\), transparent 100%\)",[\s\S]*WebkitMaskImage: "linear-gradient\(to bottom, #000 calc\(100% - 64px\), transparent 100%\)",[\s\S]*\};/u);
 	assert.match(AGENT_SOURCE, /data-agent-compact-bento-card-border-fade[\s\S]*style=\{AGENT_COMPACT_BENTO_CARD_BORDER_FADE_STYLE\}[\s\S]*data-agent-compact-bento-card-base-border[\s\S]*data-agent-compact-bento-card-glow-border[\s\S]*<\/span>/u);
-	assert.match(AGENT_SOURCE, /<AgentCompactBentoCardGlowLayers iconSrc=\{template\.iconSrc\} \/>[\s\S]*<span className="relative z-\[3\] inline-flex size-8/u);
-	assert.match(AGENT_SOURCE, /className="relative -mt-2 min-h-0 pt-2 sm:flex-1 sm:overflow-hidden sm:bento-fade-bottom"/u);
+	assert.match(AGENT_SOURCE, /<AgentCompactBentoCardGlowLayers iconSrc=\{template\.iconSrc\} \/>[\s\S]*<span className="relative z-\[3\] inline-flex size-6/u);
+	assert.match(AGENT_SOURCE, /className="relative -mt-2 min-h-0 pt-2 lg:flex-1 lg:overflow-hidden lg:bento-fade-bottom"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /sm:\[--bento-fade-end:64px\]/u);
-	assert.match(AGENT_SOURCE, /<BentoCarousel[\s\S]*gridClassName="sm:grid-cols-5"[\s\S]*arrowLabels=\{\{ next: "Show next agent templates", previous: "Show previous agent templates" \}\}/u);
+	assert.match(AGENT_SOURCE, /<BentoCarousel[\s\S]*gridClassName="lg:auto-rows-\[72px\] lg:grid-cols-5"[\s\S]*arrowLabels=\{\{ next: "Show next agent templates", previous: "Show previous agent templates" \}\}/u);
 	assert.match(AGENT_SOURCE, /BENTO_CAROUSEL_TILE_CLASS/u);
 	assert.doesNotMatch(compactOperationsSource, /whileHover=\{/u);
 	assert.match(AGENT_SOURCE, /<AgentCompactBentoTemplatesHint onBrowseAll=\{\(\) => setBrowseOpen\(true\)\} onDismiss=\{onDismiss\} \/>/u);
@@ -755,7 +761,10 @@ test("Shared toolbar groups related split controls and keeps unrelated toggles i
 	assert.match(EDITOR_TOOLBAR_SOURCE, /value=\{formattingValue\}[\s\S]*className=\{TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME\}[\s\S]*value="bold"[\s\S]*value="formatting"/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /value=\{listValue\}[\s\S]*className=\{TOOLBAR_SPLIT_TOGGLE_GROUP_CLASS_NAME\}[\s\S]*value="bulletList"[\s\S]*value="list"/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /function ToolbarSeparator\(\)[\s\S]*orientation="vertical"[\s\S]*className="mx-2 h-4 self-center bg-border data-vertical:self-center"/u);
-	assert.match(EDITOR_TOOLBAR_SOURCE, /<ToolbarSeparator \/>\s*<div className="relative">[\s\S]*value=\{listValue\}/u);
+	// The list group is wrapped in a foldable group div that carries its own
+	// leading separator, so it can collapse into the "+" dropdown when space is
+	// tight.
+	assert.match(EDITOR_TOOLBAR_SOURCE, /data-toolbar-group[\s\S]*<ToolbarSeparator \/>\s*<ToggleGroup[\s\S]*value=\{listValue\}/u);
 
 	// Link remains a separate Toggle; rendered/Markdown mode is a far-right Tabs control.
 	assert.match(EDITOR_TOOLBAR_SOURCE, /pressed=\{!isMarkdownMode && editor\.isActive\("link"\)\}/u);
@@ -763,10 +772,11 @@ test("Shared toolbar groups related split controls and keeps unrelated toggles i
 	assert.match(EDITOR_TOOLBAR_SOURCE, /aria-label="Add content"[\s\S]*onClick=\{handleAddContent\}/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /const handledByConsumer = onInsertReferenceOption\?\.\(category, label\);/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /if \(handledByConsumer !== false && typeof onInsertReferenceOption !== "undefined"\) \{[\s\S]*closeDropdown\(\);[\s\S]*return;[\s\S]*\}[\s\S]*insertContent/u);
-	// The trailing `+` button is wrapped in a positioned div so it can anchor
-	// the Insert dropdown.
-	assert.match(EDITOR_TOOLBAR_SOURCE, /<LinkIcon label="" size="small" \/>\s*<\/Toggle>\s*<ToolbarSeparator \/>/u);
-	assert.match(EDITOR_TOOLBAR_SOURCE, /<div className="relative">\s*<Button[\s\S]*aria-label="Add content"[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>[\s\S]*<\/div>/u);
+	// The trailing `+` button is the pinned overflow anchor (never folds). It is
+	// wrapped in a positioned `data-toolbar-anchor` div so it can anchor the
+	// Insert dropdown, and a leading separator only appears once groups fold.
+	assert.match(EDITOR_TOOLBAR_SOURCE, /<div data-toolbar-anchor className="relative flex items-center gap-1">/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /\{hasFoldedGroups \? <ToolbarSeparator \/> : null\}\s*<Button[\s\S]*aria-label="Add content"[\s\S]*<AddIcon label="" size="small" \/>[\s\S]*<\/Button>[\s\S]*<\/div>/u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /<AddIcon label="" size="small" \/>\s*<\/Button>\s*<ToolbarSeparator \/>/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<Tabs[\s\S]*value=\{isMarkdownMode \? "markdown" : "rendered"\}/u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /value="link"/u);

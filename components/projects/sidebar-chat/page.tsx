@@ -104,16 +104,11 @@ interface ChatPanelProps {
 	 * When true, renders the agent Test-mode-only controls in the custom
 	 * agent tab header: the version dropdown and the new-chat/edit button.
 	 * Other custom-agent tab surfaces (e.g. the RFP report canvas) keep these
-	 * hidden, so this must only be set by the agent Test panel.
+	 * hidden, so this must only be set by the agent Test panel. It also keeps
+	 * the custom agent tab list (Chat / Trigger / Activity) as a centered pill;
+	 * every other surface renders the tab list full width.
 	 */
 	showAgentTestControls?: boolean;
-	/**
-	 * When true, the custom agent tab list (Chat / Trigger / Activity) stretches
-	 * to fill the header row instead of sitting as a centered pill. Only the
-	 * sidebar chat surface opts in; other surfaces keep the centered default so
-	 * this styling does not leak across the shared ChatPanel.
-	 */
-	fullWidthAgentTabs?: boolean;
 	/**
 	 * Optional override appended to the scrollable conversation content
 	 * wrapper. Used to align the conversation body's horizontal padding with
@@ -194,7 +189,6 @@ export default function ChatPanel({
 	greetingSelectedAgent,
 	customAgentTabs,
 	showAgentTestControls = false,
-	fullWidthAgentTabs = false,
 	conversationContentClassName,
 	hideAiCursor = false,
 	hideComposerSourceAndModelControls = false,
@@ -945,15 +939,37 @@ export default function ChatPanel({
 			{shouldRenderCustomAgentTabs ? (
 				<>
 					<Tabs defaultValue="chat" aria-label="Custom agent views" className="min-h-0 min-w-0 flex-1">
-						<div className={cn("flex shrink-0 items-center gap-2 px-3 pb-3", hideHeader ? "pt-3" : null)}>
+						<div
+							className={cn(
+								"flex shrink-0 items-center gap-2 pt-3 pb-3",
+								// In Test mode the surrounding panel already supplies the
+								// header-matching horizontal inset (px-6), so the row drops
+								// its own padding to keep the version dropdown and edit
+								// button aligned with the header controls above. Other
+								// surfaces keep the px-3 inset.
+								showAgentTestControls ? null : "px-3",
+								// Match the Test-mode control bar height on every surface so
+								// the Chat/Trigger/Activity pill lands at the same vertical
+								// position as the Test-mode tab bar. The Test row is sized by
+								// its flanking controls (version dropdown + edit button), so
+								// reserve the same row height when those controls are absent.
+								showAgentTestControls ? null : "min-h-[56px]",
+							)}
+						>
 							{showAgentTestControls ? (
 								<SplitButton
 									variant="outline"
-									label={<Lozenge variant="neutral">{selectedAgentVersion}</Lozenge>}
+									label={
+										<Lozenge variant={selectedAgentVersion === "Draft" ? "neutral" : "success"}>
+											{selectedAgentVersion}
+										</Lozenge>
+									}
 									menuLabel="Switch version"
 									items={AGENT_VERSION_OPTIONS.map((version, versionIndex) => ({
 										key: version,
-										label: <Lozenge variant="neutral">{version}</Lozenge>,
+										label: <Lozenge variant={version === "Draft" ? "neutral" : "success"}>{version}</Lozenge>,
+										// Check-mark the version that is currently active.
+										selected: version === selectedAgentVersion,
 										// Pin Draft to the top so it stays visible as versions scroll.
 										sticky: version === "Draft",
 										// Divider between the Draft entry and the published versions.
@@ -962,8 +978,14 @@ export default function ChatPanel({
 									}))}
 								/>
 							) : null}
-							<div className={cn("flex flex-1", fullWidthAgentTabs ? null : "justify-center")}>
-								<TabsList className={cn(fullWidthAgentTabs ? "w-full" : null)}>
+							<div className={cn("flex flex-1", showAgentTestControls ? "justify-center" : null)}>
+								<TabsList
+									className={cn(
+										showAgentTestControls
+											? "w-full max-w-[376px]"
+											: "w-full",
+									)}
+								>
 									<TabsTrigger value="chat">Chat</TabsTrigger>
 									<TabsTrigger value="trigger">Trigger</TabsTrigger>
 									<TabsTrigger value="activity">Activity</TabsTrigger>
