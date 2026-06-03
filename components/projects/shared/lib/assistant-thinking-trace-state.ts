@@ -79,6 +79,7 @@ export interface AssistantThinkingTraceData {
 	thinkingStatusParts: RovoDataPart<"thinking-status">[];
 	thinkingToolCalls: ThinkingToolCallSummary[];
 	todoProgressItems: RovoAppTodoProgressItem[];
+	visibleThinkingToolCalls: ThinkingToolCallSummary[];
 	todoQueueItems: Array<{
 		id: string;
 		text: string;
@@ -172,6 +173,15 @@ function resolveAnsweredQuestionToolCalls(
 		hasAnsweredQuestionToolCalls,
 		thinkingToolCalls: resolvedThinkingToolCalls,
 	};
+}
+
+function shouldRenderThinkingToolCall(
+	toolCall: ThinkingToolCallSummary
+): boolean {
+	return !(
+		toolCall.state === "completed" &&
+		isRequestUserInputToolName(toolCall.toolName)
+	);
 }
 
 export function resolveThinkingToolCallStepOpen({
@@ -291,6 +301,9 @@ export function collectAssistantThinkingTraceData(
 		hasAnsweredQuestionToolCalls,
 		thinkingToolCalls,
 	} = resolveAnsweredQuestionToolCalls(rawThinkingToolCalls, options);
+	const visibleThinkingToolCalls = thinkingToolCalls.filter(
+		shouldRenderThinkingToolCall,
+	);
 	const thinkingNarrationMap = buildThinkingNarrationMap(message);
 	const latestTodoProgress = getLatestRovoAppTodoProgress(thinkingToolCalls);
 	const todoProgressItems = latestTodoProgress?.items ?? [];
@@ -343,5 +356,6 @@ export function collectAssistantThinkingTraceData(
 		thinkingToolCalls,
 		todoProgressItems,
 		todoQueueItems,
+		visibleThinkingToolCalls,
 	};
 }

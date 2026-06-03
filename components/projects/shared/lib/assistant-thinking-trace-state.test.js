@@ -419,6 +419,35 @@ test("collectAssistantThinkingTraceData marks answered question tools complete",
 	assert.equal(data.hasAwaitingInputToolCalls, false);
 	assert.equal(data.thinkingToolCalls[0].state, "completed");
 	assert.equal(data.thinkingToolCalls[0].outputPreview, "Questions answered.");
+	assert.equal(data.visibleThinkingToolCalls.length, 0);
+});
+
+test("collectAssistantThinkingTraceData keeps unanswered question tools visible", () => {
+	const data = collectAssistantThinkingTraceData({
+		parts: [
+			{
+				type: "data-thinking-event",
+				data: {
+					eventId: "tool-1:start:1",
+					phase: "start",
+					toolName: "ask_user_questions",
+					toolCallId: "tool-1",
+					timestamp: "2026-03-22T00:00:00.000Z",
+				},
+			},
+			{
+				type: "data-turn-complete",
+				data: {
+					timestamp: "2026-03-22T00:01:00.000Z",
+				},
+			},
+		],
+	});
+
+	assert.equal(data.hasAnsweredQuestionToolCalls, false);
+	assert.equal(data.hasAwaitingInputToolCalls, true);
+	assert.equal(data.thinkingToolCalls[0].state, "awaiting-input");
+	assert.equal(data.visibleThinkingToolCalls.length, 1);
 });
 
 test("collectAssistantThinkingTraceData extracts update_todo progress", () => {
@@ -767,7 +796,7 @@ test("completed thinking tool calls suppress the collapsed byline", () => {
 	);
 	assert.match(
 		chainOfThoughtSource,
-		/\{shouldShowHeaderDescription \? <CyclingByline>\{resolvedDescription\}<\/CyclingByline> : null\}/u,
+		/<CyclingByline>\{shouldShowHeaderDescription \? resolvedDescription : null\}<\/CyclingByline>/u,
 	);
 	assert.match(
 		assistantTraceSource,

@@ -331,7 +331,7 @@ export function useAssistantThinkingTraceState({
 		data.hasTodoProgressItems ||
 		data.hasLegacyTodoQueueItems ||
 		data.hasAgentExecutions ||
-		data.hasThinkingToolCalls ||
+		data.visibleThinkingToolCalls.length > 0 ||
 		shouldShowResponseGenerationStep ||
 		hasPlanNarrationText;
 	const [thinkingUserOverride, setThinkingUserOverride] = useState<boolean | null>(null);
@@ -484,8 +484,8 @@ export function AssistantThinkingTrace({
 }: Readonly<AssistantThinkingTraceProps>): ReactNode {
 	const [manuallyOpenedToolCallIds, setManuallyOpenedToolCallIds] = useState<Set<string>>(() => new Set());
 	const toolCallIds = useMemo(
-		() => state.data.thinkingToolCalls.map((toolCall) => toolCall.id),
-		[state.data.thinkingToolCalls],
+		() => state.data.visibleThinkingToolCalls.map((toolCall) => toolCall.id),
+		[state.data.visibleThinkingToolCalls],
 	);
 	const toolCallIdsKey = toolCallIds.join("|");
 
@@ -559,7 +559,7 @@ export function AssistantThinkingTrace({
 							<TraceAgentExecutionSection executions={state.data.agentExecutions} />
 						</ChainOfThoughtStep>
 					) : null}
-					{state.data.thinkingToolCalls.map((toolCall, index) => {
+					{state.data.visibleThinkingToolCalls.map((toolCall, index) => {
 						const narration = toolCall.toolCallId ? state.data.thinkingNarrationMap.byToolCallId.get(toolCall.toolCallId) : undefined;
 						const isOpen = resolveThinkingToolCallStepOpen({
 							toolCallId: toolCall.id,

@@ -19,11 +19,27 @@ test("useAgentUrlSync accepts and forwards an onAgentRestored callback", () => {
 	assert.match(HOOK_SOURCE, /onAgentRestoredRef\.current = onAgentRestored;/u);
 });
 
+// Regression: the URL must track the agent being EDITED (the config pane), not
+// the chat-selected agent. Reading `selectedAgentId`/`isCustomAgentSelected` here
+// is what made the studio flip the Ask Rovo panel onto the custom agent on
+// re-select/reload (a visible "swap"). The hook takes the edited id + the set of
+// resolvable ids explicitly and never selects an agent for chat.
+test("useAgentUrlSync is driven by the edited agent, not chat selection", () => {
+	assert.match(HOOK_SOURCE, /editingAgentId\?:\s*string\s*\|\s*null/u);
+	assert.match(HOOK_SOURCE, /selectableAgentIds:\s*readonly string\[\]/u);
+	// It must not read or mutate chat-selection state from the registry.
+	assert.doesNotMatch(HOOK_SOURCE, /useRovoSelectedAgent/u);
+	assert.doesNotMatch(HOOK_SOURCE, /selectAgent/u);
+	assert.doesNotMatch(HOOK_SOURCE, /isCustomAgentSelected/u);
+	// The URL write reflects the edited agent id directly.
+	assert.match(HOOK_SOURCE, /const desiredAgentId = editingAgentId;/u);
+});
+
 test("useAgentUrlSync notifies onAgentRestored from the mount seed", () => {
 	// The seed-apply effect must call back once the named agent resolves.
 	assert.match(
 		HOOK_SOURCE,
-		/if \(selectableAgents\.some\(\(agent\) => agent\.id === seedAgentId\)\) \{[\s\S]*onAgentRestoredRef\.current\?\.\(seedAgentId\);/u,
+		/if \(selectableAgentIds\.includes\(seedAgentId\)\) \{[\s\S]*onAgentRestoredRef\.current\?\.\(seedAgentId\);/u,
 	);
 });
 
@@ -36,8 +52,11 @@ test("studio shell opens the config pane for the URL-restored agent", () => {
 	// Handler maps a restored agent id to activeAgentConfig (and clears it for null).
 	assert.match(
 		SHELL_SOURCE,
-		/const handleAgentRestoredFromUrl = useCallback\(\(agentId: string \| null\) => \{[\s\S]*setActiveAgentConfig\(agentId \? \{ profileId: agentId, sourceMessageId: null \} : null\);/u,
+		/const handleAgentRestoredFromUrl = useCallback\(\(agentId: string \| null\) => \{[\s\S]*setActiveAgentConfigState\(agentId \? \{ profileId: agentId, sourceMessageId: null \} : null\);/u,
 	);
-	// Handler is wired into the URL sync hook.
-	assert.match(SHELL_SOURCE, /useAgentUrlSync\(\{ enabled: !embedded, onAgentRestored: handleAgentRestoredFromUrl \}\)/u);
+	// Handler is wired into the URL sync hook, driven by the edited agent.
+	assert.match(
+		SHELL_SOURCE,
+		/useAgentUrlSync\(\{[\s\S]*enabled: !embedded,[\s\S]*editingAgentId: activeAgentConfig\?\.profileId \?\? null,[\s\S]*selectableAgentIds,[\s\S]*onAgentRestored: handleAgentRestoredFromUrl,[\s\S]*\}\)/u,
+	);
 });
