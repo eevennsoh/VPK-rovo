@@ -169,11 +169,13 @@ test("buildClarificationMessageMetadata stores stable clarification identifiers"
 		},
 		{
 			answers: { "q-1": "Northstar" },
+			creationMode: "agent",
 			status: "answered",
 		},
 	);
 
 	assert.equal(metadata.source, "clarification-submit");
+	assert.equal(metadata.creationMode, "agent");
 	assert.equal(metadata.clarificationToolCallId, "tool-call-456");
 	assert.equal(metadata.clarificationSessionId, "request-user-input-tool-call-456");
 	assert.equal(metadata.clarificationRound, 1);

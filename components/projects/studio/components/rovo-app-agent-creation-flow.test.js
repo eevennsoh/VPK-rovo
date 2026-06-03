@@ -512,6 +512,8 @@ test("Studio clarification answers keep agent creation mode active", () => {
 	assert.match(SHELL_SOURCE, /buildStudioAgentCreationContinuationContext\(threadTemplate\)/u);
 	assert.match(SHELL_SOURCE, /const getStudioAgentCreationClarificationOptions = useCallback/u);
 	assert.match(SHELL_SOURCE, /activeQuestionCard\?\.creationMode === "agent" \|\|[\s\S]*studioAgentCreationThreadKeysRef\.current\.has\(chat\.runtimeThreadId\)/u);
+	assert.match(SHELL_SOURCE, /hasPersistedAgentCreationPrompt/u);
+	assert.match(SHELL_SOURCE, /message\.metadata\?\.creationMode === "agent"/u);
 	assert.match(SHELL_SOURCE, /creationMode: "agent" as const/u);
 	assert.match(SHELL_SOURCE, /submitClarification\([\s\S]*activeQuestionCard,[\s\S]*answers,[\s\S]*getStudioAgentCreationClarificationOptions\(\),/u);
 	assert.match(SHELL_SOURCE, /onDismissQuestionCard: handleCancelClarificationQuestionSet/u);

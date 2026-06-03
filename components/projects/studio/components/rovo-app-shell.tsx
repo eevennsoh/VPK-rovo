@@ -2204,10 +2204,15 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 	// Question card / clarification support
 	const activeQuestionCard = useMemo(() => getLatestQuestionCardPayload(chat.messages), [chat.messages]);
+	const hasPersistedAgentCreationPrompt = useMemo(
+		() => chat.messages.some((message) => message.metadata?.creationMode === "agent"),
+		[chat.messages],
+	);
 	const { acceptPlanReview, submitClarification } = chat;
 	const getStudioAgentCreationClarificationOptions = useCallback(() => {
 		const isStudioAgentCreationThread =
 			activeQuestionCard?.creationMode === "agent" ||
+			hasPersistedAgentCreationPrompt ||
 			studioAgentCreationThreadKeysRef.current.has(chat.runtimeThreadId) ||
 			(chat.activeThreadId ? studioAgentCreationThreadKeysRef.current.has(chat.activeThreadId) : false);
 
@@ -2223,7 +2228,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			contextDescription: buildStudioAgentCreationContinuationContext(threadTemplate),
 			creationMode: "agent" as const,
 		};
-	}, [activeQuestionCard?.creationMode, chat.activeThreadId, chat.runtimeThreadId]);
+	}, [activeQuestionCard?.creationMode, chat.activeThreadId, chat.runtimeThreadId, hasPersistedAgentCreationPrompt]);
 	const handleCancelClarificationQuestionSet = useCallback(
 		(questionCard: ParsedQuestionCardPayload) => {
 			return chat.cancelClarificationQuestionSet(questionCard, getStudioAgentCreationClarificationOptions());
@@ -2248,7 +2253,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				activeQuestionCard,
 				answers,
 				getStudioAgentCreationClarificationOptions(),
-			);
+			).catch(() => {
+				// submitClarification owns the user-facing error state.
+			});
 		},
 		[activeQuestionCard, getStudioAgentCreationClarificationOptions, submitClarification],
 	);

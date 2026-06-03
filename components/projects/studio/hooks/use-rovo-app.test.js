@@ -71,7 +71,7 @@ test("Studio queued prompt actions preserve explicit creation mode", () => {
 	);
 	assert.match(
 		HOOK_SOURCE,
-		/await dispatchPromptNow\(\{[\s\S]*creationMode: nextAction\.creationMode,[\s\S]*mode: nextAction\.mode,/u,
+		/await dispatchPromptNow\(\{[\s\S]*creationMode: action\.creationMode,[\s\S]*mode: action\.mode,/u,
 	);
 });
 
@@ -82,7 +82,19 @@ test("Studio prompt dispatch only sends creation mode when callers pass it", () 
 	);
 	assert.match(
 		HOOK_SOURCE,
+		/function buildPromptModeMetadata\([\s\S]*creationMode\?: RovoAppCreationMode,[\s\S]*\.\.\.\(creationMode \? \{ creationMode \} : \{\}\),[\s\S]*submittedMode: mode,/u,
+	);
+	assert.match(
+		HOOK_SOURCE,
 		/const submitPrompt = useCallback\([\s\S]*creationMode,[\s\S]*\}: \{[\s\S]*creationMode\?: RovoAppCreationMode;/u,
+	);
+	assert.match(
+		HOOK_SOURCE,
+		/const promptMessageMetadata = buildPromptModeMetadata\([\s\S]*undefined,[\s\S]*promptMode,[\s\S]*creationMode,/u,
+	);
+	assert.match(
+		HOOK_SOURCE,
+		/metadata: buildPromptModeMetadata\(messageMetadata, mode, creationMode\)/u,
 	);
 	assert.match(
 		HOOK_SOURCE,
@@ -125,6 +137,14 @@ test("Studio clarification continuations can preserve agent creation mode", () =
 	assert.match(
 		HOOK_SOURCE,
 		/body: Record<string, unknown> = \{[\s\S]*contextDescription,[\s\S]*\.\.\.\(creationMode \? \{ creationMode \} : \{\}\),[\s\S]*clarification:/u,
+	);
+	assert.match(
+		HOOK_SOURCE,
+		/buildClarificationMessageMetadata\(questionCard, \{[\s\S]*answers,[\s\S]*creationMode,[\s\S]*status: "answered"/u,
+	);
+	assert.match(
+		HOOK_SOURCE,
+		/catch \(sendError\) \{[\s\S]*setRovoMessages\(\(prev\) => prev\.filter\(\(m\) => m\.id !== messageId\)\);[\s\S]*setLocalThreadActiveRun\(threadId, null\);[\s\S]*setAttachedRunStatus\(null\);[\s\S]*setInputError\(toRovoAppUserErrorMessage\(sendError\)\);[\s\S]*throw sendError;/u,
 	);
 	assert.doesNotMatch(
 		HOOK_SOURCE,

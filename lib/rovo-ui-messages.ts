@@ -9,7 +9,7 @@ import {
 	type ToolUIPart,
 	type UIMessage,
 } from "ai";
-import type { RovoAppPromptMode } from "@/lib/rovo-app-types";
+import type { RovoAppCreationMode, RovoAppPromptMode } from "@/lib/rovo-app-types";
 
 // ---------------------------------------------------------------------------
 // Routing decision types (v2)
@@ -273,6 +273,8 @@ export interface RovoMessageMetadata {
 	delegatedFromId?: string;
 	/** Mode snapped when the user submitted the prompt. */
 	submittedMode?: RovoAppPromptMode;
+	/** Creation flow snapped when the user submitted a prompt or clarification answer. */
+	creationMode?: RovoAppCreationMode;
 	planApprovalDecision?: "auto-accept" | "continue-planning" | "custom";
 	planApprovalPlanKey?: string;
 	/** Short label shown in the user bubble instead of the full prompt text */

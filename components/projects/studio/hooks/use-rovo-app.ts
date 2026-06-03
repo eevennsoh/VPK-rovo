@@ -384,9 +384,11 @@ function toRovoAppUserErrorMessage(error: unknown): string {
 function buildPromptModeMetadata(
 	metadata: RovoUIMessage["metadata"] | undefined,
 	mode: RovoAppPromptMode,
+	creationMode?: RovoAppCreationMode,
 ): RovoUIMessage["metadata"] {
 	return {
 		...(metadata ?? {}),
+		...(creationMode ? { creationMode } : {}),
 		submittedMode: mode,
 	};
 }
@@ -3244,7 +3246,7 @@ export function useRovoApp({
 				await syncAgentModeForDispatch(mode);
 				const { message, messageId } = appendLocalUserMessage({
 					files,
-					metadata: buildPromptModeMetadata(messageMetadata, mode),
+					metadata: buildPromptModeMetadata(messageMetadata, mode, creationMode),
 					text: trimmedText,
 				});
 				markLocalThreadRunPending(threadId);
@@ -3381,6 +3383,7 @@ export function useRovoApp({
 			const promptMessageMetadata = buildPromptModeMetadata(
 				undefined,
 				promptMode,
+				creationMode,
 			);
 
 			const resolvedThreadId = activeThreadIdRef.current ?? draftThreadId;
@@ -3497,6 +3500,7 @@ export function useRovoApp({
 				files: [],
 				metadata: buildClarificationMessageMetadata(questionCard, {
 					answers,
+					creationMode,
 					status: "answered",
 				}),
 				text: promptText,
@@ -3545,15 +3549,25 @@ export function useRovoApp({
 						},
 				);
 			}
-			await sendMessage(
-				{
-					text: promptText,
-					files: [],
-					messageId,
-					metadata: message.metadata,
-				},
-				{ body },
-			);
+			try {
+				await sendMessage(
+					{
+						text: promptText,
+						files: [],
+						messageId,
+						metadata: message.metadata,
+					},
+					{ body },
+				);
+			} catch (sendError) {
+				setRovoMessages((prev) => prev.filter((m) => m.id !== messageId));
+				setLocalThreadActiveRun(threadId, null);
+				setAttachedRunStatus(null);
+				if (!isRovoAppSendSettledTimeoutError(sendError)) {
+					setInputError(toRovoAppUserErrorMessage(sendError));
+				}
+				throw sendError;
+			}
 		},
 		[
 			appendLocalUserMessage,
@@ -3563,6 +3577,7 @@ export function useRovoApp({
 			releaseCompletedUseChatTurnIfNeeded,
 			resetPendingArtifactAssociation,
 			sendMessage,
+			setLocalThreadActiveRun,
 			setRovoMessages,
 			syncAgentModeForDispatch,
 		],
@@ -3587,17 +3602,19 @@ export function useRovoApp({
 			const { message, messageId } = appendLocalUserMessage({
 				files: [],
 				metadata: buildClarificationMessageMetadata(questionCard, {
+					creationMode,
 					status: "dismissed",
 				}),
 				text: dismissPrompt,
 			});
 			resetPendingArtifactAssociation();
 			markLocalThreadRunPending(threadId);
+			try {
 				await sendMessage(
 					{
 						text: dismissPrompt,
-					files: [],
-					messageId,
+						files: [],
+						messageId,
 						metadata: message.metadata,
 					},
 					{
@@ -3609,15 +3626,26 @@ export function useRovoApp({
 						},
 					},
 				);
-			},
-			[
-				appendLocalUserMessage,
-				ensureThread,
-				isPlanModeRef,
-				markLocalThreadRunPending,
-				releaseCompletedUseChatTurnIfNeeded,
-				resetPendingArtifactAssociation,
-				sendMessage,
+			} catch (sendError) {
+				setRovoMessages((prev) => prev.filter((m) => m.id !== messageId));
+				setLocalThreadActiveRun(threadId, null);
+				setAttachedRunStatus(null);
+				if (!isRovoAppSendSettledTimeoutError(sendError)) {
+					setInputError(toRovoAppUserErrorMessage(sendError));
+				}
+				throw sendError;
+			}
+		},
+		[
+			appendLocalUserMessage,
+			ensureThread,
+			isPlanModeRef,
+			markLocalThreadRunPending,
+			releaseCompletedUseChatTurnIfNeeded,
+			resetPendingArtifactAssociation,
+			sendMessage,
+			setLocalThreadActiveRun,
+			setRovoMessages,
 		],
 	);
 
@@ -3658,6 +3686,7 @@ export function useRovoApp({
 			const { message, messageId } = appendLocalUserMessage({
 				files: [],
 				metadata: buildClarificationMessageMetadata(questionCard, {
+					creationMode,
 					status: "dismissed",
 				}),
 				text: dismissPrompt,
@@ -3712,15 +3741,25 @@ export function useRovoApp({
 						},
 				);
 			}
-			await sendMessage(
-				{
-					text: dismissPrompt,
-					files: [],
-					messageId,
-					metadata: message.metadata,
-				},
-				{ body },
-			);
+			try {
+				await sendMessage(
+					{
+						text: dismissPrompt,
+						files: [],
+						messageId,
+						metadata: message.metadata,
+					},
+					{ body },
+				);
+			} catch (sendError) {
+				setRovoMessages((prev) => prev.filter((m) => m.id !== messageId));
+				setLocalThreadActiveRun(threadId, null);
+				setAttachedRunStatus(null);
+				if (!isRovoAppSendSettledTimeoutError(sendError)) {
+					setInputError(toRovoAppUserErrorMessage(sendError));
+				}
+				throw sendError;
+			}
 		},
 		[
 			appendLocalUserMessage,
@@ -3730,6 +3769,7 @@ export function useRovoApp({
 			releaseCompletedUseChatTurnIfNeeded,
 			resetPendingArtifactAssociation,
 			sendMessage,
+			setLocalThreadActiveRun,
 			setRovoMessages,
 			syncAgentModeForDispatch,
 		],
