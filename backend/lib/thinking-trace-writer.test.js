@@ -116,6 +116,7 @@ test("writeThinkingTraceSteps emits status + start + result parts for each step"
 				toolName: "studio.read_brief",
 				toolCallId: "read-1",
 				label: "Reading",
+				content: "Reading the brief",
 				outputPreview: "done",
 				delayMs: 1,
 			},
@@ -123,6 +124,7 @@ test("writeThinkingTraceSteps emits status + start + result parts for each step"
 				toolName: "studio.save",
 				toolCallId: "save-1",
 				label: "Saving",
+				content: "Saving the profile",
 				outputPreview: "saved",
 				delayMs: 1,
 			},
@@ -130,6 +132,7 @@ test("writeThinkingTraceSteps emits status + start + result parts for each step"
 		{ defaultDelayMs: 1 },
 	);
 
+	// Single-row steps emit one status (the lead row) then start + result.
 	const types = writer.parts.map((p) => p.type);
 	assert.deepEqual(types, [
 		"data-thinking-status",
@@ -148,6 +151,45 @@ test("writeThinkingTraceSteps emits status + start + result parts for each step"
 	// gate for showing the chain-of-thought body.
 	assert.ok(phases.includes("start"));
 	assert.ok(phases.includes("result"));
+});
+
+test("writeThinkingTraceSteps streams stacked contentRows progressively before the result", async () => {
+	const writer = createCapturingWriter();
+	await writeThinkingTraceSteps(
+		writer,
+		[
+			{
+				toolName: "studio.read_brief",
+				toolCallId: "read-1",
+				label: "Reading",
+				contentRows: ["Lead row", "Second row", "Third row"],
+				outputPreview: "done",
+				delayMs: 1,
+			},
+		],
+		{ defaultDelayMs: 1, narrationRowDelayMs: 1 },
+	);
+
+	const types = writer.parts.map((p) => p.type);
+	// Lead status → start → 2 streamed status rows → result.
+	assert.deepEqual(types, [
+		"data-thinking-status",
+		"data-thinking-event",
+		"data-thinking-status",
+		"data-thinking-status",
+		"data-thinking-event",
+	]);
+
+	const statuses = writer.parts.filter((p) => p.type === "data-thinking-status");
+	assert.deepEqual(statuses.map((p) => p.data.content), ["Lead row", "Second row", "Third row"]);
+	// Status part ids are unique per row so the stream does not dedupe them.
+	assert.deepEqual(
+		statuses.map((p) => p.id),
+		["read-1-status-0", "read-1-status-1", "read-1-status-2"],
+	);
+
+	const events = writer.parts.filter((p) => p.type === "data-thinking-event");
+	assert.deepEqual(events.map((p) => p.data.phase), ["start", "result"]);
 });
 
 test("writeThinkingTraceSteps skips the result event when a step has no output", async () => {
@@ -186,6 +228,7 @@ test("writeThinkingTraceSteps stops emitting once the signal aborts mid-flight",
 				toolName: "x",
 				toolCallId: "x-1",
 				label: "X",
+				content: "X narration",
 				outputPreview: "y",
 				delayMs: 100,
 			},
@@ -193,6 +236,7 @@ test("writeThinkingTraceSteps stops emitting once the signal aborts mid-flight",
 				toolName: "z",
 				toolCallId: "z-1",
 				label: "Z",
+				content: "Z narration",
 				outputPreview: "w",
 				delayMs: 100,
 			},
@@ -205,7 +249,8 @@ test("writeThinkingTraceSteps stops emitting once the signal aborts mid-flight",
 	await promise;
 
 	// The first status + start should have been emitted; the result and second
-	// step's status should NOT have been.
+	// step's parts should NOT have been (single-row steps emit exactly one
+	// status then start).
 	const types = writer.parts.map((p) => p.type);
 	assert.equal(types[0], "data-thinking-status");
 	assert.equal(types[1], "data-thinking-event");

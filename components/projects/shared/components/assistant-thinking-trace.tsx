@@ -4,6 +4,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AiGenerativeTextSummaryIcon from "@atlaskit/icon/core/ai-generative-text-summary";
 import ListChecklistIcon from "@atlaskit/icon/core/list-checklist";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
@@ -19,6 +20,7 @@ import { MessageContent, MessageResponse } from "@/components/ui-custom/message"
 import { isTimelineOnlyContent } from "@/components/ui-custom/reasoning";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import { ToolInput, ToolOutput } from "@/components/ui-custom/tool";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icon";
 import { Lozenge } from "@/components/ui/lozenge";
 import { useDynamicThinkingLabel } from "@/components/projects/shared/hooks/use-dynamic-thinking-label";
@@ -49,6 +51,7 @@ import {
 	type AgentExecutionStatus,
 	type AgentExecutionSummary,
 	type RovoUIMessage,
+	type ThinkingNarrationDetailRow,
 	type ThinkingToolCallSummary,
 } from "@/lib/rovo-ui-messages";
 import {
@@ -422,9 +425,91 @@ export function useAssistantThinkingTraceState({
 	};
 }
 
+/**
+ * One narration row rendered as its own self-contained accordion: the row text
+ * is the trigger (with a hover-revealed chevron matching ChainOfThoughtStep) and
+ * the row's own Parameters/Result collapse underneath it. Collapsed by default.
+ */
+function ToolDetailRowAccordion({
+	row,
+}: Readonly<{ row: ThinkingNarrationDetailRow }>): ReactNode {
+	const [open, setOpen] = useState(false);
+	const hasDetail = row.input !== undefined || row.output !== undefined;
+
+	const trigger = (
+		<span
+			className={cn(
+				"group/tool-row flex items-start gap-1.5 text-text-subtlest transition-colors",
+				hasDetail ? "group-hover/tool-row:text-text" : null,
+			)}
+		>
+			<span className="min-w-0 truncate">{row.content}</span>
+			{hasDetail ? (
+				<Icon
+					render={<ChevronDownIcon label="" size="small" spacing="none" />}
+					className={cn(
+						"mt-0.5 size-4 shrink-0 transition-[transform,opacity] duration-medium ease-out opacity-0 group-hover/tool-row:opacity-100 group-focus-visible/tool-row:opacity-100",
+						open ? "rotate-0" : "-rotate-90",
+					)}
+				/>
+			) : null}
+		</span>
+	);
+
+	// Rows without their own detail are plain progression text — no accordion.
+	if (!hasDetail) {
+		return <div className="group/tool-row">{trigger}</div>;
+	}
+
+	return (
+		<Collapsible onOpenChange={setOpen} open={open}>
+			<button
+				type="button"
+				className="group/tool-row w-full text-left"
+				onClick={() => setOpen((prev) => !prev)}
+			>
+				{trigger}
+			</button>
+			<CollapsibleContent className="space-y-2 overflow-hidden pt-2 h-(--collapsible-panel-height) transition-[height,opacity] ease-out duration-medium data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0">
+				{row.input !== undefined ? <ToolInput codeBlockSize="sm" input={row.input} /> : null}
+				{row.output !== undefined ? <ToolOutput codeBlockSize="sm" errorText={undefined} output={row.output} /> : null}
+			</CollapsibleContent>
+		</Collapsible>
+	);
+}
+
+/**
+ * Renders a tool call's narration. When per-row detail is available
+ * (`detailRows`), each row becomes its own independent accordion with its own
+ * Parameters/Result, all collapsed by default. Otherwise it falls back to
+ * rendering the tool call's shared detail (`children`) inline.
+ */
+function ToolNarrationDisclosure({
+	detailRows,
+	children,
+}: Readonly<{
+	detailRows: readonly ThinkingNarrationDetailRow[] | undefined;
+	children: ReactNode;
+}>): ReactNode {
+	const rows = (detailRows ?? []).filter((row) => row.content.trim().length > 0);
+
+	if (rows.length === 0) {
+		return children;
+	}
+
+	return (
+		<div className="flex flex-col gap-1">
+			{rows.map((row, index) => (
+				<ToolDetailRowAccordion key={`${index}-${row.content}`} row={row} />
+			))}
+		</div>
+	);
+}
+
 function ThinkingToolCallStep({
 	messageId,
 	narration,
+	detailRows,
 	open,
 	toolCall,
 	index,
@@ -432,6 +517,7 @@ function ThinkingToolCallStep({
 }: Readonly<{
 	messageId: string;
 	narration: string[] | undefined;
+	detailRows: readonly ThinkingNarrationDetailRow[] | undefined;
 	open: boolean;
 	toolCall: ThinkingToolCallSummary;
 	index: number;
@@ -463,17 +549,18 @@ function ThinkingToolCallStep({
 			}
 			status={status}
 		>
-			{narration && narration.length > 0 ? <div className="whitespace-pre-wrap text-xs text-text-subtle leading-5">{narration.join("\n\n")}</div> : null}
-			{toolCall.input !== undefined ? <ToolInput codeBlockSize="sm" input={toolCall.input} /> : null}
-			<ToolOutput
-				codeBlockSize="sm"
-				errorText={toolCall.errorText}
-				output={toolCall.output}
-				outputPreview={toolCall.outputPreview}
-				outputBytes={toolCall.outputBytes}
-				outputTruncated={toolCall.outputTruncated}
-				suppressedRawOutput={toolCall.suppressedRawOutput}
-			/>
+			<ToolNarrationDisclosure detailRows={detailRows}>
+				{toolCall.input !== undefined ? <ToolInput codeBlockSize="sm" input={toolCall.input} /> : null}
+				<ToolOutput
+					codeBlockSize="sm"
+					errorText={toolCall.errorText}
+					output={toolCall.output}
+					outputPreview={toolCall.outputPreview}
+					outputBytes={toolCall.outputBytes}
+					outputTruncated={toolCall.outputTruncated}
+					suppressedRawOutput={toolCall.suppressedRawOutput}
+				/>
+			</ToolNarrationDisclosure>
 		</ChainOfThoughtStep>
 	);
 }
@@ -667,6 +754,7 @@ export function AssistantThinkingTrace({
 					) : null}
 					{state.data.visibleThinkingToolCalls.map((toolCall, index) => {
 						const narration = toolCall.toolCallId ? state.data.thinkingNarrationMap.byToolCallId.get(toolCall.toolCallId) : undefined;
+						const detailRows = toolCall.toolCallId ? state.data.thinkingNarrationDetailMap.byToolCallId.get(toolCall.toolCallId) : undefined;
 						const isOpen = resolveThinkingToolCallStepOpen({
 							toolCallId: toolCall.id,
 							manuallyOpenedToolCallIds,
@@ -677,6 +765,7 @@ export function AssistantThinkingTrace({
 								key={`${state.message.id}-cot-tool-${toolCall.id}-${index}`}
 								messageId={state.message.id}
 								narration={narration}
+								detailRows={detailRows}
 								open={isOpen}
 								toolCall={toolCall}
 								index={index}
