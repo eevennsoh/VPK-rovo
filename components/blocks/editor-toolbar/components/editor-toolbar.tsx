@@ -99,6 +99,7 @@ export interface EditorToolbarProps {
 	endSlot?: ReactNode;
 	isMarkdownMode?: boolean;
 	mode?: EditorToolbarViewMode;
+	controlsOverflow?: "responsive" | "fixed";
 	showDataFlowMode?: boolean;
 	onToggleMarkdownMode?: () => void;
 	onModeChange?: (mode: EditorToolbarViewMode) => void;
@@ -298,6 +299,7 @@ export function EditorToolbar({
 	endSlot,
 	isMarkdownMode = false,
 	mode,
+	controlsOverflow = "responsive",
 	showDataFlowMode = false,
 	onToggleMarkdownMode,
 	onModeChange,
@@ -316,6 +318,7 @@ export function EditorToolbar({
 	// Alignment has no raw-Markdown equivalent, so it stays disabled in source
 	// mode. Every other control rewrites the textarea selection instead.
 	const markdownUnsupported = currentMode === "markdown" || controlsDisabled;
+	const foldsControls = controlsOverflow === "responsive";
 	// Block/mark active state should only surface once the caret actually lives
 	// inside the editor. Tiptap seeds the selection at the document start before
 	// the user focuses, so reading `isActive` eagerly would, for content that
@@ -334,9 +337,10 @@ export function EditorToolbar({
 	// The five separator-bounded control groups fold (right-to-left) into the
 	// "+" insert dropdown when the toolbar runs out of horizontal room. The "+"
 	// button is the pinned anchor and never folds.
-	const { containerRef, visibleCount } = useToolbarOverflow(
+	const { containerRef, visibleCount: measuredVisibleCount } = useToolbarOverflow(
 		FOLDABLE_GROUP_COUNT,
 	);
+	const visibleCount = foldsControls ? measuredVisibleCount : FOLDABLE_GROUP_COUNT;
 	const isGroupFolded = (index: number): boolean => index >= visibleCount;
 	const hasFoldedGroups = visibleCount < FOLDABLE_GROUP_COUNT;
 
@@ -700,11 +704,11 @@ export function EditorToolbar({
 			ref={toolbarRef}
 			className={cn("flex min-h-8 items-center justify-between gap-4", className)}
 		>
-			<div className="flex min-w-0 flex-1 items-center gap-1">
+			<div className={cn("flex items-center gap-1", foldsControls ? "min-w-0 flex-1" : "shrink-0")}>
 				{leadingSlot}
 				<div
 					ref={containerRef}
-					className={cn("flex min-w-0 flex-1 items-center gap-1", controlsClassName)}
+					className={cn("flex items-center gap-1", foldsControls ? "min-w-0 flex-1" : "shrink-0", controlsClassName)}
 				>
 					<div
 						data-toolbar-group
