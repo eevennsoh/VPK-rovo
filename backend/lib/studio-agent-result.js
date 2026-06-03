@@ -224,6 +224,232 @@ function normalizeStudioAgentResult(value) {
 	};
 }
 
+const TOLERANT_PARSE_BACKTRACK = Symbol("studio-agent-result/backtrack");
+const TOLERANT_PARSE_BUDGET_EXCEEDED = Symbol("studio-agent-result/budget");
+const TOLERANT_PARSE_MAX_STEPS = 200000;
+
+function decodeJsonEscape(src, backslashIndex) {
+	const escaped = src[backslashIndex + 1];
+	switch (escaped) {
+		case "\"":
+			return { text: "\"", advance: 2 };
+		case "\\":
+			return { text: "\\", advance: 2 };
+		case "/":
+			return { text: "/", advance: 2 };
+		case "b":
+			return { text: "\b", advance: 2 };
+		case "f":
+			return { text: "\f", advance: 2 };
+		case "n":
+			return { text: "\n", advance: 2 };
+		case "r":
+			return { text: "\r", advance: 2 };
+		case "t":
+			return { text: "\t", advance: 2 };
+		case "u": {
+			const hex = src.slice(backslashIndex + 2, backslashIndex + 6);
+			if (/^[0-9a-fA-F]{4}$/u.test(hex)) {
+				return { text: String.fromCharCode(parseInt(hex, 16)), advance: 6 };
+			}
+			return { text: "u", advance: 2 };
+		}
+		default:
+			return { text: escaped === undefined ? "" : escaped, advance: 2 };
+	}
+}
+
+/**
+ * Best-effort, backtracking JSON-object parser used only as a fallback when
+ * strict `JSON.parse` fails. It recovers from the dominant LLM structured-output
+ * defect — unescaped double quotes (and raw control characters) inside long
+ * free-text string values such as `instructions`.
+ *
+ * Each string value tries its earliest closing quote first; if the rest of the
+ * object cannot then be parsed, that quote is absorbed as interior text and the
+ * next candidate is tried (continuation-passing backtracking). Object keys are
+ * constrained to identifier-like text, which rejects the degenerate "too-early
+ * close" parses that would otherwise complete a structurally-valid but wrong
+ * object. Bounded by a step budget so pathological input degrades to `null`
+ * rather than hanging.
+ *
+ * Returns `{ value, endIndex }` (endIndex points at the closing brace) or null.
+ */
+function tolerantParseJsonObjectAt(src, startIndex) {
+	if (typeof src !== "string" || src[startIndex] !== "{") {
+		return null;
+	}
+
+	const length = src.length;
+	let steps = 0;
+
+	function bumpBudget() {
+		steps += 1;
+		if (steps > TOLERANT_PARSE_MAX_STEPS) {
+			throw TOLERANT_PARSE_BUDGET_EXCEEDED;
+		}
+	}
+
+	function skipWhitespace(index) {
+		let cursor = index;
+		while (cursor < length) {
+			const character = src[cursor];
+			if (character === " " || character === "\t" || character === "\n" || character === "\r") {
+				cursor += 1;
+			} else {
+				break;
+			}
+		}
+		return cursor;
+	}
+
+	function isPlausibleKey(key) {
+		// Real object keys here are identifiers. A key that absorbed an interior
+		// quote or control character is the signature of a degenerate (too-early)
+		// string close, so reject it to steer backtracking toward the real parse.
+		return key.length > 0 && key.length <= 120 && !/["\n\r\t]/u.test(key);
+	}
+
+	function parseValue(index, continueWith) {
+		bumpBudget();
+		const cursor = skipWhitespace(index);
+		if (cursor >= length) {
+			throw TOLERANT_PARSE_BACKTRACK;
+		}
+
+		const character = src[cursor];
+		if (character === "{") {
+			return parseObject(cursor, continueWith);
+		}
+		if (character === "[") {
+			return parseArray(cursor, continueWith);
+		}
+		if (character === "\"") {
+			return parseString(cursor, continueWith);
+		}
+		return parsePrimitive(cursor, continueWith);
+	}
+
+	function parseString(index, continueWith) {
+		let cursor = index + 1;
+		let buffer = "";
+		while (cursor < length) {
+			bumpBudget();
+			const character = src[cursor];
+			if (character === "\\") {
+				const { text, advance } = decodeJsonEscape(src, cursor);
+				buffer += text;
+				cursor += advance;
+				continue;
+			}
+			if (character === "\"") {
+				try {
+					return continueWith(buffer, cursor + 1);
+				} catch (error) {
+					if (error !== TOLERANT_PARSE_BACKTRACK) {
+						throw error;
+					}
+					buffer += "\"";
+					cursor += 1;
+					continue;
+				}
+			}
+			buffer += character;
+			cursor += 1;
+		}
+		throw TOLERANT_PARSE_BACKTRACK;
+	}
+
+	function parsePrimitive(index, continueWith) {
+		const rest = src.slice(index);
+		if (rest.startsWith("true")) {
+			return continueWith(true, index + 4);
+		}
+		if (rest.startsWith("false")) {
+			return continueWith(false, index + 5);
+		}
+		if (rest.startsWith("null")) {
+			return continueWith(null, index + 4);
+		}
+		const numberMatch = /^-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/u.exec(rest);
+		if (numberMatch) {
+			return continueWith(Number(numberMatch[0]), index + numberMatch[0].length);
+		}
+		throw TOLERANT_PARSE_BACKTRACK;
+	}
+
+	function parseArray(index, continueWith) {
+		const start = skipWhitespace(index + 1);
+		if (src[start] === "]") {
+			return continueWith([], start + 1);
+		}
+
+		const items = [];
+		function parseElement(elementIndex) {
+			return parseValue(elementIndex, (value, afterValue) => {
+				items.push(value);
+				const next = skipWhitespace(afterValue);
+				if (src[next] === ",") {
+					return parseElement(next + 1);
+				}
+				if (src[next] === "]") {
+					return continueWith(items, next + 1);
+				}
+				throw TOLERANT_PARSE_BACKTRACK;
+			});
+		}
+
+		return parseElement(start);
+	}
+
+	function parseObject(index, continueWith) {
+		const start = skipWhitespace(index + 1);
+		const result = {};
+		if (src[start] === "}") {
+			return continueWith(result, start + 1);
+		}
+
+		function parsePair(pairIndex) {
+			const keyStart = skipWhitespace(pairIndex);
+			if (src[keyStart] !== "\"") {
+				throw TOLERANT_PARSE_BACKTRACK;
+			}
+
+			return parseString(keyStart, (key, afterKey) => {
+				if (!isPlausibleKey(key)) {
+					throw TOLERANT_PARSE_BACKTRACK;
+				}
+				const colon = skipWhitespace(afterKey);
+				if (src[colon] !== ":") {
+					throw TOLERANT_PARSE_BACKTRACK;
+				}
+				return parseValue(colon + 1, (value, afterValue) => {
+					result[key] = value;
+					const next = skipWhitespace(afterValue);
+					if (src[next] === ",") {
+						return parsePair(next + 1);
+					}
+					if (src[next] === "}") {
+						return continueWith(result, next + 1);
+					}
+					throw TOLERANT_PARSE_BACKTRACK;
+				});
+			});
+		}
+
+		return parsePair(start);
+	}
+
+	try {
+		return parseObject(startIndex, (value, next) => ({ value, endIndex: next - 1 }));
+	} catch (error) {
+		if (error === TOLERANT_PARSE_BACKTRACK || error === TOLERANT_PARSE_BUDGET_EXCEEDED) {
+			return null;
+		}
+		throw error;
+	}
+}
+
 function findJsonObjectEndIndex(value, startIndex) {
 	let depth = 0;
 	let inString = false;
@@ -264,18 +490,19 @@ function parseJsonObjectAt(value, startIndex) {
 	}
 
 	const endIndex = findJsonObjectEndIndex(value, startIndex);
-	if (endIndex === -1) {
-		return null;
+	if (endIndex !== -1) {
+		try {
+			return {
+				value: JSON.parse(value.slice(startIndex, endIndex + 1)),
+				endIndex,
+			};
+		} catch {
+			// Strict parse failed (commonly unescaped quotes in a free-text
+			// field). Fall through to the backtracking tolerant parser.
+		}
 	}
 
-	try {
-		return {
-			value: JSON.parse(value.slice(startIndex, endIndex + 1)),
-			endIndex,
-		};
-	} catch {
-		return null;
-	}
+	return tolerantParseJsonObjectAt(value, startIndex);
 }
 
 function cleanExtractedText(text) {
@@ -341,7 +568,8 @@ function tryParseJsonObject(value) {
 		const parsed = JSON.parse(text);
 		return isPlainObject(parsed) ? parsed : null;
 	} catch {
-		return null;
+		const tolerant = tolerantParseJsonObjectAt(text, 0);
+		return tolerant && isPlainObject(tolerant.value) ? tolerant.value : null;
 	}
 }
 
@@ -480,4 +708,5 @@ module.exports = {
 	findJsonObjectEndIndex,
 	normalizeStudioAgentResult,
 	shouldSurfaceMissingStudioAgentResultFailure,
+	tolerantParseJsonObjectAt,
 };
