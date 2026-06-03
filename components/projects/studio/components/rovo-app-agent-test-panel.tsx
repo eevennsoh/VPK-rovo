@@ -250,6 +250,7 @@ function AgentTestChatPanel({
 			abortOnUnmount={false}
 			containerClassName="mx-auto h-full min-h-0 w-full max-w-[800px] overflow-visible"
 			containerStyle={{ borderRadius: 0, borderWidth: 0, overflow: "visible" }}
+			conversationContentClassName="px-6"
 			customAgentTabs={{
 				trigger: <AgentTestTriggerView entry={entry} />,
 				activity: <AgentTestActivityView entry={entry} />,

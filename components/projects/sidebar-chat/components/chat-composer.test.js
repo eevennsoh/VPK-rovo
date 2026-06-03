@@ -280,12 +280,16 @@ test("compact chat resets the visible conversation when switching agents", () =>
 	assert.ok(selectAgentIndex > resetChatIndex);
 	assert.ok(resetAgentToRovoIndex > selectAgentIndex);
 	assert.match(
+		context,
+		/const selectedAgentIdRef = useRef\(ROVO_AGENT_ID\);[\s\S]*const setSelectedAgentIdState = useCallback\(\(nextAgentId: string\) => \{[\s\S]*selectedAgentIdRef\.current = nextAgentId;[\s\S]*setSelectedAgentId\(nextAgentId\);[\s\S]*\}, \[\]\);/u,
+	);
+	assert.match(
 		context.slice(selectAgentIndex, resetAgentToRovoIndex),
-		/if \(nextAgent\.id === selectedAgentId\) \{[\s\S]*return;[\s\S]*\}[\s\S]*setSelectedAgentId\(nextAgent\.id\);[\s\S]*if \(!options\?\.preserveCurrentThread\) \{[\s\S]*resetChat\(\);[\s\S]*\}/u,
+		/if \(nextAgent\.id === selectedAgentIdRef\.current\) \{[\s\S]*return;[\s\S]*\}[\s\S]*setSelectedAgentIdState\(nextAgent\.id\);[\s\S]*if \(!options\?\.preserveCurrentThread\) \{[\s\S]*resetChat\(\);[\s\S]*\}/u,
 	);
 	assert.match(
 		context.slice(resetAgentToRovoIndex),
-		/if \(selectedAgentId === ROVO_AGENT_ID\) \{[\s\S]*return;[\s\S]*\}[\s\S]*setSelectedAgentId\(ROVO_AGENT_ID\);[\s\S]*resetChat\(\);/u,
+		/if \(selectedAgentIdRef\.current === ROVO_AGENT_ID\) \{[\s\S]*return;[\s\S]*\}[\s\S]*setSelectedAgentIdState\(ROVO_AGENT_ID\);[\s\S]*resetChat\(\);/u,
 	);
 });
 
@@ -298,7 +302,7 @@ test("compact chat can select a created agent while preserving the current threa
 	assert.ok(resetAgentToRovoIndex > registerIndex);
 	assert.match(
 		context.slice(registerIndex, resetAgentToRovoIndex),
-		/if \(options\?\.select && entry\.profile\.id !== selectedAgentId\) \{[\s\S]*setSelectedAgentId\(entry\.profile\.id\);[\s\S]*if \(!options\.preserveCurrentThread\) \{[\s\S]*resetChat\(\);[\s\S]*\}/u,
+		/if \(options\?\.select && entry\.profile\.id !== selectedAgentIdRef\.current\) \{[\s\S]*setSelectedAgentIdState\(entry\.profile\.id\);[\s\S]*if \(!options\.preserveCurrentThread\) \{[\s\S]*resetChat\(\);[\s\S]*\}/u,
 	);
 });
 

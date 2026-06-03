@@ -1268,6 +1268,11 @@ export function RovoChatProvider({
 	portIndex,
 }: Readonly<RovoChatProviderProps>) {
 	const [selectedAgentId, setSelectedAgentId] = useState(ROVO_AGENT_ID);
+	const selectedAgentIdRef = useRef(ROVO_AGENT_ID);
+	const setSelectedAgentIdState = useCallback((nextAgentId: string) => {
+		selectedAgentIdRef.current = nextAgentId;
+		setSelectedAgentId(nextAgentId);
+	}, []);
 	const [chatSurface, setChatSurface] = useState<ChatSurface | null>(null);
 	const isOpen = chatSurface !== null;
 	const [isSubmitPending, setIsSubmitPending] = useState(false);
@@ -1393,9 +1398,9 @@ export function RovoChatProvider({
 
 	useEffect(() => {
 		if (agentProfiles && !agentProfileById.has(selectedAgentId)) {
-			setSelectedAgentId(ROVO_AGENT_ID);
+			setSelectedAgentIdState(ROVO_AGENT_ID);
 		}
-	}, [agentProfileById, agentProfiles, selectedAgentId]);
+	}, [agentProfileById, agentProfiles, selectedAgentId, setSelectedAgentIdState]);
 
 	useEffect(() => {
 		if (!autoSelectAgentId) {
@@ -1413,9 +1418,9 @@ export function RovoChatProvider({
 
 		autoSelectedAgentIdRef.current = autoSelectAgentId;
 		if (selectedAgentId !== nextAgent.id) {
-			setSelectedAgentId(nextAgent.id);
+			setSelectedAgentIdState(nextAgent.id);
 		}
-	}, [agentProfileById, autoSelectAgentId, selectedAgentId]);
+	}, [agentProfileById, autoSelectAgentId, selectedAgentId, setSelectedAgentIdState]);
 
 	const startSubmitPending = useCallback((startedAt: number) => {
 		if (isSubmitPendingRef.current) {
@@ -2876,15 +2881,15 @@ export function RovoChatProvider({
 		// the clicked agent to the top. Leave `lastTouchedAt` untouched on select —
 		// only create/edit/test/publish bump it. The selected row is reflected via
 		// `selectedAgentId` (its highlighted state), independent of list order.
-		if (nextAgent.id === selectedAgentId) {
+		if (nextAgent.id === selectedAgentIdRef.current) {
 			return;
 		}
 
-		setSelectedAgentId(nextAgent.id);
+		setSelectedAgentIdState(nextAgent.id);
 		if (!options?.preserveCurrentThread) {
 			resetChat();
 		}
-	}, [agentProfileById, resetChat, selectedAgentId]);
+	}, [agentProfileById, resetChat, setSelectedAgentIdState]);
 
 	const registerCreatedAgentFromResult = useCallback(
 		(
@@ -2910,8 +2915,8 @@ export function RovoChatProvider({
 				setSessionAgentEntries(nextEntries);
 			}
 
-			if (options?.select && entry.profile.id !== selectedAgentId) {
-				setSelectedAgentId(entry.profile.id);
+			if (options?.select && entry.profile.id !== selectedAgentIdRef.current) {
+				setSelectedAgentIdState(entry.profile.id);
 				if (!options.preserveCurrentThread) {
 					resetChat();
 				}
@@ -2919,7 +2924,7 @@ export function RovoChatProvider({
 
 			return entry.profile;
 		},
-		[resetChat, selectedAgentId, staticAgentProfiles, touchSessionAgent]
+		[resetChat, setSelectedAgentIdState, staticAgentProfiles, touchSessionAgent]
 	);
 
 	const getSessionAgentEntry = useCallback((profileId: string): SessionAgentEntry | null => {
@@ -3029,13 +3034,13 @@ export function RovoChatProvider({
 	);
 
 	const resetAgentToRovo = useCallback(() => {
-		if (selectedAgentId === ROVO_AGENT_ID) {
+		if (selectedAgentIdRef.current === ROVO_AGENT_ID) {
 			return;
 		}
 
-		setSelectedAgentId(ROVO_AGENT_ID);
+		setSelectedAgentIdState(ROVO_AGENT_ID);
 		resetChat();
-	}, [resetChat, selectedAgentId]);
+	}, [resetChat, setSelectedAgentIdState]);
 
 	const removeSessionAgent = useCallback((profileId: string) => {
 		const current = sessionAgentEntriesRef.current;
@@ -3050,11 +3055,11 @@ export function RovoChatProvider({
 		// Deleting the agent that is currently driving the chat would otherwise
 		// leave the surface pointed at a profile that no longer exists, so fall
 		// back to the default Rovo agent (which also clears the thread).
-		if (selectedAgentId === profileId) {
-			setSelectedAgentId(ROVO_AGENT_ID);
+		if (selectedAgentIdRef.current === profileId) {
+			setSelectedAgentIdState(ROVO_AGENT_ID);
 			resetChat();
 		}
-	}, [resetChat, selectedAgentId]);
+	}, [resetChat, setSelectedAgentIdState]);
 
 	const replaceMessages = useCallback(
 		(messages: ReadonlyArray<RovoUIMessage>) => {

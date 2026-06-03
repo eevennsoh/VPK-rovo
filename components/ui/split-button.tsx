@@ -14,7 +14,13 @@ import { cn } from "@/lib/utils"
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down"
 
 export interface SplitButtonItem {
-	label: string
+	label: React.ReactNode
+	/**
+	 * Stable React key for the menu item. Required when `label` is not a
+	 * plain string (e.g. a `Lozenge` element); defaults to `label` for the
+	 * common string-label case.
+	 */
+	key?: string
 	onSelect?: () => void
 	disabled?: boolean
 }
@@ -91,9 +97,9 @@ function SplitButton({
 					}
 				/>
 				<DropdownMenuContent>
-					{items.map((item) => (
+					{items.map((item, index) => (
 						<DropdownMenuItem
-							key={item.label}
+							key={item.key ?? (typeof item.label === "string" ? item.label : index)}
 							onSelect={item.onSelect}
 							disabled={item.disabled}
 						>

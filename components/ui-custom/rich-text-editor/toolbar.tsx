@@ -14,6 +14,10 @@ import { RovoColorIcon } from "@/components/ui/logo";
 
 export type RichTextEditorToolbarProps = EditorToolbarProps;
 
+function getRichTextEditorMenuAppendTarget(): HTMLElement {
+	return document.body;
+}
+
 interface RichTextEditorBubbleMenuProps {
 	editor: Editor;
 	leadingSlot?: ReactNode;
@@ -70,6 +74,7 @@ export function RichTextEditorBubbleMenu({
 }: Readonly<RichTextEditorBubbleMenuProps>) {
 	return (
 		<BubbleMenu
+			appendTo={getRichTextEditorMenuAppendTarget}
 			editor={editor}
 			className="z-[1000] flex items-stretch rounded-lg bg-popover text-popover-foreground shadow-2xl"
 			shouldShow={({ editor: activeEditor, from, to }) =>
@@ -85,7 +90,10 @@ export function RichTextEditorBubbleMenu({
 					</>
 				}
 				className="gap-0"
-				controlsClassName="px-2 py-1"
+				// Left padding is tightened to `pl-1` (4px) so the gap between the
+				// Ask Rovo separator and the first control matches the 4px the
+				// button leaves on every other side; the right edge keeps `pr-2`.
+				controlsClassName="pl-1 pr-2 py-1"
 			/>
 		</BubbleMenu>
 	);
@@ -97,6 +105,7 @@ export function RichTextEditorFloatingMenu({
 }: Readonly<RichTextEditorFloatingMenuProps>) {
 	return (
 		<FloatingMenu
+			appendTo={getRichTextEditorMenuAppendTarget}
 			editor={editor}
 			className="z-[1000] flex items-stretch rounded-lg bg-popover text-popover-foreground shadow-2xl"
 		>

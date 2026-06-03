@@ -326,7 +326,7 @@ test("Shared ChatPanel renders the Rovo-style conversation body and scroll butto
 	assert.match(CHAT_PANEL_SOURCE, /resizeTarget=\{isStreamingLifecycleActive \? "bottom" : "follow"\}/);
 	assert.match(
 		CHAT_PANEL_SOURCE,
-		/className="mx-auto flex min-w-0 max-w-\[800px\] flex-col gap-4 px-4 py-6 md:gap-6"/,
+		/className=\{cn\(\s*"mx-auto flex min-w-0 max-w-\[800px\] flex-col gap-4 px-4 py-6 md:gap-6",\s*conversationContentClassName\s*\)\}/,
 	);
 	assert.match(
 		CHAT_PANEL_SOURCE,

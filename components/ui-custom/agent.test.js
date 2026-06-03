@@ -92,7 +92,7 @@ test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /editorClassName=\{cn\("agent-instructions-tiptap-editor text-text", editorClassName\)\}/u);
 	assert.match(AGENT_SOURCE, /placeholder="Describe the agent’s role and what it should do\. @ to mention people and agents, \/ for skills, tools, and knowledge, or start with a template"/u);
 	assert.match(AGENT_SOURCE, /placeholderSlot=\{\([\s\S]*start with a template[\s\S]*\)\}/u);
-	assert.match(AGENT_SOURCE, /onClick=\{\(\) => setTemplatesOpen\(true\)\}/u);
+	assert.match(AGENT_SOURCE, /onClick=\{\(\) => \{[\s\S]*onStartWithTemplate\?\.\(\);[\s\S]*setTemplatesOpen\(true\);[\s\S]*\}\}/u);
 	assert.match(AGENT_SOURCE, /<AgentTemplatesDialog[\s\S]*open=\{templatesOpen\}[\s\S]*onOpenChange=\{setTemplatesOpen\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /showBubbleMenu=\{false\}/u);
 	assert.match(AGENT_SOURCE, /const handleInsertReferenceOption = useCallback\(\(category: string\): boolean => \{[\s\S]*category === "knowledge"[\s\S]*onOpenDirectory\?\.\("knowledge"\)[\s\S]*category === "tool"[\s\S]*onOpenDirectory\?\.\("tools"\)[\s\S]*category === "skill"[\s\S]*onOpenDirectory\?\.\("skills"\)[\s\S]*return false;[\s\S]*\}, \[onOpenDirectory\]\);/u);
@@ -803,6 +803,9 @@ test("Shared toolbar exposes far-right rendered and Markdown mode tabs gated by 
 	assert.match(EDITOR_TOOLBAR_SOURCE, /isMarkdownMode\?: boolean;/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /onToggleMarkdownMode\?: \(\) => void;/u);
 	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /import \{ BubbleMenu, FloatingMenu \} from "@tiptap\/react\/menus";/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /function getRichTextEditorMenuAppendTarget\(\): HTMLElement \{[\s\S]*return document\.body;[\s\S]*\}/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<BubbleMenu[\s\S]*appendTo=\{getRichTextEditorMenuAppendTarget\}/u);
+	assert.match(RICH_TEXT_TOOLBAR_SOURCE, /<FloatingMenu[\s\S]*appendTo=\{getRichTextEditorMenuAppendTarget\}/u);
 	assert.match(
 		RICH_TEXT_TOOLBAR_SOURCE,
 		/<BubbleMenu[\s\S]*shouldShow=\{\(\{ editor: activeEditor, from, to \}\) =>[\s\S]*activeEditor\.isEditable && from !== to/u,

@@ -2095,6 +2095,7 @@ function AgentInstructionsComposer({
 	instructions,
 	onOpenDirectory,
 	onInstructionsChange,
+	onStartWithTemplate,
 	screenAssistantTargetId,
 	showSectionLabel = true,
 	toolbarBelowSlot,
@@ -2107,6 +2108,7 @@ function AgentInstructionsComposer({
 	instructions?: string;
 	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
 	onInstructionsChange?: (value: string) => void;
+	onStartWithTemplate?: () => void;
 	screenAssistantTargetId?: string;
 	showSectionLabel?: boolean;
 	toolbarBelowSlot?: ReactNode;
@@ -2187,7 +2189,12 @@ function AgentInstructionsComposer({
 						<button
 							type="button"
 							className="pointer-events-auto cursor-pointer rounded-sm text-link no-underline underline-offset-2 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-							onClick={() => setTemplatesOpen(true)}
+							onClick={() => {
+								// Choosing a template means the user is already mindful of
+								// templates — animate the onboarding tiles away.
+								onStartWithTemplate?.();
+								setTemplatesOpen(true);
+							}}
 						>
 							start with a template
 						</button>
@@ -2553,6 +2560,7 @@ export const AgentConfigFields = memo(
 								instructions={config.instructions}
 								onOpenDirectory={handleOpenDirectory}
 								onInstructionsChange={(value) => handleTextChange("instructions", value)}
+								onStartWithTemplate={dismissTemplateTiles}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 								showSectionLabel={false}
 							/>

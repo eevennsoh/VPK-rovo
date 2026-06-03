@@ -250,20 +250,17 @@ const STATIC_MENTION_ITEMS: RichTextMentionSources = {
 		{
 			category: "human",
 			id: "human:teammate",
-			label: "Teammate",
-			description: "Mention a specific person on your team.",
+			label: "Andrea Wilson",
 		},
 		{
 			category: "human",
 			id: "human:reviewer",
-			label: "Reviewer",
-			description: "Loop in a human reviewer for sign-off.",
+			label: "Brian Lin",
 		},
 		{
 			category: "human",
 			id: "human:stakeholder",
-			label: "Stakeholder",
-			description: "Notify a project stakeholder.",
+			label: "Florence Garcia",
 		},
 	],
 	team: [
@@ -271,19 +268,16 @@ const STATIC_MENTION_ITEMS: RichTextMentionSources = {
 			category: "team",
 			id: "team:engineering",
 			label: "Engineering",
-			description: "Mention the engineering team.",
 		},
 		{
 			category: "team",
 			id: "team:design",
 			label: "Design",
-			description: "Mention the design team.",
 		},
 		{
 			category: "team",
 			id: "team:support",
 			label: "Support",
-			description: "Mention the support team.",
 		},
 	],
 	knowledge: [
@@ -987,6 +981,27 @@ function getCategoryItems(
 	return getMergedMentionSources(sources)[category] ?? [];
 }
 
+/** Lowercase, dotted handle from a display name (e.g. "Andrea Wilson" -> "andrea.wilson"). */
+function getMentionHandle(name: string): string {
+	return (
+		name
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, ".")
+			.replace(/^\.+|\.+$/g, "") || "user"
+	);
+}
+
+/** Stable, pseudo-random member count (10-200) derived from the team id. */
+function getStableMemberCount(seed: string): number {
+	let hash = 0;
+
+	for (let index = 0; index < seed.length; index += 1) {
+		hash = ((hash * 31) + seed.charCodeAt(index)) >>> 0;
+	}
+
+	return 10 + (hash % 191);
+}
+
 function getMentionChildDescription(item: RichTextMentionItem): string {
 	if (item.description) {
 		return item.description;
@@ -996,9 +1011,9 @@ function getMentionChildDescription(item: RichTextMentionItem): string {
 		case "subagent":
 			return `Delegate context or follow-up work to ${item.label}.`;
 		case "human":
-			return `Mention ${item.label} in the conversation.`;
+			return `@${getMentionHandle(item.label)}`;
 		case "team":
-			return `Mention the ${item.label} team.`;
+			return `${getStableMemberCount(item.id)} members`;
 		case "skill":
 			return `Run the ${item.label} skill.`;
 		case "tool":
@@ -1025,12 +1040,19 @@ function getMentionChildVisual(
 	item: RichTextMentionItem,
 ): RichTextSuggestionMenuVisual | undefined {
 	if (item.category === "human") {
+		const nameSlug = item.label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+		const matchedByName = PEOPLE_AVATAR_SRCS.find((src) =>
+			src.includes(`/avatar-user/${nameSlug}/`),
+		);
+
 		return {
 			kind: "avatar",
 			shape: "circle",
-			src: PEOPLE_AVATAR_SRCS[
-				getStableAssetIndex(`${item.category}:${item.id}`, PEOPLE_AVATAR_SRCS.length)
-			],
+			src:
+				matchedByName ??
+				PEOPLE_AVATAR_SRCS[
+					getStableAssetIndex(`${item.category}:${item.id}`, PEOPLE_AVATAR_SRCS.length)
+				],
 		};
 	}
 

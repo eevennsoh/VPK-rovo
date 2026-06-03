@@ -12,6 +12,10 @@ import {
 	ConversationScrollButton,
 } from "@/components/ui-custom/conversation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { SplitButton } from "@/components/ui/split-button";
+import { Lozenge } from "@/components/ui/lozenge";
+import EditIcon from "@atlaskit/icon/core/edit";
 import { MessageTurns } from "@/components/projects/shared/message-turns";
 import {
 	getMessageAgentResult,
@@ -96,6 +100,13 @@ interface ChatPanelProps {
 	cards?: ChatPanelCardsProps;
 	greeting?: ChatPanelGreetingProps;
 	customAgentTabs?: ChatPanelCustomAgentTabs;
+	/**
+	 * Optional override appended to the scrollable conversation content
+	 * wrapper. Used to align the conversation body's horizontal padding with
+	 * a surrounding header (e.g. the agent Test panel matches its `px-6`
+	 * header). Shared chat surfaces omit this to keep the default `px-4`.
+	 */
+	conversationContentClassName?: string;
 	greetingSelectedAgent?: RovoAgentProfile | null;
 	hideAiCursor?: boolean;
 	hideComposerSourceAndModelControls?: boolean;
@@ -168,6 +179,7 @@ export default function ChatPanel({
 	greeting,
 	greetingSelectedAgent,
 	customAgentTabs,
+	conversationContentClassName,
 	hideAiCursor = false,
 	hideComposerSourceAndModelControls = false,
 	hideHeader = false,
@@ -208,6 +220,8 @@ export default function ChatPanel({
 	const [containerWidthPx, setContainerWidthPx] = useState<number | null>(null);
 	const [viewportWidthPx, setViewportWidthPx] = useState<number | null>(null);
 	const [selectedReasoning, setSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
+	const AGENT_VERSION_OPTIONS = ["Draft", "Version 2", "Version 1"] as const;
+	const [selectedAgentVersion, setSelectedAgentVersion] = useState<string>(AGENT_VERSION_OPTIONS[0]);
 	const isCollapsibleEditContextBar = Boolean(chatContextBar?.collapsible && chatContextBar.variant === "edit");
 	const [isContextBarOpen, setIsContextBarOpen] = useState(true);
 
@@ -716,7 +730,10 @@ export default function ChatPanel({
 			targetScrollTop={getLatestTurnTargetTop}
 		>
 			<ConversationContent
-				className="mx-auto flex min-w-0 max-w-[800px] flex-col gap-4 px-4 py-6 md:gap-6"
+				className={cn(
+					"mx-auto flex min-w-0 max-w-[800px] flex-col gap-4 px-4 py-6 md:gap-6",
+					conversationContentClassName
+				)}
 				style={messagesContainerStyle}
 			>
 				{messages.length === 0 ? (
@@ -912,12 +929,27 @@ export default function ChatPanel({
 			{shouldRenderCustomAgentTabs ? (
 				<>
 					<Tabs defaultValue="chat" aria-label="Custom agent views" className="min-h-0 min-w-0 flex-1">
-						<div className={cn("shrink-0 px-3 pb-3", hideHeader ? "pt-3" : null)}>
-							<TabsList className="w-full">
-								<TabsTrigger value="chat">Chat</TabsTrigger>
-								<TabsTrigger value="trigger">Trigger</TabsTrigger>
-								<TabsTrigger value="activity">Activity</TabsTrigger>
-							</TabsList>
+						<div className={cn("flex shrink-0 items-center gap-2 px-3 pb-3", hideHeader ? "pt-3" : null)}>
+							<SplitButton
+								variant="outline"
+								label={<Lozenge variant="neutral">{selectedAgentVersion}</Lozenge>}
+								menuLabel="Switch version"
+								items={AGENT_VERSION_OPTIONS.map((version) => ({
+									key: version,
+									label: <Lozenge variant="neutral">{version}</Lozenge>,
+									onSelect: () => setSelectedAgentVersion(version),
+								}))}
+							/>
+							<div className="flex flex-1 justify-center">
+								<TabsList>
+									<TabsTrigger value="chat">Chat</TabsTrigger>
+									<TabsTrigger value="trigger">Trigger</TabsTrigger>
+									<TabsTrigger value="activity">Activity</TabsTrigger>
+								</TabsList>
+							</div>
+							<Button aria-label="New chat" size="icon" variant="outline" onClick={resetChat}>
+								<EditIcon label="" />
+							</Button>
 						</div>
 						<TabsContent value="chat" keepMounted className="min-h-0 flex flex-1 flex-col data-[hidden]:hidden">
 							{chatConversationBody}
