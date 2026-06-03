@@ -163,7 +163,7 @@ function CustomAgentStarterItem({
 
 	return (
 		<button
-			className="flex w-full items-center gap-4 rounded-lg p-[var(--ds-space-075)] text-left transition-colors hover:bg-bg-neutral-subtle-hovered"
+			className="flex w-full items-center gap-4 rounded-lg p-[var(--ds-space-075)] pr-3 text-left transition-colors hover:bg-bg-neutral-subtle-hovered"
 			onClick={onClick}
 			type="button"
 		>
@@ -216,7 +216,7 @@ function CustomAgentGreeting({
 	return (
 		<motion.div
 			animate="visible"
-			className="mx-auto flex w-full max-w-[368px] flex-col items-center gap-8 text-center"
+			className="mx-auto flex w-full max-w-[800px] flex-col items-center gap-8 text-center"
 			exit="exit"
 			initial="hidden"
 			key={agent.id}
@@ -234,7 +234,7 @@ function CustomAgentGreeting({
 				</motion.div>
 			</div>
 			<motion.div className="w-full" variants={CHAT_GREETING_CONTAINER_VARIANTS}>
-				<div className="flex flex-col gap-1">
+				<div className="mx-auto flex w-fit max-w-full flex-col gap-1">
 					{agent.starters.map((suggestion) => (
 						<motion.div key={suggestion.id} variants={itemVariants}>
 							<CustomAgentStarterItem
