@@ -381,6 +381,7 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /Add conversation starters/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /Teamwork Graph/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /Describe the agent’s role and what it should do/u);
+	assert.match(UI_CUSTOM_AGENT_SOURCE, /dataFlowConfig=\{config\}/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /layout\?: "default" \| "compact";/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /inputProps=\{\{ className: "h-auto border-2 px-1\.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u);

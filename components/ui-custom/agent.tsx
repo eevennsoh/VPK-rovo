@@ -2124,6 +2124,7 @@ function AgentInstructionsComposer({
 	bottomSlot,
 	bottomSlotClassName,
 	className,
+	config,
 	contentClassName,
 	editorClassName,
 	instructions,
@@ -2146,6 +2147,7 @@ function AgentInstructionsComposer({
 	screenAssistantTargetId?: string;
 	showSectionLabel?: boolean;
 	toolbarBelowSlot?: ReactNode;
+	config?: AgentConfigFormValue;
 }>) {
 	const [skills, setSkills] = useState<RichTextMentionItem[]>([]);
 	const [knowledge, setKnowledge] = useState<RichTextMentionItem[]>([]);
@@ -2237,6 +2239,7 @@ function AgentInstructionsComposer({
 				onInsertReferenceOption={handleInsertReferenceOption}
 				toolbarBelowSlot={toolbarBelowSlot}
 				value={instructions}
+				dataFlowConfig={config}
 				mentionSources={mentionSources}
 				onMarkdownChange={onInstructionsChange}
 			/>
@@ -2590,6 +2593,7 @@ export const AgentConfigFields = memo(
 								)}
 								bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-0"
 								className="relative flex min-h-0 flex-1 flex-col"
+								config={config}
 								contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]")}
 								editorClassName={isFilledConfig ? undefined : "agent-instructions-tiptap-editor-compact-empty"}
 								instructions={config.instructions}
@@ -2643,6 +2647,7 @@ export const AgentConfigFields = memo(
 							<AgentKnowledgePanel />
 						)}
 						<AgentInstructionsComposer
+							config={config}
 							instructions={config.instructions}
 							onOpenDirectory={handleOpenDirectory}
 							onInstructionsChange={(value) => handleTextChange("instructions", value)}
