@@ -52,3 +52,14 @@ test("Studio sidebar Agents accordion keeps a create action on the parent row", 
 	assert.match(SOURCE, /const actions = shouldShowRecentAgents && onNewChat \? \([\s\S]*<StudioSidebarAgentsCreateAction onClick=\{onNewChat\} \/>[\s\S]*\) : item\.actions;/u);
 	assert.match(SOURCE, /<StudioSidebarNavItem[\s\S]*actions=\{actions\}[\s\S]*isExpanded=\{shouldShowRecentAgents \? isAgentsExpanded : item\.isExpanded\}/u);
 });
+
+test("Studio sidebar does not select View all agents while a session agent is active", () => {
+	assert.match(
+		SOURCE,
+		/const hasSelectedSessionAgent = selectedAgentId\s*\?\s*sessionAgentEntries\.some\(\(entry\) => entry\.profile\.id === selectedAgentId\)\s*:\s*false;/u,
+	);
+	assert.match(
+		SOURCE,
+		/isSelected=\{isAgentsHomeActive && !hasSelectedRecentAgent && !hasSelectedSessionAgent\}/u,
+	);
+});

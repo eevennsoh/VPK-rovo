@@ -22,6 +22,7 @@ import PinIcon from "@atlaskit/icon/core/pin";
 const STUDIO_CUSTOM_AGENT_OWNER_AVATAR_SRC = "/avatar-user/venn/venn.png";
 
 const STUDIO_PINNED_AGENTS_STORAGE_KEY = "vpk:studio:pinned-custom-agents";
+const STUDIO_CUSTOM_AGENTS_TABLE_HOVER_CELL_CLASS = "transition-colors group-hover/row:bg-bg-neutral-subtle-hovered";
 
 function readPinnedAgentIds(): ReadonlySet<string> {
 	if (typeof window === "undefined") {
@@ -150,9 +151,9 @@ export function StudioCustomAgentsTable({
 	};
 
 	return (
-		<section aria-labelledby="studio-custom-agents-heading" className={`mx-auto mt-12 w-full ${ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS}`}>
-			<h2 id="studio-custom-agents-heading" className="sr-only">
-				Custom agents
+		<section aria-labelledby="studio-custom-agents-heading" className={`mx-auto mt-12 flex w-full flex-col gap-2 ${ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS}`}>
+			<h2 id="studio-custom-agents-heading" className="px-1.5 text-xs font-semibold leading-4 text-text-subtlest">
+				My agents
 			</h2>
 			<Table className="min-w-full table-fixed">
 				<colgroup>
@@ -163,15 +164,25 @@ export function StudioCustomAgentsTable({
 					<col className="w-[72px]" />
 				</colgroup>
 				<TableBody>
-					{sortedEntries.map((entry) => {
+					{sortedEntries.map((entry, entryIndex) => {
 						const agentName = getStudioSessionAgentDisplayName(entry);
 						const isPinned = pinnedAgentIds.has(entry.profile.id);
+						const isFirstRow = entryIndex === 0;
+						const isLastRow = entryIndex === sortedEntries.length - 1;
+						const firstColumnRadiusClass = cn(
+							isFirstRow && "rounded-tl-[12px]",
+							isLastRow && "rounded-bl-[12px]",
+						);
+						const lastColumnRadiusClass = cn(
+							isFirstRow && "rounded-tr-[12px]",
+							isLastRow && "rounded-br-[12px]",
+						);
 						const revealOnHover =
 							"opacity-0 transition-opacity duration-fast group-hover/row:opacity-100 focus-visible:opacity-100";
 
 						return (
-							<TableRow key={entry.profile.id} className="group/row h-14 border-disabled">
-								<TableCell className="px-4">
+							<TableRow key={entry.profile.id} className="group/row h-14 border-disabled hover:bg-transparent">
+								<TableCell className={cn("px-2", firstColumnRadiusClass, STUDIO_CUSTOM_AGENTS_TABLE_HOVER_CELL_CLASS)}>
 									<div className="flex min-w-0 items-center gap-3">
 										<Avatar aria-hidden="true" shape="hexagon" size="sm" className="shrink-0 after:border-0">
 											{entry.profile.avatarSrc ? <AvatarImage alt="" src={entry.profile.avatarSrc} /> : null}
@@ -182,15 +193,15 @@ export function StudioCustomAgentsTable({
 										</span>
 									</div>
 								</TableCell>
-								<TableCell className="px-2 text-text-subtle">
+								<TableCell className={cn("px-2 text-text-subtle", STUDIO_CUSTOM_AGENTS_TABLE_HOVER_CELL_CLASS)}>
 									{formatUserCount(getAgentUserCount(entry))}
 								</TableCell>
-								<TableCell className="px-2">
+								<TableCell className={cn("px-2", STUDIO_CUSTOM_AGENTS_TABLE_HOVER_CELL_CLASS)}>
 									<Lozenge variant={getVersionVariant(entry)}>
 										{getVersionLabel(entry)}
 									</Lozenge>
 								</TableCell>
-								<TableCell className="px-2">
+								<TableCell className={cn("px-2", STUDIO_CUSTOM_AGENTS_TABLE_HOVER_CELL_CLASS)}>
 									<div className="flex items-center gap-2">
 										<Avatar aria-hidden="true" size="sm">
 											<AvatarImage alt="" src={STUDIO_CUSTOM_AGENT_OWNER_AVATAR_SRC} />
@@ -201,8 +212,8 @@ export function StudioCustomAgentsTable({
 										</span>
 									</div>
 								</TableCell>
-								<TableCell className="px-2">
-									<div className="flex justify-end gap-1">
+								<TableCell className={cn("px-2", lastColumnRadiusClass, STUDIO_CUSTOM_AGENTS_TABLE_HOVER_CELL_CLASS)}>
+									<div className="flex justify-end gap-[4px]">
 										<Button aria-label={`Edit ${agentName || "Untitled agent"}`} className={cn("size-7", revealOnHover)} onClick={() => onEditAgent(entry.profile.id)} size="icon" type="button" variant="ghost">
 											<Icon aria-hidden render={<EditIcon label="" size="small" />} />
 										</Button>
