@@ -588,6 +588,8 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /type RichTextMentionParentCategory = "subagent" \| "people-team";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const MENTION_TARGET_ORDER: readonly RichTextMentionParentCategory\[\] = \[\s*"subagent",\s*"people-team",\s*\]/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /category === "people-team"[\s\S]*<PeopleGroupIcon label="" size="small" \/>[\s\S]*: getCategoryIcon\(category\)/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent";/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /case "subagent":[\s\S]*return <AiAgentIcon label="" size="small" \/>;/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import BookOpenIcon from "@atlaskit\/icon-lab\/core\/book-open";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /case "knowledge":[\s\S]*return <BookOpenIcon label="" size="small" \/>;/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /@atlaskit\/icon\/core\/library/u);
@@ -596,6 +598,8 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function getStableAssetIndex\(seed: string, assetCount: number\): number/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.category === "human"[\s\S]*shape: "circle"[\s\S]*PEOPLE_AVATAR_SRCS/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.category === "team"[\s\S]*shape: "square"[\s\S]*TEAM_AVATAR_SRCS/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const AGENT_AVATAR_SRCS = \[[\s\S]*\/avatar-agent\/dev-agents\/code-planner\.svg/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.category === "subagent"[\s\S]*shape: "hexagon"[\s\S]*AGENT_AVATAR_SRCS/u);
 	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /const SKILL_METADATA: readonly Pick<RichTextMentionItem, "label" \| "description">\[\] = \[/u);
 	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /description: "Condense the active conversation into decisions and next steps\."/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /getSlashCommandCategoryItems\(mentionSources\)/u);

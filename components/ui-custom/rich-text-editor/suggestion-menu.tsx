@@ -15,6 +15,7 @@ import type {
 } from "@tiptap/suggestion";
 import { motion, type Variants } from "motion/react";
 
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AppsIcon from "@atlaskit/icon/core/apps";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PersonIcon from "@atlaskit/icon/core/person";
@@ -79,7 +80,7 @@ export interface RichTextSuggestionMenuItem {
 
 interface RichTextSuggestionMenuVisual {
 	kind: "avatar";
-	shape: "circle" | "square";
+	shape: "circle" | "square" | "hexagon";
 	src: string;
 }
 
@@ -200,6 +201,27 @@ const TEAM_AVATAR_SRCS = [
 	"/avatar-project/tracking.svg",
 	"/avatar-project/unicorn.svg",
 	"/avatar-project/video.svg",
+] as const;
+
+const AGENT_AVATAR_SRCS = [
+	"/avatar-agent/teamwork-agents/blocker-checker.svg",
+	"/avatar-agent/teamwork-agents/brainstorm-facilitator.svg",
+	"/avatar-agent/teamwork-agents/brand-guardian.svg",
+	"/avatar-agent/teamwork-agents/bug-report-assistant.svg",
+	"/avatar-agent/teamwork-agents/customer-insights.svg",
+	"/avatar-agent/teamwork-agents/decision-director.svg",
+	"/avatar-agent/teamwork-agents/diagram-creator.svg",
+	"/avatar-agent/teamwork-agents/global-translator.svg",
+	"/avatar-agent/dev-agents/code-accessibility-checker.svg",
+	"/avatar-agent/dev-agents/code-documentation-writer.svg",
+	"/avatar-agent/dev-agents/code-planner.svg",
+	"/avatar-agent/dev-agents/code-reviewer.svg",
+	"/avatar-agent/product-agents/feedback-analyzer.svg",
+	"/avatar-agent/service-agents/ops-guide.svg",
+	"/avatar-agent/service-agents/rca-agent.svg",
+	"/avatar-agent/service-agents/service-triage.svg",
+	"/avatar-agent/strategy-agents/strategic-insight.svg",
+	"/avatar-agent/strategy-agents/talent-finder.svg",
 ] as const;
 
 const MENTION_PARENT_LABELS: Record<RichTextMentionParentCategory, string> = {
@@ -524,7 +546,7 @@ export const SLASH_COMMANDS: readonly RichTextCommandItem[] = [
 function getCategoryIcon(category: RichTextMentionCategory): ReactNode {
 	switch (category) {
 		case "subagent":
-			return <PeopleGroupIcon label="" size="small" />;
+			return <AiAgentIcon label="" size="small" />;
 		case "human":
 			return <PersonIcon label="" size="small" />;
 		case "team":
@@ -1062,6 +1084,16 @@ function getMentionChildVisual(
 			shape: "square",
 			src: TEAM_AVATAR_SRCS[
 				getStableAssetIndex(`${item.category}:${item.id}`, TEAM_AVATAR_SRCS.length)
+			],
+		};
+	}
+
+	if (item.category === "subagent") {
+		return {
+			kind: "avatar",
+			shape: "hexagon",
+			src: AGENT_AVATAR_SRCS[
+				getStableAssetIndex(`${item.category}:${item.id}`, AGENT_AVATAR_SRCS.length)
 			],
 		};
 	}

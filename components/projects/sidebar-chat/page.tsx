@@ -934,9 +934,13 @@ export default function ChatPanel({
 								variant="outline"
 								label={<Lozenge variant="neutral">{selectedAgentVersion}</Lozenge>}
 								menuLabel="Switch version"
-								items={AGENT_VERSION_OPTIONS.map((version) => ({
+								items={AGENT_VERSION_OPTIONS.map((version, versionIndex) => ({
 									key: version,
 									label: <Lozenge variant="neutral">{version}</Lozenge>,
+									// Pin Draft to the top so it stays visible as versions scroll.
+									sticky: version === "Draft",
+									// Divider between the Draft entry and the published versions.
+									separatorBefore: version !== "Draft" && AGENT_VERSION_OPTIONS[versionIndex - 1] === "Draft",
 									onSelect: () => setSelectedAgentVersion(version),
 								}))}
 							/>

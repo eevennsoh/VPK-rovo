@@ -8,6 +8,7 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
@@ -21,6 +22,13 @@ export interface SplitButtonItem {
 	 * common string-label case.
 	 */
 	key?: string
+	/** Render a separator immediately before this item. */
+	separatorBefore?: boolean
+	/**
+	 * Pin this item to the top of the (scrollable) menu so it stays visible
+	 * while the remaining items scroll beneath it.
+	 */
+	sticky?: boolean
 	onSelect?: () => void
 	disabled?: boolean
 }
@@ -97,15 +105,22 @@ function SplitButton({
 					}
 				/>
 				<DropdownMenuContent>
-					{items.map((item, index) => (
-						<DropdownMenuItem
-							key={item.key ?? (typeof item.label === "string" ? item.label : index)}
-							onSelect={item.onSelect}
-							disabled={item.disabled}
-						>
-							{item.label}
-						</DropdownMenuItem>
-					))}
+					{items.map((item, index) => {
+						const itemKey = item.key ?? (typeof item.label === "string" ? item.label : index)
+
+						return (
+							<React.Fragment key={itemKey}>
+								{item.separatorBefore && index > 0 ? <DropdownMenuSeparator /> : null}
+								<DropdownMenuItem
+									onSelect={item.onSelect}
+									disabled={item.disabled}
+									className={cn(item.sticky && "bg-popover sticky top-0 z-10")}
+								>
+									{item.label}
+								</DropdownMenuItem>
+							</React.Fragment>
+						)
+					})}
 				</DropdownMenuContent>
 			</DropdownMenu>
 		</ButtonGroup>
