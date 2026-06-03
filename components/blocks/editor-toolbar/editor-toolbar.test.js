@@ -31,10 +31,11 @@ test("Editor toolbar block exports the public component and props", () => {
 	const componentSource = readProjectFile("components/blocks/editor-toolbar/components/editor-toolbar.tsx");
 
 	assert.match(indexSource, /export \{ EditorToolbar \} from "\.\/components\/editor-toolbar";/u);
-	assert.match(indexSource, /export type \{ EditorToolbarInsertReferenceCategory, EditorToolbarProps \} from "\.\/components\/editor-toolbar";/u);
+	assert.match(indexSource, /export type \{ EditorToolbarInsertReferenceCategory, EditorToolbarProps, EditorToolbarViewMode \} from "\.\/components\/editor-toolbar";/u);
 	assert.match(componentSource, /export interface EditorToolbarProps/u);
 	assert.match(componentSource, /export function EditorToolbar/u);
 	assert.match(componentSource, /endSlot\?: ReactNode;/u);
+	assert.match(componentSource, /controlsOverflow\?: "responsive" \| "fixed";/u);
 	assert.match(componentSource, /onMarkdownFormat\?: \(kind: MarkdownFormatKind\) => void;/u);
 });
 
@@ -50,6 +51,8 @@ test("RichTextEditorToolbar remains as a compatibility wrapper", () => {
 		richToolbarSource,
 		/export function RichTextEditorToolbar\([\s\S]*return <EditorToolbar \{\.\.\.props\} \/>;/u,
 	);
+	assert.match(richToolbarSource, /<BubbleMenu[\s\S]*<EditorToolbar[\s\S]*controlsOverflow="fixed"[\s\S]*controlsClassName="pl-1 pr-2 py-1"/u);
+	assert.match(richToolbarSource, /<FloatingMenu[\s\S]*<EditorToolbar[\s\S]*controlsOverflow="fixed"[\s\S]*controlsClassName="px-2 py-1"/u);
 	assert.match(richToolbarSource, /<EditorToolbar[\s\S]*controlsClassName="px-2 py-1"/u);
 });
 
@@ -110,6 +113,8 @@ test("Editor toolbar exposes block inserts and an Add content reference dropdown
 	// Foldable groups are measured and collapse into the "+" dropdown via the
 	// overflow hook; the anchored "+" group carries the marker attribute.
 	assert.match(componentSource, /useToolbarOverflow/u);
+	assert.match(componentSource, /const foldsControls = controlsOverflow === "responsive";/u);
+	assert.match(componentSource, /const visibleCount = foldsControls \? measuredVisibleCount : FOLDABLE_GROUP_COUNT;/u);
 	assert.match(componentSource, /data-toolbar-group/u);
 	assert.match(componentSource, /data-toolbar-anchor/u);
 	assert.match(componentSource, /function handleInsertReference\(/u);
@@ -119,7 +124,7 @@ test("Editor toolbar exposes block inserts and an Add content reference dropdown
 	assert.match(componentSource, /\{RICH_TEXT_REFERENCE_CATEGORY_OPTIONS\.map\(\(option\) => \(/u);
 	assert.doesNotMatch(componentSource, /label: "Memory"|category: "memory"|AiModelIcon/u);
 	assert.doesNotMatch(componentSource, /<\/div>\s*<ToolbarSeparator \/>\s*\{onToggleMarkdownMode/u);
-	assert.match(componentSource, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<Tabs[\s\S]*value=\{isMarkdownMode \? "markdown" : "rendered"\}/u);
+	assert.match(componentSource, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<Tabs[\s\S]*value=\{currentMode\}/u);
 	assert.match(componentSource, /<TabsTrigger[\s\S]*aria-label="Rendered text"[\s\S]*value="rendered"[\s\S]*<TextNormalIcon size="small" \/>[\s\S]*<TabsTrigger[\s\S]*aria-label="Markdown source"[\s\S]*value="markdown"[\s\S]*<MarkdownIcon label="" size="small" \/>/u);
 	assert.doesNotMatch(componentSource, />\s*Rendered\s*</u);
 	assert.doesNotMatch(componentSource, />\s*Markdown\s*</u);

@@ -90,6 +90,7 @@ export function RichTextEditorBubbleMenu({
 					</>
 				}
 				className="gap-0"
+				controlsOverflow="fixed"
 				// Left padding is tightened to `pl-1` (4px) so the gap between the
 				// Ask Rovo separator and the first control matches the 4px the
 				// button leaves on every other side; the right edge keeps `pr-2`.
@@ -113,6 +114,7 @@ export function RichTextEditorFloatingMenu({
 				editor={editor}
 				leadingSlot={leadingSlot}
 				className="gap-0"
+				controlsOverflow="fixed"
 				controlsClassName="px-2 py-1"
 			/>
 		</FloatingMenu>
