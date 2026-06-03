@@ -8,6 +8,7 @@ const {
 	extractStudioAgentResultFromText,
 	normalizeStudioAgentResult,
 	shouldSurfaceMissingStudioAgentResultFailure,
+	tolerantParseJsonObjectAt,
 } = require("./studio-agent-result");
 
 test("normalizes a structured Studio agent definition into data-agent-result fields", () => {
@@ -173,4 +174,96 @@ test("missing Studio agent result failure is scoped and retryable", () => {
 	assert.equal(parts[3].data.code, MISSING_STUDIO_AGENT_RESULT_ERROR_CODE);
 	assert.equal(parts[3].data.canRetry, true);
 	assert.equal(parts[3].data.type, "agent-result");
+});
+
+// Regression: real /studio failure. The model emitted an AGENT_RESULT marker
+// whose long `instructions` value contained UNESCAPED interior double quotes
+// (e.g. "Tech Lead", "Design", "PM"). Strict JSON.parse throws on that, which
+// previously dead-ended agent creation with the "couldn't create a selectable
+// agent profile" banner. The tolerant fallback must now recover it.
+const MALFORMED_INSTRUCTIONS = [
+	"## Instructions",
+	"",
+	"You are Work Item Planner, an AI assistant for Project and Program Managers.",
+	"",
+	"### Output format",
+	"",
+	'- Suggest placeholder roles (e.g. "Tech Lead", "Design", "PM") rather than named individuals. Never assign a real person as owner without explicit confirmation.',
+	"- Format work items so they are ready to copy into Jira, Linear, or a doc with minimal editing.",
+].join("\n");
+
+function buildMalformedAgentResultMarkerText() {
+	// Produce a valid serialization, then strip the escaping on the three
+	// interior quote pairs to mimic exactly what the model streamed.
+	const valid = JSON.stringify({
+		agentId: "work-item-planner",
+		name: "Work Item Planner",
+		byline: "Turns projects and recordings into prioritised, sequenced plans",
+		description:
+			"Breaks large projects, epics, or workstreams into sequenced tasks, owners, and next steps.",
+		instructions: MALFORMED_INSTRUCTIONS,
+		conversationStarters: [
+			"Here's a Google Drive doc for our platform migration — break it into a sequenced plan?",
+			"I recorded a Loom walkthrough of a new epic — turn it into a prioritised breakdown?",
+			"Map the dependencies and flag any blockers before we start planning?",
+		],
+		tools: ["Google Drive", "Slack", "Loom"],
+		guardrail: "Never assign a real person as a task owner without explicit confirmation from the user.",
+		avatarFallback: { initials: "WP" },
+		action: "create",
+	})
+		.replace('\\"Tech Lead\\"', '"Tech Lead"')
+		.replace('\\"Design\\"', '"Design"')
+		.replace('\\"PM\\"', '"PM"');
+
+	return `Here's your Work Item Planner agent, ready to review.\n\n${AGENT_RESULT_STREAM_PREFIX} ${valid}`;
+}
+
+test("recovers an AGENT_RESULT marker with unescaped interior quotes in instructions", () => {
+	const text = buildMalformedAgentResultMarkerText();
+
+	// Confirm the embedded JSON really is invalid (the bug precondition).
+	const jsonStart = text.indexOf("{");
+	assert.throws(() => JSON.parse(text.slice(jsonStart)));
+
+	const extracted = extractStudioAgentResultFromText(text);
+	assert.ok(extracted, "expected the tolerant parser to recover the agent result");
+	assert.equal(extracted.source, "marker");
+	assert.equal(extracted.payload.name, "Work Item Planner");
+	assert.equal(extracted.payload.agentId, "work-item-planner");
+	assert.equal(extracted.payload.action, "create");
+	assert.deepEqual(extracted.payload.tools, ["Google Drive", "Slack", "Loom"]);
+	assert.equal(extracted.payload.conversationStarters.length, 3);
+	// Interior quotes are preserved verbatim inside the recovered instructions.
+	assert.equal(extracted.payload.instructions, MALFORMED_INSTRUCTIONS);
+	assert.ok(extracted.payload.instructions.includes('(e.g. "Tech Lead", "Design", "PM")'));
+	assert.equal(extracted.cleanedText, "Here's your Work Item Planner agent, ready to review.");
+});
+
+test("tolerant parser leaves valid JSON byte-for-byte equal to JSON.parse", () => {
+	const valid = JSON.stringify({
+		name: "Ops",
+		tags: ["a", "b", "c"],
+		nested: { ok: true, count: 2 },
+		action: "create",
+	});
+	const tolerant = tolerantParseJsonObjectAt(valid, 0);
+	assert.ok(tolerant);
+	assert.deepEqual(tolerant.value, JSON.parse(valid));
+	assert.equal(valid[tolerant.endIndex], "}");
+});
+
+test("tolerant parser does not merge legitimate string arrays", () => {
+	// The danger of naive quote-repair: turning ["one","two"] into one string.
+	const malformed = '{"note":"call it "phase one", then ship","tools":["one","two","three"]}';
+	assert.throws(() => JSON.parse(malformed));
+	const tolerant = tolerantParseJsonObjectAt(malformed, 0);
+	assert.ok(tolerant);
+	assert.equal(tolerant.value.note, 'call it "phase one", then ship');
+	assert.deepEqual(tolerant.value.tools, ["one", "two", "three"]);
+});
+
+test("tolerant parser returns null for genuinely unrecoverable input", () => {
+	assert.equal(tolerantParseJsonObjectAt('{"name":"x","desc":"unterminated', 0), null);
+	assert.equal(tolerantParseJsonObjectAt("not an object", 0), null);
 });
