@@ -5,6 +5,7 @@ import {
 	useEffect,
 	useState,
 	type CSSProperties,
+	type ReactNode,
 } from "react";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
@@ -22,8 +23,8 @@ import {
 	ROVO_APP_SEPARATOR_LINE_OFFSET_PX,
 	ROVO_APP_SIDEBAR_MAX_WIDTH_PX,
 	ROVO_APP_SIDEBAR_MIN_WIDTH_PX,
-	TOP_NAV_COLLAPSED_HEADER_PADDING_PX,
 	TOP_NAV_COLLAPSED_LEFT_SECTION_WIDTH_PX,
+	getCollapsedHeaderPaddingPx,
 	TOP_NAV_HEADER_HEIGHT_PX,
 	TOP_NAV_LEFT_SECTION_WIDTH_PX,
 	TOP_NAV_PADDING_PX,
@@ -35,6 +36,20 @@ import {
 import SearchIcon from "@atlaskit/icon/core/search";
 
 type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "search" | "studio";
+
+/**
+ * State the `"shell"` chrome hands to a sidebar slot render function so the
+ * product sidebar shares the chrome's single resizable-sidebar source of truth
+ * (one `SidebarProvider`, one resize hook) rather than maintaining its own.
+ */
+export interface ShellSidebarSlotState {
+	/** The resize handle node to render at the sidebar's trailing edge. */
+	resizeHandle: ReactNode;
+	/** Whether the sidebar is currently being resized (suppresses transitions). */
+	isResizing: boolean;
+	/** Height of the chrome header the sidebar should sit below, in px. */
+	headerOffsetPx: number;
+}
 
 interface TopNavigationProps {
 	product?: Product;
@@ -59,6 +74,26 @@ interface TopNavigationProps {
 	 *   private shell state.
 	 */
 	variant?: "shell" | "header";
+	/**
+	 * Product-specific sidebar rendered inside the `"shell"` variant, in place of
+	 * the default presentational `StudioSidebar`. The slotted node owns its own
+	 * nav content; the chrome owns the single source of truth for the resizable
+	 * sidebar state and passes it down here.
+	 *
+	 * Pass a render function to receive that state ({@link ShellSidebarSlotState})
+	 * — the resize handle, `isResizing`, and the header offset — so the product
+	 * sidebar shares the chrome's one `SidebarProvider` + resize hook instead of
+	 * maintaining a conflicting copy. A plain node is still accepted for simple
+	 * presentational sidebars. Ignored by the `"header"` variant (the host
+	 * supplies the sidebar there). Defaults to the block demo's `StudioSidebar`.
+	 */
+	sidebar?: ReactNode | ((state: ShellSidebarSlotState) => ReactNode);
+	/**
+	 * Body content rendered inside the `"shell"` variant's framed content area,
+	 * in place of the empty placeholder `<main>`. Ignored by the `"header"`
+	 * variant.
+	 */
+	children?: ReactNode;
 }
 
 /**
@@ -77,6 +112,8 @@ export default function TopNavigation({
 	hideRovoAction = false,
 	forceShowRovoAction = false,
 	variant = "shell",
+	sidebar,
+	children,
 }: Readonly<TopNavigationProps>) {
 	const nav = useTopNavigation();
 
@@ -124,6 +161,26 @@ export default function TopNavigation({
 	const sidebarStyle = {
 		"--sidebar-width": `${sidebarResize.sidebarWidth}px`,
 	} as CSSProperties;
+
+	// Single source of truth for the resizable sidebar, handed to a render-prop
+	// `sidebar` slot so product sidebars share this chrome's one resize hook +
+	// `SidebarProvider` instead of maintaining a conflicting copy.
+	const sidebarSlotState: ShellSidebarSlotState = {
+		isResizing: sidebarResize.isResizing,
+		headerOffsetPx: TOP_NAV_HEADER_HEIGHT_PX,
+		resizeHandle: (
+			<SidebarResizeHandle
+				data-active={sidebarResize.isResizing ? "" : undefined}
+				data-will-collapse={sidebarResize.willCollapse ? "" : undefined}
+				onDoubleClick={sidebarResize.onResizeHandleDoubleClick}
+				onPointerDown={sidebarResize.onResizeHandlePointerDown}
+				onPointerEnter={sidebarResize.onResizeHandlePointerEnter}
+				onPointerLeave={sidebarResize.onResizeHandlePointerLeave}
+			/>
+		),
+	};
+	const resolvedSidebar =
+		typeof sidebar === "function" ? sidebar(sidebarSlotState) : sidebar;
 
 	const headerHeightStyle: CSSProperties = {
 		height: `${TOP_NAV_HEADER_HEIGHT_PX}px`,
@@ -228,13 +285,12 @@ export default function TopNavigation({
 	if (variant === "header") {
 		return (
 			<header
-				className="flex shrink-0 items-center gap-2 border-b px-3"
+				className="relative flex shrink-0 items-center gap-2 px-3"
 				style={{
 					...headerHeightStyle,
 					position: "sticky",
 					top: 0,
 					zIndex: 100,
-					borderColor: token("color.border"),
 					backgroundColor: token("elevation.surface"),
 				}}
 			>
@@ -255,6 +311,40 @@ export default function TopNavigation({
 				</div>
 				{middleZone}
 				{rightCluster}
+				{/* Bottom border drawn as a positioned line instead of `border-b` so
+				    it can start at the sidebar's right edge when the pinned sidebar is
+				    visible. That removes the stray horizontal segment that otherwise
+				    crossed the sidebar's top-left corner. */}
+				<span
+					aria-hidden
+					style={{
+						position: "absolute",
+						left: nav.isVisible ? `${TOP_NAV_LEFT_SECTION_WIDTH_PX}px` : 0,
+						right: 0,
+						bottom: 0,
+						height: "1px",
+						backgroundColor: token("color.border"),
+						transition: "left var(--duration-medium) var(--ease-in-out)",
+					}}
+				/>
+				{/* Vertical border at the sidebar's right edge while the pinned sidebar
+				    is visible. The header (z:100) sits above the sidebar (z:99) and its
+				    own surface would otherwise hide the sidebar's right border across
+				    the top 56px; this redraws it so the divider runs unbroken from the
+				    very top edge down through the body. */}
+				{nav.isVisible ? (
+					<span
+						aria-hidden
+						style={{
+							position: "absolute",
+							left: `${TOP_NAV_LEFT_SECTION_WIDTH_PX}px`,
+							top: 0,
+							bottom: 0,
+							width: "1px",
+							backgroundColor: token("color.border"),
+						}}
+					/>
+				) : null}
 			</header>
 		);
 	}
@@ -267,21 +357,14 @@ export default function TopNavigation({
 			open={sidebarOpen}
 			style={sidebarStyle}
 		>
-			<StudioSidebar
-				headerOffsetPx={TOP_NAV_HEADER_HEIGHT_PX}
-				isResizing={sidebarResize.isResizing}
-				resizeHandle={
-					<SidebarResizeHandle
-						data-active={sidebarResize.isResizing ? "" : undefined}
-						data-will-collapse={sidebarResize.willCollapse ? "" : undefined}
-						onDoubleClick={sidebarResize.onResizeHandleDoubleClick}
-						onPointerDown={sidebarResize.onResizeHandlePointerDown}
-						onPointerEnter={sidebarResize.onResizeHandlePointerEnter}
-						onPointerLeave={sidebarResize.onResizeHandlePointerLeave}
-					/>
-				}
-				topOffset
-			/>
+			{resolvedSidebar ?? (
+				<StudioSidebar
+					headerOffsetPx={sidebarSlotState.headerOffsetPx}
+					isResizing={sidebarSlotState.isResizing}
+					resizeHandle={sidebarSlotState.resizeHandle}
+					topOffset
+				/>
+			)}
 
 			{/* Persistent side-nav chrome: aligns to the sidebar width when open and
 			    collapses to the shared left chrome width when closed. Hosts the sidebar toggle,
@@ -329,7 +412,7 @@ export default function TopNavigation({
 					className="flex shrink-0 items-center gap-2 border-b px-3 transition-[padding] duration-medium ease-in-out"
 					style={{
 						...headerHeightStyle,
-						paddingLeft: sidebarOpen ? undefined : `${TOP_NAV_COLLAPSED_HEADER_PADDING_PX}px`,
+						paddingLeft: sidebarOpen ? undefined : `${getCollapsedHeaderPaddingPx(product)}px`,
 						borderColor: token("color.border"),
 						backgroundColor: token("elevation.surface"),
 						viewTransitionName: "persistent-header" as never,
@@ -339,8 +422,11 @@ export default function TopNavigation({
 					{rightCluster}
 				</div>
 
-				{/* Placeholder content area so the chrome has a body to frame. */}
-				<main className="relative flex min-h-0 min-w-0 flex-1 bg-background px-3 text-foreground" />
+				{/* Framed content area. Hosts supply real content via `children`;
+				    the block demo renders an empty placeholder body. */}
+				{children ?? (
+					<main className="relative flex min-h-0 min-w-0 flex-1 bg-background px-3 text-foreground" />
+				)}
 			</div>
 		</SidebarProvider>
 	);
