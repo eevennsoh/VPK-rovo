@@ -3,6 +3,7 @@ import * as React from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
 
+import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
 type LegacyTagVariant = "success" | "removed" | "inprogress" | "new" | "moved";
@@ -106,6 +107,7 @@ interface TagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	 */
 	removeVariant?: "inline" | "overlay";
 	removeButtonLabel?: string;
+	/** Element rendered before the tag text, such as an icon, logo, or avatar. */
 	elemBefore?: React.ReactNode;
 	isVerified?: boolean;
 	maxWidth?: React.CSSProperties["maxWidth"];
@@ -187,7 +189,7 @@ function Tag({
 			</span>
 			{shouldShowVerifiedIcon ? (
 				<span className="ml-px inline-flex shrink-0 items-center text-blue-500" data-slot="tag-verified-icon">
-					<StatusVerifiedIcon label="Verified" size="small" />
+					<Icon render={<StatusVerifiedIcon label="" size="small" />} label="Verified" />
 				</span>
 			) : null}
 			{onRemove && !isOverlayRemove ? (
@@ -203,7 +205,7 @@ function Tag({
 							removeButtonMarginClass,
 						)}
 					>
-						<CrossIcon label="" size="small" color="currentColor" />
+						<Icon render={<CrossIcon label="" size="small" color="currentColor" />} aria-hidden />
 					</button>
 				</span>
 			) : null}
@@ -230,7 +232,7 @@ function Tag({
 							"pointer-events-none group-hover/tag:pointer-events-auto group-hover/tag:opacity-100 group-focus-within/tag:pointer-events-auto group-focus-within/tag:opacity-100",
 						)}
 					>
-						<CrossIcon label="" size="small" color="currentColor" />
+						<Icon render={<CrossIcon label="" size="small" color="currentColor" />} aria-hidden />
 					</button>
 				</>
 			) : null}

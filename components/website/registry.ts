@@ -5020,6 +5020,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "tag-demo-front-slot": dynamic(
+    () =>
+      import("./demos/ui/tag-demo").then((mod) => ({
+        default: mod.TagDemoFrontSlot,
+      })),
+    { ssr: false },
+  ),
   "tag-demo-removable-overlay": dynamic(
     () =>
       import("./demos/ui/tag-demo").then((mod) => ({
