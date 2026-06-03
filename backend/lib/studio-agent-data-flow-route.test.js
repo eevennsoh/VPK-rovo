@@ -17,6 +17,7 @@ test("Studio agent data-flow route proxies to the backend refinement endpoint", 
 test("Express route refines Mermaid and falls back to baseline", () => {
 	assert.match(SERVER_SOURCE, /refineAgentDataFlowMermaid/u);
 	assert.match(SERVER_SOURCE, /app\.post\("\/api\/studio\/agent-data-flow"/u);
+	assert.match(SERVER_SOURCE, /normalizeAgentDataFlowConfig\(requestBody\.config\)/u);
 	assert.match(SERVER_SOURCE, /buildAgentDataFlowMermaid\(config\)/u);
 	assert.match(SERVER_SOURCE, /return res\.status\(200\)\.json\(\{ mermaid: baseline \}\);/u);
 });

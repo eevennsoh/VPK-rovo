@@ -16,6 +16,7 @@ export interface StudioAgentDataFlowConfig {
 	action?: string;
 }
 
+export function normalizeAgentDataFlowConfig(value: unknown): StudioAgentDataFlowConfig;
 export function buildAgentDataFlowMermaid(config?: StudioAgentDataFlowConfig): string;
 export function buildAgentDataFlowRefinementPrompt(input?: {
 	config?: StudioAgentDataFlowConfig;
