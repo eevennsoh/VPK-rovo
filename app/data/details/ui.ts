@@ -5883,7 +5883,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
       {
         name: "elemBefore",
         type: "ReactNode",
-        description: "Element rendered before tag text (icon or avatar).",
+        description: "Element rendered before tag text, such as an icon, logo, or avatar.",
       },
       {
         name: "isVerified",
@@ -5916,6 +5916,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
         title: "Removable",
         description: "Tag with remove button.",
         demoSlug: "tag-demo-removable",
+      },
+      {
+        title: "Front slot",
+        description: "Leading Atlassian product logo and 2P/3P public-logo examples using `elemBefore`.",
+        demoSlug: "tag-demo-front-slot",
       },
       {
         title: "Removable (overlay)",

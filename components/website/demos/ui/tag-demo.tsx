@@ -1,8 +1,42 @@
 "use client";
 
+import Image from "next/image";
+import type { ReactNode } from "react";
 import { useState } from "react";
+import TagIcon from "@atlaskit/icon/core/tag";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Icon } from "@/components/ui/icon";
+import { AtlassianLogo, RovoColorIcon } from "@/components/ui/logo";
 import { Tag, TagGroup } from "@/components/ui/tag";
+import { cn } from "@/lib/utils";
+
+function LogoSlot({ children, className }: Readonly<{ children: ReactNode; className?: string }>) {
+	return (
+		<span
+			className={cn(
+				"inline-flex size-3 shrink-0 items-center justify-center align-middle leading-none",
+				"[&_span]:!inline-flex [&_span]:!size-3 [&_span]:!items-center [&_span]:!justify-center [&_span]:!leading-none",
+				"[&_svg]:!block [&_svg]:!size-3",
+				className,
+			)}
+		>
+			{children}
+		</span>
+	);
+}
+
+function PublicLogoMark({ src }: Readonly<{ src: string }>) {
+	return (
+		<LogoSlot>
+			<Image src={src} alt="" aria-hidden width={12} height={12} className="block size-3 object-contain" />
+		</LogoSlot>
+	);
+}
+
+function ProductLogoMark({ children }: Readonly<{ children: ReactNode }>) {
+	return <LogoSlot>{children}</LogoSlot>;
+}
 
 export default function TagDemo() {
 	return (
@@ -11,6 +45,9 @@ export default function TagDemo() {
 			<Tag color="blue">Blue</Tag>
 			<Tag variant="rounded" color="discovery">
 				Rounded
+			</Tag>
+			<Tag elemBefore={<Icon render={<TagIcon label="" size="small" />} aria-hidden className="size-3 [&_svg]:size-3" />}>
+				Label
 			</Tag>
 			<Tag
 				type="user"
@@ -35,6 +72,55 @@ export function TagDemoRemovable() {
 	const [visible, setVisible] = useState(true);
 	if (!visible) return <p className="text-sm text-text-subtle">Tag removed</p>;
 	return <Tag onRemove={() => setVisible(false)}>Removable</Tag>;
+}
+
+export function TagDemoFrontSlot() {
+	return (
+		<div className="flex flex-wrap items-center gap-2">
+			<Tag
+				color="blue"
+				elemBefore={
+					<ProductLogoMark>
+						<AtlassianLogo name="jira" label="" size="xxsmall" />
+					</ProductLogoMark>
+				}
+			>
+				Jira
+			</Tag>
+			<Tag
+				color="purple"
+				elemBefore={
+					<ProductLogoMark>
+						<AtlassianLogo name="confluence" label="" size="xxsmall" />
+					</ProductLogoMark>
+				}
+			>
+				Confluence
+			</Tag>
+			<Tag
+				color="green"
+				elemBefore={
+					<LogoSlot>
+						<RovoColorIcon width={12} height={12} className="block size-3" />
+					</LogoSlot>
+				}
+			>
+				Rovo
+			</Tag>
+			<Tag color="orange" elemBefore={<PublicLogoMark src="/2p/appfire.png" />}>
+				Appfire
+			</Tag>
+			<Tag color="teal" elemBefore={<PublicLogoMark src="/2p/adaptavist.png" />}>
+				Adaptavist
+			</Tag>
+			<Tag color="purple" elemBefore={<PublicLogoMark src="/3p/figma/16.svg" />}>
+				Figma
+			</Tag>
+			<Tag color="green" elemBefore={<PublicLogoMark src="/3p/google-drive/16.svg" />}>
+				Drive
+			</Tag>
+		</div>
+	);
 }
 
 export function TagDemoRemovableOverlay() {
