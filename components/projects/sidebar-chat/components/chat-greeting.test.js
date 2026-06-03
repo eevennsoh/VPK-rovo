@@ -282,7 +282,7 @@ test("ChatGreeting renders selected custom agent profile and three starters", as
 
 	assert.match(CHAT_GREETING_SOURCE, /function CustomAgentGreeting/u);
 	assert.match(CHAT_GREETING_SOURCE, /itemVariants: ChatGreetingItemVariants;/u);
-	assert.match(CHAT_GREETING_SOURCE, /className="mx-auto flex w-full max-w-\[368px\] flex-col items-center gap-8 text-center"/u);
+	assert.match(CHAT_GREETING_SOURCE, /className="mx-auto flex w-full max-w-\[800px\] flex-col items-center gap-8 text-center"/u);
 	assert.match(CHAT_GREETING_SOURCE, /<motion\.div key=\{suggestion\.id\} variants=\{itemVariants\}>/u);
 	assert.match(CHAT_GREETING_SOURCE, /<AnimatePresence mode="wait">[\s\S]*customAgent \? \(/u);
 	assert.match(markup, /AI Insights Agent/u);
