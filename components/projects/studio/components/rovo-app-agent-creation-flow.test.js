@@ -451,7 +451,7 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	);
 	assert.match(handleAgentConfigViewChangeSource, /setActiveAgentConfigView\(view\);/u);
 	assert.doesNotMatch(handleAgentConfigViewChangeSource, /nav\.openChat|nav\.toggleChat/u);
-	assert.match(SHELL_SOURCE, /import \{ AgentTestActivityView, AgentTestPanel, AgentTestTriggerView \} from "@\/components\/projects\/studio\/components\/rovo-app-agent-test-panel";/u);
+	assert.match(SHELL_SOURCE, /import \{ AgentTestPanel \} from "@\/components\/projects\/studio\/components\/rovo-app-agent-test-panel";/u);
 	assert.match(SHELL_SOURCE, /const agentConfigTestPanel = activeSessionAgentEntry \? \([\s\S]*<AgentTestPanel entry=\{activeSessionAgentEntry\} \/>/u);
 	assert.match(SHELL_SOURCE, /testPanel=\{agentConfigTestPanel\}/u);
 	assert.match(SHELL_SOURCE, /onTest=\{handleTestAgent\}/u);
@@ -470,23 +470,19 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 		SHELL_SOURCE.indexOf("// When the \"Edit agent\" context bar is active"),
 	);
 	assert.match(agentEditContextBarSource, /if \(!activeSessionAgentEntry \|\| isCustomAgentSelected\) \{[\s\S]*return null;[\s\S]*\}/u);
-	assert.match(SHELL_SOURCE, /<ChatPanel[\s\S]*onClose=\{nav\.toggleChat\}[\s\S]*abortOnUnmount=\{false\}[\s\S]*chatContextBar=\{agentEditContextBar\}[\s\S]*customAgentTabs=\{askRovoCustomAgentTabs\}[\s\S]*containerStyle=\{\{ borderRadius: 0, borderWidth: 0 \}\}[\s\S]*\/>/u);
-	// The Ask Rovo edit panel renders the custom-agent tab header (Chat /
-	// Trigger / Activity) for the agent being edited, but must NOT opt into the
-	// Test-mode-only controls (version dropdown + new-chat button); leaving
-	// showAgentTestControls off keeps them hidden and the tab list full width.
-	const askRovoCustomAgentTabsSource = SHELL_SOURCE.slice(
-		SHELL_SOURCE.indexOf("const askRovoCustomAgentTabs = useMemo"),
-		SHELL_SOURCE.indexOf("const askRovoChatResize"),
-	);
-	assert.match(askRovoCustomAgentTabsSource, /if \(!activeSessionAgentEntry\) \{[\s\S]*return undefined;[\s\S]*\}/u);
-	assert.match(askRovoCustomAgentTabsSource, /trigger: <AgentTestTriggerView entry=\{activeSessionAgentEntry\} \/>/u);
-	assert.match(askRovoCustomAgentTabsSource, /activity: <AgentTestActivityView entry=\{activeSessionAgentEntry\} \/>/u);
+	assert.match(SHELL_SOURCE, /<ChatPanel[\s\S]*onClose=\{nav\.toggleChat\}[\s\S]*abortOnUnmount=\{false\}[\s\S]*chatContextBar=\{agentEditContextBar\}[\s\S]*greeting=\{agentEditGreeting\}[\s\S]*containerStyle=\{\{ borderRadius: 0, borderWidth: 0 \}\}[\s\S]*\/>/u);
+	// The Ask Rovo edit panel always chats with the default Rovo agent (it's a
+	// build/improve helper), so it must render as a plain default-Rovo chat:
+	// no custom-agent Chat / Trigger / Activity tab header and no Test-mode-only
+	// controls. Those tabs belong to the left-hand Test panel instead.
 	const askRovoChatPanelSource = SHELL_SOURCE.slice(
 		SHELL_SOURCE.indexOf("<ChatPanel\n"),
 		SHELL_SOURCE.indexOf("<SidebarResizeHandle"),
 	);
+	assert.doesNotMatch(askRovoChatPanelSource, /customAgentTabs/u);
 	assert.doesNotMatch(askRovoChatPanelSource, /showAgentTestControls/u);
+	// The Ask Rovo tab memo is gone entirely now that the helper is plain chat.
+	assert.doesNotMatch(SHELL_SOURCE, /askRovoCustomAgentTabs/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \{ chatSurface, openChat, resetAgentToRovo \} = useRovoChat\(\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenFloatingRovoChat = useCallback\(\(\) => \{[\s\S]*resetAgentToRovo\(\);[\s\S]*openChat\("floating"\);[\s\S]*\}, \[openChat, resetAgentToRovo\]\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<FloatingRovoButton ariaLabel="Open Rovo chat" product="home" onButtonClick=\{handleOpenFloatingRovoChat\} \/>/u);

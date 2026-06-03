@@ -6,7 +6,59 @@ export const TOP_NAV_COLLAPSED_CONTROL_STEP_PX =
 export const TOP_NAV_PADDING_PX = 12;
 export const TOP_NAV_LEFT_SECTION_WIDTH_PX = 230;
 export const TOP_NAV_COLLAPSED_LEFT_SECTION_WIDTH_PX = 144;
+// Fallback collapsed left padding for the top bar. Used when the product is not
+// known to `getCollapsedHeaderPaddingPx` below. Prefer the helper so the search
+// always clears the collapsed product button (icon + label), which overflows the
+// 144px collapsed chrome once the product label becomes visible (>=1028px).
 export const TOP_NAV_COLLAPSED_HEADER_PADDING_PX = 160;
+
+// Gap kept between the collapsed product button's right edge and the start of the
+// search field so they never visually touch.
+const TOP_NAV_COLLAPSED_PRODUCT_GAP_PX = 12;
+
+// Internal width of the product button chrome that sits left of the label text:
+// button padding (space.050 = 4) + product icon (24) + icon/label gap (gap-1.5 = 6).
+const TOP_NAV_PRODUCT_BUTTON_LEADING_PX = 4 + 24 + 6;
+// Width to the right of the label text: label paddingRight (space.025 = 2) +
+// button padding (space.050 = 4).
+const TOP_NAV_PRODUCT_BUTTON_TRAILING_PX = 2 + 4;
+
+// Estimated rendered width (px) of each product label at the top-nav button font
+// (text-sm / font-bold). Measured against the live styles; only needs to be a
+// safe upper bound so the search never overlaps the label.
+const TOP_NAV_PRODUCT_LABEL_WIDTH_PX: Record<string, number> = {
+	admin: 90,
+	confluence: 72,
+	search: 44,
+	agents: 44,
+	studio: 40,
+	home: 36,
+	rovo: 32,
+	jira: 24,
+};
+
+const TOP_NAV_PRODUCT_LABEL_FALLBACK_WIDTH_PX = 90;
+
+/**
+ * Collapsed-state left padding for the top navigation bar so the search field
+ * clears the (absolutely positioned) product button, which extends past the
+ * 144px collapsed chrome once its label is visible. Derived from the same
+ * geometry constants the chrome itself uses, plus a fixed gap.
+ */
+export function getCollapsedHeaderPaddingPx(product: string): number {
+	const labelWidth =
+		TOP_NAV_PRODUCT_LABEL_WIDTH_PX[product] ?? TOP_NAV_PRODUCT_LABEL_FALLBACK_WIDTH_PX;
+	// Collapsed product button left offset: the app-switcher step plus the
+	// sidebar-toggle step (both present while collapsed).
+	const productButtonLeftPx = 2 * TOP_NAV_COLLAPSED_CONTROL_STEP_PX;
+	const productButtonRightEdgePx =
+		TOP_NAV_PADDING_PX +
+		productButtonLeftPx +
+		TOP_NAV_PRODUCT_BUTTON_LEADING_PX +
+		labelWidth +
+		TOP_NAV_PRODUCT_BUTTON_TRAILING_PX;
+	return Math.ceil(productButtonRightEdgePx + TOP_NAV_COLLAPSED_PRODUCT_GAP_PX);
+}
 // Below this window width the right cluster (Ask Rovo, notifications, help,
 // settings, avatar) collapses into a single "…" overflow popover. Matches the
 // Figma frames: 768 still shows the full inline cluster, 480 collapses it. The

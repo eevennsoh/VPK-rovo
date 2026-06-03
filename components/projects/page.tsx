@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { AnimatePresence } from "motion/react";
 import { token } from "@/lib/tokens";
 import TopNavigation from "@/components/blocks/top-navigation/page";
-import { TOP_NAV_HEADER_HEIGHT_PX } from "@/components/blocks/top-navigation/layout-constants";
 import Sidebar from "@/components/blocks/product-sidebar/page";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import type {
@@ -18,7 +17,6 @@ import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-cha
 import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/components/chat-surface-switcher";
 import { SidebarResizeHandle } from "@/components/ui/sidebar";
 import { useSidebarResize } from "@/components/projects/rovo/hooks/use-sidebar-resize";
-import { useSidebar } from "@/app/contexts/context-sidebar";
 import { useRovoChat } from "@/app/contexts";
 
 type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "search" | "studio";
@@ -140,7 +138,6 @@ export default function AppLayout({
 }: Readonly<AppLayoutProps>) {
 	const isEmbedded = useIsEmbedded(embedded);
 	const isRovoCanvasOpen = useIsRovoCanvasOpen();
-	const { isVisible } = useSidebar();
 	const { chatSurface, toggleChat } = useRovoChat();
 	const chatResize = useSidebarResize({
 		defaultWidth: 400,
@@ -155,97 +152,79 @@ export default function AppLayout({
 	const showChatPanel = !isEmbedded && !shouldHideRovoAction && isSidebarChatActive;
 	const showFloatingChat = !isEmbedded && !hideFloatingRovo && !shouldHideRovoAction && isFloatingChatActive;
 	const showFloatingRovoButton = !isEmbedded && !hideFloatingRovo && !shouldHideRovoAction;
-	const sidebarWidth = isEmbedded || !isVisible ? "0px" : "230px";
-	// The non-embedded shell reserves space for the sticky TopNavigation header
-	// bar (rendered as `variant="header"`). Keep this in lockstep with the bar's
-	// own height so the content area below it isn't pushed off-screen.
-	const headerOffset = `${TOP_NAV_HEADER_HEIGHT_PX}px`;
-	const shellViewportHeight = isEmbedded ? "100dvh" : "100vh";
-	const shellContentHeight = isEmbedded ? "100dvh" : `calc(100vh - ${headerOffset})`;
+	// Embedded mode styles (fallback when not using the TopNavigation shell)
 	const shellStyle = {
-		minHeight: shellViewportHeight,
-		height: shellViewportHeight,
+		minHeight: isEmbedded ? "100dvh" : "100vh",
+		height: isEmbedded ? "100dvh" : "100vh",
 		backgroundColor: token("color.background.neutral.subtle"),
 		overflow: "hidden",
-		"--vpk-project-shell-content-height": shellContentHeight,
-		"--vpk-project-shell-top-offset": isEmbedded ? "0px" : headerOffset,
 	} as React.CSSProperties;
 
-	return (
-		<div style={shellStyle}>
-			<div data-shell-chrome="">
-				{!isEmbedded ? <TopNavigation product={product} variant="header" hideRovoAction={shouldHideRovoAction} /> : null}
+	// Main content area with chat panel and floating elements
+	const mainContent = (
+		<>
+			{/* Main Content Area */}
+			<div
+				style={{
+					marginRight: showChatPanel ? `${chatPanelWidth}px` : "0px",
+					transition: isEmbedded || chatResize.isResizing
+						? undefined
+						: "margin-right var(--duration-medium) var(--ease-in-out)",
+					flex: 1,
+					overflow: "auto",
+				}}
+			>
+				{children}
 			</div>
 
-			<div style={{ display: "flex", height: shellContentHeight, position: "relative" }}>
-				<div data-shell-chrome="">
-					{!isEmbedded ? <Sidebar product={product} embedded={isEmbedded} /> : null}
-				</div>
-
-				{/* Main Content Area */}
+			{/* In-situ Rovo Chat Panel */}
+			{!isEmbedded && !shouldHideRovoAction ? (
 				<div
+					data-shell-chrome=""
+					aria-hidden={!isSidebarChatActive}
+					{...(!isSidebarChatActive ? { inert: true } : {})}
 					style={{
-						marginLeft: sidebarWidth,
-						marginRight: showChatPanel ? `${chatPanelWidth}px` : "0px",
-						transition: isEmbedded || chatResize.isResizing
-							? undefined
-							: "margin-left var(--duration-medium) var(--ease-in-out), margin-right var(--duration-medium) var(--ease-in-out)",
-						flex: 1,
-						overflow: "auto",
+						position: "absolute",
+						top: 0,
+						right: 0,
+						bottom: 0,
+						width: `${chatPanelWidth}px`,
+						padding: chatPanelFlush ? 0 : token("space.100"),
+						pointerEvents: isSidebarChatActive ? "auto" : "none",
+						transform: isSidebarChatActive ? "translateX(0)" : `translateX(${chatPanelWidth}px)`,
+						transition: chatResize.isResizing ? undefined : "transform var(--duration-medium) var(--ease-in-out)",
+						willChange: "transform",
+						zIndex: 90,
 					}}
 				>
-					{children}
+					<ChatPanel
+						onClose={toggleChat}
+						abortOnUnmount={false}
+						onSurfaceSwitch={onChatSurfaceSwitch}
+						chatContextBar={chatContextBar}
+						greeting={chatGreeting}
+						customAgentTabs={customAgentTabs}
+						onArtifactDialogOpen={onArtifactDialogOpen}
+						preserveFloatingSurfaceOnArtifactDialogOpen={preserveFloatingSurfaceOnArtifactDialogOpen}
+						containerStyle={
+							chatPanelFlush
+								? {
+										borderRadius: 0,
+										borderWidth: 0,
+									}
+								: undefined
+						}
+					/>
+					<SidebarResizeHandle
+						side="left"
+						data-active={chatResize.isResizing ? "" : undefined}
+						onDoubleClick={chatResize.onResizeHandleDoubleClick}
+						onPointerDown={chatResize.onResizeHandlePointerDown}
+						onPointerEnter={chatResize.onResizeHandlePointerEnter}
+						onPointerLeave={chatResize.onResizeHandlePointerLeave}
+					/>
 				</div>
-
-				{/* In-situ Rovo Chat Panel */}
-				{!isEmbedded && !shouldHideRovoAction ? (
-					<div
-						data-shell-chrome=""
-						aria-hidden={!isSidebarChatActive}
-						{...(!isSidebarChatActive ? { inert: true } : {})}
-						style={{
-							position: "absolute",
-							top: 0,
-							right: 0,
-							bottom: 0,
-							width: `${chatPanelWidth}px`,
-							padding: chatPanelFlush ? 0 : token("space.100"),
-							pointerEvents: isSidebarChatActive ? "auto" : "none",
-							transform: isSidebarChatActive ? "translateX(0)" : `translateX(${chatPanelWidth}px)`,
-							transition: chatResize.isResizing ? undefined : "transform var(--duration-medium) var(--ease-in-out)",
-							willChange: "transform",
-							zIndex: 90,
-						}}
-					>
-						<ChatPanel
-							onClose={toggleChat}
-							abortOnUnmount={false}
-							onSurfaceSwitch={onChatSurfaceSwitch}
-							chatContextBar={chatContextBar}
-							greeting={chatGreeting}
-							customAgentTabs={customAgentTabs}
-							onArtifactDialogOpen={onArtifactDialogOpen}
-							preserveFloatingSurfaceOnArtifactDialogOpen={preserveFloatingSurfaceOnArtifactDialogOpen}
-							containerStyle={
-								chatPanelFlush
-									? {
-											borderRadius: 0,
-											borderWidth: 0,
-										}
-									: undefined
-							}
-						/>
-						<SidebarResizeHandle
-							side="left"
-							data-active={chatResize.isResizing ? "" : undefined}
-							onDoubleClick={chatResize.onResizeHandleDoubleClick}
-							onPointerDown={chatResize.onResizeHandlePointerDown}
-							onPointerEnter={chatResize.onResizeHandlePointerEnter}
-							onPointerLeave={chatResize.onResizeHandlePointerLeave}
-						/>
-					</div>
-				) : null}
-			</div>
+			) : null}
 
 			{/* Floating Rovo Chat (anchored bottom-right) */}
 			<AnimatePresence>
@@ -276,6 +255,38 @@ export default function AppLayout({
 					) : null}
 				</AnimatePresence>
 			</div>
-		</div>
+		</>
+	);
+
+	// When embedded, render without the TopNavigation shell
+	if (isEmbedded) {
+		return (
+			<div style={shellStyle}>
+				{mainContent}
+			</div>
+		);
+	}
+
+	// Use the canonical TopNavigation shell variant
+	return (
+		<TopNavigation
+			product={product}
+			variant="shell"
+			hideRovoAction={shouldHideRovoAction}
+			sidebar={(slot) => (
+				<Sidebar
+					product={product}
+					asChromeSlot
+					resizeHandle={slot.resizeHandle}
+					isResizing={slot.isResizing}
+					headerOffsetPx={slot.headerOffsetPx}
+					topOffset
+				/>
+			)}
+		>
+			<div style={{ display: "flex", height: "100%", position: "relative" }}>
+				{mainContent}
+			</div>
+		</TopNavigation>
 	);
 }

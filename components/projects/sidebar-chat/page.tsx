@@ -132,6 +132,14 @@ interface ChatPanelProps {
 	 * 24px horizontal inset.
 	 */
 	composerContainerClassName?: string;
+	/**
+	 * When true, the bottom-aligned Test greeting reserves vertical space equal
+	 * to a single-line chat context bar below its last conversation starter.
+	 * The Studio agent Test panel sets this because its sibling Ask Rovo panel
+	 * renders an "Edit:" context bar above its composer; reserving the matching
+	 * footprint keeps the two greetings' last prompts on the same baseline.
+	 */
+	composerReservesContextBarSpace?: boolean;
 	greetingSelectedAgent?: RovoAgentProfile | null;
 	hideAiCursor?: boolean;
 	hideComposerSourceAndModelControls?: boolean;
@@ -148,6 +156,16 @@ interface ChatPanelProps {
 }
 
 const COMPACT_CHAT_WIDTH_MAX = 520;
+
+/**
+ * Footprint of a single-line chat context bar (the "Edit:" pill above the
+ * sidebar composer): the pill's `py-2` + small-icon line height (~36px) plus
+ * its `mb-3` bottom margin (12px). The bottom-aligned Test greeting reserves
+ * this much space below its last starter so it lines up with the sibling Ask
+ * Rovo greeting, whose composer carries that context bar. Keep in sync with
+ * `ContextBar` in components/ui-custom/context-bar/context-bar.tsx.
+ */
+const CONTEXT_BAR_RESERVED_SPACE_PX = 48;
 const REGULAR_CHAT_WIDTH_MAX = 900;
 const ARTIFACT_DIALOG_FLOATING_PIN_REASON = "sidebar-chat-artifact-dialog";
 
@@ -207,6 +225,7 @@ export default function ChatPanel({
 	showAgentTestControls = false,
 	conversationContentClassName,
 	composerContainerClassName,
+	composerReservesContextBarSpace = false,
 	hideAiCursor = false,
 	hideComposerSourceAndModelControls = false,
 	hideHeader = false,
@@ -611,9 +630,15 @@ export default function ChatPanel({
 
 	const hasMessages = messages.length > 0;
 	const resolvedGreeting = isCollapsibleEditContextBar && !isContextBarOpen ? undefined : greeting;
-	const shouldCenterAgentTestEmptyState = showAgentTestControls && !hasMessages;
+	const isAgentTestEmptyState = showAgentTestControls && !hasMessages;
+	// Bottom-align the Test greeting so its last conversation starter lines up
+	// with the Ask Rovo greeting's last prompt. Only fall back to vertical
+	// centering when the custom agent has no conversation starters to anchor.
+	const hasTestGreetingSuggestions = (resolvedGreeting?.suggestions?.length ?? 0) > 0;
+	const shouldBottomAlignAgentTestEmptyState = isAgentTestEmptyState && hasTestGreetingSuggestions;
+	const shouldCenterAgentTestEmptyState = isAgentTestEmptyState && !hasTestGreetingSuggestions;
 	const shouldHugEmptyGreeting = !hasMessages && greeting?.showHero === false;
-	const shouldUseNaturalEmptyGreeting = shouldHugEmptyGreeting || shouldCenterAgentTestEmptyState;
+	const shouldUseNaturalEmptyGreeting = shouldHugEmptyGreeting || isAgentTestEmptyState;
 	const shouldUseAutoMessageTrack = shouldUseNaturalEmptyGreeting && containerStyle?.display === "grid";
 	const resolvedContainerStyle = shouldUseAutoMessageTrack
 		? { ...containerStyle, gridTemplateRows: "auto auto" }
@@ -741,19 +766,32 @@ export default function ChatPanel({
 	const messagesContainerStyle = {
 		display: chatStyles.messagesContainer.display,
 		flexDirection: chatStyles.messagesContainer.flexDirection,
-		justifyContent: hasMessages || shouldUseNaturalEmptyGreeting ? "flex-start" : "flex-end",
-		flex: hasMessages || shouldUseNaturalEmptyGreeting ? "0 0 auto" : chatStyles.messagesContainer.flex,
-		minHeight: shouldUseNaturalEmptyGreeting ? "auto" : "100%",
+		// Test empty state: grow to full height, then bottom-align the greeting
+		// (so its last starter lines up with the Ask Rovo greeting) — or center it
+		// when the agent has no starters. (Inline values win over Tailwind classes,
+		// so the alignment must live here rather than only on the className.)
+		justifyContent: shouldBottomAlignAgentTestEmptyState
+			? "flex-end"
+			: shouldCenterAgentTestEmptyState
+				? "center"
+				: hasMessages || shouldUseNaturalEmptyGreeting
+					? "flex-start"
+					: "flex-end",
+		flex: isAgentTestEmptyState ? "1 1 auto" : hasMessages || shouldUseNaturalEmptyGreeting ? "0 0 auto" : chatStyles.messagesContainer.flex,
+		minHeight: isAgentTestEmptyState ? "100%" : shouldUseNaturalEmptyGreeting ? "auto" : "100%",
+		// When bottom-aligning the Test greeting, reserve the sibling Ask Rovo
+		// composer's context-bar footprint below the last starter (on top of the
+		// content track's base 24px `py-6`) so both greetings share a baseline.
+		...(shouldBottomAlignAgentTestEmptyState && composerReservesContextBarSpace
+			? { paddingBottom: `${24 + CONTEXT_BAR_RESERVED_SPACE_PX}px` }
+			: {}),
 	};
 	const isHeaderHistoryEnabled = !hideHeader && headerVariant === "default";
 	const shouldRenderHeaderHistory = isHeaderHistoryEnabled && chatSurface !== "floating";
 	const shouldRenderCustomAgentTabs = Boolean(customAgentTabs) || (isCustomAgentSelected && isCustomAgentTabsProfile(selectedAgent));
 	const chatConversationBody = (
 		<Conversation
-			className={cn(
-				"min-h-0 min-w-0",
-				shouldCenterAgentTestEmptyState ? "flex-none overflow-visible" : "flex-1",
-			)}
+			className="min-h-0 min-w-0 flex-1"
 			contextRef={conversationContextRef}
 			followMode={scrollFollowMode}
 			initial={false}
@@ -766,6 +804,9 @@ export default function ChatPanel({
 					"mx-auto flex min-w-0 max-w-[800px] flex-col gap-4 px-4 py-6 md:gap-6",
 					conversationContentClassName
 				)}
+				// In the Test empty state, messagesContainerStyle grows this content
+				// track to full height and bottom-aligns (or centers when there are no
+				// starters) the greeting (inline values win over Tailwind classes).
 				style={messagesContainerStyle}
 			>
 				{messages.length === 0 ? (
@@ -966,7 +1007,7 @@ export default function ChatPanel({
 						aria-label="Custom agent views"
 						className={cn(
 							"min-h-0 min-w-0 flex-1",
-							shouldCenterAgentTestEmptyState && "flex flex-col",
+							isAgentTestEmptyState && "flex flex-col",
 						)}
 					>
 						<div
@@ -992,7 +1033,9 @@ export default function ChatPanel({
 										render={
 											<Button
 												aria-label="Switch version"
-												className="h-8 shrink-0 gap-1.5 px-2 text-sm font-medium text-text"
+												// Nudge the version control 8px left so its lozenge
+												// visually aligns with the header controls above.
+												className="-ml-2 h-8 shrink-0 gap-1.5 px-2 text-sm font-medium text-text"
 												type="button"
 												variant="ghost"
 											/>
@@ -1045,13 +1088,14 @@ export default function ChatPanel({
 						<TabsContent
 							value="chat"
 							keepMounted
-							className={cn(
-								"min-h-0 flex flex-1 flex-col data-[hidden]:hidden",
-								shouldCenterAgentTestEmptyState && "justify-center",
-							)}
+							className="min-h-0 flex flex-1 flex-col data-[hidden]:hidden"
 						>
-							{shouldCenterAgentTestEmptyState ? (
-								<div className="mx-auto flex w-full flex-col gap-3">
+							{isAgentTestEmptyState ? (
+								// Fill the full tab height and pin the composer to the
+								// bottom (conversation grows to take the slack) so the Test
+								// composer aligns with the bottom-anchored sidebar composer
+								// instead of floating mid-height.
+								<div className="mx-auto flex min-h-0 w-full flex-1 flex-col gap-3">
 									{chatConversationBody}
 									{chatComposerBody}
 								</div>
@@ -1076,7 +1120,7 @@ export default function ChatPanel({
 							)}
 						</TabsContent>
 					</Tabs>
-					{shouldCenterAgentTestEmptyState ? null : chatComposerBody}
+					{isAgentTestEmptyState ? null : chatComposerBody}
 				</>
 			) : (
 				chatPanelBody

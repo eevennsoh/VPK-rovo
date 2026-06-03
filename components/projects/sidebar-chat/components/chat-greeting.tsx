@@ -271,6 +271,9 @@ export default function ChatGreeting({
 		!isMaxMode &&
 		resolvedIllustrationSrc === AGENT_ILLUSTRATION_SRC &&
 		resolvedIllustrationDarkSrc === AGENT_ILLUSTRATION_DARK_SRC;
+	// The default Rovo chat hero uses the animated, layered chat illustration
+	// (enter → idle lifecycle) instead of the static chat SVG.
+	const shouldUseControlledChatIllustration = !isMaxMode && resolvedIllustrationSrc === DEFAULT_ILLUSTRATION_SRC;
 	const heroKey = isMaxMode ? "max" : "default";
 	const itemVariants = shouldReduceMotion ? CHAT_GREETING_REDUCED_ITEM_VARIANTS : CHAT_GREETING_ITEM_VARIANTS;
 
@@ -299,7 +302,9 @@ export default function ChatGreeting({
 								variants={CHAT_GREETING_CONTAINER_VARIANTS}
 							>
 								<motion.div className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative")} style={{ willChange: "transform, opacity" }} variants={itemVariants}>
-									{shouldUseControlledAgentIllustration ? (
+									{shouldUseControlledChatIllustration ? (
+										<ControlledRovoIllustration illusId="chat" size={74} />
+									) : shouldUseControlledAgentIllustration ? (
 										<ControlledRovoIllustration illusId="ai" size={74} />
 									) : (
 										<>
