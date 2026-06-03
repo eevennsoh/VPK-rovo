@@ -261,6 +261,8 @@ test("Agent component page wires compact filled and empty placeholder variations
 	const compactOperationsSource = AGENT_SOURCE.slice(compactOperationsStart, sectionLabelStart);
 
 	assert.match(AGENT_SOURCE, /layout\?: "default" \| "compact";/u);
+	assert.match(AGENT_SOURCE, /compactScrollAreaClassName\?: string;/u);
+	assert.match(AGENT_SOURCE, /compactScrollAreaClassName,/u);
 	assert.match(AGENT_SOURCE, /layout = "default"/u);
 	assert.match(AGENT_SOURCE, /data-agent-config-layout=\{layout\}/u);
 	assert.match(AGENT_SOURCE, /layout === "compact"/u);
@@ -280,7 +282,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// Compact wrapper splits into a scrollable region + an anchored footer; it no
 	// longer reserves bottom padding for an overlay.
 	assert.match(compactLayoutSource, /<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">/u);
-	assert.match(compactLayoutSource, /<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">/u);
+	assert.match(compactLayoutSource, /"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto"[\s\S]*compactScrollOverflow\.showBottomScrollMask && "scroll-mask-bottom",[\s\S]*compactScrollAreaClassName,/u);
 	assert.doesNotMatch(compactLayoutSource, /paddingBottom/u);
 	assert.doesNotMatch(compactLayoutSource, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
 	assert.match(compactBottomSlotSource, /bottomSlot=\{isFilledConfig \? null : \([\s\S]*<AnimatePresence>[\s\S]*templatesDismissed \? null : \([\s\S]*<AgentCompactOperationsBento[\s\S]*onDismiss=\{\(\) => setTemplatesDismissed\(true\)\}/u);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
 import { getStudioSessionAgentDisplayName } from "@/app/contexts";
 import { ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS } from "@/components/projects/studio/lib/rovo-app-shell-layout";
@@ -20,6 +20,41 @@ import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
 import PinIcon from "@atlaskit/icon/core/pin";
 
 const STUDIO_CUSTOM_AGENT_OWNER_AVATAR_SRC = "/avatar-user/venn/venn.png";
+
+const STUDIO_PINNED_AGENTS_STORAGE_KEY = "vpk:studio:pinned-custom-agents";
+
+function readPinnedAgentIds(): ReadonlySet<string> {
+	if (typeof window === "undefined") {
+		return new Set();
+	}
+	try {
+		const raw = window.localStorage.getItem(STUDIO_PINNED_AGENTS_STORAGE_KEY);
+		if (!raw) {
+			return new Set();
+		}
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed)) {
+			return new Set();
+		}
+		return new Set(parsed.filter((id): id is string => typeof id === "string"));
+	} catch {
+		return new Set();
+	}
+}
+
+function writePinnedAgentIds(pinnedAgentIds: ReadonlySet<string>): void {
+	if (typeof window === "undefined") {
+		return;
+	}
+	try {
+		window.localStorage.setItem(
+			STUDIO_PINNED_AGENTS_STORAGE_KEY,
+			JSON.stringify([...pinnedAgentIds]),
+		);
+	} catch {
+		// Ignore write failures (e.g. storage disabled or quota exceeded).
+	}
+}
 
 interface StudioCustomAgentsTableProps {
 	entries: readonly StudioSessionAgentEntry[];
@@ -80,6 +115,16 @@ export function StudioCustomAgentsTable({
 	onEditAgent,
 }: Readonly<StudioCustomAgentsTableProps>) {
 	const [pinnedAgentIds, setPinnedAgentIds] = useState<ReadonlySet<string>>(() => new Set());
+
+	// Hydrate from localStorage after mount to keep the SSR/first client render
+	// in sync (both start empty) and avoid a hydration mismatch.
+	useEffect(() => {
+		const stored = readPinnedAgentIds();
+		if (stored.size > 0) {
+			setPinnedAgentIds(stored);
+		}
+	}, []);
+
 	const sortedEntries = useMemo(() => {
 		return [...entries].sort((a, b) => {
 			const aPinned = pinnedAgentIds.has(a.profile.id);
@@ -99,6 +144,7 @@ export function StudioCustomAgentsTable({
 			} else {
 				next.add(agentId);
 			}
+			writePinnedAgentIds(next);
 			return next;
 		});
 	};

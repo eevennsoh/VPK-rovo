@@ -305,24 +305,26 @@ test("Studio agent edit surfaces share the session-agent display name", () => {
 	assert.doesNotMatch(SHELL_SOURCE, /draftResult\?\.name\?\.trim\(\) \|\| profile\.name/u);
 });
 
-test("Studio lands generated agents in the Test tab without opening Ask Rovo", () => {
+test("Studio lands generated agents in the Test tab and opens Ask Rovo", () => {
 	// The navigation hook still exposes deterministic chat controls for the
-	// separate Ask Rovo surface, but generated-agent testing is tab-local now.
+	// separate Ask Rovo surface, and generated-agent testing opens it by default.
 	assert.match(NAV_HOOK_SOURCE, /const \{ toggleChat, openChat, chatSurface \} = useRovoChat\(\);/u);
 	assert.match(NAV_HOOK_SOURCE, /\n\t\topenChat,\n/u);
 
 	// The agent-result handler selects the Test tab for both registration paths
-	// without opening the right-side edit chat.
+	// and opens the right-side edit chat without toggling it closed if already open.
 	assert.ok(
 		(SHELL_SOURCE.match(/setActiveAgentConfigView\("test"\);/gu) ?? []).length >= 2,
 		"both registration success paths should land in the Test tab",
 	);
+	assert.match(SHELL_SOURCE, /const openAgentCreationAskRovoChat = useCallback\(\(\) => \{[\s\S]*studioAgentRegistry\.resetAgentToRovo\(\);[\s\S]*nav\.openChat\("sidebar"\);[\s\S]*\}, \[nav, studioAgentRegistry\]\);/u);
 	const agentResultSelectSource = SHELL_SOURCE.slice(
 		SHELL_SOURCE.indexOf("const handleStudioAgentResultSelect = useCallback"),
 		SHELL_SOURCE.indexOf("// \"Start from scratch\""),
 	);
-	assert.doesNotMatch(agentResultSelectSource, /nav\.openChat\("sidebar"\)|nav\.toggleChat/u);
-	assert.match(SHELL_SOURCE, /\[chat\.activeThreadId, chat\.runtimeThreadId, setActiveAgentConfigState, studioAgentRegistry\]/u);
+	assert.match(agentResultSelectSource, /setActiveAgentConfigView\("test"\);[\s\S]*openAgentCreationAskRovoChat\(\);[\s\S]*return true;[\s\S]*setActiveAgentConfigView\("test"\);[\s\S]*openAgentCreationAskRovoChat\(\);[\s\S]*return true;/u);
+	assert.doesNotMatch(agentResultSelectSource, /nav\.toggleChat/u);
+	assert.match(SHELL_SOURCE, /\[chat\.activeThreadId, chat\.runtimeThreadId, openAgentCreationAskRovoChat, setActiveAgentConfigState, studioAgentRegistry\]/u);
 	assert.match(SHELL_SOURCE, /const activeAgentConfigRef = useRef\(activeAgentConfig\);/u);
 	assert.match(SHELL_SOURCE, /const generatedAgentTestViewKeysRef = useRef<Set<string>>\(new Set\(\)\);/u);
 	assert.match(SHELL_SOURCE, /const setActiveAgentConfigState = useCallback\(\(nextAgentConfig: typeof activeAgentConfig\) => \{[\s\S]*activeAgentConfigRef\.current = nextAgentConfig;[\s\S]*setActiveAgentConfig\(nextAgentConfig\);[\s\S]*\}, \[\]\);/u);
@@ -330,7 +332,7 @@ test("Studio lands generated agents in the Test tab without opening Ask Rovo", (
 	assert.match(SHELL_SOURCE, /if \(activeAgentConfig && !activeSessionAgentEntry\) \{[\s\S]*if \(studioAgentRegistry\.getSessionAgentEntry\?\.\(activeAgentConfig\.profileId\)\) \{[\s\S]*return;[\s\S]*\}[\s\S]*setActiveAgentConfigState\(null\);[\s\S]*setActiveAgentConfigView\("configure"\);/u);
 	assert.match(SHELL_SOURCE, /!activeAgentConfig \|\|[\s\S]*!activeSessionAgentEntry \|\|[\s\S]*activeAgentConfigView === "test"/u);
 	assert.match(SHELL_SOURCE, /const isActiveGeneratedAgent =[\s\S]*message\.id === activeAgentConfig\.sourceMessageId \|\|[\s\S]*agentResult\.agentId === activeSessionAgentEntry\.sourceResult\.agentId \|\|[\s\S]*agentResult\.agentId === activeSessionAgentEntry\.draftResult\.agentId \|\|[\s\S]*agentResult\.agentId === activeSessionAgentEntry\.publishReadyResult\.agentId;/u);
-	assert.match(SHELL_SOURCE, /const agentResultKey = `\$\{chat\.runtimeThreadId\}:\$\{message\.id\}:\$\{agentResult\.agentId\}:\$\{agentResult\.action\}`;[\s\S]*if \(generatedAgentTestViewKeysRef\.current\.has\(agentResultKey\)\) \{[\s\S]*break;[\s\S]*\}[\s\S]*generatedAgentTestViewKeysRef\.current\.add\(agentResultKey\);[\s\S]*setActiveAgentConfigView\("test"\);/u);
+	assert.match(SHELL_SOURCE, /const agentResultKey = `\$\{chat\.runtimeThreadId\}:\$\{message\.id\}:\$\{agentResult\.agentId\}:\$\{agentResult\.action\}`;[\s\S]*if \(generatedAgentTestViewKeysRef\.current\.has\(agentResultKey\)\) \{[\s\S]*break;[\s\S]*\}[\s\S]*generatedAgentTestViewKeysRef\.current\.add\(agentResultKey\);[\s\S]*setActiveAgentConfigView\("test"\);[\s\S]*openAgentCreationAskRovoChat\(\);/u);
 });
 
 test("RovoAppMessages renders the block agent result card after generation completes", () => {
@@ -393,17 +395,18 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	// The disabled Test item is a plain ToggleGroupItem (no Tooltip wrapper) so the
 	// ToggleGroup renders as joined segments instead of separate pills.
 	assert.ok(!AGENT_CONFIG_PANEL_SOURCE.includes('TooltipTrigger render={<span className="inline-flex" />}'));
-	// The Update button is removed from the studio header; only the Configure/Test
+	// The Update button is removed from the studio header; only the Test/Configure
 	// toggle group and Publish remain (consistent with the reusable AgentHeader).
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /disabledTooltip="Make a change to the agent before updating the testing version\."/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /data-testid="agent-config-update"/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /hasAgentInstructions/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<Tabs[\s\S]*onValueChange=\{handleViewChange\}[\s\S]*value=\{activeView\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<ToggleGroup[\s\S]*aria-label="Agent config views"[\s\S]*variant="outline"[\s\S]*value=\{\[activeView\]\}[\s\S]*<ToggleGroupItem[\s\S]*value="configure"[\s\S]*Configure[\s\S]*<\/ToggleGroupItem>[\s\S]*<ToggleGroupItem[\s\S]*value="test"[\s\S]*data-testid="agent-config-test"[\s\S]*Test[\s\S]*<\/ToggleGroupItem>[\s\S]*<\/ToggleGroup>/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<ToggleGroup[\s\S]*aria-label="Agent config views"[\s\S]*variant="outline"[\s\S]*value=\{\[activeView\]\}[\s\S]*<ToggleGroupItem[\s\S]*value="test"[\s\S]*data-testid="agent-config-test"[\s\S]*Test[\s\S]*<\/ToggleGroupItem>[\s\S]*<ToggleGroupItem[\s\S]*value="configure"[\s\S]*Configure[\s\S]*<\/ToggleGroupItem>[\s\S]*<\/ToggleGroup>/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /disabled=\{!hasAgentInstructions\}/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /aria-label="Agent config views"[\s\S]{0,160}size="sm"/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /<TabsList>|<TabsTrigger/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<TabsContent value="configure"[\s\S]*<AgentConfigFields/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /compactScrollAreaClassName="-mr-6 pr-6"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<TabsContent value="test"[\s\S]*\{testPanel\}/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /Generation looks partial/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /variant="outline"[\s\S]*onClick=\{handleTest\}[\s\S]*disabled=\{!hasAgentInstructions\}/u);
@@ -468,9 +471,18 @@ test("Studio agent test conversation starters use contextual visual identity til
 	assert.match(AGENT_TEST_PANEL_SOURCE, /resolveConversationStarterVisualIdentity/u);
 	assert.match(ROVO_CONTEXT_SOURCE, /resolveConversationStarterVisualIdentity/u);
 	assert.match(ROVO_CONTEXT_SOURCE, /visualIdentity: resolveConversationStarterVisualIdentity\(\{[\s\S]*agentName: context\.agentName[\s\S]*label,[\s\S]*\}\)/u);
-	assert.match(CHAT_GREETING_SOURCE, /import \{ CardIdentityTile \} from "@\/components\/projects\/shared\/components\/card-identity-tile";/u);
-	assert.match(CHAT_GREETING_SOURCE, /const visualIdentity =[\s\S]*suggestion\.visualIdentity \?\?[\s\S]*resolveConversationStarterVisualIdentity/u);
-	assert.match(CHAT_GREETING_SOURCE, /\{visualIdentity \? \([\s\S]*<CardIdentityTile[\s\S]*identity=\{visualIdentity\}[\s\S]*size="medium"[\s\S]*\) : \(/u);
+});
+
+test("Chat greeting custom-agent starters use one consistent AI chat icon", () => {
+	// Greeting prompts no longer pull a per-prompt contextual identity; they all
+	// render the same neutral "ai-chat" tile so the column reads consistently.
+	assert.match(CHAT_GREETING_SOURCE, /const CUSTOM_AGENT_STARTER_ICON_NAME = "ai-chat";/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /resolveConversationStarterVisualIdentity/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CardIdentityTile/u);
+	assert.match(
+		CHAT_GREETING_SOURCE,
+		/<VisualIdentityTile[\s\S]*visualIdentity=\{\{ iconName: CUSTOM_AGENT_STARTER_ICON_NAME, tileVariant: "gray" \}\}/u,
+	);
 });
 
 test("Studio screen assistant applies draft patches without publishing agents", () => {
@@ -552,6 +564,7 @@ test("Studio composer reveals 'Start from scratch' on focus or hover and lands o
 		SHELL_SOURCE.indexOf("const handleStudioSidebarAgentSelect = useCallback"),
 	);
 	assert.match(fromScratchHandlerSource, /setActiveAgentConfigState\(\{\s*\n\s*profileId: registered\.id/u);
+	assert.match(fromScratchHandlerSource, /setActiveAgentConfigView\("configure"\);[\s\S]*openAgentCreationAskRovoChat\(\);/u);
 });
 
 test("Studio composer opts into experimental dark composer CTAs", () => {

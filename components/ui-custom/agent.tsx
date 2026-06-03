@@ -14,6 +14,7 @@ import DashboardIcon from "@atlaskit/icon/core/dashboard";
 import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
 import ScorecardIcon from "@atlaskit/icon/core/scorecard";
+import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import VideoPlayIcon from "@atlaskit/icon/core/video-play";
 import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
@@ -547,6 +548,14 @@ export const AgentHeader = memo(
 						// instead. ToggleGroup carries its own context, so no wrapper
 						// is required here.
 						<>
+							<Button
+								type="button"
+								size="icon"
+								variant="outline"
+								aria-label="More options"
+							>
+								<Icon render={<ShowMoreHorizontalIcon label="" color="currentColor" />} aria-hidden />
+							</Button>
 							<ToggleGroup
 								aria-label="Agent views"
 								defaultValue={["configure"]}
@@ -2443,6 +2452,7 @@ function AgentCompactConfigToolbarBelow({
 export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	config: AgentConfigFormValue;
 	avatarSrc?: string;
+	compactScrollAreaClassName?: string;
 	idPrefix: string;
 	layout?: "default" | "compact";
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
@@ -2458,6 +2468,7 @@ export const AgentConfigFields = memo(
 		className,
 		config,
 		avatarSrc,
+		compactScrollAreaClassName,
 		idPrefix,
 		layout = "default",
 		onListItemChange,
@@ -2514,6 +2525,7 @@ export const AgentConfigFields = memo(
 							className={cn(
 								"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto",
 								compactScrollOverflow.showBottomScrollMask && "scroll-mask-bottom",
+								compactScrollAreaClassName,
 							)}
 						>
 							<div className="flex flex-col gap-4">

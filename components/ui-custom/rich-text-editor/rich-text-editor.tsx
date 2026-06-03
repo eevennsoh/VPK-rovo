@@ -2,6 +2,7 @@
 
 import type { ComponentProps, CSSProperties, ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { Editor } from "@tiptap/react";
 import { EditorContent, useEditor } from "@tiptap/react";
 
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ interface RichTextEditorProps
 	onMarkdownChange?: (value: string) => void;
 	onPlainTextChange?: (value: string) => void;
 	onInsertReferenceOption?: (category: EditorToolbarInsertReferenceCategory, label: string) => boolean | void;
+	onAskRovo?: (editor: Editor) => void;
 	showToolbar?: boolean;
 	showBubbleMenu?: boolean;
 	showFloatingMenu?: boolean;
@@ -56,6 +58,7 @@ export function RichTextEditor({
 	onMarkdownChange,
 	onPlainTextChange,
 	onInsertReferenceOption,
+	onAskRovo,
 	showToolbar = true,
 	showBubbleMenu = true,
 	showFloatingMenu = false,
@@ -248,6 +251,7 @@ export function RichTextEditor({
 				{showBubbleMenu && editor && !isMarkdownMode ? (
 					<RichTextEditorBubbleMenu
 						editor={editor}
+						onAskRovo={onAskRovo}
 					/>
 				) : null}
 				{showFloatingMenu && editor && !isMarkdownMode ? (

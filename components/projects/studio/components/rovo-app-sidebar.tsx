@@ -31,7 +31,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
-import { getStudioSidebarRecentAgents, type StudioSidebarRecentAgentItem } from "@/components/projects/studio/lib/studio-sidebar-recent-agents";
+import { getStudioSidebarRecentAgents, getStudioSidebarRecentAgentSelected } from "@/components/projects/studio/lib/studio-sidebar-recent-agents";
 import type { RovoAppThread } from "@/lib/rovo-app-types";
 import { cn } from "@/lib/utils";
 
@@ -254,18 +254,6 @@ function RecentAgentRowActions({
 	);
 }
 
-function getRecentAgentItemSelected(
-	item: StudioSidebarRecentAgentItem,
-	activeThreadId: string | null,
-	selectedAgentId?: string,
-): boolean {
-	if (item.kind === "wip") {
-		return item.id === activeThreadId;
-	}
-
-	return item.id === selectedAgentId;
-}
-
 function StudioSidebarNavigation({
 	activeThreadId,
 	agentCreationThreads = [],
@@ -308,7 +296,7 @@ function StudioSidebarNavigation({
 	]), [agentCreationThreads, sessionAgentEntries]);
 	const hasRecentAgents = recentAgents.items.length > 0;
 	const hasSelectedRecentAgent = recentAgents.items.some((item) =>
-		getRecentAgentItemSelected(item, activeThreadId, selectedAgentId)
+		getStudioSidebarRecentAgentSelected(item, recentAgents.items, activeThreadId, selectedAgentId)
 	);
 	// Accordion state for the "Agents" header. Default open, and auto-open when a
 	// recent agent becomes selected from outside the visible list; a direct header
@@ -393,7 +381,7 @@ function StudioSidebarNavigation({
 																)
 															}
 															leadingSize="medium"
-															isSelected={getRecentAgentItemSelected(recentAgent, activeThreadId, selectedAgentId)}
+															isSelected={getStudioSidebarRecentAgentSelected(recentAgent, recentAgents.items, activeThreadId, selectedAgentId)}
 															onClick={() => {
 																if (recentAgent.kind === "wip") {
 																	onSelectAgentCreationThread?.(recentAgent.id);

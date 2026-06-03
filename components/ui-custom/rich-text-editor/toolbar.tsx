@@ -8,12 +8,48 @@ import {
 	EditorToolbar,
 	type EditorToolbarProps,
 } from "@/components/blocks/editor-toolbar";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { RovoColorIcon } from "@/components/ui/logo";
 
 export type RichTextEditorToolbarProps = EditorToolbarProps;
 
 interface RichTextEditorBubbleMenuProps {
 	editor: Editor;
 	leadingSlot?: ReactNode;
+	onAskRovo?: (editor: Editor) => void;
+}
+
+/**
+ * The full-color "Ask Rovo" entry point shown at the front of the bubble menu.
+ * It hands the active editor back to the consumer so they can open Rovo with the
+ * current selection as context.
+ */
+function AskRovoButton({
+	editor,
+	onAskRovo,
+}: Readonly<{ editor: Editor; onAskRovo?: (editor: Editor) => void }>) {
+	return (
+		// The toolbar renders `leadingSlot` outside its padded controls row, so
+		// inset the button so its grey fill clears the rounded container by the
+		// same ~4px the controls row's `py-1` leaves top and bottom. The
+		// separator only carries a left margin — the controls row's own `px-2`
+		// supplies the gap on its right.
+		<div className="flex items-center pl-1">
+			<Button
+				type="button"
+				variant="ghost"
+				onClick={() => onAskRovo?.(editor)}
+			>
+				<RovoColorIcon size="small" />
+				Ask Rovo
+			</Button>
+			<Separator
+				orientation="vertical"
+				className="ml-1 h-4 self-center bg-border data-vertical:self-center"
+			/>
+		</div>
+	);
 }
 
 interface RichTextEditorFloatingMenuProps {
@@ -30,6 +66,7 @@ export function RichTextEditorToolbar(
 export function RichTextEditorBubbleMenu({
 	editor,
 	leadingSlot,
+	onAskRovo,
 }: Readonly<RichTextEditorBubbleMenuProps>) {
 	return (
 		<BubbleMenu
@@ -41,7 +78,12 @@ export function RichTextEditorBubbleMenu({
 		>
 			<EditorToolbar
 				editor={editor}
-				leadingSlot={leadingSlot}
+				leadingSlot={
+					<>
+						<AskRovoButton editor={editor} onAskRovo={onAskRovo} />
+						{leadingSlot}
+					</>
+				}
 				className="gap-0"
 				controlsClassName="px-2 py-1"
 			/>

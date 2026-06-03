@@ -259,6 +259,7 @@ function AgentTestChatPanel({
 				suggestions: testAgentProfile.starters,
 			}}
 			greetingSelectedAgent={testAgentProfile}
+			hideAiCursor
 			hideComposerSourceAndModelControls
 			hideHeader
 		/>

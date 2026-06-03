@@ -6,10 +6,9 @@ import { token } from "@/lib/tokens";
 import Heading from "@/components/blocks/shared-ui/heading";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustration";
-import { CardIdentityTile } from "@/components/projects/shared/components/card-identity-tile";
 import { VisualIdentityTile } from "@/components/projects/shared/components/visual-identity-tile";
 import { IconTile } from "@/components/ui/icon-tile";
-import { defaultSuggestions, resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
+import { defaultSuggestions, type RovoSuggestion } from "@/lib/rovo-suggestions";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/components/projects/rovo/data/agent-profiles";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +21,9 @@ const MAX_MODE_HEADING = "Let's plan your next move";
 const MAX_MODE_ILLUSTRATION_SRC = "/illustration-ai/max/light.gif";
 const MAX_MODE_ILLUSTRATION_DARK_SRC = "/illustration-ai/max/dark.gif";
 const CHAT_GREETING_ILLUSTRATION_CLASS_NAME = "h-[67px] w-[74px]";
+// Custom-agent greeting prompts share one consistent "AI chat" glyph rather
+// than a per-prompt contextual icon. Maps to AiChatIcon via ICON_REGISTRY.
+const CUSTOM_AGENT_STARTER_ICON_NAME = "ai-chat";
 const CHAT_GREETING_MODE_TRANSITION = {
 	type: "spring",
 	bounce: 0,
@@ -158,16 +160,6 @@ function CustomAgentStarterItem({
 	onClick,
 }: Readonly<SkillListItemProps>) {
 	const IconComponent = suggestion.icon;
-	const visualIdentity =
-		suggestion.visualIdentity ??
-		(!suggestion.imageSrc && !IconComponent
-			? resolveConversationStarterVisualIdentity({
-					agentId: suggestion.id,
-					agentName: "",
-					byline: "",
-					label: suggestion.prompt ?? suggestion.label,
-				})
-			: null);
 
 	return (
 		<button
@@ -175,24 +167,7 @@ function CustomAgentStarterItem({
 			onClick={onClick}
 			type="button"
 		>
-			{visualIdentity && visualIdentity.kind === "icon-tile" ? (
-				// Keep the meaningful glyph but force the neutral surface treatment
-				// (bordered white tile + subtle icon) instead of a colored variant.
-				<VisualIdentityTile
-					className="border border-border bg-surface"
-					decorative
-					label={suggestion.label}
-					size="medium"
-					visualIdentity={{ iconName: visualIdentity.iconName, tileVariant: "gray" }}
-				/>
-			) : visualIdentity ? (
-				<CardIdentityTile
-					decorative
-					identity={visualIdentity}
-					label={suggestion.label}
-					size="medium"
-				/>
-			) : (
+			{suggestion.imageSrc || IconComponent ? (
 				<IconTile
 					aria-hidden={true}
 					className="border border-border bg-surface"
@@ -211,6 +186,17 @@ function CustomAgentStarterItem({
 					}
 					label={suggestion.label}
 					size="medium"
+				/>
+			) : (
+				// Greeting prompts have no inherent icon, so use a single consistent
+				// "AI chat" glyph on the neutral surface treatment (bordered white
+				// tile + subtle icon) instead of a per-prompt contextual identity.
+				<VisualIdentityTile
+					className="border border-border bg-surface"
+					decorative
+					label={suggestion.label}
+					size="medium"
+					visualIdentity={{ iconName: CUSTOM_AGENT_STARTER_ICON_NAME, tileVariant: "gray" }}
 				/>
 			)}
 			<span className="text-left text-sm text-text-subtle">{suggestion.label}</span>

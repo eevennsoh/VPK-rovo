@@ -149,11 +149,17 @@ function useEditorTransactionRerender(editor: Editor): void {
 		editor.on("transaction", update);
 		editor.on("selectionUpdate", update);
 		editor.on("update", update);
+		// Focus/blur flip `editor.isFocused`, which gates the active-state
+		// toggles, so the toolbar must re-render on those too.
+		editor.on("focus", update);
+		editor.on("blur", update);
 
 		return () => {
 			editor.off("transaction", update);
 			editor.off("selectionUpdate", update);
 			editor.off("update", update);
+			editor.off("focus", update);
+			editor.off("blur", update);
 		};
 	}, [editor]);
 }
@@ -325,12 +331,17 @@ export function EditorToolbar({
 	// Alignment has no raw-Markdown equivalent, so it stays disabled in source
 	// mode. Every other control rewrites the textarea selection instead.
 	const markdownUnsupported = isMarkdownMode;
+	// Block/mark active state should only surface once the caret actually lives
+	// inside the editor. Tiptap seeds the selection at the document start before
+	// the user focuses, so reading `isActive` eagerly would, for content that
+	// begins with a list, render the bullet toggle pre-pressed by "default".
+	const reflectsActiveState = !isMarkdownMode && editor.isFocused;
 	const formattingValue = [
-		...(!isMarkdownMode && editor.isActive("bold") ? ["bold"] : []),
+		...(reflectsActiveState && editor.isActive("bold") ? ["bold"] : []),
 		...(openDropdown === "formatting" ? ["formatting"] : []),
 	];
 	const listValue = [
-		...(!isMarkdownMode && editor.isActive("bulletList") ? ["bulletList"] : []),
+		...(reflectsActiveState && editor.isActive("bulletList") ? ["bulletList"] : []),
 		...(openDropdown === "list" ? ["list"] : []),
 	];
 	const showModeTabs = Boolean(onToggleMarkdownMode);
@@ -374,7 +385,7 @@ export function EditorToolbar({
 	}
 
 	function handleFormattingValueChange(next: string[]): void {
-		const boldActive = !isMarkdownMode && editor.isActive("bold");
+		const boldActive = reflectsActiveState && editor.isActive("bold");
 		const boldNext = next.includes("bold");
 
 		if (boldNext !== boldActive) {
@@ -389,7 +400,7 @@ export function EditorToolbar({
 	}
 
 	function handleListValueChange(next: string[]): void {
-		const bulletListActive = !isMarkdownMode && editor.isActive("bulletList");
+		const bulletListActive = reflectsActiveState && editor.isActive("bulletList");
 		const bulletListNext = next.includes("bulletList");
 
 		if (bulletListNext !== bulletListActive) {

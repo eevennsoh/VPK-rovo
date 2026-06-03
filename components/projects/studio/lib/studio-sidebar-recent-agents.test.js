@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 
 const {
 	getStudioSidebarRecentAgents,
+	getStudioSidebarRecentAgentSelected,
 	STUDIO_SIDEBAR_RECENT_AGENT_LIMIT,
 } = require("./studio-sidebar-recent-agents.ts");
 
@@ -38,4 +39,45 @@ test("limits recent Studio sidebar agents to five and exposes overflow", () => {
 	);
 	assert.equal(result.showViewAll, true);
 	assert.equal(result.overflowCount, 1);
+});
+
+test("active creation thread wins so only one recent row is selected", () => {
+	const items = [
+		{ id: "wip-thread", kind: "wip", label: "Social Media Writer", lastTouchedAt: 30 },
+		{ id: "saved-agent", kind: "agent", label: "Untitled agent", lastTouchedAt: 20 },
+	];
+
+	const selected = items.map((item) =>
+		getStudioSidebarRecentAgentSelected(item, items, "wip-thread", "saved-agent"),
+	);
+
+	// WIP row selected, saved-agent row suppressed even though selectedAgentId matches.
+	assert.deepEqual(selected, [true, false]);
+	assert.equal(selected.filter(Boolean).length, 1);
+});
+
+test("saved agent is selected when no creation thread is active", () => {
+	const items = [
+		{ id: "saved-agent", kind: "agent", label: "Untitled agent", lastTouchedAt: 20 },
+		{ id: "other-agent", kind: "agent", label: "Other agent", lastTouchedAt: 10 },
+	];
+
+	const selected = items.map((item) =>
+		getStudioSidebarRecentAgentSelected(item, items, null, "saved-agent"),
+	);
+
+	assert.deepEqual(selected, [true, false]);
+});
+
+test("stale activeThreadId without a matching WIP row does not suppress saved agent", () => {
+	const items = [
+		{ id: "saved-agent", kind: "agent", label: "Untitled agent", lastTouchedAt: 20 },
+	];
+
+	// activeThreadId points at a thread that is not a visible WIP row; the saved
+	// agent should still be selectable.
+	assert.equal(
+		getStudioSidebarRecentAgentSelected(items[0], items, "ghost-thread", "saved-agent"),
+		true,
+	);
 });

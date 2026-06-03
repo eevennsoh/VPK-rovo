@@ -331,6 +331,7 @@
 
 .ProseMirror {
 	min-height: 200px;
+	outline: none;
 }
 
 .agent-instructions-tiptap-editor {

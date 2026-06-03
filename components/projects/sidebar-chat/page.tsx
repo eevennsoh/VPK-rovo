@@ -97,6 +97,7 @@ interface ChatPanelProps {
 	greeting?: ChatPanelGreetingProps;
 	customAgentTabs?: ChatPanelCustomAgentTabs;
 	greetingSelectedAgent?: RovoAgentProfile | null;
+	hideAiCursor?: boolean;
 	hideComposerSourceAndModelControls?: boolean;
 	hideHeader?: boolean;
 	headerVariant?: "default" | "minimal";
@@ -167,6 +168,7 @@ export default function ChatPanel({
 	greeting,
 	greetingSelectedAgent,
 	customAgentTabs,
+	hideAiCursor = false,
 	hideComposerSourceAndModelControls = false,
 	hideHeader = false,
 	headerVariant = "default",
@@ -298,8 +300,18 @@ export default function ChatPanel({
 		setScreenshotDimensions: clickySetScreenshotDimensions,
 	} = clicky;
 
+	useEffect(() => {
+		if (hideAiCursor && isClickyActive) {
+			deactivateClicky();
+		}
+	}, [deactivateClicky, hideAiCursor, isClickyActive]);
+
 	// Cmd+Shift+K (Mac) / Ctrl+Shift+K toggles the AI cursor; Escape deactivates it.
 	useEffect(() => {
+		if (hideAiCursor) {
+			return;
+		}
+
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "K" && e.shiftKey && (e.metaKey || e.ctrlKey)) {
 				e.preventDefault();
@@ -314,7 +326,7 @@ export default function ChatPanel({
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isClickyActive, deactivateClicky, toggleClicky]);
+	}, [deactivateClicky, hideAiCursor, isClickyActive, toggleClicky]);
 
 	const realtimeTranscriptRef = useRef("");
 	const handleRealtimeSpeechStarted = useCallback(() => {
@@ -855,9 +867,10 @@ export default function ChatPanel({
 						hasInFlightTurn={hasInFlightTurn}
 						queuedPrompts={queuedPrompts}
 						experimentalDarkCta
+						hideAiCursor={hideAiCursor}
 						hideSourceAndModelControls={hideComposerSourceAndModelControls}
 						micStream={realtime.micStream}
-						clickyActive={isClickyActive}
+						clickyActive={!hideAiCursor && isClickyActive}
 						onPromptChange={setPrompt}
 						onSubmit={handleSubmit}
 						onStop={abort}
@@ -931,14 +944,16 @@ export default function ChatPanel({
 			) : (
 				chatPanelBody
 			)}
-			<ClickyOverlay
-				state={clicky.state}
-				pointTarget={clicky.pointTarget}
-				responseText={clicky.responseText}
-				history={clicky.history}
-				screenshotDimensions={clickyScreenshotDimensions}
-				onReturnToIdle={clickyReturnToIdle}
-			/>
+			{hideAiCursor ? null : (
+				<ClickyOverlay
+					state={clicky.state}
+					pointTarget={clicky.pointTarget}
+					responseText={clicky.responseText}
+					history={clicky.history}
+					screenshotDimensions={clickyScreenshotDimensions}
+					onReturnToIdle={clickyReturnToIdle}
+				/>
+			)}
 		</div>
 	);
 }

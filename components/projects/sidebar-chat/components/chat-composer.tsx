@@ -40,6 +40,7 @@ interface ChatComposerProps {
 	hasInFlightTurn: boolean;
 	queuedPrompts: ReadonlyArray<QueuedPromptItem>;
 	experimentalDarkCta?: boolean;
+	hideAiCursor?: boolean;
 	hideSourceAndModelControls?: boolean;
 	micStream?: MediaStream | null;
 	clickyActive?: boolean;
@@ -125,7 +126,7 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, experimentalDarkCta = false, hideSourceAndModelControls = false, micStream = null, clickyActive = false, onPromptChange, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, selectedReasoning: controlledSelectedReasoning, chatContextBar, onContextBarOpenChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, clickyActive = false, onPromptChange, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, selectedReasoning: controlledSelectedReasoning, chatContextBar, onContextBarOpenChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -227,16 +228,18 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 								</PromptInputActionMenuContent>
 							</PromptInputActionMenu>
 
-							<PromptInputButton
-								size="icon-sm"
-								variant={clickyActive ? "default" : "ghost"}
-								onClick={onToggleClicky}
-								aria-label="Rovo AI cursor"
-								aria-pressed={clickyActive}
-								tooltip={{ content: "AI Cursor ⌘⇧K", delay: 0 }}
-							>
-								<CursorIcon label="" />
-							</PromptInputButton>
+							{hideAiCursor ? null : (
+								<PromptInputButton
+									size="icon-sm"
+									variant={clickyActive ? "default" : "ghost"}
+									onClick={onToggleClicky}
+									aria-label="Rovo AI cursor"
+									aria-pressed={clickyActive}
+									tooltip={{ content: "AI Cursor ⌘⇧K", delay: 0 }}
+								>
+									<CursorIcon label="" />
+								</PromptInputButton>
+							)}
 
 							<AnimatePresence initial={false} mode="popLayout">
 								{hideSourceAndModelControls ? null : (

@@ -36,6 +36,20 @@ test("compact chat animates sources and model selectors when edit-agent context 
 	assert.match(sharedSendControls, /style=\{\{ willChange: "transform, opacity" \}\}/u);
 });
 
+test("compact chat can hide the AI cursor control without changing the default", () => {
+	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
+
+	assert.match(sidebarPanel, /hideAiCursor\?: boolean;/u);
+	assert.match(sidebarPanel, /hideAiCursor = false/u);
+	assert.match(sidebarPanel, /hideAiCursor=\{hideAiCursor\}/u);
+	assert.match(sidebarPanel, /clickyActive=\{!hideAiCursor && isClickyActive\}/u);
+	assert.match(sidebarPanel, /\{hideAiCursor \? null : \([\s\S]*<ClickyOverlay/u);
+	assert.match(sidebarComposer, /hideAiCursor\?: boolean;/u);
+	assert.match(sidebarComposer, /hideAiCursor = false/u);
+	assert.match(sidebarComposer, /\{hideAiCursor \? null : \([\s\S]*aria-label="Rovo AI cursor"/u);
+});
+
 test("Rovo app sources selector opens a reasoning-free customize popover", () => {
 	const source = readProjectFile("components/projects/rovo/components/rovo-app-composer.tsx");
 	const popoverIndex = source.indexOf("<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>");

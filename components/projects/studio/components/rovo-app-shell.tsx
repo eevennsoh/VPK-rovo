@@ -1647,6 +1647,10 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const [activeAgentConfigView, setActiveAgentConfigView] = useState<AgentConfigView>("configure");
 	const [isSidebarAgentBrowserOpen, setIsSidebarAgentBrowserOpen] = useState(false);
 	const generatedAgentTestViewKeysRef = useRef<Set<string>>(new Set());
+	const openAgentCreationAskRovoChat = useCallback(() => {
+		studioAgentRegistry.resetAgentToRovo();
+		nav.openChat("sidebar");
+	}, [nav, studioAgentRegistry]);
 
 	const handleStudioAgentResultSelect = useCallback(
 		(agentResult: RovoDataParts["agent-result"], options?: { sourceMessageId?: string; sourceKey?: string }): boolean => {
@@ -1674,6 +1678,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					sourceMessageId: options?.sourceMessageId ?? null,
 				});
 				setActiveAgentConfigView("test");
+				openAgentCreationAskRovoChat();
 				return true;
 			}
 
@@ -1703,9 +1708,10 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				sourceMessageId: options?.sourceMessageId ?? null,
 			});
 			setActiveAgentConfigView("test");
+			openAgentCreationAskRovoChat();
 			return true;
 		},
-		[chat.activeThreadId, chat.runtimeThreadId, setActiveAgentConfigState, studioAgentRegistry],
+		[chat.activeThreadId, chat.runtimeThreadId, openAgentCreationAskRovoChat, setActiveAgentConfigState, studioAgentRegistry],
 	);
 
 	// "Start from scratch" — create a fresh, untitled session agent (no AI result
@@ -1741,7 +1747,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			sourceMessageId: null,
 		});
 		setActiveAgentConfigView("configure");
-	}, [setActiveAgentConfigState, studioAgentRegistry]);
+		openAgentCreationAskRovoChat();
+	}, [openAgentCreationAskRovoChat, setActiveAgentConfigState, studioAgentRegistry]);
 
 	const handleStudioSidebarAgentSelect = useCallback(
 		(agentId: string) => {
@@ -1960,10 +1967,11 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 				generatedAgentTestViewKeysRef.current.add(agentResultKey);
 				setActiveAgentConfigView("test");
+				openAgentCreationAskRovoChat();
 				break;
 			}
 		}
-	}, [activeAgentConfig, activeAgentConfigView, activeSessionAgentEntry, chat.messages, chat.runtimeThreadId]);
+	}, [activeAgentConfig, activeAgentConfigView, activeSessionAgentEntry, chat.messages, chat.runtimeThreadId, openAgentCreationAskRovoChat]);
 
 	// Bridge the global sidebar context (TopNavigation toggle) with the local
 	// shadcn SidebarProvider so the nav bar button controls the thread sidebar.

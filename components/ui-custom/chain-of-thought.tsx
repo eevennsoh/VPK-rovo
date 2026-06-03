@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import NodeIcon from "@atlaskit/icon/core/node";
 import { createContext, memo, use, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { getDefaultThinkingLabel, getPreloadShimmerLabel, getReasoningCompletedLabel } from "@/components/projects/shared/lib/reasoning-labels";
 import { token } from "@/lib/tokens";
@@ -94,21 +95,46 @@ export type ChainOfThoughtHeaderProps = ComponentProps<
 	duration?: number;
 };
 
-function CyclingByline({ children, cycle }: Readonly<{ children: ReactNode; cycle?: boolean }>) {
-	const key = typeof children === "string" ? children : undefined;
+const BYLINE_TRANSITION = { duration: 0.2, ease: "easeOut" } as const;
+
+/**
+ * Renders a step byline that animates smoothly between three transitions:
+ * - appear (height grows + fades/slides in) when the byline becomes visible,
+ * - disappear (height collapses + fades/slides out) when it is hidden, and
+ * - cross-fade in place (stable height) when the byline text cycles.
+ *
+ * The persistent byline on the active/last step keeps a fixed row height while
+ * its text changes, so it stays put instead of flickering on every update.
+ */
+function CyclingByline({ children }: Readonly<{ children: ReactNode }>) {
+	const shouldReduceMotion = useReducedMotion();
+	const hasContent = children != null && children !== false;
+	const textKey = typeof children === "string" ? children : "byline";
 
 	return (
-		<span className="block min-h-4 overflow-hidden text-xs leading-4 text-text-subtle">
-			<span
-				key={key}
-				className={cn(
-					"block truncate",
-					cycle && "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-medium",
-				)}
-			>
-				{children}
+		<motion.span
+			className="block overflow-hidden text-xs leading-4 text-text-subtle"
+			initial={false}
+			animate={shouldReduceMotion ? undefined : { height: hasContent ? "auto" : 0 }}
+			transition={BYLINE_TRANSITION}
+		>
+			<span className="block min-h-4">
+				<AnimatePresence initial={false} mode="wait">
+					{hasContent ? (
+						<motion.span
+							key={textKey}
+							className="block truncate"
+							initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
+							animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+							exit={shouldReduceMotion ? undefined : { opacity: 0, y: 4 }}
+							transition={BYLINE_TRANSITION}
+						>
+							{children}
+						</motion.span>
+					) : null}
+				</AnimatePresence>
 			</span>
-		</span>
+		</motion.span>
 	);
 }
 
@@ -316,13 +342,13 @@ export const ChainOfThoughtStep = memo(
 							)}
 						/>
 					</span>
-					{shouldShowHeaderDescription ? <CyclingByline>{resolvedDescription}</CyclingByline> : null}
+					<CyclingByline>{shouldShowHeaderDescription ? resolvedDescription : null}</CyclingByline>
 				</span>
 			</button>
 		) : (
 			<div className="grid min-w-0 gap-0.5">
 				<span className="min-w-0 truncate">{label}</span>
-				{shouldShowDescription ? <CyclingByline>{resolvedDescription}</CyclingByline> : null}
+				<CyclingByline>{shouldShowDescription ? resolvedDescription : null}</CyclingByline>
 			</div>
 		);
 

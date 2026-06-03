@@ -904,6 +904,7 @@ export function createSlashSuggestionRenderer(
 			popupState.component = new ReactRenderer(RichTextSuggestionMenu, {
 				editor: props.editor,
 				props: {
+					className: "rich-text-command-menu-borderless",
 					emptyLabel: "No commands found",
 					items: getVisibleItems(props.query),
 					onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
@@ -1170,6 +1171,7 @@ export function createMentionSuggestionRenderer(
 			popupState.component = new ReactRenderer(RichTextSuggestionMenu, {
 				editor: props.editor,
 				props: {
+					className: "rich-text-command-menu-borderless",
 					emptyLabel: "No people or agents found",
 					items: getVisibleItems(props),
 					onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),

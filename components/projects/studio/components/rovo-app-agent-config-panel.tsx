@@ -301,18 +301,18 @@ export function RovoAppAgentConfigPanel({
 									}
 								>
 									<ToggleGroupItem
-										value="configure"
-										data-testid="agent-config-configure"
-										data-screen-assistant-target="studio-agent-config-configure"
-									>
-										Configure
-									</ToggleGroupItem>
-									<ToggleGroupItem
 										value="test"
 										data-testid="agent-config-test"
 										data-screen-assistant-target="studio-agent-config-test"
 									>
 										Test
+									</ToggleGroupItem>
+									<ToggleGroupItem
+										value="configure"
+										data-testid="agent-config-configure"
+										data-screen-assistant-target="studio-agent-config-configure"
+									>
+										Configure
 									</ToggleGroupItem>
 								</ToggleGroup>
 								<Button
@@ -345,6 +345,7 @@ export function RovoAppAgentConfigPanel({
 							<AgentConfigFields
 								config={draft}
 								avatarSrc={agentAvatarSrc}
+								compactScrollAreaClassName="-mr-6 pr-6"
 								idPrefix={`agent-${profileId}`}
 								layout="compact"
 								onTextChange={handleConfigTextChange}
