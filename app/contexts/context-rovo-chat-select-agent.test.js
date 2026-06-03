@@ -49,7 +49,7 @@ test("selecting an agent does not bump lastTouchedAt (no pin-to-top on click)", 
 	);
 
 	// Selection identity is still tracked, just without reordering.
-	assert.match(selectAgentBody, /setSelectedAgentId\(nextAgent\.id\)/u);
+	assert.match(selectAgentBody, /setSelectedAgentIdState\(nextAgent\.id\)/u);
 });
 
 test("touchSessionAgent still exists for intentional bumps (create/edit/test/publish)", () => {
