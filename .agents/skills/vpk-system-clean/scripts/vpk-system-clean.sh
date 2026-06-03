@@ -6,8 +6,12 @@
 #     normal bursty compile is NOT mistaken for a runaway. Killed (with its
 #     `next dev` parent) so it can be restarted clean. This is the live "fix".
 #  2. RUNAWAY .next CACHES: Turbopack's .next/dev grows unbounded (15GB seen);
-#     every file feeds macOS FSEvents and amplifies the thrash. Deleted when over
-#     threshold AND no dev server is running. This is the "prevention".
+#     every file feeds macOS FSEvents and amplifies the thrash. Deleted PER
+#     WORKTREE when over threshold AND that worktree has no live dev server (each
+#     running server's cwd is matched to the cache's worktree root) — so idle
+#     caches are reclaimed even while OTHER worktrees keep a live build. This is
+#     the "prevention". The old all-or-nothing skip reclaimed nothing in
+#     practice, because a 24/7 box always has at least one server up somewhere.
 #  3. fseventsd LEAK: the FS-events daemon leaks CPU/RAM over long uptimes
 #     (22GB seen). Restarted if ballooned (needs the sudoers rule from install).
 #
@@ -66,24 +70,40 @@ if (( ${#hot1} )); then
 	done
 fi
 
-# --- 2. .next cleanup ----------------------------------------------------------
-if pgrep -f "next dev|next-server" >/dev/null 2>&1; then
-	log "a dev server is still running -> skipping .next cleanup (won't touch a live build)"
-else
-	for nx in ${(u)NEXT_DIRS}; do
-		[[ -d "$nx" ]] || continue
-		gb=$(du -sg "$nx" 2>/dev/null | awk '{print $1}'); gb=${gb:-0}
-		if (( gb >= NEXT_MAX_GB )); then
-			if rm -rf "$nx"; then
-				freed=$(( freed + gb )); count=$(( count + 1 )); log "removed $nx (${gb}G)"
-			else
-				log "FAILED to remove $nx"
-			fi
-		else
-			log "kept $nx (${gb}G < ${NEXT_MAX_GB}G)"
-		fi
+# --- 2. .next cleanup (per-worktree) ------------------------------------------
+# Map each running dev server to the worktree it serves (by its cwd), then
+# delete only the .next caches whose OWN worktree has no live server. This keeps
+# the "never touch a live build" guarantee while still reclaiming idle caches —
+# the previous all-or-nothing skip freed nothing whenever any server was up.
+cwd_of() { lsof -a -d cwd -p "$1" -Fn 2>/dev/null | sed -n 's/^n//p' | head -1; }
+busy_roots=()
+for p in ${(f)"$(pgrep -f 'next dev|next-server' 2>/dev/null)"}; do
+	c=$(cwd_of "$p"); [[ -n "$c" ]] && busy_roots+="$c"
+done
+
+for nx in ${(u)NEXT_DIRS}; do
+	[[ -d "$nx" ]] || continue
+	root="${nx:h}"                       # worktree root = parent dir of .next
+	busy=0
+	for b in $busy_roots; do
+		# busy if a live server's cwd is this worktree root or nested under it
+		[[ "$b" == "$root" || "$b" == "$root/"* ]] && { busy=1; break; }
 	done
-fi
+	if (( busy )); then
+		log "kept $nx (dev server live in this worktree)"
+		continue
+	fi
+	gb=$(du -sg "$nx" 2>/dev/null | awk '{print $1}'); gb=${gb:-0}
+	if (( gb >= NEXT_MAX_GB )); then
+		if rm -rf "$nx"; then
+			freed=$(( freed + gb )); count=$(( count + 1 )); log "removed $nx (${gb}G, no live server)"
+		else
+			log "FAILED to remove $nx"
+		fi
+	else
+		log "kept $nx (${gb}G < ${NEXT_MAX_GB}G)"
+	fi
+done
 
 # --- 3. fseventsd reset --------------------------------------------------------
 fse_action="not-checked"
