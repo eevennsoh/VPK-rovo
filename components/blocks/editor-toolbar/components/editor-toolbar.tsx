@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 
 import AddIcon from "@atlaskit/icon/core/add";
-import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AlignTextCenterIcon from "@atlaskit/icon/core/align-text-center";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AlignTextRightIcon from "@atlaskit/icon/core/align-text-right";
@@ -24,11 +23,7 @@ import TextBoldIcon from "@atlaskit/icon/core/text-bold";
 import TextItalicIcon from "@atlaskit/icon/core/text-italic";
 import TextStrikethroughIcon from "@atlaskit/icon/core/text-strikethrough";
 import TextUnderlineIcon from "@atlaskit/icon/core/text-underline";
-import ToolsIcon from "@atlaskit/icon/core/tools";
-import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
-import BookOpenIcon from "@atlaskit/icon-lab/core/book-open";
 import DividerElementIcon from "@atlaskit/icon-lab/core/divider-element";
-import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import TextHeadingFiveIcon from "@atlaskit/icon-lab/core/text-heading-five";
 import TextHeadingFourIcon from "@atlaskit/icon-lab/core/text-heading-four";
 import TextHeadingOneIcon from "@atlaskit/icon-lab/core/text-heading-one";
@@ -44,6 +39,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { MarkdownFormatKind } from "@/components/ui-custom/rich-text-editor/markdown-format";
+import { RICH_TEXT_REFERENCE_CATEGORY_OPTIONS } from "@/components/ui-custom/rich-text-editor/reference-categories";
+import type { RichTextReferenceCategory } from "@/components/ui-custom/rich-text-editor/types";
 import { TextNormalIcon } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
 
@@ -88,38 +85,9 @@ const TEXT_STYLE_TO_MARKDOWN: Record<TextStyleType, MarkdownFormatKind> = {
 // mention category whose `id` prefix drives the chip styling (see
 // `data-mention-category` rules in rich-text-editor.css) and reuses the same
 // category icons as the "@"/"/" suggestion menus.
-type InsertReferenceCategory =
-	| "knowledge"
-	| "memory"
-	| "tool"
-	| "skill"
-	| "subagent";
+type InsertReferenceCategory = RichTextReferenceCategory;
 
 export type EditorToolbarInsertReferenceCategory = InsertReferenceCategory;
-
-const INSERT_REFERENCE_OPTIONS: ReadonlyArray<{
-	category: InsertReferenceCategory;
-	label: string;
-	icon: ReactNode;
-}> = [
-	{
-		category: "knowledge",
-		label: "Knowledge",
-		icon: <BookOpenIcon label="" size="small" />,
-	},
-	{ category: "tool", label: "Tools", icon: <ToolsIcon label="" size="small" /> },
-	{ category: "skill", label: "Skills", icon: <SkillIcon label="" size="small" /> },
-	{
-		category: "subagent",
-		label: "Subagents",
-		icon: <AiAgentIcon label="" size="small" />,
-	},
-	{
-		category: "memory",
-		label: "Memory",
-		icon: <AiModelIcon label="" size="small" />,
-	},
-];
 
 export interface EditorToolbarProps {
 	editor: Editor;
@@ -1012,7 +980,7 @@ export function EditorToolbar({
 										<Separator className="my-1 bg-border" />
 									</>
 								) : null}
-								{INSERT_REFERENCE_OPTIONS.map((option) => (
+								{RICH_TEXT_REFERENCE_CATEGORY_OPTIONS.map((option) => (
 									<DropdownMenuItem
 										key={option.category}
 										icon={option.icon}

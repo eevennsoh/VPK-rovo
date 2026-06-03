@@ -31,7 +31,7 @@ test("Editor toolbar block exports the public component and props", () => {
 	const componentSource = readProjectFile("components/blocks/editor-toolbar/components/editor-toolbar.tsx");
 
 	assert.match(indexSource, /export \{ EditorToolbar \} from "\.\/components\/editor-toolbar";/u);
-	assert.match(indexSource, /export type \{ EditorToolbarProps \} from "\.\/components\/editor-toolbar";/u);
+	assert.match(indexSource, /export type \{ EditorToolbarInsertReferenceCategory, EditorToolbarProps \} from "\.\/components\/editor-toolbar";/u);
 	assert.match(componentSource, /export interface EditorToolbarProps/u);
 	assert.match(componentSource, /export function EditorToolbar/u);
 	assert.match(componentSource, /endSlot\?: ReactNode;/u);
@@ -114,9 +114,10 @@ test("Editor toolbar exposes block inserts and an Add content reference dropdown
 	assert.match(componentSource, /data-toolbar-anchor/u);
 	assert.match(componentSource, /function handleInsertReference\(/u);
 	assert.match(componentSource, /\.focus\(\)\s*\.insertContent\(\[\s*\{\s*type: "mention"/u);
-	for (const label of ["Knowledge", "Memory", "Tools", "Skills", "Subagents"]) {
-		assert.match(componentSource, new RegExp(`label: "${label}"`, "u"));
-	}
+	assert.match(componentSource, /import \{ RICH_TEXT_REFERENCE_CATEGORY_OPTIONS \} from "@\/components\/ui-custom\/rich-text-editor\/reference-categories";/u);
+	assert.match(componentSource, /type InsertReferenceCategory = RichTextReferenceCategory;/u);
+	assert.match(componentSource, /\{RICH_TEXT_REFERENCE_CATEGORY_OPTIONS\.map\(\(option\) => \(/u);
+	assert.doesNotMatch(componentSource, /label: "Memory"|category: "memory"|AiModelIcon/u);
 	assert.doesNotMatch(componentSource, /<\/div>\s*<ToolbarSeparator \/>\s*\{onToggleMarkdownMode/u);
 	assert.match(componentSource, /\{endSlot \|\| showModeTabs \? \(\s*<div className="flex shrink-0 items-center gap-2">[\s\S]*\{endSlot\}[\s\S]*<Tabs[\s\S]*value=\{isMarkdownMode \? "markdown" : "rendered"\}/u);
 	assert.match(componentSource, /<TabsTrigger[\s\S]*aria-label="Rendered text"[\s\S]*value="rendered"[\s\S]*<TextNormalIcon size="small" \/>[\s\S]*<TabsTrigger[\s\S]*aria-label="Markdown source"[\s\S]*value="markdown"[\s\S]*<MarkdownIcon label="" size="small" \/>/u);

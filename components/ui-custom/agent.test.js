@@ -44,6 +44,10 @@ const RICH_TEXT_SUGGESTION_SOURCE = readFileSync(
 	join(__dirname, "rich-text-editor", "suggestion-menu.tsx"),
 	"utf8",
 );
+const RICH_TEXT_REFERENCE_CATEGORIES_SOURCE = readFileSync(
+	join(__dirname, "rich-text-editor", "reference-categories.tsx"),
+	"utf8",
+);
 const RICH_TEXT_TOOLBAR_SOURCE = readFileSync(
 	join(__dirname, "rich-text-editor", "toolbar.tsx"),
 	"utf8",
@@ -95,9 +99,15 @@ test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /onClick=\{\(\) => \{[\s\S]*onStartWithTemplate\?\.\(\);[\s\S]*setTemplatesOpen\(true\);[\s\S]*\}\}/u);
 	assert.match(AGENT_SOURCE, /<AgentTemplatesDialog[\s\S]*open=\{templatesOpen\}[\s\S]*onOpenChange=\{setTemplatesOpen\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /showBubbleMenu=\{false\}/u);
-	assert.match(AGENT_SOURCE, /const handleInsertReferenceOption = useCallback\(\(category: string\): boolean => \{[\s\S]*category === "knowledge"[\s\S]*onOpenDirectory\?\.\("knowledge"\)[\s\S]*category === "tool"[\s\S]*onOpenDirectory\?\.\("tools"\)[\s\S]*category === "skill"[\s\S]*onOpenDirectory\?\.\("skills"\)[\s\S]*return false;[\s\S]*\}, \[onOpenDirectory\]\);/u);
+	assert.match(AGENT_SOURCE, /const handleInsertReferenceOption = useCallback\(\(category: RichTextReferenceCategory, label: string\): false => \{[\s\S]*AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY\[category\][\s\S]*onAddListValues\?\.\(field, \[label\]\);[\s\S]*return false;[\s\S]*\}, \[config, onAddListValues\]\);/u);
+	assert.match(AGENT_SOURCE, /const handleMentionInventoryChange = useCallback\(\(mentions: readonly RichTextMentionItem\[\]\): void => \{/u);
+	assert.match(AGENT_SOURCE, /inlineManagedReferenceKeysRef\.current\.add\(key\);[\s\S]*onAddListValues\?\.\(next\.field, \[next\.label\]\);/u);
+	assert.match(AGENT_SOURCE, /inlineManagedReferenceKeysRef\.current\.delete\(key\);[\s\S]*onRemoveReferenceValue\?\.\(previous\.field, previous\.label\);/u);
 	assert.match(AGENT_SOURCE, /onInsertReferenceOption=\{handleInsertReferenceOption\}/u);
 	assert.match(AGENT_SOURCE, /mentionSources=\{mentionSources\}/u);
+	assert.match(AGENT_SOURCE, /mentionRemovalRequest=\{mentionRemovalRequest\}/u);
+	assert.match(AGENT_SOURCE, /onMentionInventoryChange=\{handleMentionInventoryChange\}/u);
+	assert.match(AGENT_SOURCE, /onMentionRemovalRequestHandled=\{onMentionRemovalRequestHandled\}/u);
 	assert.match(AGENT_SOURCE, /toolbarBelowSlot=\{toolbarBelowSlot\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /toolbarEndSlot=\{<AgentInstructionsModelSelector \/>\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /function AgentInstructionsModelSelector/u);
@@ -179,6 +189,23 @@ test("Agent config updates instructions as markdown strings", () => {
 	assert.match(AGENT_SOURCE, /toMentionId\("knowledge"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /getHTML\(/u);
 	assert.doesNotMatch(AGENT_SOURCE, /instructionsHtml|richInstructions/u);
+});
+
+test("Agent config syncs reference mentions with selected panel values", () => {
+	assert.match(AGENT_SOURCE, /export type AgentConfigReferenceListFieldName = Extract<[\s\S]*"knowledge" \| "skills" \| "subagents" \| "tools"/u);
+	assert.match(AGENT_SOURCE, /const AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY: Record<RichTextReferenceCategory, AgentConfigReferenceListFieldName>/u);
+	assert.match(AGENT_SOURCE, /const AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD: Record<AgentConfigReferenceListFieldName, RichTextReferenceCategory>/u);
+	assert.match(AGENT_SOURCE, /function mapConfigValuesToMentionItems\(/u);
+	assert.match(AGENT_SOURCE, /subagent: mapConfigValuesToMentionItems\("subagent", config\.subagents\)/u);
+	assert.match(AGENT_SOURCE, /skill: mergeMentionItems\(mapConfigValuesToMentionItems\("skill", config\.skills\), skills\)/u);
+	assert.match(AGENT_SOURCE, /tool: mapConfigValuesToMentionItems\("tool", config\.tools\)/u);
+	assert.match(AGENT_SOURCE, /knowledge: mergeMentionItems\(mapConfigValuesToMentionItems\("knowledge", config\.knowledge\), knowledge\)/u);
+	assert.match(AGENT_SOURCE, /onAddListValues\?: \(field: AgentConfigReferenceListFieldName, values: readonly string\[\]\) => void;/u);
+	assert.match(AGENT_SOURCE, /setMentionRemovalRequest\(\{[\s\S]*category: AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD\[field\][\s\S]*label: removedValue/u);
+	assert.match(AGENT_SOURCE, /const handleRemoveReferenceValue = useCallback\(\(field: AgentConfigReferenceListFieldName, value: string\) => \{[\s\S]*onRemoveListItem\?\.\(field, index\);/u);
+	assert.match(AGENT_SOURCE, /onAddListValues=\{handleAddListValues\}/u);
+	assert.match(AGENT_SOURCE, /onRemoveReferenceValue=\{handleRemoveReferenceValue\}/u);
+	assert.match(AGENT_SOURCE, /onMentionRemovalRequestHandled=\{handleMentionRemovalRequestHandled\}/u);
 });
 
 test("Agent config renders filled summary rows once field data exists", () => {
@@ -438,10 +465,10 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /function AgentCompactBentoCardGlowLayers/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_BENTO_CARD_BORDER_FADE_STYLE: CSSProperties = \{[\s\S]*maskImage: "linear-gradient\(to bottom, #000 calc\(100% - 64px\), transparent 100%\)",[\s\S]*WebkitMaskImage: "linear-gradient\(to bottom, #000 calc\(100% - 64px\), transparent 100%\)",[\s\S]*\};/u);
 	assert.match(AGENT_SOURCE, /data-agent-compact-bento-card-border-fade[\s\S]*style=\{AGENT_COMPACT_BENTO_CARD_BORDER_FADE_STYLE\}[\s\S]*data-agent-compact-bento-card-base-border[\s\S]*data-agent-compact-bento-card-glow-border[\s\S]*<\/span>/u);
-	assert.match(AGENT_SOURCE, /<AgentCompactBentoCardGlowLayers iconSrc=\{template\.iconSrc\} \/>[\s\S]*<span className="relative z-\[3\] inline-flex size-6/u);
+	assert.match(AGENT_SOURCE, /<AgentCompactBentoCardGlowLayers iconSrc=\{template\.iconSrc\} \/>[\s\S]*<span className="relative z-\[3\] inline-flex size-8/u);
 	assert.match(AGENT_SOURCE, /className="relative -mt-2 min-h-0 pt-2 lg:flex-1 lg:overflow-hidden lg:bento-fade-bottom"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /sm:\[--bento-fade-end:64px\]/u);
-	assert.match(AGENT_SOURCE, /<BentoCarousel[\s\S]*gridClassName="lg:auto-rows-\[72px\] lg:grid-cols-5"[\s\S]*arrowLabels=\{\{ next: "Show next agent templates", previous: "Show previous agent templates" \}\}/u);
+	assert.match(AGENT_SOURCE, /<BentoCarousel[\s\S]*gridClassName="lg:grid-cols-5"[\s\S]*arrowLabels=\{\{ next: "Show next agent templates", previous: "Show previous agent templates" \}\}/u);
 	assert.match(AGENT_SOURCE, /BENTO_CAROUSEL_TILE_CLASS/u);
 	assert.doesNotMatch(compactOperationsSource, /whileHover=\{/u);
 	assert.match(AGENT_SOURCE, /<AgentCompactBentoTemplatesHint onBrowseAll=\{\(\) => setBrowseOpen\(true\)\} onDismiss=\{onDismiss\} \/>/u);
@@ -552,6 +579,18 @@ test("Shared Tiptap editor is SSR-safe and emits markdown updates", () => {
 	assert.doesNotMatch(RICH_TEXT_EDITOR_SOURCE, /absolute top-0 left-0/u);
 });
 
+test("Shared Tiptap editor reports and removes reference mention tokens", () => {
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /onMentionInventoryChange\?: \(mentions: readonly RichTextMentionItem\[\]\) => void;/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /mentionRemovalRequest\?: RichTextMentionRemovalRequest \| null;/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /function getEditorMentionInventory\(editor: Editor\): readonly RichTextMentionItem\[\]/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /isRichTextReferenceCategory\(category\)/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /function removeMentionsFromEditor\(/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /transaction = transaction\.delete\(range\.from, range\.to\);/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /onMentionInventoryChangeRef\.current\?\.\(getEditorMentionInventory\(activeEditor\)\);/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /onMentionRemovalRequestHandled\?\.\(mentionRemovalRequest\.key\);/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /onMentionInventoryChangeRef\.current\?\.\(getEditorMentionInventory\(editor\)\);/u);
+});
+
 test("Shared Tiptap placeholder stays aligned with the editable paragraph", () => {
 	assert.match(
 		RICH_TEXT_EDITOR_CSS,
@@ -594,10 +633,10 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /type RichTextMentionParentCategory = "subagent" \| "people-team";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const MENTION_TARGET_ORDER: readonly RichTextMentionParentCategory\[\] = \[\s*"subagent",\s*"people-team",\s*\]/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /category === "people-team"[\s\S]*<PeopleGroupIcon label="" size="small" \/>[\s\S]*: getCategoryIcon\(category\)/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import AiAgentIcon from "@atlaskit\/icon\/core\/ai-agent";/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /case "subagent":[\s\S]*return <AiAgentIcon label="" size="small" \/>;/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import BookOpenIcon from "@atlaskit\/icon-lab\/core\/book-open";/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /case "knowledge":[\s\S]*return <BookOpenIcon label="" size="small" \/>;/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /RICH_TEXT_REFERENCE_CATEGORY_OPTIONS/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /getRichTextReferenceCategoryIcon/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /getRichTextReferenceCategoryLabel/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /isRichTextReferenceCategory\(category\)[\s\S]*return getRichTextReferenceCategoryIcon\(category\);/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /@atlaskit\/icon\/core\/library/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const PEOPLE_AVATAR_SRCS = \[[\s\S]*\/avatar-user\/andrea-wilson\/color\/asow-service-yellow\.png/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const TEAM_AVATAR_SRCS = \[[\s\S]*\/avatar-project\/rocket\.svg/u);
@@ -629,6 +668,7 @@ test("Slash command menu contains every toolbar command", () => {
 	]) {
 		assert.match(EDITOR_PALETTE_SOURCE, new RegExp(`caption: "${caption}"`, "u"));
 	}
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /Parent entries for the "\/" command surface: subagents, skills, tools, knowledge/u);
 
 	for (const command of [
 		"Normal text",
@@ -652,9 +692,10 @@ test("Slash command menu contains every toolbar command", () => {
 });
 
 test("Mention menu exposes people/agent and command categories and mention lozenges", () => {
-	for (const category of ["Subagents", "People and team", "Skills", "Tools", "Knowledge"]) {
-		assert.match(RICH_TEXT_SUGGESTION_SOURCE, new RegExp(category, "u"));
+	for (const category of ["Subagents", "Skills", "Tools", "Knowledge"]) {
+		assert.match(RICH_TEXT_REFERENCE_CATEGORIES_SOURCE, new RegExp(`label: "${category}"`, "u"));
 	}
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /"people-team": "People and team"/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /"Human nested"/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /"Team nested"/u);
 
@@ -716,6 +757,20 @@ test("Shared rich text toolbar delegates to the Editor toolbar block", () => {
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /import type \{ EditorToolbarInsertReferenceCategory \} from "@\/components\/blocks\/editor-toolbar";/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onInsertReferenceOption\?: \(category: EditorToolbarInsertReferenceCategory, label: string\) => boolean \| void;/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onInsertReferenceOption=\{onInsertReferenceOption\}/u);
+});
+
+test("Reference insert categories are shared by slash commands and Add content", () => {
+	assert.match(RICH_TEXT_REFERENCE_CATEGORIES_SOURCE, /export const RICH_TEXT_REFERENCE_CATEGORY_OPTIONS = \[/u);
+	for (const category of ["subagent", "skill", "tool", "knowledge"]) {
+		assert.match(RICH_TEXT_REFERENCE_CATEGORIES_SOURCE, new RegExp(`category: "${category}"`, "u"));
+	}
+	assert.doesNotMatch(RICH_TEXT_REFERENCE_CATEGORIES_SOURCE, /category: "memory"/u);
+	assert.doesNotMatch(RICH_TEXT_REFERENCE_CATEGORIES_SOURCE, /label: "Memory"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const COMMAND_CATEGORY_ORDER: readonly RichTextCommandCategory\[\] = RICH_TEXT_REFERENCE_CATEGORY_OPTIONS\.map/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /import \{ RICH_TEXT_REFERENCE_CATEGORY_OPTIONS \} from "@\/components\/ui-custom\/rich-text-editor\/reference-categories";/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /type InsertReferenceCategory = RichTextReferenceCategory;/u);
+	assert.match(EDITOR_TOOLBAR_SOURCE, /\{RICH_TEXT_REFERENCE_CATEGORY_OPTIONS\.map\(\(option\) => \(/u);
+	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /category: "memory"|label: "Memory"|AiModelIcon/u);
 });
 
 test("Shared toolbar carries the Confluence editor control set", () => {

@@ -353,6 +353,7 @@ export function RovoAppAgentConfigPanel({
 								onTextChange={handleConfigTextChange}
 								onListItemChange={updateListItem}
 								onRemoveListItem={removeListItem}
+								onAddListValues={appendListValues}
 								onAppendListItem={appendListItem}
 								onOpenDirectory={handleOpenDirectory}
 								screenAssistantTargetPrefix="studio-agent-config"

@@ -17,11 +17,20 @@ export {
 	type RichTextSlashAction,
 	type RichTextSuggestionMenuItem,
 } from "./suggestion-menu";
+export {
+	RICH_TEXT_REFERENCE_CATEGORY_OPTIONS,
+	getRichTextReferenceCategoryIcon,
+	getRichTextReferenceCategoryLabel,
+	isRichTextReferenceCategory,
+	type RichTextReferenceCategoryOption,
+} from "./reference-categories";
 export type {
 	RichTextCommandCategory,
 	RichTextMentionCategory,
 	RichTextMentionItem,
+	RichTextMentionRemovalRequest,
 	RichTextMentionSources,
 	RichTextMentionTarget,
+	RichTextReferenceCategory,
 	RichTextSlashCategory,
 } from "./types";

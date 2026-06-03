@@ -20,7 +20,12 @@ import {
 	RichTextEditorToolbar,
 } from "./toolbar";
 import type { EditorToolbarInsertReferenceCategory } from "@/components/blocks/editor-toolbar";
-import type { RichTextMentionSources } from "./types";
+import { isRichTextReferenceCategory } from "./reference-categories";
+import type {
+	RichTextMentionItem,
+	RichTextMentionRemovalRequest,
+	RichTextMentionSources,
+} from "./types";
 
 interface RichTextEditorProps
 	extends Omit<ComponentProps<"div">, "onChange"> {
@@ -32,8 +37,11 @@ interface RichTextEditorProps
 	toolbarEndSlot?: ReactNode;
 	toolbarBelowSlot?: ReactNode;
 	mentionSources?: RichTextMentionSources;
+	mentionRemovalRequest?: RichTextMentionRemovalRequest | null;
 	onMarkdownChange?: (value: string) => void;
 	onPlainTextChange?: (value: string) => void;
+	onMentionInventoryChange?: (mentions: readonly RichTextMentionItem[]) => void;
+	onMentionRemovalRequestHandled?: (key: string) => void;
 	onInsertReferenceOption?: (category: EditorToolbarInsertReferenceCategory, label: string) => boolean | void;
 	onAskRovo?: (editor: Editor) => void;
 	showToolbar?: boolean;
@@ -46,6 +54,95 @@ function toCssString(value: string): string {
 	return JSON.stringify(value);
 }
 
+function getMentionCategory(id: unknown): string {
+	if (typeof id !== "string") {
+		return "";
+	}
+
+	return id.split(":")[0] ?? "";
+}
+
+function getEditorMentionInventory(editor: Editor): readonly RichTextMentionItem[] {
+	const mentions: RichTextMentionItem[] = [];
+
+	editor.state.doc.descendants((node) => {
+		if (node.type.name !== "mention") {
+			return true;
+		}
+
+		const category = getMentionCategory(node.attrs.id);
+		if (!isRichTextReferenceCategory(category)) {
+			return false;
+		}
+
+		const label = typeof node.attrs.label === "string" ? node.attrs.label.trim() : "";
+		const id = typeof node.attrs.id === "string" ? node.attrs.id : "";
+		if (!label || !id) {
+			return false;
+		}
+
+		mentions.push({
+			category,
+			id,
+			label,
+		});
+		return false;
+	});
+
+	return mentions;
+}
+
+function normalizeMentionText(value: string | undefined): string {
+	return value?.trim().toLowerCase() ?? "";
+}
+
+function mentionMatchesRemovalRequest(
+	attrs: Record<string, unknown>,
+	request: RichTextMentionRemovalRequest,
+): boolean {
+	const category = getMentionCategory(attrs.id);
+	if (category !== request.category) {
+		return false;
+	}
+
+	const id = typeof attrs.id === "string" ? attrs.id : undefined;
+	const label = typeof attrs.label === "string" ? attrs.label : undefined;
+
+	return Boolean(
+		(request.id && id === request.id) ||
+		(request.label && normalizeMentionText(label) === normalizeMentionText(request.label)),
+	);
+}
+
+function removeMentionsFromEditor(
+	editor: Editor,
+	request: RichTextMentionRemovalRequest,
+): boolean {
+	const ranges: Array<{ from: number; to: number }> = [];
+
+	editor.state.doc.descendants((node, pos) => {
+		if (node.type.name !== "mention") {
+			return true;
+		}
+
+		if (mentionMatchesRemovalRequest(node.attrs, request)) {
+			ranges.push({ from: pos, to: pos + node.nodeSize });
+		}
+		return false;
+	});
+
+	if (ranges.length === 0) {
+		return false;
+	}
+
+	let transaction = editor.state.tr;
+	for (const range of ranges.reverse()) {
+		transaction = transaction.delete(range.from, range.to);
+	}
+	editor.view.dispatch(transaction);
+	return true;
+}
+
 export function RichTextEditor({
 	value,
 	placeholder,
@@ -56,8 +153,11 @@ export function RichTextEditor({
 	toolbarEndSlot,
 	toolbarBelowSlot,
 	mentionSources,
+	mentionRemovalRequest,
 	onMarkdownChange,
 	onPlainTextChange,
+	onMentionInventoryChange,
+	onMentionRemovalRequestHandled,
 	onInsertReferenceOption,
 	onAskRovo,
 	showToolbar = true,
@@ -69,6 +169,7 @@ export function RichTextEditor({
 	const mentionSourcesRef = useRef(mentionSources);
 	const onMarkdownChangeRef = useRef(onMarkdownChange);
 	const onPlainTextChangeRef = useRef(onPlainTextChange);
+	const onMentionInventoryChangeRef = useRef(onMentionInventoryChange);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const [isEmpty, setIsEmpty] = useState(() => !value?.trim());
 	const [isMarkdownMode, setIsMarkdownMode] = useState(false);
@@ -90,11 +191,15 @@ export function RichTextEditor({
 				class: cn("tiptap-editor", editorClassName),
 			},
 		},
+		onCreate: ({ editor: activeEditor }) => {
+			onMentionInventoryChangeRef.current?.(getEditorMentionInventory(activeEditor));
+		},
 		onUpdate: ({ editor: activeEditor }) => {
 			setIsEmpty(activeEditor.isEmpty);
 			const markdown = activeEditor.getMarkdown();
 			onMarkdownChangeRef.current?.(markdown);
 			onPlainTextChangeRef.current?.(markdown);
+			onMentionInventoryChangeRef.current?.(getEditorMentionInventory(activeEditor));
 		},
 	});
 
@@ -109,6 +214,19 @@ export function RichTextEditor({
 	useEffect(() => {
 		onPlainTextChangeRef.current = onPlainTextChange;
 	}, [onPlainTextChange]);
+
+	useEffect(() => {
+		onMentionInventoryChangeRef.current = onMentionInventoryChange;
+	}, [onMentionInventoryChange]);
+
+	useEffect(() => {
+		if (!editor || !mentionRemovalRequest) {
+			return;
+		}
+
+		removeMentionsFromEditor(editor, mentionRemovalRequest);
+		onMentionRemovalRequestHandled?.(mentionRemovalRequest.key);
+	}, [editor, mentionRemovalRequest, onMentionRemovalRequestHandled]);
 
 	useEffect(() => {
 		if (!editor) {
@@ -126,6 +244,7 @@ export function RichTextEditor({
 			emitUpdate: false,
 		});
 		setIsEmpty(!nextValue.trim());
+		onMentionInventoryChangeRef.current?.(getEditorMentionInventory(editor));
 	}, [editor, value]);
 
 	function handleToggleMarkdownMode(): void {
@@ -139,6 +258,7 @@ export function RichTextEditor({
 				emitUpdate: false,
 			});
 			setIsEmpty(!markdownSource.trim());
+			onMentionInventoryChangeRef.current?.(getEditorMentionInventory(editor));
 			setIsMarkdownMode(false);
 			return;
 		}
