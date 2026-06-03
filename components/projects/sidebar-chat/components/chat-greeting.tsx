@@ -216,7 +216,7 @@ function CustomAgentGreeting({
 	return (
 		<motion.div
 			animate="visible"
-			className="flex w-full flex-col items-center gap-8 text-center"
+			className="mx-auto flex w-full max-w-[368px] flex-col items-center gap-8 text-center"
 			exit="exit"
 			initial="hidden"
 			key={agent.id}

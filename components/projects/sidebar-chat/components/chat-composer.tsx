@@ -33,6 +33,7 @@ import CursorIcon from "@atlaskit/icon-lab/core/cursor";
 import { PendingAttachments } from "@/components/projects/rovo/components/pending-attachments";
 import { RovoAppComposerAddMenu } from "@/components/projects/rovo/components/rovo-app-composer-add-menu";
 import { RovoComposerSendControls } from "@/components/projects/shared/components/rovo-composer-send-controls";
+import { cn } from "@/lib/utils";
 
 interface ChatComposerProps {
 	prompt: string;
@@ -53,6 +54,7 @@ interface ChatComposerProps {
 	onReasoningChange?: (value: string) => void;
 	realtimeVoiceActive?: boolean;
 	selectedReasoning?: string;
+	containerClassName?: string;
 	chatContextBar?: ChatContextBarDescriptor | null;
 	onContextBarOpenChange?: (open: boolean) => void;
 }
@@ -126,7 +128,7 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, clickyActive = false, onPromptChange, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, selectedReasoning: controlledSelectedReasoning, chatContextBar, onContextBarOpenChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, clickyActive = false, onPromptChange, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, onContextBarOpenChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -168,7 +170,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 	}, [hideSourceAndModelControls]);
 
 	return (
-		<div className="relative min-w-0 px-3">
+		<div className={cn("relative min-w-0 px-3", containerClassName)}>
 			<ChatContextBar key={chatContextBar?.signature} context={chatContextBar} onOpenChange={onContextBarOpenChange} />
 			{hasQueuedPrompts ? (
 				<div className="pointer-events-none absolute bottom-full left-4 right-4 z-0">

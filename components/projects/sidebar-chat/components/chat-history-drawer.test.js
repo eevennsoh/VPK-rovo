@@ -79,10 +79,16 @@ test("custom agent compact chat renders view tabs below the header", () => {
 	assert.match(chatPanelSource, /customAgentTabs\?: ChatPanelCustomAgentTabs;/u);
 	assert.match(chatPanelSource, /function isCustomAgentTabsProfile\(agent: \{ byline\?: string \}\): boolean \{[\s\S]*\\bcustom agent\\b/u);
 	assert.match(chatPanelSource, /const shouldRenderCustomAgentTabs = Boolean\(customAgentTabs\) \|\| \(isCustomAgentSelected && isCustomAgentTabsProfile\(selectedAgent\)\);/u);
-	assert.match(
-		chatPanelSource,
-		/\{shouldRenderCustomAgentTabs \? \([\s\S]*<Tabs defaultValue="chat" aria-label="Custom agent views" className="min-h-0 min-w-0 flex-1">[\s\S]*<SplitButton[\s\S]*label=\{<Lozenge variant="neutral">\{selectedAgentVersion\}<\/Lozenge>\}[\s\S]*<TabsList>[\s\S]*<TabsTrigger value="chat">Chat<\/TabsTrigger>[\s\S]*<TabsTrigger value="trigger">Trigger<\/TabsTrigger>[\s\S]*<TabsTrigger value="activity">Activity<\/TabsTrigger>[\s\S]*<Button aria-label="New chat"[\s\S]*<EditIcon label=""[\s\S]*<TabsContent value="chat" keepMounted[\s\S]*\{chatConversationBody\}[\s\S]*<TabsContent value="trigger"[\s\S]*customAgentTabs\?\.trigger[\s\S]*<TabsContent value="activity"[\s\S]*customAgentTabs\?\.activity[\s\S]*<\/Tabs>[\s\S]*\{chatComposerBody\}/u,
-	);
+	assert.match(chatPanelSource, /const shouldCenterAgentTestEmptyState = showAgentTestControls && !hasMessages;/u);
+	assert.match(chatPanelSource, /const shouldUseNaturalEmptyGreeting = shouldHugEmptyGreeting \|\| shouldCenterAgentTestEmptyState;/u);
+	assert.match(chatPanelSource, /shouldCenterAgentTestEmptyState \? "flex-none overflow-visible" : "flex-1"/u);
+	assert.match(chatPanelSource, /<Tabs[\s\S]*aria-label="Custom agent views"[\s\S]*className=\{cn\([\s\S]*"min-h-0 min-w-0 flex-1"[\s\S]*shouldCenterAgentTestEmptyState && "flex flex-col"/u);
+	assert.match(chatPanelSource, /<DropdownMenuTrigger[\s\S]*aria-label="Switch version"[\s\S]*variant="ghost"[\s\S]*<Lozenge variant=\{selectedAgentVersion === "Draft" \? "neutral" : "success"\}>[\s\S]*<ChevronDownIcon label="" size="small" spacing="none" \/>/u);
+	assert.match(chatPanelSource, /<DropdownMenuItem[\s\S]*onSelect=\{\(\) => setSelectedAgentVersion\(version\)\}[\s\S]*elemAfter=\{version === selectedAgentVersion \? <CheckMarkIcon label="Selected" \/> : undefined\}/u);
+	assert.match(chatPanelSource, /<TabsList[\s\S]*<TabsTrigger value="chat">Chat<\/TabsTrigger>[\s\S]*<TabsTrigger value="trigger">Trigger<\/TabsTrigger>[\s\S]*<TabsTrigger value="activity">Activity<\/TabsTrigger>/u);
+	assert.match(chatPanelSource, /<Button aria-label="New chat" size="icon" variant="ghost" onClick=\{resetChat\}>[\s\S]*<EditIcon label="" \/>/u);
+	assert.match(chatPanelSource, /<TabsContent[\s\S]*value="chat"[\s\S]*shouldCenterAgentTestEmptyState && "justify-center"[\s\S]*shouldCenterAgentTestEmptyState \? \([\s\S]*<div className="mx-auto flex w-full flex-col gap-3">[\s\S]*\{chatConversationBody\}[\s\S]*\{chatComposerBody\}[\s\S]*\) : \([\s\S]*chatConversationBody/u);
+	assert.match(chatPanelSource, /<TabsContent value="trigger"[\s\S]*customAgentTabs\?\.trigger[\s\S]*<TabsContent value="activity"[\s\S]*customAgentTabs\?\.activity[\s\S]*<\/Tabs>[\s\S]*\{shouldCenterAgentTestEmptyState \? null : chatComposerBody\}/u);
 	assert.match(chatPanelSource, /const chatPanelBody = \([\s\S]*\{chatConversationBody\}[\s\S]*\{chatComposerBody\}[\s\S]*\);/u);
 });
 
