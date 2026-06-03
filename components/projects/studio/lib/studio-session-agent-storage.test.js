@@ -6,6 +6,7 @@ const {
 	STUDIO_SESSION_AGENTS_STORAGE_KEY,
 	readSessionAgentRecords,
 	writeSessionAgentRecords,
+	dedupeSessionAgentRecordsByProfileId,
 } = require("./studio-session-agent-storage.ts");
 
 const LEGACY_KEY = "vpk:studio:published-agents:v1";
@@ -216,4 +217,50 @@ test("writeSessionAgentRecords swallows quota errors", () => {
 	assert.doesNotThrow(() => {
 		writeSessionAgentRecords([makeRecord()]);
 	});
+});
+
+// Regression: a stored payload with two records sharing a profileId used to
+// hydrate into two session-agent entries with the same React key. React's keyed
+// reconciler then left a stale row in the sidebar / "My agents" table when one
+// was deleted (the agent appeared to linger on screen). readSessionAgentRecords
+// now collapses same-profileId records, keeping the freshest, so the bug can't
+// reach the UI.
+test("readSessionAgentRecords collapses records sharing a profileId, keeping the freshest", () => {
+	const store = installStorageShim();
+	const stale = makeRecord({
+		profileId: "decision-director",
+		resultKey: "key-1",
+		draftResult: makeAgentResult({ name: "Decision Director", description: "old" }),
+		lastTouchedAt: 1_700_000_000_000,
+	});
+	const fresh = makeRecord({
+		profileId: "decision-director",
+		resultKey: "key-2",
+		draftResult: makeAgentResult({ name: "Decision Director", description: "new" }),
+		lastTouchedAt: 1_700_000_005_000,
+	});
+	const other = makeRecord({ profileId: "untitled-agent", resultKey: "key-3" });
+	store.set(STUDIO_SESSION_AGENTS_STORAGE_KEY, JSON.stringify([stale, fresh, other]));
+
+	const records = readSessionAgentRecords();
+
+	assert.equal(records.length, 2);
+	const directorRecords = records.filter((record) => record.profileId === "decision-director");
+	assert.equal(directorRecords.length, 1);
+	assert.equal(directorRecords[0].resultKey, "key-2");
+	assert.equal(directorRecords[0].draftResult.description, "new");
+});
+
+test("dedupeSessionAgentRecordsByProfileId keeps one record per profileId and preserves uniques", () => {
+	const a1 = makeRecord({ profileId: "a", resultKey: "a-1", lastTouchedAt: 1 });
+	const a2 = makeRecord({ profileId: "a", resultKey: "a-2", lastTouchedAt: 2 });
+	const b = makeRecord({ profileId: "b", resultKey: "b-1", lastTouchedAt: 5 });
+
+	const deduped = dedupeSessionAgentRecordsByProfileId([a1, a2, b]);
+
+	assert.equal(deduped.length, 2);
+	const ids = deduped.map((record) => record.profileId).sort();
+	assert.deepEqual(ids, ["a", "b"]);
+	const aRecord = deduped.find((record) => record.profileId === "a");
+	assert.equal(aRecord.resultKey, "a-2");
 });

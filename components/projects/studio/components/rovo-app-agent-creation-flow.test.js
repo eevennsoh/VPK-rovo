@@ -605,7 +605,11 @@ test("Studio composer reveals 'Start from scratch' on focus or hover and lands o
 	assert.match(SHELL_SOURCE, /Math\.random\(\) \* START_FROM_SCRATCH_AGENT_AVATAR_SRCS\.length/u);
 	assert.match(SHELL_SOURCE, /action: "create",\s*\n\s*agentId: `untitled-agent-\$\{uniqueSuffix\}`,\s*\n\s*avatarSrc: getRandomStartFromScratchAgentAvatarSrc\(\)/u);
 	assert.match(SHELL_SOURCE, /studioAgentRegistry\.registerCreatedAgentFromResult\(blankAgentResult/u);
-	assert.match(SHELL_SOURCE, /onStartFromScratch=\{handleStartAgentFromScratch\}/u);
+	// The reveal is a from-scratch agent-creation CTA, so it is wired only on the
+	// default agents landing (isDefaultAgentHomeState). On thread/custom-agent/
+	// artifact views the prop is undefined, so the composer renders no reveal even
+	// on hover/focus.
+	assert.match(SHELL_SOURCE, /onStartFromScratch=\{isDefaultAgentHomeState \? handleStartAgentFromScratch : undefined\}/u);
 	// The from-scratch handler opens the same config pane the AI-result flow uses.
 	const fromScratchHandlerSource = SHELL_SOURCE.slice(
 		SHELL_SOURCE.indexOf("const handleStartAgentFromScratch = useCallback"),
