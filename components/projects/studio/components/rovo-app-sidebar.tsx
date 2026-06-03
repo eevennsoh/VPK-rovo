@@ -31,6 +31,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
+import { TOP_NAV_HEADER_HEIGHT_PX } from "@/components/blocks/top-navigation/layout-constants";
 import { getStudioSidebarRecentAgents, getStudioSidebarRecentAgentSelected } from "@/components/projects/studio/lib/studio-sidebar-recent-agents";
 import type { RovoAppThread } from "@/lib/rovo-app-types";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ interface RovoAppSidebarProps {
 	sessionAgentEntries?: ReadonlyArray<StudioSessionAgentEntry>;
 	onCancelThreadRun: (threadId: string) => Promise<void>;
 	hoverOpen?: boolean;
+	headerOffsetPx?: number;
 	isAgentsHomeActive?: boolean;
 	isResizing?: boolean;
 	onDeleteAgent?: (agentId: string) => void;
@@ -442,6 +444,7 @@ export function RovoAppSidebar({
 	activeThreadId,
 	agentCreationThreads,
 	hoverOpen = false,
+	headerOffsetPx = TOP_NAV_HEADER_HEIGHT_PX,
 	isAgentsHomeActive = false,
 	isResizing,
 	selectedAgentId,
@@ -465,14 +468,22 @@ export function RovoAppSidebar({
 				"bg-sidebar !px-0 !pb-0",
 				// Resize handle paints the divider; container border-r would stack to a 2px edge.
 				!resizeHandle && "group-data-[state=expanded]:group-data-[side=left]:border-r group-data-[state=expanded]:group-data-[side=left]:border-border",
-				topOffset && "!top-12 !h-[calc(100svh-3rem)]",
 			)}
 			isResizing={isResizing}
 			onMouseEnter={onSidebarMouseEnter}
 			onMouseLeave={onSidebarMouseLeave}
 			resizeHandle={resizeHandle}
 			role="complementary"
-			style={hoverOpen ? { left: 0, zIndex: 50, boxShadow: token("elevation.shadow.overlay") } : { zIndex: 50 }}
+			style={{
+				zIndex: 50,
+				...(topOffset
+					? {
+							top: `${headerOffsetPx}px`,
+							height: `calc(100svh - ${headerOffsetPx}px)`,
+						}
+					: {}),
+				...(hoverOpen ? { left: 0, boxShadow: token("elevation.shadow.overlay") } : {}),
+			}}
 			variant="inset"
 		>
 			<SidebarContent className="gap-3 overflow-hidden bg-sidebar px-3">

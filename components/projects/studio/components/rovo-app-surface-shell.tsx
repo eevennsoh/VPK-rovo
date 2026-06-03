@@ -11,6 +11,9 @@ import SearchSuggestionsPanel from "@/components/blocks/top-navigation/component
 import { useTopNavigation } from "@/components/blocks/top-navigation/hooks/use-top-navigation";
 import {
 	ROVO_APP_SEPARATOR_LINE_OFFSET_PX,
+	TOP_NAV_COLLAPSED_HEADER_PADDING_PX,
+	TOP_NAV_COLLAPSED_LEFT_SECTION_WIDTH_PX,
+	TOP_NAV_HEADER_HEIGHT_PX,
 	TOP_NAV_PADDING_PX,
 } from "@/components/blocks/top-navigation/layout-constants";
 import { RovoAppSidebar } from "@/components/projects/studio/components/rovo-app-sidebar";
@@ -102,6 +105,9 @@ export function RovoAppSurfaceShell({ children }: Readonly<RovoAppSurfaceShellPr
 	const rovoAppSidebarStyle = {
 		"--sidebar-width": `${sidebarResize.sidebarWidth}px`,
 	} as CSSProperties;
+	const headerHeightStyle: CSSProperties = {
+		height: `${TOP_NAV_HEADER_HEIGHT_PX}px`,
+	};
 
 	return (
 		<SidebarProvider
@@ -147,7 +153,7 @@ export function RovoAppSurfaceShell({ children }: Readonly<RovoAppSurfaceShellPr
 			{/* Sidebar header (LeftNavigation) */}
 			<div
 				className={cn(
-					"fixed top-0 left-0 z-50 flex h-12 items-center px-3 transition-[width,border-color] duration-medium ease-in-out",
+					"fixed top-0 left-0 z-50 flex items-center px-3 transition-[width,border-color] duration-medium ease-in-out",
 					sidebarResize.isResizing && "transition-none",
 					sidebarOpen
 						? cn(
@@ -157,9 +163,14 @@ export function RovoAppSurfaceShell({ children }: Readonly<RovoAppSurfaceShellPr
 									? "border-border-selected"
 									: "border-border",
 							)
-						: "w-24 border-b border-border",
+						: "border-b border-border",
 				)}
-				style={{ backgroundColor: token("elevation.surface"), viewTransitionName: "persistent-sidebar" as never }}
+				style={{
+					...headerHeightStyle,
+					width: sidebarOpen ? undefined : `${TOP_NAV_COLLAPSED_LEFT_SECTION_WIDTH_PX}px`,
+					backgroundColor: token("elevation.surface"),
+					viewTransitionName: "persistent-sidebar" as never,
+				}}
 			>
 				<LeftNavigation
 					product="studio"
@@ -182,11 +193,10 @@ export function RovoAppSurfaceShell({ children }: Readonly<RovoAppSurfaceShellPr
 			<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 				{/* Top header bar */}
 				<div
-					className={cn(
-						"flex h-12 shrink-0 items-center border-b px-3 transition-[padding] duration-medium ease-in-out",
-						!sidebarOpen && "pl-24",
-					)}
+					className="flex shrink-0 items-center border-b px-3 transition-[padding] duration-medium ease-in-out"
 					style={{
+						...headerHeightStyle,
+						paddingLeft: sidebarOpen ? undefined : `${TOP_NAV_COLLAPSED_HEADER_PADDING_PX}px`,
 						borderColor: token("color.border"),
 						backgroundColor: token("elevation.surface"),
 						viewTransitionName: "persistent-header" as never,

@@ -64,7 +64,13 @@ import { LeftNavigation } from "@/components/blocks/top-navigation/components/le
 import { RightNavigation } from "@/components/blocks/top-navigation/components/right-navigation";
 import SearchSuggestionsPanel from "@/components/blocks/top-navigation/components/search-suggestions-panel";
 import { useTopNavigation } from "@/components/blocks/top-navigation/hooks/use-top-navigation";
-import { ROVO_APP_SEPARATOR_LINE_OFFSET_PX, TOP_NAV_PADDING_PX } from "@/components/blocks/top-navigation/layout-constants";
+import {
+	ROVO_APP_SEPARATOR_LINE_OFFSET_PX,
+	TOP_NAV_COLLAPSED_HEADER_PADDING_PX,
+	TOP_NAV_COLLAPSED_LEFT_SECTION_WIDTH_PX,
+	TOP_NAV_HEADER_HEIGHT_PX,
+	TOP_NAV_PADDING_PX,
+} from "@/components/blocks/top-navigation/layout-constants";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -2112,6 +2118,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const rovoAppSidebarStyle = {
 		"--sidebar-width": `${sidebarResize.sidebarWidth}px`,
 	} as CSSProperties;
+	const headerHeightStyle: CSSProperties = {
+		height: `${TOP_NAV_HEADER_HEIGHT_PX}px`,
+	};
 	// Gate the persistent chrome's width/border transition so it never plays on
 	// first paint. The chrome renders at its final geometry during hydration,
 	// but a post-mount state settle (the global-sidebar bridge syncing
@@ -4305,7 +4314,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			{!embedded ? (
 				<div
 					className={cn(
-						"fixed top-0 left-0 z-50 flex h-12 items-center px-3",
+						"fixed top-0 left-0 z-50 flex items-center px-3",
 						hasMountedChrome && !sidebarResize.isResizing && "transition-[width,border-color] duration-medium ease-in-out",
 						sidebarResize.isResizing && "transition-none",
 						chat.sidebarOpen
@@ -4316,9 +4325,14 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									// chrome; collapse intent stays on the handle (`data-will-collapse`).
 									sidebarResize.isResizing || sidebarResize.isResizeHandleHovered ? "border-border-selected" : "border-border",
 								)
-							: "w-24 border-b border-border",
+							: "border-b border-border",
 					)}
-					style={{ backgroundColor: token("elevation.surface"), viewTransitionName: "persistent-sidebar" as never }}
+					style={{
+						...headerHeightStyle,
+						width: chat.sidebarOpen ? undefined : `${TOP_NAV_COLLAPSED_LEFT_SECTION_WIDTH_PX}px`,
+						backgroundColor: token("elevation.surface"),
+						viewTransitionName: "persistent-sidebar" as never,
+					}}
 				>
 					<LeftNavigation
 						product="studio"
@@ -4341,8 +4355,10 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 				{!embedded ? (
 					<div
-						className={cn("flex h-12 shrink-0 items-center border-b px-3 transition-[padding] duration-medium ease-in-out", !chat.sidebarOpen && "pl-24")}
+						className="flex shrink-0 items-center border-b px-3 transition-[padding] duration-medium ease-in-out"
 						style={{
+							...headerHeightStyle,
+							paddingLeft: chat.sidebarOpen ? undefined : `${TOP_NAV_COLLAPSED_HEADER_PADDING_PX}px`,
 							borderColor: token("color.border"),
 							backgroundColor: token("elevation.surface"),
 							viewTransitionName: "persistent-header" as never,
@@ -4350,9 +4366,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					>
 						<div className="relative flex min-w-0 flex-1 items-center justify-start gap-2">
 							<div
-									ref={nav.searchContainerRef}
-									className="relative flex h-9 w-full items-center"
-								>
+								ref={nav.searchContainerRef}
+								className="relative flex h-9 w-full items-center"
+							>
 								<InputGroup
 									className={cn(
 										"h-8 origin-center rounded-md bg-bg-input shadow-none transition-[transform,background-color,box-shadow] duration-medium ease-out hover:bg-bg-input-hovered",
@@ -4458,7 +4474,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						{...(!isStudioAskRovoChatActive ? { inert: true } : {})}
 						style={{
 							position: "absolute",
-							top: 48,
+							top: TOP_NAV_HEADER_HEIGHT_PX,
 							right: 0,
 							bottom: 0,
 							width: `${askRovoChatPanelWidth}px`,
