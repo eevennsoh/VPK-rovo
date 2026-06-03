@@ -478,6 +478,111 @@ function ThinkingToolCallStep({
 	);
 }
 
+/**
+ * Range (ms) for the randomized grace period a tool call keeps its metadata
+ * expanded after a newer tool call appears. The jitter makes the cascade feel
+ * organic instead of a rigid, uniform collapse: the next invocation fades in
+ * while the previous metadata is still collapsing, and each handoff takes a
+ * slightly different amount of time.
+ */
+const TOOL_CALL_COLLAPSE_GRACE_MS = { min: 180, max: 520 } as const;
+
+function randomCollapseGraceMs(): number {
+	const { min, max } = TOOL_CALL_COLLAPSE_GRACE_MS;
+	return min + Math.random() * (max - min);
+}
+
+/**
+ * Tracks which tool calls should be treated as "latest" (and therefore kept
+ * expanded). The genuinely-latest call is always included. When a newer call
+ * appears, the previously-latest call lingers in the open set for a randomized
+ * grace period so its collapse visually overlaps the next call's entrance.
+ */
+function useOverlappingLatestToolCalls(orderedToolCallIds: readonly string[]): ReadonlySet<string> {
+	const latestToolCallId =
+		orderedToolCallIds.length > 0 ? orderedToolCallIds[orderedToolCallIds.length - 1] : undefined;
+	const [lingeringToolCallIds, setLingeringToolCallIds] = useState<ReadonlySet<string>>(
+		() => new Set(),
+	);
+	const previousLatestRef = useRef<string | undefined>(latestToolCallId);
+	const timersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+	useEffect(() => {
+		const previousLatest = previousLatestRef.current;
+		previousLatestRef.current = latestToolCallId;
+
+		if (previousLatest === undefined || previousLatest === latestToolCallId) {
+			return;
+		}
+
+		// A newer tool call took over: let the previous one linger briefly so its
+		// metadata collapse overlaps the new call's entrance.
+		setLingeringToolCallIds((current) => {
+			if (current.has(previousLatest)) {
+				return current;
+			}
+			const next = new Set(current);
+			next.add(previousLatest);
+			return next;
+		});
+
+		const timers = timersRef.current;
+		const existingTimer = timers.get(previousLatest);
+		if (existingTimer) {
+			clearTimeout(existingTimer);
+		}
+		const timer = setTimeout(() => {
+			timers.delete(previousLatest);
+			setLingeringToolCallIds((current) => {
+				if (!current.has(previousLatest)) {
+					return current;
+				}
+				const next = new Set(current);
+				next.delete(previousLatest);
+				return next;
+			});
+		}, randomCollapseGraceMs());
+		timers.set(previousLatest, timer);
+	}, [latestToolCallId]);
+
+	// Drop lingering ids that are no longer present (e.g. message switch) and
+	// clear their timers.
+	const presentToolCallIdsKey = orderedToolCallIds.join("|");
+	useEffect(() => {
+		const present = new Set(orderedToolCallIds);
+		const timers = timersRef.current;
+		for (const [toolCallId, timer] of timers) {
+			if (!present.has(toolCallId)) {
+				clearTimeout(timer);
+				timers.delete(toolCallId);
+			}
+		}
+		setLingeringToolCallIds((current) => {
+			const next = new Set([...current].filter((toolCallId) => present.has(toolCallId)));
+			return next.size === current.size ? current : next;
+		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [presentToolCallIdsKey]);
+
+	useEffect(() => {
+		const timers = timersRef.current;
+		return () => {
+			for (const timer of timers.values()) {
+				clearTimeout(timer);
+			}
+			timers.clear();
+		};
+	}, []);
+
+	return useMemo(() => {
+		const open = new Set(lingeringToolCallIds);
+		if (latestToolCallId !== undefined) {
+			open.add(latestToolCallId);
+		}
+		return open;
+	}, [lingeringToolCallIds, latestToolCallId]);
+}
+
 export function AssistantThinkingTrace({
 	state,
 	className,
@@ -488,6 +593,7 @@ export function AssistantThinkingTrace({
 		[state.data.visibleThinkingToolCalls],
 	);
 	const toolCallIdsKey = toolCallIds.join("|");
+	const overlappingLatestToolCallIds = useOverlappingLatestToolCalls(toolCallIds);
 
 	useEffect(() => {
 		setManuallyOpenedToolCallIds(new Set());
@@ -564,6 +670,7 @@ export function AssistantThinkingTrace({
 						const isOpen = resolveThinkingToolCallStepOpen({
 							toolCallId: toolCall.id,
 							manuallyOpenedToolCallIds,
+							isLatestToolCall: overlappingLatestToolCallIds.has(toolCall.id),
 						});
 						return (
 							<ThinkingToolCallStep

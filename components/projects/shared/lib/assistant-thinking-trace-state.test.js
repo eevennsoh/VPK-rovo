@@ -472,29 +472,43 @@ test("collectAssistantThinkingTraceData extracts update_todo progress", () => {
 	assert.equal(data.todoProgressItems[0].label, "Unify trace");
 });
 
-test("resolveThinkingToolCallStepOpen keeps steps collapsed unless manually opened", () => {
+test("resolveThinkingToolCallStepOpen keeps the latest tool call expanded and collapses earlier ones", () => {
 	const manuallyOpenedToolCallIds = new Set(["call:manual"]);
 
+	// Earlier (non-latest) tool calls collapse so the next invocation can take over.
 	assert.equal(
 		resolveThinkingToolCallStepOpen({
 			toolCallId: "call:previous",
 			manuallyOpenedToolCallIds,
+			isLatestToolCall: false,
 		}),
 		false,
 	);
+	// The latest tool call (in-flight or most recent) stays expanded.
 	assert.equal(
 		resolveThinkingToolCallStepOpen({
 			toolCallId: "call:latest",
 			manuallyOpenedToolCallIds,
+			isLatestToolCall: true,
 		}),
-		false,
+		true,
 	);
+	// A manually opened tool call stays expanded even when it is no longer latest.
 	assert.equal(
 		resolveThinkingToolCallStepOpen({
 			toolCallId: "call:manual",
 			manuallyOpenedToolCallIds,
+			isLatestToolCall: false,
 		}),
 		true,
+	);
+	// isLatestToolCall defaults to false (collapsed) when omitted.
+	assert.equal(
+		resolveThinkingToolCallStepOpen({
+			toolCallId: "call:no-flag",
+			manuallyOpenedToolCallIds,
+		}),
+		false,
 	);
 });
 
