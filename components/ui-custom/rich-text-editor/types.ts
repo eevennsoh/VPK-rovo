@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import type { Editor } from "@tiptap/core";
 
 import type { AtlassianLogoName } from "@/components/ui/logo";
 
@@ -68,4 +69,5 @@ export type RichTextMentionSources = Partial<
 
 export interface RichTextEditorExtensionOptions {
 	getMentionSources?: () => RichTextMentionSources | undefined;
+	onAskRovo?: (editor: Editor) => void;
 }

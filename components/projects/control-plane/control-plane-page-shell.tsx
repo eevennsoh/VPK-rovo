@@ -25,7 +25,7 @@ export function ControlPlanePageShell({
 	title,
 }: Readonly<ControlPlanePageShellProps>) {
 	return (
-		<div className={cn("relative min-h-full overflow-hidden bg-background", className)}>
+		<div className={cn("relative min-h-0 flex-1 overflow-y-auto bg-background", className)}>
 			<div
 				aria-hidden="true"
 				className="pointer-events-none absolute inset-x-0 top-0 h-64"

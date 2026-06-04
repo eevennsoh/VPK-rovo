@@ -1414,6 +1414,76 @@ async function pruneCanonicalWikiMemoryBlock({
 	};
 }
 
+async function resetWikiMemory({
+	generateTextImpl,
+	logger = console,
+	qmdSyncImpl,
+	wikiDir = DEFAULT_WIKI_DIR,
+} = {}) {
+	await ensureWikiMemoryScaffold({ wikiDir });
+
+	// 1. Remove every raw memory proposal regardless of status.
+	const proposals = await listWikiMemoryProposals({ wikiDir });
+	let removedProposalCount = 0;
+	for (const proposal of proposals) {
+		try {
+			await fs.unlink(proposal.path);
+			removedProposalCount += 1;
+		} catch (error) {
+			logger.warn?.("[wiki-memory] Failed to remove memory proposal during reset", {
+				error: error instanceof Error ? error.message : String(error),
+				path: proposal.path,
+			});
+		}
+	}
+
+	// 2. Reset every canonical memory page back to its empty seed content.
+	const definitions = listScopeDefinitions({ wikiDir });
+	let removedBlockCount = 0;
+	for (const definition of definitions) {
+		const currentDocument = await readMarkdownDocument(definition.canonicalAbsolutePath);
+		const parsedDocument = parseCanonicalMemoryDocument(currentDocument, definition);
+		removedBlockCount += parsedDocument.blocks.length;
+		await writeMarkdownDocument(definition.canonicalAbsolutePath, buildCanonicalSeedContent(definition));
+		if (typeof qmdSyncImpl === "function") {
+			await qmdSyncImpl({
+				collectionName: definition.collection,
+				scope: definition.scope,
+				wikiDir,
+			});
+		}
+	}
+
+	// 3. Recompile prompt context from the now-empty canonical pages.
+	await regenerateWikiMemoryContext({ generateTextImpl, logger, wikiDir });
+
+	await appendToWikiLog(
+		"memory-reset",
+		"Durable memory",
+		[
+			"Cleared all durable memory.",
+			`Removed ${removedProposalCount} raw proposal(s).`,
+			`Removed ${removedBlockCount} canonical block(s) across ${definitions.length} scope(s).`,
+		],
+		{ wikiDir },
+	);
+
+	logger.info?.("[wiki-memory] Reset durable memory", {
+		removedBlockCount,
+		removedProposalCount,
+		scopes: definitions.map((definition) => definition.scope),
+		wikiDir,
+	});
+
+	return {
+		memories: await getCanonicalWikiMemoryDocuments({ wikiDir }),
+		removedBlockCount,
+		removedProposalCount,
+		updatedCollections: definitions.map((definition) => definition.collection),
+		updatedScopes: definitions.map((definition) => definition.scope),
+	};
+}
+
 module.exports = {
 	DEFAULT_WIKI_DIR,
 	buildWikiMemoryContextDescription,
@@ -1430,6 +1500,7 @@ module.exports = {
 	readCompiledContextDocuments,
 	rebuildWikiMemoryFromCurrentSources,
 	regenerateWikiMemoryContext,
+	resetWikiMemory,
 	resolveScopeDefinition,
 	syncWikiBackedMemory,
 };

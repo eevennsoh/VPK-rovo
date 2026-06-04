@@ -64,6 +64,7 @@ const {
 	deleteWikiMemoryProposal,
 	getCanonicalWikiMemoryDocuments,
 	pruneCanonicalWikiMemoryBlock,
+	resetWikiMemory,
 	syncWikiBackedMemory,
 } = require("./lib/wiki-memory-provider");
 const {
@@ -523,6 +524,12 @@ const wikiRouteHandlers = createWikiRouteHandlers({
 		return deleteWikiMemoryProposal({
 			logger,
 			proposalId,
+			qmdSyncImpl: syncWikiMemoryCollection,
+		});
+	},
+	resetWikiMemoryImpl: async ({ logger }) => {
+		return resetWikiMemory({
+			logger,
 			qmdSyncImpl: syncWikiMemoryCollection,
 		});
 	},
@@ -15367,6 +15374,7 @@ app.post("/api/wiki/memory-explorer/brief", wikiRouteHandlers.handleWikiMemoryBr
 app.post("/api/wiki/memory-explorer/deck", wikiRouteHandlers.handleWikiMemoryDeck);
 app.delete("/api/wiki/memories/:scope/blocks/:blockId", wikiRouteHandlers.handleWikiMemoryBlockDelete);
 app.delete("/api/wiki/memories/proposals/:proposalId", wikiRouteHandlers.handleWikiMemoryProposalDelete);
+app.post("/api/wiki/memories/reset", wikiRouteHandlers.handleWikiMemoryReset);
 app.post("/api/wiki/sync", wikiRouteHandlers.handleWikiSync);
 app.use("/api/personal-graph", personalGraphRoutes);
 

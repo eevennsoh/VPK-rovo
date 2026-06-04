@@ -7,6 +7,7 @@ import { Lozenge } from "@/components/ui/lozenge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { HermesSkillDraftDetail, HermesSkillDraftSummary } from "@/lib/rovo-runtime-types";
 import type { ReactElement } from "react";
+import { useHermesEmbedEnabled } from "@/lib/hermes-feature-flags";
 
 interface RovoAppHermesSkillDraftBarProps {
 	activeIndex: number;
@@ -40,7 +41,12 @@ export function RovoAppHermesSkillDraftBar({
 	onOpenReview,
 	onReject,
 	onSelectIndex,
-}: Readonly<RovoAppHermesSkillDraftBarProps>): ReactElement {
+}: Readonly<RovoAppHermesSkillDraftBarProps>): ReactElement | null {
+	const [hermesEmbedEnabled] = useHermesEmbedEnabled();
+	if (!hermesEmbedEnabled) {
+		return null;
+	}
+
 	const skillMarkdown = draftDetail?.files.find((file) => file.path === "SKILL.md")?.content ?? null;
 
 	return (

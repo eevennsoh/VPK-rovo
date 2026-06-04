@@ -11,7 +11,6 @@ import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
-import DashboardIcon from "@atlaskit/icon/core/dashboard";
 import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
 import ScorecardIcon from "@atlaskit/icon/core/scorecard";
@@ -406,6 +405,12 @@ export type AgentConfigListFieldName =
 
 export type AgentDirectoryKind = "knowledge" | "tools" | "skills" | "conversationStarters";
 
+// Config rows that can be suppressed by callers (e.g. while editing a subagent,
+// where these capabilities can't be configured). Keyed by the canonical row key
+// used in `AgentFilledConfigSummary` and the `agentFieldName` used by the
+// compact empty-config nav and missing-config actions.
+export type AgentHideableConfigField = "trigger" | "subagents" | "conversationStarters";
+
 export interface AgentConfigFormValue {
 	name?: string;
 	description?: string;
@@ -434,8 +439,10 @@ export const Agent = memo(({ className, ...props }: Readonly<AgentProps>) => (
 	/>
 ));
 
+// "Details" was dropped — it duplicated the "Configure" view already exposed by
+// the header's Configure/Test toggle, so the active config view is no longer a
+// nav tab here.
 const AGENT_COMPACT_HEADER_NAV_ITEMS = [
-	{ icon: <DashboardIcon label="" size="small" color="currentColor" />, isSelected: true, label: "Details" },
 	{ icon: <ChartTrendUpIcon label="" size="small" color="currentColor" />, isSelected: false, label: "Insights" },
 	{ icon: <ViewsIcon label="" size="small" color="currentColor" />, isSelected: false, label: "Surfaces" },
 	{ icon: <ScorecardIcon label="" size="small" color="currentColor" />, isSelected: false, label: "Evaluation" },
@@ -769,6 +776,7 @@ interface AgentActionTileProps {
 
 interface AgentMissingConfigActionsProps {
 	config: AgentConfigFormValue;
+	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
 	screenAssistantTargetPrefix?: string;
@@ -818,12 +826,13 @@ function AgentActionTile({
 
 function AgentMissingConfigActions({
 	config,
+	hiddenConfigFields,
 	onAppendListItem,
 	onOpenDirectory,
 	screenAssistantTargetPrefix,
 }: Readonly<AgentMissingConfigActionsProps>) {
 	const actions: ReadonlyArray<AgentMissingConfigAction | null> = [
-		getAgentTriggerItems(config).length === 0
+		getAgentTriggerItems(config).length === 0 && !hiddenConfigFields?.has("trigger")
 			? {
 					agentFieldName: "trigger",
 					label: "Add triggers",
@@ -846,7 +855,7 @@ function AgentMissingConfigActions({
 					screenAssistantTargetId: screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined,
 				}
 			: null,
-		getNonEmptyConfigItems(config.conversationStarters).length === 0
+		getNonEmptyConfigItems(config.conversationStarters).length === 0 && !hiddenConfigFields?.has("conversationStarters")
 			? {
 					agentFieldName: "conversationStarters",
 					label: "Add conversation starters",
@@ -997,6 +1006,7 @@ function AgentCompactSubagentsNavButton({
 
 function AgentCompactEmptyConfigNav({
 	config,
+	hiddenConfigFields,
 	onManageSubagents,
 	onAppendListItem,
 	onOpenDirectory,
@@ -1009,6 +1019,7 @@ function AgentCompactEmptyConfigNav({
 	selectedListItemIndexByField,
 }: Readonly<{
 	config?: AgentConfigFormValue;
+	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	onManageSubagents?: () => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
@@ -1020,7 +1031,11 @@ function AgentCompactEmptyConfigNav({
 	screenAssistantTargetPrefix?: string;
 	selectedListItemIndexByField?: Partial<Record<AgentConfigListFieldName, number>>;
 }>) {
-	const items = getAgentCompactEmptyConfigNavItems(config);
+	// `agentFieldName` doubles as a hideable-field key for trigger/subagents/
+	// conversationStarters; other field names never appear in the hidden set.
+	const items = getAgentCompactEmptyConfigNavItems(config).filter(
+		(item) => !hiddenConfigFields?.has(item.agentFieldName as AgentHideableConfigField),
+	);
 	// Re-measure whenever counts change since a count Badge appearing/disappearing
 	// changes a button's natural width. ResizeObserver alone only catches
 	// container width changes.
@@ -1545,6 +1560,7 @@ function AgentFilledSummaryRow({
 
 interface AgentFilledConfigSummaryProps {
 	config: AgentConfigFormValue;
+	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	hideEmptyRows?: boolean;
 	knowledgeMode?: KnowledgeModeValue;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
@@ -1558,6 +1574,7 @@ interface AgentFilledConfigSummaryProps {
 
 function AgentFilledConfigSummary({
 	config,
+	hiddenConfigFields,
 	hideEmptyRows = false,
 	knowledgeMode,
 	onAppendListItem,
@@ -1712,8 +1729,11 @@ function AgentFilledConfigSummary({
 		},
 	];
 	// Map then sort by index to keep the sort stable across runtimes (Array#sort
-	// only became stable in V8 in 2018, but other engines may differ).
+	// only became stable in V8 in 2018, but other engines may differ). Row keys
+	// (`trigger`, `subagents`, `conversationStarters`) double as hideable-field
+	// keys, so suppressed rows are dropped before ordering.
 	const orderedRows = rows
+		.filter((row) => !hiddenConfigFields?.has(row.key as AgentHideableConfigField))
 		.map((row, index) => ({ ...row, index }))
 		.sort((a, b) => {
 			if (a.isEmpty !== b.isEmpty) return a.isEmpty ? 1 : -1;
@@ -2441,10 +2461,10 @@ function AgentInstructionsComposer({
 				className="space-y-2"
 				contentClassName={cn("pt-2", contentClassName)}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
-				placeholder="Describe the agent’s role and what it should do. @ to mention people and agents, / for skills, tools, and knowledge, or start with a template"
+				placeholder="Press / to help me describe the agent's role, or start with a template"
 				placeholderSlot={(
-					<p className="text-sm leading-[1.55] text-text-subtlest">
-						Describe the agent’s role and what it should do. @ to mention people and agents, / for skills, tools, and knowledge, or{" "}
+					<p className="tiptap-editor text-sm leading-[1.55] text-text-subtlest">
+						Press <code>/</code> to help me describe the agent&apos;s role, or{" "}
 						<button
 							type="button"
 							className="pointer-events-auto cursor-pointer rounded-sm text-link no-underline underline-offset-2 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -2543,6 +2563,7 @@ function AgentConfigProfile({
 
 interface AgentConfigSummaryProps {
 	config: AgentConfigFormValue;
+	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	isFilledConfig: boolean;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onManageSubagents?: () => void;
@@ -2556,6 +2577,7 @@ interface AgentConfigSummaryProps {
 
 function AgentConfigSummary({
 	config,
+	hiddenConfigFields,
 	isFilledConfig,
 	onAppendListItem,
 	onOpenDirectory,
@@ -2566,6 +2588,7 @@ function AgentConfigSummary({
 	return isFilledConfig ? (
 		<AgentFilledConfigSummary
 			config={config}
+			hiddenConfigFields={hiddenConfigFields}
 			onAppendListItem={onAppendListItem}
 			onOpenDirectory={onOpenDirectory}
 			onRemoveListItem={onRemoveListItem}
@@ -2575,6 +2598,7 @@ function AgentConfigSummary({
 	) : (
 		<AgentMissingConfigActions
 			config={config}
+			hiddenConfigFields={hiddenConfigFields}
 			onAppendListItem={onAppendListItem}
 			onOpenDirectory={onOpenDirectory}
 			screenAssistantTargetPrefix={screenAssistantTargetPrefix}
@@ -2584,6 +2608,7 @@ function AgentConfigSummary({
 
 function AgentCompactConfigToolbarBelow({
 	config,
+	hiddenConfigFields,
 	isFilledConfig,
 	onAppendListItem,
 	onManageSubagents,
@@ -2685,6 +2710,7 @@ function AgentCompactConfigToolbarBelow({
 					>
 						<AgentFilledConfigSummary
 							config={config}
+							hiddenConfigFields={hiddenConfigFields}
 							knowledgeMode={knowledgeMode}
 							onKnowledgeModeChange={setKnowledgeMode}
 							onAppendListItem={onAppendListItem}
@@ -2710,6 +2736,7 @@ function AgentCompactConfigToolbarBelow({
 					>
 						<AgentCompactEmptyConfigNav
 							config={config}
+							hiddenConfigFields={hiddenConfigFields}
 							onAppendListItem={onAppendListItem}
 							onManageSubagents={onManageSubagents}
 							onOpenDirectory={onOpenDirectory}
@@ -2733,6 +2760,9 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	avatarSrc?: string;
 	compactScrollAreaClassName?: string;
 	compactFooterBefore?: ReactNode;
+	// Config rows callers can suppress — e.g. while editing a subagent, where
+	// triggers, subagents, and conversation starters can't be configured.
+	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	idPrefix: string;
 	layout?: "default" | "compact";
 	onManageSubagents?: () => void;
@@ -2757,6 +2787,7 @@ export const AgentConfigFields = memo(
 		avatarSrc,
 		compactFooterBefore,
 		compactScrollAreaClassName,
+		hiddenConfigFields,
 		idPrefix,
 		layout = "default",
 		onListItemChange,
@@ -2907,6 +2938,7 @@ export const AgentConfigFields = memo(
 						<div className="shrink-0">
 							<AgentCompactConfigToolbarBelow
 								config={config}
+								hiddenConfigFields={hiddenConfigFields}
 								isFilledConfig={isFilledConfig}
 								onAppendListItem={handleAppendListItem}
 								onManageSubagents={onManageSubagents ? handleManageSubagents : undefined}
@@ -2932,6 +2964,7 @@ export const AgentConfigFields = memo(
 							/>
 							<AgentConfigSummary
 								config={config}
+								hiddenConfigFields={hiddenConfigFields}
 								isFilledConfig={isFilledConfig}
 								onAppendListItem={handleAppendListItem}
 								onOpenDirectory={handleOpenDirectory}

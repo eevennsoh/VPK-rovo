@@ -7,6 +7,14 @@ const SUBAGENTS_PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const SUBAGENTS_NAVIGATOR_SOURCE = readFileSync(join(__dirname, "subagents-navigator.tsx"), "utf8");
 const SUBAGENTS_INDEX_SOURCE = readFileSync(join(__dirname, "index.ts"), "utf8");
 const SUBAGENTS_DATA_SOURCE = readFileSync(join(__dirname, "data", "demo-agents.ts"), "utf8");
+const SUBAGENTS_PROMPT_FIELDS_SOURCE = readFileSync(
+	join(__dirname, "components", "subagent-prompt-fields.tsx"),
+	"utf8",
+);
+const SUBAGENTS_PROMPTS_LIB_SOURCE = readFileSync(
+	join(__dirname, "lib", "subagent-prompts.ts"),
+	"utf8",
+);
 const AGENT_SOURCE = readFileSync(join(__dirname, "..", "..", "ui-custom", "agent.tsx"), "utf8");
 const SUBAGENTS_DEMO_SOURCE = readFileSync(
 	join(__dirname, "..", "..", "website", "demos", "blocks", "subagents-demo.tsx"),
@@ -48,12 +56,12 @@ test("Subagent prompt data has trigger metadata and no separate agent identity",
 	assert.doesNotMatch(promptFixtures, /avatarSrc|agentId: "policy-source-needed"|agentId: "benefits-question"/u);
 });
 
-test("Subagent prompt views expose dedicated trigger and condition fields", () => {
-	assert.match(SUBAGENTS_PAGE_SOURCE, /function SubagentPromptFields/u);
-	assert.match(SUBAGENTS_PAGE_SOURCE, />\s*Trigger\s*</u);
-	assert.match(SUBAGENTS_PAGE_SOURCE, />\s*Condition\s*</u);
-	assert.match(SUBAGENTS_PAGE_SOURCE, /placeholder="Placeholder"/u);
-	assert.match(SUBAGENTS_PAGE_SOURCE, /Describe the situation that should trigger this subagent\./u);
+test("Subagent prompt views expose dedicated name and trigger fields", () => {
+	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, /function SubagentPromptFields/u);
+	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, />\s*Name\s*</u);
+	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, />\s*Trigger\s*</u);
+	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, /placeholder="Give your subagent a name"/u);
+	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, /Describe the situation that should trigger this subagent\./u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /compactFooterBefore=\{activePrompt/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /handleTriggerNameChange/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /handleConditionChange/u);
@@ -74,9 +82,9 @@ test("Subagents switcher uses base agent header and trigger-name prompt rows", (
 });
 
 test("Create subagent adds and selects an empty prompt copy", () => {
-	assert.match(SUBAGENTS_PAGE_SOURCE, /function createDraftSubagentPrompt/u);
-	assert.match(SUBAGENTS_PAGE_SOURCE, /triggerName: ""/u);
-	assert.match(SUBAGENTS_PAGE_SOURCE, /condition: ""/u);
+	assert.match(SUBAGENTS_PROMPTS_LIB_SOURCE, /function createDraftSubagentPrompt/u);
+	assert.match(SUBAGENTS_PROMPTS_LIB_SOURCE, /triggerName: ""/u);
+	assert.match(SUBAGENTS_PROMPTS_LIB_SOURCE, /condition: ""/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /setSubagentPrompts\(\(currentPrompts\) => \[\.\.\.currentPrompts, prompt\]\)/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /setActiveSubagentId\(prompt\.id\)/u);
 });

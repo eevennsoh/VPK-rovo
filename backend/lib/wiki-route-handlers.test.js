@@ -168,6 +168,11 @@ function createTestHandlers(overrides = {}) {
 				summary: "Old memory",
 			},
 		}),
+		resetWikiMemoryImpl: async () => ({
+			memories: {},
+			removedBlockCount: 0,
+			removedProposalCount: 0,
+		}),
 		ensureFreshWikiQmdIndexImpl: async () => ({
 			didSync: false,
 			reason: "fresh",

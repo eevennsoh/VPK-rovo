@@ -40,13 +40,22 @@ export function RightNavigation({
 	const isMounted = useIsMounted();
 	const productSuppressesRovoAction = product === "rovo" || product === "studio";
 	const showRovoAction = !hideRovoAction && (!productSuppressesRovoAction || forceShowRovoAction);
+	// Match Figma: a generous gap separates the Create button (middle zone) from
+	// the right-side cluster (Ask Rovo + utility icons) at every width down to the
+	// overflow breakpoint, where the cluster collapses and the gap is dropped.
 	const containerStyle = {
 		display: "flex",
 		alignItems: "center",
 		gap: token("space.050"),
 		flexShrink: 0,
 		justifyContent: "flex-end",
-		marginLeft: "8px",
+		// 56px isn't on the ADS space scale (it jumps 48 → 64), so use a raw value;
+		// the Figma gap is flex-derived rather than a token. Below the overflow
+		// breakpoint the cluster collapses, so fall back to the 8px rhythm.
+		marginLeft:
+			isMounted && windowWidth < TOP_NAV_OVERFLOW_BREAKPOINT_PX
+				? token("space.100")
+				: "56px",
 	};
 
 	const actions = (

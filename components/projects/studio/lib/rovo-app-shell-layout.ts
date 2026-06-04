@@ -5,6 +5,9 @@ export const ROVO_APP_MIN_CHAT_PANE_WIDTH = 360;
 export const ROVO_APP_MAX_CHAT_PANE_WIDTH = 560;
 export const ROVO_APP_MIN_ARTIFACT_PANE_WIDTH = 440;
 export const ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS = "max-w-[600px]";
+// In an active chat session the composer widens to align with the 800px message
+// column (the home/landing composer stays at the narrower 600px above).
+export const ROVO_APP_STUDIO_COMPOSER_SESSION_MAX_WIDTH_CLASS = "max-w-[800px]";
 export const ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS = "max-w-[1280px]";
 const ROVO_APP_PREFERRED_CHAT_PANE_RATIO = 0.45;
 

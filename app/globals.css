@@ -190,16 +190,6 @@
 	h6 {
 		font: var(--ds-font-heading-xxsmall);
 	}
-	/* Branded text selection — replaces the OS default (usually blue) with the
-	   ADS "selected" pairing. Both sides resolve to --ds-* tokens, so the
-	   highlight re-themes automatically in light/dark via data-color-mode.
-	   ::selection only honors a small set of properties (color,
-	   background-color, text-decoration) — all safe here. */
-	::selection {
-		background-color: var(--color-bg-selected);
-		color: var(--color-text-selected);
-	}
-
 	html {
 		@apply font-sans;
 

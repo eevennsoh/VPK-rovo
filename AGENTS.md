@@ -246,6 +246,14 @@ Two runtime modes: **dev** (Next.js proxy + Express, with optional Rovo Serve fo
 - For multi-step tasks, define brief success criteria before editing and loop until they are verified.
 - If you notice unrelated dead code, stale comments, or refactor opportunities, mention them separately instead of changing them.
 
+### Worktree Isolation
+
+- Default to working in a dedicated worktree: before editing files for a task, spin one up (e.g. `EnterWorktree`) instead of editing the main checkout in place. This keeps the shared main checkout clean and prevents concurrent agents' uncommitted work from entangling.
+- Use the managed worktree path so per-worktree `node_modules` and `.env.local` bootstrap automatically; manually-created worktrees must be bootstrapped by hand (`pnpm install` + copy/symlink `.env.local`).
+- Name the worktree and its branch after what the change does, not the bug symptom, session, or a random slug.
+- Exceptions (work in place): the user explicitly asks to, the launcher/session is already configured for in-place work, or the task is read-only/trivial.
+- Note the historical hazard: `.claude/worktrees/` dirs have been swept mid-session before — commit and push early so work survives.
+
 ### Code Quality
 
 - Verify exact file location before UI edits by searching for distinctive text/classes.

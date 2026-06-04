@@ -45,6 +45,8 @@ interface ContextBarTagProps {
 	children: React.ReactNode;
 	color?: React.ComponentProps<typeof Tag>["color"];
 	elemBefore?: React.ReactNode;
+	/** Tag style variant forwarded to the underlying `Tag` (e.g. `"agent"` for an avatar chip). */
+	type?: React.ComponentProps<typeof Tag>["type"];
 	title?: string;
 	className?: string;
 }
@@ -127,6 +129,7 @@ export function ContextBarTag({
 	children,
 	color = "standard",
 	elemBefore,
+	type,
 	title,
 	className,
 }: Readonly<ContextBarTagProps>): React.ReactElement {
@@ -137,6 +140,7 @@ export function ContextBarTag({
 			elemBefore={elemBefore}
 			maxWidth="100%"
 			title={title}
+			type={type}
 		>
 			{children}
 		</Tag>

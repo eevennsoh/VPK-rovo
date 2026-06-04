@@ -16,16 +16,21 @@ import {
 	type ConversationStarter,
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
+import { SubagentPromptFields } from "@/components/blocks/subagents/components/subagent-prompt-fields";
+import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
+import type { SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
+import { getListItems, updateConfigListItem } from "@/components/blocks/subagents/lib/subagent-prompts";
+import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-agent-config-subagents";
 import {
 	Agent,
 	AgentCompactHeaderNav,
 	AgentConfigFields,
 	type AgentDirectoryKind,
-	type AgentConfigFormValue,
 	AgentHeader,
 	AgentMoreOptionsMenu,
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
+	type AgentHideableConfigField,
 } from "@/components/ui-custom/agent";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
@@ -42,8 +47,15 @@ import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { cn } from "@/lib/utils";
 
 type AgentResult = RovoDataParts["agent-result"];
-type AgentResultConfigLists = AgentResult & Pick<AgentConfigFormValue, AgentConfigListFieldName>;
 export type AgentConfigView = "configure" | "test";
+
+// Capabilities a subagent can't own. Hidden from the config rows while a
+// subagent prompt is selected/created (these aren't configurable per-subagent).
+const SUBAGENT_HIDDEN_CONFIG_FIELDS: ReadonlySet<AgentHideableConfigField> = new Set([
+	"trigger",
+	"subagents",
+	"conversationStarters",
+]);
 
 interface RovoAppAgentConfigPanelProps {
 	activeView: AgentConfigView;
@@ -106,7 +118,30 @@ export function RovoAppAgentConfigPanel({
 		[onUpdateDraft, profileId],
 	);
 
-	const handleConfigTextChange = useCallback(
+	// Base agent + subagent prompts. `activeConfig` is the base draft or the
+	// selected subagent's config; field edits route through `updateActiveConfig`.
+	const {
+		activeConfig,
+		activeConfigId,
+		activePrompt,
+		activeSubagentId,
+		baseConfig,
+		createSubagent,
+		handleConditionChange,
+		handleTriggerNameChange,
+		isSubagentActive,
+		removeSubagentByDerivedIndex,
+		selectBaseAgent,
+		selectSubagent,
+		selectSubagentByDerivedIndex,
+		selectedSubagentIndex,
+		subagentPrompts,
+		updateActiveConfig,
+	} = useAgentConfigSubagents({ draft, updateDraft });
+
+	// Profile name/description always edit the base agent, even while a subagent
+	// is selected (wired to AgentConfigFields' `onProfileTextChange`).
+	const handleBaseTextChange = useCallback(
 		(field: AgentConfigTextFieldName, value: string) => {
 			if (field === "description") {
 				updateDraft({ description: value, summary: value });
@@ -117,40 +152,60 @@ export function RovoAppAgentConfigPanel({
 		[updateDraft],
 	);
 
-	const getDraftList = useCallback(
-		(field: AgentConfigListFieldName): readonly string[] => {
-			const value = (draft as AgentResultConfigLists)[field];
-			return Array.isArray(value) ? value : [];
+	// Instructions and other config text edit whichever config is active.
+	const handleConfigTextChange = useCallback(
+		(field: AgentConfigTextFieldName, value: string) => {
+			updateActiveConfig((config) => ({
+				...config,
+				[field]: value,
+				...(field === "description" ? { summary: value } : {}),
+			}));
 		},
-		[draft],
+		[updateActiveConfig],
 	);
 
 	const updateListItem = useCallback(
 		(field: AgentConfigListFieldName, index: number, value: string) => {
-			const current = getDraftList(field);
-			const next = [...current];
-			next[index] = value;
-			updateDraft({ [field]: next } as Partial<AgentResult>);
+			// Subagent chips derive from prompt trigger names; they aren't free-text
+			// editable from the list row.
+			if (field === "subagents") {
+				return;
+			}
+			updateActiveConfig((config) => updateConfigListItem(config, field, index, value));
 		},
-		[getDraftList, updateDraft],
+		[updateActiveConfig],
 	);
 
 	const removeListItem = useCallback(
 		(field: AgentConfigListFieldName, index: number) => {
-			const current = getDraftList(field);
-			const next = current.filter((_, itemIndex) => itemIndex !== index);
-			updateDraft({ [field]: next } as Partial<AgentResult>);
+			if (field === "subagents") {
+				if (!isSubagentActive) {
+					removeSubagentByDerivedIndex(index);
+				}
+				return;
+			}
+			updateActiveConfig((config) => ({
+				...config,
+				[field]: getListItems(config, field).filter((_, itemIndex) => itemIndex !== index),
+			}));
 		},
-		[getDraftList, updateDraft],
+		[isSubagentActive, removeSubagentByDerivedIndex, updateActiveConfig],
 	);
 
 	const appendListItem = useCallback(
 		(field: AgentConfigListFieldName) => {
-			const current = getDraftList(field);
-			updateDraft({ [field]: [...current, ""] } as Partial<AgentResult>);
+			if (field === "subagents") {
+				createSubagent();
+				return;
+			}
+			updateActiveConfig((config) => ({
+				...config,
+				[field]: [...getListItems(config, field), ""],
+			}));
 		},
-		[getDraftList, updateDraft],
+		[createSubagent, updateActiveConfig],
 	);
+
 	const appendListValues = useCallback(
 		(field: AgentConfigListFieldName, values: readonly string[]) => {
 			const nextValues = values.map((value) => value.trim()).filter(Boolean);
@@ -159,7 +214,7 @@ export function RovoAppAgentConfigPanel({
 				return;
 			}
 
-			const current = getDraftList(field);
+			const current = getListItems(activeConfig, field);
 			const existing = new Set(current.map((value) => value.trim().toLowerCase()));
 			const additions = nextValues.filter((value) => !existing.has(value.toLowerCase()));
 
@@ -167,9 +222,21 @@ export function RovoAppAgentConfigPanel({
 				return;
 			}
 
-			updateDraft({ [field]: [...current, ...additions] } as Partial<AgentResult>);
+			updateActiveConfig((config) => ({
+				...config,
+				[field]: [...getListItems(config, field), ...additions],
+			}));
 		},
-		[getDraftList, updateDraft],
+		[activeConfig, updateActiveConfig],
+	);
+
+	const handleSelectListItem = useCallback(
+		(field: AgentConfigListFieldName, index: number) => {
+			if (field === "subagents") {
+				selectSubagentByDerivedIndex(index);
+			}
+		},
+		[selectSubagentByDerivedIndex],
 	);
 	const handleOpenDirectory = useCallback((directory: AgentDirectoryKind) => {
 		setActiveDirectory(directory);
@@ -224,25 +291,28 @@ export function RovoAppAgentConfigPanel({
 
 	// Conversation starters are edited as a whole set in a dedicated dialog
 	// (reorder / icon / generate), unlike the append-only directories. Seed the
-	// dialog from the draft's text + parallel icon array, defaulting the icon.
+	// dialog from the active config's text + parallel icon array, defaulting the icon.
 	const conversationStarterDialogValue = useMemo<readonly ConversationStarter[]>(() => {
-		const texts = getDraftList("conversationStarters");
-		const icons = Array.isArray(draft.conversationStarterIcons) ? draft.conversationStarterIcons : [];
+		const texts = getListItems(activeConfig, "conversationStarters");
+		const icons = Array.isArray(activeConfig.conversationStarterIcons)
+			? activeConfig.conversationStarterIcons
+			: [];
 		return texts.map((text, index) => ({
 			id: `starter-${index}`,
 			text,
 			icon: (icons[index] as StarterIconKey | undefined) ?? DEFAULT_STARTER_ICON,
 		}));
-	}, [draft, getDraftList]);
+	}, [activeConfig]);
 	const handleSaveConversationStarters = useCallback(
 		(starters: readonly ConversationStarter[]) => {
-			updateDraft({
+			updateActiveConfig((config) => ({
+				...config,
 				conversationStarters: starters.map((starter) => starter.text),
 				conversationStarterIcons: starters.map((starter) => starter.icon),
-			} as Partial<AgentResult>);
+			}));
 			setActiveDirectory(null);
 		},
-		[updateDraft],
+		[updateActiveConfig],
 	);
 
 	const hasUpdateChanges = useMemo(() => {
@@ -301,6 +371,13 @@ export function RovoAppAgentConfigPanel({
 	// `name` is still required by AgentHeader (accessibility/fallback); the compact
 	// nav supplied via `leadingContent` is what actually renders on the left.
 	const agentName = getStudioSessionAgentDisplayName(entry);
+
+	// Base agent shape the floating SubagentsNavigator expects. The navigator only
+	// reads `config.name` + `avatarSrc`, so derive both from the live draft.
+	const navigatorBaseAgent = useMemo<SubagentsBaseAgent>(
+		() => ({ id: profileId, avatarSrc: agentAvatarSrc, config: baseConfig }),
+		[agentAvatarSrc, baseConfig, profileId],
+	);
 
 	return (
 		<>
@@ -371,20 +448,49 @@ export function RovoAppAgentConfigPanel({
 							</>
 						}
 					/>
-					<TabsContent value="configure" className="min-h-0 flex-1 overflow-hidden data-[hidden]:hidden">
-						<div className="flex h-full min-h-0 w-full flex-col px-6 py-5">
+					<TabsContent value="configure" className="relative min-h-0 flex-1 overflow-hidden data-[hidden]:hidden">
+						{/* Floating switcher to jump between the base agent and its
+						    subagents. Self-hides until at least one subagent exists. */}
+						<SubagentsNavigator
+							activeSubagentId={activeSubagentId}
+							baseAgent={navigatorBaseAgent}
+							className="absolute right-4 top-[42%] z-20 hidden md:block"
+							onCreateSubagent={createSubagent}
+							onSelectBaseAgent={selectBaseAgent}
+							onSelectSubagent={selectSubagent}
+							subagents={subagentPrompts}
+						/>
+						<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-6 py-5">
 							<AgentConfigFields
-								config={draft}
+								config={activeConfig}
 								avatarSrc={agentAvatarSrc}
+								profileAvatarSrc={agentAvatarSrc}
+								profileConfig={baseConfig}
+								// Subagents can't own triggers, their own subagents, or
+								// conversation starters, so suppress those rows while editing one.
+								hiddenConfigFields={isSubagentActive ? SUBAGENT_HIDDEN_CONFIG_FIELDS : undefined}
 								compactScrollAreaClassName="-mr-6 pr-6"
-								idPrefix={`agent-${profileId}`}
+								compactFooterBefore={activePrompt ? (
+									<SubagentPromptFields
+										condition={activePrompt.condition}
+										idPrefix={`agent-${profileId}-${activeConfigId}`}
+										onConditionChange={handleConditionChange}
+										onTriggerNameChange={handleTriggerNameChange}
+										triggerName={activePrompt.triggerName}
+									/>
+								) : null}
+								idPrefix={`agent-${profileId}-${activeConfigId}`}
 								layout="compact"
 								onTextChange={handleConfigTextChange}
+								onProfileTextChange={handleBaseTextChange}
 								onListItemChange={updateListItem}
 								onRemoveListItem={removeListItem}
 								onAddListValues={appendListValues}
 								onAppendListItem={appendListItem}
+								onManageSubagents={createSubagent}
+								onSelectListItem={handleSelectListItem}
 								onOpenDirectory={handleOpenDirectory}
+								selectedListItemIndexByField={{ subagents: selectedSubagentIndex }}
 								screenAssistantTargetPrefix="studio-agent-config"
 							/>
 						</div>

@@ -144,6 +144,17 @@ export interface RovoMessageInterruption {
 	interruptedAt: string;
 }
 
+// One subagent attached to a studio agent. `config` mirrors the agent config
+// form shape (instructions, triggers, skills, tools, knowledge, …) but is kept
+// structural here so this lib stays free of `components/` imports — the studio
+// panel/hook cast it to `AgentConfigFormValue` when reading/writing it.
+export interface RovoAgentSubagentPrompt {
+	id: string;
+	triggerName: string;
+	condition: string;
+	config: Record<string, unknown>;
+}
+
 export type RovoDataParts = {
 	id: string;
 	title: string;
@@ -176,6 +187,17 @@ export type RovoDataParts = {
 		summary: string;
 		trigger?: string;
 		tools?: string[];
+		// `skills`, `knowledge`, and `subagents` are edited via the agent config
+		// panel and have long been persisted on the draft through the
+		// key-preserving reducer in context-rovo-chat. Declared here so the typed
+		// config code can read them directly instead of casting.
+		skills?: string[];
+		knowledge?: string[];
+		subagents?: string[];
+		// Full per-subagent configs (instructions, trigger, condition, tools, …).
+		// Persisted alongside the base agent so the studio subagents experience
+		// survives panel close/reopen, agent switching, and publish.
+		subagentPrompts?: RovoAgentSubagentPrompt[];
 		guardrail?: string;
 		action: "create" | "update";
 	};
