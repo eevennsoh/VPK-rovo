@@ -51,6 +51,7 @@ export type RichTextMentionVisual =
 	| {
 			kind: "icon";
 			icon: ReactElement;
+			iconColor?: string;
 			iconKey?: string;
 	};
 

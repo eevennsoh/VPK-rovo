@@ -644,6 +644,7 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /const RichTextMention = Mention\.extend/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /ReactNodeViewRenderer\(RichTextMentionNodeView\)/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /getRichTextMentionVisualAttrs\(mention\.visual\)/u);
+	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /data-visual-icon-color/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /visualSrc/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /data-type": "mention"/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ Tag \} from "@\/components\/ui\/tag";/u);
@@ -651,6 +652,7 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /type=\{getRichTextMentionTagType\(visual\)\}/u);
 	assert.doesNotMatch(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /className="rich-text-mention"/u);
 	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /const logoSize = size === "menu" \? "small" : "xxsmall";/u);
+	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /<IconTile[\s\S]*border border-border bg-surface[\s\S]*visual\.iconColor/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /Markdown\.configure/u);
 });
 
@@ -660,6 +662,12 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /getSlashCommandFormatItems/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import TableIcon from "@atlaskit\/icon\/core\/table";/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /view-type-table-home/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /useLayoutEffect\(\(\) => \{[\s\S]*scrollIntoView\(\{ block: "nearest" \}\)/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const SUGGESTION_PAGE_KEY_STEP = 5;/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /event\.key === "PageDown"[\s\S]*getPagedSelectedIndex\(selectedIndex, 1, items\.length\)/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /event\.key === "PageUp"[\s\S]*getPagedSelectedIndex\(selectedIndex, -1, items\.length\)/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /event\.key === "Home"[\s\S]*selectedIndex = 0/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /event\.key === "End"[\s\S]*selectedIndex = Math\.max\(items\.length - 1, 0\)/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function getMentionChildDescription\(item: RichTextMentionItem\): string/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /description: getMentionChildDescription\(item\)/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /description: "Use the default paragraph style for body copy\."/u);
@@ -683,6 +691,7 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /import \{ DEMO_AGENT_BROWSER_AGENTS \} from "@\/components\/blocks\/agent-browser\/data\/demo-agents";/u);
 	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /import \{ DEFAULT_KNOWLEDGE_APPS \} from "@\/components\/blocks\/knowledge-directory\/data\/apps";/u);
 	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /DEFAULT_SKILLS\.map\(mapSkillToMentionItem\)/u);
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /iconColor: skill\.iconColor/u);
 	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /\[\.\.\.DEMO_TOOLS, \.\.\.DEMO_SESSION_TOOLS\]\.map\(mapToolToMentionItem\)/u);
 	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /getDirectoryMentionItemOrFallback/u);
 	assert.doesNotMatch(EDITOR_PALETTE_MENTION_SOURCES, /SKILL_METADATA/u);

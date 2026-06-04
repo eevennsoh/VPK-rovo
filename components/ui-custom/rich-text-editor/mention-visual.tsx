@@ -4,6 +4,7 @@ import type { DOMOutputSpec } from "@tiptap/pm/model";
 
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
+import { IconTile } from "@/components/ui/icon-tile";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import { getSkillIcon, type SkillIconKey } from "@/components/blocks/skills-directory/data/skills";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ import type {
 } from "./types";
 
 export interface RichTextMentionVisualAttrs {
+	visualIconColor?: string | null;
 	visualIconKey?: string | null;
 	visualKind?: RichTextMentionVisual["kind"] | null;
 	visualLogoName?: string | null;
@@ -37,6 +39,7 @@ export function getRichTextMentionVisualAttrs(
 
 	if (visual.kind === "icon") {
 		return {
+			visualIconColor: visual.iconColor,
 			visualIconKey: visual.iconKey,
 			visualKind: visual.kind,
 		};
@@ -73,6 +76,7 @@ export function getRichTextMentionVisualFromAttrs(
 		return {
 			kind: "icon",
 			icon: getSkillIcon(attrs.visualIconKey as SkillIconKey),
+			iconColor: attrs.visualIconColor ?? undefined,
 			iconKey: attrs.visualIconKey,
 		};
 	}
@@ -154,10 +158,22 @@ export function RichTextMentionVisualMark({
 	}
 
 	if (visual.kind === "icon") {
+		if (size === "menu") {
+			return (
+				<IconTile
+					aria-hidden={true}
+					className={cn("border border-border bg-surface", visual.iconColor ?? "text-icon-subtle", className)}
+					icon={visual.icon}
+					label={label}
+					size="small"
+				/>
+			);
+		}
+
 		return (
 			<span
 				aria-hidden="true"
-				className={cn("inline-flex shrink-0 items-center justify-center text-icon-subtle", className)}
+				className={cn("inline-flex shrink-0 items-center justify-center", visual.iconColor ?? "text-icon-subtle", className)}
 			>
 				<Icon
 					aria-hidden

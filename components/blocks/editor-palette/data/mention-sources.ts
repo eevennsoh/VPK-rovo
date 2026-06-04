@@ -59,6 +59,7 @@ function mapSkillToMentionItem(skill: SkillsDirectorySkill): RichTextMentionItem
 		visual: {
 			kind: "icon",
 			icon: getSkillIcon(iconKey),
+			iconColor: skill.iconColor,
 			iconKey,
 		},
 	};
