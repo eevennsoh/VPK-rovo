@@ -7,7 +7,7 @@ import type { AgentsDirectoryAgent } from "@/components/blocks/agents-directory"
 import { DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/agents-directory/data/sidebar-groups";
 import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustration";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Empty, EmptyBody, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Icon } from "@/components/ui/icon";
@@ -325,28 +325,30 @@ function StudioAgentsEmptyState({
 	onCreateAgent: () => void;
 }>) {
 	return (
-		<Empty className="rounded-[12px] border border-dashed border-border bg-surface px-5" orientation="horizontal">
+		<Empty className="max-w-[800px] rounded-[12px] border border-dashed border-border bg-surface px-6 py-0" orientation="horizontal">
 			<EmptyMedia>
 				<span aria-hidden="true">
 					<ControlledRovoIllustration illusId="ai" size={96} />
 				</span>
 			</EmptyMedia>
-			<EmptyHeader className="sm:flex-1">
-				<EmptyTitle headingSize="xsmall">No agents yet</EmptyTitle>
-				<EmptyDescription>
-					Browse templates or create a new agent from the prompt.
-				</EmptyDescription>
-			</EmptyHeader>
-			<EmptyContent className="sm:w-auto sm:flex-none">
-				<div className="flex flex-wrap justify-center gap-2 sm:justify-end">
-					<Button onClick={onBrowseTemplates} type="button" variant="outline">
-						Browse templates
-					</Button>
-					<Button onClick={onCreateAgent} type="button">
-						Create agent
-					</Button>
-				</div>
-			</EmptyContent>
+			<EmptyBody>
+				<EmptyHeader className="gap-1">
+					<EmptyTitle headingSize="xsmall">No agents yet</EmptyTitle>
+					<EmptyDescription>
+						Browse templates or create a new agent from the prompt.
+					</EmptyDescription>
+				</EmptyHeader>
+				<EmptyContent>
+					<div className="flex flex-wrap gap-2">
+						<Button onClick={onBrowseTemplates} type="button" variant="outline">
+							Browse templates
+						</Button>
+						<Button onClick={onCreateAgent} type="button">
+							Create agent
+						</Button>
+					</div>
+				</EmptyContent>
+			</EmptyBody>
 		</Empty>
 	);
 }

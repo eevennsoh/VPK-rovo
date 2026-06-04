@@ -7,6 +7,7 @@ import { ArrowUpRightIcon } from "@/components/ui/vpk-icons"
 import { Button } from "@/components/ui/button"
 import {
 	Empty,
+	EmptyBody,
 	EmptyContent,
 	EmptyDescription,
 	EmptyHeader,
@@ -106,7 +107,7 @@ export function EmptyDemoWithImage() {
 export function EmptyDemoWithImageHorizontal() {
 	return (
 		<Empty
-			className="rounded-[12px] border border-dashed border-border bg-surface px-5"
+			className="max-w-[800px] rounded-[12px] border border-dashed border-border bg-surface px-6 py-0"
 			orientation="horizontal"
 		>
 			<EmptyMedia>
@@ -114,18 +115,20 @@ export function EmptyDemoWithImageHorizontal() {
 					<ControlledRovoIllustration illusId="ai" size={96} />
 				</span>
 			</EmptyMedia>
-			<EmptyHeader className="sm:flex-1">
-				<EmptyTitle headingSize="xsmall">No agents yet</EmptyTitle>
-				<EmptyDescription>
-					Browse templates or create a new agent from the prompt.
-				</EmptyDescription>
-			</EmptyHeader>
-			<EmptyContent className="sm:w-auto sm:flex-none">
-				<div className="flex flex-wrap justify-center gap-2 sm:justify-end">
-					<Button variant="outline">Browse templates</Button>
-					<Button>Create agent</Button>
-				</div>
-			</EmptyContent>
+			<EmptyBody>
+				<EmptyHeader>
+					<EmptyTitle headingSize="xsmall">No agents yet</EmptyTitle>
+					<EmptyDescription>
+						Browse templates or create a new agent from the prompt.
+					</EmptyDescription>
+				</EmptyHeader>
+				<EmptyContent>
+					<div className="flex flex-wrap gap-2">
+						<Button variant="outline">Browse templates</Button>
+						<Button>Create agent</Button>
+					</div>
+				</EmptyContent>
+			</EmptyBody>
 		</Empty>
 	)
 }

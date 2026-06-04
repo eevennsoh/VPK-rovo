@@ -368,7 +368,7 @@ function RovoAppComposerInner({
 			<div className="pointer-events-none absolute inset-0 overflow-visible">
 				{renderResponseGradient ? (
 					renderResponseGradient({
-						active: realtimeVoiceActive || realtimeResponseGradientState.visible,
+						active: realtimeResponseGradientState.visible,
 						phase: realtimeResponseGradientState.phase ?? "warmup",
 						signal: realtimeOutputWaveformBars,
 						voiceState: realtimeVoiceState,

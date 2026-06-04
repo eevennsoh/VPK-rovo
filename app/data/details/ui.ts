@@ -2928,6 +2928,11 @@ import { Textarea } from "@/components/ui/textarea";
     subComponents: [
       { name: "EmptyHeader", description: "Top section with media and text." },
       {
+        name: "EmptyBody",
+        description:
+          "Groups text and actions together so, in the horizontal orientation, the actions wrap directly under the text (aligned to it) instead of relative to the leading media.",
+      },
+      {
         name: "EmptyMedia",
         description:
           'Icon or image slot. Use variant="icon" for icon backgrounds.',

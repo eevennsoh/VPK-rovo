@@ -14,9 +14,12 @@ const emptyVariants = cva("flex min-w-0 flex-1", {
 			// Stacked: media on top, centered text and actions (default).
 			vertical: "flex-col items-center justify-center text-center text-balance",
 			// Side-by-side: media on the leading edge, left-aligned text/actions.
-			// Collapses back to the vertical stack below the sm breakpoint.
+			// Container-query driven: stays a wrapping row, and when the container
+			// runs out of space the actions block (basis-full) drops below the
+			// text as a single unit. Becomes a centered stack on very narrow
+			// containers (< @sm).
 			horizontal:
-				"flex-col items-center text-center text-balance sm:flex-row sm:items-center sm:justify-start sm:text-left",
+				"@container flex-row flex-wrap items-center justify-start gap-x-5 gap-y-3 text-left max-@sm:flex-col max-@sm:items-center max-@sm:text-center max-@sm:text-balance",
 		},
 	},
 	defaultVariants: {
@@ -54,8 +57,8 @@ function Empty({
 				className={cn(
 					emptyVariants({ orientation: resolvedOrientation }),
 					widthClass,
-					"mx-auto gap-6 py-12",
-					isHorizontal && "w-full sm:gap-5 sm:py-8",
+					"mx-auto py-12",
+					isHorizontal ? "w-full py-8" : "gap-6",
 					className
 				)}
 				{...props}
@@ -71,7 +74,36 @@ function EmptyHeader({ className, ...props }: React.ComponentProps<"div">) {
 			data-slot="empty-header"
 			className={cn(
 				"flex flex-col items-center gap-2",
-				orientation === "horizontal" && "sm:items-start sm:text-left",
+				// Take the remaining row width so the actions sit on the far edge;
+				// recenters on very narrow containers where the layout stacks.
+				orientation === "horizontal" &&
+					"min-w-0 flex-1 items-start text-left max-@sm:flex-none max-@sm:items-center max-@sm:text-center",
+				className
+			)}
+			{...props}
+		/>
+	)
+}
+
+// Groups the text (EmptyHeader) and actions (EmptyContent) into one block so,
+// in the horizontal layout, the actions wrap directly under the text — aligned
+// to the text's edge — rather than relative to the leading media.
+function EmptyBody({ className, ...props }: React.ComponentProps<"div">) {
+	const orientation = React.use(EmptyOrientationContext)
+	if (orientation !== "horizontal") {
+		return (
+			<div
+				data-slot="empty-body"
+				className={cn("flex w-full flex-col items-center gap-2", className)}
+				{...props}
+			/>
+		)
+	}
+	return (
+		<div
+			data-slot="empty-body"
+			className={cn(
+				"flex min-w-0 flex-1 flex-row flex-wrap items-center gap-x-5 gap-y-3 max-@sm:flex-col max-@sm:items-center",
 				className
 			)}
 			{...props}
@@ -166,7 +198,10 @@ function EmptyContent({ className, ...props }: React.ComponentProps<"div">) {
 			data-slot="empty-content"
 			className={cn(
 				"flex w-full min-w-0 flex-col items-center gap-2 text-sm",
-				orientation === "horizontal" && "sm:items-start",
+				// Sits beside the text while it fits; when the container is tight
+				// the whole actions block wraps to a full-width row beneath the text.
+				orientation === "horizontal" &&
+					"w-auto flex-none items-end max-@md:basis-full max-@md:items-start max-@sm:items-center",
 				className
 			)}
 			{...props}
@@ -176,6 +211,7 @@ function EmptyContent({ className, ...props }: React.ComponentProps<"div">) {
 
 export {
 	Empty,
+	EmptyBody,
 	EmptyHeader,
 	EmptyTitle,
 	EmptyDescription,
