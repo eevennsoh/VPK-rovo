@@ -125,7 +125,7 @@ export function ContextBarLead({
 /** The truncating chip that names the active context (artifact, agent, etc). */
 export function ContextBarTag({
 	children,
-	color = "blue",
+	color = "standard",
 	elemBefore,
 	title,
 	className,
