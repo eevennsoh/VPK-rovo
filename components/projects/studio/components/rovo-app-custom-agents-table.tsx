@@ -5,19 +5,15 @@ import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
 import { getStudioSessionAgentDisplayName } from "@/app/contexts";
 import type { AgentsDirectoryAgent } from "@/components/blocks/agents-directory";
 import { DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/agents-directory/data/sidebar-groups";
+import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustration";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Icon } from "@/components/ui/icon";
 import { Lozenge } from "@/components/ui/lozenge";
-import {
-	CardDirectory,
-	CardDirectoryAgent,
-	CardDirectoryByline,
-	CardDirectoryDescription,
-	CardDirectoryFooter,
-	CardDirectoryHeader,
-} from "@/components/ui-custom/card-directory";
+import { CardDirectoryAgent } from "@/components/ui-custom/card-directory";
+import { List, type ListColumn } from "@/components/ui-custom/list";
 import { cn } from "@/lib/utils";
 import EditIcon from "@atlaskit/icon/core/edit";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
@@ -28,6 +24,15 @@ const STUDIO_AGENTS_COMPANY_GROUP_TITLE = "By companies";
 const STUDIO_AGENTS_COMPANY_AGENT_IDS =
 	DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS.find((group) => group.title === STUDIO_AGENTS_COMPANY_GROUP_TITLE)?.agentIds ?? [];
 const STUDIO_AGENTS_COMPANY_AGENT_ID_SET = new Set<string>(STUDIO_AGENTS_COMPANY_AGENT_IDS);
+
+// My agents list: name column flexes; version, modified, and actions are fixed
+// so the agent name truncates rather than the trailing metadata/action columns.
+const STUDIO_MY_AGENTS_LIST_COLUMNS: readonly ListColumn[] = [
+	{},
+	{ className: "w-[72px]" },
+	{ className: "w-[116px]" },
+	{ className: "w-[72px]" },
+];
 
 const STUDIO_AGENT_SECTION_TABS = [
 	{ id: "my-agents", label: "My agents" },
@@ -279,25 +284,12 @@ export function StudioAgentsSection({
 
 			{activeTab === "my-agents" ? (
 				sortedEntries.length > 0 ? (
-					<StudioAgentCardsGrid>
-						{sortedEntries.map((entry) => {
-							const agentName = getStudioSessionAgentDisplayName(entry) || "Untitled agent";
-							const isPinned = pinnedAgentIds.has(entry.profile.id);
-
-							return (
-								<li key={entry.profile.id}>
-									<StudioCustomAgentCard
-										agentName={agentName}
-										description={getCustomAgentDescription(entry)}
-										entry={entry}
-										isPinned={isPinned}
-										onEdit={() => onEditAgent(entry.profile.id)}
-										onTogglePinned={() => togglePinned(entry.profile.id)}
-									/>
-								</li>
-							);
-						})}
-					</StudioAgentCardsGrid>
+					<StudioCustomAgentsList
+						entries={sortedEntries}
+						pinnedAgentIds={pinnedAgentIds}
+						onEditAgent={onEditAgent}
+						onTogglePinned={togglePinned}
+					/>
 				) : (
 					<StudioAgentsEmptyState
 						onBrowseTemplates={onBrowseTemplates}
@@ -333,15 +325,20 @@ function StudioAgentsEmptyState({
 	onCreateAgent: () => void;
 }>) {
 	return (
-		<div className="rounded-md border border-border bg-surface p-5">
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<div className="min-w-0">
-					<h3 className="text-sm font-semibold leading-5 text-text">No agents yet</h3>
-					<p className="mt-1 text-sm leading-5 text-text-subtle">
-						Browse templates or create a new agent from the prompt.
-					</p>
-				</div>
-				<div className="flex shrink-0 flex-wrap gap-2">
+		<Empty className="rounded-[12px] border border-dashed border-border bg-surface px-5" orientation="horizontal">
+			<EmptyMedia>
+				<span aria-hidden="true">
+					<ControlledRovoIllustration illusId="ai" size={96} />
+				</span>
+			</EmptyMedia>
+			<EmptyHeader className="sm:flex-1">
+				<EmptyTitle headingSize="xsmall">No agents yet</EmptyTitle>
+				<EmptyDescription>
+					Browse templates or create a new agent from the prompt.
+				</EmptyDescription>
+			</EmptyHeader>
+			<EmptyContent className="sm:w-auto sm:flex-none">
+				<div className="flex flex-wrap justify-center gap-2 sm:justify-end">
 					<Button onClick={onBrowseTemplates} type="button" variant="outline">
 						Browse templates
 					</Button>
@@ -349,73 +346,91 @@ function StudioAgentsEmptyState({
 						Create agent
 					</Button>
 				</div>
-			</div>
-		</div>
+			</EmptyContent>
+		</Empty>
 	);
 }
 
-function StudioCustomAgentCard({
-	agentName,
-	description,
-	entry,
-	isPinned,
-	onEdit,
+function StudioCustomAgentsList({
+	entries,
+	pinnedAgentIds,
+	onEditAgent,
 	onTogglePinned,
 }: Readonly<{
-	agentName: string;
-	description: string;
-	entry: StudioSessionAgentEntry;
-	isPinned: boolean;
-	onEdit: () => void;
-	onTogglePinned: () => void;
+	entries: readonly StudioSessionAgentEntry[];
+	pinnedAgentIds: ReadonlySet<string>;
+	onEditAgent: (agentId: string) => void;
+	onTogglePinned: (agentId: string) => void;
 }>) {
-	const revealOnHover =
-		"opacity-0 transition-opacity duration-fast group-hover/card:opacity-100 group-focus-within/card:opacity-100";
-
 	return (
-		<CardDirectory className="gap-4" onSelect={onEdit} selectLabel={`Edit ${agentName}`}>
-			<div className="flex flex-col gap-2">
-				<CardDirectoryHeader
-					action={
-						<div className="flex shrink-0 gap-1" onClick={stopNestedCardAction} onKeyDown={stopNestedCardAction}>
-							<Button aria-label={`Edit ${agentName}`} className={cn("size-7", revealOnHover)} onClick={onEdit} size="icon" type="button" variant="ghost">
-								<Icon aria-hidden render={<EditIcon label="" size="small" />} />
-							</Button>
-							<Button
-								aria-label={`${isPinned ? "Unpin" : "Pin"} ${agentName}`}
-								aria-pressed={isPinned}
-								className={cn(
-									"size-7 aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:[&_svg]:text-icon-subtle!",
-									isPinned ? "opacity-100" : revealOnHover,
-								)}
-								onClick={onTogglePinned}
-								size="icon"
-								type="button"
-								variant="ghost"
-							>
-								<Icon aria-hidden render={isPinned ? <PinFilledIcon label="" size="small" /> : <PinIcon label="" size="small" />} />
-							</Button>
-						</div>
-					}
-					byline={<CardDirectoryByline publisher="You" />}
-					leading={
-						<Avatar aria-hidden="true" shape="hexagon" size="default" className="shrink-0 after:border-0">
-							{entry.profile.avatarSrc ? <AvatarImage alt="" src={entry.profile.avatarSrc} /> : null}
-							<AvatarFallback>{agentName.slice(0, 2).toUpperCase()}</AvatarFallback>
-						</Avatar>
-					}
-					title={agentName}
-				/>
-				<CardDirectoryDescription>{description}</CardDirectoryDescription>
-			</div>
+		<List.Root aria-label="My agents">
+			<List.Table columns={STUDIO_MY_AGENTS_LIST_COLUMNS}>
+				{entries.map((entry) => {
+					const agentName = getStudioSessionAgentDisplayName(entry) || "Untitled agent";
+					const description = getCustomAgentDescription(entry);
+					const isPinned = pinnedAgentIds.has(entry.profile.id);
+					const revealOnHover =
+						"opacity-0 transition-opacity duration-fast group-hover/row:opacity-100 focus-visible:opacity-100";
 
-			<CardDirectoryFooter>
-				<Lozenge variant={getVersionVariant(entry)}>
-					{getVersionLabel(entry)}
-				</Lozenge>
-				<span>{formatRelativeModifiedTime(entry.lastTouchedAt)}</span>
-			</CardDirectoryFooter>
-		</CardDirectory>
+					return (
+						<List.Row key={entry.profile.id}>
+							<List.Cell edge="leading">
+								<button
+									className="flex w-full min-w-0 items-center gap-3 text-left"
+									onClick={() => onEditAgent(entry.profile.id)}
+									type="button"
+								>
+									<Avatar aria-hidden="true" shape="hexagon" size="sm" className="shrink-0 after:border-0">
+										{entry.profile.avatarSrc ? <AvatarImage alt="" src={entry.profile.avatarSrc} /> : null}
+										<AvatarFallback>{agentName.slice(0, 2).toUpperCase()}</AvatarFallback>
+									</Avatar>
+									<span className="flex min-w-0 flex-col">
+										<span className="truncate font-medium text-text">{agentName}</span>
+										{description ? (
+											<span className="truncate text-xs text-text-subtle">{description}</span>
+										) : null}
+									</span>
+								</button>
+							</List.Cell>
+							<List.Cell>
+								<Lozenge variant={getVersionVariant(entry)}>{getVersionLabel(entry)}</Lozenge>
+							</List.Cell>
+							<List.Cell className="whitespace-nowrap text-text-subtle">
+								{formatRelativeModifiedTime(entry.lastTouchedAt)}
+							</List.Cell>
+							<List.Cell edge="trailing">
+								<div className="flex justify-end gap-[4px]" onClick={stopNestedCardAction} onKeyDown={stopNestedCardAction}>
+									<Button
+										aria-label={`Edit ${agentName}`}
+										className={cn("size-7", revealOnHover)}
+										onClick={() => onEditAgent(entry.profile.id)}
+										size="icon"
+										type="button"
+										variant="ghost"
+									>
+										<Icon aria-hidden render={<EditIcon label="" size="small" />} />
+									</Button>
+									<Button
+										aria-label={`${isPinned ? "Unpin" : "Pin"} ${agentName}`}
+										aria-pressed={isPinned}
+										className={cn(
+											"size-7 aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:[&_svg]:text-icon-subtle!",
+											isPinned ? "opacity-100" : revealOnHover,
+										)}
+										onClick={() => onTogglePinned(entry.profile.id)}
+										size="icon"
+										type="button"
+										variant="ghost"
+									>
+										<Icon aria-hidden render={isPinned ? <PinFilledIcon label="" size="small" /> : <PinIcon label="" size="small" />} />
+									</Button>
+								</div>
+							</List.Cell>
+						</List.Row>
+					);
+				})}
+			</List.Table>
+		</List.Root>
 	);
 }
 

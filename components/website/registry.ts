@@ -2682,6 +2682,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "empty-demo-with-image-horizontal": dynamic(
+    () =>
+      import("./demos/ui/empty-demo").then((mod) => ({
+        default: mod.EmptyDemoWithImageHorizontal,
+      })),
+    { ssr: false },
+  ),
   // Kbd
   "kbd-demo-default": dynamic(
     () =>

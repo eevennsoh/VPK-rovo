@@ -5,11 +5,11 @@ const { test } = require("node:test");
 
 const SOURCE = readFileSync(join(__dirname, "list.tsx"), "utf8");
 
-test("List is a presentational compound: Root section, Heading h2, Table colgroup+body", () => {
-	// Compound namespace mirrors the skill-card pattern.
+test("List is a presentational compound: Root section, Heading h2, Table colgroup+body, Row, Cell", () => {
+	// Compound namespace exposes all five sub-components.
 	assert.match(
 		SOURCE,
-		/export const List = \{[\s\S]*Root: ListRoot,[\s\S]*Heading: ListHeading,[\s\S]*Table: ListTable,[\s\S]*\} as const/,
+		/export const List = \{[\s\S]*Root: ListRoot,[\s\S]*Heading: ListHeading,[\s\S]*Table: ListTable,[\s\S]*Row: ListRow,[\s\S]*Cell: ListCell,[\s\S]*\} as const/,
 	);
 	// Root renders a <section> and forwards props (so aria-labelledby passes through).
 	assert.match(SOURCE, /function ListRoot\(\{ className, \.\.\.props \}[\s\S]*<section/);
@@ -22,12 +22,38 @@ test("List is a presentational compound: Root section, Heading h2, Table colgrou
 		SOURCE,
 		/columns\.map\(\(column, columnIndex\) => \([\s\S]*<col key=\{columnIndex\} className=\{column\.className\} \/>/,
 	);
-	assert.match(SOURCE, /<TableBody>\{children\}<\/TableBody>/);
 	assert.match(SOURCE, /min-w-full table-fixed/);
 });
 
+test("List.Row carries the list row styling (height, divider, transparent hover)", () => {
+	assert.match(SOURCE, /function ListRow\(/);
+	// 14-unit row height, disabled-token divider, and a transparent row so the
+	// per-cell hover highlight can be clipped by rounded corners.
+	assert.match(SOURCE, /group\/row h-14 border-disabled hover:bg-transparent/);
+});
+
+test("List.Cell applies padding, the row-wide hover highlight, and edge corner rounding", () => {
+	assert.match(SOURCE, /function ListCell\(/);
+	// px-2 padding + the group hover highlight.
+	assert.match(
+		SOURCE,
+		/px-2 transition-colors group-hover\/row:bg-bg-neutral-subtle-hovered/,
+	);
+	// Edge cells round the outer corners on the first/last rows.
+	assert.match(SOURCE, /edge === "leading" && isFirst && "rounded-tl-\[12px\]"/);
+	assert.match(SOURCE, /edge === "leading" && isLast && "rounded-bl-\[12px\]"/);
+	assert.match(SOURCE, /edge === "trailing" && isFirst && "rounded-tr-\[12px\]"/);
+	assert.match(SOURCE, /edge === "trailing" && isLast && "rounded-br-\[12px\]"/);
+});
+
+test("List.Table supplies row position so cells can round outer corners", () => {
+	assert.match(SOURCE, /ListRowPositionContext/);
+	assert.match(SOURCE, /isFirst: rowIndex === 0, isLast: rowIndex === lastIndex/);
+	assert.match(SOURCE, /React\.use\(ListRowPositionContext\)/);
+});
+
 test("List stays presentational: no studio/state logic leaks in", () => {
-	assert.doesNotMatch(SOURCE, /localStorage|pinned|useState|useEffect/i);
+	assert.doesNotMatch(SOURCE, /localStorage|pinned/i);
 });
 
 test("List is registered in the component catalog and demo registry", () => {

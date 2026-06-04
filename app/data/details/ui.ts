@@ -2916,7 +2916,13 @@ import { Textarea } from "@/components/ui/textarea";
         name: "width",
         type: `"wide" | "narrow"`,
         description:
-          "Controls max-width. Wide (464px, default) or narrow (304px).",
+          "Controls max-width. Wide (464px, default) or narrow (304px). Ignored when orientation is horizontal.",
+      },
+      {
+        name: "orientation",
+        type: `"vertical" | "horizontal"`,
+        description:
+          "Layout direction. Vertical (default) stacks media above centered text. Horizontal places media on the leading edge with left-aligned text and actions, collapsing back to vertical below the sm breakpoint.",
       },
     ],
     subComponents: [
@@ -2957,6 +2963,12 @@ import { Textarea } from "@/components/ui/textarea";
         title: "With image",
         description: "Empty state with an illustration image.",
         demoSlug: "empty-demo-with-image",
+      },
+      {
+        title: "With image horizontal",
+        description:
+          "Single-row layout: image, text, then secondary and primary actions pushed to the far right. Collapses to the vertical stack on small screens.",
+        demoSlug: "empty-demo-with-image-horizontal",
       },
       {
         title: "With icon",

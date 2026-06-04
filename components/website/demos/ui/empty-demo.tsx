@@ -13,6 +13,7 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty"
+import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustration"
 
 export default function EmptyDemo() {
 	return (
@@ -97,6 +98,33 @@ export function EmptyDemoWithImage() {
 			</EmptyHeader>
 			<EmptyContent>
 				<Button>Browse all</Button>
+			</EmptyContent>
+		</Empty>
+	)
+}
+
+export function EmptyDemoWithImageHorizontal() {
+	return (
+		<Empty
+			className="rounded-[12px] border border-dashed border-border bg-surface px-5"
+			orientation="horizontal"
+		>
+			<EmptyMedia>
+				<span aria-hidden="true">
+					<ControlledRovoIllustration illusId="ai" size={96} />
+				</span>
+			</EmptyMedia>
+			<EmptyHeader className="sm:flex-1">
+				<EmptyTitle headingSize="xsmall">No agents yet</EmptyTitle>
+				<EmptyDescription>
+					Browse templates or create a new agent from the prompt.
+				</EmptyDescription>
+			</EmptyHeader>
+			<EmptyContent className="sm:w-auto sm:flex-none">
+				<div className="flex flex-wrap justify-center gap-2 sm:justify-end">
+					<Button variant="outline">Browse templates</Button>
+					<Button>Create agent</Button>
+				</div>
 			</EmptyContent>
 		</Empty>
 	)

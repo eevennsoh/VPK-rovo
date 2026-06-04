@@ -1,22 +1,35 @@
 import { cva, type VariantProps } from "class-variance-authority"
+import * as React from "react"
 
 import { token } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 
-const emptyVariants = cva(
-	"flex min-w-0 flex-1 flex-col items-center justify-center text-center text-balance",
-	{
-		variants: {
-			width: {
-				wide: "max-w-[464px]",
-				narrow: "max-w-[304px]",
-			},
+const emptyVariants = cva("flex min-w-0 flex-1", {
+	variants: {
+		width: {
+			wide: "max-w-[464px]",
+			narrow: "max-w-[304px]",
 		},
-		defaultVariants: {
-			width: "wide",
+		orientation: {
+			// Stacked: media on top, centered text and actions (default).
+			vertical: "flex-col items-center justify-center text-center text-balance",
+			// Side-by-side: media on the leading edge, left-aligned text/actions.
+			// Collapses back to the vertical stack below the sm breakpoint.
+			horizontal:
+				"flex-col items-center text-center text-balance sm:flex-row sm:items-center sm:justify-start sm:text-left",
 		},
-	}
-)
+	},
+	defaultVariants: {
+		width: "wide",
+		orientation: "vertical",
+	},
+})
+
+type EmptyOrientation = NonNullable<VariantProps<typeof emptyVariants>["orientation"]>
+
+// Surfaces the chosen orientation to sub-components so EmptyHeader/EmptyContent
+// can left-align in the horizontal layout without consumers prop-drilling.
+const EmptyOrientationContext = React.createContext<EmptyOrientation>("vertical")
 
 interface EmptyProps
 	extends React.ComponentProps<"div">,
@@ -25,22 +38,42 @@ interface EmptyProps
 function Empty({
 	className,
 	width = "wide",
+	orientation,
 	...props
 }: Readonly<EmptyProps>) {
+	const resolvedOrientation: EmptyOrientation = orientation ?? "vertical"
+	const isHorizontal = resolvedOrientation === "horizontal"
+	// Horizontal empties are about content, not max-width centering, so let them
+	// fill the available row width instead of clamping to the narrow/wide token.
+	const widthClass = isHorizontal ? undefined : emptyVariants({ width })
 	return (
-		<div
-			data-slot="empty"
-			className={cn(emptyVariants({ width }), "mx-auto gap-6 py-12", className)}
-			{...props}
-		/>
+		<EmptyOrientationContext value={resolvedOrientation}>
+			<div
+				data-slot="empty"
+				data-orientation={resolvedOrientation}
+				className={cn(
+					emptyVariants({ orientation: resolvedOrientation }),
+					widthClass,
+					"mx-auto gap-6 py-12",
+					isHorizontal && "w-full sm:gap-5 sm:py-8",
+					className
+				)}
+				{...props}
+			/>
+		</EmptyOrientationContext>
 	)
 }
 
 function EmptyHeader({ className, ...props }: React.ComponentProps<"div">) {
+	const orientation = React.use(EmptyOrientationContext)
 	return (
 		<div
 			data-slot="empty-header"
-			className={cn("flex flex-col items-center gap-2", className)}
+			className={cn(
+				"flex flex-col items-center gap-2",
+				orientation === "horizontal" && "sm:items-start sm:text-left",
+				className
+			)}
 			{...props}
 		/>
 	)
@@ -127,11 +160,13 @@ function EmptyDescription({
 }
 
 function EmptyContent({ className, ...props }: React.ComponentProps<"div">) {
+	const orientation = React.use(EmptyOrientationContext)
 	return (
 		<div
 			data-slot="empty-content"
 			className={cn(
 				"flex w-full min-w-0 flex-col items-center gap-2 text-sm",
+				orientation === "horizontal" && "sm:items-start",
 				className
 			)}
 			{...props}

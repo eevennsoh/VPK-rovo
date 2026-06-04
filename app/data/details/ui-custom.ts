@@ -1623,19 +1623,18 @@ import {
 
 	list: {
 		description:
-			"A presentational compound for rendering tabular lists with a fixed-width column layout. List.Root provides the labelled section wrapper, List.Heading renders a subtle section label, and List.Table sets up the colgroup and table body. Compose rows with the standard ui/table primitives (TableRow, TableCell). Keep state and interaction logic in the consuming component — List stays purely presentational.",
+			"A presentational compound for rendering record lists styled as a rounded card with a fixed-width column layout. List.Root provides the labelled section wrapper, List.Heading renders a subtle section label, and List.Table sets up the colgroup and table body. Compose rows with List.Row and cells with List.Cell — rows get a 14-unit height, divider borders, and a row-wide hover highlight, while the leading/trailing edge cells round the outer corners automatically. Keep state and interaction logic in the consuming component; List stays purely presentational.",
 		usage: `import { List, type ListColumn } from "@/components/ui-custom/list";
-import { TableCell, TableRow } from "@/components/ui/table";
 
 const COLUMNS: readonly ListColumn[] = [{}, { className: "w-[120px]" }];
 
 <List.Root aria-labelledby="recent-heading">
   <List.Heading id="recent-heading">Recent work items</List.Heading>
   <List.Table columns={COLUMNS}>
-    <TableRow>
-      <TableCell>PROJ-123: Add user authentication</TableCell>
-      <TableCell>2 days ago</TableCell>
-    </TableRow>
+    <List.Row>
+      <List.Cell edge="leading">PROJ-123: Add user authentication</List.Cell>
+      <List.Cell edge="trailing">2 days ago</List.Cell>
+    </List.Row>
   </List.Table>
 </List.Root>`,
 		props: [
@@ -1648,7 +1647,9 @@ const COLUMNS: readonly ListColumn[] = [{}, { className: "w-[120px]" }];
 		subComponents: [
 			{ name: "List.Root", description: "Section wrapper (flex column, gap-2). Forwards props such as aria-labelledby for accessible labelling." },
 			{ name: "List.Heading", description: "h2 rendered with the subtle section-label styling. Pair its id with List.Root's aria-labelledby." },
-			{ name: "List.Table", description: "Table with a table-fixed layout. Renders one <col> per entry in the `columns` array, then wraps children in a TableBody." },
+			{ name: "List.Table", description: "Table with a table-fixed layout. Renders one <col> per entry in the `columns` array, wraps children in a TableBody, and tracks each row's position so edge cells can round the outer corners." },
+			{ name: "List.Row", description: "A table row styled for lists: 14-unit height, divider border, and a group hover target. The hover highlight is applied by List.Cell so the rounded corners can clip it." },
+			{ name: "List.Cell", description: "A list cell with px-2 padding and the row-wide hover highlight. Pass edge=\"leading\" / edge=\"trailing\" on the first/last cell so it rounds the matching outer corners on the first and last rows." },
 		],
 		examples: [
 			{ title: "Basic", description: "A minimal two-column list without a heading.", demoSlug: "list-demo-basic" },

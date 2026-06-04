@@ -130,14 +130,17 @@ test("Studio default landing shows the agents card section below the composer", 
 
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /DropdownMenu/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /export function StudioAgentsSection/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className=\{cn\("mx-auto mt-12 flex w-\[90%\] flex-col gap-4", ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS\)\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className="mx-auto mt-12 flex w-\[90%\] max-w-\[800px\] flex-col gap-4"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /ButtonGroup aria-label="Agent views"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "my-agents", label: "My agents"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "by-teams", label: "By teams"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "by-companies", label: "By companies"/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3/u);
-	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /from "@\/components\/ui\/table"|from "@\/components\/ui-custom\/list"|<Table|TableCell|TableRow|TableBody|<List\./u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /grid grid-cols-1 gap-3 sm:grid-cols-2/u);
+	// My agents renders through the shared List primitive; directory tabs (teams/companies) keep the card grid.
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ List, type ListColumn \} from "@\/components\/ui-custom\/list";/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<List\.Root aria-label="My agents">/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<List\.Table columns=\{STUDIO_MY_AGENTS_LIST_COLUMNS\}>/u);
+	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /from "@\/components\/ui\/table"|<Table|TableCell|TableRow|TableBody/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Button \} from "@\/components\/ui\/button";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ ButtonGroup \} from "@\/components\/ui\/button-group";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Icon \} from "@\/components\/ui\/icon";/u);
@@ -153,10 +156,10 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /entry\.publishStatus === "published" \? "V1" : "Draft"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /formatRelativeModifiedTime\(entry\.lastTouchedAt\)/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /STUDIO_PINNED_AGENTS_STORAGE_KEY/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /onEdit=\{\(\) => onEditAgent\(entry\.profile\.id\)\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /onClick=\{\(\) => onEditAgent\(entry\.profile\.id\)\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-label=\{`Edit \$\{agentName\}`\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-label=\{`\$\{isPinned \? "Unpin" : "Pin"\} \$\{agentName\}`\}/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /onTogglePinned=\{\(\) => togglePinned\(entry\.profile\.id\)\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /onClick=\{\(\) => onTogglePinned\(entry\.profile\.id\)\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed=\{isPinned\}[\s\S]*render=\{isPinned \? <PinFilledIcon label="" size="small" \/> : <PinIcon label="" size="small" \/>\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:\[&_svg\]:text-icon-subtle!/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /text-icon-selected/u);
