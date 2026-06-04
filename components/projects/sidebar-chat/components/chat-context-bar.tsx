@@ -62,7 +62,7 @@ export default function ChatContextBar({
 	);
 
 	const tag = (
-		<ContextBarTag color="blue" elemBefore={tagElemBefore} title={context.label}>
+		<ContextBarTag elemBefore={tagElemBefore} title={context.label}>
 			{context.label}
 		</ContextBarTag>
 	);

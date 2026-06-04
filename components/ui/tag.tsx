@@ -168,7 +168,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 				"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
 				colorClasses.border,
 				hasAvatarTagStyles
-					? cn("h-5 gap-1 py-0 ps-0.5", isUserAvatarTag && "rounded-full pe-1.5", isOtherAvatarTag && "rounded-sm pe-1", isAgentAvatarTag && "rounded-sm pe-1")
+					? cn("h-5 gap-1 py-0 ps-1", isUserAvatarTag && "rounded-full pe-1.5", isOtherAvatarTag && "rounded-sm pe-1", isAgentAvatarTag && "rounded-sm pe-1")
 					: cn("h-5 gap-1 px-[3px] py-0.5", isRounded ? "rounded-full" : "rounded-sm"),
 				isInteractive ? "cursor-pointer hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed" : "cursor-default",
 				disabled && "pointer-events-none opacity-(--opacity-disabled)",
@@ -182,7 +182,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 				<span
 					className={cn(
 						"flex shrink-0 items-center justify-center",
-						hasAvatarTagStyles ? cn("size-5 overflow-hidden border border-transparent -ml-px [&>*]:size-full") : cn(colorClasses.icon, "[&>svg]:size-3"),
+						hasAvatarTagStyles ? cn("size-3 overflow-hidden [&>*]:size-full") : cn(colorClasses.icon, "[&>svg]:size-3"),
 					)}
 					data-slot="tag-before"
 				>
