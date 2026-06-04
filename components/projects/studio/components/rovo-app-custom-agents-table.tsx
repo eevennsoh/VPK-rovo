@@ -11,6 +11,7 @@ import { Empty, EmptyBody, EmptyContent, EmptyDescription, EmptyHeader, EmptyMed
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Icon } from "@/components/ui/icon";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Lozenge } from "@/components/ui/lozenge";
 import { CardDirectoryAgent } from "@/components/ui-custom/card-directory";
 import { List, type ListColumn } from "@/components/ui-custom/list";
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 import EditIcon from "@atlaskit/icon/core/edit";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
 import PinIcon from "@atlaskit/icon/core/pin";
+import SearchIcon from "@atlaskit/icon/core/search";
 
 const STUDIO_PINNED_AGENTS_STORAGE_KEY = "vpk:studio:pinned-custom-agents";
 const STUDIO_AGENTS_COMPANY_GROUP_TITLE = "By companies";
@@ -190,6 +192,20 @@ function pickAgentsByIds(
 		.filter((agent): agent is AgentsDirectoryAgent => Boolean(agent));
 }
 
+function filterDirectoryAgentsByQuery(
+	agents: readonly AgentsDirectoryAgent[],
+	normalizedQuery: string,
+): readonly AgentsDirectoryAgent[] {
+	if (!normalizedQuery) {
+		return agents;
+	}
+	return agents.filter(
+		(agent) =>
+			agent.name.toLowerCase().includes(normalizedQuery) ||
+			(agent.description?.toLowerCase().includes(normalizedQuery) ?? false),
+	);
+}
+
 function getCustomAgentDescription(entry: StudioSessionAgentEntry): string {
 	return (
 		entry.profile.description ??
@@ -213,6 +229,7 @@ export function StudioAgentsSection({
 }: Readonly<StudioAgentsSectionProps>) {
 	const [activeTab, setActiveTab] = useState<StudioAgentSectionTab>("my-agents");
 	const [pinnedAgentIds, setPinnedAgentIds] = useState<ReadonlySet<string>>(() => new Set());
+	const [searchQuery, setSearchQuery] = useState("");
 
 	// Hydrate from localStorage after mount to keep the SSR/first client render
 	// in sync (both start empty) and avoid a hydration mismatch.
@@ -243,6 +260,26 @@ export function StudioAgentsSection({
 		[directoryAgents],
 	);
 
+	const normalizedQuery = searchQuery.trim().toLowerCase();
+	const filteredEntries = useMemo(() => {
+		if (!normalizedQuery) {
+			return sortedEntries;
+		}
+		return sortedEntries.filter((entry) => {
+			const name = getStudioSessionAgentDisplayName(entry).toLowerCase();
+			const description = getCustomAgentDescription(entry).toLowerCase();
+			return name.includes(normalizedQuery) || description.includes(normalizedQuery);
+		});
+	}, [normalizedQuery, sortedEntries]);
+	const filteredTeamAgents = useMemo(
+		() => filterDirectoryAgentsByQuery(teamAgents, normalizedQuery),
+		[normalizedQuery, teamAgents],
+	);
+	const filteredCompanyAgents = useMemo(
+		() => filterDirectoryAgentsByQuery(companyAgents, normalizedQuery),
+		[normalizedQuery, companyAgents],
+	);
+
 	const togglePinned = (agentId: string) => {
 		setPinnedAgentIds((current) => {
 			const next = new Set(current);
@@ -258,52 +295,71 @@ export function StudioAgentsSection({
 
 	return (
 		<section
-			aria-labelledby="studio-agents-heading"
+			aria-label="Agents"
 			className="mx-auto mt-12 flex w-[90%] max-w-[800px] flex-col gap-4"
 			data-testid="studio-agents-section"
 		>
 			<div className="flex flex-wrap items-center justify-between gap-3">
-				<h2 id="studio-agents-heading" className="px-1.5 text-xs font-semibold leading-4 text-text-subtlest">
-					Agents
-				</h2>
 				<ButtonGroup aria-label="Agent views" className="flex-wrap" variant="separated">
 					{STUDIO_AGENT_SECTION_TABS.map((tab) => (
 						<Button
 							aria-pressed={activeTab === tab.id}
+							className="aria-pressed:bg-surface-hovered aria-pressed:text-text"
 							key={tab.id}
 							onClick={() => setActiveTab(tab.id)}
-							size="compact"
 							type="button"
-							variant="outline"
+							variant="ghost"
 						>
 							{tab.label}
 						</Button>
 					))}
 				</ButtonGroup>
+				<InputGroup className="w-full max-w-[220px] sm:w-[220px]">
+					<InputGroupAddon>
+						<Icon aria-hidden render={<SearchIcon label="" size="small" />} />
+					</InputGroupAddon>
+					<InputGroupInput
+						aria-label="Search agents"
+						onChange={(event) => setSearchQuery(event.target.value)}
+						placeholder="Search agents"
+						type="search"
+						value={searchQuery}
+					/>
+				</InputGroup>
 			</div>
 
 			{activeTab === "my-agents" ? (
-				sortedEntries.length > 0 ? (
+				sortedEntries.length === 0 ? (
+					<StudioAgentsEmptyState
+						onBrowseTemplates={onBrowseTemplates}
+						onCreateAgent={onCreateAgent}
+					/>
+				) : filteredEntries.length > 0 ? (
 					<StudioCustomAgentsList
-						entries={sortedEntries}
+						entries={filteredEntries}
 						pinnedAgentIds={pinnedAgentIds}
 						onEditAgent={onEditAgent}
 						onTogglePinned={togglePinned}
 					/>
 				) : (
-					<StudioAgentsEmptyState
-						onBrowseTemplates={onBrowseTemplates}
-						onCreateAgent={onCreateAgent}
-					/>
+					<StudioAgentsNoResults query={searchQuery} />
 				)
 			) : null}
 
 			{activeTab === "by-teams" ? (
-				<DirectoryAgentsGrid agents={teamAgents} onSelectAgent={onSelectDirectoryAgent} />
+				filteredTeamAgents.length > 0 ? (
+					<DirectoryAgentsGrid agents={filteredTeamAgents} onSelectAgent={onSelectDirectoryAgent} />
+				) : (
+					<StudioAgentsNoResults query={searchQuery} />
+				)
 			) : null}
 
 			{activeTab === "by-companies" ? (
-				<DirectoryAgentsGrid agents={companyAgents} onSelectAgent={onSelectDirectoryAgent} />
+				filteredCompanyAgents.length > 0 ? (
+					<DirectoryAgentsGrid agents={filteredCompanyAgents} onSelectAgent={onSelectDirectoryAgent} />
+				) : (
+					<StudioAgentsNoResults query={searchQuery} />
+				)
 			) : null}
 		</section>
 	);
@@ -350,6 +406,15 @@ function StudioAgentsEmptyState({
 				</EmptyContent>
 			</EmptyBody>
 		</Empty>
+	);
+}
+
+function StudioAgentsNoResults({ query }: Readonly<{ query: string }>) {
+	const trimmed = query.trim();
+	return (
+		<p className="px-1.5 py-8 text-center text-sm text-text-subtle" role="status">
+			{trimmed ? `No agents match “${trimmed}”.` : "No agents found."}
+		</p>
 	);
 }
 
