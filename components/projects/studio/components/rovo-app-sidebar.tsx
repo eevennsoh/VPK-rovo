@@ -11,6 +11,7 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import EditIcon from "@atlaskit/icon/core/edit";
+import InformationCircleIcon from "@atlaskit/icon/core/information-circle";
 import MenuIcon from "@atlaskit/icon/core/menu";
 import PersonAvatarIcon from "@atlaskit/icon/core/person-avatar";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
@@ -28,6 +29,7 @@ import {
 import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { Shimmer } from "@/components/ui-custom/shimmer";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
@@ -124,6 +126,7 @@ interface StudioAgentCreationThread {
 	id: string;
 	lastTouchedAt: number;
 	title: string;
+	isAwaitingResponse?: boolean;
 }
 
 function StudioSidebarNavItem({ actions, icon, isExpanded, isSelected = false, label, onClick }: Readonly<StudioSidebarNavItem>) {
@@ -191,6 +194,25 @@ function StudioSidebarAgentAvatar({
 // stable visual sizing inside the shared 24px leading slot.
 function StudioSidebarAgentCreationIcon() {
 	return <Spinner variant="rainbow" label="Creating agent" />;
+}
+
+// Persistent trailing indicator for an in-progress agent-creation row that is
+// paused awaiting the user's clarification answers. Rendered in the always-visible
+// `meta` slot so it stays put (unlike the hover-only `actions` menu) and signals
+// the user that the thread needs their response.
+function StudioSidebarAwaitingResponseIndicator() {
+	return (
+		<Tooltip>
+			<TooltipTrigger
+				render={
+					<span className="inline-flex items-center justify-center text-icon-information">
+						<InformationCircleIcon label="" size="small" color="currentColor" />
+					</span>
+				}
+			/>
+			<TooltipContent>Waiting for your response</TooltipContent>
+		</Tooltip>
+	);
 }
 
 // Leading icon for the "Agents" accordion header: shows `AiAgentIcon` at rest and
@@ -287,6 +309,7 @@ function StudioSidebarNavigation({
 			kind: "wip" as const,
 			label: thread.title,
 			lastTouchedAt: thread.lastTouchedAt,
+			isAwaitingResponse: thread.isAwaitingResponse,
 		})),
 		...sessionAgentEntries.map((entry) => ({
 			avatarSrc: entry.profile.avatarSrc,
@@ -387,6 +410,11 @@ function StudioSidebarNavigation({
 															}
 															leadingSize="medium"
 															isSelected={getStudioSidebarRecentAgentSelected(recentAgent, recentAgents.items, activeThreadId, selectedAgentId)}
+															meta={
+																recentAgent.kind === "wip" && recentAgent.isAwaitingResponse ? (
+																	<StudioSidebarAwaitingResponseIndicator />
+																) : undefined
+															}
 															onClick={() => {
 																if (recentAgent.kind === "wip") {
 																	onSelectAgentCreationThread?.(recentAgent.id);

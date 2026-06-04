@@ -50,6 +50,17 @@ interface ResolveAssistantThinkingTraceResponseGenerationStepOptions {
 	hasWidgetOutput?: boolean;
 	isPostToolsGeneration?: boolean;
 	isPostToolsResultPending?: boolean;
+	/**
+	 * Studio-style derivation: surfaces with a scripted (fake-tool) trace have no
+	 * real post-tools signal, so when `treatSettledToolsAsPostResultPending` is
+	 * set we treat "every thinking tool call has settled while the response is
+	 * still in flight (turn not complete)" as the post-tools-result-pending
+	 * window — i.e. the gap after the last scripted step before the answer lands.
+	 */
+	allToolsSettled?: boolean;
+	isResponseInFlight?: boolean;
+	hasTurnComplete?: boolean;
+	treatSettledToolsAsPostResultPending?: boolean;
 }
 
 interface ShouldCollapseAssistantThinkingTraceOptions {
@@ -223,18 +234,51 @@ export function resolveAssistantThinkingTraceOpen({
 	);
 }
 
+/**
+ * A thinking tool call is "settled" once it has reached a terminal state —
+ * i.e. it is no longer running, pending, or waiting on the user/approval.
+ */
+export function isSettledThinkingToolState(state: string): boolean {
+	return (
+		state !== "running" &&
+		state !== "pending" &&
+		state !== "awaiting-input" &&
+		state !== "approval-requested"
+	);
+}
+
+/**
+ * True when there is at least one visible thinking tool call and every one of
+ * them has settled. Used to detect the post-tools window on scripted-trace
+ * surfaces (Studio) that have no real post-tools generation signal.
+ */
+export function areAllThinkingToolCallsSettled(
+	toolCalls: readonly ThinkingToolCallSummary[],
+): boolean {
+	return toolCalls.length > 0 && toolCalls.every((toolCall) => isSettledThinkingToolState(toolCall.state));
+}
+
 export function resolveAssistantThinkingTraceResponseGenerationStep({
 	hasAwaitingInputToolCalls,
 	hasThinkingToolCalls,
 	hasWidgetOutput = false,
 	isPostToolsGeneration = false,
 	isPostToolsResultPending = false,
+	allToolsSettled = false,
+	isResponseInFlight = false,
+	hasTurnComplete = false,
+	treatSettledToolsAsPostResultPending = false,
 }: Readonly<ResolveAssistantThinkingTraceResponseGenerationStepOptions>): boolean {
+	const derivedPostToolsResultPending =
+		treatSettledToolsAsPostResultPending &&
+		allToolsSettled &&
+		isResponseInFlight &&
+		!hasTurnComplete;
 	return (
 		hasThinkingToolCalls &&
 		!hasAwaitingInputToolCalls &&
 		!hasWidgetOutput &&
-		(isPostToolsGeneration || isPostToolsResultPending)
+		(isPostToolsGeneration || isPostToolsResultPending || derivedPostToolsResultPending)
 	);
 }
 

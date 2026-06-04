@@ -235,6 +235,12 @@ export type ChainOfThoughtStepProps = ComponentProps<"div"> & {
 	label: ReactNode;
 	description?: ReactNode;
 	status?: "complete" | "active" | "pending";
+	/**
+	 * Whether the active-state icon shimmer wash is applied. Defaults to
+	 * `status === "active"`. Set to `false` for self-animating icons (e.g. a
+	 * spinner) that would be doubled by the wash overlay.
+	 */
+	iconShimmer?: boolean;
 	collapsible?: boolean;
 	defaultOpen?: boolean;
 	open?: boolean;
@@ -295,6 +301,7 @@ export const ChainOfThoughtStep = memo(
 		label,
 		description,
 		status = "complete",
+		iconShimmer,
 		collapsible = false,
 		defaultOpen = false,
 		open,
@@ -363,7 +370,7 @@ export const ChainOfThoughtStep = memo(
 				{...props}
 			>
 				<div className="relative mt-0.5">
-					<ChainOfThoughtIconSlot shimmer={status === "active"}>
+					<ChainOfThoughtIconSlot shimmer={iconShimmer ?? status === "active"}>
 						{iconNode}
 					</ChainOfThoughtIconSlot>
 					<div

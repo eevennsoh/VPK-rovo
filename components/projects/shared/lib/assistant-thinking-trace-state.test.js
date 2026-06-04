@@ -25,7 +25,9 @@ function loadTsModule(entryPoint) {
 }
 
 const {
+	areAllThinkingToolCallsSettled,
 	collectAssistantThinkingTraceData,
+	isSettledThinkingToolState,
 	resolveAssistantThinkingTraceOpen,
 	resolveAssistantThinkingTracePhase,
 	resolveAssistantThinkingTraceResponseGenerationStep,
@@ -650,15 +652,21 @@ test("assistant thinking trace suppresses auto-open for question-card tool state
 	);
 });
 
-test("assistant thinking trace uses a pencil icon for response generation", () => {
+test("assistant thinking trace uses a rainbow spinner + shimmer + dots for response generation", () => {
 	const source = fs.readFileSync(
 		path.join(__dirname, "../components/assistant-thinking-trace.tsx"),
 		"utf8",
 	);
 
-	assert.match(source, /import PencilIcon from "@atlaskit\/icon-lab\/core\/pencil";/u);
-	assert.match(source, /const StepPencilIcon = /u);
-	assert.match(source, /icon=\{StepPencilIcon\}\s+label=\{\s*<Shimmer[\s\S]*Generating response/u);
+	assert.match(source, /import \{ Spinner \} from "@\/components\/ui\/spinner";/u);
+	assert.match(source, /import \{ AnimatedDots \} from "@\/components\/ui-custom\/animated-dots";/u);
+	// The trailing step renders a rainbow spinner icon (no wash), shimmering
+	// "Generating a response" text, and animated dots.
+	assert.match(source, /iconRender=\{<Spinner variant="rainbow"/u);
+	assert.match(source, /iconShimmer=\{false\}/u);
+	assert.match(source, /<Shimmer[\s\S]*Generating a response[\s\S]*<\/Shimmer>\s*<AnimatedDots \/>/u);
+	// The old pencil icon is gone.
+	assert.equal(/StepPencilIcon/u.test(source), false);
 });
 
 test("resolveAssistantThinkingTraceOpen respects manual user toggles", () => {
@@ -827,6 +835,93 @@ test("resolveAssistantThinkingTraceResponseGenerationStep shows a final active s
 			isPostToolsGeneration: true,
 		}),
 		true
+	);
+});
+
+test("isSettledThinkingToolState treats only terminal states as settled", () => {
+	assert.equal(isSettledThinkingToolState("completed"), true);
+	assert.equal(isSettledThinkingToolState("error"), true);
+	assert.equal(isSettledThinkingToolState("denied"), true);
+	for (const active of ["running", "pending", "awaiting-input", "approval-requested"]) {
+		assert.equal(isSettledThinkingToolState(active), false, `${active} should not be settled`);
+	}
+});
+
+test("areAllThinkingToolCallsSettled requires at least one tool and all terminal", () => {
+	assert.equal(areAllThinkingToolCallsSettled([]), false);
+	assert.equal(
+		areAllThinkingToolCallsSettled([{ state: "completed" }, { state: "completed" }]),
+		true
+	);
+	assert.equal(
+		areAllThinkingToolCallsSettled([{ state: "completed" }, { state: "running" }]),
+		false
+	);
+});
+
+test("treatSettledToolsAsPostResultPending derives the step from settled tools + in-flight response", () => {
+	// All scripted steps settled while the answer is still streaming → show it.
+	assert.equal(
+		resolveAssistantThinkingTraceResponseGenerationStep({
+			hasAwaitingInputToolCalls: false,
+			hasThinkingToolCalls: true,
+			treatSettledToolsAsPostResultPending: true,
+			allToolsSettled: true,
+			isResponseInFlight: true,
+			hasTurnComplete: false,
+		}),
+		true
+	);
+
+	// Turn complete → hide it (the answer has landed).
+	assert.equal(
+		resolveAssistantThinkingTraceResponseGenerationStep({
+			hasAwaitingInputToolCalls: false,
+			hasThinkingToolCalls: true,
+			treatSettledToolsAsPostResultPending: true,
+			allToolsSettled: true,
+			isResponseInFlight: true,
+			hasTurnComplete: true,
+		}),
+		false
+	);
+
+	// A tool is still running (not all settled) → hide it.
+	assert.equal(
+		resolveAssistantThinkingTraceResponseGenerationStep({
+			hasAwaitingInputToolCalls: false,
+			hasThinkingToolCalls: true,
+			treatSettledToolsAsPostResultPending: true,
+			allToolsSettled: false,
+			isResponseInFlight: true,
+			hasTurnComplete: false,
+		}),
+		false
+	);
+
+	// Awaiting the user (turn-1 ask) → hide it even if settled-derivation is on.
+	assert.equal(
+		resolveAssistantThinkingTraceResponseGenerationStep({
+			hasAwaitingInputToolCalls: true,
+			hasThinkingToolCalls: true,
+			treatSettledToolsAsPostResultPending: true,
+			allToolsSettled: true,
+			isResponseInFlight: true,
+			hasTurnComplete: false,
+		}),
+		false
+	);
+
+	// Derivation off → settled tools alone don't surface the step.
+	assert.equal(
+		resolveAssistantThinkingTraceResponseGenerationStep({
+			hasAwaitingInputToolCalls: false,
+			hasThinkingToolCalls: true,
+			allToolsSettled: true,
+			isResponseInFlight: true,
+			hasTurnComplete: false,
+		}),
+		false
 	);
 });
 

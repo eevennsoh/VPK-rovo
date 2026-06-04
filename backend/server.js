@@ -6147,6 +6147,35 @@ app.post("/api/genui-description-summary", async (req, res) => {
 	}
 });
 
+// Deterministic clarification questions used as a safety net for Studio agent
+// creation. The demo flow always asks before building, so if the model declines
+// to emit its own question card on the first turn we fall back to these to keep
+// the awaiting-user-response state engaged. The model's tailored card is always
+// preferred when present. Shaped as `ask_user_questions` tool input so it flows
+// through the same `buildQuestionCardPayloadFromAIGatewayDeferredTool` builder.
+const FALLBACK_AGENT_CREATION_QUESTION_INPUT = {
+	title: "Answer these questions to continue",
+	description: "Pick the options that best match what you want.",
+	questions: [
+		{
+			question: "Who is the primary audience for this agent?",
+			options: ["My team", "The whole org", "Just me"],
+		},
+		{
+			question: "What should the agent focus on first?",
+			options: [
+				"Drafting and writing",
+				"Analysis and recommendations",
+				"Automating a workflow",
+			],
+		},
+		{
+			question: "What tone and persona should it use?",
+			options: ["Coach", "Expert", "Concise assistant"],
+		},
+	],
+};
+
 async function handleChatSdkRequest(req, res) {
 	let stageTrace = null;
 	let cleanupChatSdkAbortTracking = null;
@@ -8647,6 +8676,19 @@ async function handleChatSdkRequest(req, res) {
 					// derived from the user's prompt + prior Q&A so it reflects
 					// the actual brief rather than a canned sequence.
 					const isAgentCreationTurn = creationMode === "agent";
+					// Agent creation is a two-turn flow. Turn 1 = the user's initial
+					// brief (no prior assistant turn, not a clarification answer): we
+					// only read the brief and ask clarification questions, then await
+					// the user. Turn 2 (the clarification answer) runs the full build
+					// trace and emits the agent result. `isPostClarificationTurn`
+					// (the user answered) and a prior assistant turn both mark turn 2.
+					const hasPriorAssistantTurn = gatewayMessages.some(
+						(message) => message.role === "assistant",
+					);
+					const isFirstAgentCreationTurn =
+						isAgentCreationTurn &&
+						!isPostClarificationTurn &&
+						!hasPriorAssistantTurn;
 					writer.write({
 						type: "data-thinking-status",
 						data: {
@@ -8666,6 +8708,7 @@ async function handleChatSdkRequest(req, res) {
 									userPrompt: latestUserMessage,
 									messages: gatewayMessages,
 									contextDescription: effectiveContextWithPortBinding,
+									isFollowUpTurn: !isFirstAgentCreationTurn,
 								}),
 								{ signal: abortController.signal },
 						  ).catch((traceError) => {
@@ -8789,8 +8832,45 @@ async function handleChatSdkRequest(req, res) {
 						}
 					}
 
+					// Turn 1 always ends by asking the user. If neither the model
+					// nor the legacy extractors produced a question card, fall back
+					// to a deterministic one so the awaiting-user-response state
+					// always engages ("ask first, build second").
+					if (
+						isFirstAgentCreationTurn &&
+						!questionCardPayload &&
+						!planWidgetPayload
+					) {
+						deferredToolCallId =
+							deferredToolCallId ||
+							createAIGatewayDeferredToolCallId("ask_user_questions");
+						questionCardPayload =
+							buildQuestionCardPayloadFromAIGatewayDeferredTool(
+								FALLBACK_AGENT_CREATION_QUESTION_INPUT,
+								{
+									sessionId: `request-user-input-${deferredToolCallId}`,
+									round: 1,
+									maxRounds: 1,
+									title: "Answer these questions to continue",
+									description:
+										"Pick the options that best match what you want.",
+									widgetType: CLARIFICATION_WIDGET_TYPE,
+									maxPresetOptions: CLARIFICATION_MAX_PRESET_OPTIONS,
+									customOptionPlaceholder:
+										CLARIFICATION_CUSTOM_OPTION_PLACEHOLDER,
+									maxLabelLength: CLARIFICATION_MAX_LABEL_LENGTH,
+									createSessionId: createClarificationSessionId,
+								},
+							);
+					}
+
+					// Never emit a finished agent on turn 1 — the user must answer
+					// the clarification questions before anything is built.
 					const agentResultExtraction =
-						creationMode === "agent" && !questionCardPayload && !planWidgetPayload
+						creationMode === "agent" &&
+						!isFirstAgentCreationTurn &&
+						!questionCardPayload &&
+						!planWidgetPayload
 							? extractStudioAgentResultFromText(bufferedText)
 							: null;
 					if (agentResultExtraction) {

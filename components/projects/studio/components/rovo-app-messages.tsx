@@ -601,6 +601,10 @@ function AssistantMessage({
 		isThinkingLifecycleStreaming,
 		isResponseInFlight,
 		treatQuestionToolCallsAsAnswered: isQuestionCardResolved,
+		// Studio's trace is scripted (no real tool harness), so surface the
+		// "Generating a response" step once all scripted steps settle while the
+		// gateway answer is still buffering.
+		treatSettledToolsAsPostResultPending: true,
 		planNarrationText: shouldRenderPlanWidget ? text : "",
 		planNarrationStreaming: isMessageTextStreaming(message),
 	});
