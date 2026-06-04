@@ -17,7 +17,7 @@ import {
 } from "@/components/blocks/agent-templates/data/demo-template-agents";
 import { RovoAppBrowserArtifact } from "@/components/projects/studio/components/rovo-app-browser-artifact";
 import { RovoAppComposer } from "@/components/projects/studio/components/rovo-app-composer";
-import { StudioCustomAgentsTable } from "@/components/projects/studio/components/rovo-app-custom-agents-table";
+import { StudioAgentsSection } from "@/components/projects/studio/components/rovo-app-custom-agents-table";
 import { RovoAppMessages } from "@/components/projects/studio/components/rovo-app-messages";
 import { RovoAppHermesSkillDraftBar } from "@/components/projects/studio/components/rovo-app-hermes-skill-draft-bar";
 import { RovoAppAgentConfigPanel, type AgentConfigView } from "@/components/projects/studio/components/rovo-app-agent-config-panel";
@@ -834,16 +834,19 @@ const HOME_STARTER_CYCLE_DURATION_MS = 6000;
 // sibling so it keeps reading as a crisp affordance over the faded edge.
 
 function HomeStarterBento({
+	onBrowseTemplates,
 	onPreviewEnd,
 	onPreviewStart,
 	onSelect,
+	templatesDialogOpen,
 }: Readonly<{
+	onBrowseTemplates: (category: HomeStarterCategory) => void;
 	onPreviewEnd: () => void;
 	onPreviewStart: (prompt: string) => void;
 	onSelect: (prompt: string, template?: StudioCreationTemplateContext) => void;
+	templatesDialogOpen: boolean;
 }>) {
 	const [activeCategory, setActiveCategory] = useState<HomeStarterCategory>(HOME_STARTER_DEFAULT_CATEGORY);
-	const [browseOpen, setBrowseOpen] = useState(false);
 	const [bentoInteracting, setBentoInteracting] = useState(false);
 	const shouldReduceMotion = useReducedMotion();
 	const focusedTemplatePromptRef = useRef<string | null>(null);
@@ -855,7 +858,7 @@ function HomeStarterBento({
 	const templates = HOME_STARTER_VIEWS[activeCategory];
 	const visibleTemplates = templates.slice(0, 5);
 	const canShowMore = templates.length > visibleTemplates.length;
-	const cycleRunning = !shouldReduceMotion && !browseOpen;
+	const cycleRunning = !shouldReduceMotion && !templatesDialogOpen;
 	const cycleProgress = useMotionValue(0);
 	const cycleControlsRef = useRef<AnimationPlaybackControls | null>(null);
 	const updateBentoInteracting = useCallback((interacting: boolean) => {
@@ -958,14 +961,6 @@ function HomeStarterBento({
 			}
 		}
 	}, []);
-	const handleTemplateAgentSelect = useCallback((agent: AgentTemplatesAgent) => {
-		onSelect(
-			agent.templatePrompt ?? buildFallbackTemplatePrompt(agent),
-			buildCreationTemplateContextFromAgent(agent),
-		);
-		setBrowseOpen(false);
-	}, [onSelect]);
-
 	return (
 		<div
 			className="w-full"
@@ -1160,22 +1155,13 @@ function HomeStarterBento({
 							size="compact"
 							className="pointer-events-auto h-7 rounded-full border-0 bg-surface px-3 text-sm leading-5 font-normal text-text-subtle hover:bg-surface-hovered"
 							style={{ boxShadow: token("elevation.shadow.overlay") }}
-							onClick={() => setBrowseOpen(true)}
+							onClick={() => onBrowseTemplates(activeCategory)}
 						>
 							Browse all
 						</Button>
 					</div>
 				) : null}
 			</div>
-			<AgentTemplatesDialog
-				key={activeCategory}
-				open={browseOpen}
-				onOpenChange={setBrowseOpen}
-				agents={DEMO_AGENT_TEMPLATES}
-				initialCategoryId={activeCategory}
-				onSelectAgent={handleTemplateAgentSelect}
-				sessionAgents={DEMO_AGENT_TEMPLATES_SESSION}
-			/>
 		</div>
 	);
 }
@@ -2141,6 +2127,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	});
 	const [cursorMode, setCursorMode] = useState(false);
 	const [galleryExpanded, setGalleryExpanded] = useState(false);
+	const [agentTemplatesDialogOpen, setAgentTemplatesDialogOpen] = useState(false);
+	const [agentTemplatesInitialCategory, setAgentTemplatesInitialCategory] = useState<HomeStarterCategory>(HOME_STARTER_DEFAULT_CATEGORY);
+	const [composerFocusRequestKey, setComposerFocusRequestKey] = useState(0);
 	const [previewPrompt, setPreviewPrompt] = useState<string | null>(null);
 	const [prefillText, setPrefillText] = useState<string | null>(null);
 	const [voiceTranscript, setVoiceTranscript] = useState<string | null>(null);
@@ -2233,6 +2222,23 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		setPrefillText(prompt);
 		setPreviewPrompt(null);
 		creationTemplateRef.current = template ?? null;
+	}, []);
+
+	const handleBrowseAgentTemplates = useCallback((category: HomeStarterCategory = HOME_STARTER_DEFAULT_CATEGORY) => {
+		setAgentTemplatesInitialCategory(category);
+		setAgentTemplatesDialogOpen(true);
+	}, []);
+
+	const handleTemplateAgentSelect = useCallback((agent: AgentTemplatesAgent) => {
+		handleGallerySelect(
+			agent.templatePrompt ?? buildFallbackTemplatePrompt(agent),
+			buildCreationTemplateContextFromAgent(agent),
+		);
+		setAgentTemplatesDialogOpen(false);
+	}, [handleGallerySelect]);
+
+	const handleFocusStudioComposer = useCallback(() => {
+		setComposerFocusRequestKey((currentKey) => currentKey + 1);
 	}, []);
 
 	const handleRovoAppSuggestionSelect = useCallback(
@@ -3607,7 +3613,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const shouldShowChatHeader = !shouldShowAgentConfigPane && (visibleMessages.length > 0 || hasActiveThreadRun || chat.isStreaming);
 	const isDefaultAgentHomeState = showHomeState && !isCustomAgentSelected && !shouldShowAgentConfigPane;
 	isDefaultAgentHomeStateRef.current = isDefaultAgentHomeState;
-	const shouldShowStudioCustomAgentsTable = isDefaultAgentHomeState && studioAgentRegistry.sessionAgentEntries.length > 0;
+	const shouldShowStudioAgentsSection = isDefaultAgentHomeState;
 	const shouldReduceMotion = useReducedMotion();
 	const shouldShowTimelineNavigator = !showHomeState && !isArtifactOpen && timelineItems.length > 1;
 	const composerPreviewState = resolveRovoAppComposerPlaceholder({
@@ -4058,9 +4064,11 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					style={{ willChange: "opacity" }}
 				>
 					<HomeStarterBento
+						onBrowseTemplates={handleBrowseAgentTemplates}
 						onSelect={handleGallerySelect}
 						onPreviewStart={handleGalleryPreviewStart}
 						onPreviewEnd={handleGalleryPreviewEnd}
+						templatesDialogOpen={agentTemplatesDialogOpen}
 					/>
 				</motion.div>
 			) : null}
@@ -4142,6 +4150,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									composerStatus={chat.composerStatus}
 									compact={isArtifactOpen || shouldShowAgentConfigPane}
 									errorMessage={chat.inputError}
+									focusRequestKey={composerFocusRequestKey}
 									fillWidth={!showHomeState && !(isArtifactOpen || shouldShowAgentConfigPane)}
 									galleryExpanded={galleryExpanded}
 									isPlanMode={chat.isPlanMode}
@@ -4243,11 +4252,14 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				/>
 			) : null}
 			{chatPane}
-			{shouldShowStudioCustomAgentsTable ? (
-				<StudioCustomAgentsTable
+			{shouldShowStudioAgentsSection ? (
+				<StudioAgentsSection
+					directoryAgents={ROVO_DIRECTORY_AGENT_PROFILES}
 					entries={studioAgentRegistry.sessionAgentEntries}
-					onDeleteAgent={handleDeleteStudioAgent}
+					onBrowseTemplates={() => handleBrowseAgentTemplates()}
+					onCreateAgent={handleFocusStudioComposer}
 					onEditAgent={handleStudioSidebarAgentSelect}
+					onSelectDirectoryAgent={handleSidebarBrowseAgentSelect}
 				/>
 			) : null}
 			{showHomeState && !shouldSplitArtifactPane ? (
@@ -4310,6 +4322,15 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				threads={chat.threads}
 				threadsLoaded={chat.threadsLoaded}
 				topOffset={!embedded}
+			/>
+			<AgentTemplatesDialog
+				key={agentTemplatesInitialCategory}
+				open={agentTemplatesDialogOpen}
+				onOpenChange={setAgentTemplatesDialogOpen}
+				agents={DEMO_AGENT_TEMPLATES}
+				initialCategoryId={agentTemplatesInitialCategory}
+				onSelectAgent={handleTemplateAgentSelect}
+				sessionAgents={DEMO_AGENT_TEMPLATES_SESSION}
 			/>
 			{/* Dormant: the sidebar no longer opens this directory dialog (its "View all agents" row now returns to the landing). Kept mounted to wire to another trigger later; nothing sets it open today. */}
 			<AgentsDirectoryDialog

@@ -90,6 +90,7 @@ interface RovoAppComposerProps {
 	composerStatus: ChatStatus;
 	compact?: boolean;
 	errorMessage?: string | null;
+	focusRequestKey?: number;
 	/** Widen the prompt input to the 800px in-session width (vs. the 600px home width). */
 	fillWidth?: boolean;
 	isPlanMode?: boolean;
@@ -141,6 +142,7 @@ function RovoAppComposerInner({
 	backgroundArtifactLabel,
 	composerStatus,
 	errorMessage,
+	focusRequestKey,
 	fillWidth = false,
 	micStream,
 	onDismissPlanExecutionTracker,
@@ -311,6 +313,16 @@ function RovoAppComposerInner({
 		const items = container.querySelectorAll<HTMLButtonElement>("[data-slash-item]");
 		items[highlightedIndex]?.scrollIntoView({ block: "nearest" });
 	}, [highlightedIndex, isSlashMenuOpen]);
+
+	useEffect(() => {
+		if (typeof focusRequestKey !== "number" || focusRequestKey <= 0) {
+			return;
+		}
+
+		requestAnimationFrame(() => {
+			textareaRef.current?.focus();
+		});
+	}, [focusRequestKey]);
 
 	// Apply prefilled text from gallery click or voice transcript streaming
 	const appliedPrefillRef = useRef<string | null>(null);
