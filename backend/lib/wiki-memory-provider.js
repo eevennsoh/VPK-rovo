@@ -1455,7 +1455,17 @@ async function resetWikiMemory({
 	}
 
 	// 3. Recompile prompt context from the now-empty canonical pages.
-	await regenerateWikiMemoryContext({ generateTextImpl, logger, wikiDir });
+	// Non-fatal: the memory corpus has already been cleared (steps 1-2). If the
+	// AI Gateway is unreachable (e.g. no credentials in local dev), skip the
+	// context regeneration and let the caller know via a warning. The compiled
+	// context will be refreshed the next time the memory sync job runs.
+	try {
+		await regenerateWikiMemoryContext({ generateTextImpl, logger, wikiDir });
+	} catch (error) {
+		logger.warn?.("[wiki-memory] Skipped compiled context regeneration after reset; memory was still cleared.", {
+			error: error instanceof Error ? error.message : String(error),
+		});
+	}
 
 	await appendToWikiLog(
 		"memory-reset",

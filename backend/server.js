@@ -145,6 +145,9 @@ const {
 const {
 	createWikiRouteHandlers,
 } = require("./lib/wiki-route-handlers");
+const {
+	createWikiMemoryCollectionSync,
+} = require("./lib/wiki-memory-collection-sync");
 const personalGraphRoutes = require("./lib/personal-graph-routes");
 const {
 	inferRovoAppArtifactKindFromContent,
@@ -493,17 +496,14 @@ const {
 
 console.log("[STARTUP] Dependencies loaded");
 
-const syncWikiMemoryCollection = async ({ collectionName, wikiDir }) => {
-	if (!collectionName) {
-		return;
-	}
-
-	await syncWikiQmdIndex({
-		collectionNames: [collectionName],
-		logger: console,
-		wikiDir,
-	});
-};
+// Refresh the QMD search index for a single collection without letting an
+// unavailable better-sqlite3 native binding (intentionally not built in this
+// repo) turn a successful memory reset/delete into a 500. See
+// ./lib/wiki-memory-collection-sync.js for the full rationale.
+const syncWikiMemoryCollection = createWikiMemoryCollectionSync({
+	logger: console,
+	syncWikiQmdIndex,
+});
 
 const wikiRouteHandlers = createWikiRouteHandlers({
 	buildWikiMemoryBriefImpl: buildWikiMemoryBrief,

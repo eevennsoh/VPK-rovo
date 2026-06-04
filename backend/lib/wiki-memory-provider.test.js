@@ -14,6 +14,7 @@ const {
 	ingestQueuedWikiMemoryProposals,
 	listWikiMemoryProposals,
 	pruneCanonicalWikiMemoryBlock,
+	resetWikiMemory,
 	syncWikiBackedMemory,
 	regenerateWikiMemoryContext,
 } = require("./wiki-memory-provider");
@@ -568,4 +569,67 @@ test("syncWikiBackedMemory with force rebuilds canonical memory from current raw
 	const runtimeContext = await fs.readFile(path.join(wikiDir, "output", "work-context.md"), "utf8");
 	assert.match(runtimeContext, /Keep the runtime loop on Rovo/u);
 	assert.doesNotMatch(runtimeContext, /External screenshots are blocked/u);
+});
+
+test("resetWikiMemory clears all proposals and canonical blocks even when context regeneration fails", async () => {
+	const wikiDir = await fs.mkdtemp(path.join(os.tmpdir(), "wiki-memory-reset-"));
+
+	// Seed a proposal so there is something to clear.
+	await enqueueWikiMemoryProposal({
+		content: "User prefers dark mode.",
+		target: "user",
+		wikiDir,
+	});
+
+	const warnings = [];
+	const logger = {
+		info: () => {},
+		warn: (...args) => warnings.push(args),
+	};
+
+	// generateTextImpl throws — simulates an unreachable AI Gateway.
+	const result = await resetWikiMemory({
+		generateTextImpl: async () => {
+			throw new Error("fetch failed");
+		},
+		logger,
+		wikiDir,
+	});
+
+	// Memory must be cleared regardless of the Gateway failure.
+	assert.equal(result.removedProposalCount, 1, "proposal should have been removed");
+	assert.ok(Array.isArray(result.memories.work?.blocks), "should return empty work blocks");
+	assert.equal(result.memories.work.blocks.length, 0, "canonical blocks should be empty");
+
+	// No proposals remain on disk.
+	const remainingProposals = await listWikiMemoryProposals({ wikiDir });
+	assert.equal(remainingProposals.length, 0, "no proposals should remain after reset");
+
+	// A warning should have been emitted for the skipped context regeneration.
+	const warnMessages = warnings.flat().join(" ");
+	assert.match(warnMessages, /Skipped compiled context regeneration/u);
+});
+
+test("resetWikiMemory succeeds and regenerates context when generateTextImpl is provided", async () => {
+	const wikiDir = await fs.mkdtemp(path.join(os.tmpdir(), "wiki-memory-reset-regen-"));
+
+	await enqueueWikiMemoryProposal({
+		content: "Prefers TypeScript strict mode.",
+		target: "user",
+		wikiDir,
+	});
+
+	let regenerateCalled = false;
+	const result = await resetWikiMemory({
+		generateTextImpl: async () => {
+			regenerateCalled = true;
+			return "# Work Context\n\n- No memories yet.\n";
+		},
+		logger: { info: () => {}, warn: () => {} },
+		wikiDir,
+	});
+
+	assert.equal(result.removedProposalCount, 1);
+	assert.equal(result.memories.work.blocks.length, 0);
+	assert.ok(regenerateCalled, "generateTextImpl should have been called for context regeneration");
 });
