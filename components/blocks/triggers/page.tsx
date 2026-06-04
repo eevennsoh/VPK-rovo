@@ -1,177 +1,656 @@
 "use client";
 
+import { useCallback, useMemo, useState } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
+import Image from "next/image";
 import AddIcon from "@atlaskit/icon/core/add";
 import AutomationIcon from "@atlaskit/icon/core/automation";
+import BranchIcon from "@atlaskit/icon/core/branch";
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import ClockIcon from "@atlaskit/icon/core/clock";
 import DeleteIcon from "@atlaskit/icon/core/delete";
+import IncidentIcon from "@atlaskit/icon/core/incident";
 import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
-import Image from "next/image";
+import WebhookIcon from "@atlaskit/icon-lab/core/webhook";
+
 import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { AtlassianLogo } from "@/components/ui/logo";
 import { Separator } from "@/components/ui/separator";
+import {
+	createAgentTriggerValue,
+	DEFAULT_CONFIGURED_TRIGGER_VALUES,
+	getAgentTriggerParamLabel,
+	getAgentTriggerReadableLabel,
+	getTriggerEvent,
+	getTriggerProvider,
+	serializeAgentTriggerLabels,
+	TRIGGER_PROVIDERS,
+	type AgentTriggerConnectionState,
+	type AgentTriggerEventDefinition,
+	type AgentTriggerParamDefinition,
+	type AgentTriggerProviderDefinition,
+	type AgentTriggerProviderIcon,
+	type AgentTriggerProviderId,
+	type AgentTriggerValue,
+} from "@/components/blocks/triggers/data/trigger-catalog";
 import { cn } from "@/lib/utils";
 
-const DEFAULT_TRIGGER_PROMPT = [
-	"When a ticket enters Drafting, inspect the RFP packet, customer context, and required response sections.",
-	"Draft the first-pass response package, flag blockers or missing inputs, attach the draft to the ticket, and move ready tickets to Review.",
-].join(" ");
+export type {
+	AgentTriggerConnectionState,
+	AgentTriggerEventDefinition,
+	AgentTriggerParamDefinition,
+	AgentTriggerProviderDefinition,
+	AgentTriggerProviderId,
+	AgentTriggerValue,
+};
+export { serializeAgentTriggerLabels };
+
+function renderTriggerProviderIcon(
+	icon: AgentTriggerProviderIcon,
+	label: string,
+): ReactElement {
+	if (icon.kind === "image") {
+		return (
+			<Image
+				src={icon.src}
+				alt=""
+				width={16}
+				height={16}
+				className="size-4 shrink-0"
+			/>
+		);
+	}
+
+	if (icon.kind === "atlassian-logo") {
+		return <AtlassianLogo name={icon.name} size="xxsmall" label={label} themeAware />;
+	}
+
+	switch (icon.name) {
+		case "branch":
+			return <BranchIcon label="" size="small" />;
+		case "clock":
+			return <ClockIcon label="" size="small" />;
+		case "incident":
+			return <IncidentIcon label="" size="small" />;
+		case "webhook":
+			return <WebhookIcon label="" size="small" />;
+		case "automation":
+		default:
+			return <AutomationIcon label="" size="small" />;
+	}
+}
+
+function getInitialTriggers({
+	defaultTriggers,
+	hasTrigger,
+}: Readonly<{
+	defaultTriggers?: readonly AgentTriggerValue[];
+	hasTrigger?: boolean;
+}>): AgentTriggerValue[] {
+	if (defaultTriggers) {
+		return [...defaultTriggers];
+	}
+
+	return hasTrigger === true ? [...DEFAULT_CONFIGURED_TRIGGER_VALUES] : [];
+}
+
+function getConnectionLabel(state: AgentTriggerConnectionState | undefined): string | null {
+	switch (state) {
+		case "needs-connection":
+			return "Requires connection";
+		case "connecting":
+			return "Connecting";
+		case "connection-error":
+			return "Connection failed";
+		case "connected":
+		default:
+			return null;
+	}
+}
+
+function getConnectButtonLabel(state: AgentTriggerConnectionState | undefined): string {
+	return state === "connection-error" ? "Retry" : "Connect";
+}
+
+function getGroupedEvents(events: readonly AgentTriggerEventDefinition[]) {
+	const groups: Array<{
+		groupLabel?: string;
+		events: AgentTriggerEventDefinition[];
+	}> = [];
+
+	for (const event of events) {
+		const previousGroup = groups[groups.length - 1];
+		if (!previousGroup || previousGroup.groupLabel !== event.groupLabel) {
+			groups.push({ groupLabel: event.groupLabel, events: [event] });
+			continue;
+		}
+
+		previousGroup.events.push(event);
+	}
+
+	return groups;
+}
+
+interface TriggerAddRowProps extends ComponentProps<"button"> {
+	label: string;
+}
 
 function TriggerAddRow({
 	className,
-	label = "Add Trigger",
-}: Readonly<{
-	className?: string;
-	label?: string;
-}>): React.ReactElement {
+	label,
+	...props
+}: Readonly<TriggerAddRowProps>): ReactElement {
 	return (
-		<div
+		<button
+			type="button"
 			className={cn(
-				"grid h-8 w-full grid-cols-[2rem_minmax(0,1fr)] items-center gap-x-3 rounded-lg px-2 text-left text-sm text-text-subtle transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered",
+				"grid h-8 w-full grid-cols-[2rem_minmax(0,1fr)] items-center gap-x-3 rounded-lg px-2 text-left text-sm text-text-subtle transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered focus-visible:bg-bg-neutral-subtle-hovered focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 				className,
 			)}
+			{...props}
 		>
 			<span className="flex size-6 shrink-0 items-center justify-center justify-self-center text-icon-subtle">
 				<AddIcon label="" size="small" />
 			</span>
 			<span className="text-sm font-medium">{label}</span>
+		</button>
+	);
+}
+
+function TriggerPicker({
+	defaultOpen,
+	label,
+	onSelectEvent,
+}: Readonly<{
+	defaultOpen?: boolean;
+	label: string;
+	onSelectEvent: (providerId: AgentTriggerProviderId, eventId: string) => void;
+}>): ReactElement {
+	const [open, setOpen] = useState(defaultOpen ?? false);
+	const [query, setQuery] = useState("");
+	const normalizedQuery = query.trim().toLowerCase();
+	const filteredProviders = useMemo(
+		() =>
+			TRIGGER_PROVIDERS.map((provider) => {
+				const providerMatches =
+					normalizedQuery.length === 0 ||
+					provider.label.toLowerCase().includes(normalizedQuery) ||
+					provider.description.toLowerCase().includes(normalizedQuery);
+				const matchingEvents = provider.events.filter((event) =>
+					normalizedQuery.length === 0 ||
+					event.label.toLowerCase().includes(normalizedQuery) ||
+					event.description.toLowerCase().includes(normalizedQuery),
+				);
+
+				return providerMatches
+					? { ...provider, events: matchingEvents.length > 0 ? matchingEvents : provider.events }
+					: { ...provider, events: matchingEvents };
+			}).filter((provider) => provider.events.length > 0),
+		[normalizedQuery],
+	);
+
+	const handleSelectEvent = useCallback(
+		(providerId: AgentTriggerProviderId, eventId: string) => {
+			onSelectEvent(providerId, eventId);
+			setOpen(false);
+			setQuery("");
+		},
+		[onSelectEvent],
+	);
+
+	return (
+		<DropdownMenu open={open} onOpenChange={setOpen}>
+			<DropdownMenuTrigger render={<TriggerAddRow label={label} />} />
+			<DropdownMenuContent
+				align="start"
+				className="w-[min(24rem,calc(100vw-2rem))] p-1"
+				sideOffset={6}
+			>
+				<div className="p-2 pb-1">
+					<label className="sr-only" htmlFor="trigger-picker-search">
+						Search triggers
+					</label>
+					<input
+						id="trigger-picker-search"
+						value={query}
+						onChange={(event) => setQuery(event.target.value)}
+						onKeyDown={(event) => event.stopPropagation()}
+						placeholder="Search Triggers..."
+						className="h-8 w-full rounded-md border border-transparent bg-transparent px-2 text-sm text-text outline-none placeholder:text-text-subtle focus:border-border-focused"
+					/>
+				</div>
+				{filteredProviders.length > 0 ? (
+					<DropdownMenuGroup>
+						{filteredProviders.map((provider) => (
+							<TriggerProviderSubmenu
+								key={provider.id}
+								onSelectEvent={handleSelectEvent}
+								provider={provider}
+							/>
+						))}
+					</DropdownMenuGroup>
+				) : (
+					<div className="px-3 py-6 text-center text-sm text-text-subtle">
+						No triggers found
+					</div>
+				)}
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
+function TriggerProviderSubmenu({
+	onSelectEvent,
+	provider,
+}: Readonly<{
+	onSelectEvent: (providerId: AgentTriggerProviderId, eventId: string) => void;
+	provider: AgentTriggerProviderDefinition;
+}>): ReactElement {
+	const groupedEvents = getGroupedEvents(provider.events);
+
+	return (
+		<DropdownMenuSub>
+			<DropdownMenuSubTrigger>
+				<span className="flex min-w-0 flex-1 items-center gap-3">
+					<span className="flex size-5 shrink-0 items-center justify-center text-icon-subtle">
+						{renderTriggerProviderIcon(provider.icon, provider.label)}
+					</span>
+					<span className="min-w-0 truncate">{provider.label}</span>
+				</span>
+			</DropdownMenuSubTrigger>
+			<DropdownMenuSubContent className="min-w-64 p-1">
+				{groupedEvents.map((group, groupIndex) => (
+					<DropdownMenuGroup
+						className="p-0"
+						key={`${provider.id}-${group.groupLabel ?? "default"}-${groupIndex}`}
+					>
+						{group.groupLabel ? (
+							<DropdownMenuLabel>{group.groupLabel}</DropdownMenuLabel>
+						) : null}
+						{group.events.map((event) => (
+							<DropdownMenuItem
+								key={event.id}
+								description={event.description}
+								onSelect={() => onSelectEvent(provider.id, event.id)}
+							>
+								{event.label}
+							</DropdownMenuItem>
+						))}
+						{groupIndex < groupedEvents.length - 1 ? (
+							<DropdownMenuSeparator />
+						) : null}
+					</DropdownMenuGroup>
+				))}
+			</DropdownMenuSubContent>
+		</DropdownMenuSub>
+	);
+}
+
+function TriggerParamMenu({
+	disabled,
+	onValueChange,
+	param,
+	value,
+}: Readonly<{
+	disabled?: boolean;
+	onValueChange: (value: string) => void;
+	param: AgentTriggerParamDefinition;
+	value: string | undefined;
+}>): ReactElement {
+	const label = getAgentTriggerParamLabel(param, value);
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger
+				render={(
+					<Button
+						type="button"
+						size="compact"
+						variant="secondary"
+						disabled={disabled}
+						aria-label={`${param.label}: ${label}`}
+						className="h-6 max-w-52 gap-0 rounded-md bg-bg-neutral py-0 pr-0 pl-2 text-sm font-medium text-text-subtle hover:bg-bg-neutral-hovered disabled:opacity-(--opacity-disabled)"
+					/>
+				)}
+			>
+				<span className="min-w-0 truncate">{label}</span>
+				<ChevronDownIcon label="" size="small" />
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="start" className="min-w-56">
+				<DropdownMenuLabel>{param.label}</DropdownMenuLabel>
+				<DropdownMenuGroup>
+					{param.options.map((option) => (
+						<DropdownMenuItem
+							key={option.value}
+							description={option.description}
+							onSelect={() => onValueChange(option.value)}
+						>
+							{option.label}
+						</DropdownMenuItem>
+					))}
+				</DropdownMenuGroup>
+				{param.id === "repository" ? (
+					<>
+						<DropdownMenuSeparator />
+						<DropdownMenuGroup>
+							<DropdownMenuItem
+								elemBefore={<AddIcon label="" size="small" />}
+								onSelect={() => undefined}
+							>
+								Add repositories
+							</DropdownMenuItem>
+							<DropdownMenuItem onSelect={() => undefined}>
+								Refresh repositories
+							</DropdownMenuItem>
+						</DropdownMenuGroup>
+					</>
+				) : null}
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
+function TriggerSentence({
+	disabled,
+	event,
+	onParamChange,
+	trigger,
+}: Readonly<{
+	disabled?: boolean;
+	event: AgentTriggerEventDefinition;
+	onParamChange: (paramId: string, value: string) => void;
+	trigger: AgentTriggerValue;
+}>): ReactElement {
+	if (!event.params || event.params.length === 0) {
+		return <span className="font-medium text-text">{event.label}</span>;
+	}
+
+	return (
+		<span className="flex min-w-0 flex-wrap items-center gap-1.5 text-text">
+			<span className="font-medium">{event.label}</span>
+			{event.params.map((param) => (
+				<span className="inline-flex min-w-0 items-center gap-1.5" key={param.id}>
+					<span>{param.connector}</span>
+					<TriggerParamMenu
+						disabled={disabled}
+						onValueChange={(value) => onParamChange(param.id, value)}
+						param={param}
+						value={trigger.params?.[param.id]}
+					/>
+				</span>
+			))}
+		</span>
+	);
+}
+
+function TriggerRow({
+	onConnect,
+	onParamChange,
+	onRemove,
+	trigger,
+}: Readonly<{
+	onConnect?: (trigger: AgentTriggerValue) => void;
+	onParamChange: (paramId: string, value: string) => void;
+	onRemove: () => void;
+	trigger: AgentTriggerValue;
+}>): ReactElement {
+	const provider = getTriggerProvider(trigger.providerId);
+	const event = provider ? getTriggerEvent(provider.id, trigger.eventId) : undefined;
+	const connectionLabel = getConnectionLabel(trigger.connectionState);
+	const needsConnection = Boolean(connectionLabel);
+	const paramsDisabled = trigger.connectionState !== undefined && trigger.connectionState !== "connected";
+
+	if (!provider || !event) {
+		return (
+			<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 rounded-lg px-2 py-2 transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
+				<div className="flex flex-col items-center" aria-hidden={true}>
+					<IconTile
+						aria-hidden={true}
+						icon={<AutomationIcon label="" size="small" />}
+						label="Automation"
+						size="small"
+						variant="blue"
+					/>
+				</div>
+				<div className="flex min-h-6 min-w-0 items-start gap-2">
+					<div className="min-w-0 flex-1 text-sm text-text">{trigger.label ?? "Unknown trigger"}</div>
+					<Button
+						aria-label="Delete trigger"
+						className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 group-focus-within/trigger-row:opacity-100 focus-visible:opacity-100"
+						onClick={onRemove}
+						size="icon"
+						type="button"
+						variant="ghost"
+					>
+						<DeleteIcon label="" size="small" />
+					</Button>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 rounded-lg px-2 py-2 transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
+			<div className="flex flex-col items-center" aria-hidden={true}>
+				<IconTile
+					aria-hidden={true}
+					icon={renderTriggerProviderIcon(provider.icon, provider.label)}
+					label={provider.label}
+					size="small"
+					variant="blue"
+				/>
+				<div className="my-2 h-7 w-px bg-border" />
+				<span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-bg-neutral text-icon-subtle">
+					<GenerativeIndicatorIcon label="" size="small" />
+				</span>
+			</div>
+			<div className="grid min-w-0 gap-4">
+				<div className="flex min-h-6 items-start gap-2">
+					<div className="flex min-w-0 flex-1 flex-wrap items-center gap-1 text-sm text-text">
+						<TriggerSentence
+							disabled={paramsDisabled}
+							event={event}
+							onParamChange={onParamChange}
+							trigger={trigger}
+						/>
+					</div>
+					<Button
+						aria-label="Delete trigger"
+						className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 group-focus-within/trigger-row:opacity-100 focus-visible:opacity-100"
+						onClick={onRemove}
+						size="icon"
+						type="button"
+						variant="ghost"
+					>
+						<DeleteIcon label="" size="small" />
+					</Button>
+				</div>
+				<div className="flex min-w-0 flex-wrap items-center gap-2 text-sm leading-5 text-text-subtle">
+					<span className="min-w-0 flex-1">{event.description}</span>
+					{connectionLabel ? (
+						<span
+							className={cn(
+								"font-medium",
+								trigger.connectionState === "connection-error"
+									? "text-text-danger"
+									: "text-text-warning",
+							)}
+						>
+							{connectionLabel}
+						</span>
+					) : null}
+					{needsConnection ? (
+						<Button
+							type="button"
+							variant="outline"
+							size="compact"
+							isLoading={trigger.connectionState === "connecting"}
+							onClick={() => onConnect?.(trigger)}
+						>
+							{getConnectButtonLabel(trigger.connectionState)}
+						</Button>
+					) : null}
+				</div>
+			</div>
 		</div>
 	);
 }
 
-function TriggerDropdown({
-	avatarSrc,
-	showProjectAvatar = false,
-	value,
-}: Readonly<{
-	avatarSrc?: string;
-	showProjectAvatar?: boolean;
-	value: string;
-}>): React.ReactElement {
-	const labelContent =
-		showProjectAvatar && avatarSrc ? (
-			<span className="flex min-w-0 items-center gap-1">
-				<Image
-					src={avatarSrc}
-					alt=""
-					width={12}
-					height={12}
-					className="size-3 shrink-0 rounded-[2px]"
-				/>
-				<span className="min-w-0 truncate">{value}</span>
-			</span>
-		) : (
-			value
-		);
-
-	return (
-		<Select defaultValue={value}>
-			<SelectTrigger
-				aria-label={value}
-				className="!h-6 gap-0 rounded-md !py-0 !pr-0 !pl-2 text-sm font-medium text-text-subtle [&_[data-slot=icon]]:size-6"
-				size="sm"
-			>
-				<SelectValue>{labelContent}</SelectValue>
-			</SelectTrigger>
-			<SelectContent align="start" alignItemWithTrigger={false} className="min-w-0">
-				<SelectItem value={value}>{labelContent}</SelectItem>
-			</SelectContent>
-		</Select>
-	);
-}
-
 export interface TriggersProps {
-	/** When false, only the "Add Trigger" affordance is shown (empty state). */
-	hasTrigger?: boolean;
-	/** Status/column the trigger watches, e.g. "Drafting". */
-	statusLabel?: string;
-	/** Board the trigger is scoped to, e.g. "Enterprise RFP Response". */
-	boardLabel?: string;
-	/** Project avatar shown beside the board name. Omit to hide the avatar. */
-	boardAvatarSrc?: string;
-	/** Natural-language prompt run when the trigger fires. */
-	prompt?: string;
+	/** Controlled trigger definitions. */
+	triggers?: readonly AgentTriggerValue[];
+	/** Initial trigger definitions for uncontrolled usage. */
+	defaultTriggers?: readonly AgentTriggerValue[];
+	/** Opens the picker on first render for demos and visual state coverage. */
+	defaultPickerOpen?: boolean;
 	/** Label for the add-trigger affordance. */
 	addTriggerLabel?: string;
-	/** Invoked when the trigger's delete button is pressed. */
+	/** Invoked whenever trigger definitions change. */
+	onTriggersChange?: (triggers: readonly AgentTriggerValue[]) => void;
+	/** Invoked when a connection CTA is pressed. */
+	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
+	/** Legacy compatibility: explicit true seeds configured demo triggers. */
+	hasTrigger?: boolean;
+	/** @deprecated Use typed trigger params instead. */
+	statusLabel?: string;
+	/** @deprecated Use typed trigger params instead. */
+	boardLabel?: string;
+	/** @deprecated Use provider icons instead. */
+	boardAvatarSrc?: string;
+	/** @deprecated Trigger prompts are handled by agent instructions. */
+	prompt?: string;
+	/** @deprecated Use onTriggersChange. */
 	onClearTrigger?: () => void;
 	className?: string;
 }
 
 /**
- * Triggers — an event-trigger editor card. Renders an automation trigger row
- * ("Status changed to <status> in <board>") with its prompt and a delete
- * control, followed by an affordance to add another trigger. When `hasTrigger`
- * is false, only the add affordance is shown.
+ * Triggers — an agent automation trigger editor. Renders an add-trigger picker,
+ * configured trigger rows, compact parameter menus, remove controls, and
+ * UI-only connection states. It models only what starts an agent; conditions,
+ * actions, and branches are handled by later automation surfaces.
  */
 export default function Triggers({
-	hasTrigger = true,
-	statusLabel = "Drafting",
-	boardLabel = "Enterprise RFP Response",
-	boardAvatarSrc = "/avatar-project/rocket.svg",
-	prompt = DEFAULT_TRIGGER_PROMPT,
 	addTriggerLabel = "Add Trigger",
-	onClearTrigger,
 	className,
-}: Readonly<TriggersProps>): React.ReactElement {
-	const addTriggerControl = <TriggerAddRow label={addTriggerLabel} />;
+	defaultPickerOpen,
+	defaultTriggers,
+	hasTrigger,
+	onClearTrigger,
+	onConnectTrigger,
+	onTriggersChange,
+	triggers,
+}: Readonly<TriggersProps>): ReactElement {
+	const isControlled = typeof triggers !== "undefined";
+	const [uncontrolledTriggers, setUncontrolledTriggers] = useState<AgentTriggerValue[]>(() =>
+		getInitialTriggers({ defaultTriggers, hasTrigger }),
+	);
+	const currentTriggers = triggers ?? uncontrolledTriggers;
+
+	const commitTriggers = useCallback(
+		(nextTriggers: readonly AgentTriggerValue[]) => {
+			if (!isControlled) {
+				setUncontrolledTriggers([...nextTriggers]);
+			}
+			onTriggersChange?.(nextTriggers);
+		},
+		[isControlled, onTriggersChange],
+	);
+
+	const handleSelectEvent = useCallback(
+		(providerId: AgentTriggerProviderId, eventId: string) => {
+			const nextTrigger = createAgentTriggerValue(providerId, eventId, currentTriggers.length + 1);
+
+			if (!nextTrigger) {
+				return;
+			}
+
+			commitTriggers([...currentTriggers, nextTrigger]);
+		},
+		[commitTriggers, currentTriggers],
+	);
+
+	const handleParamChange = useCallback(
+		(triggerId: string, paramId: string, value: string) => {
+			commitTriggers(
+				currentTriggers.map((trigger) => {
+					if (trigger.id !== triggerId) {
+						return trigger;
+					}
+
+					const nextTrigger = {
+						...trigger,
+						params: {
+							...(trigger.params ?? {}),
+							[paramId]: value,
+						},
+					};
+
+					return {
+						...nextTrigger,
+						label: getAgentTriggerReadableLabel(nextTrigger),
+					};
+				}),
+			);
+		},
+		[commitTriggers, currentTriggers],
+	);
+
+	const handleRemove = useCallback(
+		(triggerId: string) => {
+			commitTriggers(currentTriggers.filter((trigger) => trigger.id !== triggerId));
+			onClearTrigger?.();
+		},
+		[commitTriggers, currentTriggers, onClearTrigger],
+	);
+
+	const cardChildren: ReactNode =
+		currentTriggers.length > 0 ? (
+			<>
+				<div className="grid gap-0">
+					{currentTriggers.map((trigger) => (
+						<TriggerRow
+							key={trigger.id}
+							onConnect={onConnectTrigger}
+							onParamChange={(paramId, value) => handleParamChange(trigger.id, paramId, value)}
+							onRemove={() => handleRemove(trigger.id)}
+							trigger={trigger}
+						/>
+					))}
+				</div>
+				<Separator className="my-2" />
+				<TriggerPicker
+					defaultOpen={defaultPickerOpen}
+					label={addTriggerLabel}
+					onSelectEvent={handleSelectEvent}
+				/>
+			</>
+		) : (
+			<TriggerPicker
+				defaultOpen={defaultPickerOpen}
+				label={addTriggerLabel}
+				onSelectEvent={handleSelectEvent}
+			/>
+		);
 
 	return (
 		<div className={cn("grid gap-5", className)}>
 			<section className="grid gap-2">
 				<div className="rounded-xl border border-border bg-surface p-2">
-					{hasTrigger ? (
-						<>
-							<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 rounded-lg px-2 py-2 transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered">
-								<div className="flex flex-col items-center" aria-hidden={true}>
-									<IconTile
-										aria-hidden={true}
-										icon={<AutomationIcon label="" size="small" />}
-										label="Automation"
-										size="small"
-										variant="blue"
-									/>
-									<div className="my-2 h-7 w-px bg-border" />
-									<span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-bg-neutral text-icon-subtle">
-										<GenerativeIndicatorIcon label="" size="small" />
-									</span>
-								</div>
-								<div className="grid min-w-0 gap-4">
-									<div className="flex min-h-6 items-start gap-2">
-										<div className="flex min-w-0 flex-1 flex-wrap items-center gap-1 text-sm text-text">
-											<span>Status changed to</span>
-											<TriggerDropdown value={statusLabel} />
-											<span className="font-medium">in</span>
-											<TriggerDropdown
-												showProjectAvatar
-												avatarSrc={boardAvatarSrc}
-												value={boardLabel}
-											/>
-										</div>
-										<Button
-											aria-label="Delete trigger"
-											className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 focus-visible:opacity-100"
-											onClick={onClearTrigger}
-											size="icon"
-											variant="ghost"
-										>
-											<DeleteIcon label="" size="small" />
-										</Button>
-									</div>
-									<p className="min-w-0 flex-1 text-sm leading-5 text-text">{prompt}</p>
-								</div>
-							</div>
-							<Separator className="my-2" />
-							{addTriggerControl}
-						</>
-					) : (
-						addTriggerControl
-					)}
+					{cardChildren}
 				</div>
 			</section>
 		</div>

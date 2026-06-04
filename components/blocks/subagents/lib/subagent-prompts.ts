@@ -17,6 +17,7 @@ export function cloneConfig(config: AgentConfigFormValue): AgentConfigFormValue 
 	return {
 		...config,
 		triggers: config.triggers ? [...config.triggers] : undefined,
+		triggerDefinitions: config.triggerDefinitions ? [...config.triggerDefinitions] : undefined,
 		skills: config.skills ? [...config.skills] : undefined,
 		tools: config.tools ? [...config.tools] : undefined,
 		subagents: config.subagents ? [...config.subagents] : undefined,

@@ -259,9 +259,9 @@ test("Agent config renders filled summary rows once field data exists", () => {
 		assert.match(AGENT_SOURCE, new RegExp(`onRemoveListItem\\("${field}", index\\)`, "u"));
 	}
 	assert.match(TAG_SOURCE, /group\/tag relative inline-flex/u);
-	assert.match(TAG_SOURCE, /hasAvatarTagStyles\s*\?\s*cn\("h-5 gap-1 py-0 ps-0\.5"/u);
+	assert.match(TAG_SOURCE, /hasAvatarTagStyles\s*\?\s*cn\("h-5 gap-1 py-0 ps-1"/u);
 	assert.doesNotMatch(TAG_SOURCE, /hasAvatarTagStyles\s*\?\s*cn\("h-6/u);
-	assert.match(TAG_SOURCE, /hasAvatarTagStyles \? cn\("size-5 overflow-hidden border border-transparent -ml-px \[&>\*\]:size-full"\)/u);
+	assert.match(TAG_SOURCE, /hasAvatarTagStyles \? cn\("size-3 overflow-hidden \[&>\*\]:size-full"\)/u);
 	assert.match(TAG_SOURCE, /group-hover\/tag:opacity-100/u);
 	assert.doesNotMatch(TAG_SOURCE, /group-hover:opacity-100/u);
 	assert.match(SKILL_TAG_SOURCE, /removeVariant\?: "inline" \| "overlay";/u);
@@ -277,6 +277,19 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	assert.match(UI_CUSTOM_DETAILS_SOURCE, /demoSlug: "skill-tag-demo-removable"/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /"skill-tag-demo-removable": dynamic/u);
 	assert.doesNotMatch(AGENT_SOURCE, /data-slot=tag-after\]\]:opacity-0/u);
+});
+
+test("Compact agent config opts into the typed Triggers editor without replacing default rows", () => {
+	assert.match(AGENT_SOURCE, /import Triggers, \{[\s\S]*serializeAgentTriggerLabels,[\s\S]*type AgentTriggerValue,[\s\S]*\} from "@\/components\/blocks\/triggers\/page";/u);
+	assert.match(AGENT_SOURCE, /triggerDefinitions\?: readonly AgentTriggerValue\[\];/u);
+	assert.match(AGENT_SOURCE, /function getAgentTriggerItems\(config: AgentConfigFormValue\): readonly string\[\] \{[\s\S]*serializeAgentTriggerLabels\(config\.triggerDefinitions\)[\s\S]*const triggers = getNonEmptyConfigItems\(config\.triggers\)[\s\S]*const trigger = config\.trigger\?\.trim\(\);/u);
+	assert.match(AGENT_SOURCE, /onConnectTrigger\?: \(trigger: AgentTriggerValue\) => void;/u);
+	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
+	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange \? \([\s\S]*<Triggers[\s\S]*triggers=\{config\.triggerDefinitions \?\? \[\]\}[\s\S]*onConnectTrigger=\{onConnectTrigger\}[\s\S]*onTriggersChange=\{onTriggerDefinitionsChange\}/u);
+	assert.match(AGENT_SOURCE, /isEmpty: onTriggerDefinitionsChange \? false : triggerItems\.length === 0/u);
+	assert.match(AGENT_SOURCE, /<AgentFilledSummaryRow[\s\S]*items=\{triggerItems\}[\s\S]*label="Triggers"/u);
+	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange=\{onTriggerDefinitionsChange\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /<Triggers[\s\S]{0,400}layout="default"/u);
 });
 
 test("Agent header renders Configure and Test as a self-contained compact ToggleGroup", () => {

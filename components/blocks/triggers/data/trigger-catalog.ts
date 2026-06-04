@@ -1,0 +1,552 @@
+export type AgentTriggerProviderId =
+	| "scheduled"
+	| "jira"
+	| "confluence"
+	| "github-gitlab"
+	| "slack"
+	| "microsoft-teams"
+	| "sentry"
+	| "linear"
+	| "webhook"
+	| "pagerduty";
+
+export type AgentTriggerConnectionState =
+	| "connected"
+	| "needs-connection"
+	| "connecting"
+	| "connection-error";
+
+export interface AgentTriggerOption {
+	label: string;
+	value: string;
+	description?: string;
+}
+
+export interface AgentTriggerParamDefinition {
+	id: string;
+	label: string;
+	connector: string;
+	placeholder: string;
+	defaultValue?: string;
+	options: readonly AgentTriggerOption[];
+}
+
+export interface AgentTriggerEventDefinition {
+	id: string;
+	label: string;
+	description: string;
+	groupLabel?: string;
+	requiresConnection?: boolean;
+	params?: readonly AgentTriggerParamDefinition[];
+}
+
+export interface AgentTriggerProviderDefinition {
+	id: AgentTriggerProviderId;
+	label: string;
+	description: string;
+	icon: AgentTriggerProviderIcon;
+	requiresConnection?: boolean;
+	events: readonly AgentTriggerEventDefinition[];
+}
+
+export type AgentTriggerProviderIcon =
+	| { kind: "atlassian-logo"; name: "jira" | "confluence" | "teams" | "opsgenie" | "bitbucket" }
+	| { kind: "atlaskit-icon"; name: "automation" | "branch" | "clock" | "incident" | "webhook" }
+	| { kind: "image"; src: string };
+
+export interface AgentTriggerValue {
+	id: string;
+	providerId: AgentTriggerProviderId;
+	eventId: string;
+	label?: string;
+	params?: Readonly<Record<string, string>>;
+	connectionState?: AgentTriggerConnectionState;
+}
+
+const REPOSITORY_OPTIONS = [
+	{ label: "Select repos", value: "select-repos" },
+	{ label: "vpf", value: "vpf", description: "eevennsoh" },
+	{ label: "proximity", value: "proximity", description: "eevennsoh" },
+	{ label: "venn-prototype-skills", value: "venn-prototype-skills", description: "eevennsoh" },
+	{ label: "venn-prototyping-kit", value: "venn-prototyping-kit", description: "eevennsoh" },
+	{ label: "vpk", value: "vpk", description: "eevennsoh" },
+] as const satisfies readonly AgentTriggerOption[];
+
+const ACTOR_OPTIONS = [
+	{ label: "Anyone", value: "anyone" },
+	{ label: "Me", value: "me" },
+	{ label: "Specific people", value: "specific-people" },
+] as const satisfies readonly AgentTriggerOption[];
+
+const PROJECT_OPTIONS = [
+	{ label: "Any project", value: "any-project" },
+	{ label: "Rovo Studio", value: "rovo-studio" },
+	{ label: "Enterprise RFP Response", value: "enterprise-rfp-response" },
+] as const satisfies readonly AgentTriggerOption[];
+
+const SPACE_OPTIONS = [
+	{ label: "Any space", value: "any-space" },
+	{ label: "Product", value: "product" },
+	{ label: "Engineering", value: "engineering" },
+] as const satisfies readonly AgentTriggerOption[];
+
+const CHANNEL_OPTIONS = [
+	{ label: "Select channels", value: "select-channels" },
+	{ label: "#triage", value: "triage" },
+	{ label: "#incidents", value: "incidents" },
+	{ label: "#releases", value: "releases" },
+] as const satisfies readonly AgentTriggerOption[];
+
+const SERVICE_OPTIONS = [
+	{ label: "Any service", value: "any-service" },
+	{ label: "Frontend", value: "frontend" },
+	{ label: "API", value: "api" },
+] as const satisfies readonly AgentTriggerOption[];
+
+const TEAM_OPTIONS = [
+	{ label: "Any team", value: "any-team" },
+	{ label: "Product engineering", value: "product-engineering" },
+	{ label: "Support", value: "support" },
+] as const satisfies readonly AgentTriggerOption[];
+
+const REPOSITORY_PARAM = {
+	id: "repository",
+	label: "Repository",
+	connector: "in",
+	placeholder: "Select repos",
+	defaultValue: "select-repos",
+	options: REPOSITORY_OPTIONS,
+} as const satisfies AgentTriggerParamDefinition;
+
+const ACTOR_PARAM = {
+	id: "actor",
+	label: "Actor",
+	connector: "by",
+	placeholder: "Anyone",
+	defaultValue: "anyone",
+	options: ACTOR_OPTIONS,
+} as const satisfies AgentTriggerParamDefinition;
+
+const PROJECT_PARAM = {
+	id: "project",
+	label: "Project",
+	connector: "in",
+	placeholder: "Any project",
+	defaultValue: "any-project",
+	options: PROJECT_OPTIONS,
+} as const satisfies AgentTriggerParamDefinition;
+
+const SPACE_PARAM = {
+	id: "space",
+	label: "Space",
+	connector: "in",
+	placeholder: "Any space",
+	defaultValue: "any-space",
+	options: SPACE_OPTIONS,
+} as const satisfies AgentTriggerParamDefinition;
+
+const CHANNEL_PARAM = {
+	id: "channel",
+	label: "Channel",
+	connector: "in",
+	placeholder: "Select channels",
+	defaultValue: "select-channels",
+	options: CHANNEL_OPTIONS,
+} as const satisfies AgentTriggerParamDefinition;
+
+const SERVICE_PARAM = {
+	id: "service",
+	label: "Service",
+	connector: "for",
+	placeholder: "Any service",
+	defaultValue: "any-service",
+	options: SERVICE_OPTIONS,
+} as const satisfies AgentTriggerParamDefinition;
+
+const TEAM_PARAM = {
+	id: "team",
+	label: "Team",
+	connector: "for",
+	placeholder: "Any team",
+	defaultValue: "any-team",
+	options: TEAM_OPTIONS,
+} as const satisfies AgentTriggerParamDefinition;
+
+export const TRIGGER_PROVIDERS = [
+	{
+		id: "scheduled",
+		label: "Scheduled",
+		description: "Run the agent on a fixed cadence.",
+		icon: { kind: "atlaskit-icon", name: "clock" },
+		events: [
+			{
+				id: "every-hour",
+				label: "Every hour",
+				description: "Run once every hour.",
+			},
+			{
+				id: "every-weekday-morning",
+				label: "Every weekday morning",
+				description: "Run on weekdays at the start of the workday.",
+			},
+			{
+				id: "custom-schedule",
+				label: "Custom schedule",
+				description: "Use a custom recurring schedule.",
+			},
+		],
+	},
+	{
+		id: "jira",
+		label: "Jira",
+		description: "React to Jira work item activity.",
+		icon: { kind: "atlassian-logo", name: "jira" },
+		events: [
+			{
+				id: "work-item-created",
+				label: "Work item created",
+				description: "Run when a new Jira work item is created.",
+				params: [PROJECT_PARAM, ACTOR_PARAM],
+			},
+			{
+				id: "work-item-updated",
+				label: "Work item updated",
+				description: "Run when a Jira work item changes.",
+				params: [PROJECT_PARAM, ACTOR_PARAM],
+			},
+			{
+				id: "status-changed",
+				label: "Status changed",
+				description: "Run when a work item transitions between statuses.",
+				params: [PROJECT_PARAM, ACTOR_PARAM],
+			},
+			{
+				id: "comment-added",
+				label: "Comment added",
+				description: "Run when a comment is added to a work item.",
+				params: [PROJECT_PARAM, ACTOR_PARAM],
+			},
+		],
+	},
+	{
+		id: "confluence",
+		label: "Confluence",
+		description: "React to page and space activity.",
+		icon: { kind: "atlassian-logo", name: "confluence" },
+		events: [
+			{
+				id: "page-published",
+				label: "Page published",
+				description: "Run when a page is published.",
+				params: [SPACE_PARAM, ACTOR_PARAM],
+			},
+			{
+				id: "page-updated",
+				label: "Page updated",
+				description: "Run when a page is edited.",
+				params: [SPACE_PARAM, ACTOR_PARAM],
+			},
+			{
+				id: "comment-added",
+				label: "Comment added",
+				description: "Run when someone comments on a page.",
+				params: [SPACE_PARAM, ACTOR_PARAM],
+			},
+			{
+				id: "scheduled-page-review",
+				label: "Scheduled page review",
+				description: "Run a scheduled review for selected Confluence spaces.",
+				params: [SPACE_PARAM],
+			},
+		],
+	},
+	{
+		id: "github-gitlab",
+		label: "GitHub / GitLab",
+		description: "React to repository and pull request activity.",
+		icon: { kind: "atlaskit-icon", name: "branch" },
+		requiresConnection: true,
+		events: [
+			{
+				id: "draft-opened",
+				label: "Draft opened",
+				description: "Run when a draft pull request or merge request opens.",
+				params: [REPOSITORY_PARAM, ACTOR_PARAM],
+			},
+			{
+				id: "pull-request-opened",
+				label: "Pull request opened",
+				description: "Run when a pull request or merge request opens.",
+				params: [REPOSITORY_PARAM, ACTOR_PARAM],
+			},
+			{
+				id: "comment-added",
+				label: "Comment added",
+				description: "Run when a review or discussion comment is added.",
+				params: [REPOSITORY_PARAM, ACTOR_PARAM],
+			},
+			{
+				id: "push-to-branch",
+				label: "New push to branch",
+				description: "Run when commits are pushed to a branch.",
+				params: [REPOSITORY_PARAM, ACTOR_PARAM],
+			},
+			{
+				id: "label-change",
+				label: "Label change",
+				description: "Run when a pull request label changes.",
+				groupLabel: "GitHub only",
+				params: [REPOSITORY_PARAM, ACTOR_PARAM],
+			},
+			{
+				id: "checks-completed",
+				label: "Checks completed",
+				description: "Run when GitHub checks finish.",
+				groupLabel: "GitHub only",
+				params: [REPOSITORY_PARAM],
+			},
+		],
+	},
+	{
+		id: "slack",
+		label: "Slack",
+		description: "React to messages and mentions.",
+		icon: { kind: "image", src: "/3p/slack/16.svg" },
+		requiresConnection: true,
+		events: [
+			{
+				id: "new-message",
+				label: "New message",
+				description: "Run when a new message appears in selected channels.",
+				params: [CHANNEL_PARAM],
+			},
+			{
+				id: "mention",
+				label: "Mention",
+				description: "Run when the agent is mentioned.",
+				params: [CHANNEL_PARAM],
+			},
+			{
+				id: "emoji-reaction",
+				label: "Emoji reaction",
+				description: "Run when a reaction is added in selected channels.",
+				params: [CHANNEL_PARAM, ACTOR_PARAM],
+			},
+		],
+	},
+	{
+		id: "microsoft-teams",
+		label: "Microsoft Teams",
+		description: "React to Teams channel activity.",
+		icon: { kind: "atlassian-logo", name: "teams" },
+		requiresConnection: true,
+		events: [
+			{
+				id: "new-message",
+				label: "New message",
+				description: "Run when a new Teams message is posted.",
+				params: [CHANNEL_PARAM],
+			},
+			{
+				id: "mention",
+				label: "Mention",
+				description: "Run when the agent is mentioned in Teams.",
+				params: [CHANNEL_PARAM],
+			},
+		],
+	},
+	{
+		id: "sentry",
+		label: "Sentry",
+		description: "React to errors and regressions.",
+		icon: { kind: "image", src: "/3p/sentry/16.svg" },
+		requiresConnection: true,
+		events: [
+			{
+				id: "issue-created",
+				label: "Issue created",
+				description: "Run when Sentry creates a new issue.",
+				params: [SERVICE_PARAM],
+			},
+			{
+				id: "issue-regressed",
+				label: "Issue regressed",
+				description: "Run when a resolved issue regresses.",
+				params: [SERVICE_PARAM],
+			},
+		],
+	},
+	{
+		id: "linear",
+		label: "Linear",
+		description: "React to Linear issue activity.",
+		icon: { kind: "atlaskit-icon", name: "automation" },
+		requiresConnection: true,
+		events: [
+			{
+				id: "issue-created",
+				label: "Issue created",
+				description: "Run when a Linear issue is created.",
+				params: [TEAM_PARAM, ACTOR_PARAM],
+			},
+			{
+				id: "issue-updated",
+				label: "Issue updated",
+				description: "Run when a Linear issue changes.",
+				params: [TEAM_PARAM, ACTOR_PARAM],
+			},
+			{
+				id: "status-changed",
+				label: "Status changed",
+				description: "Run when a Linear issue changes status.",
+				params: [TEAM_PARAM, ACTOR_PARAM],
+			},
+		],
+	},
+	{
+		id: "webhook",
+		label: "Webhook Triggered",
+		description: "Run when an external service calls a webhook.",
+		icon: { kind: "atlaskit-icon", name: "webhook" },
+		events: [
+			{
+				id: "incoming-webhook",
+				label: "Incoming webhook",
+				description: "Run when a webhook request is received.",
+			},
+		],
+	},
+	{
+		id: "pagerduty",
+		label: "PagerDuty",
+		description: "React to incident lifecycle events.",
+		icon: { kind: "image", src: "/3p/pagerduty/16.svg" },
+		requiresConnection: true,
+		events: [
+			{
+				id: "incident-triggered",
+				label: "Incident triggered",
+				description: "Run when a new incident is triggered.",
+				params: [SERVICE_PARAM],
+			},
+			{
+				id: "incident-acknowledged",
+				label: "Incident acknowledged",
+				description: "Run when an incident is acknowledged.",
+				params: [SERVICE_PARAM],
+			},
+			{
+				id: "incident-resolved",
+				label: "Incident resolved",
+				description: "Run when an incident is resolved.",
+				params: [SERVICE_PARAM],
+			},
+		],
+	},
+] as const satisfies readonly AgentTriggerProviderDefinition[];
+
+export function getTriggerProvider(
+	providerId: AgentTriggerProviderId,
+): AgentTriggerProviderDefinition | undefined {
+	return TRIGGER_PROVIDERS.find((provider) => provider.id === providerId);
+}
+
+export function getTriggerEvent(
+	providerId: AgentTriggerProviderId,
+	eventId: string,
+): AgentTriggerEventDefinition | undefined {
+	return getTriggerProvider(providerId)?.events.find((event) => event.id === eventId);
+}
+
+export function getAgentTriggerDefaultConnectionState(
+	provider: AgentTriggerProviderDefinition,
+	event: AgentTriggerEventDefinition,
+): AgentTriggerConnectionState {
+	return provider.requiresConnection || event.requiresConnection ? "needs-connection" : "connected";
+}
+
+export function createAgentTriggerValue(
+	providerId: AgentTriggerProviderId,
+	eventId: string,
+	index = 1,
+): AgentTriggerValue | null {
+	const provider = getTriggerProvider(providerId);
+	const event = provider ? getTriggerEvent(providerId, eventId) : undefined;
+
+	if (!provider || !event) {
+		return null;
+	}
+
+	const params = Object.fromEntries(
+		(event.params ?? []).map((param) => [
+			param.id,
+			param.defaultValue ?? param.options[0]?.value ?? "",
+		]),
+	);
+	const trigger = {
+		id: `${providerId}-${eventId}-${index}`,
+		providerId,
+		eventId,
+		params,
+		connectionState: getAgentTriggerDefaultConnectionState(provider, event),
+	} satisfies AgentTriggerValue;
+
+	return {
+		...trigger,
+		label: getAgentTriggerReadableLabel(trigger),
+	};
+}
+
+export function getAgentTriggerParamLabel(
+	param: AgentTriggerParamDefinition,
+	value: string | undefined,
+): string {
+	const option = param.options.find((candidate) => candidate.value === value);
+	return option?.label ?? param.placeholder;
+}
+
+export function getAgentTriggerReadableLabel(trigger: AgentTriggerValue): string {
+	const provider = getTriggerProvider(trigger.providerId);
+	const event = provider ? getTriggerEvent(provider.id, trigger.eventId) : undefined;
+
+	if (!provider || !event) {
+		return trigger.label?.trim() || "Unknown trigger";
+	}
+
+	if (!event.params || event.params.length === 0) {
+		return event.label;
+	}
+
+	return event.params.reduce((label, param) => {
+		const valueLabel = getAgentTriggerParamLabel(param, trigger.params?.[param.id]);
+		return `${label} ${param.connector} ${valueLabel}`;
+	}, event.label);
+}
+
+export function serializeAgentTriggerLabels(
+	triggers: readonly AgentTriggerValue[] | undefined,
+): string[] {
+	return (triggers ?? [])
+		.map((trigger) => getAgentTriggerReadableLabel(trigger).trim())
+		.filter(Boolean);
+}
+
+export const DEFAULT_CONFIGURED_TRIGGER_VALUES = [
+	createAgentTriggerValue("scheduled", "every-hour", 1),
+	createAgentTriggerValue("github-gitlab", "draft-opened", 2),
+].filter(Boolean) as AgentTriggerValue[];
+
+export const DEFAULT_NEEDS_CONNECTION_TRIGGER_VALUES = [
+	{
+		...(createAgentTriggerValue("scheduled", "every-hour", 1) as AgentTriggerValue),
+		connectionState: "connected",
+	},
+	{
+		...(createAgentTriggerValue("github-gitlab", "draft-opened", 2) as AgentTriggerValue),
+		connectionState: "connected",
+	},
+	{
+		...(createAgentTriggerValue("slack", "new-message", 3) as AgentTriggerValue),
+		connectionState: "needs-connection",
+	},
+] as const satisfies readonly AgentTriggerValue[];
