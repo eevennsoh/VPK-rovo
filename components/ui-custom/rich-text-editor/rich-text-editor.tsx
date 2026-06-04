@@ -166,7 +166,7 @@ function DataFlowDiagramView({
 	return (
 		<div className="relative" data-rich-text-data-flow-diagram>
 			<Streamdown
-				className="[&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_[data-streamdown=mermaid-block]]:overflow-hidden [&_[data-streamdown=mermaid-block]]:rounded-md [&_[data-streamdown=mermaid-block]]:border [&_[data-streamdown=mermaid-block]]:border-border"
+				className="[&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_[data-streamdown=mermaid-block]]:flex [&_[data-streamdown=mermaid-block]]:min-h-[480px] [&_[data-streamdown=mermaid-block]]:flex-col [&_[data-streamdown=mermaid-block]]:overflow-hidden [&_[data-streamdown=mermaid-block]]:rounded-md [&_[data-streamdown=mermaid-block]]:border [&_[data-streamdown=mermaid-block]]:border-border [&_[data-streamdown=mermaid-block]>div:last-child]:flex [&_[data-streamdown=mermaid-block]>div:last-child]:flex-1 [&_[data-streamdown=mermaid-block]>div:last-child]:items-center [&_[data-streamdown=mermaid-block]>div:last-child]:justify-center"
 				controls
 				mode="static"
 				plugins={dataFlowStreamdownPlugins}
@@ -174,18 +174,16 @@ function DataFlowDiagramView({
 				{mermaidMarkdown}
 			</Streamdown>
 			{isRefining ? (
-				<div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-8 items-center justify-end">
-					<span className="flex items-center gap-1.5 text-sm text-text-subtle">
-						<Spinner size="sm" label="Refining diagram" />
-						Refining diagram...
-					</span>
+				<div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-end">
 					{/*
-						Reserve the streamdown zoom/copy/download pill footprint so the
-						label lands just to its left. The pill is flush to the right edge
-						and measures ~96px: 3 × 22px icon buttons (14px icon + p-1) +
-						2 × 8px gaps + 12px padding (px-1.5) + 2px border.
+						32px-tall container vertically centers the spinner + label so it
+						aligns with the streamdown controls. mr-28 (112px) clears the
+						zoom/copy/download pill (~96px) and leaves a ~16px gap to its left.
 					*/}
-					<span aria-hidden className="ml-2 w-24 shrink-0" />
+					<div className="mr-28 flex h-8 items-center gap-1.5 text-sm text-text-subtle">
+						<Spinner size="sm" label="Refining diagram" />
+						<span>Refining diagram...</span>
+					</div>
 				</div>
 			) : null}
 		</div>
