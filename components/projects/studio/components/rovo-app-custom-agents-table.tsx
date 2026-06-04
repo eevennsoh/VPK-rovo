@@ -9,31 +9,43 @@ import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustra
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Empty, EmptyBody, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Lozenge } from "@/components/ui/lozenge";
 import { CardDirectoryAgent } from "@/components/ui-custom/card-directory";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { List, type ListColumn } from "@/components/ui-custom/list";
 import { cn } from "@/lib/utils";
+import DeleteIcon from "@atlaskit/icon/core/delete";
 import EditIcon from "@atlaskit/icon/core/edit";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
 import PinIcon from "@atlaskit/icon/core/pin";
 import SearchIcon from "@atlaskit/icon/core/search";
+import ShareIcon from "@atlaskit/icon/core/share";
+import ShowMoreIcon from "@atlaskit/icon/core/show-more-horizontal";
 
+const STUDIO_OWNER_AVATAR_SRC = "/avatar-user/venn/venn.png";
 const STUDIO_PINNED_AGENTS_STORAGE_KEY = "vpk:studio:pinned-custom-agents";
 const STUDIO_AGENTS_COMPANY_GROUP_TITLE = "By companies";
 const STUDIO_AGENTS_COMPANY_AGENT_IDS =
 	DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS.find((group) => group.title === STUDIO_AGENTS_COMPANY_GROUP_TITLE)?.agentIds ?? [];
 const STUDIO_AGENTS_COMPANY_AGENT_ID_SET = new Set<string>(STUDIO_AGENTS_COMPANY_AGENT_IDS);
 
-// My agents list: name column flexes; version, modified, and actions are fixed
-// so the agent name truncates rather than the trailing metadata/action columns.
+// My agents list: name column flexes; active users, version, modified, and
+// actions are fixed so the agent name truncates rather than the trailing
+// metadata/action columns.
 const STUDIO_MY_AGENTS_LIST_COLUMNS: readonly ListColumn[] = [
 	{},
+	{ className: "w-[92px]" },
 	{ className: "w-[72px]" },
 	{ className: "w-[116px]" },
-	{ className: "w-[72px]" },
+	{ className: "w-[128px]" },
 ];
 
 const STUDIO_AGENT_SECTION_TABS = [
@@ -151,6 +163,14 @@ function syntheticChats(id: string): number {
 
 function syntheticFeedback(id: string): number {
 	return 50 + (hashString(`${id}-feedback`) % 2000);
+}
+
+function syntheticActiveUsers(id: string): number {
+	return 1 + (hashString(`${id}-active-users`) % 250);
+}
+
+function formatActiveUsers(count: number): string {
+	return `${count} ${count === 1 ? "user" : "users"}`;
 }
 
 function getDirectoryCardAvatarClassName(agent: AgentsDirectoryAgent): string {
@@ -294,22 +314,25 @@ export function StudioAgentsSection({
 	};
 
 	return (
-		<Tabs
+		<section
 			aria-label="Agents"
-			className="mx-auto mt-12 w-[90%] max-w-[800px] gap-6"
+			className="mx-auto mt-12 flex w-[90%] max-w-[800px] flex-col gap-6"
 			data-testid="studio-agents-section"
-			onValueChange={(value) => setActiveTab(value as StudioAgentSectionTab)}
-			render={<section />}
-			value={activeTab}
 		>
 			<div className="flex flex-wrap items-center justify-between gap-3">
-				<TabsList variant="line">
+				<ButtonGroup aria-label="Agent views" className="flex-wrap" variant="separated">
 					{STUDIO_AGENT_SECTION_TABS.map((tab) => (
-						<TabsTrigger key={tab.id} value={tab.id}>
+						<Button
+							aria-pressed={activeTab === tab.id}
+							key={tab.id}
+							onClick={() => setActiveTab(tab.id)}
+							type="button"
+							variant="ghost"
+						>
 							{tab.label}
-						</TabsTrigger>
+						</Button>
 					))}
-				</TabsList>
+				</ButtonGroup>
 				<InputGroup className="w-full max-w-[220px] sm:w-[220px]">
 					<InputGroupAddon>
 						<Icon aria-hidden render={<SearchIcon label="" size="small" />} />
@@ -324,8 +347,8 @@ export function StudioAgentsSection({
 				</InputGroup>
 			</div>
 
-			<TabsContent value="my-agents">
-				{sortedEntries.length === 0 ? (
+			{activeTab === "my-agents" ? (
+				sortedEntries.length === 0 ? (
 					<StudioAgentsEmptyState
 						onBrowseTemplates={onBrowseTemplates}
 						onCreateAgent={onCreateAgent}
@@ -339,25 +362,25 @@ export function StudioAgentsSection({
 					/>
 				) : (
 					<StudioAgentsNoResults query={searchQuery} />
-				)}
-			</TabsContent>
+				)
+			) : null}
 
-			<TabsContent value="by-teams">
-				{filteredTeamAgents.length > 0 ? (
+			{activeTab === "by-teams" ? (
+				filteredTeamAgents.length > 0 ? (
 					<DirectoryAgentsGrid agents={filteredTeamAgents} onSelectAgent={onSelectDirectoryAgent} />
 				) : (
 					<StudioAgentsNoResults query={searchQuery} />
-				)}
-			</TabsContent>
+				)
+			) : null}
 
-			<TabsContent value="by-companies">
-				{filteredCompanyAgents.length > 0 ? (
+			{activeTab === "by-companies" ? (
+				filteredCompanyAgents.length > 0 ? (
 					<DirectoryAgentsGrid agents={filteredCompanyAgents} onSelectAgent={onSelectDirectoryAgent} />
 				) : (
 					<StudioAgentsNoResults query={searchQuery} />
-				)}
-			</TabsContent>
-		</Tabs>
+				)
+			) : null}
+		</section>
 	);
 }
 
@@ -396,7 +419,7 @@ function StudioAgentsEmptyState({
 							Browse templates
 						</Button>
 						<Button onClick={onCreateAgent} type="button">
-							Create agent
+							Create
 						</Button>
 					</div>
 				</EmptyContent>
@@ -419,11 +442,15 @@ function StudioCustomAgentsList({
 	pinnedAgentIds,
 	onEditAgent,
 	onTogglePinned,
+	onShareAgent,
+	onDeleteAgent,
 }: Readonly<{
 	entries: readonly StudioSessionAgentEntry[];
 	pinnedAgentIds: ReadonlySet<string>;
 	onEditAgent: (agentId: string) => void;
 	onTogglePinned: (agentId: string) => void;
+	onShareAgent?: (agentId: string) => void;
+	onDeleteAgent?: (agentId: string) => void;
 }>) {
 	return (
 		<List.Root aria-label="My agents">
@@ -455,14 +482,58 @@ function StudioCustomAgentsList({
 									</span>
 								</button>
 							</List.Cell>
+							<List.Cell className="whitespace-nowrap text-text-subtle">
+								{formatActiveUsers(syntheticActiveUsers(entry.profile.id))}
+							</List.Cell>
 							<List.Cell>
 								<Lozenge variant={getVersionVariant(entry)}>{getVersionLabel(entry)}</Lozenge>
 							</List.Cell>
 							<List.Cell className="whitespace-nowrap text-text-subtle">
-								{formatRelativeModifiedTime(entry.lastTouchedAt)}
+								<div className="flex items-center gap-2">
+									<Avatar aria-hidden="true" size="sm" className="shrink-0">
+										<AvatarImage alt="" src={STUDIO_OWNER_AVATAR_SRC} />
+										<AvatarFallback>V</AvatarFallback>
+									</Avatar>
+									<span className="whitespace-nowrap text-text">
+										{formatRelativeModifiedTime(entry.lastTouchedAt)}
+									</span>
+								</div>
 							</List.Cell>
 							<List.Cell edge="trailing">
 								<div className="flex justify-end gap-[4px]" onClick={stopNestedCardAction} onKeyDown={stopNestedCardAction}>
+									<DropdownMenu>
+										<DropdownMenuTrigger
+											render={
+												<Button
+													aria-label={`More actions for ${agentName}`}
+													className={cn(
+														"size-7 data-[popup-open]:opacity-100",
+														revealOnHover,
+													)}
+													size="icon"
+													type="button"
+													variant="ghost"
+												>
+													<Icon aria-hidden render={<ShowMoreIcon label="" size="small" />} />
+												</Button>
+											}
+										/>
+										<DropdownMenuContent align="end">
+											<DropdownMenuItem
+												elemBefore={<ShareIcon label="" size="small" />}
+												onSelect={() => onShareAgent?.(entry.profile.id)}
+											>
+												Share agent
+											</DropdownMenuItem>
+											<DropdownMenuItem
+												variant="destructive"
+												elemBefore={<DeleteIcon label="" size="small" />}
+												onSelect={() => onDeleteAgent?.(entry.profile.id)}
+											>
+												Delete agent
+											</DropdownMenuItem>
+										</DropdownMenuContent>
+									</DropdownMenu>
 									<Button
 										aria-label={`Edit ${agentName}`}
 										className={cn("size-7", revealOnHover)}
@@ -477,8 +548,7 @@ function StudioCustomAgentsList({
 										aria-label={`${isPinned ? "Unpin" : "Pin"} ${agentName}`}
 										aria-pressed={isPinned}
 										className={cn(
-											"size-7 aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:[&_svg]:text-icon-subtle!",
-											isPinned ? "opacity-100" : revealOnHover,
+											"size-7 opacity-100 aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:[&_svg]:text-icon-subtle!",
 										)}
 										onClick={() => onTogglePinned(entry.profile.id)}
 										size="icon"
@@ -519,6 +589,7 @@ function DirectoryAgentsGrid({
 							feedbackCount={syntheticFeedback(agent.id)}
 							logoName={agent.logoName}
 							name={agent.name}
+							onMoreActions={() => {}}
 							onSelect={() => onSelectAgent(agent)}
 							publisher={publisher}
 							rating={syntheticRating(agent.id)}

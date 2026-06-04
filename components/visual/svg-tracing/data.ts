@@ -110,6 +110,39 @@ export const SVG_TRACE_MODE_OPTIONS: readonly { value: SvgTraceMode; label: stri
 	{ value: "draw-eat", label: "Draw/eat" },
 ];
 
+export const SVG_TRACE_SCRATCH_UNDERLINE_PRESET: SvgTracePreset = {
+	id: "scratch-underline",
+	label: "Scratch underline",
+	viewBox: "0 0 200 44",
+	paths: [
+		{
+			d: "M8 30 C26 8 33 6 40 14 C47 22 44 40 56 40 C70 40 82 12 100 12 C112 12 116 28 132 26 C156 23 176 22 192 26",
+		},
+	],
+};
+
+export const SVG_TRACE_TEMPLATES_LOOP_PRESET: SvgTracePreset = {
+	id: "templates-loop",
+	label: "Templates loop",
+	viewBox: "0 0 222 55",
+	paths: [
+		{
+			d: "M3 49 C23 48 47 39 78 25 C86 21 94 16 94 9 C93 2 80 1 72 7 C59 17 59 37 74 44 C93 53 119 46 139 35 C153 26 163 9 155 4 C145 -2 128 8 127 22 C126 37 141 47 161 48 C183 49 202 44 219 38",
+		},
+	],
+};
+
+export const SVG_TRACE_TEMPLATES_WAVE_PRESET: SvgTracePreset = {
+	id: "templates-wave",
+	label: "Templates wave",
+	viewBox: "0 0 131 26",
+	paths: [
+		{
+			d: "M2 3 C12 2 18 8 27 15 C39 25 53 23 64 12 C75 1 84 1 98 11 C111 21 123 24 129 15",
+		},
+	],
+};
+
 export const SVG_TRACE_PRESETS: readonly SvgTracePreset[] = [
 	{
 		id: "dialect-loop",
@@ -150,6 +183,9 @@ export const SVG_TRACE_PRESETS: readonly SvgTracePreset[] = [
 			{ d: "M28 28 C45 48 70 22 88 38 C98 47 105 56 119 57" },
 		],
 	},
+	SVG_TRACE_SCRATCH_UNDERLINE_PRESET,
+	SVG_TRACE_TEMPLATES_LOOP_PRESET,
+	SVG_TRACE_TEMPLATES_WAVE_PRESET,
 ];
 
 export const DEFAULT_SVG_TRACE_CONFIG: SvgTraceConfig = {

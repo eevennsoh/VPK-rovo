@@ -132,11 +132,18 @@ function ListCell({ edge, className, ...props }: Readonly<ListCellProps>) {
 		edge === "trailing" && isFirst && "rounded-tr-[12px]",
 		edge === "trailing" && isLast && "rounded-br-[12px]",
 	)
+	// Edge cells get 12px of outer padding so the first/last content sits
+	// visually balanced against the rounded card corners; inner cells use 8px.
+	const edgePaddingClass = cn(
+		edge === "leading" && "pl-3",
+		edge === "trailing" && "pr-3",
+	)
 	return (
 		<TableCell
 			data-slot="list-cell"
 			className={cn(
 				"px-2 transition-colors group-hover/row:bg-bg-neutral-subtle-hovered",
+				edgePaddingClass,
 				radiusClass,
 				className,
 			)}

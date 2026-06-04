@@ -836,12 +836,14 @@ const HOME_STARTER_CYCLE_DURATION_MS = 6000;
 
 function HomeStarterBento({
 	onBrowseTemplates,
+	onDismiss,
 	onPreviewEnd,
 	onPreviewStart,
 	onSelect,
 	templatesDialogOpen,
 }: Readonly<{
 	onBrowseTemplates: (category: HomeStarterCategory) => void;
+	onDismiss: () => void;
 	onPreviewEnd: () => void;
 	onPreviewStart: (prompt: string) => void;
 	onSelect: (prompt: string, template?: StudioCreationTemplateContext) => void;
@@ -849,7 +851,6 @@ function HomeStarterBento({
 }>) {
 	const [activeCategory, setActiveCategory] = useState<HomeStarterCategory>(HOME_STARTER_DEFAULT_CATEGORY);
 	const [bentoInteracting, setBentoInteracting] = useState(false);
-	const [browseAllDismissed, setBrowseAllDismissed] = useState(false);
 	const [browseAllHovered, setBrowseAllHovered] = useState(false);
 	const shouldReduceMotion = useReducedMotion();
 	const focusedTemplatePromptRef = useRef<string | null>(null);
@@ -975,6 +976,8 @@ function HomeStarterBento({
 			}}
 			onMouseEnter={() => updateBentoInteracting(true)}
 			onMouseLeave={() => updateBentoInteracting(false)}
+			onPointerLeave={resetBentoPointer}
+			onPointerMove={handleBentoPointerMove}
 		>
 			<div className="flex flex-wrap justify-center gap-2">
 				{HOME_STARTER_CATEGORIES.map((category) => {
@@ -1022,12 +1025,7 @@ function HomeStarterBento({
 				})}
 			</div>
 
-			<div
-				className="@container/bento relative mt-6"
-				onPointerLeave={resetBentoPointer}
-				onPointerMove={handleBentoPointerMove}
-				style={HOME_STARTER_CARD_GLOW_EFFECT_STYLE}
-			>
+			<div className="@container/bento relative mt-6" style={HOME_STARTER_CARD_GLOW_EFFECT_STYLE}>
 				{/*
 					`-mt-2 pt-2` gives the masked content top headroom that nets to zero
 					visual shift: the bottom-fade mask clips its children to the box, so
@@ -1149,7 +1147,7 @@ function HomeStarterBento({
 						) : null}
 					</AnimatePresence>
 				</div>
-				{canShowMore && !browseAllDismissed ? (
+				{canShowMore ? (
 					<div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-2">
 						<div
 							className="group/browse-all pointer-events-auto relative flex items-center"
@@ -1191,7 +1189,7 @@ function HomeStarterBento({
 											size="compact"
 											className="h-7 rounded-full border-0 bg-surface px-3 text-sm leading-5 font-normal text-text-subtle hover:bg-surface-hovered"
 											style={{ boxShadow: token("elevation.shadow.overlay") }}
-											onClick={() => setBrowseAllDismissed(true)}
+											onClick={onDismiss}
 										>
 											Dismiss
 										</Button>
@@ -3655,6 +3653,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	isDefaultAgentHomeStateRef.current = isDefaultAgentHomeState;
 	const shouldShowStudioAgentsSection = isDefaultAgentHomeState;
 	const shouldReduceMotion = useReducedMotion();
+	const [bentoDismissed, setBentoDismissed] = useState(false);
+	const shouldShowHomeStarterBento = isDefaultAgentHomeState && !bentoDismissed;
 	const shouldShowTimelineNavigator = !showHomeState && !isArtifactOpen && timelineItems.length > 1;
 	const composerPreviewState = resolveRovoAppComposerPlaceholder({
 		defaultPlaceholder: DEFAULT_COMPOSER_PLACEHOLDER,
@@ -4095,23 +4095,36 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 			{shouldShowAgentConfigPane && showHomeState ? <div aria-hidden className="flex-1 shrink" /> : null}
 
-			{isDefaultAgentHomeState ? (
-				<motion.div
-					className="z-10 mx-auto mb-5 w-[90%]"
-					initial={shouldReduceMotion ? false : { opacity: 0 }}
-					animate={{ opacity: 1 }}
-					transition={{ duration: 0.25, ease: [0, 0.4, 0, 1], delay: 0.2 }}
-					style={{ willChange: "opacity" }}
-				>
-					<HomeStarterBento
-						onBrowseTemplates={handleBrowseAgentTemplates}
-						onSelect={handleGallerySelect}
-						onPreviewStart={handleGalleryPreviewStart}
-						onPreviewEnd={handleGalleryPreviewEnd}
-						templatesDialogOpen={agentTemplatesDialogOpen}
-					/>
-				</motion.div>
-			) : null}
+			<AnimatePresence initial={false}>
+				{shouldShowHomeStarterBento ? (
+					<motion.div
+						key="home-starter-bento"
+						className="z-10 mx-auto mb-5 w-[90%]"
+						initial={shouldReduceMotion ? false : { opacity: 0, y: -8 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={
+							shouldReduceMotion
+								? { opacity: 0, height: 0, marginBottom: 0, overflow: "hidden" }
+								: { opacity: 0, height: 0, marginBottom: 0, y: -8, overflow: "hidden" }
+						}
+						transition={
+							shouldReduceMotion
+								? { duration: 0 }
+								: { type: "spring", visualDuration: 0.35, bounce: 0 }
+						}
+						style={{ willChange: "opacity, height" }}
+					>
+						<HomeStarterBento
+							onBrowseTemplates={handleBrowseAgentTemplates}
+							onDismiss={() => setBentoDismissed(true)}
+							onSelect={handleGallerySelect}
+							onPreviewStart={handleGalleryPreviewStart}
+							onPreviewEnd={handleGalleryPreviewEnd}
+							templatesDialogOpen={agentTemplatesDialogOpen}
+						/>
+					</motion.div>
+				) : null}
+			</AnimatePresence>
 
 			<div
 				ref={composerDockRef}
@@ -4199,6 +4212,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									onDismissPlanExecutionTracker={chat.dismissPlanExecutionTracker}
 									onRemoveHermesSkill={selectHermesSkill}
 									onSelectHermesSkill={selectHermesSkill}
+									onBrowseTemplates={
+										isDefaultAgentHomeState && bentoDismissed ? () => setBentoDismissed(false) : undefined
+									}
 									onStartFromScratch={isDefaultAgentHomeState ? handleStartAgentFromScratch : undefined}
 									onStop={handleStop}
 									onRemoveQueuedPrompt={chat.removeQueuedPrompt}
@@ -4304,7 +4320,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			) : null}
 			{showHomeState && !shouldSplitArtifactPane ? (
 				<>
-					{!shouldShowAgentConfigPane ? <div className="flex-1 shrink" /> : null}
+					{!shouldShowAgentConfigPane ? <div className="min-h-12 flex-1 shrink" /> : null}
 					<Footer className="shrink-0" />
 				</>
 			) : null}

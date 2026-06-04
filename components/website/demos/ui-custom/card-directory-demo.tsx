@@ -106,6 +106,7 @@ export default function CardDirectoryDemo() {
 					description="Surfaces themes and sentiment from raw customer feedback in seconds."
 					feedbackCount={1280}
 					name="Feedback analyzer"
+					onMoreActions={() => {}}
 					onSelect={() => {}}
 					publisher="Atlassian"
 					rating={4.6}
@@ -117,6 +118,7 @@ export default function CardDirectoryDemo() {
 					description="Reviews PRs for style, correctness, and security gotchas."
 					feedbackCount={340}
 					name="Code reviewer"
+					onMoreActions={() => {}}
 					onSelect={() => {}}
 					publisher="Mei Tan"
 					rating={4.2}
@@ -129,6 +131,7 @@ export default function CardDirectoryDemo() {
 					icon={<PageIcon label="" />}
 					iconVariant="blue"
 					name="Create page"
+					onMoreActions={() => {}}
 					onSelect={() => {}}
 					publisher="Atlassian"
 					publisherLogo={<ConfluenceLogo size="xsmall" />}
@@ -140,6 +143,7 @@ export default function CardDirectoryDemo() {
 					icon={<SearchIcon label="" />}
 					iconVariant="purple"
 					name="Find similar work"
+					onMoreActions={() => {}}
 					onSelect={() => {}}
 					publisher="Atlassian"
 					publisherLogo={<ConfluenceLogo size="xsmall" />}
@@ -153,6 +157,7 @@ export default function CardDirectoryDemo() {
 					appLogo={<ConfluenceLogo size="small" />}
 					description="Create, search, and update pages across your Confluence sites."
 					name="Confluence"
+					onMoreActions={() => {}}
 					onSelect={() => {}}
 					teammateCount={258}
 					toolCount={36}
@@ -161,6 +166,7 @@ export default function CardDirectoryDemo() {
 					appLogo={<Image alt="" aria-hidden height={24} src="/3p/slack/32.svg" width={24} />}
 					description="Send messages and search conversations from your workspace."
 					name="Slack"
+					onMoreActions={() => {}}
 					onSelect={() => {}}
 					teammateCount={540}
 					toolCount={12}

@@ -130,8 +130,8 @@ test("Studio default landing shows the agents card section below the composer", 
 
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /DropdownMenu/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /export function StudioAgentsSection/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className="mx-auto mt-12 w-\[90%\] max-w-\[800px\] gap-6"/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<TabsList variant="line">/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className="mx-auto mt-12 flex w-\[90%\] max-w-\[800px\] flex-col gap-6"/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /ButtonGroup aria-label="Agent views"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "my-agents", label: "My agents"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "by-teams", label: "By teams"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "by-companies", label: "By companies"/u);
@@ -142,7 +142,7 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<List\.Table columns=\{STUDIO_MY_AGENTS_LIST_COLUMNS\}>/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /from "@\/components\/ui\/table"|<Table|TableCell|TableRow|TableBody/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Button \} from "@\/components\/ui\/button";/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Tabs, TabsContent, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ ButtonGroup \} from "@\/components\/ui\/button-group";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Icon \} from "@\/components\/ui\/icon";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/u);
@@ -152,7 +152,7 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /function isTeamDirectoryAgent/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /No agents yet/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /Browse templates/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /Create agent/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<Button onClick=\{onCreateAgent\} type="button">\s*Create\s*<\/Button>/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /entry\.publishStatus === "published" \? "V1" : "Draft"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /formatRelativeModifiedTime\(entry\.lastTouchedAt\)/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /STUDIO_PINNED_AGENTS_STORAGE_KEY/u);
@@ -171,10 +171,22 @@ test("Studio default landing shows the agents card section below the composer", 
 
 test("Studio start-from-scratch scribble replays on each composer hover reveal", () => {
 	assert.match(COMPOSER_SOURCE, /const \[scratchScribbleReplayKey, setScratchScribbleReplayKey\] = useState\(0\);/u);
-	assert.match(COMPOSER_SOURCE, /setScratchScribbleReplayKey\(\(currentKey\) => currentKey \+ 1\);/u);
-	assert.match(COMPOSER_SOURCE, /const showScratchScribble = isRevealVisible;/u);
+	assert.match(COMPOSER_SOURCE, /const \[templateSweepReplayKey, setTemplateSweepReplayKey\] = useState\(0\);/u);
+	assert.match(COMPOSER_SOURCE, /setTemplateSweepReplayKey\(\(currentKey\) => currentKey \+ 1\);[\s\S]*scratchScribbleDelayTimeoutRef\.current = setTimeout/u);
+	assert.match(COMPOSER_SOURCE, /setIsScratchScribblePlaying\(true\);[\s\S]*setScratchScribbleReplayKey\(\(currentKey\) => currentKey \+ 1\);/u);
+	assert.match(COMPOSER_SOURCE, /SCRATCH_SCRIBBLE_DELAY_MS = 480/u);
+	assert.match(COMPOSER_SOURCE, /const showScratchScribble = isRevealVisible && isScratchScribblePlaying;/u);
+	assert.match(COMPOSER_SOURCE, /SVG_TRACE_SCRATCH_UNDERLINE_PRESET/u);
+	assert.match(COMPOSER_SOURCE, /shape=\{SVG_TRACE_SCRATCH_UNDERLINE_PRESET\}[\s\S]*config=\{SCRATCH_SCRIBBLE_CONFIG\}[\s\S]*resetKey=\{scratchScribbleReplayKey\}/u);
 	assert.match(COMPOSER_SOURCE, /resetKey=\{scratchScribbleReplayKey\}/u);
 	assert.doesNotMatch(COMPOSER_SOURCE, /scribbleConsumed/u);
+});
+
+test("Studio template browse reveal uses a single-path svg tracing sweep", () => {
+	assert.match(COMPOSER_SOURCE, /SVG_TRACE_TEMPLATES_LOOP_PRESET/u);
+	assert.match(COMPOSER_SOURCE, /shape=\{SVG_TRACE_TEMPLATES_LOOP_PRESET\}[\s\S]*config=\{TEMPLATES_SWEEP_CONFIG\}[\s\S]*resetKey=\{templateSweepReplayKey\}/u);
+	assert.match(COMPOSER_SOURCE, /className="pointer-events-none absolute top-full left-1\/2 w-11 -translate-x-1\/2 pt-px"/u);
+	assert.doesNotMatch(COMPOSER_SOURCE, /fill="#101214"/u);
 });
 
 test("Studio composer clears shell-owned prefill sources when a prompt is submitted", () => {
@@ -669,7 +681,10 @@ test("Studio composer reveals 'Start from scratch' on focus or hover and lands o
 	assert.match(COMPOSER_SOURCE, /onBlur=\{\(\) => setIsInputFocused\(false\)\}/u);
 	assert.match(COMPOSER_SOURCE, /const isRevealVisible = isInputFocused \|\| isComposerHoverActive;/u);
 	assert.match(COMPOSER_SOURCE, /\{onStartFromScratch \? \([\s\S]*\{isRevealVisible \?/u);
-	assert.match(COMPOSER_SOURCE, /Or start from scratch/u);
+	// Reveal copy: default is "Or start from scratch"; when onBrowseTemplates is
+	// provided (bento dismissed) it becomes "Browse template or start from scratch".
+	assert.match(COMPOSER_SOURCE, /onClick=\{onBrowseTemplates\}[\s\S]*Browse\{" "\}[\s\S]*templates/u);
+	assert.match(COMPOSER_SOURCE, /onClick=\{onStartFromScratch\}[\s\S]*start from\{" "\}[\s\S]*scratch/u);
 	// Reveal is taken out of layout flow so it never reflows/recenters siblings.
 	assert.match(COMPOSER_SOURCE, /className="absolute inset-x-0 top-full/u);
 	// Footer-style copy: subtle text size + color.

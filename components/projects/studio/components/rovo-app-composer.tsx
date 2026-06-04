@@ -39,28 +39,19 @@ import { RovoAppComposerResponseGradient } from "./rovo-app-composer-response-gr
 import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
 import SvgTracing from "@/components/visual/svg-tracing";
-import { DEFAULT_SVG_TRACE_CONFIG, type SvgTraceConfig } from "@/components/visual/svg-tracing/data";
-import type { SvgTraceShape } from "@/components/visual/svg-tracing/lib";
+import {
+	DEFAULT_SVG_TRACE_CONFIG,
+	SVG_TRACE_SCRATCH_UNDERLINE_PRESET,
+	SVG_TRACE_TEMPLATES_LOOP_PRESET,
+	type SvgTraceConfig,
+} from "@/components/visual/svg-tracing/data";
 
 const HIDDEN_COMPOSER_SKILL_IDS = new Set(["vpk-html"]);
 
-// Hand-drawn squiggle traced underneath the word "scratch" when the composer
-// is focused. The rainbow trace is supplied by the shared svg-tracing effect.
-const SCRATCH_SCRIBBLE_SHAPE: SvgTraceShape = {
-	id: "scratch-scribble",
-	label: "Scratch doodle",
-	viewBox: "0 0 200 44",
-	paths: [
-		{
-			d: "M8 30 C26 8 33 6 40 14 C47 22 44 40 56 40 C70 40 82 12 100 12 C112 12 116 28 132 26 C156 23 176 22 192 26",
-		},
-	],
-};
-
 const SCRATCH_SCRIBBLE_CONFIG: SvgTraceConfig = {
 	...DEFAULT_SVG_TRACE_CONFIG,
-	duration: 0.9,
-	strokeWidth: 2,
+	duration: 0.72,
+	strokeWidth: 1.45,
 	colorStopCount: 6,
 	segmentCap: "butt",
 	easingId: "easeInOutCubic",
@@ -69,6 +60,14 @@ const SCRATCH_SCRIBBLE_CONFIG: SvgTraceConfig = {
 	repeatCount: 1,
 	showOutline: false,
 };
+
+const TEMPLATES_SWEEP_CONFIG: SvgTraceConfig = {
+	...SCRATCH_SCRIBBLE_CONFIG,
+	duration: 0.78,
+	strokeWidth: 1.45,
+};
+
+const SCRATCH_SCRIBBLE_DELAY_MS = 480;
 
 // Grace period before the hover reveal hides, so the pointer can travel from
 // the input down to the "Or start from scratch" link without it vanishing.
@@ -102,6 +101,7 @@ interface RovoAppComposerProps {
 	onRemoveQueuedPrompt?: (id: string) => void;
 	onSendQueuedPromptNow?: (id: string) => void;
 	onSelectHermesSkill?: (skillId: string) => void;
+	onBrowseTemplates?: () => void;
 	onStartFromScratch?: () => void;
 	onSubmit: (payload: { text: string; files: FileUIPart[] }) => Promise<void>;
 	onToggleClicky?: () => void;
@@ -152,6 +152,7 @@ function RovoAppComposerInner({
 	onRemoveQueuedPrompt,
 	onSendQueuedPromptNow,
 	onSelectHermesSkill,
+	onBrowseTemplates,
 	onStartFromScratch,
 	onSubmit,
 	onToggleClicky,
@@ -176,10 +177,26 @@ function RovoAppComposerInner({
 	const [isInputFocused, setIsInputFocused] = useState(false);
 	const [isComposerHoverActive, setIsComposerHoverActive] = useState(false);
 	const [scratchScribbleReplayKey, setScratchScribbleReplayKey] = useState(0);
+	const [templateSweepReplayKey, setTemplateSweepReplayKey] = useState(0);
+	const [isScratchScribblePlaying, setIsScratchScribblePlaying] = useState(false);
 	const revealHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const scratchScribbleDelayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const slashMenuRef = useRef<HTMLDivElement | null>(null);
 	const canSubmit = controller.textInput.value.trim().length > 0 || controller.attachments.files.length > 0;
 	const hasQueuedPrompts = queuedPrompts.length > 0;
+
+	const replayRevealTraces = useCallback(() => {
+		if (scratchScribbleDelayTimeoutRef.current) {
+			clearTimeout(scratchScribbleDelayTimeoutRef.current);
+		}
+		setIsScratchScribblePlaying(false);
+		setTemplateSweepReplayKey((currentKey) => currentKey + 1);
+		scratchScribbleDelayTimeoutRef.current = setTimeout(() => {
+			setIsScratchScribblePlaying(true);
+			setScratchScribbleReplayKey((currentKey) => currentKey + 1);
+			scratchScribbleDelayTimeoutRef.current = null;
+		}, SCRATCH_SCRIBBLE_DELAY_MS);
+	}, []);
 
 	const showReveal = useCallback(() => {
 		if (revealHideTimeoutRef.current) {
@@ -187,15 +204,20 @@ function RovoAppComposerInner({
 			revealHideTimeoutRef.current = null;
 		}
 		setIsComposerHoverActive(true);
-		setScratchScribbleReplayKey((currentKey) => currentKey + 1);
-	}, []);
+		replayRevealTraces();
+	}, [replayRevealTraces]);
 
 	const scheduleHideReveal = useCallback(() => {
 		if (revealHideTimeoutRef.current) {
 			clearTimeout(revealHideTimeoutRef.current);
 		}
+		if (scratchScribbleDelayTimeoutRef.current) {
+			clearTimeout(scratchScribbleDelayTimeoutRef.current);
+			scratchScribbleDelayTimeoutRef.current = null;
+		}
 		revealHideTimeoutRef.current = setTimeout(() => {
 			setIsComposerHoverActive(false);
+			setIsScratchScribblePlaying(false);
 			revealHideTimeoutRef.current = null;
 		}, REVEAL_HIDE_DELAY_MS);
 	}, []);
@@ -205,13 +227,17 @@ function RovoAppComposerInner({
 			if (revealHideTimeoutRef.current) {
 				clearTimeout(revealHideTimeoutRef.current);
 			}
+			if (scratchScribbleDelayTimeoutRef.current) {
+				clearTimeout(scratchScribbleDelayTimeoutRef.current);
+			}
 		};
 	}, []);
 
 	// Reveal shows while the composer is hovered (with a close grace period so
 	// the pointer can reach the link below) or while the textarea is focused.
 	const isRevealVisible = isInputFocused || isComposerHoverActive;
-	const showScratchScribble = isRevealVisible;
+	const showTemplateSweep = isRevealVisible;
+	const showScratchScribble = isRevealVisible && isScratchScribblePlaying;
 	const realtimeResponseGradientState = resolveRovoAppComposerResponseGradientState({
 		realtimeGenerationState,
 		realtimeVoiceState,
@@ -511,7 +537,10 @@ function RovoAppComposerInner({
 							autoResize
 							className={cn(composerTextareaClassName, floatingComposerTextareaClassName)}
 							onBlur={() => setIsInputFocused(false)}
-							onFocus={() => setIsInputFocused(true)}
+							onFocus={() => {
+								setIsInputFocused(true);
+								replayRevealTraces();
+							}}
 							onInput={() => setHighlightedIndex(0)}
 							onKeyDown={handleTextareaKeyDown}
 							placeholder={placeholder}
@@ -574,33 +603,68 @@ function RovoAppComposerInner({
 									className="absolute inset-x-0 top-full flex items-center justify-center pt-2"
 									style={{ willChange: "opacity, transform" }}
 								>
-									<button
-										type="button"
-										// Prevent the textarea from blurring before the click lands,
+									<span
+										// Prevent the textarea from blurring before a click lands,
 										// which would unmount this reveal mid-interaction.
 										onMouseDown={(event) => event.preventDefault()}
-										onClick={onStartFromScratch}
-										className="rounded-xs text-xs text-text-subtlest transition-colors hover:text-text focus-visible:text-text focus-visible:outline-none"
+										className="text-xs text-text-subtlest"
 									>
-										Or start from{" "}
-										<span className="relative">
-											scratch
-											{/* Decorative rainbow-traced doodle. */}
-											{showScratchScribble ? (
-												<span
-													aria-hidden
-													className="pointer-events-none absolute top-full left-1/2 w-9 -translate-x-1/2 pt-0.5"
+										{onBrowseTemplates ? (
+											<>
+												<button
+													type="button"
+													onClick={onBrowseTemplates}
+													className="rounded-xs transition-colors hover:text-text focus-visible:text-text focus-visible:outline-none"
 												>
-													<SvgTracing
-														shape={SCRATCH_SCRIBBLE_SHAPE}
-														config={SCRATCH_SCRIBBLE_CONFIG}
-														resetKey={scratchScribbleReplayKey}
-														svgClassName="h-3 w-full"
-													/>
-												</span>
-											) : null}
-										</span>
-									</button>
+													Browse{" "}
+													<span className="relative">
+														templates
+														{/* Decorative rainbow-traced template sweep. */}
+														{showTemplateSweep ? (
+															<span
+																aria-hidden
+																className="pointer-events-none absolute top-full left-1/2 w-11 -translate-x-1/2 pt-px"
+															>
+																<SvgTracing
+																	shape={SVG_TRACE_TEMPLATES_LOOP_PRESET}
+																	config={TEMPLATES_SWEEP_CONFIG}
+																	resetKey={templateSweepReplayKey}
+																	svgClassName="h-2.5 w-full"
+																/>
+															</span>
+														) : null}
+													</span>
+												</button>
+												{" or "}
+											</>
+										) : (
+											"Or "
+										)}
+										<button
+											type="button"
+											onClick={onStartFromScratch}
+											className="rounded-xs transition-colors hover:text-text focus-visible:text-text focus-visible:outline-none"
+										>
+											start from{" "}
+											<span className="relative">
+												scratch
+												{/* Decorative rainbow-traced doodle. */}
+												{showScratchScribble ? (
+													<span
+														aria-hidden
+														className="pointer-events-none absolute top-full left-1/2 w-6 -translate-x-1/2 pt-px"
+													>
+														<SvgTracing
+															shape={SVG_TRACE_SCRATCH_UNDERLINE_PRESET}
+															config={SCRATCH_SCRIBBLE_CONFIG}
+															resetKey={scratchScribbleReplayKey}
+															svgClassName="h-2.5 w-full"
+														/>
+													</span>
+												) : null}
+											</span>
+										</button>
+									</span>
 								</motion.div>
 							) : null}
 						</AnimatePresence>
