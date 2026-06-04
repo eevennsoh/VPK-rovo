@@ -417,7 +417,8 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /label="Conversation starters"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("conversationStarters", "conversationStarters", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactEmptyConfigNav/u);
 	assert.match(AGENT_SOURCE, /function getAgentCompactEmptyConfigNavItems/u);
-	assert.match(AGENT_SOURCE, /const items = getAgentCompactEmptyConfigNavItems\(config\);/u);
+	assert.match(AGENT_SOURCE, /hiddenConfigFields\?: ReadonlySet<AgentHideableConfigField>;/u);
+	assert.match(AGENT_SOURCE, /const items = getAgentCompactEmptyConfigNavItems\(config\)\.filter\(\s*\(item\) => !hiddenConfigFields\?\.has\(item\.agentFieldName as AgentHideableConfigField\),\s*\);/u);
 	// Toolbar now always renders every supported field; counts come from the
 	// existing helpers and a neutral Badge appears when count > 0.
 	assert.match(AGENT_SOURCE, /case "tools":[\s\S]*count = getNonEmptyConfigItems\(config\.tools\)\.length/u);
