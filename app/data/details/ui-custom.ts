@@ -836,6 +836,7 @@ import {
 			{ title: "Empty agent", description: "Default setup state with add tiles before details are populated.", demoSlug: "agent-demo-empty" },
 			{ title: "Compact filled", description: "Compact layout with filled configuration details under the editor toolbar.", demoSlug: "agent-demo-compact-filled" },
 			{ title: "Compact empty", description: "Compact builder layout with quick configuration links and Operations prompt starters.", demoSlug: "agent-demo-compact-empty" },
+			{ title: "Compact surfaces", description: "Compact agent surface settings for default and extended availability.", demoSlug: "agent-demo-compact-surfaces" },
 		],
 	},
 

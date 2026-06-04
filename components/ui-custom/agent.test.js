@@ -494,10 +494,29 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /className="relative flex min-w-0 flex-1 items-center overflow-hidden"[\s\S]*style=\{\{ gap: AGENT_COMPACT_HEADER_NAV_GAP \}\}/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH = 24;/u);
 	assert.match(AGENT_SOURCE, /<DropdownMenuTrigger[\s\S]*aria-label="More agent sections"[\s\S]*render=\{<Button className="size-6 rounded px-0" size="icon-compact" type="button" variant="ghost" \/>\}[\s\S]*<MoreHorizontalIcon size="small" \/>/u);
-	assert.match(AGENT_SOURCE, /hiddenItems\.map\(\(item\) => \([\s\S]*<DropdownMenuItem elemBefore=\{item\.icon\} key=\{item\.label\}>/u);
+	assert.match(AGENT_SOURCE, /hiddenItems\.map\(\(item\) => \([\s\S]*<DropdownMenuItem[\s\S]*elemBefore=\{item\.icon\}[\s\S]*key=\{item\.label\}[\s\S]*onSelect=\{\(\) => onSectionChange\?\.\(item\.value\)\}/u);
 	assert.match(AGENT_SOURCE, /<Avatar label="Agent" shape="hexagon" size="sm">[\s\S]*<AvatarImage alt="" src=\{avatarSrc\} \/>/u);
-	assert.match(AGENT_SOURCE, /aria-pressed=\{item\.isSelected \? true : undefined\}[\s\S]*variant=\{item\.isSelected \? "outline" : "ghost"\}/u);
+	assert.match(AGENT_SOURCE, /export type AgentCompactHeaderSection = \(typeof AGENT_COMPACT_HEADER_NAV_ITEMS\)\[number\]\["value"\];/u);
+	assert.match(AGENT_SOURCE, /activeSection\?: AgentCompactHeaderSection \| null;/u);
+	assert.match(AGENT_SOURCE, /onSectionChange\?: \(section: AgentCompactHeaderSection\) => void;/u);
+	assert.match(AGENT_SOURCE, /const isSelected = activeSection === item\.value;/u);
+	assert.match(AGENT_SOURCE, /aria-pressed=\{isSelected \? true : undefined\}[\s\S]*onClick=\{\(\) => onSectionChange\?\.\(item\.value\)\}[\s\S]*variant=\{isSelected \? "outline" : "ghost"\}/u);
+	assert.match(AGENT_SOURCE, /onSelect=\{\(\) => onSectionChange\?\.\(item\.value\)\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /\[&_svg\]:size-4!/u);
+	assert.match(AGENT_SOURCE, /function AgentDefaultSurfaceRow/u);
+	assert.match(AGENT_SOURCE, /function AgentExtendedSurfaceRow/u);
+	assert.match(AGENT_SOURCE, /export function AgentCompactSurfacesPanel/u);
+	assert.match(AGENT_SOURCE, /data-agent-compact-section="surfaces"/u);
+	assert.match(AGENT_SOURCE, /Default surfaces/u);
+	assert.match(AGENT_SOURCE, /Extended surfaces/u);
+	assert.match(AGENT_SOURCE, /label: "Rovo Chat"/u);
+	assert.match(AGENT_SOURCE, /label: "Work items"[\s\S]*switchLabel: "Enable Work items surface"/u);
+	assert.match(AGENT_SOURCE, /label: "Rovo browser extension"/u);
+	assert.match(AGENT_SOURCE, /label: "Slack"/u);
+	assert.match(AGENT_SOURCE, /actionLabel: "Add to portal"/u);
+	assert.match(AGENT_SOURCE, /actionLabel: "Add to help center"/u);
+	assert.match(AGENT_SOURCE, /import \{ Switch \} from "@\/components\/ui\/switch";/u);
+	assert.doesNotMatch(AGENT_SOURCE, /<AccordionTrigger[\s\S]{0,900}<Button[\s\S]{0,120}surface\.actionLabel/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactOperationsBento/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactBentoTemplatesHint[\s\S]*onBrowseAll\?: \(\) => void;[\s\S]*<AgentSectionLabel>[\s\S]*<span>Start with these agent templates<\/span>[\s\S]*·[\s\S]*onClick=\{onBrowseAll\}[\s\S]*Browse all/u);
 	assert.match(AGENT_SOURCE, /showSectionLabel=\{false\}/u);
@@ -529,6 +548,10 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactEmpty/u);
 	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-compact-empty"/u);
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactEmpty[\s\S]*leadingContent=\{<AgentCompactHeaderNav \/>\}/u);
+	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactSurfaces/u);
+	assert.match(AGENT_DEMO_SOURCE, /const \[activeSection, setActiveSection\] = useState<AgentCompactHeaderSection \| null>\("surfaces"\);/u);
+	assert.match(AGENT_DEMO_SOURCE, /<AgentCompactHeaderNav[\s\S]*activeSection=\{activeSection\}[\s\S]*onSectionChange=\{handleSectionChange\}/u);
+	assert.match(AGENT_DEMO_SOURCE, /activeSection === "surfaces" \? \([\s\S]*<AgentCompactSurfacesPanel \/>/u);
 	assert.doesNotMatch(AGENT_DEMO_SOURCE, /showActions=\{false\}/u);
 	assert.match(
 		AGENT_DEMO_SOURCE,
@@ -540,10 +563,13 @@ test("Agent component page wires compact filled and empty placeholder variations
 	);
 	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Compact filled"[\s\S]*demoSlug: "agent-demo-compact-filled"/u);
 	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Compact empty"[\s\S]*demoSlug: "agent-demo-compact-empty"/u);
+	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Compact surfaces"[\s\S]*demoSlug: "agent-demo-compact-surfaces"/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-compact-filled": dynamic/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /default: mod\.AgentDemoCompactFilled/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-compact-empty": dynamic/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /default: mod\.AgentDemoCompactEmpty/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-compact-surfaces": dynamic/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /default: mod\.AgentDemoCompactSurfaces/u);
 });
 
 test("Bento carousel overflow hook reattaches listeners when the scroll node remounts", () => {
