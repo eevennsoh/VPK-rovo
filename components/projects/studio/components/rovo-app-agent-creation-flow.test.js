@@ -103,9 +103,9 @@ test("Studio landing empty state is title-only by default", () => {
 test("Studio default landing prompt growth pushes below the initial home position", () => {
 	assert.match(SHELL_SOURCE, /const defaultHomeTopSpacerRef = useRef<HTMLDivElement \| null>\(null\);/u);
 	assert.match(SHELL_SOURCE, /const \[defaultHomeTopSpacerMeasurement, setDefaultHomeTopSpacerMeasurement\] = useState<\{ key: string; height: number \} \| null>\(null\);/u);
-	assert.match(SHELL_SOURCE, /const defaultHomeTopSpacerMeasurementKey = isDefaultAgentHomeState \? `\$\{shellSize\.width\}:\$\{shellSize\.height\}` : null;/u);
+	assert.match(SHELL_SOURCE, /const defaultHomeTopSpacerMeasurementKey = isDefaultAgentHomeState && landingMotionReady \? `\$\{shellSize\.width\}:\$\{shellSize\.height\}` : null;/u);
 	assert.match(SHELL_SOURCE, /const defaultHomeTopSpacerHeight = defaultHomeTopSpacerMeasurement\?\.key === defaultHomeTopSpacerMeasurementKey/u);
-	assert.match(SHELL_SOURCE, /useLayoutEffect\(\(\) => \{[\s\S]*spacerElement\.getBoundingClientRect\(\)\.height[\s\S]*setDefaultHomeTopSpacerMeasurement\(\{[\s\S]*key: defaultHomeTopSpacerMeasurementKey,[\s\S]*height: spacerHeight,[\s\S]*\}\);[\s\S]*\}, \[defaultHomeTopSpacerHeight, defaultHomeTopSpacerMeasurementKey, isDefaultAgentHomeState/u);
+	assert.match(SHELL_SOURCE, /useLayoutEffect\(\(\) => \{[\s\S]*!landingMotionReady \|\| !defaultHomeTopSpacerMeasurementKey[\s\S]*spacerElement\.getBoundingClientRect\(\)\.height[\s\S]*setDefaultHomeTopSpacerMeasurement\(\{[\s\S]*key: defaultHomeTopSpacerMeasurementKey,[\s\S]*height: spacerHeight,[\s\S]*\}\);[\s\S]*\}, \[defaultHomeTopSpacerHeight, defaultHomeTopSpacerMeasurementKey, isDefaultAgentHomeState, landingMotionReady/u);
 	assert.match(SHELL_SOURCE, /ref=\{isDefaultAgentHomeState \? defaultHomeTopSpacerRef : undefined\}/u);
 	assert.match(SHELL_SOURCE, /isDefaultAgentHomeState && defaultHomeTopSpacerHeight !== null \? "shrink-0" : "flex-1 shrink"/u);
 	assert.match(SHELL_SOURCE, /style=\{isDefaultAgentHomeState && defaultHomeTopSpacerHeight !== null \? \{ flexBasis: defaultHomeTopSpacerHeight \} : undefined\}/u);
@@ -113,10 +113,10 @@ test("Studio default landing prompt growth pushes below the initial home positio
 
 test("Studio default landing shows the agents card section below the composer", () => {
 	assert.match(SHELL_SOURCE, /import \{ StudioAgentsSection \} from "@\/components\/projects\/studio\/components\/rovo-app-custom-agents-table";/u);
-	assert.match(SHELL_SOURCE, /const shouldShowStudioAgentsSection = isDefaultAgentHomeState;/u);
+	assert.match(SHELL_SOURCE, /const shouldShowStudioAgentsSection = isDefaultAgentHomeState && shouldShowDefaultLandingContent;/u);
 	assert.doesNotMatch(SHELL_SOURCE, /shouldShowStudioCustomAgentsTable|isDefaultAgentHomeState && studioAgentRegistry\.sessionAgentEntries\.length > 0/u);
 	assert.match(SHELL_SOURCE, /const handleDeleteStudioAgent = useCallback\([\s\S]*studioAgentRegistry\.removeSessionAgent\(agentId\);[\s\S]*\},[\s\S]*\[activeAgentConfig\?\.profileId, setActiveAgentConfigState, studioAgentRegistry\]/u);
-	assert.match(SHELL_SOURCE, /<StudioAgentsSection[\s\S]*directoryAgents=\{ROVO_DIRECTORY_AGENT_PROFILES\}[\s\S]*entries=\{studioAgentRegistry\.sessionAgentEntries\}/u);
+	assert.match(SHELL_SOURCE, /<motion\.div[\s\S]*animate=\{studioLandingMotionVisible\}[\s\S]*<StudioAgentsSection[\s\S]*directoryAgents=\{ROVO_DIRECTORY_AGENT_PROFILES\}[\s\S]*entries=\{studioAgentRegistry\.sessionAgentEntries\}/u);
 	assert.match(SHELL_SOURCE, /<StudioAgentsSection[\s\S]*onBrowseTemplates=\{\(\) => handleBrowseAgentTemplates\(\)\}/u);
 	assert.match(SHELL_SOURCE, /<StudioAgentsSection[\s\S]*onCreateAgent=\{handleFocusStudioComposer\}/u);
 	assert.match(SHELL_SOURCE, /<StudioAgentsSection[\s\S]*onEditAgent=\{handleStudioSidebarAgentSelect\}/u);
@@ -167,6 +167,22 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(COMPOSER_SOURCE, /focusRequestKey\?: number;/u);
 	assert.match(COMPOSER_SOURCE, /if \(typeof focusRequestKey !== "number" \|\| focusRequestKey <= 0\)/u);
 	assert.match(COMPOSER_SOURCE, /textareaRef\.current\?\.focus\(\);/u);
+});
+
+test("Studio landing motion gates first paint and removes bento instantly after prompt submit", () => {
+	assert.match(SHELL_SOURCE, /import \{ animate, AnimatePresence, motion, useMotionValue, useReducedMotion, type AnimationPlaybackControls \} from "motion\/react";/u);
+	assert.match(SHELL_SOURCE, /const STUDIO_LANDING_ENTER_TRANSITION = \{[\s\S]*visualDuration: 0\.32,[\s\S]*bounce: 0,[\s\S]*\} as const;/u);
+	assert.match(SHELL_SOURCE, /const STUDIO_HOME_BENTO_INSTANT_EXIT = \{[\s\S]*height: 0,[\s\S]*marginBottom: 0,[\s\S]*opacity: 0,[\s\S]*transition: \{ duration: 0 \},[\s\S]*\} as const;/u);
+	assert.match(SHELL_SOURCE, /const STUDIO_HOME_BENTO_VARIANTS = \{[\s\S]*exit: \(\{ instant, reduceMotion \}: StudioHomeBentoExitContext\) =>[\s\S]*instant \|\| reduceMotion \? STUDIO_HOME_BENTO_INSTANT_EXIT : STUDIO_HOME_BENTO_COLLAPSE_EXIT/u);
+	assert.match(SHELL_SOURCE, /const \[landingMotionReady, setLandingMotionReady\] = useState\(false\);/u);
+	assert.match(SHELL_SOURCE, /const shouldGateDefaultLandingContent = isDefaultAgentHomeState && !landingMotionReady;/u);
+	assert.match(SHELL_SOURCE, /const shouldShowDefaultLandingContent = !shouldGateDefaultLandingContent;/u);
+	assert.match(SHELL_SOURCE, /showEmptyState=\{showHomeState && shouldShowDefaultLandingContent\}/u);
+	assert.match(SHELL_SOURCE, /if \(landingMotionReady \|\| shellSize\.width <= 0 \|\| shellSize\.height <= 0\) \{[\s\S]*requestAnimationFrame\(\(\) => setLandingMotionReady\(true\)\)/u);
+	assert.match(SHELL_SOURCE, /const \[isDefaultHomeSubmitTransition, setIsDefaultHomeSubmitTransition\] = useState\(false\);/u);
+	assert.match(SHELL_SOURCE, /if \(isDefaultAgentHomeStateRef\.current\) \{[\s\S]*setIsDefaultHomeSubmitTransition\(true\);[\s\S]*\}[\s\S]*setOptimisticUserMessage/u);
+	assert.match(SHELL_SOURCE, /const homeStarterBentoPresence = \{[\s\S]*instant: isDefaultHomeSubmitTransition,[\s\S]*reduceMotion: shouldReduceStudioLandingMotion,[\s\S]*\};/u);
+	assert.match(SHELL_SOURCE, /<AnimatePresence custom=\{homeStarterBentoPresence\} initial=\{false\}>[\s\S]*<motion\.div[\s\S]*custom=\{homeStarterBentoPresence\}[\s\S]*exit="exit"[\s\S]*variants=\{STUDIO_HOME_BENTO_VARIANTS\}/u);
 });
 
 test("Studio start-from-scratch scribble replays on each composer hover reveal", () => {
@@ -561,6 +577,8 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(CHAT_PANEL_SOURCE, /greetingSelectedAgent\?: RovoAgentProfile \| null;/u);
 	assert.match(CHAT_PANEL_SOURCE, /selectedAgent=\{greetingSelectedAgent \?\? selectedAgent\}/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /<Label htmlFor=\{`agent-\$\{profileId\}-name`\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /conversationStarterIcons: Array\.isArray\(config\.conversationStarterIcons\)[\s\S]*config\.conversationStarterIcons\.filter\(\(_, itemIndex\) => itemIndex !== index\)/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /saveLabel=\{conversationStarterDialogValue\.length > 0 \? "Save" : "Add"\}/u);
 });
 
 test("Studio agent config panel wires the subagents experience into AgentConfigFields", () => {
@@ -615,15 +633,27 @@ test("Studio agent test conversation starters use contextual visual identity til
 	assert.match(ROVO_SUGGESTIONS_SOURCE, /resolveGenerativeCardIdentity\(\{[\s\S]*contentType: hint\.contentType[\s\S]*iconHint: hint\.iconHint[\s\S]*title: input\.label[\s\S]*\}\)/u);
 	assert.match(ROVO_SUGGESTIONS_SOURCE, /automation-ready\|markdown\|yaml\|sql/u);
 	assert.match(ROVO_SUGGESTIONS_SOURCE, /jira\|jsm\|request\|ticket\|issue\|incident\|priority\|sla\|routing\|triage/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /from "@\/components\/blocks\/conversation-starters";/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /resolveConversationStarterVisualIdentity/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /const starterIcons = getPayloadStringArray\(payload, \["conversationStarterIcons", "starterIcons", "suggestionIcons"\]\);/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /icon: getStarterIcon\(\(iconKey as StarterIconKey \| undefined\) \?\? DEFAULT_STARTER_ICON\)/u);
+	assert.match(SHELL_SOURCE, /from "@\/components\/blocks\/conversation-starters";/u);
+	assert.match(SHELL_SOURCE, /const conversationStarterIcons = Array\.isArray\(agentResult\.conversationStarterIcons\)[\s\S]*agentResult\.conversationStarterIcons/u);
+	assert.match(SHELL_SOURCE, /icon: getStarterIcon\(\(conversationStarterIcons\[index\] as StarterIconKey \| undefined\) \?\? DEFAULT_STARTER_ICON\)/u);
 	assert.match(ROVO_CONTEXT_SOURCE, /resolveConversationStarterVisualIdentity/u);
+	assert.match(ROVO_CONTEXT_SOURCE, /from "@\/components\/blocks\/conversation-starters";/u);
+	assert.match(ROVO_CONTEXT_SOURCE, /function getAgentResultStarterIconKeys\(payload: AgentResultPayload\): string\[\] \{[\s\S]*"conversationStarterIcons", "starterIcons", "suggestionIcons"/u);
+	assert.match(ROVO_CONTEXT_SOURCE, /starterIcons: getAgentResultStarterIconKeys\(payload\)/u);
+	assert.match(ROVO_CONTEXT_SOURCE, /icon: getStarterIcon\(\(iconKey as StarterIconKey \| undefined\) \?\? DEFAULT_STARTER_ICON\)/u);
 	assert.match(ROVO_CONTEXT_SOURCE, /visualIdentity: resolveConversationStarterVisualIdentity\(\{[\s\S]*agentName: context\.agentName[\s\S]*label,[\s\S]*\}\)/u);
 });
 
-test("Chat greeting custom-agent starters use one consistent AI chat icon", () => {
-	// Greeting prompts no longer pull a per-prompt contextual identity; they all
-	// render the same neutral "ai-chat" tile so the column reads consistently.
+test("Chat greeting custom-agent starters prefer explicit icons and fall back to AI chat", () => {
+	// Managed conversation starters pass explicit icon components from the
+	// config panel. Older/iconless starters keep the neutral "ai-chat" fallback.
 	assert.match(CHAT_GREETING_SOURCE, /const CUSTOM_AGENT_STARTER_ICON_NAME = "ai-chat";/u);
+	assert.match(CHAT_GREETING_SOURCE, /const IconComponent = suggestion\.icon;/u);
+	assert.match(CHAT_GREETING_SOURCE, /IconComponent \? \(\s*<IconComponent label=\{suggestion\.label\} color=\{token\("color\.icon\.subtle"\)\} \/>/u);
 	assert.doesNotMatch(CHAT_GREETING_SOURCE, /resolveConversationStarterVisualIdentity/u);
 	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CardIdentityTile/u);
 	assert.match(

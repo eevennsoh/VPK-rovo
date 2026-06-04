@@ -106,6 +106,7 @@ function visualComponent(
 
 export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	customComponent("agent"),
+	customComponent("agent-evaluation", "Agent Evaluation"),
 	customComponent("animated-dots", "Animated Dots"),
 	customComponent("animated-rovo", "Animated Rovo"),
 	customComponent("artifact"),
@@ -283,6 +284,8 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("agent-templates", "Agent Templates"),
 	blockComponent("knowledge-directory", "Knowledge Directory"),
 	blockComponent("conversation-starters", "Conversation Starters"),
+	blockComponent("agent-users", "Agent Users"),
+	blockComponent("agent-access", "Agent Access"),
 	blockComponent("skills-directory", "Skills Directory"),
 	blockComponent("task-progress", "Task Progress"),
 	blockComponent("triggers", "Triggers"),

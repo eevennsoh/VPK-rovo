@@ -210,6 +210,10 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
     ssr: false,
   }),
   agent: dynamic(() => import("./demos/ui-custom/agent-demo"), { ssr: false }),
+  "agent-evaluation": dynamic(
+    () => import("./demos/ui-custom/agent-evaluation-demo"),
+    { ssr: false },
+  ),
   "animated-dots": dynamic(() => import("./demos/ui-custom/animated-dots-demo"), {
     ssr: false,
   }),
@@ -5428,6 +5432,13 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "agent-evaluation-demo-filled": dynamic(
+    () =>
+      import("./demos/ui-custom/agent-evaluation-demo").then((mod) => ({
+        default: mod.AgentEvaluationDemoFilled,
+      })),
+    { ssr: false },
+  ),
   "animated-dots-demo-custom-colors": dynamic(
     () =>
       import("./demos/ui-custom/animated-dots-demo").then((mod) => ({
@@ -6712,6 +6723,13 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/blocks/conversation-starters-demo"),
     { ssr: false },
   ),
+  "agent-users": dynamic(
+    () => import("./demos/blocks/agent-users-demo"),
+    { ssr: false },
+  ),
+  "agent-access": dynamic(() => import("./demos/blocks/agent-access-demo"), {
+    ssr: false,
+  }),
   "agent-progress": dynamic(
     () => import("./demos/blocks/agent-progress-demo"),
     { ssr: false },

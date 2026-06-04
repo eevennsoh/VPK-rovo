@@ -73,6 +73,8 @@ test("Conversation Starters composes the VPK InputGroup without bespoke field ov
 	assert.match(row, /<InputGroupInput/u);
 	assert.match(row, /align="inline-start"/u);
 	assert.match(row, /align="inline-end"/u);
+	assert.match(row, /<InputGroupAddon align="inline-start" className="text-icon-subtlest">/u);
+	assert.match(row, /<InputGroupAddon align="inline-end" className="text-icon-subtlest">/u);
 	// No hand-rolled bordered field / token overrides.
 	assert.doesNotMatch(row, /border-input/u);
 	assert.doesNotMatch(row, /bg-bg-input/u);
@@ -85,6 +87,7 @@ test("Conversation Starters clears a row's text rather than removing the row", (
 	assert.match(row, /onClear: \(id: string\) => void/u);
 	assert.match(row, /Clear conversation starter/u);
 	assert.match(row, /CrossCircleIcon/u);
+	assert.match(row, /<CrossCircleIcon label="" color="currentColor" \/>/u);
 	assert.match(dialog, /function handleClear\(id: string\)/u);
 	assert.match(dialog, /\{ \.\.\.s, text: "" \}/u);
 	// Faithful to the design: no add-row affordance or empty state.
@@ -111,10 +114,18 @@ test("Conversation Starters lets each starter change its icon", () => {
 
 	assert.match(picker, /export function StarterIconPicker/u);
 	assert.match(picker, /Change conversation starter icon/u);
+	assert.match(picker, /className="text-icon-subtlest"/u);
 	assert.match(picker, /onChange\(icon\)/u);
 	assert.match(picker, /role="option"/u);
 	assert.match(data, /export const STARTER_ICON_OPTIONS/u);
 	assert.match(data, /DEFAULT_STARTER_ICON: StarterIconKey = "ai-chat"/u);
+});
+
+test("Conversation Starters dialog clips full-width sections to the rounded dialog shell", () => {
+	const source = readProjectFile(DIALOG);
+
+	assert.match(source, /<DialogContent className="gap-0 overflow-hidden p-0"/u);
+	assert.match(source, /className="flex items-center justify-end gap-2 border-t border-border bg-surface-overlay/u);
 });
 
 test("Conversation Starters generates a fallback set when no handler is given", () => {

@@ -240,7 +240,7 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	assert.match(AGENT_SOURCE, /function AgentReferenceChip/u);
 	assert.match(AGENT_SOURCE, /getDirectoryMentionItemOrFallback\(category, label\)/u);
 	assert.match(AGENT_SOURCE, /<RichTextMentionVisualMark/u);
-	assert.match(AGENT_SOURCE, /type=\{getRichTextMentionTagType\(visual\)\}/u);
+	assert.match(AGENT_SOURCE, /type=\{elemBefore \? "default" : getRichTextMentionTagType\(visual\)\}/u);
 	assert.match(AGENT_SOURCE, /removeVariant="overlay"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /function AgentSkillChip/u);
 	assert.match(AGENT_SOURCE, /onRemove=\{onRemove\}[\s\S]*removeButtonLabel=\{`Remove \$\{label\}`\}[\s\S]*removeVariant="overlay"/u);
@@ -261,7 +261,8 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	assert.match(TAG_SOURCE, /group\/tag relative inline-flex/u);
 	assert.match(TAG_SOURCE, /hasAvatarTagStyles\s*\?\s*cn\("h-5 gap-1 py-0 ps-1"/u);
 	assert.doesNotMatch(TAG_SOURCE, /hasAvatarTagStyles\s*\?\s*cn\("h-6/u);
-	assert.match(TAG_SOURCE, /hasAvatarTagStyles \? cn\("size-3 overflow-hidden \[&>\*\]:size-full"\)/u);
+	assert.match(TAG_SOURCE, /const avatarTagBeforeShapeClass = isUserAvatarTag \? "rounded-full" : isOtherAvatarTag \? "rounded-xs" : "";/u);
+	assert.match(TAG_SOURCE, /hasAvatarTagStyles \? cn\("size-3 overflow-hidden \[&>\*\]:size-full", avatarTagBeforeShapeClass\)/u);
 	assert.match(TAG_SOURCE, /group-hover\/tag:opacity-100/u);
 	assert.doesNotMatch(TAG_SOURCE, /group-hover:opacity-100/u);
 	assert.match(SKILL_TAG_SOURCE, /removeVariant\?: "inline" \| "overlay";/u);
@@ -277,6 +278,18 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	assert.match(UI_CUSTOM_DETAILS_SOURCE, /demoSlug: "skill-tag-demo-removable"/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /"skill-tag-demo-removable": dynamic/u);
 	assert.doesNotMatch(AGENT_SOURCE, /data-slot=tag-after\]\]:opacity-0/u);
+	assert.match(AGENT_SOURCE, /const iconColorToTagColor: Readonly<Record<string, TagColor>> = \{/u);
+	for (const [iconClass, tagColor] of [
+		["text-icon-discovery", "discovery"],
+		["text-icon-success", "green"],
+		["text-icon-brand", "blue"],
+		["text-icon-warning", "yellow"],
+		["text-yellow-400", "yellow"],
+	]) {
+		assert.match(AGENT_SOURCE, new RegExp(`"${iconClass}": "${tagColor}"`, "u"));
+	}
+	assert.match(AGENT_SOURCE, /const resolvedTagColor = tagColor \?\? getTagColorForMentionVisual\(visual\) \?\? "blue";/u);
+	assert.match(AGENT_SOURCE, /color=\{resolvedTagColor\}/u);
 });
 
 test("Compact agent config opts into the typed Triggers editor without replacing default rows", () => {
@@ -391,14 +404,19 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// fill the row. The empty-row +Add link renders separately and stays visible.
 	assert.match(AGENT_SOURCE, /const isLastItem = index === items\.length - 1;/u);
 	assert.match(AGENT_SOURCE, /if \(isLastItem && addLabel\) \{[\s\S]*className="inline-flex max-w-full items-center gap-1\.5"[\s\S]*<AgentAddValueButton[\s\S]*className="shrink-0 opacity-0 transition-opacity group-hover\/agent-row:opacity-100/u);
-	assert.match(AGENT_SOURCE, /\{isEmpty && addLabel \? \(\s*<AgentAddValueButton\s*label=\{addLabel\}/u);
+	assert.match(AGENT_SOURCE, /\{isEmpty && addLabel \? \(\s*<AgentAddValueButton[\s\S]*label=\{addLabel\}/u);
 	assert.match(AGENT_SOURCE, /const AGENT_EMPTY_ROW_ADD_LABELS: Partial<Record<AgentConfigListFieldName, string>> = \{/u);
 	assert.match(AGENT_SOURCE, /triggers: "Add rules for when this agent runs"/u);
 	assert.match(AGENT_SOURCE, /conversationStarters: "Add prompts to help people start"/u);
 	assert.match(AGENT_SOURCE, /skills: "Add skills to guide specialized tasks"/u);
 	assert.match(AGENT_SOURCE, /tools: "Add tools to extend what this agent can do"/u);
 	assert.match(AGENT_SOURCE, /subagents: "Add subagents to handle specific scenarios"/u);
-	assert.match(AGENT_SOURCE, /function getAgentFilledSummaryAddLabel\(field: AgentConfigListFieldName, isEmpty: boolean, showAddButtons: boolean\): string \| undefined \{[\s\S]*return isEmpty \? AGENT_EMPTY_ROW_ADD_LABELS\[field\] \?\? "Add" : "Add";[\s\S]*\}/u);
+	assert.match(AGENT_SOURCE, /function getAgentFilledSummaryAddLabel\(field: AgentConfigListFieldName, isEmpty: boolean, showAddButtons: boolean\): string \| undefined \{[\s\S]*field === "conversationStarters" && !isEmpty[\s\S]*return "Manage";[\s\S]*return isEmpty \? AGENT_EMPTY_ROW_ADD_LABELS\[field\] \?\? "Add" : "Add";[\s\S]*\}/u);
+	assert.match(AGENT_SOURCE, /import EditIcon from "@atlaskit\/icon\/core\/edit";/u);
+	assert.match(AGENT_SOURCE, /import \{[\s\S]*DEFAULT_STARTER_ICON,[\s\S]*getStarterIcon,[\s\S]*type StarterIconKey,[\s\S]*\} from "@\/components\/blocks\/conversation-starters";/u);
+	assert.match(AGENT_SOURCE, /function getConversationStarterSummaryItems\(config: AgentConfigFormValue\)/u);
+	assert.match(AGENT_SOURCE, /const starterSummaryItems = getConversationStarterSummaryItems\(config\)\.slice\(0, MAX_AGENT_CONVERSATION_STARTERS\);/u);
+	assert.match(AGENT_SOURCE, /const starterItems = starterSummaryItems\.map\(\(item\) => item\.label\);/u);
 	// Every list-field row keeps a persistent +Add link. Directory-backed
 	// fields open their directory first and fall back to onAppendListItem when no
 	// directory opener is supplied.
@@ -409,6 +427,9 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("tools", toolItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("subagents", subagentItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("conversationStarters", starterItems\.length === 0, showAddButtons\)\}/u);
+	assert.match(AGENT_SOURCE, /addIcon=\{starterItems\.length > 0 \? "edit" : undefined\}/u);
+	assert.match(AGENT_SOURCE, /const StarterIcon = getStarterIcon\(starterSummaryItems\[index\]\?\.icon \?\? DEFAULT_STARTER_ICON\);[\s\S]*return <StarterIcon label="" size="small" color="currentColor" \/>;/u);
+	assert.match(AGENT_SOURCE, /tagColor="standard"/u);
 	assert.match(AGENT_SOURCE, /label="Triggers"\s+onAdd=\{\(\) => onAppendListItem\?\.\("triggers"\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Skills"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("skills", "skills", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Tools"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("tools", "tools", onOpenDirectory, onAppendListItem\)\}/u);

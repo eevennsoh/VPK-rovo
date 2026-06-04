@@ -659,6 +659,43 @@ const apps: KnowledgeDirectoryApp[] = [
 			},
 		],
 	},
+	"agent-users": {
+		description: "Users screen for managing who has access to a Rovo agent. Shows an access settings card (Owner, Author display name, and an Open-to-all-users switch) plus a selectable People table with role lozenges, and an Add user dialog for granting access at a chosen role.",
+		importStatement: `import { AgentUsers, AddUserDialog } from "@/components/blocks/agent-users";`,
+		usage: `import { AgentUsers } from "@/components/blocks/agent-users";
+
+<AgentUsers
+  defaultOpenToAll
+  learnMoreHref="https://support.atlassian.com/rovo/"
+/>`,
+		props: [
+			{
+				name: "owner",
+				type: "AgentPerson",
+				description: "Person shown in the Owner row. Defaults to the sample owner.",
+			},
+			{
+				name: "authorDisplay",
+				type: "AgentPerson",
+				description: "Person or team shown in the Author display name row.",
+			},
+			{
+				name: "people",
+				type: "readonly AgentPerson[]",
+				description: "Initial people list rendered in the table. The block manages additions locally.",
+			},
+			{
+				name: "defaultOpenToAll",
+				type: "boolean",
+				description: "Initial state of the User access switch. Defaults to true.",
+			},
+			{
+				name: "learnMoreHref",
+				type: "string",
+				description: "Destination for the “More about Rovo agent users and permissions” link.",
+			},
+		],
+	},
 	"conversation-starters": {
 		description: "Modal for editing an agent's conversation starters: a fixed set of up to maxStarters (default 3) rows you can reorder by dragging, give each its own icon, clear, or fill all at once with “Generate for me”.",
 		importStatement: `import { ConversationStartersDialog } from "@/components/blocks/conversation-starters";`,
@@ -742,6 +779,55 @@ const [starters, setStarters] = useState<readonly ConversationStarter[]>([
 				name: "placeholder",
 				type: "string",
 				description: "Optional input placeholder. Defaults to “Write a new conversation starter”.",
+			},
+		],
+	},
+	"agent-access": {
+		description:
+			"Agent “Access” settings screen: choose whether an agent acts as the requesting user or via its own account (with a confirmation warning that switching to the agent account exposes its data to all users), plus Atlassian app-access and connected-app summaries shown for the agent-account mode.",
+		importStatement: `import { AgentAccess } from "@/components/blocks/agent-access";`,
+		usage: `import { AgentAccess } from "@/components/blocks/agent-access";
+import type { AgentAccessMode } from "@/components/blocks/agent-access";
+
+const [mode, setMode] = useState<AgentAccessMode>("requesting-user");
+
+<AgentAccess
+  value={mode}
+  onValueChange={setMode}
+  onGoToAgentDetails={() => navigate("/agent/details")}
+/>`,
+		demoLayout: { previewHeight: "fixed" },
+		props: [
+			{
+				name: "value",
+				type: '"requesting-user" | "agent-account"',
+				description: "Controlled selected access mode.",
+			},
+			{
+				name: "defaultValue",
+				type: '"requesting-user" | "agent-account"',
+				default: '"requesting-user"',
+				description: "Initial mode for uncontrolled usage.",
+			},
+			{
+				name: "onValueChange",
+				type: "(value: AgentAccessMode) => void",
+				description: "Fires after a mode change is confirmed (post-warning for the agent account).",
+			},
+			{
+				name: "atlassianApps",
+				type: "readonly AtlassianAppAccess[]",
+				description: "Atlassian apps the agent account has been granted/denied access to. Defaults to a Confluence row.",
+			},
+			{
+				name: "connectedApps",
+				type: "readonly ConnectedApp[]",
+				description: "Third-party apps available once connected. Empty renders the empty state.",
+			},
+			{
+				name: "onGoToAgentDetails",
+				type: "() => void",
+				description: "Invoked by the connected-apps empty-state action.",
 			},
 		],
 	},

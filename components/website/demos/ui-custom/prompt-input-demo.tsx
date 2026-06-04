@@ -156,9 +156,9 @@ export function PromptInputDemoChatComposer() {
 									size="icon-sm"
 									variant={clickyActive ? "default" : "ghost"}
 									onClick={() => setClickyActive((prev) => !prev)}
-									aria-label="Rovo AI cursor"
+									aria-label="Rovo cursor"
 									aria-pressed={clickyActive}
-									tooltip={{ content: "AI Cursor ⌘⇧K", delay: 0 }}
+									tooltip={{ content: "Rovo cursor", delay: 0 }}
 								>
 									<CursorIcon label="" />
 								</PromptInputButton>
