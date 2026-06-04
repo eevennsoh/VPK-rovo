@@ -1416,7 +1416,7 @@ function AgentReferenceChip({
 
 	return (
 		<Tag
-			color="gray"
+			color="blue"
 			elemBefore={visual ? (
 				<RichTextMentionVisualMark
 					category={category}
