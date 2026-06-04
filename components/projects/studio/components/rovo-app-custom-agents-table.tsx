@@ -8,12 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Lozenge } from "@/components/ui/lozenge";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
+import { List, type ListColumn } from "@/components/ui-custom/list";
 import { cn } from "@/lib/utils";
 import EditIcon from "@atlaskit/icon/core/edit";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
@@ -23,6 +19,16 @@ const STUDIO_CUSTOM_AGENT_OWNER_AVATAR_SRC = "/avatar-user/venn/venn.png";
 
 const STUDIO_PINNED_AGENTS_STORAGE_KEY = "vpk:studio:pinned-custom-agents";
 const STUDIO_CUSTOM_AGENTS_TABLE_HOVER_CELL_CLASS = "transition-colors group-hover/row:bg-bg-neutral-subtle-hovered";
+
+// Column widths for the agents list. The first column flexes; the rest are fixed
+// so the name truncates rather than the metadata/action columns.
+const STUDIO_CUSTOM_AGENTS_LIST_COLUMNS: readonly ListColumn[] = [
+	{},
+	{ className: "w-[92px]" },
+	{ className: "w-[72px]" },
+	{ className: "w-[116px]" },
+	{ className: "w-[72px]" },
+];
 
 function readPinnedAgentIds(): ReadonlySet<string> {
 	if (typeof window === "undefined") {
@@ -151,20 +157,12 @@ export function StudioCustomAgentsTable({
 	};
 
 	return (
-		<section aria-labelledby="studio-custom-agents-heading" className={`mx-auto mt-12 flex w-full flex-col gap-2 ${ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS}`}>
-			<h2 id="studio-custom-agents-heading" className="px-1.5 text-xs font-semibold leading-4 text-text-subtlest">
+		<List.Root aria-labelledby="studio-custom-agents-heading" className={cn("mx-auto mt-12", ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS)}>
+			<List.Heading id="studio-custom-agents-heading">
 				My agents
-			</h2>
-			<Table className="min-w-full table-fixed">
-				<colgroup>
-					<col />
-					<col className="w-[92px]" />
-					<col className="w-[72px]" />
-					<col className="w-[116px]" />
-					<col className="w-[72px]" />
-				</colgroup>
-				<TableBody>
-					{sortedEntries.map((entry, entryIndex) => {
+			</List.Heading>
+			<List.Table columns={STUDIO_CUSTOM_AGENTS_LIST_COLUMNS}>
+				{sortedEntries.map((entry, entryIndex) => {
 						const agentName = getStudioSessionAgentDisplayName(entry);
 						const isPinned = pinnedAgentIds.has(entry.profile.id);
 						const isFirstRow = entryIndex === 0;
@@ -236,8 +234,7 @@ export function StudioCustomAgentsTable({
 							</TableRow>
 						);
 					})}
-				</TableBody>
-			</Table>
-		</section>
+			</List.Table>
+		</List.Root>
 	);
 }
