@@ -839,6 +839,34 @@ import {
 		],
 	},
 
+	"agent-evaluation": {
+		description:
+			"Evaluation screen for an agent's compact header nav. Builders create datasets (CSV prompts/responses) to simulate agent responses, then configure and run evaluations that score how consistently the agent performs. Composed from existing design components and tokens.",
+		usage: `import { AgentEvaluation } from "@/components/ui-custom/agent-evaluation";
+
+<AgentEvaluation
+  datasets={datasets}
+  agents={agents}
+  evaluationTypes={evaluationTypes}
+  completedEvaluations={completedEvaluations}
+/>`,
+		demoLayout: {
+			previewContentWidth: "full",
+			examplesContentWidth: "full",
+		},
+		props: [
+			{ name: "agents", type: "AgentEvaluationAgentOption[]", description: "Agents (and versions) available to evaluate, shown in the agent select." },
+			{ name: "datasets", type: "AgentEvaluationDatasetOption[]", description: "Datasets available to evaluate against. Empty renders the dataset empty state." },
+			{ name: "evaluationTypes", type: "AgentEvaluationTypeOption[]", description: "Evaluation strategies (e.g. Response Accuracy, Resolution Rate, Manual Testing)." },
+			{ name: "completedEvaluations", type: "AgentEvaluationCompletedRow[]", description: "Rows for the completed evaluations table. Empty renders the empty-state row." },
+			{ name: "className", type: "string", description: "Additional classes applied to the outer container." },
+		],
+		examples: [
+			{ title: "Empty state", description: "Default Evaluation screen before any datasets or evaluations exist.", demoSlug: "agent-evaluation" },
+			{ title: "With data", description: "Datasets present and a completed evaluation listed in the results table.", demoSlug: "agent-evaluation-demo-filled" },
+		],
+	},
+
 	"animated-dots": {
 		description:
 			"Animated colored dots with staggered opacity reveal, used as a loading or thinking indicator alongside text labels.",

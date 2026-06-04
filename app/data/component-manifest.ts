@@ -106,6 +106,7 @@ function visualComponent(
 
 export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	customComponent("agent"),
+	customComponent("agent-evaluation", "Agent Evaluation"),
 	customComponent("animated-dots", "Animated Dots"),
 	customComponent("animated-rovo", "Animated Rovo"),
 	customComponent("artifact"),

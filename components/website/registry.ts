@@ -210,6 +210,10 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
     ssr: false,
   }),
   agent: dynamic(() => import("./demos/ui-custom/agent-demo"), { ssr: false }),
+  "agent-evaluation": dynamic(
+    () => import("./demos/ui-custom/agent-evaluation-demo"),
+    { ssr: false },
+  ),
   "animated-dots": dynamic(() => import("./demos/ui-custom/animated-dots-demo"), {
     ssr: false,
   }),
@@ -5418,6 +5422,13 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/ui-custom/agent-demo").then((mod) => ({
         default: mod.AgentDemoCompactEmpty,
+      })),
+    { ssr: false },
+  ),
+  "agent-evaluation-demo-filled": dynamic(
+    () =>
+      import("./demos/ui-custom/agent-evaluation-demo").then((mod) => ({
+        default: mod.AgentEvaluationDemoFilled,
       })),
     { ssr: false },
   ),
