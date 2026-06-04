@@ -577,13 +577,27 @@
 
 .rich-text-mention-visual {
 	display: inline-flex;
-	width: 16px;
-	height: 16px;
+	width: 12px;
+	height: 12px;
 	flex-shrink: 0;
 	align-items: center;
 	justify-content: center;
 	overflow: hidden;
 	border-radius: var(--ds-radius-small, 3px);
+}
+
+.rich-text-mention-visual > svg,
+.rich-text-mention-visual > span,
+.rich-text-mention-visual svg {
+	width: 12px;
+	height: 12px;
+}
+
+.rich-text-mention-visual[data-visual-kind="avatar"],
+.rich-text-mention-visual[data-visual-kind="image"],
+.rich-text-mention-visual[data-visual-kind="logo"] {
+	width: 16px;
+	height: 16px;
 }
 
 .rich-text-mention-visual[data-visual-shape="circle"] {

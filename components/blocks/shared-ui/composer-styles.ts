@@ -15,16 +15,13 @@ export const composerTextareaClassName =
 export const floatingComposerTextareaClassName =
 	"min-h-8 flex-1 py-1.5 leading-5";
 
+// Note: `text-overflow: ellipsis` is ignored on a multi-line <textarea>
+// placeholder, so long placeholders hard-clip instead of truncating. The real
+// truncation is handled by an overlay <span> in PromptInputTextarea (where
+// ellipsis IS honored). This rule only sets the native placeholder color for
+// any consumer that still renders a native placeholder directly.
 export const textareaCSS = `
-	.chat-composer-textarea:placeholder-shown {
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
 	.chat-composer-textarea::placeholder {
 		color: ${token("color.text.subtlest")};
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
 	}
 `;

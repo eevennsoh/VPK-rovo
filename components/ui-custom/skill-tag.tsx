@@ -57,7 +57,7 @@ function SkillTag({
 
 			{/* Icon */}
 			{icon ? (
-				<span className={cn("relative z-[1] flex size-3 shrink-0 skew-x-12 items-center justify-center [&>svg]:size-3", collectionStyles[color].icon)} data-slot="skill-tag-icon">
+				<span className={cn("relative z-[1] flex size-3 shrink-0 skew-x-12 items-center justify-center [&>span]:size-3! [&_svg]:size-3!", collectionStyles[color].icon)} data-slot="skill-tag-icon">
 					{icon}
 				</span>
 			) : null}

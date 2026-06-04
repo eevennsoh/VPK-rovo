@@ -49,6 +49,7 @@ export function StarterIconPicker({
 				render={
 					<Button
 						aria-label="Change conversation starter icon"
+						className="text-icon-subtlest"
 						disabled={disabled}
 						size="icon"
 						type="button"

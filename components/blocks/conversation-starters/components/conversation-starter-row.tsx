@@ -71,7 +71,7 @@ export function ConversationStarterRow({
 				options={iconOptions}
 			/>
 			<InputGroup>
-				<InputGroupAddon align="inline-start">
+				<InputGroupAddon align="inline-start" className="text-icon-subtlest">
 					<button
 						aria-label={`Reorder conversation starter ${index + 1}`}
 						className="flex cursor-grab touch-none items-center active:cursor-grabbing"
@@ -89,13 +89,14 @@ export function ConversationStarterRow({
 					placeholder={placeholder}
 					value={starter.text}
 				/>
-				<InputGroupAddon align="inline-end">
+				<InputGroupAddon align="inline-end" className="text-icon-subtlest">
 					<InputGroupButton
 						aria-label={`Clear conversation starter ${index + 1}`}
 						onClick={() => onClear(starter.id)}
+						className="text-icon-subtlest"
 						size="icon-xs"
 					>
-						<CrossCircleIcon label="" />
+						<CrossCircleIcon label="" color="currentColor" />
 					</InputGroupButton>
 				</InputGroupAddon>
 			</InputGroup>

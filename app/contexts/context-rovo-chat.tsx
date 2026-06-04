@@ -20,6 +20,11 @@ import {
 	type RovoMessageMetadata,
 	type RovoUIMessage,
 } from "@/lib/rovo-ui-messages";
+import {
+	DEFAULT_STARTER_ICON,
+	getStarterIcon,
+	type StarterIconKey,
+} from "@/components/blocks/conversation-starters";
 import { shouldSendExplicitRovoCancel } from "@/lib/rovo-cancel-strategy";
 import { mergeRovoContextDescriptions } from "@/lib/rovo-context";
 import {
@@ -926,10 +931,15 @@ function getAgentResultStarterLabels(payload: AgentResultPayload): string[] {
 	return labels;
 }
 
+function getAgentResultStarterIconKeys(payload: AgentResultPayload): string[] {
+	return [...getPayloadStringArray(payload, ["conversationStarterIcons", "starterIcons", "suggestionIcons"])];
+}
+
 function normalizeSessionAgentResult(
 	result: RovoDataParts["agent-result"]
 ): RovoDataParts["agent-result"] {
 	const conversationStarters = getAgentResultStarterLabels(result as AgentResultPayload);
+	const conversationStarterIcons = getAgentResultStarterIconKeys(result as AgentResultPayload);
 	const name = getNonEmptyString(result.name) === SESSION_AGENT_LEGACY_DEFAULT_NAME
 		? ""
 		: result.name;
@@ -948,6 +958,7 @@ function normalizeSessionAgentResult(
 		...(Array.isArray(result.conversationStarters) || conversationStarters.length > 0
 			? { conversationStarters }
 			: {}),
+		...(conversationStarterIcons.length > 0 ? { conversationStarterIcons } : {}),
 	};
 }
 
@@ -1029,9 +1040,11 @@ function createSessionAgentStarter(
 	label: string,
 	index: number,
 	context: { agentName: string; byline: string; description?: string | null },
+	iconKey?: string,
 ): RovoSuggestion {
 	return {
 		id: `${agentId}-starter-${index + 1}`,
+		icon: getStarterIcon((iconKey as StarterIconKey | undefined) ?? DEFAULT_STARTER_ICON),
 		label,
 		prompt: label,
 		type: "skill",
@@ -1082,6 +1095,7 @@ function getCreatedAgentResultKey(payload: AgentResultPayload): string {
 		description: getPayloadString(payload, ["description", "summary", "shortDescription"]),
 		instructions: getPayloadString(payload, ["instructions", "contextDescription", "context", "systemPrompt", "prompt"]),
 		starters: getAgentResultStarterLabels(payload),
+		starterIcons: getAgentResultStarterIconKeys(payload),
 		avatarSrc: getPayloadString(payload, ["avatarSrc", "avatarUrl", "iconSrc"]),
 	});
 }
@@ -1104,12 +1118,13 @@ function buildSessionAgentProfileFromResult(params: {
 	const instructions =
 		getPayloadString(payload, ["instructions", "contextDescription", "context", "systemPrompt", "prompt"]) ??
 		undefined;
+	const starterIcons = getAgentResultStarterIconKeys(payload);
 	const starters = getAgentResultStarterLabels(payload).map((starter, index) =>
 		createSessionAgentStarter(params.profileId, starter, index, {
 			agentName: params.profileName,
 			byline,
 			description,
-		})
+		}, starterIcons[index])
 	);
 
 	return {

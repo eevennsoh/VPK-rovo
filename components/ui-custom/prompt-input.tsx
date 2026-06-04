@@ -1003,12 +1003,20 @@ export const PromptInputTextarea = ({
     return window.CSS.supports("field-sizing", "content");
   });
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [domEmpty, setDomEmpty] = useState(true);
 
   const shouldUseManualAutoResize = autoResize && !supportsFieldSizing;
+
+  const syncDomEmpty = useCallback((node: HTMLTextAreaElement | null) => {
+    if (node) {
+      setDomEmpty(node.value === "");
+    }
+  }, []);
 
   const assignTextareaRef = useCallback(
     (node: HTMLTextAreaElement | null) => {
       textareaRef.current = node;
+      syncDomEmpty(node);
 
       if (typeof forwardedRef === "function") {
         forwardedRef(node);
@@ -1019,7 +1027,7 @@ export const PromptInputTextarea = ({
         forwardedRef.current = node;
       }
     },
-    [forwardedRef]
+    [forwardedRef, syncDomEmpty]
   );
 
   const resizeToContent = useCallback(
@@ -1103,9 +1111,10 @@ export const PromptInputTextarea = ({
   const handleInput = useCallback<NonNullable<PromptInputTextareaProps["onInput"]>>(
     (event) => {
       onInput?.(event);
+      syncDomEmpty(event.currentTarget);
       resizeToContent(event.currentTarget);
     },
-    [onInput, resizeToContent]
+    [onInput, resizeToContent, syncDomEmpty]
   );
 
   const handlePaste: ClipboardEventHandler<HTMLTextAreaElement> = useCallback(
@@ -1139,6 +1148,17 @@ export const PromptInputTextarea = ({
   const handleCompositionStart = useCallback(() => setIsComposing(true), []);
   const resolvedValue = controller ? controller.textInput.value : valueProp;
 
+  // `text-overflow: ellipsis` is ignored on a multi-line <textarea> placeholder,
+  // so a long placeholder hard-clips instead of truncating. We render the real
+  // placeholder text in an absolutely-positioned single-line overlay <span>
+  // (where ellipsis IS honored) and keep the native placeholder empty.
+  // The overlay shows only while the field is empty.
+  const isEmpty =
+    resolvedValue !== undefined && resolvedValue !== null
+      ? resolvedValue === ""
+      : domEmpty;
+  const showOverlayPlaceholder = isEmpty && Boolean(placeholder);
+
   useEffect(() => {
     if (!shouldUseManualAutoResize || !textareaRef.current) {
       return;
@@ -1153,27 +1173,43 @@ export const PromptInputTextarea = ({
         controller.textInput.setInput(event.currentTarget.value);
       }
       onChange?.(event);
+      syncDomEmpty(event.currentTarget);
       resizeToContent(event.currentTarget);
     },
-    [controller, onChange, resizeToContent]
+    [controller, onChange, resizeToContent, syncDomEmpty]
   );
 
   return (
-    <InputGroupTextarea
-      className={cn("field-sizing-content max-h-48 min-h-16", className)}
-      name="message"
-      onChange={handleChange}
-      onCompositionEnd={handleCompositionEnd}
-      onCompositionStart={handleCompositionStart}
-      onInput={handleInput}
-      enterKeyHint="send"
-      onKeyDown={handleKeyDown}
-      onPaste={handlePaste}
-      placeholder={placeholder}
-      ref={assignTextareaRef}
-      value={resolvedValue}
-      {...props}
-    />
+    <div className="relative flex min-w-0 flex-1 self-stretch">
+      <InputGroupTextarea
+        className={cn("field-sizing-content max-h-48 min-h-16", className)}
+        name="message"
+        onChange={handleChange}
+        onCompositionEnd={handleCompositionEnd}
+        onCompositionStart={handleCompositionStart}
+        onInput={handleInput}
+        enterKeyHint="send"
+        onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
+        // Native textarea placeholders can't render an ellipsis (see overlay
+        // below); keep it empty so only the truncating overlay shows.
+        placeholder=""
+        ref={assignTextareaRef}
+        value={resolvedValue}
+        {...props}
+      />
+      {showOverlayPlaceholder ? (
+        <span
+          aria-hidden="true"
+          data-slot="prompt-input-placeholder"
+          className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center px-2.5 text-base text-text-subtlest md:text-sm"
+        >
+          <span className="block w-full overflow-hidden text-ellipsis whitespace-nowrap">
+            {placeholder}
+          </span>
+        </span>
+      ) : null}
+    </div>
   );
 };
 

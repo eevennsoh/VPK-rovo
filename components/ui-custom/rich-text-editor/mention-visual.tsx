@@ -118,7 +118,13 @@ export function RichTextMentionVisualMark({
 	const avatarSize = size === "pill" ? "xs" : "sm";
 	const imageSizeClassName = size === "pill" ? "size-4" : "size-5";
 	const logoSize = size === "menu" ? "small" : "xxsmall";
-	const iconClassName = size === "pill" ? "size-3.5" : "size-3";
+	const iconSizeClassName = size === "pill" ? "size-3.5" : "size-3";
+	const iconClassName = cn(
+		iconSizeClassName,
+		size === "pill"
+			? "[&>span]:size-3.5! [&_svg]:size-3.5!"
+			: "[&>span]:size-3! [&_svg]:size-3!",
+	);
 
 	if (visual.kind === "avatar") {
 		return (
@@ -151,7 +157,13 @@ export function RichTextMentionVisualMark({
 
 	if (visual.kind === "logo") {
 		return (
-			<span aria-hidden="true" className={cn("inline-flex shrink-0 items-center justify-center", className)}>
+			<span
+				aria-hidden="true"
+				className={cn(
+					"inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xs [&>span]:size-full! [&_svg]:size-full!",
+					className,
+				)}
+			>
 				<AtlassianLogo name={visual.logoName} size={logoSize} themeAware label={label} />
 			</span>
 		);
@@ -173,7 +185,12 @@ export function RichTextMentionVisualMark({
 		return (
 			<span
 				aria-hidden="true"
-				className={cn("inline-flex shrink-0 items-center justify-center", visual.iconColor ?? "text-icon-subtle", className)}
+				className={cn(
+					"inline-flex shrink-0 items-center justify-center",
+					iconSizeClassName,
+					visual.iconColor ?? "text-icon-subtle",
+					className,
+				)}
 			>
 				<Icon
 					aria-hidden
@@ -213,6 +230,7 @@ export function getRichTextMentionVisualDOMSpec(
 			{
 				"aria-hidden": "true",
 				class: "rich-text-mention-visual rich-text-mention-logo-fallback",
+				"data-visual-kind": visual.kind,
 			},
 			visual.logoName.slice(0, 1).toUpperCase(),
 		];
@@ -223,6 +241,7 @@ export function getRichTextMentionVisualDOMSpec(
 		{
 			"aria-hidden": "true",
 			class: "rich-text-mention-visual rich-text-mention-icon-fallback",
+			"data-visual-kind": visual.kind,
 		},
 		"",
 	];

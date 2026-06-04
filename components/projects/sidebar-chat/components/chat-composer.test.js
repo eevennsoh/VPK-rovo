@@ -47,7 +47,7 @@ test("compact chat can hide the AI cursor control without changing the default",
 	assert.match(sidebarPanel, /\{hideAiCursor \? null : \([\s\S]*<ClickyOverlay/u);
 	assert.match(sidebarComposer, /hideAiCursor\?: boolean;/u);
 	assert.match(sidebarComposer, /hideAiCursor = false/u);
-	assert.match(sidebarComposer, /\{hideAiCursor \? null : \([\s\S]*aria-label="Rovo AI cursor"/u);
+	assert.match(sidebarComposer, /\{hideAiCursor \? null : \([\s\S]*aria-label="Rovo cursor"/u);
 });
 
 test("compact chat composer padding can be overridden by opt-in surfaces", () => {

@@ -11,6 +11,7 @@ import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
+import EditIcon from "@atlaskit/icon/core/edit";
 import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
 import ScorecardIcon from "@atlaskit/icon/core/scorecard";
@@ -23,6 +24,11 @@ import ViewsIcon from "@atlaskit/icon-lab/core/views";
 
 import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
 import { DEMO_AGENT_TEMPLATES } from "@/components/blocks/agent-templates/data/demo-template-agents";
+import {
+	DEFAULT_STARTER_ICON,
+	getStarterIcon,
+	type StarterIconKey,
+} from "@/components/blocks/conversation-starters";
 import Triggers, {
 	serializeAgentTriggerLabels,
 	type AgentTriggerValue,
@@ -55,7 +61,7 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
-import { Tag } from "@/components/ui/tag";
+import { Tag, type TagColor } from "@/components/ui/tag";
 import { Tile } from "@/components/ui/tile";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CheckIcon, MoreHorizontalIcon, PlusIcon } from "@/components/ui/vpk-icons";
@@ -150,6 +156,10 @@ const AGENT_EMPTY_ROW_ADD_LABELS: Partial<Record<AgentConfigListFieldName, strin
 function getAgentFilledSummaryAddLabel(field: AgentConfigListFieldName, isEmpty: boolean, showAddButtons: boolean): string | undefined {
 	if (!showAddButtons) {
 		return undefined;
+	}
+
+	if (field === "conversationStarters" && !isEmpty) {
+		return "Manage";
 	}
 
 	return isEmpty ? AGENT_EMPTY_ROW_ADD_LABELS[field] ?? "Add" : "Add";
@@ -1412,6 +1422,20 @@ function getNonEmptyConfigItems(items: readonly string[] | undefined): readonly 
 		.filter(Boolean);
 }
 
+function getConversationStarterSummaryItems(config: AgentConfigFormValue): ReadonlyArray<{
+	icon: StarterIconKey;
+	label: string;
+}> {
+	const icons = config.conversationStarterIcons ?? [];
+
+	return (config.conversationStarters ?? [])
+		.map((item, index) => ({
+			icon: (icons[index] as StarterIconKey | undefined) ?? DEFAULT_STARTER_ICON,
+			label: item.trim(),
+		}))
+		.filter((item) => item.label.length > 0);
+}
+
 function getAgentTriggerItems(config: AgentConfigFormValue): readonly string[] {
 	const triggerDefinitions = serializeAgentTriggerLabels(config.triggerDefinitions);
 	if (triggerDefinitions.length > 0) {
@@ -1427,34 +1451,68 @@ function getAgentTriggerItems(config: AgentConfigFormValue): readonly string[] {
 	return trigger ? [trigger] : [];
 }
 
+const iconColorToTagColor: Readonly<Record<string, TagColor>> = {
+	"text-icon-brand": "blue",
+	"text-icon-information": "blue",
+	"text-icon-success": "green",
+	"text-icon-discovery": "discovery",
+	"text-icon-warning": "yellow",
+	"text-icon-danger": "red",
+	"text-icon-accent-red": "red",
+	"text-icon-accent-orange": "orange",
+	"text-icon-accent-yellow": "yellow",
+	"text-icon-accent-lime": "lime",
+	"text-icon-accent-green": "green",
+	"text-icon-accent-teal": "teal",
+	"text-icon-accent-blue": "blue",
+	"text-icon-accent-purple": "purple",
+	"text-icon-accent-magenta": "magenta",
+	"text-icon-accent-gray": "gray",
+	"text-yellow-400": "yellow",
+};
+
+function getTagColorForMentionVisual(visual: RichTextMentionItem["visual"]): TagColor | undefined {
+	return visual?.kind === "icon" && visual.iconColor
+		? iconColorToTagColor[visual.iconColor]
+		: undefined;
+}
+
 function AgentReferenceChip({
 	category,
+	elemBefore,
 	label,
 	onRemove,
+	tagColor,
 }: Readonly<{
 	category?: RichTextReferenceCategory;
+	elemBefore?: ReactNode;
 	label: string;
 	onRemove?: () => void;
+	tagColor?: TagColor;
 }>) {
 	const item = category ? getDirectoryMentionItemOrFallback(category, label) : undefined;
 	const visual = item?.visual;
+	const resolvedTagColor = tagColor ?? getTagColorForMentionVisual(visual) ?? "blue";
+	const resolvedElemBefore = elemBefore ?? (
+		visual ? (
+			<RichTextMentionVisualMark
+				category={category}
+				label={label}
+				visual={visual}
+			/>
+		) : (
+			<PageIcon label="" size="small" />
+		)
+	);
 
 	return (
 		<Tag
-			color="blue"
-			elemBefore={visual ? (
-				<RichTextMentionVisualMark
-					category={category}
-					label={label}
-					visual={visual}
-				/>
-			) : (
-				<PageIcon label="" size="small" />
-			)}
+			color={resolvedTagColor}
+			elemBefore={resolvedElemBefore}
 			onRemove={onRemove}
 			removeButtonLabel={`Remove ${label}`}
 			removeVariant="overlay"
-			type={getRichTextMentionTagType(visual)}
+			type={elemBefore ? "default" : getRichTextMentionTagType(visual)}
 		>
 			{label}
 		</Tag>
@@ -1463,9 +1521,10 @@ function AgentReferenceChip({
 
 function AgentAddValueButton({
 	className,
+	icon = "add",
 	label,
 	onClick,
-}: Readonly<{ className?: string; label: string; onClick?: () => void }>) {
+}: Readonly<{ className?: string; icon?: "add" | "edit"; label: string; onClick?: () => void }>) {
 	return (
 		<button
 			type="button"
@@ -1475,7 +1534,7 @@ function AgentAddValueButton({
 			)}
 			onClick={onClick}
 		>
-			<PlusIcon size="small" />
+			{icon === "edit" ? <EditIcon label="" size="small" /> : <PlusIcon size="small" />}
 			<span className="group-hover/add-link:underline group-focus-visible/add-link:underline">{label}</span>
 		</button>
 	);
@@ -1487,22 +1546,28 @@ interface AgentFilledSummaryRowProps {
 	referenceCategory?: RichTextReferenceCategory;
 	agentFieldName?: string;
 	screenAssistantTargetId?: string;
+	addIcon?: "add" | "edit";
 	addLabel?: string;
 	hideWhenEmpty?: boolean;
+	itemElemBefore?: (item: string, index: number) => ReactNode;
 	onAdd?: () => void;
 	onRemoveItem?: (index: number) => void;
+	tagColor?: TagColor;
 }
 
 function AgentFilledSummaryRow({
+	addIcon,
 	addLabel,
 	agentFieldName,
 	hideWhenEmpty = false,
+	itemElemBefore,
 	items,
 	label,
 	onAdd,
 	onRemoveItem,
 	referenceCategory,
 	screenAssistantTargetId,
+	tagColor,
 }: Readonly<AgentFilledSummaryRowProps>) {
 	const isEmpty = items.length === 0;
 
@@ -1533,9 +1598,11 @@ function AgentFilledSummaryRow({
 					const chip = (
 						<AgentReferenceChip
 							category={referenceCategory}
+							elemBefore={itemElemBefore?.(item, index)}
 							key={`${label}-${item}-${index}`}
 							label={item}
 							onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
+							tagColor={tagColor}
 						/>
 					);
 
@@ -1548,6 +1615,7 @@ function AgentFilledSummaryRow({
 								{chip}
 								<AgentAddValueButton
 									className="shrink-0 opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-focus-within/agent-row:opacity-100 focus-visible:opacity-100"
+									icon={addIcon}
 									label={addLabel}
 									onClick={onAdd}
 								/>
@@ -1559,6 +1627,7 @@ function AgentFilledSummaryRow({
 				})}
 				{isEmpty && addLabel ? (
 					<AgentAddValueButton
+						icon={addIcon}
 						label={addLabel}
 						onClick={onAdd}
 					/>
@@ -1608,7 +1677,8 @@ function AgentFilledConfigSummary({
 	const toolItems = getNonEmptyConfigItems(config.tools);
 	const subagentItems = getNonEmptyConfigItems(config.subagents);
 	const knowledgeItems = getNonEmptyConfigItems(config.knowledge);
-	const starterItems = getNonEmptyConfigItems(config.conversationStarters).slice(0, MAX_AGENT_CONVERSATION_STARTERS);
+	const starterSummaryItems = getConversationStarterSummaryItems(config).slice(0, MAX_AGENT_CONVERSATION_STARTERS);
+	const starterItems = starterSummaryItems.map((item) => item.label);
 
 	const hasKnowledgeSelector = Boolean(knowledgeMode && onKnowledgeModeChange);
 	// Rows declare their canonical order and whether they currently hold any user
@@ -1750,13 +1820,19 @@ function AgentFilledConfigSummary({
 			node: (
 				<AgentFilledSummaryRow
 					addLabel={getAgentFilledSummaryAddLabel("conversationStarters", starterItems.length === 0, showAddButtons)}
+					addIcon={starterItems.length > 0 ? "edit" : undefined}
 					hideWhenEmpty={hideEmptyRows}
 					agentFieldName="conversationStarters"
+					itemElemBefore={(_, index) => {
+						const StarterIcon = getStarterIcon(starterSummaryItems[index]?.icon ?? DEFAULT_STARTER_ICON);
+						return <StarterIcon label="" size="small" color="currentColor" />;
+					}}
 					items={starterItems}
 					label="Conversation starters"
 					onAdd={() => openAgentDirectoryOrAppendListItem("conversationStarters", "conversationStarters", onOpenDirectory, onAppendListItem)}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("conversationStarters", index) : undefined}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:conversation-starters` : undefined}
+					tagColor="standard"
 				/>
 			),
 		},
@@ -2516,6 +2592,7 @@ function AgentInstructionsComposer({
 				toolbarBelowSlot={toolbarBelowSlot}
 				value={instructions}
 				dataFlowConfig={config}
+				dataFlowDiagramLabel="Architectural diagram"
 				mentionSources={mentionSources}
 				mentionRemovalRequest={mentionRemovalRequest}
 				onMarkdownChange={onInstructionsChange}
