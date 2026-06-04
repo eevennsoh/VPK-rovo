@@ -75,6 +75,13 @@ const RichTextMention = Mention.extend({
 					attributes.visualIconKey ? { "data-visual-icon-key": attributes.visualIconKey } : {}
 				),
 			},
+			visualIconColor: {
+				default: null,
+				parseHTML: (element: HTMLElement) => element.getAttribute("data-visual-icon-color"),
+				renderHTML: (attributes: Record<string, unknown>) => (
+					attributes.visualIconColor ? { "data-visual-icon-color": attributes.visualIconColor } : {}
+				),
+			},
 			visualKind: {
 				default: null,
 				parseHTML: (element: HTMLElement) => element.getAttribute("data-visual-kind"),

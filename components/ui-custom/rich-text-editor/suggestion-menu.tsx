@@ -3,6 +3,7 @@
 import {
 	useCallback,
 	useEffect,
+	useLayoutEffect,
 	useRef,
 	useState,
 	type ReactNode,
@@ -99,6 +100,8 @@ interface SuggestionPopupState {
 
 export type RichTextMentionMenuCategory = RichTextMentionCategory | "people-team";
 type RichTextMentionParentCategory = "subagent" | "people-team";
+
+const SUGGESTION_PAGE_KEY_STEP = 5;
 
 const nestedCommandLabelVariants: Variants = {
 	idle: {
@@ -577,6 +580,17 @@ export function RichTextSuggestionMenu({
 		updateListScrollState();
 	}, [isNested, title, updateListScrollState]);
 
+	useLayoutEffect(() => {
+		const listElement = listRef.current;
+		const selectedElement = listElement?.querySelector<HTMLElement>("[role='option'][aria-selected='true']");
+		if (!listElement || !selectedElement) {
+			return;
+		}
+
+		selectedElement.scrollIntoView({ block: "nearest" });
+		updateListScrollState();
+	}, [items, selectedIndex, title, updateListScrollState]);
+
 	return (
 		<div
 			className={cn("rich-text-command-menu", className)}
@@ -781,6 +795,21 @@ function positionPopup(
 	element.style.top = `${rect.bottom + 6}px`;
 }
 
+function getPagedSelectedIndex(
+	currentIndex: number,
+	direction: -1 | 1,
+	itemCount: number,
+): number {
+	if (itemCount <= 0) {
+		return 0;
+	}
+
+	return Math.min(
+		Math.max(currentIndex + (direction * SUGGESTION_PAGE_KEY_STEP), 0),
+		itemCount - 1,
+	);
+}
+
 /**
  * A "/" selection is either a basic-block command to run or a reference item to
  * insert as a mention token (the migrated Skills/Tools/Knowledge categories).
@@ -925,6 +954,26 @@ export function createSlashSuggestionRenderer(
 				selectedIndex = items.length > 0
 					? (selectedIndex + items.length - 1) % items.length
 					: 0;
+				update(currentProps);
+				return true;
+			}
+			if (event.key === "PageDown") {
+				selectedIndex = getPagedSelectedIndex(selectedIndex, 1, items.length);
+				update(currentProps);
+				return true;
+			}
+			if (event.key === "PageUp") {
+				selectedIndex = getPagedSelectedIndex(selectedIndex, -1, items.length);
+				update(currentProps);
+				return true;
+			}
+			if (event.key === "Home") {
+				selectedIndex = 0;
+				update(currentProps);
+				return true;
+			}
+			if (event.key === "End") {
+				selectedIndex = Math.max(items.length - 1, 0);
 				update(currentProps);
 				return true;
 			}
@@ -1249,6 +1298,26 @@ export function createMentionSuggestionRenderer(
 				selectedIndex = items.length > 0
 					? (selectedIndex + items.length - 1) % items.length
 					: 0;
+				update(currentProps);
+				return true;
+			}
+			if (event.key === "PageDown") {
+				selectedIndex = getPagedSelectedIndex(selectedIndex, 1, items.length);
+				update(currentProps);
+				return true;
+			}
+			if (event.key === "PageUp") {
+				selectedIndex = getPagedSelectedIndex(selectedIndex, -1, items.length);
+				update(currentProps);
+				return true;
+			}
+			if (event.key === "Home") {
+				selectedIndex = 0;
+				update(currentProps);
+				return true;
+			}
+			if (event.key === "End") {
+				selectedIndex = Math.max(items.length - 1, 0);
 				update(currentProps);
 				return true;
 			}
