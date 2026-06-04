@@ -29,6 +29,7 @@ import {
 import { formatControlPlaneDateTime } from "./lib/control-plane-utils";
 import { ControlPlanePageShell } from "./control-plane-page-shell";
 import { usePersistentState } from "./lib/use-persistent-state";
+import { useHermesEmbedEnabled } from "@/lib/hermes-feature-flags";
 
 const SETTINGS_STORAGE_KEY = "vpk-control-plane-settings";
 const DEFAULT_SETTINGS_STATE = createSettingsState();
@@ -102,6 +103,7 @@ export function SettingsSurfacePage() {
 		SETTINGS_STORAGE_KEY,
 		DEFAULT_SETTINGS_STATE,
 	);
+	const [hermesEmbedEnabled, setHermesEmbedEnabled] = useHermesEmbedEnabled();
 	const [runtimeStatus, setRuntimeStatus] = useState<RuntimeStatusSnapshot | null>(null);
 	const [jobs, setJobs] = useState<HermesJob[]>([]);
 	const [wikiStatus, setWikiStatus] = useState<WikiStatus | null>(null);
@@ -317,6 +319,18 @@ export function SettingsSurfacePage() {
 							<CardDescription>These flags remain local while the control plane grows.</CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-4">
+							<label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm">
+								<span>
+									<span className="block">Hermes integration</span>
+									<span className="block text-xs text-text-subtle">
+										Enable inline Hermes skill review, skill fetching, and Hermes prompt-context injection across the chat experience.
+									</span>
+								</span>
+								<Switch
+									checked={hermesEmbedEnabled}
+									onCheckedChange={setHermesEmbedEnabled}
+								/>
+							</label>
 							<label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm">
 								<span>Advanced automation</span>
 								<Switch

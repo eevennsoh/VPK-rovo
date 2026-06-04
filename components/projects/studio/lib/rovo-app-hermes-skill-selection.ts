@@ -1,8 +1,14 @@
 import type { RovoAppHermesContext } from "@/lib/rovo-app-types";
+import { isHermesEmbedEnabled } from "@/lib/hermes-feature-flags";
 
 export function buildComposerHermesContext(
 	selectedSkillIds: ReadonlyArray<string>,
 ): RovoAppHermesContext | undefined {
+	// Hermes embed disabled: never inject Hermes skill context into prompts.
+	if (!isHermesEmbedEnabled()) {
+		return undefined;
+	}
+
 	const normalizedSkillIds = Array.from(
 		new Set(
 			selectedSkillIds

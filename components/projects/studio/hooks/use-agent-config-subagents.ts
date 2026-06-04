@@ -188,6 +188,9 @@ export function useAgentConfigSubagents({
 		activeConfig,
 		activeConfigId,
 		activePrompt,
+		// Which subagent prompt is being edited (null = base agent). Used by the
+		// floating SubagentsNavigator to highlight the active row.
+		activeSubagentId,
 		baseConfig,
 		createSubagent,
 		handleConditionChange,
@@ -198,6 +201,8 @@ export function useAgentConfigSubagents({
 		selectSubagent,
 		selectSubagentByDerivedIndex,
 		selectedSubagentIndex,
+		// Raw prompt list (including unnamed drafts) for the floating navigator.
+		subagentPrompts,
 		updateActiveConfig,
 	} as const;
 }

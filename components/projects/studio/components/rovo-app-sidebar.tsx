@@ -105,10 +105,6 @@ const STUDIO_SIDEBAR_NAV_SECTIONS: ReadonlyArray<StudioSidebarNavSection> = [
 		title: "Build",
 		items: [
 			{
-				icon: <AppsIcon label="" />,
-				label: "Apps",
-			},
-			{
 				icon: <AiAgentIcon label="" />,
 				isSelected: true,
 				label: "Agents",
@@ -116,6 +112,10 @@ const STUDIO_SIDEBAR_NAV_SECTIONS: ReadonlyArray<StudioSidebarNavSection> = [
 			{
 				icon: <AutomationIcon label="" />,
 				label: "Automation",
+			},
+			{
+				icon: <AppsIcon label="" />,
+				label: "Apps",
 			},
 		],
 	},

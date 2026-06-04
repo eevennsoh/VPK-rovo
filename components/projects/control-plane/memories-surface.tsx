@@ -40,6 +40,7 @@ import {
 	fetchWikiMemoryExplorer,
 	generateWikiMemoryBrief,
 	generateWikiMemoryDeck,
+	resetWikiMemory,
 	syncWiki,
 } from "./lib/control-plane-api";
 import { formatControlPlaneDateTime } from "./lib/control-plane-utils";
@@ -57,6 +58,7 @@ import type {
 	WikiMemoryProposalSummary,
 } from "@/lib/rovo-runtime-types";
 import DatabaseIcon from "@atlaskit/icon/core/database";
+import DeleteIcon from "@atlaskit/icon/core/delete";
 import DownloadIcon from "@atlaskit/icon/core/download";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import PageIcon from "@atlaskit/icon/core/page";
@@ -222,6 +224,8 @@ export function MemoriesSurfacePage() {
 	const [deckArtifact, setDeckArtifact] = useState<WikiMemoryGeneratedArtifact | null>(null);
 	const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
 	const [isGeneratingDeck, setIsGeneratingDeck] = useState(false);
+	const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+	const [isResetting, setIsResetting] = useState(false);
 
 	const filterInput = useMemo(() => buildExplorerFilterInput(filters), [filters]);
 	const selectedNode = useMemo(
@@ -266,6 +270,20 @@ export function MemoriesSurfacePage() {
 			setErrorMessage(error instanceof Error ? error.message : String(error));
 		} finally {
 			setIsSyncing(false);
+		}
+	}
+
+	async function handleConfirmReset() {
+		setIsResetting(true);
+		try {
+			await resetWikiMemory();
+			setIsResetDialogOpen(false);
+			await refreshExplorer(filterInput);
+			setErrorMessage(null);
+		} catch (error) {
+			setErrorMessage(error instanceof Error ? error.message : String(error));
+		} finally {
+			setIsResetting(false);
 		}
 	}
 
@@ -421,6 +439,14 @@ export function MemoriesSurfacePage() {
 						>
 							<DownloadIcon label="" />
 							CSV
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={() => setIsResetDialogOpen(true)}
+							disabled={isLoading || isSyncing || isResetting || removingKey !== null}
+						>
+							<DeleteIcon label="" />
+							Clear all memories
 						</Button>
 						<Button onClick={() => void handleSync()} isLoading={isSyncing} disabled={isLoading || removingKey !== null}>
 							Sync memory wiki
@@ -1049,6 +1075,33 @@ export function MemoriesSurfacePage() {
 							isLoading={removingKey === `block:${pendingBlockRemove?.block.id}`}
 						>
 							Remove block
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+			<AlertDialog
+				open={isResetDialogOpen}
+				onOpenChange={(open) => {
+					if (!open && !isResetting) {
+						setIsResetDialogOpen(false);
+					}
+				}}
+			>
+				<AlertDialogContent size="sm">
+					<AlertDialogHeader>
+						<AlertDialogTitle>Clear all memories?</AlertDialogTitle>
+						<AlertDialogDescription>
+							This permanently deletes every raw memory proposal and resets all canonical memory pages to empty, then regenerates compiled context. This cannot be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={isResetting}>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							variant="destructive"
+							onClick={() => void handleConfirmReset()}
+							isLoading={isResetting}
+						>
+							Clear everything
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

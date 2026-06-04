@@ -28,6 +28,7 @@ import type {
 	WikiMemoryExplorerStats,
 	WikiMemoryGeneratedArtifact,
 	WikiMemoryProposalDeleteResponse,
+	WikiMemoryResetResponse,
 	SessionSearchResult,
 	WikiQmdStatus,
 	WikiCompiledContextDocument,
@@ -839,6 +840,26 @@ export async function deleteWikiMemoryProposal(
 	return {
 		memories: normalizeWikiCanonicalMemoryDocuments(payload.memories),
 		proposal: normalizeWikiMemoryProposalSummary(payload.proposal),
+		wiki: normalizeWikiStatus(payload.wiki),
+	};
+}
+
+export async function resetWikiMemory(): Promise<WikiMemoryResetResponse> {
+	const payload = await parseJsonResponse<{
+		memories?: unknown;
+		removedBlockCount?: unknown;
+		removedProposalCount?: unknown;
+		wiki?: unknown;
+	}>(
+		await fetch(API_ENDPOINTS.WIKI_MEMORIES_RESET, {
+			method: "POST",
+		}),
+	);
+
+	return {
+		memories: normalizeWikiCanonicalMemoryDocuments(payload.memories),
+		removedBlockCount: Number(payload.removedBlockCount) || 0,
+		removedProposalCount: Number(payload.removedProposalCount) || 0,
 		wiki: normalizeWikiStatus(payload.wiki),
 	};
 }

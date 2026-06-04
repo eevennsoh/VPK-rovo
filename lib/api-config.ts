@@ -39,6 +39,7 @@ export const API_ENDPOINTS = {
 	STATUS_HERMES: `${API_BASE_URL}/api/status/hermes`,
 	WIKI_STATUS: `${API_BASE_URL}/api/wiki/status`,
 	WIKI_MEMORIES: `${API_BASE_URL}/api/wiki/memories`,
+	WIKI_MEMORIES_RESET: `${API_BASE_URL}/api/wiki/memories/reset`,
 	WIKI_MEMORY_EXPLORER: `${API_BASE_URL}/api/wiki/memory-explorer`,
 	WIKI_SYNC: `${API_BASE_URL}/api/wiki/sync`,
 	ROVO_APP_CHAT: `${API_BASE_URL}/api/rovo/chat`,

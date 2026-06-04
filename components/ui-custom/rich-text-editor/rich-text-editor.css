@@ -409,10 +409,16 @@
 
 .rich-text-command-menu-list {
 	min-height: 0;
-	max-height: 292px;
 	flex: 1 1 auto;
-	overflow-y: auto;
+	overflow-y: visible;
 	padding: 4px;
+}
+
+/* Only the nested menus can grow long enough to need scrolling. The top-level
+   "/" menu has a small, fixed set of categories, so it shows everything. */
+.rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list {
+	max-height: 292px;
+	overflow-y: auto;
 }
 
 .rich-text-command-menu-showcase .rich-text-command-menu-list {

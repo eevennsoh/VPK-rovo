@@ -256,6 +256,13 @@ export interface WikiMemoryProposalDeleteResponse {
 	wiki: WikiStatus;
 }
 
+export interface WikiMemoryResetResponse {
+	memories: WikiCanonicalMemoryDocuments;
+	removedBlockCount: number;
+	removedProposalCount: number;
+	wiki: WikiStatus;
+}
+
 export interface HermesSkillSummary {
 	id: string;
 	category: string;

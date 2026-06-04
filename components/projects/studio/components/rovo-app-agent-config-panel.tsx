@@ -17,6 +17,8 @@ import {
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
 import { SubagentPromptFields } from "@/components/blocks/subagents/components/subagent-prompt-fields";
+import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
+import type { SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
 import { getListItems, updateConfigListItem } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-agent-config-subagents";
 import {
@@ -28,6 +30,7 @@ import {
 	AgentMoreOptionsMenu,
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
+	type AgentHideableConfigField,
 } from "@/components/ui-custom/agent";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
@@ -45,6 +48,14 @@ import { cn } from "@/lib/utils";
 
 type AgentResult = RovoDataParts["agent-result"];
 export type AgentConfigView = "configure" | "test";
+
+// Capabilities a subagent can't own. Hidden from the config rows while a
+// subagent prompt is selected/created (these aren't configurable per-subagent).
+const SUBAGENT_HIDDEN_CONFIG_FIELDS: ReadonlySet<AgentHideableConfigField> = new Set([
+	"trigger",
+	"subagents",
+	"conversationStarters",
+]);
 
 interface RovoAppAgentConfigPanelProps {
 	activeView: AgentConfigView;
@@ -113,14 +124,18 @@ export function RovoAppAgentConfigPanel({
 		activeConfig,
 		activeConfigId,
 		activePrompt,
+		activeSubagentId,
 		baseConfig,
 		createSubagent,
 		handleConditionChange,
 		handleTriggerNameChange,
 		isSubagentActive,
 		removeSubagentByDerivedIndex,
+		selectBaseAgent,
+		selectSubagent,
 		selectSubagentByDerivedIndex,
 		selectedSubagentIndex,
+		subagentPrompts,
 		updateActiveConfig,
 	} = useAgentConfigSubagents({ draft, updateDraft });
 
@@ -357,6 +372,13 @@ export function RovoAppAgentConfigPanel({
 	// nav supplied via `leadingContent` is what actually renders on the left.
 	const agentName = getStudioSessionAgentDisplayName(entry);
 
+	// Base agent shape the floating SubagentsNavigator expects. The navigator only
+	// reads `config.name` + `avatarSrc`, so derive both from the live draft.
+	const navigatorBaseAgent = useMemo<SubagentsBaseAgent>(
+		() => ({ id: profileId, avatarSrc: agentAvatarSrc, config: baseConfig }),
+		[agentAvatarSrc, baseConfig, profileId],
+	);
+
 	return (
 		<>
 			<motion.div
@@ -426,13 +448,27 @@ export function RovoAppAgentConfigPanel({
 							</>
 						}
 					/>
-					<TabsContent value="configure" className="min-h-0 flex-1 overflow-hidden data-[hidden]:hidden">
-						<div className="flex h-full min-h-0 w-full flex-col px-6 py-5">
+					<TabsContent value="configure" className="relative min-h-0 flex-1 overflow-hidden data-[hidden]:hidden">
+						{/* Floating switcher to jump between the base agent and its
+						    subagents. Self-hides until at least one subagent exists. */}
+						<SubagentsNavigator
+							activeSubagentId={activeSubagentId}
+							baseAgent={navigatorBaseAgent}
+							className="absolute right-4 top-[42%] z-20 hidden md:block"
+							onCreateSubagent={createSubagent}
+							onSelectBaseAgent={selectBaseAgent}
+							onSelectSubagent={selectSubagent}
+							subagents={subagentPrompts}
+						/>
+						<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-6 py-5">
 							<AgentConfigFields
 								config={activeConfig}
 								avatarSrc={agentAvatarSrc}
 								profileAvatarSrc={agentAvatarSrc}
 								profileConfig={baseConfig}
+								// Subagents can't own triggers, their own subagents, or
+								// conversation starters, so suppress those rows while editing one.
+								hiddenConfigFields={isSubagentActive ? SUBAGENT_HIDDEN_CONFIG_FIELDS : undefined}
 								compactScrollAreaClassName="-mr-6 pr-6"
 								compactFooterBefore={activePrompt ? (
 									<SubagentPromptFields

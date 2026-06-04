@@ -53,6 +53,7 @@ function createWikiRouteHandlers({
 	logger = console,
 	normalizeNaiveWikiSearchResultsImpl,
 	queryWikiImpl,
+	resetWikiMemoryImpl,
 	saveSynthesisPageImpl,
 	searchWikiWithQmdImpl,
 	syncWikiMemoryImpl,
@@ -96,6 +97,10 @@ function createWikiRouteHandlers({
 
 	if (typeof deleteWikiMemoryProposalImpl !== "function") {
 		throw new Error("createWikiRouteHandlers requires deleteWikiMemoryProposalImpl");
+	}
+
+	if (typeof resetWikiMemoryImpl !== "function") {
+		throw new Error("createWikiRouteHandlers requires resetWikiMemoryImpl");
 	}
 
 	if (typeof getQmdSyncSummaryImpl !== "function") {
@@ -500,6 +505,23 @@ function createWikiRouteHandlers({
 		}
 	}
 
+	async function handleWikiMemoryReset(req, res) {
+		try {
+			const result = await resetWikiMemoryImpl({ logger });
+			return res.json({
+				memories: result.memories,
+				removedBlockCount: result.removedBlockCount,
+				removedProposalCount: result.removedProposalCount,
+				wiki: await getWikiStatusImpl(),
+			});
+		} catch (error) {
+			return res.status(500).json({
+				error: "Failed to reset wiki memory",
+				details: error instanceof Error ? error.message : String(error),
+			});
+		}
+	}
+
 	async function handleWikiSync(req, res) {
 		try {
 			const force = req.body?.force !== false;
@@ -545,6 +567,7 @@ function createWikiRouteHandlers({
 		handleWikiMemories,
 		handleWikiMemoryBlockDelete,
 		handleWikiMemoryProposalDelete,
+		handleWikiMemoryReset,
 		handleWikiSearch,
 		handleWikiSynthesisSave,
 		handleWikiStatus,

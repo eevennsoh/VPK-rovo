@@ -527,7 +527,7 @@ test("Studio agent config panel wires the subagents experience into AgentConfigF
 	);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /useAgentConfigSubagents\(\{ draft, updateDraft \}\)/u);
 	// Subagent switcher + per-subagent editing props are passed to the shared
-	// AgentConfigFields (in-panel nav button, not the floating navigator).
+	// AgentConfigFields (in-panel nav button for managing the subagents list).
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /profileConfig=\{baseConfig\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onProfileTextChange=\{handleBaseTextChange\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onManageSubagents=\{createSubagent\}/u);
@@ -535,8 +535,10 @@ test("Studio agent config panel wires the subagents experience into AgentConfigF
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /selectedListItemIndexByField=\{\{ subagents: selectedSubagentIndex \}\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /compactFooterBefore=\{activePrompt \?/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<SubagentPromptFields[\s\S]*onConditionChange=\{handleConditionChange\}[\s\S]*onTriggerNameChange=\{handleTriggerNameChange\}/u);
-	// The floating navigator from the standalone demo is intentionally NOT used.
-	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /SubagentsNavigator/u);
+	// The floating SubagentsNavigator is also rendered so users can quickly swap
+	// between the base agent and its subagents (self-hides when there are none).
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ SubagentsNavigator \} from "@\/components\/blocks\/subagents\/subagents-navigator";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<SubagentsNavigator[\s\S]*activeSubagentId=\{activeSubagentId\}[\s\S]*baseAgent=\{navigatorBaseAgent\}[\s\S]*onSelectBaseAgent=\{selectBaseAgent\}[\s\S]*onSelectSubagent=\{selectSubagent\}[\s\S]*subagents=\{subagentPrompts\}/u);
 	// Base name/description always edit the base agent, even while a subagent is selected.
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleBaseTextChange = useCallback\([\s\S]*updateDraft\(\{ description: value, summary: value \}\)/u);
 });

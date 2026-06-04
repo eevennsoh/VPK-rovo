@@ -56,11 +56,11 @@ test("Subagent prompt data has trigger metadata and no separate agent identity",
 	assert.doesNotMatch(promptFixtures, /avatarSrc|agentId: "policy-source-needed"|agentId: "benefits-question"/u);
 });
 
-test("Subagent prompt views expose dedicated trigger and condition fields", () => {
+test("Subagent prompt views expose dedicated name and trigger fields", () => {
 	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, /function SubagentPromptFields/u);
+	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, />\s*Name\s*</u);
 	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, />\s*Trigger\s*</u);
-	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, />\s*Condition\s*</u);
-	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, /placeholder="Placeholder"/u);
+	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, /placeholder="Give your subagent a name"/u);
 	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, /Describe the situation that should trigger this subagent\./u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /compactFooterBefore=\{activePrompt/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /handleTriggerNameChange/u);

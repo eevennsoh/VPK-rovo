@@ -46,6 +46,7 @@ import { ROVO_APP_MAX_CHAT_PANE_WIDTH, ROVO_APP_MIN_ARTIFACT_PANE_WIDTH, ROVO_AP
 import { getRovoAppSmartGenerationLayoutContext } from "@/components/projects/studio/lib/rovo-app-smart-generation-layout";
 import { deriveRovoAppTimelineItems } from "@/components/projects/studio/lib/rovo-app-timeline";
 import { buildComposerHermesContext, shouldResetComposerHermesSkillSelection } from "@/components/projects/studio/lib/rovo-app-hermes-skill-selection";
+import { useHermesEmbedEnabled } from "@/lib/hermes-feature-flags";
 import { buildRovoAppThreadPath } from "@/components/projects/studio/lib/rovo-app-thread-route-sync";
 import { createRovoAppUserMessage } from "@/components/projects/studio/lib/rovo-app-user-message";
 import {
@@ -1517,7 +1518,16 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 	const hermesSurfaceMountedRef = useRef(true);
 	const hermesSurfaceLastSerializedRef = useRef({ skills: "", drafts: "" });
+	const [hermesEmbedEnabled] = useHermesEmbedEnabled();
 	const loadHermesSurfaceData = useCallback(async () => {
+		// Hermes embed disabled: skip all skill/draft fetching and clear any
+		// existing surface data so no Hermes features run in the experience.
+		if (!hermesEmbedEnabled) {
+			hermesSurfaceLastSerializedRef.current = { skills: "", drafts: "" };
+			setAvailableHermesSkills([]);
+			setSkillDrafts([]);
+			return;
+		}
 		if (typeof document !== "undefined" && document.visibilityState !== "visible") {
 			return;
 		}
@@ -1539,7 +1549,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			hermesSurfaceLastSerializedRef.current.drafts = draftsKey;
 			setSkillDrafts(nextDrafts);
 		}
-	}, []);
+	}, [hermesEmbedEnabled]);
 
 	useEffect(() => {
 		hermesSurfaceMountedRef.current = true;

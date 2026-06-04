@@ -29,11 +29,11 @@ export function SubagentPromptFields({
 					className="pt-1.5 text-xs font-semibold leading-4 text-text-subtlest"
 					htmlFor={triggerId}
 				>
-					Trigger
+					Name
 				</label>
 				<Input
 					id={triggerId}
-					placeholder="Placeholder"
+					placeholder="Give your subagent a name"
 					value={triggerName}
 					onChange={(event) => onTriggerNameChange(event.currentTarget.value)}
 				/>
@@ -41,7 +41,7 @@ export function SubagentPromptFields({
 					className="pt-2 text-xs font-semibold leading-4 text-text-subtlest"
 					htmlFor={conditionId}
 				>
-					Condition
+					Trigger
 				</label>
 				<Textarea
 					id={conditionId}
