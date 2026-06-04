@@ -90,6 +90,7 @@ interface RovoAppComposerProps {
 	composerStatus: ChatStatus;
 	compact?: boolean;
 	errorMessage?: string | null;
+	focusRequestKey?: number;
 	isPlanMode?: boolean;
 	micStream?: MediaStream | null;
 	queuedPrompts?: ReadonlyArray<RovoAppQueuedAction>;
@@ -139,6 +140,7 @@ function RovoAppComposerInner({
 	backgroundArtifactLabel,
 	composerStatus,
 	errorMessage,
+	focusRequestKey,
 	micStream,
 	onDismissPlanExecutionTracker,
 	onDismissArtifactContext,
@@ -308,6 +310,16 @@ function RovoAppComposerInner({
 		const items = container.querySelectorAll<HTMLButtonElement>("[data-slash-item]");
 		items[highlightedIndex]?.scrollIntoView({ block: "nearest" });
 	}, [highlightedIndex, isSlashMenuOpen]);
+
+	useEffect(() => {
+		if (typeof focusRequestKey !== "number" || focusRequestKey <= 0) {
+			return;
+		}
+
+		requestAnimationFrame(() => {
+			textareaRef.current?.focus();
+		});
+	}, [focusRequestKey]);
 
 	// Apply prefilled text from gallery click or voice transcript streaming
 	const appliedPrefillRef = useRef<string | null>(null);

@@ -99,44 +99,58 @@ test("Studio default landing prompt growth pushes below the initial home positio
 	assert.match(SHELL_SOURCE, /style=\{isDefaultAgentHomeState && defaultHomeTopSpacerHeight !== null \? \{ flexBasis: defaultHomeTopSpacerHeight \} : undefined\}/u);
 });
 
-test("Studio default landing lists custom session agents below the composer", () => {
-	assert.match(SHELL_SOURCE, /import \{ StudioCustomAgentsTable \} from "@\/components\/projects\/studio\/components\/rovo-app-custom-agents-table";/u);
-	assert.match(SHELL_SOURCE, /const shouldShowStudioCustomAgentsTable = isDefaultAgentHomeState && studioAgentRegistry\.sessionAgentEntries\.length > 0;/u);
+test("Studio default landing shows the agents card section below the composer", () => {
+	assert.match(SHELL_SOURCE, /import \{ StudioAgentsSection \} from "@\/components\/projects\/studio\/components\/rovo-app-custom-agents-table";/u);
+	assert.match(SHELL_SOURCE, /const shouldShowStudioAgentsSection = isDefaultAgentHomeState;/u);
+	assert.doesNotMatch(SHELL_SOURCE, /shouldShowStudioCustomAgentsTable|isDefaultAgentHomeState && studioAgentRegistry\.sessionAgentEntries\.length > 0/u);
 	assert.match(SHELL_SOURCE, /const handleDeleteStudioAgent = useCallback\([\s\S]*studioAgentRegistry\.removeSessionAgent\(agentId\);[\s\S]*\},[\s\S]*\[activeAgentConfig\?\.profileId, setActiveAgentConfigState, studioAgentRegistry\]/u);
-	assert.match(SHELL_SOURCE, /<StudioCustomAgentsTable[\s\S]*entries=\{studioAgentRegistry\.sessionAgentEntries\}[\s\S]*onEditAgent=\{handleStudioSidebarAgentSelect\}/u);
-	assert.match(SHELL_SOURCE, /<StudioCustomAgentsTable[\s\S]*onDeleteAgent=\{handleDeleteStudioAgent\}/u);
+	assert.match(SHELL_SOURCE, /<StudioAgentsSection[\s\S]*directoryAgents=\{ROVO_DIRECTORY_AGENT_PROFILES\}[\s\S]*entries=\{studioAgentRegistry\.sessionAgentEntries\}/u);
+	assert.match(SHELL_SOURCE, /<StudioAgentsSection[\s\S]*onBrowseTemplates=\{\(\) => handleBrowseAgentTemplates\(\)\}/u);
+	assert.match(SHELL_SOURCE, /<StudioAgentsSection[\s\S]*onCreateAgent=\{handleFocusStudioComposer\}/u);
+	assert.match(SHELL_SOURCE, /<StudioAgentsSection[\s\S]*onEditAgent=\{handleStudioSidebarAgentSelect\}/u);
+	assert.match(SHELL_SOURCE, /<StudioAgentsSection[\s\S]*onSelectDirectoryAgent=\{handleSidebarBrowseAgentSelect\}/u);
 	assert.match(SHELL_SOURCE, /<RovoAppSidebar[\s\S]*onDeleteAgent=\{handleDeleteStudioAgent\}/u);
+	assert.match(SHELL_SOURCE, /const \[composerFocusRequestKey, setComposerFocusRequestKey\] = useState\(0\);/u);
+	assert.match(SHELL_SOURCE, /const handleFocusStudioComposer = useCallback\(\(\) => \{[\s\S]*setComposerFocusRequestKey\(\(currentKey\) => currentKey \+ 1\);[\s\S]*\}, \[\]\);/u);
+	assert.match(SHELL_SOURCE, /<RovoAppComposer[\s\S]*focusRequestKey=\{composerFocusRequestKey\}/u);
+	assert.match(SHELL_SOURCE, /<AgentTemplatesDialog[\s\S]*open=\{agentTemplatesDialogOpen\}[\s\S]*onSelectAgent=\{handleTemplateAgentSelect\}/u);
 
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /DropdownMenu/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className=\{`mx-auto mt-12 flex w-full flex-col gap-2 \$\{ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\}`\}/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<Table className="min-w-full table-fixed">/u);
-	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /max-w-\[1280px\]|min-w-\[760px\]/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /export function StudioAgentsSection/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className=\{cn\("mx-auto mt-12 flex w-\[90%\] flex-col gap-4", ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS\)\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /ButtonGroup aria-label="Agent views"/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "my-agents", label: "My agents"/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "by-teams", label: "By teams"/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "by-companies", label: "By companies"/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3/u);
+	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /from "@\/components\/ui\/table"|<Table|TableCell|TableRow|TableBody/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Button \} from "@\/components\/ui\/button";/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ ButtonGroup \} from "@\/components\/ui\/button-group";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Icon \} from "@\/components\/ui\/icon";/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{[\s\S]*Table,[\s\S]*TableBody,[\s\S]*TableCell,[\s\S]*TableRow,[\s\S]*\} from "@\/components\/ui\/table";/u);
-	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /TableHead|TableHeader/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /CardDirectoryAgent/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /STUDIO_AGENTS_COMPANY_GROUP_TITLE = "By companies"/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /function isTeamDirectoryAgent/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /No agents yet/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /Browse templates/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /Create agent/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /entry\.publishStatus === "published" \? "V1" : "Draft"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /formatRelativeModifiedTime\(entry\.lastTouchedAt\)/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /STUDIO_PINNED_AGENTS_STORAGE_KEY/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /onClick=\{\(\) => onEditAgent\(entry\.profile\.id\)\}/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-label=\{`Edit \$\{agentName \|\| "Untitled agent"\}`\}/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-label=\{`\$\{isPinned \? "Unpin" : "Pin"\} \$\{agentName \|\| "Untitled agent"\}`\}/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /onClick=\{\(\) => togglePinned\(entry\.profile\.id\)\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /onEdit=\{\(\) => onEditAgent\(entry\.profile\.id\)\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-label=\{`Edit \$\{agentName\}`\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-label=\{`\$\{isPinned \? "Unpin" : "Pin"\} \$\{agentName\}`\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /onTogglePinned=\{\(\) => togglePinned\(entry\.profile\.id\)\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed=\{isPinned\}[\s\S]*render=\{isPinned \? <PinFilledIcon label="" size="small" \/> : <PinIcon label="" size="small" \/>\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:\[&_svg\]:text-icon-subtle!/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /text-icon-selected/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /sortedEntries\.map\(\(entry, entryIndex\) => \{/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /const isFirstRow = entryIndex === 0;/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /const isLastRow = entryIndex === sortedEntries\.length - 1;/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /isFirstRow && "rounded-tl-\[12px\]"[\s\S]*isLastRow && "rounded-bl-\[12px\]"/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /isFirstRow && "rounded-tr-\[12px\]"[\s\S]*isLastRow && "rounded-br-\[12px\]"/u);
-	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /rounded-l-\[12px\]|rounded-r-\[12px\]/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<TableCell className=\{cn\("px-2", firstColumnRadiusClass/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<TableCell className=\{cn\("px-2", lastColumnRadiusClass/u);
-	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /<TableCell className=\{cn\("px-[04]/u);
+	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /isFirstRow|isLastRow|rounded-tl-\[12px\]|rounded-br-\[12px\]/u);
+	assert.match(COMPOSER_SOURCE, /focusRequestKey\?: number;/u);
+	assert.match(COMPOSER_SOURCE, /if \(typeof focusRequestKey !== "number" \|\| focusRequestKey <= 0\)/u);
+	assert.match(COMPOSER_SOURCE, /textareaRef\.current\?\.focus\(\);/u);
 });
 
 test("Studio start-from-scratch scribble replays on each composer hover reveal", () => {
@@ -266,7 +280,8 @@ test("Studio content surfaces keep their intended max widths", () => {
 });
 
 test("Studio home bento keeps tab auto-cycle active after manual tab selection", () => {
-	assert.match(SHELL_SOURCE, /const cycleRunning = !shouldReduceMotion && !browseOpen;/u);
+	assert.match(SHELL_SOURCE, /const cycleRunning = !shouldReduceMotion && !templatesDialogOpen;/u);
+	assert.match(SHELL_SOURCE, /templatesDialogOpen: boolean;/u);
 	assert.match(SHELL_SOURCE, /const bentoInteractingRef = useRef\(false\);/u);
 	assert.match(SHELL_SOURCE, /const updateBentoInteracting = useCallback\(\(interacting: boolean\) => \{[\s\S]*bentoInteractingRef\.current = interacting;[\s\S]*setBentoInteracting\(interacting\);[\s\S]*\}, \[\]\);/u);
 	assert.match(SHELL_SOURCE, /const selectHomeStarterCategory = useCallback\(\(category: HomeStarterCategory\) => \{[\s\S]*setActiveCategory\(category\);[\s\S]*\}, \[\]\);/u);

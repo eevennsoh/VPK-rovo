@@ -1,28 +1,51 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
 import { getStudioSessionAgentDisplayName } from "@/app/contexts";
-import { ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS } from "@/components/projects/studio/lib/rovo-app-shell-layout";
+import type { AgentsDirectoryAgent } from "@/components/blocks/agents-directory";
+import { DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/agents-directory/data/sidebar-groups";
+import { ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS } from "@/components/projects/studio/lib/rovo-app-shell-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { Icon } from "@/components/ui/icon";
 import { Lozenge } from "@/components/ui/lozenge";
 import {
-	Table,
-	TableBody,
-	TableCell,
-	TableRow,
-} from "@/components/ui/table";
+	CardDirectory,
+	CardDirectoryAgent,
+	CardDirectoryByline,
+	CardDirectoryDescription,
+	CardDirectoryFooter,
+	CardDirectoryHeader,
+} from "@/components/ui-custom/card-directory";
 import { cn } from "@/lib/utils";
 import EditIcon from "@atlaskit/icon/core/edit";
 import PinFilledIcon from "@atlaskit/icon/core/pin-filled";
 import PinIcon from "@atlaskit/icon/core/pin";
 
-const STUDIO_CUSTOM_AGENT_OWNER_AVATAR_SRC = "/avatar-user/venn/venn.png";
-
 const STUDIO_PINNED_AGENTS_STORAGE_KEY = "vpk:studio:pinned-custom-agents";
-const STUDIO_CUSTOM_AGENTS_TABLE_HOVER_CELL_CLASS = "transition-colors group-hover/row:bg-bg-neutral-subtle-hovered";
+const STUDIO_AGENTS_COMPANY_GROUP_TITLE = "By companies";
+const STUDIO_AGENTS_COMPANY_AGENT_IDS =
+	DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS.find((group) => group.title === STUDIO_AGENTS_COMPANY_GROUP_TITLE)?.agentIds ?? [];
+const STUDIO_AGENTS_COMPANY_AGENT_ID_SET = new Set<string>(STUDIO_AGENTS_COMPANY_AGENT_IDS);
+
+const STUDIO_AGENT_SECTION_TABS = [
+	{ id: "my-agents", label: "My agents" },
+	{ id: "by-teams", label: "By teams" },
+	{ id: "by-companies", label: "By companies" },
+] as const;
+
+type StudioAgentSectionTab = (typeof STUDIO_AGENT_SECTION_TABS)[number]["id"];
+
+interface StudioAgentsSectionProps {
+	directoryAgents: readonly AgentsDirectoryAgent[];
+	entries: readonly StudioSessionAgentEntry[];
+	onBrowseTemplates: () => void;
+	onCreateAgent: () => void;
+	onEditAgent: (agentId: string) => void;
+	onSelectDirectoryAgent: (agent: AgentsDirectoryAgent) => void;
+}
 
 function readPinnedAgentIds(): ReadonlySet<string> {
 	if (typeof window === "undefined") {
@@ -57,13 +80,6 @@ function writePinnedAgentIds(pinnedAgentIds: ReadonlySet<string>): void {
 	}
 }
 
-interface StudioCustomAgentsTableProps {
-	entries: readonly StudioSessionAgentEntry[];
-	/** Accepted for API compatibility with the shell; the table no longer renders a delete action. */
-	onDeleteAgent?: (agentId: string) => void;
-	onEditAgent: (agentId: string) => void;
-}
-
 function formatRelativeModifiedTime(timestamp: number): string {
 	if (!Number.isFinite(timestamp) || timestamp <= 0) {
 		return "Just now";
@@ -96,25 +112,102 @@ function getVersionLabel(entry: StudioSessionAgentEntry): string {
 	return entry.publishStatus === "published" ? "V1" : "Draft";
 }
 
-function getAgentUserCount(entry: StudioSessionAgentEntry): number {
-	// The studio is single-user: the only user of a custom agent is its owner.
-	// Derived from the owner identity rather than hard-coded so this stays
-	// correct if multi-user access is added to the entry shape later.
-	return entry.profile.id ? 1 : 0;
-}
-
-function formatUserCount(count: number): string {
-	return `${count} ${count === 1 ? "user" : "users"}`;
-}
-
 function getVersionVariant(entry: StudioSessionAgentEntry): "success" | "neutral" {
 	return entry.publishStatus === "published" ? "success" : "neutral";
 }
 
-export function StudioCustomAgentsTable({
+function derivePublisher(byline: string): string {
+	const match = /\bby\s+(.+)$/i.exec(byline);
+	return (match?.[1] ?? byline).trim();
+}
+
+function isVerified(agent: AgentsDirectoryAgent, publisher: string): boolean {
+	if (agent.attributionKind) return agent.attributionKind === "company";
+	return ["atlassian", "google", "github", "slack", "notion", "figma", "canva"].includes(publisher.toLowerCase());
+}
+
+function hashString(value: string): number {
+	let hash = 0;
+	for (let i = 0; i < value.length; i++) {
+		hash = (hash * 31 + value.charCodeAt(i)) | 0;
+	}
+	return Math.abs(hash);
+}
+
+function syntheticRating(id: string): number {
+	const remainder = hashString(id) % 16;
+	return Number((3.5 + remainder / 10).toFixed(1));
+}
+
+function syntheticChats(id: string): number {
+	return 100 + (hashString(`${id}-chats`) % 9900);
+}
+
+function syntheticFeedback(id: string): number {
+	return 50 + (hashString(`${id}-feedback`) % 2000);
+}
+
+function getDirectoryCardAvatarClassName(agent: AgentsDirectoryAgent): string {
+	if (agent.id === "google-drive" || agent.id === "slack") {
+		return "size-full scale-85 object-contain";
+	}
+
+	return "size-full object-contain";
+}
+
+function isTeamDirectoryAgent(agent: AgentsDirectoryAgent): boolean {
+	if (STUDIO_AGENTS_COMPANY_AGENT_ID_SET.has(agent.id)) {
+		return false;
+	}
+
+	const byline = agent.byline.toLowerCase();
+	if (byline.startsWith("by ")) {
+		return false;
+	}
+	if (byline.startsWith("custom agent by ") && !byline.includes("atlassian")) {
+		return false;
+	}
+
+	return (
+		byline.includes("agent by") ||
+		byline.includes("dev agent") ||
+		byline.includes("product agent") ||
+		byline.includes("rovo agent") ||
+		byline.includes("teamwork agent")
+	);
+}
+
+function pickAgentsByIds(
+	agents: readonly AgentsDirectoryAgent[],
+	ids: readonly string[],
+): readonly AgentsDirectoryAgent[] {
+	return ids
+		.map((id) => agents.find((agent) => agent.id === id))
+		.filter((agent): agent is AgentsDirectoryAgent => Boolean(agent));
+}
+
+function getCustomAgentDescription(entry: StudioSessionAgentEntry): string {
+	return (
+		entry.profile.description ??
+		entry.draftResult.description ??
+		entry.draftResult.summary ??
+		"Ready to test and refine in Studio."
+	);
+}
+
+function stopNestedCardAction(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
+	event.stopPropagation();
+}
+
+export function StudioAgentsSection({
+	directoryAgents,
 	entries,
+	onBrowseTemplates,
+	onCreateAgent,
 	onEditAgent,
-}: Readonly<StudioCustomAgentsTableProps>) {
+	onSelectDirectoryAgent,
+}: Readonly<StudioAgentsSectionProps>) {
+	const [activeTab, setActiveTab] = useState<StudioAgentSectionTab>("my-agents");
 	const [pinnedAgentIds, setPinnedAgentIds] = useState<ReadonlySet<string>>(() => new Set());
 
 	// Hydrate from localStorage after mount to keep the SSR/first client render
@@ -137,6 +230,15 @@ export function StudioCustomAgentsTable({
 		});
 	}, [entries, pinnedAgentIds]);
 
+	const teamAgents = useMemo(
+		() => directoryAgents.filter(isTeamDirectoryAgent),
+		[directoryAgents],
+	);
+	const companyAgents = useMemo(
+		() => pickAgentsByIds(directoryAgents, STUDIO_AGENTS_COMPANY_AGENT_IDS),
+		[directoryAgents],
+	);
+
 	const togglePinned = (agentId: string) => {
 		setPinnedAgentIds((current) => {
 			const next = new Set(current);
@@ -151,93 +253,203 @@ export function StudioCustomAgentsTable({
 	};
 
 	return (
-		<section aria-labelledby="studio-custom-agents-heading" className={`mx-auto mt-12 flex w-full flex-col gap-2 ${ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS}`}>
-			<h2 id="studio-custom-agents-heading" className="px-1.5 text-xs font-semibold leading-4 text-text-subtlest">
-				My agents
-			</h2>
-			<Table className="min-w-full table-fixed">
-				<colgroup>
-					<col />
-					<col className="w-[92px]" />
-					<col className="w-[72px]" />
-					<col className="w-[116px]" />
-					<col className="w-[72px]" />
-				</colgroup>
-				<TableBody>
-					{sortedEntries.map((entry, entryIndex) => {
-						const agentName = getStudioSessionAgentDisplayName(entry);
-						const isPinned = pinnedAgentIds.has(entry.profile.id);
-						const isFirstRow = entryIndex === 0;
-						const isLastRow = entryIndex === sortedEntries.length - 1;
-						const firstColumnRadiusClass = cn(
-							isFirstRow && "rounded-tl-[12px]",
-							isLastRow && "rounded-bl-[12px]",
-						);
-						const lastColumnRadiusClass = cn(
-							isFirstRow && "rounded-tr-[12px]",
-							isLastRow && "rounded-br-[12px]",
-						);
-						const revealOnHover =
-							"opacity-0 transition-opacity duration-fast group-hover/row:opacity-100 focus-visible:opacity-100";
+		<section
+			aria-labelledby="studio-agents-heading"
+			className={cn("mx-auto mt-12 flex w-[90%] flex-col gap-4", ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS)}
+			data-testid="studio-agents-section"
+		>
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<h2 id="studio-agents-heading" className="px-1.5 text-xs font-semibold leading-4 text-text-subtlest">
+					Agents
+				</h2>
+				<ButtonGroup aria-label="Agent views" className="flex-wrap" variant="separated">
+					{STUDIO_AGENT_SECTION_TABS.map((tab) => (
+						<Button
+							aria-pressed={activeTab === tab.id}
+							key={tab.id}
+							onClick={() => setActiveTab(tab.id)}
+							size="compact"
+							type="button"
+							variant="outline"
+						>
+							{tab.label}
+						</Button>
+					))}
+				</ButtonGroup>
+			</div>
 
-						return (
-							<TableRow key={entry.profile.id} className="group/row h-14 border-disabled hover:bg-transparent">
-								<TableCell className={cn("px-2", firstColumnRadiusClass, STUDIO_CUSTOM_AGENTS_TABLE_HOVER_CELL_CLASS)}>
-									<div className="flex min-w-0 items-center gap-3">
-										<Avatar aria-hidden="true" shape="hexagon" size="sm" className="shrink-0 after:border-0">
-											{entry.profile.avatarSrc ? <AvatarImage alt="" src={entry.profile.avatarSrc} /> : null}
-											<AvatarFallback>{(agentName || "UA").slice(0, 2).toUpperCase()}</AvatarFallback>
-										</Avatar>
-										<span className="min-w-0 truncate font-medium text-text">
-											{agentName || "Untitled agent"}
-										</span>
-									</div>
-								</TableCell>
-								<TableCell className={cn("px-2 text-text-subtle", STUDIO_CUSTOM_AGENTS_TABLE_HOVER_CELL_CLASS)}>
-									{formatUserCount(getAgentUserCount(entry))}
-								</TableCell>
-								<TableCell className={cn("px-2", STUDIO_CUSTOM_AGENTS_TABLE_HOVER_CELL_CLASS)}>
-									<Lozenge variant={getVersionVariant(entry)}>
-										{getVersionLabel(entry)}
-									</Lozenge>
-								</TableCell>
-								<TableCell className={cn("px-2", STUDIO_CUSTOM_AGENTS_TABLE_HOVER_CELL_CLASS)}>
-									<div className="flex items-center gap-2">
-										<Avatar aria-hidden="true" size="sm">
-											<AvatarImage alt="" src={STUDIO_CUSTOM_AGENT_OWNER_AVATAR_SRC} />
-											<AvatarFallback>V</AvatarFallback>
-										</Avatar>
-										<span className="whitespace-nowrap text-text">
-											{formatRelativeModifiedTime(entry.lastTouchedAt)}
-										</span>
-									</div>
-								</TableCell>
-								<TableCell className={cn("px-2", lastColumnRadiusClass, STUDIO_CUSTOM_AGENTS_TABLE_HOVER_CELL_CLASS)}>
-									<div className="flex justify-end gap-[4px]">
-										<Button aria-label={`Edit ${agentName || "Untitled agent"}`} className={cn("size-7", revealOnHover)} onClick={() => onEditAgent(entry.profile.id)} size="icon" type="button" variant="ghost">
-											<Icon aria-hidden render={<EditIcon label="" size="small" />} />
-										</Button>
-										<Button
-											aria-label={`${isPinned ? "Unpin" : "Pin"} ${agentName || "Untitled agent"}`}
-											aria-pressed={isPinned}
-											className={cn(
-												"size-7 aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:[&_svg]:text-icon-subtle!",
-												isPinned ? "opacity-100" : revealOnHover,
-											)}
-											onClick={() => togglePinned(entry.profile.id)}
-											size="icon"
-											type="button"
-											variant="ghost"
-										>
-											<Icon aria-hidden render={isPinned ? <PinFilledIcon label="" size="small" /> : <PinIcon label="" size="small" />} />
-										</Button>
-									</div>
-								</TableCell>
-							</TableRow>
-						);
-					})}
-				</TableBody>
-			</Table>
+			{activeTab === "my-agents" ? (
+				sortedEntries.length > 0 ? (
+					<StudioAgentCardsGrid>
+						{sortedEntries.map((entry) => {
+							const agentName = getStudioSessionAgentDisplayName(entry) || "Untitled agent";
+							const isPinned = pinnedAgentIds.has(entry.profile.id);
+
+							return (
+								<li key={entry.profile.id}>
+									<StudioCustomAgentCard
+										agentName={agentName}
+										description={getCustomAgentDescription(entry)}
+										entry={entry}
+										isPinned={isPinned}
+										onEdit={() => onEditAgent(entry.profile.id)}
+										onTogglePinned={() => togglePinned(entry.profile.id)}
+									/>
+								</li>
+							);
+						})}
+					</StudioAgentCardsGrid>
+				) : (
+					<StudioAgentsEmptyState
+						onBrowseTemplates={onBrowseTemplates}
+						onCreateAgent={onCreateAgent}
+					/>
+				)
+			) : null}
+
+			{activeTab === "by-teams" ? (
+				<DirectoryAgentsGrid agents={teamAgents} onSelectAgent={onSelectDirectoryAgent} />
+			) : null}
+
+			{activeTab === "by-companies" ? (
+				<DirectoryAgentsGrid agents={companyAgents} onSelectAgent={onSelectDirectoryAgent} />
+			) : null}
 		</section>
+	);
+}
+
+function StudioAgentCardsGrid({ children }: Readonly<{ children: ReactNode }>) {
+	return (
+		<ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+			{children}
+		</ul>
+	);
+}
+
+function StudioAgentsEmptyState({
+	onBrowseTemplates,
+	onCreateAgent,
+}: Readonly<{
+	onBrowseTemplates: () => void;
+	onCreateAgent: () => void;
+}>) {
+	return (
+		<div className="rounded-md border border-border bg-surface p-5">
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+				<div className="min-w-0">
+					<h3 className="text-sm font-semibold leading-5 text-text">No agents yet</h3>
+					<p className="mt-1 text-sm leading-5 text-text-subtle">
+						Browse templates or create a new agent from the prompt.
+					</p>
+				</div>
+				<div className="flex shrink-0 flex-wrap gap-2">
+					<Button onClick={onBrowseTemplates} type="button" variant="outline">
+						Browse templates
+					</Button>
+					<Button onClick={onCreateAgent} type="button">
+						Create agent
+					</Button>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function StudioCustomAgentCard({
+	agentName,
+	description,
+	entry,
+	isPinned,
+	onEdit,
+	onTogglePinned,
+}: Readonly<{
+	agentName: string;
+	description: string;
+	entry: StudioSessionAgentEntry;
+	isPinned: boolean;
+	onEdit: () => void;
+	onTogglePinned: () => void;
+}>) {
+	const revealOnHover =
+		"opacity-0 transition-opacity duration-fast group-hover/card:opacity-100 group-focus-within/card:opacity-100";
+
+	return (
+		<CardDirectory className="gap-4" onSelect={onEdit} selectLabel={`Edit ${agentName}`}>
+			<div className="flex flex-col gap-2">
+				<CardDirectoryHeader
+					action={
+						<div className="flex shrink-0 gap-1" onClick={stopNestedCardAction} onKeyDown={stopNestedCardAction}>
+							<Button aria-label={`Edit ${agentName}`} className={cn("size-7", revealOnHover)} onClick={onEdit} size="icon" type="button" variant="ghost">
+								<Icon aria-hidden render={<EditIcon label="" size="small" />} />
+							</Button>
+							<Button
+								aria-label={`${isPinned ? "Unpin" : "Pin"} ${agentName}`}
+								aria-pressed={isPinned}
+								className={cn(
+									"size-7 aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:[&_svg]:text-icon-subtle!",
+									isPinned ? "opacity-100" : revealOnHover,
+								)}
+								onClick={onTogglePinned}
+								size="icon"
+								type="button"
+								variant="ghost"
+							>
+								<Icon aria-hidden render={isPinned ? <PinFilledIcon label="" size="small" /> : <PinIcon label="" size="small" />} />
+							</Button>
+						</div>
+					}
+					byline={<CardDirectoryByline publisher="You" />}
+					leading={
+						<Avatar aria-hidden="true" shape="hexagon" size="default" className="shrink-0 after:border-0">
+							{entry.profile.avatarSrc ? <AvatarImage alt="" src={entry.profile.avatarSrc} /> : null}
+							<AvatarFallback>{agentName.slice(0, 2).toUpperCase()}</AvatarFallback>
+						</Avatar>
+					}
+					title={agentName}
+				/>
+				<CardDirectoryDescription>{description}</CardDirectoryDescription>
+			</div>
+
+			<CardDirectoryFooter>
+				<Lozenge variant={getVersionVariant(entry)}>
+					{getVersionLabel(entry)}
+				</Lozenge>
+				<span>{formatRelativeModifiedTime(entry.lastTouchedAt)}</span>
+			</CardDirectoryFooter>
+		</CardDirectory>
+	);
+}
+
+function DirectoryAgentsGrid({
+	agents,
+	onSelectAgent,
+}: Readonly<{
+	agents: readonly AgentsDirectoryAgent[];
+	onSelectAgent: (agent: AgentsDirectoryAgent) => void;
+}>) {
+	return (
+		<StudioAgentCardsGrid>
+			{agents.map((agent) => {
+				const publisher = derivePublisher(agent.byline);
+				return (
+					<li key={agent.id}>
+						<CardDirectoryAgent
+							avatarImageClassName={getDirectoryCardAvatarClassName(agent)}
+							avatarSrc={agent.avatarSrc}
+							chatCount={syntheticChats(agent.id)}
+							className="hover:border-transparent"
+							description={agent.description}
+							feedbackCount={syntheticFeedback(agent.id)}
+							logoName={agent.logoName}
+							name={agent.name}
+							onSelect={() => onSelectAgent(agent)}
+							publisher={publisher}
+							rating={syntheticRating(agent.id)}
+							verified={isVerified(agent, publisher)}
+						/>
+					</li>
+				);
+			})}
+		</StudioAgentCardsGrid>
 	);
 }
