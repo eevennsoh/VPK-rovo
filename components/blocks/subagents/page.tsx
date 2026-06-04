@@ -139,9 +139,9 @@ function SubagentPromptFields({
 
 	return (
 		<div className="shrink-0 border-t border-border bg-surface py-4">
-			<div className="grid gap-2 md:grid-cols-[6rem_minmax(0,1fr)]">
+			<div className="grid gap-y-2 md:grid-cols-[8rem_minmax(0,1fr)] md:gap-x-5">
 				<label
-					className="pt-1.5 text-sm font-semibold leading-5 text-text-subtle"
+					className="pt-1.5 text-xs font-semibold leading-4 text-text-subtlest"
 					htmlFor={triggerId}
 				>
 					Trigger
@@ -153,7 +153,7 @@ function SubagentPromptFields({
 					onChange={(event) => onTriggerNameChange(event.currentTarget.value)}
 				/>
 				<label
-					className="pt-2 text-sm font-semibold leading-5 text-text-subtle"
+					className="pt-2 text-xs font-semibold leading-4 text-text-subtlest"
 					htmlFor={conditionId}
 				>
 					Condition

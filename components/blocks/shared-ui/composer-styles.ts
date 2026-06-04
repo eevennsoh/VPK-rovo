@@ -18,6 +18,7 @@ export const floatingComposerTextareaClassName =
 export const textareaCSS = `
 	.chat-composer-textarea:placeholder-shown {
 		white-space: nowrap;
+		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 	.chat-composer-textarea::placeholder {
