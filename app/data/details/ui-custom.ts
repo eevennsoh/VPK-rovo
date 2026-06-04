@@ -978,19 +978,20 @@ import {
 
 	"rovo-cursor": {
 		description:
-			"An inline agent-presence indicator that swaps glyph per state: a charcoal pointer wrapped in a Rovo conic-gradient stroke (cursor), a rainbow-ringed microphone badge above a static caret stick (typing), a rainbow indeterminate spinner reused from `ui/spinner` (loading), and a 4-bar brand equalizer (speaking). The rainbow on `cursor` and `typing` can rotate or sit static via the `animated` prop, and all motion respects prefers-reduced-motion.",
+			"An inline agent-presence indicator that swaps glyph per state: a charcoal pointer wrapped in a Rovo conic-gradient stroke (cursor), a rainbow-ringed microphone badge above a static caret stick (typing), a blue text-insertion caret with a rainbow-bordered \"Rovo\" name pill (telepointer), a rainbow indeterminate spinner reused from `ui/spinner` (loading), and a 4-bar brand equalizer (speaking). The rainbow on `cursor`, `typing`, and `telepointer` can rotate or sit static via the `animated` prop, and all motion respects prefers-reduced-motion.",
 		demoLayout: { previewContentWidth: "full" },
 		usage: `import { RovoCursor } from "@/components/ui-custom/rovo-cursor";
 
 <RovoCursor state="cursor" />
 <RovoCursor state="typing" size={20} />
+<RovoCursor state="telepointer" size={20} />
 <RovoCursor state="loading" size={24} />
 <RovoCursor state="speaking" size={20} aria-label="Rovo is speaking" />
 <RovoCursor state="cursor" animated={false} />`,
 		props: [
 			{
 				name: "state",
-				type: `"cursor" | "typing" | "loading" | "speaking"`,
+				type: `"cursor" | "typing" | "telepointer" | "loading" | "speaking"`,
 				default: `"cursor"`,
 				description: "Which animated state to render.",
 			},
@@ -1005,7 +1006,7 @@ import {
 				type: "boolean",
 				default: "true",
 				description:
-					"Rotate the rainbow on the `cursor` arrow and `typing` ring. The loading spinner and speaking equalizer always animate; the typing caret stick stays static.",
+					"Rotate the rainbow on the `cursor` arrow, `typing` ring, and `telepointer` border. The loading spinner and speaking equalizer always animate; the typing caret stick stays static.",
 			},
 			{
 				name: "aria-label",
@@ -1019,7 +1020,7 @@ import {
 			},
 		],
 		examples: [
-			{ title: "Interactive", description: "Switch between cursor, typing, loading, and speaking states and adjust size.", demoSlug: "rovo-cursor-demo" },
+			{ title: "Interactive", description: "Switch between cursor, typing, telepointer, loading, and speaking states and adjust size.", demoSlug: "rovo-cursor-demo" },
 		],
 	},
 

@@ -7,9 +7,10 @@ import { GUI } from "@/components/utils/gui";
 
 const STATE_OPTIONS = [
 	{ value: "cursor" as const, label: "cursor" },
-	{ value: "typing" as const, label: "typing" },
+	{ value: "telepointer" as const, label: "typing" },
+	{ value: "typing" as const, label: "talking" },
 	{ value: "loading" as const, label: "loading" },
-	{ value: "speaking" as const, label: "speaking" },
+	{ value: "speaking" as const, label: "replying" },
 ] as const;
 
 export default function RovoCursorDemo() {

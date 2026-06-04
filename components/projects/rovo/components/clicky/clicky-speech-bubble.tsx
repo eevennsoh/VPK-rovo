@@ -4,10 +4,9 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 
 // ---------------------------------------------------------------------------
-// Speech bubble — matches reference Clicky (blue pill, white text, char stream)
+// Speech bubble — VPK tooltip styling (dark neutral pill, char stream). Kept
+// inside the cursor's transformed subtree so it tracks the moving cursor.
 // ---------------------------------------------------------------------------
-
-const CLICKY_BLUE = "#3380FF";
 
 interface ClickySpeechBubbleProps {
 	text: string;
@@ -54,13 +53,7 @@ export function ClickySpeechBubble({ text }: Readonly<ClickySpeechBubbleProps>) 
 				bounce: 0.4,
 			}}
 		>
-			<div
-				className="max-w-[340px] rounded-md px-2 py-1 text-[11px] font-medium leading-snug text-white"
-				style={{
-					backgroundColor: CLICKY_BLUE,
-					boxShadow: `0 0 6px ${CLICKY_BLUE}80`,
-				}}
-			>
+			<div className="max-w-xs rounded-md bg-bg-neutral-bold px-3 py-1.5 text-xs text-text-inverse shadow-md">
 				{displayedText}
 			</div>
 		</motion.div>

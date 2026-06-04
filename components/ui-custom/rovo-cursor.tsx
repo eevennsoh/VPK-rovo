@@ -114,7 +114,7 @@ function maskStyle(image: string) {
 // Types
 // ---------------------------------------------------------------------------
 
-export type RovoCursorState = "cursor" | "typing" | "loading" | "speaking";
+export type RovoCursorState = "cursor" | "typing" | "telepointer" | "loading" | "speaking";
 
 export interface RovoCursorProps {
 	/** Which state to render. @default "cursor" */
@@ -147,10 +147,12 @@ export interface RovoCursorProps {
 /**
  * RovoCursor — an inline agent-presence indicator that swaps glyph per state:
  * a charcoal pointer wrapped in a Rovo-gradient stroke (`cursor`), a
- * rainbow-ringed microphone badge above a static caret stick (`typing`), a rainbow indeterminate spinner
- * (`loading`), and a 4-bar brand equalizer (`speaking`). The rainbow on
- * `cursor` and `typing` can rotate (`animated`) or sit static. Motion is pure
- * CSS and honors `prefers-reduced-motion`.
+ * rainbow-ringed microphone badge above a static caret stick (`typing`), a
+ * blue text-insertion caret with a rainbow-bordered "Rovo" name pill
+ * (`telepointer`), a rainbow indeterminate spinner (`loading`), and a 4-bar
+ * brand equalizer (`speaking`). The rainbow on `cursor`, `typing`, and
+ * `telepointer` can rotate (`animated`) or sit static. Motion is pure CSS and
+ * honors `prefers-reduced-motion`.
  */
 export const RovoCursor = memo(
 	({
@@ -177,6 +179,7 @@ export const RovoCursor = memo(
 				>
 					{state === "cursor" ? <Cursor scale={scale} animated={animated} /> : null}
 					{state === "typing" ? <Typing scale={scale} animated={animated} /> : null}
+					{state === "telepointer" ? <Telepointer scale={scale} animated={animated} /> : null}
 					{state === "loading" ? <Loading scale={scale} /> : null}
 					{state === "speaking" ? <Speaking scale={scale} /> : null}
 				</span>
@@ -304,6 +307,85 @@ function Typing({ scale, animated }: Readonly<{ scale: number; animated: boolean
 				aria-hidden
 				className="bg-icon"
 				style={{ width: 1, height: 16 }}
+			/>
+		</span>
+	);
+}
+
+/**
+ * Text-insertion telepointer (Figma "Rovo telepointer", 32×28 at scale 1): a
+ * solid blue caret (`Primary/Blue 700` #1868DB, 1×24) with a dark `color.text`
+ * "Rovo" name pill hanging off its top-right. The pill is rounded on the right
+ * corners only (square where it meets the caret) and wears the Rovo
+ * conic-gradient (rainbow) border via the mask-composite technique, rotating
+ * when `animated`. Represents Rovo actively typing *text*, as opposed to the
+ * mic `typing` badge (voice input).
+ */
+function Telepointer({ scale, animated }: Readonly<{ scale: number; animated: boolean }>) {
+	const caretWidth = Math.max(1, scale); // 1u caret, scaled
+	const caretHeight = 24 * scale;
+	const headHeight = 16 * scale;
+	const radius = 4 * scale;
+	const borderWidth = Math.max(1, 0.6 * scale);
+	// Same XOR mask-composite trick as the Typing ring: a content-box mask minus
+	// a border-box mask leaves only the padding ring, so the conic gradient shows
+	// through as a border that follows the pill's right-rounded corners.
+	const ringMask: React.CSSProperties = {
+		WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+		mask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+		WebkitMaskComposite: "xor",
+		maskComposite: "exclude",
+	};
+	return (
+		<span className="relative inline-flex items-start" style={{ height: caretHeight }}>
+			{/* "Rovo" name pill */}
+			<span
+				className="relative box-border inline-flex items-center justify-center bg-[#292A2E] text-white"
+				style={{
+					height: headHeight,
+					paddingInline: 4 * scale,
+					borderTopRightRadius: radius,
+					borderBottomRightRadius: radius,
+				}}
+			>
+				<span
+					aria-hidden
+					className="pointer-events-none absolute inset-0"
+					style={{
+						padding: borderWidth,
+						overflow: "hidden",
+						borderTopRightRadius: radius,
+						borderBottomRightRadius: radius,
+						...ringMask,
+					}}
+				>
+					<span
+						className={animated ? "motion-reduce:[animation:none]" : undefined}
+						style={{
+							position: "absolute",
+							inset: "-50%",
+							background: ROVO_CONIC,
+							animation: animated ? "rovo-cursor-spin 3.6s linear infinite" : undefined,
+							willChange: animated ? "transform" : undefined,
+						}}
+					/>
+				</span>
+				<span
+					className="relative font-semibold"
+					style={{
+						fontSize: 10 * scale,
+						lineHeight: `${9 * scale}px`,
+						letterSpacing: -0.084 * scale,
+					}}
+				>
+					Rovo
+				</span>
+			</span>
+			{/* Blue insertion caret, sitting over the pill's left edge and extending below */}
+			<span
+				aria-hidden
+				className="absolute top-0 left-0 shrink-0"
+				style={{ width: caretWidth, height: caretHeight, backgroundColor: "#1868DB" }}
 			/>
 		</span>
 	);
