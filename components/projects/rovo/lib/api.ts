@@ -13,11 +13,32 @@ import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 export const ROVO_APP_BACKEND_UNAVAILABLE_MESSAGE =
 	"Cannot connect to backend server";
 
+// Raw network-failure messages surfaced by the runtime/AI-SDK transport when the
+// local backend is unreachable. The Next proxy normalizes most failures to
+// ROVO_APP_BACKEND_UNAVAILABLE_MESSAGE, but streaming/transport errors can leak
+// the underlying message (e.g. undici's "fetch failed", browsers' "Failed to
+// fetch") straight through to onError. Treat those as backend-unavailable too so
+// users see the actionable "start the backend" hint instead of a bare
+// "fetch failed".
+const ROVO_APP_NETWORK_FAILURE_MESSAGES = [
+	ROVO_APP_BACKEND_UNAVAILABLE_MESSAGE,
+	"fetch failed",
+	"failed to fetch",
+	"load failed",
+	"network error",
+	"networkerror when attempting to fetch resource.",
+	"econnrefused",
+	"connection refused",
+].map((message) => message.toLowerCase());
+
 export function isRovoAppBackendUnavailableError(error: unknown): boolean {
-	return (
-		error instanceof Error &&
-		error.message.trim().toLowerCase() ===
-			ROVO_APP_BACKEND_UNAVAILABLE_MESSAGE.toLowerCase()
+	if (!(error instanceof Error)) {
+		return false;
+	}
+
+	const message = error.message.trim().toLowerCase();
+	return ROVO_APP_NETWORK_FAILURE_MESSAGES.some(
+		(candidate) => message === candidate || message.includes(candidate),
 	);
 }
 

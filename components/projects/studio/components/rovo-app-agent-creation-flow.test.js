@@ -709,3 +709,15 @@ test("Studio composer opts into experimental dark composer CTAs", () => {
 	assert.doesNotMatch(COMPOSER_SOURCE, /voiceStartButtonClassName="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u);
 	assert.doesNotMatch(COMPOSER_SOURCE, /submitButtonClassName="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u);
 });
+
+test("deleting a thread also unmarks any in-progress agent-creation tracking", () => {
+	// Regression: deleting an in-progress agent left the thread in
+	// studioAgentCreationThreadIds after chat.threads dropped it, so the memo
+	// re-rendered it as a ghost "Agent creation" row that lingered forever.
+	const onDeleteThreadSource = SHELL_SOURCE.slice(
+		SHELL_SOURCE.indexOf("onDeleteThread={async (threadId) => {"),
+		SHELL_SOURCE.indexOf("onNewChat={handleReturnToAgentsHome}"),
+	);
+	assert.match(onDeleteThreadSource, /unmarkStudioAgentCreationThread\(threadId\);/u);
+	assert.match(onDeleteThreadSource, /void chat\.deleteThread\(threadId\);/u);
+});

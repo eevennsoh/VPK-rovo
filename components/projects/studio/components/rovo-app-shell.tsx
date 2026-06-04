@@ -4262,6 +4262,10 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				}}
 				onDeleteAgent={handleDeleteStudioAgent}
 				onDeleteThread={async (threadId) => {
+					// Clear any in-progress agent-creation tracking first. Otherwise the
+					// thread lingers in `studioAgentCreationThreadIds` after `chat.threads`
+					// drops it, and the memo re-renders it as a ghost "Agent creation" row.
+					unmarkStudioAgentCreationThread(threadId);
 					startTransition(() => {
 						void chat.deleteThread(threadId);
 					});
