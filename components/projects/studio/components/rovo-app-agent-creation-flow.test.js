@@ -515,10 +515,13 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /export type AgentConfigView = "configure" \| "insights" \| "test";/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function getPublishLabel/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleCompactSectionChange = useCallback\([\s\S]*if \(section === "insights"\) \{[\s\S]*setActiveCompactSection\(null\);[\s\S]*onViewChange\("insights"\);[\s\S]*return;[\s\S]*\}[\s\S]*onViewChange\("configure"\);[\s\S]*setActiveCompactSection\(section === "surfaces" \? "surfaces" : null\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleCompactSectionChange = useCallback\([\s\S]*if \(section === "insights"\) \{[\s\S]*setActiveCompactSection\(null\);[\s\S]*onViewChange\("insights"\);[\s\S]*return;[\s\S]*\}[\s\S]*onViewChange\("configure"\);[\s\S]*setActiveCompactSection\(\s*section === "surfaces" \|\| section === "access" \|\| section === "evaluation"\s*\? section\s*: null,?\s*\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /setActiveCompactSection\(null\);[\s\S]*if \(value === "test"\)/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentCompactHeaderNav[\s\S]*activeSection=\{activeView === "insights" \? "insights" : activeCompactSection\}[\s\S]*avatarSrc=\{agentAvatarSrc\}[\s\S]*onSectionChange=\{handleCompactSectionChange\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /activeCompactSection === "surfaces" \? \([\s\S]*<AgentCompactSurfacesPanel className="-mr-6 pr-6" \/>[\s\S]*\) : \([\s\S]*<AgentConfigFields/u);
+	// Clicking the "Evaluation" compact-nav tab renders the full-bleed Evaluation screen.
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ AgentEvaluation \} from "@\/components\/ui-custom\/agent-evaluation";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /activeCompactSection === "evaluation" \? \([\s\S]*<AgentEvaluation \/>[\s\S]*\) : \(/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigActionButton/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigToggleItem/u);
 	// The disabled Test item is a plain ToggleGroupItem (no Tooltip wrapper) so the
@@ -743,7 +746,7 @@ test("Studio composer reveals 'Start from scratch' on focus or hover and lands o
 	assert.match(COMPOSER_SOURCE, /onStartFromScratch\?: \(\) => void;/u);
 	assert.match(COMPOSER_SOURCE, /const \[isInputFocused, setIsInputFocused\] = useState\(false\);/u);
 	assert.match(COMPOSER_SOURCE, /const \[isComposerHoverActive, setIsComposerHoverActive\] = useState\(false\);/u);
-	assert.match(COMPOSER_SOURCE, /onFocus=\{\(\) => setIsInputFocused\(true\)\}/u);
+	assert.match(COMPOSER_SOURCE, /onFocus=\{\(\) => \{[\s\S]*setIsInputFocused\(true\);/u);
 	assert.match(COMPOSER_SOURCE, /onBlur=\{\(\) => setIsInputFocused\(false\)\}/u);
 	assert.match(COMPOSER_SOURCE, /const isRevealVisible = isInputFocused \|\| isComposerHoverActive;/u);
 	assert.match(COMPOSER_SOURCE, /\{onStartFromScratch \? \([\s\S]*\{isRevealVisible \?/u);

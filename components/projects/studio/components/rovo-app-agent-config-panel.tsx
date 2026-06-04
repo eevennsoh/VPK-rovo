@@ -41,6 +41,7 @@ import {
 	type AgentConfigTextFieldName,
 	type AgentHideableConfigField,
 } from "@/components/ui-custom/agent";
+import { AgentEvaluation } from "@/components/ui-custom/agent-evaluation";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import type { ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
@@ -427,7 +428,12 @@ export function RovoAppAgentConfigPanel({
 			// Only sections with a dedicated panel take over the configure view;
 			// the rest fall back to the standard config fields.
 			setActiveCompactSection(
-				section === "surfaces" || section === "access" || section === "users" ? section : null,
+				section === "surfaces" ||
+				section === "access" ||
+				section === "users" ||
+				section === "evaluation"
+					? section
+					: null,
 			);
 		},
 		[onViewChange],
@@ -523,70 +529,79 @@ export function RovoAppAgentConfigPanel({
 						}
 					/>
 					<TabsContent value="configure" className="relative min-h-0 flex-1 overflow-hidden data-[hidden]:hidden">
-						{/* Floating switcher to jump between the base agent and its
-						    subagents. Self-hides until at least one subagent exists. */}
-						<SubagentsNavigator
-							activeSubagentId={activeSubagentId}
-							baseAgent={navigatorBaseAgent}
-							className="absolute right-4 top-[42%] z-20 hidden md:block"
-							onCreateSubagent={createSubagent}
-							onSelectBaseAgent={selectBaseAgent}
-							onSelectSubagent={selectSubagent}
-							subagents={subagentPrompts}
-						/>
-						<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-6 py-5">
-							{activeCompactSection === "access" ? (
-								<div className="-mr-6 min-h-0 flex-1 overflow-y-auto pr-6">
-									<div className="mx-auto w-full max-w-4xl pb-6">
-										<AgentAccess onGoToAgentDetails={() => setActiveCompactSection(null)} />
-									</div>
-								</div>
-							) : activeCompactSection === "surfaces" ? (
-								<AgentCompactSurfacesPanel className="-mr-6 pr-6" />
-							) : activeCompactSection === "users" ? (
-								<div
-									className="-mr-6 flex min-h-0 flex-1 flex-col overflow-y-auto pr-6"
-									data-agent-compact-section="users"
-								>
-									<AgentUsers />
-								</div>
-							) : (
-								<AgentConfigFields
-									config={activeConfig}
-									avatarSrc={agentAvatarSrc}
-									profileAvatarSrc={agentAvatarSrc}
-									profileConfig={baseConfig}
-									// Subagents can't own triggers, their own subagents, or
-									// conversation starters, so suppress those rows while editing one.
-									hiddenConfigFields={isSubagentActive ? SUBAGENT_HIDDEN_CONFIG_FIELDS : undefined}
-									compactScrollAreaClassName="-mr-6 pr-6"
-									compactFooterBefore={activePrompt ? (
-										<SubagentPromptFields
-											condition={activePrompt.condition}
-											idPrefix={`agent-${profileId}-${activeConfigId}`}
-											onConditionChange={handleConditionChange}
-											onTriggerNameChange={handleTriggerNameChange}
-											triggerName={activePrompt.triggerName}
-										/>
-									) : null}
-									idPrefix={`agent-${profileId}-${activeConfigId}`}
-									layout="compact"
-									onTextChange={handleConfigTextChange}
-									onProfileTextChange={handleBaseTextChange}
-									onListItemChange={updateListItem}
-									onRemoveListItem={removeListItem}
-									onAddListValues={appendListValues}
-									onAppendListItem={appendListItem}
-									onConnectTrigger={handleConnectTrigger}
-									onManageSubagents={createSubagent}
-									onSelectListItem={handleSelectListItem}
-									onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
-									onOpenDirectory={handleOpenDirectory}
-									selectedListItemIndexByField={{ subagents: selectedSubagentIndex }}
-									screenAssistantTargetPrefix="studio-agent-config"
+						{activeCompactSection === "evaluation" ? (
+							// Evaluation owns its own scroll container, max-width, and
+							// padding, so render it full-bleed rather than inside the
+							// constrained config wrapper (and skip the subagent navigator).
+							<AgentEvaluation />
+						) : (
+							<>
+								{/* Floating switcher to jump between the base agent and its
+								    subagents. Self-hides until at least one subagent exists. */}
+								<SubagentsNavigator
+									activeSubagentId={activeSubagentId}
+									baseAgent={navigatorBaseAgent}
+									className="absolute right-4 top-[42%] z-20 hidden md:block"
+									onCreateSubagent={createSubagent}
+									onSelectBaseAgent={selectBaseAgent}
+									onSelectSubagent={selectSubagent}
+									subagents={subagentPrompts}
 								/>
-							)}
-						</div>
+								<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-6 py-5">
+									{activeCompactSection === "access" ? (
+										<div className="-mr-6 min-h-0 flex-1 overflow-y-auto pr-6">
+											<div className="mx-auto w-full max-w-4xl pb-6">
+												<AgentAccess onGoToAgentDetails={() => setActiveCompactSection(null)} />
+											</div>
+										</div>
+									) : activeCompactSection === "surfaces" ? (
+										<AgentCompactSurfacesPanel className="-mr-6 pr-6" />
+									) : activeCompactSection === "users" ? (
+										<div
+											className="-mr-6 flex min-h-0 flex-1 flex-col overflow-y-auto pr-6"
+											data-agent-compact-section="users"
+										>
+											<AgentUsers />
+										</div>
+									) : (
+										<AgentConfigFields
+											config={activeConfig}
+											avatarSrc={agentAvatarSrc}
+											profileAvatarSrc={agentAvatarSrc}
+											profileConfig={baseConfig}
+											// Subagents can't own triggers, their own subagents, or
+											// conversation starters, so suppress those rows while editing one.
+											hiddenConfigFields={isSubagentActive ? SUBAGENT_HIDDEN_CONFIG_FIELDS : undefined}
+											compactScrollAreaClassName="-mr-6 pr-6"
+											compactFooterBefore={activePrompt ? (
+												<SubagentPromptFields
+													condition={activePrompt.condition}
+													idPrefix={`agent-${profileId}-${activeConfigId}`}
+													onConditionChange={handleConditionChange}
+													onTriggerNameChange={handleTriggerNameChange}
+													triggerName={activePrompt.triggerName}
+												/>
+											) : null}
+											idPrefix={`agent-${profileId}-${activeConfigId}`}
+											layout="compact"
+											onTextChange={handleConfigTextChange}
+											onProfileTextChange={handleBaseTextChange}
+											onListItemChange={updateListItem}
+											onRemoveListItem={removeListItem}
+											onAddListValues={appendListValues}
+											onAppendListItem={appendListItem}
+											onConnectTrigger={handleConnectTrigger}
+											onManageSubagents={createSubagent}
+											onSelectListItem={handleSelectListItem}
+											onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
+											onOpenDirectory={handleOpenDirectory}
+											selectedListItemIndexByField={{ subagents: selectedSubagentIndex }}
+											screenAssistantTargetPrefix="studio-agent-config"
+										/>
+									)}
+								</div>
+							</>
+						)}
 					</TabsContent>
 					<TabsContent value="test" keepMounted={false} className="min-h-0 flex-1 data-[hidden]:hidden">
 						{testPanel}
