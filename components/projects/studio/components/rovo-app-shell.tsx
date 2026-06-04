@@ -99,6 +99,7 @@ import {
 	agentEditSuggestions,
 } from "@/components/projects/studio/data/agent-edit-greeting";
 import { clamp, cn, createId } from "@/lib/utils";
+import { getSkillIcon } from "@/lib/skill-icons";
 import { token } from "@/lib/tokens";
 import { getLatestDataPart, getLatestUserMessageId, getMessageAgentResult, getMessageArtifactResult, getMessageInterruption, getMessageText, hasTurnCompleteSignal, type RovoDataParts } from "@/lib/rovo-ui-messages";
 import { getRovoAppArtifactKindLabel, getRovoAppArtifactTypeLabel, sortRovoAppArtifacts } from "@/components/projects/rovo/lib/rovo-app-artifacts";
@@ -808,7 +809,7 @@ function HomeStarterHeroTile({
 								</span>
 								<SkillTagGroup maxRows={2}>
 									{hero.skills.map((skill) => (
-										<SkillTag color={skill.color ?? "default"} icon={skill.icon} key={skill.label}>
+										<SkillTag color={skill.color ?? "default"} icon={skill.icon ?? getSkillIcon(skill.label)} key={skill.label}>
 											{skill.label}
 										</SkillTag>
 									))}
@@ -848,6 +849,8 @@ function HomeStarterBento({
 }>) {
 	const [activeCategory, setActiveCategory] = useState<HomeStarterCategory>(HOME_STARTER_DEFAULT_CATEGORY);
 	const [bentoInteracting, setBentoInteracting] = useState(false);
+	const [browseAllDismissed, setBrowseAllDismissed] = useState(false);
+	const [browseAllHovered, setBrowseAllHovered] = useState(false);
 	const shouldReduceMotion = useReducedMotion();
 	const focusedTemplatePromptRef = useRef<string | null>(null);
 	const hoveredTemplatePromptRef = useRef<string | null>(null);
@@ -1146,19 +1149,56 @@ function HomeStarterBento({
 						) : null}
 					</AnimatePresence>
 				</div>
-				{canShowMore ? (
+				{canShowMore && !browseAllDismissed ? (
 					<div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-2">
-						<Button
-							type="button"
-							aria-label="Browse all agents"
-							variant="ghost"
-							size="compact"
-							className="pointer-events-auto h-7 rounded-full border-0 bg-surface px-3 text-sm leading-5 font-normal text-text-subtle hover:bg-surface-hovered"
-							style={{ boxShadow: token("elevation.shadow.overlay") }}
-							onClick={() => onBrowseTemplates(activeCategory)}
+						<div
+							className="group/browse-all pointer-events-auto relative flex items-center"
+							onMouseEnter={() => setBrowseAllHovered(true)}
+							onMouseLeave={() => setBrowseAllHovered(false)}
+							onFocus={() => setBrowseAllHovered(true)}
+							onBlur={(event) => {
+								if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+									setBrowseAllHovered(false);
+								}
+							}}
 						>
-							Browse all
-						</Button>
+							<Button
+								type="button"
+								aria-label="Browse all agents"
+								variant="ghost"
+								size="compact"
+								className="h-7 rounded-full border-0 bg-surface px-3 text-sm leading-5 font-normal text-text-subtle hover:bg-surface-hovered"
+								style={{ boxShadow: token("elevation.shadow.overlay") }}
+								onClick={() => onBrowseTemplates(activeCategory)}
+							>
+								Browse all
+							</Button>
+							{/* Absolutely positioned so "Browse all" stays centered at rest. */}
+							<AnimatePresence initial={false}>
+								{browseAllHovered ? (
+									<motion.div
+										key="dismiss"
+										className="absolute left-full top-0 ml-1"
+										initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
+										animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
+										exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
+										transition={{ type: "spring", visualDuration: 0.25, bounce: 0.2 }}
+									>
+										<Button
+											type="button"
+											aria-label="Dismiss prompt starters"
+											variant="ghost"
+											size="compact"
+											className="h-7 rounded-full border-0 bg-surface px-3 text-sm leading-5 font-normal text-text-subtle hover:bg-surface-hovered"
+											style={{ boxShadow: token("elevation.shadow.overlay") }}
+											onClick={() => setBrowseAllDismissed(true)}
+										>
+											Dismiss
+										</Button>
+									</motion.div>
+								) : null}
+							</AnimatePresence>
+						</div>
 					</div>
 				) : null}
 			</div>

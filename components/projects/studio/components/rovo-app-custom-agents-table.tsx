@@ -9,9 +9,9 @@ import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustra
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Empty, EmptyBody, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Lozenge } from "@/components/ui/lozenge";
 import { CardDirectoryAgent } from "@/components/ui-custom/card-directory";
 import { List, type ListColumn } from "@/components/ui-custom/list";
@@ -294,26 +294,22 @@ export function StudioAgentsSection({
 	};
 
 	return (
-		<section
+		<Tabs
 			aria-label="Agents"
-			className="mx-auto mt-12 flex w-[90%] max-w-[800px] flex-col gap-4"
+			className="mx-auto mt-12 w-[90%] max-w-[800px] gap-6"
 			data-testid="studio-agents-section"
+			onValueChange={(value) => setActiveTab(value as StudioAgentSectionTab)}
+			render={<section />}
+			value={activeTab}
 		>
 			<div className="flex flex-wrap items-center justify-between gap-3">
-				<ButtonGroup aria-label="Agent views" className="flex-wrap" variant="separated">
+				<TabsList variant="line">
 					{STUDIO_AGENT_SECTION_TABS.map((tab) => (
-						<Button
-							aria-pressed={activeTab === tab.id}
-							className="aria-pressed:bg-surface-hovered aria-pressed:text-text"
-							key={tab.id}
-							onClick={() => setActiveTab(tab.id)}
-							type="button"
-							variant="ghost"
-						>
+						<TabsTrigger key={tab.id} value={tab.id}>
 							{tab.label}
-						</Button>
+						</TabsTrigger>
 					))}
-				</ButtonGroup>
+				</TabsList>
 				<InputGroup className="w-full max-w-[220px] sm:w-[220px]">
 					<InputGroupAddon>
 						<Icon aria-hidden render={<SearchIcon label="" size="small" />} />
@@ -328,8 +324,8 @@ export function StudioAgentsSection({
 				</InputGroup>
 			</div>
 
-			{activeTab === "my-agents" ? (
-				sortedEntries.length === 0 ? (
+			<TabsContent value="my-agents">
+				{sortedEntries.length === 0 ? (
 					<StudioAgentsEmptyState
 						onBrowseTemplates={onBrowseTemplates}
 						onCreateAgent={onCreateAgent}
@@ -343,25 +339,25 @@ export function StudioAgentsSection({
 					/>
 				) : (
 					<StudioAgentsNoResults query={searchQuery} />
-				)
-			) : null}
+				)}
+			</TabsContent>
 
-			{activeTab === "by-teams" ? (
-				filteredTeamAgents.length > 0 ? (
+			<TabsContent value="by-teams">
+				{filteredTeamAgents.length > 0 ? (
 					<DirectoryAgentsGrid agents={filteredTeamAgents} onSelectAgent={onSelectDirectoryAgent} />
 				) : (
 					<StudioAgentsNoResults query={searchQuery} />
-				)
-			) : null}
+				)}
+			</TabsContent>
 
-			{activeTab === "by-companies" ? (
-				filteredCompanyAgents.length > 0 ? (
+			<TabsContent value="by-companies">
+				{filteredCompanyAgents.length > 0 ? (
 					<DirectoryAgentsGrid agents={filteredCompanyAgents} onSelectAgent={onSelectDirectoryAgent} />
 				) : (
 					<StudioAgentsNoResults query={searchQuery} />
-				)
-			) : null}
-		</section>
+				)}
+			</TabsContent>
+		</Tabs>
 	);
 }
 

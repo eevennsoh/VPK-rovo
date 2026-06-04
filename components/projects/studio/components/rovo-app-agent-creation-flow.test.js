@@ -130,8 +130,8 @@ test("Studio default landing shows the agents card section below the composer", 
 
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /DropdownMenu/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /export function StudioAgentsSection/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className="mx-auto mt-12 flex w-\[90%\] max-w-\[800px\] flex-col gap-4"/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /ButtonGroup aria-label="Agent views"/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className="mx-auto mt-12 w-\[90%\] max-w-\[800px\] gap-6"/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<TabsList variant="line">/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "my-agents", label: "My agents"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "by-teams", label: "By teams"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "by-companies", label: "By companies"/u);
@@ -142,7 +142,7 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<List\.Table columns=\{STUDIO_MY_AGENTS_LIST_COLUMNS\}>/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /from "@\/components\/ui\/table"|<Table|TableCell|TableRow|TableBody/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Button \} from "@\/components\/ui\/button";/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ ButtonGroup \} from "@\/components\/ui\/button-group";/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Tabs, TabsContent, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Icon \} from "@\/components\/ui\/icon";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/u);

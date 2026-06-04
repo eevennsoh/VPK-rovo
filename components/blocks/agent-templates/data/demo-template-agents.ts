@@ -3,6 +3,7 @@ import type {
 	AgentTemplatesCategoryId,
 } from "../components/agent-templates";
 import type { CardDirectoryCapability } from "@/components/ui-custom/card-directory";
+import { getSkillIcon } from "@/lib/skill-icons";
 
 type DemoTemplateSource = NonNullable<AgentTemplatesAgent["sources"]>[number];
 type DemoTemplateSkill = NonNullable<AgentTemplatesAgent["skills"]>[number];
@@ -273,6 +274,7 @@ function defaultSkills(id: string, categoryId: AgentTemplatesCategoryId): readon
 
 	return pickDeterministicItems(SKILL_LABELS[categoryId], seed, skillCount).map((label, index) => ({
 		color: SKILL_COLORS[(seed + index) % SKILL_COLORS.length],
+		icon: getSkillIcon(label),
 		label,
 	}));
 }
