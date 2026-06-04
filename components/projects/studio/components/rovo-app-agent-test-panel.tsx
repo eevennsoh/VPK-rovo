@@ -3,6 +3,11 @@
 import { useEffect, useMemo, type ReactElement } from "react";
 
 import { RovoChatProvider, useRovoChat, type StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
+import {
+	DEFAULT_STARTER_ICON,
+	getStarterIcon,
+	type StarterIconKey,
+} from "@/components/blocks/conversation-starters";
 import ChatPanel from "@/components/projects/sidebar-chat/page";
 import type { RovoAgentProfile } from "@/components/projects/rovo/data/agent-profiles";
 import { cn } from "@/lib/utils";
@@ -106,9 +111,11 @@ function createAgentTestStarter(
 	label: string,
 	index: number,
 	context: { agentName: string; byline: string; description?: string | null },
+	iconKey?: string,
 ): RovoSuggestion {
 	return {
 		id: `${agentId}-starter-${index + 1}`,
+		icon: getStarterIcon((iconKey as StarterIconKey | undefined) ?? DEFAULT_STARTER_ICON),
 		label,
 		prompt: label,
 		type: "skill",
@@ -163,12 +170,13 @@ function buildAgentTestProfile(entry: StudioSessionAgentEntry): RovoAgentProfile
 	const instructions =
 		getPayloadString(payload, ["instructions", "contextDescription", "context", "systemPrompt", "prompt"]) ??
 		entry.profile.contextDescription;
+	const starterIcons = getPayloadStringArray(payload, ["conversationStarterIcons", "starterIcons", "suggestionIcons"]);
 	const starters = getConversationStarterLabels(payload).map((starter, index) =>
 		createAgentTestStarter(id, starter, index, {
 			agentName: name,
 			byline,
 			description,
-		})
+		}, starterIcons[index])
 	);
 
 	return {

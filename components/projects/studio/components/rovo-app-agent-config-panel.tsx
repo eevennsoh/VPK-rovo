@@ -191,6 +191,13 @@ export function RovoAppAgentConfigPanel({
 			updateActiveConfig((config) => ({
 				...config,
 				[field]: getListItems(config, field).filter((_, itemIndex) => itemIndex !== index),
+				...(field === "conversationStarters"
+					? {
+							conversationStarterIcons: Array.isArray(config.conversationStarterIcons)
+								? config.conversationStarterIcons.filter((_, itemIndex) => itemIndex !== index)
+								: undefined,
+						}
+					: {}),
 			}));
 		},
 		[isSubagentActive, removeSubagentByDerivedIndex, updateActiveConfig],
@@ -579,6 +586,7 @@ export function RovoAppAgentConfigPanel({
 				onOpenChange={(open) => setActiveDirectory(open ? "conversationStarters" : null)}
 				starters={conversationStarterDialogValue}
 				maxStarters={3}
+				saveLabel={conversationStarterDialogValue.length > 0 ? "Save" : "Add"}
 				onSave={handleSaveConversationStarters}
 			/>
 		</>

@@ -154,7 +154,7 @@ export function ConversationStartersDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="gap-0 p-0" showCloseButton={false} size="md">
+			<DialogContent className="gap-0 overflow-hidden p-0" showCloseButton={false} size="md">
 				<div className="flex items-center justify-between gap-2 p-6">
 					<DialogTitle className="text-xl font-semibold leading-6 text-text">
 						{title}

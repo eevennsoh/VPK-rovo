@@ -147,6 +147,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	const isOverlayRemove = Boolean(onRemove) && removeVariant === "overlay";
 	const removeButtonShapeClass = isUserAvatarTag ? "rounded-full" : "rounded-xs";
 	const removeButtonMarginClass = hasAvatarTagStyles ? "mr-[-2px]" : "-mx-0.5";
+	const avatarTagBeforeShapeClass = isUserAvatarTag ? "rounded-full" : isOtherAvatarTag ? "rounded-xs" : "";
 
 	const childText = typeof children === "string" || typeof children === "number" ? String(children) : undefined;
 	const resolvedRemoveButtonLabel = childText ? `${removeButtonLabel} ${childText}` : removeButtonLabel;
@@ -182,7 +183,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 				<span
 					className={cn(
 						"flex shrink-0 items-center justify-center",
-						hasAvatarTagStyles ? cn("size-3 overflow-hidden [&>*]:size-full") : cn(colorClasses.icon, "[&>svg]:size-3"),
+						hasAvatarTagStyles ? cn("size-3 overflow-hidden [&>*]:size-full", avatarTagBeforeShapeClass) : cn(colorClasses.icon, "[&>svg]:size-3"),
 					)}
 					data-slot="tag-before"
 				>

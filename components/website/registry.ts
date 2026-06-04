@@ -6705,6 +6705,9 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/blocks/conversation-starters-demo"),
     { ssr: false },
   ),
+  "agent-access": dynamic(() => import("./demos/blocks/agent-access-demo"), {
+    ssr: false,
+  }),
   "agent-progress": dynamic(
     () => import("./demos/blocks/agent-progress-demo"),
     { ssr: false },

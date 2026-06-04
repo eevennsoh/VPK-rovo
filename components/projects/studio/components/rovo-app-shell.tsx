@@ -8,6 +8,11 @@ import { useRouter } from "next/navigation";
 import { ArtifactPanel } from "@/components/ui-custom/artifact";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import { ChatTimelineNavigator } from "@/components/blocks/chat-timeline/chat-timeline-navigator";
+import {
+	DEFAULT_STARTER_ICON,
+	getStarterIcon,
+	type StarterIconKey,
+} from "@/components/blocks/conversation-starters";
 import { CreateButton } from "@/components/blocks/top-navigation/components/create-button";
 import { AgentsDirectoryDialog } from "@/components/blocks/agents-directory";
 import { AgentTemplatesDialog, type AgentTemplatesAgent } from "@/components/blocks/agent-templates";
@@ -127,6 +132,60 @@ const ROVO_APP_SIDEBAR_MOTION_FALLBACK_MS = 200;
 const ROVO_APP_SIDEBAR_MIN_WIDTH = 240;
 const ROVO_APP_SIDEBAR_MAX_WIDTH = 480;
 const STUDIO_AGENT_MAX_CONVERSATION_STARTERS = 3;
+const STUDIO_LANDING_ENTER_TRANSITION = {
+	type: "spring",
+	visualDuration: 0.32,
+	bounce: 0,
+} as const;
+const STUDIO_LANDING_REDUCED_TRANSITION = {
+	duration: 0.08,
+} as const;
+const STUDIO_LANDING_CONTENT_INITIAL = {
+	opacity: 0,
+	transform: "translateY(8px)",
+} as const;
+const STUDIO_LANDING_CONTENT_VISIBLE = {
+	opacity: 1,
+	transform: "translateY(0px)",
+} as const;
+const STUDIO_LANDING_REDUCED_CONTENT_INITIAL = {
+	opacity: 0,
+} as const;
+const STUDIO_LANDING_REDUCED_CONTENT_VISIBLE = {
+	opacity: 1,
+} as const;
+const STUDIO_HOME_BENTO_INSTANT_EXIT = {
+	height: 0,
+	marginBottom: 0,
+	opacity: 0,
+	overflow: "hidden",
+	transition: { duration: 0 },
+} as const;
+const STUDIO_HOME_BENTO_COLLAPSE_EXIT = {
+	height: 0,
+	marginBottom: 0,
+	opacity: 0,
+	overflow: "hidden",
+	transform: "translateY(-8px)",
+	transition: { type: "spring", visualDuration: 0.35, bounce: 0 },
+} as const;
+type StudioHomeBentoExitContext = {
+	instant: boolean;
+	reduceMotion: boolean;
+};
+const STUDIO_HOME_BENTO_VARIANTS = {
+	hidden: {
+		opacity: 0,
+		transform: "translateY(-8px)",
+	},
+	visible: {
+		opacity: 1,
+		transform: "translateY(0px)",
+		transition: STUDIO_LANDING_ENTER_TRANSITION,
+	},
+	exit: ({ instant, reduceMotion }: StudioHomeBentoExitContext) =>
+		instant || reduceMotion ? STUDIO_HOME_BENTO_INSTANT_EXIT : STUDIO_HOME_BENTO_COLLAPSE_EXIT,
+} as const;
 
 const DEFAULT_COMPOSER_PLACEHOLDER = "Describe the agent you want to build";
 const REALTIME_THREAD_SUMMARY_MAX_MESSAGES = 10;
@@ -1232,6 +1291,9 @@ function normalizeStudioAgentResult(agentResult: RovoDataParts["agent-result"]):
 	const conversationStarters = Array.isArray(agentResult.conversationStarters)
 		? agentResult.conversationStarters.map((starter) => starter.trim()).filter(Boolean).slice(0, STUDIO_AGENT_MAX_CONVERSATION_STARTERS)
 		: [];
+	const conversationStarterIcons = Array.isArray(agentResult.conversationStarterIcons)
+		? agentResult.conversationStarterIcons
+		: [];
 
 	if (!id || !name || !description || conversationStarters.length === 0) {
 		return null;
@@ -1258,6 +1320,7 @@ function normalizeStudioAgentResult(agentResult: RovoDataParts["agent-result"]):
 		id,
 		name,
 		starters: conversationStarters.map((starter, index) => ({
+			icon: getStarterIcon((conversationStarterIcons[index] as StarterIconKey | undefined) ?? DEFAULT_STARTER_ICON),
 			id: `${id}-starter-${index + 1}`,
 			label: starter,
 			prompt: starter,
@@ -2175,6 +2238,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const [scrollAnchorMessageId, setScrollAnchorMessageId] = useState<string | null>(null);
 	const [scrollFollowMode, setScrollFollowMode] = useState<ConversationFollowMode>("bottom");
 	const [optimisticUserMessage, setOptimisticUserMessage] = useState<ReturnType<typeof createRovoAppUserMessage> | null>(null);
+	const [isDefaultHomeSubmitTransition, setIsDefaultHomeSubmitTransition] = useState(false);
 	const [dismissedBrowserArtifactKey, setDismissedBrowserArtifactKey] = useState<string | null>(null);
 	const realtimeUserMessageIdRef = useRef<string | null>(null);
 	const realtimeAssistantMessageIdRef = useRef<string | null>(null);
@@ -3330,6 +3394,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				(chat.sendMode === "immediate" || !chat.shouldQueueNextSubmission) &&
 				(trimmedText || files.length > 0);
 			if (shouldShowOptimisticPrompt) {
+				if (isDefaultAgentHomeStateRef.current) {
+					setIsDefaultHomeSubmitTransition(true);
+				}
 				setOptimisticUserMessage(
 					createRovoAppUserMessage({
 						id: createId("rovo-app-user"),
@@ -3369,6 +3436,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					clearHermesSkillSelection();
 				}
 			} catch (error) {
+				setIsDefaultHomeSubmitTransition(false);
 				setOptimisticUserMessage(null);
 				resetTypedScrollAnchorState();
 				throw error;
@@ -3651,20 +3719,59 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const shouldShowChatHeader = !shouldShowAgentConfigPane && (visibleMessages.length > 0 || hasActiveThreadRun || chat.isStreaming);
 	const isDefaultAgentHomeState = showHomeState && !isCustomAgentSelected && !shouldShowAgentConfigPane;
 	isDefaultAgentHomeStateRef.current = isDefaultAgentHomeState;
-	const shouldShowStudioAgentsSection = isDefaultAgentHomeState;
 	const shouldReduceMotion = useReducedMotion();
+	const shouldReduceStudioLandingMotion = Boolean(shouldReduceMotion);
+	const [landingMotionReady, setLandingMotionReady] = useState(false);
 	const [bentoDismissed, setBentoDismissed] = useState(false);
-	const shouldShowHomeStarterBento = isDefaultAgentHomeState && !bentoDismissed;
+	const shouldGateDefaultLandingContent = isDefaultAgentHomeState && !landingMotionReady;
+	const shouldShowDefaultLandingContent = !shouldGateDefaultLandingContent;
+	const shouldShowStudioAgentsSection = isDefaultAgentHomeState && shouldShowDefaultLandingContent;
+	const shouldShowHomeStarterBento = isDefaultAgentHomeState && shouldShowDefaultLandingContent && !bentoDismissed;
+	const shouldShowComposerDock = shouldShowDefaultLandingContent;
 	const shouldShowTimelineNavigator = !showHomeState && !isArtifactOpen && timelineItems.length > 1;
 	const composerPreviewState = resolveRovoAppComposerPlaceholder({
 		defaultPlaceholder: DEFAULT_COMPOSER_PLACEHOLDER,
 		previewPrompt,
 		showHomeState,
 	});
+	const studioLandingMotionInitial = shouldReduceStudioLandingMotion
+		? STUDIO_LANDING_REDUCED_CONTENT_INITIAL
+		: STUDIO_LANDING_CONTENT_INITIAL;
+	const studioLandingMotionVisible = shouldReduceStudioLandingMotion
+		? STUDIO_LANDING_REDUCED_CONTENT_VISIBLE
+		: STUDIO_LANDING_CONTENT_VISIBLE;
+	const studioLandingMotionTransition = shouldReduceStudioLandingMotion
+		? STUDIO_LANDING_REDUCED_TRANSITION
+		: STUDIO_LANDING_ENTER_TRANSITION;
+	const homeStarterBentoPresence = {
+		instant: isDefaultHomeSubmitTransition,
+		reduceMotion: shouldReduceStudioLandingMotion,
+	};
 	screenAssistantComposerRef.current = {
 		hasPrefill: Boolean(voiceTranscript ?? prefillText),
 		placeholder: composerPreviewState.placeholder,
 	};
+
+	useEffect(() => {
+		if (landingMotionReady || shellSize.width <= 0 || shellSize.height <= 0) {
+			return;
+		}
+
+		const frame = requestAnimationFrame(() => setLandingMotionReady(true));
+		return () => cancelAnimationFrame(frame);
+	}, [landingMotionReady, shellSize.height, shellSize.width]);
+
+	useEffect(() => {
+		if (showHomeState || !isDefaultHomeSubmitTransition) {
+			return;
+		}
+
+		const frame = requestAnimationFrame(() => {
+			setIsDefaultHomeSubmitTransition(false);
+		});
+		return () => cancelAnimationFrame(frame);
+	}, [isDefaultHomeSubmitTransition, showHomeState]);
+
 	const canAnnotateWorkspaceDocument = workspaceDocument !== null;
 	const annotationState = useArtifactAnnotations({
 		active: cursorMode && isArtifactOpen && !chat.streamingArtifact && chat.artifactMode === "preview" && process.env.NODE_ENV === "development",
@@ -3731,13 +3838,13 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const splitArtifactPaneDefaultSize = shouldSplitArtifactPane || (shouldShowAgentConfigPane && !isAgentConfigOverlayActive)
 		? Math.max(ROVO_APP_MIN_ARTIFACT_PANE_WIDTH, shellSize.width - splitChatPaneDefaultSize)
 		: ROVO_APP_MIN_ARTIFACT_PANE_WIDTH;
-	const defaultHomeTopSpacerMeasurementKey = isDefaultAgentHomeState ? `${shellSize.width}:${shellSize.height}` : null;
+	const defaultHomeTopSpacerMeasurementKey = isDefaultAgentHomeState && landingMotionReady ? `${shellSize.width}:${shellSize.height}` : null;
 	const defaultHomeTopSpacerHeight = defaultHomeTopSpacerMeasurement?.key === defaultHomeTopSpacerMeasurementKey
 		? defaultHomeTopSpacerMeasurement.height
 		: null;
 
 	useLayoutEffect(() => {
-		if (!defaultHomeTopSpacerMeasurementKey || !isDefaultAgentHomeState || shouldSplitArtifactPane || shouldShowAgentConfigPane || defaultHomeTopSpacerHeight !== null) {
+		if (!landingMotionReady || !defaultHomeTopSpacerMeasurementKey || !isDefaultAgentHomeState || shouldSplitArtifactPane || shouldShowAgentConfigPane || defaultHomeTopSpacerHeight !== null) {
 			return;
 		}
 
@@ -3753,7 +3860,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				height: spacerHeight,
 			});
 		}
-	}, [defaultHomeTopSpacerHeight, defaultHomeTopSpacerMeasurementKey, isDefaultAgentHomeState, shouldShowAgentConfigPane, shouldSplitArtifactPane]);
+	}, [defaultHomeTopSpacerHeight, defaultHomeTopSpacerMeasurementKey, isDefaultAgentHomeState, landingMotionReady, shouldShowAgentConfigPane, shouldSplitArtifactPane]);
 
 	useEffect(() => {
 		if (!isRealtimeActive) {
@@ -4085,7 +4192,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					scrollAnchorMessageId={scrollAnchorMessageId}
 					scrollFollowMode={scrollFollowMode}
 					selectedAgent={selectedAgent}
-					showEmptyState={showHomeState}
+					showEmptyState={showHomeState && shouldShowDefaultLandingContent}
 					shouldSuppressLatestAssistantSuggestions={chat.shouldSuppressLatestAssistantSuggestions}
 					streamingArtifact={chat.streamingArtifact}
 					streamingArtifactMessageId={chat.streamingArtifactMessageId}
@@ -4095,24 +4202,17 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 			{shouldShowAgentConfigPane && showHomeState ? <div aria-hidden className="flex-1 shrink" /> : null}
 
-			<AnimatePresence initial={false}>
+			<AnimatePresence custom={homeStarterBentoPresence} initial={false}>
 				{shouldShowHomeStarterBento ? (
 					<motion.div
 						key="home-starter-bento"
 						className="z-10 mx-auto mb-5 w-[90%]"
-						initial={shouldReduceMotion ? false : { opacity: 0, y: -8 }}
-						animate={{ opacity: 1, y: 0 }}
-						exit={
-							shouldReduceMotion
-								? { opacity: 0, height: 0, marginBottom: 0, overflow: "hidden" }
-								: { opacity: 0, height: 0, marginBottom: 0, y: -8, overflow: "hidden" }
-						}
-						transition={
-							shouldReduceMotion
-								? { duration: 0 }
-								: { type: "spring", visualDuration: 0.35, bounce: 0 }
-						}
-						style={{ willChange: "opacity, height" }}
+						animate="visible"
+						custom={homeStarterBentoPresence}
+						exit="exit"
+						initial={shouldReduceStudioLandingMotion ? false : "hidden"}
+						style={{ willChange: "transform, opacity, height" }}
+						variants={STUDIO_HOME_BENTO_VARIANTS}
 					>
 						<HomeStarterBento
 							onBrowseTemplates={handleBrowseAgentTemplates}
@@ -4126,31 +4226,32 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				) : null}
 			</AnimatePresence>
 
-			<div
-				ref={composerDockRef}
-				className={cn(
-					"relative z-10 mx-auto flex min-w-0 w-full flex-col gap-3 overflow-visible",
-					!showHomeState && "sticky bottom-0 bg-background/90 backdrop-blur",
-					isArtifactOpen || shouldShowAgentConfigPane ? "max-w-none px-3" : "max-w-[800px]",
-					// The question/approval card carries a soft 50px-blur shadow that the
-					// home-state scrollport (chatPaneContainer overflow-y-auto) clips on the
-					// left/right/bottom. When a card is shown, reserve room for that blur with
-					// inner padding and bump max-w by the same amount so the card content width
-					// is unchanged. Padding is scoped to the card case so the regular sticky
-					// composer keeps its flush bottom alignment.
-					isShowingDockCard && !(isArtifactOpen || shouldShowAgentConfigPane) && "max-w-[848px] px-6 pb-6",
-				)}
-			>
-				{realtimeStatusMessage ? <div className="px-1 text-text-subtle text-xs">{realtimeStatusMessage}</div> : null}
-				{shouldShowReopenBrowserPreviewControl ? (
-					<div className="flex justify-center px-1">
-						<Button onClick={handleOpenBrowserPreview} size="default" type="button" variant="outline">
-							Reopen browser preview
-						</Button>
-					</div>
-				) : null}
-				<div>
-					{shouldShowQuestionCard && activeQuestionCard ? (
+			{shouldShowComposerDock ? (
+				<div
+					ref={composerDockRef}
+					className={cn(
+						"relative z-10 mx-auto flex min-w-0 w-full flex-col gap-3 overflow-visible",
+						!showHomeState && "sticky bottom-0 bg-background/90 backdrop-blur",
+						isArtifactOpen || shouldShowAgentConfigPane ? "max-w-none px-3" : "max-w-[800px]",
+						// The question/approval card carries a soft 50px-blur shadow that the
+						// home-state scrollport (chatPaneContainer overflow-y-auto) clips on the
+						// left/right/bottom. When a card is shown, reserve room for that blur with
+						// inner padding and bump max-w by the same amount so the card content width
+						// is unchanged. Padding is scoped to the card case so the regular sticky
+						// composer keeps its flush bottom alignment.
+						isShowingDockCard && !(isArtifactOpen || shouldShowAgentConfigPane) && "max-w-[848px] px-6 pb-6",
+					)}
+				>
+					{realtimeStatusMessage ? <div className="px-1 text-text-subtle text-xs">{realtimeStatusMessage}</div> : null}
+					{shouldShowReopenBrowserPreviewControl ? (
+						<div className="flex justify-center px-1">
+							<Button onClick={handleOpenBrowserPreview} size="default" type="button" variant="outline">
+								Reopen browser preview
+							</Button>
+						</div>
+					) : null}
+					<div>
+						{shouldShowQuestionCard && activeQuestionCard ? (
 						<>
 							<ClarificationQuestionCard
 								key={activeQuestionCardKey ?? undefined}
@@ -4189,9 +4290,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 								</div>
 							) : null}
 							<motion.div
-								initial={showHomeState && !shouldReduceMotion ? { opacity: 0, y: 20 } : false}
-								animate={{ opacity: 1, y: 0 }}
-								transition={{ duration: 0.4, ease: [0, 0.4, 0, 1], delay: 0.2 }}
+								animate={showHomeState ? studioLandingMotionVisible : { opacity: 1, transform: "translateY(0px)" }}
+								initial={showHomeState ? studioLandingMotionInitial : false}
+								transition={showHomeState ? studioLandingMotionTransition : { duration: 0 }}
 								style={{ willChange: "transform, opacity" }}
 							>
 								<RovoAppComposer
@@ -4246,8 +4347,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							{!showHomeState ? <Footer className="relative z-10" /> : null}
 						</>
 					)}
+					</div>
 				</div>
-			</div>
+			) : null}
 		</>
 	);
 
@@ -4309,14 +4411,21 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			) : null}
 			{chatPane}
 			{shouldShowStudioAgentsSection ? (
-				<StudioAgentsSection
-					directoryAgents={ROVO_DIRECTORY_AGENT_PROFILES}
-					entries={studioAgentRegistry.sessionAgentEntries}
-					onBrowseTemplates={() => handleBrowseAgentTemplates()}
-					onCreateAgent={handleFocusStudioComposer}
-					onEditAgent={handleStudioSidebarAgentSelect}
-					onSelectDirectoryAgent={handleSidebarBrowseAgentSelect}
-				/>
+				<motion.div
+					animate={studioLandingMotionVisible}
+					initial={studioLandingMotionInitial}
+					transition={studioLandingMotionTransition}
+					style={{ willChange: "transform, opacity" }}
+				>
+					<StudioAgentsSection
+						directoryAgents={ROVO_DIRECTORY_AGENT_PROFILES}
+						entries={studioAgentRegistry.sessionAgentEntries}
+						onBrowseTemplates={() => handleBrowseAgentTemplates()}
+						onCreateAgent={handleFocusStudioComposer}
+						onEditAgent={handleStudioSidebarAgentSelect}
+						onSelectDirectoryAgent={handleSidebarBrowseAgentSelect}
+					/>
+				</motion.div>
 			) : null}
 			{showHomeState && !shouldSplitArtifactPane ? (
 				<>

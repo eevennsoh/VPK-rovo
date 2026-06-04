@@ -59,7 +59,7 @@ function AvatarHexagonBorder() {
 	return (
 		<svg
 			aria-hidden="true"
-			className="pointer-events-none absolute inset-0 z-[1] size-full p-px text-border! mix-blend-darken dark:mix-blend-lighten"
+			className="pointer-events-none absolute inset-0 z-[1] size-full overflow-visible p-px text-border! mix-blend-darken dark:mix-blend-lighten"
 			focusable="false"
 			viewBox="0 0 100 100"
 		>

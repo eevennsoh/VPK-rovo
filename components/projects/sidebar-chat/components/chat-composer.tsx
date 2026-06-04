@@ -235,9 +235,9 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 									size="icon-sm"
 									variant={clickyActive ? "default" : "ghost"}
 									onClick={onToggleClicky}
-									aria-label="Rovo AI cursor"
+									aria-label="Rovo cursor"
 									aria-pressed={clickyActive}
-									tooltip={{ content: "AI Cursor ⌘⇧K", delay: 0 }}
+									tooltip={{ content: "Rovo cursor", delay: 0 }}
 								>
 									<CursorIcon label="" />
 								</PromptInputButton>
