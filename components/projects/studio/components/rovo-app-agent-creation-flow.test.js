@@ -452,6 +452,8 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /inputProps=\{\{ className: "h-auto border-2 px-1\.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /textareaProps=\{\{ rows: 1, className: "min-h-10 border-2 bg-bg-neutral-subtle px-1\.5 focus:border-ring focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-\[variant=default\]:border-transparent data-\[variant=default\]:focus:border-ring data-\[variant=default\]:focus-visible:border-ring" \}\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentConfigFields/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentCompactSurfacesPanel/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /type AgentCompactHeaderSection/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /config=\{activeConfig\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /layout="compact"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onTextChange=\{handleConfigTextChange\}/u);
@@ -467,6 +469,7 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ ToolsDirectoryDialog \} from "@\/components\/blocks\/tools-directory";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEMO_SESSION_TOOLS, DEMO_TOOLS \} from "@\/components\/blocks\/tools-directory\/data\/demo-tools";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[activeDirectory, setActiveDirectory\] = useState<AgentDirectoryKind \| null>\(null\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[activeCompactSection, setActiveCompactSection\] = useState<AgentCompactHeaderSection \| null>\(null\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleTriggerDefinitionsChange = useCallback\([\s\S]*serializeAgentTriggerLabels\(triggerDefinitions\)[\s\S]*triggerDefinitions,[\s\S]*trigger: triggerLabels\[0\] \?\? "",[\s\S]*triggers: triggerLabels,/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleConnectTrigger = useCallback\([\s\S]*connectionState: "connecting" as const[\s\S]*serializeAgentTriggerLabels\(triggerDefinitions\)/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenDirectory = useCallback\(\(directory: AgentDirectoryKind\) => \{[\s\S]*setActiveDirectory\(directory\);[\s\S]*\}, \[\]\);/u);
@@ -483,7 +486,10 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /export type AgentConfigView = "configure" \| "test";/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function getPublishLabel/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /leadingContent=\{<AgentCompactHeaderNav avatarSrc=\{agentAvatarSrc\} \/>\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleCompactSectionChange = useCallback\([\s\S]*onViewChange\("configure"\);[\s\S]*setActiveCompactSection\(section === "surfaces" \? "surfaces" : null\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /setActiveCompactSection\(null\);[\s\S]*if \(value === "test"\)/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentCompactHeaderNav[\s\S]*activeSection=\{activeCompactSection\}[\s\S]*avatarSrc=\{agentAvatarSrc\}[\s\S]*onSectionChange=\{handleCompactSectionChange\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /activeCompactSection === "surfaces" \? \([\s\S]*<AgentCompactSurfacesPanel className="-mr-6 pr-6" \/>[\s\S]*\) : \([\s\S]*<AgentConfigFields/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigActionButton/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigToggleItem/u);
 	// The disabled Test item is a plain ToggleGroupItem (no Tooltip wrapper) so the

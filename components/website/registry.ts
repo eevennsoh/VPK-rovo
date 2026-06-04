@@ -5425,6 +5425,13 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "agent-demo-compact-surfaces": dynamic(
+    () =>
+      import("./demos/ui-custom/agent-demo").then((mod) => ({
+        default: mod.AgentDemoCompactSurfaces,
+      })),
+    { ssr: false },
+  ),
   "agent-evaluation-demo-filled": dynamic(
     () =>
       import("./demos/ui-custom/agent-evaluation-demo").then((mod) => ({

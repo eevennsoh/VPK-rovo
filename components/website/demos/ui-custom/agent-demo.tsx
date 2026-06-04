@@ -5,10 +5,12 @@ import {
 	Agent,
 	AgentConfigFields,
 	type AgentConfigFormValue,
+	type AgentCompactHeaderSection,
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
 	AgentContent,
 	AgentCompactHeaderNav,
+	AgentCompactSurfacesPanel,
 	AgentHeader,
 } from "@/components/ui-custom/agent";
 
@@ -207,6 +209,39 @@ export function AgentDemoCompactEmpty() {
 					onRemoveListItem={removeListItem}
 					onAppendListItem={appendListItem}
 				/>
+			</AgentContent>
+		</Agent>
+	);
+}
+
+export function AgentDemoCompactSurfaces() {
+	const [activeSection, setActiveSection] = useState<AgentCompactHeaderSection | null>("surfaces");
+
+	function handleSectionChange(section: AgentCompactHeaderSection) {
+		setActiveSection(section === "surfaces" ? "surfaces" : null);
+	}
+
+	return (
+		<Agent className="mx-auto min-h-[852px] w-full max-w-[720px]">
+			<AgentHeader
+				leadingContent={
+					<AgentCompactHeaderNav
+						activeSection={activeSection}
+						onSectionChange={handleSectionChange}
+					/>
+				}
+				name="Policy Checker"
+			/>
+			<AgentContent>
+				{activeSection === "surfaces" ? (
+					<AgentCompactSurfacesPanel />
+				) : (
+					<AgentConfigFields
+						config={filledAgentConfig}
+						idPrefix="agent-demo-compact-surfaces"
+						layout="compact"
+					/>
+				)}
 			</AgentContent>
 		</Agent>
 	);
