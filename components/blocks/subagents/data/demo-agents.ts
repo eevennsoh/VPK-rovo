@@ -1,17 +1,20 @@
 import type { AgentConfigFormValue } from "@/components/ui-custom/agent";
 
-export type SubagentsAgentKind = "master" | "subagent";
-
-export interface SubagentsAgent {
+export interface SubagentsBaseAgent {
 	id: string;
-	kind: SubagentsAgentKind;
 	avatarSrc?: string;
 	config: AgentConfigFormValue;
 }
 
-export const DEFAULT_SUBAGENTS_MASTER_AGENT: SubagentsAgent = {
-	id: "master-orchestrator",
-	kind: "master",
+export interface SubagentPrompt {
+	id: string;
+	triggerName: string;
+	condition: string;
+	config: AgentConfigFormValue;
+}
+
+export const DEFAULT_SUBAGENTS_BASE_AGENT: SubagentsBaseAgent = {
+	id: "policy-checker",
 	avatarSrc: "/avatar-agent/teamwork-agents/blocker-checker.svg",
 	config: {
 		name: "Policy Checker",
@@ -25,7 +28,7 @@ export const DEFAULT_SUBAGENTS_MASTER_AGENT: SubagentsAgent = {
 		triggers: ["Company Handbook", "HR policy question"],
 		skills: ["Search policies", "Summarize guidance"],
 		tools: ["Policy index", "Benefits lookup"],
-		subagents: ["Policy Researcher", "Benefits Analyst"],
+		subagents: [],
 		knowledge: ["Teamwork Graph", "HR handbook"],
 		conversationStarters: [
 			"Which leave policy applies to this request?",
@@ -36,51 +39,38 @@ export const DEFAULT_SUBAGENTS_MASTER_AGENT: SubagentsAgent = {
 	},
 };
 
-export const SUBAGENTS_DEMO_AGENTS: ReadonlyArray<SubagentsAgent> = [
-	DEFAULT_SUBAGENTS_MASTER_AGENT,
+export const SUBAGENTS_DEMO_PROMPTS: ReadonlyArray<SubagentPrompt> = [
 	{
-		id: "policy-researcher",
-		kind: "subagent",
-		avatarSrc: "/avatar-agent/product-agents/feedback-analyzer.svg",
+		id: "policy-source-needed",
+		triggerName: "Policy source needed",
+		condition:
+			"Use this prompt when the answer needs current policy source material or exact handbook references.",
 		config: {
-			name: "Policy Researcher",
-			description:
-				"Finds the most relevant policy sources, checks recency, and extracts the exact passages the master agent needs.",
-			summary:
-				"Finds the most relevant policy sources, checks recency, and extracts the exact passages the master agent needs.",
 			instructions:
-				"Search policy knowledge sources, prioritize current official guidance, and return concise source-backed notes to the master agent.",
+				"Search policy knowledge sources, prioritize current official guidance, and return concise source-backed notes to the base agent.",
 			contextDescription: "",
-			triggers: ["Policy source needed"],
+			triggers: [],
 			skills: ["Search policies"],
 			tools: ["Policy index"],
-			subagents: [],
 			knowledge: ["HR handbook"],
 			conversationStarters: ["Find the source policy for this question."],
-			agentId: "policy-researcher",
 			action: "draft",
 		},
 	},
 	{
-		id: "benefits-analyst",
-		kind: "subagent",
-		avatarSrc: "/avatar-agent/service-agents/service-triage.svg",
+		id: "benefits-question",
+		triggerName: "Benefits question",
+		condition:
+			"Use this prompt when an employee asks about benefits eligibility, coverage, or plan details.",
 		config: {
-			name: "Benefits Analyst",
-			description:
-				"Interprets employee benefits questions and prepares eligibility details for the master agent.",
-			summary:
-				"Interprets employee benefits questions and prepares eligibility details for the master agent.",
 			instructions:
-				"Review benefit-related questions, identify eligibility rules, and summarize the answer in plain language for the master agent.",
+				"Review benefit-related questions, identify eligibility rules, and summarize the answer in plain language for the base agent.",
 			contextDescription: "",
-			triggers: ["Benefits question"],
+			triggers: [],
 			skills: ["Summarize guidance"],
 			tools: ["Benefits lookup"],
-			subagents: [],
 			knowledge: ["Benefits handbook"],
 			conversationStarters: ["Check benefit eligibility for this scenario."],
-			agentId: "benefits-analyst",
 			action: "draft",
 		},
 	},

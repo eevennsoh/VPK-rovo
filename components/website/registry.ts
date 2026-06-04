@@ -6876,6 +6876,15 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
 };
 
 const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
+  // Subagents
+  "subagents-demo-empty": dynamic(
+    () =>
+      import("./demos/blocks/subagents-demo").then((mod) => ({
+        default: mod.SubagentsDemoEmpty,
+      })),
+    { ssr: false },
+  ),
+
   // Agent Selector
   "agent-selector-demo-selected-agent-actions": dynamic(
     () =>

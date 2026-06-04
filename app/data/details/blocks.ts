@@ -1282,39 +1282,53 @@ const messages: ChatTimelineMessage[] = [
 		],
 	},
 	subagents: {
-		description: "Agent builder surface that swaps between a master orchestrator configuration and subagent configurations from a floating mini-map switcher.",
-		usage: `import Subagents, { type SubagentsAgent } from "@/components/blocks/subagents/page";
+		description: "Agent builder surface for one base parent agent with conditional subagent prompt copies selected from a floating mini-map switcher.",
+		usage: `import Subagents, { type SubagentPrompt, type SubagentsBaseAgent } from "@/components/blocks/subagents/page";
 
-const agents: SubagentsAgent[] = [
+const baseAgent: SubagentsBaseAgent = {
+  id: "policy-checker",
+  config: { name: "Policy Checker", subagents: [] },
+};
+
+const subagents: SubagentPrompt[] = [
   {
-    id: "master-orchestrator",
-    kind: "master",
-    config: { name: "Policy Checker", subagents: ["Policy Researcher"] },
-  },
-  {
-    id: "policy-researcher",
-    kind: "subagent",
-    config: { name: "Policy Researcher" },
+    id: "benefits-question",
+    triggerName: "Benefits question",
+    condition: "Use this prompt for benefits eligibility questions.",
+    config: { instructions: "Summarize benefits rules for the base agent." },
   },
 ];
 
-<Subagents initialAgents={agents} />`,
+<Subagents initialBaseAgent={baseAgent} initialSubagents={subagents} />`,
 		props: [
 			{
-				name: "initialAgents",
-				type: "ReadonlyArray<SubagentsAgent>",
-				default: "SUBAGENTS_DEMO_AGENTS",
-				description: "Initial master and subagent configs used by the switcher and active agent editor.",
+				name: "initialBaseAgent",
+				type: "SubagentsBaseAgent",
+				default: "DEFAULT_SUBAGENTS_BASE_AGENT",
+				description: "Base parent agent identity and shared config used for every prompt copy.",
 			},
 			{
-				name: "initialActiveAgentId",
+				name: "initialSubagents",
+				type: "ReadonlyArray<SubagentPrompt>",
+				default: "SUBAGENTS_DEMO_PROMPTS",
+				description: "Conditional prompt copies owned by the base agent. Rows are labeled by trigger name.",
+			},
+			{
+				name: "initialActiveSubagentId",
 				type: "string",
-				description: "Optional agent id selected when the block first renders.",
+				description: "Optional subagent prompt id selected when the block first renders.",
 			},
 			{
 				name: "className",
 				type: "string",
 				description: "Optional className applied to the outer block container.",
+			},
+		],
+		examples: [
+			{
+				title: "No subagents",
+				description: "Base parent agent only, showing an empty subagent prompt list and create-subagent action.",
+				demoSlug: "subagents-demo-empty",
 			},
 		],
 	},
