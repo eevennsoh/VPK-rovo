@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { SkillTag, SkillTagGroup } from "@/components/ui-custom/skill-tag";
 import type { VoiceButtonState } from "@/components/ui-audio/voice-button";
 import ChatContextBar from "@/components/projects/sidebar-chat/components/chat-context-bar";
-import { ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS } from "@/components/projects/studio/lib/rovo-app-shell-layout";
+import { ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS, ROVO_APP_STUDIO_COMPOSER_SESSION_MAX_WIDTH_CLASS } from "@/components/projects/studio/lib/rovo-app-shell-layout";
 import { resolveRovoAppComposerResponseGradientState } from "@/components/projects/studio/lib/rovo-app-composer-response-gradient-state";
 import type { RealtimeGenerationState } from "@/components/projects/studio/hooks/use-realtime-voice";
 import { cn } from "@/lib/utils";
@@ -90,6 +90,8 @@ interface RovoAppComposerProps {
 	composerStatus: ChatStatus;
 	compact?: boolean;
 	errorMessage?: string | null;
+	/** Widen the prompt input to the 800px in-session width (vs. the 600px home width). */
+	fillWidth?: boolean;
 	isPlanMode?: boolean;
 	micStream?: MediaStream | null;
 	queuedPrompts?: ReadonlyArray<RovoAppQueuedAction>;
@@ -139,6 +141,7 @@ function RovoAppComposerInner({
 	backgroundArtifactLabel,
 	composerStatus,
 	errorMessage,
+	fillWidth = false,
 	micStream,
 	onDismissPlanExecutionTracker,
 	onDismissArtifactContext,
@@ -455,7 +458,7 @@ function RovoAppComposerInner({
 				>
 					<FloatingComposer
 						allowOverflow
-						className={cn("relative z-10 mx-auto", ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS)}
+						className={cn("relative z-10 mx-auto", fillWidth ? ROVO_APP_STUDIO_COMPOSER_SESSION_MAX_WIDTH_CLASS : ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS)}
 						data-screen-assistant-target="studio-composer"
 						onSubmit={handlePromptSubmit}
 						addButton={

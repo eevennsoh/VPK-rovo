@@ -1,0 +1,206 @@
+"use client";
+
+import { startTransition, useCallback, useMemo, useState } from "react";
+
+import type {
+	AgentConfigFormValue,
+	AgentConfigListFieldName,
+} from "@/components/ui-custom/agent";
+import {
+	cloneConfig,
+	createDraftSubagentPrompt,
+	getBaseConfigWithSubagents,
+	getDerivedSubagentNames,
+} from "@/components/blocks/subagents/lib/subagent-prompts";
+import type { SubagentPrompt } from "@/components/blocks/subagents/data/demo-agents";
+import type { RovoAgentSubagentPrompt, RovoDataParts } from "@/lib/rovo-ui-messages";
+
+type AgentResult = RovoDataParts["agent-result"];
+
+/**
+ * Backs the studio agent config panel's base-agent + subagents experience.
+ *
+ * The base agent IS the studio draft (`draft`); subagent prompts are persisted on
+ * the draft under `subagentPrompts` (see context-rovo-chat's key-preserving
+ * reducer), and the base agent's `subagents` chip list is always derived from the
+ * prompt trigger names so there is a single source of truth.
+ *
+ * `activeSubagentId` is local view state (which subagent is being edited); the
+ * data itself round-trips through `updateDraft`, so it survives panel close/reopen,
+ * agent switching, and publish. Mirrors the standalone subagents demo
+ * (components/blocks/subagents/page.tsx), reusing the same pure helpers.
+ */
+export function useAgentConfigSubagents({
+	draft,
+	updateDraft,
+}: Readonly<{
+	draft: AgentResult;
+	updateDraft: (patch: Partial<AgentResult>) => void;
+}>) {
+	const [activeSubagentId, setActiveSubagentId] = useState<string | null>(null);
+
+	// The persisted prompts carry a structural `config` (Record<string, unknown>);
+	// treat them as the demo's SubagentPrompt (config: AgentConfigFormValue) within
+	// this hook and cast back at the `updateDraft` boundary.
+	const subagentPrompts = useMemo<SubagentPrompt[]>(
+		() => ((draft.subagentPrompts ?? []) as unknown as SubagentPrompt[]),
+		[draft.subagentPrompts],
+	);
+
+	const activePrompt = activeSubagentId
+		? subagentPrompts.find((prompt) => prompt.id === activeSubagentId) ?? null
+		: null;
+	const isSubagentActive = activePrompt !== null;
+
+	const namedSubagentPrompts = useMemo(
+		() => subagentPrompts.filter((prompt) => prompt.triggerName.trim()),
+		[subagentPrompts],
+	);
+
+	// Base config = the draft + the derived subagent chip list.
+	const baseConfig = useMemo<AgentConfigFormValue>(
+		() => getBaseConfigWithSubagents(draft as unknown as AgentConfigFormValue, subagentPrompts),
+		[draft, subagentPrompts],
+	);
+
+	const activeConfig = activePrompt ? activePrompt.config : baseConfig;
+	const activeConfigId = activePrompt ? `prompt-${activePrompt.id}` : "base";
+	const namedIndex = activePrompt
+		? namedSubagentPrompts.findIndex((prompt) => prompt.id === activePrompt.id)
+		: -1;
+	const selectedSubagentIndex = namedIndex >= 0 ? namedIndex : undefined;
+
+	// Persist a prompt list change + keep the mirrored `subagents` chip list in sync.
+	const commitPrompts = useCallback(
+		(nextPrompts: SubagentPrompt[]) => {
+			updateDraft({
+				subagentPrompts: nextPrompts as unknown as RovoAgentSubagentPrompt[],
+				subagents: getDerivedSubagentNames(nextPrompts),
+			} as Partial<AgentResult>);
+		},
+		[updateDraft],
+	);
+
+	const selectBaseAgent = useCallback(() => {
+		startTransition(() => setActiveSubagentId(null));
+	}, []);
+
+	const selectSubagent = useCallback((promptId: string) => {
+		startTransition(() => setActiveSubagentId(promptId));
+	}, []);
+
+	// AgentConfigFields' subagents dropdown reports the index into the derived
+	// (named) chip list; map it back to the owning prompt id.
+	const selectSubagentByDerivedIndex = useCallback(
+		(index: number) => {
+			const prompt = namedSubagentPrompts[index];
+			if (prompt) {
+				startTransition(() => setActiveSubagentId(prompt.id));
+			}
+		},
+		[namedSubagentPrompts],
+	);
+
+	const createSubagent = useCallback(() => {
+		const prompt = createDraftSubagentPrompt(subagentPrompts);
+		commitPrompts([...subagentPrompts, prompt]);
+		startTransition(() => setActiveSubagentId(prompt.id));
+	}, [commitPrompts, subagentPrompts]);
+
+	// Single write primitive: routes an editor change to either the base draft
+	// fields or the active subagent prompt's config.
+	const updateActiveConfig = useCallback(
+		(updater: (config: AgentConfigFormValue) => AgentConfigFormValue) => {
+			if (!activePrompt) {
+				const next = updater(cloneConfig(baseConfig));
+				updateDraft(next as unknown as Partial<AgentResult>);
+				return;
+			}
+
+			const nextPrompts = subagentPrompts.map((prompt) =>
+				prompt.id === activePrompt.id
+					? { ...prompt, config: updater(cloneConfig(prompt.config)) }
+					: prompt,
+			);
+			updateDraft({
+				subagentPrompts: nextPrompts as unknown as RovoAgentSubagentPrompt[],
+			} as Partial<AgentResult>);
+		},
+		[activePrompt, baseConfig, subagentPrompts, updateDraft],
+	);
+
+	const handleTriggerNameChange = useCallback(
+		(value: string) => {
+			if (!activePrompt) {
+				return;
+			}
+			commitPrompts(
+				subagentPrompts.map((prompt) =>
+					prompt.id === activePrompt.id ? { ...prompt, triggerName: value } : prompt,
+				),
+			);
+		},
+		[activePrompt, commitPrompts, subagentPrompts],
+	);
+
+	const handleConditionChange = useCallback(
+		(value: string) => {
+			if (!activePrompt) {
+				return;
+			}
+			commitPrompts(
+				subagentPrompts.map((prompt) =>
+					prompt.id === activePrompt.id ? { ...prompt, condition: value } : prompt,
+				),
+			);
+		},
+		[activePrompt, commitPrompts, subagentPrompts],
+	);
+
+	// Remove a subagent by its index in the derived (named) chip list. Resets the
+	// active selection to the base agent in the same transition if the removed
+	// prompt was being edited.
+	const removeSubagentByDerivedIndex = useCallback(
+		(index: number) => {
+			const triggerName = getDerivedSubagentNames(subagentPrompts)[index];
+			if (!triggerName) {
+				return;
+			}
+
+			let removedId: string | null = null;
+			const nextPrompts = subagentPrompts.filter((prompt) => {
+				if (removedId === null && prompt.triggerName.trim() === triggerName) {
+					removedId = prompt.id;
+					return false;
+				}
+				return true;
+			});
+
+			commitPrompts(nextPrompts);
+			if (removedId !== null && removedId === activeSubagentId) {
+				startTransition(() => setActiveSubagentId(null));
+			}
+		},
+		[activeSubagentId, commitPrompts, subagentPrompts],
+	);
+
+	return {
+		activeConfig,
+		activeConfigId,
+		activePrompt,
+		baseConfig,
+		createSubagent,
+		handleConditionChange,
+		handleTriggerNameChange,
+		isSubagentActive,
+		removeSubagentByDerivedIndex,
+		selectBaseAgent,
+		selectSubagent,
+		selectSubagentByDerivedIndex,
+		selectedSubagentIndex,
+		updateActiveConfig,
+	} as const;
+}
+
+export type UseAgentConfigSubagentsResult = ReturnType<typeof useAgentConfigSubagents>;
+export type { AgentConfigListFieldName };

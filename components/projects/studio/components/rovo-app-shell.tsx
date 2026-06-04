@@ -4132,6 +4132,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									composerStatus={chat.composerStatus}
 									compact={isArtifactOpen || shouldShowAgentConfigPane}
 									errorMessage={chat.inputError}
+									fillWidth={!showHomeState && !(isArtifactOpen || shouldShowAgentConfigPane)}
 									galleryExpanded={galleryExpanded}
 									isPlanMode={chat.isPlanMode}
 									micStream={realtime.micStream}
