@@ -6716,6 +6716,10 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/blocks/conversation-starters-demo"),
     { ssr: false },
   ),
+  "agent-users": dynamic(
+    () => import("./demos/blocks/agent-users-demo"),
+    { ssr: false },
+  ),
   "agent-access": dynamic(() => import("./demos/blocks/agent-access-demo"), {
     ssr: false,
   }),
