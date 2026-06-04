@@ -414,13 +414,13 @@ export function ToolsDirectoryDialog({
 			>
 				<ToolsDirectoryHeader
 					title={title ?? "Browse tools"}
+					onBack={selectedTool ? () => setSelectedToolId(null) : undefined}
 					onCreateTool={onCreateTool}
 				/>
 				{selectedTool ? (
 					<ToolDetailView
 						added={addedIds.has(selectedTool.id)}
 						onAddTool={() => handleAddTool(selectedTool)}
-						onBack={() => setSelectedToolId(null)}
 						onCheckGroup={(permissions) => checkPermissionGroup(selectedTool, permissions)}
 						onPermissionChange={(permissionId, checked) => setPermission(selectedTool, permissionId, checked)}
 						onRemoveTool={() => handleRemoveTool(selectedTool)}
@@ -446,16 +446,31 @@ export function ToolsDirectoryDialog({
 }
 
 interface ToolsDirectoryHeaderProps {
+	onBack?: () => void;
 	onCreateTool?: () => void;
 	title: string;
 }
 
-function ToolsDirectoryHeader({ onCreateTool, title }: Readonly<ToolsDirectoryHeaderProps>) {
+function ToolsDirectoryHeader({ onBack, onCreateTool, title }: Readonly<ToolsDirectoryHeaderProps>) {
 	return (
 		<div className="flex items-center justify-between px-6 py-6">
-			<DialogTitle className="text-xl font-semibold leading-6 text-text">
-				{title}
-			</DialogTitle>
+			<div className="flex min-w-0 items-center gap-2">
+				{onBack ? (
+					<Button
+						aria-label="Back to tools"
+						className="-ml-2 text-icon-subtle"
+						onClick={onBack}
+						size="icon"
+						type="button"
+						variant="ghost"
+					>
+						<ArrowLeftIcon label="" color="currentColor" />
+					</Button>
+				) : null}
+				<DialogTitle className="truncate text-xl font-semibold leading-6 text-text">
+					{title}
+				</DialogTitle>
+			</div>
 			<div className="flex items-center gap-2">
 				<Button onClick={onCreateTool} type="button">
 					New tool
@@ -800,7 +815,6 @@ function SidebarToolAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 interface ToolDetailViewProps {
 	added: boolean;
 	onAddTool: () => void;
-	onBack: () => void;
 	onCheckGroup: (permissions: readonly ToolsDirectoryPermission[]) => void;
 	onPermissionChange: (permissionId: string, checked: boolean) => void;
 	onRemoveTool: () => void;
@@ -811,7 +825,6 @@ interface ToolDetailViewProps {
 function ToolDetailView({
 	added,
 	onAddTool,
-	onBack,
 	onCheckGroup,
 	onPermissionChange,
 	onRemoveTool,
@@ -826,14 +839,6 @@ function ToolDetailView({
 	return (
 		<div className="grid min-h-0 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
 			<aside className="hidden min-h-0 w-[280px] shrink-0 overflow-y-auto pl-6 md:block">
-				<button
-					type="button"
-					className="mb-6 flex items-center gap-2 text-sm leading-5 text-text outline-none hover:text-text-subtle focus-visible:rounded-md focus-visible:ring-3 focus-visible:ring-ring/50"
-					onClick={onBack}
-				>
-					<ArrowLeftIcon label="" size="small" color="currentColor" />
-					Back
-				</button>
 				<div className="flex w-64 flex-col gap-4">
 					<Tile
 						className="size-24 rounded-xl"
@@ -872,7 +877,6 @@ function ToolDetailView({
 						<GlobeIcon label="Website" size="small" color="currentColor" />
 						<EmailIcon label="Email" size="small" color="currentColor" />
 					</div>
-					<div className="h-px bg-border" />
 					{added ? (
 						<Button variant="destructive" onClick={onRemoveTool} type="button">
 							<DeleteIcon label="" />
@@ -892,14 +896,6 @@ function ToolDetailView({
 					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
 				)}
 			>
-				<button
-					type="button"
-					className="flex items-center gap-2 self-start text-sm leading-5 text-text outline-none hover:text-text-subtle focus-visible:rounded-md focus-visible:ring-3 focus-visible:ring-ring/50 md:hidden"
-					onClick={onBack}
-				>
-					<ArrowLeftIcon label="" size="small" color="currentColor" />
-					Back
-				</button>
 				<div className="rounded-xl border border-border p-4 md:hidden">
 					<div className="flex items-start gap-4">
 						<Tile hasBorder isInset={false} label={tool.name} size="xlarge" variant="transparent">
@@ -981,7 +977,6 @@ function ToolPermissionGroup({
 								checked={checked}
 								disabled={disabled}
 								onCheckedChange={(nextChecked) => onPermissionChange(permission.id, nextChecked)}
-								size="sm"
 							/>
 						</div>
 					);

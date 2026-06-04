@@ -40,6 +40,9 @@ test("Tools Directory owns the Figma modal instead of wrapping AgentBrowserDialo
 	assert.doesNotMatch(source, /AgentBrowserDialog/u);
 	assert.match(source, /className="grid h-\[min\(768px,calc\(100svh-2rem\)\)\][\s\S]*sm:!max-w-\[1200px\]"/u);
 	assert.match(source, /New tool/u);
+	assert.match(source, /onBack=\{selectedTool \? \(\) => setSelectedToolId\(null\) : undefined\}/u);
+	assert.match(source, /aria-label="Back to tools"[\s\S]*size="icon"[\s\S]*<ArrowLeftIcon label="" color="currentColor" \/>/u);
+	assert.doesNotMatch(source, />\s*Back\s*</u);
 	assert.match(source, /Search for a tool by name, or describe it/u);
 	assert.match(source, /Sort by latest/u);
 	assert.match(source, /Showing \{filteredTools\.length\.toLocaleString\("en-US"\)\} results/u);
@@ -101,6 +104,8 @@ test("Tools Directory supports controlled and uncontrolled added tool state", ()
 	assert.match(source, /onAddedToolIdsChange\?\.\(\[\.\.\.nextAddedIds\]\);/u);
 	assert.match(source, /Add to agent/u);
 	assert.match(source, /Remove/u);
+	assert.doesNotMatch(source, /size="sm"/u);
+	assert.doesNotMatch(source, /className="h-px bg-border"/u);
 });
 
 test("Tools Directory category data follows the requested category content", () => {
