@@ -1621,6 +1621,41 @@ import {
 		],
 	},
 
+	list: {
+		description:
+			"A presentational compound for rendering tabular lists with a fixed-width column layout. List.Root provides the labelled section wrapper, List.Heading renders a subtle section label, and List.Table sets up the colgroup and table body. Compose rows with the standard ui/table primitives (TableRow, TableCell). Keep state and interaction logic in the consuming component — List stays purely presentational.",
+		usage: `import { List, type ListColumn } from "@/components/ui-custom/list";
+import { TableCell, TableRow } from "@/components/ui/table";
+
+const COLUMNS: readonly ListColumn[] = [{}, { className: "w-[120px]" }];
+
+<List.Root aria-labelledby="recent-heading">
+  <List.Heading id="recent-heading">Recent work items</List.Heading>
+  <List.Table columns={COLUMNS}>
+    <TableRow>
+      <TableCell>PROJ-123: Add user authentication</TableCell>
+      <TableCell>2 days ago</TableCell>
+    </TableRow>
+  </List.Table>
+</List.Root>`,
+		props: [
+			{
+				name: "className",
+				type: "string",
+				description: "Additional classes applied to the List.Root section.",
+			},
+		],
+		subComponents: [
+			{ name: "List.Root", description: "Section wrapper (flex column, gap-2). Forwards props such as aria-labelledby for accessible labelling." },
+			{ name: "List.Heading", description: "h2 rendered with the subtle section-label styling. Pair its id with List.Root's aria-labelledby." },
+			{ name: "List.Table", description: "Table with a table-fixed layout. Renders one <col> per entry in the `columns` array, then wraps children in a TableBody." },
+		],
+		examples: [
+			{ title: "Basic", description: "A minimal two-column list without a heading.", demoSlug: "list-demo-basic" },
+			{ title: "With status", description: "A three-column list with a heading and status lozenges.", demoSlug: "list-demo-with-status" },
+		],
+	},
+
 	message: {
 		description:
 			"A compound message component system for rendering chat messages with branches (multiple responses), actions, and rich content rendering via Streamdown.",

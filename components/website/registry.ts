@@ -269,6 +269,7 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
   "jsx-preview": dynamic(() => import("./demos/ui-custom/jsx-preview-demo"), {
     ssr: false,
   }),
+  list: dynamic(() => import("./demos/ui-custom/list-demo"), { ssr: false }),
   message: dynamic(() => import("./demos/ui-custom/message-demo"), { ssr: false }),
   "mic-selector": dynamic(() => import("./demos/ui-custom/mic-selector-demo"), {
     ssr: false,
@@ -6013,6 +6014,20 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/ui-custom/prompt-input-demo").then((mod) => ({
         default: mod.PromptInputDemoFloatingBar,
+      })),
+    { ssr: false },
+  ),
+  "list-demo-basic": dynamic(
+    () =>
+      import("./demos/ui-custom/list-demo").then((mod) => ({
+        default: mod.ListDemoBasic,
+      })),
+    { ssr: false },
+  ),
+  "list-demo-with-status": dynamic(
+    () =>
+      import("./demos/ui-custom/list-demo").then((mod) => ({
+        default: mod.ListDemoWithStatus,
       })),
     { ssr: false },
   ),

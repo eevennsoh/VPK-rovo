@@ -511,6 +511,7 @@ function createWikiRouteHandlers({
 			return res.json({
 				memories: result.memories,
 				removedBlockCount: result.removedBlockCount,
+				removedKnowledgeCount: result.removedKnowledgeCount,
 				removedProposalCount: result.removedProposalCount,
 				wiki: await getWikiStatusImpl(),
 			});

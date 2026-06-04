@@ -1,7 +1,10 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { getChartColorConfigEntries } = require("./chart-config.ts");
+const {
+	getChartColorConfigEntries,
+	hasRenderableChartSize,
+} = require("./chart-config.ts");
 
 test("getChartColorConfigEntries ignores nullish configs", () => {
 	assert.deepEqual(getChartColorConfigEntries(null), []);
@@ -33,4 +36,22 @@ test("getChartColorConfigEntries keeps only color-capable entries", () => {
 		light: "#0055cc",
 		dark: "#85b8ff",
 	});
+});
+
+test("hasRenderableChartSize requires positive finite width and height", () => {
+	// Zero size is the exact case that makes Recharts log the
+	// "width(0) and height(0)" warning (e.g. a chart inside a hidden tab).
+	assert.equal(hasRenderableChartSize(0, 0), false);
+	assert.equal(hasRenderableChartSize(0, 320), false);
+	assert.equal(hasRenderableChartSize(640, 0), false);
+	assert.equal(hasRenderableChartSize(640, 320), true);
+});
+
+test("hasRenderableChartSize rejects negative, NaN, and nullish dimensions", () => {
+	assert.equal(hasRenderableChartSize(-1, 320), false);
+	assert.equal(hasRenderableChartSize(640, -1), false);
+	assert.equal(hasRenderableChartSize(Number.NaN, 320), false);
+	assert.equal(hasRenderableChartSize(640, Number.POSITIVE_INFINITY), false);
+	assert.equal(hasRenderableChartSize(null, 320), false);
+	assert.equal(hasRenderableChartSize(640, undefined), false);
 });

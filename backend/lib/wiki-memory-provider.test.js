@@ -633,3 +633,60 @@ test("resetWikiMemory succeeds and regenerates context when generateTextImpl is 
 	assert.equal(result.memories.work.blocks.length, 0);
 	assert.ok(regenerateCalled, "generateTextImpl should have been called for context regeneration");
 });
+
+test("resetWikiMemory deletes all linked-knowledge pages (sources, concepts, entities, ...)", async () => {
+	const wikiDir = await fs.mkdtemp(path.join(os.tmpdir(), "wiki-memory-reset-knowledge-"));
+
+	// Seed linked-knowledge pages across several knowledge directories.
+	const knowledgeFiles = [
+		["sources", "thread-abc-confluence.md"],
+		["concepts", "atlassian-mcp.md"],
+		["entities", "rovo-dev.md"],
+		["synthesis", "digest-2026.md"],
+	];
+	for (const [dir, name] of knowledgeFiles) {
+		const dirPath = path.join(wikiDir, dir);
+		await fs.mkdir(dirPath, { recursive: true });
+		await fs.writeFile(
+			path.join(dirPath, name),
+			`---\ntitle: "${name}"\n---\n\nSome durable knowledge.\n`,
+			"utf8",
+		);
+	}
+
+	// Seed protected files that must be preserved.
+	await fs.writeFile(path.join(wikiDir, "sources", "index.md"), "# Sources index\n", "utf8");
+
+	const syncedCollections = [];
+	const result = await resetWikiMemory({
+		generateTextImpl: async () => "# Work Context\n\n- No memories yet.\n",
+		logger: { info: () => {}, warn: () => {} },
+		qmdSyncImpl: async ({ collectionName }) => {
+			syncedCollections.push(collectionName);
+		},
+		wikiDir,
+	});
+
+	// All 4 knowledge pages removed; index.md preserved.
+	assert.equal(result.removedKnowledgeCount, 4, "should remove all 4 knowledge pages");
+
+	for (const [dir, name] of knowledgeFiles) {
+		const exists = await fs
+			.access(path.join(wikiDir, dir, name))
+			.then(() => true)
+			.catch(() => false);
+		assert.equal(exists, false, `${dir}/${name} should be deleted`);
+	}
+
+	const indexPreserved = await fs
+		.access(path.join(wikiDir, "sources", "index.md"))
+		.then(() => true)
+		.catch(() => false);
+	assert.equal(indexPreserved, true, "index.md should be preserved");
+
+	// The affected knowledge collections should have been re-synced.
+	assert.ok(syncedCollections.includes("wiki-sources"));
+	assert.ok(syncedCollections.includes("wiki-concepts"));
+	assert.ok(syncedCollections.includes("wiki-entities"));
+	assert.ok(syncedCollections.includes("wiki-synthesis"));
+});

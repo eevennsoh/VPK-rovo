@@ -140,6 +140,7 @@ export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("image"),
 	customComponent("inline-citation", "Inline Citation"),
 	customComponent("jsx-preview", "JSX Preview"),
+	customComponent("list"),
 	customComponent("message"),
 	customComponent("mic-selector", "Mic Selector"),
 	customComponent("model-selector", "Model Selector"),

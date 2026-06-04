@@ -38,6 +38,28 @@ function normalizeThemeRecord(
 	return Object.keys(result).length > 0 ? result : undefined;
 }
 
+/**
+ * Recharts' ResponsiveContainer logs a "width(0) and height(0)" warning and
+ * fails to render when it is measured at zero size — which happens whenever a
+ * chart is mounted inside a hidden container (e.g. an inactive `keepMounted`
+ * tab panel, a collapsed accordion, an off-screen slide). Gate the
+ * ResponsiveContainer render on this check so Recharts is only ever
+ * initialized once the wrapper has a real layout box.
+ */
+export function hasRenderableChartSize(
+	width: number | null | undefined,
+	height: number | null | undefined,
+): boolean {
+	return (
+		typeof width === "number" &&
+		typeof height === "number" &&
+		Number.isFinite(width) &&
+		Number.isFinite(height) &&
+		width > 0 &&
+		height > 0
+	);
+}
+
 export function getChartColorConfigEntries(
 	config: unknown,
 ): Array<[string, ChartConfigItem]> {

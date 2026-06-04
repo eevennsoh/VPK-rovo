@@ -5,20 +5,12 @@ const path = require("node:path");
 
 const { DEFAULT_WIKI_DIR, resolveLlmWikiPaths } = require("./qmd");
 const {
+	EXCLUDED_WIKI_FILENAMES,
+	LINKED_KNOWLEDGE_DIRS,
 	getCanonicalWikiMemoryDocuments,
 	listWikiMemoryProposals,
 	readCompiledContextDocuments,
 } = require("./wiki-memory-provider");
-
-const EXCLUDED_WIKI_FILENAMES = new Set(["SCHEMA.md", "index.md", "log.md"]);
-const LINKED_KNOWLEDGE_DIRS = new Set([
-	"comparisons",
-	"concepts",
-	"entities",
-	"queries",
-	"sources",
-	"synthesis",
-]);
 const TOPIC_STOP_WORDS = new Set([
 	"about",
 	"after",

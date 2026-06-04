@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import {
 	CHART_THEMES,
 	getChartColorConfigEntries,
+	hasRenderableChartSize,
 	type ChartConfig,
 } from "./chart-config"
 
@@ -45,9 +46,45 @@ function ChartContainer({
   const uniqueId = React.useId()
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`
 
+  // Recharts' ResponsiveContainer throws a "width(0) and height(0)" warning and
+  // fails to render when it is measured at zero size. That happens whenever this
+  // chart is mounted inside a hidden container (an inactive `keepMounted` tab
+  // panel, a collapsed accordion, an off-screen slide). We observe the wrapper
+  // and only mount ResponsiveContainer once it actually has a renderable box, so
+  // Recharts is never initialized at 0x0. The wrapper keeps its reserved
+  // (aspect-video) space either way, so layout does not shift.
+  const wrapperRef = React.useRef<HTMLDivElement | null>(null)
+  const [canRender, setCanRender] = React.useState(false)
+
+  React.useEffect(() => {
+    const node = wrapperRef.current
+    if (!node) {
+      return
+    }
+
+    const rect = node.getBoundingClientRect()
+    setCanRender(hasRenderableChartSize(rect.width, rect.height))
+
+    if (typeof ResizeObserver === "undefined") {
+      return
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (!entry) {
+        return
+      }
+      const { width, height } = entry.contentRect
+      setCanRender(hasRenderableChartSize(width, height))
+    })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <ChartContext value={{ config }}>
       <div
+        ref={wrapperRef}
         data-slot="chart"
         data-chart={chartId}
         className={cn(
@@ -57,9 +94,11 @@ function ChartContainer({
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
-          {children}
-        </RechartsPrimitive.ResponsiveContainer>
+        {canRender ? (
+          <RechartsPrimitive.ResponsiveContainer>
+            {children}
+          </RechartsPrimitive.ResponsiveContainer>
+        ) : null}
       </div>
     </ChartContext>
   )

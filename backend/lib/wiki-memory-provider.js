@@ -42,6 +42,20 @@ const RAW_SOURCE_DIRS = Object.freeze([
 	["raw", "assets"],
 ]);
 
+// Top-level wiki directories that hold linked-knowledge pages (Confluence
+// sources, concepts, entities, etc.) surfaced as "knowledge" nodes in the
+// memory explorer. Kept here as the single source of truth so both the explorer
+// (which renders them) and resetWikiMemory (which can wipe them) stay in sync.
+const LINKED_KNOWLEDGE_DIRS = new Set([
+	"comparisons",
+	"concepts",
+	"entities",
+	"queries",
+	"sources",
+	"synthesis",
+]);
+const EXCLUDED_WIKI_FILENAMES = new Set(["SCHEMA.md", "index.md", "log.md"]);
+
 function normalizeText(value) {
 	return typeof value === "string"
 		? value.replace(/\r\n?/gu, "\n").trim()
@@ -1414,6 +1428,40 @@ async function pruneCanonicalWikiMemoryBlock({
 	};
 }
 
+// Delete every linked-knowledge page (Confluence sources, concepts, entities,
+// comparisons, queries, synthesis) under the wiki directory. SCHEMA/index/log
+// files are preserved. Returns the affected collection names so the caller can
+// refresh the search index, plus a count of removed files.
+async function deleteLinkedKnowledgePages({ logger = console, wikiDir = DEFAULT_WIKI_DIR } = {}) {
+	let removedKnowledgeCount = 0;
+	const affectedCollections = new Set();
+
+	for (const dirName of LINKED_KNOWLEDGE_DIRS) {
+		const dirPath = path.join(wikiDir, dirName);
+		const files = await walkMarkdownFiles(dirPath);
+		for (const filePath of files) {
+			if (EXCLUDED_WIKI_FILENAMES.has(path.basename(filePath))) {
+				continue;
+			}
+			try {
+				await fs.unlink(filePath);
+				removedKnowledgeCount += 1;
+				affectedCollections.add(`wiki-${dirName}`);
+			} catch (error) {
+				logger.warn?.("[wiki-memory] Failed to remove linked-knowledge page during reset", {
+					error: error instanceof Error ? error.message : String(error),
+					path: filePath,
+				});
+			}
+		}
+	}
+
+	return {
+		affectedCollections: [...affectedCollections],
+		removedKnowledgeCount,
+	};
+}
+
 async function resetWikiMemory({
 	generateTextImpl,
 	logger = console,
@@ -1454,8 +1502,21 @@ async function resetWikiMemory({
 		}
 	}
 
-	// 3. Recompile prompt context from the now-empty canonical pages.
-	// Non-fatal: the memory corpus has already been cleared (steps 1-2). If the
+	// 3. Delete all linked-knowledge pages (sources, concepts, entities, etc.)
+	// so a "clear all memories" is a true full wipe rather than leaving the
+	// "knowledge" nodes lingering in the explorer graph.
+	const { affectedCollections, removedKnowledgeCount } = await deleteLinkedKnowledgePages({
+		logger,
+		wikiDir,
+	});
+	if (typeof qmdSyncImpl === "function") {
+		for (const collectionName of affectedCollections) {
+			await qmdSyncImpl({ collectionName, wikiDir });
+		}
+	}
+
+	// 4. Recompile prompt context from the now-empty canonical pages.
+	// Non-fatal: the memory corpus has already been cleared (steps 1-3). If the
 	// AI Gateway is unreachable (e.g. no credentials in local dev), skip the
 	// context regeneration and let the caller know via a warning. The compiled
 	// context will be refreshed the next time the memory sync job runs.
@@ -1474,12 +1535,14 @@ async function resetWikiMemory({
 			"Cleared all durable memory.",
 			`Removed ${removedProposalCount} raw proposal(s).`,
 			`Removed ${removedBlockCount} canonical block(s) across ${definitions.length} scope(s).`,
+			`Removed ${removedKnowledgeCount} linked-knowledge page(s).`,
 		],
 		{ wikiDir },
 	);
 
 	logger.info?.("[wiki-memory] Reset durable memory", {
 		removedBlockCount,
+		removedKnowledgeCount,
 		removedProposalCount,
 		scopes: definitions.map((definition) => definition.scope),
 		wikiDir,
@@ -1488,14 +1551,20 @@ async function resetWikiMemory({
 	return {
 		memories: await getCanonicalWikiMemoryDocuments({ wikiDir }),
 		removedBlockCount,
+		removedKnowledgeCount,
 		removedProposalCount,
-		updatedCollections: definitions.map((definition) => definition.collection),
+		updatedCollections: [
+			...definitions.map((definition) => definition.collection),
+			...affectedCollections,
+		],
 		updatedScopes: definitions.map((definition) => definition.scope),
 	};
 }
 
 module.exports = {
 	DEFAULT_WIKI_DIR,
+	EXCLUDED_WIKI_FILENAMES,
+	LINKED_KNOWLEDGE_DIRS,
 	buildWikiMemoryContextDescription,
 	deleteWikiMemoryProposal,
 	enqueueWikiMemoryProposal,
