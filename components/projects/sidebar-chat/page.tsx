@@ -166,6 +166,14 @@ const COMPACT_CHAT_WIDTH_MAX = 520;
  * `ContextBar` in components/ui-custom/context-bar/context-bar.tsx.
  */
 const CONTEXT_BAR_RESERVED_SPACE_PX = 48;
+/**
+ * Vertical gap the Test layout inserts between the conversation track and the
+ * composer (the `gap-3` on the empty-state wrapper below). The sibling Ask Rovo
+ * composer has no such gap, so the bottom-aligned Test greeting subtracts it
+ * from its reserved space to keep its last starter level with the Ask Rovo one.
+ * Keep in sync with the `gap-3` on the agent-test empty-state wrapper.
+ */
+const AGENT_TEST_COMPOSER_GAP_PX = 12;
 const REGULAR_CHAT_WIDTH_MAX = 900;
 const ARTIFACT_DIALOG_FLOATING_PIN_REASON = "sidebar-chat-artifact-dialog";
 
@@ -780,10 +788,11 @@ export default function ChatPanel({
 		flex: isAgentTestEmptyState ? "1 1 auto" : hasMessages || shouldUseNaturalEmptyGreeting ? "0 0 auto" : chatStyles.messagesContainer.flex,
 		minHeight: isAgentTestEmptyState ? "100%" : shouldUseNaturalEmptyGreeting ? "auto" : "100%",
 		// When bottom-aligning the Test greeting, reserve the sibling Ask Rovo
-		// composer's context-bar footprint below the last starter (on top of the
-		// content track's base 24px `py-6`) so both greetings share a baseline.
+		// composer's context-bar footprint below the last starter, minus the
+		// `gap-3` the Test layout already inserts above its composer, so both
+		// greetings share a baseline. (Base 24px from the content track's `py-6`.)
 		...(shouldBottomAlignAgentTestEmptyState && composerReservesContextBarSpace
-			? { paddingBottom: `${24 + CONTEXT_BAR_RESERVED_SPACE_PX}px` }
+			? { paddingBottom: `${24 + CONTEXT_BAR_RESERVED_SPACE_PX - AGENT_TEST_COMPOSER_GAP_PX}px` }
 			: {}),
 	};
 	const isHeaderHistoryEnabled = !hideHeader && headerVariant === "default";
@@ -815,6 +824,7 @@ export default function ChatPanel({
 							heading={resolvedGreeting?.heading}
 							illustrationSrc={resolvedGreeting?.illustrationSrc}
 							illustrationDarkSrc={resolvedGreeting?.illustrationDarkSrc}
+							isAgentTest={showAgentTestControls}
 							isMaxMode={selectedReasoning === "max"}
 							selectedAgent={greetingSelectedAgent ?? selectedAgent}
 							showHero={resolvedGreeting?.showHero}

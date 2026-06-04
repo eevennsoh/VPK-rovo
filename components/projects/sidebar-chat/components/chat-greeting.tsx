@@ -99,6 +99,11 @@ interface ChatGreetingProps {
 	suggestions?: ReadonlyArray<RovoSuggestion>;
 	/** Optional selected agent profile for custom-agent empty states. */
 	selectedAgent?: RovoAgentProfile | null;
+	/**
+	 * Render the custom-agent greeting at the narrower Test-panel width
+	 * (600px) instead of the default 800px used in the main Rovo App chat.
+	 */
+	isAgentTest?: boolean;
 	/** Callback when a suggestion is clicked */
 	onSuggestionClick?: (suggestion: RovoSuggestion) => void;
 }
@@ -206,17 +211,22 @@ function CustomAgentStarterItem({
 
 function CustomAgentGreeting({
 	agent,
+	isAgentTest = false,
 	itemVariants,
 	onSuggestionClick,
 }: Readonly<{
 	agent: RovoAgentProfile;
+	isAgentTest?: boolean;
 	itemVariants: ChatGreetingItemVariants;
 	onSuggestionClick?: (suggestion: RovoSuggestion) => void;
 }>) {
 	return (
 		<motion.div
 			animate="visible"
-			className="mx-auto flex w-full max-w-[800px] flex-col items-center gap-8 text-center"
+			className={cn(
+				"mx-auto flex w-full flex-col items-center gap-8 text-center",
+				isAgentTest ? "max-w-[600px]" : "max-w-[800px]",
+			)}
 			exit="exit"
 			initial="hidden"
 			key={agent.id}
@@ -255,6 +265,7 @@ export default function ChatGreeting({
 	illustrationDarkSrc,
 	isMaxMode = false,
 	selectedAgent = null,
+	isAgentTest = false,
 	showHero = true,
 	suggestions,
 	onSuggestionClick,
@@ -283,6 +294,7 @@ export default function ChatGreeting({
 				{customAgent ? (
 					<CustomAgentGreeting
 						agent={customAgent}
+						isAgentTest={isAgentTest}
 						itemVariants={itemVariants}
 						key={`agent-${customAgent.id}`}
 						onSuggestionClick={onSuggestionClick}
