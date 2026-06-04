@@ -7,6 +7,7 @@ import FloatingRovoButton, {
 	type FloatingRovoButtonOnboardingConfig,
 	type FloatingRovoButtonOnboardingStatus,
 	type FloatingRovoButtonPlacement,
+	type FloatingRovoButtonPositioning,
 	type FloatingRovoButtonSuggestion,
 } from "@/components/projects/shared/components/floating-rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
@@ -46,16 +47,18 @@ function getDemoStatusLabel(status: FloatingRovoButtonOnboardingStatus): string 
 function RovoButtonDemoCaption({
 	detail,
 	placement,
+	positioning,
 	title,
 }: Readonly<{
 	detail: string;
 	placement: FloatingRovoButtonPlacement;
+	positioning: FloatingRovoButtonPositioning;
 	title: string;
 }>) {
 	return (
 		<div
 			aria-hidden="true"
-			className="pointer-events-none fixed z-[500] flex w-28 flex-col items-end gap-0.5 text-right"
+			className={`pointer-events-none ${positioning === "container" ? "absolute" : "fixed"} z-[500] flex w-28 flex-col items-end gap-0.5 text-right`}
 			style={{
 				right: placement.right,
 				bottom: `calc(${placement.bottom ?? "32px"} + 60px)`,
@@ -73,10 +76,12 @@ function RovoButtonDemoCaption({
 
 interface RovoButtonProjectPageProps {
 	embedded?: boolean;
+	embeddedHeight?: "parent" | "viewport";
 }
 
 export default function RovoButtonProjectPage({
 	embedded = false,
+	embeddedHeight = "viewport",
 }: Readonly<RovoButtonProjectPageProps>) {
 	const { chatSurface } = useRovoChat();
 	const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
@@ -84,6 +89,7 @@ export default function RovoButtonProjectPage({
 		useState<FloatingRovoButtonOnboardingStatus>("idle");
 	const [demoSuggestionState, setDemoSuggestionState] = useState<DemoSuggestionState>("hidden");
 	const [demoSuggestionRun, setDemoSuggestionRun] = useState(0);
+	const demoButtonPositioning: FloatingRovoButtonPositioning = embedded ? "container" : "viewport";
 
 	useEffect(() => {
 		if (demoOnboardingStatus !== "creating") {
@@ -175,27 +181,32 @@ export default function RovoButtonProjectPage({
 	]);
 
 	return (
-		<AppLayout product="home" embedded={embedded} hideFloatingRovo>
+		<AppLayout product="home" embedded={embedded} embeddedHeight={embeddedHeight} hideFloatingRovo>
 			<div className="relative h-full w-full">
 				<RovoButtonDemoCaption
 					detail="opens chat"
 					placement={CHAT_BUTTON_PLACEMENT}
+					positioning={demoButtonPositioning}
 					title="Chat"
 				/>
 				<RovoButtonDemoCaption
 					detail="shows nudge"
 					placement={SUGGESTION_BUTTON_PLACEMENT}
+					positioning={demoButtonPositioning}
 					title="Proactive"
 				/>
 				<RovoButtonDemoCaption
 					detail="opens panel"
 					placement={ONBOARDING_BUTTON_PLACEMENT}
+					positioning={demoButtonPositioning}
 					title="Onboarding"
 				/>
 				{chatSurface === null ? (
 					<FloatingRovoButton
 						ariaLabel="Open Rovo chat demo"
+						forceVisible
 						placement={CHAT_BUTTON_PLACEMENT}
+						positioning={demoButtonPositioning}
 						product="home"
 					/>
 				) : null}
@@ -204,6 +215,7 @@ export default function RovoButtonProjectPage({
 					forceVisible
 					onButtonClick={handleSuggestionButtonClick}
 					placement={SUGGESTION_BUTTON_PLACEMENT}
+					positioning={demoButtonPositioning}
 					product="home"
 					suggestion={suggestion}
 				/>
@@ -212,6 +224,7 @@ export default function RovoButtonProjectPage({
 					forceVisible
 					onboarding={onboarding}
 					placement={ONBOARDING_BUTTON_PLACEMENT}
+					positioning={demoButtonPositioning}
 					product="home"
 				/>
 				<AnimatePresence>

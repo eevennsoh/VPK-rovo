@@ -4,6 +4,10 @@ const path = require("node:path");
 const test = require("node:test");
 
 const ROVO_BUTTON_PAGE_SOURCE = fs.readFileSync(path.join(__dirname, "page.tsx"), "utf8");
+const ROVO_BUTTON_DEMO_SOURCE = fs.readFileSync(
+	path.join(__dirname, "../../website/demos/projects/rovo-button-demo.tsx"),
+	"utf8",
+);
 
 test("Rovo button project page owns demo-only onboarding state", () => {
 	assert.match(
@@ -55,15 +59,39 @@ test("Rovo button project page shows chat, proactive suggestion, and onboarding 
 	);
 	assert.match(
 		ROVO_BUTTON_PAGE_SOURCE,
-		/<FloatingRovoButton[\s\S]*ariaLabel="Open Rovo chat demo"[\s\S]*placement=\{CHAT_BUTTON_PLACEMENT\}[\s\S]*product="home"/u,
+		/const demoButtonPositioning: FloatingRovoButtonPositioning = embedded \? "container" : "viewport";/u,
 	);
 	assert.match(
 		ROVO_BUTTON_PAGE_SOURCE,
-		/<FloatingRovoButton[\s\S]*ariaLabel="Show proactive suggestion demo"[\s\S]*forceVisible[\s\S]*onButtonClick=\{handleSuggestionButtonClick\}[\s\S]*placement=\{SUGGESTION_BUTTON_PLACEMENT\}[\s\S]*suggestion=\{suggestion\}/u,
+		/<AppLayout product="home" embedded=\{embedded\} embeddedHeight=\{embeddedHeight\} hideFloatingRovo>/u,
+	);
+	assert.match(
+		ROVO_BUTTON_PAGE_SOURCE,
+		/<RovoButtonDemoCaption[\s\S]*detail="opens chat"[\s\S]*placement=\{CHAT_BUTTON_PLACEMENT\}[\s\S]*positioning=\{demoButtonPositioning\}[\s\S]*title="Chat"/u,
+	);
+	assert.match(
+		ROVO_BUTTON_PAGE_SOURCE,
+		/<FloatingRovoButton[\s\S]*ariaLabel="Open Rovo chat demo"[\s\S]*forceVisible[\s\S]*placement=\{CHAT_BUTTON_PLACEMENT\}[\s\S]*positioning=\{demoButtonPositioning\}[\s\S]*product="home"/u,
+	);
+	assert.match(
+		ROVO_BUTTON_PAGE_SOURCE,
+		/<FloatingRovoButton[\s\S]*ariaLabel="Show proactive suggestion demo"[\s\S]*forceVisible[\s\S]*onButtonClick=\{handleSuggestionButtonClick\}[\s\S]*placement=\{SUGGESTION_BUTTON_PLACEMENT\}[\s\S]*positioning=\{demoButtonPositioning\}[\s\S]*suggestion=\{suggestion\}/u,
 	);
 	assert.match(
 		ROVO_BUTTON_PAGE_SOURCE,
 		/\{chatSurface === "floating" \? <RovoFloatingChat key="floating-chat" \/> : null\}/u,
+	);
+});
+
+test("Rovo button catalog demo uses parent-height embedded preview positioning", () => {
+	assert.match(ROVO_BUTTON_DEMO_SOURCE, /import \{ usePathname \} from "next\/navigation";/u);
+	assert.match(
+		ROVO_BUTTON_DEMO_SOURCE,
+		/const embeddedHeight = pathname\.startsWith\("\/components\/"\) \? "parent" : "viewport";/u,
+	);
+	assert.match(
+		ROVO_BUTTON_DEMO_SOURCE,
+		/<RovoButtonProjectPage embedded=\{embedded\} embeddedHeight=\{embeddedHeight\} \/>/u,
 	);
 });
 
