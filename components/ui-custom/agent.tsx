@@ -902,21 +902,27 @@ function getAgentCompactConfigNavItemOnClick(
 }
 
 function AgentCompactConfigNavButton({
+	className,
 	item,
 	onClick,
 	screenAssistantTargetId,
+	...props
 }: Readonly<{
 	item: AgentCompactConfigNavItem;
 	onClick?: () => void;
 	screenAssistantTargetId?: string;
-}>) {
+} & ComponentProps<"button">>) {
 	return (
 		<button
 			type="button"
 			data-agent-field={item.agentFieldName}
 			data-screen-assistant-target={screenAssistantTargetId}
-			className="inline-flex h-6 shrink-0 items-center gap-1 rounded px-2 text-xs font-semibold leading-4 text-text-subtlest transition-colors hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-3 focus-visible:ring-ring/50"
+			className={cn(
+				"inline-flex h-6 shrink-0 items-center gap-1 rounded px-2 text-xs font-semibold leading-4 text-text-subtlest transition-colors hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-3 focus-visible:ring-ring/50",
+				className,
+			)}
 			onClick={onClick}
+			{...props}
 		>
 			{item.label}
 			{item.count > 0 ? <Badge>{item.count}</Badge> : null}
@@ -924,24 +930,95 @@ function AgentCompactConfigNavButton({
 	);
 }
 
+function AgentCompactSubagentsNavButton({
+	item,
+	onCreateSubagent,
+	onManageSubagents,
+	onSelectSubagent,
+	screenAssistantTargetId,
+	selectedIndex,
+	subagents,
+}: Readonly<{
+	item: AgentCompactConfigNavItem;
+	onCreateSubagent?: () => void;
+	onManageSubagents?: () => void;
+	onSelectSubagent?: (index: number) => void;
+	screenAssistantTargetId?: string;
+	selectedIndex?: number;
+	subagents: readonly string[];
+}>) {
+	if (item.count === 0) {
+		return (
+			<AgentCompactConfigNavButton
+				item={item}
+				onClick={onCreateSubagent}
+				screenAssistantTargetId={screenAssistantTargetId}
+			/>
+		);
+	}
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger
+				render={(
+					<AgentCompactConfigNavButton
+						aria-label="Subagents"
+						item={item}
+						screenAssistantTargetId={screenAssistantTargetId}
+					/>
+				)}
+			/>
+			<DropdownMenuContent align="start" className="w-64 overflow-hidden p-0">
+				<div className="max-h-56 overflow-y-auto p-1">
+					<DropdownMenuGroup className="p-0">
+						{subagents.map((subagent, index) => (
+							<DropdownMenuItem
+								elemAfter={selectedIndex === index ? <CheckIcon size="small" /> : undefined}
+								key={`${subagent}-${index}`}
+								onClick={() => onSelectSubagent?.(index)}
+							>
+								{subagent}
+							</DropdownMenuItem>
+						))}
+					</DropdownMenuGroup>
+				</div>
+				<div className="sticky bottom-0 border-t border-border bg-popover p-1">
+					<DropdownMenuItem
+						elemBefore={<PlusIcon size="small" />}
+						onClick={onManageSubagents ?? onCreateSubagent}
+					>
+						Manage subagents
+					</DropdownMenuItem>
+				</div>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
 function AgentCompactEmptyConfigNav({
 	config,
+	onManageSubagents,
 	onAppendListItem,
 	onOpenDirectory,
+	onSelectListItem,
 	reasoningValue,
 	onReasoningValueChange,
 	knowledgeMode,
 	onKnowledgeModeChange,
 	screenAssistantTargetPrefix,
+	selectedListItemIndexByField,
 }: Readonly<{
 	config?: AgentConfigFormValue;
+	onManageSubagents?: () => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
+	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	reasoningValue: ReasoningModeValue;
 	onReasoningValueChange: (next: ReasoningModeValue) => void;
 	knowledgeMode: KnowledgeModeValue;
 	onKnowledgeModeChange: (next: KnowledgeModeValue) => void;
 	screenAssistantTargetPrefix?: string;
+	selectedListItemIndexByField?: Partial<Record<AgentConfigListFieldName, number>>;
 }>) {
 	const items = getAgentCompactEmptyConfigNavItems(config);
 	// Re-measure whenever counts change since a count Badge appearing/disappearing
@@ -1018,6 +1095,20 @@ function AgentCompactEmptyConfigNav({
 								value={knowledgeMode}
 								onValueChange={onKnowledgeModeChange}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
+							/>
+						);
+					}
+					if (item.agentFieldName === "subagents") {
+						return (
+							<AgentCompactSubagentsNavButton
+								item={item}
+								key={item.agentFieldName}
+								onCreateSubagent={() => onAppendListItem?.("subagents")}
+								onManageSubagents={onManageSubagents}
+								onSelectSubagent={(index) => onSelectListItem?.("subagents", index)}
+								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
+								selectedIndex={selectedListItemIndexByField?.subagents}
+								subagents={getNonEmptyConfigItems(config?.subagents)}
 							/>
 						);
 					}
@@ -2454,10 +2545,13 @@ interface AgentConfigSummaryProps {
 	config: AgentConfigFormValue;
 	isFilledConfig: boolean;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
+	onManageSubagents?: () => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
+	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	screenAssistantTargetPrefix?: string;
+	selectedListItemIndexByField?: Partial<Record<AgentConfigListFieldName, number>>;
 }
 
 function AgentConfigSummary({
@@ -2492,10 +2586,13 @@ function AgentCompactConfigToolbarBelow({
 	config,
 	isFilledConfig,
 	onAppendListItem,
+	onManageSubagents,
 	onOpenDirectory,
 	onRemoveListItem,
+	onSelectListItem,
 	onTextChange,
 	screenAssistantTargetPrefix,
+	selectedListItemIndexByField,
 }: Readonly<AgentConfigSummaryProps>) {
 	const [expanded, setExpanded] = useState(() => !isFilledConfig);
 	const [reasoningValue, setReasoningValue] = useState<ReasoningModeValue>("quick-auto");
@@ -2614,12 +2711,15 @@ function AgentCompactConfigToolbarBelow({
 						<AgentCompactEmptyConfigNav
 							config={config}
 							onAppendListItem={onAppendListItem}
+							onManageSubagents={onManageSubagents}
 							onOpenDirectory={onOpenDirectory}
+							onSelectListItem={onSelectListItem}
 							reasoningValue={reasoningValue}
 							onReasoningValueChange={setReasoningValue}
 							knowledgeMode={knowledgeMode}
 							onKnowledgeModeChange={setKnowledgeMode}
 							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+							selectedListItemIndexByField={selectedListItemIndexByField}
 						/>
 					</motion.div>
 				)}
@@ -2632,15 +2732,22 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	config: AgentConfigFormValue;
 	avatarSrc?: string;
 	compactScrollAreaClassName?: string;
+	compactFooterBefore?: ReactNode;
 	idPrefix: string;
 	layout?: "default" | "compact";
+	onManageSubagents?: () => void;
+	onProfileTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	onListItemChange?: (field: AgentConfigListFieldName, index: number, value: string) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
+	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
+	profileAvatarSrc?: string;
+	profileConfig?: AgentConfigFormValue;
 	screenAssistantTargetPrefix?: string;
+	selectedListItemIndexByField?: Partial<Record<AgentConfigListFieldName, number>>;
 }
 
 export const AgentConfigFields = memo(
@@ -2648,16 +2755,23 @@ export const AgentConfigFields = memo(
 		className,
 		config,
 		avatarSrc,
+		compactFooterBefore,
 		compactScrollAreaClassName,
 		idPrefix,
 		layout = "default",
 		onListItemChange,
 		onAddListValues,
 		onAppendListItem,
+		onManageSubagents,
 		onOpenDirectory,
+		onProfileTextChange,
 		onRemoveListItem,
+		onSelectListItem,
 		onTextChange,
+		profileAvatarSrc,
+		profileConfig,
 		screenAssistantTargetPrefix,
+		selectedListItemIndexByField,
 		...props
 	}: Readonly<AgentConfigFieldsProps>) => {
 		const isFilledConfig = hasFilledAgentConfig(config);
@@ -2671,6 +2785,10 @@ export const AgentConfigFields = memo(
 			dismissTemplateTiles();
 			onTextChange?.(field, value);
 		}, [dismissTemplateTiles, onTextChange]);
+		const handleProfileTextChange = useCallback((field: AgentConfigTextFieldName, value: string) => {
+			dismissTemplateTiles();
+			(onProfileTextChange ?? onTextChange)?.(field, value);
+		}, [dismissTemplateTiles, onProfileTextChange, onTextChange]);
 		const handleListItemChange = useCallback((field: AgentConfigListFieldName, index: number, value: string) => {
 			dismissTemplateTiles();
 			onListItemChange?.(field, index, value);
@@ -2712,6 +2830,14 @@ export const AgentConfigFields = memo(
 			dismissTemplateTiles();
 			onAppendListItem?.(field);
 		}, [dismissTemplateTiles, onAppendListItem]);
+		const handleManageSubagents = useCallback(() => {
+			dismissTemplateTiles();
+			onManageSubagents?.();
+		}, [dismissTemplateTiles, onManageSubagents]);
+		const handleSelectListItem = useCallback((field: AgentConfigListFieldName, index: number) => {
+			dismissTemplateTiles();
+			onSelectListItem?.(field, index);
+		}, [dismissTemplateTiles, onSelectListItem]);
 		const handleOpenDirectory = useCallback((directory: AgentDirectoryKind) => {
 			dismissTemplateTiles();
 			onOpenDirectory?.(directory);
@@ -2741,9 +2867,9 @@ export const AgentConfigFields = memo(
 						>
 							<div className="flex flex-col gap-4">
 								<AgentConfigProfile
-									config={config}
-									avatarSrc={avatarSrc}
-									onTextChange={handleTextChange}
+									config={profileConfig ?? config}
+									avatarSrc={profileAvatarSrc ?? avatarSrc}
+									onTextChange={handleProfileTextChange}
 									screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 								/>
 							</div>
@@ -2777,15 +2903,19 @@ export const AgentConfigFields = memo(
 						{/* Bottom-anchored footer: always flush to the panel bottom. The
 						    separator/expand row stays transparent so content scrolls
 						    visibly behind it; only the field rows carry a solid surface. */}
+						{compactFooterBefore}
 						<div className="shrink-0">
 							<AgentCompactConfigToolbarBelow
 								config={config}
 								isFilledConfig={isFilledConfig}
 								onAppendListItem={handleAppendListItem}
+								onManageSubagents={onManageSubagents ? handleManageSubagents : undefined}
 								onOpenDirectory={handleOpenDirectory}
 								onRemoveListItem={handleRemoveListItem}
+								onSelectListItem={handleSelectListItem}
 								onTextChange={handleTextChange}
 								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+								selectedListItemIndexByField={selectedListItemIndexByField}
 							/>
 						</div>
 					</div>
