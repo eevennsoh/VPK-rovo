@@ -5,7 +5,6 @@ import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
 import { getStudioSessionAgentDisplayName } from "@/app/contexts";
 import type { AgentsDirectoryAgent } from "@/components/blocks/agents-directory";
 import { DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/agents-directory/data/sidebar-groups";
-import { ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS } from "@/components/projects/studio/lib/rovo-app-shell-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -255,7 +254,7 @@ export function StudioAgentsSection({
 	return (
 		<section
 			aria-labelledby="studio-agents-heading"
-			className={cn("mx-auto mt-12 flex w-[90%] flex-col gap-4", ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS)}
+			className="mx-auto mt-12 flex w-[90%] max-w-[800px] flex-col gap-4"
 			data-testid="studio-agents-section"
 		>
 			<div className="flex flex-wrap items-center justify-between gap-3">
@@ -320,7 +319,7 @@ export function StudioAgentsSection({
 
 function StudioAgentCardsGrid({ children }: Readonly<{ children: ReactNode }>) {
 	return (
-		<ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+		<ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			{children}
 		</ul>
 	);

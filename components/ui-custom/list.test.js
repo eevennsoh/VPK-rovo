@@ -4,17 +4,6 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const SOURCE = readFileSync(join(__dirname, "list.tsx"), "utf8");
-const STUDIO_TABLE_SOURCE = readFileSync(
-	join(
-		__dirname,
-		"..",
-		"projects",
-		"studio",
-		"components",
-		"rovo-app-custom-agents-table.tsx",
-	),
-	"utf8",
-);
 
 test("List is a presentational compound: Root section, Heading h2, Table colgroup+body", () => {
 	// Compound namespace mirrors the skill-card pattern.
@@ -41,16 +30,22 @@ test("List stays presentational: no studio/state logic leaks in", () => {
 	assert.doesNotMatch(SOURCE, /localStorage|pinned|useState|useEffect/i);
 });
 
-test("Studio agents table composes List with the five-column layout", () => {
-	assert.match(STUDIO_TABLE_SOURCE, /import \{ List, type ListColumn \} from "@\/components\/ui-custom\/list"/);
-	assert.match(
-		STUDIO_TABLE_SOURCE,
-		/STUDIO_CUSTOM_AGENTS_LIST_COLUMNS: readonly ListColumn\[\] = \[\s*\{\},\s*\{ className: "w-\[92px\]" \},\s*\{ className: "w-\[72px\]" \},\s*\{ className: "w-\[116px\]" \},\s*\{ className: "w-\[72px\]" \},\s*\]/,
+test("List is registered in the component catalog and demo registry", () => {
+	const manifest = readFileSync(
+		join(__dirname, "..", "..", "app", "data", "component-manifest.ts"),
+		"utf8",
 	);
-	assert.match(
-		STUDIO_TABLE_SOURCE,
-		/<List\.Root aria-labelledby="studio-custom-agents-heading"[\s\S]*<List\.Heading id="studio-custom-agents-heading">[\s\S]*<List\.Table columns=\{STUDIO_CUSTOM_AGENTS_LIST_COLUMNS\}>/,
+	const components = readFileSync(
+		join(__dirname, "..", "..", "app", "data", "components.ts"),
+		"utf8",
 	);
-	// Studio retains its own state logic rather than pushing it into ui-custom.
-	assert.match(STUDIO_TABLE_SOURCE, /writePinnedAgentIds/);
+	const registry = readFileSync(
+		join(__dirname, "..", "..", "components", "website", "registry.ts"),
+		"utf8",
+	);
+	// Catalog/nav (manifest) and detail page (components) both expose the slug.
+	assert.match(manifest, /customComponent\("list"\)/);
+	assert.match(components, /customComponent\("list"\)/);
+	// A live demo is registered so the docs page renders a preview.
+	assert.match(registry, /list: dynamic\(\(\) => import\("\.\/demos\/ui-custom\/list-demo"\)/);
 });
