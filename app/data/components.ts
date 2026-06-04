@@ -110,6 +110,7 @@ function visualComponent(slug: string, name: string, importPath: string): Compon
 
 export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("agent"),
+	customComponent("agent-evaluation", "Agent Evaluation"),
 	customComponent("animated-dots", "Animated Dots"),
 	customComponent("animated-rovo", "Animated Rovo"),
 	customComponent("artifact"),
