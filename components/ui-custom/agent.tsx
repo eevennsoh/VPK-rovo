@@ -11,7 +11,6 @@ import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
-import DashboardIcon from "@atlaskit/icon/core/dashboard";
 import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
 import ScorecardIcon from "@atlaskit/icon/core/scorecard";
@@ -434,8 +433,10 @@ export const Agent = memo(({ className, ...props }: Readonly<AgentProps>) => (
 	/>
 ));
 
+// "Details" was dropped — it duplicated the "Configure" view already exposed by
+// the header's Configure/Test toggle, so the active config view is no longer a
+// nav tab here.
 const AGENT_COMPACT_HEADER_NAV_ITEMS = [
-	{ icon: <DashboardIcon label="" size="small" color="currentColor" />, isSelected: true, label: "Details" },
 	{ icon: <ChartTrendUpIcon label="" size="small" color="currentColor" />, isSelected: false, label: "Insights" },
 	{ icon: <ViewsIcon label="" size="small" color="currentColor" />, isSelected: false, label: "Surfaces" },
 	{ icon: <ScorecardIcon label="" size="small" color="currentColor" />, isSelected: false, label: "Evaluation" },

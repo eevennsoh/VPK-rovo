@@ -55,6 +55,18 @@ const COMPOSER_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-composer.tsx"),
 	"utf8",
 );
+const SUBAGENTS_HOOK_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "hooks", "use-agent-config-subagents.ts"),
+	"utf8",
+);
+const SUBAGENT_PROMPTS_LIB_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/blocks/subagents/lib/subagent-prompts.ts"),
+	"utf8",
+);
+const ROVO_UI_MESSAGES_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "lib/rovo-ui-messages.ts"),
+	"utf8",
+);
 
 test("RovoAppShell starts Studio agent creation only from the default-agent home composer", () => {
 	assert.match(SHELL_SOURCE, /const DEFAULT_COMPOSER_PLACEHOLDER = "Describe the agent you want to build";/u);
@@ -258,12 +270,13 @@ test("Studio home bento applies card glow pointer flow to starter tiles", () => 
 
 test("Studio content surfaces keep their intended max widths", () => {
 	assert.match(SHELL_LAYOUT_SOURCE, /export const ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS = "max-w-\[600px\]";/u);
+	assert.match(SHELL_LAYOUT_SOURCE, /export const ROVO_APP_STUDIO_COMPOSER_SESSION_MAX_WIDTH_CLASS = "max-w-\[800px\]";/u);
 	assert.match(SHELL_LAYOUT_SOURCE, /export const ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS = "max-w-\[1280px\]";/u);
 	assert.match(SHELL_SOURCE, /ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS/u);
 	assert.match(SHELL_SOURCE, /className=\{cn\(BENTO_CAROUSEL_CONTAINER_CLASS, ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS\)\}/u);
 	assert.match(MESSAGES_SOURCE, /compact \? "max-w-none" : "max-w-\[800px\]"/u);
 	assert.match(COMPOSER_SOURCE, /ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS/u);
-	assert.match(COMPOSER_SOURCE, /className=\{cn\("relative z-10 mx-auto", ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\)\}/u);
+	assert.match(COMPOSER_SOURCE, /className=\{cn\("relative z-10 mx-auto", fillWidth \? ROVO_APP_STUDIO_COMPOSER_SESSION_MAX_WIDTH_CLASS : ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\)\}/u);
 });
 
 test("Studio home bento keeps tab auto-cycle active after manual tab selection", () => {
@@ -388,7 +401,7 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /inputProps=\{\{ className: "h-auto border-2 px-1\.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /textareaProps=\{\{ rows: 1, className: "min-h-10 border-2 bg-bg-neutral-subtle px-1\.5 focus:border-ring focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-\[variant=default\]:border-transparent data-\[variant=default\]:focus:border-ring data-\[variant=default\]:focus-visible:border-ring" \}\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentConfigFields/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /config=\{draft\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /config=\{activeConfig\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /layout="compact"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onTextChange=\{handleConfigTextChange\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onAddListValues=\{appendListValues\}/u);
@@ -503,6 +516,51 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(CHAT_PANEL_SOURCE, /greetingSelectedAgent\?: RovoAgentProfile \| null;/u);
 	assert.match(CHAT_PANEL_SOURCE, /selectedAgent=\{greetingSelectedAgent \?\? selectedAgent\}/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /<Label htmlFor=\{`agent-\$\{profileId\}-name`\}/u);
+});
+
+test("Studio agent config panel wires the subagents experience into AgentConfigFields", () => {
+	// Panel consumes the subagents hook and routes edits through the active config
+	// (base agent or selected subagent) rather than the raw draft.
+	assert.match(
+		AGENT_CONFIG_PANEL_SOURCE,
+		/import \{ useAgentConfigSubagents \} from "@\/components\/projects\/studio\/hooks\/use-agent-config-subagents";/u,
+	);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /useAgentConfigSubagents\(\{ draft, updateDraft \}\)/u);
+	// Subagent switcher + per-subagent editing props are passed to the shared
+	// AgentConfigFields (in-panel nav button, not the floating navigator).
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /profileConfig=\{baseConfig\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onProfileTextChange=\{handleBaseTextChange\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onManageSubagents=\{createSubagent\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onSelectListItem=\{handleSelectListItem\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /selectedListItemIndexByField=\{\{ subagents: selectedSubagentIndex \}\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /compactFooterBefore=\{activePrompt \?/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<SubagentPromptFields[\s\S]*onConditionChange=\{handleConditionChange\}[\s\S]*onTriggerNameChange=\{handleTriggerNameChange\}/u);
+	// The floating navigator from the standalone demo is intentionally NOT used.
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /SubagentsNavigator/u);
+	// Base name/description always edit the base agent, even while a subagent is selected.
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleBaseTextChange = useCallback\([\s\S]*updateDraft\(\{ description: value, summary: value \}\)/u);
+});
+
+test("Subagents hook persists prompts on the draft and derives the subagents chip list", () => {
+	// Prompts live on the draft (persisted), not in throwaway local state.
+	assert.match(SUBAGENTS_HOOK_SOURCE, /draft\.subagentPrompts \?\? \[\]/u);
+	assert.match(SUBAGENTS_HOOK_SOURCE, /subagentPrompts: nextPrompts as unknown as RovoAgentSubagentPrompt\[\]/u);
+	// The base `subagents` chip list is always derived from prompt trigger names.
+	assert.match(SUBAGENTS_HOOK_SOURCE, /subagents: getDerivedSubagentNames\(nextPrompts\)/u);
+	assert.match(SUBAGENTS_HOOK_SOURCE, /getBaseConfigWithSubagents\(draft as unknown as AgentConfigFormValue, subagentPrompts\)/u);
+	// Removing the active subagent resets the selection back to the base agent.
+	assert.match(SUBAGENTS_HOOK_SOURCE, /if \(removedId !== null && removedId === activeSubagentId\)\s*\{\s*startTransition\(\(\) => setActiveSubagentId\(null\)\);/u);
+	// Reuses the shared helpers extracted from the demo block.
+	assert.match(
+		SUBAGENTS_HOOK_SOURCE,
+		/from "@\/components\/blocks\/subagents\/lib\/subagent-prompts"/u,
+	);
+	// Shared draft shape declares the persisted prompts.
+	assert.match(ROVO_UI_MESSAGES_SOURCE, /export interface RovoAgentSubagentPrompt/u);
+	assert.match(ROVO_UI_MESSAGES_SOURCE, /subagentPrompts\?: RovoAgentSubagentPrompt\[\]/u);
+	// Extracted helper creates an empty, draft prompt copy.
+	assert.match(SUBAGENT_PROMPTS_LIB_SOURCE, /export function createDraftSubagentPrompt/u);
+	assert.match(SUBAGENT_PROMPTS_LIB_SOURCE, /export function getDerivedSubagentNames/u);
 });
 
 test("Studio agent test conversation starters use contextual visual identity tiles", () => {
@@ -646,7 +704,7 @@ test("Studio re-selecting a custom agent edits it without selecting it for chat"
 
 test("Studio composer opts into experimental dark composer CTAs", () => {
 	assert.match(COMPOSER_SOURCE, /screenAssistantTargetPrefix="studio-composer"/u);
-	assert.match(COMPOSER_SOURCE, /className=\{cn\("relative z-10 mx-auto", ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\)\}/u);
+	assert.match(COMPOSER_SOURCE, /className=\{cn\("relative z-10 mx-auto", fillWidth \? ROVO_APP_STUDIO_COMPOSER_SESSION_MAX_WIDTH_CLASS : ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\)\}/u);
 	assert.match(COMPOSER_SOURCE, /experimentalDarkCta/u);
 	assert.doesNotMatch(COMPOSER_SOURCE, /voiceStartButtonClassName="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u);
 	assert.doesNotMatch(COMPOSER_SOURCE, /submitButtonClassName="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u);

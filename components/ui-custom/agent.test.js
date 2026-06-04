@@ -470,8 +470,9 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.doesNotMatch(AGENT_SOURCE, /agent-compact-config-marker/u);
 	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Add agent configuration"/u);
 	assert.match(AGENT_SOURCE, /export function AgentCompactHeaderNav/u);
-	assert.match(AGENT_SOURCE, /AGENT_COMPACT_HEADER_NAV_ITEMS = \[[\s\S]*label: "Details"[\s\S]*label: "Access"/u);
-	assert.match(AGENT_SOURCE, /<DashboardIcon label="" size="small" color="currentColor" \/>/u);
+	assert.match(AGENT_SOURCE, /AGENT_COMPACT_HEADER_NAV_ITEMS = \[[\s\S]*label: "Insights"[\s\S]*label: "Access"/u);
+	assert.doesNotMatch(AGENT_SOURCE, /label: "Details"/u);
+	assert.match(AGENT_SOURCE, /<ChartTrendUpIcon label="" size="small" color="currentColor" \/>/u);
 	assert.match(AGENT_SOURCE, /<VideoPlayIcon label="" size="small" color="currentColor" \/>/u);
 	assert.match(AGENT_SOURCE, /import \{[\s\S]*DropdownMenu,[\s\S]*DropdownMenuContent,[\s\S]*DropdownMenuGroup,[\s\S]*DropdownMenuItem,[\s\S]*DropdownMenuTrigger,[\s\S]*\} from "@\/components\/ui\/dropdown-menu";/u);
 	assert.match(AGENT_SOURCE, /computeContextBarOverflow\([\s\S]*AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH,[\s\S]*AGENT_COMPACT_HEADER_NAV_GAP/u);

@@ -10,14 +10,21 @@ import {
 	AgentContent,
 } from "@/components/ui-custom/agent";
 import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
+import { SubagentPromptFields } from "@/components/blocks/subagents/components/subagent-prompt-fields";
 import {
-	DEFAULT_SUBAGENTS_BASE_AGENT,
-	SUBAGENTS_DEMO_PROMPTS,
+	cloneConfig,
+	createDraftSubagentPrompt,
+	getBaseConfigWithSubagents,
+	getDerivedSubagentNames,
+	getListItems,
+	normalizeBaseAgent,
+	normalizeSubagentPrompts,
+	updateConfigListItem,
+} from "@/components/blocks/subagents/lib/subagent-prompts";
+import {
 	type SubagentPrompt,
 	type SubagentsBaseAgent,
 } from "@/components/blocks/subagents/data/demo-agents";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 export interface SubagentsProps {
@@ -25,149 +32,6 @@ export interface SubagentsProps {
 	initialActiveSubagentId?: string;
 	initialBaseAgent?: SubagentsBaseAgent;
 	initialSubagents?: ReadonlyArray<SubagentPrompt>;
-}
-
-function cloneConfig(config: AgentConfigFormValue): AgentConfigFormValue {
-	return {
-		...config,
-		triggers: config.triggers ? [...config.triggers] : undefined,
-		skills: config.skills ? [...config.skills] : undefined,
-		tools: config.tools ? [...config.tools] : undefined,
-		subagents: config.subagents ? [...config.subagents] : undefined,
-		knowledge: config.knowledge ? [...config.knowledge] : undefined,
-		conversationStarters: config.conversationStarters ? [...config.conversationStarters] : undefined,
-		conversationStarterIcons: config.conversationStarterIcons ? [...config.conversationStarterIcons] : undefined,
-	};
-}
-
-function cloneBaseAgent(agent: SubagentsBaseAgent): SubagentsBaseAgent {
-	return {
-		...agent,
-		config: cloneConfig(agent.config),
-	};
-}
-
-function cloneSubagentPrompt(prompt: SubagentPrompt): SubagentPrompt {
-	return {
-		...prompt,
-		config: cloneConfig(prompt.config),
-	};
-}
-
-function normalizeBaseAgent(agent: SubagentsBaseAgent | undefined): SubagentsBaseAgent {
-	return cloneBaseAgent(agent ?? DEFAULT_SUBAGENTS_BASE_AGENT);
-}
-
-function normalizeSubagentPrompts(prompts: ReadonlyArray<SubagentPrompt> | undefined): SubagentPrompt[] {
-	return (prompts ?? SUBAGENTS_DEMO_PROMPTS).map(cloneSubagentPrompt);
-}
-
-function getDerivedSubagentNames(prompts: ReadonlyArray<SubagentPrompt>): string[] {
-	return prompts
-		.map((prompt) => prompt.triggerName.trim())
-		.filter(Boolean);
-}
-
-function getBaseConfigWithSubagents(
-	baseConfig: AgentConfigFormValue,
-	prompts: ReadonlyArray<SubagentPrompt>,
-): AgentConfigFormValue {
-	return {
-		...baseConfig,
-		subagents: getDerivedSubagentNames(prompts),
-	};
-}
-
-function getListItems(config: AgentConfigFormValue, field: AgentConfigListFieldName): string[] {
-	const items = config[field];
-	return Array.isArray(items) ? [...items] : [];
-}
-
-function updateConfigListItem(
-	config: AgentConfigFormValue,
-	field: AgentConfigListFieldName,
-	index: number,
-	value: string,
-): AgentConfigFormValue {
-	const items = getListItems(config, field);
-	items[index] = value;
-	return { ...config, [field]: items };
-}
-
-function createDraftSubagentPrompt(prompts: ReadonlyArray<SubagentPrompt>): SubagentPrompt {
-	const nextIndex = prompts.length + 1;
-	let id = `subagent-prompt-${nextIndex}`;
-	let suffix = nextIndex;
-	const existingIds = new Set(prompts.map((prompt) => prompt.id));
-	while (existingIds.has(id)) {
-		suffix += 1;
-		id = `subagent-prompt-${suffix}`;
-	}
-
-	return {
-		id,
-		triggerName: "",
-		condition: "",
-		config: {
-			instructions: "",
-			contextDescription: "",
-			triggers: [],
-			skills: [],
-			tools: [],
-			knowledge: [],
-			conversationStarters: [],
-			action: "draft",
-		},
-	};
-}
-
-function SubagentPromptFields({
-	condition,
-	idPrefix,
-	onConditionChange,
-	onTriggerNameChange,
-	triggerName,
-}: Readonly<{
-	condition: string;
-	idPrefix: string;
-	onConditionChange: (value: string) => void;
-	onTriggerNameChange: (value: string) => void;
-	triggerName: string;
-}>) {
-	const triggerId = `${idPrefix}-trigger`;
-	const conditionId = `${idPrefix}-condition`;
-
-	return (
-		<div className="shrink-0 border-t border-border bg-surface py-4">
-			<div className="grid gap-y-2 md:grid-cols-[8rem_minmax(0,1fr)] md:gap-x-5">
-				<label
-					className="pt-1.5 text-xs font-semibold leading-4 text-text-subtlest"
-					htmlFor={triggerId}
-				>
-					Trigger
-				</label>
-				<Input
-					id={triggerId}
-					placeholder="Placeholder"
-					value={triggerName}
-					onChange={(event) => onTriggerNameChange(event.currentTarget.value)}
-				/>
-				<label
-					className="pt-2 text-xs font-semibold leading-4 text-text-subtlest"
-					htmlFor={conditionId}
-				>
-					Condition
-				</label>
-				<Textarea
-					id={conditionId}
-					className="min-h-[74px]"
-					placeholder="Describe the situation that should trigger this subagent."
-					value={condition}
-					onChange={(event) => onConditionChange(event.currentTarget.value)}
-				/>
-			</div>
-		</div>
-	);
 }
 
 export default function Subagents({

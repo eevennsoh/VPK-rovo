@@ -6,8 +6,8 @@ import LocationIcon from "@atlaskit/icon/core/location";
 import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
 import WorkItemIcon from "@atlaskit/icon/core/work-item";
-import Image from "next/image";
 import { token } from "@/lib/tokens";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	CollapsibleContextBar,
 	ContextBar,
@@ -47,22 +47,21 @@ export default function ChatContextBar({
 	const leadLabel = isEditContext ? "Edit:" : "Context:";
 	const dismissLabel = isEditContext ? "Close edit context" : "Close context";
 
-	// Agents carry an avatar; everything else falls back to its category icon.
-	const tagElemBefore = context.avatarSrc ? (
-		<Image
-			alt=""
-			aria-hidden
-			className="size-4 shrink-0 rounded-xs object-contain"
-			height={16}
-			src={context.avatarSrc}
-			width={16}
-		/>
+	// Agents render as an avatar chip (hexagon avatar + `type="agent"`, matching the
+	// Tag agent-avatar design); everything else falls back to its category icon on a
+	// default tag.
+	const isAgentTag = Boolean(context.avatarSrc);
+	const tagElemBefore = isAgentTag ? (
+		<Avatar size="xs" shape="hexagon">
+			<AvatarImage src={context.avatarSrc} alt="" />
+			<AvatarFallback>{context.label.slice(0, 2)}</AvatarFallback>
+		</Avatar>
 	) : (
 		<ContextIcon color={token("color.icon.brand")} label="" size="small" />
 	);
 
 	const tag = (
-		<ContextBarTag elemBefore={tagElemBefore} title={context.label}>
+		<ContextBarTag elemBefore={tagElemBefore} title={context.label} type={isAgentTag ? "agent" : undefined}>
 			{context.label}
 		</ContextBarTag>
 	);
