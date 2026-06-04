@@ -24,6 +24,7 @@ import { SubagentPromptFields } from "@/components/blocks/subagents/components/s
 import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
 import type { SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
 import { getListItems, updateConfigListItem } from "@/components/blocks/subagents/lib/subagent-prompts";
+import { AgentInsightsPanel } from "@/components/projects/studio/components/agent-insights-panel";
 import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-agent-config-subagents";
 import {
 	Agent,
@@ -53,7 +54,7 @@ import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { cn } from "@/lib/utils";
 
 type AgentResult = RovoDataParts["agent-result"];
-export type AgentConfigView = "configure" | "test";
+export type AgentConfigView = "configure" | "insights" | "test";
 
 // Capabilities a subagent can't own. Hidden from the config rows while a
 // subagent prompt is selected/created (these aren't configurable per-subagent).
@@ -400,7 +401,7 @@ export function RovoAppAgentConfigPanel({
 
 	const handleViewChange = useCallback(
 		(value: string | null) => {
-			if (value !== "configure" && value !== "test") {
+			if (value !== "configure" && value !== "insights" && value !== "test") {
 				return;
 			}
 			setActiveCompactSection(null);
@@ -415,6 +416,11 @@ export function RovoAppAgentConfigPanel({
 
 	const handleCompactSectionChange = useCallback(
 		(section: AgentCompactHeaderSection) => {
+			if (section === "insights") {
+				setActiveCompactSection(null);
+				onViewChange("insights");
+				return;
+			}
 			onViewChange("configure");
 			setActiveCompactSection(section === "surfaces" ? "surfaces" : null);
 		},
@@ -454,7 +460,7 @@ export function RovoAppAgentConfigPanel({
 						name={agentName}
 						leadingContent={
 							<AgentCompactHeaderNav
-								activeSection={activeCompactSection}
+								activeSection={activeView === "insights" ? "insights" : activeCompactSection}
 								avatarSrc={agentAvatarSrc}
 								onSectionChange={handleCompactSectionChange}
 							/>
@@ -565,6 +571,9 @@ export function RovoAppAgentConfigPanel({
 					</TabsContent>
 					<TabsContent value="test" keepMounted={false} className="min-h-0 flex-1 data-[hidden]:hidden">
 						{testPanel}
+					</TabsContent>
+					<TabsContent value="insights" keepMounted={false} className="min-h-0 flex-1 data-[hidden]:hidden">
+						<AgentInsightsPanel />
 					</TabsContent>
 				</Tabs>
 			</Agent>
