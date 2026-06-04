@@ -8,6 +8,12 @@ export interface StudioSidebarRecentAgentItem {
 	kind: StudioSidebarRecentAgentKind;
 	label: string;
 	lastTouchedAt: number;
+	/**
+	 * Only meaningful for `wip` (in-progress creation) rows: true when that
+	 * thread is paused awaiting the user's clarification answers, so the sidebar
+	 * row shows a persistent "waiting for your response" indicator.
+	 */
+	isAwaitingResponse?: boolean;
 }
 
 export interface StudioSidebarRecentAgentResult {

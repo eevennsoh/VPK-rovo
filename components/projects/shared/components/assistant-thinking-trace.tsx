@@ -8,7 +8,6 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import AiGenerativeTextSummaryIcon from "@atlaskit/icon/core/ai-generative-text-summary";
 import ListChecklistIcon from "@atlaskit/icon/core/list-checklist";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
-import PencilIcon from "@atlaskit/icon-lab/core/pencil";
 import {
 	ChainOfThought,
 	ChainOfThoughtContent,
@@ -19,6 +18,8 @@ import { CodeBlock } from "@/components/ui-custom/code-block";
 import { MessageContent, MessageResponse } from "@/components/ui-custom/message";
 import { isTimelineOnlyContent } from "@/components/ui-custom/reasoning";
 import { Shimmer } from "@/components/ui-custom/shimmer";
+import { AnimatedDots } from "@/components/ui-custom/animated-dots";
+import { Spinner } from "@/components/ui/spinner";
 import { ToolInput, ToolOutput } from "@/components/ui-custom/tool";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icon";
@@ -32,6 +33,7 @@ import {
 	getReasoningSectionTitle,
 } from "@/components/projects/shared/lib/reasoning-labels";
 import {
+	areAllThinkingToolCallsSettled,
 	collectAssistantThinkingTraceData,
 	resolveAssistantThinkingTraceOpen,
 	resolveAssistantThinkingTracePhase,
@@ -91,6 +93,13 @@ interface UseAssistantThinkingTraceStateOptions {
 	isRetryThinkingStatus?: boolean;
 	thinkingToolCalls?: ThinkingToolCallSummary[];
 	treatQuestionToolCallsAsAnswered?: boolean;
+	/**
+	 * For scripted-trace surfaces (Studio agent creation) with no real
+	 * post-tools generation signal: when set, the "Generating a response" step
+	 * is shown once every thinking tool call has settled while the response is
+	 * still streaming (turn not complete).
+	 */
+	treatSettledToolsAsPostResultPending?: boolean;
 	planNarrationText?: string;
 	planNarrationStreaming?: boolean;
 }
@@ -107,9 +116,6 @@ const StepChecklistIcon = ({ label = "", size = "small", spacing = "none", ...pr
 const StepAgentsIcon = ({ label = "", size = "small", spacing = "none", ...props }: NewCoreIconProps) => <Icon render={<PeopleGroupIcon label={label} size={size} spacing={spacing} {...props} />} />;
 const StepStreamIcon = ({ label = "", size = "small", spacing = "none", ...props }: NewCoreIconProps) => (
 	<Icon render={<AiGenerativeTextSummaryIcon label={label} size={size} spacing={spacing} {...props} />} />
-);
-const StepPencilIcon = ({ label = "", size = "small", spacing = "none", ...props }: NewCoreIconProps) => (
-	<Icon render={<PencilIcon label={label} size={size} spacing={spacing} {...props} />} />
 );
 
 function toolStateToCoTStatus(state: string): "complete" | "active" | "pending" {
@@ -269,6 +275,7 @@ export function useAssistantThinkingTraceState({
 	isRetryThinkingStatus = false,
 	thinkingToolCalls,
 	treatQuestionToolCallsAsAnswered = false,
+	treatSettledToolsAsPostResultPending = false,
 	planNarrationText = "",
 	planNarrationStreaming = false,
 }: Readonly<UseAssistantThinkingTraceStateOptions>): AssistantThinkingTraceState {
@@ -328,6 +335,10 @@ export function useAssistantThinkingTraceState({
 		hasWidgetOutput,
 		isPostToolsGeneration,
 		isPostToolsResultPending,
+		allToolsSettled: areAllThinkingToolCallsSettled(data.visibleThinkingToolCalls),
+		isResponseInFlight,
+		hasTurnComplete,
+		treatSettledToolsAsPostResultPending,
 	});
 	const hasThinkingDetails =
 		shouldShowThinkingSection ||
@@ -775,11 +786,15 @@ export function AssistantThinkingTrace({
 					})}
 					{state.shouldShowResponseGenerationStep ? (
 						<ChainOfThoughtStep
-							icon={StepPencilIcon}
+							iconRender={<Spinner variant="rainbow" label="Generating a response" />}
+							iconShimmer={false}
 							label={
-								<Shimmer as="span" duration={1.4} spread={2} className="min-w-0 truncate text-left">
-									Generating response
-								</Shimmer>
+								<span className="inline-flex min-w-0 items-baseline">
+									<Shimmer as="span" duration={1.4} spread={2} className="min-w-0 truncate text-left">
+										Generating a response
+									</Shimmer>
+									<AnimatedDots />
+								</span>
 							}
 							description={null}
 							status="active"

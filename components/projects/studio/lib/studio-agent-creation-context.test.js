@@ -8,14 +8,16 @@ const {
 	buildCreationTemplateContextFromStarter,
 } = require("./studio-agent-creation-context.ts");
 
-test("buildStudioAgentCreationContext always asks one focused, adaptive clarification round", () => {
+test("buildStudioAgentCreationContext always asks one focused clarification round before building", () => {
 	const context = buildStudioAgentCreationContext("Build a customer feedback agent");
 
 	assert.match(context, /\[Studio Agent Creation Request\]/u);
 	assert.match(context, /Original user brief:/u);
 	assert.match(context, /Build a customer feedback agent/u);
-	assert.match(context, /Run ONE focused clarification round FIRST using the existing ask_user_questions\/question-card flow/u);
-	assert.match(context, /never exceed 2 rounds/u);
+	assert.match(context, /ALWAYS run ONE focused clarification round FIRST using the existing ask_user_questions\/question-card flow/u);
+	// Turn 1 must not build the agent yet — it can only emit the question card.
+	assert.match(context, /Do not skip this round and do not build the agent yet on this turn/u);
+	assert.match(context, /Do NOT emit an AGENT_RESULT marker before the user has answered/u);
 	// The old "only ask if unworkable" suppression must be gone.
 	assert.doesNotMatch(context, /only ask clarifying questions if the brief truly cannot be turned/u);
 });

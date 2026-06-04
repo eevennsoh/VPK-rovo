@@ -14,7 +14,7 @@ const {
 	},
 } = require("./studio-agent-trace");
 
-test("buildStudioAgentCreationTrace emits the fixed step skeleton with stable ordering", () => {
+test("turn 1 stops at the clarification round with an open ask step", () => {
 	const steps = buildStudioAgentCreationTrace({
 		userPrompt: "Build a research agent.",
 		messages: [],
@@ -24,17 +24,40 @@ test("buildStudioAgentCreationTrace emits the fixed step skeleton with stable or
 	assert.deepEqual(labels, [
 		"Reading agent brief",
 		"Preparing clarification questions",
+	]);
+	assert.match(steps[0].content, /research agent/u);
+
+	// The ask step is left "open" (no step-level output) so the trace writer
+	// emits no result event and the tool resolves to awaiting-input.
+	const askStep = steps.find(
+		(step) => step.label === "Preparing clarification questions",
+	);
+	assert.equal(askStep.toolName, "ask_user_questions");
+	assert.equal(askStep.output, undefined);
+	assert.equal(askStep.outputPreview, undefined);
+});
+
+test("turn 2 emits the full build skeleton with stable ordering", () => {
+	const steps = buildStudioAgentCreationTrace({
+		userPrompt: "Build a research agent.",
+		messages: [{ role: "user", content: "Build a research agent." }],
+		isFollowUpTurn: true,
+	});
+
+	const labels = steps.map((step) => step.label);
+	assert.deepEqual(labels, [
+		"Reading agent brief",
+		"Reviewing agent details",
 		"Selecting agent tools",
 		"Drafting agent instructions",
 		"Naming agent profile",
 		"Saving agent profile",
 	]);
-	assert.match(steps[0].content, /research agent/u);
 	const nameStep = steps.find((step) => step.label === "Naming agent profile");
 	assert.match(nameStep.content, /name, byline, and profile-card summary/u);
 });
 
-test("first turn includes an ask_user_questions clarification step", () => {
+test("first turn ends with the ask_user_questions clarification step", () => {
 	const steps = buildStudioAgentCreationTrace({
 		userPrompt: "Build a research agent.",
 		messages: [{ role: "user", content: "Build a research agent." }],
@@ -45,13 +68,45 @@ test("first turn includes an ask_user_questions clarification step", () => {
 	);
 	assert.ok(clarifyStep, "expected a clarification step on the first turn");
 	assert.equal(clarifyStep.toolName, "ask_user_questions");
-	// Clarification comes right after reading the brief, before drafting.
+	// Turn 1 stops at the clarification round — no build steps yet, and the ask
+	// step is the final step so the turn ends awaiting the user.
 	const labels = steps.map((step) => step.label);
-	assert.ok(
-		labels.indexOf("Preparing clarification questions") <
-			labels.indexOf("Drafting agent instructions"),
-		"clarification step should precede drafting",
-	);
+	assert.equal(labels.includes("Drafting agent instructions"), false);
+	assert.equal(labels[labels.length - 1], "Preparing clarification questions");
+});
+
+test("isFollowUpTurn override forces the build steps even with empty history", () => {
+	const steps = buildStudioAgentCreationTrace({
+		userPrompt: "Build a research agent.",
+		messages: [],
+		isFollowUpTurn: true,
+	});
+	const labels = steps.map((step) => step.label);
+	assert.equal(labels.includes("Preparing clarification questions"), false);
+	for (const buildLabel of [
+		"Selecting agent tools",
+		"Drafting agent instructions",
+		"Naming agent profile",
+		"Saving agent profile",
+	]) {
+		assert.ok(labels.includes(buildLabel), `expected ${buildLabel}`);
+	}
+});
+
+test("isFollowUpTurn=false override forces the turn-1 ask flow even with prior assistant turns", () => {
+	const steps = buildStudioAgentCreationTrace({
+		userPrompt: "AI research",
+		messages: [
+			{ role: "user", content: "Build a research agent." },
+			{ role: "assistant", content: "What domain should it focus on?" },
+		],
+		isFollowUpTurn: false,
+	});
+	const labels = steps.map((step) => step.label);
+	assert.deepEqual(labels, [
+		"Reading agent brief",
+		"Preparing clarification questions",
+	]);
 });
 
 test("follow-up turns omit the ask_user_questions clarification step", () => {
@@ -140,6 +195,7 @@ test("detectMentionedTools handles empty/non-string input safely", () => {
 test("Selecting tools step reflects detected integrations in the input + preview", () => {
 	const steps = buildStudioAgentCreationTrace({
 		userPrompt: "An agent that watches GitHub PRs and pings Slack on review requests.",
+		isFollowUpTurn: true,
 	});
 	const selectStep = steps.find((s) => s.label === "Selecting agent tools");
 	assert.ok(selectStep);
@@ -149,7 +205,7 @@ test("Selecting tools step reflects detected integrations in the input + preview
 });
 
 test("Selecting tools step reports a sensible fallback when no integrations are mentioned", () => {
-	const steps = buildStudioAgentCreationTrace({ userPrompt: "Just a helpful tutor." });
+	const steps = buildStudioAgentCreationTrace({ userPrompt: "Just a helpful tutor.", isFollowUpTurn: true });
 	const selectStep = steps.find((s) => s.label === "Selecting agent tools");
 	assert.match(selectStep.outputPreview, /tool-neutral/i);
 });
@@ -244,6 +300,7 @@ test("buildProgressionRows never exceeds the 1–4 row bounds across the random 
 test("buildStudioAgentCreationTrace attaches 1–4 stacked contentRows per step", () => {
 	const steps = buildStudioAgentCreationTrace({
 		userPrompt: "Build a Jira triage agent",
+		isFollowUpTurn: true,
 		random: () => 0.999,
 	});
 	for (const step of steps) {

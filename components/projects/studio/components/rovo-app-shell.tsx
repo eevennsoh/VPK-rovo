@@ -2154,13 +2154,18 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const studioAgentCreationThreads = useMemo(() => {
 		return Array.from(studioAgentCreationThreadIds).map((threadId) => {
 			const thread = chat.threads.find((currentThread) => currentThread.id === threadId) ?? null;
+			// Prefer the live message list for the active thread (freshest); fall
+			// back to a background thread's persisted messages. A pending question
+			// card means that creation thread is paused awaiting the user's answers.
+			const threadMessages = threadId === chat.activeThreadId ? chat.messages : (thread?.messages ?? []);
 			return {
 				id: threadId,
 				lastTouchedAt: studioAgentCreationThreadTouchedAtRef.current.get(threadId) ?? 0,
 				title: getStudioAgentCreationThreadTitle(thread),
+				isAwaitingResponse: Boolean(getLatestQuestionCardPayload(threadMessages)),
 			};
 		});
-	}, [chat.threads, studioAgentCreationThreadIds]);
+	}, [chat.activeThreadId, chat.messages, chat.threads, studioAgentCreationThreadIds]);
 	const handledAgentResultKeysRef = useRef<Set<string>>(new Set());
 	const previousTypedAnchorUserMessageIdRef = useRef<string | null>(null);
 	const typedScrollAnchorSourceRef = useRef<TypedScrollAnchorSource>("none");

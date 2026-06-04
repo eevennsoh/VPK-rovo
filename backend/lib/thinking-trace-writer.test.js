@@ -153,6 +153,29 @@ test("writeThinkingTraceSteps emits status + start + result parts for each step"
 	assert.ok(phases.includes("result"));
 });
 
+test("writeThinkingTraceSteps leaves a step without output open (start but no result)", async () => {
+	const writer = createCapturingWriter();
+	await writeThinkingTraceSteps(
+		writer,
+		[
+			{
+				toolName: "ask_user_questions",
+				toolCallId: "ask-1",
+				label: "Preparing clarification questions",
+				content: "Asking a few questions",
+				// No output / outputPreview → the step stays "running" so the
+				// frontend can promote it to awaiting-input on turn-complete.
+				delayMs: 1,
+			},
+		],
+		{ defaultDelayMs: 1 },
+	);
+
+	const events = writer.parts.filter((p) => p.type === "data-thinking-event");
+	assert.deepEqual(events.map((p) => p.data.phase), ["start"]);
+	assert.equal(events.some((p) => p.data.phase === "result"), false);
+});
+
 test("writeThinkingTraceSteps streams stacked contentRows progressively before the result", async () => {
 	const writer = createCapturingWriter();
 	await writeThinkingTraceSteps(

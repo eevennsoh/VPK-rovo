@@ -168,11 +168,11 @@ export function buildStudioAgentCreationContext(
 		"Original user brief:",
 		originalBrief.trim(),
 		...(template ? formatTemplateContextBlock(template) : []),
-		"Clarification rule: Run ONE focused clarification round FIRST using the existing ask_user_questions/question-card flow — 2 to 4 targeted questions, each offering a few recommended options. Tailor every question to this specific brief and template context; never use a generic questionnaire. Skip the round only if the brief plus template context already specify every dimension below. You MAY run ONE additional adaptive round if essential details are still missing; never exceed 2 rounds, and do not invent a separate Q&A format.",
+		"Clarification rule: ALWAYS run ONE focused clarification round FIRST using the existing ask_user_questions/question-card flow — 2 to 4 targeted questions, each offering a few recommended options. Tailor every question to this specific brief and template context; never use a generic questionnaire. Do not skip this round and do not build the agent yet on this turn.",
 		CLARIFICATION_DIMENSIONS,
-		"Required agent profile fields (infer from the brief, template context, and clarification answers):",
+		"Required agent profile fields (gather via the clarification answers; do not finalize them yet):",
 		...REQUIRED_AGENT_PROFILE_FIELDS,
-		`Expected output: once you have enough to build a strong agent, create the agent profile and emit exactly one structured AGENT_RESULT marker on its own line OUTSIDE any code fence. ${FENCE_RULE}`,
+		`Expected output for THIS turn: emit only the ask_user_questions question card. Do NOT emit an AGENT_RESULT marker before the user has answered — that happens on the next turn. ${FENCE_RULE}`,
 		"[End Studio Agent Creation Request]",
 	].join("\n");
 }

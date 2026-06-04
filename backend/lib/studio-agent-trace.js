@@ -236,13 +236,20 @@ function buildProgressionRows(primary, detail = [], random) {
  * Build an ordered list of thinking-trace steps for a Studio agent-creation
  * turn on the AI Gateway path.
  *
+ * The trace is split across two turns, keyed off whether a prior assistant
+ * turn exists in `messages`:
+ * - Turn 1 (no prior assistant turn): `read_brief` + an "open" `ask_user_questions`
+ *   step (no result event) so the turn ends in the awaiting-user-response state.
+ * - Turn 2 (user has answered): `read_brief` + `review_answers` + the full build
+ *   sequence (`select_tools` → `draft_instructions` → `name_agent` → `save_profile`).
+ *
  * @param {object} params
  * @param {string} [params.userPrompt]          — the latest user message text
  * @param {Array}  [params.messages]            — conversation history (role + content)
  * @param {string} [params.contextDescription]  — optional hidden context (unused for output but kept for future heuristics)
  * @returns {Array<object>} step descriptors consumable by `writeThinkingTraceSteps`
  */
-function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescription, random } = {}) {
+function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescription, random, isFollowUpTurn } = {}) {
 	const promptText = typeof userPrompt === "string" ? userPrompt : "";
 	const traceIdPrefix = `studio-agent-trace-${Date.now()}`;
 	const steps = [];
@@ -300,8 +307,14 @@ function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescriptio
 	);
 
 	const qaSummary = summarizeQAExchange(messages, promptText);
-	const hadPriorAssistantTurn = Array.isArray(messages)
-		&& messages.some((m) => getMessageRole(m) === "assistant" && getMessageText(m).trim().length > 0);
+	// `isFollowUpTurn` (when supplied by the caller) is the authoritative turn
+	// signal so the scripted trace stays in lockstep with the server's turn
+	// gating; fall back to inferring from message history for standalone callers
+	// (e.g. unit tests).
+	const hadPriorAssistantTurn = typeof isFollowUpTurn === "boolean"
+		? isFollowUpTurn
+		: Array.isArray(messages)
+			&& messages.some((m) => getMessageRole(m) === "assistant" && getMessageText(m).trim().length > 0);
 	if (hadPriorAssistantTurn && qaSummary) {
 		steps.push(
 			withProgression(
@@ -343,37 +356,52 @@ function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescriptio
 	// drafting. `ask_user_questions` already maps to QuestionCircleIcon in the
 	// trace renderer, so no frontend change is needed.
 	if (!hadPriorAssistantTurn) {
-		steps.push(
-			withProgression(
+		// Turn 1 ends by handing off to the user. The ask step is left "open":
+		// with no step-level output the trace writer never emits a `result`
+		// event (thinking-trace-writer.js gates on `output`/`outputPreview`), so
+		// the tool call stays running and `getThinkingToolCallSummaries` promotes
+		// it to `awaiting-input` on turn-complete — driving the "Awaiting user
+		// response" header + question card. Narration rows still stream so the
+		// step shows believable progression while it waits.
+		const askStep = withProgression(
+			{
+				toolName: "ask_user_questions",
+				toolCallId: `${traceIdPrefix}-ask-questions`,
+				label: "Preparing clarification questions",
+			},
+			{
+				content: `Asking a few targeted questions to shape ${agentFocus} before drafting the profile.`,
+				input: { round: 1 },
+				outputPreview: "Clarification questions ready for your input.",
+			},
+			[
 				{
-					toolName: "ask_user_questions",
-					toolCallId: `${traceIdPrefix}-ask-questions`,
-					label: "Preparing clarification questions",
+					content: "Spotting the gaps that would change the design.",
+					input: { step: "find_gaps" },
+					outputPreview: "Key gaps identified.",
 				},
 				{
-					content: `Asking a few targeted questions to shape ${agentFocus} before drafting the profile.`,
-					input: { round: 1 },
-					outputPreview: "Clarification questions ready for your input.",
+					content: "Phrasing each question to be quick to answer.",
+					input: { step: "phrase_questions" },
+					outputPreview: "Questions phrased concisely.",
 				},
-				[
-					{
-						content: "Spotting the gaps that would change the design.",
-						input: { step: "find_gaps" },
-						outputPreview: "Key gaps identified.",
-					},
-					{
-						content: "Phrasing each question to be quick to answer.",
-						input: { step: "phrase_questions" },
-						outputPreview: "Questions phrased concisely.",
-					},
-					{
-						content: "Ordering questions from most to least impactful.",
-						input: { step: "order_questions" },
-						outputPreview: "Questions ordered by impact.",
-					},
-				],
-			),
+				{
+					content: "Ordering questions from most to least impactful.",
+					input: { step: "order_questions" },
+					outputPreview: "Questions ordered by impact.",
+				},
+			],
 		);
+		askStep.output = undefined;
+		askStep.outputPreview = undefined;
+		steps.push(askStep);
+
+		// Stop here on the first turn: the user must answer the clarification
+		// questions before anything is built. The full build sequence
+		// (select tools → draft → name → save) runs on the next turn, once a
+		// prior assistant turn exists. This is what makes the two turns'
+		// thinking traces distinct instead of duplicating the build steps.
+		return steps;
 	}
 
 	const mentionedTools = detectMentionedTools(promptText);
