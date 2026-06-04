@@ -72,12 +72,15 @@ export interface FloatingRovoButtonPlacement {
 	bottom?: string;
 }
 
+export type FloatingRovoButtonPositioning = "viewport" | "container";
+
 interface FloatingRovoButtonProps {
 	product: Product;
 	embedded?: boolean;
 	forceVisible?: boolean;
 	ariaLabel?: string;
 	placement?: FloatingRovoButtonPlacement;
+	positioning?: FloatingRovoButtonPositioning;
 	onButtonClick?: () => void;
 	suggestion?: FloatingRovoButtonSuggestion | null;
 	onboarding?: FloatingRovoButtonOnboardingConfig | null;
@@ -111,6 +114,18 @@ interface FloatingRovoButtonDragStart {
 	y: number;
 }
 
+interface FloatingRovoButtonCoordinateSpace {
+	height: number;
+	left: number;
+	top: number;
+	width: number;
+}
+
+interface FloatingRovoButtonLocalMeasurement {
+	rect: Pick<DOMRect, "height" | "left" | "top" | "width">;
+	space: FloatingRovoButtonCoordinateSpace;
+}
+
 function resolveFloatingRovoButtonPlacement(placement?: FloatingRovoButtonPlacement): Required<FloatingRovoButtonPlacement> {
 	return {
 		right: placement?.right ?? DEFAULT_BUTTON_RIGHT,
@@ -120,6 +135,47 @@ function resolveFloatingRovoButtonPlacement(placement?: FloatingRovoButtonPlacem
 
 function clampFloatingRovoButtonValue(value: number, min: number, max: number): number {
 	return Math.min(Math.max(value, min), max);
+}
+
+function getFloatingRovoButtonCoordinateSpace(
+	surface: HTMLElement,
+	positioning: FloatingRovoButtonPositioning,
+): FloatingRovoButtonCoordinateSpace {
+	if (positioning === "container" && surface.offsetParent instanceof HTMLElement) {
+		const parentRect = surface.offsetParent.getBoundingClientRect();
+
+		return {
+			left: parentRect.left,
+			top: parentRect.top,
+			width: surface.offsetParent.clientWidth,
+			height: surface.offsetParent.clientHeight,
+		};
+	}
+
+	return {
+		left: 0,
+		top: 0,
+		width: window.innerWidth,
+		height: window.innerHeight,
+	};
+}
+
+function getFloatingRovoButtonLocalMeasurement(
+	surface: HTMLElement,
+	positioning: FloatingRovoButtonPositioning,
+): FloatingRovoButtonLocalMeasurement {
+	const rect = surface.getBoundingClientRect();
+	const space = getFloatingRovoButtonCoordinateSpace(surface, positioning);
+
+	return {
+		rect: {
+			left: rect.left - space.left,
+			top: rect.top - space.top,
+			width: rect.width,
+			height: rect.height,
+		},
+		space,
+	};
 }
 
 function getFloatingRovoButtonSafeBounds(rect: Pick<DOMRect, "width" | "height">, viewportWidth: number, viewportHeight: number) {
@@ -161,7 +217,11 @@ function getDefaultFloatingRovoButtonSnapTarget(
 	return snapTargets[snapTargets.length - 1];
 }
 
-function getNearestFloatingRovoButtonSnapTarget(rect: DOMRect, viewportWidth: number, viewportHeight: number) {
+function getNearestFloatingRovoButtonSnapTarget(
+	rect: Pick<DOMRect, "height" | "left" | "top" | "width">,
+	viewportWidth: number,
+	viewportHeight: number,
+) {
 	const snapTargets = getFloatingRovoButtonSnapTargets(rect, viewportWidth, viewportHeight);
 	const centerX = rect.left + rect.width / 2;
 	const centerY = rect.top + rect.height / 2;
@@ -199,7 +259,11 @@ function getFloatingRovoButtonDragConstraints(
 	};
 }
 
-function getClampedFloatingRovoButtonTarget(rect: DOMRect, viewportWidth: number, viewportHeight: number): FloatingRovoButtonSnapTarget {
+function getClampedFloatingRovoButtonTarget(
+	rect: Pick<DOMRect, "height" | "left" | "top" | "width">,
+	viewportWidth: number,
+	viewportHeight: number,
+): FloatingRovoButtonSnapTarget {
 	const { minLeft, minTop, maxLeft, maxTop } = getFloatingRovoButtonSafeBounds(rect, viewportWidth, viewportHeight);
 	const clampedLeft = clampFloatingRovoButtonValue(rect.left, minLeft, maxLeft);
 	const clampedTop = clampFloatingRovoButtonValue(rect.top, minTop, maxTop);
@@ -210,9 +274,11 @@ function getClampedFloatingRovoButtonTarget(rect: DOMRect, viewportWidth: number
 function FloatingRovoButtonNudge({
 	suggestion,
 	placement,
+	positioning = "viewport",
 }: Readonly<{
 	suggestion: FloatingRovoButtonSuggestion;
 	placement?: FloatingRovoButtonPlacement;
+	positioning?: FloatingRovoButtonPositioning;
 }>) {
 	const resolvedPlacement = resolveFloatingRovoButtonPlacement(placement);
 
@@ -220,7 +286,8 @@ function FloatingRovoButtonNudge({
 		<motion.div
 			key={suggestion.id}
 			className={cn(
-				"fixed z-[510] flex w-fit max-w-[calc(100vw-112px)] origin-right items-center gap-1 overflow-hidden rounded-lg p-1 text-text-inverse",
+				"z-[510] flex w-fit max-w-[calc(100vw-112px)] origin-right items-center gap-1 overflow-hidden rounded-lg p-1 text-text-inverse",
+				positioning === "container" ? "absolute" : "fixed",
 				placement ? null : "right-[84px] bottom-7",
 			)}
 			initial={{ opacity: 0, scaleX: 0.24, x: 52 }}
@@ -536,6 +603,7 @@ function FloatingRovoButtonSurface({
 	onboarding,
 	onOpenChange,
 	placement,
+	positioning = "viewport",
 	ariaLabel,
 	onButtonClick,
 	shouldReduceMotion,
@@ -544,6 +612,7 @@ function FloatingRovoButtonSurface({
 	onboarding: FloatingRovoButtonOnboardingConfig | null | undefined;
 	onOpenChange: (open: boolean) => void;
 	placement?: FloatingRovoButtonPlacement;
+	positioning?: FloatingRovoButtonPositioning;
 	ariaLabel: string;
 	onButtonClick: () => void;
 	shouldReduceMotion: boolean;
@@ -559,7 +628,7 @@ function FloatingRovoButtonSurface({
 		right: 0,
 		top: 0,
 	});
-	const hasInitializedPositionRef = useRef(false);
+	const initializedPositionKeyRef = useRef<string | null>(null);
 	const skipNextSnapToGridRef = useRef(false);
 	const dragPointerStartRef = useRef<FloatingRovoButtonDragStart | null>(null);
 	const suppressDragClickStateRef = useRef<FloatingRovoButtonClickSuppressionState>(
@@ -637,7 +706,9 @@ function FloatingRovoButtonSurface({
 	}, [clearDragClickSuppressionTimeout]);
 
 	useEffect(() => {
-		if (hasInitializedPositionRef.current) {
+		const positionKey = `${positioning}:${resolvedPlacement.right}:${resolvedPlacement.bottom}`;
+
+		if (initializedPositionKeyRef.current === positionKey) {
 			return;
 		}
 
@@ -647,18 +718,18 @@ function FloatingRovoButtonSurface({
 			return;
 		}
 
-		const rect = surface.getBoundingClientRect();
+		const { rect, space } = getFloatingRovoButtonLocalMeasurement(surface, positioning);
 		const target = placement
-			? getClampedFloatingRovoButtonTarget(rect, window.innerWidth, window.innerHeight)
-			: getDefaultFloatingRovoButtonSnapTarget(rect, window.innerWidth, window.innerHeight);
+			? getClampedFloatingRovoButtonTarget(rect, space.width, space.height)
+			: getDefaultFloatingRovoButtonSnapTarget(rect, space.width, space.height);
 
 		buttonX.set(0);
 		buttonY.set(0);
 		setDragOrigin(target);
-		setDragConstraints(getFloatingRovoButtonDragConstraints(target, rect, window.innerWidth, window.innerHeight));
-		hasInitializedPositionRef.current = true;
+		setDragConstraints(getFloatingRovoButtonDragConstraints(target, rect, space.width, space.height));
+		initializedPositionKeyRef.current = positionKey;
 		skipNextSnapToGridRef.current = true;
-	}, [buttonX, buttonY, placement]);
+	}, [buttonX, buttonY, placement, positioning, resolvedPlacement.bottom, resolvedPlacement.right]);
 
 	useEffect(() => {
 		return () => {
@@ -702,15 +773,15 @@ function FloatingRovoButtonSurface({
 			return;
 		}
 
-		const rect = surface.getBoundingClientRect();
-		const target = getNearestFloatingRovoButtonSnapTarget(rect, window.innerWidth, window.innerHeight);
+		const { rect, space } = getFloatingRovoButtonLocalMeasurement(surface, positioning);
+		const target = getNearestFloatingRovoButtonSnapTarget(rect, space.width, space.height);
 
-		setDragConstraints(getFloatingRovoButtonDragConstraints(dragOrigin, rect, window.innerWidth, window.innerHeight));
+		setDragConstraints(getFloatingRovoButtonDragConstraints(dragOrigin, rect, space.width, space.height));
 		buttonX.jump(buttonX.get());
 		buttonY.jump(buttonY.get());
 		animate(buttonX, target.left - dragOrigin.left, dragSnapTransition);
 		animate(buttonY, target.top - dragOrigin.top, dragSnapTransition);
-	}, [buttonX, buttonY, dragOrigin, dragSnapTransition]);
+	}, [buttonX, buttonY, dragOrigin, dragSnapTransition, positioning]);
 
 	useEffect(() => {
 		if (!dragOrigin) {
@@ -860,7 +931,8 @@ function FloatingRovoButtonSurface({
 			key="floating-rovo-button-surface"
 			layout
 			className={cn(
-				"fixed z-[510] bg-bg-neutral-bold",
+				"z-[510] bg-bg-neutral-bold",
+				positioning === "container" ? "absolute" : "fixed",
 				!onboardingOpen ? "cursor-grab active:cursor-grabbing" : null,
 				onboardingOpen
 					? "w-[295px] max-w-[calc(100vw-32px)] overflow-hidden"
@@ -910,6 +982,7 @@ export default function FloatingRovoButton({
 	forceVisible = false,
 	ariaLabel,
 	placement,
+	positioning = "viewport",
 	onButtonClick,
 	suggestion,
 	onboarding,
@@ -923,7 +996,8 @@ export default function FloatingRovoButton({
 	const onboardingOpen = Boolean(onboarding && (onboarding.open ?? internalOnboardingOpen));
 	const shouldOpenOnboardingFromButton = Boolean(onboarding && (onboarding.openOnButtonClick ?? true));
 	const resolvedAriaLabel = ariaLabel ?? (shouldOpenOnboardingFromButton ? "Open onboarding" : "Open Rovo");
-	const shouldRenderSurface = (shouldShowButton || onboardingOpen) && !(embedded || product === "rovo" || product === "studio");
+	const shouldSuppressSurface = embedded || product === "rovo" || product === "studio";
+	const shouldRenderSurface = (shouldShowButton || onboardingOpen) && (forceVisible || !shouldSuppressSurface);
 
 	useEffect(() => {
 		if (onboardingId) {
@@ -960,7 +1034,12 @@ export default function FloatingRovoButton({
 		<>
 			<AnimatePresence>
 				{suggestion && shouldShowButton && !onboardingOpen ? (
-					<FloatingRovoButtonNudge key={suggestion.id} placement={placement} suggestion={suggestion} />
+					<FloatingRovoButtonNudge
+						key={suggestion.id}
+						placement={placement}
+						positioning={positioning}
+						suggestion={suggestion}
+					/>
 				) : null}
 			</AnimatePresence>
 			<AnimatePresence>
@@ -971,6 +1050,7 @@ export default function FloatingRovoButton({
 						onboarding={onboarding}
 						onOpenChange={setOnboardingOpen}
 						placement={placement}
+						positioning={positioning}
 						ariaLabel={resolvedAriaLabel}
 						onButtonClick={handleButtonClick}
 						shouldReduceMotion={shouldReduceMotion}

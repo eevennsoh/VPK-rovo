@@ -25,6 +25,7 @@ interface AppLayoutProps {
 	product: Product;
 	children: React.ReactNode;
 	embedded?: boolean;
+	embeddedHeight?: "parent" | "viewport";
 	hideFloatingRovo?: boolean;
 	hideRovoAction?: boolean;
 	onChatSurfaceSwitch?: ChatSurfaceSwitchHandler;
@@ -124,6 +125,7 @@ export default function AppLayout({
 	product,
 	children,
 	embedded = false,
+	embeddedHeight = "viewport",
 	hideFloatingRovo,
 	hideRovoAction = false,
 	onChatSurfaceSwitch,
@@ -152,10 +154,11 @@ export default function AppLayout({
 	const showChatPanel = !isEmbedded && !shouldHideRovoAction && isSidebarChatActive;
 	const showFloatingChat = !isEmbedded && !hideFloatingRovo && !shouldHideRovoAction && isFloatingChatActive;
 	const showFloatingRovoButton = !isEmbedded && !hideFloatingRovo && !shouldHideRovoAction;
+	const embeddedShellHeight = embeddedHeight === "parent" ? "100%" : "100dvh";
 	// Embedded mode styles (fallback when not using the TopNavigation shell)
 	const shellStyle = {
-		minHeight: isEmbedded ? "100dvh" : "100vh",
-		height: isEmbedded ? "100dvh" : "100vh",
+		minHeight: isEmbedded ? embeddedShellHeight : "100vh",
+		height: isEmbedded ? embeddedShellHeight : "100vh",
 		backgroundColor: token("color.background.neutral.subtle"),
 		overflow: "hidden",
 	} as React.CSSProperties;
@@ -171,6 +174,7 @@ export default function AppLayout({
 						? undefined
 						: "margin-right var(--duration-medium) var(--ease-in-out)",
 					flex: 1,
+					height: isEmbedded ? "100%" : undefined,
 					overflow: "auto",
 				}}
 			>
