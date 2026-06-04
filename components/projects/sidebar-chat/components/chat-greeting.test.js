@@ -167,8 +167,9 @@ async function loadChatGreetingHarness() {
 					}));
 				}
 
-				export function renderCustomAgentGreeting() {
+				export function renderCustomAgentGreeting(isAgentTest = false) {
 					return renderToStaticMarkup(React.createElement(ChatGreeting, {
+						isAgentTest,
 						selectedAgent: getRovoAgentProfile(AI_INSIGHTS_AGENT_ID),
 					}));
 				}
@@ -282,7 +283,10 @@ test("ChatGreeting renders selected custom agent profile and three starters", as
 
 	assert.match(CHAT_GREETING_SOURCE, /function CustomAgentGreeting/u);
 	assert.match(CHAT_GREETING_SOURCE, /itemVariants: ChatGreetingItemVariants;/u);
-	assert.match(CHAT_GREETING_SOURCE, /className="mx-auto flex w-full max-w-\[800px\] flex-col items-center gap-8 text-center"/u);
+	assert.match(CHAT_GREETING_SOURCE, /isAgentTest \? "max-w-\[600px\]" : "max-w-\[800px\]"/u);
+	// Default (main Rovo App chat) renders the wide 800px custom-agent greeting.
+	assert.match(markup, /max-w-\[800px\]/u);
+	assert.doesNotMatch(markup, /max-w-\[600px\]/u);
 	assert.match(CHAT_GREETING_SOURCE, /<motion\.div key=\{suggestion\.id\} variants=\{itemVariants\}>/u);
 	assert.match(CHAT_GREETING_SOURCE, /<AnimatePresence mode="wait">[\s\S]*customAgent \? \(/u);
 	assert.match(markup, /AI Insights Agent/u);
@@ -292,4 +296,13 @@ test("ChatGreeting renders selected custom agent profile and three starters", as
 	assert.match(markup, /Give me AI industry insights and developments/u);
 	assert.equal((markup.match(/data-testid="ai-chat-icon"/g) ?? []).length, 3);
 	assert.equal((markup.match(/<button/g) ?? []).length, 3);
+});
+
+test("ChatGreeting renders the custom agent greeting at 600px in Test mode", async () => {
+	const harness = await loadChatGreetingHarness();
+	const markup = harness.renderCustomAgentGreeting(true);
+
+	// The Studio Test panel passes isAgentTest so the greeting narrows to 600px.
+	assert.match(markup, /max-w-\[600px\]/u);
+	assert.doesNotMatch(markup, /max-w-\[800px\]/u);
 });
