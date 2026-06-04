@@ -5,6 +5,41 @@ reconciled against `CLICKY_SCREEN_ASSISTANT_PLAN.md`. Read this before editing s
 you build from what the code actually does, not from the plan's aspirational
 naming.
 
+> **Last verified: 2026-06-04.** The two surfaces use *different sensing
+> strategies* (see "How each surface sees the screen" below). There is **no
+> Claude-vision Clicky path** in the current code — an earlier version of this
+> doc described one; it has been removed. Re-verify against the cited files
+> before trusting any line here.
+
+## How each surface sees the screen (TL;DR)
+
+The most important divergence is not line counts — it is *how the model
+perceives the UI*:
+
+- **rovo = screenshot vision.** `hooks/use-clicky-voice.ts` captures the viewport
+  with html2canvas (`lib/clicky-screen-capture.ts`), downscales to a JPEG, and
+  sends it to the OpenAI Realtime model as an `input_image` once per voice turn
+  (on the `processing` state). The model is told it can "see screenshots" and
+  points back with a text tag `[POINT:x,y:label]` in pixel coordinates. Pointing
+  is approximate; html2canvas mis-renders cross-origin/canvas/WebGL content.
+- **studio = structured DOM via tools (screenshot-free).** `hooks/use-clicky-voice.ts`
+  injects a prompt that explicitly says the model **CANNOT see images**; to read
+  the screen it calls the `get_screen_state` tool (active route/panel, composer
+  text, pointer-over, and a DOM-scanned list of visible targets with id/label/
+  role). Pointing is *grounded* via `point_at_target` → real element rect, and it
+  can act through `set_composer_text` / `submit_composer` /
+  `apply_agent_draft_patch` / `delegate_to_rovo`. No screenshot is ever captured
+  or sent on this path.
+
+These are two different theories of perception (pixels-in-an-image vs
+structured-DOM-via-tools), and they exist because the trees are a half-finished
+migration — not because two designs were chosen on purpose. The plan's intent is
+to converge rovo onto studio's structured model behind a shared module + route
+adapters. Studio's model is the better foundation (accuracy, hallucination risk,
+cost, privacy, ability to act); the screenshot path's only edge is purely-visual
+questions not represented in the DOM, which argues for an *optional* screenshot
+fallback rather than two engines.
+
 ## Feature names
 
 - The user-facing feature is **Clicky** — an AI cursor companion / screen
@@ -23,10 +58,11 @@ backend relay is shared and already serves both.
 | Concern | `components/projects/rovo/...` | `components/projects/studio/...` | Divergence |
 | --- | --- | --- | --- |
 | State machine | `hooks/use-clicky.ts` | `hooks/use-clicky.ts` | import path only |
-| Voice bridge | `hooks/use-clicky-voice.ts` | `hooks/use-clicky-voice.ts` | studio adds screen-assistant snapshot + structured prompt (~114 lines) |
+| Sensing strategy | screenshot vision (`input_image` per turn) | structured DOM via `get_screen_state` tool; **no screenshot** | fundamental — different perception models |
+| Voice bridge | `hooks/use-clicky-voice.ts` (screenshot system prompt, captures on `processing`) | `hooks/use-clicky-voice.ts` (tool-based prompt: "you CANNOT see images") | divergent intent, not just length |
 | Realtime transport | `hooks/use-realtime-voice.ts` | `hooks/use-realtime-voice.ts` | studio adds `screen_assistant_result` (~60 lines) |
 | POINT parser | `lib/clicky-point-parser.ts` | `lib/clicky-point-parser.ts` | identical |
-| Screen capture | `lib/clicky-screen-capture.ts` | `lib/clicky-screen-capture.ts` | identical |
+| Screen capture | `lib/clicky-screen-capture.ts` (USED) | `lib/clicky-screen-capture.ts` (present but UNUSED — studio never captures) | studio's tool path bypasses it |
 | Cursor/overlay/bubble/history | `components/clicky/*` | `components/clicky/*` | identical → ~12 lines |
 | Shell wiring | `components/rovo-app-shell.tsx` | `components/rovo-app-shell.tsx` | heavily diverged (~2000 lines; studio holds the grounding + agent-draft pipeline) |
 
@@ -70,25 +106,36 @@ passes no prefix** — so rovo emits no visible targets today.
 - Tests: `backend/lib/openai-realtime.test.js`,
   `backend/lib/runtime-socket-security.test.js`.
 
-### Vision + parsing (server-side)
+### Image input (server-side) — NO Claude vision path
 
-- `_handleClickyVision` routes Clicky screenshots to **Claude via AI Gateway**
-  (`streamBedrockGatewayManualSse`), injecting structured `screenAssistant`
-  context as text, then re-injects the spoken text into OpenAI for TTS while
-  suppressing that response's transcript (`_clickyTtsResponseId`).
-- `parseScreenAssistantVisionResponse` tries structured JSON first
-  (` ```json `, ` ```screen_assistant_result `, or `[SCREEN_ASSISTANT:{...}]`),
-  normalizes `point`/`target`/`agentDraftPatch`, emits
-  `{ type: "screen_assistant_result", turnId, text, point?, target?, agentDraftPatch? }`,
-  and **falls back** to legacy `[POINT:x,y:label]` (`POINT_TAG_RE`) when no JSON
-  is present.
+- There is **no** `_handleClickyVision`, no `streamBedrockGatewayManualSse` call
+  for Clicky, no `parseScreenAssistantVisionResponse`, and no
+  `_clickyTtsResponseId` in the relay. An earlier version of this doc described a
+  Claude-via-AI-Gateway vision detour with structured-JSON parsing; **that code
+  does not exist.** (`streamBedrockGatewayManualSse` exists in
+  `ai-gateway-helpers.js` but is used by the general gateway provider, not Clicky.)
+- rovo's screenshot is handled by `RealtimeSession._handleImageMessageFromUser`
+  (`backend/lib/openai-realtime.js`, ~line 950): it forwards the JPEG **directly
+  to the OpenAI Realtime model** as a `conversation.item.create` with an
+  `input_image` content part (default `detail: "low"`; rovo sends `"auto"`) plus
+  an optional `input_text`, then issues `response.create`. No separate vision
+  model, no transcript suppression.
+- Pointing for rovo is parsed **client-side** from the model's spoken text via
+  `lib/clicky-point-parser.ts` (`[POINT:x,y:label]`). studio receives structured
+  `screen_assistant_result` over the realtime transport instead.
 
 ### Tools / function calls (already present)
 
-- `SESSION_TOOLS` = `end_voice_session` and `delegate_to_rovo`.
+- `SESSION_TOOLS` (in `openai-realtime.js`) currently includes: `end_voice_session`,
+  `delegate_to_rovo`, **and the studio screen tools** `get_screen_state`,
+  `point_at_target`, `set_composer_text`, `submit_composer`,
+  `apply_agent_draft_patch`. (These are session-wide; rovo's prompt simply does
+  not instruct the model to use the screen tools, so its turns rely on the
+  screenshot instead.)
 - `RESPONSE_FUNCTION_CALL_ARGUMENTS_DONE` sends `function_call_output` back to
   OpenAI and forwards `{ type: "function_call", name, arguments, callId }` to
-  the client. Client handles it in `use-realtime-voice.ts`.
+  the client, which executes the app-owned tool and returns the result. Client
+  handles it in `use-realtime-voice.ts`.
 
 ## Composer API (both routes)
 
@@ -101,8 +148,15 @@ submission is the shell's `onSubmit` callback (which also calls
 ## Plan claims — verdicts
 
 ACCURATE: duplication across routes; relay in `backend/lib`; studio structured
-vs rovo legacy POINT; Claude vision + OpenAI TTS; `delegate_to_rovo` /
-`end_voice_session` + `function_call_output`; no imperative composer API.
+vs rovo legacy POINT; `delegate_to_rovo` / `end_voice_session` +
+`function_call_output`; no imperative composer API.
+
+WRONG — do not build on these:
+- "Claude vision + OpenAI TTS for Clicky" — **no such path exists.** rovo sends
+  its screenshot straight to the OpenAI Realtime model via
+  `_handleImageMessageFromUser`; studio sends no screenshot at all and reads the
+  DOM through `get_screen_state`. There is no separate vision model and no TTS
+  transcript-suppression machinery.
 
 CORRECT BEFORE BUILDING:
 - "Decouple `visualCursorEnabled` from `screenAssistantEnabled`" — those flags
