@@ -44,6 +44,7 @@ import TextHeadingThreeIcon from "@atlaskit/icon-lab/core/text-heading-three";
 import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 
 import { IconTile } from "@/components/ui/icon-tile";
+import { RovoColorIcon } from "@/components/ui/logo";
 import { ArrowLeftIcon } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
 
@@ -79,6 +80,7 @@ export interface RichTextSuggestionMenuItem {
 	description?: string;
 	shortcut?: string;
 	icon: ReactNode;
+	isSticky?: boolean;
 	visual?: RichTextMentionVisual;
 	disabled?: boolean;
 }
@@ -234,6 +236,13 @@ const SLASH_CATEGORY_ORDER: readonly RichTextSlashCategory[] = [
 	...COMMAND_CATEGORY_ORDER,
 	"format",
 ];
+const ASK_ROVO_SLASH_ITEM: RichTextSuggestionMenuItem = {
+	description: "Ask Rovo to help with the current editor context.",
+	icon: <RovoColorIcon size="small" />,
+	id: "ask-rovo",
+	isSticky: true,
+	label: "Ask Rovo",
+};
 
 const STATIC_MENTION_ITEMS: RichTextMentionSources = {
 	subagent: [
@@ -654,6 +663,7 @@ function RichTextSuggestionMenuOption({
 	const className = cn(
 		"rich-text-command-menu-item",
 		isSelected && "rich-text-command-menu-item-selected",
+		item.isSticky && "rich-text-command-menu-item-sticky",
 	);
 	const children = (
 		<>
@@ -756,7 +766,7 @@ function RichTextSuggestionMenuItemVisual({
 	);
 }
 
-function filterItems<T extends { label: string; description?: string }>(
+function filterItems<T extends { label: string; description?: string; isSticky?: boolean }>(
 	items: readonly T[],
 	query: string,
 ): readonly T[] {
@@ -766,6 +776,10 @@ function filterItems<T extends { label: string; description?: string }>(
 	}
 
 	return items.filter((item) => {
+		if (item.isSticky) {
+			return true;
+		}
+
 		const haystack = `${item.label} ${item.description ?? ""}`.toLowerCase();
 		return haystack.includes(normalizedQuery);
 	});
@@ -815,6 +829,7 @@ function getPagedSelectedIndex(
  * insert as a mention token (the migrated Skills/Tools/Knowledge categories).
  */
 export type RichTextSlashAction =
+	| { type: "ask-rovo"; onAskRovo?: (editor: Editor) => void }
 	| { type: "command"; run: (editor: Editor) => void }
 	| { type: "mention"; mention: RichTextMentionItem };
 
@@ -839,6 +854,7 @@ export function getSlashCommandFormatItems(
 
 export function createSlashSuggestionRenderer(
 	getMentionSources?: () => RichTextMentionSources | undefined,
+	onAskRovo?: (editor: Editor) => void,
 ) {
 	const popupState: SuggestionPopupState = { component: null, element: null };
 	let selectedIndex = 0;
@@ -917,6 +933,10 @@ export function createSlashSuggestionRenderer(
 			activeCategory = item.id;
 			selectedIndex = 0;
 			update(currentProps);
+			return true;
+		}
+		if (item.id === ASK_ROVO_SLASH_ITEM.id) {
+			currentProps.command({ type: "ask-rovo", onAskRovo });
 			return true;
 		}
 		return false;
@@ -1173,14 +1193,17 @@ export function getMentionTargetItems(
 export function getSlashCommandCategoryItems(
 	sources?: RichTextMentionSources,
 ): readonly RichTextSuggestionMenuItem[] {
-	return SLASH_CATEGORY_ORDER.map((category) => ({
-		description: category === "format"
-			? `${SLASH_COMMANDS.length} options`
-			: `${getCategoryItems(sources, category).length} available`,
-		icon: getSlashCategoryIcon(category),
-		id: category,
-		label: getSlashCategoryLabel(category),
-	}));
+	return [
+		ASK_ROVO_SLASH_ITEM,
+		...SLASH_CATEGORY_ORDER.map((category) => ({
+			description: category === "format"
+				? `${SLASH_COMMANDS.length} options`
+				: `${getCategoryItems(sources, category).length} available`,
+			icon: getSlashCategoryIcon(category),
+			id: category,
+			label: getSlashCategoryLabel(category),
+		})),
+	];
 }
 
 /** Nested reference items for a single category (e.g. the Skills submenu). */

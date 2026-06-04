@@ -2441,10 +2441,10 @@ function AgentInstructionsComposer({
 				className="space-y-2"
 				contentClassName={cn("pt-2", contentClassName)}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
-				placeholder="Describe the agent’s role and what it should do. @ to mention people and agents, / for skills, tools, and knowledge, or start with a template"
+				placeholder="Press / to help me describe the agent's role, or start with a template"
 				placeholderSlot={(
-					<p className="text-sm leading-[1.55] text-text-subtlest">
-						Describe the agent’s role and what it should do. @ to mention people and agents, / for skills, tools, and knowledge, or{" "}
+					<p className="tiptap-editor text-sm leading-[1.55] text-text-subtlest">
+						Press <code>/</code> to help me describe the agent&apos;s role, or{" "}
 						<button
 							type="button"
 							className="pointer-events-auto cursor-pointer rounded-sm text-link no-underline underline-offset-2 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"

@@ -148,9 +148,14 @@ const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 					}
 
 					editor.chain().focus().deleteRange(range).run();
+					if (props.type === "ask-rovo") {
+						props.onAskRovo?.(editor);
+						return;
+					}
+
 					props.run(editor);
 				},
-				render: () => createSlashSuggestionRenderer(getMentionSources),
+				render: () => createSlashSuggestionRenderer(getMentionSources, this.options.onAskRovo),
 			}),
 		];
 	},
