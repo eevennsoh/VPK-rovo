@@ -55,6 +55,8 @@ test("Knowledge Directory owns a knowledge-specific modal without the copied sid
 	assert.match(source, /sm:max-w-\[960px\]/u);
 	assert.match(source, /sm:max-w-\[640px\]/u);
 	assert.match(source, /title = "Browse knowledge"/u);
+	assert.match(source, /onBack=\{selectedApp \? handleBack : undefined\}/u);
+	assert.match(source, /aria-label="Back to knowledge apps"[\s\S]*size="icon"[\s\S]*<ArrowLeftIcon label="" color="currentColor" \/>/u);
 });
 
 test("Knowledge Directory exposes app, content, and callback props", () => {

@@ -280,7 +280,7 @@ function KnowledgeDirectoryHeader({ onBack, title }: Readonly<KnowledgeDirectory
 						type="button"
 						variant="ghost"
 					>
-						<ArrowLeftIcon label="" size="small" color="currentColor" />
+						<ArrowLeftIcon label="" color="currentColor" />
 					</Button>
 				) : null}
 				<DialogTitle className="truncate text-xl font-semibold leading-6 text-text">
