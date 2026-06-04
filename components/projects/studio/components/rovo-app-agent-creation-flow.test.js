@@ -109,12 +109,13 @@ test("Studio default landing lists custom session agents below the composer", ()
 
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /DropdownMenu/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className=\{`mx-auto mt-12 flex w-full flex-col gap-2 \$\{ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\}`\}/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<Table className="min-w-full table-fixed">/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<List\.Root aria-labelledby="studio-custom-agents-heading" className=\{cn\("mx-auto mt-12", ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\)\}>/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<List\.Table columns=\{STUDIO_CUSTOM_AGENTS_LIST_COLUMNS\}>/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /max-w-\[1280px\]|min-w-\[760px\]/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Button \} from "@\/components\/ui\/button";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Icon \} from "@\/components\/ui\/icon";/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{[\s\S]*Table,[\s\S]*TableBody,[\s\S]*TableCell,[\s\S]*TableRow,[\s\S]*\} from "@\/components\/ui\/table";/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ TableCell, TableRow \} from "@\/components\/ui\/table";/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ List, type ListColumn \} from "@\/components\/ui-custom\/list";/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /TableHead|TableHeader/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/u);
