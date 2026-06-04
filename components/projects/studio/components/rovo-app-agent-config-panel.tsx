@@ -16,6 +16,10 @@ import {
 	type ConversationStarter,
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
+import {
+	serializeAgentTriggerLabels,
+	type AgentTriggerValue,
+} from "@/components/blocks/triggers/data/trigger-catalog";
 import { SubagentPromptFields } from "@/components/blocks/subagents/components/subagent-prompt-fields";
 import { getListItems, updateConfigListItem } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-agent-config-subagents";
@@ -222,6 +226,39 @@ export function RovoAppAgentConfigPanel({
 			}
 		},
 		[selectSubagentByDerivedIndex],
+	);
+	const handleTriggerDefinitionsChange = useCallback(
+		(triggerDefinitions: readonly AgentTriggerValue[]) => {
+			const triggerLabels = serializeAgentTriggerLabels(triggerDefinitions);
+
+			updateActiveConfig((config) => ({
+				...config,
+				triggerDefinitions,
+				trigger: triggerLabels[0] ?? "",
+				triggers: triggerLabels,
+			}));
+		},
+		[updateActiveConfig],
+	);
+	const handleConnectTrigger = useCallback(
+		(targetTrigger: AgentTriggerValue) => {
+			updateActiveConfig((config) => {
+				const triggerDefinitions = (config.triggerDefinitions ?? []).map((trigger) =>
+					trigger.id === targetTrigger.id
+						? { ...trigger, connectionState: "connecting" as const }
+						: trigger,
+				);
+				const triggerLabels = serializeAgentTriggerLabels(triggerDefinitions);
+
+				return {
+					...config,
+					triggerDefinitions,
+					trigger: triggerLabels[0] ?? "",
+					triggers: triggerLabels,
+				};
+			});
+		},
+		[updateActiveConfig],
 	);
 	const handleOpenDirectory = useCallback((directory: AgentDirectoryKind) => {
 		setActiveDirectory(directory);
@@ -451,8 +488,10 @@ export function RovoAppAgentConfigPanel({
 								onRemoveListItem={removeListItem}
 								onAddListValues={appendListValues}
 								onAppendListItem={appendListItem}
+								onConnectTrigger={handleConnectTrigger}
 								onManageSubagents={createSubagent}
 								onSelectListItem={handleSelectListItem}
+								onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
 								onOpenDirectory={handleOpenDirectory}
 								selectedListItemIndexByField={{ subagents: selectedSubagentIndex }}
 								screenAssistantTargetPrefix="studio-agent-config"

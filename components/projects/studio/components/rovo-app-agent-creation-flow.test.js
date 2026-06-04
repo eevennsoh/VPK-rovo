@@ -383,6 +383,9 @@ test("RovoAppMessages renders the block agent result card after generation compl
 	assert.match(MESSAGES_SOURCE, /resolvedArtifactDisplayForMessage \? \([\s\S]*<ArtifactCard/u);
 	assert.match(MESSAGES_SOURCE, /completedAgentResult \? \([\s\S]*<AgentResultCard[\s\S]*agent=\{completedAgentResult\}[\s\S]*sourceMessageId: message\.id/u);
 	assert.doesNotMatch(MESSAGES_SOURCE, /function StudioAgentResultCard/u);
+	assert.match(ROVO_UI_MESSAGES_SOURCE, /import type \{ AgentTriggerValue \} from "@\/components\/blocks\/triggers\/data\/trigger-catalog";/u);
+	assert.match(ROVO_UI_MESSAGES_SOURCE, /triggers\?: string\[\];/u);
+	assert.match(ROVO_UI_MESSAGES_SOURCE, /triggerDefinitions\?: AgentTriggerValue\[\];/u);
 });
 
 test("Studio agent config panel renders the shared ui-custom agent config fields", () => {
@@ -397,6 +400,8 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /Press \/ to help me describe the agent's role/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /dataFlowConfig=\{config\}/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /layout\?: "default" \| "compact";/u);
+	assert.match(UI_CUSTOM_AGENT_SOURCE, /triggerDefinitions\?: readonly AgentTriggerValue\[\];/u);
+	assert.match(UI_CUSTOM_AGENT_SOURCE, /onTriggerDefinitionsChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /inputProps=\{\{ className: "h-auto border-2 px-1\.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /textareaProps=\{\{ rows: 1, className: "min-h-10 border-2 bg-bg-neutral-subtle px-1\.5 focus:border-ring focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-\[variant=default\]:border-transparent data-\[variant=default\]:focus:border-ring data-\[variant=default\]:focus-visible:border-ring" \}\}/u);
@@ -406,6 +411,8 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onTextChange=\{handleConfigTextChange\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onAddListValues=\{appendListValues\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onAppendListItem=\{appendListItem\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onConnectTrigger=\{handleConnectTrigger\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onTriggerDefinitionsChange=\{handleTriggerDefinitionsChange\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onOpenDirectory=\{handleOpenDirectory\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ KnowledgeDirectoryDialog, type KnowledgeDirectoryAddPayload \} from "@\/components\/blocks\/knowledge-directory";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEFAULT_KNOWLEDGE_APPS \} from "@\/components\/blocks\/knowledge-directory\/data\/apps";/u);
@@ -414,6 +421,8 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ ToolsDirectoryDialog \} from "@\/components\/blocks\/tools-directory";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEMO_SESSION_TOOLS, DEMO_TOOLS \} from "@\/components\/blocks\/tools-directory\/data\/demo-tools";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[activeDirectory, setActiveDirectory\] = useState<AgentDirectoryKind \| null>\(null\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleTriggerDefinitionsChange = useCallback\([\s\S]*serializeAgentTriggerLabels\(triggerDefinitions\)[\s\S]*triggerDefinitions,[\s\S]*trigger: triggerLabels\[0\] \?\? "",[\s\S]*triggers: triggerLabels,/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleConnectTrigger = useCallback\([\s\S]*connectionState: "connecting" as const[\s\S]*serializeAgentTriggerLabels\(triggerDefinitions\)/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenDirectory = useCallback\(\(directory: AgentDirectoryKind\) => \{[\s\S]*setActiveDirectory\(directory\);[\s\S]*\}, \[\]\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddKnowledge = useCallback\([\s\S]*payload: KnowledgeDirectoryAddPayload[\s\S]*DEFAULT_KNOWLEDGE_APPS\.find[\s\S]*appendListValues\("knowledge"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleDirectoryToolIdsChange = useCallback\([\s\S]*const toolsById = new Map\(\[\.\.\.DEMO_TOOLS, \.\.\.DEMO_SESSION_TOOLS\][\s\S]*appendListValues\(\s*"tools"/u);

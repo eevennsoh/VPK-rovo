@@ -23,6 +23,10 @@ import ViewsIcon from "@atlaskit/icon-lab/core/views";
 
 import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
 import { DEMO_AGENT_TEMPLATES } from "@/components/blocks/agent-templates/data/demo-template-agents";
+import Triggers, {
+	serializeAgentTriggerLabels,
+	type AgentTriggerValue,
+} from "@/components/blocks/triggers/page";
 import {
 	EDITOR_PALETTE_MENTION_SOURCES,
 	getDirectoryMentionItemOrFallback,
@@ -413,6 +417,7 @@ export interface AgentConfigFormValue {
 	contextDescription?: string;
 	trigger?: string;
 	triggers?: readonly string[];
+	triggerDefinitions?: readonly AgentTriggerValue[];
 	skills?: readonly string[];
 	guardrail?: string;
 	tools?: readonly string[];
@@ -1394,6 +1399,11 @@ function getNonEmptyConfigItems(items: readonly string[] | undefined): readonly 
 }
 
 function getAgentTriggerItems(config: AgentConfigFormValue): readonly string[] {
+	const triggerDefinitions = serializeAgentTriggerLabels(config.triggerDefinitions);
+	if (triggerDefinitions.length > 0) {
+		return triggerDefinitions;
+	}
+
 	const triggers = getNonEmptyConfigItems(config.triggers);
 	if (triggers.length > 0) {
 		return triggers;
@@ -1549,10 +1559,12 @@ interface AgentFilledConfigSummaryProps {
 	hideEmptyRows?: boolean;
 	knowledgeMode?: KnowledgeModeValue;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
+	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 	onKnowledgeModeChange?: (next: KnowledgeModeValue) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
+	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
 	screenAssistantTargetPrefix?: string;
 	showAddButtons?: boolean;
 }
@@ -1562,10 +1574,12 @@ function AgentFilledConfigSummary({
 	hideEmptyRows = false,
 	knowledgeMode,
 	onAppendListItem,
+	onConnectTrigger,
 	onKnowledgeModeChange,
 	onOpenDirectory,
 	onRemoveListItem,
 	onTextChange,
+	onTriggerDefinitionsChange,
 	screenAssistantTargetPrefix,
 	showAddButtons = true,
 }: Readonly<AgentFilledConfigSummaryProps>) {
@@ -1593,18 +1607,37 @@ function AgentFilledConfigSummary({
 	const rows: ReadonlyArray<{ key: string; isEmpty: boolean; node: ReactNode }> = [
 		{
 			key: "trigger",
-			isEmpty: triggerItems.length === 0,
+			isEmpty: onTriggerDefinitionsChange ? false : triggerItems.length === 0,
 			node: (
-				<AgentFilledSummaryRow
-					addLabel={getAgentFilledSummaryAddLabel("triggers", triggerItems.length === 0, showAddButtons)}
-					hideWhenEmpty={hideEmptyRows}
-					agentFieldName="trigger"
-					items={triggerItems}
-					label="Triggers"
-					onAdd={() => onAppendListItem?.("triggers")}
-					onRemoveItem={removeTriggerItem}
-					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
-				/>
+				onTriggerDefinitionsChange ? (
+					<div
+						className="-mx-2 flex flex-col gap-y-2 rounded-md px-2 py-1 sm:flex-row sm:gap-x-5"
+						data-agent-field="trigger"
+						data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
+					>
+						<div className="sm:w-32 sm:shrink-0">
+							<AgentSectionLabel>Triggers</AgentSectionLabel>
+						</div>
+						<div className="min-w-0 flex-1">
+							<Triggers
+								triggers={config.triggerDefinitions ?? []}
+								onConnectTrigger={onConnectTrigger}
+								onTriggersChange={onTriggerDefinitionsChange}
+							/>
+						</div>
+					</div>
+				) : (
+					<AgentFilledSummaryRow
+						addLabel={getAgentFilledSummaryAddLabel("triggers", triggerItems.length === 0, showAddButtons)}
+						hideWhenEmpty={hideEmptyRows}
+						agentFieldName="trigger"
+						items={triggerItems}
+						label="Triggers"
+						onAdd={() => onAppendListItem?.("triggers")}
+						onRemoveItem={removeTriggerItem}
+						screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
+					/>
+				)
 			),
 		},
 		{
@@ -2546,11 +2579,13 @@ interface AgentConfigSummaryProps {
 	config: AgentConfigFormValue;
 	isFilledConfig: boolean;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
+	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 	onManageSubagents?: () => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
+	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
 	screenAssistantTargetPrefix?: string;
 	selectedListItemIndexByField?: Partial<Record<AgentConfigListFieldName, number>>;
 }
@@ -2559,18 +2594,22 @@ function AgentConfigSummary({
 	config,
 	isFilledConfig,
 	onAppendListItem,
+	onConnectTrigger,
 	onOpenDirectory,
 	onRemoveListItem,
 	onTextChange,
+	onTriggerDefinitionsChange,
 	screenAssistantTargetPrefix,
 }: Readonly<AgentConfigSummaryProps>) {
 	return isFilledConfig ? (
 		<AgentFilledConfigSummary
 			config={config}
 			onAppendListItem={onAppendListItem}
+			onConnectTrigger={onConnectTrigger}
 			onOpenDirectory={onOpenDirectory}
 			onRemoveListItem={onRemoveListItem}
 			onTextChange={onTextChange}
+			onTriggerDefinitionsChange={onTriggerDefinitionsChange}
 			screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 		/>
 	) : (
@@ -2587,11 +2626,13 @@ function AgentCompactConfigToolbarBelow({
 	config,
 	isFilledConfig,
 	onAppendListItem,
+	onConnectTrigger,
 	onManageSubagents,
 	onOpenDirectory,
 	onRemoveListItem,
 	onSelectListItem,
 	onTextChange,
+	onTriggerDefinitionsChange,
 	screenAssistantTargetPrefix,
 	selectedListItemIndexByField,
 }: Readonly<AgentConfigSummaryProps>) {
@@ -2689,9 +2730,11 @@ function AgentCompactConfigToolbarBelow({
 							knowledgeMode={knowledgeMode}
 							onKnowledgeModeChange={setKnowledgeMode}
 							onAppendListItem={onAppendListItem}
+							onConnectTrigger={onConnectTrigger}
 							onOpenDirectory={onOpenDirectory}
 							onRemoveListItem={onRemoveListItem}
 							onTextChange={onTextChange}
+							onTriggerDefinitionsChange={onTriggerDefinitionsChange}
 							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 						/>
 						<AgentReasoningRow
@@ -2744,7 +2787,9 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
+	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
+	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
 	profileAvatarSrc?: string;
 	profileConfig?: AgentConfigFormValue;
 	screenAssistantTargetPrefix?: string;
@@ -2763,12 +2808,14 @@ export const AgentConfigFields = memo(
 		onListItemChange,
 		onAddListValues,
 		onAppendListItem,
+		onConnectTrigger,
 		onManageSubagents,
 		onOpenDirectory,
 		onProfileTextChange,
 		onRemoveListItem,
 		onSelectListItem,
 		onTextChange,
+		onTriggerDefinitionsChange,
 		profileAvatarSrc,
 		profileConfig,
 		screenAssistantTargetPrefix,
@@ -2910,11 +2957,13 @@ export const AgentConfigFields = memo(
 								config={config}
 								isFilledConfig={isFilledConfig}
 								onAppendListItem={handleAppendListItem}
+								onConnectTrigger={onConnectTrigger}
 								onManageSubagents={onManageSubagents ? handleManageSubagents : undefined}
 								onOpenDirectory={handleOpenDirectory}
 								onRemoveListItem={handleRemoveListItem}
 								onSelectListItem={handleSelectListItem}
 								onTextChange={handleTextChange}
+								onTriggerDefinitionsChange={onTriggerDefinitionsChange}
 								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 								selectedListItemIndexByField={selectedListItemIndexByField}
 							/>

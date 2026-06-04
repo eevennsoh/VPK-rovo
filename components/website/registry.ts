@@ -7039,6 +7039,27 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "triggers-demo-picker": dynamic(
+    () =>
+      import("./demos/blocks/triggers-demo").then((mod) => ({
+        default: mod.TriggersDemoPicker,
+      })),
+    { ssr: false },
+  ),
+  "triggers-demo-multiple": dynamic(
+    () =>
+      import("./demos/blocks/triggers-demo").then((mod) => ({
+        default: mod.TriggersDemoMultiple,
+      })),
+    { ssr: false },
+  ),
+  "triggers-demo-needs-connection": dynamic(
+    () =>
+      import("./demos/blocks/triggers-demo").then((mod) => ({
+        default: mod.TriggersDemoNeedsConnection,
+      })),
+    { ssr: false },
+  ),
 
   // Question Card
   "question-card-demo-single-select": dynamic(
