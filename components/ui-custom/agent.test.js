@@ -102,8 +102,8 @@ test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /function AgentInstructionsComposer/u);
 	assert.match(AGENT_SOURCE, /<RichTextEditor[\s\S]*aria-label="Agent instructions"/u);
 	assert.match(AGENT_SOURCE, /editorClassName=\{cn\("agent-instructions-tiptap-editor text-text", editorClassName\)\}/u);
-	assert.match(AGENT_SOURCE, /placeholder="Describe the agent’s role and what it should do\. @ to mention people and agents, \/ for skills, tools, and knowledge, or start with a template"/u);
-	assert.match(AGENT_SOURCE, /placeholderSlot=\{\([\s\S]*start with a template[\s\S]*\)\}/u);
+	assert.match(AGENT_SOURCE, /placeholder="Press \/ to help me describe the agent's role, or start with a template"/u);
+	assert.match(AGENT_SOURCE, /placeholderSlot=\{\([\s\S]*className="tiptap-editor text-sm leading-\[1\.55\] text-text-subtlest"[\s\S]*Press <code>\/<\/code> to help me describe the agent&apos;s role,[\s\S]*start with a template[\s\S]*\)\}/u);
 	assert.match(AGENT_SOURCE, /onClick=\{\(\) => \{[\s\S]*onStartWithTemplate\?\.\(\);[\s\S]*setTemplatesOpen\(true\);[\s\S]*\}\}/u);
 	assert.match(AGENT_SOURCE, /<AgentTemplatesDialog[\s\S]*open=\{templatesOpen\}[\s\S]*onOpenChange=\{setTemplatesOpen\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /showBubbleMenu=\{false\}/u);
@@ -659,6 +659,13 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 
 test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /"format"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ RovoColorIcon \} from "@\/components\/ui\/logo";/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const ASK_ROVO_SLASH_ITEM: RichTextSuggestionMenuItem = \{[\s\S]*id: "ask-rovo",[\s\S]*isSticky: true,[\s\S]*label: "Ask Rovo",/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /return \[\s*ASK_ROVO_SLASH_ITEM,[\s\S]*\.\.\.SLASH_CATEGORY_ORDER\.map/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.id === ASK_ROVO_SLASH_ITEM\.id[\s\S]*currentProps\.command\(\{ type: "ask-rovo", onAskRovo \}\)/u);
+	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /props\.type === "ask-rovo"[\s\S]*props\.onAskRovo\?\.\(editor\)/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /onAskRovoRef = useRef\(onAskRovo\)/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item-sticky \{\s*position: sticky;\s*top: 0;/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /category === "format" \? "Format"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /getSlashCommandFormatItems/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import TableIcon from "@atlaskit\/icon\/core\/table";/u);

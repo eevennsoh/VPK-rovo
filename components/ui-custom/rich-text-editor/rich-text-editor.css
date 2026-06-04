@@ -449,6 +449,18 @@
 	background-color: var(--ds-background-neutral-subtle-hovered, #f1f2f4);
 }
 
+.rich-text-command-menu-item-sticky {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	background-color: var(--ds-surface-overlay, #ffffff);
+}
+
+.rich-text-command-menu-item-sticky:hover,
+.rich-text-command-menu-item-sticky.rich-text-command-menu-item-selected {
+	background-color: var(--ds-background-neutral-subtle-hovered, #f1f2f4);
+}
+
 .rich-text-command-menu-item:disabled {
 	color: var(--ds-text-disabled, #091e424f);
 	cursor: not-allowed;

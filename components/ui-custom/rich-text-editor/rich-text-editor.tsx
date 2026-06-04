@@ -215,6 +215,7 @@ export function RichTextEditor({
 	...props
 }: Readonly<RichTextEditorProps>) {
 	const mentionSourcesRef = useRef(mentionSources);
+	const onAskRovoRef = useRef(onAskRovo);
 	const onMarkdownChangeRef = useRef(onMarkdownChange);
 	const onPlainTextChangeRef = useRef(onPlainTextChange);
 	const onMentionInventoryChangeRef = useRef(onMentionInventoryChange);
@@ -233,6 +234,7 @@ export function RichTextEditor({
 	const extensions = useMemo(
 		() => createRichTextEditorExtensions({
 			getMentionSources: () => mentionSourcesRef.current,
+			onAskRovo: (activeEditor) => onAskRovoRef.current?.(activeEditor),
 		}),
 		[],
 	);
@@ -262,6 +264,10 @@ export function RichTextEditor({
 	useEffect(() => {
 		mentionSourcesRef.current = mentionSources;
 	}, [mentionSources]);
+
+	useEffect(() => {
+		onAskRovoRef.current = onAskRovo;
+	}, [onAskRovo]);
 
 	useEffect(() => {
 		onMarkdownChangeRef.current = onMarkdownChange;
