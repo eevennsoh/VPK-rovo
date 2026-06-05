@@ -171,7 +171,7 @@ export function AgentSelector({
 								onSelect={() => onAgentToggle?.(agent.id)}
 								role={supportsMultipleSelection ? "menuitemcheckbox" : undefined}
 								showCheckIcon={supportsMultipleSelection}
-								value={agent.name}
+								value={agent.id}
 							>
 								<AgentSelectorLogo agent={agent} />
 								<span className="min-w-0 flex-1">
