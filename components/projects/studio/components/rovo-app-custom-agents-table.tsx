@@ -63,6 +63,7 @@ interface StudioAgentsSectionProps {
 	onCreateAgent: () => void;
 	onEditAgent: (agentId: string) => void;
 	onSelectDirectoryAgent: (agent: AgentsDirectoryAgent) => void;
+	onDeleteAgent?: (agentId: string) => void;
 }
 
 function readPinnedAgentIds(): ReadonlySet<string> {
@@ -246,6 +247,7 @@ export function StudioAgentsSection({
 	onCreateAgent,
 	onEditAgent,
 	onSelectDirectoryAgent,
+	onDeleteAgent,
 }: Readonly<StudioAgentsSectionProps>) {
 	const [activeTab, setActiveTab] = useState<StudioAgentSectionTab>("my-agents");
 	const [pinnedAgentIds, setPinnedAgentIds] = useState<ReadonlySet<string>>(() => new Set());
@@ -359,6 +361,7 @@ export function StudioAgentsSection({
 						pinnedAgentIds={pinnedAgentIds}
 						onEditAgent={onEditAgent}
 						onTogglePinned={togglePinned}
+						onDeleteAgent={onDeleteAgent}
 					/>
 				) : (
 					<StudioAgentsNoResults query={searchQuery} />
@@ -457,7 +460,6 @@ function StudioCustomAgentsList({
 			<List.Table columns={STUDIO_MY_AGENTS_LIST_COLUMNS}>
 				{entries.map((entry) => {
 					const agentName = getStudioSessionAgentDisplayName(entry) || "Untitled agent";
-					const description = getCustomAgentDescription(entry);
 					const isPinned = pinnedAgentIds.has(entry.profile.id);
 					const revealOnHover =
 						"opacity-0 transition-opacity duration-fast group-hover/row:opacity-100 focus-visible:opacity-100";
@@ -476,9 +478,6 @@ function StudioCustomAgentsList({
 									</Avatar>
 									<span className="flex min-w-0 flex-col">
 										<span className="truncate font-medium text-text">{agentName}</span>
-										{description ? (
-											<span className="truncate text-xs text-text-subtle">{description}</span>
-										) : null}
 									</span>
 								</button>
 							</List.Cell>

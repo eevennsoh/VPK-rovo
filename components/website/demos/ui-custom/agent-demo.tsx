@@ -248,5 +248,5 @@ export function AgentDemoCompactSurfaces() {
 }
 
 export default function AgentDemo() {
-	return <AgentDemoFull />;
+	return <AgentDemoCompactFilled />;
 }

@@ -4422,6 +4422,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						entries={studioAgentRegistry.sessionAgentEntries}
 						onBrowseTemplates={() => handleBrowseAgentTemplates()}
 						onCreateAgent={handleFocusStudioComposer}
+						onDeleteAgent={handleDeleteStudioAgent}
 						onEditAgent={handleStudioSidebarAgentSelect}
 						onSelectDirectoryAgent={handleSidebarBrowseAgentSelect}
 					/>

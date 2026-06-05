@@ -832,11 +832,11 @@ import {
 			{ name: "AgentOutput", description: "Output schema display with syntax highlighting." },
 		],
 		examples: [
-			{ title: "Filled agent", description: "Agent strategy surface after configuration fields have been populated.", demoSlug: "agent-demo-full" },
-			{ title: "Empty agent", description: "Default setup state with add tiles before details are populated.", demoSlug: "agent-demo-empty" },
-			{ title: "Compact filled", description: "Compact layout with filled configuration details under the editor toolbar.", demoSlug: "agent-demo-compact-filled" },
+			{ title: "Default", description: "Compact layout with filled configuration details under the editor toolbar.", demoSlug: "agent-demo-compact-filled" },
 			{ title: "Compact empty", description: "Compact builder layout with quick configuration links and Operations prompt starters.", demoSlug: "agent-demo-compact-empty" },
 			{ title: "Compact surfaces", description: "Compact agent surface settings for default and extended availability.", demoSlug: "agent-demo-compact-surfaces" },
+			{ title: "Filled agent", description: "Agent strategy surface after configuration fields have been populated.", demoSlug: "agent-demo-full" },
+			{ title: "Empty agent", description: "Default setup state with add tiles before details are populated.", demoSlug: "agent-demo-empty" },
 		],
 	},
 

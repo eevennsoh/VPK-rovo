@@ -97,6 +97,14 @@ const HORIZONTAL_OVERFLOW_HOOK_SOURCE = readFileSync(
 	"utf8",
 );
 
+test("Agent demo defaults to the compact filled preview", () => {
+	assert.match(AGENT_DEMO_SOURCE, /export default function AgentDemo\(\) \{[\s\S]*return <AgentDemoCompactFilled \/>;/u);
+	assert.match(
+		UI_CUSTOM_DETAILS_SOURCE,
+		/examples: \[[\s\S]*title: "Default"[\s\S]*demoSlug: "agent-demo-compact-filled"[\s\S]*demoSlug: "agent-demo-full"/u,
+	);
+});
+
 test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /RichTextEditor,[\s\S]*\} from "@\/components\/ui-custom\/rich-text-editor";/u);
 	assert.match(AGENT_SOURCE, /function AgentInstructionsComposer/u);
@@ -566,6 +574,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactFilled/u);
 	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-compact-filled"/u);
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactFilled[\s\S]*leadingContent=\{<AgentCompactHeaderNav \/>\}/u);
+	assert.match(AGENT_DEMO_SOURCE, /export default function AgentDemo\(\) \{[\s\S]*return <AgentDemoCompactFilled \/>;/u);
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactEmpty/u);
 	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-compact-empty"/u);
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactEmpty[\s\S]*leadingContent=\{<AgentCompactHeaderNav \/>\}/u);
@@ -582,7 +591,8 @@ test("Agent component page wires compact filled and empty placeholder variations
 		AGENT_DEMO_SOURCE,
 		/idPrefix="agent-demo-compact-empty"[\s\S]*layout="compact"/u,
 	);
-	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Compact filled"[\s\S]*demoSlug: "agent-demo-compact-filled"/u);
+	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Default"[\s\S]*demoSlug: "agent-demo-compact-filled"/u);
+	assert.match(UI_CUSTOM_DETAILS_SOURCE, /demoSlug: "agent-demo-compact-filled"[\s\S]*demoSlug: "agent-demo-full"/u);
 	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Compact empty"[\s\S]*demoSlug: "agent-demo-compact-empty"/u);
 	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Compact surfaces"[\s\S]*demoSlug: "agent-demo-compact-surfaces"/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-compact-filled": dynamic/u);
