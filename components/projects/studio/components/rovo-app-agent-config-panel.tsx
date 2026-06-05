@@ -24,6 +24,7 @@ import { SubagentPromptFields } from "@/components/blocks/subagents/components/s
 import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
 import type { SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
 import { getListItems, updateConfigListItem } from "@/components/blocks/subagents/lib/subagent-prompts";
+import { AgentUsers } from "@/components/blocks/agent-users";
 import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-agent-config-subagents";
 import {
 	Agent,
@@ -416,7 +417,9 @@ export function RovoAppAgentConfigPanel({
 	const handleCompactSectionChange = useCallback(
 		(section: AgentCompactHeaderSection) => {
 			onViewChange("configure");
-			setActiveCompactSection(section === "surfaces" ? "surfaces" : null);
+			// Only sections with a dedicated panel take over the configure view;
+			// the rest fall back to the standard config fields.
+			setActiveCompactSection(section === "surfaces" || section === "users" ? section : null);
 		},
 		[onViewChange],
 	);
@@ -525,6 +528,13 @@ export function RovoAppAgentConfigPanel({
 						<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-6 py-5">
 							{activeCompactSection === "surfaces" ? (
 								<AgentCompactSurfacesPanel className="-mr-6 pr-6" />
+							) : activeCompactSection === "users" ? (
+								<div
+									className="-mr-6 flex min-h-0 flex-1 flex-col overflow-y-auto pr-6"
+									data-agent-compact-section="users"
+								>
+									<AgentUsers />
+								</div>
 							) : (
 								<AgentConfigFields
 									config={activeConfig}
