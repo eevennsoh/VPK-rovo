@@ -832,11 +832,26 @@ import {
 			{ name: "AgentOutput", description: "Output schema display with syntax highlighting." },
 		],
 		examples: [
-			{ title: "Default", description: "Compact layout with filled configuration details under the editor toolbar.", demoSlug: "agent-demo-compact-filled" },
-			{ title: "Compact empty", description: "Compact builder layout with quick configuration links and Operations prompt starters.", demoSlug: "agent-demo-compact-empty" },
-			{ title: "Compact surfaces", description: "Compact agent surface settings for default and extended availability.", demoSlug: "agent-demo-compact-surfaces" },
 			{ title: "Filled agent", description: "Agent strategy surface after configuration fields have been populated.", demoSlug: "agent-demo-full" },
-			{ title: "Empty agent", description: "Default setup state with add tiles before details are populated.", demoSlug: "agent-demo-empty" },
+			{ title: "Empty agent", description: "Default setup state with quick configuration links and Operations prompt starters before details are populated.", demoSlug: "agent-demo-empty" },
+		],
+	},
+
+	knowledge: {
+		description:
+			"Knowledge configuration panel for an agent strategy surface. Shows the Teamwork Graph source row with connected app icons, a Memory row with a Manage action, and an Add knowledge button. Composed from existing design components and tokens.",
+		usage: `import { Knowledge } from "@/components/ui-custom/knowledge";
+
+<Knowledge />`,
+		props: [
+			{
+				name: "className",
+				type: "string",
+				description: "Additional classes applied to the outer section element.",
+			},
+		],
+		examples: [
+			{ title: "Default", description: "Knowledge panel with the Teamwork Graph source, Memory row, and Add knowledge action.", demoSlug: "knowledge" },
 		],
 	},
 

@@ -170,14 +170,21 @@ function TriggerAddRow({
 	);
 }
 
-function TriggerPicker({
+export function TriggerPicker({
 	defaultOpen,
 	label,
 	onSelectEvent,
+	trigger,
 }: Readonly<{
 	defaultOpen?: boolean;
 	label: string;
 	onSelectEvent: (providerId: AgentTriggerProviderId, eventId: string) => void;
+	/**
+	 * Custom element rendered as the dropdown trigger. Defaults to the standard
+	 * `TriggerAddRow`. Lets callers anchor the provider/event picker to their own
+	 * affordance (e.g. an agent config summary row) while reusing the menu.
+	 */
+	trigger?: ReactElement;
 }>): ReactElement {
 	const [open, setOpen] = useState(defaultOpen ?? false);
 	const [query, setQuery] = useState("");
@@ -213,7 +220,7 @@ function TriggerPicker({
 
 	return (
 		<DropdownMenu open={open} onOpenChange={setOpen}>
-			<DropdownMenuTrigger render={<TriggerAddRow label={label} />} />
+			<DropdownMenuTrigger render={trigger ?? <TriggerAddRow label={label} />} />
 			<DropdownMenuContent
 				align="start"
 				className="w-[min(24rem,calc(100vw-2rem))] p-1"

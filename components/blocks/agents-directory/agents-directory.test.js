@@ -77,14 +77,16 @@ test("Agents Directory sidebar nav uses the shared SidebarNavItem primitive", ()
 	assert.match(source, /import AlignTextLeftIcon from "@atlaskit\/icon\/core\/align-text-left";/u);
 	assert.match(source, /import \{ Avatar, AvatarImage \} from "@\/components\/ui\/avatar";/u);
 	assert.match(source, /import \{ AtlassianLogo, type AtlassianLogoName \} from "@\/components\/ui\/logo";/u);
-	assert.doesNotMatch(source, /import \{ Tile \} from "@\/components\/ui\/tile";/u);
+	assert.match(source, /import \{ Tile \} from "@\/components\/ui\/tile";/u);
 	assert.match(
 		source,
 		/<SidebarNavItem label=\{label\} isSelected=\{active\} onClick=\{onClick\} \/>/u,
 	);
 	assert.match(source, /<SidebarNavItem[\s\S]*label=\{item\.label\}[\s\S]*leading=\{<SidebarItemAvatar item=\{item\} \/>\}[\s\S]*onClick=\{agent \? \(\) => onSelectAgent\?\.\(agent\) : undefined\}/u);
 	assert.match(source, /function SidebarItemAvatar\(\{ item \}: Readonly<\{ item: AgentBrowserSidebarItem \}>\)/u);
-	assert.match(source, /if \(item\.logoName\)[\s\S]*<span className="flex size-6 shrink-0 items-center justify-center">[\s\S]*<AtlassianLogo name=\{item\.logoName\} label=\{item\.label\} size="small" themeAware \/>[\s\S]*<\/span>/u);
+	// Atlassian's transparent brand mark gets a bordered Tile container so company
+	// sidebar rows read consistently with the 3p logos (which carry their own tile).
+	assert.match(source, /if \(item\.logoName\)[\s\S]*<Tile label=\{item\.label\} variant="transparent" size="small" hasBorder className="shrink-0">[\s\S]*<AtlassianLogo name=\{item\.logoName\} label=\{item\.label\} size="xsmall" themeAware \/>[\s\S]*<\/Tile>/u);
 	assert.match(source, /if \(item\.avatarSrc\?\.startsWith\("\/avatar-project\/"\)\)/u);
 	assert.match(source, /<span className="flex size-6 shrink-0 items-center justify-center">[\s\S]*<Avatar size="sm" shape="square" label=\{item\.label\} className="size-5">[\s\S]*<AvatarImage alt="" aria-hidden src=\{item\.avatarSrc\} \/>/u);
 	assert.match(source, /<Avatar size="sm" shape="square" className="shrink-0 after:border-0">/u);
@@ -207,21 +209,24 @@ test("Agents Directory cards render the shared CardDirectoryAgent with overlay e
 	assert.match(source, /import \{ CardDirectoryAgent \} from "@\/components\/ui-custom\/card-directory";/u);
 	assert.match(source, /function AgentCard\(\{ agent, onSelectAgent, publisher \}: Readonly<AgentCardProps>\)/u);
 	assert.match(source, /const \[moreMenuOpen, setMoreMenuOpen\] = useState\(false\);/u);
-	assert.match(source, /<CardDirectoryAgent[\s\S]*active=\{moreMenuOpen\}[\s\S]*avatarImageClassName=\{getDirectoryCardAvatarClassName\(agent\)\}/u);
+	assert.match(source, /<CardDirectoryAgent[\s\S]*active=\{moreMenuOpen\}[\s\S]*avatarSrc=\{getDirectoryCardAvatarSrc\(agent\)\}[\s\S]*insetLogo=\{isBorderlessHexagonAgent\(agent\)\}/u);
 	assert.match(source, /className="hover:border-transparent"/u);
 	assert.match(source, /onSelect=\{selectAgent\}/u);
 	assert.match(source, /<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
 	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
 	assert.match(cardDirectoryAgentSource, /logoName\?: AtlassianLogoName;/u);
-	assert.match(cardDirectoryAgentSource, /<AtlassianLogo name=\{logoName\} size="medium" themeAware label=\{name\} \/>/u);
+	assert.match(cardDirectoryAgentSource, /size=\{logoName === "atlassian" \? "xsmall" : "medium"\}/u);
 	assert.doesNotMatch(source, /AgentDirectoryCard/u);
 	assert.doesNotMatch(source, /AGENT_CARD_OVERLAY_SHADOW/u);
 	assert.doesNotMatch(source, /import \{ motion, useReducedMotion \}/u);
 
-	// Avatar scaling for wide third-party logos is still derived locally.
-	assert.match(source, /function getDirectoryCardAvatarClassName\(agent: AgentBrowserAgent\): string/u);
-	assert.match(source, /if \(agent\.id === "google-drive" \|\| agent\.id === "slack"\)/u);
-	assert.match(source, /return "size-full scale-85 object-contain";/u);
+	// Self-contained third-party marks render in a borderless hexagon, inset to 16x16.
+	assert.match(source, /const BORDERLESS_HEXAGON_AGENT_IDS: ReadonlySet<string> = new Set\(\["google-drive", "slack", "notion"\]\);/u);
+	assert.match(source, /function isBorderlessHexagonAgent\(agent: AgentBrowserAgent\): boolean/u);
+	assert.match(source, /return BORDERLESS_HEXAGON_AGENT_IDS\.has\(agent\.id\);/u);
+	// Borderless agents swap to their purpose-built 16px tile on the card.
+	assert.match(source, /function getDirectoryCardAvatarSrc\(agent: AgentBrowserAgent\): string \| undefined/u);
+	assert.match(source, /return `\/3p\/\$\{agent\.id\}\/16-borderless\.svg`;/u);
 
 	// The hover/elevation/keyboard contract now lives in the shared shell + agent wrapper.
 	const shell = readProjectFile("components/ui-custom/card-directory/card-directory.tsx");

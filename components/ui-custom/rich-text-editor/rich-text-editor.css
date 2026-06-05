@@ -472,7 +472,15 @@
 	cursor: not-allowed;
 }
 
+/* Mirror the full-bleed "Back" header: break out of the list's 4px padding so
+   the sticky input bar spans edge-to-edge with square top corners, while the
+   logo stays aligned with the icons of the rows below (12px from the edge). */
 .rich-text-command-menu-input {
+	margin: -4px -4px 4px;
+	width: calc(100% + 8px);
+	border-radius: 0;
+	padding-left: 12px;
+	padding-right: 12px;
 	cursor: text;
 }
 
@@ -482,6 +490,11 @@
 	height: 24px;
 	align-items: center;
 	justify-content: center;
+}
+
+.rich-text-command-menu-input-logo > svg {
+	width: 20px;
+	height: 20px;
 }
 
 .rich-text-command-menu-input > [data-slot="input"] {

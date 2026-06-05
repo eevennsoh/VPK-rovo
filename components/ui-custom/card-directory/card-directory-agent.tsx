@@ -33,6 +33,13 @@ export interface CardDirectoryAgentProps {
 	chatCount?: number;
 	/** Extra classes applied to the avatar image (e.g. to scale a wide logo). */
 	avatarImageClassName?: string;
+	/**
+	 * Inset the `avatarSrc` image to 16x16 inside the hexagon container (rather
+	 * than letting it fill edge-to-edge). Use with the purpose-built borderless
+	 * 16px marks (e.g. Notion, Slack, Google Drive) so the logo sits centered as
+	 * a tile while the hexagon container + outline are preserved.
+	 */
+	insetLogo?: boolean;
 	active?: boolean;
 	moreAction?: ReactNode;
 	onSelect?: () => void;
@@ -52,6 +59,7 @@ export function CardDirectoryAgent({
 	feedbackCount,
 	chatCount,
 	avatarImageClassName,
+	insetLogo = false,
 	active = false,
 	moreAction,
 	onSelect,
@@ -63,15 +71,28 @@ export function CardDirectoryAgent({
 	const leadingAvatar = (
 		<Avatar size="default" shape="hexagon">
 			{logoName ? (
-				<AtlassianLogo name={logoName} size="medium" themeAware label={name} />
+				// The Atlassian "one" brand mark reads heavy at 32px inside the hexagon;
+				// render it at 20x20 so it sits like an inset logo rather than a full bleed.
+				<AtlassianLogo
+					name={logoName}
+					size={logoName === "atlassian" ? "xsmall" : "medium"}
+					themeAware
+					label={name}
+				/>
 			) : avatarSrc ? (
+				// Inset marks sit at 16x16 inside the hexagon container so they read as a
+				// tile; otherwise the image fills the hexagon (with optional scaling).
 				<Image
 					alt=""
 					aria-hidden
-					className={cn("size-full object-contain", avatarImageClassName)}
-					height={32}
+					className={
+						insetLogo
+							? cn("size-4 object-contain", avatarImageClassName)
+							: cn("size-full object-contain", avatarImageClassName)
+					}
+					height={insetLogo ? 16 : 32}
 					src={avatarSrc}
-					width={32}
+					width={insetLogo ? 16 : 32}
 				/>
 			) : null}
 		</Avatar>

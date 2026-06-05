@@ -346,7 +346,13 @@ function RovoAppComposerInner({
 		}
 
 		requestAnimationFrame(() => {
-			textareaRef.current?.focus();
+			const el = textareaRef.current;
+			if (!el) return;
+			el.focus();
+			// Place the caret after the last character (e.g. when a template
+			// tile prefilled the input) instead of at the start.
+			const end = el.value.length;
+			el.setSelectionRange(end, end);
 		});
 	}, [focusRequestKey]);
 

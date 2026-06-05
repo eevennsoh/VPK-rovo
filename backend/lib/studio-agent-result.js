@@ -625,6 +625,267 @@ function extractStudioAgentResultFromText(text) {
 	);
 }
 
+const CLARIFICATION_ANSWERS_PATTERN = /^\s*here are my clarification answers\b/i;
+
+function extractMessageText(message) {
+	if (!message || typeof message !== "object") {
+		return "";
+	}
+
+	if (typeof message.content === "string") {
+		return message.content.trim();
+	}
+
+	if (typeof message.text === "string") {
+		return message.text.trim();
+	}
+
+	if (Array.isArray(message.parts)) {
+		return message.parts
+			.map((part) => {
+				if (typeof part === "string") {
+					return part;
+				}
+				if (!part || typeof part !== "object") {
+					return "";
+				}
+				if (part.type === "text" && typeof part.text === "string") {
+					return part.text;
+				}
+				if (part.type === "text-delta" && typeof part.delta === "string") {
+					return part.delta;
+				}
+				return "";
+			})
+			.join("")
+			.trim();
+	}
+
+	return "";
+}
+
+function findOriginalAgentBrief({ prompt, messages } = {}) {
+	const candidates = [];
+	if (Array.isArray(messages)) {
+		for (const message of messages) {
+			const role = message?.role || message?.type;
+			if (role !== "user") {
+				continue;
+			}
+			candidates.push(extractMessageText(message));
+		}
+	}
+	candidates.push(typeof prompt === "string" ? prompt : "");
+
+	return candidates.find((candidate) => (
+		candidate &&
+		!CLARIFICATION_ANSWERS_PATTERN.test(candidate)
+	)) || "";
+}
+
+function normalizeWhitespace(value) {
+	return getNonEmptyString(value)?.replace(/\s+/gu, " ") || "";
+}
+
+function sentenceCase(value) {
+	const normalized = normalizeWhitespace(value);
+	if (!normalized) {
+		return "";
+	}
+
+	return `${normalized[0].toUpperCase()}${normalized.slice(1)}`;
+}
+
+function titleCase(value) {
+	return normalizeWhitespace(value)
+		.toLowerCase()
+		.split(/\s+/u)
+		.map((word) => {
+			if (["and", "or", "for", "to", "of", "the", "a", "an"].includes(word)) {
+				return word;
+			}
+			return `${word[0]?.toUpperCase() || ""}${word.slice(1)}`;
+		})
+		.join(" ")
+		.replace(/^\w/u, (match) => match.toUpperCase());
+}
+
+function deriveObjectiveFromBrief(brief) {
+	const normalizedBrief = normalizeWhitespace(brief)
+		.replace(/^create\s+(?:an?\s+)?agent\s+(?:that|to|for)\s+/iu, "")
+		.replace(/^build\s+(?:an?\s+)?agent\s+(?:that|to|for)\s+/iu, "")
+		.replace(/^make\s+(?:an?\s+)?agent\s+(?:that|to|for)\s+/iu, "")
+		.replace(/\.$/u, "");
+
+	return normalizedBrief || "help with the requested Studio workflow";
+}
+
+function deriveFallbackAgentName(brief) {
+	const normalizedBrief = normalizeWhitespace(brief);
+	if (/\bsupport\b/iu.test(normalizedBrief) && /\btriag(?:e|es|ing)\b/iu.test(normalizedBrief)) {
+		return "Support Request Triage Agent";
+	}
+	if (/\brfp\b/iu.test(normalizedBrief) && /\bdraft(?:er|ing)?\b/iu.test(normalizedBrief)) {
+		return "RFP Drafter";
+	}
+	if (/\bincident\b/iu.test(normalizedBrief) && /\btriag(?:e|es|ing)\b/iu.test(normalizedBrief)) {
+		return "Incident Triage Agent";
+	}
+
+	const objective = deriveObjectiveFromBrief(normalizedBrief)
+		.split(/\b(?:,| and | then | while )\b/iu)[0]
+		.replace(/\b(?:incoming|requested|clear|best)\b/giu, "")
+		.trim();
+	const words = objective
+		.split(/\s+/u)
+		.filter((word) => /^[a-z0-9-]+$/iu.test(word))
+		.slice(0, 4);
+	if (words.length > 0) {
+		const title = titleCase(words.join(" "));
+		return /\bagent$/iu.test(title) ? title : `${title} Agent`;
+	}
+
+	return "Custom Studio Agent";
+}
+
+function normalizeAnswerText(value) {
+	if (Array.isArray(value)) {
+		return value.map(normalizeAnswerText).filter(Boolean).join(", ");
+	}
+	if (isPlainObject(value)) {
+		return (
+			getNonEmptyString(value.label) ||
+			getNonEmptyString(value.text) ||
+			getNonEmptyString(value.value) ||
+			""
+		);
+	}
+	return getNonEmptyString(value) || "";
+}
+
+function normalizeClarificationAnswerEntries(clarificationAnswers) {
+	if (!isPlainObject(clarificationAnswers)) {
+		return [];
+	}
+
+	return Object.entries(clarificationAnswers)
+		.map(([question, answer]) => ({
+			question: normalizeWhitespace(question),
+			answer: normalizeAnswerText(answer),
+		}))
+		.filter((entry) => entry.question && entry.answer);
+}
+
+function detectToolsFromText(text) {
+	const tools = [];
+	const addTool = (label, pattern) => {
+		if (pattern.test(text) && !tools.includes(label)) {
+			tools.push(label);
+		}
+	};
+
+	addTool("Jira Service Management", /\bjira service management\b|\bjsm\b/iu);
+	addTool("Jira", /\bjira\b/iu);
+	addTool("Confluence", /\bconfluence\b|\bwiki\b/iu);
+	addTool("Slack", /\bslack\b/iu);
+	addTool("GitHub", /\bgithub\b|\bpull request\b|\bpr\b/iu);
+	addTool("Email", /\bemail\b|\binbox\b|\bgmail\b/iu);
+
+	return tools.filter((tool, index) => (
+		tool !== "Jira" || !tools.slice(0, index).includes("Jira Service Management")
+	));
+}
+
+function buildClarificationSummary(entries) {
+	if (!Array.isArray(entries) || entries.length === 0) {
+		return "";
+	}
+
+	return entries
+		.map((entry) => `- **${entry.question}** ${entry.answer}`)
+		.join("\n");
+}
+
+function buildFallbackConversationStarters({ brief, name }) {
+	const normalizedBrief = normalizeWhitespace(brief);
+	if (/\bsupport\b/iu.test(normalizedBrief)) {
+		return [
+			"Triage this incoming support request.",
+			"Ask for any missing priority and reproduction details.",
+			"Draft the next action for the support team.",
+		];
+	}
+
+	const base = name.replace(/\s+Agent$/u, "");
+	return [
+		`Help me with a new ${base.toLowerCase()} request.`,
+		"Review this context and identify what is missing.",
+		"Draft the next recommended action.",
+	];
+}
+
+function buildFallbackStudioAgentResult({
+	prompt,
+	messages,
+	clarificationAnswers,
+} = {}) {
+	const brief = findOriginalAgentBrief({ prompt, messages });
+	const objective = deriveObjectiveFromBrief(brief);
+	const name = deriveFallbackAgentName(brief);
+	const entries = normalizeClarificationAnswerEntries(clarificationAnswers);
+	const answerText = entries.map((entry) => `${entry.question} ${entry.answer}`).join("\n");
+	const combinedText = [brief, answerText].filter(Boolean).join("\n");
+	const tools = detectToolsFromText(combinedText);
+	const description = sentenceCase(objective).replace(/\.$/u, ".");
+	const clarificationSummary = buildClarificationSummary(entries);
+	const instructions = [
+		"## Instructions",
+		"",
+		`You are ${name}. Your job is to ${objective}.`,
+		"",
+		"- **Intake** Read the user's request, identify the desired outcome, and note any missing context before acting.",
+		"- **Workflow** Classify the request, gather missing details, and draft a clear next action that the team can use immediately.",
+		"- **Communication** Keep responses professional, concise, and explicit about assumptions.",
+		"- **Guardrails** Do not invent facts, priorities, owners, or system state. Ask for confirmation before recommending irreversible or high-impact action.",
+		...(clarificationSummary
+			? [
+					"",
+					"## Confirmed Details",
+					"",
+					clarificationSummary,
+				]
+			: []),
+		...(tools.length > 0
+			? [
+					"",
+					"## Tools",
+					"",
+					`Use ${tools.join(", ")} when the request requires context from those systems.`,
+				]
+			: []),
+		"",
+		"## Validation",
+		"",
+		"- Before finalizing, confirm the response includes the classification, missing details, and next action.",
+	].join("\n");
+
+	return normalizeStudioAgentResult({
+		agentId: slugify(name),
+		name,
+		byline: DEFAULT_GENERATED_AGENT_BYLINE,
+		description,
+		instructions,
+		contextDescription: instructions,
+		conversationStarters: buildFallbackConversationStarters({ brief, name }),
+		tools,
+		trigger: "When a user asks for help with this workflow.",
+		guardrail:
+			"Ask for missing context before making priority, ownership, or escalation recommendations.",
+		avatarFallback: { initials: getInitials(name) },
+		action: "create",
+	});
+}
+
 function buildCreationModeContextPrefix(creationMode) {
 	if (creationMode === "agent") {
 		return `[AGENT CREATION MODE]
@@ -703,6 +964,7 @@ module.exports = {
 	MISSING_STUDIO_AGENT_RESULT_ERROR_CODE,
 	STUDIO_AGENT_RESULT_WIDGET_TYPE,
 	buildCreationModeContextPrefix,
+	buildFallbackStudioAgentResult,
 	buildMissingStudioAgentResultFailureParts,
 	extractStudioAgentResultFromText,
 	findJsonObjectEndIndex,

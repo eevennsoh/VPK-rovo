@@ -240,6 +240,7 @@ const {
 const {
 	AGENT_RESULT_STREAM_PREFIX,
 	buildCreationModeContextPrefix,
+	buildFallbackStudioAgentResult,
 	buildMissingStudioAgentResultFailureParts,
 	extractStudioAgentResultFromText,
 	findJsonObjectEndIndex: findStudioAgentJsonObjectEndIndex,
@@ -6182,6 +6183,29 @@ const FALLBACK_AGENT_CREATION_QUESTION_INPUT = {
 		},
 	],
 };
+const STUDIO_AGENT_GATEWAY_FALLBACK_TIMEOUT_MS = 12_000;
+
+function withStudioAgentGatewayFallbackTimeout(promise, timeoutMs) {
+	let timeoutHandle = null;
+	const timeoutPromise = new Promise((resolve) => {
+		timeoutHandle = setTimeout(
+			() => resolve({ timedOut: true, value: "" }),
+			timeoutMs,
+		);
+	});
+	const trackedPromise = promise.then(
+		(value) => ({ timedOut: false, value }),
+		(error) => {
+			throw error;
+		},
+	);
+
+	return Promise.race([trackedPromise, timeoutPromise]).finally(() => {
+		if (timeoutHandle) {
+			clearTimeout(timeoutHandle);
+		}
+	});
+}
 
 async function handleChatSdkRequest(req, res) {
 	let stageTrace = null;
@@ -8749,9 +8773,40 @@ async function handleChatSdkRequest(req, res) {
 								bufferedText += delta;
 							}
 						},
+					}).catch((gatewayError) => {
+						if (isAgentCreationTurn && !abortController.signal.aborted) {
+							console.warn(
+								"[CHAT-SDK] Studio agent gateway generation failed; falling back to deterministic profile:",
+								gatewayError?.message || gatewayError,
+							);
+							return "";
+						}
+						throw gatewayError;
 					});
+					const boundedGatewayCallPromise =
+						isAgentCreationTurn && !isFirstAgentCreationTurn
+							? withStudioAgentGatewayFallbackTimeout(
+									gatewayCallPromise,
+									STUDIO_AGENT_GATEWAY_FALLBACK_TIMEOUT_MS,
+							  )
+							: gatewayCallPromise.then((value) => ({
+									timedOut: false,
+									value,
+							  }));
 
-					await Promise.all([gatewayCallPromise, scriptedTracePromise]);
+					const [gatewayCallResult] = await Promise.all([
+						boundedGatewayCallPromise,
+						scriptedTracePromise,
+					]);
+					if (gatewayCallResult?.timedOut) {
+						console.warn(
+							"[CHAT-SDK] Studio agent gateway generation timed out; falling back to deterministic profile",
+							{
+								timeoutMs: STUDIO_AGENT_GATEWAY_FALLBACK_TIMEOUT_MS,
+								threadId,
+							},
+						);
+					}
 
 					// Post-process: prefer the model-agnostic deferred-tool
 					// envelope, then keep the legacy question-card/prose
@@ -8883,6 +8938,26 @@ async function handleChatSdkRequest(req, res) {
 					if (agentResultExtraction) {
 						visibleText = agentResultExtraction.cleanedText;
 					}
+					const fallbackAgentResultPayload =
+						creationMode === "agent" &&
+						!isFirstAgentCreationTurn &&
+						!questionCardPayload &&
+						!planWidgetPayload &&
+						!agentResultExtraction?.payload
+							? buildFallbackStudioAgentResult({
+									prompt: latestUserMessage,
+									messages: gatewayMessages,
+									clarificationAnswers: clarificationSubmission
+										? adaptClarificationAnswersForToolContract(
+												clarificationSubmission.sessionId,
+												clarificationSubmission.answers,
+										  )
+										: null,
+							  })
+							: null;
+					if (fallbackAgentResultPayload && !visibleText) {
+						visibleText = `${fallbackAgentResultPayload.name} is ready to review.`;
+					}
 
 					if (visibleText && visibleText.length > 0) {
 						writer.write({ type: "text-start", id: textId });
@@ -8932,11 +9007,13 @@ async function handleChatSdkRequest(req, res) {
 						}));
 					}
 
-					if (agentResultExtraction?.payload) {
+					const agentResultPayload =
+						agentResultExtraction?.payload || fallbackAgentResultPayload;
+					if (agentResultPayload) {
 						writer.write({
 							type: "data-agent-result",
 							id: `studio-agent-result-${Date.now()}`,
-							data: agentResultExtraction.payload,
+							data: agentResultPayload,
 						});
 					} else if (
 						shouldSurfaceMissingStudioAgentResultFailure({

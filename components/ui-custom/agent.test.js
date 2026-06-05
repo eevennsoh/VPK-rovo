@@ -97,11 +97,11 @@ const HORIZONTAL_OVERFLOW_HOOK_SOURCE = readFileSync(
 	"utf8",
 );
 
-test("Agent demo defaults to the compact filled preview", () => {
-	assert.match(AGENT_DEMO_SOURCE, /export default function AgentDemo\(\) \{[\s\S]*return <AgentDemoCompactFilled \/>;/u);
+test("Agent demo defaults to the filled preview", () => {
+	assert.match(AGENT_DEMO_SOURCE, /export default function AgentDemo\(\) \{[\s\S]*return <AgentDemoFull \/>;/u);
 	assert.match(
 		UI_CUSTOM_DETAILS_SOURCE,
-		/examples: \[[\s\S]*title: "Default"[\s\S]*demoSlug: "agent-demo-compact-filled"[\s\S]*demoSlug: "agent-demo-full"/u,
+		/examples: \[[\s\S]*title: "Filled agent"[\s\S]*demoSlug: "agent-demo-full"[\s\S]*title: "Empty agent"[\s\S]*demoSlug: "agent-demo-empty"/u,
 	);
 });
 
@@ -229,11 +229,14 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	assert.match(AGENT_SOURCE, /function hasFilledAgentConfig\(config: AgentConfigFormValue\): boolean/u);
 	assert.match(AGENT_SOURCE, /const isFilledConfig = hasFilledAgentConfig\(config\);/u);
 	assert.match(AGENT_SOURCE, /<AgentFilledConfigSummary/u);
-	assert.match(AGENT_SOURCE, /function AgentMissingConfigActions/u);
-	assert.match(AGENT_SOURCE, /<AgentMissingConfigActions[\s\S]*config=\{config\}/u);
+	// The empty state now uses the single-layout config nav (AgentCompactEmptyConfigNav)
+	// instead of the removed AgentMissingConfigActions grid.
+	assert.doesNotMatch(AGENT_SOURCE, /function AgentMissingConfigActions/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactEmptyConfigNav/u);
 	assert.match(AGENT_SOURCE, /getAgentTriggerItems\(config\)\.length > 0/u);
 	assert.match(AGENT_SOURCE, /MAX_AGENT_CONVERSATION_STARTERS = 3/u);
 
+	// Every config field is represented in the empty-state nav item catalog.
 	for (const label of [
 		"Triggers",
 		"Skills",
@@ -242,7 +245,7 @@ test("Agent config renders filled summary rows once field data exists", () => {
 		"Knowledge",
 		"Conversation starters",
 	]) {
-		assert.match(AGENT_SOURCE, new RegExp(`label="${label}"`, "u"));
+		assert.match(AGENT_SOURCE, new RegExp(`label: "${label}"`, "u"));
 	}
 
 	assert.match(AGENT_SOURCE, /function AgentReferenceChip/u);
@@ -263,7 +266,9 @@ test("Agent config renders filled summary rows once field data exists", () => {
 			new RegExp(`label="${rowLabel}"[\\s\\S]*referenceCategory="${category}"`, "u"),
 		);
 	}
-	for (const field of ["triggers", "skills", "tools", "subagents", "knowledge", "conversationStarters"]) {
+	// Triggers are edited via the triggers dialog (onEditTriggers), not removed
+	// via onRemoveListItem like the other list fields.
+	for (const field of ["skills", "tools", "subagents", "knowledge", "conversationStarters"]) {
 		assert.match(AGENT_SOURCE, new RegExp(`onRemoveListItem\\("${field}", index\\)`, "u"));
 	}
 	assert.match(TAG_SOURCE, /group\/tag relative inline-flex/u);
@@ -333,9 +338,11 @@ test("Agent header renders Configure and Test as a self-contained compact Toggle
 });
 
 test("Agent component page wires compact filled and empty placeholder variations", () => {
-	const compactLayoutStart = AGENT_SOURCE.indexOf('{layout === "compact"');
-	const defaultLayoutStart = AGENT_SOURCE.indexOf("{/* Profile + config summary", compactLayoutStart);
-	const compactLayoutSource = AGENT_SOURCE.slice(compactLayoutStart, defaultLayoutStart);
+	// The config surface now has a single (formerly "compact") layout — no
+	// `layout` prop and no default/compact branch. The render starts at the
+	// scrollable wrapper inside AgentConfigFields.
+	const compactLayoutStart = AGENT_SOURCE.indexOf("data-agent-config-id={idPrefix}");
+	const compactLayoutSource = AGENT_SOURCE.slice(compactLayoutStart);
 	const compactBottomSlotSource = compactLayoutSource.slice(
 		compactLayoutSource.indexOf("bottomSlot="),
 		compactLayoutSource.indexOf("bottomSlotClassName="),
@@ -347,12 +354,13 @@ test("Agent component page wires compact filled and empty placeholder variations
 	const sectionLabelStart = AGENT_SOURCE.indexOf("function AgentSectionLabel", compactOperationsStart);
 	const compactOperationsSource = AGENT_SOURCE.slice(compactOperationsStart, sectionLabelStart);
 
-	assert.match(AGENT_SOURCE, /layout\?: "default" \| "compact";/u);
 	assert.match(AGENT_SOURCE, /compactScrollAreaClassName\?: string;/u);
 	assert.match(AGENT_SOURCE, /compactScrollAreaClassName,/u);
-	assert.match(AGENT_SOURCE, /layout = "default"/u);
-	assert.match(AGENT_SOURCE, /data-agent-config-layout=\{layout\}/u);
-	assert.match(AGENT_SOURCE, /layout === "compact"/u);
+	// The `layout` prop and the dual-branch render have been removed entirely.
+	assert.doesNotMatch(AGENT_SOURCE, /layout\?: "default" \| "compact";/u);
+	assert.doesNotMatch(AGENT_SOURCE, /layout = "default"/u);
+	assert.doesNotMatch(AGENT_SOURCE, /data-agent-config-layout=/u);
+	assert.doesNotMatch(AGENT_SOURCE, /layout === "compact"/u);
 	// The compact footer is now a true bottom-anchored solid footer, not a
 	// sticky overlay pulled up by negative margin. The old reserved-height
 	// constant, footer-height ref/state, and ResizeObserver machinery are gone.
@@ -387,7 +395,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// The toolbar lives in a bottom-anchored footer (no overlay). The wrapper
 	// itself is transparent so the separator/expand row shows content scrolling
 	// behind it; the opaque surface lives on the field rows inside the toolbar.
-	assert.match(compactFooterSource, /<div className="shrink-0">[\s\S]*<AgentCompactConfigToolbarBelow[\s\S]*isFilledConfig=\{isFilledConfig\}/u);
+	assert.match(compactFooterSource, /<div className="shrink-0">[\s\S]*<AgentCompactConfigToolbarBelow/u);
 	assert.doesNotMatch(compactFooterSource, /shrink-0 bg-surface/u);
 	assert.doesNotMatch(compactFooterSource, /sticky/u);
 	assert.doesNotMatch(compactFooterSource, /marginTop/u);
@@ -478,7 +486,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /import ChevronUpIcon from "@atlaskit\/icon\/core\/chevron-up";/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE = 24;/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_REVEAL_DISTANCE = 72;/u);
-	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow\([\s\S]*const \[expanded, setExpanded\] = useState\(\(\) => !isFilledConfig\);[\s\S]*const shouldReduceMotion = useReducedMotion\(\);[\s\S]*const expandButtonRowRef = useRef<HTMLDivElement \| null>\(null\);[\s\S]*const expandButtonX = useMotionValue\(0\);[\s\S]*const expandButtonPaddingRight = useTransform\(expandButtonX, \(latest\): number =>[\s\S]*Math\.abs\(latest\) > 0\.5 \? AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP : 0,[\s\S]*\);[\s\S]*const expandButtonVisualX = useTransform\(expandButtonX, \(latest\): number =>[\s\S]*latest \+ \(Math\.abs\(latest\) > 0\.5 \? AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP : 0\),[\s\S]*\);[\s\S]*const isExpanded = expanded;/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactConfigToolbarBelow\([\s\S]*const \[expanded, setExpanded\] = useState\(true\);[\s\S]*const shouldReduceMotion = useReducedMotion\(\);[\s\S]*const expandButtonRowRef = useRef<HTMLDivElement \| null>\(null\);[\s\S]*const expandButtonX = useMotionValue\(0\);[\s\S]*const expandButtonPaddingRight = useTransform\(expandButtonX, \(latest\): number =>[\s\S]*Math\.abs\(latest\) > 0\.5 \? AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP : 0,[\s\S]*\);[\s\S]*const expandButtonVisualX = useTransform\(expandButtonX, \(latest\): number =>[\s\S]*latest \+ \(Math\.abs\(latest\) > 0\.5 \? AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP : 0\),[\s\S]*\);[\s\S]*const isExpanded = expanded;/u);
 	assert.match(AGENT_SOURCE, /window\.addEventListener\("pointermove", handlePointerMove, true\);[\s\S]*window\.removeEventListener\("pointermove", handlePointerMove, true\);/u);
 	assert.match(AGENT_SOURCE, /const isNearBottom = pointerDistanceFromBottom >= -AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE[\s\S]*pointerDistanceFromBottom <= AGENT_COMPACT_CONFIG_EXPAND_BUTTON_REVEAL_DISTANCE;/u);
 	assert.doesNotMatch(AGENT_SOURCE, /clampFloatingRovoButtonValue/u);
@@ -571,36 +579,30 @@ test("Agent component page wires compact filled and empty placeholder variations
 		/toolbarBelowSlot\?: ReactNode;[\s\S]*data-slot="rich-text-editor-toolbar-below"/u,
 	);
 
-	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactFilled/u);
-	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-compact-filled"/u);
-	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactFilled[\s\S]*leadingContent=\{<AgentCompactHeaderNav \/>\}/u);
-	assert.match(AGENT_DEMO_SOURCE, /export default function AgentDemo\(\) \{[\s\S]*return <AgentDemoCompactFilled \/>;/u);
-	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactEmpty/u);
-	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-compact-empty"/u);
-	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactEmpty[\s\S]*leadingContent=\{<AgentCompactHeaderNav \/>\}/u);
-	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoCompactSurfaces/u);
-	assert.match(AGENT_DEMO_SOURCE, /const \[activeSection, setActiveSection\] = useState<AgentCompactHeaderSection \| null>\("surfaces"\);/u);
-	assert.match(AGENT_DEMO_SOURCE, /<AgentCompactHeaderNav[\s\S]*activeSection=\{activeSection\}[\s\S]*onSectionChange=\{handleSectionChange\}/u);
-	assert.match(AGENT_DEMO_SOURCE, /activeSection === "surfaces" \? \([\s\S]*<AgentCompactSurfacesPanel \/>/u);
+	// Only two agent demos remain — Filled and Empty — both rendering the single
+	// (formerly "compact") layout with the header nav + section switching. The
+	// old "Compact"-named demos and the `layout` prop are gone.
+	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoFull/u);
+	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-full"/u);
+	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoFull[\s\S]*<AgentCompactHeaderNav activeSection=\{activeSection\} onSectionChange=\{setActiveSection\} \/>/u);
+	assert.match(AGENT_DEMO_SOURCE, /export default function AgentDemo\(\) \{[\s\S]*return <AgentDemoFull \/>;/u);
+	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoEmpty/u);
+	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-empty"/u);
+	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoEmpty[\s\S]*<AgentCompactHeaderNav activeSection=\{activeSection\} onSectionChange=\{setActiveSection\} \/>/u);
+	// Shared body still routes the "surfaces" section to the surfaces panel.
+	assert.match(AGENT_DEMO_SOURCE, /activeSection === "surfaces"[\s\S]*<AgentCompactSurfacesPanel \/>/u);
 	assert.doesNotMatch(AGENT_DEMO_SOURCE, /showActions=\{false\}/u);
-	assert.match(
-		AGENT_DEMO_SOURCE,
-		/idPrefix="agent-demo-compact-filled"[\s\S]*layout="compact"/u,
-	);
-	assert.match(
-		AGENT_DEMO_SOURCE,
-		/idPrefix="agent-demo-compact-empty"[\s\S]*layout="compact"/u,
-	);
-	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Default"[\s\S]*demoSlug: "agent-demo-compact-filled"/u);
-	assert.match(UI_CUSTOM_DETAILS_SOURCE, /demoSlug: "agent-demo-compact-filled"[\s\S]*demoSlug: "agent-demo-full"/u);
-	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Compact empty"[\s\S]*demoSlug: "agent-demo-compact-empty"/u);
-	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Compact surfaces"[\s\S]*demoSlug: "agent-demo-compact-surfaces"/u);
-	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-compact-filled": dynamic/u);
-	assert.match(WEBSITE_REGISTRY_SOURCE, /default: mod\.AgentDemoCompactFilled/u);
-	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-compact-empty": dynamic/u);
-	assert.match(WEBSITE_REGISTRY_SOURCE, /default: mod\.AgentDemoCompactEmpty/u);
-	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-compact-surfaces": dynamic/u);
-	assert.match(WEBSITE_REGISTRY_SOURCE, /default: mod\.AgentDemoCompactSurfaces/u);
+	// The removed demos and the `layout` prop must not reappear.
+	assert.doesNotMatch(AGENT_DEMO_SOURCE, /AgentDemoCompactFilled|AgentDemoCompactEmpty|AgentDemoCompactSurfaces/u);
+	assert.doesNotMatch(AGENT_DEMO_SOURCE, /layout="compact"/u);
+	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Filled agent"[\s\S]*demoSlug: "agent-demo-full"/u);
+	assert.match(UI_CUSTOM_DETAILS_SOURCE, /demoSlug: "agent-demo-full"[\s\S]*title: "Empty agent"[\s\S]*demoSlug: "agent-demo-empty"/u);
+	assert.doesNotMatch(UI_CUSTOM_DETAILS_SOURCE, /agent-demo-compact-/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-full": dynamic/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /default: mod\.AgentDemoFull/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-empty": dynamic/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /default: mod\.AgentDemoEmpty/u);
+	assert.doesNotMatch(WEBSITE_REGISTRY_SOURCE, /agent-demo-compact-/u);
 });
 
 test("Bento carousel overflow hook reattaches listeners when the scroll node remounts", () => {

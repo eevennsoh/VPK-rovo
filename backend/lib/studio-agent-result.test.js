@@ -4,6 +4,7 @@ const {
 	AGENT_RESULT_STREAM_PREFIX,
 	MISSING_STUDIO_AGENT_RESULT_ERROR_CODE,
 	buildCreationModeContextPrefix,
+	buildFallbackStudioAgentResult,
 	buildMissingStudioAgentResultFailureParts,
 	extractStudioAgentResultFromText,
 	normalizeStudioAgentResult,
@@ -266,4 +267,49 @@ test("tolerant parser does not merge legitimate string arrays", () => {
 test("tolerant parser returns null for genuinely unrecoverable input", () => {
 	assert.equal(tolerantParseJsonObjectAt('{"name":"x","desc":"unterminated', 0), null);
 	assert.equal(tolerantParseJsonObjectAt("not an object", 0), null);
+});
+
+test("builds a fallback Studio agent result from original brief and clarification answers", () => {
+	const result = buildFallbackStudioAgentResult({
+		prompt: [
+			"Here are my clarification answers for \"Answer these questions to continue\":",
+			"",
+			"- Where do support requests come from, and where should the agent act?: Jira Service Management",
+		].join("\n"),
+		messages: [
+			{
+				role: "user",
+				content:
+					"Create an agent that triages incoming support requests, asks for missing priority details, and drafts a clear next action for the team.",
+			},
+			{
+				role: "assistant",
+				content: "",
+			},
+		],
+		clarificationAnswers: {
+			"Where do support requests come from, and where should the agent act?": [
+				"Jira Service Management",
+			],
+			"What priority details should the agent chase down when missing?": [
+				"Both severity and repro details",
+			],
+			"Who is the primary audience for this agent's responses?": [
+				"Both — agent talks to reporters and notifies the team",
+			],
+			"What tone and guardrails should the agent follow?": [
+				"Professional & concise",
+			],
+		},
+	});
+
+	assert.equal(result.name, "Support Request Triage Agent");
+	assert.equal(result.action, "create");
+	assert.equal(result.agentId, "support-request-triage-agent");
+	assert.deepEqual(result.tools, ["Jira Service Management"]);
+	assert.equal(result.conversationStarters.length, 3);
+	assert.match(result.description, /triages incoming support requests/iu);
+	assert.match(result.instructions, /Both severity and repro details/u);
+	assert.match(result.instructions, /Professional & concise/u);
+	assert.doesNotMatch(result.name, /clarification answers/iu);
 });

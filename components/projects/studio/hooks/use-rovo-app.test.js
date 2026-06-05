@@ -124,7 +124,7 @@ test("Studio transport preserves creation mode in prepared request bodies", () =
 test("Studio clarification continuations can preserve agent creation mode", () => {
 	assert.match(
 		HOOK_SOURCE,
-		/interface RovoAppClarificationSubmitOptions \{[\s\S]*contextDescription\?: string;[\s\S]*creationMode\?: RovoAppCreationMode;[\s\S]*\}/u,
+		/interface RovoAppClarificationSubmitOptions \{[\s\S]*contextDescription\?: string;[\s\S]*creationMode\?: RovoAppCreationMode;[\s\S]*onSubmitted\?: \(\) => void;[\s\S]*\}/u,
 	);
 	assert.match(
 		HOOK_SOURCE,
@@ -141,6 +141,10 @@ test("Studio clarification continuations can preserve agent creation mode", () =
 	assert.match(
 		HOOK_SOURCE,
 		/buildClarificationMessageMetadata\(questionCard, \{[\s\S]*answers,[\s\S]*creationMode,[\s\S]*status: "answered"/u,
+	);
+	assert.match(
+		HOOK_SOURCE,
+		/markLocalThreadRunPending\(threadId\);\s*options\?\.onSubmitted\?\.\(\);/u,
 	);
 	assert.match(
 		HOOK_SOURCE,

@@ -611,7 +611,12 @@ function AssistantMessage({
 	const thinkingToolCalls = thinkingTraceState.data.thinkingToolCalls;
 	const hasThinkingToolCalls = thinkingTraceState.data.hasThinkingToolCalls;
 	const hasTraceDataSignals = thinkingTraceState.data.hasTraceDataSignals;
-	const thinkingActive = thinkingTraceState.thinkingActive;
+	const shouldSuppressResolvedQuestionTrace =
+		shouldHideResolvedQuestionCard &&
+		thinkingTraceState.data.hasAnsweredQuestionToolCalls &&
+		thinkingTraceState.data.visibleThinkingToolCalls.length === 0 &&
+		!isResponseInFlight;
+	const thinkingActive = thinkingTraceState.thinkingActive && !shouldSuppressResolvedQuestionTrace;
 	const shouldSuppressAssistantTextForBrowserScreenshot =
 		hasBrowserScreenshotContent &&
 		(
