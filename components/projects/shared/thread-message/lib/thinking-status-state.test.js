@@ -163,3 +163,26 @@ test("normalizes generic thinking labels while preserving specific status labels
 		"Generating image"
 	);
 });
+
+test("genericizes scripted step labels so the parent header does not echo the latest step", () => {
+	const stepLabels = [
+		"Reading agent brief",
+		"Preparing clarification questions",
+		"Reviewing agent details",
+		"Selecting agent tools",
+		"Drafting agent instructions",
+		"Naming agent profile",
+		"Saving agent profile",
+	];
+	for (const resolvedLabel of stepLabels) {
+		assert.equal(
+			resolveThinkingStatusTriggerLabel({
+				resolvedLabel,
+				reasoningPhase: "thinking",
+				duration: undefined,
+			}),
+			"Working",
+			`expected generic header for step label "${resolvedLabel}"`
+		);
+	}
+});

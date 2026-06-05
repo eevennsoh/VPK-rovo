@@ -1,5 +1,5 @@
 import type { ReasoningPhase } from "@/components/projects/shared/hooks/use-reasoning-phase";
-import { getDefaultThinkingLabel } from "@/components/projects/shared/lib/reasoning-labels";
+import { getDefaultThinkingLabel, REASONING_LABELS } from "@/components/projects/shared/lib/reasoning-labels";
 
 interface ResolveThinkingLabelForSurfaceOptions {
 	baseLabel: string;
@@ -11,6 +11,25 @@ const GENERIC_THINKING_LABELS = new Set([
 	"thinking",
 	"rovo is thinking",
 	"rovo is tihking",
+]);
+
+/**
+ * Step labels whose names also surface as the active trigger/parent header.
+ * For these scripted, multi-step traces (e.g. Studio agent creation) the latest
+ * step label is identical to the collapsed header, producing a repetitive
+ * "Saving agent profile" / "Saving agent profile" parent-child echo. Mapping
+ * them to a generic working header keeps the parent general while the per-step
+ * rows keep their specific names. Other specific labels (e.g. "Generating
+ * image", "Inspecting files") are intentionally preserved.
+ */
+const STEP_SPECIFIC_HEADER_LABELS = new Set([
+	"reading agent brief",
+	"preparing clarification questions",
+	"reviewing agent details",
+	"selecting agent tools",
+	"drafting agent instructions",
+	"naming agent profile",
+	"saving agent profile",
 ]);
 
 function normalizeLabelKey(label: string): string {
@@ -25,7 +44,15 @@ export function resolveThinkingLabelForSurface({
 		return getDefaultThinkingLabel();
 	}
 
-	return GENERIC_THINKING_LABELS.has(normalizeLabelKey(trimmedLabel))
-		? getDefaultThinkingLabel()
-		: trimmedLabel;
+	const normalized = normalizeLabelKey(trimmedLabel);
+
+	if (GENERIC_THINKING_LABELS.has(normalized)) {
+		return getDefaultThinkingLabel();
+	}
+
+	if (STEP_SPECIFIC_HEADER_LABELS.has(normalized)) {
+		return REASONING_LABELS.trigger.working;
+	}
+
+	return trimmedLabel;
 }
