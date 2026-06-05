@@ -48,7 +48,11 @@ export function ComponentDoc({ component }: Readonly<ComponentDocProps>) {
 
 			{/* 5. Examples — only if data exists */}
 			{detail?.examples && detail.examples.length > 0 && (
-				<DocExamples examples={detail.examples} category={category} />
+				<DocExamples
+					examples={detail.examples}
+					category={category}
+					demoLayout={detail.demoLayout}
+				/>
 			)}
 
 			{/* 6. API Reference — only if props data exists */}

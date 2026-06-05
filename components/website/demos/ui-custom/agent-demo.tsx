@@ -14,6 +14,8 @@ import {
 	AgentHeader,
 } from "@/components/ui-custom/agent";
 
+const AGENT_DEMO_SURFACE_CLASSNAME = "min-h-[852px] w-full";
+
 const initialAgentConfig: AgentConfigFormValue = {
 	name: "",
 	description: "",
@@ -106,7 +108,7 @@ export function AgentDemoFull() {
 	} = useAgentDemoConfig(filledAgentConfig);
 
 	return (
-		<Agent className="mx-auto min-h-[852px] w-full max-w-[720px]">
+		<Agent className={AGENT_DEMO_SURFACE_CLASSNAME}>
 			<AgentHeader
 				name={config.name?.trim() || "Untitled agent"}
 				model="Draft"
@@ -135,7 +137,7 @@ export function AgentDemoEmpty() {
 	} = useAgentDemoConfig(emptyAgentConfig);
 
 	return (
-		<Agent className="mx-auto min-h-[852px] w-full max-w-[720px]">
+		<Agent className={AGENT_DEMO_SURFACE_CLASSNAME}>
 			<AgentHeader
 				name={config.name?.trim() || "Untitled agent"}
 				model="Draft"
@@ -164,7 +166,7 @@ export function AgentDemoCompactFilled() {
 	} = useAgentDemoConfig(filledAgentConfig);
 
 	return (
-		<Agent className="mx-auto min-h-[852px] w-full max-w-[720px]">
+		<Agent className={AGENT_DEMO_SURFACE_CLASSNAME}>
 			<AgentHeader
 				leadingContent={<AgentCompactHeaderNav />}
 				name={config.name?.trim() || "Untitled agent"}
@@ -194,7 +196,7 @@ export function AgentDemoCompactEmpty() {
 	} = useAgentDemoConfig(emptyAgentConfig);
 
 	return (
-		<Agent className="mx-auto min-h-[852px] w-full max-w-[720px]">
+		<Agent className={AGENT_DEMO_SURFACE_CLASSNAME}>
 			<AgentHeader
 				leadingContent={<AgentCompactHeaderNav />}
 				name={config.name?.trim() || "Untitled agent"}
@@ -222,7 +224,7 @@ export function AgentDemoCompactSurfaces() {
 	}
 
 	return (
-		<Agent className="mx-auto min-h-[852px] w-full max-w-[720px]">
+		<Agent className={AGENT_DEMO_SURFACE_CLASSNAME}>
 			<AgentHeader
 				leadingContent={
 					<AgentCompactHeaderNav

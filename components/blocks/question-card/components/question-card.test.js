@@ -97,3 +97,22 @@ test("QuestionCard keyboard shortcuts toggle multi-select options without submit
 		/default: \{[\s\S]*const digit = Number\(event\.key\)[\s\S]*handleKeyboardOptionSelect\(option\.id\)/u,
 	);
 });
+
+test("QuestionCard persists in-progress keyed answers across remounts", () => {
+	assert.match(QUESTION_CARD_SOURCE, /toolCallId,/u);
+	assert.match(QUESTION_CARD_SOURCE, /toolCallId,\s*onSubmit,/u);
+	assert.match(QUESTION_CARD_SOURCE, /onClick=\{\(\) => goToNextQuestion\(\)\}/u);
+	assert.match(QUESTION_CARD_SOURCE, /onClick=\{handleDismiss\}/u);
+
+	assert.match(QUESTION_CARD_HOOK_SOURCE, /QUESTION_CARD_STORAGE_PREFIX = "vpk:question-card:"/u);
+	assert.match(QUESTION_CARD_HOOK_SOURCE, /function readPersistedQuestionCardState/u);
+	assert.match(QUESTION_CARD_HOOK_SOURCE, /window\.sessionStorage\.getItem\(storageKey\)/u);
+	assert.match(QUESTION_CARD_HOOK_SOURCE, /function writePersistedQuestionCardState/u);
+	assert.match(QUESTION_CARD_HOOK_SOURCE, /window\.sessionStorage\.setItem\(storageKey, JSON\.stringify\(state\)\)/u);
+	assert.match(QUESTION_CARD_HOOK_SOURCE, /function clearPersistedQuestionCardState/u);
+	assert.match(QUESTION_CARD_HOOK_SOURCE, /window\.sessionStorage\.removeItem\(storageKey\)/u);
+	assert.match(QUESTION_CARD_HOOK_SOURCE, /questionSignature/u);
+	assert.match(QUESTION_CARD_HOOK_SOURCE, /currentQuestionIndex/u);
+	assert.match(QUESTION_CARD_HOOK_SOURCE, /persistQuestionCardState\(nextAnswers, nextIndex\)/u);
+	assert.match(QUESTION_CARD_HOOK_SOURCE, /submitAnswers\(answers\)/u);
+});

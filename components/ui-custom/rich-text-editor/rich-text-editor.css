@@ -473,15 +473,33 @@
 }
 
 .rich-text-command-menu-input {
-	cursor: default;
+	cursor: text;
 }
 
-.rich-text-command-menu-input:hover {
-	background-color: transparent;
+.rich-text-command-menu-input-logo {
+	display: inline-flex;
+	width: 24px;
+	height: 24px;
+	align-items: center;
+	justify-content: center;
 }
 
 .rich-text-command-menu-input > [data-slot="input"] {
 	min-width: 0;
+	border-color: transparent;
+	padding-left: 0;
+	padding-right: 0;
+	caret-color: var(--ds-text, #172b4d);
+}
+
+/* The whole top bar carries the hover state, so the field itself stays
+   visually flat in every interaction state. */
+.rich-text-command-menu-input > [data-slot="input"]:hover,
+.rich-text-command-menu-input > [data-slot="input"]:active,
+.rich-text-command-menu-input > [data-slot="input"]:focus-visible {
+	border-color: transparent;
+	background-color: transparent;
+	box-shadow: none;
 }
 
 .rich-text-command-menu-avatar {

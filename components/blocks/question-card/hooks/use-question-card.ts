@@ -19,8 +19,90 @@ interface UseQuestionCardOptions {
 	maxVisibleOptions: number;
 	showCustomInput: boolean;
 	defaultAnswers?: QuestionCardAnswers;
+	toolCallId?: string;
 	onSubmit: (answers: QuestionCardAnswers) => void;
 	onDismiss?: () => void;
+}
+
+interface PersistedQuestionCardState {
+	answers: QuestionCardAnswers;
+	currentQuestionIndex: number;
+	questionSignature: string;
+}
+
+const QUESTION_CARD_STORAGE_PREFIX = "vpk:question-card:";
+
+function getQuestionCardStorageKey(toolCallId: string | undefined): string | null {
+	if (!toolCallId) {
+		return null;
+	}
+
+	return `${QUESTION_CARD_STORAGE_PREFIX}${toolCallId}`;
+}
+
+function getQuestionSignature(questions: ReadonlyArray<QuestionCardQuestion>): string {
+	return questions.map((question) => question.id).join("|");
+}
+
+function readPersistedQuestionCardState(
+	storageKey: string | null,
+	questionSignature: string
+): PersistedQuestionCardState | null {
+	if (!storageKey || typeof window === "undefined") {
+		return null;
+	}
+
+	try {
+		const rawValue = window.sessionStorage.getItem(storageKey);
+		if (!rawValue) {
+			return null;
+		}
+
+		const parsedValue = JSON.parse(rawValue) as Partial<PersistedQuestionCardState>;
+		if (
+			parsedValue.questionSignature !== questionSignature ||
+			typeof parsedValue.currentQuestionIndex !== "number" ||
+			typeof parsedValue.answers !== "object" ||
+			parsedValue.answers === null
+		) {
+			return null;
+		}
+
+		return {
+			answers: parsedValue.answers as QuestionCardAnswers,
+			currentQuestionIndex: Math.max(0, parsedValue.currentQuestionIndex),
+			questionSignature,
+		};
+	} catch {
+		return null;
+	}
+}
+
+function writePersistedQuestionCardState(
+	storageKey: string | null,
+	state: PersistedQuestionCardState
+) {
+	if (!storageKey || typeof window === "undefined") {
+		return;
+	}
+
+	try {
+		window.sessionStorage.setItem(storageKey, JSON.stringify(state));
+	} catch {
+		// Losing this cache should not block answering a clarification card.
+	}
+}
+
+function clearPersistedQuestionCardState(storageKey: string | null) {
+	if (!storageKey || typeof window === "undefined") {
+		return;
+	}
+
+	try {
+		window.sessionStorage.removeItem(storageKey);
+	} catch {
+		// Ignore storage cleanup failures; the signature guard prevents stale reuse.
+	}
 }
 
 export function useQuestionCard({
@@ -29,6 +111,7 @@ export function useQuestionCard({
 	maxVisibleOptions,
 	showCustomInput,
 	defaultAnswers,
+	toolCallId,
 	onSubmit,
 	onDismiss,
 }: Readonly<UseQuestionCardOptions>) {
@@ -36,9 +119,15 @@ export function useQuestionCard({
 	const customInputRef = useRef<HTMLInputElement>(null);
 	const footerButtonRef = useRef<HTMLButtonElement>(null);
 	const previousQuestionIndexRef = useRef<number | null>(null);
+	const questionSignature = getQuestionSignature(questions);
+	const storageKey = getQuestionCardStorageKey(toolCallId);
+	const initialPersistedStateRef = useRef<PersistedQuestionCardState | null | undefined>(undefined);
+	if (initialPersistedStateRef.current === undefined) {
+		initialPersistedStateRef.current = readPersistedQuestionCardState(storageKey, questionSignature);
+	}
 	const [navigationDirection, setNavigationDirection] = useState<"forward" | "backward">("forward");
-	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-	const [answers, setAnswers] = useState<QuestionCardAnswers>(defaultAnswers ?? {});
+	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(() => initialPersistedStateRef.current?.currentQuestionIndex ?? 0);
+	const [answers, setAnswers] = useState<QuestionCardAnswers>(() => defaultAnswers ?? initialPersistedStateRef.current?.answers ?? {});
 	const [focusedIndex, setFocusedIndex] = useState(0);
 
 	const totalQuestions = questions.length;
@@ -58,6 +147,29 @@ export function useQuestionCard({
 	useEffect(() => {
 		cardRef.current?.focus();
 	}, []);
+
+	useEffect(() => {
+		const persistedState = readPersistedQuestionCardState(storageKey, questionSignature);
+		setAnswers(defaultAnswers ?? persistedState?.answers ?? {});
+		setCurrentQuestionIndex(Math.min(totalQuestions - 1, persistedState?.currentQuestionIndex ?? 0));
+		setFocusedIndex(0);
+		previousQuestionIndexRef.current = null;
+	}, [defaultAnswers, questionSignature, storageKey, totalQuestions]);
+
+	const persistQuestionCardState = useCallback(
+		(nextAnswers: QuestionCardAnswers, nextQuestionIndex: number) => {
+			writePersistedQuestionCardState(storageKey, {
+				answers: nextAnswers,
+				currentQuestionIndex: Math.min(totalQuestions - 1, Math.max(0, nextQuestionIndex)),
+				questionSignature,
+			});
+		},
+		[questionSignature, storageKey, totalQuestions],
+	);
+
+	const clearPersistedState = useCallback(() => {
+		clearPersistedQuestionCardState(storageKey);
+	}, [storageKey]);
 
 	useEffect(() => {
 		const previousQuestionIndex = previousQuestionIndexRef.current;
@@ -87,17 +199,38 @@ export function useQuestionCard({
 		setFocusedIndex(0);
 	}, []);
 
-	const goToNextQuestion = useCallback(() => {
+	const goToNextQuestion = useCallback((nextAnswers: QuestionCardAnswers = answers) => {
 		setNavigationDirection("forward");
 		resetFocusForNewQuestion();
-		setCurrentQuestionIndex((previous) => Math.min(totalQuestions - 1, previous + 1));
-	}, [totalQuestions, resetFocusForNewQuestion]);
+		setCurrentQuestionIndex((previous) => {
+			const nextIndex = Math.min(totalQuestions - 1, previous + 1);
+			persistQuestionCardState(nextAnswers, nextIndex);
+			return nextIndex;
+		});
+	}, [answers, totalQuestions, resetFocusForNewQuestion, persistQuestionCardState]);
 
-	const goToPreviousQuestion = useCallback(() => {
+	const goToPreviousQuestion = useCallback((nextAnswers: QuestionCardAnswers = answers) => {
 		setNavigationDirection("backward");
 		resetFocusForNewQuestion();
-		setCurrentQuestionIndex((previous) => Math.max(0, previous - 1));
-	}, [resetFocusForNewQuestion]);
+		setCurrentQuestionIndex((previous) => {
+			const nextIndex = Math.max(0, previous - 1);
+			persistQuestionCardState(nextAnswers, nextIndex);
+			return nextIndex;
+		});
+	}, [answers, resetFocusForNewQuestion, persistQuestionCardState]);
+
+	const submitAnswers = useCallback(
+		(nextAnswers: QuestionCardAnswers) => {
+			clearPersistedState();
+			onSubmit(nextAnswers);
+		},
+		[clearPersistedState, onSubmit],
+	);
+
+	const handleDismiss = useCallback(() => {
+		clearPersistedState();
+		onDismiss?.();
+	}, [clearPersistedState, onDismiss]);
 
 	const handleSkip = useCallback(() => {
 		if (isSubmitting) return;
@@ -109,7 +242,7 @@ export function useQuestionCard({
 
 		if (canGoToNextQuestion) {
 			setAnswers(nextAnswers);
-			goToNextQuestion();
+			goToNextQuestion(nextAnswers);
 		} else {
 			const hasAnyRealAnswer = questions.some((question) =>
 				isQuestionAnswered(question, nextAnswers) &&
@@ -117,12 +250,12 @@ export function useQuestionCard({
 			);
 			if (hasAnyRealAnswer) {
 				setAnswers(nextAnswers);
-				onSubmit(nextAnswers);
+				submitAnswers(nextAnswers);
 			} else {
-				onDismiss?.();
+				handleDismiss();
 			}
 		}
-	}, [isSubmitting, currentQuestion, canGoToNextQuestion, goToNextQuestion, questions, answers, onSubmit, onDismiss]);
+	}, [isSubmitting, currentQuestion, canGoToNextQuestion, goToNextQuestion, questions, answers, submitAnswers, handleDismiss]);
 
 	const handleSelectOption = useCallback(
 		(optionId: string) => {
@@ -132,16 +265,16 @@ export function useQuestionCard({
 			setAnswers(nextAnswers);
 
 			if (canGoToNextQuestion) {
-				goToNextQuestion();
+				goToNextQuestion(nextAnswers);
 				return;
 			}
 
 			const allAnswered = questions.every((question) => (question.id === currentQuestion.id ? true : isQuestionAnswered(question, nextAnswers)));
 			if (allAnswered) {
-				onSubmit(nextAnswers);
+				submitAnswers(nextAnswers);
 			}
 		},
-		[isSubmitting, answers, currentQuestion, canGoToNextQuestion, goToNextQuestion, questions, onSubmit],
+		[isSubmitting, answers, currentQuestion, canGoToNextQuestion, goToNextQuestion, questions, submitAnswers],
 	);
 
 	const handleCustomInputSubmit = useCallback(
@@ -152,43 +285,43 @@ export function useQuestionCard({
 			setAnswers(nextAnswers);
 
 			if (canGoToNextQuestion) {
-				goToNextQuestion();
+				goToNextQuestion(nextAnswers);
 				return;
 			}
 
 			const allAnswered = questions.every((question) => (question.id === currentQuestion.id ? true : isQuestionAnswered(question, nextAnswers)));
 			if (allAnswered) {
-				onSubmit(nextAnswers);
+				submitAnswers(nextAnswers);
 			}
 		},
-		[isSubmitting, answers, currentQuestion, canGoToNextQuestion, goToNextQuestion, questions, onSubmit],
+		[isSubmitting, answers, currentQuestion, canGoToNextQuestion, goToNextQuestion, questions, submitAnswers],
 	);
 
 	const handleAnswerChange = useCallback(
 		(answerValue: QuestionCardAnswerValue, options?: Readonly<{ autoAdvance?: boolean }>) => {
 			if (isSubmitting) return;
 
-			setAnswers((previousAnswers) => ({
-				...previousAnswers,
+			const nextAnswers = {
+				...answers,
 				[currentQuestion.id]: answerValue,
-			}));
+			};
+			setAnswers(nextAnswers);
 
 			if (options?.autoAdvance && currentQuestion.kind === "single-select") {
 				if (canGoToNextQuestion) {
-					goToNextQuestion();
+					goToNextQuestion(nextAnswers);
 				} else {
-					const nextAnswers = {
-						...answers,
-						[currentQuestion.id]: answerValue,
-					};
 					const allAnswered = questions.every((question) => (question.id === currentQuestion.id ? true : isQuestionAnswered(question, nextAnswers)));
 					if (allAnswered) {
-						onSubmit(nextAnswers);
+						submitAnswers(nextAnswers);
 					}
 				}
+				return;
 			}
+
+			persistQuestionCardState(nextAnswers, safeQuestionIndex);
 		},
-		[isSubmitting, currentQuestion, canGoToNextQuestion, goToNextQuestion, answers, questions, onSubmit],
+		[isSubmitting, currentQuestion, safeQuestionIndex, canGoToNextQuestion, goToNextQuestion, answers, questions, persistQuestionCardState, submitAnswers],
 	);
 
 	const handleKeyboardOptionSelect = useCallback(
@@ -200,17 +333,19 @@ export function useQuestionCard({
 						? selectedValues.filter((value) => value !== optionId)
 						: [...selectedValues, optionId];
 
-					return {
+					const nextAnswers = {
 						...previousAnswers,
 						[currentQuestion.id]: nextValues,
 					};
+					persistQuestionCardState(nextAnswers, safeQuestionIndex);
+					return nextAnswers;
 				});
 				return;
 			}
 
 			handleSelectOption(optionId);
 		},
-		[currentQuestion, handleSelectOption],
+		[currentQuestion, handleSelectOption, persistQuestionCardState, safeQuestionIndex],
 	);
 
 	const handleCustomInputFocus = useCallback(() => {
@@ -410,6 +545,7 @@ export function useQuestionCard({
 		handleAnswerChange,
 		handleCustomInputFocus,
 		handleKeyDown,
-		onSubmit: () => onSubmit(answers),
+		onSubmit: () => submitAnswers(answers),
+		onDismiss: handleDismiss,
 	};
 }

@@ -1235,7 +1235,7 @@ function HomeStarterBento({
 								{browseAllHovered ? (
 									<motion.div
 										key="dismiss"
-										className="absolute left-full top-0 ml-1"
+										className="absolute left-full top-0 ml-2"
 										initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
 										animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
 										exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
@@ -2324,6 +2324,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		setPrefillText(prompt);
 		setPreviewPrompt(null);
 		creationTemplateRef.current = template ?? null;
+		// Refocus the composer caret so the user can immediately hit Enter to submit.
+		setComposerFocusRequestKey((currentKey) => currentKey + 1);
 	}, []);
 
 	const handleBrowseAgentTemplates = useCallback((category: HomeStarterCategory = HOME_STARTER_DEFAULT_CATEGORY) => {

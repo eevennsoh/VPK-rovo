@@ -65,7 +65,11 @@ function ResolvedDocPreview({
 
 	return (
 		<DocSection id="preview" title="Preview" action={fullViewAction}>
-			<DemoPreviewShell fullPage={isFullPage} fitContent={fitContent}>
+			<DemoPreviewShell
+				contentWidth={demoLayout?.previewContentWidth}
+				fullPage={isFullPage}
+				fitContent={fitContent}
+			>
 				<Suspense fallback={<PreviewSkeleton />}>
 					{createElement(Demo)}
 				</Suspense>

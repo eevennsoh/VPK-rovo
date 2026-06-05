@@ -223,7 +223,7 @@ function QuestionCard({
 	isSubmitting = false,
 	onSubmit,
 	onDismiss,
-	toolCallId: _toolCallId,
+	toolCallId,
 	maxVisibleOptions = DEFAULT_MAX_VISIBLE_OPTIONS,
 	customInputPlaceholder = DEFAULT_CUSTOM_INPUT_PLACEHOLDER,
 	showCustomInput = true,
@@ -231,8 +231,6 @@ function QuestionCard({
 	className,
 	...props
 }: Readonly<QuestionCardProps>): React.ReactElement {
-	void _toolCallId;
-
 	const {
 		cardRef,
 		customInputRef,
@@ -258,12 +256,14 @@ function QuestionCard({
 		handleCustomInputFocus,
 		handleKeyDown,
 		onSubmit: handleSubmit,
+		onDismiss: handleDismiss,
 	} = useQuestionCard({
 		questions,
 		isSubmitting,
 		maxVisibleOptions,
 		showCustomInput,
 		defaultAnswers,
+		toolCallId,
 		onSubmit,
 		onDismiss,
 	});
@@ -301,7 +301,7 @@ function QuestionCard({
 										size="icon"
 										variant="ghost"
 										disabled={!canGoToPreviousQuestion || isSubmitting}
-										onClick={goToPreviousQuestion}
+										onClick={() => goToPreviousQuestion()}
 										tabIndex={-1}
 										className="shrink-0"
 									>
@@ -314,7 +314,7 @@ function QuestionCard({
 										size="icon"
 										variant="ghost"
 										disabled={!canGoToNextQuestion || isSubmitting}
-										onClick={goToNextQuestion}
+										onClick={() => goToNextQuestion()}
 										tabIndex={-1}
 										className="shrink-0"
 									>
@@ -324,7 +324,7 @@ function QuestionCard({
 							) : null}
 						</div>
 						{onDismiss ? (
-							<Button aria-label="Dismiss questions" size="icon" variant="ghost" disabled={isSubmitting} className="-mr-1 shrink-0" onClick={onDismiss} tabIndex={-1}>
+							<Button aria-label="Dismiss questions" size="icon" variant="ghost" disabled={isSubmitting} className="-mr-1 shrink-0" onClick={handleDismiss} tabIndex={-1}>
 								<CrossIcon label="" size="small" />
 							</Button>
 						) : null}

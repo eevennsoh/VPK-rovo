@@ -772,7 +772,9 @@ function RichTextSuggestionMenuInputOption({
 }: Readonly<RichTextSuggestionMenuInputOptionProps>) {
 	return (
 		<div className="rich-text-command-menu-item rich-text-command-menu-input">
-			<RichTextSuggestionMenuItemVisual item={item} />
+			<span className="rich-text-command-menu-input-logo" aria-hidden={true}>
+				{item.icon}
+			</span>
 			<Input
 				variant="subtle"
 				isCompact

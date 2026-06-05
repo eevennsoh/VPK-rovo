@@ -2,7 +2,7 @@
 
 import { Suspense, createElement, type ComponentType, use } from "react";
 import { token } from "@/lib/tokens";
-import type { ExampleDefinition } from "@/app/data/component-detail-types";
+import type { DemoLayout, ExampleDefinition } from "@/app/data/component-detail-types";
 import {
 	loadVariantDemoComponents,
 	type DemoCategory,
@@ -31,6 +31,7 @@ function slugify(name: string) {
 interface DocExamplesProps {
 	examples: ExampleDefinition[];
 	category: DemoCategory;
+	demoLayout?: DemoLayout;
 }
 
 function ExampleSkeleton() {
@@ -60,7 +61,8 @@ function ExampleSkeleton() {
 function ExampleItem({
 	example,
 	Demo,
-}: Readonly<{ example: ExampleDefinition; Demo: ComponentType }>) {
+	demoLayout,
+}: Readonly<{ example: ExampleDefinition; Demo: ComponentType; demoLayout?: DemoLayout }>) {
 	const id = slugify(example.title);
 	return (
 		<div
@@ -107,7 +109,7 @@ function ExampleItem({
 					</p>
 				)}
 			</div>
-			<DemoPreviewShell>
+			<DemoPreviewShell contentWidth={demoLayout?.examplesContentWidth}>
 				<Suspense fallback={<ExampleSkeleton />}>
 					{createElement(Demo)}
 				</Suspense>
@@ -119,6 +121,7 @@ function ExampleItem({
 function ResolvedDocExamples({
 	examples,
 	category,
+	demoLayout,
 }: Readonly<DocExamplesProps>) {
 	const demos = use(
 		loadVariantDemoComponents(
@@ -154,6 +157,7 @@ function ResolvedDocExamples({
 						key={example.demoSlug}
 						example={example}
 						Demo={Demo}
+						demoLayout={demoLayout}
 					/>
 				))}
 			</div>

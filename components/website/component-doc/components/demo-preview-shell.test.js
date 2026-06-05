@@ -20,11 +20,17 @@ async function loadDemoPreviewShellHarness() {
 						children: React.createElement("div", null, "demo"),
 						fullPage: true,
 					});
+					const fullWidthShell = DemoPreviewShell({
+						children: React.createElement("div", null, "demo"),
+						contentWidth: "full",
+					});
 
 					return {
 						surface: token("elevation.surface"),
 						defaultStyle: defaultShell.props.style,
 						fullPageStyle: fullPageShell.props.style,
+						fullWidthPadding: fullWidthShell.props.children.props.style.padding,
+						fullWidthInnerStyle: fullWidthShell.props.children.props.children.props.style,
 					};
 				}
 			`,
@@ -48,4 +54,13 @@ test("DemoPreviewShell keeps a raised surface background in embedded and full-pa
 
 	assert.equal(defaultStyle.backgroundColor, surface);
 	assert.equal(fullPageStyle.backgroundColor, surface);
+});
+
+test("DemoPreviewShell lets full-width demos fill the embedded preview surface", async () => {
+	const harness = await loadDemoPreviewShellHarness();
+	const { fullWidthPadding, fullWidthInnerStyle } = harness.getShellStyles();
+
+	assert.equal(fullWidthPadding, 0);
+	assert.equal(fullWidthInnerStyle.alignItems, "stretch");
+	assert.equal(fullWidthInnerStyle.justifyContent, "stretch");
 });

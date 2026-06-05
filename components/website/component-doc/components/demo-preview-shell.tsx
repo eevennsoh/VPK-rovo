@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { DemoContentWidth } from "@/app/data/component-detail-types";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -8,13 +9,16 @@ const DEMO_CONTENT_MIN_HEIGHT_PX = DEMO_SHELL_MIN_HEIGHT_PX - DEMO_SHELL_PADDING
 const FULL_PAGE_HEIGHT_PX = 1000;
 interface DemoPreviewShellProps {
 	children: ReactNode;
+	contentWidth?: DemoContentWidth;
 	/** When true, constrains the shell to a fixed height for full-page demos (templates, sidebars). */
 	fullPage?: boolean;
 	/** When true (with fullPage), the shell auto-sizes to content instead of using a fixed height. */
 	fitContent?: boolean;
 }
 
-export function DemoPreviewShell({ children, fullPage, fitContent }: Readonly<DemoPreviewShellProps>) {
+export function DemoPreviewShell({ children, contentWidth = "fit", fullPage, fitContent }: Readonly<DemoPreviewShellProps>) {
+	const isFullWidth = contentWidth === "full";
+
 	if (fullPage) {
 		return (
 			<div
@@ -55,9 +59,9 @@ export function DemoPreviewShell({ children, fullPage, fitContent }: Readonly<De
 					display: "flex",
 					width: "100%",
 					minHeight: DEMO_SHELL_MIN_HEIGHT_PX,
-					padding: DEMO_SHELL_PADDING_PX,
-					alignItems: "center",
-					justifyContent: "center",
+					padding: isFullWidth ? 0 : DEMO_SHELL_PADDING_PX,
+					alignItems: isFullWidth ? "stretch" : "center",
+					justifyContent: isFullWidth ? "stretch" : "center",
 				}}
 			>
 				<div
@@ -67,9 +71,9 @@ export function DemoPreviewShell({ children, fullPage, fitContent }: Readonly<De
 						width: "100%",
 						minWidth: "100%",
 						maxWidth: "100%",
-						minHeight: DEMO_CONTENT_MIN_HEIGHT_PX,
-						alignItems: "center",
-						justifyContent: "center",
+						minHeight: isFullWidth ? DEMO_SHELL_MIN_HEIGHT_PX : DEMO_CONTENT_MIN_HEIGHT_PX,
+						alignItems: isFullWidth ? "stretch" : "center",
+						justifyContent: isFullWidth ? "stretch" : "center",
 					}}
 				>
 					{children}
