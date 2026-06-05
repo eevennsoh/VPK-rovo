@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 import { CARD_HOVER_TRANSITION, useCardInteraction } from "./use-card-interaction";
 
 export interface CardDirectoryProps {
-	/** Invoked on click / Enter / Space. Presence makes the card a button. */
+	/** Invoked on click / Enter / Space. Presence renders a whole-card select button. */
 	onSelect?: () => void;
-	/** Accessible label for the button role when interactive. */
+	/** Accessible label for the whole-card select button when interactive. */
 	selectLabel?: string;
 	/** Keeps the hover visual treatment active while a child popup/menu is open. */
 	active?: boolean;
@@ -32,12 +32,16 @@ export function CardDirectory({
 	className,
 	children,
 }: Readonly<CardDirectoryProps>) {
-	const { interactive, hoverAnimation, tapAnimation, handleSelect, handleKeyDown } =
+	const { interactive, hoverAnimation, tapAnimation, handleSelect } =
 		useCardInteraction(onSelect);
 
 	const cardMotionProps = {
 		className: cn(
-			"group/card relative flex h-full w-full flex-col gap-3 rounded-md bg-surface p-4 text-left outline-none after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:border after:border-border after:transition-colors after:duration-fast after:ease-out hover:after:border-transparent focus-visible:after:border-transparent focus-visible:ring-3 focus-visible:ring-ring/50",
+			// The card shell is a non-interactive container. Selection is provided by a
+			// dedicated overlay <button> (below) so nested controls (checkboxes, menus)
+			// stay valid sibling controls instead of focusable descendants of a button —
+			// an element with the button role must not contain other interactive elements.
+			"group/card relative flex h-full w-full flex-col gap-3 rounded-md bg-surface p-4 text-left outline-none after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:border after:border-border after:transition-colors after:duration-fast after:ease-out hover:after:border-transparent has-[[data-slot=card-directory-select]:focus-visible]:after:border-transparent has-[[data-slot=card-directory-select]:focus-visible]:ring-3 has-[[data-slot=card-directory-select]:focus-visible]:ring-ring/50",
 			active && "after:border-transparent",
 			interactive && "cursor-pointer",
 			className,
@@ -46,21 +50,24 @@ export function CardDirectory({
 		animate: active ? hoverAnimation : { boxShadow: "none" },
 		transition: CARD_HOVER_TRANSITION,
 		whileHover: hoverAnimation,
+		whileTap: interactive ? tapAnimation : undefined,
 	};
 
 	if (interactive) {
 		return (
-			<motion.article
-				aria-label={selectLabel}
-				data-slot="card-directory"
-				onClick={handleSelect}
-				onKeyDown={handleKeyDown}
-				role="button"
-				tabIndex={0}
-				whileTap={tapAnimation}
-				{...cardMotionProps}
-			>
-				{children}
+			<motion.article data-slot="card-directory" {...cardMotionProps}>
+				{/* Whole-card selection affordance. A real <button> gives native keyboard
+				    (Enter/Space) operation and focus management; it sits beneath the card
+				    content (z-0) so nested controls layered above (z-10) remain clickable
+				    and are announced as siblings, not children, of this button. */}
+				<button
+					aria-label={selectLabel}
+					className="absolute inset-0 z-0 rounded-md outline-none"
+					data-slot="card-directory-select"
+					onClick={handleSelect}
+					type="button"
+				/>
+				<div className="contents [&>*]:relative [&>*]:z-10">{children}</div>
 			</motion.article>
 		);
 	}

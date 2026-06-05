@@ -1,4 +1,3 @@
-import { type KeyboardEvent } from "react";
 import { useReducedMotion } from "motion/react";
 
 import { token } from "@/lib/tokens";
@@ -25,14 +24,16 @@ export interface CardInteraction {
 	hoverAnimation: typeof HOVER_ANIMATION | typeof REDUCED_HOVER_ANIMATION;
 	tapAnimation: typeof TAP_ANIMATION | undefined;
 	handleSelect: () => void;
-	handleKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
 }
 
 /**
  * Shared interaction contract for the directory card shell.
  *
- * When `onSelect` is provided the card becomes a keyboard-operable button:
- * Enter/Space trigger selection. Hover/tap animations respect reduced motion.
+ * When `onSelect` is provided the card renders a dedicated overlay `<button>`
+ * (see `CardDirectory`) that owns selection. The native button handles
+ * Enter/Space and focus, so no manual key handling is needed here — keeping the
+ * whole-card affordance free of an invalid `role="button"` wrapper around nested
+ * controls. Hover/tap animations respect reduced motion.
  */
 export function useCardInteraction(onSelect?: () => void): CardInteraction {
 	const interactive = Boolean(onSelect);
@@ -41,13 +42,6 @@ export function useCardInteraction(onSelect?: () => void): CardInteraction {
 	const tapAnimation = shouldReduceMotion ? undefined : TAP_ANIMATION;
 
 	const handleSelect = () => onSelect?.();
-	const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-		if (!interactive) return;
-		if (event.key !== "Enter" && event.key !== " ") return;
 
-		event.preventDefault();
-		handleSelect();
-	};
-
-	return { interactive, hoverAnimation, tapAnimation, handleSelect, handleKeyDown };
+	return { interactive, hoverAnimation, tapAnimation, handleSelect };
 }

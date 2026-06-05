@@ -23,13 +23,16 @@ const AGENT_BROWSER_SOURCE = readFileSync(
 test("shell preserves the bordered surface and hover-elevation classes", () => {
 	assert.match(SHELL_SOURCE, /group\/card/u);
 	assert.match(SHELL_SOURCE, /rounded-md bg-surface p-4/u);
-	assert.match(SHELL_SOURCE, /focus-visible:ring-3 focus-visible:ring-ring\/50/u);
+	// Focus ring + border fade now key off the overlay select button's focus-visible
+	// state (via :has) instead of the article's own focus, since the article is no
+	// longer focusable — see the overlay-button regression test below (#709).
+	assert.match(SHELL_SOURCE, /has-\[\[data-slot=card-directory-select\]:focus-visible\]:ring-3 has-\[\[data-slot=card-directory-select\]:focus-visible\]:ring-ring\/50/u);
 	assert.match(SHELL_SOURCE, /willChange: "transform"/u);
 	// The border is an overlay pseudo-element that fades out on hover/focus so only the
 	// elevation shadow remains — never a persistent real border that survives hover.
 	assert.doesNotMatch(SHELL_SOURCE, /\bborder border-border\b/u);
 	assert.match(SHELL_SOURCE, /after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:border after:border-border/u);
-	assert.match(SHELL_SOURCE, /hover:after:border-transparent focus-visible:after:border-transparent/u);
+	assert.match(SHELL_SOURCE, /hover:after:border-transparent has-\[\[data-slot=card-directory-select\]:focus-visible\]:after:border-transparent/u);
 	assert.match(SHELL_SOURCE, /active = false/u);
 	assert.match(SHELL_SOURCE, /active && "after:border-transparent"/u);
 	assert.match(SHELL_SOURCE, /animate: active \? hoverAnimation : \{ boxShadow: "none" \}/u);
@@ -37,19 +40,33 @@ test("shell preserves the bordered surface and hover-elevation classes", () => {
 	assert.doesNotMatch(SHELL_SOURCE, /hover:after:ring-border-selected/u);
 });
 
-test("shell exposes the keyboard-operable button contract when interactive", () => {
-	assert.match(SHELL_SOURCE, /role="button"/u);
-	assert.match(SHELL_SOURCE, /tabIndex=\{0\}/u);
-	assert.match(SHELL_SOURCE, /onKeyDown=\{handleKeyDown\}/u);
+test("shell uses a dedicated overlay <button> for selection, not a role=button wrapper", () => {
+	// Regression for #709: a whole-card role="button" must not wrap nested interactive
+	// controls (checkboxes, menu buttons). Selection is a real <button> overlay instead,
+	// so nested controls are valid sibling controls rather than focusable descendants.
+	assert.doesNotMatch(SHELL_SOURCE, /role="button"/u);
+	assert.doesNotMatch(SHELL_SOURCE, /tabIndex=\{0\}/u);
+	assert.doesNotMatch(SHELL_SOURCE, /onKeyDown=/u);
+	assert.match(SHELL_SOURCE, /<button/u);
+	assert.match(SHELL_SOURCE, /data-slot="card-directory-select"/u);
 	assert.match(SHELL_SOURCE, /aria-label=\{selectLabel\}/u);
-	assert.match(SHELL_SOURCE, /whileTap=\{tapAnimation\}/u);
+	assert.match(SHELL_SOURCE, /onClick=\{handleSelect\}/u);
+	assert.match(SHELL_SOURCE, /type="button"/u);
+	// Overlay sits beneath card content so nested controls stay clickable.
+	assert.match(SHELL_SOURCE, /absolute inset-0 z-0/u);
+	assert.match(SHELL_SOURCE, /\[&>\*\]:relative \[&>\*\]:z-10/u);
+	assert.match(SHELL_SOURCE, /whileTap: interactive \? tapAnimation : undefined/u);
+	// Focus ring follows the overlay button's focus-visible state, not the article's.
+	assert.match(SHELL_SOURCE, /has-\[\[data-slot=card-directory-select\]:focus-visible\]:ring-3/u);
 });
 
-test("interaction hook derives interactivity from onSelect and guards Enter/Space", () => {
+test("interaction hook derives interactivity from onSelect and drops manual key handling", () => {
 	assert.match(INTERACTION_SOURCE, /const interactive = Boolean\(onSelect\)/u);
 	assert.match(INTERACTION_SOURCE, /useReducedMotion\(\)/u);
-	assert.match(INTERACTION_SOURCE, /event\.key !== "Enter" && event\.key !== " "/u);
-	assert.match(INTERACTION_SOURCE, /event\.preventDefault\(\)/u);
+	// Native <button> overlay owns Enter/Space, so the hook no longer ships a keydown handler.
+	assert.doesNotMatch(INTERACTION_SOURCE, /handleKeyDown/u);
+	assert.doesNotMatch(INTERACTION_SOURCE, /event\.key/u);
+	assert.match(INTERACTION_SOURCE, /handleSelect/u);
 });
 
 test("interaction hook keeps the card border visible while adding hover elevation", () => {
