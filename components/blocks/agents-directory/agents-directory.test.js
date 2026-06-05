@@ -239,9 +239,13 @@ test("Agents Directory cards render the shared CardDirectoryAgent with overlay e
 	assert.match(interaction, /type: "spring",[\s\S]*bounce: 0\.16,[\s\S]*visualDuration: 0\.22/u);
 	assert.match(shell, /group\/card relative flex h-full w-full flex-col gap-3 rounded-md bg-surface p-4/u);
 	assert.match(shell, /after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:border after:border-border/u);
-	assert.match(shell, /focus-visible:after:border-transparent focus-visible:ring-3 focus-visible:ring-ring\/50/u);
+	// Focus styling keys off the overlay select button's focus-visible (#709): the shared
+	// shell no longer makes the whole card a role="button", so nested controls stay valid.
+	assert.match(shell, /has-\[\[data-slot=card-directory-select\]:focus-visible\]:after:border-transparent has-\[\[data-slot=card-directory-select\]:focus-visible\]:ring-3 has-\[\[data-slot=card-directory-select\]:focus-visible\]:ring-ring\/50/u);
 	assert.match(shell, /willChange: "transform"/u);
-	assert.match(shell, /role="button"[\s\S]*tabIndex=\{0\}[\s\S]*whileTap=\{tapAnimation\}/u);
+	assert.doesNotMatch(shell, /role="button"/u);
+	assert.match(shell, /data-slot="card-directory-select"[\s\S]*type="button"/u);
+	assert.match(shell, /whileTap: interactive \? tapAnimation : undefined/u);
 
 	assert.match(agentWrapper, /shape="hexagon"/u);
 	assert.match(agentWrapper, /<CardDirectory active=\{active\} className=\{cn\("gap-4", className\)\}/u);
