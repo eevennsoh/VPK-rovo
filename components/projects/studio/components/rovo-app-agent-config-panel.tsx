@@ -22,6 +22,7 @@ import {
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/data/trigger-catalog";
 import { SubagentPromptFields } from "@/components/blocks/subagents/components/subagent-prompt-fields";
+import { ManageSubagentsDialog } from "@/components/blocks/subagents/components/manage-subagents-dialog";
 import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
 import type { SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
 import { getListItems, updateConfigListItem } from "@/components/blocks/subagents/lib/subagent-prompts";
@@ -114,6 +115,7 @@ export function RovoAppAgentConfigPanel({
 	const [activeCompactSection, setActiveCompactSection] = useState<AgentCompactHeaderSection | null>(null);
 	const [directoryToolIds, setDirectoryToolIds] = useState<readonly string[]>([]);
 	const [directorySkillIds, setDirectorySkillIds] = useState<readonly string[]>([]);
+	const [isManageSubagentsOpen, setIsManageSubagentsOpen] = useState(false);
 
 	// Floating Rovo chat launcher for the agent config screen. studio surfaces
 	// suppress the floating button by default (the shell owns chat), so we render
@@ -138,15 +140,18 @@ export function RovoAppAgentConfigPanel({
 		activeSubagentId,
 		baseConfig,
 		createSubagent,
+		deleteSubagentById,
 		handleConditionChange,
 		handleTriggerNameChange,
 		isSubagentActive,
 		removeSubagentByDerivedIndex,
+		reorderSubagents,
 		selectBaseAgent,
 		selectSubagent,
 		selectSubagentByDerivedIndex,
 		selectedSubagentIndex,
 		subagentPrompts,
+		toggleSubagent,
 		updateActiveConfig,
 	} = useAgentConfigSubagents({ draft, updateDraft });
 
@@ -543,6 +548,7 @@ export function RovoAppAgentConfigPanel({
 									baseAgent={navigatorBaseAgent}
 									className="absolute right-4 top-[42%] z-20 hidden md:block"
 									onCreateSubagent={createSubagent}
+									onManageSubagents={() => setIsManageSubagentsOpen(true)}
 									onSelectBaseAgent={selectBaseAgent}
 									onSelectSubagent={selectSubagent}
 									subagents={subagentPrompts}
@@ -583,7 +589,6 @@ export function RovoAppAgentConfigPanel({
 												/>
 											) : null}
 											idPrefix={`agent-${profileId}-${activeConfigId}`}
-											layout="compact"
 											onTextChange={handleConfigTextChange}
 											onProfileTextChange={handleBaseTextChange}
 											onListItemChange={updateListItem}
@@ -591,7 +596,7 @@ export function RovoAppAgentConfigPanel({
 											onAddListValues={appendListValues}
 											onAppendListItem={appendListItem}
 											onConnectTrigger={handleConnectTrigger}
-											onManageSubagents={createSubagent}
+											onManageSubagents={() => setIsManageSubagentsOpen(true)}
 											onSelectListItem={handleSelectListItem}
 											onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
 											onOpenDirectory={handleOpenDirectory}
@@ -653,6 +658,18 @@ export function RovoAppAgentConfigPanel({
 				maxStarters={3}
 				saveLabel={conversationStarterDialogValue.length > 0 ? "Save" : "Add"}
 				onSave={handleSaveConversationStarters}
+			/>
+			<ManageSubagentsDialog
+				open={isManageSubagentsOpen}
+				onOpenChange={setIsManageSubagentsOpen}
+				onCreateSubagent={() => {
+					setIsManageSubagentsOpen(false);
+					createSubagent();
+				}}
+				onDeleteSubagent={deleteSubagentById}
+				onReorderSubagents={reorderSubagents}
+				onToggleSubagent={toggleSubagent}
+				subagents={subagentPrompts}
 			/>
 		</>
 	);

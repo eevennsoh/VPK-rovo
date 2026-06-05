@@ -344,6 +344,7 @@ interface RovoAppPlanningSession {
 interface RovoAppClarificationSubmitOptions {
 	contextDescription?: string;
 	creationMode?: RovoAppCreationMode;
+	onSubmitted?: () => void;
 }
 
 function resolveClarificationContextDescription({
@@ -3524,6 +3525,7 @@ export function useRovoApp({
 			};
 
 			markLocalThreadRunPending(threadId);
+			options?.onSubmitted?.();
 			if (wasPlanModeActive) {
 				await syncAgentModeForDispatch("plan");
 				setPlanningSession((prev) =>

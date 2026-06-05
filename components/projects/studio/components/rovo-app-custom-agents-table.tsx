@@ -174,12 +174,22 @@ function formatActiveUsers(count: number): string {
 	return `${count} ${count === 1 ? "user" : "users"}`;
 }
 
-function getDirectoryCardAvatarClassName(agent: AgentsDirectoryAgent): string {
-	if (agent.id === "google-drive" || agent.id === "slack") {
-		return "size-full scale-85 object-contain";
+// Third-party app marks that ship a purpose-built, self-contained 16px tile
+// (`/3p/<id>/16-borderless.svg`). On the directory card these render in a
+// borderless hexagon so the artwork isn't fighting an edge.
+const BORDERLESS_HEXAGON_AGENT_IDS: ReadonlySet<string> = new Set(["google-drive", "slack", "notion"]);
+
+function isBorderlessHexagonAgent(agent: AgentsDirectoryAgent): boolean {
+	return BORDERLESS_HEXAGON_AGENT_IDS.has(agent.id);
+}
+
+// Swap the standard 3p logo for its borderless 16px sibling used on the card.
+function getDirectoryCardAvatarSrc(agent: AgentsDirectoryAgent): string | undefined {
+	if (isBorderlessHexagonAgent(agent)) {
+		return `/3p/${agent.id}/16-borderless.svg`;
 	}
 
-	return "size-full object-contain";
+	return agent.avatarSrc;
 }
 
 function isTeamDirectoryAgent(agent: AgentsDirectoryAgent): boolean {
@@ -580,8 +590,8 @@ function DirectoryAgentsGrid({
 				return (
 					<li key={agent.id}>
 						<CardDirectoryAgent
-							avatarImageClassName={getDirectoryCardAvatarClassName(agent)}
-							avatarSrc={agent.avatarSrc}
+							avatarSrc={getDirectoryCardAvatarSrc(agent)}
+							insetLogo={isBorderlessHexagonAgent(agent)}
 							chatCount={syntheticChats(agent.id)}
 							className="hover:border-transparent"
 							description={agent.description}

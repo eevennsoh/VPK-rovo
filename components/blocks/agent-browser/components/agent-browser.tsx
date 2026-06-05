@@ -21,6 +21,7 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
+import { Tile } from "@/components/ui/tile";
 import { CardDirectoryAgent } from "@/components/ui-custom/card-directory";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { token } from "@/lib/tokens";
@@ -147,12 +148,23 @@ function getSidebarGroupItems(
 	}));
 }
 
-function getDirectoryCardAvatarClassName(agent: AgentBrowserAgent): string {
-	if (agent.id === "google-drive" || agent.id === "slack") {
-		return "size-full scale-85 object-contain";
+// Third-party app marks that ship a purpose-built, self-contained 16px tile
+// (`/3p/<id>/16-borderless.svg`). On the directory card these render in a
+// borderless hexagon so the artwork isn't fighting an edge. Other surfaces
+// (e.g. the sidebar) keep the standard `avatarSrc` at their own size.
+const BORDERLESS_HEXAGON_AGENT_IDS: ReadonlySet<string> = new Set(["google-drive", "slack", "notion"]);
+
+function isBorderlessHexagonAgent(agent: AgentBrowserAgent): boolean {
+	return BORDERLESS_HEXAGON_AGENT_IDS.has(agent.id);
+}
+
+// Swap the standard 3p logo for its borderless 16px sibling used on the card.
+function getDirectoryCardAvatarSrc(agent: AgentBrowserAgent): string | undefined {
+	if (isBorderlessHexagonAgent(agent)) {
+		return `/3p/${agent.id}/16-borderless.svg`;
 	}
 
-	return "size-full object-contain";
+	return agent.avatarSrc;
 }
 
 export function AgentBrowserDialog({
@@ -358,10 +370,13 @@ function SidebarGroup({ title, items, agents, onSelectAgent, showAll = false }: 
 
 function SidebarItemAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>) {
 	if (item.logoName) {
+		// The 3p logos carry their own rounded-square tile inside the SVG; the
+		// Atlassian brand mark is transparent, so wrap it in a bordered Tile to
+		// match the company rows.
 		return (
-			<span className="flex size-6 shrink-0 items-center justify-center">
-				<AtlassianLogo name={item.logoName} label={item.label} size="small" themeAware />
-			</span>
+			<Tile label={item.label} variant="transparent" size="small" hasBorder className="shrink-0">
+				<AtlassianLogo name={item.logoName} label={item.label} size="xsmall" themeAware />
+			</Tile>
 		);
 	}
 
@@ -430,8 +445,8 @@ function AgentCard({ agent, onSelectAgent, publisher }: Readonly<AgentCardProps>
 	return (
 		<CardDirectoryAgent
 			active={moreMenuOpen}
-			avatarImageClassName={getDirectoryCardAvatarClassName(agent)}
-			avatarSrc={agent.avatarSrc}
+			avatarSrc={getDirectoryCardAvatarSrc(agent)}
+			insetLogo={isBorderlessHexagonAgent(agent)}
 			chatCount={syntheticChats(agent.id)}
 			className="hover:border-transparent"
 			description={agent.description}

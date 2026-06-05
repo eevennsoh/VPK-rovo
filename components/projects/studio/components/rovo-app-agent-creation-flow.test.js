@@ -483,7 +483,6 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentCompactSurfacesPanel/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /type AgentCompactHeaderSection/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /config=\{activeConfig\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /layout="compact"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onTextChange=\{handleConfigTextChange\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onAddListValues=\{appendListValues\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onAppendListItem=\{appendListItem\}/u);
@@ -722,8 +721,14 @@ test("Studio clarification answers keep agent creation mode active", () => {
 	assert.match(SHELL_SOURCE, /hasPersistedAgentCreationPrompt/u);
 	assert.match(SHELL_SOURCE, /message\.metadata\?\.creationMode === "agent"/u);
 	assert.match(SHELL_SOURCE, /creationMode: "agent" as const/u);
-	assert.match(SHELL_SOURCE, /submitClarification\([\s\S]*activeQuestionCard,[\s\S]*answers,[\s\S]*getStudioAgentCreationClarificationOptions\(\),/u);
+	assert.match(SHELL_SOURCE, /submitClarification\([\s\S]*activeQuestionCard,[\s\S]*answers,[\s\S]*\.\.\.getStudioAgentCreationClarificationOptions\(\),[\s\S]*onSubmitted: hideQuestionCard/u);
+	assert.match(SHELL_SOURCE, /setSubmittingQuestionCardKey\(questionCardKey\);/u);
 	assert.match(SHELL_SOURCE, /onDismissQuestionCard: handleCancelClarificationQuestionSet/u);
+});
+
+test("Studio hides resolved question-card trace after rendering answer summary", () => {
+	assert.match(MESSAGES_SOURCE, /const shouldSuppressResolvedQuestionTrace =[\s\S]*shouldHideResolvedQuestionCard[\s\S]*hasAnsweredQuestionToolCalls[\s\S]*visibleThinkingToolCalls\.length === 0[\s\S]*!isResponseInFlight;/u);
+	assert.match(MESSAGES_SOURCE, /const thinkingActive = thinkingTraceState\.thinkingActive && !shouldSuppressResolvedQuestionTrace;/u);
 });
 
 test("Studio threads template provenance into agent creation contexts", () => {

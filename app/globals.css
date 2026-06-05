@@ -134,14 +134,6 @@
 		-webkit-tap-highlight-color: transparent;
 	}
 
-	/* Brand caret — color the text-insertion cursor with the link/brand blue
-	   on text entry fields. Resolves to a --ds-* token so it re-themes in
-	   light/dark via data-color-mode. */
-	input,
-	textarea {
-		caret-color: var(--color-link);
-	}
-
 	/* Autofill repaint — Chromium/WebKit lock the autofilled field's
 	   background-color to a pale UA yellow that ignores our theme (and never
 	   updates in dark mode). background-color can't be overridden during

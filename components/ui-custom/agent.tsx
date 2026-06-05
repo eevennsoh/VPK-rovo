@@ -6,7 +6,6 @@ import type { ComponentProps, CSSProperties, PointerEvent as ReactPointerEvent, 
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 
-import AddIcon from "@atlaskit/icon/core/add";
 import AppIcon from "@atlaskit/icon/core/app";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
@@ -35,8 +34,11 @@ import {
 } from "@/components/blocks/conversation-starters";
 import {
 	serializeAgentTriggerLabels,
+	TriggerPicker,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/page";
+import { createAgentTriggerValue } from "@/components/blocks/triggers/data/trigger-catalog";
+import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
 import {
 	EDITOR_PALETTE_MENTION_SOURCES,
 	getDirectoryMentionItemOrFallback,
@@ -71,10 +73,6 @@ import { Tile } from "@/components/ui/tile";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CheckIcon, MoreHorizontalIcon, PlusIcon } from "@/components/ui/vpk-icons";
 import { computeContextBarOverflow } from "@/components/ui-custom/context-bar/overflow";
-import {
-	TwgToolBannerBackground,
-} from "@/components/ui-custom/twg-tool";
-import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import {
 	type RichTextMentionItem,
 	type RichTextMentionRemovalRequest,
@@ -128,15 +126,6 @@ const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
 	"strategy-agents": "#FCA700",
 	"teamwork-agents": DEFAULT_AGENT_PROFILE_COVER_COLOR,
 };
-
-const AGENT_KNOWLEDGE_SOURCES = [
-	{ id: "twg", label: "Teamwork Graph", provider: "twg" },
-	{ id: "jira", label: "Jira", provider: "jira" },
-	{ id: "google-drive", label: "Google Drive", provider: "google-drive" },
-	{ id: "confluence", label: "Confluence", provider: "confluence" },
-	{ id: "teams", label: "Microsoft Teams", provider: "teams" },
-	{ id: "salesforce", label: "Salesforce", provider: "salesforce" },
-] as const satisfies readonly TwgToolSource[];
 
 const AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = [
 	{ agentFieldName: "trigger", label: "Triggers" },
@@ -1028,131 +1017,18 @@ export const AgentOutput = memo(
 	)
 );
 
-interface AgentActionTileProps {
-	agentFieldName?: string;
-	label: string;
-	onClick?: () => void;
-	screenAssistantTargetId?: string;
-}
-
-interface AgentMissingConfigActionsProps {
-	config: AgentConfigFormValue;
-	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
-	onAppendListItem?: (field: AgentConfigListFieldName) => void;
-	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
-	screenAssistantTargetPrefix?: string;
-}
-
-interface AgentMissingConfigAction {
-	agentFieldName?: string;
-	label: string;
-	onClick?: () => void;
-	screenAssistantTargetId?: string;
-}
-
-function AgentIconTile({ children, label }: Readonly<{ children: ReactNode; label: string }>) {
-	return (
-		<Tile
-			className="shrink-0 text-icon-subtle"
-			label={label}
-			size="medium"
-			variant="neutral"
-		>
-			{children}
-		</Tile>
-	);
-}
-
-function AgentActionTile({
-	agentFieldName,
-	label,
-	onClick,
-	screenAssistantTargetId,
-}: Readonly<AgentActionTileProps>) {
-	return (
-		<button
-			type="button"
-			data-agent-field={agentFieldName}
-			data-screen-assistant-target={screenAssistantTargetId}
-			className="flex min-h-11 w-full items-center gap-3 rounded-xl border border-border bg-surface p-1.5 text-left text-sm font-medium text-text transition-colors hover:bg-surface-raised-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-			onClick={onClick}
-		>
-			<AgentIconTile label="Add">
-				<Icon render={<AddIcon label="" size="small" />} aria-hidden />
-			</AgentIconTile>
-			<span className="min-w-0 truncate">{label}</span>
-		</button>
-	);
-}
-
-function AgentMissingConfigActions({
-	config,
-	hiddenConfigFields,
-	onAppendListItem,
-	onOpenDirectory,
-	screenAssistantTargetPrefix,
-}: Readonly<AgentMissingConfigActionsProps>) {
-	const actions: ReadonlyArray<AgentMissingConfigAction | null> = [
-		getAgentTriggerItems(config).length === 0 && !hiddenConfigFields?.has("trigger")
-			? {
-					agentFieldName: "trigger",
-					label: "Add triggers",
-					screenAssistantTargetId: screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined,
-				}
-			: null,
-		getNonEmptyConfigItems(config.skills).length === 0
-			? {
-					agentFieldName: "skills",
-					label: "Add skills",
-					onClick: () => openAgentDirectoryOrAppendListItem("skills", "skills", onOpenDirectory, onAppendListItem),
-					screenAssistantTargetId: screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined,
-				}
-			: null,
-		getNonEmptyConfigItems(config.tools).length === 0
-			? {
-					agentFieldName: "tools",
-					label: "Add tools",
-					onClick: () => openAgentDirectoryOrAppendListItem("tools", "tools", onOpenDirectory, onAppendListItem),
-					screenAssistantTargetId: screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined,
-				}
-			: null,
-		getNonEmptyConfigItems(config.conversationStarters).length === 0 && !hiddenConfigFields?.has("conversationStarters")
-			? {
-					agentFieldName: "conversationStarters",
-					label: "Add conversation starters",
-					onClick: () => openAgentDirectoryOrAppendListItem("conversationStarters", "conversationStarters", onOpenDirectory, onAppendListItem),
-					screenAssistantTargetId: screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:conversation-starters` : undefined,
-				}
-			: null,
-	];
-	const visibleActions = actions.filter((action): action is AgentMissingConfigAction => action !== null);
-
-	if (visibleActions.length === 0) {
-		return null;
-	}
-
-	return (
-		<div className="grid grid-cols-2 gap-2">
-			{visibleActions.map((action) => (
-				<AgentActionTile
-					key={action.label}
-					agentFieldName={action.agentFieldName}
-					label={action.label}
-					onClick={action.onClick}
-					screenAssistantTargetId={action.screenAssistantTargetId}
-				/>
-			))}
-		</div>
-	);
-}
-
 type AgentCompactConfigNavItem = ReturnType<typeof getAgentCompactEmptyConfigNavItems>[number];
 
 function getAgentCompactConfigNavItemOnClick(
 	item: AgentCompactConfigNavItem,
 	onAppendListItem?: (field: AgentConfigListFieldName) => void,
 	onOpenDirectory?: (directory: AgentDirectoryKind) => void,
+	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void,
 ): (() => void) | undefined {
+	if (item.agentFieldName === "trigger") {
+		return () => onEditTriggers?.([]);
+	}
+
 	if (item.agentFieldName === "tools") {
 		return () => openAgentDirectoryOrAppendListItem("tools", "tools", onOpenDirectory, onAppendListItem);
 	}
@@ -1270,6 +1146,7 @@ function AgentCompactEmptyConfigNav({
 	hiddenConfigFields,
 	onManageSubagents,
 	onAppendListItem,
+	onEditTriggers,
 	onOpenDirectory,
 	onSelectListItem,
 	reasoningValue,
@@ -1283,6 +1160,7 @@ function AgentCompactEmptyConfigNav({
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	onManageSubagents?: () => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
+	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
 	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	reasoningValue: ReasoningModeValue;
@@ -1392,7 +1270,7 @@ function AgentCompactEmptyConfigNav({
 						<AgentCompactConfigNavButton
 							item={item}
 							key={item.agentFieldName}
-							onClick={getAgentCompactConfigNavItemOnClick(item, onAppendListItem, onOpenDirectory)}
+							onClick={getAgentCompactConfigNavItemOnClick(item, onAppendListItem, onOpenDirectory, onEditTriggers)}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:${item.agentFieldName}` : undefined}
 						/>
 					);
@@ -1430,7 +1308,7 @@ function AgentCompactEmptyConfigNav({
 										<DropdownMenuItem
 											elemAfter={item.count > 0 ? <Badge>{item.count}</Badge> : undefined}
 											key={item.agentFieldName}
-											onClick={getAgentCompactConfigNavItemOnClick(item, onAppendListItem, onOpenDirectory)}
+											onClick={getAgentCompactConfigNavItemOnClick(item, onAppendListItem, onOpenDirectory, onEditTriggers)}
 										>
 											{item.label}
 										</DropdownMenuItem>
@@ -1883,6 +1761,77 @@ function AgentFilledSummaryRow({
 	);
 }
 
+interface AgentTriggerSummaryRowProps {
+	items: readonly string[];
+	addLabel?: string;
+	hideWhenEmpty?: boolean;
+	screenAssistantTargetId?: string;
+	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
+}
+
+/**
+ * Triggers row. Unlike the generic `AgentFilledSummaryRow`, the trigger entry
+ * launches the rule-builder modal instead of inline editing:
+ * - empty → the content area is the provider/event `TriggerPicker` dropdown;
+ *   selecting an event seeds the modal with that one trigger;
+ * - non-empty → the chips area is a button that opens the modal directly for
+ *   editing the existing definitions.
+ * Chips render statically (no `onRemove`) so they can live inside the button
+ * trigger; removal happens inside the modal.
+ */
+function AgentTriggerSummaryRow({
+	items,
+	addLabel,
+	hideWhenEmpty = false,
+	screenAssistantTargetId,
+	onEditTriggers,
+}: Readonly<AgentTriggerSummaryRowProps>) {
+	const isEmpty = items.length === 0;
+
+	if (isEmpty && (hideWhenEmpty || !addLabel)) {
+		return null;
+	}
+
+	return (
+		<div
+			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-5"
+			data-agent-field="trigger"
+			data-screen-assistant-target={screenAssistantTargetId}
+		>
+			<div className="sm:w-32 sm:shrink-0">
+				<AgentSectionLabel>Triggers</AgentSectionLabel>
+			</div>
+			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
+				{isEmpty ? (
+					<TriggerPicker
+						label={addLabel ?? "Add"}
+						onSelectEvent={(providerId, eventId) => {
+							const next = createAgentTriggerValue(providerId, eventId, 1);
+							onEditTriggers?.(next ? [next] : []);
+						}}
+						trigger={<AgentAddValueButton icon="add" label={addLabel ?? "Add"} />}
+					/>
+				) : (
+					<button
+						type="button"
+						aria-label="Edit triggers"
+						className="group/trigger-edit flex min-w-0 flex-1 flex-wrap items-center gap-1.5 rounded-xs text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						onClick={() => onEditTriggers?.()}
+					>
+						{items.map((item, index) => (
+							<AgentReferenceChip key={`trigger-${item}-${index}`} label={item} />
+						))}
+						<span className="inline-flex h-5 shrink-0 items-center gap-1 text-xs font-medium text-text-subtlest opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-focus-visible/trigger-edit:opacity-100">
+							<EditIcon label="" size="small" />
+							<span className="group-hover/trigger-edit:underline">Edit</span>
+						</span>
+					</button>
+				)}
+			</div>
+		</div>
+	);
+}
+
 interface AgentFilledConfigSummaryProps {
 	config: AgentConfigFormValue;
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
@@ -1890,6 +1839,7 @@ interface AgentFilledConfigSummaryProps {
 	knowledgeMode?: KnowledgeModeValue;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
+	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
 	onKnowledgeModeChange?: (next: KnowledgeModeValue) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
@@ -1905,18 +1855,14 @@ function AgentFilledConfigSummary({
 	hideEmptyRows = false,
 	knowledgeMode,
 	onAppendListItem,
+	onEditTriggers,
 	onKnowledgeModeChange,
 	onOpenDirectory,
 	onRemoveListItem,
-	onTextChange,
 	screenAssistantTargetPrefix,
 	showAddButtons = true,
 }: Readonly<AgentFilledConfigSummaryProps>) {
 	const triggerItems = getAgentTriggerItems(config);
-	const triggerListItems = getNonEmptyConfigItems(config.triggers);
-	const removeTriggerItem = triggerListItems.length > 0
-		? (onRemoveListItem ? (index: number) => onRemoveListItem("triggers", index) : undefined)
-		: (onTextChange ? () => onTextChange("trigger", "") : undefined);
 	const skillItems = getNonEmptyConfigItems(config.skills);
 	const toolItems = getNonEmptyConfigItems(config.tools);
 	const subagentItems = getNonEmptyConfigItems(config.subagents);
@@ -1939,14 +1885,11 @@ function AgentFilledConfigSummary({
 			key: "trigger",
 			isEmpty: triggerItems.length === 0,
 			node: (
-				<AgentFilledSummaryRow
+				<AgentTriggerSummaryRow
 					addLabel={getAgentFilledSummaryAddLabel("triggers", triggerItems.length === 0, showAddButtons)}
 					hideWhenEmpty={hideEmptyRows}
-					agentFieldName="trigger"
 					items={triggerItems}
-					label="Triggers"
-					onAdd={() => onAppendListItem?.("triggers")}
-					onRemoveItem={removeTriggerItem}
+					onEditTriggers={onEditTriggers}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
 				/>
 			),
@@ -2150,72 +2093,8 @@ function AgentProfileCover({ avatarSrc = AGENT_AVATAR_SRC }: Readonly<{ avatarSr
 	);
 }
 
-function AgentKnowledgePanel() {
-	return (
-		<section className="space-y-0">
-			<AgentSectionLabel>Knowledge</AgentSectionLabel>
-			<div className="rounded-xl border border-border bg-bg-input p-1.5">
-				<div className="relative flex h-12 min-w-0 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken pl-1.5 pr-2">
-					<TwgToolBannerBackground />
-					<div className="relative z-10 flex min-w-0 items-center gap-2">
-						<Tile
-							className="bg-surface text-icon-discovery"
-							hasBorder
-							label="Teamwork Graph"
-							size="medium"
-							variant="transparent"
-						>
-							<svg
-								className="size-4 text-icon"
-								width={16}
-								height={16}
-								viewBox="0 0 16 16"
-								fill="none"
-								xmlns="http://www.w3.org/2000/svg"
-								aria-hidden
-							>
-								<path d="M11 11L5 5" stroke="currentColor" strokeWidth={1.5} />
-								<circle cx="3.5" cy="3.5" r="1.75" stroke="#1868DB" strokeWidth={1.5} />
-								<circle cx="3.5" cy="12.5" r="1.75" stroke="#BF63F3" strokeWidth={1.5} />
-								<circle cx="12.5" cy="12.5" r="1.75" stroke="#FCA700" strokeWidth={1.5} />
-								<circle cx="12.5" cy="3.5" r="1.75" stroke="#6A9A23" strokeWidth={1.5} />
-							</svg>
-						</Tile>
-						<span className="truncate text-sm font-medium text-text-subtle">Teamwork Graph</span>
-					</div>
-					<TWGAppstack
-						className="relative z-10 max-w-[42%]"
-						iconSize="md"
-						sources={AGENT_KNOWLEDGE_SOURCES}
-					/>
-				</div>
-				<div className="flex items-center justify-between rounded-lg p-1.5 transition-colors hover:bg-bg-neutral-subtle-hovered">
-					<div className="flex min-w-0 items-center gap-3">
-						<AgentIconTile label="Memory">
-							<Icon render={<AiModelIcon label="" />} aria-hidden />
-						</AgentIconTile>
-						<span className="truncate text-sm font-medium text-text-subtle">Memory</span>
-					</div>
-					<Button variant="ghost">
-						Manage
-					</Button>
-				</div>
-				<div className="px-1.5 py-1.5">
-					<div className="h-px bg-border-disabled" />
-				</div>
-				<button
-					type="button"
-					className="flex w-full items-center gap-3 rounded-lg p-1.5 text-left text-sm font-medium text-text-subtle transition-colors hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-				>
-					<AgentIconTile label="Add knowledge">
-						<Icon render={<AddIcon label="" size="small" />} aria-hidden />
-					</AgentIconTile>
-					<span>Add knowledge</span>
-				</button>
-			</div>
-		</section>
-	);
-}
+// The Knowledge panel now lives in its own reusable component; agent.tsx
+// renders it directly via <Knowledge /> from "@/components/ui-custom/knowledge".
 
 const REASONING_MODE_SECTIONS = [
 	{
@@ -2896,12 +2775,12 @@ function AgentConfigProfile({
 	);
 }
 
-interface AgentConfigSummaryProps {
+interface AgentCompactConfigToolbarBelowProps {
 	config: AgentConfigFormValue;
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
-	isFilledConfig: boolean;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
+	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
 	onManageSubagents?: () => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
@@ -2912,47 +2791,12 @@ interface AgentConfigSummaryProps {
 	selectedListItemIndexByField?: Partial<Record<AgentConfigListFieldName, number>>;
 }
 
-function AgentConfigSummary({
-	config,
-	hiddenConfigFields,
-	isFilledConfig,
-	onAppendListItem,
-	onConnectTrigger,
-	onOpenDirectory,
-	onRemoveListItem,
-	onTextChange,
-	onTriggerDefinitionsChange,
-	screenAssistantTargetPrefix,
-}: Readonly<AgentConfigSummaryProps>) {
-	return isFilledConfig ? (
-		<AgentFilledConfigSummary
-			config={config}
-			hiddenConfigFields={hiddenConfigFields}
-			onAppendListItem={onAppendListItem}
-			onConnectTrigger={onConnectTrigger}
-			onOpenDirectory={onOpenDirectory}
-			onRemoveListItem={onRemoveListItem}
-			onTextChange={onTextChange}
-			onTriggerDefinitionsChange={onTriggerDefinitionsChange}
-			screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-		/>
-	) : (
-		<AgentMissingConfigActions
-			config={config}
-			hiddenConfigFields={hiddenConfigFields}
-			onAppendListItem={onAppendListItem}
-			onOpenDirectory={onOpenDirectory}
-			screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-		/>
-	);
-}
-
 function AgentCompactConfigToolbarBelow({
 	config,
 	hiddenConfigFields,
-	isFilledConfig,
 	onAppendListItem,
 	onConnectTrigger,
+	onEditTriggers,
 	onManageSubagents,
 	onOpenDirectory,
 	onRemoveListItem,
@@ -2961,8 +2805,8 @@ function AgentCompactConfigToolbarBelow({
 	onTriggerDefinitionsChange,
 	screenAssistantTargetPrefix,
 	selectedListItemIndexByField,
-}: Readonly<AgentConfigSummaryProps>) {
-	const [expanded, setExpanded] = useState(() => !isFilledConfig);
+}: Readonly<AgentCompactConfigToolbarBelowProps>) {
+	const [expanded, setExpanded] = useState(true);
 	const [reasoningValue, setReasoningValue] = useState<ReasoningModeValue>("quick-auto");
 	const [knowledgeMode, setKnowledgeMode] = useState<KnowledgeModeValue>(() =>
 		getNonEmptyConfigItems(config.knowledge).length > 0 ? "custom" : "all",
@@ -3058,6 +2902,7 @@ function AgentCompactConfigToolbarBelow({
 							onKnowledgeModeChange={setKnowledgeMode}
 							onAppendListItem={onAppendListItem}
 							onConnectTrigger={onConnectTrigger}
+							onEditTriggers={onEditTriggers}
 							onOpenDirectory={onOpenDirectory}
 							onRemoveListItem={onRemoveListItem}
 							onTextChange={onTextChange}
@@ -3083,6 +2928,7 @@ function AgentCompactConfigToolbarBelow({
 							config={config}
 							hiddenConfigFields={hiddenConfigFields}
 							onAppendListItem={onAppendListItem}
+							onEditTriggers={onEditTriggers}
 							onManageSubagents={onManageSubagents}
 							onOpenDirectory={onOpenDirectory}
 							onSelectListItem={onSelectListItem}
@@ -3109,7 +2955,6 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	// triggers, subagents, and conversation starters can't be configured.
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	idPrefix: string;
-	layout?: "default" | "compact";
 	onManageSubagents?: () => void;
 	onProfileTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
@@ -3136,7 +2981,6 @@ export const AgentConfigFields = memo(
 		compactScrollAreaClassName,
 		hiddenConfigFields,
 		idPrefix,
-		layout = "default",
 		onListItemChange,
 		onAddListValues,
 		onAppendListItem,
@@ -3222,126 +3066,108 @@ export const AgentConfigFields = memo(
 			dismissTemplateTiles();
 			onOpenDirectory?.(directory);
 		}, [dismissTemplateTiles, onOpenDirectory]);
+		// Trigger authoring routes through the rule-builder modal hosted here so a
+		// single dialog instance serves every entry point (summary row, collapsed
+		// nav, missing-config tile). `seed` carries the definitions the modal opens
+		// with — the existing list when editing, or a freshly-picked trigger.
+		const [triggersEditor, setTriggersEditor] = useState<{ open: boolean; seed: readonly AgentTriggerValue[] }>({
+			open: false,
+			seed: [],
+		});
+		const handleEditTriggers = useCallback((seed?: readonly AgentTriggerValue[]) => {
+			dismissTemplateTiles();
+			setTriggersEditor({ open: true, seed: seed ?? config.triggerDefinitions ?? [] });
+		}, [config.triggerDefinitions, dismissTemplateTiles]);
+		const handleTriggersEditorOpenChange = useCallback((open: boolean) => {
+			setTriggersEditor((prev) => ({ ...prev, open }));
+		}, []);
+		const handleTriggersSave = useCallback((triggers: readonly AgentTriggerValue[]) => {
+			onTriggerDefinitionsChange?.(triggers);
+		}, [onTriggerDefinitionsChange]);
 
 		return (
 			<div
-				className={cn("flex flex-col gap-6", layout === "compact" && "min-h-0 flex-1", className)}
+				className={cn("flex min-h-0 flex-1 flex-col gap-6", className)}
 				data-agent-config-id={idPrefix}
-				data-agent-config-layout={layout}
 				data-screen-assistant-target={screenAssistantTargetPrefix}
 				{...props}
 			>
-				{layout === "compact" ? (
-					<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-						{/* Scrollable region: profile + instructions grow to fill, the
-						    sibling footer below stays anchored to the panel bottom. The
-						    bottom scroll mask fades content into the footer while there's
-						    more below, and clears once the region is scrolled to the end. */}
-						<div
-							ref={compactScrollOverflow.ref}
-							className={cn(
-								"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto",
-								compactScrollOverflow.showBottomScrollMask && "scroll-mask-bottom",
-								compactScrollAreaClassName,
-							)}
-						>
-							<div className="flex flex-col gap-4">
-								<AgentConfigProfile
-									config={profileConfig ?? config}
-									avatarSrc={profileAvatarSrc ?? avatarSrc}
-									onTextChange={handleProfileTextChange}
-									screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-								/>
-							</div>
-							<AgentInstructionsComposer
-								bottomSlot={isFilledConfig ? null : (
-									<AnimatePresence>
-										{templatesDismissed ? null : (
-											<AgentCompactOperationsBento
-												key="agent-compact-operations-bento"
-												onDismiss={() => setTemplatesDismissed(true)}
-											/>
-										)}
-									</AnimatePresence>
-								)}
-								bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-0"
-								className="relative flex min-h-0 flex-1 flex-col"
-								config={config}
-								contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]")}
-								editorClassName={isFilledConfig ? undefined : "agent-instructions-tiptap-editor-compact-empty"}
-								instructions={config.instructions}
-								mentionRemovalRequest={mentionRemovalRequest}
-								onAddListValues={handleAddListValues}
-								onInstructionsChange={(value) => handleTextChange("instructions", value)}
-								onMentionRemovalRequestHandled={handleMentionRemovalRequestHandled}
-								onRemoveReferenceValue={handleRemoveReferenceValue}
-								onStartWithTemplate={dismissTemplateTiles}
-								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
-								showSectionLabel={false}
-							/>
-						</div>
-						{/* Bottom-anchored footer: always flush to the panel bottom. The
-						    separator/expand row stays transparent so content scrolls
-						    visibly behind it; only the field rows carry a solid surface. */}
-						{compactFooterBefore}
-						<div className="shrink-0">
-							<AgentCompactConfigToolbarBelow
-								config={config}
-								hiddenConfigFields={hiddenConfigFields}
-								isFilledConfig={isFilledConfig}
-								onAppendListItem={handleAppendListItem}
-								onConnectTrigger={onConnectTrigger}
-								onManageSubagents={onManageSubagents ? handleManageSubagents : undefined}
-								onOpenDirectory={handleOpenDirectory}
-								onRemoveListItem={handleRemoveListItem}
-								onSelectListItem={handleSelectListItem}
-								onTextChange={handleTextChange}
-								onTriggerDefinitionsChange={onTriggerDefinitionsChange}
-								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-								selectedListItemIndexByField={selectedListItemIndexByField}
-							/>
-						</div>
-					</div>
-				) : (
-					<>
-						{/* Profile + config summary share one flex column; this `gap-4` is
-						    the single knob for the agent description → summary rows gap. */}
+				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+					{/* Scrollable region: profile + instructions grow to fill, the
+					    sibling footer below stays anchored to the panel bottom. The
+					    bottom scroll mask fades content into the footer while there's
+					    more below, and clears once the region is scrolled to the end. */}
+					<div
+						ref={compactScrollOverflow.ref}
+						className={cn(
+							"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto",
+							compactScrollOverflow.showBottomScrollMask && "scroll-mask-bottom",
+							compactScrollAreaClassName,
+						)}
+					>
 						<div className="flex flex-col gap-4">
 							<AgentConfigProfile
-								config={config}
-								avatarSrc={avatarSrc}
-								onTextChange={handleTextChange}
-								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-							/>
-							<AgentConfigSummary
-								config={config}
-								hiddenConfigFields={hiddenConfigFields}
-								isFilledConfig={isFilledConfig}
-								onAppendListItem={handleAppendListItem}
-								onOpenDirectory={handleOpenDirectory}
-								onRemoveListItem={handleRemoveListItem}
-								onTextChange={handleTextChange}
+								config={profileConfig ?? config}
+								avatarSrc={profileAvatarSrc ?? avatarSrc}
+								onTextChange={handleProfileTextChange}
 								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 							/>
 						</div>
-
-						{isFilledConfig ? (
-							<div className="h-px bg-border" />
-						) : (
-							<AgentKnowledgePanel />
-						)}
 						<AgentInstructionsComposer
+							bottomSlot={isFilledConfig ? null : (
+								<AnimatePresence>
+									{templatesDismissed ? null : (
+										<AgentCompactOperationsBento
+											key="agent-compact-operations-bento"
+											onDismiss={() => setTemplatesDismissed(true)}
+										/>
+									)}
+								</AnimatePresence>
+							)}
+							bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-0"
+							className="relative flex min-h-0 flex-1 flex-col"
 							config={config}
+							contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]")}
+							editorClassName={isFilledConfig ? undefined : "agent-instructions-tiptap-editor-compact-empty"}
 							instructions={config.instructions}
 							mentionRemovalRequest={mentionRemovalRequest}
 							onAddListValues={handleAddListValues}
 							onInstructionsChange={(value) => handleTextChange("instructions", value)}
 							onMentionRemovalRequestHandled={handleMentionRemovalRequestHandled}
 							onRemoveReferenceValue={handleRemoveReferenceValue}
+							onStartWithTemplate={dismissTemplateTiles}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
+							showSectionLabel={false}
 						/>
-					</>
-				)}
+					</div>
+					{/* Bottom-anchored footer: always flush to the panel bottom. The
+					    separator/expand row stays transparent so content scrolls
+					    visibly behind it; only the field rows carry a solid surface. */}
+					{compactFooterBefore}
+					<div className="shrink-0">
+						<AgentCompactConfigToolbarBelow
+							config={config}
+							hiddenConfigFields={hiddenConfigFields}
+							onAppendListItem={handleAppendListItem}
+							onConnectTrigger={onConnectTrigger}
+							onEditTriggers={handleEditTriggers}
+							onManageSubagents={onManageSubagents ? handleManageSubagents : undefined}
+							onOpenDirectory={handleOpenDirectory}
+							onRemoveListItem={handleRemoveListItem}
+							onSelectListItem={handleSelectListItem}
+							onTextChange={handleTextChange}
+							onTriggerDefinitionsChange={onTriggerDefinitionsChange}
+							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+							selectedListItemIndexByField={selectedListItemIndexByField}
+						/>
+					</div>
+				</div>
+				<AgentTriggersDialog
+					open={triggersEditor.open}
+					onOpenChange={handleTriggersEditorOpenChange}
+					triggerDefinitions={triggersEditor.seed}
+					onSave={handleTriggersSave}
+				/>
 			</div>
 		);
 	}

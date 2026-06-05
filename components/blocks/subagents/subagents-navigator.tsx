@@ -1,8 +1,8 @@
 "use client";
 
-import { useId, useState, type FocusEvent, type KeyboardEvent } from "react";
+import { useId, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
-import { PlusIcon } from "@/components/ui/vpk-icons";
+import { PlusIcon, SettingsIcon } from "@/components/ui/vpk-icons";
 import type { SubagentPrompt, SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ interface SubagentsNavigatorProps {
 	baseAgent: SubagentsBaseAgent;
 	className?: string;
 	onCreateSubagent: () => void;
+	onManageSubagents?: () => void;
 	onSelectBaseAgent: () => void;
 	onSelectSubagent: (id: string) => void;
 	subagents: ReadonlyArray<SubagentPrompt>;
@@ -31,7 +32,9 @@ const SWITCHER_SECTION_PADDING_Y_PX = 16;
 const SWITCHER_SECTION_LABEL_HEIGHT_PX = 20;
 const SWITCHER_ROW_HEIGHT_PX = 36;
 const SWITCHER_ROW_GAP_PX = 2;
-const SWITCHER_FOOTER_HEIGHT_PX = 45;
+// Footer chrome = top border (1px) + pt-2 (8px); each action button is 36px tall.
+const SWITCHER_FOOTER_CHROME_PX = 9;
+const SWITCHER_FOOTER_ACTION_HEIGHT_PX = 36;
 
 function getBaseAgentDisplayName(baseAgent: SubagentsBaseAgent): string {
 	return baseAgent.config.name?.trim() || "Untitled agent";
@@ -46,6 +49,7 @@ export function SubagentsNavigator({
 	baseAgent,
 	className,
 	onCreateSubagent,
+	onManageSubagents,
 	onSelectBaseAgent,
 	onSelectSubagent,
 	subagents,
@@ -54,6 +58,10 @@ export function SubagentsNavigator({
 	const shouldReduceMotion = useReducedMotion();
 	const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
 	const switcherItemsCount = subagents.length + 1;
+	// The footer holds "Create subagent" and, when wired, "Manage subagents".
+	const footerActionCount = onManageSubagents ? 2 : 1;
+	const footerHeight =
+		SWITCHER_FOOTER_CHROME_PX + footerActionCount * SWITCHER_FOOTER_ACTION_HEIGHT_PX;
 	const closedHeight =
 		2 * MINIMAP_PADDING_Y_PX +
 		switcherItemsCount * BAR_HEIGHT_PX +
@@ -65,7 +73,7 @@ export function SubagentsNavigator({
 		SWITCHER_SECTION_LABEL_HEIGHT_PX +
 		subagents.length * SWITCHER_ROW_HEIGHT_PX +
 		Math.max(0, subagents.length - 1) * SWITCHER_ROW_GAP_PX +
-		SWITCHER_FOOTER_HEIGHT_PX;
+		footerHeight;
 	const shellTransition = shouldReduceMotion
 		? undefined
 		: [
@@ -201,19 +209,44 @@ export function SubagentsNavigator({
 						</div>
 					</div>
 					<div className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-surface-overlay pt-2">
-						<button
-							type="button"
-							aria-label="Create subagent"
-							className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-text-subtle transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected"
+						<SubagentsActionButton
+							icon={<PlusIcon size="small" />}
+							label="Create subagent"
 							onClick={onCreateSubagent}
-						>
-							<PlusIcon size="small" />
-							<span className="min-w-0 truncate">Create subagent</span>
-						</button>
+						/>
+						{onManageSubagents ? (
+							<SubagentsActionButton
+								icon={<SettingsIcon size="small" />}
+								label="Manage subagents"
+								onClick={onManageSubagents}
+							/>
+						) : null}
 					</div>
 				</div>
 			</div>
 		</div>
+	);
+}
+
+function SubagentsActionButton({
+	icon,
+	label,
+	onClick,
+}: Readonly<{
+	icon: ReactNode;
+	label: string;
+	onClick: () => void;
+}>) {
+	return (
+		<button
+			type="button"
+			aria-label={label}
+			className="flex h-9 w-full items-center gap-2 rounded-lg px-2 text-left text-sm text-text-subtle transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected"
+			onClick={onClick}
+		>
+			{icon}
+			<span className="min-w-0 truncate">{label}</span>
+		</button>
 	);
 }
 

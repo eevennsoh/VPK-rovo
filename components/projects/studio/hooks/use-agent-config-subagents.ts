@@ -184,6 +184,53 @@ export function useAgentConfigSubagents({
 		[activeSubagentId, commitPrompts, subagentPrompts],
 	);
 
+	// Remove a subagent by its prompt id (used by the Manage subagents dialog,
+	// which works in prompt ids rather than derived chip indexes). Resets the
+	// active selection to the base agent if the removed prompt was being edited.
+	const deleteSubagentById = useCallback(
+		(id: string) => {
+			if (!subagentPrompts.some((prompt) => prompt.id === id)) {
+				return;
+			}
+
+			commitPrompts(subagentPrompts.filter((prompt) => prompt.id !== id));
+			if (id === activeSubagentId) {
+				startTransition(() => setActiveSubagentId(null));
+			}
+		},
+		[activeSubagentId, commitPrompts, subagentPrompts],
+	);
+
+	// Reorder the raw prompt list by moving `activeId` to `overId`'s position.
+	const reorderSubagents = useCallback(
+		(activeId: string, overId: string) => {
+			const fromIndex = subagentPrompts.findIndex((prompt) => prompt.id === activeId);
+			const toIndex = subagentPrompts.findIndex((prompt) => prompt.id === overId);
+			if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
+				return;
+			}
+
+			const nextPrompts = [...subagentPrompts];
+			const [moved] = nextPrompts.splice(fromIndex, 1);
+			nextPrompts.splice(toIndex, 0, moved);
+			commitPrompts(nextPrompts);
+		},
+		[commitPrompts, subagentPrompts],
+	);
+
+	// Enable/disable a subagent without removing it. The derived chip list keys
+	// off trigger names, so the enabled flag is purely the prompt's own state.
+	const toggleSubagent = useCallback(
+		(id: string, enabled: boolean) => {
+			commitPrompts(
+				subagentPrompts.map((prompt) =>
+					prompt.id === id ? { ...prompt, enabled } : prompt,
+				),
+			);
+		},
+		[commitPrompts, subagentPrompts],
+	);
+
 	return {
 		activeConfig,
 		activeConfigId,
@@ -193,16 +240,19 @@ export function useAgentConfigSubagents({
 		activeSubagentId,
 		baseConfig,
 		createSubagent,
+		deleteSubagentById,
 		handleConditionChange,
 		handleTriggerNameChange,
 		isSubagentActive,
 		removeSubagentByDerivedIndex,
+		reorderSubagents,
 		selectBaseAgent,
 		selectSubagent,
 		selectSubagentByDerivedIndex,
 		selectedSubagentIndex,
 		// Raw prompt list (including unnamed drafts) for the floating navigator.
 		subagentPrompts,
+		toggleSubagent,
 		updateActiveConfig,
 	} as const;
 }

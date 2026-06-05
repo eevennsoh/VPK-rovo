@@ -78,7 +78,28 @@ test("Subagents switcher uses base agent header and trigger-name prompt rows", (
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /variant ===|rounded-b-lg|rounded-t"/u);
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_OPEN_MAX_HEIGHT_PX|Math\.min\(|overflow-y-auto/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /sticky top-0[\s\S]*shrink-0 py-2[\s\S]*sticky bottom-0/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /gap-2 rounded-lg px-2 py-2 text-left text-sm text-text-subtle/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /gap-2 rounded-lg px-2 text-left text-sm text-text-subtle/u);
+});
+
+test("Subagents navigator footer exposes create and manage sticky actions", () => {
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /onManageSubagents\?: \(\) => void/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /function SubagentsActionButton/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /label="Create subagent"/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /label="Manage subagents"/u);
+	// The manage action only renders when wired, and lives in the sticky footer.
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /onManageSubagents \? \(/u);
+	// Footer height accounts for the optional second action row.
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /footerActionCount = onManageSubagents \? 2 : 1/u);
+});
+
+test("Manage subagents dialog is connected to the navigator manage action", () => {
+	assert.match(SUBAGENTS_INDEX_SOURCE, /ManageSubagentsDialog/u);
+	assert.match(SUBAGENTS_PAGE_SOURCE, /import \{ ManageSubagentsDialog \}/u);
+	assert.match(SUBAGENTS_PAGE_SOURCE, /onManageSubagents=\{\(\) => setIsManageSubagentsOpen\(true\)\}/u);
+	assert.match(SUBAGENTS_PAGE_SOURCE, /<ManageSubagentsDialog/u);
+	assert.match(SUBAGENTS_PAGE_SOURCE, /onDeleteSubagent=\{handleDeleteSubagent\}/u);
+	assert.match(SUBAGENTS_PAGE_SOURCE, /onReorderSubagents=\{handleReorderSubagents\}/u);
+	assert.match(SUBAGENTS_PAGE_SOURCE, /onToggleSubagent=\{handleToggleSubagent\}/u);
 });
 
 test("Create subagent adds and selects an empty prompt copy", () => {
@@ -97,7 +118,7 @@ test("Subagents creation is routed through the compact control panel", () => {
 	assert.match(AGENT_SOURCE, /if \(item\.count === 0\)[\s\S]*onCreateSubagent/u);
 	assert.match(AGENT_SOURCE, /onSelectListItem\?\.\("subagents", index\)/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /function handleSelectConfigListItem/u);
-	assert.match(SUBAGENTS_PAGE_SOURCE, /onManageSubagents=\{handleCreateSubagent\}/u);
+	assert.match(SUBAGENTS_PAGE_SOURCE, /onManageSubagents=\{\(\) => setIsManageSubagentsOpen\(true\)\}/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /onSelectListItem=\{handleSelectConfigListItem\}/u);
 });
 

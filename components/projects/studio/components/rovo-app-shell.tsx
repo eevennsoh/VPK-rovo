@@ -2403,20 +2403,40 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		activeQuestionCard,
 		onDismissQuestionCard: handleCancelClarificationQuestionSet,
 	});
+	const [submittingQuestionCardKey, setSubmittingQuestionCardKey] = useState<string | null>(null);
 	const isDeferredQuestionCard = Boolean(activeQuestionCard?.deferredToolCallId);
 	const shouldShowQuestionCard = shouldShowQuestionCardRaw && (!chat.isStreaming || isDeferredQuestionCard);
 	const handleClarificationSubmit = useCallback(
-		(answers: ClarificationAnswers) => {
+		async (answers: ClarificationAnswers) => {
 			if (!activeQuestionCard) return;
-			void submitClarification(
-				activeQuestionCard,
-				answers,
-				getStudioAgentCreationClarificationOptions(),
-			).catch(() => {
+			const questionCardKey = activeQuestionCardKey ?? `${activeQuestionCard.sessionId}:${activeQuestionCard.round}`;
+			if (submittingQuestionCardKey === questionCardKey) return;
+			setSubmittingQuestionCardKey(questionCardKey);
+			try {
+				await submitClarification(
+					activeQuestionCard,
+					answers,
+					{
+						...getStudioAgentCreationClarificationOptions(),
+						onSubmitted: hideQuestionCard,
+					},
+				);
+			} catch {
 				// submitClarification owns the user-facing error state.
-			});
+			} finally {
+				setSubmittingQuestionCardKey((currentKey) =>
+					currentKey === questionCardKey ? null : currentKey,
+				);
+			}
 		},
-		[activeQuestionCard, getStudioAgentCreationClarificationOptions, submitClarification],
+		[
+			activeQuestionCard,
+			activeQuestionCardKey,
+			getStudioAgentCreationClarificationOptions,
+			hideQuestionCard,
+			submitClarification,
+			submittingQuestionCardKey,
+		],
 	);
 	const handleBuildPlan = useCallback(
 		(planWidget: ParsedPlanWidgetPayload) => {
@@ -4254,22 +4274,22 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					) : null}
 					<div>
 						{shouldShowQuestionCard && activeQuestionCard ? (
-						<>
-							<ClarificationQuestionCard
-								key={activeQuestionCardKey ?? undefined}
-								questionCard={activeQuestionCard}
-								onSubmit={(answers) => {
-									handleClarificationSubmit(answers);
-									hideQuestionCard();
-								}}
-								onDismiss={() => {
-									dismissQuestionCard();
-									hideQuestionCard();
-								}}
-							/>
-							<QuestionCardShortcutsFooter />
-						</>
-					) : shouldShowApprovalCard && activePendingPlan ? (
+							<>
+								<ClarificationQuestionCard
+									key={activeQuestionCardKey ?? undefined}
+									questionCard={activeQuestionCard}
+									isSubmitting={submittingQuestionCardKey === (activeQuestionCardKey ?? `${activeQuestionCard.sessionId}:${activeQuestionCard.round}`)}
+									onSubmit={(answers) => {
+										void handleClarificationSubmit(answers);
+									}}
+									onDismiss={() => {
+										dismissQuestionCard();
+										hideQuestionCard();
+									}}
+								/>
+								<QuestionCardShortcutsFooter />
+							</>
+						) : shouldShowApprovalCard && activePendingPlan ? (
 						<>
 							<ApprovalCard key={pendingPlanKey ?? undefined} onDismiss={handleDismissApprovalCard} onSelect={handlePlanApprovalSubmit} isSubmitting={isSubmittingPlanApproval} />
 							<QuestionCardShortcutsFooter escLabel="cancel" />

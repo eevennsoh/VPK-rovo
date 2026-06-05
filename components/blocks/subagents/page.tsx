@@ -11,6 +11,7 @@ import {
 } from "@/components/ui-custom/agent";
 import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
 import { SubagentPromptFields } from "@/components/blocks/subagents/components/subagent-prompt-fields";
+import { ManageSubagentsDialog } from "@/components/blocks/subagents/components/manage-subagents-dialog";
 import {
 	cloneConfig,
 	createDraftSubagentPrompt,
@@ -50,6 +51,7 @@ export default function Subagents({
 			: null;
 		return initialActivePrompt?.id ?? null;
 	});
+	const [isManageSubagentsOpen, setIsManageSubagentsOpen] = useState(false);
 
 	const activePrompt = activeSubagentId
 		? subagentPrompts.find((prompt) => prompt.id === activeSubagentId) ?? null
@@ -86,6 +88,32 @@ export default function Subagents({
 			setSubagentPrompts((currentPrompts) => [...currentPrompts, prompt]);
 			setActiveSubagentId(prompt.id);
 		});
+	}
+
+	function handleDeleteSubagent(id: string) {
+		setSubagentPrompts((currentPrompts) => currentPrompts.filter((prompt) => prompt.id !== id));
+		setActiveSubagentId((currentId) => (currentId === id ? null : currentId));
+	}
+
+	function handleReorderSubagents(activeId: string, overId: string) {
+		setSubagentPrompts((currentPrompts) => {
+			const fromIndex = currentPrompts.findIndex((prompt) => prompt.id === activeId);
+			const toIndex = currentPrompts.findIndex((prompt) => prompt.id === overId);
+			if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
+				return currentPrompts;
+			}
+
+			const nextPrompts = [...currentPrompts];
+			const [moved] = nextPrompts.splice(fromIndex, 1);
+			nextPrompts.splice(toIndex, 0, moved);
+			return nextPrompts;
+		});
+	}
+
+	function handleToggleSubagent(id: string, enabled: boolean) {
+		setSubagentPrompts((currentPrompts) =>
+			currentPrompts.map((prompt) => (prompt.id === id ? { ...prompt, enabled } : prompt)),
+		);
 	}
 
 	function updateBaseConfig(updateConfig: (config: AgentConfigFormValue) => AgentConfigFormValue) {
@@ -229,6 +257,7 @@ export default function Subagents({
 				baseAgent={baseAgent}
 				className="absolute right-4 top-[42%] z-20 hidden md:block"
 				onCreateSubagent={handleCreateSubagent}
+				onManageSubagents={() => setIsManageSubagentsOpen(true)}
 				onSelectBaseAgent={handleSelectBaseAgent}
 				onSelectSubagent={handleSelectSubagent}
 				subagents={subagentPrompts}
@@ -250,10 +279,9 @@ export default function Subagents({
 							) : null}
 							config={activeConfig}
 							idPrefix={`subagents-${activeConfigId}`}
-							layout="compact"
 							onAppendListItem={handleAppendListItem}
 							onListItemChange={handleListItemChange}
-							onManageSubagents={handleCreateSubagent}
+							onManageSubagents={() => setIsManageSubagentsOpen(true)}
 							onProfileTextChange={handleBaseTextChange}
 							onRemoveListItem={handleRemoveListItem}
 							onSelectListItem={handleSelectConfigListItem}
@@ -268,6 +296,18 @@ export default function Subagents({
 					</AgentContent>
 				</Agent>
 			</div>
+			<ManageSubagentsDialog
+				open={isManageSubagentsOpen}
+				onOpenChange={setIsManageSubagentsOpen}
+				onCreateSubagent={() => {
+					setIsManageSubagentsOpen(false);
+					handleCreateSubagent();
+				}}
+				onDeleteSubagent={handleDeleteSubagent}
+				onReorderSubagents={handleReorderSubagents}
+				onToggleSubagent={handleToggleSubagent}
+				subagents={subagentPrompts}
+			/>
 		</div>
 	);
 }
