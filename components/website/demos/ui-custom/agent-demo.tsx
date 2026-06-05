@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AgentUsers } from "@/components/blocks/agent-users";
 import {
 	Agent,
 	AgentConfigFields,
@@ -220,7 +221,7 @@ export function AgentDemoCompactSurfaces() {
 	const [activeSection, setActiveSection] = useState<AgentCompactHeaderSection | null>("surfaces");
 
 	function handleSectionChange(section: AgentCompactHeaderSection) {
-		setActiveSection(section === "surfaces" ? "surfaces" : null);
+		setActiveSection(section === "surfaces" || section === "users" ? section : null);
 	}
 
 	return (
@@ -237,6 +238,10 @@ export function AgentDemoCompactSurfaces() {
 			<AgentContent>
 				{activeSection === "surfaces" ? (
 					<AgentCompactSurfacesPanel />
+				) : activeSection === "users" ? (
+					<div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
+						<AgentUsers />
+					</div>
 				) : (
 					<AgentConfigFields
 						config={filledAgentConfig}

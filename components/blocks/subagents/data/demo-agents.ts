@@ -11,6 +11,8 @@ export interface SubagentPrompt {
 	triggerName: string;
 	condition: string;
 	config: AgentConfigFormValue;
+	/** Whether the subagent is active. Treated as enabled when omitted. */
+	enabled?: boolean;
 }
 
 export const DEFAULT_SUBAGENTS_BASE_AGENT: SubagentsBaseAgent = {
