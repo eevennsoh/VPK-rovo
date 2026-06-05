@@ -19,6 +19,10 @@ const AGENT_CONFIG_PANEL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-agent-config-panel.tsx"),
 	"utf8",
 );
+const AGENT_INSIGHTS_PANEL_SOURCE = fs.readFileSync(
+	path.join(__dirname, "agent-insights-panel.tsx"),
+	"utf8",
+);
 const AGENT_TEST_PANEL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-agent-test-panel.tsx"),
 	"utf8",
@@ -434,6 +438,30 @@ test("RovoAppMessages renders the block agent result card after generation compl
 	assert.match(ROVO_UI_MESSAGES_SOURCE, /triggerDefinitions\?: AgentTriggerValue\[\];/u);
 });
 
+test("Studio agent insights panel frames agent performance and improvement opportunities", () => {
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /Review your agent&apos;s performance and gather insights\./u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /Understand adoption, answer quality, failure patterns, and the next improvements/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /Total conversations/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /Active users/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /Successful answer rate/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /Escalation rate/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /Feedback score/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /Adoption trend/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /Answer quality/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /Conversation outcomes/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /Top topics/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /Feedback mix/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /Recommended improvements/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /Improve billing answers/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /Next review focus/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /<ChartContainer/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /AGENT_INSIGHTS_TREND_DATA/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /AGENT_INSIGHTS_TOPIC_DATA/u);
+	assert.match(AGENT_INSIGHTS_PANEL_SOURCE, /AGENT_INSIGHTS_RECOMMENDATIONS/u);
+	assert.doesNotMatch(AGENT_INSIGHTS_PANEL_SOURCE, /bg-\[var\(--ds-/u);
+	assert.doesNotMatch(AGENT_INSIGHTS_PANEL_SOURCE, /text-\[var\(--ds-/u);
+});
+
 test("Studio agent config panel renders the shared ui-custom agent config fields", () => {
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /export const AgentConfigFields = memo/u);
 	assert.match(UI_CUSTOM_AGENT_SOURCE, /const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string>/u);
@@ -468,6 +496,7 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEFAULT_SKILLS \} from "@\/components\/blocks\/skills-directory\/data\/skills";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ ToolsDirectoryDialog \} from "@\/components\/blocks\/tools-directory";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEMO_SESSION_TOOLS, DEMO_TOOLS \} from "@\/components\/blocks\/tools-directory\/data\/demo-tools";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ AgentInsightsPanel \} from "@\/components\/projects\/studio\/components\/agent-insights-panel";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[activeDirectory, setActiveDirectory\] = useState<AgentDirectoryKind \| null>\(null\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[activeCompactSection, setActiveCompactSection\] = useState<AgentCompactHeaderSection \| null>\(null\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleTriggerDefinitionsChange = useCallback\([\s\S]*serializeAgentTriggerLabels\(triggerDefinitions\)[\s\S]*triggerDefinitions,[\s\S]*trigger: triggerLabels\[0\] \?\? "",[\s\S]*triggers: triggerLabels,/u);
@@ -484,11 +513,11 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Tabs, TabsContent \} from "@\/components\/ui\/tabs";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /export type AgentConfigView = "configure" \| "test";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /export type AgentConfigView = "configure" \| "insights" \| "test";/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function getPublishLabel/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleCompactSectionChange = useCallback\([\s\S]*onViewChange\("configure"\);[\s\S]*setActiveCompactSection\(section === "surfaces" \? "surfaces" : null\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleCompactSectionChange = useCallback\([\s\S]*if \(section === "insights"\) \{[\s\S]*setActiveCompactSection\(null\);[\s\S]*onViewChange\("insights"\);[\s\S]*return;[\s\S]*\}[\s\S]*onViewChange\("configure"\);[\s\S]*setActiveCompactSection\(section === "surfaces" \? "surfaces" : null\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /setActiveCompactSection\(null\);[\s\S]*if \(value === "test"\)/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentCompactHeaderNav[\s\S]*activeSection=\{activeCompactSection\}[\s\S]*avatarSrc=\{agentAvatarSrc\}[\s\S]*onSectionChange=\{handleCompactSectionChange\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentCompactHeaderNav[\s\S]*activeSection=\{activeView === "insights" \? "insights" : activeCompactSection\}[\s\S]*avatarSrc=\{agentAvatarSrc\}[\s\S]*onSectionChange=\{handleCompactSectionChange\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /activeCompactSection === "surfaces" \? \([\s\S]*<AgentCompactSurfacesPanel className="-mr-6 pr-6" \/>[\s\S]*\) : \([\s\S]*<AgentConfigFields/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigActionButton/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigToggleItem/u);
@@ -508,6 +537,7 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<TabsContent value="configure"[\s\S]*<AgentConfigFields/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /compactScrollAreaClassName="-mr-6 pr-6"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<TabsContent value="test"[\s\S]*\{testPanel\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<TabsContent value="insights"[\s\S]*<AgentInsightsPanel \/>/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /Generation looks partial/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /variant="outline"[\s\S]*onClick=\{handleTest\}[\s\S]*disabled=\{!hasAgentInstructions\}/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /disabledTooltip="Add agent instructions before testing this agent\."/u);

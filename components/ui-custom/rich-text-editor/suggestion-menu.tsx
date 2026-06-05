@@ -44,6 +44,7 @@ import TextHeadingThreeIcon from "@atlaskit/icon-lab/core/text-heading-three";
 import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 
 import { IconTile } from "@/components/ui/icon-tile";
+import { Input } from "@/components/ui/input";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { ArrowLeftIcon } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
@@ -91,6 +92,12 @@ interface RichTextSuggestionMenuProps {
 	items: readonly RichTextSuggestionMenuItem[];
 	onBack?: () => void;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
+	/**
+	 * When true, the first item renders as a subtle text input (keeping its
+	 * visual — e.g. the Rovo logo — at the front) instead of a button. Used by
+	 * showcases like the editor palette; the live editor leaves this off.
+	 */
+	renderFirstItemAsInput?: boolean;
 	selectedIndex: number;
 	title: string;
 }
@@ -569,6 +576,7 @@ export function RichTextSuggestionMenu({
 	items,
 	onBack,
 	onSelect,
+	renderFirstItemAsInput = false,
 	selectedIndex,
 	title,
 }: Readonly<RichTextSuggestionMenuProps>) {
@@ -629,15 +637,23 @@ export function RichTextSuggestionMenu({
 				onScroll={updateListScrollState}
 			>
 				{items.length > 0 ? (
-					items.map((item, index) => (
-						<RichTextSuggestionMenuOption
-							key={item.id}
-							isNested={isNested}
-							isSelected={index === selectedIndex}
-							item={item}
-							onSelect={onSelect}
-						/>
-					))
+					items.map((item, index) =>
+						renderFirstItemAsInput && index === 0 ? (
+							<RichTextSuggestionMenuInputOption
+								key={item.id}
+								item={item}
+								onSelect={onSelect}
+							/>
+						) : (
+							<RichTextSuggestionMenuOption
+								key={item.id}
+								isNested={isNested}
+								isSelected={index === selectedIndex}
+								item={item}
+								onSelect={onSelect}
+							/>
+						),
+					)
 				) : (
 					<div className="rich-text-command-menu-empty">{emptyLabel}</div>
 				)}
@@ -738,6 +754,39 @@ function RichTextSuggestionMenuOption({
 		>
 			{children}
 		</button>
+	);
+}
+
+interface RichTextSuggestionMenuInputOptionProps {
+	item: RichTextSuggestionMenuItem;
+	onSelect: (item: RichTextSuggestionMenuItem) => void;
+}
+
+/**
+ * Renders a menu item as a subtle text input with its visual (e.g. the Rovo
+ * logo) kept at the front. Pressing Enter selects the underlying item.
+ */
+function RichTextSuggestionMenuInputOption({
+	item,
+	onSelect,
+}: Readonly<RichTextSuggestionMenuInputOptionProps>) {
+	return (
+		<div className="rich-text-command-menu-item rich-text-command-menu-input">
+			<RichTextSuggestionMenuItemVisual item={item} />
+			<Input
+				variant="subtle"
+				isCompact
+				aria-label={item.label}
+				placeholder={item.label}
+				disabled={item.disabled}
+				onKeyDown={(event) => {
+					if (event.key === "Enter") {
+						event.preventDefault();
+						onSelect(item);
+					}
+				}}
+			/>
+		</div>
 	);
 }
 

@@ -19,7 +19,7 @@ import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
 import ScorecardIcon from "@atlaskit/icon/core/scorecard";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import VideoPlayIcon from "@atlaskit/icon/core/video-play";
+import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import WorkItemIcon from "@atlaskit/icon/core/work-item";
 import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
@@ -33,7 +33,7 @@ import {
 	getStarterIcon,
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
-import Triggers, {
+import {
 	serializeAgentTriggerLabels,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/page";
@@ -467,7 +467,7 @@ const AGENT_COMPACT_HEADER_NAV_ITEMS = [
 	{ icon: <ViewsIcon label="" size="small" color="currentColor" />, label: "Surfaces", value: "surfaces" },
 	{ icon: <ScorecardIcon label="" size="small" color="currentColor" />, label: "Evaluation", value: "evaluation" },
 	{ icon: <PersonIcon label="" size="small" color="currentColor" />, label: "Users", value: "users" },
-	{ icon: <VideoPlayIcon label="" size="small" color="currentColor" />, label: "Access", value: "access" },
+	{ icon: <LockLockedIcon label="" size="small" color="currentColor" />, label: "Access", value: "access" },
 ] as const;
 
 export type AgentCompactHeaderSection = (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[number]["value"];
@@ -494,7 +494,7 @@ function AgentCompactHeaderNavButton({
 			size="compact"
 			variant={isSelected ? "outline" : "ghost"}
 			className={cn(
-				"h-6 gap-1 rounded px-2 text-sm font-medium leading-5",
+				"h-6 gap-1.5 rounded px-2 text-sm font-medium leading-5",
 				isSelected
 					? "border-border-selected bg-bg-selected text-text-selected [&_svg]:text-icon-selected"
 					: "text-text-subtle [&_svg]:text-icon-subtle"
@@ -1905,12 +1905,10 @@ function AgentFilledConfigSummary({
 	hideEmptyRows = false,
 	knowledgeMode,
 	onAppendListItem,
-	onConnectTrigger,
 	onKnowledgeModeChange,
 	onOpenDirectory,
 	onRemoveListItem,
 	onTextChange,
-	onTriggerDefinitionsChange,
 	screenAssistantTargetPrefix,
 	showAddButtons = true,
 }: Readonly<AgentFilledConfigSummaryProps>) {
@@ -1939,37 +1937,18 @@ function AgentFilledConfigSummary({
 	const rows: ReadonlyArray<{ key: string; isEmpty: boolean; node: ReactNode }> = [
 		{
 			key: "trigger",
-			isEmpty: onTriggerDefinitionsChange ? false : triggerItems.length === 0,
+			isEmpty: triggerItems.length === 0,
 			node: (
-				onTriggerDefinitionsChange ? (
-					<div
-						className="-mx-2 flex flex-col gap-y-2 rounded-md px-2 py-1 sm:flex-row sm:gap-x-5"
-						data-agent-field="trigger"
-						data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
-					>
-						<div className="sm:w-32 sm:shrink-0">
-							<AgentSectionLabel>Triggers</AgentSectionLabel>
-						</div>
-						<div className="min-w-0 flex-1">
-							<Triggers
-								triggers={config.triggerDefinitions ?? []}
-								onConnectTrigger={onConnectTrigger}
-								onTriggersChange={onTriggerDefinitionsChange}
-							/>
-						</div>
-					</div>
-				) : (
-					<AgentFilledSummaryRow
-						addLabel={getAgentFilledSummaryAddLabel("triggers", triggerItems.length === 0, showAddButtons)}
-						hideWhenEmpty={hideEmptyRows}
-						agentFieldName="trigger"
-						items={triggerItems}
-						label="Triggers"
-						onAdd={() => onAppendListItem?.("triggers")}
-						onRemoveItem={removeTriggerItem}
-						screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
-					/>
-				)
+				<AgentFilledSummaryRow
+					addLabel={getAgentFilledSummaryAddLabel("triggers", triggerItems.length === 0, showAddButtons)}
+					hideWhenEmpty={hideEmptyRows}
+					agentFieldName="trigger"
+					items={triggerItems}
+					label="Triggers"
+					onAdd={() => onAppendListItem?.("triggers")}
+					onRemoveItem={removeTriggerItem}
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
+				/>
 			),
 		},
 		{

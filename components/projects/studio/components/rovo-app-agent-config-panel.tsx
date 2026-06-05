@@ -5,6 +5,7 @@ import { type ReactNode, useCallback, useMemo, useState } from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 
 import { KnowledgeDirectoryDialog, type KnowledgeDirectoryAddPayload } from "@/components/blocks/knowledge-directory";
+import { AgentAccess } from "@/components/blocks/agent-access";
 import { DEFAULT_KNOWLEDGE_APPS } from "@/components/blocks/knowledge-directory/data/apps";
 import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/blocks/skills-directory";
 import { DEFAULT_SKILLS } from "@/components/blocks/skills-directory/data/skills";
@@ -25,6 +26,7 @@ import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navi
 import type { SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
 import { getListItems, updateConfigListItem } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { AgentUsers } from "@/components/blocks/agent-users";
+import { AgentInsightsPanel } from "@/components/projects/studio/components/agent-insights-panel";
 import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-agent-config-subagents";
 import {
 	Agent,
@@ -54,7 +56,7 @@ import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { cn } from "@/lib/utils";
 
 type AgentResult = RovoDataParts["agent-result"];
-export type AgentConfigView = "configure" | "test";
+export type AgentConfigView = "configure" | "insights" | "test";
 
 // Capabilities a subagent can't own. Hidden from the config rows while a
 // subagent prompt is selected/created (these aren't configurable per-subagent).
@@ -401,7 +403,7 @@ export function RovoAppAgentConfigPanel({
 
 	const handleViewChange = useCallback(
 		(value: string | null) => {
-			if (value !== "configure" && value !== "test") {
+			if (value !== "configure" && value !== "insights" && value !== "test") {
 				return;
 			}
 			setActiveCompactSection(null);
@@ -416,10 +418,17 @@ export function RovoAppAgentConfigPanel({
 
 	const handleCompactSectionChange = useCallback(
 		(section: AgentCompactHeaderSection) => {
+			if (section === "insights") {
+				setActiveCompactSection(null);
+				onViewChange("insights");
+				return;
+			}
 			onViewChange("configure");
 			// Only sections with a dedicated panel take over the configure view;
 			// the rest fall back to the standard config fields.
-			setActiveCompactSection(section === "surfaces" || section === "users" ? section : null);
+			setActiveCompactSection(
+				section === "surfaces" || section === "access" || section === "users" ? section : null,
+			);
 		},
 		[onViewChange],
 	);
@@ -457,7 +466,7 @@ export function RovoAppAgentConfigPanel({
 						name={agentName}
 						leadingContent={
 							<AgentCompactHeaderNav
-								activeSection={activeCompactSection}
+								activeSection={activeView === "insights" ? "insights" : activeCompactSection}
 								avatarSrc={agentAvatarSrc}
 								onSectionChange={handleCompactSectionChange}
 							/>
@@ -526,7 +535,13 @@ export function RovoAppAgentConfigPanel({
 							subagents={subagentPrompts}
 						/>
 						<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-6 py-5">
-							{activeCompactSection === "surfaces" ? (
+							{activeCompactSection === "access" ? (
+								<div className="-mr-6 min-h-0 flex-1 overflow-y-auto pr-6">
+									<div className="mx-auto w-full max-w-4xl pb-6">
+										<AgentAccess onGoToAgentDetails={() => setActiveCompactSection(null)} />
+									</div>
+								</div>
+							) : activeCompactSection === "surfaces" ? (
 								<AgentCompactSurfacesPanel className="-mr-6 pr-6" />
 							) : activeCompactSection === "users" ? (
 								<div
@@ -575,6 +590,9 @@ export function RovoAppAgentConfigPanel({
 					</TabsContent>
 					<TabsContent value="test" keepMounted={false} className="min-h-0 flex-1 data-[hidden]:hidden">
 						{testPanel}
+					</TabsContent>
+					<TabsContent value="insights" keepMounted={false} className="min-h-0 flex-1 data-[hidden]:hidden">
+						<AgentInsightsPanel />
 					</TabsContent>
 				</Tabs>
 			</Agent>

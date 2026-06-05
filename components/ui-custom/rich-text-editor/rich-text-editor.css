@@ -472,6 +472,18 @@
 	cursor: not-allowed;
 }
 
+.rich-text-command-menu-input {
+	cursor: default;
+}
+
+.rich-text-command-menu-input:hover {
+	background-color: transparent;
+}
+
+.rich-text-command-menu-input > [data-slot="input"] {
+	min-width: 0;
+}
+
 .rich-text-command-menu-avatar {
 	width: 24px;
 	height: 24px;

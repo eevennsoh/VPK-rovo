@@ -6,6 +6,7 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
+import type { TagColor } from "@/components/ui/tag";
 import { getSkillIcon, type SkillIconKey } from "@/components/blocks/skills-directory/data/skills";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,46 @@ import type {
 	RichTextMentionCategory,
 	RichTextMentionVisual,
 } from "./types";
+
+// Maps an icon's ADS color token to the closest `Tag` color so that mention
+// tokens in the TipTap editor and reference chips in the agent config panel
+// render with the same accent. Keep this the single source of truth — both
+// surfaces resolve their tag color through `getRichTextMentionTagColor`.
+const ICON_COLOR_TO_TAG_COLOR: Readonly<Record<string, TagColor>> = {
+	"text-icon-brand": "blue",
+	"text-icon-information": "blue",
+	"text-icon-success": "green",
+	"text-icon-discovery": "discovery",
+	"text-icon-warning": "yellow",
+	"text-icon-danger": "red",
+	"text-icon-accent-red": "red",
+	"text-icon-accent-orange": "orange",
+	"text-icon-accent-yellow": "yellow",
+	"text-icon-accent-lime": "lime",
+	"text-icon-accent-green": "green",
+	"text-icon-accent-teal": "teal",
+	"text-icon-accent-blue": "blue",
+	"text-icon-accent-purple": "purple",
+	"text-icon-accent-magenta": "magenta",
+	"text-icon-accent-gray": "gray",
+	"text-yellow-400": "yellow",
+};
+
+/**
+ * Resolves the `Tag` color for a mention visual. Returns the visual-derived
+ * accent when available (icon color token), falling back to `"blue"` so the
+ * mention reads as an interactive reference rather than a neutral gray chip —
+ * matching the agent config panel reference chips.
+ */
+export function getRichTextMentionTagColor(
+	visual: RichTextMentionVisual | undefined,
+): TagColor {
+	if (visual?.kind === "icon" && visual.iconColor) {
+		return ICON_COLOR_TO_TAG_COLOR[visual.iconColor] ?? "blue";
+	}
+
+	return "blue";
+}
 
 export interface RichTextMentionVisualAttrs {
 	visualIconColor?: string | null;
