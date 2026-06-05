@@ -243,6 +243,7 @@ Two runtime modes: **dev** (Next.js proxy + Express, with optional Rovo Serve fo
 - Prefer the smallest complete change that solves the stated problem. Do not add speculative features, configuration, abstractions, or error handling that the request does not require.
 - Keep edits surgical: every changed line should trace back to the user's request, required verification, or cleanup caused by your own change.
 - Match existing local style and patterns, even when a different pattern would be preferable in isolation.
+- Reuse before building: before writing any UI, search `components/ui-custom/`, `components/ui/`, and the screen the user references for an existing component or asset (SVG, animation) and reuse it verbatim. Do not write custom/creative markup, add style overrides, copy a component piece-by-piece, or re-implement what already exists. When the user names an existing component/asset, make only the minimal additive change requested (e.g. "add the publish button on the far right") and never substitute a different-but-related component on your own judgment.
 - For multi-step tasks, define brief success criteria before editing and loop until they are verified.
 - If you notice unrelated dead code, stale comments, or refactor opportunities, mention them separately instead of changing them.
 
@@ -253,6 +254,10 @@ Two runtime modes: **dev** (Next.js proxy + Express, with optional Rovo Serve fo
 - For Figma work, front-load key specs: spacing, radius, width constraints, shadow token.
 - When editing icons, check consistency across all icons in the component.
 - When fixing a bug, add a regression test that reproduces the original failure.
+- After a UI edit, trace which source the target route actually imports/renders and confirm the change is visible on the live route (open it via `/agent-browser` and screenshot) before reporting done. Editing a component definition is not enough if the route renders a different instance or wrapper — verify the change reaches the actual usage/render path, not just the definition.
+- When you change a UI pattern or make a new variant the default, update every instance of the old pattern and fully delete the old behavior/markup so old and new states never coexist (e.g. no leftover empty rows beside new single-line buttons). Strip any content the user explicitly excludes.
+- When fixing layout, check the whole surrounding region, not just the edited element: do not introduce spacing collisions with adjacent panels, viewport-level overflow/scroll, or clipping, and preserve existing visual effects (gradient fades, shadows). Verify across viewport sizes (collapsed sidebar, larger viewport, empty state), not just the first case.
+- When an element overlays content (hover-reveal control, remove button, scrim), implement the specified gradient/scrim so underlying text stays legible and no residual borders/edges of the underlying element peek through; keep padding symmetric after layout changes, and verify the overlay state visually.
 - Before marking work complete, verify: root cause addressed (not symptoms), no leftover workarounds, no dead code introduced, lint + typecheck pass.
 
 > Skills, parallel work model, and agent teams reference loads automatically from `.agents/rules/` when editing skill/agent files.
