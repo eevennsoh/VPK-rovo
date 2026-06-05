@@ -713,6 +713,16 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /<NodeViewWrapper[\s\S]*as=\{Tag\}[\s\S]*elemBefore=\{visual \? \(/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /type=\{getRichTextMentionTagType\(visual\)\}/u);
 	assert.doesNotMatch(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /className="rich-text-mention"/u);
+	// Mention tokens render with the visual-derived accent color (synced with the
+	// agent config-panel reference chips) rather than a hardcoded gray chip.
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /color=\{getRichTextMentionTagColor\(visual\)\}/u);
+	assert.doesNotMatch(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /color="gray"/u);
+	// Visual resolution falls back to the directory entry so a token shows the
+	// same icon/logo as its config-panel chip even when stored attrs lack one.
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /getDirectoryMentionItemOrFallback\(category, label\)\.visual/u);
+	// The shared color helper lives alongside the visual helpers so both the node
+	// view and the config chips resolve color from a single source of truth.
+	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /export function getRichTextMentionTagColor\(/u);
 	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /const logoSize = size === "menu" \? "small" : "xxsmall";/u);
 	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /<IconTile[\s\S]*border border-border bg-surface[\s\S]*visual\.iconColor/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /Markdown\.configure/u);

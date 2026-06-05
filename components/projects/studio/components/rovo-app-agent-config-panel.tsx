@@ -5,6 +5,7 @@ import { type ReactNode, useCallback, useMemo, useState } from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 
 import { KnowledgeDirectoryDialog, type KnowledgeDirectoryAddPayload } from "@/components/blocks/knowledge-directory";
+import { AgentAccess } from "@/components/blocks/agent-access";
 import { DEFAULT_KNOWLEDGE_APPS } from "@/components/blocks/knowledge-directory/data/apps";
 import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/blocks/skills-directory";
 import { DEFAULT_SKILLS } from "@/components/blocks/skills-directory/data/skills";
@@ -422,7 +423,7 @@ export function RovoAppAgentConfigPanel({
 				return;
 			}
 			onViewChange("configure");
-			setActiveCompactSection(section === "surfaces" ? "surfaces" : null);
+			setActiveCompactSection(section === "surfaces" || section === "access" ? section : null);
 		},
 		[onViewChange],
 	);
@@ -529,7 +530,13 @@ export function RovoAppAgentConfigPanel({
 							subagents={subagentPrompts}
 						/>
 						<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-6 py-5">
-							{activeCompactSection === "surfaces" ? (
+							{activeCompactSection === "access" ? (
+								<div className="-mr-6 min-h-0 flex-1 overflow-y-auto pr-6">
+									<div className="mx-auto w-full max-w-4xl pb-6">
+										<AgentAccess onGoToAgentDetails={() => setActiveCompactSection(null)} />
+									</div>
+								</div>
+							) : activeCompactSection === "surfaces" ? (
 								<AgentCompactSurfacesPanel className="-mr-6 pr-6" />
 							) : (
 								<AgentConfigFields

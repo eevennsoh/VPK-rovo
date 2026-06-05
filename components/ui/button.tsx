@@ -8,11 +8,13 @@ import { cn } from "@/lib/utils"
 
 const defaultButtonSize =
 	"h-8 gap-1.5 px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2"
+const compactIconSize =
+	"[&_[data-slot=icon]:not([class*='size-'])]:size-3! [&_[data-slot=icon]:not([class*='size-'])>span]:size-3! [&_svg:not([class*='size-'])]:size-3!"
 const compactButtonSize =
-	"h-6 gap-1 rounded-md px-3 text-xs in-data-[slot=button-group]:rounded-md [&_svg:not([class*='size-'])]:size-3"
+	`h-6 gap-1.5 rounded-md px-3 in-data-[slot=button-group]:rounded-md ${compactIconSize}`
 const defaultIconButtonSize = "size-8"
 const compactIconButtonSize =
-	"size-6 rounded-md in-data-[slot=button-group]:rounded-md [&_svg:not([class*='size-'])]:size-3"
+	`size-6 rounded-md in-data-[slot=button-group]:rounded-md ${compactIconSize}`
 
 const buttonVariants = cva(
 	"focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 aria-invalid:border-destructive rounded-md border border-transparent bg-clip-padding text-sm font-medium focus-visible:ring-3 aria-invalid:ring-3 [&_svg:not([class*='size-'])]:size-4 inline-flex items-center justify-center whitespace-nowrap transition-all [&_svg]:pointer-events-none shrink-0 [&_svg]:shrink-0 outline-none group/button select-none",

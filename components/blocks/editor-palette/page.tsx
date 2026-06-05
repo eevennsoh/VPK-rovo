@@ -77,6 +77,7 @@ export default function EditorPalette({
 						emptyLabel="No commands found"
 						items={commandItems}
 						selectedIndex={0}
+						renderFirstItemAsInput
 						onSelect={noop}
 					/>
 				</PalettePanel>
