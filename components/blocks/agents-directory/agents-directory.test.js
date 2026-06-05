@@ -66,6 +66,50 @@ test("Agents Directory renders a New agent header action", () => {
 	assert.match(detailsSource, /name: "onCreateAgent"[\s\S]*Optional handler for the New agent action/u);
 });
 
+test("Agents Directory includes Agent Templates as a sidebar mode", () => {
+	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
+	const agentsDirectorySource = readProjectFile("components/blocks/agents-directory/components/agents-directory.tsx");
+	const agentTemplatesSource = readProjectFile("components/blocks/agent-templates/components/agent-templates.tsx");
+	const studioShellSource = readProjectFile("components/projects/studio/components/rovo-app-shell.tsx");
+
+	assert.match(agentTemplatesSource, /export const AGENT_TEMPLATES_CATEGORIES/u);
+	assert.match(source, /AGENT_TEMPLATES_CATEGORIES/u);
+	assert.match(source, /type AgentTemplatesCategory/u);
+	assert.match(source, /templateCategories\?: readonly AgentTemplatesCategory\[\];/u);
+	assert.match(source, /templateAgents\?: readonly AgentTemplatesAgent\[\];/u);
+	assert.match(source, /onSelectTemplateAgent\?: \(agent: AgentTemplatesAgent\) => void;/u);
+	assert.match(source, /<SidebarTemplateGroup[\s\S]*categories=\{templateCategories\}[\s\S]*onSelectCategory=\{onSelectTemplateCategory\}/u);
+	assert.match(source, /Agent templates/u);
+	assert.match(source, /<SidebarNavItem[\s\S]*isSelected=\{activeCategory === category\.id\}[\s\S]*label=\{category\.label\}[\s\S]*leading=\{<SidebarTemplateIcon category=\{category\} \/>\}/u);
+	assert.match(source, /function SidebarTemplateIcon\(\{ category \}: Readonly<\{ category: AgentTemplatesCategory \}>\)/u);
+	assert.match(source, /src=\{category\.iconSrc\}/u);
+	assert.match(source, /className=\{cn\("size-6 object-contain", category\.iconClassName\)\}/u);
+	assert.match(source, /activeTemplateCategoryOption \? \(/u);
+	assert.match(source, /activeTemplateCategoryOption \? \([\s\S]*<AnimatePresence custom=\{templateMotionCustom\} initial=\{false\} mode="wait">[\s\S]*<motion\.div[\s\S]*key=\{`template-title-\$\{activeTemplateCategoryOption\.id\}`\}[\s\S]*variants=\{AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS\}[\s\S]*<TemplateCategoryTitle category=\{activeTemplateCategoryOption\} \/>/u);
+	assert.match(source, /:\s*\([\s\S]*<Button variant="outline">[\s\S]*Sort by popularity/u);
+	assert.doesNotMatch(source, /key="sort-button"[\s\S]*variants=\{AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS\}/u);
+	assert.match(source, /category\.titleLines\[0\]/u);
+	assert.match(source, /category\.titleLines\[1\]/u);
+	assert.match(source, /No templates match/u);
+	assert.match(source, /activeTemplateCategoryOption \? \([\s\S]*<AnimatePresence custom=\{templateMotionCustom\} initial=\{false\} mode="wait">[\s\S]*<motion\.section[\s\S]*aria-label="Agent templates"[\s\S]*key=\{`templates-\$\{activeTemplateCategoryOption\.id\}`\}[\s\S]*variants=\{AGENT_BROWSER_TEMPLATE_GRID_VARIANTS\}[\s\S]*<AgentTemplateSection[\s\S]*onSelectAgent=\{onSelectTemplateAgent\}/u);
+	assert.match(source, /CardDirectoryAgentExpanded/u);
+	assert.match(source, /className="h-\[400px\] \[will-change:transform,opacity\]"/u);
+	assert.match(source, /<ul className="grid grid-cols-1 gap-3 md:grid-cols-2">/u);
+	assert.match(source, /AGENT_BROWSER_TEMPLATE_MAX_VISIBLE_AGENTS = 8/u);
+	assert.match(source, /AGENT_BROWSER_TEMPLATE_CARD_STAGGER = 0\.05/u);
+	assert.match(source, /translateY/u);
+	assert.match(source, /const AGENT_BROWSER_TEMPLATE_GRID_VARIANTS = \{[\s\S]*enter: \{ opacity: 1 \},[\s\S]*center: \{ opacity: 1 \}/u);
+	assert.doesNotMatch(source, /translateY\(\$\{AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET \* direction\}px\)/u);
+	assert.doesNotMatch(source, /translateX\(\$\{motionCustom\.direction \* AGENT_BROWSER_TEMPLATE_CARD_ENTER_OFFSET\}px\)/u);
+	assert.match(source, /const handleSelectCategory = \(category: string\) => \{[\s\S]*setActiveTemplateCategory\(null\);[\s\S]*setActiveCategory\(category\);[\s\S]*\};/u);
+	assert.match(agentsDirectorySource, /DEMO_AGENT_TEMPLATES/u);
+	assert.match(agentsDirectorySource, /DEMO_AGENT_TEMPLATES_SESSION/u);
+	assert.match(agentsDirectorySource, /templateAgents = DEMO_AGENT_TEMPLATES/u);
+	assert.match(agentsDirectorySource, /sessionTemplateAgents = DEMO_AGENT_TEMPLATES_SESSION/u);
+	assert.match(agentsDirectorySource, /onSelectTemplateAgent=\{onSelectTemplateAgent\}/u);
+	assert.match(studioShellSource, /onSelectTemplateAgent=\{handleTemplateAgentSelect\}/u);
+});
+
 test("Agents Directory sidebar nav uses the shared SidebarNavItem primitive", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 	const sidebarNavItemSource = readProjectFile("components/ui-custom/sidebar-nav-item.tsx");
@@ -117,8 +161,8 @@ test("Agents Directory uses independent column scrolling without extra content p
 	assert.match(source, /ref=\{contentOverflow\.ref\}/u);
 	assert.match(source, /"flex min-h-0 min-w-0 flex-col gap-5 overflow-y-auto px-6 pb-6 md:pl-4"/u);
 	assert.match(source, /contentOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"/u);
-	assert.match(source, /<nav aria-label="Agent categories" className="hidden min-h-0 w-\[280px\] shrink-0 flex-col gap-5 overflow-y-auto pl-6 md:flex">/u);
-	assert.doesNotMatch(source, /Agent categories" className="scroll-mask-top/u);
+	assert.match(source, /const sidebarOverflow = useHasVerticalOverflow<HTMLElement>\(\);/u);
+	assert.match(source, /aria-label="Agent categories"[\s\S]*sidebarOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"[\s\S]*ref=\{sidebarOverflow\.ref\}/u);
 	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /scrollHeight - element\.clientHeight > 1/u);
 	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /scrollTop > 1/u);
 	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /showTopScrollMask: hasVerticalOverflow && hasScrolledFromTop/u);
@@ -153,7 +197,7 @@ test("Agents Directory uses one unsegmented results grid and updated sidebar lab
 	const demoSidebarGroupsSource = readProjectFile("components/blocks/agent-browser/data/demo-agents.ts");
 	const pageSource = readProjectFile("components/blocks/agents-directory/page.tsx");
 
-	assert.match(source, /<AgentSection agents=\{filtered\} onSelectAgent=\{onSelectAgent\} \/>/u);
+	assert.match(source, /<AgentSection agents=\{filtered\} key=\{`agents-\$\{activeCategory\}`\} onSelectAgent=\{onSelectAgent\} \/>/u);
 	assert.match(source, /favorite\?: boolean;/u);
 	assert.match(source, /label: "Favourite agents"/u);
 	assert.match(source, /if \(activeCategory === "favorite-agents" && !agent\.favorite\) return false;/u);
@@ -206,7 +250,7 @@ test("Agents Directory cards render the shared CardDirectoryAgent with overlay e
 	const cardDirectoryAgentSource = readProjectFile("components/ui-custom/card-directory/card-directory-agent.tsx");
 
 	// Cards are delegated to the shared ui-custom component — no inlined shell duplication.
-	assert.match(source, /import \{ CardDirectoryAgent \} from "@\/components\/ui-custom\/card-directory";/u);
+	assert.match(source, /CardDirectoryAgent,[\s\S]*CardDirectoryAgentExpanded,[\s\S]*from "@\/components\/ui-custom\/card-directory";/u);
 	assert.match(source, /function AgentCard\(\{ agent, onSelectAgent, publisher \}: Readonly<AgentCardProps>\)/u);
 	assert.match(source, /const \[moreMenuOpen, setMoreMenuOpen\] = useState\(false\);/u);
 	assert.match(source, /<CardDirectoryAgent[\s\S]*active=\{moreMenuOpen\}[\s\S]*avatarSrc=\{getDirectoryCardAvatarSrc\(agent\)\}[\s\S]*insetLogo=\{isBorderlessHexagonAgent\(agent\)\}/u);
@@ -218,7 +262,7 @@ test("Agents Directory cards render the shared CardDirectoryAgent with overlay e
 	assert.match(cardDirectoryAgentSource, /size=\{logoName === "atlassian" \? "xsmall" : "medium"\}/u);
 	assert.doesNotMatch(source, /AgentDirectoryCard/u);
 	assert.doesNotMatch(source, /AGENT_CARD_OVERLAY_SHADOW/u);
-	assert.doesNotMatch(source, /import \{ motion, useReducedMotion \}/u);
+	assert.match(source, /import \{ AnimatePresence, cubicBezier, motion, useReducedMotion \} from "motion\/react";/u);
 
 	// Self-contained third-party marks render in a borderless hexagon, inset to 16x16.
 	assert.match(source, /const BORDERLESS_HEXAGON_AGENT_IDS: ReadonlySet<string> = new Set\(\["google-drive", "slack", "notion"\]\);/u);

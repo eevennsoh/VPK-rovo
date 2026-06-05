@@ -2,12 +2,19 @@
 
 import Image from "next/image";
 import { type KeyboardEvent, type MouseEvent, useMemo, useState } from "react";
+import { AnimatePresence, cubicBezier, motion, useReducedMotion } from "motion/react";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 
+import {
+	AGENT_TEMPLATES_CATEGORIES,
+	type AgentTemplatesAgent,
+	type AgentTemplatesCategory,
+	type AgentTemplatesCategoryId,
+} from "@/components/blocks/agent-templates";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
@@ -22,7 +29,11 @@ import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { Tile } from "@/components/ui/tile";
-import { CardDirectoryAgent } from "@/components/ui-custom/card-directory";
+import {
+	CardDirectoryAgent,
+	CardDirectoryAgentExpanded,
+	type CardDirectoryCapability,
+} from "@/components/ui-custom/card-directory";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -62,8 +73,11 @@ export interface AgentBrowserCategory {
 export interface AgentBrowserProps {
 	agents: readonly AgentBrowserAgent[];
 	categories?: readonly AgentBrowserCategory[];
+	templateCategories?: readonly AgentTemplatesCategory[];
+	templateAgents?: readonly AgentTemplatesAgent[];
 	sidebarGroups?: readonly AgentBrowserSidebarGroup[];
 	onSelectAgent?: (agent: AgentBrowserAgent) => void;
+	onSelectTemplateAgent?: (agent: AgentTemplatesAgent) => void;
 }
 
 export interface AgentBrowserDialogProps extends AgentBrowserProps {
@@ -79,6 +93,61 @@ const DEFAULT_CATEGORIES: readonly AgentBrowserCategory[] = [
 	{ id: "favorite-agents", label: "Favourite agents" },
 	{ id: "my-agents", label: "My agents" },
 ] as const;
+const DEFAULT_TEMPLATE_CATEGORIES = AGENT_TEMPLATES_CATEGORIES;
+const EMPTY_TEMPLATE_AGENTS: readonly AgentTemplatesAgent[] = [];
+const EMPTY_TEMPLATE_CAPABILITIES: readonly CardDirectoryCapability[] = [];
+const AGENT_BROWSER_TEMPLATE_MAX_VISIBLE_AGENTS = 8;
+const AGENT_BROWSER_TEMPLATE_TAB_EXIT_TRANSITION = {
+	duration: 0.13,
+	ease: cubicBezier(0.6, 0.01, 0.8, 0.6),
+};
+const AGENT_BROWSER_TEMPLATE_TITLE_ENTER_TRANSITION = {
+	duration: 0.3,
+	ease: cubicBezier(0, 0.4, 0, 1),
+};
+const AGENT_BROWSER_TEMPLATE_CARD_ENTER_TRANSITION = {
+	type: "spring",
+	bounce: 0,
+	visualDuration: 0.4,
+} as const;
+const AGENT_BROWSER_TEMPLATE_CARD_STAGGER = 0.05;
+const AGENT_BROWSER_TEMPLATE_TITLE_SWAP_OFFSET = 12;
+const AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET = 24;
+const AGENT_BROWSER_TEMPLATE_CARD_ENTER_OFFSET = 16;
+const NOOP_TEMPLATE_MORE_ACTIONS = () => undefined;
+
+type AgentBrowserTemplateMotionDirection = 1 | -1;
+type AgentBrowserTemplateMotionCustom = {
+	direction: AgentBrowserTemplateMotionDirection;
+	shouldReduceMotion: boolean;
+};
+
+const AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS = {
+	enter: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
+		opacity: 0,
+		transform: shouldReduceMotion ? "translateY(0px)" : `translateY(${AGENT_BROWSER_TEMPLATE_TITLE_SWAP_OFFSET * direction}px)`,
+	}),
+	center: {
+		opacity: 1,
+		transform: "translateY(0px)",
+		transition: AGENT_BROWSER_TEMPLATE_TITLE_ENTER_TRANSITION,
+	},
+	exit: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
+		opacity: 0,
+		transform: shouldReduceMotion ? "translateY(0px)" : `translateY(${-AGENT_BROWSER_TEMPLATE_TITLE_SWAP_OFFSET * direction}px)`,
+		transition: AGENT_BROWSER_TEMPLATE_TAB_EXIT_TRANSITION,
+	}),
+} as const;
+
+const AGENT_BROWSER_TEMPLATE_GRID_VARIANTS = {
+	enter: { opacity: 1 },
+	center: { opacity: 1 },
+	exit: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
+		opacity: 0,
+		transform: shouldReduceMotion ? "translateY(0px)" : `translateY(${-AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET * direction}px)`,
+		transition: AGENT_BROWSER_TEMPLATE_TAB_EXIT_TRANSITION,
+	}),
+} as const;
 
 function derivePublisher(byline: string): string {
 	const match = /\bby\s+(.+)$/i.exec(byline);
@@ -124,6 +193,45 @@ function filterAgents(
 		const haystack = `${agent.name} ${agent.byline} ${agent.description ?? ""}`.toLowerCase();
 		return haystack.includes(normalized);
 	});
+}
+
+function filterTemplateAgents(
+	agents: readonly AgentTemplatesAgent[],
+	query: string,
+	activeCategory: AgentTemplatesCategoryId | null,
+): readonly AgentTemplatesAgent[] {
+	const normalized = query.trim().toLowerCase();
+	const categoryAgents = activeCategory
+		? agents.filter((agent) => agent.categoryId === activeCategory)
+		: agents;
+	const visibleAgents = categoryAgents.length > 0 ? categoryAgents : agents;
+
+	return visibleAgents.filter((agent) => {
+		if (!normalized) return true;
+
+		const haystack = [
+			agent.name,
+			agent.byline,
+			agent.publisher,
+			agent.description,
+			agent.sources?.map((source) => source.label).join(" "),
+			agent.skills?.map((skill) => skill.label).join(" "),
+		].filter(Boolean).join(" ").toLowerCase();
+
+		return haystack.includes(normalized);
+	}).slice(0, AGENT_BROWSER_TEMPLATE_MAX_VISIBLE_AGENTS);
+}
+
+function getTemplateCategoryIndex(
+	categories: readonly AgentTemplatesCategory[],
+	categoryId: AgentTemplatesCategoryId,
+): number {
+	const categoryIndex = categories.findIndex((category) => category.id === categoryId);
+	return categoryIndex >= 0 ? categoryIndex : 0;
+}
+
+function deriveTemplatePublisher(agent: AgentTemplatesAgent): string {
+	return agent.publisher ?? derivePublisher(agent.byline);
 }
 
 function pickAgentsByIds(
@@ -208,22 +316,59 @@ export function AgentBrowserDialog({
 export function AgentBrowser({
 	agents,
 	categories = DEFAULT_CATEGORIES,
+	templateCategories = DEFAULT_TEMPLATE_CATEGORIES,
+	templateAgents = EMPTY_TEMPLATE_AGENTS,
 	sidebarGroups = [],
 	onSelectAgent,
+	onSelectTemplateAgent,
 }: Readonly<AgentBrowserProps>) {
 	const initialCategory = categories[0]?.id ?? "all";
 	const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
+	const [activeTemplateCategory, setActiveTemplateCategory] = useState<AgentTemplatesCategoryId | null>(null);
+	const [templateMotionDirection, setTemplateMotionDirection] = useState<AgentBrowserTemplateMotionDirection>(1);
 	const [query, setQuery] = useState("");
+	const shouldReduceMotion = useReducedMotion() ?? false;
 	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	const visibleTemplateCategories = templateAgents.length > 0 ? templateCategories : [];
+	const activeTemplateCategoryOption = activeTemplateCategory
+		? visibleTemplateCategories.find((category) => category.id === activeTemplateCategory) ?? null
+		: null;
+	const templateMotionCustom = {
+		direction: templateMotionDirection,
+		shouldReduceMotion,
+	};
 
 	const filtered = useMemo(() => filterAgents(agents, query, activeCategory), [agents, query, activeCategory]);
+	const filteredTemplates = useMemo(
+		() => filterTemplateAgents(templateAgents, query, activeTemplateCategory),
+		[activeTemplateCategory, query, templateAgents],
+	);
+
+	const handleSelectCategory = (category: string) => {
+		setActiveTemplateCategory(null);
+		setActiveCategory(category);
+	};
+
+	const handleSelectTemplateCategory = (categoryId: AgentTemplatesCategoryId) => {
+		if (categoryId === activeTemplateCategory) return;
+
+		setTemplateMotionDirection(
+			activeTemplateCategory && getTemplateCategoryIndex(visibleTemplateCategories, categoryId) < getTemplateCategoryIndex(visibleTemplateCategories, activeTemplateCategory)
+				? -1
+				: 1,
+		);
+		setActiveTemplateCategory(categoryId);
+	};
 
 	return (
 		<div className="grid h-full min-h-0 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
 			<DirectorySidebar
 				categories={categories}
 				activeCategory={activeCategory}
-				onSelectCategory={setActiveCategory}
+				onSelectCategory={handleSelectCategory}
+				activeTemplateCategory={activeTemplateCategory}
+				onSelectTemplateCategory={handleSelectTemplateCategory}
+				templateCategories={visibleTemplateCategories}
 				sidebarGroups={sidebarGroups}
 				agents={agents}
 				onSelectAgent={onSelectAgent}
@@ -249,19 +394,72 @@ export function AgentBrowser({
 				</InputGroup>
 
 				<div className="flex items-center justify-between">
-					<Button variant="outline">
-						Sort by popularity
-						<Icon render={<ChevronDownIcon label="" size="small" color="currentColor" />} />
-					</Button>
+					{activeTemplateCategoryOption ? (
+						<AnimatePresence custom={templateMotionCustom} initial={false} mode="wait">
+							<motion.div
+								animate="center"
+								className="min-h-10 overflow-hidden text-text"
+								custom={templateMotionCustom}
+								exit="exit"
+								initial="enter"
+								key={`template-title-${activeTemplateCategoryOption.id}`}
+								style={{ font: token("font.heading.small"), willChange: "transform, opacity" }}
+								variants={AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS}
+							>
+								<TemplateCategoryTitle category={activeTemplateCategoryOption} />
+							</motion.div>
+						</AnimatePresence>
+					) : (
+						<Button variant="outline">
+							Sort by popularity
+							<Icon render={<ChevronDownIcon label="" size="small" color="currentColor" />} />
+						</Button>
+					)}
 					<p className="text-sm leading-5 text-text-subtle">
-						Showing {filtered.length.toLocaleString("en-US")} results
+						Showing {(activeTemplateCategoryOption ? filteredTemplates.length : filtered.length).toLocaleString("en-US")} results
 					</p>
 				</div>
 
-				{filtered.length === 0 ? (
-					<p className="text-sm text-text-subtlest">No agents match &ldquo;{query}&rdquo;.</p>
+				{activeTemplateCategoryOption ? (
+					<AnimatePresence custom={templateMotionCustom} initial={false} mode="wait">
+						{filteredTemplates.length === 0 ? (
+							<motion.p
+								animate="center"
+								className="text-sm text-text-subtlest"
+								custom={templateMotionCustom}
+								exit="exit"
+								initial="enter"
+								key={`template-empty-${activeTemplateCategoryOption.id}`}
+								style={{ willChange: "transform, opacity" }}
+								variants={AGENT_BROWSER_TEMPLATE_GRID_VARIANTS}
+							>
+								No templates match &ldquo;{query}&rdquo;.
+							</motion.p>
+						) : (
+							<motion.section
+								animate="center"
+								aria-label="Agent templates"
+								custom={templateMotionCustom}
+								exit="exit"
+								initial="enter"
+								key={`templates-${activeTemplateCategoryOption.id}`}
+								style={{ willChange: "transform, opacity" }}
+								variants={AGENT_BROWSER_TEMPLATE_GRID_VARIANTS}
+							>
+								<AgentTemplateSection
+									agents={filteredTemplates}
+									motionCustom={templateMotionCustom}
+									onSelectAgent={onSelectTemplateAgent}
+								/>
+							</motion.section>
+						)}
+					</AnimatePresence>
+				) : filtered.length === 0 ? (
+					<p className="text-sm text-text-subtlest" key={`agents-empty-${activeCategory}`}>
+						No agents match &ldquo;{query}&rdquo;.
+					</p>
 				) : (
-					<AgentSection agents={filtered} onSelectAgent={onSelectAgent} />
+					<AgentSection agents={filtered} key={`agents-${activeCategory}`} onSelectAgent={onSelectAgent} />
 				)}
 			</div>
 		</div>
@@ -272,6 +470,9 @@ interface DirectorySidebarProps {
 	categories: readonly AgentBrowserCategory[];
 	activeCategory: string;
 	onSelectCategory: (category: string) => void;
+	activeTemplateCategory: AgentTemplatesCategoryId | null;
+	onSelectTemplateCategory: (category: AgentTemplatesCategoryId) => void;
+	templateCategories: readonly AgentTemplatesCategory[];
 	sidebarGroups: readonly AgentBrowserSidebarGroup[];
 	agents: readonly AgentBrowserAgent[];
 	onSelectAgent?: (agent: AgentBrowserAgent) => void;
@@ -281,22 +482,39 @@ function DirectorySidebar({
 	categories,
 	activeCategory,
 	onSelectCategory,
+	activeTemplateCategory,
+	onSelectTemplateCategory,
+	templateCategories,
 	sidebarGroups,
 	agents,
 	onSelectAgent,
 }: Readonly<DirectorySidebarProps>) {
+	const sidebarOverflow = useHasVerticalOverflow<HTMLElement>();
+
 	return (
-		<nav aria-label="Agent categories" className="hidden min-h-0 w-[280px] shrink-0 flex-col gap-5 overflow-y-auto pl-6 md:flex">
+		<nav
+			aria-label="Agent categories"
+			className={cn(
+				"hidden min-h-0 w-[280px] shrink-0 flex-col gap-5 overflow-y-auto pl-6 md:flex",
+				sidebarOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
+			)}
+			ref={sidebarOverflow.ref}
+		>
 			<ul className="flex w-64 flex-col">
 				{categories.map((category) => (
 					<SidebarPrimaryItem
 						key={category.id}
 						label={category.label}
-						active={activeCategory === category.id}
+						active={!activeTemplateCategory && activeCategory === category.id}
 						onClick={() => onSelectCategory(category.id)}
 					/>
 				))}
 			</ul>
+			<SidebarTemplateGroup
+				activeCategory={activeTemplateCategory}
+				categories={templateCategories}
+				onSelectCategory={onSelectTemplateCategory}
+			/>
 			{sidebarGroups.map((group) => (
 				<SidebarGroup
 					key={group.title}
@@ -308,6 +526,39 @@ function DirectorySidebar({
 				/>
 			))}
 		</nav>
+	);
+}
+
+function SidebarTemplateGroup({
+	activeCategory,
+	categories,
+	onSelectCategory,
+}: Readonly<{
+	activeCategory: AgentTemplatesCategoryId | null;
+	categories: readonly AgentTemplatesCategory[];
+	onSelectCategory: (category: AgentTemplatesCategoryId) => void;
+}>) {
+	if (categories.length === 0) return null;
+
+	return (
+		<div className="flex w-64 flex-col gap-1.5">
+			<p style={{ font: token("font.heading.xxsmall") }} className="px-1.5 text-text-subtlest">
+				Agent templates
+			</p>
+			<ul className="flex flex-col">
+				{categories.map((category) => (
+					<li key={category.id}>
+						<SidebarNavItem
+							isSelected={activeCategory === category.id}
+							label={category.label}
+							leading={<SidebarTemplateIcon category={category} />}
+							leadingSize="medium"
+							onClick={() => onSelectCategory(category.id)}
+						/>
+					</li>
+				))}
+			</ul>
+		</div>
 	);
 }
 
@@ -406,6 +657,29 @@ function SidebarItemAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 	);
 }
 
+function SidebarTemplateIcon({ category }: Readonly<{ category: AgentTemplatesCategory }>) {
+	return (
+		<span aria-hidden className="flex size-6 shrink-0 items-center justify-center">
+			<Image
+				alt=""
+				className={cn("size-6 object-contain", category.iconClassName)}
+				height={24}
+				src={category.iconSrc}
+				width={24}
+			/>
+		</span>
+	);
+}
+
+function TemplateCategoryTitle({ category }: Readonly<{ category: AgentTemplatesCategory }>) {
+	return (
+		<>
+			<span className="block">{category.titleLines[0]}</span>
+			<span className="block text-text-subtlest">{category.titleLines[1]}</span>
+		</>
+	);
+}
+
 interface AgentSectionProps {
 	agents: readonly AgentBrowserAgent[];
 	onSelectAgent?: (agent: AgentBrowserAgent) => void;
@@ -429,6 +703,72 @@ function AgentSection({ agents, onSelectAgent }: Readonly<AgentSectionProps>) {
 				})}
 			</ul>
 		</section>
+	);
+}
+
+interface AgentTemplateSectionProps {
+	agents: readonly AgentTemplatesAgent[];
+	motionCustom: AgentBrowserTemplateMotionCustom;
+	onSelectAgent?: (agent: AgentTemplatesAgent) => void;
+}
+
+function AgentTemplateSection({
+	agents,
+	motionCustom,
+	onSelectAgent,
+}: Readonly<AgentTemplateSectionProps>) {
+	return (
+		<ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
+			{agents.map((agent, index) => (
+				<motion.li
+					animate={{ opacity: 1, transform: "translateY(0px)" }}
+					className="h-[400px] [will-change:transform,opacity]"
+					initial={{
+						opacity: 0,
+						transform: motionCustom.shouldReduceMotion ? "translateY(0px)" : `translateY(${motionCustom.direction * AGENT_BROWSER_TEMPLATE_CARD_ENTER_OFFSET}px)`,
+					}}
+					key={agent.id}
+					transition={{
+						...AGENT_BROWSER_TEMPLATE_CARD_ENTER_TRANSITION,
+						delay: motionCustom.shouldReduceMotion ? 0 : index * AGENT_BROWSER_TEMPLATE_CARD_STAGGER,
+					}}
+				>
+					<AgentTemplateCard
+						agent={agent}
+						onSelectAgent={onSelectAgent}
+					/>
+				</motion.li>
+			))}
+		</ul>
+	);
+}
+
+function AgentTemplateCard({
+	agent,
+	onSelectAgent,
+}: Readonly<{
+	agent: AgentTemplatesAgent;
+	onSelectAgent?: (agent: AgentTemplatesAgent) => void;
+}>) {
+	return (
+		<CardDirectoryAgentExpanded
+			attributionKind={agent.attributionKind}
+			avatarSrc={agent.avatarSrc}
+			capabilities={agent.capabilities ?? EMPTY_TEMPLATE_CAPABILITIES}
+			className="h-full w-full"
+			collaboratorOverflow={agent.collaboratorOverflow}
+			collaborators={agent.collaborators}
+			description={agent.description}
+			name={agent.name}
+			onMoreActions={NOOP_TEMPLATE_MORE_ACTIONS}
+			onSelect={onSelectAgent ? () => onSelectAgent(agent) : undefined}
+			publisher={deriveTemplatePublisher(agent)}
+			publisherLogoSrc={agent.publisherLogoSrc}
+			skills={agent.skills}
+			sources={agent.sources}
+			stats={agent.stats}
+			verified={agent.verified}
+		/>
 	);
 }
 

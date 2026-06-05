@@ -169,7 +169,7 @@ function FormattingToolbar({ editor }: { editor: Editor }) {
 		description: "Dialog-based agents directory for browsing recommended, team, partner, and session-created agents.",
 		importStatement: `import { AgentsDirectoryDialog } from "@/components/blocks/agents-directory";`,
 		usage: `import { AgentsDirectoryDialog } from "@/components/blocks/agents-directory";
-import type { AgentsDirectoryAgent } from "@/components/blocks/agents-directory";
+import type { AgentsDirectoryAgent, AgentsDirectoryTemplateAgent } from "@/components/blocks/agents-directory";
 
 const agents: AgentsDirectoryAgent[] = [
   {
@@ -181,12 +181,16 @@ const agents: AgentsDirectoryAgent[] = [
   },
 ];
 
+const templates: AgentsDirectoryTemplateAgent[] = [];
+
 <AgentsDirectoryDialog
   open={open}
   onOpenChange={setOpen}
   agents={agents}
+  templateAgents={templates}
   onCreateAgent={() => console.log("Create agent")}
   onSelectAgent={(agent) => console.log(agent.id)}
+  onSelectTemplateAgent={(template) => console.log(template.id)}
 />`,
 		demoLayout: { previewHeight: "fixed" },
 		props: [
@@ -200,6 +204,16 @@ const agents: AgentsDirectoryAgent[] = [
 				name: "sessionAgents",
 				type: "readonly AgentsDirectoryAgent[]",
 				description: "Runtime-created agents appended to the catalog.",
+			},
+			{
+				name: "templateAgents",
+				type: "readonly AgentsDirectoryTemplateAgent[]",
+				description: "Template catalog entries shown under the Agent templates sidebar section.",
+			},
+			{
+				name: "sessionTemplateAgents",
+				type: "readonly AgentsDirectoryTemplateAgent[]",
+				description: "Runtime-created template entries appended to the template catalog.",
 			},
 			{
 				name: "open",
@@ -222,6 +236,11 @@ const agents: AgentsDirectoryAgent[] = [
 				name: "onSelectAgent",
 				type: "(agent: AgentsDirectoryAgent) => void",
 				description: "Called when an agent card or sidebar agent is selected.",
+			},
+			{
+				name: "onSelectTemplateAgent",
+				type: "(agent: AgentsDirectoryTemplateAgent) => void",
+				description: "Called when an agent template tile is selected.",
 			},
 			{
 				name: "sidebarGroups",

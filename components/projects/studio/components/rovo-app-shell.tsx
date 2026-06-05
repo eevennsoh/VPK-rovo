@@ -4526,6 +4526,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				onOpenChange={setIsSidebarAgentBrowserOpen}
 				agents={ROVO_DIRECTORY_AGENT_PROFILES}
 				onSelectAgent={handleSidebarBrowseAgentSelect}
+				onSelectTemplateAgent={handleTemplateAgentSelect}
 				sessionAgents={studioAgentRegistry.sessionAgentEntries.map((entry) => entry.profile)}
 			/>
 

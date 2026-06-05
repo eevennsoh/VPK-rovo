@@ -147,6 +147,7 @@ test("Skills Directory uses multi-select cards, hover learn-more, and selected t
 
 test("Skills Directory renders skill info view with file tree and top scroll mask", () => {
 	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory.tsx");
+	const sidebarSource = readProjectFile("components/blocks/skills-directory/components/skills-directory-sidebar.tsx");
 
 	assert.match(source, /function SkillDetailHeader/u);
 	assert.match(source, /<SplitButton/u);
@@ -158,7 +159,9 @@ test("Skills Directory renders skill info view with file tree and top scroll mas
 	assert.match(source, /references/u);
 	assert.match(source, /scripts/u);
 	assert.match(source, /contentOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"/u);
-	assert.doesNotMatch(source, /Skill categories"[\s\S]{0,160}scroll-mask-top/u);
+	assert.match(sidebarSource, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
+	assert.match(sidebarSource, /const sidebarOverflow = useHasVerticalOverflow<HTMLElement>\(\);/u);
+	assert.match(sidebarSource, /aria-label="Skill categories"[\s\S]*sidebarOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"[\s\S]*ref=\{sidebarOverflow\.ref\}/u);
 });
 
 test("Skills Directory demo and docs use skill-specific examples", () => {

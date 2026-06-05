@@ -60,9 +60,9 @@ test("Tools Directory owns the Figma modal instead of wrapping AgentBrowserDialo
 	assert.match(source, /"flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto px-6 pb-6 md:pl-4"/u);
 	assert.match(source, /"flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto px-6 pb-6 md:pl-4"/u);
 	assert.match(source, /contentOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"/u);
-	assert.match(source, /className="hidden min-h-0 w-\[280px\] shrink-0 flex-col overflow-y-auto pl-6 md:flex"/u);
+	assert.match(source, /const sidebarOverflow = useHasVerticalOverflow<HTMLElement>\(\);/u);
+	assert.match(source, /aria-label="Tool categories"[\s\S]*sidebarOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"[\s\S]*ref=\{sidebarOverflow\.ref\}/u);
 	assert.match(source, /className="hidden min-h-0 w-\[280px\] shrink-0 overflow-y-auto pl-6 md:block"/u);
-	assert.doesNotMatch(source, /Tool categories"[\s\S]{0,120}scroll-mask-top/u);
 	assert.match(cardDirectoryToolSource, /<CardDirectory active=\{active\} className=\{cn\("gap-4", className\)\}/u);
 	assert.match(cardDirectoryToolSource, /moreAction \?\? \(onMoreActions \? \(/u);
 	assert.match(cardDirectoryToolSource, /<CardDirectoryMoreButton active=\{active\}/u);

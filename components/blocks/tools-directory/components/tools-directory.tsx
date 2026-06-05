@@ -671,11 +671,16 @@ function ToolsDirectorySidebar({
 		: TOOLS_DIRECTORY_CATEGORIES.slice(0, MAX_VISIBLE_CATEGORY_ITEMS);
 	const hasHiddenCategoryItems =
 		!showAllCategories && TOOLS_DIRECTORY_CATEGORIES.length > MAX_VISIBLE_CATEGORY_ITEMS;
+	const sidebarOverflow = useHasVerticalOverflow<HTMLElement>();
 
 	return (
 		<nav
 			aria-label="Tool categories"
-			className="hidden min-h-0 w-[280px] shrink-0 flex-col overflow-y-auto pl-6 md:flex"
+			className={cn(
+				"hidden min-h-0 w-[280px] shrink-0 flex-col overflow-y-auto pl-6 md:flex",
+				sidebarOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
+			)}
+			ref={sidebarOverflow.ref}
 		>
 			<ul className="flex w-64 flex-col">
 				{PRIMARY_CATEGORIES.map((category) => (

@@ -3,4 +3,5 @@ export type {
 	AgentsDirectoryAgent,
 	AgentsDirectoryDialogProps,
 	AgentsDirectorySidebarGroup,
+	AgentsDirectoryTemplateAgent,
 } from "./components/agents-directory";

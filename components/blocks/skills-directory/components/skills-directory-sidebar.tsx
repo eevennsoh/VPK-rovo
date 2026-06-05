@@ -17,7 +17,9 @@ import { useState, type ReactElement } from "react";
 import { AtlassianLogo } from "@/components/ui/logo";
 import { Tile } from "@/components/ui/tile";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { token } from "@/lib/tokens";
+import { cn } from "@/lib/utils";
 
 import {
 	getSkillById,
@@ -110,11 +112,16 @@ export function SkillsDirectorySidebar({
 }: Readonly<SkillsDirectorySidebarProps>) {
 	const categoryGroup = groups.find(isCategorySidebarGroup);
 	const secondaryGroups = groups.filter((group) => group !== categoryGroup);
+	const sidebarOverflow = useHasVerticalOverflow<HTMLElement>();
 
 	return (
 		<nav
 			aria-label="Skill categories"
-			className="hidden min-h-0 w-[280px] shrink-0 flex-col overflow-y-auto pl-6 md:flex"
+			className={cn(
+				"hidden min-h-0 w-[280px] shrink-0 flex-col overflow-y-auto pl-6 md:flex",
+				sidebarOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
+			)}
+			ref={sidebarOverflow.ref}
 		>
 			<ul className="flex w-64 flex-col">
 				{primaryItems.map((item) => (

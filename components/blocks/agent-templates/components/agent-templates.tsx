@@ -95,7 +95,7 @@ type AgentTemplatesTabMotionCustom = {
 	shouldReduceMotion: boolean;
 };
 
-type AgentTemplatesCategory = {
+export type AgentTemplatesCategory = {
 	id: AgentTemplatesCategoryId;
 	label: string;
 	iconClassName?: string;
@@ -105,7 +105,7 @@ type AgentTemplatesCategory = {
 
 const RICH_ICON_ROOT = "/illustration/rich-icon";
 
-const AGENT_TEMPLATES_CATEGORIES: readonly AgentTemplatesCategory[] = [
+export const AGENT_TEMPLATES_CATEGORIES: readonly AgentTemplatesCategory[] = [
 	{
 		id: "brainstorm",
 		label: "Planning",
