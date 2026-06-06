@@ -3862,10 +3862,6 @@ const edgeTypes = {
     <StackTraceFrames />
   </StackTraceContent>
 </StackTrace>`,
-		demoLayout: {
-			previewContentWidth: "full",
-			examplesContentWidth: "full",
-		},
 		props: [
 			{
 				name: "trace",
