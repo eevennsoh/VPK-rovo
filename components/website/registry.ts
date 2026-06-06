@@ -213,10 +213,6 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
   knowledge: dynamic(() => import("./demos/ui-custom/knowledge-demo"), {
     ssr: false,
   }),
-  "agent-evaluation": dynamic(
-    () => import("./demos/ui-custom/agent-evaluation-demo"),
-    { ssr: false },
-  ),
   "animated-dots": dynamic(() => import("./demos/ui-custom/animated-dots-demo"), {
     ssr: false,
   }),
@@ -5416,7 +5412,7 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
   ),
   "agent-evaluation-demo-filled": dynamic(
     () =>
-      import("./demos/ui-custom/agent-evaluation-demo").then((mod) => ({
+      import("./demos/blocks/agent-evaluation-demo").then((mod) => ({
         default: mod.AgentEvaluationDemoFilled,
       })),
     { ssr: false },
@@ -6715,6 +6711,18 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
   "agent-access": dynamic(() => import("./demos/blocks/agent-access-demo"), {
     ssr: false,
   }),
+  "agent-evaluation": dynamic(
+    () => import("./demos/blocks/agent-evaluation-demo"),
+    { ssr: false },
+  ),
+  "agent-insights": dynamic(
+    () => import("./demos/blocks/agent-insights-demo"),
+    { ssr: false },
+  ),
+  "agent-surfaces": dynamic(
+    () => import("./demos/blocks/agent-surfaces-demo"),
+    { ssr: false },
+  ),
   "agent-progress": dynamic(
     () => import("./demos/blocks/agent-progress-demo"),
     { ssr: false },

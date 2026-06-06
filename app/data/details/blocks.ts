@@ -896,6 +896,61 @@ const [mode, setMode] = useState<AgentAccessMode>("requesting-user");
 			},
 		],
 	},
+	"agent-evaluation": {
+		description:
+			"Agent “Evaluation” screen for compact agent sections. Builders create datasets (CSV prompts/responses) to simulate agent responses, then configure and run evaluations that score how consistently the agent performs.",
+		importStatement: `import { AgentEvaluation } from "@/components/blocks/agent-evaluation";`,
+		usage: `import { AgentEvaluation } from "@/components/blocks/agent-evaluation";
+
+<AgentEvaluation
+  datasets={datasets}
+  agents={agents}
+  evaluationTypes={evaluationTypes}
+  completedEvaluations={completedEvaluations}
+/>`,
+		demoLayout: {
+			previewContentWidth: "full",
+			examplesContentWidth: "full",
+		},
+		props: [
+			{ name: "agents", type: "AgentEvaluationAgentOption[]", description: "Agents (and versions) available to evaluate, shown in the agent select." },
+			{ name: "datasets", type: "AgentEvaluationDatasetOption[]", description: "Datasets available to evaluate against. Empty renders the dataset empty state." },
+			{ name: "evaluationTypes", type: "AgentEvaluationTypeOption[]", description: "Evaluation strategies (e.g. Response Accuracy, Resolution Rate, Manual Testing)." },
+			{ name: "completedEvaluations", type: "AgentEvaluationCompletedRow[]", description: "Rows for the completed evaluations table. Empty renders the empty-state row." },
+			{ name: "className", type: "string", description: "Additional classes applied to the outer container." },
+		],
+		examples: [
+			{ title: "Empty state", description: "Default Evaluation screen before any datasets or evaluations exist.", demoSlug: "agent-evaluation" },
+			{ title: "With data", description: "Datasets present and a completed evaluation listed in the results table.", demoSlug: "agent-evaluation-demo-filled" },
+		],
+	},
+	"agent-insights": {
+		description:
+			"Agent “Insights” screen for reviewing adoption, answer quality, feedback mix, top topics, and recommended improvements for an agent.",
+		importStatement: `import { AgentInsights } from "@/components/blocks/agent-insights";`,
+		usage: `import { AgentInsights } from "@/components/blocks/agent-insights";
+
+<AgentInsights />`,
+		demoLayout: {
+			previewContentWidth: "full",
+			examplesContentWidth: "full",
+		},
+		props: [
+			{ name: "className", type: "string", description: "Additional classes applied to the outer container." },
+		],
+	},
+	"agent-surfaces": {
+		description:
+			"Agent “Surfaces” screen for choosing where an agent appears across Atlassian apps and connected channels, including default surfaces and extended channel entry points.",
+		importStatement: `import { AgentSurfaces } from "@/components/blocks/agent-surfaces";`,
+		usage: `import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
+
+<AgentSurfaces />`,
+		demoLayout: { previewHeight: "fixed" },
+		props: [
+			{ name: "className", type: "string", description: "Additional classes applied to the outer container." },
+		],
+	},
 	"mermaid-diagram": {
 		description: "Dedicated Mermaid diagram block rendered through Streamdown’s Mermaid plugin so fenced mermaid content becomes an interactive SVG diagram instead of a plain code block.",
 		usage: `import MermaidDiagram from "@/components/blocks/mermaid-diagram/page";

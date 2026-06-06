@@ -4,6 +4,10 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 
 const AGENT_SOURCE = readFileSync(join(__dirname, "agent.tsx"), "utf8");
+const AGENT_SURFACES_SOURCE = readFileSync(
+	join(__dirname, "..", "blocks", "agent-surfaces", "components", "agent-surfaces.tsx"),
+	"utf8",
+);
 const INLINE_EDIT_SOURCE = readFileSync(
 	join(__dirname, "..", "ui", "inline-edit.tsx"),
 	"utf8",
@@ -272,10 +276,10 @@ test("Agent config renders filled summary rows once field data exists", () => {
 		assert.match(AGENT_SOURCE, new RegExp(`onRemoveListItem\\("${field}", index\\)`, "u"));
 	}
 	assert.match(TAG_SOURCE, /group\/tag relative inline-flex/u);
-	assert.match(TAG_SOURCE, /hasAvatarTagStyles\s*\?\s*cn\("h-5 gap-1 py-0 ps-1"/u);
+	assert.match(TAG_SOURCE, /hasLeadingElement \? "gap-0\.5 py-0 ps-px" : "gap-1 py-0\.5 ps-\[3px\]"/u);
 	assert.doesNotMatch(TAG_SOURCE, /hasAvatarTagStyles\s*\?\s*cn\("h-6/u);
 	assert.match(TAG_SOURCE, /const avatarTagBeforeShapeClass = isUserAvatarTag \? "rounded-full" : isOtherAvatarTag \? "rounded-xs" : "";/u);
-	assert.match(TAG_SOURCE, /hasAvatarTagStyles \? cn\("size-3 overflow-hidden \[&>\*\]:size-full", avatarTagBeforeShapeClass\)/u);
+	assert.match(TAG_SOURCE, /hasAvatarTagStyles \? cn\("overflow-hidden", avatarTagBeforeShapeClass\) : colorClasses\.icon/u);
 	assert.match(TAG_SOURCE, /group-hover\/tag:opacity-100/u);
 	assert.doesNotMatch(TAG_SOURCE, /group-hover:opacity-100/u);
 	assert.match(SKILL_TAG_SOURCE, /removeVariant\?: "inline" \| "overlay";/u);
@@ -306,14 +310,14 @@ test("Agent config renders filled summary rows once field data exists", () => {
 });
 
 test("Compact agent config opts into the typed Triggers editor without replacing default rows", () => {
-	assert.match(AGENT_SOURCE, /import Triggers, \{[\s\S]*serializeAgentTriggerLabels,[\s\S]*type AgentTriggerValue,[\s\S]*\} from "@\/components\/blocks\/triggers\/page";/u);
+	assert.match(AGENT_SOURCE, /import \{[\s\S]*renderAgentTriggerProviderIcon,[\s\S]*serializeAgentTriggerLabels,[\s\S]*TriggerPicker,[\s\S]*type AgentTriggerValue,[\s\S]*\} from "@\/components\/blocks\/triggers\/page";/u);
 	assert.match(AGENT_SOURCE, /triggerDefinitions\?: readonly AgentTriggerValue\[\];/u);
 	assert.match(AGENT_SOURCE, /function getAgentTriggerItems\(config: AgentConfigFormValue\): readonly string\[\] \{[\s\S]*serializeAgentTriggerLabels\(config\.triggerDefinitions\)[\s\S]*const triggers = getNonEmptyConfigItems\(config\.triggers\)[\s\S]*const trigger = config\.trigger\?\.trim\(\);/u);
 	assert.match(AGENT_SOURCE, /onConnectTrigger\?: \(trigger: AgentTriggerValue\) => void;/u);
 	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
-	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange \? \([\s\S]*<Triggers[\s\S]*triggers=\{config\.triggerDefinitions \?\? \[\]\}[\s\S]*onConnectTrigger=\{onConnectTrigger\}[\s\S]*onTriggersChange=\{onTriggerDefinitionsChange\}/u);
-	assert.match(AGENT_SOURCE, /isEmpty: onTriggerDefinitionsChange \? false : triggerItems\.length === 0/u);
-	assert.match(AGENT_SOURCE, /<AgentFilledSummaryRow[\s\S]*items=\{triggerItems\}[\s\S]*label="Triggers"/u);
+	assert.match(AGENT_SOURCE, /<TriggerPicker[\s\S]*onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*createAgentTriggerValue\(providerId, eventId, 1\)[\s\S]*onEditTriggers\?\.\(next \? \[next\] : \[\]\);/u);
+	assert.match(AGENT_SOURCE, /isEmpty: triggerItems\.length === 0/u);
+	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*items=\{triggerItems\}[\s\S]*onTriggerDefinitionsChange=\{onTriggerDefinitionsChange\}/u);
 	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange=\{onTriggerDefinitionsChange\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /<Triggers[\s\S]{0,400}layout="default"/u);
 });
@@ -423,7 +427,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// fields open their directory first and fall back to onAppendListItem when no
 	// directory opener is supplied.
 	assert.match(AGENT_SOURCE, /export type AgentDirectoryKind = "knowledge" \| "tools" \| "skills" \| "conversationStarters";/u);
-	assert.match(AGENT_SOURCE, /function openAgentDirectoryOrAppendListItem\([\s\S]*onOpenDirectory\?: \(directory: AgentDirectoryKind\) => void[\s\S]*onAppendListItem\?: \(field: AgentConfigListFieldName\) => void[\s\S]*onOpenDirectory\(directory\);[\s\S]*onAppendListItem\?\.\(field\);/u);
+	assert.match(AGENT_SOURCE, /function openAgentDirectoryOrAppendListItem\([\s\S]*onOpenDirectory\?: \(directory: AgentDirectoryKind, selectedItem\?: string\) => void[\s\S]*onAppendListItem\?: \(field: AgentConfigListFieldName\) => void[\s\S]*onOpenDirectory\(directory\);[\s\S]*onAppendListItem\?\.\(field\);/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("triggers", triggerItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("skills", skillItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("tools", toolItems\.length === 0, showAddButtons\)\}/u);
@@ -432,7 +436,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /addIcon=\{starterItems\.length > 0 \? "edit" : undefined\}/u);
 	assert.match(AGENT_SOURCE, /const StarterIcon = getStarterIcon\(starterSummaryItems\[index\]\?\.icon \?\? DEFAULT_STARTER_ICON\);[\s\S]*return <StarterIcon label="" size="small" color="currentColor" \/>;/u);
 	assert.match(AGENT_SOURCE, /tagColor="standard"/u);
-	assert.match(AGENT_SOURCE, /label="Triggers"\s+onAdd=\{\(\) => onAppendListItem\?\.\("triggers"\)\}/u);
+	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*addLabel=\{getAgentFilledSummaryAddLabel\("triggers", triggerItems\.length === 0, showAddButtons\)\}[\s\S]*onEditTriggers=\{onEditTriggers\}/u);
 	assert.match(AGENT_SOURCE, /label="Skills"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("skills", "skills", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Tools"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("tools", "tools", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Subagents"\s+onAdd=\{\(\) => onAppendListItem\?\.\("subagents"\)\}/u);
@@ -510,7 +514,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /AGENT_COMPACT_HEADER_NAV_ITEMS = \[[\s\S]*label: "Insights"[\s\S]*label: "Access"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /label: "Details"/u);
 	assert.match(AGENT_SOURCE, /<ChartTrendUpIcon label="" size="small" color="currentColor" \/>/u);
-	assert.match(AGENT_SOURCE, /<VideoPlayIcon label="" size="small" color="currentColor" \/>/u);
+	assert.match(AGENT_SOURCE, /<ScorecardIcon label="" size="small" color="currentColor" \/>/u);
 	assert.match(AGENT_SOURCE, /import \{[\s\S]*DropdownMenu,[\s\S]*DropdownMenuContent,[\s\S]*DropdownMenuGroup,[\s\S]*DropdownMenuItem,[\s\S]*DropdownMenuTrigger,[\s\S]*\} from "@\/components\/ui\/dropdown-menu";/u);
 	assert.match(AGENT_SOURCE, /computeContextBarOverflow\([\s\S]*AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH,[\s\S]*AGENT_COMPACT_HEADER_NAV_GAP/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_HEADER_NAV_GAP = 4;/u);
@@ -526,20 +530,21 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /aria-pressed=\{isSelected \? true : undefined\}[\s\S]*onClick=\{\(\) => onSectionChange\?\.\(item\.value\)\}[\s\S]*variant=\{isSelected \? "outline" : "ghost"\}/u);
 	assert.match(AGENT_SOURCE, /onSelect=\{\(\) => onSectionChange\?\.\(item\.value\)\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /\[&_svg\]:size-4!/u);
-	assert.match(AGENT_SOURCE, /function AgentDefaultSurfaceRow/u);
-	assert.match(AGENT_SOURCE, /function AgentExtendedSurfaceRow/u);
 	assert.match(AGENT_SOURCE, /export function AgentCompactSurfacesPanel/u);
-	assert.match(AGENT_SOURCE, /data-agent-compact-section="surfaces"/u);
-	assert.match(AGENT_SOURCE, /Default surfaces/u);
-	assert.match(AGENT_SOURCE, /Extended surfaces/u);
-	assert.match(AGENT_SOURCE, /label: "Rovo Chat"/u);
-	assert.match(AGENT_SOURCE, /label: "Work items"[\s\S]*switchLabel: "Enable Work items surface"/u);
-	assert.match(AGENT_SOURCE, /label: "Rovo browser extension"/u);
-	assert.match(AGENT_SOURCE, /label: "Slack"/u);
-	assert.match(AGENT_SOURCE, /actionLabel: "Add to portal"/u);
-	assert.match(AGENT_SOURCE, /actionLabel: "Add to help center"/u);
-	assert.match(AGENT_SOURCE, /import \{ Switch \} from "@\/components\/ui\/switch";/u);
-	assert.doesNotMatch(AGENT_SOURCE, /<AccordionTrigger[\s\S]{0,900}<Button[\s\S]{0,120}surface\.actionLabel/u);
+	assert.match(AGENT_SOURCE, /return <AgentSurfaces \{\.\.\.props\} \/>;/u);
+	assert.match(AGENT_SURFACES_SOURCE, /function AgentDefaultSurfaceRow/u);
+	assert.match(AGENT_SURFACES_SOURCE, /function AgentExtendedSurfaceRow/u);
+	assert.match(AGENT_SURFACES_SOURCE, /data-agent-compact-section="surfaces"/u);
+	assert.match(AGENT_SURFACES_SOURCE, /Default surfaces/u);
+	assert.match(AGENT_SURFACES_SOURCE, /Extended surfaces/u);
+	assert.match(AGENT_SURFACES_SOURCE, /label: "Rovo Chat"/u);
+	assert.match(AGENT_SURFACES_SOURCE, /label: "Work items"[\s\S]*switchLabel: "Enable Work items surface"/u);
+	assert.match(AGENT_SURFACES_SOURCE, /label: "Rovo browser extension"/u);
+	assert.match(AGENT_SURFACES_SOURCE, /label: "Slack"/u);
+	assert.match(AGENT_SURFACES_SOURCE, /actionLabel: "Add to portal"/u);
+	assert.match(AGENT_SURFACES_SOURCE, /actionLabel: "Add to help center"/u);
+	assert.match(AGENT_SURFACES_SOURCE, /import \{ Switch \} from "@\/components\/ui\/switch";/u);
+	assert.doesNotMatch(AGENT_SURFACES_SOURCE, /<AccordionTrigger[\s\S]{0,900}<Button[\s\S]{0,120}surface\.actionLabel/u);
 	assert.match(AGENT_SOURCE, /showSectionLabel=\{false\}/u);
 	assert.match(
 		RICH_TEXT_EDITOR_SOURCE,
@@ -557,7 +562,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-empty"/u);
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoEmpty[\s\S]*<AgentCompactHeaderNav activeSection=\{activeSection\} onSectionChange=\{setActiveSection\} \/>/u);
 	// Shared body still routes the "surfaces" section to the surfaces panel.
-	assert.match(AGENT_DEMO_SOURCE, /activeSection === "surfaces"[\s\S]*<AgentCompactSurfacesPanel \/>/u);
+	assert.match(AGENT_DEMO_SOURCE, /activeSection === "surfaces"[\s\S]*<AgentSurfaces \/>/u);
 	assert.doesNotMatch(AGENT_DEMO_SOURCE, /showActions=\{false\}/u);
 	// The removed demos and the `layout` prop must not reappear.
 	assert.doesNotMatch(AGENT_DEMO_SOURCE, /AgentDemoCompactFilled|AgentDemoCompactEmpty|AgentDemoCompactSurfaces/u);

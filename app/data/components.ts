@@ -110,7 +110,6 @@ function visualComponent(slug: string, name: string, importPath: string): Compon
 
 export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("agent"),
-	customComponent("agent-evaluation", "Agent Evaluation"),
 	customComponent("animated-dots", "Animated Dots"),
 	customComponent("animated-rovo", "Animated Rovo"),
 	customComponent("artifact"),
@@ -295,6 +294,9 @@ export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("conversation-starters", "Conversation Starters"),
 	blockComponent("agent-users", "Agent Users"),
 	blockComponent("agent-access", "Agent Access"),
+	blockComponent("agent-evaluation", "Agent Evaluation"),
+	blockComponent("agent-insights", "Agent Insights"),
+	blockComponent("agent-surfaces", "Agent Surfaces"),
 	blockComponent("skills-directory", "Skills Directory"),
 	blockComponent("task-progress", "Task Progress"),
 	blockComponent("triggers", "Triggers"),
