@@ -128,6 +128,31 @@ const AGENT_PROFILE_INLINE_EDIT_BACKDROP_MOTION_PROPS = {
 	},
 	transition: { type: "spring", bounce: 0.08, visualDuration: 0.18 },
 } satisfies Pick<MotionProps, "variants" | "transition">;
+// Direction-aware swap for the profile header (name + description, plus the
+// inline back-arrow on subagents) when toggling between the base agent and a
+// subagent. Forward (parent →
+// subagent) slides the incoming content in from the right; back (subagent →
+// parent) slides it in from the left. Spring-based so an interrupted swap (rapid
+// jumps) settles naturally; `opacity` + `transform` are the only animated props.
+const AGENT_PROFILE_SWAP_SLIDE_PX = 16;
+const AGENT_PROFILE_SWAP_VARIANTS = {
+	enter: (direction: number) => ({ opacity: 0, x: direction * AGENT_PROFILE_SWAP_SLIDE_PX }),
+	center: { opacity: 1, x: 0 },
+	exit: (direction: number) => ({ opacity: 0, x: direction * -AGENT_PROFILE_SWAP_SLIDE_PX }),
+} as const;
+const AGENT_PROFILE_SWAP_TRANSITION = { type: "spring", bounce: 0.12, visualDuration: 0.22 } as const;
+
+// Expand/collapse swap for the compact config toolbar's two mutually-exclusive
+// panels (expanded summary ⇄ collapsed nav). Animating `height` between 0 and
+// auto (with overflow hidden) lets the container grow/shrink smoothly instead of
+// snapping, while opacity + a small `y` nudge crossfade the contents. Both
+// panels stay in flow during the swap (default AnimatePresence mode) so their
+// heights interpolate together and nothing jumps.
+const AGENT_TOOLBAR_PANEL_VARIANTS = {
+	hidden: { opacity: 0, height: 0, y: -4 },
+	visible: { opacity: 1, height: "auto", y: 0 },
+} as const;
+
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE = 24;
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP = 8;
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_REVEAL_DISTANCE = 72;
@@ -850,7 +875,9 @@ function AgentCompactNavMenuFooter({ children }: Readonly<{ children: ReactNode 
 	// so the scrolling list passes behind it.
 	return (
 		<div className="sticky bottom-0 bg-popover">
-			<DropdownMenuSeparator className="mt-0" />
+			{/* Default separator margin (`mx-1 my-1` = 4px all around) so the
+			    divider is inset from the menu edges, matching the Memory dropdown. */}
+			<DropdownMenuSeparator />
 			<div className="p-1 pt-0">{children}</div>
 		</div>
 	);
@@ -2736,10 +2763,10 @@ interface AgentConfigProfileProps {
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	screenAssistantTargetPrefix?: string;
 	// Subagent editing context. When `isSubagent` is true the profile header
-	// renders a "← Back to parent" link above the name (a quick way back to the
-	// base agent), and the big editable title becomes the subagent's name
-	// (placeholder "Untitled subagent") wired to `onSubagentNameChange` instead
-	// of the base config name.
+	// shows a back-arrow icon button inline before the name (a quick way back to
+	// the base agent, wired to `onSelectBaseAgent`), and the big editable title
+	// becomes the subagent's name (placeholder "Untitled subagent") wired to
+	// `onSubagentNameChange` instead of the base config name.
 	isSubagent?: boolean;
 	baseAgentName?: string;
 	subagentName?: string;
@@ -2764,48 +2791,68 @@ function AgentConfigProfile({
 	subagentCondition,
 	onSubagentConditionChange,
 }: Readonly<AgentConfigProfileProps>) {
+	const shouldReduceMotion = useReducedMotion();
+	// Swap direction for the header content: +1 when entering a subagent (slide in
+	// from the right), -1 when returning to the parent (slide in from the left).
+	// Reduced motion collapses the slide to a pure crossfade.
+	const direction = shouldReduceMotion ? 0 : isSubagent ? 1 : -1;
 	return (
 		<section
 			className="flex flex-col gap-4"
 			data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:profile` : undefined}
 		>
 			<AgentProfileCover avatarSrc={avatarSrc} />
-			{isSubagent ? (
-				<button
-					type="button"
-					data-agent-field="back-to-parent"
-					className="inline-flex w-fit items-center gap-1 rounded text-xs font-semibold leading-4 text-text-subtle transition-colors outline-hidden hover:text-text focus-visible:ring-3 focus-visible:ring-ring/50"
-					onClick={onSelectBaseAgent}
-				>
-					<Icon
-						aria-hidden
-						render={<ArrowLeftIcon label="" size="small" />}
-						className="size-3 shrink-0 [&_svg]:size-3"
-					/>
-					Back to parent
-				</button>
-			) : null}
-			<div
-				className={cn(
-					"flex flex-col gap-1",
-					// Tighten the back-link→name spacing to 4px (overrides the section's
-					// 16px gap-4) only when the back link is rendered for subagents.
-					isSubagent && "-mt-3",
-				)}
-				data-agent-field="name"
-				data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:name` : undefined}
-			>
-				<InlineEdit
-					value={isSubagent ? subagentName ?? "" : config.name ?? ""}
-					placeholder={isSubagent ? UNTITLED_SUBAGENT_NAME : "Untitled agent"}
-					editButtonLabel={isSubagent ? "Edit subagent name" : "Edit agent name"}
-					readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"
-					readViewMotionProps={AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS}
-					readViewBackdropClassName="-inset-0.5 bg-bg-neutral-subtle-hovered"
-					readViewBackdropMotionProps={AGENT_PROFILE_INLINE_EDIT_BACKDROP_MOTION_PROPS}
-					inputProps={{ className: "h-auto border-2 px-1.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" }}
-					onConfirm={(value) => (isSubagent ? onSubagentNameChange?.(value) : onTextChange?.("name", value))}
-				/>
+			<div className="flex flex-col gap-1" data-agent-field="name">
+				{/* The cover/avatar and the description below stay put; only the name
+				    row (title + inline back-arrow on subagents) crossfades and slides
+				    when swapping between the base agent and a subagent. `popLayout`
+				    lets the exiting copy leave the layout flow so the entering copy
+				    doesn't jump. */}
+				<AnimatePresence custom={direction} initial={false} mode="popLayout">
+					<motion.div
+						key={isSubagent ? "subagent" : "base"}
+						custom={direction}
+						variants={AGENT_PROFILE_SWAP_VARIANTS}
+						initial="enter"
+						animate="center"
+						exit="exit"
+						transition={AGENT_PROFILE_SWAP_TRANSITION}
+						className="flex items-center gap-1"
+						style={{ willChange: "transform, opacity" }}
+						data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:name` : undefined}
+					>
+						{isSubagent ? (
+							// Match the name field's read-view height (h-auto + py-1 +
+							// leading-7 + border-2 ≈ 40px) so the icon button aligns with
+							// the title row. Icon stays the default 16px (ADS "small").
+							<Button
+								type="button"
+								aria-label="Back to parent agent"
+								data-agent-field="back-to-parent"
+								className="size-10 shrink-0 rounded text-icon-subtle hover:text-icon"
+								onClick={onSelectBaseAgent}
+								size="icon"
+								variant="ghost"
+							>
+								<ArrowLeftIcon label="" size="small" />
+							</Button>
+						) : null}
+						<InlineEdit
+							className="min-w-0 flex-1"
+							value={isSubagent ? subagentName ?? "" : config.name ?? ""}
+							placeholder={isSubagent ? UNTITLED_SUBAGENT_NAME : "Untitled agent"}
+							editButtonLabel={isSubagent ? "Edit subagent name" : "Edit agent name"}
+							readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"
+							readViewMotionProps={AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS}
+							readViewBackdropClassName="-inset-0.5 bg-bg-neutral-subtle-hovered"
+							readViewBackdropMotionProps={AGENT_PROFILE_INLINE_EDIT_BACKDROP_MOTION_PROPS}
+							inputProps={{ className: "h-auto border-2 px-1.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" }}
+							onConfirm={(value) => (isSubagent ? onSubagentNameChange?.(value) : onTextChange?.("name", value))}
+						/>
+					</motion.div>
+				</AnimatePresence>
+				{/* Description / trigger condition is intentionally NOT animated — it
+				    stays put and just swaps its bound value as the view changes. */}
 				<div
 					data-agent-field={isSubagent ? "condition" : "description"}
 					data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:${isSubagent ? "condition" : "description"}` : undefined}
@@ -2943,15 +2990,17 @@ function AgentCompactConfigToolbarBelow({
 					</Button>
 				</motion.div>
 			</div>
-			<AnimatePresence initial={false} mode="wait">
+			<AnimatePresence initial={false}>
 				{isExpanded ? (
 					<motion.div
 						key="expanded"
-						className="bg-surface pt-2"
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
+						className="overflow-hidden bg-surface pt-2"
+						variants={AGENT_TOOLBAR_PANEL_VARIANTS}
+						initial="hidden"
+						animate="visible"
+						exit="hidden"
 						transition={transition}
+						style={{ willChange: "transform, opacity" }}
 					>
 						<AgentFilledConfigSummary
 							config={config}
@@ -2978,11 +3027,13 @@ function AgentCompactConfigToolbarBelow({
 				) : (
 					<motion.div
 						key="collapsed"
-						className="bg-surface pt-2"
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
+						className="overflow-hidden bg-surface pt-2"
+						variants={AGENT_TOOLBAR_PANEL_VARIANTS}
+						initial="hidden"
+						animate="visible"
+						exit="hidden"
 						transition={transition}
+						style={{ willChange: "transform, opacity" }}
 					>
 						<AgentCompactEmptyConfigNav
 							config={config}

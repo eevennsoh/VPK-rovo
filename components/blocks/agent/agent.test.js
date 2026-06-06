@@ -469,11 +469,12 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /const targetCenterX = Math\.min\(Math\.max\(event\.clientX, minCenterX\), maxCenterX\);[\s\S]*expandButtonX\.set\(targetCenterX - restingCenterX\);/u);
 	assert.match(AGENT_SOURCE, /return \(\s*<div className="flex flex-col">/u);
 	assert.doesNotMatch(AGENT_SOURCE, /<div className="flex flex-col pb-6">/u);
-	assert.match(AGENT_SOURCE, /<AnimatePresence initial=\{false\} mode="wait">/u);
+	assert.match(AGENT_SOURCE, /<AnimatePresence initial=\{false\}>/u);
 	// The field-row blocks carry the opaque surface so they stay readable over
 	// scrolling content, while the separator/expand row above stays transparent.
-	assert.match(AGENT_SOURCE, /<motion\.div\s+key="expanded"\s+className="bg-surface pt-2"/u);
-	assert.match(AGENT_SOURCE, /<motion\.div\s+key="collapsed"\s+className="bg-surface pt-2"/u);
+	// `overflow-hidden` lets the height/opacity collapse animation clip cleanly.
+	assert.match(AGENT_SOURCE, /<motion\.div\s+key="expanded"\s+className="overflow-hidden bg-surface pt-2"/u);
+	assert.match(AGENT_SOURCE, /<motion\.div\s+key="collapsed"\s+className="overflow-hidden bg-surface pt-2"/u);
 	// Horizontal rule line spans the row; the chevron sits at the far right of
 	// the same row and stays mounted across both states. Empty configs initialize
 	// expanded so first-run users see all supported capability rows.
