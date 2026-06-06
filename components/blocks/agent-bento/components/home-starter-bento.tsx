@@ -83,7 +83,7 @@ const CARD_BASE_BORDER_STYLE: CSSProperties = {
 // The hover glow is a plain accent radial-gradient painted onto the same 1px
 // ring as the base grey border (same border-box geometry + radius). It is fully
 // transparent away from the pointer, so the grey stroke shows through everywhere
-// except where the accent overlays it. Deliberately NO backdrop-filter here — an
+// except where the accent overlays it. Deliberately NO backdrop CSS filter here — an
 // always-on filter recolors the ring even where the gradient is transparent,
 // which crushes the grey border underneath and breaks coexistence.
 const CARD_BORDER_GLOW_STYLE: CSSProperties = {
