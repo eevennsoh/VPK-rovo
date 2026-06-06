@@ -6,6 +6,9 @@ import CrossIcon from "@atlaskit/icon/core/cross";
 
 import { KnowledgeDirectoryDialog, type KnowledgeDirectoryAddPayload } from "@/components/blocks/knowledge-directory";
 import { AgentAccess } from "@/components/blocks/agent-access";
+import { AgentEvaluation } from "@/components/blocks/agent-evaluation";
+import { AgentInsights } from "@/components/blocks/agent-insights";
+import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
 import { DEFAULT_KNOWLEDGE_APPS } from "@/components/blocks/knowledge-directory/data/apps";
 import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/blocks/skills-directory";
 import { DEFAULT_SKILLS } from "@/components/blocks/skills-directory/data/skills";
@@ -26,13 +29,11 @@ import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navi
 import type { SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
 import { getListItems, updateConfigListItem } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { AgentUsers } from "@/components/blocks/agent-users";
-import { AgentInsightsPanel } from "@/components/projects/studio/components/agent-insights-panel";
 import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-agent-config-subagents";
 import {
 	Agent,
 	AgentCompactHeaderNav,
 	type AgentCompactHeaderSection,
-	AgentCompactSurfacesPanel,
 	AgentConfigFields,
 	type AgentDirectoryKind,
 	AgentHeader,
@@ -41,7 +42,6 @@ import {
 	type AgentConfigTextFieldName,
 	type AgentHideableConfigField,
 } from "@/components/ui-custom/agent";
-import { AgentEvaluation } from "@/components/ui-custom/agent-evaluation";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import type { ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
@@ -575,7 +575,7 @@ export function RovoAppAgentConfigPanel({
 											</div>
 										</div>
 									) : activeCompactSection === "surfaces" ? (
-										<AgentCompactSurfacesPanel className="-mr-6 pr-6" />
+										<AgentSurfaces className="-mr-6 pr-6" />
 									) : activeCompactSection === "users" ? (
 										<div
 											className="-mr-6 flex min-h-0 flex-1 flex-col overflow-y-auto pr-6"
@@ -626,7 +626,7 @@ export function RovoAppAgentConfigPanel({
 						{testPanel}
 					</TabsContent>
 					<TabsContent value="insights" keepMounted={false} className="min-h-0 flex-1 data-[hidden]:hidden">
-						<AgentInsightsPanel />
+						<AgentInsights />
 					</TabsContent>
 				</Tabs>
 			</Agent>

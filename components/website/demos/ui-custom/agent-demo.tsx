@@ -2,9 +2,10 @@
 
 import { type ReactNode, useState } from "react";
 import { AgentAccess } from "@/components/blocks/agent-access";
+import { AgentEvaluation } from "@/components/blocks/agent-evaluation";
+import { AgentInsights } from "@/components/blocks/agent-insights";
+import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
 import { AgentUsers } from "@/components/blocks/agent-users";
-import { AgentInsightsPanel } from "@/components/projects/studio/components/agent-insights-panel";
-import { AgentEvaluation } from "@/components/ui-custom/agent-evaluation";
 import {
 	Agent,
 	AgentConfigFields,
@@ -14,7 +15,6 @@ import {
 	type AgentConfigTextFieldName,
 	AgentContent,
 	AgentCompactHeaderNav,
-	AgentCompactSurfacesPanel,
 	AgentHeader,
 } from "@/components/ui-custom/agent";
 import {
@@ -138,7 +138,7 @@ function AgentDemoCompactBody({
 	if (activeSection === "insights") {
 		return (
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-				<AgentInsightsPanel />
+				<AgentInsights />
 			</div>
 		);
 	}
@@ -168,7 +168,7 @@ function AgentDemoCompactBody({
 	if (activeSection === "surfaces") {
 		return (
 			<div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">
-				<AgentCompactSurfacesPanel />
+				<AgentSurfaces />
 			</div>
 		);
 	}

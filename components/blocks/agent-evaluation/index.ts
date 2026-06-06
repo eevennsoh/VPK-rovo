@@ -1,10 +1,8 @@
-export {
-	AgentEvaluation,
-} from "@/components/blocks/agent-evaluation";
+export { AgentEvaluation } from "./components/agent-evaluation";
 export type {
 	AgentEvaluationAgentOption,
 	AgentEvaluationCompletedRow,
 	AgentEvaluationDatasetOption,
 	AgentEvaluationProps,
 	AgentEvaluationTypeOption,
-} from "@/components/blocks/agent-evaluation";
+} from "./components/agent-evaluation";
