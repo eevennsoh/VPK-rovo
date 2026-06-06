@@ -146,22 +146,24 @@ test("Subagents exposes a no-subagents demo variant with an empty prompt list", 
 	assert.match(WEBSITE_REGISTRY_SOURCE, /SubagentsDemoEmpty/u);
 });
 
-test("Agent profile header renders a subagent breadcrumb and Untitled subagent placeholder", () => {
-	// Breadcrumb (base agent → subagent) is rendered above the name when editing
-	// a subagent, with the base name as a clickable link back to the base agent.
-	assert.match(AGENT_SOURCE, /isSubagent \? \(\s*<Breadcrumb/u);
-	assert.match(AGENT_SOURCE, /<BreadcrumbLink[\s\S]*onClick=\{onSelectBaseAgent\}/u);
-	assert.match(AGENT_SOURCE, /<BreadcrumbPage>\{resolvedSubagentName\}<\/BreadcrumbPage>/u);
+test("Agent profile header renders a Back to parent link and Untitled subagent placeholder", () => {
+	// While editing a subagent the profile header shows a "← Back to parent" link
+	// (arrow-left icon + label) above the name, wired to onSelectBaseAgent, as a
+	// quick way back to the base agent. It only renders for subagents.
+	assert.match(AGENT_SOURCE, /import ArrowLeftIcon from "@atlaskit\/icon\/core\/arrow-left"/u);
+	assert.match(AGENT_SOURCE, /isSubagent \? \(\s*<button/u);
+	assert.match(AGENT_SOURCE, /data-agent-field="back-to-parent"/u);
+	assert.match(AGENT_SOURCE, /onClick=\{onSelectBaseAgent\}/u);
+	assert.match(AGENT_SOURCE, /render=\{<ArrowLeftIcon label="" size="small" \/>\}/u);
+	assert.match(AGENT_SOURCE, /Back to parent/u);
 	// The big editable title switches to the subagent name with the restored
 	// "Untitled subagent" placeholder, and edits route to onSubagentNameChange.
 	assert.match(AGENT_SOURCE, /placeholder=\{isSubagent \? UNTITLED_SUBAGENT_NAME : "Untitled agent"\}/u);
 	assert.match(AGENT_SOURCE, /isSubagent \? onSubagentNameChange\?\.\(value\) : onTextChange\?\.\("name", value\)/u);
-	assert.match(AGENT_SOURCE, /resolvedSubagentName = subagentName\?\.trim\(\) \|\| UNTITLED_SUBAGENT_NAME/u);
 });
 
-test("Subagents page wires the subagent breadcrumb and name editing into AgentConfigFields", () => {
+test("Subagents page wires the subagent back link and name editing into AgentConfigFields", () => {
 	assert.match(SUBAGENTS_PAGE_SOURCE, /isSubagent=\{Boolean\(activePrompt\)\}/u);
-	assert.match(SUBAGENTS_PAGE_SOURCE, /baseAgentName=\{baseConfig\.name\}/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /subagentName=\{activePrompt\?\.triggerName\}/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /onSelectBaseAgent=\{handleSelectBaseAgent\}/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /onSubagentNameChange=\{handleTriggerNameChange\}/u);

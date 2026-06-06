@@ -94,7 +94,7 @@ test("Reasoning selector lives in the compact toolbar and shares state across co
 	assert.match(AGENT_SOURCE, /function AgentReasoningRow/u);
 	assert.match(AGENT_SOURCE, /function AgentReasoningOverflowMenu/u);
 	assert.match(AGENT_SOURCE, /const \[reasoningValue, setReasoningValue\] = useState<ReasoningModeValue>\("quick-auto"\);/u);
-	assert.match(AGENT_SOURCE, /\{ agentFieldName: "reasoning", label: "Reasoning", kind: "reasoning" \}/u);
+	assert.match(AGENT_SOURCE, /\{ agentFieldName: "reasoning", label: "Reasoning", kind: "reasoning", Icon: AiComputeIcon \}/u);
 	assert.match(AGENT_SOURCE, /case "reasoning":[\s\S]*count = 0;/u);
 	assert.match(AGENT_SOURCE, /render="nav-button"[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{onReasoningValueChange\}/u);
 	assert.match(AGENT_SOURCE, /<AgentReasoningRow[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{setReasoningValue\}/u);
@@ -115,7 +115,7 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 	assert.match(AGENT_SOURCE, /function AgentKnowledgeSelector/u);
 	assert.match(AGENT_SOURCE, /function AgentKnowledgeRow/u);
 	assert.match(AGENT_SOURCE, /function AgentKnowledgeOverflowMenu/u);
-	assert.match(AGENT_SOURCE, /\{ agentFieldName: "knowledge", label: "Knowledge", kind: "knowledge" \}/u);
+	assert.match(AGENT_SOURCE, /\{ agentFieldName: "knowledge", label: "Knowledge", kind: "knowledge", Icon: BookOpenIcon \}/u);
 	assert.match(AGENT_SOURCE, /case "knowledge":[\s\S]*count = 0;/u);
 	assert.match(AGENT_SOURCE, /const \[knowledgeMode, setKnowledgeMode\] = useState<KnowledgeModeValue>/u);
 	assert.match(AGENT_SOURCE, /<AgentKnowledgeRow[\s\S]*value=\{knowledgeMode\}/u);

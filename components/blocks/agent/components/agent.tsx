@@ -6,6 +6,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 
+import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import AutomationIcon from "@atlaskit/icon/core/automation";
@@ -17,13 +18,13 @@ import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 import EditIcon from "@atlaskit/icon/core/edit";
 import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
-import SearchIcon from "@atlaskit/icon/core/search";
 import ScorecardIcon from "@atlaskit/icon/core/scorecard";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
 import BookOpenIcon from "@atlaskit/icon-lab/core/book-open";
+import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import ViewsIcon from "@atlaskit/icon-lab/core/views";
 
 import { AgentAccess } from "@/components/blocks/agent-access";
@@ -59,14 +60,6 @@ import { Accordion,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbList,
-	BreadcrumbPage,
-	BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
@@ -154,7 +147,7 @@ const AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = [
 	{ agentFieldName: "trigger", label: "Triggers", Icon: AutomationIcon },
 	{ agentFieldName: "knowledge", label: "Knowledge", kind: "knowledge", Icon: BookOpenIcon },
 	{ agentFieldName: "tools", label: "Tools", listFieldName: "tools", Icon: ToolsIcon },
-	{ agentFieldName: "skills", label: "Skills", listFieldName: "skills", Icon: ScorecardIcon },
+	{ agentFieldName: "skills", label: "Skills", listFieldName: "skills", Icon: SkillIcon },
 	{ agentFieldName: "subagents", label: "Subagents", listFieldName: "subagents", Icon: AiAgentIcon },
 	{ agentFieldName: "memory", label: "Memory", kind: "memory", Icon: AiModelIcon },
 	{ agentFieldName: "conversationStarters", label: "Conversation starters", listFieldName: "conversationStarters", Icon: AiChatIcon },
@@ -918,7 +911,10 @@ function AgentCompactSubagentsNavButton({
 					</div>
 				) : null}
 				<AgentCompactNavMenuFooter>
-					<DropdownMenuItem onClick={onManageSubagents ?? onCreateSubagent}>
+					<DropdownMenuItem
+						elemBefore={<AiAgentIcon label="" size="small" />}
+						onClick={onManageSubagents ?? onCreateSubagent}
+					>
 						Manage subagents
 					</DropdownMenuItem>
 				</AgentCompactNavMenuFooter>
@@ -991,7 +987,10 @@ function AgentCompactTriggersNavButton({
 					<>
 						<div className="p-1">{addTriggerFlyout}</div>
 						<AgentCompactNavMenuFooter>
-							<DropdownMenuItem onClick={() => onEditTriggers?.()}>
+							<DropdownMenuItem
+								elemBefore={<AutomationIcon label="" size="small" />}
+								onClick={() => onEditTriggers?.()}
+							>
 								Manage triggers
 							</DropdownMenuItem>
 						</AgentCompactNavMenuFooter>
@@ -1045,7 +1044,7 @@ function AgentCompactDirectoryNavButton({
 }>) {
 	const isEmpty = items.length === 0;
 	const browseItem = (
-		<DropdownMenuItem elemBefore={<SearchIcon label="" size="small" />} onClick={onBrowse}>
+		<DropdownMenuItem elemBefore={<item.Icon label="" size="small" />} onClick={onBrowse}>
 			{browseLabel}
 		</DropdownMenuItem>
 	);
@@ -1098,7 +1097,7 @@ function AgentCompactConversationStartersNavButton({
 	screenAssistantTargetId,
 }: Readonly<{
 	item: AgentCompactConfigNavItem;
-	starters: ReadonlyArray<{ icon: StarterIconKey; label: string }>;
+	starters: ReadonlyArray<{ label: string }>;
 	onStarterChange?: (index: number, value: string) => void;
 	onManage: () => void;
 	screenAssistantTargetId?: string;
@@ -1106,7 +1105,6 @@ function AgentCompactConversationStartersNavButton({
 	// Always render MAX fields so the menu offers the full set of quick-edit
 	// slots even before any starter exists.
 	const fields = Array.from({ length: MAX_AGENT_CONVERSATION_STARTERS }, (_, index) => ({
-		icon: starters[index]?.icon ?? DEFAULT_STARTER_ICON,
 		label: starters[index]?.label ?? "",
 	}));
 
@@ -1124,27 +1122,23 @@ function AgentCompactConversationStartersNavButton({
 			/>
 			<MenubarContent align="start" className="w-72 overflow-hidden p-0">
 				<div className="flex flex-col gap-1.5 p-2">
-					{fields.map((field, index) => {
-						const StarterIcon = getStarterIcon(field.icon);
-						return (
-							<div
-								className="flex items-center gap-2 rounded-sm border border-input px-3 focus-within:border-border-focused"
-								key={`starter-${index}`}
-							>
-								<StarterIcon label="" size="small" color="currentColor" />
-								<input
-									className="h-7 w-full bg-transparent text-sm text-text outline-none placeholder:text-text-subtlest"
-									onChange={(event) => onStarterChange?.(index, event.target.value)}
-									onKeyDown={(event) => event.stopPropagation()}
-									placeholder={`Starter ${index + 1}`}
-									value={field.label}
-								/>
-							</div>
-						);
-					})}
+					{fields.map((field, index) => (
+						<div
+							className="flex items-center gap-2 rounded-sm border border-input px-3 focus-within:border-border-focused"
+							key={`starter-${index}`}
+						>
+							<input
+								className="h-7 w-full bg-transparent text-sm text-text outline-none placeholder:text-text-subtlest"
+								onChange={(event) => onStarterChange?.(index, event.target.value)}
+								onKeyDown={(event) => event.stopPropagation()}
+								placeholder={`Starter ${index + 1}`}
+								value={field.label}
+							/>
+						</div>
+					))}
 				</div>
 				<AgentCompactNavMenuFooter>
-					<DropdownMenuItem elemBefore={<EditIcon label="" size="small" />} onClick={onManage}>
+					<DropdownMenuItem elemBefore={<AiChatIcon label="" size="small" />} onClick={onManage}>
 						Manage conversation starters
 					</DropdownMenuItem>
 				</AgentCompactNavMenuFooter>
@@ -2357,7 +2351,7 @@ function AgentMemorySelectorMenu({
 			</DropdownMenuGroup>
 			<DropdownMenuSeparator />
 			<DropdownMenuGroup>
-				<DropdownMenuItem>
+				<DropdownMenuItem elemBefore={<AiModelIcon label="" size="small" />}>
 					Manage memory
 				</DropdownMenuItem>
 			</DropdownMenuGroup>
@@ -2742,9 +2736,10 @@ interface AgentConfigProfileProps {
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	screenAssistantTargetPrefix?: string;
 	// Subagent editing context. When `isSubagent` is true the profile header
-	// renders a breadcrumb (base agent → subagent) above the name, and the big
-	// editable title becomes the subagent's name (placeholder "Untitled
-	// subagent") wired to `onSubagentNameChange` instead of the base config name.
+	// renders a "← Back to parent" link above the name (a quick way back to the
+	// base agent), and the big editable title becomes the subagent's name
+	// (placeholder "Untitled subagent") wired to `onSubagentNameChange` instead
+	// of the base config name.
 	isSubagent?: boolean;
 	baseAgentName?: string;
 	subagentName?: string;
@@ -2763,15 +2758,12 @@ function AgentConfigProfile({
 	onTextChange,
 	screenAssistantTargetPrefix,
 	isSubagent = false,
-	baseAgentName,
 	subagentName,
 	onSelectBaseAgent,
 	onSubagentNameChange,
 	subagentCondition,
 	onSubagentConditionChange,
 }: Readonly<AgentConfigProfileProps>) {
-	const resolvedBaseAgentName = baseAgentName?.trim() || "Untitled agent";
-	const resolvedSubagentName = subagentName?.trim() || UNTITLED_SUBAGENT_NAME;
 	return (
 		<section
 			className="flex flex-col gap-4"
@@ -2779,28 +2771,25 @@ function AgentConfigProfile({
 		>
 			<AgentProfileCover avatarSrc={avatarSrc} />
 			{isSubagent ? (
-				<Breadcrumb data-agent-field="subagent-breadcrumb">
-					<BreadcrumbList>
-						<BreadcrumbItem>
-							<BreadcrumbLink
-								render={<button type="button" />}
-								onClick={onSelectBaseAgent}
-							>
-								{resolvedBaseAgentName}
-							</BreadcrumbLink>
-						</BreadcrumbItem>
-						<BreadcrumbSeparator />
-						<BreadcrumbItem>
-							<BreadcrumbPage>{resolvedSubagentName}</BreadcrumbPage>
-						</BreadcrumbItem>
-					</BreadcrumbList>
-				</Breadcrumb>
+				<button
+					type="button"
+					data-agent-field="back-to-parent"
+					className="inline-flex w-fit items-center gap-1 rounded text-xs font-semibold leading-4 text-text-subtle transition-colors outline-hidden hover:text-text focus-visible:ring-3 focus-visible:ring-ring/50"
+					onClick={onSelectBaseAgent}
+				>
+					<Icon
+						aria-hidden
+						render={<ArrowLeftIcon label="" size="small" />}
+						className="size-3 shrink-0 [&_svg]:size-3"
+					/>
+					Back to parent
+				</button>
 			) : null}
 			<div
 				className={cn(
 					"flex flex-col gap-1",
-					// Tighten the breadcrumb→name spacing to 4px (overrides the section's
-					// 16px gap-4) only when the breadcrumb is rendered for subagents.
+					// Tighten the back-link→name spacing to 4px (overrides the section's
+					// 16px gap-4) only when the back link is rendered for subagents.
 					isSubagent && "-mt-3",
 				)}
 				data-agent-field="name"
