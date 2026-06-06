@@ -245,6 +245,7 @@ const {
 	extractStudioAgentResultFromText,
 	findJsonObjectEndIndex: findStudioAgentJsonObjectEndIndex,
 	normalizeStudioAgentResult,
+	shouldBoundStudioAgentGatewayCall,
 	shouldSurfaceMissingStudioAgentResultFailure,
 } = require("./lib/studio-agent-result");
 const {
@@ -8783,8 +8784,17 @@ async function handleChatSdkRequest(req, res) {
 						}
 						throw gatewayError;
 					});
+					// Bound the gateway call on EVERY agent-creation turn — not just
+					// post-clarification turns. Without this, a hung or
+					// never-resolving gateway call leaves the stream's execute()
+					// awaiting forever, the SSE response never closes, and the
+					// Studio UI latches in the "generating" state with no agent
+					// result and no error (the recurring /studio stuck-generation
+					// bug). The trace promise is already self-bounded, so wrapping
+					// the gateway call guarantees Promise.all resolves and the
+					// deterministic fallback agent result is emitted.
 					const boundedGatewayCallPromise =
-						isAgentCreationTurn && !isFirstAgentCreationTurn
+						shouldBoundStudioAgentGatewayCall({ creationMode })
 							? withStudioAgentGatewayFallbackTimeout(
 									gatewayCallPromise,
 									STUDIO_AGENT_GATEWAY_FALLBACK_TIMEOUT_MS,

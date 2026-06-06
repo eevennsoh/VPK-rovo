@@ -8,6 +8,7 @@ const {
 	buildMissingStudioAgentResultFailureParts,
 	extractStudioAgentResultFromText,
 	normalizeStudioAgentResult,
+	shouldBoundStudioAgentGatewayCall,
 	shouldSurfaceMissingStudioAgentResultFailure,
 	tolerantParseJsonObjectAt,
 } = require("./studio-agent-result");
@@ -312,4 +313,103 @@ test("builds a fallback Studio agent result from original brief and clarificatio
 	assert.match(result.instructions, /Both severity and repro details/u);
 	assert.match(result.instructions, /Professional & concise/u);
 	assert.doesNotMatch(result.name, /clarification answers/iu);
+});
+
+// --- Regression: /studio agent generation must never hang ---
+//
+// The recurring stuck-generation bug was caused by bounding the AI Gateway
+// call only on post-clarification turns. If the gateway call hung on any other
+// agent-creation turn, the stream's execute() awaited forever, the SSE
+// response never closed, and the Studio UI latched in the "generating" state
+// with no agent result and no error. The predicate below must request bounding
+// for EVERY agent-creation turn.
+
+test("shouldBoundStudioAgentGatewayCall bounds every agent-creation turn", () => {
+	assert.equal(shouldBoundStudioAgentGatewayCall({ creationMode: "agent" }), true);
+});
+
+test("shouldBoundStudioAgentGatewayCall does not bound non-agent turns", () => {
+	assert.equal(shouldBoundStudioAgentGatewayCall({ creationMode: "skill" }), false);
+	assert.equal(shouldBoundStudioAgentGatewayCall({ creationMode: undefined }), false);
+	assert.equal(shouldBoundStudioAgentGatewayCall({}), false);
+	assert.equal(shouldBoundStudioAgentGatewayCall(), false);
+});
+
+test("a never-resolving gateway call still terminates and yields a fallback agent result", async () => {
+	// Mirror the server's bounding semantics: race the (hung) gateway call
+	// against a short timeout, then build the deterministic fallback. This
+	// proves the turn terminates even when the gateway never resolves.
+	const TIMEOUT_MS = 20;
+	const neverResolvingGatewayCall = new Promise(() => {});
+
+	const withFallbackTimeout = (promise, timeoutMs) => {
+		let timeoutHandle = null;
+		const timeoutPromise = new Promise((resolve) => {
+			timeoutHandle = setTimeout(
+				() => resolve({ timedOut: true, value: "" }),
+				timeoutMs,
+			);
+		});
+		const tracked = promise.then(
+			(value) => ({ timedOut: false, value }),
+			(error) => {
+				throw error;
+			},
+		);
+		return Promise.race([tracked, timeoutPromise]).finally(() => {
+			if (timeoutHandle) {
+				clearTimeout(timeoutHandle);
+			}
+		});
+	};
+
+	assert.equal(shouldBoundStudioAgentGatewayCall({ creationMode: "agent" }), true);
+
+	const boundedGatewayCallPromise = withFallbackTimeout(
+		neverResolvingGatewayCall,
+		TIMEOUT_MS,
+	);
+	// The self-bounded trace promise the server runs in parallel.
+	const scriptedTracePromise = new Promise((resolve) => setTimeout(resolve, 5));
+
+	const [gatewayCallResult] = await Promise.all([
+		boundedGatewayCallPromise,
+		scriptedTracePromise,
+	]);
+
+	assert.equal(gatewayCallResult.timedOut, true);
+
+	// With the bounded call resolved, the server builds a deterministic
+	// fallback agent result so a data-agent-result is always emitted.
+	const fallback = buildFallbackStudioAgentResult({
+		prompt: "Create an agent that drafts release notes from merged PRs.",
+		messages: [
+			{
+				role: "user",
+				content: "Create an agent that drafts release notes from merged PRs.",
+			},
+			{ role: "assistant", content: "" },
+		],
+		clarificationAnswers: null,
+	});
+
+	assert.ok(fallback);
+	assert.ok(typeof fallback.name === "string" && fallback.name.length > 0);
+	assert.ok(
+		typeof fallback.description === "string" && fallback.description.length > 0,
+	);
+	assert.ok(Array.isArray(fallback.conversationStarters));
+
+	// And if no result and no clarification were produced, the failure surface
+	// fires so the user gets a retryable error instead of an endless spinner.
+	assert.equal(
+		shouldSurfaceMissingStudioAgentResultFailure({
+			creationMode: "agent",
+			hasAgentResult: false,
+			hasDeferredToolRequest: false,
+			hasPlanWidget: false,
+			hasQuestionCard: false,
+		}),
+		true,
+	);
 });

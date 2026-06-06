@@ -930,6 +930,19 @@ function shouldSurfaceMissingStudioAgentResultFailure({
 	);
 }
 
+// Whether the AI Gateway call for a Studio agent-creation turn must be wrapped
+// in the bounded fallback timeout. This MUST be true for every agent-creation
+// turn, not just post-clarification turns: if the gateway call hangs without
+// resolving or rejecting, the stream's execute() awaits forever, the SSE
+// response never closes, and the Studio UI latches in the "generating" state
+// with no agent result and no error (the recurring /studio stuck-generation
+// bug). Bounding the call guarantees execute() resolves so a deterministic
+// fallback result (or retryable failure) is always emitted and the stream
+// closes.
+function shouldBoundStudioAgentGatewayCall({ creationMode } = {}) {
+	return creationMode === "agent";
+}
+
 function buildMissingStudioAgentResultFailureParts({
 	id = `studio-agent-result-failure-${Date.now()}`,
 } = {}) {
@@ -969,6 +982,7 @@ module.exports = {
 	extractStudioAgentResultFromText,
 	findJsonObjectEndIndex,
 	normalizeStudioAgentResult,
+	shouldBoundStudioAgentGatewayCall,
 	shouldSurfaceMissingStudioAgentResultFailure,
 	tolerantParseJsonObjectAt,
 };
