@@ -162,26 +162,18 @@ export function useAgentConfigSubagents({
 	// prompt was being edited.
 	const removeSubagentByDerivedIndex = useCallback(
 		(index: number) => {
-			const triggerName = getDerivedSubagentNames(subagentPrompts)[index];
-			if (!triggerName) {
+			const promptToRemove = namedSubagentPrompts[index];
+			if (!promptToRemove) {
 				return;
 			}
 
-			let removedId: string | null = null;
-			const nextPrompts = subagentPrompts.filter((prompt) => {
-				if (removedId === null && prompt.triggerName.trim() === triggerName) {
-					removedId = prompt.id;
-					return false;
-				}
-				return true;
-			});
-
+			const nextPrompts = subagentPrompts.filter((prompt) => prompt.id !== promptToRemove.id);
 			commitPrompts(nextPrompts);
-			if (removedId !== null && removedId === activeSubagentId) {
+			if (promptToRemove.id === activeSubagentId) {
 				startTransition(() => setActiveSubagentId(null));
 			}
 		},
-		[activeSubagentId, commitPrompts, subagentPrompts],
+		[activeSubagentId, commitPrompts, namedSubagentPrompts, subagentPrompts],
 	);
 
 	// Remove a subagent by its prompt id (used by the Manage subagents dialog,
