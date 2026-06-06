@@ -617,6 +617,17 @@
 	font-size: 13px;
 }
 
+/*
+ * Center mention tokens on the text line in the chat composer so the typing
+ * caret lines up with the tag chips instead of sitting above them. Inline
+ * elements default to vertical-align: baseline, which raises the taller chip
+ * relative to the caret. Scoped to the composer so the document editor is
+ * untouched.
+ */
+.prompt-input-composer .rich-text-mention-node {
+	vertical-align: middle;
+}
+
 .rich-text-mention {
 	display: inline-flex;
 	max-width: 100%;

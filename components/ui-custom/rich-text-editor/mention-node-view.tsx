@@ -71,6 +71,7 @@ export function RichTextMentionNodeView({ node }: Readonly<ReactNodeViewProps>) 
 	return (
 		<NodeViewWrapper
 			as={Tag}
+			className="rich-text-mention-node"
 			color={getRichTextMentionTagColor(visual)}
 			data-mention-category={category}
 			data-mention-has-visual={visual ? "true" : undefined}
