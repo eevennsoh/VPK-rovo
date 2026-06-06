@@ -694,7 +694,7 @@ function isClarificationSubmitMessage(message) {
 function findOriginalAgentBrief({ prompt, messages } = {}) {
 	const candidates = [];
 	if (Array.isArray(messages)) {
-		for (const [index, message] of messages.entries()) {
+		for (const message of messages) {
 			const role = message?.role || message?.type;
 			if (role !== "user") {
 				continue;
@@ -705,7 +705,6 @@ function findOriginalAgentBrief({ prompt, messages } = {}) {
 			}
 			candidates.push({
 				text,
-				index,
 				isAgentCreation:
 					getNonEmptyString(message?.metadata?.creationMode) === "agent",
 			});
