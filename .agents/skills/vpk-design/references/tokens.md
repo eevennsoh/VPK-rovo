@@ -408,42 +408,45 @@ When Tailwind doesn't have a direct mapping:
 
 ## Motion Tokens
 
-Duration and easing tokens are defined in `app/tailwind-theme.css`. Use `var()` references instead of hardcoded timing values.
+Duration and easing tokens are defined in `app/tailwind-theme.css`. Prefer semantic Tailwind utilities in class names and `var()` references inside custom CSS or inline transition strings.
 
 ### Duration
 
 | CSS Variable | Value | Tailwind | Use for |
 |---|---|---|---|
-| `--duration-instant` | 50ms | — | Active press |
-| `--duration-fast` | 100ms | — | Hover elevation |
-| `--duration-normal` | 150ms | — | Small state changes |
-| `--duration-medium` | 200ms | `duration-200` | Sidebar, modals, panels |
-| `--duration-slow` | 250ms | — | Complex transitions |
-| `--duration-slower` | 400ms | — | Page transitions |
-| `--duration-slowest` | 600ms | — | Scroll reveals |
+| `--duration-instant` | 0ms | `duration-instant` | Immediate state changes |
+| `--duration-xxshort` | 50ms | `duration-xxshort` | Active press |
+| `--duration-fast` | 100ms | `duration-fast` | Hover elevation |
+| `--duration-normal` | 150ms | `duration-normal` | Small state changes |
+| `--duration-medium` | 200ms | `duration-medium` | Sidebar, modals, panels |
+| `--duration-slow` | 250ms | `duration-slow` | Complex transitions |
+| `--duration-slower` | 400ms | `duration-slower` | Page transitions |
+| `--duration-slowest` | 600ms | `duration-slowest` | Scroll reveals |
 
 ### Easing
 
 | CSS Variable | Value | Tailwind | Use for |
 |---|---|---|---|
 | `--ease-linear` | `cubic-bezier(0, 0, 1, 1)` | `ease-linear` | Progress bars, continuous |
-| `--ease-in` | `cubic-bezier(0.6, 0.01, 0.8, 0.6)` | — | Exit animations |
-| `--ease-out` | `cubic-bezier(0, 0.4, 0, 1)` | — | Enter animations, hover |
+| `--ease-in` | `cubic-bezier(0.6, 0, 0.8, 0.6)` | `ease-in` | Exit animations |
+| `--ease-out` | `cubic-bezier(0, 0.4, 0, 1)` | `ease-out` | Enter animations, hover |
+| `--ease-out-practical` | `cubic-bezier(0.4, 1, 0.6, 1)` | `ease-out-practical` | Compact fade/slide entrances |
 | `--ease-in-out` | `cubic-bezier(0.4, 0, 0, 1)` | `ease-in-out` | Sidebar, modals, position swaps |
-| `--ease-cubic` | `cubic-bezier(0.33, 1, 0.68, 1)` | — | Snappy dismissals |
+| `--ease-spring` | `linear(...)` | `ease-spring` | Small tactile branded motion only |
 
 ### Usage
 
 ```tsx
-// Inline style — use var() references
-style={{ transition: "left var(--duration-medium) var(--ease-in-out)" }}
+// Tailwind class — preferred when a matching utility exists
+className="transition-[width] duration-medium ease-in-out"
 
-// Tailwind — when a matching utility exists
-className="transition-[width] duration-200 ease-in-out"
+// Inline style — use var() references for property-specific transitions
+style={{ transition: "left var(--duration-medium) var(--ease-in-out)" }}
 ```
 
 | Wrong | Correct | Why |
 |---|---|---|
+| `duration-200` | `duration-medium` | Use semantic duration utilities |
 | `0.15s cubic-bezier(0.4, 0, 0.2, 1)` | `var(--duration-medium) var(--ease-in-out)` | Use theme tokens |
 | `ease-linear` on sidebar slide | `ease-in-out` | Linear feels mechanical |
 | Mismatched easing on synced elements | Same `var(--ease-*)` + `var(--duration-*)` on all | Elements moving together must match |
