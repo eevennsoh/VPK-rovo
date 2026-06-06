@@ -56,7 +56,7 @@ const NAV_HOOK_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const COMPOSER_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/projects/shared/components/rovo-app-composer.tsx"),
+	path.join(process.cwd(), "components/projects/shared/components/composer-floating-body.tsx"),
 	"utf8",
 );
 const COMPOSER_REVEAL_HOOK_SOURCE = fs.readFileSync(
@@ -172,7 +172,7 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:\[&_svg\]:text-icon-subtle!/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /text-icon-selected/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /isFirstRow|isLastRow|rounded-tl-\[12px\]|rounded-br-\[12px\]/u);
-	assert.match(COMPOSER_SOURCE, /focusRequestKey\?: number;/u);
+	assert.match(COMPOSER_SOURCE, /focusRequestKey: number \| undefined;/u);
 	assert.match(COMPOSER_SOURCE, /if \(typeof focusRequestKey !== "number" \|\| focusRequestKey <= 0\)/u);
 	assert.match(COMPOSER_SOURCE, /textareaRef\.current\?\.focus\(\);/u);
 });

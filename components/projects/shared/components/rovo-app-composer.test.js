@@ -22,6 +22,8 @@ test("RovoAppComposer gates the floating-only send-now queued action behind onSe
 
 test("RovoAppComposer renders both card and floating chrome bodies", () => {
 	assert.match(COMPOSER_SOURCE, /chrome === "floating"/u);
-	assert.match(COMPOSER_SOURCE, /function ComposerCardBody\(/u);
-	assert.match(COMPOSER_SOURCE, /function ComposerFloatingBody\(/u);
+	assert.match(COMPOSER_SOURCE, /import \{ ComposerCardBody \} from "@\/components\/projects\/shared\/components\/composer-card-body";/u);
+	assert.match(COMPOSER_SOURCE, /import \{ ComposerFloatingBody \} from "@\/components\/projects\/shared\/components\/composer-floating-body";/u);
+	assert.match(COMPOSER_SOURCE, /<ComposerFloatingBody/u);
+	assert.match(COMPOSER_SOURCE, /<ComposerCardBody/u);
 });
