@@ -137,16 +137,27 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 
 	const resolvedColor = colorAliases[color ?? legacyVariantToColor[variant]];
 	const colorClasses = tagColorClasses[resolvedColor];
-	const hasAvatarTagStyles = type !== "default" && Boolean(elemBefore);
+	// The front slot (logos) and the avatar slot are the same thing: both render
+	// content via `elemBefore`. Anything with a leading element shares one slot
+	// styling branch (leading padding / gap / right padding). The real avatar
+	// `type`s only differ in how the before-element itself is rendered (16px
+	// avatar vs 12px logo icon) and in their fixed rounding.
+	const hasLeadingElement = Boolean(elemBefore);
+	const isAvatarType = type !== "default";
+	const hasAvatarTagStyles = isAvatarType && hasLeadingElement;
 	const isUserAvatarTag = hasAvatarTagStyles && type === "user";
 	const isOtherAvatarTag = hasAvatarTagStyles && type === "other";
-	const isAgentAvatarTag = hasAvatarTagStyles && type === "agent";
 	const isRounded = shape === "rounded" || variant === "rounded";
 	const isInteractive = Boolean(onClick);
 	const shouldShowVerifiedIcon = isOtherAvatarTag && isVerified;
 	const isOverlayRemove = Boolean(onRemove) && removeVariant === "overlay";
-	const removeButtonShapeClass = isUserAvatarTag ? "rounded-full" : "rounded-xs";
-	const removeButtonMarginClass = hasAvatarTagStyles ? "mr-[-2px]" : "-mx-0.5";
+	// Any tag rendering the inline "x" remove button gets 3px right padding
+	// (the visual gap reads as 4px once the tag's 1px inner border is counted).
+	const hasRemoveButton = Boolean(onRemove) && !isOverlayRemove;
+	// Round the remove button to match the tag shape: pill tags (user avatars or
+	// rounded tags) get a fully-rounded "x"; everything else stays `rounded-xs`.
+	const removeButtonShapeClass = isUserAvatarTag || isRounded ? "rounded-full" : "rounded-xs";
+	const removeButtonMarginClass = hasLeadingElement ? "mr-[-2px]" : "-mx-0.5";
 	const avatarTagBeforeShapeClass = isUserAvatarTag ? "rounded-full" : isOtherAvatarTag ? "rounded-xs" : "";
 
 	const childText = typeof children === "string" || typeof children === "number" ? String(children) : undefined;
@@ -168,9 +179,19 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 				"group/tag relative inline-flex max-w-[11.25rem] min-w-0 shrink-0 self-start items-center border bg-bg-neutral-subtle text-xs leading-4 font-normal text-text transition-colors box-border",
 				"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
 				colorClasses.border,
-				hasAvatarTagStyles
-					? cn("h-5 gap-1 py-0 ps-1", isUserAvatarTag && "rounded-full pe-1.5", isOtherAvatarTag && "rounded-sm pe-1", isAgentAvatarTag && "rounded-sm pe-1")
-					: cn("h-5 gap-1 px-[3px] py-0.5", isRounded ? "rounded-full" : "rounded-sm"),
+				cn(
+					"h-5",
+					// Front slot and avatar slot share one leading-padding/gap branch.
+					// 1px left padding so the visible inset reads correctly once the
+					// tag's 1px inner border is counted.
+					hasLeadingElement ? "gap-0.5 py-0 ps-px" : "gap-1 py-0.5 ps-[3px]",
+					// Avatar types keep their fixed rounding; everything else honors `isRounded`.
+					isUserAvatarTag ? "rounded-full" : isOtherAvatarTag || type === "agent" ? "rounded-sm" : isRounded ? "rounded-full" : "rounded-sm",
+					// Removable tags get 3px right padding so the visible gap reads as
+					// 4px once the 1px inner border is counted; otherwise keep the
+					// non-removable defaults (avatar types 4-6px, logo/default 3px).
+					hasRemoveButton ? "pe-[3px]" : isUserAvatarTag ? "pe-1.5" : isAvatarType ? "pe-1" : "pe-[3px]",
+				),
 				isInteractive ? "cursor-pointer hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed" : "cursor-default",
 				disabled && "pointer-events-none opacity-(--opacity-disabled)",
 				className,
@@ -182,8 +203,9 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 			{elemBefore ? (
 				<span
 					className={cn(
-						"flex shrink-0 items-center justify-center",
-						hasAvatarTagStyles ? cn("size-3 overflow-hidden [&>*]:size-full", avatarTagBeforeShapeClass) : cn(colorClasses.icon, "[&>svg]:size-3"),
+						// Front slot and avatar slot share a 16x16 leading box; the element fills it.
+						"flex size-4 shrink-0 items-center justify-center [&>*]:size-full [&>svg]:size-4",
+						hasAvatarTagStyles ? cn("overflow-hidden", avatarTagBeforeShapeClass) : colorClasses.icon,
 					)}
 					data-slot="tag-before"
 				>
@@ -234,7 +256,8 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 						onClick={handleRemoveClick}
 						data-slot="tag-remove-overlay-button"
 						className={cn(
-							"absolute end-px top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center rounded-xs border-0 bg-transparent text-text opacity-0 transition-[opacity,background-color] duration-fast ease-out hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none",
+							"absolute end-px top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center border-0 bg-transparent text-text opacity-0 transition-[opacity,background-color] duration-fast ease-out hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none",
+							removeButtonShapeClass,
 							"pointer-events-none group-hover/tag:pointer-events-auto group-hover/tag:opacity-100 group-focus-within/tag:pointer-events-auto group-focus-within/tag:opacity-100",
 						)}
 					>

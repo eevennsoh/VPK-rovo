@@ -15,9 +15,9 @@ function LogoSlot({ children, className }: Readonly<{ children: ReactNode; class
 	return (
 		<span
 			className={cn(
-				"inline-flex size-3 shrink-0 items-center justify-center align-middle leading-none",
-				"[&_span]:!inline-flex [&_span]:!size-3 [&_span]:!items-center [&_span]:!justify-center [&_span]:!leading-none",
-				"[&_svg]:!block [&_svg]:!size-3",
+				"inline-flex size-4 shrink-0 items-center justify-center align-middle leading-none",
+				"[&_span]:!inline-flex [&_span]:!size-4 [&_span]:!items-center [&_span]:!justify-center [&_span]:!leading-none",
+				"[&_svg]:!block [&_svg]:!size-4",
 				className,
 			)}
 		>
@@ -29,7 +29,7 @@ function LogoSlot({ children, className }: Readonly<{ children: ReactNode; class
 function PublicLogoMark({ src }: Readonly<{ src: string }>) {
 	return (
 		<LogoSlot>
-			<Image src={src} alt="" aria-hidden width={12} height={12} className="block size-3 object-contain" />
+			<Image src={src} alt="" aria-hidden width={16} height={16} className="block size-4 object-contain" />
 		</LogoSlot>
 	);
 }
@@ -101,7 +101,7 @@ export function TagDemoFrontSlot() {
 				color="green"
 				elemBefore={
 					<LogoSlot>
-						<RovoColorIcon width={12} height={12} className="block size-3" />
+						<RovoColorIcon width={16} height={16} className="block size-4" />
 					</LogoSlot>
 				}
 			>
