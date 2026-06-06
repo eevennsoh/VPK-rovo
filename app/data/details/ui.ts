@@ -4007,7 +4007,7 @@ import SearchIcon from "@atlaskit/icon/core/search";
     usage: `import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 <AspectRatio ratio={16 / 9}>
-  <img src="/illustration/rich-icon/design/standard.png" alt="Photo" className="h-full w-full object-cover" />
+  <img src="/illustration/rich-icon/design/standard.svg" alt="Photo" className="h-full w-full object-cover" />
 </AspectRatio>`,
     props: [
       {

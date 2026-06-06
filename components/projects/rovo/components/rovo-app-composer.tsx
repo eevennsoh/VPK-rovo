@@ -148,15 +148,12 @@ function RovoAppComposerInner({
 	const controller = usePromptInputController();
 	const composerRef = useRef<HTMLDivElement | null>(null);
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-	const previewMeasureRef = useRef<HTMLTextAreaElement | null>(null);
-	const previewPromptRef = useRef<string | null>(previewPrompt);
 	const textInputValueRef = useRef(controller.textInput.value);
 	const galleryExpandedRef = useRef(galleryExpanded);
 	const isPreviewPlaceholderActiveRef = useRef(false);
 	const [baseComposerHeight, setBaseComposerHeight] = useState(0);
 	const [baseTextareaHeight, setBaseTextareaHeight] = useState(0);
 	const [stableBaseHeight, setStableBaseHeight] = useState(0);
-	const [previewPromptHeight, setPreviewPromptHeight] = useState(0);
 	const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
 	const [isCustomizeMenuOpen, setIsCustomizeMenuOpen] = useState(false);
 	const [isAutoMenuOpen, setIsAutoMenuOpen] = useState(false);
@@ -288,7 +285,6 @@ function RovoAppComposerInner({
 	);
 
 	useLayoutEffect(() => {
-		previewPromptRef.current = previewPrompt;
 		textInputValueRef.current = controller.textInput.value;
 		galleryExpandedRef.current = galleryExpanded;
 		isPreviewPlaceholderActiveRef.current = isPreviewPlaceholderActive;
@@ -310,27 +306,6 @@ function RovoAppComposerInner({
 
 		setSelectedReasoning((currentReasoning) => currentReasoning === "max" ? DEFAULT_REASONING_OPTION_ID : currentReasoning);
 	}, [isPlanMode]);
-
-	const measurePreviewPromptHeight = useCallback((nextPreviewPrompt: string | null) => {
-		const textareaElement = textareaRef.current;
-		const previewMeasureElement = previewMeasureRef.current;
-		if (!nextPreviewPrompt || !textareaElement || !previewMeasureElement || textInputValueRef.current.trim().length > 0) {
-			setPreviewPromptHeight(0);
-			return;
-		}
-
-		const computedStyle = window.getComputedStyle(textareaElement);
-		previewMeasureElement.style.width = `${textareaElement.clientWidth}px`;
-		previewMeasureElement.style.font = computedStyle.font;
-		previewMeasureElement.style.fontSize = computedStyle.fontSize;
-		previewMeasureElement.style.fontWeight = computedStyle.fontWeight;
-		previewMeasureElement.style.letterSpacing = computedStyle.letterSpacing;
-		previewMeasureElement.style.lineHeight = computedStyle.lineHeight;
-		previewMeasureElement.style.padding = "0";
-		previewMeasureElement.style.border = "0";
-		previewMeasureElement.value = nextPreviewPrompt;
-		setPreviewPromptHeight(previewMeasureElement.scrollHeight);
-	}, []);
 
 	const captureBaseMeasurements = useCallback(() => {
 		const composerElement = composerRef.current;
@@ -389,20 +364,6 @@ function RovoAppComposerInner({
 	}, [prefillText, controller.textInput]);
 
 	useEffect(() => {
-		if (!isPreviewPlaceholderActive) {
-			return;
-		}
-
-		const animationFrameId = window.requestAnimationFrame(() => {
-			measurePreviewPromptHeight(previewPrompt);
-		});
-
-		return () => {
-			window.cancelAnimationFrame(animationFrameId);
-		};
-	}, [isPreviewPlaceholderActive, measurePreviewPromptHeight, previewPrompt]);
-
-	useEffect(() => {
 		if (controller.textInput.value.trim().length > 0 || previewPrompt || galleryExpanded) {
 			return;
 		}
@@ -419,7 +380,6 @@ function RovoAppComposerInner({
 
 		const resizeObserver = new ResizeObserver(() => {
 			if (isPreviewPlaceholderActiveRef.current) {
-				measurePreviewPromptHeight(previewPromptRef.current);
 				return;
 			}
 			if (galleryExpandedRef.current || textInputValueRef.current.trim().length > 0) {
@@ -435,13 +395,13 @@ function RovoAppComposerInner({
 		return () => {
 			resizeObserver.disconnect();
 		};
-	}, [captureBaseMeasurements, measurePreviewPromptHeight]);
+	}, [captureBaseMeasurements]);
 
 	const previewComposerHeight = isPreviewPlaceholderActive
 		? resolveRovoAppComposerPreviewHeight({
 				baseComposerHeight,
 				baseTextareaHeight,
-				previewPromptHeight,
+				previewPromptHeight: baseTextareaHeight,
 			})
 		: null;
 	const expandedGalleryComposerHeight = galleryExpanded
@@ -704,28 +664,16 @@ function RovoAppComposerInner({
 			<style>{textareaCSS}</style>
 			<style>{`
 				.chat-composer-textarea.chat-composer-textarea-preview-active:placeholder-shown {
-					field-sizing: content;
-					white-space: pre-wrap;
-					text-overflow: clip;
+					white-space: nowrap;
+					overflow: hidden;
+					text-overflow: ellipsis;
 				}
 				.chat-composer-textarea.chat-composer-textarea-preview-active::placeholder {
-					white-space: pre-wrap;
-					overflow: visible;
-					text-overflow: clip;
+					white-space: nowrap;
+					overflow: hidden;
+					text-overflow: ellipsis;
 				}
 			`}</style>
-			<textarea
-				ref={previewMeasureRef}
-				aria-hidden
-				readOnly
-				tabIndex={-1}
-				className="pointer-events-none absolute -z-10 m-0 h-0 w-0 overflow-hidden opacity-0"
-				style={{
-					whiteSpace: "pre-wrap",
-					overflowWrap: "break-word",
-					wordBreak: "break-word",
-				}}
-			/>
 		</div>
 	);
 }
