@@ -1,41 +1,37 @@
-import { DEMO_AGENT_BROWSER_AGENTS } from "@/components/blocks/agent-browser/data/demo-agents";
-import { DEFAULT_KNOWLEDGE_APPS } from "@/components/blocks/knowledge-directory/data/apps";
 import {
+	DEFAULT_KNOWLEDGE_APPS,
 	DEFAULT_SKILLS,
-	getSkillIcon,
+	DEMO_AGENT_BROWSER_AGENTS,
+	DEMO_SESSION_TOOLS,
+	DEMO_TEAMS,
+	DEMO_TOOLS,
+	getAgentDirectoryVisual,
+	getPersonDirectoryVisual,
+	getSkillDirectoryVisual,
+	getTeamDirectoryVisual,
+	getToolDirectoryVisual,
+	resolveDirectoryVisual,
+	SAMPLE_AGENT_PEOPLE,
+	type AgentPerson,
+	type DirectoryTeam,
+	type KnowledgeDirectoryApp,
 	type SkillsDirectorySkill,
-} from "@/components/blocks/skills-directory/data/skills";
-import { DEMO_SESSION_TOOLS, DEMO_TOOLS } from "@/components/blocks/tools-directory/data/demo-tools";
-import type { ToolsDirectoryTool } from "@/components/blocks/tools-directory";
+	type ToolsDirectoryTool,
+} from "@/app/data/directory";
 import type { AgentBrowserAgent } from "@/components/blocks/agent-browser";
 import type {
+	RichTextMentionCategory,
 	RichTextMentionItem,
 	RichTextMentionSources,
 	RichTextReferenceCategory,
 } from "@/components/ui-custom/rich-text-editor";
 
-function toMentionId(category: RichTextReferenceCategory, id: string): string {
+function toMentionId(category: RichTextMentionCategory, id: string): string {
 	return `${category}:${id.trim().replace(/\s+/g, "-")}`;
 }
 
 function normalizeLookupValue(value: string): string {
 	return value.trim().toLowerCase();
-}
-
-function getAgentVisual(agent: AgentBrowserAgent): RichTextMentionItem["visual"] {
-	if (agent.logoName) {
-		return { kind: "logo", logoName: agent.logoName };
-	}
-
-	if (!agent.avatarSrc) {
-		return undefined;
-	}
-
-	return {
-		kind: agent.avatarSrc.startsWith("/avatar-agent/") ? "avatar" : "image",
-		shape: agent.avatarSrc.startsWith("/avatar-agent/") ? "hexagon" : "square",
-		src: agent.avatarSrc,
-	};
 }
 
 function mapAgentToMentionItem(agent: AgentBrowserAgent): RichTextMentionItem {
@@ -44,40 +40,17 @@ function mapAgentToMentionItem(agent: AgentBrowserAgent): RichTextMentionItem {
 		description: agent.description ?? agent.byline,
 		id: toMentionId("subagent", agent.id),
 		label: agent.name,
-		visual: getAgentVisual(agent),
+		visual: resolveDirectoryVisual(getAgentDirectoryVisual(agent)),
 	};
 }
 
 function mapSkillToMentionItem(skill: SkillsDirectorySkill): RichTextMentionItem {
-	const iconKey = skill.icon ?? "page";
-
 	return {
 		category: "skill",
 		description: skill.description,
 		id: toMentionId("skill", skill.id),
 		label: skill.name,
-		visual: {
-			kind: "icon",
-			icon: getSkillIcon(iconKey),
-			iconColor: skill.iconColor,
-			iconKey,
-		},
-	};
-}
-
-function getToolVisual(tool: ToolsDirectoryTool): RichTextMentionItem["visual"] {
-	if (tool.logoName) {
-		return { kind: "logo", logoName: tool.logoName };
-	}
-
-	if (!tool.avatarSrc) {
-		return undefined;
-	}
-
-	return {
-		kind: tool.avatarSrc.startsWith("/avatar-agent/") ? "avatar" : "image",
-		shape: tool.avatarSrc.startsWith("/avatar-agent/") ? "hexagon" : "square",
-		src: tool.avatarSrc,
+		visual: resolveDirectoryVisual(getSkillDirectoryVisual(skill)),
 	};
 }
 
@@ -87,27 +60,50 @@ function mapToolToMentionItem(tool: ToolsDirectoryTool): RichTextMentionItem {
 		description: tool.description,
 		id: toMentionId("tool", tool.id),
 		label: tool.name,
-		visual: getToolVisual(tool),
+		visual: resolveDirectoryVisual(getToolDirectoryVisual(tool)),
+	};
+}
+
+function mapPersonToMentionItem(person: AgentPerson): RichTextMentionItem {
+	return {
+		category: "human",
+		id: toMentionId("human", person.id),
+		label: person.name,
+		visual: resolveDirectoryVisual(getPersonDirectoryVisual(person)),
+	};
+}
+
+function mapTeamToMentionItem(team: DirectoryTeam): RichTextMentionItem {
+	return {
+		category: "team",
+		description: team.description,
+		id: toMentionId("team", team.id),
+		label: team.name,
+		visual: resolveDirectoryVisual(getTeamDirectoryVisual(team)),
 	};
 }
 
 function getKnowledgeMentionItems(): RichTextMentionItem[] {
-	return DEFAULT_KNOWLEDGE_APPS.flatMap((app) => [
-		{
-			category: "knowledge" as const,
-			description: app.description,
-			id: toMentionId("knowledge", `${app.id}:all`),
-			label: `${app.name} - all content`,
-			visual: app.visual,
-		},
-		...app.contents.map((content) => ({
-			category: "knowledge" as const,
-			description: content.description,
-			id: toMentionId("knowledge", `${app.id}:${content.id}`),
-			label: content.name,
-			visual: app.visual,
-		})),
-	]);
+	return DEFAULT_KNOWLEDGE_APPS.flatMap((app: KnowledgeDirectoryApp) => {
+		const visual = resolveDirectoryVisual(app.visual);
+
+		return [
+			{
+				category: "knowledge" as const,
+				description: app.description,
+				id: toMentionId("knowledge", `${app.id}:all`),
+				label: `${app.name} - all content`,
+				visual,
+			},
+			...app.contents.map((content) => ({
+				category: "knowledge" as const,
+				description: content.description,
+				id: toMentionId("knowledge", `${app.id}:${content.id}`),
+				label: content.name,
+				visual,
+			})),
+		];
+	});
 }
 
 function uniqueMentionItems(items: readonly RichTextMentionItem[]): readonly RichTextMentionItem[] {
@@ -123,11 +119,19 @@ function uniqueMentionItems(items: readonly RichTextMentionItem[]): readonly Ric
 	});
 }
 
+/**
+ * The unified mention/token catalog for the composer/editor surfaces. Every
+ * category is built from the `@/app/data/directory` loaders — the single source
+ * of truth — via each vertical's `getXDirectoryVisual` helper so the `@` and `/`
+ * surfaces draw the same tokens the directories render.
+ */
 export const EDITOR_PALETTE_MENTION_SOURCES: RichTextMentionSources = {
 	knowledge: uniqueMentionItems(getKnowledgeMentionItems()),
 	skill: uniqueMentionItems(DEFAULT_SKILLS.map(mapSkillToMentionItem)),
 	subagent: uniqueMentionItems(DEMO_AGENT_BROWSER_AGENTS.map(mapAgentToMentionItem)),
 	tool: uniqueMentionItems([...DEMO_TOOLS, ...DEMO_SESSION_TOOLS].map(mapToolToMentionItem)),
+	human: uniqueMentionItems(SAMPLE_AGENT_PEOPLE.map(mapPersonToMentionItem)),
+	team: uniqueMentionItems(DEMO_TEAMS.map(mapTeamToMentionItem)),
 };
 
 export function getDirectoryMentionItem(

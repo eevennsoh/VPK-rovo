@@ -25,7 +25,7 @@ import {
 	getRovoAgentProfile,
 	ROVO_AGENT_ID,
 	type RovoAgentProfile,
-} from "@/components/projects/rovo/data/agent-profiles";
+} from "@/app/data/directory/agents";
 import { mergeRovoContextDescriptions } from "@/lib/rovo-context";
 import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/components/chat-surface-switcher";
 import type { ChatPanelCustomAgentTabs } from "@/components/projects/sidebar-chat/page";

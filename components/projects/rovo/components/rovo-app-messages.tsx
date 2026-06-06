@@ -51,7 +51,7 @@ import { cn } from "@/lib/utils";
 import { BrowserScreenshotPart } from "@/components/projects/rovo/components/rovo-app-browser-screenshot";
 import type { RovoAppDocument } from "@/lib/rovo-app-types";
 import type { RovoAppStreamingArtifact } from "@/components/projects/rovo/lib/rovo-app-streaming-artifact";
-import { isRovoAgentProfile, type RovoAgentProfile } from "@/components/projects/rovo/data/agent-profiles";
+import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 import Image from "next/image";
 import { Component, Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnswerCard } from "@/components/blocks/answer-card/components/answer-card";

@@ -10,7 +10,9 @@ function readProjectFile(relativePath) {
 const SCREEN = "components/blocks/agent-users/components/agent-users.tsx";
 const DIALOG = "components/blocks/agent-users/components/add-user-dialog.tsx";
 const ROLE = "components/blocks/agent-users/components/role-select.tsx";
-const DATA = "components/blocks/agent-users/data/users.ts";
+// People/role data is now owned by the directory data layer; the agent-users
+// module re-exports it for back-compat.
+const DATA = "app/data/directory/people.ts";
 const INDEX = "components/blocks/agent-users/index.ts";
 
 test("Agent Users is exposed as a website block", () => {

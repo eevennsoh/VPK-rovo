@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { ToolsDirectoryDialog } from "@/components/blocks/tools-directory";
-import { DEMO_SESSION_TOOLS, DEMO_TOOLS } from "@/components/blocks/tools-directory/data/demo-tools";
+import { DEMO_SESSION_TOOLS, DEMO_TOOLS } from "@/app/data/directory/tools";
 import { Button } from "@/components/ui/button";
 
 export default function ToolsDirectoryPage() {

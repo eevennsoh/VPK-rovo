@@ -1,0 +1,51 @@
+[
+	{
+		"id": "u-owner",
+		"name": "Ee Venn Soh",
+		"avatarSrc": "https://api.dicebear.com/9.x/glass/svg?seed=Ee%20Venn%20Soh",
+		"isOwner": true,
+		"role": "manager"
+	},
+	{
+		"id": "u-priya-nair",
+		"name": "Priya Nair",
+		"avatarSrc": "https://api.dicebear.com/9.x/glass/svg?seed=Priya%20Nair",
+		"isOwner": false,
+		"role": "manager"
+	},
+	{
+		"id": "u-marcus-chen",
+		"name": "Marcus Chen",
+		"avatarSrc": "https://api.dicebear.com/9.x/glass/svg?seed=Marcus%20Chen",
+		"isOwner": false,
+		"role": "editor"
+	},
+	{
+		"id": "u-sofia-rossi",
+		"name": "Sofia Rossi",
+		"avatarSrc": "https://api.dicebear.com/9.x/glass/svg?seed=Sofia%20Rossi",
+		"isOwner": false,
+		"role": "editor"
+	},
+	{
+		"id": "u-tunde-adeyemi",
+		"name": "Tunde Adeyemi",
+		"avatarSrc": "https://api.dicebear.com/9.x/glass/svg?seed=Tunde%20Adeyemi",
+		"isOwner": false,
+		"role": "user"
+	},
+	{
+		"id": "u-hana-kim",
+		"name": "Hana Kim",
+		"avatarSrc": "https://api.dicebear.com/9.x/glass/svg?seed=Hana%20Kim",
+		"isOwner": false,
+		"role": "user"
+	},
+	{
+		"id": "u-diego-morales",
+		"name": "Diego Morales",
+		"avatarSrc": "https://api.dicebear.com/9.x/glass/svg?seed=Diego%20Morales",
+		"isOwner": false,
+		"role": "user"
+	}
+]

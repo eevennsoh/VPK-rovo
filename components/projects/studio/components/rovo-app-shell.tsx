@@ -120,7 +120,7 @@ import { approveSkillDraft, fetchSkillDraftDetail, fetchSkillDrafts, fetchSkills
 import type { HermesSkillDraftDetail, HermesSkillDraftSummary, HermesSkillSummary } from "@/lib/rovo-runtime-types";
 import type { RovoAppHermesContext } from "@/lib/rovo-app-types";
 import { getStudioSessionAgentDisplayName, useRovoSelectedAgent } from "@/app/contexts";
-import { ROVO_DIRECTORY_AGENT_PROFILES, getRovoAgentPromptContext, isRovoAgentProfile, type RovoAgentProfile } from "@/components/projects/studio/data/agent-profiles";
+import { ROVO_DIRECTORY_AGENT_PROFILES, getRovoAgentPromptContext, isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 
 interface RovoAppShellProps {
 	embedded?: boolean;

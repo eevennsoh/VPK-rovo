@@ -11,7 +11,7 @@ import {
 	AGENT_ROLE_OPTIONS,
 	getRoleOption,
 	type AgentUserRole,
-} from "../data/users";
+} from "@/app/data/directory/people";
 
 export interface RoleSelectProps {
 	value: AgentUserRole;

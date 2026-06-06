@@ -1,0 +1,161 @@
+[
+	{
+		"id": "design-landing-page",
+		"name": "Design landing page",
+		"description": "Create high-converting, visually distinctive landing pages from scratch or by refactoring existing pages. Use when the user asks to build, redesign, polish, or optimize a landing page.",
+		"icon": "paint-palette",
+		"iconColor": "text-icon-discovery",
+		"publisherName": "By you",
+		"publisherAvatarSrc": "/avatar-human/maia-ma.png",
+		"companyId": "you",
+		"categoryId": "content-and-communication",
+		"starCount": 30,
+		"viewCount": 6279,
+		"favorite": true,
+		"tools": [
+			{ "id": "tool-1", "name": "Tool1", "icon": "page" },
+			{ "id": "tool-2", "name": "Tool2", "icon": "page" },
+			{ "id": "tool-3", "name": "Tool3", "icon": "page" }
+		],
+		"instructions": "# Design Landing Page\n\nThis skill guides creation of distinctive, production-grade frontend interfaces that avoid generic AI aesthetics. The goal is to implement real, working code with careful attention to aesthetic details and deliberate creative choices.\n\nThe user provides frontend requirements: a component, page, application, or interface to build. They may include context about the purpose, audience, or technical constraints.\n\n---\n\n## Design Thinking\n\nBefore coding, understand the context and commit to a bold aesthetic direction."
+	},
+	{
+		"id": "develop-mobile-app-interface",
+		"name": "Develop mobile app interface",
+		"description": "Craft intuitive and engaging mobile app interfaces tailored for both iOS and Android platforms. Ideal for designing, enhancing, or refining app UI/UX.",
+		"icon": "device-mobile",
+		"iconColor": "text-icon-success",
+		"publisherName": "By you",
+		"publisherAvatarSrc": "/avatar-human/maia-ma.png",
+		"companyId": "you",
+		"categoryId": "software-development",
+		"starCount": 45,
+		"viewCount": 8345,
+		"favorite": true,
+		"tools": [
+			{ "id": "wireframe", "name": "Wireframe", "icon": "page" },
+			{ "id": "prototype", "name": "Prototype", "icon": "paint-palette" }
+		],
+		"instructions": "# Develop Mobile App Interface\n\nCraft intuitive mobile app interfaces for iOS and Android. Use this skill for onboarding flows, productivity surfaces, detail views, and app experiences that need refined interaction patterns.\n\nPlan the primary task first, then design the smallest complete surface that lets a user accomplish it."
+	},
+	{
+		"id": "create-brand-identity",
+		"name": "Create brand identity",
+		"description": "Establish a cohesive brand identity through logo design, color palettes, typography, and visual style guidelines. Use this when creating or refreshing a brand.",
+		"icon": "paint-palette",
+		"iconColor": "text-icon-brand",
+		"publisherName": "By you",
+		"publisherAvatarSrc": "/avatar-human/maia-ma.png",
+		"companyId": "you",
+		"categoryId": "content-and-communication",
+		"starCount": 60,
+		"viewCount": 4921,
+		"favorite": true,
+		"tools": [
+			{ "id": "palette", "name": "Palette", "icon": "paint-palette" },
+			{ "id": "guidelines", "name": "Guidelines", "icon": "page" }
+		],
+		"instructions": "# Create Brand Identity\n\nCreate cohesive brand systems with logo direction, color palette, typography, voice, and reusable visual rules.\n\nUse when a project needs a recognizable visual identity before product or marketing screens are built."
+	},
+	{
+		"id": "produce-marketing-materials",
+		"name": "Produce marketing materials",
+		"description": "Design eye-catching marketing collateral that resonates with target audiences, including brochures, posters, and social media graphics.",
+		"icon": "megaphone",
+		"iconColor": "text-icon-warning",
+		"publisherName": "By you",
+		"publisherAvatarSrc": "/avatar-human/maia-ma.png",
+		"companyId": "you",
+		"categoryId": "content-and-communication",
+		"starCount": 25,
+		"viewCount": 3810,
+		"tools": [
+			{ "id": "campaign-kit", "name": "Campaign kit", "icon": "megaphone" }
+		],
+		"instructions": "Create polished campaign assets with clear hierarchy, strong brand fit, and production-ready copy blocks."
+	},
+	{
+		"id": "review-pull-request",
+		"name": "Review pull request",
+		"description": "Summarize diffs and surface review-worthy changes across a pull request before a teammate merges it.",
+		"icon": "angle-brackets",
+		"iconColor": "text-icon-success",
+		"publisherName": "Atlassian",
+		"companyId": "atlassian",
+		"categoryId": "software-development",
+		"starCount": 61,
+		"viewCount": 8120,
+		"tools": [
+			{ "id": "bitbucket", "name": "Bitbucket", "icon": "angle-brackets" }
+		],
+		"instructions": "Inspect changed files, summarize behavioral risk, and produce actionable review comments."
+	},
+	{
+		"id": "summarize-thread",
+		"name": "Summarize thread",
+		"description": "Condense a long conversation into the decisions, owners, and next steps that matter.",
+		"icon": "comment",
+		"iconColor": "text-icon-brand",
+		"publisherName": "Slack",
+		"publisherAvatarSrc": "/3p/slack/16.svg",
+		"companyId": "slack",
+		"categoryId": "content-and-communication",
+		"starCount": 54,
+		"viewCount": 7045,
+		"tools": [
+			{ "id": "slack", "name": "Slack", "icon": "comment" }
+		],
+		"instructions": "Extract decisions, unresolved questions, and owner/date pairs from long Slack-style discussions."
+	},
+	{
+		"id": "schedule-meeting",
+		"name": "Schedule meeting",
+		"description": "Find a time that works for everyone and create a calendar invite with the right context.",
+		"icon": "calendar",
+		"iconColor": "text-yellow-400",
+		"publisherName": "Google",
+		"publisherAvatarSrc": "/3p/google-drive/16.svg",
+		"companyId": "google",
+		"categoryId": "administrative-tools",
+		"starCount": 33,
+		"viewCount": 5210,
+		"tools": [
+			{ "id": "calendar", "name": "Calendar", "icon": "calendar" }
+		],
+		"instructions": "Compare availability, propose meeting slots, and draft concise invites."
+	},
+	{
+		"id": "build-report",
+		"name": "Build report",
+		"description": "Turn raw metrics into a narrative report your stakeholders will actually read.",
+		"icon": "chart-trend-up",
+		"iconColor": "text-icon-discovery",
+		"publisherName": "Notion",
+		"publisherAvatarSrc": "/3p/notion/16.svg",
+		"companyId": "notion",
+		"categoryId": "data-and-analytics",
+		"starCount": 47,
+		"viewCount": 6940,
+		"tools": [
+			{ "id": "notion", "name": "Notion", "icon": "page" }
+		],
+		"instructions": "Structure metric snapshots into a short, evidence-backed status report."
+	},
+	{
+		"id": "create-payment-flow",
+		"name": "Create payment flow",
+		"description": "Design checkout, billing, and account-update flows with clear states and recovery paths.",
+		"icon": "link",
+		"iconColor": "text-icon-warning",
+		"publisherName": "Stripe",
+		"publisherAvatarSrc": "/3p/stripe/16.svg",
+		"companyId": "stripe",
+		"categoryId": "project-management",
+		"starCount": 22,
+		"viewCount": 3384,
+		"tools": [
+			{ "id": "stripe", "name": "Stripe", "icon": "link" }
+		],
+		"instructions": "Map payment states, error recovery, and confirmation copy for checkout-like flows."
+	}
+]

@@ -77,7 +77,7 @@ import { approveSkillDraft, fetchSkillDraftDetail, fetchSkillDrafts, fetchSkills
 import type { HermesSkillDraftDetail, HermesSkillDraftSummary, HermesSkillSummary } from "@/lib/rovo-runtime-types";
 import type { RovoAppHermesContext } from "@/lib/rovo-app-types";
 import { useRovoSelectedAgent } from "@/app/contexts";
-import { getRovoAgentPromptContext, isRovoAgentProfile } from "@/components/projects/rovo/data/agent-profiles";
+import { getRovoAgentPromptContext, isRovoAgentProfile } from "@/app/data/directory/agents";
 
 interface RovoAppShellProps {
 	embedded?: boolean;

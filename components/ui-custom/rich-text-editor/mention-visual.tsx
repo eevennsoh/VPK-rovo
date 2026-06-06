@@ -7,7 +7,8 @@ import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import type { TagColor } from "@/components/ui/tag";
-import { getSkillIcon, type SkillIconKey } from "@/components/blocks/skills-directory/data/skills";
+import { getSkillIcon } from "@/app/data/directory/visual";
+import type { SkillIconKey } from "@/app/data/directory/types";
 import { cn } from "@/lib/utils";
 
 import type {

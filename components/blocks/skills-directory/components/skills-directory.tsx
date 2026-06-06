@@ -63,7 +63,7 @@ import {
 	type SkillsDirectoryFileTreeItem,
 	type SkillsDirectorySkill,
 	type SkillsDirectoryToolTag,
-} from "../data/skills";
+} from "@/app/data/directory/skills";
 import {
 	DEFAULT_SKILLS_DIRECTORY_PRIMARY_ITEMS,
 	DEFAULT_SKILLS_DIRECTORY_SIDEBAR_GROUPS,
@@ -72,7 +72,7 @@ import {
 } from "../data/sidebar-groups";
 
 export type SkillsDirectoryAgent = AgentBrowserAgent;
-export type { SkillsDirectorySkill } from "../data/skills";
+export type { SkillsDirectorySkill } from "@/app/data/directory/skills";
 export type {
 	SkillsDirectoryPrimaryItem,
 	SkillsDirectorySidebarGroup,

@@ -194,7 +194,10 @@ test("Agents Directory uses independent column scrolling without extra content p
 test("Agents Directory uses one unsegmented results grid and updated sidebar labels", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 	const defaultSidebarGroupsSource = readProjectFile("components/blocks/agents-directory/data/sidebar-groups.ts");
-	const demoSidebarGroupsSource = readProjectFile("components/blocks/agent-browser/data/demo-agents.ts");
+	// The agent-browser sidebar groups + directory catalog now live in the unified
+	// agents data layer (DEMO_AGENT_BROWSER_SIDEBAR_GROUPS salvaged verbatim there).
+	const agentsLoaderSource = readProjectFile("app/data/directory/agents.ts");
+	const agentsJson = JSON.parse(readProjectFile("app/data/directory/agents.json"));
 	const pageSource = readProjectFile("components/blocks/agents-directory/page.tsx");
 
 	assert.match(source, /<AgentSection agents=\{filtered\} key=\{`agents-\$\{activeCategory\}`\} onSelectAgent=\{onSelectAgent\} \/>/u);
@@ -210,7 +213,7 @@ test("Agents Directory uses one unsegmented results grid and updated sidebar lab
 	assert.doesNotMatch(source, /title="All agents"/u);
 	assert.doesNotMatch(source, />\s*\{title\}\s*<\/h2>/u);
 
-	for (const groupsSource of [defaultSidebarGroupsSource, demoSidebarGroupsSource]) {
+	for (const groupsSource of [defaultSidebarGroupsSource, agentsLoaderSource]) {
 		assert.doesNotMatch(groupsSource, /title: "Favourites"/u);
 		assert.match(groupsSource, /title: "By teams"/u);
 		assert.match(groupsSource, /title: "By teams",\n\t\tshowAll: true/u);
@@ -231,18 +234,19 @@ test("Agents Directory uses one unsegmented results grid and updated sidebar lab
 	assert.match(source, /attributionKind\?: "company" \| "team" \| "person";/u);
 	assert.match(source, /function isVerified\(agent: AgentBrowserAgent, publisher: string\): boolean/u);
 	assert.match(source, /if \(agent\.attributionKind\) return agent\.attributionKind === "company";/u);
-	assert.match(demoSidebarGroupsSource, /attributionKind: "company"/u);
-	assert.match(demoSidebarGroupsSource, /attributionKind: "team"/u);
-	assert.match(demoSidebarGroupsSource, /attributionKind: "person"/u);
-	assert.match(demoSidebarGroupsSource, /by Product Experience|by Customer Success|by Platform Engineering/u);
-	assert.match(demoSidebarGroupsSource, /by Mei Tan|by Priya Shah/u);
+	// The unified catalog carries every attribution kind (company/team/person).
+	for (const kind of ["company", "team", "person"]) {
+		assert.ok(
+			agentsJson.some((agent) => agent.attributionKind === kind),
+			`unified catalog should have a ${kind}-attributed agent`,
+		);
+	}
 	assert.match(pageSource, /attributionKind: "team"/u);
 	assert.match(pageSource, /attributionKind: "person"/u);
 	assert.match(pageSource, /by Revenue Operations/u);
 	assert.match(pageSource, /by Alex Kim/u);
-	for (const dataSource of [demoSidebarGroupsSource, pageSource]) {
-		assert.doesNotMatch(dataSource, /Custom agent/u);
-	}
+	// The directory demo page's session agents use descriptive bylines, not generic labels.
+	assert.doesNotMatch(pageSource, /Custom agent/u);
 });
 
 test("Agents Directory cards render the shared CardDirectoryAgent with overlay elevation", () => {

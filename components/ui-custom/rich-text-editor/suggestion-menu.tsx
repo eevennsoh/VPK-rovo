@@ -47,6 +47,7 @@ import { IconTile } from "@/components/ui/icon-tile";
 import { Input } from "@/components/ui/input";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { ArrowLeftIcon } from "@/components/ui/vpk-icons";
+import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import { cn } from "@/lib/utils";
 
 import { RichTextMentionVisualMark } from "./mention-visual";
@@ -62,7 +63,6 @@ import type {
 	RichTextMentionItem,
 	RichTextMentionSources,
 	RichTextMentionVisual,
-	RichTextReferenceCategory,
 	RichTextSlashCategory,
 } from "./types";
 
@@ -249,114 +249,14 @@ const ASK_ROVO_SLASH_ITEM: RichTextSuggestionMenuItem = {
 	label: "Ask Rovo",
 };
 
-const STATIC_MENTION_ITEMS: RichTextMentionSources = {
-	subagent: [
-		{
-			category: "subagent",
-			id: "subagent:researcher",
-			label: "Researcher",
-			description: "Investigates open questions and gathers source context.",
-		},
-		{
-			category: "subagent",
-			id: "subagent:reviewer",
-			label: "Reviewer",
-			description: "Checks changes for regressions, risks, and missing tests.",
-		},
-		{
-			category: "subagent",
-			id: "subagent:designer",
-			label: "Designer",
-			description: "Explores UI polish, layout, and interaction refinements.",
-		},
-	],
-	human: [
-		{
-			category: "human",
-			id: "human:teammate",
-			label: "Andrea Wilson",
-		},
-		{
-			category: "human",
-			id: "human:reviewer",
-			label: "Brian Lin",
-		},
-		{
-			category: "human",
-			id: "human:stakeholder",
-			label: "Florence Garcia",
-		},
-	],
-	team: [
-		{
-			category: "team",
-			id: "team:engineering",
-			label: "Engineering",
-		},
-		{
-			category: "team",
-			id: "team:design",
-			label: "Design",
-		},
-		{
-			category: "team",
-			id: "team:support",
-			label: "Support",
-		},
-	],
-	knowledge: [
-		{
-			category: "knowledge",
-			id: "knowledge:agent-definition",
-			label: "Agent definition",
-			description: "Reference the canonical generated agent profile.",
-		},
-		{
-			category: "knowledge",
-			id: "knowledge:studio-thread",
-			label: "Studio thread",
-			description: "Reference the active Studio conversation.",
-		},
-		{
-			category: "knowledge",
-			id: "knowledge:work-item",
-			label: "Work item",
-			description: "Reference a Jira or project work item.",
-		},
-	],
-	tool: [
-		{
-			category: "tool",
-			id: "tool:web-search",
-			label: "Web search",
-			description: "Search the web for current public information.",
-		},
-		{
-			category: "tool",
-			id: "tool:teamwork-graph",
-			label: "Teamwork Graph",
-			description: "Find project, people, and work-item context.",
-		},
-		{
-			category: "tool",
-			id: "tool:jira",
-			label: "Jira work items",
-			description: "Read and update relevant Jira work items.",
-		},
-		{
-			category: "tool",
-			id: "tool:google-drive",
-			label: "Google Drive",
-			description: "Reference Drive and Docs content.",
-		},
-		{
-			category: "tool",
-			id: "tool:create-image",
-			label: "Create image",
-			description: "Generate visual assets when the agent task needs them.",
-		},
-	],
-};
+/**
+ * Static fallback mention catalog. Sourced from the single unified
+ * `EDITOR_PALETTE_MENTION_SOURCES` (built from the `@/app/data/directory`
+ * loaders) so the live editor's `@` and `/` surfaces draw from the same catalog
+ * as the composer palette instead of a divergent hardcoded set. Consumer-passed
+ * `getMentionSources` still take precedence via `getMergedMentionSources`.
+ */
+const STATIC_MENTION_ITEMS: RichTextMentionSources = EDITOR_PALETTE_MENTION_SOURCES;
 
 export const SLASH_COMMANDS: readonly RichTextCommandItem[] = [
 	{
@@ -1160,10 +1060,12 @@ function getMentionChildDescription(item: RichTextMentionItem): string {
 			return `Use ${item.label} for this task.`;
 		case "knowledge":
 			return `Reference ${item.label} as knowledge context.`;
+		default: {
+			// Exhaustiveness guard: a new RichTextMentionCategory must add a case above.
+			const exhaustiveCategory: never = item.category;
+			return exhaustiveCategory;
+		}
 	}
-
-	const exhaustiveCategory: never = item.category;
-	return exhaustiveCategory;
 }
 
 function getStableAssetIndex(seed: string, assetCount: number): number {

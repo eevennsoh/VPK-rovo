@@ -167,17 +167,32 @@ test("Skills Directory renders skill info view with file tree and top scroll mas
 test("Skills Directory demo and docs use skill-specific examples", () => {
 	const pageSource = readProjectFile("components/blocks/skills-directory/page.tsx");
 	const detailsSource = readProjectFile("app/data/details/blocks.ts");
-	const skillsSource = readProjectFile("components/blocks/skills-directory/data/skills.tsx");
+	// Skill data is now the single-source-of-truth JSON catalog; the loader + icon
+	// resolver own the typing/helpers and the Atlaskit icon imports.
+	const skillsJson = JSON.parse(readProjectFile("app/data/directory/skills.json"));
+	const skillsLoaderSource = readProjectFile("app/data/directory/skills.ts");
+	const visualSource = readProjectFile("app/data/directory/visual.tsx");
 	const sidebarGroupsSource = readProjectFile("components/blocks/skills-directory/data/sidebar-groups.ts");
+
+	const skillIds = new Set(skillsJson.map((skill) => skill.id));
 
 	assert.doesNotMatch(pageSource, /defaultSelectedSkillIds=/u);
 	assert.doesNotMatch(detailsSource, /defaultSelectedSkillIds=\{\[/u);
-	assert.match(skillsSource, /"design-landing-page"/u);
-	assert.match(skillsSource, /"develop-mobile-app-interface"/u);
-	assert.match(skillsSource, /"create-brand-identity"/u);
-	assert.match(skillsSource, /import DeviceMobileIcon from "@atlaskit\/icon\/core\/device-mobile";/u);
-	assert.match(skillsSource, /icon: "device-mobile"/u);
-	assert.doesNotMatch(skillsSource, /text-(blue|purple|teal|orange|indigo|green)-500/u);
+	assert.ok(skillIds.has("design-landing-page"));
+	assert.ok(skillIds.has("develop-mobile-app-interface"));
+	assert.ok(skillIds.has("create-brand-identity"));
+	// The icon resolver owns the closed icon set + its Atlaskit imports.
+	assert.match(visualSource, /import DeviceMobileIcon from "@atlaskit\/icon\/core\/device-mobile";/u);
+	assert.ok(
+		skillsJson.some((skill) => skill.icon === "device-mobile"),
+		"at least one skill should use the device-mobile icon",
+	);
+	// Decorative icon colors are semantic/accent tokens, never raw -500 hues.
+	for (const skill of skillsJson) {
+		if (skill.iconColor) {
+			assert.doesNotMatch(skill.iconColor, /text-(blue|purple|teal|orange|indigo|green)-500/u);
+		}
+	}
 	for (const colorClass of [
 		"text-icon-brand",
 		"text-icon-success",
@@ -185,19 +200,25 @@ test("Skills Directory demo and docs use skill-specific examples", () => {
 		"text-yellow-400",
 		"text-icon-discovery",
 	]) {
-		assert.match(skillsSource, new RegExp(colorClass, "u"));
+		assert.ok(
+			skillsJson.some((skill) => skill.iconColor === colorClass),
+			`a skill should use the ${colorClass} icon color`,
+		);
 	}
-	assert.match(skillsSource, /function getSkillPublisherLogoName/u);
+	assert.match(skillsLoaderSource, /function getSkillPublisherLogoName/u);
 	assert.match(sidebarGroupsSource, /logoName: "atlassian"/u);
 	assert.match(detailsSource, /onAddSkills/u);
 	assert.match(detailsSource, /onCreateSkill/u);
-	assert.match(skillsSource, /publisherName/u);
-	assert.match(skillsSource, /publisherAvatarSrc/u);
-	assert.match(skillsSource, /categoryId/u);
-	assert.match(skillsSource, /companyId/u);
+	// The loader interface still carries the publisher/category/company fields.
+	assert.match(skillsLoaderSource, /publisherName/u);
+	assert.match(skillsLoaderSource, /publisherAvatarSrc/u);
+	assert.match(skillsLoaderSource, /categoryId/u);
+	assert.match(skillsLoaderSource, /companyId/u);
 	assert.match(sidebarGroupsSource, /label: "All skills"/u);
 	assert.match(sidebarGroupsSource, /label: "Favourite skills"/u);
 	assert.match(sidebarGroupsSource, /label: "Your skills"/u);
-	assert.match(skillsSource, /"content-and-communication"/u);
-	assert.match(skillsSource, /"data-and-analytics"/u);
+	// Category ids are still exercised by the data.
+	const categoryIds = new Set(skillsJson.map((skill) => skill.categoryId ?? skill.category));
+	assert.ok(categoryIds.has("content-and-communication"));
+	assert.ok(categoryIds.has("data-and-analytics"));
 });
