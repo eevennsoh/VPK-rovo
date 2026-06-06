@@ -131,8 +131,11 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 	assert.match(AGENT_SOURCE, /render=\{\(\s*<LozengeDropdownTrigger[\s\S]*aria-label="Memory mode"[\s\S]*icon=\{<AiModelIcon label="" size="small" \/>\}/u);
 	assert.match(AGENT_SOURCE, /\{`Memory \$\{selectedOption\.label\.toLowerCase\(\)\}`\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Memory mode"[\s\S]{0,180}variant="information"/u);
-	assert.match(AGENT_SOURCE, /<DropdownMenuSeparator \/>[\s\S]*Configure memory/u);
-	assert.match(AGENT_SOURCE, /<AgentMemorySelector \/>/u);
+	assert.match(AGENT_SOURCE, /<DropdownMenuSeparator \/>[\s\S]*Manage memory/u);
+	// Memory selector is now driven by lifted state and renders as a row lozenge
+	// or a compact nav button, mirroring the knowledge selector.
+	assert.match(AGENT_SOURCE, /<AgentMemorySelector render="row" value=\{value\} onValueChange=\{onValueChange\} \/>/u);
+	assert.match(AGENT_SOURCE, /function AgentMemoryOverflowMenu/u);
 	assert.doesNotMatch(AGENT_SOURCE, /<AgentReferenceChip label="Memory" \/>/u);
 });
 
@@ -149,6 +152,20 @@ test("Filled config summary sorts empty rows to the bottom while preserving cano
 	// Memory is its own always-on row (never empty), not a chip inside Knowledge.
 	assert.match(AGENT_SOURCE, /function AgentMemoryRow/u);
 	assert.match(AGENT_SOURCE, /key: "memory",[\s\S]*isEmpty: false,/u);
+	// The collapsed nav item catalog mirrors the same canonical order and now
+	// includes Memory, so the collapsed and expanded views stay symmetric.
+	assert.match(
+		AGENT_SOURCE,
+		/AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = \[[\s\S]*"trigger"[\s\S]*"knowledge"[\s\S]*"tools"[\s\S]*"skills"[\s\S]*"subagents"[\s\S]*"memory"[\s\S]*"conversationStarters"[\s\S]*"reasoning"[\s\S]*\] as const;/u,
+	);
+	// Memory renders as a nav button (and overflow sub-menu) in the collapsed nav.
+	assert.match(AGENT_SOURCE, /item\.agentFieldName === "memory"[\s\S]*<AgentMemorySelector[\s\S]*render="nav-button"[\s\S]*value=\{memoryMode\}/u);
+	// The collapsed nav button surfaces the on/off state inline as a neutral badge
+	// so the current state reads without opening the dropdown.
+	assert.match(AGENT_SOURCE, /Memory[\s\S]*<Badge>\{selectedOption\.label\}<\/Badge>/u);
+	assert.match(AGENT_SOURCE, /item\.agentFieldName === "memory"[\s\S]*<AgentMemoryOverflowMenu[\s\S]*value=\{memoryMode\}/u);
+	// Memory state is lifted to the toolbar so both views share one toggle.
+	assert.match(AGENT_SOURCE, /const \[memoryMode, setMemoryMode\] = useState<MemoryModeValue>\("on"\);/u);
 });
 
 test("Agent config updates instructions as markdown strings", () => {
@@ -200,6 +217,7 @@ test("Agent config renders filled summary rows once field data exists", () => {
 		"Tools",
 		"Subagents",
 		"Knowledge",
+		"Memory",
 		"Conversation starters",
 	]) {
 		assert.match(AGENT_SOURCE, new RegExp(`label: "${label}"`, "u"));

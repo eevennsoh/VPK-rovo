@@ -133,12 +133,17 @@ const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
 	"teamwork-agents": DEFAULT_AGENT_PROFILE_COVER_COLOR,
 };
 
+// Source order IS the canonical display order, kept in lockstep with the
+// AgentFilledConfigSummary rows array: Triggers › Knowledge › Tools › Skills ›
+// Subagents › Memory › Conversation starters. Reasoning renders separately and
+// always sits last. Keep both lists in sync when reordering.
 const AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = [
 	{ agentFieldName: "trigger", label: "Triggers" },
-	{ agentFieldName: "skills", label: "Skills", listFieldName: "skills" },
-	{ agentFieldName: "tools", label: "Tools", listFieldName: "tools" },
-	{ agentFieldName: "subagents", label: "Subagents", listFieldName: "subagents" },
 	{ agentFieldName: "knowledge", label: "Knowledge", kind: "knowledge" },
+	{ agentFieldName: "tools", label: "Tools", listFieldName: "tools" },
+	{ agentFieldName: "skills", label: "Skills", listFieldName: "skills" },
+	{ agentFieldName: "subagents", label: "Subagents", listFieldName: "subagents" },
+	{ agentFieldName: "memory", label: "Memory", kind: "memory" },
 	{ agentFieldName: "conversationStarters", label: "Conversation starters", listFieldName: "conversationStarters" },
 	{ agentFieldName: "reasoning", label: "Reasoning", kind: "reasoning" },
 ] as const;
@@ -197,6 +202,10 @@ function getAgentCompactEmptyConfigNavItems(config?: AgentConfigFormValue) {
 					count = getNonEmptyConfigItems(config.subagents).length;
 					break;
 				case "knowledge":
+					count = 0;
+					break;
+				case "memory":
+					// Memory is an always-on knowledge source with no item count.
 					count = 0;
 					break;
 				case "conversationStarters":
@@ -887,6 +896,8 @@ function AgentCompactEmptyConfigNav({
 	onReasoningValueChange,
 	knowledgeMode,
 	onKnowledgeModeChange,
+	memoryMode,
+	onMemoryModeChange,
 	screenAssistantTargetPrefix,
 	selectedListItemIndexByField,
 }: Readonly<{
@@ -901,6 +912,8 @@ function AgentCompactEmptyConfigNav({
 	onReasoningValueChange: (next: ReasoningModeValue) => void;
 	knowledgeMode: KnowledgeModeValue;
 	onKnowledgeModeChange: (next: KnowledgeModeValue) => void;
+	memoryMode: MemoryModeValue;
+	onMemoryModeChange: (next: MemoryModeValue) => void;
 	screenAssistantTargetPrefix?: string;
 	selectedListItemIndexByField?: Partial<Record<AgentConfigListFieldName, number>>;
 }>) {
@@ -986,6 +999,17 @@ function AgentCompactEmptyConfigNav({
 							/>
 						);
 					}
+					if (item.agentFieldName === "memory") {
+						return (
+							<AgentMemorySelector
+								key={item.agentFieldName}
+								render="nav-button"
+								value={memoryMode}
+								onValueChange={onMemoryModeChange}
+								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:memory` : undefined}
+							/>
+						);
+					}
 					if (item.agentFieldName === "subagents") {
 						return (
 							<AgentCompactSubagentsNavButton
@@ -1035,6 +1059,15 @@ function AgentCompactEmptyConfigNav({
 												key={item.agentFieldName}
 												value={knowledgeMode}
 												onValueChange={onKnowledgeModeChange}
+											/>
+										);
+									}
+									if (item.agentFieldName === "memory") {
+										return (
+											<AgentMemoryOverflowMenu
+												key={item.agentFieldName}
+												value={memoryMode}
+												onValueChange={onMemoryModeChange}
 											/>
 										);
 									}
@@ -1406,10 +1439,12 @@ interface AgentFilledConfigSummaryProps {
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	hideEmptyRows?: boolean;
 	knowledgeMode?: KnowledgeModeValue;
+	memoryMode: MemoryModeValue;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
 	onKnowledgeModeChange?: (next: KnowledgeModeValue) => void;
+	onMemoryModeChange: (next: MemoryModeValue) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
@@ -1423,9 +1458,11 @@ function AgentFilledConfigSummary({
 	hiddenConfigFields,
 	hideEmptyRows = false,
 	knowledgeMode,
+	memoryMode,
 	onAppendListItem,
 	onEditTriggers,
 	onKnowledgeModeChange,
+	onMemoryModeChange,
 	onOpenDirectory,
 	onRemoveListItem,
 	onTriggerDefinitionsChange,
@@ -1552,7 +1589,9 @@ function AgentFilledConfigSummary({
 			isEmpty: false,
 			node: (
 				<AgentMemoryRow
+					onValueChange={onMemoryModeChange}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:memory` : undefined}
+					value={memoryMode}
 				/>
 			),
 		},
@@ -1964,9 +2003,72 @@ const MEMORY_MODE_OPTIONS = [
 
 type MemoryModeValue = (typeof MEMORY_MODE_OPTIONS)[number]["value"];
 
-function AgentMemorySelector() {
-	const [value, setValue] = useState<MemoryModeValue>("on");
+function AgentMemorySelectorMenu({
+	value,
+	onValueChange,
+}: Readonly<{
+	value: MemoryModeValue;
+	onValueChange: (next: MemoryModeValue) => void;
+}>) {
+	return (
+		<DropdownMenuContent align="start">
+			<DropdownMenuGroup>
+				{MEMORY_MODE_OPTIONS.map((option) => (
+					<DropdownMenuItem
+						elemAfter={value === option.value ? <CheckIcon size="small" /> : undefined}
+						key={option.value}
+						onClick={() => onValueChange(option.value)}
+					>
+						{option.label}
+					</DropdownMenuItem>
+				))}
+			</DropdownMenuGroup>
+			<DropdownMenuSeparator />
+			<DropdownMenuGroup>
+				<DropdownMenuItem>
+					Manage memory
+				</DropdownMenuItem>
+			</DropdownMenuGroup>
+		</DropdownMenuContent>
+	);
+}
+
+interface AgentMemorySelectorProps {
+	value: MemoryModeValue;
+	onValueChange: (next: MemoryModeValue) => void;
+	render: "nav-button" | "row";
+	screenAssistantTargetId?: string;
+}
+
+function AgentMemorySelector({
+	value,
+	onValueChange,
+	render,
+	screenAssistantTargetId,
+}: Readonly<AgentMemorySelectorProps>) {
 	const selectedOption = MEMORY_MODE_OPTIONS.find((option) => option.value === value) ?? MEMORY_MODE_OPTIONS[0];
+
+	if (render === "nav-button") {
+		return (
+			<DropdownMenu>
+				<DropdownMenuTrigger
+					render={(
+						<button
+							type="button"
+							data-agent-field="memory"
+							data-screen-assistant-target={screenAssistantTargetId}
+							className="inline-flex h-6 shrink-0 items-center gap-1 rounded px-2 text-xs font-semibold leading-4 text-text-subtlest transition-colors hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-3 focus-visible:ring-ring/50"
+						/>
+					)}
+				>
+					Memory
+					{/* Surface the on/off state inline so it reads without opening the menu. */}
+					<Badge>{selectedOption.label}</Badge>
+				</DropdownMenuTrigger>
+				<AgentMemorySelectorMenu value={value} onValueChange={onValueChange} />
+			</DropdownMenu>
+		);
+	}
 
 	return (
 		<DropdownMenu>
@@ -1980,13 +2082,28 @@ function AgentMemorySelector() {
 			>
 				{`Memory ${selectedOption.label.toLowerCase()}`}
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start">
+			<AgentMemorySelectorMenu value={value} onValueChange={onValueChange} />
+		</DropdownMenu>
+	);
+}
+
+function AgentMemoryOverflowMenu({
+	value,
+	onValueChange,
+}: Readonly<{
+	value: MemoryModeValue;
+	onValueChange: (next: MemoryModeValue) => void;
+}>) {
+	return (
+		<DropdownMenuSub>
+			<DropdownMenuSubTrigger>Memory</DropdownMenuSubTrigger>
+			<DropdownMenuSubContent>
 				<DropdownMenuGroup>
 					{MEMORY_MODE_OPTIONS.map((option) => (
 						<DropdownMenuItem
 							elemAfter={value === option.value ? <CheckIcon size="small" /> : undefined}
 							key={option.value}
-							onClick={() => setValue(option.value)}
+							onClick={() => onValueChange(option.value)}
 						>
 							{option.label}
 						</DropdownMenuItem>
@@ -1995,17 +2112,25 @@ function AgentMemorySelector() {
 				<DropdownMenuSeparator />
 				<DropdownMenuGroup>
 					<DropdownMenuItem>
-						Configure memory
+						Manage memory
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
-			</DropdownMenuContent>
-		</DropdownMenu>
+			</DropdownMenuSubContent>
+		</DropdownMenuSub>
 	);
 }
 
+interface AgentMemoryRowProps {
+	value: MemoryModeValue;
+	onValueChange: (next: MemoryModeValue) => void;
+	screenAssistantTargetId?: string;
+}
+
 function AgentMemoryRow({
+	value,
+	onValueChange,
 	screenAssistantTargetId,
-}: Readonly<{ screenAssistantTargetId?: string }>) {
+}: Readonly<AgentMemoryRowProps>) {
 	return (
 		<div
 			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-5"
@@ -2016,7 +2141,7 @@ function AgentMemoryRow({
 				<AgentSectionLabel>Memory</AgentSectionLabel>
 			</div>
 			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
-				<AgentMemorySelector />
+				<AgentMemorySelector render="row" value={value} onValueChange={onValueChange} />
 			</div>
 		</div>
 	);
@@ -2418,6 +2543,9 @@ function AgentCompactConfigToolbarBelow({
 	const [knowledgeMode, setKnowledgeMode] = useState<KnowledgeModeValue>(() =>
 		getNonEmptyConfigItems(config.knowledge).length > 0 ? "custom" : "all",
 	);
+	// Memory state is lifted here so the collapsed nav button and the expanded
+	// Memory row stay in sync as the toolbar toggles between the two views.
+	const [memoryMode, setMemoryMode] = useState<MemoryModeValue>("on");
 	const shouldReduceMotion = useReducedMotion();
 	const expandButtonRowRef = useRef<HTMLDivElement | null>(null);
 	const expandButtonX = useMotionValue(0);
@@ -2507,6 +2635,8 @@ function AgentCompactConfigToolbarBelow({
 							hiddenConfigFields={hiddenConfigFields}
 							knowledgeMode={knowledgeMode}
 							onKnowledgeModeChange={setKnowledgeMode}
+							memoryMode={memoryMode}
+							onMemoryModeChange={setMemoryMode}
 							onAppendListItem={onAppendListItem}
 							onConnectTrigger={onConnectTrigger}
 							onEditTriggers={onEditTriggers}
@@ -2543,6 +2673,8 @@ function AgentCompactConfigToolbarBelow({
 							onReasoningValueChange={setReasoningValue}
 							knowledgeMode={knowledgeMode}
 							onKnowledgeModeChange={setKnowledgeMode}
+							memoryMode={memoryMode}
+							onMemoryModeChange={setMemoryMode}
 							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 							selectedListItemIndexByField={selectedListItemIndexByField}
 						/>
