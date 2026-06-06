@@ -7,10 +7,12 @@ const {
 	buildFallbackStudioAgentResult,
 	buildMissingStudioAgentResultFailureParts,
 	extractStudioAgentResultFromText,
+	findOriginalAgentBrief,
 	normalizeStudioAgentResult,
 	parseJsonObjectAt,
 	shouldBoundStudioAgentGatewayCall,
 	shouldSurfaceMissingStudioAgentResultFailure,
+	stripStudioAgentResultMarkersFromText,
 	tolerantParseJsonObjectAt,
 } = require("./studio-agent-result");
 
@@ -326,6 +328,105 @@ test("builds a fallback Studio agent result from original brief and clarificatio
 	assert.match(result.instructions, /Both severity and repro details/u);
 	assert.match(result.instructions, /Professional & concise/u);
 	assert.doesNotMatch(result.name, /clarification answers/iu);
+});
+
+test("fallback Studio agent result prefers the original agent brief after clarification submit", () => {
+	const messages = [
+		{
+			role: "user",
+			metadata: {
+				creationMode: "agent",
+			},
+			parts: [
+				{
+					type: "text",
+					text:
+						"Build a Studio agent named Decision Director that reviews DACI decision documents, suggests improvements, identifies missing context, and points to useful resources.",
+				},
+			],
+		},
+		{
+			role: "assistant",
+			parts: [
+				{
+					type: "text",
+					text:
+						"```deferred-tool\n{\"tool_name\":\"ask_user_questions\",\"input\":{\"questions\":[",
+				},
+				{
+					type: "data-widget-data",
+					data: {
+						type: "question-card",
+					},
+				},
+			],
+		},
+		{
+			role: "user",
+			metadata: {
+				source: "clarification-submit",
+				creationMode: "agent",
+			},
+			parts: [
+				{
+					type: "text",
+					text: [
+						"Here are my clarification answers for \"Answer these questions to continue\":",
+						"",
+						"- Who is the primary audience for this agent?: My team",
+						"- What should the agent focus on first?: Analysis and recommendations",
+						"- What tone and persona should it use?: Coach",
+					].join("\n"),
+				},
+			],
+		},
+	];
+
+	assert.equal(
+		findOriginalAgentBrief({
+			prompt: messages[2].parts[0].text,
+			messages,
+		}),
+		"Build a Studio agent named Decision Director that reviews DACI decision documents, suggests improvements, identifies missing context, and points to useful resources.",
+	);
+
+	const result = buildFallbackStudioAgentResult({
+		prompt: messages[2].parts[0].text,
+		messages,
+		clarificationAnswers: {
+			"Who is the primary audience for this agent?": ["My team"],
+			"What should the agent focus on first?": [
+				"Analysis and recommendations",
+			],
+			"What tone and persona should it use?": ["Coach"],
+		},
+	});
+
+	assert.equal(result.name, "Decision Director");
+	assert.equal(result.agentId, "decision-director");
+	assert.match(result.description, /reviews DACI decision documents/iu);
+	assert.match(result.instructions, /Analysis and recommendations/u);
+	assert.doesNotMatch(result.name, /Build a Studio Agent/iu);
+	assert.doesNotMatch(result.description, /clarification answers/iu);
+});
+
+test("strips incomplete Studio agent result markers before fallback text is shown", () => {
+	const visibleText = [
+		"Drafting the agent now.",
+		"",
+		`${AGENT_RESULT_STREAM_PREFIX} {"agentId":"decision-director","name":"Decision Director"`,
+	].join("\n");
+
+	assert.equal(
+		stripStudioAgentResultMarkersFromText(visibleText),
+		"Drafting the agent now.",
+	);
+	assert.equal(
+		stripStudioAgentResultMarkersFromText(
+			`${AGENT_RESULT_STREAM_PREFIX} {"agentId":"decision-director"`,
+		),
+		"",
+	);
 });
 
 // --- Regression: /studio agent generation must never hang ---

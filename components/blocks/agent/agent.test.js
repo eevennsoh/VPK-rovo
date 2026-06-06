@@ -342,14 +342,16 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// longer reserves bottom padding for an overlay.
 	assert.match(compactLayoutSource, /<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">/u);
 	// Scroll region carries `px-1.5` so descendant focus rings (including the
-	// full-width title/description inputs) aren't clipped by the auto horizontal
-	// overflow that `overflow-y-auto` implies; inner content cancels it with
-	// `-mx-1.5` to keep the visual layout unchanged.
+	// full-width title/description inputs, whose focus backdrop bleeds past their
+	// box) aren't clipped by the auto horizontal overflow that `overflow-y-auto`
+	// implies. The inner blocks deliberately do NOT cancel it with a negative
+	// margin — doing so pulled full-width inputs back to the clip edge.
 	assert.match(compactLayoutSource, /"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-1\.5"[\s\S]*compactScrollOverflow\.showBottomScrollMask && "scroll-mask-bottom",[\s\S]*compactScrollAreaClassName,/u);
-	assert.match(compactLayoutSource, /<div className="-mx-1\.5 flex flex-col gap-4">/u);
+	assert.match(compactLayoutSource, /<div className="flex flex-col gap-4">/u);
+	assert.doesNotMatch(compactLayoutSource, /-mx-1\.5/u);
 	assert.doesNotMatch(compactLayoutSource, /paddingBottom/u);
 	assert.doesNotMatch(compactLayoutSource, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
-	assert.match(compactLayoutSource, /className="relative -mx-1\.5 flex min-h-0 flex-1 flex-col"/u);
+	assert.match(compactLayoutSource, /className="relative flex min-h-0 flex-1 flex-col"/u);
 	// No fixed 560px min-height — the composer fills available space instead.
 	assert.doesNotMatch(compactLayoutSource, /min-h-\[560px\]/u);
 	// Empty compact agents start without unnecessary vertical scroll: the
@@ -441,10 +443,10 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// menu can move between items with arrow keys).
 	assert.match(AGENT_SOURCE, /<MenubarTrigger\s+aria-label="More configuration options"[\s\S]*<MoreHorizontalIcon size="small" \/>/u);
 	assert.match(AGENT_SOURCE, /<DropdownMenuItem\s+elemAfter=\{item\.count > 0 \? <Badge>\{item\.count\}<\/Badge> : undefined\}/u);
-	// Container clips horizontal overflow (so the "…" menu absorbs hidden items)
-	// but keeps a small clip margin + vertical room so edge focus-visible rings
-	// aren't sheared off.
-	assert.match(AGENT_SOURCE, /className="relative -my-1 flex min-w-0 flex-1 items-center overflow-x-clip overflow-y-visible py-1 \[overflow-clip-margin:4px\]"[\s\S]*style=\{\{ gap: AGENT_COMPACT_CONFIG_NAV_GAP \}\}/u);
+	// The connected config Menubar clips horizontal overflow (so the "…" menu
+	// absorbs hidden items) but insets the first item (`pl-1`) and keeps a 6px
+	// clip margin + vertical room so edge focus-visible rings aren't sheared off.
+	assert.match(AGENT_SOURCE, /className="relative -my-1 flex h-auto min-w-0 flex-1 items-center overflow-x-clip overflow-y-visible rounded-none border-0 bg-transparent p-0 py-1 pl-1 \[overflow-clip-margin:6px\]"[\s\S]*style=\{\{ gap: AGENT_COMPACT_CONFIG_NAV_GAP \}\}/u);
 	assert.match(AGENT_SOURCE, /<div className="invisible flex items-center" ref=\{measureRef\}/u);
 	// Collapsible toolbar: outer wrapper now stacks a "rule row" (horizontal
 	// line + chevron at the far right) above an AnimatePresence crossfade that

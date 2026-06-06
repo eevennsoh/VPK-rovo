@@ -992,11 +992,11 @@ function AgentCompactEmptyConfigNav({
 				// Override the shared Menubar's bordered/elevated chrome so the strip
 				// reads as one flat, connected surface (matching the prior loose-button
 				// look) while still giving us roving focus + arrow-key nav across items.
-				// `overflow-x-clip` hides horizontally-overflowing items (the "…"
-				// menu absorbs them) while `overflow-clip-margin` leaves a few px of
-				// bleed so edge items' focus-visible rings aren't sheared off. `-my-1
-				// py-1` adds matching vertical room so the ring's top/bottom show too.
-				className="relative -my-1 flex h-auto min-w-0 flex-1 items-center overflow-x-clip overflow-y-visible rounded-none border-0 bg-transparent p-0 py-1 [overflow-clip-margin:4px]"
+				// `overflow-x-clip` hides horizontally-overflowing items (the "…" menu
+				// absorbs them). `pl-1` insets the first item so its focus ring isn't
+				// shorn flat at the left clip edge; `py-1 -my-1` add vertical room and
+				// `overflow-clip-margin` covers the trailing "…" on the right.
+				className="relative -my-1 flex h-auto min-w-0 flex-1 items-center overflow-x-clip overflow-y-visible rounded-none border-0 bg-transparent p-0 py-1 pl-1 [overflow-clip-margin:6px]"
 				ref={containerRef}
 				style={{ gap: AGENT_COMPACT_CONFIG_NAV_GAP }}
 			>
@@ -2847,19 +2847,21 @@ export const AgentConfigFields = memo(
 					    more below, and clears once the region is scrolled to the end. */}
 					<div
 						ref={compactScrollOverflow.ref}
-						// `overflow-y-auto` forces `overflow-x` to compute to `auto`, which
-						// clips the left/right edges of descendant focus-visible rings
-						// (title input, description, editor toolbar, etc.). `px-1.5` adds
-						// 6px of inset so even the full-width input rings clear the
-						// scroll-clip edge; the children below cancel it with `-mx-1.5`
-						// so the visual layout is unchanged.
+						// `overflow-y-auto` forces `overflow-x` to compute to `auto`,
+						// which clips the left/right edges of descendant focus-visible
+						// rings. `px-1.5` insets the content 6px so full-width controls
+						// (the title/description inputs, whose focus backdrop bleeds
+						// `-inset-0.5` past their box) clear the scroll-clip edge. We do
+						// NOT cancel this with a negative margin on the profile block,
+						// because that would pull those full-width inputs back to the
+						// clip edge and re-clip their rings.
 						className={cn(
 							"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-1.5",
 							compactScrollOverflow.showBottomScrollMask && "scroll-mask-bottom",
 							compactScrollAreaClassName,
 						)}
 					>
-						<div className="-mx-1.5 flex flex-col gap-4">
+						<div className="flex flex-col gap-4">
 							<AgentConfigProfile
 								config={profileConfig ?? config}
 								avatarSrc={profileAvatarSrc ?? avatarSrc}
@@ -2875,7 +2877,7 @@ export const AgentConfigFields = memo(
 							/>
 						</div>
 						<AgentInstructionsComposer
-							className="relative -mx-1.5 flex min-h-0 flex-1 flex-col"
+							className="relative flex min-h-0 flex-1 flex-col"
 							config={config}
 							contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]")}
 							editorClassName={isFilledConfig ? undefined : "agent-instructions-tiptap-editor-compact-empty"}

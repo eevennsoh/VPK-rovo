@@ -625,7 +625,26 @@ function extractStudioAgentResultFromText(text) {
 	);
 }
 
+function stripStudioAgentResultMarkersFromText(text) {
+	const normalizedText = getNonEmptyString(text);
+	if (!normalizedText) {
+		return "";
+	}
+
+	const markerIndex = normalizedText.indexOf(AGENT_RESULT_STREAM_PREFIX);
+	if (markerIndex === -1) {
+		return normalizedText;
+	}
+
+	return normalizedText
+		.slice(0, markerIndex)
+		.replace(/\n{3,}/gu, "\n\n")
+		.trim();
+}
+
 const CLARIFICATION_ANSWERS_PATTERN = /^\s*here are my clarification answers\b/i;
+const AGENT_NAME_STOP_WORD_PATTERN =
+	/\b(?:that|who|which|to|for|from|with|when|where|and)\b/iu;
 
 function extractMessageText(message) {
 	if (!message || typeof message !== "object") {
@@ -664,23 +683,51 @@ function extractMessageText(message) {
 	return "";
 }
 
+function isClarificationAnswerText(value) {
+	return CLARIFICATION_ANSWERS_PATTERN.test(value || "");
+}
+
+function isClarificationSubmitMessage(message) {
+	return getNonEmptyString(message?.metadata?.source) === "clarification-submit";
+}
+
 function findOriginalAgentBrief({ prompt, messages } = {}) {
 	const candidates = [];
 	if (Array.isArray(messages)) {
-		for (const message of messages) {
+		for (const [index, message] of messages.entries()) {
 			const role = message?.role || message?.type;
 			if (role !== "user") {
 				continue;
 			}
-			candidates.push(extractMessageText(message));
+			const text = extractMessageText(message);
+			if (!text || isClarificationSubmitMessage(message) || isClarificationAnswerText(text)) {
+				continue;
+			}
+			candidates.push({
+				text,
+				index,
+				isAgentCreation:
+					getNonEmptyString(message?.metadata?.creationMode) === "agent",
+			});
 		}
 	}
-	candidates.push(typeof prompt === "string" ? prompt : "");
 
-	return candidates.find((candidate) => (
-		candidate &&
-		!CLARIFICATION_ANSWERS_PATTERN.test(candidate)
-	)) || "";
+	const agentCreationCandidate = candidates.find((candidate) => (
+		candidate.isAgentCreation
+	));
+	if (agentCreationCandidate) {
+		return agentCreationCandidate.text;
+	}
+
+	const firstMessageCandidate = candidates.find((candidate) => candidate.text);
+	if (firstMessageCandidate) {
+		return firstMessageCandidate.text;
+	}
+
+	const fallbackPrompt = typeof prompt === "string" ? prompt.trim() : "";
+	return fallbackPrompt && !isClarificationAnswerText(fallbackPrompt)
+		? fallbackPrompt
+		: "";
 }
 
 function normalizeWhitespace(value) {
@@ -712,6 +759,18 @@ function titleCase(value) {
 
 function deriveObjectiveFromBrief(brief) {
 	const normalizedBrief = normalizeWhitespace(brief)
+		.replace(
+			/^build\s+(?:an?\s+)?(?:studio\s+)?agent\s+(?:named|called)\s+.+?\s+(?:that|to|for)\s+/iu,
+			"",
+		)
+		.replace(
+			/^create\s+(?:an?\s+)?(?:studio\s+)?agent\s+(?:named|called)\s+.+?\s+(?:that|to|for)\s+/iu,
+			"",
+		)
+		.replace(
+			/^make\s+(?:an?\s+)?(?:studio\s+)?agent\s+(?:named|called)\s+.+?\s+(?:that|to|for)\s+/iu,
+			"",
+		)
 		.replace(/^create\s+(?:an?\s+)?agent\s+(?:that|to|for)\s+/iu, "")
 		.replace(/^build\s+(?:an?\s+)?agent\s+(?:that|to|for)\s+/iu, "")
 		.replace(/^make\s+(?:an?\s+)?agent\s+(?:that|to|for)\s+/iu, "")
@@ -720,8 +779,38 @@ function deriveObjectiveFromBrief(brief) {
 	return normalizedBrief || "help with the requested Studio workflow";
 }
 
+function normalizeExplicitAgentName(value) {
+	const normalized = normalizeWhitespace(value)
+		.replace(/^["'“”]+|["'“”]+$/gu, "")
+		.replace(/\s+(?:agent|assistant)$/iu, "")
+		.trim();
+	if (!normalized || normalized.length > 80) {
+		return "";
+	}
+
+	return /[A-Z]/u.test(normalized) ? normalized : titleCase(normalized);
+}
+
+function deriveExplicitAgentName(brief) {
+	const normalizedBrief = normalizeWhitespace(brief);
+	const explicitNameMatch = normalizedBrief.match(
+		/\b(?:named|called)\s+["'“”]?([^"'“”.,:;!?]+?)(?=\s+\b(?:that|who|which|to|for|from|with|when|where|and)\b|[.,:;!?]|$)/iu,
+	);
+	if (!explicitNameMatch) {
+		return "";
+	}
+
+	const [firstSegment] = explicitNameMatch[1].split(AGENT_NAME_STOP_WORD_PATTERN);
+	return normalizeExplicitAgentName(firstSegment);
+}
+
 function deriveFallbackAgentName(brief) {
 	const normalizedBrief = normalizeWhitespace(brief);
+	const explicitName = deriveExplicitAgentName(normalizedBrief);
+	if (explicitName) {
+		return explicitName;
+	}
+
 	if (/\bsupport\b/iu.test(normalizedBrief) && /\btriag(?:e|es|ing)\b/iu.test(normalizedBrief)) {
 		return "Support Request Triage Agent";
 	}
@@ -980,10 +1069,12 @@ module.exports = {
 	buildFallbackStudioAgentResult,
 	buildMissingStudioAgentResultFailureParts,
 	extractStudioAgentResultFromText,
+	findOriginalAgentBrief,
 	findJsonObjectEndIndex,
 	normalizeStudioAgentResult,
 	parseJsonObjectAt,
 	shouldBoundStudioAgentGatewayCall,
 	shouldSurfaceMissingStudioAgentResultFailure,
+	stripStudioAgentResultMarkersFromText,
 	tolerantParseJsonObjectAt,
 };

@@ -243,10 +243,12 @@ const {
 	buildFallbackStudioAgentResult,
 	buildMissingStudioAgentResultFailureParts,
 	extractStudioAgentResultFromText,
+	findOriginalAgentBrief,
 	normalizeStudioAgentResult,
 	parseJsonObjectAt: parseStudioAgentJsonObjectAt,
 	shouldBoundStudioAgentGatewayCall,
 	shouldSurfaceMissingStudioAgentResultFailure,
+	stripStudioAgentResultMarkersFromText,
 } = require("./lib/studio-agent-result");
 const {
 	buildAgentDataFlowMermaid,
@@ -996,6 +998,23 @@ function parseOptionalBoolean(value) {
 		return false;
 	}
 	return null;
+}
+
+// Hermes memory/skill companions run extra AI Gateway calls after every Rovo
+// turn to propose memory entries and skill drafts. They are opt-in: set
+// HERMES_COMPANIONS_ENABLED=true (or =1) to turn them back on. Disabled by
+// default so they never run behind the scenes during local dev.
+function areHermesCompanionsEnabled() {
+	return parseOptionalBoolean(process.env.HERMES_COMPANIONS_ENABLED) === true;
+}
+
+// Hermes background jobs (the job ticker that executes scheduled jobs and the
+// startup wiki-job provisioning) are opt-in: set HERMES_JOBS_ENABLED=true (or
+// =1) to turn them back on. Disabled by default so no scheduled work runs
+// behind the scenes during local dev. Job CRUD/run routes remain available so
+// the UI keeps working; only autonomous background execution is gated.
+function areHermesJobsEnabled() {
+	return parseOptionalBoolean(process.env.HERMES_JOBS_ENABLED) === true;
 }
 
 function parseOptionalInteger(value) {
@@ -3695,7 +3714,7 @@ async function consumeRovoAppManagedResponse({
 	} = mapUiMessagesToConversation(messages);
 	const latestAssistantMessage = getLatestAssistantTextFromMessages(messages);
 
-	if (latestUserMessage || latestAssistantMessage) {
+	if (areHermesCompanionsEnabled() && (latestUserMessage || latestAssistantMessage)) {
 		const runHermesMemoryReview = async () => {
 				try {
 					const reviewResult = await runHermesMemoryCompanionReview({
@@ -8673,6 +8692,15 @@ async function handleChatSdkRequest(req, res) {
 					content: message.content,
 				}),
 			);
+			const agentCreationOriginalBrief =
+				creationMode === "agent"
+					? findOriginalAgentBrief({
+							prompt: latestUserMessage,
+							messages,
+					  })
+					: "";
+			const agentCreationTracePrompt =
+				agentCreationOriginalBrief || latestUserMessage;
 			const gatewaySystem = buildAIGatewaySystemPrompt({
 				runtimeContext: getNonEmptyString(effectiveContextWithPortBinding),
 				userName: getNonEmptyString(rawUserName),
@@ -8738,7 +8766,7 @@ async function handleChatSdkRequest(req, res) {
 						? writeGenericThinkingTraceSteps(
 								writer,
 								buildStudioAgentCreationTrace({
-									userPrompt: latestUserMessage,
+									userPrompt: agentCreationTracePrompt,
 									messages: gatewayMessages,
 									contextDescription: effectiveContextWithPortBinding,
 									isFollowUpTurn: !isFirstAgentCreationTurn,
@@ -8957,8 +8985,8 @@ async function handleChatSdkRequest(req, res) {
 						!planWidgetPayload &&
 						!agentResultExtraction?.payload
 							? buildFallbackStudioAgentResult({
-									prompt: latestUserMessage,
-									messages: gatewayMessages,
+									prompt: agentCreationOriginalBrief || latestUserMessage,
+									messages: messages || gatewayMessages,
 									clarificationAnswers: clarificationSubmission
 										? adaptClarificationAnswersForToolContract(
 												clarificationSubmission.sessionId,
@@ -8967,8 +8995,11 @@ async function handleChatSdkRequest(req, res) {
 										: null,
 							  })
 							: null;
-					if (fallbackAgentResultPayload && !visibleText) {
-						visibleText = `${fallbackAgentResultPayload.name} is ready to review.`;
+					if (fallbackAgentResultPayload) {
+						visibleText = stripStudioAgentResultMarkersFromText(visibleText);
+						if (!visibleText) {
+							visibleText = `${fallbackAgentResultPayload.name} is ready to review.`;
+						}
 					}
 
 					if (visibleText && visibleText.length > 0) {
@@ -16001,18 +16032,22 @@ const server = app.listen(port, "0.0.0.0", async () => {
 
 	// Check for Rovo Serve at startup
 	const rovoReady = await refreshRovoAvailability();
-	try {
-		const wikiJobProvisioning = await ensureWikiJobs(hermesJobsProvider);
-		console.log(
-			`  WIKI_JOBS: ${wikiJobProvisioning.existing} existing, ${wikiJobProvisioning.created} created`
-		);
-	} catch (error) {
-		console.error(
-			"[STARTUP] Failed to ensure wiki jobs",
-			error instanceof Error ? error.message : error,
-		);
+	if (areHermesJobsEnabled()) {
+		try {
+			const wikiJobProvisioning = await ensureWikiJobs(hermesJobsProvider);
+			console.log(
+				`  WIKI_JOBS: ${wikiJobProvisioning.existing} existing, ${wikiJobProvisioning.created} created`
+			);
+		} catch (error) {
+			console.error(
+				"[STARTUP] Failed to ensure wiki jobs",
+				error instanceof Error ? error.message : error,
+			);
+		}
+		hermesJobsProvider.startJobTicker?.();
+	} else {
+		console.log("  HERMES_JOBS: disabled (set HERMES_JOBS_ENABLED=true to enable background jobs)");
 	}
-	hermesJobsProvider.startJobTicker?.();
 	const aiGatewayConfigured = hasGatewayUrlConfigured(getEnvVars());
 	const llmRouting = buildLlmRoutingStatus({
 		rovoAvailable: rovoReady,
