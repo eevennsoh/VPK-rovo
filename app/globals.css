@@ -30,6 +30,39 @@
 
 @custom-variant dark (&:is(.dark *));
 
+:root {
+	--chart-1: var(--ds-chart-blue-bolder);
+	--chart-2: var(--ds-chart-green-bolder);
+	--chart-3: var(--ds-chart-purple-bolder);
+	--chart-4: var(--ds-chart-orange-bolder);
+	--chart-5: var(--ds-chart-teal-bolder);
+	--chart-background: var(--ds-surface);
+	--chart-foreground: var(--ds-text);
+	--chart-foreground-muted: var(--ds-text-subtle);
+	--chart-line-primary: var(--chart-1);
+	--chart-line-secondary: var(--chart-2);
+	--chart-crosshair: var(--ds-border-focused);
+	--chart-grid: var(--ds-border);
+	--chart-brush-border: var(--chart-grid);
+	--chart-tooltip-background: var(--ds-surface-overlay);
+	--chart-tooltip-foreground: var(--ds-text);
+	--chart-tooltip-muted: var(--ds-text-subtle);
+	--chart-marker-background: var(--ds-surface-raised);
+	--chart-marker-border: var(--ds-border);
+	--chart-marker-foreground: var(--ds-text);
+	--chart-marker-badge-background: var(--chart-marker-background);
+	--chart-marker-badge-foreground: var(--chart-marker-foreground);
+	--chart-ring-background: var(--ds-background-neutral);
+	--chart-label: var(--ds-text-subtle);
+	--chart-segment-background: var(--chart-grid);
+	--chart-segment-line: var(--chart-line-primary);
+	--legend: var(--ds-surface-overlay);
+	--legend-foreground: var(--ds-text);
+	--legend-muted: var(--ds-background-neutral);
+	--legend-muted-foreground: var(--ds-text-subtle);
+	--legend-track: var(--ds-background-neutral);
+}
+
 /* -----------------------------------------------------------------
    Font Fallback Metric Overrides (Finding 24 — CLS reduction)
 

@@ -53,6 +53,15 @@
 	--color-chart-6: var(--ds-chart-categorical-6); /* #964AC0 */
 	--color-chart-7: var(--ds-chart-categorical-7); /* #42B2D7 */
 	--color-chart-8: var(--ds-chart-categorical-8); /* #BD5B00 */
+	--color-chart-label: var(--chart-label);
+	--color-chart-tooltip-background: var(--chart-tooltip-background);
+	--color-chart-tooltip-foreground: var(--chart-tooltip-foreground);
+	--color-chart-tooltip-muted: var(--chart-tooltip-muted);
+	--color-legend: var(--legend);
+	--color-legend-foreground: var(--legend-foreground);
+	--color-legend-muted: var(--legend-muted);
+	--color-legend-muted-foreground: var(--legend-muted-foreground);
+	--color-legend-track: var(--legend-track);
 
 	/* -----------------------------------------------------------------
 	   Sidebar Colors
