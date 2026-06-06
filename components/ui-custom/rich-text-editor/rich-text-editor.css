@@ -330,8 +330,17 @@
 }
 
 .ProseMirror {
-	min-height: 200px;
 	outline: none;
+}
+
+/*
+ * The tall authoring min-height is for the document editor only. The chat
+ * composer reuses the same ProseMirror editor but must hug its content and be
+ * sized by its own `min-h-*` utilities (it carries `.prompt-input-composer`),
+ * so it is excluded here — otherwise the composer renders as a 200px-tall box.
+ */
+.ProseMirror:not(.prompt-input-composer) {
+	min-height: 200px;
 }
 
 .agent-instructions-tiptap-editor {

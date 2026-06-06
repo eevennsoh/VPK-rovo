@@ -51,47 +51,50 @@ export function FloatingComposer({
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [isMultiline, setIsMultiline] = useState(false);
 
-	// Detecting whether the textarea has wrapped to a second line can't be done in pure CSS
+	// Detecting whether the field has wrapped to a second line can't be done in pure CSS
 	// (`:has()`/container queries can't observe text wrapping), so we measure `scrollHeight`.
+	// The field is the core composer's ProseMirror contentEditable (no longer a <textarea>).
 	useEffect(() => {
 		const container = containerRef.current;
-		const textarea = container?.querySelector("textarea");
-		if (!container || !textarea) {
+		const field = container?.querySelector<HTMLElement>(
+			"textarea, [contenteditable='true']",
+		);
+		if (!container || !field) {
 			return;
 		}
 
 		const measure = () => {
-			const styles = window.getComputedStyle(textarea);
+			const styles = window.getComputedStyle(field);
 			const lineHeight = parseFloat(styles.lineHeight) || 20;
 			const verticalPadding =
 				(parseFloat(styles.paddingTop) || 0) +
 				(parseFloat(styles.paddingBottom) || 0);
-			const contentHeight = textarea.scrollHeight - verticalPadding;
+			const contentHeight = field.scrollHeight - verticalPadding;
 			// 1.5× line-height cleanly separates one line (≈1×) from two lines (≈2×).
 			setIsMultiline(contentHeight > lineHeight * 1.5);
 		};
 
 		measure();
 
-		// Observe the textarea itself so we catch *programmatic* value changes — gallery
-		// prefill, voice transcript streaming, paste, and clear all update the controlled
-		// React value without firing a DOM `input` event, so a typing-only listener misses
+		// Observe the field itself so we catch *programmatic* value changes — gallery
+		// prefill, voice transcript streaming, paste, and clear all update the editor
+		// without firing a DOM `input` event, so a typing-only listener misses
 		// them and the layout never stacks.
 		//
-		// The hazard is a feedback loop: stacking widens the textarea (it gains the button
+		// The hazard is a feedback loop: stacking widens the field (it gains the button
 		// row's width), which can un-wrap borderline content and flip the layout straight
 		// back. We break the loop by ignoring callbacks caused by our own width change and
 		// only re-measuring when the content height changes at a stable width.
-		let lastTextareaWidth = textarea.getBoundingClientRect().width;
-		const textareaObserver = new ResizeObserver((entries) => {
-			const width = entries[0]?.contentRect.width ?? lastTextareaWidth;
-			if (width !== lastTextareaWidth) {
-				lastTextareaWidth = width;
+		let lastFieldWidth = field.getBoundingClientRect().width;
+		const fieldObserver = new ResizeObserver((entries) => {
+			const width = entries[0]?.contentRect.width ?? lastFieldWidth;
+			if (width !== lastFieldWidth) {
+				lastFieldWidth = width;
 				return;
 			}
 			measure();
 		});
-		textareaObserver.observe(textarea);
+		fieldObserver.observe(field);
 
 		// React to real responsive width changes of the whole composer. The outer container's
 		// width is set by its parent and does not change when the internal layout reflows, so
@@ -103,15 +106,15 @@ export function FloatingComposer({
 				return;
 			}
 			lastWidth = width;
-			// The textarea width tracks the container here, so resync the baseline to keep the
-			// textarea observer from treating this genuine reflow as a content change next tick.
-			lastTextareaWidth = textarea.getBoundingClientRect().width;
+			// The field width tracks the container here, so resync the baseline to keep the
+			// field observer from treating this genuine reflow as a content change next tick.
+			lastFieldWidth = field.getBoundingClientRect().width;
 			measure();
 		});
 		containerObserver.observe(container);
 
 		return () => {
-			textareaObserver.disconnect();
+			fieldObserver.disconnect();
 			containerObserver.disconnect();
 		};
 	}, []);
