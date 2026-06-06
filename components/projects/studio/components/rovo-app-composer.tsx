@@ -18,7 +18,6 @@ import {
 import { composerTextareaClassName, floatingComposerTextareaClassName, textareaCSS } from "@/components/blocks/shared-ui/composer-styles";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { SkillTag, SkillTagGroup } from "@/components/ui-custom/skill-tag";
 import type { VoiceButtonState } from "@/components/ui-audio/voice-button";
 import ChatContextBar from "@/components/projects/sidebar-chat/components/chat-context-bar";
 import { ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS, ROVO_APP_STUDIO_COMPOSER_SESSION_MAX_WIDTH_CLASS } from "@/components/projects/studio/lib/rovo-app-shell-layout";
@@ -31,9 +30,8 @@ import AddIcon from "@atlaskit/icon/core/add";
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
 import CursorIcon from "@atlaskit/icon-lab/core/cursor";
 import DeleteIcon from "@atlaskit/icon/core/delete";
-import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { RovoAppPlanExecutionTracker } from "./rovo-app-plan-execution-tracker";
 import { RovoAppComposerResponseGradient } from "./rovo-app-composer-response-gradient";
 import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
@@ -45,8 +43,6 @@ import {
 	SVG_TRACE_TEMPLATES_LOOP_PRESET,
 	type SvgTraceConfig,
 } from "@/components/visual/svg-tracing/data";
-
-const HIDDEN_COMPOSER_SKILL_IDS = new Set(["vpk-html"]);
 
 const SCRATCH_SCRIBBLE_CONFIG: SvgTraceConfig = {
 	...DEFAULT_SVG_TRACE_CONFIG,
@@ -76,14 +72,8 @@ const REVEAL_HIDE_DELAY_MS = 400;
 const EMPTY_REALTIME_OUTPUT_WAVEFORM_BARS: number[] = [];
 const EMPTY_QUEUED_PROMPTS: ReadonlyArray<RovoAppQueuedAction> = [];
 
-const supportsFieldSizing =
-	typeof window !== "undefined" &&
-	typeof window.CSS?.supports === "function" &&
-	window.CSS.supports("field-sizing", "content");
-
 interface RovoAppComposerProps {
 	artifactTitle?: string | null;
-	availableHermesSkills?: ReadonlyArray<{ id: string; title: string; disabled: boolean }>;
 	autoFocus?: boolean;
 	backgroundArtifactLabel?: string | null;
 	composerStatus: ChatStatus;
@@ -100,7 +90,6 @@ interface RovoAppComposerProps {
 	onDismissArtifactContext?: () => void;
 	onRemoveQueuedPrompt?: (id: string) => void;
 	onSendQueuedPromptNow?: (id: string) => void;
-	onSelectHermesSkill?: (skillId: string) => void;
 	onBrowseTemplates?: () => void;
 	onStartFromScratch?: () => void;
 	onSubmit: (payload: { text: string; files: FileUIPart[] }) => Promise<void>;
@@ -127,17 +116,12 @@ interface RovoAppComposerProps {
 		micStream?: MediaStream | null;
 	}) => React.ReactNode;
 	showBackgroundStop?: boolean;
-	selectedHermesSkills?: ReadonlyArray<{ id: string; title: string }>;
-	onRemoveHermesSkill?: (skillId: string) => void;
 	submitDisabled?: boolean;
 	voiceState?: VoiceButtonState;
 }
 
-const EMPTY_AVAILABLE_SKILLS: ReadonlyArray<{ id: string; title: string; disabled: boolean }> = [];
-
 function RovoAppComposerInner({
 	artifactTitle,
-	availableHermesSkills = EMPTY_AVAILABLE_SKILLS,
 	autoFocus = true,
 	backgroundArtifactLabel,
 	composerStatus,
@@ -151,7 +135,6 @@ function RovoAppComposerInner({
 	onStop,
 	onRemoveQueuedPrompt,
 	onSendQueuedPromptNow,
-	onSelectHermesSkill,
 	onBrowseTemplates,
 	onStartFromScratch,
 	onSubmit,
@@ -167,13 +150,10 @@ function RovoAppComposerInner({
 	realtimeVoiceState = "idle",
 	renderResponseGradient,
 	showBackgroundStop = false,
-	selectedHermesSkills = [],
-	onRemoveHermesSkill,
 	submitDisabled = false,
 }: Readonly<RovoAppComposerProps>) {
 	const controller = usePromptInputController();
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-	const [highlightedIndex, setHighlightedIndex] = useState(0);
 	const [isInputFocused, setIsInputFocused] = useState(false);
 	const [isComposerHoverActive, setIsComposerHoverActive] = useState(false);
 	const [scratchScribbleReplayKey, setScratchScribbleReplayKey] = useState(0);
@@ -181,7 +161,6 @@ function RovoAppComposerInner({
 	const [isScratchScribblePlaying, setIsScratchScribblePlaying] = useState(false);
 	const revealHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const scratchScribbleDelayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const slashMenuRef = useRef<HTMLDivElement | null>(null);
 	const canSubmit = controller.textInput.value.trim().length > 0 || controller.attachments.files.length > 0;
 	const hasQueuedPrompts = queuedPrompts.length > 0;
 
@@ -254,23 +233,6 @@ function RovoAppComposerInner({
 		[onSubmit, submitDisabled],
 	);
 
-	const enabledHermesSkills = useMemo(
-		() => availableHermesSkills.filter((skill) => !skill.disabled),
-		[availableHermesSkills],
-	);
-	const slashMatch = onSelectHermesSkill && enabledHermesSkills.length > 0
-		? controller.textInput.value.match(/(^|\s)\/([\w-]*)$/)
-		: null;
-	const isSlashMenuOpen = slashMatch !== null;
-	const slashQuery = slashMatch?.[2] ?? "";
-	const filteredSlashSkills = slashQuery
-		? enabledHermesSkills.filter((skill) =>
-			skill.title.toLowerCase().includes(slashQuery.toLowerCase()),
-		)
-		: enabledHermesSkills;
-	const visibleSelectedHermesSkills = selectedHermesSkills.filter(
-		(skill) => !HIDDEN_COMPOSER_SKILL_IDS.has(skill.id),
-	);
 	const artifactContextBar = artifactTitle
 		? {
 				iconName: "artifact" as const,
@@ -280,114 +242,28 @@ function RovoAppComposerInner({
 			}
 		: null;
 
-	const handleSlashSelect = useCallback(
-		(skillId: string) => {
-			onSelectHermesSkill?.(skillId);
-			const text = controller.textInput.value;
-			const match = text.match(/(^|\s)\/[\w-]*$/);
-			if (match) {
-				const cleaned = text.slice(0, match.index! + (match[1] ? 1 : 0)).trimEnd();
-				controller.textInput.setInput(cleaned);
-			}
-			requestAnimationFrame(() => {
-				textareaRef.current?.focus();
-			});
-		},
-		[controller.textInput, onSelectHermesSkill],
-	);
-
-	const handleTextareaKeyDown = useCallback(
-		(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-			if (!isSlashMenuOpen || filteredSlashSkills.length === 0) return;
-
-			if (e.key === "ArrowDown") {
-				e.preventDefault();
-				setHighlightedIndex((prev) =>
-					prev < filteredSlashSkills.length - 1 ? prev + 1 : 0,
-				);
-				return;
-			}
-
-			if (e.key === "ArrowUp") {
-				e.preventDefault();
-				setHighlightedIndex((prev) =>
-					prev > 0 ? prev - 1 : filteredSlashSkills.length - 1,
-				);
-				return;
-			}
-
-			if (e.key === "Escape") {
-				e.preventDefault();
-				controller.textInput.setInput(
-					controller.textInput.value.replace(/(^|\s)\/[\w-]*$/, "$1").trimEnd(),
-				);
-				return;
-			}
-
-			if (e.key === "Enter") {
-				e.preventDefault();
-				handleSlashSelect(filteredSlashSkills[highlightedIndex].id);
-			}
-		},
-		[controller.textInput, filteredSlashSkills, handleSlashSelect, highlightedIndex, isSlashMenuOpen],
-	);
-
-	useEffect(() => {
-		if (!isSlashMenuOpen) return;
-		const container = slashMenuRef.current;
-		if (!container) return;
-		const items = container.querySelectorAll<HTMLButtonElement>("[data-slash-item]");
-		items[highlightedIndex]?.scrollIntoView({ block: "nearest" });
-	}, [highlightedIndex, isSlashMenuOpen]);
-
 	useEffect(() => {
 		if (typeof focusRequestKey !== "number" || focusRequestKey <= 0) {
 			return;
 		}
 
 		requestAnimationFrame(() => {
-			const el = textareaRef.current;
-			if (!el) return;
-			el.focus();
-			// Place the caret after the last character (e.g. when a template
-			// tile prefilled the input) instead of at the start.
-			const end = el.value.length;
-			el.setSelectionRange(end, end);
+			// The forwarded ref points at the core editor's contentEditable; focusing
+			// it lands the caret per the editor (autofocus="end"), so no manual caret
+			// placement is needed.
+			textareaRef.current?.focus();
 		});
 	}, [focusRequestKey]);
 
-	// Apply prefilled text from gallery click or voice transcript streaming
+	// Apply prefilled text from gallery click or voice transcript streaming.
+	// Routing through the controller lets the core editor sync the value into the
+	// contentEditable (via setComposerPlainText), which auto-grows on its own —
+	// no manual textarea height management is needed anymore.
 	const appliedPrefillRef = useRef<string | null>(null);
 	useEffect(() => {
 		if (prefillText && prefillText !== appliedPrefillRef.current) {
 			appliedPrefillRef.current = prefillText;
 			controller.textInput.setInput(prefillText);
-
-			if (supportsFieldSizing) {
-				requestAnimationFrame(() => {
-					const el = textareaRef.current;
-					if (!el) return;
-					el.style.height = "";
-					el.style.overflowY = "";
-				});
-				return;
-			}
-
-			// Ensure the textarea resizes to fit the prefilled content.
-			// Wait two frames so React commits the value to the DOM first.
-			requestAnimationFrame(() => {
-				requestAnimationFrame(() => {
-					const el = textareaRef.current;
-					if (!el) return;
-					el.style.height = "0px";
-					const styles = window.getComputedStyle(el);
-					const maxH = parseFloat(styles.maxHeight);
-					const maxHeight = Number.isFinite(maxH) ? maxH : 120;
-					const nextHeight = Math.min(maxHeight, el.scrollHeight);
-					el.style.height = `${nextHeight}px`;
-					el.style.overflowY = el.scrollHeight > nextHeight ? "auto" : "hidden";
-				});
-			});
 		} else if (prefillText === null && appliedPrefillRef.current !== null) {
 			// Voice transcript cleared (auto-sent) — clear the input
 			appliedPrefillRef.current = null;
@@ -477,24 +353,6 @@ function RovoAppComposerInner({
 
 				<ChatContextBar context={artifactContextBar} onDismiss={onDismissArtifactContext} />
 
-				{visibleSelectedHermesSkills.length > 0 ? (
-					<div className="mb-3 flex flex-wrap items-center gap-2">
-						<SkillTagGroup>
-							{visibleSelectedHermesSkills.map((skill) => (
-								<SkillTag
-									key={skill.id}
-									color="platform"
-									icon={<SkillIcon label="" size="small" />}
-									onRemove={onRemoveHermesSkill ? () => onRemoveHermesSkill(skill.id) : undefined}
-									removeButtonLabel={`Remove ${skill.title}`}
-								>
-									{skill.title}
-								</SkillTag>
-							))}
-						</SkillTagGroup>
-					</div>
-				) : null}
-
 				<div
 					className="relative z-10"
 					onMouseEnter={showReveal}
@@ -547,53 +405,11 @@ function RovoAppComposerInner({
 								setIsInputFocused(true);
 								replayRevealTraces();
 							}}
-							onInput={() => setHighlightedIndex(0)}
-							onKeyDown={handleTextareaKeyDown}
 							placeholder={placeholder}
 							rows={1}
 							suppressHydrationWarning
 						/>
 					</FloatingComposer>
-
-					<AnimatePresence>
-						{isSlashMenuOpen && filteredSlashSkills.length > 0 ? (
-							<motion.div
-								key="slash-menu"
-								ref={slashMenuRef}
-								role="listbox"
-								aria-label="Skills"
-								initial={{ opacity: 0, y: 8 }}
-								animate={{ opacity: 1, y: 0 }}
-								exit={{ opacity: 0, y: 8 }}
-								transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
-								className="absolute inset-x-0 bottom-full z-50 mb-2 overflow-hidden rounded-lg bg-surface-overlay shadow-xl"
-								style={{ willChange: "transform, opacity" }}
-							>
-								<div className="max-h-[170px] overflow-y-auto py-1">
-									{filteredSlashSkills.map((skill, index) => (
-										<button
-											key={skill.id}
-											type="button"
-											role="option"
-											aria-selected={index === highlightedIndex}
-											data-slash-item
-											className={cn(
-												"flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text transition-colors",
-												index === highlightedIndex
-													? "bg-bg-neutral-subtle-hovered"
-													: "hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
-											)}
-											onMouseEnter={() => setHighlightedIndex(index)}
-											onClick={() => handleSlashSelect(skill.id)}
-										>
-											<SkillIcon label="" size="small" />
-											<span className="min-w-0 truncate">{skill.title}</span>
-										</button>
-									))}
-								</div>
-							</motion.div>
-						) : null}
-					</AnimatePresence>
 
 					{onStartFromScratch ? (
 						<AnimatePresence>
