@@ -188,6 +188,53 @@ const UI_AUDIO_DEMO: Record<string, ComponentType> = {
   }),
 };
 
+const UI_CHARTS_DEMO: Record<string, ComponentType> = {
+  "area-chart": dynamic(() => import("./demos/ui-charts/area-chart-demo"), { ssr: false }),
+  "bar-chart": dynamic(() => import("./demos/ui-charts/bar-chart-demo"), { ssr: false }),
+  "candlestick-chart": dynamic(() => import("./demos/ui-charts/candlestick-chart-demo"), { ssr: false }),
+  "choropleth-chart": dynamic(() => import("./demos/ui-charts/choropleth-chart-demo"), { ssr: false }),
+  "composed-chart": dynamic(() => import("./demos/ui-charts/composed-chart-demo"), { ssr: false }),
+  "funnel-chart": dynamic(() => import("./demos/ui-charts/funnel-chart-demo"), { ssr: false }),
+  "gauge-chart": dynamic(() => import("./demos/ui-charts/gauge-chart-demo"), { ssr: false }),
+  "legend": dynamic(() => import("./demos/ui-charts/legend-demo"), { ssr: false }),
+  "line-chart": dynamic(() => import("./demos/ui-charts/line-chart-demo"), { ssr: false }),
+  "live-line-chart": dynamic(() => import("./demos/ui-charts/live-line-chart-demo"), { ssr: false }),
+  "pie-chart": dynamic(() => import("./demos/ui-charts/pie-chart-demo"), { ssr: false }),
+  "profit-loss-line": dynamic(() => import("./demos/ui-charts/profit-loss-line-demo"), { ssr: false }),
+  "radar-chart": dynamic(() => import("./demos/ui-charts/radar-chart-demo"), { ssr: false }),
+  "ring-chart": dynamic(() => import("./demos/ui-charts/ring-chart-demo"), { ssr: false }),
+  "sankey-chart": dynamic(() => import("./demos/ui-charts/sankey-chart-demo"), { ssr: false }),
+  "scatter-chart": dynamic(() => import("./demos/ui-charts/scatter-chart-demo"), { ssr: false }),
+  "stat-card-area-01": dynamic(() => import("./demos/ui-charts/stat-card-area-01-demo"), { ssr: false }),
+  "stat-card-choropleth-01": dynamic(() => import("./demos/ui-charts/stat-card-choropleth-01-demo"), { ssr: false }),
+  "stat-card-line-01": dynamic(() => import("./demos/ui-charts/stat-card-line-01-demo"), { ssr: false }),
+};
+
+const UI_CHARTS_VARIANT_DEMOS: Record<string, ComponentType> = {
+  "area-chart-demo-default": dynamic(() => import("./demos/ui-charts/area-chart-demo").then((mod) => ({ default: mod.AreaChartDemoDefault })), { ssr: false }),
+  "area-chart-demo-stacked": dynamic(() => import("./demos/ui-charts/area-chart-demo").then((mod) => ({ default: mod.AreaChartDemoStacked })), { ssr: false }),
+  "bar-chart-demo-default": dynamic(() => import("./demos/ui-charts/bar-chart-demo").then((mod) => ({ default: mod.BarChartDemoDefault })), { ssr: false }),
+  "bar-chart-demo-stacked": dynamic(() => import("./demos/ui-charts/bar-chart-demo").then((mod) => ({ default: mod.BarChartDemoStacked })), { ssr: false }),
+  "candlestick-chart-demo-default": dynamic(() => import("./demos/ui-charts/candlestick-chart-demo").then((mod) => ({ default: mod.CandlestickChartDemoDefault })), { ssr: false }),
+  "choropleth-chart-demo-default": dynamic(() => import("./demos/ui-charts/choropleth-chart-demo").then((mod) => ({ default: mod.ChoroplethChartDemoDefault })), { ssr: false }),
+  "composed-chart-demo-default": dynamic(() => import("./demos/ui-charts/composed-chart-demo").then((mod) => ({ default: mod.ComposedChartDemoDefault })), { ssr: false }),
+  "funnel-chart-demo-default": dynamic(() => import("./demos/ui-charts/funnel-chart-demo").then((mod) => ({ default: mod.FunnelChartDemoDefault })), { ssr: false }),
+  "gauge-chart-demo-default": dynamic(() => import("./demos/ui-charts/gauge-chart-demo").then((mod) => ({ default: mod.GaugeChartDemoDefault })), { ssr: false }),
+  "legend-demo-default": dynamic(() => import("./demos/ui-charts/legend-demo").then((mod) => ({ default: mod.LegendDemoDefault })), { ssr: false }),
+  "line-chart-demo-default": dynamic(() => import("./demos/ui-charts/line-chart-demo").then((mod) => ({ default: mod.LineChartDemoDefault })), { ssr: false }),
+  "line-chart-demo-multiple": dynamic(() => import("./demos/ui-charts/line-chart-demo").then((mod) => ({ default: mod.LineChartDemoMultiple })), { ssr: false }),
+  "live-line-chart-demo-default": dynamic(() => import("./demos/ui-charts/live-line-chart-demo").then((mod) => ({ default: mod.LiveLineChartDemoDefault })), { ssr: false }),
+  "pie-chart-demo-default": dynamic(() => import("./demos/ui-charts/pie-chart-demo").then((mod) => ({ default: mod.PieChartDemoDefault })), { ssr: false }),
+  "profit-loss-line-demo-default": dynamic(() => import("./demos/ui-charts/profit-loss-line-demo").then((mod) => ({ default: mod.ProfitLossLineDemoDefault })), { ssr: false }),
+  "radar-chart-demo-default": dynamic(() => import("./demos/ui-charts/radar-chart-demo").then((mod) => ({ default: mod.RadarChartDemoDefault })), { ssr: false }),
+  "ring-chart-demo-default": dynamic(() => import("./demos/ui-charts/ring-chart-demo").then((mod) => ({ default: mod.RingChartDemoDefault })), { ssr: false }),
+  "sankey-chart-demo-default": dynamic(() => import("./demos/ui-charts/sankey-chart-demo").then((mod) => ({ default: mod.SankeyChartDemoDefault })), { ssr: false }),
+  "scatter-chart-demo-default": dynamic(() => import("./demos/ui-charts/scatter-chart-demo").then((mod) => ({ default: mod.ScatterChartDemoDefault })), { ssr: false }),
+  "stat-card-area-01-demo-default": dynamic(() => import("./demos/ui-charts/stat-card-area-01-demo").then((mod) => ({ default: mod.StatCardArea01DemoDefault })), { ssr: false }),
+  "stat-card-choropleth-01-demo-default": dynamic(() => import("./demos/ui-charts/stat-card-choropleth-01-demo").then((mod) => ({ default: mod.StatCardChoropleth01DemoDefault })), { ssr: false }),
+  "stat-card-line-01-demo-default": dynamic(() => import("./demos/ui-charts/stat-card-line-01-demo").then((mod) => ({ default: mod.StatCardLine01DemoDefault })), { ssr: false }),
+};
+
 const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
 
   footer: dynamic(() => import("./demos/ui-custom/footer-demo"), { ssr: false }),
@@ -7981,6 +8028,7 @@ const CATEGORY_REGISTRIES: Record<string, Record<string, ComponentType>> = {
   arts: ARTS_DEMOS,
   blocks: BLOCK_DEMOS,
   "ui-audio": UI_AUDIO_DEMO,
+  "ui-charts": UI_CHARTS_DEMO,
   "ui-custom": UI_CUSTOM_DEMO,
   ui: UI_DEMO,
 };
@@ -7989,6 +8037,7 @@ export function getDemoComponent(
   slug: string,
   category:
     | "ui-audio"
+    | "ui-charts"
     | "ui-custom"
     | "ui"
     | "blocks"
@@ -8144,6 +8193,7 @@ const VARIANT_REGISTRIES: Record<string, Record<string, ComponentType>> = {
       { ssr: false },
     ),
   },
+  "ui-charts": UI_CHARTS_VARIANT_DEMOS,
   "ui-custom": UI_CUSTOM_VARIANT_DEMOS,
   blocks: BLOCK_VARIANT_DEMOS,
   ui: UI_VARIANT_DEMOS,
@@ -8153,6 +8203,7 @@ export function getVariantDemoComponent(
   slug: string,
   category:
     | "ui-audio"
+    | "ui-charts"
     | "ui-custom"
     | "ui"
     | "blocks"

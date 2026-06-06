@@ -9,6 +9,7 @@ function toTitleCase(slug: string): string {
 const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
 	ui: "UI",
 	"ui-audio": "UI-Audio",
+	"ui-charts": "UI — Charts",
 	"ui-custom": "UI-Custom",
 	blocks: "Blocks",
 	projects: "Projects",
