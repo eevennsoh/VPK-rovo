@@ -117,7 +117,7 @@ test("Subagents creation is routed through the compact control panel", () => {
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /h-7 rounded-full px-3|variant="outline"/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactSubagentsNavButton/u);
 	assert.match(AGENT_SOURCE, /Manage subagents/u);
-	assert.match(AGENT_SOURCE, /if \(item\.count === 0\)[\s\S]*onCreateSubagent/u);
+	assert.match(AGENT_SOURCE, /const isEmpty = item\.count === 0;[\s\S]*isEmpty \? \([\s\S]*onClick=\{onCreateSubagent\}[\s\S]*Add subagent/u);
 	assert.match(AGENT_SOURCE, /onSelectListItem\?\.\("subagents", index\)/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /function handleSelectConfigListItem/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /onManageSubagents=\{\(\) => setIsManageSubagentsOpen\(true\)\}/u);
