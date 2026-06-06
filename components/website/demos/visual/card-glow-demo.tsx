@@ -223,7 +223,7 @@ export function CardGlowBento({ config }: Readonly<{ config: CardGlowConfig }>) 
 			"circle at ",
 			"calc((var(--card-glow-pointer-x, -10) + 1) * 50%) ",
 			"calc((var(--card-glow-pointer-y, -10) + 1) * 50%), ",
-			"color-mix(in srgb, var(--card-glow-tile-accent) 78%, transparent) 0 calc(var(--card-glow-border-core) * 1px), ",
+			"var(--card-glow-tile-accent) 0 calc(var(--card-glow-border-core) * 1px), ",
 			"transparent calc(var(--card-glow-border-spread) * 1px)",
 			") border-box",
 		].join(""),
@@ -283,7 +283,7 @@ export function CardGlowBento({ config }: Readonly<{ config: CardGlowConfig }>) 
 					<button
 						aria-label={tile.title}
 						className={cn(
-							"group/card-glow relative isolate flex min-h-0 flex-col items-start gap-3 overflow-hidden rounded-lg p-4 text-left outline-none transition-[background-color,box-shadow,translate,scale,--card-glow-pointer-x,--card-glow-pointer-y] duration-fast ease-out focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px active:scale-[0.99]",
+							"group/card-glow relative isolate flex min-h-0 flex-col items-start gap-3 overflow-hidden rounded-lg p-4 text-left outline-none transition-[background-color,box-shadow,translate,scale] duration-fast ease-out focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px active:scale-[0.99]",
 							getCardThemeClassName(config.theme),
 							tile.layoutClassName,
 						)}

@@ -948,6 +948,9 @@ export function createSlashSuggestionRenderer(
 					}
 				: undefined,
 			onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
+			// Top-level "Ask Rovo" renders as the subtle input row (matching the
+			// editor palette); nested category/format submenus keep plain options.
+			renderFirstItemAsInput: !activeCategory,
 			selectedIndex,
 			title: activeCategory ? getSlashCategoryLabel(activeCategory) : "Commands",
 		});
@@ -1003,6 +1006,9 @@ export function createSlashSuggestionRenderer(
 					emptyLabel: "No commands found",
 					items: getVisibleItems(props.query),
 					onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
+					// Menus always open at the top level, where "Ask Rovo" renders
+					// as the subtle input row (matching the editor palette).
+					renderFirstItemAsInput: true,
 					selectedIndex,
 					title: "Commands",
 				},

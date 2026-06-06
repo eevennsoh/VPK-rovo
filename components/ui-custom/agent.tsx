@@ -33,11 +33,13 @@ import {
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
 import {
+	renderAgentTriggerProviderIcon,
 	serializeAgentTriggerLabels,
 	TriggerPicker,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/page";
 import { createAgentTriggerValue } from "@/components/blocks/triggers/data/trigger-catalog";
+import { UNTITLED_SUBAGENT_NAME } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
 import {
 	EDITOR_PALETTE_MENTION_SOURCES,
@@ -49,6 +51,14 @@ import { Accordion,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
@@ -162,7 +172,7 @@ function getAgentFilledSummaryAddLabel(field: AgentConfigListFieldName, isEmpty:
 function openAgentDirectoryOrAppendListItem(
 	directory: AgentDirectoryKind,
 	field: AgentConfigListFieldName,
-	onOpenDirectory?: (directory: AgentDirectoryKind) => void,
+	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void,
 	onAppendListItem?: (field: AgentConfigListFieldName) => void,
 ): void {
 	if (onOpenDirectory) {
@@ -1022,7 +1032,7 @@ type AgentCompactConfigNavItem = ReturnType<typeof getAgentCompactEmptyConfigNav
 function getAgentCompactConfigNavItemOnClick(
 	item: AgentCompactConfigNavItem,
 	onAppendListItem?: (field: AgentConfigListFieldName) => void,
-	onOpenDirectory?: (directory: AgentDirectoryKind) => void,
+	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void,
 	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void,
 ): (() => void) | undefined {
 	if (item.agentFieldName === "trigger") {
@@ -1161,7 +1171,7 @@ function AgentCompactEmptyConfigNav({
 	onManageSubagents?: () => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
-	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
+	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	reasoningValue: ReasoningModeValue;
 	onReasoningValueChange: (next: ReasoningModeValue) => void;
@@ -1605,12 +1615,14 @@ function AgentReferenceChip({
 	category,
 	elemBefore,
 	label,
+	onClick,
 	onRemove,
 	tagColor,
 }: Readonly<{
 	category?: RichTextReferenceCategory;
 	elemBefore?: ReactNode;
 	label: string;
+	onClick?: () => void;
 	onRemove?: () => void;
 	tagColor?: TagColor;
 }>) {
@@ -1633,6 +1645,7 @@ function AgentReferenceChip({
 		<Tag
 			color={resolvedTagColor}
 			elemBefore={resolvedElemBefore}
+			onClick={onClick}
 			onRemove={onRemove}
 			removeButtonLabel={`Remove ${label}`}
 			removeVariant="overlay"
@@ -1675,6 +1688,7 @@ interface AgentFilledSummaryRowProps {
 	hideWhenEmpty?: boolean;
 	itemElemBefore?: (item: string, index: number) => ReactNode;
 	onAdd?: () => void;
+	onItemClick?: (item: string, index: number) => void;
 	onRemoveItem?: (index: number) => void;
 	tagColor?: TagColor;
 }
@@ -1688,6 +1702,7 @@ function AgentFilledSummaryRow({
 	items,
 	label,
 	onAdd,
+	onItemClick,
 	onRemoveItem,
 	referenceCategory,
 	screenAssistantTargetId,
@@ -1725,6 +1740,7 @@ function AgentFilledSummaryRow({
 							elemBefore={itemElemBefore?.(item, index)}
 							key={`${label}-${item}-${index}`}
 							label={item}
+							onClick={onItemClick ? () => onItemClick(item, index) : undefined}
 							onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
 							tagColor={tagColor}
 						/>
@@ -1767,6 +1783,14 @@ interface AgentTriggerSummaryRowProps {
 	hideWhenEmpty?: boolean;
 	screenAssistantTargetId?: string;
 	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
+	/**
+	 * The structured definitions backing `items`. Required for inline removal —
+	 * a single chip is removed by splicing this array (the source of truth),
+	 * because `items` is a serialized, possibly-filtered projection whose indices
+	 * may not align with the definitions.
+	 */
+	triggerDefinitions?: readonly AgentTriggerValue[];
+	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
 }
 
 /**
@@ -1774,10 +1798,9 @@ interface AgentTriggerSummaryRowProps {
  * launches the rule-builder modal instead of inline editing:
  * - empty → the content area is the provider/event `TriggerPicker` dropdown;
  *   selecting an event seeds the modal with that one trigger;
- * - non-empty → the chips area is a button that opens the modal directly for
- *   editing the existing definitions.
- * Chips render statically (no `onRemove`) so they can live inside the button
- * trigger; removal happens inside the modal.
+ * - non-empty → each chip opens the modal on click and (when removal is wired)
+ *   carries an overlay remove control, matching the other summary rows so a
+ *   trigger can be removed inline without opening the modal.
  */
 function AgentTriggerSummaryRow({
 	items,
@@ -1785,8 +1808,24 @@ function AgentTriggerSummaryRow({
 	hideWhenEmpty = false,
 	screenAssistantTargetId,
 	onEditTriggers,
+	triggerDefinitions,
+	onTriggerDefinitionsChange,
 }: Readonly<AgentTriggerSummaryRowProps>) {
 	const isEmpty = items.length === 0;
+
+	// The structured definitions back the displayed chips one-to-one only when
+	// they are present and index-aligned with the serialized `items`. Both the
+	// provider icon and inline removal depend on this alignment (removal also
+	// needs a change handler).
+	const definitionsAlignItems =
+		triggerDefinitions !== undefined && triggerDefinitions.length === items.length;
+	const canRemoveInline = definitionsAlignItems && Boolean(onTriggerDefinitionsChange);
+	const handleRemoveTrigger = (index: number) => {
+		if (!triggerDefinitions) {
+			return;
+		}
+		onTriggerDefinitionsChange?.(triggerDefinitions.filter((_, i) => i !== index));
+	};
 
 	if (isEmpty && (hideWhenEmpty || !addLabel)) {
 		return null;
@@ -1812,20 +1851,35 @@ function AgentTriggerSummaryRow({
 						trigger={<AgentAddValueButton icon="add" label={addLabel ?? "Add"} />}
 					/>
 				) : (
-					<button
-						type="button"
-						aria-label="Edit triggers"
-						className="group/trigger-edit flex min-w-0 flex-1 flex-wrap items-center gap-1.5 rounded-xs text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-						onClick={() => onEditTriggers?.()}
-					>
-						{items.map((item, index) => (
-							<AgentReferenceChip key={`trigger-${item}-${index}`} label={item} />
-						))}
-						<span className="inline-flex h-5 shrink-0 items-center gap-1 text-xs font-medium text-text-subtlest opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-focus-visible/trigger-edit:opacity-100">
-							<EditIcon label="" size="small" />
-							<span className="group-hover/trigger-edit:underline">Edit</span>
-						</span>
-					</button>
+					<div className="group/trigger-edit flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+						{items.map((item, index) => {
+							// Show the provider's own logo/icon — identical to the trigger
+							// picker and rows — whenever the structured definition that backs
+							// this chip is available and index-aligned with `items`. Falls
+							// back to the chip's default icon for legacy label-only triggers.
+							const definition = definitionsAlignItems ? triggerDefinitions?.[index] : undefined;
+							const elemBefore = definition ? renderAgentTriggerProviderIcon(definition) : undefined;
+							return (
+								<AgentReferenceChip
+									key={`trigger-${item}-${index}`}
+									elemBefore={elemBefore ?? undefined}
+									label={item}
+									onClick={onEditTriggers ? () => onEditTriggers() : undefined}
+									onRemove={canRemoveInline ? () => handleRemoveTrigger(index) : undefined}
+								/>
+							);
+						})}
+						{onEditTriggers ? (
+							<button
+								type="button"
+								className="inline-flex h-5 shrink-0 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest opacity-0 transition-opacity group-hover/agent-row:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+								onClick={() => onEditTriggers()}
+							>
+								<EditIcon label="" size="small" />
+								<span className="group-hover/trigger-edit:underline">Edit</span>
+							</button>
+						) : null}
+					</div>
 				)}
 			</div>
 		</div>
@@ -1841,7 +1895,7 @@ interface AgentFilledConfigSummaryProps {
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
 	onKnowledgeModeChange?: (next: KnowledgeModeValue) => void;
-	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
+	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
@@ -1859,6 +1913,7 @@ function AgentFilledConfigSummary({
 	onKnowledgeModeChange,
 	onOpenDirectory,
 	onRemoveListItem,
+	onTriggerDefinitionsChange,
 	screenAssistantTargetPrefix,
 	showAddButtons = true,
 }: Readonly<AgentFilledConfigSummaryProps>) {
@@ -1890,7 +1945,9 @@ function AgentFilledConfigSummary({
 					hideWhenEmpty={hideEmptyRows}
 					items={triggerItems}
 					onEditTriggers={onEditTriggers}
+					onTriggerDefinitionsChange={onTriggerDefinitionsChange}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
+					triggerDefinitions={config.triggerDefinitions}
 				/>
 			),
 		},
@@ -1933,6 +1990,8 @@ function AgentFilledConfigSummary({
 					items={toolItems}
 					label="Tools"
 					onAdd={() => openAgentDirectoryOrAppendListItem("tools", "tools", onOpenDirectory, onAppendListItem)}
+					// Clicking a tool chip opens the tools directory focused on that tool.
+					onItemClick={onOpenDirectory ? (item) => onOpenDirectory("tools", item) : undefined}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("tools", index) : undefined}
 					referenceCategory="tool"
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
@@ -2723,6 +2782,20 @@ interface AgentConfigProfileProps {
 	avatarSrc?: string;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	screenAssistantTargetPrefix?: string;
+	// Subagent editing context. When `isSubagent` is true the profile header
+	// renders a breadcrumb (base agent → subagent) above the name, and the big
+	// editable title becomes the subagent's name (placeholder "Untitled
+	// subagent") wired to `onSubagentNameChange` instead of the base config name.
+	isSubagent?: boolean;
+	baseAgentName?: string;
+	subagentName?: string;
+	onSelectBaseAgent?: () => void;
+	onSubagentNameChange?: (value: string) => void;
+	// While editing a subagent the description slot becomes the trigger
+	// condition ("Describe the situation that should trigger this subagent"),
+	// bound to the subagent's condition rather than the base agent description.
+	subagentCondition?: string;
+	onSubagentConditionChange?: (value: string) => void;
 }
 
 function AgentConfigProfile({
@@ -2730,44 +2803,71 @@ function AgentConfigProfile({
 	avatarSrc,
 	onTextChange,
 	screenAssistantTargetPrefix,
+	isSubagent = false,
+	baseAgentName,
+	subagentName,
+	onSelectBaseAgent,
+	onSubagentNameChange,
+	subagentCondition,
+	onSubagentConditionChange,
 }: Readonly<AgentConfigProfileProps>) {
+	const resolvedBaseAgentName = baseAgentName?.trim() || "Untitled agent";
+	const resolvedSubagentName = subagentName?.trim() || UNTITLED_SUBAGENT_NAME;
 	return (
 		<section
 			className="flex flex-col gap-4"
 			data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:profile` : undefined}
 		>
 			<AgentProfileCover avatarSrc={avatarSrc} />
+			{isSubagent ? (
+				<Breadcrumb data-agent-field="subagent-breadcrumb">
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink
+								render={<button type="button" />}
+								onClick={onSelectBaseAgent}
+							>
+								{resolvedBaseAgentName}
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator />
+						<BreadcrumbItem>
+							<BreadcrumbPage>{resolvedSubagentName}</BreadcrumbPage>
+						</BreadcrumbItem>
+					</BreadcrumbList>
+				</Breadcrumb>
+			) : null}
 			<div
 				className="flex flex-col gap-1"
 				data-agent-field="name"
 				data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:name` : undefined}
 			>
 				<InlineEdit
-					value={config.name ?? ""}
-					placeholder="Untitled agent"
-					editButtonLabel="Edit agent name"
+					value={isSubagent ? subagentName ?? "" : config.name ?? ""}
+					placeholder={isSubagent ? UNTITLED_SUBAGENT_NAME : "Untitled agent"}
+					editButtonLabel={isSubagent ? "Edit subagent name" : "Edit agent name"}
 					readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"
 					readViewMotionProps={AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS}
 					readViewBackdropClassName="-inset-0.5 bg-bg-neutral-subtle-hovered"
 					readViewBackdropMotionProps={AGENT_PROFILE_INLINE_EDIT_BACKDROP_MOTION_PROPS}
 					inputProps={{ className: "h-auto border-2 px-1.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" }}
-					onConfirm={(value) => onTextChange?.("name", value)}
+					onConfirm={(value) => (isSubagent ? onSubagentNameChange?.(value) : onTextChange?.("name", value))}
 				/>
 				<div
-					data-agent-field="description"
-					data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:description` : undefined}
+					data-agent-field={isSubagent ? "condition" : "description"}
+					data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:${isSubagent ? "condition" : "description"}` : undefined}
 				>
 					<InlineEdit
-						value={config.description ?? config.summary ?? ""}
-						placeholder="Add a description"
-						editButtonLabel="Edit agent description"
+						value={isSubagent ? subagentCondition ?? "" : config.description ?? config.summary ?? ""}
+						placeholder={isSubagent ? "Describe the situation that should trigger this subagent" : "Add a description"}
+						editButtonLabel={isSubagent ? "Edit subagent trigger condition" : "Edit agent description"}
 						multiline
 						readViewClassName="relative overflow-visible border-2 bg-transparent px-0 hover:bg-transparent active:bg-transparent focus-visible:bg-transparent"
 						readViewMotionProps={AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS}
 						readViewBackdropClassName="-inset-0.5 bg-bg-neutral-subtle-hovered"
 						readViewBackdropMotionProps={AGENT_PROFILE_INLINE_EDIT_BACKDROP_MOTION_PROPS}
 						textareaProps={{ rows: 1, className: "min-h-10 border-2 bg-bg-neutral-subtle px-1.5 focus:border-ring focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-[variant=default]:border-transparent data-[variant=default]:focus:border-ring data-[variant=default]:focus-visible:border-ring" }}
-						onConfirm={(value) => onTextChange?.("description", value)}
+						onConfirm={(value) => (isSubagent ? onSubagentConditionChange?.(value) : onTextChange?.("description", value))}
 					/>
 				</div>
 			</div>
@@ -2782,7 +2882,7 @@ interface AgentCompactConfigToolbarBelowProps {
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
 	onManageSubagents?: () => void;
-	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
+	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
@@ -2964,12 +3064,22 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
-	onOpenDirectory?: (directory: AgentDirectoryKind) => void;
+	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
 	profileAvatarSrc?: string;
 	profileConfig?: AgentConfigFormValue;
 	screenAssistantTargetPrefix?: string;
 	selectedListItemIndexByField?: Partial<Record<AgentConfigListFieldName, number>>;
+	// Subagent editing context, forwarded to the profile header so it can render
+	// the base-agent → subagent breadcrumb, edit the subagent's name, and treat
+	// the description slot as the subagent's trigger condition.
+	isSubagent?: boolean;
+	baseAgentName?: string;
+	subagentName?: string;
+	onSelectBaseAgent?: () => void;
+	onSubagentNameChange?: (value: string) => void;
+	subagentCondition?: string;
+	onSubagentConditionChange?: (value: string) => void;
 }
 
 export const AgentConfigFields = memo(
@@ -2996,6 +3106,13 @@ export const AgentConfigFields = memo(
 		profileConfig,
 		screenAssistantTargetPrefix,
 		selectedListItemIndexByField,
+		isSubagent,
+		baseAgentName,
+		subagentName,
+		onSelectBaseAgent,
+		onSubagentNameChange,
+		subagentCondition,
+		onSubagentConditionChange,
 		...props
 	}: Readonly<AgentConfigFieldsProps>) => {
 		const isFilledConfig = hasFilledAgentConfig(config);
@@ -3062,9 +3179,9 @@ export const AgentConfigFields = memo(
 			dismissTemplateTiles();
 			onSelectListItem?.(field, index);
 		}, [dismissTemplateTiles, onSelectListItem]);
-		const handleOpenDirectory = useCallback((directory: AgentDirectoryKind) => {
+		const handleOpenDirectory = useCallback((directory: AgentDirectoryKind, selectedItem?: string) => {
 			dismissTemplateTiles();
-			onOpenDirectory?.(directory);
+			onOpenDirectory?.(directory, selectedItem);
 		}, [dismissTemplateTiles, onOpenDirectory]);
 		// Trigger authoring routes through the rule-builder modal hosted here so a
 		// single dialog instance serves every entry point (summary row, collapsed
@@ -3111,6 +3228,13 @@ export const AgentConfigFields = memo(
 								avatarSrc={profileAvatarSrc ?? avatarSrc}
 								onTextChange={handleProfileTextChange}
 								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+								isSubagent={isSubagent}
+								baseAgentName={baseAgentName}
+								subagentName={subagentName}
+								onSelectBaseAgent={onSelectBaseAgent}
+								onSubagentNameChange={onSubagentNameChange}
+								subagentCondition={subagentCondition}
+								onSubagentConditionChange={onSubagentConditionChange}
 							/>
 						</div>
 						<AgentInstructionsComposer

@@ -1,5 +1,5 @@
 import type { ReasoningPhase } from "@/components/projects/shared/hooks/use-reasoning-phase";
-import { getDefaultThinkingLabel, REASONING_LABELS } from "@/components/projects/shared/lib/reasoning-labels";
+import { getCyclingWorkingLabel, getDefaultThinkingLabel } from "@/components/projects/shared/lib/reasoning-labels";
 
 interface ResolveThinkingLabelForSurfaceOptions {
 	baseLabel: string;
@@ -19,8 +19,10 @@ const GENERIC_THINKING_LABELS = new Set([
  * step label is identical to the collapsed header, producing a repetitive
  * "Saving agent profile" / "Saving agent profile" parent-child echo. Mapping
  * them to a generic working header keeps the parent general while the per-step
- * rows keep their specific names. Other specific labels (e.g. "Generating
- * image", "Inspecting files") are intentionally preserved.
+ * rows keep their specific names. The generic header still cycles through a
+ * pool of working synonyms (keyed off the step) so it never sits stale on a
+ * single persistent word as the flow advances. Other specific labels (e.g.
+ * "Generating image", "Inspecting files") are intentionally preserved.
  */
 const STEP_SPECIFIC_HEADER_LABELS = new Set([
 	"reading agent brief",
@@ -51,7 +53,7 @@ export function resolveThinkingLabelForSurface({
 	}
 
 	if (STEP_SPECIFIC_HEADER_LABELS.has(normalized)) {
-		return REASONING_LABELS.trigger.working;
+		return getCyclingWorkingLabel(normalized);
 	}
 
 	return trimmedLabel;

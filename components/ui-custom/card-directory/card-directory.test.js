@@ -60,6 +60,21 @@ test("shell uses a dedicated overlay <button> for selection, not a role=button w
 	assert.match(SHELL_SOURCE, /has-\[\[data-slot=card-directory-select\]:focus-visible\]:ring-3/u);
 });
 
+test("inert card content lets clicks fall through to the select button", () => {
+	// Regression: the content wrapper sits at z-10 above the z-0 select button, so
+	// clicks on inert text/logo (most of the card surface) were swallowed and never
+	// reached the overlay button — selection felt unreliable and required repeated
+	// clicks. Inert content is now pointer-events-none so clicks fall through, while
+	// genuinely interactive descendants (menus, links, form controls) re-enable
+	// pointer events so they stay clickable.
+	assert.match(SHELL_SOURCE, /\[&>\*\]:pointer-events-none/u);
+	assert.match(SHELL_SOURCE, /\[&_button\]:pointer-events-auto/u);
+	assert.match(SHELL_SOURCE, /\[&_a\]:pointer-events-auto/u);
+	assert.match(SHELL_SOURCE, /\[&_\[role=button\]\]:pointer-events-auto/u);
+	assert.match(SHELL_SOURCE, /\[&_\[role=menuitem\]\]:pointer-events-auto/u);
+	assert.match(SHELL_SOURCE, /\[&_input\]:pointer-events-auto/u);
+});
+
 test("interaction hook derives interactivity from onSelect and drops manual key handling", () => {
 	assert.match(INTERACTION_SOURCE, /const interactive = Boolean\(onSelect\)/u);
 	assert.match(INTERACTION_SOURCE, /useReducedMotion\(\)/u);

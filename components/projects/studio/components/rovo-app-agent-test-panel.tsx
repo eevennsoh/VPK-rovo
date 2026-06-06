@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, type ReactElement } from "react";
+import { useEffect, useMemo, useState, type ReactElement } from "react";
 
 import { RovoChatProvider, useRovoChat, type StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
 import {
@@ -8,8 +8,11 @@ import {
 	getStarterIcon,
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
+import Triggers from "@/components/blocks/triggers/page";
+import type { AgentTriggerValue } from "@/components/blocks/triggers/data/trigger-catalog";
 import ChatPanel from "@/components/projects/sidebar-chat/page";
 import type { RovoAgentProfile } from "@/components/projects/rovo/data/agent-profiles";
+import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
 import { cn } from "@/lib/utils";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
@@ -204,16 +207,39 @@ export function AgentTestTriggerView({
 }: Readonly<{
 	entry: StudioSessionAgentEntry;
 }>): ReactElement {
-	const trigger = entry.publishReadyResult.trigger?.trim();
+	const triggerDefinitions = useMemo<readonly AgentTriggerValue[]>(
+		() => entry.publishReadyResult.triggerDefinitions ?? [],
+		[entry.publishReadyResult.triggerDefinitions],
+	);
+	const [isDialogOpen, setIsDialogOpen] = useState(false);
 
 	return (
-		<div className="flex min-h-[220px] items-center justify-center p-6 text-center">
-			<div className="max-w-[320px] space-y-2">
-				<h3 className="text-sm font-semibold text-text">Trigger</h3>
-				<p className="text-sm leading-6 text-text-subtle">
-					{trigger || "Manual test run"}
-				</p>
+		<div className="flex min-h-[220px] items-start justify-center p-6">
+			<div className="w-full max-w-[48rem]">
+				{/*
+				 * Test mode mirrors the publish-ready snapshot, so the trigger
+				 * card is a read-only preview: clicking anywhere on it opens the
+				 * trigger modal. A transparent overlay button captures the click
+				 * while the configured `<Triggers>` card renders underneath.
+				 */}
+				<div className="relative">
+					<Triggers triggers={triggerDefinitions} />
+					<button
+						type="button"
+						aria-label="View triggers"
+						className="absolute inset-0 size-full cursor-pointer rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focused"
+						onClick={() => setIsDialogOpen(true)}
+					/>
+				</div>
 			</div>
+			<AgentTriggersDialog
+				open={isDialogOpen}
+				onOpenChange={setIsDialogOpen}
+				triggerDefinitions={triggerDefinitions}
+				// Read-only preview: discard edits so the published snapshot stays
+				// the source of truth.
+				onSave={() => setIsDialogOpen(false)}
+			/>
 		</div>
 	);
 }

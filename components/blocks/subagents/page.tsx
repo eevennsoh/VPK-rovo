@@ -10,7 +10,6 @@ import {
 	AgentContent,
 } from "@/components/ui-custom/agent";
 import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
-import { SubagentPromptFields } from "@/components/blocks/subagents/components/subagent-prompt-fields";
 import { ManageSubagentsDialog } from "@/components/blocks/subagents/components/manage-subagents-dialog";
 import {
 	cloneConfig,
@@ -257,6 +256,7 @@ export default function Subagents({
 				baseAgent={baseAgent}
 				className="absolute right-4 top-[42%] z-20 hidden md:block"
 				onCreateSubagent={handleCreateSubagent}
+				onDeleteSubagent={handleDeleteSubagent}
 				onManageSubagents={() => setIsManageSubagentsOpen(true)}
 				onSelectBaseAgent={handleSelectBaseAgent}
 				onSelectSubagent={handleSelectSubagent}
@@ -267,17 +267,15 @@ export default function Subagents({
 					<AgentContent className="flex min-h-0 flex-1 flex-col">
 						<AgentConfigFields
 							avatarSrc={baseAgent.avatarSrc}
+							baseAgentName={baseConfig.name}
 							className="min-h-0 flex-1"
-							compactFooterBefore={activePrompt ? (
-								<SubagentPromptFields
-									condition={activePrompt.condition}
-									idPrefix={`subagents-${activePrompt.id}`}
-									onConditionChange={handleConditionChange}
-									onTriggerNameChange={handleTriggerNameChange}
-									triggerName={activePrompt.triggerName}
-								/>
-							) : null}
 							config={activeConfig}
+							isSubagent={Boolean(activePrompt)}
+							onSelectBaseAgent={handleSelectBaseAgent}
+							onSubagentNameChange={handleTriggerNameChange}
+							subagentName={activePrompt?.triggerName}
+							subagentCondition={activePrompt?.condition}
+							onSubagentConditionChange={handleConditionChange}
 							idPrefix={`subagents-${activeConfigId}`}
 							onAppendListItem={handleAppendListItem}
 							onListItemChange={handleListItemChange}

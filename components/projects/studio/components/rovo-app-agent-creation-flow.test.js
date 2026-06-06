@@ -625,11 +625,16 @@ test("Studio agent config panel wires the subagents experience into AgentConfigF
 	// AgentConfigFields (in-panel nav button for managing the subagents list).
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /profileConfig=\{baseConfig\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onProfileTextChange=\{handleBaseTextChange\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onManageSubagents=\{createSubagent\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onManageSubagents=\{\(\) => setIsManageSubagentsOpen\(true\)\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onSelectListItem=\{handleSelectListItem\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /selectedListItemIndexByField=\{\{ subagents: selectedSubagentIndex \}\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /compactFooterBefore=\{activePrompt \?/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<SubagentPromptFields[\s\S]*onConditionChange=\{handleConditionChange\}[\s\S]*onTriggerNameChange=\{handleTriggerNameChange\}/u);
+	// The subagent name + trigger condition are edited in the profile header now
+	// (the old lower SubagentPromptFields rows were removed to avoid duplication).
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /SubagentPromptFields/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /subagentName=\{activePrompt\?\.triggerName\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onSubagentNameChange=\{handleTriggerNameChange\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /subagentCondition=\{activePrompt\?\.condition\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onSubagentConditionChange=\{handleConditionChange\}/u);
 	// The floating SubagentsNavigator is also rendered so users can quickly swap
 	// between the base agent and its subagents (self-hides when there are none).
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ SubagentsNavigator \} from "@\/components\/blocks\/subagents\/subagents-navigator";/u);

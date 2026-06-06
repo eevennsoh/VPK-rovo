@@ -2,8 +2,9 @@
 
 import { useId, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
-import { PlusIcon, SettingsIcon } from "@/components/ui/vpk-icons";
+import { DeleteIcon, PlusIcon, SettingsIcon } from "@/components/ui/vpk-icons";
 import type { SubagentPrompt, SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
+import { getSubagentDisplayName } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +13,7 @@ interface SubagentsNavigatorProps {
 	baseAgent: SubagentsBaseAgent;
 	className?: string;
 	onCreateSubagent: () => void;
+	onDeleteSubagent?: (id: string) => void;
 	onManageSubagents?: () => void;
 	onSelectBaseAgent: () => void;
 	onSelectSubagent: (id: string) => void;
@@ -40,15 +42,12 @@ function getBaseAgentDisplayName(baseAgent: SubagentsBaseAgent): string {
 	return baseAgent.config.name?.trim() || "Untitled agent";
 }
 
-function getSubagentDisplayName(prompt: SubagentPrompt): string {
-	return prompt.triggerName.trim() || "Untitled trigger";
-}
-
 export function SubagentsNavigator({
 	activeSubagentId,
 	baseAgent,
 	className,
 	onCreateSubagent,
+	onDeleteSubagent,
 	onManageSubagents,
 	onSelectBaseAgent,
 	onSelectSubagent,
@@ -203,6 +202,7 @@ export function SubagentsNavigator({
 									isActive={prompt.id === activeSubagentId}
 									key={prompt.id}
 									label={getSubagentDisplayName(prompt)}
+									onDelete={onDeleteSubagent ? () => onDeleteSubagent(prompt.id) : undefined}
 									onSelect={() => onSelectSubagent(prompt.id)}
 								/>
 							))}
@@ -253,28 +253,43 @@ function SubagentsActionButton({
 function SubagentsSwitcherButton({
 	isActive,
 	label,
+	onDelete,
 	onSelect,
 }: Readonly<{
 	isActive: boolean;
 	label: string;
+	onDelete?: () => void;
 	onSelect: () => void;
 }>) {
 	return (
-		<button
-			type="button"
-			aria-label={`Select ${label}`}
-			aria-pressed={isActive}
-			className={cn(
-				"flex h-9 w-full min-w-0 items-center rounded-lg p-2 text-left transition-colors duration-normal ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected",
-				isActive
-					? "bg-bg-selected text-text-selected"
-					: "bg-transparent text-text-subtle hover:bg-surface-hovered hover:text-text",
-			)}
-			onClick={onSelect}
-		>
-			<span className="w-full truncate text-sm font-semibold leading-5">
-				{label}
-			</span>
-		</button>
+		<div className="group/switcher-row relative">
+			<button
+				type="button"
+				aria-label={`Select ${label}`}
+				aria-pressed={isActive}
+				className={cn(
+					"flex h-9 w-full min-w-0 items-center rounded-lg p-2 text-left transition-colors duration-normal ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected",
+					isActive
+						? "bg-bg-selected text-text-selected"
+						: "bg-transparent text-text-subtle hover:bg-surface-hovered hover:text-text",
+					onDelete && "pr-9",
+				)}
+				onClick={onSelect}
+			>
+				<span className="w-full truncate text-sm font-semibold leading-5">
+					{label}
+				</span>
+			</button>
+			{onDelete ? (
+				<button
+					type="button"
+					aria-label={`Delete ${label}`}
+					className="absolute right-1 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-text-subtlest opacity-0 transition-[colors,opacity] duration-normal hover:bg-bg-danger-hovered hover:text-text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected group-hover/switcher-row:opacity-100"
+					onClick={onDelete}
+				>
+					<DeleteIcon size="small" />
+				</button>
+			) : null}
+		</div>
 	);
 }

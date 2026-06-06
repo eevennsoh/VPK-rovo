@@ -93,6 +93,20 @@ function renderTriggerProviderIcon(
 	}
 }
 
+/**
+ * Provider icon element for a configured trigger value, identical to the icon
+ * the picker and trigger rows render. Exported so summary chips elsewhere (e.g.
+ * the agent config trigger row) can show the exact same provider logo instead
+ * of a generic fallback. Returns `null` for an unknown provider id.
+ */
+export function renderAgentTriggerProviderIcon(trigger: AgentTriggerValue): ReactElement | null {
+	const provider = getTriggerProvider(trigger.providerId);
+	if (!provider) {
+		return null;
+	}
+	return renderTriggerProviderIcon(provider.icon, provider.label);
+}
+
 function getInitialTriggers({
 	defaultTriggers,
 	hasTrigger,
@@ -218,8 +232,32 @@ export function TriggerPicker({
 		[onSelectEvent],
 	);
 
+	const handleOpenChange = useCallback(
+		(nextOpen: boolean, eventDetails: { reason?: string }) => {
+			// Hovering a provider submenu trigger opens that submenu, which Base UI
+			// reports against the controlled root as a `sibling-open` close —
+			// collapsing the whole picker before the user can reach a submenu item.
+			// Blurring the in-menu search input similarly reports `focus-out`.
+			// Ignore both so the picker stays open during normal pointer
+			// interaction; all explicit closes (item press, escape, outside press,
+			// trigger press) still pass through.
+			if (
+				!nextOpen &&
+				(eventDetails.reason === "sibling-open" ||
+					eventDetails.reason === "focus-out")
+			) {
+				return;
+			}
+			setOpen(nextOpen);
+			if (!nextOpen) {
+				setQuery("");
+			}
+		},
+		[],
+	);
+
 	return (
-		<DropdownMenu open={open} onOpenChange={setOpen}>
+		<DropdownMenu open={open} onOpenChange={handleOpenChange}>
 			<DropdownMenuTrigger render={trigger ?? <TriggerAddRow label={label} />} />
 			<DropdownMenuContent
 				align="start"

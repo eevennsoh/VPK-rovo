@@ -91,6 +91,11 @@ test("Card Glow tracks pointer position from each tile center", () => {
 	assert.match(DEMO_SOURCE, /--card-glow-pointer-x", normalizedX\.toFixed\(3\)/);
 	assert.match(DEMO_SOURCE, /--card-glow-pointer-y", normalizedY\.toFixed\(3\)/);
 	assert.match(DEMO_SOURCE, /resetTilePointer/);
+	// Jank regression: never CSS-transition the per-frame pointer variables.
+	// Interpolating --card-glow-pointer-x/y forces the radial-gradient (and the
+	// backdrop-filtered ring that reads it) to re-paint every frame between moves,
+	// which is what made the demo janky vs the snap-to-pointer Studio landing.
+	assert.doesNotMatch(DEMO_SOURCE, /transition-\[[^\]]*--card-glow-pointer/);
 });
 
 test("Card Glow duplicates avatars for the glow and renders a masked border ring", () => {
@@ -105,7 +110,10 @@ test("Card Glow duplicates avatars for the glow and renders a masked border ring
 	assert.match(DEMO_SOURCE, /const borderGlowStyle: CSSProperties = \{/);
 	assert.match(DEMO_SOURCE, /backdropFilter: borderFilter/);
 	assert.match(DEMO_SOURCE, /circle at /);
-	assert.match(DEMO_SOURCE, /var\(--card-glow-tile-accent\) 78%/);
+	assert.match(DEMO_SOURCE, /var\(--card-glow-tile-accent\) 0 calc\(var\(--card-glow-border-core\) \* 1px\)/);
+	// Jank regression: the gradient stop uses the accent directly (like Studio),
+	// not a per-frame color-mix() that re-evaluates as the gradient repaints.
+	assert.doesNotMatch(DEMO_SOURCE, /color-mix/);
 	assert.match(DEMO_SOURCE, /"--card-glow-border-spread": config\.borderSpread/);
 	assert.match(DEMO_SOURCE, /"--card-glow-border-core": Math\.max\(1, config\.borderSpread \* 0\.3\)/);
 	assert.match(DEMO_SOURCE, /transparent calc\(var\(--card-glow-border-spread\) \* 1px\)/);

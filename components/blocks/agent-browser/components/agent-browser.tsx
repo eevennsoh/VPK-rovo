@@ -76,6 +76,8 @@ export interface AgentBrowserProps {
 	templateCategories?: readonly AgentTemplatesCategory[];
 	templateAgents?: readonly AgentTemplatesAgent[];
 	sidebarGroups?: readonly AgentBrowserSidebarGroup[];
+	/** Template category selected when the browser first mounts (e.g. open straight onto "Planning"). */
+	initialTemplateCategory?: AgentTemplatesCategoryId | null;
 	onSelectAgent?: (agent: AgentBrowserAgent) => void;
 	onSelectTemplateAgent?: (agent: AgentTemplatesAgent) => void;
 }
@@ -319,12 +321,13 @@ export function AgentBrowser({
 	templateCategories = DEFAULT_TEMPLATE_CATEGORIES,
 	templateAgents = EMPTY_TEMPLATE_AGENTS,
 	sidebarGroups = [],
+	initialTemplateCategory = null,
 	onSelectAgent,
 	onSelectTemplateAgent,
 }: Readonly<AgentBrowserProps>) {
 	const initialCategory = categories[0]?.id ?? "all";
 	const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
-	const [activeTemplateCategory, setActiveTemplateCategory] = useState<AgentTemplatesCategoryId | null>(null);
+	const [activeTemplateCategory, setActiveTemplateCategory] = useState<AgentTemplatesCategoryId | null>(initialTemplateCategory);
 	const [templateMotionDirection, setTemplateMotionDirection] = useState<AgentBrowserTemplateMotionDirection>(1);
 	const [query, setQuery] = useState("");
 	const shouldReduceMotion = useReducedMotion() ?? false;
@@ -381,29 +384,31 @@ export function AgentBrowser({
 					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
 				)}
 			>
-				<InputGroup>
-					<InputGroupAddon>
-						<SearchIcon label="" />
-					</InputGroupAddon>
-					<InputGroupInput
-						aria-label="Search agents"
-						placeholder="Search agents"
-						value={query}
-						onChange={(event) => setQuery(event.target.value)}
-					/>
-				</InputGroup>
+				{activeTemplateCategoryOption ? null : (
+					<InputGroup>
+						<InputGroupAddon>
+							<SearchIcon label="" />
+						</InputGroupAddon>
+						<InputGroupInput
+							aria-label="Search agents"
+							placeholder="Search agents"
+							value={query}
+							onChange={(event) => setQuery(event.target.value)}
+						/>
+					</InputGroup>
+				)}
 
 				<div className="flex items-center justify-between">
 					{activeTemplateCategoryOption ? (
 						<AnimatePresence custom={templateMotionCustom} initial={false} mode="wait">
 							<motion.div
 								animate="center"
-								className="min-h-10 overflow-hidden text-text"
+								className="min-h-14 overflow-hidden text-text"
 								custom={templateMotionCustom}
 								exit="exit"
 								initial="enter"
 								key={`template-title-${activeTemplateCategoryOption.id}`}
-								style={{ font: token("font.heading.small"), willChange: "transform, opacity" }}
+								style={{ font: token("font.heading.medium"), willChange: "transform, opacity" }}
 								variants={AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS}
 							>
 								<TemplateCategoryTitle category={activeTemplateCategoryOption} />
@@ -415,9 +420,11 @@ export function AgentBrowser({
 							<Icon render={<ChevronDownIcon label="" size="small" color="currentColor" />} />
 						</Button>
 					)}
-					<p className="text-sm leading-5 text-text-subtle">
-						Showing {(activeTemplateCategoryOption ? filteredTemplates.length : filtered.length).toLocaleString("en-US")} results
-					</p>
+					{activeTemplateCategoryOption ? null : (
+						<p className="text-sm leading-5 text-text-subtle">
+							Showing {filtered.length.toLocaleString("en-US")} results
+						</p>
+					)}
 				</div>
 
 				{activeTemplateCategoryOption ? (

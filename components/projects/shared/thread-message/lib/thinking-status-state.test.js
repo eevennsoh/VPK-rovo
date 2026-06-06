@@ -164,6 +164,15 @@ test("normalizes generic thinking labels while preserving specific status labels
 	);
 });
 
+const WORKING_HEADER_LABELS = [
+	"Working",
+	"Cooking",
+	"Crafting",
+	"Building",
+	"Shaping",
+	"Assembling",
+];
+
 test("genericizes scripted step labels so the parent header does not echo the latest step", () => {
 	const stepLabels = [
 		"Reading agent brief",
@@ -175,14 +184,57 @@ test("genericizes scripted step labels so the parent header does not echo the la
 		"Saving agent profile",
 	];
 	for (const resolvedLabel of stepLabels) {
-		assert.equal(
-			resolveThinkingStatusTriggerLabel({
-				resolvedLabel,
-				reasoningPhase: "thinking",
-				duration: undefined,
-			}),
-			"Working",
-			`expected generic header for step label "${resolvedLabel}"`
+		const header = resolveThinkingStatusTriggerLabel({
+			resolvedLabel,
+			reasoningPhase: "thinking",
+			duration: undefined,
+		});
+		assert.ok(
+			WORKING_HEADER_LABELS.includes(header),
+			`expected generic working header for step label "${resolvedLabel}", got "${header}"`
+		);
+		assert.notEqual(
+			header,
+			resolvedLabel,
+			`header should not echo the step label "${resolvedLabel}"`
 		);
 	}
+});
+
+test("cycles the generic header across scripted steps instead of sitting on one word", () => {
+	const stepLabels = [
+		"Reading agent brief",
+		"Preparing clarification questions",
+		"Reviewing agent details",
+		"Selecting agent tools",
+		"Drafting agent instructions",
+		"Naming agent profile",
+		"Saving agent profile",
+	];
+	const headers = stepLabels.map((resolvedLabel) =>
+		resolveThinkingStatusTriggerLabel({
+			resolvedLabel,
+			reasoningPhase: "thinking",
+			duration: undefined,
+		})
+	);
+	const distinct = new Set(headers);
+	assert.ok(
+		distinct.size > 1,
+		`expected the header to vary across steps, got only ${[...distinct].join(", ")}`
+	);
+});
+
+test("resolves the same scripted step to a stable header across renders", () => {
+	const first = resolveThinkingStatusTriggerLabel({
+		resolvedLabel: "Saving agent profile",
+		reasoningPhase: "thinking",
+		duration: undefined,
+	});
+	const second = resolveThinkingStatusTriggerLabel({
+		resolvedLabel: "Saving agent profile",
+		reasoningPhase: "thinking",
+		duration: undefined,
+	});
+	assert.equal(first, second);
 });

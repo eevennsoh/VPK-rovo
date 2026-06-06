@@ -7,10 +7,6 @@ const SUBAGENTS_PAGE_SOURCE = readFileSync(join(__dirname, "page.tsx"), "utf8");
 const SUBAGENTS_NAVIGATOR_SOURCE = readFileSync(join(__dirname, "subagents-navigator.tsx"), "utf8");
 const SUBAGENTS_INDEX_SOURCE = readFileSync(join(__dirname, "index.ts"), "utf8");
 const SUBAGENTS_DATA_SOURCE = readFileSync(join(__dirname, "data", "demo-agents.ts"), "utf8");
-const SUBAGENTS_PROMPT_FIELDS_SOURCE = readFileSync(
-	join(__dirname, "components", "subagent-prompt-fields.tsx"),
-	"utf8",
-);
 const SUBAGENTS_PROMPTS_LIB_SOURCE = readFileSync(
 	join(__dirname, "lib", "subagent-prompts.ts"),
 	"utf8",
@@ -56,22 +52,28 @@ test("Subagent prompt data has trigger metadata and no separate agent identity",
 	assert.doesNotMatch(promptFixtures, /avatarSrc|agentId: "policy-source-needed"|agentId: "benefits-question"/u);
 });
 
-test("Subagent prompt views expose dedicated name and trigger fields", () => {
-	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, /function SubagentPromptFields/u);
-	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, />\s*Name\s*</u);
-	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, />\s*Trigger\s*</u);
-	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, /placeholder="Give your subagent a name"/u);
-	assert.match(SUBAGENTS_PROMPT_FIELDS_SOURCE, /Describe the situation that should trigger this subagent\./u);
-	assert.match(SUBAGENTS_PAGE_SOURCE, /compactFooterBefore=\{activePrompt/u);
-	assert.match(SUBAGENTS_PAGE_SOURCE, /handleTriggerNameChange/u);
-	assert.match(SUBAGENTS_PAGE_SOURCE, /handleConditionChange/u);
+test("Subagent name and trigger condition are edited in the profile header", () => {
+	// The header title edits the subagent name; the description slot becomes the
+	// trigger condition. The old lower SubagentPromptFields rows are removed so
+	// the same fields never appear in two places.
+	assert.match(AGENT_SOURCE, /placeholder=\{isSubagent \? UNTITLED_SUBAGENT_NAME : "Untitled agent"\}/u);
+	assert.match(AGENT_SOURCE, /placeholder=\{isSubagent \? "Describe the situation that should trigger this subagent" : "Add a description"\}/u);
+	assert.match(AGENT_SOURCE, /isSubagent \? onSubagentConditionChange\?\.\(value\) : onTextChange\?\.\("description", value\)/u);
+	assert.doesNotMatch(SUBAGENTS_PAGE_SOURCE, /SubagentPromptFields|compactFooterBefore/u);
+	assert.doesNotMatch(SUBAGENTS_INDEX_SOURCE, /SubagentPromptFields/u);
+	// Both surfaces feed the subagent condition into the header.
+	assert.match(SUBAGENTS_PAGE_SOURCE, /subagentCondition=\{activePrompt\?\.condition\}/u);
+	assert.match(SUBAGENTS_PAGE_SOURCE, /onSubagentConditionChange=\{handleConditionChange\}/u);
 });
 
 test("Subagents switcher uses base agent header and trigger-name prompt rows", () => {
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /baseAgent: SubagentsBaseAgent/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /subagents: ReadonlyArray<SubagentPrompt>/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /getSubagentDisplayName\(prompt/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /prompt\.triggerName\.trim\(\) \|\| "Untitled trigger"/u);
+	// The fallback label lives in the shared lib (single source of truth) so the
+	// navigator, manage dialog, and profile header can never drift apart.
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /import \{ getSubagentDisplayName \} from "@\/components\/blocks\/subagents\/lib\/subagent-prompts"/u);
+	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /Untitled trigger/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /MINIMAP_BASE_BAR_WIDTH_PX = 26/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /MINIMAP_PROMPT_BAR_WIDTH_PX = 16/u);
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /getAgentDescription|toSnippet|config\.name\?\.trim\(\) \|\| \(agent\.kind/u);
@@ -142,4 +144,59 @@ test("Subagents exposes a no-subagents demo variant with an empty prompt list", 
 	assert.match(SUBAGENTS_DEMO_SOURCE, /initialSubagents=\{\[\]\}/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /"subagents-demo-empty"/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /SubagentsDemoEmpty/u);
+});
+
+test("Agent profile header renders a subagent breadcrumb and Untitled subagent placeholder", () => {
+	// Breadcrumb (base agent → subagent) is rendered above the name when editing
+	// a subagent, with the base name as a clickable link back to the base agent.
+	assert.match(AGENT_SOURCE, /isSubagent \? \(\s*<Breadcrumb/u);
+	assert.match(AGENT_SOURCE, /<BreadcrumbLink[\s\S]*onClick=\{onSelectBaseAgent\}/u);
+	assert.match(AGENT_SOURCE, /<BreadcrumbPage>\{resolvedSubagentName\}<\/BreadcrumbPage>/u);
+	// The big editable title switches to the subagent name with the restored
+	// "Untitled subagent" placeholder, and edits route to onSubagentNameChange.
+	assert.match(AGENT_SOURCE, /placeholder=\{isSubagent \? UNTITLED_SUBAGENT_NAME : "Untitled agent"\}/u);
+	assert.match(AGENT_SOURCE, /isSubagent \? onSubagentNameChange\?\.\(value\) : onTextChange\?\.\("name", value\)/u);
+	assert.match(AGENT_SOURCE, /resolvedSubagentName = subagentName\?\.trim\(\) \|\| UNTITLED_SUBAGENT_NAME/u);
+});
+
+test("Subagents page wires the subagent breadcrumb and name editing into AgentConfigFields", () => {
+	assert.match(SUBAGENTS_PAGE_SOURCE, /isSubagent=\{Boolean\(activePrompt\)\}/u);
+	assert.match(SUBAGENTS_PAGE_SOURCE, /baseAgentName=\{baseConfig\.name\}/u);
+	assert.match(SUBAGENTS_PAGE_SOURCE, /subagentName=\{activePrompt\?\.triggerName\}/u);
+	assert.match(SUBAGENTS_PAGE_SOURCE, /onSelectBaseAgent=\{handleSelectBaseAgent\}/u);
+	assert.match(SUBAGENTS_PAGE_SOURCE, /onSubagentNameChange=\{handleTriggerNameChange\}/u);
+});
+
+test("Untitled subagent label is a single shared constant across all surfaces", () => {
+	const MANAGE_DIALOG_SOURCE = readFileSync(
+		join(__dirname, "components", "manage-subagents-dialog.tsx"),
+		"utf8",
+	);
+	// Source of truth: the lib exports the constant and the shared helper.
+	assert.match(SUBAGENTS_PROMPTS_LIB_SOURCE, /export const UNTITLED_SUBAGENT_NAME = "Untitled subagent"/u);
+	assert.match(SUBAGENTS_PROMPTS_LIB_SOURCE, /export function getSubagentDisplayName/u);
+	assert.match(SUBAGENTS_PROMPTS_LIB_SOURCE, /prompt\.triggerName\.trim\(\) \|\| UNTITLED_SUBAGENT_NAME/u);
+	// Every consumer resolves the label through the shared lib — no local copies.
+	assert.match(AGENT_SOURCE, /import \{ UNTITLED_SUBAGENT_NAME \} from "@\/components\/blocks\/subagents\/lib\/subagent-prompts"/u);
+	assert.match(MANAGE_DIALOG_SOURCE, /import \{ getSubagentDisplayName \} from "@\/components\/blocks\/subagents\/lib\/subagent-prompts"/u);
+	assert.doesNotMatch(MANAGE_DIALOG_SOURCE, /Untitled trigger/u);
+	assert.doesNotMatch(MANAGE_DIALOG_SOURCE, /function getSubagentDisplayName/u);
+	// The old, drifting "Untitled trigger" fallback is gone everywhere.
+	assert.doesNotMatch(SUBAGENTS_PROMPTS_LIB_SOURCE, /Untitled trigger/u);
+});
+
+test("Subagent switcher rows expose a hover-reveal delete button", () => {
+	// The switcher button gains an optional delete action that is hidden until
+	// the row is hovered/focused (opacity-0 → group-hover/focus opacity-100).
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /onDelete\?: \(\) => void;/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /aria-label=\{`Delete \$\{label\}`\}/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /group-hover\/switcher-row:opacity-100/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /<DeleteIcon size="small" \/>/u);
+	// Only subagent rows get a delete handler (the base agent row must not).
+	assert.match(
+		SUBAGENTS_NAVIGATOR_SOURCE,
+		/onDelete=\{onDeleteSubagent \? \(\) => onDeleteSubagent\(prompt\.id\) : undefined\}/u,
+	);
+	// Both surfaces feed their delete handler into the navigator.
+	assert.match(SUBAGENTS_PAGE_SOURCE, /onDeleteSubagent=\{handleDeleteSubagent\}/u);
 });

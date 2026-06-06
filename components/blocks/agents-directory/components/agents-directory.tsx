@@ -7,7 +7,7 @@ import {
 	type AgentBrowserAgent,
 	type AgentBrowserSidebarGroup,
 } from "@/components/blocks/agent-browser";
-import type { AgentTemplatesAgent } from "@/components/blocks/agent-templates";
+import type { AgentTemplatesAgent, AgentTemplatesCategoryId } from "@/components/blocks/agent-templates";
 import {
 	DEMO_AGENT_TEMPLATES,
 	DEMO_AGENT_TEMPLATES_SESSION,
@@ -29,6 +29,8 @@ export interface AgentsDirectoryDialogProps {
 	sessionTemplateAgents?: readonly AgentsDirectoryTemplateAgent[];
 	sidebarGroups?: readonly AgentsDirectorySidebarGroup[];
 	templateAgents?: readonly AgentsDirectoryTemplateAgent[];
+	/** Template category selected when the directory first opens (e.g. open straight onto "Planning"). */
+	initialTemplateCategory?: AgentTemplatesCategoryId | null;
 	title?: string;
 }
 
@@ -45,6 +47,7 @@ export function AgentsDirectoryDialog({
 	sessionTemplateAgents = DEMO_AGENT_TEMPLATES_SESSION,
 	sidebarGroups = DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS,
 	templateAgents = DEMO_AGENT_TEMPLATES,
+	initialTemplateCategory = null,
 	title,
 }: Readonly<AgentsDirectoryDialogProps>) {
 	const directoryAgents = useMemo(
@@ -68,6 +71,7 @@ export function AgentsDirectoryDialog({
 			onSelectTemplateAgent={onSelectTemplateAgent}
 			sidebarGroups={sidebarGroups}
 			templateAgents={directoryTemplateAgents}
+			initialTemplateCategory={initialTemplateCategory}
 		/>
 	);
 }

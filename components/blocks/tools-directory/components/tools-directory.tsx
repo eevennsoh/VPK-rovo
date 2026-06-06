@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { type KeyboardEvent, type MouseEvent, useMemo, useState, type ReactNode } from "react";
+import { type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
@@ -85,6 +85,13 @@ export interface ToolsDirectoryDialogProps {
 	sidebarGroups?: readonly ToolsDirectorySidebarGroup[];
 	title?: string;
 	tools: readonly ToolsDirectoryTool[];
+	/**
+	 * Tool to open directly in its detail view when the dialog opens. Lets callers
+	 * deep-link to a specific tool (e.g. clicking a tool chip in the agent config
+	 * summary). The detail view stays user-controllable afterward: pressing back
+	 * or closing clears it. Pass `null` to open at the directory list.
+	 */
+	initialSelectedToolId?: string | null;
 }
 
 const EMPTY_TOOLS_DIRECTORY_TOOLS: readonly ToolsDirectoryTool[] = [];
@@ -323,6 +330,7 @@ export function ToolsDirectoryDialog({
 	sidebarGroups = DEFAULT_TOOLS_DIRECTORY_SIDEBAR_GROUPS,
 	title,
 	tools,
+	initialSelectedToolId = null,
 }: Readonly<ToolsDirectoryDialogProps>) {
 	const directoryTools = useMemo(
 		() => [...tools, ...sessionTools],
@@ -331,6 +339,17 @@ export function ToolsDirectoryDialog({
 	const [activeCategory, setActiveCategory] = useState<string>("all");
 	const [query, setQuery] = useState("");
 	const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
+	// Seed the detail view from `initialSelectedToolId` each time the dialog
+	// transitions to open, so callers can deep-link to a specific tool (e.g. a
+	// clicked chip). After opening, the detail view stays user-controllable —
+	// back/close clears it via `handleOpenChange`/the header back button.
+	const wasOpenRef = useRef(false);
+	useEffect(() => {
+		if (open && !wasOpenRef.current) {
+			setSelectedToolId(initialSelectedToolId);
+		}
+		wasOpenRef.current = open;
+	}, [open, initialSelectedToolId]);
 	const [uncontrolledAddedToolIds, setUncontrolledAddedToolIds] = useState<ReadonlySet<string>>(
 		() => new Set(defaultAddedToolIds),
 	);

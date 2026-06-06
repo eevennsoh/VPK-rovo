@@ -514,9 +514,9 @@ function RovoAppComposerInner({
 									size="icon-sm"
 									variant={clickyActive ? "default" : "ghost"}
 									onClick={onToggleClicky}
-									aria-label="Studio AI cursor"
+									aria-label="Rovo Cursor"
 									aria-pressed={clickyActive}
-									tooltip={{ content: "AI Cursor ⌘⇧K", delay: 0 }}
+									tooltip={{ content: "Rovo Cursor", delay: 0 }}
 								>
 									<CursorIcon label="" />
 								</PromptInputButton>

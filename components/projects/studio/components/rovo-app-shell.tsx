@@ -1749,6 +1749,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	}, []);
 	const [activeAgentConfigView, setActiveAgentConfigView] = useState<AgentConfigView>("configure");
 	const [isSidebarAgentBrowserOpen, setIsSidebarAgentBrowserOpen] = useState(false);
+	const [sidebarAgentBrowserInitialCategory, setSidebarAgentBrowserInitialCategory] = useState<HomeStarterCategory>(HOME_STARTER_DEFAULT_CATEGORY);
 	const generatedAgentTestViewKeysRef = useRef<Set<string>>(new Set());
 	const openAgentCreationAskRovoChat = useCallback(() => {
 		studioAgentRegistry.resetAgentToRovo();
@@ -2331,6 +2332,14 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const handleBrowseAgentTemplates = useCallback((category: HomeStarterCategory = HOME_STARTER_DEFAULT_CATEGORY) => {
 		setAgentTemplatesInitialCategory(category);
 		setAgentTemplatesDialogOpen(true);
+	}, []);
+
+	// The home bento's "Browse all" pill opens the full agents directory instead
+	// of the lighter templates dialog, landing straight on the category the user
+	// was exploring (e.g. "Planning") so the directory mirrors that tab.
+	const handleBrowseAgentsDirectory = useCallback((category: HomeStarterCategory = HOME_STARTER_DEFAULT_CATEGORY) => {
+		setSidebarAgentBrowserInitialCategory(category);
+		setIsSidebarAgentBrowserOpen(true);
 	}, []);
 
 	const handleTemplateAgentSelect = useCallback((agent: AgentTemplatesAgent) => {
@@ -2980,13 +2989,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	// Keyboard shortcuts for Rovo
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
-			// Cmd+Shift+K (Mac) / Ctrl+Shift+K (other) toggles Rovo
-			if (e.key === "K" && e.shiftKey && (e.metaKey || e.ctrlKey)) {
-				e.preventDefault();
-				toggleClicky();
-				return;
-			}
-
 			// Escape deactivates Rovo
 			if (e.key === "Escape" && isClickyActive) {
 				deactivateClicky();
@@ -2995,7 +2997,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isClickyActive, deactivateClicky, toggleClicky]);
+	}, [isClickyActive, deactivateClicky]);
 
 	// --- Realtime voice (live conversation mode) ---
 	const realtime = useRealtimeVoice({
@@ -4237,12 +4239,12 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						variants={STUDIO_HOME_BENTO_VARIANTS}
 					>
 						<HomeStarterBento
-							onBrowseTemplates={handleBrowseAgentTemplates}
+							onBrowseTemplates={handleBrowseAgentsDirectory}
 							onDismiss={() => setBentoDismissed(true)}
 							onSelect={handleGallerySelect}
 							onPreviewStart={handleGalleryPreviewStart}
 							onPreviewEnd={handleGalleryPreviewEnd}
-							templatesDialogOpen={agentTemplatesDialogOpen}
+							templatesDialogOpen={agentTemplatesDialogOpen || isSidebarAgentBrowserOpen}
 						/>
 					</motion.div>
 				) : null}
@@ -4520,14 +4522,18 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				onSelectAgent={handleTemplateAgentSelect}
 				sessionAgents={DEMO_AGENT_TEMPLATES_SESSION}
 			/>
-			{/* Dormant: the sidebar no longer opens this directory dialog (its "View all agents" row now returns to the landing). Kept mounted to wire to another trigger later; nothing sets it open today. */}
+			{/* Opened by the home bento's "Browse all" pill, landing straight on the
+			    category the user was exploring (e.g. "Planning"). The `key` remounts
+			    AgentBrowser so its `initialTemplateCategory` re-seeds per category. */}
 			<AgentsDirectoryDialog
+				key={`agents-directory-${sidebarAgentBrowserInitialCategory}`}
 				open={isSidebarAgentBrowserOpen}
 				onOpenChange={setIsSidebarAgentBrowserOpen}
 				agents={ROVO_DIRECTORY_AGENT_PROFILES}
 				onSelectAgent={handleSidebarBrowseAgentSelect}
 				onSelectTemplateAgent={handleTemplateAgentSelect}
 				sessionAgents={studioAgentRegistry.sessionAgentEntries.map((entry) => entry.profile)}
+				initialTemplateCategory={sidebarAgentBrowserInitialCategory}
 			/>
 
 			{!embedded ? (

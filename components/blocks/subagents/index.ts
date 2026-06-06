@@ -1,6 +1,5 @@
 export { default } from "./page";
 export { SubagentsNavigator } from "./subagents-navigator";
-export { SubagentPromptFields } from "./components/subagent-prompt-fields";
 export { ManageSubagentsDialog } from "./components/manage-subagents-dialog";
 export {
 	cloneConfig,

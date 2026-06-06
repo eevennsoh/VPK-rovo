@@ -21,7 +21,6 @@ import {
 	serializeAgentTriggerLabels,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/data/trigger-catalog";
-import { SubagentPromptFields } from "@/components/blocks/subagents/components/subagent-prompt-fields";
 import { ManageSubagentsDialog } from "@/components/blocks/subagents/components/manage-subagents-dialog";
 import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
 import type { SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
@@ -114,6 +113,9 @@ export function RovoAppAgentConfigPanel({
 	const [activeDirectory, setActiveDirectory] = useState<AgentDirectoryKind | null>(null);
 	const [activeCompactSection, setActiveCompactSection] = useState<AgentCompactHeaderSection | null>(null);
 	const [directoryToolIds, setDirectoryToolIds] = useState<readonly string[]>([]);
+	// Tool to focus when the tools directory opens (e.g. clicking a tool chip).
+	// Cleared on close so a plain "Add" opens at the directory list instead.
+	const [directorySelectedToolId, setDirectorySelectedToolId] = useState<string | null>(null);
 	const [directorySkillIds, setDirectorySkillIds] = useState<readonly string[]>([]);
 	const [isManageSubagentsOpen, setIsManageSubagentsOpen] = useState(false);
 
@@ -294,7 +296,18 @@ export function RovoAppAgentConfigPanel({
 		},
 		[updateActiveConfig],
 	);
-	const handleOpenDirectory = useCallback((directory: AgentDirectoryKind) => {
+	const handleOpenDirectory = useCallback((directory: AgentDirectoryKind, selectedItem?: string) => {
+		if (directory === "tools" && selectedItem) {
+			// Chips carry tool names; resolve to the directory's tool id so the
+			// dialog can open directly on that tool's detail view.
+			const normalized = selectedItem.trim().toLowerCase();
+			const matchedTool = [...DEMO_TOOLS, ...DEMO_SESSION_TOOLS].find(
+				(tool) => tool.name.trim().toLowerCase() === normalized,
+			);
+			setDirectorySelectedToolId(matchedTool?.id ?? null);
+		} else if (directory === "tools") {
+			setDirectorySelectedToolId(null);
+		}
 		setActiveDirectory(directory);
 	}, []);
 	const handleAddKnowledge = useCallback(
@@ -548,6 +561,7 @@ export function RovoAppAgentConfigPanel({
 									baseAgent={navigatorBaseAgent}
 									className="absolute right-4 top-[42%] z-20 hidden md:block"
 									onCreateSubagent={createSubagent}
+									onDeleteSubagent={deleteSubagentById}
 									onManageSubagents={() => setIsManageSubagentsOpen(true)}
 									onSelectBaseAgent={selectBaseAgent}
 									onSelectSubagent={selectSubagent}
@@ -578,16 +592,16 @@ export function RovoAppAgentConfigPanel({
 											// Subagents can't own triggers, their own subagents, or
 											// conversation starters, so suppress those rows while editing one.
 											hiddenConfigFields={isSubagentActive ? SUBAGENT_HIDDEN_CONFIG_FIELDS : undefined}
+											// Subagent header: breadcrumb (base agent → subagent) plus the
+											// big editable title bound to the subagent's name (its triggerName).
+											isSubagent={isSubagentActive}
+											baseAgentName={baseConfig.name}
+											subagentName={activePrompt?.triggerName}
+											onSelectBaseAgent={selectBaseAgent}
+											onSubagentNameChange={handleTriggerNameChange}
+											subagentCondition={activePrompt?.condition}
+											onSubagentConditionChange={handleConditionChange}
 											compactScrollAreaClassName="-mr-6 pr-6"
-											compactFooterBefore={activePrompt ? (
-												<SubagentPromptFields
-													condition={activePrompt.condition}
-													idPrefix={`agent-${profileId}-${activeConfigId}`}
-													onConditionChange={handleConditionChange}
-													onTriggerNameChange={handleTriggerNameChange}
-													triggerName={activePrompt.triggerName}
-												/>
-											) : null}
 											idPrefix={`agent-${profileId}-${activeConfigId}`}
 											onTextChange={handleConfigTextChange}
 											onProfileTextChange={handleBaseTextChange}
@@ -637,9 +651,15 @@ export function RovoAppAgentConfigPanel({
 			/>
 			<ToolsDirectoryDialog
 				addedToolIds={directoryToolIds}
+				initialSelectedToolId={directorySelectedToolId}
 				open={activeDirectory === "tools"}
 				onAddedToolIdsChange={handleDirectoryToolIdsChange}
-				onOpenChange={(open) => setActiveDirectory(open ? "tools" : null)}
+				onOpenChange={(open) => {
+					setActiveDirectory(open ? "tools" : null);
+					if (!open) {
+						setDirectorySelectedToolId(null);
+					}
+				}}
 				sessionTools={DEMO_SESSION_TOOLS}
 				tools={DEMO_TOOLS}
 			/>

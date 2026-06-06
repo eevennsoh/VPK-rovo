@@ -30,6 +30,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { DeleteIcon, GripVerticalIcon, PlusIcon } from "@/components/ui/vpk-icons";
 import type { SubagentPrompt } from "@/components/blocks/subagents/data/demo-agents";
+import { getSubagentDisplayName } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { cn } from "@/lib/utils";
 
 interface ManageSubagentsDialogProps {
@@ -40,10 +41,6 @@ interface ManageSubagentsDialogProps {
 	onReorderSubagents: (activeId: string, overId: string) => void;
 	onToggleSubagent: (id: string, enabled: boolean) => void;
 	subagents: ReadonlyArray<SubagentPrompt>;
-}
-
-function getSubagentDisplayName(prompt: SubagentPrompt): string {
-	return prompt.triggerName.trim() || "Untitled trigger";
 }
 
 export function ManageSubagentsDialog({

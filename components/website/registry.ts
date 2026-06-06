@@ -6678,6 +6678,9 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
 };
 
 const BLOCK_DEMOS: Record<string, ComponentType> = {
+  "agent-bento": dynamic(() => import("./demos/blocks/agent-bento-demo"), {
+    ssr: false,
+  }),
   "agent-card": dynamic(() => import("./demos/blocks/agent-card-demo"), {
     ssr: false,
   }),

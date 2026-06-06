@@ -13,6 +13,15 @@ import {
 // (components/blocks/subagents/page.tsx) and the studio agent config panel.
 // Keeping them here is the single source of truth for both consumers.
 
+// A subagent's identity is its trigger name. When unset, every surface that
+// shows a subagent (profile header, breadcrumb, floating navigator, manage
+// dialog) must fall back to the same label so they never drift out of sync.
+export const UNTITLED_SUBAGENT_NAME = "Untitled subagent";
+
+export function getSubagentDisplayName(prompt: SubagentPrompt): string {
+	return prompt.triggerName.trim() || UNTITLED_SUBAGENT_NAME;
+}
+
 export function cloneConfig(config: AgentConfigFormValue): AgentConfigFormValue {
 	return {
 		...config,
