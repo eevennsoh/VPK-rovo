@@ -78,4 +78,11 @@ export interface RichTextEditorExtensionOptions {
 	 * surfaces references only.
 	 */
 	includeFormat?: boolean;
+	/**
+	 * When `true`, the `@`/`/` palette anchors to the prompt-input box (the
+	 * `.chat-composer-form`) instead of the caret: it spans the box's full width,
+	 * sits 8px away, and flips above/below by available viewport space. The chat
+	 * composer sets this; the document editor leaves it `false` (caret-anchored).
+	 */
+	anchorToInput?: boolean;
 }

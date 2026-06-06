@@ -391,6 +391,19 @@
 	max-width: min(360px, calc(100vw - 24px));
 }
 
+/*
+ * Chat-composer variant: the palette anchors to the prompt-input box and spans
+ * its full width (set inline as `width`), so drop the caret-menu max-width cap
+ * and let the inner menu stretch to fill.
+ */
+.rich-text-command-menu-popover-anchored {
+	max-width: none;
+}
+
+.rich-text-command-menu-popover-anchored .rich-text-command-menu {
+	width: 100%;
+}
+
 .rich-text-command-menu {
 	display: flex;
 	flex-direction: column;

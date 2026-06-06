@@ -162,14 +162,17 @@ export interface ComposerEditorExtensionOptions extends RichTextEditorExtensionO
 export function createComposerEditorExtensions(
 	options: ComposerEditorExtensionOptions = {},
 ) {
+	// The chat composer anchors its `@`/`/` palette to the prompt-input box
+	// (full width, 8px gap, viewport-aware up/down flip) rather than the caret.
+	const composerOptions = { ...options, anchorToInput: true };
 	return [
 		ComposerDocument,
 		ComposerParagraph,
 		ComposerText,
 		ComposerHardBreak,
-		createRichTextMentionExtension(options),
+		createRichTextMentionExtension(composerOptions),
 		// The composer's "/" menu surfaces references only — no Format category.
-		SlashCommand.configure({ ...options, includeFormat: false }),
+		SlashCommand.configure({ ...composerOptions, includeFormat: false }),
 		createComposerBehavior(options.onEnter),
 	];
 }

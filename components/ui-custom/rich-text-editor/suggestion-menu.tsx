@@ -105,6 +105,9 @@ interface RichTextSuggestionMenuProps {
 interface SuggestionPopupState {
 	component: ReactRenderer<unknown, RichTextSuggestionMenuProps> | null;
 	element: HTMLDivElement | null;
+	// Detaches the resize/scroll listeners used by the input-anchored (chat
+	// composer) positioning mode. Null for caret-anchored menus.
+	cleanup: (() => void) | null;
 }
 
 export type RichTextMentionMenuCategory = RichTextMentionCategory | "people-team";
@@ -747,9 +750,11 @@ function filterItems<T extends { label: string; description?: string; isSticky?:
 	});
 }
 
-function createPopup(): HTMLDivElement {
+function createPopup(anchorToInput = false): HTMLDivElement {
 	const element = document.createElement("div");
-	element.className = "rich-text-command-menu-popover";
+	element.className = anchorToInput
+		? "rich-text-command-menu-popover rich-text-command-menu-popover-anchored"
+		: "rich-text-command-menu-popover";
 	document.body.appendChild(element);
 	return element;
 }
@@ -769,6 +774,66 @@ function positionPopup(
 
 	element.style.left = `${rect.left}px`;
 	element.style.top = `${rect.bottom + 6}px`;
+}
+
+/**
+ * Chat-composer positioning: instead of opening at the caret, anchor the palette
+ * to the prompt-input box (the `.chat-composer-form`), span its full width, and
+ * sit 8px away. Flips above the input when there isn't room below — so the menu
+ * follows available viewport space.
+ */
+const COMPOSER_POPUP_GAP = 8;
+
+function positionComposerPopup(
+	element: HTMLDivElement | null,
+	editorDom?: HTMLElement | null,
+): void {
+	if (!element || !editorDom) {
+		return;
+	}
+
+	const box =
+		editorDom.closest<HTMLElement>(".chat-composer-form") ??
+		editorDom.closest<HTMLElement>("form");
+	if (!box) {
+		return;
+	}
+
+	const rect = box.getBoundingClientRect();
+	const popupHeight = element.offsetHeight || 0;
+	const spaceBelow = window.innerHeight - rect.bottom - COMPOSER_POPUP_GAP;
+	const spaceAbove = rect.top - COMPOSER_POPUP_GAP;
+	// Prefer below; flip up only when the menu doesn't fit below but fits better above.
+	const placeAbove = popupHeight > spaceBelow && spaceAbove > spaceBelow;
+
+	element.style.maxWidth = "none";
+	element.style.left = `${rect.left}px`;
+	element.style.width = `${rect.width}px`;
+	element.style.top = placeAbove
+		? `${Math.max(COMPOSER_POPUP_GAP, rect.top - popupHeight - COMPOSER_POPUP_GAP)}px`
+		: `${rect.bottom + COMPOSER_POPUP_GAP}px`;
+}
+
+/**
+ * Attach the input-anchored positioning + a resize/scroll reposition loop for a
+ * chat-composer palette. Returns a cleanup that detaches the listeners. A double
+ * rAF lets the menu render (and re-render after a category drill-in) so its
+ * measured height drives the up/down flip on the next frame.
+ */
+function attachComposerAnchor(
+	element: HTMLDivElement | null,
+	editorDom: HTMLElement | null,
+): () => void {
+	const reposition = () => positionComposerPopup(element, editorDom);
+	reposition();
+	requestAnimationFrame(reposition);
+	window.addEventListener("resize", reposition);
+	// Capture phase so we also catch scrolls inside scrollable ancestors.
+	window.addEventListener("scroll", reposition, true);
+	return () => {
+		window.removeEventListener("resize", reposition);
+		window.removeEventListener("scroll", reposition, true);
+	};
 }
 
 function getPagedSelectedIndex(
@@ -818,8 +883,9 @@ export function createSlashSuggestionRenderer(
 	getMentionSources?: () => RichTextMentionSources | undefined,
 	onAskRovo?: (editor: Editor) => void,
 	includeFormat = true,
+	anchorToInput = false,
 ) {
-	const popupState: SuggestionPopupState = { component: null, element: null };
+	const popupState: SuggestionPopupState = { component: null, element: null, cleanup: null };
 	let selectedIndex = 0;
 	let activeCategory: RichTextSlashCategory | null = null;
 	let currentProps: SuggestionProps<RichTextSlashAction, RichTextSlashAction> | null = null;
@@ -848,7 +914,11 @@ export function createSlashSuggestionRenderer(
 		currentProps = props;
 		const items = getVisibleItems(props.query);
 		selectedIndex = Math.min(selectedIndex, Math.max(items.length - 1, 0));
-		positionPopup(popupState.element, props.clientRect);
+		if (anchorToInput) {
+			positionComposerPopup(popupState.element, props.editor.view.dom);
+		} else {
+			positionPopup(popupState.element, props.clientRect);
+		}
 		popupState.component?.updateProps({
 			emptyLabel: activeCategory ? "No matching items" : "No commands found",
 			items,
@@ -910,7 +980,7 @@ export function createSlashSuggestionRenderer(
 
 	return {
 		onStart: (props: SuggestionProps<RichTextSlashAction, RichTextSlashAction>) => {
-			popupState.element = createPopup();
+			popupState.element = createPopup(anchorToInput);
 			popupState.component = new ReactRenderer(RichTextSuggestionMenu, {
 				editor: props.editor,
 				props: {
@@ -927,6 +997,9 @@ export function createSlashSuggestionRenderer(
 			});
 			popupState.element.appendChild(popupState.component.element);
 			update(props);
+			if (anchorToInput) {
+				popupState.cleanup = attachComposerAnchor(popupState.element, props.editor.view.dom);
+			}
 		},
 		onUpdate: update,
 		onKeyDown: ({ event }: SuggestionKeyDownProps) => {
@@ -981,6 +1054,8 @@ export function createSlashSuggestionRenderer(
 			return false;
 		},
 		onExit: () => {
+			popupState.cleanup?.();
+			popupState.cleanup = null;
 			popupState.component?.destroy();
 			popupState.element?.remove();
 			popupState.component = null;
@@ -1194,8 +1269,9 @@ export function getMentionChildItems(
 
 export function createMentionSuggestionRenderer(
 	getMentionSources?: () => RichTextMentionSources | undefined,
+	anchorToInput = false,
 ) {
-	const popupState: SuggestionPopupState = { component: null, element: null };
+	const popupState: SuggestionPopupState = { component: null, element: null, cleanup: null };
 	let selectedIndex = 0;
 	let activeCategory: RichTextMentionParentCategory | null = null;
 	let currentProps: SuggestionProps<RichTextMentionItem, RichTextMentionItem> | null = null;
@@ -1222,7 +1298,11 @@ export function createMentionSuggestionRenderer(
 		currentProps = props;
 		const items = getVisibleItems(props);
 		selectedIndex = Math.min(selectedIndex, Math.max(items.length - 1, 0));
-		positionPopup(popupState.element, props.clientRect);
+		if (anchorToInput) {
+			positionComposerPopup(popupState.element, props.editor.view.dom);
+		} else {
+			positionPopup(popupState.element, props.clientRect);
+		}
 		popupState.component?.updateProps({
 			emptyLabel: activeCategory ? "No matching items" : "No people or agents found",
 			items,
@@ -1263,7 +1343,7 @@ export function createMentionSuggestionRenderer(
 
 	return {
 		onStart: (props: SuggestionProps<RichTextMentionItem, RichTextMentionItem>) => {
-			popupState.element = createPopup();
+			popupState.element = createPopup(anchorToInput);
 			popupState.component = new ReactRenderer(RichTextSuggestionMenu, {
 				editor: props.editor,
 				props: {
@@ -1277,6 +1357,9 @@ export function createMentionSuggestionRenderer(
 			});
 			popupState.element.appendChild(popupState.component.element);
 			update(props);
+			if (anchorToInput) {
+				popupState.cleanup = attachComposerAnchor(popupState.element, props.editor.view.dom);
+			}
 		},
 		onUpdate: update,
 		onKeyDown: ({ event }: SuggestionKeyDownProps) => {
@@ -1331,6 +1414,8 @@ export function createMentionSuggestionRenderer(
 			return false;
 		},
 		onExit: () => {
+			popupState.cleanup?.();
+			popupState.cleanup = null;
 			popupState.component?.destroy();
 			popupState.element?.remove();
 			popupState.component = null;

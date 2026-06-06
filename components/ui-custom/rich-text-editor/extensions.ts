@@ -156,7 +156,7 @@ export const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 
 					props.run(editor);
 				},
-				render: () => createSlashSuggestionRenderer(getMentionSources, this.options.onAskRovo, includeFormat),
+				render: () => createSlashSuggestionRenderer(getMentionSources, this.options.onAskRovo, includeFormat, this.options.anchorToInput),
 			}),
 		];
 	},
@@ -216,7 +216,7 @@ export function createRichTextMentionExtension(
 					])
 					.run();
 			},
-			render: () => createMentionSuggestionRenderer(options.getMentionSources),
+			render: () => createMentionSuggestionRenderer(options.getMentionSources, options.anchorToInput),
 		},
 	});
 }
