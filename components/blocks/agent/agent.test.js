@@ -341,10 +341,15 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// Compact wrapper splits into a scrollable region + an anchored footer; it no
 	// longer reserves bottom padding for an overlay.
 	assert.match(compactLayoutSource, /<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">/u);
-	assert.match(compactLayoutSource, /"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto"[\s\S]*compactScrollOverflow\.showBottomScrollMask && "scroll-mask-bottom",[\s\S]*compactScrollAreaClassName,/u);
+	// Scroll region carries `px-1.5` so descendant focus rings (including the
+	// full-width title/description inputs) aren't clipped by the auto horizontal
+	// overflow that `overflow-y-auto` implies; inner content cancels it with
+	// `-mx-1.5` to keep the visual layout unchanged.
+	assert.match(compactLayoutSource, /"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-1\.5"[\s\S]*compactScrollOverflow\.showBottomScrollMask && "scroll-mask-bottom",[\s\S]*compactScrollAreaClassName,/u);
+	assert.match(compactLayoutSource, /<div className="-mx-1\.5 flex flex-col gap-4">/u);
 	assert.doesNotMatch(compactLayoutSource, /paddingBottom/u);
 	assert.doesNotMatch(compactLayoutSource, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
-	assert.match(compactLayoutSource, /className="relative flex min-h-0 flex-1 flex-col"/u);
+	assert.match(compactLayoutSource, /className="relative -mx-1\.5 flex min-h-0 flex-1 flex-col"/u);
 	// No fixed 560px min-height — the composer fills available space instead.
 	assert.doesNotMatch(compactLayoutSource, /min-h-\[560px\]/u);
 	// Empty compact agents start without unnecessary vertical scroll: the
@@ -424,7 +429,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /agentFieldName: "conversationStarters",\s*label: "Conversation starters",\s*listFieldName: "conversationStarters"/u);
 	assert.match(AGENT_SOURCE, /item\.count > 0 \? <Badge>\{item\.count\}<\/Badge> : null/u);
 	assert.match(AGENT_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/u);
-	assert.match(AGENT_SOURCE, /className="flex min-h-8 min-w-0 items-center"/u);
+	assert.match(AGENT_SOURCE, /className="relative flex min-h-8 min-w-0 items-center"/u);
 	// Nav now rolls overflow into a "..." DropdownMenu instead of wrapping onto
 	// multiple lines (mirrors AgentCompactHeaderNav).
 	assert.doesNotMatch(AGENT_SOURCE, /flex min-w-0 flex-wrap items-center gap-1/u);
@@ -432,9 +437,14 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH = 24;/u);
 	assert.match(AGENT_SOURCE, /computeContextBarOverflow\([\s\S]*AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH,[\s\S]*AGENT_COMPACT_CONFIG_NAV_GAP/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactConfigNavButton\(/u);
-	assert.match(AGENT_SOURCE, /<DropdownMenuTrigger\s+aria-label="More configuration options"[\s\S]*<MoreHorizontalIcon size="small" \/>/u);
+	// Overflow trigger is a Menubar trigger (the nav is a Menubar so the active
+	// menu can move between items with arrow keys).
+	assert.match(AGENT_SOURCE, /<MenubarTrigger\s+aria-label="More configuration options"[\s\S]*<MoreHorizontalIcon size="small" \/>/u);
 	assert.match(AGENT_SOURCE, /<DropdownMenuItem\s+elemAfter=\{item\.count > 0 \? <Badge>\{item\.count\}<\/Badge> : undefined\}/u);
-	assert.match(AGENT_SOURCE, /className="relative flex min-w-0 flex-1 items-center overflow-hidden"[\s\S]*style=\{\{ gap: AGENT_COMPACT_CONFIG_NAV_GAP \}\}/u);
+	// Container clips horizontal overflow (so the "…" menu absorbs hidden items)
+	// but keeps a small clip margin + vertical room so edge focus-visible rings
+	// aren't sheared off.
+	assert.match(AGENT_SOURCE, /className="relative -my-1 flex min-w-0 flex-1 items-center overflow-x-clip overflow-y-visible py-1 \[overflow-clip-margin:4px\]"[\s\S]*style=\{\{ gap: AGENT_COMPACT_CONFIG_NAV_GAP \}\}/u);
 	assert.match(AGENT_SOURCE, /<div className="invisible flex items-center" ref=\{measureRef\}/u);
 	// Collapsible toolbar: outer wrapper now stacks a "rule row" (horizontal
 	// line + chevron at the far right) above an AnimatePresence crossfade that
@@ -489,7 +499,10 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /import \{[\s\S]*DropdownMenu,[\s\S]*DropdownMenuContent,[\s\S]*DropdownMenuGroup,[\s\S]*DropdownMenuItem,[\s\S]*DropdownMenuTrigger,[\s\S]*\} from "@\/components\/ui\/dropdown-menu";/u);
 	assert.match(AGENT_SOURCE, /computeContextBarOverflow\([\s\S]*AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH,[\s\S]*AGENT_COMPACT_HEADER_NAV_GAP/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_HEADER_NAV_GAP = 4;/u);
-	assert.match(AGENT_SOURCE, /className="relative flex min-w-0 flex-1 items-center overflow-hidden"[\s\S]*style=\{\{ gap: AGENT_COMPACT_HEADER_NAV_GAP \}\}/u);
+	// Header nav clips horizontal overflow (so the "…" menu absorbs hidden items)
+	// but keeps a 6px clip margin + vertical room so the active (outline) button's
+	// offset focus ring isn't sheared off at the edge.
+	assert.match(AGENT_SOURCE, /className="relative -my-1 flex min-w-0 flex-1 items-center overflow-x-clip overflow-y-visible py-1 pl-1 \[overflow-clip-margin:6px\]"[\s\S]*style=\{\{ gap: AGENT_COMPACT_HEADER_NAV_GAP \}\}/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH = 24;/u);
 	assert.match(AGENT_SOURCE, /<DropdownMenuTrigger[\s\S]*aria-label="More agent sections"[\s\S]*render=\{<Button className="size-6 rounded px-0" size="icon-compact" type="button" variant="ghost" \/>\}[\s\S]*<MoreHorizontalIcon size="small" \/>/u);
 	assert.match(AGENT_SOURCE, /hiddenItems\.map\(\(item\) => \([\s\S]*<DropdownMenuItem[\s\S]*elemBefore=\{item\.icon\}[\s\S]*key=\{item\.label\}[\s\S]*onSelect=\{\(\) => onSectionChange\?\.\(item\.value\)\}/u);

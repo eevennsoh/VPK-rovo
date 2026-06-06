@@ -75,6 +75,12 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	Menubar,
+	MenubarContent,
+	MenubarMenu,
+	MenubarTrigger,
+} from "@/components/ui/menubar";
 import { Icon } from "@/components/ui/icon";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
@@ -150,6 +156,11 @@ const AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = [
 
 const AGENT_COMPACT_CONFIG_NAV_GAP = 4;
 const AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH = 24;
+// Shared flat-trigger look for every item in the connected config menu bar.
+// Kept subtle (no border/background) so the strip reads as one continuous
+// surface rather than a row of separate buttons.
+const AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS =
+	"inline-flex h-6 shrink-0 items-center gap-1 rounded px-2 text-xs font-semibold leading-4 text-text-subtlest transition-colors outline-hidden hover:bg-bg-neutral-subtle-hovered hover:text-text aria-expanded:bg-bg-neutral-subtle-hovered aria-expanded:text-text focus-visible:ring-3 focus-visible:ring-ring/50";
 const AGENT_EMPTY_ROW_ADD_LABELS: Partial<Record<AgentConfigListFieldName, string>> = {
 	conversationStarters: "Add prompts to help people start",
 	skills: "Add skills to guide specialized tasks",
@@ -470,7 +481,14 @@ export function AgentCompactHeaderNav({
 				)}
 			</Avatar>
 			<div
-				className="relative flex min-w-0 flex-1 items-center overflow-hidden"
+				// `overflow-x-clip` hides horizontally-overflowing items (the "…"
+				// menu absorbs them). The first item ("Insights") would otherwise sit
+				// flush at the clip box's left edge, so its 3px focus ring gets
+				// shorn flat on the left even with a clip margin. `pl-1` insets the
+				// content 4px inside the clip box so the ring clears the edge; `py-1
+				// -my-1` adds matching vertical room, and the clip margin covers the
+				// trailing "…" item on the right.
+				className="relative -my-1 flex min-w-0 flex-1 items-center overflow-x-clip overflow-y-visible py-1 pl-1 [overflow-clip-margin:6px]"
 				ref={containerRef}
 				style={{ gap: AGENT_COMPACT_HEADER_NAV_GAP }}
 			>
@@ -806,10 +824,7 @@ function AgentCompactConfigNavButton({
 			type="button"
 			data-agent-field={item.agentFieldName}
 			data-screen-assistant-target={screenAssistantTargetId}
-			className={cn(
-				"inline-flex h-6 shrink-0 items-center gap-1 rounded px-2 text-xs font-semibold leading-4 text-text-subtlest transition-colors hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-3 focus-visible:ring-ring/50",
-				className,
-			)}
+			className={cn(AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS, className)}
 			onClick={onClick}
 			{...props}
 		>
@@ -847,8 +862,8 @@ function AgentCompactSubagentsNavButton({
 	}
 
 	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger
+		<MenubarMenu>
+			<MenubarTrigger
 				render={(
 					<AgentCompactConfigNavButton
 						aria-label="Subagents"
@@ -857,7 +872,7 @@ function AgentCompactSubagentsNavButton({
 					/>
 				)}
 			/>
-			<DropdownMenuContent align="start" className="w-64 overflow-hidden p-0">
+			<MenubarContent align="start" className="w-64 overflow-hidden p-0">
 				<div className="max-h-56 overflow-y-auto p-1">
 					<DropdownMenuGroup className="p-0">
 						{subagents.map((subagent, index) => (
@@ -879,8 +894,8 @@ function AgentCompactSubagentsNavButton({
 						Manage subagents
 					</DropdownMenuItem>
 				</div>
-			</DropdownMenuContent>
-		</DropdownMenu>
+			</MenubarContent>
+		</MenubarMenu>
 	);
 }
 
@@ -963,19 +978,28 @@ function AgentCompactEmptyConfigNav({
 	const hiddenItems = items.slice(visibleCount);
 
 	return (
-		<div className="flex min-h-8 min-w-0 items-center">
-			<div
-				className="relative flex min-w-0 flex-1 items-center overflow-hidden"
+		<div className="relative flex min-h-8 min-w-0 items-center">
+			{/* Hidden width-measurement strip lives outside the Menubar root so its
+			    invisible duplicate buttons never join the menubar's roving focus. */}
+			<div aria-hidden className="pointer-events-none absolute top-0 left-0 h-0 w-0 overflow-clip">
+				<div className="invisible flex items-center" ref={measureRef} style={{ gap: AGENT_COMPACT_CONFIG_NAV_GAP }}>
+					{items.map((item) => (
+						<AgentCompactConfigNavButton item={item} key={`measure-${item.agentFieldName}`} />
+					))}
+				</div>
+			</div>
+			<Menubar
+				// Override the shared Menubar's bordered/elevated chrome so the strip
+				// reads as one flat, connected surface (matching the prior loose-button
+				// look) while still giving us roving focus + arrow-key nav across items.
+				// `overflow-x-clip` hides horizontally-overflowing items (the "…"
+				// menu absorbs them) while `overflow-clip-margin` leaves a few px of
+				// bleed so edge items' focus-visible rings aren't sheared off. `-my-1
+				// py-1` adds matching vertical room so the ring's top/bottom show too.
+				className="relative -my-1 flex h-auto min-w-0 flex-1 items-center overflow-x-clip overflow-y-visible rounded-none border-0 bg-transparent p-0 py-1 [overflow-clip-margin:4px]"
 				ref={containerRef}
 				style={{ gap: AGENT_COMPACT_CONFIG_NAV_GAP }}
 			>
-				<div aria-hidden className="pointer-events-none absolute top-0 left-0 h-0 w-0 overflow-clip">
-					<div className="invisible flex items-center" ref={measureRef} style={{ gap: AGENT_COMPACT_CONFIG_NAV_GAP }}>
-						{items.map((item) => (
-							<AgentCompactConfigNavButton item={item} key={`measure-${item.agentFieldName}`} />
-						))}
-					</div>
-				</div>
 				{visibleItems.map((item) => {
 					if (item.agentFieldName === "reasoning") {
 						return (
@@ -1034,14 +1058,14 @@ function AgentCompactEmptyConfigNav({
 					);
 				})}
 				{hiddenItems.length > 0 ? (
-					<DropdownMenu>
-						<DropdownMenuTrigger
+					<MenubarMenu>
+						<MenubarTrigger
 							aria-label="More configuration options"
 							render={<Button className="size-6 rounded px-0" size="icon-compact" type="button" variant="ghost" />}
 						>
 							<MoreHorizontalIcon size="small" />
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
+						</MenubarTrigger>
+						<MenubarContent align="end">
 							<DropdownMenuGroup>
 								{hiddenItems.map((item) => {
 									if (item.agentFieldName === "reasoning") {
@@ -1082,10 +1106,10 @@ function AgentCompactEmptyConfigNav({
 									);
 								})}
 							</DropdownMenuGroup>
-						</DropdownMenuContent>
-					</DropdownMenu>
+						</MenubarContent>
+					</MenubarMenu>
 				) : null}
-			</div>
+			</Menubar>
 		</div>
 	);
 }
@@ -1786,21 +1810,16 @@ function AgentReasoningSelector({
 
 	if (render === "nav-button") {
 		return (
-			<DropdownMenu>
-				<DropdownMenuTrigger
-					render={(
-						<button
-							type="button"
-							data-agent-field="reasoning"
-							data-screen-assistant-target={screenAssistantTargetId}
-							className="inline-flex h-6 shrink-0 items-center gap-1 rounded px-2 text-xs font-semibold leading-4 text-text-subtlest transition-colors hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-3 focus-visible:ring-ring/50"
-						/>
-					)}
+			<MenubarMenu>
+				<MenubarTrigger
+					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
+					data-agent-field="reasoning"
+					data-screen-assistant-target={screenAssistantTargetId}
 				>
 					Reasoning
-				</DropdownMenuTrigger>
+				</MenubarTrigger>
 				<AgentReasoningSelectorMenu value={value} onValueChange={onValueChange} />
-			</DropdownMenu>
+			</MenubarMenu>
 		);
 	}
 
@@ -1939,21 +1958,16 @@ function AgentKnowledgeSelector({
 
 	if (render === "nav-button") {
 		return (
-			<DropdownMenu>
-				<DropdownMenuTrigger
-					render={(
-						<button
-							type="button"
-							data-agent-field="knowledge"
-							data-screen-assistant-target={screenAssistantTargetId}
-							className="inline-flex h-6 shrink-0 items-center gap-1 rounded px-2 text-xs font-semibold leading-4 text-text-subtlest transition-colors hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-3 focus-visible:ring-ring/50"
-						/>
-					)}
+			<MenubarMenu>
+				<MenubarTrigger
+					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
+					data-agent-field="knowledge"
+					data-screen-assistant-target={screenAssistantTargetId}
 				>
 					Knowledge
-				</DropdownMenuTrigger>
+				</MenubarTrigger>
 				<AgentKnowledgeSelectorMenu value={value} onValueChange={onValueChange} />
-			</DropdownMenu>
+			</MenubarMenu>
 		);
 	}
 
@@ -2050,23 +2064,18 @@ function AgentMemorySelector({
 
 	if (render === "nav-button") {
 		return (
-			<DropdownMenu>
-				<DropdownMenuTrigger
-					render={(
-						<button
-							type="button"
-							data-agent-field="memory"
-							data-screen-assistant-target={screenAssistantTargetId}
-							className="inline-flex h-6 shrink-0 items-center gap-1 rounded px-2 text-xs font-semibold leading-4 text-text-subtlest transition-colors hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-3 focus-visible:ring-ring/50"
-						/>
-					)}
+			<MenubarMenu>
+				<MenubarTrigger
+					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
+					data-agent-field="memory"
+					data-screen-assistant-target={screenAssistantTargetId}
 				>
 					Memory
 					{/* Surface the on/off state inline so it reads without opening the menu. */}
 					<Badge>{selectedOption.label}</Badge>
-				</DropdownMenuTrigger>
+				</MenubarTrigger>
 				<AgentMemorySelectorMenu value={value} onValueChange={onValueChange} />
-			</DropdownMenu>
+			</MenubarMenu>
 		);
 	}
 
@@ -2838,13 +2847,19 @@ export const AgentConfigFields = memo(
 					    more below, and clears once the region is scrolled to the end. */}
 					<div
 						ref={compactScrollOverflow.ref}
+						// `overflow-y-auto` forces `overflow-x` to compute to `auto`, which
+						// clips the left/right edges of descendant focus-visible rings
+						// (title input, description, editor toolbar, etc.). `px-1.5` adds
+						// 6px of inset so even the full-width input rings clear the
+						// scroll-clip edge; the children below cancel it with `-mx-1.5`
+						// so the visual layout is unchanged.
 						className={cn(
-							"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto",
+							"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-1.5",
 							compactScrollOverflow.showBottomScrollMask && "scroll-mask-bottom",
 							compactScrollAreaClassName,
 						)}
 					>
-						<div className="flex flex-col gap-4">
+						<div className="-mx-1.5 flex flex-col gap-4">
 							<AgentConfigProfile
 								config={profileConfig ?? config}
 								avatarSrc={profileAvatarSrc ?? avatarSrc}
@@ -2860,7 +2875,7 @@ export const AgentConfigFields = memo(
 							/>
 						</div>
 						<AgentInstructionsComposer
-							className="relative flex min-h-0 flex-1 flex-col"
+							className="relative -mx-1.5 flex min-h-0 flex-1 flex-col"
 							config={config}
 							contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]")}
 							editorClassName={isFilledConfig ? undefined : "agent-instructions-tiptap-editor-compact-empty"}

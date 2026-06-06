@@ -110,3 +110,29 @@ test("backend clarification question cards preserve creation mode metadata", () 
 		/resolvedWidgetType === CLARIFICATION_WIDGET_TYPE &&[\s\S]*\(creationMode === "agent" \|\| creationMode === "skill"\)[\s\S]*\.\.\.parsedWidget,[\s\S]*creationMode/u,
 	);
 });
+
+test("Rovo agent-result stream parser uses shared tolerant JSON parsing", () => {
+	assert.match(
+		SERVER_SOURCE,
+		/parseJsonObjectAt:\s*parseStudioAgentJsonObjectAt/u,
+	);
+	assert.match(
+		SERVER_SOURCE,
+		/textBuffer\.startsWith\(agentResultPrefix\)[\s\S]*const parsedAgentResult = parseStudioAgentJsonObjectAt\(\s*textBuffer,\s*jsonStartIndex\s*\);[\s\S]*normalizeStudioAgentResult\(\s*parsedAgentResult\.value\s*\)/u,
+	);
+	assert.doesNotMatch(
+		SERVER_SOURCE,
+		/normalizeStudioAgentResult\(\s*JSON\.parse\(jsonPayload\)\s*\)/u,
+	);
+});
+
+test("agent-creation fallback question cards strip internal deferred-tool text", () => {
+	assert.match(
+		SERVER_SOURCE,
+		/stripDeferredToolFencesFromText/u,
+	);
+	assert.match(
+		SERVER_SOURCE,
+		/isFirstAgentCreationTurn &&[\s\S]*FALLBACK_AGENT_CREATION_QUESTION_INPUT[\s\S]*visibleText = stripDeferredToolFencesFromText\(visibleText\);/u,
+	);
+});

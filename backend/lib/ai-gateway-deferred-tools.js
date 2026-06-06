@@ -5,6 +5,8 @@ const { getNonEmptyString, isObjectRecord } = require("./shared-utils");
 
 const DEFERRED_TOOL_FENCE_PATTERN =
 	/```([A-Za-z0-9_-]+)?[^\S\r\n]*(?:\r?\n)([\s\S]*?)(?:\r?\n)```/g;
+const DEFERRED_TOOL_FENCE_START_PATTERN =
+	/```([A-Za-z0-9_-]+)?[^\S\r\n]*(?:\r?\n)/g;
 const SUPPORTED_DEFERRED_TOOLS = new Set([
 	"ask_user_questions",
 	"exit_plan_mode",
@@ -126,6 +128,39 @@ function stripRanges(text, ranges) {
 	cleanedText += text.slice(previousEnd);
 
 	return cleanedText.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function getDeferredToolFenceRanges(text) {
+	const ranges = [];
+	DEFERRED_TOOL_FENCE_START_PATTERN.lastIndex = 0;
+
+	let match;
+	while ((match = DEFERRED_TOOL_FENCE_START_PATTERN.exec(text)) !== null) {
+		const language = getNonEmptyString(match[1])?.toLowerCase() || "";
+		if (!DEFERRED_TOOL_FENCE_LANGUAGES.has(language)) {
+			continue;
+		}
+
+		const closingFenceIndex = text.indexOf("```", DEFERRED_TOOL_FENCE_START_PATTERN.lastIndex);
+		const end = closingFenceIndex === -1
+			? text.length
+			: closingFenceIndex + "```".length;
+		ranges.push({
+			start: match.index,
+			end,
+		});
+		DEFERRED_TOOL_FENCE_START_PATTERN.lastIndex = end;
+	}
+
+	return ranges;
+}
+
+function stripDeferredToolFencesFromText(text) {
+	if (typeof text !== "string" || text.length === 0) {
+		return "";
+	}
+
+	return stripRanges(text, getDeferredToolFenceRanges(text));
 }
 
 function extractAIGatewayDeferredToolFromAssistantText(text) {
@@ -376,6 +411,7 @@ function buildQuestionMetaFromQuestionCardPayload(payload) {
 
 module.exports = {
 	extractAIGatewayDeferredToolFromAssistantText,
+	stripDeferredToolFencesFromText,
 	normalizeAIGatewayAskUserQuestionsInput,
 	buildQuestionCardPayloadFromAIGatewayDeferredTool,
 	buildPlanWidgetPayloadFromAIGatewayDeferredTool,

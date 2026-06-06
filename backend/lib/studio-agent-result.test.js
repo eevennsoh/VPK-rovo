@@ -8,6 +8,7 @@ const {
 	buildMissingStudioAgentResultFailureParts,
 	extractStudioAgentResultFromText,
 	normalizeStudioAgentResult,
+	parseJsonObjectAt,
 	shouldBoundStudioAgentGatewayCall,
 	shouldSurfaceMissingStudioAgentResultFailure,
 	tolerantParseJsonObjectAt,
@@ -253,6 +254,18 @@ test("tolerant parser leaves valid JSON byte-for-byte equal to JSON.parse", () =
 	assert.ok(tolerant);
 	assert.deepEqual(tolerant.value, JSON.parse(valid));
 	assert.equal(valid[tolerant.endIndex], "}");
+});
+
+test("shared JSON object parser recovers malformed Studio agent result payloads", () => {
+	const markerText = buildMalformedAgentResultMarkerText();
+	const text = `${AGENT_RESULT_STREAM_PREFIX} ${markerText.slice(markerText.indexOf("{"))}`;
+	const jsonStart = text.indexOf("{");
+	const parsed = parseJsonObjectAt(text, jsonStart);
+
+	assert.ok(parsed);
+	assert.equal(text[parsed.endIndex], "}");
+	assert.equal(parsed.value.name, "Work Item Planner");
+	assert.equal(parsed.value.instructions, MALFORMED_INSTRUCTIONS);
 });
 
 test("tolerant parser does not merge legitimate string arrays", () => {

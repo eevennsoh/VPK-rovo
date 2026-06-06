@@ -982,6 +982,7 @@ module.exports = {
 	extractStudioAgentResultFromText,
 	findJsonObjectEndIndex,
 	normalizeStudioAgentResult,
+	parseJsonObjectAt,
 	shouldBoundStudioAgentGatewayCall,
 	shouldSurfaceMissingStudioAgentResultFailure,
 	tolerantParseJsonObjectAt,

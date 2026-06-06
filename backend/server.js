@@ -243,8 +243,8 @@ const {
 	buildFallbackStudioAgentResult,
 	buildMissingStudioAgentResultFailureParts,
 	extractStudioAgentResultFromText,
-	findJsonObjectEndIndex: findStudioAgentJsonObjectEndIndex,
 	normalizeStudioAgentResult,
+	parseJsonObjectAt: parseStudioAgentJsonObjectAt,
 	shouldBoundStudioAgentGatewayCall,
 	shouldSurfaceMissingStudioAgentResultFailure,
 } = require("./lib/studio-agent-result");
@@ -471,6 +471,7 @@ const {
 } = require("./lib/question-card-payload");
 const {
 	extractAIGatewayDeferredToolFromAssistantText,
+	stripDeferredToolFencesFromText,
 	buildQuestionCardPayloadFromAIGatewayDeferredTool,
 	buildPlanWidgetPayloadFromAIGatewayDeferredTool,
 	buildQuestionMetaFromQuestionCardPayload,
@@ -8934,6 +8935,7 @@ async function handleChatSdkRequest(req, res) {
 									createSessionId: createClarificationSessionId,
 								},
 							);
+						visibleText = stripDeferredToolFencesFromText(visibleText);
 					}
 
 					// Never emit a finished agent on turn 1 — the user must answer
@@ -10333,11 +10335,11 @@ async function handleChatSdkRequest(req, res) {
 								continue;
 							}
 
-							const jsonEndIndex = findStudioAgentJsonObjectEndIndex(
+							const parsedAgentResult = parseStudioAgentJsonObjectAt(
 								textBuffer,
 								jsonStartIndex
 							);
-							if (jsonEndIndex === -1) {
+							if (!parsedAgentResult) {
 								if (isFinalChunk) {
 									emitTextDelta(textBuffer);
 									textBuffer = "";
@@ -10345,17 +10347,13 @@ async function handleChatSdkRequest(req, res) {
 								return;
 							}
 
-							const jsonPayload = textBuffer.slice(
-								jsonStartIndex,
-								jsonEndIndex + 1
-							);
 							textBuffer = textBuffer
-								.slice(jsonEndIndex + 1)
+								.slice(parsedAgentResult.endIndex + 1)
 								.replace(/^[\r\n\t ]+/, "");
 
 							try {
 								const normalizedAgentResult = normalizeStudioAgentResult(
-									JSON.parse(jsonPayload)
+									parsedAgentResult.value
 								);
 								if (normalizedAgentResult) {
 									writer.write({
