@@ -764,8 +764,9 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /description: "Use the default paragraph style for body copy\."/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /description: "Align the current block to the left edge\."/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /"people-team": "People and team"/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /type RichTextMentionParentCategory = "subagent" \| "people-team";/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const MENTION_TARGET_ORDER: readonly RichTextMentionParentCategory\[\] = \[\s*"subagent",\s*"people-team",\s*\]/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /type RichTextMentionParentCategory = "people-team";/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const MENTION_TARGET_ORDER: readonly RichTextMentionParentCategory\[\] = \[\s*"people-team",\s*\]/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /Parent entries for the "@" mention surface: subagents/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /category === "people-team"[\s\S]*<PeopleGroupIcon label="" size="small" \/>[\s\S]*: getCategoryIcon\(category\)/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /RICH_TEXT_REFERENCE_CATEGORY_OPTIONS/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /getRichTextReferenceCategoryIcon/u);
@@ -807,6 +808,7 @@ test("Slash command menu contains every toolbar command", () => {
 	]) {
 		assert.match(EDITOR_PALETTE_SOURCE, new RegExp(`caption: "${caption}"`, "u"));
 	}
+	assert.match(EDITOR_PALETTE_SOURCE, /category: "subagent", title: "Subagents", trigger: "\/"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /Parent entries for the "\/" command surface: subagents, skills, tools, knowledge/u);
 
 	for (const command of [

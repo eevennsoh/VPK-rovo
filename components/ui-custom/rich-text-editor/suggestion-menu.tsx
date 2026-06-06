@@ -108,7 +108,7 @@ interface SuggestionPopupState {
 }
 
 export type RichTextMentionMenuCategory = RichTextMentionCategory | "people-team";
-type RichTextMentionParentCategory = "subagent" | "people-team";
+type RichTextMentionParentCategory = "people-team";
 
 const SUGGESTION_PAGE_KEY_STEP = 5;
 
@@ -226,13 +226,11 @@ const AGENT_AVATAR_SRCS = [
 ] as const;
 
 const MENTION_PARENT_LABELS: Record<RichTextMentionParentCategory, string> = {
-	subagent: getRichTextReferenceCategoryLabel("subagent"),
 	"people-team": "People and team",
 };
 
-/** "@" mention surface: people and agents only. */
+/** "@" mention surface: people and teams only. */
 const MENTION_TARGET_ORDER: readonly RichTextMentionParentCategory[] = [
-	"subagent",
 	"people-team",
 ];
 
@@ -1239,7 +1237,7 @@ function buildCategoryMenuItems(
 	}));
 }
 
-/** Parent entries for the "@" mention surface: subagents plus people and teams. */
+/** Parent entries for the "@" mention surface: people and teams only. */
 export function getMentionTargetItems(
 	sources?: RichTextMentionSources,
 ): readonly RichTextSuggestionMenuItem[] {
