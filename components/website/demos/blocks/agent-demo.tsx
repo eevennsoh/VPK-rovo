@@ -1,12 +1,13 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import {
 	Agent,
 	AgentCompactAccessPanel,
 	AgentCompactEvaluationPanel,
 	AgentConfigFields,
 	type AgentConfigFormValue,
+	type AgentDirectoryKind,
 	type AgentCompactHeaderSection,
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
@@ -16,15 +17,28 @@ import {
 	AgentCompactSurfacesPanel,
 	AgentCompactUsersPanel,
 	AgentHeader,
+	AgentMoreOptionsMenu,
 } from "@/components/blocks/agent";
 import {
 	serializeAgentTriggerLabels,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/page";
 import { DEFAULT_CONFIGURED_TRIGGER_VALUES } from "@/components/blocks/triggers/data/trigger-catalog";
+import {
+	ConversationStartersDialog,
+	DEFAULT_STARTER_ICON,
+	type ConversationStarter,
+	type StarterIconKey,
+} from "@/components/blocks/conversation-starters";
+import { AgentTestPanel } from "@/components/projects/studio/components/rovo-app-agent-test-panel";
+import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
+import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { cn } from "@/lib/utils";
 
 const AGENT_DEMO_SURFACE_CLASSNAME = "min-h-[852px] w-full";
+type AgentDemoView = "test" | "configure";
 
 const initialAgentConfig: AgentConfigFormValue = {
 	name: "",
@@ -62,7 +76,11 @@ const filledAgentConfig: AgentConfigFormValue = {
 	tools: ["Tool name", "Tool name"],
 	subagents: ["Subagent 1", "Subagent 1"],
 	knowledge: ["Knowledge 1", "Knowledge 2"],
-	conversationStarters: [],
+	conversationStarters: [
+		"Can this policy answer an employee leave question?",
+		"Summarize the relevant HR guidance for a manager.",
+		"Create a follow-up work item for missing policy context.",
+	],
 	agentId: "policy-checker",
 	action: "draft",
 };
@@ -110,13 +128,115 @@ function useAgentDemoConfig(initialConfig: AgentConfigFormValue) {
 		}));
 	}
 
+	const conversationStarterDialogValue = useMemo<readonly ConversationStarter[]>(() => {
+		const texts = Array.isArray(config.conversationStarters)
+			? config.conversationStarters
+			: [];
+		const icons = Array.isArray(config.conversationStarterIcons)
+			? config.conversationStarterIcons
+			: [];
+
+		return texts
+			.filter((text) => text.trim().length > 0)
+			.map((text, index) => ({
+				id: `starter-${index}`,
+				text,
+				icon: (icons[index] as StarterIconKey | undefined) ?? DEFAULT_STARTER_ICON,
+			}));
+	}, [config.conversationStarterIcons, config.conversationStarters]);
+
+	function handleSaveConversationStarters(starters: readonly ConversationStarter[]) {
+		setConfig((current) => ({
+			...current,
+			conversationStarters: starters.map((starter) => starter.text),
+			conversationStarterIcons: starters.map((starter) => starter.icon),
+		}));
+	}
+
 	return {
 		config,
 		appendListItem,
+		conversationStarterDialogValue,
 		handleTextChange,
+		handleSaveConversationStarters,
 		handleTriggerDefinitionsChange,
 		removeListItem,
 		updateListItem,
+	};
+}
+
+function AgentDemoHeaderActions({
+	activeView,
+	onViewChange,
+}: Readonly<{
+	activeView: AgentDemoView;
+	onViewChange: (view: AgentDemoView) => void;
+}>) {
+	return (
+		<>
+			<AgentMoreOptionsMenu />
+			<ToggleGroup
+				aria-label="Agent config views"
+				onValueChange={(value) => {
+					const nextView = value[value.length - 1];
+					if (nextView === "test" || nextView === "configure") {
+						onViewChange(nextView);
+					}
+				}}
+				value={[activeView]}
+				variant="outline"
+			>
+				<ToggleGroupItem value="test" onClick={() => onViewChange("test")}>Test</ToggleGroupItem>
+				<ToggleGroupItem value="configure" onClick={() => onViewChange("configure")}>Configure</ToggleGroupItem>
+			</ToggleGroup>
+			<Button type="button" size="default" variant="default">
+				Publish
+			</Button>
+		</>
+	);
+}
+
+function buildAgentDemoTestEntry(config: AgentConfigFormValue): StudioSessionAgentEntry {
+	const agentName = config.name?.trim() || "Untitled agent";
+	const description = config.description?.trim() || config.summary?.trim();
+	const summary = description || "Test this agent before it goes live.";
+	const action = config.action === "update" ? "update" : "create";
+	const agentResult: RovoDataParts["agent-result"] = {
+		agentId: config.agentId || "agent-demo-test",
+		name: agentName,
+		byline: "Custom agent test",
+		summary,
+		description: summary,
+		instructions: config.instructions,
+		contextDescription: config.contextDescription,
+		conversationStarters: [...(config.conversationStarters ?? [])],
+		conversationStarterIcons: [...(config.conversationStarterIcons ?? [])],
+		trigger: config.trigger,
+		triggers: [...(config.triggers ?? [])],
+		triggerDefinitions: [...(config.triggerDefinitions ?? [])],
+		tools: [...(config.tools ?? [])],
+		skills: [...(config.skills ?? [])],
+		knowledge: [...(config.knowledge ?? [])],
+		subagents: [...(config.subagents ?? [])],
+		guardrail: config.guardrail,
+		action,
+	};
+
+	return {
+		profile: {
+			id: agentResult.agentId,
+			name: agentName,
+			byline: "Custom agent test",
+			description: summary,
+			starters: [],
+		},
+		resultKey: `agent-demo:${agentResult.agentId}`,
+		sourceResult: agentResult,
+		draftResult: agentResult,
+		lastTouchedAt: 0,
+		publishReadyResult: agentResult,
+		publishedResult: null,
+		publishStatus: "testing",
 	};
 }
 
@@ -179,38 +299,64 @@ export function AgentDemoFull() {
 	const {
 		appendListItem,
 		config,
+		conversationStarterDialogValue,
+		handleSaveConversationStarters,
 		handleTextChange,
 		handleTriggerDefinitionsChange,
 		removeListItem,
 		updateListItem,
 	} = useAgentDemoConfig(filledAgentConfig);
 	const [activeSection, setActiveSection] = useState<AgentCompactHeaderSection | null>(null);
+	const [activeView, setActiveView] = useState<AgentDemoView>("configure");
+	const [activeDirectory, setActiveDirectory] = useState<AgentDirectoryKind | null>(null);
+	const testEntry = buildAgentDemoTestEntry(config);
+	function handleOpenDirectory(directory: AgentDirectoryKind) {
+		if (directory === "conversationStarters") {
+			setActiveDirectory("conversationStarters");
+		}
+	}
 
 	return (
-		<Agent className={cn(AGENT_DEMO_SURFACE_CLASSNAME, "flex flex-col")}>
-			<AgentHeader
-				leadingContent={
-					<AgentCompactHeaderNav activeSection={activeSection} onSectionChange={setActiveSection} />
-				}
-				name={config.name?.trim() || "Untitled agent"}
+		<>
+			<Agent className={cn(AGENT_DEMO_SURFACE_CLASSNAME, "flex flex-col")}>
+				<AgentHeader
+					actions={<AgentDemoHeaderActions activeView={activeView} onViewChange={setActiveView} />}
+					leadingContent={
+						<AgentCompactHeaderNav activeSection={activeSection} onSectionChange={setActiveSection} />
+					}
+					name={config.name?.trim() || "Untitled agent"}
+				/>
+				{activeView === "test" ? (
+					<AgentTestPanel entry={testEntry} />
+				) : (
+					<AgentDemoCompactBody
+						activeSection={activeSection}
+						configView={
+							<AgentContent>
+								<AgentConfigFields
+									config={config}
+									idPrefix="agent-demo-full"
+									onTextChange={handleTextChange}
+									onListItemChange={updateListItem}
+									onRemoveListItem={removeListItem}
+									onAppendListItem={appendListItem}
+									onOpenDirectory={handleOpenDirectory}
+									onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
+								/>
+							</AgentContent>
+						}
+					/>
+				)}
+			</Agent>
+			<ConversationStartersDialog
+				open={activeDirectory === "conversationStarters"}
+				onOpenChange={(open) => setActiveDirectory(open ? "conversationStarters" : null)}
+				starters={conversationStarterDialogValue}
+				maxStarters={3}
+				saveLabel={conversationStarterDialogValue.length > 0 ? "Save" : "Add"}
+				onSave={handleSaveConversationStarters}
 			/>
-			<AgentDemoCompactBody
-				activeSection={activeSection}
-				configView={
-					<AgentContent>
-						<AgentConfigFields
-							config={config}
-							idPrefix="agent-demo-full"
-							onTextChange={handleTextChange}
-							onListItemChange={updateListItem}
-							onRemoveListItem={removeListItem}
-							onAppendListItem={appendListItem}
-							onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
-						/>
-					</AgentContent>
-				}
-			/>
-		</Agent>
+		</>
 	);
 }
 
@@ -218,38 +364,64 @@ export function AgentDemoEmpty() {
 	const {
 		appendListItem,
 		config,
+		conversationStarterDialogValue,
+		handleSaveConversationStarters,
 		handleTextChange,
 		handleTriggerDefinitionsChange,
 		removeListItem,
 		updateListItem,
 	} = useAgentDemoConfig(emptyAgentConfig);
 	const [activeSection, setActiveSection] = useState<AgentCompactHeaderSection | null>(null);
+	const [activeView, setActiveView] = useState<AgentDemoView>("configure");
+	const [activeDirectory, setActiveDirectory] = useState<AgentDirectoryKind | null>(null);
+	const testEntry = buildAgentDemoTestEntry(config);
+	function handleOpenDirectory(directory: AgentDirectoryKind) {
+		if (directory === "conversationStarters") {
+			setActiveDirectory("conversationStarters");
+		}
+	}
 
 	return (
-		<Agent className={cn(AGENT_DEMO_SURFACE_CLASSNAME, "flex flex-col")}>
-			<AgentHeader
-				leadingContent={
-					<AgentCompactHeaderNav activeSection={activeSection} onSectionChange={setActiveSection} />
-				}
-				name={config.name?.trim() || "Untitled agent"}
+		<>
+			<Agent className={cn(AGENT_DEMO_SURFACE_CLASSNAME, "flex flex-col")}>
+				<AgentHeader
+					actions={<AgentDemoHeaderActions activeView={activeView} onViewChange={setActiveView} />}
+					leadingContent={
+						<AgentCompactHeaderNav activeSection={activeSection} onSectionChange={setActiveSection} />
+					}
+					name={config.name?.trim() || "Untitled agent"}
+				/>
+				{activeView === "test" ? (
+					<AgentTestPanel entry={testEntry} />
+				) : (
+					<AgentDemoCompactBody
+						activeSection={activeSection}
+						configView={
+							<AgentContent>
+								<AgentConfigFields
+									config={config}
+									idPrefix="agent-demo-empty"
+									onTextChange={handleTextChange}
+									onListItemChange={updateListItem}
+									onRemoveListItem={removeListItem}
+									onAppendListItem={appendListItem}
+									onOpenDirectory={handleOpenDirectory}
+									onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
+								/>
+							</AgentContent>
+						}
+					/>
+				)}
+			</Agent>
+			<ConversationStartersDialog
+				open={activeDirectory === "conversationStarters"}
+				onOpenChange={(open) => setActiveDirectory(open ? "conversationStarters" : null)}
+				starters={conversationStarterDialogValue}
+				maxStarters={3}
+				saveLabel={conversationStarterDialogValue.length > 0 ? "Save" : "Add"}
+				onSave={handleSaveConversationStarters}
 			/>
-			<AgentDemoCompactBody
-				activeSection={activeSection}
-				configView={
-					<AgentContent>
-						<AgentConfigFields
-							config={config}
-							idPrefix="agent-demo-empty"
-							onTextChange={handleTextChange}
-							onListItemChange={updateListItem}
-							onRemoveListItem={removeListItem}
-							onAppendListItem={appendListItem}
-							onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
-						/>
-					</AgentContent>
-				}
-			/>
-		</Agent>
+		</>
 	);
 }
 

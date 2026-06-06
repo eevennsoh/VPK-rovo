@@ -603,8 +603,8 @@ export const AgentHeader = memo(
 		leadingContent,
 		model,
 		name,
-		primaryActionLabel = "Configure",
-		secondaryActionLabel = "Test",
+		primaryActionLabel = "Test",
+		secondaryActionLabel = "Configure",
 		publishLabel = "Publish",
 		showActions = true,
 		actions,
@@ -652,10 +652,10 @@ export const AgentHeader = memo(
 								defaultValue={["configure"]}
 								variant="outline"
 							>
-								<ToggleGroupItem value="configure">
+								<ToggleGroupItem value="test">
 									{primaryActionLabel}
 								</ToggleGroupItem>
-								<ToggleGroupItem value="test">
+								<ToggleGroupItem value="configure">
 									{secondaryActionLabel}
 								</ToggleGroupItem>
 							</ToggleGroup>

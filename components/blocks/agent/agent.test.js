@@ -40,9 +40,14 @@ const HORIZONTAL_OVERFLOW_HOOK_SOURCE = readProjectFile("components/hooks/use-ha
 
 test("Agent demo defaults to the filled preview", () => {
 	assert.match(AGENT_DEMO_SOURCE, /export default function AgentDemo\(\) \{[\s\S]*return <AgentDemoFull \/>;/u);
+	assert.doesNotMatch(AGENT_DEMO_SOURCE, /AgentDemoMode|Agent demo state/u);
 	assert.match(
 		BLOCK_DETAILS_SOURCE,
 		/examples: \[[\s\S]*title: "Filled agent"[\s\S]*demoSlug: "agent-demo-full"[\s\S]*title: "Empty agent"[\s\S]*demoSlug: "agent-demo-empty"/u,
+	);
+	assert.match(
+		WEBSITE_REGISTRY_SOURCE,
+		/const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = \{[\s\S]*"agent-demo-full": dynamic[\s\S]*default: mod\.AgentDemoFull[\s\S]*"agent-demo-empty": dynamic[\s\S]*default: mod\.AgentDemoEmpty/u,
 	);
 });
 
@@ -270,19 +275,19 @@ test("Compact agent config opts into the typed Triggers editor without replacing
 	assert.doesNotMatch(AGENT_SOURCE, /<Triggers[\s\S]{0,400}layout="default"/u);
 });
 
-test("Agent header renders Configure and Test as a self-contained compact ToggleGroup", () => {
+test("Agent header renders Test and Configure as a self-contained compact ToggleGroup", () => {
 	// The default header uses an outline ToggleGroup at the default size (32px /
 	// h-8) instead of the Tabs control. Consumers that need controlled tabs still
 	// override via the `actions` prop.
 	assert.match(AGENT_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
-	assert.match(AGENT_SOURCE, /primaryActionLabel = "Configure"/u);
-	assert.match(AGENT_SOURCE, /secondaryActionLabel = "Test"/u);
+	assert.match(AGENT_SOURCE, /primaryActionLabel = "Test"/u);
+	assert.match(AGENT_SOURCE, /secondaryActionLabel = "Configure"/u);
 	assert.match(AGENT_SOURCE, /publishLabel = "Publish"/u);
 	// ToggleGroup carries its own context, so the default actions render it
 	// directly (variant="outline", default size) alongside a Publish button.
 	assert.match(
 		AGENT_SOURCE,
-		/\{actions \?\? \([\s\S]*<ToggleGroup[\s\S]*aria-label="Agent views"[\s\S]*defaultValue=\{\["configure"\]\}[\s\S]*variant="outline"[\s\S]*<ToggleGroupItem value="configure">[\s\S]*\{primaryActionLabel\}[\s\S]*<ToggleGroupItem value="test">[\s\S]*\{secondaryActionLabel\}[\s\S]*<\/ToggleGroup>[\s\S]*<Button[\s\S]*\{publishLabel\}[\s\S]*<\/Button>/u,
+		/\{actions \?\? \([\s\S]*<ToggleGroup[\s\S]*aria-label="Agent views"[\s\S]*defaultValue=\{\["configure"\]\}[\s\S]*variant="outline"[\s\S]*<ToggleGroupItem value="test">[\s\S]*\{primaryActionLabel\}[\s\S]*<ToggleGroupItem value="configure">[\s\S]*\{secondaryActionLabel\}[\s\S]*<\/ToggleGroup>[\s\S]*<Button[\s\S]*\{publishLabel\}[\s\S]*<\/Button>/u,
 	);
 	// The Tabs-based header is fully retired from the default actions.
 	assert.doesNotMatch(AGENT_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
@@ -489,7 +494,8 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /export function AgentCompactAccessPanel/u);
 	assert.match(AGENT_SOURCE, /return <AgentAccess \{\.\.\.props\} \/>;/u);
 	assert.match(AGENT_INDEX_SOURCE, /export \* from "\.\/components\/agent";/u);
-	assert.match(AGENT_PAGE_SOURCE, /import \{ AgentDemoFull \} from "@\/components\/website\/demos\/blocks\/agent-demo";/u);
+	assert.match(AGENT_PAGE_SOURCE, /import AgentDemo from "@\/components\/website\/demos\/blocks\/agent-demo";/u);
+	assert.match(AGENT_PAGE_SOURCE, /return <AgentDemo \/>;/u);
 	assert.match(AGENT_PREVIEW_PAGE_SOURCE, /import AgentPage from "@\/components\/blocks\/agent\/page";/u);
 	assert.match(AGENT_PREVIEW_PAGE_SOURCE, /title: getPreviewPageTitle\("agent", "blocks"\),/u);
 	assert.match(AGENT_SURFACES_SOURCE, /function AgentDefaultSurfaceRow/u);
@@ -517,7 +523,22 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoFull/u);
 	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-full"/u);
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoFull[\s\S]*<AgentCompactHeaderNav activeSection=\{activeSection\} onSectionChange=\{setActiveSection\} \/>/u);
-	assert.match(AGENT_DEMO_SOURCE, /export default function AgentDemo\(\) \{[\s\S]*return <AgentDemoFull \/>;/u);
+	assert.match(AGENT_DEMO_SOURCE, /function AgentDemoHeaderActions/u);
+	assert.match(AGENT_DEMO_SOURCE, /aria-label="Agent config views"[\s\S]*value=\{\[activeView\]\}[\s\S]*<ToggleGroupItem value="test"[\s\S]*>Test<\/ToggleGroupItem>[\s\S]*<ToggleGroupItem value="configure"[\s\S]*>Configure<\/ToggleGroupItem>/u);
+	assert.match(AGENT_DEMO_SOURCE, /<ToggleGroupItem value="test" onClick=\{\(\) => onViewChange\("test"\)\}>Test<\/ToggleGroupItem>/u);
+	assert.match(AGENT_DEMO_SOURCE, /<ToggleGroupItem value="configure" onClick=\{\(\) => onViewChange\("configure"\)\}>Configure<\/ToggleGroupItem>/u);
+	assert.match(AGENT_DEMO_SOURCE, /import \{ AgentTestPanel \} from "@\/components\/projects\/studio\/components\/rovo-app-agent-test-panel";/u);
+	assert.match(AGENT_DEMO_SOURCE, /ConversationStartersDialog,[\s\S]*DEFAULT_STARTER_ICON,[\s\S]*type ConversationStarter,[\s\S]*type StarterIconKey,/u);
+	assert.match(AGENT_DEMO_SOURCE, /function buildAgentDemoTestEntry\(config: AgentConfigFormValue\): StudioSessionAgentEntry/u);
+	assert.match(AGENT_DEMO_SOURCE, /AgentTestPanel entry=\{testEntry\}/u);
+	assert.doesNotMatch(AGENT_DEMO_SOURCE, /function AgentDemoTestPanel|data-testid="agent-demo-test-panel"/u);
+	assert.match(AGENT_DEMO_SOURCE, /activeView === "test" \? \(/u);
+	assert.match(AGENT_DEMO_SOURCE, /conversationStarters: \[[\s\S]*Can this policy answer an employee leave question\?[\s\S]*Summarize the relevant HR guidance for a manager\.[\s\S]*Create a follow-up work item for missing policy context\.[\s\S]*\]/u);
+	assert.match(AGENT_DEMO_SOURCE, /const conversationStarterDialogValue = useMemo<readonly ConversationStarter\[\]>/u);
+	assert.match(AGENT_DEMO_SOURCE, /function handleSaveConversationStarters\(starters: readonly ConversationStarter\[\]\)/u);
+	assert.match(AGENT_DEMO_SOURCE, /onOpenDirectory=\{handleOpenDirectory\}/u);
+	assert.match(AGENT_DEMO_SOURCE, /<ConversationStartersDialog[\s\S]*open=\{activeDirectory === "conversationStarters"\}[\s\S]*starters=\{conversationStarterDialogValue\}[\s\S]*maxStarters=\{3\}[\s\S]*onSave=\{handleSaveConversationStarters\}/u);
+	assert.match(AGENT_DEMO_SOURCE, /export default function AgentDemo/u);
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoEmpty/u);
 	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-empty"/u);
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoEmpty[\s\S]*<AgentCompactHeaderNav activeSection=\{activeSection\} onSectionChange=\{setActiveSection\} \/>/u);
