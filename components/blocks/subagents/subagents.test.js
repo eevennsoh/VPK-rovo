@@ -155,9 +155,10 @@ test("Agent profile header renders an inline back-to-parent icon button beside t
 	assert.match(AGENT_SOURCE, /data-agent-field="back-to-parent"/u);
 	assert.match(AGENT_SOURCE, /aria-label="Back to parent agent"/u);
 	assert.match(AGENT_SOURCE, /onClick=\{onSelectBaseAgent\}/u);
-	assert.match(AGENT_SOURCE, /<ArrowLeftIcon label="" size="small" \/>/u);
-	// The button matches the name field's ~40px height so the icon row aligns.
-	assert.match(AGENT_SOURCE, /className="size-10 shrink-0 rounded text-icon-subtle hover:text-icon"/u);
+	assert.match(AGENT_SOURCE, /<ArrowLeftIcon label="" \/>/u);
+	// The button matches the name field's ~40px height so the icon row aligns,
+	// and forces the icon to 16px via the svg utility (no ADS size prop).
+	assert.match(AGENT_SOURCE, /className="size-10 shrink-0 rounded text-icon-subtle hover:text-icon \[&_svg\]:size-4"/u);
 	// The old full-width "Back to parent" text row is gone.
 	assert.doesNotMatch(AGENT_SOURCE, /Back to parent</u);
 	// The big editable title switches to the subagent name with the restored

@@ -2813,7 +2813,8 @@ function AgentConfigProfile({
 						{isSubagent ? (
 							// Match the name field's read-view height (h-auto + py-1 +
 							// leading-7 + border-2 ≈ 40px) so the icon button aligns with
-							// the title row. Icon stays the default 16px (ADS "small").
+							// the title row. `[&_svg]:size-4` forces the arrow to 16px
+							// without the ADS size prop.
 							<Button
 								type="button"
 								aria-label="Back to parent agent"
