@@ -11,7 +11,7 @@ export const DEFAULT_PROMPT_GALLERY_EXAMPLES: PromptGalleryExample[] = [
 		prompt: "Summarize this Confluence page into key points, decisions made, and action items. Highlight anything that needs follow-up.",
 	},
 	{
-		iconPath: "/illustration/rich-icon/customer/standard.png",
+		iconPath: "/illustration/rich-icon/customer/standard.svg",
 		title: "Analyze support ticket trends",
 		description: "Identify recurring themes and top issues from recent support tickets.",
 		useCase: "Analysis",
@@ -19,7 +19,7 @@ export const DEFAULT_PROMPT_GALLERY_EXAMPLES: PromptGalleryExample[] = [
 		prompt: "Analyze recent support tickets and identify the top recurring themes, common pain points, and areas where our documentation could reduce ticket volume.",
 	},
 	{
-		iconPath: "/illustration/rich-icon/software/standard.png",
+		iconPath: "/illustration/rich-icon/software/standard.svg",
 		title: "Convert request into JQL",
 		description: "Write a JQL query to find specific issues in Jira based on natural language.",
 		useCase: "Analysis",
@@ -35,7 +35,7 @@ export const DEFAULT_PROMPT_GALLERY_EXAMPLES: PromptGalleryExample[] = [
 		prompt: "Audit this component for WCAG 2.1 AA compliance. Check color contrast, keyboard navigation, screen reader support, and focus management. Provide a prioritized list of issues with recommended fixes.",
 	},
 	{
-		iconPath: "/illustration/rich-icon/product-management/standard.png",
+		iconPath: "/illustration/rich-icon/product-management/standard.svg",
 		title: "Generate competitive analysis",
 		description: "Compare features, positioning, and strengths across competitor products.",
 		useCase: "Analysis",
@@ -61,7 +61,7 @@ export const DEFAULT_PROMPT_GALLERY_EXAMPLES: PromptGalleryExample[] = [
 		prompt: "Brainstorm 10 creative name options for a new AI-powered search feature. Names should be memorable, convey intelligence and speed, and work well in marketing materials.",
 	},
 	{
-		iconPath: "/illustration/rich-icon/design/standard.png",
+		iconPath: "/illustration/rich-icon/design/standard.svg",
 		title: "Brainstorm onboarding flow ideas",
 		description: "Explore creative approaches to improve new user onboarding experience.",
 		useCase: "Brainstorming",
@@ -163,7 +163,7 @@ export const DEFAULT_PROMPT_GALLERY_EXAMPLES: PromptGalleryExample[] = [
 		prompt: "Draft a stakeholder update email covering project status, key accomplishments this week, upcoming milestones, risks and blockers, and any decisions needed from leadership.",
 	},
 	{
-		iconPath: "/illustration/rich-icon/resilience/standard.png",
+		iconPath: "/illustration/rich-icon/resilience/standard.svg",
 		title: "Draft an incident postmortem",
 		description: "Write a blameless postmortem with timeline, impact, and follow-ups.",
 		useCase: "Communication",
@@ -181,7 +181,7 @@ export const DEFAULT_PROMPT_GALLERY_EXAMPLES: PromptGalleryExample[] = [
 		prompt: "Write comprehensive unit test cases for this function. Cover happy path, edge cases, error handling, boundary values, and null/undefined inputs. Use descriptive test names that explain the expected behavior.",
 	},
 	{
-		iconPath: "/illustration/rich-icon/platform/standard.png",
+		iconPath: "/illustration/rich-icon/platform/standard.svg",
 		title: "Explain a code review finding",
 		description: "Break down a complex code issue into a clear, actionable explanation.",
 		useCase: "Development",
@@ -199,7 +199,7 @@ export const DEFAULT_PROMPT_GALLERY_EXAMPLES: PromptGalleryExample[] = [
 
 	// IT Support
 	{
-		iconPath: "/illustration/rich-icon/trust/standard.png",
+		iconPath: "/illustration/rich-icon/trust/standard.svg",
 		title: "Troubleshoot permission errors",
 		description: "Diagnose and resolve access control and permission issues.",
 		useCase: "IT Support",

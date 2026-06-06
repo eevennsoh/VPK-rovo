@@ -99,16 +99,14 @@ export default function ChatGallery({
 						return (
 							<Button
 								key={suggestion.label}
-								className="gap-2 rounded-full"
+								className="max-w-full gap-2 rounded-full"
 								variant="secondary"
 								onClick={() => onSelect(suggestionPrompt)}
-								onMouseEnter={() => handlePreviewStart(suggestionPrompt)}
-								onMouseLeave={handlePreviewEnd}
 								onFocus={() => handlePreviewStart(suggestionPrompt)}
 								onBlur={handlePreviewEnd}
 							>
 								<Icon label="" size="small" />
-								{suggestion.label}
+								<span className="min-w-0 truncate">{suggestion.label}</span>
 							</Button>
 						);
 					})}
