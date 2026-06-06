@@ -5395,20 +5395,6 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  "agent-demo-full": dynamic(
-    () =>
-      import("./demos/blocks/agent-demo").then((mod) => ({
-        default: mod.AgentDemoFull,
-      })),
-    { ssr: false },
-  ),
-  "agent-demo-empty": dynamic(
-    () =>
-      import("./demos/blocks/agent-demo").then((mod) => ({
-        default: mod.AgentDemoEmpty,
-      })),
-    { ssr: false },
-  ),
   "agent-evaluation-demo-filled": dynamic(
     () =>
       import("./demos/blocks/agent-evaluation-demo").then((mod) => ({
@@ -6916,6 +6902,22 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
 };
 
 const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
+  // Agent
+  "agent-demo-full": dynamic(
+    () =>
+      import("./demos/blocks/agent-demo").then((mod) => ({
+        default: mod.AgentDemoFull,
+      })),
+    { ssr: false },
+  ),
+  "agent-demo-empty": dynamic(
+    () =>
+      import("./demos/blocks/agent-demo").then((mod) => ({
+        default: mod.AgentDemoEmpty,
+      })),
+    { ssr: false },
+  ),
+
   // Subagents
   "subagents-demo-empty": dynamic(
     () =>
