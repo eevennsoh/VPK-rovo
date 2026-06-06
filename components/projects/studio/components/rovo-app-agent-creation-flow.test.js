@@ -173,9 +173,11 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(COMPOSER_SOURCE, /textareaRef\.current\?\.focus\(\);/u);
 });
 
-test("Studio landing motion gates first paint", () => {
-	assert.match(SHELL_SOURCE, /import \{ motion, useReducedMotion \} from "motion\/react";/u);
+test("Studio landing motion gates first paint and removes bento instantly after prompt submit", () => {
+	assert.match(SHELL_SOURCE, /import \{ animate, AnimatePresence, motion, useMotionValue, useReducedMotion, type AnimationPlaybackControls \} from "motion\/react";/u);
 	assert.match(SHELL_SOURCE, /const STUDIO_LANDING_ENTER_TRANSITION = \{[\s\S]*visualDuration: 0\.32,[\s\S]*bounce: 0,[\s\S]*\} as const;/u);
+	assert.match(SHELL_SOURCE, /const STUDIO_HOME_BENTO_INSTANT_EXIT = \{[\s\S]*height: 0,[\s\S]*marginBottom: 0,[\s\S]*opacity: 0,[\s\S]*transition: \{ duration: 0 \},[\s\S]*\} as const;/u);
+	assert.match(SHELL_SOURCE, /const STUDIO_HOME_BENTO_VARIANTS = \{[\s\S]*exit: \(\{ instant, reduceMotion \}: StudioHomeBentoExitContext\) =>[\s\S]*instant \|\| reduceMotion \? STUDIO_HOME_BENTO_INSTANT_EXIT : STUDIO_HOME_BENTO_COLLAPSE_EXIT/u);
 	assert.match(SHELL_SOURCE, /const \[landingMotionReady, setLandingMotionReady\] = useState\(false\);/u);
 	assert.match(SHELL_SOURCE, /const shouldGateDefaultLandingContent = isDefaultAgentHomeState && !landingMotionReady;/u);
 	assert.match(SHELL_SOURCE, /const shouldShowDefaultLandingContent = !shouldGateDefaultLandingContent;/u);
@@ -183,6 +185,8 @@ test("Studio landing motion gates first paint", () => {
 	assert.match(SHELL_SOURCE, /if \(landingMotionReady \|\| shellSize\.width <= 0 \|\| shellSize\.height <= 0\) \{[\s\S]*requestAnimationFrame\(\(\) => setLandingMotionReady\(true\)\)/u);
 	assert.match(SHELL_SOURCE, /const \[isDefaultHomeSubmitTransition, setIsDefaultHomeSubmitTransition\] = useState\(false\);/u);
 	assert.match(SHELL_SOURCE, /if \(isDefaultAgentHomeStateRef\.current\) \{[\s\S]*setIsDefaultHomeSubmitTransition\(true\);[\s\S]*\}[\s\S]*setOptimisticUserMessage/u);
+	assert.match(SHELL_SOURCE, /const homeStarterBentoPresence = \{[\s\S]*instant: isDefaultHomeSubmitTransition,[\s\S]*reduceMotion: shouldReduceStudioLandingMotion,[\s\S]*\};/u);
+	assert.match(SHELL_SOURCE, /<AnimatePresence custom=\{homeStarterBentoPresence\} initial=\{false\}>[\s\S]*<motion\.div[\s\S]*custom=\{homeStarterBentoPresence\}[\s\S]*exit="exit"[\s\S]*variants=\{STUDIO_HOME_BENTO_VARIANTS\}/u);
 });
 
 test("Studio start-from-scratch scribble replays on each composer hover reveal", () => {
@@ -217,13 +221,121 @@ test("Studio composer clears shell-owned prefill sources when a prompt is submit
 	assert.match(SHELL_SOURCE, /clearPrefillSources,/u);
 });
 
+test("Studio home starters frame agent building instead of generic one-off tasks", () => {
+	assert.match(SHELL_SOURCE, /type HomeStarterCategory = "analyze" \| "brainstorm" \| "review" \| "summarize" \| "create";/u);
+	assert.match(SHELL_SOURCE, /const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyArray<HomeStarterTemplate>>>/u);
+	const homeStarterViewsSource = SHELL_SOURCE.slice(
+		SHELL_SOURCE.indexOf("const HOME_STARTER_VIEWS"),
+		SHELL_SOURCE.indexOf("function parseCssDurationMs"),
+	);
+	const starterTitles = [...homeStarterViewsSource.matchAll(/\btitle: "([^"]+)"/gu)].map((match) => match[1]);
+
+	assert.equal(starterTitles.length, 36);
+	for (const title of starterTitles) {
+		assert.doesNotMatch(title, /agent/iu);
+	}
+
+	for (const title of [
+		"Product Requirements Guide",
+		"Release Notes Drafter",
+		"Brand Voice Crafter",
+		"Social Media Writer",
+		"Global Translator",
+		"Meeting Insights",
+		"Decision Director",
+		"OKR Generator",
+		"Work Item Planner",
+		"Progress Tracker",
+		"Work Item Organizer",
+		"Blocker Checker",
+		"Bug Report Assistant",
+		"Readiness Checker",
+		"Rovo Ops",
+		"Service Request Helper",
+		"Service Triage",
+		"Jira Theme Analyzer",
+		"Transcript Insights Reporter",
+		"Customer Insights",
+		"User Manual Writer",
+		"Rovo Expert",
+	]) {
+		assert.ok(starterTitles.includes(title), `${title} should be available as a Studio starter`);
+	}
+
+	assert.match(SHELL_SOURCE, /prompt: "Build a Studio agent named Product Requirements Guide/u);
+	assert.match(SHELL_SOURCE, /prompt: "Build a Studio agent named Rovo Expert/u);
+	assert.doesNotMatch(SHELL_SOURCE, /title: "Analyze a workstream"/u);
+	assert.doesNotMatch(homeStarterViewsSource, /\btitle: "Build .* agent"/iu);
+	assert.doesNotMatch(SHELL_SOURCE, /prompt: "Summarize this into key points/u);
+});
+
+test("Studio home bento applies card glow pointer flow to starter tiles", () => {
+	assert.match(SHELL_SOURCE, /const HOME_STARTER_CARD_GLOW_EFFECT_STYLE/u);
+	// The hover stroke color is the tile's own agent-avatar color, derived from
+	// the avatar group in `iconSrc` (each /avatar-agent/<group>/ family shares one
+	// brand color) — not an index-cycled palette that drifts out of sync.
+	assert.match(SHELL_SOURCE, /const HOME_STARTER_AVATAR_GROUP_ACCENTS: Readonly<Record<string, string>>/u);
+	assert.match(SHELL_SOURCE, /"teamwork-agents": "#1868DB"/u);
+	assert.match(SHELL_SOURCE, /function getHomeStarterCardGlowAccent\(iconSrc: string\)/u);
+	assert.match(SHELL_SOURCE, /getHomeStarterCardGlowAccent\(template\.iconSrc\)/u);
+	assert.match(SHELL_SOURCE, /function HomeStarterCardGlowLayers/u);
+	assert.match(SHELL_SOURCE, /const tileRefs = useRef<Array<HTMLButtonElement \| null>>\(\[\]\);/u);
+	assert.match(SHELL_SOURCE, /onPointerMove=\{handleBentoPointerMove\}/u);
+	assert.match(SHELL_SOURCE, /onPointerLeave=\{resetBentoPointer\}/u);
+	assert.match(SHELL_SOURCE, /--card-glow-pointer-x", normalizedX\.toFixed\(3\)/u);
+	assert.match(SHELL_SOURCE, /--card-glow-pointer-y", normalizedY\.toFixed\(3\)/u);
+	assert.match(SHELL_SOURCE, /"--card-glow-tile-accent": accentColor/u);
+	assert.match(SHELL_SOURCE, /"--card-glow-border-core": 36/u);
+	assert.match(SHELL_SOURCE, /"--card-glow-border-spread": 120/u);
+	assert.match(SHELL_SOURCE, /<HomeStarterCardGlowLayers iconSrc=\{template\.iconSrc\} \/>/u);
+	assert.match(SHELL_SOURCE, /const HOME_STARTER_CARD_BASE_BORDER_STYLE: CSSProperties/u);
+	// Resting stroke uses the subtle `color.border` token (matches the tiles'
+	// pre-glow default), not the heavier `color.border.bold`.
+	assert.match(SHELL_SOURCE, /boxShadow: `inset 0 0 0 calc\(var\(--card-glow-border-width\) \* 1px\) \$\{token\("color\.border"\)\}`/u);
+	assert.doesNotMatch(SHELL_SOURCE, /token\("color\.border\.bold"\)/u);
+	assert.match(SHELL_SOURCE, /borderWidth: "calc\(var\(--card-glow-border-width\) \* 1px\)"/u);
+	assert.match(SHELL_SOURCE, /transparent calc\(var\(--card-glow-border-spread\) \* 1px\)/u);
+	assert.match(SHELL_SOURCE, /data-home-starter-card-base-border/u);
+	assert.match(SHELL_SOURCE, /data-home-starter-card-glow-border/u);
+	assert.match(SHELL_SOURCE, /absolute inset-0 z-\[1\] rounded-\[inherit\]/u);
+	assert.match(SHELL_SOURCE, /style=\{HOME_STARTER_CARD_BASE_BORDER_STYLE\}/u);
+	assert.match(SHELL_SOURCE, /absolute inset-0 z-\[2\] overflow-hidden rounded-\[inherit\] border border-transparent/u);
+	// Regression: the glow ring must coexist with the always-on grey base stroke.
+	// Two invariants enforce the desired behavior:
+	// 1. No backdrop-filter on the ring — an always-on filter recolors the whole
+	//    ring (even where the gradient is transparent) and crushes the grey stroke.
+	// 2. No per-tile hover/focus opacity gate on the ring — the glow is driven by
+	//    the container-level pointer tracking so edges still light up when the
+	//    cursor is in the GAPS between tiles, not only over the hovered tile.
+	assert.doesNotMatch(SHELL_SOURCE, /backdropFilter/u);
+	assert.doesNotMatch(SHELL_SOURCE, /z-\[2\][^"]*group-hover\/home-starter-card:opacity-100/u);
+	assert.match(SHELL_SOURCE, /onPointerMove=\{handleBentoPointerMove\}/u);
+	assert.match(SHELL_SOURCE, /rounded-lg bg-background/u);
+	assert.match(SHELL_SOURCE, /transition-\[background-color,box-shadow\]/u);
+	assert.doesNotMatch(SHELL_SOURCE, /hover:border-border-bold/u);
+	assert.doesNotMatch(SHELL_SOURCE, /color-mix\(in srgb, var\(--card-glow-tile-accent\) 92%, white\)/u);
+	assert.doesNotMatch(SHELL_SOURCE, /rounded-lg border border-border bg-background/u);
+});
+
 test("Studio content surfaces keep their intended max widths", () => {
 	assert.match(SHELL_LAYOUT_SOURCE, /export const ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS = "max-w-\[600px\]";/u);
 	assert.match(SHELL_LAYOUT_SOURCE, /export const ROVO_APP_STUDIO_COMPOSER_SESSION_MAX_WIDTH_CLASS = "max-w-\[800px\]";/u);
 	assert.match(SHELL_LAYOUT_SOURCE, /export const ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS = "max-w-\[1280px\]";/u);
+	assert.match(SHELL_SOURCE, /ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS/u);
+	assert.match(SHELL_SOURCE, /className=\{cn\(BENTO_CAROUSEL_CONTAINER_CLASS, ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS\)\}/u);
 	assert.match(MESSAGES_SOURCE, /compact \? "max-w-none" : "max-w-\[800px\]"/u);
 	assert.match(COMPOSER_SOURCE, /ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS/u);
 	assert.match(COMPOSER_SOURCE, /className=\{cn\("relative z-10 mx-auto", fillWidth \? ROVO_APP_STUDIO_COMPOSER_SESSION_MAX_WIDTH_CLASS : ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\)\}/u);
+});
+
+test("Studio home bento keeps tab auto-cycle active after manual tab selection", () => {
+	assert.match(SHELL_SOURCE, /const cycleRunning = !shouldReduceMotion && !templatesDialogOpen;/u);
+	assert.match(SHELL_SOURCE, /templatesDialogOpen: boolean;/u);
+	assert.match(SHELL_SOURCE, /const bentoInteractingRef = useRef\(false\);/u);
+	assert.match(SHELL_SOURCE, /const updateBentoInteracting = useCallback\(\(interacting: boolean\) => \{[\s\S]*bentoInteractingRef\.current = interacting;[\s\S]*setBentoInteracting\(interacting\);[\s\S]*\}, \[\]\);/u);
+	assert.match(SHELL_SOURCE, /const selectHomeStarterCategory = useCallback\(\(category: HomeStarterCategory\) => \{[\s\S]*setActiveCategory\(category\);[\s\S]*\}, \[\]\);/u);
+	assert.match(SHELL_SOURCE, /if \(bentoInteractingRef\.current\) \{[\s\S]*controls\.pause\(\);[\s\S]*\}[\s\S]*cycleControlsRef\.current = controls;/u);
+	assert.doesNotMatch(SHELL_SOURCE, /setCycleEnabled\(false\)/u);
 });
 
 test("Studio chat header is hidden until a chat is active", () => {
@@ -250,7 +362,10 @@ test("Studio agent results use guarded session-agent registration with preserve-
 	assert.match(SHELL_SOURCE, /handledAgentResultKeysRef\.current\.add\(agentResultKey\);[\s\S]*unmarkStudioAgentCreationThread\(chat\.runtimeThreadId\);[\s\S]*unmarkStudioAgentCreationThread\(chat\.activeThreadId\);[\s\S]*break;/u);
 	assert.match(SHELL_SOURCE, /const unmarkStudioAgentCreationThread = useCallback[\s\S]*studioAgentCreationThreadKeysRef\.current\.delete\(threadId\);/u);
 	assert.doesNotMatch(SHELL_SOURCE, /!studioAgentCreationThreadKeysRef\.current\.has\(chat\.runtimeThreadId\) &&[\s\S]*return;[\s\S]*for \(const message of chat\.messages/u);
+	assert.match(SHELL_SOURCE, /import \{ AgentsDirectoryDialog \} from "@\/components\/blocks\/agents-directory";/u);
 	assert.match(SHELL_SOURCE, /sessionAgentEntries=\{studioAgentRegistry\.sessionAgentEntries\}/u);
+	assert.match(SHELL_SOURCE, /sessionAgents=\{studioAgentRegistry\.sessionAgentEntries\.map\(\(entry\) => entry\.profile\)\}/u);
+	assert.match(SHELL_SOURCE, /agents=\{ROVO_DIRECTORY_AGENT_PROFILES\}/u);
 	assert.match(SHELL_SOURCE, /selectedAgentId=\{activeSessionAgentEntry\?\.profile\.id \?\? studioAgentRegistry\.selectedAgentId\}/u);
 	assert.match(SHELL_SOURCE, /onSelectAgent=\{handleStudioSidebarAgentSelect\}/u);
 	assert.match(SHELL_SOURCE, /onViewAllAgents=\{handleReturnToAgentsHome\}/u);
@@ -622,9 +737,11 @@ test("Studio hides resolved question-card trace after rendering answer summary",
 });
 
 test("Studio threads template provenance into agent creation contexts", () => {
-	// The templates dialog carries distilled template provenance into the gallery
-	// select handler.
+	// Browse-all dialog and bento starters both carry distilled template
+	// provenance into the gallery select handler.
 	assert.match(SHELL_SOURCE, /buildCreationTemplateContextFromAgent\(agent\)/u);
+	assert.match(SHELL_SOURCE, /onSelect\(template\.prompt, buildCreationTemplateContextFromStarter\(template\)\)/u);
+	assert.match(SHELL_SOURCE, /onSelect: \(prompt: string, template\?: StudioCreationTemplateContext\) => void;/u);
 	// The pending selection is held in a ref and consumed on submit; the active
 	// creation thread keeps its template for the clarification continuation.
 	assert.match(SHELL_SOURCE, /const creationTemplateRef = useRef<StudioCreationTemplateContext \| null>\(null\);/u);
