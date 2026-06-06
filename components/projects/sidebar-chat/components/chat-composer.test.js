@@ -61,7 +61,7 @@ test("compact chat composer padding can be overridden by opt-in surfaces", () =>
 });
 
 test("Rovo app sources selector opens a reasoning-free customize popover", () => {
-	const source = readProjectFile("components/projects/rovo/components/rovo-app-composer.tsx");
+	const source = readProjectFile("components/projects/shared/components/rovo-app-composer.tsx");
 	const popoverIndex = source.indexOf("<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>");
 	const preferencesTriggerIndex = source.indexOf("<PopoverTrigger render={<PromptInputPreferencesButton aria-label=\"Customize\" />} />", popoverIndex);
 	const customizeMenuIndex = source.indexOf("<CustomizeMenu", preferencesTriggerIndex);
@@ -124,7 +124,7 @@ test("shared composer experimental dark CTA prop is opt-in and covers submit plu
 test("Rovo composers default reasoning to Auto", () => {
 	const sharedMenuData = readProjectFile("components/blocks/shared-ui/data/customize-menu-data.tsx");
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
-	const rovoComposer = readProjectFile("components/projects/rovo/components/rovo-app-composer.tsx");
+	const rovoComposer = readProjectFile("components/projects/shared/components/rovo-app-composer.tsx");
 
 	assert.match(sharedMenuData, /export const DEFAULT_REASONING_OPTION_ID = "let-rovo-decide"/u);
 	assert.match(sidebarComposer, /useState\(DEFAULT_REASONING_OPTION_ID\)/u);
@@ -151,7 +151,7 @@ test("sidebar chat shares Max reasoning with the empty-state greeting", () => {
 test("sidebar chat and Rovo app composers use the shared Auto plus CTA controls", () => {
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
-	const rovoComposer = readProjectFile("components/projects/rovo/components/rovo-app-composer.tsx");
+	const rovoComposer = readProjectFile("components/projects/shared/components/rovo-app-composer.tsx");
 	const rovoShell = readProjectFile("components/projects/rovo/components/rovo-app-shell.tsx");
 
 	for (const source of [sidebarComposer, rovoComposer]) {
@@ -170,7 +170,7 @@ test("sidebar chat and Rovo app composers use the shared Auto plus CTA controls"
 });
 
 test("Rovo app Max reasoning owns plan mode without a separate Task button", () => {
-	const rovoComposer = readProjectFile("components/projects/rovo/components/rovo-app-composer.tsx");
+	const rovoComposer = readProjectFile("components/projects/shared/components/rovo-app-composer.tsx");
 
 	assert.match(rovoComposer, /const handleReasoningChange = useCallback\(\(reasoning: string\) => \{/u);
 	assert.match(rovoComposer, /const shouldEnablePlanMode = reasoning === "max"/u);
@@ -184,7 +184,7 @@ test("Rovo app Max reasoning owns plan mode without a separate Task button", () 
 
 test("compact chat plus menu reuses the Rovo app attachment actions", () => {
 	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
-	const rovoAddMenu = readProjectFile("components/projects/rovo/components/rovo-app-composer-add-menu.tsx");
+	const rovoAddMenu = readProjectFile("components/projects/shared/components/rovo-app-composer-add-menu.tsx");
 
 	assert.match(sidebarComposer, /RovoAppComposerAddMenu/u);
 	assert.match(sidebarComposer, /PendingAttachments/u);

@@ -65,7 +65,7 @@ import {
 	getLatestRovoAppThinkingStatusLabel,
 	resolveRovoAppComposerSubmitState,
 	type RovoAppDirectDelegationPhase,
-} from "@/components/projects/rovo/lib/rovo-app-composer-submit-state";
+} from "@/components/projects/shared/lib/rovo-app-composer-submit-state";
 import {
 	canDispatchRovoAppQueuedAction,
 	hasQueuedRovoAppFollowUp,
@@ -187,7 +187,7 @@ import {
 	clearRovoAppPlanExecutionDismissalsForThread,
 	resolveRovoAppPlanExecutionTracker,
 	type RovoAppPlanExecutionTrackerViewModel,
-} from "@/components/projects/rovo/lib/rovo-app-plan-execution-tracker";
+} from "@/components/projects/shared/lib/rovo-app-plan-execution-tracker";
 
 function deriveThreadTitle(promptText: string): string {
 	const firstLine = promptText

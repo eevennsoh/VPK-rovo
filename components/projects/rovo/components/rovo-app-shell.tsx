@@ -27,7 +27,7 @@ import {
 	shouldAutoOpenRovoAppBrowserArtifact,
 	shouldShowReopenRovoAppBrowserArtifactControl,
 } from "@/components/projects/rovo/lib/rovo-app-browser-preview";
-import { resolveRovoAppComposerPlaceholder } from "@/components/projects/rovo/lib/rovo-app-composer-placeholder";
+import { resolveRovoAppComposerPlaceholder } from "@/components/projects/shared/lib/rovo-app-composer-placeholder";
 import { ROVO_APP_MAX_CHAT_PANE_WIDTH, ROVO_APP_MIN_ARTIFACT_PANE_WIDTH, ROVO_APP_MIN_CHAT_PANE_WIDTH, getRovoAppShellLayout } from "@/components/projects/rovo/lib/rovo-app-shell-layout";
 import { getRovoAppSmartGenerationLayoutContext } from "@/components/projects/rovo/lib/rovo-app-smart-generation-layout";
 import { deriveRovoAppTimelineItems } from "@/components/projects/rovo/lib/rovo-app-timeline";

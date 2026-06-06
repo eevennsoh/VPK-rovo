@@ -56,7 +56,11 @@ const NAV_HOOK_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const COMPOSER_SOURCE = fs.readFileSync(
-	path.join(__dirname, "rovo-app-composer.tsx"),
+	path.join(process.cwd(), "components/projects/shared/components/rovo-app-composer.tsx"),
+	"utf8",
+);
+const COMPOSER_REVEAL_HOOK_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/shared/hooks/use-rovo-app-composer-reveal.ts"),
 	"utf8",
 );
 const SUBAGENTS_HOOK_SOURCE = fs.readFileSync(
@@ -190,12 +194,12 @@ test("Studio landing motion gates first paint and removes bento instantly after 
 });
 
 test("Studio start-from-scratch scribble replays on each composer hover reveal", () => {
-	assert.match(COMPOSER_SOURCE, /const \[scratchScribbleReplayKey, setScratchScribbleReplayKey\] = useState\(0\);/u);
-	assert.match(COMPOSER_SOURCE, /const \[templateSweepReplayKey, setTemplateSweepReplayKey\] = useState\(0\);/u);
-	assert.match(COMPOSER_SOURCE, /setTemplateSweepReplayKey\(\(currentKey\) => currentKey \+ 1\);[\s\S]*scratchScribbleDelayTimeoutRef\.current = setTimeout/u);
-	assert.match(COMPOSER_SOURCE, /setIsScratchScribblePlaying\(true\);[\s\S]*setScratchScribbleReplayKey\(\(currentKey\) => currentKey \+ 1\);/u);
-	assert.match(COMPOSER_SOURCE, /SCRATCH_SCRIBBLE_DELAY_MS = 480/u);
-	assert.match(COMPOSER_SOURCE, /const showScratchScribble = isRevealVisible && isScratchScribblePlaying;/u);
+	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /const \[scratchScribbleReplayKey, setScratchScribbleReplayKey\] = useState\(0\);/u);
+	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /const \[templateSweepReplayKey, setTemplateSweepReplayKey\] = useState\(0\);/u);
+	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /setTemplateSweepReplayKey\(\(currentKey\) => currentKey \+ 1\);[\s\S]*scratchScribbleDelayTimeoutRef\.current = setTimeout/u);
+	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /setIsScratchScribblePlaying\(true\);[\s\S]*setScratchScribbleReplayKey\(\(currentKey\) => currentKey \+ 1\);/u);
+	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /SCRATCH_SCRIBBLE_DELAY_MS = 480/u);
+	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /const showScratchScribble = isRevealVisible && isScratchScribblePlaying;/u);
 	assert.match(COMPOSER_SOURCE, /SVG_TRACE_SCRATCH_UNDERLINE_PRESET/u);
 	assert.match(COMPOSER_SOURCE, /shape=\{SVG_TRACE_SCRATCH_UNDERLINE_PRESET\}[\s\S]*config=\{SCRATCH_SCRIBBLE_CONFIG\}[\s\S]*resetKey=\{scratchScribbleReplayKey\}/u);
 	assert.match(COMPOSER_SOURCE, /resetKey=\{scratchScribbleReplayKey\}/u);
@@ -324,8 +328,8 @@ test("Studio content surfaces keep their intended max widths", () => {
 	assert.match(SHELL_SOURCE, /ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS/u);
 	assert.match(SHELL_SOURCE, /className=\{cn\(BENTO_CAROUSEL_CONTAINER_CLASS, ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS\)\}/u);
 	assert.match(MESSAGES_SOURCE, /compact \? "max-w-none" : "max-w-\[800px\]"/u);
-	assert.match(COMPOSER_SOURCE, /ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS/u);
-	assert.match(COMPOSER_SOURCE, /className=\{cn\("relative z-10 mx-auto", fillWidth \? ROVO_APP_STUDIO_COMPOSER_SESSION_MAX_WIDTH_CLASS : ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\)\}/u);
+	assert.match(COMPOSER_SOURCE, /FLOATING_COMPOSER_MAX_WIDTH_CLASS = "max-w-\[600px\]"/u);
+	assert.match(COMPOSER_SOURCE, /className=\{cn\("relative z-10 mx-auto", fillWidth \? FLOATING_COMPOSER_SESSION_MAX_WIDTH_CLASS : FLOATING_COMPOSER_MAX_WIDTH_CLASS\)\}/u);
 });
 
 test("Studio home bento keeps tab auto-cycle active after manual tab selection", () => {
@@ -754,11 +758,11 @@ test("Studio threads template provenance into agent creation contexts", () => {
 test("Studio composer reveals 'Start from scratch' on focus or hover and lands on a blank untitled agent config", () => {
 	// Composer reveals the affordance underneath the prompt input on focus or hover.
 	assert.match(COMPOSER_SOURCE, /onStartFromScratch\?: \(\) => void;/u);
-	assert.match(COMPOSER_SOURCE, /const \[isInputFocused, setIsInputFocused\] = useState\(false\);/u);
-	assert.match(COMPOSER_SOURCE, /const \[isComposerHoverActive, setIsComposerHoverActive\] = useState\(false\);/u);
-	assert.match(COMPOSER_SOURCE, /onFocus=\{\(\) => \{[\s\S]*setIsInputFocused\(true\);/u);
-	assert.match(COMPOSER_SOURCE, /onBlur=\{\(\) => setIsInputFocused\(false\)\}/u);
-	assert.match(COMPOSER_SOURCE, /const isRevealVisible = isInputFocused \|\| isComposerHoverActive;/u);
+	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /const \[isInputFocused, setIsInputFocused\] = useState\(false\);/u);
+	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /const \[isComposerHoverActive, setIsComposerHoverActive\] = useState\(false\);/u);
+	assert.match(COMPOSER_SOURCE, /onFocus=\{\(\) => \{[\s\S]*setInputFocused\(true\);/u);
+	assert.match(COMPOSER_SOURCE, /onBlur=\{\(\) => setInputFocused\(false\)\}/u);
+	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /const isRevealVisible = isInputFocused \|\| isComposerHoverActive;/u);
 	assert.match(COMPOSER_SOURCE, /\{onStartFromScratch \? \([\s\S]*\{isRevealVisible \?/u);
 	// Reveal copy: default is "Or start from scratch"; when onBrowseTemplates is
 	// provided (bento dismissed) it becomes "Browse template or start from scratch".
@@ -827,7 +831,7 @@ test("Studio re-selecting a custom agent edits it without selecting it for chat"
 
 test("Studio composer opts into experimental dark composer CTAs", () => {
 	assert.match(COMPOSER_SOURCE, /screenAssistantTargetPrefix="studio-composer"/u);
-	assert.match(COMPOSER_SOURCE, /className=\{cn\("relative z-10 mx-auto", fillWidth \? ROVO_APP_STUDIO_COMPOSER_SESSION_MAX_WIDTH_CLASS : ROVO_APP_STUDIO_COMPOSER_MAX_WIDTH_CLASS\)\}/u);
+	assert.match(COMPOSER_SOURCE, /className=\{cn\("relative z-10 mx-auto", fillWidth \? FLOATING_COMPOSER_SESSION_MAX_WIDTH_CLASS : FLOATING_COMPOSER_MAX_WIDTH_CLASS\)\}/u);
 	assert.match(COMPOSER_SOURCE, /experimentalDarkCta/u);
 	assert.doesNotMatch(COMPOSER_SOURCE, /voiceStartButtonClassName="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u);
 	assert.doesNotMatch(COMPOSER_SOURCE, /submitButtonClassName="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u);

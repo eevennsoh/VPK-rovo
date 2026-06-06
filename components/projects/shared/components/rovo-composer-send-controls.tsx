@@ -12,8 +12,8 @@ import {
 } from "@/components/ui-custom/prompt-input";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { LiveWaveform } from "@/components/ui-audio/live-waveform";
-import { resolveRovoAppComposerIdleAction } from "@/components/projects/rovo/lib/rovo-app-composer-idle-action";
-import { resolveRovoAppComposerWaveformState } from "@/components/projects/rovo/lib/rovo-app-composer-waveform-state";
+import { resolveRovoAppComposerIdleAction } from "@/components/projects/shared/lib/rovo-app-composer-idle-action";
+import { resolveRovoAppComposerWaveformState } from "@/components/projects/shared/lib/rovo-app-composer-waveform-state";
 import { ROVO_WAVEFORM_COLOR_CSS_VARS } from "@/lib/rovo-colors";
 import { cn } from "@/lib/utils";
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";

@@ -1,6 +1,6 @@
 "use client";
 
-import { RovoAppComposerAddMenu } from "@/components/projects/rovo/components/rovo-app-composer-add-menu";
+import { RovoAppComposerAddMenu } from "@/components/projects/shared/components/rovo-app-composer-add-menu";
 
 interface AddMenuProps {
 	onClose: () => void;
