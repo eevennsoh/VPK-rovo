@@ -4,6 +4,8 @@ import type { CarouselApi } from "@/components/ui/carousel";
 import type { ComponentProps } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import {
 	Carousel,
 	CarouselContent,
@@ -161,10 +163,7 @@ export function InlineCitationCarouselHeader({
 }: Readonly<InlineCitationCarouselHeaderProps>) {
 	return (
 		<div
-			className={cn(
-				"flex items-center justify-between gap-2 rounded-t-md bg-secondary p-2",
-				className,
-			)}
+			className={cn("flex items-center justify-between p-2", className)}
 			{...props}
 		/>
 	);
@@ -213,7 +212,18 @@ export function InlineCitationCarouselIndex({
 	);
 }
 
-export type InlineCitationCarouselPrevProps = ComponentProps<"button">;
+export type InlineCitationCarouselButtonsProps = ComponentProps<
+	typeof ButtonGroup
+>;
+
+export function InlineCitationCarouselButtons({
+	className,
+	...props
+}: Readonly<InlineCitationCarouselButtonsProps>) {
+	return <ButtonGroup className={cn("shrink-0", className)} {...props} />;
+}
+
+export type InlineCitationCarouselPrevProps = ComponentProps<typeof Button>;
 
 export function InlineCitationCarouselPrev({
 	className,
@@ -226,19 +236,21 @@ export function InlineCitationCarouselPrev({
 	}, [api]);
 
 	return (
-		<button
+		<Button
 			aria-label="Previous"
 			className={cn("shrink-0", className)}
 			onClick={handleClick}
+			size="icon-compact"
 			type="button"
+			variant="ghost"
 			{...props}
 		>
-			<ArrowLeftIcon className="size-4 text-muted-foreground" />
-		</button>
+			<ArrowLeftIcon />
+		</Button>
 	);
 }
 
-export type InlineCitationCarouselNextProps = ComponentProps<"button">;
+export type InlineCitationCarouselNextProps = ComponentProps<typeof Button>;
 
 export function InlineCitationCarouselNext({
 	className,
@@ -251,15 +263,17 @@ export function InlineCitationCarouselNext({
 	}, [api]);
 
 	return (
-		<button
+		<Button
 			aria-label="Next"
 			className={cn("shrink-0", className)}
 			onClick={handleClick}
+			size="icon-compact"
 			type="button"
+			variant="ghost"
 			{...props}
 		>
-			<ArrowRightIcon className="size-4 text-muted-foreground" />
-		</button>
+			<ArrowRightIcon />
+		</Button>
 	);
 }
 
