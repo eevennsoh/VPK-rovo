@@ -24,10 +24,10 @@ export const dropdownStyles = {
     "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2 bg-popover text-popover-foreground z-[200] max-h-(--available-height) min-w-56 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg p-1 shadow-xl outline-none duration-fast data-closed:overflow-hidden",
   group: "",
   selectableItem:
-    "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center rounded-sm py-2 pr-3 pl-8 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+    "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex min-h-8 w-full cursor-pointer items-center rounded-sm py-1.5 pr-3 pl-8 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   checkedState:
     "data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed",
-  label: "text-text-subtle px-3 py-2 text-xs leading-4 font-medium",
+  label: "text-text-subtlest px-3 py-2 text-xs leading-4 font-semibold",
   separator: "bg-border mx-1 my-1 h-px",
   indicator:
     "pointer-events-none absolute left-2 inline-flex items-center justify-center",
@@ -176,6 +176,13 @@ type DropdownMenuItemClickHandler = NonNullable<MenuPrimitive.Item.Props["onClic
 interface DropdownMenuItemProps extends Omit<MenuPrimitive.Item.Props, "onSelect"> {
   inset?: boolean;
   variant?: "default" | "destructive";
+  /**
+   * Marks the item as the active choice in a single-select menu. Applies the
+   * selected background (with hover/pressed states), recolors the leading icon
+   * to the selected icon token, and shows a trailing check mark unless the
+   * caller supplies their own `elemAfter`.
+   */
+  selected?: boolean;
   elemBefore?: ReactNode;
   elemAfter?: ReactNode;
   description?: string;
@@ -186,6 +193,7 @@ function DropdownMenuItem({
   className,
   inset,
   variant = "default",
+  selected = false,
   elemBefore,
   elemAfter,
   description,
@@ -208,20 +216,29 @@ function DropdownMenuItem({
     }
   };
 
+  // Default the trailing slot to a check mark when selected so every callsite
+  // gets a consistent selected affordance without repeating it.
+  const resolvedElemAfter =
+    elemAfter ?? (selected ? <CheckMarkIcon label="" /> : undefined);
+  const isSelected = selected && variant === "default";
+
   return (
     <MenuPrimitive.Item
       data-slot="dropdown-menu-item"
       data-inset={inset}
       data-variant={variant}
+      data-selected={isSelected || undefined}
       className={cn(
-        "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center gap-3 rounded-sm px-3 py-2 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
+        "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex min-h-8 w-full cursor-pointer items-center gap-3 rounded-sm px-3 py-1.5 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
+        // Selected state: selected surface + selected hover/pressed + selected icon/text tokens.
+        "data-selected:bg-bg-selected data-selected:text-text-selected data-selected:data-[highlighted]:bg-bg-selected-hovered data-selected:data-[highlighted]:text-text-selected data-selected:active:bg-bg-selected-pressed data-selected:[&_svg]:text-icon-selected",
         className,
       )}
       onClick={handleClick}
       {...props}
     >
       {elemBefore ? (
-        <span className={cn("inline-flex h-5 shrink-0 items-center justify-center", variant === "destructive" ? "text-icon-danger" : "text-icon-subtle")}>
+        <span className={cn("inline-flex h-5 shrink-0 items-center justify-center", variant === "destructive" ? "text-icon-danger" : isSelected ? "text-icon-selected" : "text-icon-subtle")}>
           {elemBefore}
         </span>
       ) : null}
@@ -235,9 +252,9 @@ function DropdownMenuItem({
           </span>
         ) : null}
       </span>
-      {elemAfter ? (
-        <span className={cn("ml-auto inline-flex h-5 shrink-0 items-center justify-center", variant === "destructive" ? "text-icon-danger" : "text-icon-subtle")}>
-          {elemAfter}
+      {resolvedElemAfter ? (
+        <span className={cn("ml-auto inline-flex h-5 shrink-0 items-center justify-center", variant === "destructive" ? "text-icon-danger" : isSelected ? "text-icon-selected" : "text-icon-subtle")}>
+          {resolvedElemAfter}
         </span>
       ) : null}
     </MenuPrimitive.Item>
@@ -266,7 +283,7 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-popup-open:bg-bg-neutral-subtle-hovered data-popup-open:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled flex w-full cursor-pointer items-center gap-2 rounded-sm px-3 py-2 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-inset:pl-8 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-popup-open:bg-bg-neutral-subtle-hovered data-popup-open:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled flex min-h-8 w-full cursor-pointer items-center gap-2 rounded-sm px-3 py-1.5 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-inset:pl-8 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}

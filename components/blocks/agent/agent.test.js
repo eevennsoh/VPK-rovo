@@ -435,7 +435,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// Nav now rolls overflow into a "..." DropdownMenu instead of wrapping onto
 	// multiple lines (mirrors AgentCompactHeaderNav).
 	assert.doesNotMatch(AGENT_SOURCE, /flex min-w-0 flex-wrap items-center gap-1/u);
-	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_GAP = 4;/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_GAP = 2;/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH = 24;/u);
 	assert.match(AGENT_SOURCE, /computeContextBarOverflow\([\s\S]*AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH,[\s\S]*AGENT_COMPACT_CONFIG_NAV_GAP/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactConfigNavButton\(/u);
@@ -489,7 +489,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /isExpanded \? \(\s*<ChevronDownIcon label="" size="small" \/>\s*\) : \(\s*<ChevronUpIcon label="" size="small" \/>\s*\)/u);
 	// Reduced motion drops the animation duration.
 	assert.match(AGENT_SOURCE, /shouldReduceMotion \? \{ duration: 0 \} : \{ duration: 0\.2, ease: "easeOut" as const \}/u);
-	assert.match(AGENT_SOURCE, /import \{ CheckIcon, MoreHorizontalIcon, PlusIcon \} from "@\/components\/ui\/vpk-icons";/u);
+	assert.match(AGENT_SOURCE, /import \{ MoreHorizontalIcon, PlusIcon \} from "@\/components\/ui\/vpk-icons";/u);
 	assert.doesNotMatch(AGENT_SOURCE, /PlusCircleIcon/u);
 	assert.doesNotMatch(AGENT_SOURCE, /agent-compact-config-marker/u);
 	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Add agent configuration"/u);

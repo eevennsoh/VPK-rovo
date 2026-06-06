@@ -6,8 +6,12 @@ import type { ComponentProps, ReactNode } from "react";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
+import AiChatIcon from "@atlaskit/icon/core/ai-chat";
+import AutomationIcon from "@atlaskit/icon/core/automation";
 import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
 import DeleteIcon from "@atlaskit/icon/core/delete";
+import ToolsIcon from "@atlaskit/icon/core/tools";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 import EditIcon from "@atlaskit/icon/core/edit";
@@ -89,7 +93,7 @@ import { InlineEdit } from "@/components/ui/inline-edit";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import { Tag, type TagColor } from "@/components/ui/tag";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { CheckIcon, MoreHorizontalIcon, PlusIcon } from "@/components/ui/vpk-icons";
+import { MoreHorizontalIcon, PlusIcon } from "@/components/ui/vpk-icons";
 import { computeContextBarOverflow } from "@/components/ui-custom/context-bar/overflow";
 import {
 	type RichTextMentionItem,
@@ -147,17 +151,19 @@ const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
 // Subagents › Memory › Conversation starters. Reasoning renders separately and
 // always sits last. Keep both lists in sync when reordering.
 const AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = [
-	{ agentFieldName: "trigger", label: "Triggers" },
-	{ agentFieldName: "knowledge", label: "Knowledge", kind: "knowledge" },
-	{ agentFieldName: "tools", label: "Tools", listFieldName: "tools" },
-	{ agentFieldName: "skills", label: "Skills", listFieldName: "skills" },
-	{ agentFieldName: "subagents", label: "Subagents", listFieldName: "subagents" },
-	{ agentFieldName: "memory", label: "Memory", kind: "memory" },
-	{ agentFieldName: "conversationStarters", label: "Conversation starters", listFieldName: "conversationStarters" },
-	{ agentFieldName: "reasoning", label: "Reasoning", kind: "reasoning" },
+	{ agentFieldName: "trigger", label: "Triggers", Icon: AutomationIcon },
+	{ agentFieldName: "knowledge", label: "Knowledge", kind: "knowledge", Icon: BookOpenIcon },
+	{ agentFieldName: "tools", label: "Tools", listFieldName: "tools", Icon: ToolsIcon },
+	{ agentFieldName: "skills", label: "Skills", listFieldName: "skills", Icon: ScorecardIcon },
+	{ agentFieldName: "subagents", label: "Subagents", listFieldName: "subagents", Icon: AiAgentIcon },
+	{ agentFieldName: "memory", label: "Memory", kind: "memory", Icon: AiModelIcon },
+	{ agentFieldName: "conversationStarters", label: "Conversation starters", listFieldName: "conversationStarters", Icon: AiChatIcon },
+	{ agentFieldName: "reasoning", label: "Reasoning", kind: "reasoning", Icon: AiComputeIcon },
 ] as const;
 
-const AGENT_COMPACT_CONFIG_NAV_GAP = 4;
+// Match the shared Menubar's default `gap-0.5` (2px) so the connected config
+// strip spaces items identically to the base component.
+const AGENT_COMPACT_CONFIG_NAV_GAP = 2;
 const AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH = 24;
 // Shared flat-trigger look for every item in the connected config menu bar.
 // Kept subtle (no border/background) so the strip reads as one continuous
@@ -846,8 +852,14 @@ function AgentCompactNavMenuList({ children }: Readonly<{ children: ReactNode }>
 }
 
 function AgentCompactNavMenuFooter({ children }: Readonly<{ children: ReactNode }>) {
+	// Match the Memory dropdown: an inset separator (not a full-bleed border)
+	// divides the list from the footer. The sticky footer keeps a solid surface
+	// so the scrolling list passes behind it.
 	return (
-		<div className="sticky bottom-0 border-t border-border bg-popover p-1">{children}</div>
+		<div className="sticky bottom-0 bg-popover">
+			<DropdownMenuSeparator className="mt-0" />
+			<div className="p-1 pt-0">{children}</div>
+		</div>
 	);
 }
 
@@ -873,6 +885,7 @@ function AgentCompactSubagentsNavButton({
 	return (
 		<MenubarMenu>
 			<MenubarTrigger
+				className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
 				render={(
 					<AgentCompactConfigNavButton
 						aria-label="Subagents"
@@ -887,9 +900,9 @@ function AgentCompactSubagentsNavButton({
 						<DropdownMenuGroup className="p-0">
 							{subagents.map((subagent, index) => (
 								<DropdownMenuItem
-									elemAfter={selectedIndex === index ? <CheckIcon size="small" /> : undefined}
 									key={`${subagent}-${index}`}
 									onClick={() => onSelectSubagent?.(index)}
+									selected={selectedIndex === index}
 								>
 									{subagent}
 								</DropdownMenuItem>
@@ -902,20 +915,13 @@ function AgentCompactSubagentsNavButton({
 						<DropdownMenuItem elemBefore={<PlusIcon size="small" />} onClick={onCreateSubagent}>
 							Add subagent
 						</DropdownMenuItem>
-						<DropdownMenuItem onClick={onManageSubagents ?? onCreateSubagent}>
-							Manage subagents
-						</DropdownMenuItem>
 					</div>
-				) : (
-					<AgentCompactNavMenuFooter>
-						<DropdownMenuItem
-							elemBefore={<PlusIcon size="small" />}
-							onClick={onManageSubagents ?? onCreateSubagent}
-						>
-							Manage subagents
-						</DropdownMenuItem>
-					</AgentCompactNavMenuFooter>
-				)}
+				) : null}
+				<AgentCompactNavMenuFooter>
+					<DropdownMenuItem onClick={onManageSubagents ?? onCreateSubagent}>
+						Manage subagents
+					</DropdownMenuItem>
+				</AgentCompactNavMenuFooter>
 			</MenubarContent>
 		</MenubarMenu>
 	);
@@ -971,6 +977,7 @@ function AgentCompactTriggersNavButton({
 	return (
 		<MenubarMenu>
 			<MenubarTrigger
+				className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
 				render={(
 					<AgentCompactConfigNavButton
 						aria-label="Triggers"
@@ -1046,6 +1053,7 @@ function AgentCompactDirectoryNavButton({
 	return (
 		<MenubarMenu>
 			<MenubarTrigger
+				className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
 				render={(
 					<AgentCompactConfigNavButton
 						aria-label={item.label}
@@ -1105,6 +1113,7 @@ function AgentCompactConversationStartersNavButton({
 	return (
 		<MenubarMenu>
 			<MenubarTrigger
+				className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
 				render={(
 					<AgentCompactConfigNavButton
 						aria-label="Conversation starters"
@@ -1119,7 +1128,7 @@ function AgentCompactConversationStartersNavButton({
 						const StarterIcon = getStarterIcon(field.icon);
 						return (
 							<div
-								className="flex items-center gap-2 rounded-sm border border-input px-2 focus-within:border-border-focused"
+								className="flex items-center gap-2 rounded-sm border border-input px-3 focus-within:border-border-focused"
 								key={`starter-${index}`}
 							>
 								<StarterIcon label="" size="small" color="currentColor" />
@@ -2048,14 +2057,26 @@ type ReasoningModeValue =
 	(typeof REASONING_MODE_SECTIONS)[number]["options"][number]["value"];
 
 const REASONING_MODE_FLAT_OPTIONS = REASONING_MODE_SECTIONS.flatMap((section) =>
-	section.options.map((option) => ({
+	section.options.map((option, index) => ({
 		...option,
 		section: section.title,
+		// The default (first) option of a section represents the whole section.
+		isSectionDefault: index === 0,
 	})),
 );
 
 function findReasoningModeOption(value: ReasoningModeValue) {
 	return REASONING_MODE_FLAT_OPTIONS.find((option) => option.value === value);
+}
+
+// Lozenge value: a section's default option reads as the section title
+// ("Quick answer" / "Think deeper"); a specific model reads as its own label.
+function getReasoningModeLozengeLabel(value: ReasoningModeValue): string | undefined {
+	const option = findReasoningModeOption(value);
+	if (!option) {
+		return undefined;
+	}
+	return option.isSectionDefault ? option.section : option.label;
 }
 
 function AgentReasoningSelectorMenu({
@@ -2067,14 +2088,14 @@ function AgentReasoningSelectorMenu({
 }>) {
 	return (
 		<DropdownMenuContent align="start" className="min-w-[280px]">
-			{REASONING_MODE_SECTIONS.map((section) => (
-				<DropdownMenuGroup key={section.title}>
+			{REASONING_MODE_SECTIONS.map((section, sectionIndex) => (
+				<DropdownMenuGroup className={sectionIndex > 0 ? "mt-1" : undefined} key={section.title}>
 					<DropdownMenuLabel>{section.title}</DropdownMenuLabel>
 					{section.options.map((option) => (
 						<DropdownMenuItem
-							elemAfter={value === option.value ? <CheckIcon size="small" /> : undefined}
 							key={option.value}
 							onClick={() => onValueChange(option.value as ReasoningModeValue)}
+							selected={value === option.value}
 						>
 							{option.label}
 						</DropdownMenuItem>
@@ -2101,6 +2122,7 @@ function AgentReasoningSelector({
 	const current = findReasoningModeOption(value);
 	const sectionLabel = current?.section ?? "Reasoning";
 	const isThinkDeeper = current?.section === "Think deeper";
+	const lozengeLabel = getReasoningModeLozengeLabel(value);
 
 	if (render === "nav-button") {
 		return (
@@ -2112,7 +2134,7 @@ function AgentReasoningSelector({
 				>
 					Reasoning
 					{/* Surface the chosen mode inline so it reads without opening the menu. */}
-					{current ? <Badge>{current.label}</Badge> : null}
+					{lozengeLabel ? <Badge>{lozengeLabel}</Badge> : null}
 				</MenubarTrigger>
 				<AgentReasoningSelectorMenu value={value} onValueChange={onValueChange} />
 			</MenubarMenu>
@@ -2155,9 +2177,9 @@ function AgentReasoningOverflowMenu({
 						<DropdownMenuLabel>{section.title}</DropdownMenuLabel>
 						{section.options.map((option) => (
 							<DropdownMenuItem
-								elemAfter={value === option.value ? <CheckIcon size="small" /> : undefined}
 								key={option.value}
 								onClick={() => onValueChange(option.value as ReasoningModeValue)}
+								selected={value === option.value}
 							>
 								{option.label}
 							</DropdownMenuItem>
@@ -2224,9 +2246,9 @@ function AgentKnowledgeSelectorMenu({
 			<DropdownMenuGroup>
 				{KNOWLEDGE_MODE_OPTIONS.map((option) => (
 					<DropdownMenuItem
-						elemAfter={value === option.value ? <CheckIcon size="small" /> : undefined}
 						key={option.value}
 						onClick={() => onValueChange(option.value)}
+						selected={value === option.value}
 					>
 						{option.label}
 					</DropdownMenuItem>
@@ -2293,9 +2315,9 @@ function AgentKnowledgeOverflowMenu({
 				<DropdownMenuGroup>
 					{KNOWLEDGE_MODE_OPTIONS.map((option) => (
 						<DropdownMenuItem
-							elemAfter={value === option.value ? <CheckIcon size="small" /> : undefined}
 							key={option.value}
 							onClick={() => onValueChange(option.value)}
+							selected={value === option.value}
 						>
 							{option.label}
 						</DropdownMenuItem>
@@ -2325,9 +2347,9 @@ function AgentMemorySelectorMenu({
 			<DropdownMenuGroup>
 				{MEMORY_MODE_OPTIONS.map((option) => (
 					<DropdownMenuItem
-						elemAfter={value === option.value ? <CheckIcon size="small" /> : undefined}
 						key={option.value}
 						onClick={() => onValueChange(option.value)}
+						selected={value === option.value}
 					>
 						{option.label}
 					</DropdownMenuItem>
@@ -2406,9 +2428,9 @@ function AgentMemoryOverflowMenu({
 				<DropdownMenuGroup>
 					{MEMORY_MODE_OPTIONS.map((option) => (
 						<DropdownMenuItem
-							elemAfter={value === option.value ? <CheckIcon size="small" /> : undefined}
 							key={option.value}
 							onClick={() => onValueChange(option.value)}
+							selected={value === option.value}
 						>
 							{option.label}
 						</DropdownMenuItem>
@@ -2775,7 +2797,12 @@ function AgentConfigProfile({
 				</Breadcrumb>
 			) : null}
 			<div
-				className="flex flex-col gap-1"
+				className={cn(
+					"flex flex-col gap-1",
+					// Tighten the breadcrumb→name spacing to 4px (overrides the section's
+					// 16px gap-4) only when the breadcrumb is rendered for subagents.
+					isSubagent && "-mt-3",
+				)}
 				data-agent-field="name"
 				data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:name` : undefined}
 			>
