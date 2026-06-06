@@ -10,6 +10,7 @@ function readProjectFile(relativePath) {
 const AGENT_SOURCE = readProjectFile("components/blocks/agent/components/agent.tsx");
 const AGENT_INDEX_SOURCE = readProjectFile("components/blocks/agent/index.ts");
 const AGENT_PAGE_SOURCE = readProjectFile("components/blocks/agent/page.tsx");
+const AGENT_PREVIEW_PAGE_SOURCE = readProjectFile("app/preview/blocks/agent/page.tsx");
 const AGENT_SURFACES_SOURCE = readProjectFile("components/blocks/agent-surfaces/components/agent-surfaces.tsx");
 const INLINE_EDIT_SOURCE = readProjectFile("components/ui/inline-edit.tsx");
 const TAG_SOURCE = readProjectFile("components/ui/tag.tsx");
@@ -52,7 +53,8 @@ test("Agent is exposed as a website block", () => {
 	assert.doesNotMatch(COMPONENT_MANIFEST_SOURCE, /customComponent\("agent"\)/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /import \{[\s\S]*Agent,[\s\S]*AgentHeader,[\s\S]*AgentContent,[\s\S]*AgentConfigFields,[\s\S]*\} from "@\/components\/blocks\/agent";/u);
 	assert.doesNotMatch(UI_CUSTOM_DETAILS_SOURCE, /\n\tagent: \{/u);
-	assert.match(WEBSITE_REGISTRY_SOURCE, /agent: dynamic\(\(\) => import\("\.\/demos\/blocks\/agent-demo"\), \{ ssr: false \}\)/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /const BLOCK_DEMOS: Record<string, ComponentType> = \{[\s\S]*agent: dynamic\(\(\) => import\("\.\/demos\/blocks\/agent-demo"\), \{ ssr: false \}\)/u);
+	assert.doesNotMatch(WEBSITE_REGISTRY_SOURCE, /const UI_CUSTOM_DEMO: Record<string, ComponentType> = \{[\s\S]*agent: dynamic\(\(\) => import\("\.\/demos\/blocks\/agent-demo"\), \{ ssr: false \}\)[\s\S]*const BLOCK_DEMOS/u);
 });
 
 test("Agent instructions composer uses the shared Tiptap editor", () => {
@@ -488,6 +490,8 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /return <AgentAccess \{\.\.\.props\} \/>;/u);
 	assert.match(AGENT_INDEX_SOURCE, /export \* from "\.\/components\/agent";/u);
 	assert.match(AGENT_PAGE_SOURCE, /import \{ AgentDemoFull \} from "@\/components\/website\/demos\/blocks\/agent-demo";/u);
+	assert.match(AGENT_PREVIEW_PAGE_SOURCE, /import AgentPage from "@\/components\/blocks\/agent\/page";/u);
+	assert.match(AGENT_PREVIEW_PAGE_SOURCE, /title: getPreviewPageTitle\("agent", "blocks"\),/u);
 	assert.match(AGENT_SURFACES_SOURCE, /function AgentDefaultSurfaceRow/u);
 	assert.match(AGENT_SURFACES_SOURCE, /function AgentExtendedSurfaceRow/u);
 	assert.match(AGENT_SURFACES_SOURCE, /data-agent-compact-section="surfaces"/u);
