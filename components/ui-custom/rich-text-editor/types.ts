@@ -6,9 +6,10 @@ import type { Editor } from "@tiptap/core";
 import type { AtlassianLogoName } from "@/components/ui/logo";
 
 /**
- * "@" mentions people and agents only.
+ * "@" mentions people and teams only. Subagents are inserted from the "/"
+ * command surface alongside other reference categories.
  */
-export type RichTextMentionTarget = "subagent" | "human" | "team";
+export type RichTextMentionTarget = "human" | "team";
 
 export type RichTextReferenceCategory = "subagent" | "skill" | "tool" | "knowledge";
 
