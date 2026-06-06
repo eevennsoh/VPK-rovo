@@ -142,17 +142,6 @@ const AGENT_PROFILE_SWAP_VARIANTS = {
 } as const;
 const AGENT_PROFILE_SWAP_TRANSITION = { type: "spring", bounce: 0.12, visualDuration: 0.22 } as const;
 
-// Expand/collapse swap for the compact config toolbar's two mutually-exclusive
-// panels (expanded summary ⇄ collapsed nav). Animating `height` between 0 and
-// auto (with overflow hidden) lets the container grow/shrink smoothly instead of
-// snapping, while opacity + a small `y` nudge crossfade the contents. Both
-// panels stay in flow during the swap (default AnimatePresence mode) so their
-// heights interpolate together and nothing jumps.
-const AGENT_TOOLBAR_PANEL_VARIANTS = {
-	hidden: { opacity: 0, height: 0, y: -4 },
-	visible: { opacity: 1, height: "auto", y: 0 },
-} as const;
-
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE = 24;
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP = 8;
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_REVEAL_DISTANCE = 72;
@@ -2829,12 +2818,12 @@ function AgentConfigProfile({
 								type="button"
 								aria-label="Back to parent agent"
 								data-agent-field="back-to-parent"
-								className="size-10 shrink-0 rounded text-icon-subtle hover:text-icon"
+								className="size-10 shrink-0 rounded text-icon-subtle hover:text-icon [&_svg]:size-4"
 								onClick={onSelectBaseAgent}
 								size="icon"
 								variant="ghost"
 							>
-								<ArrowLeftIcon label="" size="small" />
+								<ArrowLeftIcon label="" />
 							</Button>
 						) : null}
 						<InlineEdit
@@ -2990,17 +2979,15 @@ function AgentCompactConfigToolbarBelow({
 					</Button>
 				</motion.div>
 			</div>
-			<AnimatePresence initial={false}>
+			<AnimatePresence initial={false} mode="wait">
 				{isExpanded ? (
 					<motion.div
 						key="expanded"
-						className="overflow-hidden bg-surface pt-2"
-						variants={AGENT_TOOLBAR_PANEL_VARIANTS}
-						initial="hidden"
-						animate="visible"
-						exit="hidden"
+						className="bg-surface pt-2"
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						exit={{ opacity: 0 }}
 						transition={transition}
-						style={{ willChange: "transform, opacity" }}
 					>
 						<AgentFilledConfigSummary
 							config={config}
@@ -3027,13 +3014,11 @@ function AgentCompactConfigToolbarBelow({
 				) : (
 					<motion.div
 						key="collapsed"
-						className="overflow-hidden bg-surface pt-2"
-						variants={AGENT_TOOLBAR_PANEL_VARIANTS}
-						initial="hidden"
-						animate="visible"
-						exit="hidden"
+						className="bg-surface pt-2"
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						exit={{ opacity: 0 }}
 						transition={transition}
-						style={{ willChange: "transform, opacity" }}
 					>
 						<AgentCompactEmptyConfigNav
 							config={config}
