@@ -788,55 +788,6 @@ import {
 		],
 	},
 
-	agent: {
-		description:
-			"A structured agent strategy/configuration surface with an app header, cover area, action tiles, knowledge controls, and instructions composer.",
-		usage: `import {
-  Agent,
-  AgentHeader,
-  AgentContent,
-  AgentConfigFields,
-} from "@/components/ui-custom/agent";
-
-<Agent>
-  <AgentHeader name="Policy Checker" model="Draft" />
-  <AgentContent>
-    <AgentConfigFields
-      config={agentConfig}
-      idPrefix="agent-config"
-      onTextChange={handleTextChange}
-      onListItemChange={updateListItem}
-      onRemoveListItem={removeListItem}
-      onAppendListItem={appendListItem}
-    />
-  </AgentContent>
-</Agent>`,
-		demoLayout: {
-			previewContentWidth: "full",
-			examplesContentWidth: "full",
-		},
-		props: [
-			{
-				name: "className",
-				type: "string",
-				description: "Additional classes applied to the outer container.",
-			},
-		],
-		subComponents: [
-			{ name: "AgentHeader", description: "Top app bar with agent avatar, name, status lozenge, and Configure/Test tabs (override via the `actions` prop)." },
-			{ name: "AgentContent", description: "Body container for the agent configuration surface." },
-			{ name: "AgentConfigFields", description: "Shared Figma-style agent strategy surface used by the catalog preview and Studio panel." },
-			{ name: "AgentInstructions", description: "Instruction text block with label." },
-			{ name: "AgentTools", description: "Accordion container for tool definitions." },
-			{ name: "AgentTool", description: "Individual tool item with expandable JSON schema." },
-			{ name: "AgentOutput", description: "Output schema display with syntax highlighting." },
-		],
-		examples: [
-			{ title: "Filled agent", description: "Agent strategy surface after configuration fields have been populated.", demoSlug: "agent-demo-full" },
-			{ title: "Empty agent", description: "Default setup state with quick configuration links and Operations prompt starters before details are populated.", demoSlug: "agent-demo-empty" },
-		],
-	},
-
 	knowledge: {
 		description:
 			"Knowledge configuration panel for an agent strategy surface. Shows the Teamwork Graph source row with connected app icons, a Memory row with a Manage action, and an Add knowledge button. Composed from existing design components and tokens.",

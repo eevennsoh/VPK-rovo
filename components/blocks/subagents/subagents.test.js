@@ -11,7 +11,7 @@ const SUBAGENTS_PROMPTS_LIB_SOURCE = readFileSync(
 	join(__dirname, "lib", "subagent-prompts.ts"),
 	"utf8",
 );
-const AGENT_SOURCE = readFileSync(join(__dirname, "..", "..", "ui-custom", "agent.tsx"), "utf8");
+const AGENT_SOURCE = readFileSync(join(__dirname, "..", "agent", "components", "agent.tsx"), "utf8");
 const SUBAGENTS_DEMO_SOURCE = readFileSync(
 	join(__dirname, "..", "..", "website", "demos", "blocks", "subagents-demo.tsx"),
 	"utf8",

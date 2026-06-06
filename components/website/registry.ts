@@ -209,7 +209,7 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
   "skill-tag": dynamic(() => import("./demos/ui-custom/skill-tag-demo"), {
     ssr: false,
   }),
-  agent: dynamic(() => import("./demos/ui-custom/agent-demo"), { ssr: false }),
+  agent: dynamic(() => import("./demos/blocks/agent-demo"), { ssr: false }),
   knowledge: dynamic(() => import("./demos/ui-custom/knowledge-demo"), {
     ssr: false,
   }),
@@ -5398,14 +5398,14 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
   ),
   "agent-demo-full": dynamic(
     () =>
-      import("./demos/ui-custom/agent-demo").then((mod) => ({
+      import("./demos/blocks/agent-demo").then((mod) => ({
         default: mod.AgentDemoFull,
       })),
     { ssr: false },
   ),
   "agent-demo-empty": dynamic(
     () =>
-      import("./demos/ui-custom/agent-demo").then((mod) => ({
+      import("./demos/blocks/agent-demo").then((mod) => ({
         default: mod.AgentDemoEmpty,
       })),
     { ssr: false },

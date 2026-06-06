@@ -1,13 +1,10 @@
 "use client";
 
 import { type ReactNode, useState } from "react";
-import { AgentAccess } from "@/components/blocks/agent-access";
-import { AgentEvaluation } from "@/components/blocks/agent-evaluation";
-import { AgentInsights } from "@/components/blocks/agent-insights";
-import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
-import { AgentUsers } from "@/components/blocks/agent-users";
 import {
 	Agent,
+	AgentCompactAccessPanel,
+	AgentCompactEvaluationPanel,
 	AgentConfigFields,
 	type AgentConfigFormValue,
 	type AgentCompactHeaderSection,
@@ -15,8 +12,11 @@ import {
 	type AgentConfigTextFieldName,
 	AgentContent,
 	AgentCompactHeaderNav,
+	AgentCompactInsightsPanel,
+	AgentCompactSurfacesPanel,
+	AgentCompactUsersPanel,
 	AgentHeader,
-} from "@/components/ui-custom/agent";
+} from "@/components/blocks/agent";
 import {
 	serializeAgentTriggerLabels,
 	type AgentTriggerValue,
@@ -138,14 +138,14 @@ function AgentDemoCompactBody({
 	if (activeSection === "insights") {
 		return (
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-				<AgentInsights />
+				<AgentCompactInsightsPanel />
 			</div>
 		);
 	}
 	if (activeSection === "evaluation") {
 		return (
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-				<AgentEvaluation />
+				<AgentCompactEvaluationPanel />
 			</div>
 		);
 	}
@@ -153,7 +153,7 @@ function AgentDemoCompactBody({
 		return (
 			<div className="min-h-0 flex-1 overflow-y-auto">
 				<div className="mx-auto w-full max-w-4xl px-6 py-5">
-					<AgentAccess />
+					<AgentCompactAccessPanel />
 				</div>
 			</div>
 		);
@@ -161,14 +161,14 @@ function AgentDemoCompactBody({
 	if (activeSection === "users") {
 		return (
 			<div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">
-				<AgentUsers />
+				<AgentCompactUsersPanel />
 			</div>
 		);
 	}
 	if (activeSection === "surfaces") {
 		return (
 			<div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">
-				<AgentSurfaces />
+				<AgentCompactSurfacesPanel />
 			</div>
 		);
 	}

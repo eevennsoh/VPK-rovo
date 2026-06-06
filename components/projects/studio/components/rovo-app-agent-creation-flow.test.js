@@ -47,8 +47,8 @@ const ROVO_SUGGESTIONS_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "lib/rovo-suggestions.ts"),
 	"utf8",
 );
-const UI_CUSTOM_AGENT_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/ui-custom/agent.tsx"),
+const AGENT_BLOCK_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/blocks/agent/components/agent.tsx"),
 	"utf8",
 );
 const NAV_HOOK_SOURCE = fs.readFileSync(
@@ -463,23 +463,23 @@ test("Studio agent insights panel frames agent performance and improvement oppor
 	assert.doesNotMatch(AGENT_INSIGHTS_PANEL_SOURCE, /text-\[var\(--ds-/u);
 });
 
-test("Studio agent config panel renders the shared ui-custom agent config fields", () => {
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /export const AgentConfigFields = memo/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string>/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /"product-agents": "#BF63F3"/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /function getAgentProfileCoverBackgroundColor\(avatarSrc: string \| undefined\): string/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /style=\{\{ backgroundColor: coverBackgroundColor \}\}/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /Add rules for when this agent runs/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /Add prompts to help people start/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /aria-label="Knowledge mode"/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /Press \/ to help me describe the agent's role/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /dataFlowConfig=\{config\}/u);
-	assert.doesNotMatch(UI_CUSTOM_AGENT_SOURCE, /layout\?: "default" \| "compact";/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /triggerDefinitions\?: readonly AgentTriggerValue\[\];/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /onTriggerDefinitionsChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /inputProps=\{\{ className: "h-auto border-2 px-1\.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /textareaProps=\{\{ rows: 1, className: "min-h-10 border-2 bg-bg-neutral-subtle px-1\.5 focus:border-ring focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-\[variant=default\]:border-transparent data-\[variant=default\]:focus:border-ring data-\[variant=default\]:focus-visible:border-ring" \}\}/u);
+test("Studio agent config panel renders the shared block agent config fields", () => {
+	assert.match(AGENT_BLOCK_SOURCE, /export const AgentConfigFields = memo/u);
+	assert.match(AGENT_BLOCK_SOURCE, /const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string>/u);
+	assert.match(AGENT_BLOCK_SOURCE, /"product-agents": "#BF63F3"/u);
+	assert.match(AGENT_BLOCK_SOURCE, /function getAgentProfileCoverBackgroundColor\(avatarSrc: string \| undefined\): string/u);
+	assert.match(AGENT_BLOCK_SOURCE, /style=\{\{ backgroundColor: coverBackgroundColor \}\}/u);
+	assert.match(AGENT_BLOCK_SOURCE, /Add rules for when this agent runs/u);
+	assert.match(AGENT_BLOCK_SOURCE, /Add prompts to help people start/u);
+	assert.match(AGENT_BLOCK_SOURCE, /aria-label="Knowledge mode"/u);
+	assert.match(AGENT_BLOCK_SOURCE, /Press \/ to help me describe the agent's role/u);
+	assert.match(AGENT_BLOCK_SOURCE, /dataFlowConfig=\{config\}/u);
+	assert.doesNotMatch(AGENT_BLOCK_SOURCE, /layout\?: "default" \| "compact";/u);
+	assert.match(AGENT_BLOCK_SOURCE, /triggerDefinitions\?: readonly AgentTriggerValue\[\];/u);
+	assert.match(AGENT_BLOCK_SOURCE, /onTriggerDefinitionsChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
+	assert.match(AGENT_BLOCK_SOURCE, /readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"/u);
+	assert.match(AGENT_BLOCK_SOURCE, /inputProps=\{\{ className: "h-auto border-2 px-1\.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u);
+	assert.match(AGENT_BLOCK_SOURCE, /textareaProps=\{\{ rows: 1, className: "min-h-10 border-2 bg-bg-neutral-subtle px-1\.5 focus:border-ring focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-\[variant=default\]:border-transparent data-\[variant=default\]:focus:border-ring data-\[variant=default\]:focus-visible:border-ring" \}\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentConfigFields/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentSurfaces/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /type AgentCompactHeaderSection/u);
@@ -714,8 +714,8 @@ test("Studio screen assistant applies draft patches without publishing agents", 
 	assert.match(screenAssistantHandlerSource, /activeSessionAgentEntry\.profile\.id/u);
 	assert.doesNotMatch(screenAssistantHandlerSource, /publishSessionAgent/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /data-screen-assistant-target="studio-agent-config-panel"/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /screenAssistantTargetPrefix/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /data-agent-field="instructions"/u);
+	assert.match(AGENT_BLOCK_SOURCE, /screenAssistantTargetPrefix/u);
+	assert.match(AGENT_BLOCK_SOURCE, /data-agent-field="instructions"/u);
 });
 
 test("Studio clarification answers keep agent creation mode active", () => {
