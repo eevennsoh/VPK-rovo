@@ -108,6 +108,15 @@ test("buildWikiMemoryExplorer returns canonical, compiled, proposal, and linked 
 		target: "memory",
 		wikiDir,
 	});
+	await enqueueWikiMemoryProposal({
+		content: "Use a separate draft flow for unrelated context.",
+		origin: "durable_workflow",
+		reason: "This proposal belongs to a different thread.",
+		sourceThreadId: "thread-2",
+		summary: "Use a separate draft flow.",
+		target: "memory",
+		wikiDir,
+	});
 
 	const explorer = await buildWikiMemoryExplorer({ wikiDir });
 
@@ -127,6 +136,7 @@ test("buildWikiMemoryExplorer returns canonical, compiled, proposal, and linked 
 	});
 	assert.ok(filteredByThread.nodes.some((node) => node.kind === "raw-proposal"));
 	assert.ok(filteredByThread.nodes.some((node) => node.kind === "canonical-memory"));
+	assert.ok(filteredByThread.nodes.every((node) => node.sourceThreadId !== "thread-2"));
 
 	const csv = buildWikiMemoryExplorerCsv(explorer);
 	assert.match(csv, /canonical:work/u);

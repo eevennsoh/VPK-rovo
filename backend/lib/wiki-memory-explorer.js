@@ -771,13 +771,14 @@ function applyExplorerFilters(snapshot, filters) {
 
 	const visibleIds = new Set(directMatches.map((node) => node.id));
 	if (normalizedFilters.threadId || normalizedFilters.tag) {
+		const nodeById = new Map(snapshot.nodes.map((node) => [node.id, node]));
 		for (const edge of snapshot.edges) {
 			if (!(visibleIds.has(edge.source) || visibleIds.has(edge.target))) {
 				continue;
 			}
 
-			const sourceNode = snapshot.nodes.find((node) => node.id === edge.source);
-			const targetNode = snapshot.nodes.find((node) => node.id === edge.target);
+			const sourceNode = nodeById.get(edge.source);
+			const targetNode = nodeById.get(edge.target);
 			for (const candidateNode of [sourceNode, targetNode]) {
 				if (!candidateNode) {
 					continue;
