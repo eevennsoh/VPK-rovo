@@ -39,7 +39,7 @@ import type {
 
 const slashCommandPluginKey = new PluginKey("rich-text-slash-command");
 
-function getMentionCategory(id: unknown): string {
+export function getMentionCategory(id: unknown): string {
 	if (typeof id !== "string") {
 		return "context";
 	}
@@ -47,7 +47,7 @@ function getMentionCategory(id: unknown): string {
 	return id.split(":")[0] || "context";
 }
 
-function getMentionNodeAttrs(mention: RichTextMentionItem) {
+export function getMentionNodeAttrs(mention: RichTextMentionItem) {
 	return {
 		category: mention.category,
 		id: mention.id,
@@ -57,7 +57,7 @@ function getMentionNodeAttrs(mention: RichTextMentionItem) {
 	};
 }
 
-const RichTextMention = Mention.extend({
+export const RichTextMention = Mention.extend({
 	addAttributes() {
 		return {
 			...(this.parent?.() ?? {}),
@@ -117,11 +117,12 @@ const RichTextMention = Mention.extend({
 	},
 });
 
-const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
+export const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 	name: "slashCommand",
 
 	addProseMirrorPlugins() {
 		const getMentionSources = this.options.getMentionSources;
+		const includeFormat = this.options.includeFormat ?? true;
 
 		return [
 			Suggestion<RichTextSlashAction, RichTextSlashAction>({
@@ -155,11 +156,70 @@ const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 
 					props.run(editor);
 				},
-				render: () => createSlashSuggestionRenderer(getMentionSources, this.options.onAskRovo),
+				render: () => createSlashSuggestionRenderer(getMentionSources, this.options.onAskRovo, includeFormat),
 			}),
 		];
 	},
 });
+
+/**
+ * The configured `@` mention extension shared by the full document editor and
+ * the mentions-only chat composer. Both surfaces insert the same mention node
+ * (visual node view, `data-mention-category`, "@" suggestion) so a token reads
+ * identically wherever it is created.
+ */
+export function createRichTextMentionExtension(
+	options: RichTextEditorExtensionOptions = {},
+) {
+	return RichTextMention.configure({
+		HTMLAttributes: {
+			class: "rich-text-mention",
+		},
+		deleteTriggerWithBackspace: true,
+		renderText: ({ node }) => `@${node.attrs.label ?? node.attrs.id}`,
+		renderHTML: ({ node, options: mentionOptions }) => [
+			"span",
+			mergeAttributes(
+				mentionOptions.HTMLAttributes,
+				{
+					"data-mention-category": node.attrs.category ?? getMentionCategory(node.attrs.id),
+					"data-type": "mention",
+				},
+			),
+			...[
+				getRichTextMentionVisualDOMSpec(getRichTextMentionVisualFromAttrs(node.attrs)) ?? [
+					"span",
+					{ "aria-hidden": "true", class: "rich-text-mention-trigger" },
+					"@",
+				],
+				[
+					"span",
+					{ class: "rich-text-mention-label" },
+					node.attrs.label ?? node.attrs.id,
+				],
+			],
+		],
+		suggestion: {
+			char: "@",
+			items: () => [],
+			command: ({ editor, range, props }) => {
+				const mention = props as RichTextMentionItem;
+				editor
+					.chain()
+					.focus()
+					.insertContentAt(range, [
+						{
+							type: "mention",
+							attrs: getMentionNodeAttrs(mention),
+						},
+						{ type: "text", text: " " },
+					])
+					.run();
+			},
+			render: () => createMentionSuggestionRenderer(options.getMentionSources),
+		},
+	});
+}
 
 export function createRichTextEditorExtensions(
 	options: RichTextEditorExtensionOptions = {},
@@ -205,54 +265,7 @@ export function createRichTextEditorExtensions(
 		TableRow,
 		TableHeader,
 		TableCell,
-		RichTextMention.configure({
-			HTMLAttributes: {
-				class: "rich-text-mention",
-			},
-			deleteTriggerWithBackspace: true,
-			renderText: ({ node }) => `@${node.attrs.label ?? node.attrs.id}`,
-			renderHTML: ({ node, options: mentionOptions }) => [
-				"span",
-				mergeAttributes(
-					mentionOptions.HTMLAttributes,
-					{
-						"data-mention-category": node.attrs.category ?? getMentionCategory(node.attrs.id),
-						"data-type": "mention",
-					},
-				),
-				...[
-					getRichTextMentionVisualDOMSpec(getRichTextMentionVisualFromAttrs(node.attrs)) ?? [
-						"span",
-						{ "aria-hidden": "true", class: "rich-text-mention-trigger" },
-						"@",
-					],
-					[
-						"span",
-						{ class: "rich-text-mention-label" },
-						node.attrs.label ?? node.attrs.id,
-					],
-				],
-			],
-			suggestion: {
-				char: "@",
-				items: () => [],
-				command: ({ editor, range, props }) => {
-					const mention = props as RichTextMentionItem;
-					editor
-						.chain()
-						.focus()
-						.insertContentAt(range, [
-							{
-								type: "mention",
-								attrs: getMentionNodeAttrs(mention),
-							},
-							{ type: "text", text: " " },
-						])
-						.run();
-				},
-				render: () => createMentionSuggestionRenderer(options.getMentionSources),
-			},
-		}),
+		createRichTextMentionExtension(options),
 		SlashCommand.configure(options),
 		Markdown.configure({
 			indentation: {

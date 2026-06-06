@@ -4,7 +4,6 @@ import type { ChatStatus, FileUIPart, SourceDocumentUIPart } from "ai";
 import type {
   ChangeEvent,
   ChangeEventHandler,
-  ClipboardEventHandler,
   ComponentProps,
   FormEvent,
   FormEventHandler,
@@ -16,6 +15,20 @@ import type {
 } from "react";
 
 import Image from "next/image";
+
+import type { Editor } from "@tiptap/core";
+import { EditorContent, useEditor } from "@tiptap/react";
+
+import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
+import {
+  createComposerEditorExtensions,
+  type RichTextMentionSources,
+} from "@/components/ui-custom/rich-text-editor";
+import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
+import {
+  serializeComposerDoc,
+  setComposerPlainText,
+} from "@/lib/composer-serialize";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -979,225 +992,319 @@ export type PromptInputTextareaProps = ComponentProps<
   typeof InputGroupTextarea
 > & {
   autoResize?: boolean;
+  /**
+   * Mention/reference catalog backing the inline `@`/`/` palette. Defaults to
+   * the unified editor-palette catalog (built from `@/app/data/directory`).
+   */
+  mentionSources?: RichTextMentionSources;
+  /**
+   * Called once the tiptap editor is ready. Use this (or the forwarded `ref`,
+   * which points at the contentEditable DOM) to drive focus or measurement,
+   * e.g. from the Rovo/Studio composers.
+   */
+  onEditorReady?: (editor: Editor) => void;
 };
 
+/**
+ * Build a textarea-shaped synthetic change event so existing consumers that read
+ * `event.currentTarget.value` / `event.target.value` keep working now that the
+ * control is a contentEditable rather than a native <textarea>.
+ */
+function createSyntheticChangeEvent(
+  element: HTMLElement | null,
+  value: string,
+  name: string
+): ChangeEvent<HTMLTextAreaElement> {
+  // Consumers only read `.value` / `.name` off target/currentTarget. Build a
+  // lightweight textarea-shaped target whose prototype is the real
+  // contentEditable element, so identity checks still resolve to the DOM node
+  // without mutating it.
+  const target = Object.create(element, {
+    name: { configurable: true, enumerable: true, value: name },
+    value: { configurable: true, enumerable: true, value },
+  }) as HTMLTextAreaElement & EventTarget;
+
+  return {
+    bubbles: true,
+    cancelable: false,
+    currentTarget: target,
+    defaultPrevented: false,
+    target,
+    type: "change",
+    preventDefault: () => undefined,
+    stopPropagation: () => undefined,
+  } as unknown as ChangeEvent<HTMLTextAreaElement>;
+}
+
 export const PromptInputTextarea = ({
-  autoResize = true,
+  autoResize: _autoResize = true,
   onChange,
   onInput,
-  onKeyDown,
+  onKeyDown: _onKeyDown,
   className,
   placeholder = "What would you like to know?",
   ref: forwardedRef,
   value: valueProp,
+  name = "message",
+  disabled,
+  autoFocus,
+  mentionSources = EDITOR_PALETTE_MENTION_SOURCES,
+  onEditorReady,
+  "aria-label": ariaLabel,
+  // Native-textarea-only props (rows, enterKeyHint, onPaste, …) have no
+  // contentEditable equivalent the composer relies on; absorb them so the
+  // public prop type stays drop-in without forwarding them to a <div>.
+  rows: _rows,
+  // oxlint-disable-next-line eslint(no-unused-vars)
+  onCompositionStart: _onCompositionStart,
+  // oxlint-disable-next-line eslint(no-unused-vars)
+  onCompositionEnd: _onCompositionEnd,
+  // oxlint-disable-next-line eslint(no-unused-vars)
+  onPaste: _onPaste,
+  // oxlint-disable-next-line eslint(no-unused-vars)
+  onClick: _onClick,
+  // oxlint-disable-next-line eslint(no-unused-vars)
+  enterKeyHint: _enterKeyHint,
   ...props
 }: Readonly<PromptInputTextareaProps>) => {
   const controller = useOptionalPromptInputController();
   const attachments = usePromptInputAttachments();
-  const [isComposing, setIsComposing] = useState(false);
-  const [supportsFieldSizing] = useState(() => {
-    if (typeof window === "undefined" || typeof window.CSS?.supports !== "function") {
+
+  // The public `value` prop inherits the textarea union type; the composer only
+  // deals in plain strings, so normalize once.
+  const normalizedValueProp =
+    typeof valueProp === "string" ? valueProp : undefined;
+
+  // Stable refs for callbacks/values the editor reads, so the editor instance is
+  // created once and never torn down by changing handler identities.
+  const onChangeRef = useRef(onChange);
+  const onInputRef = useRef(onInput);
+  const onEditorReadyRef = useRef(onEditorReady);
+  const mentionSourcesRef = useRef(mentionSources);
+  const attachmentsRef = useRef(attachments);
+  const controllerRef = useRef(controller);
+  const nameRef = useRef(name);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    onInputRef.current = onInput;
+    onEditorReadyRef.current = onEditorReady;
+    mentionSourcesRef.current = mentionSources;
+    attachmentsRef.current = attachments;
+    controllerRef.current = controller;
+    nameRef.current = name;
+  });
+
+  const hiddenInputRef = useRef<HTMLInputElement | null>(null);
+  const [domEmpty, setDomEmpty] = useState(() => {
+    const initial = controller ? controller.textInput.value : normalizedValueProp;
+    return !initial;
+  });
+
+  // Mirror the serialized text into the hidden input + the optional consumer
+  // handlers. `fromEditor` distinguishes user edits (fire onChange) from
+  // programmatic syncs (skip onChange to avoid feedback loops).
+  const publishText = useCallback(
+    (text: string, editorDom: HTMLElement | null, fromEditor: boolean) => {
+      if (hiddenInputRef.current) {
+        hiddenInputRef.current.value = text;
+      }
+      setDomEmpty(text === "");
+
+      if (!fromEditor) {
+        return;
+      }
+
+      const activeController = controllerRef.current;
+      if (activeController) {
+        activeController.textInput.setInput(text);
+      }
+
+      const syntheticEvent = createSyntheticChangeEvent(
+        editorDom,
+        text,
+        nameRef.current
+      );
+      onChangeRef.current?.(syntheticEvent);
+      onInputRef.current?.(
+        syntheticEvent as unknown as Parameters<
+          NonNullable<PromptInputTextareaProps["onInput"]>
+        >[0]
+      );
+    },
+    []
+  );
+
+  // Plain Enter (menu closed, no IME) submits the host form unless its submit
+  // button is disabled. Returns true to consume the keystroke.
+  const handleEnterSubmit = useCallback((view: { dom: HTMLElement }) => {
+    const form = view.dom.closest("form");
+    if (!form) {
       return false;
     }
 
-    return window.CSS.supports("field-sizing", "content");
-  });
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const [domEmpty, setDomEmpty] = useState(true);
-
-  const shouldUseManualAutoResize = autoResize && !supportsFieldSizing;
-
-  const syncDomEmpty = useCallback((node: HTMLTextAreaElement | null) => {
-    if (node) {
-      setDomEmpty(node.value === "");
+    const submitButton = form.querySelector(
+      'button[type="submit"]'
+    ) as HTMLButtonElement | null;
+    if (submitButton?.disabled) {
+      // Swallow Enter so a disabled composer doesn't insert a newline either.
+      return true;
     }
+
+    form.requestSubmit();
+    return true;
   }, []);
 
-  const assignTextareaRef = useCallback(
-    (node: HTMLTextAreaElement | null) => {
-      textareaRef.current = node;
-      syncDomEmpty(node);
-
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-        return;
-      }
-
-      if (forwardedRef && typeof forwardedRef === "object") {
-        forwardedRef.current = node;
-      }
-    },
-    [forwardedRef, syncDomEmpty]
+  const extensions = useMemo(
+    () =>
+      createComposerEditorExtensions({
+        getMentionSources: () => mentionSourcesRef.current,
+        onEnter: handleEnterSubmit,
+      }),
+    [handleEnterSubmit]
   );
 
-  const resizeToContent = useCallback(
-    (textarea: HTMLTextAreaElement) => {
-      if (!shouldUseManualAutoResize) {
-        return;
-      }
-
-      textarea.style.height = "0px";
-      const styles = window.getComputedStyle(textarea);
-      const minHeight = parseFloat(styles.minHeight) || 0;
-      const parsedMaxHeight = parseFloat(styles.maxHeight);
-      const maxHeight = Number.isFinite(parsedMaxHeight)
-        ? parsedMaxHeight
-        : Number.POSITIVE_INFINITY;
-      const borderOffset =
-        styles.boxSizing === "border-box"
-          ? (parseFloat(styles.borderTopWidth) || 0) +
-            (parseFloat(styles.borderBottomWidth) || 0)
-          : 0;
-
-      const nextHeight = Math.min(
-        maxHeight,
-        Math.max(minHeight, textarea.scrollHeight + borderOffset)
-      );
-
-      textarea.style.height = `${nextHeight}px`;
-      textarea.style.overflowY =
-        textarea.scrollHeight + borderOffset > nextHeight ? "auto" : "hidden";
+  const editor = useEditor({
+    extensions,
+    immediatelyRender: false,
+    editable: !disabled,
+    autofocus: autoFocus ? "end" : false,
+    editorProps: {
+      attributes: {
+        "aria-label": ariaLabel ?? "Message",
+        class: cn(
+          "prompt-input-composer max-h-48 min-h-16 w-full overflow-y-auto px-0 py-2 outline-none",
+          className
+        ),
+        ...(disabled ? { "aria-disabled": "true" } : {}),
+      },
     },
-    [shouldUseManualAutoResize]
-  );
-
-  const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = useCallback(
-    (e) => {
-      // Call the external onKeyDown handler first
-      onKeyDown?.(e);
-
-      // If the external handler prevented default, don't run internal logic
-      if (e.defaultPrevented) {
-        return;
+    onCreate: ({ editor: activeEditor }) => {
+      const initial = controllerRef.current
+        ? controllerRef.current.textInput.value
+        : normalizedValueProp;
+      if (initial) {
+        setComposerPlainText(activeEditor, initial);
       }
-
-      if (e.key === "Enter") {
-        if (isComposing || e.nativeEvent.isComposing) {
-          return;
-        }
-        if (e.shiftKey) {
-          return;
-        }
-        e.preventDefault();
-
-        // Check if the submit button is disabled before submitting
-        const { form } = e.currentTarget;
-        const submitButton = form?.querySelector(
-          'button[type="submit"]'
-        ) as HTMLButtonElement | null;
-        if (submitButton?.disabled) {
-          return;
-        }
-
-        form?.requestSubmit();
-      }
-
-      // Remove last attachment when Backspace is pressed and textarea is empty
-      if (
-        e.key === "Backspace" &&
-        e.currentTarget.value === "" &&
-        attachments.files.length > 0
-      ) {
-        e.preventDefault();
-        const lastAttachment = attachments.files.at(-1);
-        if (lastAttachment) {
-          attachments.remove(lastAttachment.id);
-        }
-      }
+      publishText(serializeComposerDoc(activeEditor), activeEditor.view.dom, false);
+      onEditorReadyRef.current?.(activeEditor);
     },
-    [onKeyDown, isComposing, attachments]
-  );
-
-  const handleInput = useCallback<NonNullable<PromptInputTextareaProps["onInput"]>>(
-    (event) => {
-      onInput?.(event);
-      syncDomEmpty(event.currentTarget);
-      resizeToContent(event.currentTarget);
+    onUpdate: ({ editor: activeEditor }) => {
+      publishText(serializeComposerDoc(activeEditor), activeEditor.view.dom, true);
     },
-    [onInput, resizeToContent, syncDomEmpty]
-  );
+  });
 
-  const handlePaste: ClipboardEventHandler<HTMLTextAreaElement> = useCallback(
-    (event) => {
-      const items = event.clipboardData?.items;
-
-      if (!items) {
-        return;
-      }
-
-      const files: File[] = [];
-
-      for (const item of items) {
-        if (item.kind === "file") {
-          const file = item.getAsFile();
-          if (file) {
-            files.push(file);
-          }
-        }
-      }
-
-      if (files.length > 0) {
-        event.preventDefault();
-        attachments.add(files);
-      }
-    },
-    [attachments]
-  );
-
-  const handleCompositionEnd = useCallback(() => setIsComposing(false), []);
-  const handleCompositionStart = useCallback(() => setIsComposing(true), []);
-  const resolvedValue = controller ? controller.textInput.value : valueProp;
-
-  // `text-overflow: ellipsis` is ignored on a multi-line <textarea> placeholder,
-  // so a long placeholder hard-clips instead of truncating. We render the real
-  // placeholder text in an absolutely-positioned single-line overlay <span>
-  // (where ellipsis IS honored) and keep the native placeholder empty.
-  // The overlay shows only while the field is empty.
-  const isEmpty =
-    resolvedValue !== undefined && resolvedValue !== null
-      ? resolvedValue === ""
-      : domEmpty;
-  const showOverlayPlaceholder = isEmpty && Boolean(placeholder);
-
+  // Forward the ref to the contentEditable DOM (escape hatch for consumers that
+  // previously held a textarea ref to call .focus()/measure).
   useEffect(() => {
-    if (!shouldUseManualAutoResize || !textareaRef.current) {
+    if (!editor) {
+      return;
+    }
+    const node = editor.view.dom as unknown as HTMLTextAreaElement;
+
+    if (typeof forwardedRef === "function") {
+      forwardedRef(node);
+    } else if (forwardedRef && typeof forwardedRef === "object") {
+      forwardedRef.current = node;
+    }
+
+    return () => {
+      if (typeof forwardedRef === "function") {
+        forwardedRef(null);
+      } else if (forwardedRef && typeof forwardedRef === "object") {
+        forwardedRef.current = null;
+      }
+    };
+  }, [editor, forwardedRef]);
+
+  // Keep editable state in sync with the disabled prop.
+  useEffect(() => {
+    if (editor && editor.isEditable === Boolean(disabled)) {
+      editor.setEditable(!disabled);
+    }
+  }, [editor, disabled]);
+
+  // Truly-uncontrolled demos (no `value`/controller) clear the composer via the
+  // host form's reset() after submit. The contentEditable isn't a native form
+  // control, so mirror that reset here by clearing the editor on form reset.
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+    const form = editor.view.dom.closest("form");
+    if (!form) {
       return;
     }
 
-    resizeToContent(textareaRef.current);
-  }, [resolvedValue, resizeToContent, shouldUseManualAutoResize]);
+    const handleReset = () => {
+      setComposerPlainText(editor, "");
+      publishText("", editor.view.dom, false);
+    };
+    form.addEventListener("reset", handleReset);
+    return () => {
+      form.removeEventListener("reset", handleReset);
+    };
+  }, [editor, publishText]);
 
-  const handleChange = useCallback(
-    (event: ChangeEvent<HTMLTextAreaElement>) => {
-      if (controller) {
-        controller.textInput.setInput(event.currentTarget.value);
+  // Sync external value (controller or controlled `value` prop) into the editor.
+  // Compares against the serialized text so prefill/clear/setInput apply, while
+  // a user's own keystrokes (already serialized) don't loop back through here.
+  const resolvedValue = controller ? controller.textInput.value : normalizedValueProp;
+
+  useEffect(() => {
+    if (!editor || resolvedValue === undefined || resolvedValue === null) {
+      return;
+    }
+
+    if (serializeComposerDoc(editor) === resolvedValue) {
+      return;
+    }
+
+    setComposerPlainText(editor, resolvedValue);
+    publishText(resolvedValue, editor.view.dom, false);
+  }, [editor, resolvedValue, publishText]);
+
+  // Backspace on an empty composer removes the last attachment, matching the
+  // previous textarea behavior.
+  const handleContainerKeyDown: KeyboardEventHandler<HTMLDivElement> = useCallback(
+    (event) => {
+      if (
+        event.key === "Backspace" &&
+        domEmpty &&
+        attachmentsRef.current.files.length > 0
+      ) {
+        event.preventDefault();
+        const lastAttachment = attachmentsRef.current.files.at(-1);
+        if (lastAttachment) {
+          attachmentsRef.current.remove(lastAttachment.id);
+        }
       }
-      onChange?.(event);
-      syncDomEmpty(event.currentTarget);
-      resizeToContent(event.currentTarget);
     },
-    [controller, onChange, resizeToContent, syncDomEmpty]
+    [domEmpty]
   );
+
+  const showOverlayPlaceholder = domEmpty && Boolean(placeholder);
 
   return (
     <div className="relative flex min-w-0 flex-1 self-stretch">
-      <InputGroupTextarea
-        className={cn("field-sizing-content max-h-48 min-h-16", className)}
-        name="message"
-        onChange={handleChange}
-        onCompositionEnd={handleCompositionEnd}
-        onCompositionStart={handleCompositionStart}
-        onInput={handleInput}
-        enterKeyHint="send"
-        onKeyDown={handleKeyDown}
-        onPaste={handlePaste}
-        // Native textarea placeholders can't render an ellipsis (see overlay
-        // below); keep it empty so only the truncating overlay shows.
-        placeholder=""
-        ref={assignTextareaRef}
-        value={resolvedValue}
-        {...props}
-      />
+      <div
+        data-slot="input-group-control-container"
+        className="flex min-w-0 flex-1 self-stretch cursor-text px-2.5 has-disabled:cursor-not-allowed"
+        onClick={() => editor?.commands.focus()}
+        onKeyDownCapture={handleContainerKeyDown}
+        // Pass through residual layout attributes (id, data-*, style). Textarea-
+        // only handlers were destructured out above; cast bridges the textarea
+        // prop type to this container <div>.
+        {...(props as HTMLAttributes<HTMLDivElement>)}
+      >
+        <EditorContent
+          editor={editor}
+          className="min-w-0 flex-1 self-stretch"
+        />
+      </div>
+      {/* Hidden input keeps FormData.get("message") working for demos that read
+          the submitted text from the form rather than the controller. */}
+      <input ref={hiddenInputRef} type="hidden" name={name} />
       {showOverlayPlaceholder ? (
         <span
           aria-hidden="true"

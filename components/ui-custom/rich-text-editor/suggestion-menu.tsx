@@ -241,6 +241,19 @@ const SLASH_CATEGORY_ORDER: readonly RichTextSlashCategory[] = [
 	...COMMAND_CATEGORY_ORDER,
 	"format",
 ];
+
+/**
+ * The slash category order, optionally without the "format" parent. The
+ * mentions-only chat composer passes `includeFormat: false` so its "/" menu
+ * surfaces references only; the document editor keeps the default.
+ */
+function getSlashCategoryOrder(
+	includeFormat: boolean,
+): readonly RichTextSlashCategory[] {
+	return includeFormat
+		? SLASH_CATEGORY_ORDER
+		: COMMAND_CATEGORY_ORDER;
+}
 const ASK_ROVO_SLASH_ITEM: RichTextSuggestionMenuItem = {
 	description: "Ask Rovo to help with the current editor context.",
 	icon: <RovoColorIcon size="small" />,
@@ -804,6 +817,7 @@ export function getSlashCommandFormatItems(
 export function createSlashSuggestionRenderer(
 	getMentionSources?: () => RichTextMentionSources | undefined,
 	onAskRovo?: (editor: Editor) => void,
+	includeFormat = true,
 ) {
 	const popupState: SuggestionPopupState = { component: null, element: null };
 	let selectedIndex = 0;
@@ -811,7 +825,7 @@ export function createSlashSuggestionRenderer(
 	let currentProps: SuggestionProps<RichTextSlashAction, RichTextSlashAction> | null = null;
 
 	function getTopLevelItems(query: string): readonly RichTextSuggestionMenuItem[] {
-		return filterItems(getSlashCommandCategoryItems(getMentionSources?.()), query);
+		return filterItems(getSlashCommandCategoryItems(getMentionSources?.(), includeFormat), query);
 	}
 
 	function getChildItems(query: string): readonly RichTextSuggestionMenuItem[] {
@@ -952,7 +966,7 @@ export function createSlashSuggestionRenderer(
 				update(currentProps);
 				return true;
 			}
-			if (event.key === "Enter") {
+			if (event.key === "Enter" || event.key === "Tab") {
 				return selectItem(items[selectedIndex]);
 			}
 			if (event.key === "Backspace" && activeCategory) {
@@ -1149,10 +1163,11 @@ export function getMentionTargetItems(
 /** Parent entries for the "/" command surface: subagents, skills, tools, knowledge. */
 export function getSlashCommandCategoryItems(
 	sources?: RichTextMentionSources,
+	includeFormat = true,
 ): readonly RichTextSuggestionMenuItem[] {
 	return [
 		ASK_ROVO_SLASH_ITEM,
-		...SLASH_CATEGORY_ORDER.map((category) => ({
+		...getSlashCategoryOrder(includeFormat).map((category) => ({
 			description: category === "format"
 				? `${SLASH_COMMANDS.length} options`
 				: `${getCategoryItems(sources, category).length} available`,
@@ -1301,7 +1316,7 @@ export function createMentionSuggestionRenderer(
 				update(currentProps);
 				return true;
 			}
-			if (event.key === "Enter") {
+			if (event.key === "Enter" || event.key === "Tab") {
 				return selectItem(items[selectedIndex]);
 			}
 			if (event.key === "Backspace" && activeCategory) {

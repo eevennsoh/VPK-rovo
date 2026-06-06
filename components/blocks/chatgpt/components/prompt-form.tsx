@@ -4,6 +4,15 @@ import { useState } from "react";
 
 import { Example } from "@/components/example";
 import {
+	PromptInput,
+	PromptInputBody,
+	PromptInputButton,
+	PromptInputFooter,
+	PromptInputSubmit,
+	PromptInputTextarea,
+	PromptInputTools,
+} from "@/components/ui-custom/prompt-input";
+import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuGroup,
@@ -14,13 +23,6 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Field, FieldLabel } from "@/components/ui/field";
-import {
-	InputGroup,
-	InputGroupAddon,
-	InputGroupButton,
-	InputGroupTextarea,
-} from "@/components/ui/input-group";
 import { Kbd } from "@/components/ui/kbd";
 import {
 	Tooltip,
@@ -28,7 +30,6 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-	ArrowUpIcon,
 	AudioLinesIcon,
 	BookOpenIcon,
 	GlobeIcon,
@@ -48,20 +49,19 @@ export function PromptForm() {
 
 	return (
 		<Example title="Prompt Form">
-			<Field>
-				<FieldLabel htmlFor="prompt" className="sr-only">
-					Prompt
-				</FieldLabel>
-				<InputGroup>
-					<InputGroupTextarea id="prompt" placeholder="Ask anything" />
-					<InputGroupAddon align="block-end">
+			<PromptInput onSubmit={() => undefined}>
+				<PromptInputBody>
+					<PromptInputTextarea placeholder="Ask anything" rows={1} />
+				</PromptInputBody>
+				<PromptInputFooter>
+					<PromptInputTools>
 						<DropdownMenu>
 							<Tooltip>
 								<TooltipTrigger
 									render={
 										<DropdownMenuTrigger
 											render={
-												<InputGroupButton
+												<PromptInputButton
 													variant="ghost"
 													size="icon-sm"
 													className="rounded-4xl"
@@ -144,7 +144,7 @@ export function PromptForm() {
 						<Tooltip>
 							<TooltipTrigger
 								render={
-									<InputGroupButton
+									<PromptInputButton
 										variant="ghost"
 										size="icon-sm"
 										onClick={() => setDictateEnabled((prev) => !prev)}
@@ -156,16 +156,10 @@ export function PromptForm() {
 							</TooltipTrigger>
 							<TooltipContent>Dictate</TooltipContent>
 						</Tooltip>
-						<InputGroupButton
-							size="icon-sm"
-							variant="default"
-							className="rounded-4xl"
-						>
-							<ArrowUpIcon />
-						</InputGroupButton>
-					</InputGroupAddon>
-				</InputGroup>
-			</Field>
+					</PromptInputTools>
+					<PromptInputSubmit className="rounded-4xl" />
+				</PromptInputFooter>
+			</PromptInput>
 		</Example>
 	);
 }

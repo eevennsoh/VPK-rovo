@@ -71,4 +71,11 @@ export type RichTextMentionSources = Partial<
 export interface RichTextEditorExtensionOptions {
 	getMentionSources?: () => RichTextMentionSources | undefined;
 	onAskRovo?: (editor: Editor) => void;
+	/**
+	 * Whether the "/" command menu includes the "Format" parent category (and its
+	 * block/mark formatting commands). Defaults to `true` for the full document
+	 * editor; the mentions-only chat composer passes `false` so the slash menu
+	 * surfaces references only.
+	 */
+	includeFormat?: boolean;
 }
