@@ -410,6 +410,30 @@ test("fallback Studio agent result prefers the original agent brief after clarif
 	assert.doesNotMatch(result.description, /clarification answers/iu);
 });
 
+test("fallback Studio agent result preserves Rovo template prompt names", () => {
+	const namedResult = buildFallbackStudioAgentResult({
+		prompt:
+			"Build a Rovo agent named Work Item Organizer that finds and updates project work items, moves them into sprints, assigns epics, deletes stale items, and recommends cleanup actions.",
+	});
+
+	assert.equal(namedResult.name, "Work Item Organizer");
+	assert.equal(namedResult.agentId, "work-item-organizer");
+	assert.match(namedResult.description, /finds and updates project work items/iu);
+	assert.doesNotMatch(namedResult.name, /Build a Studio Agent/iu);
+	assert.doesNotMatch(namedResult.description, /Build a Rovo agent/iu);
+
+	const templateResult = buildFallbackStudioAgentResult({
+		prompt:
+			"Use the Decision Director template to create a Rovo agent. Review DACI decision documents, suggest improvements, identify missing context, and point to useful resources.",
+	});
+
+	assert.equal(templateResult.name, "Decision Director");
+	assert.equal(templateResult.agentId, "decision-director");
+	assert.match(templateResult.description, /Review DACI decision documents/iu);
+	assert.doesNotMatch(templateResult.name, /Build a Studio Agent/iu);
+	assert.doesNotMatch(templateResult.name, /Rovo agent/iu);
+});
+
 test("strips incomplete Studio agent result markers before fallback text is shown", () => {
 	const visibleText = [
 		"Drafting the agent now.",

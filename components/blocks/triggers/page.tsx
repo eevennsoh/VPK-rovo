@@ -56,7 +56,7 @@ export type {
 	AgentTriggerProviderId,
 	AgentTriggerValue,
 };
-export { serializeAgentTriggerLabels };
+export { serializeAgentTriggerLabels, TRIGGER_PROVIDERS };
 
 function renderTriggerProviderIcon(
 	icon: AgentTriggerProviderIcon,
@@ -297,7 +297,7 @@ export function TriggerPicker({
 	);
 }
 
-function TriggerProviderSubmenu({
+export function TriggerProviderSubmenu({
 	onSelectEvent,
 	provider,
 }: Readonly<{

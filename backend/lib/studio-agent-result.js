@@ -760,20 +760,21 @@ function titleCase(value) {
 function deriveObjectiveFromBrief(brief) {
 	const normalizedBrief = normalizeWhitespace(brief)
 		.replace(
-			/^build\s+(?:an?\s+)?(?:studio\s+)?agent\s+(?:named|called)\s+.+?\s+(?:that|to|for)\s+/iu,
+			/^build\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\s+(?:named|called)\s+.+?\s+(?:that|to|for)\s+/iu,
 			"",
 		)
 		.replace(
-			/^create\s+(?:an?\s+)?(?:studio\s+)?agent\s+(?:named|called)\s+.+?\s+(?:that|to|for)\s+/iu,
+			/^create\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\s+(?:named|called)\s+.+?\s+(?:that|to|for)\s+/iu,
 			"",
 		)
 		.replace(
-			/^make\s+(?:an?\s+)?(?:studio\s+)?agent\s+(?:named|called)\s+.+?\s+(?:that|to|for)\s+/iu,
+			/^make\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\s+(?:named|called)\s+.+?\s+(?:that|to|for)\s+/iu,
 			"",
 		)
-		.replace(/^create\s+(?:an?\s+)?agent\s+(?:that|to|for)\s+/iu, "")
-		.replace(/^build\s+(?:an?\s+)?agent\s+(?:that|to|for)\s+/iu, "")
-		.replace(/^make\s+(?:an?\s+)?agent\s+(?:that|to|for)\s+/iu, "")
+		.replace(/^create\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\s+(?:that|to|for)\s+/iu, "")
+		.replace(/^build\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\s+(?:that|to|for)\s+/iu, "")
+		.replace(/^make\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\s+(?:that|to|for)\s+/iu, "")
+		.replace(/^use\s+the\s+.+?\s+template\s+to\s+create\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\.?\s*/iu, "")
 		.replace(/\.$/u, "");
 
 	return normalizedBrief || "help with the requested Studio workflow";
@@ -793,6 +794,16 @@ function normalizeExplicitAgentName(value) {
 
 function deriveExplicitAgentName(brief) {
 	const normalizedBrief = normalizeWhitespace(brief);
+	const templateNameMatch = normalizedBrief.match(
+		/^use\s+the\s+(.+?)\s+template\s+to\s+create\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\b/iu,
+	);
+	if (templateNameMatch) {
+		const templateName = normalizeExplicitAgentName(templateNameMatch[1]);
+		if (templateName) {
+			return templateName;
+		}
+	}
+
 	const explicitNameMatch = normalizedBrief.match(
 		/\b(?:named|called)\s+["'“”]?([^"'“”.,:;!?]+?)(?=\s+\b(?:that|who|which|to|for|from|with|when|where|and)\b|[.,:;!?]|$)/iu,
 	);

@@ -263,8 +263,9 @@ test("Studio home starters frame agent building instead of generic one-off tasks
 		assert.ok(starterTitles.includes(title), `${title} should be available as a Studio starter`);
 	}
 
-	assert.match(SHELL_SOURCE, /prompt: "Build a Studio agent named Product Requirements Guide/u);
-	assert.match(SHELL_SOURCE, /prompt: "Build a Studio agent named Rovo Expert/u);
+	assert.match(SHELL_SOURCE, /prompt: "Build a Rovo agent named Product Requirements Guide/u);
+	assert.match(SHELL_SOURCE, /prompt: "Build a Rovo agent named Rovo Expert/u);
+	assert.doesNotMatch(homeStarterViewsSource, /Build a Studio agent/u);
 	assert.doesNotMatch(SHELL_SOURCE, /title: "Analyze a workstream"/u);
 	assert.doesNotMatch(homeStarterViewsSource, /\btitle: "Build .* agent"/iu);
 	assert.doesNotMatch(SHELL_SOURCE, /prompt: "Summarize this into key points/u);
@@ -743,11 +744,14 @@ test("Studio threads template provenance into agent creation contexts", () => {
 	assert.match(SHELL_SOURCE, /buildCreationTemplateContextFromAgent\(agent\)/u);
 	assert.match(SHELL_SOURCE, /onSelect\(template\.prompt, buildCreationTemplateContextFromStarter\(template\)\)/u);
 	assert.match(SHELL_SOURCE, /onSelect: \(prompt: string, template\?: StudioCreationTemplateContext\) => void;/u);
+	assert.match(SHELL_SOURCE, /Use the \$\{agent\.name\} template to create a Rovo agent/u);
+	assert.doesNotMatch(SHELL_SOURCE, /Use the \$\{agent\.name\} template to create a Studio agent/u);
 	// The pending selection is held in a ref and consumed on submit; the active
 	// creation thread keeps its template for the clarification continuation.
 	assert.match(SHELL_SOURCE, /const creationTemplateRef = useRef<StudioCreationTemplateContext \| null>\(null\);/u);
 	assert.match(SHELL_SOURCE, /const creationTemplateByThreadRef = useRef<Record<string, StudioCreationTemplateContext>>\(\{\}\);/u);
 	assert.match(SHELL_SOURCE, /creationTemplateRef\.current = template \?\? null;/u);
+	assert.match(SHELL_SOURCE, /setAgentTemplatesDialogOpen\(false\);[\s\S]*setIsSidebarAgentBrowserOpen\(false\);/u);
 	assert.match(SHELL_SOURCE, /creationTemplateByThreadRef\.current\[chat\.runtimeThreadId\] = creationTemplate;/u);
 	assert.match(SHELL_SOURCE, /creationTemplateRef\.current = null;/u);
 });
