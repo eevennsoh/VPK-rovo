@@ -105,7 +105,6 @@ function visualComponent(
 }
 
 export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
-	customComponent("agent"),
 	customComponent("animated-dots", "Animated Dots"),
 	customComponent("animated-rovo", "Animated Rovo"),
 	customComponent("artifact"),
@@ -277,6 +276,7 @@ export const UI_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 ]);
 
 export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
+	blockComponent("agent"),
 	blockComponent("agent-bento", "Agent Bento"),
 	blockComponent("agent-card", "Agent Card"),
 	blockComponent("agents-directory", "Agents Directory"),

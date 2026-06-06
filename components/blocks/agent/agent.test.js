@@ -3,110 +3,56 @@ const { readFileSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
 
-const AGENT_SOURCE = readFileSync(join(__dirname, "agent.tsx"), "utf8");
-const AGENT_SURFACES_SOURCE = readFileSync(
-	join(__dirname, "..", "blocks", "agent-surfaces", "components", "agent-surfaces.tsx"),
-	"utf8",
-);
-const INLINE_EDIT_SOURCE = readFileSync(
-	join(__dirname, "..", "ui", "inline-edit.tsx"),
-	"utf8",
-);
-const TAG_SOURCE = readFileSync(
-	join(__dirname, "..", "ui", "tag.tsx"),
-	"utf8",
-);
-const SKILL_TAG_SOURCE = readFileSync(
-	join(__dirname, "skill-tag.tsx"),
-	"utf8",
-);
-const AGENT_DEMO_SOURCE = readFileSync(
-	join(__dirname, "..", "website", "demos", "ui-custom", "agent-demo.tsx"),
-	"utf8",
-);
-const UI_CUSTOM_DETAILS_SOURCE = readFileSync(
-	join(__dirname, "..", "..", "app", "data", "details", "ui-custom.ts"),
-	"utf8",
-);
-const WEBSITE_REGISTRY_SOURCE = readFileSync(
-	join(__dirname, "..", "website", "registry.ts"),
-	"utf8",
-);
-const RICH_TEXT_EDITOR_SOURCE = readFileSync(
-	join(__dirname, "rich-text-editor", "rich-text-editor.tsx"),
-	"utf8",
-);
-const RICH_TEXT_EDITOR_CSS = readFileSync(
-	join(__dirname, "rich-text-editor", "rich-text-editor.css"),
-	"utf8",
-);
-const RICH_TEXT_EXTENSIONS_SOURCE = readFileSync(
-	join(__dirname, "rich-text-editor", "extensions.ts"),
-	"utf8",
-);
-const RICH_TEXT_MENTION_NODE_VIEW_SOURCE = readFileSync(
-	join(__dirname, "rich-text-editor", "mention-node-view.tsx"),
-	"utf8",
-);
-const RICH_TEXT_MENTION_VISUAL_SOURCE = readFileSync(
-	join(__dirname, "rich-text-editor", "mention-visual.tsx"),
-	"utf8",
-);
-const RICH_TEXT_SUGGESTION_SOURCE = readFileSync(
-	join(__dirname, "rich-text-editor", "suggestion-menu.tsx"),
-	"utf8",
-);
-const RICH_TEXT_REFERENCE_CATEGORIES_SOURCE = readFileSync(
-	join(__dirname, "rich-text-editor", "reference-categories.tsx"),
-	"utf8",
-);
-const RICH_TEXT_TOOLBAR_SOURCE = readFileSync(
-	join(__dirname, "rich-text-editor", "toolbar.tsx"),
-	"utf8",
-);
-const EDITOR_PALETTE_SOURCE = readFileSync(
-	join(__dirname, "..", "blocks", "editor-palette", "page.tsx"),
-	"utf8",
-);
-const EDITOR_PALETTE_MENTION_SOURCES = readFileSync(
-	join(__dirname, "..", "blocks", "editor-palette", "data", "mention-sources.ts"),
-	"utf8",
-);
-const EDITOR_PALETTE_DEMO_SOURCE = readFileSync(
-	join(__dirname, "..", "website", "demos", "blocks", "editor-palette-demo.tsx"),
-	"utf8",
-);
-const BLOCK_DETAILS_SOURCE = readFileSync(
-	join(__dirname, "..", "..", "app", "data", "details", "blocks.ts"),
-	"utf8",
-);
-const EDITOR_TOOLBAR_SOURCE = readFileSync(
-	join(__dirname, "..", "blocks", "editor-toolbar", "components", "editor-toolbar.tsx"),
-	"utf8",
-);
-const EDITOR_TOOLBAR_INDEX_SOURCE = readFileSync(
-	join(__dirname, "..", "blocks", "editor-toolbar", "index.ts"),
-	"utf8",
-);
-const STUDIO_AGENT_RESULT_SOURCE = readFileSync(
-	join(__dirname, "..", "..", "backend", "lib", "studio-agent-result.js"),
-	"utf8",
-);
-const STUDIO_SHELL_SOURCE = readFileSync(
-	join(__dirname, "..", "projects", "studio", "components", "rovo-app-shell.tsx"),
-	"utf8",
-);
-const HORIZONTAL_OVERFLOW_HOOK_SOURCE = readFileSync(
-	join(__dirname, "..", "hooks", "use-has-horizontal-overflow.ts"),
-	"utf8",
-);
+function readProjectFile(relativePath) {
+	return readFileSync(join(process.cwd(), relativePath), "utf8");
+}
+
+const AGENT_SOURCE = readProjectFile("components/blocks/agent/components/agent.tsx");
+const AGENT_INDEX_SOURCE = readProjectFile("components/blocks/agent/index.ts");
+const AGENT_PAGE_SOURCE = readProjectFile("components/blocks/agent/page.tsx");
+const AGENT_SURFACES_SOURCE = readProjectFile("components/blocks/agent-surfaces/components/agent-surfaces.tsx");
+const INLINE_EDIT_SOURCE = readProjectFile("components/ui/inline-edit.tsx");
+const TAG_SOURCE = readProjectFile("components/ui/tag.tsx");
+const SKILL_TAG_SOURCE = readProjectFile("components/ui-custom/skill-tag.tsx");
+const AGENT_DEMO_SOURCE = readProjectFile("components/website/demos/blocks/agent-demo.tsx");
+const BLOCK_DETAILS_SOURCE = readProjectFile("app/data/details/blocks.ts");
+const UI_CUSTOM_DETAILS_SOURCE = readProjectFile("app/data/details/ui-custom.ts");
+const COMPONENTS_SOURCE = readProjectFile("app/data/components.ts");
+const COMPONENT_MANIFEST_SOURCE = readProjectFile("app/data/component-manifest.ts");
+const WEBSITE_REGISTRY_SOURCE = readProjectFile("components/website/registry.ts");
+const RICH_TEXT_EDITOR_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.tsx");
+const RICH_TEXT_EDITOR_CSS = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.css");
+const RICH_TEXT_EXTENSIONS_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/extensions.ts");
+const RICH_TEXT_MENTION_NODE_VIEW_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/mention-node-view.tsx");
+const RICH_TEXT_MENTION_VISUAL_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/mention-visual.tsx");
+const RICH_TEXT_SUGGESTION_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+const RICH_TEXT_REFERENCE_CATEGORIES_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/reference-categories.tsx");
+const RICH_TEXT_TOOLBAR_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/toolbar.tsx");
+const EDITOR_PALETTE_SOURCE = readProjectFile("components/blocks/editor-palette/page.tsx");
+const EDITOR_PALETTE_MENTION_SOURCES = readProjectFile("components/blocks/editor-palette/data/mention-sources.ts");
+const EDITOR_PALETTE_DEMO_SOURCE = readProjectFile("components/website/demos/blocks/editor-palette-demo.tsx");
+const EDITOR_TOOLBAR_SOURCE = readProjectFile("components/blocks/editor-toolbar/components/editor-toolbar.tsx");
+const EDITOR_TOOLBAR_INDEX_SOURCE = readProjectFile("components/blocks/editor-toolbar/index.ts");
+const STUDIO_AGENT_RESULT_SOURCE = readProjectFile("backend/lib/studio-agent-result.js");
+const STUDIO_SHELL_SOURCE = readProjectFile("components/projects/studio/components/rovo-app-shell.tsx");
+const HORIZONTAL_OVERFLOW_HOOK_SOURCE = readProjectFile("components/hooks/use-has-horizontal-overflow.ts");
 
 test("Agent demo defaults to the filled preview", () => {
 	assert.match(AGENT_DEMO_SOURCE, /export default function AgentDemo\(\) \{[\s\S]*return <AgentDemoFull \/>;/u);
 	assert.match(
-		UI_CUSTOM_DETAILS_SOURCE,
+		BLOCK_DETAILS_SOURCE,
 		/examples: \[[\s\S]*title: "Filled agent"[\s\S]*demoSlug: "agent-demo-full"[\s\S]*title: "Empty agent"[\s\S]*demoSlug: "agent-demo-empty"/u,
 	);
+});
+
+test("Agent is exposed as a website block", () => {
+	assert.match(COMPONENTS_SOURCE, /blockComponent\("agent"\)/u);
+	assert.doesNotMatch(COMPONENTS_SOURCE, /customComponent\("agent"\)/u);
+	assert.match(COMPONENT_MANIFEST_SOURCE, /blockComponent\("agent"\)/u);
+	assert.doesNotMatch(COMPONENT_MANIFEST_SOURCE, /customComponent\("agent"\)/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /import \{[\s\S]*Agent,[\s\S]*AgentHeader,[\s\S]*AgentContent,[\s\S]*AgentConfigFields,[\s\S]*\} from "@\/components\/blocks\/agent";/u);
+	assert.doesNotMatch(UI_CUSTOM_DETAILS_SOURCE, /\n\tagent: \{/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /agent: dynamic\(\(\) => import\("\.\/demos\/blocks\/agent-demo"\), \{ ssr: false \}\)/u);
 });
 
 test("Agent instructions composer uses the shared Tiptap editor", () => {
@@ -530,8 +476,18 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /aria-pressed=\{isSelected \? true : undefined\}[\s\S]*onClick=\{\(\) => onSectionChange\?\.\(item\.value\)\}[\s\S]*variant=\{isSelected \? "outline" : "ghost"\}/u);
 	assert.match(AGENT_SOURCE, /onSelect=\{\(\) => onSectionChange\?\.\(item\.value\)\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /\[&_svg\]:size-4!/u);
+	assert.match(AGENT_SOURCE, /export function AgentCompactInsightsPanel/u);
+	assert.match(AGENT_SOURCE, /return <AgentInsights \{\.\.\.props\} \/>;/u);
 	assert.match(AGENT_SOURCE, /export function AgentCompactSurfacesPanel/u);
 	assert.match(AGENT_SOURCE, /return <AgentSurfaces \{\.\.\.props\} \/>;/u);
+	assert.match(AGENT_SOURCE, /export function AgentCompactEvaluationPanel/u);
+	assert.match(AGENT_SOURCE, /return <AgentEvaluation \{\.\.\.props\} \/>;/u);
+	assert.match(AGENT_SOURCE, /export function AgentCompactUsersPanel/u);
+	assert.match(AGENT_SOURCE, /return <AgentUsers \{\.\.\.props\} \/>;/u);
+	assert.match(AGENT_SOURCE, /export function AgentCompactAccessPanel/u);
+	assert.match(AGENT_SOURCE, /return <AgentAccess \{\.\.\.props\} \/>;/u);
+	assert.match(AGENT_INDEX_SOURCE, /export \* from "\.\/components\/agent";/u);
+	assert.match(AGENT_PAGE_SOURCE, /import \{ AgentDemoFull \} from "@\/components\/website\/demos\/blocks\/agent-demo";/u);
 	assert.match(AGENT_SURFACES_SOURCE, /function AgentDefaultSurfaceRow/u);
 	assert.match(AGENT_SURFACES_SOURCE, /function AgentExtendedSurfaceRow/u);
 	assert.match(AGENT_SURFACES_SOURCE, /data-agent-compact-section="surfaces"/u);
@@ -561,15 +517,18 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoEmpty/u);
 	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-empty"/u);
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoEmpty[\s\S]*<AgentCompactHeaderNav activeSection=\{activeSection\} onSectionChange=\{setActiveSection\} \/>/u);
-	// Shared body still routes the "surfaces" section to the surfaces panel.
-	assert.match(AGENT_DEMO_SOURCE, /activeSection === "surfaces"[\s\S]*<AgentSurfaces \/>/u);
+	assert.match(AGENT_DEMO_SOURCE, /activeSection === "insights"[\s\S]*<AgentCompactInsightsPanel \/>/u);
+	assert.match(AGENT_DEMO_SOURCE, /activeSection === "surfaces"[\s\S]*<AgentCompactSurfacesPanel \/>/u);
+	assert.match(AGENT_DEMO_SOURCE, /activeSection === "evaluation"[\s\S]*<AgentCompactEvaluationPanel \/>/u);
+	assert.match(AGENT_DEMO_SOURCE, /activeSection === "users"[\s\S]*<AgentCompactUsersPanel \/>/u);
+	assert.match(AGENT_DEMO_SOURCE, /activeSection === "access"[\s\S]*<AgentCompactAccessPanel \/>/u);
 	assert.doesNotMatch(AGENT_DEMO_SOURCE, /showActions=\{false\}/u);
 	// The removed demos and the `layout` prop must not reappear.
 	assert.doesNotMatch(AGENT_DEMO_SOURCE, /AgentDemoCompactFilled|AgentDemoCompactEmpty|AgentDemoCompactSurfaces/u);
 	assert.doesNotMatch(AGENT_DEMO_SOURCE, /layout="compact"/u);
-	assert.match(UI_CUSTOM_DETAILS_SOURCE, /title: "Filled agent"[\s\S]*demoSlug: "agent-demo-full"/u);
-	assert.match(UI_CUSTOM_DETAILS_SOURCE, /demoSlug: "agent-demo-full"[\s\S]*title: "Empty agent"[\s\S]*demoSlug: "agent-demo-empty"/u);
-	assert.doesNotMatch(UI_CUSTOM_DETAILS_SOURCE, /agent-demo-compact-/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /title: "Filled agent"[\s\S]*demoSlug: "agent-demo-full"/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /demoSlug: "agent-demo-full"[\s\S]*title: "Empty agent"[\s\S]*demoSlug: "agent-demo-empty"/u);
+	assert.doesNotMatch(BLOCK_DETAILS_SOURCE, /agent-demo-compact-/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-full": dynamic/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /default: mod\.AgentDemoFull/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /"agent-demo-empty": dynamic/u);

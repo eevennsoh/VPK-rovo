@@ -209,7 +209,7 @@ export function CardDirectorySection({
 	);
 }
 
-// Cover-banner styling, mirrored from `AgentProfileCover` in `components/ui-custom/agent.tsx`.
+// Cover-banner styling, mirrored from `AgentProfileCover` in `components/blocks/agent`.
 // Kept local so the card-directory module stays self-contained and doesn't pull in the large
 // agent module — the same color map is duplicated there and in the agent-card block.
 const BANNER_HEXAGON_PATH =

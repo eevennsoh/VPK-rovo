@@ -41,7 +41,7 @@ import {
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
 	type AgentHideableConfigField,
-} from "@/components/ui-custom/agent";
+} from "@/components/blocks/agent";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import type { ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
