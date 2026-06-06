@@ -2,49 +2,49 @@
 	{
 		"id": "u-owner",
 		"name": "Ee Venn Soh",
-		"avatarSrc": "https://api.dicebear.com/9.x/glass/svg?seed=Ee%20Venn%20Soh",
+		"avatarSrc": "/avatar-user/venn/venn.png",
 		"isOwner": true,
 		"role": "manager"
 	},
 	{
-		"id": "u-priya-nair",
-		"name": "Priya Nair",
-		"avatarSrc": "https://api.dicebear.com/9.x/glass/svg?seed=Priya%20Nair",
+		"id": "u-andrea-wilson",
+		"name": "Andrea Wilson",
+		"avatarSrc": "/avatar-user/andrea-wilson/color/asow-strategy-orange.png",
 		"isOwner": false,
 		"role": "manager"
 	},
 	{
-		"id": "u-marcus-chen",
-		"name": "Marcus Chen",
-		"avatarSrc": "https://api.dicebear.com/9.x/glass/svg?seed=Marcus%20Chen",
+		"id": "u-david-hsieh",
+		"name": "David Hsieh",
+		"avatarSrc": "/avatar-user/david-hsieh/color/asow-strategy-orange.png",
 		"isOwner": false,
 		"role": "editor"
 	},
 	{
-		"id": "u-sofia-rossi",
-		"name": "Sofia Rossi",
-		"avatarSrc": "https://api.dicebear.com/9.x/glass/svg?seed=Sofia%20Rossi",
+		"id": "u-christine-sanchez",
+		"name": "Christine Sanchez",
+		"avatarSrc": "/avatar-user/christine-sanchez/color/asow-strategy-orange.png",
 		"isOwner": false,
 		"role": "editor"
 	},
 	{
-		"id": "u-tunde-adeyemi",
-		"name": "Tunde Adeyemi",
-		"avatarSrc": "https://api.dicebear.com/9.x/glass/svg?seed=Tunde%20Adeyemi",
+		"id": "u-michael-chu",
+		"name": "Michael Chu",
+		"avatarSrc": "/avatar-user/michael-chu/color/asow-strategy-orange.png",
 		"isOwner": false,
 		"role": "user"
 	},
 	{
-		"id": "u-hana-kim",
-		"name": "Hana Kim",
-		"avatarSrc": "https://api.dicebear.com/9.x/glass/svg?seed=Hana%20Kim",
+		"id": "u-olivia-yang",
+		"name": "Olivia Yang",
+		"avatarSrc": "/avatar-user/olivia-yang/color/asow-strategy-orange.png",
 		"isOwner": false,
 		"role": "user"
 	},
 	{
-		"id": "u-diego-morales",
-		"name": "Diego Morales",
-		"avatarSrc": "https://api.dicebear.com/9.x/glass/svg?seed=Diego%20Morales",
+		"id": "u-priya-hansra",
+		"name": "Priya Hansra",
+		"avatarSrc": "/avatar-user/priya-hansra/color/asow-strategy-orange.png",
 		"isOwner": false,
 		"role": "user"
 	}
