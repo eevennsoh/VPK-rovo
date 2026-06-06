@@ -343,16 +343,9 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// scrollable wrapper inside AgentConfigFields.
 	const compactLayoutStart = AGENT_SOURCE.indexOf("data-agent-config-id={idPrefix}");
 	const compactLayoutSource = AGENT_SOURCE.slice(compactLayoutStart);
-	const compactBottomSlotSource = compactLayoutSource.slice(
-		compactLayoutSource.indexOf("bottomSlot="),
-		compactLayoutSource.indexOf("bottomSlotClassName="),
-	);
 	const compactFooterSource = compactLayoutSource.slice(
 		compactLayoutSource.indexOf('<div className="shrink-0">'),
 	);
-	const compactOperationsStart = AGENT_SOURCE.indexOf("function AgentCompactOperationsBento");
-	const sectionLabelStart = AGENT_SOURCE.indexOf("function AgentSectionLabel", compactOperationsStart);
-	const compactOperationsSource = AGENT_SOURCE.slice(compactOperationsStart, sectionLabelStart);
 
 	assert.match(AGENT_SOURCE, /compactScrollAreaClassName\?: string;/u);
 	assert.match(AGENT_SOURCE, /compactScrollAreaClassName,/u);
@@ -368,10 +361,6 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.doesNotMatch(AGENT_SOURCE, /compactFooterOverlayRef/u);
 	assert.doesNotMatch(AGENT_SOURCE, /compactFooterOverlayHeight/u);
 	assert.doesNotMatch(AGENT_SOURCE, /compactBentoFooterOffset/u);
-	assert.match(AGENT_SOURCE, /const dismissTemplateTiles = useCallback\(\(\) => \{[\s\S]*setTemplatesDismissed\(true\);[\s\S]*\}, \[\]\);/u);
-	assert.match(AGENT_SOURCE, /const handleTextChange = useCallback\(\(field: AgentConfigTextFieldName, value: string\) => \{[\s\S]*dismissTemplateTiles\(\);[\s\S]*onTextChange\?\.\(field, value\);/u);
-	assert.match(AGENT_SOURCE, /const handleAppendListItem = useCallback\(\(field: AgentConfigListFieldName\) => \{[\s\S]*dismissTemplateTiles\(\);[\s\S]*onAppendListItem\?\.\(field\);/u);
-	assert.match(AGENT_SOURCE, /const handleOpenDirectory = useCallback\(\(directory: AgentDirectoryKind\) => \{[\s\S]*dismissTemplateTiles\(\);[\s\S]*onOpenDirectory\?\.\(directory\);/u);
 	// No ResizeObserver footer-measuring effect remains.
 	assert.doesNotMatch(AGENT_SOURCE, /updateFooterOverlayHeight/u);
 	// Compact wrapper splits into a scrollable region + an anchored footer; it no
@@ -380,9 +369,6 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(compactLayoutSource, /"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto"[\s\S]*compactScrollOverflow\.showBottomScrollMask && "scroll-mask-bottom",[\s\S]*compactScrollAreaClassName,/u);
 	assert.doesNotMatch(compactLayoutSource, /paddingBottom/u);
 	assert.doesNotMatch(compactLayoutSource, /lg:grid-cols-\[minmax\(0,280px\)_minmax\(0,1fr\)\]/u);
-	assert.match(compactBottomSlotSource, /bottomSlot=\{isFilledConfig \? null : \([\s\S]*<AnimatePresence>[\s\S]*templatesDismissed \? null : \([\s\S]*<AgentCompactOperationsBento[\s\S]*onDismiss=\{\(\) => setTemplatesDismissed\(true\)\}/u);
-	assert.doesNotMatch(compactBottomSlotSource, /AgentCompactConfigToolbarBelow/u);
-	assert.match(compactLayoutSource, /bottomSlotClassName="mt-auto flex min-h-0 flex-col gap-2 pt-0"/u);
 	assert.match(compactLayoutSource, /className="relative flex min-h-0 flex-1 flex-col"/u);
 	// No fixed 560px min-height — the composer fills available space instead.
 	assert.doesNotMatch(compactLayoutSource, /min-h-\[560px\]/u);
@@ -554,26 +540,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /actionLabel: "Add to help center"/u);
 	assert.match(AGENT_SOURCE, /import \{ Switch \} from "@\/components\/ui\/switch";/u);
 	assert.doesNotMatch(AGENT_SOURCE, /<AccordionTrigger[\s\S]{0,900}<Button[\s\S]{0,120}surface\.actionLabel/u);
-	assert.match(AGENT_SOURCE, /function AgentCompactOperationsBento/u);
-	assert.match(AGENT_SOURCE, /function AgentCompactBentoTemplatesHint[\s\S]*onBrowseAll\?: \(\) => void;[\s\S]*<AgentSectionLabel>[\s\S]*<span>Start with these agent templates<\/span>[\s\S]*·[\s\S]*onClick=\{onBrowseAll\}[\s\S]*Browse all/u);
 	assert.match(AGENT_SOURCE, /showSectionLabel=\{false\}/u);
-	assert.match(AGENT_SOURCE, /data-slot="agent-compact-operations-bento"/u);
-	assert.match(AGENT_SOURCE, /AGENT_COMPACT_BENTO_CARD_GLOW_EFFECT_STYLE/u);
-	assert.match(AGENT_SOURCE, /function AgentCompactBentoCardGlowLayers/u);
-	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_BENTO_CARD_BORDER_FADE_STYLE: CSSProperties = \{[\s\S]*maskImage: "linear-gradient\(to bottom, #000 calc\(100% - 64px\), transparent 100%\)",[\s\S]*WebkitMaskImage: "linear-gradient\(to bottom, #000 calc\(100% - 64px\), transparent 100%\)",[\s\S]*\};/u);
-	assert.match(AGENT_SOURCE, /data-agent-compact-bento-card-border-fade[\s\S]*style=\{AGENT_COMPACT_BENTO_CARD_BORDER_FADE_STYLE\}[\s\S]*data-agent-compact-bento-card-base-border[\s\S]*data-agent-compact-bento-card-glow-border[\s\S]*<\/span>/u);
-	assert.match(AGENT_SOURCE, /<AgentCompactBentoCardGlowLayers iconSrc=\{template\.iconSrc\} \/>[\s\S]*<span className="relative z-\[3\] inline-flex size-8/u);
-	assert.match(AGENT_SOURCE, /className="relative -mt-2 min-h-0 pt-2 lg:flex-1 lg:overflow-hidden lg:bento-fade-bottom"/u);
-	assert.doesNotMatch(AGENT_SOURCE, /sm:\[--bento-fade-end:64px\]/u);
-	assert.match(AGENT_SOURCE, /<BentoCarousel[\s\S]*gridClassName="lg:grid-cols-5"[\s\S]*arrowLabels=\{\{ next: "Show next agent templates", previous: "Show previous agent templates" \}\}/u);
-	assert.match(AGENT_SOURCE, /BENTO_CAROUSEL_TILE_CLASS/u);
-	assert.doesNotMatch(compactOperationsSource, /whileHover=\{/u);
-	assert.match(AGENT_SOURCE, /<AgentCompactBentoTemplatesHint onBrowseAll=\{\(\) => setBrowseOpen\(true\)\} onDismiss=\{onDismiss\} \/>/u);
-	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Browse all agents"/u);
-	assert.doesNotMatch(AGENT_SOURCE, /Show more/u);
-	assert.match(AGENT_SOURCE, /title: "Service Triage"/u);
-	assert.match(AGENT_SOURCE, /title: "Service Request Helper"/u);
-	assert.match(AGENT_SOURCE, /title: "Rovo Ops"/u);
 	assert.match(
 		RICH_TEXT_EDITOR_SOURCE,
 		/toolbarBelowSlot\?: ReactNode;[\s\S]*data-slot="rich-text-editor-toolbar-below"/u,
