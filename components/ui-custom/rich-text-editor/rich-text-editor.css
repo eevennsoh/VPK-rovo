@@ -469,7 +469,7 @@
 	border: 0;
 	border-radius: var(--ds-radius-small, 3px);
 	background: transparent;
-	padding: 7px 8px;
+	padding: 6px 8px;
 	color: var(--ds-text, #172b4d);
 	text-align: left;
 	cursor: pointer;
@@ -636,6 +636,14 @@
 	font-size: 12px;
 	font-weight: 600;
 	line-height: 16px;
+}
+
+/* The first heading has nothing meaningful above it — whether it leads the list
+   or follows the "Ask Rovo" input bar — so drop its 12px top gap to sit tight
+   under the input / list top. */
+.rich-text-command-menu-list > .rich-text-command-menu-heading:first-child,
+.rich-text-command-menu-input + .rich-text-command-menu-heading {
+	padding-top: 0;
 }
 
 /*

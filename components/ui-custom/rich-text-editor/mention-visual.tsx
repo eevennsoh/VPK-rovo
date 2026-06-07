@@ -203,17 +203,27 @@ export function RichTextMentionVisualMark({
 	}
 
 	if (visual.kind === "logo") {
-		// In menu rows the logo gets the same tile treatment as `IconTile`
-		// (bordered surface tile) so logos and icons read consistently; the
-		// inner logo is inset so it doesn't touch the tile border.
+		// In menu rows the logo reuses the shared `IconTile` (bordered surface
+		// tile) so logos and icons read consistently. Tags/pills keep the bare
+		// inline logo with no tile.
+		if (size === "menu") {
+			return (
+				<IconTile
+					aria-hidden={true}
+					className={cn("border border-border bg-surface p-0.5", className)}
+					icon={<AtlassianLogo name={visual.logoName} size={logoSize} themeAware label={label} />}
+					label={label}
+					size="small"
+				/>
+			);
+		}
+
 		return (
 			<span
 				aria-hidden="true"
 				className={cn(
-					"inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xs",
-					size === "menu"
-						? "size-6 border border-border bg-surface p-0.5 [&>span]:size-full! [&_svg]:size-full!"
-						: cn(imageSizeClassName, "[&>span]:size-full! [&_svg]:size-full!"),
+					"inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xs [&>span]:size-full! [&_svg]:size-full!",
+					imageSizeClassName,
 					className,
 				)}
 			>
