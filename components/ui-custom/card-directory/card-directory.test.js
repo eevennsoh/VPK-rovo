@@ -31,7 +31,7 @@ test("shell preserves the bordered surface and hover-elevation classes", () => {
 	// The border is an overlay pseudo-element that fades out on hover/focus so only the
 	// elevation shadow remains — never a persistent real border that survives hover.
 	assert.doesNotMatch(SHELL_SOURCE, /\bborder border-border\b/u);
-	assert.match(SHELL_SOURCE, /after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:border after:border-border/u);
+	assert.match(SHELL_SOURCE, /after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-md after:border after:border-border/u);
 	assert.match(SHELL_SOURCE, /hover:after:border-transparent has-\[\[data-slot=card-directory-select\]:focus-visible\]:after:border-transparent/u);
 	assert.match(SHELL_SOURCE, /active = false/u);
 	assert.match(SHELL_SOURCE, /active && "after:border-transparent"/u);
@@ -292,7 +292,7 @@ test("barrel exports the shell, parts, and variant wrappers", () => {
 });
 
 test("agent-browser renders the shared CardDirectoryAgent (no inline card duplication)", () => {
-	assert.match(AGENT_BROWSER_SOURCE, /import \{ CardDirectoryAgent \} from "@\/components\/ui-custom\/card-directory"/u);
+	assert.match(AGENT_BROWSER_SOURCE, /import \{[\s\S]*CardDirectoryAgent,[\s\S]*\} from "@\/components\/ui-custom\/card-directory"/u);
 	assert.match(AGENT_BROWSER_SOURCE, /<CardDirectoryAgent/u);
 	assert.doesNotMatch(AGENT_BROWSER_SOURCE, /AgentDirectoryCard/u);
 	assert.doesNotMatch(AGENT_BROWSER_SOURCE, /AGENT_CARD_HOVER_ANIMATION/u);

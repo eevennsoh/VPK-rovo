@@ -472,8 +472,8 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /<AnimatePresence initial=\{false\} mode="wait">/u);
 	// The field-row blocks carry the opaque surface so they stay readable over
 	// scrolling content, while the separator/expand row above stays transparent.
-	assert.match(AGENT_SOURCE, /<motion\.div\s+key="expanded"\s+className="bg-surface pt-2"/u);
-	assert.match(AGENT_SOURCE, /<motion\.div\s+key="collapsed"\s+className="bg-surface pt-2"/u);
+	assert.match(AGENT_SOURCE, /<motion\.div\s+key="expanded"\s+className="overflow-hidden bg-surface pt-2"/u);
+	assert.match(AGENT_SOURCE, /<motion\.div\s+key="collapsed"\s+className="overflow-hidden bg-surface pt-2"/u);
 	// Horizontal rule line spans the row; the chevron sits at the far right of
 	// the same row and stays mounted across both states. Empty configs initialize
 	// expanded so first-run users see all supported capability rows.
@@ -733,6 +733,7 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /"format"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ RovoColorIcon \} from "@\/components\/ui\/logo";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const ASK_ROVO_SLASH_ITEM: RichTextSuggestionMenuItem = \{[\s\S]*id: "ask-rovo",[\s\S]*isSticky: true,[\s\S]*label: "Ask Rovo",/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /includeFormat = true/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /return \[\s*ASK_ROVO_SLASH_ITEM,[\s\S]*\.\.\.getSlashCategoryOrder\(includeFormat\)\.map/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.id === ASK_ROVO_SLASH_ITEM\.id[\s\S]*currentProps\.command\(\{ type: "ask-rovo", onAskRovo \}\)/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /props\.type === "ask-rovo"[\s\S]*props\.onAskRovo\?\.\(editor\)/u);
