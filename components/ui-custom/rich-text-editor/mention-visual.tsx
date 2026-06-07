@@ -161,9 +161,10 @@ export function RichTextMentionVisualMark({
 	// box so avatars, images, logos, and icons line up — previously avatar=24px,
 	// image=20px, icon=12px, which misaligned the chips. "pill" already matches at
 	// 16px; "menu" (dropdown rows) stays larger.
-	const avatarSize = size === "menu" ? "sm" : "xs";
-	const imageSizeClassName = size === "menu" ? "size-5" : "size-4";
+	const avatarSize = size === "menu" ? "default" : "xs";
+	const imageSizeClassName = size === "menu" ? "size-8" : "size-4";
 	const logoSize = size === "menu" ? "small" : "xxsmall";
+	const menuTileSize = "medium" as const;
 	const iconSizeClassName =
 		size === "menu" ? "size-3" : size === "pill" ? "size-3.5" : "size-4";
 	const iconClassName = cn(
@@ -213,7 +214,7 @@ export function RichTextMentionVisualMark({
 					className={cn("border border-border bg-surface p-0.5", className)}
 					icon={<AtlassianLogo name={visual.logoName} size={logoSize} themeAware label={label} />}
 					label={label}
-					size="small"
+					size={menuTileSize}
 				/>
 			);
 		}
@@ -240,7 +241,7 @@ export function RichTextMentionVisualMark({
 					className={cn("border border-border bg-surface", visual.iconColor ?? "text-icon-subtle", className)}
 					icon={visual.icon}
 					label={label}
-					size="small"
+					size={menuTileSize}
 				/>
 			);
 		}
