@@ -135,7 +135,7 @@ async function loadChatGreetingHarness() {
 				import React from "react";
 				import { renderToStaticMarkup } from "react-dom/server";
 				import ChatGreeting from "./components/projects/sidebar-chat/components/chat-greeting.tsx";
-				import { AI_INSIGHTS_AGENT_ID, getRovoAgentProfile } from "./components/projects/rovo/data/agent-profiles.ts";
+				import { AI_INSIGHTS_AGENT_ID, getRovoAgentProfile } from "./app/data/directory/agents.ts";
 
 				export function renderCustomLightGreeting() {
 					return renderToStaticMarkup(React.createElement(ChatGreeting, {

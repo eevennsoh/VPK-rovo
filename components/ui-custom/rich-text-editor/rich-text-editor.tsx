@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 
-import { createRichTextEditorExtensions } from "./extensions";
+import { createRichTextEditorExtensions, getMentionCategory } from "./extensions";
 import {
 	applyMarkdownFormat,
 	type MarkdownFormatKind,
@@ -66,13 +66,6 @@ function toCssString(value: string): string {
 	return JSON.stringify(value);
 }
 
-function getMentionCategory(id: unknown): string {
-	if (typeof id !== "string") {
-		return "";
-	}
-
-	return id.split(":")[0] ?? "";
-}
 
 function getEditorMentionInventory(editor: Editor): readonly RichTextMentionItem[] {
 	const mentions: RichTextMentionItem[] = [];

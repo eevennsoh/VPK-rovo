@@ -6,6 +6,10 @@ export {
 } from "./rich-text-editor";
 export { createRichTextEditorExtensions } from "./extensions";
 export {
+	createComposerEditorExtensions,
+	type ComposerEditorExtensionOptions,
+} from "./composer-extensions";
+export {
 	RichTextSuggestionMenu,
 	SLASH_COMMANDS,
 	getSlashCommandFormatItems,

@@ -7,7 +7,8 @@ import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import type { TagColor } from "@/components/ui/tag";
-import { getSkillIcon, type SkillIconKey } from "@/components/blocks/skills-directory/data/skills";
+import { getSkillIcon } from "@/app/data/directory/visual";
+import type { SkillIconKey } from "@/app/data/directory/types";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -156,15 +157,20 @@ export function RichTextMentionVisualMark({
 	size?: "menu" | "pill" | "tag";
 	visual: RichTextMentionVisual;
 }>) {
-	const avatarSize = size === "pill" ? "xs" : "sm";
-	const imageSizeClassName = size === "pill" ? "size-4" : "size-5";
+	// Inside a "tag" (mention token) every visual kind must occupy the SAME 16px
+	// box so avatars, images, logos, and icons line up — previously avatar=24px,
+	// image=20px, icon=12px, which misaligned the chips. "pill" already matches at
+	// 16px; "menu" (dropdown rows) stays larger.
+	const avatarSize = size === "menu" ? "sm" : "xs";
+	const imageSizeClassName = size === "menu" ? "size-5" : "size-4";
 	const logoSize = size === "menu" ? "small" : "xxsmall";
-	const iconSizeClassName = size === "pill" ? "size-3.5" : "size-3";
+	const iconSizeClassName =
+		size === "menu" ? "size-3" : size === "pill" ? "size-3.5" : "size-4";
 	const iconClassName = cn(
 		iconSizeClassName,
-		size === "pill"
-			? "[&>span]:size-3.5! [&_svg]:size-3.5!"
-			: "[&>span]:size-3! [&_svg]:size-3!",
+		size === "menu"
+			? "[&>span]:size-3! [&_svg]:size-3!"
+			: "[&>span]:size-3.5! [&_svg]:size-3.5!",
 	);
 
 	if (visual.kind === "avatar") {
@@ -202,6 +208,7 @@ export function RichTextMentionVisualMark({
 				aria-hidden="true"
 				className={cn(
 					"inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xs [&>span]:size-full! [&_svg]:size-full!",
+					size === "menu" ? undefined : imageSizeClassName,
 					className,
 				)}
 			>

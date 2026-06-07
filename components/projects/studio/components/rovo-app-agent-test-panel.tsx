@@ -11,7 +11,7 @@ import {
 import Triggers from "@/components/blocks/triggers/page";
 import type { AgentTriggerValue } from "@/components/blocks/triggers/data/trigger-catalog";
 import ChatPanel from "@/components/projects/sidebar-chat/page";
-import type { RovoAgentProfile } from "@/components/projects/rovo/data/agent-profiles";
+import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
 import { cn } from "@/lib/utils";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-import { ROVO_AGENT_ID } from "@/components/projects/studio/data/agent-profiles";
+import { ROVO_AGENT_ID } from "@/app/data/directory/agents";
 import { getAgentIdFromSearch, withAgentParam } from "@/lib/agent-route-sync";
 
 /**

@@ -1,0 +1,222 @@
+"use client";
+
+import {
+	PromptInput,
+	PromptInputActionMenu,
+	PromptInputActionMenuContent,
+	PromptInputActionMenuTrigger,
+	PromptInputBody,
+	PromptInputButton,
+	PromptInputFooter,
+	PromptInputPreferencesButton,
+	PromptInputTextarea,
+	PromptInputTools,
+} from "@/components/ui-custom/prompt-input";
+import { composerPromptInputClassName, composerTextareaClassName, composerUpwardShadow } from "@/components/blocks/shared-ui/composer-styles";
+import CustomizeMenu from "@/components/blocks/shared-ui/customize-menu";
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import AddIcon from "@atlaskit/icon/core/add";
+import CursorIcon from "@atlaskit/icon-lab/core/cursor";
+import { useCallback, useEffect, useState } from "react";
+import { RovoAppComposerAddMenu } from "@/components/projects/shared/components/rovo-app-composer-add-menu";
+import { PendingAttachments } from "@/components/projects/shared/components/pending-attachments";
+import { RovoComposerSendControls } from "@/components/projects/shared/components/rovo-composer-send-controls";
+import { useRovoAppComposerHeight } from "@/components/projects/shared/hooks/use-rovo-app-composer-height";
+import { DEFAULT_REASONING_OPTION_ID } from "@/components/blocks/shared-ui/data/customize-menu-data";
+import { type ComposerBodyBaseProps, usePrefillEffect } from "@/components/projects/shared/components/composer-body-shared";
+
+export interface ComposerCardBodyProps extends ComposerBodyBaseProps {
+	artifactTitle: string | null | undefined;
+	compact: boolean;
+	experimentalDarkCta: boolean;
+	galleryExpanded: boolean;
+	isPlanMode: boolean;
+	onTogglePlanMode?: () => void;
+	previewPrompt: string | null;
+}
+
+/**
+ * Rovo "card" composer body: bordered card with the height-animation system,
+ * the Add action-menu, Rovo Cursor + Customize controls, and the full
+ * reasoning-aware send controls.
+ */
+export function ComposerCardBody({
+	artifactTitle,
+	autoFocus,
+	attachmentCount,
+	canSubmit,
+	clickyActive,
+	compact,
+	composerStatus,
+	experimentalDarkCta,
+	galleryExpanded,
+	isPlanMode,
+	micStream,
+	onPromptSubmit,
+	onStop,
+	onTogglePlanMode,
+	onToggleClicky,
+	onToggleRealtimeVoice,
+	placeholder,
+	prefillText,
+	previewPrompt,
+	realtimeVoiceActive,
+	showBackgroundStop,
+	submitDisabled,
+	textValue,
+}: Readonly<ComposerCardBodyProps>) {
+	const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+	const [isCustomizeMenuOpen, setIsCustomizeMenuOpen] = useState(false);
+	const [isAutoMenuOpen, setIsAutoMenuOpen] = useState(false);
+	const [selectedReasoning, setSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
+	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
+	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
+
+	const isPreviewPlaceholderActive = Boolean(previewPrompt) && textValue.trim().length === 0;
+	const isComposerBusy = composerStatus === "submitted" || composerStatus === "streaming";
+
+	const { composerRef, textareaRef, composerHeight } = useRovoAppComposerHeight({
+		textValue,
+		attachmentCount,
+		isPreviewPlaceholderActive,
+		galleryExpanded,
+		hasArtifactTitle: Boolean(artifactTitle),
+		previewPrompt,
+	});
+
+	usePrefillEffect(prefillText);
+
+	const handleReasoningChange = useCallback((reasoning: string) => {
+		setSelectedReasoning(reasoning);
+		const shouldEnablePlanMode = reasoning === "max";
+
+		if (onTogglePlanMode && shouldEnablePlanMode !== isPlanMode) {
+			onTogglePlanMode();
+		}
+
+		requestAnimationFrame(() => {
+			textareaRef.current?.focus();
+		});
+	}, [isPlanMode, onTogglePlanMode, textareaRef]);
+	const handleCustomizeMenuOpenChange = useCallback((open: boolean) => {
+		setIsCustomizeMenuOpen(open);
+		if (open) {
+			setIsAutoMenuOpen(false);
+		}
+	}, []);
+	const handleAutoMenuOpenChange = useCallback((open: boolean) => {
+		setIsAutoMenuOpen(open);
+		if (open) {
+			setIsCustomizeMenuOpen(false);
+		}
+	}, []);
+
+	useEffect(() => {
+		if (isPlanMode) {
+			setSelectedReasoning("max");
+			return;
+		}
+
+		setSelectedReasoning((currentReasoning) => currentReasoning === "max" ? DEFAULT_REASONING_OPTION_ID : currentReasoning);
+	}, [isPlanMode]);
+
+	return (
+		<div
+			ref={composerRef}
+			className={cn("relative z-10 rounded-xl border border-border bg-surface px-4 pb-3 pt-3", composerHeight ? "flex flex-col" : undefined, compact ? "pb-2.5 pt-3.5" : undefined)}
+			style={{
+				boxShadow: composerUpwardShadow,
+				...(composerHeight
+					? {
+							height: `${composerHeight}px`,
+							transition: "height var(--duration-normal) var(--ease-out)",
+						}
+					: {}),
+			}}
+		>
+			<PromptInput
+				allowOverflow
+				className={cn(composerPromptInputClassName, "relative z-10", composerHeight ? "flex h-full flex-col [&>[data-slot=input-group]]:h-full" : undefined)}
+				onSubmit={onPromptSubmit}
+			>
+				<PendingAttachments />
+
+				<PromptInputBody className={composerHeight ? "flex-1" : undefined}>
+					<PromptInputTextarea
+						ref={textareaRef}
+						autoFocus={autoFocus}
+						autoResize={!composerHeight}
+						className={cn(composerTextareaClassName, composerHeight ? "h-full max-h-none min-h-0" : undefined)}
+						placeholder={placeholder}
+						rows={1}
+						suppressHydrationWarning
+					/>
+				</PromptInputBody>
+
+				<PromptInputFooter className="mt-3 justify-between px-0 pb-0">
+					<PromptInputTools>
+						<PromptInputActionMenu open={isAddMenuOpen} onOpenChange={setIsAddMenuOpen}>
+							<PromptInputActionMenuTrigger aria-label="Add" size="icon-sm" variant="ghost">
+								<AddIcon label="" />
+							</PromptInputActionMenuTrigger>
+							<PromptInputActionMenuContent>
+								<RovoAppComposerAddMenu
+									onClose={() => setIsAddMenuOpen(false)}
+								/>
+							</PromptInputActionMenuContent>
+						</PromptInputActionMenu>
+						<PromptInputButton
+							size="icon-sm"
+							variant={clickyActive ? "default" : "ghost"}
+							onClick={onToggleClicky}
+							aria-label="Rovo cursor"
+							aria-pressed={clickyActive}
+							tooltip={{ content: "Rovo cursor", delay: 0 }}
+						>
+							<CursorIcon label="" />
+						</PromptInputButton>
+						<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
+							<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />
+							<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-2">
+								<PopoverTitle className="sr-only">Customize sources</PopoverTitle>
+								<CustomizeMenu
+									selectedReasoning={selectedReasoning}
+									onReasoningChange={handleReasoningChange}
+									showReasoning={false}
+									webResultsEnabled={webResultsEnabled}
+									onWebResultsChange={setWebResultsEnabled}
+									companyKnowledgeEnabled={companyKnowledgeEnabled}
+									onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
+									onClose={() => setIsCustomizeMenuOpen(false)}
+								/>
+							</PopoverContent>
+						</Popover>
+					</PromptInputTools>
+
+					<RovoComposerSendControls
+						canSubmit={canSubmit}
+						className="flex-1"
+						companyKnowledgeEnabled={companyKnowledgeEnabled}
+						composerStatus={composerStatus}
+						experimentalDarkCta={experimentalDarkCta}
+						isComposerBusy={isComposerBusy}
+						micStream={micStream}
+						onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
+						onOpenChange={handleAutoMenuOpenChange}
+						onReasoningChange={handleReasoningChange}
+						onStop={onStop}
+						onToggleRealtimeVoice={onToggleRealtimeVoice}
+						open={isAutoMenuOpen}
+						realtimeVoiceActive={realtimeVoiceActive}
+						selectedReasoning={selectedReasoning}
+						showBackgroundStop={showBackgroundStop}
+						submitDisabled={submitDisabled}
+						webResultsEnabled={webResultsEnabled}
+						onWebResultsChange={setWebResultsEnabled}
+					/>
+				</PromptInputFooter>
+			</PromptInput>
+		</div>
+	);
+}

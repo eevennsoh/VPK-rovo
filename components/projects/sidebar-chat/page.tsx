@@ -58,7 +58,7 @@ import { QuestionCardShortcutsFooter } from "@/components/projects/shared/compon
 import { ApprovalCard } from "@/components/blocks/approval-card/page";
 import { useDismissibleCards } from "@/components/projects/shared/hooks/use-dismissible-cards";
 import type { RovoSuggestion } from "@/lib/rovo-suggestions";
-import type { RovoAgentProfile } from "@/components/projects/rovo/data/agent-profiles";
+import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import ChatHeader from "./components/chat-header";
 import { ChatHistoryDrawer } from "./components/chat-history-drawer";
 import ChatGreeting from "./components/chat-greeting";

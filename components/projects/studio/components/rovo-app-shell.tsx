@@ -46,7 +46,7 @@ import {
 	shouldAutoOpenRovoAppBrowserArtifact,
 	shouldShowReopenRovoAppBrowserArtifactControl,
 } from "@/components/projects/studio/lib/rovo-app-browser-preview";
-import { resolveRovoAppComposerPlaceholder } from "@/components/projects/studio/lib/rovo-app-composer-placeholder";
+import { resolveRovoAppComposerPlaceholder } from "@/components/projects/shared/lib/rovo-app-composer-placeholder";
 import { ROVO_APP_MAX_CHAT_PANE_WIDTH, ROVO_APP_MIN_ARTIFACT_PANE_WIDTH, ROVO_APP_MIN_CHAT_PANE_WIDTH, ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS, getRovoAppShellLayout } from "@/components/projects/studio/lib/rovo-app-shell-layout";
 import { getRovoAppSmartGenerationLayoutContext } from "@/components/projects/studio/lib/rovo-app-smart-generation-layout";
 import { deriveRovoAppTimelineItems } from "@/components/projects/studio/lib/rovo-app-timeline";
@@ -120,7 +120,7 @@ import { approveSkillDraft, fetchSkillDraftDetail, fetchSkillDrafts, rejectSkill
 import type { HermesSkillDraftDetail, HermesSkillDraftSummary } from "@/lib/rovo-runtime-types";
 import type { RovoAppHermesContext } from "@/lib/rovo-app-types";
 import { getStudioSessionAgentDisplayName, useRovoSelectedAgent } from "@/app/contexts";
-import { ROVO_DIRECTORY_AGENT_PROFILES, getRovoAgentPromptContext, isRovoAgentProfile, type RovoAgentProfile } from "@/components/projects/studio/data/agent-profiles";
+import { ROVO_DIRECTORY_AGENT_PROFILES, getRovoAgentPromptContext, isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 
 interface RovoAppShellProps {
 	embedded?: boolean;

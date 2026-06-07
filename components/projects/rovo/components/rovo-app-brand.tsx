@@ -18,7 +18,7 @@ import { Icon } from "@/components/ui/icon";
 import { RovoColorIcon } from "@/components/ui/logo";
 import {
 	isRovoAgentProfile,
-} from "@/components/projects/rovo/data/agent-profiles";
+} from "@/app/data/directory/agents";
 
 const ROVO_APP_BRAND_CONTAINER_VARIANTS = {
 	hidden: {},

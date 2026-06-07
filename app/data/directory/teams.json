@@ -1,0 +1,44 @@
+[
+	{
+		"id": "team-design-systems",
+		"name": "Design Systems",
+		"description": "Owns the shared component library, design tokens, and accessibility standards.",
+		"avatarSrc": "/avatar-project/canvas.svg",
+		"memberCount": 12
+	},
+	{
+		"id": "team-growth",
+		"name": "Growth",
+		"description": "Drives activation, onboarding, and conversion experiments across the funnel.",
+		"avatarSrc": "/avatar-project/graph.svg",
+		"memberCount": 9
+	},
+	{
+		"id": "team-platform",
+		"name": "Platform",
+		"description": "Builds the core services, APIs, and infrastructure other teams depend on.",
+		"avatarSrc": "/avatar-project/gears.svg",
+		"memberCount": 18
+	},
+	{
+		"id": "team-customer-success",
+		"name": "Customer Success",
+		"description": "Partners with customers to drive adoption, retention, and expansion.",
+		"avatarSrc": "/avatar-project/life-ring.svg",
+		"memberCount": 14
+	},
+	{
+		"id": "team-mobile",
+		"name": "Mobile",
+		"description": "Ships the iOS and Android apps and shared cross-platform mobile foundations.",
+		"avatarSrc": "/avatar-project/phone.svg",
+		"memberCount": 8
+	},
+	{
+		"id": "team-data-science",
+		"name": "Data Science",
+		"description": "Powers analytics, experimentation, and ML models across the product.",
+		"avatarSrc": "/avatar-project/science.svg",
+		"memberCount": 7
+	}
+]

@@ -84,17 +84,28 @@ test("Knowledge Directory exposes app, content, and callback props", () => {
 });
 
 test("Knowledge Directory includes real connector defaults", () => {
-	const source = readProjectFile("components/blocks/knowledge-directory/data/apps.tsx");
+	// App data is now the single-source-of-truth JSON catalog.
+	const apps = JSON.parse(readProjectFile("app/data/directory/knowledge.json"));
+	const byName = new Map(apps.map((app) => [app.name, app]));
 
-	assert.match(source, /name: "Confluence"/u);
-	assert.match(source, /name: "Google Drive"/u);
-	assert.match(source, /name: "Microsoft Teams"/u);
-	assert.match(source, /name: "Microsoft SharePoint"/u);
-	assert.match(source, /name: "GitHub"/u);
-	assert.match(source, /name: "Loom"/u);
-	assert.match(source, /visual: \{ kind: "logo", logoName: "confluence" \}/u);
-	assert.match(source, /visual: \{ kind: "image", shape: "square", src: "\/3p\/google-drive\/20\.svg" \}/u);
-	assert.match(source, /contents: \[/u);
+	for (const name of [
+		"Confluence",
+		"Google Drive",
+		"Microsoft Teams",
+		"Microsoft SharePoint",
+		"GitHub",
+		"Loom",
+	]) {
+		assert.ok(byName.has(name), `knowledge catalog should include ${name}`);
+	}
+
+	assert.deepEqual(byName.get("Confluence").visual, { kind: "logo", logoName: "confluence" });
+	assert.deepEqual(byName.get("Google Drive").visual, {
+		kind: "image",
+		shape: "square",
+		src: "/3p/google-drive/20.svg",
+	});
+	assert.ok(apps.every((app) => Array.isArray(app.contents)));
 });
 
 test("Knowledge Directory implements app selection and content-scope actions", () => {

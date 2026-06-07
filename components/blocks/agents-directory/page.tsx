@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { AgentsDirectoryDialog, type AgentsDirectoryAgent } from "@/components/blocks/agents-directory";
-import { DEMO_AGENT_BROWSER_AGENTS } from "@/components/blocks/agent-browser/data/demo-agents";
+import { DEMO_AGENT_BROWSER_AGENTS } from "@/app/data/directory/agents";
 
 const DEMO_SESSION_AGENTS: readonly AgentsDirectoryAgent[] = [
 	{
