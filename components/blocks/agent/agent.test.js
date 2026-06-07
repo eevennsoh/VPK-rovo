@@ -770,11 +770,18 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.category === "team"[\s\S]*shape: "square"[\s\S]*TEAM_AVATAR_SRCS/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const AGENT_AVATAR_SRCS = \[[\s\S]*\/avatar-agent\/dev-agents\/code-planner\.svg/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.category === "subagent"[\s\S]*shape: "hexagon"[\s\S]*AGENT_AVATAR_SRCS/u);
-	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /import \{ DEMO_AGENT_BROWSER_AGENTS \} from "@\/components\/blocks\/agent-browser\/data\/demo-agents";/u);
-	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /import \{ DEFAULT_KNOWLEDGE_APPS \} from "@\/components\/blocks\/knowledge-directory\/data\/apps";/u);
+	// The mention catalog now sources every vertical from the unified data layer.
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /from "@\/app\/data\/directory"/u);
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /DEFAULT_SKILLS,/u);
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /DEFAULT_KNOWLEDGE_APPS,/u);
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /DEMO_AGENT_BROWSER_AGENTS,/u);
 	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /DEFAULT_SKILLS\.map\(mapSkillToMentionItem\)/u);
-	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /iconColor: skill\.iconColor/u);
+	// Skill visuals are derived via the loader's getSkillDirectoryVisual helper.
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /getSkillDirectoryVisual\(skill\)/u);
 	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /\[\.\.\.DEMO_TOOLS, \.\.\.DEMO_SESSION_TOOLS\]\.map\(mapToolToMentionItem\)/u);
+	// The unified catalog adds the human + team verticals.
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /SAMPLE_AGENT_PEOPLE\.map\(mapPersonToMentionItem\)/u);
+	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /DEMO_TEAMS\.map\(mapTeamToMentionItem\)/u);
 	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /getDirectoryMentionItemOrFallback/u);
 	assert.doesNotMatch(EDITOR_PALETTE_MENTION_SOURCES, /SKILL_METADATA/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /getSlashCommandCategoryItems\(mentionSources\)/u);
@@ -830,9 +837,16 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /"Human nested"/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /"Team nested"/u);
 
-	for (const idPrefix of ["human:", "team:", "tool:", "knowledge:"]) {
-		assert.match(RICH_TEXT_SUGGESTION_SOURCE, new RegExp(`id: "${idPrefix}`, "u"));
+	// The @/​ surfaces now draw mention ids from the unified catalog builder
+	// (suggestion-menu's STATIC_MENTION_ITEMS = EDITOR_PALETTE_MENTION_SOURCES),
+	// so the per-category ids are minted there via toMentionId.
+	for (const category of ["human", "team", "tool", "knowledge", "skill", "subagent"]) {
+		assert.match(EDITOR_PALETTE_MENTION_SOURCES, new RegExp(`toMentionId\\("${category}"`, "u"));
 	}
+	assert.match(
+		RICH_TEXT_SUGGESTION_SOURCE,
+		/const STATIC_MENTION_ITEMS: RichTextMentionSources = EDITOR_PALETTE_MENTION_SOURCES;/u,
+	);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /revealDescriptionOnHover/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /data-nested=\{isNested \? "true" : undefined\}/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /data-list-scrolled=\{isNested && hasScrolledList \? "true" : undefined\}/u);

@@ -30,8 +30,8 @@ import ChatContextBar from "./chat-context-bar";
 import type { ChatContextBarDescriptor } from "../lib/chat-context-bar";
 import AddIcon from "@atlaskit/icon/core/add";
 import CursorIcon from "@atlaskit/icon-lab/core/cursor";
-import { PendingAttachments } from "@/components/projects/rovo/components/pending-attachments";
-import { RovoAppComposerAddMenu } from "@/components/projects/rovo/components/rovo-app-composer-add-menu";
+import { PendingAttachments } from "@/components/projects/shared/components/pending-attachments";
+import { RovoAppComposerAddMenu } from "@/components/projects/shared/components/rovo-app-composer-add-menu";
 import { RovoComposerSendControls } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { cn } from "@/lib/utils";
 

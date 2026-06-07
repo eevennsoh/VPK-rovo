@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { RoleSelect } from "./role-select";
-import { DEFAULT_AGENT_ROLE, type AgentUserRole } from "../data/users";
+import { DEFAULT_AGENT_ROLE, type AgentUserRole } from "@/app/data/directory/people";
 
 export interface AddUserPayload {
 	name: string;

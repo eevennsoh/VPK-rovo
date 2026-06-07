@@ -46,7 +46,7 @@ import {
 	ROVO_AGENT_ID,
 	ROVO_AGENT_SELECTOR_AGENTS,
 	type RovoAgentProfile,
-} from "@/components/projects/rovo/data/agent-profiles";
+} from "@/app/data/directory/agents";
 import {
 	cancelRovoAppRun,
 	createRovoAppThread,

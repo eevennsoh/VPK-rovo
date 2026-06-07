@@ -7,7 +7,7 @@ import { AgentBrowserDialog } from "./components/agent-browser";
 import {
 	DEMO_AGENT_BROWSER_AGENTS,
 	DEMO_AGENT_BROWSER_SIDEBAR_GROUPS,
-} from "./data/demo-agents";
+} from "@/app/data/directory/agents";
 
 export default function Page() {
 	const [open, setOpen] = useState(false);

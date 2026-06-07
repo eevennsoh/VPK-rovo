@@ -24,10 +24,13 @@ import TimelineIcon from "@atlaskit/icon/core/timeline";
 import CartIcon from "@atlaskit/icon-lab/core/cart";
 
 import type {
-	AgentBrowserAgent,
 	AgentBrowserSidebarGroup,
 	AgentBrowserSidebarItem,
 } from "@/components/blocks/agent-browser";
+import type {
+	ToolsDirectoryPermission,
+	ToolsDirectoryTool,
+} from "@/app/data/directory/tools";
 import { TOOLS_DIRECTORY_CATEGORIES } from "@/components/blocks/tools-directory/data/categories";
 import { DEFAULT_TOOLS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/tools-directory/data/sidebar-groups";
 import { Badge } from "@/components/ui/badge";
@@ -50,26 +53,10 @@ import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-over
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-export interface ToolsDirectoryPermission {
-	id: string;
-	name: string;
-	description: string;
-	enabled?: boolean;
-	disabled?: boolean;
-}
-
-export interface ToolsDirectoryTool extends AgentBrowserAgent {
-	categoryId?: string;
-	favorite?: boolean;
-	lastUpdatedLabel?: string;
-	logoSrc?: string;
-	publisherName?: string;
-	readOnlyTools?: readonly ToolsDirectoryPermission[];
-	teammateCount?: number;
-	toolCount?: number;
-	verified?: boolean;
-	writeDeleteTools?: readonly ToolsDirectoryPermission[];
-}
+// `ToolsDirectoryTool` and `ToolsDirectoryPermission` are owned by the data layer
+// (`@/app/data/directory/tools`) so JSON data and the directory UI share one type
+// identity. Re-exported here for existing callers that import them from this module.
+export type { ToolsDirectoryPermission, ToolsDirectoryTool } from "@/app/data/directory/tools";
 
 export type ToolsDirectorySidebarGroup = AgentBrowserSidebarGroup;
 

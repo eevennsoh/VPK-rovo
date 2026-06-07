@@ -1,4 +1,4 @@
-import type { SkillCategory } from "./skills";
+import type { SkillCategory } from "@/app/data/directory/skills";
 import type { AtlassianLogoName } from "@/components/ui/logo";
 
 /** Primary (sectionless) nav rows shown above the first group heading. */

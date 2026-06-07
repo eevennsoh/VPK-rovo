@@ -1,0 +1,35 @@
+[
+	{
+		"agentId": "feedback-analyzer"
+	},
+	{
+		"agentId": "ai-insights-agent"
+	},
+	{
+		"agentId": "readiness-checker"
+	},
+	{
+		"agentId": "code-reviewer"
+	},
+	{
+		"agentId": "pipeline-troubleshooter"
+	},
+	{
+		"agentId": "meeting-insights-reporter"
+	},
+	{
+		"agentId": "google-drive"
+	},
+	{
+		"agentId": "github-copilot"
+	},
+	{
+		"agentId": "slack"
+	},
+	{
+		"agentId": "notion"
+	},
+	{
+		"agentId": "atlassian"
+	}
+]

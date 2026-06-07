@@ -1804,7 +1804,7 @@ import { Button } from "@/components/ui/button";
 
 	"prompt-input": {
 		description:
-			"A composable AI prompt composer built on InputGroup primitives, with textarea submission semantics, action menus, model/tool controls, file attachments, and provider-based external control.",
+			"A composable AI prompt composer built on a tiptap rich-text editor, with an inline `/` (skills) and `@` (mentions) palette, Enter-to-submit semantics, action menus, model/tool controls, file attachments, and provider-based external control. Typing `/` or `@` opens the command palette; selections insert non-editable inline reference tokens (pills) while the serialized text stays a plain string for `onSubmit`/`value`/`onChange`. The catalog backing the palette is configurable via the `mentionSources` prop and defaults to the unified editor-palette directory.",
 		usage: `import {
   PromptInput,
   PromptInputBody,
@@ -1821,7 +1821,8 @@ import AddIcon from "@atlaskit/icon/core/add";
 
 <PromptInput onSubmit={({ text, files }) => sendMessage({ text, files })}>
   <PromptInputBody>
-    <PromptInputTextarea placeholder="Ask anything..." rows={1} />
+    {/* Type "/" for skills or "@" to mention. Pass mentionSources to scope the palette. */}
+    <PromptInputTextarea placeholder="Ask, @mention, or / for skills" rows={1} />
   </PromptInputBody>
   <PromptInputFooter className="justify-between px-1">
     <PromptInputTools>
@@ -1887,11 +1888,21 @@ import AddIcon from "@atlaskit/icon/core/add";
 				default: '"default"',
 				description: 'Visual variant. "floating" applies rounded border, input background, padding, and elevated shadow for overlay use.',
 			},
+			{
+				name: "mentionSources",
+				type: "RichTextMentionSources",
+				description: "PromptInputTextarea prop. Catalog backing the inline `/` and `@` palette. Defaults to the unified editor-palette catalog built from the app directory; pass a custom catalog to scope skills/mentions per surface.",
+			},
+			{
+				name: "onEditorReady",
+				type: "(editor: Editor) => void",
+				description: "PromptInputTextarea prop. Called once the tiptap editor mounts. Use it (or the forwarded ref, which points at the contentEditable DOM) to drive focus or measurement.",
+			},
 		],
 		subComponents: [
 			{ name: "PromptInputProvider", description: "Optional provider for externally controlled text input and attachments." },
 			{ name: "PromptInputBody", description: "Body slot that wraps the main textarea input region." },
-			{ name: "PromptInputTextarea", description: "Autosizing textarea with Enter-to-submit and paste-file support." },
+			{ name: "PromptInputTextarea", description: "Rich-text composer (tiptap) with Enter-to-submit, an inline `/` (skills) + `@` (mentions) palette, inline reference pills, and a configurable `mentionSources` catalog. Serializes to a plain string for `value`/`onChange`/`onSubmit`." },
 			{ name: "PromptInputHeader", description: "Top aligned addon row for tabs, modes, or context chips." },
 			{ name: "PromptInputFooter", description: "Bottom aligned addon row for tools and submit actions." },
 			{ name: "PromptInputTools", description: "Inline tools container commonly used inside PromptInputFooter." },
@@ -1905,7 +1916,7 @@ import AddIcon from "@atlaskit/icon/core/add";
 			{ name: "PromptInputSubmit", description: "Submit/stop button with chat status-aware icon states." },
 		],
 		examples: [
-			{ title: "Chat Composer style", description: "Rovo-style composer with add menu, AI cursor toggle, customize popover, reasoning selector, and submit/voice action button.", demoSlug: "prompt-input-demo-chat-composer" },
+			{ title: "Chat Composer style", description: "Rovo-style composer with the inline / (skills) and @ (mentions) palette, add menu, AI cursor toggle, customize popover, reasoning selector, and submit/voice action button. Type / or @ in the input to open the palette.", demoSlug: "prompt-input-demo-chat-composer" },
 			{ title: "Floating bar", description: 'Uses variant="floating" for a minimal single-line input with elevated shadow, ideal for overlaying on content areas.', demoSlug: "prompt-input-demo-floating-bar" },
 		],
 	},

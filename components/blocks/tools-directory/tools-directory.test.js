@@ -75,9 +75,17 @@ test("Tools Directory owns the Figma modal instead of wrapping AgentBrowserDialo
 });
 
 test("Tools Directory keeps compatible types while adding tool detail fields", () => {
-	const source = readProjectFile("components/blocks/tools-directory/components/tools-directory.tsx");
+	// The tool type is now owned by the data layer (single type identity) and
+	// re-exported from the component module for existing callers.
+	const loaderSource = readProjectFile("app/data/directory/tools.ts");
+	const componentSource = readProjectFile("components/blocks/tools-directory/components/tools-directory.tsx");
 
-	assert.match(source, /export interface ToolsDirectoryTool extends AgentBrowserAgent/u);
+	assert.match(loaderSource, /export interface ToolsDirectoryTool/u);
+	// The loader interface mirrors AgentBrowserAgent's identity fields...
+	for (const field of ["id", "name", "byline", "attributionKind", "avatarSrc", "logoName", "description"]) {
+		assert.match(loaderSource, new RegExp(`\\b${field}\\??:`, "u"));
+	}
+	// ...plus the tool-specific detail fields.
 	for (const field of [
 		"categoryId",
 		"toolCount",
@@ -89,9 +97,15 @@ test("Tools Directory keeps compatible types while adding tool detail fields", (
 		"readOnlyTools",
 		"writeDeleteTools",
 	]) {
-		assert.match(source, new RegExp(`${field}\\?`, "u"));
+		assert.match(loaderSource, new RegExp(`${field}\\?`, "u"));
 	}
-	assert.match(source, /export type ToolsDirectorySidebarGroup = AgentBrowserSidebarGroup;/u);
+	// The component re-exports the loader's tool/permission types and keeps the
+	// sidebar-group alias to AgentBrowserSidebarGroup.
+	assert.match(
+		componentSource,
+		/export type \{ ToolsDirectoryPermission, ToolsDirectoryTool \} from "@\/app\/data\/directory\/tools";/u,
+	);
+	assert.match(componentSource, /export type ToolsDirectorySidebarGroup = AgentBrowserSidebarGroup;/u);
 });
 
 test("Tools Directory supports controlled and uncontrolled added tool state", () => {
@@ -132,16 +146,21 @@ test("Tools Directory category data follows the requested category content", () 
 test("Tools Directory docs demo includes added and non-added detail states", () => {
 	const source = readProjectFile("components/blocks/tools-directory/page.tsx");
 	const componentSource = readProjectFile("components/blocks/tools-directory/components/tools-directory.tsx");
-	const demoToolsSource = readProjectFile("components/blocks/tools-directory/data/demo-tools.ts");
+	// Tool data is now the single-source-of-truth JSON catalog (two groups).
+	const toolsData = JSON.parse(readProjectFile("app/data/directory/tools.json"));
+	const allTools = [...toolsData.tools, ...toolsData.sessionTools];
 	const sidebarGroupsSource = readProjectFile("components/blocks/tools-directory/data/sidebar-groups.ts");
 
-	assert.match(source, /import \{ DEMO_SESSION_TOOLS, DEMO_TOOLS \} from "@\/components\/blocks\/tools-directory\/data\/demo-tools";/u);
+	assert.match(source, /import \{ DEMO_SESSION_TOOLS, DEMO_TOOLS \} from "@\/app\/data\/directory\/tools";/u);
 	assert.match(source, /defaultAddedToolIds=\{\["atlassian"\]\}/u);
-	assert.match(demoToolsSource, /logoName: "atlassian"/u);
-	assert.match(demoToolsSource, /favorite: true/u);
-	assert.match(demoToolsSource, /categoryId: "project-management"/u);
-	assert.match(demoToolsSource, /categoryId: "software-development"/u);
-	assert.match(demoToolsSource, /categoryId: "security-and-compliance"/u);
+	assert.ok(allTools.some((tool) => tool.logoName === "atlassian"), "a tool should use the Atlassian brand logo");
+	assert.ok(allTools.some((tool) => tool.favorite === true), "a tool should be marked favourite");
+	for (const categoryId of ["project-management", "software-development", "security-and-compliance"]) {
+		assert.ok(
+			allTools.some((tool) => tool.categoryId === categoryId),
+			`a tool should be in the ${categoryId} category`,
+		);
+	}
 	assert.match(componentSource, /label: "Favourite tools"/u);
 	assert.match(componentSource, /if \(activeCategory === "favorite-tools" && !tool\.favorite\) return false;/u);
 	assert.match(componentSource, /const MAX_VISIBLE_CATEGORY_ITEMS = 5;/u);

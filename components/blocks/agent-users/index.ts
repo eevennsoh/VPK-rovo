@@ -10,9 +10,9 @@ export {
 	SAMPLE_AGENT_OWNER,
 	SAMPLE_AGENT_PEOPLE,
 	getRoleOption,
-} from "./data/users";
+} from "@/app/data/directory/people";
 export type {
 	AgentPerson,
 	AgentRoleOption,
 	AgentUserRole,
-} from "./data/users";
+} from "@/app/data/directory/people";

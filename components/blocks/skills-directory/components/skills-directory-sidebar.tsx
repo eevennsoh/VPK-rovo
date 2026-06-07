@@ -25,7 +25,7 @@ import {
 	getSkillById,
 	getSkillIcon,
 	type SkillsDirectorySkill,
-} from "../data/skills";
+} from "@/app/data/directory/skills";
 import type {
 	SkillsDirectoryCategoryItem,
 	SkillNavIcon,

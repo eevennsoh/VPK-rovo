@@ -9,7 +9,7 @@ import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustra
 import { VisualIdentityTile } from "@/components/projects/shared/components/visual-identity-tile";
 import { IconTile } from "@/components/ui/icon-tile";
 import { defaultSuggestions, type RovoSuggestion } from "@/lib/rovo-suggestions";
-import { isRovoAgentProfile, type RovoAgentProfile } from "@/components/projects/rovo/data/agent-profiles";
+import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_ILLUSTRATION_SRC = "/illustration-ai/chat/light.svg";

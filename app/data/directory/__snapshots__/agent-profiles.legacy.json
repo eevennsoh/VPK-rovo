@@ -1,0 +1,1546 @@
+{
+	"_note": "Pre-change derived outputs of the two forked agent-profiles modules. ROVO_DIRECTORY_AGENT_PROFILES is exported ONLY by the studio file. The selector exports exist in BOTH files but differ (studio has +atlassian +release-notes-drafter). Keyed by source file so task #7 can verify whichever module each importer is repointed from.",
+	"studio": {
+		"source": "components/projects/studio/data/agent-profiles.ts",
+		"ROVO_DIRECTORY_AGENT_PROFILES": [
+			{
+				"id": "github-copilot",
+				"name": "GitHub Copilot",
+				"byline": "Agent by GitHub",
+				"avatarSrc": "/3p/github/24.svg",
+				"description": "Helps review code, explain repository changes, and suggest implementation paths.",
+				"contextDescription": "[Selected custom agent]\nAgent: GitHub Copilot\nByline: Agent by GitHub\nDescription: Helps review code, explain repository changes, and suggest implementation paths.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "github-copilot-overview",
+						"label": "Ask GitHub Copilot for an overview",
+						"prompt": "Ask GitHub Copilot for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "github-copilot-summary",
+						"label": "Summarize this with GitHub Copilot",
+						"prompt": "Summarize this with GitHub Copilot",
+						"type": "skill"
+					},
+					{
+						"id": "github-copilot-next-steps",
+						"label": "Get GitHub Copilot's recommended next steps",
+						"prompt": "Get GitHub Copilot's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "release-notes-drafter",
+				"name": "Release Notes Drafter",
+				"byline": "Custom agent by Diego Alvarez",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-1.svg",
+				"description": "Turns merged changes and tickets into clear, customer-ready release notes.",
+				"contextDescription": "[Selected custom agent]\nAgent: Release Notes Drafter\nByline: Custom agent by Diego Alvarez\nDescription: Turns merged changes and tickets into clear, customer-ready release notes.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "release-notes-drafter-overview",
+						"label": "Ask Release Notes Drafter for an overview",
+						"prompt": "Ask Release Notes Drafter for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "release-notes-drafter-summary",
+						"label": "Summarize this with Release Notes Drafter",
+						"prompt": "Summarize this with Release Notes Drafter",
+						"type": "skill"
+					},
+					{
+						"id": "release-notes-drafter-next-steps",
+						"label": "Get Release Notes Drafter's recommended next steps",
+						"prompt": "Get Release Notes Drafter's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "readiness-checker",
+				"name": "Readiness Checker",
+				"byline": "Rovo agent by Enterprise Solutions",
+				"avatarSrc": "/avatar-agent/service-agents/service-triage.svg",
+				"description": "Checks plans, launches, and work items for readiness gaps before handoff.",
+				"contextDescription": "[Selected custom agent]\nAgent: Readiness Checker\nByline: Rovo agent by Enterprise Solutions\nDescription: Checks plans, launches, and work items for readiness gaps before handoff.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "readiness-checker-overview",
+						"label": "Ask Readiness Checker for an overview",
+						"prompt": "Ask Readiness Checker for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "readiness-checker-summary",
+						"label": "Summarize this with Readiness Checker",
+						"prompt": "Summarize this with Readiness Checker",
+						"type": "skill"
+					},
+					{
+						"id": "readiness-checker-next-steps",
+						"label": "Get Readiness Checker's recommended next steps",
+						"prompt": "Get Readiness Checker's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "figma",
+				"name": "Figma",
+				"byline": "by Figma",
+				"avatarSrc": "/3p/figma/24.svg",
+				"description": "Finds design context, summarizes frames, and helps connect UI work to design intent.",
+				"contextDescription": "[Selected custom agent]\nAgent: Figma\nByline: by Figma\nDescription: Finds design context, summarizes frames, and helps connect UI work to design intent.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "figma-overview",
+						"label": "Ask Figma for an overview",
+						"prompt": "Ask Figma for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "figma-summary",
+						"label": "Summarize this with Figma",
+						"prompt": "Summarize this with Figma",
+						"type": "skill"
+					},
+					{
+						"id": "figma-next-steps",
+						"label": "Get Figma's recommended next steps",
+						"prompt": "Get Figma's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "canva",
+				"name": "Canva",
+				"byline": "by Canva",
+				"avatarSrc": "/3p/canva/24.svg",
+				"description": "Helps draft visual assets, campaign ideas, and design-ready content.",
+				"contextDescription": "[Selected custom agent]\nAgent: Canva\nByline: by Canva\nDescription: Helps draft visual assets, campaign ideas, and design-ready content.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "canva-overview",
+						"label": "Ask Canva for an overview",
+						"prompt": "Ask Canva for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "canva-summary",
+						"label": "Summarize this with Canva",
+						"prompt": "Summarize this with Canva",
+						"type": "skill"
+					},
+					{
+						"id": "canva-next-steps",
+						"label": "Get Canva's recommended next steps",
+						"prompt": "Get Canva's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "code-reviewer",
+				"name": "Code Reviewer",
+				"byline": "Dev agent by Atlassian",
+				"avatarSrc": "/avatar-agent/dev-agents/code-reviewer.svg",
+				"description": "Reviews changes for correctness, maintainability, and test coverage.",
+				"contextDescription": "[Selected custom agent]\nAgent: Code Reviewer\nByline: Dev agent by Atlassian\nDescription: Reviews changes for correctness, maintainability, and test coverage.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "code-reviewer-overview",
+						"label": "Ask Code Reviewer for an overview",
+						"prompt": "Ask Code Reviewer for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "code-reviewer-summary",
+						"label": "Summarize this with Code Reviewer",
+						"prompt": "Summarize this with Code Reviewer",
+						"type": "skill"
+					},
+					{
+						"id": "code-reviewer-next-steps",
+						"label": "Get Code Reviewer's recommended next steps",
+						"prompt": "Get Code Reviewer's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "pipeline-troubleshooter",
+				"name": "Pipeline Troubleshooter",
+				"byline": "Dev agent by Atlassian",
+				"avatarSrc": "/avatar-agent/dev-agents/pipeline-troubleshooter.svg",
+				"description": "Diagnoses failing builds, deployment issues, and CI configuration problems.",
+				"contextDescription": "[Selected custom agent]\nAgent: Pipeline Troubleshooter\nByline: Dev agent by Atlassian\nDescription: Diagnoses failing builds, deployment issues, and CI configuration problems.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "pipeline-troubleshooter-overview",
+						"label": "Ask Pipeline Troubleshooter for an overview",
+						"prompt": "Ask Pipeline Troubleshooter for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "pipeline-troubleshooter-summary",
+						"label": "Summarize this with Pipeline Troubleshooter",
+						"prompt": "Summarize this with Pipeline Troubleshooter",
+						"type": "skill"
+					},
+					{
+						"id": "pipeline-troubleshooter-next-steps",
+						"label": "Get Pipeline Troubleshooter's recommended next steps",
+						"prompt": "Get Pipeline Troubleshooter's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "meeting-insights-reporter",
+				"name": "Meeting Insights Reporter",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg",
+				"description": "Turns meeting notes and transcripts into summaries, decisions, and follow-ups.",
+				"contextDescription": "[Selected custom agent]\nAgent: Meeting Insights Reporter\nByline: Teamwork agent by Atlassian\nDescription: Turns meeting notes and transcripts into summaries, decisions, and follow-ups.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "meeting-insights-reporter-overview",
+						"label": "Ask Meeting Insights Reporter for an overview",
+						"prompt": "Ask Meeting Insights Reporter for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "meeting-insights-reporter-summary",
+						"label": "Summarize this with Meeting Insights Reporter",
+						"prompt": "Summarize this with Meeting Insights Reporter",
+						"type": "skill"
+					},
+					{
+						"id": "meeting-insights-reporter-next-steps",
+						"label": "Get Meeting Insights Reporter's recommended next steps",
+						"prompt": "Get Meeting Insights Reporter's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "product-requirements-guide",
+				"name": "Product Requirements Guide",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/product-requirements-guide.svg",
+				"description": "Helps shape goals, requirements, risks, and acceptance criteria.",
+				"contextDescription": "[Selected custom agent]\nAgent: Product Requirements Guide\nByline: Teamwork agent by Atlassian\nDescription: Helps shape goals, requirements, risks, and acceptance criteria.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "product-requirements-guide-overview",
+						"label": "Ask Product Requirements Guide for an overview",
+						"prompt": "Ask Product Requirements Guide for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "product-requirements-guide-summary",
+						"label": "Summarize this with Product Requirements Guide",
+						"prompt": "Summarize this with Product Requirements Guide",
+						"type": "skill"
+					},
+					{
+						"id": "product-requirements-guide-next-steps",
+						"label": "Get Product Requirements Guide's recommended next steps",
+						"prompt": "Get Product Requirements Guide's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"byline": "Product agent by Atlassian",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
+				"contextDescription": "[Selected custom agent]\nAgent: Feedback Analyzer\nByline: Product agent by Atlassian\nDescription: Clusters customer feedback and surfaces themes, sentiment, and product opportunities.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "feedback-analyzer-overview",
+						"label": "Ask Feedback Analyzer for an overview",
+						"prompt": "Ask Feedback Analyzer for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "feedback-analyzer-summary",
+						"label": "Summarize this with Feedback Analyzer",
+						"prompt": "Summarize this with Feedback Analyzer",
+						"type": "skill"
+					},
+					{
+						"id": "feedback-analyzer-next-steps",
+						"label": "Get Feedback Analyzer's recommended next steps",
+						"prompt": "Get Feedback Analyzer's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "notion",
+				"name": "Notion",
+				"byline": "by Notion",
+				"avatarSrc": "/3p/notion/24.svg",
+				"description": "Helps organize notes, docs, and project knowledge into structured pages.",
+				"contextDescription": "[Selected custom agent]\nAgent: Notion\nByline: by Notion\nDescription: Helps organize notes, docs, and project knowledge into structured pages.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "notion-overview",
+						"label": "Ask Notion for an overview",
+						"prompt": "Ask Notion for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "notion-summary",
+						"label": "Summarize this with Notion",
+						"prompt": "Summarize this with Notion",
+						"type": "skill"
+					},
+					{
+						"id": "notion-next-steps",
+						"label": "Get Notion's recommended next steps",
+						"prompt": "Get Notion's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "slack",
+				"name": "Slack",
+				"byline": "by Slack",
+				"avatarSrc": "/3p/slack/24.svg",
+				"description": "Drafts, summarizes, and prepares Slack-ready team communication.",
+				"contextDescription": "[Selected custom agent]\nAgent: Slack\nByline: by Slack\nDescription: Drafts, summarizes, and prepares Slack-ready team communication.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "slack-overview",
+						"label": "Ask Slack for an overview",
+						"prompt": "Ask Slack for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "slack-summary",
+						"label": "Summarize this with Slack",
+						"prompt": "Summarize this with Slack",
+						"type": "skill"
+					},
+					{
+						"id": "slack-next-steps",
+						"label": "Get Slack's recommended next steps",
+						"prompt": "Get Slack's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "google-drive",
+				"name": "Google Drive",
+				"byline": "by Google",
+				"avatarSrc": "/3p/google-drive/24.svg",
+				"description": "Helps locate, summarize, and work with Drive files and document context.",
+				"contextDescription": "[Selected custom agent]\nAgent: Google Drive\nByline: by Google\nDescription: Helps locate, summarize, and work with Drive files and document context.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "google-drive-overview",
+						"label": "Ask Google Drive for an overview",
+						"prompt": "Ask Google Drive for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "google-drive-summary",
+						"label": "Summarize this with Google Drive",
+						"prompt": "Summarize this with Google Drive",
+						"type": "skill"
+					},
+					{
+						"id": "google-drive-next-steps",
+						"label": "Get Google Drive's recommended next steps",
+						"prompt": "Get Google Drive's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "atlassian",
+				"name": "Atlassian",
+				"byline": "by Atlassian",
+				"logoName": "atlassian",
+				"description": "Searches and connects work across Jira, Confluence, and the Teamwork Graph.",
+				"contextDescription": "[Selected custom agent]\nAgent: Atlassian\nByline: by Atlassian\nDescription: Searches and connects work across Jira, Confluence, and the Teamwork Graph.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "atlassian-overview",
+						"label": "Ask Atlassian for an overview",
+						"prompt": "Ask Atlassian for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "atlassian-summary",
+						"label": "Summarize this with Atlassian",
+						"prompt": "Summarize this with Atlassian",
+						"type": "skill"
+					},
+					{
+						"id": "atlassian-next-steps",
+						"label": "Get Atlassian's recommended next steps",
+						"prompt": "Get Atlassian's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "ai-insights-agent",
+				"name": "AI Insights Agent",
+				"byline": "Custom agent by Atlassian",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-1.svg",
+				"description": "Researches and summarizes latest AI trends, breakthroughs, and industry developments for weekly insights.",
+				"contextDescription": "[Selected custom agent]\nAgent: AI Insights Agent\nByline: Custom agent by Atlassian\nDescription: Researches and summarizes latest AI trends, breakthroughs, and industry developments for weekly insights.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "ai-insights-agent-latest-trends",
+						"label": "What are the latest AI trends this week?",
+						"prompt": "What are the latest AI trends this week?",
+						"type": "skill"
+					},
+					{
+						"id": "ai-insights-agent-breakthroughs",
+						"label": "Summarize recent AI breakthroughs for me",
+						"prompt": "Summarize recent AI breakthroughs for me",
+						"type": "skill"
+					},
+					{
+						"id": "ai-insights-agent-industry-insights",
+						"label": "Give me AI industry insights and developments",
+						"prompt": "Give me AI industry insights and developments",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "untitled-agent",
+				"name": "Research Companion",
+				"byline": "Custom agent by Maya Chen",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-3.svg",
+				"description": "A flexible custom agent for open-ended research, writing, and planning tasks.",
+				"contextDescription": "[Selected custom agent]\nAgent: Research Companion\nByline: Custom agent by Maya Chen\nDescription: A flexible custom agent for open-ended research, writing, and planning tasks.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "untitled-agent-overview",
+						"label": "Ask Research Companion for an overview",
+						"prompt": "Ask Research Companion for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "untitled-agent-summary",
+						"label": "Summarize this with Research Companion",
+						"prompt": "Summarize this with Research Companion",
+						"type": "skill"
+					},
+					{
+						"id": "untitled-agent-next-steps",
+						"label": "Get Research Companion's recommended next steps",
+						"prompt": "Get Research Companion's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "chatgpt-wrapper-app",
+				"name": "ChatGPT Wrapper App",
+				"byline": "Custom agent by Sam Rivera",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-2.svg",
+				"description": "Wraps general chat workflows with lightweight task framing and response structure.",
+				"contextDescription": "[Selected custom agent]\nAgent: ChatGPT Wrapper App\nByline: Custom agent by Sam Rivera\nDescription: Wraps general chat workflows with lightweight task framing and response structure.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "chatgpt-wrapper-app-overview",
+						"label": "Ask ChatGPT Wrapper App for an overview",
+						"prompt": "Ask ChatGPT Wrapper App for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "chatgpt-wrapper-app-summary",
+						"label": "Summarize this with ChatGPT Wrapper App",
+						"prompt": "Summarize this with ChatGPT Wrapper App",
+						"type": "skill"
+					},
+					{
+						"id": "chatgpt-wrapper-app-next-steps",
+						"label": "Get ChatGPT Wrapper App's recommended next steps",
+						"prompt": "Get ChatGPT Wrapper App's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "social-media-writer",
+				"name": "Social Media Writer",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-2.svg",
+				"description": "Drafts concise social posts, campaign variations, and channel-ready copy.",
+				"contextDescription": "[Selected custom agent]\nAgent: Social Media Writer\nByline: Teamwork agent by Atlassian\nDescription: Drafts concise social posts, campaign variations, and channel-ready copy.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "social-media-writer-overview",
+						"label": "Ask Social Media Writer for an overview",
+						"prompt": "Ask Social Media Writer for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "social-media-writer-summary",
+						"label": "Summarize this with Social Media Writer",
+						"prompt": "Summarize this with Social Media Writer",
+						"type": "skill"
+					},
+					{
+						"id": "social-media-writer-next-steps",
+						"label": "Get Social Media Writer's recommended next steps",
+						"prompt": "Get Social Media Writer's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"description": "Summarizes project movement, blockers, and next actions across work streams.",
+				"contextDescription": "[Selected custom agent]\nAgent: Progress Tracker\nByline: Teamwork agent by Atlassian\nDescription: Summarizes project movement, blockers, and next actions across work streams.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "progress-tracker-overview",
+						"label": "Ask Progress Tracker for an overview",
+						"prompt": "Ask Progress Tracker for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "progress-tracker-summary",
+						"label": "Summarize this with Progress Tracker",
+						"prompt": "Summarize this with Progress Tracker",
+						"type": "skill"
+					},
+					{
+						"id": "progress-tracker-next-steps",
+						"label": "Get Progress Tracker's recommended next steps",
+						"prompt": "Get Progress Tracker's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "transcript-insights-reporter",
+				"name": "Transcript Insights Reporter",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/service-agents/wildcard-1.svg",
+				"description": "Extracts themes, decisions, and action items from long transcripts.",
+				"contextDescription": "[Selected custom agent]\nAgent: Transcript Insights Reporter\nByline: Teamwork agent by Atlassian\nDescription: Extracts themes, decisions, and action items from long transcripts.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "transcript-insights-reporter-overview",
+						"label": "Ask Transcript Insights Reporter for an overview",
+						"prompt": "Ask Transcript Insights Reporter for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "transcript-insights-reporter-summary",
+						"label": "Summarize this with Transcript Insights Reporter",
+						"prompt": "Summarize this with Transcript Insights Reporter",
+						"type": "skill"
+					},
+					{
+						"id": "transcript-insights-reporter-next-steps",
+						"label": "Get Transcript Insights Reporter's recommended next steps",
+						"prompt": "Get Transcript Insights Reporter's recommended next steps",
+						"type": "skill"
+					}
+				]
+			}
+		],
+		"ROVO_AGENT_SELECTOR_AGENTS": [
+			{
+				"id": "github-copilot",
+				"name": "GitHub Copilot",
+				"byline": "Agent by GitHub",
+				"avatarSrc": "/3p/github/24.svg"
+			},
+			{
+				"id": "release-notes-drafter",
+				"name": "Release Notes Drafter",
+				"byline": "Custom agent by Diego Alvarez",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-1.svg"
+			},
+			{
+				"id": "readiness-checker",
+				"name": "Readiness Checker",
+				"byline": "Rovo agent by Enterprise Solutions",
+				"avatarSrc": "/avatar-agent/service-agents/service-triage.svg"
+			},
+			{
+				"id": "figma",
+				"name": "Figma",
+				"byline": "by Figma",
+				"avatarSrc": "/3p/figma/24.svg"
+			},
+			{
+				"id": "canva",
+				"name": "Canva",
+				"byline": "by Canva",
+				"avatarSrc": "/3p/canva/24.svg"
+			},
+			{
+				"id": "code-reviewer",
+				"name": "Code Reviewer",
+				"byline": "Dev agent by Atlassian",
+				"avatarSrc": "/avatar-agent/dev-agents/code-reviewer.svg"
+			},
+			{
+				"id": "pipeline-troubleshooter",
+				"name": "Pipeline Troubleshooter",
+				"byline": "Dev agent by Atlassian",
+				"avatarSrc": "/avatar-agent/dev-agents/pipeline-troubleshooter.svg"
+			},
+			{
+				"id": "meeting-insights-reporter",
+				"name": "Meeting Insights Reporter",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg"
+			},
+			{
+				"id": "product-requirements-guide",
+				"name": "Product Requirements Guide",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/product-requirements-guide.svg"
+			},
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"byline": "Product agent by Atlassian",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg"
+			},
+			{
+				"id": "notion",
+				"name": "Notion",
+				"byline": "by Notion",
+				"avatarSrc": "/3p/notion/24.svg"
+			},
+			{
+				"id": "slack",
+				"name": "Slack",
+				"byline": "by Slack",
+				"avatarSrc": "/3p/slack/24.svg"
+			},
+			{
+				"id": "google-drive",
+				"name": "Google Drive",
+				"byline": "by Google",
+				"avatarSrc": "/3p/google-drive/24.svg"
+			},
+			{
+				"id": "atlassian",
+				"name": "Atlassian",
+				"byline": "by Atlassian"
+			},
+			{
+				"id": "ai-insights-agent",
+				"name": "AI Insights Agent",
+				"byline": "Custom agent by Atlassian",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-1.svg"
+			},
+			{
+				"id": "untitled-agent",
+				"name": "Research Companion",
+				"byline": "Custom agent by Maya Chen",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-3.svg"
+			},
+			{
+				"id": "chatgpt-wrapper-app",
+				"name": "ChatGPT Wrapper App",
+				"byline": "Custom agent by Sam Rivera",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-2.svg"
+			},
+			{
+				"id": "social-media-writer",
+				"name": "Social Media Writer",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-2.svg"
+			},
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg"
+			},
+			{
+				"id": "transcript-insights-reporter",
+				"name": "Transcript Insights Reporter",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/service-agents/wildcard-1.svg"
+			}
+		],
+		"ROVO_CUSTOM_AGENT_SELECTOR_AGENTS": [
+			{
+				"id": "github-copilot",
+				"name": "GitHub Copilot",
+				"byline": "Agent by GitHub",
+				"avatarSrc": "/3p/github/24.svg"
+			},
+			{
+				"id": "release-notes-drafter",
+				"name": "Release Notes Drafter",
+				"byline": "Custom agent by Diego Alvarez",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-1.svg"
+			},
+			{
+				"id": "readiness-checker",
+				"name": "Readiness Checker",
+				"byline": "Rovo agent by Enterprise Solutions",
+				"avatarSrc": "/avatar-agent/service-agents/service-triage.svg"
+			},
+			{
+				"id": "figma",
+				"name": "Figma",
+				"byline": "by Figma",
+				"avatarSrc": "/3p/figma/24.svg"
+			},
+			{
+				"id": "canva",
+				"name": "Canva",
+				"byline": "by Canva",
+				"avatarSrc": "/3p/canva/24.svg"
+			},
+			{
+				"id": "code-reviewer",
+				"name": "Code Reviewer",
+				"byline": "Dev agent by Atlassian",
+				"avatarSrc": "/avatar-agent/dev-agents/code-reviewer.svg"
+			},
+			{
+				"id": "pipeline-troubleshooter",
+				"name": "Pipeline Troubleshooter",
+				"byline": "Dev agent by Atlassian",
+				"avatarSrc": "/avatar-agent/dev-agents/pipeline-troubleshooter.svg"
+			},
+			{
+				"id": "meeting-insights-reporter",
+				"name": "Meeting Insights Reporter",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg"
+			},
+			{
+				"id": "product-requirements-guide",
+				"name": "Product Requirements Guide",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/product-requirements-guide.svg"
+			},
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"byline": "Product agent by Atlassian",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg"
+			},
+			{
+				"id": "notion",
+				"name": "Notion",
+				"byline": "by Notion",
+				"avatarSrc": "/3p/notion/24.svg"
+			},
+			{
+				"id": "slack",
+				"name": "Slack",
+				"byline": "by Slack",
+				"avatarSrc": "/3p/slack/24.svg"
+			},
+			{
+				"id": "google-drive",
+				"name": "Google Drive",
+				"byline": "by Google",
+				"avatarSrc": "/3p/google-drive/24.svg"
+			},
+			{
+				"id": "atlassian",
+				"name": "Atlassian",
+				"byline": "by Atlassian"
+			},
+			{
+				"id": "ai-insights-agent",
+				"name": "AI Insights Agent",
+				"byline": "Custom agent by Atlassian",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-1.svg"
+			},
+			{
+				"id": "untitled-agent",
+				"name": "Research Companion",
+				"byline": "Custom agent by Maya Chen",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-3.svg"
+			},
+			{
+				"id": "chatgpt-wrapper-app",
+				"name": "ChatGPT Wrapper App",
+				"byline": "Custom agent by Sam Rivera",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-2.svg"
+			},
+			{
+				"id": "social-media-writer",
+				"name": "Social Media Writer",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-2.svg"
+			},
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg"
+			},
+			{
+				"id": "transcript-insights-reporter",
+				"name": "Transcript Insights Reporter",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/service-agents/wildcard-1.svg"
+			}
+		]
+	},
+	"rovo": {
+		"source": "components/projects/rovo/data/agent-profiles.ts",
+		"ROVO_AGENT_PROFILES": [
+			{
+				"id": "github-copilot",
+				"name": "GitHub Copilot",
+				"byline": "Agent by GitHub",
+				"avatarSrc": "/3p/github/24.svg",
+				"description": "Helps review code, explain repository changes, and suggest implementation paths.",
+				"contextDescription": "[Selected custom agent]\nAgent: GitHub Copilot\nByline: Agent by GitHub\nDescription: Helps review code, explain repository changes, and suggest implementation paths.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "github-copilot-overview",
+						"label": "Ask GitHub Copilot for an overview",
+						"prompt": "Ask GitHub Copilot for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "github-copilot-summary",
+						"label": "Summarize this with GitHub Copilot",
+						"prompt": "Summarize this with GitHub Copilot",
+						"type": "skill"
+					},
+					{
+						"id": "github-copilot-next-steps",
+						"label": "Get GitHub Copilot's recommended next steps",
+						"prompt": "Get GitHub Copilot's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "rovo-dev",
+				"name": "Rovo Dev",
+				"byline": "by Atlassian",
+				"avatarSrc": "ROVO_LOGO_DATA_URI",
+				"starters": []
+			},
+			{
+				"id": "readiness-checker",
+				"name": "Readiness Checker",
+				"byline": "Rovo agent by Enterprise Solutions",
+				"avatarSrc": "/avatar-agent/service-agents/service-triage.svg",
+				"description": "Checks plans, launches, and work items for readiness gaps before handoff.",
+				"contextDescription": "[Selected custom agent]\nAgent: Readiness Checker\nByline: Rovo agent by Enterprise Solutions\nDescription: Checks plans, launches, and work items for readiness gaps before handoff.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "readiness-checker-overview",
+						"label": "Ask Readiness Checker for an overview",
+						"prompt": "Ask Readiness Checker for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "readiness-checker-summary",
+						"label": "Summarize this with Readiness Checker",
+						"prompt": "Summarize this with Readiness Checker",
+						"type": "skill"
+					},
+					{
+						"id": "readiness-checker-next-steps",
+						"label": "Get Readiness Checker's recommended next steps",
+						"prompt": "Get Readiness Checker's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "figma",
+				"name": "Figma",
+				"byline": "by Figma",
+				"avatarSrc": "/3p/figma/24.svg",
+				"description": "Finds design context, summarizes frames, and helps connect UI work to design intent.",
+				"contextDescription": "[Selected custom agent]\nAgent: Figma\nByline: by Figma\nDescription: Finds design context, summarizes frames, and helps connect UI work to design intent.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "figma-overview",
+						"label": "Ask Figma for an overview",
+						"prompt": "Ask Figma for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "figma-summary",
+						"label": "Summarize this with Figma",
+						"prompt": "Summarize this with Figma",
+						"type": "skill"
+					},
+					{
+						"id": "figma-next-steps",
+						"label": "Get Figma's recommended next steps",
+						"prompt": "Get Figma's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "canva",
+				"name": "Canva",
+				"byline": "by Canva",
+				"avatarSrc": "/3p/canva/24.svg",
+				"description": "Helps draft visual assets, campaign ideas, and design-ready content.",
+				"contextDescription": "[Selected custom agent]\nAgent: Canva\nByline: by Canva\nDescription: Helps draft visual assets, campaign ideas, and design-ready content.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "canva-overview",
+						"label": "Ask Canva for an overview",
+						"prompt": "Ask Canva for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "canva-summary",
+						"label": "Summarize this with Canva",
+						"prompt": "Summarize this with Canva",
+						"type": "skill"
+					},
+					{
+						"id": "canva-next-steps",
+						"label": "Get Canva's recommended next steps",
+						"prompt": "Get Canva's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "code-reviewer",
+				"name": "Code Reviewer",
+				"byline": "Dev agent by Atlassian",
+				"avatarSrc": "/avatar-agent/dev-agents/code-reviewer.svg",
+				"description": "Reviews changes for correctness, maintainability, and test coverage.",
+				"contextDescription": "[Selected custom agent]\nAgent: Code Reviewer\nByline: Dev agent by Atlassian\nDescription: Reviews changes for correctness, maintainability, and test coverage.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "code-reviewer-overview",
+						"label": "Ask Code Reviewer for an overview",
+						"prompt": "Ask Code Reviewer for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "code-reviewer-summary",
+						"label": "Summarize this with Code Reviewer",
+						"prompt": "Summarize this with Code Reviewer",
+						"type": "skill"
+					},
+					{
+						"id": "code-reviewer-next-steps",
+						"label": "Get Code Reviewer's recommended next steps",
+						"prompt": "Get Code Reviewer's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "pipeline-troubleshooter",
+				"name": "Pipeline Troubleshooter",
+				"byline": "Dev agent by Atlassian",
+				"avatarSrc": "/avatar-agent/dev-agents/pipeline-troubleshooter.svg",
+				"description": "Diagnoses failing builds, deployment issues, and CI configuration problems.",
+				"contextDescription": "[Selected custom agent]\nAgent: Pipeline Troubleshooter\nByline: Dev agent by Atlassian\nDescription: Diagnoses failing builds, deployment issues, and CI configuration problems.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "pipeline-troubleshooter-overview",
+						"label": "Ask Pipeline Troubleshooter for an overview",
+						"prompt": "Ask Pipeline Troubleshooter for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "pipeline-troubleshooter-summary",
+						"label": "Summarize this with Pipeline Troubleshooter",
+						"prompt": "Summarize this with Pipeline Troubleshooter",
+						"type": "skill"
+					},
+					{
+						"id": "pipeline-troubleshooter-next-steps",
+						"label": "Get Pipeline Troubleshooter's recommended next steps",
+						"prompt": "Get Pipeline Troubleshooter's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "meeting-insights-reporter",
+				"name": "Meeting Insights Reporter",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg",
+				"description": "Turns meeting notes and transcripts into summaries, decisions, and follow-ups.",
+				"contextDescription": "[Selected custom agent]\nAgent: Meeting Insights Reporter\nByline: Teamwork agent by Atlassian\nDescription: Turns meeting notes and transcripts into summaries, decisions, and follow-ups.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "meeting-insights-reporter-overview",
+						"label": "Ask Meeting Insights Reporter for an overview",
+						"prompt": "Ask Meeting Insights Reporter for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "meeting-insights-reporter-summary",
+						"label": "Summarize this with Meeting Insights Reporter",
+						"prompt": "Summarize this with Meeting Insights Reporter",
+						"type": "skill"
+					},
+					{
+						"id": "meeting-insights-reporter-next-steps",
+						"label": "Get Meeting Insights Reporter's recommended next steps",
+						"prompt": "Get Meeting Insights Reporter's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "product-requirements-guide",
+				"name": "Product Requirements Guide",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/product-requirements-guide.svg",
+				"description": "Helps shape goals, requirements, risks, and acceptance criteria.",
+				"contextDescription": "[Selected custom agent]\nAgent: Product Requirements Guide\nByline: Teamwork agent by Atlassian\nDescription: Helps shape goals, requirements, risks, and acceptance criteria.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "product-requirements-guide-overview",
+						"label": "Ask Product Requirements Guide for an overview",
+						"prompt": "Ask Product Requirements Guide for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "product-requirements-guide-summary",
+						"label": "Summarize this with Product Requirements Guide",
+						"prompt": "Summarize this with Product Requirements Guide",
+						"type": "skill"
+					},
+					{
+						"id": "product-requirements-guide-next-steps",
+						"label": "Get Product Requirements Guide's recommended next steps",
+						"prompt": "Get Product Requirements Guide's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"byline": "Product agent by Atlassian",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
+				"contextDescription": "[Selected custom agent]\nAgent: Feedback Analyzer\nByline: Product agent by Atlassian\nDescription: Clusters customer feedback and surfaces themes, sentiment, and product opportunities.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "feedback-analyzer-overview",
+						"label": "Ask Feedback Analyzer for an overview",
+						"prompt": "Ask Feedback Analyzer for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "feedback-analyzer-summary",
+						"label": "Summarize this with Feedback Analyzer",
+						"prompt": "Summarize this with Feedback Analyzer",
+						"type": "skill"
+					},
+					{
+						"id": "feedback-analyzer-next-steps",
+						"label": "Get Feedback Analyzer's recommended next steps",
+						"prompt": "Get Feedback Analyzer's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "notion",
+				"name": "Notion",
+				"byline": "by Notion",
+				"avatarSrc": "/3p/notion/24.svg",
+				"description": "Helps organize notes, docs, and project knowledge into structured pages.",
+				"contextDescription": "[Selected custom agent]\nAgent: Notion\nByline: by Notion\nDescription: Helps organize notes, docs, and project knowledge into structured pages.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "notion-overview",
+						"label": "Ask Notion for an overview",
+						"prompt": "Ask Notion for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "notion-summary",
+						"label": "Summarize this with Notion",
+						"prompt": "Summarize this with Notion",
+						"type": "skill"
+					},
+					{
+						"id": "notion-next-steps",
+						"label": "Get Notion's recommended next steps",
+						"prompt": "Get Notion's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "slack",
+				"name": "Slack",
+				"byline": "by Slack",
+				"avatarSrc": "/3p/slack/24.svg",
+				"description": "Drafts, summarizes, and prepares Slack-ready team communication.",
+				"contextDescription": "[Selected custom agent]\nAgent: Slack\nByline: by Slack\nDescription: Drafts, summarizes, and prepares Slack-ready team communication.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "slack-overview",
+						"label": "Ask Slack for an overview",
+						"prompt": "Ask Slack for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "slack-summary",
+						"label": "Summarize this with Slack",
+						"prompt": "Summarize this with Slack",
+						"type": "skill"
+					},
+					{
+						"id": "slack-next-steps",
+						"label": "Get Slack's recommended next steps",
+						"prompt": "Get Slack's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "google-drive",
+				"name": "Google Drive",
+				"byline": "by Google",
+				"avatarSrc": "/3p/google-drive/24.svg",
+				"description": "Helps locate, summarize, and work with Drive files and document context.",
+				"contextDescription": "[Selected custom agent]\nAgent: Google Drive\nByline: by Google\nDescription: Helps locate, summarize, and work with Drive files and document context.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "google-drive-overview",
+						"label": "Ask Google Drive for an overview",
+						"prompt": "Ask Google Drive for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "google-drive-summary",
+						"label": "Summarize this with Google Drive",
+						"prompt": "Summarize this with Google Drive",
+						"type": "skill"
+					},
+					{
+						"id": "google-drive-next-steps",
+						"label": "Get Google Drive's recommended next steps",
+						"prompt": "Get Google Drive's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "ai-insights-agent",
+				"name": "AI Insights Agent",
+				"byline": "Custom agent by Atlassian",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-1.svg",
+				"description": "Researches and summarizes latest AI trends, breakthroughs, and industry developments for weekly insights.",
+				"contextDescription": "[Selected custom agent]\nAgent: AI Insights Agent\nByline: Custom agent by Atlassian\nDescription: Researches and summarizes latest AI trends, breakthroughs, and industry developments for weekly insights.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "ai-insights-agent-latest-trends",
+						"label": "What are the latest AI trends this week?",
+						"prompt": "What are the latest AI trends this week?",
+						"type": "skill"
+					},
+					{
+						"id": "ai-insights-agent-breakthroughs",
+						"label": "Summarize recent AI breakthroughs for me",
+						"prompt": "Summarize recent AI breakthroughs for me",
+						"type": "skill"
+					},
+					{
+						"id": "ai-insights-agent-industry-insights",
+						"label": "Give me AI industry insights and developments",
+						"prompt": "Give me AI industry insights and developments",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "untitled-agent",
+				"name": "Research Companion",
+				"byline": "Custom agent by Maya Chen",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-3.svg",
+				"description": "A flexible custom agent for open-ended research, writing, and planning tasks.",
+				"contextDescription": "[Selected custom agent]\nAgent: Research Companion\nByline: Custom agent by Maya Chen\nDescription: A flexible custom agent for open-ended research, writing, and planning tasks.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "untitled-agent-overview",
+						"label": "Ask Research Companion for an overview",
+						"prompt": "Ask Research Companion for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "untitled-agent-summary",
+						"label": "Summarize this with Research Companion",
+						"prompt": "Summarize this with Research Companion",
+						"type": "skill"
+					},
+					{
+						"id": "untitled-agent-next-steps",
+						"label": "Get Research Companion's recommended next steps",
+						"prompt": "Get Research Companion's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "chatgpt-wrapper-app",
+				"name": "ChatGPT Wrapper App",
+				"byline": "Custom agent by Sam Rivera",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-2.svg",
+				"description": "Wraps general chat workflows with lightweight task framing and response structure.",
+				"contextDescription": "[Selected custom agent]\nAgent: ChatGPT Wrapper App\nByline: Custom agent by Sam Rivera\nDescription: Wraps general chat workflows with lightweight task framing and response structure.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "chatgpt-wrapper-app-overview",
+						"label": "Ask ChatGPT Wrapper App for an overview",
+						"prompt": "Ask ChatGPT Wrapper App for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "chatgpt-wrapper-app-summary",
+						"label": "Summarize this with ChatGPT Wrapper App",
+						"prompt": "Summarize this with ChatGPT Wrapper App",
+						"type": "skill"
+					},
+					{
+						"id": "chatgpt-wrapper-app-next-steps",
+						"label": "Get ChatGPT Wrapper App's recommended next steps",
+						"prompt": "Get ChatGPT Wrapper App's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "social-media-writer",
+				"name": "Social Media Writer",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-2.svg",
+				"description": "Drafts concise social posts, campaign variations, and channel-ready copy.",
+				"contextDescription": "[Selected custom agent]\nAgent: Social Media Writer\nByline: Teamwork agent by Atlassian\nDescription: Drafts concise social posts, campaign variations, and channel-ready copy.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "social-media-writer-overview",
+						"label": "Ask Social Media Writer for an overview",
+						"prompt": "Ask Social Media Writer for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "social-media-writer-summary",
+						"label": "Summarize this with Social Media Writer",
+						"prompt": "Summarize this with Social Media Writer",
+						"type": "skill"
+					},
+					{
+						"id": "social-media-writer-next-steps",
+						"label": "Get Social Media Writer's recommended next steps",
+						"prompt": "Get Social Media Writer's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"description": "Summarizes project movement, blockers, and next actions across work streams.",
+				"contextDescription": "[Selected custom agent]\nAgent: Progress Tracker\nByline: Teamwork agent by Atlassian\nDescription: Summarizes project movement, blockers, and next actions across work streams.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "progress-tracker-overview",
+						"label": "Ask Progress Tracker for an overview",
+						"prompt": "Ask Progress Tracker for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "progress-tracker-summary",
+						"label": "Summarize this with Progress Tracker",
+						"prompt": "Summarize this with Progress Tracker",
+						"type": "skill"
+					},
+					{
+						"id": "progress-tracker-next-steps",
+						"label": "Get Progress Tracker's recommended next steps",
+						"prompt": "Get Progress Tracker's recommended next steps",
+						"type": "skill"
+					}
+				]
+			},
+			{
+				"id": "transcript-insights-reporter",
+				"name": "Transcript Insights Reporter",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/service-agents/wildcard-1.svg",
+				"description": "Extracts themes, decisions, and action items from long transcripts.",
+				"contextDescription": "[Selected custom agent]\nAgent: Transcript Insights Reporter\nByline: Teamwork agent by Atlassian\nDescription: Extracts themes, decisions, and action items from long transcripts.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
+				"starters": [
+					{
+						"id": "transcript-insights-reporter-overview",
+						"label": "Ask Transcript Insights Reporter for an overview",
+						"prompt": "Ask Transcript Insights Reporter for an overview",
+						"type": "skill"
+					},
+					{
+						"id": "transcript-insights-reporter-summary",
+						"label": "Summarize this with Transcript Insights Reporter",
+						"prompt": "Summarize this with Transcript Insights Reporter",
+						"type": "skill"
+					},
+					{
+						"id": "transcript-insights-reporter-next-steps",
+						"label": "Get Transcript Insights Reporter's recommended next steps",
+						"prompt": "Get Transcript Insights Reporter's recommended next steps",
+						"type": "skill"
+					}
+				]
+			}
+		],
+		"ROVO_AGENT_SELECTOR_AGENTS": [
+			{
+				"id": "github-copilot",
+				"name": "GitHub Copilot",
+				"byline": "Agent by GitHub",
+				"avatarSrc": "/3p/github/24.svg"
+			},
+			{
+				"id": "readiness-checker",
+				"name": "Readiness Checker",
+				"byline": "Rovo agent by Enterprise Solutions",
+				"avatarSrc": "/avatar-agent/service-agents/service-triage.svg"
+			},
+			{
+				"id": "figma",
+				"name": "Figma",
+				"byline": "by Figma",
+				"avatarSrc": "/3p/figma/24.svg"
+			},
+			{
+				"id": "canva",
+				"name": "Canva",
+				"byline": "by Canva",
+				"avatarSrc": "/3p/canva/24.svg"
+			},
+			{
+				"id": "code-reviewer",
+				"name": "Code Reviewer",
+				"byline": "Dev agent by Atlassian",
+				"avatarSrc": "/avatar-agent/dev-agents/code-reviewer.svg"
+			},
+			{
+				"id": "pipeline-troubleshooter",
+				"name": "Pipeline Troubleshooter",
+				"byline": "Dev agent by Atlassian",
+				"avatarSrc": "/avatar-agent/dev-agents/pipeline-troubleshooter.svg"
+			},
+			{
+				"id": "meeting-insights-reporter",
+				"name": "Meeting Insights Reporter",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg"
+			},
+			{
+				"id": "product-requirements-guide",
+				"name": "Product Requirements Guide",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/product-requirements-guide.svg"
+			},
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"byline": "Product agent by Atlassian",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg"
+			},
+			{
+				"id": "notion",
+				"name": "Notion",
+				"byline": "by Notion",
+				"avatarSrc": "/3p/notion/24.svg"
+			},
+			{
+				"id": "slack",
+				"name": "Slack",
+				"byline": "by Slack",
+				"avatarSrc": "/3p/slack/24.svg"
+			},
+			{
+				"id": "google-drive",
+				"name": "Google Drive",
+				"byline": "by Google",
+				"avatarSrc": "/3p/google-drive/24.svg"
+			},
+			{
+				"id": "ai-insights-agent",
+				"name": "AI Insights Agent",
+				"byline": "Custom agent by Atlassian",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-1.svg"
+			},
+			{
+				"id": "untitled-agent",
+				"name": "Research Companion",
+				"byline": "Custom agent by Maya Chen",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-3.svg"
+			},
+			{
+				"id": "chatgpt-wrapper-app",
+				"name": "ChatGPT Wrapper App",
+				"byline": "Custom agent by Sam Rivera",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-2.svg"
+			},
+			{
+				"id": "social-media-writer",
+				"name": "Social Media Writer",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-2.svg"
+			},
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg"
+			},
+			{
+				"id": "transcript-insights-reporter",
+				"name": "Transcript Insights Reporter",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/service-agents/wildcard-1.svg"
+			}
+		],
+		"ROVO_CUSTOM_AGENT_SELECTOR_AGENTS": [
+			{
+				"id": "github-copilot",
+				"name": "GitHub Copilot",
+				"byline": "Agent by GitHub",
+				"avatarSrc": "/3p/github/24.svg"
+			},
+			{
+				"id": "readiness-checker",
+				"name": "Readiness Checker",
+				"byline": "Rovo agent by Enterprise Solutions",
+				"avatarSrc": "/avatar-agent/service-agents/service-triage.svg"
+			},
+			{
+				"id": "figma",
+				"name": "Figma",
+				"byline": "by Figma",
+				"avatarSrc": "/3p/figma/24.svg"
+			},
+			{
+				"id": "canva",
+				"name": "Canva",
+				"byline": "by Canva",
+				"avatarSrc": "/3p/canva/24.svg"
+			},
+			{
+				"id": "code-reviewer",
+				"name": "Code Reviewer",
+				"byline": "Dev agent by Atlassian",
+				"avatarSrc": "/avatar-agent/dev-agents/code-reviewer.svg"
+			},
+			{
+				"id": "pipeline-troubleshooter",
+				"name": "Pipeline Troubleshooter",
+				"byline": "Dev agent by Atlassian",
+				"avatarSrc": "/avatar-agent/dev-agents/pipeline-troubleshooter.svg"
+			},
+			{
+				"id": "meeting-insights-reporter",
+				"name": "Meeting Insights Reporter",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg"
+			},
+			{
+				"id": "product-requirements-guide",
+				"name": "Product Requirements Guide",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/product-requirements-guide.svg"
+			},
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"byline": "Product agent by Atlassian",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg"
+			},
+			{
+				"id": "notion",
+				"name": "Notion",
+				"byline": "by Notion",
+				"avatarSrc": "/3p/notion/24.svg"
+			},
+			{
+				"id": "slack",
+				"name": "Slack",
+				"byline": "by Slack",
+				"avatarSrc": "/3p/slack/24.svg"
+			},
+			{
+				"id": "google-drive",
+				"name": "Google Drive",
+				"byline": "by Google",
+				"avatarSrc": "/3p/google-drive/24.svg"
+			},
+			{
+				"id": "ai-insights-agent",
+				"name": "AI Insights Agent",
+				"byline": "Custom agent by Atlassian",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-1.svg"
+			},
+			{
+				"id": "untitled-agent",
+				"name": "Research Companion",
+				"byline": "Custom agent by Maya Chen",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-3.svg"
+			},
+			{
+				"id": "chatgpt-wrapper-app",
+				"name": "ChatGPT Wrapper App",
+				"byline": "Custom agent by Sam Rivera",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-2.svg"
+			},
+			{
+				"id": "social-media-writer",
+				"name": "Social Media Writer",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-2.svg"
+			},
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg"
+			},
+			{
+				"id": "transcript-insights-reporter",
+				"name": "Transcript Insights Reporter",
+				"byline": "Teamwork agent by Atlassian",
+				"avatarSrc": "/avatar-agent/service-agents/wildcard-1.svg"
+			}
+		]
+	}
+}

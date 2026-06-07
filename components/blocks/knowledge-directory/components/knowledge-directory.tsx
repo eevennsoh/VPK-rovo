@@ -19,16 +19,17 @@ import { cn } from "@/lib/utils";
 
 import {
 	DEFAULT_KNOWLEDGE_APPS,
+	getKnowledgeAppIcon,
 	type KnowledgeDirectoryApp,
 	type KnowledgeDirectoryContent,
 	type KnowledgeDirectoryMode,
-} from "../data/apps";
+} from "@/app/data/directory/knowledge";
 
 export type {
 	KnowledgeDirectoryApp,
 	KnowledgeDirectoryContent,
 	KnowledgeDirectoryMode,
-} from "../data/apps";
+} from "@/app/data/directory/knowledge";
 
 export interface KnowledgeDirectoryAddPayload {
 	appId: string;
@@ -387,7 +388,7 @@ function KnowledgeAppCard({ app, onSelect }: Readonly<KnowledgeAppCardProps>) {
 		>
 			<span className="flex flex-col gap-2">
 				<span className="flex items-center gap-2">
-					<span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center">{app.icon}</span>
+					<span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center">{getKnowledgeAppIcon(app)}</span>
 					<span className="font-semibold leading-5 text-text">{app.name}</span>
 				</span>
 				<span className="line-clamp-2 text-sm leading-5 text-text">{app.description}</span>

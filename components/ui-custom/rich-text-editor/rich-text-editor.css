@@ -330,8 +330,20 @@
 }
 
 .ProseMirror {
-	min-height: 200px;
 	outline: none;
+}
+
+/*
+ * The tall authoring min-height applies to the document editor only — every
+ * document surface tags its editor with `.tiptap-editor`. Scoping to that
+ * positive variant (rather than negating the composer) means a new ProseMirror
+ * surface opts IN to the authoring height by adding `.tiptap-editor`, instead of
+ * silently inheriting 200px and having to remember to opt out. The chat composer
+ * (`.prompt-input-composer`, no `.tiptap-editor`) hugs its content via its own
+ * `min-h-*` utilities.
+ */
+.tiptap-editor.ProseMirror {
+	min-height: 200px;
 }
 
 .agent-instructions-tiptap-editor {
@@ -380,6 +392,19 @@
 	position: fixed;
 	z-index: 1000;
 	max-width: min(360px, calc(100vw - 24px));
+}
+
+/*
+ * Chat-composer variant: the palette anchors to the prompt-input box and spans
+ * its full width (set inline as `width`), so drop the caret-menu max-width cap
+ * and let the inner menu stretch to fill.
+ */
+.rich-text-command-menu-popover-anchored {
+	max-width: none;
+}
+
+.rich-text-command-menu-popover-anchored .rich-text-command-menu {
+	width: 100%;
 }
 
 .rich-text-command-menu {
@@ -593,6 +618,17 @@
 	padding: 14px 10px;
 	color: var(--ds-text-subtle, #44546f);
 	font-size: 13px;
+}
+
+/*
+ * Center mention tokens on the text line in the chat composer so the typing
+ * caret lines up with the tag chips instead of sitting above them. Inline
+ * elements default to vertical-align: baseline, which raises the taller chip
+ * relative to the caret. Scoped to the composer so the document editor is
+ * untouched.
+ */
+.prompt-input-composer .rich-text-mention-node {
+	vertical-align: middle;
 }
 
 .rich-text-mention {

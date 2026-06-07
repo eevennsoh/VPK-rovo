@@ -3,7 +3,7 @@ import {
 	AI_INSIGHTS_AGENT_ID,
 	ROVO_AGENT_SELECTOR_AGENTS,
 	ROVO_CUSTOM_AGENT_SELECTOR_AGENTS,
-} from "@/components/projects/rovo/data/agent-profiles";
+} from "@/app/data/directory/agents";
 
 const DEFAULT_AGENT_SELECTOR_ORDER = [
 	"github-copilot",

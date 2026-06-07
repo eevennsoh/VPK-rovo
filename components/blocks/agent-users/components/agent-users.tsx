@@ -23,7 +23,7 @@ import {
 	SAMPLE_AGENT_PEOPLE,
 	getRoleOption,
 	type AgentPerson,
-} from "../data/users";
+} from "@/app/data/directory/people";
 
 function getInitials(name: string): string {
 	return name

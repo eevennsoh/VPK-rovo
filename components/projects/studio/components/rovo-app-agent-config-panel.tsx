@@ -9,11 +9,11 @@ import { AgentAccess } from "@/components/blocks/agent-access";
 import { AgentEvaluation } from "@/components/blocks/agent-evaluation";
 import { AgentInsights } from "@/components/blocks/agent-insights";
 import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
-import { DEFAULT_KNOWLEDGE_APPS } from "@/components/blocks/knowledge-directory/data/apps";
+import { DEFAULT_KNOWLEDGE_APPS } from "@/app/data/directory/knowledge";
 import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/blocks/skills-directory";
-import { DEFAULT_SKILLS } from "@/components/blocks/skills-directory/data/skills";
+import { DEFAULT_SKILLS } from "@/app/data/directory/skills";
 import { ToolsDirectoryDialog } from "@/components/blocks/tools-directory";
-import { DEMO_SESSION_TOOLS, DEMO_TOOLS } from "@/components/blocks/tools-directory/data/demo-tools";
+import { DEMO_SESSION_TOOLS, DEMO_TOOLS } from "@/app/data/directory/tools";
 import {
 	ConversationStartersDialog,
 	DEFAULT_STARTER_ICON,
