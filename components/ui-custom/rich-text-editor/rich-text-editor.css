@@ -469,7 +469,7 @@
 	border: 0;
 	border-radius: var(--ds-radius-small, 3px);
 	background: transparent;
-	padding: 6px 8px;
+	padding: 6px;
 	color: var(--ds-text, #172b4d);
 	text-align: left;
 	cursor: pointer;
@@ -501,7 +501,7 @@
    the sticky input bar spans edge-to-edge with square top corners, while the
    logo stays aligned with the icons of the rows below (12px from the edge). */
 .rich-text-command-menu-input {
-	margin: -4px -4px 4px;
+	margin: -4px -4px 0;
 	width: calc(100% + 8px);
 	border-radius: 0;
 	padding-left: 12px;
@@ -511,15 +511,15 @@
 
 .rich-text-command-menu-input-logo {
 	display: inline-flex;
-	width: 24px;
-	height: 24px;
+	width: 32px;
+	height: 32px;
 	align-items: center;
 	justify-content: center;
 }
 
 .rich-text-command-menu-input-logo > svg {
-	width: 20px;
-	height: 20px;
+	width: 24px;
+	height: 24px;
 }
 
 .rich-text-command-menu-input > [data-slot="input"] {
@@ -541,8 +541,8 @@
 }
 
 .rich-text-command-menu-avatar {
-	width: 24px;
-	height: 24px;
+	width: 32px;
+	height: 32px;
 }
 
 .rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .rich-text-command-menu-item {
@@ -638,11 +638,10 @@
 	line-height: 16px;
 }
 
-/* The first heading has nothing meaningful above it — whether it leads the list
-   or follows the "Ask Rovo" input bar — so drop its 12px top gap to sit tight
-   under the input / list top. */
-.rich-text-command-menu-list > .rich-text-command-menu-heading:first-child,
-.rich-text-command-menu-input + .rich-text-command-menu-heading {
+/* A heading that leads the list (nothing above it) drops its 12px top gap to sit
+   tight at the list top. A heading following the "Ask Rovo" input keeps its
+   default top padding — the input's own bottom margin is removed instead. */
+.rich-text-command-menu-list > .rich-text-command-menu-heading:first-child {
 	padding-top: 0;
 }
 

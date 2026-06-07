@@ -870,7 +870,7 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /whileFocus="active"/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \{\s*max-height: 400px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-borderless \{\s*border: 0;/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-avatar \{\s*width: 24px;\s*height: 24px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-avatar \{\s*width: 32px;\s*height: 32px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-showcase\[data-nested="true"\] \.rich-text-command-menu-list \{\s*overflow-y: auto;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\]\[data-list-scrolled="true"\] \.rich-text-command-menu-list \{\s*mask-image: linear-gradient\(to bottom, transparent 0, black 16px, black 100%\);/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*border-bottom/u);
