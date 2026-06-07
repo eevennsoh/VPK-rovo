@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { type ReactNode, useCallback, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 
 import { KnowledgeDirectoryDialog, type KnowledgeDirectoryAddPayload } from "@/components/blocks/knowledge-directory";
@@ -30,6 +30,7 @@ import type { SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo
 import { getListItems, updateConfigListItem } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { AgentUsers } from "@/components/blocks/agent-users";
 import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-agent-config-subagents";
+import { useSubagentsNavigatorTop } from "@/components/projects/studio/hooks/use-subagents-navigator-top";
 import {
 	Agent,
 	AgentCompactHeaderNav,
@@ -110,6 +111,12 @@ export function RovoAppAgentConfigPanel({
 	const draft = entry.draftResult;
 	const shouldReduceMotion = useReducedMotion();
 	const profileId = entry.profile.id;
+	// The floating SubagentsNavigator must top-align with the first line of the
+	// instructions editor. That line moves as the profile/content above it
+	// reflows or scrolls, so measure it relative to the positioned TabsContent
+	// (the navigator's positioning context) instead of using a fixed `top`.
+	const configureTabRef = useRef<HTMLDivElement | null>(null);
+	const navigatorTop = useSubagentsNavigatorTop(configureTabRef);
 	const [activeDirectory, setActiveDirectory] = useState<AgentDirectoryKind | null>(null);
 	const [activeCompactSection, setActiveCompactSection] = useState<AgentCompactHeaderSection | null>(null);
 	const [directoryToolIds, setDirectoryToolIds] = useState<readonly string[]>([]);
@@ -546,7 +553,7 @@ export function RovoAppAgentConfigPanel({
 							</>
 						}
 					/>
-					<TabsContent value="configure" className="relative min-h-0 flex-1 overflow-hidden data-[hidden]:hidden">
+					<TabsContent ref={configureTabRef} value="configure" className="relative min-h-0 flex-1 overflow-hidden data-[hidden]:hidden">
 						{activeCompactSection === "evaluation" ? (
 							// Evaluation owns its own scroll container, max-width, and
 							// padding, so render it full-bleed rather than inside the
@@ -555,19 +562,25 @@ export function RovoAppAgentConfigPanel({
 						) : (
 							<>
 								{/* Floating switcher to jump between the base agent and its
-								    subagents. Self-hides until at least one subagent exists. */}
-								<SubagentsNavigator
-									activeSubagentId={activeSubagentId}
-									baseAgent={navigatorBaseAgent}
-									className="absolute right-4 top-[42%] z-20 hidden md:block"
-									onCreateSubagent={createSubagent}
-									onDeleteSubagent={deleteSubagentById}
-									onManageSubagents={() => setIsManageSubagentsOpen(true)}
-									onSelectBaseAgent={selectBaseAgent}
-									onSelectSubagent={selectSubagent}
-									onToggleSubagent={toggleSubagent}
-									subagents={subagentPrompts}
-								/>
+								    subagents. Self-hides until at least one subagent exists.
+								    The wrapper carries the measured `top` so the switcher
+								    top-aligns with the first line of the instructions editor. */}
+								<div
+									className="absolute right-4 z-20 hidden md:block"
+									style={{ top: navigatorTop }}
+								>
+									<SubagentsNavigator
+										activeSubagentId={activeSubagentId}
+										baseAgent={navigatorBaseAgent}
+										onCreateSubagent={createSubagent}
+										onDeleteSubagent={deleteSubagentById}
+										onManageSubagents={() => setIsManageSubagentsOpen(true)}
+										onSelectBaseAgent={selectBaseAgent}
+										onSelectSubagent={selectSubagent}
+										onToggleSubagent={toggleSubagent}
+										subagents={subagentPrompts}
+									/>
+								</div>
 								<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-6 py-5">
 									{activeCompactSection === "access" ? (
 										<div className="-mr-6 min-h-0 flex-1 overflow-y-auto pr-6">

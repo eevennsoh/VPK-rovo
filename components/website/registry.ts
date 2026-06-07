@@ -6949,6 +6949,22 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
 };
 
 const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
+  // Editor palette
+  "editor-palette-nested": dynamic(
+    () =>
+      import("./demos/blocks/editor-palette-demo").then((mod) => ({
+        default: mod.EditorPaletteNested,
+      })),
+    { ssr: false },
+  ),
+  "editor-palette-flat": dynamic(
+    () =>
+      import("./demos/blocks/editor-palette-demo").then((mod) => ({
+        default: mod.EditorPaletteFlat,
+      })),
+    { ssr: false },
+  ),
+
   // Agent
   "agent-demo-full": dynamic(
     () =>

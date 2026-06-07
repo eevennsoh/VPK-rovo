@@ -9,3 +9,19 @@ export default function EditorPaletteDemo() {
 		</div>
 	);
 }
+
+export function EditorPaletteNested() {
+	return (
+		<div className="flex w-full justify-center p-6">
+			<EditorPalette variant="nested" />
+		</div>
+	);
+}
+
+export function EditorPaletteFlat() {
+	return (
+		<div className="flex w-full justify-center p-6">
+			<EditorPalette variant="flat" />
+		</div>
+	);
+}
