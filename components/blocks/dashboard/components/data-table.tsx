@@ -49,6 +49,7 @@ import {
   PlusIcon,
   TrendingUpIcon,
 } from "@/components/ui/vpk-icons"
+import { Spinner } from "@/components/ui/spinner"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -129,7 +130,7 @@ function showSaveToast(header: string) {
       <SonnerToast
         appearance="info"
         title={`Saving ${header}`}
-        icon={<LoaderIcon className="size-4 animate-spin text-icon-information" />}
+        icon={<Spinner className="text-icon-information" />}
         iconLabel="Saving"
         onDismiss={() => toast.dismiss(id)}
       />

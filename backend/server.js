@@ -1372,14 +1372,18 @@ async function deleteAgentsRfpDemoHermesJobs(state) {
 		}
 	}
 
-	for (const jobId of jobIds) {
-		await hermesJobsProvider.deleteHermesJob(jobId).catch((error) => {
-			if (error?.code !== "ENOENT") {
-				throw error;
-			}
-		});
-		await hermesJobLinkManager.removeLink(jobId);
-	}
+	// Jobs are independent, so clean them up in parallel. Each job keeps its
+	// delete -> removeLink order, and the ENOENT-tolerant catch is preserved.
+	await Promise.all(
+		[...jobIds].map(async (jobId) => {
+			await hermesJobsProvider.deleteHermesJob(jobId).catch((error) => {
+				if (error?.code !== "ENOENT") {
+					throw error;
+				}
+			});
+			await hermesJobLinkManager.removeLink(jobId);
+		}),
+	);
 }
 
 // Baseline security headers (CSP, nosniff, HSTS, Referrer-Policy, etc.).

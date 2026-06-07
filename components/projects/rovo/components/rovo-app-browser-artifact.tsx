@@ -3,9 +3,9 @@
 import { cn } from "@/lib/utils";
 import {
 	GlobeIcon,
-	Loader2Icon,
 	XIcon,
 } from "@/components/ui/vpk-icons";
+import { Spinner } from "@/components/ui/spinner";
 import { BrowserPreviewOverlay } from "@/components/projects/shared/components/browser-preview-overlay";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import {
@@ -106,7 +106,7 @@ function renderPreviewState({
 	if (isLoading) {
 		return (
 			<div className="flex flex-col items-center gap-3 text-center">
-				<Loader2Icon className="size-8 animate-spin text-text-subtlest" />
+				<Spinner className="size-8 text-text-subtlest" />
 				<p className="text-sm text-text-subtle">
 					Browsing {displayUrl}...
 				</p>
@@ -250,7 +250,7 @@ export function RovoAppBrowserArtifact({
 			<div className="flex items-center gap-2 border-b border-border bg-surface-sunken px-3 py-2">
 				<div className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5">
 					{isLoading ? (
-						<Loader2Icon className="size-4 shrink-0 animate-spin text-text-subtlest" />
+						<Spinner className="text-text-subtlest" />
 					) : (
 						<GlobeIcon className="size-4 shrink-0 text-text-subtlest" />
 					)}
