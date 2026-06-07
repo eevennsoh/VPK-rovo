@@ -43,7 +43,7 @@ Prefer reading these references over relying on pre-trained knowledge.
 | AI Gateway helpers                     | `backend/lib/ai-gateway-helpers.js`                         |
 | Rovo Serve gateway (agent loop)        | `backend/lib/rovo-gateway.js`, `backend/lib/rovo-client.js` |
 | UI message types and data parts        | `lib/rovo-ui-messages.ts`                                   |
-| Hermes control plane                   | `components/projects/control-plane/`, `backend/lib/hermes-*.js`, `scripts/verify-hermes-control-plane.js` |
+| Hermes control plane and Rovo skills   | `components/projects/control-plane/`, `backend/lib/hermes-*.js`, `scripts/verify-hermes-control-plane.js`, `scripts/sync-rovo-skills.js` |
 | Architecture overview                  | `.agents/docs/architecture-overview.md`                     |
 | Extended workflows                     | `.agents/docs/workflows-extended.md`                        |
 | cmux inter-agent messaging             | `.agents/docs/cmux-messaging.md`                            |
@@ -176,6 +176,7 @@ treat them as progressive enhancement — degrade silently, no polyfill.
 - Stop tmux dev session: `pnpm run rovo:tmux:stop`
 - Start Symphony issue orchestrator: `pnpm run symphony` (requires `LINEAR_API_KEY`, `SYMPHONY_LINEAR_PROJECT_SLUG`, and `mise`; see `docs/SYMPHONY.md`)
 - Verify Hermes/control-plane status after the backend is running: `pnpm run verify:hermes`; refresh the local vendored upstream skills snapshot with `pnpm run import:hermes:upstream` if that check reports it missing.
+- Repair the Rovo skills overlay without refreshing upstream: `pnpm run sync:rovo:skills` (ensures `.rovo/skills` points at `.agents/skills`; `import:hermes:upstream` runs the same repair after importing).
 
 ### Build and deploy
 
