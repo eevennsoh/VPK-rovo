@@ -260,6 +260,7 @@ export default function Subagents({
 				onManageSubagents={() => setIsManageSubagentsOpen(true)}
 				onSelectBaseAgent={handleSelectBaseAgent}
 				onSelectSubagent={handleSelectSubagent}
+				onToggleSubagent={handleToggleSubagent}
 				subagents={subagentPrompts}
 			/>
 			<div className="flex-1 overflow-y-auto px-6 py-6 pr-20">

@@ -472,7 +472,6 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /<AnimatePresence initial=\{false\} mode="wait">/u);
 	// The field-row blocks carry the opaque surface so they stay readable over
 	// scrolling content, while the separator/expand row above stays transparent.
-	// `overflow-hidden` lets the height/opacity collapse animation clip cleanly.
 	assert.match(AGENT_SOURCE, /<motion\.div\s+key="expanded"\s+className="overflow-hidden bg-surface pt-2"/u);
 	assert.match(AGENT_SOURCE, /<motion\.div\s+key="collapsed"\s+className="overflow-hidden bg-surface pt-2"/u);
 	// Horizontal rule line spans the row; the chevron sits at the far right of
@@ -755,9 +754,9 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /description: "Use the default paragraph style for body copy\."/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /description: "Align the current block to the left edge\."/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /"people-team": "People and team"/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /type RichTextMentionParentCategory = "people-team";/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const MENTION_TARGET_ORDER: readonly RichTextMentionParentCategory\[\] = \[\s*"people-team",\s*\]/u);
-	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /Parent entries for the "@" mention surface: subagents/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /subagent: "Subagents"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /type RichTextMentionParentCategory = "people-team" \| "subagent";/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const MENTION_TARGET_ORDER: readonly RichTextMentionParentCategory\[\] = \[\s*"people-team",\s*"subagent",\s*\]/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /category === "people-team"[\s\S]*<PeopleGroupIcon label="" size="small" \/>[\s\S]*: getCategoryIcon\(category\)/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /RICH_TEXT_REFERENCE_CATEGORY_OPTIONS/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /getRichTextReferenceCategoryIcon/u);
@@ -806,8 +805,10 @@ test("Slash command menu contains every toolbar command", () => {
 	]) {
 		assert.match(EDITOR_PALETTE_SOURCE, new RegExp(`caption: "${caption}"`, "u"));
 	}
-	assert.match(EDITOR_PALETTE_SOURCE, /category: "subagent", title: "Subagents", trigger: "\/"/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /Parent entries for the "\/" command surface: subagents, skills, tools, knowledge/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /category: "subagent", title: "Subagents", trigger: "@"/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /category: "people-team", title: "People and team", trigger: "@"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /Parent entries for the "\/" command surface: skills, tools, knowledge/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /Parent entries for the "@" mention surface: people\/teams and subagents/u);
 
 	for (const command of [
 		"Normal text",
@@ -915,7 +916,7 @@ test("Reference insert categories are shared by slash commands and Add content",
 	}
 	assert.doesNotMatch(RICH_TEXT_REFERENCE_CATEGORIES_SOURCE, /category: "memory"/u);
 	assert.doesNotMatch(RICH_TEXT_REFERENCE_CATEGORIES_SOURCE, /label: "Memory"/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const COMMAND_CATEGORY_ORDER: readonly RichTextCommandCategory\[\] = RICH_TEXT_REFERENCE_CATEGORY_OPTIONS\.map/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const COMMAND_CATEGORY_ORDER: readonly RichTextCommandCategory\[\] = RICH_TEXT_REFERENCE_CATEGORY_OPTIONS\s*\.map\(\(option\) => option\.category\)\s*\.filter\([\s\S]*category !== "subagent"\)/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /import \{ RICH_TEXT_REFERENCE_CATEGORY_OPTIONS \} from "@\/components\/ui-custom\/rich-text-editor\/reference-categories";/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /type InsertReferenceCategory = RichTextReferenceCategory;/u);
 	assert.match(EDITOR_TOOLBAR_SOURCE, /\{RICH_TEXT_REFERENCE_CATEGORY_OPTIONS\.map\(\(option\) => \(/u);

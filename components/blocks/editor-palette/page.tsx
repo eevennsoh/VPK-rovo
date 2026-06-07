@@ -34,8 +34,8 @@ const NESTED_MENTION_SHOWCASES: readonly {
 	trigger: "@" | "/";
 	caption: string;
 }[] = [
-	{ category: "subagent", title: "Subagents", trigger: "/", caption: "Subagents nested" },
 	{ category: "people-team", title: "People and team", trigger: "@", caption: "People and team nested" },
+	{ category: "subagent", title: "Subagents", trigger: "@", caption: "Subagents nested" },
 	{ category: "skill", title: "Skills", trigger: "/", caption: "Skills nested" },
 	{ category: "tool", title: "Tools", trigger: "/", caption: "Tools nested" },
 	{ category: "knowledge", title: "Knowledge", trigger: "/", caption: "Knowledge nested" },

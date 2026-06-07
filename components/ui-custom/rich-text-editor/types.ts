@@ -6,19 +6,24 @@ import type { Editor } from "@tiptap/core";
 import type { AtlassianLogoName } from "@/components/ui/logo";
 
 /**
- * "@" mentions people and teams only. Subagents are inserted from the "/"
- * command surface alongside other reference categories.
+ * "@" mention surface: people, teams, and subagents. Each opens a nested list
+ * and is inserted as a mention token.
  */
-export type RichTextMentionTarget = "human" | "team";
+export type RichTextMentionTarget = "human" | "team" | "subagent";
 
+/**
+ * Reference categories used by the "Add content" toolbar menu. Still includes
+ * "subagent" so it can be inserted from the toolbar, even though the "@" surface
+ * (not "/") owns the subagent mention picker.
+ */
 export type RichTextReferenceCategory = "subagent" | "skill" | "tool" | "knowledge";
 
 /**
  * "/" command categories. Each opens a nested list of reference items and is
- * inserted as a mention token. "knowledge" is the former "link" category;
- * "memory" folded into "knowledge" and "trigger" was retired.
+ * inserted as a mention token. Subagents live on the "@" mention surface, so the
+ * "/" surface only carries skills, tools, and knowledge.
  */
-export type RichTextCommandCategory = RichTextReferenceCategory;
+export type RichTextCommandCategory = "skill" | "tool" | "knowledge";
 
 /**
  * "/" parent categories. Format is a command-only category whose children run

@@ -1285,6 +1285,7 @@ function AgentCompactEmptyConfigNav({
 								render="nav-button"
 								value={knowledgeMode}
 								onValueChange={onKnowledgeModeChange}
+								itemCount={getNonEmptyConfigItems(config?.knowledge).length}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
 							/>
 						);
@@ -2244,6 +2245,18 @@ function findKnowledgeModeOption(value: KnowledgeModeValue) {
 	return KNOWLEDGE_MODE_OPTIONS.find((option) => option.value === value);
 }
 
+// Compact nav-button label: "all" reads as "All", "none" as "None", and a
+// "custom" selection reads as its item count so the strip stays terse.
+function getKnowledgeNavLabel(value: KnowledgeModeValue, itemCount: number): string {
+	if (value === "all") {
+		return "All";
+	}
+	if (value === "none") {
+		return "None";
+	}
+	return String(itemCount);
+}
+
 function AgentKnowledgeSelectorMenu({
 	value,
 	onValueChange,
@@ -2272,6 +2285,7 @@ interface AgentKnowledgeSelectorProps {
 	value: KnowledgeModeValue;
 	onValueChange: (next: KnowledgeModeValue) => void;
 	render: "nav-button" | "row";
+	itemCount?: number;
 	screenAssistantTargetId?: string;
 }
 
@@ -2279,6 +2293,7 @@ function AgentKnowledgeSelector({
 	value,
 	onValueChange,
 	render,
+	itemCount = 0,
 	screenAssistantTargetId,
 }: Readonly<AgentKnowledgeSelectorProps>) {
 	const current = findKnowledgeModeOption(value);
@@ -2292,7 +2307,7 @@ function AgentKnowledgeSelector({
 					data-agent-field="knowledge"
 					data-screen-assistant-target={screenAssistantTargetId}
 				>
-					Knowledge
+					{getKnowledgeNavLabel(value, itemCount)}
 				</MenubarTrigger>
 				<AgentKnowledgeSelectorMenu value={value} onValueChange={onValueChange} />
 			</MenubarMenu>

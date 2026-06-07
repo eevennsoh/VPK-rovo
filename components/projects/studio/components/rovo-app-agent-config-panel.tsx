@@ -565,6 +565,7 @@ export function RovoAppAgentConfigPanel({
 									onManageSubagents={() => setIsManageSubagentsOpen(true)}
 									onSelectBaseAgent={selectBaseAgent}
 									onSelectSubagent={selectSubagent}
+									onToggleSubagent={toggleSubagent}
 									subagents={subagentPrompts}
 								/>
 								<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-6 py-5">
