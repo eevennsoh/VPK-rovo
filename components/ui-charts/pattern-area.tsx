@@ -12,8 +12,6 @@ export interface PatternAreaProps {
   fill: string;
   /** Curve function. Default: curveMonotoneX */
   curve?: CurveFactory;
-  /** @deprecated Pattern fill is not clip-revealed; only the stroke `Area` animates. */
-  animate?: boolean;
 }
 
 /**
