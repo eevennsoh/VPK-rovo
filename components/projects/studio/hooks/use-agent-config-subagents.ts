@@ -181,11 +181,12 @@ export function useAgentConfigSubagents({
 	// active selection to the base agent if the removed prompt was being edited.
 	const deleteSubagentById = useCallback(
 		(id: string) => {
-			if (!subagentPrompts.some((prompt) => prompt.id === id)) {
+			const nextPrompts = subagentPrompts.filter((prompt) => prompt.id !== id);
+			if (nextPrompts.length === subagentPrompts.length) {
 				return;
 			}
 
-			commitPrompts(subagentPrompts.filter((prompt) => prompt.id !== id));
+			commitPrompts(nextPrompts);
 			if (id === activeSubagentId) {
 				startTransition(() => setActiveSubagentId(null));
 			}
