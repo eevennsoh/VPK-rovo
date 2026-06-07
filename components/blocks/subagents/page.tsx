@@ -8,7 +8,7 @@ import {
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
 	AgentContent,
-} from "@/components/ui-custom/agent";
+} from "@/components/blocks/agent";
 import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
 import { ManageSubagentsDialog } from "@/components/blocks/subagents/components/manage-subagents-dialog";
 import {

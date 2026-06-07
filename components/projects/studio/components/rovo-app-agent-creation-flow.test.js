@@ -20,7 +20,7 @@ const AGENT_CONFIG_PANEL_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const AGENT_INSIGHTS_PANEL_SOURCE = fs.readFileSync(
-	path.join(__dirname, "agent-insights-panel.tsx"),
+	path.join(__dirname, "..", "..", "..", "blocks", "agent-insights", "components", "agent-insights.tsx"),
 	"utf8",
 );
 const AGENT_TEST_PANEL_SOURCE = fs.readFileSync(
@@ -47,8 +47,8 @@ const ROVO_SUGGESTIONS_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "lib/rovo-suggestions.ts"),
 	"utf8",
 );
-const UI_CUSTOM_AGENT_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/ui-custom/agent.tsx"),
+const AGENT_BLOCK_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/blocks/agent/components/agent.tsx"),
 	"utf8",
 );
 const NAV_HOOK_SOURCE = fs.readFileSync(
@@ -136,7 +136,8 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(SHELL_SOURCE, /<RovoAppComposer[\s\S]*fillWidth=\{!showHomeState && !\(isArtifactOpen \|\| shouldShowAgentConfigPane\)\}/u);
 	assert.match(SHELL_SOURCE, /<AgentTemplatesDialog[\s\S]*open=\{agentTemplatesDialogOpen\}[\s\S]*onSelectAgent=\{handleTemplateAgentSelect\}/u);
 
-	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /DropdownMenu/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /DropdownMenu/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-label=\{`More actions for \$\{agentName\}`\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /export function StudioAgentsSection/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className="mx-auto mt-12 flex w-\[90%\] max-w-\[800px\] flex-col gap-6"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /ButtonGroup aria-label="Agent views"/u);
@@ -169,6 +170,8 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-label=\{`\$\{isPinned \? "Unpin" : "Pin"\} \$\{agentName\}`\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /onClick=\{\(\) => onTogglePinned\(entry\.profile\.id\)\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed=\{isPinned\}[\s\S]*render=\{isPinned \? <PinFilledIcon label="" size="small" \/> : <PinIcon label="" size="small" \/>\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<div className="flex justify-end gap-\[4px\]">/u);
+	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /stopNestedCardAction|onClick=\{stopNestedCardAction\}|onKeyDown=\{stopNestedCardAction\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:\[&_svg\]:text-icon-subtle!/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /text-icon-selected/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /isFirstRow|isLastRow|rounded-tl-\[12px\]|rounded-br-\[12px\]/u);
@@ -266,8 +269,9 @@ test("Studio home starters frame agent building instead of generic one-off tasks
 		assert.ok(starterTitles.includes(title), `${title} should be available as a Studio starter`);
 	}
 
-	assert.match(SHELL_SOURCE, /prompt: "Build a Studio agent named Product Requirements Guide/u);
-	assert.match(SHELL_SOURCE, /prompt: "Build a Studio agent named Rovo Expert/u);
+	assert.match(SHELL_SOURCE, /prompt: "Build a Rovo agent named Product Requirements Guide/u);
+	assert.match(SHELL_SOURCE, /prompt: "Build a Rovo agent named Rovo Expert/u);
+	assert.doesNotMatch(homeStarterViewsSource, /Build a Studio agent/u);
 	assert.doesNotMatch(SHELL_SOURCE, /title: "Analyze a workstream"/u);
 	assert.doesNotMatch(homeStarterViewsSource, /\btitle: "Build .* agent"/iu);
 	assert.doesNotMatch(SHELL_SOURCE, /prompt: "Summarize this into key points/u);
@@ -466,25 +470,25 @@ test("Studio agent insights panel frames agent performance and improvement oppor
 	assert.doesNotMatch(AGENT_INSIGHTS_PANEL_SOURCE, /text-\[var\(--ds-/u);
 });
 
-test("Studio agent config panel renders the shared ui-custom agent config fields", () => {
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /export const AgentConfigFields = memo/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string>/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /"product-agents": "#BF63F3"/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /function getAgentProfileCoverBackgroundColor\(avatarSrc: string \| undefined\): string/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /style=\{\{ backgroundColor: coverBackgroundColor \}\}/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /Add triggers/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /Add conversation starters/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /Teamwork Graph/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /Press \/ to help me describe the agent's role/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /dataFlowConfig=\{config\}/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /layout\?: "default" \| "compact";/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /triggerDefinitions\?: readonly AgentTriggerValue\[\];/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /onTriggerDefinitionsChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /inputProps=\{\{ className: "h-auto border-2 px-1\.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /textareaProps=\{\{ rows: 1, className: "min-h-10 border-2 bg-bg-neutral-subtle px-1\.5 focus:border-ring focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-\[variant=default\]:border-transparent data-\[variant=default\]:focus:border-ring data-\[variant=default\]:focus-visible:border-ring" \}\}/u);
+test("Studio agent config panel renders the shared block agent config fields", () => {
+	assert.match(AGENT_BLOCK_SOURCE, /export const AgentConfigFields = memo/u);
+	assert.match(AGENT_BLOCK_SOURCE, /const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string>/u);
+	assert.match(AGENT_BLOCK_SOURCE, /"product-agents": "#BF63F3"/u);
+	assert.match(AGENT_BLOCK_SOURCE, /function getAgentProfileCoverBackgroundColor\(avatarSrc: string \| undefined\): string/u);
+	assert.match(AGENT_BLOCK_SOURCE, /style=\{\{ backgroundColor: coverBackgroundColor \}\}/u);
+	assert.match(AGENT_BLOCK_SOURCE, /Add rules for when this agent runs/u);
+	assert.match(AGENT_BLOCK_SOURCE, /Add prompts to help people start/u);
+	assert.match(AGENT_BLOCK_SOURCE, /aria-label="Knowledge mode"/u);
+	assert.match(AGENT_BLOCK_SOURCE, /Press \/ to help me describe the agent's role/u);
+	assert.match(AGENT_BLOCK_SOURCE, /dataFlowConfig=\{config\}/u);
+	assert.doesNotMatch(AGENT_BLOCK_SOURCE, /layout\?: "default" \| "compact";/u);
+	assert.match(AGENT_BLOCK_SOURCE, /triggerDefinitions\?: readonly AgentTriggerValue\[\];/u);
+	assert.match(AGENT_BLOCK_SOURCE, /onTriggerDefinitionsChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
+	assert.match(AGENT_BLOCK_SOURCE, /readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"/u);
+	assert.match(AGENT_BLOCK_SOURCE, /inputProps=\{\{ className: "h-auto border-2 px-1\.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u);
+	assert.match(AGENT_BLOCK_SOURCE, /textareaProps=\{\{ rows: 1, className: "min-h-10 border-2 bg-bg-neutral-subtle px-1\.5 focus:border-ring focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-\[variant=default\]:border-transparent data-\[variant=default\]:focus:border-ring data-\[variant=default\]:focus-visible:border-ring" \}\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentConfigFields/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentCompactSurfacesPanel/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentSurfaces/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /type AgentCompactHeaderSection/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /config=\{activeConfig\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onTextChange=\{handleConfigTextChange\}/u);
@@ -499,12 +503,12 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEFAULT_SKILLS \} from "@\/app\/data\/directory\/skills";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ ToolsDirectoryDialog \} from "@\/components\/blocks\/tools-directory";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEMO_SESSION_TOOLS, DEMO_TOOLS \} from "@\/app\/data\/directory\/tools";/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ AgentInsightsPanel \} from "@\/components\/projects\/studio\/components\/agent-insights-panel";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ AgentInsights \} from "@\/components\/blocks\/agent-insights";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[activeDirectory, setActiveDirectory\] = useState<AgentDirectoryKind \| null>\(null\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[activeCompactSection, setActiveCompactSection\] = useState<AgentCompactHeaderSection \| null>\(null\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleTriggerDefinitionsChange = useCallback\([\s\S]*serializeAgentTriggerLabels\(triggerDefinitions\)[\s\S]*triggerDefinitions,[\s\S]*trigger: triggerLabels\[0\] \?\? "",[\s\S]*triggers: triggerLabels,/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleConnectTrigger = useCallback\([\s\S]*connectionState: "connecting" as const[\s\S]*serializeAgentTriggerLabels\(triggerDefinitions\)/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenDirectory = useCallback\(\(directory: AgentDirectoryKind\) => \{[\s\S]*setActiveDirectory\(directory\);[\s\S]*\}, \[\]\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenDirectory = useCallback\(\(directory: AgentDirectoryKind, selectedItem\?: string\) => \{[\s\S]*setDirectorySelectedToolId\(matchedTool\?\.id \?\? null\);[\s\S]*setActiveDirectory\(directory\);[\s\S]*\}, \[\]\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddKnowledge = useCallback\([\s\S]*payload: KnowledgeDirectoryAddPayload[\s\S]*DEFAULT_KNOWLEDGE_APPS\.find[\s\S]*appendListValues\("knowledge"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleDirectoryToolIdsChange = useCallback\([\s\S]*const toolsById = new Map\(\[\.\.\.DEMO_TOOLS, \.\.\.DEMO_SESSION_TOOLS\][\s\S]*appendListValues\(\s*"tools"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddSkills = useCallback\([\s\S]*skills: readonly SkillsDirectorySkill\[\][\s\S]*appendListValues\("skills", skills\.map\(\(skill\) => skill\.name\)\);/u);
@@ -518,12 +522,12 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /export type AgentConfigView = "configure" \| "insights" \| "test";/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function getPublishLabel/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleCompactSectionChange = useCallback\([\s\S]*if \(section === "insights"\) \{[\s\S]*setActiveCompactSection\(null\);[\s\S]*onViewChange\("insights"\);[\s\S]*return;[\s\S]*\}[\s\S]*onViewChange\("configure"\);[\s\S]*setActiveCompactSection\(\s*section === "surfaces" \|\| section === "access" \|\| section === "evaluation"\s*\? section\s*: null,?\s*\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleCompactSectionChange = useCallback\([\s\S]*if \(section === "insights"\) \{[\s\S]*setActiveCompactSection\(null\);[\s\S]*onViewChange\("insights"\);[\s\S]*return;[\s\S]*\}[\s\S]*onViewChange\("configure"\);[\s\S]*setActiveCompactSection\(\s*section === "surfaces" \|\|[\s\S]*section === "access" \|\|[\s\S]*section === "users" \|\|[\s\S]*section === "evaluation"[\s\S]*\? section[\s\S]*: null,/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /setActiveCompactSection\(null\);[\s\S]*if \(value === "test"\)/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentCompactHeaderNav[\s\S]*activeSection=\{activeView === "insights" \? "insights" : activeCompactSection\}[\s\S]*avatarSrc=\{agentAvatarSrc\}[\s\S]*onSectionChange=\{handleCompactSectionChange\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /activeCompactSection === "surfaces" \? \([\s\S]*<AgentCompactSurfacesPanel className="-mr-6 pr-6" \/>[\s\S]*\) : \([\s\S]*<AgentConfigFields/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /activeCompactSection === "surfaces" \? \([\s\S]*<AgentSurfaces className="-mr-6 pr-6" \/>[\s\S]*\) : \([\s\S]*<AgentConfigFields/u);
 	// Clicking the "Evaluation" compact-nav tab renders the full-bleed Evaluation screen.
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ AgentEvaluation \} from "@\/components\/ui-custom\/agent-evaluation";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ AgentEvaluation \} from "@\/components\/blocks\/agent-evaluation";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /activeCompactSection === "evaluation" \? \([\s\S]*<AgentEvaluation \/>[\s\S]*\) : \(/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigActionButton/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigToggleItem/u);
@@ -543,7 +547,7 @@ test("Studio agent config panel renders the shared ui-custom agent config fields
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<TabsContent value="configure"[\s\S]*<AgentConfigFields/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /compactScrollAreaClassName="-mr-6 pr-6"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<TabsContent value="test"[\s\S]*\{testPanel\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<TabsContent value="insights"[\s\S]*<AgentInsightsPanel \/>/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<TabsContent value="insights"[\s\S]*<AgentInsights \/>/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /Generation looks partial/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /variant="outline"[\s\S]*onClick=\{handleTest\}[\s\S]*disabled=\{!hasAgentInstructions\}/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /disabledTooltip="Add agent instructions before testing this agent\."/u);
@@ -655,7 +659,11 @@ test("Subagents hook persists prompts on the draft and derives the subagents chi
 	assert.match(SUBAGENTS_HOOK_SOURCE, /subagents: getDerivedSubagentNames\(nextPrompts\)/u);
 	assert.match(SUBAGENTS_HOOK_SOURCE, /getBaseConfigWithSubagents\(draft as unknown as AgentConfigFormValue, subagentPrompts\)/u);
 	// Removing the active subagent resets the selection back to the base agent.
-	assert.match(SUBAGENTS_HOOK_SOURCE, /if \(removedId !== null && removedId === activeSubagentId\)\s*\{\s*startTransition\(\(\) => setActiveSubagentId\(null\)\);/u);
+	assert.match(SUBAGENTS_HOOK_SOURCE, /if \(promptToRemove\.id === activeSubagentId\)\s*\{\s*startTransition\(\(\) => setActiveSubagentId\(null\)\);/u);
+	// Removal uses the same derived-index -> prompt-id mapping as selection, so
+	// duplicate trigger names do not delete the wrong prompt.
+	assert.match(SUBAGENTS_HOOK_SOURCE, /const promptToRemove = namedSubagentPrompts\[index\];[\s\S]*subagentPrompts\.filter\(\(prompt\) => prompt\.id !== promptToRemove\.id\)/u);
+	assert.doesNotMatch(SUBAGENTS_HOOK_SOURCE, /const triggerName = getDerivedSubagentNames\(subagentPrompts\)\[index\]/u);
 	// Reuses the shared helpers extracted from the demo block.
 	assert.match(
 		SUBAGENTS_HOOK_SOURCE,
@@ -717,8 +725,8 @@ test("Studio screen assistant applies draft patches without publishing agents", 
 	assert.match(screenAssistantHandlerSource, /activeSessionAgentEntry\.profile\.id/u);
 	assert.doesNotMatch(screenAssistantHandlerSource, /publishSessionAgent/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /data-screen-assistant-target="studio-agent-config-panel"/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /screenAssistantTargetPrefix/u);
-	assert.match(UI_CUSTOM_AGENT_SOURCE, /data-agent-field="instructions"/u);
+	assert.match(AGENT_BLOCK_SOURCE, /screenAssistantTargetPrefix/u);
+	assert.match(AGENT_BLOCK_SOURCE, /data-agent-field="instructions"/u);
 });
 
 test("Studio clarification answers keep agent creation mode active", () => {
@@ -746,11 +754,14 @@ test("Studio threads template provenance into agent creation contexts", () => {
 	assert.match(SHELL_SOURCE, /buildCreationTemplateContextFromAgent\(agent\)/u);
 	assert.match(SHELL_SOURCE, /onSelect\(template\.prompt, buildCreationTemplateContextFromStarter\(template\)\)/u);
 	assert.match(SHELL_SOURCE, /onSelect: \(prompt: string, template\?: StudioCreationTemplateContext\) => void;/u);
+	assert.match(SHELL_SOURCE, /Use the \$\{agent\.name\} template to create a Rovo agent/u);
+	assert.doesNotMatch(SHELL_SOURCE, /Use the \$\{agent\.name\} template to create a Studio agent/u);
 	// The pending selection is held in a ref and consumed on submit; the active
 	// creation thread keeps its template for the clarification continuation.
 	assert.match(SHELL_SOURCE, /const creationTemplateRef = useRef<StudioCreationTemplateContext \| null>\(null\);/u);
 	assert.match(SHELL_SOURCE, /const creationTemplateByThreadRef = useRef<Record<string, StudioCreationTemplateContext>>\(\{\}\);/u);
 	assert.match(SHELL_SOURCE, /creationTemplateRef\.current = template \?\? null;/u);
+	assert.match(SHELL_SOURCE, /setAgentTemplatesDialogOpen\(false\);[\s\S]*setIsSidebarAgentBrowserOpen\(false\);/u);
 	assert.match(SHELL_SOURCE, /creationTemplateByThreadRef\.current\[chat\.runtimeThreadId\] = creationTemplate;/u);
 	assert.match(SHELL_SOURCE, /creationTemplateRef\.current = null;/u);
 });

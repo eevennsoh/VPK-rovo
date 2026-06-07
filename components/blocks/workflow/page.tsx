@@ -12,7 +12,7 @@ import {
 	AgentContent,
 	AgentHeader,
 	AgentInstructions,
-} from "@/components/ui-custom/agent"
+} from "@/components/blocks/agent"
 import {
 	Plan,
 	PlanAvatar,

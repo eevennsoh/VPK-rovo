@@ -141,11 +141,18 @@ export function FileTreeFolder({
     <FileTreeFolderContext value={folderContextValue}>
       <Collapsible onOpenChange={handleOpenChange} open={isExpanded}>
         <div
-          className={cn("", className)}
+          className={cn("relative", className)}
           role="treeitem"
           tabIndex={0}
           {...props}
         >
+          {/* Guide line: runs from below the header row to the bottom of children.
+              left-3.5 = 14px = px-2(8) + half-chevron(6) = chevron center
+              (Atlaskit small chevron is 12px wide).
+              top-7 skips the header row height. */}
+          {isExpanded && (
+            <div className="absolute bottom-0 left-3.5 top-7 w-px bg-muted-foreground/20" />
+          )}
           <div
             className={cn(
               "flex w-full items-center gap-1 rounded px-2 py-1 text-left transition-colors hover:bg-muted/50",
@@ -184,7 +191,9 @@ export function FileTreeFolder({
             </button>
           </div>
           <CollapsibleContent>
-            <div className="ml-4 border-l pl-2">{children}</div>
+            {/* One level of indent = chevron(12) + gap(4) = 16px (pl-4),
+                so a child's chevron aligns under the parent's folder icon. */}
+            <div className="pl-4">{children}</div>
           </CollapsibleContent>
         </div>
       </Collapsible>
@@ -250,8 +259,9 @@ export function FileTreeFile({
       >
         {children ?? (
           <>
-            {/* Spacer for alignment */}
-            <span className="size-4 shrink-0" />
+            {/* Spacer matches the chevron width (Atlaskit small chevron = 12px)
+                so file icons align with folder icons at the same level. */}
+            <span className="w-3 shrink-0" />
             <FileTreeIcon>
               {icon ?? <FileIcon size="small" className="text-muted-foreground" />}
             </FileTreeIcon>

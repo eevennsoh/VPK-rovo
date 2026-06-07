@@ -324,7 +324,7 @@ function buildTemplatePrompt({
 	const skillList = skills.map((skill) => skill.label).join(", ");
 	const featureList = capabilities.map((capability) => capability.label).join("; ");
 
-	return `Use the ${name} template to create a Studio agent. ${description} Connect it to ${appList}. Include skills for ${skillList}. It should support these features: ${featureList}. Keep the agent focused, reusable, and ready for me to review before sending.`;
+	return `Use the ${name} template to create a Rovo agent. ${description} Connect it to ${appList}. Include skills for ${skillList}. It should support these features: ${featureList}. Keep the agent focused, reusable, and ready for me to review before sending.`;
 }
 
 function demoTemplateAgent({

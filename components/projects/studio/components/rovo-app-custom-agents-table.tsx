@@ -1,6 +1,6 @@
 "use client";
 
-import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
 import { getStudioSessionAgentDisplayName } from "@/app/contexts";
 import type { AgentsDirectoryAgent } from "@/components/blocks/agents-directory";
@@ -244,10 +244,6 @@ function getCustomAgentDescription(entry: StudioSessionAgentEntry): string {
 		entry.draftResult.summary ??
 		"Ready to test and refine in Studio."
 	);
-}
-
-function stopNestedCardAction(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
-	event.stopPropagation();
 }
 
 export function StudioAgentsSection({
@@ -509,7 +505,7 @@ function StudioCustomAgentsList({
 								</div>
 							</List.Cell>
 							<List.Cell edge="trailing">
-								<div className="flex justify-end gap-[4px]" onClick={stopNestedCardAction} onKeyDown={stopNestedCardAction}>
+								<div className="flex justify-end gap-[4px]">
 									<DropdownMenu>
 										<DropdownMenuTrigger
 											render={

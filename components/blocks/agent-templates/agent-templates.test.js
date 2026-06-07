@@ -122,12 +122,12 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(pageSource, /DEMO_AGENT_TEMPLATES/u);
 	assert.match(pageSource, /DEMO_AGENT_TEMPLATES_SESSION/u);
 	assert.match(studioShellSource, /agents=\{DEMO_AGENT_TEMPLATES\}/u);
-	assert.match(studioShellSource, /initialCategoryId=\{activeCategory\}/u);
+	assert.match(studioShellSource, /initialCategoryId=\{agentTemplatesInitialCategory\}/u);
 	assert.match(studioShellSource, /onSelectAgent=\{handleTemplateAgentSelect\}/u);
 	assert.match(studioShellSource, /agent\.templatePrompt \?\? buildFallbackTemplatePrompt\(agent\)/u);
 	assert.match(studioShellSource, /sessionAgents=\{DEMO_AGENT_TEMPLATES_SESSION\}/u);
 	assert.match(studioShellSource, /function HomeStarterHeroTile[\s\S]*<TWGAppstack[\s\S]*animated=\{false\}/u);
-	assert.match(studioShellSource, /className=\{cn\(BENTO_CAROUSEL_CONTAINER_CLASS, "max-w-\[1280px\]"\)\}/u);
+	assert.match(studioShellSource, /className=\{cn\(BENTO_CAROUSEL_CONTAINER_CLASS, ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS\)\}/u);
 	assert.match(source, /initialCategoryId\?: AgentTemplatesCategoryId/u);
 	assert.match(source, /setActiveCategory\(initialCategoryId\)/u);
 	// Demo agents carry the expanded-card detail the cards render.
@@ -141,7 +141,7 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(demoAgentsSource, /const skillCount = 3 \+ \(seed % 8\)/u);
 	assert.match(demoAgentsSource, /function defaultCapabilities/u);
 	assert.match(demoAgentsSource, /templatePrompt:/u);
-	assert.match(demoAgentsSource, /Use the \$\{name\} template to create a Studio agent/u);
+	assert.match(demoAgentsSource, /Use the \$\{name\} template to create a Rovo agent/u);
 	assert.match(demoAgentsSource, /ready for me to review before sending/u);
 	assert.match(demoAgentsSource, /const MAX_VISIBLE_TEMPLATE_COLLABORATORS = 4/u);
 	assert.match(demoAgentsSource, /function pickCollaborators\(offset: number, count: number\)/u);

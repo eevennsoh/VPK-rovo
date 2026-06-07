@@ -2,6 +2,7 @@ import { compareByNameNatural } from "@/lib/utils";
 
 export type ComponentCategory =
 	| "ui-audio"
+	| "ui-charts"
 	| "ui-custom"
 	| "ui"
 	| "blocks"
@@ -43,6 +44,15 @@ function audioComponent(slug: string, name?: string): ComponentManifestEntry {
 		slug,
 		importPath: `@/components/ui-audio/${slug}`,
 		category: "ui-audio",
+	};
+}
+
+function uiChartComponent(slug: string, name?: string, importPath?: string): ComponentManifestEntry {
+	return {
+		name: name ?? toTitleCase(slug),
+		slug,
+		importPath: importPath ?? `@/components/ui-charts/${slug}`,
+		category: "ui-charts",
 	};
 }
 
@@ -105,8 +115,6 @@ function visualComponent(
 }
 
 export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
-	customComponent("agent"),
-	customComponent("agent-evaluation", "Agent Evaluation"),
 	customComponent("animated-dots", "Animated Dots"),
 	customComponent("animated-rovo", "Animated Rovo"),
 	customComponent("artifact"),
@@ -196,6 +204,28 @@ export const AUDIO_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	audioComponent("waveform", "Waveform"),
 ]);
 
+export const UI_CHART_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
+	uiChartComponent("area-chart", "Area Chart"),
+	uiChartComponent("bar-chart", "Bar Chart"),
+	uiChartComponent("candlestick-chart", "Candlestick Chart"),
+	uiChartComponent("choropleth-chart", "Choropleth Chart", "@/components/ui-charts/choropleth"),
+	uiChartComponent("composed-chart", "Composed Chart"),
+	uiChartComponent("funnel-chart", "Funnel Chart"),
+	uiChartComponent("gauge-chart", "Gauge Chart", "@/components/ui-charts/gauge"),
+	uiChartComponent("legend", "Legend", "@/components/ui-charts/legend"),
+	uiChartComponent("line-chart", "Line Chart"),
+	uiChartComponent("live-line-chart", "Live Line Chart"),
+	uiChartComponent("pie-chart", "Pie Chart"),
+	uiChartComponent("profit-loss-line", "Profit Loss Line", "@/components/ui-charts/profit-loss-line"),
+	uiChartComponent("radar-chart", "Radar Chart"),
+	uiChartComponent("ring-chart", "Ring Chart"),
+	uiChartComponent("sankey-chart", "Sankey Chart", "@/components/ui-charts/sankey"),
+	uiChartComponent("scatter-chart", "Scatter Chart"),
+	uiChartComponent("stat-card-area-01", "Stat Card Area 01"),
+	uiChartComponent("stat-card-choropleth-01", "Stat Card Choropleth 01"),
+	uiChartComponent("stat-card-line-01", "Stat Card Line 01"),
+]);
+
 export const UI_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	uiComponent("accordion"),
 	uiComponent("alert"),
@@ -278,6 +308,7 @@ export const UI_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 ]);
 
 export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
+	blockComponent("agent"),
 	blockComponent("agent-bento", "Agent Bento"),
 	blockComponent("agent-card", "Agent Card"),
 	blockComponent("agents-directory", "Agents Directory"),
@@ -288,6 +319,9 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("conversation-starters", "Conversation Starters"),
 	blockComponent("agent-users", "Agent Users"),
 	blockComponent("agent-access", "Agent Access"),
+	blockComponent("agent-evaluation", "Agent Evaluation"),
+	blockComponent("agent-insights", "Agent Insights"),
+	blockComponent("agent-surfaces", "Agent Surfaces"),
 	blockComponent("skills-directory", "Skills Directory"),
 	blockComponent("task-progress", "Task Progress"),
 	blockComponent("triggers", "Triggers"),
@@ -645,6 +679,7 @@ export const VISUAL_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 
 const ALL_COMPONENTS = [
 	...AUDIO_COMPONENTS,
+	...UI_CHART_COMPONENTS,
 	...CUSTOM_COMPONENTS,
 	...UI_COMPONENTS,
 	...BLOCK_COMPONENTS,

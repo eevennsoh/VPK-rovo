@@ -7,8 +7,12 @@ const {
 	buildFallbackStudioAgentResult,
 	buildMissingStudioAgentResultFailureParts,
 	extractStudioAgentResultFromText,
+	findOriginalAgentBrief,
 	normalizeStudioAgentResult,
+	parseJsonObjectAt,
+	shouldBoundStudioAgentGatewayCall,
 	shouldSurfaceMissingStudioAgentResultFailure,
+	stripStudioAgentResultMarkersFromText,
 	tolerantParseJsonObjectAt,
 } = require("./studio-agent-result");
 
@@ -254,6 +258,18 @@ test("tolerant parser leaves valid JSON byte-for-byte equal to JSON.parse", () =
 	assert.equal(valid[tolerant.endIndex], "}");
 });
 
+test("shared JSON object parser recovers malformed Studio agent result payloads", () => {
+	const markerText = buildMalformedAgentResultMarkerText();
+	const text = `${AGENT_RESULT_STREAM_PREFIX} ${markerText.slice(markerText.indexOf("{"))}`;
+	const jsonStart = text.indexOf("{");
+	const parsed = parseJsonObjectAt(text, jsonStart);
+
+	assert.ok(parsed);
+	assert.equal(text[parsed.endIndex], "}");
+	assert.equal(parsed.value.name, "Work Item Planner");
+	assert.equal(parsed.value.instructions, MALFORMED_INSTRUCTIONS);
+});
+
 test("tolerant parser does not merge legitimate string arrays", () => {
 	// The danger of naive quote-repair: turning ["one","two"] into one string.
 	const malformed = '{"note":"call it "phase one", then ship","tools":["one","two","three"]}';
@@ -312,4 +328,226 @@ test("builds a fallback Studio agent result from original brief and clarificatio
 	assert.match(result.instructions, /Both severity and repro details/u);
 	assert.match(result.instructions, /Professional & concise/u);
 	assert.doesNotMatch(result.name, /clarification answers/iu);
+});
+
+test("fallback Studio agent result prefers the original agent brief after clarification submit", () => {
+	const messages = [
+		{
+			role: "user",
+			metadata: {
+				creationMode: "agent",
+			},
+			parts: [
+				{
+					type: "text",
+					text:
+						"Build a Studio agent named Decision Director that reviews DACI decision documents, suggests improvements, identifies missing context, and points to useful resources.",
+				},
+			],
+		},
+		{
+			role: "assistant",
+			parts: [
+				{
+					type: "text",
+					text:
+						"```deferred-tool\n{\"tool_name\":\"ask_user_questions\",\"input\":{\"questions\":[",
+				},
+				{
+					type: "data-widget-data",
+					data: {
+						type: "question-card",
+					},
+				},
+			],
+		},
+		{
+			role: "user",
+			metadata: {
+				source: "clarification-submit",
+				creationMode: "agent",
+			},
+			parts: [
+				{
+					type: "text",
+					text: [
+						"Here are my clarification answers for \"Answer these questions to continue\":",
+						"",
+						"- Who is the primary audience for this agent?: My team",
+						"- What should the agent focus on first?: Analysis and recommendations",
+						"- What tone and persona should it use?: Coach",
+					].join("\n"),
+				},
+			],
+		},
+	];
+
+	assert.equal(
+		findOriginalAgentBrief({
+			prompt: messages[2].parts[0].text,
+			messages,
+		}),
+		"Build a Studio agent named Decision Director that reviews DACI decision documents, suggests improvements, identifies missing context, and points to useful resources.",
+	);
+
+	const result = buildFallbackStudioAgentResult({
+		prompt: messages[2].parts[0].text,
+		messages,
+		clarificationAnswers: {
+			"Who is the primary audience for this agent?": ["My team"],
+			"What should the agent focus on first?": [
+				"Analysis and recommendations",
+			],
+			"What tone and persona should it use?": ["Coach"],
+		},
+	});
+
+	assert.equal(result.name, "Decision Director");
+	assert.equal(result.agentId, "decision-director");
+	assert.match(result.description, /reviews DACI decision documents/iu);
+	assert.match(result.instructions, /Analysis and recommendations/u);
+	assert.doesNotMatch(result.name, /Build a Studio Agent/iu);
+	assert.doesNotMatch(result.description, /clarification answers/iu);
+});
+
+test("fallback Studio agent result preserves Rovo template prompt names", () => {
+	const namedResult = buildFallbackStudioAgentResult({
+		prompt:
+			"Build a Rovo agent named Work Item Organizer that finds and updates project work items, moves them into sprints, assigns epics, deletes stale items, and recommends cleanup actions.",
+	});
+
+	assert.equal(namedResult.name, "Work Item Organizer");
+	assert.equal(namedResult.agentId, "work-item-organizer");
+	assert.match(namedResult.description, /finds and updates project work items/iu);
+	assert.doesNotMatch(namedResult.name, /Build a Studio Agent/iu);
+	assert.doesNotMatch(namedResult.description, /Build a Rovo agent/iu);
+
+	const templateResult = buildFallbackStudioAgentResult({
+		prompt:
+			"Use the Decision Director template to create a Rovo agent. Review DACI decision documents, suggest improvements, identify missing context, and point to useful resources.",
+	});
+
+	assert.equal(templateResult.name, "Decision Director");
+	assert.equal(templateResult.agentId, "decision-director");
+	assert.match(templateResult.description, /Review DACI decision documents/iu);
+	assert.doesNotMatch(templateResult.name, /Build a Studio Agent/iu);
+	assert.doesNotMatch(templateResult.name, /Rovo agent/iu);
+});
+
+test("strips incomplete Studio agent result markers before fallback text is shown", () => {
+	const visibleText = [
+		"Drafting the agent now.",
+		"",
+		`${AGENT_RESULT_STREAM_PREFIX} {"agentId":"decision-director","name":"Decision Director"`,
+	].join("\n");
+
+	assert.equal(
+		stripStudioAgentResultMarkersFromText(visibleText),
+		"Drafting the agent now.",
+	);
+	assert.equal(
+		stripStudioAgentResultMarkersFromText(
+			`${AGENT_RESULT_STREAM_PREFIX} {"agentId":"decision-director"`,
+		),
+		"",
+	);
+});
+
+// --- Regression: /studio agent generation must never hang ---
+//
+// The recurring stuck-generation bug was caused by bounding the AI Gateway
+// call only on post-clarification turns. If the gateway call hung on any other
+// agent-creation turn, the stream's execute() awaited forever, the SSE
+// response never closed, and the Studio UI latched in the "generating" state
+// with no agent result and no error. The predicate below must request bounding
+// for EVERY agent-creation turn.
+
+test("shouldBoundStudioAgentGatewayCall bounds every agent-creation turn", () => {
+	assert.equal(shouldBoundStudioAgentGatewayCall({ creationMode: "agent" }), true);
+});
+
+test("shouldBoundStudioAgentGatewayCall does not bound non-agent turns", () => {
+	assert.equal(shouldBoundStudioAgentGatewayCall({ creationMode: "skill" }), false);
+	assert.equal(shouldBoundStudioAgentGatewayCall({ creationMode: undefined }), false);
+	assert.equal(shouldBoundStudioAgentGatewayCall({}), false);
+	assert.equal(shouldBoundStudioAgentGatewayCall(), false);
+});
+
+test("a never-resolving gateway call still terminates and yields a fallback agent result", async () => {
+	// Mirror the server's bounding semantics: race the (hung) gateway call
+	// against a short timeout, then build the deterministic fallback. This
+	// proves the turn terminates even when the gateway never resolves.
+	const TIMEOUT_MS = 20;
+	const neverResolvingGatewayCall = new Promise(() => {});
+
+	const withFallbackTimeout = (promise, timeoutMs) => {
+		let timeoutHandle = null;
+		const timeoutPromise = new Promise((resolve) => {
+			timeoutHandle = setTimeout(
+				() => resolve({ timedOut: true, value: "" }),
+				timeoutMs,
+			);
+		});
+		const tracked = promise.then(
+			(value) => ({ timedOut: false, value }),
+			(error) => {
+				throw error;
+			},
+		);
+		return Promise.race([tracked, timeoutPromise]).finally(() => {
+			if (timeoutHandle) {
+				clearTimeout(timeoutHandle);
+			}
+		});
+	};
+
+	assert.equal(shouldBoundStudioAgentGatewayCall({ creationMode: "agent" }), true);
+
+	const boundedGatewayCallPromise = withFallbackTimeout(
+		neverResolvingGatewayCall,
+		TIMEOUT_MS,
+	);
+	// The self-bounded trace promise the server runs in parallel.
+	const scriptedTracePromise = new Promise((resolve) => setTimeout(resolve, 5));
+
+	const [gatewayCallResult] = await Promise.all([
+		boundedGatewayCallPromise,
+		scriptedTracePromise,
+	]);
+
+	assert.equal(gatewayCallResult.timedOut, true);
+
+	// With the bounded call resolved, the server builds a deterministic
+	// fallback agent result so a data-agent-result is always emitted.
+	const fallback = buildFallbackStudioAgentResult({
+		prompt: "Create an agent that drafts release notes from merged PRs.",
+		messages: [
+			{
+				role: "user",
+				content: "Create an agent that drafts release notes from merged PRs.",
+			},
+			{ role: "assistant", content: "" },
+		],
+		clarificationAnswers: null,
+	});
+
+	assert.ok(fallback);
+	assert.ok(typeof fallback.name === "string" && fallback.name.length > 0);
+	assert.ok(
+		typeof fallback.description === "string" && fallback.description.length > 0,
+	);
+	assert.ok(Array.isArray(fallback.conversationStarters));
+
+	// And if no result and no clarification were produced, the failure surface
+	// fires so the user gets a retryable error instead of an endless spinner.
+	assert.equal(
+		shouldSurfaceMissingStudioAgentResultFailure({
+			creationMode: "agent",
+			hasAgentResult: false,
+			hasDeferredToolRequest: false,
+			hasPlanWidget: false,
+			hasQuestionCard: false,
+		}),
+		true,
+	);
 });

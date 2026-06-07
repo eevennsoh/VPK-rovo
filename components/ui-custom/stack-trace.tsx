@@ -195,15 +195,17 @@ export const StackTrace = memo(
 
 		return (
 			<StackTraceContext value={contextValue}>
-				<div
-					className={cn(
-						"not-prose w-full overflow-hidden rounded-lg border bg-background font-mono text-sm",
-						className
-					)}
-					{...props}
-				>
-					{children}
-				</div>
+				<Collapsible onOpenChange={setIsOpen} open={isOpen}>
+					<div
+						className={cn(
+							"not-prose w-full overflow-hidden rounded-lg border bg-background font-mono text-sm",
+							className
+						)}
+						{...props}
+					>
+						{children}
+					</div>
+				</Collapsible>
 			</StackTraceContext>
 		);
 	}
@@ -213,15 +215,11 @@ export type StackTraceHeaderProps = ComponentProps<typeof CollapsibleTrigger>;
 
 export const StackTraceHeader = memo(
 	function StackTraceHeader({ className, children, ...props }: Readonly<StackTraceHeaderProps>) {
-		const { isOpen, setIsOpen } = useStackTrace();
-
 		return (
-			<Collapsible onOpenChange={setIsOpen} open={isOpen}>
-				<CollapsibleTrigger {...props} render={<div className={cn(
-					"flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-muted/50",
-					className
-				)} />} nativeButton={false}>{children}</CollapsibleTrigger>
-			</Collapsible>
+			<CollapsibleTrigger {...props} render={<div className={cn(
+				"flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-muted/50",
+				className
+			)} />} nativeButton={false}>{children}</CollapsibleTrigger>
 		);
 	}
 );
@@ -379,8 +377,9 @@ export const StackTraceExpandButton = memo(
 				{...props}
 			>
 				<ChevronDownIcon
+					size="small"
 					className={cn(
-						"size-4 text-muted-foreground transition-transform",
+						"text-muted-foreground transition-transform",
 						isOpen ? "rotate-180" : "rotate-0"
 					)}
 				/>
@@ -402,22 +401,18 @@ export const StackTraceContent = memo(
 		children,
 		...props
 	}: Readonly<StackTraceContentProps>) {
-		const { isOpen } = useStackTrace();
-
 		return (
-			<Collapsible open={isOpen}>
-				<CollapsibleContent
-					className={cn(
-						"overflow-auto border-t bg-muted/30",
-						"data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=open]:animate-in",
-						className
-					)}
-					style={{ maxHeight }}
-					{...props}
-				>
-					{children}
-				</CollapsibleContent>
-			</Collapsible>
+			<CollapsibleContent
+				className={cn(
+					"overflow-auto border-t bg-muted/30",
+					"data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=open]:animate-in",
+					className
+				)}
+				style={{ maxHeight }}
+				{...props}
+			>
+				{children}
+			</CollapsibleContent>
 		);
 	}
 );

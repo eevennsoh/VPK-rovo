@@ -4,6 +4,7 @@ import {
 	InlineCitationCardBody,
 	InlineCitationCardTrigger,
 	InlineCitationCarousel,
+	InlineCitationCarouselButtons,
 	InlineCitationCarouselContent,
 	InlineCitationCarouselHeader,
 	InlineCitationCarouselIndex,
@@ -70,9 +71,11 @@ export function InlineCitationDemoWithCarousel() {
 					<InlineCitationCardBody>
 						<InlineCitationCarousel>
 							<InlineCitationCarouselHeader>
-								<InlineCitationCarouselPrev />
+								<InlineCitationCarouselButtons>
+									<InlineCitationCarouselPrev />
+									<InlineCitationCarouselNext />
+								</InlineCitationCarouselButtons>
 								<InlineCitationCarouselIndex />
-								<InlineCitationCarouselNext />
 							</InlineCitationCarouselHeader>
 							<InlineCitationCarouselContent>
 								{SOURCES.map((source) => (
@@ -138,9 +141,11 @@ export function InlineCitationDemoMultiple() {
 					<InlineCitationCardBody>
 						<InlineCitationCarousel>
 							<InlineCitationCarouselHeader>
-								<InlineCitationCarouselPrev />
+								<InlineCitationCarouselButtons>
+									<InlineCitationCarouselPrev />
+									<InlineCitationCarouselNext />
+								</InlineCitationCarouselButtons>
 								<InlineCitationCarouselIndex />
-								<InlineCitationCarouselNext />
 							</InlineCitationCarouselHeader>
 							<InlineCitationCarouselContent>
 								<InlineCitationCarouselItem>

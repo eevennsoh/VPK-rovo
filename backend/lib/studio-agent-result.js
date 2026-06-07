@@ -625,7 +625,26 @@ function extractStudioAgentResultFromText(text) {
 	);
 }
 
+function stripStudioAgentResultMarkersFromText(text) {
+	const normalizedText = getNonEmptyString(text);
+	if (!normalizedText) {
+		return "";
+	}
+
+	const markerIndex = normalizedText.indexOf(AGENT_RESULT_STREAM_PREFIX);
+	if (markerIndex === -1) {
+		return normalizedText;
+	}
+
+	return normalizedText
+		.slice(0, markerIndex)
+		.replace(/\n{3,}/gu, "\n\n")
+		.trim();
+}
+
 const CLARIFICATION_ANSWERS_PATTERN = /^\s*here are my clarification answers\b/i;
+const AGENT_NAME_STOP_WORD_PATTERN =
+	/\b(?:that|who|which|to|for|from|with|when|where|and)\b/iu;
 
 function extractMessageText(message) {
 	if (!message || typeof message !== "object") {
@@ -664,6 +683,14 @@ function extractMessageText(message) {
 	return "";
 }
 
+function isClarificationAnswerText(value) {
+	return CLARIFICATION_ANSWERS_PATTERN.test(value || "");
+}
+
+function isClarificationSubmitMessage(message) {
+	return getNonEmptyString(message?.metadata?.source) === "clarification-submit";
+}
+
 function findOriginalAgentBrief({ prompt, messages } = {}) {
 	const candidates = [];
 	if (Array.isArray(messages)) {
@@ -672,15 +699,34 @@ function findOriginalAgentBrief({ prompt, messages } = {}) {
 			if (role !== "user") {
 				continue;
 			}
-			candidates.push(extractMessageText(message));
+			const text = extractMessageText(message);
+			if (!text || isClarificationSubmitMessage(message) || isClarificationAnswerText(text)) {
+				continue;
+			}
+			candidates.push({
+				text,
+				isAgentCreation:
+					getNonEmptyString(message?.metadata?.creationMode) === "agent",
+			});
 		}
 	}
-	candidates.push(typeof prompt === "string" ? prompt : "");
 
-	return candidates.find((candidate) => (
-		candidate &&
-		!CLARIFICATION_ANSWERS_PATTERN.test(candidate)
-	)) || "";
+	const agentCreationCandidate = candidates.find((candidate) => (
+		candidate.isAgentCreation
+	));
+	if (agentCreationCandidate) {
+		return agentCreationCandidate.text;
+	}
+
+	const firstMessageCandidate = candidates.find((candidate) => candidate.text);
+	if (firstMessageCandidate) {
+		return firstMessageCandidate.text;
+	}
+
+	const fallbackPrompt = typeof prompt === "string" ? prompt.trim() : "";
+	return fallbackPrompt && !isClarificationAnswerText(fallbackPrompt)
+		? fallbackPrompt
+		: "";
 }
 
 function normalizeWhitespace(value) {
@@ -712,16 +758,69 @@ function titleCase(value) {
 
 function deriveObjectiveFromBrief(brief) {
 	const normalizedBrief = normalizeWhitespace(brief)
-		.replace(/^create\s+(?:an?\s+)?agent\s+(?:that|to|for)\s+/iu, "")
-		.replace(/^build\s+(?:an?\s+)?agent\s+(?:that|to|for)\s+/iu, "")
-		.replace(/^make\s+(?:an?\s+)?agent\s+(?:that|to|for)\s+/iu, "")
+		.replace(
+			/^build\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\s+(?:named|called)\s+.+?\s+(?:that|to|for)\s+/iu,
+			"",
+		)
+		.replace(
+			/^create\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\s+(?:named|called)\s+.+?\s+(?:that|to|for)\s+/iu,
+			"",
+		)
+		.replace(
+			/^make\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\s+(?:named|called)\s+.+?\s+(?:that|to|for)\s+/iu,
+			"",
+		)
+		.replace(/^create\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\s+(?:that|to|for)\s+/iu, "")
+		.replace(/^build\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\s+(?:that|to|for)\s+/iu, "")
+		.replace(/^make\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\s+(?:that|to|for)\s+/iu, "")
+		.replace(/^use\s+the\s+.+?\s+template\s+to\s+create\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\.?\s*/iu, "")
 		.replace(/\.$/u, "");
 
 	return normalizedBrief || "help with the requested Studio workflow";
 }
 
+function normalizeExplicitAgentName(value) {
+	const normalized = normalizeWhitespace(value)
+		.replace(/^["'“”]+|["'“”]+$/gu, "")
+		.replace(/\s+(?:agent|assistant)$/iu, "")
+		.trim();
+	if (!normalized || normalized.length > 80) {
+		return "";
+	}
+
+	return /[A-Z]/u.test(normalized) ? normalized : titleCase(normalized);
+}
+
+function deriveExplicitAgentName(brief) {
+	const normalizedBrief = normalizeWhitespace(brief);
+	const templateNameMatch = normalizedBrief.match(
+		/^use\s+the\s+(.+?)\s+template\s+to\s+create\s+(?:an?\s+)?(?:(?:studio|rovo)\s+)?agent\b/iu,
+	);
+	if (templateNameMatch) {
+		const templateName = normalizeExplicitAgentName(templateNameMatch[1]);
+		if (templateName) {
+			return templateName;
+		}
+	}
+
+	const explicitNameMatch = normalizedBrief.match(
+		/\b(?:named|called)\s+["'“”]?([^"'“”.,:;!?]+?)(?=\s+\b(?:that|who|which|to|for|from|with|when|where|and)\b|[.,:;!?]|$)/iu,
+	);
+	if (!explicitNameMatch) {
+		return "";
+	}
+
+	const [firstSegment] = explicitNameMatch[1].split(AGENT_NAME_STOP_WORD_PATTERN);
+	return normalizeExplicitAgentName(firstSegment);
+}
+
 function deriveFallbackAgentName(brief) {
 	const normalizedBrief = normalizeWhitespace(brief);
+	const explicitName = deriveExplicitAgentName(normalizedBrief);
+	if (explicitName) {
+		return explicitName;
+	}
+
 	if (/\bsupport\b/iu.test(normalizedBrief) && /\btriag(?:e|es|ing)\b/iu.test(normalizedBrief)) {
 		return "Support Request Triage Agent";
 	}
@@ -930,6 +1029,19 @@ function shouldSurfaceMissingStudioAgentResultFailure({
 	);
 }
 
+// Whether the AI Gateway call for a Studio agent-creation turn must be wrapped
+// in the bounded fallback timeout. This MUST be true for every agent-creation
+// turn, not just post-clarification turns: if the gateway call hangs without
+// resolving or rejecting, the stream's execute() awaits forever, the SSE
+// response never closes, and the Studio UI latches in the "generating" state
+// with no agent result and no error (the recurring /studio stuck-generation
+// bug). Bounding the call guarantees execute() resolves so a deterministic
+// fallback result (or retryable failure) is always emitted and the stream
+// closes.
+function shouldBoundStudioAgentGatewayCall({ creationMode } = {}) {
+	return creationMode === "agent";
+}
+
 function buildMissingStudioAgentResultFailureParts({
 	id = `studio-agent-result-failure-${Date.now()}`,
 } = {}) {
@@ -967,8 +1079,12 @@ module.exports = {
 	buildFallbackStudioAgentResult,
 	buildMissingStudioAgentResultFailureParts,
 	extractStudioAgentResultFromText,
+	findOriginalAgentBrief,
 	findJsonObjectEndIndex,
 	normalizeStudioAgentResult,
+	parseJsonObjectAt,
+	shouldBoundStudioAgentGatewayCall,
 	shouldSurfaceMissingStudioAgentResultFailure,
+	stripStudioAgentResultMarkersFromText,
 	tolerantParseJsonObjectAt,
 };

@@ -1,5 +1,6 @@
 import type { ComponentDetail } from "./component-detail-types";
 import { UI_AUDIO_DETAILS } from "./details/ui-audio";
+import { UI_CHART_DETAILS } from "./details/ui-charts";
 import { UI_CUSTOM_DETAILS } from "./details/ui-custom";
 import { BLOCK_DETAILS } from "./details/blocks";
 import { PROJECT_DETAILS } from "./details/projects";
@@ -13,7 +14,7 @@ export interface ComponentEntry {
 	name: string;
 	slug: string;
 	importPath: string;
-	category: "ui-audio" | "ui-custom" | "ui" | "blocks" | "projects" | "arts" | "utility" | "visual";
+	category: "ui-audio" | "ui-charts" | "ui-custom" | "ui" | "blocks" | "projects" | "arts" | "utility" | "visual";
 	detail?: ComponentDetail;
 }
 
@@ -45,6 +46,16 @@ function audioComponent(slug: string, name?: string): ComponentEntry {
 		importPath: `@/components/ui-audio/${slug}`,
 		category: "ui-audio",
 		detail: UI_AUDIO_DETAILS[slug],
+	};
+}
+
+function uiChartComponent(slug: string, name?: string, importPath?: string): ComponentEntry {
+	return {
+		name: name ?? toTitleCase(slug),
+		slug,
+		importPath: importPath ?? `@/components/ui-charts/${slug}`,
+		category: "ui-charts",
+		detail: UI_CHART_DETAILS[slug],
 	};
 }
 
@@ -109,8 +120,6 @@ function visualComponent(slug: string, name: string, importPath: string): Compon
 }
 
 export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
-	customComponent("agent"),
-	customComponent("agent-evaluation", "Agent Evaluation"),
 	customComponent("animated-dots", "Animated Dots"),
 	customComponent("animated-rovo", "Animated Rovo"),
 	customComponent("artifact"),
@@ -200,6 +209,28 @@ export const AUDIO_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	audioComponent("waveform", "Waveform"),
 ]);
 
+export const UI_CHART_COMPONENTS: ComponentEntry[] = sortEntriesByName([
+	uiChartComponent("area-chart", "Area Chart"),
+	uiChartComponent("bar-chart", "Bar Chart"),
+	uiChartComponent("candlestick-chart", "Candlestick Chart"),
+	uiChartComponent("choropleth-chart", "Choropleth Chart", "@/components/ui-charts/choropleth"),
+	uiChartComponent("composed-chart", "Composed Chart"),
+	uiChartComponent("funnel-chart", "Funnel Chart"),
+	uiChartComponent("gauge-chart", "Gauge Chart", "@/components/ui-charts/gauge"),
+	uiChartComponent("legend", "Legend", "@/components/ui-charts/legend"),
+	uiChartComponent("line-chart", "Line Chart"),
+	uiChartComponent("live-line-chart", "Live Line Chart"),
+	uiChartComponent("pie-chart", "Pie Chart"),
+	uiChartComponent("profit-loss-line", "Profit Loss Line", "@/components/ui-charts/profit-loss-line"),
+	uiChartComponent("radar-chart", "Radar Chart"),
+	uiChartComponent("ring-chart", "Ring Chart"),
+	uiChartComponent("sankey-chart", "Sankey Chart", "@/components/ui-charts/sankey"),
+	uiChartComponent("scatter-chart", "Scatter Chart"),
+	uiChartComponent("stat-card-area-01", "Stat Card Area 01"),
+	uiChartComponent("stat-card-choropleth-01", "Stat Card Choropleth 01"),
+	uiChartComponent("stat-card-line-01", "Stat Card Line 01"),
+]);
+
 export const UI_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	uiComponent("accordion"),
 	uiComponent("alert"),
@@ -285,6 +316,7 @@ export const UI_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 ]);
 
 export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
+	blockComponent("agent"),
 	blockComponent("agent-bento", "Agent Bento"),
 	blockComponent("agent-card", "Agent Card"),
 	blockComponent("agents-directory", "Agents Directory"),
@@ -295,6 +327,9 @@ export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("conversation-starters", "Conversation Starters"),
 	blockComponent("agent-users", "Agent Users"),
 	blockComponent("agent-access", "Agent Access"),
+	blockComponent("agent-evaluation", "Agent Evaluation"),
+	blockComponent("agent-insights", "Agent Insights"),
+	blockComponent("agent-surfaces", "Agent Surfaces"),
 	blockComponent("skills-directory", "Skills Directory"),
 	blockComponent("task-progress", "Task Progress"),
 	blockComponent("triggers", "Triggers"),
@@ -461,7 +496,7 @@ export const VISUAL_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	visualComponent("chromatic-aberration-v2", "Chromatic Aberration v2", "@/components/website/demos/visual/shader-lab-effect-demo"),
 	]);
 
-const ALL_COMPONENTS = [...AUDIO_COMPONENTS, ...CUSTOM_COMPONENTS, ...UI_COMPONENTS, ...BLOCK_COMPONENTS, ...PROJECT_COMPONENTS, ...ART_COMPONENTS, ...UTILITY_COMPONENTS, ...VISUAL_COMPONENTS];
+const ALL_COMPONENTS = [...AUDIO_COMPONENTS, ...UI_CHART_COMPONENTS, ...CUSTOM_COMPONENTS, ...UI_COMPONENTS, ...BLOCK_COMPONENTS, ...PROJECT_COMPONENTS, ...ART_COMPONENTS, ...UTILITY_COMPONENTS, ...VISUAL_COMPONENTS];
 
 export function findComponent(category: string, slug: string): ComponentEntry | undefined {
 	return ALL_COMPONENTS.find((c) => c.category === category && c.slug === slug);

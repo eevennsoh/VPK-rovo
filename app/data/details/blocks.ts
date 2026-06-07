@@ -1,6 +1,66 @@
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 
 export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
+	agent: {
+		description:
+			"A structured agent strategy/configuration surface with an app header, cover area, compact section navigation, section block wrappers, knowledge controls, and instructions composer.",
+		importStatement: `import {
+  Agent,
+  AgentHeader,
+  AgentContent,
+  AgentConfigFields,
+} from "@/components/blocks/agent";`,
+		usage: `import {
+  Agent,
+  AgentHeader,
+  AgentContent,
+  AgentConfigFields,
+} from "@/components/blocks/agent";
+
+<Agent>
+  <AgentHeader name="Policy Checker" model="Draft" />
+  <AgentContent>
+    <AgentConfigFields
+      config={agentConfig}
+      idPrefix="agent-config"
+      onTextChange={handleTextChange}
+      onListItemChange={updateListItem}
+      onRemoveListItem={removeListItem}
+      onAppendListItem={appendListItem}
+    />
+  </AgentContent>
+</Agent>`,
+		demoLayout: {
+			previewContentWidth: "full",
+			examplesContentWidth: "full",
+		},
+		props: [
+			{
+				name: "className",
+				type: "string",
+				description: "Additional classes applied to the outer container.",
+			},
+		],
+		subComponents: [
+			{ name: "AgentHeader", description: "Top app bar with agent avatar, name, status lozenge, and Configure/Test tabs (override via the `actions` prop)." },
+			{ name: "AgentContent", description: "Body container for the agent configuration surface." },
+			{ name: "AgentConfigFields", description: "Shared Figma-style agent strategy surface used by the catalog preview and Studio panel." },
+			{ name: "AgentCompactHeaderNav", description: "Compact section navigation for Insights, Surfaces, Evaluation, Users, and Access." },
+			{ name: "AgentCompactInsightsPanel", description: "Wrapper around the Agent Insights block for compact agent layouts." },
+			{ name: "AgentCompactSurfacesPanel", description: "Wrapper around the Agent Surfaces block for compact agent layouts." },
+			{ name: "AgentCompactEvaluationPanel", description: "Wrapper around the Agent Evaluation block for compact agent layouts." },
+			{ name: "AgentCompactUsersPanel", description: "Wrapper around the Agent Users block for compact agent layouts." },
+			{ name: "AgentCompactAccessPanel", description: "Wrapper around the Agent Access block for compact agent layouts." },
+			{ name: "AgentInstructions", description: "Instruction text block with label." },
+			{ name: "AgentTools", description: "Accordion container for tool definitions." },
+			{ name: "AgentTool", description: "Individual tool item with expandable JSON schema." },
+			{ name: "AgentOutput", description: "Output schema display with syntax highlighting." },
+		],
+		examples: [
+			{ title: "Filled agent", description: "Agent strategy surface after configuration fields have been populated.", demoSlug: "agent-demo-full" },
+			{ title: "Empty agent", description: "Default setup state with quick configuration links and Operations prompt starters before details are populated.", demoSlug: "agent-demo-empty" },
+		],
+	},
 	"agent-bento": {
 		description: "Two Rovo agent prompt-starter bentos: a tabbed landing variant with an auto-cycling category bar, a hero tile (\"Works with\" sources + \"Skills\"), and a \"Browse all\" pill; and a minimal five-tile \"Start with these agent templates\" row. Both use an avatar-colored hover glow and collapse from their desktop grid to a horizontal carousel below the lg breakpoint.",
 		importStatement: `import { HomeStarterBento, AgentCompactOperationsBento } from "@/components/blocks/agent-bento";`,
@@ -894,6 +954,61 @@ const [mode, setMode] = useState<AgentAccessMode>("requesting-user");
 				type: "() => void",
 				description: "Invoked by the connected-apps empty-state action.",
 			},
+		],
+	},
+	"agent-evaluation": {
+		description:
+			"Agent “Evaluation” screen for compact agent sections. Builders create datasets (CSV prompts/responses) to simulate agent responses, then configure and run evaluations that score how consistently the agent performs.",
+		importStatement: `import { AgentEvaluation } from "@/components/blocks/agent-evaluation";`,
+		usage: `import { AgentEvaluation } from "@/components/blocks/agent-evaluation";
+
+<AgentEvaluation
+  datasets={datasets}
+  agents={agents}
+  evaluationTypes={evaluationTypes}
+  completedEvaluations={completedEvaluations}
+/>`,
+		demoLayout: {
+			previewContentWidth: "full",
+			examplesContentWidth: "full",
+		},
+		props: [
+			{ name: "agents", type: "AgentEvaluationAgentOption[]", description: "Agents (and versions) available to evaluate, shown in the agent select." },
+			{ name: "datasets", type: "AgentEvaluationDatasetOption[]", description: "Datasets available to evaluate against. Empty renders the dataset empty state." },
+			{ name: "evaluationTypes", type: "AgentEvaluationTypeOption[]", description: "Evaluation strategies (e.g. Response Accuracy, Resolution Rate, Manual Testing)." },
+			{ name: "completedEvaluations", type: "AgentEvaluationCompletedRow[]", description: "Rows for the completed evaluations table. Empty renders the empty-state row." },
+			{ name: "className", type: "string", description: "Additional classes applied to the outer container." },
+		],
+		examples: [
+			{ title: "Empty state", description: "Default Evaluation screen before any datasets or evaluations exist.", demoSlug: "agent-evaluation" },
+			{ title: "With data", description: "Datasets present and a completed evaluation listed in the results table.", demoSlug: "agent-evaluation-demo-filled" },
+		],
+	},
+	"agent-insights": {
+		description:
+			"Agent “Insights” screen for reviewing adoption, answer quality, feedback mix, top topics, and recommended improvements for an agent.",
+		importStatement: `import { AgentInsights } from "@/components/blocks/agent-insights";`,
+		usage: `import { AgentInsights } from "@/components/blocks/agent-insights";
+
+<AgentInsights />`,
+		demoLayout: {
+			previewContentWidth: "full",
+			examplesContentWidth: "full",
+		},
+		props: [
+			{ name: "className", type: "string", description: "Additional classes applied to the outer container." },
+		],
+	},
+	"agent-surfaces": {
+		description:
+			"Agent “Surfaces” screen for choosing where an agent appears across Atlassian apps and connected channels, including default surfaces and extended channel entry points.",
+		importStatement: `import { AgentSurfaces } from "@/components/blocks/agent-surfaces";`,
+		usage: `import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
+
+<AgentSurfaces />`,
+		demoLayout: { previewHeight: "fixed" },
+		props: [
+			{ name: "className", type: "string", description: "Additional classes applied to the outer container." },
 		],
 	},
 	"mermaid-diagram": {

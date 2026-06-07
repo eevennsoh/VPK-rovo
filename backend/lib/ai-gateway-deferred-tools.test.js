@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
 	extractAIGatewayDeferredToolFromAssistantText,
+	stripDeferredToolFencesFromText,
 	buildQuestionCardPayloadFromAIGatewayDeferredTool,
 	buildPlanWidgetPayloadFromAIGatewayDeferredTool,
 	buildQuestionMetaFromQuestionCardPayload,
@@ -51,6 +52,21 @@ test("returns null for malformed deferred-tool JSON", () => {
 	].join("\n"));
 
 	assert.equal(result, null);
+});
+
+test("strips malformed and unclosed deferred-tool fences from visible text", () => {
+	const text = [
+		"Before",
+		"```deferred-tool",
+		"{",
+		'  "tool_name": "ask_user_questions",',
+		'  "input": {',
+		'    "questions": [',
+		'      { "question": "Who is the primary audience?" },',
+		"      ",
+	].join("\n");
+
+	assert.equal(stripDeferredToolFencesFromText(text), "Before");
 });
 
 test("dedupes duplicate deferred-tool envelopes by using the first and stripping all", () => {

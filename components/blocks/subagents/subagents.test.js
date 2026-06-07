@@ -11,7 +11,7 @@ const SUBAGENTS_PROMPTS_LIB_SOURCE = readFileSync(
 	join(__dirname, "lib", "subagent-prompts.ts"),
 	"utf8",
 );
-const AGENT_SOURCE = readFileSync(join(__dirname, "..", "..", "ui-custom", "agent.tsx"), "utf8");
+const AGENT_SOURCE = readFileSync(join(__dirname, "..", "agent", "components", "agent.tsx"), "utf8");
 const SUBAGENTS_DEMO_SOURCE = readFileSync(
 	join(__dirname, "..", "..", "website", "demos", "blocks", "subagents-demo.tsx"),
 	"utf8",
@@ -117,7 +117,7 @@ test("Subagents creation is routed through the compact control panel", () => {
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /h-7 rounded-full px-3|variant="outline"/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactSubagentsNavButton/u);
 	assert.match(AGENT_SOURCE, /Manage subagents/u);
-	assert.match(AGENT_SOURCE, /if \(item\.count === 0\)[\s\S]*onCreateSubagent/u);
+	assert.match(AGENT_SOURCE, /const isEmpty = item\.count === 0;[\s\S]*isEmpty \? \([\s\S]*onClick=\{onCreateSubagent\}[\s\S]*Add subagent/u);
 	assert.match(AGENT_SOURCE, /onSelectListItem\?\.\("subagents", index\)/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /function handleSelectConfigListItem/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /onManageSubagents=\{\(\) => setIsManageSubagentsOpen\(true\)\}/u);
@@ -146,22 +146,44 @@ test("Subagents exposes a no-subagents demo variant with an empty prompt list", 
 	assert.match(WEBSITE_REGISTRY_SOURCE, /SubagentsDemoEmpty/u);
 });
 
-test("Agent profile header renders a subagent breadcrumb and Untitled subagent placeholder", () => {
-	// Breadcrumb (base agent → subagent) is rendered above the name when editing
-	// a subagent, with the base name as a clickable link back to the base agent.
-	assert.match(AGENT_SOURCE, /isSubagent \? \(\s*<Breadcrumb/u);
-	assert.match(AGENT_SOURCE, /<BreadcrumbLink[\s\S]*onClick=\{onSelectBaseAgent\}/u);
-	assert.match(AGENT_SOURCE, /<BreadcrumbPage>\{resolvedSubagentName\}<\/BreadcrumbPage>/u);
+test("Agent profile header renders an inline back-to-parent icon button beside the subagent name", () => {
+	// While editing a subagent the name field is preceded by a back-arrow icon
+	// button (no extra row that pushes content down), wired to onSelectBaseAgent.
+	// It only renders for subagents.
+	assert.match(AGENT_SOURCE, /import ArrowLeftIcon from "@atlaskit\/icon\/core\/arrow-left"/u);
+	assert.match(AGENT_SOURCE, /isSubagent \? \([\s\S]*?<Button/u);
+	assert.match(AGENT_SOURCE, /data-agent-field="back-to-parent"/u);
+	assert.match(AGENT_SOURCE, /aria-label="Back to parent agent"/u);
+	assert.match(AGENT_SOURCE, /onClick=\{onSelectBaseAgent\}/u);
+	assert.match(AGENT_SOURCE, /<ArrowLeftIcon label="" \/>/u);
+	// The button matches the name field's ~40px height so the icon row aligns,
+	// and forces the icon to 16px via the svg utility (no ADS size prop).
+	assert.match(AGENT_SOURCE, /className="size-10 shrink-0 rounded text-icon-subtle hover:text-icon \[&_svg\]:size-4"/u);
+	// The old full-width "Back to parent" text row is gone.
+	assert.doesNotMatch(AGENT_SOURCE, /Back to parent</u);
 	// The big editable title switches to the subagent name with the restored
 	// "Untitled subagent" placeholder, and edits route to onSubagentNameChange.
 	assert.match(AGENT_SOURCE, /placeholder=\{isSubagent \? UNTITLED_SUBAGENT_NAME : "Untitled agent"\}/u);
 	assert.match(AGENT_SOURCE, /isSubagent \? onSubagentNameChange\?\.\(value\) : onTextChange\?\.\("name", value\)/u);
-	assert.match(AGENT_SOURCE, /resolvedSubagentName = subagentName\?\.trim\(\) \|\| UNTITLED_SUBAGENT_NAME/u);
 });
 
-test("Subagents page wires the subagent breadcrumb and name editing into AgentConfigFields", () => {
+test("Parent ⇄ subagent swap animates the profile header with a direction-aware transition", () => {
+	// The header (back-link + name + description) crossfades and slides when
+	// toggling between base agent and subagent, keyed on the view so AnimatePresence
+	// runs enter/exit. popLayout avoids a layout jump while both copies are mounted.
+	assert.match(AGENT_SOURCE, /<AnimatePresence custom=\{direction\} initial=\{false\} mode="popLayout">/u);
+	assert.match(AGENT_SOURCE, /key=\{isSubagent \? "subagent" : "base"\}/u);
+	// Direction is +1 entering a subagent, -1 returning to the parent, and 0
+	// (pure crossfade, no slide) when the user prefers reduced motion.
+	assert.match(AGENT_SOURCE, /const shouldReduceMotion = useReducedMotion\(\)/u);
+	assert.match(AGENT_SOURCE, /const direction = shouldReduceMotion \? 0 : isSubagent \? 1 : -1/u);
+	// Only opacity + transform animate, hinted via willChange for compositor.
+	assert.match(AGENT_SOURCE, /willChange: "transform, opacity"/u);
+	assert.match(AGENT_SOURCE, /AGENT_PROFILE_SWAP_TRANSITION = \{ type: "spring"/u);
+});
+
+test("Subagents page wires the subagent back link and name editing into AgentConfigFields", () => {
 	assert.match(SUBAGENTS_PAGE_SOURCE, /isSubagent=\{Boolean\(activePrompt\)\}/u);
-	assert.match(SUBAGENTS_PAGE_SOURCE, /baseAgentName=\{baseConfig\.name\}/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /subagentName=\{activePrompt\?\.triggerName\}/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /onSelectBaseAgent=\{handleSelectBaseAgent\}/u);
 	assert.match(SUBAGENTS_PAGE_SOURCE, /onSubagentNameChange=\{handleTriggerNameChange\}/u);

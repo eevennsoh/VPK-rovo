@@ -788,55 +788,6 @@ import {
 		],
 	},
 
-	agent: {
-		description:
-			"A structured agent strategy/configuration surface with an app header, cover area, action tiles, knowledge controls, and instructions composer.",
-		usage: `import {
-  Agent,
-  AgentHeader,
-  AgentContent,
-  AgentConfigFields,
-} from "@/components/ui-custom/agent";
-
-<Agent>
-  <AgentHeader name="Policy Checker" model="Draft" />
-  <AgentContent>
-    <AgentConfigFields
-      config={agentConfig}
-      idPrefix="agent-config"
-      onTextChange={handleTextChange}
-      onListItemChange={updateListItem}
-      onRemoveListItem={removeListItem}
-      onAppendListItem={appendListItem}
-    />
-  </AgentContent>
-</Agent>`,
-		demoLayout: {
-			previewContentWidth: "full",
-			examplesContentWidth: "full",
-		},
-		props: [
-			{
-				name: "className",
-				type: "string",
-				description: "Additional classes applied to the outer container.",
-			},
-		],
-		subComponents: [
-			{ name: "AgentHeader", description: "Top app bar with agent avatar, name, status lozenge, and Configure/Test tabs (override via the `actions` prop)." },
-			{ name: "AgentContent", description: "Body container for the agent configuration surface." },
-			{ name: "AgentConfigFields", description: "Shared Figma-style agent strategy surface used by the catalog preview and Studio panel." },
-			{ name: "AgentInstructions", description: "Instruction text block with label." },
-			{ name: "AgentTools", description: "Accordion container for tool definitions." },
-			{ name: "AgentTool", description: "Individual tool item with expandable JSON schema." },
-			{ name: "AgentOutput", description: "Output schema display with syntax highlighting." },
-		],
-		examples: [
-			{ title: "Filled agent", description: "Agent strategy surface after configuration fields have been populated.", demoSlug: "agent-demo-full" },
-			{ title: "Empty agent", description: "Default setup state with quick configuration links and Operations prompt starters before details are populated.", demoSlug: "agent-demo-empty" },
-		],
-	},
-
 	knowledge: {
 		description:
 			"Knowledge configuration panel for an agent strategy surface. Shows the Teamwork Graph source row with connected app icons, a Memory row with a Manage action, and an Add knowledge button. Composed from existing design components and tokens.",
@@ -852,34 +803,6 @@ import {
 		],
 		examples: [
 			{ title: "Default", description: "Knowledge panel with the Teamwork Graph source, Memory row, and Add knowledge action.", demoSlug: "knowledge" },
-		],
-	},
-
-	"agent-evaluation": {
-		description:
-			"Evaluation screen for an agent's compact header nav. Builders create datasets (CSV prompts/responses) to simulate agent responses, then configure and run evaluations that score how consistently the agent performs. Composed from existing design components and tokens.",
-		usage: `import { AgentEvaluation } from "@/components/ui-custom/agent-evaluation";
-
-<AgentEvaluation
-  datasets={datasets}
-  agents={agents}
-  evaluationTypes={evaluationTypes}
-  completedEvaluations={completedEvaluations}
-/>`,
-		demoLayout: {
-			previewContentWidth: "full",
-			examplesContentWidth: "full",
-		},
-		props: [
-			{ name: "agents", type: "AgentEvaluationAgentOption[]", description: "Agents (and versions) available to evaluate, shown in the agent select." },
-			{ name: "datasets", type: "AgentEvaluationDatasetOption[]", description: "Datasets available to evaluate against. Empty renders the dataset empty state." },
-			{ name: "evaluationTypes", type: "AgentEvaluationTypeOption[]", description: "Evaluation strategies (e.g. Response Accuracy, Resolution Rate, Manual Testing)." },
-			{ name: "completedEvaluations", type: "AgentEvaluationCompletedRow[]", description: "Rows for the completed evaluations table. Empty renders the empty-state row." },
-			{ name: "className", type: "string", description: "Additional classes applied to the outer container." },
-		],
-		examples: [
-			{ title: "Empty state", description: "Default Evaluation screen before any datasets or evaluations exist.", demoSlug: "agent-evaluation" },
-			{ title: "With data", description: "Datasets present and a completed evaluation listed in the results table.", demoSlug: "agent-evaluation-demo-filled" },
 		],
 	},
 
@@ -3202,6 +3125,7 @@ const edgeTypes = {
   InlineCitationCarouselHeader,
   InlineCitationCarouselItem,
   InlineCitationCarouselIndex,
+  InlineCitationCarouselButtons,
   InlineCitationCarouselPrev,
   InlineCitationCarouselNext,
   InlineCitationSource,
@@ -3266,6 +3190,7 @@ const edgeTypes = {
 			{ name: "InlineCitationCarouselItem", description: "Individual carousel slide for a single source." },
 			{ name: "InlineCitationCarouselHeader", description: "Navigation header with prev/next buttons and index indicator." },
 			{ name: "InlineCitationCarouselIndex", description: "Position indicator displaying current/total (e.g., 1/3)." },
+			{ name: "InlineCitationCarouselButtons", description: "ButtonGroup wrapper that joins the prev/next navigation arrows into a connected control." },
 			{ name: "InlineCitationCarouselPrev", description: "Previous source navigation button." },
 			{ name: "InlineCitationCarouselNext", description: "Next source navigation button." },
 			{ name: "InlineCitationSource", description: "Source metadata display with title, URL, and description." },
@@ -3950,10 +3875,6 @@ const edgeTypes = {
     <StackTraceFrames />
   </StackTraceContent>
 </StackTrace>`,
-		demoLayout: {
-			previewContentWidth: "full",
-			examplesContentWidth: "full",
-		},
 		props: [
 			{
 				name: "trace",

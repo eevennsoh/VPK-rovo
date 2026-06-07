@@ -35,7 +35,7 @@ const TRACE_NETWORK = `Error: fetch failed
 
 export default function StackTraceDemo() {
 	return (
-		<StackTrace trace={TRACE_BASIC} className="w-full">
+		<StackTrace trace={TRACE_BASIC} defaultOpen className="w-full">
 			<StackTraceHeader>
 				<StackTraceError>
 					<StackTraceErrorType />
