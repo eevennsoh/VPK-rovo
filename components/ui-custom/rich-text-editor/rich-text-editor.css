@@ -559,10 +559,16 @@
 	color: var(--ds-text-subtle, #44546f);
 }
 
+/* Every option row reserves the same copy height (matching the revealed
+   label + description) so rows without a byline stay vertically balanced with
+   rows that have one, and the list keeps an even rhythm. */
 .rich-text-command-menu-copy {
 	display: flex;
 	min-width: 0;
+	min-height: 34px;
 	flex-direction: column;
+	justify-content: center;
+	overflow: hidden;
 }
 
 .rich-text-command-menu-nested-copy {

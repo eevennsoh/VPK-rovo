@@ -2,9 +2,10 @@
 
 import { useState, type ReactNode } from "react";
 
-import SearchIcon from "@atlaskit/icon/core/search";
+import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 
+import { RovoColorIcon } from "@/components/ui/logo";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
 	RichTextEditor,
@@ -59,7 +60,7 @@ const NESTED_MENTION_SHOWCASES: readonly {
 
 /**
  * Sections rendered by the flat variant. `hasDirectory` sections get a
- * "Browse all" footer (search icon) that links to a dedicated directory;
+ * "Browse all" footer (ellipsis icon) that links to a dedicated directory;
  * sections without one get a "View more" footer (chevron) that expands the
  * remaining items inline.
  *
@@ -241,7 +242,7 @@ function getFlatSectionRows(
 				? {
 						id: getSectionFooterId(section.category),
 						label: "Browse all",
-						icon: <SearchIcon label="" size="small" />,
+						icon: <ShowMoreHorizontalIcon label="" size="small" />,
 						isSticky: true,
 					}
 				: {
@@ -255,6 +256,18 @@ function getFlatSectionRows(
 
 	return rows;
 }
+
+/**
+ * Sticky "Ask Rovo" lead row for the "/" surface, rendered as a subtle input
+ * (matching the live slash menu). The "@" surface has no equivalent.
+ */
+const ASK_ROVO_LEAD_ITEM: RichTextSuggestionMenuItem = {
+	id: "ask-rovo",
+	label: "Ask Rovo",
+	description: "Ask Rovo to help with the current editor context.",
+	icon: <RovoColorIcon size="small" />,
+	isSticky: true,
+};
 
 function FlatPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
 	return (
@@ -274,6 +287,7 @@ function FlatPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
 				caption="Commands"
 				sections={FLAT_COMMAND_SECTIONS}
 				mentionSources={mentionSources}
+				leadItem={ASK_ROVO_LEAD_ITEM}
 			/>
 		</div>
 	);
@@ -283,6 +297,11 @@ interface FlatMergedPanelProps extends PaletteVariantProps {
 	trigger: "@" | "/";
 	caption: string;
 	sections: readonly FlatSectionConfig[];
+	/**
+	 * Optional sticky lead row (e.g. "Ask Rovo") prepended before the section
+	 * list and rendered as the subtle input row, matching the live slash menu.
+	 */
+	leadItem?: RichTextSuggestionMenuItem;
 }
 
 /**
@@ -295,17 +314,21 @@ function FlatMergedPanel({
 	caption,
 	sections,
 	mentionSources,
+	leadItem,
 }: Readonly<FlatMergedPanelProps>) {
 	const [expandedSections, setExpandedSections] = useState<Readonly<Record<string, boolean>>>({});
 
-	const rows = sections.flatMap((section) =>
-		getFlatSectionRows(
-			section,
-			getFlatSectionItems(mentionSources, section.category),
-			Boolean(expandedSections[section.category]),
-			section.title,
+	const rows = [
+		...(leadItem ? [leadItem] : []),
+		...sections.flatMap((section) =>
+			getFlatSectionRows(
+				section,
+				getFlatSectionItems(mentionSources, section.category),
+				Boolean(expandedSections[section.category]),
+				section.title,
+			),
 		),
-	);
+	];
 
 	const handleSelect = (item: RichTextSuggestionMenuItem) => {
 		const section = sections.find(
@@ -328,6 +351,7 @@ function FlatMergedPanel({
 				items={rows}
 				selectedIndex={-1}
 				onSelect={handleSelect}
+				renderFirstItemAsInput={leadItem !== undefined}
 			/>
 		</PalettePanel>
 	);

@@ -858,8 +858,11 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ motion, type Variants \} from "motion\/react";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const nestedCommandLabelVariants: Variants = \{/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const nestedCommandDescriptionVariants: Variants = \{[\s\S]*opacity: 0,[\s\S]*opacity: 1,/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /whileHover=\{canRevealMetadata \? "active" : undefined\}/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /whileFocus=\{canRevealMetadata \? "active" : undefined\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const canRevealMetadata = Boolean\(item\.description\);/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /isNested && Boolean\(item\.description\)/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /if \(canRevealMetadata\) \{/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /whileHover="active"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /whileFocus="active"/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \{\s*max-height: 400px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-borderless \{\s*border: 0;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-avatar \{\s*width: 24px;\s*height: 24px;/u);

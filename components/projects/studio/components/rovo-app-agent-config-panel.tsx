@@ -566,7 +566,7 @@ export function RovoAppAgentConfigPanel({
 								    The wrapper carries the measured `top` so the switcher
 								    top-aligns with the first line of the instructions editor. */}
 								<div
-									className="absolute right-4 z-20 hidden md:block"
+									className="absolute right-6 z-20 hidden md:block"
 									style={{ top: navigatorTop }}
 								>
 									<SubagentsNavigator

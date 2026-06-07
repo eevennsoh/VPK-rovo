@@ -19,7 +19,7 @@ import { motion, type Variants } from "motion/react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PersonIcon from "@atlaskit/icon/core/person";
-import SearchIcon from "@atlaskit/icon/core/search";
+import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import SnippetIcon from "@atlaskit/icon/core/snippet";
 import TeamsIcon from "@atlaskit/icon/core/teams";
 import AlignTextCenterIcon from "@atlaskit/icon/core/align-text-center";
@@ -587,7 +587,6 @@ export function RichTextSuggestionMenu({
 						) : (
 							<RichTextSuggestionMenuOption
 								key={item.id}
-								isNested={isNested}
 								isSelected={index === selectedIndex}
 								item={item}
 								onSelect={onSelect}
@@ -603,19 +602,20 @@ export function RichTextSuggestionMenu({
 }
 
 interface RichTextSuggestionMenuOptionProps {
-	isNested: boolean;
 	isSelected: boolean;
 	item: RichTextSuggestionMenuItem;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
 }
 
 function RichTextSuggestionMenuOption({
-	isNested,
 	isSelected,
 	item,
 	onSelect,
 }: Readonly<RichTextSuggestionMenuOptionProps>) {
-	const canRevealMetadata = isNested && Boolean(item.description);
+	// Descriptions reveal on hover/selection wherever an item has one, in both
+	// the nested drill-in lists and the merged flat lists, so the collapsed row
+	// stays compact (label only) until the user lands on it.
+	const canRevealMetadata = Boolean(item.description);
 	const className = cn(
 		"rich-text-command-menu-item",
 		isSelected && "rich-text-command-menu-item-selected",
@@ -642,16 +642,8 @@ function RichTextSuggestionMenuOption({
 					</motion.span>
 				</span>
 			) : (
-				<span className={cn(
-					"rich-text-command-menu-copy",
-					isNested && "rich-text-command-menu-nested-copy",
-				)}>
+				<span className="rich-text-command-menu-copy">
 					<span className="rich-text-command-menu-label">{item.label}</span>
-					{item.description ? (
-						<span className="rich-text-command-menu-description">
-							{item.description}
-						</span>
-					) : null}
 				</span>
 			)}
 			{item.shortcut ? (
@@ -662,20 +654,20 @@ function RichTextSuggestionMenuOption({
 		</>
 	);
 
-	if (isNested) {
+	if (canRevealMetadata) {
 		return (
 			<motion.button
 				type="button"
 				role="option"
 				aria-selected={isSelected}
-				animate={canRevealMetadata && isSelected ? "active" : "idle"}
+				animate={isSelected ? "active" : "idle"}
 				className={className}
 				disabled={item.disabled}
 				initial={false}
 				onMouseDown={(event) => event.preventDefault()}
 				onClick={() => onSelect(item)}
-				whileFocus={canRevealMetadata ? "active" : undefined}
-				whileHover={canRevealMetadata ? "active" : undefined}
+				whileFocus="active"
+				whileHover="active"
 			>
 				{children}
 			</motion.button>
@@ -998,7 +990,7 @@ function buildFlatSurfaceRows(
 					? {
 							id: getFlatFooterId(section.key),
 							label: "Browse all",
-							icon: <SearchIcon label="" size="small" />,
+							icon: <ShowMoreHorizontalIcon label="" size="small" />,
 							isSticky: true,
 						}
 					: {
