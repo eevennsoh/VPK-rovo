@@ -583,9 +583,9 @@
 
 .rich-text-command-menu-label {
 	overflow: hidden;
-	color: var(--ds-text, #172b4d);
-	font-size: 13px;
-	font-weight: 550;
+	color: var(--ds-text-subtle, #44546f);
+	font-size: 14px;
+	font-weight: 500;
 	line-height: 18px;
 	text-overflow: ellipsis;
 	white-space: nowrap;
