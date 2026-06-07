@@ -16,6 +16,14 @@ import type {
 	RichTextMentionVisual,
 } from "./types";
 
+/**
+ * Single source of truth for the front-slot visual tile size in suggestion-menu
+ * rows (both the `RichTextMentionVisualMark` paths here and the fallback
+ * `IconTile` in `suggestion-menu.tsx`). Change this one value to resize every
+ * menu-row avatar, image, logo tile, and icon tile together.
+ */
+export const MENU_VISUAL_TILE_SIZE = "medium" as const;
+
 // Maps an icon's ADS color token to the closest `Tag` color so that mention
 // tokens in the TipTap editor and reference chips in the agent config panel
 // render with the same accent. Keep this the single source of truth — both
@@ -164,7 +172,7 @@ export function RichTextMentionVisualMark({
 	const avatarSize = size === "menu" ? "default" : "xs";
 	const imageSizeClassName = size === "menu" ? "size-8" : "size-4";
 	const logoSize = "xxsmall";
-	const menuTileSize = "medium" as const;
+	const menuTileSize = MENU_VISUAL_TILE_SIZE;
 	const iconSizeClassName =
 		size === "menu" ? "size-3" : size === "pill" ? "size-3.5" : "size-4";
 	const iconClassName = cn(

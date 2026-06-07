@@ -52,7 +52,7 @@ import { ArrowLeftIcon } from "@/components/ui/vpk-icons";
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import { cn } from "@/lib/utils";
 
-import { RichTextMentionVisualMark } from "./mention-visual";
+import { MENU_VISUAL_TILE_SIZE, RichTextMentionVisualMark } from "./mention-visual";
 import {
 	RICH_TEXT_REFERENCE_CATEGORY_OPTIONS,
 	getRichTextReferenceCategoryIcon,
@@ -755,7 +755,7 @@ function RichTextSuggestionMenuItemVisual({
 
 	return (
 		<IconTile
-			size="medium"
+			size={MENU_VISUAL_TILE_SIZE}
 			label={item.label}
 			aria-hidden={true}
 			className="rich-text-command-menu-avatar border border-border bg-surface text-icon-subtlest"
