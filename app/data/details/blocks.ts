@@ -108,11 +108,11 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 		],
 	},
 	"editor-palette": {
-		description: "Showcase of the rich text editor's two suggestion menus: the \"@\" Mention listbox for people and agents and the \"/\" Commands listbox for skills, tools, knowledge, and basic blocks, plus a live editor where typing the trigger characters opens the real popups.",
+		description: "Showcase of the rich text editor's suggestion menus across two layouts. The \"nested\" layout shows each top-level section (People and team, Subagents, Skills, Tools, Knowledge, Format) as a single list you click into; the \"flat\" layout expands every section inline, capped at five items with a \"Browse all\" footer (search icon) for sections backed by a directory and a \"View more\" footer (chevron) that expands the rest inline for the others. Both include a live editor where typing \"@\" or \"/\" opens the real popups.",
 		importStatement: `import EditorPalette from "@/components/blocks/editor-palette/page";`,
 		usage: `import EditorPalette from "@/components/blocks/editor-palette/page";
 
-<EditorPalette />`,
+<EditorPalette variant="flat" />`,
 		demoLayout: { previewHeight: "fit" },
 		props: [
 			{
@@ -121,11 +121,21 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 				description: "Skill catalog that drives the live editor's \"/\" Skills submenu counts.",
 			},
 			{
+				name: "variant",
+				type: `"nested" | "flat"`,
+				default: `"nested"`,
+				description: "Showcase layout. \"nested\" shows each section as a single list you click into; \"flat\" expands every section inline with a \"Browse all\" / \"View more\" footer.",
+			},
+			{
 				name: "showLiveEditor",
 				type: "boolean",
 				default: "true",
 				description: "Render a live editor where typing \"@\" or \"/\" opens the real menus.",
 			},
+		],
+		examples: [
+			{ title: "Nested", description: "Each top-level section is a single list you click into to reveal its children.", demoSlug: "editor-palette-nested" },
+			{ title: "Flat", description: "Every section is expanded inline, capped at five items with a \"Browse all\" or \"View more\" footer.", demoSlug: "editor-palette-flat" },
 		],
 	},
 	"editor-toolbar": {
