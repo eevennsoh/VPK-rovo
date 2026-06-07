@@ -15,7 +15,6 @@ import {
 	cloneConfig,
 	createDraftSubagentPrompt,
 	getBaseConfigWithSubagents,
-	getDerivedSubagentNames,
 	getListItems,
 	normalizeBaseAgent,
 	normalizeSubagentPrompts,
@@ -166,22 +165,12 @@ export default function Subagents({
 
 	function handleRemoveListItem(field: AgentConfigListFieldName, index: number) {
 		if (!activePrompt && field === "subagents") {
-			const triggerNames = getDerivedSubagentNames(subagentPrompts);
-			const triggerName = triggerNames[index];
-			if (!triggerName) {
+			const promptToRemove = namedSubagentPrompts[index];
+			if (!promptToRemove) {
 				return;
 			}
 
-			setSubagentPrompts((currentPrompts) => {
-				let removed = false;
-				return currentPrompts.filter((prompt) => {
-					if (!removed && prompt.triggerName.trim() === triggerName) {
-						removed = true;
-						return false;
-					}
-					return true;
-				});
-			});
+			setSubagentPrompts((currentPrompts) => currentPrompts.filter((prompt) => prompt.id !== promptToRemove.id));
 			return;
 		}
 

@@ -13,9 +13,11 @@ import {
 // (components/blocks/subagents/page.tsx) and the studio agent config panel.
 // Keeping them here is the single source of truth for both consumers.
 
-// A subagent's identity is its trigger name. When unset, every surface that
-// shows a subagent (profile header, breadcrumb, floating navigator, manage
-// dialog) must fall back to the same label so they never drift out of sync.
+// A subagent prompt's stable identity is its id. Its trigger name is the
+// user-visible label and the serialized base-agent subagents chip value.
+// When unset, every surface that shows a subagent (profile header, breadcrumb,
+// floating navigator, manage dialog) must fall back to the same label so they
+// never drift out of sync.
 export const UNTITLED_SUBAGENT_NAME = "Untitled subagent";
 
 export function getSubagentDisplayName(prompt: SubagentPrompt): string {

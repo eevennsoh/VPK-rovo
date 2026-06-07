@@ -124,6 +124,13 @@ test("Subagents creation is routed through the compact control panel", () => {
 	assert.match(SUBAGENTS_PAGE_SOURCE, /onSelectListItem=\{handleSelectConfigListItem\}/u);
 });
 
+test("Subagents compact removal uses prompt id instead of trigger-name identity", () => {
+	assert.match(SUBAGENTS_PROMPTS_LIB_SOURCE, /stable identity is its id/u);
+	assert.match(SUBAGENTS_PAGE_SOURCE, /const promptToRemove = namedSubagentPrompts\[index\];[\s\S]*setSubagentPrompts\(\(currentPrompts\) => currentPrompts\.filter\(\(prompt\) => prompt\.id !== promptToRemove\.id\)\)/u);
+	assert.doesNotMatch(SUBAGENTS_PAGE_SOURCE, /const triggerNames = getDerivedSubagentNames\(subagentPrompts\)/u);
+	assert.doesNotMatch(SUBAGENTS_PAGE_SOURCE, /prompt\.triggerName\.trim\(\) === triggerName/u);
+});
+
 test("Subagents docs describe prompt copies instead of agent-directory links", () => {
 	const subagentsDetailsStart = BLOCK_DETAILS_SOURCE.indexOf("subagents: {");
 	const terminalSwitchStart = BLOCK_DETAILS_SOURCE.indexOf('"terminal-switch"', subagentsDetailsStart);
