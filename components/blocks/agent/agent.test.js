@@ -469,7 +469,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /const targetCenterX = Math\.min\(Math\.max\(event\.clientX, minCenterX\), maxCenterX\);[\s\S]*expandButtonX\.set\(targetCenterX - restingCenterX\);/u);
 	assert.match(AGENT_SOURCE, /return \(\s*<div className="flex flex-col">/u);
 	assert.doesNotMatch(AGENT_SOURCE, /<div className="flex flex-col pb-6">/u);
-	assert.match(AGENT_SOURCE, /<AnimatePresence initial=\{false\}>/u);
+	assert.match(AGENT_SOURCE, /<AnimatePresence initial=\{false\} mode="wait">/u);
 	// The field-row blocks carry the opaque surface so they stay readable over
 	// scrolling content, while the separator/expand row above stays transparent.
 	// `overflow-hidden` lets the height/opacity collapse animation clip cleanly.
@@ -734,7 +734,8 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /"format"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ RovoColorIcon \} from "@\/components\/ui\/logo";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const ASK_ROVO_SLASH_ITEM: RichTextSuggestionMenuItem = \{[\s\S]*id: "ask-rovo",[\s\S]*isSticky: true,[\s\S]*label: "Ask Rovo",/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /return \[\s*ASK_ROVO_SLASH_ITEM,[\s\S]*\.\.\.SLASH_CATEGORY_ORDER\.map/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /includeFormat = true/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /return \[\s*ASK_ROVO_SLASH_ITEM,[\s\S]*\.\.\.getSlashCategoryOrder\(includeFormat\)\.map/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.id === ASK_ROVO_SLASH_ITEM\.id[\s\S]*currentProps\.command\(\{ type: "ask-rovo", onAskRovo \}\)/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /props\.type === "ask-rovo"[\s\S]*props\.onAskRovo\?\.\(editor\)/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onAskRovoRef = useRef\(onAskRovo\)/u);

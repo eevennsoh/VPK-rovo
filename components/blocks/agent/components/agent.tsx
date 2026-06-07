@@ -2984,11 +2984,12 @@ function AgentCompactConfigToolbarBelow({
 				{isExpanded ? (
 					<motion.div
 						key="expanded"
-						className="bg-surface pt-2"
+						className="overflow-hidden bg-surface pt-2"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
 						transition={transition}
+						style={{ willChange: "opacity" }}
 					>
 						<AgentFilledConfigSummary
 							config={config}
@@ -3015,11 +3016,12 @@ function AgentCompactConfigToolbarBelow({
 				) : (
 					<motion.div
 						key="collapsed"
-						className="bg-surface pt-2"
+						className="overflow-hidden bg-surface pt-2"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
 						transition={transition}
+						style={{ willChange: "opacity" }}
 					>
 						<AgentCompactEmptyConfigNav
 							config={config}
