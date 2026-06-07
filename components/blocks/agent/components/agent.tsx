@@ -2244,16 +2244,18 @@ function findKnowledgeModeOption(value: KnowledgeModeValue) {
 	return KNOWLEDGE_MODE_OPTIONS.find((option) => option.value === value);
 }
 
-// Compact nav-button label: "all" reads as "All", "none" as "None", and a
-// "custom" selection reads as its item count so the strip stays terse.
-function getKnowledgeNavLabel(value: KnowledgeModeValue, itemCount: number): string {
+// Compact nav-button value shown after the "Knowledge" category word: "all"
+// reads as "All", "none" as "None". A "custom" selection has no text value —
+// its item count is rendered as a Badge instead (matching Tools/Skills), so
+// `getKnowledgeNavValueLabel` returns null for custom.
+function getKnowledgeNavValueLabel(value: KnowledgeModeValue): string | null {
 	if (value === "all") {
 		return "All";
 	}
 	if (value === "none") {
 		return "None";
 	}
-	return String(itemCount);
+	return null;
 }
 
 function AgentKnowledgeSelectorMenu({
@@ -2299,6 +2301,10 @@ function AgentKnowledgeSelector({
 	const label = current?.label ?? "Knowledge";
 
 	if (render === "nav-button") {
+		// Always lead with the "Knowledge" category word (like Tools/Skills), then
+		// the value in a Badge: "All"/"None" for those modes, or the item count for
+		// a custom selection — matching the grey Badge used by Tools/Skills.
+		const valueLabel = getKnowledgeNavValueLabel(value) ?? String(itemCount);
 		return (
 			<MenubarMenu>
 				<MenubarTrigger
@@ -2306,7 +2312,8 @@ function AgentKnowledgeSelector({
 					data-agent-field="knowledge"
 					data-screen-assistant-target={screenAssistantTargetId}
 				>
-					{getKnowledgeNavLabel(value, itemCount)}
+					Knowledge
+					<Badge>{valueLabel}</Badge>
 				</MenubarTrigger>
 				<AgentKnowledgeSelectorMenu value={value} onValueChange={onValueChange} />
 			</MenubarMenu>

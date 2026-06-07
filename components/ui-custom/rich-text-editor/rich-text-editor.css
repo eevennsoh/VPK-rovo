@@ -621,19 +621,15 @@
 }
 
 /* Section heading for merged "/" lists (flat editor palette). Mirrors the
-   dropdown menu's group label (DropdownMenuLabel): subtle, small, semibold.
-   A 4px top gap separates each section from the items above it; the first
-   heading sits flush against the list's 4px padding. */
+   dropdown menu's group label (DropdownMenuLabel): subtle, small, semibold,
+   with 12px top / 4px bottom padding so each section gets breathing room above
+   and sits tight to its items below. */
 .rich-text-command-menu-heading {
-	padding: 6px 8px;
+	padding: 12px 8px 4px;
 	color: var(--ds-text-subtlest, #626f86);
 	font-size: 12px;
 	font-weight: 600;
 	line-height: 16px;
-}
-
-.rich-text-command-menu-heading:not(:first-child) {
-	margin-top: 4px;
 }
 
 /*

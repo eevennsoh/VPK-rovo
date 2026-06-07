@@ -262,60 +262,43 @@ function FlatPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
 			className="grid w-full grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] items-start justify-items-center"
 			style={{ gap: token("space.300") }}
 		>
-			{FLAT_MENTION_SECTIONS.map((section) => (
-				<FlatSectionPanel
-					key={section.category}
-					trigger="@"
-					section={section}
-					items={getFlatSectionItems(mentionSources, section.category)}
-				/>
-			))}
+			<FlatMergedPanel
+				trigger="@"
+				caption="Mention"
+				sections={FLAT_MENTION_SECTIONS}
+				mentionSources={mentionSources}
+			/>
 
-			<FlatCommandPanel mentionSources={mentionSources} />
+			<FlatMergedPanel
+				trigger="/"
+				caption="Commands"
+				sections={FLAT_COMMAND_SECTIONS}
+				mentionSources={mentionSources}
+			/>
 		</div>
 	);
 }
 
-interface FlatSectionPanelProps {
+interface FlatMergedPanelProps extends PaletteVariantProps {
 	trigger: "@" | "/";
-	section: FlatSectionConfig;
-	items: readonly RichTextSuggestionMenuItem[];
-}
-
-/** A single flat section rendered in its own panel (used by the "@" surface). */
-function FlatSectionPanel({ trigger, section, items }: Readonly<FlatSectionPanelProps>) {
-	const [expanded, setExpanded] = useState(false);
-	const rows = getFlatSectionRows(section, items, expanded);
-
-	const handleSelect = (item: RichTextSuggestionMenuItem) => {
-		if (item.id === getSectionFooterId(section.category) && !section.hasDirectory) {
-			setExpanded((value) => !value);
-		}
-	};
-
-	return (
-		<PalettePanel trigger={trigger} caption={section.title}>
-			<RichTextSuggestionMenu
-				className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
-				title={section.title}
-				emptyLabel="No matching items"
-				items={rows}
-				selectedIndex={-1}
-				onSelect={handleSelect}
-			/>
-		</PalettePanel>
-	);
+	caption: string;
+	sections: readonly FlatSectionConfig[];
 }
 
 /**
- * The "/" surface for the flat variant: Skills, Tools, Knowledge, and Format
- * merged into one list, each preceded by a section heading and capped at five
- * items with its own "Browse all" / "View more" footer.
+ * A flat surface: every section is merged into one list, each preceded by a
+ * section heading and capped at five items with its own "Browse all" / "View
+ * more" footer. Used by both the "@" (Mention) and "/" (Commands) surfaces.
  */
-function FlatCommandPanel({ mentionSources }: Readonly<PaletteVariantProps>) {
+function FlatMergedPanel({
+	trigger,
+	caption,
+	sections,
+	mentionSources,
+}: Readonly<FlatMergedPanelProps>) {
 	const [expandedSections, setExpandedSections] = useState<Readonly<Record<string, boolean>>>({});
 
-	const rows = FLAT_COMMAND_SECTIONS.flatMap((section) =>
+	const rows = sections.flatMap((section) =>
 		getFlatSectionRows(
 			section,
 			getFlatSectionItems(mentionSources, section.category),
@@ -325,7 +308,7 @@ function FlatCommandPanel({ mentionSources }: Readonly<PaletteVariantProps>) {
 	);
 
 	const handleSelect = (item: RichTextSuggestionMenuItem) => {
-		const section = FLAT_COMMAND_SECTIONS.find(
+		const section = sections.find(
 			(candidate) => item.id === getSectionFooterId(candidate.category),
 		);
 		if (section && !section.hasDirectory) {
@@ -337,10 +320,10 @@ function FlatCommandPanel({ mentionSources }: Readonly<PaletteVariantProps>) {
 	};
 
 	return (
-		<PalettePanel trigger="/" caption="Commands">
+		<PalettePanel trigger={trigger} caption={caption}>
 			<RichTextSuggestionMenu
 				className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
-				title="Commands"
+				title={caption}
 				emptyLabel="No matching items"
 				items={rows}
 				selectedIndex={-1}
