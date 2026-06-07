@@ -620,6 +620,22 @@
 	font-size: 13px;
 }
 
+/* Section heading for merged "/" lists (flat editor palette). Mirrors the
+   dropdown menu's group label (DropdownMenuLabel): subtle, small, semibold.
+   A 4px top gap separates each section from the items above it; the first
+   heading sits flush against the list's 4px padding. */
+.rich-text-command-menu-heading {
+	padding: 6px 8px;
+	color: var(--ds-text-subtlest, #626f86);
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 16px;
+}
+
+.rich-text-command-menu-heading:not(:first-child) {
+	margin-top: 4px;
+}
+
 /*
  * Center mention tokens on the text line in the chat composer so the typing
  * caret lines up with the tag chips instead of sitting above them. Inline

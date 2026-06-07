@@ -851,24 +851,23 @@ function AgentCompactConfigNavButton({
 }
 
 // Shared chrome for every collapsed-nav dropdown so Triggers, Knowledge/Tools/
-// Skills, Subagents and Conversation starters all read as the same "list at top
-// + sticky footer" surface. The scroll region caps height; the footer pins to
-// the bottom over a solid surface so the list scrolls behind it.
+// Skills, Subagents and Conversation starters all read identically to the
+// Memory dropdown: items sit directly inside the popup's default `p-1` frame
+// (4px all around), so list, separator, and footer share one even inset. The
+// popup itself scrolls and caps height (`overflow-y-auto max-h-(--available-height)`),
+// so no inner scroll region or sticky footer is needed.
 function AgentCompactNavMenuList({ children }: Readonly<{ children: ReactNode }>) {
-	return <div className="max-h-56 overflow-y-auto p-1">{children}</div>;
+	return <>{children}</>;
 }
 
 function AgentCompactNavMenuFooter({ children }: Readonly<{ children: ReactNode }>) {
-	// Match the Memory dropdown: an inset separator (not a full-bleed border)
-	// divides the list from the footer. The sticky footer keeps a solid surface
-	// so the scrolling list passes behind it.
+	// Inset separator (default `mx-1 my-1` = 4px) then the footer item, both
+	// living in the popup's `p-1` frame — identical rhythm to the Memory menu.
 	return (
-		<div className="sticky bottom-0 bg-popover">
-			{/* Default separator margin (`mx-1 my-1` = 4px all around) so the
-			    divider is inset from the menu edges, matching the Memory dropdown. */}
+		<>
 			<DropdownMenuSeparator />
-			<div className="p-1 pt-0">{children}</div>
-		</div>
+			{children}
+		</>
 	);
 }
 
@@ -903,7 +902,7 @@ function AgentCompactSubagentsNavButton({
 					/>
 				)}
 			/>
-			<MenubarContent align="start" className="w-64 overflow-hidden p-0">
+			<MenubarContent align="start" className="w-64">
 				{isEmpty ? null : (
 					<AgentCompactNavMenuList>
 						<DropdownMenuGroup className="p-0">
@@ -920,11 +919,9 @@ function AgentCompactSubagentsNavButton({
 					</AgentCompactNavMenuList>
 				)}
 				{isEmpty ? (
-					<div className="p-1">
-						<DropdownMenuItem elemBefore={<PlusIcon size="small" />} onClick={onCreateSubagent}>
-							Add subagent
-						</DropdownMenuItem>
-					</div>
+					<DropdownMenuItem elemBefore={<PlusIcon size="small" />} onClick={onCreateSubagent}>
+						Add subagent
+					</DropdownMenuItem>
 				) : null}
 				<AgentCompactNavMenuFooter>
 					<DropdownMenuItem
@@ -998,10 +995,10 @@ function AgentCompactTriggersNavButton({
 					/>
 				)}
 			/>
-			<MenubarContent align="start" className="w-64 overflow-hidden p-0">
+			<MenubarContent align="start" className="w-64">
 				{isEmpty ? (
 					<>
-						<div className="p-1">{addTriggerFlyout}</div>
+						{addTriggerFlyout}
 						<AgentCompactNavMenuFooter>
 							<DropdownMenuItem
 								elemBefore={<AutomationIcon label="" size="small" />}
@@ -1077,9 +1074,9 @@ function AgentCompactDirectoryNavButton({
 					/>
 				)}
 			/>
-			<MenubarContent align="start" className="w-64 overflow-hidden p-0">
+			<MenubarContent align="start" className="w-64">
 				{isEmpty ? (
-					<div className="p-1">{browseItem}</div>
+					browseItem
 				) : (
 					<>
 						<AgentCompactNavMenuList>
@@ -1136,8 +1133,8 @@ function AgentCompactConversationStartersNavButton({
 					/>
 				)}
 			/>
-			<MenubarContent align="start" className="w-72 overflow-hidden p-0">
-				<div className="flex flex-col gap-1.5 p-2">
+			<MenubarContent align="start" className="w-72">
+				<div className="flex flex-col gap-1.5">
 					{fields.map((field, index) => (
 						<div
 							className="flex items-center gap-2 rounded-sm border border-input px-3 focus-within:border-border-focused"

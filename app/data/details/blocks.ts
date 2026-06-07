@@ -108,7 +108,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 		],
 	},
 	"editor-palette": {
-		description: "Showcase of the rich text editor's suggestion menus across two layouts. The \"nested\" layout shows each top-level section (People and team, Subagents, Skills, Tools, Knowledge, Format) as a single list you click into; the \"flat\" layout expands every section inline, capped at five items with a \"Browse all\" footer (search icon) for sections backed by a directory and a \"View more\" footer (chevron) that expands the rest inline for the others. Both include a live editor where typing \"@\" or \"/\" opens the real popups.",
+		description: "Showcase of the rich text editor's suggestion menus across two layouts. The \"nested\" layout shows each top-level section (People and team, Subagents, Skills, Tools, Knowledge, Format) as a single list you click into; the \"flat\" layout expands every section inline, capped at five items with a \"Browse all\" footer (search icon) for sections backed by a directory and a \"View more\" footer (chevron) that expands the rest inline for the others. In the flat layout the \"/\" sections (Skills, Tools, Knowledge, Format) are merged into one list with a heading per section, while each \"@\" section keeps its own panel. Both include a live editor where typing \"@\" or \"/\" opens the real popups.",
 		importStatement: `import EditorPalette from "@/components/blocks/editor-palette/page";`,
 		usage: `import EditorPalette from "@/components/blocks/editor-palette/page";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useMemo, useState } from "react";
+import { startTransition, useMemo, useRef, useState } from "react";
 import {
 	Agent,
 	AgentConfigFields,
@@ -10,6 +10,7 @@ import {
 	AgentContent,
 } from "@/components/blocks/agent";
 import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
+import { useSubagentsNavigatorTop } from "@/components/projects/studio/hooks/use-subagents-navigator-top";
 import { ManageSubagentsDialog } from "@/components/blocks/subagents/components/manage-subagents-dialog";
 import {
 	cloneConfig,
@@ -39,6 +40,11 @@ export default function Subagents({
 	initialBaseAgent,
 	initialSubagents,
 }: Readonly<SubagentsProps>) {
+	// Keep the floating navigator top-aligned with the first line of the
+	// instructions editor (measured relative to this positioned root) instead
+	// of a fixed `top` that drifts as the profile/content above reflows.
+	const containerRef = useRef<HTMLDivElement | null>(null);
+	const navigatorTop = useSubagentsNavigatorTop(containerRef);
 	const initialBaseAgentState = useMemo(() => normalizeBaseAgent(initialBaseAgent), [initialBaseAgent]);
 	const initialSubagentPromptState = useMemo(() => normalizeSubagentPrompts(initialSubagents), [initialSubagents]);
 	const [baseAgent, setBaseAgent] = useState<SubagentsBaseAgent>(() => initialBaseAgentState);
@@ -235,23 +241,30 @@ export default function Subagents({
 
 	return (
 		<div
+			ref={containerRef}
 			className={cn(
 				"relative flex h-full min-h-[852px] overflow-hidden rounded-xl bg-background",
 				className,
 			)}
 		>
-			<SubagentsNavigator
-				activeSubagentId={activeSubagentId}
-				baseAgent={baseAgent}
-				className="absolute right-4 top-[42%] z-20 hidden md:block"
-				onCreateSubagent={handleCreateSubagent}
-				onDeleteSubagent={handleDeleteSubagent}
-				onManageSubagents={() => setIsManageSubagentsOpen(true)}
-				onSelectBaseAgent={handleSelectBaseAgent}
-				onSelectSubagent={handleSelectSubagent}
-				onToggleSubagent={handleToggleSubagent}
-				subagents={subagentPrompts}
-			/>
+			{/* The wrapper carries the measured `top` so the switcher top-aligns
+			    with the first line of the instructions editor. */}
+			<div
+				className="absolute right-4 z-20 hidden md:block"
+				style={{ top: navigatorTop }}
+			>
+				<SubagentsNavigator
+					activeSubagentId={activeSubagentId}
+					baseAgent={baseAgent}
+					onCreateSubagent={handleCreateSubagent}
+					onDeleteSubagent={handleDeleteSubagent}
+					onManageSubagents={() => setIsManageSubagentsOpen(true)}
+					onSelectBaseAgent={handleSelectBaseAgent}
+					onSelectSubagent={handleSelectSubagent}
+					onToggleSubagent={handleToggleSubagent}
+					subagents={subagentPrompts}
+				/>
+			</div>
 			<div className="flex-1 overflow-y-auto px-6 py-6 pr-20">
 				<Agent className="mx-auto flex min-h-[852px] w-full max-w-[720px] flex-col">
 					<AgentContent className="flex min-h-0 flex-1 flex-col">

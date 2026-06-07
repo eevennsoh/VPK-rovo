@@ -84,6 +84,13 @@ export interface RichTextSuggestionMenuItem {
 	isSticky?: boolean;
 	visual?: RichTextMentionVisual;
 	disabled?: boolean;
+	/**
+	 * When set, the entry renders as a non-interactive section heading (matching
+	 * the dropdown menu's `DropdownMenuLabel`) instead of a selectable option.
+	 * Used by the flat editor palette to merge several "/" categories into one
+	 * list with a labeled group per category.
+	 */
+	headingLabel?: string;
 }
 
 interface RichTextSuggestionMenuProps {
@@ -561,7 +568,15 @@ export function RichTextSuggestionMenu({
 			>
 				{items.length > 0 ? (
 					items.map((item, index) =>
-						renderFirstItemAsInput && index === 0 ? (
+						item.headingLabel !== undefined ? (
+							<div
+								key={item.id}
+								className="rich-text-command-menu-heading"
+								role="presentation"
+							>
+								{item.headingLabel}
+							</div>
+						) : renderFirstItemAsInput && index === 0 ? (
 							<RichTextSuggestionMenuInputOption
 								key={item.id}
 								item={item}

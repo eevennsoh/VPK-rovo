@@ -62,12 +62,20 @@ export function useSubagentsNavigatorTop(
 				return;
 			}
 			const firstLine = findFirstLine(root);
+			// Keep the last known position instead of snapping back to the
+			// fallback if the editor subtree momentarily can't be measured (e.g.
+			// during a tab/agent swap) — snapping would make the navigator jump.
 			if (!firstLine) {
-				setTop(DEFAULT_TOP_PX);
 				return;
 			}
 			const containerRect = root.getBoundingClientRect();
 			const lineRect = firstLine.getBoundingClientRect();
+			// A collapsed/unpainted layout can report a rect at the container top
+			// (≈0). Treat that as "not ready yet" and keep the current value so we
+			// don't park the navigator at the top of the cover banner.
+			if (lineRect.height === 0 && lineRect.top <= containerRect.top) {
+				return;
+			}
 			const next = Math.round(lineRect.top - containerRect.top);
 			setTop((current) => (current === next ? current : next));
 		}
@@ -77,6 +85,19 @@ export function useSubagentsNavigatorTop(
 				cancelAnimationFrame(frame);
 			}
 			frame = requestAnimationFrame(measure);
+		}
+
+		// The editor's vertical position depends on async-settling siblings above
+		// it (the profile cover image, avatars, InlineEdit name/description). Those
+		// reflows don't always surface as DOM mutations or observed-node resizes,
+		// so a one-shot measurement can park the navigator too high. Re-measure a
+		// few times over the first second to catch image loads and font/layout
+		// settling, then stop.
+		let settleTimers: number[] = [];
+		function scheduleSettlePasses(): void {
+			settleTimers = [0, 60, 160, 320, 640, 1000].map((delay) =>
+				window.setTimeout(scheduleMeasure, delay),
+			);
 		}
 
 		function findScrollParent(node: HTMLElement | null): HTMLElement | null {
@@ -104,21 +125,55 @@ export function useSubagentsNavigatorTop(
 				passive: true,
 			});
 		}
+		// The profile column above the editor reflows as it settles; observe it so
+		// the first line stays tracked when the name/description height changes.
+		const profileName = container.querySelector<HTMLElement>(
+			'[data-agent-field="name"]',
+		);
+		if (profileName) {
+			resizeObserver.observe(profileName);
+		}
+
+		// Images above the editor (cover banner, avatars) load asynchronously and
+		// push the editor down without firing a mutation or observed-node resize.
+		// Re-measure when each finishes loading.
+		const pendingImages = Array.from(
+			container.querySelectorAll<HTMLImageElement>("img"),
+		).filter((img) => !img.complete);
+		for (const img of pendingImages) {
+			img.addEventListener("load", scheduleMeasure, { once: true });
+			img.addEventListener("error", scheduleMeasure, { once: true });
+		}
 
 		// The editor mounts/streams content asynchronously; re-measure when the
 		// instructions subtree changes so the first line stays tracked.
 		const mutationObserver = new MutationObserver(scheduleMeasure);
 		mutationObserver.observe(container, { childList: true, subtree: true });
 
+		// Late web-font swaps and the window's own load event can shift the
+		// editor's baseline after our first pass.
+		window.addEventListener("resize", scheduleMeasure, { passive: true });
+		window.addEventListener("load", scheduleMeasure);
+
 		scheduleMeasure();
+		scheduleSettlePasses();
 
 		return () => {
 			if (frame) {
 				cancelAnimationFrame(frame);
 			}
+			for (const timer of settleTimers) {
+				window.clearTimeout(timer);
+			}
 			resizeObserver.disconnect();
 			mutationObserver.disconnect();
 			scrollTarget?.removeEventListener("scroll", scheduleMeasure);
+			for (const img of pendingImages) {
+				img.removeEventListener("load", scheduleMeasure);
+				img.removeEventListener("error", scheduleMeasure);
+			}
+			window.removeEventListener("resize", scheduleMeasure);
+			window.removeEventListener("load", scheduleMeasure);
 		};
 	}, [containerRef]);
 
