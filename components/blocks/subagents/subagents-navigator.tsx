@@ -3,6 +3,7 @@
 import { useId, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import { DeleteIcon, PlusIcon, SettingsIcon } from "@/components/ui/vpk-icons";
+import { Switch } from "@/components/ui/switch";
 import type { SubagentPrompt, SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
 import { getSubagentDisplayName } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { token } from "@/lib/tokens";
@@ -17,6 +18,7 @@ interface SubagentsNavigatorProps {
 	onManageSubagents?: () => void;
 	onSelectBaseAgent: () => void;
 	onSelectSubagent: (id: string) => void;
+	onToggleSubagent?: (id: string, enabled: boolean) => void;
 	subagents: ReadonlyArray<SubagentPrompt>;
 }
 
@@ -33,7 +35,7 @@ const SWITCHER_HEADER_HEIGHT_PX = 45;
 const SWITCHER_SECTION_PADDING_Y_PX = 16;
 const SWITCHER_SECTION_LABEL_HEIGHT_PX = 20;
 const SWITCHER_ROW_HEIGHT_PX = 36;
-const SWITCHER_ROW_GAP_PX = 2;
+const SWITCHER_ROW_GAP_PX = 0;
 // Footer chrome = top border (1px) + pt-2 (8px); each action button is 36px tall.
 const SWITCHER_FOOTER_CHROME_PX = 9;
 const SWITCHER_FOOTER_ACTION_HEIGHT_PX = 36;
@@ -51,6 +53,7 @@ export function SubagentsNavigator({
 	onManageSubagents,
 	onSelectBaseAgent,
 	onSelectSubagent,
+	onToggleSubagent,
 	subagents,
 }: Readonly<SubagentsNavigatorProps>) {
 	const switcherId = useId();
@@ -196,16 +199,25 @@ export function SubagentsNavigator({
 						<div className="px-2 pb-1 text-xs font-semibold leading-4 text-text-subtlest">
 							Subagents
 						</div>
-						<div className="flex flex-col gap-0.5">
-							{subagents.map((prompt) => (
-								<SubagentsSwitcherButton
-									isActive={prompt.id === activeSubagentId}
-									key={prompt.id}
-									label={getSubagentDisplayName(prompt)}
-									onDelete={onDeleteSubagent ? () => onDeleteSubagent(prompt.id) : undefined}
-									onSelect={() => onSelectSubagent(prompt.id)}
-								/>
-							))}
+						<div className="flex flex-col">
+							{subagents.map((prompt) => {
+								const isEnabled = prompt.enabled !== false;
+								return (
+									<SubagentsSwitcherButton
+										isActive={prompt.id === activeSubagentId}
+										key={prompt.id}
+										label={getSubagentDisplayName(prompt)}
+										enabled={isEnabled}
+										onDelete={onDeleteSubagent ? () => onDeleteSubagent(prompt.id) : undefined}
+										onSelect={() => onSelectSubagent(prompt.id)}
+										onToggle={
+											onToggleSubagent
+												? (next) => onToggleSubagent(prompt.id, next)
+												: undefined
+										}
+									/>
+								);
+							})}
 						</div>
 					</div>
 					<div className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-surface-overlay pt-2">
@@ -253,14 +265,21 @@ function SubagentsActionButton({
 function SubagentsSwitcherButton({
 	isActive,
 	label,
+	enabled = true,
 	onDelete,
 	onSelect,
+	onToggle,
 }: Readonly<{
 	isActive: boolean;
 	label: string;
+	enabled?: boolean;
 	onDelete?: () => void;
 	onSelect: () => void;
+	onToggle?: (enabled: boolean) => void;
 }>) {
+	// Reserve right padding for whichever overlay controls are present so the
+	// label never slides under them: switch (~28px) + delete (~28px).
+	const trailingPadding = onDelete && onToggle ? "pr-16" : onDelete || onToggle ? "pr-9" : undefined;
 	return (
 		<div className="group/switcher-row relative">
 			<button
@@ -271,15 +290,35 @@ function SubagentsSwitcherButton({
 					"flex h-9 w-full min-w-0 items-center rounded-lg p-2 text-left transition-colors duration-normal ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected",
 					isActive
 						? "bg-bg-selected text-text-selected"
-						: "bg-transparent text-text-subtle hover:bg-surface-hovered hover:text-text",
-					onDelete && "pr-9",
+						: "bg-transparent text-text group-hover/switcher-row:bg-surface-hovered group-hover/switcher-row:text-text",
+					// A disabled (off) subagent reads as muted until re-enabled.
+					!enabled && !isActive && "text-text-disabled",
+					trailingPadding,
 				)}
 				onClick={onSelect}
 			>
-				<span className="w-full truncate text-sm font-semibold leading-5">
+				<span className="w-full truncate text-sm leading-5">
 					{label}
 				</span>
 			</button>
+			{onToggle ? (
+				<div
+					className={cn(
+						// Stays visible while off so the disabled state is discoverable;
+						// otherwise reveals on row hover / keyboard focus.
+						"absolute top-1/2 flex -translate-y-1/2 items-center transition-opacity duration-normal focus-within:opacity-100 group-hover/switcher-row:opacity-100",
+						onDelete ? "right-9" : "right-2",
+						enabled ? "opacity-0" : "opacity-100",
+					)}
+				>
+					<Switch
+						size="sm"
+						checked={enabled}
+						onCheckedChange={onToggle}
+						aria-label={`${enabled ? "Disable" : "Enable"} ${label}`}
+					/>
+				</div>
+			) : null}
 			{onDelete ? (
 				<button
 					type="button"
