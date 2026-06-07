@@ -518,8 +518,8 @@
 }
 
 .rich-text-command-menu-input-logo > svg {
-	width: 24px;
-	height: 24px;
+	width: 16px;
+	height: 16px;
 }
 
 .rich-text-command-menu-input > [data-slot="input"] {
@@ -636,13 +636,6 @@
 	font-size: 12px;
 	font-weight: 600;
 	line-height: 16px;
-}
-
-/* A heading that leads the list (nothing above it) drops its 12px top gap to sit
-   tight at the list top. A heading following the "Ask Rovo" input keeps its
-   default top padding — the input's own bottom margin is removed instead. */
-.rich-text-command-menu-list > .rich-text-command-menu-heading:first-child {
-	padding-top: 0;
 }
 
 /*

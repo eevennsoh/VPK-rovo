@@ -283,7 +283,7 @@ function getSlashCategoryOrder(
 }
 const ASK_ROVO_SLASH_ITEM: RichTextSuggestionMenuItem = {
 	description: "Ask Rovo to help with the current editor context.",
-	icon: <RovoColorIcon size="small" />,
+	icon: <RovoColorIcon size="xxsmall" />,
 	id: "ask-rovo",
 	isSticky: true,
 	label: "Ask Rovo",

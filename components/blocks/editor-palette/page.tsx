@@ -265,7 +265,7 @@ const ASK_ROVO_LEAD_ITEM: RichTextSuggestionMenuItem = {
 	id: "ask-rovo",
 	label: "Ask Rovo",
 	description: "Ask Rovo to help with the current editor context.",
-	icon: <RovoColorIcon size="small" />,
+	icon: <RovoColorIcon size="xxsmall" />,
 	isSticky: true,
 };
 
