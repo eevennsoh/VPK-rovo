@@ -49,6 +49,7 @@ Start every workflow by proving the repo, default branch, and local safety state
 
 ```bash
 pwd
+git update-index --refresh
 git status --short --branch
 git worktree list --porcelain
 gh repo view --json nameWithOwner,defaultBranchRef
@@ -101,6 +102,7 @@ Use when the user wants to commit current edits, push, and open a PR in one comm
    - If one exists, **ask the user once**: push as an update to PR #N, or close it and open a new PR? Wait for the answer before continuing. This is the only interactive prompt in this workflow.
 
 4. Stage and commit:
+   - Refresh Git's index before staging: `git update-index --refresh`, then re-run `git status --short --branch`. This catches files changed by editors, generators, or stash/apply operations while validation was running; do not commit from stale status output.
    - Prefer `git add -A`. If the diff includes paths clearly outside the intended scope (e.g. unrelated experiments, secrets, `.env*`), stage selectively and surface the skipped paths in the report.
    - Generate a concise imperative commit subject (~50 chars) from the diff. If the user passed a title hint, use it verbatim as the subject. Body is optional — include only when changes span multiple concerns.
    - Follow repo commit style observed in `git log` — no `Co-Authored-By` footer unless the user explicitly asks.
