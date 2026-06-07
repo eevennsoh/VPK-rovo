@@ -166,6 +166,8 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-label=\{`\$\{isPinned \? "Unpin" : "Pin"\} \$\{agentName\}`\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /onClick=\{\(\) => onTogglePinned\(entry\.profile\.id\)\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed=\{isPinned\}[\s\S]*render=\{isPinned \? <PinFilledIcon label="" size="small" \/> : <PinIcon label="" size="small" \/>\}/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<div className="flex justify-end gap-\[4px\]">/u);
+	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /stopNestedCardAction|onClick=\{stopNestedCardAction\}|onKeyDown=\{stopNestedCardAction\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:\[&_svg\]:text-icon-subtle!/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /text-icon-selected/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /isFirstRow|isLastRow|rounded-tl-\[12px\]|rounded-br-\[12px\]/u);
