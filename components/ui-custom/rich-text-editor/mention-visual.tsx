@@ -203,12 +203,17 @@ export function RichTextMentionVisualMark({
 	}
 
 	if (visual.kind === "logo") {
+		// In menu rows the logo gets the same tile treatment as `IconTile`
+		// (bordered surface tile) so logos and icons read consistently; the
+		// inner logo is inset so it doesn't touch the tile border.
 		return (
 			<span
 				aria-hidden="true"
 				className={cn(
-					"inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xs [&>span]:size-full! [&_svg]:size-full!",
-					size === "menu" ? undefined : imageSizeClassName,
+					"inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xs",
+					size === "menu"
+						? "size-6 border border-border bg-surface p-0.5 [&>span]:size-full! [&_svg]:size-full!"
+						: cn(imageSizeClassName, "[&>span]:size-full! [&_svg]:size-full!"),
 					className,
 				)}
 			>

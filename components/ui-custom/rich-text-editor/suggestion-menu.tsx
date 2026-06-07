@@ -93,6 +93,12 @@ export interface RichTextSuggestionMenuItem {
 	 * list with a labeled group per category.
 	 */
 	headingLabel?: string;
+	/**
+	 * When true, the description stays visible at all times instead of revealing
+	 * on hover/selection. Used by nested parent rows whose byline is a count
+	 * (e.g. "13 available") that should always be readable.
+	 */
+	persistentDescription?: boolean;
 }
 
 interface RichTextSuggestionMenuProps {
@@ -614,8 +620,12 @@ function RichTextSuggestionMenuOption({
 }: Readonly<RichTextSuggestionMenuOptionProps>) {
 	// Descriptions reveal on hover/selection wherever an item has one, in both
 	// the nested drill-in lists and the merged flat lists, so the collapsed row
-	// stays compact (label only) until the user lands on it.
-	const canRevealMetadata = Boolean(item.description);
+	// stays compact (label only) until the user lands on it. Rows that opt into
+	// `persistentDescription` (nested parent rows with a count byline) instead
+	// keep their description visible at all times.
+	const hasDescription = Boolean(item.description);
+	const showsPersistentDescription = hasDescription && Boolean(item.persistentDescription);
+	const canRevealMetadata = hasDescription && !item.persistentDescription;
 	const className = cn(
 		"rich-text-command-menu-item",
 		isSelected && "rich-text-command-menu-item-selected",
@@ -644,6 +654,11 @@ function RichTextSuggestionMenuOption({
 			) : (
 				<span className="rich-text-command-menu-copy">
 					<span className="rich-text-command-menu-label">{item.label}</span>
+					{showsPersistentDescription ? (
+						<span className="rich-text-command-menu-description">
+							{item.description}
+						</span>
+					) : null}
 				</span>
 			)}
 			{item.shortcut ? (
@@ -1502,6 +1517,7 @@ function buildCategoryMenuItems(
 ): readonly RichTextSuggestionMenuItem[] {
 	return order.map((category) => ({
 		description: `${getCategoryItems(sources, category).length} available`,
+		persistentDescription: true,
 		icon: category === "people-team"
 			? <PeopleGroupIcon label="" size="small" />
 			: getCategoryIcon(category),
@@ -1528,6 +1544,7 @@ export function getSlashCommandCategoryItems(
 			description: category === "format"
 				? `${SLASH_COMMANDS.length} options`
 				: `${getCategoryItems(sources, category).length} available`,
+			persistentDescription: true,
 			icon: getSlashCategoryIcon(category),
 			id: category,
 			label: getSlashCategoryLabel(category),

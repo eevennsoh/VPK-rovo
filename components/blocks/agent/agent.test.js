@@ -858,8 +858,13 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ motion, type Variants \} from "motion\/react";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const nestedCommandLabelVariants: Variants = \{/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const nestedCommandDescriptionVariants: Variants = \{[\s\S]*opacity: 0,[\s\S]*opacity: 1,/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const canRevealMetadata = Boolean\(item\.description\);/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /persistentDescription\?: boolean;/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const hasDescription = Boolean\(item\.description\);/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const showsPersistentDescription = hasDescription && Boolean\(item\.persistentDescription\);/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const canRevealMetadata = hasDescription && !item\.persistentDescription;/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /isNested && Boolean\(item\.description\)/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /persistentDescription: true,[\s\S]*icon: category === "people-team"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /persistentDescription: true,[\s\S]*icon: getSlashCategoryIcon\(category\)/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /if \(canRevealMetadata\) \{/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /whileHover="active"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /whileFocus="active"/u);
