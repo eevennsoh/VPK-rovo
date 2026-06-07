@@ -163,7 +163,7 @@ export function RichTextMentionVisualMark({
 	// 16px; "menu" (dropdown rows) stays larger.
 	const avatarSize = size === "menu" ? "default" : "xs";
 	const imageSizeClassName = size === "menu" ? "size-8" : "size-4";
-	const logoSize = size === "menu" ? "small" : "xxsmall";
+	const logoSize = "xxsmall";
 	const menuTileSize = "medium" as const;
 	const iconSizeClassName =
 		size === "menu" ? "size-3" : size === "pill" ? "size-3.5" : "size-4";
@@ -211,7 +211,7 @@ export function RichTextMentionVisualMark({
 			return (
 				<IconTile
 					aria-hidden={true}
-					className={cn("border border-border bg-surface p-0.5", className)}
+					className={cn("border border-border bg-surface", className)}
 					icon={<AtlassianLogo name={visual.logoName} size={logoSize} themeAware label={label} />}
 					label={label}
 					size={menuTileSize}
