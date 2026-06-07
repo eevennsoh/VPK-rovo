@@ -334,12 +334,15 @@
 }
 
 /*
- * The tall authoring min-height is for the document editor only. The chat
- * composer reuses the same ProseMirror editor but must hug its content and be
- * sized by its own `min-h-*` utilities (it carries `.prompt-input-composer`),
- * so it is excluded here — otherwise the composer renders as a 200px-tall box.
+ * The tall authoring min-height applies to the document editor only — every
+ * document surface tags its editor with `.tiptap-editor`. Scoping to that
+ * positive variant (rather than negating the composer) means a new ProseMirror
+ * surface opts IN to the authoring height by adding `.tiptap-editor`, instead of
+ * silently inheriting 200px and having to remember to opt out. The chat composer
+ * (`.prompt-input-composer`, no `.tiptap-editor`) hugs its content via its own
+ * `min-h-*` utilities.
  */
-.ProseMirror:not(.prompt-input-composer) {
+.tiptap-editor.ProseMirror {
 	min-height: 200px;
 }
 

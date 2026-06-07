@@ -39,7 +39,17 @@ import type {
 
 const slashCommandPluginKey = new PluginKey("rich-text-slash-command");
 
-export function getMentionCategory(id: unknown): string {
+/**
+ * Resolve a mention's category. Prefers an explicit non-empty `category`
+ * (stored on the node), else derives it from the `id` prefix (`skill:foo` →
+ * `skill`), falling back to `"context"`. Single source for every mention
+ * surface (node view, editor inventory).
+ */
+export function getMentionCategory(id: unknown, category?: unknown): string {
+	if (typeof category === "string" && category.trim()) {
+		return category;
+	}
+
 	if (typeof id !== "string") {
 		return "context";
 	}

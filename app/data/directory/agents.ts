@@ -8,6 +8,7 @@ import type { RovoSuggestion } from "@/lib/rovo-suggestions";
 import agentsData from "./agents.json";
 import subagentsData from "./subagents.json";
 import type { DirectoryVisual } from "./types";
+import { avatarVisualFromSrc } from "./visual";
 
 /**
  * Unified agents data layer — the single source of truth for every agent surface
@@ -328,19 +329,5 @@ export const DIRECTORY_SUBAGENTS: readonly AgentBrowserAgent[] = DEMO_AGENT_BROW
 export function getAgentDirectoryVisual(
 	agent: Pick<AgentBrowserAgent, "avatarSrc" | "logoName">,
 ): DirectoryVisual | undefined {
-	if (agent.logoName) {
-		return { kind: "logo", logoName: agent.logoName };
-	}
-
-	if (!agent.avatarSrc) {
-		return undefined;
-	}
-
-	const isHexagonAvatar = agent.avatarSrc.startsWith("/avatar-agent/");
-
-	return {
-		kind: isHexagonAvatar ? "avatar" : "image",
-		shape: isHexagonAvatar ? "hexagon" : "square",
-		src: agent.avatarSrc,
-	};
+	return avatarVisualFromSrc(agent.logoName, agent.avatarSrc);
 }

@@ -824,15 +824,33 @@ function attachComposerAnchor(
 	element: HTMLDivElement | null,
 	editorDom: HTMLElement | null,
 ): () => void {
+	let frame = 0;
 	const reposition = () => positionComposerPopup(element, editorDom);
+	// Coalesce bursty scroll/resize events into a single reposition per frame —
+	// each reposition does a getBoundingClientRect read + style writes, so an
+	// unthrottled capture-phase scroll listener would force-reflow on every event
+	// during momentum scrolling.
+	const scheduleReposition = () => {
+		if (frame) {
+			return;
+		}
+		frame = requestAnimationFrame(() => {
+			frame = 0;
+			reposition();
+		});
+	};
 	reposition();
 	requestAnimationFrame(reposition);
-	window.addEventListener("resize", reposition);
-	// Capture phase so we also catch scrolls inside scrollable ancestors.
-	window.addEventListener("scroll", reposition, true);
+	window.addEventListener("resize", scheduleReposition);
+	// Capture phase so we also catch scrolls inside scrollable ancestors; passive
+	// since we never preventDefault.
+	window.addEventListener("scroll", scheduleReposition, { capture: true, passive: true });
 	return () => {
-		window.removeEventListener("resize", reposition);
-		window.removeEventListener("scroll", reposition, true);
+		if (frame) {
+			cancelAnimationFrame(frame);
+		}
+		window.removeEventListener("resize", scheduleReposition);
+		window.removeEventListener("scroll", scheduleReposition, { capture: true });
 	};
 }
 

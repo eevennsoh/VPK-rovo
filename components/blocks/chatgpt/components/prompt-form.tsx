@@ -51,7 +51,7 @@ export function PromptForm() {
 		<Example title="Prompt Form">
 			<PromptInput onSubmit={() => undefined}>
 				<PromptInputBody>
-					<PromptInputTextarea placeholder="Ask anything" rows={1} />
+					<PromptInputTextarea aria-label="Prompt" placeholder="Ask anything" rows={1} />
 				</PromptInputBody>
 				<PromptInputFooter>
 					<PromptInputTools>

@@ -2,6 +2,7 @@ import type { AtlassianLogoName } from "@/components/ui/logo";
 
 import toolsData from "./tools.json";
 import type { DirectoryVisual } from "./types";
+import { avatarVisualFromSrc } from "./visual";
 
 /** Stable category ids, shared with the other directory verticals. */
 export type ToolCategory =
@@ -77,27 +78,13 @@ export const DEMO_TOOLS: readonly ToolsDirectoryTool[] = data.tools;
 export const DEMO_SESSION_TOOLS: readonly ToolsDirectoryTool[] = data.sessionTools;
 
 /**
- * Derives the JSON-serializable mention-token visual for a tool. Mirrors the
- * `getToolVisual` logic in the editor palette's mention sources: a `logoName`
+ * Derives the JSON-serializable mention-token visual for a tool: a `logoName`
  * resolves to the ADS brand mark; an `avatarSrc` under `/avatar-agent/` is a
- * hexagon agent avatar, otherwise it is a square image. Returns `undefined`
- * when a tool has neither, so composer/editor surfaces can fall back.
+ * hexagon agent avatar, otherwise a square image. Shares one resolver with
+ * agents (see {@link avatarVisualFromSrc}) so the two never diverge.
  */
 export function getToolDirectoryVisual(tool: ToolsDirectoryTool): DirectoryVisual | undefined {
-	if (tool.logoName) {
-		return { kind: "logo", logoName: tool.logoName };
-	}
-
-	if (!tool.avatarSrc) {
-		return undefined;
-	}
-
-	const isAgentAvatar = tool.avatarSrc.startsWith("/avatar-agent/");
-	return {
-		kind: isAgentAvatar ? "avatar" : "image",
-		shape: isAgentAvatar ? "hexagon" : "square",
-		src: tool.avatarSrc,
-	};
+	return avatarVisualFromSrc(tool.logoName, tool.avatarSrc);
 }
 
 /** Convenience lookup across both tool groups. */

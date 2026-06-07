@@ -5,6 +5,7 @@ import PageIcon from "@atlaskit/icon/core/page";
 
 import { getDirectoryMentionItemOrFallback } from "@/components/blocks/editor-palette/data/mention-sources";
 import { Tag } from "@/components/ui/tag";
+import { getMentionCategory } from "./extensions";
 import {
 	RichTextMentionVisualMark,
 	getRichTextMentionTagColor,
@@ -23,18 +24,6 @@ const REFERENCE_CATEGORIES: ReadonlySet<RichTextReferenceCategory> = new Set([
 	"tool",
 	"knowledge",
 ]);
-
-function getMentionCategory(id: unknown, category: unknown): string {
-	if (typeof category === "string" && category.trim()) {
-		return category;
-	}
-
-	if (typeof id !== "string") {
-		return "context";
-	}
-
-	return id.split(":")[0] || "context";
-}
 
 function isReferenceCategory(
 	category: string,

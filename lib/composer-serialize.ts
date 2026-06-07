@@ -69,8 +69,9 @@ function serializeInline(block: ProseMirrorNode): string {
 /**
  * Serialize a ProseMirror composer document to plain text. Block (paragraph)
  * boundaries and hard breaks both become "\n"; mentions become their sigil +
- * label. Trailing whitespace is trimmed so an empty trailing paragraph (which
- * ProseMirror keeps as the editing caret line) does not leak a stray newline.
+ * label. Trailing blank lines are trimmed so an empty trailing paragraph (which
+ * ProseMirror keeps as the editing caret line) does not leak a stray newline —
+ * but intentional trailing spaces on the last line are preserved.
  */
 export function serializeComposerNode(doc: ProseMirrorNode): string {
 	const blocks: string[] = [];
@@ -79,7 +80,7 @@ export function serializeComposerNode(doc: ProseMirrorNode): string {
 		blocks.push(serializeInline(block));
 	});
 
-	return blocks.join("\n").replace(/\s+$/u, "");
+	return blocks.join("\n").replace(/\n+$/u, "");
 }
 
 /** Serialize a live editor's document to plain text. */
@@ -121,4 +122,8 @@ export function setComposerPlainText(editor: Editor, text: string): void {
 	editor.commands.setContent(buildComposerDocJSON(text), {
 		emitUpdate: false,
 	});
+	// setContent resets the selection to the document start; move the caret to
+	// the end so prefilled / synced / voice-transcript text is appended when the
+	// user starts typing, not prepended. Selection only — does not steal focus.
+	editor.commands.setTextSelection(editor.state.doc.content.size);
 }

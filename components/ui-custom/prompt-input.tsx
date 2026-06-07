@@ -881,6 +881,14 @@ export const PromptInput = ({
       const text = usingProvider
         ? controller.textInput.value
         : (() => {
+            // Read the composer's synced hidden field by data-slot so a custom
+            // `name` prop can't desync it from the field this submit path reads.
+            const field = form.querySelector<HTMLInputElement>(
+              '[data-slot="prompt-input-message"]'
+            );
+            if (field) {
+              return field.value;
+            }
             const formData = new FormData(form);
             return (formData.get("message") as string) || "";
           })();
@@ -1160,6 +1168,7 @@ export const PromptInputTextarea = ({
       createComposerEditorExtensions({
         getMentionSources: () => mentionSourcesRef.current,
         onEnter: handleEnterSubmit,
+        onPasteFiles: (files) => attachmentsRef.current.add(files),
       }),
     [handleEnterSubmit]
   );
@@ -1304,7 +1313,7 @@ export const PromptInputTextarea = ({
       </div>
       {/* Hidden input keeps FormData.get("message") working for demos that read
           the submitted text from the form rather than the controller. */}
-      <input ref={hiddenInputRef} type="hidden" name={name} />
+      <input ref={hiddenInputRef} type="hidden" name={name} data-slot="prompt-input-message" />
       {showOverlayPlaceholder ? (
         <span
           aria-hidden="true"

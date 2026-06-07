@@ -15,8 +15,36 @@ import SearchIcon from "@atlaskit/icon/core/search";
 import VideoIcon from "@atlaskit/icon/core/video";
 
 import type { RichTextMentionVisual } from "@/components/ui-custom/rich-text-editor";
+import type { AtlassianLogoName } from "@/components/ui/logo";
 
 import type { DirectoryVisual, SkillIconKey } from "./types";
+
+/**
+ * Shared visual resolver for directory items whose mark comes from a brand logo
+ * or an avatar/image path (agents and tools). A `logoName` renders the ADS brand
+ * logo; an avatar under `/avatar-agent/` is a hexagon agent avatar; any other
+ * path is a square image. Returns `undefined` when the item has neither. Single
+ * source so agent and tool tokens never diverge in shape.
+ */
+export function avatarVisualFromSrc(
+	logoName: AtlassianLogoName | undefined,
+	avatarSrc: string | undefined,
+): DirectoryVisual | undefined {
+	if (logoName) {
+		return { kind: "logo", logoName };
+	}
+
+	if (!avatarSrc) {
+		return undefined;
+	}
+
+	const isAgentAvatar = avatarSrc.startsWith("/avatar-agent/");
+	return {
+		kind: isAgentAvatar ? "avatar" : "image",
+		shape: isAgentAvatar ? "hexagon" : "square",
+		src: avatarSrc,
+	};
+}
 
 /**
  * Resolves a skill icon key to a raw Atlaskit icon element (color inherits from
