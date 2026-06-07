@@ -109,6 +109,7 @@ export default function EditorPalette({
 				>
 					<RichTextEditor
 						mentionSources={mentionSources}
+						suggestionVariant={variant}
 						placeholder="Type @ to mention people and agents, or / for commands…"
 						showToolbar={false}
 						showBubbleMenu={false}

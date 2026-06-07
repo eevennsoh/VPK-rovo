@@ -33,6 +33,7 @@ import type {
 	RichTextMentionItem,
 	RichTextMentionRemovalRequest,
 	RichTextMentionSources,
+	RichTextSuggestionVariant,
 } from "./types";
 
 const dataFlowStreamdownPlugins = { mermaid };
@@ -49,6 +50,12 @@ interface RichTextEditorProps
 	toolbarEndSlot?: ReactNode;
 	toolbarBelowSlot?: ReactNode;
 	mentionSources?: RichTextMentionSources;
+	/**
+	 * Layout for the live "@" / "/" suggestion menus. `"flat"` (default) merges
+	 * each surface's sections into one list separated by headings; `"nested"`
+	 * keeps the original drill-in category lists.
+	 */
+	suggestionVariant?: RichTextSuggestionVariant;
 	mentionRemovalRequest?: RichTextMentionRemovalRequest | null;
 	onMarkdownChange?: (value: string) => void;
 	onPlainTextChange?: (value: string) => void;
@@ -277,6 +284,7 @@ export function RichTextEditor({
 	toolbarEndSlot,
 	toolbarBelowSlot,
 	mentionSources,
+	suggestionVariant = "flat",
 	mentionRemovalRequest,
 	onMarkdownChange,
 	onPlainTextChange,
@@ -311,8 +319,9 @@ export function RichTextEditor({
 		() => createRichTextEditorExtensions({
 			getMentionSources: () => mentionSourcesRef.current,
 			onAskRovo: (activeEditor) => onAskRovoRef.current?.(activeEditor),
+			suggestionVariant,
 		}),
-		[],
+		[suggestionVariant],
 	);
 	const editor = useEditor({
 		extensions,

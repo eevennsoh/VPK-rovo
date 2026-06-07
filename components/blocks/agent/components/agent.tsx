@@ -1134,7 +1134,9 @@ function AgentCompactConversationStartersNavButton({
 				)}
 			/>
 			<MenubarContent align="start" className="w-72">
-				<div className="flex flex-col gap-1.5">
+				{/* 8px (`pb-2`) below the last starter field so it doesn't crowd the
+				    footer separator — the rest of the frame keeps the popup's even 4px. */}
+				<div className="flex flex-col gap-1.5 pb-2">
 					{fields.map((field, index) => (
 						<div
 							className="flex items-center gap-2 rounded-sm border border-input px-3 focus-within:border-border-focused"

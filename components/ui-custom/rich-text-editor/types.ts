@@ -73,9 +73,26 @@ export type RichTextMentionSources = Partial<
 	Record<RichTextMentionCategory, readonly RichTextMentionItem[]>
 >;
 
+/**
+ * Layout for the live "@" / "/" suggestion menus.
+ *
+ * - `"flat"` (default): every section is merged into one scrollable list,
+ *   separated by non-interactive section headings (mirroring
+ *   `DropdownMenuLabel`). On the empty query each section is capped at five
+ *   items with a "Browse all" / "View more" footer; once the user starts
+ *   typing, the menu filters across every section at once and shows all matches.
+ * - `"nested"`: the original drill-in behavior where the top level lists
+ *   categories you click into to reveal each category's items.
+ */
+export type RichTextSuggestionVariant = "nested" | "flat";
+
 export interface RichTextEditorExtensionOptions {
 	getMentionSources?: () => RichTextMentionSources | undefined;
 	onAskRovo?: (editor: Editor) => void;
+	/**
+	 * Layout for the live "@" / "/" suggestion menus. Defaults to `"flat"`.
+	 */
+	suggestionVariant?: RichTextSuggestionVariant;
 	/**
 	 * Whether the "/" command menu includes the "Format" parent category (and its
 	 * block/mark formatting commands). Defaults to `true` for the full document

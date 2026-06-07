@@ -133,6 +133,7 @@ export const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 	addProseMirrorPlugins() {
 		const getMentionSources = this.options.getMentionSources;
 		const includeFormat = this.options.includeFormat ?? true;
+		const suggestionVariant = this.options.suggestionVariant ?? "flat";
 
 		return [
 			Suggestion<RichTextSlashAction, RichTextSlashAction>({
@@ -166,7 +167,7 @@ export const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 
 					props.run(editor);
 				},
-				render: () => createSlashSuggestionRenderer(getMentionSources, this.options.onAskRovo, includeFormat, this.options.anchorToInput),
+				render: () => createSlashSuggestionRenderer(getMentionSources, this.options.onAskRovo, includeFormat, this.options.anchorToInput, suggestionVariant),
 			}),
 		];
 	},
@@ -226,7 +227,7 @@ export function createRichTextMentionExtension(
 					])
 					.run();
 			},
-			render: () => createMentionSuggestionRenderer(options.getMentionSources, options.anchorToInput),
+			render: () => createMentionSuggestionRenderer(options.getMentionSources, options.anchorToInput, options.suggestionVariant ?? "flat"),
 		},
 	});
 }

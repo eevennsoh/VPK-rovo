@@ -16,8 +16,10 @@ import type {
 } from "@tiptap/suggestion";
 import { motion, type Variants } from "motion/react";
 
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PersonIcon from "@atlaskit/icon/core/person";
+import SearchIcon from "@atlaskit/icon/core/search";
 import SnippetIcon from "@atlaskit/icon/core/snippet";
 import TeamsIcon from "@atlaskit/icon/core/teams";
 import AlignTextCenterIcon from "@atlaskit/icon/core/align-text-center";
@@ -878,21 +880,6 @@ function attachComposerAnchor(
 	};
 }
 
-function getPagedSelectedIndex(
-	currentIndex: number,
-	direction: -1 | 1,
-	itemCount: number,
-): number {
-	if (itemCount <= 0) {
-		return 0;
-	}
-
-	return Math.min(
-		Math.max(currentIndex + (direction * SUGGESTION_PAGE_KEY_STEP), 0),
-		itemCount - 1,
-	);
-}
-
 /**
  * A "/" selection is either a basic-block command to run or a reference item to
  * insert as a mention token (the migrated Skills/Tools/Knowledge categories).
@@ -921,17 +908,211 @@ export function getSlashCommandFormatItems(
 	);
 }
 
+/**
+ * Layout for the live suggestion menus. `"flat"` merges every section of a
+ * surface into one list separated by headings; `"nested"` keeps the original
+ * drill-in category lists.
+ */
+type SuggestionVariant = "nested" | "flat";
+
+/** Max items shown per section (empty query) before the section footer. */
+const FLAT_SECTION_LIMIT = 5;
+
+/** Prefix for the synthetic footer rows ("Browse all" / "View more"). */
+const FLAT_FOOTER_ID_PREFIX = "__rich-text-flat-footer__";
+
+function getFlatFooterId(category: string): string {
+	return `${FLAT_FOOTER_ID_PREFIX}${category}`;
+}
+
+function isFlatFooterId(id: string): boolean {
+	return id.startsWith(FLAT_FOOTER_ID_PREFIX);
+}
+
+/** One section of a merged flat surface. */
+interface FlatSectionSpec {
+	/** Stable key used for the heading id, footer id, and expansion state. */
+	key: string;
+	/** Section heading text (mirrors the dropdown menu group label). */
+	title: string;
+	/**
+	 * Directory-backed sections show a "Browse all" footer that links out;
+	 * the rest show a "View more" / "View less" footer that expands inline.
+	 */
+	hasDirectory: boolean;
+	/** Full item list for the section (already mapped to menu items). */
+	items: readonly RichTextSuggestionMenuItem[];
+}
+
+/**
+ * Builds the rows for a merged flat surface from its sections.
+ *
+ * - Empty query: each section leads with a heading, caps at five items, and
+ *   ends with a footer ("Browse all" for directory sections, "View more" /
+ *   "View less" for the rest). "View more" sections honor `expandedSections`.
+ * - Non-empty query: every section is filtered, empty sections (and their
+ *   headings/footers) are dropped, and all matches are shown with no cap.
+ *
+ * `stickyLeadItems` (e.g. "Ask Rovo") are prepended verbatim, before any
+ * heading, and are kept regardless of the query.
+ */
+function buildFlatSurfaceRows(
+	sections: readonly FlatSectionSpec[],
+	query: string,
+	expandedSections: Readonly<Record<string, boolean>>,
+	stickyLeadItems: readonly RichTextSuggestionMenuItem[] = [],
+): readonly RichTextSuggestionMenuItem[] {
+	const normalizedQuery = query.trim();
+	const isFiltering = normalizedQuery.length > 0;
+	const rows: RichTextSuggestionMenuItem[] = [...stickyLeadItems];
+
+	for (const section of sections) {
+		const matchedItems = isFiltering
+			? filterItems(section.items, normalizedQuery)
+			: section.items;
+		if (matchedItems.length === 0) {
+			continue;
+		}
+
+		rows.push({
+			id: `${section.key}-heading`,
+			label: section.title,
+			headingLabel: section.title,
+			icon: null,
+		});
+
+		if (isFiltering) {
+			// While filtering, show every match across all sections — no caps.
+			rows.push(...matchedItems);
+			continue;
+		}
+
+		const overflowing = matchedItems.length > FLAT_SECTION_LIMIT;
+		const expanded = !section.hasDirectory && Boolean(expandedSections[section.key]);
+		const visibleItems = expanded ? matchedItems : matchedItems.slice(0, FLAT_SECTION_LIMIT);
+		rows.push(...visibleItems);
+
+		if (overflowing) {
+			rows.push(
+				section.hasDirectory
+					? {
+							id: getFlatFooterId(section.key),
+							label: "Browse all",
+							icon: <SearchIcon label="" size="small" />,
+							isSticky: true,
+						}
+					: {
+							id: getFlatFooterId(section.key),
+							label: expanded ? "View less" : "View more",
+							icon: <ChevronDownIcon label="" size="small" />,
+							isSticky: true,
+						},
+			);
+		}
+	}
+
+	return rows;
+}
+
+/** A row is selectable when it is neither a section heading nor disabled. */
+function isSelectableRow(item: RichTextSuggestionMenuItem): boolean {
+	return item.headingLabel === undefined && !item.disabled;
+}
+
+/** First selectable index at or after `from` (wrapping), or -1 if none. */
+function getFirstSelectableIndex(
+	items: readonly RichTextSuggestionMenuItem[],
+	from = 0,
+): number {
+	for (let offset = 0; offset < items.length; offset += 1) {
+		const index = (from + offset) % items.length;
+		if (isSelectableRow(items[index])) {
+			return index;
+		}
+	}
+	return -1;
+}
+
+/**
+ * Moves the selected index to the next selectable row in `direction`, skipping
+ * heading rows and wrapping around the list.
+ */
+function getNextSelectableIndex(
+	items: readonly RichTextSuggestionMenuItem[],
+	currentIndex: number,
+	direction: -1 | 1,
+): number {
+	if (items.length === 0) {
+		return 0;
+	}
+	for (let step = 1; step <= items.length; step += 1) {
+		const index = (currentIndex + direction * step + items.length * step) % items.length;
+		if (isSelectableRow(items[index])) {
+			return index;
+		}
+	}
+	return currentIndex;
+}
+
+/** Page up/down to a selectable row, clamped to the list bounds. */
+function getPagedSelectableIndex(
+	items: readonly RichTextSuggestionMenuItem[],
+	currentIndex: number,
+	direction: -1 | 1,
+): number {
+	if (items.length === 0) {
+		return 0;
+	}
+	const target = Math.min(
+		Math.max(currentIndex + direction * SUGGESTION_PAGE_KEY_STEP, 0),
+		items.length - 1,
+	);
+	// Snap onto the nearest selectable row in the travel direction.
+	for (let index = target; index >= 0 && index < items.length; index += direction) {
+		if (isSelectableRow(items[index])) {
+			return index;
+		}
+	}
+	return getFirstSelectableIndex(items, target);
+}
+
 export function createSlashSuggestionRenderer(
 	getMentionSources?: () => RichTextMentionSources | undefined,
 	onAskRovo?: (editor: Editor) => void,
 	includeFormat = true,
 	anchorToInput = false,
+	variant: SuggestionVariant = "flat",
 ) {
 	const popupState: SuggestionPopupState = { component: null, element: null, cleanup: null };
 	let selectedIndex = 0;
 	let activeCategory: RichTextSlashCategory | null = null;
 	let currentProps: SuggestionProps<RichTextSlashAction, RichTextSlashAction> | null = null;
+	// Per-section inline expansion for "View more" footers (flat variant only).
+	const expandedSections: Record<string, boolean> = {};
 
+	const isFlat = variant === "flat";
+
+	/** Maps a "/" category to its full, unfiltered menu items. */
+	function getCategoryMenuItems(
+		category: RichTextSlashCategory,
+	): readonly RichTextSuggestionMenuItem[] {
+		return category === "format"
+			? getSlashCommandFormatItems()
+			: getMentionChildItems(getMentionSources?.(), category);
+	}
+
+	/** Flat surface sections in slash order (skills, tools, knowledge, format). */
+	function getFlatSections(): readonly FlatSectionSpec[] {
+		return getSlashCategoryOrder(includeFormat).map((category) => ({
+			key: category,
+			title: getSlashCategoryLabel(category),
+			// Reference categories link out to a directory; "format" expands inline.
+			hasDirectory: category !== "format",
+			items: getCategoryMenuItems(category),
+		}));
+	}
+
+	// --- Nested (drill-in) item resolution -------------------------------------
 	function getTopLevelItems(query: string): readonly RichTextSuggestionMenuItem[] {
 		return filterItems(getSlashCommandCategoryItems(getMentionSources?.(), includeFormat), query);
 	}
@@ -949,22 +1130,25 @@ export function createSlashSuggestionRenderer(
 	}
 
 	function getVisibleItems(query: string): readonly RichTextSuggestionMenuItem[] {
+		if (isFlat) {
+			return buildFlatSurfaceRows(getFlatSections(), query, expandedSections, [ASK_ROVO_SLASH_ITEM]);
+		}
 		return activeCategory ? getChildItems(query) : getTopLevelItems(query);
 	}
 
 	function update(props: SuggestionProps<RichTextSlashAction, RichTextSlashAction>) {
 		currentProps = props;
 		const items = getVisibleItems(props.query);
-		selectedIndex = Math.min(selectedIndex, Math.max(items.length - 1, 0));
+		selectedIndex = clampSelectedIndex(items, selectedIndex);
 		if (anchorToInput) {
 			positionComposerPopup(popupState.element, props.editor.view.dom);
 		} else {
 			positionPopup(popupState.element, props.clientRect);
 		}
 		popupState.component?.updateProps({
-			emptyLabel: activeCategory ? "No matching items" : "No commands found",
+			emptyLabel: !isFlat && activeCategory ? "No matching items" : "No commands found",
 			items,
-			onBack: activeCategory
+			onBack: !isFlat && activeCategory
 				? () => {
 						activeCategory = null;
 						selectedIndex = 0;
@@ -972,16 +1156,63 @@ export function createSlashSuggestionRenderer(
 					}
 				: undefined,
 			onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
-			// Top-level "Ask Rovo" renders as the subtle input row (matching the
-			// editor palette); nested category/format submenus keep plain options.
-			renderFirstItemAsInput: !activeCategory,
+			// "Ask Rovo" renders as the subtle input row (matching the editor
+			// palette). In flat mode it is always the first row; in nested mode it
+			// only appears at the top level.
+			renderFirstItemAsInput: isFlat || !activeCategory,
 			selectedIndex,
-			title: activeCategory ? getSlashCategoryLabel(activeCategory) : "Commands",
+			title: !isFlat && activeCategory ? getSlashCategoryLabel(activeCategory) : "Commands",
 		});
+	}
+
+	/** Clamp/snap the selection onto a selectable row (skips headings). */
+	function clampSelectedIndex(
+		items: readonly RichTextSuggestionMenuItem[],
+		index: number,
+	): number {
+		if (items.length === 0) {
+			return 0;
+		}
+		const bounded = Math.min(Math.max(index, 0), items.length - 1);
+		return isSelectableRow(items[bounded])
+			? bounded
+			: Math.max(getFirstSelectableIndex(items, bounded), 0);
 	}
 
 	function selectItem(item: RichTextSuggestionMenuItem | undefined): boolean {
 		if (!item || !currentProps) {
+			return false;
+		}
+
+		if (item.id === ASK_ROVO_SLASH_ITEM.id) {
+			currentProps.command({ type: "ask-rovo", onAskRovo });
+			return true;
+		}
+
+		if (isFlat) {
+			// "Browse all" footers link out to a directory we don't host here; keep
+			// the menu open. "View more" / "View less" footers toggle the section.
+			if (isFlatFooterId(item.id)) {
+				const sectionKey = item.id.slice(FLAT_FOOTER_ID_PREFIX.length);
+				if (item.label === "View more" || item.label === "View less") {
+					expandedSections[sectionKey] = !expandedSections[sectionKey];
+					update(currentProps);
+				}
+				return true;
+			}
+
+			// Format commands run; everything else inserts a reference mention.
+			const command = SLASH_COMMANDS.find((candidate) => candidate.id === item.id);
+			if (command) {
+				currentProps.command({ type: "command", run: command.run });
+				return true;
+			}
+
+			const mention = findMentionAcrossCategories(item.id);
+			if (mention) {
+				currentProps.command({ type: "mention", mention });
+				return true;
+			}
 			return false;
 		}
 
@@ -1013,11 +1244,34 @@ export function createSlashSuggestionRenderer(
 			update(currentProps);
 			return true;
 		}
-		if (item.id === ASK_ROVO_SLASH_ITEM.id) {
-			currentProps.command({ type: "ask-rovo", onAskRovo });
-			return true;
-		}
 		return false;
+	}
+
+	/** Find a reference mention by id across every "/" reference category. */
+	function findMentionAcrossCategories(id: string): RichTextMentionItem | undefined {
+		for (const category of getSlashCategoryOrder(includeFormat)) {
+			if (category === "format") {
+				continue;
+			}
+			const mention = getCategoryItems(getMentionSources?.(), category).find(
+				(candidate) => candidate.id === id,
+			);
+			if (mention) {
+				return mention;
+			}
+		}
+		return undefined;
+	}
+
+	function moveSelection(direction: -1 | 1, paged: boolean) {
+		if (!currentProps) {
+			return;
+		}
+		const items = getVisibleItems(currentProps.query);
+		selectedIndex = paged
+			? getPagedSelectableIndex(items, selectedIndex, direction)
+			: getNextSelectableIndex(items, selectedIndex, direction);
+		update(currentProps);
 	}
 
 	return {
@@ -1030,8 +1284,8 @@ export function createSlashSuggestionRenderer(
 					emptyLabel: "No commands found",
 					items: getVisibleItems(props.query),
 					onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
-					// Menus always open at the top level, where "Ask Rovo" renders
-					// as the subtle input row (matching the editor palette).
+					// Menus always open with "Ask Rovo" as the subtle input row
+					// (matching the editor palette).
 					renderFirstItemAsInput: true,
 					selectedIndex,
 					title: "Commands",
@@ -1050,41 +1304,35 @@ export function createSlashSuggestionRenderer(
 			}
 			const items = getVisibleItems(currentProps.query);
 			if (event.key === "ArrowDown") {
-				selectedIndex = items.length > 0 ? (selectedIndex + 1) % items.length : 0;
-				update(currentProps);
+				moveSelection(1, false);
 				return true;
 			}
 			if (event.key === "ArrowUp") {
-				selectedIndex = items.length > 0
-					? (selectedIndex + items.length - 1) % items.length
-					: 0;
-				update(currentProps);
+				moveSelection(-1, false);
 				return true;
 			}
 			if (event.key === "PageDown") {
-				selectedIndex = getPagedSelectedIndex(selectedIndex, 1, items.length);
-				update(currentProps);
+				moveSelection(1, true);
 				return true;
 			}
 			if (event.key === "PageUp") {
-				selectedIndex = getPagedSelectedIndex(selectedIndex, -1, items.length);
-				update(currentProps);
+				moveSelection(-1, true);
 				return true;
 			}
 			if (event.key === "Home") {
-				selectedIndex = 0;
+				selectedIndex = Math.max(getFirstSelectableIndex(items, 0), 0);
 				update(currentProps);
 				return true;
 			}
 			if (event.key === "End") {
-				selectedIndex = Math.max(items.length - 1, 0);
+				selectedIndex = clampSelectedIndex(items, items.length - 1);
 				update(currentProps);
 				return true;
 			}
 			if (event.key === "Enter" || event.key === "Tab") {
 				return selectItem(items[selectedIndex]);
 			}
-			if (event.key === "Backspace" && activeCategory) {
+			if (event.key === "Backspace" && !isFlat && activeCategory) {
 				activeCategory = null;
 				selectedIndex = 0;
 				update(currentProps);
@@ -1309,14 +1557,35 @@ export function getMentionChildItems(
 	}));
 }
 
+/** "@" surface sections in mention order: people & team, then subagents. */
+const MENTION_FLAT_SECTIONS: readonly { category: RichTextMentionParentCategory; hasDirectory: boolean }[] = [
+	{ category: "people-team", hasDirectory: false },
+	{ category: "subagent", hasDirectory: true },
+];
+
 export function createMentionSuggestionRenderer(
 	getMentionSources?: () => RichTextMentionSources | undefined,
 	anchorToInput = false,
+	variant: SuggestionVariant = "flat",
 ) {
 	const popupState: SuggestionPopupState = { component: null, element: null, cleanup: null };
 	let selectedIndex = 0;
 	let activeCategory: RichTextMentionParentCategory | null = null;
 	let currentProps: SuggestionProps<RichTextMentionItem, RichTextMentionItem> | null = null;
+	// Per-section inline expansion for "View more" footers (flat variant only).
+	const expandedSections: Record<string, boolean> = {};
+
+	const isFlat = variant === "flat";
+
+	/** Flat surface sections: people & team, then subagents. */
+	function getFlatSections(): readonly FlatSectionSpec[] {
+		return MENTION_FLAT_SECTIONS.map(({ category, hasDirectory }) => ({
+			key: category,
+			title: MENTION_PARENT_LABELS[category],
+			hasDirectory,
+			items: getMentionChildItems(getMentionSources?.(), category),
+		}));
+	}
 
 	function getParentItems(query: string): readonly RichTextSuggestionMenuItem[] {
 		return filterItems(getMentionTargetItems(getMentionSources?.()), query);
@@ -1333,22 +1602,39 @@ export function createMentionSuggestionRenderer(
 	function getVisibleItems(
 		props: SuggestionProps<RichTextMentionItem, RichTextMentionItem>,
 	): readonly RichTextSuggestionMenuItem[] {
+		if (isFlat) {
+			return buildFlatSurfaceRows(getFlatSections(), props.query, expandedSections);
+		}
 		return activeCategory ? getChildItems(props.query) : getParentItems(props.query);
+	}
+
+	/** Clamp/snap the selection onto a selectable row (skips headings). */
+	function clampSelectedIndex(
+		items: readonly RichTextSuggestionMenuItem[],
+		index: number,
+	): number {
+		if (items.length === 0) {
+			return 0;
+		}
+		const bounded = Math.min(Math.max(index, 0), items.length - 1);
+		return isSelectableRow(items[bounded])
+			? bounded
+			: Math.max(getFirstSelectableIndex(items, bounded), 0);
 	}
 
 	function update(props: SuggestionProps<RichTextMentionItem, RichTextMentionItem>) {
 		currentProps = props;
 		const items = getVisibleItems(props);
-		selectedIndex = Math.min(selectedIndex, Math.max(items.length - 1, 0));
+		selectedIndex = clampSelectedIndex(items, selectedIndex);
 		if (anchorToInput) {
 			positionComposerPopup(popupState.element, props.editor.view.dom);
 		} else {
 			positionPopup(popupState.element, props.clientRect);
 		}
 		popupState.component?.updateProps({
-			emptyLabel: activeCategory ? "No matching items" : "No people or agents found",
+			emptyLabel: !isFlat && activeCategory ? "No matching items" : "No people or agents found",
 			items,
-			onBack: activeCategory
+			onBack: !isFlat && activeCategory
 				? () => {
 						activeCategory = null;
 						selectedIndex = 0;
@@ -1357,13 +1643,46 @@ export function createMentionSuggestionRenderer(
 				: undefined,
 			onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
 			selectedIndex,
-			title: activeCategory ? MENTION_PARENT_LABELS[activeCategory] : "Mention",
+			title: !isFlat && activeCategory ? MENTION_PARENT_LABELS[activeCategory] : "Mention",
 		});
+	}
+
+	/** Resolve a mention by id across both "@" parent categories. */
+	function findMentionAcrossCategories(id: string): RichTextMentionItem | undefined {
+		for (const { category } of MENTION_FLAT_SECTIONS) {
+			const mention = getCategoryItems(getMentionSources?.(), category).find(
+				(candidate) => candidate.id === id,
+			);
+			if (mention) {
+				return mention;
+			}
+		}
+		return undefined;
 	}
 
 	function selectItem(item: RichTextSuggestionMenuItem | undefined): boolean {
 		if (!item || !currentProps) {
 			return false;
+		}
+
+		if (isFlat) {
+			// "Browse all" footers link out to a directory we don't host here; keep
+			// the menu open. "View more" / "View less" footers toggle the section.
+			if (isFlatFooterId(item.id)) {
+				const sectionKey = item.id.slice(FLAT_FOOTER_ID_PREFIX.length);
+				if (item.label === "View more" || item.label === "View less") {
+					expandedSections[sectionKey] = !expandedSections[sectionKey];
+					update(currentProps);
+				}
+				return true;
+			}
+
+			const mention = findMentionAcrossCategories(item.id);
+			if (!mention) {
+				return false;
+			}
+			currentProps.command(mention);
+			return true;
 		}
 
 		if (!activeCategory) {
@@ -1381,6 +1700,17 @@ export function createMentionSuggestionRenderer(
 
 		currentProps.command(mention);
 		return true;
+	}
+
+	function moveSelection(direction: -1 | 1, paged: boolean) {
+		if (!currentProps) {
+			return;
+		}
+		const items = getVisibleItems(currentProps);
+		selectedIndex = paged
+			? getPagedSelectableIndex(items, selectedIndex, direction)
+			: getNextSelectableIndex(items, selectedIndex, direction);
+		update(currentProps);
 	}
 
 	return {
@@ -1410,41 +1740,35 @@ export function createMentionSuggestionRenderer(
 			}
 			const items = getVisibleItems(currentProps);
 			if (event.key === "ArrowDown") {
-				selectedIndex = items.length > 0 ? (selectedIndex + 1) % items.length : 0;
-				update(currentProps);
+				moveSelection(1, false);
 				return true;
 			}
 			if (event.key === "ArrowUp") {
-				selectedIndex = items.length > 0
-					? (selectedIndex + items.length - 1) % items.length
-					: 0;
-				update(currentProps);
+				moveSelection(-1, false);
 				return true;
 			}
 			if (event.key === "PageDown") {
-				selectedIndex = getPagedSelectedIndex(selectedIndex, 1, items.length);
-				update(currentProps);
+				moveSelection(1, true);
 				return true;
 			}
 			if (event.key === "PageUp") {
-				selectedIndex = getPagedSelectedIndex(selectedIndex, -1, items.length);
-				update(currentProps);
+				moveSelection(-1, true);
 				return true;
 			}
 			if (event.key === "Home") {
-				selectedIndex = 0;
+				selectedIndex = Math.max(getFirstSelectableIndex(items, 0), 0);
 				update(currentProps);
 				return true;
 			}
 			if (event.key === "End") {
-				selectedIndex = Math.max(items.length - 1, 0);
+				selectedIndex = clampSelectedIndex(items, items.length - 1);
 				update(currentProps);
 				return true;
 			}
 			if (event.key === "Enter" || event.key === "Tab") {
 				return selectItem(items[selectedIndex]);
 			}
-			if (event.key === "Backspace" && activeCategory) {
+			if (event.key === "Backspace" && !isFlat && activeCategory) {
 				activeCategory = null;
 				selectedIndex = 0;
 				update(currentProps);

@@ -745,10 +745,13 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /view-type-table-home/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /useLayoutEffect\(\(\) => \{[\s\S]*scrollIntoView\(\{ block: "nearest" \}\)/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const SUGGESTION_PAGE_KEY_STEP = 5;/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /event\.key === "PageDown"[\s\S]*getPagedSelectedIndex\(selectedIndex, 1, items\.length\)/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /event\.key === "PageUp"[\s\S]*getPagedSelectedIndex\(selectedIndex, -1, items\.length\)/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /event\.key === "Home"[\s\S]*selectedIndex = 0/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /event\.key === "End"[\s\S]*selectedIndex = Math\.max\(items\.length - 1, 0\)/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function moveSelection\(direction: -1 \| 1, paged: boolean\)[\s\S]*getPagedSelectableIndex\(items, selectedIndex, direction\)/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /event\.key === "PageDown"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /moveSelection\(1, true\)/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /event\.key === "PageUp"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /moveSelection\(-1, true\)/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /event\.key === "Home"[\s\S]*getFirstSelectableIndex\(items, 0\)/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /event\.key === "End"[\s\S]*clampSelectedIndex\(items, items\.length - 1\)/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function getMentionChildDescription\(item: RichTextMentionItem\): string/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /description: getMentionChildDescription\(item\)/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /description: "Use the default paragraph style for body copy\."/u);
