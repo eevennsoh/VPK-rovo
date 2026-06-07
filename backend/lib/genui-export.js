@@ -463,14 +463,20 @@ function mapSpec(spec, format, externalState) {
 	}
 
 	// Prune children refs to dropped elements
+	const childElementKeys = new Set();
 	for (const el of Object.values(elements)) {
-		if (el.children) el.children = el.children.filter((k) => k in elements);
+		if (el.children) {
+			el.children = el.children.filter((k) => k in elements);
+			for (const childKey of el.children) {
+				childElementKeys.add(childKey);
+			}
+		}
 	}
 
 	// Wrap in document envelope
 	const rootKey = spec.root in elements ? spec.root : uid("wrap");
 	if (!(spec.root in elements)) {
-		const orphans = Object.keys(elements).filter((k) => !Object.values(elements).some((e) => e.children && e.children.includes(k)));
+		const orphans = Object.keys(elements).filter((k) => !childElementKeys.has(k));
 		elements[rootKey] = { type: format === "image" ? "Column" : "View", props: {}, children: orphans };
 	}
 

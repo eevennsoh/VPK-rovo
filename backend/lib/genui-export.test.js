@@ -127,6 +127,39 @@ describe("mapSpec", () => {
 		assert.ok(!result.elements["scene"] || result.elements["scene"].type !== "Scene3D", "Scene3D dropped");
 		assert.ok(!result.elements["box"] || result.elements["box"].type !== "Box", "3D Box dropped");
 	});
+
+	it("wraps top-level mapped orphans when the declared root is dropped", () => {
+		const result = mapSpec({
+			root: "scene",
+			elements: {
+				scene: {
+					type: "Scene3D",
+					props: {},
+					children: ["heading"],
+				},
+				heading: {
+					type: "Stack",
+					props: { direction: "vertical" },
+					children: ["detail"],
+				},
+				detail: {
+					type: "Text",
+					props: { content: "Detail" },
+				},
+				loose: {
+					type: "Text",
+					props: { content: "Loose" },
+				},
+			},
+		}, "pdf");
+
+		const doc = result.elements[result.root];
+		const page = result.elements[doc.children[0]];
+		const wrapper = result.elements[page.children[0]];
+
+		assert.equal(wrapper.type, "View");
+		assert.deepEqual(wrapper.children, ["heading", "loose"]);
+	});
 });
 
 describe("generateReactCode", () => {
