@@ -111,7 +111,7 @@ interface SuggestionPopupState {
 }
 
 export type RichTextMentionMenuCategory = RichTextMentionCategory | "people-team";
-type RichTextMentionParentCategory = "people-team";
+type RichTextMentionParentCategory = "people-team" | "subagent";
 
 const SUGGESTION_PAGE_KEY_STEP = 5;
 
@@ -230,15 +230,24 @@ const AGENT_AVATAR_SRCS = [
 
 const MENTION_PARENT_LABELS: Record<RichTextMentionParentCategory, string> = {
 	"people-team": "People and team",
+	subagent: "Subagents",
 };
 
-/** "@" mention surface: people and teams only. */
+/** "@" mention surface: people/teams and subagents, each opening a nested list. */
 const MENTION_TARGET_ORDER: readonly RichTextMentionParentCategory[] = [
 	"people-team",
+	"subagent",
 ];
 
-/** "/" command surface: everything else, each opening a nested item list. */
-const COMMAND_CATEGORY_ORDER: readonly RichTextCommandCategory[] = RICH_TEXT_REFERENCE_CATEGORY_OPTIONS.map((option) => option.category);
+/**
+ * "/" command surface: reference categories other than subagent (which lives on
+ * the "@" surface), each opening a nested item list. Derived from the shared
+ * `RICH_TEXT_REFERENCE_CATEGORY_OPTIONS` so the toolbar's "Add content" menu and
+ * the slash menu stay in sync, minus subagent.
+ */
+const COMMAND_CATEGORY_ORDER: readonly RichTextCommandCategory[] = RICH_TEXT_REFERENCE_CATEGORY_OPTIONS
+	.map((option) => option.category)
+	.filter((category): category is RichTextCommandCategory => category !== "subagent");
 
 const SLASH_CATEGORY_ORDER: readonly RichTextSlashCategory[] = [
 	...COMMAND_CATEGORY_ORDER,
@@ -1246,14 +1255,14 @@ function buildCategoryMenuItems(
 	}));
 }
 
-/** Parent entries for the "@" mention surface: people and teams only. */
+/** Parent entries for the "@" mention surface: people/teams and subagents. */
 export function getMentionTargetItems(
 	sources?: RichTextMentionSources,
 ): readonly RichTextSuggestionMenuItem[] {
 	return buildCategoryMenuItems(MENTION_TARGET_ORDER, sources);
 }
 
-/** Parent entries for the "/" command surface: subagents, skills, tools, knowledge. */
+/** Parent entries for the "/" command surface: skills, tools, knowledge. */
 export function getSlashCommandCategoryItems(
 	sources?: RichTextMentionSources,
 	includeFormat = true,
