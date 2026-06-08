@@ -12,6 +12,14 @@ const INCLUDED_TEST_PREFIXES = [
 	"rovo/",
 	"scripts/",
 ];
+// Specific component-tree tests gated by CI even though `components/` as a whole
+// is not (its 200+ source-assertion tests have drifted and aren't CI-maintained).
+// These cover the agent-generation integration seams that prefix-based inclusion
+// would otherwise miss.
+const INCLUDED_TEST_FILES = new Set([
+	"components/projects/studio/components/rovo-app-agent-creation-flow.test.js",
+	"components/projects/studio/lib/studio-agent-creation-context.test.js",
+]);
 
 const gitResult = spawnSync("git", [
 	"ls-files",
@@ -35,7 +43,10 @@ const testFiles = gitResult.stdout
 		if (!filePath || EXCLUDED_TEST_FILES.has(filePath)) {
 			return false;
 		}
-		if (!INCLUDED_TEST_PREFIXES.some((prefix) => filePath.startsWith(prefix))) {
+		const isIncluded =
+			INCLUDED_TEST_FILES.has(filePath) ||
+			INCLUDED_TEST_PREFIXES.some((prefix) => filePath.startsWith(prefix));
+		if (!isIncluded) {
 			return false;
 		}
 

@@ -731,14 +731,15 @@ test("Studio screen assistant applies draft patches without publishing agents", 
 
 test("Studio clarification answers keep agent creation mode active", () => {
 	// Continuation context builder now lives in the lib; the shell looks up the
-	// per-thread template provenance and passes it into the continuation context.
-	assert.match(SHELL_SOURCE, /buildStudioAgentCreationContinuationContext\(threadTemplate\)/u);
+	// per-thread template provenance and passes it (plus the domain-scoped category
+	// ids) into the continuation context.
+	assert.match(SHELL_SOURCE, /buildStudioAgentCreationContinuationContext\(studioCreationTemplate, \{/u);
 	assert.match(SHELL_SOURCE, /const getStudioAgentCreationClarificationOptions = useCallback/u);
 	assert.match(SHELL_SOURCE, /activeQuestionCard\?\.creationMode === "agent" \|\|[\s\S]*studioAgentCreationThreadKeysRef\.current\.has\(chat\.runtimeThreadId\)/u);
 	assert.match(SHELL_SOURCE, /hasPersistedAgentCreationPrompt/u);
 	assert.match(SHELL_SOURCE, /message\.metadata\?\.creationMode === "agent"/u);
 	assert.match(SHELL_SOURCE, /creationMode: "agent" as const/u);
-	assert.match(SHELL_SOURCE, /submitClarification\([\s\S]*activeQuestionCard,[\s\S]*answers,[\s\S]*\.\.\.getStudioAgentCreationClarificationOptions\(\),[\s\S]*onSubmitted: hideQuestionCard/u);
+	assert.match(SHELL_SOURCE, /submitClarification\([\s\S]*activeQuestionCard,[\s\S]*omitDomainScopeAnswer\(answers\),[\s\S]*\.\.\.getStudioAgentCreationClarificationOptions\(categoryIds\),[\s\S]*onSubmitted: hideQuestionCard/u);
 	assert.match(SHELL_SOURCE, /setSubmittingQuestionCardKey\(questionCardKey\);/u);
 	assert.match(SHELL_SOURCE, /onDismissQuestionCard: handleCancelClarificationQuestionSet/u);
 });

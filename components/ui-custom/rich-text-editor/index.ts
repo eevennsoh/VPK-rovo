@@ -34,6 +34,12 @@ export {
 	getRichTextMentionVisualAttrs,
 	getRichTextMentionVisualFromAttrs,
 } from "./mention-visual";
+export {
+	MENTION_MARKDOWN_TOKEN_NAME,
+	parseMentionTokenId,
+	serializeMentionNode,
+	type MentionTokenResolver,
+} from "./mention-token-codec";
 export type {
 	RichTextCommandCategory,
 	RichTextMentionCategory,

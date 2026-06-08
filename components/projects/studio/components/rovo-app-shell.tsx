@@ -61,6 +61,13 @@ import {
 	buildStudioAgentCreationContinuationContext,
 	type StudioCreationTemplateContext,
 } from "@/components/projects/studio/lib/studio-agent-creation-context";
+import {
+	deriveTemplateCategoryIds,
+	omitDomainScopeAnswer,
+	readDomainCategoryIds,
+	withDomainScopeQuestion,
+} from "@/components/projects/studio/lib/agent-creation-domain-scope";
+import { repairGeneratedAgentCatalog } from "@/app/data/directory/repair-agent-result";
 import { useLiveVoice } from "@/components/projects/studio/hooks/use-live-voice";
 import { type DelegationRequest, useRealtimeVoice } from "@/components/projects/studio/hooks/use-realtime-voice";
 import type { VoiceButtonState } from "@/components/ui-audio/voice-button";
@@ -1742,7 +1749,17 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	}, [nav, studioAgentRegistry]);
 
 	const handleStudioAgentResultSelect = useCallback(
-		(agentResult: RovoDataParts["agent-result"], options?: { sourceMessageId?: string; sourceKey?: string }): boolean => {
+		(rawAgentResult: RovoDataParts["agent-result"], options?: { sourceMessageId?: string; sourceKey?: string }): boolean => {
+			// Repair catalog references on every generated result at this single ingest
+			// boundary (create AND any future update path), so hallucinated ids are
+			// fuzzy-repaired, @[category:id] tokens resolved, and body lozenges unioned
+			// into the config arrays. Idempotent — the context-side create path repairs
+			// too, but applying here also covers non-create results. User panel edits go
+			// through updateSessionAgentDraft and are intentionally NOT repaired here.
+			const agentResult = {
+				...rawAgentResult,
+				...repairGeneratedAgentCatalog(rawAgentResult),
+			};
 			const normalizedAgent = normalizeStudioAgentResult(agentResult);
 			if (!normalizedAgent) {
 				return false;
@@ -2363,26 +2380,48 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		[chat.messages],
 	);
 	const { acceptPlanReview, submitClarification } = chat;
-	const getStudioAgentCreationClarificationOptions = useCallback(() => {
-		const isStudioAgentCreationThread =
-			activeQuestionCard?.creationMode === "agent" ||
-			hasPersistedAgentCreationPrompt ||
-			studioAgentCreationThreadKeysRef.current.has(chat.runtimeThreadId) ||
-			(chat.activeThreadId ? studioAgentCreationThreadKeysRef.current.has(chat.activeThreadId) : false);
-
-		if (!isStudioAgentCreationThread) {
-			return undefined;
-		}
-
-		const threadTemplate =
-			creationTemplateByThreadRef.current[chat.runtimeThreadId] ??
-			(chat.activeThreadId ? creationTemplateByThreadRef.current[chat.activeThreadId] : undefined);
-
-		return {
-			contextDescription: buildStudioAgentCreationContinuationContext(threadTemplate),
-			creationMode: "agent" as const,
-		};
-	}, [activeQuestionCard?.creationMode, chat.activeThreadId, chat.runtimeThreadId, hasPersistedAgentCreationPrompt]);
+	// True when the active thread is a Studio agent-creation flow (model creation
+	// card, persisted creation prompt, or a thread we tagged as creation). Computed
+	// inline (not memoized) so it always reflects the live mutable refs — a memo
+	// keyed on thread ids alone would read a stale snapshot if the ref is mutated
+	// without a dep change.
+	const isStudioAgentCreationThread =
+		activeQuestionCard?.creationMode === "agent" ||
+		hasPersistedAgentCreationPrompt ||
+		studioAgentCreationThreadKeysRef.current.has(chat.runtimeThreadId) ||
+		(chat.activeThreadId
+			? studioAgentCreationThreadKeysRef.current.has(chat.activeThreadId)
+			: false);
+	// The template (if any) bound to this creation thread. Templates derive their
+	// catalog scope from their bound ids and skip the domain-scope question;
+	// free-text creation injects it instead. Read live for the same reason.
+	const studioCreationTemplate =
+		creationTemplateByThreadRef.current[chat.runtimeThreadId] ??
+		(chat.activeThreadId ? creationTemplateByThreadRef.current[chat.activeThreadId] : undefined);
+	// Free-text creation cards get a deterministic 10-category domain question
+	// prepended so the user's pick scopes the generation catalog. Rendered only;
+	// the base `activeQuestionCard` is what we submit to the model tool contract.
+	const renderedQuestionCard =
+		activeQuestionCard && isStudioAgentCreationThread && !studioCreationTemplate
+			? withDomainScopeQuestion(activeQuestionCard)
+			: activeQuestionCard;
+	// Remember the chosen scope per thread so later clarification rounds (which no
+	// longer render the domain question) keep the same catalog scope.
+	const creationDomainScopeByThreadRef = useRef<Record<string, readonly string[]>>({});
+	const getStudioAgentCreationClarificationOptions = useCallback(
+		(categoryIds?: readonly string[]) => {
+			if (!isStudioAgentCreationThread) {
+				return undefined;
+			}
+			return {
+				contextDescription: buildStudioAgentCreationContinuationContext(studioCreationTemplate, {
+					categoryIds,
+				}),
+				creationMode: "agent" as const,
+			};
+		},
+		[isStudioAgentCreationThread, studioCreationTemplate],
+	);
 	const handleCancelClarificationQuestionSet = useCallback(
 		(questionCard: ParsedQuestionCardPayload) => {
 			return chat.cancelClarificationQuestionSet(questionCard, getStudioAgentCreationClarificationOptions());
@@ -2408,11 +2447,24 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			if (submittingQuestionCardKey === questionCardKey) return;
 			setSubmittingQuestionCardKey(questionCardKey);
 			try {
+				// Scope the generation catalog: templates derive it from their bound
+				// ids; free-text uses the domain-scope answer, remembered per thread so
+				// later rounds (no domain question) keep the same scope.
+				const scopeKey = activeQuestionCard.sessionId;
+				const storedScope = scopeKey
+					? creationDomainScopeByThreadRef.current[scopeKey]
+					: undefined;
+				const categoryIds = studioCreationTemplate
+					? deriveTemplateCategoryIds(studioCreationTemplate)
+					: (readDomainCategoryIds(answers) ?? storedScope);
+				if (categoryIds && scopeKey) {
+					creationDomainScopeByThreadRef.current[scopeKey] = categoryIds;
+				}
 				await submitClarification(
 					activeQuestionCard,
-					answers,
+					omitDomainScopeAnswer(answers),
 					{
-						...getStudioAgentCreationClarificationOptions(),
+						...getStudioAgentCreationClarificationOptions(categoryIds),
 						onSubmitted: hideQuestionCard,
 					},
 				);
@@ -2427,8 +2479,11 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		[
 			activeQuestionCard,
 			activeQuestionCardKey,
+			chat.activeThreadId,
+			chat.runtimeThreadId,
 			getStudioAgentCreationClarificationOptions,
 			hideQuestionCard,
+			studioCreationTemplate,
 			submitClarification,
 			submittingQuestionCardKey,
 		],
@@ -4264,7 +4319,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							<>
 								<ClarificationQuestionCard
 									key={activeQuestionCardKey ?? undefined}
-									questionCard={activeQuestionCard}
+									questionCard={renderedQuestionCard ?? activeQuestionCard}
 									isSubmitting={submittingQuestionCardKey === (activeQuestionCardKey ?? `${activeQuestionCard.sessionId}:${activeQuestionCard.round}`)}
 									onSubmit={(answers) => {
 										void handleClarificationSubmit(answers);

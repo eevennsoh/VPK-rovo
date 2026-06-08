@@ -11,7 +11,43 @@
 		"remix": "1.8K",
 		"updated": "2 weeks ago",
 		"peopleOffset": 0,
-		"instructions": "# Decision Director\n\nReview DACI decisions, close context gaps, and suggest the next decision-ready resources.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Decision Director\n\nReview DACI decisions, close context gaps, and suggest the next decision-ready resources.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"confluence",
+			"jira",
+			"atlassian-home"
+		],
+		"skillIds": [
+			"explore-ideas",
+			"prioritize-ideas",
+			"build-report"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"jira"
+		],
+		"subagentIds": [
+			"decision-director",
+			"strategic-insight"
+		],
+		"conversationStarters": [
+			"Review this DACI decision for gaps",
+			"Compare these options against our criteria",
+			"What's the next decision-ready resource?"
+		],
+		"conversationStarterIcons": [
+			"list-checklist",
+			"comparison",
+			"book"
+		],
+		"triggers": [
+			"A new DACI doc is shared",
+			"A decision is marked blocked"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nGather context from @[knowledge:confluence] and @[knowledge:jira], then weigh options against explicit criteria using @[skill:explore-ideas] and @[skill:prioritize-ideas]. Pull supporting work from @[tool:confluence] and @[tool:jira]. Escalate ambiguous calls to @[subagent:strategic-insight].\n\n## Output\nA review-ready DACI summary with ranked paths and open questions."
 	},
 	{
 		"id": "okr-generator",
@@ -25,7 +61,42 @@
 		"remix": "1.2K",
 		"updated": "6 days ago",
 		"peopleOffset": 1,
-		"instructions": "# OKR Generator\n\nCreate and review clear, measurable OKRs against examples, team priorities, and outcome guidance.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# OKR Generator\n\nCreate and review clear, measurable OKRs against examples, team priorities, and outcome guidance.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira",
+			"atlassian-home",
+			"confluence"
+		],
+		"skillIds": [
+			"roadmap-builder",
+			"build-report",
+			"prioritize-ideas"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"jira"
+		],
+		"subagentIds": [
+			"okr-generator",
+			"strategic-insight"
+		],
+		"conversationStarters": [
+			"Draft measurable OKRs for this quarter",
+			"Review these OKRs for clarity",
+			"Align objectives to team priorities"
+		],
+		"conversationStarterIcons": [
+			"target",
+			"list-checklist",
+			"people-group"
+		],
+		"triggers": [
+			"Quarter planning kicks off"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nDraft and review OKRs using @[skill:roadmap-builder] and @[skill:prioritize-ideas], grounded in @[knowledge:confluence] and @[knowledge:jira]. Link objectives to live work in @[tool:jira]. Hand strategy questions to @[subagent:strategic-insight].\n\n## Output\nClear, measurable objectives with key results and owners."
 	},
 	{
 		"id": "opportunity-explorer",
@@ -38,7 +109,41 @@
 		"remix": "940",
 		"updated": "4 days ago",
 		"peopleOffset": 2,
-		"instructions": "# Opportunity Explorer\n\nExplore non-obvious directions before committing.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Opportunity Explorer\n\nExplore non-obvious directions before committing.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira-product-discovery",
+			"confluence",
+			"miro"
+		],
+		"skillIds": [
+			"explore-ideas",
+			"trend-spotter",
+			"prioritize-ideas"
+		],
+		"knowledgeIds": [
+			"confluence"
+		],
+		"subagentIds": [
+			"strategic-insight",
+			"feedback-analyzer"
+		],
+		"conversationStarters": [
+			"Surface non-obvious directions here",
+			"What opportunities are we missing?",
+			"Explore adjacent problem spaces"
+		],
+		"conversationStarterIcons": [
+			"lightbulb",
+			"search",
+			"compass"
+		],
+		"triggers": [
+			"Discovery phase opens"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nExplore divergent directions with @[skill:explore-ideas] and @[skill:trend-spotter] before converging. Capture ideas in @[tool:jira-product-discovery] and @[tool:miro], grounded in @[knowledge:confluence]. Loop in @[subagent:feedback-analyzer] for customer signals.\n\n## Output\nA shortlist of non-obvious opportunities worth pursuing."
 	},
 	{
 		"id": "experiment-planner",
@@ -50,7 +155,38 @@
 		"remix": "830",
 		"updated": "1 week ago",
 		"peopleOffset": 3,
-		"instructions": "# Experiment Planner\n\nTurn ideas into experiments and decision points.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Experiment Planner\n\nTurn ideas into experiments and decision points.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira-product-discovery",
+			"jira",
+			"confluence"
+		],
+		"skillIds": [
+			"explore-ideas",
+			"test-plan-builder",
+			"build-report"
+		],
+		"knowledgeIds": [
+			"confluence"
+		],
+		"subagentIds": [
+			"strategic-insight"
+		],
+		"conversationStarters": [
+			"Turn this idea into an experiment",
+			"Define the decision points for this test",
+			"What should we measure here?"
+		],
+		"conversationStarterIcons": [
+			"lightbulb",
+			"graph-line",
+			"list-checklist"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nShape ideas into testable experiments with @[skill:explore-ideas] and @[skill:test-plan-builder]. Track hypotheses in @[tool:jira-product-discovery] and @[tool:jira], referencing @[knowledge:confluence]. Escalate strategy tradeoffs to @[subagent:strategic-insight].\n\n## Output\nAn experiment plan with hypotheses, metrics, and decision points."
 	},
 	{
 		"id": "tradeoff-mapper",
@@ -62,7 +198,38 @@
 		"remix": "760",
 		"updated": "3 days ago",
 		"peopleOffset": 4,
-		"instructions": "# Tradeoff Mapper\n\nCompare options by upside, cost, and risk.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Tradeoff Mapper\n\nCompare options by upside, cost, and risk.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"confluence",
+			"jira",
+			"miro"
+		],
+		"skillIds": [
+			"explore-ideas",
+			"prioritize-ideas",
+			"build-report"
+		],
+		"knowledgeIds": [
+			"confluence"
+		],
+		"subagentIds": [
+			"strategic-insight"
+		],
+		"conversationStarters": [
+			"Compare these options by cost and risk",
+			"Map the tradeoffs for this decision",
+			"Which path has the best upside?"
+		],
+		"conversationStarterIcons": [
+			"comparison",
+			"graph-bar",
+			"warning"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nCompare options across upside, cost, and risk using @[skill:explore-ideas] and @[skill:prioritize-ideas]. Visualize tradeoffs in @[tool:miro] and document in @[tool:confluence], grounded in @[knowledge:confluence]. Hand close calls to @[subagent:strategic-insight].\n\n## Output\nA tradeoff matrix with a recommended path."
 	},
 	{
 		"id": "assumption-tester",
@@ -74,7 +241,38 @@
 		"remix": "690",
 		"updated": "5 days ago",
 		"peopleOffset": 5,
-		"instructions": "# Assumption Tester\n\nStress-test ideas against weak assumptions.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Assumption Tester\n\nStress-test ideas against weak assumptions.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"confluence",
+			"jira-product-discovery"
+		],
+		"skillIds": [
+			"explore-ideas",
+			"run-deep-research",
+			"build-report"
+		],
+		"knowledgeIds": [
+			"confluence"
+		],
+		"subagentIds": [
+			"feedback-analyzer",
+			"strategic-insight"
+		],
+		"conversationStarters": [
+			"Stress-test the assumptions here",
+			"Which assumptions are weakest?",
+			"What evidence would change this plan?"
+		],
+		"conversationStarterIcons": [
+			"warning",
+			"search",
+			"question-circle"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nSurface and stress-test weak assumptions with @[skill:explore-ideas] and @[skill:run-deep-research], grounded in @[knowledge:confluence]. Capture findings in @[tool:confluence]. Validate against customer signal via @[subagent:feedback-analyzer].\n\n## Output\nA ranked list of fragile assumptions and the evidence to test them."
 	},
 	{
 		"id": "criteria-builder",
@@ -86,7 +284,37 @@
 		"remix": "540",
 		"updated": "1 month ago",
 		"peopleOffset": 6,
-		"instructions": "# Criteria Builder\n\nDefine practical criteria for choosing a path.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Criteria Builder\n\nDefine practical criteria for choosing a path.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"confluence",
+			"jira"
+		],
+		"skillIds": [
+			"prioritize-ideas",
+			"explore-ideas",
+			"build-report"
+		],
+		"knowledgeIds": [
+			"confluence"
+		],
+		"subagentIds": [
+			"strategic-insight"
+		],
+		"conversationStarters": [
+			"Define criteria for choosing a path",
+			"What should we weigh in this decision?",
+			"Turn these goals into selection criteria"
+		],
+		"conversationStarterIcons": [
+			"list-checklist",
+			"target",
+			"settings"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nDefine practical decision criteria with @[skill:prioritize-ideas] and @[skill:explore-ideas], grounded in @[knowledge:confluence]. Document the rubric in @[tool:confluence]. Escalate weighting disputes to @[subagent:strategic-insight].\n\n## Output\nA weighted criteria set ready to score options against."
 	},
 	{
 		"id": "brainstorm-facilitator",
@@ -98,7 +326,41 @@
 		"remix": "510",
 		"updated": "2 days ago",
 		"peopleOffset": 7,
-		"instructions": "# Brainstorm Facilitator\n\nGuide teams from loose prompts to ranked concepts.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Brainstorm Facilitator\n\nGuide teams from loose prompts to ranked concepts.\n\n## When to use\nUse this template when you need to open up thinking, weigh options, and converge on a confident decision.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Compare options against explicit criteria, surface assumptions and tradeoffs, and rank the strongest paths.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"miro",
+			"confluence",
+			"loom"
+		],
+		"skillIds": [
+			"explore-ideas",
+			"prioritize-ideas",
+			"whiteboard-summarizer"
+		],
+		"knowledgeIds": [
+			"confluence"
+		],
+		"subagentIds": [
+			"diagram-creator",
+			"strategic-insight"
+		],
+		"conversationStarters": [
+			"Facilitate a brainstorm on this topic",
+			"Cluster and rank these raw ideas",
+			"Help the team converge on concepts"
+		],
+		"conversationStarterIcons": [
+			"people-group",
+			"lightbulb",
+			"list-checklist"
+		],
+		"triggers": [
+			"A workshop is scheduled"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nGuide teams from loose prompts to ranked concepts with @[skill:explore-ideas] and @[skill:prioritize-ideas]. Summarize boards via @[skill:whiteboard-summarizer] on @[tool:miro], and capture outcomes in @[tool:confluence]. Visualize clusters with @[subagent:diagram-creator].\n\n## Output\nA ranked set of concepts with rationale and next steps."
 	},
 	{
 		"id": "customer-insights",
@@ -112,7 +374,43 @@
 		"remix": "2.1K",
 		"updated": "2 weeks ago",
 		"peopleOffset": 2,
-		"instructions": "# Customer Insights\n\nSynthesize feedback into themes, customer needs, risks, and recommended product actions.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Customer Insights\n\nSynthesize feedback into themes, customer needs, risks, and recommended product actions.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"salesforce",
+			"zendesk",
+			"confluence",
+			"dovetail"
+		],
+		"skillIds": [
+			"customer-insights",
+			"capture-insights",
+			"trend-spotter"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"google-drive"
+		],
+		"subagentIds": [
+			"customer-insights",
+			"feedback-analyzer"
+		],
+		"conversationStarters": [
+			"Synthesize this feedback into themes",
+			"What are customers asking for most?",
+			"Surface risks from recent signals"
+		],
+		"conversationStarterIcons": [
+			"people-group",
+			"graph-bar",
+			"warning"
+		],
+		"triggers": [
+			"New feedback batch arrives"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nSynthesize feedback into themes and needs with @[skill:customer-insights] and @[skill:trend-spotter]. Pull signals from @[tool:salesforce], @[tool:zendesk], and @[tool:dovetail], grounded in @[knowledge:confluence]. Escalate deep analysis to @[subagent:feedback-analyzer].\n\n## Output\nThemes, customer needs, risks, and recommended product actions."
 	},
 	{
 		"id": "jira-theme-analyzer",
@@ -131,7 +429,42 @@
 		"remix": "1.6K",
 		"updated": "5 days ago",
 		"peopleOffset": 3,
-		"instructions": "# Jira Theme Analyzer\n\nScan Jira work items to find themes, candidate epics, and patterns worth acting on.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Jira Theme Analyzer\n\nScan Jira work items to find themes, candidate epics, and patterns worth acting on.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira",
+			"jira-product-discovery",
+			"confluence"
+		],
+		"skillIds": [
+			"jql-query-builder",
+			"trend-spotter",
+			"build-report"
+		],
+		"knowledgeIds": [
+			"jira",
+			"confluence"
+		],
+		"subagentIds": [
+			"jira-theme-analyzer",
+			"feedback-analyzer"
+		],
+		"conversationStarters": [
+			"Find themes across these Jira items",
+			"What candidate epics emerge here?",
+			"Spot patterns worth acting on"
+		],
+		"conversationStarterIcons": [
+			"search",
+			"graph-bar",
+			"folder"
+		],
+		"triggers": [
+			"Backlog review starts"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nScan work items with @[skill:jql-query-builder] and @[skill:trend-spotter] over @[tool:jira] and @[tool:jira-product-discovery], grounded in @[knowledge:jira]. Document candidate epics in @[tool:confluence]. Hand pattern analysis to @[subagent:jira-theme-analyzer].\n\n## Output\nThemes, candidate epics, and patterns ranked by impact."
 	},
 	{
 		"id": "transcript-insights-reporter",
@@ -150,7 +483,43 @@
 		"remix": "1.1K",
 		"updated": "6 days ago",
 		"peopleOffset": 4,
-		"instructions": "# Transcript Insights Reporter\n\nTurn transcripts into decisions, insights, recommendations, owners, and follow-up actions.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Transcript Insights Reporter\n\nTurn transcripts into decisions, insights, recommendations, owners, and follow-up actions.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"loom",
+			"confluence",
+			"zoom",
+			"microsoft-teams"
+		],
+		"skillIds": [
+			"summarize-thread",
+			"capture-insights",
+			"build-report"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"loom"
+		],
+		"subagentIds": [
+			"transcript-insights-reporter",
+			"meeting-insights-reporter"
+		],
+		"conversationStarters": [
+			"Turn this transcript into decisions",
+			"Extract owners and follow-ups",
+			"What were the key insights here?"
+		],
+		"conversationStarterIcons": [
+			"document",
+			"list-checklist",
+			"person"
+		],
+		"triggers": [
+			"A recording finishes processing"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nTurn transcripts into decisions and actions with @[skill:summarize-thread] and @[skill:capture-insights]. Source recordings from @[tool:loom], @[tool:zoom], and @[tool:microsoft-teams], grounded in @[knowledge:loom]. Hand long recaps to @[subagent:meeting-insights-reporter].\n\n## Output\nDecisions, insights, recommendations, owners, and follow-up actions."
 	},
 	{
 		"id": "meeting-insights",
@@ -169,7 +538,42 @@
 		"remix": "990",
 		"updated": "1 week ago",
 		"peopleOffset": 5,
-		"instructions": "# Meeting Insights\n\nFind decisions, action items, highlights, and useful context across meeting notes.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Meeting Insights\n\nFind decisions, action items, highlights, and useful context across meeting notes.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"confluence",
+			"loom",
+			"microsoft-teams",
+			"google-calendar"
+		],
+		"skillIds": [
+			"summarize-thread",
+			"capture-insights",
+			"build-report"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"microsoft-teams"
+		],
+		"subagentIds": [
+			"meeting-insights-reporter"
+		],
+		"conversationStarters": [
+			"Find decisions in these meeting notes",
+			"List action items and owners",
+			"What context should I know here?"
+		],
+		"conversationStarterIcons": [
+			"calendar",
+			"list-checklist",
+			"info"
+		],
+		"triggers": [
+			"A meeting ends"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nFind decisions, action items, and highlights with @[skill:summarize-thread] and @[skill:capture-insights] across @[tool:confluence] and @[tool:microsoft-teams], grounded in @[knowledge:microsoft-teams]. Hand detailed reports to @[subagent:meeting-insights-reporter].\n\n## Output\nDecisions, action items, highlights, and useful context."
 	},
 	{
 		"id": "trend-spotter",
@@ -181,7 +585,39 @@
 		"remix": "870",
 		"updated": "3 days ago",
 		"peopleOffset": 6,
-		"instructions": "# Trend Spotter\n\nSpot emerging trends across notes and feedback.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Trend Spotter\n\nSpot emerging trends across notes and feedback.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"confluence",
+			"dovetail",
+			"amplitude"
+		],
+		"skillIds": [
+			"trend-spotter",
+			"capture-insights",
+			"build-report"
+		],
+		"knowledgeIds": [
+			"confluence"
+		],
+		"subagentIds": [
+			"feedback-analyzer",
+			"strategic-insight"
+		],
+		"conversationStarters": [
+			"Spot emerging trends in this data",
+			"What's shifting across our feedback?",
+			"Surface early signals worth watching"
+		],
+		"conversationStarterIcons": [
+			"graph-line",
+			"search",
+			"lightbulb"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nSpot emerging trends across notes and feedback with @[skill:trend-spotter] and @[skill:capture-insights]. Pull data from @[tool:confluence], @[tool:dovetail], and @[tool:amplitude]. Escalate strategic patterns to @[subagent:strategic-insight].\n\n## Output\nA brief on emerging trends and the signals behind them."
 	},
 	{
 		"id": "sentiment-mapper",
@@ -193,7 +629,39 @@
 		"remix": "780",
 		"updated": "2 days ago",
 		"peopleOffset": 7,
-		"instructions": "# Sentiment Mapper\n\nMap sentiment shifts across customer signals.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Sentiment Mapper\n\nMap sentiment shifts across customer signals.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"zendesk",
+			"salesforce",
+			"dovetail"
+		],
+		"skillIds": [
+			"customer-insights",
+			"trend-spotter",
+			"capture-insights"
+		],
+		"knowledgeIds": [
+			"confluence"
+		],
+		"subagentIds": [
+			"feedback-analyzer",
+			"customer-insights"
+		],
+		"conversationStarters": [
+			"Map sentiment shifts over time",
+			"Where is sentiment trending down?",
+			"Connect sentiment to recent changes"
+		],
+		"conversationStarterIcons": [
+			"graph-line",
+			"emoji",
+			"warning"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nMap sentiment shifts across customer signals with @[skill:customer-insights] and @[skill:trend-spotter]. Pull signals from @[tool:zendesk], @[tool:salesforce], and @[tool:dovetail]. Hand deep dives to @[subagent:feedback-analyzer].\n\n## Output\nA sentiment map with notable shifts and likely drivers."
 	},
 	{
 		"id": "funnel-analyzer",
@@ -212,7 +680,39 @@
 		"remix": "660",
 		"updated": "1 month ago",
 		"peopleOffset": 8,
-		"instructions": "# Funnel Analyzer\n\nTrace product drop-offs, connect them to feedback, and suggest the next investigation.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Funnel Analyzer\n\nTrace product drop-offs, connect them to feedback, and suggest the next investigation.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"amplitude",
+			"datadog",
+			"confluence"
+		],
+		"skillIds": [
+			"funnel-analytics",
+			"trend-spotter",
+			"build-report"
+		],
+		"knowledgeIds": [
+			"confluence"
+		],
+		"subagentIds": [
+			"feedback-analyzer",
+			"strategic-insight"
+		],
+		"conversationStarters": [
+			"Trace drop-offs in this funnel",
+			"Connect drop-offs to feedback",
+			"What should we investigate next?"
+		],
+		"conversationStarterIcons": [
+			"graph-bar",
+			"search",
+			"warning"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nTrace product drop-offs with @[skill:funnel-analytics] over @[tool:amplitude] and @[tool:datadog], then connect them to feedback with @[skill:trend-spotter], grounded in @[knowledge:confluence]. Escalate hypotheses to @[subagent:strategic-insight].\n\n## Output\nDrop-off points, likely causes, and the next investigation."
 	},
 	{
 		"id": "research-synthesizer",
@@ -225,7 +725,40 @@
 		"remix": "610",
 		"updated": "4 days ago",
 		"peopleOffset": 9,
-		"instructions": "# Research Synthesizer\n\nPull research into a single, decision-ready brief.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Research Synthesizer\n\nPull research into a single, decision-ready brief.\n\n## When to use\nUse this template to turn raw signal — feedback, transcripts, and metrics — into decision-ready insight.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Cluster patterns, quotes, and anomalies, then connect them to measurable impact.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"confluence",
+			"dovetail",
+			"google-drive"
+		],
+		"skillIds": [
+			"run-deep-research",
+			"capture-insights",
+			"build-report"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"google-drive"
+		],
+		"subagentIds": [
+			"feedback-analyzer",
+			"strategic-insight"
+		],
+		"conversationStarters": [
+			"Pull this research into one brief",
+			"Summarize findings for a decision",
+			"What does the evidence point to?"
+		],
+		"conversationStarterIcons": [
+			"book",
+			"document",
+			"lightbulb"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nPull research into a single brief with @[skill:run-deep-research] and @[skill:capture-insights]. Source from @[tool:confluence], @[tool:dovetail], and @[tool:google-drive], grounded in @[knowledge:google-drive]. Hand synthesis to @[subagent:strategic-insight].\n\n## Output\nA decision-ready research brief with sources and recommendations."
 	},
 	{
 		"id": "service-triage",
@@ -239,7 +772,43 @@
 		"remix": "1.4K",
 		"updated": "1 week ago",
 		"peopleOffset": 4,
-		"instructions": "# Service Triage\n\nTriage service requests, recommend field updates, and ask for missing details when needed.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Service Triage\n\nTriage service requests, recommend field updates, and ask for missing details when needed.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira-service-management",
+			"servicenow",
+			"confluence"
+		],
+		"skillIds": [
+			"service-request-triage",
+			"response-drafter",
+			"sla-monitor"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"jira"
+		],
+		"subagentIds": [
+			"service-request-helper",
+			"root-cause-analyzer"
+		],
+		"conversationStarters": [
+			"Triage this service request",
+			"Recommend field updates here",
+			"What details are missing?"
+		],
+		"conversationStarterIcons": [
+			"list-checklist",
+			"edit",
+			"question-circle"
+		],
+		"triggers": [
+			"A new request is created",
+			"A request breaches SLA"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nTriage requests with @[skill:service-request-triage] and watch SLAs with @[skill:sla-monitor] across @[tool:jira-service-management] and @[tool:servicenow], grounded in @[knowledge:confluence]. Escalate complex cases to @[subagent:service-request-helper].\n\n## Output\nA triaged request with recommended fields and missing-detail prompts."
 	},
 	{
 		"id": "service-request-helper",
@@ -258,7 +827,40 @@
 		"remix": "1.3K",
 		"updated": "3 days ago",
 		"peopleOffset": 5,
-		"instructions": "# Service Request Helper\n\nDraft support responses, suggest assignees, and summarize requests for faster resolution.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Service Request Helper\n\nDraft support responses, suggest assignees, and summarize requests for faster resolution.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira-service-management",
+			"zendesk",
+			"confluence"
+		],
+		"skillIds": [
+			"response-drafter",
+			"service-request-triage",
+			"summarize-thread"
+		],
+		"knowledgeIds": [
+			"confluence"
+		],
+		"subagentIds": [
+			"service-request-helper"
+		],
+		"conversationStarters": [
+			"Draft a support response for this",
+			"Suggest an assignee for this request",
+			"Summarize this request for handoff"
+		],
+		"conversationStarterIcons": [
+			"comment",
+			"person",
+			"document"
+		],
+		"triggers": [
+			"A request is assigned to the team"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nDraft support responses with @[skill:response-drafter] and summarize with @[skill:summarize-thread] across @[tool:jira-service-management] and @[tool:zendesk], grounded in @[knowledge:confluence]. Hand tricky triage to @[subagent:service-request-helper].\n\n## Output\nA draft response, suggested assignee, and request summary."
 	},
 	{
 		"id": "rovo-ops",
@@ -278,7 +880,43 @@
 		"remix": "1.1K",
 		"updated": "2 weeks ago",
 		"peopleOffset": 6,
-		"instructions": "# Rovo Ops\n\nGuide incident response, on-call actions, mitigation, status updates, and recovery.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Rovo Ops\n\nGuide incident response, on-call actions, mitigation, status updates, and recovery.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"opsgenie",
+			"statuspage",
+			"pagerduty",
+			"jira-service-management"
+		],
+		"skillIds": [
+			"incident-responder",
+			"analyze-root-cause",
+			"response-drafter"
+		],
+		"knowledgeIds": [
+			"confluence"
+		],
+		"subagentIds": [
+			"rovo-ops",
+			"root-cause-analyzer"
+		],
+		"conversationStarters": [
+			"Guide me through this incident",
+			"Draft a status update for stakeholders",
+			"What's the next mitigation step?"
+		],
+		"conversationStarterIcons": [
+			"warning",
+			"bell",
+			"list-checklist"
+		],
+		"triggers": [
+			"An incident is declared",
+			"An alert pages on-call"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nGuide incident response with @[skill:incident-responder] and @[skill:analyze-root-cause] across @[tool:opsgenie], @[tool:statuspage], and @[tool:pagerduty], grounded in @[knowledge:confluence]. Draft updates with @[skill:response-drafter]. Hand root-cause depth to @[subagent:root-cause-analyzer].\n\n## Output\nMitigation steps, status updates, and a recovery path."
 	},
 	{
 		"id": "rovo-expert",
@@ -292,7 +930,37 @@
 		"remix": "970",
 		"updated": "4 days ago",
 		"peopleOffset": 7,
-		"instructions": "# Rovo Expert\n\nAnswer Rovo setup and usage questions with concise guidance and helpful links.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Rovo Expert\n\nAnswer Rovo setup and usage questions with concise guidance and helpful links.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"confluence",
+			"atlassian-home"
+		],
+		"skillIds": [
+			"kb-article-writer",
+			"summarize-thread",
+			"search-web"
+		],
+		"knowledgeIds": [
+			"confluence"
+		],
+		"subagentIds": [
+			"rovo-expert"
+		],
+		"conversationStarters": [
+			"How do I set up Rovo for my team?",
+			"Explain this Rovo feature",
+			"Point me to the right Rovo docs"
+		],
+		"conversationStarterIcons": [
+			"question-circle",
+			"book",
+			"link"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nAnswer Rovo setup and usage questions with @[skill:kb-article-writer] and @[skill:search-web], grounded in @[knowledge:confluence] and @[tool:confluence]. Escalate edge cases to @[subagent:rovo-expert].\n\n## Output\nConcise guidance with helpful links."
 	},
 	{
 		"id": "user-manual-writer",
@@ -306,7 +974,37 @@
 		"remix": "850",
 		"updated": "6 days ago",
 		"peopleOffset": 8,
-		"instructions": "# User Manual Writer\n\nHelp teammates document working style, communication norms, and collaboration preferences.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# User Manual Writer\n\nHelp teammates document working style, communication norms, and collaboration preferences.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"confluence",
+			"loom"
+		],
+		"skillIds": [
+			"user-manual-writer",
+			"onboarding-plan",
+			"brand-voice-editor"
+		],
+		"knowledgeIds": [
+			"confluence"
+		],
+		"subagentIds": [
+			"user-manual-writer"
+		],
+		"conversationStarters": [
+			"Help me document my working style",
+			"Draft my communication norms",
+			"Capture my collaboration preferences"
+		],
+		"conversationStarterIcons": [
+			"document",
+			"person",
+			"comment"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nHelp teammates document working style and norms with @[skill:user-manual-writer] and @[skill:onboarding-plan], publishing to @[tool:confluence], grounded in @[knowledge:confluence]. Hand polish to @[subagent:user-manual-writer].\n\n## Output\nA personal user manual covering style, communication, and collaboration."
 	},
 	{
 		"id": "knowledge-base-guide",
@@ -318,7 +1016,39 @@
 		"remix": "790",
 		"updated": "1 month ago",
 		"peopleOffset": 9,
-		"instructions": "# Knowledge Base Guide\n\nAnswer policy and process questions from trusted context.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Knowledge Base Guide\n\nAnswer policy and process questions from trusted context.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"confluence",
+			"atlassian-home",
+			"notion"
+		],
+		"skillIds": [
+			"kb-article-writer",
+			"summarize-thread",
+			"search-web"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"notion"
+		],
+		"subagentIds": [
+			"rovo-expert"
+		],
+		"conversationStarters": [
+			"Answer this policy question",
+			"Where's the process for this?",
+			"Summarize the relevant guidance"
+		],
+		"conversationStarterIcons": [
+			"book",
+			"search",
+			"info"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nAnswer policy and process questions with @[skill:kb-article-writer] and @[skill:search-web], grounded in @[knowledge:confluence] and @[knowledge:notion] via @[tool:confluence] and @[tool:notion]. Defer unknowns to @[subagent:rovo-expert].\n\n## Output\nA grounded answer with links to the source guidance."
 	},
 	{
 		"id": "incident-recap-writer",
@@ -330,7 +1060,43 @@
 		"remix": "620",
 		"updated": "2 days ago",
 		"peopleOffset": 10,
-		"instructions": "# Incident Recap Writer\n\nCompile post-incident timelines, decisions, and follow-ups.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Incident Recap Writer\n\nCompile post-incident timelines, decisions, and follow-ups.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"opsgenie",
+			"statuspage",
+			"confluence",
+			"jira-service-management"
+		],
+		"skillIds": [
+			"incident-responder",
+			"analyze-root-cause",
+			"kb-article-writer"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"jira"
+		],
+		"subagentIds": [
+			"root-cause-analyzer",
+			"rovo-ops"
+		],
+		"conversationStarters": [
+			"Compile a post-incident recap",
+			"Build the incident timeline",
+			"List follow-ups and owners"
+		],
+		"conversationStarterIcons": [
+			"document",
+			"clock",
+			"list-checklist"
+		],
+		"triggers": [
+			"An incident is resolved"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nCompile post-incident recaps with @[skill:analyze-root-cause] and @[skill:kb-article-writer], sourcing from @[tool:opsgenie], @[tool:statuspage], and @[tool:jira-service-management], grounded in @[knowledge:confluence]. Hand causal depth to @[subagent:root-cause-analyzer].\n\n## Output\nA timeline, decisions, and follow-ups with owners."
 	},
 	{
 		"id": "teamwork-coach",
@@ -342,7 +1108,38 @@
 		"remix": "570",
 		"updated": "5 days ago",
 		"peopleOffset": 11,
-		"instructions": "# Teamwork Coach\n\nReview collaboration patterns and suggest healthier rituals.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Teamwork Coach\n\nReview collaboration patterns and suggest healthier rituals.\n\n## When to use\nUse this template to keep service and operational work moving with the right owners and clean handoffs.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Triage by risk and ownership, check current service state, and prepare the follow-through note.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"confluence",
+			"slack",
+			"microsoft-teams"
+		],
+		"skillIds": [
+			"team-building-planner",
+			"team-health-survey-skill",
+			"summarize-thread"
+		],
+		"knowledgeIds": [
+			"confluence"
+		],
+		"subagentIds": [
+			"strategic-insight"
+		],
+		"conversationStarters": [
+			"Review our collaboration patterns",
+			"Suggest healthier team rituals",
+			"Where are we losing momentum?"
+		],
+		"conversationStarterIcons": [
+			"people-group",
+			"heart",
+			"lightbulb"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nReview collaboration patterns with @[skill:team-health-survey-skill] and propose rituals with @[skill:team-building-planner], drawing on @[tool:slack] and @[tool:microsoft-teams], grounded in @[knowledge:confluence]. Escalate org patterns to @[subagent:strategic-insight].\n\n## Output\nObserved patterns and concrete ritual suggestions."
 	},
 	{
 		"id": "product-requirements-guide",
@@ -356,7 +1153,42 @@
 		"remix": "1.7K",
 		"updated": "2 weeks ago",
 		"peopleOffset": 6,
-		"instructions": "# Product Requirements Guide\n\nCreate and review PRDs with customer empathy, evidence, acceptance criteria, and direct feedback.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Product Requirements Guide\n\nCreate and review PRDs with customer empathy, evidence, acceptance criteria, and direct feedback.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira-product-discovery",
+			"confluence",
+			"jira"
+		],
+		"skillIds": [
+			"prd-builder",
+			"customer-insights",
+			"build-report"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"jira"
+		],
+		"subagentIds": [
+			"product-requirements-guide",
+			"customer-insights"
+		],
+		"conversationStarters": [
+			"Draft a PRD from this context",
+			"Review this PRD for gaps",
+			"Add acceptance criteria here"
+		],
+		"conversationStarterIcons": [
+			"document",
+			"list-checklist",
+			"people-group"
+		],
+		"triggers": [
+			"A new initiative is scoped"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nCreate and review PRDs with @[skill:prd-builder] and @[skill:customer-insights], grounded in @[knowledge:confluence] and @[knowledge:jira] via @[tool:jira-product-discovery]. Hand customer depth to @[subagent:customer-insights].\n\n## Output\nA PRD with evidence, acceptance criteria, and direct feedback."
 	},
 	{
 		"id": "release-notes-drafter",
@@ -375,7 +1207,42 @@
 		"remix": "1.2K",
 		"updated": "4 days ago",
 		"peopleOffset": 7,
-		"instructions": "# Release Notes Drafter\n\nConvert Jira work items into grouped release notes for customers and stakeholders.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Release Notes Drafter\n\nConvert Jira work items into grouped release notes for customers and stakeholders.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira",
+			"confluence",
+			"github",
+			"release-notes-composer"
+		],
+		"skillIds": [
+			"draft-release-notes",
+			"release-announcement",
+			"build-report"
+		],
+		"knowledgeIds": [
+			"jira",
+			"github"
+		],
+		"subagentIds": [
+			"release-notes-drafter"
+		],
+		"conversationStarters": [
+			"Draft release notes from these items",
+			"Group changes for customers",
+			"Write a stakeholder summary"
+		],
+		"conversationStarterIcons": [
+			"document",
+			"tag",
+			"people-group"
+		],
+		"triggers": [
+			"A release is cut"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nConvert work items into grouped release notes with @[skill:draft-release-notes] and @[skill:release-announcement], sourcing from @[tool:jira] and @[tool:github], grounded in @[knowledge:jira]. Hand polish to @[subagent:release-notes-drafter].\n\n## Output\nGrouped release notes for customers and stakeholders."
 	},
 	{
 		"id": "brand-voice-crafter",
@@ -389,7 +1256,40 @@
 		"remix": "1K",
 		"updated": "1 week ago",
 		"peopleOffset": 8,
-		"instructions": "# Brand Voice Crafter\n\nDraft or review content against brand voice, tone guidance, and audience needs.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Brand Voice Crafter\n\nDraft or review content against brand voice, tone guidance, and audience needs.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"confluence",
+			"google-drive",
+			"canva"
+		],
+		"skillIds": [
+			"brand-voice-editor",
+			"produce-marketing-materials",
+			"translate-content"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"google-drive"
+		],
+		"subagentIds": [
+			"brand-voice-crafter",
+			"social-media-writer"
+		],
+		"conversationStarters": [
+			"Draft this in our brand voice",
+			"Review this copy against tone guidance",
+			"Adapt this for our audience"
+		],
+		"conversationStarterIcons": [
+			"edit",
+			"comment",
+			"people-group"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nDraft or review content with @[skill:brand-voice-editor] and @[skill:produce-marketing-materials], grounded in @[knowledge:confluence] and @[knowledge:google-drive] via @[tool:confluence]. Hand campaigns to @[subagent:social-media-writer].\n\n## Output\nOn-brand content matched to tone and audience."
 	},
 	{
 		"id": "social-media-writer",
@@ -403,7 +1303,40 @@
 		"remix": "880",
 		"updated": "2 days ago",
 		"peopleOffset": 9,
-		"instructions": "# Social Media Writer\n\nDraft social posts, improve engagement, and adapt messages by channel and audience.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Social Media Writer\n\nDraft social posts, improve engagement, and adapt messages by channel and audience.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"canva",
+			"loom",
+			"confluence"
+		],
+		"skillIds": [
+			"produce-marketing-materials",
+			"brand-voice-editor",
+			"translate-content"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"google-drive"
+		],
+		"subagentIds": [
+			"social-media-writer",
+			"brand-voice-crafter"
+		],
+		"conversationStarters": [
+			"Draft posts for this launch",
+			"Adapt this message per channel",
+			"Improve engagement on this post"
+		],
+		"conversationStarterIcons": [
+			"megaphone",
+			"comment",
+			"graph-line"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nDraft and adapt social posts with @[skill:produce-marketing-materials] and @[skill:brand-voice-editor], using @[tool:canva], grounded in @[knowledge:confluence]. Hand voice review to @[subagent:brand-voice-crafter].\n\n## Output\nChannel-ready posts tuned for engagement."
 	},
 	{
 		"id": "global-translator",
@@ -417,7 +1350,40 @@
 		"remix": "810",
 		"updated": "6 days ago",
 		"peopleOffset": 10,
-		"instructions": "# Global Translator\n\nTranslate writing while preserving meaning, tone, accessibility, and audience context.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Global Translator\n\nTranslate writing while preserving meaning, tone, accessibility, and audience context.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"confluence",
+			"google-drive",
+			"notion"
+		],
+		"skillIds": [
+			"translate-content",
+			"brand-voice-editor",
+			"summarize-thread"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"google-drive"
+		],
+		"subagentIds": [
+			"global-translator",
+			"brand-voice-crafter"
+		],
+		"conversationStarters": [
+			"Translate this while keeping tone",
+			"Localize this for our audience",
+			"Check this translation for accessibility"
+		],
+		"conversationStarterIcons": [
+			"globe",
+			"comment",
+			"accessibility"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nTranslate writing with @[skill:translate-content] while preserving tone via @[skill:brand-voice-editor], grounded in @[knowledge:confluence] and @[knowledge:google-drive]. Hand voice nuance to @[subagent:brand-voice-crafter].\n\n## Output\nA translation that preserves meaning, tone, and accessibility."
 	},
 	{
 		"id": "executive-briefing-writer",
@@ -429,7 +1395,39 @@
 		"remix": "730",
 		"updated": "3 days ago",
 		"peopleOffset": 11,
-		"instructions": "# Executive Briefing Writer\n\nCondense dense context for leadership updates.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Executive Briefing Writer\n\nCondense dense context for leadership updates.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"confluence",
+			"jira",
+			"google-drive"
+		],
+		"skillIds": [
+			"summarize-thread",
+			"build-report",
+			"report-compiler"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"jira"
+		],
+		"subagentIds": [
+			"strategic-insight"
+		],
+		"conversationStarters": [
+			"Condense this for leadership",
+			"Write an executive summary here",
+			"What should leaders know first?"
+		],
+		"conversationStarterIcons": [
+			"document",
+			"graph-bar",
+			"person"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nCondense dense context for leadership with @[skill:summarize-thread] and @[skill:report-compiler], sourcing from @[tool:confluence] and @[tool:jira], grounded in @[knowledge:confluence]. Escalate strategy framing to @[subagent:strategic-insight].\n\n## Output\nA crisp executive briefing with the key decisions up front."
 	},
 	{
 		"id": "stakeholder-update-builder",
@@ -441,7 +1439,42 @@
 		"remix": "680",
 		"updated": "1 month ago",
 		"peopleOffset": 0,
-		"instructions": "# Stakeholder Update Builder\n\nPackage progress into stakeholder-ready updates.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Stakeholder Update Builder\n\nPackage progress into stakeholder-ready updates.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira",
+			"confluence",
+			"slack"
+		],
+		"skillIds": [
+			"build-report",
+			"summarize-thread",
+			"report-compiler"
+		],
+		"knowledgeIds": [
+			"jira",
+			"confluence"
+		],
+		"subagentIds": [
+			"progress-tracker",
+			"strategic-insight"
+		],
+		"conversationStarters": [
+			"Package progress for stakeholders",
+			"Write this week's status update",
+			"Highlight risks for stakeholders"
+		],
+		"conversationStarterIcons": [
+			"document",
+			"people-group",
+			"warning"
+		],
+		"triggers": [
+			"A reporting cadence is due"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nPackage progress into stakeholder-ready updates with @[skill:build-report] and @[skill:report-compiler], sourcing from @[tool:jira] and @[tool:confluence], grounded in @[knowledge:jira]. Hand status rollups to @[subagent:progress-tracker].\n\n## Output\nA stakeholder update with progress, risks, and next steps."
 	},
 	{
 		"id": "team-recap",
@@ -453,7 +1486,41 @@
 		"remix": "590",
 		"updated": "5 days ago",
 		"peopleOffset": 1,
-		"instructions": "# Team Recap\n\nTurn busy channels into concise weekly summaries.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Team Recap\n\nTurn busy channels into concise weekly summaries.\n\n## When to use\nUse this template to draft, refine, and adapt writing for a specific audience without losing the point.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Preserve audience, tone, and source context while tightening the narrative and pulling out decisions.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"slack",
+			"microsoft-teams",
+			"confluence"
+		],
+		"skillIds": [
+			"summarize-thread",
+			"standup-summarizer",
+			"build-report"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"microsoft-teams"
+		],
+		"subagentIds": [
+			"progress-tracker"
+		],
+		"conversationStarters": [
+			"Turn this channel into a recap",
+			"Summarize the week for the team",
+			"What did we ship and decide?"
+		],
+		"conversationStarterIcons": [
+			"comment",
+			"calendar",
+			"list-checklist"
+		],
+		"triggers": [
+			"The weekly recap is due"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nTurn busy channels into concise weekly summaries with @[skill:summarize-thread] and @[skill:standup-summarizer] across @[tool:slack] and @[tool:microsoft-teams], grounded in @[knowledge:microsoft-teams]. Hand status to @[subagent:progress-tracker].\n\n## Output\nA concise weekly recap of decisions, progress, and highlights."
 	},
 	{
 		"id": "work-item-planner",
@@ -467,7 +1534,42 @@
 		"remix": "1.9K",
 		"updated": "2 weeks ago",
 		"peopleOffset": 8,
-		"instructions": "# Work Item Planner\n\nBreak large projects, epics, or workstreams into sequenced tasks, owners, and next steps.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Work Item Planner\n\nBreak large projects, epics, or workstreams into sequenced tasks, owners, and next steps.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira",
+			"jira-product-discovery",
+			"confluence"
+		],
+		"skillIds": [
+			"create-work-items",
+			"sprint-planner",
+			"dependency-mapper"
+		],
+		"knowledgeIds": [
+			"jira",
+			"confluence"
+		],
+		"subagentIds": [
+			"work-item-planner",
+			"code-planner"
+		],
+		"conversationStarters": [
+			"Break this project into tasks",
+			"Sequence work and assign owners",
+			"What are the next steps here?"
+		],
+		"conversationStarterIcons": [
+			"list-checklist",
+			"people-group",
+			"arrow-right"
+		],
+		"triggers": [
+			"A new epic is created"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nBreak large work into sequenced tasks with @[skill:create-work-items] and @[skill:dependency-mapper], planning in @[tool:jira] and @[tool:jira-product-discovery], grounded in @[knowledge:jira]. Hand technical breakdowns to @[subagent:code-planner].\n\n## Output\nSequenced tasks with owners and next steps."
 	},
 	{
 		"id": "work-item-organizer",
@@ -481,7 +1583,40 @@
 		"remix": "1.5K",
 		"updated": "1 week ago",
 		"peopleOffset": 9,
-		"instructions": "# Work Item Organizer\n\nFind, move, update, and organize Jira work items across sprints, epics, and stale queues.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Work Item Organizer\n\nFind, move, update, and organize Jira work items across sprints, epics, and stale queues.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira",
+			"confluence",
+			"trello"
+		],
+		"skillIds": [
+			"bulk-issue-editor",
+			"create-work-items",
+			"jql-query-builder"
+		],
+		"knowledgeIds": [
+			"jira"
+		],
+		"subagentIds": [
+			"work-item-organizer"
+		],
+		"conversationStarters": [
+			"Organize these Jira work items",
+			"Move stale issues out of the sprint",
+			"Bulk-update these items"
+		],
+		"conversationStarterIcons": [
+			"folder",
+			"edit",
+			"broom"
+		],
+		"triggers": [
+			"A sprint boundary is reached"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nFind, move, and update work items with @[skill:bulk-issue-editor] and @[skill:jql-query-builder] across @[tool:jira] and @[tool:trello], grounded in @[knowledge:jira]. Hand large reorganizations to @[subagent:work-item-organizer].\n\n## Output\nA tidy backlog with items moved, updated, and organized."
 	},
 	{
 		"id": "bug-report-assistant",
@@ -500,7 +1635,43 @@
 		"remix": "1.1K",
 		"updated": "5 days ago",
 		"peopleOffset": 10,
-		"instructions": "# Bug Report Assistant\n\nWrite concise bug reports with reproduction steps, impact, expected behavior, and triage notes.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Bug Report Assistant\n\nWrite concise bug reports with reproduction steps, impact, expected behavior, and triage notes.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira",
+			"github",
+			"sentry",
+			"bitbucket"
+		],
+		"skillIds": [
+			"bug-report-assistant",
+			"debug-log-issue",
+			"test-plan-builder"
+		],
+		"knowledgeIds": [
+			"jira",
+			"github"
+		],
+		"subagentIds": [
+			"bug-report-assistant",
+			"unit-test-creator"
+		],
+		"conversationStarters": [
+			"Write a bug report for this",
+			"Add reproduction steps",
+			"What's the impact and triage note?"
+		],
+		"conversationStarterIcons": [
+			"bug",
+			"list-checklist",
+			"warning"
+		],
+		"triggers": [
+			"An error spikes in Sentry"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nWrite concise bug reports with @[skill:bug-report-assistant] and @[skill:debug-log-issue], sourcing from @[tool:jira], @[tool:github], and @[tool:sentry], grounded in @[knowledge:github]. Hand test coverage to @[subagent:unit-test-creator].\n\n## Output\nA bug report with repro steps, impact, expected behavior, and triage notes."
 	},
 	{
 		"id": "blocker-checker",
@@ -514,7 +1685,42 @@
 		"remix": "960",
 		"updated": "2 days ago",
 		"peopleOffset": 11,
-		"instructions": "# Blocker Checker\n\nDetect blocked work, explain the evidence, and recommend the clearest unblocking move.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Blocker Checker\n\nDetect blocked work, explain the evidence, and recommend the clearest unblocking move.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira",
+			"confluence",
+			"slack"
+		],
+		"skillIds": [
+			"dependency-mapper",
+			"standup-summarizer",
+			"jql-query-builder"
+		],
+		"knowledgeIds": [
+			"jira",
+			"confluence"
+		],
+		"subagentIds": [
+			"blocker-checker",
+			"progress-tracker"
+		],
+		"conversationStarters": [
+			"Find blocked work and why",
+			"What's the clearest way to unblock this?",
+			"Show me dependencies at risk"
+		],
+		"conversationStarterIcons": [
+			"warning",
+			"link",
+			"arrow-right"
+		],
+		"triggers": [
+			"A standup is due"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nDetect blocked work with @[skill:dependency-mapper] and @[skill:jql-query-builder] over @[tool:jira], grounded in @[knowledge:jira]. Surface evidence and the clearest unblocking move. Hand status rollups to @[subagent:progress-tracker].\n\n## Output\nBlocked items, the evidence, and a recommended unblocking move."
 	},
 	{
 		"id": "readiness-checker",
@@ -528,7 +1734,41 @@
 		"remix": "850",
 		"updated": "6 days ago",
 		"peopleOffset": 0,
-		"instructions": "# Readiness Checker\n\nReview work items against a team's definition of ready and suggest missing details.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Readiness Checker\n\nReview work items against a team's definition of ready and suggest missing details.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira",
+			"confluence"
+		],
+		"skillIds": [
+			"create-work-items",
+			"build-report",
+			"jql-query-builder"
+		],
+		"knowledgeIds": [
+			"jira",
+			"confluence"
+		],
+		"subagentIds": [
+			"readiness-checker",
+			"work-item-planner"
+		],
+		"conversationStarters": [
+			"Check these items against definition of ready",
+			"What's missing before we start?",
+			"Flag items not ready for sprint"
+		],
+		"conversationStarterIcons": [
+			"list-checklist",
+			"question-circle",
+			"warning"
+		],
+		"triggers": [
+			"Sprint planning starts"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nReview items against the definition of ready with @[skill:create-work-items] and @[skill:jql-query-builder] over @[tool:jira], grounded in @[knowledge:confluence]. Hand planning gaps to @[subagent:work-item-planner].\n\n## Output\nA readiness checklist with missing details flagged per item."
 	},
 	{
 		"id": "progress-tracker",
@@ -542,7 +1782,42 @@
 		"remix": "820",
 		"updated": "4 days ago",
 		"peopleOffset": 1,
-		"instructions": "# Progress Tracker\n\nSummarize in-flight projects, priorities, owners, progress, and work that needs attention.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Progress Tracker\n\nSummarize in-flight projects, priorities, owners, progress, and work that needs attention.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira",
+			"confluence",
+			"atlassian-home"
+		],
+		"skillIds": [
+			"standup-summarizer",
+			"build-report",
+			"milestone-tracker"
+		],
+		"knowledgeIds": [
+			"jira",
+			"confluence"
+		],
+		"subagentIds": [
+			"progress-tracker",
+			"blocker-checker"
+		],
+		"conversationStarters": [
+			"Summarize in-flight projects",
+			"Who owns what right now?",
+			"What needs attention this week?"
+		],
+		"conversationStarterIcons": [
+			"graph-bar",
+			"people-group",
+			"warning"
+		],
+		"triggers": [
+			"A status cadence is due"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "quick-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nSummarize in-flight work with @[skill:standup-summarizer] and @[skill:milestone-tracker] over @[tool:jira], grounded in @[knowledge:jira]. Surface blockers via @[subagent:blocker-checker].\n\n## Output\nProjects, priorities, owners, progress, and what needs attention."
 	},
 	{
 		"id": "sprint-capacity-planner",
@@ -561,7 +1836,42 @@
 		"remix": "700",
 		"updated": "1 month ago",
 		"peopleOffset": 2,
-		"instructions": "# Sprint Capacity Planner\n\nRecommend balanced sprint scope using capacity, velocity, issue size, and delivery risk.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Sprint Capacity Planner\n\nRecommend balanced sprint scope using capacity, velocity, issue size, and delivery risk.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"jira",
+			"confluence",
+			"trello"
+		],
+		"skillIds": [
+			"sprint-planner",
+			"backlog-groomer",
+			"milestone-tracker"
+		],
+		"knowledgeIds": [
+			"jira",
+			"confluence"
+		],
+		"subagentIds": [
+			"work-item-planner",
+			"progress-tracker"
+		],
+		"conversationStarters": [
+			"Recommend balanced sprint scope",
+			"What can we commit to this sprint?",
+			"Flag delivery risk in this plan"
+		],
+		"conversationStarterIcons": [
+			"graph-bar",
+			"list-checklist",
+			"warning"
+		],
+		"triggers": [
+			"Sprint planning starts"
+		],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nRecommend balanced sprint scope with @[skill:sprint-planner] and @[skill:backlog-groomer] over @[tool:jira], using capacity and velocity, grounded in @[knowledge:jira]. Hand sequencing to @[subagent:work-item-planner].\n\n## Output\nA sprint plan balanced for capacity, velocity, and delivery risk."
 	},
 	{
 		"id": "workflow-synthesizer",
@@ -573,6 +1883,39 @@
 		"remix": "640",
 		"updated": "3 days ago",
 		"peopleOffset": 3,
-		"instructions": "# Workflow Synthesizer\n\nTurns scattered requests into durable operating workflows.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation."
+		"instructions": "# Workflow Synthesizer\n\nTurns scattered requests into durable operating workflows.\n\n## When to use\nUse this template to break work down and keep delivery moving with clear scope, owners, and next steps.\n\n## How it works\n1. Gather the relevant context from your connected sources.\n2. Slice work into owners, scope, dependencies, and a clear definition of ready.\n3. Recommend the next moves and flag anything that needs a human decision.\n\n## Output\nA concise, review-ready result you can edit before sharing — never sent without your confirmation.",
+		"toolIds": [
+			"confluence",
+			"jira",
+			"workflow-synthesizer"
+		],
+		"skillIds": [
+			"automation-rule-builder",
+			"build-report",
+			"create-work-items"
+		],
+		"knowledgeIds": [
+			"confluence",
+			"jira"
+		],
+		"subagentIds": [
+			"work-item-organizer",
+			"strategic-insight"
+		],
+		"conversationStarters": [
+			"Turn these requests into a workflow",
+			"Codify this recurring process",
+			"Build an operating runbook here"
+		],
+		"conversationStarterIcons": [
+			"settings",
+			"list-checklist",
+			"book"
+		],
+		"triggers": [],
+		"memoryMode": "on",
+		"reasoningMode": "deep-auto",
+		"knowledgeMode": "all",
+		"instructionsBody": "## Instructions\nTurn scattered requests into durable workflows with @[skill:automation-rule-builder] and @[skill:create-work-items], documenting in @[tool:confluence] and operationalizing in @[tool:jira], grounded in @[knowledge:confluence]. Hand large rollouts to @[subagent:work-item-organizer].\n\n## Output\nA durable operating workflow with steps, owners, and automation."
 	}
 ]

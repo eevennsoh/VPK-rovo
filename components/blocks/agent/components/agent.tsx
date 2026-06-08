@@ -353,7 +353,12 @@ export type AgentConfigTextFieldName =
 	| "instructions"
 	| "contextDescription"
 	| "trigger"
-	| "guardrail";
+	| "guardrail"
+	// Mode selectors are single-value (string) config like the text fields, so
+	// they reuse the same onTextChange plumbing rather than a bespoke callback.
+	| "memoryMode"
+	| "reasoningMode"
+	| "knowledgeMode";
 
 export type AgentConfigListFieldName =
 	| "triggers"
@@ -387,6 +392,13 @@ export interface AgentConfigFormValue {
 	knowledge?: readonly string[];
 	conversationStarters?: readonly string[];
 	conversationStarterIcons?: readonly string[];
+	// Mode selectors, persisted on the agent draft. Stored loosely as `string`
+	// (matching the agent-result wire type); the option lists below
+	// (MEMORY_MODE_OPTIONS / REASONING_MODE_SECTIONS / KNOWLEDGE_MODE_OPTIONS)
+	// are the source of valid values, narrowed at the selector boundary.
+	memoryMode?: string;
+	reasoningMode?: string;
+	knowledgeMode?: string;
 	agentId?: string;
 	action?: string;
 }
@@ -2920,13 +2932,43 @@ function AgentCompactConfigToolbarBelow({
 	selectedListItemIndexByField,
 }: Readonly<AgentCompactConfigToolbarBelowProps>) {
 	const [expanded, setExpanded] = useState(true);
-	const [reasoningValue, setReasoningValue] = useState<ReasoningModeValue>("quick-auto");
-	const [knowledgeMode, setKnowledgeMode] = useState<KnowledgeModeValue>(() =>
-		getNonEmptyConfigItems(config.knowledge).length > 0 ? "custom" : "all",
+	// Mode selectors are controlled from the persisted config when present (so a
+	// generated or published agent shows its saved modes) and fall back to local
+	// state otherwise (standalone demo, or before the first edit). Changes persist
+	// through onTextChange — the same draft→publish channel as the text fields —
+	// and also update the local fallback so the collapsed nav button and expanded
+	// row stay in sync as the toolbar toggles between the two views.
+	const [reasoningFallback, setReasoningFallback] = useState<ReasoningModeValue | null>(null);
+	const [knowledgeFallback, setKnowledgeFallback] = useState<KnowledgeModeValue | null>(null);
+	const [memoryFallback, setMemoryFallback] = useState<MemoryModeValue | null>(null);
+	const reasoningValue =
+		(config.reasoningMode as ReasoningModeValue | undefined) ?? reasoningFallback ?? "quick-auto";
+	const knowledgeMode =
+		(config.knowledgeMode as KnowledgeModeValue | undefined)
+		?? knowledgeFallback
+		?? (getNonEmptyConfigItems(config.knowledge).length > 0 ? "custom" : "all");
+	const memoryMode = (config.memoryMode as MemoryModeValue | undefined) ?? memoryFallback ?? "on";
+	const setReasoningValue = useCallback(
+		(next: ReasoningModeValue) => {
+			setReasoningFallback(next);
+			onTextChange?.("reasoningMode", next);
+		},
+		[onTextChange],
 	);
-	// Memory state is lifted here so the collapsed nav button and the expanded
-	// Memory row stay in sync as the toolbar toggles between the two views.
-	const [memoryMode, setMemoryMode] = useState<MemoryModeValue>("on");
+	const setKnowledgeMode = useCallback(
+		(next: KnowledgeModeValue) => {
+			setKnowledgeFallback(next);
+			onTextChange?.("knowledgeMode", next);
+		},
+		[onTextChange],
+	);
+	const setMemoryMode = useCallback(
+		(next: MemoryModeValue) => {
+			setMemoryFallback(next);
+			onTextChange?.("memoryMode", next);
+		},
+		[onTextChange],
+	);
 	const shouldReduceMotion = useReducedMotion();
 	const expandButtonRowRef = useRef<HTMLDivElement | null>(null);
 	const expandButtonX = useMotionValue(0);

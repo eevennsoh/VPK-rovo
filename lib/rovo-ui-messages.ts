@@ -202,6 +202,16 @@ export type RovoDataParts = {
 		// survives panel close/reopen, agent switching, and publish.
 		subagentPrompts?: RovoAgentSubagentPrompt[];
 		guardrail?: string;
+		// Config "mode" selectors: Memory ("on"|"off"), Reasoning level, and
+		// Knowledge scope ("all"|"custom"|"none"). Persisted on the draft so
+		// generation-set modes survive panel close/reopen, agent switching, and
+		// publish (carried by the same key-preserving reducer as skills/knowledge).
+		// Typed as `string` on the wire; the valid value sets are owned by the
+		// option lists in components/blocks/agent/components/agent.tsx
+		// (MEMORY_MODE_OPTIONS, REASONING_MODE_SECTIONS, KNOWLEDGE_MODE_OPTIONS).
+		memoryMode?: string;
+		reasoningMode?: string;
+		knowledgeMode?: string;
 		action: "create" | "update";
 	};
 	clear: null;
