@@ -106,8 +106,6 @@
 	body {
 		@apply bg-background text-foreground;
 		font: var(--ds-font-body);
-		/* Mixed-font stability — keep x-height proportional across font swaps. */
-		font-size-adjust: ex-height 0.5;
 	}
 
 	/* Global pointer cursor */
@@ -119,8 +117,6 @@
 	code,
 	kbd {
 		font-family: var(--ds-font-family-code);
-		/* Mixed-font stability for inline monospace next to body copy. */
-		font-size-adjust: ex-height 0.5;
 	}
 
 	small {

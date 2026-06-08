@@ -14,6 +14,7 @@ export const agentEditSuggestions: RovoSuggestion[] = [
 	{
 		id: "agent-edit-test",
 		label: "Test this agent",
+		description: "Run a quick chat to see how it responds",
 		prompt: "Test this agent",
 		icon: FlaskIcon,
 		type: "skill",
@@ -21,6 +22,7 @@ export const agentEditSuggestions: RovoSuggestion[] = [
 	{
 		id: "agent-edit-advanced-logic",
 		label: "Add advanced logic",
+		description: "Branch behavior with conditions and rules",
 		prompt: "Add advanced logic to this agent",
 		icon: BranchIcon,
 		type: "skill",
@@ -28,6 +30,7 @@ export const agentEditSuggestions: RovoSuggestion[] = [
 	{
 		id: "agent-edit-configure-runs",
 		label: "Configure when the agent runs",
+		description: "Set the triggers and schedule that start it",
 		prompt: "Configure when this agent runs",
 		icon: AutomationIcon,
 		type: "skill",
@@ -35,6 +38,7 @@ export const agentEditSuggestions: RovoSuggestion[] = [
 	{
 		id: "agent-edit-improve",
 		label: "Improve this agent",
+		description: "Get suggestions to refine how it works",
 		prompt: "Improve this agent",
 		icon: SuggestedEditIcon,
 		type: "skill",
@@ -42,6 +46,7 @@ export const agentEditSuggestions: RovoSuggestion[] = [
 	{
 		id: "agent-edit-instructions",
 		label: "Update the agent's instructions",
+		description: "Edit its role, tone, and guardrails",
 		prompt: "Update this agent's instructions",
 		icon: BookOpenIcon,
 		type: "skill",
@@ -49,6 +54,7 @@ export const agentEditSuggestions: RovoSuggestion[] = [
 	{
 		id: "agent-edit-connect-tools",
 		label: "Connect tools and knowledge",
+		description: "Link the sources and tools it can use",
 		prompt: "Connect tools and knowledge to this agent",
 		icon: LinkIcon,
 		type: "skill",
