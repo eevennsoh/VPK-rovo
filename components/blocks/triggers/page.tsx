@@ -12,9 +12,13 @@ import DeleteIcon from "@atlaskit/icon/core/delete";
 import IncidentIcon from "@atlaskit/icon/core/incident";
 import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
 import WebhookIcon from "@atlaskit/icon-lab/core/webhook";
+import SearchIcon from "@atlaskit/icon/core/search";
+import CrossCircleIcon from "@atlaskit/icon/core/cross-circle";
 
 import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
+import { Input } from "@/components/ui/input";
+import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -261,37 +265,64 @@ export function TriggerPicker({
 			<DropdownMenuTrigger render={trigger ?? <TriggerAddRow label={label} />} />
 			<DropdownMenuContent
 				align="start"
-				className="w-[min(24rem,calc(100vw-2rem))] p-1"
+				className="w-[min(24rem,calc(100vw-2rem))] overflow-hidden p-0"
 				sideOffset={6}
 			>
-				<div className="p-2 pb-1">
-					<label className="sr-only" htmlFor="trigger-picker-search">
-						Search triggers
-					</label>
-					<input
-						id="trigger-picker-search"
-						value={query}
-						onChange={(event) => setQuery(event.target.value)}
-						onKeyDown={(event) => event.stopPropagation()}
-						placeholder="Search Triggers..."
-						className="h-8 w-full rounded-md border border-transparent bg-transparent px-2 text-sm text-text outline-none placeholder:text-text-subtle focus:border-border-focused"
-					/>
-				</div>
-				{filteredProviders.length > 0 ? (
-					<DropdownMenuGroup>
-						{filteredProviders.map((provider) => (
-							<TriggerProviderSubmenu
-								key={provider.id}
-								onSelectEvent={handleSelectEvent}
-								provider={provider}
-							/>
-						))}
-					</DropdownMenuGroup>
-				) : (
-					<div className="px-3 py-6 text-center text-sm text-text-subtle">
-						No triggers found
+				<div
+					className="rich-text-command-menu rich-text-command-menu-borderless"
+					data-first-item-input="true"
+					role="presentation"
+				>
+					<div className="rich-text-command-menu-item rich-text-command-menu-input rich-text-command-menu-item-sticky">
+						<span
+							className="rich-text-command-menu-input-logo text-icon-subtle"
+							aria-hidden={true}
+						>
+							<SearchIcon label="" size="small" />
+						</span>
+						<Input
+							id="trigger-picker-search"
+							variant="subtle"
+							isCompact
+							value={query}
+							aria-label="Search triggers"
+							placeholder="Search Triggers..."
+							onChange={(event) => setQuery(event.currentTarget.value)}
+							onKeyDown={(event) => event.stopPropagation()}
+						/>
+						{query ? (
+							<Button
+								type="button"
+								aria-label="Clear search"
+								className="rich-text-command-menu-input-clear text-icon-subtle"
+								onMouseDown={(event) => event.preventDefault()}
+								onClick={() => setQuery("")}
+								shape="circle"
+								size="icon-compact"
+								variant="ghost"
+							>
+								<CrossCircleIcon label="" size="small" />
+							</Button>
+						) : null}
 					</div>
-				)}
+					<div className="rich-text-command-menu-list">
+						{filteredProviders.length > 0 ? (
+							<DropdownMenuGroup className="p-0">
+								{filteredProviders.map((provider) => (
+									<TriggerProviderSubmenu
+										key={provider.id}
+										onSelectEvent={handleSelectEvent}
+										provider={provider}
+									/>
+								))}
+							</DropdownMenuGroup>
+						) : (
+							<div className="rich-text-command-menu-empty">
+								No triggers found
+							</div>
+						)}
+					</div>
+				</div>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

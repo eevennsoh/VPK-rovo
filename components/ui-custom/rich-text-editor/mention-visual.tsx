@@ -206,19 +206,26 @@ export function RichTextMentionVisualMark({
 		// 3P marks paint their own background, so they render bare (no border) —
 		// mirroring the self-contained 1p product logos below.
 		const { src, hasBorder } = resolveBrandLogoPresentation(visual.src);
+		// Menu rows keep the bordered surface tile; inline chips (tag/pill) drop the
+		// border + background so the borderless 3P/2P glyph reads as a bare mark.
+		const showTile = hasBorder && size === "menu";
 		return (
 			<Tile
 				aria-hidden={true}
 				className={cn(
-					hasBorder && "bg-surface",
+					showTile && "bg-surface",
 					// In menu rows: bordered 3P brand glyphs sit at 16px in the 32px tile;
 					// bordered 2P partner marks match the Atlassian/icon tiles' 24px inset.
-					hasBorder &&
-						size === "menu" &&
+					showTile &&
 						(src.startsWith("/3p/") ? "[&_img]:size-4!" : "[&_img]:size-6!"),
+					// Inline chips (tag/pill): borderless 3P + all 2P marks have no baked
+					// background, so they render as a centered 12px glyph inside the 16px
+					// box (no border). Solid-fill 3P marks (`hasBorder === false`) keep
+					// filling the full 16px box since they paint their own background.
+					hasBorder && size !== "menu" && "[&_img]:size-3!",
 					className,
 				)}
-				hasBorder={hasBorder}
+				hasBorder={showTile}
 				isInset={false}
 				label={label}
 				size={size === "menu" ? "medium" : "xxsmall"}
