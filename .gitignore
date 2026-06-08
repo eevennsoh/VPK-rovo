@@ -19,6 +19,9 @@
 # browser automation artifacts
 /screenshots
 /public/screenshots/
+--full-page
+--out
+--output
 .playwright-cli/
 .bg-shell/
 .tmp-agent-browser-home/

@@ -598,11 +598,10 @@
 	overflow: hidden;
 	/* Title: ADS font.body (14px / line-height 20px) via the token, so size and
 	   line-height are never hand-overridden. Color is the subtle text token, one
-	   step above the subtlest byline below it; weight steps up to medium (500)
-	   as the only deliberate override. */
+	   step above the subtlest byline below it; weight stays at the default
+	   paragraph weight (no deliberate override). */
 	font: var(--ds-font-body);
 	color: var(--ds-text-subtle, #44546f);
-	font-weight: 500;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
