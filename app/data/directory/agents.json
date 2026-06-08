@@ -172,5 +172,173 @@
 		"byline": "Teamwork agent by Atlassian",
 		"avatarSrc": "/avatar-agent/service-agents/wildcard-1.svg",
 		"description": "Extracts themes, decisions, and action items from long transcripts."
+	},
+	{
+		"id": "decision-director",
+		"name": "Decision Director",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/teamwork-agents/decision-director.svg",
+		"description": "Applies the DACI framework to structure, document, and communicate decisions.",
+		"attributionKind": "team"
+	},
+	{
+		"id": "okr-generator",
+		"name": "OKR Generator",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/teamwork-agents/okr-generator.svg",
+		"description": "Creates, reviews, and refines measurable team and org OKRs.",
+		"attributionKind": "team"
+	},
+	{
+		"id": "work-item-organizer",
+		"name": "Work Item Organizer",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/teamwork-agents/work-organizer.svg",
+		"description": "Finds and updates work items and assigns them to epics or sprints.",
+		"attributionKind": "team"
+	},
+	{
+		"id": "blocker-checker",
+		"name": "Blocker Checker",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/teamwork-agents/blocker-checker.svg",
+		"description": "Flags potentially blocked work items before they stall delivery.",
+		"attributionKind": "team"
+	},
+	{
+		"id": "work-item-planner",
+		"name": "Work Item Planner",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/teamwork-agents/work-item-planner.svg",
+		"description": "Breaks large projects into smaller, actionable, well-scoped tasks.",
+		"attributionKind": "team"
+	},
+	{
+		"id": "jira-theme-analyzer",
+		"name": "Jira Theme Analyzer",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/teamwork-agents/jira-theme-analyzer.svg",
+		"description": "Identifies themes across work items and drafts epics from groups.",
+		"attributionKind": "team"
+	},
+	{
+		"id": "bug-report-assistant",
+		"name": "Bug Report Assistant",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/teamwork-agents/bug-report-assistant.svg",
+		"description": "Helps write clear, detailed, reproducible bug reports for triage.",
+		"attributionKind": "company"
+	},
+	{
+		"id": "brand-voice-crafter",
+		"name": "Brand Voice Crafter",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/teamwork-agents/brand-guardian.svg",
+		"description": "Produces content that matches your brand guidelines and tone.",
+		"attributionKind": "company"
+	},
+	{
+		"id": "global-translator",
+		"name": "Global Translator",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/teamwork-agents/global-translator.svg",
+		"description": "Translates pages, posts, and replies into multiple languages.",
+		"attributionKind": "company"
+	},
+	{
+		"id": "user-manual-writer",
+		"name": "User Manual Writer",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/teamwork-agents/user-manual-writer.svg",
+		"description": "Helps create a personal user manual of your working styles.",
+		"attributionKind": "company"
+	},
+	{
+		"id": "customer-insights",
+		"name": "Customer Insights",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/teamwork-agents/customer-insights.svg",
+		"description": "Analyzes customer feedback from connected data sources for themes.",
+		"attributionKind": "company"
+	},
+	{
+		"id": "rovo-ops",
+		"name": "Rovo Ops",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/service-agents/ops-guide.svg",
+		"description": "Streamlines incident management and on-call guidance in service projects.",
+		"attributionKind": "team"
+	},
+	{
+		"id": "service-request-helper",
+		"name": "Service Request Helper",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/service-agents/service-request-helper.svg",
+		"description": "Helps compose support responses and find the right assignee.",
+		"attributionKind": "team"
+	},
+	{
+		"id": "root-cause-analyzer",
+		"name": "Root Cause Analyzer",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/service-agents/rca-agent.svg",
+		"description": "Traces incidents to their root cause from signals and history.",
+		"attributionKind": "team"
+	},
+	{
+		"id": "strategic-insight",
+		"name": "Strategic Insight",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+		"description": "Surfaces strategic insights and risks across initiatives.",
+		"attributionKind": "team"
+	},
+	{
+		"id": "talent-finder",
+		"name": "Talent Finder",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/strategy-agents/talent-finder.svg",
+		"description": "Finds people, skills, and availability across your organization.",
+		"attributionKind": "team"
+	},
+	{
+		"id": "diagram-creator",
+		"name": "Diagram Creator",
+		"byline": "Rovo agent by Atlassian",
+		"avatarSrc": "/avatar-agent/teamwork-agents/diagram-creator.svg",
+		"description": "Generates diagrams and flowcharts from a plain-language description.",
+		"attributionKind": "company"
+	},
+	{
+		"id": "code-planner",
+		"name": "Code Planner",
+		"byline": "Dev agent by Atlassian",
+		"avatarSrc": "/avatar-agent/dev-agents/code-planner.svg",
+		"description": "Plans implementation steps and breaks down technical work.",
+		"attributionKind": "team"
+	},
+	{
+		"id": "unit-test-creator",
+		"name": "Unit Test Creator",
+		"byline": "Dev agent by Atlassian",
+		"avatarSrc": "/avatar-agent/dev-agents/unit-test-creator.svg",
+		"description": "Generates unit tests and coverage for changed code.",
+		"attributionKind": "person"
+	},
+	{
+		"id": "deployment-summarizer",
+		"name": "Deployment Summarizer",
+		"byline": "Dev agent by Atlassian",
+		"avatarSrc": "/avatar-agent/dev-agents/deployment-summarizer.svg",
+		"description": "Summarizes deployments, changes, and rollout risk.",
+		"attributionKind": "team"
+	},
+	{
+		"id": "rovo-expert",
+		"name": "Rovo Expert",
+		"byline": "by Atlassian",
+		"logoName": "rovo",
+		"description": "Introduces Rovo features and provides hands-on usage guidance.",
+		"attributionKind": "company"
 	}
 ]

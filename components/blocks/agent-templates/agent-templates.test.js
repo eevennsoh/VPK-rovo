@@ -151,32 +151,54 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(demoAgentsSource, /collaborators: pickCollaborators\(peopleOffset, visibleCollaboratorCount\)/u);
 	assert.match(demoAgentsSource, /sources:/u);
 	assert.match(demoAgentsSource, /skills:/u);
-	assert.match(demoAgentsSource, /attributionKind: "team"/u);
-	assert.match(demoAgentsSource, /attributionKind: "person"/u);
-	assert.match(demoAgentsSource, /attributionKind: "company"/u);
-	assert.match(demoAgentsSource, /publisherLogoSrc: "\/3p\/amplitude\/16\.svg"/u);
-	assert.match(demoAgentsSource, /name: "Decision Director"/u);
-	assert.match(demoAgentsSource, /name: "Customer Insights"/u);
-	assert.match(demoAgentsSource, /name: "Service Triage"/u);
-	assert.match(demoAgentsSource, /name: "Product Requirements Guide"/u);
-	assert.match(demoAgentsSource, /name: "Work Item Planner"/u);
-	assert.match(demoAgentsSource, /name: "OKR Generator"[\s\S]*avatarSrc: "\/avatar-agent\/product-agents\/wildcard-2\.svg"/u);
-	assert.match(demoAgentsSource, /name: "Jira Theme Analyzer"[\s\S]*avatarSrc: "\/avatar-agent\/dev-agents\/code-reviewer\.svg"/u);
-	assert.match(demoAgentsSource, /name: "Transcript Insights Reporter"[\s\S]*avatarSrc: "\/avatar-agent\/strategy-agents\/wildcard-1\.svg"/u);
-	assert.match(demoAgentsSource, /name: "Service Request Helper"[\s\S]*avatarSrc: "\/avatar-agent\/strategy-agents\/strategic-insight\.svg"/u);
-	assert.match(demoAgentsSource, /name: "Product Requirements Guide"[\s\S]*avatarSrc: "\/avatar-agent\/product-agents\/wildcard-1\.svg"/u);
-	assert.match(demoAgentsSource, /name: "Release Notes Drafter"[\s\S]*avatarSrc: "\/avatar-agent\/dev-agents\/deployment-summarizer\.svg"/u);
-	assert.match(demoAgentsSource, /name: "Brand Voice Crafter"[\s\S]*avatarSrc: "\/avatar-agent\/strategy-agents\/wildcard-3\.svg"/u);
-	assert.match(demoAgentsSource, /name: "Social Media Writer"[\s\S]*avatarSrc: "\/avatar-agent\/service-agents\/wildcard-4\.svg"/u);
-	assert.match(demoAgentsSource, /name: "Work Item Planner"[\s\S]*avatarSrc: "\/avatar-agent\/service-agents\/wildcard-2\.svg"/u);
-	assert.match(demoAgentsSource, /name: "Bug Report Assistant"[\s\S]*avatarSrc: "\/avatar-agent\/dev-agents\/code-vulnerability-scanner-npm-yarn\.svg"/u);
-	assert.match(demoAgentsSource, /name: "Blocker Checker"[\s\S]*avatarSrc: "\/avatar-agent\/strategy-agents\/wildcard-4\.svg"/u);
-	assert.match(demoAgentsSource, /name: "Readiness Checker"[\s\S]*avatarSrc: "\/avatar-agent\/product-agents\/feedback-analyzer\.svg"/u);
-	assert.equal((demoAgentsSource.match(/categoryId: "brainstorm"/gu) ?? []).length, 8);
-	assert.equal((demoAgentsSource.match(/categoryId: "analyze"/gu) ?? []).length, 8);
-	assert.equal((demoAgentsSource.match(/categoryId: "review"/gu) ?? []).length, 8);
-	assert.equal((demoAgentsSource.match(/categoryId: "summarize"/gu) ?? []).length, 8);
-	assert.equal((demoAgentsSource.match(/categoryId: "create"/gu) ?? []).length, 8);
+	// The template data is sourced from the centralized directory catalog; the demo
+	// module derives sources/skills/capabilities from these authored configs.
+	assert.match(demoAgentsSource, /AGENT_TEMPLATE_CONFIGS/u);
+	const templates = JSON.parse(readProjectFile("app/data/directory/agent-templates.json"));
+	const templateByName = new Map(templates.map((template) => [template.name, template]));
+	const attributionKinds = new Set(templates.map((template) => template.attributionKind ?? "team"));
+	assert.ok(attributionKinds.has("team"), "templates include a team attribution (default)");
+	assert.ok(attributionKinds.has("person"), "templates include a person attribution");
+	assert.ok(attributionKinds.has("company"), "templates include a company attribution");
+	assert.equal(templateByName.get("Funnel Analyzer")?.publisherLogoSrc, "/3p/amplitude/16.svg");
+	for (const name of [
+		"Decision Director",
+		"Customer Insights",
+		"Service Triage",
+		"Product Requirements Guide",
+		"Work Item Planner",
+	]) {
+		assert.ok(templateByName.has(name), `template catalog must include ${name}`);
+	}
+	const nameToAvatar = [
+		["OKR Generator", "/avatar-agent/product-agents/wildcard-2.svg"],
+		["Jira Theme Analyzer", "/avatar-agent/dev-agents/code-reviewer.svg"],
+		["Transcript Insights Reporter", "/avatar-agent/strategy-agents/wildcard-1.svg"],
+		["Service Request Helper", "/avatar-agent/strategy-agents/strategic-insight.svg"],
+		["Product Requirements Guide", "/avatar-agent/product-agents/wildcard-1.svg"],
+		["Release Notes Drafter", "/avatar-agent/dev-agents/deployment-summarizer.svg"],
+		["Brand Voice Crafter", "/avatar-agent/strategy-agents/wildcard-3.svg"],
+		["Social Media Writer", "/avatar-agent/service-agents/wildcard-4.svg"],
+		["Work Item Planner", "/avatar-agent/service-agents/wildcard-2.svg"],
+		["Bug Report Assistant", "/avatar-agent/dev-agents/code-vulnerability-scanner-npm-yarn.svg"],
+		["Blocker Checker", "/avatar-agent/strategy-agents/wildcard-4.svg"],
+		["Readiness Checker", "/avatar-agent/product-agents/feedback-analyzer.svg"],
+	];
+	for (const [name, avatarSrc] of nameToAvatar) {
+		assert.equal(templateByName.get(name)?.avatarSrc, avatarSrc, `${name} avatar`);
+	}
+	for (const categoryId of ["brainstorm", "analyze", "review", "summarize", "create"]) {
+		assert.equal(
+			templates.filter((template) => template.categoryId === categoryId).length,
+			8,
+			`${categoryId} should have 8 templates`,
+		);
+	}
+	// Templates are robust: every one carries non-empty setup instructions.
+	for (const template of templates) {
+		assert.equal(typeof template.instructions, "string", `${template.id} instructions must be a string`);
+		assert.ok(template.instructions.length > 0, `${template.id} instructions must be non-empty`);
+	}
 	assert.match(defaultSidebarGroupsSource, /title: "By teams"/u);
 	assert.match(defaultSidebarGroupsSource, /title: "By companies"/u);
 });

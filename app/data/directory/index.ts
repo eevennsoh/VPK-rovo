@@ -25,13 +25,16 @@ export {
 	getSkillById,
 	getSkillCategoryId,
 	getSkillDirectoryVisual,
+	getSkillIconColor,
 	getSkillPublisherAvatarSrc,
 	getSkillPublisherLogoName,
 	getSkillPublisherName,
 	isSkillPublisherPerson,
+	SKILL_SOURCE_ICON_COLOR,
 } from "./skills";
 export type {
 	SkillCategory,
+	SkillSource,
 	SkillsDirectoryFileTreeItem,
 	SkillsDirectorySkill,
 	SkillsDirectoryToolTag,
@@ -99,3 +102,12 @@ export {
 	ROVO_DIRECTORY_AGENT_PROFILES,
 } from "./agents";
 export type { RovoAgentProfile } from "./agents";
+
+// --- Agent templates ---
+export {
+	AGENT_TEMPLATE_CATEGORY_IDS,
+	AGENT_TEMPLATE_CONFIGS,
+	getAgentTemplateConfigById,
+	getAgentTemplateConfigsByCategory,
+} from "./agent-templates";
+export type { AgentTemplateCategoryId, AgentTemplateConfig } from "./agent-templates";

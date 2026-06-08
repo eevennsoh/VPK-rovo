@@ -40,5 +40,313 @@
 		"description": "Powers analytics, experimentation, and ML models across the product.",
 		"avatarSrc": "/avatar-project/science.svg",
 		"memberCount": 7
+	},
+	{
+		"id": "team-apple",
+		"name": "Apple Ecosystem",
+		"description": "Maintains native integrations and certifications across Apple devices and services.",
+		"avatarSrc": "/avatar-project/apple.svg",
+		"memberCount": 6
+	},
+	{
+		"id": "team-bank",
+		"name": "Finance & Treasury",
+		"description": "Manages billing, revenue recognition, and financial reporting for the business.",
+		"avatarSrc": "/avatar-project/bank.svg",
+		"memberCount": 11
+	},
+	{
+		"id": "team-battery",
+		"name": "Energy & Efficiency",
+		"description": "Optimizes resource usage, performance budgets, and sustainability targets.",
+		"avatarSrc": "/avatar-project/battery.svg",
+		"memberCount": 5
+	},
+	{
+		"id": "team-boat",
+		"name": "Logistics",
+		"description": "Coordinates shipping, fulfillment, and supply-chain operations end to end.",
+		"avatarSrc": "/avatar-project/boat.svg",
+		"memberCount": 10
+	},
+	{
+		"id": "team-book",
+		"name": "Knowledge Base",
+		"description": "Curates documentation, help articles, and the internal learning library.",
+		"avatarSrc": "/avatar-project/book.svg",
+		"memberCount": 8
+	},
+	{
+		"id": "team-cat",
+		"name": "Community",
+		"description": "Nurtures the user community, forums, and ambassador programs.",
+		"avatarSrc": "/avatar-project/cat.svg",
+		"memberCount": 6
+	},
+	{
+		"id": "team-celebration",
+		"name": "Events",
+		"description": "Plans launches, conferences, and team celebrations across the company.",
+		"avatarSrc": "/avatar-project/celebration.svg",
+		"memberCount": 7
+	},
+	{
+		"id": "team-cloud",
+		"name": "Cloud Infrastructure",
+		"description": "Runs the cloud environments, networking, and reliability of hosted services.",
+		"avatarSrc": "/avatar-project/cloud.svg",
+		"memberCount": 16
+	},
+	{
+		"id": "team-code",
+		"name": "Engineering",
+		"description": "Delivers product features and maintains the core application codebase.",
+		"avatarSrc": "/avatar-project/code.svg",
+		"memberCount": 22
+	},
+	{
+		"id": "team-compass",
+		"name": "Product Strategy",
+		"description": "Sets the product roadmap, vision, and prioritization across initiatives.",
+		"avatarSrc": "/avatar-project/compass.svg",
+		"memberCount": 9
+	},
+	{
+		"id": "team-connie-blog",
+		"name": "Content & Editorial",
+		"description": "Writes the company blog, thought leadership, and long-form storytelling.",
+		"avatarSrc": "/avatar-project/connie-blog.svg",
+		"memberCount": 5
+	},
+	{
+		"id": "team-government",
+		"name": "Public Sector",
+		"description": "Handles compliance, procurement, and partnerships with government customers.",
+		"avatarSrc": "/avatar-project/government.svg",
+		"memberCount": 8
+	},
+	{
+		"id": "team-graduation",
+		"name": "Learning & Enablement",
+		"description": "Builds training, certification, and onboarding programs for customers and staff.",
+		"avatarSrc": "/avatar-project/graduation.svg",
+		"memberCount": 7
+	},
+	{
+		"id": "team-group",
+		"name": "People Operations",
+		"description": "Supports hiring, team structure, and the day-to-day employee experience.",
+		"avatarSrc": "/avatar-project/group.svg",
+		"memberCount": 12
+	},
+	{
+		"id": "team-hr-badge",
+		"name": "People & HR",
+		"description": "Owns recruiting, performance, benefits, and organizational development.",
+		"avatarSrc": "/avatar-project/hr-badge.svg",
+		"memberCount": 10
+	},
+	{
+		"id": "team-id",
+		"name": "Identity & Access",
+		"description": "Manages authentication, authorization, and user identity across products.",
+		"avatarSrc": "/avatar-project/id.svg",
+		"memberCount": 9
+	},
+	{
+		"id": "team-it",
+		"name": "IT Operations",
+		"description": "Runs internal systems, device management, and corporate networking.",
+		"avatarSrc": "/avatar-project/it.svg",
+		"memberCount": 11
+	},
+	{
+		"id": "team-launch-ship",
+		"name": "Launch",
+		"description": "Coordinates go-to-market readiness and ships major product releases.",
+		"avatarSrc": "/avatar-project/launch-ship.svg",
+		"memberCount": 8
+	},
+	{
+		"id": "team-light-bulb",
+		"name": "Innovation Lab",
+		"description": "Prototypes new ideas and incubates early-stage product bets.",
+		"avatarSrc": "/avatar-project/light-bulb.svg",
+		"memberCount": 6
+	},
+	{
+		"id": "team-lightning",
+		"name": "Performance",
+		"description": "Tunes speed, latency, and responsiveness across the entire platform.",
+		"avatarSrc": "/avatar-project/lightning.svg",
+		"memberCount": 7
+	},
+	{
+		"id": "team-loom-record",
+		"name": "Screen Capture",
+		"description": "Builds the recording experience and capture tooling for async video.",
+		"avatarSrc": "/avatar-project/loom-record.svg",
+		"memberCount": 9
+	},
+	{
+		"id": "team-loom-video",
+		"name": "Video Platform",
+		"description": "Powers video hosting, playback, and the async messaging experience.",
+		"avatarSrc": "/avatar-project/loom-video.svg",
+		"memberCount": 13
+	},
+	{
+		"id": "team-magnifying-glass",
+		"name": "Search",
+		"description": "Builds search relevance, indexing, and discovery across the product.",
+		"avatarSrc": "/avatar-project/magnifying-glass.svg",
+		"memberCount": 10
+	},
+	{
+		"id": "team-mail",
+		"name": "Messaging",
+		"description": "Owns transactional email, notifications, and communication delivery.",
+		"avatarSrc": "/avatar-project/mail.svg",
+		"memberCount": 6
+	},
+	{
+		"id": "team-map",
+		"name": "Strategy",
+		"description": "Maps long-term company direction and cross-functional planning.",
+		"avatarSrc": "/avatar-project/map.svg",
+		"memberCount": 8
+	},
+	{
+		"id": "team-megaphone",
+		"name": "Marketing",
+		"description": "Drives brand, campaigns, and demand generation across all channels.",
+		"avatarSrc": "/avatar-project/megaphone.svg",
+		"memberCount": 14
+	},
+	{
+		"id": "team-palm-tree",
+		"name": "Workplace Experience",
+		"description": "Shapes office spaces, remote perks, and the overall employee environment.",
+		"avatarSrc": "/avatar-project/palm-tree.svg",
+		"memberCount": 5
+	},
+	{
+		"id": "team-paper-airplane",
+		"name": "Outbound",
+		"description": "Runs outbound sales motions, sequences, and prospect engagement.",
+		"avatarSrc": "/avatar-project/paper-airplane.svg",
+		"memberCount": 9
+	},
+	{
+		"id": "team-pencil",
+		"name": "UX Writing",
+		"description": "Crafts product copy, microcopy, and the voice and tone guidelines.",
+		"avatarSrc": "/avatar-project/pencil.svg",
+		"memberCount": 6
+	},
+	{
+		"id": "team-pin",
+		"name": "Field Operations",
+		"description": "Coordinates regional teams, locations, and on-the-ground logistics.",
+		"avatarSrc": "/avatar-project/pin.svg",
+		"memberCount": 7
+	},
+	{
+		"id": "team-plant",
+		"name": "Sustainability",
+		"description": "Leads environmental initiatives, carbon goals, and green operations.",
+		"avatarSrc": "/avatar-project/plant.svg",
+		"memberCount": 5
+	},
+	{
+		"id": "team-rocket",
+		"name": "Launch Acceleration",
+		"description": "Accelerates new feature rollouts and high-velocity release programs.",
+		"avatarSrc": "/avatar-project/rocket.svg",
+		"memberCount": 11
+	},
+	{
+		"id": "team-service-bell",
+		"name": "Service Desk",
+		"description": "Fields support requests and keeps the customer help queue moving.",
+		"avatarSrc": "/avatar-project/service-bell.svg",
+		"memberCount": 13
+	},
+	{
+		"id": "team-shield",
+		"name": "Security",
+		"description": "Protects the platform with threat detection, audits, and incident response.",
+		"avatarSrc": "/avatar-project/shield.svg",
+		"memberCount": 15
+	},
+	{
+		"id": "team-shopping-cart",
+		"name": "Commerce",
+		"description": "Builds the checkout, cart, and purchase flows for the storefront.",
+		"avatarSrc": "/avatar-project/shopping-cart.svg",
+		"memberCount": 10
+	},
+	{
+		"id": "team-star",
+		"name": "Quality Assurance",
+		"description": "Safeguards product quality through testing, review, and release gating.",
+		"avatarSrc": "/avatar-project/star.svg",
+		"memberCount": 9
+	},
+	{
+		"id": "team-stopwatch",
+		"name": "Productivity",
+		"description": "Improves internal tooling, automation, and team efficiency workflows.",
+		"avatarSrc": "/avatar-project/stopwatch.svg",
+		"memberCount": 6
+	},
+	{
+		"id": "team-store-bag",
+		"name": "Retail",
+		"description": "Manages merchandising, pricing, and the retail purchasing experience.",
+		"avatarSrc": "/avatar-project/store-bag.svg",
+		"memberCount": 8
+	},
+	{
+		"id": "team-storefront",
+		"name": "Marketplace",
+		"description": "Operates the marketplace catalog, listings, and seller partnerships.",
+		"avatarSrc": "/avatar-project/storefront.svg",
+		"memberCount": 12
+	},
+	{
+		"id": "team-sun",
+		"name": "Wellbeing",
+		"description": "Champions employee health, balance, and wellness programs.",
+		"avatarSrc": "/avatar-project/sun.svg",
+		"memberCount": 5
+	},
+	{
+		"id": "team-support-wrench",
+		"name": "IT Support",
+		"description": "Resolves technical issues and maintains internal hardware and software.",
+		"avatarSrc": "/avatar-project/support-wrench.svg",
+		"memberCount": 10
+	},
+	{
+		"id": "team-tracking",
+		"name": "Analytics",
+		"description": "Instruments product telemetry, dashboards, and event tracking.",
+		"avatarSrc": "/avatar-project/tracking.svg",
+		"memberCount": 9
+	},
+	{
+		"id": "team-unicorn",
+		"name": "Special Projects",
+		"description": "Tackles ambitious, high-impact bets that fall outside normal roadmaps.",
+		"avatarSrc": "/avatar-project/unicorn.svg",
+		"memberCount": 6
+	},
+	{
+		"id": "team-video",
+		"name": "Media Production",
+		"description": "Produces video content, tutorials, and visual assets for the brand.",
+		"avatarSrc": "/avatar-project/video.svg",
+		"memberCount": 7
 	}
 ]

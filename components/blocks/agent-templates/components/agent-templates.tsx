@@ -34,6 +34,8 @@ export interface AgentTemplatesAgent extends AgentBrowserAgent {
 	publisher?: string;
 	publisherLogoSrc?: string;
 	templatePrompt?: string;
+	/** Robust setup/usage guidance for the template (from the directory catalog). */
+	instructions?: string;
 	verified?: boolean;
 	capabilities?: readonly CardDirectoryCapability[];
 	sources?: ReadonlyArray<TwgToolSource>;

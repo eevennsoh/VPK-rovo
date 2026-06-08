@@ -4,7 +4,6 @@
 		"name": "Design landing page",
 		"description": "Create high-converting, visually distinctive landing pages from scratch or by refactoring existing pages. Use when the user asks to build, redesign, polish, or optimize a landing page.",
 		"icon": "paint-palette",
-		"iconColor": "text-icon-discovery",
 		"publisherName": "By you",
 		"publisherAvatarSrc": "/avatar-human/maia-ma.png",
 		"companyId": "you",
@@ -13,18 +12,30 @@
 		"viewCount": 6279,
 		"favorite": true,
 		"tools": [
-			{ "id": "tool-1", "name": "Tool1", "icon": "page" },
-			{ "id": "tool-2", "name": "Tool2", "icon": "page" },
-			{ "id": "tool-3", "name": "Tool3", "icon": "page" }
+			{
+				"id": "tool-1",
+				"name": "Tool1",
+				"icon": "page"
+			},
+			{
+				"id": "tool-2",
+				"name": "Tool2",
+				"icon": "page"
+			},
+			{
+				"id": "tool-3",
+				"name": "Tool3",
+				"icon": "page"
+			}
 		],
-		"instructions": "# Design Landing Page\n\nThis skill guides creation of distinctive, production-grade frontend interfaces that avoid generic AI aesthetics. The goal is to implement real, working code with careful attention to aesthetic details and deliberate creative choices.\n\nThe user provides frontend requirements: a component, page, application, or interface to build. They may include context about the purpose, audience, or technical constraints.\n\n---\n\n## Design Thinking\n\nBefore coding, understand the context and commit to a bold aesthetic direction."
+		"instructions": "# Design Landing Page\n\nThis skill guides creation of distinctive, production-grade frontend interfaces that avoid generic AI aesthetics. The goal is to implement real, working code with careful attention to aesthetic details and deliberate creative choices.\n\nThe user provides frontend requirements: a component, page, application, or interface to build. They may include context about the purpose, audience, or technical constraints.\n\n---\n\n## Design Thinking\n\nBefore coding, understand the context and commit to a bold aesthetic direction.",
+		"source": "custom"
 	},
 	{
 		"id": "develop-mobile-app-interface",
 		"name": "Develop mobile app interface",
 		"description": "Craft intuitive and engaging mobile app interfaces tailored for both iOS and Android platforms. Ideal for designing, enhancing, or refining app UI/UX.",
 		"icon": "device-mobile",
-		"iconColor": "text-icon-success",
 		"publisherName": "By you",
 		"publisherAvatarSrc": "/avatar-human/maia-ma.png",
 		"companyId": "you",
@@ -33,17 +44,25 @@
 		"viewCount": 8345,
 		"favorite": true,
 		"tools": [
-			{ "id": "wireframe", "name": "Wireframe", "icon": "page" },
-			{ "id": "prototype", "name": "Prototype", "icon": "paint-palette" }
+			{
+				"id": "wireframe",
+				"name": "Wireframe",
+				"icon": "page"
+			},
+			{
+				"id": "prototype",
+				"name": "Prototype",
+				"icon": "paint-palette"
+			}
 		],
-		"instructions": "# Develop Mobile App Interface\n\nCraft intuitive mobile app interfaces for iOS and Android. Use this skill for onboarding flows, productivity surfaces, detail views, and app experiences that need refined interaction patterns.\n\nPlan the primary task first, then design the smallest complete surface that lets a user accomplish it."
+		"instructions": "# Develop Mobile App Interface\n\nCraft intuitive mobile app interfaces for iOS and Android. Use this skill for onboarding flows, productivity surfaces, detail views, and app experiences that need refined interaction patterns.\n\nPlan the primary task first, then design the smallest complete surface that lets a user accomplish it.",
+		"source": "custom"
 	},
 	{
 		"id": "create-brand-identity",
 		"name": "Create brand identity",
 		"description": "Establish a cohesive brand identity through logo design, color palettes, typography, and visual style guidelines. Use this when creating or refreshing a brand.",
 		"icon": "paint-palette",
-		"iconColor": "text-icon-brand",
 		"publisherName": "By you",
 		"publisherAvatarSrc": "/avatar-human/maia-ma.png",
 		"companyId": "you",
@@ -52,17 +71,25 @@
 		"viewCount": 4921,
 		"favorite": true,
 		"tools": [
-			{ "id": "palette", "name": "Palette", "icon": "paint-palette" },
-			{ "id": "guidelines", "name": "Guidelines", "icon": "page" }
+			{
+				"id": "palette",
+				"name": "Palette",
+				"icon": "paint-palette"
+			},
+			{
+				"id": "guidelines",
+				"name": "Guidelines",
+				"icon": "page"
+			}
 		],
-		"instructions": "# Create Brand Identity\n\nCreate cohesive brand systems with logo direction, color palette, typography, voice, and reusable visual rules.\n\nUse when a project needs a recognizable visual identity before product or marketing screens are built."
+		"instructions": "# Create Brand Identity\n\nCreate cohesive brand systems with logo direction, color palette, typography, voice, and reusable visual rules.\n\nUse when a project needs a recognizable visual identity before product or marketing screens are built.",
+		"source": "custom"
 	},
 	{
 		"id": "produce-marketing-materials",
 		"name": "Produce marketing materials",
 		"description": "Design eye-catching marketing collateral that resonates with target audiences, including brochures, posters, and social media graphics.",
 		"icon": "megaphone",
-		"iconColor": "text-icon-warning",
 		"publisherName": "By you",
 		"publisherAvatarSrc": "/avatar-human/maia-ma.png",
 		"companyId": "you",
@@ -70,32 +97,40 @@
 		"starCount": 25,
 		"viewCount": 3810,
 		"tools": [
-			{ "id": "campaign-kit", "name": "Campaign kit", "icon": "megaphone" }
+			{
+				"id": "campaign-kit",
+				"name": "Campaign kit",
+				"icon": "megaphone"
+			}
 		],
-		"instructions": "Create polished campaign assets with clear hierarchy, strong brand fit, and production-ready copy blocks."
+		"instructions": "Create polished campaign assets with clear hierarchy, strong brand fit, and production-ready copy blocks.",
+		"source": "custom"
 	},
 	{
 		"id": "review-pull-request",
 		"name": "Review pull request",
 		"description": "Summarize diffs and surface review-worthy changes across a pull request before a teammate merges it.",
 		"icon": "angle-brackets",
-		"iconColor": "text-icon-success",
 		"publisherName": "Atlassian",
 		"companyId": "atlassian",
 		"categoryId": "software-development",
 		"starCount": 61,
 		"viewCount": 8120,
 		"tools": [
-			{ "id": "bitbucket", "name": "Bitbucket", "icon": "angle-brackets" }
+			{
+				"id": "bitbucket",
+				"name": "Bitbucket",
+				"icon": "angle-brackets"
+			}
 		],
-		"instructions": "Inspect changed files, summarize behavioral risk, and produce actionable review comments."
+		"instructions": "Inspect changed files, summarize behavioral risk, and produce actionable review comments.",
+		"source": "software"
 	},
 	{
 		"id": "summarize-thread",
 		"name": "Summarize thread",
 		"description": "Condense a long conversation into the decisions, owners, and next steps that matter.",
 		"icon": "comment",
-		"iconColor": "text-icon-brand",
 		"publisherName": "Slack",
 		"publisherAvatarSrc": "/3p/slack/16.svg",
 		"companyId": "slack",
@@ -103,16 +138,20 @@
 		"starCount": 54,
 		"viewCount": 7045,
 		"tools": [
-			{ "id": "slack", "name": "Slack", "icon": "comment" }
+			{
+				"id": "slack",
+				"name": "Slack",
+				"icon": "comment"
+			}
 		],
-		"instructions": "Extract decisions, unresolved questions, and owner/date pairs from long Slack-style discussions."
+		"instructions": "Extract decisions, unresolved questions, and owner/date pairs from long Slack-style discussions.",
+		"source": "3p"
 	},
 	{
 		"id": "schedule-meeting",
 		"name": "Schedule meeting",
 		"description": "Find a time that works for everyone and create a calendar invite with the right context.",
 		"icon": "calendar",
-		"iconColor": "text-yellow-400",
 		"publisherName": "Google",
 		"publisherAvatarSrc": "/3p/google-drive/16.svg",
 		"companyId": "google",
@@ -120,16 +159,20 @@
 		"starCount": 33,
 		"viewCount": 5210,
 		"tools": [
-			{ "id": "calendar", "name": "Calendar", "icon": "calendar" }
+			{
+				"id": "calendar",
+				"name": "Calendar",
+				"icon": "calendar"
+			}
 		],
-		"instructions": "Compare availability, propose meeting slots, and draft concise invites."
+		"instructions": "Compare availability, propose meeting slots, and draft concise invites.",
+		"source": "3p"
 	},
 	{
 		"id": "build-report",
 		"name": "Build report",
 		"description": "Turn raw metrics into a narrative report your stakeholders will actually read.",
 		"icon": "chart-trend-up",
-		"iconColor": "text-icon-discovery",
 		"publisherName": "Notion",
 		"publisherAvatarSrc": "/3p/notion/16.svg",
 		"companyId": "notion",
@@ -137,16 +180,20 @@
 		"starCount": 47,
 		"viewCount": 6940,
 		"tools": [
-			{ "id": "notion", "name": "Notion", "icon": "page" }
+			{
+				"id": "notion",
+				"name": "Notion",
+				"icon": "page"
+			}
 		],
-		"instructions": "Structure metric snapshots into a short, evidence-backed status report."
+		"instructions": "Structure metric snapshots into a short, evidence-backed status report.",
+		"source": "3p"
 	},
 	{
 		"id": "create-payment-flow",
 		"name": "Create payment flow",
 		"description": "Design checkout, billing, and account-update flows with clear states and recovery paths.",
 		"icon": "link",
-		"iconColor": "text-icon-warning",
 		"publisherName": "Stripe",
 		"publisherAvatarSrc": "/3p/stripe/16.svg",
 		"companyId": "stripe",
@@ -154,8 +201,892 @@
 		"starCount": 22,
 		"viewCount": 3384,
 		"tools": [
-			{ "id": "stripe", "name": "Stripe", "icon": "link" }
+			{
+				"id": "stripe",
+				"name": "Stripe",
+				"icon": "link"
+			}
 		],
-		"instructions": "Map payment states, error recovery, and confirmation copy for checkout-like flows."
+		"instructions": "Map payment states, error recovery, and confirmation copy for checkout-like flows.",
+		"source": "3p"
+	},
+	{
+		"id": "sprint-planner",
+		"name": "Sprint planner",
+		"description": "Break an epic into sprint-ready work items with estimates and owners.",
+		"icon": "calendar",
+		"source": "teamwork",
+		"categoryId": "project-management",
+		"publisherName": "Atlassian",
+		"starCount": 75,
+		"viewCount": 6415
+	},
+	{
+		"id": "backlog-groomer",
+		"name": "Backlog groomer",
+		"description": "Re-rank, label, and de-duplicate your backlog automatically.",
+		"icon": "chart-trend-up",
+		"source": "teamwork",
+		"categoryId": "project-management",
+		"publisherName": "Atlassian",
+		"starCount": 14,
+		"viewCount": 7028
+	},
+	{
+		"id": "create-work-items",
+		"name": "Create work items",
+		"description": "Turn a plan into structured, assigned, ready-to-start work items.",
+		"icon": "page",
+		"source": "teamwork",
+		"categoryId": "project-management",
+		"publisherName": "Atlassian",
+		"starCount": 31,
+		"viewCount": 7641
+	},
+	{
+		"id": "roadmap-builder",
+		"name": "Roadmap builder",
+		"description": "Generate a quarterly roadmap from epics and goals.",
+		"icon": "calendar",
+		"source": "strategy",
+		"categoryId": "project-management",
+		"publisherName": "Atlassian",
+		"starCount": 48,
+		"viewCount": 8254
+	},
+	{
+		"id": "dependency-mapper",
+		"name": "Dependency mapper",
+		"description": "Surface cross-team blockers and dependency chains across boards.",
+		"icon": "link",
+		"source": "teamwork",
+		"categoryId": "project-management",
+		"publisherName": "Atlassian",
+		"starCount": 65,
+		"viewCount": 8867
+	},
+	{
+		"id": "milestone-tracker",
+		"name": "Milestone tracker",
+		"description": "Track delivery milestones and flag slippage against target dates.",
+		"icon": "calendar",
+		"source": "teamwork",
+		"categoryId": "project-management",
+		"publisherName": "Atlassian",
+		"starCount": 82,
+		"viewCount": 9480
+	},
+	{
+		"id": "standup-summarizer",
+		"name": "Standup summarizer",
+		"description": "Compile yesterday, today, and blockers from recent activity.",
+		"icon": "comment",
+		"source": "teamwork",
+		"categoryId": "project-management",
+		"publisherName": "Atlassian",
+		"starCount": 21,
+		"viewCount": 1493
+	},
+	{
+		"id": "bulk-issue-editor",
+		"name": "Bulk issue editor",
+		"description": "Apply field changes across many work items at once.",
+		"icon": "edit",
+		"source": "platform",
+		"categoryId": "administrative-tools",
+		"publisherName": "Atlassian",
+		"starCount": 38,
+		"viewCount": 2106
+	},
+	{
+		"id": "user-provisioning",
+		"name": "User provisioning",
+		"description": "Add or remove members and assign product access.",
+		"icon": "page",
+		"source": "platform",
+		"categoryId": "administrative-tools",
+		"publisherName": "Atlassian",
+		"starCount": 55,
+		"viewCount": 2719
+	},
+	{
+		"id": "permission-auditor",
+		"name": "Permission auditor",
+		"description": "Review space and project permissions for over-grants.",
+		"icon": "search",
+		"source": "platform",
+		"categoryId": "administrative-tools",
+		"publisherName": "Atlassian",
+		"starCount": 72,
+		"viewCount": 3332
+	},
+	{
+		"id": "license-optimizer",
+		"name": "License optimizer",
+		"description": "Find inactive seats and reclaim unused licenses.",
+		"icon": "chart-trend-up",
+		"source": "platform",
+		"categoryId": "administrative-tools",
+		"publisherName": "Atlassian",
+		"starCount": 89,
+		"viewCount": 3945
+	},
+	{
+		"id": "automation-rule-builder",
+		"name": "Automation rule builder",
+		"description": "Draft automation rules from plain-language intent.",
+		"icon": "link",
+		"source": "platform",
+		"categoryId": "administrative-tools",
+		"publisherName": "Atlassian",
+		"starCount": 28,
+		"viewCount": 4558
+	},
+	{
+		"id": "use-computer",
+		"name": "Use computer",
+		"description": "Operate apps and tools to complete a multi-step task end to end.",
+		"icon": "curly-brackets",
+		"source": "default",
+		"categoryId": "administrative-tools",
+		"publisherName": "Atlassian",
+		"starCount": 45,
+		"viewCount": 5171
+	},
+	{
+		"id": "appfire-automation",
+		"name": "Appfire automation",
+		"description": "Configure Appfire-powered automation, templates, and macros.",
+		"icon": "link",
+		"source": "2p",
+		"categoryId": "administrative-tools",
+		"publisherName": "Appfire",
+		"publisherAvatarSrc": "/2p/appfire.png",
+		"companyId": "appfire",
+		"starCount": 62,
+		"viewCount": 5784
+	},
+	{
+		"id": "confluence-page-drafter",
+		"name": "Draft Confluence page",
+		"description": "Turn a brief into a structured, publish-ready page.",
+		"icon": "page",
+		"source": "teamwork",
+		"categoryId": "content-and-communication",
+		"publisherName": "Atlassian",
+		"starCount": 79,
+		"viewCount": 6397
+	},
+	{
+		"id": "release-announcement",
+		"name": "Release announcement",
+		"description": "Draft a customer-facing announcement from shipped work.",
+		"icon": "megaphone",
+		"source": "software",
+		"categoryId": "content-and-communication",
+		"publisherName": "Atlassian",
+		"starCount": 18,
+		"viewCount": 7010
+	},
+	{
+		"id": "translate-content",
+		"name": "Translate content",
+		"description": "Localize pages and posts into multiple languages.",
+		"icon": "comment",
+		"source": "platform",
+		"categoryId": "content-and-communication",
+		"publisherName": "Atlassian",
+		"starCount": 35,
+		"viewCount": 7623
+	},
+	{
+		"id": "brand-voice-editor",
+		"name": "Brand voice editor",
+		"description": "Rewrite copy to match your brand tone and style guide.",
+		"icon": "edit",
+		"source": "strategy",
+		"categoryId": "content-and-communication",
+		"publisherName": "Atlassian",
+		"starCount": 52,
+		"viewCount": 8236
+	},
+	{
+		"id": "explore-ideas",
+		"name": "Explore ideas",
+		"description": "Brainstorm and shape early ideas into clear next steps.",
+		"icon": "comment",
+		"source": "teamwork",
+		"categoryId": "content-and-communication",
+		"publisherName": "Atlassian",
+		"starCount": 69,
+		"viewCount": 8849
+	},
+	{
+		"id": "jql-query-builder",
+		"name": "JQL query builder",
+		"description": "Generate complex JQL from a natural-language question.",
+		"icon": "search",
+		"source": "software",
+		"categoryId": "data-and-analytics",
+		"publisherName": "Atlassian",
+		"starCount": 86,
+		"viewCount": 9462
+	},
+	{
+		"id": "dashboard-generator",
+		"name": "Dashboard generator",
+		"description": "Build a dashboard from a metrics request.",
+		"icon": "chart-trend-up",
+		"source": "strategy",
+		"categoryId": "data-and-analytics",
+		"publisherName": "Atlassian",
+		"starCount": 25,
+		"viewCount": 1475
+	},
+	{
+		"id": "trend-spotter",
+		"name": "Trend spotter",
+		"description": "Identify themes and anomalies across issue and ticket data.",
+		"icon": "chart-trend-up",
+		"source": "strategy",
+		"categoryId": "data-and-analytics",
+		"publisherName": "Atlassian",
+		"starCount": 42,
+		"viewCount": 2088
+	},
+	{
+		"id": "report-compiler",
+		"name": "Report compiler",
+		"description": "Roll up cross-project metrics into a periodic report.",
+		"icon": "page",
+		"source": "strategy",
+		"categoryId": "data-and-analytics",
+		"publisherName": "Atlassian",
+		"starCount": 59,
+		"viewCount": 2701
+	},
+	{
+		"id": "search-web",
+		"name": "Search the web",
+		"description": "Find and cite current information from across the web.",
+		"icon": "search",
+		"source": "default",
+		"categoryId": "data-and-analytics",
+		"publisherName": "Atlassian",
+		"starCount": 76,
+		"viewCount": 3314
+	},
+	{
+		"id": "run-deep-research",
+		"name": "Run deep research",
+		"description": "Investigate a topic in depth and synthesize sources.",
+		"icon": "search",
+		"source": "default",
+		"categoryId": "data-and-analytics",
+		"publisherName": "Atlassian",
+		"starCount": 15,
+		"viewCount": 3927
+	},
+	{
+		"id": "funnel-analytics",
+		"name": "Funnel analytics",
+		"description": "Analyze conversion and drop-off across the product funnel.",
+		"icon": "chart-trend-up",
+		"source": "3p",
+		"categoryId": "data-and-analytics",
+		"publisherName": "Amplitude",
+		"publisherAvatarSrc": "/3p/amplitude/24.svg",
+		"companyId": "amplitude",
+		"starCount": 32,
+		"viewCount": 4540
+	},
+	{
+		"id": "powerbi-reporter",
+		"name": "Power BI reporter",
+		"description": "Locate and summarize BI reports for a stakeholder.",
+		"icon": "chart-trend-up",
+		"source": "3p",
+		"categoryId": "data-and-analytics",
+		"publisherName": "Microsoft",
+		"publisherAvatarSrc": "/3p/powerbi/24.svg",
+		"companyId": "powerbi",
+		"starCount": 49,
+		"viewCount": 5153
+	},
+	{
+		"id": "tempo-timesheet-report",
+		"name": "Tempo timesheet report",
+		"description": "Summarize logged time and capacity from Tempo.",
+		"icon": "chart-trend-up",
+		"source": "2p",
+		"categoryId": "data-and-analytics",
+		"publisherName": "Tempo",
+		"publisherAvatarSrc": "/2p/tempo-software.png",
+		"companyId": "tempo-software",
+		"starCount": 66,
+		"viewCount": 5766
+	},
+	{
+		"id": "generate-code",
+		"name": "Generate code",
+		"description": "Scaffold functions, components, and tests from a spec.",
+		"icon": "curly-brackets",
+		"source": "software",
+		"categoryId": "software-development",
+		"publisherName": "Atlassian",
+		"starCount": 83,
+		"viewCount": 6379
+	},
+	{
+		"id": "draft-release-notes",
+		"name": "Draft release notes",
+		"description": "Turn merged work into clear, customer-ready release notes.",
+		"icon": "page",
+		"source": "software",
+		"categoryId": "software-development",
+		"publisherName": "Atlassian",
+		"starCount": 22,
+		"viewCount": 6992
+	},
+	{
+		"id": "commit-message-writer",
+		"name": "Write commit message",
+		"description": "Draft a conventional commit from a staged diff.",
+		"icon": "branch",
+		"source": "software",
+		"categoryId": "software-development",
+		"publisherName": "Atlassian",
+		"starCount": 39,
+		"viewCount": 7605
+	},
+	{
+		"id": "bug-report-assistant",
+		"name": "Bug report assistant",
+		"description": "Write a clear, reproducible bug report for triage.",
+		"icon": "angle-brackets",
+		"source": "software",
+		"categoryId": "software-development",
+		"publisherName": "Atlassian",
+		"starCount": 56,
+		"viewCount": 8218
+	},
+	{
+		"id": "test-plan-builder",
+		"name": "Test plan builder",
+		"description": "Generate test cases and coverage from requirements.",
+		"icon": "curly-brackets",
+		"source": "software",
+		"categoryId": "software-development",
+		"publisherName": "Atlassian",
+		"starCount": 73,
+		"viewCount": 8831
+	},
+	{
+		"id": "github-pr-summary",
+		"name": "Summarize GitHub PR",
+		"description": "Summarize a pull request's intent, risk, and review points.",
+		"icon": "angle-brackets",
+		"source": "3p",
+		"categoryId": "software-development",
+		"publisherName": "GitHub",
+		"publisherAvatarSrc": "/3p/github/24.svg",
+		"companyId": "github",
+		"starCount": 12,
+		"viewCount": 9444
+	},
+	{
+		"id": "gitkraken-branch-helper",
+		"name": "GitKraken branch helper",
+		"description": "Navigate branches, commits, and merge conflicts.",
+		"icon": "branch",
+		"source": "2p",
+		"categoryId": "software-development",
+		"publisherName": "GitKraken",
+		"publisherAvatarSrc": "/2p/gitkraken.png",
+		"companyId": "gitkraken",
+		"starCount": 29,
+		"viewCount": 1457
+	},
+	{
+		"id": "service-request-triage",
+		"name": "Triage service request",
+		"description": "Categorize, route, and set fields on incoming requests.",
+		"icon": "search",
+		"source": "service",
+		"categoryId": "it-support-and-service",
+		"publisherName": "Atlassian",
+		"starCount": 46,
+		"viewCount": 2070
+	},
+	{
+		"id": "analyze-root-cause",
+		"name": "Analyze root cause",
+		"description": "Trace an incident to its root cause from signals and logs.",
+		"icon": "search",
+		"source": "service",
+		"categoryId": "it-support-and-service",
+		"publisherName": "Atlassian",
+		"starCount": 63,
+		"viewCount": 2683
+	},
+	{
+		"id": "debug-log-issue",
+		"name": "Debug log issue",
+		"description": "Diagnose an error from stack traces and log context.",
+		"icon": "angle-brackets",
+		"source": "service",
+		"categoryId": "it-support-and-service",
+		"publisherName": "Atlassian",
+		"starCount": 80,
+		"viewCount": 3296
+	},
+	{
+		"id": "incident-responder",
+		"name": "Incident responder",
+		"description": "Guide on-call response and assemble an incident timeline.",
+		"icon": "link",
+		"source": "service",
+		"categoryId": "it-support-and-service",
+		"publisherName": "Atlassian",
+		"starCount": 19,
+		"viewCount": 3909
+	},
+	{
+		"id": "kb-article-writer",
+		"name": "Write KB article",
+		"description": "Turn a resolved ticket into a reusable knowledge article.",
+		"icon": "page",
+		"source": "service",
+		"categoryId": "it-support-and-service",
+		"publisherName": "Atlassian",
+		"starCount": 36,
+		"viewCount": 4522
+	},
+	{
+		"id": "sla-monitor",
+		"name": "SLA monitor",
+		"description": "Flag tickets approaching an SLA breach.",
+		"icon": "calendar",
+		"source": "service",
+		"categoryId": "it-support-and-service",
+		"publisherName": "Atlassian",
+		"starCount": 53,
+		"viewCount": 5135
+	},
+	{
+		"id": "response-drafter",
+		"name": "Draft support reply",
+		"description": "Compose a support response and find the right assignee.",
+		"icon": "comment",
+		"source": "service",
+		"categoryId": "it-support-and-service",
+		"publisherName": "Atlassian",
+		"starCount": 70,
+		"viewCount": 5748
+	},
+	{
+		"id": "servicenow-ticket-finder",
+		"name": "Find ServiceNow ticket",
+		"description": "Search requests and incidents across ServiceNow.",
+		"icon": "search",
+		"source": "3p",
+		"categoryId": "it-support-and-service",
+		"publisherName": "ServiceNow",
+		"publisherAvatarSrc": "/3p/servicenow/24.svg",
+		"companyId": "servicenow",
+		"starCount": 87,
+		"viewCount": 6361
+	},
+	{
+		"id": "diagram-creator",
+		"name": "Create diagram",
+		"description": "Generate a diagram from a plain-language description.",
+		"icon": "paint-palette",
+		"source": "product",
+		"categoryId": "design-and-diagramming",
+		"publisherName": "Atlassian",
+		"starCount": 26,
+		"viewCount": 6974
+	},
+	{
+		"id": "architecture-diagrammer",
+		"name": "Diagram architecture",
+		"description": "Render a system architecture from a description.",
+		"icon": "paint-palette",
+		"source": "software",
+		"categoryId": "design-and-diagramming",
+		"publisherName": "Atlassian",
+		"starCount": 43,
+		"viewCount": 7587
+	},
+	{
+		"id": "flowchart-builder",
+		"name": "Build flowchart",
+		"description": "Turn a process narrative into a flowchart.",
+		"icon": "paint-palette",
+		"source": "product",
+		"categoryId": "design-and-diagramming",
+		"publisherName": "Atlassian",
+		"starCount": 60,
+		"viewCount": 8200
+	},
+	{
+		"id": "wireframe-generator",
+		"name": "Generate wireframe",
+		"description": "Produce low-fidelity wireframes from a feature brief.",
+		"icon": "edit",
+		"source": "product",
+		"categoryId": "design-and-diagramming",
+		"publisherName": "Atlassian",
+		"starCount": 77,
+		"viewCount": 8813
+	},
+	{
+		"id": "whiteboard-summarizer",
+		"name": "Summarize whiteboard",
+		"description": "Convert a board into structured notes and action items.",
+		"icon": "edit",
+		"source": "product",
+		"categoryId": "design-and-diagramming",
+		"publisherName": "Atlassian",
+		"starCount": 16,
+		"viewCount": 9426
+	},
+	{
+		"id": "figma-design-context",
+		"name": "Get Figma context",
+		"description": "Summarize frames and connect UI work to design intent.",
+		"icon": "paint-palette",
+		"source": "3p",
+		"categoryId": "design-and-diagramming",
+		"publisherName": "Figma",
+		"publisherAvatarSrc": "/3p/figma/24.svg",
+		"companyId": "figma",
+		"starCount": 33,
+		"viewCount": 1439
+	},
+	{
+		"id": "miro-board-synth",
+		"name": "Synthesize Miro board",
+		"description": "Turn a workshop board into prioritized follow-up work.",
+		"icon": "paint-palette",
+		"source": "3p",
+		"categoryId": "design-and-diagramming",
+		"publisherName": "Miro",
+		"publisherAvatarSrc": "/3p/miro/24.svg",
+		"companyId": "miro",
+		"starCount": 50,
+		"viewCount": 2052
+	},
+	{
+		"id": "lucid-diagram-finder",
+		"name": "Find Lucid diagram",
+		"description": "Search documents and diagrams across Lucid.",
+		"icon": "search",
+		"source": "3p",
+		"categoryId": "design-and-diagramming",
+		"publisherName": "Lucid",
+		"publisherAvatarSrc": "/3p/lucidchart/24.svg",
+		"companyId": "lucidchart",
+		"starCount": 67,
+		"viewCount": 2665
+	},
+	{
+		"id": "access-review",
+		"name": "Access review",
+		"description": "Run a periodic review of user access and roles.",
+		"icon": "search",
+		"source": "platform",
+		"categoryId": "security-and-compliance",
+		"publisherName": "Atlassian",
+		"starCount": 84,
+		"viewCount": 3278
+	},
+	{
+		"id": "permission-audit",
+		"name": "Permission audit",
+		"description": "Audit space, project, and content permissions for risk.",
+		"icon": "search",
+		"source": "platform",
+		"categoryId": "security-and-compliance",
+		"publisherName": "Atlassian",
+		"starCount": 23,
+		"viewCount": 3891
+	},
+	{
+		"id": "policy-drafter",
+		"name": "Draft security policy",
+		"description": "Generate a security or compliance policy page.",
+		"icon": "page",
+		"source": "platform",
+		"categoryId": "security-and-compliance",
+		"publisherName": "Atlassian",
+		"starCount": 40,
+		"viewCount": 4504
+	},
+	{
+		"id": "audit-trail-reporter",
+		"name": "Audit trail report",
+		"description": "Compile audit-log evidence for a control or incident.",
+		"icon": "page",
+		"source": "platform",
+		"categoryId": "security-and-compliance",
+		"publisherName": "Atlassian",
+		"starCount": 57,
+		"viewCount": 5117
+	},
+	{
+		"id": "compliance-check",
+		"name": "Compliance check",
+		"description": "Check changes against your compliance controls.",
+		"icon": "link",
+		"source": "platform",
+		"categoryId": "security-and-compliance",
+		"publisherName": "Atlassian",
+		"starCount": 74,
+		"viewCount": 5730
+	},
+	{
+		"id": "data-residency-review",
+		"name": "Data residency review",
+		"description": "Review where regulated data is stored and accessed.",
+		"icon": "search",
+		"source": "platform",
+		"categoryId": "security-and-compliance",
+		"publisherName": "Atlassian",
+		"starCount": 13,
+		"viewCount": 6343
+	},
+	{
+		"id": "vulnerability-triage",
+		"name": "Vulnerability triage",
+		"description": "Prioritize and route security findings from monitoring.",
+		"icon": "search",
+		"source": "3p",
+		"categoryId": "security-and-compliance",
+		"publisherName": "Sentry",
+		"publisherAvatarSrc": "/3p/sentry/24.svg",
+		"companyId": "sentry",
+		"starCount": 30,
+		"viewCount": 6956
+	},
+	{
+		"id": "incident-disclosure",
+		"name": "Draft incident disclosure",
+		"description": "Prepare a clear customer disclosure after an incident.",
+		"icon": "megaphone",
+		"source": "service",
+		"categoryId": "security-and-compliance",
+		"publisherName": "Atlassian",
+		"starCount": 47,
+		"viewCount": 7569
+	},
+	{
+		"id": "user-manual-writer",
+		"name": "Write user manual",
+		"description": "Draft a personal 'how to work with me' manual.",
+		"icon": "edit",
+		"source": "teamwork",
+		"categoryId": "hr-and-team-building",
+		"publisherName": "Atlassian",
+		"starCount": 64,
+		"viewCount": 8182
+	},
+	{
+		"id": "onboarding-plan",
+		"name": "Build onboarding plan",
+		"description": "Create a structured new-hire onboarding plan.",
+		"icon": "calendar",
+		"source": "teamwork",
+		"categoryId": "hr-and-team-building",
+		"publisherName": "Atlassian",
+		"starCount": 81,
+		"viewCount": 8795
+	},
+	{
+		"id": "create-teams",
+		"name": "Create team",
+		"description": "Set up a team with members, roles, and a charter.",
+		"icon": "page",
+		"source": "platform",
+		"categoryId": "hr-and-team-building",
+		"publisherName": "Atlassian",
+		"starCount": 20,
+		"viewCount": 9408
+	},
+	{
+		"id": "team-health-survey-skill",
+		"name": "Team health survey",
+		"description": "Generate and summarize a team pulse survey.",
+		"icon": "comment",
+		"source": "teamwork",
+		"categoryId": "hr-and-team-building",
+		"publisherName": "Atlassian",
+		"starCount": 37,
+		"viewCount": 1421
+	},
+	{
+		"id": "offboarding-checklist",
+		"name": "Offboarding checklist",
+		"description": "Produce an offboarding access and asset checklist.",
+		"icon": "page",
+		"source": "platform",
+		"categoryId": "hr-and-team-building",
+		"publisherName": "Atlassian",
+		"starCount": 54,
+		"viewCount": 2034
+	},
+	{
+		"id": "team-building-planner",
+		"name": "Plan team activity",
+		"description": "Suggest and plan team rituals and activities.",
+		"icon": "calendar",
+		"source": "teamwork",
+		"categoryId": "hr-and-team-building",
+		"publisherName": "Atlassian",
+		"starCount": 71,
+		"viewCount": 2647
+	},
+	{
+		"id": "workday-people-lookup",
+		"name": "Look up in Workday",
+		"description": "Find people, roles, and org details in Workday.",
+		"icon": "search",
+		"source": "3p",
+		"categoryId": "hr-and-team-building",
+		"publisherName": "Workday",
+		"publisherAvatarSrc": "/3p/workday/24.svg",
+		"companyId": "workday",
+		"starCount": 88,
+		"viewCount": 3260
+	},
+	{
+		"id": "hiring-jd-drafter",
+		"name": "Draft job description",
+		"description": "Write an inclusive, role-specific job description.",
+		"icon": "edit",
+		"source": "custom",
+		"categoryId": "hr-and-team-building",
+		"publisherName": "Andrea Wilson",
+		"publisherAvatarSrc": "/avatar-human/andrea-wilson.png",
+		"companyId": "you",
+		"starCount": 27,
+		"viewCount": 3873
+	},
+	{
+		"id": "account-brief-builder",
+		"name": "Build account brief",
+		"description": "Compile a one-page account summary before a call.",
+		"icon": "page",
+		"source": "strategy",
+		"categoryId": "sales-and-customer-relations",
+		"publisherName": "Atlassian",
+		"starCount": 44,
+		"viewCount": 4486
+	},
+	{
+		"id": "renewal-risk-flagger",
+		"name": "Flag renewal risk",
+		"description": "Identify accounts at churn or renewal risk.",
+		"icon": "chart-trend-up",
+		"source": "strategy",
+		"categoryId": "sales-and-customer-relations",
+		"publisherName": "Atlassian",
+		"starCount": 61,
+		"viewCount": 5099
+	},
+	{
+		"id": "customer-insights",
+		"name": "Customer insights",
+		"description": "Summarize feedback themes across customer data.",
+		"icon": "comment",
+		"source": "product",
+		"categoryId": "sales-and-customer-relations",
+		"publisherName": "Atlassian",
+		"starCount": 78,
+		"viewCount": 5712
+	},
+	{
+		"id": "deal-desk",
+		"name": "Deal desk",
+		"description": "Review deals and route approvals through the deal desk.",
+		"icon": "link",
+		"source": "strategy",
+		"categoryId": "sales-and-customer-relations",
+		"publisherName": "Atlassian",
+		"starCount": 17,
+		"viewCount": 6325
+	},
+	{
+		"id": "capture-insights",
+		"name": "Capture insights",
+		"description": "Capture and structure insights from customer conversations.",
+		"icon": "comment",
+		"source": "product",
+		"categoryId": "sales-and-customer-relations",
+		"publisherName": "Atlassian",
+		"starCount": 34,
+		"viewCount": 6938
+	},
+	{
+		"id": "salesforce-deal-finder",
+		"name": "Find Salesforce deal",
+		"description": "Surface deals, leads, and account activity.",
+		"icon": "search",
+		"source": "3p",
+		"categoryId": "sales-and-customer-relations",
+		"publisherName": "Salesforce",
+		"publisherAvatarSrc": "/3p/salesforce/24.svg",
+		"companyId": "salesforce",
+		"starCount": 51,
+		"viewCount": 7551
+	},
+	{
+		"id": "hubspot-contact-finder",
+		"name": "Find HubSpot contact",
+		"description": "Locate contacts and deals across HubSpot.",
+		"icon": "search",
+		"source": "3p",
+		"categoryId": "sales-and-customer-relations",
+		"publisherName": "HubSpot",
+		"publisherAvatarSrc": "/3p/hubspot/24.svg",
+		"companyId": "hubspot",
+		"starCount": 68,
+		"viewCount": 8164
+	},
+	{
+		"id": "zendesk-ticket-summary",
+		"name": "Summarize Zendesk ticket",
+		"description": "Summarize a support ticket and suggest next steps.",
+		"icon": "comment",
+		"source": "3p",
+		"categoryId": "sales-and-customer-relations",
+		"publisherName": "Zendesk",
+		"publisherAvatarSrc": "/3p/zendesk/24.svg",
+		"companyId": "zendesk",
+		"starCount": 85,
+		"viewCount": 8777
+	},
+	{
+		"id": "prioritize-ideas",
+		"name": "Prioritize ideas",
+		"description": "Score and rank ideas against impact and effort.",
+		"icon": "chart-trend-up",
+		"source": "product",
+		"categoryId": "project-management",
+		"publisherName": "Atlassian",
+		"starCount": 24,
+		"viewCount": 9390
+	},
+	{
+		"id": "prd-builder",
+		"name": "Build PRD",
+		"description": "Draft a product requirements doc with goals and risks.",
+		"icon": "page",
+		"source": "product",
+		"categoryId": "content-and-communication",
+		"publisherName": "Atlassian",
+		"starCount": 41,
+		"viewCount": 1403
 	}
 ]
