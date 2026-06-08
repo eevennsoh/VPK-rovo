@@ -33,9 +33,9 @@ export function KbdDemoArrowKeys() {
 export function KbdDemoBasic() {
 	return (
 		<div className="flex items-center gap-2">
-			<Kbd>Ctrl</Kbd>
+			{/* Combined chords render as a single keycap (no "+" separator). */}
 			<Kbd>⌘K</Kbd>
-			<Kbd>Ctrl + B</Kbd>
+			<Kbd>⌥B</Kbd>
 		</div>
 	);
 }
@@ -102,11 +102,11 @@ export function KbdDemoWithIconsAndText() {
 	return (
 		<KbdGroup>
 			<Kbd>
-				<ArrowLeftIcon />
+				<ArrowLeftIcon size="small" />
 				Left
 			</Kbd>
 			<Kbd>
-				<CircleDashedIcon />
+				<CircleDashedIcon size="small" />
 				Voice Enabled
 			</Kbd>
 		</KbdGroup>
@@ -117,13 +117,13 @@ export function KbdDemoWithIcons() {
 	return (
 		<KbdGroup>
 			<Kbd>
-				<CircleDashedIcon />
+				<CircleDashedIcon size="small" />
 			</Kbd>
 			<Kbd>
-				<ArrowLeftIcon />
+				<ArrowLeftIcon size="small" />
 			</Kbd>
 			<Kbd>
-				<ArrowRightIcon />
+				<ArrowRightIcon size="small" />
 			</Kbd>
 		</KbdGroup>
 	);

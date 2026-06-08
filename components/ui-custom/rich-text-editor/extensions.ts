@@ -32,6 +32,10 @@ import {
 	createSlashSuggestionRenderer,
 	type RichTextSlashAction,
 } from "./suggestion-menu";
+import {
+	resolveCommandVariant,
+	resolveMentionVariant,
+} from "./types";
 import type {
 	RichTextEditorExtensionOptions,
 	RichTextMentionItem,
@@ -133,7 +137,9 @@ export const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 	addProseMirrorPlugins() {
 		const getMentionSources = this.options.getMentionSources;
 		const includeFormat = this.options.includeFormat ?? true;
-		const suggestionVariant = this.options.suggestionVariant ?? "flat";
+		// The "/" command menu resolves to the command variant (object form lets
+		// Studio keep "/" nested while "@" stays flat).
+		const suggestionVariant = resolveCommandVariant(this.options.suggestionVariant);
 
 		return [
 			Suggestion<RichTextSlashAction, RichTextSlashAction>({
@@ -227,7 +233,7 @@ export function createRichTextMentionExtension(
 					])
 					.run();
 			},
-			render: () => createMentionSuggestionRenderer(options.getMentionSources, options.anchorToInput, options.suggestionVariant ?? "flat"),
+			render: () => createMentionSuggestionRenderer(options.getMentionSources, options.anchorToInput, resolveMentionVariant(options.suggestionVariant)),
 		},
 	});
 }

@@ -212,7 +212,19 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 					{elemBefore}
 				</span>
 			) : null}
-			<span className="min-w-0 grow truncate whitespace-nowrap" data-tag-text>
+			<span
+				className={cn(
+					"min-w-0 grow truncate whitespace-nowrap",
+					// Overlay-remove tags fade the trailing edge of the *label itself*
+					// (mask to transparent) on hover/focus so the floating X stays
+					// legible. Masking the text — rather than painting a colored
+					// gradient scrim on top — keeps the effect correct regardless of
+					// the surface color behind the tag.
+					isOverlayRemove &&
+						"group-hover/tag:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-focus-within/tag:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-hover/tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-focus-within/tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))]",
+				)}
+				data-tag-text
+			>
 				{children}
 			</span>
 			{shouldShowVerifiedIcon ? (
@@ -239,16 +251,9 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 			) : null}
 			{isOverlayRemove ? (
 				<>
-					{/* Decorative gradient: solid behind the icon, fading toward the label so the X stays legible.
-					    Fades from the opaque app `surface` — the color the label visually sits on, since the tag's
-					    own `subtle` background is transparent — not from the (transparent) tag background token. */}
-					<span
-						aria-hidden
-						data-slot="tag-remove-overlay-scrim"
-						className={cn(
-							"pointer-events-none absolute inset-y-px end-px w-9 rounded-[inherit] bg-linear-to-l from-surface from-45% to-transparent opacity-0 transition-opacity duration-fast ease-out group-hover/tag:opacity-100 group-focus-within/tag:opacity-100",
-						)}
-					/>
+					{/* No colored scrim: the trailing edge of the label text is masked
+					    to transparent on hover/focus (see data-tag-text above) so the X
+					    stays legible without assuming the surface color behind the tag. */}
 					<button
 						type="button"
 						aria-label={resolvedRemoveButtonLabel}

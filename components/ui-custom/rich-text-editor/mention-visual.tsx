@@ -7,6 +7,8 @@ import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import type { TagColor } from "@/components/ui/tag";
+import { Tile } from "@/components/ui/tile";
+import { resolveBrandLogoPresentation } from "@/app/data/directory/brand-logos";
 import { getSkillIcon } from "@/app/data/directory/visual";
 import type { SkillIconKey } from "@/app/data/directory/types";
 import { cn } from "@/lib/utils";
@@ -196,18 +198,29 @@ export function RichTextMentionVisualMark({
 	}
 
 	if (visual.kind === "image") {
+		// 2P/3P brand logos. White-tile 3P marks (those with a `16-borderless.svg`
+		// sibling) and bare 2P partner PNGs render inside a VPK-drawn bordered tile,
+		// swapping to the borderless variant so borders don't double up. Solid-fill
+		// 3P marks paint their own background, so they render bare (no border) —
+		// mirroring the self-contained 1p product logos below.
+		const { src, hasBorder } = resolveBrandLogoPresentation(visual.src);
 		return (
-			<span
-				aria-hidden="true"
+			<Tile
+				aria-hidden={true}
 				className={cn(
-					"inline-flex shrink-0 items-center justify-center overflow-hidden",
-					visual.shape === "circle" ? "rounded-full" : "rounded-xs",
-					imageSizeClassName,
+					hasBorder && "bg-surface",
+					// Bordered menu glyph matches the Atlassian/icon menu tiles' 24px inset.
+					hasBorder && size === "menu" && "[&_img]:size-6!",
 					className,
 				)}
+				hasBorder={hasBorder}
+				isInset={false}
+				label={label}
+				size={size === "menu" ? "medium" : "xxsmall"}
+				variant="transparent"
 			>
-				<img alt="" aria-hidden="true" className="size-full object-contain" src={visual.src} />
-			</span>
+				<img alt="" aria-hidden="true" className="object-contain" src={src} />
+			</Tile>
 		);
 	}
 
@@ -215,15 +228,31 @@ export function RichTextMentionVisualMark({
 		// Most 1p product logos ship their own colored background, so in menu rows
 		// they render as the bare 32px lockup with no surface tile. The plain
 		// "atlassian" mark has no background fill, so it keeps the bordered
-		// `IconTile` (16px glyph in a 32px tile) to stay visually contained.
+		// `IconTile` (24px glyph in a 32px tile) so the stroked container stays
+		// while the content is the full 24px Atlassian logo.
 		// Tags/pills keep the bare inline 16px logo.
 		if (size === "menu") {
 			if (visual.logoName === "atlassian") {
 				return (
 					<IconTile
 						aria-hidden={true}
-						className={cn("border border-border bg-surface", className)}
-						icon={<AtlassianLogo name={visual.logoName} size={logoSize} themeAware label={label} />}
+						// IconTile's `medium` variant clamps inner spans/svgs to 16px; the
+						// Atlassian logo wraps its svg in spans, so bump both so the glyph
+						// renders at 24px inside the stroked tile (centering is unchanged).
+						className={cn(
+							"border border-border bg-surface [&_span]:size-6! [&_svg]:size-6!",
+							className,
+						)}
+						icon={
+							<AtlassianLogo
+								name={visual.logoName}
+								// `@atlaskit/logo` sizes the glyph from this prop; the runtime
+								// accepts a numeric px string even though the type lists named sizes.
+								size={"24" as React.ComponentProps<typeof AtlassianLogo>["size"]}
+								themeAware
+								label={label}
+							/>
+						}
 						label={label}
 						size={menuTileSize}
 					/>
@@ -300,6 +329,13 @@ export function getRichTextMentionVisualDOMSpec(
 	}
 
 	if (visual.kind === "avatar" || visual.kind === "image") {
+		// Image (2P/3P brand) logos use the borderless variant in the fallback too,
+		// so the non-React serialization matches the React mark. Avatars are not
+		// brand logos, so their src is passed through unchanged.
+		const src =
+			visual.kind === "image"
+				? resolveBrandLogoPresentation(visual.src).src
+				: visual.src;
 		return [
 			"span",
 			{
@@ -308,7 +344,7 @@ export function getRichTextMentionVisualDOMSpec(
 				"data-visual-kind": visual.kind,
 				"data-visual-shape": visual.shape ?? undefined,
 			},
-			["img", { alt: "", src: visual.src }],
+			["img", { alt: "", src }],
 		];
 	}
 

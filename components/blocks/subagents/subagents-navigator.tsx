@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useId, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import { DeleteIcon, PlusIcon, SettingsIcon } from "@/components/ui/vpk-icons";
 import { Switch } from "@/components/ui/switch";
@@ -280,6 +280,11 @@ function SubagentsSwitcherButton({
 	// Reserve right padding for whichever overlay controls are present so the
 	// label never slides under them: switch (~28px) + delete (~28px).
 	const trailingPadding = onDelete && onToggle ? "pr-16" : onDelete || onToggle ? "pr-9" : undefined;
+
+	function handleSwitchMouseDown(event: MouseEvent<HTMLElement>) {
+		event.preventDefault();
+	}
+
 	return (
 		<div className="group/switcher-row relative">
 			<button
@@ -305,9 +310,16 @@ function SubagentsSwitcherButton({
 				<div
 					className={cn(
 						// Stays visible while off so the disabled state is discoverable;
-						// otherwise reveals on row hover / keyboard focus.
-						"absolute top-1/2 flex -translate-y-1/2 items-center transition-opacity duration-normal focus-within:opacity-100 group-hover/switcher-row:opacity-100",
-						onDelete ? "right-9" : "right-2",
+						// otherwise reveals on row hover / keyboard focus-visible.
+						"absolute top-1/2 flex -translate-y-1/2 items-center transition-[right,opacity] duration-normal ease-out has-[:focus-visible]:opacity-100 group-hover/switcher-row:opacity-100",
+						// When delete can appear, the switch parks at the far right
+						// (right-2) at rest so it doesn't float in the middle with empty
+						// space beside it — then slides back to right-9 on hover as the
+						// trash icon transitions in. Keyboard focus-visible reveals the
+						// switch without moving it into the hidden delete-button slot.
+						onDelete
+							? "right-2 group-hover/switcher-row:right-9"
+							: "right-2",
 						enabled ? "opacity-0" : "opacity-100",
 					)}
 				>
@@ -315,6 +327,7 @@ function SubagentsSwitcherButton({
 						size="sm"
 						checked={enabled}
 						onCheckedChange={onToggle}
+						onMouseDown={handleSwitchMouseDown}
 						aria-label={`${enabled ? "Disable" : "Enable"} ${label}`}
 					/>
 				</div>
@@ -323,7 +336,10 @@ function SubagentsSwitcherButton({
 				<button
 					type="button"
 					aria-label={`Delete ${label}`}
-					className="absolute right-1 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-text-subtlest opacity-0 transition-[colors,opacity] duration-normal hover:bg-bg-danger-hovered hover:text-text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected group-hover/switcher-row:opacity-100"
+					// Slides in from the right (and back out) in lockstep with the switch
+					// so hovering out clears the far-right slot immediately instead of the
+					// switch appearing to wait on a lingering opacity fade.
+					className="absolute right-1 top-1/2 flex size-7 origin-right -translate-y-1/2 translate-x-2 items-center justify-center rounded-md text-text-subtlest opacity-0 transition-[color,background-color,opacity,transform] duration-normal ease-out hover:bg-bg-danger-hovered hover:text-text-danger focus-visible:translate-x-0 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected group-hover/switcher-row:translate-x-0 group-hover/switcher-row:opacity-100"
 					onClick={onDelete}
 				>
 					<DeleteIcon size="small" />

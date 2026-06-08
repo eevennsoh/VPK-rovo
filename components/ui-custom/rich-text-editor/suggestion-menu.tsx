@@ -47,6 +47,7 @@ import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 
 import { IconTile } from "@/components/ui/icon-tile";
 import { Input } from "@/components/ui/input";
+import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { ArrowLeftIcon } from "@/components/ui/vpk-icons";
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
@@ -550,7 +551,7 @@ export function RichTextSuggestionMenu({
 		<div
 			className={cn("rich-text-command-menu", className)}
 			data-nested={isNested ? "true" : undefined}
-			data-list-scrolled={isNested && hasScrolledList ? "true" : undefined}
+			data-list-scrolled={hasScrolledList ? "true" : undefined}
 			role="listbox"
 			aria-label={title}
 		>
@@ -661,7 +662,7 @@ function RichTextSuggestionMenuOption({
 			)}
 			{item.shortcut ? (
 				<span className="rich-text-command-menu-shortcut">
-					{item.shortcut}
+					<Kbd>{item.shortcut}</Kbd>
 				</span>
 			) : null}
 		</>

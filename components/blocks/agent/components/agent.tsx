@@ -93,6 +93,7 @@ import {
 	type RichTextMentionRemovalRequest,
 	type RichTextMentionSources,
 	type RichTextReferenceCategory,
+	type RichTextSuggestionVariantConfig,
 	RichTextMentionVisualMark,
 	RichTextEditor,
 	getRichTextMentionTagType,
@@ -248,6 +249,14 @@ function getAgentCompactEmptyConfigNavItems(config?: AgentConfigFormValue) {
 }
 
 const MENTION_SOURCE_LIMIT = 24;
+
+// Studio instructions editor: "@" expands people / teams / subagents inline
+// (flat), while "/" keeps the Skills / Tools / Knowledge / Format drill-in
+// (nested). Hoisted so the editor's extension memo stays referentially stable.
+const AGENT_INSTRUCTIONS_SUGGESTION_VARIANT: RichTextSuggestionVariantConfig = {
+	mention: "flat",
+	command: "nested",
+};
 
 function toMentionId(category: RichTextMentionItem["category"], id: string): string {
 	return `${category}:${id.trim().replace(/\s+/g, "-")}`;
@@ -2742,6 +2751,7 @@ function AgentInstructionsComposer({
 					</p>
 				)}
 				onInsertReferenceOption={handleInsertReferenceOption}
+				suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
 				toolbarBelowSlot={toolbarBelowSlot}
 				value={instructions}
 				dataFlowConfig={config}
@@ -3005,7 +3015,11 @@ function AgentCompactConfigToolbarBelow({
 				{isExpanded ? (
 					<motion.div
 						key="expanded"
-						className="overflow-hidden bg-surface pt-2"
+						// No `overflow-hidden`: the crossfade only animates opacity, so
+						// clipping isn't needed — and it would square off each row's
+						// `rounded-md` hover highlight, whose `-mx-2` bleed sits exactly at
+						// the clip edge.
+						className="bg-surface pt-2"
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}

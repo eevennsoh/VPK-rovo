@@ -472,7 +472,11 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /<AnimatePresence initial=\{false\} mode="wait">/u);
 	// The field-row blocks carry the opaque surface so they stay readable over
 	// scrolling content, while the separator/expand row above stays transparent.
-	assert.match(AGENT_SOURCE, /<motion\.div\s+key="expanded"\s+className="overflow-hidden bg-surface pt-2"/u);
+	// The expanded variant drops `overflow-hidden` (the crossfade only animates
+	// opacity, so clipping isn't needed — and it would square off each row's
+	// `rounded-md` hover highlight, whose `-mx-2` bleed sits at the clip edge);
+	// the collapsed variant keeps `overflow-hidden` for its measured collapse.
+	assert.match(AGENT_SOURCE, /<motion\.div\s+key="expanded"\s+\/\/[\s\S]*?className="bg-surface pt-2"/u);
 	assert.match(AGENT_SOURCE, /<motion\.div\s+key="collapsed"\s+className="overflow-hidden bg-surface pt-2"/u);
 	// Horizontal rule line spans the row; the chevron sits at the far right of
 	// the same row and stays mounted across both states. Empty configs initialize
@@ -724,7 +728,10 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 	// The shared color helper lives alongside the visual helpers so both the node
 	// view and the config chips resolve color from a single source of truth.
 	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /export function getRichTextMentionTagColor\(/u);
-	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /const logoSize = size === "menu" \? "small" : "xxsmall";/u);
+	// Every mention visual (avatar, image, logo, icon) now occupies the same 16px
+	// box inside a tag, so the logo no longer scales up for menu rows — it stays a
+	// single `xxsmall` constant regardless of `size`.
+	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /const logoSize = "xxsmall";/u);
 	assert.match(RICH_TEXT_MENTION_VISUAL_SOURCE, /<IconTile[\s\S]*border border-border bg-surface[\s\S]*visual\.iconColor/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /Markdown\.configure/u);
 });
@@ -854,7 +861,7 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /revealDescriptionOnHover/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /data-nested=\{isNested \? "true" : undefined\}/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /data-list-scrolled=\{isNested && hasScrolledList \? "true" : undefined\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /data-list-scrolled=\{hasScrolledList \? "true" : undefined\}/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ motion, type Variants \} from "motion\/react";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const nestedCommandLabelVariants: Variants = \{/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const nestedCommandDescriptionVariants: Variants = \{[\s\S]*opacity: 0,[\s\S]*opacity: 1,/u);
@@ -872,9 +879,16 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-borderless \{\s*border: 0;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-avatar \{\s*width: 32px;\s*height: 32px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-showcase\[data-nested="true"\] \.rich-text-command-menu-list \{\s*overflow-y: auto;/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\]\[data-list-scrolled="true"\] \.rich-text-command-menu-list \{\s*mask-image: linear-gradient\(to bottom, transparent 0, black 16px, black 100%\);/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-list-scrolled="true"\] \.rich-text-command-menu-list \{\s*mask-image: linear-gradient\(to bottom, transparent 0, black 16px, black 100%\);/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*border-bottom/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \.rich-text-command-menu-list \.rich-text-command-menu-item \{\s*height: 44px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \.rich-text-command-menu-list \.rich-text-command-menu-item \{[\s\S]*?height: 44px;\s*\}/u);
+	// `[^}]*?` keeps this scoped to the nested item rule's own block so it can't
+	// leak into a later rule (flat / non-nested rows carry 6px vertical padding).
+	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \.rich-text-command-menu-list \.rich-text-command-menu-item \{[^}]*?padding-top: 6px;/u);
+	// Flat (non-nested) rows get the showcase's 6px vertical padding on every
+	// surface — the live "@"/"/" menus and the static demo — not just the
+	// showcase, so the live density matches the editor-palette source of truth.
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu:not\(\[data-nested="true"\]\) \.rich-text-command-menu-item \{\s*padding-top: 6px;\s*padding-bottom: 6px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-nested-copy \{\s*height: 34px;\s*justify-content: center;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-nested-copy-revealable \{\s*justify-content: flex-start;/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item:hover \.rich-text-command-menu-description/u);
@@ -882,6 +896,17 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-title/u);
 	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /toMentionId\("skill"/u);
 	assert.match(AGENT_SOURCE, /toMentionId\("knowledge"/u);
+	// Per-trigger suggestion variant: the Studio instructions editor keeps "@"
+	// flat (inline people/teams/subagents) while "/" is nested (Skills/Tools/
+	// Knowledge/Format drill-in). The extension resolves each trigger separately.
+	const RICH_TEXT_TYPES_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/types.ts");
+	assert.match(RICH_TEXT_TYPES_SOURCE, /export type RichTextSuggestionVariantConfig =/u);
+	assert.match(RICH_TEXT_TYPES_SOURCE, /export function resolveMentionVariant\(/u);
+	assert.match(RICH_TEXT_TYPES_SOURCE, /export function resolveCommandVariant\(/u);
+	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /resolveCommandVariant\(this\.options\.suggestionVariant\)/u);
+	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /resolveMentionVariant\(options\.suggestionVariant\)/u);
+	assert.match(AGENT_SOURCE, /const AGENT_INSTRUCTIONS_SUGGESTION_VARIANT: RichTextSuggestionVariantConfig = \{\s*mention: "flat",\s*command: "nested",\s*\};/u);
+	assert.match(AGENT_SOURCE, /suggestionVariant=\{AGENT_INSTRUCTIONS_SUGGESTION_VARIANT\}/u);
 
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-mention/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-mention-visual/u);
