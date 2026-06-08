@@ -6052,6 +6052,13 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "prompt-input-demo-floating-bar-dark-cta": dynamic(
+    () =>
+      import("./demos/ui-custom/prompt-input-demo").then((mod) => ({
+        default: mod.PromptInputDemoFloatingBarDarkCta,
+      })),
+    { ssr: false },
+  ),
   "list-demo-basic": dynamic(
     () =>
       import("./demos/ui-custom/list-demo").then((mod) => ({

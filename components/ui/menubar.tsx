@@ -66,20 +66,13 @@ function MenubarTrigger({
 function MenubarContent({
   className,
   align = "start",
-  alignOffset = -4,
-  sideOffset = 8,
   ...props
 }: React.ComponentProps<typeof DropdownMenuContent>) {
   return (
     <DropdownMenuContent
       data-slot="menubar-content"
       align={align}
-      alignOffset={alignOffset}
-      sideOffset={sideOffset}
-	      className={cn(
-	        "bg-popover text-popover-foreground min-w-48 rounded-lg p-1 shadow-xl origin-(--transform-origin) transition-[opacity,scale,translate] duration-fast ease-out data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95 data-[side=bottom]:data-starting-style:-translate-y-1 data-[side=top]:data-starting-style:translate-y-1 data-[side=left]:data-starting-style:translate-x-1 data-[side=right]:data-starting-style:-translate-x-1 data-[side=inline-start]:data-starting-style:translate-x-1 data-[side=inline-end]:data-starting-style:-translate-x-1 data-[side=bottom]:data-ending-style:-translate-y-1 data-[side=top]:data-ending-style:translate-y-1 data-[side=left]:data-ending-style:translate-x-1 data-[side=right]:data-ending-style:-translate-x-1 data-[side=inline-start]:data-ending-style:translate-x-1 data-[side=inline-end]:data-ending-style:-translate-x-1",
-	        className,
-	      )}
+      className={className}
       {...props}
     />
   );

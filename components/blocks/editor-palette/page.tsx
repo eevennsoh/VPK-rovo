@@ -4,7 +4,9 @@ import { useState, type ReactNode } from "react";
 
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 
+import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
@@ -248,7 +250,11 @@ function getFlatSectionRows(
 				: {
 						id: getSectionFooterId(section.category),
 						label: showAll ? "View less" : "View more",
-						icon: <ChevronDownIcon label="" size="small" />,
+						icon: showAll ? (
+							<ChevronUpIcon label="" size="small" />
+						) : (
+							<ChevronDownIcon label="" size="small" />
+						),
 						isSticky: true,
 					},
 		);
@@ -265,7 +271,7 @@ const ASK_ROVO_LEAD_ITEM: RichTextSuggestionMenuItem = {
 	id: "ask-rovo",
 	label: "Ask Rovo",
 	description: "Ask Rovo to help with the current editor context.",
-	icon: <RovoColorIcon size="small" />,
+	icon: <RovoColorIcon size="xxsmall" />,
 	isSticky: true,
 };
 
@@ -367,12 +373,7 @@ function PalettePanel({ trigger, caption, children }: Readonly<PalettePanelProps
 	return (
 		<figure className="m-0 flex flex-col" style={{ gap: token("space.100") }}>
 			<figcaption className="flex items-center" style={{ gap: token("space.100") }}>
-				<span
-					className="inline-flex items-center justify-center rounded-sm bg-surface-sunken font-mono text-text-subtle"
-					style={{ width: 24, height: 24, fontSize: 13 }}
-				>
-					{trigger}
-				</span>
+				<Kbd>{trigger}</Kbd>
 				<span className="text-sm font-medium text-text">{caption}</span>
 			</figcaption>
 			{children}

@@ -57,6 +57,7 @@ interface AgentStarterSeed {
 	id: string;
 	label: string;
 	prompt?: string;
+	description?: string;
 }
 
 /**
@@ -97,10 +98,11 @@ const EMPTY_STARTERS: readonly RovoSuggestion[] = [];
 
 // --- Re-homed VERBATIM from agent-profiles.ts (runtime derivation helpers) ---
 
-function createStarter(id: string, label: string, prompt = label): RovoSuggestion {
+function createStarter(id: string, label: string, prompt = label, description?: string): RovoSuggestion {
 	return {
 		id,
 		label,
+		description,
 		prompt,
 		icon: AiChatIcon,
 		type: "skill",
@@ -109,9 +111,9 @@ function createStarter(id: string, label: string, prompt = label): RovoSuggestio
 
 function createDefaultStarters(agentId: string, agentName: string): readonly RovoSuggestion[] {
 	return [
-		createStarter(`${agentId}-overview`, `Ask ${agentName} for an overview`),
-		createStarter(`${agentId}-summary`, `Summarize this with ${agentName}`),
-		createStarter(`${agentId}-next-steps`, `Get ${agentName}'s recommended next steps`),
+		createStarter(`${agentId}-overview`, `Ask ${agentName} for an overview`, undefined, `Get a quick summary of what ${agentName} can do`),
+		createStarter(`${agentId}-summary`, `Summarize this with ${agentName}`, undefined, `Have ${agentName} condense the current context`),
+		createStarter(`${agentId}-next-steps`, `Get ${agentName}'s recommended next steps`, undefined, `Ask ${agentName} what to do next`),
 	];
 }
 
@@ -167,7 +169,7 @@ function toAgentProfile(record: UnifiedAgentRecord): RovoAgentProfile {
 		: record.starters.length === 0
 			? EMPTY_STARTERS
 			: record.starters.map((starter) =>
-					createStarter(starter.id, starter.label, starter.prompt ?? starter.label),
+					createStarter(starter.id, starter.label, starter.prompt ?? starter.label, starter.description),
 				);
 
 	return createProfile({

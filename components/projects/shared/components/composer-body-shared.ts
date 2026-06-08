@@ -3,6 +3,8 @@
 import type { ChatStatus, FileUIPart } from "ai";
 import { useEffect, useRef } from "react";
 import { usePromptInputController } from "@/components/ui-custom/prompt-input";
+import type { ComposerDirectoryAutocompleteController } from "@/components/ui-custom/rich-text-editor";
+import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 
 /** Props shared by both composer bodies (card + floating). */
 export interface ComposerBodyBaseProps {
@@ -10,7 +12,10 @@ export interface ComposerBodyBaseProps {
 	canSubmit: boolean;
 	clickyActive: boolean;
 	composerStatus: ChatStatus;
+	directoryAutocompleteListVisible: boolean;
 	micStream: MediaStream | null | undefined;
+	onDirectoryAutocompleteChange?: (state: DirectoryAutocompleteState | null) => void;
+	onDirectoryAutocompleteControllerChange?: (controller: ComposerDirectoryAutocompleteController | null) => void;
 	onPromptSubmit: (payload: { text: string; files: FileUIPart[] }) => void;
 	onStop: () => Promise<void>;
 	onToggleClicky?: () => void;

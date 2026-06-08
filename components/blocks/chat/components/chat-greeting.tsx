@@ -2,7 +2,7 @@
 
 import { token } from "@/lib/tokens";
 import Heading from "@/components/blocks/shared-ui/heading";
-import { IconTile } from "@/components/ui/icon-tile";
+import { GreetingPromptRow } from "@/components/projects/shared/components/greeting-prompt-row";
 import Image from "next/image";
 import { defaultSuggestions, type RovoSuggestion } from "@/lib/rovo-suggestions";
 
@@ -17,17 +17,6 @@ interface ChatGreetingProps {
 	onSuggestionClick?: (suggestion: RovoSuggestion) => void;
 }
 
-// Styles for the list item row
-const listItemStyles = {
-	display: "flex",
-	alignItems: "center",
-	gap: token("space.150"),
-	padding: token("space.075"),
-	borderRadius: token("radius.large"),
-	width: "100%",
-	transition: "background-color 0.1s ease",
-} as const;
-
 function SkillListItem({
 	suggestion,
 	onClick,
@@ -35,46 +24,19 @@ function SkillListItem({
 	suggestion: RovoSuggestion;
 	onClick?: () => void;
 }>) {
-	const IconComponent = suggestion.icon;
 	const iconColor = suggestion.id === "work-last-7-days" || suggestion.id === "draft-confluence-page"
 		? token("color.icon.accent.blue")
 		: token("color.icon.subtlest");
 
 	return (
-		<div
-			role="button"
-			tabIndex={0}
+		<GreetingPromptRow
+			description={suggestion.description}
+			icon={suggestion.icon}
+			iconColor={iconColor}
+			imageSrc={suggestion.imageSrc}
+			label={suggestion.label}
 			onClick={onClick}
-			onKeyDown={(e) => {
-				if (e.key === "Enter" || e.key === " ") {
-					e.preventDefault();
-					onClick?.();
-				}
-			}}
-			style={listItemStyles}
-			onMouseEnter={(e) => {
-				e.currentTarget.style.backgroundColor = token("color.background.neutral.subtle.hovered");
-			}}
-			onMouseLeave={(e) => {
-				e.currentTarget.style.backgroundColor = "transparent";
-			}}
-		>
-			<IconTile
-				size="medium"
-				label={suggestion.label}
-				className="border border-border bg-surface"
-				icon={
-					suggestion.imageSrc ? (
-						<Image src={suggestion.imageSrc} alt={suggestion.label} width={16} height={16} className="size-4" style={{ objectFit: "contain" }} />
-					) : IconComponent ? (
-						<IconComponent label={suggestion.label} color={iconColor} />
-					) : null
-				}
-			/>
-
-			{/* Label text */}
-			<span className="text-sm text-text-subtle">{suggestion.label}</span>
-		</div>
+		/>
 	);
 }
 

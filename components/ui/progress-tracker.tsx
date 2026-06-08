@@ -6,6 +6,7 @@ import WarningIcon from "@atlaskit/icon/core/warning"
 
 import { token } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
+import { Spinner } from "@/components/ui/spinner"
 
 export type ProgressTrackerStepState = "todo" | "current" | "done" | "warning"
 
@@ -34,7 +35,7 @@ function StepIcon({ state }: Readonly<{ state: ProgressTrackerStepState }>) {
 	if (state === "current") {
 		return (
 			<div className="flex size-3 items-center justify-center">
-				<div className="size-3 animate-spin rounded-full border border-border border-t-text-subtle" />
+				<Spinner size="xs" className="text-text-subtle" />
 			</div>
 		)
 	}

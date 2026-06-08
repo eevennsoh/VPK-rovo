@@ -525,7 +525,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleCompactSectionChange = useCallback\([\s\S]*if \(section === "insights"\) \{[\s\S]*setActiveCompactSection\(null\);[\s\S]*onViewChange\("insights"\);[\s\S]*return;[\s\S]*\}[\s\S]*onViewChange\("configure"\);[\s\S]*setActiveCompactSection\(\s*section === "surfaces" \|\|[\s\S]*section === "access" \|\|[\s\S]*section === "users" \|\|[\s\S]*section === "evaluation"[\s\S]*\? section[\s\S]*: null,/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /setActiveCompactSection\(null\);[\s\S]*if \(value === "test"\)/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentCompactHeaderNav[\s\S]*activeSection=\{activeView === "insights" \? "insights" : activeCompactSection\}[\s\S]*avatarSrc=\{agentAvatarSrc\}[\s\S]*onSectionChange=\{handleCompactSectionChange\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /activeCompactSection === "surfaces" \? \([\s\S]*<AgentSurfaces className="-mr-6 pr-6" \/>[\s\S]*\) : \([\s\S]*<AgentConfigFields/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /activeCompactSection === "surfaces" \? \([\s\S]*<AgentSurfaces className="-mr-4 pr-4" \/>[\s\S]*\) : \([\s\S]*<AgentConfigFields/u);
 	// Clicking the "Evaluation" compact-nav tab renders the full-bleed Evaluation screen.
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ AgentEvaluation \} from "@\/components\/blocks\/agent-evaluation";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /activeCompactSection === "evaluation" \? \([\s\S]*<AgentEvaluation \/>[\s\S]*\) : \(/u);
@@ -545,7 +545,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /aria-label="Agent config views"[\s\S]{0,160}size="sm"/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /<TabsList>|<TabsTrigger/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<TabsContent[\s\S]*value="configure"[\s\S]*<AgentConfigFields/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /compactScrollAreaClassName="-mr-6 pr-6"/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /compactScrollAreaClassName="-ml-1\.5 -mr-4 pr-4"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<TabsContent value="test"[\s\S]*\{testPanel\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<TabsContent value="insights"[\s\S]*<AgentInsights \/>/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /Generation looks partial/u);
@@ -607,7 +607,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_TEST_PANEL_SOURCE, /export function AgentTestPanel/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /aria-label="Agent test"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /data-testid="agent-test-panel"/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /className=\{cn\("h-full min-h-0 px-6", className\)\}/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /className=\{cn\("h-full min-h-0 px-4", className\)\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /containerClassName="h-full min-h-0 w-full overflow-visible"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /composerContainerClassName="px-0"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /conversationContentClassName="px-0"/u);

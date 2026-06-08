@@ -208,7 +208,13 @@ export function PromptInputDemoChatComposer() {
 	);
 }
 
-export function PromptInputDemoFloatingBar() {
+interface FloatingBarDemoProps {
+	// Renders the action button with the experimental dark/black CTA styling used
+	// in the Studio floating composer (neutral-bold background, inverse icon).
+	experimentalDarkCta?: boolean;
+}
+
+function FloatingBarDemo({ experimentalDarkCta = false }: Readonly<FloatingBarDemoProps>) {
 	const [prompt, setPrompt] = useState("");
 	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
 	const [clickyActive, setClickyActive] = useState(false);
@@ -249,6 +255,7 @@ export function PromptInputDemoFloatingBar() {
 					<RovoComposerActionButton
 						canSubmit={canSubmit}
 						composerStatus="ready"
+						experimentalDarkCta={experimentalDarkCta}
 						onStop={handleStop}
 						onToggleRealtimeVoice={handleToggleRealtimeVoice}
 						realtimeVoiceActive={realtimeVoiceActive}
@@ -268,4 +275,12 @@ export function PromptInputDemoFloatingBar() {
 			<style>{textareaCSS}</style>
 		</DemoFrame>
 	);
+}
+
+export function PromptInputDemoFloatingBar() {
+	return <FloatingBarDemo />;
+}
+
+export function PromptInputDemoFloatingBarDarkCta() {
+	return <FloatingBarDemo experimentalDarkCta />;
 }

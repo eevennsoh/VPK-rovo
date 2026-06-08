@@ -1,10 +1,16 @@
 "use client";
 
-import React from "react";
+import dynamic from "next/dynamic";
 import { token } from "@/lib/tokens";
 import ConfluenceHeader from "./components/confluence-header";
-import DocumentEditor from "./components/document-editor";
 import FloatingConfluenceActions from "./components/floating-confluence-actions";
+
+// Lazy-load the document editor: it pulls in the full @tiptap / ProseMirror
+// editor stack. Code-splitting keeps that out of the route's initial chunk; it
+// loads when the Confluence view mounts, client-only.
+const DocumentEditor = dynamic(() => import("./components/document-editor"), {
+	ssr: false,
+});
 
 interface ConfluenceViewProps {
 	embedded?: boolean;

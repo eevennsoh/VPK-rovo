@@ -9,7 +9,7 @@ import { Message, MessageActions, MessageContent, MessageCopyAction, MessageEdit
 import { ArtifactCard, type ArtifactKind } from "@/components/ui-custom/artifact";
 import { AdsReasoningTrigger, Reasoning, ReasoningContent } from "@/components/ui-custom/reasoning";
 import { Button } from "@/components/ui/button";
-import { IconTile } from "@/components/ui/icon-tile";
+import { GreetingPromptRow } from "@/components/projects/shared/components/greeting-prompt-row";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { getRovoAppInterruptionLabel } from "@/lib/rovo-app-interruptions";
 import { resolveRovoAppMessageArtifactDisplay, resolveRovoAppOrphanArtifactDisplay, type RovoAppPendingArtifactResult } from "@/components/projects/rovo/lib/rovo-app-message-artifacts";
@@ -87,6 +87,7 @@ interface RovoAppMessagesProps {
 	streamingArtifact: RovoAppStreamingArtifact | null;
 	streamingArtifactMessageId: string | null;
 	votes: Record<string, "up" | "down">;
+	hideCustomAgentStarters?: boolean;
 }
 
 const ROVO_APP_SCROLL_ANCHOR_SELECTOR = "[data-rovo-app-scroll-anchor='true']";
@@ -761,10 +762,12 @@ function RovoAppThinkingIndicator() {
 
 function RovoAppCustomAgentEmptyState({
 	agent,
+	hideStarters,
 	itemVariants,
 	onSelectSuggestion,
 }: Readonly<{
 	agent: RovoAgentProfile;
+	hideStarters: boolean;
 	itemVariants: RovoAppEmptyStateItemVariants;
 	onSelectSuggestion: (suggestion: string) => Promise<void>;
 }>) {
@@ -788,33 +791,27 @@ function RovoAppCustomAgentEmptyState({
 					) : null}
 				</motion.div>
 			</div>
-			<motion.div className="flex w-full max-w-[720px] flex-col gap-2" variants={ROVO_APP_EMPTY_STATE_CONTAINER_VARIANTS}>
-				{agent.starters.map((starter) => {
-					const IconComponent = starter.icon;
-					const starterPrompt = starter.prompt ?? starter.label;
+			{hideStarters ? null : (
+				<motion.div className="flex w-full max-w-[720px] flex-col gap-2" variants={ROVO_APP_EMPTY_STATE_CONTAINER_VARIANTS}>
+					{agent.starters.map((starter) => {
+						const starterPrompt = starter.prompt ?? starter.label;
 
-					return (
-						<motion.div key={starter.id} variants={itemVariants}>
-							<button
-								className="flex w-full items-center gap-4 rounded-lg p-2 text-left transition-colors hover:bg-bg-neutral-subtle-hovered"
-								onClick={() => {
-									void onSelectSuggestion(starterPrompt);
-								}}
-								type="button"
-							>
-								<IconTile
-									aria-hidden={true}
-									className="border border-border bg-surface"
-									icon={IconComponent ? <IconComponent label={starter.label} /> : null}
+						return (
+							<motion.div key={starter.id} variants={itemVariants}>
+								<GreetingPromptRow
+									description={starter.description}
+									icon={starter.icon}
+									imageSrc={starter.imageSrc}
 									label={starter.label}
-									size="medium"
+									onClick={() => {
+										void onSelectSuggestion(starterPrompt);
+									}}
 								/>
-								<span className="min-w-0 flex-1 text-base font-semibold leading-6 text-text-subtle">{starter.label}</span>
-							</button>
-						</motion.div>
-					);
-				})}
-			</motion.div>
+							</motion.div>
+						);
+					})}
+				</motion.div>
+			)}
 		</motion.div>
 	);
 }
@@ -839,7 +836,7 @@ function StreamingArtifactMessage({
 	versionNumber?: number;
 }>) {
 	return (
-		<div className="group/message fade-in w-full animate-in duration-200" data-role="assistant" data-testid="message-assistant-streaming-artifact">
+		<div className="group/message fade-in w-full animate-in duration-medium" data-role="assistant" data-testid="message-assistant-streaming-artifact">
 			<div className="flex w-full items-start gap-2 md:gap-3">
 				<div className="flex min-w-0 flex-1 flex-col gap-3">
 					<ArtifactCard
@@ -874,7 +871,7 @@ function AssistantSuggestionPills({
 	}
 
 	return (
-		<div className="fade-in mb-6 w-full animate-in duration-200" data-role="assistant-suggestions">
+		<div className="fade-in mb-6 w-full animate-in duration-medium" data-role="assistant-suggestions">
 			<div className="flex w-full items-start gap-2 md:gap-3">
 				<div aria-hidden className="size-8 shrink-0" />
 				<div className="flex min-w-0 flex-1 justify-end">
@@ -922,6 +919,7 @@ export function RovoAppMessages({
 	streamingArtifact,
 	streamingArtifactMessageId,
 	votes,
+	hideCustomAgentStarters = false,
 }: Readonly<RovoAppMessagesProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const scrollSpacerRef = useRef<HTMLDivElement | null>(null);
@@ -1002,6 +1000,7 @@ export function RovoAppMessages({
 						{customAgent ? (
 							<RovoAppCustomAgentEmptyState
 								agent={customAgent}
+								hideStarters={hideCustomAgentStarters}
 								itemVariants={emptyStateItemVariants}
 								key={`agent-${customAgent.id}`}
 								onSelectSuggestion={onSelectSuggestion}

@@ -21,7 +21,10 @@ import { EditorContent, useEditor } from "@tiptap/react";
 
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import {
+  composerDirectoryAutocompletePluginKey,
   createComposerEditorExtensions,
+  getMentionNodeAttrs,
+  type ComposerDirectoryAutocompleteController,
   type RichTextMentionSources,
 } from "@/components/ui-custom/rich-text-editor";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
@@ -29,6 +32,10 @@ import {
   serializeComposerDoc,
   setComposerPlainText,
 } from "@/lib/composer-serialize";
+import {
+  getDirectoryAutocompleteState,
+  type DirectoryAutocompleteState,
+} from "@/lib/directory-autocomplete";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -960,6 +967,7 @@ export const PromptInput = ({
         onSubmit={handleSubmit}
         ref={formRef}
         {...props}
+        data-prompt-input-root=""
       >
         <InputGroup
           className={cn(
@@ -1000,6 +1008,22 @@ export type PromptInputTextareaProps = ComponentProps<
   typeof InputGroupTextarea
 > & {
   autoResize?: boolean;
+  /**
+   * Enables plain-text skill/tool autocomplete backed by the directory mention
+   * catalog. Defaults to true so every prompt composer exposes the discoverable
+   * token path; pass false for exceptional surfaces.
+   */
+  enableDirectoryAutocomplete?: boolean;
+  /**
+   * Whether the host is rendering an external suggestions list for the current
+   * composer. When true, ArrowUp/ArrowDown/Enter and Mod+1..9 select that list
+   * instead of submitting.
+   */
+  directoryAutocompleteListVisible?: boolean;
+  /** Receives composer-owned autocomplete state for external list rendering. */
+  onDirectoryAutocompleteChange?: (state: DirectoryAutocompleteState | null) => void;
+  /** Receives imperative insertion/selection actions for external rows. */
+  onDirectoryAutocompleteControllerChange?: (controller: ComposerDirectoryAutocompleteController | null) => void;
   /**
    * Mention/reference catalog backing the inline `@`/`/` palette. Defaults to
    * the unified editor-palette catalog (built from `@/app/data/directory`).
@@ -1046,6 +1070,10 @@ function createSyntheticChangeEvent(
 
 export const PromptInputTextarea = ({
   autoResize: _autoResize = true,
+  enableDirectoryAutocomplete = true,
+  directoryAutocompleteListVisible = false,
+  onDirectoryAutocompleteChange,
+  onDirectoryAutocompleteControllerChange,
   onChange,
   onInput,
   onKeyDown: _onKeyDown,
@@ -1092,6 +1120,27 @@ export const PromptInputTextarea = ({
   const attachmentsRef = useRef(attachments);
   const controllerRef = useRef(controller);
   const nameRef = useRef(name);
+  const activeEditorRef = useRef<Editor | null>(null);
+  const directoryAutocompleteStateRef = useRef<DirectoryAutocompleteState | null>(null);
+  const directoryAutocompleteListVisibleRef = useRef(directoryAutocompleteListVisible);
+  const onDirectoryAutocompleteChangeRef = useRef(onDirectoryAutocompleteChange);
+  const onDirectoryAutocompleteControllerChangeRef = useRef(onDirectoryAutocompleteControllerChange);
+  const acceptDirectoryAutocompleteIndexRef = useRef<(index: number, requireGhost?: boolean) => boolean>(() => false);
+  const moveDirectoryAutocompleteActiveRef = useRef<(direction: -1 | 1) => boolean>(() => false);
+  const setDirectoryAutocompleteActiveIndexRef = useRef<(index: number) => boolean>(() => false);
+
+  const directoryAutocompleteController = useMemo<ComposerDirectoryAutocompleteController>(() => ({
+    acceptActive: () => acceptDirectoryAutocompleteIndexRef.current(
+      directoryAutocompleteStateRef.current?.activeIndex ?? 0
+    ),
+    acceptGhost: () => acceptDirectoryAutocompleteIndexRef.current(0, true),
+    acceptIndex: (index: number) => acceptDirectoryAutocompleteIndexRef.current(index),
+    hasVisibleList: () =>
+      directoryAutocompleteListVisibleRef.current &&
+      (directoryAutocompleteStateRef.current?.matches.length ?? 0) > 0,
+    moveActive: (direction: -1 | 1) => moveDirectoryAutocompleteActiveRef.current(direction),
+    setActiveIndex: (index: number) => setDirectoryAutocompleteActiveIndexRef.current(index),
+  }), []);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -1101,6 +1150,9 @@ export const PromptInputTextarea = ({
     attachmentsRef.current = attachments;
     controllerRef.current = controller;
     nameRef.current = name;
+    directoryAutocompleteListVisibleRef.current = directoryAutocompleteListVisible;
+    onDirectoryAutocompleteChangeRef.current = onDirectoryAutocompleteChange;
+    onDirectoryAutocompleteControllerChangeRef.current = onDirectoryAutocompleteControllerChange;
   });
 
   const hiddenInputRef = useRef<HTMLInputElement | null>(null);
@@ -1143,6 +1195,126 @@ export const PromptInputTextarea = ({
     []
   );
 
+  const applyDirectoryAutocompleteGhost = useCallback((state: DirectoryAutocompleteState | null) => {
+    const activeEditor = activeEditorRef.current;
+    if (!activeEditor) {
+      return;
+    }
+
+    const meta = state?.ghostText
+      ? { from: state.queryTo, text: state.ghostText }
+      : null;
+    activeEditor.view.dispatch(
+      activeEditor.state.tr.setMeta(composerDirectoryAutocompletePluginKey, meta)
+    );
+  }, []);
+
+  const setDirectoryAutocompleteState = useCallback((nextState: DirectoryAutocompleteState | null) => {
+    directoryAutocompleteStateRef.current = nextState;
+    applyDirectoryAutocompleteGhost(nextState);
+    onDirectoryAutocompleteChangeRef.current?.(nextState);
+  }, [applyDirectoryAutocompleteGhost]);
+
+  const isAnySuggestionMenuOpen = useCallback((activeEditor: Editor): boolean => {
+    for (const plugin of activeEditor.view.state.plugins) {
+      const pluginState = plugin.getState(activeEditor.view.state) as
+        | { active?: boolean; query?: unknown; range?: unknown }
+        | undefined;
+      if (pluginState?.active === true && "query" in pluginState && "range" in pluginState) {
+        return true;
+      }
+    }
+
+    return false;
+  }, []);
+
+  const refreshDirectoryAutocomplete = useCallback((activeEditor: Editor) => {
+    if (!enableDirectoryAutocomplete || !activeEditor.isEditable) {
+      setDirectoryAutocompleteState(null);
+      return;
+    }
+
+    const { selection } = activeEditor.state;
+    if (activeEditor.view.composing || !selection.empty || isAnySuggestionMenuOpen(activeEditor)) {
+      setDirectoryAutocompleteState(null);
+      return;
+    }
+
+    const textBeforeCursor = selection.$from.parent.textBetween(
+      0,
+      selection.$from.parentOffset,
+      "\n",
+      "\uFFFC"
+    );
+    const nextState = getDirectoryAutocompleteState({
+      activeIndex: directoryAutocompleteStateRef.current?.activeIndex ?? 0,
+      cursorPosition: selection.from,
+      sources: mentionSourcesRef.current,
+      textBeforeCursor,
+    });
+    setDirectoryAutocompleteState(nextState);
+  }, [enableDirectoryAutocomplete, isAnySuggestionMenuOpen, setDirectoryAutocompleteState]);
+
+  acceptDirectoryAutocompleteIndexRef.current = (index: number, requireGhost = false): boolean => {
+    const activeEditor = activeEditorRef.current;
+    const currentState = directoryAutocompleteStateRef.current;
+    if (!activeEditor || !currentState) {
+      return false;
+    }
+    if (requireGhost && !currentState.ghostText) {
+      return false;
+    }
+
+    const match = currentState.matches[index];
+    if (!match) {
+      return false;
+    }
+
+    activeEditor
+      .chain()
+      .focus()
+      .insertContentAt(
+        { from: currentState.queryFrom, to: currentState.queryTo },
+        [
+          {
+            type: "mention",
+            attrs: getMentionNodeAttrs(match.mention),
+          },
+          { type: "text", text: " " },
+        ]
+      )
+      .run();
+    setDirectoryAutocompleteState(null);
+    return true;
+  };
+
+  moveDirectoryAutocompleteActiveRef.current = (direction: -1 | 1): boolean => {
+    const currentState = directoryAutocompleteStateRef.current;
+    if (!currentState || currentState.matches.length === 0) {
+      return false;
+    }
+
+    const nextIndex = (currentState.activeIndex + direction + currentState.matches.length) %
+      currentState.matches.length;
+    setDirectoryAutocompleteState({
+      ...currentState,
+      activeIndex: nextIndex,
+    });
+    return true;
+  };
+
+  setDirectoryAutocompleteActiveIndexRef.current = (index: number): boolean => {
+    const currentState = directoryAutocompleteStateRef.current;
+    if (!currentState || index < 0 || index >= currentState.matches.length) {
+      return false;
+    }
+    setDirectoryAutocompleteState({
+      ...currentState,
+      activeIndex: index,
+    });
+    return true;
+  };
+
   // Plain Enter (menu closed, no IME) submits the host form unless its submit
   // button is disabled. Returns true to consume the keystroke.
   const handleEnterSubmit = useCallback((view: { dom: HTMLElement }) => {
@@ -1166,11 +1338,12 @@ export const PromptInputTextarea = ({
   const extensions = useMemo(
     () =>
       createComposerEditorExtensions({
+        directoryAutocomplete: directoryAutocompleteController,
         getMentionSources: () => mentionSourcesRef.current,
         onEnter: handleEnterSubmit,
         onPasteFiles: (files) => attachmentsRef.current.add(files),
       }),
-    [handleEnterSubmit]
+    [directoryAutocompleteController, handleEnterSubmit]
   );
 
   const editor = useEditor({
@@ -1189,6 +1362,7 @@ export const PromptInputTextarea = ({
       },
     },
     onCreate: ({ editor: activeEditor }) => {
+      activeEditorRef.current = activeEditor;
       const initial = controllerRef.current
         ? controllerRef.current.textInput.value
         : normalizedValueProp;
@@ -1196,12 +1370,38 @@ export const PromptInputTextarea = ({
         setComposerPlainText(activeEditor, initial);
       }
       publishText(serializeComposerDoc(activeEditor), activeEditor.view.dom, false);
+      refreshDirectoryAutocomplete(activeEditor);
       onEditorReadyRef.current?.(activeEditor);
+    },
+    onSelectionUpdate: ({ editor: activeEditor }) => {
+      refreshDirectoryAutocomplete(activeEditor);
     },
     onUpdate: ({ editor: activeEditor }) => {
       publishText(serializeComposerDoc(activeEditor), activeEditor.view.dom, true);
+      refreshDirectoryAutocomplete(activeEditor);
     },
   });
+
+  useEffect(() => {
+    onDirectoryAutocompleteControllerChangeRef.current?.(directoryAutocompleteController);
+    return () => {
+      onDirectoryAutocompleteControllerChangeRef.current?.(null);
+    };
+  }, [directoryAutocompleteController]);
+
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+    activeEditorRef.current = editor;
+    refreshDirectoryAutocomplete(editor);
+    return () => {
+      if (activeEditorRef.current === editor) {
+        activeEditorRef.current = null;
+      }
+      setDirectoryAutocompleteState(null);
+    };
+  }, [editor, refreshDirectoryAutocomplete, setDirectoryAutocompleteState]);
 
   // Forward the ref to the contentEditable DOM (escape hatch for consumers that
   // previously held a textarea ref to call .focus()/measure).
@@ -1230,8 +1430,9 @@ export const PromptInputTextarea = ({
   useEffect(() => {
     if (editor && editor.isEditable === Boolean(disabled)) {
       editor.setEditable(!disabled);
+      refreshDirectoryAutocomplete(editor);
     }
-  }, [editor, disabled]);
+  }, [editor, disabled, refreshDirectoryAutocomplete]);
 
   // Truly-uncontrolled demos (no `value`/controller) clear the composer via the
   // host form's reset() after submit. The contentEditable isn't a native form
@@ -1248,12 +1449,13 @@ export const PromptInputTextarea = ({
     const handleReset = () => {
       setComposerPlainText(editor, "");
       publishText("", editor.view.dom, false);
+      setDirectoryAutocompleteState(null);
     };
     form.addEventListener("reset", handleReset);
     return () => {
       form.removeEventListener("reset", handleReset);
     };
-  }, [editor, publishText]);
+  }, [editor, publishText, setDirectoryAutocompleteState]);
 
   // Sync external value (controller or controlled `value` prop) into the editor.
   // Compares against the serialized text so prefill/clear/setInput apply, while
@@ -1271,7 +1473,8 @@ export const PromptInputTextarea = ({
 
     setComposerPlainText(editor, resolvedValue);
     publishText(resolvedValue, editor.view.dom, false);
-  }, [editor, resolvedValue, publishText]);
+    refreshDirectoryAutocomplete(editor);
+  }, [editor, refreshDirectoryAutocomplete, resolvedValue, publishText]);
 
   // Backspace on an empty composer removes the last attachment, matching the
   // previous textarea behavior.

@@ -19,10 +19,20 @@ async function loadChatGreetingHarness() {
 					return React.createElement(React.Fragment, null, props.children);
 				}
 
+				function stripMotionProps(props) {
+					const { animate, exit, initial, variants, whileHover, whileFocus, whileTap, ...rest } = props;
+					return rest;
+				}
+
 				export const motion = {
 					div: function MotionDiv(props) {
-						const { animate, exit, initial, variants, ...rest } = props;
-						return React.createElement("div", rest, props.children);
+						return React.createElement("div", stripMotionProps(props), props.children);
+					},
+					button: function MotionButton(props) {
+						return React.createElement("button", stripMotionProps(props), props.children);
+					},
+					span: function MotionSpan(props) {
+						return React.createElement("span", stripMotionProps(props), props.children);
 					},
 				};
 
@@ -181,6 +191,9 @@ async function loadChatGreetingHarness() {
 		bundle: true,
 		format: "cjs",
 		platform: "node",
+		// Some real modules pulled into the graph (e.g. app/data/directory/visual.tsx
+		// → @atlaskit/icon/core/*) import compiled CSS; drop it so the bundle builds.
+		loader: { ".css": "empty" },
 		tsconfig: path.join(process.cwd(), "tsconfig.json"),
 		write: false,
 		plugins: [
@@ -272,9 +285,11 @@ test("ChatGreeting staggers the illustration before the heading", () => {
 	assert.match(CHAT_GREETING_SOURCE, /<motion\.div className=\{cn\(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative"\)[\s\S]*<motion\.div style=\{\{ willChange: "transform, opacity" \}\} variants=\{itemVariants\}>[\s\S]*<Heading size="large"/u);
 });
 
-test("ChatGreeting prompt row icons are decorative inside labelled buttons", () => {
-	assert.match(CHAT_GREETING_SOURCE, /<IconTile[\s\S]*aria-hidden=\{true\}/u);
-	assert.match(CHAT_GREETING_SOURCE, /<span className="text-left text-sm text-text-subtle">\{suggestion\.label\}<\/span>/u);
+test("ChatGreeting prompt rows render through the shared GreetingPromptRow", () => {
+	// Greeting rows now delegate to the shared row so every chat surface matches
+	// the editor palette (medium-weight label + hover-revealed byline).
+	assert.match(CHAT_GREETING_SOURCE, /import \{ GreetingPromptRow \} from "@\/components\/projects\/shared\/components\/greeting-prompt-row";/u);
+	assert.match(CHAT_GREETING_SOURCE, /<GreetingPromptRow[\s\S]*description=\{suggestion\.description\}/u);
 });
 
 test("ChatGreeting renders selected custom agent profile and three starters", async () => {

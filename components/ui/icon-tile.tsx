@@ -61,7 +61,7 @@ const iconTileVariants = cva(
 				xlarge: "size-12 [font-size:24px] [&_span]:size-6! [&_svg]:size-6!",
 			},
 			shape: {
-				square: "rounded-tile",
+				square: "rounded-[6px]",
 				circle: "rounded-full!",
 			},
 		},

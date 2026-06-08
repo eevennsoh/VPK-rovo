@@ -64,10 +64,13 @@ export function ComposerFloatingBody({
 	canSubmit,
 	clickyActive,
 	composerStatus,
+	directoryAutocompleteListVisible,
 	experimentalDarkCta,
 	fillWidth,
 	focusRequestKey,
 	micStream,
+	onDirectoryAutocompleteChange,
+	onDirectoryAutocompleteControllerChange,
 	onBrowseTemplates,
 	onPromptSubmit,
 	onStartFromScratch,
@@ -156,7 +159,10 @@ export function ComposerFloatingBody({
 					autoFocus={autoFocus}
 					autoResize
 					className={cn(composerTextareaClassName, floatingComposerTextareaClassName)}
+					directoryAutocompleteListVisible={directoryAutocompleteListVisible}
 					onBlur={() => setInputFocused(false)}
+					onDirectoryAutocompleteChange={onDirectoryAutocompleteChange}
+					onDirectoryAutocompleteControllerChange={onDirectoryAutocompleteControllerChange}
 					onFocus={() => {
 						setInputFocused(true);
 						replayRevealTraces();

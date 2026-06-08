@@ -287,10 +287,12 @@ component expectations unless a nested design file says otherwise.
 
 ### Motion and interaction
 
-- **Duration:** Use `duration-fast`, `duration-normal`, `duration-medium`,
-  `duration-slow`, `duration-slower`, and `duration-slowest`.
+- **Duration:** Use `duration-instant`, `duration-xxshort`, `duration-fast`,
+  `duration-normal`, `duration-medium`, `duration-slow`, `duration-slower`,
+  and `duration-slowest`.
 - **Easing:** Use `ease-out` for entry and hover feedback, `ease-in` for exit,
-  and `ease-in-out` for panels that move together.
+  `ease-out-practical` for compact fade/slide entrances, and `ease-in-out` for
+  panels that move together.
 - **Animated properties:** Animate opacity and transforms before layout
   properties. Avoid motion that changes layout in ways that break scanning.
 

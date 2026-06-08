@@ -395,7 +395,7 @@
 }
 
 /*
- * Chat-composer variant: the palette anchors to the prompt-input box and spans
+ * Chat-composer variant: the palette anchors to the prompt-input root and spans
  * its full width (set inline as `width`), so drop the caret-menu max-width cap
  * and let the inner menu stretch to fill.
  */
@@ -432,20 +432,22 @@
 	max-height: 400px;
 }
 
+/* Both surfaces scroll: the nested drill-in lists and the flat merged "/" menu
+   (skills + tools + knowledge + format) can each exceed the popover height, so
+   the list scrolls within the `max-height`-capped container above. */
 .rich-text-command-menu-list {
 	min-height: 0;
 	flex: 1 1 auto;
-	overflow-y: visible;
+	overflow-y: auto;
 	padding: 4px;
 }
 
-/* Only the nested menus can grow long enough to need scrolling. The top-level
-   "/" menu has a small, fixed set of categories, so it shows everything. */
 .rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list {
 	max-height: 292px;
-	overflow-y: auto;
 }
 
+/* The showcase (editor-palette demo) renders the full list inline with no cap,
+   so it never scrolls — except when it explicitly opts into the nested view. */
 .rich-text-command-menu-showcase .rich-text-command-menu-list {
 	max-height: none;
 	overflow-y: visible;
@@ -455,7 +457,7 @@
 	overflow-y: auto;
 }
 
-.rich-text-command-menu[data-nested="true"][data-list-scrolled="true"] .rich-text-command-menu-list {
+.rich-text-command-menu[data-list-scrolled="true"] .rich-text-command-menu-list {
 	mask-image: linear-gradient(to bottom, transparent 0, black 16px, black 100%);
 	-webkit-mask-image: linear-gradient(to bottom, transparent 0, black 16px, black 100%);
 }
@@ -469,7 +471,9 @@
 	border: 0;
 	border-radius: var(--ds-radius-small, 3px);
 	background: transparent;
-	padding: 6px 8px;
+	/* No vertical padding: the 32px avatar sets the row height and
+	   `align-items: center` keeps the content centered within it. */
+	padding: 0 6px;
 	color: var(--ds-text, #172b4d);
 	text-align: left;
 	cursor: pointer;
@@ -501,25 +505,25 @@
    the sticky input bar spans edge-to-edge with square top corners, while the
    logo stays aligned with the icons of the rows below (12px from the edge). */
 .rich-text-command-menu-input {
-	margin: -4px -4px 4px;
+	margin: -4px -4px 0;
 	width: calc(100% + 8px);
 	border-radius: 0;
-	padding-left: 12px;
-	padding-right: 12px;
+	padding-left: 10px;
+	padding-right: 10px;
 	cursor: text;
 }
 
 .rich-text-command-menu-input-logo {
 	display: inline-flex;
-	width: 24px;
-	height: 24px;
+	width: 32px;
+	height: 32px;
 	align-items: center;
 	justify-content: center;
 }
 
 .rich-text-command-menu-input-logo > svg {
-	width: 20px;
-	height: 20px;
+	width: 16px;
+	height: 16px;
 }
 
 .rich-text-command-menu-input > [data-slot="input"] {
@@ -541,12 +545,21 @@
 }
 
 .rich-text-command-menu-avatar {
-	width: 24px;
-	height: 24px;
+	width: 32px;
+	height: 32px;
 }
 
 .rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .rich-text-command-menu-item {
+	/* Fixed row height with no vertical padding: `align-items: center` (from the
+	   base rule) auto-centers the avatar + copy within the 44px box. */
 	height: 44px;
+}
+
+/* Flat (non-nested) rows carry 6px of vertical padding for a comfortable
+   reading density, matching the editor-palette showcase (the source of truth)
+   on both the live "@"/"/" menus and the static demo. Nested rows are pinned to
+   a fixed 44px height by the rule above, so they stay padding-free everywhere. */
+.rich-text-command-menu:not([data-nested="true"]) .rich-text-command-menu-item {
 	padding-top: 6px;
 	padding-bottom: 6px;
 }
@@ -583,17 +596,20 @@
 
 .rich-text-command-menu-label {
 	overflow: hidden;
-	color: var(--ds-text, #172b4d);
-	font-size: 13px;
-	font-weight: 550;
-	line-height: 18px;
+	/* Title: ADS font.body (14px / line-height 20px) via the token, so size and
+	   line-height are never hand-overridden. Color is the subtle text token, one
+	   step above the subtlest byline below it; weight stays at the default
+	   paragraph weight (no deliberate override). */
+	font: var(--ds-font-body);
+	color: var(--ds-text-subtle, #44546f);
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
 .rich-text-command-menu-description {
 	overflow: hidden;
-	color: var(--ds-text-subtle, #44546f);
+	/* Byline: one step quieter than the title above it. */
+	color: var(--ds-text-subtlest, #626f86);
 	font-size: 12px;
 	line-height: 16px;
 	text-overflow: ellipsis;
@@ -605,19 +621,17 @@
 }
 
 .rich-text-command-menu-shortcut {
+	display: inline-flex;
+	align-items: center;
 	margin-left: auto;
 	flex-shrink: 0;
 	padding-left: 24px;
-	color: var(--ds-text-subtlest, #626f86);
-	font-size: 11px;
-	line-height: 16px;
-	letter-spacing: 0.025em;
-	text-align: right;
 }
 
-.rich-text-command-menu-item:hover .rich-text-command-menu-shortcut,
-.rich-text-command-menu-item-selected .rich-text-command-menu-shortcut {
-	color: var(--ds-text-subtle, #44546f);
+.rich-text-command-menu-return-shortcut {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-end;
 }
 
 .rich-text-command-menu-empty {
@@ -638,14 +652,6 @@
 	line-height: 16px;
 }
 
-/* The first heading has nothing meaningful above it — whether it leads the list
-   or follows the "Ask Rovo" input bar — so drop its 12px top gap to sit tight
-   under the input / list top. */
-.rich-text-command-menu-list > .rich-text-command-menu-heading:first-child,
-.rich-text-command-menu-input + .rich-text-command-menu-heading {
-	padding-top: 0;
-}
-
 /*
  * Center mention tokens on the text line in the chat composer so the typing
  * caret lines up with the tag chips instead of sitting above them. Inline
@@ -655,6 +661,13 @@
  */
 .prompt-input-composer .rich-text-mention-node {
 	vertical-align: middle;
+}
+
+.prompt-input-directory-autocomplete-ghost {
+	color: var(--ds-text-subtlest, #626f86);
+	opacity: 0.42;
+	pointer-events: none;
+	white-space: pre;
 }
 
 .rich-text-mention {

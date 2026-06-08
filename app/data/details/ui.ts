@@ -3027,7 +3027,7 @@ import { Textarea } from "@/components/ui/textarea";
         description: "Arrow key representations.",
         demoSlug: "kbd-demo-arrow-keys",
       },
-      { title: "Basic", demoSlug: "kbd-demo-basic" },
+      { title: "Combined", demoSlug: "kbd-demo-basic" },
       {
         title: "Input group",
         description: "Kbd inside an input group.",

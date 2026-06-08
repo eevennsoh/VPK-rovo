@@ -52,7 +52,7 @@ Use `/agent-browser` (the `npx agent-browser` CLI) for all browser interactions.
 | Interactive snapshot | `npx agent-browser snapshot -i` |
 | Full snapshot | `npx agent-browser snapshot` |
 | Screenshot (viewport) | `npx agent-browser screenshot [filename]` |
-| Screenshot (full page) | `npx agent-browser screenshot --full-page [filename]` |
+| Screenshot (full page) | `npx agent-browser screenshot --full [filename]` |
 | Evaluate JS | `npx agent-browser eval "[js code]"` |
 | Click element | `npx agent-browser click @ref` |
 | Close browser | `npx agent-browser close` |

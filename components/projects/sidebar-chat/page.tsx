@@ -58,7 +58,9 @@ import { QuestionCardShortcutsFooter } from "@/components/projects/shared/compon
 import { ApprovalCard } from "@/components/blocks/approval-card/page";
 import { useDismissibleCards } from "@/components/projects/shared/hooks/use-dismissible-cards";
 import type { RovoSuggestion } from "@/lib/rovo-suggestions";
-import type { RovoAgentProfile } from "@/app/data/directory/agents";
+import type { ComposerDirectoryAutocompleteController } from "@/components/ui-custom/rich-text-editor";
+import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
+import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 import ChatHeader from "./components/chat-header";
 import { ChatHistoryDrawer } from "./components/chat-history-drawer";
 import ChatGreeting from "./components/chat-greeting";
@@ -274,6 +276,8 @@ export default function ChatPanel({
 	const [containerWidthPx, setContainerWidthPx] = useState<number | null>(null);
 	const [viewportWidthPx, setViewportWidthPx] = useState<number | null>(null);
 	const [selectedReasoning, setSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
+	const [directoryAutocompleteState, setDirectoryAutocompleteState] = useState<DirectoryAutocompleteState | null>(null);
+	const [directoryAutocompleteController, setDirectoryAutocompleteController] = useState<ComposerDirectoryAutocompleteController | null>(null);
 	const AGENT_VERSION_OPTIONS = ["Draft", "Version 2", "Version 1"] as const;
 	const [selectedAgentVersion, setSelectedAgentVersion] = useState<string>(AGENT_VERSION_OPTIONS[0]);
 	const isCollapsibleEditContextBar = Boolean(chatContextBar?.collapsible && chatContextBar.variant === "edit");
@@ -648,6 +652,18 @@ export default function ChatPanel({
 	const shouldHugEmptyGreeting = !hasMessages && greeting?.showHero === false;
 	const shouldUseNaturalEmptyGreeting = shouldHugEmptyGreeting || isAgentTestEmptyState;
 	const shouldUseAutoMessageTrack = shouldUseNaturalEmptyGreeting && containerStyle?.display === "grid";
+	const directoryAutocompleteGreetingAgent = greetingSelectedAgent ?? selectedAgent;
+	const canShowDirectoryAutocompleteGreeting =
+		directoryAutocompleteGreetingAgent === null ||
+		isRovoAgentProfile(directoryAutocompleteGreetingAgent);
+	const shouldShowDirectoryAutocompleteList =
+		!hasMessages &&
+		canShowDirectoryAutocompleteGreeting &&
+		directoryAutocompleteState !== null &&
+		directoryAutocompleteState.matches.length > 0;
+	const shouldUseWideDirectoryAutocompleteList =
+		(chatSurface !== "floating") &&
+		(containerWidthPx ?? viewportWidthPx ?? 0) >= 760;
 	const resolvedContainerStyle = shouldUseAutoMessageTrack
 		? { ...containerStyle, gridTemplateRows: "auto auto" }
 		: containerStyle;
@@ -737,6 +753,12 @@ export default function ChatPanel({
 		},
 		[resolvedSendPromptOptions, sendPrompt],
 	);
+	const handleDirectoryAutocompleteSelect = useCallback((index: number) => {
+		directoryAutocompleteController?.acceptIndex(index);
+	}, [directoryAutocompleteController]);
+	const handleDirectoryAutocompleteActiveChange = useCallback((index: number) => {
+		directoryAutocompleteController?.setActiveIndex(index);
+	}, [directoryAutocompleteController]);
 
 	const handleWidgetPrimaryAction = useCallback(
 		(payload: GenerativeWidgetPrimaryActionPayload) => {
@@ -829,7 +851,11 @@ export default function ChatPanel({
 							selectedAgent={greetingSelectedAgent ?? selectedAgent}
 							showHero={resolvedGreeting?.showHero}
 							suggestions={resolvedGreeting?.suggestions}
+							directoryAutocompleteState={directoryAutocompleteState}
+							useWideSuggestionLayout={shouldUseWideDirectoryAutocompleteList}
 							onSuggestionClick={handleGreetingSuggestionClick}
+							onDirectoryAutocompleteSelect={handleDirectoryAutocompleteSelect}
+							onDirectoryAutocompleteActiveChange={handleDirectoryAutocompleteActiveChange}
 						/>
 					</div>
 				) : (
@@ -982,7 +1008,10 @@ export default function ChatPanel({
 						realtimeVoiceActive={isRealtimeVoiceActive}
 						selectedReasoning={selectedReasoning}
 						chatContextBar={chatContextBar}
+						directoryAutocompleteListVisible={shouldShowDirectoryAutocompleteList}
 						onContextBarOpenChange={setIsContextBarOpen}
+						onDirectoryAutocompleteChange={setDirectoryAutocompleteState}
+						onDirectoryAutocompleteControllerChange={setDirectoryAutocompleteController}
 					/>
 				</>
 			)}

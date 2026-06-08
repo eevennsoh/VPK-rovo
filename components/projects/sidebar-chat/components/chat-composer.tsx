@@ -20,6 +20,8 @@ import {
 	type PromptInputMessage,
 	usePromptInputAttachments,
 } from "@/components/ui-custom/prompt-input";
+import type { ComposerDirectoryAutocompleteController } from "@/components/ui-custom/rich-text-editor";
+import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { composerUpwardShadow, composerPromptInputClassName, composerTextareaClassName, textareaCSS } from "@/components/blocks/shared-ui/composer-styles";
 import { Queue, QueueItem, QueueItemActions, QueueItemContent, QueueItemIndicator, QueueList } from "@/components/ui-custom/queue";
@@ -56,7 +58,10 @@ interface ChatComposerProps {
 	selectedReasoning?: string;
 	containerClassName?: string;
 	chatContextBar?: ChatContextBarDescriptor | null;
+	directoryAutocompleteListVisible?: boolean;
 	onContextBarOpenChange?: (open: boolean) => void;
+	onDirectoryAutocompleteChange?: (state: DirectoryAutocompleteState | null) => void;
+	onDirectoryAutocompleteControllerChange?: (controller: ComposerDirectoryAutocompleteController | null) => void;
 }
 
 interface ChatComposerSendControlsProps {
@@ -128,7 +133,7 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, clickyActive = false, onPromptChange, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, onContextBarOpenChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, clickyActive = false, onPromptChange, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, directoryAutocompleteListVisible = false, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -205,7 +210,10 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 					<PromptInputBody>
 						<PromptInputTextarea
 							value={prompt}
+							directoryAutocompleteListVisible={directoryAutocompleteListVisible}
 							onChange={(event) => onPromptChange(event.currentTarget.value)}
+							onDirectoryAutocompleteChange={onDirectoryAutocompleteChange}
+							onDirectoryAutocompleteControllerChange={onDirectoryAutocompleteControllerChange}
 							placeholder="Ask, @mention, or / for skills"
 							aria-label="Chat message input"
 							rows={1}

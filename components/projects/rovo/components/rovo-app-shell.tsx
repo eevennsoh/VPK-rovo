@@ -39,9 +39,11 @@ import { useLiveVoice } from "@/components/projects/rovo/hooks/use-live-voice";
 import { type DelegationRequest, useRealtimeVoice } from "@/components/projects/rovo/hooks/use-realtime-voice";
 import type { VoiceButtonState } from "@/components/ui-audio/voice-button";
 import type { ConversationFollowMode } from "@/components/ui-custom/conversation";
+import { RichTextMentionVisualMark, type ComposerDirectoryAutocompleteController } from "@/components/ui-custom/rich-text-editor";
 import { useSidebar as useGlobalSidebar } from "@/app/contexts/context-sidebar";
 import PromptGallery from "@/components/blocks/prompt-gallery/page";
 import { DEFAULT_PROMPT_GALLERY_SUGGESTIONS } from "@/components/blocks/prompt-gallery/data/suggestions";
+import { GreetingPromptRow } from "@/components/projects/shared/components/greeting-prompt-row";
 import { LeftNavigation } from "@/components/blocks/top-navigation/components/left-navigation";
 import { RightNavigation } from "@/components/blocks/top-navigation/components/right-navigation";
 import SearchSuggestionsPanel from "@/components/blocks/top-navigation/components/search-suggestions-panel";
@@ -55,6 +57,7 @@ import {
 } from "@/components/blocks/top-navigation/layout-constants";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/ui/kbd";
 import SearchIcon from "@atlaskit/icon/core/search";
 import { SidebarProvider, SidebarResizeHandle } from "@/components/ui/sidebar";
 import { Footer } from "@/components/ui-custom/footer";
@@ -78,6 +81,8 @@ import type { HermesSkillDraftDetail, HermesSkillDraftSummary } from "@/lib/rovo
 import type { RovoAppHermesContext } from "@/lib/rovo-app-types";
 import { useRovoSelectedAgent } from "@/app/contexts";
 import { getRovoAgentPromptContext, isRovoAgentProfile } from "@/app/data/directory/agents";
+import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
+import { ReturnIcon } from "@/components/ui/vpk-icons";
 
 interface RovoAppShellProps {
 	embedded?: boolean;
@@ -305,6 +310,84 @@ function resolveRealtimeSessionIdentity(realtime: RealtimeVoiceShellResult, acti
 	return realtime.voiceState !== "idle" ? `${activeThreadId ?? runtimeThreadId}:${realtime.voiceState}` : null;
 }
 
+function RovoAppDirectoryAutocompleteShortcut({
+	active,
+	index,
+}: Readonly<{
+	active: boolean;
+	index: number;
+}>) {
+	if (active) {
+		return <ReturnIcon className="size-3.5 text-icon-subtlest" />;
+	}
+
+	return (
+		<Kbd className="h-5 min-w-7 rounded-sm bg-bg-neutral px-1.5 text-[11px] text-text-subtle">
+			⌘{index + 1}
+		</Kbd>
+	);
+}
+
+function RovoAppDirectoryAutocompleteRows({
+	className,
+	shouldReduceMotion,
+	state,
+	useWideLayout,
+	onActiveChange,
+	onSelect,
+}: Readonly<{
+	className?: string;
+	shouldReduceMotion: boolean;
+	state: DirectoryAutocompleteState;
+	useWideLayout: boolean;
+	onActiveChange?: (index: number) => void;
+	onSelect?: (index: number) => void;
+}>) {
+	if (state.matches.length === 0) {
+		return null;
+	}
+
+	return (
+		<motion.div
+			animate={{ opacity: 1, y: 0 }}
+			className={cn("mx-auto w-full max-w-[720px]", className)}
+			initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
+			transition={{ duration: 0.18, ease: [0, 0.4, 0, 1] }}
+			style={{ willChange: "transform, opacity" }}
+		>
+			<div className={cn("grid gap-1", useWideLayout ? "grid-cols-2 gap-x-8" : "grid-cols-1")}>
+				{state.matches.map((match, index) => {
+					const active = state.activeIndex === index;
+
+					return (
+						<GreetingPromptRow
+							active={active}
+							description={match.mention.description}
+							key={match.mention.id}
+							label={match.mention.label}
+							onClick={() => onSelect?.(index)}
+							onFocus={() => onActiveChange?.(index)}
+							onMouseEnter={() => onActiveChange?.(index)}
+							shortcut={<RovoAppDirectoryAutocompleteShortcut active={active} index={index} />}
+							visual={
+								match.mention.visual ? (
+									<RichTextMentionVisualMark
+										category={match.mention.category}
+										className="border border-border bg-surface"
+										label={match.mention.label}
+										size="menu"
+										visual={match.mention.visual}
+									/>
+								) : undefined
+							}
+						/>
+					);
+				})}
+			</div>
+		</motion.div>
+	);
+}
+
 export function RovoAppShell({ embedded = false, initialThreadId = null }: Readonly<RovoAppShellProps>) {
 	const router = useRouter();
 	const nav = useTopNavigation();
@@ -332,6 +415,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const [activePendingSkillDraftDetail, setActivePendingSkillDraftDetail] = useState<HermesSkillDraftDetail | null>(null);
 	const [submittingSkillDraftId, setSubmittingSkillDraftId] = useState<string | null>(null);
 	const [selectedHermesSkillIds, setSelectedHermesSkillIds] = useState<string[]>([]);
+	const [directoryAutocompleteState, setDirectoryAutocompleteState] = useState<DirectoryAutocompleteState | null>(null);
+	const [directoryAutocompleteController, setDirectoryAutocompleteController] = useState<ComposerDirectoryAutocompleteController | null>(null);
 	const previousActiveThreadIdRef = useRef<string | null>(null);
 	const activeThreadRecord = useMemo(() => chat.threads.find((thread) => thread.id === chat.activeThreadId) ?? null, [chat.activeThreadId, chat.threads]);
 	const pendingThreadSkillDrafts = useMemo(() => {
@@ -629,6 +714,13 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		},
 		[buildHermesPromptOptions, chat],
 	);
+
+	const handleDirectoryAutocompleteSelect = useCallback((index: number) => {
+		directoryAutocompleteController?.acceptIndex(index);
+	}, [directoryAutocompleteController]);
+	const handleDirectoryAutocompleteActiveChange = useCallback((index: number) => {
+		directoryAutocompleteController?.setActiveIndex(index);
+	}, [directoryAutocompleteController]);
 
 	// Question card / clarification support
 	const activeQuestionCard = useMemo(() => getLatestQuestionCardPayload(chat.messages), [chat.messages]);
@@ -1729,6 +1821,15 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	});
 	const hasActiveThreadRun = typeof chat.activeThreadId === "string" && chat.backgroundStreamThreadIds.has(chat.activeThreadId);
 	const showHomeState = !chat.isLoadingThread && !isArtifactOpen && !hasActiveThreadRun && visibleMessages.length === 0;
+	const shouldShowDirectoryAutocompleteList =
+		showHomeState &&
+		directoryAutocompleteState !== null &&
+		directoryAutocompleteState.matches.length > 0;
+	const shouldHideHomePromptGallery =
+		showHomeState &&
+		directoryAutocompleteState !== null;
+	const directoryAutocompleteLayoutWidth = shellSize.width || viewportWidthPx || 0;
+	const shouldUseWideDirectoryAutocompleteLayout = directoryAutocompleteLayoutWidth >= 760;
 	const shouldReduceMotion = useReducedMotion();
 	const shouldShowTimelineNavigator = !showHomeState && !isArtifactOpen && timelineItems.length > 1;
 	const composerPreviewState = resolveRovoAppComposerPlaceholder({
@@ -2116,6 +2217,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					isMaxMode={chat.isPlanMode}
 					documents={chat.documents}
 					editingMessageId={chat.editingMessageId}
+					hideCustomAgentStarters={showHomeState && directoryAutocompleteState !== null}
 					isStreaming={chat.isStreaming}
 					messages={displayMessages}
 					onBuildPlan={handleBuildPlan}
@@ -2210,6 +2312,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									backgroundArtifactLabel={chat.backgroundArtifactLabel}
 									composerStatus={chat.composerStatus}
 									compact={isArtifactOpen}
+									directoryAutocompleteListVisible={shouldShowDirectoryAutocompleteList}
 									errorMessage={chat.inputError}
 									experimentalDarkCta
 									galleryExpanded={galleryExpanded}
@@ -2217,6 +2320,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									micStream={realtime.micStream}
 									onDismissArtifactContext={handleCloseArtifactPane}
 									onDismissPlanExecutionTracker={chat.dismissPlanExecutionTracker}
+									onDirectoryAutocompleteChange={setDirectoryAutocompleteState}
+									onDirectoryAutocompleteControllerChange={setDirectoryAutocompleteController}
 									onStop={handleStop}
 									onRemoveQueuedPrompt={chat.removeQueuedPrompt}
 									onSubmit={handleComposerSubmit}
@@ -2238,13 +2343,23 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									showBackgroundStop={chat.hasBackgroundDelegation}
 									voiceState={voiceButtonState}
 								/>
+								{showHomeState && shouldShowDirectoryAutocompleteList && directoryAutocompleteState ? (
+									<RovoAppDirectoryAutocompleteRows
+										className="mt-3"
+										shouldReduceMotion={Boolean(shouldReduceMotion)}
+										state={directoryAutocompleteState}
+										useWideLayout={shouldUseWideDirectoryAutocompleteLayout}
+										onActiveChange={handleDirectoryAutocompleteActiveChange}
+										onSelect={handleDirectoryAutocompleteSelect}
+									/>
+								) : null}
 							</motion.div>
 							{!showHomeState ? <Footer className="relative z-10" /> : null}
 						</>
 					)}
 				</div>
 
-				{showHomeState && !isCustomAgentSelected ? (
+				{showHomeState && !isCustomAgentSelected && !shouldHideHomePromptGallery ? (
 					<motion.div
 						initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}

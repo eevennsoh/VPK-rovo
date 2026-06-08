@@ -7,6 +7,8 @@ import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import type { TagColor } from "@/components/ui/tag";
+import { Tile } from "@/components/ui/tile";
+import { resolveBrandLogoPresentation } from "@/app/data/directory/brand-logos";
 import { getSkillIcon } from "@/app/data/directory/visual";
 import type { SkillIconKey } from "@/app/data/directory/types";
 import { cn } from "@/lib/utils";
@@ -15,6 +17,14 @@ import type {
 	RichTextMentionCategory,
 	RichTextMentionVisual,
 } from "./types";
+
+/**
+ * Single source of truth for the front-slot visual tile size in suggestion-menu
+ * rows (both the `RichTextMentionVisualMark` paths here and the fallback
+ * `IconTile` in `suggestion-menu.tsx`). Change this one value to resize every
+ * menu-row avatar, image, logo tile, and icon tile together.
+ */
+export const MENU_VISUAL_TILE_SIZE = "medium" as const;
 
 // Maps an icon's ADS color token to the closest `Tag` color so that mention
 // tokens in the TipTap editor and reference chips in the agent config panel
@@ -163,8 +173,8 @@ export function RichTextMentionVisualMark({
 	// 16px; "menu" (dropdown rows) stays larger.
 	const avatarSize = size === "menu" ? "default" : "xs";
 	const imageSizeClassName = size === "menu" ? "size-8" : "size-4";
-	const logoSize = size === "menu" ? "small" : "xxsmall";
-	const menuTileSize = "medium" as const;
+	const logoSize = "xxsmall";
+	const menuTileSize = MENU_VISUAL_TILE_SIZE;
 	const iconSizeClassName =
 		size === "menu" ? "size-3" : size === "pill" ? "size-3.5" : "size-4";
 	const iconClassName = cn(
@@ -175,10 +185,12 @@ export function RichTextMentionVisualMark({
 	);
 
 	if (visual.kind === "avatar") {
+		// Menu rows keep the avatar's semi-opaque border (matching the avatar demo);
+		// inline tag/pill chips strip it so the border doesn't clutter mid-sentence.
 		return (
 			<Avatar
 				aria-hidden={true}
-				className={cn("after:border-0", className)}
+				className={cn(size !== "menu" && "after:border-0", className)}
 				shape={visual.shape ?? (category === "subagent" ? "hexagon" : "circle")}
 				size={avatarSize}
 			>
@@ -188,34 +200,77 @@ export function RichTextMentionVisualMark({
 	}
 
 	if (visual.kind === "image") {
+		// 2P/3P brand logos. White-tile 3P marks (those with a `16-borderless.svg`
+		// sibling) and bare 2P partner PNGs render inside a VPK-drawn bordered tile,
+		// swapping to the borderless variant so borders don't double up. Solid-fill
+		// 3P marks paint their own background, so they render bare (no border) —
+		// mirroring the self-contained 1p product logos below.
+		const { src, hasBorder } = resolveBrandLogoPresentation(visual.src);
 		return (
-			<span
-				aria-hidden="true"
+			<Tile
+				aria-hidden={true}
 				className={cn(
-					"inline-flex shrink-0 items-center justify-center overflow-hidden",
-					visual.shape === "circle" ? "rounded-full" : "rounded-xs",
-					imageSizeClassName,
+					hasBorder && "bg-surface",
+					// In menu rows: bordered 3P brand glyphs sit at 16px in the 32px tile;
+					// bordered 2P partner marks match the Atlassian/icon tiles' 24px inset.
+					hasBorder &&
+						size === "menu" &&
+						(src.startsWith("/3p/") ? "[&_img]:size-4!" : "[&_img]:size-6!"),
 					className,
 				)}
+				hasBorder={hasBorder}
+				isInset={false}
+				label={label}
+				size={size === "menu" ? "medium" : "xxsmall"}
+				variant="transparent"
 			>
-				<img alt="" aria-hidden="true" className="size-full object-contain" src={visual.src} />
-			</span>
+				<img alt="" aria-hidden="true" className="object-contain" src={src} />
+			</Tile>
 		);
 	}
 
 	if (visual.kind === "logo") {
-		// In menu rows the logo reuses the shared `IconTile` (bordered surface
-		// tile) so logos and icons read consistently. Tags/pills keep the bare
-		// inline logo with no tile.
+		// Most 1p product logos ship their own colored background, so in menu rows
+		// they render as the bare 32px lockup with no surface tile. The plain
+		// "atlassian" mark has no background fill, so it keeps the bordered
+		// `IconTile` (16px glyph in a 32px tile) so the stroked container stays
+		// while the content matches the 16px glyph of every other menu tile.
+		// Tags/pills keep the bare inline 16px logo.
 		if (size === "menu") {
+			if (visual.logoName === "atlassian") {
+				return (
+					<IconTile
+						aria-hidden={true}
+						// IconTile's `medium` variant clamps inner spans/svgs to 16px; the
+						// Atlassian logo wraps its svg in spans, so this keeps the glyph at
+						// 16px inside the stroked tile, matching the other menu tiles.
+						className={cn("border border-border bg-surface", className)}
+						icon={
+							<AtlassianLogo
+								name={visual.logoName}
+								// `@atlaskit/logo` sizes the glyph from this prop; the runtime
+								// accepts a numeric px string even though the type lists named sizes.
+								size={"16" as React.ComponentProps<typeof AtlassianLogo>["size"]}
+								themeAware
+								label={label}
+							/>
+						}
+						label={label}
+						size={menuTileSize}
+					/>
+				);
+			}
+
 			return (
-				<IconTile
-					aria-hidden={true}
-					className={cn("border border-border bg-surface p-0.5", className)}
-					icon={<AtlassianLogo name={visual.logoName} size={logoSize} themeAware label={label} />}
-					label={label}
-					size={menuTileSize}
-				/>
+				<span
+					aria-hidden="true"
+					className={cn(
+						"inline-flex size-8 shrink-0 items-center justify-center [&>span]:size-full! [&_svg]:size-full!",
+						className,
+					)}
+				>
+					<AtlassianLogo name={visual.logoName} size="medium" themeAware label={label} />
+				</span>
 			);
 		}
 
@@ -276,6 +331,13 @@ export function getRichTextMentionVisualDOMSpec(
 	}
 
 	if (visual.kind === "avatar" || visual.kind === "image") {
+		// Image (2P/3P brand) logos use the borderless variant in the fallback too,
+		// so the non-React serialization matches the React mark. Avatars are not
+		// brand logos, so their src is passed through unchanged.
+		const src =
+			visual.kind === "image"
+				? resolveBrandLogoPresentation(visual.src).src
+				: visual.src;
 		return [
 			"span",
 			{
@@ -284,7 +346,7 @@ export function getRichTextMentionVisualDOMSpec(
 				"data-visual-kind": visual.kind,
 				"data-visual-shape": visual.shape ?? undefined,
 			},
-			["img", { alt: "", src: visual.src }],
+			["img", { alt: "", src }],
 		];
 	}
 

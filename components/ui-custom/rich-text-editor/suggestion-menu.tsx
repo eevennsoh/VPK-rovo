@@ -17,6 +17,7 @@ import type {
 import { motion, type Variants } from "motion/react";
 
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PersonIcon from "@atlaskit/icon/core/person";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
@@ -47,12 +48,13 @@ import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 
 import { IconTile } from "@/components/ui/icon-tile";
 import { Input } from "@/components/ui/input";
+import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
-import { ArrowLeftIcon } from "@/components/ui/vpk-icons";
+import { ArrowLeftIcon, ReturnIcon } from "@/components/ui/vpk-icons";
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import { cn } from "@/lib/utils";
 
-import { RichTextMentionVisualMark } from "./mention-visual";
+import { MENU_VISUAL_TILE_SIZE, RichTextMentionVisualMark } from "./mention-visual";
 import {
 	RICH_TEXT_REFERENCE_CATEGORY_OPTIONS,
 	getRichTextReferenceCategoryIcon,
@@ -283,7 +285,7 @@ function getSlashCategoryOrder(
 }
 const ASK_ROVO_SLASH_ITEM: RichTextSuggestionMenuItem = {
 	description: "Ask Rovo to help with the current editor context.",
-	icon: <RovoColorIcon size="small" />,
+	icon: <RovoColorIcon size="xxsmall" />,
 	id: "ask-rovo",
 	isSticky: true,
 	label: "Ask Rovo",
@@ -550,7 +552,7 @@ export function RichTextSuggestionMenu({
 		<div
 			className={cn("rich-text-command-menu", className)}
 			data-nested={isNested ? "true" : undefined}
-			data-list-scrolled={isNested && hasScrolledList ? "true" : undefined}
+			data-list-scrolled={hasScrolledList ? "true" : undefined}
 			role="listbox"
 			aria-label={title}
 		>
@@ -561,12 +563,10 @@ export function RichTextSuggestionMenu({
 					onMouseDown={(event) => event.preventDefault()}
 					onClick={onBack}
 				>
-					<span className="inline-flex size-6 items-center justify-center">
-						<ArrowLeftIcon size="small" />
+					<span className="inline-flex size-8 items-center justify-center">
+						<ArrowLeftIcon className="size-4" />
 					</span>
-					<span className="block text-xs font-semibold leading-4 text-text-subtle">
-						Back
-					</span>
+					<span className="rich-text-command-menu-label">Back</span>
 				</button>
 			) : null}
 			<div
@@ -618,6 +618,7 @@ function RichTextSuggestionMenuOption({
 	item,
 	onSelect,
 }: Readonly<RichTextSuggestionMenuOptionProps>) {
+	const [isInteractionActive, setIsInteractionActive] = useState(false);
 	// Descriptions reveal on hover/selection wherever an item has one, in both
 	// the nested drill-in lists and the merged flat lists, so the collapsed row
 	// stays compact (label only) until the user lands on it. Rows that opt into
@@ -626,6 +627,7 @@ function RichTextSuggestionMenuOption({
 	const hasDescription = Boolean(item.description);
 	const showsPersistentDescription = hasDescription && Boolean(item.persistentDescription);
 	const canRevealMetadata = hasDescription && !item.persistentDescription;
+	const shouldShowReturnShortcut = !item.disabled && (isSelected || isInteractionActive);
 	const className = cn(
 		"rich-text-command-menu-item",
 		isSelected && "rich-text-command-menu-item-selected",
@@ -661,9 +663,15 @@ function RichTextSuggestionMenuOption({
 					) : null}
 				</span>
 			)}
-			{item.shortcut ? (
+			{shouldShowReturnShortcut ? (
+				<span className="rich-text-command-menu-shortcut rich-text-command-menu-return-shortcut" aria-hidden="true">
+					<span className="inline-flex size-4 shrink-0 items-center justify-center">
+						<ReturnIcon className="size-3.5 text-icon-subtlest" />
+					</span>
+				</span>
+			) : item.shortcut ? (
 				<span className="rich-text-command-menu-shortcut">
-					{item.shortcut}
+					<Kbd>{item.shortcut}</Kbd>
 				</span>
 			) : null}
 		</>
@@ -681,6 +689,10 @@ function RichTextSuggestionMenuOption({
 				initial={false}
 				onMouseDown={(event) => event.preventDefault()}
 				onClick={() => onSelect(item)}
+				onBlur={() => setIsInteractionActive(false)}
+				onFocus={() => setIsInteractionActive(true)}
+				onMouseEnter={() => setIsInteractionActive(true)}
+				onMouseLeave={() => setIsInteractionActive(false)}
 				whileFocus="active"
 				whileHover="active"
 			>
@@ -698,6 +710,10 @@ function RichTextSuggestionMenuOption({
 			disabled={item.disabled}
 			onMouseDown={(event) => event.preventDefault()}
 			onClick={() => onSelect(item)}
+			onBlur={() => setIsInteractionActive(false)}
+			onFocus={() => setIsInteractionActive(true)}
+			onMouseEnter={() => setIsInteractionActive(true)}
+			onMouseLeave={() => setIsInteractionActive(false)}
 		>
 			{children}
 		</button>
@@ -755,10 +771,10 @@ function RichTextSuggestionMenuItemVisual({
 
 	return (
 		<IconTile
-			size="small"
+			size={MENU_VISUAL_TILE_SIZE}
 			label={item.label}
 			aria-hidden={true}
-			className="border border-border bg-surface text-icon-subtlest"
+			className="rich-text-command-menu-avatar border border-border bg-surface text-icon-subtlest"
 			icon={item.icon}
 		/>
 	);
@@ -811,11 +827,20 @@ function positionPopup(
 
 /**
  * Chat-composer positioning: instead of opening at the caret, anchor the palette
- * to the prompt-input box (the `.chat-composer-form`), span its full width, and
- * sit 8px away. Flips above the input when there isn't room below — so the menu
- * follows available viewport space.
+ * to the prompt-input root, span its full width, and sit 8px away. Prefer the
+ * Studio-style placement above the input; use the old below placement only when
+ * the menu would clip above the viewport.
  */
 const COMPOSER_POPUP_GAP = 8;
+const PROMPT_INPUT_ROOT_SELECTOR = "[data-prompt-input-root]";
+
+function getComposerAnchorBox(editorDom: HTMLElement): HTMLElement | null {
+	return (
+		editorDom.closest<HTMLElement>(PROMPT_INPUT_ROOT_SELECTOR) ??
+		editorDom.closest<HTMLElement>(".chat-composer-form") ??
+		editorDom.closest<HTMLElement>("form")
+	);
+}
 
 function positionComposerPopup(
 	element: HTMLDivElement | null,
@@ -825,19 +850,15 @@ function positionComposerPopup(
 		return;
 	}
 
-	const box =
-		editorDom.closest<HTMLElement>(".chat-composer-form") ??
-		editorDom.closest<HTMLElement>("form");
+	const box = getComposerAnchorBox(editorDom);
 	if (!box) {
 		return;
 	}
 
 	const rect = box.getBoundingClientRect();
 	const popupHeight = element.offsetHeight || 0;
-	const spaceBelow = window.innerHeight - rect.bottom - COMPOSER_POPUP_GAP;
 	const spaceAbove = rect.top - COMPOSER_POPUP_GAP;
-	// Prefer below; flip up only when the menu doesn't fit below but fits better above.
-	const placeAbove = popupHeight > spaceBelow && spaceAbove > spaceBelow;
+	const placeAbove = popupHeight <= spaceAbove;
 
 	element.style.maxWidth = "none";
 	element.style.left = `${rect.left}px`;
@@ -1011,7 +1032,11 @@ function buildFlatSurfaceRows(
 					: {
 							id: getFlatFooterId(section.key),
 							label: expanded ? "View less" : "View more",
-							icon: <ChevronDownIcon label="" size="small" />,
+							icon: expanded ? (
+								<ChevronUpIcon label="" size="small" />
+							) : (
+								<ChevronDownIcon label="" size="small" />
+							),
 							isSticky: true,
 						},
 			);

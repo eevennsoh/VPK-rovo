@@ -2,14 +2,19 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
+import type { ReactNode } from "react";
 import { token } from "@/lib/tokens";
 import Heading from "@/components/blocks/shared-ui/heading";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustration";
 import { VisualIdentityTile } from "@/components/projects/shared/components/visual-identity-tile";
-import { IconTile } from "@/components/ui/icon-tile";
+import { GreetingPromptRow } from "@/components/projects/shared/components/greeting-prompt-row";
 import { defaultSuggestions, type RovoSuggestion } from "@/lib/rovo-suggestions";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
+import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor";
+import { Kbd } from "@/components/ui/kbd";
+import { ReturnIcon } from "@/components/ui/vpk-icons";
+import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_ILLUSTRATION_SRC = "/illustration-ai/chat/light.svg";
@@ -97,6 +102,10 @@ interface ChatGreetingProps {
 	isMaxMode?: boolean;
 	/** Optional custom suggestions list */
 	suggestions?: ReadonlyArray<RovoSuggestion>;
+	/** Composer-owned skill/tool autocomplete state for filtered empty-state rows. */
+	directoryAutocompleteState?: DirectoryAutocompleteState | null;
+	/** Uses two columns for large Rovo-style empty states only. */
+	useWideSuggestionLayout?: boolean;
 	/** Optional selected agent profile for custom-agent empty states. */
 	selectedAgent?: RovoAgentProfile | null;
 	/**
@@ -106,10 +115,15 @@ interface ChatGreetingProps {
 	isAgentTest?: boolean;
 	/** Callback when a suggestion is clicked */
 	onSuggestionClick?: (suggestion: RovoSuggestion) => void;
+	onDirectoryAutocompleteSelect?: (index: number) => void;
+	onDirectoryAutocompleteActiveChange?: (index: number) => void;
 }
 
 interface SkillListItemProps {
+	active?: boolean;
+	onActive?: () => void;
 	suggestion: RovoSuggestion;
+	shortcut?: ReactNode;
 	onClick?: () => void;
 }
 
@@ -122,41 +136,89 @@ function getPairedDarkIllustrationSrc(illustrationSrc: string): string {
 }
 
 function SkillListItem({
+	active = false,
+	onActive,
 	suggestion,
+	shortcut,
 	onClick,
 }: Readonly<SkillListItemProps>) {
-	const IconComponent = suggestion.icon;
 	const iconColor = suggestion.id === "work-last-7-days" || suggestion.id === "draft-confluence-page"
 		? token("color.icon.accent.blue")
 		: token("color.icon.subtlest");
 
 	return (
-		<button
-			type="button"
+		<GreetingPromptRow
+			description={suggestion.description}
+			icon={suggestion.icon}
+			iconColor={iconColor}
+			imageSrc={suggestion.imageSrc}
+			label={suggestion.label}
+			active={active}
 			onClick={onClick}
-			className="flex w-full items-center gap-3 rounded-lg p-[var(--ds-space-075)] transition-colors hover:bg-bg-neutral-subtle-hovered"
-		>
-			<IconTile
-				size="medium"
-				label={suggestion.label}
-				aria-hidden={true}
-				className="border border-border bg-surface"
-				icon={
-					suggestion.imageSrc ? (
-						<Image
-							src={suggestion.imageSrc}
-							alt={suggestion.label}
-							width={16}
-							height={16}
-							className="size-4 object-contain"
-						/>
-					) : IconComponent ? (
-						<IconComponent label={suggestion.label} color={iconColor} />
-					) : null
-				}
-			/>
-			<span className="text-left text-sm text-text-subtle">{suggestion.label}</span>
-		</button>
+			onFocus={onActive}
+			onMouseEnter={onActive}
+			shortcut={shortcut}
+		/>
+	);
+}
+
+function DirectoryAutocompleteShortcut({
+	active,
+	index,
+}: Readonly<{
+	active: boolean;
+	index: number;
+}>) {
+	if (active) {
+		return <ReturnIcon className="size-3.5 text-icon-subtlest" />;
+	}
+
+	return (
+		<Kbd className="h-5 min-w-7 rounded-sm bg-bg-neutral px-1.5 text-[11px] text-text-subtle">
+			⌘{index + 1}
+		</Kbd>
+	);
+}
+
+function DirectoryAutocompleteItem({
+	active,
+	index,
+	state,
+	onActive,
+	onSelect,
+}: Readonly<{
+	active: boolean;
+	index: number;
+	state: DirectoryAutocompleteState;
+	onActive?: () => void;
+	onSelect?: () => void;
+}>) {
+	const match = state.matches[index];
+	if (!match) {
+		return null;
+	}
+
+	return (
+		<GreetingPromptRow
+			active={active}
+			description={match.mention.description}
+			label={match.mention.label}
+			onClick={onSelect}
+			onFocus={onActive}
+			onMouseEnter={onActive}
+			shortcut={<DirectoryAutocompleteShortcut active={active} index={index} />}
+			visual={
+				match.mention.visual ? (
+					<RichTextMentionVisualMark
+						category={match.mention.category}
+						className="border border-border bg-surface"
+						label={match.mention.label}
+						size="menu"
+						visual={match.mention.visual}
+					/>
+				) : undefined
+			}
+		/>
 	);
 }
 
@@ -164,48 +226,31 @@ function CustomAgentStarterItem({
 	suggestion,
 	onClick,
 }: Readonly<SkillListItemProps>) {
-	const IconComponent = suggestion.icon;
+	const hasOwnVisual = Boolean(suggestion.imageSrc || suggestion.icon);
 
 	return (
-		<button
-			className="flex w-full items-center gap-4 rounded-lg p-[var(--ds-space-075)] pr-3 text-left transition-colors hover:bg-bg-neutral-subtle-hovered"
+		<GreetingPromptRow
+			description={suggestion.description}
+			icon={suggestion.icon}
+			iconColor={token("color.icon.subtle")}
+			imageSrc={suggestion.imageSrc}
+			label={suggestion.label}
 			onClick={onClick}
-			type="button"
-		>
-			{suggestion.imageSrc || IconComponent ? (
-				<IconTile
-					aria-hidden={true}
-					className="border border-border bg-surface"
-					icon={
-						suggestion.imageSrc ? (
-							<Image
-								src={suggestion.imageSrc}
-								alt={suggestion.label}
-								width={16}
-								height={16}
-								className="size-4 object-contain"
-							/>
-						) : IconComponent ? (
-							<IconComponent label={suggestion.label} color={token("color.icon.subtle")} />
-						) : null
-					}
-					label={suggestion.label}
-					size="medium"
-				/>
-			) : (
-				// Greeting prompts have no inherent icon, so use a single consistent
-				// "AI chat" glyph on the neutral surface treatment (bordered white
-				// tile + subtle icon) instead of a per-prompt contextual identity.
-				<VisualIdentityTile
-					className="border border-border bg-surface"
-					decorative
-					label={suggestion.label}
-					size="medium"
-					visualIdentity={{ iconName: CUSTOM_AGENT_STARTER_ICON_NAME, tileVariant: "gray" }}
-				/>
-			)}
-			<span className="text-left text-sm text-text-subtle">{suggestion.label}</span>
-		</button>
+			visual={
+				hasOwnVisual ? undefined : (
+					// Greeting prompts have no inherent icon, so use a single consistent
+					// "AI chat" glyph on the neutral surface treatment (bordered white
+					// tile + subtle icon) instead of a per-prompt contextual identity.
+					<VisualIdentityTile
+						className="border border-border bg-surface"
+						decorative
+						label={suggestion.label}
+						size="medium"
+						visualIdentity={{ iconName: CUSTOM_AGENT_STARTER_ICON_NAME, tileVariant: "gray" }}
+					/>
+				)
+			}
+		/>
 	);
 }
 
@@ -268,11 +313,23 @@ export default function ChatGreeting({
 	isAgentTest = false,
 	showHero = true,
 	suggestions,
+	directoryAutocompleteState = null,
+	useWideSuggestionLayout = false,
 	onSuggestionClick,
+	onDirectoryAutocompleteSelect,
+	onDirectoryAutocompleteActiveChange,
 }: Readonly<ChatGreetingProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const customAgent = selectedAgent !== null && !isRovoAgentProfile(selectedAgent) ? selectedAgent : null;
 	const greetingSuggestions = suggestions ?? defaultSuggestions;
+	const shouldRenderDirectoryMatches =
+		!customAgent &&
+		directoryAutocompleteState !== null &&
+		directoryAutocompleteState.matches.length > 0;
+	const shouldHideSuggestionList =
+		!customAgent &&
+		directoryAutocompleteState !== null &&
+		directoryAutocompleteState.matches.length === 0;
 	const resolvedHeading = isMaxMode ? MAX_MODE_HEADING : heading;
 	const resolvedIllustrationSrc = isMaxMode ? MAX_MODE_ILLUSTRATION_SRC : illustrationSrc;
 	const resolvedIllustrationDarkSrc = isMaxMode
@@ -344,18 +401,35 @@ export default function ChatGreeting({
 								</motion.div>
 							</motion.div>
 						) : null}
-						<motion.div className="w-full" variants={CHAT_GREETING_CONTAINER_VARIANTS}>
-							<div className="flex flex-col gap-1">
-								{greetingSuggestions.map((suggestion) => (
-									<motion.div key={suggestion.id} variants={itemVariants}>
-										<SkillListItem
-											suggestion={suggestion}
-											onClick={() => onSuggestionClick?.(suggestion)}
-										/>
-									</motion.div>
-								))}
-							</div>
-						</motion.div>
+						{shouldHideSuggestionList ? null : (
+							<motion.div className="w-full" variants={CHAT_GREETING_CONTAINER_VARIANTS}>
+								<div className={cn(
+									"grid gap-1",
+									shouldRenderDirectoryMatches && useWideSuggestionLayout ? "grid-cols-2 gap-x-8" : "grid-cols-1",
+								)}>
+									{shouldRenderDirectoryMatches
+										? directoryAutocompleteState.matches.map((match, index) => (
+												<motion.div key={match.mention.id} variants={itemVariants}>
+													<DirectoryAutocompleteItem
+														active={directoryAutocompleteState.activeIndex === index}
+														index={index}
+														state={directoryAutocompleteState}
+														onActive={() => onDirectoryAutocompleteActiveChange?.(index)}
+														onSelect={() => onDirectoryAutocompleteSelect?.(index)}
+													/>
+												</motion.div>
+											))
+										: greetingSuggestions.map((suggestion) => (
+												<motion.div key={suggestion.id} variants={itemVariants}>
+													<SkillListItem
+														suggestion={suggestion}
+														onClick={() => onSuggestionClick?.(suggestion)}
+													/>
+												</motion.div>
+											))}
+								</div>
+							</motion.div>
+						)}
 					</motion.div>
 				)}
 			</AnimatePresence>

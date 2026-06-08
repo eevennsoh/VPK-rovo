@@ -47,7 +47,51 @@ test("Rovo app empty state renders selected custom agent profile and starters", 
 	assert.match(MESSAGES_SOURCE, /itemVariants=\{emptyStateItemVariants\}/u);
 	assert.match(SHELL_SOURCE, /const \{ selectedAgent \} = useRovoSelectedAgent\(\);/u);
 	assert.match(SHELL_SOURCE, /selectedAgent=\{selectedAgent\}/u);
-	assert.match(SHELL_SOURCE, /showHomeState && !isCustomAgentSelected \? \(/u);
+	assert.match(SHELL_SOURCE, /showHomeState && !isCustomAgentSelected && !shouldHideHomePromptGallery \? \(/u);
+});
+
+test("Rovo app empty state keeps directory autocomplete rows below the composer", () => {
+	assert.doesNotMatch(MESSAGES_SOURCE, /function RovoAppDirectoryAutocompleteRows/u);
+	assert.doesNotMatch(MESSAGES_SOURCE, /directoryAutocompleteState\?: DirectoryAutocompleteState \| null;/u);
+	assert.doesNotMatch(MESSAGES_SOURCE, /onDirectoryAutocompleteActiveChange\?: \(index: number\) => void;/u);
+	assert.match(MESSAGES_SOURCE, /hideCustomAgentStarters\?: boolean;/u);
+	assert.match(MESSAGES_SOURCE, /hideStarters=\{hideCustomAgentStarters\}/u);
+	assert.match(SHELL_SOURCE, /import \{ Kbd \} from "@\/components\/ui\/kbd";/u);
+	assert.match(SHELL_SOURCE, /import \{ ReturnIcon \} from "@\/components\/ui\/vpk-icons";/u);
+	assert.match(SHELL_SOURCE, /import \{ RichTextMentionVisualMark, type ComposerDirectoryAutocompleteController \} from "@\/components\/ui-custom\/rich-text-editor";/u);
+	assert.match(SHELL_SOURCE, /function RovoAppDirectoryAutocompleteRows/u);
+	assert.match(SHELL_SOURCE, /useWideLayout \? "grid-cols-2 gap-x-8" : "grid-cols-1"/u);
+	assert.match(SHELL_SOURCE, /state\.matches\.map/u);
+	assert.match(SHELL_SOURCE, /const active = state\.activeIndex === index;/u);
+	assert.match(SHELL_SOURCE, /active=\{active\}/u);
+	assert.match(SHELL_SOURCE, /shortcut=\{<RovoAppDirectoryAutocompleteShortcut active=\{active\} index=\{index\} \/>\}/u);
+	assert.match(SHELL_SOURCE, /onClick=\{\(\) => onSelect\?\.\(index\)\}/u);
+	assert.match(SHELL_SOURCE, /onMouseEnter=\{\(\) => onActiveChange\?\.\(index\)\}/u);
+	assert.match(SHELL_SOURCE, /<RichTextMentionVisualMark/u);
+	assert.match(SHELL_SOURCE, /<ReturnIcon className="size-3\.5 text-icon-subtlest" \/>/u);
+	assert.match(SHELL_SOURCE, /⌘\{index \+ 1\}/u);
+	assert.match(SHELL_SOURCE, /<RovoAppComposer[\s\S]*\/>[\s\S]*<RovoAppDirectoryAutocompleteRows/u);
+	assert.match(SHELL_SOURCE, /className="mt-3"/u);
+	assert.match(SHELL_SOURCE, /state=\{directoryAutocompleteState\}/u);
+});
+
+test("Rovo app shell wires directory autocomplete to composer, messages, and home gallery", () => {
+	assert.match(SHELL_SOURCE, /useState<DirectoryAutocompleteState \| null>\(null\)/u);
+	assert.match(SHELL_SOURCE, /useState<ComposerDirectoryAutocompleteController \| null>\(null\)/u);
+	assert.match(SHELL_SOURCE, /const shouldShowDirectoryAutocompleteList =[\s\S]*showHomeState[\s\S]*directoryAutocompleteState !== null[\s\S]*directoryAutocompleteState\.matches\.length > 0;/u);
+	assert.match(SHELL_SOURCE, /const shouldHideHomePromptGallery =[\s\S]*showHomeState[\s\S]*directoryAutocompleteState !== null;/u);
+	assert.match(SHELL_SOURCE, /const directoryAutocompleteLayoutWidth = shellSize\.width \|\| viewportWidthPx \|\| 0;/u);
+	assert.match(SHELL_SOURCE, /const shouldUseWideDirectoryAutocompleteLayout = directoryAutocompleteLayoutWidth >= 760;/u);
+	assert.match(SHELL_SOURCE, /directoryAutocompleteController\?\.acceptIndex\(index\)/u);
+	assert.match(SHELL_SOURCE, /directoryAutocompleteController\?\.setActiveIndex\(index\)/u);
+	assert.match(SHELL_SOURCE, /hideCustomAgentStarters=\{showHomeState && directoryAutocompleteState !== null\}/u);
+	assert.match(SHELL_SOURCE, /<RovoAppDirectoryAutocompleteRows[\s\S]*onActiveChange=\{handleDirectoryAutocompleteActiveChange\}[\s\S]*onSelect=\{handleDirectoryAutocompleteSelect\}/u);
+	assert.match(SHELL_SOURCE, /directoryAutocompleteListVisible=\{shouldShowDirectoryAutocompleteList\}/u);
+	assert.match(SHELL_SOURCE, /onDirectoryAutocompleteChange=\{setDirectoryAutocompleteState\}/u);
+	assert.match(SHELL_SOURCE, /onDirectoryAutocompleteControllerChange=\{setDirectoryAutocompleteController\}/u);
+	assert.match(SHELL_SOURCE, /useWideLayout=\{shouldUseWideDirectoryAutocompleteLayout\}/u);
+	assert.doesNotMatch(SHELL_SOURCE, /useWideLayout=\{!isArtifactOpen\}/u);
+	assert.match(SHELL_SOURCE, /showHomeState && !isCustomAgentSelected && !shouldHideHomePromptGallery/u);
 });
 
 test("Rovo app selected custom agent context is merged into fullscreen submissions", () => {

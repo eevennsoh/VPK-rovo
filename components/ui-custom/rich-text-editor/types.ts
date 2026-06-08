@@ -86,13 +86,51 @@ export type RichTextMentionSources = Partial<
  */
 export type RichTextSuggestionVariant = "nested" | "flat";
 
+/**
+ * Suggestion layout, set either uniformly or per trigger.
+ *
+ * - A bare {@link RichTextSuggestionVariant} applies to both the "@" mention and
+ *   "/" command menus (the common case).
+ * - An object form picks a variant per trigger, e.g. `{ mention: "flat",
+ *   command: "nested" }` for the Studio agent editor, where "@" expands people /
+ *   subagents inline (flat) while "/" keeps the Skills / Tools / Knowledge /
+ *   Format drill-in (nested). Either key defaults to `"flat"` when omitted.
+ */
+export type RichTextSuggestionVariantConfig =
+	| RichTextSuggestionVariant
+	| {
+			mention?: RichTextSuggestionVariant;
+			command?: RichTextSuggestionVariant;
+		};
+
+/** Resolve the "@" mention menu variant from a (possibly per-trigger) config. */
+export function resolveMentionVariant(
+	config: RichTextSuggestionVariantConfig | undefined,
+): RichTextSuggestionVariant {
+	if (typeof config === "string") {
+		return config;
+	}
+	return config?.mention ?? "flat";
+}
+
+/** Resolve the "/" command menu variant from a (possibly per-trigger) config. */
+export function resolveCommandVariant(
+	config: RichTextSuggestionVariantConfig | undefined,
+): RichTextSuggestionVariant {
+	if (typeof config === "string") {
+		return config;
+	}
+	return config?.command ?? "flat";
+}
+
 export interface RichTextEditorExtensionOptions {
 	getMentionSources?: () => RichTextMentionSources | undefined;
 	onAskRovo?: (editor: Editor) => void;
 	/**
-	 * Layout for the live "@" / "/" suggestion menus. Defaults to `"flat"`.
+	 * Layout for the live "@" / "/" suggestion menus. Accepts a single variant
+	 * (applied to both triggers) or a per-trigger object. Defaults to `"flat"`.
 	 */
-	suggestionVariant?: RichTextSuggestionVariant;
+	suggestionVariant?: RichTextSuggestionVariantConfig;
 	/**
 	 * Whether the "/" command menu includes the "Format" parent category (and its
 	 * block/mark formatting commands). Defaults to `true` for the full document
@@ -101,10 +139,10 @@ export interface RichTextEditorExtensionOptions {
 	 */
 	includeFormat?: boolean;
 	/**
-	 * When `true`, the `@`/`/` palette anchors to the prompt-input box (the
-	 * `.chat-composer-form`) instead of the caret: it spans the box's full width,
-	 * sits 8px away, and flips above/below by available viewport space. The chat
-	 * composer sets this; the document editor leaves it `false` (caret-anchored).
+	 * When `true`, the `@`/`/` palette anchors to the prompt-input root instead
+	 * of the caret: it spans the box's full width, sits 8px away, and prefers
+	 * above-input placement with a viewport fallback. The chat composer sets this;
+	 * the document editor leaves it `false` (caret-anchored).
 	 */
 	anchorToInput?: boolean;
 }
