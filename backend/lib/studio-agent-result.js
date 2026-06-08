@@ -193,6 +193,20 @@ function normalizeStudioAgentResult(value) {
 		getNonEmptyString(definition.avatar?.url);
 	const avatarFallback = normalizeAvatarFallback(definition, name);
 	const tools = normalizeStringList(definition.tools, { maxItems: 12 });
+	const skills = normalizeStringList(definition.skills, { maxItems: 24 });
+	const knowledge = normalizeStringList(definition.knowledge, { maxItems: 24 });
+	const subagents = normalizeStringList(definition.subagents, { maxItems: 24 });
+	const triggers = normalizeStringList(definition.triggers, { maxItems: 12 });
+	const conversationStarterIcons = normalizeStringList(
+		definition.conversationStarterIcons || definition.conversation_starter_icons,
+		{ maxItems: MAX_GENERATED_AGENT_CONVERSATION_STARTERS },
+	);
+	const memoryMode =
+		getNonEmptyString(definition.memoryMode) || getNonEmptyString(definition.memory_mode);
+	const reasoningMode =
+		getNonEmptyString(definition.reasoningMode) || getNonEmptyString(definition.reasoning_mode);
+	const knowledgeMode =
+		getNonEmptyString(definition.knowledgeMode) || getNonEmptyString(definition.knowledge_mode);
 	const trigger = getNonEmptyString(definition.trigger);
 	const guardrail =
 		getNonEmptyString(definition.guardrail) ||
@@ -218,7 +232,15 @@ function normalizeStudioAgentResult(value) {
 		...(avatarFallback ? { avatarFallback } : {}),
 		...(assignedColumn ? { assignedColumn } : {}),
 		...(trigger ? { trigger } : {}),
+		...(triggers.length > 0 ? { triggers } : {}),
 		...(tools.length > 0 ? { tools } : {}),
+		...(skills.length > 0 ? { skills } : {}),
+		...(knowledge.length > 0 ? { knowledge } : {}),
+		...(subagents.length > 0 ? { subagents } : {}),
+		...(conversationStarterIcons.length > 0 ? { conversationStarterIcons } : {}),
+		...(memoryMode ? { memoryMode } : {}),
+		...(reasoningMode ? { reasoningMode } : {}),
+		...(knowledgeMode ? { knowledgeMode } : {}),
 		...(guardrail ? { guardrail } : {}),
 		action: "create",
 	};

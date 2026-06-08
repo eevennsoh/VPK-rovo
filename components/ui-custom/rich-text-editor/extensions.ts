@@ -21,12 +21,21 @@ import { Suggestion } from "@tiptap/suggestion";
 import StarterKit from "@tiptap/starter-kit";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 
+import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import { RichTextMentionNodeView } from "./mention-node-view";
+import {
+	createMentionTokenParser,
+	mentionMarkdownTokenizer,
+	MENTION_MARKDOWN_TOKEN_NAME,
+	type MentionTokenResolver,
+	serializeMentionNode,
+} from "./mention-token-codec";
 import {
 	getRichTextMentionVisualAttrs,
 	getRichTextMentionVisualDOMSpec,
 	getRichTextMentionVisualFromAttrs,
 } from "./mention-visual";
+import { isRichTextReferenceCategory } from "./reference-categories";
 import {
 	createMentionSuggestionRenderer,
 	createSlashSuggestionRenderer,
@@ -71,7 +80,39 @@ export function getMentionNodeAttrs(mention: RichTextMentionItem) {
 	};
 }
 
+/**
+ * Resolve a `@[category:id]` markdown token back to the mention attrs the node
+ * view needs, looking the id up in the shared editor-palette directory (the same
+ * source the `@`/`/` palettes draw from). Returns `undefined` for an unknown id
+ * so the codec leaves the token as plain text. Lookup is by exact `id` because a
+ * token carries the id, not the label.
+ */
+const resolveMentionToken: MentionTokenResolver = (category, id) => {
+	if (!isRichTextReferenceCategory(category)) {
+		return undefined;
+	}
+
+	const item = EDITOR_PALETTE_MENTION_SOURCES[category]?.find(
+		(candidate) => candidate.id === id,
+	);
+	if (!item) {
+		return undefined;
+	}
+
+	return {
+		label: item.label,
+		attrs: getRichTextMentionVisualAttrs(item.visual),
+	};
+};
+
 export const RichTextMention = Mention.extend({
+	// Teach tiptap-markdown to round-trip a mention as `@[category:id]`. Without
+	// these the node is dropped from the markdown `value` (it has no default
+	// markdown spec), so an agent's tokenized `instructions` lose their lozenges.
+	markdownTokenName: MENTION_MARKDOWN_TOKEN_NAME,
+	markdownTokenizer: mentionMarkdownTokenizer,
+	parseMarkdown: createMentionTokenParser(resolveMentionToken),
+	renderMarkdown: serializeMentionNode,
 	addAttributes() {
 		return {
 			...(this.parent?.() ?? {}),

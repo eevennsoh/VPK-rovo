@@ -47,6 +47,7 @@ import {
 	ROVO_AGENT_SELECTOR_AGENTS,
 	type RovoAgentProfile,
 } from "@/app/data/directory/agents";
+import { repairGeneratedAgentCatalog } from "@/app/data/directory/repair-agent-result";
 import {
 	cancelRovoAppRun,
 	createRovoAppThread,
@@ -1145,6 +1146,20 @@ function buildSessionAgentProfileFromResult(params: {
 			},
 		}),
 	};
+}
+
+/**
+ * Repairs an LLM-generated agent-result against the real catalog before it
+ * becomes a session entry: fuzzy-repairs each tools/skills/knowledge/subagents
+ * id (dropping no-matches), repairs `@[category:id]` tokens in the instructions,
+ * and UNIONs body-referenced ids into the matching array. Safe on empty results
+ * (from-scratch agents stay untouched). Pure core lives in
+ * `app/data/directory/repair-agent-result.ts` so it is unit testable.
+ */
+function applyGeneratedCatalogRepair(
+	result: RovoDataParts["agent-result"],
+): RovoDataParts["agent-result"] {
+	return { ...result, ...repairGeneratedAgentCatalog(result) };
 }
 
 function createSessionAgentEntryFromResult(params: {
@@ -2912,7 +2927,7 @@ export function RovoChatProvider({
 			options?: RegisterCreatedAgentOptions
 		) => {
 			const entry = createSessionAgentEntryFromResult({
-				agentResult,
+				agentResult: applyGeneratedCatalogRepair(agentResult),
 				sessionAgentEntries: sessionAgentEntriesRef.current,
 				sourceKey: options?.sourceKey,
 				staticAgentProfiles,

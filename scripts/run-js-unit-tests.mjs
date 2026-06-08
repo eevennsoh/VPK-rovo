@@ -12,6 +12,16 @@ const INCLUDED_TEST_PREFIXES = [
 	"rovo/",
 	"scripts/",
 ];
+// Specific component-tree tests gated by CI even though `components/` as a whole
+// is not (its 200+ source-assertion tests have drifted and aren't CI-maintained).
+// This covers the agent-generation creation-context seam. NOTE: the broader
+// `rovo-app-agent-creation-flow.test.js` is deliberately NOT gated — it bundles
+// pre-existing source-grep tests (greeting, landing layout) that drift whenever
+// main refactors those components; the focused tests here plus the e2e pipeline
+// test in `app/data/directory/agent-generation-e2e.test.js` cover this feature.
+const INCLUDED_TEST_FILES = new Set([
+	"components/projects/studio/lib/studio-agent-creation-context.test.js",
+]);
 
 const gitResult = spawnSync("git", [
 	"ls-files",
@@ -35,7 +45,10 @@ const testFiles = gitResult.stdout
 		if (!filePath || EXCLUDED_TEST_FILES.has(filePath)) {
 			return false;
 		}
-		if (!INCLUDED_TEST_PREFIXES.some((prefix) => filePath.startsWith(prefix))) {
+		const isIncluded =
+			INCLUDED_TEST_FILES.has(filePath) ||
+			INCLUDED_TEST_PREFIXES.some((prefix) => filePath.startsWith(prefix));
+		if (!isIncluded) {
 			return false;
 		}
 
