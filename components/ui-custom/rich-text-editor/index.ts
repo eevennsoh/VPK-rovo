@@ -48,4 +48,6 @@ export type {
 	RichTextMentionVisual,
 	RichTextReferenceCategory,
 	RichTextSlashCategory,
+	RichTextSuggestionVariant,
+	RichTextSuggestionVariantConfig,
 } from "./types";

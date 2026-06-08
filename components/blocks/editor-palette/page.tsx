@@ -5,6 +5,7 @@ import { useState, type ReactNode } from "react";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 
+import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
@@ -367,12 +368,7 @@ function PalettePanel({ trigger, caption, children }: Readonly<PalettePanelProps
 	return (
 		<figure className="m-0 flex flex-col" style={{ gap: token("space.100") }}>
 			<figcaption className="flex items-center" style={{ gap: token("space.100") }}>
-				<span
-					className="inline-flex items-center justify-center rounded-sm bg-surface-sunken font-mono text-text-subtle"
-					style={{ width: 24, height: 24, fontSize: 13 }}
-				>
-					{trigger}
-				</span>
+				<Kbd>{trigger}</Kbd>
 				<span className="text-sm font-medium text-text">{caption}</span>
 			</figcaption>
 			{children}

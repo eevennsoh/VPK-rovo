@@ -229,3 +229,15 @@ test("Subagent switcher rows expose a hover-reveal delete button", () => {
 	// Both surfaces feed their delete handler into the navigator.
 	assert.match(SUBAGENTS_PAGE_SOURCE, /onDeleteSubagent=\{handleDeleteSubagent\}/u);
 });
+
+test("Subagent switcher switch rests at the far right and only persists when disabled", () => {
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /function handleSwitchMouseDown\(event: MouseEvent<HTMLElement>\)/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /event\.preventDefault\(\);/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /onMouseDown=\{handleSwitchMouseDown\}/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /enabled \? "opacity-0" : "opacity-100"/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /has-\[:focus-visible\]:opacity-100/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /right-2 group-hover\/switcher-row:right-9/u);
+	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /focus-within:(?:right-9|opacity-100)/u);
+	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /has-\[:focus-visible\]:right-9/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /group-hover\/switcher-row:translate-x-0 group-hover\/switcher-row:opacity-100/u);
+});

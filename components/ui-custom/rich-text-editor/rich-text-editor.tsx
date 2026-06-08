@@ -33,7 +33,7 @@ import type {
 	RichTextMentionItem,
 	RichTextMentionRemovalRequest,
 	RichTextMentionSources,
-	RichTextSuggestionVariant,
+	RichTextSuggestionVariantConfig,
 } from "./types";
 
 const dataFlowStreamdownPlugins = { mermaid };
@@ -53,9 +53,10 @@ interface RichTextEditorProps
 	/**
 	 * Layout for the live "@" / "/" suggestion menus. `"flat"` (default) merges
 	 * each surface's sections into one list separated by headings; `"nested"`
-	 * keeps the original drill-in category lists.
+	 * keeps the original drill-in category lists. Pass an object to set each
+	 * trigger independently, e.g. `{ mention: "flat", command: "nested" }`.
 	 */
-	suggestionVariant?: RichTextSuggestionVariant;
+	suggestionVariant?: RichTextSuggestionVariantConfig;
 	mentionRemovalRequest?: RichTextMentionRemovalRequest | null;
 	onMarkdownChange?: (value: string) => void;
 	onPlainTextChange?: (value: string) => void;
