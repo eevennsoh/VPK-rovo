@@ -25,3 +25,11 @@ export function EditorPaletteFlat() {
 		</div>
 	);
 }
+
+export function EditorPaletteSearch() {
+	return (
+		<div className="flex w-full justify-center p-6">
+			<EditorPalette variant="search" searchCategory="tool" showLiveEditor={false} />
+		</div>
+	);
+}

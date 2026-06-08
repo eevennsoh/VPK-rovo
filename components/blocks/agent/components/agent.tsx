@@ -54,6 +54,10 @@ import {
 	EDITOR_PALETTE_MENTION_SOURCES,
 	getDirectoryMentionItemOrFallback,
 } from "@/components/blocks/editor-palette/data/mention-sources";
+import {
+	EditorPaletteSearchPicker,
+	type EditorPaletteSearchCategory,
+} from "@/components/blocks/editor-palette/page";
 import { Accordion,
 	AccordionContent,
 	AccordionItem,
@@ -93,6 +97,7 @@ import {
 	type RichTextMentionRemovalRequest,
 	type RichTextMentionSources,
 	type RichTextReferenceCategory,
+	type RichTextSuggestionMenuItem,
 	type RichTextSuggestionVariantConfig,
 	RichTextMentionVisualMark,
 	RichTextEditor,
@@ -278,6 +283,13 @@ const AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD: Record<AgentConfigReferenceListF
 	knowledge: "knowledge",
 	skills: "skill",
 	subagents: "subagent",
+	tools: "tool",
+};
+type AgentInlineSearchField = Extract<AgentConfigReferenceListFieldName, "knowledge" | "skills" | "tools">;
+
+const AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD: Record<AgentInlineSearchField, EditorPaletteSearchCategory> = {
+	knowledge: "knowledge",
+	skills: "skill",
 	tools: "tool",
 };
 
@@ -1601,6 +1613,7 @@ interface AgentFilledSummaryRowProps {
 	addLabel?: string;
 	hideWhenEmpty?: boolean;
 	itemElemBefore?: (item: string, index: number) => ReactNode;
+	inlinePicker?: ReactNode;
 	onAdd?: () => void;
 	onItemClick?: (item: string, index: number) => void;
 	onRemoveItem?: (index: number) => void;
@@ -1612,6 +1625,7 @@ function AgentFilledSummaryRow({
 	addLabel,
 	agentFieldName,
 	hideWhenEmpty = false,
+	inlinePicker,
 	itemElemBefore,
 	items,
 	label,
@@ -1634,60 +1648,88 @@ function AgentFilledSummaryRow({
 
 	return (
 		<div
-			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-5"
+			className="group/agent-row -mx-2 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered"
 			data-agent-field={agentFieldName}
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
-			<div className="sm:w-32 sm:shrink-0">
-				<AgentSectionLabel>{label}</AgentSectionLabel>
-			</div>
-			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
-				{items.map((item, index) => {
-					// Pair the final chip with the inline "Add" affordance inside a single
-					// non-wrapping group so they reflow to the next line together. Without
-					// this, a row-filling set of chips pushes "Add" onto its own line and
-					// leaves an awkward gap beside the last chip.
-					const isLastItem = index === items.length - 1;
-					const chip = (
-						<AgentReferenceChip
-							category={referenceCategory}
-							elemBefore={itemElemBefore?.(item, index)}
-							key={`${label}-${item}-${index}`}
-							label={item}
-							onClick={onItemClick ? () => onItemClick(item, index) : undefined}
-							onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
-							tagColor={tagColor}
-						/>
-					);
-
-					if (isLastItem && addLabel) {
-						return (
-							<div
-								key={`${label}-${item}-${index}-group`}
-								className="inline-flex max-w-full items-center gap-1.5"
-							>
-								{chip}
-								<AgentAddValueButton
-									className="shrink-0 opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-focus-within/agent-row:opacity-100 focus-visible:opacity-100"
-									icon={addIcon}
-									label={addLabel}
-									onClick={onAdd}
+			<div className="flex flex-col gap-y-1 sm:flex-row sm:items-center sm:gap-x-5">
+				<div className="sm:w-32 sm:shrink-0">
+					<AgentSectionLabel>{label}</AgentSectionLabel>
+				</div>
+				<div className="flex min-w-0 flex-1 flex-col gap-2">
+					<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
+						{items.map((item, index) => {
+							// Pair the final chip with the inline "Add" affordance inside a single
+							// non-wrapping group so they reflow to the next line together. Without
+							// this, a row-filling set of chips pushes "Add" onto its own line and
+							// leaves an awkward gap beside the last chip.
+							const isLastItem = index === items.length - 1;
+							const chip = (
+								<AgentReferenceChip
+									category={referenceCategory}
+									elemBefore={itemElemBefore?.(item, index)}
+									key={`${label}-${item}-${index}`}
+									label={item}
+									onClick={onItemClick ? () => onItemClick(item, index) : undefined}
+									onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
+									tagColor={tagColor}
 								/>
-							</div>
-						);
-					}
+							);
 
-					return chip;
-				})}
-				{isEmpty && addLabel ? (
-					<AgentAddValueButton
-						icon={addIcon}
-						label={addLabel}
-						onClick={onAdd}
-					/>
-				) : null}
+							if (isLastItem && addLabel) {
+								return (
+									<div
+										key={`${label}-${item}-${index}-group`}
+										className="inline-flex max-w-full items-center gap-1.5"
+									>
+										{chip}
+										<AgentAddValueButton
+											className="shrink-0 opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-focus-within/agent-row:opacity-100 focus-visible:opacity-100"
+											icon={addIcon}
+											label={addLabel}
+											onClick={onAdd}
+										/>
+									</div>
+								);
+							}
+
+							return chip;
+						})}
+						{isEmpty && addLabel ? (
+							<AgentAddValueButton
+								icon={addIcon}
+								label={addLabel}
+								onClick={onAdd}
+							/>
+						) : null}
+					</div>
+					{inlinePicker ? (
+						<div className="w-full max-w-80">
+							{inlinePicker}
+						</div>
+					) : null}
+				</div>
 			</div>
 		</div>
+	);
+}
+
+function AgentInlineReferenceSearchPicker({
+	field,
+	onBrowseAll,
+	onSelectItem,
+}: Readonly<{
+	field: AgentInlineSearchField;
+	onBrowseAll: () => void;
+	onSelectItem: (item: RichTextSuggestionMenuItem) => void;
+}>) {
+	return (
+		<EditorPaletteSearchPicker
+			autoFocus
+			category={AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD[field]}
+			onBrowseAll={onBrowseAll}
+			onSelectItem={onSelectItem}
+		/>
 	);
 }
 
@@ -1806,6 +1848,7 @@ interface AgentFilledConfigSummaryProps {
 	hideEmptyRows?: boolean;
 	knowledgeMode?: KnowledgeModeValue;
 	memoryMode: MemoryModeValue;
+	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
@@ -1826,6 +1869,7 @@ function AgentFilledConfigSummary({
 	knowledgeMode,
 	memoryMode,
 	onAppendListItem,
+	onAddListValues,
 	onEditTriggers,
 	onKnowledgeModeChange,
 	onMemoryModeChange,
@@ -1842,8 +1886,32 @@ function AgentFilledConfigSummary({
 	const knowledgeItems = getNonEmptyConfigItems(config.knowledge);
 	const starterSummaryItems = getConversationStarterSummaryItems(config).slice(0, MAX_AGENT_CONVERSATION_STARTERS);
 	const starterItems = starterSummaryItems.map((item) => item.label);
+	const [inlineSearchField, setInlineSearchField] = useState<AgentInlineSearchField | null>(null);
 
 	const hasKnowledgeSelector = Boolean(knowledgeMode && onKnowledgeModeChange);
+	const openInlineSearchPicker = (field: AgentInlineSearchField) => {
+		if (!onAddListValues) {
+			openAgentDirectoryOrAppendListItem(field, field, onOpenDirectory, onAppendListItem);
+			return;
+		}
+
+		setInlineSearchField((current) => current === field ? null : field);
+	};
+	const browseInlineSearchPicker = (field: AgentInlineSearchField) => {
+		setInlineSearchField(null);
+		openAgentDirectoryOrAppendListItem(field, field, onOpenDirectory, onAppendListItem);
+	};
+	const selectInlineSearchItem = (
+		field: AgentInlineSearchField,
+		item: RichTextSuggestionMenuItem,
+	) => {
+		if (item.disabled) {
+			return;
+		}
+
+		onAddListValues?.(field, [item.label]);
+		setInlineSearchField(null);
+	};
 	// Rows declare their canonical order and whether they currently hold any user
 	// content. Empty rows get sorted to the bottom (preserving the canonical order
 	// within each group) so configured fields stay visually grouped at the top.
@@ -1905,9 +1973,16 @@ function AgentFilledConfigSummary({
 					addLabel={getAgentFilledSummaryAddLabel("tools", toolItems.length === 0, showAddButtons)}
 					hideWhenEmpty={hideEmptyRows}
 					agentFieldName="tools"
+					inlinePicker={inlineSearchField === "tools" ? (
+						<AgentInlineReferenceSearchPicker
+							field="tools"
+							onBrowseAll={() => browseInlineSearchPicker("tools")}
+							onSelectItem={(item) => selectInlineSearchItem("tools", item)}
+						/>
+					) : undefined}
 					items={toolItems}
 					label="Tools"
-					onAdd={() => openAgentDirectoryOrAppendListItem("tools", "tools", onOpenDirectory, onAppendListItem)}
+					onAdd={() => openInlineSearchPicker("tools")}
 					// Clicking a tool chip opens the tools directory focused on that tool.
 					onItemClick={onOpenDirectory ? (item) => onOpenDirectory("tools", item) : undefined}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("tools", index) : undefined}
@@ -2919,6 +2994,7 @@ function AgentConfigProfile({
 interface AgentCompactConfigToolbarBelowProps {
 	config: AgentConfigFormValue;
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
+	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
@@ -2936,6 +3012,7 @@ interface AgentCompactConfigToolbarBelowProps {
 function AgentCompactConfigToolbarBelow({
 	config,
 	hiddenConfigFields,
+	onAddListValues,
 	onAppendListItem,
 	onConnectTrigger,
 	onEditTriggers,
@@ -3083,6 +3160,7 @@ function AgentCompactConfigToolbarBelow({
 							onKnowledgeModeChange={setKnowledgeMode}
 							memoryMode={memoryMode}
 							onMemoryModeChange={setMemoryMode}
+							onAddListValues={onAddListValues}
 							onAppendListItem={onAppendListItem}
 							onConnectTrigger={onConnectTrigger}
 							onEditTriggers={onEditTriggers}
@@ -3340,6 +3418,7 @@ export const AgentConfigFields = memo(
 						<AgentCompactConfigToolbarBelow
 							config={config}
 							hiddenConfigFields={hiddenConfigFields}
+							onAddListValues={handleAddListValues}
 							onAppendListItem={handleAppendListItem}
 							onConnectTrigger={onConnectTrigger}
 							onEditTriggers={handleEditTriggers}

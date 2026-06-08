@@ -6971,6 +6971,13 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "editor-palette-search": dynamic(
+    () =>
+      import("./demos/blocks/editor-palette-demo").then((mod) => ({
+        default: mod.EditorPaletteSearch,
+      })),
+    { ssr: false },
+  ),
 
   // Agent
   "agent-demo-full": dynamic(
