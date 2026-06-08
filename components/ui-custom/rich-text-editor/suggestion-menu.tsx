@@ -664,7 +664,7 @@ function RichTextSuggestionMenuOption({
 			)}
 			{shouldShowReturnShortcut ? (
 				<span className="rich-text-command-menu-shortcut rich-text-command-menu-return-shortcut" aria-hidden="true">
-					<ReturnIcon className="size-3.5" />
+					<ReturnIcon className="size-3.5 text-icon-subtlest" />
 				</span>
 			) : item.shortcut ? (
 				<span className="rich-text-command-menu-shortcut">

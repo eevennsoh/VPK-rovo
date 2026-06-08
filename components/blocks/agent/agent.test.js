@@ -846,7 +846,7 @@ test("Slash command menu contains every toolbar command", () => {
 test("Suggestion menu active selectable rows replace shortcut text with ReturnIcon", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ ArrowLeftIcon, ReturnIcon \} from "@\/components\/ui\/vpk-icons";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const shouldShowReturnShortcut = !item\.disabled && \(isSelected \|\| isInteractionActive\);/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /shouldShowReturnShortcut \? \([\s\S]*rich-text-command-menu-return-shortcut[\s\S]*<ReturnIcon className="size-3\.5" \/>[\s\S]*\) : item\.shortcut \? \(/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /shouldShowReturnShortcut \? \([\s\S]*rich-text-command-menu-return-shortcut[\s\S]*<ReturnIcon className="size-3\.5 text-icon-subtlest" \/>[\s\S]*\) : item\.shortcut \? \(/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onFocus=\{\(\) => setIsInteractionActive\(true\)\}/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onMouseEnter=\{\(\) => setIsInteractionActive\(true\)\}/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.headingLabel !== undefined \? \([\s\S]*className="rich-text-command-menu-heading"[\s\S]*role="presentation"/u);

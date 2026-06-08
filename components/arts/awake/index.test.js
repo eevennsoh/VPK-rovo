@@ -113,7 +113,7 @@ test("Weather splits pointer-driven chrome between the top theme control and bot
 	// (`@/components/ui/kbd`) for consistent styling. The ReturnIcon
 	// glyph is wrapped in a `<Kbd>` so it visually reads like the
 	// other shortcut keys (Enter == Return key).
-	assert.match(WEATHER_SOURCE, /<Kbd className="font-sans">\s*<ReturnIcon className="size-3\.5" \/>\s*<\/Kbd>/);
+	assert.match(WEATHER_SOURCE, /<Kbd className="font-sans">\s*<ReturnIcon className="size-3\.5 text-icon-subtlest" \/>\s*<\/Kbd>/);
 	assert.match(WEATHER_SOURCE, /<Kbd className="font-sans">w<\/Kbd>\s+<span>awake<\/span>/);
 	assert.match(WEATHER_SOURCE, /update/);
 	assert.match(

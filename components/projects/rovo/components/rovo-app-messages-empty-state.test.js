@@ -68,7 +68,7 @@ test("Rovo app empty state keeps directory autocomplete rows below the composer"
 	assert.match(SHELL_SOURCE, /onClick=\{\(\) => onSelect\?\.\(index\)\}/u);
 	assert.match(SHELL_SOURCE, /onMouseEnter=\{\(\) => onActiveChange\?\.\(index\)\}/u);
 	assert.match(SHELL_SOURCE, /<RichTextMentionVisualMark/u);
-	assert.match(SHELL_SOURCE, /<ReturnIcon className="size-3\.5" \/>/u);
+	assert.match(SHELL_SOURCE, /<ReturnIcon className="size-3\.5 text-icon-subtlest" \/>/u);
 	assert.match(SHELL_SOURCE, /⌘\{index \+ 1\}/u);
 	assert.match(SHELL_SOURCE, /<RovoAppComposer[\s\S]*\/>[\s\S]*<RovoAppDirectoryAutocompleteRows/u);
 	assert.match(SHELL_SOURCE, /className="mt-3"/u);

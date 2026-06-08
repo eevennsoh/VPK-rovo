@@ -604,7 +604,7 @@ function WeatherKeyboardHints({
 					</span>
 					<span className="inline-flex flex-col items-center gap-0.5 sm:flex-row sm:gap-1">
 						<Kbd className="font-sans">
-							<ReturnIcon className="size-3.5" />
+							<ReturnIcon className="size-3.5 text-icon-subtlest" />
 						</Kbd>
 						update
 						</span>

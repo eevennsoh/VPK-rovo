@@ -170,7 +170,7 @@ function DirectoryAutocompleteShortcut({
 	index: number;
 }>) {
 	if (active) {
-		return <ReturnIcon className="size-3.5" />;
+		return <ReturnIcon className="size-3.5 text-icon-subtlest" />;
 	}
 
 	return (

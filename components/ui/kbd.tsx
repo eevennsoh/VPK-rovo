@@ -79,7 +79,7 @@ function renderToken(token: string): ReactNode {
 
 /** Shared keycap chrome (surface, color, radius, font, layout). */
 const KBD_BASE_CLASS =
-  "bg-surface-sunken text-text-subtle in-data-[slot=tooltip-content]:bg-background/20 in-data-[slot=tooltip-content]:text-background h-4 gap-1 rounded-sm font-sans text-xs pointer-events-none inline-flex items-center justify-center select-none"
+  "bg-surface-sunken text-text-subtlest [&_svg]:text-icon-subtlest in-data-[slot=tooltip-content]:bg-background/20 in-data-[slot=tooltip-content]:text-background in-data-[slot=tooltip-content]:[&_svg]:text-background h-4 gap-1 rounded-sm font-sans text-xs pointer-events-none inline-flex items-center justify-center select-none"
 
 /** A single glyph or icon renders as a fixed 16×16 square (no side padding). */
 const KBD_SQUARE_CLASS = "size-4"
