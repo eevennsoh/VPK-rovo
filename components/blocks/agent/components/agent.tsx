@@ -497,7 +497,7 @@ export function AgentCompactHeaderNav({
 	}, []);
 
 	return (
-		<div className="flex min-w-0 flex-1 items-center gap-4">
+		<div className="flex min-w-0 flex-1 items-center gap-1">
 			<Avatar label="Agent" shape="hexagon" size="sm">
 				{isAtlassianLogoSource(avatarSrc) ? (
 					<AtlassianLogo name="atlassian" label="Agent" size="small" />
@@ -880,6 +880,19 @@ function AgentCompactNavMenuFooter({ children }: Readonly<{ children: ReactNode 
 	);
 }
 
+// Permanent footer pinned to the bottom of a scrolling popup. The popup itself
+// is the scroll container (`p-1` frame, `overflow-y-auto max-h`), so this block
+// bleeds to the popup edges (`-mx-1 -mb-1`), re-pads to the `p-1` rhythm, sticks
+// to the bottom, paints the popup background, and carries a top border so the
+// list scrolls cleanly underneath it.
+function AgentCompactNavMenuStickyFooter({ children }: Readonly<{ children: ReactNode }>) {
+	return (
+		<div className="sticky bottom-0 -mx-1 -mb-1 mt-1 border-t border-border bg-popover p-1">
+			{children}
+		</div>
+	);
+}
+
 function AgentCompactSubagentsNavButton({
 	item,
 	onCreateSubagent,
@@ -945,10 +958,11 @@ function AgentCompactSubagentsNavButton({
 	);
 }
 
-// Trigger dropdown: 0 triggers → "Add trigger ›" flyout + "Manage triggers"
-// footer; ≥1 → list of trigger chips with the same flyout/footer. The flyout
-// reuses the full TriggerPicker provider/event content so behavior matches the
-// expanded summary row exactly.
+// Trigger dropdown: the trigger list (when any) scrolls in the popup body, and
+// the "Add trigger ›" flyout + "Manage triggers" live in a permanent sticky
+// footer pinned to the bottom — so adding triggers grows the list at the top
+// while the footer stays anchored. The flyout reuses the full TriggerPicker
+// provider/event content so behavior matches the expanded summary row exactly.
 function AgentCompactTriggersNavButton({
 	item,
 	triggers,
@@ -1005,40 +1019,34 @@ function AgentCompactTriggersNavButton({
 				)}
 			/>
 			<MenubarContent align="start" className="w-64">
-				{isEmpty ? (
-					<>
-						{addTriggerFlyout}
-						<AgentCompactNavMenuFooter>
-							<DropdownMenuItem
-								elemBefore={<AutomationIcon label="" size="small" />}
-								onClick={() => onEditTriggers?.()}
-							>
-								Manage triggers
-							</DropdownMenuItem>
-						</AgentCompactNavMenuFooter>
-					</>
-				) : (
-					<>
-						<AgentCompactNavMenuList>
-							<DropdownMenuGroup className="p-0">
-								{triggers.map((trigger, index) => {
-									const definition = definitionsAlignItems ? triggerDefinitions?.[index] : undefined;
-									const elemBefore = definition ? renderAgentTriggerProviderIcon(definition) : undefined;
-									return (
-										<DropdownMenuItem
-											elemBefore={elemBefore ?? undefined}
-											key={`trigger-${trigger}-${index}`}
-											onClick={() => onEditTriggers?.()}
-										>
-											{trigger}
-										</DropdownMenuItem>
-									);
-								})}
-							</DropdownMenuGroup>
-						</AgentCompactNavMenuList>
-						<AgentCompactNavMenuFooter>{addTriggerFlyout}</AgentCompactNavMenuFooter>
-					</>
+				{isEmpty ? null : (
+					<AgentCompactNavMenuList>
+						<DropdownMenuGroup className="p-0">
+							{triggers.map((trigger, index) => {
+								const definition = definitionsAlignItems ? triggerDefinitions?.[index] : undefined;
+								const elemBefore = definition ? renderAgentTriggerProviderIcon(definition) : undefined;
+								return (
+									<DropdownMenuItem
+										elemBefore={elemBefore ?? undefined}
+										key={`trigger-${trigger}-${index}`}
+										onClick={() => onEditTriggers?.()}
+									>
+										{trigger}
+									</DropdownMenuItem>
+								);
+							})}
+						</DropdownMenuGroup>
+					</AgentCompactNavMenuList>
 				)}
+				<AgentCompactNavMenuStickyFooter>
+					{addTriggerFlyout}
+					<DropdownMenuItem
+						elemBefore={<AutomationIcon label="" size="small" />}
+						onClick={() => onEditTriggers?.()}
+					>
+						Manage triggers
+					</DropdownMenuItem>
+				</AgentCompactNavMenuStickyFooter>
 			</MenubarContent>
 		</MenubarMenu>
 	);

@@ -130,10 +130,11 @@ export function GreetingPromptRow({
 }: Readonly<GreetingPromptRowProps>) {
 	// Mirrors `.rich-text-command-menu-item`: a CSS grid with a fixed 32px icon
 	// column, 12px gap, 6px horizontal padding, and a fixed 44px row height (no
-	// vertical padding — the 32px tile + `items-center` set the rhythm). Hover
-	// and corner radius use the same tokens as the palette row.
+	// vertical padding — the 32px tile + `items-center` set the rhythm). The
+	// container uses a 12px corner radius and the same hover token as the
+	// palette row.
 	const buttonClassName = cn(
-		"grid h-11 w-full grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 rounded-[3px] px-1.5 text-left transition-colors hover:bg-bg-neutral-subtle-hovered",
+		"grid h-11 w-full grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 rounded-[12px] px-1.5 text-left transition-colors hover:bg-bg-neutral-subtle-hovered",
 		active && "bg-bg-neutral-subtle-hovered",
 		className,
 	);

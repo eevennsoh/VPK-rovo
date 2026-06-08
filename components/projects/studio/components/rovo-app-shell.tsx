@@ -4218,7 +4218,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				{shouldShowHomeStarterBento ? (
 					<motion.div
 						key="home-starter-bento"
-						className="z-10 mx-auto mb-5 w-[90%]"
+						className="z-10 mx-auto mb-3 w-[90%]"
 						animate="visible"
 						custom={homeStarterBentoPresence}
 						exit="exit"
@@ -4408,7 +4408,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					ref={isDefaultAgentHomeState ? defaultHomeTopSpacerRef : undefined}
 					aria-hidden
 					className={cn(
-						"min-h-[40px]",
+						"min-h-3",
 						isDefaultAgentHomeState && defaultHomeTopSpacerHeight !== null ? "shrink-0" : "flex-1 shrink",
 					)}
 					style={isDefaultAgentHomeState && defaultHomeTopSpacerHeight !== null ? { flexBasis: defaultHomeTopSpacerHeight } : undefined}
@@ -4435,7 +4435,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			) : null}
 			{showHomeState && !shouldSplitArtifactPane ? (
 				<>
-					{!shouldShowAgentConfigPane ? <div className="min-h-12 flex-1 shrink" /> : null}
+					{!shouldShowAgentConfigPane ? <div className="min-h-0 flex-1 shrink" /> : null}
 					<Footer className="shrink-0" />
 				</>
 			) : null}

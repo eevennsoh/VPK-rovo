@@ -132,10 +132,12 @@ function ListCell({ edge, className, ...props }: Readonly<ListCellProps>) {
 		edge === "trailing" && isFirst && "rounded-tr-[12px]",
 		edge === "trailing" && isLast && "rounded-br-[12px]",
 	)
-	// Edge cells get 12px of outer padding so the first/last content sits
-	// visually balanced against the rounded card corners; inner cells use 8px.
+	// Edge cells get outer padding so the first/last content sits visually
+	// balanced against the rounded card corners; inner cells use 8px. The
+	// leading edge uses 16px so the first cell's content aligns to the card
+	// gutter; the trailing edge keeps 12px.
 	const edgePaddingClass = cn(
-		edge === "leading" && "pl-3",
+		edge === "leading" && "pl-4",
 		edge === "trailing" && "pr-3",
 	)
 	return (

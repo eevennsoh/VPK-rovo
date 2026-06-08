@@ -185,10 +185,12 @@ export function RichTextMentionVisualMark({
 	);
 
 	if (visual.kind === "avatar") {
+		// Menu rows keep the avatar's semi-opaque border (matching the avatar demo);
+		// inline tag/pill chips strip it so the border doesn't clutter mid-sentence.
 		return (
 			<Avatar
 				aria-hidden={true}
-				className={cn("after:border-0", className)}
+				className={cn(size !== "menu" && "after:border-0", className)}
 				shape={visual.shape ?? (category === "subagent" ? "hexagon" : "circle")}
 				size={avatarSize}
 			>

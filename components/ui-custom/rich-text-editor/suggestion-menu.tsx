@@ -17,6 +17,7 @@ import type {
 import { motion, type Variants } from "motion/react";
 
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PersonIcon from "@atlaskit/icon/core/person";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
@@ -664,7 +665,9 @@ function RichTextSuggestionMenuOption({
 			)}
 			{shouldShowReturnShortcut ? (
 				<span className="rich-text-command-menu-shortcut rich-text-command-menu-return-shortcut" aria-hidden="true">
-					<ReturnIcon className="size-3.5 text-icon-subtlest" />
+					<span className="inline-flex size-4 shrink-0 items-center justify-center">
+						<ReturnIcon className="size-3.5 text-icon-subtlest" />
+					</span>
 				</span>
 			) : item.shortcut ? (
 				<span className="rich-text-command-menu-shortcut">
@@ -1029,7 +1032,11 @@ function buildFlatSurfaceRows(
 					: {
 							id: getFlatFooterId(section.key),
 							label: expanded ? "View less" : "View more",
-							icon: <ChevronDownIcon label="" size="small" />,
+							icon: expanded ? (
+								<ChevronUpIcon label="" size="small" />
+							) : (
+								<ChevronDownIcon label="" size="small" />
+							),
 							isSticky: true,
 						},
 			);

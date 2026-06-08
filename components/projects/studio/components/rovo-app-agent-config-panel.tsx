@@ -615,7 +615,13 @@ export function RovoAppAgentConfigPanel({
 											onSubagentNameChange={handleTriggerNameChange}
 											subagentCondition={activePrompt?.condition}
 											onSubagentConditionChange={handleConditionChange}
-											compactScrollAreaClassName="-mr-4 pr-4"
+											// Pull the scroll area's left edge back 6px (-ml-1.5) so it
+											// cancels part of the shared px-4 wrapper. Combined with the
+											// scroll area's own px-1.5 ring-clearance inset, content lands
+											// flush at 16px from the panel edge (10px wrapper + 6px inset)
+											// while the focus-ring clip clearance is preserved. Scoped to
+											// this config branch only; access/surfaces/users keep px-4.
+											compactScrollAreaClassName="-ml-1.5 -mr-4 pr-4"
 											idPrefix={`agent-${profileId}-${activeConfigId}`}
 											onTextChange={handleConfigTextChange}
 											onProfileTextChange={handleBaseTextChange}

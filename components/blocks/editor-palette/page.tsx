@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 
 import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
@@ -249,7 +250,11 @@ function getFlatSectionRows(
 				: {
 						id: getSectionFooterId(section.category),
 						label: showAll ? "View less" : "View more",
-						icon: <ChevronDownIcon label="" size="small" />,
+						icon: showAll ? (
+							<ChevronUpIcon label="" size="small" />
+						) : (
+							<ChevronDownIcon label="" size="small" />
+						),
 						isSticky: true,
 					},
 		);
