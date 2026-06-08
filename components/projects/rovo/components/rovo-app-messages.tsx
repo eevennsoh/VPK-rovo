@@ -9,7 +9,7 @@ import { Message, MessageActions, MessageContent, MessageCopyAction, MessageEdit
 import { ArtifactCard, type ArtifactKind } from "@/components/ui-custom/artifact";
 import { AdsReasoningTrigger, Reasoning, ReasoningContent } from "@/components/ui-custom/reasoning";
 import { Button } from "@/components/ui/button";
-import { IconTile } from "@/components/ui/icon-tile";
+import { GreetingPromptRow } from "@/components/projects/shared/components/greeting-prompt-row";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { getRovoAppInterruptionLabel } from "@/lib/rovo-app-interruptions";
 import { resolveRovoAppMessageArtifactDisplay, resolveRovoAppOrphanArtifactDisplay, type RovoAppPendingArtifactResult } from "@/components/projects/rovo/lib/rovo-app-message-artifacts";
@@ -790,27 +790,19 @@ function RovoAppCustomAgentEmptyState({
 			</div>
 			<motion.div className="flex w-full max-w-[720px] flex-col gap-2" variants={ROVO_APP_EMPTY_STATE_CONTAINER_VARIANTS}>
 				{agent.starters.map((starter) => {
-					const IconComponent = starter.icon;
 					const starterPrompt = starter.prompt ?? starter.label;
 
 					return (
 						<motion.div key={starter.id} variants={itemVariants}>
-							<button
-								className="flex w-full items-center gap-4 rounded-lg p-2 text-left transition-colors hover:bg-bg-neutral-subtle-hovered"
+							<GreetingPromptRow
+								description={starter.description}
+								icon={starter.icon}
+								imageSrc={starter.imageSrc}
+								label={starter.label}
 								onClick={() => {
 									void onSelectSuggestion(starterPrompt);
 								}}
-								type="button"
-							>
-								<IconTile
-									aria-hidden={true}
-									className="border border-border bg-surface"
-									icon={IconComponent ? <IconComponent label={starter.label} /> : null}
-									label={starter.label}
-									size="medium"
-								/>
-								<span className="min-w-0 flex-1 text-base font-semibold leading-6 text-text-subtle">{starter.label}</span>
-							</button>
+							/>
 						</motion.div>
 					);
 				})}

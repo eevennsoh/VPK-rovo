@@ -212,18 +212,34 @@ export function RichTextMentionVisualMark({
 	}
 
 	if (visual.kind === "logo") {
-		// In menu rows the logo reuses the shared `IconTile` (bordered surface
-		// tile) so logos and icons read consistently. Tags/pills keep the bare
-		// inline logo with no tile.
+		// Most 1p product logos ship their own colored background, so in menu rows
+		// they render as the bare 32px lockup with no surface tile. The plain
+		// "atlassian" mark has no background fill, so it keeps the bordered
+		// `IconTile` (16px glyph in a 32px tile) to stay visually contained.
+		// Tags/pills keep the bare inline 16px logo.
 		if (size === "menu") {
+			if (visual.logoName === "atlassian") {
+				return (
+					<IconTile
+						aria-hidden={true}
+						className={cn("border border-border bg-surface", className)}
+						icon={<AtlassianLogo name={visual.logoName} size={logoSize} themeAware label={label} />}
+						label={label}
+						size={menuTileSize}
+					/>
+				);
+			}
+
 			return (
-				<IconTile
-					aria-hidden={true}
-					className={cn("border border-border bg-surface", className)}
-					icon={<AtlassianLogo name={visual.logoName} size={logoSize} themeAware label={label} />}
-					label={label}
-					size={menuTileSize}
-				/>
+				<span
+					aria-hidden="true"
+					className={cn(
+						"inline-flex size-8 shrink-0 items-center justify-center [&>span]:size-full! [&_svg]:size-full!",
+						className,
+					)}
+				>
+					<AtlassianLogo name={visual.logoName} size="medium" themeAware label={label} />
+				</span>
 			);
 		}
 

@@ -504,8 +504,8 @@
 	margin: -4px -4px 0;
 	width: calc(100% + 8px);
 	border-radius: 0;
-	padding-left: 12px;
-	padding-right: 12px;
+	padding-left: 10px;
+	padding-right: 10px;
 	cursor: text;
 }
 

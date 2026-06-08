@@ -17,6 +17,11 @@ import TranslateIcon from "@atlaskit/icon/core/translate";
 export interface RovoSuggestion {
 	id: string;
 	label: string;
+	/**
+	 * Short byline revealed on hover/selection beneath the label, matching the
+	 * editor palette's command-menu rows. Omit for a label-only row.
+	 */
+	description?: string;
 	/** Prompt text sent to the AI — defaults to `label` if omitted */
 	prompt?: string;
 	/** Local icon component for skills - uses any to accommodate icon props */
@@ -147,6 +152,7 @@ export const defaultSuggestions: RovoSuggestion[] = [
 	{
 		id: "work-last-7-days",
 		label: "Last 7 days of work",
+		description: "Summarize your recent Jira and Confluence activity",
 		prompt: LAST_7_DAYS_PROMPT,
 		icon: TimelineIcon,
 		contextDescription: LAST_7_DAYS_SITE_SCOPE_CONTEXT,
@@ -155,30 +161,35 @@ export const defaultSuggestions: RovoSuggestion[] = [
 	{
 		id: "draft-confluence-page",
 		label: "Find related RFPs",
+		description: "Surface relevant RFP pages from Confluence",
 		icon: PageIcon,
 		type: "skill",
 	},
 	{
 		id: "translate-text",
 		label: "Translate this text",
+		description: "Translate content into another language",
 		icon: TranslateIcon,
 		type: "skill",
 	},
 	{
 		id: "figma-design-context",
 		label: "Get Figma design context",
+		description: "Pull frames and specs from a Figma file",
 		imageSrc: "/3p/figma/16.svg",
 		type: "prompt",
 	},
 	{
 		id: "send-slack-message",
 		label: "Send Slack message",
+		description: "Draft and post a message to a Slack channel",
 		imageSrc: "/3p/slack/16-borderless.svg",
 		type: "prompt",
 	},
 	{
 		id: "list-google-calendar-events",
 		label: "List Google Calendar events",
+		description: "Show today's events from Google Calendar",
 		prompt: GOOGLE_CALENDAR_LIST_EVENTS_PROMPT,
 		contextDescription: GOOGLE_CALENDAR_LIST_EVENTS_CONTEXT,
 		imageSrc: "/3p/google-calendar/16-borderless.svg",

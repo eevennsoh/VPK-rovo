@@ -7,7 +7,7 @@ import Heading from "@/components/blocks/shared-ui/heading";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustration";
 import { VisualIdentityTile } from "@/components/projects/shared/components/visual-identity-tile";
-import { IconTile } from "@/components/ui/icon-tile";
+import { GreetingPromptRow } from "@/components/projects/shared/components/greeting-prompt-row";
 import { defaultSuggestions, type RovoSuggestion } from "@/lib/rovo-suggestions";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 import { cn } from "@/lib/utils";
@@ -125,38 +125,19 @@ function SkillListItem({
 	suggestion,
 	onClick,
 }: Readonly<SkillListItemProps>) {
-	const IconComponent = suggestion.icon;
 	const iconColor = suggestion.id === "work-last-7-days" || suggestion.id === "draft-confluence-page"
 		? token("color.icon.accent.blue")
 		: token("color.icon.subtlest");
 
 	return (
-		<button
-			type="button"
+		<GreetingPromptRow
+			description={suggestion.description}
+			icon={suggestion.icon}
+			iconColor={iconColor}
+			imageSrc={suggestion.imageSrc}
+			label={suggestion.label}
 			onClick={onClick}
-			className="flex w-full items-center gap-3 rounded-lg p-[var(--ds-space-075)] transition-colors hover:bg-bg-neutral-subtle-hovered"
-		>
-			<IconTile
-				size="medium"
-				label={suggestion.label}
-				aria-hidden={true}
-				className="border border-border bg-surface"
-				icon={
-					suggestion.imageSrc ? (
-						<Image
-							src={suggestion.imageSrc}
-							alt={suggestion.label}
-							width={16}
-							height={16}
-							className="size-4 object-contain"
-						/>
-					) : IconComponent ? (
-						<IconComponent label={suggestion.label} color={iconColor} />
-					) : null
-				}
-			/>
-			<span className="text-left text-sm text-text-subtle">{suggestion.label}</span>
-		</button>
+		/>
 	);
 }
 
@@ -164,48 +145,31 @@ function CustomAgentStarterItem({
 	suggestion,
 	onClick,
 }: Readonly<SkillListItemProps>) {
-	const IconComponent = suggestion.icon;
+	const hasOwnVisual = Boolean(suggestion.imageSrc || suggestion.icon);
 
 	return (
-		<button
-			className="flex w-full items-center gap-4 rounded-lg p-[var(--ds-space-075)] pr-3 text-left transition-colors hover:bg-bg-neutral-subtle-hovered"
+		<GreetingPromptRow
+			description={suggestion.description}
+			icon={suggestion.icon}
+			iconColor={token("color.icon.subtle")}
+			imageSrc={suggestion.imageSrc}
+			label={suggestion.label}
 			onClick={onClick}
-			type="button"
-		>
-			{suggestion.imageSrc || IconComponent ? (
-				<IconTile
-					aria-hidden={true}
-					className="border border-border bg-surface"
-					icon={
-						suggestion.imageSrc ? (
-							<Image
-								src={suggestion.imageSrc}
-								alt={suggestion.label}
-								width={16}
-								height={16}
-								className="size-4 object-contain"
-							/>
-						) : IconComponent ? (
-							<IconComponent label={suggestion.label} color={token("color.icon.subtle")} />
-						) : null
-					}
-					label={suggestion.label}
-					size="medium"
-				/>
-			) : (
-				// Greeting prompts have no inherent icon, so use a single consistent
-				// "AI chat" glyph on the neutral surface treatment (bordered white
-				// tile + subtle icon) instead of a per-prompt contextual identity.
-				<VisualIdentityTile
-					className="border border-border bg-surface"
-					decorative
-					label={suggestion.label}
-					size="medium"
-					visualIdentity={{ iconName: CUSTOM_AGENT_STARTER_ICON_NAME, tileVariant: "gray" }}
-				/>
-			)}
-			<span className="text-left text-sm text-text-subtle">{suggestion.label}</span>
-		</button>
+			visual={
+				hasOwnVisual ? undefined : (
+					// Greeting prompts have no inherent icon, so use a single consistent
+					// "AI chat" glyph on the neutral surface treatment (bordered white
+					// tile + subtle icon) instead of a per-prompt contextual identity.
+					<VisualIdentityTile
+						className="border border-border bg-surface"
+						decorative
+						label={suggestion.label}
+						size="medium"
+						visualIdentity={{ iconName: CUSTOM_AGENT_STARTER_ICON_NAME, tileVariant: "gray" }}
+					/>
+				)
+			}
+		/>
 	);
 }
 
