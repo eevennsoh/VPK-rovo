@@ -209,8 +209,11 @@ export function RichTextMentionVisualMark({
 				aria-hidden={true}
 				className={cn(
 					hasBorder && "bg-surface",
-					// Bordered menu glyph matches the Atlassian/icon menu tiles' 24px inset.
-					hasBorder && size === "menu" && "[&_img]:size-6!",
+					// In menu rows: bordered 3P brand glyphs sit at 16px in the 32px tile;
+					// bordered 2P partner marks match the Atlassian/icon tiles' 24px inset.
+					hasBorder &&
+						size === "menu" &&
+						(src.startsWith("/3p/") ? "[&_img]:size-4!" : "[&_img]:size-6!"),
 					className,
 				)}
 				hasBorder={hasBorder}
