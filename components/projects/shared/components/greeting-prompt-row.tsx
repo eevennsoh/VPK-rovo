@@ -28,9 +28,9 @@ const GREETING_COPY_CLASS =
 // (`font: var(--ds-font-body)` → 14px/20px, default weight).
 const GREETING_LABEL_CLASS =
 	"truncate text-left text-sm leading-5 text-text-subtle";
-// Byline: 12px / 16px / text-subtle, truncated. Mirrors the palette description.
+// Byline: 12px / 16px / text-subtlest, truncated. Mirrors the palette description.
 const GREETING_DESCRIPTION_CLASS =
-	"truncate text-left text-xs leading-4 text-text-subtle";
+	"truncate text-left text-xs leading-4 text-text-subtlest";
 
 // Mirrors `nestedCommandLabelVariants` in the editor palette suggestion menu so
 // the label lift on reveal matches exactly.

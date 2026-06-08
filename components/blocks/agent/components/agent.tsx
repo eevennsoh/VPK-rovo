@@ -665,7 +665,7 @@ export const AgentHeader = memo(
 	}: Readonly<AgentHeaderProps>) => (
 		<div
 			className={cn(
-				"flex h-14 w-full items-center justify-between gap-4 border-b border-border bg-surface px-6",
+				"flex h-14 w-full items-center justify-between gap-4 border-b border-border bg-surface px-4",
 				className
 			)}
 			{...props}

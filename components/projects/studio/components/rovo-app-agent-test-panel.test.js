@@ -12,7 +12,7 @@ test("AgentTestPanel isolates the publish-ready agent in a nested chat provider"
 	assert.match(AGENT_TEST_PANEL_SOURCE, /export interface AgentTestPanelProps \{[\s\S]*entry: StudioSessionAgentEntry;[\s\S]*className\?: string;[\s\S]*\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /aria-label="Agent test"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /data-testid="agent-test-panel"/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /className=\{cn\("h-full min-h-0 px-6", className\)\}/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /className=\{cn\("h-full min-h-0 px-4", className\)\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /const id = `agent-test-\$\{entry\.profile\.id\}`;/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /function buildAgentTestProfile\(entry: StudioSessionAgentEntry\): RovoAgentProfile/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /const publishReadySnapshotKey = JSON\.stringify\(entry\.publishReadyResult\);/u);

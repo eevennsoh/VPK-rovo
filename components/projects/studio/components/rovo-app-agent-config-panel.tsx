@@ -566,7 +566,7 @@ export function RovoAppAgentConfigPanel({
 								    The wrapper carries the measured `top` so the switcher
 								    top-aligns with the first line of the instructions editor. */}
 								<div
-									className="absolute right-6 z-20 hidden md:block"
+									className="absolute right-4 z-20 hidden md:block"
 									style={{ top: navigatorTop }}
 								>
 									<SubagentsNavigator
@@ -581,18 +581,18 @@ export function RovoAppAgentConfigPanel({
 										subagents={subagentPrompts}
 									/>
 								</div>
-								<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-6 py-5">
+								<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-4 py-5">
 									{activeCompactSection === "access" ? (
-										<div className="-mr-6 min-h-0 flex-1 overflow-y-auto pr-6">
+										<div className="-mr-4 min-h-0 flex-1 overflow-y-auto pr-4">
 											<div className="mx-auto w-full max-w-4xl pb-6">
 												<AgentAccess onGoToAgentDetails={() => setActiveCompactSection(null)} />
 											</div>
 										</div>
 									) : activeCompactSection === "surfaces" ? (
-										<AgentSurfaces className="-mr-6 pr-6" />
+										<AgentSurfaces className="-mr-4 pr-4" />
 									) : activeCompactSection === "users" ? (
 										<div
-											className="-mr-6 flex min-h-0 flex-1 flex-col overflow-y-auto pr-6"
+											className="-mr-4 flex min-h-0 flex-1 flex-col overflow-y-auto pr-4"
 											data-agent-compact-section="users"
 										>
 											<AgentUsers />
@@ -615,7 +615,7 @@ export function RovoAppAgentConfigPanel({
 											onSubagentNameChange={handleTriggerNameChange}
 											subagentCondition={activePrompt?.condition}
 											onSubagentConditionChange={handleConditionChange}
-											compactScrollAreaClassName="-mr-6 pr-6"
+											compactScrollAreaClassName="-mr-4 pr-4"
 											idPrefix={`agent-${profileId}-${activeConfigId}`}
 											onTextChange={handleConfigTextChange}
 											onProfileTextChange={handleBaseTextChange}

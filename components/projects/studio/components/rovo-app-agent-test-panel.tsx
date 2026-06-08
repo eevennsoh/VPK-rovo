@@ -316,9 +316,9 @@ export function AgentTestPanel({
 		<section
 			aria-label="Agent test"
 			data-testid="agent-test-panel"
-			// Match the agent header / Configure tab inset (px-6) so the test
+			// Match the agent header / Configure tab inset (px-4) so the test
 			// chat tab strip and composer align with the header above.
-			className={cn("h-full min-h-0 px-6", className)}
+			className={cn("h-full min-h-0 px-4", className)}
 		>
 			<RovoChatProvider
 				key={snapshotKey}
