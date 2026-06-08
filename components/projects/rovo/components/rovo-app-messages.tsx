@@ -87,6 +87,7 @@ interface RovoAppMessagesProps {
 	streamingArtifact: RovoAppStreamingArtifact | null;
 	streamingArtifactMessageId: string | null;
 	votes: Record<string, "up" | "down">;
+	hideCustomAgentStarters?: boolean;
 }
 
 const ROVO_APP_SCROLL_ANCHOR_SELECTOR = "[data-rovo-app-scroll-anchor='true']";
@@ -761,10 +762,12 @@ function RovoAppThinkingIndicator() {
 
 function RovoAppCustomAgentEmptyState({
 	agent,
+	hideStarters,
 	itemVariants,
 	onSelectSuggestion,
 }: Readonly<{
 	agent: RovoAgentProfile;
+	hideStarters: boolean;
 	itemVariants: RovoAppEmptyStateItemVariants;
 	onSelectSuggestion: (suggestion: string) => Promise<void>;
 }>) {
@@ -788,25 +791,27 @@ function RovoAppCustomAgentEmptyState({
 					) : null}
 				</motion.div>
 			</div>
-			<motion.div className="flex w-full max-w-[720px] flex-col gap-2" variants={ROVO_APP_EMPTY_STATE_CONTAINER_VARIANTS}>
-				{agent.starters.map((starter) => {
-					const starterPrompt = starter.prompt ?? starter.label;
+			{hideStarters ? null : (
+				<motion.div className="flex w-full max-w-[720px] flex-col gap-2" variants={ROVO_APP_EMPTY_STATE_CONTAINER_VARIANTS}>
+					{agent.starters.map((starter) => {
+						const starterPrompt = starter.prompt ?? starter.label;
 
-					return (
-						<motion.div key={starter.id} variants={itemVariants}>
-							<GreetingPromptRow
-								description={starter.description}
-								icon={starter.icon}
-								imageSrc={starter.imageSrc}
-								label={starter.label}
-								onClick={() => {
-									void onSelectSuggestion(starterPrompt);
-								}}
-							/>
-						</motion.div>
-					);
-				})}
-			</motion.div>
+						return (
+							<motion.div key={starter.id} variants={itemVariants}>
+								<GreetingPromptRow
+									description={starter.description}
+									icon={starter.icon}
+									imageSrc={starter.imageSrc}
+									label={starter.label}
+									onClick={() => {
+										void onSelectSuggestion(starterPrompt);
+									}}
+								/>
+							</motion.div>
+						);
+					})}
+				</motion.div>
+			)}
 		</motion.div>
 	);
 }
@@ -914,6 +919,7 @@ export function RovoAppMessages({
 	streamingArtifact,
 	streamingArtifactMessageId,
 	votes,
+	hideCustomAgentStarters = false,
 }: Readonly<RovoAppMessagesProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const scrollSpacerRef = useRef<HTMLDivElement | null>(null);
@@ -994,6 +1000,7 @@ export function RovoAppMessages({
 						{customAgent ? (
 							<RovoAppCustomAgentEmptyState
 								agent={customAgent}
+								hideStarters={hideCustomAgentStarters}
 								itemVariants={emptyStateItemVariants}
 								key={`agent-${customAgent.id}`}
 								onSelectSuggestion={onSelectSuggestion}

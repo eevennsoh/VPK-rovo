@@ -70,8 +70,12 @@ export interface GreetingPromptRowProps {
 	iconColor?: string;
 	/** Fully-rendered leading visual; overrides `imageSrc` / `icon`. */
 	visual?: ReactNode;
+	shortcut?: ReactNode;
+	active?: boolean;
 	onClick?: () => void;
 	className?: string;
+	onFocus?: () => void;
+	onMouseEnter?: () => void;
 }
 
 function GreetingPromptVisual({
@@ -115,11 +119,16 @@ export function GreetingPromptRow({
 	icon,
 	iconColor,
 	visual,
+	shortcut,
+	active = false,
 	onClick,
 	className,
+	onFocus,
+	onMouseEnter,
 }: Readonly<GreetingPromptRowProps>) {
 	const buttonClassName = cn(
 		"flex w-full items-center gap-3 rounded-lg p-[var(--ds-space-075)] text-left transition-colors hover:bg-bg-neutral-subtle-hovered",
+		active && "bg-bg-neutral-subtle-hovered",
 		className,
 	);
 	const leadingVisual = (
@@ -135,24 +144,31 @@ export function GreetingPromptRow({
 	// Label-only row: no byline to reveal, so render a plain (cheaper) button.
 	if (!description) {
 		return (
-			<button className={buttonClassName} onClick={onClick} type="button">
+			<button className={buttonClassName} onClick={onClick} onFocus={onFocus} onMouseEnter={onMouseEnter} type="button">
 				{leadingVisual}
 				<span className={GREETING_COPY_CLASS}>
 					<span className={GREETING_LABEL_CLASS}>{label}</span>
 				</span>
+				{shortcut ? (
+					<span className="ml-auto flex shrink-0 items-center justify-end text-text-subtlest">
+						{shortcut}
+					</span>
+				) : null}
 			</button>
 		);
 	}
 
-	return (
-		<motion.button
-			animate="idle"
-			className={buttonClassName}
+		return (
+			<motion.button
+				className={buttonClassName}
 			initial={false}
 			onClick={onClick}
+			onFocus={onFocus}
+			onMouseEnter={onMouseEnter}
 			type="button"
 			whileFocus="active"
 			whileHover="active"
+			animate={active ? "active" : "idle"}
 		>
 			{leadingVisual}
 			<span className={cn(GREETING_COPY_CLASS, "justify-start")}>
@@ -171,6 +187,11 @@ export function GreetingPromptRow({
 					{description}
 				</motion.span>
 			</span>
+			{shortcut ? (
+				<span className="ml-auto flex shrink-0 items-center justify-end text-text-subtlest">
+					{shortcut}
+				</span>
+			) : null}
 		</motion.button>
 	);
 }

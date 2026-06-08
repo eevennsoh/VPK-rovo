@@ -7,8 +7,12 @@ export {
 export { createRichTextEditorExtensions } from "./extensions";
 export {
 	createComposerEditorExtensions,
+	composerDirectoryAutocompletePluginKey,
+	type ComposerDirectoryAutocompleteController,
+	type ComposerDirectoryAutocompleteDecoration,
 	type ComposerEditorExtensionOptions,
 } from "./composer-extensions";
+export { getMentionNodeAttrs } from "./extensions";
 export {
 	RichTextSuggestionMenu,
 	SLASH_COMMANDS,

@@ -615,6 +615,12 @@
 	text-align: right;
 }
 
+.rich-text-command-menu-return-shortcut {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-end;
+}
+
 .rich-text-command-menu-item:hover .rich-text-command-menu-shortcut,
 .rich-text-command-menu-item-selected .rich-text-command-menu-shortcut {
 	color: var(--ds-text-subtle, #44546f);
@@ -647,6 +653,13 @@
  */
 .prompt-input-composer .rich-text-mention-node {
 	vertical-align: middle;
+}
+
+.prompt-input-directory-autocomplete-ghost {
+	color: var(--ds-text-subtlest, #626f86);
+	opacity: 0.42;
+	pointer-events: none;
+	white-space: pre;
 }
 
 .rich-text-mention {

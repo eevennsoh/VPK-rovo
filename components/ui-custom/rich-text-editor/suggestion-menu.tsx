@@ -48,7 +48,7 @@ import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Input } from "@/components/ui/input";
 import { RovoColorIcon } from "@/components/ui/logo";
-import { ArrowLeftIcon } from "@/components/ui/vpk-icons";
+import { ArrowLeftIcon, ReturnIcon } from "@/components/ui/vpk-icons";
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import { cn } from "@/lib/utils";
 
@@ -616,6 +616,7 @@ function RichTextSuggestionMenuOption({
 	item,
 	onSelect,
 }: Readonly<RichTextSuggestionMenuOptionProps>) {
+	const [isInteractionActive, setIsInteractionActive] = useState(false);
 	// Descriptions reveal on hover/selection wherever an item has one, in both
 	// the nested drill-in lists and the merged flat lists, so the collapsed row
 	// stays compact (label only) until the user lands on it. Rows that opt into
@@ -624,6 +625,7 @@ function RichTextSuggestionMenuOption({
 	const hasDescription = Boolean(item.description);
 	const showsPersistentDescription = hasDescription && Boolean(item.persistentDescription);
 	const canRevealMetadata = hasDescription && !item.persistentDescription;
+	const shouldShowReturnShortcut = !item.disabled && (isSelected || isInteractionActive);
 	const className = cn(
 		"rich-text-command-menu-item",
 		isSelected && "rich-text-command-menu-item-selected",
@@ -659,7 +661,11 @@ function RichTextSuggestionMenuOption({
 					) : null}
 				</span>
 			)}
-			{item.shortcut ? (
+			{shouldShowReturnShortcut ? (
+				<span className="rich-text-command-menu-shortcut rich-text-command-menu-return-shortcut" aria-hidden="true">
+					<ReturnIcon className="size-3.5" />
+				</span>
+			) : item.shortcut ? (
 				<span className="rich-text-command-menu-shortcut">
 					{item.shortcut}
 				</span>
@@ -679,6 +685,10 @@ function RichTextSuggestionMenuOption({
 				initial={false}
 				onMouseDown={(event) => event.preventDefault()}
 				onClick={() => onSelect(item)}
+				onBlur={() => setIsInteractionActive(false)}
+				onFocus={() => setIsInteractionActive(true)}
+				onMouseEnter={() => setIsInteractionActive(true)}
+				onMouseLeave={() => setIsInteractionActive(false)}
 				whileFocus="active"
 				whileHover="active"
 			>
@@ -696,6 +706,10 @@ function RichTextSuggestionMenuOption({
 			disabled={item.disabled}
 			onMouseDown={(event) => event.preventDefault()}
 			onClick={() => onSelect(item)}
+			onBlur={() => setIsInteractionActive(false)}
+			onFocus={() => setIsInteractionActive(true)}
+			onMouseEnter={() => setIsInteractionActive(true)}
+			onMouseLeave={() => setIsInteractionActive(false)}
 		>
 			{children}
 		</button>

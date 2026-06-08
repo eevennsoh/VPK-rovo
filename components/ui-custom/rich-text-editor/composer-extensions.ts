@@ -2,6 +2,7 @@
 
 import { Extension, Node } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import type { EditorView } from "@tiptap/pm/view";
 
 import {
@@ -71,6 +72,7 @@ const ComposerHardBreak = Node.create({
 });
 
 const composerSubmitPluginKey = new PluginKey("composer-submit");
+export const composerDirectoryAutocompletePluginKey = new PluginKey<DecorationSet>("composer-directory-autocomplete");
 
 /**
  * True when any `@tiptap/suggestion`-backed palette (the `@` mention menu or the
@@ -182,7 +184,138 @@ function createComposerBehavior(
 	});
 }
 
+export interface ComposerDirectoryAutocompleteController {
+	acceptActive: () => boolean;
+	acceptGhost: () => boolean;
+	acceptIndex: (index: number) => boolean;
+	hasVisibleList: () => boolean;
+	moveActive: (direction: -1 | 1) => boolean;
+	setActiveIndex: (index: number) => boolean;
+}
+
+export interface ComposerDirectoryAutocompleteDecoration {
+	from: number;
+	text: string;
+}
+
+function createComposerDirectoryAutocomplete(
+	controller?: ComposerDirectoryAutocompleteController,
+) {
+	return Extension.create({
+		name: "composerDirectoryAutocomplete",
+		// Above ProseMirror's base Enter keymap so a visible external list can
+		// accept the active row before Enter splits the composer paragraph.
+		priority: 150,
+		addProseMirrorPlugins() {
+			return [
+				new Plugin<DecorationSet>({
+					key: composerDirectoryAutocompletePluginKey,
+					state: {
+						init: () => DecorationSet.empty,
+						apply(transaction, current) {
+							const meta = transaction.getMeta(composerDirectoryAutocompletePluginKey) as
+								| ComposerDirectoryAutocompleteDecoration
+								| null
+								| undefined;
+
+							if (meta === null) {
+								return DecorationSet.empty;
+							}
+
+							if (meta?.text) {
+								const widget = Decoration.widget(
+									meta.from,
+									() => {
+										const element = document.createElement("span");
+										element.className = "prompt-input-directory-autocomplete-ghost";
+										element.textContent = meta.text;
+										element.setAttribute("aria-hidden", "true");
+										return element;
+									},
+									{ side: 1 },
+								);
+								return DecorationSet.create(transaction.doc, [widget]);
+							}
+
+							return current.map(transaction.mapping, transaction.doc);
+						},
+					},
+					props: {
+						decorations(state) {
+							return composerDirectoryAutocompletePluginKey.getState(state) ?? DecorationSet.empty;
+						},
+						handleDOMEvents: {
+							keydown: (_view, event) => {
+								if (!controller || !controller.hasVisibleList()) {
+									return false;
+								}
+
+								const keyboardEvent = event as KeyboardEvent;
+								if (keyboardEvent.key !== "Enter" || keyboardEvent.shiftKey || keyboardEvent.isComposing) {
+									return false;
+								}
+
+								event.preventDefault();
+								return controller.acceptActive();
+							},
+							beforeinput: (_view, event) => {
+								if (!controller || event.isComposing || !controller.hasVisibleList()) {
+									return false;
+								}
+
+								const inputType = (event as InputEvent).inputType;
+								if (inputType !== "insertParagraph" && inputType !== "insertLineBreak") {
+									return false;
+								}
+
+								event.preventDefault();
+								return controller.acceptActive();
+							},
+						},
+						handleKeyDown: (_view, event) => {
+							if (!controller || event.isComposing || event.altKey) {
+								return false;
+							}
+
+							if ((event.metaKey || event.ctrlKey) && /^[1-9]$/u.test(event.key) && controller.hasVisibleList()) {
+								event.preventDefault();
+								return controller.acceptIndex(Number(event.key) - 1);
+							}
+
+							if (event.ctrlKey || event.metaKey) {
+								return false;
+							}
+
+							if (event.key === "ArrowDown" && controller.hasVisibleList()) {
+								event.preventDefault();
+								return controller.moveActive(1);
+							}
+
+							if (event.key === "ArrowUp" && controller.hasVisibleList()) {
+								event.preventDefault();
+								return controller.moveActive(-1);
+							}
+
+							if (event.key === "Enter" && controller.hasVisibleList()) {
+								event.preventDefault();
+								return controller.acceptActive();
+							}
+
+							if (event.key === "Tab" || event.key === "ArrowRight") {
+								return controller.acceptGhost();
+							}
+
+							return false;
+						},
+					},
+				}),
+			];
+		},
+	});
+}
+
 export interface ComposerEditorExtensionOptions extends RichTextEditorExtensionOptions {
+	directoryAutocomplete?: ComposerDirectoryAutocompleteController;
 	/**
 	 * Called on a plain (non-Shift, non-IME) Enter when no `@`/`/` menu is open.
 	 * Return `true` to consume the keystroke (e.g. after requesting form submit).
@@ -209,6 +342,7 @@ export function createComposerEditorExtensions(
 		createRichTextMentionExtension(composerOptions),
 		// The composer's "/" menu surfaces references only — no Format category.
 		SlashCommand.configure({ ...composerOptions, includeFormat: false }),
+		createComposerDirectoryAutocomplete(options.directoryAutocomplete),
 		createComposerBehavior(options.onEnter, options.onPasteFiles),
 	];
 }

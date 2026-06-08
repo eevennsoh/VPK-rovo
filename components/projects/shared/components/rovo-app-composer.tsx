@@ -5,6 +5,7 @@ import {
 	PromptInputProvider,
 	usePromptInputController,
 } from "@/components/ui-custom/prompt-input";
+import type { ComposerDirectoryAutocompleteController } from "@/components/ui-custom/rich-text-editor";
 import {
 	Queue,
 	QueueItem,
@@ -32,6 +33,7 @@ import { RovoAppPlanExecutionTracker } from "@/components/projects/shared/compon
 import { RovoAppComposerResponseGradient } from "@/components/projects/shared/components/rovo-app-composer-response-gradient";
 import { ComposerCardBody } from "@/components/projects/shared/components/composer-card-body";
 import { ComposerFloatingBody } from "@/components/projects/shared/components/composer-floating-body";
+import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 
 const EMPTY_REALTIME_OUTPUT_WAVEFORM_BARS: number[] = [];
 const EMPTY_QUEUED_PROMPTS: ReadonlyArray<RovoAppQueuedAction> = [];
@@ -55,6 +57,7 @@ export interface RovoAppComposerProps {
 	backgroundArtifactLabel?: string | null;
 	composerStatus: ChatStatus;
 	compact?: boolean;
+	directoryAutocompleteListVisible?: boolean;
 	errorMessage?: string | null;
 	experimentalDarkCta?: boolean;
 	/** Floating chrome: bumps the prompt input to the in-session 800px width. */
@@ -65,6 +68,8 @@ export interface RovoAppComposerProps {
 	micStream?: MediaStream | null;
 	queuedPrompts?: ReadonlyArray<RovoAppQueuedAction>;
 	onStop: () => Promise<void>;
+	onDirectoryAutocompleteChange?: (state: DirectoryAutocompleteState | null) => void;
+	onDirectoryAutocompleteControllerChange?: (controller: ComposerDirectoryAutocompleteController | null) => void;
 	onDismissPlanExecutionTracker?: () => void;
 	onDismissArtifactContext?: () => void;
 	onRemoveQueuedPrompt?: (id: string) => void;
@@ -109,6 +114,7 @@ function RovoAppComposerInner({
 	backgroundArtifactLabel,
 	composerStatus,
 	compact = false,
+	directoryAutocompleteListVisible = false,
 	errorMessage,
 	experimentalDarkCta = false,
 	fillWidth = false,
@@ -116,6 +122,8 @@ function RovoAppComposerInner({
 	galleryExpanded = false,
 	isPlanMode = false,
 	micStream,
+	onDirectoryAutocompleteChange,
+	onDirectoryAutocompleteControllerChange,
 	onDismissPlanExecutionTracker,
 	onDismissArtifactContext,
 	queuedPrompts = EMPTY_QUEUED_PROMPTS,
@@ -174,7 +182,10 @@ function RovoAppComposerInner({
 		canSubmit,
 		clickyActive,
 		composerStatus,
+		directoryAutocompleteListVisible,
 		micStream,
+		onDirectoryAutocompleteChange,
+		onDirectoryAutocompleteControllerChange,
 		onPromptSubmit: handlePromptSubmit,
 		onStop,
 		onToggleClicky,

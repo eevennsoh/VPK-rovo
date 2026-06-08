@@ -49,10 +49,13 @@ export function ComposerCardBody({
 	clickyActive,
 	compact,
 	composerStatus,
+	directoryAutocompleteListVisible,
 	experimentalDarkCta,
 	galleryExpanded,
 	isPlanMode,
 	micStream,
+	onDirectoryAutocompleteChange,
+	onDirectoryAutocompleteControllerChange,
 	onPromptSubmit,
 	onStop,
 	onTogglePlanMode,
@@ -148,6 +151,9 @@ export function ComposerCardBody({
 						autoFocus={autoFocus}
 						autoResize={!composerHeight}
 						className={cn(composerTextareaClassName, composerHeight ? "h-full max-h-none min-h-0" : undefined)}
+						directoryAutocompleteListVisible={directoryAutocompleteListVisible}
+						onDirectoryAutocompleteChange={onDirectoryAutocompleteChange}
+						onDirectoryAutocompleteControllerChange={onDirectoryAutocompleteControllerChange}
 						placeholder={placeholder}
 						rows={1}
 						suppressHydrationWarning

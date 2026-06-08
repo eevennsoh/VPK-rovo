@@ -21,9 +21,11 @@ const UI_CUSTOM_DETAILS_SOURCE = readProjectFile("app/data/details/ui-custom.ts"
 const COMPONENTS_SOURCE = readProjectFile("app/data/components.ts");
 const COMPONENT_MANIFEST_SOURCE = readProjectFile("app/data/component-manifest.ts");
 const WEBSITE_REGISTRY_SOURCE = readProjectFile("components/website/registry.ts");
+const PROMPT_INPUT_SOURCE = readProjectFile("components/ui-custom/prompt-input.tsx");
 const RICH_TEXT_EDITOR_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.tsx");
 const RICH_TEXT_EDITOR_CSS = readProjectFile("components/ui-custom/rich-text-editor/rich-text-editor.css");
 const RICH_TEXT_EXTENSIONS_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/extensions.ts");
+const RICH_TEXT_COMPOSER_EXTENSIONS_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/composer-extensions.ts");
 const RICH_TEXT_MENTION_NODE_VIEW_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/mention-node-view.tsx");
 const RICH_TEXT_MENTION_VISUAL_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/mention-visual.tsx");
 const RICH_TEXT_SUGGESTION_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
@@ -832,6 +834,28 @@ test("Slash command menu contains every toolbar command", () => {
 	]) {
 		assert.match(RICH_TEXT_SUGGESTION_SOURCE, new RegExp(`label: "${command}"`, "u"));
 	}
+});
+
+test("Suggestion menu active selectable rows replace shortcut text with ReturnIcon", () => {
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ ArrowLeftIcon, ReturnIcon \} from "@\/components\/ui\/vpk-icons";/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const shouldShowReturnShortcut = !item\.disabled && \(isSelected \|\| isInteractionActive\);/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /shouldShowReturnShortcut \? \([\s\S]*rich-text-command-menu-return-shortcut[\s\S]*<ReturnIcon className="size-3\.5" \/>[\s\S]*\) : item\.shortcut \? \(/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onFocus=\{\(\) => setIsInteractionActive\(true\)\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onMouseEnter=\{\(\) => setIsInteractionActive\(true\)\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.headingLabel !== undefined \? \([\s\S]*className="rich-text-command-menu-heading"[\s\S]*role="presentation"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function isSelectableRow\(item: RichTextSuggestionMenuItem\): boolean \{[\s\S]*return item\.headingLabel === undefined && !item\.disabled;/u);
+});
+
+test("Composer directory autocomplete accepts visible rows before paragraph insertion", () => {
+	assert.match(PROMPT_INPUT_SOURCE, /if \(activeEditor\.view\.composing \|\| !selection\.empty \|\| isAnySuggestionMenuOpen\(activeEditor\)\) \{/u);
+	assert.match(RICH_TEXT_COMPOSER_EXTENSIONS_SOURCE, /name: "composerDirectoryAutocomplete"[\s\S]*priority: 150/u);
+	assert.match(RICH_TEXT_COMPOSER_EXTENSIONS_SOURCE, /handleDOMEvents: \{[\s\S]*keydown: \(_view, event\) => \{/u);
+	assert.match(RICH_TEXT_COMPOSER_EXTENSIONS_SOURCE, /const keyboardEvent = event as KeyboardEvent;/u);
+	assert.match(RICH_TEXT_COMPOSER_EXTENSIONS_SOURCE, /keyboardEvent\.key !== "Enter" \|\| keyboardEvent\.shiftKey \|\| keyboardEvent\.isComposing/u);
+	assert.match(RICH_TEXT_COMPOSER_EXTENSIONS_SOURCE, /handleDOMEvents: \{[\s\S]*beforeinput: \(_view, event\) => \{/u);
+	assert.match(RICH_TEXT_COMPOSER_EXTENSIONS_SOURCE, /const inputType = \(event as InputEvent\)\.inputType;/u);
+	assert.match(RICH_TEXT_COMPOSER_EXTENSIONS_SOURCE, /inputType !== "insertParagraph" && inputType !== "insertLineBreak"/u);
+	assert.match(RICH_TEXT_COMPOSER_EXTENSIONS_SOURCE, /event\.preventDefault\(\);[\s\S]*return controller\.acceptActive\(\);/u);
 });
 
 test("Mention menu exposes people/agent and command categories and mention lozenges", () => {
