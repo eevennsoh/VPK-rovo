@@ -231,8 +231,8 @@ export function RichTextMentionVisualMark({
 		// Most 1p product logos ship their own colored background, so in menu rows
 		// they render as the bare 32px lockup with no surface tile. The plain
 		// "atlassian" mark has no background fill, so it keeps the bordered
-		// `IconTile` (24px glyph in a 32px tile) so the stroked container stays
-		// while the content is the full 24px Atlassian logo.
+		// `IconTile` (16px glyph in a 32px tile) so the stroked container stays
+		// while the content matches the 16px glyph of every other menu tile.
 		// Tags/pills keep the bare inline 16px logo.
 		if (size === "menu") {
 			if (visual.logoName === "atlassian") {
@@ -240,18 +240,15 @@ export function RichTextMentionVisualMark({
 					<IconTile
 						aria-hidden={true}
 						// IconTile's `medium` variant clamps inner spans/svgs to 16px; the
-						// Atlassian logo wraps its svg in spans, so bump both so the glyph
-						// renders at 24px inside the stroked tile (centering is unchanged).
-						className={cn(
-							"border border-border bg-surface [&_span]:size-6! [&_svg]:size-6!",
-							className,
-						)}
+						// Atlassian logo wraps its svg in spans, so this keeps the glyph at
+						// 16px inside the stroked tile, matching the other menu tiles.
+						className={cn("border border-border bg-surface", className)}
 						icon={
 							<AtlassianLogo
 								name={visual.logoName}
 								// `@atlaskit/logo` sizes the glyph from this prop; the runtime
 								// accepts a numeric px string even though the type lists named sizes.
-								size={"24" as React.ComponentProps<typeof AtlassianLogo>["size"]}
+								size={"16" as React.ComponentProps<typeof AtlassianLogo>["size"]}
 								themeAware
 								label={label}
 							/>
