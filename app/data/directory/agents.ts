@@ -325,8 +325,9 @@ export const DIRECTORY_SUBAGENTS: readonly AgentBrowserAgent[] = DEMO_AGENT_BROW
  * Derives the JSON-serializable mention-token visual for an agent. Mirrors
  * `getAgentVisual` in `components/blocks/editor-palette/data/mention-sources.ts`:
  * a `logoName` renders the ADS brand logo; an `/avatar-agent/` path renders a
- * hexagon avatar; any other path renders a square image. Returns `undefined`
- * when the agent has neither a logo nor an avatar.
+ * hexagon avatar; a `/avatar-project/` path renders a square avatar; any other
+ * path renders a square image. Returns `undefined` when the agent has neither a
+ * logo nor an avatar.
  */
 export function getAgentDirectoryVisual(
 	agent: Pick<AgentBrowserAgent, "avatarSrc" | "logoName">,

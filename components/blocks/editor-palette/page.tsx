@@ -6,6 +6,14 @@ import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 
+import { Button } from "@/components/ui/button";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle,
+} from "@/components/ui/empty";
 import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { SearchIcon } from "@/components/ui/vpk-icons";
@@ -148,7 +156,6 @@ const SEARCH_CATEGORY_LABELS: Record<EditorPaletteSearchCategory, string> = {
 
 const SEARCH_INPUT_ITEM_ID = "__editor-palette-search-input__";
 const SEARCH_BROWSE_ALL_ITEM_ID = "__editor-palette-search-browse-all__";
-const SEARCH_EMPTY_ITEM_ID = "__editor-palette-search-empty__";
 
 function getSearchPlaceholder(category: EditorPaletteSearchCategory): string {
 	return `Search ${SEARCH_CATEGORY_LABELS[category]}`;
@@ -190,28 +197,18 @@ export function EditorPaletteSearchPicker({
 }: Readonly<EditorPaletteSearchPickerProps>) {
 	const [query, setQuery] = useState("");
 	const items = filterSearchItems(getMentionChildItems(mentionSources, category), query);
-	const resultRows: readonly RichTextSuggestionMenuItem[] = items.length > 0 ? items : [
-		{
-			id: SEARCH_EMPTY_ITEM_ID,
-			disabled: true,
-			icon: <SearchIcon className="size-4" />,
-			label: emptyLabel,
-		},
-	];
 	const searchItem: RichTextSuggestionMenuItem = {
 		id: SEARCH_INPUT_ITEM_ID,
-		icon: <SearchIcon className="size-4" />,
+		icon: <SearchIcon className="size-4 text-icon-subtle" />,
 		isSticky: true,
 		label: getSearchPlaceholder(category),
 	};
 	const browseAllItem: RichTextSuggestionMenuItem = {
 		id: SEARCH_BROWSE_ALL_ITEM_ID,
 		icon: <ShowMoreHorizontalIcon label="" size="small" />,
-		isSticky: true,
 		label: "Browse all",
-		stickyPosition: "bottom",
 	};
-	const rows = [searchItem, ...resultRows, browseAllItem];
+	const rows = items.length > 0 ? [searchItem, ...items, browseAllItem] : [searchItem];
 
 	const handleSelect = (item: RichTextSuggestionMenuItem) => {
 		if (item.id === SEARCH_INPUT_ITEM_ID) {
@@ -235,14 +232,47 @@ export function EditorPaletteSearchPicker({
 			className={className}
 			title={getSearchPlaceholder(category)}
 			emptyLabel={emptyLabel}
+			emptyState={
+				<EditorPaletteSearchEmptyState
+					label={emptyLabel}
+					onBrowseAll={onBrowseAll}
+				/>
+			}
 			inputAutoFocus={autoFocus}
 			inputValue={query}
 			items={rows}
+			onInputClear={() => setQuery("")}
 			onInputValueChange={setQuery}
 			onSelect={handleSelect}
 			renderFirstItemAsInput
 			selectedIndex={-1}
 		/>
+	);
+}
+
+function EditorPaletteSearchEmptyState({
+	label,
+	onBrowseAll,
+}: Readonly<{
+	label: string;
+	onBrowseAll?: () => void;
+}>) {
+	return (
+		<Empty width="narrow" className="px-6 pt-4 pb-6">
+			<EmptyHeader>
+				<EmptyTitle headingSize="xsmall">{label}</EmptyTitle>
+				<EmptyDescription>Try a different search term.</EmptyDescription>
+			</EmptyHeader>
+			<EmptyContent>
+				<Button
+					type="button"
+					variant="outline"
+					onClick={onBrowseAll}
+				>
+					Browse all
+				</Button>
+			</EmptyContent>
+		</Empty>
 	);
 }
 

@@ -80,7 +80,8 @@ export const DEMO_SESSION_TOOLS: readonly ToolsDirectoryTool[] = data.sessionToo
 /**
  * Derives the JSON-serializable mention-token visual for a tool: a `logoName`
  * resolves to the ADS brand mark; an `avatarSrc` under `/avatar-agent/` is a
- * hexagon agent avatar, otherwise a square image. Shares one resolver with
+ * hexagon agent avatar; an `avatarSrc` under `/avatar-project/` is a square
+ * project avatar; otherwise it is a square image. Shares one resolver with
  * agents (see {@link avatarVisualFromSrc}) so the two never diverge.
  */
 export function getToolDirectoryVisual(tool: ToolsDirectoryTool): DirectoryVisual | undefined {

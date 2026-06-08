@@ -22,9 +22,10 @@ import type { DirectoryVisual, SkillIconKey } from "./types";
 /**
  * Shared visual resolver for directory items whose mark comes from a brand logo
  * or an avatar/image path (agents and tools). A `logoName` renders the ADS brand
- * logo; an avatar under `/avatar-agent/` is a hexagon agent avatar; any other
- * path is a square image. Returns `undefined` when the item has neither. Single
- * source so agent and tool tokens never diverge in shape.
+ * logo; avatars under `/avatar-agent/` are hexagon agent avatars; avatars under
+ * `/avatar-project/` are square project avatars; any other path is a square
+ * image. Returns `undefined` when the item has neither. Single source so agent
+ * and tool tokens never diverge in shape.
  */
 export function avatarVisualFromSrc(
 	logoName: AtlassianLogoName | undefined,
@@ -39,8 +40,9 @@ export function avatarVisualFromSrc(
 	}
 
 	const isAgentAvatar = avatarSrc.startsWith("/avatar-agent/");
+	const isProjectAvatar = avatarSrc.startsWith("/avatar-project/");
 	return {
-		kind: isAgentAvatar ? "avatar" : "image",
+		kind: isAgentAvatar || isProjectAvatar ? "avatar" : "image",
 		shape: isAgentAvatar ? "hexagon" : "square",
 		src: avatarSrc,
 	};

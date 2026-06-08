@@ -108,7 +108,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 		],
 	},
 	"editor-palette": {
-		description: "Showcase of the rich text editor's suggestion menus across three layouts. The \"nested\" layout shows each top-level section (People and team, Subagents, Skills, Tools, Knowledge, Format) as a single list you click into; the \"flat\" layout expands every section inline, capped at five items with a \"Browse all\" footer (search icon) for sections backed by a directory and a \"View more\" footer (chevron) that expands the rest inline for the others. The \"search\" layout shows one category-specific inline picker with a Search input row and sticky \"Browse all\" footer. In the flat layout the \"/\" sections (Skills, Tools, Knowledge, Format) are merged into one list with a heading per section, while each \"@\" section keeps its own panel. Nested and flat include a live editor where typing \"@\" or \"/\" opens the real popups.",
+		description: "Showcase of the rich text editor's suggestion menus across three layouts. The \"nested\" layout shows each top-level section (People and team, Subagents, Skills, Tools, Knowledge, Format) as a single list you click into; the \"flat\" layout expands every section inline, capped at five items with a \"Browse all\" footer (search icon) for sections backed by a directory and a \"View more\" footer (chevron) that expands the rest inline for the others. The \"search\" layout shows one category-specific inline picker with a Search input row and a normal \"Browse all\" row. In the flat layout the \"/\" sections (Skills, Tools, Knowledge, Format) are merged into one list with a heading per section, while each \"@\" section keeps its own panel. Nested and flat include a live editor where typing \"@\" or \"/\" opens the real popups.",
 		importStatement: `import EditorPalette from "@/components/blocks/editor-palette/page";`,
 		usage: `import EditorPalette from "@/components/blocks/editor-palette/page";
 
@@ -142,7 +142,7 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 		examples: [
 			{ title: "Nested", description: "Each top-level section is a single list you click into to reveal its children.", demoSlug: "editor-palette-nested" },
 			{ title: "Flat", description: "Every section is expanded inline, capped at five items with a \"Browse all\" or \"View more\" footer.", demoSlug: "editor-palette-flat" },
-			{ title: "Search", description: "A category-specific inline search picker with a sticky \"Browse all\" footer.", demoSlug: "editor-palette-search" },
+			{ title: "Search", description: "A category-specific inline search picker with a normal \"Browse all\" row.", demoSlug: "editor-palette-search" },
 		],
 	},
 	"editor-toolbar": {

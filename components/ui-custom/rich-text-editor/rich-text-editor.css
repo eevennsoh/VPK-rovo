@@ -436,6 +436,8 @@
    (skills + tools + knowledge + format) can each exceed the popover height, so
    the list scrolls within the `max-height`-capped container above. */
 .rich-text-command-menu-list {
+	--rich-text-command-menu-scroll-mask-fade-size: 48px;
+	--rich-text-command-menu-scrollbar-width: 10px;
 	min-height: 0;
 	flex: 1 1 auto;
 	overflow-y: auto;
@@ -458,8 +460,22 @@
 }
 
 .rich-text-command-menu[data-list-scrolled="true"] .rich-text-command-menu-list {
-	mask-image: linear-gradient(to bottom, transparent 0, black 16px, black 100%);
-	-webkit-mask-image: linear-gradient(to bottom, transparent 0, black 16px, black 100%);
+	mask-image:
+		linear-gradient(to bottom, transparent 0, black var(--rich-text-command-menu-scroll-mask-fade-size), black 100%),
+		linear-gradient(black, black);
+	mask-position: 0 0, 100% 0;
+	mask-repeat: no-repeat, no-repeat;
+	mask-size:
+		calc(100% - var(--rich-text-command-menu-scrollbar-width)) 100%,
+		var(--rich-text-command-menu-scrollbar-width) 100%;
+	-webkit-mask-image:
+		linear-gradient(to bottom, transparent 0, black var(--rich-text-command-menu-scroll-mask-fade-size), black 100%),
+		linear-gradient(black, black);
+	-webkit-mask-position: 0 0, 100% 0;
+	-webkit-mask-repeat: no-repeat, no-repeat;
+	-webkit-mask-size:
+		calc(100% - var(--rich-text-command-menu-scrollbar-width)) 100%,
+		var(--rich-text-command-menu-scrollbar-width) 100%;
 }
 
 .rich-text-command-menu-item {
@@ -510,12 +526,16 @@
    the sticky input bar spans edge-to-edge with square top corners, while the
    logo stays aligned with the icons of the rows below (12px from the edge). */
 .rich-text-command-menu-input {
-	margin: -4px -4px 0;
-	width: calc(100% + 8px);
+	margin: 0;
+	width: 100%;
 	border-radius: 0;
 	padding-left: 10px;
 	padding-right: 10px;
 	cursor: text;
+}
+
+.rich-text-command-menu[data-first-item-input="true"] .rich-text-command-menu-list {
+	padding-top: 0;
 }
 
 .rich-text-command-menu-input-logo {
@@ -547,6 +567,10 @@
 	border-color: transparent;
 	background-color: transparent;
 	box-shadow: none;
+}
+
+.rich-text-command-menu-input-clear {
+	justify-self: end;
 }
 
 .rich-text-command-menu-avatar {
@@ -602,11 +626,11 @@
 .rich-text-command-menu-label {
 	overflow: hidden;
 	/* Title: ADS font.body (14px / line-height 20px) via the token, so size and
-	   line-height are never hand-overridden. Color is the subtle text token, one
-	   step above the subtlest byline below it; weight stays at the default
-	   paragraph weight (no deliberate override). */
+	   line-height are never hand-overridden. Color follows the icon-subtlest
+	   token used by the picker visuals; weight stays at the default paragraph
+	   weight (no deliberate override). */
 	font: var(--ds-font-body);
-	color: var(--ds-text-subtle, #44546f);
+	color: var(--ds-icon-subtlest, #626f86);
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
