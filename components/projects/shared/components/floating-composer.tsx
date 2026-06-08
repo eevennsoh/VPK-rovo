@@ -56,14 +56,26 @@ export function FloatingComposer({
 	// The field is the core composer's ProseMirror contentEditable (no longer a <textarea>).
 	useEffect(() => {
 		const container = containerRef.current;
-		const field = container?.querySelector<HTMLElement>(
-			"textarea, [contenteditable='true']",
-		);
-		if (!container || !field) {
+		if (!container) {
 			return;
 		}
 
+		// The contentEditable is mounted asynchronously by the editor
+		// (`immediatelyRender: false`), so it may not exist on this first commit.
+		// Re-query inside `measure()`/`bind()` and retry until it appears rather than
+		// bailing out once (which previously left the layout permanently single-row).
+		const findField = () =>
+			container.querySelector<HTMLElement>(
+				"textarea, [contenteditable='true']",
+			);
+
+		let lastFieldWidth = 0;
+
 		const measure = () => {
+			const field = findField();
+			if (!field) {
+				return;
+			}
 			const styles = window.getComputedStyle(field);
 			const lineHeight = parseFloat(styles.lineHeight) || 20;
 			const verticalPadding =
@@ -74,18 +86,21 @@ export function FloatingComposer({
 			setIsMultiline(contentHeight > lineHeight * 1.5);
 		};
 
-		measure();
-
-		// Observe the field itself so we catch *programmatic* value changes — gallery
-		// prefill, voice transcript streaming, paste, and clear all update the editor
-		// without firing a DOM `input` event, so a typing-only listener misses
-		// them and the layout never stacks.
+		// Observe the field for height changes from typing *and* programmatic value
+		// changes — gallery prefill, voice transcript streaming, paste, and clear all
+		// update the editor without firing a DOM `input` event, so a typing-only
+		// listener would miss them and the layout would never stack.
+		//
+		// ResizeObserver alone is unreliable for the ProseMirror contentEditable: a
+		// soft wrap that grows height but not width doesn't always deliver a callback,
+		// so we pair it with a MutationObserver on the field subtree (which catches the
+		// DOM/text mutations ProseMirror commits on every edit).
 		//
 		// The hazard is a feedback loop: stacking widens the field (it gains the button
 		// row's width), which can un-wrap borderline content and flip the layout straight
-		// back. We break the loop by ignoring callbacks caused by our own width change and
-		// only re-measuring when the content height changes at a stable width.
-		let lastFieldWidth = field.getBoundingClientRect().width;
+		// back. We break the loop in the ResizeObserver by ignoring callbacks caused by
+		// our own width change and only re-measuring when the height changes at a stable
+		// width.
 		const fieldObserver = new ResizeObserver((entries) => {
 			const width = entries[0]?.contentRect.width ?? lastFieldWidth;
 			if (width !== lastFieldWidth) {
@@ -94,7 +109,42 @@ export function FloatingComposer({
 			}
 			measure();
 		});
-		fieldObserver.observe(field);
+		const mutationObserver = new MutationObserver(() => {
+			measure();
+		});
+
+		let boundField: HTMLElement | null = null;
+		const bind = () => {
+			const field = findField();
+			if (!field || field === boundField) {
+				return Boolean(boundField);
+			}
+			if (boundField) {
+				fieldObserver.unobserve(boundField);
+			}
+			boundField = field;
+			lastFieldWidth = field.getBoundingClientRect().width;
+			fieldObserver.observe(field);
+			mutationObserver.observe(field, {
+				characterData: true,
+				childList: true,
+				subtree: true,
+			});
+			measure();
+			return true;
+		};
+
+		// Bind now if the field already exists; otherwise poll briefly until the editor
+		// mounts its contentEditable, then stop.
+		let pollId: ReturnType<typeof setInterval> | null = null;
+		if (!bind()) {
+			pollId = setInterval(() => {
+				if (bind() && pollId) {
+					clearInterval(pollId);
+					pollId = null;
+				}
+			}, 50);
+		}
 
 		// React to real responsive width changes of the whole composer. The outer container's
 		// width is set by its parent and does not change when the internal layout reflows, so
@@ -108,13 +158,20 @@ export function FloatingComposer({
 			lastWidth = width;
 			// The field width tracks the container here, so resync the baseline to keep the
 			// field observer from treating this genuine reflow as a content change next tick.
-			lastFieldWidth = field.getBoundingClientRect().width;
+			const field = findField();
+			if (field) {
+				lastFieldWidth = field.getBoundingClientRect().width;
+			}
 			measure();
 		});
 		containerObserver.observe(container);
 
 		return () => {
+			if (pollId) {
+				clearInterval(pollId);
+			}
 			fieldObserver.disconnect();
+			mutationObserver.disconnect();
 			containerObserver.disconnect();
 		};
 	}, []);

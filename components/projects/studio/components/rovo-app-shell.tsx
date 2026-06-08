@@ -71,7 +71,6 @@ import { RightNavigation } from "@/components/blocks/top-navigation/components/r
 import SearchSuggestionsPanel from "@/components/blocks/top-navigation/components/search-suggestions-panel";
 import { useTopNavigation } from "@/components/blocks/top-navigation/hooks/use-top-navigation";
 import {
-	ROVO_APP_SEPARATOR_LINE_OFFSET_PX,
 	TOP_NAV_COLLAPSED_HEADER_PADDING_PX,
 	TOP_NAV_COLLAPSED_LEFT_SECTION_WIDTH_PX,
 	TOP_NAV_HEADER_HEIGHT_PX,
@@ -129,7 +128,11 @@ interface RovoAppShellProps {
 
 const ROVO_APP_SIDEBAR_MOTION_DURATION = "--duration-medium";
 const ROVO_APP_SIDEBAR_MOTION_FALLBACK_MS = 200;
-const ROVO_APP_SIDEBAR_MIN_WIDTH = 240;
+// Studio sidebar opens at this width by default across every view (home, agent
+// config, etc.). The resize minimum is lowered to match so the default width is
+// never clamped up on mount.
+const ROVO_APP_SIDEBAR_DEFAULT_WIDTH = 216;
+const ROVO_APP_SIDEBAR_MIN_WIDTH = 216;
 const ROVO_APP_SIDEBAR_MAX_WIDTH = 480;
 const STUDIO_AGENT_MAX_CONVERSATION_STARTERS = 3;
 const STUDIO_LANDING_ENTER_TRANSITION = {
@@ -2180,7 +2183,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const voiceDrainEpochRef = useRef(0);
 	const isDrainingVoiceRef = useRef(false);
 	const sidebarResize = useSidebarResize({
-		defaultWidth: ROVO_APP_SEPARATOR_LINE_OFFSET_PX,
+		defaultWidth: ROVO_APP_SIDEBAR_DEFAULT_WIDTH,
 		minWidth: ROVO_APP_SIDEBAR_MIN_WIDTH,
 		maxWidth: ROVO_APP_SIDEBAR_MAX_WIDTH,
 		onCollapse: useCallback(() => {

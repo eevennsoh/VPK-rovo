@@ -1918,6 +1918,7 @@ import AddIcon from "@atlaskit/icon/core/add";
 		examples: [
 			{ title: "Chat Composer style", description: "Rovo-style composer with the inline / (skills) and @ (mentions) palette, add menu, AI cursor toggle, customize popover, reasoning selector, and submit/voice action button. Type / or @ in the input to open the palette.", demoSlug: "prompt-input-demo-chat-composer" },
 			{ title: "Floating bar", description: 'Uses variant="floating" for a minimal single-line input with elevated shadow, ideal for overlaying on content areas.', demoSlug: "prompt-input-demo-floating-bar" },
+			{ title: "Floating bar — experimental dark CTA", description: "The floating bar with the experimental dark/black CTA button (neutral-bold background, inverse icon) used in the Studio composer. The dark styling applies to both the submit and start-live-voice states; type to see the submit variant.", demoSlug: "prompt-input-demo-floating-bar-dark-cta" },
 		],
 	},
 

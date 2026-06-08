@@ -87,11 +87,19 @@ const KBD_SQUARE_CLASS = "size-4"
 /** Multi-character content grows with side padding while staying 16px tall. */
 const KBD_GROW_CLASS = "w-fit min-w-4 px-1"
 
-/** True when the content is a single character or a single React element. */
+/**
+ * True when the content is a single glyph-sized key: a single character, or a
+ * single React element whose own children are not multi-character text (e.g. an
+ * icon). An element wrapping text like `<samp>File</samp>` is NOT a single key —
+ * it must grow to fit its text rather than collapse into a fixed 16px square.
+ */
 function isSingleKey(children: ReactNode): boolean {
   if (typeof children === "string") return [...children.trim()].length === 1
   const array = Children.toArray(children)
-  return array.length === 1 && isValidElement(array[0])
+  if (array.length !== 1 || !isValidElement(array[0])) return false
+  const inner = (array[0].props as { children?: ReactNode }).children
+  if (typeof inner === "string") return [...inner.trim()].length === 1
+  return true
 }
 
 function Kbd({ className, children, ...props }: ComponentProps<"kbd">) {
