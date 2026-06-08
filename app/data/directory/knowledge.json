@@ -76,5 +76,83 @@
 			{ "id": "team-updates", "name": "Team updates", "description": "Async status updates and roadmap briefings." },
 			{ "id": "research-clips", "name": "Research clips", "description": "Short clips from usability sessions and interviews." }
 		]
+	},
+	{
+		"id": "jira",
+		"name": "Jira",
+		"description": "Pull in epics, sprints, and issue history to ground work in delivery context.",
+		"providerName": "Atlassian",
+		"visual": { "kind": "logo", "logoName": "jira" },
+		"contents": [
+			{ "id": "epics", "name": "Epics", "description": "Initiative-level work with scope, status, and child issues." },
+			{ "id": "sprint-board", "name": "Sprint board", "description": "Active sprint columns, owners, and in-flight progress." },
+			{ "id": "bug-backlog", "name": "Bug backlog", "description": "Triaged defects ranked by severity and priority." },
+			{ "id": "release-plan", "name": "Release plan", "description": "Versioned scope, target dates, and release readiness." }
+		]
+	},
+	{
+		"id": "compass",
+		"name": "Compass",
+		"description": "Reference services, components, and ownership from your software catalog.",
+		"providerName": "Atlassian",
+		"visual": { "kind": "logo", "logoName": "compass" },
+		"contents": [
+			{ "id": "service-catalog", "name": "Service catalog", "description": "Registered services with tiers and dependencies." },
+			{ "id": "ownership-map", "name": "Ownership map", "description": "Teams accountable for each component and system." },
+			{ "id": "scorecards", "name": "Scorecards", "description": "Operational health checks and compliance metrics." },
+			{ "id": "tech-stack", "name": "Tech stack", "description": "Languages, frameworks, and tooling across services." }
+		]
+	},
+	{
+		"id": "notion",
+		"name": "Notion",
+		"description": "Connect wikis, project docs, and structured databases from Notion workspaces.",
+		"providerName": "Notion",
+		"visual": { "kind": "image", "shape": "square", "src": "/3p/notion/20.svg" },
+		"contents": [
+			{ "id": "team-wiki", "name": "Team wiki", "description": "Processes, policies, and onboarding documentation." },
+			{ "id": "project-tracker", "name": "Project tracker", "description": "Database of initiatives, status, and owners." },
+			{ "id": "meeting-notes", "name": "Meeting notes", "description": "Agendas, decisions, and action items by meeting." },
+			{ "id": "product-specs", "name": "Product specs", "description": "Feature briefs, requirements, and design context." }
+		]
+	},
+	{
+		"id": "box",
+		"name": "Box",
+		"description": "Reuse documents, contracts, and shared folders stored in Box.",
+		"providerName": "Box",
+		"visual": { "kind": "image", "shape": "square", "src": "/3p/box/20.svg" },
+		"contents": [
+			{ "id": "contracts", "name": "Contracts", "description": "Signed agreements and legal documentation." },
+			{ "id": "finance-folder", "name": "Finance folder", "description": "Budgets, invoices, and procurement records." },
+			{ "id": "shared-deliverables", "name": "Shared deliverables", "description": "Client-facing assets and project outputs." },
+			{ "id": "compliance-docs", "name": "Compliance docs", "description": "Audit reports and regulatory paperwork." }
+		]
+	},
+	{
+		"id": "dropbox",
+		"name": "Dropbox",
+		"description": "Connect synced files, shared folders, and team libraries from Dropbox.",
+		"providerName": "Dropbox",
+		"visual": { "kind": "image", "shape": "square", "src": "/3p/dropbox/20.svg" },
+		"contents": [
+			{ "id": "design-files", "name": "Design files", "description": "Source artwork, mockups, and exported assets." },
+			{ "id": "team-library", "name": "Team library", "description": "Shared reference materials and templates." },
+			{ "id": "client-deliverables", "name": "Client deliverables", "description": "Final files handed off to stakeholders." },
+			{ "id": "archive", "name": "Archive", "description": "Historical projects and retired documentation." }
+		]
+	},
+	{
+		"id": "airtable",
+		"name": "Airtable",
+		"description": "Pull in structured records, project bases, and tracked workflows from Airtable.",
+		"providerName": "Airtable",
+		"visual": { "kind": "image", "shape": "square", "src": "/3p/airtable/20.svg" },
+		"contents": [
+			{ "id": "content-calendar", "name": "Content calendar", "description": "Scheduled campaigns, owners, and publish dates." },
+			{ "id": "feature-requests", "name": "Feature requests", "description": "Customer asks with votes, status, and themes." },
+			{ "id": "vendor-tracker", "name": "Vendor tracker", "description": "Suppliers, contracts, and renewal timelines." },
+			{ "id": "roadmap-base", "name": "Roadmap base", "description": "Initiatives mapped to quarters and dependencies." }
+		]
 	}
 ]

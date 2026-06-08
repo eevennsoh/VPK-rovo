@@ -1,5 +1,7 @@
-// Minimal "Start with these agent templates" prompt-starter set, copied from the
-// agent-config compact operations bento (`AgentCompactOperationsBento`).
+// Minimal "Start with these agent templates" prompt-starter set, sourced from the
+// centralized agent-template catalog (`app/data/directory/agent-templates.json`)
+// so the bento, the agent-templates directory, and agents-directory stay in sync.
+import { getAgentTemplateConfigById } from "@/app/data/directory/agent-templates";
 
 export interface AgentBentoOperationsTemplate {
 	description: string;
@@ -7,30 +9,24 @@ export interface AgentBentoOperationsTemplate {
 	title: string;
 }
 
-export const AGENT_BENTO_OPERATIONS_TEMPLATES: ReadonlyArray<AgentBentoOperationsTemplate> = [
-	{
-		description: "Triage service requests, recommend field updates, and ask for missing details when needed.",
-		iconSrc: "/avatar-agent/service-agents/service-triage.svg",
-		title: "Service Triage",
-	},
-	{
-		description: "Draft support responses, suggest assignees, and summarize requests for faster resolution.",
-		iconSrc: "/avatar-agent/strategy-agents/strategic-insight.svg",
-		title: "Service Request Helper",
-	},
-	{
-		description: "Guide incident response, on-call actions, mitigation, status updates, and recovery.",
-		iconSrc: "/avatar-agent/dev-agents/code-standardizer.svg",
-		title: "Rovo Ops",
-	},
-	{
-		description: "Answer Rovo setup and usage questions with concise guidance and helpful links.",
-		iconSrc: "/avatar-agent/product-agents/wildcard-3.svg",
-		title: "Rovo Expert",
-	},
-	{
-		description: "Help teammates document working style, communication norms, and collaboration preferences.",
-		iconSrc: "/avatar-agent/teamwork-agents/user-manual-writer.svg",
-		title: "User Manual Writer",
-	},
-] as const;
+// The five "Operations" starter tiles, by template id (mirrors the review tab).
+const OPERATIONS_TEMPLATE_IDS: readonly string[] = [
+	"service-triage",
+	"service-request-helper",
+	"rovo-ops",
+	"rovo-expert",
+	"user-manual-writer",
+];
+
+export const AGENT_BENTO_OPERATIONS_TEMPLATES: ReadonlyArray<AgentBentoOperationsTemplate> =
+	OPERATIONS_TEMPLATE_IDS.map((id) => {
+		const config = getAgentTemplateConfigById(id);
+		if (!config) {
+			throw new Error(`Agent bento operations template missing catalog entry: ${id}`);
+		}
+		return {
+			description: config.description,
+			iconSrc: config.avatarSrc,
+			title: config.name,
+		};
+	});

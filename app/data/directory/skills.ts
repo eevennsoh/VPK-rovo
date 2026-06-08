@@ -28,6 +28,50 @@ export type SkillCategory =
 	| "hr-and-team-building"
 	| "sales-and-customer-relations";
 
+/**
+ * A skill's provenance — where it comes from. ORTHOGONAL to {@link SkillCategory}
+ * (which is *what the skill does*); `source` drives the leading visual:
+ *
+ * - `2p` / `3p` — Marketplace / third-party app skills → render the publisher's
+ *   company brand mark (`publisherAvatarSrc`) instead of a monochrome glyph.
+ * - `default` / `custom` / `platform` — non-collection, user-authored, or core
+ *   platform skills → greyscale glyph.
+ * - `teamwork` / `software` / `strategy` / `service` / `product` — the Atlassian
+ *   System-of-Work app families → glyph tinted with that family's accent hue
+ *   (teamwork=blue, software=green, strategy=orange, service=yellow,
+ *   product=purple).
+ */
+export type SkillSource =
+	| "2p"
+	| "3p"
+	| "default"
+	| "custom"
+	| "platform"
+	| "teamwork"
+	| "software"
+	| "strategy"
+	| "service"
+	| "product";
+
+/**
+ * Maps a {@link SkillSource} to the ADS accent icon-color class for its glyph.
+ * App-family sources get their System-of-Work hue; default/custom/platform read
+ * neutral grey. `2p`/`3p` render a company logo (not a tinted glyph), so they
+ * map to grey only as a fallback when no publisher logo is available.
+ */
+export const SKILL_SOURCE_ICON_COLOR: Record<SkillSource, string> = {
+	"2p": "text-icon-accent-gray",
+	"3p": "text-icon-accent-gray",
+	default: "text-icon-accent-gray",
+	custom: "text-icon-accent-gray",
+	platform: "text-icon-accent-gray",
+	teamwork: "text-icon-accent-blue",
+	software: "text-icon-accent-green",
+	strategy: "text-icon-accent-orange",
+	service: "text-icon-accent-yellow",
+	product: "text-icon-accent-purple",
+};
+
 export interface SkillsDirectoryToolTag {
 	id: string;
 	name: string;
@@ -48,8 +92,14 @@ export interface SkillsDirectorySkill {
 	name: string;
 	description: string;
 	icon?: SkillIconKey;
-	/** Decorative Tailwind text-color class applied to the leading icon. */
+	/**
+	 * Decorative Tailwind text-color class applied to the leading glyph. Usually
+	 * derived from {@link source} via {@link getSkillIconColor}; this explicit
+	 * field is the fallback for skills that declare no `source`.
+	 */
 	iconColor?: string;
+	/** Provenance — drives the leading visual. See {@link SkillSource}. */
+	source?: SkillSource;
 	publisherName?: string;
 	publisherAvatarSrc?: string;
 	companyId?: string;
@@ -103,6 +153,16 @@ export function getSkillCategoryId(skill: SkillsDirectorySkill): SkillCategory |
 	return skill.categoryId ?? skill.category;
 }
 
+/**
+ * Resolves the leading-glyph color class for a skill. When the skill declares a
+ * {@link SkillSource}, the color is derived from that family's accent (the
+ * single source of truth — see {@link SKILL_SOURCE_ICON_COLOR}); otherwise it
+ * falls back to the skill's explicit `iconColor`.
+ */
+export function getSkillIconColor(skill: SkillsDirectorySkill): string | undefined {
+	return skill.source ? SKILL_SOURCE_ICON_COLOR[skill.source] : skill.iconColor;
+}
+
 /** Convenience lookup for sidebar references. */
 export function getSkillById(
 	skills: readonly SkillsDirectorySkill[],
@@ -112,15 +172,24 @@ export function getSkillById(
 }
 
 /**
- * Derives the JSON-serializable mention-token visual for a skill. The directory
- * item keeps its own `icon`/`iconColor` fields; this projects them into the
- * shared {@link DirectoryVisual} `icon` shape so composer/editor surfaces can
- * rehydrate them via `resolveDirectoryVisual`.
+ * Derives the JSON-serializable mention-token visual for a skill.
+ *
+ * - `2p`/`3p` app skills render the publisher's company brand mark (their
+ *   `publisherAvatarSrc` logo) as a square image, so a Slack skill reads as a
+ *   Slack tag rather than a generic glyph.
+ * - Every other source renders the skill's `icon` glyph, tinted by its source
+ *   family via {@link getSkillIconColor}, projected into the shared
+ *   {@link DirectoryVisual} `icon` shape for rehydration via
+ *   `resolveDirectoryVisual`.
  */
 export function getSkillDirectoryVisual(skill: SkillsDirectorySkill): DirectoryVisual {
+	const brandSrc = getSkillPublisherAvatarSrc(skill);
+	if ((skill.source === "2p" || skill.source === "3p") && brandSrc) {
+		return { kind: "image", shape: "square", src: brandSrc };
+	}
 	return {
 		kind: "icon",
 		iconKey: skill.icon ?? "page",
-		iconColor: skill.iconColor,
+		iconColor: getSkillIconColor(skill),
 	};
 }

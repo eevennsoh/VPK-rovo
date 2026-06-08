@@ -31,5 +31,29 @@
 	},
 	{
 		"agentId": "atlassian"
+	},
+	{
+		"agentId": "decision-director"
+	},
+	{
+		"agentId": "okr-generator"
+	},
+	{
+		"agentId": "work-item-organizer"
+	},
+	{
+		"agentId": "jira-theme-analyzer"
+	},
+	{
+		"agentId": "customer-insights"
+	},
+	{
+		"agentId": "rovo-ops"
+	},
+	{
+		"agentId": "service-request-helper"
+	},
+	{
+		"agentId": "user-manual-writer"
 	}
 ]

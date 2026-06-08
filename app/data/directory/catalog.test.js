@@ -65,8 +65,26 @@ test("skills catalog is valid, uniquely identified, and produces resolvable visu
 	assertStringField(DEFAULT_SKILLS, "name", "skills");
 	assertStringField(DEFAULT_SKILLS, "description", "skills");
 
+	const VALID_SOURCES = new Set([
+		"2p", "3p", "default", "custom", "platform",
+		"teamwork", "software", "strategy", "service", "product",
+	]);
+
 	for (const skill of DEFAULT_SKILLS) {
 		assertVisualResolves(resolveDirectoryVisual, getSkillDirectoryVisual(skill), `skill ${skill.id}`);
+
+		if (skill.source !== undefined) {
+			assert.ok(VALID_SOURCES.has(skill.source), `skill ${skill.id}: invalid source ${skill.source}`);
+		}
+		// 2p/3p app skills render the publisher's company brand mark, not a glyph.
+		if (skill.source === "2p" || skill.source === "3p") {
+			const visual = getSkillDirectoryVisual(skill);
+			assert.equal(
+				visual.kind,
+				"image",
+				`skill ${skill.id}: ${skill.source} source must resolve to a company logo image`,
+			);
+		}
 	}
 });
 

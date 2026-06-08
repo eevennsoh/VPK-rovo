@@ -22,7 +22,8 @@ const AGENT_SELECTOR_PAGE_SOURCE = fs.readFileSync(
 	"utf8",
 );
 
-// The two agents the Studio superset adds to the rovo-fed surfaces.
+// The two agents the Studio superset originally added on top of the rovo fork.
+// They are the floor — the catalog may now add more OOTB agents beyond them.
 const ADDED_AGENT_IDS = ["release-notes-drafter", "atlassian"];
 
 let agentsModulePromise;
@@ -53,8 +54,9 @@ function serializeProfile(profile, shape) {
 	return projected;
 }
 
-test("unified catalog merges the Studio superset (21 agents incl. release-notes-drafter and atlassian)", () => {
-	assert.equal(AGENTS_JSON.length, 21);
+test("unified catalog includes the Studio superset floor (>=21 agents incl. release-notes-drafter and atlassian)", () => {
+	// Floor, not a freeze: the catalog grows as OOTB agents are added.
+	assert.ok(AGENTS_JSON.length >= 21, `expected >=21 agents, got ${AGENTS_JSON.length}`);
 
 	const ids = new Set(AGENTS_JSON.map((agent) => agent.id));
 	for (const id of ADDED_AGENT_IDS) {
@@ -62,6 +64,8 @@ test("unified catalog merges the Studio superset (21 agents incl. release-notes-
 	}
 	// Rovo Dev remains the built-in default.
 	assert.ok(ids.has("rovo-dev"));
+	// Ids stay unique as the catalog grows.
+	assert.equal(ids.size, AGENTS_JSON.length, "agent ids must be unique");
 });
 
 test("Rovo Dev stays available as the fallback profile but is not a selector example", () => {
@@ -76,8 +80,12 @@ test("Rovo Dev stays available as the fallback profile but is not a selector exa
 		/ROVO_CUSTOM_AGENT_SELECTOR_AGENTS: readonly AgentSelectorAgent\[\] = ROVO_AGENT_SELECTOR_AGENTS;/u,
 	);
 
-	// The selector excludes Rovo Dev; 20 of the 21 unified agents remain.
-	assert.equal(AGENTS_JSON.filter((agent) => agent.id !== "rovo-dev").length, 20);
+	// The selector excludes Rovo Dev; exactly one rovo-dev exists, all others remain.
+	assert.equal(
+		AGENTS_JSON.filter((agent) => agent.id !== "rovo-dev").length,
+		AGENTS_JSON.length - 1,
+		"exactly one rovo-dev entry; every other agent is selector-eligible",
+	);
 
 	assert.doesNotMatch(DEMO_AGENTS_SOURCE, /ROVO_AGENT_ID/u);
 	assert.doesNotMatch(DEMO_AGENTS_SOURCE, /rovo-dev/u);
@@ -85,27 +93,30 @@ test("Rovo Dev stays available as the fallback profile but is not a selector exa
 });
 
 test("the subagent reference catalog resolves curated ids against the unified catalog", () => {
-	assert.equal(SUBAGENTS_JSON.length, 11);
+	assert.ok(SUBAGENTS_JSON.length >= 11, `expected >=11 subagents, got ${SUBAGENTS_JSON.length}`);
 
+	const seen = new Set();
 	const agentIds = new Set(AGENTS_JSON.map((agent) => agent.id));
 	for (const { agentId } of SUBAGENTS_JSON) {
 		assert.ok(agentIds.has(agentId), `subagent ${agentId} must exist in the unified catalog`);
+		assert.ok(!seen.has(agentId), `duplicate subagent ref ${agentId}`);
+		seen.add(agentId);
 	}
 });
 
-test("unified directory + selector are a strict superset of the legacy forks (nothing removed, +2 added)", async () => {
+test("unified directory + selector are a superset floor of the legacy forks (nothing removed; additions allowed)", async () => {
 	const agents = await loadAgents();
 
-	// --- Directory profiles: the studio fork was already the superset; unified must match it exactly. ---
+	// --- Directory profiles: every legacy studio-fork profile must still be present
+	// and byte-for-byte identical. The catalog may add more beyond the snapshot. ---
 	const directoryById = new Map(
 		agents.ROVO_DIRECTORY_AGENT_PROFILES.map((profile) => [profile.id, profile]),
 	);
 	const studioDirectory = LEGACY_SNAPSHOT.studio.ROVO_DIRECTORY_AGENT_PROFILES;
 
-	assert.equal(
-		agents.ROVO_DIRECTORY_AGENT_PROFILES.length,
-		studioDirectory.length,
-		"directory length must equal the studio fork",
+	assert.ok(
+		agents.ROVO_DIRECTORY_AGENT_PROFILES.length >= studioDirectory.length,
+		"directory must be a superset of the studio fork (>= length)",
 	);
 	for (const legacyProfile of studioDirectory) {
 		const unifiedProfile = directoryById.get(legacyProfile.id);
@@ -117,14 +128,18 @@ test("unified directory + selector are a strict superset of the legacy forks (no
 		);
 	}
 
-	// --- Selector agents: must equal the studio fork, and be the rovo fork PLUS exactly the 2 added ids. ---
+	// --- Selector agents: must still contain every studio-fork agent unchanged,
+	// and remain a superset of the rovo fork. New OOTB agents may be added. ---
 	const selectorById = new Map(
 		agents.ROVO_AGENT_SELECTOR_AGENTS.map((agent) => [agent.id, agent]),
 	);
 	const studioSelector = LEGACY_SNAPSHOT.studio.ROVO_AGENT_SELECTOR_AGENTS;
 	const rovoSelector = LEGACY_SNAPSHOT.rovo.ROVO_AGENT_SELECTOR_AGENTS;
 
-	assert.equal(agents.ROVO_AGENT_SELECTOR_AGENTS.length, studioSelector.length);
+	assert.ok(
+		agents.ROVO_AGENT_SELECTOR_AGENTS.length >= studioSelector.length,
+		"selector must be a superset of the studio fork (>= length)",
+	);
 	for (const legacyAgent of studioSelector) {
 		const unifiedAgent = selectorById.get(legacyAgent.id);
 		assert.ok(unifiedAgent, `unified selector must contain ${legacyAgent.id}`);
@@ -142,13 +157,17 @@ test("unified directory + selector are a strict superset of the legacy forks (no
 		assert.deepEqual(projectToShape(unifiedAgent, legacyAgent), legacyAgent);
 	}
 
-	// The added ids are EXACTLY the 2 accepted additions (unified \ rovo fork).
+	// The studio-fork additions (release-notes-drafter, atlassian) remain present on
+	// top of the rovo fork — that's the floor; extra OOTB additions are permitted.
 	const rovoSelectorIds = new Set(rovoSelector.map((agent) => agent.id));
-	const addedIds = agents.ROVO_AGENT_SELECTOR_AGENTS
-		.map((agent) => agent.id)
-		.filter((id) => !rovoSelectorIds.has(id))
-		.sort();
-	assert.deepEqual(addedIds, [...ADDED_AGENT_IDS].sort());
+	const addedIds = new Set(
+		agents.ROVO_AGENT_SELECTOR_AGENTS
+			.map((agent) => agent.id)
+			.filter((id) => !rovoSelectorIds.has(id)),
+	);
+	for (const id of ADDED_AGENT_IDS) {
+		assert.ok(addedIds.has(id), `selector must add ${id} on top of the rovo fork`);
+	}
 
 	// ROVO_CUSTOM_AGENT_SELECTOR_AGENTS aliases the selector list.
 	assert.deepEqual(

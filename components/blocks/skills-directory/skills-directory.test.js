@@ -116,7 +116,7 @@ test("Skills Directory uses multi-select cards, hover learn-more, and selected t
 	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
 	assert.match(source, /"min-h-\[112px\] gap-4 hover:border-transparent"/u);
 	assert.match(source, /<div className="flex flex-col gap-2">[\s\S]*<CardDirectoryDescription className="text-text">/u);
-	assert.match(source, /aria-hidden[\s\S]*skill\.iconColor[\s\S]*\{getSkillIcon\(skill\.icon\)\}/u);
+	assert.match(source, /aria-hidden[\s\S]*getSkillIconColor\(skill\)[\s\S]*\{getSkillIcon\(skill\.icon\)\}/u);
 	assert.doesNotMatch(source, /rounded-xs bg-bg-neutral text-icon-subtle transition-opacity/u);
 	assert.match(source, /absolute top-1\/2 left-1\/2 -translate-x-1\/2 -translate-y-1\/2 opacity-0 transition-opacity/u);
 	assert.match(source, /selected[\s\S]*\? "opacity-0"[\s\S]*: "opacity-100 group-hover\/card:opacity-0"/u);
@@ -193,17 +193,36 @@ test("Skills Directory demo and docs use skill-specific examples", () => {
 			assert.doesNotMatch(skill.iconColor, /text-(blue|purple|teal|orange|indigo|green)-500/u);
 		}
 	}
-	for (const colorClass of [
-		"text-icon-brand",
-		"text-icon-success",
-		"text-icon-warning",
-		"text-yellow-400",
-		"text-icon-discovery",
+	// Skill provenance (`source`) drives the leading-glyph color. Every declared
+	// source is in the closed set, and the System-of-Work families + a company
+	// (3p) source are all exercised by the data.
+	const VALID_SOURCES = new Set([
+		"2p", "3p", "default", "custom", "platform",
+		"teamwork", "software", "strategy", "service", "product",
+	]);
+	const sources = new Set();
+	for (const skill of skillsJson) {
+		if (skill.source !== undefined) {
+			assert.ok(VALID_SOURCES.has(skill.source), `invalid skill source: ${skill.source}`);
+			sources.add(skill.source);
+		}
+	}
+	for (const family of ["teamwork", "software", "strategy", "service", "product", "3p"]) {
+		assert.ok(sources.has(family), `a skill should have source "${family}"`);
+	}
+	// The loader maps each source to its ADS accent color and exposes the
+	// derivation helper consumed by both the directory card and the composer tag.
+	assert.match(skillsLoaderSource, /SKILL_SOURCE_ICON_COLOR/u);
+	assert.match(skillsLoaderSource, /function getSkillIconColor/u);
+	for (const accent of [
+		"text-icon-accent-blue",
+		"text-icon-accent-green",
+		"text-icon-accent-orange",
+		"text-icon-accent-yellow",
+		"text-icon-accent-purple",
+		"text-icon-accent-gray",
 	]) {
-		assert.ok(
-			skillsJson.some((skill) => skill.iconColor === colorClass),
-			`a skill should use the ${colorClass} icon color`,
-		);
+		assert.ok(skillsLoaderSource.includes(accent), `loader should map a source to ${accent}`);
 	}
 	assert.match(skillsLoaderSource, /function getSkillPublisherLogoName/u);
 	assert.match(sidebarGroupsSource, /logoName: "atlassian"/u);

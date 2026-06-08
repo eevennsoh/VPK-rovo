@@ -54,6 +54,7 @@ import {
 	DEFAULT_SKILLS,
 	getSkillCategoryId,
 	getSkillIcon,
+	getSkillIconColor,
 	getSkillPublisherAvatarSrc,
 	getSkillPublisherLogoName,
 	getSkillPublisherName,
@@ -597,7 +598,7 @@ function SkillCard({ onLearnMore, onSelect, selected, skill }: Readonly<SkillCar
 							aria-hidden
 							className={cn(
 								"absolute inset-0 flex items-center justify-center text-icon-subtle transition-opacity duration-fast ease-out [&>svg]:size-4",
-								skill.iconColor,
+								getSkillIconColor(skill),
 								selected
 									? "opacity-0"
 									: "opacity-100 group-hover/card:opacity-0",
@@ -920,7 +921,7 @@ function SkillDetailSummary({ skill }: Readonly<{ skill: SkillsDirectorySkill }>
 					size="large"
 					variant="transparent"
 				>
-					<span className={cn("inline-flex items-center justify-center", skill.iconColor ?? "text-icon-subtle")}>
+					<span className={cn("inline-flex items-center justify-center", getSkillIconColor(skill) ?? "text-icon-subtle")}>
 						{getSkillIcon(skill.icon)}
 					</span>
 				</Tile>
