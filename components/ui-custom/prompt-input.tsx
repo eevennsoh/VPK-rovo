@@ -960,6 +960,7 @@ export const PromptInput = ({
         onSubmit={handleSubmit}
         ref={formRef}
         {...props}
+        data-prompt-input-root=""
       >
         <InputGroup
           className={cn(

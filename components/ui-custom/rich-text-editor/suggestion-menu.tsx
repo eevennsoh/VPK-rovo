@@ -810,11 +810,20 @@ function positionPopup(
 
 /**
  * Chat-composer positioning: instead of opening at the caret, anchor the palette
- * to the prompt-input box (the `.chat-composer-form`), span its full width, and
- * sit 8px away. Flips above the input when there isn't room below — so the menu
- * follows available viewport space.
+ * to the prompt-input root, span its full width, and sit 8px away. Prefer the
+ * Studio-style placement above the input; use the old below placement only when
+ * the menu would clip above the viewport.
  */
 const COMPOSER_POPUP_GAP = 8;
+const PROMPT_INPUT_ROOT_SELECTOR = "[data-prompt-input-root]";
+
+function getComposerAnchorBox(editorDom: HTMLElement): HTMLElement | null {
+	return (
+		editorDom.closest<HTMLElement>(PROMPT_INPUT_ROOT_SELECTOR) ??
+		editorDom.closest<HTMLElement>(".chat-composer-form") ??
+		editorDom.closest<HTMLElement>("form")
+	);
+}
 
 function positionComposerPopup(
 	element: HTMLDivElement | null,
@@ -824,19 +833,15 @@ function positionComposerPopup(
 		return;
 	}
 
-	const box =
-		editorDom.closest<HTMLElement>(".chat-composer-form") ??
-		editorDom.closest<HTMLElement>("form");
+	const box = getComposerAnchorBox(editorDom);
 	if (!box) {
 		return;
 	}
 
 	const rect = box.getBoundingClientRect();
 	const popupHeight = element.offsetHeight || 0;
-	const spaceBelow = window.innerHeight - rect.bottom - COMPOSER_POPUP_GAP;
 	const spaceAbove = rect.top - COMPOSER_POPUP_GAP;
-	// Prefer below; flip up only when the menu doesn't fit below but fits better above.
-	const placeAbove = popupHeight > spaceBelow && spaceAbove > spaceBelow;
+	const placeAbove = popupHeight <= spaceAbove;
 
 	element.style.maxWidth = "none";
 	element.style.left = `${rect.left}px`;
