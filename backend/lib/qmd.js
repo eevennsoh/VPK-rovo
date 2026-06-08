@@ -250,16 +250,23 @@ async function walkMarkdownFiles(dirPath) {
 
 async function getLatestCanonicalWikiUpdateAt({ wikiDir = DEFAULT_WIKI_DIR } = {}) {
 	const collectionRoots = getQmdCollectionDefinitions({ wikiDir }).map((definition) => definition.path);
-	let latestTimestamp = null;
 
-	for (const collectionRoot of collectionRoots) {
-		const files = await walkMarkdownFiles(collectionRoot);
-		for (const filePath of files) {
+	// Walk every collection root and stat all files in parallel — independent I/O
+	// reduced to a single max timestamp, so iteration order does not matter.
+	const fileLists = await Promise.all(
+		collectionRoots.map((collectionRoot) => walkMarkdownFiles(collectionRoot)),
+	);
+	const timestamps = await Promise.all(
+		fileLists.flat().map(async (filePath) => {
 			const stats = await fs.stat(filePath);
-			const timestamp = stats.mtime.toISOString();
-			if (!latestTimestamp || timestamp > latestTimestamp) {
-				latestTimestamp = timestamp;
-			}
+			return stats.mtime.toISOString();
+		}),
+	);
+
+	let latestTimestamp = null;
+	for (const timestamp of timestamps) {
+		if (!latestTimestamp || timestamp > latestTimestamp) {
+			latestTimestamp = timestamp;
 		}
 	}
 

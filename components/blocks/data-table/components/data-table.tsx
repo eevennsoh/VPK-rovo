@@ -111,10 +111,10 @@ import {
   Columns3Icon,
   EllipsisVerticalIcon,
   GripVerticalIcon,
-  LoaderIcon,
   PlusIcon,
   TrendingUpIcon,
 } from "@/components/ui/vpk-icons"
+import { Spinner } from "@/components/ui/spinner"
 
 export const schema = z.object({
   id: z.number(),
@@ -132,7 +132,7 @@ function showSaveToast(header: string) {
       <SonnerToast
         appearance="info"
         title={`Saving ${header}`}
-        icon={<LoaderIcon className="size-4 animate-spin text-icon-information" />}
+        icon={<Spinner className="text-icon-information" />}
         iconLabel="Saving"
         onDismiss={() => toast.dismiss(id)}
       />

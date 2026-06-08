@@ -3,10 +3,10 @@
 import { cn } from "@/lib/utils";
 import {
 	AudioWaveformIcon,
-	LoaderCircleIcon,
 	MessageSquareDiffIcon,
 	MicIcon,
 } from "@/components/ui/vpk-icons";
+import { Spinner } from "@/components/ui/spinner";
 
 export type RovoAppSteeringPhase =
 	| "idle"
@@ -56,7 +56,7 @@ function renderPhaseIcon(phase: Exclude<RovoAppSteeringPhase, "idle">) {
 	}
 
 	if (phase === "applying") {
-		return <LoaderCircleIcon className="size-4 animate-spin" />;
+		return <Spinner />;
 	}
 
 	return <AudioWaveformIcon className="size-4" />;

@@ -294,19 +294,31 @@ async function walkMarkdownFiles(dir) {
 }
 
 async function buildDedupeIndex(rawDir) {
-	const index = new Map();
 	const files = await walkMarkdownFiles(rawDir);
 
-	for (const filePath of files) {
-		try {
-			const content = await fs.readFile(filePath, "utf8");
-			const { frontmatter } = parseFrontmatter(content);
-			const url = frontmatter.canonical_url || frontmatter.source_url;
-			if (url) {
-				index.set(url, filePath);
+	// Read independent files in parallel. Each read keeps its own try/catch so
+	// an unreadable file resolves to null and is skipped (matching the original
+	// per-file skip) instead of rejecting the whole batch. The map is built in
+	// `files` order afterward, preserving the original last-write-wins semantics
+	// when two files share a URL.
+	const entries = await Promise.all(
+		files.map(async (filePath) => {
+			try {
+				const content = await fs.readFile(filePath, "utf8");
+				const { frontmatter } = parseFrontmatter(content);
+				const url = frontmatter.canonical_url || frontmatter.source_url;
+				return url ? { url, filePath } : null;
+			} catch {
+				// Skip unreadable files
+				return null;
 			}
-		} catch {
-			// Skip unreadable files
+		}),
+	);
+
+	const index = new Map();
+	for (const entry of entries) {
+		if (entry) {
+			index.set(entry.url, entry.filePath);
 		}
 	}
 
@@ -464,14 +476,22 @@ async function queryWiki(query, { limit, wikiDir = WIKI_DIR } = {}) {
 
 	const normalizedQuery = query.toLowerCase().trim();
 	const terms = normalizedQuery.split(/\s+/u);
-	const results = [];
+	const { wikiDir: canonicalWikiDir } = resolveLlmWikiPaths({ wikiDir });
 
-	for (const dir of WIKI_CONTENT_DIRS) {
-		const { wikiDir: canonicalWikiDir } = resolveLlmWikiPaths({ wikiDir });
-		const dirPath = path.join(canonicalWikiDir, dir);
-		const files = await walkMarkdownFiles(dirPath);
+	// Walk every content dir and read its files in parallel — each file is
+	// independent and results are sorted by score afterward. Each read keeps its
+	// own try/catch so unreadable files resolve to null and are skipped (matching
+	// the original per-file skip) instead of failing the whole search. V8's sort
+	// is stable, so equal-score results keep their dir-then-file order, leaving
+	// output identical to the original sequential version.
+	const fileLists = await Promise.all(
+		WIKI_CONTENT_DIRS.map((dir) =>
+			walkMarkdownFiles(path.join(canonicalWikiDir, dir)),
+		),
+	);
 
-		for (const filePath of files) {
+	const matched = await Promise.all(
+		fileLists.flat().map(async (filePath) => {
 			try {
 				const content = await fs.readFile(filePath, "utf8");
 				const { frontmatter, body } = parseFrontmatter(content);
@@ -485,7 +505,7 @@ async function queryWiki(query, { limit, wikiDir = WIKI_DIR } = {}) {
 				const matchCount = terms.filter((term) => searchable.includes(term)).length;
 
 				if (matchCount === 0) {
-					continue;
+					return null;
 				}
 
 				// Extract snippet around first match
@@ -497,17 +517,20 @@ async function queryWiki(query, { limit, wikiDir = WIKI_DIR } = {}) {
 				const snippetStart = Math.max(0, firstTermIndex - 40);
 				const snippet = body.slice(snippetStart, snippetStart + 120).trim();
 
-				results.push({
+				return {
 					title: frontmatter.title || path.basename(filePath, ".md"),
 					path: filePath,
 					snippet: snippet || body.slice(0, 120).trim(),
 					score: matchCount / terms.length,
-				});
+				};
 			} catch {
 				// Skip unreadable files
+				return null;
 			}
-		}
-	}
+		}),
+	);
+
+	const results = matched.filter(Boolean);
 
 	results.sort((a, b) => b.score - a.score);
 	const resolvedLimit = Number.isInteger(limit) && limit > 0 ? limit : results.length;
@@ -532,18 +555,37 @@ async function lintWiki({ wikiDir = WIKI_DIR } = {}) {
 
 	// 2. Collect all canonical pages
 	const { wikiDir: canonicalWikiDir, rawDir } = resolveLlmWikiPaths({ wikiDir });
-	const allPages = [];
-	for (const dir of WIKI_CONTENT_DIRS) {
-		const dirPath = path.join(canonicalWikiDir, dir);
-		const files = await walkMarkdownFiles(dirPath);
-		for (const filePath of files) {
+
+	// Walk content dirs and read pages in parallel — independent I/O. Results are
+	// reassembled in the original dir-then-file order afterward, so both `allPages`
+	// and the "unreadable" issues land in the same order as the sequential version
+	// (each read keeps its own try/catch so one bad file is reported, not thrown).
+	const pageFileLists = await Promise.all(
+		WIKI_CONTENT_DIRS.map((dir) =>
+			walkMarkdownFiles(path.join(canonicalWikiDir, dir)),
+		),
+	);
+	const pageReads = await Promise.all(
+		pageFileLists.flat().map(async (filePath) => {
 			try {
 				const content = await fs.readFile(filePath, "utf8");
 				const { frontmatter, body } = parseFrontmatter(content);
-				allPages.push({ filePath, frontmatter, body, slug: path.basename(filePath, ".md") });
+				return {
+					ok: true,
+					page: { filePath, frontmatter, body, slug: path.basename(filePath, ".md") },
+				};
 			} catch {
-				issues.push({ type: "unreadable", path: filePath, message: "Could not read file" });
+				return { ok: false, filePath };
 			}
+		}),
+	);
+
+	const allPages = [];
+	for (const result of pageReads) {
+		if (result.ok) {
+			allPages.push(result.page);
+		} else {
+			issues.push({ type: "unreadable", path: result.filePath, message: "Could not read file" });
 		}
 	}
 

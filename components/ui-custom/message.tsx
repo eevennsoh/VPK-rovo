@@ -81,7 +81,12 @@ export function Message({
 	return (
 		<div
 			className={cn(
-				"group group/message flex flex-col gap-2",
+				// cv-auto: skip layout/paint for off-screen messages in long
+				// transcripts. `contain-intrinsic-size: auto 400px` makes each
+				// message remember its real height once rendered, so scroll
+				// anchoring stays stable. Applied here so every chat surface
+				// (chatbot, cursor, rovo, studio) benefits from one place.
+				"group group/message flex flex-col gap-2 cv-auto",
 				from === "user"
 					? cn(
 							"is-user ml-auto w-fit items-end justify-end",

@@ -20,7 +20,6 @@ import {
 	ArrowLeftIcon as ArrowLeft,
 	ArrowRightIcon as ArrowRight,
 	ExternalLinkIcon as ExternalLink,
-	Loader2Icon,
 	PlusIcon,
 	RefreshCwIcon,
 	RotateCwIcon as RotateCw,
@@ -28,6 +27,7 @@ import {
 	TriangleAlertIcon,
 	XIcon,
 } from "@/components/ui/vpk-icons";
+import { Spinner } from "@/components/ui/spinner";
 import type { UseBrowserWorkspaceResult } from "@/components/website/demos/utils/hooks/use-browser-workspace";
 import { useBrowserPreviewSession } from "@/components/website/demos/utils/hooks/use-browser-preview-session";
 
@@ -115,7 +115,7 @@ function SnapshotView({
 				) : (
 					<div className="flex h-full flex-col items-center justify-center gap-3 text-center">
 						{isLoading ? (
-							<Loader2Icon className="size-7 animate-spin text-text-subtle" />
+							<Spinner className="size-7 text-text-subtle" />
 						) : null}
 						<p className="text-sm text-text-subtle">
 							{isLoading
@@ -757,7 +757,7 @@ function EmbeddedBrowserWorkspacePreview({
 				(previewStatus === "fallback" || previewStatus === "connecting") ? (
 					<div className="text-text-subtle flex size-full flex-col items-center justify-center gap-3 text-sm">
 						{isWorkspaceInitializing || previewStatus === "connecting" ? (
-							<Loader2Icon className="size-7 animate-spin" />
+							<Spinner className="size-7" />
 						) : null}
 						<p>
 							{isWorkspaceInitializing
@@ -771,7 +771,7 @@ function EmbeddedBrowserWorkspacePreview({
 
 				{isBusy ? (
 					<div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/20 backdrop-blur-[1px]">
-						<Loader2Icon className="size-7 animate-spin text-text-subtle" />
+						<Spinner className="size-7 text-text-subtle" />
 					</div>
 				) : null}
 

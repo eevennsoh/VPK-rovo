@@ -624,10 +624,18 @@ async function listWikiMemoryProposals({
 	const requestedStatuses = Array.isArray(statuses) && statuses.length > 0
 		? new Set(statuses)
 		: null;
+
+	// Read all proposal files in parallel — they are independent and the result
+	// is sorted afterward, so loop order does not matter. Failure behavior is
+	// unchanged: readMarkdownDocument swallows ENOENT and rethrows otherwise.
+	const documents = await Promise.all(
+		files.map((filePath) => readMarkdownDocument(filePath)),
+	);
 	const proposals = [];
 
-	for (const filePath of files) {
-		const document = await readMarkdownDocument(filePath);
+	for (let index = 0; index < files.length; index += 1) {
+		const filePath = files[index];
+		const document = documents[index];
 		if (!document.exists) {
 			continue;
 		}
