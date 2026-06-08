@@ -21,6 +21,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { List, type ListColumn } from "@/components/ui-custom/list";
+import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import EditIcon from "@atlaskit/icon/core/edit";
@@ -478,12 +479,12 @@ function StudioCustomAgentsList({
 									onClick={() => onEditAgent(entry.profile.id)}
 									type="button"
 								>
-									<Avatar aria-hidden="true" shape="hexagon" size="sm" className="shrink-0 after:border-0">
+									<Avatar aria-hidden="true" shape="hexagon" size="default" className="shrink-0 after:border-0">
 										{entry.profile.avatarSrc ? <AvatarImage alt="" src={entry.profile.avatarSrc} /> : null}
 										<AvatarFallback>{agentName.slice(0, 2).toUpperCase()}</AvatarFallback>
 									</Avatar>
 									<span className="flex min-w-0 flex-col">
-										<span className="truncate font-medium text-text">{agentName}</span>
+										<span className="truncate text-text" style={{ font: token("font.heading.xsmall") }}>{agentName}</span>
 									</span>
 								</button>
 							</List.Cell>
