@@ -395,7 +395,7 @@
 }
 
 /*
- * Chat-composer variant: the palette anchors to the prompt-input box and spans
+ * Chat-composer variant: the palette anchors to the prompt-input root and spans
  * its full width (set inline as `width`), so drop the caret-menu max-width cap
  * and let the inner menu stretch to fill.
  */
