@@ -113,12 +113,15 @@ test("Reasoning selector lives in the compact toolbar and shares state across co
 
 test("Knowledge selector mirrors reasoning with mode dropdown and custom tag list", () => {
 	assert.match(AGENT_SOURCE, /const KNOWLEDGE_MODE_OPTIONS = \[/u);
-	assert.match(AGENT_SOURCE, /\{ value: "all", label: "All organizational knowledge" \}/u);
-	assert.match(AGENT_SOURCE, /\{ value: "custom", label: "Custom knowledge" \}/u);
-	assert.match(AGENT_SOURCE, /\{ value: "none", label: "No organizational knowledge" \}/u);
+	assert.match(AGENT_SOURCE, /\{ value: "all", label: "All organizational knowledge", tabLabel: "All" \}/u);
+	assert.match(AGENT_SOURCE, /\{ value: "custom", label: "Custom knowledge", tabLabel: "Custom" \}/u);
+	assert.match(AGENT_SOURCE, /\{ value: "none", label: "No organizational knowledge", tabLabel: "None" \}/u);
 	assert.match(AGENT_SOURCE, /function AgentKnowledgeSelector/u);
 	assert.match(AGENT_SOURCE, /function AgentKnowledgeRow/u);
 	assert.match(AGENT_SOURCE, /function AgentKnowledgeOverflowMenu/u);
+	assert.match(AGENT_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
+	assert.match(AGENT_SOURCE, /function AgentKnowledgeModeTabs/u);
+	assert.match(AGENT_SOURCE, /<Tabs[\s\S]*value=\{value\}[\s\S]*onValueChange=\{\(next\) => onValueChange\(next as KnowledgeModeValue\)\}[\s\S]*<TabsList className="w-full">[\s\S]*<TabsTrigger key=\{option\.value\} value=\{option\.value\}>[\s\S]*\{option\.tabLabel\}/u);
 	assert.match(AGENT_SOURCE, /\{ agentFieldName: "knowledge", label: "Knowledge", kind: "knowledge", Icon: BookOpenIcon \}/u);
 	assert.match(AGENT_SOURCE, /case "knowledge":[\s\S]*count = 0;/u);
 	assert.match(AGENT_SOURCE, /const \[knowledgeFallback, setKnowledgeFallback\] = useState<KnowledgeModeValue \| null>\(null\);/u);
@@ -315,9 +318,13 @@ test("Agent header renders Test and Configure as a self-contained compact Toggle
 		AGENT_SOURCE,
 		/\{actions \?\? \([\s\S]*<ToggleGroup[\s\S]*aria-label="Agent views"[\s\S]*defaultValue=\{\["configure"\]\}[\s\S]*variant="outline"[\s\S]*<ToggleGroupItem value="test">[\s\S]*\{primaryActionLabel\}[\s\S]*<ToggleGroupItem value="configure">[\s\S]*\{secondaryActionLabel\}[\s\S]*<\/ToggleGroup>[\s\S]*<Button[\s\S]*\{publishLabel\}[\s\S]*<\/Button>/u,
 	);
-	// The Tabs-based header is fully retired from the default actions.
-	assert.doesNotMatch(AGENT_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
-	assert.doesNotMatch(AGENT_SOURCE, /<TabsTrigger/u);
+	// Tabs still back the knowledge-mode segmented control, but the default
+	// header actions are ToggleGroup-owned.
+	const agentHeaderSource = AGENT_SOURCE.slice(
+		AGENT_SOURCE.indexOf("export const AgentHeader = memo"),
+		AGENT_SOURCE.indexOf("export type AgentContentProps"),
+	);
+	assert.doesNotMatch(agentHeaderSource, /<TabsTrigger/u);
 });
 
 test("Agent component page wires compact filled and empty placeholder variations", () => {

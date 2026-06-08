@@ -88,6 +88,7 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tag, type TagColor } from "@/components/ui/tag";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { MoreHorizontalIcon, PlusIcon } from "@/components/ui/vpk-icons";
@@ -904,14 +905,25 @@ function AgentCompactNavMenuFooter({ children }: Readonly<{ children: ReactNode 
 	);
 }
 
-// Permanent footer pinned to the bottom of a scrolling popup. The popup itself
-// is the scroll container (`p-1` frame, `overflow-y-auto max-h`), so this block
-// bleeds to the popup edges (`-mx-1 -mb-1`), re-pads to the `p-1` rhythm, sticks
-// to the bottom, paints the popup background, and carries a top border so the
-// list scrolls cleanly underneath it.
-function AgentCompactNavMenuStickyFooter({ children }: Readonly<{ children: ReactNode }>) {
+// Permanent footer pinned to the bottom of a flex-column popup. Used together
+// with `AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS` on the `MenubarContent` and a
+// `flex-1 min-h-0 overflow-y-auto` scroll region around the list: the list
+// scrolls, this footer is a non-shrinking block that simply sits at the bottom
+// (no `sticky`, which would add phantom height when the content fits). The
+// popup's own `p-1` (4px) frame keeps the footer items inset evenly left/right/
+// bottom to match the list. When `bordered` (a list sits above) it carries the
+// same inset `DropdownMenuSeparator` (`mx-1 my-1` = 4px) as the non-sticky
+// `AgentCompactNavMenuFooter`, so the divider gap matches the Knowledge/Tools/
+// Skills/Subagents menus exactly.
+const AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS = "flex max-h-(--available-height) flex-col";
+
+function AgentCompactNavMenuPinnedFooter({
+	bordered = true,
+	children,
+}: Readonly<{ bordered?: boolean; children: ReactNode }>) {
 	return (
-		<div className="sticky bottom-0 -mx-1 -mb-1 mt-1 border-t border-border bg-popover p-1">
+		<div className="shrink-0">
+			{bordered ? <DropdownMenuSeparator /> : null}
 			{children}
 		</div>
 	);
@@ -1042,27 +1054,29 @@ function AgentCompactTriggersNavButton({
 					/>
 				)}
 			/>
-			<MenubarContent align="start" className="w-64">
+			<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
 				{isEmpty ? null : (
-					<AgentCompactNavMenuList>
-						<DropdownMenuGroup className="p-0">
-							{triggers.map((trigger, index) => {
-								const definition = definitionsAlignItems ? triggerDefinitions?.[index] : undefined;
-								const elemBefore = definition ? renderAgentTriggerProviderIcon(definition) : undefined;
-								return (
-									<DropdownMenuItem
-										elemBefore={elemBefore ?? undefined}
-										key={`trigger-${trigger}-${index}`}
-										onClick={() => onEditTriggers?.()}
-									>
-										{trigger}
-									</DropdownMenuItem>
-								);
-							})}
-						</DropdownMenuGroup>
-					</AgentCompactNavMenuList>
+					<div className="min-h-0 flex-1 overflow-y-auto">
+						<AgentCompactNavMenuList>
+							<DropdownMenuGroup className="p-0">
+								{triggers.map((trigger, index) => {
+									const definition = definitionsAlignItems ? triggerDefinitions?.[index] : undefined;
+									const elemBefore = definition ? renderAgentTriggerProviderIcon(definition) : undefined;
+									return (
+										<DropdownMenuItem
+											elemBefore={elemBefore ?? undefined}
+											key={`trigger-${trigger}-${index}`}
+											onClick={() => onEditTriggers?.()}
+										>
+											{trigger}
+										</DropdownMenuItem>
+									);
+								})}
+							</DropdownMenuGroup>
+						</AgentCompactNavMenuList>
+					</div>
 				)}
-				<AgentCompactNavMenuStickyFooter>
+				<AgentCompactNavMenuPinnedFooter bordered={!isEmpty}>
 					{addTriggerFlyout}
 					<DropdownMenuItem
 						elemBefore={<AutomationIcon label="" size="small" />}
@@ -1070,7 +1084,7 @@ function AgentCompactTriggersNavButton({
 					>
 						Manage triggers
 					</DropdownMenuItem>
-				</AgentCompactNavMenuStickyFooter>
+				</AgentCompactNavMenuPinnedFooter>
 			</MenubarContent>
 		</MenubarMenu>
 	);
@@ -1326,6 +1340,10 @@ function AgentCompactEmptyConfigNav({
 								value={knowledgeMode}
 								onValueChange={onKnowledgeModeChange}
 								itemCount={getNonEmptyConfigItems(config?.knowledge).length}
+								items={getNonEmptyConfigItems(config?.knowledge)}
+								onBrowse={() => openAgentDirectoryOrAppendListItem("knowledge", "knowledge", onOpenDirectory, onAppendListItem)}
+								onAdd={() => onAppendListItem?.("knowledge")}
+								onSelectItem={onOpenDirectory ? (value) => onOpenDirectory("knowledge", value) : undefined}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
 							/>
 						);
@@ -2337,9 +2355,9 @@ function AgentReasoningRow({
 }
 
 const KNOWLEDGE_MODE_OPTIONS = [
-	{ value: "all", label: "All organizational knowledge" },
-	{ value: "custom", label: "Custom knowledge" },
-	{ value: "none", label: "No organizational knowledge" },
+	{ value: "all", label: "All organizational knowledge", tabLabel: "All" },
+	{ value: "custom", label: "Custom knowledge", tabLabel: "Custom" },
+	{ value: "none", label: "No organizational knowledge", tabLabel: "None" },
 ] as const;
 
 type KnowledgeModeValue = (typeof KNOWLEDGE_MODE_OPTIONS)[number]["value"];
@@ -2386,11 +2404,106 @@ function AgentKnowledgeSelectorMenu({
 	);
 }
 
+// "All | Custom | None" tabs pinned to the bottom of the popup. The tabs ARE the
+// knowledge mode: picking a tab calls `onValueChange` directly. Kept inside the
+// popup's `p-1` frame so it lines up with the list/footer above it.
+function AgentKnowledgeModeTabs({
+	value,
+	onValueChange,
+}: Readonly<{
+	value: KnowledgeModeValue;
+	onValueChange: (next: KnowledgeModeValue) => void;
+}>) {
+	return (
+		<Tabs
+			// Base UI Tabs `value` must match a Tab `value`; map mode → tab 1:1.
+			value={value}
+			onValueChange={(next) => onValueChange(next as KnowledgeModeValue)}
+		>
+			<TabsList className="w-full">
+				{KNOWLEDGE_MODE_OPTIONS.map((option) => (
+					<TabsTrigger key={option.value} value={option.value}>
+						{option.tabLabel}
+					</TabsTrigger>
+				))}
+			</TabsList>
+		</Tabs>
+	);
+}
+
+// Nav-button knowledge popup: a flex column whose body scrolls (the custom
+// knowledge list, once any items exist) and whose footer is pinned. The footer
+// stacks, bottom-up: the "All | Custom | None" tabs (the mode), and — only when
+// "Custom" is active — "Add knowledge" + "Browse knowledge" just above the tabs.
+// A separator sits above those actions once the list has items, so the list,
+// actions, and tabs read as three banded sections.
+function AgentKnowledgeNavMenuContent({
+	value,
+	onValueChange,
+	items,
+	onBrowse,
+	onAdd,
+	onSelectItem,
+}: Readonly<{
+	value: KnowledgeModeValue;
+	onValueChange: (next: KnowledgeModeValue) => void;
+	items: readonly string[];
+	onBrowse?: () => void;
+	onAdd?: () => void;
+	onSelectItem?: (item: string) => void;
+}>) {
+	const isCustom = value === "custom";
+	const hasItems = isCustom && items.length > 0;
+
+	return (
+		<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
+			{hasItems ? (
+				<div className="min-h-0 flex-1 overflow-y-auto">
+					<AgentCompactNavMenuList>
+						<DropdownMenuGroup className="p-0">
+							{items.map((item, index) => (
+								<DropdownMenuItem
+									key={`knowledge-${item}-${index}`}
+									onClick={onSelectItem ? () => onSelectItem(item) : undefined}
+								>
+									{item}
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuGroup>
+					</AgentCompactNavMenuList>
+				</div>
+			) : null}
+			<div className="shrink-0">
+				{isCustom ? (
+					<>
+						{hasItems ? <DropdownMenuSeparator /> : null}
+						<DropdownMenuItem elemBefore={<PlusIcon size="small" />} onClick={onAdd}>
+							Add knowledge
+						</DropdownMenuItem>
+						<DropdownMenuItem elemBefore={<BookOpenIcon label="" size="small" />} onClick={onBrowse}>
+							Browse knowledge
+						</DropdownMenuItem>
+					</>
+				) : null}
+				<div className="px-1 pt-1">
+					<AgentKnowledgeModeTabs value={value} onValueChange={onValueChange} />
+				</div>
+			</div>
+		</MenubarContent>
+	);
+}
+
 interface AgentKnowledgeSelectorProps {
 	value: KnowledgeModeValue;
 	onValueChange: (next: KnowledgeModeValue) => void;
 	render: "nav-button" | "row";
 	itemCount?: number;
+	// Nav-button only: the custom knowledge items, plus browse/add/select
+	// handlers surfaced inside the dropdown when "Custom" is active.
+	items?: readonly string[];
+	onBrowse?: () => void;
+	onAdd?: () => void;
+	onSelectItem?: (item: string) => void;
 	screenAssistantTargetId?: string;
 }
 
@@ -2399,6 +2512,10 @@ function AgentKnowledgeSelector({
 	onValueChange,
 	render,
 	itemCount = 0,
+	items = [],
+	onBrowse,
+	onAdd,
+	onSelectItem,
 	screenAssistantTargetId,
 }: Readonly<AgentKnowledgeSelectorProps>) {
 	const current = findKnowledgeModeOption(value);
@@ -2419,7 +2536,14 @@ function AgentKnowledgeSelector({
 					Knowledge
 					<Badge>{valueLabel}</Badge>
 				</MenubarTrigger>
-				<AgentKnowledgeSelectorMenu value={value} onValueChange={onValueChange} />
+				<AgentKnowledgeNavMenuContent
+					value={value}
+					onValueChange={onValueChange}
+					items={items}
+					onBrowse={onBrowse}
+					onAdd={onAdd}
+					onSelectItem={onSelectItem}
+				/>
 			</MenubarMenu>
 		);
 	}
