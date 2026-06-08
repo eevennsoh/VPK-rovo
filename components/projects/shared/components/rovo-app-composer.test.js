@@ -4,6 +4,8 @@ const path = require("node:path");
 const test = require("node:test");
 
 const COMPOSER_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-app-composer.tsx"), "utf8");
+const CARD_BODY_SOURCE = fs.readFileSync(path.join(__dirname, "composer-card-body.tsx"), "utf8");
+const FLOATING_BODY_SOURCE = fs.readFileSync(path.join(__dirname, "composer-floating-body.tsx"), "utf8");
 
 test("RovoAppComposer uses the shared edit context bar for open artifacts", () => {
 	assert.match(COMPOSER_SOURCE, /import ChatContextBar from "@\/components\/projects\/sidebar-chat\/components\/chat-context-bar";/u);
@@ -26,4 +28,16 @@ test("RovoAppComposer renders both card and floating chrome bodies", () => {
 	assert.match(COMPOSER_SOURCE, /import \{ ComposerFloatingBody \} from "@\/components\/projects\/shared\/components\/composer-floating-body";/u);
 	assert.match(COMPOSER_SOURCE, /<ComposerFloatingBody/u);
 	assert.match(COMPOSER_SOURCE, /<ComposerCardBody/u);
+});
+
+test("RovoAppComposer forwards directory autocomplete control to both composer bodies", () => {
+	assert.match(COMPOSER_SOURCE, /directoryAutocompleteListVisible\?: boolean;/u);
+	assert.match(COMPOSER_SOURCE, /onDirectoryAutocompleteChange\?: \(state: DirectoryAutocompleteState \| null\) => void;/u);
+	assert.match(COMPOSER_SOURCE, /onDirectoryAutocompleteControllerChange\?: \(controller: ComposerDirectoryAutocompleteController \| null\) => void;/u);
+	assert.match(COMPOSER_SOURCE, /directoryAutocompleteListVisible = false/u);
+	assert.match(COMPOSER_SOURCE, /directoryAutocompleteListVisible,/u);
+	assert.match(COMPOSER_SOURCE, /onDirectoryAutocompleteChange,/u);
+	assert.match(COMPOSER_SOURCE, /onDirectoryAutocompleteControllerChange,/u);
+	assert.match(CARD_BODY_SOURCE, /<PromptInputTextarea[\s\S]*directoryAutocompleteListVisible=\{directoryAutocompleteListVisible\}[\s\S]*onDirectoryAutocompleteChange=\{onDirectoryAutocompleteChange\}[\s\S]*onDirectoryAutocompleteControllerChange=\{onDirectoryAutocompleteControllerChange\}/u);
+	assert.match(FLOATING_BODY_SOURCE, /<PromptInputTextarea[\s\S]*directoryAutocompleteListVisible=\{directoryAutocompleteListVisible\}[\s\S]*onDirectoryAutocompleteChange=\{onDirectoryAutocompleteChange\}[\s\S]*onDirectoryAutocompleteControllerChange=\{onDirectoryAutocompleteControllerChange\}/u);
 });

@@ -72,8 +72,12 @@ export interface GreetingPromptRowProps {
 	iconColor?: string;
 	/** Fully-rendered leading visual; overrides `imageSrc` / `icon`. */
 	visual?: ReactNode;
+	shortcut?: ReactNode;
+	active?: boolean;
 	onClick?: () => void;
 	className?: string;
+	onFocus?: () => void;
+	onMouseEnter?: () => void;
 }
 
 function GreetingPromptVisual({
@@ -117,8 +121,12 @@ export function GreetingPromptRow({
 	icon,
 	iconColor,
 	visual,
+	shortcut,
+	active = false,
 	onClick,
 	className,
+	onFocus,
+	onMouseEnter,
 }: Readonly<GreetingPromptRowProps>) {
 	// Mirrors `.rich-text-command-menu-item`: a CSS grid with a fixed 32px icon
 	// column, 12px gap, 6px horizontal padding, and a fixed 44px row height (no
@@ -126,6 +134,7 @@ export function GreetingPromptRow({
 	// and corner radius use the same tokens as the palette row.
 	const buttonClassName = cn(
 		"grid h-11 w-full grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 rounded-[3px] px-1.5 text-left transition-colors hover:bg-bg-neutral-subtle-hovered",
+		active && "bg-bg-neutral-subtle-hovered",
 		className,
 	);
 	const leadingVisual = (
@@ -141,21 +150,28 @@ export function GreetingPromptRow({
 	// Label-only row: no byline to reveal, so render a plain (cheaper) button.
 	if (!description) {
 		return (
-			<button className={buttonClassName} onClick={onClick} type="button">
+			<button className={buttonClassName} onClick={onClick} onFocus={onFocus} onMouseEnter={onMouseEnter} type="button">
 				{leadingVisual}
 				<span className={GREETING_COPY_CLASS}>
 					<span className={GREETING_LABEL_CLASS}>{label}</span>
 				</span>
+				{shortcut ? (
+					<span className="flex shrink-0 items-center justify-end text-text-subtlest">
+						{shortcut}
+					</span>
+				) : null}
 			</button>
 		);
 	}
 
 	return (
 		<motion.button
-			animate="idle"
+			animate={active ? "active" : "idle"}
 			className={buttonClassName}
 			initial={false}
 			onClick={onClick}
+			onFocus={onFocus}
+			onMouseEnter={onMouseEnter}
 			type="button"
 			whileFocus="active"
 			whileHover="active"
@@ -177,6 +193,11 @@ export function GreetingPromptRow({
 					{description}
 				</motion.span>
 			</span>
+			{shortcut ? (
+				<span className="flex shrink-0 items-center justify-end text-text-subtlest">
+					{shortcut}
+				</span>
+			) : null}
 		</motion.button>
 	);
 }
