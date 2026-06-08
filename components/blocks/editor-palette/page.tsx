@@ -8,6 +8,7 @@ import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 
 import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
+import { SearchIcon } from "@/components/ui/vpk-icons";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
 	RichTextEditor,
@@ -26,7 +27,11 @@ import { cn } from "@/lib/utils";
 import { EDITOR_PALETTE_MENTION_SOURCES } from "./data/mention-sources";
 
 /** How the editor palette lays out its suggestion surfaces. */
-export type EditorPaletteVariant = "nested" | "flat";
+export type EditorPaletteVariant = "nested" | "flat" | "search";
+export type EditorPaletteSearchCategory = Extract<
+	RichTextMentionMenuCategory,
+	"knowledge" | "skill" | "subagent" | "tool"
+>;
 
 export interface EditorPaletteProps {
 	/** Skill catalog that drives the live editor's "/" Skills submenu counts. */
@@ -35,8 +40,10 @@ export interface EditorPaletteProps {
 	 * Layout for the showcase menus. `"nested"` (default) shows each top-level
 	 * section as a single list you click into. `"flat"` expands every section
 	 * inline, capped at five items with a "Browse all" / "View more" footer.
+	 * `"search"` shows one category-specific inline search picker.
 	 */
 	variant?: EditorPaletteVariant;
+	searchCategory?: EditorPaletteSearchCategory;
 	/** Render a live editor where typing "@" or "/" opens the real menus. */
 	showLiveEditor?: boolean;
 	className?: string;
@@ -90,6 +97,7 @@ const FLAT_COMMAND_SECTIONS: readonly FlatSectionConfig[] = [
 
 export default function EditorPalette({
 	mentionSources = EDITOR_PALETTE_MENTION_SOURCES,
+	searchCategory = "tool",
 	variant = "nested",
 	showLiveEditor = true,
 	className,
@@ -99,7 +107,9 @@ export default function EditorPalette({
 			className={cn("flex w-full max-w-[1440px] flex-col", className)}
 			style={{ gap: token("space.400") }}
 		>
-			{variant === "flat" ? (
+			{variant === "search" ? (
+				<SearchPalette category={searchCategory} mentionSources={mentionSources} />
+			) : variant === "flat" ? (
 				<FlatPalette mentionSources={mentionSources} />
 			) : (
 				<NestedPalette mentionSources={mentionSources} />
@@ -112,7 +122,7 @@ export default function EditorPalette({
 				>
 					<RichTextEditor
 						mentionSources={mentionSources}
-						suggestionVariant={variant}
+						suggestionVariant={variant === "search" ? "flat" : variant}
 						placeholder="Type @ to mention people and agents, or / for commands…"
 						showToolbar={false}
 						showBubbleMenu={false}
@@ -127,6 +137,134 @@ export default function EditorPalette({
 
 interface PaletteVariantProps {
 	mentionSources: RichTextMentionSources;
+}
+
+const SEARCH_CATEGORY_LABELS: Record<EditorPaletteSearchCategory, string> = {
+	knowledge: "knowledge",
+	skill: "skills",
+	subagent: "subagents",
+	tool: "tools",
+};
+
+const SEARCH_INPUT_ITEM_ID = "__editor-palette-search-input__";
+const SEARCH_BROWSE_ALL_ITEM_ID = "__editor-palette-search-browse-all__";
+const SEARCH_EMPTY_ITEM_ID = "__editor-palette-search-empty__";
+
+function getSearchPlaceholder(category: EditorPaletteSearchCategory): string {
+	return `Search ${SEARCH_CATEGORY_LABELS[category]}`;
+}
+
+function filterSearchItems(
+	items: readonly RichTextSuggestionMenuItem[],
+	query: string,
+): readonly RichTextSuggestionMenuItem[] {
+	const normalizedQuery = query.trim().toLowerCase();
+	if (!normalizedQuery) {
+		return items;
+	}
+
+	return items.filter((item) => {
+		const haystack = `${item.label} ${item.description ?? ""}`.toLowerCase();
+		return haystack.includes(normalizedQuery);
+	});
+}
+
+export interface EditorPaletteSearchPickerProps {
+	autoFocus?: boolean;
+	category: EditorPaletteSearchCategory;
+	className?: string;
+	emptyLabel?: string;
+	mentionSources?: RichTextMentionSources;
+	onBrowseAll?: () => void;
+	onSelectItem?: (item: RichTextSuggestionMenuItem) => void;
+}
+
+export function EditorPaletteSearchPicker({
+	autoFocus,
+	category,
+	className,
+	emptyLabel = "No matching items",
+	mentionSources = EDITOR_PALETTE_MENTION_SOURCES,
+	onBrowseAll,
+	onSelectItem,
+}: Readonly<EditorPaletteSearchPickerProps>) {
+	const [query, setQuery] = useState("");
+	const items = filterSearchItems(getMentionChildItems(mentionSources, category), query);
+	const resultRows: readonly RichTextSuggestionMenuItem[] = items.length > 0 ? items : [
+		{
+			id: SEARCH_EMPTY_ITEM_ID,
+			disabled: true,
+			icon: <SearchIcon className="size-4" />,
+			label: emptyLabel,
+		},
+	];
+	const searchItem: RichTextSuggestionMenuItem = {
+		id: SEARCH_INPUT_ITEM_ID,
+		icon: <SearchIcon className="size-4" />,
+		isSticky: true,
+		label: getSearchPlaceholder(category),
+	};
+	const browseAllItem: RichTextSuggestionMenuItem = {
+		id: SEARCH_BROWSE_ALL_ITEM_ID,
+		icon: <ShowMoreHorizontalIcon label="" size="small" />,
+		isSticky: true,
+		label: "Browse all",
+		stickyPosition: "bottom",
+	};
+	const rows = [searchItem, ...resultRows, browseAllItem];
+
+	const handleSelect = (item: RichTextSuggestionMenuItem) => {
+		if (item.id === SEARCH_INPUT_ITEM_ID) {
+			const firstItem = items[0];
+			if (firstItem) {
+				onSelectItem?.(firstItem);
+			}
+			return;
+		}
+
+		if (item.id === SEARCH_BROWSE_ALL_ITEM_ID) {
+			onBrowseAll?.();
+			return;
+		}
+
+		onSelectItem?.(item);
+	};
+
+	return (
+		<RichTextSuggestionMenu
+			className={className}
+			title={getSearchPlaceholder(category)}
+			emptyLabel={emptyLabel}
+			inputAutoFocus={autoFocus}
+			inputValue={query}
+			items={rows}
+			onInputValueChange={setQuery}
+			onSelect={handleSelect}
+			renderFirstItemAsInput
+			selectedIndex={-1}
+		/>
+	);
+}
+
+interface SearchPaletteProps extends PaletteVariantProps {
+	category: EditorPaletteSearchCategory;
+}
+
+function SearchPalette({ category, mentionSources }: Readonly<SearchPaletteProps>) {
+	return (
+		<div
+			className="grid w-full grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] items-start justify-items-center"
+			style={{ gap: token("space.300") }}
+		>
+			<PalettePanel caption={getSearchPlaceholder(category)}>
+				<EditorPaletteSearchPicker
+					category={category}
+					className="rich-text-command-menu-borderless"
+					mentionSources={mentionSources}
+				/>
+			</PalettePanel>
+		</div>
+	);
 }
 
 function NestedPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
@@ -364,7 +502,7 @@ function FlatMergedPanel({
 }
 
 interface PalettePanelProps {
-	trigger: string;
+	trigger?: string;
 	caption: string;
 	children: ReactNode;
 }
@@ -373,7 +511,7 @@ function PalettePanel({ trigger, caption, children }: Readonly<PalettePanelProps
 	return (
 		<figure className="m-0 flex flex-col" style={{ gap: token("space.100") }}>
 			<figcaption className="flex items-center" style={{ gap: token("space.100") }}>
-				<Kbd>{trigger}</Kbd>
+				{trigger ? <Kbd>{trigger}</Kbd> : null}
 				<span className="text-sm font-medium text-text">{caption}</span>
 			</figcaption>
 			{children}

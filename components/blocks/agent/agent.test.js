@@ -95,7 +95,9 @@ test("Reasoning selector lives in the compact toolbar and shares state across co
 	assert.match(AGENT_SOURCE, /function AgentReasoningSelector/u);
 	assert.match(AGENT_SOURCE, /function AgentReasoningRow/u);
 	assert.match(AGENT_SOURCE, /function AgentReasoningOverflowMenu/u);
-	assert.match(AGENT_SOURCE, /const \[reasoningValue, setReasoningValue\] = useState<ReasoningModeValue>\("quick-auto"\);/u);
+	assert.match(AGENT_SOURCE, /const \[reasoningFallback, setReasoningFallback\] = useState<ReasoningModeValue \| null>\(null\);/u);
+	assert.match(AGENT_SOURCE, /const reasoningValue =[\s\S]*\(config\.reasoningMode as ReasoningModeValue \| undefined\) \?\? reasoningFallback \?\? "quick-auto";/u);
+	assert.match(AGENT_SOURCE, /const setReasoningValue = useCallback\([\s\S]*setReasoningFallback\(next\);[\s\S]*onTextChange\?\.\("reasoningMode", next\);/u);
 	assert.match(AGENT_SOURCE, /\{ agentFieldName: "reasoning", label: "Reasoning", kind: "reasoning", Icon: AiComputeIcon \}/u);
 	assert.match(AGENT_SOURCE, /case "reasoning":[\s\S]*count = 0;/u);
 	assert.match(AGENT_SOURCE, /render="nav-button"[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{onReasoningValueChange\}/u);
@@ -119,7 +121,9 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 	assert.match(AGENT_SOURCE, /function AgentKnowledgeOverflowMenu/u);
 	assert.match(AGENT_SOURCE, /\{ agentFieldName: "knowledge", label: "Knowledge", kind: "knowledge", Icon: BookOpenIcon \}/u);
 	assert.match(AGENT_SOURCE, /case "knowledge":[\s\S]*count = 0;/u);
-	assert.match(AGENT_SOURCE, /const \[knowledgeMode, setKnowledgeMode\] = useState<KnowledgeModeValue>/u);
+	assert.match(AGENT_SOURCE, /const \[knowledgeFallback, setKnowledgeFallback\] = useState<KnowledgeModeValue \| null>\(null\);/u);
+	assert.match(AGENT_SOURCE, /const knowledgeMode =[\s\S]*\(config\.knowledgeMode as KnowledgeModeValue \| undefined\)[\s\S]*\?\? knowledgeFallback[\s\S]*\?\? \(getNonEmptyConfigItems\(config\.knowledge\)\.length > 0 \? "custom" : "all"\);/u);
+	assert.match(AGENT_SOURCE, /const setKnowledgeMode = useCallback\([\s\S]*setKnowledgeFallback\(next\);[\s\S]*onTextChange\?\.\("knowledgeMode", next\);/u);
 	assert.match(AGENT_SOURCE, /<AgentKnowledgeRow[\s\S]*value=\{knowledgeMode\}/u);
 	assert.match(AGENT_SOURCE, /<AgentKnowledgeOverflowMenu[\s\S]*value=\{knowledgeMode\}/u);
 	assert.match(AGENT_SOURCE, /const isCustom = value === "custom";/u);
@@ -167,7 +171,9 @@ test("Filled config summary sorts empty rows to the bottom while preserving cano
 	assert.match(AGENT_SOURCE, /Memory[\s\S]*<Badge>\{selectedOption\.label\}<\/Badge>/u);
 	assert.match(AGENT_SOURCE, /item\.agentFieldName === "memory"[\s\S]*<AgentMemoryOverflowMenu[\s\S]*value=\{memoryMode\}/u);
 	// Memory state is lifted to the toolbar so both views share one toggle.
-	assert.match(AGENT_SOURCE, /const \[memoryMode, setMemoryMode\] = useState<MemoryModeValue>\("on"\);/u);
+	assert.match(AGENT_SOURCE, /const \[memoryFallback, setMemoryFallback\] = useState<MemoryModeValue \| null>\(null\);/u);
+	assert.match(AGENT_SOURCE, /const memoryMode = \(config\.memoryMode as MemoryModeValue \| undefined\) \?\? memoryFallback \?\? "on";/u);
+	assert.match(AGENT_SOURCE, /const setMemoryMode = useCallback\([\s\S]*setMemoryFallback\(next\);[\s\S]*onTextChange\?\.\("memoryMode", next\);/u);
 });
 
 test("Agent config updates instructions as markdown strings", () => {
@@ -418,7 +424,13 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /tagColor="standard"/u);
 	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*addLabel=\{getAgentFilledSummaryAddLabel\("triggers", triggerItems\.length === 0, showAddButtons\)\}[\s\S]*onEditTriggers=\{onEditTriggers\}/u);
 	assert.match(AGENT_SOURCE, /label="Skills"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("skills", "skills", onOpenDirectory, onAppendListItem\)\}/u);
-	assert.match(AGENT_SOURCE, /label="Tools"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("tools", "tools", onOpenDirectory, onAppendListItem\)\}/u);
+	assert.match(AGENT_SOURCE, /label="Tools"\s+onAdd=\{\(\) => openInlineSearchPicker\("tools"\)\}/u);
+	assert.match(AGENT_SOURCE, /inlinePicker=\{inlineSearchField === "tools" \? \([\s\S]*<AgentInlineReferenceSearchPicker[\s\S]*field="tools"[\s\S]*onBrowseAll=\{\(\) => browseInlineSearchPicker\("tools"\)\}[\s\S]*onSelectItem=\{\(item\) => selectInlineSearchItem\("tools", item\)\}/u);
+	assert.match(AGENT_SOURCE, /function AgentInlineReferenceSearchPicker\([\s\S]*<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category=\{AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD\[field\]\}[\s\S]*onBrowseAll=\{onBrowseAll\}[\s\S]*onSelectItem=\{onSelectItem\}/u);
+	assert.match(AGENT_SOURCE, /const \[inlineSearchField, setInlineSearchField\] = useState<AgentInlineSearchField \| null>\(null\);/u);
+	assert.match(AGENT_SOURCE, /const openInlineSearchPicker = \(field: AgentInlineSearchField\) => \{[\s\S]*if \(!onAddListValues\) \{[\s\S]*openAgentDirectoryOrAppendListItem\(field, field, onOpenDirectory, onAppendListItem\);[\s\S]*setInlineSearchField\(\(current\) => current === field \? null : field\);/u);
+	assert.match(AGENT_SOURCE, /const browseInlineSearchPicker = \(field: AgentInlineSearchField\) => \{[\s\S]*setInlineSearchField\(null\);[\s\S]*openAgentDirectoryOrAppendListItem\(field, field, onOpenDirectory, onAppendListItem\);/u);
+	assert.match(AGENT_SOURCE, /const selectInlineSearchItem = \([\s\S]*field: AgentInlineSearchField,[\s\S]*item: RichTextSuggestionMenuItem,[\s\S]*onAddListValues\?\.\(field, \[item\.label\]\);[\s\S]*setInlineSearchField\(null\);/u);
 	assert.match(AGENT_SOURCE, /label="Subagents"\s+onAdd=\{\(\) => onAppendListItem\?\.\("subagents"\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Knowledge"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("knowledge", "knowledge", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Conversation starters"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("conversationStarters", "conversationStarters", onOpenDirectory, onAppendListItem\)\}/u);
@@ -798,6 +810,15 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.doesNotMatch(EDITOR_PALETTE_MENTION_SOURCES, /SKILL_METADATA/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /getSlashCommandCategoryItems\(mentionSources\)/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /getMentionChildItems\(mentionSources, category\)/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /export type EditorPaletteVariant = "nested" \| "flat" \| "search";/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /export type EditorPaletteSearchCategory = Extract<[\s\S]*"knowledge" \| "skill" \| "subagent" \| "tool"/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /variant === "search" \? \([\s\S]*<SearchPalette category=\{searchCategory\} mentionSources=\{mentionSources\} \/>/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /suggestionVariant=\{variant === "search" \? "flat" : variant\}/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /export function EditorPaletteSearchPicker\(/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /const searchItem: RichTextSuggestionMenuItem = \{[\s\S]*id: SEARCH_INPUT_ITEM_ID,[\s\S]*icon: <SearchIcon className="size-4" \/>,[\s\S]*isSticky: true,[\s\S]*label: getSearchPlaceholder\(category\),/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /id: SEARCH_BROWSE_ALL_ITEM_ID,[\s\S]*label: "Browse all",[\s\S]*stickyPosition: "bottom"/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /onInputValueChange=\{setQuery\}/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /renderFirstItemAsInput/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /NESTED_MENTION_SHOWCASES/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /getSlashCommandFormatItems\(\)/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /caption="Format nested"/u);
@@ -806,7 +827,12 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /min-w-\[1008px\]/u);
 	assert.doesNotMatch(EDITOR_PALETTE_DEMO_SOURCE, /min-w-\[1008px\]/u);
 	assert.match(EDITOR_PALETTE_DEMO_SOURCE, /className="flex w-full justify-center p-6"/u);
+	assert.match(EDITOR_PALETTE_DEMO_SOURCE, /export function EditorPaletteSearch\(\)[\s\S]*<EditorPalette variant="search" searchCategory="tool" showLiveEditor=\{false\} \/>/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /"editor-palette": \{[\s\S]*demoLayout: \{ previewHeight: "fit" \}/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /name: "variant"[\s\S]*type: `"nested" \| "flat" \| "search"`/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /name: "searchCategory"[\s\S]*type: `"knowledge" \| "skill" \| "subagent" \| "tool"`[\s\S]*default: `"tool"`/u);
+	assert.match(BLOCK_DETAILS_SOURCE, /title: "Search"[\s\S]*demoSlug: "editor-palette-search"/u);
+	assert.match(WEBSITE_REGISTRY_SOURCE, /"editor-palette-search": dynamic\([\s\S]*default: mod\.EditorPaletteSearch/u);
 
 	for (const caption of [
 		"Subagents nested",
@@ -845,12 +871,21 @@ test("Slash command menu contains every toolbar command", () => {
 
 test("Suggestion menu active selectable rows replace shortcut text with ReturnIcon", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ ArrowLeftIcon, ReturnIcon \} from "@\/components\/ui\/vpk-icons";/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /stickyPosition\?: "top" \| "bottom";/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /inputAutoFocus\?: boolean;/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /inputValue\?: string;/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onInputValueChange\?: \(value: string\) => void;/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const shouldShowReturnShortcut = !item\.disabled && \(isSelected \|\| isInteractionActive\);/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function getSuggestionMenuItemStickyClassName\([\s\S]*item\.isSticky && "rich-text-command-menu-item-sticky",[\s\S]*item\.isSticky && item\.stickyPosition === "bottom" && "rich-text-command-menu-item-sticky-bottom"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /<RichTextSuggestionMenuInputOption[\s\S]*autoFocus=\{inputAutoFocus\}[\s\S]*inputValue=\{inputValue\}[\s\S]*onInputValueChange=\{onInputValueChange\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const controlledValueProps = inputValue === undefined \? \{\} : \{ value: inputValue \};/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onChange=\{\(event\) => onInputValueChange\?\.\(event\.currentTarget\.value\)\}/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /shouldShowReturnShortcut \? \([\s\S]*rich-text-command-menu-return-shortcut[\s\S]*<ReturnIcon className="size-3\.5 text-icon-subtlest" \/>[\s\S]*\) : item\.shortcut \? \(/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onFocus=\{\(\) => setIsInteractionActive\(true\)\}/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onMouseEnter=\{\(\) => setIsInteractionActive\(true\)\}/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.headingLabel !== undefined \? \([\s\S]*className="rich-text-command-menu-heading"[\s\S]*role="presentation"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function isSelectableRow\(item: RichTextSuggestionMenuItem\): boolean \{[\s\S]*return item\.headingLabel === undefined && !item\.disabled;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item-sticky-bottom \{\s*top: auto;\s*bottom: 0;\s*\}/u);
 });
 
 test("Composer directory autocomplete accepts visible rows before paragraph insertion", () => {

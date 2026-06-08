@@ -86,6 +86,7 @@ export interface RichTextSuggestionMenuItem {
 	shortcut?: string;
 	icon: ReactNode;
 	isSticky?: boolean;
+	stickyPosition?: "top" | "bottom";
 	visual?: RichTextMentionVisual;
 	disabled?: boolean;
 	/**
@@ -115,6 +116,9 @@ interface RichTextSuggestionMenuProps {
 	 * showcases like the editor palette; the live editor leaves this off.
 	 */
 	renderFirstItemAsInput?: boolean;
+	inputAutoFocus?: boolean;
+	inputValue?: string;
+	onInputValueChange?: (value: string) => void;
 	selectedIndex: number;
 	title: string;
 }
@@ -513,8 +517,11 @@ function getSlashCategoryLabel(category: RichTextSlashCategory): string {
 export function RichTextSuggestionMenu({
 	className,
 	emptyLabel,
+	inputAutoFocus,
+	inputValue,
 	items,
 	onBack,
+	onInputValueChange,
 	onSelect,
 	renderFirstItemAsInput = false,
 	selectedIndex,
@@ -587,7 +594,10 @@ export function RichTextSuggestionMenu({
 						) : renderFirstItemAsInput && index === 0 ? (
 							<RichTextSuggestionMenuInputOption
 								key={item.id}
+								autoFocus={inputAutoFocus}
+								inputValue={inputValue}
 								item={item}
+								onInputValueChange={onInputValueChange}
 								onSelect={onSelect}
 							/>
 						) : (
@@ -631,7 +641,7 @@ function RichTextSuggestionMenuOption({
 	const className = cn(
 		"rich-text-command-menu-item",
 		isSelected && "rich-text-command-menu-item-selected",
-		item.isSticky && "rich-text-command-menu-item-sticky",
+		getSuggestionMenuItemStickyClassName(item),
 	);
 	const children = (
 		<>
@@ -721,7 +731,10 @@ function RichTextSuggestionMenuOption({
 }
 
 interface RichTextSuggestionMenuInputOptionProps {
+	autoFocus?: boolean;
+	inputValue?: string;
 	item: RichTextSuggestionMenuItem;
+	onInputValueChange?: (value: string) => void;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
 }
 
@@ -730,11 +743,21 @@ interface RichTextSuggestionMenuInputOptionProps {
  * logo) kept at the front. Pressing Enter selects the underlying item.
  */
 function RichTextSuggestionMenuInputOption({
+	autoFocus,
+	inputValue,
 	item,
+	onInputValueChange,
 	onSelect,
 }: Readonly<RichTextSuggestionMenuInputOptionProps>) {
+	const controlledValueProps = inputValue === undefined ? {} : { value: inputValue };
+
 	return (
-		<div className="rich-text-command-menu-item rich-text-command-menu-input">
+		<div
+			className={cn(
+				"rich-text-command-menu-item rich-text-command-menu-input",
+				getSuggestionMenuItemStickyClassName(item),
+			)}
+		>
 			<span className="rich-text-command-menu-input-logo" aria-hidden={true}>
 				{item.icon}
 			</span>
@@ -744,14 +767,26 @@ function RichTextSuggestionMenuInputOption({
 				aria-label={item.label}
 				placeholder={item.label}
 				disabled={item.disabled}
+				autoFocus={autoFocus}
+				onChange={(event) => onInputValueChange?.(event.currentTarget.value)}
 				onKeyDown={(event) => {
 					if (event.key === "Enter") {
 						event.preventDefault();
 						onSelect(item);
 					}
 				}}
+				{...controlledValueProps}
 			/>
 		</div>
+	);
+}
+
+function getSuggestionMenuItemStickyClassName(
+	item: RichTextSuggestionMenuItem,
+): string | undefined {
+	return cn(
+		item.isSticky && "rich-text-command-menu-item-sticky",
+		item.isSticky && item.stickyPosition === "bottom" && "rich-text-command-menu-item-sticky-bottom",
 	);
 }
 
