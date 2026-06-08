@@ -581,7 +581,7 @@ export function RovoAppAgentConfigPanel({
 										subagents={subagentPrompts}
 									/>
 								</div>
-								<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-4 py-5">
+								<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-4 py-4">
 									{activeCompactSection === "access" ? (
 										<div className="-mr-4 min-h-0 flex-1 overflow-y-auto pr-4">
 											<div className="mx-auto w-full max-w-4xl pb-6">
