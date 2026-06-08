@@ -26,6 +26,7 @@ import TeamsIcon from "@atlaskit/icon/core/teams";
 import AlignTextCenterIcon from "@atlaskit/icon/core/align-text-center";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AlignTextRightIcon from "@atlaskit/icon/core/align-text-right";
+import CrossCircleIcon from "@atlaskit/icon/core/cross-circle";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import ListChecklistIcon from "@atlaskit/icon/core/list-checklist";
 import ListNumberedIcon from "@atlaskit/icon/core/list-numbered";
@@ -46,6 +47,7 @@ import TextHeadingSixIcon from "@atlaskit/icon-lab/core/text-heading-six";
 import TextHeadingThreeIcon from "@atlaskit/icon-lab/core/text-heading-three";
 import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 
+import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
@@ -107,6 +109,7 @@ export interface RichTextSuggestionMenuItem {
 interface RichTextSuggestionMenuProps {
 	className?: string;
 	emptyLabel: string;
+	emptyState?: ReactNode;
 	items: readonly RichTextSuggestionMenuItem[];
 	onBack?: () => void;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
@@ -118,6 +121,7 @@ interface RichTextSuggestionMenuProps {
 	renderFirstItemAsInput?: boolean;
 	inputAutoFocus?: boolean;
 	inputValue?: string;
+	onInputClear?: () => void;
 	onInputValueChange?: (value: string) => void;
 	selectedIndex: number;
 	title: string;
@@ -517,10 +521,12 @@ function getSlashCategoryLabel(category: RichTextSlashCategory): string {
 export function RichTextSuggestionMenu({
 	className,
 	emptyLabel,
+	emptyState,
 	inputAutoFocus,
 	inputValue,
 	items,
 	onBack,
+	onInputClear,
 	onInputValueChange,
 	onSelect,
 	renderFirstItemAsInput = false,
@@ -530,6 +536,8 @@ export function RichTextSuggestionMenu({
 	const listRef = useRef<HTMLDivElement | null>(null);
 	const [hasScrolledList, setHasScrolledList] = useState(false);
 	const isNested = Boolean(onBack);
+	const inputItem = renderFirstItemAsInput ? items[0] : undefined;
+	const listItems = inputItem ? items.slice(1) : items;
 
 	const updateListScrollState = useCallback(() => {
 		const listElement = listRef.current;
@@ -559,6 +567,7 @@ export function RichTextSuggestionMenu({
 		<div
 			className={cn("rich-text-command-menu", className)}
 			data-nested={isNested ? "true" : undefined}
+			data-first-item-input={renderFirstItemAsInput ? "true" : undefined}
 			data-list-scrolled={hasScrolledList ? "true" : undefined}
 			role="listbox"
 			aria-label={title}
@@ -576,41 +585,45 @@ export function RichTextSuggestionMenu({
 					<span className="rich-text-command-menu-label">Back</span>
 				</button>
 			) : null}
+			{inputItem ? (
+				<RichTextSuggestionMenuInputOption
+					autoFocus={inputAutoFocus}
+					inputValue={inputValue}
+					item={inputItem}
+					onInputClear={onInputClear}
+					onInputValueChange={onInputValueChange}
+					onSelect={onSelect}
+				/>
+			) : null}
 			<div
 				className="rich-text-command-menu-list"
 				ref={listRef}
 				onScroll={updateListScrollState}
 			>
-				{items.length > 0 ? (
-					items.map((item, index) =>
-						item.headingLabel !== undefined ? (
-							<div
-								key={item.id}
-								className="rich-text-command-menu-heading"
-								role="presentation"
-							>
-								{item.headingLabel}
-							</div>
-						) : renderFirstItemAsInput && index === 0 ? (
-							<RichTextSuggestionMenuInputOption
-								key={item.id}
-								autoFocus={inputAutoFocus}
-								inputValue={inputValue}
-								item={item}
-								onInputValueChange={onInputValueChange}
-								onSelect={onSelect}
-							/>
-						) : (
-							<RichTextSuggestionMenuOption
-								key={item.id}
-								isSelected={index === selectedIndex}
-								item={item}
-								onSelect={onSelect}
-							/>
-						),
-					)
+				{listItems.length > 0 ? (
+					listItems.map((item, index) => {
+						const itemIndex = inputItem ? index + 1 : index;
+						return (
+							item.headingLabel !== undefined ? (
+								<div
+									key={item.id}
+									className="rich-text-command-menu-heading"
+									role="presentation"
+								>
+									{item.headingLabel}
+								</div>
+							) : (
+								<RichTextSuggestionMenuOption
+									key={item.id}
+									isSelected={itemIndex === selectedIndex}
+									item={item}
+									onSelect={onSelect}
+								/>
+							)
+						);
+					})
 				) : (
-					<div className="rich-text-command-menu-empty">{emptyLabel}</div>
+					emptyState ?? <div className="rich-text-command-menu-empty">{emptyLabel}</div>
 				)}
 			</div>
 		</div>
@@ -734,6 +747,7 @@ interface RichTextSuggestionMenuInputOptionProps {
 	autoFocus?: boolean;
 	inputValue?: string;
 	item: RichTextSuggestionMenuItem;
+	onInputClear?: () => void;
 	onInputValueChange?: (value: string) => void;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
 }
@@ -746,10 +760,12 @@ function RichTextSuggestionMenuInputOption({
 	autoFocus,
 	inputValue,
 	item,
+	onInputClear,
 	onInputValueChange,
 	onSelect,
 }: Readonly<RichTextSuggestionMenuInputOptionProps>) {
 	const controlledValueProps = inputValue === undefined ? {} : { value: inputValue };
+	const showClearButton = Boolean(onInputClear && inputValue);
 
 	return (
 		<div
@@ -777,6 +793,20 @@ function RichTextSuggestionMenuInputOption({
 				}}
 				{...controlledValueProps}
 			/>
+			{showClearButton ? (
+				<Button
+					type="button"
+					aria-label="Clear search"
+					className="rich-text-command-menu-input-clear text-icon-subtle"
+					onMouseDown={(event) => event.preventDefault()}
+					onClick={() => onInputClear?.()}
+					shape="circle"
+					size="icon-compact"
+					variant="ghost"
+				>
+					<CrossCircleIcon label="" size="small" />
+				</Button>
+			) : null}
 		</div>
 	);
 }

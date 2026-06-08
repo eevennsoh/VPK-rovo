@@ -100,7 +100,13 @@ test("tools catalog (both groups) is valid, uniquely identified, and produces re
 
 	for (const tool of allTools) {
 		// Tools may legitimately have no visual (neither logoName nor avatarSrc).
-		assertVisualResolves(resolveDirectoryVisual, getToolDirectoryVisual(tool), `tool ${tool.id}`);
+		const visual = getToolDirectoryVisual(tool);
+		assertVisualResolves(resolveDirectoryVisual, visual, `tool ${tool.id}`);
+
+		if (!tool.logoName && tool.avatarSrc?.startsWith("/avatar-project/")) {
+			assert.equal(visual.kind, "avatar", `tool ${tool.id}: project avatar must use Avatar visuals`);
+			assert.equal(visual.shape, "square", `tool ${tool.id}: project avatar must stay square`);
+		}
 	}
 });
 
