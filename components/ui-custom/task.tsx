@@ -90,7 +90,7 @@ export const TaskContent = ({
   >
     <div
       className={cn(
-        "h-(--collapsible-panel-height) data-ending-style:h-0 data-starting-style:h-0 transition-all duration-200 ease-in-out data-ending-style:opacity-0 data-starting-style:opacity-0",
+        "h-(--collapsible-panel-height) data-ending-style:h-0 data-starting-style:h-0 transition-all duration-medium ease-in-out data-ending-style:opacity-0 data-starting-style:opacity-0",
         className
       )}
     >

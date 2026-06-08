@@ -90,7 +90,7 @@ export function Message({
 								: "max-w-[80%]",
 						)
 					: "is-assistant w-full max-w-[80%]",
-				animate && "fade-in animate-in duration-200",
+				animate && "fade-in animate-in duration-medium",
 				className,
 			)}
 			{...props}

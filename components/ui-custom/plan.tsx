@@ -467,7 +467,7 @@ export const PlanChevronTrigger = ({ isOpen = true, className, ...props }: Reado
 		aria-label={isOpen ? "Collapse plan" : "Expand plan"}
 		size="icon"
 		variant="ghost"
-		className={cn("rounded-full [&_svg]:transition-transform [&_svg]:duration-150", isOpen ? "[&_svg]:rotate-90" : "[&_svg]:rotate-0", className)}
+		className={cn("rounded-full [&_svg]:transition-transform [&_svg]:duration-normal", isOpen ? "[&_svg]:rotate-90" : "[&_svg]:rotate-0", className)}
 		data-slot="plan-chevron-trigger"
 		{...props}
 	>
