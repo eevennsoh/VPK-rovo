@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2Icon } from "@/components/ui/vpk-icons";
+import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -267,7 +267,7 @@ export function SonnerDemoPromise() {
 						{
 							appearance: "info",
 							title: "Deploying...",
-							icon: <Loader2Icon className="size-4 animate-spin text-icon-information" />,
+							icon: <Spinner className="text-icon-information" />,
 							iconLabel: "Loading",
 						},
 						toasterId,

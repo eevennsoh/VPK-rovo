@@ -85,7 +85,8 @@ ADS motion tokens are defined as CSS custom properties in `app/tailwind-theme.cs
 
 | Token | Value | Usage |
 |---|---|---|
-| `--duration-instant` | 50ms | Active press feedback |
+| `--duration-instant` | 0ms | Immediate state changes |
+| `--duration-xxshort` | 50ms | Active press feedback |
 | `--duration-fast` | 100ms | Hover elevation, tooltip show |
 | `--duration-normal` | 150ms | Hover scale, small state changes |
 | `--duration-medium` | 200ms | Sidebar, modals, panel transitions |
@@ -98,12 +99,13 @@ ADS motion tokens are defined as CSS custom properties in `app/tailwind-theme.cs
 | Token | Value | Usage |
 |---|---|---|
 | `--ease-linear` | `cubic-bezier(0, 0, 1, 1)` | Progress bars, continuous motion |
-| `--ease-in` | `cubic-bezier(0.6, 0.01, 0.8, 0.6)` | Elements leaving view |
+| `--ease-in` | `cubic-bezier(0.6, 0, 0.8, 0.6)` | Elements leaving view |
 | `--ease-out` | `cubic-bezier(0, 0.4, 0, 1)` | Elements entering view, hover feedback |
+| `--ease-out-practical` | `cubic-bezier(0.4, 1, 0.6, 1)` | Compact fade/slide entrances |
 | `--ease-in-out` | `cubic-bezier(0.4, 0, 0, 1)` | Sidebar, modals, position swaps |
-| `--ease-cubic` | `cubic-bezier(0.33, 1, 0.68, 1)` | Flag dismiss, snappy exits |
+| `--ease-spring` | `linear(...)` | Small tactile branded motion only |
 
-**Pattern:** Since these are `@theme inline` variables, Tailwind v4 maps them directly as utility classes. Always prefer the token class over arbitrary values or raw `var()`:
+**Pattern:** `app/tailwind-theme.css` defines both the ADS-backed CSS variables and the semantic Tailwind utility aliases. Always prefer the semantic class over arbitrary values; use raw `var()` only inside CSS declarations or inline styles that need a specific transition property list:
 
 ```tsx
 // Tailwind class (preferred)

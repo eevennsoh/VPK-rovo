@@ -197,8 +197,10 @@ async function walkMarkdownFiles(dirPath) {
 
 async function readMarkdownDocument(filePath) {
 	try {
-		const content = await fs.readFile(filePath, "utf8");
-		const stats = await fs.stat(filePath);
+		const [content, stats] = await Promise.all([
+			fs.readFile(filePath, "utf8"),
+			fs.stat(filePath),
+		]);
 		const parsed = parseFrontmatter(content);
 		return {
 			body: parsed.body,
@@ -443,20 +445,33 @@ function buildProposalNodes(proposals, rootDir) {
 
 async function buildLinkedKnowledgeNodes({ rootDir, wikiDir }) {
 	const files = await walkMarkdownFiles(wikiDir);
+
+	// Filter to linked-knowledge files first (cheap, synchronous), then read the
+	// surviving files in parallel — they are independent. Promise.all preserves
+	// array order, so the resulting node order matches the original sequential
+	// loop. readMarkdownDocument swallows ENOENT (exists: false) and rethrows
+	// other errors, so the failure behavior is unchanged.
+	const candidates = files
+		.map((filePath) => ({
+			filePath,
+			relativePath: toRelativePath(filePath, rootDir),
+			topLevelDir: toRelativePath(filePath, wikiDir).split("/")[0],
+		}))
+		.filter(
+			({ filePath, topLevelDir }) =>
+				LINKED_KNOWLEDGE_DIRS.has(topLevelDir)
+				&& !EXCLUDED_WIKI_FILENAMES.has(path.basename(filePath)),
+		);
+
+	const documents = await Promise.all(
+		candidates.map(({ filePath }) => readMarkdownDocument(filePath)),
+	);
+
 	const nodes = [];
 
-	for (const filePath of files) {
-		const relativePath = toRelativePath(filePath, rootDir);
-		const relativeWikiPath = toRelativePath(filePath, wikiDir);
-		const topLevelDir = relativeWikiPath.split("/")[0];
-		if (
-			!LINKED_KNOWLEDGE_DIRS.has(topLevelDir)
-			|| EXCLUDED_WIKI_FILENAMES.has(path.basename(filePath))
-		) {
-			continue;
-		}
-
-		const document = await readMarkdownDocument(filePath);
+	for (let index = 0; index < candidates.length; index += 1) {
+		const { filePath, relativePath, topLevelDir } = candidates[index];
+		const document = documents[index];
 		if (!document.exists) {
 			continue;
 		}

@@ -23,6 +23,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -387,25 +388,6 @@ export const AudioPlayerDuration = ({
   )
 }
 
-interface SpinnerProps {
-  className?: string
-}
-
-function Spinner({ className }: SpinnerProps) {
-  return (
-    <div
-      className={cn(
-        "border-border border-t-border-bold size-3.5 animate-spin rounded-full border-2",
-        className
-      )}
-      role="status"
-      aria-label="Loading"
-    >
-      <span className="sr-only">Loading...</span>
-    </div>
-  )
-}
-
 interface PlayButtonProps extends React.ComponentProps<typeof Button> {
   playing: boolean
   onPlayingChange: (playing: boolean) => void
@@ -444,7 +426,7 @@ const PlayButton = ({
       )}
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center rounded-[inherit]">
-          <Spinner />
+          <Spinner size="sm" />
         </div>
       )}
     </Button>

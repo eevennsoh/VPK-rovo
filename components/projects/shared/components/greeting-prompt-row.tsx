@@ -11,21 +11,23 @@ import { cn } from "@/lib/utils";
  * Shared prompt-greeting row used across every chat greeting surface (sidebar
  * chat, blocks chat demo, and the /rovo + /studio custom-agent empty states).
  *
- * Visual contract is the editor palette's command-menu option: a leading icon
- * tile, a `text-sm` / weight-500 label, and a byline that reveals on
- * hover/selection (label slides up, description fades + slides in). The
- * typography, copy-column sizing, and reveal motion are kept in lockstep with
- * the palette's `rich-text-command-menu-*` rows so the two surfaces match.
+ * Visual contract is the editor palette's command-menu option: a 44px grid row
+ * (fixed 32px icon column, 12px gap, 6px horizontal padding), a `text-sm` /
+ * default-weight / 20px label, and a byline that reveals on hover/selection
+ * (label slides up, description fades + slides in). The layout, typography,
+ * copy-column sizing, and reveal motion are kept in lockstep with the palette's
+ * `rich-text-command-menu-*` rows so the two surfaces match.
  */
 
 // Copy column reserves the revealed label + byline height so collapsed (label
 // only) rows stay vertically balanced with revealed ones, and clips the byline
 // until it slides into view. Mirrors `.rich-text-command-menu-copy`.
 const GREETING_COPY_CLASS =
-	"flex min-h-[34px] min-w-0 flex-1 flex-col justify-center overflow-hidden";
-// Label: 14px / 500 / 18px / text-subtle, truncated. Mirrors the palette label.
+	"flex min-h-[34px] min-w-0 flex-col justify-center overflow-hidden";
+// Label: 14px / 400 / 20px / text-subtle, truncated. Mirrors the palette label
+// (`font: var(--ds-font-body)` → 14px/20px, default weight).
 const GREETING_LABEL_CLASS =
-	"truncate text-left text-sm font-medium leading-[18px] text-text-subtle";
+	"truncate text-left text-sm leading-5 text-text-subtle";
 // Byline: 12px / 16px / text-subtle, truncated. Mirrors the palette description.
 const GREETING_DESCRIPTION_CLASS =
 	"truncate text-left text-xs leading-4 text-text-subtle";
@@ -126,8 +128,12 @@ export function GreetingPromptRow({
 	onFocus,
 	onMouseEnter,
 }: Readonly<GreetingPromptRowProps>) {
+	// Mirrors `.rich-text-command-menu-item`: a CSS grid with a fixed 32px icon
+	// column, 12px gap, 6px horizontal padding, and a fixed 44px row height (no
+	// vertical padding — the 32px tile + `items-center` set the rhythm). Hover
+	// and corner radius use the same tokens as the palette row.
 	const buttonClassName = cn(
-		"flex w-full items-center gap-3 rounded-lg p-[var(--ds-space-075)] text-left transition-colors hover:bg-bg-neutral-subtle-hovered",
+		"grid h-11 w-full grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 rounded-[3px] px-1.5 text-left transition-colors hover:bg-bg-neutral-subtle-hovered",
 		active && "bg-bg-neutral-subtle-hovered",
 		className,
 	);
@@ -150,7 +156,7 @@ export function GreetingPromptRow({
 					<span className={GREETING_LABEL_CLASS}>{label}</span>
 				</span>
 				{shortcut ? (
-					<span className="ml-auto flex shrink-0 items-center justify-end text-text-subtlest">
+					<span className="flex shrink-0 items-center justify-end text-text-subtlest">
 						{shortcut}
 					</span>
 				) : null}
@@ -158,9 +164,10 @@ export function GreetingPromptRow({
 		);
 	}
 
-		return (
-			<motion.button
-				className={buttonClassName}
+	return (
+		<motion.button
+			animate={active ? "active" : "idle"}
+			className={buttonClassName}
 			initial={false}
 			onClick={onClick}
 			onFocus={onFocus}
@@ -168,7 +175,6 @@ export function GreetingPromptRow({
 			type="button"
 			whileFocus="active"
 			whileHover="active"
-			animate={active ? "active" : "idle"}
 		>
 			{leadingVisual}
 			<span className={cn(GREETING_COPY_CLASS, "justify-start")}>
@@ -188,7 +194,7 @@ export function GreetingPromptRow({
 				</motion.span>
 			</span>
 			{shortcut ? (
-				<span className="ml-auto flex shrink-0 items-center justify-end text-text-subtlest">
+				<span className="flex shrink-0 items-center justify-end text-text-subtlest">
 					{shortcut}
 				</span>
 			) : null}

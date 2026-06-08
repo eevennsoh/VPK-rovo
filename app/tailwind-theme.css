@@ -392,13 +392,13 @@
 	--animate-ping: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
 	--animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 	--animate-bounce: bounce 1s infinite;
-	--animate-modal-show: modalShow var(--duration-medium) var(--ease-in-out) forwards;
-	--animate-modal-hide: modalHide var(--duration-medium) var(--ease-in-out) forwards;
-	--animate-flag-show: flagShow 150ms var(--ease-in-out) forwards;
-	--animate-flag-hide: flagHide 100ms var(--ease-out-practical) forwards;
+	--animate-modal-show: modalShow var(--duration-slow) var(--ease-in-out) forwards;
+	--animate-modal-hide: modalHide var(--duration-medium) var(--ease-in) forwards;
+	--animate-flag-show: flagShow var(--duration-slow) var(--ease-out) forwards;
+	--animate-flag-hide: flagHide var(--duration-medium) var(--ease-in) forwards;
 	--animate-progress-indeterminate: progressIndeterminate 1.5s ease-in-out infinite;
-	--animate-stagger-fade-in: stagger-fade-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-	--animate-blur-in: blur-in 220ms ease-out both;
+	--animate-stagger-fade-in: stagger-fade-in var(--duration-slower) var(--ease-out-practical) both;
+	--animate-blur-in: blur-in var(--duration-medium) var(--ease-out) both;
 	--animate-progress-rovo-indeterminate: progressRovoIndeterminate 1.5s cubic-bezier(0.35, 0, 0.15, 1) infinite;
 	--animate-rovo-band-pulse: rovoBandPulse 1.3s cubic-bezier(0.45, 0, 0.15, 1) infinite;
 	--animate-rovo-band-traverse: rovoBandTraverse 1.5s linear infinite;
@@ -660,6 +660,56 @@
    `animate-stagger-fade-in` and `animate-blur-in` from --animate-* theme
    tokens above.
    ===================================================================== */
+
+@utility duration-instant {
+	--tw-duration: var(--duration-instant);
+	transition-duration: var(--duration-instant);
+}
+
+@utility duration-xxshort {
+	--tw-duration: var(--duration-xxshort);
+	transition-duration: var(--duration-xxshort);
+}
+
+@utility duration-fast {
+	--tw-duration: var(--duration-fast);
+	transition-duration: var(--duration-fast);
+}
+
+@utility duration-normal {
+	--tw-duration: var(--duration-normal);
+	transition-duration: var(--duration-normal);
+}
+
+@utility duration-medium {
+	--tw-duration: var(--duration-medium);
+	transition-duration: var(--duration-medium);
+}
+
+@utility duration-slow {
+	--tw-duration: var(--duration-slow);
+	transition-duration: var(--duration-slow);
+}
+
+@utility duration-slower {
+	--tw-duration: var(--duration-slower);
+	transition-duration: var(--duration-slower);
+}
+
+@utility duration-slowest {
+	--tw-duration: var(--duration-slowest);
+	transition-duration: var(--duration-slowest);
+}
+
+@utility ease-out-practical {
+	--tw-ease: var(--ease-out-practical);
+	transition-timing-function: var(--ease-out-practical);
+}
+
+@utility ease-spring {
+	--tw-ease: var(--ease-spring);
+	transition-timing-function: var(--ease-spring);
+}
 
 @utility scroll-fade-in {
 	opacity: 0;

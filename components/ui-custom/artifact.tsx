@@ -28,7 +28,6 @@ import {
 import {
 	ClockIcon,
 	CopyIcon,
-	LoaderCircleIcon,
 	MessageSquarePlusIcon,
 	PencilLineIcon,
 	SaveIcon,
@@ -36,6 +35,7 @@ import {
 	type VpkIconComponent,
 	XIcon,
 } from "@/components/ui/vpk-icons";
+import { Spinner } from "@/components/ui/spinner";
 import type {
 	ArtifactAnnotation,
 	ArtifactAnnotationPosition,
@@ -391,7 +391,7 @@ export function ArtifactCard({
 									size={displayMode === "chip" ? "small" : "medium"}
 									className="animate-pulse"
 								/>
-								<LoaderCircleIcon className="absolute inset-0 m-auto size-4 animate-spin text-current" />
+								<Spinner className="absolute inset-0 m-auto text-current" />
 							</div>
 						) : (
 							<CardIdentityTile

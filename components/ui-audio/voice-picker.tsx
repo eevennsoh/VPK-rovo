@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import type { ElevenLabs } from "@elevenlabs/elevenlabs-js"
 import {
   CheckIcon as Check,
@@ -23,12 +24,19 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import { Orb } from "@/components/ui-audio/orb"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+
+// Lazy-load the Orb: it pulls in three / @react-three/fiber / drei (a large
+// WebGL stack). Code-splitting keeps that out of the initial bundle for every
+// screen that mounts the voice picker; it loads on demand, client-only.
+const Orb = dynamic(
+  () => import("@/components/ui-audio/orb").then((m) => m.Orb),
+  { ssr: false },
+)
 
 interface VoicePickerProps {
   voices: ElevenLabs.Voice[]
