@@ -52,6 +52,11 @@ import { createAgentTriggerValue } from "@/components/blocks/triggers/data/trigg
 import { UNTITLED_SUBAGENT_NAME } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
 import {
+	hoverRevealRowClassName,
+	HoverRevealActions,
+	HoverRevealLabel,
+} from "@/components/ui-custom/hover-reveal-row";
+import {
 	EDITOR_PALETTE_KNOWLEDGE_APP_ITEMS,
 	EDITOR_PALETTE_MENTION_SOURCES,
 	getDirectoryMentionItemOrFallback,
@@ -1018,11 +1023,22 @@ function AgentCompactSubagentsNavButton({
 					</div>
 				)}
 				<AgentCompactNavMenuPinnedFooter bordered={!isEmpty}>
-					<DropdownMenuItem elemBefore={<PlusIcon size="small" />} onClick={onCreateSubagent}>
+					<DropdownMenuItem
+						elemBefore={
+							<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
+								<PlusIcon />
+							</span>
+						}
+						onClick={onCreateSubagent}
+					>
 						Add subagent
 					</DropdownMenuItem>
 					<DropdownMenuItem
-						elemBefore={<AiAgentIcon label="" size="small" />}
+						elemBefore={
+							<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
+								<AiAgentIcon label="" />
+							</span>
+						}
 						onClick={onManageSubagents ?? onCreateSubagent}
 					>
 						Manage subagents
@@ -1051,17 +1067,6 @@ function AgentCompactTriggerRow({
 	onToggle: (enabled: boolean) => void;
 	onEdit?: () => void;
 }>) {
-	// Trailing space is reserved *only* when the controls are actually visible, so
-	// the label gets the full row width at rest (no big empty gap in this narrow
-	// w-64 popup) and re-truncates to clear the switch / edit button on hover or
-	// keyboard focus. A disabled row keeps its switch parked, so it always reserves
-	// the single-control width.
-	// - hover / focus-visible: edit (~28px) + switch (~28px) → pr-16
-	// - disabled at rest: parked switch (~28px) → pr-9
-	const reservedPaddingClasses = onEdit
-		? "group-hover/trigger-row:pr-16 group-has-[:focus-visible]/trigger-row:pr-16"
-		: "group-hover/trigger-row:pr-9 group-has-[:focus-visible]/trigger-row:pr-9";
-
 	// The row is a Base UI Menu.Item with `closeOnClick={false}` so item activation
 	// doesn't close the menu. The switch additionally calls `preventDefault()` on
 	// pointerdown: Base UI's dismissal treats a prevented press that starts inside
@@ -1077,11 +1082,13 @@ function AgentCompactTriggerRow({
 		<DropdownMenuItem
 			closeOnClick={false}
 			className={cn(
-				"group/trigger-row relative cursor-default transition-[padding] duration-normal ease-out",
-				reservedPaddingClasses,
-				// A disabled row parks its switch visibly even without hover, so keep
-				// the single-control width reserved and mute the label.
-				enabled ? undefined : "pr-9 text-text-disabled",
+				hoverRevealRowClassName,
+				// Match the subagent switcher's roomier 36px row height.
+				"h-9 cursor-default",
+				// A disabled row reads as muted until re-enabled — keep it muted on
+				// hover too (the item's `data-[highlighted]:text-text` would otherwise
+				// re-darken the label).
+				enabled ? undefined : "text-text-disabled data-[highlighted]:text-text-disabled",
 			)}
 			elemBefore={
 				icon ? (
@@ -1096,39 +1103,39 @@ function AgentCompactTriggerRow({
 				) : undefined
 			}
 		>
-			<span className="block w-full truncate">{label}</span>
-			<div
-				className={cn(
-					// Stays visible while off so the disabled state is discoverable;
-					// otherwise reveals on row hover / keyboard focus-visible. Parks at the
-					// far right (right-2) at rest, then slides to right-9 on hover as the
-					// edit icon transitions in.
-					"absolute top-1/2 flex -translate-y-1/2 items-center transition-[right,opacity] duration-normal ease-out has-[:focus-visible]:opacity-100 group-hover/trigger-row:opacity-100",
-					onEdit ? "right-2 group-hover/trigger-row:right-9" : "right-2",
-					enabled ? "opacity-0" : "opacity-100",
-				)}
+			<HoverRevealLabel
+				reserveOnReveal={onEdit ? 2 : 1}
+				// A disabled row parks its switch visibly, so keep its single-control
+				// width reserved even at rest; an enabled row gets the full width.
+				reserveAtRest={enabled ? 0 : 1}
 			>
-				<Switch
-					size="sm"
-					checked={enabled}
-					onCheckedChange={onToggle}
-					onPointerDown={suppressMenuDismissal}
-					onMouseDown={suppressMenuDismissal}
-					aria-label={`${enabled ? "Disable" : "Enable"} ${label}`}
-				/>
-			</div>
-			{onEdit ? (
-				<button
-					type="button"
-					aria-label={`Edit ${label}`}
-					// Slides in from the right (and back out) in lockstep with the switch
-					// so hovering out clears the far-right slot immediately.
-					className="absolute right-1 top-1/2 flex size-7 origin-right -translate-y-1/2 translate-x-2 items-center justify-center rounded-md text-text-subtlest opacity-0 transition-[color,background-color,opacity,transform] duration-normal ease-out hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:translate-x-0 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected group-hover/trigger-row:translate-x-0 group-hover/trigger-row:opacity-100 [&_svg]:size-4"
-					onClick={onEdit}
-				>
-					<EditIcon label="" size="small" />
-				</button>
-			) : null}
+				{label}
+			</HoverRevealLabel>
+			<HoverRevealActions
+				toggleParked={!enabled}
+				toggle={
+					<Switch
+						size="sm"
+						checked={enabled}
+						onCheckedChange={onToggle}
+						onPointerDown={suppressMenuDismissal}
+						onMouseDown={suppressMenuDismissal}
+						aria-label={`${enabled ? "Disable" : "Enable"} ${label}`}
+					/>
+				}
+				action={
+					onEdit ? (
+						<button
+							type="button"
+							aria-label={`Edit ${label}`}
+							className="flex size-7 items-center justify-center rounded-md text-text-subtlest transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected [&_svg]:size-4"
+							onClick={onEdit}
+						>
+							<EditIcon label="" size="small" />
+						</button>
+					) : undefined
+				}
+			/>
 		</DropdownMenuItem>
 	);
 }
@@ -1286,7 +1293,14 @@ function AgentCompactDirectoryNavButton({
 	const isEmpty = items.length === 0;
 	const addLabel = `Add ${item.label.toLowerCase()}`;
 	const browseItem = (
-		<DropdownMenuItem elemBefore={<item.Icon label="" size="small" />} onClick={onBrowse}>
+		<DropdownMenuItem
+			elemBefore={
+				<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
+					<item.Icon label="" />
+				</span>
+			}
+			onClick={onBrowse}
+		>
 			{browseLabel}
 		</DropdownMenuItem>
 	);
@@ -1300,7 +1314,7 @@ function AgentCompactDirectoryNavButton({
 			<DropdownMenuSubTrigger>
 				<span className="flex items-center gap-3">
 					<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
-						<PlusIcon size="small" />
+						<PlusIcon />
 					</span>
 					{addLabel}
 				</span>
@@ -1409,7 +1423,14 @@ function AgentCompactConversationStartersNavButton({
 					))}
 				</div>
 				<AgentCompactNavMenuFooter>
-					<DropdownMenuItem elemBefore={<AiChatIcon label="" size="small" />} onClick={onManage}>
+					<DropdownMenuItem
+						elemBefore={
+							<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
+								<AiChatIcon label="" />
+							</span>
+						}
+						onClick={onManage}
+					>
 						Manage conversation starters
 					</DropdownMenuItem>
 				</AgentCompactNavMenuFooter>
@@ -2864,7 +2885,7 @@ function AgentMemoryNavMenuContent({
 				<DropdownMenuItem
 					elemBefore={
 						<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
-							<AiModelIcon label="" size="small" />
+							<AiModelIcon label="" />
 						</span>
 					}
 					onClick={onManage}
@@ -2906,7 +2927,14 @@ function AgentMemorySelectorMenu({
 			</DropdownMenuGroup>
 			<DropdownMenuSeparator />
 			<DropdownMenuGroup>
-				<DropdownMenuItem elemBefore={<AiModelIcon label="" size="small" />} onClick={onManage}>
+				<DropdownMenuItem
+					elemBefore={
+						<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
+							<AiModelIcon label="" />
+						</span>
+					}
+					onClick={onManage}
+				>
 					Manage memory
 				</DropdownMenuItem>
 			</DropdownMenuGroup>

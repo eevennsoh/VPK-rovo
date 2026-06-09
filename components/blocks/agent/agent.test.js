@@ -95,7 +95,7 @@ test("Reasoning selector lives in the compact toolbar and shares state across co
 	assert.match(AGENT_SOURCE, /import \{ Lozenge, LozengeDropdownTrigger \} from "@\/components\/ui\/lozenge";/u);
 	assert.match(AGENT_SOURCE, /function AgentReasoningSelector/u);
 	assert.match(AGENT_SOURCE, /function AgentReasoningRow/u);
-	assert.match(AGENT_SOURCE, /function AgentReasoningOverflowMenu/u);
+	assert.doesNotMatch(AGENT_SOURCE, /function AgentReasoningOverflowMenu/u);
 	assert.match(AGENT_SOURCE, /const \[reasoningFallback, setReasoningFallback\] = useState<ReasoningModeValue \| null>\(null\);/u);
 	assert.match(AGENT_SOURCE, /const reasoningValue =[\s\S]*\(config\.reasoningMode as ReasoningModeValue \| undefined\) \?\? reasoningFallback \?\? "quick-auto";/u);
 	assert.match(AGENT_SOURCE, /const setReasoningValue = useCallback\([\s\S]*setReasoningFallback\(next\);[\s\S]*onTextChange\?\.\("reasoningMode", next\);/u);
@@ -103,7 +103,7 @@ test("Reasoning selector lives in the compact toolbar and shares state across co
 	assert.match(AGENT_SOURCE, /case "reasoning":[\s\S]*count = 0;/u);
 	assert.match(AGENT_SOURCE, /render="nav-button"[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{onReasoningValueChange\}/u);
 	assert.match(AGENT_SOURCE, /<AgentReasoningRow[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{setReasoningValue\}/u);
-	assert.match(AGENT_SOURCE, /<AgentReasoningOverflowMenu[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{onReasoningValueChange\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /<AgentReasoningOverflowMenu/u);
 	assert.match(AGENT_SOURCE, /import AiComputeIcon from "@atlaskit\/icon-lab\/core\/ai-compute";/u);
 	assert.match(AGENT_SOURCE, /render=\{<LozengeDropdownTrigger aria-label="Reasoning mode" icon=\{<AiComputeIcon label="" size="small" \/>\} \/>\}/u);
 	assert.match(AGENT_SOURCE, /<Tag>\{current\?\.label \?\? "Recommended"\}<\/Tag>/u);
@@ -119,7 +119,7 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 	assert.match(AGENT_SOURCE, /\{ value: "none", label: "No organizational knowledge", tabLabel: "None" \}/u);
 	assert.match(AGENT_SOURCE, /function AgentKnowledgeSelector/u);
 	assert.match(AGENT_SOURCE, /function AgentKnowledgeRow/u);
-	assert.match(AGENT_SOURCE, /function AgentKnowledgeOverflowMenu/u);
+	assert.doesNotMatch(AGENT_SOURCE, /function AgentKnowledgeOverflowMenu/u);
 	assert.match(AGENT_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
 	assert.match(AGENT_SOURCE, /function AgentKnowledgeModeTabs/u);
 	assert.match(AGENT_SOURCE, /<Tabs[\s\S]*value=\{value\}[\s\S]*onValueChange=\{\(next\) => onValueChange\(next as KnowledgeModeValue\)\}[\s\S]*<TabsList className="w-full">[\s\S]*<TabsTrigger key=\{option\.value\} value=\{option\.value\}>[\s\S]*\{option\.tabLabel\}/u);
@@ -129,7 +129,7 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 	assert.match(AGENT_SOURCE, /const knowledgeMode =[\s\S]*\(config\.knowledgeMode as KnowledgeModeValue \| undefined\)[\s\S]*\?\? knowledgeFallback[\s\S]*\?\? \(getNonEmptyConfigItems\(config\.knowledge\)\.length > 0 \? "custom" : "all"\);/u);
 	assert.match(AGENT_SOURCE, /const setKnowledgeMode = useCallback\([\s\S]*setKnowledgeFallback\(next\);[\s\S]*onTextChange\?\.\("knowledgeMode", next\);/u);
 	assert.match(AGENT_SOURCE, /<AgentKnowledgeRow[\s\S]*value=\{knowledgeMode\}/u);
-	assert.match(AGENT_SOURCE, /<AgentKnowledgeOverflowMenu[\s\S]*value=\{knowledgeMode\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /<AgentKnowledgeOverflowMenu/u);
 	assert.match(AGENT_SOURCE, /const isCustom = value === "custom";/u);
 	assert.match(AGENT_SOURCE, /<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category="knowledge"[\s\S]*className="rich-text-command-menu-borderless"[\s\S]*items=\{EDITOR_PALETTE_KNOWLEDGE_APP_ITEMS\}[\s\S]*leadingItems=\{AGENT_KNOWLEDGE_UPLOAD_LEADING_ITEMS\}[\s\S]*onBrowseAll=\{onBrowse\}/u);
 	assert.match(AGENT_SOURCE, /onPickKnowledgeApp\(getKnowledgeAppIdFromMentionId\(item\.id\)\)/u);
@@ -147,7 +147,7 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 	// Memory selector is now driven by lifted state and renders as a row lozenge
 	// or a compact nav button, mirroring the knowledge selector.
 	assert.match(AGENT_SOURCE, /<AgentMemorySelector render="row" value=\{value\} onValueChange=\{onValueChange\} onManage=\{onManage\} \/>/u);
-	assert.match(AGENT_SOURCE, /function AgentMemoryOverflowMenu/u);
+	assert.doesNotMatch(AGENT_SOURCE, /function AgentMemoryOverflowMenu/u);
 	assert.doesNotMatch(AGENT_SOURCE, /<AgentReferenceChip label="Memory" \/>/u);
 });
 
@@ -170,12 +170,12 @@ test("Filled config summary sorts empty rows to the bottom while preserving cano
 		AGENT_SOURCE,
 		/AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = \[[\s\S]*"trigger"[\s\S]*"knowledge"[\s\S]*"tools"[\s\S]*"skills"[\s\S]*"subagents"[\s\S]*"memory"[\s\S]*"conversationStarters"[\s\S]*"reasoning"[\s\S]*\] as const;/u,
 	);
-	// Memory renders as a nav button (and overflow sub-menu) in the collapsed nav.
+	// Memory renders as a nav button in the collapsed nav.
 	assert.match(AGENT_SOURCE, /item\.agentFieldName === "memory"[\s\S]*<AgentMemorySelector[\s\S]*render="nav-button"[\s\S]*value=\{memoryMode\}[\s\S]*onManage=\{\(\) => onOpenDirectory\?\.\("memory"\)\}/u);
 	// The collapsed nav button surfaces the on/off state inline as a neutral badge
 	// so the current state reads without opening the dropdown.
 	assert.match(AGENT_SOURCE, /Memory[\s\S]*<Badge>\{selectedOption\.label\}<\/Badge>/u);
-	assert.match(AGENT_SOURCE, /item\.agentFieldName === "memory"[\s\S]*<AgentMemoryOverflowMenu[\s\S]*value=\{memoryMode\}[\s\S]*onManage=\{\(\) => onOpenDirectory\?\.\("memory"\)\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /<AgentMemoryOverflowMenu/u);
 	// Memory state is lifted to the toolbar so both views share one toggle.
 	assert.match(AGENT_SOURCE, /const \[memoryFallback, setMemoryFallback\] = useState<MemoryModeValue \| null>\(null\);/u);
 	assert.match(AGENT_SOURCE, /const memoryMode = \(config\.memoryMode as MemoryModeValue \| undefined\) \?\? memoryFallback \?\? "on";/u);
@@ -456,32 +456,22 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /item\.count > 0 \? <Badge>\{item\.count\}<\/Badge> : null/u);
 	assert.match(AGENT_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/u);
 	assert.match(AGENT_SOURCE, /className="relative flex min-h-8 min-w-0 items-center"/u);
-	// Nav now rolls overflow into a "..." DropdownMenu instead of wrapping onto
-	// multiple lines (mirrors AgentCompactHeaderNav).
+	// Nav scrolls horizontally instead of wrapping or tucking items behind a
+	// "..." overflow menu.
 	assert.doesNotMatch(AGENT_SOURCE, /flex min-w-0 flex-wrap items-center gap-1/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_GAP = 2;/u);
-	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH = 24;/u);
-	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_RENDERED_OVERFLOW_THRESHOLD = 4;/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_SCROLL_EDGE_THRESHOLD = 4;/u);
+	assert.match(AGENT_SOURCE, /import \{ useHasHorizontalOverflow \} from "@\/components\/hooks\/use-has-horizontal-overflow";/u);
 	assert.match(AGENT_SOURCE, /import \{ buildHorizontalScrollMaskStyle \} from "@\/components\/visual\/scroll-mask\/lib";/u);
-	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_END_MASK_STYLE = buildHorizontalScrollMaskStyle\(\{\s*edge: "end",\s*endGutterWidth: AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH,\s*fadeSize: "var\(--ds-space-300\)",\s*\}\);/u);
-	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_EDGE_MASK_STYLE = buildHorizontalScrollMaskStyle\(\{\s*edge: "end",\s*fadeSize: "var\(--ds-space-300\)",\s*\}\);/u);
-	assert.match(AGENT_SOURCE, /computeContextBarOverflow\([\s\S]*AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH,[\s\S]*AGENT_COMPACT_CONFIG_NAV_GAP/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_START_MASK_STYLE = buildHorizontalScrollMaskStyle\(\{\s*edge: "start",\s*fadeSize: "var\(--ds-space-300\)",\s*\}\);/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_END_MASK_STYLE = buildHorizontalScrollMaskStyle\(\{\s*edge: "end",\s*fadeSize: "var\(--ds-space-300\)",\s*\}\);/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_BOTH_MASK_STYLE = buildHorizontalScrollMaskStyle\(\{\s*edge: "both",\s*fadeSize: "var\(--ds-space-300\)",\s*\}\);/u);
+	assert.match(AGENT_SOURCE, /const navOverflow = useHasHorizontalOverflow<HTMLDivElement>\(\{\s*edgeThreshold: AGENT_COMPACT_CONFIG_NAV_SCROLL_EDGE_THRESHOLD,\s*\}\);/u);
+	assert.match(AGENT_SOURCE, /const scrollMaskStyle = navOverflow\.canScrollLeft && navOverflow\.canScrollRight[\s\S]*\? AGENT_COMPACT_CONFIG_NAV_BOTH_MASK_STYLE[\s\S]*: navOverflow\.canScrollLeft[\s\S]*\? AGENT_COMPACT_CONFIG_NAV_START_MASK_STYLE[\s\S]*: navOverflow\.canScrollRight[\s\S]*\? AGENT_COMPACT_CONFIG_NAV_END_MASK_STYLE[\s\S]*: \{\};/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactConfigNavButton\(/u);
-	// Overflow trigger is a Menubar trigger (the nav is a Menubar so the active
-	// menu can move between items with arrow keys).
-	assert.match(AGENT_SOURCE, /<MenubarTrigger\s+aria-label="More configuration options"[\s\S]*<MoreHorizontalIcon size="small" \/>/u);
-	assert.match(AGENT_SOURCE, /<DropdownMenuItem\s+elemAfter=\{item\.count > 0 \? <Badge>\{item\.count\}<\/Badge> : undefined\}/u);
-	// The connected config Menubar clips horizontal overflow (so the "…" menu
-	// absorbs hidden items) but insets the first item (`pl-1`) and keeps a 6px
-	// clip margin + vertical room so edge focus-visible rings aren't sheared off.
-	// When the overflow menu is active, the trailing clip edge fades through the
-	// shared horizontal scroll-mask style rather than ending with a hard crop.
-	assert.match(AGENT_SOURCE, /const \[hasRenderedOverflow, setHasRenderedOverflow\] = useState\(false\);/u);
-	assert.match(AGENT_SOURCE, /setHasRenderedOverflow\(\s*container!\.scrollWidth - container!\.clientWidth > AGENT_COMPACT_CONFIG_NAV_RENDERED_OVERFLOW_THRESHOLD,\s*\);/u);
-	assert.match(AGENT_SOURCE, /const shouldShowEndMask = hiddenItems\.length > 0 \|\| hasRenderedOverflow;/u);
-	assert.match(AGENT_SOURCE, /const endMaskStyle = hiddenItems\.length > 0[\s\S]*\? AGENT_COMPACT_CONFIG_NAV_END_MASK_STYLE[\s\S]*: AGENT_COMPACT_CONFIG_NAV_EDGE_MASK_STYLE;/u);
-	assert.match(AGENT_SOURCE, /className="relative -my-1 flex h-auto min-w-0 flex-1 items-center overflow-x-clip overflow-y-visible rounded-none border-0 bg-transparent p-0 py-1 pl-1 \[overflow-clip-margin:6px\]"[\s\S]*style=\{\{\s*gap: AGENT_COMPACT_CONFIG_NAV_GAP,\s*\.\.\.\(shouldShowEndMask \? endMaskStyle : \{\}\),\s*\}\}/u);
-	assert.match(AGENT_SOURCE, /<div className="invisible flex items-center" ref=\{measureRef\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /aria-label="More configuration options"|AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH|AGENT_COMPACT_CONFIG_NAV_RENDERED_OVERFLOW_THRESHOLD|AGENT_COMPACT_CONFIG_NAV_EDGE_MASK_STYLE/u);
+	assert.match(AGENT_SOURCE, /className="relative -my-1 flex h-auto min-w-0 flex-1 items-center overflow-x-auto overflow-y-visible overscroll-x-contain rounded-none border-0 bg-transparent p-0 py-1 pl-1 \[scrollbar-width:none\] \[&::-webkit-scrollbar\]:hidden"[\s\S]*ref=\{navOverflow\.ref\}[\s\S]*style=\{\{\s*gap: AGENT_COMPACT_CONFIG_NAV_GAP,\s*\.\.\.scrollMaskStyle,\s*\}\}/u);
+	assert.match(AGENT_SOURCE, /\{items\.map\(\(item\) => \{/u);
 	// Collapsible toolbar: outer wrapper now stacks a "rule row" (horizontal
 	// line + chevron at the far right) above an AnimatePresence crossfade that
 	// swaps between the collapsed nav and the expanded filled summary.

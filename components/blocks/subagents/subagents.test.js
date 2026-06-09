@@ -216,12 +216,12 @@ test("Untitled subagent label is a single shared constant across all surfaces", 
 });
 
 test("Subagent switcher rows expose a hover-reveal delete button", () => {
-	// The switcher button gains an optional delete action that is hidden until
-	// the row is hovered/focused (opacity-0 → group-hover/focus opacity-100).
+	// The switcher button gains an optional delete action, fed to the shared
+	// hover-reveal actions overlay (hidden until the row is hovered/focused).
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /onDelete\?: \(\) => void;/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /aria-label=\{`Delete \$\{label\}`\}/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /group-hover\/switcher-row:opacity-100/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /<DeleteIcon size="small" \/>/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /<HoverRevealActions/u);
 	// Only subagent rows get a delete handler (the base agent row must not).
 	assert.match(
 		SUBAGENTS_NAVIGATOR_SOURCE,
@@ -231,14 +231,20 @@ test("Subagent switcher rows expose a hover-reveal delete button", () => {
 	assert.match(SUBAGENTS_PAGE_SOURCE, /onDeleteSubagent=\{handleDeleteSubagent\}/u);
 });
 
-test("Subagent switcher switch rests at the far right and only persists when disabled", () => {
+test("Subagent switcher composes the shared hover-reveal row interaction", () => {
+	// Positioning/reveal/truncation now live in the reusable primitive; the
+	// navigator just composes it (see hover-reveal-row.test.js for the markup).
+	assert.match(
+		SUBAGENTS_NAVIGATOR_SOURCE,
+		/from "@\/components\/ui-custom\/hover-reveal-row"/u,
+	);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /className=\{hoverRevealRowClassName\}/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /function handleSwitchMouseDown\(event: MouseEvent<HTMLElement>\)/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /event\.preventDefault\(\);/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /onMouseDown=\{handleSwitchMouseDown\}/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /enabled \? "opacity-0" : "opacity-100"/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /has-\[:focus-visible\]:opacity-100/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /right-2 group-hover\/switcher-row:right-9/u);
-	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /focus-within:(?:right-9|opacity-100)/u);
-	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /has-\[:focus-visible\]:right-9/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /group-hover\/switcher-row:translate-x-0 group-hover\/switcher-row:opacity-100/u);
+	// The switch is parked (kept visible) only while the subagent is off.
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /toggleParked=\{!enabled\}/u);
+	// The label only reserves room for controls when they reveal (full at rest),
+	// keeping a parked single-slot reserve when off.
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /<HoverRevealLabel/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /reserveAtRest=\{!enabled && onToggle \? 1 : 0\}/u);
 });

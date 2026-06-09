@@ -5,17 +5,21 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-import { THIRD_PARTY_BORDERLESS_LOGO_IDS, resolveBrandLogoPresentation } from "./brand-logos.ts";
+import {
+	THIRD_PARTY_BORDERLESS_LOGO_IDS,
+	resolveBrandLogoPresentation,
+	resolveAtlassianLogoBorder,
+} from "./logo-usage.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
-// app/data/directory -> repo root -> public/3p
+// components/ui/data -> repo root -> public/3p
 const THIRD_PARTY_DIR = join(here, "..", "..", "..", "public", "3p");
 
 /**
- * The borderless ID set is a hand-maintained mirror of which `/public/3p/<id>/`
- * folders ship a `16-borderless.svg`. If a new 3P asset is added (or a borderless
- * variant added/removed) without updating the set, the border treatment silently
- * breaks — so assert the set equals the on-disk reality.
+ * The borderless ID list in logo-usage.json is a hand-maintained mirror of which
+ * `/public/3p/<id>/` folders ship a `16-borderless.svg`. If a new 3P asset is
+ * added (or a borderless variant added/removed) without updating the JSON, the
+ * border treatment silently breaks — so assert the list equals on-disk reality.
  */
 test("THIRD_PARTY_BORDERLESS_LOGO_IDS matches the folders shipping 16-borderless.svg", () => {
 	const onDisk = readdirSync(THIRD_PARTY_DIR, { withFileTypes: true })
@@ -29,9 +33,8 @@ test("THIRD_PARTY_BORDERLESS_LOGO_IDS matches the folders shipping 16-borderless
 	assert.deepEqual(
 		inSet,
 		onDisk,
-		"THIRD_PARTY_BORDERLESS_LOGO_IDS is out of sync with /public/3p. " +
-			"Update the set in app/data/directory/brand-logos.ts to match the folders " +
-			"containing a 16-borderless.svg.",
+		"borderlessIds in components/ui/data/logo-usage.json is out of sync with " +
+			"/public/3p. Update the JSON to match the folders containing a 16-borderless.svg.",
 	);
 });
 
@@ -61,4 +64,18 @@ test("unknown logo paths fall back to no border, src unchanged", () => {
 		src: "/illustration/foo.svg",
 		hasBorder: false,
 	});
+});
+
+test("the Atlassian master logo (no solid background) gets a bordered tile", () => {
+	assert.equal(resolveAtlassianLogoBorder("atlassian"), true);
+});
+
+test("solid-background 1P product logos render bare (no border)", () => {
+	for (const name of ["jira", "confluence", "loom", "trello", "compass"]) {
+		assert.equal(
+			resolveAtlassianLogoBorder(name),
+			false,
+			`expected ${name} to render without a border`,
+		);
+	}
 });

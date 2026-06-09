@@ -23,8 +23,8 @@
  * directory and fails if the JSON drifts, so new 3P assets can't silently bypass
  * the border treatment.
  */
-import type { AtlassianLogoName } from "@/components/ui/data/logo-data";
-import logoUsage from "@/components/ui/data/logo-usage.json";
+import type { AtlassianLogoName } from "./logo-data";
+import logoUsage from "./logo-usage.json" with { type: "json" };
 
 const ONE_P = logoUsage.tiers.oneP;
 const TWO_P = logoUsage.tiers.twoP;

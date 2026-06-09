@@ -6,8 +6,8 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
+import { BrandLogoMark } from "@/components/ui/logo-mark";
 import type { TagColor } from "@/components/ui/tag";
-import { Tile } from "@/components/ui/tile";
 import { resolveBrandLogoPresentation } from "@/app/data/directory/brand-logos";
 import { getSkillIcon } from "@/app/data/directory/visual";
 import type { SkillIconKey } from "@/app/data/directory/types";
@@ -200,39 +200,22 @@ export function RichTextMentionVisualMark({
 	}
 
 	if (visual.kind === "image") {
-		// 2P/3P brand logos. White-tile 3P marks (those with a `16-borderless.svg`
-		// sibling) and bare 2P partner PNGs render inside a VPK-drawn bordered tile,
-		// swapping to the borderless variant so borders don't double up. Solid-fill
-		// 3P marks paint their own background, so they render bare (no border) —
-		// mirroring the self-contained 1p product logos below.
-		const { src, hasBorder } = resolveBrandLogoPresentation(visual.src);
-		// Menu rows keep the bordered surface tile; inline chips (tag/pill) drop the
-		// border + background so the borderless 3P/2P glyph reads as a bare mark.
-		const showTile = hasBorder && size === "menu";
-		return (
-			<Tile
-				aria-hidden={true}
-				className={cn(
-					showTile && "bg-surface",
-					// In menu rows: bordered 3P brand glyphs sit at 16px in the 32px tile;
-					// bordered 2P partner marks match the Atlassian/icon tiles' 24px inset.
-					showTile &&
-						(src.startsWith("/3p/") ? "[&_img]:size-4!" : "[&_img]:size-6!"),
-					// Inline chips (tag/pill): borderless 3P + all 2P marks have no baked
-					// background, so they render as a centered 12px glyph inside the 16px
-					// box (no border). Solid-fill 3P marks (`hasBorder === false`) keep
-					// filling the full 16px box since they paint their own background.
-					hasBorder && size !== "menu" && "[&_img]:size-3!",
-					className,
-				)}
-				hasBorder={showTile}
-				isInset={false}
+		// 2P/3P brand logos — rendered through the shared `BrandLogoMark` so border
+		// treatment, the borderless-variant swap (resolved from `logo-usage.json`),
+		// and the size-scaled glyph fill stay identical to the `Logo` doc demos and
+		// can never drift. Menu rows use the `Tile` frame (32px tile, glyph tracks
+		// the tile size); inline chips (tag/pill) use the 16px `chip` frame where
+		// bordered 2P/3P marks read as a bare centered glyph.
+		return size === "menu" ? (
+			<BrandLogoMark
+				className={className}
+				frame="tile"
 				label={label}
-				size={size === "menu" ? "medium" : "xxsmall"}
-				variant="transparent"
-			>
-				<img alt="" aria-hidden="true" className="object-contain" src={src} />
-			</Tile>
+				size={menuTileSize}
+				src={visual.src}
+			/>
+		) : (
+			<BrandLogoMark className={className} frame="chip" label={label} src={visual.src} />
 		);
 	}
 

@@ -4,6 +4,11 @@ import { useId, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, 
 import { useReducedMotion } from "motion/react";
 import { DeleteIcon, PlusIcon, SettingsIcon } from "@/components/ui/vpk-icons";
 import { Switch } from "@/components/ui/switch";
+import {
+	hoverRevealRowClassName,
+	HoverRevealActions,
+	HoverRevealLabel,
+} from "@/components/ui-custom/hover-reveal-row";
 import type { SubagentPrompt, SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
 import { getSubagentDisplayName } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { token } from "@/lib/tokens";
@@ -277,16 +282,14 @@ function SubagentsSwitcherButton({
 	onSelect: () => void;
 	onToggle?: (enabled: boolean) => void;
 }>) {
-	// Reserve right padding for whichever overlay controls are present so the
-	// label never slides under them: switch (~28px) + delete (~28px).
-	const trailingPadding = onDelete && onToggle ? "pr-16" : onDelete || onToggle ? "pr-9" : undefined;
-
 	function handleSwitchMouseDown(event: MouseEvent<HTMLElement>) {
 		event.preventDefault();
 	}
 
+	const controlCount = (onToggle ? 1 : 0) + (onDelete ? 1 : 0);
+
 	return (
-		<div className="group/switcher-row relative">
+		<div className={hoverRevealRowClassName}>
 			<button
 				type="button"
 				aria-label={`Select ${label}`}
@@ -295,56 +298,54 @@ function SubagentsSwitcherButton({
 					"flex h-9 w-full min-w-0 items-center rounded-lg p-2 text-left transition-colors duration-normal ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected",
 					isActive
 						? "bg-bg-selected text-text-selected"
-						: "bg-transparent text-text group-hover/switcher-row:bg-surface-hovered group-hover/switcher-row:text-text",
-					// A disabled (off) subagent reads as muted until re-enabled.
-					!enabled && !isActive && "text-text-disabled",
-					trailingPadding,
+						: "bg-transparent text-text group-hover/hover-reveal-row:bg-surface-hovered group-hover/hover-reveal-row:text-text",
+					// A disabled (off) subagent reads as muted until re-enabled — keep it
+					// muted on hover too (the non-active branch's hover would otherwise
+					// re-darken the label).
+					!enabled && !isActive && "text-text-disabled group-hover/hover-reveal-row:text-text-disabled",
 				)}
 				onClick={onSelect}
 			>
-				<span className="w-full truncate text-sm leading-5">
-					{label}
-				</span>
+				{controlCount > 0 ? (
+					<HoverRevealLabel
+						className="text-sm leading-5"
+						reserveOnReveal={controlCount === 2 ? 2 : 1}
+						// An off subagent parks its switch at rest, so keep its single
+						// slot reserved; an on subagent gets the full label width.
+						reserveAtRest={!enabled && onToggle ? 1 : 0}
+					>
+						{label}
+					</HoverRevealLabel>
+				) : (
+					<span className="w-full truncate text-sm leading-5">{label}</span>
+				)}
 			</button>
-			{onToggle ? (
-				<div
-					className={cn(
-						// Stays visible while off so the disabled state is discoverable;
-						// otherwise reveals on row hover / keyboard focus-visible.
-						"absolute top-1/2 flex -translate-y-1/2 items-center transition-[right,opacity] duration-normal ease-out has-[:focus-visible]:opacity-100 group-hover/switcher-row:opacity-100",
-						// When delete can appear, the switch parks at the far right
-						// (right-2) at rest so it doesn't float in the middle with empty
-						// space beside it — then slides back to right-9 on hover as the
-						// trash icon transitions in. Keyboard focus-visible reveals the
-						// switch without moving it into the hidden delete-button slot.
-						onDelete
-							? "right-2 group-hover/switcher-row:right-9"
-							: "right-2",
-						enabled ? "opacity-0" : "opacity-100",
-					)}
-				>
-					<Switch
-						size="sm"
-						checked={enabled}
-						onCheckedChange={onToggle}
-						onMouseDown={handleSwitchMouseDown}
-						aria-label={`${enabled ? "Disable" : "Enable"} ${label}`}
-					/>
-				</div>
-			) : null}
-			{onDelete ? (
-				<button
-					type="button"
-					aria-label={`Delete ${label}`}
-					// Slides in from the right (and back out) in lockstep with the switch
-					// so hovering out clears the far-right slot immediately instead of the
-					// switch appearing to wait on a lingering opacity fade.
-					className="absolute right-1 top-1/2 flex size-7 origin-right -translate-y-1/2 translate-x-2 items-center justify-center rounded-md text-text-subtlest opacity-0 transition-[color,background-color,opacity,transform] duration-normal ease-out hover:bg-bg-danger-hovered hover:text-text-danger focus-visible:translate-x-0 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected group-hover/switcher-row:translate-x-0 group-hover/switcher-row:opacity-100"
-					onClick={onDelete}
-				>
-					<DeleteIcon size="small" />
-				</button>
-			) : null}
+			<HoverRevealActions
+				toggleParked={!enabled}
+				toggle={
+					onToggle ? (
+						<Switch
+							size="sm"
+							checked={enabled}
+							onCheckedChange={onToggle}
+							onMouseDown={handleSwitchMouseDown}
+							aria-label={`${enabled ? "Disable" : "Enable"} ${label}`}
+						/>
+					) : undefined
+				}
+				action={
+					onDelete ? (
+						<button
+							type="button"
+							aria-label={`Delete ${label}`}
+							className="flex size-7 items-center justify-center rounded-md text-text-subtlest transition-colors duration-normal ease-out hover:bg-bg-danger-hovered hover:text-text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected"
+							onClick={onDelete}
+						>
+							<DeleteIcon size="small" />
+						</button>
+					) : undefined
+				}
+			/>
 		</div>
 	);
 }
