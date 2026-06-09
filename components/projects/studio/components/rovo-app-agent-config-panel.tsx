@@ -5,6 +5,7 @@ import { type ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 
 import { KnowledgeDirectoryDialog, type KnowledgeDirectoryAddPayload } from "@/components/blocks/knowledge-directory";
+import { Memory } from "@/components/blocks/memory";
 import { AgentAccess } from "@/components/blocks/agent-access";
 import { AgentEvaluation } from "@/components/blocks/agent-evaluation";
 import { AgentInsights } from "@/components/blocks/agent-insights";
@@ -690,6 +691,11 @@ export function RovoAppAgentConfigPanel({
 				open={activeDirectory === "skills"}
 				selectedSkillIds={directorySkillIds}
 				skills={DEFAULT_SKILLS}
+			/>
+			<Memory
+				open={activeDirectory === "memory"}
+				onOpenChange={(open) => setActiveDirectory(open ? "memory" : null)}
+				showTrigger={false}
 			/>
 			<ConversationStartersDialog
 				open={activeDirectory === "conversationStarters"}

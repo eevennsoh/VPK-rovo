@@ -22,20 +22,38 @@ import { ObservationsTab } from "./observations-tab"
 
 export interface MemoryProps {
 	defaultOpen?: boolean
+	open?: boolean
+	onOpenChange?: (open: boolean) => void
+	showTrigger?: boolean
 }
 
 /**
  * Rovo memory modal (prototype). Two tabs — Rovo's auto-generated observations,
  * and the memories the user has shared directly — over local-only state.
  */
-export function Memory({ defaultOpen = true }: Readonly<MemoryProps>) {
-	const [open, setOpen] = React.useState(defaultOpen)
+export function Memory({
+	defaultOpen = false,
+	open,
+	onOpenChange,
+	showTrigger = true,
+}: Readonly<MemoryProps>) {
+	const [internalOpen, setInternalOpen] = React.useState(defaultOpen)
+	const isControlled = open !== undefined
+	const resolvedOpen = isControlled ? open : internalOpen
+	const handleOpenChange = React.useCallback((nextOpen: boolean) => {
+		if (!isControlled) {
+			setInternalOpen(nextOpen)
+		}
+		onOpenChange?.(nextOpen)
+	}, [isControlled, onOpenChange])
 
 	return (
-		<Dialog onOpenChange={setOpen} open={open}>
-			<DialogTrigger render={<Button size="default" />}>
-				Open Rovo memory
-			</DialogTrigger>
+		<Dialog onOpenChange={handleOpenChange} open={resolvedOpen}>
+			{showTrigger ? (
+				<DialogTrigger render={<Button size="default" />}>
+					Open Rovo memory
+				</DialogTrigger>
+			) : null}
 			<DialogContent className="max-h-[85vh] gap-4 overflow-y-auto" size="lg">
 				<Toaster id={MEMORY_TOASTER_ID} position="bottom-left" />
 				<DialogTitle className="sr-only">Rovo memory</DialogTitle>
