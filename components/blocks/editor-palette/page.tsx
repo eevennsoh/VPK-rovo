@@ -181,6 +181,17 @@ export interface EditorPaletteSearchPickerProps {
 	category: EditorPaletteSearchCategory;
 	className?: string;
 	emptyLabel?: string;
+	/**
+	 * Explicit rows to search over. When omitted, the picker derives its rows
+	 * from `mentionSources` for `category`. Callers pass this to surface a
+	 * curated list (e.g. one row per knowledge app) instead of the raw catalog.
+	 */
+	items?: readonly RichTextSuggestionMenuItem[];
+	/**
+	 * Sticky rows pinned above the searchable list (e.g. an "Upload files" lead
+	 * row). They are not filtered by the query.
+	 */
+	leadingItems?: readonly RichTextSuggestionMenuItem[];
 	mentionSources?: RichTextMentionSources;
 	onBrowseAll?: () => void;
 	onSelectItem?: (item: RichTextSuggestionMenuItem) => void;
@@ -191,12 +202,15 @@ export function EditorPaletteSearchPicker({
 	category,
 	className,
 	emptyLabel = "No matching items",
+	items: itemsProp,
+	leadingItems = [],
 	mentionSources = EDITOR_PALETTE_MENTION_SOURCES,
 	onBrowseAll,
 	onSelectItem,
 }: Readonly<EditorPaletteSearchPickerProps>) {
 	const [query, setQuery] = useState("");
-	const items = filterSearchItems(getMentionChildItems(mentionSources, category), query);
+	const sourceItems = itemsProp ?? getMentionChildItems(mentionSources, category);
+	const items = filterSearchItems(sourceItems, query);
 	const searchItem: RichTextSuggestionMenuItem = {
 		id: SEARCH_INPUT_ITEM_ID,
 		icon: <SearchIcon className="size-4 text-icon-subtle" />,
@@ -208,11 +222,13 @@ export function EditorPaletteSearchPicker({
 		icon: <ShowMoreHorizontalIcon label="" size="small" />,
 		label: "Browse all",
 	};
-	const rows = items.length > 0 ? [searchItem, ...items, browseAllItem] : [searchItem];
+	const rows = items.length > 0
+		? [searchItem, ...leadingItems, ...items, browseAllItem]
+		: [searchItem, ...leadingItems];
 
 	const handleSelect = (item: RichTextSuggestionMenuItem) => {
 		if (item.id === SEARCH_INPUT_ITEM_ID) {
-			const firstItem = items[0];
+			const firstItem = items[0] ?? leadingItems[0];
 			if (firstItem) {
 				onSelectItem?.(firstItem);
 			}

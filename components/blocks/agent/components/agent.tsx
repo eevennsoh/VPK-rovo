@@ -2791,7 +2791,7 @@ function AgentKnowledgeNavMenuContent({
 							<DropdownMenuSubTrigger>
 								<span className="flex items-center gap-3">
 									<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
-										<PlusIcon size="small" />
+										<PlusIcon />
 									</span>
 									Add knowledge
 								</span>
@@ -2812,7 +2812,7 @@ function AgentKnowledgeNavMenuContent({
 						<DropdownMenuItem
 							elemBefore={
 								<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
-									<BookOpenIcon label="" size="small" />
+									<BookOpenIcon label="" />
 								</span>
 							}
 							onClick={onBrowse}

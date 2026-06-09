@@ -24,6 +24,7 @@ import type {
 	RichTextMentionItem,
 	RichTextMentionSources,
 	RichTextReferenceCategory,
+	RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
 
 function toMentionId(category: RichTextMentionCategory, id: string): string {
@@ -155,3 +156,54 @@ export function getDirectoryMentionItemOrFallback(
 		label,
 	};
 }
+
+/**
+ * Strips the leading `"<category>:"` prefix from a mention id produced by
+ * `toMentionId`, returning the remaining payload (or the input unchanged when
+ * no prefix is present).
+ */
+function stripMentionCategoryPrefix(category: RichTextMentionCategory, id: string): string {
+	const prefix = `${category}:`;
+	return id.startsWith(prefix) ? id.slice(prefix.length) : id;
+}
+
+/**
+ * Extracts the tool id from a `"tool:<id>"` mention id (e.g. the ids minted by
+ * `mapToolToMentionItem`). The "Add tool" picker uses this to open the tools
+ * directory on the chosen tool's detail.
+ */
+export function getToolIdFromMentionId(id: string): string {
+	return stripMentionCategoryPrefix("tool", id);
+}
+
+/**
+ * Extracts the knowledge app id from a knowledge mention id. Knowledge ids are
+ * minted as `"knowledge:<appId>:all"` (app-level) or
+ * `"knowledge:<appId>:<contentId>"` (per-content), so this drops the category
+ * prefix and returns the leading `<appId>` segment.
+ */
+export function getKnowledgeAppIdFromMentionId(id: string): string {
+	const payload = stripMentionCategoryPrefix("knowledge", id);
+	const [appId] = payload.split(":");
+	return appId ?? payload;
+}
+
+/**
+ * App-level rows for the "Add knowledge" search picker: one entry per knowledge
+ * app (the `:all` mention items), carrying each app's name, description, and
+ * resolved visual. Selecting a row yields the app id via
+ * `getKnowledgeAppIdFromMentionId`.
+ *
+ * `icon` is `null` because the picker renders `visual` when present and only
+ * falls back to `icon` otherwise — every knowledge app supplies a `visual`.
+ */
+export const EDITOR_PALETTE_KNOWLEDGE_APP_ITEMS: readonly RichTextSuggestionMenuItem[] =
+	(EDITOR_PALETTE_MENTION_SOURCES.knowledge ?? [])
+		.filter((item) => item.id.endsWith(":all"))
+		.map((item) => ({
+			description: item.description,
+			icon: null,
+			id: item.id,
+			label: item.label.replace(/ - all content$/, ""),
+			visual: item.visual,
+		}));
