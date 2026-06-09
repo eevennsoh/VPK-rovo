@@ -391,7 +391,7 @@ export type AgentConfigListFieldName =
 	| "knowledge"
 	| "conversationStarters";
 
-export type AgentDirectoryKind = "knowledge" | "tools" | "skills" | "conversationStarters";
+export type AgentDirectoryKind = "knowledge" | "tools" | "skills" | "memory" | "conversationStarters";
 
 // Config rows that can be suppressed by callers (e.g. while editing a subagent,
 // where these capabilities can't be configured). Keyed by the canonical row key
@@ -1515,6 +1515,7 @@ function AgentCompactEmptyConfigNav({
 								render="nav-button"
 								value={memoryMode}
 								onValueChange={onMemoryModeChange}
+								onManage={() => onOpenDirectory?.("memory")}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:memory` : undefined}
 							/>
 						);
@@ -1630,6 +1631,7 @@ function AgentCompactEmptyConfigNav({
 												key={item.agentFieldName}
 												value={memoryMode}
 												onValueChange={onMemoryModeChange}
+												onManage={() => onOpenDirectory?.("memory")}
 											/>
 										);
 									}
@@ -2219,6 +2221,7 @@ function AgentFilledConfigSummary({
 			isEmpty: false,
 			node: (
 				<AgentMemoryRow
+					onManage={() => onOpenDirectory?.("memory")}
 					onValueChange={onMemoryModeChange}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:memory` : undefined}
 					value={memoryMode}
@@ -2926,9 +2929,11 @@ function AgentMemoryModeTabs({
 function AgentMemoryNavMenuContent({
 	value,
 	onValueChange,
+	onManage,
 }: Readonly<{
 	value: MemoryModeValue;
 	onValueChange: (next: MemoryModeValue) => void;
+	onManage?: () => void;
 }>) {
 	return (
 		<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
@@ -2939,6 +2944,7 @@ function AgentMemoryNavMenuContent({
 							<AiModelIcon label="" size="small" />
 						</span>
 					}
+					onClick={onManage}
 				>
 					Manage memory
 				</DropdownMenuItem>
@@ -2956,9 +2962,11 @@ function AgentMemoryNavMenuContent({
 function AgentMemorySelectorMenu({
 	value,
 	onValueChange,
+	onManage,
 }: Readonly<{
 	value: MemoryModeValue;
 	onValueChange: (next: MemoryModeValue) => void;
+	onManage?: () => void;
 }>) {
 	return (
 		<DropdownMenuContent align="start">
@@ -2975,7 +2983,7 @@ function AgentMemorySelectorMenu({
 			</DropdownMenuGroup>
 			<DropdownMenuSeparator />
 			<DropdownMenuGroup>
-				<DropdownMenuItem elemBefore={<AiModelIcon label="" size="small" />}>
+				<DropdownMenuItem elemBefore={<AiModelIcon label="" size="small" />} onClick={onManage}>
 					Manage memory
 				</DropdownMenuItem>
 			</DropdownMenuGroup>
@@ -2986,6 +2994,7 @@ function AgentMemorySelectorMenu({
 interface AgentMemorySelectorProps {
 	value: MemoryModeValue;
 	onValueChange: (next: MemoryModeValue) => void;
+	onManage?: () => void;
 	render: "nav-button" | "row";
 	screenAssistantTargetId?: string;
 }
@@ -2993,6 +3002,7 @@ interface AgentMemorySelectorProps {
 function AgentMemorySelector({
 	value,
 	onValueChange,
+	onManage,
 	render,
 	screenAssistantTargetId,
 }: Readonly<AgentMemorySelectorProps>) {
@@ -3010,7 +3020,7 @@ function AgentMemorySelector({
 					{/* Surface the on/off state inline so it reads without opening the menu. */}
 					<Badge>{selectedOption.label}</Badge>
 				</MenubarTrigger>
-				<AgentMemoryNavMenuContent value={value} onValueChange={onValueChange} />
+				<AgentMemoryNavMenuContent value={value} onValueChange={onValueChange} onManage={onManage} />
 			</MenubarMenu>
 		);
 	}
@@ -3027,7 +3037,7 @@ function AgentMemorySelector({
 			>
 				{`Memory ${selectedOption.label.toLowerCase()}`}
 			</DropdownMenuTrigger>
-			<AgentMemorySelectorMenu value={value} onValueChange={onValueChange} />
+			<AgentMemorySelectorMenu value={value} onValueChange={onValueChange} onManage={onManage} />
 		</DropdownMenu>
 	);
 }
@@ -3035,9 +3045,11 @@ function AgentMemorySelector({
 function AgentMemoryOverflowMenu({
 	value,
 	onValueChange,
+	onManage,
 }: Readonly<{
 	value: MemoryModeValue;
 	onValueChange: (next: MemoryModeValue) => void;
+	onManage?: () => void;
 }>) {
 	return (
 		<DropdownMenuSub>
@@ -3056,7 +3068,7 @@ function AgentMemoryOverflowMenu({
 				</DropdownMenuGroup>
 				<DropdownMenuSeparator />
 				<DropdownMenuGroup>
-					<DropdownMenuItem>
+					<DropdownMenuItem onClick={onManage}>
 						Manage memory
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
@@ -3068,12 +3080,14 @@ function AgentMemoryOverflowMenu({
 interface AgentMemoryRowProps {
 	value: MemoryModeValue;
 	onValueChange: (next: MemoryModeValue) => void;
+	onManage?: () => void;
 	screenAssistantTargetId?: string;
 }
 
 function AgentMemoryRow({
 	value,
 	onValueChange,
+	onManage,
 	screenAssistantTargetId,
 }: Readonly<AgentMemoryRowProps>) {
 	return (
@@ -3086,7 +3100,7 @@ function AgentMemoryRow({
 				<AgentSectionLabel>Memory</AgentSectionLabel>
 			</div>
 			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
-				<AgentMemorySelector render="row" value={value} onValueChange={onValueChange} />
+				<AgentMemorySelector render="row" value={value} onValueChange={onValueChange} onManage={onManage} />
 			</div>
 		</div>
 	);

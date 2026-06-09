@@ -140,10 +140,10 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 	assert.match(AGENT_SOURCE, /render=\{\(\s*<LozengeDropdownTrigger[\s\S]*aria-label="Memory mode"[\s\S]*icon=\{<AiModelIcon label="" size="small" \/>\}/u);
 	assert.match(AGENT_SOURCE, /\{`Memory \$\{selectedOption\.label\.toLowerCase\(\)\}`\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Memory mode"[\s\S]{0,180}variant="information"/u);
-	assert.match(AGENT_SOURCE, /<DropdownMenuSeparator \/>[\s\S]*Manage memory/u);
+	assert.match(AGENT_SOURCE, /<DropdownMenuSeparator \/>[\s\S]*onClick=\{onManage\}[\s\S]*Manage memory/u);
 	// Memory selector is now driven by lifted state and renders as a row lozenge
 	// or a compact nav button, mirroring the knowledge selector.
-	assert.match(AGENT_SOURCE, /<AgentMemorySelector render="row" value=\{value\} onValueChange=\{onValueChange\} \/>/u);
+	assert.match(AGENT_SOURCE, /<AgentMemorySelector render="row" value=\{value\} onValueChange=\{onValueChange\} onManage=\{onManage\} \/>/u);
 	assert.match(AGENT_SOURCE, /function AgentMemoryOverflowMenu/u);
 	assert.doesNotMatch(AGENT_SOURCE, /<AgentReferenceChip label="Memory" \/>/u);
 });
@@ -168,11 +168,11 @@ test("Filled config summary sorts empty rows to the bottom while preserving cano
 		/AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = \[[\s\S]*"trigger"[\s\S]*"knowledge"[\s\S]*"tools"[\s\S]*"skills"[\s\S]*"subagents"[\s\S]*"memory"[\s\S]*"conversationStarters"[\s\S]*"reasoning"[\s\S]*\] as const;/u,
 	);
 	// Memory renders as a nav button (and overflow sub-menu) in the collapsed nav.
-	assert.match(AGENT_SOURCE, /item\.agentFieldName === "memory"[\s\S]*<AgentMemorySelector[\s\S]*render="nav-button"[\s\S]*value=\{memoryMode\}/u);
+	assert.match(AGENT_SOURCE, /item\.agentFieldName === "memory"[\s\S]*<AgentMemorySelector[\s\S]*render="nav-button"[\s\S]*value=\{memoryMode\}[\s\S]*onManage=\{\(\) => onOpenDirectory\?\.\("memory"\)\}/u);
 	// The collapsed nav button surfaces the on/off state inline as a neutral badge
 	// so the current state reads without opening the dropdown.
 	assert.match(AGENT_SOURCE, /Memory[\s\S]*<Badge>\{selectedOption\.label\}<\/Badge>/u);
-	assert.match(AGENT_SOURCE, /item\.agentFieldName === "memory"[\s\S]*<AgentMemoryOverflowMenu[\s\S]*value=\{memoryMode\}/u);
+	assert.match(AGENT_SOURCE, /item\.agentFieldName === "memory"[\s\S]*<AgentMemoryOverflowMenu[\s\S]*value=\{memoryMode\}[\s\S]*onManage=\{\(\) => onOpenDirectory\?\.\("memory"\)\}/u);
 	// Memory state is lifted to the toolbar so both views share one toggle.
 	assert.match(AGENT_SOURCE, /const \[memoryFallback, setMemoryFallback\] = useState<MemoryModeValue \| null>\(null\);/u);
 	assert.match(AGENT_SOURCE, /const memoryMode = \(config\.memoryMode as MemoryModeValue \| undefined\) \?\? memoryFallback \?\? "on";/u);
@@ -419,7 +419,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// Every list-field row keeps a persistent +Add link. Directory-backed
 	// fields open their directory first and fall back to onAppendListItem when no
 	// directory opener is supplied.
-	assert.match(AGENT_SOURCE, /export type AgentDirectoryKind = "knowledge" \| "tools" \| "skills" \| "conversationStarters";/u);
+	assert.match(AGENT_SOURCE, /export type AgentDirectoryKind = "knowledge" \| "tools" \| "skills" \| "memory" \| "conversationStarters";/u);
 	assert.match(AGENT_SOURCE, /function openAgentDirectoryOrAppendListItem\([\s\S]*onOpenDirectory\?: \(directory: AgentDirectoryKind, selectedItem\?: string\) => void[\s\S]*onAppendListItem\?: \(field: AgentConfigListFieldName\) => void[\s\S]*onOpenDirectory\(directory\);[\s\S]*onAppendListItem\?\.\(field\);/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("triggers", triggerItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("skills", skillItems\.length === 0, showAddButtons\)\}/u);
