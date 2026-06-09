@@ -6736,6 +6736,9 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/blocks/skills-directory-demo"),
     { ssr: false },
   ),
+  "smart-link": dynamic(() => import("./demos/blocks/smart-link-demo"), {
+    ssr: false,
+  }),
   "knowledge-directory": dynamic(
     () => import("./demos/blocks/knowledge-directory-demo"),
     { ssr: false },
@@ -7000,6 +7003,50 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/blocks/subagents-demo").then((mod) => ({
         default: mod.SubagentsDemoEmpty,
+      })),
+    { ssr: false },
+  ),
+
+  // Smart Link
+  "smart-link-demo-rich": dynamic(
+    () =>
+      import("./demos/blocks/smart-link-demo").then((mod) => ({
+        default: mod.SmartLinkDemoRich,
+      })),
+    { ssr: false },
+  ),
+  "smart-link-demo-article": dynamic(
+    () =>
+      import("./demos/blocks/smart-link-demo").then((mod) => ({
+        default: mod.SmartLinkDemoArticle,
+      })),
+    { ssr: false },
+  ),
+  "smart-link-demo-team": dynamic(
+    () =>
+      import("./demos/blocks/smart-link-demo").then((mod) => ({
+        default: mod.SmartLinkDemoTeam,
+      })),
+    { ssr: false },
+  ),
+  "smart-link-demo-goal": dynamic(
+    () =>
+      import("./demos/blocks/smart-link-demo").then((mod) => ({
+        default: mod.SmartLinkDemoGoal,
+      })),
+    { ssr: false },
+  ),
+  "smart-link-demo-loom": dynamic(
+    () =>
+      import("./demos/blocks/smart-link-demo").then((mod) => ({
+        default: mod.SmartLinkDemoLoom,
+      })),
+    { ssr: false },
+  ),
+  "smart-link-demo-generic": dynamic(
+    () =>
+      import("./demos/blocks/smart-link-demo").then((mod) => ({
+        default: mod.SmartLinkDemoGeneric,
       })),
     { ssr: false },
   ),
