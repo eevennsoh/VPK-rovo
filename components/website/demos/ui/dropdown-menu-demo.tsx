@@ -664,7 +664,7 @@ export function DropdownMenuDemoItemMultiline() {
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-72">
         <DropdownMenuGroup>
-          <DropdownMenuItem>
+          <DropdownMenuItem allowTextWrap>
             This is a long dropdown item label that wraps across multiple lines
             in order to mirror the ADS multiline example.
           </DropdownMenuItem>

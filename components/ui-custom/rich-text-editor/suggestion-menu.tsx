@@ -646,6 +646,7 @@ export function RichTextCommandMenuSearchField({
 				onChange={(event) => onValueChange(event.currentTarget.value)}
 				onKeyDown={(event) => {
 					onKeyDown?.(event);
+					event.stopPropagation();
 					if (event.defaultPrevented) {
 						return;
 					}

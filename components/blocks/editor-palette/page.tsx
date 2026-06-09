@@ -176,6 +176,14 @@ function filterSearchItems(
 	});
 }
 
+function normalizeSearchPickerItem(
+	item: RichTextSuggestionMenuItem,
+): RichTextSuggestionMenuItem {
+	return item.description
+		? { ...item, persistentDescription: true }
+		: item;
+}
+
 export interface EditorPaletteSearchPickerProps {
 	autoFocus?: boolean;
 	category: EditorPaletteSearchCategory;
@@ -209,11 +217,9 @@ export function EditorPaletteSearchPicker({
 	onSelectItem,
 }: Readonly<EditorPaletteSearchPickerProps>) {
 	const [query, setQuery] = useState("");
-	// Search rows reveal their byline on hover/selection (the `canRevealMetadata`
-	// path in RichTextSuggestionMenuOption), matching the flat and nested menus.
-	// We deliberately do not set `persistentDescription`, so the collapsed row
-	// stays label-only until the user lands on it.
-	const sourceItems = itemsProp ?? getMentionChildItems(mentionSources, category);
+	const sourceItems = (itemsProp ?? getMentionChildItems(mentionSources, category))
+		.map(normalizeSearchPickerItem);
+	const leadingRows = leadingItems.map(normalizeSearchPickerItem);
 	const items = filterSearchItems(sourceItems, query);
 	const browseAllItem: RichTextSuggestionMenuItem = {
 		id: SEARCH_BROWSE_ALL_ITEM_ID,
@@ -221,11 +227,11 @@ export function EditorPaletteSearchPicker({
 		label: "Browse all",
 	};
 	const rows = items.length > 0
-		? [...leadingItems, ...items, browseAllItem]
-		: leadingItems;
+		? [...leadingRows, ...items, browseAllItem]
+		: leadingRows;
 
 	const selectFirstResult = () => {
-		const firstItem = items[0] ?? leadingItems[0];
+		const firstItem = items[0] ?? leadingRows[0];
 		if (firstItem) {
 			onSelectItem?.(firstItem);
 		}

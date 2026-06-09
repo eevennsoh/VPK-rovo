@@ -300,7 +300,15 @@ test("Compact agent config opts into the typed Triggers editor without replacing
 	assert.match(AGENT_SOURCE, /function getAgentTriggerItems\(config: AgentConfigFormValue\): readonly string\[\] \{[\s\S]*serializeAgentTriggerLabels\(config\.triggerDefinitions\)[\s\S]*const triggers = getNonEmptyConfigItems\(config\.triggers\)[\s\S]*const trigger = config\.trigger\?\.trim\(\);/u);
 	assert.match(AGENT_SOURCE, /onConnectTrigger\?: \(trigger: AgentTriggerValue\) => void;/u);
 	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
-	assert.match(AGENT_SOURCE, /<TriggerPicker[\s\S]*onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*createAgentTriggerValue\(providerId, eventId, 1\)[\s\S]*onEditTriggers\?\.\(next \? \[next\] : \[\]\);/u);
+	// Adding a trigger from the picker must APPEND to the existing definitions
+	// (seed `[...existing, next]`), not replace them with `[next]` — otherwise
+	// saving the rule-builder drops every previously configured trigger.
+	assert.match(AGENT_SOURCE, /<TriggerPicker[\s\S]*onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*const existing = triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\);/u);
+	// The collapsed-nav "Add trigger" flyout appends the same way, seeding from
+	// the agent's own config so the editor opens with the full trigger list.
+	assert.match(AGENT_SOURCE, /onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*const existing = config\?\.triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\);/u);
+	// Guard against the override regression returning anywhere in the source.
+	assert.doesNotMatch(AGENT_SOURCE, /onEditTriggers\?\.\(next \? \[next\] : \[\]\)/u);
 	assert.match(AGENT_SOURCE, /isEmpty: triggerItems\.length === 0/u);
 	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*items=\{triggerItems\}[\s\S]*onTriggerDefinitionsChange=\{onTriggerDefinitionsChange\}/u);
 	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange=\{onTriggerDefinitionsChange\}/u);
@@ -979,6 +987,7 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /\{header\}[\s\S]*<div[\s\S]*className="rich-text-command-menu-list"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /export function RichTextCommandMenuSearchField\(/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /<Input[\s\S]*variant="subtle"[\s\S]*value=\{value\}[\s\S]*onChange=\{\(event\) => onValueChange\(event\.currentTarget\.value\)\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onKeyDown=\{\(event\) => \{[\s\S]*onKeyDown\?\.\(event\);[\s\S]*event\.stopPropagation\(\);[\s\S]*if \(event\.defaultPrevented\)/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /<Button[\s\S]*aria-label="Clear search"[\s\S]*className="rich-text-command-menu-search-clear text-icon-subtle"[\s\S]*shape="circle"[\s\S]*size="icon-compact"[\s\S]*variant="ghost"[\s\S]*<CrossCircleIcon label="" size="small" \/>/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /const inputItem =|const listItems =|showClearButton|RichTextSuggestionMenuInputOption/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /<Input[\s\S]*variant="subtle"[\s\S]*isCompact/u);

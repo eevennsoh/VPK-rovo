@@ -98,6 +98,7 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { InlineEdit } from "@/components/ui/inline-edit";
+import { Input } from "@/components/ui/input";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tag, type TagColor } from "@/components/ui/tag";
@@ -977,6 +978,7 @@ function AgentCompactSubagentsNavButton({
 	item,
 	onCreateSubagent,
 	onManageSubagents,
+	onRemoveSubagent,
 	onSelectSubagent,
 	screenAssistantTargetId,
 	selectedIndex,
@@ -985,6 +987,7 @@ function AgentCompactSubagentsNavButton({
 	item: AgentCompactConfigNavItem;
 	onCreateSubagent?: () => void;
 	onManageSubagents?: () => void;
+	onRemoveSubagent?: (index: number) => void;
 	onSelectSubagent?: (index: number) => void;
 	screenAssistantTargetId?: string;
 	selectedIndex?: number;
@@ -1010,13 +1013,13 @@ function AgentCompactSubagentsNavButton({
 						<AgentCompactNavMenuList>
 							<DropdownMenuGroup className="p-0">
 								{subagents.map((subagent, index) => (
-									<DropdownMenuItem
+									<AgentCompactReferenceRow
 										key={`${subagent}-${index}`}
+										label={subagent}
 										onClick={() => onSelectSubagent?.(index)}
+										onRemove={onRemoveSubagent ? () => onRemoveSubagent(index) : undefined}
 										selected={selectedIndex === index}
-									>
-										{subagent}
-									</DropdownMenuItem>
+									/>
 								))}
 							</DropdownMenuGroup>
 						</AgentCompactNavMenuList>
@@ -1140,6 +1143,60 @@ function AgentCompactTriggerRow({
 	);
 }
 
+// A configured reference row (knowledge / tools / skills / subagents) inside a
+// collapsed config dropdown. Mirrors AgentCompactTriggerRow's hover-reveal model:
+// the label truncates clear of a trailing control that reveals on hover/focus.
+// Here the trailing control is a single "Remove" button (these items have no
+// enabled/disabled toggle). The row's primary press keeps its normal behavior
+// (open the directory on this item); the remove button stops propagation so it
+// never also triggers the row press.
+function AgentCompactReferenceRow({
+	elemBefore,
+	label,
+	onClick,
+	onRemove,
+	selected,
+}: Readonly<{
+	elemBefore?: ReactNode;
+	label: string;
+	onClick?: () => void;
+	onRemove?: () => void;
+	selected?: boolean;
+}>) {
+	return (
+		<DropdownMenuItem
+			className={cn(hoverRevealRowClassName)}
+			elemBefore={elemBefore}
+			onClick={onClick}
+			selected={selected}
+		>
+			<HoverRevealLabel reserveOnReveal={onRemove ? 1 : undefined} reserveAtRest={0}>
+				{label}
+			</HoverRevealLabel>
+			{onRemove ? (
+				<HoverRevealActions
+					action={
+						<button
+							type="button"
+							aria-label={`Remove ${label}`}
+							className="flex size-7 items-center justify-center rounded-md text-text-subtlest transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected [&_svg]:size-4"
+							onClick={(event) => {
+								// Don't let the press bubble to the row's onClick (which would
+								// open the directory) or close the menu via item activation.
+								event.preventDefault();
+								event.stopPropagation();
+								onRemove();
+							}}
+						>
+							<DeleteIcon label="" size="small" />
+						</button>
+					}
+				/>
+			) : null}
+		</DropdownMenuItem>
+	);
+}
+
 // Trigger dropdown: the trigger list (when any) scrolls in the popup body, and
 // the "Add trigger ›" flyout + "Manage triggers" live in a permanent sticky
 // footer pinned to the bottom — so adding triggers grows the list at the top
@@ -1204,7 +1261,7 @@ function AgentCompactTriggersNavButton({
 					Add trigger
 				</span>
 			</DropdownMenuSubTrigger>
-			<DropdownMenuSubContent className="min-w-64 overflow-hidden p-0">
+			<DropdownMenuSubContent className="w-80 overflow-hidden p-0">
 				<TriggerProviderSearchList onSelectEvent={onSelectEvent} />
 			</DropdownMenuSubContent>
 		</DropdownMenuSub>
@@ -1226,7 +1283,7 @@ function AgentCompactTriggersNavButton({
 				{isEmpty ? null : (
 					<div className="min-h-0 flex-1 overflow-y-auto">
 						<AgentCompactNavMenuList>
-							<div className="p-0">
+							<DropdownMenuGroup className="p-0">
 								{triggers.map((trigger, index) => {
 									const definition = definitionsAlignItems ? triggerDefinitions?.[index] : undefined;
 									const providerIcon = definition ? renderAgentTriggerProviderTileIcon(definition) : undefined;
@@ -1241,7 +1298,7 @@ function AgentCompactTriggersNavButton({
 										/>
 									);
 								})}
-							</div>
+							</DropdownMenuGroup>
 						</AgentCompactNavMenuList>
 					</div>
 				)}
@@ -1275,6 +1332,7 @@ function AgentCompactDirectoryNavButton({
 	onBrowse,
 	onAddSearchItem,
 	onPickTool,
+	onRemoveItem,
 	onSelectItem,
 	screenAssistantTargetId,
 }: Readonly<{
@@ -1287,6 +1345,7 @@ function AgentCompactDirectoryNavButton({
 	// `onPickTool` instead (opens the tools directory on that tool's detail).
 	onAddSearchItem?: (item: RichTextSuggestionMenuItem) => void;
 	onPickTool?: (toolId: string) => void;
+	onRemoveItem?: (index: number) => void;
 	onSelectItem?: (item: string) => void;
 	screenAssistantTargetId?: string;
 }>) {
@@ -1349,12 +1408,12 @@ function AgentCompactDirectoryNavButton({
 						<AgentCompactNavMenuList>
 							<DropdownMenuGroup className="p-0">
 								{items.map((value, index) => (
-									<DropdownMenuItem
+									<AgentCompactReferenceRow
 										key={`${directory}-${value}-${index}`}
+										label={value}
 										onClick={onSelectItem ? () => onSelectItem(value) : undefined}
-									>
-										{value}
-									</DropdownMenuItem>
+										onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
+									/>
 								))}
 							</DropdownMenuGroup>
 						</AgentCompactNavMenuList>
@@ -1403,23 +1462,18 @@ function AgentCompactConversationStartersNavButton({
 					/>
 				)}
 			/>
-			<MenubarContent align="start" className="w-72">
+			<MenubarContent align="start" className="w-70">
 				{/* 8px (`pb-2`) below the last starter field so it doesn't crowd the
 				    footer separator — the rest of the frame keeps the popup's even 4px. */}
 				<div className="flex flex-col gap-1.5 pb-2">
 					{fields.map((field, index) => (
-						<div
-							className="flex items-center gap-2 rounded-sm border border-input px-3 focus-within:border-border-focused"
+						<Input
 							key={`starter-${index}`}
-						>
-							<input
-								className="h-7 w-full bg-transparent text-sm text-text outline-none placeholder:text-text-subtlest"
-								onChange={(event) => onStarterChange?.(index, event.target.value)}
-								onKeyDown={(event) => event.stopPropagation()}
-								placeholder={`Starter ${index + 1}`}
-								value={field.label}
-							/>
-						</div>
+							onChange={(event) => onStarterChange?.(index, event.target.value)}
+							onKeyDown={(event) => event.stopPropagation()}
+							placeholder={`Starter ${index + 1}`}
+							value={field.label}
+						/>
 					))}
 				</div>
 				<AgentCompactNavMenuFooter>
@@ -1448,6 +1502,7 @@ function AgentCompactEmptyConfigNav({
 	onEditTriggers,
 	onListItemChange,
 	onOpenDirectory,
+	onRemoveListItem,
 	onSelectListItem,
 	reasoningValue,
 	onReasoningValueChange,
@@ -1466,6 +1521,7 @@ function AgentCompactEmptyConfigNav({
 	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
 	onListItemChange?: (field: AgentConfigListFieldName, index: number, value: string) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
+	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	reasoningValue: ReasoningModeValue;
 	onReasoningValueChange: (next: ReasoningModeValue) => void;
@@ -1534,6 +1590,7 @@ function AgentCompactEmptyConfigNav({
 								items={getNonEmptyConfigItems(config?.knowledge)}
 								onBrowse={() => openAgentDirectoryOrAppendListItem("knowledge", "knowledge", onOpenDirectory, onAppendListItem)}
 								onPickKnowledgeApp={onOpenDirectory ? (appIdOrUpload) => onOpenDirectory("knowledge", appIdOrUpload) : undefined}
+								onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
 								onSelectItem={onOpenDirectory ? (value) => onOpenDirectory("knowledge", value) : undefined}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
 							/>
@@ -1558,6 +1615,7 @@ function AgentCompactEmptyConfigNav({
 								key={item.agentFieldName}
 								onCreateSubagent={() => onAppendListItem?.("subagents")}
 								onManageSubagents={onManageSubagents}
+								onRemoveSubagent={onRemoveListItem ? (index) => onRemoveListItem("subagents", index) : undefined}
 								onSelectSubagent={(index) => onSelectListItem?.("subagents", index)}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
 								selectedIndex={selectedListItemIndexByField?.subagents}
@@ -1572,8 +1630,12 @@ function AgentCompactEmptyConfigNav({
 								key={item.agentFieldName}
 								onEditTriggers={onEditTriggers}
 								onSelectEvent={(providerId, eventId) => {
-									const next = createAgentTriggerValue(providerId, eventId, 1);
-									onEditTriggers?.(next ? [next] : []);
+									// Append to the existing definitions so the rule-builder
+									// opens with every trigger, not just the new one — otherwise
+									// Save would persist only the picked trigger and drop the rest.
+									const existing = config?.triggerDefinitions ?? [];
+									const next = createAgentTriggerValue(providerId, eventId, existing.length + 1);
+									onEditTriggers?.(next ? [...existing, next] : existing);
 								}}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
 								triggerDefinitions={config?.triggerDefinitions}
@@ -1598,6 +1660,7 @@ function AgentCompactEmptyConfigNav({
 								}}
 								onPickTool={directory === "tools" && onOpenDirectory ? (toolId) => onOpenDirectory("tools", toolId) : undefined}
 								onBrowse={() => openAgentDirectoryOrAppendListItem(directory, directory, onOpenDirectory, onAppendListItem)}
+								onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem(directory, index) : undefined}
 								onSelectItem={onOpenDirectory ? (value) => onOpenDirectory(directory, value) : undefined}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:${item.agentFieldName}` : undefined}
 							/>
@@ -1972,8 +2035,11 @@ function AgentTriggerSummaryRow({
 					<TriggerPicker
 						label={addLabel ?? "Add"}
 						onSelectEvent={(providerId, eventId) => {
-							const next = createAgentTriggerValue(providerId, eventId, 1);
-							onEditTriggers?.(next ? [next] : []);
+							// Append rather than replace so picking a trigger seeds the
+							// editor with the full set (see the collapsed-nav handler).
+							const existing = triggerDefinitions ?? [];
+							const next = createAgentTriggerValue(providerId, eventId, existing.length + 1);
+							onEditTriggers?.(next ? [...existing, next] : existing);
 						}}
 						trigger={<AgentAddValueButton icon="add" label={addLabel ?? "Add"} />}
 					/>
@@ -2658,6 +2724,7 @@ function AgentKnowledgeNavMenuContent({
 	items,
 	onBrowse,
 	onPickKnowledgeApp,
+	onRemoveItem,
 	onSelectItem,
 }: Readonly<{
 	value: KnowledgeModeValue;
@@ -2669,6 +2736,7 @@ function AgentKnowledgeNavMenuContent({
 	// row opens the directory dialog on that app's content step rather than
 	// adding immediately; `__upload__` opens the file browser.
 	onPickKnowledgeApp?: (appIdOrUpload: string) => void;
+	onRemoveItem?: (index: number) => void;
 	onSelectItem?: (item: string) => void;
 }>) {
 	const isCustom = value === "custom";
@@ -2683,7 +2751,7 @@ function AgentKnowledgeNavMenuContent({
 							{items.map((item, index) => {
 								const mention = getDirectoryMentionItemOrFallback("knowledge", item);
 								return (
-									<DropdownMenuItem
+									<AgentCompactReferenceRow
 										key={`knowledge-${item}-${index}`}
 										elemBefore={
 											// The shared menu visual renders at a fixed 32px tile
@@ -2708,10 +2776,10 @@ function AgentKnowledgeNavMenuContent({
 												)}
 											</span>
 										}
+										label={item}
 										onClick={onSelectItem ? () => onSelectItem(item) : undefined}
-									>
-										{item}
-									</DropdownMenuItem>
+										onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
+									/>
 								);
 							})}
 						</DropdownMenuGroup>
@@ -2776,6 +2844,7 @@ interface AgentKnowledgeSelectorProps {
 	onBrowse?: () => void;
 	// Picking an app row (or "Upload files") in the "Add knowledge" flyout.
 	onPickKnowledgeApp?: (appIdOrUpload: string) => void;
+	onRemoveItem?: (index: number) => void;
 	onSelectItem?: (item: string) => void;
 	screenAssistantTargetId?: string;
 }
@@ -2788,6 +2857,7 @@ function AgentKnowledgeSelector({
 	items = [],
 	onBrowse,
 	onPickKnowledgeApp,
+	onRemoveItem,
 	onSelectItem,
 	screenAssistantTargetId,
 }: Readonly<AgentKnowledgeSelectorProps>) {
@@ -2815,6 +2885,7 @@ function AgentKnowledgeSelector({
 					items={items}
 					onBrowse={onBrowse}
 					onPickKnowledgeApp={onPickKnowledgeApp}
+					onRemoveItem={onRemoveItem}
 					onSelectItem={onSelectItem}
 				/>
 			</MenubarMenu>
@@ -3609,6 +3680,7 @@ function AgentCompactConfigToolbarBelow({
 							onListItemChange={onListItemChange}
 							onManageSubagents={onManageSubagents}
 							onOpenDirectory={onOpenDirectory}
+							onRemoveListItem={onRemoveListItem}
 							onSelectListItem={onSelectListItem}
 							reasoningValue={reasoningValue}
 							onReasoningValueChange={setReasoningValue}

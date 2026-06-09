@@ -282,7 +282,7 @@ export function TriggerProviderSearchList({
 
 	return (
 		<div
-			className="rich-text-command-menu rich-text-command-menu-borderless"
+			className="rich-text-command-menu rich-text-command-menu-embedded"
 			data-has-header="true"
 			role="presentation"
 		>
