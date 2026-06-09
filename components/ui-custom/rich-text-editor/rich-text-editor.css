@@ -510,15 +510,16 @@
 .rich-text-command-menu-item {
 	display: grid;
 	width: 100%;
-	/* Front-slot visual + copy + optional trailing shortcut. The 12px spacing
-	   between the avatar and copy is applied as a margin on the copy (not the
-	   grid `gap`), and the grid `column-gap` is 0, so the trailing `auto`
-	   shortcut column reserves NOTHING when empty — no stranded gap on the right
-	   that would truncate the description early. The shortcut, when present,
-	   opens its own left gap via `padding-left`. */
-	grid-template-columns: 24px minmax(0, 1fr) auto;
+	/* Front-slot visual + copy, with a 12px gap between them. Any trailing
+	   shortcut/return icon is positioned absolutely at the right edge (see
+	   `.rich-text-command-menu-shortcut`), so it is OUT of grid flow: a row
+	   without a shortcut reserves no column and strands no gap on the right (the
+	   description uses the full width), and a hovered row never reflows it onto a
+	   second line. */
+	position: relative;
+	grid-template-columns: 24px minmax(0, 1fr);
 	align-items: center;
-	column-gap: 0;
+	column-gap: 12px;
 	border: 0;
 	border-radius: 8px;
 	background: transparent;
@@ -538,6 +539,15 @@
 .rich-text-command-menu-item:hover,
 .rich-text-command-menu-item-selected {
 	background-color: var(--ds-background-neutral-subtle-hovered, #f1f2f4);
+}
+
+/* When the return icon is revealed (hover / selection), reserve room for it on
+   the copy's right edge so the text truncates BEFORE the icon — the 16px icon
+   plus a 12px gap — instead of sliding underneath the absolutely-positioned
+   shortcut. */
+.rich-text-command-menu-item:hover .rich-text-command-menu-copy,
+.rich-text-command-menu-item-selected .rich-text-command-menu-copy {
+	padding-right: 28px;
 }
 
 .rich-text-command-menu-item-sticky {
@@ -644,10 +654,6 @@
 	flex-direction: column;
 	justify-content: center;
 	overflow: hidden;
-	/* Spacing from the 24px front-slot visual. Carried as a margin (not the
-	   grid `column-gap`, which is 0) so the empty trailing shortcut column never
-	   reserves a stranded gap on the right. */
-	margin-left: 12px;
 }
 
 /* Reveal-able / persistent copy: holds the label plus a description line stacked
@@ -694,13 +700,17 @@
 }
 
 .rich-text-command-menu-shortcut {
-	/* Trailing column 3. With the grid `column-gap: 0`, this reserves nothing
-	   when absent; when present it opens its own 24px gap from the copy via
-	   `padding-left`, so the return icon / Kbd never crowds the label. */
+	/* Anchored to the right edge, OUT of grid flow (absolute) so it reserves no
+	   column when absent and never wraps to a second line on hover. On hover /
+	   selection the copy reserves matching right padding (see the rule above), so
+	   the text truncates BEFORE the icon and never slides underneath it. */
+	position: absolute;
+	top: 0;
+	right: 8px;
+	bottom: 0;
 	display: inline-flex;
 	align-items: center;
 	flex-shrink: 0;
-	padding-left: 24px;
 }
 
 .rich-text-command-menu-return-shortcut {
