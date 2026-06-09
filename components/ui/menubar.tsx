@@ -6,6 +6,7 @@ import { Menubar as MenubarPrimitive } from "@base-ui/react/menubar";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 
 import { Icon } from "@/components/ui/icon";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -15,12 +16,17 @@ import {
   DropdownMenuPortal,
   DropdownMenuRadioGroup,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+const menubarRowBaseClassName =
+  "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center gap-2 rounded-lg text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed";
+const menubarRowHeightClassName = "h-8 py-0 whitespace-nowrap";
+const menubarRowHorizontalPaddingClassName = "px-2";
+const menubarWrappingRowClassName = "min-h-8 py-1.5 whitespace-normal break-words";
 
 function Menubar({ className, ...props }: MenubarPrimitive.Props) {
   return (
@@ -66,12 +72,14 @@ function MenubarTrigger({
 function MenubarContent({
   className,
   align = "start",
+  sideOffset = 8,
   ...props
 }: React.ComponentProps<typeof DropdownMenuContent>) {
   return (
     <DropdownMenuContent
       data-slot="menubar-content"
       align={align}
+      sideOffset={sideOffset}
       className={className}
       {...props}
     />
@@ -82,6 +90,7 @@ type MenubarItemClickHandler = NonNullable<MenuPrimitive.Item.Props["onClick"]>;
 
 interface MenubarItemProps extends Omit<MenuPrimitive.Item.Props, "onSelect"> {
   inset?: boolean;
+  allowTextWrap?: boolean;
   variant?: "default" | "destructive";
   elemBefore?: React.ReactNode;
   elemAfter?: React.ReactNode;
@@ -92,6 +101,7 @@ interface MenubarItemProps extends Omit<MenuPrimitive.Item.Props, "onSelect"> {
 function MenubarItem({
   className,
   inset,
+  allowTextWrap = false,
   variant = "default",
   elemBefore,
   elemAfter,
@@ -116,6 +126,7 @@ function MenubarItem({
   };
 
   const hasStructuredSlots = Boolean(elemBefore || elemAfter || description);
+  const shouldWrapText = allowTextWrap || Boolean(description);
 
   return (
     <MenuPrimitive.Item
@@ -123,7 +134,11 @@ function MenubarItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "group/menubar-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center gap-2 rounded-sm px-3 py-2 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_[data-slot=icon]]:shrink-0 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4 [&_svg]:text-icon-subtle data-disabled:[&_svg]:text-icon-disabled data-[variant=destructive]:[&_svg]:text-icon-danger",
+        "group/menubar-item",
+        menubarRowBaseClassName,
+        shouldWrapText ? menubarWrappingRowClassName : menubarRowHeightClassName,
+        menubarRowHorizontalPaddingClassName,
+        "data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_[data-slot=icon]]:shrink-0 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4 [&_svg]:text-icon-subtle data-disabled:[&_svg]:text-icon-disabled data-[variant=destructive]:[&_svg]:text-icon-danger",
         className,
       )}
       onClick={handleClick}
@@ -132,12 +147,12 @@ function MenubarItem({
       {hasStructuredSlots ? (
         <>
           {elemBefore ? (
-            <span className={cn("inline-flex h-5 shrink-0 items-center justify-center", variant === "destructive" ? "text-icon-danger" : "text-icon-subtle")}>
+            <span className="inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle [&_[data-slot=icon]]:text-icon-subtle [&_svg]:text-icon-subtle">
               {elemBefore}
             </span>
           ) : null}
           <span className="min-w-0 flex flex-1 flex-col">
-            <span className="min-w-0 whitespace-normal break-words">
+            <span className={cn("min-w-0", shouldWrapText ? "whitespace-normal break-words" : "truncate")}>
               {children}
             </span>
             {description ? (
@@ -162,6 +177,7 @@ function MenubarItem({
 interface MenubarCheckboxItemProps
   extends MenuPrimitive.CheckboxItem.Props {
   inset?: boolean;
+  allowTextWrap?: boolean;
 }
 
 function MenubarCheckboxItem({
@@ -169,6 +185,7 @@ function MenubarCheckboxItem({
   children,
   checked,
   inset,
+  allowTextWrap = false,
   ...props
 }: Readonly<MenubarCheckboxItemProps>) {
   return (
@@ -176,7 +193,9 @@ function MenubarCheckboxItem({
       data-slot="menubar-checkbox-item"
       data-inset={inset}
       className={cn(
-        "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center gap-2 rounded-sm py-2 pr-3 pl-8 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed data-inset:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
+        menubarRowBaseClassName,
+        allowTextWrap ? menubarWrappingRowClassName : menubarRowHeightClassName,
+        "pr-2 pl-8 data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed data-inset:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
         className,
       )}
       checked={checked}
@@ -207,12 +226,14 @@ function MenubarRadioGroup(
 
 interface MenubarRadioItemProps extends MenuPrimitive.RadioItem.Props {
   inset?: boolean;
+  allowTextWrap?: boolean;
 }
 
 function MenubarRadioItem({
   className,
   children,
   inset,
+  allowTextWrap = false,
   ...props
 }: Readonly<MenubarRadioItemProps>) {
   return (
@@ -220,7 +241,9 @@ function MenubarRadioItem({
       data-slot="menubar-radio-item"
       data-inset={inset}
       className={cn(
-        "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center gap-2 rounded-sm py-2 pr-3 pl-8 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed data-inset:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
+        menubarRowBaseClassName,
+        allowTextWrap ? menubarWrappingRowClassName : menubarRowHeightClassName,
+        "pr-2 pl-8 data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed data-inset:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
         className,
       )}
       {...props}
@@ -254,7 +277,7 @@ function MenubarLabel({
       data-slot="menubar-label"
       data-inset={inset}
       className={cn(
-        "px-1.5 py-1 text-xs font-semibold leading-4 text-text-subtlest data-inset:pl-7",
+        "px-1.5 py-1 text-xs font-semibold leading-4 text-text-subtlest data-inset:pl-8",
         className,
       )}
       {...props}
@@ -277,18 +300,41 @@ function MenubarSeparator({
 
 function MenubarShortcut({
   className,
+  children,
   ...props
-}: React.ComponentProps<typeof DropdownMenuShortcut>) {
+}: React.ComponentProps<"span">) {
   return (
-    <DropdownMenuShortcut
+    <span
       data-slot="menubar-shortcut"
       className={cn(
-        "text-text-subtlest group-data-[highlighted]/menubar-item:text-text-subtle ml-auto shrink-0 pl-6 text-right text-[11px] leading-4 tracking-wide",
+        "group-data-[highlighted]/menubar-item:[&_kbd]:text-text-subtle ml-auto inline-flex shrink-0 items-center justify-end pl-6",
         className,
       )}
       {...props}
-    />
+    >
+      {typeof children === "string" ? (
+        <MenubarShortcutKeys shortcut={children} />
+      ) : (
+        children
+      )}
+    </span>
   );
+}
+
+function MenubarShortcutKeys({ shortcut }: Readonly<{ shortcut: string }>) {
+  const trimmedShortcut = shortcut.trim();
+
+  if (!trimmedShortcut.includes("+") && [...trimmedShortcut].length > 1) {
+    return (
+      <KbdGroup>
+        {[...trimmedShortcut].map((key, index) => (
+          <Kbd key={`${key}-${index}`}>{key}</Kbd>
+        ))}
+      </KbdGroup>
+    );
+  }
+
+  return <Kbd>{trimmedShortcut}</Kbd>;
 }
 
 function MenubarSub(props: React.ComponentProps<typeof DropdownMenuSub>) {
@@ -297,17 +343,21 @@ function MenubarSub(props: React.ComponentProps<typeof DropdownMenuSub>) {
 
 function MenubarSubTrigger({
   className,
+  allowTextWrap = false,
   inset,
   ...props
 }: React.ComponentProps<typeof DropdownMenuSubTrigger> & {
   inset?: boolean;
+  allowTextWrap?: boolean;
 }) {
   return (
     <DropdownMenuSubTrigger
       data-slot="menubar-sub-trigger"
       data-inset={inset}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground [&_svg:not([class*='size-'])]:size-4",
+        allowTextWrap ? menubarWrappingRowClassName : menubarRowHeightClassName,
+        menubarRowHorizontalPaddingClassName,
+        "rounded-lg focus:bg-accent focus:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
@@ -319,16 +369,16 @@ function MenubarSubContent({
   className,
   ...props
 }: React.ComponentProps<typeof DropdownMenuSubContent>) {
-  return (
-    <DropdownMenuSubContent
-      data-slot="menubar-sub-content"
-	      className={cn(
-	        "bg-popover text-popover-foreground min-w-32 rounded-lg p-1 shadow-xl origin-(--transform-origin) transition-[opacity,scale,translate] duration-fast ease-out data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95 data-[side=bottom]:data-starting-style:-translate-y-1 data-[side=top]:data-starting-style:translate-y-1 data-[side=left]:data-starting-style:translate-x-1 data-[side=right]:data-starting-style:-translate-x-1 data-[side=inline-start]:data-starting-style:translate-x-1 data-[side=inline-end]:data-starting-style:-translate-x-1 data-[side=bottom]:data-ending-style:-translate-y-1 data-[side=top]:data-ending-style:translate-y-1 data-[side=left]:data-ending-style:translate-x-1 data-[side=right]:data-ending-style:-translate-x-1 data-[side=inline-start]:data-ending-style:translate-x-1 data-[side=inline-end]:data-ending-style:-translate-x-1",
-	        className,
-	      )}
-      {...props}
-    />
-  );
+	return (
+		<DropdownMenuSubContent
+			data-slot="menubar-sub-content"
+			className={cn(
+				"bg-popover text-popover-foreground min-w-32 rounded-xl p-1 shadow-xl origin-(--transform-origin) transition-[opacity,scale,translate] duration-fast ease-out data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95 data-[side=bottom]:data-starting-style:-translate-y-1 data-[side=top]:data-starting-style:translate-y-1 data-[side=left]:data-starting-style:translate-x-1 data-[side=right]:data-starting-style:-translate-x-1 data-[side=inline-start]:data-starting-style:translate-x-1 data-[side=inline-end]:data-starting-style:-translate-x-1 data-[side=bottom]:data-ending-style:-translate-y-1 data-[side=top]:data-ending-style:translate-y-1 data-[side=left]:data-ending-style:translate-x-1 data-[side=right]:data-ending-style:-translate-x-1 data-[side=inline-start]:data-ending-style:translate-x-1 data-[side=inline-end]:data-ending-style:-translate-x-1",
+				className,
+			)}
+			{...props}
+		/>
+	);
 }
 
 export {
