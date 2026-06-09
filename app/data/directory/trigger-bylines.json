@@ -1,0 +1,12 @@
+{
+	"scheduled": "Runs your agent on a set schedule",
+	"jira": "Reacts to Jira work item activity",
+	"confluence": "Reacts to page and space changes",
+	"github-gitlab": "Reacts to pull requests and pushes",
+	"slack": "Reacts to messages and mentions",
+	"microsoft-teams": "Reacts to Teams messages and mentions",
+	"sentry": "Reacts to new errors and regressions",
+	"linear": "Reacts to Linear issue activity",
+	"webhook": "Runs when an external service calls in",
+	"pagerduty": "Reacts to incident lifecycle events"
+}

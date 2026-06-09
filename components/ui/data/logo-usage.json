@@ -1,0 +1,52 @@
+{
+	"$comment": "SINGLE SOURCE OF TRUTH for 1P/2P/3P logo usage. Documents how each logo tier is rendered (bare vs. bordered tile vs. borderless-in-tile). Human-readable rationale lives in logo-usage.ts. The threeP.borderlessIds list MUST mirror /public/3p folders that ship a 16-borderless.svg (enforced by logo-usage.test.js).",
+	"tiers": {
+		"oneP": {
+			"description": "Atlassian product marks from @atlaskit/logo. Most ship a solid superellipse background, so they render bare. The Atlassian master logo has no solid background and needs a bordered tile.",
+			"defaultHasBorder": false,
+			"borderById": {
+				"atlassian": true
+			}
+		},
+		"twoP": {
+			"description": "Marketplace partner logos at /public/2p/<vendor>.png. Bare PNG marks with no background, so they always need a bordered containing tile.",
+			"defaultHasBorder": true
+		},
+		"threeP": {
+			"description": "Third-party marks at /public/3p/<id>/<size>.svg. Solid-fill marks paint their own background and render bare. White-tile marks ship a 16-borderless.svg sibling: render the borderless glyph inside a VPK-drawn bordered tile so borders don't double up.",
+			"defaultHasBorder": false,
+			"borderlessVariantFile": "16-borderless.svg",
+			"borderlessIds": [
+				"airtable",
+				"clickup",
+				"coupa",
+				"datadog",
+				"docusign",
+				"egnyte",
+				"gitlab",
+				"gmail",
+				"google-calendar",
+				"google-chrome",
+				"google-cloud-platform",
+				"google-drive",
+				"jenkins",
+				"lucidchart",
+				"microsoft-onedrive",
+				"microsoft-outlook",
+				"microsoft-sharepoint",
+				"microsoft-teams",
+				"monday",
+				"mural",
+				"notion",
+				"powerbi",
+				"salesforce",
+				"slack",
+				"spinnaker",
+				"stack-overflow",
+				"tableau",
+				"webex",
+				"zeplin"
+			]
+		}
+	}
+}

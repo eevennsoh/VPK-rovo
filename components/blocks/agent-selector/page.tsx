@@ -56,7 +56,7 @@ export default function AgentSelectorPage({ variant = "default" }: Readonly<Agen
 				Select agent
 				<ChevronDownIcon label="" size="small" />
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" className="w-[360px] overflow-hidden p-0" portalled={false} sideOffset={8}>
+			<DropdownMenuContent align="start" className="max-h-none w-[360px] overflow-hidden p-0" portalled={false} sideOffset={8}>
 				<AgentSelector
 					agents={agents}
 					heading={variant === "selected-agent-actions" ? "Switch to another agent" : undefined}

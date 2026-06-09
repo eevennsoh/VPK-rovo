@@ -38,6 +38,34 @@ test("dropdown menu shortcut strings render as VPK keycaps", () => {
 	assert.match(source, /return <Kbd>\{trimmedShortcut\}<\/Kbd>;/u);
 });
 
+test("dropdown menu single rows lock to a fixed 32px height", () => {
+	assert.match(source, /const dropdownMenuRowHeightClassName = "h-8 py-0";/u);
+	assert.match(
+		source,
+		/shouldWrapText \? dropdownMenuWrappingRowClassName : dropdownMenuRowHeightClassName/u,
+	);
+	assert.match(
+		source,
+		/allowTextWrap \? dropdownMenuWrappingRowClassName : dropdownMenuRowHeightClassName/u,
+	);
+});
+
+test("dropdown menu rows only use vertical padding when text can wrap", () => {
+	assert.match(
+		source,
+		/const dropdownMenuWrappingRowClassName = "min-h-8 py-1\.5";/u,
+	);
+	assert.match(source, /allowTextWrap\?: boolean;/u);
+	assert.match(
+		source,
+		/const shouldWrapText = allowTextWrap \|\| Boolean\(description\);/u,
+	);
+	assert.match(
+		source,
+		/shouldWrapText \? "whitespace-normal break-words" : "truncate"/u,
+	);
+});
+
 test("dropdown menu item maps onSelect to Base UI click activation", () => {
 	assert.match(
 		source,

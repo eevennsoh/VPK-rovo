@@ -47,9 +47,8 @@ export interface AgentSelectorProps {
 	selectedAgentIds?: readonly string[];
 }
 
-// Reveal animation copied verbatim from the editor-palette suggestion menu
-// (`nestedCommandLabelVariants` / `nestedCommandDescriptionVariants`) so the
-// agent rows animate the byline in/out identically on hover and selection.
+// Keep the hover/focus reveal in lockstep with GreetingPromptRow so agent rows
+// use the same label lift and byline reveal rhythm without importing chat CSS.
 const agentLabelVariants: Variants = {
 	idle: {
 		transform: "translateY(8px)",
@@ -78,6 +77,17 @@ const EMPTY_SELECTED_AGENT_IDS: readonly string[] = [];
 const EMPTY_SELECTED_AGENT_ACTIONS: readonly AgentSelectorAction[] = [];
 const ACTION_BUTTON_CLASS = "h-8 min-h-8 w-full justify-start gap-3 pl-2 pr-3 py-0 text-left text-sm font-normal";
 const ACTION_ICON_CLASS = "grid size-6 shrink-0 place-items-center text-icon-subtle";
+const ACTION_LABEL_CLASS = "text-text-subtle";
+const AGENT_ROW_CLASS =
+	"grid h-11 w-full grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-3 rounded-[12px] px-1.5 py-0 text-left";
+const AGENT_COPY_CLASS =
+	"flex min-h-[34px] min-w-0 flex-col justify-start overflow-hidden";
+// Title + byline share the editor palette's reusable type treatment
+// (`menu-row-title` / `menu-row-byline` in app/globals.css): explicit 14px/20px
+// and 12px/16px line-heights + truncation + subtle/subtlest color. `text-left`
+// keeps the alignment the row expects.
+const AGENT_LABEL_CLASS = "menu-row-title text-left";
+const AGENT_DESCRIPTION_CLASS = "menu-row-byline text-left";
 
 function matchesAgent(agent: AgentSelectorAgent, query: string): boolean {
 	const searchableText = `${agent.name} ${agent.byline}`.toLowerCase();
@@ -124,7 +134,7 @@ function AgentSelectorItem({
 	return (
 		<CommandItem
 			aria-checked={supportsMultipleSelection ? isChecked : undefined}
-			className="h-11 min-h-11 items-center gap-3 rounded-[6px] px-2 py-1.5"
+			className={AGENT_ROW_CLASS}
 			data-checked={supportsMultipleSelection && isChecked ? true : undefined}
 			keywords={[agent.name, agent.byline]}
 			onBlur={() => setIsInteractionActive(false)}
@@ -139,18 +149,18 @@ function AgentSelectorItem({
 			<AgentSelectorLogo agent={agent} />
 			<motion.span
 				animate={isInteractionActive ? "active" : "idle"}
-				className="flex h-[34px] min-w-0 flex-1 flex-col justify-start overflow-hidden"
+				className={AGENT_COPY_CLASS}
 				initial={false}
 			>
 				<motion.span
-					className="block truncate text-sm font-normal leading-4 text-text-subtle"
+					className={AGENT_LABEL_CLASS}
 					style={{ willChange: "transform" }}
 					variants={agentLabelVariants}
 				>
 					{agent.name}
 				</motion.span>
 				<motion.span
-					className="block truncate text-xs leading-4 text-text-subtlest"
+					className={AGENT_DESCRIPTION_CLASS}
 					style={{ willChange: "transform, opacity" }}
 					variants={agentDescriptionVariants}
 				>
@@ -210,7 +220,7 @@ export function AgentSelector({
 	const supportsMultipleSelection = selectionMode === "multiple";
 
 	return (
-		<Command className={cn("h-[26rem] max-h-[min(26rem,var(--available-height))] min-h-0 min-w-80 flex-1 p-2", className)} shouldFilter={false}>
+		<Command className={cn("h-[26rem] max-h-[min(26rem,var(--available-height,26rem))] min-h-0 min-w-80 flex-1 p-2", className)} shouldFilter={false}>
 			{hasSelectedAgentActions ? (
 				<div aria-label="Selected agent actions" className="flex shrink-0 flex-col border-b border-border pb-2" role="group">
 					{selectedActions.map((action) => (
@@ -224,7 +234,7 @@ export function AgentSelector({
 							<span className={ACTION_ICON_CLASS}>
 								{action.icon}
 							</span>
-							<span className="text-text">{action.label}</span>
+							<span className={ACTION_LABEL_CLASS}>{action.label}</span>
 						</Button>
 					))}
 				</div>
@@ -266,7 +276,7 @@ export function AgentSelector({
 							<span className={ACTION_ICON_CLASS}>
 								<Icon className="size-4" render={<AiAgentIcon label="" />} />
 							</span>
-							<span className="text-text">{browseAgentsLabel}</span>
+							<span className={ACTION_LABEL_CLASS}>{browseAgentsLabel}</span>
 						</Button>
 					) : null}
 					{onCreateAgent ? (
@@ -279,7 +289,7 @@ export function AgentSelector({
 							<span className={ACTION_ICON_CLASS}>
 								<Icon className="size-4" render={<AddIcon label="" />} />
 							</span>
-							<span className="text-text">{createAgentLabel}</span>
+							<span className={ACTION_LABEL_CLASS}>{createAgentLabel}</span>
 						</Button>
 					) : null}
 				</div>

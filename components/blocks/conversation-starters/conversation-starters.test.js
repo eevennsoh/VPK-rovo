@@ -87,7 +87,8 @@ test("Conversation Starters clears a row's text rather than removing the row", (
 	assert.match(row, /onClear: \(id: string\) => void/u);
 	assert.match(row, /Clear conversation starter/u);
 	assert.match(row, /CrossCircleIcon/u);
-	assert.match(row, /<CrossCircleIcon label="" color="currentColor" \/>/u);
+	assert.match(row, /shape="circle"/u);
+	assert.match(row, /<CrossCircleIcon label="" size="small" color="currentColor" \/>/u);
 	assert.match(dialog, /function handleClear\(id: string\)/u);
 	assert.match(dialog, /\{ \.\.\.s, text: "" \}/u);
 	// Faithful to the design: no add-row affordance or empty state.

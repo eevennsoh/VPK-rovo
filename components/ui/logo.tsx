@@ -11,6 +11,10 @@ import {
 	LOGO_LOCKUP_COMPONENTS,
 	CUSTOM_LOGO_SIZES,
 } from "@/components/ui/data/logo-data";
+import {
+	resolveAtlassianLogoBorder,
+	resolveBrandLogoPresentation,
+} from "@/components/ui/data/logo-usage";
 import { ROVO_LOGO_PATHS, ROVO_LOGO_VIEWBOX } from "@/components/ui/data/rovo-logo";
 
 export { ROVO_LOGO_DATA_URI } from "@/components/ui/data/rovo-logo";

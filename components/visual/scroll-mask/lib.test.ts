@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 
 // @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-import { buildScrollMaskStyle } from "./lib.ts";
+import { buildHorizontalScrollMaskStyle, buildScrollMaskStyle } from "./lib.ts";
 
 const ROOT = process.cwd();
 const SCROLL_MASK_SOURCE = readWorkspaceFile("components/visual/scroll-mask/index.tsx");
@@ -37,6 +37,37 @@ test("buildScrollMaskStyle resolves numeric fade and scrollbar values to pixels"
 	assert.equal(style["--scroll-mask-fade-size"], "24px");
 	assert.equal(style["--scroll-mask-scrollbar-width"], "12px");
 	assert.equal(style.maskSize, "calc(100% - 12px) 100%, 12px 100%");
+});
+
+test("buildHorizontalScrollMaskStyle can fade before an opaque trailing gutter", () => {
+	const style = buildHorizontalScrollMaskStyle({ edge: "end", endGutterWidth: 24, fadeSize: 20 });
+
+	assert.equal(style["--scroll-mask-fade-size"], "20px");
+	assert.equal(style["--scroll-mask-end-gutter-width"], "24px");
+	assert.equal(
+		style.maskImage,
+		"linear-gradient(to right, black 0, black calc(100% - var(--scroll-mask-fade-size)), transparent 100%), linear-gradient(black, black)",
+	);
+	assert.equal(style.WebkitMaskImage, style.maskImage);
+	assert.equal(style.maskPosition, "0 0, 100% 0");
+	assert.equal(style.WebkitMaskPosition, "0 0, 100% 0");
+	assert.equal(style.maskRepeat, "no-repeat, no-repeat");
+	assert.equal(style.WebkitMaskRepeat, "no-repeat, no-repeat");
+	assert.equal(style.maskSize, "calc(100% - 24px) 100%, 24px 100%");
+	assert.equal(style.WebkitMaskSize, "calc(100% - 24px) 100%, 24px 100%");
+});
+
+test("buildHorizontalScrollMaskStyle can fade the trailing edge without a gutter", () => {
+	const style = buildHorizontalScrollMaskStyle({ edge: "end", fadeSize: 20 });
+
+	assert.equal(style["--scroll-mask-fade-size"], "20px");
+	assert.equal(style["--scroll-mask-end-gutter-width"], undefined);
+	assert.equal(
+		style.maskImage,
+		"linear-gradient(to right, black 0, black calc(100% - var(--scroll-mask-fade-size)), transparent 100%)",
+	);
+	assert.equal(style.maskRepeat, "no-repeat");
+	assert.equal(style.maskSize, "100% 100%");
 });
 
 test("Scroll Mask is wired into the Visual catalog route and demo registry", () => {

@@ -112,7 +112,9 @@ import {
 	isRichTextReferenceCategory,
 } from "@/components/ui-custom/rich-text-editor";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
+import { useHasHorizontalOverflow } from "@/components/hooks/use-has-horizontal-overflow";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { buildHorizontalScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import type {
 	WikiMemoryExplorerResponse,
 } from "@/lib/rovo-runtime-types";
@@ -185,7 +187,19 @@ const AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = [
 // Match the shared Menubar's default `gap-0.5` (2px) so the connected config
 // strip spaces items identically to the base component.
 const AGENT_COMPACT_CONFIG_NAV_GAP = 2;
-const AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH = 24;
+const AGENT_COMPACT_CONFIG_NAV_SCROLL_EDGE_THRESHOLD = 4;
+const AGENT_COMPACT_CONFIG_NAV_START_MASK_STYLE = buildHorizontalScrollMaskStyle({
+	edge: "start",
+	fadeSize: "var(--ds-space-300)",
+});
+const AGENT_COMPACT_CONFIG_NAV_END_MASK_STYLE = buildHorizontalScrollMaskStyle({
+	edge: "end",
+	fadeSize: "var(--ds-space-300)",
+});
+const AGENT_COMPACT_CONFIG_NAV_BOTH_MASK_STYLE = buildHorizontalScrollMaskStyle({
+	edge: "both",
+	fadeSize: "var(--ds-space-300)",
+});
 // Shared flat-trigger look for every item in the connected config menu bar.
 // Kept subtle (no border/background) so the strip reads as one continuous
 // surface rather than a row of separate buttons.
@@ -1446,70 +1460,37 @@ function AgentCompactEmptyConfigNav({
 	const items = getAgentCompactEmptyConfigNavItems(config).filter(
 		(item) => !hiddenConfigFields?.has(item.agentFieldName as AgentHideableConfigField),
 	);
-	// Re-measure whenever counts change since a count Badge appearing/disappearing
-	// changes a button's natural width. ResizeObserver alone only catches
-	// container width changes.
-	const itemsSignature = items.map((item) => `${item.agentFieldName}:${item.count}`).join("|");
-	const containerRef = useRef<HTMLDivElement>(null);
-	const measureRef = useRef<HTMLDivElement>(null);
-	const [visibleCount, setVisibleCount] = useState<number>(items.length);
-
-	useLayoutEffect(() => {
-		const container = containerRef.current;
-		const measure = measureRef.current;
-		if (!container || !measure) {
-			return;
-		}
-
-		function recompute(): void {
-			const widths = Array.from(measure!.children).map((node) => (node as HTMLElement).offsetWidth);
-			setVisibleCount(
-				computeContextBarOverflow(
-					widths,
-					container!.clientWidth,
-					AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH,
-					AGENT_COMPACT_CONFIG_NAV_GAP,
-				),
-			);
-		}
-
-		recompute();
-		const observer = new ResizeObserver(recompute);
-		observer.observe(container);
-		return () => observer.disconnect();
-	}, [itemsSignature]);
+	const navOverflow = useHasHorizontalOverflow<HTMLDivElement>({
+		edgeThreshold: AGENT_COMPACT_CONFIG_NAV_SCROLL_EDGE_THRESHOLD,
+	});
+	const scrollMaskStyle = navOverflow.canScrollLeft && navOverflow.canScrollRight
+		? AGENT_COMPACT_CONFIG_NAV_BOTH_MASK_STYLE
+		: navOverflow.canScrollLeft
+			? AGENT_COMPACT_CONFIG_NAV_START_MASK_STYLE
+			: navOverflow.canScrollRight
+				? AGENT_COMPACT_CONFIG_NAV_END_MASK_STYLE
+				: {};
 
 	if (items.length === 0) {
 		return null;
 	}
 
-	const visibleItems = items.slice(0, visibleCount);
-	const hiddenItems = items.slice(visibleCount);
-
 	return (
 		<div className="relative flex min-h-8 min-w-0 items-center">
-			{/* Hidden width-measurement strip lives outside the Menubar root so its
-			    invisible duplicate buttons never join the menubar's roving focus. */}
-			<div aria-hidden className="pointer-events-none absolute top-0 left-0 h-0 w-0 overflow-clip">
-				<div className="invisible flex items-center" ref={measureRef} style={{ gap: AGENT_COMPACT_CONFIG_NAV_GAP }}>
-					{items.map((item) => (
-						<AgentCompactConfigNavButton item={item} key={`measure-${item.agentFieldName}`} />
-					))}
-				</div>
-			</div>
 			<Menubar
 				// Override the shared Menubar's bordered/elevated chrome so the strip
 				// reads as one flat, connected surface (matching the prior loose-button
 				// look) while still giving us roving focus + arrow-key nav across items.
-				// `overflow-x-clip` hides horizontally-overflowing items (the "…" menu
-				// absorbs them). `pl-1` insets the first item so its focus ring isn't
-				// shorn flat at the left clip edge; `py-1 -my-1` add vertical room and
-				// `overflow-clip-margin` covers the trailing "…" on the right.
-				className="relative -my-1 flex h-auto min-w-0 flex-1 items-center overflow-x-clip overflow-y-visible rounded-none border-0 bg-transparent p-0 py-1 pl-1 [overflow-clip-margin:6px]"
-				ref={containerRef}
-				style={{ gap: AGENT_COMPACT_CONFIG_NAV_GAP }}
+				// When the container is too tight, the row scrolls horizontally and the
+				// shared scroll-mask fades whichever edge has more content.
+				className="relative -my-1 flex h-auto min-w-0 flex-1 items-center overflow-x-auto overflow-y-visible overscroll-x-contain rounded-none border-0 bg-transparent p-0 py-1 pl-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+				ref={navOverflow.ref}
+				style={{
+					gap: AGENT_COMPACT_CONFIG_NAV_GAP,
+					...scrollMaskStyle,
+				}}
 			>
-				{visibleItems.map((item) => {
+				{items.map((item) => {
 					if (item.agentFieldName === "reasoning") {
 						return (
 							<AgentReasoningSelector
@@ -1626,59 +1607,6 @@ function AgentCompactEmptyConfigNav({
 						/>
 					);
 				})}
-				{hiddenItems.length > 0 ? (
-					<MenubarMenu>
-						<MenubarTrigger
-							aria-label="More configuration options"
-							render={<Button className="size-6 rounded px-0" size="icon-compact" type="button" variant="ghost" />}
-						>
-							<MoreHorizontalIcon size="small" />
-						</MenubarTrigger>
-						<MenubarContent align="end">
-							<DropdownMenuGroup>
-								{hiddenItems.map((item) => {
-									if (item.agentFieldName === "reasoning") {
-										return (
-											<AgentReasoningOverflowMenu
-												key={item.agentFieldName}
-												value={reasoningValue}
-												onValueChange={onReasoningValueChange}
-											/>
-										);
-									}
-									if (item.agentFieldName === "knowledge") {
-										return (
-											<AgentKnowledgeOverflowMenu
-												key={item.agentFieldName}
-												value={knowledgeMode}
-												onValueChange={onKnowledgeModeChange}
-											/>
-										);
-									}
-									if (item.agentFieldName === "memory") {
-										return (
-											<AgentMemoryOverflowMenu
-												key={item.agentFieldName}
-												value={memoryMode}
-												onValueChange={onMemoryModeChange}
-												onManage={() => onOpenDirectory?.("memory")}
-											/>
-										);
-									}
-									return (
-										<DropdownMenuItem
-											elemAfter={item.count > 0 ? <Badge>{item.count}</Badge> : undefined}
-											key={item.agentFieldName}
-											onClick={getAgentCompactConfigNavItemOnClick(item, onAppendListItem, onOpenDirectory, onEditTriggers)}
-										>
-											{item.label}
-										</DropdownMenuItem>
-									);
-								})}
-							</DropdownMenuGroup>
-						</MenubarContent>
-					</MenubarMenu>
-				) : null}
 			</Menubar>
 		</div>
 	);
@@ -2589,36 +2517,6 @@ function AgentReasoningSelector({
 	);
 }
 
-function AgentReasoningOverflowMenu({
-	value,
-	onValueChange,
-}: Readonly<{
-	value: ReasoningModeValue;
-	onValueChange: (next: ReasoningModeValue) => void;
-}>) {
-	return (
-		<DropdownMenuSub>
-			<DropdownMenuSubTrigger>Reasoning</DropdownMenuSubTrigger>
-			<DropdownMenuSubContent>
-				{REASONING_MODE_SECTIONS.map((section) => (
-					<DropdownMenuGroup key={section.title}>
-						<DropdownMenuLabel>{section.title}</DropdownMenuLabel>
-						{section.options.map((option) => (
-							<DropdownMenuItem
-								key={option.value}
-								onClick={() => onValueChange(option.value as ReasoningModeValue)}
-								selected={value === option.value}
-							>
-								{option.label}
-							</DropdownMenuItem>
-						))}
-					</DropdownMenuGroup>
-				))}
-			</DropdownMenuSubContent>
-		</DropdownMenuSub>
-	);
-}
-
 interface AgentReasoningRowProps {
 	value: ReasoningModeValue;
 	onValueChange: (next: ReasoningModeValue) => void;
@@ -2914,33 +2812,6 @@ function AgentKnowledgeSelector({
 	);
 }
 
-function AgentKnowledgeOverflowMenu({
-	value,
-	onValueChange,
-}: Readonly<{
-	value: KnowledgeModeValue;
-	onValueChange: (next: KnowledgeModeValue) => void;
-}>) {
-	return (
-		<DropdownMenuSub>
-			<DropdownMenuSubTrigger>Knowledge</DropdownMenuSubTrigger>
-			<DropdownMenuSubContent>
-				<DropdownMenuGroup>
-					{KNOWLEDGE_MODE_OPTIONS.map((option) => (
-						<DropdownMenuItem
-							key={option.value}
-							onClick={() => onValueChange(option.value)}
-							selected={value === option.value}
-						>
-							{option.label}
-						</DropdownMenuItem>
-					))}
-				</DropdownMenuGroup>
-			</DropdownMenuSubContent>
-		</DropdownMenuSub>
-	);
-}
-
 const MEMORY_MODE_OPTIONS = [
 	{ value: "on", label: "On" },
 	{ value: "off", label: "Off" },
@@ -3094,41 +2965,6 @@ function AgentMemorySelector({
 	);
 }
 
-function AgentMemoryOverflowMenu({
-	value,
-	onValueChange,
-	onManage,
-}: Readonly<{
-	value: MemoryModeValue;
-	onValueChange: (next: MemoryModeValue) => void;
-	onManage?: () => void;
-}>) {
-	return (
-		<DropdownMenuSub>
-			<DropdownMenuSubTrigger>Memory</DropdownMenuSubTrigger>
-			<DropdownMenuSubContent>
-				<DropdownMenuGroup>
-					{MEMORY_MODE_OPTIONS.map((option) => (
-						<DropdownMenuItem
-							key={option.value}
-							onClick={() => onValueChange(option.value)}
-							selected={value === option.value}
-						>
-							{option.label}
-						</DropdownMenuItem>
-					))}
-				</DropdownMenuGroup>
-				<DropdownMenuSeparator />
-				<DropdownMenuGroup>
-					<DropdownMenuItem onClick={onManage}>
-						Manage memory
-					</DropdownMenuItem>
-				</DropdownMenuGroup>
-			</DropdownMenuSubContent>
-		</DropdownMenuSub>
-	);
-}
-
 interface AgentMemoryRowProps {
 	value: MemoryModeValue;
 	onValueChange: (next: MemoryModeValue) => void;
@@ -3197,6 +3033,7 @@ function AgentKnowledgeRow({
 				/>
 				{isCustom ? (
 					<>
+						<div aria-hidden className="h-4 w-px shrink-0 bg-border" />
 						{items.map((item, index) => (
 							<AgentReferenceChip
 								category="knowledge"

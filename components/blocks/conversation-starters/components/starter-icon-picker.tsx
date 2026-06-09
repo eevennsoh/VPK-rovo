@@ -57,7 +57,7 @@ export function StarterIconPicker({
 					/>
 				}
 			>
-				<current.Icon label="" size="small" color="currentColor" />
+				<current.Icon label="" color="currentColor" />
 			</PopoverTrigger>
 			<PopoverContent align="start" className="w-auto" sideOffset={6}>
 				<div className="grid grid-cols-5 gap-1" role="listbox" aria-label="Conversation starter icons">

@@ -6,6 +6,7 @@ import {
 	useLayoutEffect,
 	useRef,
 	useState,
+	type KeyboardEvent,
 	type ReactNode,
 } from "react";
 import { ReactRenderer } from "@tiptap/react";
@@ -110,19 +111,10 @@ interface RichTextSuggestionMenuProps {
 	className?: string;
 	emptyLabel: string;
 	emptyState?: ReactNode;
+	header?: ReactNode;
 	items: readonly RichTextSuggestionMenuItem[];
 	onBack?: () => void;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
-	/**
-	 * When true, the first item renders as a subtle text input (keeping its
-	 * visual — e.g. the Rovo logo — at the front) instead of a button. Used by
-	 * showcases like the editor palette; the live editor leaves this off.
-	 */
-	renderFirstItemAsInput?: boolean;
-	inputAutoFocus?: boolean;
-	inputValue?: string;
-	onInputClear?: () => void;
-	onInputValueChange?: (value: string) => void;
 	selectedIndex: number;
 	title: string;
 }
@@ -522,22 +514,16 @@ export function RichTextSuggestionMenu({
 	className,
 	emptyLabel,
 	emptyState,
-	inputAutoFocus,
-	inputValue,
+	header,
 	items,
 	onBack,
-	onInputClear,
-	onInputValueChange,
 	onSelect,
-	renderFirstItemAsInput = false,
 	selectedIndex,
 	title,
 }: Readonly<RichTextSuggestionMenuProps>) {
 	const listRef = useRef<HTMLDivElement | null>(null);
 	const [hasScrolledList, setHasScrolledList] = useState(false);
 	const isNested = Boolean(onBack);
-	const inputItem = renderFirstItemAsInput ? items[0] : undefined;
-	const listItems = inputItem ? items.slice(1) : items;
 
 	const updateListScrollState = useCallback(() => {
 		const listElement = listRef.current;
@@ -567,7 +553,7 @@ export function RichTextSuggestionMenu({
 		<div
 			className={cn("rich-text-command-menu", className)}
 			data-nested={isNested ? "true" : undefined}
-			data-first-item-input={renderFirstItemAsInput ? "true" : undefined}
+			data-has-header={header ? "true" : undefined}
 			data-list-scrolled={hasScrolledList ? "true" : undefined}
 			role="listbox"
 			aria-label={title}
@@ -582,27 +568,17 @@ export function RichTextSuggestionMenu({
 					<span className="inline-flex size-6 items-center justify-center">
 						<ArrowLeftIcon className="size-4" />
 					</span>
-					<span className="rich-text-command-menu-label">Back</span>
+					<span className="menu-row-title">Back</span>
 				</button>
 			) : null}
-			{inputItem ? (
-				<RichTextSuggestionMenuInputOption
-					autoFocus={inputAutoFocus}
-					inputValue={inputValue}
-					item={inputItem}
-					onInputClear={onInputClear}
-					onInputValueChange={onInputValueChange}
-					onSelect={onSelect}
-				/>
-			) : null}
+			{header}
 			<div
 				className="rich-text-command-menu-list"
 				ref={listRef}
 				onScroll={updateListScrollState}
 			>
-				{listItems.length > 0 ? (
-					listItems.map((item, index) => {
-						const itemIndex = inputItem ? index + 1 : index;
+				{items.length > 0 ? (
+					items.map((item, index) => {
 						return (
 							item.headingLabel !== undefined ? (
 								<div
@@ -615,7 +591,7 @@ export function RichTextSuggestionMenu({
 							) : (
 								<RichTextSuggestionMenuOption
 									key={item.id}
-									isSelected={itemIndex === selectedIndex}
+									isSelected={index === selectedIndex}
 									item={item}
 									onSelect={onSelect}
 								/>
@@ -626,6 +602,73 @@ export function RichTextSuggestionMenu({
 					emptyState ?? <div className="rich-text-command-menu-empty">{emptyLabel}</div>
 				)}
 			</div>
+		</div>
+	);
+}
+
+export interface RichTextCommandMenuSearchFieldProps {
+	autoFocus?: boolean;
+	icon: ReactNode;
+	id?: string;
+	label: string;
+	onClear: () => void;
+	onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
+	onSubmit?: () => void;
+	onValueChange: (value: string) => void;
+	placeholder?: string;
+	value: string;
+}
+
+export function RichTextCommandMenuSearchField({
+	autoFocus,
+	icon,
+	id,
+	label,
+	onClear,
+	onKeyDown,
+	onSubmit,
+	onValueChange,
+	placeholder = label,
+	value,
+}: Readonly<RichTextCommandMenuSearchFieldProps>) {
+	return (
+		<div className="rich-text-command-menu-search rich-text-command-menu-item-sticky">
+			<span className="rich-text-command-menu-search-logo" aria-hidden={true}>
+				{icon}
+			</span>
+			<Input
+				id={id}
+				variant="subtle"
+				value={value}
+				aria-label={label}
+				placeholder={placeholder}
+				autoFocus={autoFocus}
+				onChange={(event) => onValueChange(event.currentTarget.value)}
+				onKeyDown={(event) => {
+					onKeyDown?.(event);
+					if (event.defaultPrevented) {
+						return;
+					}
+					if (event.key === "Enter") {
+						event.preventDefault();
+						onSubmit?.();
+					}
+				}}
+			/>
+			{value ? (
+				<Button
+					type="button"
+					aria-label="Clear search"
+					className="rich-text-command-menu-search-clear text-icon-subtle"
+					onMouseDown={(event) => event.preventDefault()}
+					onClick={onClear}
+					shape="circle"
+					size="icon-compact"
+					variant="ghost"
+				>
+					<CrossCircleIcon label="" size="small" />
+				</Button>
+			) : null}
 		</div>
 	);
 }
@@ -662,14 +705,14 @@ function RichTextSuggestionMenuOption({
 			{canRevealMetadata ? (
 				<span className="rich-text-command-menu-copy rich-text-command-menu-nested-copy rich-text-command-menu-nested-copy-revealable">
 					<motion.span
-						className="rich-text-command-menu-label"
+						className="menu-row-title"
 						style={{ willChange: "transform" }}
 						variants={nestedCommandLabelVariants}
 					>
 						{item.label}
 					</motion.span>
 					<motion.span
-						className="rich-text-command-menu-description rich-text-command-menu-nested-description"
+						className="menu-row-byline"
 						style={{ willChange: "transform, opacity" }}
 						variants={nestedCommandDescriptionVariants}
 					>
@@ -678,9 +721,9 @@ function RichTextSuggestionMenuOption({
 				</span>
 			) : (
 				<span className="rich-text-command-menu-copy">
-					<span className="rich-text-command-menu-label">{item.label}</span>
+					<span className="menu-row-title">{item.label}</span>
 					{showsPersistentDescription ? (
-						<span className="rich-text-command-menu-description">
+						<span className="menu-row-byline">
 							{item.description}
 						</span>
 					) : null}
@@ -740,73 +783,6 @@ function RichTextSuggestionMenuOption({
 		>
 			{children}
 		</button>
-	);
-}
-
-interface RichTextSuggestionMenuInputOptionProps {
-	autoFocus?: boolean;
-	inputValue?: string;
-	item: RichTextSuggestionMenuItem;
-	onInputClear?: () => void;
-	onInputValueChange?: (value: string) => void;
-	onSelect: (item: RichTextSuggestionMenuItem) => void;
-}
-
-/**
- * Renders a menu item as a subtle text input with its visual (e.g. the Rovo
- * logo) kept at the front. Pressing Enter selects the underlying item.
- */
-function RichTextSuggestionMenuInputOption({
-	autoFocus,
-	inputValue,
-	item,
-	onInputClear,
-	onInputValueChange,
-	onSelect,
-}: Readonly<RichTextSuggestionMenuInputOptionProps>) {
-	const controlledValueProps = inputValue === undefined ? {} : { value: inputValue };
-	const showClearButton = Boolean(onInputClear && inputValue);
-
-	return (
-		<div
-			className={cn(
-				"rich-text-command-menu-item rich-text-command-menu-input",
-				getSuggestionMenuItemStickyClassName(item),
-			)}
-		>
-			<span className="rich-text-command-menu-input-logo" aria-hidden={true}>
-				{item.icon}
-			</span>
-			<Input
-				variant="subtle"
-				aria-label={item.label}
-				placeholder={item.label}
-				disabled={item.disabled}
-				autoFocus={autoFocus}
-				onChange={(event) => onInputValueChange?.(event.currentTarget.value)}
-				onKeyDown={(event) => {
-					if (event.key === "Enter") {
-						event.preventDefault();
-						onSelect(item);
-					}
-				}}
-				{...controlledValueProps}
-			/>
-			{showClearButton ? (
-				<Button
-					type="button"
-					aria-label="Clear search"
-					className="rich-text-command-menu-input-clear text-icon-subtle"
-					onMouseDown={(event) => event.preventDefault()}
-					onClick={() => onInputClear?.()}
-					shape="circle"
-					size="icon-compact"
-					variant="ghost"
-				>
-					<CrossCircleIcon label="" size="small" />
-				</Button>
-			) : null}
-		</div>
 	);
 }
 
@@ -1257,10 +1233,6 @@ export function createSlashSuggestionRenderer(
 					}
 				: undefined,
 			onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
-			// "Ask Rovo" renders as the subtle input row (matching the editor
-			// palette). In flat mode it is always the first row; in nested mode it
-			// only appears at the top level.
-			renderFirstItemAsInput: isFlat || !activeCategory,
 			selectedIndex,
 			title: !isFlat && activeCategory ? getSlashCategoryLabel(activeCategory) : "Commands",
 		});
@@ -1385,9 +1357,6 @@ export function createSlashSuggestionRenderer(
 					emptyLabel: "No commands found",
 					items: getVisibleItems(props.query),
 					onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
-					// Menus always open with "Ask Rovo" as the subtle input row
-					// (matching the editor palette).
-					renderFirstItemAsInput: true,
 					selectedIndex,
 					title: "Commands",
 				},

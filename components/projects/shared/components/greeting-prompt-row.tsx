@@ -24,13 +24,11 @@ import { cn } from "@/lib/utils";
 // until it slides into view. Mirrors `.rich-text-command-menu-copy`.
 const GREETING_COPY_CLASS =
 	"flex min-h-[34px] min-w-0 flex-col justify-center overflow-hidden";
-// Label: 14px / 400 / 20px / text-subtle, truncated. Mirrors the palette label
-// (`font: var(--ds-font-body)` → 14px/20px, default weight).
-const GREETING_LABEL_CLASS =
-	"truncate text-left text-sm leading-5 text-text-subtle";
-// Byline: 12px / 16px / text-subtlest, truncated. Mirrors the palette description.
-const GREETING_DESCRIPTION_CLASS =
-	"truncate text-left text-xs leading-4 text-text-subtlest";
+// Title + byline share the editor palette's reusable type treatment
+// (`menu-row-title` / `menu-row-byline` in app/globals.css): explicit 14px/20px
+// and 12px/16px line-heights + truncation + subtle/subtlest color.
+const GREETING_LABEL_CLASS = "menu-row-title text-left";
+const GREETING_DESCRIPTION_CLASS = "menu-row-byline text-left";
 
 // Mirrors `nestedCommandLabelVariants` in the editor palette suggestion menu so
 // the label lift on reveal matches exactly.

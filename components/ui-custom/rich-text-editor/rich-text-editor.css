@@ -408,10 +408,11 @@
 }
 
 .rich-text-command-menu {
+	--rich-text-command-menu-max-height: 328px;
 	display: flex;
 	flex-direction: column;
 	width: 320px;
-	max-height: min(360px, calc(100vh - 48px));
+	max-height: min(var(--rich-text-command-menu-max-height), calc(100vh - 48px));
 	overflow: hidden;
 	border: 1px solid var(--ds-border, #dfe1e6);
 	border-radius: var(--ds-radius-large, 8px);
@@ -458,7 +459,7 @@
 }
 
 .rich-text-command-menu[data-nested="true"] {
-	max-height: 400px;
+	max-height: min(var(--rich-text-command-menu-max-height), calc(100vh - 48px));
 }
 
 /* Both surfaces scroll: the nested drill-in lists and the flat merged "/" menu
@@ -572,25 +573,25 @@
 	cursor: not-allowed;
 }
 
-/* Mirror the full-bleed "Back" header: break out of the list's 4px padding so
-   the sticky input bar spans edge-to-edge with square top corners. The 12px left
-   padding + 24px logo box center the input glyph at the same 24px offset as the
-   24px front slots in the list rows below, so the sticky header and the rows
-   line up exactly across every variant — nested, flat, and search. */
-.rich-text-command-menu-input {
-	margin: 0;
-	width: 100%;
-	border-radius: 0;
-	padding-left: 12px;
-	padding-right: 10px;
-	cursor: text;
-}
-
-.rich-text-command-menu[data-first-item-input="true"] .rich-text-command-menu-list {
+.rich-text-command-menu[data-has-header="true"] .rich-text-command-menu-list {
 	padding-top: 0;
 }
 
-.rich-text-command-menu-input-logo {
+.rich-text-command-menu-search {
+	display: grid;
+	flex: 0 0 44px;
+	grid-template-columns: 24px minmax(0, 1fr) auto;
+	align-items: center;
+	column-gap: 12px;
+	width: 100%;
+	height: 44px;
+	min-height: 44px;
+	padding: 0 10px 0 12px;
+	background-color: var(--ds-surface-overlay, #ffffff);
+	cursor: text;
+}
+
+.rich-text-command-menu-search-logo {
 	display: inline-flex;
 	width: 24px;
 	height: 24px;
@@ -598,12 +599,13 @@
 	justify-content: center;
 }
 
-.rich-text-command-menu-input-logo > svg {
+.rich-text-command-menu-search-logo > svg {
 	width: 16px;
 	height: 16px;
 }
 
-.rich-text-command-menu-input > [data-slot="input"] {
+.rich-text-command-menu-search > [data-slot="input"] {
+	height: 100%;
 	min-width: 0;
 	border-color: transparent;
 	padding-left: 0;
@@ -613,15 +615,15 @@
 
 /* The whole top bar carries the hover state, so the field itself stays
    visually flat in every interaction state. */
-.rich-text-command-menu-input > [data-slot="input"]:hover,
-.rich-text-command-menu-input > [data-slot="input"]:active,
-.rich-text-command-menu-input > [data-slot="input"]:focus-visible {
+.rich-text-command-menu-search > [data-slot="input"]:hover,
+.rich-text-command-menu-search > [data-slot="input"]:active,
+.rich-text-command-menu-search > [data-slot="input"]:focus-visible {
 	border-color: transparent;
 	background-color: transparent;
 	box-shadow: none;
 }
 
-.rich-text-command-menu-input-clear {
+.rich-text-command-menu-search-clear {
 	justify-self: end;
 }
 
@@ -670,32 +672,14 @@
 	justify-content: flex-start;
 }
 
-.rich-text-command-menu-label {
-	overflow: hidden;
-	/* Title: ADS font.body values (14px / 20px) applied as LONGHAND, not the
-	   `font: var(--ds-font-body)` shorthand. The shorthand expands to a full
-	   `font` value, which also resets font-family + font-size-adjust off the
-	   inherited app typography — so we set only size + line-height here and let
-	   family/weight inherit. `overflow`/`text-overflow`/`white-space` keep the
-	   single-line truncation (ellipsis) for long labels. */
-	font-size: 14px;
-	line-height: 20px;
-	color: var(--ds-text-subtle, #44546f);
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.rich-text-command-menu-description {
-	overflow: hidden;
-	/* Byline: one step quieter than the title above it. */
-	color: var(--ds-text-subtlest, #626f86);
-	font-size: 12px;
-	line-height: 16px;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .rich-text-command-menu-description {
+/* Title (`.menu-row-title`) and byline (`.menu-row-byline`) type — including the
+   explicit longhand line-height that keeps these rows off a fractional value —
+   now live as shared utilities in app/globals.css, so every option row (editor
+   palette, agent selector, greeting prompts, the compact config flyout) renders
+   identically and there is one place to change it. Only the menu-scoped behavior
+   stays here: bylines in a nested drill-in list are non-interactive so a
+   hover/click lands on the row, not the text. */
+.rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .menu-row-byline {
 	pointer-events: none;
 }
 

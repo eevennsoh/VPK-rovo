@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
+import { motion, type Variants } from "motion/react";
 import Image from "next/image";
 import AddIcon from "@atlaskit/icon/core/add";
 import AutomationIcon from "@atlaskit/icon/core/automation";
@@ -13,11 +14,10 @@ import IncidentIcon from "@atlaskit/icon/core/incident";
 import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
 import WebhookIcon from "@atlaskit/icon-lab/core/webhook";
 import { SearchIcon } from "@/components/ui/vpk-icons";
-import CrossCircleIcon from "@atlaskit/icon/core/cross-circle";
 
 import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
-import { Input } from "@/components/ui/input";
+import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
 import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/mention-visual";
 import type { RichTextMentionVisual } from "@/components/ui-custom/rich-text-editor/types";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
@@ -52,6 +52,7 @@ import {
 	type AgentTriggerProviderId,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/data/trigger-catalog";
+import { getTriggerByline } from "@/app/data/directory/trigger-bylines";
 import { cn } from "@/lib/utils";
 
 export type {
@@ -282,38 +283,19 @@ export function TriggerProviderSearchList({
 	return (
 		<div
 			className="rich-text-command-menu rich-text-command-menu-borderless"
-			data-first-item-input="true"
+			data-has-header="true"
 			role="presentation"
 		>
-			<div className="rich-text-command-menu-item rich-text-command-menu-input rich-text-command-menu-item-sticky">
-				<span className="rich-text-command-menu-input-logo" aria-hidden={true}>
-					<SearchIcon className="size-4 text-icon-subtle" />
-				</span>
-				<Input
-					id={searchId}
-					variant="subtle"
-					isCompact
-					value={query}
-					aria-label="Search triggers"
-					placeholder="Search Triggers..."
-					onChange={(event) => setQuery(event.currentTarget.value)}
-					onKeyDown={(event) => event.stopPropagation()}
-				/>
-				{query ? (
-					<Button
-						type="button"
-						aria-label="Clear search"
-						className="rich-text-command-menu-input-clear text-icon-subtle"
-						onMouseDown={(event) => event.preventDefault()}
-						onClick={() => setQuery("")}
-						shape="circle"
-						size="icon-compact"
-						variant="ghost"
-					>
-						<CrossCircleIcon label="" size="small" />
-					</Button>
-				) : null}
-			</div>
+			<RichTextCommandMenuSearchField
+				id={searchId}
+				icon={<SearchIcon className="size-4 text-icon-subtle" />}
+				label="Search triggers"
+				onClear={() => setQuery("")}
+				onKeyDown={(event) => event.stopPropagation()}
+				onValueChange={setQuery}
+				placeholder="Search Triggers..."
+				value={query}
+			/>
 			<div className="rich-text-command-menu-list">
 				{filteredProviders.length > 0 ? (
 					<DropdownMenuGroup className="p-0">
@@ -399,6 +381,36 @@ export function TriggerPicker({
 	);
 }
 
+// Byline reveal motion. Mirrors `nestedCommandLabelVariants` /
+// `nestedCommandDescriptionVariants` in the editor palette suggestion menu (and
+// `greetingLabelVariants` / `greetingDescriptionVariants` in the chat greeting
+// rows) so the provider-row byline reveal matches every other command-menu
+// surface exactly: the label lifts up and the byline fades + slides in on
+// hover/highlight without changing the row height.
+const triggerProviderLabelVariants: Variants = {
+	idle: {
+		transform: "translateY(8px)",
+		transition: { type: "spring", bounce: 0, visualDuration: 0.18 },
+	},
+	active: {
+		transform: "translateY(0px)",
+		transition: { type: "spring", bounce: 0.12, visualDuration: 0.24 },
+	},
+};
+
+const triggerProviderBylineVariants: Variants = {
+	idle: {
+		opacity: 0,
+		transform: "translateY(4px)",
+		transition: { duration: 0.1, ease: [0.4, 0, 1, 1] },
+	},
+	active: {
+		opacity: 1,
+		transform: "translateY(0px)",
+		transition: { delay: 0.02, duration: 0.16, ease: [0, 0.4, 0, 1] },
+	},
+};
+
 export function TriggerProviderSubmenu({
 	onSelectEvent,
 	provider,
@@ -407,13 +419,49 @@ export function TriggerProviderSubmenu({
 	provider: AgentTriggerProviderDefinition;
 }>): ReactElement {
 	const groups = getGroupedEvents(provider.events);
+	const byline = getTriggerByline(provider.id);
+	// Reveal the byline whenever the row is hovered/focused/keyboard-highlighted,
+	// and keep it revealed while the events submenu is open (the pointer leaves
+	// the trigger to enter the submenu, which would otherwise collapse it).
+	const [isInteractionActive, setIsInteractionActive] = useState(false);
+	const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
+	const isActive = isInteractionActive || isSubmenuOpen;
 
 	return (
-		<DropdownMenuSub>
-			<DropdownMenuSubTrigger>
+		<DropdownMenuSub onOpenChange={setIsSubmenuOpen}>
+			<DropdownMenuSubTrigger
+				className="h-11"
+				onMouseEnter={() => setIsInteractionActive(true)}
+				onMouseLeave={() => setIsInteractionActive(false)}
+				onFocus={() => setIsInteractionActive(true)}
+				onBlur={() => setIsInteractionActive(false)}
+			>
 				<span className="flex min-w-0 flex-1 items-center gap-3">
 					<TriggerProviderTileIcon icon={provider.icon} label={provider.label} />
-					<span className="min-w-0 truncate">{provider.label}</span>
+					{byline ? (
+						<span className="rich-text-command-menu-copy rich-text-command-menu-nested-copy rich-text-command-menu-nested-copy-revealable flex-1">
+							<motion.span
+								animate={isActive ? "active" : "idle"}
+								className="menu-row-title"
+								initial={false}
+								style={{ willChange: "transform" }}
+								variants={triggerProviderLabelVariants}
+							>
+								{provider.label}
+							</motion.span>
+							<motion.span
+								animate={isActive ? "active" : "idle"}
+								className="menu-row-byline"
+								initial={false}
+								style={{ willChange: "transform, opacity" }}
+								variants={triggerProviderBylineVariants}
+							>
+								{byline}
+							</motion.span>
+						</span>
+					) : (
+						<span className="min-w-0 truncate">{provider.label}</span>
+					)}
 				</span>
 			</DropdownMenuSubTrigger>
 			<DropdownMenuSubContent className="min-w-64 overflow-hidden p-0">

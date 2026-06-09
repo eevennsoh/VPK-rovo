@@ -14,6 +14,7 @@ export {
 } from "./composer-extensions";
 export { getMentionNodeAttrs } from "./extensions";
 export {
+	RichTextCommandMenuSearchField,
 	RichTextSuggestionMenu,
 	SLASH_COMMANDS,
 	getSlashCommandFormatItems,
@@ -21,6 +22,7 @@ export {
 	getMentionTargetItems,
 	getSlashCommandCategoryItems,
 	type RichTextCommandItem,
+	type RichTextCommandMenuSearchFieldProps,
 	type RichTextMentionMenuCategory,
 	type RichTextSlashAction,
 	type RichTextSuggestionMenuItem,

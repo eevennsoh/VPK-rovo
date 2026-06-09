@@ -388,6 +388,38 @@
 	contain-intrinsic-size: auto 400px;
 }
 
+/* Shared option-row type treatment — the single source of truth for every
+   list/menu option row's title + byline (editor palette command menu + its
+   trigger/flyout pickers, agent selector, greeting prompts). Each surface
+   references these utilities by name so the type renders identically and there
+   is exactly one place to change it. Originated as the editor palette's
+   `.rich-text-command-menu-label` / `.rich-text-command-menu-description` rules,
+   now retired from rich-text-editor.css in favor of these.
+
+   Size + line-height are explicit LONGHAND on purpose:
+   - never the `font:` shorthand, which would also reset font-family +
+     font-size-adjust off the inherited app typography; and
+   - never Tailwind's `text-sm`/`text-xs` paired with `leading-*`, where two
+     competing `line-height` declarations can resolve to a fractional value by
+     utility source order. One declaration here = one deterministic result. */
+@utility menu-row-title {
+	overflow: hidden;
+	font-size: 14px;
+	line-height: 20px;
+	color: var(--ds-text-subtle, #44546f);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+@utility menu-row-byline {
+	overflow: hidden;
+	font-size: 12px;
+	line-height: 16px;
+	color: var(--ds-text-subtlest, #626f86);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 /* -----------------------------------------------------------------
    Unlayered Overrides
 

@@ -243,7 +243,7 @@ function ColumnAgentAssignment({
 				</TooltipProvider>
 				<DropdownMenuContent
 					align="end"
-					className="w-[360px] overflow-hidden p-0"
+					className="max-h-none w-[360px] overflow-hidden p-0"
 					positionerClassName="z-[502]"
 					sideOffset={8}
 				>

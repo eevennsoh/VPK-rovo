@@ -17,6 +17,9 @@ const BLOCK_DETAILS_SOURCE = readFileSync(
 	join(__dirname, "..", "..", "..", "app", "data", "details", "blocks.ts"),
 	"utf8",
 );
+const TRIGGER_BYLINES = require(
+	join(__dirname, "..", "..", "..", "app", "data", "directory", "trigger-bylines.json"),
+);
 
 test("trigger catalog defines expected automation providers and events", () => {
 	for (const providerId of [
@@ -58,13 +61,49 @@ test("trigger catalog defines expected automation providers and events", () => {
 	assert.match(CATALOG_SOURCE, /DEFAULT_NEEDS_CONNECTION_TRIGGER_VALUES/u);
 });
 
+test("every trigger provider has byline mock copy in the directory data layer", () => {
+	for (const providerId of [
+		"scheduled",
+		"jira",
+		"confluence",
+		"github-gitlab",
+		"slack",
+		"microsoft-teams",
+		"sentry",
+		"linear",
+		"webhook",
+		"pagerduty",
+	]) {
+		const byline = TRIGGER_BYLINES[providerId];
+		assert.equal(typeof byline, "string", `missing byline for ${providerId}`);
+		assert.ok(byline.trim().length > 0, `empty byline for ${providerId}`);
+	}
+});
+
+test("provider rows render an animated byline matching the command-menu reveal", () => {
+	// Byline copy is sourced from the shared directory data layer, not inlined.
+	assert.match(
+		TRIGGERS_SOURCE,
+		/import \{ getTriggerByline \} from "@\/app\/data\/directory\/trigger-bylines";/u,
+	);
+	// Reveal is driven by interaction + submenu-open state.
+	assert.match(TRIGGERS_SOURCE, /const isActive = isInteractionActive \|\| isSubmenuOpen;/u);
+	assert.match(TRIGGERS_SOURCE, /<DropdownMenuSub onOpenChange=\{setIsSubmenuOpen\}>/u);
+	// Motion variants mirror the editor-palette nested command label/description.
+	assert.match(TRIGGERS_SOURCE, /triggerProviderLabelVariants/u);
+	assert.match(TRIGGERS_SOURCE, /triggerProviderBylineVariants/u);
+	assert.match(TRIGGERS_SOURCE, /animate=\{isActive \? "active" : "idle"\}/u);
+	// Reuses the shared command-menu reveal layout classes.
+	assert.match(TRIGGERS_SOURCE, /rich-text-command-menu-nested-copy-revealable/u);
+});
+
 test("Triggers supports empty, picker, configured, remove, params, and connection states", () => {
 	assert.match(TRIGGERS_SOURCE, /triggers\?: readonly AgentTriggerValue\[\];/u);
 	assert.match(TRIGGERS_SOURCE, /defaultTriggers\?: readonly AgentTriggerValue\[\];/u);
 	assert.match(TRIGGERS_SOURCE, /defaultPickerOpen\?: boolean;/u);
 	assert.match(TRIGGERS_SOURCE, /onTriggersChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
 	assert.match(TRIGGERS_SOURCE, /onConnectTrigger\?: \(trigger: AgentTriggerValue\) => void;/u);
-	assert.match(TRIGGERS_SOURCE, /<DropdownMenuSub>/u);
+	assert.match(TRIGGERS_SOURCE, /<DropdownMenuSub onOpenChange=\{setIsSubmenuOpen\}>/u);
 	assert.match(TRIGGERS_SOURCE, /placeholder="Search Triggers\.\.\."/u);
 	assert.match(TRIGGERS_SOURCE, /No triggers found/u);
 	assert.match(TRIGGERS_SOURCE, /aria-label="Delete trigger"/u);

@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
  */
 export const dropdownStyles = {
   popup:
-    "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2 bg-popover text-popover-foreground max-h-[min(360px,var(--available-height,360px))] min-w-56 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-xl p-1 shadow-xl outline-none duration-fast data-closed:overflow-hidden",
+    "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2 bg-popover text-popover-foreground max-h-[min(328px,var(--available-height,328px))] min-w-56 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-xl p-1 shadow-xl outline-none duration-fast data-closed:overflow-hidden",
   group: "",
   selectableItem:
     "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex min-h-8 w-full cursor-pointer items-center rounded-lg py-1.5 pr-2 pl-8 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
@@ -43,6 +43,12 @@ const dropdownMenuOverlayShadow = "shadow-2xl";
 // effect. (Using group-data so the slot reads the owning item's variant.)
 const dropdownMenuFrontSlotClassName =
   "inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:text-icon-danger group-data-selected/dropdown-menu-item:text-icon-selected [&_[data-slot=icon]]:text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:[&_[data-slot=icon]]:text-icon-danger group-data-selected/dropdown-menu-item:[&_[data-slot=icon]]:text-icon-selected [&_svg]:text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:[&_svg]:text-icon-danger group-data-selected/dropdown-menu-item:[&_svg]:text-icon-selected";
+
+// Single-row items lock to a fixed 32px height (no vertical padding), matching
+// the Menubar standard; rows only gain `min-h-8` + `py-1.5` growth when their
+// text is allowed to wrap (explicit `allowTextWrap` or a `description`).
+const dropdownMenuRowHeightClassName = "h-8 py-0";
+const dropdownMenuWrappingRowClassName = "min-h-8 py-1.5";
 
 type DropdownMenuProps = MenuPrimitive.Root.Props;
 
@@ -186,6 +192,12 @@ interface DropdownMenuItemProps extends Omit<MenuPrimitive.Item.Props, "onSelect
   inset?: boolean;
   variant?: "default" | "destructive";
   /**
+   * Allows the label/description to wrap onto multiple lines, growing the row
+   * past its fixed 32px single-row height. Implied whenever a `description` is
+   * provided; defaults to a single truncated line otherwise.
+   */
+  allowTextWrap?: boolean;
+  /**
    * Marks the item as the active choice in a single-select menu. Applies the
    * selected background (with hover/pressed states), recolors the leading icon
    * to the selected icon token, and shows a trailing check mark unless the
@@ -203,6 +215,7 @@ function DropdownMenuItem({
   inset,
   variant = "default",
   selected = false,
+  allowTextWrap = false,
   elemBefore,
   elemAfter,
   description,
@@ -230,6 +243,7 @@ function DropdownMenuItem({
   const resolvedElemAfter =
     elemAfter ?? (selected ? <CheckMarkIcon label="" size="small" /> : undefined);
   const isSelected = selected && variant === "default";
+  const shouldWrapText = allowTextWrap || Boolean(description);
 
   return (
     <MenuPrimitive.Item
@@ -238,10 +252,10 @@ function DropdownMenuItem({
       data-variant={variant}
       data-selected={isSelected || undefined}
       className={cn(
-        // py-1.5 (6px) + leading-5 (20px) == 32px, so a single line lands exactly on the
-        // min-h-8 floor and stays fixed at 32px; when the label or description wraps to
-        // multiple lines the row grows with a consistent 6px top/bottom padding.
-        "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex min-h-8 w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
+        // Single row stays fixed at 32px; growth is opt-in via `shouldWrapText`
+        // (an explicit `allowTextWrap` or a `description`), matching Menubar.
+        "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
+        shouldWrapText ? dropdownMenuWrappingRowClassName : dropdownMenuRowHeightClassName,
         // Selected state: selected surface + selected hover/pressed + selected icon/text tokens.
         "data-selected:bg-bg-selected data-selected:text-text-selected data-selected:data-[highlighted]:bg-bg-selected-hovered data-selected:data-[highlighted]:text-text-selected data-selected:active:bg-bg-selected-pressed data-selected:[&_svg]:text-icon-selected",
         className,
@@ -255,7 +269,7 @@ function DropdownMenuItem({
         </span>
       ) : null}
       <span className="min-w-0 flex flex-1 flex-col">
-        <span className="min-w-0 whitespace-normal break-words">
+        <span className={cn("min-w-0", shouldWrapText ? "whitespace-normal break-words" : "truncate")}>
           {children}
         </span>
         {description ? (
@@ -285,11 +299,13 @@ function DropdownMenuSub(props: Readonly<DropdownMenuSubProps>) {
 interface DropdownMenuSubTriggerProps
   extends MenuPrimitive.SubmenuTrigger.Props {
   inset?: boolean;
+  allowTextWrap?: boolean;
 }
 
 function DropdownMenuSubTrigger({
   className,
   inset,
+  allowTextWrap = false,
   children,
   ...props
 }: Readonly<DropdownMenuSubTriggerProps>) {
@@ -298,7 +314,8 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-popup-open:bg-bg-neutral-subtle-hovered data-popup-open:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled flex min-h-8 w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-inset:pl-8 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-popup-open:bg-bg-neutral-subtle-hovered data-popup-open:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-inset:pl-8 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        allowTextWrap ? dropdownMenuWrappingRowClassName : dropdownMenuRowHeightClassName,
         className,
       )}
       {...props}

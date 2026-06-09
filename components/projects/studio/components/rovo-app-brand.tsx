@@ -178,7 +178,7 @@ export function RovoAppBrand() {
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
 				align="start"
-				className="w-[360px] overflow-hidden p-0"
+				className="max-h-none w-[360px] overflow-hidden p-0"
 				positionerClassName="z-[600]"
 				sideOffset={8}
 			>

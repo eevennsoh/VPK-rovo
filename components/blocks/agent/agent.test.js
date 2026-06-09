@@ -34,6 +34,7 @@ const RICH_TEXT_TOOLBAR_SOURCE = readProjectFile("components/ui-custom/rich-text
 const EDITOR_PALETTE_SOURCE = readProjectFile("components/blocks/editor-palette/page.tsx");
 const EDITOR_PALETTE_MENTION_SOURCES = readProjectFile("components/blocks/editor-palette/data/mention-sources.ts");
 const EDITOR_PALETTE_DEMO_SOURCE = readProjectFile("components/website/demos/blocks/editor-palette-demo.tsx");
+const TRIGGERS_SOURCE = readProjectFile("components/blocks/triggers/page.tsx");
 const EDITOR_TOOLBAR_SOURCE = readProjectFile("components/blocks/editor-toolbar/components/editor-toolbar.tsx");
 const EDITOR_TOOLBAR_INDEX_SOURCE = readProjectFile("components/blocks/editor-toolbar/index.ts");
 const STUDIO_AGENT_RESULT_SOURCE = readProjectFile("backend/lib/studio-agent-result.js");
@@ -460,6 +461,10 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.doesNotMatch(AGENT_SOURCE, /flex min-w-0 flex-wrap items-center gap-1/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_GAP = 2;/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH = 24;/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_RENDERED_OVERFLOW_THRESHOLD = 4;/u);
+	assert.match(AGENT_SOURCE, /import \{ buildHorizontalScrollMaskStyle \} from "@\/components\/visual\/scroll-mask\/lib";/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_END_MASK_STYLE = buildHorizontalScrollMaskStyle\(\{\s*edge: "end",\s*endGutterWidth: AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH,\s*fadeSize: "var\(--ds-space-300\)",\s*\}\);/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_EDGE_MASK_STYLE = buildHorizontalScrollMaskStyle\(\{\s*edge: "end",\s*fadeSize: "var\(--ds-space-300\)",\s*\}\);/u);
 	assert.match(AGENT_SOURCE, /computeContextBarOverflow\([\s\S]*AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH,[\s\S]*AGENT_COMPACT_CONFIG_NAV_GAP/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactConfigNavButton\(/u);
 	// Overflow trigger is a Menubar trigger (the nav is a Menubar so the active
@@ -469,7 +474,13 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// The connected config Menubar clips horizontal overflow (so the "…" menu
 	// absorbs hidden items) but insets the first item (`pl-1`) and keeps a 6px
 	// clip margin + vertical room so edge focus-visible rings aren't sheared off.
-	assert.match(AGENT_SOURCE, /className="relative -my-1 flex h-auto min-w-0 flex-1 items-center overflow-x-clip overflow-y-visible rounded-none border-0 bg-transparent p-0 py-1 pl-1 \[overflow-clip-margin:6px\]"[\s\S]*style=\{\{ gap: AGENT_COMPACT_CONFIG_NAV_GAP \}\}/u);
+	// When the overflow menu is active, the trailing clip edge fades through the
+	// shared horizontal scroll-mask style rather than ending with a hard crop.
+	assert.match(AGENT_SOURCE, /const \[hasRenderedOverflow, setHasRenderedOverflow\] = useState\(false\);/u);
+	assert.match(AGENT_SOURCE, /setHasRenderedOverflow\(\s*container!\.scrollWidth - container!\.clientWidth > AGENT_COMPACT_CONFIG_NAV_RENDERED_OVERFLOW_THRESHOLD,\s*\);/u);
+	assert.match(AGENT_SOURCE, /const shouldShowEndMask = hiddenItems\.length > 0 \|\| hasRenderedOverflow;/u);
+	assert.match(AGENT_SOURCE, /const endMaskStyle = hiddenItems\.length > 0[\s\S]*\? AGENT_COMPACT_CONFIG_NAV_END_MASK_STYLE[\s\S]*: AGENT_COMPACT_CONFIG_NAV_EDGE_MASK_STYLE;/u);
+	assert.match(AGENT_SOURCE, /className="relative -my-1 flex h-auto min-w-0 flex-1 items-center overflow-x-clip overflow-y-visible rounded-none border-0 bg-transparent p-0 py-1 pl-1 \[overflow-clip-margin:6px\]"[\s\S]*style=\{\{\s*gap: AGENT_COMPACT_CONFIG_NAV_GAP,\s*\.\.\.\(shouldShowEndMask \? endMaskStyle : \{\}\),\s*\}\}/u);
 	assert.match(AGENT_SOURCE, /<div className="invisible flex items-center" ref=\{measureRef\}/u);
 	// Collapsible toolbar: outer wrapper now stacks a "rule row" (horizontal
 	// line + chevron at the far right) above an AnimatePresence crossfade that
@@ -629,6 +640,8 @@ test("Agent compact directory dropdowns keep persistent add and browse footers",
 	assert.match(AGENT_SOURCE, /const addSearchFlyout = \([\s\S]*<DropdownMenuSub>[\s\S]*<DropdownMenuSubTrigger>[\s\S]*\{addLabel\}[\s\S]*<DropdownMenuSubContent className="w-auto min-w-0 overflow-visible border-0 bg-transparent p-0 shadow-none">[\s\S]*<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category=\{AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD\[directory\]\}[\s\S]*className="rich-text-command-menu-borderless"[\s\S]*onBrowseAll=\{onBrowse\}[\s\S]*onSelectItem=\{handlePickerSelect\}/u);
 	assert.match(AGENT_SOURCE, /onAddSearchItem=\{\(searchItem\) => \{[\s\S]*if \(searchItem\.disabled\) \{[\s\S]*return;[\s\S]*onAddListValues\?\.\(directory, \[searchItem\.label\]\);[\s\S]*\}\}/u);
 	assert.match(AGENT_SOURCE, /browseLabel=\{`Browse \$\{item\.label\.toLowerCase\(\)\}`\}[\s\S]*onBrowse=\{\(\) => openAgentDirectoryOrAppendListItem\(directory, directory, onOpenDirectory, onAppendListItem\)\}/u);
+	assert.match(TRIGGERS_SOURCE, /<RichTextCommandMenuSearchField[\s\S]*label="Search triggers"[\s\S]*onValueChange=\{setQuery\}[\s\S]*placeholder="Search Triggers\.\.\."[\s\S]*value=\{query\}/u);
+	assert.doesNotMatch(TRIGGERS_SOURCE, /rich-text-command-menu-input|data-first-item-input|isCompact/u);
 });
 
 test("Agent compact subagents dropdown keeps add and manage actions pinned", () => {
@@ -841,21 +854,21 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(EDITOR_PALETTE_SOURCE, /suggestionVariant=\{variant === "search" \? "flat" : variant\}/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /export function EditorPaletteSearchPicker\(/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /import \{[\s\S]*Empty,[\s\S]*EmptyContent,[\s\S]*EmptyDescription,[\s\S]*EmptyHeader,[\s\S]*EmptyTitle,[\s\S]*\} from "@\/components\/ui\/empty";/u);
-	assert.match(EDITOR_PALETTE_SOURCE, /const searchItem: RichTextSuggestionMenuItem = \{[\s\S]*id: SEARCH_INPUT_ITEM_ID,[\s\S]*icon: <SearchIcon className="size-4 text-icon-subtle" \/>,[\s\S]*isSticky: true,[\s\S]*label: getSearchPlaceholder\(category\),/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /RichTextCommandMenuSearchField/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /id: SEARCH_BROWSE_ALL_ITEM_ID,[\s\S]*label: "Browse all"/u);
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /id: SEARCH_BROWSE_ALL_ITEM_ID,[\s\S]*stickyPosition: "bottom"/u);
+	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /SEARCH_INPUT_ITEM_ID/u);
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /SEARCH_EMPTY_ITEM_ID/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /function normalizeSearchPickerItem\([\s\S]*item: RichTextSuggestionMenuItem,[\s\S]*\): RichTextSuggestionMenuItem \{[\s\S]*return item\.description[\s\S]*\? \{ \.\.\.item, persistentDescription: true \}[\s\S]*: item;/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /const sourceItems = \(itemsProp \?\? getMentionChildItems\(mentionSources, category\)\)[\s\S]*\.map\(normalizeSearchPickerItem\);/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /const leadingRows = leadingItems\.map\(normalizeSearchPickerItem\);/u);
-	assert.match(EDITOR_PALETTE_SOURCE, /const rows = items\.length > 0[\s\S]*\? \[searchItem, \.\.\.leadingRows, \.\.\.items, browseAllItem\][\s\S]*: \[searchItem, \.\.\.leadingRows\];/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /const rows = items\.length > 0[\s\S]*\? \[\.\.\.leadingRows, \.\.\.items, browseAllItem\][\s\S]*: leadingRows;/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /const firstItem = items\[0\] \?\? leadingRows\[0\];/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /emptyState=\{[\s\S]*<EditorPaletteSearchEmptyState[\s\S]*label=\{emptyLabel\}[\s\S]*onBrowseAll=\{onBrowseAll\}[\s\S]*\/>[\s\S]*\}/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /header=\{\([\s\S]*<RichTextCommandMenuSearchField[\s\S]*autoFocus=\{autoFocus\}[\s\S]*label=\{getSearchPlaceholder\(category\)\}[\s\S]*onClear=\{\(\) => setQuery\(""\)\}[\s\S]*onSubmit=\{selectFirstResult\}[\s\S]*onValueChange=\{setQuery\}[\s\S]*value=\{query\}/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /function EditorPaletteSearchEmptyState\(/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /<Empty width="narrow" className="px-6 pt-4 pb-6">[\s\S]*<EmptyTitle headingSize="xsmall">\{label\}<\/EmptyTitle>[\s\S]*<EmptyDescription>Try a different search term\.<\/EmptyDescription>[\s\S]*<Button[\s\S]*variant="outline"[\s\S]*onClick=\{onBrowseAll\}[\s\S]*Browse all/u);
-	assert.match(EDITOR_PALETTE_SOURCE, /onInputClear=\{\(\) => setQuery\(""\)\}/u);
-	assert.match(EDITOR_PALETTE_SOURCE, /onInputValueChange=\{setQuery\}/u);
-	assert.match(EDITOR_PALETTE_SOURCE, /renderFirstItemAsInput/u);
+	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /onInputClear|onInputValueChange|renderFirstItemAsInput/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /NESTED_MENTION_SHOWCASES/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /getSlashCommandFormatItems\(\)/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /caption="Format nested"/u);
@@ -909,14 +922,11 @@ test("Slash command menu contains every toolbar command", () => {
 test("Suggestion menu active selectable rows replace shortcut text with ReturnIcon", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ ArrowLeftIcon, ReturnIcon \} from "@\/components\/ui\/vpk-icons";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /stickyPosition\?: "top" \| "bottom";/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /inputAutoFocus\?: boolean;/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /inputValue\?: string;/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onInputValueChange\?: \(value: string\) => void;/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /header\?: ReactNode;/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /inputAutoFocus\?:|inputValue\?:|onInputValueChange\?:|onInputClear\?:/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const shouldShowReturnShortcut = !item\.disabled && \(isSelected \|\| isInteractionActive\);/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function getSuggestionMenuItemStickyClassName\([\s\S]*item\.isSticky && "rich-text-command-menu-item-sticky",[\s\S]*item\.isSticky && item\.stickyPosition === "bottom" && "rich-text-command-menu-item-sticky-bottom"/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /<RichTextSuggestionMenuInputOption[\s\S]*autoFocus=\{inputAutoFocus\}[\s\S]*inputValue=\{inputValue\}[\s\S]*onInputValueChange=\{onInputValueChange\}/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const controlledValueProps = inputValue === undefined \? \{\} : \{ value: inputValue \};/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onChange=\{\(event\) => onInputValueChange\?\.\(event\.currentTarget\.value\)\}/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /RichTextSuggestionMenuInputOption|controlledValueProps|renderFirstItemAsInput/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /shouldShowReturnShortcut \? \([\s\S]*rich-text-command-menu-return-shortcut[\s\S]*<ReturnIcon className="size-3\.5 text-icon-subtlest" \/>[\s\S]*\) : item\.shortcut \? \(/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onFocus=\{\(\) => setIsInteractionActive\(true\)\}/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onMouseEnter=\{\(\) => setIsInteractionActive\(true\)\}/u);
@@ -960,10 +970,10 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import CrossCircleIcon from "@atlaskit\/icon\/core\/cross-circle";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ Button \} from "@\/components\/ui\/button";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /emptyState \?\? <div className="rich-text-command-menu-empty">\{emptyLabel\}<\/div>/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onInputClear\?: \(\) => void;/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /data-nested=\{isNested \? "true" : undefined\}/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /data-first-item-input=\{renderFirstItemAsInput \? "true" : undefined\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /data-has-header=\{header \? "true" : undefined\}/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /data-list-scrolled=\{hasScrolledList \? "true" : undefined\}/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /data-first-item-input/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /data-list-overflow-after/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ motion, type Variants \} from "motion\/react";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const nestedCommandLabelVariants: Variants = \{/u);
@@ -976,17 +986,17 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /persistentDescription: true,[\s\S]*icon: category === "people-team"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /persistentDescription: true,[\s\S]*icon: getSlashCategoryIcon\(category\)/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /if \(canRevealMetadata\) \{/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const inputItem = renderFirstItemAsInput \? items\[0\] : undefined;/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const listItems = inputItem \? items\.slice\(1\) : items;/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /\{inputItem \? \([\s\S]*<RichTextSuggestionMenuInputOption[\s\S]*item=\{inputItem\}[\s\S]*\) : null\}[\s\S]*<div[\s\S]*className="rich-text-command-menu-list"/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const showClearButton = Boolean\(onInputClear && inputValue\);/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /\{header\}[\s\S]*<div[\s\S]*className="rich-text-command-menu-list"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /export function RichTextCommandMenuSearchField\(/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /<Input[\s\S]*variant="subtle"[\s\S]*value=\{value\}[\s\S]*onChange=\{\(event\) => onValueChange\(event\.currentTarget\.value\)\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /<Button[\s\S]*aria-label="Clear search"[\s\S]*className="rich-text-command-menu-search-clear text-icon-subtle"[\s\S]*shape="circle"[\s\S]*size="icon-compact"[\s\S]*variant="ghost"[\s\S]*<CrossCircleIcon label="" size="small" \/>/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /const inputItem =|const listItems =|showClearButton|RichTextSuggestionMenuInputOption/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /<Input[\s\S]*variant="subtle"[\s\S]*isCompact/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /<Button[\s\S]*aria-label="Clear search"[\s\S]*className="rich-text-command-menu-input-clear text-icon-subtle"[\s\S]*shape="circle"[\s\S]*size="icon-compact"[\s\S]*variant="ghost"[\s\S]*<CrossCircleIcon label="" size="small" \/>/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const itemIndex = inputItem \? index \+ 1 : index;/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /isSelected=\{itemIndex === selectedIndex\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /isSelected=\{index === selectedIndex\}/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /whileHover="active"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /whileFocus="active"/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \{\s*max-height: 400px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu \{[\s\S]*--rich-text-command-menu-max-height: 328px;[\s\S]*max-height: min\(var\(--rich-text-command-menu-max-height\), calc\(100vh - 48px\)\);/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \{\s*max-height: min\(var\(--rich-text-command-menu-max-height\), calc\(100vh - 48px\)\);/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-borderless \{\s*border: 0;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-avatar \{\s*width: 24px;\s*height: 24px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-showcase\[data-nested="true"\] \.rich-text-command-menu-list \{\s*overflow-y: auto;/u);
@@ -994,11 +1004,20 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-list-scrolled="true"\] \.rich-text-command-menu-list \{[\s\S]*linear-gradient\(to bottom, transparent 0, black var\(--rich-text-command-menu-scroll-mask-fade-size\), black 100%\)/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /data-list-overflow-after/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /black calc\(100% - var\(--rich-text-command-menu-scroll-mask-fade-size\)\), transparent 100%/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-first-item-input="true"\] \.rich-text-command-menu-list \{\s*padding-top: 0;/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-input \{[\s\S]*margin: 0;[\s\S]*width: 100%;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-has-header="true"\] \.rich-text-command-menu-list \{\s*padding-top: 0;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-search \{[\s\S]*flex: 0 0 44px;[\s\S]*grid-template-columns: 24px minmax\(0, 1fr\) auto;[\s\S]*height: 44px;[\s\S]*min-height: 44px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-search > \[data-slot="input"\] \{\s*height: 100%;/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /rich-text-command-menu-search-picker/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-input-clear \{\s*justify-self: end;\s*\}/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-label \{[\s\S]*color: var\(--ds-text-subtle, #44546f\);/u);
+	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /data-first-item-input|rich-text-command-menu-input/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-search-clear \{\s*justify-self: end;\s*\}/u);
+	// Title/byline type now comes from the shared `menu-row-*` utilities
+	// (app/globals.css); the editor palette markup references them and the old
+	// per-class type rules are retired, so there is a single source of truth.
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /className="menu-row-title"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /className="menu-row-byline"/u);
+	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-label \{/u);
+	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-description\b/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \.rich-text-command-menu-list \.menu-row-byline \{\s*pointer-events: none;/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*border-bottom/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item \{[\s\S]*?height: 44px;/u);
 	// `[^}]*?` keeps this scoped to the nested item rule's own block so it can't

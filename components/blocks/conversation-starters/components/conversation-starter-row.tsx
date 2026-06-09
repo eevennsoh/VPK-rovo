@@ -94,9 +94,10 @@ export function ConversationStarterRow({
 						aria-label={`Clear conversation starter ${index + 1}`}
 						onClick={() => onClear(starter.id)}
 						className="text-icon-subtlest"
+						shape="circle"
 						size="icon-xs"
 					>
-						<CrossCircleIcon label="" color="currentColor" />
+						<CrossCircleIcon label="" size="small" color="currentColor" />
 					</InputGroupButton>
 				</InputGroupAddon>
 			</InputGroup>

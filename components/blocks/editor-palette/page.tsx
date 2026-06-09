@@ -19,6 +19,7 @@ import { RovoColorIcon } from "@/components/ui/logo";
 import { SearchIcon } from "@/components/ui/vpk-icons";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
+	RichTextCommandMenuSearchField,
 	RichTextEditor,
 	RichTextSuggestionMenu,
 	getMentionChildItems,
@@ -154,7 +155,6 @@ const SEARCH_CATEGORY_LABELS: Record<EditorPaletteSearchCategory, string> = {
 	tool: "tools",
 };
 
-const SEARCH_INPUT_ITEM_ID = "__editor-palette-search-input__";
 const SEARCH_BROWSE_ALL_ITEM_ID = "__editor-palette-search-browse-all__";
 
 function getSearchPlaceholder(category: EditorPaletteSearchCategory): string {
@@ -174,14 +174,6 @@ function filterSearchItems(
 		const haystack = `${item.label} ${item.description ?? ""}`.toLowerCase();
 		return haystack.includes(normalizedQuery);
 	});
-}
-
-function normalizeSearchPickerItem(
-	item: RichTextSuggestionMenuItem,
-): RichTextSuggestionMenuItem {
-	return item.description
-		? { ...item, persistentDescription: true }
-		: item;
 }
 
 export interface EditorPaletteSearchPickerProps {
@@ -217,34 +209,29 @@ export function EditorPaletteSearchPicker({
 	onSelectItem,
 }: Readonly<EditorPaletteSearchPickerProps>) {
 	const [query, setQuery] = useState("");
-	const sourceItems = (itemsProp ?? getMentionChildItems(mentionSources, category))
-		.map(normalizeSearchPickerItem);
-	const leadingRows = leadingItems.map(normalizeSearchPickerItem);
+	// Search rows reveal their byline on hover/selection (the `canRevealMetadata`
+	// path in RichTextSuggestionMenuOption), matching the flat and nested menus.
+	// We deliberately do not set `persistentDescription`, so the collapsed row
+	// stays label-only until the user lands on it.
+	const sourceItems = itemsProp ?? getMentionChildItems(mentionSources, category);
 	const items = filterSearchItems(sourceItems, query);
-	const searchItem: RichTextSuggestionMenuItem = {
-		id: SEARCH_INPUT_ITEM_ID,
-		icon: <SearchIcon className="size-4 text-icon-subtle" />,
-		isSticky: true,
-		label: getSearchPlaceholder(category),
-	};
 	const browseAllItem: RichTextSuggestionMenuItem = {
 		id: SEARCH_BROWSE_ALL_ITEM_ID,
 		icon: <ShowMoreHorizontalIcon label="" size="small" />,
 		label: "Browse all",
 	};
 	const rows = items.length > 0
-		? [searchItem, ...leadingRows, ...items, browseAllItem]
-		: [searchItem, ...leadingRows];
+		? [...leadingItems, ...items, browseAllItem]
+		: leadingItems;
+
+	const selectFirstResult = () => {
+		const firstItem = items[0] ?? leadingItems[0];
+		if (firstItem) {
+			onSelectItem?.(firstItem);
+		}
+	};
 
 	const handleSelect = (item: RichTextSuggestionMenuItem) => {
-		if (item.id === SEARCH_INPUT_ITEM_ID) {
-			const firstItem = items[0] ?? leadingRows[0];
-			if (firstItem) {
-				onSelectItem?.(firstItem);
-			}
-			return;
-		}
-
 		if (item.id === SEARCH_BROWSE_ALL_ITEM_ID) {
 			onBrowseAll?.();
 			return;
@@ -264,13 +251,19 @@ export function EditorPaletteSearchPicker({
 					onBrowseAll={onBrowseAll}
 				/>
 			}
-			inputAutoFocus={autoFocus}
-			inputValue={query}
+			header={(
+				<RichTextCommandMenuSearchField
+					autoFocus={autoFocus}
+					icon={<SearchIcon className="size-4 text-icon-subtle" />}
+					label={getSearchPlaceholder(category)}
+					onClear={() => setQuery("")}
+					onSubmit={selectFirstResult}
+					onValueChange={setQuery}
+					value={query}
+				/>
+			)}
 			items={rows}
-			onInputClear={() => setQuery("")}
-			onInputValueChange={setQuery}
 			onSelect={handleSelect}
-			renderFirstItemAsInput
 			selectedIndex={-1}
 		/>
 	);
@@ -351,7 +344,6 @@ function NestedPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
 					emptyLabel="No commands found"
 					items={commandItems}
 					selectedIndex={0}
-					renderFirstItemAsInput
 					onSelect={noop}
 				/>
 			</PalettePanel>
@@ -551,7 +543,6 @@ function FlatMergedPanel({
 				items={rows}
 				selectedIndex={-1}
 				onSelect={handleSelect}
-				renderFirstItemAsInput={leadItem !== undefined}
 			/>
 		</PalettePanel>
 	);

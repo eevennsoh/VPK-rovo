@@ -111,3 +111,7 @@ export {
 	getAgentTemplateConfigsByCategory,
 } from "./agent-templates";
 export type { AgentTemplateCategoryId, AgentTemplateConfig } from "./agent-templates";
+
+// --- Trigger bylines ---
+export { TRIGGER_BYLINES, getTriggerByline } from "./trigger-bylines";
+export type { TriggerBylineMap } from "./trigger-bylines";
