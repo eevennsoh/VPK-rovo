@@ -18,6 +18,8 @@ import CrossCircleIcon from "@atlaskit/icon/core/cross-circle";
 import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Input } from "@/components/ui/input";
+import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/mention-visual";
+import type { RichTextMentionVisual } from "@/components/ui-custom/rich-text-editor/types";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
 	DropdownMenu,

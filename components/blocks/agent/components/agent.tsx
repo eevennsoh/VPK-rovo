@@ -20,6 +20,7 @@ import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
 import ScorecardIcon from "@atlaskit/icon/core/scorecard";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import UploadIcon from "@atlaskit/icon/core/upload";
 import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
@@ -50,8 +51,11 @@ import { createAgentTriggerValue } from "@/components/blocks/triggers/data/trigg
 import { UNTITLED_SUBAGENT_NAME } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
 import {
+	EDITOR_PALETTE_KNOWLEDGE_APP_ITEMS,
 	EDITOR_PALETTE_MENTION_SOURCES,
 	getDirectoryMentionItemOrFallback,
+	getKnowledgeAppIdFromMentionId,
+	getToolIdFromMentionId,
 } from "@/components/blocks/editor-palette/data/mention-sources";
 import {
 	EditorPaletteSearchPicker,
@@ -106,6 +110,7 @@ import {
 	getRichTextMentionTagType,
 	isRichTextReferenceCategory,
 } from "@/components/ui-custom/rich-text-editor";
+import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import type {
 	WikiMemoryExplorerResponse,
@@ -294,6 +299,24 @@ const AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD: Record<AgentInlineSearchField, Edit
 	skills: "skill",
 	tools: "tool",
 };
+
+// Sentinel passed to onPickKnowledgeApp when the picker's leading "Upload
+// files" row is chosen (vs. a real app id).
+// Sentinel "app id" for the "Upload files" lead row in the Add knowledge
+// flyout. The config panel opens the directory's file browser instead of an
+// app content step when it receives this value.
+export const AGENT_KNOWLEDGE_UPLOAD_TARGET = "__upload__";
+
+// Sticky lead row above the knowledge app list, mirroring the directory's
+// upload drop zone. Selecting it opens the directory dialog's file browser.
+const AGENT_KNOWLEDGE_UPLOAD_ITEM: RichTextSuggestionMenuItem = {
+	id: `knowledge:${AGENT_KNOWLEDGE_UPLOAD_TARGET}`,
+	icon: <UploadIcon label="" size="small" />,
+	label: "Upload files",
+};
+const AGENT_KNOWLEDGE_UPLOAD_LEADING_ITEMS: readonly RichTextSuggestionMenuItem[] = [
+	AGENT_KNOWLEDGE_UPLOAD_ITEM,
+];
 
 function isAgentConfigReferenceListField(
 	field: AgentConfigListFieldName,
@@ -1229,6 +1252,7 @@ function AgentCompactDirectoryNavButton({
 	browseLabel,
 	onBrowse,
 	onAddSearchItem,
+	onPickTool,
 	onSelectItem,
 	screenAssistantTargetId,
 }: Readonly<{
@@ -1237,7 +1261,10 @@ function AgentCompactDirectoryNavButton({
 	items: readonly string[];
 	browseLabel: string;
 	onBrowse: () => void;
+	// Skills: picking a result adds it immediately. Tools: handled by
+	// `onPickTool` instead (opens the tools directory on that tool's detail).
 	onAddSearchItem?: (item: RichTextSuggestionMenuItem) => void;
+	onPickTool?: (toolId: string) => void;
 	onSelectItem?: (item: string) => void;
 	screenAssistantTargetId?: string;
 }>) {
@@ -1248,6 +1275,11 @@ function AgentCompactDirectoryNavButton({
 			{browseLabel}
 		</DropdownMenuItem>
 	);
+	// Tools open the directory dialog on the chosen tool's detail; skills add
+	// the picked result immediately.
+	const handlePickerSelect = directory === "tools"
+		? (onPickTool ? (picked: RichTextSuggestionMenuItem) => onPickTool(getToolIdFromMentionId(picked.id)) : undefined)
+		: onAddSearchItem;
 	const addSearchFlyout = (
 		<DropdownMenuSub>
 			<DropdownMenuSubTrigger>
@@ -1263,7 +1295,7 @@ function AgentCompactDirectoryNavButton({
 					autoFocus
 					category={AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD[directory]}
 					onBrowseAll={onBrowse}
-					onSelectItem={onAddSearchItem}
+					onSelectItem={handlePickerSelect}
 				/>
 			</DropdownMenuSubContent>
 		</DropdownMenuSub>
@@ -1497,12 +1529,7 @@ function AgentCompactEmptyConfigNav({
 								itemCount={getNonEmptyConfigItems(config?.knowledge).length}
 								items={getNonEmptyConfigItems(config?.knowledge)}
 								onBrowse={() => openAgentDirectoryOrAppendListItem("knowledge", "knowledge", onOpenDirectory, onAppendListItem)}
-								onAddSearchItem={(item) => {
-									if (item.disabled) {
-										return;
-									}
-									onAddListValues?.("knowledge", [item.label]);
-								}}
+								onPickKnowledgeApp={onOpenDirectory ? (appIdOrUpload) => onOpenDirectory("knowledge", appIdOrUpload) : undefined}
 								onSelectItem={onOpenDirectory ? (value) => onOpenDirectory("knowledge", value) : undefined}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
 							/>
@@ -1565,6 +1592,7 @@ function AgentCompactEmptyConfigNav({
 									}
 									onAddListValues?.(directory, [searchItem.label]);
 								}}
+								onPickTool={directory === "tools" && onOpenDirectory ? (toolId) => onOpenDirectory("tools", toolId) : undefined}
 								onBrowse={() => openAgentDirectoryOrAppendListItem(directory, directory, onOpenDirectory, onAppendListItem)}
 								onSelectItem={onOpenDirectory ? (value) => onOpenDirectory(directory, value) : undefined}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:${item.agentFieldName}` : undefined}
@@ -2694,16 +2722,18 @@ function AgentKnowledgeNavMenuContent({
 	onValueChange,
 	items,
 	onBrowse,
-	onAddSearchItem,
+	onPickKnowledgeApp,
 	onSelectItem,
 }: Readonly<{
 	value: KnowledgeModeValue;
 	onValueChange: (next: KnowledgeModeValue) => void;
 	items: readonly string[];
 	onBrowse?: () => void;
-	// "Add knowledge" opens a nested knowledge-only search flyout (mirroring
-	// "Add trigger ›"); picking a result adds it via this callback.
-	onAddSearchItem?: (item: RichTextSuggestionMenuItem) => void;
+	// "Add knowledge" opens a nested flyout whose rows are the knowledge apps
+	// (plus an "Upload files" lead row), mirroring the directory grid. Picking a
+	// row opens the directory dialog on that app's content step rather than
+	// adding immediately; `__upload__` opens the file browser.
+	onPickKnowledgeApp?: (appIdOrUpload: string) => void;
 	onSelectItem?: (item: string) => void;
 }>) {
 	const isCustom = value === "custom";
@@ -2770,8 +2800,12 @@ function AgentKnowledgeNavMenuContent({
 								<EditorPaletteSearchPicker
 									autoFocus
 									category="knowledge"
+									items={EDITOR_PALETTE_KNOWLEDGE_APP_ITEMS}
+									leadingItems={AGENT_KNOWLEDGE_UPLOAD_LEADING_ITEMS}
 									onBrowseAll={onBrowse}
-									onSelectItem={onAddSearchItem}
+									onSelectItem={onPickKnowledgeApp
+										? (item) => onPickKnowledgeApp(getKnowledgeAppIdFromMentionId(item.id))
+										: undefined}
 								/>
 							</DropdownMenuSubContent>
 						</DropdownMenuSub>
@@ -2804,7 +2838,8 @@ interface AgentKnowledgeSelectorProps {
 	// handlers surfaced inside the dropdown when "Custom" is active.
 	items?: readonly string[];
 	onBrowse?: () => void;
-	onAddSearchItem?: (item: RichTextSuggestionMenuItem) => void;
+	// Picking an app row (or "Upload files") in the "Add knowledge" flyout.
+	onPickKnowledgeApp?: (appIdOrUpload: string) => void;
 	onSelectItem?: (item: string) => void;
 	screenAssistantTargetId?: string;
 }
@@ -2816,7 +2851,7 @@ function AgentKnowledgeSelector({
 	itemCount = 0,
 	items = [],
 	onBrowse,
-	onAddSearchItem,
+	onPickKnowledgeApp,
 	onSelectItem,
 	screenAssistantTargetId,
 }: Readonly<AgentKnowledgeSelectorProps>) {
@@ -2843,7 +2878,7 @@ function AgentKnowledgeSelector({
 					onValueChange={onValueChange}
 					items={items}
 					onBrowse={onBrowse}
-					onAddSearchItem={onAddSearchItem}
+					onPickKnowledgeApp={onPickKnowledgeApp}
 					onSelectItem={onSelectItem}
 				/>
 			</MenubarMenu>

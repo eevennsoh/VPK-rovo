@@ -124,6 +124,9 @@ export function RovoAppAgentConfigPanel({
 	// Tool to focus when the tools directory opens (e.g. clicking a tool chip).
 	// Cleared on close so a plain "Add" opens at the directory list instead.
 	const [directorySelectedToolId, setDirectorySelectedToolId] = useState<string | null>(null);
+	// App to open the knowledge directory on (e.g. picking an app in the "Add
+	// knowledge" flyout). Cleared on close so "Browse knowledge" opens the grid.
+	const [directoryKnowledgeAppId, setDirectoryKnowledgeAppId] = useState<string | null>(null);
 	const [directorySkillIds, setDirectorySkillIds] = useState<readonly string[]>([]);
 	const [isManageSubagentsOpen, setIsManageSubagentsOpen] = useState(false);
 
@@ -305,16 +308,27 @@ export function RovoAppAgentConfigPanel({
 		[updateActiveConfig],
 	);
 	const handleOpenDirectory = useCallback((directory: AgentDirectoryKind, selectedItem?: string) => {
-		if (directory === "tools" && selectedItem) {
-			// Chips carry tool names; resolve to the directory's tool id so the
-			// dialog can open directly on that tool's detail view.
-			const normalized = selectedItem.trim().toLowerCase();
-			const matchedTool = [...DEMO_TOOLS, ...DEMO_SESSION_TOOLS].find(
-				(tool) => tool.name.trim().toLowerCase() === normalized,
+		if (directory === "tools") {
+			if (selectedItem) {
+				// The "Add tools" picker passes a tool id; tool chips pass a tool
+				// name. Resolve either to the directory's tool id so the dialog can
+				// open directly on that tool's detail view.
+				const normalized = selectedItem.trim().toLowerCase();
+				const allTools = [...DEMO_TOOLS, ...DEMO_SESSION_TOOLS];
+				const matchedTool =
+					allTools.find((tool) => tool.id === selectedItem) ??
+					allTools.find((tool) => tool.name.trim().toLowerCase() === normalized);
+				setDirectorySelectedToolId(matchedTool?.id ?? null);
+			} else {
+				setDirectorySelectedToolId(null);
+			}
+		} else if (directory === "knowledge") {
+			// The "Add knowledge" picker passes an app id (open that app's content
+			// step) or the upload sentinel (open the file browser). "Browse
+			// knowledge" passes nothing → open the app grid.
+			setDirectoryKnowledgeAppId(
+				selectedItem && selectedItem !== AGENT_KNOWLEDGE_UPLOAD_TARGET ? selectedItem : null,
 			);
-			setDirectorySelectedToolId(matchedTool?.id ?? null);
-		} else if (directory === "tools") {
-			setDirectorySelectedToolId(null);
 		}
 		setActiveDirectory(directory);
 	}, []);
