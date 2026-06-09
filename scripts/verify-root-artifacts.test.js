@@ -8,11 +8,16 @@ test("blocks known extensionless agent-browser screenshot filenames", () => {
 		"--full-page",
 		"--out",
 		"--output",
+		"--path",
+		"--wait",
+		"output/agent-browser/--path",
 		"components/example.png",
 	]), [
 		"--full-page",
 		"--out",
 		"--output",
+		"--path",
+		"--wait",
 	]);
 });
 
