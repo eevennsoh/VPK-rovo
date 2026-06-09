@@ -11,6 +11,7 @@ import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
 import { cn } from "@/lib/utils";
 
 import {
+	EntityCardByline,
 	EntityCardDescription,
 	EntityCardFooter,
 	EntityCardHeader,
@@ -111,7 +112,6 @@ export function EntityCardSkill({
 	iconVariant = "gray",
 	iconMeta,
 	publisher,
-	publisherLogo,
 	source,
 	description,
 	starCount,
@@ -161,10 +161,11 @@ export function EntityCardSkill({
 						<EntityCardMoreButton label={`More actions for ${name}`} onClick={onMoreActions} />
 					) : null)
 				}
+				byline={publisher ? <EntityCardByline publisher={publisher} /> : undefined}
 				leading={
 					icon ? (
 						iconTile ? (
-							<IconTile aria-hidden icon={icon} label={name} size="small" variant={iconVariant} />
+							<IconTile aria-hidden icon={icon} label={name} size="medium" variant={iconVariant} />
 						) : (
 							<span aria-hidden className="inline-flex size-4 items-center justify-center [&_svg]:size-4">
 								{icon}
@@ -179,37 +180,26 @@ export function EntityCardSkill({
 				{description ?? `Learn how ${name} can help your team work faster.`}
 			</EntityCardDescription>
 
-			{publisher || showStars || showViews ? (
-				<EntityCardFooter className="justify-between">
-					{publisher ? (
-						<span className="inline-flex min-w-0 items-center gap-1 text-text-subtle">
-							{publisherLogo ?? null}
-							<span className="truncate">{publisher}</span>
-						</span>
-					) : null}
-					{showStars || showViews ? (
-						<span
-							className={cn(
-								"inline-flex shrink-0 items-center gap-4",
-								revealStatsOnHover &&
-									"opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
-							)}
+			{showStars || showViews ? (
+				<EntityCardFooter
+					className={cn(
+						revealStatsOnHover &&
+							"opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
+					)}
+				>
+					{showStars ? (
+						<EntityCardStat
+							icon={<StarUnstarredIcon label="" size="small" spacing="none" color="currentColor" />}
 						>
-							{showStars ? (
-								<EntityCardStat
-									icon={<StarUnstarredIcon label="" size="small" spacing="none" color="currentColor" />}
-								>
-									{formatCompact(starCount)}
-								</EntityCardStat>
-							) : null}
-							{showViews ? (
-								<EntityCardStat
-									icon={<EyeOpenIcon label="" size="small" spacing="none" color="currentColor" />}
-								>
-									{formatCompact(viewCount)}
-								</EntityCardStat>
-							) : null}
-						</span>
+							{formatCompact(starCount)}
+						</EntityCardStat>
+					) : null}
+					{showViews ? (
+						<EntityCardStat
+							icon={<EyeOpenIcon label="" size="small" spacing="none" color="currentColor" />}
+						>
+							{formatCompact(viewCount)}
+						</EntityCardStat>
 					) : null}
 				</EntityCardFooter>
 			) : null}

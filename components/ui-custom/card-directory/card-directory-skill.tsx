@@ -8,7 +8,7 @@ export interface CardDirectorySkillProps extends EntityCardSkillProps {
 	onSelect?: () => void;
 }
 
-/** Skill directory card shell adapter — icon tile, publisher attribution, and usage stats. */
+/** Skill directory card shell adapter — icon tile, byline attribution, and usage stats. */
 export function CardDirectorySkill({
 	className,
 	name,

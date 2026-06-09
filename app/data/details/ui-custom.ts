@@ -424,33 +424,19 @@ import { SidebarNavItem, SidebarNavItemAction, SidebarNavItemCount } from "@/com
 
 	"entity-card": {
 		description:
-			"Shared entity-card visual system for skills, tools, agents, templates, knowledge, and object tiles. Compose it inside CardDirectory for embedded grids or inside HoverCardContent for hover previews.",
-		usage: `import { Button } from "@/components/ui/button"
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
-import { EntityCard } from "@/components/ui-custom/entity-card"
+			"Shared entity-card visual system for skills, tools, agents, templates, knowledge, and object tiles. Use CardDirectory adapters for embedded grids, or compose EntityCard variants directly inside HoverCardContent for hover previews.",
+		usage: `import { CardDirectorySkill } from "@/components/ui-custom/card-directory"
 import PageIcon from "@atlaskit/icon/core/page"
 
-<HoverCard>
-  <HoverCardTrigger render={<Button variant="outline" />}>
-    Hover to preview
-  </HoverCardTrigger>
-  <HoverCardContent className="w-80 rounded-md bg-surface-overlay p-4 shadow-2xl">
-    <EntityCard.Skill
-      density="preview"
-      name="Create Google Drive document"
-      description="Create, name, and store a document in the right folder."
-      iconMeta={{ render: <PageIcon label="" size="small" />, label: "Document" }}
-      source={{ type: "app", name: "Google Drive", logoSrc: "/3p/google-drive/16.svg" }}
-    />
-  </HoverCardContent>
-</HoverCard>`,
+<CardDirectorySkill
+  name="Create page"
+  description="Create a new formatted, rich text document or page in Confluence."
+  icon={<PageIcon label="" />}
+  iconVariant="blue"
+  publisher="Atlassian"
+  viewCount={6273}
+/>`,
 		props: [
-			{
-				name: "density",
-				type: '"directory" | "preview" | "compact"',
-				default: '"directory"',
-				description: "Visual sizing mode for embedded directories, hover previews, or compact object/list rows.",
-			},
 			{
 				name: "name",
 				type: "string",
@@ -464,19 +450,36 @@ import PageIcon from "@atlaskit/icon/core/page"
 					"Optional secondary text. Variant-specific layouts clamp or wrap this text.",
 			},
 			{
-				name: "iconMeta",
-				type: "{ render: ReactElement; label: string; className?: string }",
+				name: "onSelect",
+				type: "() => void",
 				description:
-					"Optional icon descriptor used by skill and related entity variants.",
+					"Optional whole-card selection handler owned by the CardDirectory shell.",
 			},
 			{
-				name: "source",
-				type: '{ type: "app"; name: string; logoSrc?: string } | { type: "custom"; name: string; avatarSrc?: string; fallbackInitials?: string }',
+				name: "density",
+				type: '"directory" | "preview" | "compact"',
+				default: '"directory"',
 				description:
-					"Optional attribution row shown by variants that support ownership/source metadata.",
+					"Visual sizing mode available on low-level EntityCard variants when composing outside CardDirectory.",
 			},
 		],
 		subComponents: [
+			{
+				name: "CardDirectorySkill",
+				description: "Directory shell adapter for skill cards.",
+			},
+			{
+				name: "CardDirectoryTool",
+				description: "Directory shell adapter for tool cards.",
+			},
+			{
+				name: "CardDirectoryAgent",
+				description: "Directory shell adapter for agent cards.",
+			},
+			{
+				name: "CardDirectoryKnowledge",
+				description: "Directory shell adapter for knowledge app cards.",
+			},
 			{
 				name: "EntityCard.Skill",
 				description: "Skill entity visual for directory cards and hover previews.",
@@ -507,21 +510,26 @@ import PageIcon from "@atlaskit/icon/core/page"
 			},
 		],
 		examples: [
-			{ title: "Skill preview", demoSlug: "entity-card-demo-default" },
+			{ title: "Directory cards", demoSlug: "entity-card-demo-default" },
 			{
-				title: "App source",
-				description: "Attribution row with app logo and name.",
-				demoSlug: "entity-card-demo-app-source",
+				title: "Skills",
+				description: "Skill cards through the CardDirectorySkill adapter.",
+				demoSlug: "entity-card-demo-skills",
 			},
 			{
-				title: "Custom source",
-				description: "Attribution row with user avatar and name.",
-				demoSlug: "entity-card-demo-custom-source",
+				title: "Tools",
+				description: "Tool cards through the CardDirectoryTool adapter.",
+				demoSlug: "entity-card-demo-tools",
 			},
 			{
-				title: "No description",
-				description: "Compact content with title and source only.",
-				demoSlug: "entity-card-demo-no-description",
+				title: "Agents",
+				description: "Agent cards through the CardDirectoryAgent adapter.",
+				demoSlug: "entity-card-demo-agents",
+			},
+			{
+				title: "Knowledge",
+				description: "Knowledge app cards through the CardDirectoryKnowledge adapter.",
+				demoSlug: "entity-card-demo-knowledge",
 			},
 		],
 	},
@@ -625,12 +633,13 @@ import SearchIcon from "@atlaskit/icon/core/search"
 
 	"card-directory": {
 		description:
-			"A directory listing card with a shared shell (bordered surface, hover elevation, optional keyboard-operable button) and five ready-made variants that swap the leading visual and footer: agent (hexagon avatar + rating/chats), agent (expanded) (cover banner + \"Works with\" sources, \"Skills\" tags, a scrollable feature list, and a metadata + collaborator-avatar footer), skill (icon tile + publisher + views), tool (app logo + tool/teammate counts), and template (rich icon + \"Works with\" sources and \"Skills\" tags). Compose your own layout with the CardDirectory parts, or use a variant wrapper. Passing onSelect turns the card into a keyboard-operable button; onMoreActions reveals an overflow button on hover/focus.",
+			"A directory listing card with a shared shell (bordered surface, hover elevation, optional keyboard-operable button) and six ready-made variants that swap the leading visual and footer: agent (hexagon avatar + rating/chats), agent (expanded) (cover banner + \"Works with\" sources, \"Skills\" tags, a scrollable feature list, and a metadata + collaborator-avatar footer), skill (icon tile + publisher + views), tool (app logo + tool/teammate counts), knowledge (app identity + provider metadata), and template (rich icon + \"Works with\" sources and \"Skills\" tags). Compose your own layout with the CardDirectory parts, or use a variant wrapper. Passing onSelect turns the card into a keyboard-operable button; onMoreActions reveals an overflow button on hover/focus.",
 		usage: `import {
   CardDirectoryAgent,
   CardDirectoryAgentExpanded,
   CardDirectorySkill,
   CardDirectoryTool,
+  CardDirectoryKnowledge,
   CardDirectoryTemplate,
 } from "@/components/ui-custom/card-directory";
 import PageIcon from "@atlaskit/icon/core/page";
@@ -683,13 +692,12 @@ import { ConfluenceLogo } from "@/components/ui/logo";
   onMoreActions={() => openMenu()}
 />
 
-// Skill — icon tile + publisher logo + star/view counts
+// Skill — icon tile + byline attribution + star/view counts
 <CardDirectorySkill
   name="Create page"
   icon={<PageIcon label="" />}
   iconVariant="blue"
   publisher="Atlassian"
-  publisherLogo={<ConfluenceLogo size="xsmall" />}
   description="Create a new formatted page in Confluence."
   starCount={38}
   viewCount={6273}
@@ -704,6 +712,15 @@ import { ConfluenceLogo } from "@/components/ui/logo";
   toolCount={36}
   teammateCount={258}
   onSelect={() => openApp()}
+/>
+
+// Knowledge — app identity, description, and provider metadata
+<CardDirectoryKnowledge
+  name="Google Drive"
+  description="Bring in documents, folders, and shared files from Drive."
+  providerName="Google"
+  icon={<img alt="" aria-hidden src="/3p/google-drive/20.svg" />}
+  onSelect={() => selectKnowledgeApp()}
 />
 
 // Template — rich icon + "Works with" sources and "Skills" tags
