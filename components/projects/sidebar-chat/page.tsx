@@ -66,6 +66,7 @@ import { ChatHistoryDrawer } from "./components/chat-history-drawer";
 import ChatGreeting from "./components/chat-greeting";
 import ChatComposer from "./components/chat-composer";
 import MessageBubble from "./components/message-bubble";
+import { AgentActivityTimeline } from "./components/agent-activity-timeline";
 import { ArtifactResultCard, type ArtifactResult } from "./components/artifact-result-card";
 import { AgentResultCard, isGeneratedAgentResult } from "./components/agent-result-card";
 import { StreamingThinkingIndicator } from "./components/streaming-thinking-indicator";
@@ -263,6 +264,7 @@ export default function ChatPanel({
 		selectedAgent,
 		selectableAgents,
 		selectAgent,
+		getSessionAgentEntry,
 		isCustomAgentSelected,
 		activePrompt,
 		isHistoryOpen,
@@ -1152,9 +1154,15 @@ export default function ChatPanel({
 						</TabsContent>
 						<TabsContent value="activity" className="min-h-0 flex-1 overflow-y-auto px-4 py-5 data-[hidden]:hidden">
 							{customAgentTabs?.activity ?? (
-								<CustomAgentTabEmptyState
-									title="No activity yet"
-									description={`${selectedAgent.name} has not recorded activity in this view yet.`}
+								<AgentActivityTimeline
+									entry={getSessionAgentEntry(selectedAgent.id)}
+									messages={rawUiMessages}
+									emptyState={
+										<CustomAgentTabEmptyState
+											title="No activity yet"
+											description={`${selectedAgent.name} has not recorded activity in this view yet.`}
+										/>
+									}
 								/>
 							)}
 						</TabsContent>
