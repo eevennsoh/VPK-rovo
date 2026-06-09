@@ -6882,6 +6882,7 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
   "chat-configuration": dynamic(() => import("./demos/blocks/shared-ui-demo"), {
     ssr: false,
   }),
+  memory: dynamic(() => import("./demos/blocks/memory-demo"), { ssr: false }),
   "settings-dialog": dynamic(
     () => import("./demos/blocks/settings-dialog-demo"),
     { ssr: false },
