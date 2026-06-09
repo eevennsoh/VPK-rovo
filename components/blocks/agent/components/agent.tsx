@@ -1295,6 +1295,7 @@ function AgentCompactDirectoryNavButton({
 				<EditorPaletteSearchPicker
 					autoFocus
 					category={AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD[directory]}
+					className="rich-text-command-menu-borderless"
 					onBrowseAll={onBrowse}
 					onSelectItem={handlePickerSelect}
 				/>
@@ -1947,6 +1948,7 @@ function AgentInlineReferenceSearchPicker({
 		<EditorPaletteSearchPicker
 			autoFocus
 			category={AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD[field]}
+			className="rich-text-command-menu-borderless"
 			onBrowseAll={onBrowseAll}
 			onSelectItem={onSelectItem}
 		/>
@@ -2814,6 +2816,7 @@ function AgentKnowledgeNavMenuContent({
 								<EditorPaletteSearchPicker
 									autoFocus
 									category="knowledge"
+									className="rich-text-command-menu-borderless"
 									items={EDITOR_PALETTE_KNOWLEDGE_APP_ITEMS}
 									leadingItems={AGENT_KNOWLEDGE_UPLOAD_LEADING_ITEMS}
 									onBrowseAll={onBrowse}

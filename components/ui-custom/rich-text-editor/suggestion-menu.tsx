@@ -779,7 +779,6 @@ function RichTextSuggestionMenuInputOption({
 			</span>
 			<Input
 				variant="subtle"
-				isCompact
 				aria-label={item.label}
 				placeholder={item.label}
 				disabled={item.disabled}

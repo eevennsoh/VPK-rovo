@@ -130,7 +130,7 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 	assert.match(AGENT_SOURCE, /<AgentKnowledgeRow[\s\S]*value=\{knowledgeMode\}/u);
 	assert.match(AGENT_SOURCE, /<AgentKnowledgeOverflowMenu[\s\S]*value=\{knowledgeMode\}/u);
 	assert.match(AGENT_SOURCE, /const isCustom = value === "custom";/u);
-	assert.match(AGENT_SOURCE, /<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category="knowledge"[\s\S]*items=\{EDITOR_PALETTE_KNOWLEDGE_APP_ITEMS\}[\s\S]*leadingItems=\{AGENT_KNOWLEDGE_UPLOAD_LEADING_ITEMS\}[\s\S]*onBrowseAll=\{onBrowse\}/u);
+	assert.match(AGENT_SOURCE, /<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category="knowledge"[\s\S]*className="rich-text-command-menu-borderless"[\s\S]*items=\{EDITOR_PALETTE_KNOWLEDGE_APP_ITEMS\}[\s\S]*leadingItems=\{AGENT_KNOWLEDGE_UPLOAD_LEADING_ITEMS\}[\s\S]*onBrowseAll=\{onBrowse\}/u);
 	assert.match(AGENT_SOURCE, /onPickKnowledgeApp\(getKnowledgeAppIdFromMentionId\(item\.id\)\)/u);
 	assert.match(AGENT_SOURCE, /import BookOpenIcon from "@atlaskit\/icon-lab\/core\/book-open";/u);
 	assert.match(AGENT_SOURCE, /render=\{<LozengeDropdownTrigger aria-label="Knowledge mode" icon=\{<BookOpenIcon label="" size="small" \/>\} \/>\}/u);
@@ -435,7 +435,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /label="Skills"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("skills", "skills", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Tools"\s+onAdd=\{\(\) => openInlineSearchPicker\("tools"\)\}/u);
 	assert.match(AGENT_SOURCE, /inlinePicker=\{inlineSearchField === "tools" \? \([\s\S]*<AgentInlineReferenceSearchPicker[\s\S]*field="tools"[\s\S]*onBrowseAll=\{\(\) => browseInlineSearchPicker\("tools"\)\}[\s\S]*onSelectItem=\{\(item\) => selectInlineSearchItem\("tools", item\)\}/u);
-	assert.match(AGENT_SOURCE, /function AgentInlineReferenceSearchPicker\([\s\S]*<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category=\{AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD\[field\]\}[\s\S]*onBrowseAll=\{onBrowseAll\}[\s\S]*onSelectItem=\{onSelectItem\}/u);
+	assert.match(AGENT_SOURCE, /function AgentInlineReferenceSearchPicker\([\s\S]*<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category=\{AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD\[field\]\}[\s\S]*className="rich-text-command-menu-borderless"[\s\S]*onBrowseAll=\{onBrowseAll\}[\s\S]*onSelectItem=\{onSelectItem\}/u);
 	assert.match(AGENT_SOURCE, /const \[inlineSearchField, setInlineSearchField\] = useState<AgentInlineSearchField \| null>\(null\);/u);
 	assert.match(AGENT_SOURCE, /const openInlineSearchPicker = \(field: AgentInlineSearchField\) => \{[\s\S]*if \(!onAddListValues\) \{[\s\S]*openAgentDirectoryOrAppendListItem\(field, field, onOpenDirectory, onAppendListItem\);[\s\S]*setInlineSearchField\(\(current\) => current === field \? null : field\);/u);
 	assert.match(AGENT_SOURCE, /const browseInlineSearchPicker = \(field: AgentInlineSearchField\) => \{[\s\S]*setInlineSearchField\(null\);[\s\S]*openAgentDirectoryOrAppendListItem\(field, field, onOpenDirectory, onAppendListItem\);/u);
@@ -626,7 +626,7 @@ test("Agent compact directory dropdowns keep persistent add and browse footers",
 	assert.match(AGENT_SOURCE, /directory: AgentInlineSearchField;/u);
 	assert.match(AGENT_SOURCE, /onAddSearchItem\?: \(item: RichTextSuggestionMenuItem\) => void;/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactDirectoryNavButton[\s\S]*<MenubarContent align="start" className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}>[\s\S]*<div className="min-h-0 flex-1 overflow-y-auto">[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*\{addSearchFlyout\}[\s\S]*\{browseItem\}/u);
-	assert.match(AGENT_SOURCE, /const addSearchFlyout = \([\s\S]*<DropdownMenuSub>[\s\S]*<DropdownMenuSubTrigger>[\s\S]*\{addLabel\}[\s\S]*<DropdownMenuSubContent className="w-auto min-w-0 overflow-visible border-0 bg-transparent p-0 shadow-none">[\s\S]*<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category=\{AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD\[directory\]\}[\s\S]*onBrowseAll=\{onBrowse\}[\s\S]*onSelectItem=\{handlePickerSelect\}/u);
+	assert.match(AGENT_SOURCE, /const addSearchFlyout = \([\s\S]*<DropdownMenuSub>[\s\S]*<DropdownMenuSubTrigger>[\s\S]*\{addLabel\}[\s\S]*<DropdownMenuSubContent className="w-auto min-w-0 overflow-visible border-0 bg-transparent p-0 shadow-none">[\s\S]*<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category=\{AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD\[directory\]\}[\s\S]*className="rich-text-command-menu-borderless"[\s\S]*onBrowseAll=\{onBrowse\}[\s\S]*onSelectItem=\{handlePickerSelect\}/u);
 	assert.match(AGENT_SOURCE, /onAddSearchItem=\{\(searchItem\) => \{[\s\S]*if \(searchItem\.disabled\) \{[\s\S]*return;[\s\S]*onAddListValues\?\.\(directory, \[searchItem\.label\]\);[\s\S]*\}\}/u);
 	assert.match(AGENT_SOURCE, /browseLabel=\{`Browse \$\{item\.label\.toLowerCase\(\)\}`\}[\s\S]*onBrowse=\{\(\) => openAgentDirectoryOrAppendListItem\(directory, directory, onOpenDirectory, onAppendListItem\)\}/u);
 });
@@ -731,7 +731,7 @@ test("Shared Tiptap placeholder stays aligned with the editable paragraph", () =
 	assert.match(RICH_TEXT_EDITOR_CSS, /content: var\(--rich-text-placeholder\);/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /float: left;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /height: 0;/u);
-	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /position:\s*absolute/u);
+	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-editor-content\[data-empty="true"\] \.tiptap-editor > p:first-child::before \{[^}]*position:\s*absolute/u);
 });
 
 test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", () => {
@@ -980,6 +980,7 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const listItems = inputItem \? items\.slice\(1\) : items;/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /\{inputItem \? \([\s\S]*<RichTextSuggestionMenuInputOption[\s\S]*item=\{inputItem\}[\s\S]*\) : null\}[\s\S]*<div[\s\S]*className="rich-text-command-menu-list"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const showClearButton = Boolean\(onInputClear && inputValue\);/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /<Input[\s\S]*variant="subtle"[\s\S]*isCompact/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /<Button[\s\S]*aria-label="Clear search"[\s\S]*className="rich-text-command-menu-input-clear text-icon-subtle"[\s\S]*shape="circle"[\s\S]*size="icon-compact"[\s\S]*variant="ghost"[\s\S]*<CrossCircleIcon label="" size="small" \/>/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const itemIndex = inputItem \? index \+ 1 : index;/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /isSelected=\{itemIndex === selectedIndex\}/u);
@@ -995,6 +996,7 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /black calc\(100% - var\(--rich-text-command-menu-scroll-mask-fade-size\)\), transparent 100%/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-first-item-input="true"\] \.rich-text-command-menu-list \{\s*padding-top: 0;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-input \{[\s\S]*margin: 0;[\s\S]*width: 100%;/u);
+	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /rich-text-command-menu-search-picker/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-input-clear \{\s*justify-self: end;\s*\}/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-label \{[\s\S]*color: var\(--ds-text-subtle, #44546f\);/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*border-bottom/u);
@@ -1002,7 +1004,7 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	// `[^}]*?` keeps this scoped to the nested item rule's own block so it can't
 	// leak into a later rule (flat / non-nested rows carry 6px vertical padding).
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \.rich-text-command-menu-list \.rich-text-command-menu-item \{[^}]*?padding-top: 6px;/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item \{[\s\S]*padding: 0 6px 0 8px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item \{[\s\S]*padding: 0 8px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-nested-copy \{\s*height: 34px;\s*justify-content: center;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-nested-copy-revealable \{\s*justify-content: flex-start;/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item:hover \.rich-text-command-menu-description/u);
