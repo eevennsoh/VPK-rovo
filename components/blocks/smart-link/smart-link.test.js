@@ -9,6 +9,8 @@ const DATA_SOURCE = fs.readFileSync(path.join(DIR, "data", "demo-smart-links.tsx
 const PAGE_SOURCE = fs.readFileSync(path.join(DIR, "page.tsx"), "utf8");
 const INDEX_SOURCE = fs.readFileSync(path.join(DIR, "index.ts"), "utf8");
 const COMPONENTS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app", "data", "components.ts"), "utf8");
+const COMPONENT_MANIFEST_SOURCE = fs.readFileSync(path.join(process.cwd(), "app", "data", "component-manifest.ts"), "utf8");
+const NAV_ADS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app", "data", "nav-ads.ts"), "utf8");
 const BLOCK_DETAILS_SOURCE = fs.readFileSync(path.join(process.cwd(), "app", "data", "details", "blocks.ts"), "utf8");
 const REGISTRY_SOURCE = fs.readFileSync(path.join(process.cwd(), "components", "website", "registry.ts"), "utf8");
 
@@ -40,6 +42,8 @@ test("demo data covers every required production variant", () => {
 
 test("catalog details and registry expose smart-link demos", () => {
 	assert.match(COMPONENTS_SOURCE, /blockComponent\("smart-link", "Smart Link"\)/u);
+	assert.match(COMPONENT_MANIFEST_SOURCE, /blockComponent\("smart-link", "Smart Link"\)/u);
+	assert.match(NAV_ADS_SOURCE, /"smart-link"/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /"smart-link": \{/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-rich/u);
 	assert.match(BLOCK_DETAILS_SOURCE, /smart-link-demo-article/u);
