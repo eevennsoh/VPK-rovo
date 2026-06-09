@@ -8,6 +8,7 @@ import {
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
 	AgentContent,
+	toggleAgentConfigDisabledItem,
 } from "@/components/blocks/agent";
 import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
 import { useSubagentsNavigatorTop } from "@/components/projects/studio/hooks/use-subagents-navigator-top";
@@ -186,6 +187,13 @@ export default function Subagents({
 		}));
 	}
 
+	function handleToggleListItem(field: AgentConfigListFieldName, index: number, enabled: boolean) {
+		updateActivePromptConfig((config) => {
+			const label = getListItems(config, field)[index];
+			return label ? toggleAgentConfigDisabledItem(config, field, label, enabled) : config;
+		});
+	}
+
 	function handleAppendListItem(field: AgentConfigListFieldName) {
 		if (field === "subagents") {
 			handleCreateSubagent();
@@ -285,6 +293,7 @@ export default function Subagents({
 							onManageSubagents={() => setIsManageSubagentsOpen(true)}
 							onProfileTextChange={handleBaseTextChange}
 							onRemoveListItem={handleRemoveListItem}
+							onToggleListItem={handleToggleListItem}
 							onSelectListItem={handleSelectConfigListItem}
 							onTextChange={handleActiveTextChange}
 							profileAvatarSrc={baseAgent.avatarSrc}

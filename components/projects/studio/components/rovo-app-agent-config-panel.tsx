@@ -41,6 +41,7 @@ import {
 	type AgentDirectoryKind,
 	AgentHeader,
 	AgentMoreOptionsMenu,
+	toggleAgentConfigDisabledItem,
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
 	type AgentHideableConfigField,
@@ -227,6 +228,16 @@ export function RovoAppAgentConfigPanel({
 			}));
 		},
 		[isSubagentActive, removeSubagentByDerivedIndex, updateActiveConfig],
+	);
+
+	const toggleListItem = useCallback(
+		(field: AgentConfigListFieldName, index: number, enabled: boolean) => {
+			updateActiveConfig((config) => {
+				const label = getListItems(config, field)[index];
+				return label ? toggleAgentConfigDisabledItem(config, field, label, enabled) : config;
+			});
+		},
+		[updateActiveConfig],
 	);
 
 	const appendListItem = useCallback(
@@ -643,6 +654,7 @@ export function RovoAppAgentConfigPanel({
 											onProfileTextChange={handleBaseTextChange}
 											onListItemChange={updateListItem}
 											onRemoveListItem={removeListItem}
+											onToggleListItem={toggleListItem}
 											onAddListValues={appendListValues}
 											onAppendListItem={appendListItem}
 											onConnectTrigger={handleConnectTrigger}

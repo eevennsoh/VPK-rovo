@@ -5114,13 +5114,15 @@ import SearchIcon from "@atlaskit/icon/core/search";
 
   "icon-tile": {
     description:
-      "A colored tile that wraps an icon, used for feature lists, navigation items, or visual indicators. Supports 20 color variants (10 subtle + 10 bold), 5 sizes, and square or circle shapes.",
+      "A tile that wraps an icon, used for feature lists, navigation items, or visual indicators. Supports transparent, 20 color variants (10 subtle + 10 bold), 6 sizes, and square or circle shapes.",
     adsUrl: "https://atlassian.design/components/icon/icon-tile",
     usage: `import { IconTile } from "@/components/ui/icon-tile";
+import { Icon } from "@/components/ui/icon";
 import SearchIcon from "@atlaskit/icon/core/search";
 
-<IconTile icon={<SearchIcon label="" />} label="Search" variant="blue" />
-<IconTile icon={<SearchIcon label="" />} label="Search" variant="blueBold" size="large" shape="circle" />`,
+<IconTile icon={<Icon aria-hidden render={<SearchIcon label="" />} />} label="Search" variant="blue" />
+<IconTile icon={<Icon aria-hidden render={<SearchIcon label="" />} />} label="Search" variant="transparent" size="xxsmall" />
+<IconTile icon={<Icon aria-hidden render={<SearchIcon label="" />} />} label="Search" variant="blueBold" size="large" shape="circle" />`,
     props: [
       {
         name: "icon",
@@ -5136,14 +5138,14 @@ import SearchIcon from "@atlaskit/icon/core/search";
       },
       {
         name: "variant",
-        type: '"gray" | "blue" | "teal" | "green" | "lime" | "yellow" | "orange" | "red" | "magenta" | "purple" | "grayBold" | "blueBold" | ... (20 total)',
+        type: '"transparent" | "gray" | "blue" | "teal" | "green" | "lime" | "yellow" | "orange" | "red" | "magenta" | "purple" | "grayBold" | "blueBold" | ... (21 total)',
         default: '"gray"',
         description:
-          "Color variant of the tile. Subtle variants use light background with colored icon; bold variants use solid background with white icon.",
+          "Visual variant of the tile. Transparent keeps only the sizing box; subtle variants use light background with colored icon; bold variants use solid background with white icon.",
       },
       {
         name: "size",
-        type: '"xsmall" | "small" | "medium" | "large" | "xlarge"',
+        type: '"xxsmall" | "xsmall" | "small" | "medium" | "large" | "xlarge"',
         default: '"medium"',
         description: "Size of the tile.",
       },
@@ -5158,8 +5160,13 @@ import SearchIcon from "@atlaskit/icon/core/search";
       { title: "Default", demoSlug: "icon-tile-demo-default" },
       {
         title: "Sizes",
-        description: "All five tile sizes from xsmall to xlarge.",
+        description: "All six tile sizes from xxsmall to xlarge.",
         demoSlug: "icon-tile-demo-sizes",
+      },
+      {
+        title: "Transparent",
+        description: "Backgroundless tiles that preserve the same size and child-size contract.",
+        demoSlug: "icon-tile-demo-transparent",
       },
       {
         title: "Variants",

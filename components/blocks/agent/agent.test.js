@@ -789,10 +789,14 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /"format"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ RovoColorIcon \} from "@\/components\/ui\/logo";/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const ASK_ROVO_SLASH_ITEM: RichTextSuggestionMenuItem = \{[\s\S]*id: "ask-rovo",[\s\S]*isSticky: true,[\s\S]*label: "Ask Rovo",/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const ASK_ROVO_SLASH_ITEM: RichTextSuggestionMenuItem = \{[\s\S]*id: "ask-rovo",[\s\S]*label: "Ask Rovo",/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /includeFormat = true/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /return \[\s*ASK_ROVO_SLASH_ITEM,[\s\S]*\.\.\.getSlashCategoryOrder\(includeFormat\)\.map/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.id === ASK_ROVO_SLASH_ITEM\.id[\s\S]*currentProps\.command\(\{ type: "ask-rovo", onAskRovo \}\)/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /return \[\s*ASK_ROVO_SLASH_ITEM,[\s\S]*\.\.\.getSlashCategoryOrder\(includeFormat\)\.map/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /buildFlatSurfaceRows\(getFlatSections\(\), query, expandedSections, \[ASK_ROVO_SLASH_ITEM\]\)/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /item\.id === ASK_ROVO_SLASH_ITEM\.id/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function getAskRovoHeader\(\): ReactNode \{[\s\S]*<RichTextCommandMenuSearchField[\s\S]*icon=\{ASK_ROVO_SLASH_ITEM\.icon\}[\s\S]*label=\{ASK_ROVO_SLASH_ITEM\.label\}[\s\S]*onSubmit=\{submitAskRovoPrompt\}[\s\S]*onValueChange=\{updateAskRovoPrompt\}[\s\S]*value=\{askRovoPrompt\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /header: isFlat \|\| !activeCategory \? getAskRovoHeader\(\) : undefined/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function submitAskRovoPrompt\(\): boolean \{[\s\S]*currentProps\.command\(\{ type: "ask-rovo", onAskRovo \}\)/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /props\.type === "ask-rovo"[\s\S]*props\.onAskRovo\?\.\(editor\)/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onAskRovoRef = useRef\(onAskRovo\)/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item-sticky \{\s*position: sticky;\s*top: 0;/u);
@@ -853,6 +857,8 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(EDITOR_PALETTE_SOURCE, /export function EditorPaletteSearchPicker\(/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /import \{[\s\S]*Empty,[\s\S]*EmptyContent,[\s\S]*EmptyDescription,[\s\S]*EmptyHeader,[\s\S]*EmptyTitle,[\s\S]*\} from "@\/components\/ui\/empty";/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /RichTextCommandMenuSearchField/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /function NestedPalette\([\s\S]*const \[commandPrompt, setCommandPrompt\] = useState\(""\);/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /title="Commands"[\s\S]*header=\{\([\s\S]*<RichTextCommandMenuSearchField[\s\S]*icon=\{ASK_ROVO_LEAD_ITEM\.icon\}[\s\S]*label=\{ASK_ROVO_LEAD_ITEM\.label\}[\s\S]*onClear=\{\(\) => setCommandPrompt\(""\)\}[\s\S]*onValueChange=\{setCommandPrompt\}[\s\S]*value=\{commandPrompt\}/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /id: SEARCH_BROWSE_ALL_ITEM_ID,[\s\S]*label: "Browse all"/u);
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /id: SEARCH_BROWSE_ALL_ITEM_ID,[\s\S]*stickyPosition: "bottom"/u);
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /SEARCH_INPUT_ITEM_ID/u);
@@ -867,6 +873,9 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(EDITOR_PALETTE_SOURCE, /function EditorPaletteSearchEmptyState\(/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /<Empty width="narrow" className="px-6 pt-4 pb-6">[\s\S]*<EmptyTitle headingSize="xsmall">\{label\}<\/EmptyTitle>[\s\S]*<EmptyDescription>Try a different search term\.<\/EmptyDescription>[\s\S]*<Button[\s\S]*variant="outline"[\s\S]*onClick=\{onBrowseAll\}[\s\S]*Browse all/u);
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /onInputClear|onInputValueChange|renderFirstItemAsInput/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /const \[leadPrompt, setLeadPrompt\] = useState\(""\);/u);
+	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /const rows = \[\s*\.\.\.\(leadItem \? \[leadItem\] : \[\]\),/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /header=\{leadItem \? \([\s\S]*<RichTextCommandMenuSearchField[\s\S]*icon=\{leadItem\.icon\}[\s\S]*label=\{leadItem\.label\}[\s\S]*onClear=\{\(\) => setLeadPrompt\(""\)\}[\s\S]*onSubmit=\{\(\) => handleSelect\(leadItem\)\}[\s\S]*onValueChange=\{setLeadPrompt\}[\s\S]*placeholder=\{leadItem\.label\}[\s\S]*value=\{leadPrompt\}/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /NESTED_MENTION_SHOWCASES/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /getSlashCommandFormatItems\(\)/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /caption="Format nested"/u);
@@ -998,13 +1007,14 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \{\s*max-height: min\(var\(--rich-text-command-menu-max-height\), calc\(100vh - 48px\)\);/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-borderless \{\s*border: 0;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-avatar \{\s*width: 24px;\s*height: 24px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-has-header="true"\] \.rich-text-command-menu-list \{\s*padding-top: 4px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-showcase\[data-nested="true"\] \.rich-text-command-menu-list \{\s*overflow-y: auto;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /--rich-text-command-menu-scroll-mask-fade-size: 48px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-list-scrolled="true"\] \.rich-text-command-menu-list \{[\s\S]*linear-gradient\(to bottom, transparent 0, black var\(--rich-text-command-menu-scroll-mask-fade-size\), black 100%\)/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /data-list-overflow-after/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /black calc\(100% - var\(--rich-text-command-menu-scroll-mask-fade-size\)\), transparent 100%/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-has-header="true"\] \.rich-text-command-menu-list \{\s*padding-top: 0;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-search \{[\s\S]*flex: 0 0 44px;[\s\S]*grid-template-columns: 24px minmax\(0, 1fr\) auto;[\s\S]*height: 44px;[\s\S]*min-height: 44px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-search \{[\s\S]*padding: 0 6px 0 12px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-search > \[data-slot="input"\] \{\s*height: 100%;/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /rich-text-command-menu-search-picker/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /data-first-item-input|rich-text-command-menu-input/u);
@@ -1018,6 +1028,7 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-description\b/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \.rich-text-command-menu-list \.menu-row-byline \{\s*pointer-events: none;/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*border-bottom/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*padding: 8px 6px 8px 12px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item \{[\s\S]*?height: 44px;/u);
 	// `[^}]*?` keeps this scoped to the nested item rule's own block so it can't
 	// leak into a later rule (flat / non-nested rows carry 6px vertical padding).

@@ -114,6 +114,13 @@ interface RichTextSuggestionMenuProps {
 	header?: ReactNode;
 	items: readonly RichTextSuggestionMenuItem[];
 	onBack?: () => void;
+	/**
+	 * Pointer hover handler. Receives the hovered row's index into `items` so the
+	 * controller can move `selectedIndex` onto it — keeping mouse hover and
+	 * keyboard navigation on a single source of truth (Enter always commits the
+	 * row under the pointer).
+	 */
+	onHover?: (index: number) => void;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
 	selectedIndex: number;
 	title: string;
@@ -287,7 +294,6 @@ const ASK_ROVO_SLASH_ITEM: RichTextSuggestionMenuItem = {
 	description: "Ask Rovo to help with the current editor context.",
 	icon: <RovoColorIcon size="xxsmall" />,
 	id: "ask-rovo",
-	isSticky: true,
 	label: "Ask Rovo",
 };
 
@@ -517,6 +523,7 @@ export function RichTextSuggestionMenu({
 	header,
 	items,
 	onBack,
+	onHover,
 	onSelect,
 	selectedIndex,
 	title,
@@ -555,6 +562,7 @@ export function RichTextSuggestionMenu({
 			data-nested={isNested ? "true" : undefined}
 			data-has-header={header ? "true" : undefined}
 			data-list-scrolled={hasScrolledList ? "true" : undefined}
+			data-pointer-selects={onHover ? "true" : undefined}
 			role="listbox"
 			aria-label={title}
 		>
@@ -593,6 +601,7 @@ export function RichTextSuggestionMenu({
 									key={item.id}
 									isSelected={index === selectedIndex}
 									item={item}
+									onHover={onHover ? () => onHover(index) : undefined}
 									onSelect={onSelect}
 								/>
 							)
@@ -616,6 +625,14 @@ export interface RichTextCommandMenuSearchFieldProps {
 	onSubmit?: () => void;
 	onValueChange: (value: string) => void;
 	placeholder?: string;
+	/**
+	 * When true, show a "Tab" key hint in the trailing slot while the field is
+	 * empty and unfocused — signalling that pressing Tab from the editor moves
+	 * focus into this field (e.g. to prompt Rovo) rather than typing into the
+	 * page. Hidden once the field is focused or has a value (where the clear
+	 * button takes the slot instead).
+	 */
+	tabHint?: boolean;
 	value: string;
 }
 
@@ -629,6 +646,7 @@ export function RichTextCommandMenuSearchField({
 	onSubmit,
 	onValueChange,
 	placeholder = label,
+	tabHint,
 	value,
 }: Readonly<RichTextCommandMenuSearchFieldProps>) {
 	return (
@@ -669,6 +687,10 @@ export function RichTextCommandMenuSearchField({
 				>
 					<CrossCircleIcon label="" size="small" />
 				</Button>
+			) : tabHint ? (
+				<span className="rich-text-command-menu-search-hint" aria-hidden="true">
+					<Kbd>Tab</Kbd>
+				</span>
 			) : null}
 		</div>
 	);
@@ -677,12 +699,14 @@ export function RichTextCommandMenuSearchField({
 interface RichTextSuggestionMenuOptionProps {
 	isSelected: boolean;
 	item: RichTextSuggestionMenuItem;
+	onHover?: () => void;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
 }
 
 function RichTextSuggestionMenuOption({
 	isSelected,
 	item,
+	onHover,
 	onSelect,
 }: Readonly<RichTextSuggestionMenuOptionProps>) {
 	const [isInteractionActive, setIsInteractionActive] = useState(false);
@@ -695,6 +719,14 @@ function RichTextSuggestionMenuOption({
 	const showsPersistentDescription = hasDescription && Boolean(item.persistentDescription);
 	const canRevealMetadata = hasDescription && !item.persistentDescription;
 	const shouldShowReturnShortcut = !item.disabled && (isSelected || isInteractionActive);
+	// Hovering a row moves the real keyboard selection onto it (via `onHover`),
+	// so mouse and keyboard never disagree and Enter commits the hovered row.
+	const handleMouseEnter = () => {
+		setIsInteractionActive(true);
+		if (!item.disabled) {
+			onHover?.();
+		}
+	};
 	const className = cn(
 		"rich-text-command-menu-item",
 		isSelected && "rich-text-command-menu-item-selected",
@@ -758,7 +790,7 @@ function RichTextSuggestionMenuOption({
 				onClick={() => onSelect(item)}
 				onBlur={() => setIsInteractionActive(false)}
 				onFocus={() => setIsInteractionActive(true)}
-				onMouseEnter={() => setIsInteractionActive(true)}
+				onMouseEnter={handleMouseEnter}
 				onMouseLeave={() => setIsInteractionActive(false)}
 				whileFocus="active"
 				whileHover="active"
@@ -779,7 +811,7 @@ function RichTextSuggestionMenuOption({
 			onClick={() => onSelect(item)}
 			onBlur={() => setIsInteractionActive(false)}
 			onFocus={() => setIsInteractionActive(true)}
-			onMouseEnter={() => setIsInteractionActive(true)}
+			onMouseEnter={handleMouseEnter}
 			onMouseLeave={() => setIsInteractionActive(false)}
 		>
 			{children}
@@ -1026,19 +1058,15 @@ interface FlatSectionSpec {
  *   "View less" for the rest). "View more" sections honor `expandedSections`.
  * - Non-empty query: every section is filtered, empty sections (and their
  *   headings/footers) are dropped, and all matches are shown with no cap.
- *
- * `stickyLeadItems` (e.g. "Ask Rovo") are prepended verbatim, before any
- * heading, and are kept regardless of the query.
  */
 function buildFlatSurfaceRows(
 	sections: readonly FlatSectionSpec[],
 	query: string,
 	expandedSections: Readonly<Record<string, boolean>>,
-	stickyLeadItems: readonly RichTextSuggestionMenuItem[] = [],
 ): readonly RichTextSuggestionMenuItem[] {
 	const normalizedQuery = query.trim();
 	const isFiltering = normalizedQuery.length > 0;
-	const rows: RichTextSuggestionMenuItem[] = [...stickyLeadItems];
+	const rows: RichTextSuggestionMenuItem[] = [];
 
 	for (const section of sections) {
 		const matchedItems = isFiltering
@@ -1154,6 +1182,13 @@ function getPagedSelectableIndex(
 	return getFirstSelectableIndex(items, target);
 }
 
+/**
+ * Per-renderer counter so each live "/" menu gives its Ask Rovo field a unique,
+ * stable DOM id. The id lets the editor's Tab handler move focus into that field
+ * (client-only — the renderer is created by Tiptap on the client, never SSR).
+ */
+let askRovoFieldIdCounter = 0;
+
 export function createSlashSuggestionRenderer(
 	getMentionSources?: () => RichTextMentionSources | undefined,
 	onAskRovo?: (editor: Editor) => void,
@@ -1165,6 +1200,9 @@ export function createSlashSuggestionRenderer(
 	let selectedIndex = 0;
 	let activeCategory: RichTextSlashCategory | null = null;
 	let currentProps: SuggestionProps<RichTextSlashAction, RichTextSlashAction> | null = null;
+	let askRovoPrompt = "";
+	askRovoFieldIdCounter += 1;
+	const askRovoFieldId = `rich-text-ask-rovo-field-${askRovoFieldIdCounter}`;
 	// Per-section inline expansion for "View more" footers (flat variant only).
 	const expandedSections: Record<string, boolean> = {};
 
@@ -1209,9 +1247,40 @@ export function createSlashSuggestionRenderer(
 
 	function getVisibleItems(query: string): readonly RichTextSuggestionMenuItem[] {
 		if (isFlat) {
-			return buildFlatSurfaceRows(getFlatSections(), query, expandedSections, [ASK_ROVO_SLASH_ITEM]);
+			return buildFlatSurfaceRows(getFlatSections(), query, expandedSections);
 		}
 		return activeCategory ? getChildItems(query) : getTopLevelItems(query);
+	}
+
+	function submitAskRovoPrompt(): boolean {
+		if (!currentProps) {
+			return false;
+		}
+		currentProps.command({ type: "ask-rovo", onAskRovo });
+		return true;
+	}
+
+	function updateAskRovoPrompt(value: string): void {
+		askRovoPrompt = value;
+		if (currentProps) {
+			update(currentProps);
+		}
+	}
+
+	function getAskRovoHeader(): ReactNode {
+		return (
+			<RichTextCommandMenuSearchField
+				id={askRovoFieldId}
+				icon={ASK_ROVO_SLASH_ITEM.icon}
+				label={ASK_ROVO_SLASH_ITEM.label}
+				onClear={() => updateAskRovoPrompt("")}
+				onSubmit={submitAskRovoPrompt}
+				onValueChange={updateAskRovoPrompt}
+				placeholder={ASK_ROVO_SLASH_ITEM.label}
+				tabHint
+				value={askRovoPrompt}
+			/>
+		);
 	}
 
 	function update(props: SuggestionProps<RichTextSlashAction, RichTextSlashAction>) {
@@ -1233,7 +1302,9 @@ export function createSlashSuggestionRenderer(
 						update(props);
 					}
 				: undefined,
+			header: isFlat || !activeCategory ? getAskRovoHeader() : undefined,
 			onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
+			onHover: selectIndex,
 			selectedIndex,
 			title: !isFlat && activeCategory ? getSlashCategoryLabel(activeCategory) : "Commands",
 		});
@@ -1256,11 +1327,6 @@ export function createSlashSuggestionRenderer(
 	function selectItem(item: RichTextSuggestionMenuItem | undefined): boolean {
 		if (!item || !currentProps) {
 			return false;
-		}
-
-		if (item.id === ASK_ROVO_SLASH_ITEM.id) {
-			currentProps.command({ type: "ask-rovo", onAskRovo });
-			return true;
 		}
 
 		if (isFlat) {
@@ -1348,6 +1414,15 @@ export function createSlashSuggestionRenderer(
 		update(currentProps);
 	}
 
+	/** Pointer hover: move the keyboard selection onto the hovered row. */
+	function selectIndex(index: number) {
+		if (!currentProps || index === selectedIndex) {
+			return;
+		}
+		selectedIndex = index;
+		update(currentProps);
+	}
+
 	return {
 		onStart: (props: SuggestionProps<RichTextSlashAction, RichTextSlashAction>) => {
 			popupState.element = createPopup(anchorToInput);
@@ -1400,7 +1475,19 @@ export function createSlashSuggestionRenderer(
 				update(currentProps);
 				return true;
 			}
-			if (event.key === "Enter" || event.key === "Tab") {
+			if (event.key === "Tab") {
+				// Tab moves focus into the Ask Rovo field (when present) so the user
+				// can prompt Rovo instead of inserting into the page. The header only
+				// renders for the flat surface and the nested top level, so fall back
+				// to selecting the row when there is no field to focus.
+				const askRovoField = document.getElementById(askRovoFieldId);
+				if (askRovoField instanceof HTMLInputElement) {
+					askRovoField.focus();
+					return true;
+				}
+				return selectItem(items[selectedIndex]);
+			}
+			if (event.key === "Enter") {
 				return selectItem(items[selectedIndex]);
 			}
 			if (event.key === "Backspace" && !isFlat && activeCategory) {
@@ -1602,18 +1689,15 @@ export function getSlashCommandCategoryItems(
 	sources?: RichTextMentionSources,
 	includeFormat = true,
 ): readonly RichTextSuggestionMenuItem[] {
-	return [
-		ASK_ROVO_SLASH_ITEM,
-		...getSlashCategoryOrder(includeFormat).map((category) => ({
-			description: category === "format"
-				? `${SLASH_COMMANDS.length} options`
-				: `${getCategoryItems(sources, category).length} available`,
-			persistentDescription: true,
-			icon: getSlashCategoryIcon(category),
-			id: category,
-			label: getSlashCategoryLabel(category),
-		})),
-	];
+	return getSlashCategoryOrder(includeFormat).map((category) => ({
+		description: category === "format"
+			? `${SLASH_COMMANDS.length} options`
+			: `${getCategoryItems(sources, category).length} available`,
+		persistentDescription: true,
+		icon: getSlashCategoryIcon(category),
+		id: category,
+		label: getSlashCategoryLabel(category),
+	}));
 }
 
 /** Nested reference items for a single category (e.g. the Skills submenu). */
@@ -1715,6 +1799,7 @@ export function createMentionSuggestionRenderer(
 					}
 				: undefined,
 			onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
+			onHover: selectIndex,
 			selectedIndex,
 			title: !isFlat && activeCategory ? MENTION_PARENT_LABELS[activeCategory] : "Mention",
 		});
@@ -1783,6 +1868,15 @@ export function createMentionSuggestionRenderer(
 		selectedIndex = paged
 			? getPagedSelectableIndex(items, selectedIndex, direction)
 			: getNextSelectableIndex(items, selectedIndex, direction);
+		update(currentProps);
+	}
+
+	/** Pointer hover: move the keyboard selection onto the hovered row. */
+	function selectIndex(index: number) {
+		if (!currentProps || index === selectedIndex) {
+			return;
+		}
+		selectedIndex = index;
 		update(currentProps);
 	}
 

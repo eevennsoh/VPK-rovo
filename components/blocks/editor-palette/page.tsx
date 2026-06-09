@@ -323,6 +323,7 @@ function SearchPalette({ category, mentionSources }: Readonly<SearchPaletteProps
 }
 
 function NestedPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
+	const [commandPrompt, setCommandPrompt] = useState("");
 	const mentionItems = getMentionTargetItems(mentionSources);
 	const commandItems = getSlashCommandCategoryItems(mentionSources);
 	const formatItems = getSlashCommandFormatItems();
@@ -349,6 +350,17 @@ function NestedPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
 					title="Commands"
 					emptyLabel="No commands found"
 					items={commandItems}
+					header={(
+						<RichTextCommandMenuSearchField
+							icon={ASK_ROVO_LEAD_ITEM.icon}
+							label={ASK_ROVO_LEAD_ITEM.label}
+							onClear={() => setCommandPrompt("")}
+							onSubmit={noop}
+							onValueChange={setCommandPrompt}
+							placeholder={ASK_ROVO_LEAD_ITEM.label}
+							value={commandPrompt}
+						/>
+					)}
 					selectedIndex={0}
 					onSelect={noop}
 				/>
@@ -456,8 +468,8 @@ function getFlatSectionRows(
 }
 
 /**
- * Sticky "Ask Rovo" lead row for the "/" surface, rendered as a subtle input
- * (matching the live slash menu). The "@" surface has no equivalent.
+ * Sticky "Ask Rovo" prompt for the "/" surface, rendered as the menu header
+ * input. The "@" surface has no equivalent.
  */
 const ASK_ROVO_LEAD_ITEM: RichTextSuggestionMenuItem = {
 	id: "ask-rovo",
@@ -496,8 +508,8 @@ interface FlatMergedPanelProps extends PaletteVariantProps {
 	caption: string;
 	sections: readonly FlatSectionConfig[];
 	/**
-	 * Optional sticky lead row (e.g. "Ask Rovo") prepended before the section
-	 * list and rendered as the subtle input row, matching the live slash menu.
+	 * Optional sticky lead prompt (e.g. "Ask Rovo") rendered as the menu header
+	 * input before the section list.
 	 */
 	leadItem?: RichTextSuggestionMenuItem;
 }
@@ -515,9 +527,9 @@ function FlatMergedPanel({
 	leadItem,
 }: Readonly<FlatMergedPanelProps>) {
 	const [expandedSections, setExpandedSections] = useState<Readonly<Record<string, boolean>>>({});
+	const [leadPrompt, setLeadPrompt] = useState("");
 
 	const rows = [
-		...(leadItem ? [leadItem] : []),
 		...sections.flatMap((section) =>
 			getFlatSectionRows(
 				section,
@@ -547,6 +559,17 @@ function FlatMergedPanel({
 				title={caption}
 				emptyLabel="No matching items"
 				items={rows}
+				header={leadItem ? (
+					<RichTextCommandMenuSearchField
+						icon={leadItem.icon}
+						label={leadItem.label}
+						onClear={() => setLeadPrompt("")}
+						onSubmit={() => handleSelect(leadItem)}
+						onValueChange={setLeadPrompt}
+						placeholder={leadItem.label}
+						value={leadPrompt}
+					/>
+				) : undefined}
 				selectedIndex={-1}
 				onSelect={handleSelect}
 			/>

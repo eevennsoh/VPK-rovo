@@ -7,7 +7,9 @@ import PageIcon from "@atlaskit/icon/core/page";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Icon } from "@/components/ui/icon";
-import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
+import { IconTile } from "@/components/ui/icon-tile";
+import { AtlassianLogo, CustomLogo, type AtlassianLogoName, type LogoProps } from "@/components/ui/logo";
+import { BrandLogoMark } from "@/components/ui/logo-mark";
 import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
 import { cn } from "@/lib/utils";
 
@@ -100,12 +102,43 @@ export interface SmartLinkCardProps {
 	className?: string;
 }
 
+type SmartLinkVisualSize = "trigger" | "card" | "footer";
+type AtlaskitIconSize = "small" | "medium";
+type SmartLinkIconTileSize = NonNullable<ComponentProps<typeof IconTile>["size"]>;
+type SmartLinkIconTileVariant = NonNullable<ComponentProps<typeof IconTile>["variant"]>;
+
 const toneClasses: Record<SmartLinkTone, string> = {
 	neutral: "bg-bg-neutral text-icon-subtle",
 	information: "bg-bg-information-subtler text-icon-information",
 	discovery: "bg-bg-discovery-subtler text-icon-discovery",
 	magenta: "bg-bg-accent-magenta-subtler text-icon-accent-magenta",
 	warning: "bg-bg-warning text-icon-warning",
+};
+
+const toneIconTileVariants: Record<SmartLinkTone, SmartLinkIconTileVariant> = {
+	neutral: "gray",
+	information: "blue",
+	discovery: "purple",
+	magenta: "magenta",
+	warning: "yellow",
+};
+
+const visualLogoSizes: Record<SmartLinkVisualSize, NonNullable<LogoProps["size"]>> = {
+	trigger: "xxsmall",
+	card: "small",
+	footer: "xxsmall",
+};
+
+const visualIconSizes: Record<SmartLinkVisualSize, AtlaskitIconSize> = {
+	trigger: "small",
+	card: "medium",
+	footer: "small",
+};
+
+const visualIconTileSizes: Record<SmartLinkVisualSize, SmartLinkIconTileSize> = {
+	trigger: "xxsmall",
+	card: "small",
+	footer: "xxsmall",
 };
 
 const previewToneClasses: Record<SmartLinkTone, string> = {
@@ -116,43 +149,47 @@ const previewToneClasses: Record<SmartLinkTone, string> = {
 	warning: "bg-bg-warning text-text-warning-bolder",
 };
 
-function cloneIcon(icon: ReactElement, className?: string) {
+function cloneIcon(icon: ReactElement, iconSize?: AtlaskitIconSize, className?: string) {
 	if (!isValidElement(icon)) {
 		return icon;
 	}
 
-	const iconElement = icon as ReactElement<{ color?: string; label?: string; className?: string }>;
+	const iconElement = icon as ReactElement<{ color?: string; label?: string; className?: string; size?: AtlaskitIconSize }>;
 
 	return cloneElement(iconElement, {
 		color: "currentColor",
 		label: "",
+		size: iconSize,
 		className: cn(className, iconElement.props.className),
 	});
 }
 
-function renderVisual(visual: SmartLinkVisual, size: "trigger" | "card" | "footer" = "card") {
-	const imageSize = size === "trigger" || size === "footer" ? 16 : 24;
-	const logoSize = size === "trigger" || size === "footer" ? "xxsmall" : "small";
+function renderVisual(visual: SmartLinkVisual, size: SmartLinkVisualSize = "card") {
+	const logoSize = visualLogoSizes[size];
+	const iconSize = visualIconSizes[size];
 
 	if (visual.kind === "atlassian") {
-		return <AtlassianLogo name={visual.name} size={logoSize} />;
+		return <AtlassianLogo name={visual.name} label="" size={logoSize} withUsageBorder />;
 	}
 
 	if (visual.kind === "image") {
-		return (
-			<Image
-				alt={visual.alt}
-				className="shrink-0"
-				height={imageSize}
-				src={visual.src}
-				width={imageSize}
-			/>
+		return size === "trigger" ? (
+			<BrandLogoMark frame="chip" src={visual.src} label={visual.alt} />
+		) : (
+			<CustomLogo src={visual.src} label={visual.alt} size={logoSize} />
 		);
 	}
 
 	if (visual.kind === "icon") {
-		const iconSize = size === "trigger" || size === "footer" ? "size-4" : "size-5";
-		return <Icon className={cn(iconSize, "text-icon-subtle")} render={cloneIcon(visual.icon)} />;
+		return (
+			<IconTile
+				aria-hidden
+				icon={<Icon aria-hidden render={cloneIcon(visual.icon, iconSize)} />}
+				label=""
+				size={visualIconTileSizes[size]}
+				variant="transparent"
+			/>
+		);
 	}
 
 	if (visual.kind === "text") {
@@ -170,18 +207,14 @@ function renderVisual(visual: SmartLinkVisual, size: "trigger" | "card" | "foote
 		);
 	}
 
-	const tileBox = size === "trigger" || size === "footer" ? "size-4" : "size-6";
-	const tileIcon = size === "trigger" || size === "footer" ? "size-3" : "size-4";
 	return (
-		<span
-			className={cn(
-				"inline-flex shrink-0 items-center justify-center rounded-tile",
-				tileBox,
-				toneClasses[visual.tone ?? "neutral"],
-			)}
-		>
-			<Icon className={tileIcon} render={cloneIcon(visual.icon)} />
-		</span>
+		<IconTile
+			aria-hidden
+			icon={<Icon aria-hidden render={cloneIcon(visual.icon, iconSize)} />}
+			label=""
+			size={visualIconTileSizes[size]}
+			variant={toneIconTileVariants[visual.tone ?? "neutral"]}
+		/>
 	);
 }
 
@@ -260,7 +293,7 @@ function MetadataPill({ metadata }: Readonly<{ metadata: SmartLinkMetadata }>) {
 				metadata.tone ? toneClasses[metadata.tone] : null,
 			)}
 		>
-			{metadata.icon ? <Icon className="size-4" render={cloneIcon(metadata.icon)} /> : null}
+			{metadata.icon ? <Icon render={cloneIcon(metadata.icon, "medium")} /> : null}
 			{metadata.label}
 		</span>
 	);
@@ -346,7 +379,7 @@ function SmartLinkActionRow({
 			onClick={handleClick}
 			type="button"
 		>
-			<Icon className="size-5 text-icon" render={cloneIcon(action.icon)} />
+			<Icon className="text-icon" render={cloneIcon(action.icon, "medium")} />
 			<span className="truncate">{action.label}</span>
 		</button>
 	);

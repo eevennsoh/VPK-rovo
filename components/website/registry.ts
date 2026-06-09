@@ -4680,6 +4680,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "icon-tile-demo-transparent": dynamic(
+    () =>
+      import("./demos/ui/icon-tile-demo").then((mod) => ({
+        default: mod.IconTileDemoTransparent,
+      })),
+    { ssr: false },
+  ),
   "icon-tile-demo-appearances": dynamic(
     () =>
       import("./demos/ui/icon-tile-demo").then((mod) => ({

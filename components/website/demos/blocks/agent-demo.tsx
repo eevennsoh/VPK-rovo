@@ -18,6 +18,7 @@ import {
 	AgentCompactUsersPanel,
 	AgentHeader,
 	AgentMoreOptionsMenu,
+	toggleAgentConfigDisabledItem,
 } from "@/components/blocks/agent";
 import {
 	serializeAgentTriggerLabels,
@@ -111,6 +112,13 @@ function useAgentDemoConfig(initialConfig: AgentConfigFormValue) {
 		});
 	}
 
+	function toggleListItem(field: AgentConfigListFieldName, index: number, enabled: boolean) {
+		setConfig((current) => {
+			const label = (Array.isArray(current[field]) ? current[field] : [])[index];
+			return label ? toggleAgentConfigDisabledItem(current, field, label, enabled) : current;
+		});
+	}
+
 	function appendListItem(field: AgentConfigListFieldName) {
 		setConfig((current) => {
 			const items = Array.isArray(current[field]) ? current[field] : [];
@@ -161,6 +169,7 @@ function useAgentDemoConfig(initialConfig: AgentConfigFormValue) {
 		handleSaveConversationStarters,
 		handleTriggerDefinitionsChange,
 		removeListItem,
+		toggleListItem,
 		updateListItem,
 	};
 }
@@ -304,6 +313,7 @@ export function AgentDemoFull() {
 		handleTextChange,
 		handleTriggerDefinitionsChange,
 		removeListItem,
+		toggleListItem,
 		updateListItem,
 	} = useAgentDemoConfig(filledAgentConfig);
 	const [activeSection, setActiveSection] = useState<AgentCompactHeaderSection | null>(null);
@@ -339,6 +349,7 @@ export function AgentDemoFull() {
 									onTextChange={handleTextChange}
 									onListItemChange={updateListItem}
 									onRemoveListItem={removeListItem}
+									onToggleListItem={toggleListItem}
 									onAppendListItem={appendListItem}
 									onOpenDirectory={handleOpenDirectory}
 									onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
@@ -369,6 +380,7 @@ export function AgentDemoEmpty() {
 		handleTextChange,
 		handleTriggerDefinitionsChange,
 		removeListItem,
+		toggleListItem,
 		updateListItem,
 	} = useAgentDemoConfig(emptyAgentConfig);
 	const [activeSection, setActiveSection] = useState<AgentCompactHeaderSection | null>(null);
@@ -404,6 +416,7 @@ export function AgentDemoEmpty() {
 									onTextChange={handleTextChange}
 									onListItemChange={updateListItem}
 									onRemoveListItem={removeListItem}
+									onToggleListItem={toggleListItem}
 									onAppendListItem={appendListItem}
 									onOpenDirectory={handleOpenDirectory}
 									onTriggerDefinitionsChange={handleTriggerDefinitionsChange}

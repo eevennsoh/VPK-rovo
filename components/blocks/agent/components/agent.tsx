@@ -459,6 +459,13 @@ export interface AgentConfigFormValue {
 	knowledge?: readonly string[];
 	conversationStarters?: readonly string[];
 	conversationStarterIcons?: readonly string[];
+	// Per-field set of disabled list items, keyed by the item's label (not index)
+	// so the disabled state survives reordering and removal. A configured item
+	// (tool / skill / knowledge / subagent) whose label appears here is shown in a
+	// disabled state in both the collapsed-nav dropdown and the filled summary,
+	// but stays listed until explicitly removed. Persisted on the agent draft
+	// alongside the other config fields (e.g. localStorage).
+	disabledItems?: Partial<Record<AgentConfigListFieldName, readonly string[]>>;
 	// Mode selectors, persisted on the agent draft. Stored loosely as `string`
 	// (matching the agent-result wire type); the option lists below
 	// (MEMORY_MODE_OPTIONS / REASONING_MODE_SECTIONS / KNOWLEDGE_MODE_OPTIONS)
@@ -974,26 +981,38 @@ function AgentCompactNavMenuPinnedFooter({
 	);
 }
 
+// Memoize a trimmed Set of disabled labels for O(1) per-row lookups. The
+// collapsed-nav dropdowns receive the field's disabled labels (derived from the
+// persisted config) and match by label so the state survives reorder/removal.
+function useDisabledLabelSet(disabledItems: readonly string[] | undefined): ReadonlySet<string> {
+	return useMemo(() => new Set((disabledItems ?? []).map((entry) => entry.trim())), [disabledItems]);
+}
+
 function AgentCompactSubagentsNavButton({
+	disabledItems,
 	item,
 	onCreateSubagent,
 	onManageSubagents,
 	onRemoveSubagent,
 	onSelectSubagent,
+	onToggleItem,
 	screenAssistantTargetId,
 	selectedIndex,
 	subagents,
 }: Readonly<{
+	disabledItems?: readonly string[];
 	item: AgentCompactConfigNavItem;
 	onCreateSubagent?: () => void;
 	onManageSubagents?: () => void;
 	onRemoveSubagent?: (index: number) => void;
 	onSelectSubagent?: (index: number) => void;
+	onToggleItem?: (index: number, enabled: boolean) => void;
 	screenAssistantTargetId?: string;
 	selectedIndex?: number;
 	subagents: readonly string[];
 }>) {
 	const isEmpty = item.count === 0;
+	const disabledSet = useDisabledLabelSet(disabledItems);
 
 	return (
 		<MenubarMenu>
@@ -1015,9 +1034,11 @@ function AgentCompactSubagentsNavButton({
 								{subagents.map((subagent, index) => (
 									<AgentCompactReferenceRow
 										key={`${subagent}-${index}`}
+										enabled={!disabledSet.has(subagent.trim())}
 										label={subagent}
 										onClick={() => onSelectSubagent?.(index)}
 										onRemove={onRemoveSubagent ? () => onRemoveSubagent(index) : undefined}
+										onToggle={onToggleItem ? (enabled) => onToggleItem(index, enabled) : undefined}
 										selected={selectedIndex === index}
 									/>
 								))}
@@ -1145,51 +1166,95 @@ function AgentCompactTriggerRow({
 
 // A configured reference row (knowledge / tools / skills / subagents) inside a
 // collapsed config dropdown. Mirrors AgentCompactTriggerRow's hover-reveal model:
-// the label truncates clear of a trailing control that reveals on hover/focus.
-// Here the trailing control is a single "Remove" button (these items have no
-// enabled/disabled toggle). The row's primary press keeps its normal behavior
-// (open the directory on this item); the remove button stops propagation so it
-// never also triggers the row press.
+// the label truncates clear of trailing controls that reveal on hover/focus —
+// an enable/disable Switch (parked visible while off) plus a "Remove" button.
+// The row's primary press keeps its normal behavior (open the directory on this
+// item); both trailing controls stop propagation so they never also trigger the
+// row press or dismiss the menu.
 function AgentCompactReferenceRow({
 	elemBefore,
+	enabled = true,
 	label,
 	onClick,
 	onRemove,
+	onToggle,
 	selected,
 }: Readonly<{
 	elemBefore?: ReactNode;
+	enabled?: boolean;
 	label: string;
 	onClick?: () => void;
 	onRemove?: () => void;
+	onToggle?: (enabled: boolean) => void;
 	selected?: boolean;
 }>) {
+	// See AgentCompactTriggerRow: preventDefault on the switch's pointer/mouse
+	// down stops Base UI from dismissing the menu when toggling.
+	function suppressMenuDismissal(event: { preventDefault: () => void }) {
+		event.preventDefault();
+	}
+	const hasToggle = onToggle !== undefined;
+	// Reserve trailing width for whichever controls exist: switch + remove = 2,
+	// either alone = 1, neither = none.
+	const reserveCount = (hasToggle ? 1 : 0) + (onRemove ? 1 : 0);
 	return (
 		<DropdownMenuItem
-			className={cn(hoverRevealRowClassName)}
-			elemBefore={elemBefore}
+			closeOnClick={!hasToggle}
+			className={cn(
+				hoverRevealRowClassName,
+				// A disabled row reads as muted until re-enabled — keep it muted on
+				// hover too (the item's `data-[highlighted]:text-text` would otherwise
+				// re-darken the label).
+				hasToggle && !enabled ? "text-text-disabled data-[highlighted]:text-text-disabled" : undefined,
+			)}
+			elemBefore={
+				elemBefore ? (
+					<span className={cn(hasToggle && !enabled && "opacity-(--opacity-disabled)")}>{elemBefore}</span>
+				) : undefined
+			}
 			onClick={onClick}
 			selected={selected}
 		>
-			<HoverRevealLabel reserveOnReveal={onRemove ? 1 : undefined} reserveAtRest={0}>
+			<HoverRevealLabel
+				reserveOnReveal={reserveCount > 0 ? (reserveCount as 1 | 2) : undefined}
+				// A disabled row parks its switch visibly, so keep one control's width
+				// reserved even at rest; otherwise reveal the full label at rest.
+				reserveAtRest={hasToggle && !enabled ? 1 : 0}
+			>
 				{label}
 			</HoverRevealLabel>
-			{onRemove ? (
+			{reserveCount > 0 ? (
 				<HoverRevealActions
+					toggleParked={hasToggle && !enabled}
+					toggle={
+						hasToggle ? (
+							<Switch
+								size="sm"
+								checked={enabled}
+								onCheckedChange={onToggle}
+								onPointerDown={suppressMenuDismissal}
+								onMouseDown={suppressMenuDismissal}
+								aria-label={`${enabled ? "Disable" : "Enable"} ${label}`}
+							/>
+						) : undefined
+					}
 					action={
-						<button
-							type="button"
-							aria-label={`Remove ${label}`}
-							className="flex size-7 items-center justify-center rounded-md text-text-subtlest transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected [&_svg]:size-4"
-							onClick={(event) => {
-								// Don't let the press bubble to the row's onClick (which would
-								// open the directory) or close the menu via item activation.
-								event.preventDefault();
-								event.stopPropagation();
-								onRemove();
-							}}
-						>
-							<DeleteIcon label="" size="small" />
-						</button>
+						onRemove ? (
+							<button
+								type="button"
+								aria-label={`Remove ${label}`}
+								className="flex size-7 items-center justify-center rounded-md text-text-subtlest transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected [&_svg]:size-4"
+								onClick={(event) => {
+									// Don't let the press bubble to the row's onClick (which would
+									// open the directory) or close the menu via item activation.
+									event.preventDefault();
+									event.stopPropagation();
+									onRemove();
+								}}
+							>
+								<DeleteIcon label="" size="small" />
+							</button>
+						) : undefined
 					}
 				/>
 			) : null}
@@ -1330,10 +1395,12 @@ function AgentCompactDirectoryNavButton({
 	items,
 	browseLabel,
 	onBrowse,
+	disabledItems,
 	onAddSearchItem,
 	onPickTool,
 	onRemoveItem,
 	onSelectItem,
+	onToggleItem,
 	screenAssistantTargetId,
 }: Readonly<{
 	item: AgentCompactConfigNavItem;
@@ -1341,15 +1408,18 @@ function AgentCompactDirectoryNavButton({
 	items: readonly string[];
 	browseLabel: string;
 	onBrowse: () => void;
+	disabledItems?: readonly string[];
 	// Skills: picking a result adds it immediately. Tools: handled by
 	// `onPickTool` instead (opens the tools directory on that tool's detail).
 	onAddSearchItem?: (item: RichTextSuggestionMenuItem) => void;
 	onPickTool?: (toolId: string) => void;
 	onRemoveItem?: (index: number) => void;
 	onSelectItem?: (item: string) => void;
+	onToggleItem?: (index: number, enabled: boolean) => void;
 	screenAssistantTargetId?: string;
 }>) {
 	const isEmpty = items.length === 0;
+	const disabledSet = useDisabledLabelSet(disabledItems);
 	const addLabel = `Add ${item.label.toLowerCase()}`;
 	const browseItem = (
 		<DropdownMenuItem
@@ -1410,9 +1480,11 @@ function AgentCompactDirectoryNavButton({
 								{items.map((value, index) => (
 									<AgentCompactReferenceRow
 										key={`${directory}-${value}-${index}`}
+										enabled={!disabledSet.has(value.trim())}
 										label={value}
 										onClick={onSelectItem ? () => onSelectItem(value) : undefined}
 										onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
+										onToggle={onToggleItem ? (enabled) => onToggleItem(index, enabled) : undefined}
 									/>
 								))}
 							</DropdownMenuGroup>
@@ -1504,6 +1576,7 @@ function AgentCompactEmptyConfigNav({
 	onOpenDirectory,
 	onRemoveListItem,
 	onSelectListItem,
+	onToggleListItem,
 	reasoningValue,
 	onReasoningValueChange,
 	knowledgeMode,
@@ -1523,6 +1596,7 @@ function AgentCompactEmptyConfigNav({
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
+	onToggleListItem?: (field: AgentConfigListFieldName, index: number, enabled: boolean) => void;
 	reasoningValue: ReasoningModeValue;
 	onReasoningValueChange: (next: ReasoningModeValue) => void;
 	knowledgeMode: KnowledgeModeValue;
@@ -1589,9 +1663,11 @@ function AgentCompactEmptyConfigNav({
 								itemCount={getNonEmptyConfigItems(config?.knowledge).length}
 								items={getNonEmptyConfigItems(config?.knowledge)}
 								onBrowse={() => openAgentDirectoryOrAppendListItem("knowledge", "knowledge", onOpenDirectory, onAppendListItem)}
+								disabledItems={config?.disabledItems?.knowledge}
 								onPickKnowledgeApp={onOpenDirectory ? (appIdOrUpload) => onOpenDirectory("knowledge", appIdOrUpload) : undefined}
 								onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
 								onSelectItem={onOpenDirectory ? (value) => onOpenDirectory("knowledge", value) : undefined}
+								onToggleItem={onToggleListItem ? (index, enabled) => onToggleListItem("knowledge", index, enabled) : undefined}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
 							/>
 						);
@@ -1615,8 +1691,10 @@ function AgentCompactEmptyConfigNav({
 								key={item.agentFieldName}
 								onCreateSubagent={() => onAppendListItem?.("subagents")}
 								onManageSubagents={onManageSubagents}
+								disabledItems={config?.disabledItems?.subagents}
 								onRemoveSubagent={onRemoveListItem ? (index) => onRemoveListItem("subagents", index) : undefined}
 								onSelectSubagent={(index) => onSelectListItem?.("subagents", index)}
+								onToggleItem={onToggleListItem ? (index, enabled) => onToggleListItem("subagents", index, enabled) : undefined}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
 								selectedIndex={selectedListItemIndexByField?.subagents}
 								subagents={getNonEmptyConfigItems(config?.subagents)}
@@ -1658,9 +1736,11 @@ function AgentCompactEmptyConfigNav({
 									}
 									onAddListValues?.(directory, [searchItem.label]);
 								}}
+								disabledItems={config?.disabledItems?.[directory]}
 								onPickTool={directory === "tools" && onOpenDirectory ? (toolId) => onOpenDirectory("tools", toolId) : undefined}
 								onBrowse={() => openAgentDirectoryOrAppendListItem(directory, directory, onOpenDirectory, onAppendListItem)}
 								onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem(directory, index) : undefined}
+								onToggleItem={onToggleListItem ? (index, enabled) => onToggleListItem(directory, index, enabled) : undefined}
 								onSelectItem={onOpenDirectory ? (value) => onOpenDirectory(directory, value) : undefined}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:${item.agentFieldName}` : undefined}
 							/>
@@ -1708,6 +1788,62 @@ function getNonEmptyConfigItems(items: readonly string[] | undefined): readonly 
 	return (items ?? [])
 		.map((item) => item.trim())
 		.filter(Boolean);
+}
+
+// Disabled-item lookups are label-keyed (trimmed) so they survive reordering and
+// removal of the underlying list. A missing field or label means "enabled".
+function getDisabledItemLabels(
+	config: AgentConfigFormValue | undefined,
+	field: AgentConfigListFieldName,
+): readonly string[] {
+	return config?.disabledItems?.[field] ?? [];
+}
+
+function isAgentListItemDisabled(
+	config: AgentConfigFormValue | undefined,
+	field: AgentConfigListFieldName,
+	label: string,
+): boolean {
+	const target = label.trim();
+	return getDisabledItemLabels(config, field).some((entry) => entry.trim() === target);
+}
+
+// Pure reducer: returns a new config with `label` added to / removed from the
+// field's disabled set. Used by owners that persist the config (e.g. the studio
+// draft saved to localStorage). Prunes empty field arrays and an empty
+// `disabledItems` map so the persisted shape stays minimal.
+export function toggleAgentConfigDisabledItem(
+	config: AgentConfigFormValue,
+	field: AgentConfigListFieldName,
+	label: string,
+	enabled: boolean,
+): AgentConfigFormValue {
+	const target = label.trim();
+	if (!target) {
+		return config;
+	}
+	const current = getDisabledItemLabels(config, field);
+	const isCurrentlyDisabled = current.some((entry) => entry.trim() === target);
+	// No-op fast paths keep referential identity stable (avoids needless writes).
+	if (enabled && !isCurrentlyDisabled) {
+		return config;
+	}
+	if (!enabled && isCurrentlyDisabled) {
+		return config;
+	}
+	const nextField = enabled
+		? current.filter((entry) => entry.trim() !== target)
+		: [...current, target];
+	const nextDisabledItems: Partial<Record<AgentConfigListFieldName, readonly string[]>> = {
+		...config.disabledItems,
+	};
+	if (nextField.length > 0) {
+		nextDisabledItems[field] = nextField;
+	} else {
+		delete nextDisabledItems[field];
+	}
+	const hasAny = Object.keys(nextDisabledItems).length > 0;
+	return { ...config, disabledItems: hasAny ? nextDisabledItems : undefined };
 }
 
 function getConversationStarterSummaryItems(config: AgentConfigFormValue): ReadonlyArray<{
@@ -1767,6 +1903,7 @@ function getTagColorForMentionVisual(visual: RichTextMentionItem["visual"]): Tag
 
 function AgentReferenceChip({
 	category,
+	disabled = false,
 	elemBefore,
 	label,
 	onClick,
@@ -1774,6 +1911,7 @@ function AgentReferenceChip({
 	tagColor,
 }: Readonly<{
 	category?: RichTextReferenceCategory;
+	disabled?: boolean;
 	elemBefore?: ReactNode;
 	label: string;
 	onClick?: () => void;
@@ -1800,11 +1938,18 @@ function AgentReferenceChip({
 		)
 	);
 
+	// A disabled chip reads as muted but stays removable, so we deliberately do
+	// NOT use Tag's `disabled` prop (which sets pointer-events:none and would also
+	// kill the remove control). Instead we dim it via opacity and suppress only
+	// the row's primary click (opening the directory), leaving the overlay remove
+	// button fully interactive.
 	return (
 		<Tag
+			aria-disabled={disabled || undefined}
+			className={cn(disabled && "opacity-(--opacity-disabled)")}
 			color={resolvedTagColor}
 			elemBefore={resolvedElemBefore}
-			onClick={onClick}
+			onClick={disabled ? undefined : onClick}
 			onRemove={onRemove}
 			removeButtonLabel={`Remove ${label}`}
 			removeVariant="overlay"
@@ -1846,6 +1991,7 @@ interface AgentFilledSummaryRowProps {
 	addLabel?: string;
 	hideWhenEmpty?: boolean;
 	itemElemBefore?: (item: string, index: number) => ReactNode;
+	isItemDisabled?: (item: string, index: number) => boolean;
 	inlinePicker?: ReactNode;
 	onAdd?: () => void;
 	onItemClick?: (item: string, index: number) => void;
@@ -1860,6 +2006,7 @@ function AgentFilledSummaryRow({
 	hideWhenEmpty = false,
 	inlinePicker,
 	itemElemBefore,
+	isItemDisabled,
 	items,
 	label,
 	onAdd,
@@ -1900,6 +2047,7 @@ function AgentFilledSummaryRow({
 							const chip = (
 								<AgentReferenceChip
 									category={referenceCategory}
+									disabled={isItemDisabled?.(item, index)}
 									elemBefore={itemElemBefore?.(item, index)}
 									key={`${label}-${item}-${index}`}
 									label={item}
@@ -2182,6 +2330,7 @@ function AgentFilledConfigSummary({
 			node: hasKnowledgeSelector && knowledgeMode && onKnowledgeModeChange ? (
 				<AgentKnowledgeRow
 					addLabel={showAddButtons ? "Add" : undefined}
+					isItemDisabled={(item) => isAgentListItemDisabled(config, "knowledge", item)}
 					items={knowledgeItems}
 					onAdd={() => openAgentDirectoryOrAppendListItem("knowledge", "knowledge", onOpenDirectory, onAppendListItem)}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
@@ -2193,6 +2342,7 @@ function AgentFilledConfigSummary({
 				<AgentFilledSummaryRow
 					addLabel={showAddButtons ? "Add" : undefined}
 					hideWhenEmpty={hideEmptyRows}
+					isItemDisabled={(item) => isAgentListItemDisabled(config, "knowledge", item)}
 					items={knowledgeItems}
 					label="Knowledge"
 					onAdd={() => openAgentDirectoryOrAppendListItem("knowledge", "knowledge", onOpenDirectory, onAppendListItem)}
@@ -2217,6 +2367,7 @@ function AgentFilledConfigSummary({
 							onSelectItem={(item) => selectInlineSearchItem("tools", item)}
 						/>
 					) : undefined}
+					isItemDisabled={(item) => isAgentListItemDisabled(config, "tools", item)}
 					items={toolItems}
 					label="Tools"
 					onAdd={() => openInlineSearchPicker("tools")}
@@ -2235,6 +2386,7 @@ function AgentFilledConfigSummary({
 				<AgentFilledSummaryRow
 					addLabel={getAgentFilledSummaryAddLabel("skills", skillItems.length === 0, showAddButtons)}
 					hideWhenEmpty={hideEmptyRows}
+					isItemDisabled={(item) => isAgentListItemDisabled(config, "skills", item)}
 					items={skillItems}
 					label="Skills"
 					onAdd={() => openAgentDirectoryOrAppendListItem("skills", "skills", onOpenDirectory, onAppendListItem)}
@@ -2251,6 +2403,7 @@ function AgentFilledConfigSummary({
 				<AgentFilledSummaryRow
 					addLabel={getAgentFilledSummaryAddLabel("subagents", subagentItems.length === 0, showAddButtons)}
 					hideWhenEmpty={hideEmptyRows}
+					isItemDisabled={(item) => isAgentListItemDisabled(config, "subagents", item)}
 					items={subagentItems}
 					label="Subagents"
 					onAdd={() => onAppendListItem?.("subagents")}
@@ -2722,14 +2875,17 @@ function AgentKnowledgeNavMenuContent({
 	value,
 	onValueChange,
 	items,
+	disabledItems,
 	onBrowse,
 	onPickKnowledgeApp,
 	onRemoveItem,
 	onSelectItem,
+	onToggleItem,
 }: Readonly<{
 	value: KnowledgeModeValue;
 	onValueChange: (next: KnowledgeModeValue) => void;
 	items: readonly string[];
+	disabledItems?: readonly string[];
 	onBrowse?: () => void;
 	// "Add knowledge" opens a nested flyout whose rows are the knowledge apps
 	// (plus an "Upload files" lead row), mirroring the directory grid. Picking a
@@ -2738,9 +2894,11 @@ function AgentKnowledgeNavMenuContent({
 	onPickKnowledgeApp?: (appIdOrUpload: string) => void;
 	onRemoveItem?: (index: number) => void;
 	onSelectItem?: (item: string) => void;
+	onToggleItem?: (index: number, enabled: boolean) => void;
 }>) {
 	const isCustom = value === "custom";
 	const hasItems = isCustom && items.length > 0;
+	const disabledSet = useDisabledLabelSet(disabledItems);
 
 	return (
 		<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
@@ -2753,6 +2911,7 @@ function AgentKnowledgeNavMenuContent({
 								return (
 									<AgentCompactReferenceRow
 										key={`knowledge-${item}-${index}`}
+										enabled={!disabledSet.has(item.trim())}
 										elemBefore={
 											// The shared menu visual renders at a fixed 32px tile
 											// (MENU_VISUAL_TILE_SIZE). Scale the whole mark to 24px
@@ -2779,6 +2938,7 @@ function AgentKnowledgeNavMenuContent({
 										label={item}
 										onClick={onSelectItem ? () => onSelectItem(item) : undefined}
 										onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
+										onToggle={onToggleItem ? (enabled) => onToggleItem(index, enabled) : undefined}
 									/>
 								);
 							})}
@@ -2842,10 +3002,12 @@ interface AgentKnowledgeSelectorProps {
 	// handlers surfaced inside the dropdown when "Custom" is active.
 	items?: readonly string[];
 	onBrowse?: () => void;
+	disabledItems?: readonly string[];
 	// Picking an app row (or "Upload files") in the "Add knowledge" flyout.
 	onPickKnowledgeApp?: (appIdOrUpload: string) => void;
 	onRemoveItem?: (index: number) => void;
 	onSelectItem?: (item: string) => void;
+	onToggleItem?: (index: number, enabled: boolean) => void;
 	screenAssistantTargetId?: string;
 }
 
@@ -2855,10 +3017,12 @@ function AgentKnowledgeSelector({
 	render,
 	itemCount = 0,
 	items = [],
+	disabledItems,
 	onBrowse,
 	onPickKnowledgeApp,
 	onRemoveItem,
 	onSelectItem,
+	onToggleItem,
 	screenAssistantTargetId,
 }: Readonly<AgentKnowledgeSelectorProps>) {
 	const current = findKnowledgeModeOption(value);
@@ -2883,10 +3047,12 @@ function AgentKnowledgeSelector({
 					value={value}
 					onValueChange={onValueChange}
 					items={items}
+					disabledItems={disabledItems}
 					onBrowse={onBrowse}
 					onPickKnowledgeApp={onPickKnowledgeApp}
 					onRemoveItem={onRemoveItem}
 					onSelectItem={onSelectItem}
+					onToggleItem={onToggleItem}
 				/>
 			</MenubarMenu>
 		);
@@ -3098,6 +3264,7 @@ interface AgentKnowledgeRowProps {
 	onValueChange: (next: KnowledgeModeValue) => void;
 	items: readonly string[];
 	addLabel?: string;
+	isItemDisabled?: (item: string, index: number) => boolean;
 	onAdd?: () => void;
 	onRemoveItem?: (index: number) => void;
 	screenAssistantTargetId?: string;
@@ -3108,6 +3275,7 @@ function AgentKnowledgeRow({
 	onValueChange,
 	items,
 	addLabel,
+	isItemDisabled,
 	onAdd,
 	onRemoveItem,
 	screenAssistantTargetId,
@@ -3136,6 +3304,7 @@ function AgentKnowledgeRow({
 						{items.map((item, index) => (
 							<AgentReferenceChip
 								category="knowledge"
+								disabled={isItemDisabled?.(item, index)}
 								key={`knowledge-${item}-${index}`}
 								label={item}
 								onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
@@ -3489,6 +3658,7 @@ interface AgentCompactConfigToolbarBelowProps {
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
+	onToggleListItem?: (field: AgentConfigListFieldName, index: number, enabled: boolean) => void;
 	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
 	screenAssistantTargetPrefix?: string;
 	selectedListItemIndexByField?: Partial<Record<AgentConfigListFieldName, number>>;
@@ -3507,6 +3677,7 @@ function AgentCompactConfigToolbarBelow({
 	onRemoveListItem,
 	onSelectListItem,
 	onTextChange,
+	onToggleListItem,
 	onTriggerDefinitionsChange,
 	screenAssistantTargetPrefix,
 	selectedListItemIndexByField,
@@ -3682,6 +3853,7 @@ function AgentCompactConfigToolbarBelow({
 							onOpenDirectory={onOpenDirectory}
 							onRemoveListItem={onRemoveListItem}
 							onSelectListItem={onSelectListItem}
+							onToggleListItem={onToggleListItem}
 							reasoningValue={reasoningValue}
 							onReasoningValueChange={setReasoningValue}
 							knowledgeMode={knowledgeMode}
@@ -3713,6 +3885,11 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	onListItemChange?: (field: AgentConfigListFieldName, index: number, value: string) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
+	// Toggle a configured list item's enabled state. Owners that persist the
+	// config (e.g. the studio draft in localStorage) should apply
+	// `toggleAgentConfigDisabledItem` to their stored value so the disabled state
+	// survives a refresh. Omitting this prop hides the enable/disable switches.
+	onToggleListItem?: (field: AgentConfigListFieldName, index: number, enabled: boolean) => void;
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
@@ -3753,6 +3930,7 @@ export const AgentConfigFields = memo(
 		onRemoveListItem,
 		onSelectListItem,
 		onTextChange,
+		onToggleListItem,
 		onTriggerDefinitionsChange,
 		profileAvatarSrc,
 		profileConfig,
@@ -3915,6 +4093,7 @@ export const AgentConfigFields = memo(
 							onRemoveListItem={handleRemoveListItem}
 							onSelectListItem={handleSelectListItem}
 							onTextChange={handleTextChange}
+							onToggleListItem={onToggleListItem}
 							onTriggerDefinitionsChange={onTriggerDefinitionsChange}
 							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 							selectedListItemIndexByField={selectedListItemIndexByField}
