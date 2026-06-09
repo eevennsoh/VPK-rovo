@@ -485,7 +485,7 @@
 	align-items: center;
 	gap: 12px;
 	border: 0;
-	border-radius: var(--ds-radius-small, 3px);
+	border-radius: 8px;
 	background: transparent;
 	/* Shared sizing model for every variant (nested, flat, live "@"/"/" menus):
 	   a fixed 40px row. The 24px front-slot avatar plus the clamped copy box
@@ -493,7 +493,7 @@
 	   inside 40px, and `align-items: center` centers them. No vertical padding —
 	   the fixed height owns the row rhythm so reveal animations never reflow it. */
 	height: 40px;
-	padding: 0 6px 0 12px;
+	padding: 0 6px 0 8px;
 	color: var(--ds-text, #172b4d);
 	text-align: left;
 	cursor: pointer;
@@ -527,13 +527,15 @@
 }
 
 /* Mirror the full-bleed "Back" header: break out of the list's 4px padding so
-   the sticky input bar spans edge-to-edge with square top corners, while the
-   logo stays aligned with the icons of the rows below (12px from the edge). */
+   the sticky input bar spans edge-to-edge with square top corners. The 12px left
+   padding + 24px logo box center the input glyph at the same 24px offset as the
+   24px front slots in the list rows below, so the sticky header and the rows
+   line up exactly across every variant — nested, flat, and search. */
 .rich-text-command-menu-input {
 	margin: 0;
 	width: 100%;
 	border-radius: 0;
-	padding-left: 10px;
+	padding-left: 12px;
 	padding-right: 10px;
 	cursor: text;
 }
@@ -544,8 +546,8 @@
 
 .rich-text-command-menu-input-logo {
 	display: inline-flex;
-	width: 32px;
-	height: 32px;
+	width: 24px;
+	height: 24px;
 	align-items: center;
 	justify-content: center;
 }
@@ -577,36 +579,23 @@
 	justify-self: end;
 }
 
+/* Single front-slot size for every menu (live "@"/"/" surfaces, the agent
+   composer, and the editor-palette showcases): a 24px box that lines up with the
+   24px grid track on `.rich-text-command-menu-item` and the 24px-scaled tiles
+   from `RichTextSuggestionMenuItemVisual`. */
 .rich-text-command-menu-avatar {
-	width: 32px;
-	height: 32px;
-}
-
-/* Compact front slot (editor-palette showcases opt in via
-   `visualSize="compact"`). The 24px front-slot box and grid track line up with
-   the 24px-scaled tiles rendered by `RichTextSuggestionMenuItemVisual`. */
-.rich-text-command-menu[data-visual-size="compact"] .rich-text-command-menu-item {
-	grid-template-columns: 24px minmax(0, 1fr) auto;
-}
-
-.rich-text-command-menu[data-visual-size="compact"] .rich-text-command-menu-avatar {
 	width: 24px;
 	height: 24px;
 }
-
-.rich-text-command-menu[data-visual-size="compact"] .rich-text-command-menu-input-logo {
-	width: 24px;
-	height: 24px;
-}
-
 
 .rich-text-command-menu-back {
 	display: flex;
 	grid-template-columns: none;
 	border-radius: 0;
-	/* 16px left padding aligns the back arrow with the 24px front slots in the
-	   list rows below (which sit at 12px padding + 12px to glyph center). */
-	padding: 8px 10px 8px 16px;
+	/* 12px left padding matches the "Ask Rovo"/search input sticky header and the
+	   24px front slots in the list rows, so the back arrow lines up exactly with
+	   every other leading glyph across nested, flat, and search variants. */
+	padding: 8px 10px 8px 12px;
 	color: var(--ds-text-subtle, #44546f);
 }
 
@@ -685,7 +674,7 @@
    with 12px top / 4px bottom padding so each section gets breathing room above
    and sits tight to its items below. */
 .rich-text-command-menu-heading {
-	padding: 12px 12px 4px;
+	padding: 12px 8px 4px;
 	color: var(--ds-text-subtlest, #626f86);
 	font-size: 12px;
 	font-weight: 600;

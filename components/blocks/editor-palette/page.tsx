@@ -184,8 +184,6 @@ export interface EditorPaletteSearchPickerProps {
 	mentionSources?: RichTextMentionSources;
 	onBrowseAll?: () => void;
 	onSelectItem?: (item: RichTextSuggestionMenuItem) => void;
-	/** Front-slot visual scale forwarded to the underlying suggestion menu. */
-	visualSize?: "default" | "compact";
 }
 
 export function EditorPaletteSearchPicker({
@@ -196,7 +194,6 @@ export function EditorPaletteSearchPicker({
 	mentionSources = EDITOR_PALETTE_MENTION_SOURCES,
 	onBrowseAll,
 	onSelectItem,
-	visualSize = "default",
 }: Readonly<EditorPaletteSearchPickerProps>) {
 	const [query, setQuery] = useState("");
 	const items = filterSearchItems(getMentionChildItems(mentionSources, category), query);
@@ -249,7 +246,6 @@ export function EditorPaletteSearchPicker({
 			onSelect={handleSelect}
 			renderFirstItemAsInput
 			selectedIndex={-1}
-			visualSize={visualSize}
 		/>
 	);
 }
@@ -295,7 +291,6 @@ function SearchPalette({ category, mentionSources }: Readonly<SearchPaletteProps
 					category={category}
 					className="rich-text-command-menu-borderless"
 					mentionSources={mentionSources}
-					visualSize="compact"
 				/>
 			</PalettePanel>
 		</div>
@@ -320,7 +315,6 @@ function NestedPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
 					items={mentionItems}
 					selectedIndex={0}
 					onSelect={noop}
-					visualSize="compact"
 				/>
 			</PalettePanel>
 
@@ -333,7 +327,6 @@ function NestedPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
 					selectedIndex={0}
 					renderFirstItemAsInput
 					onSelect={noop}
-					visualSize="compact"
 				/>
 			</PalettePanel>
 
@@ -347,7 +340,6 @@ function NestedPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
 						selectedIndex={0}
 						onBack={noop}
 						onSelect={noop}
-						visualSize="compact"
 					/>
 				</PalettePanel>
 			))}
@@ -361,7 +353,6 @@ function NestedPalette({ mentionSources }: Readonly<PaletteVariantProps>) {
 					selectedIndex={0}
 					onBack={noop}
 					onSelect={noop}
-					visualSize="compact"
 				/>
 			</PalettePanel>
 		</div>
@@ -535,7 +526,6 @@ function FlatMergedPanel({
 				selectedIndex={-1}
 				onSelect={handleSelect}
 				renderFirstItemAsInput={leadItem !== undefined}
-				visualSize="compact"
 			/>
 		</PalettePanel>
 	);
