@@ -113,6 +113,8 @@ test("Knowledge Directory implements app selection and content-scope actions", (
 
 	assert.match(source, /function BrowseAppsStep/u);
 	assert.match(source, /function KnowledgeAppCard/u);
+	assert.match(source, /<CardDirectory[\s\S]*selectLabel=\{`Select \$\{app\.name\}`\}/u);
+	assert.match(source, /<EntityCard\.Knowledge/u);
 	assert.match(source, /function AppContentStep/u);
 	assert.match(source, /function ContentModeSelector/u);
 	assert.match(source, /All content/u);

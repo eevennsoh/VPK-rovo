@@ -25,19 +25,21 @@ test("Agent Card preview uses a direct route instead of the generic dynamic prev
 
 test("Agent Card title actions use chat label and edit icon controls", () => {
 	const source = readProjectFile("components/blocks/agent-card/components/agent-card.tsx");
+	const entitySource = readProjectFile("components/ui-custom/entity-card/agent-profile.tsx");
 
-	assert.match(source, /import EditIcon from "@atlaskit\/icon\/core\/edit";/u);
-	assert.doesNotMatch(source, /SwapIcon/u);
-	assert.match(source, /editActionLabel\?: string;/u);
-	assert.match(source, /onEditAction\?: \(\) => void;/u);
-	assert.match(source, /const resolvedSwapActionLabel = swapActionLabel \?\? "Chat with agent";/u);
-	assert.match(source, /const resolvedEditActionLabel = editActionLabel \?\? `Edit \$\{name\}`;/u);
+	assert.match(source, /<EntityCard\.AgentProfile \{\.\.\.props\} \/>/u);
+	assert.match(entitySource, /import EditIcon from "@atlaskit\/icon\/core\/edit";/u);
+	assert.doesNotMatch(entitySource, /SwapIcon/u);
+	assert.match(entitySource, /editActionLabel\?: string;/u);
+	assert.match(entitySource, /onEditAction\?: \(\) => void;/u);
+	assert.match(entitySource, /const resolvedSwapActionLabel = swapActionLabel \?\? "Chat with agent";/u);
+	assert.match(entitySource, /const resolvedEditActionLabel = editActionLabel \?\? `Edit \$\{name\}`;/u);
 	assert.match(
-		source,
+		entitySource,
 		/<Button[\s\S]*aria-label=\{resolvedSwapActionLabel\}[\s\S]*size="compact"[\s\S]*>\s*\{resolvedSwapActionLabel\}\s*<\/Button>/u,
 	);
 	assert.match(
-		source,
+		entitySource,
 		/<Button[\s\S]*aria-label=\{resolvedEditActionLabel\}[\s\S]*onClick=\{onEditAction\}[\s\S]*size="icon-compact"[\s\S]*<EditIcon label="" size="small" \/>/u,
 	);
 });
