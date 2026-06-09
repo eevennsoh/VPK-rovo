@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { type ReactElement, type ReactNode } from "react";
-import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
+import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -49,10 +49,11 @@ export interface EntityCardSkillProps {
 	iconMeta?: EntityCardIcon;
 	publisher?: string;
 	publisherLogo?: ReactNode;
+	verified?: boolean;
 	source?: EntityCardSource;
 	description?: string;
 	starCount?: number;
-	viewCount?: number;
+	teammateCount?: number;
 	revealStatsOnHover?: boolean;
 	action?: ReactNode;
 	onMoreActions?: () => void;
@@ -112,10 +113,11 @@ export function EntityCardSkill({
 	iconVariant = "gray",
 	iconMeta,
 	publisher,
+	verified = false,
 	source,
 	description,
 	starCount,
-	viewCount,
+	teammateCount,
 	revealStatsOnHover = false,
 	action,
 	onMoreActions,
@@ -123,7 +125,7 @@ export function EntityCardSkill({
 	className,
 }: Readonly<EntityCardSkillProps>) {
 	const showStars = typeof starCount === "number";
-	const showViews = typeof viewCount === "number";
+	const showTeammates = typeof teammateCount === "number";
 
 	if (density === "preview") {
 		return (
@@ -161,7 +163,7 @@ export function EntityCardSkill({
 						<EntityCardMoreButton label={`More actions for ${name}`} onClick={onMoreActions} />
 					) : null)
 				}
-				byline={publisher ? <EntityCardByline publisher={publisher} /> : undefined}
+				byline={publisher ? <EntityCardByline publisher={publisher} verified={verified} /> : undefined}
 				leading={
 					icon ? (
 						iconTile ? (
@@ -180,7 +182,7 @@ export function EntityCardSkill({
 				{description ?? `Learn how ${name} can help your team work faster.`}
 			</EntityCardDescription>
 
-			{showStars || showViews ? (
+			{showStars || showTeammates ? (
 				<EntityCardFooter
 					className={cn(
 						revealStatsOnHover &&
@@ -194,11 +196,11 @@ export function EntityCardSkill({
 							{formatCompact(starCount)}
 						</EntityCardStat>
 					) : null}
-					{showViews ? (
+					{showTeammates ? (
 						<EntityCardStat
-							icon={<EyeOpenIcon label="" size="small" spacing="none" color="currentColor" />}
+							icon={<PeopleGroupIcon label="" size="small" spacing="none" color="currentColor" />}
 						>
-							{formatCompact(viewCount)}
+							Used by {formatCompact(teammateCount)} teammates
 						</EntityCardStat>
 					) : null}
 				</EntityCardFooter>

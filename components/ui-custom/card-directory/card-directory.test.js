@@ -246,12 +246,16 @@ test("capabilities label is optional and omitted when not provided", () => {
 	assert.doesNotMatch(PARTS_SOURCE, /label = "What it can do"/u);
 });
 
-test("skill variant uses a 32px icon tile, header byline, and left-aligned view count", () => {
+test("skill variant uses a 32px icon tile, header byline, and a teammate stat", () => {
 	assert.match(SKILL_SOURCE, /IconTile/u);
 	assert.match(SKILL_SOURCE, /size="medium"/u);
-	assert.match(SKILL_SOURCE, /@atlaskit\/icon\/core\/eye-open/u);
+	// Star + "Used by X teammates" stats (people-group icon), not an eye/view count.
+	assert.match(SKILL_SOURCE, /@atlaskit\/icon\/core\/star-unstarred/u);
+	assert.match(SKILL_SOURCE, /@atlaskit\/icon\/core\/people-group/u);
+	assert.match(SKILL_SOURCE, /Used by \{formatCompact\(teammateCount\)\} teammates/u);
+	assert.doesNotMatch(SKILL_SOURCE, /@atlaskit\/icon\/core\/eye-open/u);
 	assert.match(SKILL_SOURCE, /EntityCardByline/u);
-	assert.match(SKILL_SOURCE, /byline=\{publisher \? <EntityCardByline publisher=\{publisher\} \/> : undefined\}/u);
+	assert.match(SKILL_SOURCE, /byline=\{publisher \? <EntityCardByline publisher=\{publisher\} verified=\{verified\} \/> : undefined\}/u);
 	assert.doesNotMatch(SKILL_SOURCE, /className="justify-between"/u);
 	assert.doesNotMatch(SKILL_SOURCE, /publisherLogo \?\? null/u);
 });
@@ -278,12 +282,22 @@ test("template variant renders Works with sources and Skills tags, no glow or st
 	assert.doesNotMatch(TEMPLATE_SOURCE, /StarUnstarredIcon|AiChatIcon/u);
 });
 
-test("knowledge variant renders app identity, description, and provider metadata", () => {
+test("knowledge variant renders app identity, a publisher byline, and star/teammate stats", () => {
 	assert.match(KNOWLEDGE_SOURCE, /data-slot="entity-card-knowledge"/u);
-	assert.match(KNOWLEDGE_SOURCE, /<EntityCardHeader[\s\S]*leading=\{icon \?\? null\}[\s\S]*title=\{name\}/u);
+	assert.match(KNOWLEDGE_SOURCE, /title=\{name\}/u);
 	assert.match(KNOWLEDGE_SOURCE, /<EntityCardDescription>\{description\}<\/EntityCardDescription>/u);
-	assert.match(KNOWLEDGE_SOURCE, /<EntityCardFooter>[\s\S]*\{providerName\}/u);
-	assert.match(KNOWLEDGE_SOURCE, /providerName/u);
+	// Provider attribution moved to a "By {publisher}" byline (with optional
+	// verified checkmark), mirroring the agent/skill cards.
+	assert.match(KNOWLEDGE_SOURCE, /byline=\{bylinePublisher \? <EntityCardByline publisher=\{bylinePublisher\} verified=\{verified\} \/> : undefined\}/u);
+	assert.match(KNOWLEDGE_SOURCE, /const bylinePublisher = publisher \?\? providerName/u);
+	// The metadata row shows star + "Used by X teammates" stats (people-group
+	// icon), like the tool card — not an eye/view count or the raw provider name.
+	assert.match(KNOWLEDGE_SOURCE, /@atlaskit\/icon\/core\/star-unstarred/u);
+	assert.match(KNOWLEDGE_SOURCE, /@atlaskit\/icon\/core\/people-group/u);
+	assert.match(KNOWLEDGE_SOURCE, /formatCompact\(starCount\)/u);
+	assert.match(KNOWLEDGE_SOURCE, /Used by \{formatCompact\(teammateCount\)\} teammates/u);
+	assert.doesNotMatch(KNOWLEDGE_SOURCE, /@atlaskit\/icon\/core\/eye-open/u);
+	assert.doesNotMatch(KNOWLEDGE_SOURCE, /<EntityCardFooter>[\s\S]*<span>\{providerName\}<\/span>/u);
 	assert.match(KNOWLEDGE_WRAPPER_SOURCE, /className=\{cn\("gap-4", className\)\}/u);
 	assert.match(KNOWLEDGE_WRAPPER_SOURCE, /<EntityCard\.Knowledge/u);
 });

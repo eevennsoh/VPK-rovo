@@ -305,7 +305,7 @@ function SearchPalette({ category, mentionSources }: Readonly<SearchPaletteProps
 			<PalettePanel caption={getSearchPlaceholder(category)}>
 				<EditorPaletteSearchPicker
 					category={category}
-					className="rich-text-command-menu-borderless"
+					className="rich-text-command-menu-borderless rich-text-command-menu-showcase"
 					mentionSources={mentionSources}
 				/>
 			</PalettePanel>

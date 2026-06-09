@@ -77,14 +77,27 @@ export interface CardDirectoryHeaderProps {
 	title: string;
 	/** Attribution line under the title (e.g. `CardDirectoryByline`). */
 	byline?: ReactNode;
+	/**
+	 * Reserves the byline's vertical space even when no `byline` is supplied, so
+	 * a card without attribution (e.g. a tool card) keeps the same header height
+	 * as one with it (agent/skill/knowledge). The leading visual and title stay
+	 * vertically centered — the reserved space is added symmetrically, it does
+	 * not shift the content down.
+	 */
+	reserveByline?: boolean;
 	/** Trailing action revealed on hover/focus (e.g. `CardDirectoryMoreButton`). */
 	action?: ReactNode;
 }
 
-export function CardDirectoryHeader({ leading, title, byline, action }: Readonly<CardDirectoryHeaderProps>) {
+export function CardDirectoryHeader({ leading, title, byline, reserveByline = false, action }: Readonly<CardDirectoryHeaderProps>) {
 	return (
 		<div
-			className="flex items-center gap-2"
+			// When `reserveByline` is set on a byline-less header, `min-h-9` (36px)
+			// reserves the height a title + byline header occupies (title line +
+			// 16px byline), so it lines up with attributed cards. `items-center`
+			// keeps the logo + title centered, so the reserved space is added
+			// symmetrically and the content does not shift down.
+			className={cn("flex items-center gap-2", reserveByline && !byline && "min-h-9")}
 			data-slot="card-directory-header"
 		>
 			{leading ? <span className="inline-flex shrink-0 items-center leading-none">{leading}</span> : null}

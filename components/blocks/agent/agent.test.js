@@ -619,12 +619,12 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.doesNotMatch(WEBSITE_REGISTRY_SOURCE, /agent-demo-compact-/u);
 });
 
-test("Agent compact directory dropdowns keep persistent browse and add footers", () => {
+test("Agent compact directory dropdowns keep persistent add and browse footers", () => {
 	assert.match(AGENT_SOURCE, /function AgentCompactDirectoryNavButton\(/u);
 	assert.match(AGENT_SOURCE, /directory: AgentInlineSearchField;/u);
 	assert.match(AGENT_SOURCE, /onAddSearchItem\?: \(item: RichTextSuggestionMenuItem\) => void;/u);
-	assert.match(AGENT_SOURCE, /function AgentCompactDirectoryNavButton[\s\S]*<MenubarContent align="start" className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}>[\s\S]*<div className="min-h-0 flex-1 overflow-y-auto">[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*\{browseItem\}[\s\S]*\{addSearchFlyout\}/u);
-	assert.match(AGENT_SOURCE, /const addSearchFlyout = \([\s\S]*<DropdownMenuSub>[\s\S]*<DropdownMenuSubTrigger>[\s\S]*\{addLabel\}[\s\S]*<DropdownMenuSubContent className="w-auto min-w-0 border-0 bg-transparent p-0 shadow-none">[\s\S]*<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category=\{AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD\[directory\]\}[\s\S]*onBrowseAll=\{onBrowse\}[\s\S]*onSelectItem=\{onAddSearchItem\}/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactDirectoryNavButton[\s\S]*<MenubarContent align="start" className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}>[\s\S]*<div className="min-h-0 flex-1 overflow-y-auto">[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*\{addSearchFlyout\}[\s\S]*\{browseItem\}/u);
+	assert.match(AGENT_SOURCE, /const addSearchFlyout = \([\s\S]*<DropdownMenuSub>[\s\S]*<DropdownMenuSubTrigger>[\s\S]*\{addLabel\}[\s\S]*<DropdownMenuSubContent className="w-auto min-w-0 overflow-visible border-0 bg-transparent p-0 shadow-none">[\s\S]*<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category=\{AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD\[directory\]\}[\s\S]*onBrowseAll=\{onBrowse\}[\s\S]*onSelectItem=\{handlePickerSelect\}/u);
 	assert.match(AGENT_SOURCE, /onAddSearchItem=\{\(searchItem\) => \{[\s\S]*if \(searchItem\.disabled\) \{[\s\S]*return;[\s\S]*onAddListValues\?\.\(directory, \[searchItem\.label\]\);[\s\S]*\}\}/u);
 	assert.match(AGENT_SOURCE, /browseLabel=\{`Browse \$\{item\.label\.toLowerCase\(\)\}`\}[\s\S]*onBrowse=\{\(\) => openAgentDirectoryOrAppendListItem\(directory, directory, onOpenDirectory, onAppendListItem\)\}/u);
 });

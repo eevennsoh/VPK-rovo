@@ -42,6 +42,7 @@ import {
 } from "@/components/blocks/conversation-starters";
 import {
 	renderAgentTriggerProviderIcon,
+	renderAgentTriggerProviderTileIcon,
 	serializeAgentTriggerLabels,
 	TriggerPicker,
 	TriggerProviderSearchList,
@@ -1072,7 +1073,7 @@ function AgentCompactTriggerRow({
 				icon ? (
 					<span
 						className={cn(
-							"inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4",
+							"inline-flex size-6 shrink-0 items-center justify-center",
 							enabled ? "text-icon-subtle" : "text-icon-disabled",
 						)}
 					>
@@ -1207,7 +1208,7 @@ function AgentCompactTriggersNavButton({
 							<div className="p-0">
 								{triggers.map((trigger, index) => {
 									const definition = definitionsAlignItems ? triggerDefinitions?.[index] : undefined;
-									const providerIcon = definition ? renderAgentTriggerProviderIcon(definition) : undefined;
+									const providerIcon = definition ? renderAgentTriggerProviderTileIcon(definition) : undefined;
 									return (
 										<AgentCompactTriggerRow
 											key={`trigger-${trigger}-${index}`}
@@ -1242,7 +1243,7 @@ function AgentCompactTriggersNavButton({
 }
 
 // Tools/Skills share one shape: configured items scroll in the body, while
-// "Browse {label}" and "Add {label} ›" stay pinned in a permanent footer.
+// "Add {label} ›" and "Browse {label}" stay pinned in a permanent footer.
 // Knowledge layers its mode options above the list (handled by
 // AgentKnowledgeSelector instead).
 function AgentCompactDirectoryNavButton({
@@ -1290,7 +1291,7 @@ function AgentCompactDirectoryNavButton({
 					{addLabel}
 				</span>
 			</DropdownMenuSubTrigger>
-			<DropdownMenuSubContent className="w-auto min-w-0 border-0 bg-transparent p-0 shadow-none">
+			<DropdownMenuSubContent className="w-auto min-w-0 overflow-visible border-0 bg-transparent p-0 shadow-none">
 				<EditorPaletteSearchPicker
 					autoFocus
 					category={AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD[directory]}
@@ -1331,8 +1332,8 @@ function AgentCompactDirectoryNavButton({
 					</div>
 				)}
 				<AgentCompactNavMenuPinnedFooter bordered={!isEmpty}>
-					{browseItem}
 					{addSearchFlyout}
+					{browseItem}
 				</AgentCompactNavMenuPinnedFooter>
 			</MenubarContent>
 		</MenubarMenu>
@@ -2440,28 +2441,31 @@ function AgentReasoningSelectorMenu({
 	);
 }
 
+function getReasoningSectionTitle(value: ReasoningModeValue): string {
+	return findReasoningModeOption(value)?.section ?? REASONING_MODE_SECTIONS[0].title;
+}
+
 // "Quick answer | Think deeper" tabs pinned to the bottom of the nav-button
 // popup, mirroring the Knowledge menu's "All | Custom | None" tabs
 // (`AgentKnowledgeModeTabs`). Unlike Knowledge — where a tab IS the mode — a
-// reasoning section holds several options, so the tab tracks the active
-// section and switching it selects that section's default (first) option.
+// reasoning section holds several options. Switching tabs only changes which
+// section's options are *browsed*; it never commits a model. A new model is
+// selected only when the user clicks an option row.
 function AgentReasoningModeTabs({
-	value,
-	onValueChange,
+	browsedSection,
+	onBrowseSection,
 }: Readonly<{
-	value: ReasoningModeValue;
-	onValueChange: (next: ReasoningModeValue) => void;
+	browsedSection: string;
+	onBrowseSection: (next: string) => void;
 }>) {
-	const activeSection = findReasoningModeOption(value)?.section ?? REASONING_MODE_SECTIONS[0].title;
 	return (
 		<Tabs
 			// Base UI Tabs `value` must match a Tab `value`; the tab IS the section
-			// title here. Picking a tab selects that section's default option.
-			value={activeSection}
+			// title here. Picking a tab only previews that section's options.
+			value={browsedSection}
 			onValueChange={(next) => {
-				const section = REASONING_MODE_SECTIONS.find((entry) => entry.title === next);
-				if (section) {
-					onValueChange(section.options[0].value as ReasoningModeValue);
+				if (REASONING_MODE_SECTIONS.some((entry) => entry.title === next)) {
+					onBrowseSection(next);
 				}
 			}}
 		>
@@ -2477,9 +2481,11 @@ function AgentReasoningModeTabs({
 }
 
 // Nav-button reasoning popup: a flex column matching the Knowledge nav menu.
-// The active section's options scroll in the body, a separator sits between the
-// list and the tabs, and the "Quick answer | Think deeper" tab control (the
-// section) is pinned at the bottom.
+// The browsed section's options scroll in the body, a separator sits between
+// the list and the tabs, and the "Quick answer | Think deeper" tab control (the
+// section) is pinned at the bottom. The browsed section is local state so the
+// user can flip tabs to browse without changing their committed model; it
+// re-syncs to the committed value's section whenever that value changes.
 function AgentReasoningNavMenuContent({
 	value,
 	onValueChange,
@@ -2487,10 +2493,18 @@ function AgentReasoningNavMenuContent({
 	value: ReasoningModeValue;
 	onValueChange: (next: ReasoningModeValue) => void;
 }>) {
+	const committedSection = getReasoningSectionTitle(value);
+	const [browsedSection, setBrowsedSection] = useState(committedSection);
+	// Re-anchor browsing to the committed value's section when it changes (e.g.
+	// the menu reopens after a selection or an external update).
+	const [lastCommittedSection, setLastCommittedSection] = useState(committedSection);
+	if (committedSection !== lastCommittedSection) {
+		setLastCommittedSection(committedSection);
+		setBrowsedSection(committedSection);
+	}
 	const activeSection =
-		REASONING_MODE_SECTIONS.find(
-			(section) => section.title === (findReasoningModeOption(value)?.section ?? REASONING_MODE_SECTIONS[0].title),
-		) ?? REASONING_MODE_SECTIONS[0];
+		REASONING_MODE_SECTIONS.find((section) => section.title === browsedSection) ??
+		REASONING_MODE_SECTIONS[0];
 	return (
 		<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
 			<div className="min-h-0 flex-1 overflow-y-auto">
@@ -2511,7 +2525,7 @@ function AgentReasoningNavMenuContent({
 			<div className="shrink-0">
 				<DropdownMenuSeparator />
 				<div className="pt-1">
-					<AgentReasoningModeTabs value={value} onValueChange={onValueChange} />
+					<AgentReasoningModeTabs browsedSection={browsedSection} onBrowseSection={setBrowsedSection} />
 				</div>
 			</div>
 		</MenubarContent>
@@ -2796,7 +2810,7 @@ function AgentKnowledgeNavMenuContent({
 									Add knowledge
 								</span>
 							</DropdownMenuSubTrigger>
-							<DropdownMenuSubContent className="w-auto min-w-0 border-0 bg-transparent p-0 shadow-none">
+							<DropdownMenuSubContent className="w-auto min-w-0 overflow-visible border-0 bg-transparent p-0 shadow-none">
 								<EditorPaletteSearchPicker
 									autoFocus
 									category="knowledge"

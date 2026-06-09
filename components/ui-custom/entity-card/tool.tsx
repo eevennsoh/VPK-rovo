@@ -50,8 +50,13 @@ export function EntityCardTool({
 							<EntityCardMoreButton active={active} label={`More actions for ${name}`} onClick={onMoreActions} />
 						) : null)
 					}
+					// Tool cards have no "By" attribution, but agent/skill/knowledge
+					// cards do. `reserveByline` keeps the header the same height as a
+					// title + byline header (so the cards line up) WITHOUT inserting a
+					// visible row — the logo + title stay vertically centered.
+					reserveByline
 					leading={
-						<Tile isInset={false} label={name} size="small" variant="transparent">
+						<Tile isInset={false} label={name} size="medium" variant="transparent">
 							{appLogo}
 						</Tile>
 					}

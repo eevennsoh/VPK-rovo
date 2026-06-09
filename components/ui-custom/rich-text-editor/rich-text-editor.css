@@ -424,6 +424,35 @@
 	border: 0;
 }
 
+/* Strips all container chrome (border, shadow, bg, radius, sizing) so the menu
+   can be embedded as the list-only portion inside a parent shell element. The
+   parent owns the visual frame; the embedded menu contributes only its list. */
+.rich-text-command-menu-embedded {
+	border: 0;
+	border-radius: 0;
+	background-color: transparent;
+	box-shadow: none;
+	width: 100%;
+	max-height: none;
+	overflow: visible;
+}
+
+.rich-text-command-menu-embedded .rich-text-command-menu-list {
+	max-height: none;
+	overflow-y: visible;
+	padding-top: 0;
+}
+
+.rich-text-command-menu-uncapped {
+	max-height: none;
+	overflow: visible;
+}
+
+.rich-text-command-menu-uncapped .rich-text-command-menu-list {
+	max-height: none;
+	overflow-y: visible;
+}
+
 .rich-text-command-menu-showcase {
 	max-height: none;
 }
@@ -626,10 +655,14 @@
 
 .rich-text-command-menu-label {
 	overflow: hidden;
-	/* Title: ADS font.body (14px / line-height 20px) via the token, so size and
-	   line-height are never hand-overridden. Color uses the text-subtle token;
-	   weight stays at the default paragraph weight (no deliberate override). */
-	font: var(--ds-font-body);
+	/* Title: ADS font.body values (14px / 20px) applied as LONGHAND, not the
+	   `font: var(--ds-font-body)` shorthand. The shorthand expands to a full
+	   `font` value, which also resets font-family + font-size-adjust off the
+	   inherited app typography — so we set only size + line-height here and let
+	   family/weight inherit. `overflow`/`text-overflow`/`white-space` keep the
+	   single-line truncation (ellipsis) for long labels. */
+	font-size: 14px;
+	line-height: 20px;
 	color: var(--ds-text-subtle, #44546f);
 	text-overflow: ellipsis;
 	white-space: nowrap;

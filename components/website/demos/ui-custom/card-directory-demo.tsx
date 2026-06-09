@@ -21,10 +21,19 @@ function DemoSection({ title, children }: Readonly<{ title: string; children: Re
 	return (
 		<section className="flex w-full flex-col gap-3">
 			<h3 className="text-xs font-semibold tracking-wide text-text-subtlest uppercase">{title}</h3>
-			<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
+			{/* CSS columns (masonry-style) instead of a grid so each card keeps its
+			    natural height — a grid forces every card in a row to the tallest
+			    card's height, which breaks the design. `break-inside-avoid` keeps a
+			    card whole within a column. */}
+			<div className="w-full columns-1 gap-3 sm:columns-2 [&>*]:mb-3 [&>*]:break-inside-avoid">{children}</div>
 		</section>
 	);
 }
+
+const KNOWLEDGE_DEMO_STATS = [
+	{ starCount: 38, verified: true, teammateCount: 6273 },
+	{ starCount: 124, verified: false, teammateCount: 18400 },
+] as const;
 
 function DemoKnowledgeCard({ index = 0 }: Readonly<{ index?: number }>) {
 	const app = DEFAULT_KNOWLEDGE_APPS[index] ?? DEFAULT_KNOWLEDGE_APPS[0];
@@ -33,13 +42,18 @@ function DemoKnowledgeCard({ index = 0 }: Readonly<{ index?: number }>) {
 		return null;
 	}
 
+	const stats = KNOWLEDGE_DEMO_STATS[index] ?? KNOWLEDGE_DEMO_STATS[0];
+
 	return (
 		<CardDirectoryKnowledge
 			description={app.description}
 			icon={getKnowledgeAppIcon(app)}
 			name={app.name}
 			onSelect={() => {}}
-			providerName={app.providerName}
+			publisher={app.providerName}
+			starCount={stats.starCount}
+			verified={stats.verified}
+			teammateCount={stats.teammateCount}
 		/>
 	);
 }
@@ -158,7 +172,7 @@ export default function CardDirectoryDemo() {
 					onSelect={() => {}}
 					publisher="Atlassian"
 					starCount={38}
-					viewCount={6273}
+					teammateCount={6273}
 				/>
 				<CardDirectorySkill
 					description="Find related issues and pages across your team's workspace."
@@ -169,13 +183,13 @@ export default function CardDirectoryDemo() {
 					onSelect={() => {}}
 					publisher="Atlassian"
 					starCount={120}
-					viewCount={4100}
+					teammateCount={4100}
 				/>
 			</DemoSection>
 
 			<DemoSection title="Tool">
 				<CardDirectoryTool
-					appLogo={<ConfluenceLogo size="small" />}
+					appLogo={<ConfluenceLogo size="medium" />}
 					description="Create, search, and update pages across your Confluence sites."
 					name="Confluence"
 					onMoreActions={() => {}}
@@ -184,7 +198,7 @@ export default function CardDirectoryDemo() {
 					toolCount={36}
 				/>
 				<CardDirectoryTool
-					appLogo={<Image alt="" aria-hidden height={24} src="/3p/slack/32.svg" width={24} />}
+					appLogo={<Image alt="" aria-hidden height={32} src="/3p/slack/32.svg" width={32} />}
 					description="Send messages and search conversations from your workspace."
 					name="Slack"
 					onMoreActions={() => {}}

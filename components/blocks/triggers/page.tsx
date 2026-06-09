@@ -114,6 +114,22 @@ export function renderAgentTriggerProviderIcon(trigger: AgentTriggerValue): Reac
 }
 
 /**
+ * Tile-filled provider icon for a configured trigger value, using the EXACT
+ * editor-palette treatment (the 24px `.rich-text-command-menu-avatar` tile that
+ * the logo fills) rather than the bare 16px glyph from
+ * `renderAgentTriggerProviderIcon`. Use where a trigger row should mirror the
+ * picker / editor-palette logo, e.g. the collapsed agent-config Triggers
+ * dropdown rows. Returns `null` for an unknown provider id.
+ */
+export function renderAgentTriggerProviderTileIcon(trigger: AgentTriggerValue): ReactElement | null {
+	const provider = getTriggerProvider(trigger.providerId);
+	if (!provider) {
+		return null;
+	}
+	return <TriggerProviderTileIcon icon={provider.icon} label={provider.label} />;
+}
+
+/**
  * Maps a trigger provider icon to the editor palette's `RichTextMentionVisual`
  * so picker rows get the EXACT same logo treatment as editor-palette menu rows:
  * 1p product logos render bare (they ship their own fill), 2p/3p brand images
@@ -298,7 +314,7 @@ export function TriggerProviderSearchList({
 					</Button>
 				) : null}
 			</div>
-			<div className="rich-text-command-menu-list max-h-[min(280px,calc(100vh-8rem))] overflow-y-auto">
+			<div className="rich-text-command-menu-list">
 				{filteredProviders.length > 0 ? (
 					<DropdownMenuGroup className="p-0">
 						{filteredProviders.map((provider) => (
@@ -371,7 +387,7 @@ export function TriggerPicker({
 			<DropdownMenuTrigger render={trigger ?? <TriggerAddRow label={label} />} />
 			<DropdownMenuContent
 				align="start"
-				className="w-[min(24rem,calc(100vw-2rem))] overflow-hidden p-0"
+				className="w-[min(24rem,calc(100vw-2rem))] p-0"
 				sideOffset={6}
 			>
 				<TriggerProviderSearchList

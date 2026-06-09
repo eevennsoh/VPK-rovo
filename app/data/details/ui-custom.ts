@@ -434,7 +434,7 @@ import PageIcon from "@atlaskit/icon/core/page"
   icon={<PageIcon label="" />}
   iconVariant="blue"
   publisher="Atlassian"
-  viewCount={6273}
+  teammateCount={6273}
 />`,
 		props: [
 			{
@@ -700,25 +700,28 @@ import { ConfluenceLogo } from "@/components/ui/logo";
   publisher="Atlassian"
   description="Create a new formatted page in Confluence."
   starCount={38}
-  viewCount={6273}
+  teammateCount={6273}
   onSelect={() => runSkill()}
 />
 
 // Tool — app logo tile + tool/teammate counts
 <CardDirectoryTool
   name="Confluence"
-  appLogo={<ConfluenceLogo size="small" />}
+  appLogo={<ConfluenceLogo size="medium" />}
   description="Create, search, and update pages."
   toolCount={36}
   teammateCount={258}
   onSelect={() => openApp()}
 />
 
-// Knowledge — app identity, description, and provider metadata
+// Knowledge — app identity, "By" byline, and star/view stats
 <CardDirectoryKnowledge
   name="Google Drive"
   description="Bring in documents, folders, and shared files from Drive."
-  providerName="Google"
+  publisher="Google"
+  verified
+  starCount={124}
+  teammateCount={18400}
   icon={<img alt="" aria-hidden src="/3p/google-drive/20.svg" />}
   onSelect={() => selectKnowledgeApp()}
 />
