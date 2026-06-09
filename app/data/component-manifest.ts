@@ -344,6 +344,7 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("kanban-board", "Kanban Board"),
 	blockComponent("tools-directory", "Tools Directory"),
 	blockComponent("mermaid-diagram", "Mermaid Diagram"),
+	blockComponent("memory", "Memory"),
 	{
 		name: "Login 01",
 		slug: "login-01",

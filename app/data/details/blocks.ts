@@ -1839,6 +1839,14 @@ import { SheetIcon } from "@/components/ui/vpk-icons";
 	"settings-dialog": {
 		description: "Settings dialog with configurable options and preferences.",
 	},
+	memory: {
+		description:
+			"Rovo memory modal prototype with two tabs: Rovo's observations about you (a static weekly summary), and Information you've shared directly (a searchable list with add and two-step delete over local state). Includes an INTERNAL ONLY discovery lozenge, a success toast on add, and a write empty state.",
+		importStatement: `import { Memory } from "@/components/blocks/memory";`,
+		usage: `import { Memory } from "@/components/blocks/memory";
+
+<Memory />`,
+	},
 	"product-sidebar": {
 		description: "ADS-style product sidebar with Jira and Confluence navigation variants.",
 	},
