@@ -519,7 +519,7 @@ function SkillSection({
 					const selected = selectedIds.has(skill.id);
 					return (
 						<li key={skill.id}>
-							<SkillCard
+							<SkillsDirectoryEntityCard
 								onLearnMore={() => onLearnMore(skill)}
 								onSelect={(checked) => onSelectSkill(skill, checked)}
 								selected={selected}
@@ -533,7 +533,7 @@ function SkillSection({
 	);
 }
 
-interface SkillCardProps {
+interface SkillsDirectoryEntityCardProps {
 	onLearnMore: () => void;
 	onSelect: (checked?: boolean) => void;
 	selected: boolean;
@@ -573,7 +573,7 @@ function SkillPublisherAvatar({ skill }: Readonly<{ skill: SkillsDirectorySkill 
 	);
 }
 
-function SkillCard({ onLearnMore, onSelect, selected, skill }: Readonly<SkillCardProps>) {
+function SkillsDirectoryEntityCard({ onLearnMore, onSelect, selected, skill }: Readonly<SkillsDirectoryEntityCardProps>) {
 	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 	const publisher = getSkillPublisherName(skill);
 

@@ -238,6 +238,9 @@ const UI_CHARTS_VARIANT_DEMOS: Record<string, ComponentType> = {
 const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
 
   footer: dynamic(() => import("./demos/ui-custom/footer-demo"), { ssr: false }),
+  "entity-card": dynamic(() => import("./demos/ui-custom/entity-card-demo"), {
+    ssr: false,
+  }),
   "object-tile": dynamic(() => import("./demos/ui-custom/object-tile-demo"), {
     ssr: false,
   }),
@@ -248,9 +251,6 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
     ssr: false,
   }),
   "sidebar-nav-item": dynamic(() => import("./demos/ui-custom/sidebar-nav-item-demo"), {
-    ssr: false,
-  }),
-  "skill-card": dynamic(() => import("./demos/ui-custom/skill-card-demo"), {
     ssr: false,
   }),
   "skill-tag": dynamic(() => import("./demos/ui-custom/skill-tag-demo"), {
@@ -5369,20 +5369,20 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/ui-custom/object-tile-demo").then((mod) => ({ default: mod.ObjectTileDemoWithAvatar })),
     { ssr: false },
   ),
-  "skill-card-demo-default": dynamic(
-    () => import("./demos/ui-custom/skill-card-demo"),
+  "entity-card-demo-default": dynamic(
+    () => import("./demos/ui-custom/entity-card-demo"),
     { ssr: false },
   ),
-  "skill-card-demo-app-source": dynamic(
-    () => import("./demos/ui-custom/skill-card-demo").then((mod) => ({ default: mod.SkillCardDemoAppSource })),
+  "entity-card-demo-app-source": dynamic(
+    () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoAppSource })),
     { ssr: false },
   ),
-  "skill-card-demo-custom-source": dynamic(
-    () => import("./demos/ui-custom/skill-card-demo").then((mod) => ({ default: mod.SkillCardDemoCustomSource })),
+  "entity-card-demo-custom-source": dynamic(
+    () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoCustomSource })),
     { ssr: false },
   ),
-  "skill-card-demo-no-description": dynamic(
-    () => import("./demos/ui-custom/skill-card-demo").then((mod) => ({ default: mod.SkillCardDemoWithoutDescription })),
+  "entity-card-demo-no-description": dynamic(
+    () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoWithoutDescription })),
     { ssr: false },
   ),
   "skill-tag-demo-default": dynamic(

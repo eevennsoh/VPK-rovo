@@ -1,6 +1,6 @@
 import { getAdsDisplayInfo } from "@/app/data/ads-equivalents";
 
-const ADS_UI_DISCOVERY_SLUGS = new Set(["skill-card", "sidebar-nav-item"]);
+const ADS_UI_DISCOVERY_SLUGS = new Set(["entity-card", "sidebar-nav-item"]);
 
 const ADS_CUSTOM_SLUGS = new Set([
 	"animated-dots",
