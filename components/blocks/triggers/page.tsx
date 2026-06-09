@@ -188,23 +188,19 @@ function TriggerAddRow({
 	);
 }
 
-export function TriggerPicker({
-	defaultOpen,
-	label,
+/**
+ * The editor-palette "search" variant provider list: a sticky search input over
+ * the filtered provider→event submenus. Shared by the root `TriggerPicker` and
+ * the agent compact nav's "Add trigger ›" flyout so both render an identical
+ * searchable provider list.
+ */
+export function TriggerProviderSearchList({
 	onSelectEvent,
-	trigger,
+	searchId,
 }: Readonly<{
-	defaultOpen?: boolean;
-	label: string;
 	onSelectEvent: (providerId: AgentTriggerProviderId, eventId: string) => void;
-	/**
-	 * Custom element rendered as the dropdown trigger. Defaults to the standard
-	 * `TriggerAddRow`. Lets callers anchor the provider/event picker to their own
-	 * affordance (e.g. an agent config summary row) while reusing the menu.
-	 */
-	trigger?: ReactElement;
+	searchId?: string;
 }>): ReactElement {
-	const [open, setOpen] = useState(defaultOpen ?? false);
 	const [query, setQuery] = useState("");
 	const normalizedQuery = query.trim().toLowerCase();
 	const filteredProviders = useMemo(
@@ -227,11 +223,87 @@ export function TriggerPicker({
 		[normalizedQuery],
 	);
 
+	return (
+		<div
+			className="rich-text-command-menu rich-text-command-menu-borderless"
+			data-first-item-input="true"
+			role="presentation"
+		>
+			<div className="rich-text-command-menu-item rich-text-command-menu-input rich-text-command-menu-item-sticky">
+				<span
+					className="rich-text-command-menu-input-logo text-icon-subtle"
+					aria-hidden={true}
+				>
+					<SearchIcon label="" size="small" />
+				</span>
+				<Input
+					id={searchId}
+					variant="subtle"
+					isCompact
+					value={query}
+					aria-label="Search triggers"
+					placeholder="Search Triggers..."
+					onChange={(event) => setQuery(event.currentTarget.value)}
+					onKeyDown={(event) => event.stopPropagation()}
+				/>
+				{query ? (
+					<Button
+						type="button"
+						aria-label="Clear search"
+						className="rich-text-command-menu-input-clear text-icon-subtle"
+						onMouseDown={(event) => event.preventDefault()}
+						onClick={() => setQuery("")}
+						shape="circle"
+						size="icon-compact"
+						variant="ghost"
+					>
+						<CrossCircleIcon label="" size="small" />
+					</Button>
+				) : null}
+			</div>
+			<div className="rich-text-command-menu-list">
+				{filteredProviders.length > 0 ? (
+					<DropdownMenuGroup className="p-0">
+						{filteredProviders.map((provider) => (
+							<TriggerProviderSubmenu
+								key={provider.id}
+								onSelectEvent={onSelectEvent}
+								provider={provider}
+							/>
+						))}
+					</DropdownMenuGroup>
+				) : (
+					<div className="rich-text-command-menu-empty">
+						No triggers found
+					</div>
+				)}
+			</div>
+		</div>
+	);
+}
+
+export function TriggerPicker({
+	defaultOpen,
+	label,
+	onSelectEvent,
+	trigger,
+}: Readonly<{
+	defaultOpen?: boolean;
+	label: string;
+	onSelectEvent: (providerId: AgentTriggerProviderId, eventId: string) => void;
+	/**
+	 * Custom element rendered as the dropdown trigger. Defaults to the standard
+	 * `TriggerAddRow`. Lets callers anchor the provider/event picker to their own
+	 * affordance (e.g. an agent config summary row) while reusing the menu.
+	 */
+	trigger?: ReactElement;
+}>): ReactElement {
+	const [open, setOpen] = useState(defaultOpen ?? false);
+
 	const handleSelectEvent = useCallback(
 		(providerId: AgentTriggerProviderId, eventId: string) => {
 			onSelectEvent(providerId, eventId);
 			setOpen(false);
-			setQuery("");
 		},
 		[onSelectEvent],
 	);
@@ -253,9 +325,6 @@ export function TriggerPicker({
 				return;
 			}
 			setOpen(nextOpen);
-			if (!nextOpen) {
-				setQuery("");
-			}
 		},
 		[],
 	);
@@ -268,6 +337,68 @@ export function TriggerPicker({
 				className="w-[min(24rem,calc(100vw-2rem))] overflow-hidden p-0"
 				sideOffset={6}
 			>
+				<TriggerProviderSearchList
+					onSelectEvent={handleSelectEvent}
+					searchId="trigger-picker-search"
+				/>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
+export function TriggerProviderSubmenu({
+	onSelectEvent,
+	provider,
+}: Readonly<{
+	onSelectEvent: (providerId: AgentTriggerProviderId, eventId: string) => void;
+	provider: AgentTriggerProviderDefinition;
+}>): ReactElement {
+	const [open, setOpen] = useState(false);
+	const [query, setQuery] = useState("");
+	const normalizedQuery = query.trim().toLowerCase();
+
+	// Filter this provider's events by the nested search, preserving group
+	// structure and dropping empty groups.
+	const filteredGroups = useMemo(() => {
+		const filteredEvents =
+			normalizedQuery.length === 0
+				? provider.events
+				: provider.events.filter(
+						(event) =>
+							event.label.toLowerCase().includes(normalizedQuery) ||
+							event.description.toLowerCase().includes(normalizedQuery),
+					);
+		return getGroupedEvents(filteredEvents);
+	}, [normalizedQuery, provider.events]);
+
+	const handleOpenChange = useCallback(
+		(nextOpen: boolean, eventDetails: { reason?: string }) => {
+			// Typing in the nested search input blurs the submenu trigger, which
+			// Base UI reports as `focus-out` against the controlled submenu — that
+			// would collapse it mid-search. Ignore it; explicit closes (item press,
+			// escape, pointer leave, trigger toggle) still pass through.
+			if (!nextOpen && eventDetails.reason === "focus-out") {
+				return;
+			}
+			setOpen(nextOpen);
+			if (!nextOpen) {
+				setQuery("");
+			}
+		},
+		[],
+	);
+
+	return (
+		<DropdownMenuSub open={open} onOpenChange={handleOpenChange}>
+			<DropdownMenuSubTrigger>
+				<span className="flex min-w-0 flex-1 items-center gap-3">
+					<span className="flex size-5 shrink-0 items-center justify-center text-icon-subtle">
+						{renderTriggerProviderIcon(provider.icon, provider.label)}
+					</span>
+					<span className="min-w-0 truncate">{provider.label}</span>
+				</span>
+			</DropdownMenuSubTrigger>
+			<DropdownMenuSubContent className="min-w-64 overflow-hidden p-0">
 				<div
 					className="rich-text-command-menu rich-text-command-menu-borderless"
 					data-first-item-input="true"
@@ -281,12 +412,11 @@ export function TriggerPicker({
 							<SearchIcon label="" size="small" />
 						</span>
 						<Input
-							id="trigger-picker-search"
 							variant="subtle"
 							isCompact
 							value={query}
-							aria-label="Search triggers"
-							placeholder="Search Triggers..."
+							aria-label={`Search ${provider.label} events`}
+							placeholder={`Search ${provider.label}...`}
 							onChange={(event) => setQuery(event.currentTarget.value)}
 							onKeyDown={(event) => event.stopPropagation()}
 						/>
@@ -306,70 +436,36 @@ export function TriggerPicker({
 						) : null}
 					</div>
 					<div className="rich-text-command-menu-list">
-						{filteredProviders.length > 0 ? (
-							<DropdownMenuGroup className="p-0">
-								{filteredProviders.map((provider) => (
-									<TriggerProviderSubmenu
-										key={provider.id}
-										onSelectEvent={handleSelectEvent}
-										provider={provider}
-									/>
-								))}
-							</DropdownMenuGroup>
+						{filteredGroups.length > 0 ? (
+							filteredGroups.map((group, groupIndex) => (
+								<DropdownMenuGroup
+									className="p-0"
+									key={`${provider.id}-${group.groupLabel ?? "default"}-${groupIndex}`}
+								>
+									{group.groupLabel ? (
+										<DropdownMenuLabel>{group.groupLabel}</DropdownMenuLabel>
+									) : null}
+									{group.events.map((event) => (
+										<DropdownMenuItem
+											key={event.id}
+											description={event.description}
+											onSelect={() => onSelectEvent(provider.id, event.id)}
+										>
+											{event.label}
+										</DropdownMenuItem>
+									))}
+									{groupIndex < filteredGroups.length - 1 ? (
+										<DropdownMenuSeparator />
+									) : null}
+								</DropdownMenuGroup>
+							))
 						) : (
 							<div className="rich-text-command-menu-empty">
-								No triggers found
+								No events found
 							</div>
 						)}
 					</div>
 				</div>
-			</DropdownMenuContent>
-		</DropdownMenu>
-	);
-}
-
-export function TriggerProviderSubmenu({
-	onSelectEvent,
-	provider,
-}: Readonly<{
-	onSelectEvent: (providerId: AgentTriggerProviderId, eventId: string) => void;
-	provider: AgentTriggerProviderDefinition;
-}>): ReactElement {
-	const groupedEvents = getGroupedEvents(provider.events);
-
-	return (
-		<DropdownMenuSub>
-			<DropdownMenuSubTrigger>
-				<span className="flex min-w-0 flex-1 items-center gap-3">
-					<span className="flex size-5 shrink-0 items-center justify-center text-icon-subtle">
-						{renderTriggerProviderIcon(provider.icon, provider.label)}
-					</span>
-					<span className="min-w-0 truncate">{provider.label}</span>
-				</span>
-			</DropdownMenuSubTrigger>
-			<DropdownMenuSubContent className="min-w-64 p-1">
-				{groupedEvents.map((group, groupIndex) => (
-					<DropdownMenuGroup
-						className="p-0"
-						key={`${provider.id}-${group.groupLabel ?? "default"}-${groupIndex}`}
-					>
-						{group.groupLabel ? (
-							<DropdownMenuLabel>{group.groupLabel}</DropdownMenuLabel>
-						) : null}
-						{group.events.map((event) => (
-							<DropdownMenuItem
-								key={event.id}
-								description={event.description}
-								onSelect={() => onSelectEvent(provider.id, event.id)}
-							>
-								{event.label}
-							</DropdownMenuItem>
-						))}
-						{groupIndex < groupedEvents.length - 1 ? (
-							<DropdownMenuSeparator />
-						) : null}
-					</DropdownMenuGroup>
-				))}
 			</DropdownMenuSubContent>
 		</DropdownMenuSub>
 	);

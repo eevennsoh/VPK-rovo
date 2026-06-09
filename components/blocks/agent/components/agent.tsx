@@ -42,9 +42,8 @@ import {
 import {
 	renderAgentTriggerProviderIcon,
 	serializeAgentTriggerLabels,
-	TRIGGER_PROVIDERS,
 	TriggerPicker,
-	TriggerProviderSubmenu,
+	TriggerProviderSearchList,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/page";
 import { createAgentTriggerValue } from "@/components/blocks/triggers/data/trigger-catalog";
@@ -1133,11 +1132,25 @@ function AgentCompactTriggersNavButton({
 			return next;
 		});
 	}, []);
-	// "Add trigger ›" reuses the picker's provider→event submenus verbatim, so a
-	// hover reveals the same provider list (and nested event flyouts) as the
-	// expanded summary row, minus the search box that has no place in a footer.
+	// Controlled open for the "Add trigger ›" flyout so typing in its search input
+	// (which blurs the submenu trigger) doesn't collapse the flyout: Base UI
+	// reports that as a `focus-out` close, which we ignore. All explicit closes
+	// (item press, escape, pointer leave, trigger toggle) still pass through.
+	const [addTriggerOpen, setAddTriggerOpen] = useState(false);
+	const handleAddTriggerOpenChange = useCallback(
+		(nextOpen: boolean, eventDetails: { reason?: string }) => {
+			if (!nextOpen && eventDetails.reason === "focus-out") {
+				return;
+			}
+			setAddTriggerOpen(nextOpen);
+		},
+		[],
+	);
+	// "Add trigger ›" reuses the picker's full searchable provider list (the
+	// editor-palette "search" variant), so the flyout shows the same sticky search
+	// input over the provider→event submenus as the expanded summary row's picker.
 	const addTriggerFlyout = (
-		<DropdownMenuSub>
+		<DropdownMenuSub open={addTriggerOpen} onOpenChange={handleAddTriggerOpenChange}>
 			<DropdownMenuSubTrigger>
 				<span className="flex items-center gap-3">
 					<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
@@ -1146,16 +1159,8 @@ function AgentCompactTriggersNavButton({
 					Add trigger
 				</span>
 			</DropdownMenuSubTrigger>
-			<DropdownMenuSubContent className="min-w-64 p-1">
-				<DropdownMenuGroup className="p-0">
-					{TRIGGER_PROVIDERS.map((provider) => (
-						<TriggerProviderSubmenu
-							key={provider.id}
-							onSelectEvent={onSelectEvent}
-							provider={provider}
-						/>
-					))}
-				</DropdownMenuGroup>
+			<DropdownMenuSubContent className="min-w-64 overflow-hidden p-0">
+				<TriggerProviderSearchList onSelectEvent={onSelectEvent} />
 			</DropdownMenuSubContent>
 		</DropdownMenuSub>
 	);
@@ -2368,6 +2373,84 @@ function AgentReasoningSelectorMenu({
 	);
 }
 
+// "Quick answer | Think deeper" tabs pinned to the bottom of the nav-button
+// popup, mirroring the Knowledge menu's "All | Custom | None" tabs
+// (`AgentKnowledgeModeTabs`). Unlike Knowledge — where a tab IS the mode — a
+// reasoning section holds several options, so the tab tracks the active
+// section and switching it selects that section's default (first) option.
+function AgentReasoningModeTabs({
+	value,
+	onValueChange,
+}: Readonly<{
+	value: ReasoningModeValue;
+	onValueChange: (next: ReasoningModeValue) => void;
+}>) {
+	const activeSection = findReasoningModeOption(value)?.section ?? REASONING_MODE_SECTIONS[0].title;
+	return (
+		<Tabs
+			// Base UI Tabs `value` must match a Tab `value`; the tab IS the section
+			// title here. Picking a tab selects that section's default option.
+			value={activeSection}
+			onValueChange={(next) => {
+				const section = REASONING_MODE_SECTIONS.find((entry) => entry.title === next);
+				if (section) {
+					onValueChange(section.options[0].value as ReasoningModeValue);
+				}
+			}}
+		>
+			<TabsList className="w-full">
+				{REASONING_MODE_SECTIONS.map((section) => (
+					<TabsTrigger key={section.title} value={section.title}>
+						{section.title}
+					</TabsTrigger>
+				))}
+			</TabsList>
+		</Tabs>
+	);
+}
+
+// Nav-button reasoning popup: a flex column matching the Knowledge nav menu.
+// The active section's options scroll in the body, a separator sits between the
+// list and the tabs, and the "Quick answer | Think deeper" tab control (the
+// section) is pinned at the bottom.
+function AgentReasoningNavMenuContent({
+	value,
+	onValueChange,
+}: Readonly<{
+	value: ReasoningModeValue;
+	onValueChange: (next: ReasoningModeValue) => void;
+}>) {
+	const activeSection =
+		REASONING_MODE_SECTIONS.find(
+			(section) => section.title === (findReasoningModeOption(value)?.section ?? REASONING_MODE_SECTIONS[0].title),
+		) ?? REASONING_MODE_SECTIONS[0];
+	return (
+		<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
+			<div className="min-h-0 flex-1 overflow-y-auto">
+				<AgentCompactNavMenuList>
+					<DropdownMenuGroup className="p-0">
+						{activeSection.options.map((option) => (
+							<DropdownMenuItem
+								key={option.value}
+								onClick={() => onValueChange(option.value as ReasoningModeValue)}
+								selected={value === option.value}
+							>
+								{option.label}
+							</DropdownMenuItem>
+						))}
+					</DropdownMenuGroup>
+				</AgentCompactNavMenuList>
+			</div>
+			<div className="shrink-0">
+				<DropdownMenuSeparator />
+				<div className="pt-1">
+					<AgentReasoningModeTabs value={value} onValueChange={onValueChange} />
+				</div>
+			</div>
+		</MenubarContent>
+	);
+}
+
 interface AgentReasoningSelectorProps {
 	value: ReasoningModeValue;
 	onValueChange: (next: ReasoningModeValue) => void;
@@ -2398,7 +2481,7 @@ function AgentReasoningSelector({
 					{/* Surface the chosen mode inline so it reads without opening the menu. */}
 					{lozengeLabel ? <Badge>{lozengeLabel}</Badge> : null}
 				</MenubarTrigger>
-				<AgentReasoningSelectorMenu value={value} onValueChange={onValueChange} />
+				<AgentReasoningNavMenuContent value={value} onValueChange={onValueChange} />
 			</MenubarMenu>
 		);
 	}
@@ -2774,6 +2857,66 @@ const MEMORY_MODE_OPTIONS = [
 
 type MemoryModeValue = (typeof MEMORY_MODE_OPTIONS)[number]["value"];
 
+// "On | Off" tabs pinned to the bottom of the popup, mirroring the Knowledge
+// menu's "All | Custom | None" tabs (`AgentKnowledgeModeTabs`). The tabs ARE the
+// memory mode: picking a tab calls `onValueChange` directly.
+function AgentMemoryModeTabs({
+	value,
+	onValueChange,
+}: Readonly<{
+	value: MemoryModeValue;
+	onValueChange: (next: MemoryModeValue) => void;
+}>) {
+	return (
+		<Tabs
+			// Base UI Tabs `value` must match a Tab `value`; map mode → tab 1:1.
+			value={value}
+			onValueChange={(next) => onValueChange(next as MemoryModeValue)}
+		>
+			<TabsList className="w-full">
+				{MEMORY_MODE_OPTIONS.map((option) => (
+					<TabsTrigger key={option.value} value={option.value}>
+						{option.label}
+					</TabsTrigger>
+				))}
+			</TabsList>
+		</Tabs>
+	);
+}
+
+// Nav-button memory popup: a flex column matching the Knowledge nav menu —
+// "Manage memory" on top, then a separator, then the "On | Off" tab control
+// (the mode) pinned at the bottom.
+function AgentMemoryNavMenuContent({
+	value,
+	onValueChange,
+}: Readonly<{
+	value: MemoryModeValue;
+	onValueChange: (next: MemoryModeValue) => void;
+}>) {
+	return (
+		<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
+			<div className="min-h-0 flex-1 overflow-y-auto">
+				<DropdownMenuItem
+					elemBefore={
+						<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
+							<AiModelIcon label="" size="small" />
+						</span>
+					}
+				>
+					Manage memory
+				</DropdownMenuItem>
+			</div>
+			<div className="shrink-0">
+				<DropdownMenuSeparator />
+				<div className="pt-1">
+					<AgentMemoryModeTabs value={value} onValueChange={onValueChange} />
+				</div>
+			</div>
+		</MenubarContent>
+	);
+}
+
 function AgentMemorySelectorMenu({
 	value,
 	onValueChange,
@@ -2831,7 +2974,7 @@ function AgentMemorySelector({
 					{/* Surface the on/off state inline so it reads without opening the menu. */}
 					<Badge>{selectedOption.label}</Badge>
 				</MenubarTrigger>
-				<AgentMemorySelectorMenu value={value} onValueChange={onValueChange} />
+				<AgentMemoryNavMenuContent value={value} onValueChange={onValueChange} />
 			</MenubarMenu>
 		);
 	}
