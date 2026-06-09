@@ -8,11 +8,17 @@ const read = (name) => readFileSync(join(__dirname, name), "utf8");
 const SHELL_SOURCE = read("card-directory.tsx");
 const INTERACTION_SOURCE = read("use-card-interaction.ts");
 const PARTS_SOURCE = read("card-directory-parts.tsx");
-const AGENT_SOURCE = read("card-directory-agent.tsx");
-const AGENT_EXPANDED_SOURCE = read("card-directory-agent-expanded.tsx");
-const SKILL_SOURCE = read("card-directory-skill.tsx");
-const TOOL_SOURCE = read("card-directory-tool.tsx");
-const TEMPLATE_SOURCE = read("card-directory-template.tsx");
+const AGENT_WRAPPER_SOURCE = read("card-directory-agent.tsx");
+const AGENT_EXPANDED_WRAPPER_SOURCE = read("card-directory-agent-expanded.tsx");
+const SKILL_WRAPPER_SOURCE = read("card-directory-skill.tsx");
+const TOOL_WRAPPER_SOURCE = read("card-directory-tool.tsx");
+const TEMPLATE_WRAPPER_SOURCE = read("card-directory-template.tsx");
+const AGENT_SOURCE = read(join("..", "entity-card", "agent.tsx"));
+const AGENT_EXPANDED_SOURCE = read(join("..", "entity-card", "agent-expanded.tsx"));
+const SKILL_SOURCE = read(join("..", "entity-card", "skill.tsx"));
+const TOOL_SOURCE = read(join("..", "entity-card", "tool.tsx"));
+const TEMPLATE_SOURCE = read(join("..", "entity-card", "template.tsx"));
+const ENTITY_CARD_INDEX_SOURCE = read(join("..", "entity-card", "index.ts"));
 const INDEX_SOURCE = read("index.ts");
 const SKILL_TAG_SOURCE = read(join("..", "skill-tag.tsx"));
 const AGENT_BROWSER_SOURCE = readFileSync(
@@ -139,18 +145,18 @@ test("agent variant renders a hexagon avatar with rating and chat stats", () => 
 	assert.match(AGENT_SOURCE, /shape="hexagon"/u);
 	assert.match(AGENT_SOURCE, /StarUnstarredIcon/u);
 	assert.match(AGENT_SOURCE, /AiChatIcon/u);
-	assert.match(AGENT_SOURCE, /<CardDirectoryByline/u);
+	assert.match(AGENT_SOURCE, /<EntityCardByline/u);
 	assert.match(AGENT_SOURCE, /chats/u);
 });
 
 test("expanded agent variant adds a cover banner and scrollable capabilities to the agent layout", () => {
-	assert.match(AGENT_EXPANDED_SOURCE, /<CardDirectoryBanner/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /<EntityCardBanner/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /avatarBadge=\{avatarBadge\}/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /<CardDirectoryCapabilities/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /capabilities: readonly \(CardDirectoryCapability \| string\)\[\]/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /<EntityCardCapabilities/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /capabilities: readonly \(EntityCardCapability \| string\)\[\]/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /StarUnstarredIcon/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /AiChatIcon/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /<CardDirectoryByline/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /<EntityCardByline/u);
 });
 
 test("expanded agent variant uses stable project-avatar fallbacks for team badges", () => {
@@ -171,9 +177,9 @@ test("expanded agent variant uses stable project-avatar fallbacks for team badge
 test("expanded agent variant renders Works with sources and Skills tags", () => {
 	assert.match(AGENT_EXPANDED_SOURCE, /TWGAppstack/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /<TWGAppstack animated=\{false\}/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /const CARD_DIRECTORY_SKILLS_MAX_ROWS = 2/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /const CARD_DIRECTORY_SKILLS_GROUP_CLASS_NAME = "h-11 content-start overflow-clip \[overflow-clip-margin:3px\]"/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /<SkillTagGroup className=\{CARD_DIRECTORY_SKILLS_GROUP_CLASS_NAME\} maxRows=\{CARD_DIRECTORY_SKILLS_MAX_ROWS\}>/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /const ENTITY_CARD_SKILLS_MAX_ROWS = 2/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /const ENTITY_CARD_SKILLS_GROUP_CLASS_NAME = "h-11 content-start overflow-clip \[overflow-clip-margin:3px\]"/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /<SkillTagGroup className=\{ENTITY_CARD_SKILLS_GROUP_CLASS_NAME\} maxRows=\{ENTITY_CARD_SKILLS_MAX_ROWS\}>/u);
 	assert.doesNotMatch(AGENT_EXPANDED_SOURCE, /MAX_VISIBLE_SKILLS/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /maxVisible=\{8\}/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /label="Works with"/u);
@@ -181,7 +187,7 @@ test("expanded agent variant renders Works with sources and Skills tags", () => 
 });
 
 test("expanded agent scroll mask only fades the sticky header edge", () => {
-	assert.match(AGENT_EXPANDED_SOURCE, /CARD_DIRECTORY_SCROLL_MASK_IMAGE/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /ENTITY_CARD_SCROLL_MASK_IMAGE/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /transparent 0, black var\(--scroll-mask-fade-size\), black 100%/u);
 	assert.doesNotMatch(AGENT_EXPANDED_SOURCE, /black calc\(100% - var\(--scroll-mask-fade-size\)\), transparent 100%/u);
 });
@@ -211,15 +217,15 @@ test("expanded agent variant pins the header and footer around a scrollable body
 	assert.match(AGENT_EXPANDED_SOURCE, /data-slot="card-directory-sticky-header"/u);
 	assert.match(
 		AGENT_EXPANDED_SOURCE,
-		/<CardDirectoryBanner[\s\S]*<div className="px-4 pt-3">[\s\S]*<CardDirectoryHeader[\s\S]*byline=\{<CardDirectoryByline publisher=\{publisher\} verified=\{verified\} \/>\}[\s\S]*title=\{name\}[\s\S]*<CardDirectoryDescription className="mt-1">[\s\S]*description \?\?[\s\S]*\{\/\* Scrollable body/u,
+		/<EntityCardBanner[\s\S]*<div className="px-4 pt-3">[\s\S]*<EntityCardHeader[\s\S]*byline=\{<EntityCardByline publisher=\{publisher\} verified=\{verified\} \/>\}[\s\S]*title=\{name\}[\s\S]*<EntityCardDescription className="mt-1">[\s\S]*description \?\?/u,
 	);
 	// flex-auto + min-h-0 + overflow-y-auto lets the body hug its content when the card is
 	// unbounded, yet shrink + scroll (header/footer pinned) when a height is imposed
 	assert.match(AGENT_EXPANDED_SOURCE, /flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-2/u);
-	assert.match(AGENT_EXPANDED_SOURCE, /<div className="pb-4">\s*<CardDirectoryCapabilities/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /<div className="pb-4">\s*<EntityCardCapabilities/u);
 	// the expanded shell owns clipping while body/footer restore their own padding; the
 	// hover-fading after-border now comes from the base shell, so the variant only resets layout
-	assert.match(AGENT_EXPANDED_SOURCE, /gap-0 overflow-clip p-0/u);
+	assert.match(AGENT_EXPANDED_WRAPPER_SOURCE, /gap-0 overflow-clip p-0/u);
 	assert.doesNotMatch(AGENT_EXPANDED_SOURCE, /border-0/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /shrink-0 overflow-clip border-t border-border bg-surface/u);
 	assert.match(AGENT_EXPANDED_SOURCE, /className="justify-between px-4 py-3 transition-opacity/u);
@@ -240,19 +246,19 @@ test("skill variant uses an icon tile, publisher footer, and view count", () => 
 	assert.match(SKILL_SOURCE, /IconTile/u);
 	assert.match(SKILL_SOURCE, /@atlaskit\/icon\/core\/eye-open/u);
 	assert.match(SKILL_SOURCE, /justify-between/u);
-	assert.doesNotMatch(SKILL_SOURCE, /CardDirectoryByline/u);
+	assert.doesNotMatch(SKILL_SOURCE, /EntityCardByline/u);
 });
 
 test("tool variant uses an app-logo tile with tool and teammate counts", () => {
 	assert.match(TOOL_SOURCE, /@atlaskit\/icon-lab\/core\/wrench/u);
 	assert.match(TOOL_SOURCE, /@atlaskit\/icon\/core\/people-group/u);
 	assert.match(TOOL_SOURCE, /active\?: boolean/u);
-	assert.match(TOOL_SOURCE, /moreAction\?: ReactNode/u);
-	assert.match(TOOL_SOURCE, /<CardDirectory active=\{active\}/u);
-	assert.match(TOOL_SOURCE, /<CardDirectoryMoreButton active=\{active\}/u);
+	assert.match(TOOL_WRAPPER_SOURCE, /moreAction\?: ReactNode/u);
+	assert.match(TOOL_WRAPPER_SOURCE, /<CardDirectory active=\{active\}/u);
+	assert.match(TOOL_SOURCE, /<EntityCardMoreButton active=\{active\}/u);
 	assert.match(TOOL_SOURCE, /tools/u);
 	assert.match(TOOL_SOURCE, /teammates/u);
-	assert.doesNotMatch(TOOL_SOURCE, /CardDirectoryByline/u);
+	assert.doesNotMatch(TOOL_SOURCE, /EntityCardByline/u);
 });
 
 test("template variant renders Works with sources and Skills tags, no glow or stats", () => {
@@ -289,6 +295,44 @@ test("barrel exports the shell, parts, and variant wrappers", () => {
 	]) {
 		assert.match(INDEX_SOURCE, new RegExp(`\\b${symbol}\\b`, "u"));
 	}
+});
+
+test("entity-card namespace owns the visual card variants and parts", () => {
+	for (const symbol of [
+		"EntityCard",
+		"Agent",
+		"AgentExpanded",
+		"AgentProfile",
+		"Knowledge",
+		"ObjectTile",
+		"Skill",
+		"Tool",
+		"Template",
+		"Header",
+		"Description",
+		"Footer",
+		"Stat",
+		"Byline",
+		"MoreButton",
+		"Section",
+		"Banner",
+		"Capabilities",
+	]) {
+		assert.match(ENTITY_CARD_INDEX_SOURCE, new RegExp(`\\b${symbol}\\b`, "u"));
+	}
+});
+
+test("card-directory variants are shell adapters around entity-card content", () => {
+	assert.match(AGENT_WRAPPER_SOURCE, /<CardDirectory active=\{active\}/u);
+	assert.match(AGENT_WRAPPER_SOURCE, /<EntityCard\.Agent/u);
+	assert.match(AGENT_EXPANDED_WRAPPER_SOURCE, /<CardDirectory[\s\S]*className=\{cn\("gap-0 overflow-clip p-0", className\)\}/u);
+	assert.match(AGENT_EXPANDED_WRAPPER_SOURCE, /<EntityCard\.AgentExpanded/u);
+	assert.match(SKILL_WRAPPER_SOURCE, /<CardDirectory className=\{className\}/u);
+	assert.match(SKILL_WRAPPER_SOURCE, /<EntityCard\.Skill/u);
+	assert.match(TOOL_WRAPPER_SOURCE, /<CardDirectory active=\{active\}/u);
+	assert.match(TOOL_WRAPPER_SOURCE, /<EntityCard\.Tool/u);
+	assert.match(TEMPLATE_WRAPPER_SOURCE, /<CardDirectory className=\{className\}/u);
+	assert.match(TEMPLATE_WRAPPER_SOURCE, /<EntityCard\.Template/u);
 });
 
 test("agent-browser renders the shared CardDirectoryAgent (no inline card duplication)", () => {

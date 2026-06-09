@@ -14,6 +14,8 @@ import GlobeIcon from "@atlaskit/icon/core/globe";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { CardDirectory } from "@/components/ui-custom/card-directory";
+import { EntityCard } from "@/components/ui-custom/entity-card";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -381,20 +383,18 @@ interface KnowledgeAppCardProps {
 
 function KnowledgeAppCard({ app, onSelect }: Readonly<KnowledgeAppCardProps>) {
 	return (
-		<button
-			className="flex min-h-[136px] w-full flex-col justify-between rounded-md border border-border bg-surface p-4 text-left transition-colors duration-normal ease-out hover:border-border-bold hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-			onClick={onSelect}
-			type="button"
+		<CardDirectory
+			className="min-h-[136px] justify-between transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered"
+			onSelect={onSelect}
+			selectLabel={`Select ${app.name}`}
 		>
-			<span className="flex flex-col gap-2">
-				<span className="flex items-center gap-2">
-					<span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center">{getKnowledgeAppIcon(app)}</span>
-					<span className="font-semibold leading-5 text-text">{app.name}</span>
-				</span>
-				<span className="line-clamp-2 text-sm leading-5 text-text">{app.description}</span>
-			</span>
-			<span className="text-xs leading-4 text-text-subtlest">{app.providerName}</span>
-		</button>
+			<EntityCard.Knowledge
+				description={app.description}
+				icon={getKnowledgeAppIcon(app)}
+				name={app.name}
+				providerName={app.providerName}
+			/>
+		</CardDirectory>
 	);
 }
 

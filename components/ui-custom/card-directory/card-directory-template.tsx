@@ -1,80 +1,28 @@
 "use client";
 
-import { type ReactNode } from "react";
-import Image from "next/image";
-
-import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
-import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
+import { EntityCard, type EntityCardTemplateProps, type EntityCardTemplateSkill } from "@/components/ui-custom/entity-card";
 
 import { CardDirectory } from "./card-directory";
-import {
-	CardDirectoryDescription,
-	CardDirectoryHeader,
-	CardDirectorySection,
-} from "./card-directory-parts";
 
-export interface CardDirectoryTemplateSkill {
-	label: string;
-	color?: SkillTagColor;
-	icon?: ReactNode;
-}
+export type CardDirectoryTemplateSkill = EntityCardTemplateSkill;
 
-export interface CardDirectoryTemplateProps {
-	name: string;
-	/** Rich icon image source rendered at 32px. */
-	iconSrc: string;
-	description?: string;
-	/** Connected data sources shown in the "Works with" section. */
-	sources?: ReadonlyArray<TwgToolSource>;
-	/** Skill tags shown in the "Skills" section. */
-	skills?: ReadonlyArray<CardDirectoryTemplateSkill>;
+export interface CardDirectoryTemplateProps extends EntityCardTemplateProps {
 	onSelect?: () => void;
-	className?: string;
 }
 
 /**
- * Agent-template directory card — rich icon, "Works with" sources, and "Skills"
- * tags. A flat take on the studio bento tile (without the card glow effect).
+ * Agent-template directory card shell adapter — rich icon, "Works with" sources,
+ * and "Skills" tags. A flat take on the studio bento tile.
  */
 export function CardDirectoryTemplate({
-	name,
-	iconSrc,
-	description,
-	sources = [],
-	skills = [],
-	onSelect,
 	className,
+	name,
+	onSelect,
+	...entityProps
 }: Readonly<CardDirectoryTemplateProps>) {
 	return (
 		<CardDirectory className={className} onSelect={onSelect} selectLabel={`Select ${name}`}>
-			<CardDirectoryHeader
-				leading={
-					<Image alt="" aria-hidden className="size-8 object-contain" height={32} src={iconSrc} width={32} />
-				}
-				title={name}
-			/>
-
-			<CardDirectoryDescription>
-				{description ?? `Learn how ${name} can help your team work faster.`}
-			</CardDirectoryDescription>
-
-			{sources.length > 0 ? (
-				<CardDirectorySection label="Works with">
-					<TWGAppstack animated={false} className="justify-start" iconSize="md" maxVisible={6} sources={sources} />
-				</CardDirectorySection>
-			) : null}
-
-			{skills.length > 0 ? (
-				<CardDirectorySection label="Skills">
-					<SkillTagGroup maxRows={2}>
-						{skills.map((skill) => (
-							<SkillTag color={skill.color ?? "default"} icon={skill.icon} key={skill.label}>
-								{skill.label}
-							</SkillTag>
-						))}
-					</SkillTagGroup>
-				</CardDirectorySection>
-			) : null}
+			<EntityCard.Template {...entityProps} name={name} />
 		</CardDirectory>
 	);
 }

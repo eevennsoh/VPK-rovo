@@ -251,7 +251,7 @@ test("Agents Directory uses one unsegmented results grid and updated sidebar lab
 
 test("Agents Directory cards render the shared CardDirectoryAgent with overlay elevation", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
-	const cardDirectoryAgentSource = readProjectFile("components/ui-custom/card-directory/card-directory-agent.tsx");
+	const entityAgentSource = readProjectFile("components/ui-custom/entity-card/agent.tsx");
 
 	// Cards are delegated to the shared ui-custom component — no inlined shell duplication.
 	assert.match(source, /CardDirectoryAgent,[\s\S]*CardDirectoryAgentExpanded,[\s\S]*from "@\/components\/ui-custom\/card-directory";/u);
@@ -262,8 +262,8 @@ test("Agents Directory cards render the shared CardDirectoryAgent with overlay e
 	assert.match(source, /onSelect=\{selectAgent\}/u);
 	assert.match(source, /<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
 	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
-	assert.match(cardDirectoryAgentSource, /logoName\?: AtlassianLogoName;/u);
-	assert.match(cardDirectoryAgentSource, /size=\{logoName === "atlassian" \? "xsmall" : "medium"\}/u);
+	assert.match(entityAgentSource, /logoName\?: AtlassianLogoName;/u);
+	assert.match(entityAgentSource, /size=\{logoName === "atlassian" \? "xsmall" : "medium"\}/u);
 	assert.doesNotMatch(source, /AgentDirectoryCard/u);
 	assert.doesNotMatch(source, /AGENT_CARD_OVERLAY_SHADOW/u);
 	assert.match(source, /import \{ AnimatePresence, cubicBezier, motion, useReducedMotion \} from "motion\/react";/u);
@@ -280,6 +280,7 @@ test("Agents Directory cards render the shared CardDirectoryAgent with overlay e
 	const shell = readProjectFile("components/ui-custom/card-directory/card-directory.tsx");
 	const interaction = readProjectFile("components/ui-custom/card-directory/use-card-interaction.ts");
 	const agentWrapper = readProjectFile("components/ui-custom/card-directory/card-directory-agent.tsx");
+	const entityAgent = readProjectFile("components/ui-custom/entity-card/agent.tsx");
 
 	assert.match(interaction, /token\("elevation\.shadow\.overlay"\)/u);
 	assert.match(interaction, /boxShadow: OVERLAY_SHADOW/u);
@@ -295,14 +296,16 @@ test("Agents Directory cards render the shared CardDirectoryAgent with overlay e
 	assert.match(shell, /data-slot="card-directory-select"[\s\S]*type="button"/u);
 	assert.match(shell, /whileTap: interactive \? tapAnimation : undefined/u);
 
-	assert.match(agentWrapper, /shape="hexagon"/u);
 	assert.match(agentWrapper, /<CardDirectory active=\{active\} className=\{cn\("gap-4", className\)\}/u);
-	assert.match(agentWrapper, /moreAction \?\? \(onMoreActions \? \(/u);
-	assert.match(agentWrapper, /<CardDirectoryMoreButton active=\{active\}/u);
-	assert.match(agentWrapper, /<div className="flex flex-col gap-2">[\s\S]*<CardDirectoryHeader[\s\S]*<CardDirectoryDescription>/u);
-	assert.match(agentWrapper, /<CardDirectoryByline/u);
-	assert.match(agentWrapper, /StarUnstarredIcon/u);
-	assert.match(agentWrapper, /AiChatIcon/u);
+	assert.match(agentWrapper, /action=\{moreAction\}/u);
+	assert.match(agentWrapper, /onMoreActions=\{onMoreActions\}/u);
+	assert.match(agentWrapper, /<EntityCard\.Agent/u);
+	assert.match(entityAgent, /shape="hexagon"/u);
+	assert.match(entityAgent, /<EntityCardMoreButton active=\{active\}/u);
+	assert.match(entityAgent, /<div className="flex flex-col gap-2">[\s\S]*<EntityCardHeader[\s\S]*<EntityCardDescription>/u);
+	assert.match(entityAgent, /<EntityCardByline/u);
+	assert.match(entityAgent, /StarUnstarredIcon/u);
+	assert.match(entityAgent, /AiChatIcon/u);
 
 	assert.doesNotMatch(shell, /hover:-translate-y/u);
 	assert.doesNotMatch(shell, /hover:shadow-2xl/u);
