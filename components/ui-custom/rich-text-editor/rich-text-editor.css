@@ -578,6 +578,23 @@
 	height: 32px;
 }
 
+/* Compact front slot (editor-palette showcases opt in via
+   `visualSize="compact"`). The 24px front-slot box and grid track line up with
+   the 24px-scaled tiles rendered by `RichTextSuggestionMenuItemVisual`. */
+.rich-text-command-menu[data-visual-size="compact"] .rich-text-command-menu-item {
+	grid-template-columns: 24px minmax(0, 1fr) auto;
+}
+
+.rich-text-command-menu[data-visual-size="compact"] .rich-text-command-menu-avatar {
+	width: 24px;
+	height: 24px;
+}
+
+.rich-text-command-menu[data-visual-size="compact"] .rich-text-command-menu-input-logo {
+	width: 24px;
+	height: 24px;
+}
+
 .rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .rich-text-command-menu-item {
 	/* Fixed row height with no vertical padding: `align-items: center` (from the
 	   base rule) auto-centers the avatar + copy within the 44px box. */

@@ -125,6 +125,13 @@ interface RichTextSuggestionMenuProps {
 	onInputValueChange?: (value: string) => void;
 	selectedIndex: number;
 	title: string;
+	/**
+	 * Front-slot visual scale. `"default"` keeps the 32px tile (the shared menu
+	 * default used by the live editor and product surfaces). `"compact"` renders
+	 * the same tiles at 24px — used by the editor-palette showcases, which opt in
+	 * via this prop so other consumers stay unchanged.
+	 */
+	visualSize?: "default" | "compact";
 }
 
 interface SuggestionPopupState {
@@ -532,6 +539,7 @@ export function RichTextSuggestionMenu({
 	renderFirstItemAsInput = false,
 	selectedIndex,
 	title,
+	visualSize = "default",
 }: Readonly<RichTextSuggestionMenuProps>) {
 	const listRef = useRef<HTMLDivElement | null>(null);
 	const [hasScrolledList, setHasScrolledList] = useState(false);
@@ -569,6 +577,7 @@ export function RichTextSuggestionMenu({
 			data-nested={isNested ? "true" : undefined}
 			data-first-item-input={renderFirstItemAsInput ? "true" : undefined}
 			data-list-scrolled={hasScrolledList ? "true" : undefined}
+			data-visual-size={visualSize === "compact" ? "compact" : undefined}
 			role="listbox"
 			aria-label={title}
 		>
@@ -618,6 +627,7 @@ export function RichTextSuggestionMenu({
 									isSelected={itemIndex === selectedIndex}
 									item={item}
 									onSelect={onSelect}
+									visualSize={visualSize}
 								/>
 							)
 						);
@@ -634,12 +644,14 @@ interface RichTextSuggestionMenuOptionProps {
 	isSelected: boolean;
 	item: RichTextSuggestionMenuItem;
 	onSelect: (item: RichTextSuggestionMenuItem) => void;
+	visualSize: "default" | "compact";
 }
 
 function RichTextSuggestionMenuOption({
 	isSelected,
 	item,
 	onSelect,
+	visualSize,
 }: Readonly<RichTextSuggestionMenuOptionProps>) {
 	const [isInteractionActive, setIsInteractionActive] = useState(false);
 	// Descriptions reveal on hover/selection wherever an item has one, in both
@@ -658,7 +670,7 @@ function RichTextSuggestionMenuOption({
 	);
 	const children = (
 		<>
-			<RichTextSuggestionMenuItemVisual item={item} />
+			<RichTextSuggestionMenuItemVisual item={item} visualSize={visualSize} />
 			{canRevealMetadata ? (
 				<span className="rich-text-command-menu-copy rich-text-command-menu-nested-copy rich-text-command-menu-nested-copy-revealable">
 					<motion.span
@@ -822,27 +834,42 @@ function getSuggestionMenuItemStickyClassName(
 
 function RichTextSuggestionMenuItemVisual({
 	item,
-}: Readonly<{ item: RichTextSuggestionMenuItem }>) {
-	if (item.visual) {
-		return (
-			<RichTextMentionVisualMark
-				className="rich-text-command-menu-avatar"
-				label={item.label}
-				size="menu"
-				visual={item.visual}
-			/>
-		);
-	}
-
-	return (
+	visualSize,
+}: Readonly<{ item: RichTextSuggestionMenuItem; visualSize: "default" | "compact" }>) {
+	const isCompact = visualSize === "compact";
+	// `"compact"` reuses the shared 32px menu tiles but scales the whole mark to
+	// 24px (tile + glyph + corners) inside a 24px front-slot box, matching the
+	// agent knowledge picker. The 24px box itself is set in CSS via the menu
+	// root's `data-visual-size="compact"`.
+	const visual = item.visual ? (
+		<RichTextMentionVisualMark
+			className={isCompact ? undefined : "rich-text-command-menu-avatar"}
+			label={item.label}
+			size="menu"
+			visual={item.visual}
+		/>
+	) : (
 		<IconTile
 			size={MENU_VISUAL_TILE_SIZE}
 			label={item.label}
 			aria-hidden={true}
-			className="rich-text-command-menu-avatar border border-border bg-surface text-icon-subtlest"
+			className={cn(
+				!isCompact && "rich-text-command-menu-avatar",
+				"border border-border bg-surface text-icon-subtlest",
+			)}
 			icon={item.icon}
 		/>
 	);
+
+	if (isCompact) {
+		return (
+			<span className="rich-text-command-menu-avatar inline-flex shrink-0 items-center justify-center [&>*]:scale-75">
+				{visual}
+			</span>
+		);
+	}
+
+	return visual;
 }
 
 function filterItems<T extends { label: string; description?: string; isSticky?: boolean }>(
