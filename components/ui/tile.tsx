@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const tileVariants = cva(
-	"inline-flex items-center justify-center overflow-hidden rounded-[6px] leading-none",
+	"inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[6px] leading-none",
 	{
 		variants: {
 			size: {

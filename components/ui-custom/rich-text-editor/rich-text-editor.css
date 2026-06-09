@@ -481,15 +481,19 @@
 .rich-text-command-menu-item {
 	display: grid;
 	width: 100%;
-	grid-template-columns: 32px minmax(0, 1fr) auto;
+	grid-template-columns: 24px minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 12px;
 	border: 0;
 	border-radius: var(--ds-radius-small, 3px);
 	background: transparent;
-	/* No vertical padding: the 32px avatar sets the row height and
-	   `align-items: center` keeps the content centered within it. */
-	padding: 0 6px;
+	/* Shared sizing model for every variant (nested, flat, live "@"/"/" menus):
+	   a fixed 40px row. The 24px front-slot avatar plus the clamped copy box
+	   (label, with any description revealing in place on hover/selection) fit
+	   inside 40px, and `align-items: center` centers them. No vertical padding —
+	   the fixed height owns the row rhythm so reveal animations never reflow it. */
+	height: 40px;
+	padding: 0 6px 0 12px;
 	color: var(--ds-text, #172b4d);
 	text-align: left;
 	cursor: pointer;
@@ -595,26 +599,14 @@
 	height: 24px;
 }
 
-.rich-text-command-menu[data-nested="true"] .rich-text-command-menu-list .rich-text-command-menu-item {
-	/* Fixed row height with no vertical padding: `align-items: center` (from the
-	   base rule) auto-centers the avatar + copy within the 44px box. */
-	height: 44px;
-}
-
-/* Flat (non-nested) rows carry 6px of vertical padding for a comfortable
-   reading density, matching the editor-palette showcase (the source of truth)
-   on both the live "@"/"/" menus and the static demo. Nested rows are pinned to
-   a fixed 44px height by the rule above, so they stay padding-free everywhere. */
-.rich-text-command-menu:not([data-nested="true"]) .rich-text-command-menu-item {
-	padding-top: 6px;
-	padding-bottom: 6px;
-}
 
 .rich-text-command-menu-back {
 	display: flex;
 	grid-template-columns: none;
 	border-radius: 0;
-	padding: 8px 10px;
+	/* 16px left padding aligns the back arrow with the 24px front slots in the
+	   list rows below (which sit at 12px padding + 12px to glyph center). */
+	padding: 8px 10px 8px 16px;
 	color: var(--ds-text-subtle, #44546f);
 }
 
@@ -624,12 +616,15 @@
 .rich-text-command-menu-copy {
 	display: flex;
 	min-width: 0;
-	min-height: 34px;
 	flex-direction: column;
 	justify-content: center;
 	overflow: hidden;
 }
 
+/* Reveal-able / persistent copy: holds the label plus a description line stacked
+   below it. Clamped to 34px and clipped so the pair sits inside the row's fixed
+   40px height; the description is `opacity: 0` when idle and fades + slides into
+   view on hover/selection WITHOUT changing the row height. */
 .rich-text-command-menu-nested-copy {
 	height: 34px;
 	justify-content: center;
@@ -643,11 +638,10 @@
 .rich-text-command-menu-label {
 	overflow: hidden;
 	/* Title: ADS font.body (14px / line-height 20px) via the token, so size and
-	   line-height are never hand-overridden. Color follows the icon-subtlest
-	   token used by the picker visuals; weight stays at the default paragraph
-	   weight (no deliberate override). */
+	   line-height are never hand-overridden. Color uses the text-subtle token;
+	   weight stays at the default paragraph weight (no deliberate override). */
 	font: var(--ds-font-body);
-	color: var(--ds-icon-subtlest, #626f86);
+	color: var(--ds-text-subtle, #44546f);
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
@@ -691,7 +685,7 @@
    with 12px top / 4px bottom padding so each section gets breathing room above
    and sits tight to its items below. */
 .rich-text-command-menu-heading {
-	padding: 12px 8px 4px;
+	padding: 12px 12px 4px;
 	color: var(--ds-text-subtlest, #626f86);
 	font-size: 12px;
 	font-weight: 600;

@@ -261,7 +261,7 @@ export function TriggerProviderSearchList({
 					</Button>
 				) : null}
 			</div>
-			<div className="rich-text-command-menu-list">
+			<div className="rich-text-command-menu-list max-h-[min(280px,calc(100vh-8rem))] overflow-y-auto">
 				{filteredProviders.length > 0 ? (
 					<DropdownMenuGroup className="p-0">
 						{filteredProviders.map((provider) => (
@@ -392,7 +392,7 @@ export function TriggerProviderSubmenu({
 		<DropdownMenuSub open={open} onOpenChange={handleOpenChange}>
 			<DropdownMenuSubTrigger>
 				<span className="flex min-w-0 flex-1 items-center gap-3">
-					<span className="flex size-5 shrink-0 items-center justify-center text-icon-subtle">
+					<span className="flex size-6 shrink-0 items-center justify-center text-icon-subtle">
 						{renderTriggerProviderIcon(provider.icon, provider.label)}
 					</span>
 					<span className="min-w-0 truncate">{provider.label}</span>

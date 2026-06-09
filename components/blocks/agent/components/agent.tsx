@@ -1154,7 +1154,7 @@ function AgentCompactTriggersNavButton({
 			<DropdownMenuSubTrigger>
 				<span className="flex items-center gap-3">
 					<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
-						<PlusIcon size="small" />
+						<PlusIcon />
 					</span>
 					Add trigger
 				</span>
@@ -1205,7 +1205,7 @@ function AgentCompactTriggersNavButton({
 					<DropdownMenuItem
 						elemBefore={
 							<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
-								<AutomationIcon label="" size="small" />
+								<AutomationIcon label="" />
 							</span>
 						}
 						onClick={() => onEditTriggers?.()}

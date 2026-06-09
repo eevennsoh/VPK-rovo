@@ -588,7 +588,7 @@ export function RichTextSuggestionMenu({
 					onMouseDown={(event) => event.preventDefault()}
 					onClick={onBack}
 				>
-					<span className="inline-flex size-8 items-center justify-center">
+					<span className="inline-flex size-6 items-center justify-center">
 						<ArrowLeftIcon className="size-4" />
 					</span>
 					<span className="rich-text-command-menu-label">Back</span>
