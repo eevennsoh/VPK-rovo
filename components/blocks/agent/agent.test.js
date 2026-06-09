@@ -130,6 +130,8 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 	assert.match(AGENT_SOURCE, /<AgentKnowledgeRow[\s\S]*value=\{knowledgeMode\}/u);
 	assert.match(AGENT_SOURCE, /<AgentKnowledgeOverflowMenu[\s\S]*value=\{knowledgeMode\}/u);
 	assert.match(AGENT_SOURCE, /const isCustom = value === "custom";/u);
+	assert.match(AGENT_SOURCE, /<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category="knowledge"[\s\S]*items=\{EDITOR_PALETTE_KNOWLEDGE_APP_ITEMS\}[\s\S]*leadingItems=\{AGENT_KNOWLEDGE_UPLOAD_LEADING_ITEMS\}[\s\S]*onBrowseAll=\{onBrowse\}/u);
+	assert.match(AGENT_SOURCE, /onPickKnowledgeApp\(getKnowledgeAppIdFromMentionId\(item\.id\)\)/u);
 	assert.match(AGENT_SOURCE, /import BookOpenIcon from "@atlaskit\/icon-lab\/core\/book-open";/u);
 	assert.match(AGENT_SOURCE, /render=\{<LozengeDropdownTrigger aria-label="Knowledge mode" icon=\{<BookOpenIcon label="" size="small" \/>\} \/>\}/u);
 	assert.match(AGENT_SOURCE, /const MEMORY_MODE_OPTIONS = \[/u);
@@ -843,7 +845,11 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(EDITOR_PALETTE_SOURCE, /id: SEARCH_BROWSE_ALL_ITEM_ID,[\s\S]*label: "Browse all"/u);
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /id: SEARCH_BROWSE_ALL_ITEM_ID,[\s\S]*stickyPosition: "bottom"/u);
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /SEARCH_EMPTY_ITEM_ID/u);
-	assert.match(EDITOR_PALETTE_SOURCE, /const rows = items\.length > 0 \? \[searchItem, \.\.\.items, browseAllItem\] : \[searchItem\];/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /function normalizeSearchPickerItem\([\s\S]*item: RichTextSuggestionMenuItem,[\s\S]*\): RichTextSuggestionMenuItem \{[\s\S]*return item\.description[\s\S]*\? \{ \.\.\.item, persistentDescription: true \}[\s\S]*: item;/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /const sourceItems = \(itemsProp \?\? getMentionChildItems\(mentionSources, category\)\)[\s\S]*\.map\(normalizeSearchPickerItem\);/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /const leadingRows = leadingItems\.map\(normalizeSearchPickerItem\);/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /const rows = items\.length > 0[\s\S]*\? \[searchItem, \.\.\.leadingRows, \.\.\.items, browseAllItem\][\s\S]*: \[searchItem, \.\.\.leadingRows\];/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /const firstItem = items\[0\] \?\? leadingRows\[0\];/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /emptyState=\{[\s\S]*<EditorPaletteSearchEmptyState[\s\S]*label=\{emptyLabel\}[\s\S]*onBrowseAll=\{onBrowseAll\}[\s\S]*\/>[\s\S]*\}/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /function EditorPaletteSearchEmptyState\(/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /<Empty width="narrow" className="px-6 pt-4 pb-6">[\s\S]*<EmptyTitle headingSize="xsmall">\{label\}<\/EmptyTitle>[\s\S]*<EmptyDescription>Try a different search term\.<\/EmptyDescription>[\s\S]*<Button[\s\S]*variant="outline"[\s\S]*onClick=\{onBrowseAll\}[\s\S]*Browse all/u);
@@ -981,7 +987,7 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /whileFocus="active"/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \{\s*max-height: 400px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-borderless \{\s*border: 0;/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-avatar \{\s*width: 32px;\s*height: 32px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-avatar \{\s*width: 24px;\s*height: 24px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-showcase\[data-nested="true"\] \.rich-text-command-menu-list \{\s*overflow-y: auto;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /--rich-text-command-menu-scroll-mask-fade-size: 48px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-list-scrolled="true"\] \.rich-text-command-menu-list \{[\s\S]*linear-gradient\(to bottom, transparent 0, black var\(--rich-text-command-menu-scroll-mask-fade-size\), black 100%\)/u);
@@ -990,16 +996,13 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-first-item-input="true"\] \.rich-text-command-menu-list \{\s*padding-top: 0;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-input \{[\s\S]*margin: 0;[\s\S]*width: 100%;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-input-clear \{\s*justify-self: end;\s*\}/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-label \{[\s\S]*color: var\(--ds-icon-subtlest, #626f86\);/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-label \{[\s\S]*color: var\(--ds-text-subtle, #44546f\);/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*border-bottom/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \.rich-text-command-menu-list \.rich-text-command-menu-item \{[\s\S]*?height: 44px;\s*\}/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item \{[\s\S]*?height: 44px;/u);
 	// `[^}]*?` keeps this scoped to the nested item rule's own block so it can't
 	// leak into a later rule (flat / non-nested rows carry 6px vertical padding).
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \.rich-text-command-menu-list \.rich-text-command-menu-item \{[^}]*?padding-top: 6px;/u);
-	// Flat (non-nested) rows get the showcase's 6px vertical padding on every
-	// surface — the live "@"/"/" menus and the static demo — not just the
-	// showcase, so the live density matches the editor-palette source of truth.
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu:not\(\[data-nested="true"\]\) \.rich-text-command-menu-item \{\s*padding-top: 6px;\s*padding-bottom: 6px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item \{[\s\S]*padding: 0 6px 0 8px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-nested-copy \{\s*height: 34px;\s*justify-content: center;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-nested-copy-revealable \{\s*justify-content: flex-start;/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item:hover \.rich-text-command-menu-description/u);

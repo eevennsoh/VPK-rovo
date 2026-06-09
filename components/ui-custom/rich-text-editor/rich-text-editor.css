@@ -510,9 +510,15 @@
 .rich-text-command-menu-item {
 	display: grid;
 	width: 100%;
+	/* Front-slot visual + copy + optional trailing shortcut. The 12px spacing
+	   between the avatar and copy is applied as a margin on the copy (not the
+	   grid `gap`), and the grid `column-gap` is 0, so the trailing `auto`
+	   shortcut column reserves NOTHING when empty — no stranded gap on the right
+	   that would truncate the description early. The shortcut, when present,
+	   opens its own left gap via `padding-left`. */
 	grid-template-columns: 24px minmax(0, 1fr) auto;
 	align-items: center;
-	gap: 12px;
+	column-gap: 0;
 	border: 0;
 	border-radius: 8px;
 	background: transparent;
@@ -522,7 +528,8 @@
 	   inside 44px, and `align-items: center` centers them. No vertical padding —
 	   the fixed height owns the row rhythm so reveal animations never reflow it. */
 	height: 44px;
-	padding: 0 6px 0 8px;
+	/* 8px horizontal padding matches the dropdown menu item default (`px-2`). */
+	padding: 0 8px;
 	color: var(--ds-text, #172b4d);
 	text-align: left;
 	cursor: pointer;
@@ -637,6 +644,10 @@
 	flex-direction: column;
 	justify-content: center;
 	overflow: hidden;
+	/* Spacing from the 24px front-slot visual. Carried as a margin (not the
+	   grid `column-gap`, which is 0) so the empty trailing shortcut column never
+	   reserves a stranded gap on the right. */
+	margin-left: 12px;
 }
 
 /* Reveal-able / persistent copy: holds the label plus a description line stacked
@@ -683,9 +694,11 @@
 }
 
 .rich-text-command-menu-shortcut {
+	/* Trailing column 3. With the grid `column-gap: 0`, this reserves nothing
+	   when absent; when present it opens its own 24px gap from the copy via
+	   `padding-left`, so the return icon / Kbd never crowds the label. */
 	display: inline-flex;
 	align-items: center;
-	margin-left: auto;
 	flex-shrink: 0;
 	padding-left: 24px;
 }

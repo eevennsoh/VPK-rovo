@@ -176,6 +176,14 @@ function filterSearchItems(
 	});
 }
 
+function normalizeSearchPickerItem(
+	item: RichTextSuggestionMenuItem,
+): RichTextSuggestionMenuItem {
+	return item.description
+		? { ...item, persistentDescription: true }
+		: item;
+}
+
 export interface EditorPaletteSearchPickerProps {
 	autoFocus?: boolean;
 	category: EditorPaletteSearchCategory;
@@ -209,7 +217,9 @@ export function EditorPaletteSearchPicker({
 	onSelectItem,
 }: Readonly<EditorPaletteSearchPickerProps>) {
 	const [query, setQuery] = useState("");
-	const sourceItems = itemsProp ?? getMentionChildItems(mentionSources, category);
+	const sourceItems = (itemsProp ?? getMentionChildItems(mentionSources, category))
+		.map(normalizeSearchPickerItem);
+	const leadingRows = leadingItems.map(normalizeSearchPickerItem);
 	const items = filterSearchItems(sourceItems, query);
 	const searchItem: RichTextSuggestionMenuItem = {
 		id: SEARCH_INPUT_ITEM_ID,
@@ -223,12 +233,12 @@ export function EditorPaletteSearchPicker({
 		label: "Browse all",
 	};
 	const rows = items.length > 0
-		? [searchItem, ...leadingItems, ...items, browseAllItem]
-		: [searchItem, ...leadingItems];
+		? [searchItem, ...leadingRows, ...items, browseAllItem]
+		: [searchItem, ...leadingRows];
 
 	const handleSelect = (item: RichTextSuggestionMenuItem) => {
 		if (item.id === SEARCH_INPUT_ITEM_ID) {
-			const firstItem = items[0] ?? leadingItems[0];
+			const firstItem = items[0] ?? leadingRows[0];
 			if (firstItem) {
 				onSelectItem?.(firstItem);
 			}
