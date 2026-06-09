@@ -34,6 +34,7 @@ import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-
 import { useSubagentsNavigatorTop } from "@/components/projects/studio/hooks/use-subagents-navigator-top";
 import {
 	Agent,
+	AGENT_KNOWLEDGE_UPLOAD_TARGET,
 	AgentCompactHeaderNav,
 	type AgentCompactHeaderSection,
 	AgentConfigFields,
@@ -680,8 +681,18 @@ export function RovoAppAgentConfigPanel({
 				) : null}
 			</AnimatePresence>
 			<KnowledgeDirectoryDialog
+				// Remount per open so `defaultSelectedAppId` re-seeds the step: a
+				// plain "Browse knowledge" opens the grid, while picking an app in
+				// the "Add knowledge" flyout opens that app's content step.
+				key={`knowledge-${directoryKnowledgeAppId ?? "browse"}`}
+				defaultSelectedAppId={directoryKnowledgeAppId}
 				open={activeDirectory === "knowledge"}
-				onOpenChange={(open) => setActiveDirectory(open ? "knowledge" : null)}
+				onOpenChange={(open) => {
+					setActiveDirectory(open ? "knowledge" : null);
+					if (!open) {
+						setDirectoryKnowledgeAppId(null);
+					}
+				}}
 				onAddKnowledge={handleAddKnowledge}
 			/>
 			<ToolsDirectoryDialog
