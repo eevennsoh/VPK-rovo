@@ -961,35 +961,35 @@ function AgentCompactSubagentsNavButton({
 					/>
 				)}
 			/>
-			<MenubarContent align="start" className="w-64">
+			<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
 				{isEmpty ? null : (
-					<AgentCompactNavMenuList>
-						<DropdownMenuGroup className="p-0">
-							{subagents.map((subagent, index) => (
-								<DropdownMenuItem
-									key={`${subagent}-${index}`}
-									onClick={() => onSelectSubagent?.(index)}
-									selected={selectedIndex === index}
-								>
-									{subagent}
-								</DropdownMenuItem>
-							))}
-						</DropdownMenuGroup>
-					</AgentCompactNavMenuList>
+					<div className="min-h-0 flex-1 overflow-y-auto">
+						<AgentCompactNavMenuList>
+							<DropdownMenuGroup className="p-0">
+								{subagents.map((subagent, index) => (
+									<DropdownMenuItem
+										key={`${subagent}-${index}`}
+										onClick={() => onSelectSubagent?.(index)}
+										selected={selectedIndex === index}
+									>
+										{subagent}
+									</DropdownMenuItem>
+								))}
+							</DropdownMenuGroup>
+						</AgentCompactNavMenuList>
+					</div>
 				)}
-				{isEmpty ? (
+				<AgentCompactNavMenuPinnedFooter bordered={!isEmpty}>
 					<DropdownMenuItem elemBefore={<PlusIcon size="small" />} onClick={onCreateSubagent}>
 						Add subagent
 					</DropdownMenuItem>
-				) : null}
-				<AgentCompactNavMenuFooter>
 					<DropdownMenuItem
 						elemBefore={<AiAgentIcon label="" size="small" />}
 						onClick={onManageSubagents ?? onCreateSubagent}
 					>
 						Manage subagents
 					</DropdownMenuItem>
-				</AgentCompactNavMenuFooter>
+				</AgentCompactNavMenuPinnedFooter>
 			</MenubarContent>
 		</MenubarMenu>
 	);
@@ -1218,31 +1218,55 @@ function AgentCompactTriggersNavButton({
 	);
 }
 
-// Knowledge/Tools/Skills share one shape: 0 items → single "Browse {label}"
-// item; ≥1 → list of added items + "Browse {label}" footer. Knowledge layers
-// its mode options above the list (handled by AgentKnowledgeSelector instead).
+// Tools/Skills share one shape: configured items scroll in the body, while
+// "Browse {label}" and "Add {label} ›" stay pinned in a permanent footer.
+// Knowledge layers its mode options above the list (handled by
+// AgentKnowledgeSelector instead).
 function AgentCompactDirectoryNavButton({
 	item,
 	directory,
 	items,
 	browseLabel,
 	onBrowse,
+	onAddSearchItem,
 	onSelectItem,
 	screenAssistantTargetId,
 }: Readonly<{
 	item: AgentCompactConfigNavItem;
-	directory: AgentDirectoryKind;
+	directory: AgentInlineSearchField;
 	items: readonly string[];
 	browseLabel: string;
 	onBrowse: () => void;
+	onAddSearchItem?: (item: RichTextSuggestionMenuItem) => void;
 	onSelectItem?: (item: string) => void;
 	screenAssistantTargetId?: string;
 }>) {
 	const isEmpty = items.length === 0;
+	const addLabel = `Add ${item.label.toLowerCase()}`;
 	const browseItem = (
 		<DropdownMenuItem elemBefore={<item.Icon label="" size="small" />} onClick={onBrowse}>
 			{browseLabel}
 		</DropdownMenuItem>
+	);
+	const addSearchFlyout = (
+		<DropdownMenuSub>
+			<DropdownMenuSubTrigger>
+				<span className="flex items-center gap-3">
+					<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
+						<PlusIcon size="small" />
+					</span>
+					{addLabel}
+				</span>
+			</DropdownMenuSubTrigger>
+			<DropdownMenuSubContent className="w-auto min-w-0 border-0 bg-transparent p-0 shadow-none">
+				<EditorPaletteSearchPicker
+					autoFocus
+					category={AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD[directory]}
+					onBrowseAll={onBrowse}
+					onSelectItem={onAddSearchItem}
+				/>
+			</DropdownMenuSubContent>
+		</DropdownMenuSub>
 	);
 
 	return (
@@ -1257,11 +1281,9 @@ function AgentCompactDirectoryNavButton({
 					/>
 				)}
 			/>
-			<MenubarContent align="start" className="w-64">
-				{isEmpty ? (
-					browseItem
-				) : (
-					<>
+			<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
+				{isEmpty ? null : (
+					<div className="min-h-0 flex-1 overflow-y-auto">
 						<AgentCompactNavMenuList>
 							<DropdownMenuGroup className="p-0">
 								{items.map((value, index) => (
@@ -1274,9 +1296,12 @@ function AgentCompactDirectoryNavButton({
 								))}
 							</DropdownMenuGroup>
 						</AgentCompactNavMenuList>
-						<AgentCompactNavMenuFooter>{browseItem}</AgentCompactNavMenuFooter>
-					</>
+					</div>
 				)}
+				<AgentCompactNavMenuPinnedFooter bordered={!isEmpty}>
+					{browseItem}
+					{addSearchFlyout}
+				</AgentCompactNavMenuPinnedFooter>
 			</MenubarContent>
 		</MenubarMenu>
 	);
@@ -1533,6 +1558,12 @@ function AgentCompactEmptyConfigNav({
 								item={item}
 								items={getNonEmptyConfigItems(directory === "tools" ? config?.tools : config?.skills)}
 								key={item.agentFieldName}
+								onAddSearchItem={(searchItem) => {
+									if (searchItem.disabled) {
+										return;
+									}
+									onAddListValues?.(directory, [searchItem.label]);
+								}}
 								onBrowse={() => openAgentDirectoryOrAppendListItem(directory, directory, onOpenDirectory, onAppendListItem)}
 								onSelectItem={onOpenDirectory ? (value) => onOpenDirectory(directory, value) : undefined}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:${item.agentFieldName}` : undefined}

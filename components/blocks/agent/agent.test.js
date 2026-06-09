@@ -619,6 +619,22 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.doesNotMatch(WEBSITE_REGISTRY_SOURCE, /agent-demo-compact-/u);
 });
 
+test("Agent compact directory dropdowns keep persistent browse and add footers", () => {
+	assert.match(AGENT_SOURCE, /function AgentCompactDirectoryNavButton\(/u);
+	assert.match(AGENT_SOURCE, /directory: AgentInlineSearchField;/u);
+	assert.match(AGENT_SOURCE, /onAddSearchItem\?: \(item: RichTextSuggestionMenuItem\) => void;/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactDirectoryNavButton[\s\S]*<MenubarContent align="start" className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}>[\s\S]*<div className="min-h-0 flex-1 overflow-y-auto">[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*\{browseItem\}[\s\S]*\{addSearchFlyout\}/u);
+	assert.match(AGENT_SOURCE, /const addSearchFlyout = \([\s\S]*<DropdownMenuSub>[\s\S]*<DropdownMenuSubTrigger>[\s\S]*\{addLabel\}[\s\S]*<DropdownMenuSubContent className="w-auto min-w-0 border-0 bg-transparent p-0 shadow-none">[\s\S]*<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category=\{AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD\[directory\]\}[\s\S]*onBrowseAll=\{onBrowse\}[\s\S]*onSelectItem=\{onAddSearchItem\}/u);
+	assert.match(AGENT_SOURCE, /onAddSearchItem=\{\(searchItem\) => \{[\s\S]*if \(searchItem\.disabled\) \{[\s\S]*return;[\s\S]*onAddListValues\?\.\(directory, \[searchItem\.label\]\);[\s\S]*\}\}/u);
+	assert.match(AGENT_SOURCE, /browseLabel=\{`Browse \$\{item\.label\.toLowerCase\(\)\}`\}[\s\S]*onBrowse=\{\(\) => openAgentDirectoryOrAppendListItem\(directory, directory, onOpenDirectory, onAppendListItem\)\}/u);
+});
+
+test("Agent compact subagents dropdown keeps add and manage actions pinned", () => {
+	assert.match(AGENT_SOURCE, /function AgentCompactSubagentsNavButton/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactSubagentsNavButton[\s\S]*<MenubarContent align="start" className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}>[\s\S]*<div className="min-h-0 flex-1 overflow-y-auto">[\s\S]*selected=\{selectedIndex === index\}[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*Add subagent[\s\S]*Manage subagents/u);
+	assert.doesNotMatch(AGENT_SOURCE, /Browse subagents/u);
+});
+
 test("Bento carousel overflow hook reattaches listeners when the scroll node remounts", () => {
 	assert.match(HORIZONTAL_OVERFLOW_HOOK_SOURCE, /const \[element, setElement\] = useState<T \| null>\(null\);/u);
 	assert.match(HORIZONTAL_OVERFLOW_HOOK_SOURCE, /elementRef\.current = node;\s*setElement\(node\);/u);
@@ -937,7 +953,7 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /emptyState\?: ReactNode;/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import CrossCircleIcon from "@atlaskit\/icon\/core\/cross-circle";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ Button \} from "@\/components\/ui\/button";/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /emptyState ?? <div className="rich-text-command-menu-empty">\{emptyLabel\}<\/div>/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /emptyState \?\? <div className="rich-text-command-menu-empty">\{emptyLabel\}<\/div>/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onInputClear\?: \(\) => void;/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /data-nested=\{isNested \? "true" : undefined\}/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /data-first-item-input=\{renderFirstItemAsInput \? "true" : undefined\}/u);
