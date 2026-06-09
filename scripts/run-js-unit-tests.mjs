@@ -21,6 +21,7 @@ const INCLUDED_TEST_PREFIXES = [
 // test in `app/data/directory/agent-generation-e2e.test.js` cover this feature.
 const INCLUDED_TEST_FILES = new Set([
 	"components/projects/studio/lib/studio-agent-creation-context.test.js",
+	"components/projects/sidebar-chat/lib/agent-activity-timeline.test.js",
 ]);
 
 const gitResult = spawnSync("git", [
