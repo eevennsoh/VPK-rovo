@@ -52,10 +52,12 @@ export function useAgentConfigSubagents({
 		: null;
 	const isSubagentActive = activePrompt !== null;
 
-	const namedSubagentPrompts = useMemo(
-		() => subagentPrompts.filter((prompt) => prompt.triggerName.trim()),
-		[subagentPrompts],
-	);
+	// The derived subagents chip list (getDerivedSubagentNames) mirrors the prompt
+	// list 1:1 — including unnamed drafts shown as "Untitled subagent" — so the
+	// index reported by the summary row maps straight back to the owning prompt.
+	// Keep this list aligned with that derivation; filtering here would desync the
+	// indexes used by select/remove-by-derived-index.
+	const derivedSubagentPrompts = subagentPrompts;
 
 	// Base config = the draft + the derived subagent chip list.
 	const baseConfig = useMemo<AgentConfigFormValue>(
@@ -65,10 +67,10 @@ export function useAgentConfigSubagents({
 
 	const activeConfig = activePrompt ? activePrompt.config : baseConfig;
 	const activeConfigId = activePrompt ? `prompt-${activePrompt.id}` : "base";
-	const namedIndex = activePrompt
-		? namedSubagentPrompts.findIndex((prompt) => prompt.id === activePrompt.id)
+	const derivedIndex = activePrompt
+		? derivedSubagentPrompts.findIndex((prompt) => prompt.id === activePrompt.id)
 		: -1;
-	const selectedSubagentIndex = namedIndex >= 0 ? namedIndex : undefined;
+	const selectedSubagentIndex = derivedIndex >= 0 ? derivedIndex : undefined;
 
 	// Persist a prompt list change + keep the mirrored `subagents` chip list in sync.
 	const commitPrompts = useCallback(
@@ -90,15 +92,15 @@ export function useAgentConfigSubagents({
 	}, []);
 
 	// AgentConfigFields' subagents dropdown reports the index into the derived
-	// (named) chip list; map it back to the owning prompt id.
+	// chip list; map it back to the owning prompt id.
 	const selectSubagentByDerivedIndex = useCallback(
 		(index: number) => {
-			const prompt = namedSubagentPrompts[index];
+			const prompt = derivedSubagentPrompts[index];
 			if (prompt) {
 				startTransition(() => setActiveSubagentId(prompt.id));
 			}
 		},
-		[namedSubagentPrompts],
+		[derivedSubagentPrompts],
 	);
 
 	const createSubagent = useCallback(() => {
@@ -162,7 +164,7 @@ export function useAgentConfigSubagents({
 	// prompt was being edited.
 	const removeSubagentByDerivedIndex = useCallback(
 		(index: number) => {
-			const promptToRemove = namedSubagentPrompts[index];
+			const promptToRemove = derivedSubagentPrompts[index];
 			if (!promptToRemove) {
 				return;
 			}
@@ -173,7 +175,7 @@ export function useAgentConfigSubagents({
 				startTransition(() => setActiveSubagentId(null));
 			}
 		},
-		[activeSubagentId, commitPrompts, namedSubagentPrompts, subagentPrompts],
+		[activeSubagentId, commitPrompts, derivedSubagentPrompts, subagentPrompts],
 	);
 
 	// Remove a subagent by its prompt id (used by the Manage subagents dialog,

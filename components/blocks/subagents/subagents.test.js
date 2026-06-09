@@ -126,7 +126,7 @@ test("Subagents creation is routed through the compact control panel", () => {
 
 test("Subagents compact removal uses prompt id instead of trigger-name identity", () => {
 	assert.match(SUBAGENTS_PROMPTS_LIB_SOURCE, /stable identity is its id/u);
-	assert.match(SUBAGENTS_PAGE_SOURCE, /const promptToRemove = namedSubagentPrompts\[index\];[\s\S]*setSubagentPrompts\(\(currentPrompts\) => currentPrompts\.filter\(\(prompt\) => prompt\.id !== promptToRemove\.id\)\)/u);
+	assert.match(SUBAGENTS_PAGE_SOURCE, /const promptToRemove = derivedSubagentPrompts\[index\];[\s\S]*setSubagentPrompts\(\(currentPrompts\) => currentPrompts\.filter\(\(prompt\) => prompt\.id !== promptToRemove\.id\)\)/u);
 	assert.doesNotMatch(SUBAGENTS_PAGE_SOURCE, /const triggerNames = getDerivedSubagentNames\(subagentPrompts\)/u);
 	assert.doesNotMatch(SUBAGENTS_PAGE_SOURCE, /prompt\.triggerName\.trim\(\) === triggerName/u);
 });
@@ -165,7 +165,8 @@ test("Agent profile header renders an inline back-to-parent icon button beside t
 	assert.match(AGENT_SOURCE, /<ArrowLeftIcon label="" \/>/u);
 	// The button matches the name field's ~40px height so the icon row aligns,
 	// and forces the icon to 16px via the svg utility (no ADS size prop).
-	assert.match(AGENT_SOURCE, /className="size-10 shrink-0 rounded text-icon-subtle hover:text-icon \[&_svg\]:size-4"/u);
+	// `rounded-md` matches the InlineEdit name field's read-view radius beside it.
+	assert.match(AGENT_SOURCE, /className="size-10 shrink-0 rounded-md text-icon-subtle hover:text-icon \[&_svg\]:size-4"/u);
 	// The old full-width "Back to parent" text row is gone.
 	assert.doesNotMatch(AGENT_SOURCE, /Back to parent</u);
 	// The big editable title switches to the subagent name with the restored

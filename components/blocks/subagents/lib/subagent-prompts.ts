@@ -60,10 +60,14 @@ export function normalizeSubagentPrompts(prompts: ReadonlyArray<SubagentPrompt> 
 	return (prompts ?? SUBAGENTS_DEMO_PROMPTS).map(cloneSubagentPrompt);
 }
 
+// The base agent's subagents chip list mirrors the prompt list 1:1, including
+// freshly created drafts that haven't been named yet. Unnamed prompts fall back
+// to the shared placeholder (same label the navigator/header use) so the summary
+// row, navigator, and breadcrumb never drift out of sync. Filtering unnamed
+// prompts out here would also misalign chip indexes from the owning prompts,
+// breaking remove/select-by-index from the summary row.
 export function getDerivedSubagentNames(prompts: ReadonlyArray<SubagentPrompt>): string[] {
-	return prompts
-		.map((prompt) => prompt.triggerName.trim())
-		.filter(Boolean);
+	return prompts.map((prompt) => prompt.triggerName.trim() || UNTITLED_SUBAGENT_NAME);
 }
 
 export function getBaseConfigWithSubagents(

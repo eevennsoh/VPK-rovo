@@ -662,7 +662,7 @@ test("Subagents hook persists prompts on the draft and derives the subagents chi
 	assert.match(SUBAGENTS_HOOK_SOURCE, /if \(promptToRemove\.id === activeSubagentId\)\s*\{\s*startTransition\(\(\) => setActiveSubagentId\(null\)\);/u);
 	// Removal uses the same derived-index -> prompt-id mapping as selection, so
 	// duplicate trigger names do not delete the wrong prompt.
-	assert.match(SUBAGENTS_HOOK_SOURCE, /const promptToRemove = namedSubagentPrompts\[index\];[\s\S]*subagentPrompts\.filter\(\(prompt\) => prompt\.id !== promptToRemove\.id\)/u);
+	assert.match(SUBAGENTS_HOOK_SOURCE, /const promptToRemove = derivedSubagentPrompts\[index\];[\s\S]*subagentPrompts\.filter\(\(prompt\) => prompt\.id !== promptToRemove\.id\)/u);
 	assert.doesNotMatch(SUBAGENTS_HOOK_SOURCE, /const triggerName = getDerivedSubagentNames\(subagentPrompts\)\[index\]/u);
 	// Reuses the shared helpers extracted from the demo block.
 	assert.match(

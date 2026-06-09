@@ -60,10 +60,10 @@ export default function Subagents({
 	const activePrompt = activeSubagentId
 		? subagentPrompts.find((prompt) => prompt.id === activeSubagentId) ?? null
 		: null;
-	const namedSubagentPrompts = useMemo(
-		() => subagentPrompts.filter((prompt) => prompt.triggerName.trim()),
-		[subagentPrompts],
-	);
+	// The derived subagents chip list (getDerivedSubagentNames) mirrors the prompt
+	// list 1:1 — including unnamed drafts shown as "Untitled subagent" — so the
+	// index reported by the summary row maps straight back to the owning prompt.
+	const derivedSubagentPrompts = subagentPrompts;
 	const baseConfig = useMemo(
 		() => getBaseConfigWithSubagents(baseAgent.config, subagentPrompts),
 		[baseAgent.config, subagentPrompts],
@@ -71,7 +71,7 @@ export default function Subagents({
 	const activeConfig = activePrompt ? activePrompt.config : baseConfig;
 	const activeConfigId = activePrompt ? `prompt-${activePrompt.id}` : "base";
 	const activeSubagentListIndex = activePrompt
-		? namedSubagentPrompts.findIndex((prompt) => prompt.id === activePrompt.id)
+		? derivedSubagentPrompts.findIndex((prompt) => prompt.id === activePrompt.id)
 		: -1;
 
 	function handleSelectBaseAgent() {
@@ -171,7 +171,7 @@ export default function Subagents({
 
 	function handleRemoveListItem(field: AgentConfigListFieldName, index: number) {
 		if (!activePrompt && field === "subagents") {
-			const promptToRemove = namedSubagentPrompts[index];
+			const promptToRemove = derivedSubagentPrompts[index];
 			if (!promptToRemove) {
 				return;
 			}
@@ -203,7 +203,7 @@ export default function Subagents({
 			return;
 		}
 
-		const prompt = namedSubagentPrompts[index];
+		const prompt = derivedSubagentPrompts[index];
 		if (!prompt) {
 			return;
 		}

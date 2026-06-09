@@ -124,7 +124,7 @@ function AgentSelectorItem({
 	return (
 		<CommandItem
 			aria-checked={supportsMultipleSelection ? isChecked : undefined}
-			className="h-10 min-h-10 items-center gap-3 rounded-[6px] pl-2 pr-3 py-1.5"
+			className="h-11 min-h-11 items-center gap-3 rounded-[6px] px-2 py-1.5"
 			data-checked={supportsMultipleSelection && isChecked ? true : undefined}
 			keywords={[agent.name, agent.byline]}
 			onBlur={() => setIsInteractionActive(false)}
@@ -143,14 +143,14 @@ function AgentSelectorItem({
 				initial={false}
 			>
 				<motion.span
-					className="block truncate text-sm font-normal leading-4 text-text"
+					className="block truncate text-sm font-normal leading-4 text-text-subtle"
 					style={{ willChange: "transform" }}
 					variants={agentLabelVariants}
 				>
 					{agent.name}
 				</motion.span>
 				<motion.span
-					className="block truncate text-xs leading-4 text-text-subtle"
+					className="block truncate text-xs leading-4 text-text-subtlest"
 					style={{ willChange: "transform, opacity" }}
 					variants={agentDescriptionVariants}
 				>
@@ -212,7 +212,7 @@ export function AgentSelector({
 	return (
 		<Command className={cn("h-[26rem] max-h-[min(26rem,var(--available-height))] min-h-0 min-w-80 flex-1 p-2", className)} shouldFilter={false}>
 			{hasSelectedAgentActions ? (
-				<div aria-label="Selected agent actions" className="flex shrink-0 flex-col border-b border-border pb-3" role="group">
+				<div aria-label="Selected agent actions" className="flex shrink-0 flex-col border-b border-border pb-2" role="group">
 					{selectedActions.map((action) => (
 						<Button
 							className={ACTION_BUTTON_CLASS}
@@ -230,7 +230,7 @@ export function AgentSelector({
 				</div>
 			) : null}
 			<div className={cn("shrink-0", hasSelectedAgentActions && "pt-4")}>
-				<p className="mb-2 text-xs font-semibold leading-4 text-text-subtlest">{heading}</p>
+				<p className="mb-2 px-2 text-xs font-semibold leading-4 text-text-subtlest">{heading}</p>
 				<CommandInput
 					aria-label={searchPlaceholder}
 					inputGroupClassName="has-[[data-slot=input-group-control]:focus-visible]:border-input has-[[data-slot=input-group-control]:focus-visible]:ring-0 [&>[data-align=inline-start]]:pl-3 has-[>[data-align=inline-start]]:[&>input]:pl-3"

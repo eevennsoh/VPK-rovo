@@ -1739,6 +1739,11 @@ function AgentReferenceChip({
 	const item = category ? getDirectoryMentionItemOrFallback(category, label) : undefined;
 	const visual = item?.visual;
 	const resolvedTagColor = tagColor ?? getTagColorForMentionVisual(visual) ?? "blue";
+	// When no directory visual resolves (e.g. a freshly created, still-unnamed
+	// subagent that isn't in the demo agent directory), fall back to a
+	// category-appropriate icon — subagents use the same agent icon as the
+	// Subagents config row/header rather than the generic page icon.
+	const FallbackIcon = category === "subagent" ? AiAgentIcon : PageIcon;
 	const resolvedElemBefore = elemBefore ?? (
 		visual ? (
 			<RichTextMentionVisualMark
@@ -1747,7 +1752,7 @@ function AgentReferenceChip({
 				visual={visual}
 			/>
 		) : (
-			<PageIcon label="" size="small" />
+			<FallbackIcon label="" size="small" />
 		)
 	);
 
@@ -3423,7 +3428,7 @@ function AgentConfigProfile({
 								type="button"
 								aria-label="Back to parent agent"
 								data-agent-field="back-to-parent"
-								className="size-10 shrink-0 rounded text-icon-subtle hover:text-icon [&_svg]:size-4"
+								className="size-10 shrink-0 rounded-md text-icon-subtle hover:text-icon [&_svg]:size-4"
 								onClick={onSelectBaseAgent}
 								size="icon"
 								variant="ghost"

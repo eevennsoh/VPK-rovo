@@ -488,11 +488,11 @@
 	border-radius: 8px;
 	background: transparent;
 	/* Shared sizing model for every variant (nested, flat, live "@"/"/" menus):
-	   a fixed 40px row. The 24px front-slot avatar plus the clamped copy box
+	   a fixed 44px row. The 24px front-slot avatar plus the clamped copy box
 	   (label, with any description revealing in place on hover/selection) fit
-	   inside 40px, and `align-items: center` centers them. No vertical padding —
+	   inside 44px, and `align-items: center` centers them. No vertical padding —
 	   the fixed height owns the row rhythm so reveal animations never reflow it. */
-	height: 40px;
+	height: 44px;
 	padding: 0 6px 0 8px;
 	color: var(--ds-text, #172b4d);
 	text-align: left;
@@ -612,7 +612,7 @@
 
 /* Reveal-able / persistent copy: holds the label plus a description line stacked
    below it. Clamped to 34px and clipped so the pair sits inside the row's fixed
-   40px height; the description is `opacity: 0` when idle and fades + slides into
+   44px height; the description is `opacity: 0` when idle and fades + slides into
    view on hover/selection WITHOUT changing the row height. */
 .rich-text-command-menu-nested-copy {
 	height: 34px;

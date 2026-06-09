@@ -14,10 +14,13 @@ test("dropdown menu popup uses a 12px container radius", () => {
 });
 
 test("dropdown menu front slot icons use a 24px subtle icon container", () => {
-	assert.match(source, /const dropdownMenuFrontSlotClassName =\s*"inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle \[&_\[data-slot=icon\]\]:text-icon-subtle \[&_svg\]:text-icon-subtle"/u);
+	assert.match(source, /const dropdownMenuFrontSlotClassName =\s*"inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle/u);
 	assert.match(source, /<span className=\{dropdownMenuFrontSlotClassName\}>/u);
-	assert.match(source, /indicator:\s*"pointer-events-none absolute left-1 inline-flex size-6 items-center justify-center text-icon-subtle \[&_\[data-slot=icon\]\]:text-icon-subtle \[&_svg\]:text-icon-subtle"/u);
 	assert.doesNotMatch(source, /elemBefore \? \([\s\S]*?<span className=\{cn\("inline-flex h-5/u);
+});
+
+test("dropdown menu selected indicator uses a 24px container aligned with item icons", () => {
+	assert.match(source, /indicator:\s*"pointer-events-none absolute left-2 inline-flex size-6 items-center justify-center text-icon-selected/u);
 });
 
 test("dropdown menu rows use an 8px item radius", () => {

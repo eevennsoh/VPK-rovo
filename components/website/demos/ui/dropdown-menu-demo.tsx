@@ -180,9 +180,9 @@ export function DropdownMenuDemoDensity() {
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuGroup>
-            <DropdownMenuItem className="py-2.5">Dashboard</DropdownMenuItem>
-            <DropdownMenuItem className="py-2.5">Projects</DropdownMenuItem>
-            <DropdownMenuItem className="py-2.5">Settings</DropdownMenuItem>
+            <DropdownMenuItem className="h-11">Dashboard</DropdownMenuItem>
+            <DropdownMenuItem className="h-11">Projects</DropdownMenuItem>
+            <DropdownMenuItem className="h-11">Settings</DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -194,9 +194,9 @@ export function DropdownMenuDemoDensity() {
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuGroup>
-            <DropdownMenuItem className="py-1.5">Dashboard</DropdownMenuItem>
-            <DropdownMenuItem className="py-1.5">Projects</DropdownMenuItem>
-            <DropdownMenuItem className="py-1.5">Settings</DropdownMenuItem>
+            <DropdownMenuItem className="h-8">Dashboard</DropdownMenuItem>
+            <DropdownMenuItem className="h-8">Projects</DropdownMenuItem>
+            <DropdownMenuItem className="h-8">Settings</DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -956,16 +956,22 @@ export function DropdownMenuDemoWithCheckbox() {
         <div className="px-2 py-1.5 text-xs font-semibold text-text-subtle">
           Display
         </div>
-        <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex w-full cursor-pointer items-center gap-3 rounded-sm px-3 py-2 text-[13px] leading-5 select-none">
-          <Checkbox checked={showSidebar} onCheckedChange={setShowSidebar} />
+        <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex h-8 w-full cursor-pointer items-center gap-3 rounded-sm px-2 text-[13px] leading-5 select-none">
+          <span className="inline-flex size-6 shrink-0 items-center justify-center">
+            <Checkbox checked={showSidebar} onCheckedChange={setShowSidebar} />
+          </span>
           Show sidebar
         </label>
-        <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex w-full cursor-pointer items-center gap-3 rounded-sm px-3 py-2 text-[13px] leading-5 select-none">
-          <Checkbox checked={showActivity} onCheckedChange={setShowActivity} />
+        <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex h-8 w-full cursor-pointer items-center gap-3 rounded-sm px-2 text-[13px] leading-5 select-none">
+          <span className="inline-flex size-6 shrink-0 items-center justify-center">
+            <Checkbox checked={showActivity} onCheckedChange={setShowActivity} />
+          </span>
           Show activity panel
         </label>
-        <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex w-full cursor-pointer items-center gap-3 rounded-sm px-3 py-2 text-[13px] leading-5 select-none">
-          <Checkbox checked={showPreview} onCheckedChange={setShowPreview} />
+        <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex h-8 w-full cursor-pointer items-center gap-3 rounded-sm px-2 text-[13px] leading-5 select-none">
+          <span className="inline-flex size-6 shrink-0 items-center justify-center">
+            <Checkbox checked={showPreview} onCheckedChange={setShowPreview} />
+          </span>
           Show preview
         </label>
       </PopoverContent>
@@ -988,16 +994,22 @@ export function DropdownMenuDemoWithRadioGroup() {
           Layout
         </div>
         <RadioGroup value={view} onValueChange={setView} className="gap-0">
-          <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex w-full cursor-pointer items-center gap-3 rounded-sm px-3 py-2 text-[13px] leading-5 select-none">
-            <RadioGroupItem value="list" />
+          <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex h-8 w-full cursor-pointer items-center gap-3 rounded-sm px-2 text-[13px] leading-5 select-none">
+            <span className="inline-flex size-6 shrink-0 items-center justify-center">
+              <RadioGroupItem value="list" />
+            </span>
             List
           </label>
-          <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex w-full cursor-pointer items-center gap-3 rounded-sm px-3 py-2 text-[13px] leading-5 select-none">
-            <RadioGroupItem value="board" />
+          <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex h-8 w-full cursor-pointer items-center gap-3 rounded-sm px-2 text-[13px] leading-5 select-none">
+            <span className="inline-flex size-6 shrink-0 items-center justify-center">
+              <RadioGroupItem value="board" />
+            </span>
             Board
           </label>
-          <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex w-full cursor-pointer items-center gap-3 rounded-sm px-3 py-2 text-[13px] leading-5 select-none">
-            <RadioGroupItem value="calendar" />
+          <label className="hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed flex h-8 w-full cursor-pointer items-center gap-3 rounded-sm px-2 text-[13px] leading-5 select-none">
+            <span className="inline-flex size-6 shrink-0 items-center justify-center">
+              <RadioGroupItem value="calendar" />
+            </span>
             Calendar
           </label>
         </RadioGroup>

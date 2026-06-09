@@ -2,7 +2,6 @@
 
 import { cloneElement, isValidElement, useId, useState, type ComponentProps, type ReactElement } from "react";
 import Image from "next/image";
-import GrowDiagonalIcon from "@atlaskit/icon/core/grow-diagonal";
 import PageIcon from "@atlaskit/icon/core/page";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -117,17 +116,6 @@ const previewToneClasses: Record<SmartLinkTone, string> = {
 	warning: "bg-bg-warning text-text-warning-bolder",
 };
 
-const variantPreviewLabels: Record<SmartLinkVariant, string> = {
-	confluence: "Preview",
-	jira: "Preview",
-	team: "Preview",
-	goal: "Preview",
-	loom: "Preview",
-	article: "Preview",
-	file: "Preview",
-	generic: "Preview",
-};
-
 function cloneIcon(icon: ReactElement, className?: string) {
 	if (!isValidElement(icon)) {
 		return icon;
@@ -163,7 +151,8 @@ function renderVisual(visual: SmartLinkVisual, size: "trigger" | "card" | "foote
 	}
 
 	if (visual.kind === "icon") {
-		return <Icon className="size-5 text-icon-subtle" render={cloneIcon(visual.icon)} />;
+		const iconSize = size === "trigger" || size === "footer" ? "size-4" : "size-5";
+		return <Icon className={cn(iconSize, "text-icon-subtle")} render={cloneIcon(visual.icon)} />;
 	}
 
 	if (visual.kind === "text") {
@@ -181,31 +170,17 @@ function renderVisual(visual: SmartLinkVisual, size: "trigger" | "card" | "foote
 		);
 	}
 
+	const tileBox = size === "trigger" || size === "footer" ? "size-4" : "size-6";
+	const tileIcon = size === "trigger" || size === "footer" ? "size-3" : "size-4";
 	return (
 		<span
 			className={cn(
-				"inline-flex size-6 shrink-0 items-center justify-center rounded-tile",
+				"inline-flex shrink-0 items-center justify-center rounded-tile",
+				tileBox,
 				toneClasses[visual.tone ?? "neutral"],
 			)}
 		>
-			<Icon className="size-4" render={cloneIcon(visual.icon)} />
-		</span>
-	);
-}
-
-function SmartLinkPreviewBadge({
-	open,
-	variant,
-}: Readonly<{ open: boolean; variant: SmartLinkVariant }>) {
-	return (
-		<span
-			className={cn(
-				"pointer-events-none -ml-1 inline-flex h-6 shrink-0 items-center gap-1 rounded-md bg-bg-neutral px-1.5 text-sm leading-5 text-text-subtle transition-opacity duration-fast ease-out",
-				open ? "opacity-100" : "opacity-0 group-hover/smart-link:opacity-100 group-focus/smart-link:opacity-100",
-			)}
-		>
-			<Icon className="size-4" render={<GrowDiagonalIcon label="" size="small" />} />
-			<span>{variantPreviewLabels[variant]}</span>
+			<Icon className={tileIcon} render={cloneIcon(visual.icon)} />
 		</span>
 	);
 }
@@ -221,15 +196,19 @@ function SmartLinkTrigger({
 			{...props}
 			aria-describedby={`smart-link-card-${item.id}`}
 			className={cn(
-				"group/smart-link inline-flex max-w-full items-center gap-1 overflow-hidden rounded-md border border-border bg-surface px-1.5 py-0.5 align-baseline text-link no-underline outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-out hover:border-border-selected hover:bg-surface-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+				// Extends the VPK Tag visual contract: same compact pill metrics
+				// (h-5, text-xs/leading-4, rounded-sm, ps-px/pe-[3px], gap-0.5) so the
+				// inline chip sits on a single text line instead of upscaling.
+				"group/smart-link relative inline-flex h-5 max-w-[11.25rem] min-w-0 shrink-0 items-center gap-0.5 self-start overflow-hidden rounded-sm border border-border bg-bg-neutral-subtle py-0 ps-px pe-[3px] align-baseline text-xs leading-4 font-normal text-link no-underline outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-out hover:border-border-selected hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
 				open && "border-border-selected",
 				className,
 			)}
 			href={item.href}
 		>
-			<span className="inline-flex shrink-0 items-center justify-center">{renderVisual(item.icon, "trigger")}</span>
-			<SmartLinkPreviewBadge open={open} variant={item.variant} />
-			<span className="min-w-0 truncate text-xl leading-7">{item.title}</span>
+			<span className="flex size-4 shrink-0 items-center justify-center [&>*]:size-full [&>svg]:size-4">
+				{renderVisual(item.icon, "trigger")}
+			</span>
+			<span className="min-w-0 grow truncate whitespace-nowrap">{item.title}</span>
 		</a>
 	);
 }

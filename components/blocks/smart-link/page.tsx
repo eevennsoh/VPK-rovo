@@ -13,7 +13,7 @@ export default function SmartLinkPage({
 	return (
 		<div className="min-h-[560px] w-full bg-surface px-8 py-16 text-text">
 			<div className="mx-auto max-w-5xl">
-				<div className="space-y-5 text-xl leading-9">
+				<div className="space-y-4 text-sm leading-6">
 					<p>
 						<SmartLink item={items[0]} /> keeps planning work connected to source context while updates flow through related references.
 					</p>

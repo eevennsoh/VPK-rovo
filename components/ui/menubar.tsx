@@ -138,7 +138,7 @@ function MenubarItem({
         menubarRowBaseClassName,
         shouldWrapText ? menubarWrappingRowClassName : menubarRowHeightClassName,
         menubarRowHorizontalPaddingClassName,
-        "data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_[data-slot=icon]]:shrink-0 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4 [&_svg]:text-icon-subtle data-disabled:[&_svg]:text-icon-disabled data-[variant=destructive]:[&_svg]:text-icon-danger",
+        "data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_[data-slot=icon]]:shrink-0 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4 [&_svg]:text-icon-subtle data-disabled:[&_svg]:text-icon-disabled data-[variant=destructive]:[&_svg]:text-icon-danger [&>svg:first-child]:box-content [&>svg:first-child]:size-4 [&>svg:first-child]:p-1 [&>[data-slot=icon]:first-child]:box-content [&>[data-slot=icon]:first-child]:size-4 [&>[data-slot=icon]:first-child]:p-1 [&_[data-slot=icon]]:text-icon-subtle [&>[data-slot=icon]:first-child_svg]:text-icon-subtle data-disabled:[&_[data-slot=icon]]:text-icon-disabled data-disabled:[&>[data-slot=icon]:first-child_svg]:text-icon-disabled data-[variant=destructive]:[&_[data-slot=icon]]:text-icon-danger data-[variant=destructive]:[&>[data-slot=icon]:first-child_svg]:text-icon-danger",
         className,
       )}
       onClick={handleClick}
@@ -195,14 +195,14 @@ function MenubarCheckboxItem({
       className={cn(
         menubarRowBaseClassName,
         allowTextWrap ? menubarWrappingRowClassName : menubarRowHeightClassName,
-        "pr-2 pl-8 data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed data-inset:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
+        "pr-2 pl-10 data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed data-inset:pl-10 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
         className,
       )}
       checked={checked}
       {...props}
     >
       <span
-        className="pointer-events-none absolute left-2 inline-flex items-center justify-center"
+        className="pointer-events-none absolute left-2 inline-flex size-6 items-center justify-center"
         data-slot="menubar-checkbox-item-indicator"
       >
         <MenuPrimitive.CheckboxItemIndicator>
@@ -243,13 +243,13 @@ function MenubarRadioItem({
       className={cn(
         menubarRowBaseClassName,
         allowTextWrap ? menubarWrappingRowClassName : menubarRowHeightClassName,
-        "pr-2 pl-8 data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed data-inset:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
+        "pr-2 pl-10 data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed data-inset:pl-10 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
         className,
       )}
       {...props}
     >
       <span
-        className="pointer-events-none absolute left-2 inline-flex items-center justify-center"
+        className="pointer-events-none absolute left-2 inline-flex size-6 items-center justify-center"
         data-slot="menubar-radio-item-indicator"
       >
         <MenuPrimitive.RadioItemIndicator>
@@ -357,7 +357,7 @@ function MenubarSubTrigger({
       className={cn(
         allowTextWrap ? menubarWrappingRowClassName : menubarRowHeightClassName,
         menubarRowHorizontalPaddingClassName,
-        "rounded-lg focus:bg-accent focus:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground [&_svg:not([class*='size-'])]:size-4",
+        "rounded-lg focus:bg-accent focus:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4 [&_svg]:text-icon-subtle data-disabled:[&_svg]:text-icon-disabled [&>svg:first-child]:box-content [&>svg:first-child]:size-4 [&>svg:first-child]:p-1 [&_[data-slot=icon]]:shrink-0 [&_[data-slot=icon]]:text-icon-subtle [&>[data-slot=icon]:first-child]:box-content [&>[data-slot=icon]:first-child]:size-4 [&>[data-slot=icon]:first-child]:p-1 [&>[data-slot=icon]:first-child_svg]:text-icon-subtle data-disabled:[&_[data-slot=icon]]:text-icon-disabled data-disabled:[&>[data-slot=icon]:first-child_svg]:text-icon-disabled",
         className,
       )}
       {...props}

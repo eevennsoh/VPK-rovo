@@ -25,18 +25,24 @@ export const dropdownStyles = {
     "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2 bg-popover text-popover-foreground z-[200] max-h-(--available-height) min-w-56 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-xl p-1 shadow-xl outline-none duration-fast data-closed:overflow-hidden",
   group: "",
   selectableItem:
-    "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex min-h-8 w-full cursor-pointer items-center rounded-lg py-1.5 pr-3 pl-8 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+    "data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex min-h-8 w-full cursor-pointer items-center rounded-lg py-1.5 pr-2 pl-8 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   checkedState:
     "data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed",
-  label: "text-text-subtlest px-3 pt-3 pb-1 text-xs leading-4 font-semibold",
+  label: "text-text-subtlest px-2 pt-3 pb-1 text-xs leading-4 font-semibold",
   separator: "bg-border mx-1 my-1 h-px",
   indicator:
-    "pointer-events-none absolute left-1 inline-flex size-6 items-center justify-center text-icon-subtle [&_[data-slot=icon]]:text-icon-subtle [&_svg]:text-icon-subtle",
+    "pointer-events-none absolute left-2 inline-flex size-6 items-center justify-center text-icon-selected [&_[data-slot=icon]]:text-icon-selected [&_svg]:text-icon-selected",
 } as const;
 
 const dropdownMenuOverlayShadow = "shadow-2xl";
+// The leading-icon slot defaults to the subtle icon token, but the @atlaskit
+// icon glyph paints its SVG from `currentColor`, so this wrapper's `color` wins
+// over the item's variant rules unless we yield on the destructive/selected
+// states. Scope the subtle default to non-destructive, non-selected items so the
+// item-level `[&_svg]:text-icon-danger` / `[&_svg]:text-icon-selected` rules take
+// effect. (Using group-data so the slot reads the owning item's variant.)
 const dropdownMenuFrontSlotClassName =
-  "inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle [&_[data-slot=icon]]:text-icon-subtle [&_svg]:text-icon-subtle";
+  "inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:text-icon-danger group-data-selected/dropdown-menu-item:text-icon-selected [&_[data-slot=icon]]:text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:[&_[data-slot=icon]]:text-icon-danger group-data-selected/dropdown-menu-item:[&_[data-slot=icon]]:text-icon-selected [&_svg]:text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:[&_svg]:text-icon-danger group-data-selected/dropdown-menu-item:[&_svg]:text-icon-selected";
 
 type DropdownMenuProps = MenuPrimitive.Root.Props;
 
@@ -232,7 +238,10 @@ function DropdownMenuItem({
       data-variant={variant}
       data-selected={isSelected || undefined}
       className={cn(
-        "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex min-h-8 w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-1.5 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
+        // py-1.5 (6px) + leading-5 (20px) == 32px, so a single line lands exactly on the
+        // min-h-8 floor and stays fixed at 32px; when the label or description wraps to
+        // multiple lines the row grows with a consistent 6px top/bottom padding.
+        "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex min-h-8 w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
         // Selected state: selected surface + selected hover/pressed + selected icon/text tokens.
         "data-selected:bg-bg-selected data-selected:text-text-selected data-selected:data-[highlighted]:bg-bg-selected-hovered data-selected:data-[highlighted]:text-text-selected data-selected:active:bg-bg-selected-pressed data-selected:[&_svg]:text-icon-selected",
         className,
@@ -250,7 +259,10 @@ function DropdownMenuItem({
           {children}
         </span>
         {description ? (
-          <span className="text-text-subtle text-[11px] leading-4">
+          <span
+            data-slot="dropdown-menu-item-description"
+            className="text-text-subtle text-[11px] leading-4"
+          >
             {description}
           </span>
         ) : null}
@@ -286,7 +298,7 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-popup-open:bg-bg-neutral-subtle-hovered data-popup-open:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled flex min-h-8 w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-inset:pl-8 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-popup-open:bg-bg-neutral-subtle-hovered data-popup-open:text-text data-disabled:pointer-events-none data-disabled:text-text-disabled flex min-h-8 w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-inset:pl-8 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}
