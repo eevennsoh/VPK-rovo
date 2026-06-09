@@ -12,7 +12,7 @@ import DeleteIcon from "@atlaskit/icon/core/delete";
 import IncidentIcon from "@atlaskit/icon/core/incident";
 import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
 import WebhookIcon from "@atlaskit/icon-lab/core/webhook";
-import SearchIcon from "@atlaskit/icon/core/search";
+import { SearchIcon } from "@/components/ui/vpk-icons";
 import CrossCircleIcon from "@atlaskit/icon/core/cross-circle";
 
 import { Button } from "@/components/ui/button";
@@ -111,6 +111,44 @@ export function renderAgentTriggerProviderIcon(trigger: AgentTriggerValue): Reac
 		return null;
 	}
 	return renderTriggerProviderIcon(provider.icon, provider.label);
+}
+
+/**
+ * Maps a trigger provider icon to the editor palette's `RichTextMentionVisual`
+ * so picker rows get the EXACT same logo treatment as editor-palette menu rows:
+ * 1p product logos render bare (they ship their own fill), 2p/3p brand images
+ * are border-resolved via `resolveBrandLogoPresentation`, and stroked glyph
+ * icons sit in a bordered tile.
+ */
+function getTriggerProviderVisual(icon: AgentTriggerProviderIcon): RichTextMentionVisual {
+	if (icon.kind === "atlassian-logo") {
+		return { kind: "logo", logoName: icon.name };
+	}
+	if (icon.kind === "image") {
+		return { kind: "image", src: icon.src };
+	}
+	return { kind: "icon", icon: renderTriggerProviderIcon(icon, "") };
+}
+
+/**
+ * Picker-row front slot, identical to the editor palette's
+ * `RichTextSuggestionMenuItemVisual`: a 24px box (`.rich-text-command-menu-avatar`)
+ * wrapping the shared `RichTextMentionVisualMark` at `size="menu"`, scaled to
+ * fill the slot. Reuses the palette's logo/image/icon rules verbatim.
+ */
+function TriggerProviderTileIcon({
+	icon,
+	label,
+}: Readonly<{ icon: AgentTriggerProviderIcon; label: string }>): ReactElement {
+	return (
+		<span className="rich-text-command-menu-avatar inline-flex shrink-0 items-center justify-center [&>*]:scale-75">
+			<RichTextMentionVisualMark
+				label={label}
+				size="menu"
+				visual={getTriggerProviderVisual(icon)}
+			/>
+		</span>
+	);
 }
 
 function getInitialTriggers({
@@ -232,11 +270,8 @@ export function TriggerProviderSearchList({
 			role="presentation"
 		>
 			<div className="rich-text-command-menu-item rich-text-command-menu-input rich-text-command-menu-item-sticky">
-				<span
-					className="rich-text-command-menu-input-logo text-icon-subtle"
-					aria-hidden={true}
-				>
-					<SearchIcon label="" size="small" />
+				<span className="rich-text-command-menu-input-logo" aria-hidden={true}>
+					<SearchIcon className="size-4 text-icon-subtle" />
 				</span>
 				<Input
 					id={searchId}
@@ -355,117 +390,41 @@ export function TriggerProviderSubmenu({
 	onSelectEvent: (providerId: AgentTriggerProviderId, eventId: string) => void;
 	provider: AgentTriggerProviderDefinition;
 }>): ReactElement {
-	const [open, setOpen] = useState(false);
-	const [query, setQuery] = useState("");
-	const normalizedQuery = query.trim().toLowerCase();
-
-	// Filter this provider's events by the nested search, preserving group
-	// structure and dropping empty groups.
-	const filteredGroups = useMemo(() => {
-		const filteredEvents =
-			normalizedQuery.length === 0
-				? provider.events
-				: provider.events.filter(
-						(event) =>
-							event.label.toLowerCase().includes(normalizedQuery) ||
-							event.description.toLowerCase().includes(normalizedQuery),
-					);
-		return getGroupedEvents(filteredEvents);
-	}, [normalizedQuery, provider.events]);
-
-	const handleOpenChange = useCallback(
-		(nextOpen: boolean, eventDetails: { reason?: string }) => {
-			// Typing in the nested search input blurs the submenu trigger, which
-			// Base UI reports as `focus-out` against the controlled submenu — that
-			// would collapse it mid-search. Ignore it; explicit closes (item press,
-			// escape, pointer leave, trigger toggle) still pass through.
-			if (!nextOpen && eventDetails.reason === "focus-out") {
-				return;
-			}
-			setOpen(nextOpen);
-			if (!nextOpen) {
-				setQuery("");
-			}
-		},
-		[],
-	);
+	const groups = getGroupedEvents(provider.events);
 
 	return (
-		<DropdownMenuSub open={open} onOpenChange={handleOpenChange}>
+		<DropdownMenuSub>
 			<DropdownMenuSubTrigger>
 				<span className="flex min-w-0 flex-1 items-center gap-3">
-					<span className="flex size-6 shrink-0 items-center justify-center text-icon-subtle">
-						{renderTriggerProviderIcon(provider.icon, provider.label)}
-					</span>
+					<TriggerProviderTileIcon icon={provider.icon} label={provider.label} />
 					<span className="min-w-0 truncate">{provider.label}</span>
 				</span>
 			</DropdownMenuSubTrigger>
 			<DropdownMenuSubContent className="min-w-64 overflow-hidden p-0">
-				<div
-					className="rich-text-command-menu rich-text-command-menu-borderless"
-					data-first-item-input="true"
-					role="presentation"
-				>
-					<div className="rich-text-command-menu-item rich-text-command-menu-input rich-text-command-menu-item-sticky">
-						<span
-							className="rich-text-command-menu-input-logo text-icon-subtle"
-							aria-hidden={true}
-						>
-							<SearchIcon label="" size="small" />
-						</span>
-						<Input
-							variant="subtle"
-							isCompact
-							value={query}
-							aria-label={`Search ${provider.label} events`}
-							placeholder={`Search ${provider.label}...`}
-							onChange={(event) => setQuery(event.currentTarget.value)}
-							onKeyDown={(event) => event.stopPropagation()}
-						/>
-						{query ? (
-							<Button
-								type="button"
-								aria-label="Clear search"
-								className="rich-text-command-menu-input-clear text-icon-subtle"
-								onMouseDown={(event) => event.preventDefault()}
-								onClick={() => setQuery("")}
-								shape="circle"
-								size="icon-compact"
-								variant="ghost"
-							>
-								<CrossCircleIcon label="" size="small" />
-							</Button>
-						) : null}
-					</div>
+				<div className="rich-text-command-menu rich-text-command-menu-borderless">
 					<div className="rich-text-command-menu-list">
-						{filteredGroups.length > 0 ? (
-							filteredGroups.map((group, groupIndex) => (
-								<DropdownMenuGroup
-									className="p-0"
-									key={`${provider.id}-${group.groupLabel ?? "default"}-${groupIndex}`}
-								>
-									{group.groupLabel ? (
-										<DropdownMenuLabel>{group.groupLabel}</DropdownMenuLabel>
-									) : null}
-									{group.events.map((event) => (
-										<DropdownMenuItem
-											key={event.id}
-											description={event.description}
-											onSelect={() => onSelectEvent(provider.id, event.id)}
-										>
-											{event.label}
-										</DropdownMenuItem>
-									))}
-									{groupIndex < filteredGroups.length - 1 ? (
-										<DropdownMenuSeparator />
-									) : null}
-								</DropdownMenuGroup>
-							))
-						) : (
-							<div className="rich-text-command-menu-empty">
-								No events found
-							</div>
-						)}
+						{groups.map((group, groupIndex) => (
+							<DropdownMenuGroup
+								className="p-0"
+								key={`${provider.id}-${group.groupLabel ?? "default"}-${groupIndex}`}
+							>
+								{group.groupLabel ? (
+									<DropdownMenuLabel>{group.groupLabel}</DropdownMenuLabel>
+								) : null}
+								{group.events.map((event) => (
+									<DropdownMenuItem
+										key={event.id}
+										description={event.description}
+										onSelect={() => onSelectEvent(provider.id, event.id)}
+									>
+										{event.label}
+									</DropdownMenuItem>
+								))}
+								{groupIndex < groups.length - 1 ? (
+									<DropdownMenuSeparator />
+								) : null}
+							</DropdownMenuGroup>
+						))}
 					</div>
 				</div>
 			</DropdownMenuSubContent>
