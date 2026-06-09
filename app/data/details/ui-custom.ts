@@ -422,103 +422,109 @@ import { SidebarNavItem, SidebarNavItemAction, SidebarNavItemCount } from "@/com
     ],
   },
 
-  "skill-card": {
-    description:
-      "Compound hover-preview card for skills. Built on VPK HoverCard primitives with a trigger, title/description content, optional icon, and attribution source.",
-    usage: `import { SkillCard } from "@/components/ui-custom/skill-card"
-import { Button } from "@/components/ui/button"
+	"entity-card": {
+		description:
+			"Shared entity-card visual system for skills, tools, agents, templates, knowledge, and object tiles. Compose it inside CardDirectory for embedded grids or inside HoverCardContent for hover previews.",
+		usage: `import { Button } from "@/components/ui/button"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
+import { EntityCard } from "@/components/ui-custom/entity-card"
 import PageIcon from "@atlaskit/icon/core/page"
 
-<SkillCard.Root>
-  <SkillCard.Trigger render={<Button variant="outline" />}>
+<HoverCard>
+  <HoverCardTrigger render={<Button variant="outline" />}>
     Hover to preview
-  </SkillCard.Trigger>
-  <SkillCard.Content
-    skillName="Create Google Drive document"
-    description="Create, name, and store a document in the right folder."
-    icon={{ render: <PageIcon label="" size="small" />, label: "Document" }}
-    source={{ type: "app", name: "Google Drive", logoSrc: "/3p/google-drive/16.svg" }}
-  />
-</SkillCard.Root>`,
-    props: [
-      {
-        name: "skillName",
-        type: "string",
-        required: true,
-        description: "Primary title shown in the card header.",
-      },
-      {
-        name: "description",
-        type: "string",
-        description:
-          "Optional secondary text. Truncated to two lines when present.",
-      },
-      {
-        name: "icon",
-        type: "{ render: ReactElement; label: string; className?: string }",
-        description:
-          "Optional icon descriptor rendered before the title via VPK Icon wrapper.",
-      },
-      {
-        name: "source",
-        type: '{ type: "app"; name: string; logoSrc?: string } | { type: "custom"; name: string; avatarSrc?: string; fallbackInitials?: string }',
-        description:
-          "Optional attribution row shown at the bottom of the card.",
-      },
-      {
-        name: "side",
-        type: '"top" | "right" | "bottom" | "left"',
-        default: '"top"',
-        description:
-          "Popup side relative to trigger (inherited from HoverCardContent).",
-      },
-      {
-        name: "openDelay",
-        type: "number",
-        description:
-          "Delay before opening on hover (inherited from SkillCard.Root).",
-      },
-      {
-        name: "closeDelay",
-        type: "number",
-        description:
-          "Delay before closing after hover leaves (inherited from SkillCard.Root).",
-      },
-    ],
-    subComponents: [
-      {
-        name: "SkillCard.Root",
-        description: "Hover-card root controller (open state and timing).",
-      },
-      {
-        name: "SkillCard.Trigger",
-        description: "Interactive trigger element for opening the card.",
-      },
-      {
-        name: "SkillCard.Content",
-        description:
-          "Card surface with title, description, and source attribution.",
-      },
-    ],
-    examples: [
-      { title: "Default", demoSlug: "skill-card-demo-default" },
-      {
-        title: "App source",
-        description: "Attribution row with app logo and name.",
-        demoSlug: "skill-card-demo-app-source",
-      },
-      {
-        title: "Custom source",
-        description: "Attribution row with user avatar and name.",
-        demoSlug: "skill-card-demo-custom-source",
-      },
-      {
-        title: "No description",
-        description: "Compact content with title and source only.",
-        demoSlug: "skill-card-demo-no-description",
-      },
-    ],
-  },
+  </HoverCardTrigger>
+  <HoverCardContent className="w-80 rounded-md bg-surface-overlay p-4 shadow-2xl">
+    <EntityCard.Skill
+      density="preview"
+      name="Create Google Drive document"
+      description="Create, name, and store a document in the right folder."
+      iconMeta={{ render: <PageIcon label="" size="small" />, label: "Document" }}
+      source={{ type: "app", name: "Google Drive", logoSrc: "/3p/google-drive/16.svg" }}
+    />
+  </HoverCardContent>
+</HoverCard>`,
+		props: [
+			{
+				name: "density",
+				type: '"directory" | "preview" | "compact"',
+				default: '"directory"',
+				description: "Visual sizing mode for embedded directories, hover previews, or compact object/list rows.",
+			},
+			{
+				name: "name",
+				type: "string",
+				required: true,
+				description: "Primary title shown in the card header.",
+			},
+			{
+				name: "description",
+				type: "string",
+				description:
+					"Optional secondary text. Variant-specific layouts clamp or wrap this text.",
+			},
+			{
+				name: "iconMeta",
+				type: "{ render: ReactElement; label: string; className?: string }",
+				description:
+					"Optional icon descriptor used by skill and related entity variants.",
+			},
+			{
+				name: "source",
+				type: '{ type: "app"; name: string; logoSrc?: string } | { type: "custom"; name: string; avatarSrc?: string; fallbackInitials?: string }',
+				description:
+					"Optional attribution row shown by variants that support ownership/source metadata.",
+			},
+		],
+		subComponents: [
+			{
+				name: "EntityCard.Skill",
+				description: "Skill entity visual for directory cards and hover previews.",
+			},
+			{
+				name: "EntityCard.Tool",
+				description: "Tool entity visual with app identity and tool metadata.",
+			},
+			{
+				name: "EntityCard.Agent",
+				description: "Agent directory card visual with avatar, rating, and usage metadata.",
+			},
+			{
+				name: "EntityCard.AgentProfile",
+				description: "Block-level agent profile card visual used by the Agent Card block.",
+			},
+			{
+				name: "EntityCard.Template",
+				description: "Template card visual for source and skill tag metadata.",
+			},
+			{
+				name: "EntityCard.Knowledge",
+				description: "Knowledge app card visual for the knowledge directory.",
+			},
+			{
+				name: "EntityCard.ObjectTile",
+				description: "Compact object tile visual kept compatible with the ObjectTile shim.",
+			},
+		],
+		examples: [
+			{ title: "Skill preview", demoSlug: "entity-card-demo-default" },
+			{
+				title: "App source",
+				description: "Attribution row with app logo and name.",
+				demoSlug: "entity-card-demo-app-source",
+			},
+			{
+				title: "Custom source",
+				description: "Attribution row with user avatar and name.",
+				demoSlug: "entity-card-demo-custom-source",
+			},
+			{
+				title: "No description",
+				description: "Compact content with title and source only.",
+				demoSlug: "entity-card-demo-no-description",
+			},
+		],
+	},
 
   "skill-tag": {
     description:

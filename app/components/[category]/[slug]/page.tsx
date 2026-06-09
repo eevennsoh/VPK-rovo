@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { AUDIO_COMPONENTS, UI_CHART_COMPONENTS, CUSTOM_COMPONENTS, UI_COMPONENTS, BLOCK_COMPONENTS, PROJECT_COMPONENTS, ART_COMPONENTS, UTILITY_COMPONENTS, VISUAL_COMPONENTS, findComponent } from "@/app/data/components";
 import { ComponentDoc } from "@/components/website/component-doc/page";
 import { getComponentPageTitle } from "@/lib/project-page-title";
@@ -13,6 +13,9 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
 	const { category, slug } = await params;
+	if (category === "ui-custom" && slug === "skill-card") {
+		return { title: getComponentPageTitle("Entity Card", "ui-custom") };
+	}
 	const component = findComponent(category, slug);
 	if (!component) return {};
 	return { title: getComponentPageTitle(component.name, component.category) };
@@ -62,6 +65,10 @@ export function generateStaticParams() {
 
 export default async function ComponentDetailPage({ params }: PageProps) {
 	const { category, slug } = await params;
+
+	if (category === "ui-custom" && slug === "skill-card") {
+		redirect("/components/ui-custom/entity-card");
+	}
 
 	if (category !== "ui-audio" && category !== "ui-charts" && category !== "ui-custom" && category !== "ui" && category !== "blocks" && category !== "projects" && category !== "arts" && category !== "utility" && category !== "visual") {
 		notFound();
