@@ -18,7 +18,8 @@ test("label reserves padding from a descendant so a self group-hover never misfi
 	// The reserve is keyed off the row group and applied to the label (a
 	// descendant) — the exact thing a self `group-hover` on the container cannot
 	// do. Literal strings so Tailwind can statically extract them.
-	assert.match(SOURCE, /block w-full truncate transition-\[padding\]/u);
+	assert.match(SOURCE, /block w-full truncate/u);
+	assert.doesNotMatch(SOURCE, /transition-\[padding\]/u);
 	assert.match(
 		SOURCE,
 		/group-hover\/hover-reveal-row:pr-9 group-has-\[:focus-visible\]\/hover-reveal-row:pr-9/u,
@@ -33,9 +34,10 @@ test("label reserves padding from a descendant so a self group-hover never misfi
 
 test("actions overlay parks the toggle and slides controls in on reveal", () => {
 	// Toggle reveals on hover/focus, parks at the far right, and slides left to
-	// clear the action slot when an action is present.
+	// clear the action slot with transform when an action is present.
 	assert.match(SOURCE, /group-hover\/hover-reveal-row:opacity-100 group-has-\[:focus-visible\]\/hover-reveal-row:opacity-100/u);
-	assert.match(SOURCE, /right-2 group-hover\/hover-reveal-row:right-9 group-has-\[:focus-visible\]\/hover-reveal-row:right-9/u);
+	assert.match(SOURCE, /right-9 translate-x-7 group-hover\/hover-reveal-row:translate-x-0 group-has-\[:focus-visible\]\/hover-reveal-row:translate-x-0/u);
+	assert.doesNotMatch(SOURCE, /transition-\[right/u);
 	assert.match(SOURCE, /toggleParked \? "opacity-100" : "opacity-0"/u);
 	// Action slides in from translate-x-2 → 0 and fades in on reveal.
 	assert.match(SOURCE, /translate-x-2[\s\S]*group-hover\/hover-reveal-row:translate-x-0 group-hover\/hover-reveal-row:opacity-100/u);
