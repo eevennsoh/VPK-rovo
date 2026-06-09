@@ -4,8 +4,13 @@ import PageIcon from "@atlaskit/icon/core/page";
 import SearchIcon from "@atlaskit/icon/core/search";
 
 import {
+	DEFAULT_KNOWLEDGE_APPS,
+	getKnowledgeAppIcon,
+} from "@/app/data/directory/knowledge";
+import {
 	CardDirectoryAgent,
 	CardDirectoryAgentExpanded,
+	CardDirectoryKnowledge,
 	CardDirectorySkill,
 	CardDirectoryTemplate,
 	CardDirectoryTool,
@@ -18,6 +23,24 @@ function DemoSection({ title, children }: Readonly<{ title: string; children: Re
 			<h3 className="text-xs font-semibold tracking-wide text-text-subtlest uppercase">{title}</h3>
 			<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
 		</section>
+	);
+}
+
+function DemoKnowledgeCard({ index = 0 }: Readonly<{ index?: number }>) {
+	const app = DEFAULT_KNOWLEDGE_APPS[index] ?? DEFAULT_KNOWLEDGE_APPS[0];
+
+	if (!app) {
+		return null;
+	}
+
+	return (
+		<CardDirectoryKnowledge
+			description={app.description}
+			icon={getKnowledgeAppIcon(app)}
+			name={app.name}
+			onSelect={() => {}}
+			providerName={app.providerName}
+		/>
 	);
 }
 
@@ -134,7 +157,6 @@ export default function CardDirectoryDemo() {
 					onMoreActions={() => {}}
 					onSelect={() => {}}
 					publisher="Atlassian"
-					publisherLogo={<ConfluenceLogo size="xsmall" />}
 					starCount={38}
 					viewCount={6273}
 				/>
@@ -146,7 +168,6 @@ export default function CardDirectoryDemo() {
 					onMoreActions={() => {}}
 					onSelect={() => {}}
 					publisher="Atlassian"
-					publisherLogo={<ConfluenceLogo size="xsmall" />}
 					starCount={120}
 					viewCount={4100}
 				/>
@@ -171,6 +192,11 @@ export default function CardDirectoryDemo() {
 					teammateCount={540}
 					toolCount={12}
 				/>
+			</DemoSection>
+
+			<DemoSection title="Knowledge">
+				<DemoKnowledgeCard />
+				<DemoKnowledgeCard index={1} />
 			</DemoSection>
 
 			<DemoSection title="Agent template">

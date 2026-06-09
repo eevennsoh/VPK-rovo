@@ -13,11 +13,13 @@ const AGENT_EXPANDED_WRAPPER_SOURCE = read("card-directory-agent-expanded.tsx");
 const SKILL_WRAPPER_SOURCE = read("card-directory-skill.tsx");
 const TOOL_WRAPPER_SOURCE = read("card-directory-tool.tsx");
 const TEMPLATE_WRAPPER_SOURCE = read("card-directory-template.tsx");
+const KNOWLEDGE_WRAPPER_SOURCE = read("card-directory-knowledge.tsx");
 const AGENT_SOURCE = read(join("..", "entity-card", "agent.tsx"));
 const AGENT_EXPANDED_SOURCE = read(join("..", "entity-card", "agent-expanded.tsx"));
 const SKILL_SOURCE = read(join("..", "entity-card", "skill.tsx"));
 const TOOL_SOURCE = read(join("..", "entity-card", "tool.tsx"));
 const TEMPLATE_SOURCE = read(join("..", "entity-card", "template.tsx"));
+const KNOWLEDGE_SOURCE = read(join("..", "entity-card", "knowledge.tsx"));
 const ENTITY_CARD_INDEX_SOURCE = read(join("..", "entity-card", "index.ts"));
 const INDEX_SOURCE = read("index.ts");
 const SKILL_TAG_SOURCE = read(join("..", "skill-tag.tsx"));
@@ -114,7 +116,9 @@ test("parts carry data-slot attributes for the shared shell pieces", () => {
 
 test("header leading is optional and only renders the leading span when present", () => {
 	assert.match(PARTS_SOURCE, /leading\?: ReactNode/u);
-	assert.match(PARTS_SOURCE, /\{leading \? <span className="shrink-0">\{leading\}<\/span> : null\}/u);
+	assert.match(PARTS_SOURCE, /className="flex items-center gap-2"/u);
+	assert.match(PARTS_SOURCE, /\{leading \? <span className="inline-flex shrink-0 items-center leading-none">\{leading\}<\/span> : null\}/u);
+	assert.doesNotMatch(PARTS_SOURCE, /items-start/u);
 });
 
 test("banner part draws the full-bleed cover and hexagon-outlined cover avatar", () => {
@@ -242,11 +246,14 @@ test("capabilities label is optional and omitted when not provided", () => {
 	assert.doesNotMatch(PARTS_SOURCE, /label = "What it can do"/u);
 });
 
-test("skill variant uses an icon tile, publisher footer, and view count", () => {
+test("skill variant uses a 32px icon tile, header byline, and left-aligned view count", () => {
 	assert.match(SKILL_SOURCE, /IconTile/u);
+	assert.match(SKILL_SOURCE, /size="medium"/u);
 	assert.match(SKILL_SOURCE, /@atlaskit\/icon\/core\/eye-open/u);
-	assert.match(SKILL_SOURCE, /justify-between/u);
-	assert.doesNotMatch(SKILL_SOURCE, /EntityCardByline/u);
+	assert.match(SKILL_SOURCE, /EntityCardByline/u);
+	assert.match(SKILL_SOURCE, /byline=\{publisher \? <EntityCardByline publisher=\{publisher\} \/> : undefined\}/u);
+	assert.doesNotMatch(SKILL_SOURCE, /className="justify-between"/u);
+	assert.doesNotMatch(SKILL_SOURCE, /publisherLogo \?\? null/u);
 });
 
 test("tool variant uses an app-logo tile with tool and teammate counts", () => {
@@ -271,6 +278,16 @@ test("template variant renders Works with sources and Skills tags, no glow or st
 	assert.doesNotMatch(TEMPLATE_SOURCE, /StarUnstarredIcon|AiChatIcon/u);
 });
 
+test("knowledge variant renders app identity, description, and provider metadata", () => {
+	assert.match(KNOWLEDGE_SOURCE, /data-slot="entity-card-knowledge"/u);
+	assert.match(KNOWLEDGE_SOURCE, /<EntityCardHeader[\s\S]*leading=\{icon \?\? null\}[\s\S]*title=\{name\}/u);
+	assert.match(KNOWLEDGE_SOURCE, /<EntityCardDescription>\{description\}<\/EntityCardDescription>/u);
+	assert.match(KNOWLEDGE_SOURCE, /<EntityCardFooter>[\s\S]*\{providerName\}/u);
+	assert.match(KNOWLEDGE_SOURCE, /providerName/u);
+	assert.match(KNOWLEDGE_WRAPPER_SOURCE, /className=\{cn\("gap-4", className\)\}/u);
+	assert.match(KNOWLEDGE_WRAPPER_SOURCE, /<EntityCard\.Knowledge/u);
+});
+
 test("skill tag group collapses wrapped rows into the overflow count", () => {
 	assert.match(SKILL_TAG_SOURCE, /maxRows\?: number/u);
 	assert.match(SKILL_TAG_SOURCE, /calculateVisibleSkillTagCount/u);
@@ -291,6 +308,7 @@ test("barrel exports the shell, parts, and variant wrappers", () => {
 		"CardDirectoryAgentExpanded",
 		"CardDirectorySkill",
 		"CardDirectoryTool",
+		"CardDirectoryKnowledge",
 		"CardDirectoryTemplate",
 	]) {
 		assert.match(INDEX_SOURCE, new RegExp(`\\b${symbol}\\b`, "u"));
@@ -331,6 +349,8 @@ test("card-directory variants are shell adapters around entity-card content", ()
 	assert.match(SKILL_WRAPPER_SOURCE, /<EntityCard\.Skill/u);
 	assert.match(TOOL_WRAPPER_SOURCE, /<CardDirectory active=\{active\}/u);
 	assert.match(TOOL_WRAPPER_SOURCE, /<EntityCard\.Tool/u);
+	assert.match(KNOWLEDGE_WRAPPER_SOURCE, /<CardDirectory[\s\S]*selectLabel=\{`Select \$\{name\}`\}/u);
+	assert.match(KNOWLEDGE_WRAPPER_SOURCE, /<EntityCard\.Knowledge/u);
 	assert.match(TEMPLATE_WRAPPER_SOURCE, /<CardDirectory className=\{className\}/u);
 	assert.match(TEMPLATE_WRAPPER_SOURCE, /<EntityCard\.Template/u);
 });

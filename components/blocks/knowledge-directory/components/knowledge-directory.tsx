@@ -14,8 +14,7 @@ import GlobeIcon from "@atlaskit/icon/core/globe";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { CardDirectory } from "@/components/ui-custom/card-directory";
-import { EntityCard } from "@/components/ui-custom/entity-card";
+import { CardDirectoryKnowledge } from "@/components/ui-custom/card-directory";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -341,7 +340,13 @@ function BrowseAppsStep({
 					<ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
 						{apps.map((app) => (
 							<li key={app.id}>
-								<KnowledgeAppCard app={app} onSelect={() => onSelectApp(app)} />
+								<CardDirectoryKnowledge
+									description={app.description}
+									icon={getKnowledgeAppIcon(app)}
+									name={app.name}
+									onSelect={() => onSelectApp(app)}
+									providerName={app.providerName}
+								/>
 							</li>
 						))}
 					</ul>
@@ -373,28 +378,6 @@ function UploadDropZone({ onBrowseFiles }: Readonly<{ onBrowseFiles?: () => void
 				<p className="text-sm text-text">Drag and drop a file here</p>
 			</div>
 		</div>
-	);
-}
-
-interface KnowledgeAppCardProps {
-	app: KnowledgeDirectoryApp;
-	onSelect: () => void;
-}
-
-function KnowledgeAppCard({ app, onSelect }: Readonly<KnowledgeAppCardProps>) {
-	return (
-		<CardDirectory
-			className="min-h-[136px] justify-between transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered"
-			onSelect={onSelect}
-			selectLabel={`Select ${app.name}`}
-		>
-			<EntityCard.Knowledge
-				description={app.description}
-				icon={getKnowledgeAppIcon(app)}
-				name={app.name}
-				providerName={app.providerName}
-			/>
-		</CardDirectory>
 	);
 }
 

@@ -31,3 +31,7 @@ export {
 	type CardDirectoryTemplateProps,
 	type CardDirectoryTemplateSkill,
 } from "./card-directory-template";
+export {
+	CardDirectoryKnowledge,
+	type CardDirectoryKnowledgeProps,
+} from "./card-directory-knowledge";

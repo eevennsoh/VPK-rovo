@@ -83,13 +83,11 @@ export interface CardDirectoryHeaderProps {
 
 export function CardDirectoryHeader({ leading, title, byline, action }: Readonly<CardDirectoryHeaderProps>) {
 	return (
-		// Center the title against the leading visual for single-line headers; top-align
-		// once a byline adds a second line so the avatar tops with the name.
 		<div
-			className={cn("flex gap-2", byline ? "items-start" : "items-center")}
+			className="flex items-center gap-2"
 			data-slot="card-directory-header"
 		>
-			{leading ? <span className="shrink-0">{leading}</span> : null}
+			{leading ? <span className="inline-flex shrink-0 items-center leading-none">{leading}</span> : null}
 			<div className="min-w-0 flex-1">
 				<h3 className="truncate text-text" style={{ font: token("font.heading.xsmall") }}>
 					{title}

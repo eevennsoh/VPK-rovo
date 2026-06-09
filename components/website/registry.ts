@@ -5373,16 +5373,20 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/ui-custom/entity-card-demo"),
     { ssr: false },
   ),
-  "entity-card-demo-app-source": dynamic(
-    () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoAppSource })),
+  "entity-card-demo-skills": dynamic(
+    () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoSkills })),
     { ssr: false },
   ),
-  "entity-card-demo-custom-source": dynamic(
-    () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoCustomSource })),
+  "entity-card-demo-tools": dynamic(
+    () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoTools })),
     { ssr: false },
   ),
-  "entity-card-demo-no-description": dynamic(
-    () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoWithoutDescription })),
+  "entity-card-demo-agents": dynamic(
+    () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoAgents })),
+    { ssr: false },
+  ),
+  "entity-card-demo-knowledge": dynamic(
+    () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoKnowledge })),
     { ssr: false },
   ),
   "skill-tag-demo-default": dynamic(
