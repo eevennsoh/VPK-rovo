@@ -20,7 +20,7 @@ function Textarea({
 			data-slot="textarea"
 			data-variant={variant}
 			className={cn(
-				"rounded-lg border border-transparent bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground md:text-sm flex field-sizing-content min-h-16 w-full",
+				"rounded-lg border border-transparent bg-transparent px-2.5 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground flex field-sizing-content min-h-16 w-full",
 				"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3",
 				"aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-invalid:ring-3",
 				"disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-(--opacity-disabled)",

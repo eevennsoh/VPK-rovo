@@ -58,7 +58,14 @@ function assertVisualResolves(resolveDirectoryVisual, descriptor, label) {
 
 test("skills catalog is valid, uniquely identified, and produces resolvable visuals", async () => {
 	const { dir } = await loadCatalog();
-	const { DEFAULT_SKILLS, getSkillDirectoryVisual, resolveDirectoryVisual } = dir;
+	const {
+		ATLASSIAN_SKILL_COLLECTION_IDS,
+		DEFAULT_SKILLS,
+		getSkillCollection,
+		getSkillDirectoryVisual,
+		resolveDirectoryVisual,
+		SKILL_COLLECTIONS,
+	} = dir;
 
 	assert.ok(Array.isArray(DEFAULT_SKILLS) && DEFAULT_SKILLS.length > 0);
 	assertUniqueIds(DEFAULT_SKILLS, "skills");
@@ -69,6 +76,8 @@ test("skills catalog is valid, uniquely identified, and produces resolvable visu
 		"2p", "3p", "default", "custom", "platform",
 		"teamwork", "software", "strategy", "service", "product",
 	]);
+	const VALID_COLLECTIONS = new Set(Object.keys(SKILL_COLLECTIONS));
+	const collectionIds = new Set();
 
 	for (const skill of DEFAULT_SKILLS) {
 		assertVisualResolves(resolveDirectoryVisual, getSkillDirectoryVisual(skill), `skill ${skill.id}`);
@@ -76,6 +85,21 @@ test("skills catalog is valid, uniquely identified, and produces resolvable visu
 		if (skill.source !== undefined) {
 			assert.ok(VALID_SOURCES.has(skill.source), `skill ${skill.id}: invalid source ${skill.source}`);
 		}
+		assert.ok(skill.collectionId, `skill ${skill.id}: collectionId is required`);
+		assert.ok(VALID_COLLECTIONS.has(skill.collectionId), `skill ${skill.id}: invalid collectionId ${skill.collectionId}`);
+		assert.equal(typeof skill.collectionDescription, "string", `skill ${skill.id}: collectionDescription must be a string`);
+		assert.ok(skill.collectionDescription.length > 0, `skill ${skill.id}: collectionDescription must be non-empty`);
+		assert.ok(Array.isArray(skill.collectionProducts), `skill ${skill.id}: collectionProducts must be an array`);
+		assert.ok(skill.collectionProducts.length > 0, `skill ${skill.id}: collectionProducts must be non-empty`);
+		assert.equal(typeof skill.collectionDocsUrl, "string", `skill ${skill.id}: collectionDocsUrl must be a string`);
+		assert.equal(typeof skill.teammateCount, "number", `skill ${skill.id}: teammateCount must be a number`);
+		assert.equal(typeof skill.verified, "boolean", `skill ${skill.id}: verified must be a boolean`);
+		collectionIds.add(skill.collectionId);
+
+		const collection = getSkillCollection(skill);
+		assert.equal(collection.id, skill.collectionId, `skill ${skill.id}: collection metadata id mismatch`);
+		assert.ok(collection.iconClassName.startsWith("text-icon-accent-"), `skill ${skill.id}: collection must expose ADS icon class`);
+		assert.ok(collection.slashClassName.startsWith("bg-border-accent-"), `skill ${skill.id}: collection must expose ADS border class`);
 		// 2p/3p app skills render the publisher's company brand mark, not a glyph.
 		if (skill.source === "2p" || skill.source === "3p") {
 			const visual = getSkillDirectoryVisual(skill);
@@ -85,6 +109,10 @@ test("skills catalog is valid, uniquely identified, and produces resolvable visu
 				`skill ${skill.id}: ${skill.source} source must resolve to a company logo image`,
 			);
 		}
+	}
+
+	for (const collectionId of ATLASSIAN_SKILL_COLLECTION_IDS) {
+		assert.ok(collectionIds.has(collectionId), `skills catalog should include ${collectionId} collection skills`);
 	}
 });
 
@@ -99,6 +127,10 @@ test("tools catalog (both groups) is valid, uniquely identified, and produces re
 	assertStringField(allTools, "byline", "tools");
 
 	for (const tool of allTools) {
+		assert.equal(typeof tool.teammateCount, "number", `tool ${tool.id}: teammateCount must be a number`);
+		assert.equal(typeof tool.toolCount, "number", `tool ${tool.id}: toolCount must be a number`);
+		assert.equal(typeof tool.publisherName, "string", `tool ${tool.id}: publisherName must be a string`);
+		assert.equal(typeof tool.verified, "boolean", `tool ${tool.id}: verified must be a boolean`);
 		// Tools may legitimately have no visual (neither logoName nor avatarSrc).
 		const visual = getToolDirectoryVisual(tool);
 		assertVisualResolves(resolveDirectoryVisual, visual, `tool ${tool.id}`);
@@ -123,6 +155,9 @@ test("knowledge catalog is valid, with unique apps and unique nested contents", 
 		assert.ok(Array.isArray(app.contents), `knowledge ${app.id}: contents must be an array`);
 		assertUniqueIds(app.contents, `knowledge ${app.id} contents`);
 		assertStringField(app.contents, "name", `knowledge ${app.id} contents`);
+		assert.equal(typeof app.starCount, "number", `knowledge ${app.id}: starCount must be a number`);
+		assert.equal(typeof app.teammateCount, "number", `knowledge ${app.id}: teammateCount must be a number`);
+		assert.equal(typeof app.verified, "boolean", `knowledge ${app.id}: verified must be a boolean`);
 		// Every app carries a serializable visual descriptor that must resolve.
 		assertVisualResolves(resolveDirectoryVisual, app.visual, `knowledge ${app.id}`);
 	}
@@ -180,6 +215,10 @@ test("agents + subagents catalogs are valid, uniquely identified, with resolvabl
 	assertUniqueIds(DIRECTORY_SUBAGENTS, "subagents");
 
 	for (const agent of DEMO_AGENT_BROWSER_AGENTS) {
+		assert.equal(typeof agent.rating, "number", `agent ${agent.id}: rating must be a number`);
+		assert.equal(typeof agent.feedbackCount, "number", `agent ${agent.id}: feedbackCount must be a number`);
+		assert.equal(typeof agent.chatCount, "number", `agent ${agent.id}: chatCount must be a number`);
+		assert.equal(typeof agent.verified, "boolean", `agent ${agent.id}: verified must be a boolean`);
 		// Agents may have a logo, an avatar, or neither — all must resolve safely.
 		assertVisualResolves(resolveDirectoryVisual, getAgentDirectoryVisual(agent), `agent ${agent.id}`);
 	}

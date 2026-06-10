@@ -595,8 +595,8 @@ function ToolCard({ onSelectTool, tool }: Readonly<ToolCardProps>) {
 			}
 			name={tool.name}
 			onSelect={selectTool}
-			teammateCount={tool.teammateCount ?? 258}
-			toolCount={tool.toolCount ?? 36}
+			teammateCount={tool.teammateCount}
+			toolCount={tool.toolCount}
 		/>
 	);
 }
@@ -880,7 +880,7 @@ function ToolDetailView({
 						<p>
 							By <span className="text-link">{publisher}</span>
 						</p>
-						<p>Used by {(tool.teammateCount ?? 258).toLocaleString("en-US")} teammates</p>
+						<p>Used by {tool.teammateCount.toLocaleString("en-US")} teammates</p>
 						<p>{tool.lastUpdatedLabel ?? "Last updated 2mo ago"}</p>
 					</div>
 					<div className="flex items-center gap-2 text-icon-subtle">

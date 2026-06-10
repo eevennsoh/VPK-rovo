@@ -1,4 +1,4 @@
-import type { SkillCategory } from "@/app/data/directory/skills";
+import type { SkillCategory, SkillCollectionId } from "@/app/data/directory/skills";
 import type { AtlassianLogoName } from "@/components/ui/logo";
 
 /** Primary (sectionless) nav rows shown above the first group heading. */
@@ -33,6 +33,13 @@ export interface SkillsDirectoryCategoryItem {
 	icon: SkillNavIcon;
 }
 
+export interface SkillsDirectoryCollectionItem {
+	kind: "collection";
+	id: SkillCollectionId;
+	label: string;
+	icon: SkillNavIcon;
+}
+
 export interface SkillsDirectoryCompanyItem {
 	kind: "company";
 	id: string;
@@ -50,6 +57,7 @@ export interface SkillsDirectoryCompanyItem {
 export type SkillsDirectorySidebarItem =
 	| SkillsDirectoryFavouriteItem
 	| SkillsDirectoryCategoryItem
+	| SkillsDirectoryCollectionItem
 	| SkillsDirectoryCompanyItem;
 
 export interface SkillsDirectorySidebarGroup {
@@ -66,19 +74,14 @@ export const DEFAULT_SKILLS_DIRECTORY_PRIMARY_ITEMS: readonly SkillsDirectoryPri
 
 export const DEFAULT_SKILLS_DIRECTORY_SIDEBAR_GROUPS: readonly SkillsDirectorySidebarGroup[] = [
 	{
-		title: "Category",
+		title: "Collections",
 		showAll: true,
 		items: [
-			{ kind: "category", id: "project-management", label: "Project management", icon: "timeline" },
-			{ kind: "category", id: "administrative-tools", label: "Administrative tools", icon: "settings" },
-			{ kind: "category", id: "content-and-communication", label: "Content and communication", icon: "edit" },
-			{ kind: "category", id: "data-and-analytics", label: "Data and analytics", icon: "chart-trend-up" },
-			{ kind: "category", id: "software-development", label: "Software development", icon: "angle-brackets" },
-			{ kind: "category", id: "it-support-and-service", label: "IT support and service", icon: "support" },
-			{ kind: "category", id: "design-and-diagramming", label: "Design and diagramming", icon: "branch" },
-			{ kind: "category", id: "security-and-compliance", label: "Security and compliance", icon: "shield" },
-			{ kind: "category", id: "hr-and-team-building", label: "HR and team building", icon: "people-group" },
-			{ kind: "category", id: "sales-and-customer-relations", label: "Sales and customer relations", icon: "cart" },
+			{ kind: "collection", id: "teamwork", label: "Teamwork", icon: "people-group" },
+			{ kind: "collection", id: "strategy", label: "Strategy", icon: "timeline" },
+			{ kind: "collection", id: "service", label: "Service", icon: "support" },
+			{ kind: "collection", id: "software", label: "Software", icon: "angle-brackets" },
+			{ kind: "collection", id: "product", label: "Product", icon: "branch" },
 		],
 	},
 	{

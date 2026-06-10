@@ -70,38 +70,37 @@ test("Skills Directory exposes canonical skill props and legacy agent compatibil
 	assert.match(indexSource, /SkillsDirectoryAgent/u);
 });
 
-test("Skills Directory sidebar uses Tools Directory category treatment", () => {
+test("Skills Directory sidebar uses Collections as the primary taxonomy", () => {
 	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory-sidebar.tsx");
 	const sidebarGroupsSource = readProjectFile("components/blocks/skills-directory/data/sidebar-groups.ts");
 
-	assert.match(source, /const MAX_VISIBLE_CATEGORY_ITEMS = 5;/u);
-	assert.match(source, /const \[showAllCategories, setShowAllCategories\] = useState\(false\);/u);
-	assert.match(source, /showAllCategories\s+\?\s+categoryItems\s+:\s+categoryItems\.slice\(0, MAX_VISIBLE_CATEGORY_ITEMS\);/u);
-	assert.match(source, /const hasHiddenCategoryItems = !showAllCategories && categoryItems\.length > MAX_VISIBLE_CATEGORY_ITEMS;/u);
-	assert.match(source, /<ul className="flex w-64 flex-col">[\s\S]*visibleCategoryItems\.map/u);
-	assert.match(source, /leading=\{getCategoryNavIcon\(item\.icon, item\.label\)\}/u);
+	assert.match(source, /const MAX_VISIBLE_TAXONOMY_ITEMS = 5;/u);
+	assert.match(source, /function isCollectionSidebarItem/u);
+	assert.match(source, /function isTaxonomySidebarGroup/u);
+	assert.match(source, /const \[showAllTaxonomyItems, setShowAllTaxonomyItems\] = useState\(false\);/u);
+	assert.match(source, /showAllTaxonomyItems\s+\?\s+taxonomyItems\s+:\s+taxonomyItems\.slice\(0, MAX_VISIBLE_TAXONOMY_ITEMS\);/u);
+	assert.match(source, /const hasHiddenTaxonomyItems = !showAllTaxonomyItems && taxonomyItems\.length > MAX_VISIBLE_TAXONOMY_ITEMS;/u);
+	assert.match(source, /<ul className="flex w-64 flex-col">[\s\S]*visibleTaxonomyItems\.map/u);
+	assert.match(source, /leading=\{<TaxonomyLeading item=\{item\} \/>\}/u);
+	assert.match(source, /getSkillCollectionMetadata\(item\.id\)/u);
+	assert.match(source, /collection\.iconClassName/u);
 	assert.match(source, /label="Show all"/u);
-	assert.match(source, /onClick=\{\(\) => setShowAllCategories\(true\)\}/u);
+	assert.match(source, /onClick=\{\(\) => setShowAllTaxonomyItems\(true\)\}/u);
 	assert.match(source, /import \{ AtlassianLogo \} from "@\/components\/ui\/logo";/u);
 	assert.match(source, /item\.logoName \? \([\s\S]*<AtlassianLogo name=\{item\.logoName\} size="small" themeAware label=\{item\.label\} \/>/u);
-	assert.match(source, /<SettingsIcon label=\{label\} size="small" color="currentColor" \/>/u);
 	assert.match(source, /<SupportIcon label=\{label\} size="small" color="currentColor" \/>/u);
-	assert.match(source, /<CartIcon label=\{label\} size="small" color="currentColor" \/>/u);
 	assert.doesNotMatch(source, /leading=\{<TileLeading>\{getCategoryNavIcon/u);
 	for (const label of [
-		"Project management",
-		"Administrative tools",
-		"Content and communication",
-		"Data and analytics",
-		"Software development",
-		"IT support and service",
-		"Design and diagramming",
-		"Security and compliance",
-		"HR and team building",
-		"Sales and customer relations",
+		"Collections",
+		"Teamwork",
+		"Strategy",
+		"Service",
+		"Software",
+		"Product",
 	]) {
 		assert.match(sidebarGroupsSource, new RegExp(label, "u"));
 	}
+	assert.doesNotMatch(sidebarGroupsSource, /Project management/u);
 });
 
 test("Skills Directory uses multi-select cards, hover learn-more, and selected toolbar", () => {
@@ -116,7 +115,7 @@ test("Skills Directory uses multi-select cards, hover learn-more, and selected t
 	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
 	assert.match(source, /"min-h-\[112px\] gap-4 hover:border-transparent"/u);
 	assert.match(source, /<div className="flex flex-col gap-2">[\s\S]*<CardDirectoryDescription className="text-text">/u);
-	assert.match(source, /aria-hidden[\s\S]*getSkillIconColor\(skill\)[\s\S]*\{getSkillIcon\(skill\.icon\)\}/u);
+	assert.match(source, /<IconTile[\s\S]*icon=\{getSkillIcon\(skill\.icon\)\}[\s\S]*variant=\{getSkillIconTileVariant\(skill\)\}/u);
 	assert.doesNotMatch(source, /rounded-xs bg-bg-neutral text-icon-subtle transition-opacity/u);
 	assert.match(source, /absolute top-1\/2 left-1\/2 -translate-x-1\/2 -translate-y-1\/2 opacity-0 transition-opacity/u);
 	assert.match(source, /selected[\s\S]*\? "opacity-0"[\s\S]*: "opacity-100 group-hover\/card:opacity-0"/u);
@@ -153,6 +152,10 @@ test("Skills Directory renders skill info view with file tree and top scroll mas
 	assert.match(source, /<SplitButton/u);
 	assert.match(source, /Try in chat/u);
 	assert.match(source, /function SkillDetailView/u);
+	assert.match(source, /const collection = getSkillCollection\(skill\);/u);
+	assert.match(source, /skill\.collectionDescription \?\? collection\.description/u);
+	assert.match(source, /collectionProducts\.join\(" • "\)/u);
+	assert.match(source, /Learn about this collection/u);
 	assert.match(source, /function SkillFileTreeSidebar/u);
 	assert.match(source, /SKILL\.md/u);
 	assert.match(source, /LICENSE\.txt/u);
@@ -171,6 +174,7 @@ test("Skills Directory demo and docs use skill-specific examples", () => {
 	// resolver own the typing/helpers and the Atlaskit icon imports.
 	const skillsJson = JSON.parse(readProjectFile("app/data/directory/skills.json"));
 	const skillsLoaderSource = readProjectFile("app/data/directory/skills.ts");
+	const skillCollectionsSource = readProjectFile("app/data/directory/skill-collections.ts");
 	const visualSource = readProjectFile("app/data/directory/visual.tsx");
 	const sidebarGroupsSource = readProjectFile("components/blocks/skills-directory/data/sidebar-groups.ts");
 
@@ -193,27 +197,45 @@ test("Skills Directory demo and docs use skill-specific examples", () => {
 			assert.doesNotMatch(skill.iconColor, /text-(blue|purple|teal|orange|indigo|green)-500/u);
 		}
 	}
-	// Skill provenance (`source`) drives the leading-glyph color. Every declared
-	// source is in the closed set, and the System-of-Work families + a company
-	// (3p) source are all exercised by the data.
+	// Skill provenance (`source`) remains valid, while collectionId owns the
+	// browse taxonomy and collection-colored tag/card styling.
 	const VALID_SOURCES = new Set([
 		"2p", "3p", "default", "custom", "platform",
 		"teamwork", "software", "strategy", "service", "product",
 	]);
+	const VALID_COLLECTIONS = new Set([
+		"teamwork", "software", "strategy", "service", "product",
+		"platform", "marketplace", "custom", "default",
+	]);
 	const sources = new Set();
+	const collections = new Set();
 	for (const skill of skillsJson) {
 		if (skill.source !== undefined) {
 			assert.ok(VALID_SOURCES.has(skill.source), `invalid skill source: ${skill.source}`);
 			sources.add(skill.source);
 		}
+		assert.ok(VALID_COLLECTIONS.has(skill.collectionId), `invalid skill collection: ${skill.collectionId}`);
+		assert.equal(typeof skill.collectionDescription, "string");
+		assert.ok(Array.isArray(skill.collectionProducts));
+		assert.equal(typeof skill.collectionDocsUrl, "string");
+		assert.equal(typeof skill.teammateCount, "number");
+		assert.equal(typeof skill.verified, "boolean");
+		collections.add(skill.collectionId);
 	}
 	for (const family of ["teamwork", "software", "strategy", "service", "product", "3p"]) {
 		assert.ok(sources.has(family), `a skill should have source "${family}"`);
 	}
-	// The loader maps each source to its ADS accent color and exposes the
-	// derivation helper consumed by both the directory card and the composer tag.
+	for (const collection of ["teamwork", "software", "strategy", "service", "product"]) {
+		assert.ok(collections.has(collection), `a skill should have collection "${collection}"`);
+	}
+	// The loader maps each source to shared collection metadata consumed by both
+	// the directory card and the composer tag.
 	assert.match(skillsLoaderSource, /SKILL_SOURCE_ICON_COLOR/u);
+	assert.match(skillsLoaderSource, /SKILL_COLLECTIONS/u);
+	assert.match(skillsLoaderSource, /function getSkillCollectionId/u);
+	assert.match(skillsLoaderSource, /function getSkillCollection/u);
 	assert.match(skillsLoaderSource, /function getSkillIconColor/u);
+	assert.match(skillsLoaderSource, /function getSkillIconTileVariant/u);
 	for (const accent of [
 		"text-icon-accent-blue",
 		"text-icon-accent-green",
@@ -222,7 +244,7 @@ test("Skills Directory demo and docs use skill-specific examples", () => {
 		"text-icon-accent-purple",
 		"text-icon-accent-gray",
 	]) {
-		assert.ok(skillsLoaderSource.includes(accent), `loader should map a source to ${accent}`);
+		assert.ok(skillCollectionsSource.includes(accent), `collection metadata should map a family to ${accent}`);
 	}
 	assert.match(skillsLoaderSource, /function getSkillPublisherLogoName/u);
 	assert.match(sidebarGroupsSource, /logoName: "atlassian"/u);
@@ -236,6 +258,7 @@ test("Skills Directory demo and docs use skill-specific examples", () => {
 	assert.match(sidebarGroupsSource, /label: "All skills"/u);
 	assert.match(sidebarGroupsSource, /label: "Favourite skills"/u);
 	assert.match(sidebarGroupsSource, /label: "Your skills"/u);
+	assert.match(sidebarGroupsSource, /title: "Collections"/u);
 	// Category ids are still exercised by the data.
 	const categoryIds = new Set(skillsJson.map((skill) => skill.categoryId ?? skill.category));
 	assert.ok(categoryIds.has("content-and-communication"));

@@ -36,7 +36,6 @@ export function IconTileDemoDefault() {
 export function IconTileDemoSizes() {
 	return (
 		<div className="flex items-end gap-3">
-			<IconTile icon={tileIcon(<SearchIcon label="" size="small" />)} label="Search" variant="blue" size="xxsmall" />
 			<IconTile icon={tileIcon(<SearchIcon label="" size="small" />)} label="Search" variant="blue" size="xsmall" />
 			<IconTile icon={tileIcon(<SearchIcon label="" size="small" />)} label="Search" variant="blue" size="small" />
 			<IconTile icon={tileIcon(<SearchIcon label="" />)} label="Search" variant="blue" size="medium" />
@@ -50,11 +49,8 @@ export function IconTileDemoTransparent() {
 	return (
 		<div className="flex items-end gap-3 text-icon-subtle">
 			<IconTile icon={tileIcon(<SearchIcon label="" size="small" />)} label="Search" variant="transparent" size="xxsmall" />
-			<IconTile icon={tileIcon(<StarIcon label="" size="small" />)} label="Star" variant="transparent" size="xsmall" />
 			<IconTile icon={tileIcon(<HomeIcon label="" size="small" />)} label="Home" variant="transparent" size="small" />
 			<IconTile icon={tileIcon(<AddIcon label="" />)} label="Add" variant="transparent" size="medium" />
-			<IconTile icon={tileIcon(<EditIcon label="" />)} label="Edit" variant="transparent" size="large" />
-			<IconTile icon={tileIcon(<SettingsIcon label="" />)} label="Settings" variant="transparent" size="xlarge" />
 		</div>
 	);
 }

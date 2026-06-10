@@ -175,14 +175,6 @@ export function RichTextMentionVisualMark({
 	const imageSizeClassName = size === "menu" ? "size-8" : "size-4";
 	const logoSize = "xxsmall";
 	const menuTileSize = MENU_VISUAL_TILE_SIZE;
-	const iconSizeClassName =
-		size === "menu" ? "size-3" : size === "pill" ? "size-3.5" : "size-4";
-	const iconClassName = cn(
-		iconSizeClassName,
-		size === "menu"
-			? "[&>span]:size-3! [&_svg]:size-3!"
-			: "[&>span]:size-3.5! [&_svg]:size-3.5!",
-	);
 
 	if (visual.kind === "avatar") {
 		// Menu rows keep the avatar's semi-opaque border (matching the avatar demo);
@@ -292,21 +284,14 @@ export function RichTextMentionVisualMark({
 		}
 
 		return (
-			<span
-				aria-hidden="true"
-				className={cn(
-					"inline-flex shrink-0 items-center justify-center",
-					iconSizeClassName,
-					visual.iconColor ?? "text-icon-subtle",
-					className,
-				)}
-			>
-				<Icon
-					aria-hidden
-					className={iconClassName}
-					render={visual.icon}
-				/>
-			</span>
+			<IconTile
+				aria-hidden={true}
+				className={cn(visual.iconColor ?? "text-icon-subtle", className)}
+				icon={<Icon aria-hidden render={visual.icon} />}
+				label={label}
+				size="xxsmall"
+				variant="transparent"
+			/>
 		);
 	}
 

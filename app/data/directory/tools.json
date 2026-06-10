@@ -443,7 +443,8 @@
 			"description": "Coordinates multi-cloud deployments and release pipelines.",
 			"publisherName": "Spinnaker",
 			"teammateCount": 39,
-			"toolCount": 9
+			"toolCount": 9,
+			"verified": true
 		},
 		{
 			"id": "stack-overflow",
@@ -507,7 +508,8 @@
 			"description": "Connects whiteboards and diagrams to planning and delivery work.",
 			"publisherName": "Lucid",
 			"teammateCount": 45,
-			"toolCount": 9
+			"toolCount": 9,
+			"verified": true
 		},
 		{
 			"id": "mural",
@@ -532,7 +534,8 @@
 			"description": "Bridges design specs and developer handoff for shipping teams.",
 			"publisherName": "Zeplin",
 			"teammateCount": 33,
-			"toolCount": 7
+			"toolCount": 7,
+			"verified": true
 		},
 		{
 			"id": "canva",
@@ -557,7 +560,8 @@
 			"description": "Surfaces interactive design files and prototypes from Adobe XD.",
 			"publisherName": "Adobe",
 			"teammateCount": 41,
-			"toolCount": 8
+			"toolCount": 8,
+			"verified": true
 		},
 		{
 			"id": "notion",
@@ -738,7 +742,8 @@
 			"description": "Orchestrates sequences, tasks, and prospect engagement.",
 			"publisherName": "Outreach",
 			"teammateCount": 43,
-			"toolCount": 13
+			"toolCount": 13,
+			"verified": true
 		},
 		{
 			"id": "workday",
@@ -815,7 +820,8 @@
 			"description": "Tracks purchase requests, invoices, and supplier spend.",
 			"publisherName": "Coupa",
 			"teammateCount": 38,
-			"toolCount": 11
+			"toolCount": 11,
+			"verified": true
 		},
 		{
 			"id": "clickup",
@@ -853,7 +859,8 @@
 			"description": "Coordinates plans, sheets, and rollups across programs.",
 			"publisherName": "Smartsheet",
 			"teammateCount": 57,
-			"toolCount": 13
+			"toolCount": 13,
+			"verified": true
 		},
 		{
 			"id": "aha",
@@ -865,7 +872,8 @@
 			"description": "Connects strategy, roadmaps, and feature plans for product teams.",
 			"publisherName": "Aha!",
 			"teammateCount": 44,
-			"toolCount": 12
+			"toolCount": 12,
+			"verified": true
 		},
 		{
 			"id": "todoist",
@@ -877,7 +885,8 @@
 			"description": "Captures tasks, due dates, and personal project lists.",
 			"publisherName": "Doist",
 			"teammateCount": 71,
-			"toolCount": 8
+			"toolCount": 8,
+			"verified": true
 		},
 		{
 			"id": "docusign",
@@ -902,7 +911,8 @@
 			"description": "Manages signature requests and agreement status across teams.",
 			"publisherName": "Adobe",
 			"teammateCount": 52,
-			"toolCount": 9
+			"toolCount": 9,
+			"verified": true
 		},
 		{
 			"id": "zendesk",
@@ -953,7 +963,8 @@
 			"description": "Surfaces customer research, themes, and insights.",
 			"publisherName": "Dovetail",
 			"teammateCount": 41,
-			"toolCount": 10
+			"toolCount": 10,
+			"verified": true
 		},
 		{
 			"id": "egnyte",
@@ -965,7 +976,8 @@
 			"description": "Finds and governs files across secure content stores.",
 			"publisherName": "Egnyte",
 			"teammateCount": 35,
-			"toolCount": 11
+			"toolCount": 11,
+			"verified": true
 		},
 		{
 			"id": "simpplr",
@@ -977,7 +989,8 @@
 			"description": "Surfaces company news, resources, and team announcements.",
 			"publisherName": "Simpplr",
 			"teammateCount": 46,
-			"toolCount": 8
+			"toolCount": 8,
+			"verified": true
 		},
 		{
 			"id": "ziprecruiter",
@@ -989,7 +1002,8 @@
 			"description": "Tracks job postings, candidates, and hiring pipeline activity.",
 			"publisherName": "ZipRecruiter",
 			"teammateCount": 29,
-			"toolCount": 9
+			"toolCount": 9,
+			"verified": true
 		},
 		{
 			"id": "brightspot",
@@ -1001,7 +1015,8 @@
 			"description": "Surfaces content, assets, and publishing workflows.",
 			"publisherName": "Brightspot",
 			"teammateCount": 31,
-			"toolCount": 10
+			"toolCount": 10,
+			"verified": true
 		}
 	],
 	"sessionTools": [
@@ -1015,7 +1030,8 @@
 			"description": "Builds team pulse surveys and summarizes engagement signals.",
 			"publisherName": "People Operations",
 			"teammateCount": 48,
-			"toolCount": 8
+			"toolCount": 8,
+			"verified": false
 		},
 		{
 			"id": "workflow-synthesizer",
@@ -1027,7 +1043,8 @@
 			"description": "Turns scattered requests into durable operating workflows.",
 			"publisherName": "Revenue Operations",
 			"teammateCount": 36,
-			"toolCount": 6
+			"toolCount": 6,
+			"verified": false
 		},
 		{
 			"id": "incident-retro-builder",
@@ -1039,7 +1056,8 @@
 			"description": "Drafts incident timelines and retrospectives from live signals.",
 			"publisherName": "Platform Reliability",
 			"teammateCount": 27,
-			"toolCount": 7
+			"toolCount": 7,
+			"verified": false
 		},
 		{
 			"id": "release-notes-composer",
@@ -1051,7 +1069,8 @@
 			"description": "Compiles merged work into customer-ready release notes.",
 			"publisherName": "Developer Experience",
 			"teammateCount": 22,
-			"toolCount": 5
+			"toolCount": 5,
+			"verified": false
 		},
 		{
 			"id": "deal-desk-assistant",
@@ -1063,7 +1082,8 @@
 			"description": "Reviews quotes, approvals, and contract terms for sales teams.",
 			"publisherName": "Revenue Operations",
 			"teammateCount": 19,
-			"toolCount": 6
+			"toolCount": 6,
+			"verified": false
 		},
 		{
 			"id": "onboarding-buddy",
@@ -1075,7 +1095,8 @@
 			"description": "Guides new hires through setup, policies, and first-week tasks.",
 			"publisherName": "People Operations",
 			"teammateCount": 33,
-			"toolCount": 7
+			"toolCount": 7,
+			"verified": false
 		}
 	]
 }

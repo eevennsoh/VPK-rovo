@@ -40,8 +40,9 @@ export function SkillTagDemoColors() {
 	return (
 		<div className="flex flex-wrap items-center gap-2">
 			<SkillTag color="default">Default</SkillTag>
-			<SkillTag color="2p3p">2p3p</SkillTag>
+			<SkillTag color="marketplace">Marketplace</SkillTag>
 			<SkillTag color="platform">Platform</SkillTag>
+			<SkillTag color="custom">Custom</SkillTag>
 			<SkillTag color="teamwork">Teamwork</SkillTag>
 			<SkillTag color="software">Software</SkillTag>
 			<SkillTag color="strategy">Strategy</SkillTag>
@@ -78,7 +79,7 @@ export function SkillTagDemoWithIcon() {
 			<SkillTag icon={<SupportIcon label="" size="small" />} color="service">
 				Service
 			</SkillTag>
-			<SkillTag icon={<BoardIcon label="" size="small" />} color="2p3p">
+			<SkillTag icon={<BoardIcon label="" size="small" />} color="marketplace">
 				Board
 			</SkillTag>
 		</div>
