@@ -70,6 +70,17 @@ export default async function ComponentDetailPage({ params }: PageProps) {
 		redirect("/components/ui-custom/entity-card");
 	}
 
+	// The old card-directory doc was split: its shell + variants merged into
+	// entity-card, and its template card became the standalone ui-custom/agent-card.
+	if (category === "ui-custom" && slug === "card-directory") {
+		redirect("/components/ui-custom/entity-card");
+	}
+
+	// The blocks agent-card was renamed to agent-profile-card.
+	if (category === "blocks" && slug === "agent-card") {
+		redirect("/components/blocks/agent-profile-card");
+	}
+
 	if (category !== "ui-audio" && category !== "ui-charts" && category !== "ui-custom" && category !== "ui" && category !== "blocks" && category !== "projects" && category !== "arts" && category !== "utility" && category !== "visual") {
 		notFound();
 	}

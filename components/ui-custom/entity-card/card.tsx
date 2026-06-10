@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 import { CARD_HOVER_TRANSITION, useCardInteraction } from "./use-card-interaction";
 
-export interface CardDirectoryProps {
+export interface EntityCardShellProps {
 	/** Invoked on click / Enter / Space. Presence renders a whole-card select button. */
 	onSelect?: () => void;
 	/** Accessible label for the whole-card select button when interactive. */
@@ -19,20 +19,19 @@ export interface CardDirectoryProps {
 }
 
 /**
- * Base directory-card shell — a bordered surface with hover elevation and an
+ * Base entity-card shell — a bordered surface with hover elevation and an
  * optional keyboard-operable button contract. Compose content with
- * `CardDirectoryHeader`, `CardDirectoryDescription`, `CardDirectoryFooter`, etc.,
- * or use a ready-made variant wrapper (`CardDirectoryAgent`, `CardDirectorySkill`,
- * `CardDirectoryApp`, `CardDirectoryTool`, `CardDirectoryKnowledge`,
- * `CardDirectoryTemplate`).
+ * `EntityCardHeader`, `EntityCardDescription`, `EntityCardFooter`, etc.,
+ * or use a ready-made variant (`EntityCard.Agent`, `EntityCard.Skill`,
+ * `EntityCard.App`, `EntityCard.Tool`, `EntityCard.Knowledge`).
  */
-export function CardDirectory({
+export function EntityCardShell({
 	onSelect,
 	selectLabel = "Select item",
 	active = false,
 	className,
 	children,
-}: Readonly<CardDirectoryProps>) {
+}: Readonly<EntityCardShellProps>) {
 	const { interactive, hoverAnimation, tapAnimation, handleSelect } =
 		useCardInteraction(onSelect);
 

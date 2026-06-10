@@ -130,6 +130,7 @@ import {
 	type RichTextMentionRemovalRequest,
 	type RichTextMentionSources,
 	type RichTextReferenceCategory,
+	type RichTextSlashCategory,
 	type RichTextSuggestionMenuItem,
 	type RichTextSuggestionVariantConfig,
 	RichTextMentionVisualMark,
@@ -300,13 +301,11 @@ function getAgentCompactEmptyConfigNavItems(config?: AgentConfigFormValue) {
 
 const MENTION_SOURCE_LIMIT = 24;
 
-// Studio instructions editor: "@" expands people / teams / subagents inline
-// (flat), while "/" keeps the Skills / Tools / Knowledge / Format drill-in
-// (nested). Hoisted so the editor's extension memo stays referentially stable.
-const AGENT_INSTRUCTIONS_SUGGESTION_VARIANT: RichTextSuggestionVariantConfig = {
-	mention: "flat",
-	command: "nested",
-};
+// Studio instructions editor uses the shared nested-first suggestion behavior:
+// bare "@" / "/" show parent categories, while top-level typing searches flat
+// across that trigger's full set. Hoisted so the editor's extension memo stays
+// referentially stable.
+const AGENT_INSTRUCTIONS_SUGGESTION_VARIANT: RichTextSuggestionVariantConfig = "nested";
 
 function toMentionId(category: RichTextMentionItem["category"], id: string): string {
 	return `${category}:${id.trim().replace(/\s+/g, "-")}`;
@@ -453,6 +452,19 @@ export type AgentConfigListFieldName =
 	| "conversationStarters";
 
 export type AgentDirectoryKind = "knowledge" | "tools" | "skills" | "memory" | "conversationStarters";
+
+// Maps a directory-backed "/" slash category to the config-panel directory it
+// opens from a nested empty state's "Browse all". "format" has no directory and
+// is intentionally absent (the renderer omits its button), so the map only
+// covers the reference categories.
+const AGENT_DIRECTORY_BY_SLASH_CATEGORY: Record<
+	Exclude<RichTextSlashCategory, "format">,
+	AgentDirectoryKind
+> = {
+	skill: "skills",
+	tool: "tools",
+	knowledge: "knowledge",
+};
 
 // Config rows that can be suppressed by callers (e.g. while editing a subagent,
 // where these capabilities can't be configured). Keyed by the canonical row key
@@ -3712,6 +3724,7 @@ function AgentInstructionsComposer({
 	onAddListValues,
 	onMentionRemovalRequestHandled,
 	onInstructionsChange,
+	onOpenDirectory,
 	onRemoveReferenceValue,
 	onStartWithTemplate,
 	screenAssistantTargetId,
@@ -3729,6 +3742,7 @@ function AgentInstructionsComposer({
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onMentionRemovalRequestHandled?: (key: string) => void;
 	onInstructionsChange?: (value: string) => void;
+	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	onRemoveReferenceValue?: (field: AgentConfigReferenceListFieldName, value: string) => void;
 	onStartWithTemplate?: () => void;
 	screenAssistantTargetId?: string;
@@ -3773,6 +3787,15 @@ function AgentInstructionsComposer({
 
 		return false;
 	}, [config, onAddListValues]);
+	// "Browse all" in a nested "/" category's empty state opens that category's
+	// directory. Map the slash category to the config-panel directory kind; the
+	// renderer only fires this for directory-backed categories (not "format").
+	const handleOpenDirectory = useCallback((category: RichTextSlashCategory): void => {
+		if (category === "format") {
+			return;
+		}
+		onOpenDirectory?.(AGENT_DIRECTORY_BY_SLASH_CATEGORY[category]);
+	}, [onOpenDirectory]);
 	const handleMentionInventoryChange = useCallback((mentions: readonly RichTextMentionItem[]): void => {
 		const nextCounts = new Map<string, {
 			count: number;
@@ -3880,6 +3903,7 @@ function AgentInstructionsComposer({
 					</p>
 				)}
 				onInsertReferenceOption={handleInsertReferenceOption}
+				onOpenDirectory={handleOpenDirectory}
 				suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
 				toolbarBelowSlot={toolbarBelowSlot}
 				value={instructions}
@@ -4460,6 +4484,7 @@ export const AgentConfigFields = memo(
 							onAddListValues={handleAddListValues}
 							onInstructionsChange={(value) => handleTextChange("instructions", value)}
 							onMentionRemovalRequestHandled={handleMentionRemovalRequestHandled}
+							onOpenDirectory={handleOpenDirectory}
 							onRemoveReferenceValue={handleRemoveReferenceValue}
 							onStartWithTemplate={onStartWithTemplate}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}

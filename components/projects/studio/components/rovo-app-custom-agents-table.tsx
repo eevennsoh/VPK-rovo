@@ -13,7 +13,7 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Lozenge } from "@/components/ui/lozenge";
-import { CardDirectoryAgent } from "@/components/ui-custom/card-directory";
+import { EntityCardAgentCard } from "@/components/ui-custom/entity-card";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -586,7 +586,7 @@ function DirectoryAgentsGrid({
 				const publisher = derivePublisher(agent.byline);
 				return (
 					<li key={agent.id}>
-						<CardDirectoryAgent
+						<EntityCardAgentCard
 							avatarSrc={getDirectoryCardAvatarSrc(agent)}
 							insetLogo={isBorderlessHexagonAgent(agent)}
 							chatCount={syntheticChats(agent.id)}

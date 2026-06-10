@@ -121,7 +121,7 @@ export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	customComponent("attachments"),
 	customComponent("audio-player", "Audio Player"),
 	customComponent("canvas"),
-	customComponent("card-directory", "Card Directory"),
+	customComponent("agent-card", "Agent Card"),
 	customComponent("entity-card", "Entity Card"),
 	customComponent("knowledge"),
 	customComponent("footer", "Footer"),
@@ -311,7 +311,7 @@ export const UI_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("agent"),
 	blockComponent("agent-bento", "Agent Bento"),
-	blockComponent("agent-card", "Agent Card"),
+	blockComponent("agent-profile-card", "Agent Profile Card"),
 	blockComponent("agents-directory", "Agents Directory"),
 	blockComponent("agent-progress", "Agent Progress"),
 	blockComponent("agent-selector", "Agent Selector"),

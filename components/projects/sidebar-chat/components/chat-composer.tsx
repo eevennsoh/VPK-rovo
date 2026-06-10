@@ -204,7 +204,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 					</Queue>
 				</div>
 			) : null}
-			<div className="relative z-10 rounded-xl border border-border bg-surface px-4 pb-3 pt-4" style={{ boxShadow: composerUpwardShadow }}>
+			<div className="relative z-10 mx-auto w-full max-w-[800px] rounded-xl border border-border bg-surface px-4 pb-3 pt-4" style={{ boxShadow: composerUpwardShadow }}>
 				<PromptInput allowOverflow onSubmit={onSubmit} className={`${composerPromptInputClassName} relative z-10`}>
 					<PendingAttachments />
 					<PromptInputBody>

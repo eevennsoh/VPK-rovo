@@ -76,13 +76,15 @@ export type RichTextMentionSources = Partial<
 /**
  * Layout for the live "@" / "/" suggestion menus.
  *
- * - `"flat"` (default): every section is merged into one scrollable list,
+ * - `"nested"` (default): a bare trigger lists parent categories. Once the
+ *   user types a top-level query, the menu searches every section in that
+ *   trigger's set at once and shows the merged flat results. After drilling
+ *   into a category, typing stays scoped to that category.
+ * - `"flat"`: every section is merged into one scrollable list,
  *   separated by non-interactive section headings (mirroring
  *   `DropdownMenuLabel`). On the empty query each section is capped at five
  *   items with a "Browse all" / "View more" footer; once the user starts
  *   typing, the menu filters across every section at once and shows all matches.
- * - `"nested"`: the original drill-in behavior where the top level lists
- *   categories you click into to reveal each category's items.
  */
 export type RichTextSuggestionVariant = "nested" | "flat";
 
@@ -92,9 +94,9 @@ export type RichTextSuggestionVariant = "nested" | "flat";
  * - A bare {@link RichTextSuggestionVariant} applies to both the "@" mention and
  *   "/" command menus (the common case).
  * - An object form picks a variant per trigger, e.g. `{ mention: "flat",
- *   command: "nested" }` for the Studio agent editor, where "@" expands people /
- *   subagents inline (flat) while "/" keeps the Skills / Tools / Knowledge /
- *   Format drill-in (nested). Either key defaults to `"flat"` when omitted.
+ *   command: "flat" }` for a surface that always expands slash results inline
+ *   while keeping mentions nested. Either key defaults to `"nested"` when
+ *   omitted.
  */
 export type RichTextSuggestionVariantConfig =
 	| RichTextSuggestionVariant
@@ -110,7 +112,7 @@ export function resolveMentionVariant(
 	if (typeof config === "string") {
 		return config;
 	}
-	return config?.mention ?? "flat";
+	return config?.mention ?? "nested";
 }
 
 /** Resolve the "/" command menu variant from a (possibly per-trigger) config. */
@@ -120,7 +122,7 @@ export function resolveCommandVariant(
 	if (typeof config === "string") {
 		return config;
 	}
-	return config?.command ?? "flat";
+	return config?.command ?? "nested";
 }
 
 export interface RichTextEditorExtensionOptions {
@@ -128,7 +130,7 @@ export interface RichTextEditorExtensionOptions {
 	onAskRovo?: (editor: Editor) => void;
 	/**
 	 * Layout for the live "@" / "/" suggestion menus. Accepts a single variant
-	 * (applied to both triggers) or a per-trigger object. Defaults to `"flat"`.
+	 * (applied to both triggers) or a per-trigger object. Defaults to `"nested"`.
 	 */
 	suggestionVariant?: RichTextSuggestionVariantConfig;
 	/**
@@ -145,4 +147,13 @@ export interface RichTextEditorExtensionOptions {
 	 * the document editor leaves it `false` (caret-anchored).
 	 */
 	anchorToInput?: boolean;
+	/**
+	 * Launches the directory for a nested "/" category when the user clicks
+	 * "Browse all" in that category's empty state (e.g. drilling into Skills and
+	 * typing a non-matching query). Only directory-backed categories (everything
+	 * but "format") invoke it. Omit it to keep the plain empty title with no
+	 * button — surfaces without a host directory (the showcase, the chat
+	 * composer) leave it unset.
+	 */
+	onOpenDirectory?: (category: RichTextSlashCategory) => void;
 }

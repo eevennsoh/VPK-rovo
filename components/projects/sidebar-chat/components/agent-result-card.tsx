@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { RFP_DRAFTING_AGENT_AVATAR_SRC } from "@/components/projects/agents/lib/rfp-demo-state";
-import { AgentCard } from "@/components/blocks/agent-card";
+import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { cn } from "@/lib/utils";
 
@@ -70,7 +70,7 @@ export function AgentResultCard({
 
 	return (
 		<div className={cn("pb-2", className)} data-testid="rovo-agent-result-card">
-			<AgentCard
+			<AgentProfileCard
 				avatarSrc={avatarSrc}
 				className="w-full"
 				coverSrc={avatarSrc}
