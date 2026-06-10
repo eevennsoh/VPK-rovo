@@ -12,12 +12,12 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import DownloadIcon from "@atlaskit/icon/core/download";
-import EyeOpenIcon from "@atlaskit/icon/core/eye-open";
 import FileIcon from "@atlaskit/icon/core/file";
 import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
 import FolderOpenIcon from "@atlaskit/icon/core/folder-open";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PageIcon from "@atlaskit/icon/core/page";
+import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
@@ -34,6 +34,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import { IconTile } from "@/components/ui/icon-tile";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { AtlassianLogo } from "@/components/ui/logo";
 import { SplitButton } from "@/components/ui/split-button";
@@ -53,8 +54,10 @@ import { SkillsDirectorySidebar } from "./skills-directory-sidebar";
 import {
 	DEFAULT_SKILLS,
 	getSkillCategoryId,
+	getSkillCollection,
+	getSkillCollectionId,
 	getSkillIcon,
-	getSkillIconColor,
+	getSkillIconTileVariant,
 	getSkillPublisherAvatarSrc,
 	getSkillPublisherLogoName,
 	getSkillPublisherName,
@@ -122,13 +125,13 @@ function normalizeAgentSkill(agent: SkillsDirectoryAgent): SkillsDirectorySkill 
 		name: agent.name,
 		description: agent.description ?? agent.byline,
 		icon: "page",
-		iconColor: "text-icon-success",
+		collectionId: "software",
 		publisherName: deriveAgentPublisher(agent),
 		publisherAvatarSrc: agent.avatarSrc,
 		companyId: agent.attributionKind === "person" || agent.attributionKind === "team" ? "you" : undefined,
 		categoryId: "software-development",
 		starCount: 0,
-		viewCount: 0,
+		teammateCount: 0,
 	};
 }
 
@@ -156,6 +159,20 @@ function isCategoryItem(value: string): value is SkillCategory {
 	].includes(value);
 }
 
+function isCollectionItem(value: string): boolean {
+	return [
+		"teamwork",
+		"strategy",
+		"service",
+		"software",
+		"product",
+		"platform",
+		"marketplace",
+		"custom",
+		"default",
+	].includes(value);
+}
+
 function filterSkills(
 	skills: readonly SkillsDirectorySkill[],
 	query: string,
@@ -167,11 +184,13 @@ function filterSkills(
 	return skills.filter((skill) => {
 		if (normalizedActiveItem === "favorite-skills" && !skill.favorite) return false;
 		if (normalizedActiveItem === "your-skills" && !isYourSkill(skill)) return false;
+		if (isCollectionItem(normalizedActiveItem) && getSkillCollectionId(skill) !== normalizedActiveItem) return false;
 		if (isCategoryItem(normalizedActiveItem) && getSkillCategoryId(skill) !== normalizedActiveItem) return false;
 		if (
 			normalizedActiveItem !== "all-skills" &&
 			normalizedActiveItem !== "favorite-skills" &&
 			normalizedActiveItem !== "your-skills" &&
+			!isCollectionItem(normalizedActiveItem) &&
 			!isCategoryItem(normalizedActiveItem) &&
 			skill.companyId !== normalizedActiveItem
 		) {
@@ -185,6 +204,10 @@ function filterSkills(
 			skill.description,
 			getSkillPublisherName(skill),
 			getSkillCategoryId(skill),
+			getSkillCollection(skill).label,
+			getSkillCollection(skill).description,
+			skill.collectionDescription,
+			skill.collectionProducts?.join(" "),
 			skill.companyId,
 			...(skill.tools ?? []).map((tool) => tool.name),
 		]
@@ -593,18 +616,22 @@ function SkillsDirectoryEntityCard({ onLearnMore, onSelect, selected, skill }: R
 		>
 			<div className="flex flex-col gap-2">
 				<div className="flex items-center gap-2">
-					<span className="relative size-6 shrink-0">
+					<span className="relative size-8 shrink-0">
 						<span
 							aria-hidden
 							className={cn(
-								"absolute inset-0 flex items-center justify-center text-icon-subtle transition-opacity duration-fast ease-out [&>svg]:size-4",
-								getSkillIconColor(skill),
+								"absolute inset-0 flex items-center justify-center transition-opacity duration-fast ease-out",
 								selected
 									? "opacity-0"
 									: "opacity-100 group-hover/card:opacity-0",
 							)}
 						>
-							{getSkillIcon(skill.icon)}
+							<IconTile
+								icon={getSkillIcon(skill.icon)}
+								label={skill.name}
+								size="medium"
+								variant={getSkillIconTileVariant(skill)}
+							/>
 						</span>
 						<Checkbox
 							aria-label={`${selected ? "Deselect" : "Select"} ${skill.name}`}
@@ -651,11 +678,11 @@ function SkillsDirectoryEntityCard({ onLearnMore, onSelect, selected, skill }: R
 							{formatCompact(skill.starCount)}
 						</CardDirectoryStat>
 					) : null}
-					{typeof skill.viewCount === "number" ? (
+					{typeof skill.teammateCount === "number" ? (
 						<CardDirectoryStat
-							icon={<EyeOpenIcon label="" size="small" spacing="none" color="currentColor" />}
+							icon={<PeopleGroupIcon label="" size="small" spacing="none" color="currentColor" />}
 						>
-							{formatCompact(skill.viewCount)}
+							Used by {formatCompact(skill.teammateCount)} teammates
 						</CardDirectoryStat>
 					) : null}
 				</span>
@@ -909,6 +936,9 @@ function SkillFileTreeSidebar({ skill }: Readonly<{ skill: SkillsDirectorySkill 
 
 function SkillDetailSummary({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
 	const publisher = getSkillPublisherName(skill);
+	const collection = getSkillCollection(skill);
+	const collectionDocsUrl = skill.collectionDocsUrl ?? collection.docsUrl;
+	const collectionProducts = skill.collectionProducts ?? collection.products;
 
 	return (
 		<section className="flex flex-col gap-6" aria-labelledby="skill-detail-title">
@@ -935,6 +965,21 @@ function SkillDetailSummary({ skill }: Readonly<{ skill: SkillsDirectorySkill }>
 			</div>
 			<div className="max-w-4xl text-sm leading-5 text-text">
 				<p>{skill.description}</p>
+			</div>
+			<div className="flex max-w-4xl flex-col gap-1 rounded-md border border-border bg-surface p-3 text-sm leading-5">
+				<p className="font-medium text-text">{collection.label}</p>
+				<p className="text-text-subtle">{skill.collectionDescription ?? collection.description}</p>
+				<p className="text-xs leading-4 text-text-subtlest">
+					{collectionProducts.join(" • ")}
+				</p>
+				<a
+					className="w-fit text-sm leading-5 text-link hover:underline"
+					href={collectionDocsUrl}
+					rel="noreferrer"
+					target="_blank"
+				>
+					Learn about this collection
+				</a>
 			</div>
 		</section>
 	);

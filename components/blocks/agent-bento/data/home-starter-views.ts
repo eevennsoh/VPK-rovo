@@ -128,7 +128,7 @@ export const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyAr
 				bannerClassName: "bg-[#1868DB]",
 				skills: [
 					{ color: "platform", label: "stakeholder-input" },
-					{ color: "2p3p", label: "opportunity-sizing" },
+					{ color: "marketplace", label: "opportunity-sizing" },
 					{ color: "default", label: "option-mapping" },
 					{ color: "product", label: "risk-spotting" },
 					{ color: "strategy", label: "constraint-mapping" },
@@ -208,7 +208,7 @@ export const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyAr
 				bannerClassName: "bg-[#FCA700]",
 				skills: [
 					{ color: "platform", label: "handoff" },
-					{ color: "2p3p", label: "postmortem-scan" },
+					{ color: "marketplace", label: "postmortem-scan" },
 					{ color: "default", label: "incident-routing" },
 					{ color: "product", label: "readiness-review" },
 					{ color: "strategy", label: "escalation-drafting" },
@@ -276,7 +276,7 @@ export const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyAr
 					{ color: "software", label: "brand-review" },
 					{ color: "service", label: "translation-review" },
 					{ color: "platform", label: "clarity-pass" },
-					{ color: "2p3p", label: "prd-outline" },
+					{ color: "marketplace", label: "prd-outline" },
 					{ color: "default", label: "action-extraction" },
 					{ color: "product", label: "changelog-writing" },
 				],
@@ -346,7 +346,7 @@ export const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyAr
 					{ color: "software", label: "workflow-design" },
 					{ color: "service", label: "blocker-scan" },
 					{ color: "platform", label: "acceptance-criteria" },
-					{ color: "2p3p", label: "prioritization" },
+					{ color: "marketplace", label: "prioritization" },
 				],
 				sources: [
 					{ id: "google-drive", label: "Google Drive", provider: "google-drive" },

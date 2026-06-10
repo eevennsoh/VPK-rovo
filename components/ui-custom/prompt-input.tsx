@@ -1521,7 +1521,7 @@ export const PromptInputTextarea = ({
         <span
           aria-hidden="true"
           data-slot="prompt-input-placeholder"
-          className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center px-2.5 text-base text-text-subtlest md:text-sm"
+          className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center px-2.5 text-sm text-text-subtlest"
         >
           <span className="block w-full overflow-hidden text-ellipsis whitespace-nowrap">
             {placeholder}

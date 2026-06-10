@@ -23,11 +23,13 @@ import { cn } from "@/lib/utils";
 
 import {
 	getSkillById,
+	getSkillCollectionMetadata,
 	getSkillIcon,
 	type SkillsDirectorySkill,
 } from "@/app/data/directory/skills";
 import type {
 	SkillsDirectoryCategoryItem,
+	SkillsDirectoryCollectionItem,
 	SkillNavIcon,
 	SkillsDirectoryCompanyItem,
 	SkillsDirectoryPrimaryItem,
@@ -35,7 +37,7 @@ import type {
 	SkillsDirectorySidebarItem,
 } from "../data/sidebar-groups";
 
-const MAX_VISIBLE_CATEGORY_ITEMS = 5;
+const MAX_VISIBLE_TAXONOMY_ITEMS = 5;
 
 function getCategoryNavIcon(icon: SkillNavIcon, label: string): ReactElement {
 	switch (icon) {
@@ -110,8 +112,8 @@ export function SkillsDirectorySidebar({
 	primaryItems,
 	skills,
 }: Readonly<SkillsDirectorySidebarProps>) {
-	const categoryGroup = groups.find(isCategorySidebarGroup);
-	const secondaryGroups = groups.filter((group) => group !== categoryGroup);
+	const taxonomyGroup = groups.find(isTaxonomySidebarGroup);
+	const secondaryGroups = groups.filter((group) => group !== taxonomyGroup);
 	const sidebarOverflow = useHasVerticalOverflow<HTMLElement>();
 
 	return (
@@ -137,10 +139,10 @@ export function SkillsDirectorySidebar({
 
 			<div className="h-3 w-64 shrink-0" />
 
-			{categoryGroup ? (
-				<SkillsCategoryGroup
+			{taxonomyGroup ? (
+				<SkillsTaxonomyGroup
 					activeItem={activeItem}
-					group={categoryGroup}
+					group={taxonomyGroup}
 					onSelectItem={onSelectItem}
 				/>
 			) : null}
@@ -166,29 +168,39 @@ function isCategorySidebarItem(item: SkillsDirectorySidebarItem): item is Skills
 	return item.kind === "category";
 }
 
-function isCategorySidebarGroup(group: SkillsDirectorySidebarGroup): boolean {
-	return group.items.some(isCategorySidebarItem);
+function isCollectionSidebarItem(item: SkillsDirectorySidebarItem): item is SkillsDirectoryCollectionItem {
+	return item.kind === "collection";
 }
 
-interface SkillsCategoryGroupProps {
+function isTaxonomySidebarItem(
+	item: SkillsDirectorySidebarItem,
+): item is SkillsDirectoryCategoryItem | SkillsDirectoryCollectionItem {
+	return isCategorySidebarItem(item) || isCollectionSidebarItem(item);
+}
+
+function isTaxonomySidebarGroup(group: SkillsDirectorySidebarGroup): boolean {
+	return group.items.some(isTaxonomySidebarItem);
+}
+
+interface SkillsTaxonomyGroupProps {
 	activeItem: string;
 	group: SkillsDirectorySidebarGroup;
 	onSelectItem: (id: string) => void;
 }
 
-function SkillsCategoryGroup({
+function SkillsTaxonomyGroup({
 	activeItem,
 	group,
 	onSelectItem,
-}: Readonly<SkillsCategoryGroupProps>) {
-	const [showAllCategories, setShowAllCategories] = useState(false);
-	const categoryItems = group.items.filter(isCategorySidebarItem);
-	const visibleCategoryItems = showAllCategories
-		? categoryItems
-		: categoryItems.slice(0, MAX_VISIBLE_CATEGORY_ITEMS);
-	const hasHiddenCategoryItems = !showAllCategories && categoryItems.length > MAX_VISIBLE_CATEGORY_ITEMS;
+}: Readonly<SkillsTaxonomyGroupProps>) {
+	const [showAllTaxonomyItems, setShowAllTaxonomyItems] = useState(false);
+	const taxonomyItems = group.items.filter(isTaxonomySidebarItem);
+	const visibleTaxonomyItems = showAllTaxonomyItems
+		? taxonomyItems
+		: taxonomyItems.slice(0, MAX_VISIBLE_TAXONOMY_ITEMS);
+	const hasHiddenTaxonomyItems = !showAllTaxonomyItems && taxonomyItems.length > MAX_VISIBLE_TAXONOMY_ITEMS;
 
-	if (visibleCategoryItems.length === 0) return null;
+	if (visibleTaxonomyItems.length === 0) return null;
 
 	return (
 		<>
@@ -198,30 +210,43 @@ function SkillsCategoryGroup({
 				</p>
 			</div>
 			<ul className="flex w-64 flex-col">
-				{visibleCategoryItems.map((item) => (
-					<li key={`category-${item.id}`}>
+				{visibleTaxonomyItems.map((item) => (
+					<li key={`${item.kind}-${item.id}`}>
 						<SidebarNavItem
 							isSelected={activeItem === item.id}
 							label={item.label}
-							leading={getCategoryNavIcon(item.icon, item.label)}
+							leading={<TaxonomyLeading item={item} />}
 							leadingSize="medium"
 							onClick={() => onSelectItem(item.id)}
 						/>
 					</li>
 				))}
-				{hasHiddenCategoryItems ? (
+				{hasHiddenTaxonomyItems ? (
 					<li>
 						<SidebarNavItem
 							label="Show all"
 							leading={<AlignTextLeftIcon label="" size="small" />}
 							leadingSize="medium"
-							onClick={() => setShowAllCategories(true)}
+							onClick={() => setShowAllTaxonomyItems(true)}
 						/>
 					</li>
 				) : null}
 			</ul>
 		</>
 	);
+}
+
+function TaxonomyLeading({
+	item,
+}: Readonly<{ item: SkillsDirectoryCategoryItem | SkillsDirectoryCollectionItem }>) {
+	const icon = getCategoryNavIcon(item.icon, item.label);
+
+	if (item.kind === "collection") {
+		const collection = getSkillCollectionMetadata(item.id);
+		return <span className={collection.iconClassName}>{icon}</span>;
+	}
+
+	return icon;
 }
 
 interface SkillsSidebarGroupProps {
@@ -262,7 +287,7 @@ function SkillsSidebarGroup({
 						);
 					}
 
-					if (item.kind === "category") return null;
+					if (item.kind === "category" || item.kind === "collection") return null;
 
 					return (
 						<li key={`company-${item.id}`}>

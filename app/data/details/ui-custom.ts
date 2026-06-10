@@ -639,7 +639,7 @@ import SearchIcon from "@atlaskit/icon/core/search"
     props: [
       {
         name: "color",
-        type: '"default" | "2p3p" | "platform" | "teamwork" | "software" | "strategy" | "service" | "product"',
+        type: '"default" | "platform" | "marketplace" | "custom" | "teamwork" | "software" | "strategy" | "service" | "product"',
         default: '"default"',
         description:
           "Collection variant. Controls both slash bar color and icon color. Maps to Figma collection names.",
@@ -680,7 +680,7 @@ import SearchIcon from "@atlaskit/icon/core/search"
       { title: "Default", demoSlug: "skill-tag-demo-default" },
       {
         title: "Colors",
-        description: "All 8 collection variants.",
+        description: "All collection and fallback variants.",
         demoSlug: "skill-tag-demo-colors",
       },
       {

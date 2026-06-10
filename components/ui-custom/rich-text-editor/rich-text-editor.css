@@ -612,6 +612,15 @@
 	padding-top: 4px;
 }
 
+/* When a query matches nothing the slash list renders empty (just the Ask Rovo
+   header remains). Collapse the list padding so the popup ends flush under the
+   header instead of leaving a stray gap at the bottom. The mention menu still
+   renders an empty-label row, so it keeps its padding. */
+.rich-text-command-menu-list:empty,
+.rich-text-command-menu[data-has-header="true"] .rich-text-command-menu-list:empty {
+	padding: 0;
+}
+
 .rich-text-command-menu-search {
 	display: grid;
 	flex: 0 0 44px;

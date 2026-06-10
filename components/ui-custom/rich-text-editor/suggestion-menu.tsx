@@ -689,7 +689,9 @@ export function RichTextCommandMenuSearchField({
 				</Button>
 			) : tabHint ? (
 				<span className="rich-text-command-menu-search-hint" aria-hidden="true">
-					<Kbd>Tab</Kbd>
+					{/* Wrap the label in an element so Kbd renders the literal word
+					    "Tab" instead of mapping the string to the ⇥ glyph. */}
+					<Kbd><span>Tab</span></Kbd>
 				</span>
 			) : null}
 		</div>
@@ -1267,6 +1269,10 @@ export function createSlashSuggestionRenderer(
 		}
 	}
 
+	function shouldHideSlashRowsForAskRovoPrompt(): boolean {
+		return (isFlat || !activeCategory) && askRovoPrompt.trim().length > 0;
+	}
+
 	function getAskRovoHeader(): ReactNode {
 		return (
 			<RichTextCommandMenuSearchField
@@ -1285,7 +1291,9 @@ export function createSlashSuggestionRenderer(
 
 	function update(props: SuggestionProps<RichTextSlashAction, RichTextSlashAction>) {
 		currentProps = props;
-		const items = getVisibleItems(props.query);
+		const items = shouldHideSlashRowsForAskRovoPrompt()
+			? []
+			: getVisibleItems(props.query);
 		selectedIndex = clampSelectedIndex(items, selectedIndex);
 		if (anchorToInput) {
 			positionComposerPopup(popupState.element, props.editor.view.dom);
@@ -1294,6 +1302,10 @@ export function createSlashSuggestionRenderer(
 		}
 		popupState.component?.updateProps({
 			emptyLabel: !isFlat && activeCategory ? "No matching items" : "No commands found",
+			// With the Ask Rovo header showing, a non-matching query collapses to
+			// just that header — no "No commands found" row. Nested category
+			// drill-ins (no header) keep their empty label.
+			emptyState: isFlat || !activeCategory ? <></> : undefined,
 			items,
 			onBack: !isFlat && activeCategory
 				? () => {
@@ -1481,7 +1493,15 @@ export function createSlashSuggestionRenderer(
 				// renders for the flat surface and the nested top level, so fall back
 				// to selecting the row when there is no field to focus.
 				const askRovoField = document.getElementById(askRovoFieldId);
-				if (askRovoField instanceof HTMLInputElement) {
+				if (askRovoField instanceof HTMLInputElement && currentProps) {
+					// If the user already typed "/query", move that text out of the
+					// page and into the Ask Rovo field: keep the "/" trigger so the
+					// menu stays open, then delete just the query characters.
+					if (currentProps.query) {
+						askRovoPrompt += currentProps.query;
+						const { from, to } = currentProps.range;
+						currentProps.editor.commands.deleteRange({ from: from + 1, to });
+					}
 					askRovoField.focus();
 					return true;
 				}
@@ -1511,6 +1531,7 @@ export function createSlashSuggestionRenderer(
 			currentProps = null;
 			selectedIndex = 0;
 			activeCategory = null;
+			askRovoPrompt = "";
 		},
 	};
 }

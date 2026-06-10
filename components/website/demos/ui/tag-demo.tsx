@@ -5,6 +5,7 @@ import TagIcon from "@atlaskit/icon/core/tag";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
+import { IconTile } from "@/components/ui/icon-tile";
 import { AtlassianLogo, CustomLogo, RovoColorIcon } from "@/components/ui/logo";
 import { BrandLogoMark } from "@/components/ui/logo-mark";
 import { Tag, TagGroup } from "@/components/ui/tag";
@@ -21,7 +22,17 @@ export default function TagDemo() {
 			<Tag variant="rounded" color="discovery">
 				Rounded
 			</Tag>
-			<Tag elemBefore={<Icon render={<TagIcon label="" size="small" />} aria-hidden className="size-3 [&_svg]:size-3" />}>
+			<Tag
+				elemBefore={
+					<IconTile
+						aria-hidden
+						icon={<Icon render={<TagIcon label="" size="small" />} aria-hidden />}
+						label=""
+						size="xxsmall"
+						variant="transparent"
+					/>
+				}
+			>
 				Label
 			</Tag>
 			<Tag

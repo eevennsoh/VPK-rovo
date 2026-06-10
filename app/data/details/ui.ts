@@ -5114,7 +5114,7 @@ import SearchIcon from "@atlaskit/icon/core/search";
 
   "icon-tile": {
     description:
-      "A tile that wraps an icon, used for feature lists, navigation items, or visual indicators. Supports transparent, 20 color variants (10 subtle + 10 bold), 6 sizes, and square or circle shapes.",
+      "A tile that wraps an icon, used for feature lists, navigation items, or visual indicators. Supports a transparent sizing-only variant, 20 color variants (10 subtle + 10 bold), colored sizes from xsmall to xlarge, and square or circle shapes.",
     adsUrl: "https://atlassian.design/components/icon/icon-tile",
     usage: `import { IconTile } from "@/components/ui/icon-tile";
 import { Icon } from "@/components/ui/icon";
@@ -5141,13 +5141,13 @@ import SearchIcon from "@atlaskit/icon/core/search";
         type: '"transparent" | "gray" | "blue" | "teal" | "green" | "lime" | "yellow" | "orange" | "red" | "magenta" | "purple" | "grayBold" | "blueBold" | ... (21 total)',
         default: '"gray"',
         description:
-          "Visual variant of the tile. Transparent keeps only the sizing box; subtle variants use light background with colored icon; bold variants use solid background with white icon.",
+          "Visual variant of the tile. Transparent keeps only the sizing box and is shown at 16, 24, and 32px; subtle variants use light background with colored icon; bold variants use solid background with white icon.",
       },
       {
         name: "size",
         type: '"xxsmall" | "xsmall" | "small" | "medium" | "large" | "xlarge"',
         default: '"medium"',
-        description: "Size of the tile.",
+        description: "Size of the tile. Colored examples use xsmall through xlarge; transparent uses xxsmall, small, and medium.",
       },
       {
         name: "shape",
@@ -5160,12 +5160,12 @@ import SearchIcon from "@atlaskit/icon/core/search";
       { title: "Default", demoSlug: "icon-tile-demo-default" },
       {
         title: "Sizes",
-        description: "All six tile sizes from xxsmall to xlarge.",
+        description: "Colored tile sizes from xsmall to xlarge.",
         demoSlug: "icon-tile-demo-sizes",
       },
       {
         title: "Transparent",
-        description: "Backgroundless tiles that preserve the same size and child-size contract.",
+        description: "Backgroundless tiles at 16, 24, and 32px with bespoke icon sizing.",
         demoSlug: "icon-tile-demo-transparent",
       },
       {

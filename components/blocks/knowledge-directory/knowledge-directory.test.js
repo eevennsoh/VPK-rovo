@@ -106,6 +106,11 @@ test("Knowledge Directory includes real connector defaults", () => {
 		src: "/3p/google-drive/20.svg",
 	});
 	assert.ok(apps.every((app) => Array.isArray(app.contents)));
+	for (const app of apps) {
+		assert.equal(typeof app.starCount, "number", `knowledge app ${app.id} should have starCount`);
+		assert.equal(typeof app.teammateCount, "number", `knowledge app ${app.id} should have teammateCount`);
+		assert.equal(typeof app.verified, "boolean", `knowledge app ${app.id} should have verified`);
+	}
 });
 
 test("Knowledge Directory implements app selection and content-scope actions", () => {
@@ -114,6 +119,10 @@ test("Knowledge Directory implements app selection and content-scope actions", (
 	assert.match(source, /function BrowseAppsStep/u);
 	assert.match(source, /<CardDirectoryKnowledge/u);
 	assert.match(source, /getKnowledgeAppIcon\(app\)/u);
+	assert.match(source, /publisher=\{app\.providerName\}/u);
+	assert.match(source, /starCount=\{app\.starCount\}/u);
+	assert.match(source, /teammateCount=\{app\.teammateCount\}/u);
+	assert.match(source, /verified=\{app\.verified\}/u);
 	assert.doesNotMatch(source, /function KnowledgeAppCard/u);
 	assert.match(source, /function AppContentStep/u);
 	assert.match(source, /function ContentModeSelector/u);

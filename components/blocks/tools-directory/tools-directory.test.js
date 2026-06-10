@@ -88,20 +88,22 @@ test("Tools Directory keeps compatible types while adding tool detail fields", (
 	for (const field of ["id", "name", "byline", "attributionKind", "avatarSrc", "logoName", "description"]) {
 		assert.match(loaderSource, new RegExp(`\\b${field}\\??:`, "u"));
 	}
-	// ...plus the tool-specific detail fields.
-	for (const field of [
-		"categoryId",
-		"toolCount",
-		"teammateCount",
-		"lastUpdatedLabel",
-		"publisherName",
-		"verified",
+		// ...plus the optional tool-specific detail fields.
+		for (const field of [
+			"categoryId",
+			"lastUpdatedLabel",
+			"publisherName",
+			"verified",
 		"favorite",
 		"readOnlyTools",
 		"writeDeleteTools",
-	]) {
-		assert.match(loaderSource, new RegExp(`${field}\\?`, "u"));
-	}
+		]) {
+			assert.match(loaderSource, new RegExp(`${field}\\?`, "u"));
+		}
+		// Card stats are required catalog data, not component-level fallbacks.
+		for (const field of ["toolCount", "teammateCount"]) {
+			assert.match(loaderSource, new RegExp(`${field}: number`, "u"));
+		}
 	// The component re-exports the loader's tool/permission types and keeps the
 	// sidebar-group alias to AgentBrowserSidebarGroup.
 	assert.match(
@@ -166,6 +168,10 @@ test("Tools Directory docs demo includes added and non-added detail states", () 
 	}
 	assert.match(componentSource, /label: "Favourite tools"/u);
 	assert.match(componentSource, /if \(activeCategory === "favorite-tools" && !tool\.favorite\) return false;/u);
+	assert.match(componentSource, /teammateCount=\{tool\.teammateCount\}/u);
+	assert.match(componentSource, /toolCount=\{tool\.toolCount\}/u);
+	assert.doesNotMatch(componentSource, /teammateCount=\{tool\.teammateCount \?\? 258\}/u);
+	assert.doesNotMatch(componentSource, /toolCount=\{tool\.toolCount \?\? 36\}/u);
 	assert.match(componentSource, /const MAX_VISIBLE_CATEGORY_ITEMS = 5;/u);
 	assert.match(componentSource, /const \[showAllCategories, setShowAllCategories\] = useState\(false\);/u);
 	assert.match(componentSource, /TOOLS_DIRECTORY_CATEGORIES\.slice\(0, MAX_VISIBLE_CATEGORY_ITEMS\)/u);
@@ -174,4 +180,10 @@ test("Tools Directory docs demo includes added and non-added detail states", () 
 	assert.match(sidebarGroupsSource, /title: "By companies"/u);
 	assert.doesNotMatch(sidebarGroupsSource, /title: "By teams"/u);
 	assert.doesNotMatch(sidebarGroupsSource, /title: "Favourites"/u);
+	for (const tool of allTools) {
+		assert.equal(typeof tool.teammateCount, "number", `tool ${tool.id} should have teammateCount`);
+		assert.equal(typeof tool.toolCount, "number", `tool ${tool.id} should have toolCount`);
+		assert.equal(typeof tool.publisherName, "string", `tool ${tool.id} should have publisherName`);
+		assert.equal(typeof tool.verified, "boolean", `tool ${tool.id} should have verified`);
+	}
 });

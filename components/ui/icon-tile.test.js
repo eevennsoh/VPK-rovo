@@ -4,6 +4,10 @@ const path = require("node:path");
 const test = require("node:test");
 
 const ICON_TILE_SOURCE = fs.readFileSync(path.join(__dirname, "icon-tile.tsx"), "utf8");
+const ICON_TILE_DEMO_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components", "website", "demos", "ui", "icon-tile-demo.tsx"),
+	"utf8",
+);
 
 const SIZE_CLASS_EXPECTATIONS = [
 	["xxsmall", "size-4", "[font-size:10px]", "[&_img]:size-2.5!", "[&_span]:size-2.5!", "[&_svg]:size-2.5!"],
@@ -25,10 +29,33 @@ test("IconTile size variants keep ADS tile and icon scaling aligned", () => {
 
 test("IconTile exposes a transparent, backgroundless tile variant", () => {
 	assert.match(ICON_TILE_SOURCE, /\| "transparent"/u);
-	assert.match(ICON_TILE_SOURCE, /transparent: "bg-transparent text-icon/u);
+	assert.match(ICON_TILE_SOURCE, /transparent:\s*"bg-transparent text-icon/u);
 	assert.match(ICON_TILE_SOURCE, /data-\[size=xxsmall\]:\[font-size:12px\]/u);
 	assert.match(ICON_TILE_SOURCE, /data-\[size=xxsmall\]:\[&_span\]:size-3!/u);
+	assert.match(ICON_TILE_SOURCE, /data-\[size=small\]:\[font-size:16px\]/u);
+	assert.match(ICON_TILE_SOURCE, /data-\[size=small\]:\[&_span\]:size-4!/u);
+	assert.match(ICON_TILE_SOURCE, /data-\[size=medium\]:\[font-size:16px\]/u);
+	assert.match(ICON_TILE_SOURCE, /data-\[size=medium\]:\[&_span\]:size-4!/u);
 	assert.match(ICON_TILE_SOURCE, /data-size=\{size\}/u);
 	assert.match(ICON_TILE_SOURCE, /data-variant=\{variant\}/u);
 	assert.match(ICON_TILE_SOURCE, /square: "rounded-tile"/u);
+});
+
+test("IconTile demos reserve the 16px size for transparent tiles only", () => {
+	const sizesDemoMatch = ICON_TILE_DEMO_SOURCE.match(/export function IconTileDemoSizes\(\) \{[\s\S]*?\n\}/u);
+	const transparentDemoMatch = ICON_TILE_DEMO_SOURCE.match(/export function IconTileDemoTransparent\(\) \{[\s\S]*?\n\}/u);
+
+	assert.ok(sizesDemoMatch, "colored sizes demo should exist");
+	assert.ok(transparentDemoMatch, "transparent demo should exist");
+
+	assert.doesNotMatch(sizesDemoMatch[0], /variant="blue" size="xxsmall"/u);
+	assert.match(sizesDemoMatch[0], /variant="blue" size="xsmall"/u);
+	assert.match(sizesDemoMatch[0], /variant="blue" size="xlarge"/u);
+
+	assert.match(transparentDemoMatch[0], /variant="transparent" size="xxsmall"/u);
+	assert.match(transparentDemoMatch[0], /variant="transparent" size="small"/u);
+	assert.match(transparentDemoMatch[0], /variant="transparent" size="medium"/u);
+	assert.doesNotMatch(transparentDemoMatch[0], /variant="transparent" size="xsmall"/u);
+	assert.doesNotMatch(transparentDemoMatch[0], /variant="transparent" size="large"/u);
+	assert.doesNotMatch(transparentDemoMatch[0], /variant="transparent" size="xlarge"/u);
 });

@@ -795,6 +795,8 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /buildFlatSurfaceRows\(getFlatSections\(\), query, expandedSections, \[ASK_ROVO_SLASH_ITEM\]\)/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /item\.id === ASK_ROVO_SLASH_ITEM\.id/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function getAskRovoHeader\(\): ReactNode \{[\s\S]*<RichTextCommandMenuSearchField[\s\S]*icon=\{ASK_ROVO_SLASH_ITEM\.icon\}[\s\S]*label=\{ASK_ROVO_SLASH_ITEM\.label\}[\s\S]*onSubmit=\{submitAskRovoPrompt\}[\s\S]*onValueChange=\{updateAskRovoPrompt\}[\s\S]*value=\{askRovoPrompt\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function shouldHideSlashRowsForAskRovoPrompt\(\): boolean \{[\s\S]*askRovoPrompt\.trim\(\)\.length > 0/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const items = shouldHideSlashRowsForAskRovoPrompt\(\)[\s\S]*\? \[\][\s\S]*: getVisibleItems\(props\.query\);/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /header: isFlat \|\| !activeCategory \? getAskRovoHeader\(\) : undefined/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function submitAskRovoPrompt\(\): boolean \{[\s\S]*currentProps\.command\(\{ type: "ask-rovo", onAskRovo \}\)/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /props\.type === "ask-rovo"[\s\S]*props\.onAskRovo\?\.\(editor\)/u);
@@ -936,7 +938,8 @@ test("Suggestion menu active selectable rows replace shortcut text with ReturnIc
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /RichTextSuggestionMenuInputOption|controlledValueProps|renderFirstItemAsInput/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /shouldShowReturnShortcut \? \([\s\S]*rich-text-command-menu-return-shortcut[\s\S]*<ReturnIcon className="size-3\.5 text-icon-subtlest" \/>[\s\S]*\) : item\.shortcut \? \(/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onFocus=\{\(\) => setIsInteractionActive\(true\)\}/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onMouseEnter=\{\(\) => setIsInteractionActive\(true\)\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const handleMouseEnter = \(\) => \{[\s\S]*setIsInteractionActive\(true\);[\s\S]*onHover\?\.\(\);/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onMouseEnter=\{handleMouseEnter\}/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.headingLabel !== undefined \? \([\s\S]*className="rich-text-command-menu-heading"[\s\S]*role="presentation"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function isSelectableRow\(item: RichTextSuggestionMenuItem\): boolean \{[\s\S]*return item\.headingLabel === undefined && !item\.disabled;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item-sticky-bottom \{\s*top: auto;\s*bottom: 0;\s*\}/u);
