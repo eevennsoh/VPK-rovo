@@ -172,8 +172,8 @@ function filterSearchItems(
 function normalizeSearchPickerItem(
 	item: RichTextSuggestionMenuItem,
 ): RichTextSuggestionMenuItem {
-	return item.description
-		? { ...item, persistentDescription: true }
+	return item.persistentDescription
+		? { ...item, persistentDescription: false }
 		: item;
 }
 
