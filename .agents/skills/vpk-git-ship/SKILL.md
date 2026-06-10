@@ -124,23 +124,25 @@ Use this phase before queueing auto-merge, and again whenever a merge is blocked
 
 Server-side enforcement still belongs in GitHub branch protection / rulesets: enable **Require conversation resolution before merging** for `main`. This skill actively remediates conversations, but the GitHub rule is the hard gate that prevents a merge if any thread remains unresolved.
 
-1. Fetch unresolved review threads for the PR. `gh pr view` does not expose per-thread resolution state, so use GraphQL:
+1. Fetch unresolved review threads for the PR. `gh pr view` does not expose per-thread resolution state, so use GraphQL. Page through the full connection; GitHub caps each page at 100 review threads, and unresolved threads may be on later pages:
 
    ```bash
-   repo=$(gh repo view --json nameWithOwner -q .nameWithOwner)
-   owner=${repo%/*}
-   name=${repo#*/}
    gh api graphql \
-     -f owner="$owner" \
-     -f name="$name" \
+     -f owner="<owner>" \
+     -f name="<repo>" \
      -F number=<pr-number> \
+     -f after=null \
      -f query='
-       query($owner: String!, $name: String!, $number: Int!) {
+       query($owner: String!, $name: String!, $number: Int!, $after: String) {
          repository(owner: $owner, name: $name) {
            pullRequest(number: $number) {
              reviewDecision
              mergeStateStatus
-             reviewThreads(first: 100) {
+             reviewThreads(first: 100, after: $after) {
+               pageInfo {
+                 hasNextPage
+                 endCursor
+               }
                nodes {
                  id
                  isResolved
@@ -163,6 +165,8 @@ Server-side enforcement still belongs in GitHub branch protection / rulesets: en
          }
        }'
    ```
+
+   Repeat the query with `after=<endCursor>` while `pageInfo.hasNextPage` is true. Only conclude "no unresolved threads" after checking every page.
 
 2. Filter to `isResolved == false`. If branch protection requires conversation resolution, process **all** unresolved threads, not only threads that look Codex-authored. Codex-only identification is best-effort from author login/body text (`codex`, `openai`, or automation bot names) and is not reliable enough to ignore other unresolved conversations.
 
@@ -274,12 +278,13 @@ Triggered by prompts that list more than one target, e.g. `merge PRs 303, 304, 3
    - Ready to merge cleanly.
    - Needs rebase / conflict resolution against current `origin/main`.
    - Blocked (failing checks, draft, missing review) — leave for the user.
-3. Stash unrelated edits on the persistent `main` checkout **once**, not per PR. Restore unstaged at the end.
-4. Merge ready PRs sequentially in the order the user gave (or ascending PR number if unspecified). After each merge:
+3. Run **PR Review Remediation** for every target before treating it as ready. If any PR still has unresolved ambiguous/product-judgment threads after remediation, remove it from the ready group and report the thread URLs.
+4. Stash unrelated edits on the persistent `main` checkout **once**, not per PR. Restore unstaged at the end.
+5. Merge ready PRs sequentially in the order the user gave (or ascending PR number if unspecified). After each merge:
    - `git fetch origin && git -C <main-checkout> pull --ff-only origin main` so the next PR rebases against the freshly merged tip.
    - If a later PR was "ready" but now conflicts because of a previous merge, surface the conflict and pause — do not auto-resolve across PRs.
-5. After the final merge in the batch, run a single sync + verification pass (`git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`) and report a one-line status per target: merged / skipped (with reason) / failed.
-6. Branch deletion uses `--delete-branch` per PR as in the single-target flow. Do not bulk-delete branches outside the merged set in this workflow — that is the `vpk-git-clean` skill's job.
+6. After the final merge in the batch, run a single sync + verification pass (`git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`) and report a one-line status per target: merged / skipped (with reason) / failed.
+7. Branch deletion uses `--delete-branch` per PR as in the single-target flow. Do not bulk-delete branches outside the merged set in this workflow — that is the `vpk-git-clean` skill's job.
 
 ## Cleanup (moved to `vpk-git-clean`)
 
