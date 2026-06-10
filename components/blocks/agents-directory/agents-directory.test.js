@@ -212,9 +212,8 @@ test("Agents Directory sidebar nav uses the shared SidebarNavItem primitive", ()
 test("Agents Directory uses independent column scrolling without extra content padding", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 
-	assert.match(source, /"grid max-h-\[calc\(100svh-2rem\)\] grid-rows-\[auto_minmax\(0,1fr\)\] gap-0 overflow-hidden p-0"/u);
-	assert.match(source, /variant === "experimental"[\s\S]*"h-\[min\(920px,calc\(100svh-2rem\)\)\] sm:max-w-\[1440px\]"/u);
-	assert.match(source, /"h-\[min\(800px,calc\(100svh-2rem\)\)\] sm:max-w-\[1200px\]"/u);
+	assert.match(source, /className="grid h-\[min\(800px,calc\(100svh-2rem\)\)\] max-h-\[calc\(100svh-2rem\)\] grid-rows-\[auto_minmax\(0,1fr\)\] gap-0 overflow-hidden p-0 sm:max-w-\[1200px\]"/u);
+	assert.doesNotMatch(source, /h-\[min\(920px,calc\(100svh-2rem\)\)\] sm:max-w-\[1440px\]/u);
 	assert.doesNotMatch(source, /max-h-\[85vh\]/u);
 	assert.doesNotMatch(source, /className="grid max-h-\[800px\] grid-rows-\[auto_minmax\(0,1fr\)\] gap-0 p-0 sm:max-w-\[1200px\]"/u);
 	assert.match(source, /<div className="min-h-0 overflow-hidden">/u);
