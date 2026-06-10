@@ -383,6 +383,18 @@ const templates: AgentsDirectoryTemplateAgent[] = [];
   onSelectTemplateAgent={(template) => console.log(template.id)}
 />`,
 		demoLayout: { previewHeight: "fixed" },
+		examples: [
+			{
+				title: "Standard",
+				description: "Default sidebar directory with the original navigation and template mode.",
+				demoSlug: "agents-directory-demo-standard",
+			},
+			{
+				title: "Experimental",
+				description: "Dense browse layout with full-width search, sectioned rows, and searchable multi-select filters.",
+				demoSlug: "agents-directory-demo-experimental",
+			},
+		],
 		props: [
 			{
 				name: "agents",
@@ -441,6 +453,12 @@ const templates: AgentsDirectoryTemplateAgent[] = [];
 				name: "title",
 				type: "string",
 				description: "Optional dialog title. Defaults to the underlying browser dialog title.",
+			},
+			{
+				name: "variant",
+				type: "\"default\" | \"experimental\"",
+				default: "\"default\"",
+				description: "Opt-in layout variation. The default sidebar directory remains unchanged.",
 			},
 		],
 	},

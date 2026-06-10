@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import {
 	AgentBrowserDialog,
 	type AgentBrowserAgent,
+	type AgentBrowserVariant,
 	type AgentBrowserSidebarGroup,
 } from "@/components/blocks/agent-browser";
 import type { AgentTemplatesAgent, AgentTemplatesCategoryId } from "@/components/blocks/agent-templates";
@@ -17,6 +18,7 @@ import { DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/age
 export type AgentsDirectoryAgent = AgentBrowserAgent;
 export type AgentsDirectoryTemplateAgent = AgentTemplatesAgent;
 export type AgentsDirectorySidebarGroup = AgentBrowserSidebarGroup;
+export type AgentsDirectoryVariant = AgentBrowserVariant;
 
 export interface AgentsDirectoryDialogProps {
 	agents: readonly AgentsDirectoryAgent[];
@@ -32,6 +34,7 @@ export interface AgentsDirectoryDialogProps {
 	/** Template category selected when the directory first opens (e.g. open straight onto "Planning"). */
 	initialTemplateCategory?: AgentTemplatesCategoryId | null;
 	title?: string;
+	variant?: AgentsDirectoryVariant;
 }
 
 const EMPTY_AGENTS_DIRECTORY_AGENTS: readonly AgentsDirectoryAgent[] = [];
@@ -49,10 +52,14 @@ export function AgentsDirectoryDialog({
 	templateAgents = DEMO_AGENT_TEMPLATES,
 	initialTemplateCategory = null,
 	title,
+	variant = "default",
 }: Readonly<AgentsDirectoryDialogProps>) {
 	const directoryAgents = useMemo(
-		() => [...agents, ...sessionAgents],
-		[agents, sessionAgents],
+		() => [
+			...agents,
+			...sessionAgents.map((agent) => variant === "experimental" ? { ...agent, favorite: true } : agent),
+		],
+		[agents, sessionAgents, variant],
 	);
 	const directoryTemplateAgents = useMemo(
 		() => [...templateAgents, ...sessionTemplateAgents],
@@ -72,6 +79,7 @@ export function AgentsDirectoryDialog({
 			sidebarGroups={sidebarGroups}
 			templateAgents={directoryTemplateAgents}
 			initialTemplateCategory={initialTemplateCategory}
+			variant={variant}
 		/>
 	);
 }

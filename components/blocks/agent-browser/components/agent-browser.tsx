@@ -16,8 +16,10 @@ import {
 	type AgentTemplatesCategoryId,
 } from "@/components/blocks/agent-templates";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
 	DropdownMenu,
@@ -27,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { Tile } from "@/components/ui/tile";
 import {
@@ -74,6 +77,8 @@ export interface AgentBrowserCategory {
 	label: string;
 }
 
+export type AgentBrowserVariant = "default" | "experimental";
+
 export interface AgentBrowserProps {
 	agents: readonly AgentBrowserAgent[];
 	categories?: readonly AgentBrowserCategory[];
@@ -84,6 +89,7 @@ export interface AgentBrowserProps {
 	initialTemplateCategory?: AgentTemplatesCategoryId | null;
 	onSelectAgent?: (agent: AgentBrowserAgent) => void;
 	onSelectTemplateAgent?: (agent: AgentTemplatesAgent) => void;
+	variant?: AgentBrowserVariant;
 }
 
 export interface AgentBrowserDialogProps extends AgentBrowserProps {
@@ -202,6 +208,75 @@ function filterTemplateAgents(
 	}).slice(0, AGENT_BROWSER_TEMPLATE_MAX_VISIBLE_AGENTS);
 }
 
+function matchesAgentQuery(agent: AgentBrowserAgent, query: string): boolean {
+	const normalized = query.trim().toLowerCase();
+	if (!normalized) return true;
+
+	const haystack = `${agent.name} ${agent.byline} ${agent.description ?? ""}`.toLowerCase();
+	return haystack.includes(normalized);
+}
+
+function matchesTemplateQuery(agent: AgentTemplatesAgent, query: string): boolean {
+	const normalized = query.trim().toLowerCase();
+	if (!normalized) return true;
+
+	const haystack = [
+		agent.name,
+		agent.byline,
+		agent.publisher,
+		agent.description,
+		agent.sources?.map((source) => source.label).join(" "),
+		agent.skills?.map((skill) => skill.label).join(" "),
+	].filter(Boolean).join(" ").toLowerCase();
+
+	return haystack.includes(normalized);
+}
+
+function deriveAgentCategory(agent: AgentBrowserAgent): string {
+	const [prefix] = agent.byline.split(/\s+by\s+/i);
+	const label = prefix.trim();
+	return label.length > 0 && label !== agent.byline ? label : "General";
+}
+
+function createOptionId(label: string): string {
+	return label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+interface ExperimentalFilterOption {
+	id: string;
+	label: string;
+}
+
+function getUniqueOptions(labels: readonly string[]): readonly ExperimentalFilterOption[] {
+	const seen = new Set<string>();
+	const options: ExperimentalFilterOption[] = [];
+
+	for (const label of labels) {
+		const trimmed = label.trim();
+		const id = createOptionId(trimmed);
+		if (!trimmed || seen.has(id)) continue;
+
+		seen.add(id);
+		options.push({ id, label: trimmed });
+	}
+
+	return options;
+}
+
+function selectedOptionLabels(
+	options: readonly ExperimentalFilterOption[],
+	selectedValues: readonly string[],
+): ReadonlySet<string> {
+	const selected = new Set(selectedValues);
+	return new Set(options.filter((option) => selected.has(option.id)).map((option) => option.label));
+}
+
+function toggleSelectedValue(values: readonly string[], value: string): readonly string[] {
+	return values.includes(value)
+		? values.filter((current) => current !== value)
+		: [...values, value];
+}
+
 function getTemplateCategoryIndex(
 	categories: readonly AgentTemplatesCategory[],
 	categoryId: AgentTemplatesCategoryId,
@@ -261,6 +336,7 @@ export function AgentBrowserDialog({
 	onOpenChange,
 	primaryActionLabel,
 	title = "Browse agents",
+	variant = "default",
 	...browserProps
 }: Readonly<AgentBrowserDialogProps>) {
 	return (
@@ -286,14 +362,20 @@ export function AgentBrowserDialog({
 					</div>
 				</div>
 				<div className="min-h-0 overflow-hidden">
-					<AgentBrowser {...browserProps} />
+					<AgentBrowser {...browserProps} variant={variant} />
 				</div>
 			</DialogContent>
 		</Dialog>
 	);
 }
 
-export function AgentBrowser({
+export function AgentBrowser(props: Readonly<AgentBrowserProps>) {
+	return props.variant === "experimental"
+		? <ExperimentalAgentBrowser {...props} />
+		: <DefaultAgentBrowser {...props} />;
+}
+
+function DefaultAgentBrowser({
 	agents,
 	categories = DEFAULT_CATEGORIES,
 	templateCategories = DEFAULT_TEMPLATE_CATEGORIES,
@@ -448,6 +530,371 @@ export function AgentBrowser({
 				)}
 			</div>
 		</div>
+	);
+}
+
+function ExperimentalAgentBrowser({
+	agents,
+	templateCategories = DEFAULT_TEMPLATE_CATEGORIES,
+	templateAgents = EMPTY_TEMPLATE_AGENTS,
+	onSelectAgent,
+	onSelectTemplateAgent,
+}: Readonly<AgentBrowserProps>) {
+	const [query, setQuery] = useState("");
+	const [selectedMyAgents, setSelectedMyAgents] = useState<readonly string[]>([]);
+	const [selectedTeams, setSelectedTeams] = useState<readonly string[]>([]);
+	const [selectedCompanies, setSelectedCompanies] = useState<readonly string[]>([]);
+	const [selectedCategories, setSelectedCategories] = useState<readonly string[]>([]);
+	const [selectedTemplates, setSelectedTemplates] = useState<readonly string[]>([]);
+	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
+
+	const teamOptions = useMemo(
+		() => getUniqueOptions(agents.filter((agent) => agent.attributionKind === "team").map((agent) => derivePublisher(agent.byline))),
+		[agents],
+	);
+	const companyOptions = useMemo(
+		() => getUniqueOptions(agents.filter((agent) => agent.attributionKind === "company").map((agent) => derivePublisher(agent.byline))),
+		[agents],
+	);
+	const categoryOptions = useMemo(
+		() => getUniqueOptions(agents.map((agent) => deriveAgentCategory(agent))),
+		[agents],
+	);
+	const templateOptions = useMemo(
+		() => templateCategories
+			.filter((category) => templateAgents.some((agent) => agent.categoryId === category.id))
+			.map((category) => ({ id: category.id, label: category.label })),
+		[templateAgents, templateCategories],
+	);
+
+	const selectedTeamLabels = useMemo(
+		() => selectedOptionLabels(teamOptions, selectedTeams),
+		[selectedTeams, teamOptions],
+	);
+	const selectedCompanyLabels = useMemo(
+		() => selectedOptionLabels(companyOptions, selectedCompanies),
+		[companyOptions, selectedCompanies],
+	);
+	const selectedCategoryLabels = useMemo(
+		() => selectedOptionLabels(categoryOptions, selectedCategories),
+		[categoryOptions, selectedCategories],
+	);
+	const selectedTemplateIds = useMemo(() => new Set(selectedTemplates), [selectedTemplates]);
+
+	const queryMatchedAgents = useMemo(
+		() => agents.filter((agent) => matchesAgentQuery(agent, query)),
+		[agents, query],
+	);
+	const matchesSelectedCategories = useMemo(
+		() => (agent: AgentBrowserAgent) =>
+			selectedCategoryLabels.size === 0 || selectedCategoryLabels.has(deriveAgentCategory(agent)),
+		[selectedCategoryLabels],
+	);
+
+	const myAgents = useMemo(
+		() => queryMatchedAgents.filter((agent) => agent.favorite && matchesSelectedCategories(agent)),
+		[matchesSelectedCategories, queryMatchedAgents],
+	);
+	const teamAgents = useMemo(
+		() => queryMatchedAgents.filter((agent) =>
+			agent.attributionKind === "team"
+			&& matchesSelectedCategories(agent)
+			&& (selectedTeamLabels.size === 0 || selectedTeamLabels.has(derivePublisher(agent.byline))),
+		),
+		[matchesSelectedCategories, queryMatchedAgents, selectedTeamLabels],
+	);
+	const companyAgents = useMemo(
+		() => queryMatchedAgents.filter((agent) =>
+			agent.attributionKind === "company"
+			&& matchesSelectedCategories(agent)
+			&& (selectedCompanyLabels.size === 0 || selectedCompanyLabels.has(derivePublisher(agent.byline))),
+		),
+		[matchesSelectedCategories, queryMatchedAgents, selectedCompanyLabels],
+	);
+	const visibleTemplates = useMemo(
+		() => selectedTemplateIds.size === 0
+			? EMPTY_TEMPLATE_AGENTS
+			: templateAgents
+					.filter((agent) => agent.categoryId ? selectedTemplateIds.has(agent.categoryId) && matchesTemplateQuery(agent, query) : false)
+					.slice(0, AGENT_BROWSER_TEMPLATE_MAX_VISIBLE_AGENTS),
+		[query, selectedTemplateIds, templateAgents],
+	);
+
+	const hasMyAgentFilter = selectedMyAgents.length > 0;
+	const hasAgentGroupFilter = selectedTeams.length > 0 || selectedCompanies.length > 0;
+	const showMyAgents = myAgents.length > 0 && (!hasAgentGroupFilter || hasMyAgentFilter);
+	const showTeamAgents = teamAgents.length > 0 && !hasMyAgentFilter && (selectedTeams.length > 0 || !hasAgentGroupFilter);
+	const showCompanyAgents = companyAgents.length > 0 && !hasMyAgentFilter && (selectedCompanies.length > 0 || !hasAgentGroupFilter);
+	const showTemplates = visibleTemplates.length > 0;
+	const resultCount = [
+		showMyAgents ? myAgents.length : 0,
+		showTeamAgents ? teamAgents.length : 0,
+		showCompanyAgents ? companyAgents.length : 0,
+		showTemplates ? visibleTemplates.length : 0,
+	].reduce((total, count) => total + count, 0);
+	const hasActiveFilters = [
+		query.trim(),
+		...selectedMyAgents,
+		...selectedTeams,
+		...selectedCompanies,
+		...selectedCategories,
+		...selectedTemplates,
+	].some(Boolean);
+
+	function resetFilters() {
+		setQuery("");
+		setSelectedMyAgents([]);
+		setSelectedTeams([]);
+		setSelectedCompanies([]);
+		setSelectedCategories([]);
+		setSelectedTemplates([]);
+	}
+
+	return (
+		<div
+			ref={contentOverflow.ref}
+			className={cn(
+				"flex h-full min-h-0 flex-col gap-5 overflow-y-auto px-6 pb-6",
+				contentOverflow.showTopScrollMask ? "scroll-mask-top overscroll-contain" : null,
+			)}
+		>
+			<InputGroup>
+				<InputGroupAddon>
+					<SearchIcon label="" />
+				</InputGroupAddon>
+				<InputGroupInput
+					aria-label="Search agents"
+					placeholder="Search agents"
+					value={query}
+					onChange={(event) => setQuery(event.target.value)}
+				/>
+			</InputGroup>
+
+			<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+				<div className="flex flex-wrap items-center gap-2">
+					<ExperimentalFilterDropdown
+						label="Filter by my agents"
+						activeLabel="Filter by my agents"
+						options={[{ id: "my-agents", label: "My agents" }]}
+						selectedValues={selectedMyAgents}
+						onToggle={(value) => setSelectedMyAgents((current) => toggleSelectedValue(current, value))}
+					/>
+					<ExperimentalFilterDropdown
+						label="Teams"
+						activeLabel="Filter by teams"
+						options={teamOptions}
+						selectedValues={selectedTeams}
+						onToggle={(value) => setSelectedTeams((current) => toggleSelectedValue(current, value))}
+					/>
+					<ExperimentalFilterDropdown
+						label="Companies"
+						activeLabel="Filter by companies"
+						options={companyOptions}
+						selectedValues={selectedCompanies}
+						onToggle={(value) => setSelectedCompanies((current) => toggleSelectedValue(current, value))}
+					/>
+					<ExperimentalFilterDropdown
+						label="Categories"
+						activeLabel="Filter by categories"
+						options={categoryOptions}
+						selectedValues={selectedCategories}
+						onToggle={(value) => setSelectedCategories((current) => toggleSelectedValue(current, value))}
+					/>
+					<span aria-hidden className="mx-2 hidden h-6 w-px bg-border md:block" />
+					<ExperimentalFilterDropdown
+						label="Agent templates"
+						activeLabel="Filter by agent templates"
+						options={templateOptions}
+						selectedValues={selectedTemplates}
+						onToggle={(value) => setSelectedTemplates((current) => toggleSelectedValue(current, value))}
+					/>
+					{hasActiveFilters ? (
+						<Button type="button" variant="ghost" onClick={resetFilters}>
+							Reset
+						</Button>
+					) : null}
+				</div>
+				<p className="text-sm leading-5 text-text-subtle">
+					Showing {resultCount.toLocaleString("en-US")} results
+				</p>
+			</div>
+
+			{resultCount === 0 ? (
+				<p className="text-sm text-text-subtlest">
+					No agents match &ldquo;{query}&rdquo;.
+				</p>
+			) : (
+				<div className="flex flex-col gap-7">
+					{showMyAgents ? (
+						<ExperimentalAgentSection heading="My agents" agents={myAgents} onSelectAgent={onSelectAgent} />
+					) : null}
+					{showTeamAgents ? (
+						<ExperimentalAgentSection heading="By teams" agents={teamAgents} onSelectAgent={onSelectAgent} />
+					) : null}
+					{showCompanyAgents ? (
+						<ExperimentalAgentSection heading="By companies" agents={companyAgents} onSelectAgent={onSelectAgent} />
+					) : null}
+					{showTemplates ? (
+						<ExperimentalTemplateSection agents={visibleTemplates} onSelectAgent={onSelectTemplateAgent} />
+					) : null}
+				</div>
+			)}
+		</div>
+	);
+}
+
+function ExperimentalFilterDropdown({
+	activeLabel,
+	label,
+	options,
+	selectedValues,
+	onToggle,
+}: Readonly<{
+	activeLabel: string;
+	label: string;
+	options: readonly ExperimentalFilterOption[];
+	selectedValues: readonly string[];
+	onToggle: (value: string) => void;
+}>) {
+	const [open, setOpen] = useState(false);
+	const [query, setQuery] = useState("");
+	const visibleOptions = useMemo(() => {
+		const normalized = query.trim().toLowerCase();
+		return normalized
+			? options.filter((option) => option.label.toLowerCase().includes(normalized))
+			: options;
+	}, [options, query]);
+	const selectedCount = selectedValues.length;
+	const triggerLabel = open || selectedCount > 0 ? activeLabel : label;
+
+	function handleOpenChange(nextOpen: boolean) {
+		setOpen(nextOpen);
+		if (!nextOpen) {
+			setQuery("");
+		}
+	}
+
+	return (
+		<Popover open={open} onOpenChange={handleOpenChange}>
+			<PopoverTrigger
+				render={
+					<Button
+						aria-expanded={open}
+						aria-pressed={selectedCount > 0 ? true : undefined}
+						className="gap-2"
+						type="button"
+						variant="outline"
+					/>
+				}
+			>
+				<span>{triggerLabel}</span>
+				{selectedCount > 0 ? (
+					<Badge variant="secondary" className="h-5 min-w-5 px-1">
+						{selectedCount}
+					</Badge>
+				) : null}
+				<Icon
+					render={<ChevronDownIcon label="" size="small" color="currentColor" />}
+					className={cn("text-icon-subtle transition-transform duration-fast", open ? "rotate-180" : null)}
+				/>
+			</PopoverTrigger>
+			<PopoverContent align="start" className="w-72 gap-2 p-2">
+				<InputGroup>
+					<InputGroupAddon>
+						<SearchIcon label="" />
+					</InputGroupAddon>
+					<InputGroupInput
+						aria-label={`Search ${label}`}
+						placeholder="Search options"
+						value={query}
+						onChange={(event) => setQuery(event.target.value)}
+					/>
+				</InputGroup>
+				<div className="max-h-64 overflow-y-auto">
+					{visibleOptions.length === 0 ? (
+						<p className="px-2 py-3 text-sm text-text-subtlest">
+							No options found.
+						</p>
+					) : (
+						<ul className="flex flex-col gap-px">
+							{visibleOptions.map((option) => (
+								<li key={option.id}>
+									<label className="flex min-h-8 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm leading-5 text-text hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed">
+										<Checkbox
+											checked={selectedValues.includes(option.id)}
+											onCheckedChange={(checked) => {
+												if (checked === true || checked === false) {
+													onToggle(option.id);
+												}
+											}}
+										/>
+										<span className="min-w-0 flex-1 truncate">{option.label}</span>
+									</label>
+								</li>
+							))}
+						</ul>
+					)}
+				</div>
+			</PopoverContent>
+		</Popover>
+	);
+}
+
+function ExperimentalAgentSection({
+	agents,
+	heading,
+	onSelectAgent,
+}: Readonly<{
+	agents: readonly AgentBrowserAgent[];
+	heading: string;
+	onSelectAgent?: (agent: AgentBrowserAgent) => void;
+}>) {
+	return (
+		<section aria-label={heading} className="flex flex-col gap-4">
+			<h2 style={{ font: token("font.heading.large") }} className="text-text">
+				{heading}
+			</h2>
+			<ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+				{agents.map((agent) => {
+					const publisher = derivePublisher(agent.byline);
+					return (
+						<li key={agent.id}>
+							<AgentCard
+								agent={agent}
+								onSelectAgent={onSelectAgent}
+								publisher={publisher}
+							/>
+						</li>
+					);
+				})}
+			</ul>
+		</section>
+	);
+}
+
+function ExperimentalTemplateSection({
+	agents,
+	onSelectAgent,
+}: Readonly<{
+	agents: readonly AgentTemplatesAgent[];
+	onSelectAgent?: (agent: AgentTemplatesAgent) => void;
+}>) {
+	return (
+		<section aria-label="Agent templates" className="flex flex-col gap-4">
+			<h2 style={{ font: token("font.heading.large") }} className="text-text">
+				Agent templates
+			</h2>
+			<ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+				{agents.map((agent) => (
+					<li className="h-[400px]" key={agent.id}>
+						<AgentTemplateCard
+							agent={agent}
+							onSelectAgent={onSelectAgent}
+						/>
+					</li>
+				))}
+			</ul>
+		</section>
 	);
 }
 
