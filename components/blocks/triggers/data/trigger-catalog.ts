@@ -61,6 +61,8 @@ export interface AgentTriggerValue {
 	label?: string;
 	params?: Readonly<Record<string, string>>;
 	connectionState?: AgentTriggerConnectionState;
+	/** Free-text prompt that runs when this trigger's event fires. */
+	prompt?: string;
 }
 
 const REPOSITORY_OPTIONS = [
@@ -494,6 +496,7 @@ export function createAgentTriggerValue(
 		eventId,
 		params,
 		connectionState: getAgentTriggerDefaultConnectionState(provider, event),
+		prompt: "",
 	} satisfies AgentTriggerValue;
 
 	return {

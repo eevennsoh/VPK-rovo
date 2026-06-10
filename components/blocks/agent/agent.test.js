@@ -239,6 +239,19 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	assert.match(AGENT_SOURCE, /<RichTextMentionVisualMark/u);
 	assert.match(AGENT_SOURCE, /type=\{elemBefore \? "default" : getRichTextMentionTagType\(visual\)\}/u);
 	assert.match(AGENT_SOURCE, /removeVariant="overlay"/u);
+	// Regression: when the chip is used as a menu/menubar `render` target, Base UI
+	// injects its trigger handlers/aria/id/ref. The chip MUST forward those
+	// behavioral props onto the underlying Tag, or clicking the chip does nothing.
+	assert.match(AGENT_SOURCE, /\.\.\.rest\s*\n\s*\}: Readonly<\s*\n\s*Omit<ComponentProps<typeof Tag>, "color" \| "children">/u);
+	assert.match(
+		AGENT_SOURCE,
+		/const \{ className: injectedClassName, style: injectedStyle, \.\.\.behaviorProps \} = rest;/u,
+	);
+	assert.match(AGENT_SOURCE, /<Tag\s*\n\s*\{\.\.\.behaviorProps\}/u);
+	// ...but it must NOT apply the injected className/style, or the trigger's own
+	// button styling would visually reshape the flat Tag into a card/button.
+	assert.doesNotMatch(AGENT_SOURCE, /\{\.\.\.rest\}\s*\n\s*aria-disabled/u);
+	assert.doesNotMatch(AGENT_SOURCE, /opacity-\(--opacity-disabled\)", rest\.className/u);
 	assert.match(AGENT_SOURCE, /import \{ HoverCard, HoverCardTrigger \} from "@\/components\/ui\/hover-card";/u);
 	assert.match(AGENT_SOURCE, /getRichTextReferencePreview,[\s\S]*RichTextReferencePreviewContent/u);
 	assert.match(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /import \{ HoverCardContent \} from "@\/components\/ui\/hover-card";/u);
@@ -311,18 +324,21 @@ test("Compact agent config opts into the typed Triggers editor without replacing
 	assert.match(AGENT_SOURCE, /function getAgentTriggerItems\(config: AgentConfigFormValue\): readonly string\[\] \{[\s\S]*serializeAgentTriggerLabels\(config\.triggerDefinitions\)[\s\S]*const triggers = getNonEmptyConfigItems\(config\.triggers\)[\s\S]*const trigger = config\.trigger\?\.trim\(\);/u);
 	assert.match(AGENT_SOURCE, /onConnectTrigger\?: \(trigger: AgentTriggerValue\) => void;/u);
 	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
-	// Adding a trigger from the summary row's picker must APPEND to the existing
-	// definitions (seed `[...existing, next]`), not replace them with `[next]` —
-	// otherwise saving the rule-builder drops every previously configured trigger.
-	// The summary row wires `<TriggerPicker onSelectEvent={handleSelectEvent} />`,
-	// so assert the named handler carries the append logic.
-	assert.match(AGENT_SOURCE, /const handleSelectEvent = \([\s\S]*const existing = triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\);/u);
+	// Adding a trigger opens the rule-builder scoped to JUST the new trigger
+	// (seed `[next]`, one trigger per modal). Save merges it back into the full
+	// set by id (append when new), so the other triggers are preserved without
+	// seeding the modal with them. The summary row wires
+	// `<TriggerPicker onSelectEvent={handleSelectEvent} />`, so assert the named
+	// handler carries the single-trigger seed.
+	assert.match(AGENT_SOURCE, /const handleSelectEvent = \([\s\S]*const existing = triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[next\] : existing\);/u);
 	assert.match(AGENT_SOURCE, /<TriggerPicker[\s\S]*onSelectEvent=\{handleSelectEvent\}/u);
-	// The collapsed-nav "Add trigger" flyout appends the same way, seeding from
-	// the agent's own config so the editor opens with the full trigger list.
-	assert.match(AGENT_SOURCE, /onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*const existing = config\?\.triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\);/u);
-	// Guard against the override regression returning anywhere in the source.
-	assert.doesNotMatch(AGENT_SOURCE, /onEditTriggers\?\.\(next \? \[next\] : \[\]\)/u);
+	// The collapsed-nav "Add trigger" flyout seeds the same single new trigger.
+	assert.match(AGENT_SOURCE, /onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*const existing = config\?\.triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[next\] : existing\);/u);
+	// Save merges the modal's single-trigger draft back into the full set by id
+	// (replace existing, append new) so sibling triggers are never dropped.
+	assert.match(AGENT_SOURCE, /const handleTriggersSave = useCallback\(\(triggers[\s\S]*editedById\.get\(trigger\.id\) \?\? trigger[\s\S]*if \(!existingIds\.has\(trigger\.id\)\)[\s\S]*onTriggerDefinitionsChange\?\.\(merged\);/u);
+	// Guard against the whole-list replace regression returning.
+	assert.doesNotMatch(AGENT_SOURCE, /onTriggerDefinitionsChange\?\.\(triggers\);/u);
 	assert.match(AGENT_SOURCE, /isEmpty: triggerItems\.length === 0/u);
 	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*items=\{triggerItems\}[\s\S]*onTriggerDefinitionsChange=\{onTriggerDefinitionsChange\}/u);
 	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange=\{onTriggerDefinitionsChange\}/u);
@@ -428,7 +444,28 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /"inline-flex min-h-5 max-w-full shrink-0 items-center gap-1 rounded-xs p-0 text-left text-xs font-medium leading-4 text-text-subtlest transition-opacity hover:bg-transparent active:bg-transparent focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-transparent aria-expanded:opacity-100"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /group\/add-link/u);
 	assert.match(AGENT_SOURCE, /<span className="min-w-0 whitespace-normal group-hover\/agent-row:underline">\{label\}<\/span>/u);
-	assert.match(AGENT_SOURCE, /renderTrigger=\{\(\s*<AgentAddValueButton[\s\S]*className="opacity-0 group-hover\/agent-row:opacity-100"[\s\S]*icon="edit"[\s\S]*label=\{addLabel \?\? "Edit"\}[\s\S]*\/>\s*\)\}/u);
+	// Triggers summary row: clicking a configured chip opens the Triggers MODAL
+	// directly (no dropdown) scoped to JUST that one trigger — the chip seeds the
+	// modal with its single `definition`. The trailing "Edit" button opens the
+	// generic (no-seed) editor.
+	assert.match(
+		AGENT_SOURCE,
+		/<AgentReferenceChip[\s\S]*onClick=\{\s*onEditTriggers\s*\?\s*\(\) => onEditTriggers\(definition \? \[definition\] : undefined\)\s*:\s*undefined\s*\}[\s\S]*onRemove=\{canRemoveInline \? \(\) => handleRemoveTrigger\(index\) : undefined\}/u,
+	);
+	// The trailing "Edit" control opens the provider/event "Add trigger" flyout
+	// (a TriggerPicker wrapping the edit-styled button) — NOT the modal — so it
+	// mirrors the empty-state add. Picking an event seeds a single-trigger modal.
+	assert.match(
+		AGENT_SOURCE,
+		/\{onEditTriggers \? \([\s\S]*<TriggerPicker\s*\n\s*label=\{addLabel \?\? "Edit"\}\s*\n\s*onSelectEvent=\{handleSelectEvent\}\s*\n\s*trigger=\{\s*\n\s*<AgentAddValueButton\s*\n\s*className="opacity-0 group-hover\/agent-row:opacity-100"\s*\n\s*icon="edit"\s*\n\s*label=\{addLabel \?\? "Edit"\}\s*\n\s*\/>/u,
+	);
+	// The summary row no longer wraps chips in the dropdown nav button.
+	const triggerSummaryRowStart = AGENT_SOURCE.indexOf("function AgentTriggerSummaryRow");
+	const triggerSummaryRowSource = AGENT_SOURCE.slice(
+		triggerSummaryRowStart,
+		AGENT_SOURCE.indexOf("function AgentFilledConfigSummary"),
+	);
+	assert.doesNotMatch(triggerSummaryRowSource, /<AgentCompactTriggersNavButton/u);
 	// The final chip and the inline +Add link share a single non-wrapping group so
 	// they reflow to the next line together instead of leaving a gap when chips
 	// fill the row. The empty-row +Add link renders separately and stays visible.

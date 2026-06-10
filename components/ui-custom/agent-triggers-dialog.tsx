@@ -5,6 +5,7 @@ import type { ReactElement } from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 
 import Triggers, { type AgentTriggerValue } from "@/components/blocks/triggers/page";
+import { getAgentTriggerReadableLabel } from "@/components/blocks/triggers/data/trigger-catalog";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -35,7 +36,7 @@ export function AgentTriggersDialog({
 	onOpenChange,
 	triggerDefinitions,
 	onSave,
-	title = "Triggers",
+	title,
 	saveLabel,
 }: Readonly<AgentTriggersDialogProps>): ReactElement {
 	const seedRef = useRef<readonly AgentTriggerValue[]>(triggerDefinitions);
@@ -72,12 +73,18 @@ export function AgentTriggersDialog({
 
 	const resolvedSaveLabel = saveLabel ?? (triggerDefinitions.length > 0 ? "Save" : "Add");
 
+	// A single-trigger modal reads as that trigger ("Every hour"); the multi /
+	// empty case keeps the generic "Triggers" heading. An explicit title wins.
+	const resolvedTitle =
+		title ??
+		(draft.length === 1 ? getAgentTriggerReadableLabel(draft[0]).trim() || "Trigger" : "Triggers");
+
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="gap-0 overflow-hidden p-0" showCloseButton={false} size="md">
 				<div className="flex items-center justify-between gap-2 p-6">
 					<DialogTitle className="text-xl font-semibold leading-6 text-text">
-						{title}
+						{resolvedTitle}
 					</DialogTitle>
 					<DialogClose render={<Button aria-label="Close" size="icon" variant="ghost" />}>
 						<CrossIcon label="" />

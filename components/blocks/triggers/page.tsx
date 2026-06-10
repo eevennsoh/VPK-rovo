@@ -11,7 +11,6 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ClockIcon from "@atlaskit/icon/core/clock";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import IncidentIcon from "@atlaskit/icon/core/incident";
-import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
 import WebhookIcon from "@atlaskit/icon-lab/core/webhook";
 import { SearchIcon } from "@/components/ui/vpk-icons";
 
@@ -34,7 +33,6 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AtlassianLogo } from "@/components/ui/logo";
-import { Separator } from "@/components/ui/separator";
 import {
 	createAgentTriggerValue,
 	DEFAULT_CONFIGURED_TRIGGER_VALUES,
@@ -618,14 +616,21 @@ function TriggerSentence({
 	);
 }
 
+/**
+ * A single, self-contained trigger: the event (with its connection state) and
+ * the editable prompt that runs when that event fires. Triggers never chain —
+ * each renders as its own card with no shared connector to a sibling.
+ */
 function TriggerRow({
 	onConnect,
 	onParamChange,
+	onPromptChange,
 	onRemove,
 	trigger,
 }: Readonly<{
 	onConnect?: (trigger: AgentTriggerValue) => void;
 	onParamChange: (paramId: string, value: string) => void;
+	onPromptChange: (value: string) => void;
 	onRemove: () => void;
 	trigger: AgentTriggerValue;
 }>): ReactElement {
@@ -637,36 +642,35 @@ function TriggerRow({
 
 	if (!provider || !event) {
 		return (
-			<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 rounded-lg px-2 py-2 transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
-				<div className="flex flex-col items-center" aria-hidden={true}>
-					<IconTile
-						aria-hidden={true}
-						icon={<AutomationIcon label="" size="small" />}
-						label="Automation"
-						size="small"
-						variant="blue"
-					/>
+			<div className="group/trigger-row flex min-w-0 items-start gap-3 rounded-xl border border-border bg-surface p-3">
+				<IconTile
+					aria-hidden={true}
+					icon={<AutomationIcon label="" size="small" />}
+					label="Automation"
+					size="small"
+					variant="blue"
+				/>
+				<div className="min-w-0 flex-1 self-center text-sm text-text">
+					{trigger.label ?? "Unknown trigger"}
 				</div>
-				<div className="flex min-h-6 min-w-0 items-start gap-2">
-					<div className="min-w-0 flex-1 text-sm text-text">{trigger.label ?? "Unknown trigger"}</div>
-					<Button
-						aria-label="Delete trigger"
-						className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 group-focus-within/trigger-row:opacity-100 focus-visible:opacity-100"
-						onClick={onRemove}
-						size="icon"
-						type="button"
-						variant="ghost"
-					>
-						<DeleteIcon label="" size="small" />
-					</Button>
-				</div>
+				<Button
+					aria-label="Delete trigger"
+					className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 group-focus-within/trigger-row:opacity-100 focus-visible:opacity-100"
+					onClick={onRemove}
+					size="icon"
+					type="button"
+					variant="ghost"
+				>
+					<DeleteIcon label="" size="small" />
+				</Button>
 			</div>
 		);
 	}
 
 	return (
-		<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 rounded-lg px-2 py-2 transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
-			<div className="flex flex-col items-center" aria-hidden={true}>
+		<div className="group/trigger-row grid min-w-0 gap-3 rounded-xl border border-border bg-surface p-3">
+			{/* Event node — what starts the trigger, including its connection state. */}
+			<div className="flex min-w-0 items-start gap-3">
 				<IconTile
 					aria-hidden={true}
 					icon={renderTriggerProviderIcon(provider.icon, provider.label)}
@@ -674,34 +678,13 @@ function TriggerRow({
 					size="small"
 					variant="blue"
 				/>
-				<div className="my-2 h-7 w-px bg-border" />
-				<span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-bg-neutral text-icon-subtle">
-					<GenerativeIndicatorIcon label="" size="small" />
-				</span>
-			</div>
-			<div className="grid min-w-0 gap-4">
-				<div className="flex min-h-6 items-start gap-2">
-					<div className="flex min-w-0 flex-1 flex-wrap items-center gap-1 text-sm text-text">
-						<TriggerSentence
-							disabled={paramsDisabled}
-							event={event}
-							onParamChange={onParamChange}
-							trigger={trigger}
-						/>
-					</div>
-					<Button
-						aria-label="Delete trigger"
-						className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 group-focus-within/trigger-row:opacity-100 focus-visible:opacity-100"
-						onClick={onRemove}
-						size="icon"
-						type="button"
-						variant="ghost"
-					>
-						<DeleteIcon label="" size="small" />
-					</Button>
-				</div>
-				<div className="flex min-w-0 flex-wrap items-center gap-2 text-sm leading-5 text-text-subtle">
-					<span className="min-w-0 flex-1">{event.description}</span>
+				<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1.5 self-center text-sm text-text">
+					<TriggerSentence
+						disabled={paramsDisabled}
+						event={event}
+						onParamChange={onParamChange}
+						trigger={trigger}
+					/>
 					{connectionLabel ? (
 						<span
 							className={cn(
@@ -726,7 +709,26 @@ function TriggerRow({
 						</Button>
 					) : null}
 				</div>
+				<Button
+					aria-label="Delete trigger"
+					className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 group-focus-within/trigger-row:opacity-100 focus-visible:opacity-100"
+					onClick={onRemove}
+					size="icon"
+					type="button"
+					variant="ghost"
+				>
+					<DeleteIcon label="" size="small" />
+				</Button>
 			</div>
+			{/* Prompt node — the instruction that runs when this event fires. */}
+			<textarea
+				aria-label="Trigger prompt"
+				className="min-h-16 w-full resize-none rounded-lg border border-border bg-surface-sunken px-3 py-2 text-sm leading-5 text-text transition-colors duration-normal field-sizing-content placeholder:text-text-subtlest hover:bg-bg-neutral-subtle-hovered focus-visible:border-border-focused focus-visible:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focused"
+				onChange={(changeEvent) => onPromptChange(changeEvent.target.value)}
+				placeholder="Write a prompt for this trigger…"
+				rows={2}
+				value={trigger.prompt ?? ""}
+			/>
 		</div>
 	);
 }
@@ -831,6 +833,17 @@ export default function Triggers({
 		[commitTriggers, currentTriggers],
 	);
 
+	const handlePromptChange = useCallback(
+		(triggerId: string, value: string) => {
+			commitTriggers(
+				currentTriggers.map((trigger) =>
+					trigger.id === triggerId ? { ...trigger, prompt: value } : trigger,
+				),
+			);
+		},
+		[commitTriggers, currentTriggers],
+	);
+
 	const handleRemove = useCallback(
 		(triggerId: string) => {
 			commitTriggers(currentTriggers.filter((trigger) => trigger.id !== triggerId));
@@ -841,40 +854,35 @@ export default function Triggers({
 
 	const cardChildren: ReactNode =
 		currentTriggers.length > 0 ? (
-			<>
-				<div className="grid gap-0">
-					{currentTriggers.map((trigger) => (
-						<TriggerRow
-							key={trigger.id}
-							onConnect={onConnectTrigger}
-							onParamChange={(paramId, value) => handleParamChange(trigger.id, paramId, value)}
-							onRemove={() => handleRemove(trigger.id)}
-							trigger={trigger}
-						/>
-					))}
-				</div>
-				<Separator className="my-2" />
+			// One self-contained card per trigger. There is intentionally no
+			// "Add Trigger" affordance here — a trigger is added from the agent
+			// config surface, not from inside an existing trigger's editor.
+			<div className="grid gap-3">
+				{currentTriggers.map((trigger) => (
+					<TriggerRow
+						key={trigger.id}
+						onConnect={onConnectTrigger}
+						onParamChange={(paramId, value) => handleParamChange(trigger.id, paramId, value)}
+						onPromptChange={(value) => handlePromptChange(trigger.id, value)}
+						onRemove={() => handleRemove(trigger.id)}
+						trigger={trigger}
+					/>
+				))}
+			</div>
+		) : (
+			// Empty state keeps the picker so the first trigger can be added.
+			<div className="rounded-xl border border-border bg-surface p-2">
 				<TriggerPicker
 					defaultOpen={defaultPickerOpen}
 					label={addTriggerLabel}
 					onSelectEvent={handleSelectEvent}
 				/>
-			</>
-		) : (
-			<TriggerPicker
-				defaultOpen={defaultPickerOpen}
-				label={addTriggerLabel}
-				onSelectEvent={handleSelectEvent}
-			/>
+			</div>
 		);
 
 	return (
 		<div className={cn("grid gap-5", className)}>
-			<section className="grid gap-2">
-				<div className="rounded-xl border border-border bg-surface p-2">
-					{cardChildren}
-				</div>
-			</section>
+			<section className="grid gap-3">{cardChildren}</section>
 		</div>
 	);
 }

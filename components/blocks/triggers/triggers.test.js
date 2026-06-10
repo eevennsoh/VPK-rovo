@@ -115,6 +115,28 @@ test("Triggers supports empty, picker, configured, remove, params, and connectio
 	assert.match(TRIGGERS_SOURCE, /getAgentTriggerReadableLabel\(nextTrigger\)/u);
 });
 
+test("each trigger renders a self-contained event node plus an editable prompt", () => {
+	// Prompt is part of the trigger value model.
+	assert.match(CATALOG_SOURCE, /\/\*\* Free-text prompt[^*]*\*\/\s*prompt\?: string;/u);
+	// New triggers seed an empty prompt.
+	assert.match(CATALOG_SOURCE, /prompt: "",/u);
+	// Editable prompt textarea bound to the trigger value.
+	assert.match(TRIGGERS_SOURCE, /<textarea/u);
+	assert.match(TRIGGERS_SOURCE, /aria-label="Trigger prompt"/u);
+	assert.match(TRIGGERS_SOURCE, /value=\{trigger\.prompt \?\? ""\}/u);
+	assert.match(TRIGGERS_SOURCE, /onPromptChange\(changeEvent\.target\.value\)/u);
+	// Prompt edits flow back through the controlled draft.
+	assert.match(TRIGGERS_SOURCE, /const handlePromptChange = useCallback\(/u);
+	assert.match(
+		TRIGGERS_SOURCE,
+		/trigger\.id === triggerId \? \{ \.\.\.trigger, prompt: value \} : trigger/u,
+	);
+	// No more chained connector line or generative-indicator placeholder node.
+	// (event.description still feeds the picker search list, just not the row.)
+	assert.doesNotMatch(TRIGGERS_SOURCE, /GenerativeIndicatorIcon/u);
+	assert.doesNotMatch(TRIGGERS_SOURCE, /h-7 w-px bg-border/u);
+});
+
 test("Triggers demos and block docs export the required state variations", () => {
 	for (const exportName of [
 		"TriggersDemoEmpty",

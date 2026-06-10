@@ -1862,12 +1862,13 @@ function AgentCompactEmptyConfigNav({
 								key={item.agentFieldName}
 								onEditTriggers={onEditTriggers}
 								onSelectEvent={(providerId, eventId) => {
-									// Append to the existing definitions so the rule-builder
-									// opens with every trigger, not just the new one — otherwise
-									// Save would persist only the picked trigger and drop the rest.
+									// Open the rule-builder scoped to JUST the newly added
+									// trigger (one trigger per modal). Save merges this back into
+									// the full set by id (append when new), so the other triggers
+									// are preserved without seeding the modal with them.
 									const existing = config?.triggerDefinitions ?? [];
 									const next = createAgentTriggerValue(providerId, eventId, existing.length + 1);
-									onEditTriggers?.(next ? [...existing, next] : existing);
+									onEditTriggers?.(next ? [next] : existing);
 								}}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
 								triggerDefinitions={config?.triggerDefinitions}
@@ -2084,15 +2085,22 @@ function AgentReferenceChip({
 	onClick,
 	onRemove,
 	tagColor,
-}: Readonly<{
-	category?: RichTextReferenceCategory;
-	disabled?: boolean;
-	elemBefore?: ReactNode;
-	label: string;
-	onClick?: () => void;
-	onRemove?: () => void;
-	tagColor?: TagColor;
-}>) {
+	// Extra props (and ref) are injected when this chip is used as a menu/menubar
+	// `render` target — Base UI merges its trigger handlers, aria state, id, and
+	// ref onto whatever element it renders. Those MUST reach the underlying `Tag`
+	// or the trigger is inert (e.g. clicking a trigger chip wouldn't open the
+	// Triggers dropdown). We forward them onto the interactive `Tag` element.
+	...rest
+}: Readonly<
+	Omit<ComponentProps<typeof Tag>, "color" | "children"> & {
+		category?: RichTextReferenceCategory;
+		disabled?: boolean;
+		elemBefore?: ReactNode;
+		label: string;
+		onRemove?: () => void;
+		tagColor?: TagColor;
+	}
+>) {
 	const item = category ? getDirectoryMentionItemOrFallback(category, label) : undefined;
 	const visual = item?.visual;
 	const resolvedTagColor = tagColor ?? getTagColorForMentionVisual(visual) ?? "blue";
@@ -2130,8 +2138,18 @@ function AgentReferenceChip({
 	// kill the remove control). Instead we dim it via opacity and suppress only
 	// the row's primary click (opening the directory), leaving the overlay remove
 	// button fully interactive.
+	//
+	// Forward ONLY the behavioral props a `render`-target receives (event
+	// handlers, aria state, id, ref) — NOT the injected `className`/`style`. When
+	// this chip is a menu/menubar trigger, the parent injects its own trigger
+	// styling (padding/rounding/hover background); applying that would visually
+	// reshape the Tag into a button. The chip must always look like a Tag.
+	const { className: injectedClassName, style: injectedStyle, ...behaviorProps } = rest;
+	void injectedClassName;
+	void injectedStyle;
 	const tag = (
 		<Tag
+			{...behaviorProps}
 			aria-disabled={disabled || undefined}
 			className={cn(disabled && "opacity-(--opacity-disabled)")}
 			color={resolvedTagColor}
@@ -2367,25 +2385,18 @@ function AgentTriggerSummaryRow({
 		onTriggerDefinitionsChange?.(triggerDefinitions.filter((_, i) => i !== index));
 	};
 
-	// Picking a provider event from the "Add trigger" flyout appends to the
-	// existing set and seeds the rule-builder modal — identical to the empty-state
-	// TriggerPicker and the collapsed-nav handler.
+	// Picking a provider event from the "Add trigger" flyout creates one new
+	// trigger and opens the rule-builder scoped to JUST that trigger (one trigger
+	// per modal). Save merges it back into the full set by id (append when new),
+	// so the other triggers are preserved.
 	const handleSelectEvent = (
 		providerId: Parameters<typeof createAgentTriggerValue>[0],
 		eventId: string,
 	) => {
 		const existing = triggerDefinitions ?? [];
 		const next = createAgentTriggerValue(providerId, eventId, existing.length + 1);
-		onEditTriggers?.(next ? [...existing, next] : existing);
+		onEditTriggers?.(next ? [next] : existing);
 	};
-
-	// The configured chips and the trailing "Edit" button open the SAME Triggers
-	// dropdown the collapsed nav uses, so both layouts share one experience. The
-	// nav button needs a catalog nav item (label/icon/count) — look it up the way
-	// the collapsed strip does.
-	const triggerNavItem = getAgentCompactEmptyConfigNavItems()
-		.map((entry) => ({ ...entry, count: items.length }))
-		.find((entry) => entry.agentFieldName === "trigger");
 
 	if (isEmpty && (hideWhenEmpty || !addLabel)) {
 		return null;
@@ -2436,44 +2447,42 @@ function AgentTriggerSummaryRow({
 								) : (
 									providerIcon ?? undefined
 								);
-							const chip = (
+							// Clicking a configured trigger chip opens the Triggers modal
+							// directly (no intermediate dropdown) scoped to JUST that one
+							// trigger (reusing the `definition` resolved above), so the modal
+							// edits a single rule + prompt rather than the whole set. The
+							// chip's own "Remove" control stops propagation so it never also
+							// opens the modal.
+							return (
 								<AgentReferenceChip
+									key={`trigger-${item}-${index}`}
 									elemBefore={elemBefore ?? undefined}
 									label={item}
+									onClick={
+										onEditTriggers
+											? () => onEditTriggers(definition ? [definition] : undefined)
+											: undefined
+									}
 									onRemove={canRemoveInline ? () => handleRemoveTrigger(index) : undefined}
 								/>
 							);
-							// Clicking the chip opens the shared Triggers dropdown (the same
-							// menu the collapsed nav shows). The chip's own "Remove" control
-							// stops propagation so it never also opens the menu.
-							return triggerNavItem ? (
-								<AgentCompactTriggersNavButton
-									key={`trigger-${item}-${index}`}
-									item={triggerNavItem}
-									triggers={items}
-									triggerDefinitions={triggerDefinitions}
-									onSelectEvent={handleSelectEvent}
-									onEditTriggers={onEditTriggers}
-									renderTrigger={chip}
-								/>
-							) : (
-								<Fragment key={`trigger-${item}-${index}`}>{chip}</Fragment>
-							);
 						})}
-						{onEditTriggers && triggerNavItem ? (
-							<AgentCompactTriggersNavButton
-								item={triggerNavItem}
-								triggers={items}
-								triggerDefinitions={triggerDefinitions}
+						{onEditTriggers ? (
+							// The trailing control opens the same provider/event "Add
+							// trigger" flyout as the empty-state picker — NOT the modal.
+							// Picking an event seeds a new single-trigger modal via
+							// handleSelectEvent. (Chips themselves still open their own
+							// trigger's modal on click.)
+							<TriggerPicker
+								label={addLabel ?? "Edit"}
 								onSelectEvent={handleSelectEvent}
-								onEditTriggers={onEditTriggers}
-								renderTrigger={(
+								trigger={
 									<AgentAddValueButton
 										className="opacity-0 group-hover/agent-row:opacity-100"
 										icon="edit"
 										label={addLabel ?? "Edit"}
 									/>
-								)}
+								}
 							/>
 						) : null}
 					</div>
@@ -3989,9 +3998,22 @@ export const AgentConfigFields = memo(
 		const handleTriggersEditorOpenChange = useCallback((open: boolean) => {
 			setTriggersEditor((prev) => ({ ...prev, open }));
 		}, []);
+		// The modal scopes to a single trigger (edit one chip, or add one new),
+		// so its returned draft is merged back into the full set by id: existing
+		// ids are replaced in place and any new id is appended. This preserves the
+		// other triggers that were never part of this modal session.
 		const handleTriggersSave = useCallback((triggers: readonly AgentTriggerValue[]) => {
-			onTriggerDefinitionsChange?.(triggers);
-		}, [onTriggerDefinitionsChange]);
+			const current = config.triggerDefinitions ?? [];
+			const editedById = new Map(triggers.map((trigger) => [trigger.id, trigger]));
+			const merged = current.map((trigger) => editedById.get(trigger.id) ?? trigger);
+			const existingIds = new Set(current.map((trigger) => trigger.id));
+			for (const trigger of triggers) {
+				if (!existingIds.has(trigger.id)) {
+					merged.push(trigger);
+				}
+			}
+			onTriggerDefinitionsChange?.(merged);
+		}, [config.triggerDefinitions, onTriggerDefinitionsChange]);
 
 		return (
 			<div
