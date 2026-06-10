@@ -31,9 +31,19 @@ test("Agents Directory is exposed as a website block and used by Studio", () => 
 });
 
 test("Agents Directory docs demo starts closed until the trigger is clicked", () => {
+	const pageSource = readProjectFile("components/blocks/agents-directory/page.tsx");
+
 	assert.match(
-		readProjectFile("components/blocks/agents-directory/page.tsx"),
-		/const \[open, setOpen\] = useState\(false\);/u,
+		pageSource,
+		/export default function AgentsDirectoryPage\(\) \{[\s\S]*const \[open, setOpen\] = useState\(false\);/u,
+	);
+	assert.match(pageSource, /const \[variant, setVariant\] = useState<AgentsDirectoryVariant>\("default"\);/u);
+	assert.match(pageSource, /function openDirectory\(nextVariant: AgentsDirectoryVariant\)[\s\S]*setVariant\(nextVariant\);[\s\S]*setOpen\(true\);/u);
+	assert.match(pageSource, />\s*Open standard directory\s*<\/Button>/u);
+	assert.match(pageSource, />\s*Open experimental directory\s*<\/Button>/u);
+	assert.match(
+		pageSource,
+		/export function AgentsDirectoryExperimentalPage\(\) \{[\s\S]*const \[open, setOpen\] = useState\(false\);/u,
 	);
 });
 
@@ -64,6 +74,57 @@ test("Agents Directory renders a New agent header action", () => {
 	assert.match(agentsDirectorySource, /primaryActionLabel="New agent"/u);
 	assert.match(agentsDirectorySource, /onPrimaryAction=\{onCreateAgent\}/u);
 	assert.match(detailsSource, /name: "onCreateAgent"[\s\S]*Optional handler for the New agent action/u);
+});
+
+test("Agents Directory exposes an opt-in experimental variation", () => {
+	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
+	const agentsDirectorySource = readProjectFile("components/blocks/agents-directory/components/agents-directory.tsx");
+	const indexSource = readProjectFile("components/blocks/agents-directory/index.ts");
+	const detailsSource = readProjectFile("app/data/details/blocks.ts");
+	const registrySource = readProjectFile("components/website/registry.ts");
+	const demoSource = readProjectFile("components/website/demos/blocks/agents-directory-demo.tsx");
+	const pageSource = readProjectFile("components/blocks/agents-directory/page.tsx");
+
+	assert.match(source, /export type AgentBrowserVariant = "default" \| "experimental";/u);
+	assert.match(source, /variant\?: AgentBrowserVariant;/u);
+	assert.match(source, /variant = "default"[\s\S]*<AgentBrowser \{\.\.\.browserProps\} variant=\{variant\} \/>/u);
+	assert.match(source, /props\.variant === "experimental"[\s\S]*<ExperimentalAgentBrowser \{\.\.\.props\} \/>/u);
+	assert.match(agentsDirectorySource, /export type AgentsDirectoryVariant = AgentBrowserVariant;/u);
+	assert.match(agentsDirectorySource, /variant\?: AgentsDirectoryVariant;/u);
+	assert.match(agentsDirectorySource, /variant = "default"/u);
+	assert.match(agentsDirectorySource, /variant === "experimental" \? \{ \.\.\.agent, favorite: true \} : agent/u);
+	assert.match(agentsDirectorySource, /variant=\{variant\}/u);
+	assert.match(indexSource, /AgentsDirectoryVariant/u);
+	assert.match(detailsSource, /title: "Standard"[\s\S]*demoSlug: "agents-directory-demo-standard"/u);
+	assert.match(detailsSource, /title: "Experimental"[\s\S]*demoSlug: "agents-directory-demo-experimental"/u);
+	assert.match(detailsSource, /name: "variant"[\s\S]*type: "\\"default\\" \| \\"experimental\\""/u);
+	assert.match(registrySource, /"agents-directory-demo-standard": dynamic[\s\S]*default: mod\.AgentsDirectoryDemoStandard/u);
+	assert.match(registrySource, /"agents-directory-demo-experimental": dynamic[\s\S]*default: mod\.AgentsDirectoryDemoExperimental/u);
+	assert.match(demoSource, /export function AgentsDirectoryDemoStandard/u);
+	assert.match(demoSource, /export function AgentsDirectoryDemoExperimental/u);
+	assert.match(pageSource, /export function AgentsDirectoryExperimentalPage/u);
+	assert.match(pageSource, /variant="experimental"/u);
+});
+
+test("Agents Directory experimental variation has searchable multi-select filters and sections", () => {
+	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
+
+	assert.match(source, /function ExperimentalAgentBrowser/u);
+	assert.match(source, /function ExperimentalFilterDropdown/u);
+	assert.match(source, /Filter by my agents/u);
+	assert.match(source, /Filter by teams/u);
+	assert.match(source, /Filter by companies/u);
+	assert.match(source, /Filter by categories/u);
+	assert.match(source, /Filter by agent templates/u);
+	assert.match(source, /placeholder="Search options"/u);
+	assert.match(source, /<Checkbox[\s\S]*checked=\{selectedValues\.includes\(option\.id\)\}/u);
+	assert.match(source, /<Badge variant="secondary"[\s\S]*\{selectedCount\}/u);
+	assert.match(source, />\s*Reset\s*<\/Button>/u);
+	assert.match(source, /Showing \{resultCount\.toLocaleString\("en-US"\)\} results/u);
+	assert.match(source, /heading="My agents"/u);
+	assert.match(source, /heading="By teams"/u);
+	assert.match(source, /heading="By companies"/u);
+	assert.match(source, /Agent templates/u);
 });
 
 test("Agents Directory includes Agent Templates as a sidebar mode", () => {
@@ -151,7 +212,9 @@ test("Agents Directory sidebar nav uses the shared SidebarNavItem primitive", ()
 test("Agents Directory uses independent column scrolling without extra content padding", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 
-	assert.match(source, /className="grid h-\[min\(800px,calc\(100svh-2rem\)\)\] max-h-\[calc\(100svh-2rem\)\] grid-rows-\[auto_minmax\(0,1fr\)\] gap-0 overflow-hidden p-0 sm:max-w-\[1200px\]"/u);
+	assert.match(source, /"grid max-h-\[calc\(100svh-2rem\)\] grid-rows-\[auto_minmax\(0,1fr\)\] gap-0 overflow-hidden p-0"/u);
+	assert.match(source, /variant === "experimental"[\s\S]*"h-\[min\(920px,calc\(100svh-2rem\)\)\] sm:max-w-\[1440px\]"/u);
+	assert.match(source, /"h-\[min\(800px,calc\(100svh-2rem\)\)\] sm:max-w-\[1200px\]"/u);
 	assert.doesNotMatch(source, /max-h-\[85vh\]/u);
 	assert.doesNotMatch(source, /className="grid max-h-\[800px\] grid-rows-\[auto_minmax\(0,1fr\)\] gap-0 p-0 sm:max-w-\[1200px\]"/u);
 	assert.match(source, /<div className="min-h-0 overflow-hidden">/u);

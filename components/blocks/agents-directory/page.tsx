@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { AgentsDirectoryDialog, type AgentsDirectoryAgent } from "@/components/blocks/agents-directory";
+import { AgentsDirectoryDialog, type AgentsDirectoryAgent, type AgentsDirectoryVariant } from "@/components/blocks/agents-directory";
 import { DEMO_AGENT_BROWSER_AGENTS } from "@/app/data/directory/agents";
 
 const DEMO_SESSION_AGENTS: readonly AgentsDirectoryAgent[] = [
@@ -35,15 +35,64 @@ const DEMO_SESSION_AGENTS: readonly AgentsDirectoryAgent[] = [
 
 export default function AgentsDirectoryPage() {
 	const [open, setOpen] = useState(false);
+	const [variant, setVariant] = useState<AgentsDirectoryVariant>("default");
+
+	function openDirectory(nextVariant: AgentsDirectoryVariant) {
+		setVariant(nextVariant);
+		setOpen(true);
+	}
 
 	return (
-		<div className="flex min-h-screen items-center justify-center p-4">
-			<Button onClick={() => setOpen(true)}>Open agents directory</Button>
+		<div className="flex min-h-screen items-center justify-center gap-3 p-4">
+			<Button onClick={() => openDirectory("default")} variant="outline">
+				Open standard directory
+			</Button>
+			<Button onClick={() => openDirectory("experimental")}>
+				Open experimental directory
+			</Button>
 			<AgentsDirectoryDialog
 				open={open}
 				onOpenChange={setOpen}
 				agents={DEMO_AGENT_BROWSER_AGENTS}
 				sessionAgents={DEMO_SESSION_AGENTS}
+				variant={variant}
+			/>
+		</div>
+	);
+}
+
+export function AgentsDirectoryExperimentalPage() {
+	const [open, setOpen] = useState(false);
+
+	return (
+		<AgentsDirectoryPageShell
+			open={open}
+			onOpenChange={setOpen}
+			variant="experimental"
+		/>
+	);
+}
+
+function AgentsDirectoryPageShell({
+	open,
+	onOpenChange,
+	variant,
+}: Readonly<{
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	variant?: AgentsDirectoryVariant;
+}>) {
+	return (
+		<div className="flex min-h-screen items-center justify-center p-4">
+			<Button onClick={() => onOpenChange(true)}>
+				{variant === "experimental" ? "Open experimental directory" : "Open standard directory"}
+			</Button>
+			<AgentsDirectoryDialog
+				open={open}
+				onOpenChange={onOpenChange}
+				agents={DEMO_AGENT_BROWSER_AGENTS}
+				sessionAgents={DEMO_SESSION_AGENTS}
+				variant={variant}
 			/>
 		</div>
 	);

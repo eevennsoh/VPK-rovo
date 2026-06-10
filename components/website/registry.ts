@@ -7055,6 +7055,22 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
     { ssr: false },
   ),
 
+  // Agents Directory
+  "agents-directory-demo-standard": dynamic(
+    () =>
+      import("./demos/blocks/agents-directory-demo").then((mod) => ({
+        default: mod.AgentsDirectoryDemoStandard,
+      })),
+    { ssr: false },
+  ),
+  "agents-directory-demo-experimental": dynamic(
+    () =>
+      import("./demos/blocks/agents-directory-demo").then((mod) => ({
+        default: mod.AgentsDirectoryDemoExperimental,
+      })),
+    { ssr: false },
+  ),
+
   // Agent Card
   "agent-card-demo-expanded": dynamic(
     () =>
