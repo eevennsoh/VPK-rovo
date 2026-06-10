@@ -82,6 +82,7 @@ test("resolveCatalogIds resolves display labels used by agent config chips", asy
 	const { resolveCatalogIds } = await loadResolver();
 
 	assert.deepEqual(resolveCatalogIds(["Jira"], "tool"), ["jira"]);
+	assert.deepEqual(resolveCatalogIds(["Atlassian"], "app"), ["atlassian"]);
 	assert.deepEqual(resolveCatalogIds(["Review pull request"], "skill"), ["review-pull-request"]);
 	assert.deepEqual(resolveCatalogIds(["Confluence - all content"], "knowledge"), ["confluence:all"]);
 	assert.deepEqual(resolveCatalogIds(["Product requirements"], "knowledge"), ["confluence:product-requirements-space"]);

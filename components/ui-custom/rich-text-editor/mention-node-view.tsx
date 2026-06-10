@@ -4,6 +4,7 @@ import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import PageIcon from "@atlaskit/icon/core/page";
 
 import { getDirectoryMentionItemOrFallback } from "@/components/blocks/editor-palette/data/mention-sources";
+import { HoverCard, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tag } from "@/components/ui/tag";
 import { getMentionCategory } from "./extensions";
 import {
@@ -12,6 +13,10 @@ import {
 	getRichTextMentionTagType,
 	getRichTextMentionVisualFromAttrs,
 } from "./mention-visual";
+import {
+	getRichTextReferencePreview,
+	RichTextReferencePreviewContent,
+} from "./reference-preview";
 import type {
 	RichTextMentionCategory,
 	RichTextMentionVisual,
@@ -19,6 +24,7 @@ import type {
 } from "./types";
 
 const REFERENCE_CATEGORIES: ReadonlySet<RichTextReferenceCategory> = new Set([
+	"app",
 	"subagent",
 	"skill",
 	"tool",
@@ -56,14 +62,10 @@ export function RichTextMentionNodeView({ node }: Readonly<ReactNodeViewProps>) 
 	const category = getMentionCategory(attrs.id, attrs.category);
 	const label = String(attrs.label ?? attrs.id ?? "");
 	const visual = resolveMentionVisual(category, label, attrs);
-
-	return (
-		<NodeViewWrapper
-			as={Tag}
-			className="rich-text-mention-node"
+	const preview = isReferenceCategory(category) ? getRichTextReferencePreview(category, label) : undefined;
+	const tag = (
+		<Tag
 			color={getRichTextMentionTagColor(visual)}
-			data-mention-category={category}
-			data-mention-has-visual={visual ? "true" : undefined}
 			elemBefore={visual ? (
 				<RichTextMentionVisualMark
 					category={category as RichTextMentionCategory}
@@ -76,6 +78,24 @@ export function RichTextMentionNodeView({ node }: Readonly<ReactNodeViewProps>) 
 			type={getRichTextMentionTagType(visual)}
 		>
 			{label}
+		</Tag>
+	);
+
+	return (
+		<NodeViewWrapper
+			as="span"
+			className="rich-text-mention-node inline-flex"
+			data-mention-category={category}
+			data-mention-has-visual={visual ? "true" : undefined}
+		>
+			{preview ? (
+				<HoverCard>
+					<HoverCardTrigger closeDelay={80} delay={120} render={<span className="inline-flex max-w-full" />}>
+						{tag}
+					</HoverCardTrigger>
+					<RichTextReferencePreviewContent preview={preview} />
+				</HoverCard>
+			) : tag}
 		</NodeViewWrapper>
 	);
 }
