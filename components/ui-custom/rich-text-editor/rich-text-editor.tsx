@@ -33,6 +33,7 @@ import type {
 	RichTextMentionItem,
 	RichTextMentionRemovalRequest,
 	RichTextMentionSources,
+	RichTextSlashCategory,
 	RichTextSuggestionVariantConfig,
 } from "./types";
 
@@ -64,6 +65,13 @@ interface RichTextEditorProps
 	onMentionRemovalRequestHandled?: (key: string) => void;
 	onInsertReferenceOption?: (category: EditorToolbarInsertReferenceCategory, label: string) => boolean | void;
 	onAskRovo?: (editor: Editor) => void;
+	/**
+	 * Launches the directory for a nested "/" category from its empty-state
+	 * "Browse all" button (e.g. drilling into Skills with no matches). Only
+	 * directory-backed categories (everything but "format") invoke it; omit it to
+	 * keep the plain empty title with no button.
+	 */
+	onOpenDirectory?: (category: RichTextSlashCategory) => void;
 	showToolbar?: boolean;
 	showBubbleMenu?: boolean;
 	showFloatingMenu?: boolean;
@@ -293,6 +301,7 @@ export function RichTextEditor({
 	onMentionRemovalRequestHandled,
 	onInsertReferenceOption,
 	onAskRovo,
+	onOpenDirectory,
 	showToolbar = true,
 	showBubbleMenu = true,
 	showFloatingMenu = false,
@@ -301,6 +310,7 @@ export function RichTextEditor({
 }: Readonly<RichTextEditorProps>) {
 	const mentionSourcesRef = useRef(mentionSources);
 	const onAskRovoRef = useRef(onAskRovo);
+	const onOpenDirectoryRef = useRef(onOpenDirectory);
 	const onMarkdownChangeRef = useRef(onMarkdownChange);
 	const onPlainTextChangeRef = useRef(onPlainTextChange);
 	const onMentionInventoryChangeRef = useRef(onMentionInventoryChange);
@@ -320,6 +330,10 @@ export function RichTextEditor({
 		() => createRichTextEditorExtensions({
 			getMentionSources: () => mentionSourcesRef.current,
 			onAskRovo: (activeEditor) => onAskRovoRef.current?.(activeEditor),
+			// Read through a ref so a changing handler doesn't rebuild the editor
+			// (matches onAskRovo above); the slash menu calls this when the user
+			// clicks "Browse all" in a nested category's empty state.
+			onOpenDirectory: (category) => onOpenDirectoryRef.current?.(category),
 			suggestionVariant,
 		}),
 		[suggestionVariant],
@@ -354,6 +368,10 @@ export function RichTextEditor({
 	useEffect(() => {
 		onAskRovoRef.current = onAskRovo;
 	}, [onAskRovo]);
+
+	useEffect(() => {
+		onOpenDirectoryRef.current = onOpenDirectory;
+	}, [onOpenDirectory]);
 
 	useEffect(() => {
 		onMarkdownChangeRef.current = onMarkdownChange;

@@ -6,14 +6,6 @@ import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 
-import { Button } from "@/components/ui/button";
-import {
-	Empty,
-	EmptyContent,
-	EmptyDescription,
-	EmptyHeader,
-	EmptyTitle,
-} from "@/components/ui/empty";
 import { Kbd } from "@/components/ui/kbd";
 import { RovoColorIcon } from "@/components/ui/logo";
 import { SearchIcon } from "@/components/ui/vpk-icons";
@@ -21,6 +13,7 @@ import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import {
 	RichTextCommandMenuSearchField,
 	RichTextEditor,
+	RichTextSuggestionEmptyState,
 	RichTextSuggestionMenu,
 	getMentionChildItems,
 	getMentionTargetItems,
@@ -252,7 +245,7 @@ export function EditorPaletteSearchPicker({
 			title={getSearchPlaceholder(category)}
 			emptyLabel={emptyLabel}
 			emptyState={
-				<EditorPaletteSearchEmptyState
+				<RichTextSuggestionEmptyState
 					label={emptyLabel}
 					onBrowseAll={onBrowseAll}
 				/>
@@ -272,32 +265,6 @@ export function EditorPaletteSearchPicker({
 			onSelect={handleSelect}
 			selectedIndex={-1}
 		/>
-	);
-}
-
-function EditorPaletteSearchEmptyState({
-	label,
-	onBrowseAll,
-}: Readonly<{
-	label: string;
-	onBrowseAll?: () => void;
-}>) {
-	return (
-		<Empty width="narrow" className="px-6 pt-4 pb-6">
-			<EmptyHeader>
-				<EmptyTitle headingSize="xsmall">{label}</EmptyTitle>
-				<EmptyDescription>Try a different search term.</EmptyDescription>
-			</EmptyHeader>
-			<EmptyContent>
-				<Button
-					type="button"
-					variant="outline"
-					onClick={onBrowseAll}
-				>
-					Browse all
-				</Button>
-			</EmptyContent>
-		</Empty>
 	);
 }
 

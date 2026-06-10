@@ -15,6 +15,7 @@ export {
 export { getMentionNodeAttrs } from "./extensions";
 export {
 	RichTextCommandMenuSearchField,
+	RichTextSuggestionEmptyState,
 	RichTextSuggestionMenu,
 	SLASH_COMMANDS,
 	getSlashCommandFormatItems,

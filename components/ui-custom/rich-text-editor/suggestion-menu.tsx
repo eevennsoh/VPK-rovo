@@ -49,6 +49,13 @@ import TextHeadingThreeIcon from "@atlaskit/icon-lab/core/text-heading-three";
 import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 
 import { Button } from "@/components/ui/button";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle,
+} from "@/components/ui/empty";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
@@ -514,6 +521,44 @@ function getSlashCategoryIcon(category: RichTextSlashCategory): ReactNode {
 
 function getSlashCategoryLabel(category: RichTextSlashCategory): string {
 	return category === "format" ? "Format" : getRichTextReferenceCategoryLabel(category);
+}
+
+/**
+ * Contextual empty state for a suggestion surface with no matching rows. Mirrors
+ * the showcase search picker: a title, the "try another term" hint, and an
+ * optional "Browse all" button that launches the surface's directory. When
+ * `onBrowseAll` is omitted (a surface with no backing directory, e.g. Format),
+ * the button is hidden and only the title + hint show.
+ */
+export function RichTextSuggestionEmptyState({
+	label = "No matching items",
+	onBrowseAll,
+}: Readonly<{
+	label?: string;
+	onBrowseAll?: () => void;
+}>) {
+	return (
+		<Empty width="narrow" className="px-6 pt-4 pb-6">
+			<EmptyHeader>
+				<EmptyTitle headingSize="xsmall">{label}</EmptyTitle>
+				<EmptyDescription>Try a different search term.</EmptyDescription>
+			</EmptyHeader>
+			{onBrowseAll ? (
+				<EmptyContent>
+					<Button
+						type="button"
+						variant="outline"
+						// Keep focus in the editor: a mousedown blur would tear down the
+						// suggestion popup before the click handler can open the directory.
+						onMouseDown={(event) => event.preventDefault()}
+						onClick={onBrowseAll}
+					>
+						Browse all
+					</Button>
+				</EmptyContent>
+			) : null}
+		</Empty>
+	);
 }
 
 export function RichTextSuggestionMenu({
@@ -1197,6 +1242,10 @@ export function createSlashSuggestionRenderer(
 	includeFormat = true,
 	anchorToInput = false,
 	variant: SuggestionVariant = "flat",
+	// Launches the directory for a nested "/" category from its empty-state
+	// "Browse all" button. Only directory-backed categories (everything but
+	// "format") invoke it; omit it to keep the plain empty title with no button.
+	onOpenDirectory?: (category: RichTextSlashCategory) => void,
 ) {
 	const popupState: SuggestionPopupState = { component: null, element: null, cleanup: null };
 	let selectedIndex = 0;
@@ -1300,12 +1349,25 @@ export function createSlashSuggestionRenderer(
 		} else {
 			positionPopup(popupState.element, props.clientRect);
 		}
+		// A nested drill-in (no header) shows the contextual empty state: the
+		// "No matching items" title plus, for directory-backed categories
+		// (everything but "format"), a "Browse all" button that opens that
+		// category's directory. With the Ask Rovo header showing (flat surface or
+		// the top-level category list), a non-matching query collapses to just
+		// that header — render an empty fragment so no "No commands found" row.
+		const nestedCategory = !isFlat && activeCategory ? activeCategory : null;
+		const nestedEmptyState = nestedCategory ? (
+			<RichTextSuggestionEmptyState
+				onBrowseAll={
+					nestedCategory !== "format" && onOpenDirectory
+						? () => onOpenDirectory(nestedCategory)
+						: undefined
+				}
+			/>
+		) : undefined;
 		popupState.component?.updateProps({
-			emptyLabel: !isFlat && activeCategory ? "No matching items" : "No commands found",
-			// With the Ask Rovo header showing, a non-matching query collapses to
-			// just that header — no "No commands found" row. Nested category
-			// drill-ins (no header) keep their empty label.
-			emptyState: isFlat || !activeCategory ? <></> : undefined,
+			emptyLabel: nestedCategory ? "No matching items" : "No commands found",
+			emptyState: nestedCategory ? nestedEmptyState : <></>,
 			items,
 			onBack: !isFlat && activeCategory
 				? () => {

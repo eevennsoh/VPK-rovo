@@ -145,4 +145,13 @@ export interface RichTextEditorExtensionOptions {
 	 * the document editor leaves it `false` (caret-anchored).
 	 */
 	anchorToInput?: boolean;
+	/**
+	 * Launches the directory for a nested "/" category when the user clicks
+	 * "Browse all" in that category's empty state (e.g. drilling into Skills and
+	 * typing a non-matching query). Only directory-backed categories (everything
+	 * but "format") invoke it. Omit it to keep the plain empty title with no
+	 * button — surfaces without a host directory (the showcase, the chat
+	 * composer) leave it unset.
+	 */
+	onOpenDirectory?: (category: RichTextSlashCategory) => void;
 }

@@ -214,7 +214,7 @@ export const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 
 					props.run(editor);
 				},
-				render: () => createSlashSuggestionRenderer(getMentionSources, this.options.onAskRovo, includeFormat, this.options.anchorToInput, suggestionVariant),
+				render: () => createSlashSuggestionRenderer(getMentionSources, this.options.onAskRovo, includeFormat, this.options.anchorToInput, suggestionVariant, this.options.onOpenDirectory),
 			}),
 		];
 	},
