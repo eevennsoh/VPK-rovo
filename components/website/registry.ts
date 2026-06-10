@@ -276,7 +276,7 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
     ssr: false,
   }),
   canvas: dynamic(() => import("./demos/ui-custom/canvas-demo"), { ssr: false }),
-  "agent-card": dynamic(() => import("./demos/ui-custom/agent-card-demo"), {
+  "card-directory": dynamic(() => import("./demos/ui-custom/card-directory-demo"), {
     ssr: false,
   }),
   "chain-of-thought": dynamic(
@@ -6769,7 +6769,7 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
   "agent-bento": dynamic(() => import("./demos/blocks/agent-bento-demo"), {
     ssr: false,
   }),
-  "agent-profile-card": dynamic(() => import("./demos/blocks/agent-profile-card-demo"), {
+  "agent-card": dynamic(() => import("./demos/blocks/agent-card-demo"), {
     ssr: false,
   }),
   "agents-directory": dynamic(

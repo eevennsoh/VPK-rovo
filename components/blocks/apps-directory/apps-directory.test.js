@@ -35,7 +35,7 @@ test("Apps Directory docs demo starts closed until the trigger is clicked", () =
 
 test("Apps Directory owns the Figma modal instead of wrapping AgentBrowserDialog", () => {
 	const source = readProjectFile("components/blocks/apps-directory/components/apps-directory.tsx");
-	const variantsSource = readProjectFile("components/ui-custom/entity-card/variants.tsx");
+	const cardDirectoryAppSource = readProjectFile("components/ui-custom/card-directory/card-directory-app.tsx");
 	const entityCardAppSource = readProjectFile("components/ui-custom/entity-card/app.tsx");
 
 	assert.doesNotMatch(source, /AgentBrowserDialog/u);
@@ -51,11 +51,11 @@ test("Apps Directory owns the Figma modal instead of wrapping AgentBrowserDialog
 	assert.match(source, /Showing \{filteredTools\.length\.toLocaleString\("en-US"\)\} results/u);
 	assert.match(source, /<AppCard onSelectTool=\{onSelectTool\} tool=\{tool\} \/>/u);
 	assert.match(source, /const \[moreMenuOpen, setMoreMenuOpen\] = useState\(false\);/u);
-	assert.match(source, /import \{ EntityCardAppCard \} from "@\/components\/ui-custom\/entity-card";/u);
+	assert.match(source, /import \{ CardDirectoryApp \} from "@\/components\/ui-custom\/card-directory";/u);
 	assert.match(source, /const knowledgeApp = findKnowledgeAppForTool\(tool\);/u);
-	assert.match(source, /<EntityCardAppCard[\s\S]*active=\{moreMenuOpen\}[\s\S]*moreAction=\{[\s\S]*<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
+	assert.match(source, /<CardDirectoryApp[\s\S]*active=\{moreMenuOpen\}[\s\S]*moreAction=\{[\s\S]*<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
 	assert.match(source, /knowledgeCount=\{knowledgeApp\?\.contents\.length\}/u);
-	assert.doesNotMatch(source, /<EntityCardToolCard/u);
+	assert.doesNotMatch(source, /<CardDirectoryTool/u);
 	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
 	assert.match(source, /className="min-h-\[102px\] hover:border-transparent"/u);
 	assert.match(source, /import \{ AtlassianLogo, CustomLogo \} from "@\/components\/ui\/logo";/u);
@@ -77,12 +77,12 @@ test("Apps Directory owns the Figma modal instead of wrapping AgentBrowserDialog
 	assert.match(source, /const sidebarOverflow = useHasVerticalOverflow<HTMLElement>\(\);/u);
 	assert.match(source, /aria-label="Tool categories"[\s\S]*sidebarOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"[\s\S]*ref=\{sidebarOverflow\.ref\}/u);
 	assert.match(source, /className="hidden min-h-0 w-\[280px\] shrink-0 overflow-y-auto pl-6 md:block"/u);
-	assert.match(variantsSource, /<EntityCardShell active=\{active\} className=\{cn\("gap-4", className\)\}/u);
-	assert.match(variantsSource, /<EntityCardApp/u);
-	assert.match(variantsSource, /action=\{moreAction\}/u);
-	assert.match(variantsSource, /onMoreActions=\{onMoreActions\}/u);
+	assert.match(cardDirectoryAppSource, /<CardDirectory active=\{active\} className=\{cn\("gap-4", className\)\}/u);
+	assert.match(cardDirectoryAppSource, /<EntityCard\.App/u);
+	assert.match(cardDirectoryAppSource, /action=\{moreAction\}/u);
+	assert.match(cardDirectoryAppSource, /onMoreActions=\{onMoreActions\}/u);
 	assert.match(entityCardAppSource, /<EntityCardMoreButton active=\{active\}/u);
-	assert.match(entityCardAppSource, /<div className="flex flex-col gap-2">[\s\S]*<EntityCardHeader[\s\S]*<EntityCardDescription>/u);
+	assert.match(entityCardToolSource, /<div className="flex flex-col gap-2">[\s\S]*<EntityCardHeader[\s\S]*<EntityCardDescription>/u);
 	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /scrollTop > 1/u);
 	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /showTopScrollMask: hasVerticalOverflow && hasScrolledFromTop/u);
 	assert.match(readProjectFile("app/tailwind-theme.css"), /@utility scroll-mask-top/u);

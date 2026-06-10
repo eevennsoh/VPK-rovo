@@ -13,7 +13,7 @@ import SearchIcon from "@atlaskit/icon/core/search";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { EntityCardKnowledgeCard } from "@/components/ui-custom/entity-card";
+import { CardDirectoryKnowledge } from "@/components/ui-custom/card-directory";
 import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/mention-visual";
 import { cn } from "@/lib/utils";
 
@@ -340,7 +340,7 @@ function BrowseAppsStep({
 					<ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
 						{apps.map((app) => (
 							<li key={app.id}>
-								<EntityCardKnowledgeCard
+								<CardDirectoryKnowledge
 									description={app.description}
 									icon={getKnowledgeAppIcon(app)}
 									name={app.name}

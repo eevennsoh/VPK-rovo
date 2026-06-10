@@ -57,7 +57,7 @@ import { AtlassianLogoGlyph, AtlassianLogoMark, BrandLogoMark } from "@/componen
 import { Switch } from "@/components/ui/switch";
 import { Tile } from "@/components/ui/tile";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { EntityCardAppCard } from "@/components/ui-custom/entity-card";
+import { CardDirectoryApp } from "@/components/ui-custom/card-directory";
 import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/mention-visual";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
@@ -641,7 +641,7 @@ function AppCard({ onSelectTool, tool }: Readonly<AppCardProps>) {
 	const selectTool = () => onSelectTool(tool);
 
 	return (
-		<EntityCardAppCard
+		<CardDirectoryApp
 			active={moreMenuOpen}
 			appLogo={getToolLogo(tool)}
 			className="min-h-[102px] hover:border-transparent"

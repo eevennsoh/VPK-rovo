@@ -40,12 +40,12 @@ import { AtlassianLogo } from "@/components/ui/logo";
 import { SplitButton } from "@/components/ui/split-button";
 import { Tile } from "@/components/ui/tile";
 import {
-	EntityCardShell,
-	EntityCardDescription,
-	EntityCardFooter,
-	EntityCardStat,
+	CardDirectory,
+	CardDirectoryDescription,
+	CardDirectoryFooter,
+	CardDirectoryStat,
 	formatCompact,
-} from "@/components/ui-custom/entity-card";
+} from "@/components/ui-custom/card-directory";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -606,7 +606,7 @@ function SkillsDirectoryEntityCard({ onLearnMore, onSelect, selected, skill }: R
 	}
 
 	return (
-		<EntityCardShell
+		<CardDirectory
 			active={moreMenuOpen}
 			className={cn(
 				"min-h-[112px] gap-4 hover:border-transparent",
@@ -661,34 +661,34 @@ function SkillsDirectoryEntityCard({ onLearnMore, onSelect, selected, skill }: R
 					/>
 				</div>
 
-				<EntityCardDescription className="text-text">
+				<CardDirectoryDescription className="text-text">
 					{skill.description}
-				</EntityCardDescription>
+				</CardDirectoryDescription>
 			</div>
 
-			<EntityCardFooter>
+			<CardDirectoryFooter>
 				<span className="inline-flex min-w-0 items-center gap-1 text-text-subtle">
 					<SkillPublisherAvatar skill={skill} />
 					<span className="truncate">{publisher}</span>
 				</span>
 				<span className="inline-flex shrink-0 items-center gap-4">
 					{typeof skill.starCount === "number" ? (
-						<EntityCardStat
+						<CardDirectoryStat
 							icon={<StarUnstarredIcon label="" size="small" spacing="none" color="currentColor" />}
 						>
 							{formatCompact(skill.starCount)}
-						</EntityCardStat>
+						</CardDirectoryStat>
 					) : null}
 					{typeof skill.teammateCount === "number" ? (
-						<EntityCardStat
+						<CardDirectoryStat
 							icon={<PeopleGroupIcon label="" size="small" spacing="none" color="currentColor" />}
 						>
 							Used by {formatCompact(skill.teammateCount)} teammates
-						</EntityCardStat>
+						</CardDirectoryStat>
 					) : null}
 				</span>
-			</EntityCardFooter>
-		</EntityCardShell>
+			</CardDirectoryFooter>
+		</CardDirectory>
 	);
 }
 

@@ -9,12 +9,12 @@ import {
 	getKnowledgeAppIcon,
 } from "@/app/data/directory/knowledge";
 import {
-	EntityCardAgentCard,
-	EntityCardAppCard,
-	EntityCardKnowledgeCard,
-	EntityCardSkillCard,
-	EntityCardToolCard,
-} from "@/components/ui-custom/entity-card";
+	CardDirectoryAgent,
+	CardDirectoryApp,
+	CardDirectoryKnowledge,
+	CardDirectorySkill,
+	CardDirectoryTool,
+} from "@/components/ui-custom/card-directory";
 import { ConfluenceLogo } from "@/components/ui/logo";
 
 const KNOWLEDGE_DEMO_STATS = [
@@ -32,7 +32,7 @@ function DemoKnowledgeCard({ index = 0 }: Readonly<{ index?: number }>) {
 	const stats = KNOWLEDGE_DEMO_STATS[index] ?? KNOWLEDGE_DEMO_STATS[0];
 
 	return (
-		<EntityCardKnowledgeCard
+		<CardDirectoryKnowledge
 			description={app.description}
 			icon={getKnowledgeAppIcon(app)}
 			name={app.name}
@@ -53,7 +53,7 @@ export default function EntityCardDemo() {
 			    card's height, which breaks the design. `break-inside-avoid` keeps a
 			    card whole within a column. */}
 			<div className="w-full columns-1 gap-3 sm:columns-2 [&>*]:mb-3 [&>*]:break-inside-avoid">
-				<EntityCardSkillCard
+				<CardDirectorySkill
 					description="Create a new formatted, rich text document or page in Confluence."
 					icon={<PageIcon label="" />}
 					iconVariant="blue"
@@ -65,7 +65,7 @@ export default function EntityCardDemo() {
 					verified
 					teammateCount={6273}
 				/>
-				<EntityCardAppCard
+				<CardDirectoryApp
 					appLogo={<ConfluenceLogo size="medium" />}
 					description="Create, search, and update pages across your Confluence sites."
 					knowledgeCount={4}
@@ -75,7 +75,7 @@ export default function EntityCardDemo() {
 					teammateCount={258}
 					toolCount={36}
 				/>
-				<EntityCardToolCard
+				<CardDirectoryTool
 					appLogo={<ConfluenceLogo size="medium" />}
 					description="Create, search, and update pages across your Confluence sites."
 					name="Confluence"
@@ -84,7 +84,7 @@ export default function EntityCardDemo() {
 					teammateCount={258}
 					toolCount={36}
 				/>
-				<EntityCardAgentCard
+				<CardDirectoryAgent
 					avatarSrc="/avatar-agent/product-agents/feedback-analyzer.svg"
 					chatCount={9400}
 					description="Surfaces themes and sentiment from raw customer feedback in seconds."
@@ -105,7 +105,7 @@ export default function EntityCardDemo() {
 export function EntityCardDemoSkills() {
 	return (
 		<div className="w-full max-w-2xl columns-1 gap-3 sm:columns-2 [&>*]:mb-3 [&>*]:break-inside-avoid">
-			<EntityCardSkillCard
+			<CardDirectorySkill
 				description="Create a new formatted, rich text document or page in Confluence."
 				icon={<PageIcon label="" />}
 				iconVariant="blue"
@@ -116,7 +116,7 @@ export function EntityCardDemoSkills() {
 				starCount={38}
 				teammateCount={6273}
 			/>
-			<EntityCardSkillCard
+			<CardDirectorySkill
 				description="Find related issues and pages across your team's workspace."
 				icon={<SearchIcon label="" />}
 				iconVariant="purple"
@@ -134,7 +134,7 @@ export function EntityCardDemoSkills() {
 export function EntityCardDemoApps() {
 	return (
 		<div className="w-full max-w-2xl columns-1 gap-3 sm:columns-2 [&>*]:mb-3 [&>*]:break-inside-avoid">
-			<EntityCardAppCard
+			<CardDirectoryApp
 				appLogo={<ConfluenceLogo size="medium" />}
 				description="Create, search, and update pages across your Confluence sites."
 				knowledgeCount={4}
@@ -144,7 +144,7 @@ export function EntityCardDemoApps() {
 				teammateCount={258}
 				toolCount={36}
 			/>
-			<EntityCardAppCard
+			<CardDirectoryApp
 				appLogo={<Image alt="" aria-hidden height={32} src="/3p/slack/32.svg" width={32} />}
 				description="Send messages and search conversations from your workspace."
 				name="Slack"
@@ -160,7 +160,7 @@ export function EntityCardDemoApps() {
 export function EntityCardDemoTools() {
 	return (
 		<div className="w-full max-w-2xl columns-1 gap-3 sm:columns-2 [&>*]:mb-3 [&>*]:break-inside-avoid">
-			<EntityCardToolCard
+			<CardDirectoryTool
 				appLogo={<ConfluenceLogo size="medium" />}
 				description="Create, search, and update pages across your Confluence sites."
 				name="Confluence"
@@ -169,7 +169,7 @@ export function EntityCardDemoTools() {
 				teammateCount={258}
 				toolCount={36}
 			/>
-			<EntityCardToolCard
+			<CardDirectoryTool
 				appLogo={<Image alt="" aria-hidden height={32} src="/3p/slack/32.svg" width={32} />}
 				description="Send messages and search conversations from your workspace."
 				name="Slack"
@@ -185,7 +185,7 @@ export function EntityCardDemoTools() {
 export function EntityCardDemoAgents() {
 	return (
 		<div className="w-full max-w-2xl columns-1 gap-3 sm:columns-2 [&>*]:mb-3 [&>*]:break-inside-avoid">
-			<EntityCardAgentCard
+			<CardDirectoryAgent
 				avatarSrc="/avatar-agent/product-agents/feedback-analyzer.svg"
 				chatCount={9400}
 				description="Surfaces themes and sentiment from raw customer feedback in seconds."
@@ -197,7 +197,7 @@ export function EntityCardDemoAgents() {
 				rating={4.6}
 				verified
 			/>
-			<EntityCardAgentCard
+			<CardDirectoryAgent
 				avatarSrc="/avatar-agent/dev-agents/code-reviewer.svg"
 				chatCount={1500}
 				description="Reviews PRs for style, correctness, and security gotchas."
