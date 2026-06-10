@@ -118,6 +118,21 @@ Use when the user wants to commit current edits, push, and open a PR in one comm
 
 Skip local validation. CI runs `pnpm run lint` and `pnpm run typecheck` on every PR — trust that signal. The Full Ship Sequence depends on CI passing before auto-merge; here, surface the status URL so the user can monitor independently.
 
+## Cloud Codex Auto-Review Poll
+
+Use this phase after creating or updating a PR when the current workflow intends to merge it. Codex Cloud automatic review is useful review coverage, but it is best-effort: missing Codex credit, auth problems, product outages, or no-op results must not block the normal PR path. Do **not** post `@codex review` from this skill. The repository already has Codex Cloud auto-review configured, and a manual trigger can double-request review.
+
+1. Capture the current PR head SHA and the time the PR was created or last pushed:
+   - `gh pr view <number> --json headRefOid,updatedAt,reviews,url`
+   - If available, use the PR timeline to distinguish reactions before vs. after the current head became the PR head.
+2. Poll for up to **3 minutes**, every **15 seconds**, for a Codex terminal signal:
+   - **Current-head Codex review exists**: a review from `chatgpt-codex-connector[bot]` / `chatgpt-codex-connector` whose `commit.oid` matches `headRefOid`, or whose body includes a `Reviewed commit:` prefix matching the current head SHA. Continue to **PR Review Remediation**.
+   - **Current-head Codex `+1` reaction exists**: a `+1` issue reaction from `chatgpt-codex-connector[bot]` after the current head became active. Treat this as "Codex reviewed/no findings" and continue.
+   - **Codex `eyes` reaction exists**: treat this as in-progress; keep polling until a terminal signal or timeout.
+   - **Only stale Codex reviews/reactions exist**: report them as stale and keep polling until timeout.
+3. If the 3-minute poll times out, or GitHub/Codex reports an auth, credit, or availability problem, continue non-blocking. Record "Codex auto-review unavailable/timed out" in the final report.
+4. Never wait for Codex longer than this phase's timeout, never fail the ship only because Codex did not run, and never post `@codex review` as a fallback.
+
 ## PR Review Remediation
 
 Use this phase before queueing auto-merge, and again whenever a merge is blocked by unresolved review conversations. This is the agent-assisted path for Codex review comments: evaluate every unresolved thread against the actual code, fix valid issues, explain invalid issues, and resolve only after posting the disposition.
@@ -226,28 +241,30 @@ Runs **Create PR -> PR Merge Back** against the current branch's work, fully aut
 
 1. Run **Create PR**. Capture the PR number and branch name.
 
-2. Run **PR Review Remediation**. If any unresolved thread remains because it is ambiguous, requires product judgment, or GitHub API access cannot resolve it safely, stop before queueing auto-merge.
+2. Run **Cloud Codex Auto-Review Poll**. Continue even if Codex does not produce a current-head signal before the 3-minute timeout.
 
-3. Queue auto-merge:
+3. Run **PR Review Remediation**. If any unresolved thread remains because it is ambiguous, requires product judgment, or GitHub API access cannot resolve it safely, stop before queueing auto-merge. Missing Codex auto-review is not a stop condition; unresolved conversations are.
+
+4. Queue auto-merge:
    - `gh pr merge <number> --merge --auto --delete-branch`
    - `--auto` lets GitHub merge as soon as required checks pass. If no required checks are configured, the merge is immediate. `--delete-branch` removes the *remote* branch server-side on merge.
 
-4. Poll PR state until merged or blocked:
+5. Poll PR state until merged or blocked:
    - `gh pr view <number> --json state,mergedAt,mergeStateStatus,statusCheckRollup`
    - First poll after ~10s, then every 30s. Hard timeout: 15 minutes.
    - Report progress concisely (e.g. "checks: 2/3 pending"); do not flood the output with every poll.
    - On any failed check, `DIRTY` merge state, or timeout, stop and report. The PR remains open for the user to resolve manually. Do not retry automatically.
    - If merge state is `BLOCKED`, run **PR Review Remediation** once before stopping. If remediation clears unresolved threads, re-queue auto-merge and continue polling. If the block is not review-thread related, or unresolved threads remain, stop and report.
 
-5. After merge confirms, sync `main` and decide whether to switch — but never remove a worktree or force a navigation that loses work:
+6. After merge confirms, sync `main` and decide whether to switch — but never remove a worktree or force a navigation that loses work:
    - **Sync the persistent `main` checkout.** If you are in the main checkout, `git switch main` (only per the rule below) then `git pull --ff-only origin main`. If you are in a secondary worktree, sync out-of-place instead: `git -C <main-checkout> fetch origin && git -C <main-checkout> pull --ff-only origin main`. You cannot check out `main` from a worktree — it is already checked out in the main checkout, and git forbids the same branch in two worktrees.
    - **Switch to `main` + delete the local branch only when both are true:** you are running in the **main checkout** AND the working tree is clean. Then `git switch main` and `git branch -d <branch>` (the local branch is safe to delete once the remote is merged). This is the tidy, expected end state when shipping from the main repo directory.
    - **Otherwise stay put.** In a secondary worktree (switching is impossible) or with uncommitted edits in the tree (switching would drag that work onto `main`), do not switch and do not delete the local branch. Leave navigation to the user.
    - **Never** remove the current worktree, and never delete a local branch you are still standing on. That is `vpk-git-clean`'s job, run later from the main checkout.
 
-6. Final report: PR URL, merge commit hash, remote branch deleted (server-side), whether you switched to `main` and deleted the local branch (or why you stayed), local `main` sync state, review remediation summary, and a one-line deferred-cleanup pointer — e.g. "Worktree `<path>` has landed; run `vpk-git-clean` from the main checkout later to remove it and prune refs."
+7. Final report: PR URL, merge commit hash, remote branch deleted (server-side), whether you switched to `main` and deleted the local branch (or why you stayed), local `main` sync state, Codex auto-review status, review remediation summary, and a one-line deferred-cleanup pointer — e.g. "Worktree `<path>` has landed; run `vpk-git-clean` from the main checkout later to remove it and prune refs."
 
-Stop and hand back to the user (do not destroy state) if Create PR is blocked, auto-merge cannot be queued, required checks fail, the merge state goes `DIRTY` (conflict needs human resolution), or the poll times out.
+Stop and hand back to the user (do not destroy state) if Create PR is blocked, auto-merge cannot be queued, required checks fail, the merge state goes `DIRTY` (conflict needs human resolution), or the 15-minute merge poll times out.
 
 ## PR Merge Back
 
@@ -261,6 +278,7 @@ Stop and hand back to the user (do not destroy state) if Create PR is blocked, a
    - Use merge commits unless the user explicitly asks for squash or rebase.
 4. Validate before final merge:
    - Prefer required GitHub checks when present.
+   - Run **Cloud Codex Auto-Review Poll** only when this workflow just pushed or updated the PR branch in the current turn. For already-open PRs with no new push, inspect and report existing Codex review status but do not delay merge-back just to wait for Codex.
    - Run **PR Review Remediation** before merging. If unresolved ambiguous/product-judgment threads remain, stop and report them instead of merging.
    - If there are no checks, run relevant local validation from `AGENTS.md`, usually `pnpm run lint`, `pnpm run typecheck`, and focused tests for the changed surface.
    - For UI-visible changes, include browser evidence when practical.
@@ -277,14 +295,15 @@ Triggered by prompts that list more than one target, e.g. `merge PRs 303, 304, 3
 2. Inspect every target once via `gh pr view ... --json mergeStateStatus,reviewDecision,statusCheckRollup,baseRefName,headRefName` and group them:
    - Ready to merge cleanly.
    - Needs rebase / conflict resolution against current `origin/main`.
-   - Blocked (failing checks, draft, missing review) — leave for the user.
-3. Run **PR Review Remediation** for every target before treating it as ready. If any PR still has unresolved ambiguous/product-judgment threads after remediation, remove it from the ready group and report the thread URLs.
-4. Stash unrelated edits on the persistent `main` checkout **once**, not per PR. Restore unstaged at the end.
-5. Merge ready PRs sequentially in the order the user gave (or ascending PR number if unspecified). After each merge:
+   - Blocked (failing checks, draft, or missing required human/GitHub review) — leave for the user.
+3. Inspect existing Codex auto-review status for every target, but do not delay batch merge-back to wait for missing Codex signals unless the PR branch is updated during this workflow.
+4. Run **PR Review Remediation** for every target before treating it as ready. If any PR still has unresolved ambiguous/product-judgment threads after remediation, remove it from the ready group and report the thread URLs.
+5. Stash unrelated edits on the persistent `main` checkout **once**, not per PR. Restore unstaged at the end.
+6. Merge ready PRs sequentially in the order the user gave (or ascending PR number if unspecified). After each merge:
    - `git fetch origin && git -C <main-checkout> pull --ff-only origin main` so the next PR rebases against the freshly merged tip.
    - If a later PR was "ready" but now conflicts because of a previous merge, surface the conflict and pause — do not auto-resolve across PRs.
-6. After the final merge in the batch, run a single sync + verification pass (`git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`) and report a one-line status per target: merged / skipped (with reason) / failed.
-7. Branch deletion uses `--delete-branch` per PR as in the single-target flow. Do not bulk-delete branches outside the merged set in this workflow — that is the `vpk-git-clean` skill's job.
+7. After the final merge in the batch, run a single sync + verification pass (`git status --short --branch`, `git rev-parse main`, `git rev-parse origin/main`) and report a one-line status per target: merged / skipped (with reason) / failed.
+8. Branch deletion uses `--delete-branch` per PR as in the single-target flow. Do not bulk-delete branches outside the merged set in this workflow — that is the `vpk-git-clean` skill's job.
 
 ## Cleanup (moved to `vpk-git-clean`)
 
@@ -299,6 +318,7 @@ Stop and report instead of changing state when:
 - Merge conflicts touch files you cannot confidently resolve from source evidence.
 - GitHub state, default branch, PR ownership, or branch ancestry is ambiguous.
 - Unresolved review threads remain after **PR Review Remediation**, GitHub API access cannot fetch/reply/resolve review threads, or a thread requires product/design judgment.
+- Missing, timed-out, stale, or unavailable Codex auto-review is **not** a stop condition. Report it and continue as long as required checks pass and unresolved conversations are cleared.
 - **Create PR**: working tree is clean **and** no commits ahead of the default branch (nothing to PR), the derived branch name collides with an existing local or remote branch *and* the SHA-disambiguator fallback also collides, or `gh pr create` / `git push` fails for a non-trivial reason (auth, network, protected branch). Detached HEAD is *not* a stop condition — branch handling step 2 derives a name and attaches a branch automatically. A mismatched-but-locked branch name (current branch name is a poor fit for the diff but an open PR already exists on it) is *not* a stop either — keep the branch, finish the PR, and surface the mismatch in the report.
 - **Full Ship Sequence**: PR review remediation cannot clear unresolved threads, auto-merge cannot be queued, required checks fail, merge state goes `DIRTY` (conflict needs human resolution), or the merge poll exceeds the 15-minute timeout.
 
@@ -309,6 +329,7 @@ Keep the final report concise:
 - PR created / updated / merged / closed and its URL.
 - Branch created (with derived name), renamed (from old → new, with the reason), or reused as-is; push result. If the branch name was a poor fit for the diff but could not be renamed (open PR already attached), surface the mismatch explicitly so the user can rename next time.
 - PR merged or deliberately skipped; merge commit or final commit hash when available.
+- Codex auto-review status: current-head review, current-head no-findings reaction, stale only, timed out, unavailable, or not waited because this was merge-back with no new push.
 - Review remediation performed: fixed, explained/resolved as invalid, or left unresolved with thread URLs and decision needed.
 - Validation performed and result (note when validation was deferred to CI).
 - Remote branch deleted on merge (server-side); whether you switched to `main` and deleted the local branch, or stayed put (with the reason).
