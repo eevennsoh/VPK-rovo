@@ -1043,6 +1043,7 @@ function AgentCompactSubagentsNavButton({
 								{subagents.map((subagent, index) => (
 									<AgentCompactReferenceRow
 										key={`${subagent}-${index}`}
+										category="subagent"
 										enabled={!disabledSet.has(subagent.trim())}
 										label={subagent}
 										onClick={() => onSelectSubagent?.(index)}
@@ -1173,6 +1174,35 @@ function AgentCompactTriggerRow({
 	);
 }
 
+// Resolves a configured reference row's leading "front slot" visual from its
+// directory category — the same avatar/logo/icon the inline AgentReferenceChip
+// shows. The shared mark renders at a fixed 32px tile (MENU_VISUAL_TILE_SIZE),
+// so it's wrapped in a 24px box scaled uniformly to match the trigger rows and
+// footer icons in these dropdowns. Values not present in the directory (e.g. a
+// freshly created, still-unnamed subagent) fall back to a category-appropriate
+// icon tile, mirroring AgentReferenceChip's fallback. Glyph icons inherit the
+// menu's subtle front-slot treatment (see dropdownMenuFrontSlotClassName);
+// avatars/logos/images keep their color, exactly like the sibling Triggers rows.
+function renderAgentReferenceRowVisual(category: RichTextReferenceCategory, label: string): ReactNode {
+	const visual = getDirectoryMentionItemOrFallback(category, label).visual;
+	const FallbackIcon = category === "subagent" ? AiAgentIcon : PageIcon;
+	return (
+		<span className="inline-flex size-6 shrink-0 items-center justify-center [&>*]:scale-75">
+			{visual ? (
+				<RichTextMentionVisualMark category={category} label={label} size="menu" visual={visual} />
+			) : (
+				<IconTile
+					aria-hidden
+					className="border border-border bg-surface text-icon-subtlest"
+					icon={<FallbackIcon label="" size="small" />}
+					label=""
+					size="medium"
+				/>
+			)}
+		</span>
+	);
+}
+
 // A configured reference row (knowledge / tools / skills / subagents) inside a
 // collapsed config dropdown. Mirrors AgentCompactTriggerRow's hover-reveal model:
 // the label truncates clear of trailing controls that reveal on hover/focus —
@@ -1181,6 +1211,7 @@ function AgentCompactTriggerRow({
 // item); both trailing controls stop propagation so they never also trigger the
 // row press or dismiss the menu.
 function AgentCompactReferenceRow({
+	category,
 	elemBefore,
 	enabled = true,
 	label,
@@ -1189,6 +1220,10 @@ function AgentCompactReferenceRow({
 	onToggle,
 	selected,
 }: Readonly<{
+	// Directory category for the row. When set (and no explicit `elemBefore` is
+	// passed), the row resolves its leading "front slot" visual from the directory
+	// so every configured item shows the same avatar/logo/icon as its inline chip.
+	category?: RichTextReferenceCategory;
 	elemBefore?: ReactNode;
 	enabled?: boolean;
 	label: string;
@@ -1202,6 +1237,9 @@ function AgentCompactReferenceRow({
 	function suppressMenuDismissal(event: { preventDefault: () => void }) {
 		event.preventDefault();
 	}
+	// Prefer an explicit elemBefore; otherwise derive the front slot from the row's
+	// directory category so skills/tools/apps/subagents each lead with their icon.
+	const frontSlot = elemBefore ?? (category ? renderAgentReferenceRowVisual(category, label) : undefined);
 	const hasToggle = onToggle !== undefined;
 	// Reserve trailing width for whichever controls exist: switch + remove = 2,
 	// either alone = 1, neither = none.
@@ -1217,8 +1255,8 @@ function AgentCompactReferenceRow({
 				hasToggle && !enabled ? "text-text-disabled data-[highlighted]:text-text-disabled" : undefined,
 			)}
 			elemBefore={
-				elemBefore ? (
-					<span className={cn(hasToggle && !enabled && "opacity-(--opacity-disabled)")}>{elemBefore}</span>
+				frontSlot ? (
+					<span className={cn(hasToggle && !enabled && "opacity-(--opacity-disabled)")}>{frontSlot}</span>
 				) : undefined
 			}
 			onClick={onClick}
@@ -1506,6 +1544,7 @@ function AgentCompactDirectoryNavButton({
 								{items.map((value, index) => (
 									<AgentCompactReferenceRow
 										key={`${directory}-${value}-${index}`}
+										category={AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD[directory]}
 										enabled={!disabledSet.has(value.trim())}
 										label={value}
 										onClick={onSelectItem ? () => onSelectItem(value) : undefined}
@@ -1606,6 +1645,7 @@ function AgentCompactAppsNavButton({
 								{apps.map((value, index) => (
 									<AgentCompactReferenceRow
 										key={`apps-${value}-${index}`}
+										category="app"
 										enabled={!disabledSet.has(value.trim())}
 										label={value}
 										onClick={onSelectItem ? () => onSelectItem(value) : undefined}
