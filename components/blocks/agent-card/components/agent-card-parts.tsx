@@ -195,10 +195,11 @@ export function AgentCardByline({ publisher, verified = false }: Readonly<AgentC
 export interface AgentCardMoreButtonProps {
 	label: string;
 	active?: boolean;
+	className?: string;
 	onClick?: () => void;
 }
 
-export function AgentCardMoreButton({ label, active = false, onClick }: Readonly<AgentCardMoreButtonProps>) {
+export function AgentCardMoreButton({ label, active = false, className, onClick }: Readonly<AgentCardMoreButtonProps>) {
 	const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
 		event.stopPropagation();
 		onClick?.();
@@ -211,6 +212,7 @@ export function AgentCardMoreButton({ label, active = false, onClick }: Readonly
 			className={cn(
 				"size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
 				active && "opacity-100",
+				className,
 			)}
 			onClick={handleClick}
 			size="icon-compact"
