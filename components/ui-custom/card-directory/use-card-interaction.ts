@@ -27,10 +27,10 @@ export interface CardInteraction {
 }
 
 /**
- * Shared interaction contract for the entity-card shell.
+ * Shared interaction contract for the directory card shell.
  *
  * When `onSelect` is provided the card renders a dedicated overlay `<button>`
- * (see `EntityCardShell`) that owns selection. The native button handles
+ * (see `CardDirectory`) that owns selection. The native button handles
  * Enter/Space and focus, so no manual key handling is needed here — keeping the
  * whole-card affordance free of an invalid `role="button"` wrapper around nested
  * controls. Hover/tap animations respect reduced motion.

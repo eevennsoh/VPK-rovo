@@ -30,10 +30,10 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { Tile } from "@/components/ui/tile";
 import {
-	EntityCardAgentCard,
-	EntityCardAgentExpandedCard,
-	type EntityCardCapability,
-} from "@/components/ui-custom/entity-card";
+	CardDirectoryAgent,
+	CardDirectoryAgentExpanded,
+	type CardDirectoryCapability,
+} from "@/components/ui-custom/card-directory";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
@@ -101,7 +101,7 @@ const DEFAULT_CATEGORIES: readonly AgentBrowserCategory[] = [
 ] as const;
 const DEFAULT_TEMPLATE_CATEGORIES = AGENT_TEMPLATES_CATEGORIES;
 const EMPTY_TEMPLATE_AGENTS: readonly AgentTemplatesAgent[] = [];
-const EMPTY_TEMPLATE_CAPABILITIES: readonly EntityCardCapability[] = [];
+const EMPTY_TEMPLATE_CAPABILITIES: readonly CardDirectoryCapability[] = [];
 const AGENT_BROWSER_TEMPLATE_MAX_VISIBLE_AGENTS = 8;
 const AGENT_BROWSER_TEMPLATE_TAB_EXIT_TRANSITION = {
 	duration: 0.13,
@@ -736,7 +736,7 @@ function AgentTemplateCard({
 	onSelectAgent?: (agent: AgentTemplatesAgent) => void;
 }>) {
 	return (
-		<EntityCardAgentExpandedCard
+		<CardDirectoryAgentExpanded
 			attributionKind={agent.attributionKind}
 			avatarSrc={agent.avatarSrc}
 			capabilities={agent.capabilities ?? EMPTY_TEMPLATE_CAPABILITIES}
@@ -768,7 +768,7 @@ function AgentCard({ agent, onSelectAgent, publisher }: Readonly<AgentCardProps>
 	const selectAgent = onSelectAgent ? () => onSelectAgent(agent) : undefined;
 
 	return (
-		<EntityCardAgentCard
+		<CardDirectoryAgent
 			active={moreMenuOpen}
 			avatarSrc={getDirectoryCardAvatarSrc(agent)}
 			insetLogo={isBorderlessHexagonAgent(agent)}

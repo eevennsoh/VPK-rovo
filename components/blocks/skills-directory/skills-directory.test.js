@@ -114,7 +114,7 @@ test("Skills Directory uses multi-select cards, hover learn-more, and selected t
 	assert.match(source, /<SkillMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
 	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
 	assert.match(source, /"min-h-\[112px\] gap-4 hover:border-transparent"/u);
-	assert.match(source, /<div className="flex flex-col gap-2">[\s\S]*<EntityCardDescription className="text-text">/u);
+	assert.match(source, /<div className="flex flex-col gap-2">[\s\S]*<CardDirectoryDescription className="text-text">/u);
 	assert.match(source, /<IconTile[\s\S]*icon=\{getSkillIcon\(skill\.icon\)\}[\s\S]*variant=\{getSkillIconTileVariant\(skill\)\}/u);
 	assert.doesNotMatch(source, /rounded-xs bg-bg-neutral text-icon-subtle transition-opacity/u);
 	assert.match(source, /absolute top-1\/2 left-1\/2 -translate-x-1\/2 -translate-y-1\/2 opacity-0 transition-opacity/u);

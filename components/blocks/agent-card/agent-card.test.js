@@ -7,24 +7,24 @@ function readProjectFile(relativePath) {
 	return fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
 }
 
-test("Agent Profile Card preview uses a direct route instead of the generic dynamic preview loader", () => {
-	const source = readProjectFile("app/preview/blocks/agent-profile-card/page.tsx");
+test("Agent Card preview uses a direct route instead of the generic dynamic preview loader", () => {
+	const source = readProjectFile("app/preview/blocks/agent-card/page.tsx");
 
 	assert.match(
 		source,
-		/import AgentProfileCardPage from "@\/components\/blocks\/agent-profile-card\/page";/u,
+		/import AgentCardPage from "@\/components\/blocks\/agent-card\/page";/u,
 	);
 	assert.match(
 		source,
 		/import \{ getPreviewPageTitle \} from "@\/lib\/project-page-title";/u,
 	);
-	assert.match(source, /title: getPreviewPageTitle\("agent-profile-card", "blocks"\),/u);
-	assert.match(source, /return <AgentProfileCardPage \/>;/u);
+	assert.match(source, /title: getPreviewPageTitle\("agent-card", "blocks"\),/u);
+	assert.match(source, /return <AgentCardPage \/>;/u);
 	assert.doesNotMatch(source, /RenderPreviewCategoryPage/u);
 });
 
-test("Agent Profile Card title actions use chat label and edit icon controls", () => {
-	const source = readProjectFile("components/blocks/agent-profile-card/components/agent-profile-card.tsx");
+test("Agent Card title actions use chat label and edit icon controls", () => {
+	const source = readProjectFile("components/blocks/agent-card/components/agent-card.tsx");
 	const entitySource = readProjectFile("components/ui-custom/entity-card/agent-profile.tsx");
 
 	assert.match(source, /<EntityCard\.AgentProfile \{\.\.\.props\} \/>/u);
