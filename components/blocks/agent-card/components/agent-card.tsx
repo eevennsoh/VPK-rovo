@@ -481,7 +481,7 @@ export function AgentCard({
 								<AgentCardMoreButton
 									className={cn(
 										EXPERIMENTAL_COVER_TEXT_CLASS_NAME,
-										"hover:bg-white/20 active:bg-white/30",
+										"[&_svg]:text-current hover:bg-white/20 active:bg-white/30",
 									)}
 									label={`More actions for ${name}`}
 									onClick={onMoreActions}
