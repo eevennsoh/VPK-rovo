@@ -29,6 +29,10 @@ const INCLUDED_TEST_FILES = new Set([
 	// Scheduled-trigger inference (daily-at-7am + NL → structured definitions).
 	// Lives under components/ so it must be included explicitly to run in CI.
 	"components/blocks/triggers/data/trigger-inference.test.js",
+	// Pure LCS/digit reconcile logic behind the Text Morphing visual component.
+	// No source-grep assertions (so it won't drift like the wholesale component
+	// tests); included explicitly so the morph keying stays guarded in CI.
+	"components/visual/text-morphing/lib.test.js",
 ]);
 
 const gitResult = spawnSync("git", [

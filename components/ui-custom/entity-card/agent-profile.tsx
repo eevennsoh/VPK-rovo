@@ -2,12 +2,15 @@
 
 import Image from "next/image";
 import { type ComponentProps, type ReactElement } from "react";
+import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import EditIcon from "@atlaskit/icon/core/edit";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
 import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
 
 import { Avatar, AvatarCompanyBadge, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { AtlassianLogo } from "@/components/ui/logo";
 import { cn } from "@/lib/utils";
 
@@ -109,13 +112,13 @@ export function EntityCardAgentProfile({
 						<div className="flex items-center gap-2">
 							<Button
 								aria-label={resolvedSwapActionLabel}
-								className="bg-surface text-text-subtle"
+								className="size-6 rounded-md bg-surface p-0 text-icon-subtle"
 								onClick={onSwapAction}
-								size="compact"
+								size="icon-compact"
 								type="button"
 								variant="outline"
 							>
-								{resolvedSwapActionLabel}
+								<AiChatIcon label="" size="small" />
 							</Button>
 							<Button
 								aria-label={resolvedEditActionLabel}
@@ -139,8 +142,13 @@ export function EntityCardAgentProfile({
 							</Button>
 						</div>
 					</div>
-					<p className="text-xs leading-4 text-text-subtle">
-						By <span className="text-link">{partnerName}</span>
+					<p className="flex items-center gap-1 text-xs leading-4 text-text-subtle">
+						<span>By</span>
+						<span className="truncate text-link">{partnerName}</span>
+						<Icon
+							className="text-icon-information"
+							render={<StatusVerifiedIcon label="Verified" size="small" color="currentColor" />}
+						/>
 					</p>
 				</div>
 				<p className="px-4 pb-4 text-sm leading-5 text-text">

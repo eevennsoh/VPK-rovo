@@ -276,9 +276,6 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
     ssr: false,
   }),
   canvas: dynamic(() => import("./demos/ui-custom/canvas-demo"), { ssr: false }),
-  "card-directory": dynamic(() => import("./demos/ui-custom/card-directory-demo"), {
-    ssr: false,
-  }),
   "chain-of-thought": dynamic(
     () => import("./demos/ui-custom/chain-of-thought-demo"),
     { ssr: false },
@@ -6772,6 +6769,9 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
   "agent-card": dynamic(() => import("./demos/blocks/agent-card-demo"), {
     ssr: false,
   }),
+  "agent-profile-card": dynamic(() => import("./demos/blocks/agent-profile-card-demo"), {
+    ssr: false,
+  }),
   "agents-directory": dynamic(
     () => import("./demos/blocks/agents-directory-demo"),
     { ssr: false },
@@ -7051,6 +7051,22 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/blocks/agent-demo").then((mod) => ({
         default: mod.AgentDemoEmpty,
+      })),
+    { ssr: false },
+  ),
+
+  // Agent Card
+  "agent-card-demo-expanded": dynamic(
+    () =>
+      import("./demos/blocks/agent-card-demo").then((mod) => ({
+        default: mod.AgentCardDemoExpanded,
+      })),
+    { ssr: false },
+  ),
+  "agent-card-demo-simple": dynamic(
+    () =>
+      import("./demos/blocks/agent-card-demo").then((mod) => ({
+        default: mod.AgentCardDemoSimple,
       })),
     { ssr: false },
   ),
@@ -7992,6 +8008,9 @@ const VISUAL_DEMOS: Record<string, ComponentType> = {
     ssr: false,
   }),
   "text-effects": dynamic(() => import("./demos/visual/text-effects-demo"), {
+    ssr: false,
+  }),
+  "text-morphing": dynamic(() => import("./demos/visual/text-morphing-demo"), {
     ssr: false,
   }),
   ascii: dynamic(() => import("./demos/visual/ascii-demo"), {

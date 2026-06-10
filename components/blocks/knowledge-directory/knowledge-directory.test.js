@@ -193,7 +193,7 @@ test("Knowledge Directory implements app selection and content-scope actions", (
 	const source = readProjectFile("components/blocks/knowledge-directory/components/knowledge-directory.tsx");
 
 	assert.match(source, /function BrowseAppsStep/u);
-	assert.match(source, /<CardDirectoryKnowledge/u);
+	assert.match(source, /<EntityCardKnowledgeCard/u);
 	assert.match(source, /getKnowledgeAppIcon\(app\)/u);
 	assert.match(source, /publisher=\{app\.providerName\}/u);
 	assert.match(source, /starCount=\{app\.starCount\}/u);

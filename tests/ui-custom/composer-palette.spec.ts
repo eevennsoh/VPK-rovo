@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test";
  * PLAYWRIGHT_BASE_URL). NOT part of the `ci:pr` gate — run with
  * `pnpm exec playwright test tests/ui-custom/composer-palette.spec.ts`.
  *
- * Targets the chat-composer block demo, which renders the shared PromptInput
+ * Targets the prompt-input chat-composer demo, which renders the shared PromptInput
  * primitive — now a mentions-only tiptap contentEditable with the `/` and `@`
  * palettes. Assertions are anchored to real catalog labels from
  * app/data/directory (skills/people) so they stay meaningful as data evolves.
@@ -15,7 +15,7 @@ import { expect, test } from "@playwright/test";
 
 const COMPOSER_URL = `${
 	process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000"
-}/preview/blocks/chat-composer`;
+}/preview/ui-custom/prompt-input`;
 
 // The tiptap editor renders as a ProseMirror contentEditable inside the primitive.
 const EDITOR = ".ProseMirror[contenteditable='true']";
@@ -48,7 +48,7 @@ test("`@` opens the mention menu for people and teams", async ({ page }) => {
 	await expect(page.getByText(/people|team/i).first()).toBeVisible();
 });
 
-test("selecting a `/` reference inserts an inline token, and Escape closes the menu", async ({ page }) => {
+test("top-level `/` search inserts a matching reference, and Escape closes the menu", async ({ page }) => {
 	const editor = page.locator(EDITOR).first();
 	await editor.click();
 
@@ -57,15 +57,58 @@ test("selecting a `/` reference inserts an inline token, and Escape closes the m
 	await expect(page.getByRole("textbox", { name: "Ask Rovo" })).toBeVisible();
 	await page.keyboard.press("Escape");
 	await expect(page.getByRole("textbox", { name: "Ask Rovo" })).toHaveCount(0);
+	await page.keyboard.press("Backspace");
 
 	// Re-open, narrow to a known skill, and select it -> inline mention token.
-	await page.keyboard.type("/Summarize");
-	const option = page.getByText(/Summarize/i).first();
+	await page.keyboard.type("/Design");
+	const option = page.getByRole("option", { name: /Design landing page/i }).first();
 	await expect(option).toBeVisible();
 	await option.click();
 
-	// The inserted reference renders as an inline mention chip inside the editor.
-	await expect(editor.locator(".rich-text-mention, [data-mention]").first()).toBeVisible();
+	// The selected reference is inserted and the trigger/query text is consumed.
+	await expect(editor).toContainText("Design landing page");
+	await expect(editor).not.toContainText("/Design");
+});
+
+test("`/` keeps search scoped after drilling into a category", async ({ page }) => {
+	const editor = page.locator(EDITOR).first();
+	await editor.click();
+	await page.keyboard.type("/");
+	await page.getByRole("option", { name: /Skills/i }).click();
+
+	await page.keyboard.type("Design");
+
+	await expect(page.getByRole("listbox", { name: "Skills" })).toBeVisible();
+	await expect(page.getByRole("option", { name: /Design landing page/i })).toBeVisible();
+	await expect(page.getByRole("option", { name: /Tools/i })).toHaveCount(0);
+});
+
+test("top-level `@` search spans people and agents", async ({ page }) => {
+	const editor = page.locator(EDITOR).first();
+	await editor.click();
+	await page.keyboard.type("@Andrea");
+
+	const person = page.getByRole("option", { name: /Andrea Wilson/i }).first();
+	await expect(person).toBeVisible();
+	await person.click();
+
+	await expect(editor).toContainText("Andrea Wilson");
+	await expect(editor).not.toContainText("@Andrea");
+});
+
+test("Tab copies the slash query into Ask Rovo, and Escape returns focus to the editor", async ({ page }) => {
+	const editor = page.locator(EDITOR).first();
+	await editor.click();
+	await page.keyboard.type("/Design");
+	await page.keyboard.press("Tab");
+
+	const askRovo = page.getByRole("textbox", { name: "Ask Rovo" });
+	await expect(askRovo).toBeFocused();
+	await expect(askRovo).toHaveValue("Design");
+
+	await page.keyboard.press("Escape");
+	await expect(askRovo).toHaveCount(0);
+	await expect(editor).toBeFocused();
 });
 
 test("Shift+Enter inserts a newline rather than submitting", async ({ page }) => {

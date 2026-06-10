@@ -2,6 +2,8 @@
 
 import { type MouseEvent, type ReactElement, type ReactNode } from "react";
 import Image from "next/image";
+import { motion } from "motion/react";
+import { useReducedMotion } from "motion/react";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
 import ArrowUpRightIcon from "@atlaskit/icon/core/arrow-up-right";
 import BacklogIcon from "@atlaskit/icon/core/backlog";
@@ -71,35 +73,93 @@ export function formatCompact(value: number): string {
 	return `${value}`;
 }
 
-export interface CardDirectoryHeaderProps {
-	/** Leading visual — hexagon avatar, icon tile, app logo, or rich icon. Omit when the visual lives elsewhere (e.g. a `CardDirectoryBanner`). */
+// --- Shell ----------------------------------------------------------------
+
+const OVERLAY_SHADOW = token("elevation.shadow.overlay");
+const CARD_HOVER_TRANSITION = {
+	type: "spring",
+	bounce: 0.16,
+	visualDuration: 0.22,
+} as const;
+
+export interface AgentCardShellProps {
+	/** Invoked on click / Enter / Space. Presence renders a whole-card select button. */
+	onSelect?: () => void;
+	/** Accessible label for the whole-card select button when interactive. */
+	selectLabel?: string;
+	/** Keeps the hover visual treatment active while a child popup/menu is open. */
+	active?: boolean;
+	className?: string;
+	children: ReactNode;
+}
+
+/**
+ * Base card shell — a bordered surface with hover elevation and an optional
+ * keyboard-operable button contract. Self-contained to this block.
+ */
+export function AgentCardShell({
+	onSelect,
+	selectLabel = "Select item",
+	active = false,
+	className,
+	children,
+}: Readonly<AgentCardShellProps>) {
+	const interactive = Boolean(onSelect);
+	const shouldReduceMotion = useReducedMotion();
+	const hoverAnimation = { boxShadow: OVERLAY_SHADOW } as const;
+	const tapAnimation = shouldReduceMotion ? undefined : ({ scale: 0.998 } as const);
+	const handleSelect = () => onSelect?.();
+
+	const cardMotionProps = {
+		className: cn(
+			"group/card relative flex w-full flex-col gap-3 rounded-md bg-surface p-4 text-left outline-none after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-md after:border after:border-border after:transition-colors after:duration-fast after:ease-out hover:after:border-transparent has-[[data-slot=agent-card-select]:focus-visible]:after:border-transparent has-[[data-slot=agent-card-select]:focus-visible]:ring-3 has-[[data-slot=agent-card-select]:focus-visible]:ring-ring/50",
+			active && "after:border-transparent",
+			interactive && "cursor-pointer",
+			className,
+		),
+		style: { willChange: "transform" },
+		animate: active ? hoverAnimation : ({ boxShadow: "none" } as const),
+		transition: CARD_HOVER_TRANSITION,
+		whileHover: hoverAnimation,
+		whileTap: interactive ? tapAnimation : undefined,
+	};
+
+	if (interactive) {
+		return (
+			<motion.article data-slot="agent-card" {...cardMotionProps}>
+				<button
+					aria-label={selectLabel}
+					className="absolute inset-0 z-0 rounded-md outline-none"
+					data-slot="agent-card-select"
+					onClick={handleSelect}
+					type="button"
+				/>
+				<div className="contents [&>*]:pointer-events-none [&>*]:relative [&>*]:z-10 [&_[data-slot=agent-card-scroll]]:pointer-events-auto [&_[role=button]]:pointer-events-auto [&_[role=menuitem]]:pointer-events-auto [&_a]:pointer-events-auto [&_button]:pointer-events-auto [&_input]:pointer-events-auto [&_select]:pointer-events-auto [&_textarea]:pointer-events-auto">
+					{children}
+				</div>
+			</motion.article>
+		);
+	}
+
+	return (
+		<motion.article data-slot="agent-card" {...cardMotionProps}>
+			{children}
+		</motion.article>
+	);
+}
+
+// --- Header / Byline ------------------------------------------------------
+
+export interface AgentCardHeaderProps {
 	leading?: ReactNode;
 	title: string;
-	/** Attribution line under the title (e.g. `CardDirectoryByline`). */
 	byline?: ReactNode;
-	/**
-	 * Reserves the byline's vertical space even when no `byline` is supplied, so
-	 * a card without attribution (e.g. a tool card) keeps the same header height
-	 * as one with it (agent/skill/knowledge). The leading visual and title stay
-	 * vertically centered — the reserved space is added symmetrically, it does
-	 * not shift the content down.
-	 */
-	reserveByline?: boolean;
-	/** Trailing action revealed on hover/focus (e.g. `CardDirectoryMoreButton`). */
 	action?: ReactNode;
 }
 
-export function CardDirectoryHeader({ leading, title, byline, reserveByline = false, action }: Readonly<CardDirectoryHeaderProps>) {
+export function AgentCardHeader({ leading, title, byline, action }: Readonly<AgentCardHeaderProps>) {
 	return (
-		<div
-			// When `reserveByline` is set on a byline-less header, `min-h-9` (36px)
-			// reserves the height a title + byline header occupies (title line +
-			// 16px byline), so it lines up with attributed cards. `items-center`
-			// keeps the logo + title centered, so the reserved space is added
-			// symmetrically and the content does not shift down.
-			className={cn("flex items-center gap-2", reserveByline && !byline && "min-h-9")}
-			data-slot="card-directory-header"
-		>
+		<div className="flex items-center gap-2" data-slot="agent-card-header">
 			{leading ? <span className="inline-flex shrink-0 items-center leading-none">{leading}</span> : null}
 			<div className="min-w-0 flex-1">
 				<h3 className="truncate text-text" style={{ font: token("font.heading.xsmall") }}>
@@ -112,17 +172,14 @@ export function CardDirectoryHeader({ leading, title, byline, reserveByline = fa
 	);
 }
 
-export interface CardDirectoryBylineProps {
+export interface AgentCardBylineProps {
 	publisher: string;
 	verified?: boolean;
 }
 
-export function CardDirectoryByline({ publisher, verified = false }: Readonly<CardDirectoryBylineProps>) {
+export function AgentCardByline({ publisher, verified = false }: Readonly<AgentCardBylineProps>) {
 	return (
-		<p
-			className="flex items-center gap-1 text-xs leading-4 text-text-subtle"
-			data-slot="card-directory-byline"
-		>
+		<p className="flex items-center gap-1 text-xs leading-4 text-text-subtle" data-slot="agent-card-byline">
 			<span>By</span>
 			<span className="truncate text-link">{publisher}</span>
 			{verified ? (
@@ -135,13 +192,13 @@ export function CardDirectoryByline({ publisher, verified = false }: Readonly<Ca
 	);
 }
 
-export interface CardDirectoryMoreButtonProps {
+export interface AgentCardMoreButtonProps {
 	label: string;
 	active?: boolean;
 	onClick?: () => void;
 }
 
-export function CardDirectoryMoreButton({ label, active = false, onClick }: Readonly<CardDirectoryMoreButtonProps>) {
+export function AgentCardMoreButton({ label, active = false, onClick }: Readonly<AgentCardMoreButtonProps>) {
 	const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
 		event.stopPropagation();
 		onClick?.();
@@ -165,64 +222,58 @@ export function CardDirectoryMoreButton({ label, active = false, onClick }: Read
 	);
 }
 
-export function CardDirectoryDescription({
+// --- Description / Footer / Stat / Section --------------------------------
+
+export function AgentCardDescription({
 	className,
 	children,
 }: Readonly<{ className?: string; children: ReactNode }>) {
 	return (
-		<p
-			className={cn("line-clamp-2 min-h-10 text-sm leading-5 text-text", className)}
-			data-slot="card-directory-description"
-		>
+		<p className={cn("line-clamp-2 min-h-10 text-sm leading-5 text-text", className)} data-slot="agent-card-description">
 			{children}
 		</p>
 	);
 }
 
-export function CardDirectoryFooter({
+export function AgentCardFooter({
 	className,
 	children,
 }: Readonly<{ className?: string; children: ReactNode }>) {
 	return (
 		<div
 			className={cn("flex items-center gap-4 text-xs leading-4 text-text-subtlest", className)}
-			data-slot="card-directory-footer"
+			data-slot="agent-card-footer"
 		>
 			{children}
 		</div>
 	);
 }
 
-export interface CardDirectoryStatProps {
-	/** Raw Atlaskit icon element; wrapped in the 12px stat-icon treatment. */
+export interface AgentCardStatProps {
 	icon: ReactElement;
 	children: ReactNode;
 }
 
-export function CardDirectoryStat({ icon, children }: Readonly<CardDirectoryStatProps>) {
+export function AgentCardStat({ icon, children }: Readonly<AgentCardStatProps>) {
 	return (
-		<span className="inline-flex items-center gap-1" data-slot="card-directory-stat">
+		<span className="inline-flex items-center gap-1" data-slot="agent-card-stat">
 			<Icon className="size-3 text-icon-subtlest [&_svg]:size-3" render={icon} />
 			{children}
 		</span>
 	);
 }
 
-export function CardDirectorySection({
-	label,
-	children,
-}: Readonly<{ label: string; children: ReactNode }>) {
+export function AgentCardSection({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
 	return (
-		<div className="flex flex-col gap-1" data-slot="card-directory-section">
+		<div className="flex flex-col gap-1" data-slot="agent-card-section">
 			<span className="text-xs font-semibold leading-4 text-text-subtlest">{label}</span>
 			{children}
 		</div>
 	);
 }
 
-// Cover-banner styling, mirrored from `AgentProfileCover` in `components/blocks/agent`.
-// Kept local so the card-directory module stays self-contained and doesn't pull in the large
-// agent module — the same color map is duplicated there and in the agent-card block.
+// --- Banner ---------------------------------------------------------------
+
 const BANNER_HEXAGON_PATH =
 	"M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
 const DEFAULT_BANNER_COVER_COLOR = "#1868DB";
@@ -239,26 +290,17 @@ function getBannerCoverColor(avatarSrc: string | undefined): string {
 	return (category ? BANNER_COVER_COLORS[category] : undefined) ?? DEFAULT_BANNER_COVER_COLOR;
 }
 
-export interface CardDirectoryBannerProps {
+export interface AgentCardBannerProps {
 	avatarSrc?: string;
-	/** Override the avatar-category-derived cover color. */
 	backgroundColor?: string;
-	/** Optional badge overlaid on the foreground avatar. */
 	avatarBadge?: ReactNode;
 }
 
-/**
- * Full-bleed cover banner — a colored strip with a bleeding avatar and a hexagon-outlined
- * avatar overhanging the bottom edge. The parent card clips the top corners.
- */
-export function CardDirectoryBanner({ avatarSrc, avatarBadge, backgroundColor }: Readonly<CardDirectoryBannerProps>) {
+export function AgentCardBanner({ avatarSrc, avatarBadge, backgroundColor }: Readonly<AgentCardBannerProps>) {
 	const coverColor = backgroundColor ?? getBannerCoverColor(avatarSrc);
 
 	return (
-		<div
-			className="relative shrink-0 overflow-hidden bg-surface"
-			data-slot="card-directory-banner"
-		>
+		<div className="relative shrink-0 overflow-hidden bg-surface" data-slot="agent-card-banner">
 			<div className="relative h-12 overflow-hidden" style={{ backgroundColor: coverColor }}>
 				{avatarSrc ? (
 					<Image
@@ -272,14 +314,6 @@ export function CardDirectoryBanner({ avatarSrc, avatarBadge, backgroundColor }:
 				) : null}
 			</div>
 			<div aria-hidden className="h-6" />
-			{/* The avatar art (`public/avatar-agent/*`) is itself a full-bleed hexagon drawn with
-			    the exact `BANNER_HEXAGON_PATH`, so we render it directly (like `AgentProfileCover`)
-			    rather than routing it through the Avatar hexagon shape, whose square-derived clip
-			    sliced the art and floated its outline. The surface ring is drawn over the art and
-			    centered on the hexagon edge — its inner half sits on the avatar, its outer half
-			    lifts it off the colored cover. Art and stroke share one viewBox and the same
-			    default (meet) scaling so they stay flush. The wrapper recreates the `group/avatar`
-			    + `data-size` contract the badge sizes against. */}
 			<div aria-hidden className="group/avatar absolute top-6 left-4 h-12 w-[42px]" data-size="xl">
 				{avatarSrc ? (
 					<Image alt="" aria-hidden className="absolute inset-0 size-full object-contain" height={48} src={avatarSrc} width={42} />
@@ -298,7 +332,9 @@ export function CardDirectoryBanner({ avatarSrc, avatarBadge, backgroundColor }:
 	);
 }
 
-export type CardDirectoryCapabilityIcon =
+// --- Capabilities ---------------------------------------------------------
+
+export type AgentCardCapabilityIcon =
 	| "action"
 	| "alert"
 	| "board"
@@ -352,23 +388,21 @@ export type CardDirectoryCapabilityIcon =
 	| "trend"
 	| "work";
 
-export interface CardDirectoryCapability {
-	icon?: CardDirectoryCapabilityIcon;
+export interface AgentCardCapability {
+	icon?: AgentCardCapabilityIcon;
 	label: string;
 }
 
-export interface CardDirectoryCapabilitiesProps {
-	/** Optional section label above the list. Omit to render the bare list. */
+export interface AgentCardCapabilitiesProps {
 	label?: string;
-	/** Capability lines rendered as a scrollable icon-tile feature list. */
-	items: readonly (string | CardDirectoryCapability)[];
+	items: readonly (string | AgentCardCapability)[];
 }
 
-function getCapabilityItem(item: string | CardDirectoryCapability): CardDirectoryCapability {
+function getCapabilityItem(item: string | AgentCardCapability): AgentCardCapability {
 	return typeof item === "string" ? { label: item } : item;
 }
 
-function getCapabilityIcon(icon: CardDirectoryCapabilityIcon | undefined): ReactElement {
+function getCapabilityIcon(icon: AgentCardCapabilityIcon | undefined): ReactElement {
 	switch (icon) {
 		case "action":
 			return <ArrowUpRightIcon label="" size="small" />;
@@ -479,14 +513,9 @@ function getCapabilityIcon(icon: CardDirectoryCapabilityIcon | undefined): React
 	}
 }
 
-/**
- * Feature list — borderless rows (one per capability), each a plain 16px icon
- * beside its label. Scrolling is owned by the enclosing card body, so this list
- * just flows at its natural height.
- */
-export function CardDirectoryCapabilities({ label, items }: Readonly<CardDirectoryCapabilitiesProps>) {
+export function AgentCardCapabilities({ label, items }: Readonly<AgentCardCapabilitiesProps>) {
 	return (
-		<div className="flex flex-col gap-1" data-slot="card-directory-capabilities">
+		<div className="flex flex-col gap-1" data-slot="agent-card-capabilities">
 			{label ? <span className="text-xs font-semibold leading-4 text-text-subtlest">{label}</span> : null}
 			<TooltipProvider>
 				<ul className="flex flex-col gap-1">
@@ -494,10 +523,6 @@ export function CardDirectoryCapabilities({ label, items }: Readonly<CardDirecto
 						const capability = getCapabilityItem(item);
 
 						return (
-							// Labels truncate in the fixed-width card body, so surface the full
-							// string on hover. Anchor the tooltip to the side (not top/bottom) so it
-							// never sits in the path of the user's vertical cursor travel between rows.
-							// Screen readers already get the label from the DOM text.
 							<Tooltip key={capability.label}>
 								<TooltipTrigger render={<li className="flex items-center gap-2" />}>
 									<Icon

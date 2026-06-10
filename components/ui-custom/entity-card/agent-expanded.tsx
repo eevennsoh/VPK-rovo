@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, type MouseEvent, type UIEvent, useCallback, useState } from "react";
+import { type CSSProperties, type MouseEvent, type ReactNode, type UIEvent, useCallback, useState } from "react";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
@@ -8,7 +8,7 @@ import { Avatar, AvatarCompanyBadge, AvatarFallback, AvatarGroup, AvatarGroupCou
 import { Button } from "@/components/ui/button";
 import { AtlassianLogo } from "@/components/ui/logo";
 import { Separator } from "@/components/ui/separator";
-import { SkillTag, SkillTagGroup } from "@/components/ui-custom/skill-tag";
+import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +25,13 @@ import {
 	type EntityCardCapability,
 	formatCompact,
 } from "./parts";
-import { type EntityCardTemplateSkill } from "./template";
+
+/** A skill tag shown in the expanded agent card's "Skills" section. */
+export interface EntityCardSkillTag {
+	label: string;
+	color?: SkillTagColor;
+	icon?: ReactNode;
+}
 
 const MAX_VISIBLE_COLLABORATORS = 4;
 const ENTITY_CARD_SKILLS_MAX_ROWS = 2;
@@ -122,7 +128,7 @@ export interface EntityCardAgentExpandedProps {
 	capabilities: readonly (EntityCardCapability | string)[];
 	capabilitiesLabel?: string;
 	sources?: ReadonlyArray<TwgToolSource>;
-	skills?: ReadonlyArray<EntityCardTemplateSkill>;
+	skills?: ReadonlyArray<EntityCardSkillTag>;
 	stats?: ReadonlyArray<{ value: string; label: string }>;
 	collaborators?: ReadonlyArray<{ src: string; name: string }>;
 	collaboratorOverflow?: number;
@@ -180,6 +186,21 @@ export function EntityCardAgentExpanded({
 			currentBodyScrolled === nextBodyScrolled ? currentBodyScrolled : nextBodyScrolled
 		));
 	}, []);
+	// The scroll body sits above the shell's select-overlay button (so it can own
+	// wheel/drag scroll), which means clicks on it no longer fall through to that
+	// button. Forward plain clicks to onSelect so whole-card selection still works;
+	// clicks that originate on a genuinely interactive control (menus, the footer
+	// button, links) are ignored here so they keep their own behavior.
+	const handleBodyClick = useCallback(
+		(event: MouseEvent<HTMLDivElement>) => {
+			if (event.defaultPrevented) return;
+			if ((event.target as HTMLElement).closest("a,button,[role=button],[role=menuitem],input,select,textarea")) {
+				return;
+			}
+			onSelect?.();
+		},
+		[onSelect],
+	);
 	const projectBadgeAvatarSrc = getProjectBadgeAvatarSrc(`${publisher}:${name}`);
 	const avatarBadge = (() => {
 		if (attributionKind === "company") {
@@ -232,8 +253,17 @@ export function EntityCardAgentExpanded({
 				</div>
 			</div>
 
+			{/* Raise the scroll body above the absolute `z-0` select-overlay button and
+			    give it pointer-events so wheel/drag scroll lands here instead of being
+			    swallowed by the button painted on top — the parent is `display:contents`,
+			    so the shell's `[&>*]:relative [&>*]:z-10` never reaches this grandchild.
+			    Because the body now covers the select button, plain clicks on it are
+			    forwarded to onSelect (see handleBodyClick) so whole-card selection still
+			    works, while genuinely interactive descendants keep their own behavior. */}
 			<div
-				className="flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-2 [scrollbar-gutter:stable]"
+				className="pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-2 [scrollbar-gutter:stable]"
+				data-slot="card-directory-scroll"
+				onClick={onSelect ? handleBodyClick : undefined}
 				onScroll={handleBodyScroll}
 				style={bodyScrolled ? ENTITY_CARD_SCROLL_MASK_STYLE : undefined}
 			>

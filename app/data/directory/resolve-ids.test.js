@@ -78,6 +78,15 @@ test("resolveCatalogIds de-dupes and preserves first-seen order of resolved ids"
 	assert.deepEqual(resolveCatalogIds(["", "jira"], "tool"), ["jira"]);
 });
 
+test("resolveCatalogIds resolves display labels used by agent config chips", async () => {
+	const { resolveCatalogIds } = await loadResolver();
+
+	assert.deepEqual(resolveCatalogIds(["Jira"], "tool"), ["jira"]);
+	assert.deepEqual(resolveCatalogIds(["Review pull request"], "skill"), ["review-pull-request"]);
+	assert.deepEqual(resolveCatalogIds(["Confluence - all content"], "knowledge"), ["confluence:all"]);
+	assert.deepEqual(resolveCatalogIds(["Product requirements"], "knowledge"), ["confluence:product-requirements-space"]);
+});
+
 test("extractInstructionTokens returns all valid tokens in document order", async () => {
 	const { extractInstructionTokens } = await loadResolver();
 

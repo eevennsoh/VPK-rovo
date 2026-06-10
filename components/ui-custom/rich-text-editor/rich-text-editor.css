@@ -699,11 +699,17 @@
 .rich-text-command-menu-back {
 	display: flex;
 	grid-template-columns: none;
+	align-items: center;
 	border-radius: 0;
-	/* 12px left padding matches the "Ask Rovo"/search input sticky header and the
-	   24px front slots in the list rows, so the back arrow lines up exactly with
-	   every other leading glyph across nested, flat, and search variants. */
-	padding: 8px 6px 8px 12px;
+	/* Fixed 44px row with no vertical padding, matching the latest dropdown menu
+	   item pattern (and `.rich-text-command-menu-item`): the height owns the row
+	   rhythm so the bar never reflows. 12px left padding matches the
+	   "Ask Rovo"/search input sticky header and the 24px front slots in the list
+	   rows, so the back arrow lines up exactly with every other leading glyph
+	   across nested, flat, and search variants; 6px right matches the sticky
+	   search header. */
+	height: 44px;
+	padding: 0 6px 0 12px;
 	color: var(--ds-text-subtle, #44546f);
 }
 

@@ -147,6 +147,11 @@ function InputGroupInput({
       variant="none"
       className={cn(
         "flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0",
+        // Keep the field transparent even while the browser previews an
+        // autocomplete suggestion (which otherwise paints a UA blue block).
+        // bg-clip-text strips the autofill background; the transparent inset
+        // shadow (with !important to beat utility `shadow-none`) keeps it clear.
+        "[&:-webkit-autofill]:[-webkit-background-clip:text] [&:-webkit-autofill]:[box-shadow:0_0_0_1000px_transparent_inset!important] [&:-webkit-autofill]:[-webkit-text-fill-color:var(--color-foreground)]",
         className
       )}
       {...props}

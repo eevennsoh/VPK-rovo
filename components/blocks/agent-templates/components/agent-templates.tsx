@@ -15,17 +15,17 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/icon";
 import {
-	CardDirectoryAgentExpanded,
-	type CardDirectoryCapability,
-	type CardDirectoryTemplateSkill,
-} from "@/components/ui-custom/card-directory";
+	EntityCardAgentExpandedCard,
+	type EntityCardCapability,
+	type EntityCardSkillTag,
+} from "@/components/ui-custom/entity-card";
 import { type TwgToolSource } from "@/components/ui-custom/twg-tool";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 /**
  * Carousel agents extend the shared `AgentBrowserAgent` identity with the richer
- * directory-card detail (`CardDirectoryAgentExpanded`) renders. Every detail field
+ * directory-card detail (`EntityCardAgentExpandedCard`) renders. Every detail field
  * is optional so plain `AgentBrowserAgent` data still satisfies the type — the card
  * derives a publisher from `byline` and falls back gracefully when detail is absent.
  */
@@ -37,9 +37,9 @@ export interface AgentTemplatesAgent extends AgentBrowserAgent {
 	/** Robust setup/usage guidance for the template (from the directory catalog). */
 	instructions?: string;
 	verified?: boolean;
-	capabilities?: readonly CardDirectoryCapability[];
+	capabilities?: readonly EntityCardCapability[];
 	sources?: ReadonlyArray<TwgToolSource>;
-	skills?: ReadonlyArray<CardDirectoryTemplateSkill>;
+	skills?: ReadonlyArray<EntityCardSkillTag>;
 	stats?: ReadonlyArray<{ value: string; label: string }>;
 	collaborators?: ReadonlyArray<{ src: string; name: string }>;
 	collaboratorOverflow?: number;
@@ -145,7 +145,7 @@ export const AGENT_TEMPLATES_CATEGORIES: readonly AgentTemplatesCategory[] = [
 	},
 ] as const;
 
-const EMPTY_CAPABILITIES: readonly CardDirectoryCapability[] = [];
+const EMPTY_CAPABILITIES: readonly EntityCardCapability[] = [];
 const AGENT_TEMPLATES_TAB_COPY_VARIANTS = {
 	enter: ({ direction, shouldReduceMotion }: AgentTemplatesTabMotionCustom) => ({
 		opacity: 0,
@@ -515,7 +515,7 @@ function AgentTemplateCard({
 }>) {
 	// The motion wrapper owns the fixed carousel width; the card fills that frame.
 	return (
-		<CardDirectoryAgentExpanded
+		<EntityCardAgentExpandedCard
 			avatarSrc={agent.avatarSrc}
 			attributionKind={agent.attributionKind}
 			capabilities={agent.capabilities ?? EMPTY_CAPABILITIES}

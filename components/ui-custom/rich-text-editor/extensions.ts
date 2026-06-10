@@ -17,7 +17,7 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
 import { Markdown } from "@tiptap/markdown";
 import { PluginKey } from "@tiptap/pm/state";
-import { Suggestion } from "@tiptap/suggestion";
+import { Suggestion, exitSuggestion } from "@tiptap/suggestion";
 import StarterKit from "@tiptap/starter-kit";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 
@@ -214,7 +214,15 @@ export const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 
 					props.run(editor);
 				},
-				render: () => createSlashSuggestionRenderer(getMentionSources, this.options.onAskRovo, includeFormat, this.options.anchorToInput, suggestionVariant),
+				render: () => createSlashSuggestionRenderer(
+					getMentionSources,
+					this.options.onAskRovo,
+					includeFormat,
+					this.options.anchorToInput,
+					suggestionVariant,
+					this.options.onOpenDirectory,
+					(editor) => exitSuggestion(editor.view, slashCommandPluginKey),
+				),
 			}),
 		];
 	},
@@ -274,7 +282,11 @@ export function createRichTextMentionExtension(
 					])
 					.run();
 			},
-			render: () => createMentionSuggestionRenderer(options.getMentionSources, options.anchorToInput, resolveMentionVariant(options.suggestionVariant)),
+			render: () => createMentionSuggestionRenderer(
+				options.getMentionSources,
+				options.anchorToInput,
+				resolveMentionVariant(options.suggestionVariant),
+			),
 		},
 	});
 }

@@ -49,6 +49,13 @@ import TextHeadingThreeIcon from "@atlaskit/icon-lab/core/text-heading-three";
 import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 
 import { Button } from "@/components/ui/button";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyTitle,
+} from "@/components/ui/empty";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
@@ -516,6 +523,44 @@ function getSlashCategoryLabel(category: RichTextSlashCategory): string {
 	return category === "format" ? "Format" : getRichTextReferenceCategoryLabel(category);
 }
 
+/**
+ * Contextual empty state for a suggestion surface with no matching rows. Mirrors
+ * the showcase search picker: a title, the "try another term" hint, and an
+ * optional "Browse all" button that launches the surface's directory. When
+ * `onBrowseAll` is omitted (a surface with no backing directory, e.g. Format),
+ * the button is hidden and only the title + hint show.
+ */
+export function RichTextSuggestionEmptyState({
+	label = "No matching items",
+	onBrowseAll,
+}: Readonly<{
+	label?: string;
+	onBrowseAll?: () => void;
+}>) {
+	return (
+		<Empty width="narrow" className="px-6 pt-4 pb-6">
+			<EmptyHeader>
+				<EmptyTitle headingSize="xsmall">{label}</EmptyTitle>
+				<EmptyDescription>Try a different search term.</EmptyDescription>
+			</EmptyHeader>
+			{onBrowseAll ? (
+				<EmptyContent>
+					<Button
+						type="button"
+						variant="outline"
+						// Keep focus in the editor: a mousedown blur would tear down the
+						// suggestion popup before the click handler can open the directory.
+						onMouseDown={(event) => event.preventDefault()}
+						onClick={onBrowseAll}
+					>
+						Browse all
+					</Button>
+				</EmptyContent>
+			) : null}
+		</Empty>
+	);
+}
+
 export function RichTextSuggestionMenu({
 	className,
 	emptyLabel,
@@ -621,6 +666,7 @@ export interface RichTextCommandMenuSearchFieldProps {
 	id?: string;
 	label: string;
 	onClear: () => void;
+	onEscape?: () => void;
 	onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
 	onSubmit?: () => void;
 	onValueChange: (value: string) => void;
@@ -642,6 +688,7 @@ export function RichTextCommandMenuSearchField({
 	id,
 	label,
 	onClear,
+	onEscape,
 	onKeyDown,
 	onSubmit,
 	onValueChange,
@@ -666,6 +713,11 @@ export function RichTextCommandMenuSearchField({
 					onKeyDown?.(event);
 					event.stopPropagation();
 					if (event.defaultPrevented) {
+						return;
+					}
+					if ((event.key === "Escape" || event.key === "Esc") && onEscape) {
+						event.preventDefault();
+						onEscape();
 						return;
 					}
 					if (event.key === "Enter") {
@@ -1196,7 +1248,12 @@ export function createSlashSuggestionRenderer(
 	onAskRovo?: (editor: Editor) => void,
 	includeFormat = true,
 	anchorToInput = false,
-	variant: SuggestionVariant = "flat",
+	variant: SuggestionVariant = "nested",
+	// Launches the directory for a nested "/" category from its empty-state
+	// "Browse all" button. Only directory-backed categories (everything but
+	// "format") invoke it; omit it to keep the plain empty title with no button.
+	onOpenDirectory?: (category: RichTextSlashCategory) => void,
+	onExitSuggestion?: (editor: Editor) => void,
 ) {
 	const popupState: SuggestionPopupState = { component: null, element: null, cleanup: null };
 	let selectedIndex = 0;
@@ -1209,6 +1266,10 @@ export function createSlashSuggestionRenderer(
 	const expandedSections: Record<string, boolean> = {};
 
 	const isFlat = variant === "flat";
+
+	function shouldUseFlatSurface(query: string): boolean {
+		return isFlat || (!activeCategory && query.trim().length > 0);
+	}
 
 	/** Maps a "/" category to its full, unfiltered menu items. */
 	function getCategoryMenuItems(
@@ -1248,10 +1309,21 @@ export function createSlashSuggestionRenderer(
 	}
 
 	function getVisibleItems(query: string): readonly RichTextSuggestionMenuItem[] {
-		if (isFlat) {
+		if (shouldUseFlatSurface(query)) {
 			return buildFlatSurfaceRows(getFlatSections(), query, expandedSections);
 		}
 		return activeCategory ? getChildItems(query) : getTopLevelItems(query);
+	}
+
+	function dismissSuggestion(): void {
+		if (!currentProps) {
+			return;
+		}
+		const { editor } = currentProps;
+		onExitSuggestion?.(editor);
+		requestAnimationFrame(() => {
+			editor.commands.focus();
+		});
 	}
 
 	function submitAskRovoPrompt(): boolean {
@@ -1280,6 +1352,7 @@ export function createSlashSuggestionRenderer(
 				icon={ASK_ROVO_SLASH_ITEM.icon}
 				label={ASK_ROVO_SLASH_ITEM.label}
 				onClear={() => updateAskRovoPrompt("")}
+				onEscape={dismissSuggestion}
 				onSubmit={submitAskRovoPrompt}
 				onValueChange={updateAskRovoPrompt}
 				placeholder={ASK_ROVO_SLASH_ITEM.label}
@@ -1300,12 +1373,25 @@ export function createSlashSuggestionRenderer(
 		} else {
 			positionPopup(popupState.element, props.clientRect);
 		}
+		// A nested drill-in (no header) shows the contextual empty state: the
+		// "No matching items" title plus, for directory-backed categories
+		// (everything but "format"), a "Browse all" button that opens that
+		// category's directory. With the Ask Rovo header showing (flat surface or
+		// the top-level category list), a non-matching query collapses to just
+		// that header — render an empty fragment so no "No commands found" row.
+		const nestedCategory = !isFlat && activeCategory ? activeCategory : null;
+		const nestedEmptyState = nestedCategory ? (
+			<RichTextSuggestionEmptyState
+				onBrowseAll={
+					nestedCategory !== "format" && onOpenDirectory
+						? () => onOpenDirectory(nestedCategory)
+						: undefined
+				}
+			/>
+		) : undefined;
 		popupState.component?.updateProps({
-			emptyLabel: !isFlat && activeCategory ? "No matching items" : "No commands found",
-			// With the Ask Rovo header showing, a non-matching query collapses to
-			// just that header — no "No commands found" row. Nested category
-			// drill-ins (no header) keep their empty label.
-			emptyState: isFlat || !activeCategory ? <></> : undefined,
+			emptyLabel: nestedCategory ? "No matching items" : "No commands found",
+			emptyState: nestedCategory ? nestedEmptyState : <></>,
 			items,
 			onBack: !isFlat && activeCategory
 				? () => {
@@ -1341,7 +1427,7 @@ export function createSlashSuggestionRenderer(
 			return false;
 		}
 
-		if (isFlat) {
+		if (shouldUseFlatSurface(currentProps.query)) {
 			// "Browse all" footers link out to a directory we don't host here; keep
 			// the menu open. "View more" / "View less" footers toggle the section.
 			if (isFlatFooterId(item.id)) {
@@ -1747,7 +1833,7 @@ const MENTION_FLAT_SECTIONS: readonly { category: RichTextMentionParentCategory;
 export function createMentionSuggestionRenderer(
 	getMentionSources?: () => RichTextMentionSources | undefined,
 	anchorToInput = false,
-	variant: SuggestionVariant = "flat",
+	variant: SuggestionVariant = "nested",
 ) {
 	const popupState: SuggestionPopupState = { component: null, element: null, cleanup: null };
 	let selectedIndex = 0;
@@ -1757,6 +1843,10 @@ export function createMentionSuggestionRenderer(
 	const expandedSections: Record<string, boolean> = {};
 
 	const isFlat = variant === "flat";
+
+	function shouldUseFlatSurface(query: string): boolean {
+		return isFlat || (!activeCategory && query.trim().length > 0);
+	}
 
 	/** Flat surface sections: people & team, then subagents. */
 	function getFlatSections(): readonly FlatSectionSpec[] {
@@ -1783,7 +1873,7 @@ export function createMentionSuggestionRenderer(
 	function getVisibleItems(
 		props: SuggestionProps<RichTextMentionItem, RichTextMentionItem>,
 	): readonly RichTextSuggestionMenuItem[] {
-		if (isFlat) {
+		if (shouldUseFlatSurface(props.query)) {
 			return buildFlatSurfaceRows(getFlatSections(), props.query, expandedSections);
 		}
 		return activeCategory ? getChildItems(props.query) : getParentItems(props.query);
@@ -1847,7 +1937,7 @@ export function createMentionSuggestionRenderer(
 			return false;
 		}
 
-		if (isFlat) {
+		if (shouldUseFlatSurface(currentProps.query)) {
 			// "Browse all" footers link out to a directory we don't host here; keep
 			// the menu open. "View more" / "View less" footers toggle the section.
 			if (isFlatFooterId(item.id)) {
