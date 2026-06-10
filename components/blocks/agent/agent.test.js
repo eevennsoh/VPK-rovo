@@ -248,6 +248,17 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	assert.match(AGENT_SOURCE, /<RichTextMentionVisualMark/u);
 	assert.match(AGENT_SOURCE, /type=\{elemBefore \? "default" : getRichTextMentionTagType\(visual\)\}/u);
 	assert.match(AGENT_SOURCE, /removeVariant="overlay"/u);
+	assert.match(AGENT_SOURCE, /import \{ HoverCard, HoverCardContent, HoverCardTrigger \} from "@\/components\/ui\/hover-card";/u);
+	assert.match(AGENT_SOURCE, /import \{ EntityCard \} from "@\/components\/ui-custom\/entity-card";/u);
+	assert.match(AGENT_SOURCE, /SmartLinkCard,[\s\S]*type SmartLinkItem/u);
+	assert.match(AGENT_SOURCE, /type AgentReferencePreview =[\s\S]*kind: "skill"[\s\S]*kind: "tool"[\s\S]*kind: "knowledge"/u);
+	assert.match(AGENT_SOURCE, /function getAgentReferencePreview/u);
+	assert.match(AGENT_SOURCE, /<EntityCard\.Skill[\s\S]*description=\{preview\.skill\.description\}/u);
+	assert.match(AGENT_SOURCE, /<EntityCard\.Tool[\s\S]*appLogo=\{getAgentReferenceToolLogo\(preview\.tool\)\}/u);
+	assert.match(AGENT_SOURCE, /<SmartLinkCard item=\{preview\.item\} \/>/u);
+	assert.doesNotMatch(AGENT_SOURCE, /const \[previewOpen, setPreviewOpen\] = useState\(false\);/u);
+	assert.doesNotMatch(AGENT_SOURCE, /onMouseEnter=\{preview \? openPreview : undefined\}/u);
+	assert.match(AGENT_SOURCE, /return preview \? \([\s\S]*<HoverCard>[\s\S]*<HoverCardTrigger closeDelay=\{80\} delay=\{120\} render=\{<span className="inline-flex max-w-full" \/>\}>[\s\S]*\{tag\}[\s\S]*<\/HoverCardTrigger>[\s\S]*<AgentReferencePreviewContent preview=\{preview\} \/>/u);
 	assert.doesNotMatch(AGENT_SOURCE, /function AgentSkillChip/u);
 	assert.match(AGENT_SOURCE, /onRemove=\{onRemove\}[\s\S]*removeButtonLabel=\{`Remove \$\{label\}`\}[\s\S]*removeVariant="overlay"/u);
 	for (const [rowLabel, category] of [
