@@ -33,22 +33,22 @@ export function TileDemoSizes() {
 	return (
 		<div className="flex items-end gap-3">
 			<Tile label="xxsmall" variant="blueSubtle" size="xxsmall">
-				<SearchIcon label="" size="large" color="currentColor" />
+				<SearchIcon label="" color="currentColor" />
 			</Tile>
 			<Tile label="xsmall" variant="blueSubtle" size="xsmall">
-				<SearchIcon label="" size="large" color="currentColor" />
+				<SearchIcon label="" color="currentColor" />
 			</Tile>
 			<Tile label="small" variant="blueSubtle" size="small">
-				<SearchIcon label="" size="large" color="currentColor" />
+				<SearchIcon label="" color="currentColor" />
 			</Tile>
 			<Tile label="medium" variant="blueSubtle" size="medium">
-				<SearchIcon label="" size="large" color="currentColor" />
+				<SearchIcon label="" color="currentColor" />
 			</Tile>
 			<Tile label="large" variant="blueSubtle" size="large">
-				<SearchIcon label="" size="large" color="currentColor" />
+				<SearchIcon label="" color="currentColor" />
 			</Tile>
 			<Tile label="xlarge" variant="blueSubtle" size="xlarge">
-				<SearchIcon label="" size="large" color="currentColor" />
+				<SearchIcon label="" color="currentColor" />
 			</Tile>
 		</div>
 	);
