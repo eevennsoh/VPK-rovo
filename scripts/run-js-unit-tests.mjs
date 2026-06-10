@@ -26,6 +26,10 @@ const INCLUDED_TEST_FILES = new Set([
 	// on-disk 16-borderless.svg <-> logo-usage.json sync. Lives under components/
 	// (which is not CI-gated wholesale) so it is included explicitly.
 	"components/ui/data/logo-usage.test.js",
+	// Pure LCS/digit reconcile logic behind the Text Morphing visual component.
+	// No source-grep assertions (so it won't drift like the wholesale component
+	// tests); included explicitly so the morph keying stays guarded in CI.
+	"components/visual/text-morphing/lib.test.js",
 ]);
 
 const gitResult = spawnSync("git", [

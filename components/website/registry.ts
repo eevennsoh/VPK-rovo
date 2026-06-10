@@ -7994,6 +7994,9 @@ const VISUAL_DEMOS: Record<string, ComponentType> = {
   "text-effects": dynamic(() => import("./demos/visual/text-effects-demo"), {
     ssr: false,
   }),
+  "text-morphing": dynamic(() => import("./demos/visual/text-morphing-demo"), {
+    ssr: false,
+  }),
   ascii: dynamic(() => import("./demos/visual/ascii-demo"), {
     ssr: false,
   }),
