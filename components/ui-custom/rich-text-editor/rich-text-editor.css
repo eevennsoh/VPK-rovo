@@ -842,6 +842,7 @@
 
 .rich-text-mention-visual[data-visual-kind="avatar"],
 .rich-text-mention-visual[data-visual-kind="image"],
+.rich-text-mention-visual[data-visual-kind="icon"],
 .rich-text-mention-visual[data-visual-kind="logo"] {
 	width: 16px;
 	height: 16px;
