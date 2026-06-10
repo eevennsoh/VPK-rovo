@@ -48,7 +48,7 @@ import {
 	TriggerProviderSearchList,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/page";
-import { createAgentTriggerValue } from "@/components/blocks/triggers/data/trigger-catalog";
+import { createAgentTriggerValue, getTriggerProvider } from "@/components/blocks/triggers/data/trigger-catalog";
 import { UNTITLED_SUBAGENT_NAME } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
 import {
@@ -1959,7 +1959,18 @@ function AgentReferenceChip({
 				visual={visual}
 			/>
 		) : (
-			<FallbackIcon label="" size="small" />
+			// Latest Tag standard: a bare leading icon is wrapped in the
+			// `IconTile` xxsmall/transparent treatment (see `TagDemoFrontSlot`) so
+			// the glyph is normalized to 16px and centered in the chip's leading
+			// slot. Rendering the raw `@atlaskit/icon` instead left-aligns the 12px
+			// glyph, which reads as a misaligned icon with an oversized gap.
+			<IconTile
+				aria-hidden
+				icon={<Icon aria-hidden render={<FallbackIcon label="" size="small" />} />}
+				label=""
+				size="xxsmall"
+				variant="transparent"
+			/>
 		)
 	);
 
@@ -1987,23 +1998,33 @@ function AgentReferenceChip({
 
 function AgentAddValueButton({
 	className,
-	icon = "add",
+	// `icon` / `label` are retained in the prop contract so existing call sites
+	// keep compiling, but every add affordance now renders as a uniform "Edit"
+	// control that matches the trigger row's edit button class-for-class. They are
+	// destructured here purely to keep them off the spread DOM `...props`.
+	icon,
 	label,
 	onClick,
 	...props
 }: Readonly<{ icon?: "add" | "edit"; label: string } & ComponentProps<"button">>) {
+	void icon;
+	void label;
 	return (
 		<button
 			type="button"
 			className={cn(
-				"group/add-link inline-flex h-5 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest transition-colors hover:text-text focus-visible:text-text focus-visible:outline-none",
+				// Match the Triggers row "Edit" CTA class-for-class. The hover-reveal
+				// opacity (opacity-0 + group-hover/agent-row:opacity-100 …) is supplied
+				// via `className` for the filled-row spot, exactly as the trigger button
+				// bakes it in; the empty-row spot passes no className so it stays visible.
+				"group/add-link inline-flex h-5 shrink-0 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest transition-opacity focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 				className
 			)}
 			onClick={onClick}
 			{...props}
 		>
-			{icon === "edit" ? <EditIcon label="" size="small" /> : <PlusIcon size="small" />}
-			<span className="group-hover/add-link:underline group-focus-visible/add-link:underline">{label}</span>
+			<EditIcon label="" size="small" />
+			<span className="group-hover/add-link:underline group-focus-visible/add-link:underline">Edit</span>
 		</button>
 	);
 }
@@ -2236,7 +2257,27 @@ function AgentTriggerSummaryRow({
 							// this chip is available and index-aligned with `items`. Falls
 							// back to the chip's default icon for legacy label-only triggers.
 							const definition = definitionsAlignItems ? triggerDefinitions?.[index] : undefined;
-							const elemBefore = definition ? renderAgentTriggerProviderIcon(definition) : undefined;
+							const providerIcon = definition ? renderAgentTriggerProviderIcon(definition) : undefined;
+							// Product logos / brand images already render as a centered 16px
+							// mark; only the stroked `@atlaskit/icon` glyph kinds need the
+							// latest Tag standard's `IconTile` xxsmall/transparent wrap so the
+							// 12px glyph centers in the chip's leading slot instead of
+							// left-aligning with an oversized gap.
+							const providerIconKind = definition
+								? getTriggerProvider(definition.providerId)?.icon.kind
+								: undefined;
+							const elemBefore =
+								providerIcon && providerIconKind !== "atlassian-logo" && providerIconKind !== "image" ? (
+									<IconTile
+										aria-hidden
+										icon={<Icon aria-hidden render={providerIcon} />}
+										label=""
+										size="xxsmall"
+										variant="transparent"
+									/>
+								) : (
+									providerIcon ?? undefined
+								);
 							const chip = (
 								<AgentReferenceChip
 									elemBefore={elemBefore ?? undefined}
@@ -2529,7 +2570,18 @@ function AgentFilledConfigSummary({
 					agentFieldName="conversationStarters"
 					itemElemBefore={(_, index) => {
 						const StarterIcon = getStarterIcon(starterSummaryItems[index]?.icon ?? DEFAULT_STARTER_ICON);
-						return <StarterIcon label="" size="small" color="currentColor" />;
+						// Match the latest Tag standard: normalize the leading glyph to a
+						// centered 16px slot via the `IconTile` xxsmall/transparent
+						// treatment instead of dropping a raw left-aligned icon in.
+						return (
+							<IconTile
+								aria-hidden
+								icon={<Icon aria-hidden render={<StarterIcon label="" size="small" color="currentColor" />} />}
+								label=""
+								size="xxsmall"
+								variant="transparent"
+							/>
+						);
 					}}
 					items={starterItems}
 					label="Conversation starters"

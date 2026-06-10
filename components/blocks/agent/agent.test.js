@@ -410,10 +410,12 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// The row-level skip guard for empty rows still drops rows that lack an
 	// addLabel, but with addLabel set (the default) every row renders.
 	assert.match(AGENT_SOURCE, /if \(isEmpty && \(hideWhenEmpty \|\| !addLabel\)\) \{/u);
-	// Empty-row "+ Add" link is always visible; for filled rows the same
-	// AgentAddValueButton fades in on hover via the opacity-0 group class.
-	assert.match(AGENT_SOURCE, /"group\/add-link inline-flex h-5 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest/u);
+	// Every AgentAddValueButton renders as a uniform "Edit" affordance whose
+	// chrome matches the trigger row's edit button (transition-opacity + ring
+	// focus). The placement-specific hover-reveal opacity arrives via className.
+	assert.match(AGENT_SOURCE, /"group\/add-link inline-flex h-5 shrink-0 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest transition-opacity focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/u);
 	assert.doesNotMatch(AGENT_SOURCE, /group\/add-link inline-flex h-5 items-center gap-0\.5/u);
+	assert.match(AGENT_SOURCE, /<EditIcon label="" size="small" \/>\s*<span className="group-hover\/add-link:underline group-focus-visible\/add-link:underline">Edit<\/span>/u);
 	// The final chip and the inline +Add link share a single non-wrapping group so
 	// they reflow to the next line together instead of leaving a gap when chips
 	// fill the row. The empty-row +Add link renders separately and stays visible.
@@ -447,7 +449,10 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("subagents", subagentItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("conversationStarters", starterItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addIcon=\{starterItems\.length > 0 \? "edit" : undefined\}/u);
-	assert.match(AGENT_SOURCE, /const StarterIcon = getStarterIcon\(starterSummaryItems\[index\]\?\.icon \?\? DEFAULT_STARTER_ICON\);[\s\S]*return <StarterIcon label="" size="small" color="currentColor" \/>;/u);
+	// Conversation starter chip icons follow the latest Tag standard: the glyph is
+	// wrapped in the `IconTile` xxsmall/transparent treatment so it centers in the
+	// chip's leading slot instead of left-aligning with an oversized gap.
+	assert.match(AGENT_SOURCE, /const StarterIcon = getStarterIcon\(starterSummaryItems\[index\]\?\.icon \?\? DEFAULT_STARTER_ICON\);[\s\S]*<IconTile[\s\S]*icon=\{<Icon aria-hidden render=\{<StarterIcon label="" size="small" color="currentColor" \/>\} \/>\}[\s\S]*size="xxsmall"[\s\S]*variant="transparent"/u);
 	assert.match(AGENT_SOURCE, /tagColor="standard"/u);
 	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*addLabel=\{getAgentFilledSummaryAddLabel\("triggers", triggerItems\.length === 0, showAddButtons\)\}[\s\S]*onEditTriggers=\{onEditTriggers\}/u);
 	// Skills, Tools and Subagents "Add" buttons open the SAME dropdown the
