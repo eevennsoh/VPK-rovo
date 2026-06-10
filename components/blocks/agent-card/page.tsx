@@ -21,6 +21,21 @@ const SKILLS = [
 	{ label: "decision-logging" },
 ] as const;
 
+const CAPABILITIES = [
+	{ icon: "review", label: "Review DACI decisions, close context gaps, and suggest resources" },
+	{ icon: "target", label: "Size opportunities against current priorities" },
+	{ icon: "list", label: "Map options and trade-offs for each decision" },
+	{ icon: "alert", label: "Spot risks before they block a decision" },
+	{ icon: "people", label: "Pull the right stakeholders into the conversation" },
+] as const;
+
+const COLLABORATORS = [
+	{ name: "Michael Chu", src: "/avatar-human/michael-chu.png" },
+	{ name: "Melanie Lee", src: "/avatar-human/melanie-lee.png" },
+	{ name: "David Hsieh", src: "/avatar-human/david-hsieh.png" },
+	{ name: "Aoife Burke", src: "/avatar-human/aoife-burke.png" },
+] as const;
+
 function DemoSection({
 	label,
 	children,
@@ -40,20 +55,9 @@ export default function AgentCardPage(): React.ReactElement {
 				<AgentCard
 					attributionKind="company"
 					avatarSrc="/avatar-agent/teamwork-agents/decision-director.svg"
-					capabilities={[
-						{ icon: "review", label: "Review DACI decisions, close context gaps, and suggest resources" },
-						{ icon: "target", label: "Size opportunities against current priorities" },
-						{ icon: "list", label: "Map options and trade-offs for each decision" },
-						{ icon: "alert", label: "Spot risks before they block a decision" },
-						{ icon: "people", label: "Pull the right stakeholders into the conversation" },
-					]}
+					capabilities={CAPABILITIES}
 					className="max-h-[400px] w-[420px]"
-					collaborators={[
-						{ name: "Michael Chu", src: "/avatar-human/michael-chu.png" },
-						{ name: "Melanie Lee", src: "/avatar-human/melanie-lee.png" },
-						{ name: "David Hsieh", src: "/avatar-human/david-hsieh.png" },
-						{ name: "Aoife Burke", src: "/avatar-human/aoife-burke.png" },
-					]}
+					collaborators={COLLABORATORS}
 					description="Review DACI decisions, close context gaps, and suggest the next decision-ready resources."
 					name="Decision Director"
 					onSelect={() => {}}
@@ -65,6 +69,46 @@ export default function AgentCardPage(): React.ReactElement {
 						{ label: "Last update", value: "2 weeks ago" },
 					]}
 					variant="expanded"
+					verified
+				/>
+			</DemoSection>
+
+			<DemoSection label="Experimental (template)">
+				<AgentCard
+					attributionKind="company"
+					avatarSrc="/avatar-agent/teamwork-agents/decision-director.svg"
+					capabilities={CAPABILITIES}
+					className="max-h-[423px] w-[376px]"
+					collaborators={COLLABORATORS}
+					description="Review DACI decisions, close context gaps, and suggest the next decision-ready resources."
+					name="Decision Director"
+					onSelect={() => {}}
+					publisher="Atlassian"
+					skills={SKILLS}
+					sources={SOURCES}
+					stats={[
+						{ label: "Users", value: "648" },
+						{ label: "Reactions", value: "1.2K" },
+					]}
+					variant="experimental-template"
+					verified
+				/>
+			</DemoSection>
+
+			<DemoSection label="Experimental (profile)">
+				<AgentCard
+					attributionKind="company"
+					avatarSrc="/avatar-agent/teamwork-agents/decision-director.svg"
+					className="w-[376px]"
+					description="Review DACI decisions, close context gaps, and suggest the next decision-ready resources."
+					name="Decision Director"
+					onSelect={() => {}}
+					publisher="Atlassian"
+					stats={[
+						{ label: "Users", value: "648" },
+						{ label: "Reactions", value: "1.2K" },
+					]}
+					variant="experimental-profile"
 					verified
 				/>
 			</DemoSection>

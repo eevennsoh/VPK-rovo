@@ -21,6 +21,86 @@ const SKILLS = [
 	{ label: "decision-logging" },
 ] as const;
 
+const CAPABILITIES = [
+	{ icon: "review", label: "Review DACI decisions, close context gaps, and suggest resources" },
+	{ icon: "target", label: "Size opportunities against current priorities" },
+	{ icon: "list", label: "Map options and trade-offs for each decision" },
+	{ icon: "alert", label: "Spot risks before they block a decision" },
+	{ icon: "people", label: "Pull the right stakeholders into the conversation" },
+] as const;
+
+const COLLABORATORS = [
+	{ name: "Michael Chu", src: "/avatar-human/michael-chu.png" },
+	{ name: "Melanie Lee", src: "/avatar-human/melanie-lee.png" },
+	{ name: "David Hsieh", src: "/avatar-human/david-hsieh.png" },
+	{ name: "Aoife Burke", src: "/avatar-human/aoife-burke.png" },
+] as const;
+
+const DEFAULT_EXPERIMENTAL_AGENT = {
+	avatarSrc: "/avatar-agent/teamwork-agents/decision-director.svg",
+	description: "Review DACI decisions, close context gaps, and suggest the next decision-ready resources.",
+	label: "Teamwork",
+	name: "Decision Director",
+} as const;
+
+const EXPERIMENTAL_AGENT_VARIANTS = [
+	DEFAULT_EXPERIMENTAL_AGENT,
+	{
+		avatarSrc: "/avatar-agent/dev-agents/code-reviewer.svg",
+		description: "Review code changes, surface blockers, and suggest the next implementation-ready fixes.",
+		label: "Dev",
+		name: "Code Reviewer",
+	},
+	{
+		avatarSrc: "/avatar-agent/product-agents/feedback-analyzer.svg",
+		description: "Cluster feedback, size opportunities, and identify the strongest product next steps.",
+		label: "Product",
+		name: "Feedback Analyzer",
+	},
+	{
+		avatarSrc: "/avatar-agent/service-agents/service-triage.svg",
+		description: "Triage requests, route urgent issues, and recommend the next support-ready action.",
+		label: "Service",
+		name: "Service Triage",
+	},
+	{
+		avatarSrc: "/avatar-agent/strategy-agents/strategic-insight.svg",
+		description: "Synthesize market context, compare options, and shape the next strategic recommendation.",
+		label: "Strategy",
+		name: "Strategic Insight",
+	},
+] as const;
+
+function ExperimentalAgentCard({
+	agent,
+	variant = "experimental-template",
+}: Readonly<{
+	agent: (typeof EXPERIMENTAL_AGENT_VARIANTS)[number];
+	variant?: "experimental-template" | "experimental-profile";
+}>) {
+	return (
+		<AgentCard
+			attributionKind="company"
+			avatarSrc={agent.avatarSrc}
+			capabilities={CAPABILITIES}
+			className="max-h-[423px] w-full max-w-[376px]"
+			collaborators={variant === "experimental-template" ? COLLABORATORS : undefined}
+			description={agent.description}
+			name={agent.name}
+			onSelect={() => {}}
+			publisher="Atlassian"
+			skills={SKILLS}
+			sources={SOURCES}
+			stats={[
+				{ label: "Users", value: "648" },
+				{ label: "Reactions", value: "1.2K" },
+			]}
+			variant={variant}
+			verified
+		/>
+	);
+}
+
 /** Expanded variant — cover banner, byline, capabilities feature list, footer. */
 export function AgentCardDemoExpanded() {
 	return (
@@ -28,20 +108,9 @@ export function AgentCardDemoExpanded() {
 			<AgentCard
 				attributionKind="company"
 				avatarSrc="/avatar-agent/teamwork-agents/decision-director.svg"
-				capabilities={[
-					{ icon: "review", label: "Review DACI decisions, close context gaps, and suggest resources" },
-					{ icon: "target", label: "Size opportunities against current priorities" },
-					{ icon: "list", label: "Map options and trade-offs for each decision" },
-					{ icon: "alert", label: "Spot risks before they block a decision" },
-					{ icon: "people", label: "Pull the right stakeholders into the conversation" },
-				]}
+				capabilities={CAPABILITIES}
 				className="max-h-[400px] w-[420px]"
-				collaborators={[
-					{ name: "Michael Chu", src: "/avatar-human/michael-chu.png" },
-					{ name: "Melanie Lee", src: "/avatar-human/melanie-lee.png" },
-					{ name: "David Hsieh", src: "/avatar-human/david-hsieh.png" },
-					{ name: "Aoife Burke", src: "/avatar-human/aoife-burke.png" },
-				]}
+				collaborators={COLLABORATORS}
 				description="Review DACI decisions, close context gaps, and suggest the next decision-ready resources."
 				name="Decision Director"
 				onSelect={() => {}}
@@ -57,6 +126,34 @@ export function AgentCardDemoExpanded() {
 			/>
 		</div>
 	);
+}
+
+/** Experimental template variant — banner-first layout with inline metrics and template-building sections. */
+export function AgentCardDemoExperimentalTemplate() {
+	return (
+		<div className="grid w-full grid-cols-[repeat(auto-fit,minmax(320px,376px))] justify-center gap-6 p-6">
+			{EXPERIMENTAL_AGENT_VARIANTS.map((agent) => (
+				<div className="flex min-w-0 flex-col gap-3" key={agent.label}>
+					<span className="text-xs font-medium text-text-subtlest">{agent.label}</span>
+					<ExperimentalAgentCard agent={agent} />
+				</div>
+			))}
+		</div>
+	);
+}
+
+/** Experimental profile variant — built-agent profile summary without template-building sections. */
+export function AgentCardDemoExperimentalProfile() {
+	return (
+		<div className="flex w-full justify-center p-6">
+			<ExperimentalAgentCard agent={DEFAULT_EXPERIMENTAL_AGENT} variant="experimental-profile" />
+		</div>
+	);
+}
+
+/** Backwards-compatible experimental demo export. */
+export function AgentCardDemoExperimental() {
+	return <AgentCardDemoExperimentalTemplate />;
 }
 
 /** Simple variant — flat icon + name header, description, "Works with", "Skills". */
@@ -85,6 +182,16 @@ export default function AgentCardDemo(): React.ReactElement {
 			<div className="flex flex-col gap-3">
 				<span className="text-xs font-medium text-text-subtlest">Expanded</span>
 				<AgentCardDemoExpanded />
+			</div>
+			<div className="flex flex-col gap-3">
+				<span className="text-xs font-medium text-text-subtlest">Experimental (template)</span>
+				<div className="flex w-full justify-center p-6">
+					<ExperimentalAgentCard agent={DEFAULT_EXPERIMENTAL_AGENT} />
+				</div>
+			</div>
+			<div className="flex flex-col gap-3">
+				<span className="text-xs font-medium text-text-subtlest">Experimental (profile)</span>
+				<AgentCardDemoExperimentalProfile />
 			</div>
 			<div className="flex flex-col gap-3">
 				<span className="text-xs font-medium text-text-subtlest">Simple</span>

@@ -7063,6 +7063,27 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "agent-card-demo-experimental": dynamic(
+    () =>
+      import("./demos/blocks/agent-card-demo").then((mod) => ({
+        default: mod.AgentCardDemoExperimental,
+      })),
+    { ssr: false },
+  ),
+  "agent-card-demo-experimental-template": dynamic(
+    () =>
+      import("./demos/blocks/agent-card-demo").then((mod) => ({
+        default: mod.AgentCardDemoExperimentalTemplate,
+      })),
+    { ssr: false },
+  ),
+  "agent-card-demo-experimental-profile": dynamic(
+    () =>
+      import("./demos/blocks/agent-card-demo").then((mod) => ({
+        default: mod.AgentCardDemoExperimentalProfile,
+      })),
+    { ssr: false },
+  ),
   "agent-card-demo-simple": dynamic(
     () =>
       import("./demos/blocks/agent-card-demo").then((mod) => ({
