@@ -92,7 +92,7 @@ test("Agents Directory includes Agent Templates as a sidebar mode", () => {
 	assert.match(source, /category\.titleLines\[1\]/u);
 	assert.match(source, /No templates match/u);
 	assert.match(source, /activeTemplateCategoryOption \? \([\s\S]*<AnimatePresence custom=\{templateMotionCustom\} initial=\{false\} mode="wait">[\s\S]*<motion\.section[\s\S]*aria-label="Agent templates"[\s\S]*key=\{`templates-\$\{activeTemplateCategoryOption\.id\}`\}[\s\S]*variants=\{AGENT_BROWSER_TEMPLATE_GRID_VARIANTS\}[\s\S]*<AgentTemplateSection[\s\S]*onSelectAgent=\{onSelectTemplateAgent\}/u);
-	assert.match(source, /CardDirectoryAgentExpanded/u);
+	assert.match(source, /EntityCardAgentExpandedCard/u);
 	assert.match(source, /className="h-\[400px\] \[will-change:transform,opacity\]"/u);
 	assert.match(source, /<ul className="grid grid-cols-1 gap-3 md:grid-cols-2">/u);
 	assert.match(source, /AGENT_BROWSER_TEMPLATE_MAX_VISIBLE_AGENTS = 8/u);
@@ -258,15 +258,15 @@ test("Agents Directory uses one unsegmented results grid and updated sidebar lab
 	assert.doesNotMatch(pageSource, /Custom agent/u);
 });
 
-test("Agents Directory cards render the shared CardDirectoryAgent with overlay elevation", () => {
+test("Agents Directory cards render the shared EntityCardAgentCard with overlay elevation", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 	const entityAgentSource = readProjectFile("components/ui-custom/entity-card/agent.tsx");
 
 	// Cards are delegated to the shared ui-custom component — no inlined shell duplication.
-	assert.match(source, /CardDirectoryAgent,[\s\S]*CardDirectoryAgentExpanded,[\s\S]*from "@\/components\/ui-custom\/card-directory";/u);
+	assert.match(source, /EntityCardAgentCard,[\s\S]*EntityCardAgentExpandedCard,[\s\S]*from "@\/components\/ui-custom\/entity-card";/u);
 	assert.match(source, /function AgentCard\(\{ agent, onSelectAgent, publisher \}: Readonly<AgentCardProps>\)/u);
 	assert.match(source, /const \[moreMenuOpen, setMoreMenuOpen\] = useState\(false\);/u);
-	assert.match(source, /<CardDirectoryAgent[\s\S]*active=\{moreMenuOpen\}[\s\S]*avatarSrc=\{getDirectoryCardAvatarSrc\(agent\)\}[\s\S]*insetLogo=\{isBorderlessHexagonAgent\(agent\)\}/u);
+	assert.match(source, /<EntityCardAgentCard[\s\S]*active=\{moreMenuOpen\}[\s\S]*avatarSrc=\{getDirectoryCardAvatarSrc\(agent\)\}[\s\S]*insetLogo=\{isBorderlessHexagonAgent\(agent\)\}/u);
 	assert.match(source, /chatCount=\{agent\.chatCount\}/u);
 	assert.match(source, /feedbackCount=\{agent\.feedbackCount\}/u);
 	assert.match(source, /rating=\{agent\.rating\}/u);
@@ -293,9 +293,9 @@ test("Agents Directory cards render the shared CardDirectoryAgent with overlay e
 	assert.match(source, /return `\/3p\/\$\{agent\.id\}\/16-borderless\.svg`;/u);
 
 	// The hover/elevation/keyboard contract now lives in the shared shell + agent wrapper.
-	const shell = readProjectFile("components/ui-custom/card-directory/card-directory.tsx");
-	const interaction = readProjectFile("components/ui-custom/card-directory/use-card-interaction.ts");
-	const agentWrapper = readProjectFile("components/ui-custom/card-directory/card-directory-agent.tsx");
+	const shell = readProjectFile("components/ui-custom/entity-card/card.tsx");
+	const interaction = readProjectFile("components/ui-custom/entity-card/use-card-interaction.ts");
+	const agentWrapper = readProjectFile("components/ui-custom/entity-card/variants.tsx");
 	const entityAgent = readProjectFile("components/ui-custom/entity-card/agent.tsx");
 
 	assert.match(interaction, /token\("elevation\.shadow\.overlay"\)/u);
@@ -312,10 +312,10 @@ test("Agents Directory cards render the shared CardDirectoryAgent with overlay e
 	assert.match(shell, /data-slot="card-directory-select"[\s\S]*type="button"/u);
 	assert.match(shell, /whileTap: interactive \? tapAnimation : undefined/u);
 
-	assert.match(agentWrapper, /<CardDirectory active=\{active\} className=\{cn\("gap-4", className\)\}/u);
+	assert.match(agentWrapper, /<EntityCardShell active=\{active\} className=\{cn\("gap-4", className\)\}/u);
 	assert.match(agentWrapper, /action=\{moreAction\}/u);
 	assert.match(agentWrapper, /onMoreActions=\{onMoreActions\}/u);
-	assert.match(agentWrapper, /<EntityCard\.Agent/u);
+	assert.match(agentWrapper, /<EntityCardAgent\b/u);
 	assert.match(entityAgent, /shape="hexagon"/u);
 	assert.match(entityAgent, /<EntityCardMoreButton active=\{active\}/u);
 	assert.match(entityAgent, /<div className="flex flex-col gap-2">[\s\S]*<EntityCardHeader[\s\S]*<EntityCardDescription>/u);

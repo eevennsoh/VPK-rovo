@@ -24,17 +24,17 @@ test("Entity Card is the visible ui-custom catalog entry", () => {
 	assert.doesNotMatch(MANIFEST_SOURCE, /customComponent\("skill-card", "Skill Card"\)/u);
 });
 
-test("Entity Card docs and demo use CardDirectory adapters instead of the SkillCard shim", () => {
+test("Entity Card docs and demo use entity-card directory cards instead of the SkillCard shim", () => {
 	assert.match(DETAILS_SOURCE, /"entity-card": \{/u);
-	assert.match(DETAILS_SOURCE, /from "@\/components\/ui-custom\/card-directory"/u);
-	assert.match(DETAILS_SOURCE, /<CardDirectorySkill/u);
+	assert.match(DETAILS_SOURCE, /from "@\/components\/ui-custom\/entity-card"/u);
+	assert.match(DETAILS_SOURCE, /<EntityCardSkillCard/u);
 	assert.doesNotMatch(DETAILS_SOURCE, /from "@\/components\/ui-custom\/skill-card"/u);
-	assert.match(DEMO_SOURCE, /CardDirectorySkill/u);
-	assert.match(DEMO_SOURCE, /CardDirectoryApp/u);
-	assert.match(DEMO_SOURCE, /CardDirectoryTool/u);
-	assert.match(DEMO_SOURCE, /CardDirectoryAgent/u);
-	assert.match(DEMO_SOURCE, /CardDirectoryKnowledge/u);
-	assert.doesNotMatch(DEMO_SOURCE, /SkillCard/u);
+	assert.match(DEMO_SOURCE, /EntityCardSkillCard/u);
+	assert.match(DEMO_SOURCE, /EntityCardAppCard/u);
+	assert.match(DEMO_SOURCE, /EntityCardToolCard/u);
+	assert.match(DEMO_SOURCE, /EntityCardAgentCard/u);
+	assert.match(DEMO_SOURCE, /EntityCardKnowledgeCard/u);
+	assert.doesNotMatch(DEMO_SOURCE, /\bSkillCard\b/u);
 	for (const demoSlug of [
 		"entity-card-demo-skills",
 		"entity-card-demo-apps",

@@ -517,11 +517,11 @@ import { SidebarNavItem, SidebarNavItemAction, SidebarNavItemCount } from "@/com
 
 	"entity-card": {
 		description:
-			"Shared entity-card visual system for skills, apps, tools, agents, templates, knowledge, and object tiles. Use CardDirectory adapters for embedded grids, or compose EntityCard variants directly inside HoverCardContent for hover previews.",
-		usage: `import { CardDirectorySkill } from "@/components/ui-custom/card-directory"
+			"Shared entity-card visual system for skills, apps, tools, agents, knowledge, and object tiles. Use the ready-made directory cards (EntityCard*Card) for embedded grids, or compose the bare EntityCard variants directly inside HoverCardContent for hover previews.",
+		usage: `import { EntityCardSkillCard } from "@/components/ui-custom/entity-card"
 import PageIcon from "@atlaskit/icon/core/page"
 
-<CardDirectorySkill
+<EntityCardSkillCard
   name="Create page"
   description="Create a new formatted, rich text document or page in Confluence."
   icon={<PageIcon label="" />}
@@ -546,40 +546,44 @@ import PageIcon from "@atlaskit/icon/core/page"
 				name: "onSelect",
 				type: "() => void",
 				description:
-					"Optional whole-card selection handler owned by the CardDirectory shell.",
+					"Optional whole-card selection handler owned by the EntityCardShell.",
 			},
 			{
 				name: "density",
 				type: '"directory" | "preview" | "compact"',
 				default: '"directory"',
 				description:
-					"Visual sizing mode available on low-level EntityCard variants when composing outside CardDirectory.",
+					"Visual sizing mode available on the bare EntityCard variants when composing outside the shell.",
 			},
 		],
 		subComponents: [
 			{
-				name: "CardDirectorySkill",
-				description: "Directory shell adapter for skill cards.",
+				name: "EntityCardSkillCard",
+				description: "Ready-made directory card for skills (shell + content).",
 			},
 			{
-				name: "CardDirectoryApp",
-				description: "Directory shell adapter for app cards.",
+				name: "EntityCardAppCard",
+				description: "Ready-made directory card for apps (shell + content).",
 			},
 			{
-				name: "CardDirectoryTool",
-				description: "Directory shell adapter for tool cards.",
+				name: "EntityCardToolCard",
+				description: "Ready-made directory card for tools (shell + content).",
 			},
 			{
-				name: "CardDirectoryAgent",
-				description: "Directory shell adapter for agent cards.",
+				name: "EntityCardAgentCard",
+				description: "Ready-made directory card for agents (shell + content).",
 			},
 			{
-				name: "CardDirectoryKnowledge",
-				description: "Directory shell adapter for knowledge app cards.",
+				name: "EntityCardKnowledgeCard",
+				description: "Ready-made directory card for knowledge apps (shell + content).",
+			},
+			{
+				name: "EntityCard.Shell",
+				description: "Bordered, hover-elevating surface with an optional whole-card select button.",
 			},
 			{
 				name: "EntityCard.Skill",
-				description: "Skill entity visual for directory cards and hover previews.",
+				description: "Bare skill entity visual for directory cards and hover previews.",
 			},
 			{
 				name: "EntityCard.App",
@@ -595,11 +599,7 @@ import PageIcon from "@atlaskit/icon/core/page"
 			},
 			{
 				name: "EntityCard.AgentProfile",
-				description: "Block-level agent profile card visual used by the Agent Card block.",
-			},
-			{
-				name: "EntityCard.Template",
-				description: "Template card visual for source and skill tag metadata.",
+				description: "Block-level agent profile card visual used by the Agent Profile Card block.",
 			},
 			{
 				name: "EntityCard.Knowledge",
@@ -614,27 +614,27 @@ import PageIcon from "@atlaskit/icon/core/page"
 			{ title: "Directory cards", demoSlug: "entity-card-demo-default" },
 			{
 				title: "Skills",
-				description: "Skill cards through the CardDirectorySkill adapter.",
+				description: "Skill cards through the EntityCardSkillCard directory card.",
 				demoSlug: "entity-card-demo-skills",
 			},
 			{
 				title: "Apps",
-				description: "App cards through the CardDirectoryApp adapter.",
+				description: "App cards through the EntityCardAppCard directory card.",
 				demoSlug: "entity-card-demo-apps",
 			},
 			{
 				title: "Tools",
-				description: "Tool cards through the CardDirectoryTool adapter.",
+				description: "Tool cards through the EntityCardToolCard directory card.",
 				demoSlug: "entity-card-demo-tools",
 			},
 			{
 				title: "Agents",
-				description: "Agent cards through the CardDirectoryAgent adapter.",
+				description: "Agent cards through the EntityCardAgentCard directory card.",
 				demoSlug: "entity-card-demo-agents",
 			},
 			{
 				title: "Knowledge",
-				description: "Knowledge app cards through the CardDirectoryKnowledge adapter.",
+				description: "Knowledge app cards through the EntityCardKnowledgeCard directory card.",
 				demoSlug: "entity-card-demo-knowledge",
 			},
 		],
@@ -737,41 +737,15 @@ import SearchIcon from "@atlaskit/icon/core/search"
   },
 
 
-	"card-directory": {
+	"agent-card": {
 		description:
-			"A directory listing card with a shared shell (bordered surface, hover elevation, optional keyboard-operable button) and seven ready-made variants that swap the leading visual and footer: agent (hexagon avatar + rating/chats), agent (expanded) (cover banner + \"Works with\" sources, \"Skills\" tags, a scrollable feature list, and a metadata + collaborator-avatar footer), skill (icon tile + publisher + star/teammate counts), app (app logo + tool/knowledge/teammate counts), tool (app logo + tool/teammate counts), knowledge (app identity + provider metadata), and template (rich icon + \"Works with\" sources and \"Skills\" tags). Compose your own layout with the CardDirectory parts, or use a variant wrapper. Passing onSelect turns the card into a keyboard-operable button; onMoreActions reveals an overflow button on hover/focus.",
-		usage: `import {
-  CardDirectoryAgent,
-  CardDirectoryAgentExpanded,
-  CardDirectorySkill,
-  CardDirectoryApp,
-  CardDirectoryTool,
-  CardDirectoryKnowledge,
-  CardDirectoryTemplate,
-} from "@/components/ui-custom/card-directory";
-import PageIcon from "@atlaskit/icon/core/page";
-import { ConfluenceLogo } from "@/components/ui/logo";
+			"A standalone agent card on a bordered, hover-elevating surface: a rich-icon header, an optional \"Works with\" sources row, and a \"Skills\" tag group. Passing onSelect turns the whole card into a keyboard-operable select button. A flat take on the studio bento tile; separate from the entity-card system.",
+		usage: `import { AgentCard } from "@/components/ui-custom/agent-card";
 
-// Agent — hexagon avatar, attribution, rating + chats
-<CardDirectoryAgent
-  name="Feedback analyzer"
-  publisher="Atlassian"
-  avatarSrc="/avatar-agent/product-agents/feedback-analyzer.svg"
-  description="Surfaces themes and sentiment from raw customer feedback."
-  verified
-  rating={4.6}
-  feedbackCount={1280}
-  chatCount={9400}
-  onSelect={() => openAgent()}
-  onMoreActions={() => openMenu()}
-/>
-
-// Agent (expanded) — cover banner + "Works with" + "Skills" + feature list + metadata footer
-<CardDirectoryAgentExpanded
-  name="Feedback analyzer"
-  publisher="Atlassian"
-  avatarSrc="/avatar-agent/product-agents/feedback-analyzer.svg"
-  description="Surfaces themes and sentiment from raw customer feedback."
+<AgentCard
+  name="Customer Insights"
+  iconSrc="/avatar-agent/teamwork-agents/customer-insights.svg"
+  description="Surface customer feedback themes from trusted sources."
   sources={[
     { id: "jira", label: "Jira", provider: "jira" },
     { id: "confluence", label: "Confluence", provider: "confluence" },
@@ -780,88 +754,42 @@ import { ConfluenceLogo } from "@/components/ui/logo";
     { label: "jql-search", color: "software" },
     { label: "theme-grouping", color: "teamwork" },
   ]}
-  capabilities={[
-    "Surfaces recurring themes from raw feedback",
-    "Scores sentiment shifts across releases",
-    "Links findings back to source tickets",
-  ]}
-  stats={[
-    { value: "1.4K", label: "Remix" },
-    { value: "2 weeks ago", label: "Last update" },
-  ]}
-  collaborators={[
-    { name: "Priya Hansra", src: "/avatar-human/priya-hansra.png" },
-    { name: "Raul Gonzalez", src: "/avatar-human/raul-gonzalez.png" },
-  ]}
-  collaboratorOverflow={4}
-  verified
-  onSelect={() => openAgent()}
-  onMoreActions={() => openMenu()}
-/>
-
-// Skill — icon tile + byline attribution + star/teammate counts
-<CardDirectorySkill
-  name="Create page"
-  icon={<PageIcon label="" />}
-  iconVariant="blue"
-  publisher="Atlassian"
-  description="Create a new formatted page in Confluence."
-  starCount={38}
-  teammateCount={6273}
-  onSelect={() => runSkill()}
-/>
-
-// App — app logo tile + tool/knowledge/teammate counts
-<CardDirectoryApp
-  name="Confluence"
-  appLogo={<ConfluenceLogo size="medium" />}
-  description="Create, search, and update pages."
-  toolCount={36}
-  knowledgeCount={4}
-  teammateCount={258}
-  onSelect={() => openApp()}
-/>
-
-// Tool — app logo tile + tool/teammate counts
-<CardDirectoryTool
-  name="Confluence"
-  appLogo={<ConfluenceLogo size="medium" />}
-  description="Create, search, and update pages."
-  toolCount={36}
-  teammateCount={258}
-  onSelect={() => openApp()}
-/>
-
-// Knowledge — app identity, "By" byline, and star/teammate stats
-<CardDirectoryKnowledge
-  name="Google Drive"
-  description="Bring in documents, folders, and shared files from Drive."
-  publisher="Google"
-  verified
-  starCount={124}
-  teammateCount={18400}
-  icon={<img alt="" aria-hidden src="/3p/google-drive/20.svg" />}
-  onSelect={() => selectKnowledgeApp()}
-/>
-
-// Template — rich icon + "Works with" sources and "Skills" tags
-<CardDirectoryTemplate
-  name="Customer Insights"
-  iconSrc="/avatar-agent/teamwork-agents/customer-insights.svg"
-  description="Surface customer feedback themes from trusted sources."
-  sources={[{ id: "jira", label: "Jira", provider: "jira" }]}
-  skills={[{ label: "jql-search", color: "software" }]}
   onSelect={() => useTemplate()}
-/>
-
-// Custom layout — compose the shared parts directly
-import {
-  CardDirectory,
-  CardDirectoryHeader,
-  CardDirectoryDescription,
-  CardDirectoryFooter,
-  CardDirectoryStat,
-} from "@/components/ui-custom/card-directory";`,
+/>`,
+		props: [
+			{
+				name: "name",
+				type: "string",
+				required: true,
+				description: "Agent name shown in the card header.",
+			},
+			{
+				name: "iconSrc",
+				type: "string",
+				required: true,
+				description: "Path to the rich agent icon rendered in the header.",
+			},
+			{
+				name: "description",
+				type: "string",
+				description: "Optional secondary text. Falls back to a derived line when omitted.",
+			},
+			{
+				name: "sources",
+				type: "ReadonlyArray<TwgToolSource>",
+				description: 'Tools/products shown in the "Works with" appstack.',
+			},
+			{
+				name: "skills",
+				type: "ReadonlyArray<AgentCardSkill>",
+				description: 'Skill tags shown in the "Skills" group.',
+			},
+			{
+				name: "onSelect",
+				type: "() => void",
+				description: "Optional whole-card selection handler; renders a keyboard-operable select button.",
+			},
+		],
 	},
 	"audio-player": {
 		description:
