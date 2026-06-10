@@ -36,7 +36,6 @@ import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-
 import { useSubagentsNavigatorTop } from "@/components/projects/studio/hooks/use-subagents-navigator-top";
 import {
 	Agent,
-	AGENT_KNOWLEDGE_UPLOAD_TARGET,
 	AgentCompactHeaderNav,
 	type AgentCompactHeaderSection,
 	AgentConfigFields,

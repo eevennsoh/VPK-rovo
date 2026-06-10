@@ -20,11 +20,9 @@ import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
 import ScorecardIcon from "@atlaskit/icon/core/scorecard";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import UploadIcon from "@atlaskit/icon/core/upload";
 import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
-import BookOpenIcon from "@atlaskit/icon-lab/core/book-open";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import ViewsIcon from "@atlaskit/icon-lab/core/views";
 
@@ -57,10 +55,8 @@ import {
 	HoverRevealLabel,
 } from "@/components/ui-custom/hover-reveal-row";
 import {
-	EDITOR_PALETTE_KNOWLEDGE_APP_ITEMS,
 	EDITOR_PALETTE_MENTION_SOURCES,
 	getDirectoryMentionItemOrFallback,
-	getKnowledgeAppIdFromMentionId,
 	getToolIdFromMentionId,
 } from "@/components/blocks/editor-palette/data/mention-sources";
 import {
@@ -326,14 +322,6 @@ export const AGENT_KNOWLEDGE_UPLOAD_TARGET = "__upload__";
 
 // Sticky lead row above the knowledge app list, mirroring the directory's
 // upload drop zone. Selecting it opens the directory dialog's file browser.
-const AGENT_KNOWLEDGE_UPLOAD_ITEM: RichTextSuggestionMenuItem = {
-	id: `knowledge:${AGENT_KNOWLEDGE_UPLOAD_TARGET}`,
-	icon: <UploadIcon label="" size="small" />,
-	label: "Upload files",
-};
-const AGENT_KNOWLEDGE_UPLOAD_LEADING_ITEMS: readonly RichTextSuggestionMenuItem[] = [
-	AGENT_KNOWLEDGE_UPLOAD_ITEM,
-];
 
 function isAgentConfigReferenceListField(
 	field: AgentConfigListFieldName,
@@ -1602,8 +1590,6 @@ function AgentCompactEmptyConfigNav({
 	onToggleListItem,
 	reasoningValue,
 	onReasoningValueChange,
-	knowledgeMode,
-	onKnowledgeModeChange,
 	memoryMode,
 	onMemoryModeChange,
 	screenAssistantTargetPrefix,
@@ -2331,12 +2317,10 @@ function AgentFilledConfigSummary({
 	config,
 	hiddenConfigFields,
 	hideEmptyRows = false,
-	knowledgeMode,
 	memoryMode,
 	onAppendListItem,
 	onAddListValues,
 	onEditTriggers,
-	onKnowledgeModeChange,
 	onManageSubagents,
 	onMemoryModeChange,
 	onOpenDirectory,
@@ -2869,287 +2853,7 @@ function AgentReasoningRow({
 	);
 }
 
-const KNOWLEDGE_MODE_OPTIONS = [
-	{ value: "all", label: "All organizational knowledge", tabLabel: "All" },
-	{ value: "custom", label: "Custom knowledge", tabLabel: "Custom" },
-	{ value: "none", label: "No organizational knowledge", tabLabel: "None" },
-] as const;
-
-type KnowledgeModeValue = (typeof KNOWLEDGE_MODE_OPTIONS)[number]["value"];
-
-function findKnowledgeModeOption(value: KnowledgeModeValue) {
-	return KNOWLEDGE_MODE_OPTIONS.find((option) => option.value === value);
-}
-
-// Compact nav-button value shown after the "Knowledge" category word: "all"
-// reads as "All", "none" as "None". A "custom" selection has no text value —
-// its item count is rendered as a Badge instead (matching Tools/Skills), so
-// `getKnowledgeNavValueLabel` returns null for custom.
-function getKnowledgeNavValueLabel(value: KnowledgeModeValue): string | null {
-	if (value === "all") {
-		return "All";
-	}
-	if (value === "none") {
-		return "None";
-	}
-	return null;
-}
-
-function AgentKnowledgeSelectorMenu({
-	value,
-	onValueChange,
-}: Readonly<{
-	value: KnowledgeModeValue;
-	onValueChange: (next: KnowledgeModeValue) => void;
-}>) {
-	return (
-		<DropdownMenuContent align="start" className="min-w-[280px]">
-			<DropdownMenuGroup>
-				{KNOWLEDGE_MODE_OPTIONS.map((option) => (
-					<DropdownMenuItem
-						key={option.value}
-						onClick={() => onValueChange(option.value)}
-						selected={value === option.value}
-					>
-						{option.label}
-					</DropdownMenuItem>
-				))}
-			</DropdownMenuGroup>
-		</DropdownMenuContent>
-	);
-}
-
-// "All | Custom | None" tabs pinned to the bottom of the popup. The tabs ARE the
-// knowledge mode: picking a tab calls `onValueChange` directly. Kept inside the
-// popup's `p-1` frame so it lines up with the list/footer above it.
-function AgentKnowledgeModeTabs({
-	value,
-	onValueChange,
-}: Readonly<{
-	value: KnowledgeModeValue;
-	onValueChange: (next: KnowledgeModeValue) => void;
-}>) {
-	return (
-		<Tabs
-			// Base UI Tabs `value` must match a Tab `value`; map mode → tab 1:1.
-			value={value}
-			onValueChange={(next) => onValueChange(next as KnowledgeModeValue)}
-		>
-			<TabsList className="w-full">
-				{KNOWLEDGE_MODE_OPTIONS.map((option) => (
-					<TabsTrigger key={option.value} value={option.value}>
-						{option.tabLabel}
-					</TabsTrigger>
-				))}
-			</TabsList>
-		</Tabs>
-	);
-}
-
-// Nav-button knowledge popup: a flex column whose body scrolls (the custom
-// knowledge list, once any items exist) and whose footer is pinned. The footer
-// stacks, bottom-up: the "All | Custom | None" tabs (the mode), and — only when
-// "Custom" is active — "Add knowledge" + "Browse knowledge" just above the tabs.
-// A separator sits above those actions once the list has items, so the list,
-// actions, and tabs read as three banded sections.
-function AgentKnowledgeNavMenuContent({
-	value,
-	onValueChange,
-	items,
-	disabledItems,
-	onBrowse,
-	onPickKnowledgeApp,
-	onRemoveItem,
-	onSelectItem,
-	onToggleItem,
-}: Readonly<{
-	value: KnowledgeModeValue;
-	onValueChange: (next: KnowledgeModeValue) => void;
-	items: readonly string[];
-	disabledItems?: readonly string[];
-	onBrowse?: () => void;
-	// "Add knowledge" opens a nested flyout whose rows are the knowledge apps
-	// (plus an "Upload files" lead row), mirroring the directory grid. Picking a
-	// row opens the directory dialog on that app's content step rather than
-	// adding immediately; `__upload__` opens the file browser.
-	onPickKnowledgeApp?: (appIdOrUpload: string) => void;
-	onRemoveItem?: (index: number) => void;
-	onSelectItem?: (item: string) => void;
-	onToggleItem?: (index: number, enabled: boolean) => void;
-}>) {
-	const isCustom = value === "custom";
-	const hasItems = isCustom && items.length > 0;
-	const disabledSet = useDisabledLabelSet(disabledItems);
-
-	return (
-		<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
-			{hasItems ? (
-				<div className="min-h-0 flex-1 overflow-y-auto">
-					<AgentCompactNavMenuList>
-						<DropdownMenuGroup className="p-0">
-							{items.map((item, index) => {
-								const mention = getDirectoryMentionItemOrFallback("knowledge", item);
-								return (
-									<AgentCompactReferenceRow
-										key={`knowledge-${item}-${index}`}
-										enabled={!disabledSet.has(item.trim())}
-										elemBefore={
-											// The shared menu visual renders at a fixed 32px tile
-											// (MENU_VISUAL_TILE_SIZE). Scale the whole mark to 24px
-											// uniformly across avatar/image/icon kinds.
-											<span className="inline-flex size-6 shrink-0 items-center justify-center [&>*]:scale-75">
-												{mention.visual ? (
-													<RichTextMentionVisualMark
-														category="knowledge"
-														label={item}
-														size="menu"
-														visual={mention.visual}
-													/>
-												) : (
-													<IconTile
-														aria-hidden={true}
-														className="border border-border bg-surface text-icon-subtlest"
-														icon={<PageIcon label="" size="small" />}
-														label={item}
-														size="medium"
-													/>
-												)}
-											</span>
-										}
-										label={item}
-										onClick={onSelectItem ? () => onSelectItem(item) : undefined}
-										onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
-										onToggle={onToggleItem ? (enabled) => onToggleItem(index, enabled) : undefined}
-									/>
-								);
-							})}
-						</DropdownMenuGroup>
-					</AgentCompactNavMenuList>
-				</div>
-			) : null}
-			<div className="shrink-0">
-				{isCustom ? (
-					<>
-						{hasItems ? <DropdownMenuSeparator /> : null}
-						<DropdownMenuSub>
-							<DropdownMenuSubTrigger>
-								<span className="flex items-center gap-3">
-									<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
-										<PlusIcon />
-									</span>
-									Add knowledge
-								</span>
-							</DropdownMenuSubTrigger>
-							<DropdownMenuSubContent className="w-auto min-w-0 overflow-visible border-0 bg-transparent p-0 shadow-none">
-								<EditorPaletteSearchPicker
-									autoFocus
-									category="knowledge"
-									className="rich-text-command-menu-borderless"
-									items={EDITOR_PALETTE_KNOWLEDGE_APP_ITEMS}
-									leadingItems={AGENT_KNOWLEDGE_UPLOAD_LEADING_ITEMS}
-									onBrowseAll={onBrowse}
-									onSelectItem={onPickKnowledgeApp
-										? (item) => onPickKnowledgeApp(getKnowledgeAppIdFromMentionId(item.id))
-										: undefined}
-								/>
-							</DropdownMenuSubContent>
-						</DropdownMenuSub>
-						<DropdownMenuItem
-							elemBefore={
-								<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
-									<BookOpenIcon label="" />
-								</span>
-							}
-							onClick={onBrowse}
-						>
-							Browse knowledge
-						</DropdownMenuItem>
-					</>
-				) : null}
-				<div className={cn(isCustom && "pt-1")}>
-					<AgentKnowledgeModeTabs value={value} onValueChange={onValueChange} />
-				</div>
-			</div>
-		</MenubarContent>
-	);
-}
-
-interface AgentKnowledgeSelectorProps {
-	value: KnowledgeModeValue;
-	onValueChange: (next: KnowledgeModeValue) => void;
-	render: "nav-button" | "row";
-	itemCount?: number;
-	// Nav-button only: the custom knowledge items, plus browse/add/select
-	// handlers surfaced inside the dropdown when "Custom" is active.
-	items?: readonly string[];
-	onBrowse?: () => void;
-	disabledItems?: readonly string[];
-	// Picking an app row (or "Upload files") in the "Add knowledge" flyout.
-	onPickKnowledgeApp?: (appIdOrUpload: string) => void;
-	onRemoveItem?: (index: number) => void;
-	onSelectItem?: (item: string) => void;
-	onToggleItem?: (index: number, enabled: boolean) => void;
-	screenAssistantTargetId?: string;
-}
-
-function AgentKnowledgeSelector({
-	value,
-	onValueChange,
-	render,
-	itemCount = 0,
-	items = [],
-	disabledItems,
-	onBrowse,
-	onPickKnowledgeApp,
-	onRemoveItem,
-	onSelectItem,
-	onToggleItem,
-	screenAssistantTargetId,
-}: Readonly<AgentKnowledgeSelectorProps>) {
-	const current = findKnowledgeModeOption(value);
-	const label = current?.label ?? "Knowledge";
-
-	if (render === "nav-button") {
-		// Always lead with the "Knowledge" category word (like Tools/Skills), then
-		// the value in a Badge: "All"/"None" for those modes, or the item count for
-		// a custom selection — matching the grey Badge used by Tools/Skills.
-		const valueLabel = getKnowledgeNavValueLabel(value) ?? String(itemCount);
-		return (
-			<MenubarMenu>
-				<MenubarTrigger
-					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
-					data-agent-field="knowledge"
-					data-screen-assistant-target={screenAssistantTargetId}
-				>
-					Knowledge
-					<Badge>{valueLabel}</Badge>
-				</MenubarTrigger>
-				<AgentKnowledgeNavMenuContent
-					value={value}
-					onValueChange={onValueChange}
-					items={items}
-					disabledItems={disabledItems}
-					onBrowse={onBrowse}
-					onPickKnowledgeApp={onPickKnowledgeApp}
-					onRemoveItem={onRemoveItem}
-					onSelectItem={onSelectItem}
-					onToggleItem={onToggleItem}
-				/>
-			</MenubarMenu>
-		);
-	}
-
-	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger
-				render={<LozengeDropdownTrigger aria-label="Knowledge mode" icon={<BookOpenIcon label="" size="small" />} />}
-			>
-				{label}
-			</DropdownMenuTrigger>
-			<AgentKnowledgeSelectorMenu value={value} onValueChange={onValueChange} />
-		</DropdownMenu>
-	);
-}
+type KnowledgeModeValue = "all" | "custom" | "none";
 
 const MEMORY_MODE_OPTIONS = [
 	{ value: "on", label: "On" },
@@ -3335,99 +3039,6 @@ function AgentMemoryRow({
 			</div>
 			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
 				<AgentMemorySelector render="row" value={value} onValueChange={onValueChange} onManage={onManage} />
-			</div>
-		</div>
-	);
-}
-
-interface AgentKnowledgeRowProps {
-	value: KnowledgeModeValue;
-	onValueChange: (next: KnowledgeModeValue) => void;
-	items: readonly string[];
-	addLabel?: string;
-	disabledItems?: readonly string[];
-	isItemDisabled?: (item: string, index: number) => boolean;
-	onBrowse?: () => void;
-	onPickKnowledgeApp?: (appIdOrUpload: string) => void;
-	onRemoveItem?: (index: number) => void;
-	onSelectItem?: (item: string) => void;
-	onToggleItem?: (index: number, enabled: boolean) => void;
-	screenAssistantTargetId?: string;
-}
-
-function AgentKnowledgeRow({
-	value,
-	onValueChange,
-	items,
-	addLabel,
-	disabledItems,
-	isItemDisabled,
-	onBrowse,
-	onPickKnowledgeApp,
-	onRemoveItem,
-	onSelectItem,
-	onToggleItem,
-	screenAssistantTargetId,
-}: Readonly<AgentKnowledgeRowProps>) {
-	const isCustom = value === "custom";
-	const isEmpty = items.length === 0;
-
-	return (
-		<div
-			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-5"
-			data-agent-field="knowledge"
-			data-screen-assistant-target={screenAssistantTargetId}
-		>
-			<div className="sm:w-32 sm:shrink-0">
-				<AgentSectionLabel>Knowledge</AgentSectionLabel>
-			</div>
-			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
-				<AgentKnowledgeSelector
-					render="row"
-					value={value}
-					onValueChange={onValueChange}
-				/>
-				{isCustom ? (
-					<>
-						<div aria-hidden className="h-4 w-px shrink-0 bg-border" />
-						{items.map((item, index) => (
-							<AgentReferenceChip
-								category="knowledge"
-								disabled={isItemDisabled?.(item, index)}
-								key={`knowledge-${item}-${index}`}
-								label={item}
-								onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
-							/>
-						))}
-						{addLabel ? (
-							// "Add" opens the same dropdown the collapsed nav shows
-							// (custom list + "Add knowledge ›" flyout + "Browse" + mode tabs).
-							<MenubarMenu>
-								<MenubarTrigger
-									render={(
-										<AgentAddValueButton
-											className={isEmpty
-												? "aria-expanded:opacity-100"
-												: "opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-focus-within/agent-row:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100"}
-											label={addLabel}
-										/>
-									)}
-								/>
-								<AgentKnowledgeNavMenuContent
-									value={value}
-									onValueChange={onValueChange}
-									items={items}
-									disabledItems={disabledItems}
-									onBrowse={onBrowse}
-									onPickKnowledgeApp={onPickKnowledgeApp}
-									onRemoveItem={onRemoveItem}
-									onSelectItem={onSelectItem}
-									onToggleItem={onToggleItem}
-								/>
-							</MenubarMenu>
-						) : null}
-					</>
-				) : null}
 			</div>
 		</div>
 	);
