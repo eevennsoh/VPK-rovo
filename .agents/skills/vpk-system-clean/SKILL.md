@@ -1,20 +1,17 @@
 ---
 name: vpk-system-clean
 description: >-
-  Diagnose and fix high local-dev CPU/RAM on this Mac, and run/schedule the
-  cleanup that prevents it. The #1 cause is a runaway `next-server` (Turbopack
-  dev server) pegged at hundreds of percent CPU — a watch/recompile thrash loop;
-  the skill detects and restarts it. It also deletes runaway Next.js `.next`
-  caches across all vpk-rovo worktrees and restarts a ballooned `fseventsd`. USE
-  THIS whenever the user says Next.js / next-server / node / the dev server is
-  "eating CPU" / "at 400%" / "spiking", the Mac "feels slow" or "fans are loud"
-  or "load is high", `fseventsd` is using lots of CPU/RAM, disk is filling from
-  `.next`, or they want to "clean my system / free up space", "kill the runaway
-  dev server", "fix the CPU problem", "set a timer / schedule the cleanup",
-  "see cleanup records / history / how much was freed", "check the maintenance
-  job/log", "change thresholds", or "reinstall / repair the cleanup or sudoers
-  rule". Trigger on `vpk-system-clean` or the agent `com.<user>.vpk-system-clean`
-  even if the skill is not named.
+  Diagnose and fix high local-dev CPU/RAM on this Mac, then run or schedule the
+  cleanup that prevents recurrence. The common cause is a runaway `next-server`
+  or Turbopack dev server pegged at hundreds of percent CPU in a watch/recompile
+  loop; this skill detects and restarts it, clears oversized Next.js `.next`
+  caches across vpk-rovo worktrees, and restarts ballooned `fseventsd` when the
+  machine is configured for it. Use whenever the user says `vpk-system-clean`,
+  Next.js/node/dev server is "eating CPU", "at 400%", or "spiking", the Mac is
+  slow or loud, `fseventsd` is using lots of CPU/RAM, disk is filling from
+  `.next`, or they want to clean the system, free space, kill runaway dev
+  servers, schedule cleanup, see cleanup records, check the maintenance job/log,
+  change thresholds, or repair the launchd agent or sudoers rule.
 ---
 
 # vpk-system-clean

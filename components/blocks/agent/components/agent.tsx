@@ -1281,6 +1281,7 @@ function AgentCompactTriggersNavButton({
 	triggerDefinitions,
 	onSelectEvent,
 	onEditTriggers,
+	renderTrigger,
 	screenAssistantTargetId,
 }: Readonly<{
 	item: AgentCompactConfigNavItem;
@@ -1288,6 +1289,10 @@ function AgentCompactTriggersNavButton({
 	triggerDefinitions?: readonly AgentTriggerValue[];
 	onSelectEvent: (providerId: Parameters<typeof createAgentTriggerValue>[0], eventId: string) => void;
 	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
+	// Overrides the default collapsed-nav trigger button. The expanded Triggers
+	// summary row passes its inline chips / "Edit" button here so they open this
+	// same dropdown.
+	renderTrigger?: ReactElement;
 	screenAssistantTargetId?: string;
 }>) {
 	const isEmpty = triggers.length === 0;
@@ -1342,16 +1347,20 @@ function AgentCompactTriggersNavButton({
 
 	return (
 		<MenubarMenu>
-			<MenubarTrigger
-				className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
-				render={(
-					<AgentCompactConfigNavButton
-						aria-label="Triggers"
-						item={item}
-						screenAssistantTargetId={screenAssistantTargetId}
-					/>
-				)}
-			/>
+			{renderTrigger ? (
+				<MenubarTrigger render={renderTrigger} />
+			) : (
+				<MenubarTrigger
+					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
+					render={(
+						<AgentCompactConfigNavButton
+							aria-label="Triggers"
+							item={item}
+							screenAssistantTargetId={screenAssistantTargetId}
+						/>
+					)}
+				/>
+			)}
 			<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
 				{isEmpty ? null : (
 					<div className="min-h-0 flex-1 overflow-y-auto">
@@ -2179,6 +2188,26 @@ function AgentTriggerSummaryRow({
 		onTriggerDefinitionsChange?.(triggerDefinitions.filter((_, i) => i !== index));
 	};
 
+	// Picking a provider event from the "Add trigger" flyout appends to the
+	// existing set and seeds the rule-builder modal — identical to the empty-state
+	// TriggerPicker and the collapsed-nav handler.
+	const handleSelectEvent = (
+		providerId: Parameters<typeof createAgentTriggerValue>[0],
+		eventId: string,
+	) => {
+		const existing = triggerDefinitions ?? [];
+		const next = createAgentTriggerValue(providerId, eventId, existing.length + 1);
+		onEditTriggers?.(next ? [...existing, next] : existing);
+	};
+
+	// The configured chips and the trailing "Edit" button open the SAME Triggers
+	// dropdown the collapsed nav uses, so both layouts share one experience. The
+	// nav button needs a catalog nav item (label/icon/count) — look it up the way
+	// the collapsed strip does.
+	const triggerNavItem = getAgentCompactEmptyConfigNavItems()
+		.map((entry) => ({ ...entry, count: items.length }))
+		.find((entry) => entry.agentFieldName === "trigger");
+
 	if (isEmpty && (hideWhenEmpty || !addLabel)) {
 		return null;
 	}
@@ -2196,13 +2225,7 @@ function AgentTriggerSummaryRow({
 				{isEmpty ? (
 					<TriggerPicker
 						label={addLabel ?? "Add"}
-						onSelectEvent={(providerId, eventId) => {
-							// Append rather than replace so picking a trigger seeds the
-							// editor with the full set (see the collapsed-nav handler).
-							const existing = triggerDefinitions ?? [];
-							const next = createAgentTriggerValue(providerId, eventId, existing.length + 1);
-							onEditTriggers?.(next ? [...existing, next] : existing);
-						}}
+						onSelectEvent={handleSelectEvent}
 						trigger={<AgentAddValueButton icon="add" label={addLabel ?? "Add"} />}
 					/>
 				) : (
@@ -2214,25 +2237,47 @@ function AgentTriggerSummaryRow({
 							// back to the chip's default icon for legacy label-only triggers.
 							const definition = definitionsAlignItems ? triggerDefinitions?.[index] : undefined;
 							const elemBefore = definition ? renderAgentTriggerProviderIcon(definition) : undefined;
-							return (
+							const chip = (
 								<AgentReferenceChip
-									key={`trigger-${item}-${index}`}
 									elemBefore={elemBefore ?? undefined}
 									label={item}
-									onClick={onEditTriggers ? () => onEditTriggers() : undefined}
 									onRemove={canRemoveInline ? () => handleRemoveTrigger(index) : undefined}
 								/>
 							);
+							// Clicking the chip opens the shared Triggers dropdown (the same
+							// menu the collapsed nav shows). The chip's own "Remove" control
+							// stops propagation so it never also opens the menu.
+							return triggerNavItem ? (
+								<AgentCompactTriggersNavButton
+									key={`trigger-${item}-${index}`}
+									item={triggerNavItem}
+									triggers={items}
+									triggerDefinitions={triggerDefinitions}
+									onSelectEvent={handleSelectEvent}
+									onEditTriggers={onEditTriggers}
+									renderTrigger={chip}
+								/>
+							) : (
+								<Fragment key={`trigger-${item}-${index}`}>{chip}</Fragment>
+							);
 						})}
-						{onEditTriggers ? (
-							<button
-								type="button"
-								className="inline-flex h-5 shrink-0 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest opacity-0 transition-opacity group-hover/agent-row:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-								onClick={() => onEditTriggers()}
-							>
-								<EditIcon label="" size="small" />
-								<span className="group-hover/trigger-edit:underline">Edit</span>
-							</button>
+						{onEditTriggers && triggerNavItem ? (
+							<AgentCompactTriggersNavButton
+								item={triggerNavItem}
+								triggers={items}
+								triggerDefinitions={triggerDefinitions}
+								onSelectEvent={handleSelectEvent}
+								onEditTriggers={onEditTriggers}
+								renderTrigger={(
+									<button
+										type="button"
+										className="inline-flex h-5 shrink-0 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest opacity-0 transition-opacity group-hover/agent-row:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-expanded:opacity-100"
+									>
+										<EditIcon label="" size="small" />
+										<span className="group-hover/trigger-edit:underline">Edit</span>
+									</button>
+								)}
+							/>
 						) : null}
 					</div>
 				)}
