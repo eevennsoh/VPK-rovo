@@ -293,7 +293,7 @@ export function RichTextEditor({
 	toolbarEndSlot,
 	toolbarBelowSlot,
 	mentionSources,
-	suggestionVariant = "flat",
+	suggestionVariant = "nested",
 	mentionRemovalRequest,
 	onMarkdownChange,
 	onPlainTextChange,

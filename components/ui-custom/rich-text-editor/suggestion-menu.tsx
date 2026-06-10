@@ -666,6 +666,7 @@ export interface RichTextCommandMenuSearchFieldProps {
 	id?: string;
 	label: string;
 	onClear: () => void;
+	onEscape?: () => void;
 	onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
 	onSubmit?: () => void;
 	onValueChange: (value: string) => void;
@@ -687,6 +688,7 @@ export function RichTextCommandMenuSearchField({
 	id,
 	label,
 	onClear,
+	onEscape,
 	onKeyDown,
 	onSubmit,
 	onValueChange,
@@ -711,6 +713,11 @@ export function RichTextCommandMenuSearchField({
 					onKeyDown?.(event);
 					event.stopPropagation();
 					if (event.defaultPrevented) {
+						return;
+					}
+					if ((event.key === "Escape" || event.key === "Esc") && onEscape) {
+						event.preventDefault();
+						onEscape();
 						return;
 					}
 					if (event.key === "Enter") {
@@ -1241,11 +1248,12 @@ export function createSlashSuggestionRenderer(
 	onAskRovo?: (editor: Editor) => void,
 	includeFormat = true,
 	anchorToInput = false,
-	variant: SuggestionVariant = "flat",
+	variant: SuggestionVariant = "nested",
 	// Launches the directory for a nested "/" category from its empty-state
 	// "Browse all" button. Only directory-backed categories (everything but
 	// "format") invoke it; omit it to keep the plain empty title with no button.
 	onOpenDirectory?: (category: RichTextSlashCategory) => void,
+	onExitSuggestion?: (editor: Editor) => void,
 ) {
 	const popupState: SuggestionPopupState = { component: null, element: null, cleanup: null };
 	let selectedIndex = 0;
@@ -1258,6 +1266,10 @@ export function createSlashSuggestionRenderer(
 	const expandedSections: Record<string, boolean> = {};
 
 	const isFlat = variant === "flat";
+
+	function shouldUseFlatSurface(query: string): boolean {
+		return isFlat || (!activeCategory && query.trim().length > 0);
+	}
 
 	/** Maps a "/" category to its full, unfiltered menu items. */
 	function getCategoryMenuItems(
@@ -1297,10 +1309,21 @@ export function createSlashSuggestionRenderer(
 	}
 
 	function getVisibleItems(query: string): readonly RichTextSuggestionMenuItem[] {
-		if (isFlat) {
+		if (shouldUseFlatSurface(query)) {
 			return buildFlatSurfaceRows(getFlatSections(), query, expandedSections);
 		}
 		return activeCategory ? getChildItems(query) : getTopLevelItems(query);
+	}
+
+	function dismissSuggestion(): void {
+		if (!currentProps) {
+			return;
+		}
+		const { editor } = currentProps;
+		onExitSuggestion?.(editor);
+		requestAnimationFrame(() => {
+			editor.commands.focus();
+		});
 	}
 
 	function submitAskRovoPrompt(): boolean {
@@ -1329,6 +1352,7 @@ export function createSlashSuggestionRenderer(
 				icon={ASK_ROVO_SLASH_ITEM.icon}
 				label={ASK_ROVO_SLASH_ITEM.label}
 				onClear={() => updateAskRovoPrompt("")}
+				onEscape={dismissSuggestion}
 				onSubmit={submitAskRovoPrompt}
 				onValueChange={updateAskRovoPrompt}
 				placeholder={ASK_ROVO_SLASH_ITEM.label}
@@ -1403,7 +1427,7 @@ export function createSlashSuggestionRenderer(
 			return false;
 		}
 
-		if (isFlat) {
+		if (shouldUseFlatSurface(currentProps.query)) {
 			// "Browse all" footers link out to a directory we don't host here; keep
 			// the menu open. "View more" / "View less" footers toggle the section.
 			if (isFlatFooterId(item.id)) {
@@ -1806,7 +1830,7 @@ const MENTION_FLAT_SECTIONS: readonly { category: RichTextMentionParentCategory;
 export function createMentionSuggestionRenderer(
 	getMentionSources?: () => RichTextMentionSources | undefined,
 	anchorToInput = false,
-	variant: SuggestionVariant = "flat",
+	variant: SuggestionVariant = "nested",
 ) {
 	const popupState: SuggestionPopupState = { component: null, element: null, cleanup: null };
 	let selectedIndex = 0;
@@ -1816,6 +1840,10 @@ export function createMentionSuggestionRenderer(
 	const expandedSections: Record<string, boolean> = {};
 
 	const isFlat = variant === "flat";
+
+	function shouldUseFlatSurface(query: string): boolean {
+		return isFlat || (!activeCategory && query.trim().length > 0);
+	}
 
 	/** Flat surface sections: people & team, then subagents. */
 	function getFlatSections(): readonly FlatSectionSpec[] {
@@ -1842,7 +1870,7 @@ export function createMentionSuggestionRenderer(
 	function getVisibleItems(
 		props: SuggestionProps<RichTextMentionItem, RichTextMentionItem>,
 	): readonly RichTextSuggestionMenuItem[] {
-		if (isFlat) {
+		if (shouldUseFlatSurface(props.query)) {
 			return buildFlatSurfaceRows(getFlatSections(), props.query, expandedSections);
 		}
 		return activeCategory ? getChildItems(props.query) : getParentItems(props.query);
@@ -1906,7 +1934,7 @@ export function createMentionSuggestionRenderer(
 			return false;
 		}
 
-		if (isFlat) {
+		if (shouldUseFlatSurface(currentProps.query)) {
 			// "Browse all" footers link out to a directory we don't host here; keep
 			// the menu open. "View more" / "View less" footers toggle the section.
 			if (isFlatFooterId(item.id)) {
