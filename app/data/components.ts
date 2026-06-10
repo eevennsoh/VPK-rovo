@@ -126,7 +126,6 @@ export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("attachments"),
 	customComponent("audio-player", "Audio Player"),
 	customComponent("canvas"),
-	customComponent("agent-card", "Agent Card"),
 	customComponent("entity-card", "Entity Card"),
 	customComponent("knowledge"),
 	customComponent("footer", "Footer"),
@@ -319,6 +318,7 @@ export const UI_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("agent"),
 	blockComponent("agent-bento", "Agent Bento"),
+	blockComponent("agent-card", "Agent Card"),
 	blockComponent("agent-profile-card", "Agent Profile Card"),
 	blockComponent("agents-directory", "Agents Directory"),
 	blockComponent("agent-progress", "Agent Progress"),

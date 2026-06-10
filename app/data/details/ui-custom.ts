@@ -737,60 +737,6 @@ import SearchIcon from "@atlaskit/icon/core/search"
   },
 
 
-	"agent-card": {
-		description:
-			"A standalone agent card on a bordered, hover-elevating surface: a rich-icon header, an optional \"Works with\" sources row, and a \"Skills\" tag group. Passing onSelect turns the whole card into a keyboard-operable select button. A flat take on the studio bento tile; separate from the entity-card system.",
-		usage: `import { AgentCard } from "@/components/ui-custom/agent-card";
-
-<AgentCard
-  name="Customer Insights"
-  iconSrc="/avatar-agent/teamwork-agents/customer-insights.svg"
-  description="Surface customer feedback themes from trusted sources."
-  sources={[
-    { id: "jira", label: "Jira", provider: "jira" },
-    { id: "confluence", label: "Confluence", provider: "confluence" },
-  ]}
-  skills={[
-    { label: "jql-search", color: "software" },
-    { label: "theme-grouping", color: "teamwork" },
-  ]}
-  onSelect={() => useTemplate()}
-/>`,
-		props: [
-			{
-				name: "name",
-				type: "string",
-				required: true,
-				description: "Agent name shown in the card header.",
-			},
-			{
-				name: "iconSrc",
-				type: "string",
-				required: true,
-				description: "Path to the rich agent icon rendered in the header.",
-			},
-			{
-				name: "description",
-				type: "string",
-				description: "Optional secondary text. Falls back to a derived line when omitted.",
-			},
-			{
-				name: "sources",
-				type: "ReadonlyArray<TwgToolSource>",
-				description: 'Tools/products shown in the "Works with" appstack.',
-			},
-			{
-				name: "skills",
-				type: "ReadonlyArray<AgentCardSkill>",
-				description: 'Skill tags shown in the "Skills" group.',
-			},
-			{
-				name: "onSelect",
-				type: "() => void",
-				description: "Optional whole-card selection handler; renders a keyboard-operable select button.",
-			},
-		],
-	},
 	"audio-player": {
 		description:
 			"A composable audio player built on media-chrome with play/pause, seek, time display, and volume controls. Supports remote URLs and AI SDK SpeechResult base64 audio.",

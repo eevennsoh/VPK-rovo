@@ -200,6 +200,73 @@ function FormattingToolbar({ editor }: { editor: Editor }) {
 			},
 		],
 	},
+	"agent-card": {
+		description:
+			"Self-contained agent card with two layouts. The default \"expanded\" variant has a cover banner, attribution byline, \"Works with\" sources, \"Skills\" tags, a scrollable capabilities feature list, and a stats / collaborators footer that swaps to a \"Use template\" action on hover. The \"template\" variant is a flat card (icon + name, description, \"Works with\", \"Skills\"). Passing onSelect turns the whole card into a keyboard-operable select button.",
+		importStatement: `import { AgentCard } from "@/components/blocks/agent-card";`,
+		usage: `import { AgentCard } from "@/components/blocks/agent-card";
+
+<AgentCard
+  name="Decision Director"
+  publisher="Atlassian"
+  attributionKind="company"
+  verified
+  avatarSrc="/avatar-agent/teamwork-agents/decision-director.svg"
+  description="Review DACI decisions, close context gaps, and suggest the next decision-ready resources."
+  sources={[
+    { id: "jira", label: "Jira", provider: "jira" },
+    { id: "confluence", label: "Confluence", provider: "confluence" },
+  ]}
+  skills={[
+    { label: "stakeholder-input", color: "teamwork" },
+    { label: "opportunity-sizing", color: "product" },
+  ]}
+  capabilities={[
+    { icon: "review", label: "Review DACI decisions and close context gaps" },
+    { icon: "target", label: "Size opportunities against current priorities" },
+  ]}
+  stats={[
+    { value: "1.8K", label: "Remix" },
+    { value: "2 weeks ago", label: "Last update" },
+  ]}
+  collaborators={[
+    { name: "Michael Chu", src: "/avatar-human/michael-chu.png" },
+    { name: "Melanie Lee", src: "/avatar-human/melanie-lee.png" },
+  ]}
+  onSelect={() => useTemplate()}
+/>`,
+		props: [
+			{ name: "name", type: "string", required: true, description: "Agent name shown in the card header." },
+			{ name: "variant", type: '"expanded" | "template"', default: '"expanded"', description: 'Layout: "expanded" (banner + capabilities + footer) or flat "template".' },
+			{ name: "publisher", type: "string", required: true, description: "Attribution publisher shown in the byline." },
+			{ name: "avatarSrc", type: "string", description: "Cover/avatar art rendered in the banner and hexagon (expanded variant)." },
+			{ name: "iconSrc", type: "string", description: 'Flat icon shown in the header of the "template" variant.' },
+			{ name: "attributionKind", type: '"company" | "team" | "person"', description: "Controls the avatar badge (company logo, team project badge, or none)." },
+			{ name: "description", type: "string", description: "Secondary text under the header; falls back to a derived line." },
+			{ name: "capabilities", type: "readonly (AgentCardCapability | string)[]", description: 'Feature list rendered as an icon-tile capabilities list (expanded variant).' },
+			{ name: "sources", type: "ReadonlyArray<TwgToolSource>", description: 'Tools/products shown in the "Works with" appstack.' },
+			{ name: "skills", type: "ReadonlyArray<AgentCardSkill>", description: 'Skill tags shown in the "Skills" group.' },
+			{ name: "stats", type: "ReadonlyArray<{ value: string; label: string }>", description: "Footer metric pairs (e.g. Remix, Last update)." },
+			{ name: "collaborators", type: "ReadonlyArray<{ src: string; name: string }>", description: "Collaborator avatars shown in the footer." },
+			{ name: "verified", type: "boolean", default: "false", description: "Shows the verified badge next to the publisher." },
+			{ name: "onSelect", type: "() => void", description: "Whole-card selection handler; also wires the hover \"Use template\" action." },
+			{ name: "onMoreActions", type: "() => void", description: "Reveals an overflow button in the header on hover/focus." },
+		],
+		examples: [
+			{
+				title: "Expanded",
+				description:
+					"Full layout: cover banner, attribution byline, \"Works with\" sources, \"Skills\" tags, a scrollable capabilities feature list, and a stats / collaborators footer. Capped height shows the inner scroll mask.",
+				demoSlug: "agent-card-demo-expanded",
+			},
+			{
+				title: "Simple",
+				description:
+					"Flat \"template\" variant: icon + name header, description, \"Works with\", and \"Skills\". Hugs its content.",
+				demoSlug: "agent-card-demo-simple",
+			},
+		],
+	},
 	"agent-profile-card": {
 		description: "Figma-matched Rovo agent profile card with cover art, avatar attribution, partner byline, description, title actions, and an AI input affordance.",
 		importStatement: `import { AgentProfileCard } from "@/components/blocks/agent-profile-card";`,

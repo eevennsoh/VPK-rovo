@@ -76,9 +76,9 @@ export default async function ComponentDetailPage({ params }: PageProps) {
 		redirect("/components/ui-custom/entity-card");
 	}
 
-	// The blocks agent-card was renamed to agent-profile-card.
-	if (category === "blocks" && slug === "agent-card") {
-		redirect("/components/blocks/agent-profile-card");
+	// The agent-card moved from ui-custom to a self-contained block.
+	if (category === "ui-custom" && slug === "agent-card") {
+		redirect("/components/blocks/agent-card");
 	}
 
 	if (category !== "ui-audio" && category !== "ui-charts" && category !== "ui-custom" && category !== "ui" && category !== "blocks" && category !== "projects" && category !== "arts" && category !== "utility" && category !== "visual") {
