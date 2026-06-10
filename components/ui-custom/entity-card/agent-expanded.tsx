@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, type MouseEvent, type ReactNode, type UIEvent, useCallback, useState } from "react";
+import { type CSSProperties, type MouseEvent, type UIEvent, useCallback, useState } from "react";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
@@ -8,7 +8,7 @@ import { Avatar, AvatarCompanyBadge, AvatarFallback, AvatarGroup, AvatarGroupCou
 import { Button } from "@/components/ui/button";
 import { AtlassianLogo } from "@/components/ui/logo";
 import { Separator } from "@/components/ui/separator";
-import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
+import { SkillTag, SkillTagGroup } from "@/components/ui-custom/skill-tag";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import { cn } from "@/lib/utils";
 
@@ -25,13 +25,7 @@ import {
 	type EntityCardCapability,
 	formatCompact,
 } from "./parts";
-
-/** A skill tag shown in the expanded agent card's "Skills" section. */
-export interface EntityCardSkillTag {
-	label: string;
-	color?: SkillTagColor;
-	icon?: ReactNode;
-}
+import { type EntityCardTemplateSkill } from "./template";
 
 const MAX_VISIBLE_COLLABORATORS = 4;
 const ENTITY_CARD_SKILLS_MAX_ROWS = 2;
@@ -128,7 +122,7 @@ export interface EntityCardAgentExpandedProps {
 	capabilities: readonly (EntityCardCapability | string)[];
 	capabilitiesLabel?: string;
 	sources?: ReadonlyArray<TwgToolSource>;
-	skills?: ReadonlyArray<EntityCardSkillTag>;
+	skills?: ReadonlyArray<EntityCardTemplateSkill>;
 	stats?: ReadonlyArray<{ value: string; label: string }>;
 	collaborators?: ReadonlyArray<{ src: string; name: string }>;
 	collaboratorOverflow?: number;

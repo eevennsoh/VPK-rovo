@@ -155,7 +155,7 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Icon \} from "@\/components\/ui\/icon";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /import \{ Avatar, AvatarFallback, AvatarImage \} from "@\/components\/ui\/avatar";/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /EntityCardAgentCard/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /CardDirectoryAgent/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /DEFAULT_AGENTS_DIRECTORY_SIDEBAR_GROUPS/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /STUDIO_AGENTS_COMPANY_GROUP_TITLE = "By companies"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /function isTeamDirectoryAgent/u);

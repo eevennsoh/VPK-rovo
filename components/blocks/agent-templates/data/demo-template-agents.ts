@@ -2,7 +2,7 @@ import type {
 	AgentTemplatesAgent,
 	AgentTemplatesCategoryId,
 } from "../components/agent-templates";
-import type { EntityCardCapability } from "@/components/ui-custom/entity-card";
+import type { CardDirectoryCapability } from "@/components/ui-custom/card-directory";
 import { AGENT_TEMPLATE_CONFIGS } from "@/app/data/directory/agent-templates";
 import { getSkillIcon } from "@/lib/skill-icons";
 
@@ -24,7 +24,7 @@ type DemoTemplateConfig = {
 	verified?: boolean;
 	sources?: readonly DemoTemplateSource[];
 	skills?: readonly DemoTemplateSkill[];
-	capabilities?: readonly EntityCardCapability[];
+	capabilities?: readonly CardDirectoryCapability[];
 	remix: string;
 	updated: string;
 	peopleOffset: number;
@@ -199,7 +199,7 @@ const SKILL_LABELS: Record<AgentTemplatesCategoryId, readonly string[]> = {
 
 const PICK_STEPS = [7, 11, 13, 17, 19] as const;
 const MAX_VISIBLE_TEMPLATE_COLLABORATORS = 4;
-type CapabilityIcon = NonNullable<EntityCardCapability["icon"]>;
+type CapabilityIcon = NonNullable<CardDirectoryCapability["icon"]>;
 // Each tab draws capability icons from its own themed, diverse pool, so the whole
 // tab reads differently from the others (planning vs insights vs operations vs
 // writing vs work management). Every pool holds nine icons; capability icons are
@@ -293,7 +293,7 @@ function defaultCapabilities({
 	id: string;
 	name: string;
 	sources: readonly DemoTemplateSource[];
-}): readonly EntityCardCapability[] {
+}): readonly CardDirectoryCapability[] {
 	const seed = getTemplateSeed(`${categoryId}:${id}:capabilities`);
 	const [categoryInsight, categoryOutput] = CATEGORY_CAPABILITY_DETAIL[categoryId];
 	const sourceLabel = sources[seed % sources.length]?.label ?? "trusted sources";
@@ -320,7 +320,7 @@ function buildTemplatePrompt({
 	description: string;
 	sources: readonly DemoTemplateSource[];
 	skills: readonly DemoTemplateSkill[];
-	capabilities: readonly EntityCardCapability[];
+	capabilities: readonly CardDirectoryCapability[];
 }): string {
 	const appList = sources.map((source) => source.label).join(", ");
 	const skillList = skills.map((skill) => skill.label).join(", ");
@@ -465,7 +465,7 @@ function templateConfigToDemo(
 
 // Demo data aligned to the Studio HomeStarterBento buckets, sourced from the
 // centralized agent-template catalog (app/data/directory/agent-templates.json).
-// Each active tab renders up to eight expanded entity-card agents from its
+// Each active tab renders up to eight expanded card-directory agents from its
 // matching category.
 export const DEMO_AGENT_TEMPLATES: readonly AgentTemplatesAgent[] = withTabVariedCapabilityIcons(
 	AGENT_TEMPLATE_CONFIGS.map((config) => demoTemplateAgent(templateConfigToDemo(config))),
