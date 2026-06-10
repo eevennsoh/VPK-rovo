@@ -12,7 +12,7 @@ import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
 import DeleteIcon from "@atlaskit/icon/core/delete";
-import ToolsIcon from "@atlaskit/icon/core/tools";
+import AppsIcon from "@atlaskit/icon/core/apps";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 import EditIcon from "@atlaskit/icon/core/edit";
@@ -181,8 +181,7 @@ const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
 // always sits last. Keep both lists in sync when reordering.
 const AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = [
 	{ agentFieldName: "trigger", label: "Triggers", Icon: AutomationIcon },
-	{ agentFieldName: "knowledge", label: "Knowledge", kind: "knowledge", Icon: BookOpenIcon },
-	{ agentFieldName: "tools", label: "Tools", listFieldName: "tools", Icon: ToolsIcon },
+	{ agentFieldName: "apps", label: "Apps", listFieldName: "apps", Icon: AppsIcon },
 	{ agentFieldName: "skills", label: "Skills", listFieldName: "skills", Icon: SkillIcon },
 	{ agentFieldName: "subagents", label: "Subagents", listFieldName: "subagents", Icon: AiAgentIcon },
 	{ agentFieldName: "memory", label: "Memory", kind: "memory", Icon: AiModelIcon },
@@ -254,14 +253,11 @@ function getAgentCompactEmptyConfigNavItems(config?: AgentConfigFormValue) {
 				case "skills":
 					count = getNonEmptyConfigItems(config.skills).length;
 					break;
-				case "tools":
-					count = getNonEmptyConfigItems(config.tools).length;
+				case "apps":
+					count = getNonEmptyConfigItems(config.apps).length;
 					break;
 				case "subagents":
 					count = getNonEmptyConfigItems(config.subagents).length;
-					break;
-				case "knowledge":
-					count = 0;
 					break;
 				case "memory":
 					// Memory is an always-on knowledge source with no item count.
@@ -436,7 +432,7 @@ export type AgentConfigListFieldName =
 	| "apps"
 	| "conversationStarters";
 
-export type AgentDirectoryKind = "knowledge" | "tools" | "skills" | "memory" | "conversationStarters";
+export type AgentDirectoryKind = "knowledge" | "tools" | "apps" | "skills" | "memory" | "conversationStarters";
 
 // Config rows that can be suppressed by callers (e.g. while editing a subagent,
 // where these capabilities can't be configured). Keyed by the canonical row key
@@ -894,8 +890,8 @@ function getAgentCompactConfigNavItemOnClick(
 		return () => onEditTriggers?.([]);
 	}
 
-	if (item.agentFieldName === "tools") {
-		return () => openAgentDirectoryOrAppendListItem("tools", "tools", onOpenDirectory, onAppendListItem);
+	if (item.agentFieldName === "apps") {
+		return () => openAgentDirectoryOrAppendListItem("apps", "apps", onOpenDirectory, onAppendListItem);
 	}
 
 	if (item.agentFieldName === "skills") {
@@ -1680,25 +1676,6 @@ function AgentCompactEmptyConfigNav({
 							/>
 						);
 					}
-					if (item.agentFieldName === "knowledge") {
-						return (
-							<AgentKnowledgeSelector
-								key={item.agentFieldName}
-								render="nav-button"
-								value={knowledgeMode}
-								onValueChange={onKnowledgeModeChange}
-								itemCount={getNonEmptyConfigItems(config?.knowledge).length}
-								items={getNonEmptyConfigItems(config?.knowledge)}
-								onBrowse={() => openAgentDirectoryOrAppendListItem("knowledge", "knowledge", onOpenDirectory, onAppendListItem)}
-								disabledItems={config?.disabledItems?.knowledge}
-								onPickKnowledgeApp={onOpenDirectory ? (appIdOrUpload) => onOpenDirectory("knowledge", appIdOrUpload) : undefined}
-								onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
-								onSelectItem={onOpenDirectory ? (value) => onOpenDirectory("knowledge", value) : undefined}
-								onToggleItem={onToggleListItem ? (index, enabled) => onToggleListItem("knowledge", index, enabled) : undefined}
-								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
-							/>
-						);
-					}
 					if (item.agentFieldName === "memory") {
 						return (
 							<AgentMemorySelector
@@ -1748,14 +1725,14 @@ function AgentCompactEmptyConfigNav({
 							/>
 						);
 					}
-					if (item.agentFieldName === "tools" || item.agentFieldName === "skills") {
-						const directory = item.agentFieldName;
+					if (item.agentFieldName === "skills") {
+						const directory = "skills" as const;
 						return (
 							<AgentCompactDirectoryNavButton
 								browseLabel={`Browse ${item.label.toLowerCase()}`}
 								directory={directory}
 								item={item}
-								items={getNonEmptyConfigItems(directory === "tools" ? config?.tools : config?.skills)}
+								items={getNonEmptyConfigItems(config?.skills)}
 								key={item.agentFieldName}
 								onAddSearchItem={(searchItem) => {
 									if (searchItem.disabled) {
@@ -1764,7 +1741,7 @@ function AgentCompactEmptyConfigNav({
 									onAddListValues?.(directory, [searchItem.label]);
 								}}
 								disabledItems={config?.disabledItems?.[directory]}
-								onPickTool={directory === "tools" && onOpenDirectory ? (toolId) => onOpenDirectory("tools", toolId) : undefined}
+								onPickTool={undefined}
 								onBrowse={() => openAgentDirectoryOrAppendListItem(directory, directory, onOpenDirectory, onAppendListItem)}
 								onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem(directory, index) : undefined}
 								onToggleItem={onToggleListItem ? (index, enabled) => onToggleListItem(directory, index, enabled) : undefined}
@@ -2373,13 +2350,11 @@ function AgentFilledConfigSummary({
 }: Readonly<AgentFilledConfigSummaryProps>) {
 	const triggerItems = getAgentTriggerItems(config);
 	const skillItems = getNonEmptyConfigItems(config.skills);
-	const toolItems = getNonEmptyConfigItems(config.tools);
+	const appItems = getNonEmptyConfigItems(config.apps);
 	const subagentItems = getNonEmptyConfigItems(config.subagents);
-	const knowledgeItems = getNonEmptyConfigItems(config.knowledge);
 	const starterSummaryItems = getConversationStarterSummaryItems(config).slice(0, MAX_AGENT_CONVERSATION_STARTERS);
 	const starterItems = starterSummaryItems.map((item) => item.label);
 
-	const hasKnowledgeSelector = Boolean(knowledgeMode && onKnowledgeModeChange);
 	// Each summary row's inline "Add" opens the SAME dropdown as the collapsed
 	// nav (list + "Add ›" search flyout + "Browse"), so the two layouts share one
 	// experience. We reuse the collapsed nav components directly, passing the
@@ -2387,7 +2362,6 @@ function AgentFilledConfigSummary({
 	// the dropdowns inherit the same label/icon the collapsed strip uses.
 	const navItems = getAgentCompactEmptyConfigNavItems(config);
 	const skillsNavItem = navItems.find((entry) => entry.agentFieldName === "skills");
-	const toolsNavItem = navItems.find((entry) => entry.agentFieldName === "tools");
 	const subagentsNavItem = navItems.find((entry) => entry.agentFieldName === "subagents");
 	const renderDirectoryAddControl = (
 		field: Extract<AgentInlineSearchField, "skills" | "tools">,
@@ -2443,56 +2417,22 @@ function AgentFilledConfigSummary({
 			),
 		},
 		{
-			key: "knowledge",
-			// The new knowledge selector always renders its mode lozenge, so the row
-			// is never visually empty even when no custom items are configured.
-			isEmpty: hasKnowledgeSelector ? false : knowledgeItems.length === 0,
-			node: hasKnowledgeSelector && knowledgeMode && onKnowledgeModeChange ? (
-				<AgentKnowledgeRow
-					addLabel={showAddButtons ? "Add" : undefined}
-					isItemDisabled={(item) => isAgentListItemDisabled(config, "knowledge", item)}
-					items={knowledgeItems}
-					disabledItems={config.disabledItems?.knowledge}
-					onBrowse={() => openAgentDirectoryOrAppendListItem("knowledge", "knowledge", onOpenDirectory, onAppendListItem)}
-					onPickKnowledgeApp={onOpenDirectory ? (appIdOrUpload) => onOpenDirectory("knowledge", appIdOrUpload) : undefined}
-					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
-					onSelectItem={onOpenDirectory ? (value) => onOpenDirectory("knowledge", value) : undefined}
-					onToggleItem={onToggleListItem ? (index, enabled) => onToggleListItem("knowledge", index, enabled) : undefined}
-					onValueChange={onKnowledgeModeChange}
-					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
-					value={knowledgeMode}
-				/>
-			) : (
-				<AgentFilledSummaryRow
-					addLabel={showAddButtons ? "Add" : undefined}
-					hideWhenEmpty={hideEmptyRows}
-					isItemDisabled={(item) => isAgentListItemDisabled(config, "knowledge", item)}
-					items={knowledgeItems}
-					label="Knowledge"
-					onAdd={() => openAgentDirectoryOrAppendListItem("knowledge", "knowledge", onOpenDirectory, onAppendListItem)}
-					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
-					referenceCategory="knowledge"
-					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
-				/>
-			),
-		},
-		{
-			key: "tools",
-			isEmpty: toolItems.length === 0,
+			key: "apps",
+			isEmpty: appItems.length === 0,
 			node: (
 				<AgentFilledSummaryRow
-					addLabel={getAgentFilledSummaryAddLabel("tools", toolItems.length === 0, showAddButtons)}
+					addLabel={getAgentFilledSummaryAddLabel("apps", appItems.length === 0, showAddButtons)}
 					hideWhenEmpty={hideEmptyRows}
-					agentFieldName="tools"
-					isItemDisabled={(item) => isAgentListItemDisabled(config, "tools", item)}
-					items={toolItems}
-					label="Tools"
-					renderAddControl={renderDirectoryAddControl("tools", toolsNavItem, toolItems)}
-					// Clicking a tool chip opens the tools directory focused on that tool.
-					onItemClick={onOpenDirectory ? (item) => onOpenDirectory("tools", item) : undefined}
-					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("tools", index) : undefined}
-					referenceCategory="tool"
-					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
+					agentFieldName="apps"
+					isItemDisabled={(item) => isAgentListItemDisabled(config, "apps", item)}
+					items={appItems}
+					label="Apps"
+					onAdd={() => openAgentDirectoryOrAppendListItem("apps", "apps", onOpenDirectory, onAppendListItem)}
+					// Clicking an app chip opens the apps directory focused on that app.
+					onItemClick={onOpenDirectory ? (item) => onOpenDirectory("apps", item) : undefined}
+					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("apps", index) : undefined}
+					referenceCategory="app"
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:apps` : undefined}
 				/>
 			),
 		},
