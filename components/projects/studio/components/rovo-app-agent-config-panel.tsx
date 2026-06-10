@@ -392,7 +392,12 @@ export function RovoAppAgentConfigPanel({
 						removeToolNames.add(app.name.toLowerCase());
 					}
 					if (app.hasKnowledgeFacet && app.knowledgeApp) {
+						// Strip both the app-level "all content" entry and any per-content
+						// names — the app may have been added with custom content selected.
 						removeKnowledgeNames.add(`${app.knowledgeApp.name} - all content`.toLowerCase());
+						for (const content of app.knowledgeApp.contents) {
+							removeKnowledgeNames.add(content.name.toLowerCase());
+						}
 					}
 				}
 				updateActiveConfig((config) => ({
