@@ -1190,24 +1190,30 @@ function AgentCompactTriggerRow({
 
 // Resolves a configured reference row's leading "front slot" visual from its
 // directory category — the same avatar/logo/icon the inline AgentReferenceChip
-// shows, sized for menu rows (32px tile via RichTextMentionVisualMark's "menu"
-// size). Values not present in the directory (e.g. a freshly created, still-
-// unnamed subagent) fall back to a category-appropriate icon tile, mirroring
-// AgentReferenceChip's fallback.
+// shows. The shared mark renders at a fixed 32px tile (MENU_VISUAL_TILE_SIZE),
+// so it's wrapped in a 24px box scaled uniformly to match the trigger rows and
+// footer icons in these dropdowns. Values not present in the directory (e.g. a
+// freshly created, still-unnamed subagent) fall back to a category-appropriate
+// icon tile, mirroring AgentReferenceChip's fallback. Glyph icons inherit the
+// menu's subtle front-slot treatment (see dropdownMenuFrontSlotClassName);
+// avatars/logos/images keep their color, exactly like the sibling Triggers rows.
 function renderAgentReferenceRowVisual(category: RichTextReferenceCategory, label: string): ReactNode {
 	const visual = getDirectoryMentionItemOrFallback(category, label).visual;
-	if (visual) {
-		return <RichTextMentionVisualMark category={category} label={label} size="menu" visual={visual} />;
-	}
 	const FallbackIcon = category === "subagent" ? AiAgentIcon : PageIcon;
 	return (
-		<IconTile
-			aria-hidden
-			className="border border-border bg-surface text-icon-subtle"
-			icon={<Icon aria-hidden render={<FallbackIcon label="" />} />}
-			label=""
-			size="medium"
-		/>
+		<span className="inline-flex size-6 shrink-0 items-center justify-center [&>*]:scale-75">
+			{visual ? (
+				<RichTextMentionVisualMark category={category} label={label} size="menu" visual={visual} />
+			) : (
+				<IconTile
+					aria-hidden
+					className="border border-border bg-surface text-icon-subtlest"
+					icon={<FallbackIcon label="" size="small" />}
+					label=""
+					size="medium"
+				/>
+			)}
+		</span>
 	);
 }
 
