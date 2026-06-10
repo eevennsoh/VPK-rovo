@@ -412,9 +412,13 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// The final chip and the inline +Add link share a single non-wrapping group so
 	// they reflow to the next line together instead of leaving a gap when chips
 	// fill the row. The empty-row +Add link renders separately and stays visible.
+	// Both spots route through `renderAddButton`, which yields either the default
+	// click link or a dropdown-backed control (renderAddControl) — the same
+	// dropdown the collapsed nav opens.
 	assert.match(AGENT_SOURCE, /const isLastItem = index === items\.length - 1;/u);
-	assert.match(AGENT_SOURCE, /if \(isLastItem && addLabel\) \{[\s\S]*className="inline-flex max-w-full items-center gap-1\.5"[\s\S]*<AgentAddValueButton[\s\S]*className="shrink-0 opacity-0 transition-opacity group-hover\/agent-row:opacity-100/u);
-	assert.match(AGENT_SOURCE, /\{isEmpty && addLabel \? \(\s*<AgentAddValueButton[\s\S]*label=\{addLabel\}/u);
+	assert.match(AGENT_SOURCE, /const renderAddButton = \(className\?: string\): ReactNode =>[\s\S]*renderAddControl\s*\? renderAddControl\(\{ icon: addIcon, label: addLabel, className \}\)[\s\S]*<AgentAddValueButton[\s\S]*className=\{className\}[\s\S]*onClick=\{onAdd\}/u);
+	assert.match(AGENT_SOURCE, /if \(isLastItem && addLabel\) \{[\s\S]*className="inline-flex max-w-full items-center gap-1\.5"[\s\S]*\{renderAddButton\(\s*"shrink-0 opacity-0 transition-opacity group-hover\/agent-row:opacity-100/u);
+	assert.match(AGENT_SOURCE, /\{isEmpty && addLabel \? renderAddButton\(\) : null\}/u);
 	assert.match(AGENT_SOURCE, /const AGENT_EMPTY_ROW_ADD_LABELS: Partial<Record<AgentConfigListFieldName, string>> = \{/u);
 	assert.match(AGENT_SOURCE, /triggers: "Add rules for when this agent runs"/u);
 	assert.match(AGENT_SOURCE, /conversationStarters: "Add prompts to help people start"/u);
@@ -441,15 +445,19 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /const StarterIcon = getStarterIcon\(starterSummaryItems\[index\]\?\.icon \?\? DEFAULT_STARTER_ICON\);[\s\S]*return <StarterIcon label="" size="small" color="currentColor" \/>;/u);
 	assert.match(AGENT_SOURCE, /tagColor="standard"/u);
 	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*addLabel=\{getAgentFilledSummaryAddLabel\("triggers", triggerItems\.length === 0, showAddButtons\)\}[\s\S]*onEditTriggers=\{onEditTriggers\}/u);
-	assert.match(AGENT_SOURCE, /label="Skills"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("skills", "skills", onOpenDirectory, onAppendListItem\)\}/u);
-	assert.match(AGENT_SOURCE, /label="Tools"\s+onAdd=\{\(\) => openInlineSearchPicker\("tools"\)\}/u);
-	assert.match(AGENT_SOURCE, /inlinePicker=\{inlineSearchField === "tools" \? \([\s\S]*<AgentInlineReferenceSearchPicker[\s\S]*field="tools"[\s\S]*onBrowseAll=\{\(\) => browseInlineSearchPicker\("tools"\)\}[\s\S]*onSelectItem=\{\(item\) => selectInlineSearchItem\("tools", item\)\}/u);
-	assert.match(AGENT_SOURCE, /function AgentInlineReferenceSearchPicker\([\s\S]*<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category=\{AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD\[field\]\}[\s\S]*className="rich-text-command-menu-borderless"[\s\S]*onBrowseAll=\{onBrowseAll\}[\s\S]*onSelectItem=\{onSelectItem\}/u);
-	assert.match(AGENT_SOURCE, /const \[inlineSearchField, setInlineSearchField\] = useState<AgentInlineSearchField \| null>\(null\);/u);
-	assert.match(AGENT_SOURCE, /const openInlineSearchPicker = \(field: AgentInlineSearchField\) => \{[\s\S]*if \(!onAddListValues\) \{[\s\S]*openAgentDirectoryOrAppendListItem\(field, field, onOpenDirectory, onAppendListItem\);[\s\S]*setInlineSearchField\(\(current\) => current === field \? null : field\);/u);
-	assert.match(AGENT_SOURCE, /const browseInlineSearchPicker = \(field: AgentInlineSearchField\) => \{[\s\S]*setInlineSearchField\(null\);[\s\S]*openAgentDirectoryOrAppendListItem\(field, field, onOpenDirectory, onAppendListItem\);/u);
-	assert.match(AGENT_SOURCE, /const selectInlineSearchItem = \([\s\S]*field: AgentInlineSearchField,[\s\S]*item: RichTextSuggestionMenuItem,[\s\S]*onAddListValues\?\.\(field, \[item\.label\]\);[\s\S]*setInlineSearchField\(null\);/u);
-	assert.match(AGENT_SOURCE, /label="Subagents"\s+onAdd=\{\(\) => onAppendListItem\?\.\("subagents"\)\}/u);
+	// Skills, Tools and Subagents "Add" buttons open the SAME dropdown the
+	// collapsed nav shows (list + add flyout + browse), wired via renderAddControl
+	// + renderTrigger so the two layouts share one experience.
+	assert.match(AGENT_SOURCE, /label="Skills"\s+renderAddControl=\{renderDirectoryAddControl\("skills", skillsNavItem, skillItems\)\}/u);
+	assert.match(AGENT_SOURCE, /label="Tools"\s+renderAddControl=\{renderDirectoryAddControl\("tools", toolsNavItem, toolItems\)\}/u);
+	assert.match(AGENT_SOURCE, /const renderDirectoryAddControl = \([\s\S]*<AgentCompactDirectoryNavButton[\s\S]*onBrowse=\{\(\) => openAgentDirectoryOrAppendListItem\(field, field, onOpenDirectory, onAppendListItem\)\}[\s\S]*renderTrigger=\{<AgentAddValueButton className=\{className\} icon=\{icon\} label=\{label\} \/>\}/u);
+	assert.match(AGENT_SOURCE, /label="Subagents"\s+renderAddControl=\{subagentsNavItem \? \(\{ label, className \}\) => \([\s\S]*<AgentCompactSubagentsNavButton[\s\S]*onCreateSubagent=\{\(\) => onAppendListItem\?\.\("subagents"\)\}[\s\S]*renderTrigger=\{<AgentAddValueButton className=\{className\} icon="add" label=\{label\} \/>\}/u);
+	// The inline-below-row Tools search picker is gone — Tools now uses the same
+	// dropdown as the other directory fields.
+	assert.doesNotMatch(AGENT_SOURCE, /openInlineSearchPicker|browseInlineSearchPicker|selectInlineSearchItem|inlineSearchField|function AgentInlineReferenceSearchPicker/u);
+	// Knowledge's "Add" opens the shared knowledge nav menu (mode tabs + custom
+	// list + add flyout + browse) under the inline Add button trigger.
+	assert.match(AGENT_SOURCE, /function AgentKnowledgeRow[\s\S]*<MenubarTrigger\s*render=\{\(\s*<AgentAddValueButton[\s\S]*\)\}\s*\/>\s*<AgentKnowledgeNavMenuContent/u);
 	assert.match(AGENT_SOURCE, /label="Knowledge"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("knowledge", "knowledge", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Conversation starters"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("conversationStarters", "conversationStarters", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactEmptyConfigNav/u);
