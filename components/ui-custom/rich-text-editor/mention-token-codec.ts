@@ -54,6 +54,7 @@ const BODY_TOKEN_CATEGORIES: ReadonlySet<RichTextReferenceCategory> = new Set([
 	"skill",
 	"tool",
 	"knowledge",
+	"app",
 ]);
 
 function isBodyTokenCategory(value: string): value is RichTextReferenceCategory {

@@ -271,7 +271,7 @@ const MENTION_TARGET_ORDER: readonly RichTextMentionParentCategory[] = [
  */
 const COMMAND_CATEGORY_ORDER: readonly RichTextCommandCategory[] = RICH_TEXT_REFERENCE_CATEGORY_OPTIONS
 	.map((option) => option.category)
-	.filter((category): category is RichTextCommandCategory => category !== "subagent");
+	.filter((category) => category !== "subagent") as readonly RichTextCommandCategory[];
 
 const SLASH_CATEGORY_ORDER: readonly RichTextSlashCategory[] = [
 	...COMMAND_CATEGORY_ORDER,
@@ -1562,6 +1562,7 @@ function getMergedMentionSources(
 		skill: mergeCategoryItems("skill"),
 		tool: mergeCategoryItems("tool"),
 		knowledge: mergeCategoryItems("knowledge"),
+		app: mergeCategoryItems("app"),
 	};
 }
 
@@ -1618,6 +1619,8 @@ function getMentionChildDescription(item: RichTextMentionItem): string {
 			return `Use ${item.label} for this task.`;
 		case "knowledge":
 			return `Reference ${item.label} as knowledge context.`;
+		case "app":
+			return `Connect ${item.label} (tools and knowledge) to this agent.`;
 		default: {
 			// Exhaustiveness guard: a new RichTextMentionCategory must add a case above.
 			const exhaustiveCategory: never = item.category;

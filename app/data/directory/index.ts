@@ -74,6 +74,10 @@ export type {
 	KnowledgeDirectoryMode,
 } from "./knowledge";
 
+// --- Apps (tools ∪ knowledge umbrella) ---
+export { DIRECTORY_APPS, getAppById, getAppDirectoryVisual } from "./apps";
+export type { DirectoryApp } from "./apps";
+
 // --- People ---
 export {
 	AGENT_ROLE_OPTIONS,

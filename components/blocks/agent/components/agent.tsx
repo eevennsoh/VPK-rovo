@@ -214,6 +214,7 @@ const AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS =
 const AGENT_EMPTY_ROW_ADD_LABELS: Record<AgentConfigListFieldName, string> = {
 	conversationStarters: "Add prompts to help people start",
 	knowledge: "Add knowledge to ground this agent",
+	apps: "Add apps to connect tools and knowledge",
 	skills: "Add skills to guide specialized tasks",
 	subagents: "Add subagents to handle specific scenarios",
 	tools: "Add tools to extend what this agent can do",
@@ -294,7 +295,7 @@ function toMentionId(category: RichTextMentionItem["category"], id: string): str
 
 export type AgentConfigReferenceListFieldName = Extract<
 	AgentConfigListFieldName,
-	"knowledge" | "skills" | "subagents" | "tools"
+	"knowledge" | "skills" | "subagents" | "tools" | "apps"
 >;
 
 const AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY: Record<RichTextReferenceCategory, AgentConfigReferenceListFieldName> = {
@@ -302,6 +303,7 @@ const AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY: Record<RichTextReferenceCategory
 	skill: "skills",
 	subagent: "subagents",
 	tool: "tools",
+	app: "apps",
 };
 
 const AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD: Record<AgentConfigReferenceListFieldName, RichTextReferenceCategory> = {
@@ -309,6 +311,7 @@ const AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD: Record<AgentConfigReferenceListF
 	skills: "skill",
 	subagents: "subagent",
 	tools: "tool",
+	apps: "app",
 };
 type AgentInlineSearchField = Extract<AgentConfigReferenceListFieldName, "knowledge" | "skills" | "tools">;
 
@@ -430,6 +433,7 @@ export type AgentConfigListFieldName =
 	| "tools"
 	| "subagents"
 	| "knowledge"
+	| "apps"
 	| "conversationStarters";
 
 export type AgentDirectoryKind = "knowledge" | "tools" | "skills" | "memory" | "conversationStarters";
@@ -454,6 +458,7 @@ export interface AgentConfigFormValue {
 	tools?: readonly string[];
 	subagents?: readonly string[];
 	knowledge?: readonly string[];
+	apps?: readonly string[];
 	conversationStarters?: readonly string[];
 	conversationStarterIcons?: readonly string[];
 	// Per-field set of disabled list items, keyed by the item's label (not index)

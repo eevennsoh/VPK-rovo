@@ -190,6 +190,11 @@ export const TRIGGER_PROVIDERS = [
 				description: "Run on weekdays at the start of the workday.",
 			},
 			{
+				id: "daily-at-7am",
+				label: "Every day at 7:00 AM",
+				description: "Run once every morning at 7:00 AM.",
+			},
+			{
 				id: "custom-schedule",
 				label: "Custom schedule",
 				description: "Use a custom recurring schedule.",
@@ -521,6 +526,57 @@ export function getAgentTriggerReadableLabel(trigger: AgentTriggerValue): string
 		const valueLabel = getAgentTriggerParamLabel(param, trigger.params?.[param.id]);
 		return `${label} ${param.connector} ${valueLabel}`;
 	}, event.label);
+}
+
+/**
+ * Maps a free-text trigger string (as emitted by agent generation) to a
+ * structured `scheduled` event id, or `undefined` when it isn't a recognized
+ * recurring schedule. Lets a generated "every day at 7am" line hydrate into a
+ * real structured trigger (clock icon + schedule semantics) instead of a plain
+ * label-only chip. Order matters: the most specific time match wins.
+ */
+export function inferScheduledEventId(trigger: string): string | undefined {
+	const text = trigger.toLowerCase();
+	if (/\b(7|seven)(:\.?0{0,2})?\s*(am|a\.m\.)\b|\b7\s*o'?clock/.test(text)) {
+		return "daily-at-7am";
+	}
+	if (/\b(hourly|every hour|each hour)\b/.test(text)) {
+		return "every-hour";
+	}
+	if (/\b(weekday morning|every morning|each morning|start of the workday|every weekday)\b/.test(text)) {
+		return "every-weekday-morning";
+	}
+	return undefined;
+}
+
+/**
+ * Infers structured `triggerDefinitions` from a list of generated trigger
+ * strings. Returns `undefined` unless EVERY string maps to a known scheduled
+ * event, so the definitions stay index-aligned with the trigger labels (the
+ * summary UI only shows provider icons when the two arrays align). A mixed list
+ * (some schedule, some not) is left as plain label-only chips.
+ */
+export function inferScheduledTriggerDefinitions(
+	triggers: readonly string[] | undefined,
+): AgentTriggerValue[] | undefined {
+	if (!triggers || triggers.length === 0) {
+		return undefined;
+	}
+
+	const definitions: AgentTriggerValue[] = [];
+	for (let index = 0; index < triggers.length; index += 1) {
+		const eventId = inferScheduledEventId(triggers[index]);
+		if (!eventId) {
+			return undefined;
+		}
+		const definition = createAgentTriggerValue("scheduled", eventId, index + 1);
+		if (!definition) {
+			return undefined;
+		}
+		definitions.push(definition);
+	}
+
+	return definitions;
 }
 
 export function serializeAgentTriggerLabels(

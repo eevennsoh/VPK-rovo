@@ -14,16 +14,18 @@ export type RichTextMentionTarget = "human" | "team" | "subagent";
 /**
  * Reference categories used by the "Add content" toolbar menu. Still includes
  * "subagent" so it can be inserted from the toolbar, even though the "@" surface
- * (not "/") owns the subagent mention picker.
+ * (not "/") owns the subagent mention picker. `app` is the umbrella over
+ * tools + knowledge; `tool`/`knowledge` remain so legacy tokens still resolve.
  */
-export type RichTextReferenceCategory = "subagent" | "skill" | "tool" | "knowledge";
+export type RichTextReferenceCategory = "subagent" | "skill" | "tool" | "knowledge" | "app";
 
 /**
  * "/" command categories. Each opens a nested list of reference items and is
  * inserted as a mention token. Subagents live on the "@" mention surface, so the
- * "/" surface only carries skills, tools, and knowledge.
+ * "/" surface only carries skills and apps (tools + knowledge are unified under
+ * the `app` umbrella; the legacy `tool`/`knowledge` values stay for resolution).
  */
-export type RichTextCommandCategory = "skill" | "tool" | "knowledge";
+export type RichTextCommandCategory = "skill" | "tool" | "knowledge" | "app";
 
 /**
  * "/" parent categories. Format is a command-only category whose children run

@@ -29,10 +29,9 @@ import type {
 } from "@/components/blocks/agent-browser";
 import type {
 	ToolsDirectoryPermission as AppsDirectoryPermission,
-	ToolsDirectoryTool as AppsDirectoryTool,
 } from "@/app/data/directory/tools";
+import { type DirectoryApp as AppsDirectoryTool } from "@/app/data/directory/apps";
 import {
-	DEFAULT_KNOWLEDGE_APPS,
 	type KnowledgeDirectoryApp,
 	type KnowledgeDirectoryContent,
 	type KnowledgeDirectoryMode,
@@ -64,12 +63,11 @@ import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-over
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-// Re-export the shared tools-directory data types under this block's API names
-// while Apps Directory intentionally mirrors Tools Directory.
-export type {
-	ToolsDirectoryPermission as AppsDirectoryPermission,
-	ToolsDirectoryTool as AppsDirectoryTool,
-} from "@/app/data/directory/tools";
+// Re-export the apps-directory data types under this block's public API names.
+// An "app" is the tools + knowledge umbrella ({@link DirectoryApp}); permissions
+// reuse the shared tools-directory permission shape.
+export type { ToolsDirectoryPermission as AppsDirectoryPermission } from "@/app/data/directory/tools";
+export type { DirectoryApp as AppsDirectoryTool } from "@/app/data/directory/apps";
 
 export type AppsDirectorySidebarGroup = AgentBrowserSidebarGroup;
 
@@ -325,15 +323,10 @@ function getKnowledgeContentIds(app: KnowledgeDirectoryApp | null): readonly str
 	return app?.contents.map((content) => content.id) ?? EMPTY_KNOWLEDGE_CONTENT_IDS;
 }
 
-function findKnowledgeAppForTool(tool: AppsDirectoryTool): KnowledgeDirectoryApp | undefined {
-	const normalizedToolName = tool.name.trim().toLowerCase();
-	return DEFAULT_KNOWLEDGE_APPS.find((app) => app.id === tool.id || app.name.trim().toLowerCase() === normalizedToolName);
-}
-
+// An app's knowledge facet comes straight from the unified catalog record; there
+// is no name-matching fallback — a tool-only app simply has no knowledge facet.
 function getKnowledgeAppForTool(tool: AppsDirectoryTool): KnowledgeDirectoryApp | null {
-	return findKnowledgeAppForTool(tool)
-		?? DEFAULT_KNOWLEDGE_APPS[0]
-		?? null;
+	return tool.hasKnowledgeFacet ? tool.knowledgeApp ?? null : null;
 }
 
 function filterKnowledgeContent(
@@ -637,7 +630,7 @@ interface AppCardProps {
 
 function AppCard({ onSelectTool, tool }: Readonly<AppCardProps>) {
 	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-	const knowledgeApp = findKnowledgeAppForTool(tool);
+	const knowledgeApp = getKnowledgeAppForTool(tool);
 	const selectTool = () => onSelectTool(tool);
 
 	return (
@@ -988,19 +981,22 @@ function ToolDetailView({
 						</div>
 					</div>
 				</div>
-				{groups.map((group) => (
-					group.id === "read-only" ? (
-						<KnowledgeSection
-							key="knowledge"
-							contentQuery={knowledgeQuery}
-							filteredContent={filteredKnowledgeContent}
-							mode={knowledgeMode}
-							onRemoveContent={handleRemoveKnowledgeContent}
-							onSelectMode={handleSelectKnowledgeMode}
-							selectedContentCount={selectedKnowledgeContentIds.length}
-							setContentQuery={setKnowledgeQuery}
-						/>
-					) : (
+				{/* Facet-aware: knowledge-only apps show just the Knowledge section,
+				    tool-only apps show just the permission groups, dual apps show both. */}
+				{tool.hasKnowledgeFacet ? (
+					<KnowledgeSection
+						key="knowledge"
+						contentQuery={knowledgeQuery}
+						filteredContent={filteredKnowledgeContent}
+						mode={knowledgeMode}
+						onRemoveContent={handleRemoveKnowledgeContent}
+						onSelectMode={handleSelectKnowledgeMode}
+						selectedContentCount={selectedKnowledgeContentIds.length}
+						setContentQuery={setKnowledgeQuery}
+					/>
+				) : null}
+				{tool.hasToolFacet
+					? groups.map((group) => (
 						<ToolPermissionGroup
 							key={group.id}
 							added={added}
@@ -1010,8 +1006,8 @@ function ToolDetailView({
 							permissionSelections={permissionSelections}
 							permissions={group.permissions}
 						/>
-					)
-				))}
+					))
+					: null}
 			</div>
 		</div>
 	);
