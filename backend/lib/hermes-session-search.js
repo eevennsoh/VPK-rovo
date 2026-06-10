@@ -48,21 +48,19 @@ function extractSearchableText(messages) {
 }
 
 /**
- * Build a snippet around the first match occurrence.
+ * Build a snippet around a known match occurrence.
  *
  * @param {string} text - Full text to extract snippet from.
- * @param {RegExp} pattern - Search pattern.
+ * @param {number} matchStart - First match start offset.
+ * @param {number} matchLength - First match length.
  * @returns {string} Snippet with match context.
  */
-function buildSnippet(text, pattern) {
-	pattern.lastIndex = 0;
-	const match = pattern.exec(text);
-	if (!match) {
+function buildSnippetFromMatch(text, matchStart, matchLength) {
+	if (matchStart < 0 || matchLength <= 0) {
 		return text.slice(0, SNIPPET_CONTEXT_CHARS * 2).trim();
 	}
 
-	const matchStart = match.index;
-	const matchEnd = matchStart + match[0].length;
+	const matchEnd = matchStart + matchLength;
 	const snippetStart = Math.max(0, matchStart - SNIPPET_CONTEXT_CHARS);
 	const snippetEnd = Math.min(text.length, matchEnd + SNIPPET_CONTEXT_CHARS);
 
@@ -79,19 +77,26 @@ function buildSnippet(text, pattern) {
 }
 
 /**
- * Count non-overlapping matches of a pattern in text.
+ * Count non-overlapping matches of a pattern in text and retain first match.
  *
  * @param {string} text
  * @param {RegExp} pattern - Must have global flag.
- * @returns {number}
+ * @returns {{ count: number, firstMatchLength: number, firstMatchStart: number }}
  */
-function countMatches(text, pattern) {
+function collectMatchSummary(text, pattern) {
 	pattern.lastIndex = 0;
 	let count = 0;
-	while (pattern.exec(text) !== null) {
+	let firstMatchStart = -1;
+	let firstMatchLength = 0;
+	let match;
+	while ((match = pattern.exec(text)) !== null) {
+		if (count === 0) {
+			firstMatchStart = match.index;
+			firstMatchLength = match[0].length;
+		}
 		count += 1;
 	}
-	return count;
+	return { count, firstMatchLength, firstMatchStart };
 }
 
 /**
@@ -126,12 +131,17 @@ function searchThreads(threads, query, options) {
 		const messageText = extractSearchableText(thread.messages);
 		const fullText = `${title}\n${messageText}`;
 
-		const matchCount = countMatches(fullText, pattern);
+		const matchSummary = collectMatchSummary(fullText, pattern);
+		const matchCount = matchSummary.count;
 		if (matchCount === 0) {
 			continue;
 		}
 
-		const snippet = buildSnippet(fullText, pattern);
+		const snippet = buildSnippetFromMatch(
+			fullText,
+			matchSummary.firstMatchStart,
+			matchSummary.firstMatchLength,
+		);
 
 		const lastMessageAt = thread.updatedAt || new Date().toISOString();
 		results.push({

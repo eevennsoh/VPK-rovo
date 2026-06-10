@@ -114,6 +114,33 @@ test("searchThreads parses recency once per matching thread", () => {
 	}
 });
 
+test("searchThreads reuses first match from count pass for snippets", () => {
+	const threads = Array.from({ length: 4 }, (_, index) => ({
+		id: `thread-${index}`,
+		title: `Thread ${index}`,
+		messages: [{ content: `${"context ".repeat(100)}needle` }],
+		updatedAt: new Date(Date.UTC(2026, 0, 1, 0, index)).toISOString(),
+	}));
+	const originalExec = RegExp.prototype.exec;
+	let needleExecCount = 0;
+
+	try {
+		RegExp.prototype.exec = function patchedExec(value) {
+			if (this.source === "needle") {
+				needleExecCount += 1;
+			}
+			return originalExec.call(this, value);
+		};
+
+		const results = searchThreads(threads, "needle", { limit: threads.length });
+		assert.equal(results.length, threads.length);
+		assert.equal(needleExecCount, threads.length * 2);
+		assert.ok(results.every((result) => result.snippet.includes("needle")));
+	} finally {
+		RegExp.prototype.exec = originalExec;
+	}
+});
+
 test("searchThreads handles empty query", () => {
 	const results = searchThreads(THREADS, "");
 	assert.equal(results.length, 0);
