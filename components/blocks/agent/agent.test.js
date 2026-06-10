@@ -934,7 +934,8 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /id: SEARCH_BROWSE_ALL_ITEM_ID,[\s\S]*stickyPosition: "bottom"/u);
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /SEARCH_INPUT_ITEM_ID/u);
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /SEARCH_EMPTY_ITEM_ID/u);
-	assert.match(EDITOR_PALETTE_SOURCE, /function normalizeSearchPickerItem\([\s\S]*item: RichTextSuggestionMenuItem,[\s\S]*\): RichTextSuggestionMenuItem \{[\s\S]*return item\.description[\s\S]*\? \{ \.\.\.item, persistentDescription: true \}[\s\S]*: item;/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /function normalizeSearchPickerItem\([\s\S]*item: RichTextSuggestionMenuItem,[\s\S]*\): RichTextSuggestionMenuItem \{[\s\S]*return item\.persistentDescription[\s\S]*\? \{ \.\.\.item, persistentDescription: false \}[\s\S]*: item;/u);
+	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /persistentDescription: true/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /const sourceItems = \(itemsProp \?\? getMentionChildItems\(mentionSources, category\)\)[\s\S]*\.map\(normalizeSearchPickerItem\);/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /const leadingRows = leadingItems\.map\(normalizeSearchPickerItem\);/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /const rows = items\.length > 0[\s\S]*\? \[\.\.\.leadingRows, \.\.\.items, browseAllItem\][\s\S]*: leadingRows;/u);
