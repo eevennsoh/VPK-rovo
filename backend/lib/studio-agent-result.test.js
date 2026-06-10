@@ -330,6 +330,30 @@ test("builds a fallback Studio agent result from original brief and clarificatio
 	assert.doesNotMatch(result.name, /clarification answers/iu);
 });
 
+test("fallback wires named apps as @[app:id] chips and a 7am scheduled trigger", () => {
+	const result = buildFallbackStudioAgentResult({
+		prompt:
+			"Make me a chief of staff agent. Each morning at 7am, give me a concise readout. Refer to my gmail salesforce slack google calendar jira.",
+		messages: [],
+		clarificationAnswers: {},
+	});
+
+	// Role name extracted between the article and "agent".
+	assert.equal(result.name, "Chief of Staff");
+	// All five named apps are wired into the canonical apps[] membership.
+	assert.deepEqual(
+		[...result.apps].sort(),
+		["Gmail", "Google Calendar", "Jira", "Salesforce", "Slack"],
+	);
+	// Instructions reference the apps as @[app:id] mention chips (not plain text).
+	assert.match(result.instructions, /@\[app:gmail\]/u);
+	assert.match(result.instructions, /@\[app:salesforce\]/u);
+	assert.match(result.instructions, /@\[app:google-calendar\]/u);
+	// The recurring 7am cadence becomes a schedule trigger the frontend can hydrate.
+	assert.equal(result.trigger, "Every day at 7:00 AM.");
+	assert.deepEqual(result.triggers, ["Every day at 7:00 AM."]);
+});
+
 test("fallback Studio agent result prefers the original agent brief after clarification submit", () => {
 	const messages = [
 		{
