@@ -211,8 +211,9 @@ const AGENT_COMPACT_CONFIG_NAV_BOTH_MASK_STYLE = buildHorizontalScrollMaskStyle(
 // surface rather than a row of separate buttons.
 const AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS =
 	"inline-flex h-6 shrink-0 items-center gap-1 rounded px-2 text-xs font-semibold leading-4 text-text-subtlest transition-colors outline-hidden hover:bg-bg-neutral-subtle-hovered hover:text-text aria-expanded:bg-bg-neutral-subtle-hovered aria-expanded:text-text focus-visible:ring-3 focus-visible:ring-ring/50";
-const AGENT_EMPTY_ROW_ADD_LABELS: Partial<Record<AgentConfigListFieldName, string>> = {
+const AGENT_EMPTY_ROW_ADD_LABELS: Record<AgentConfigListFieldName, string> = {
 	conversationStarters: "Add prompts to help people start",
+	knowledge: "Add knowledge to ground this agent",
 	skills: "Add skills to guide specialized tasks",
 	subagents: "Add subagents to handle specific scenarios",
 	tools: "Add tools to extend what this agent can do",
@@ -224,11 +225,7 @@ function getAgentFilledSummaryAddLabel(field: AgentConfigListFieldName, isEmpty:
 		return undefined;
 	}
 
-	if (field === "conversationStarters" && !isEmpty) {
-		return "Manage";
-	}
-
-	return isEmpty ? AGENT_EMPTY_ROW_ADD_LABELS[field] ?? "Add" : "Add";
+	return isEmpty ? AGENT_EMPTY_ROW_ADD_LABELS[field] : "Edit";
 }
 
 function openAgentDirectoryOrAppendListItem(
@@ -1998,34 +1995,31 @@ function AgentReferenceChip({
 
 function AgentAddValueButton({
 	className,
-	// `icon` / `label` are retained in the prop contract so existing call sites
-	// keep compiling, but every add affordance now renders as a uniform "Edit"
-	// control that matches the trigger row's edit button class-for-class. They are
-	// destructured here purely to keep them off the spread DOM `...props`.
+	// `icon` is retained in the prop contract so existing call sites keep
+	// compiling, but every affordance now uses the edit glyph and this shared text
+	// link chrome. `label` carries either "Edit" for filled rows or the descriptive
+	// empty-row placeholder copy.
 	icon,
 	label,
 	onClick,
 	...props
 }: Readonly<{ icon?: "add" | "edit"; label: string } & ComponentProps<"button">>) {
 	void icon;
-	void label;
 	return (
-		// Same visual chrome as the Triggers row "Edit" CTA (AgentTriggerSummaryRow):
-		// identical sizing/typography/focus classes + identical EditIcon + "Edit"
-		// span. The hover-reveal opacity (opacity-0 → group-hover/agent-row) is NOT
-		// baked in here — it is supplied via `className` ONLY for the filled-row spot
-		// (the last-chip Add), so empty rows keep their Edit button always visible.
+		// Shared visual chrome for Triggers and every other summary-row edit CTA.
+		// The hover-reveal opacity (opacity-0 → group-hover/agent-row) is supplied
+		// via `className` only for filled rows, so empty placeholders stay visible.
 		<button
 			type="button"
 			className={cn(
-				"inline-flex h-5 shrink-0 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest transition-opacity focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-expanded:opacity-100",
-				className
+				className,
+				"inline-flex min-h-5 max-w-full shrink-0 items-center gap-1 rounded-xs p-0 text-left text-xs font-medium leading-4 text-text-subtlest transition-opacity hover:bg-transparent active:bg-transparent focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-transparent aria-expanded:opacity-100",
 			)}
 			onClick={onClick}
 			{...props}
 		>
 			<EditIcon label="" size="small" />
-			<span className="group-hover/agent-row:underline">Edit</span>
+			<span className="min-w-0 whitespace-normal group-hover/agent-row:underline">{label}</span>
 		</button>
 	);
 }
@@ -2311,13 +2305,11 @@ function AgentTriggerSummaryRow({
 								onSelectEvent={handleSelectEvent}
 								onEditTriggers={onEditTriggers}
 								renderTrigger={(
-									<button
-										type="button"
-										className="inline-flex h-5 shrink-0 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest opacity-0 transition-opacity group-hover/agent-row:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-expanded:opacity-100"
-									>
-										<EditIcon label="" size="small" />
-										<span className="group-hover/trigger-edit:underline">Edit</span>
-									</button>
+									<AgentAddValueButton
+										className="opacity-0 group-hover/agent-row:opacity-100"
+										icon="edit"
+										label={addLabel ?? "Edit"}
+									/>
 								)}
 							/>
 						) : null}

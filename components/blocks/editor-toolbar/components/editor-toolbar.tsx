@@ -173,6 +173,7 @@ function DropdownMenuItem({
 				label=""
 				variant="transparent"
 				size="small"
+				className="text-icon-subtle"
 				aria-hidden
 			/>
 			<span className="min-w-0 truncate">{label}</span>

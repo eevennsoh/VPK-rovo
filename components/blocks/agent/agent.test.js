@@ -413,13 +413,16 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// The row-level skip guard for empty rows still drops rows that lack an
 	// addLabel, but with addLabel set (the default) every row renders.
 	assert.match(AGENT_SOURCE, /if \(isEmpty && \(hideWhenEmpty \|\| !addLabel\)\) \{/u);
-	// AgentAddValueButton shares the Triggers row "Edit" CTA chrome (same sizing,
-	// typography, focus + aria-expanded states) and the same EditIcon + "Edit"
-	// span. The hover-reveal opacity is NOT baked into the base class — it is added
-	// via `className` ONLY for the filled-row spot, so empty rows stay visible.
-	assert.match(AGENT_SOURCE, /"inline-flex h-5 shrink-0 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest transition-opacity focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-expanded:opacity-100"/u);
+	// AgentAddValueButton is the single visual chrome for Triggers and every
+	// summary-row edit CTA: same edit glyph, sizing, typography, focus +
+	// aria-expanded states. Empty rows pass descriptive placeholder copy through
+	// `label`; filled rows pass "Edit". The hover-reveal opacity is NOT baked into
+	// the base class — it is added via `className` ONLY for the filled-row spot, so
+	// empty rows stay visible.
+	assert.match(AGENT_SOURCE, /"inline-flex min-h-5 max-w-full shrink-0 items-center gap-1 rounded-xs p-0 text-left text-xs font-medium leading-4 text-text-subtlest transition-opacity hover:bg-transparent active:bg-transparent focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-transparent aria-expanded:opacity-100"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /group\/add-link/u);
-	assert.match(AGENT_SOURCE, /<span className="group-hover\/agent-row:underline">Edit<\/span>/u);
+	assert.match(AGENT_SOURCE, /<span className="min-w-0 whitespace-normal group-hover\/agent-row:underline">\{label\}<\/span>/u);
+	assert.match(AGENT_SOURCE, /renderTrigger=\{\(\s*<AgentAddValueButton[\s\S]*className="opacity-0 group-hover\/agent-row:opacity-100"[\s\S]*icon="edit"[\s\S]*label=\{addLabel \?\? "Edit"\}[\s\S]*\/>\s*\)\}/u);
 	// The final chip and the inline +Add link share a single non-wrapping group so
 	// they reflow to the next line together instead of leaving a gap when chips
 	// fill the row. The empty-row +Add link renders separately and stays visible.
@@ -430,13 +433,14 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /const renderAddButton = \(className\?: string\): ReactNode =>[\s\S]*renderAddControl\s*\? renderAddControl\(\{ icon: addIcon, label: addLabel, className \}\)[\s\S]*<AgentAddValueButton[\s\S]*className=\{className\}[\s\S]*onClick=\{onAdd\}/u);
 	assert.match(AGENT_SOURCE, /if \(isLastItem && addLabel\) \{[\s\S]*className="inline-flex max-w-full items-center gap-1\.5"[\s\S]*\{renderAddButton\(\s*"shrink-0 opacity-0 transition-opacity group-hover\/agent-row:opacity-100/u);
 	assert.match(AGENT_SOURCE, /\{isEmpty && addLabel \? renderAddButton\(\) : null\}/u);
-	assert.match(AGENT_SOURCE, /const AGENT_EMPTY_ROW_ADD_LABELS: Partial<Record<AgentConfigListFieldName, string>> = \{/u);
+	assert.match(AGENT_SOURCE, /const AGENT_EMPTY_ROW_ADD_LABELS: Record<AgentConfigListFieldName, string> = \{/u);
 	assert.match(AGENT_SOURCE, /triggers: "Add rules for when this agent runs"/u);
 	assert.match(AGENT_SOURCE, /conversationStarters: "Add prompts to help people start"/u);
+	assert.match(AGENT_SOURCE, /knowledge: "Add knowledge to ground this agent"/u);
 	assert.match(AGENT_SOURCE, /skills: "Add skills to guide specialized tasks"/u);
 	assert.match(AGENT_SOURCE, /tools: "Add tools to extend what this agent can do"/u);
 	assert.match(AGENT_SOURCE, /subagents: "Add subagents to handle specific scenarios"/u);
-	assert.match(AGENT_SOURCE, /function getAgentFilledSummaryAddLabel\(field: AgentConfigListFieldName, isEmpty: boolean, showAddButtons: boolean\): string \| undefined \{[\s\S]*field === "conversationStarters" && !isEmpty[\s\S]*return "Manage";[\s\S]*return isEmpty \? AGENT_EMPTY_ROW_ADD_LABELS\[field\] \?\? "Add" : "Add";[\s\S]*\}/u);
+	assert.match(AGENT_SOURCE, /function getAgentFilledSummaryAddLabel\(field: AgentConfigListFieldName, isEmpty: boolean, showAddButtons: boolean\): string \| undefined \{[\s\S]*return isEmpty \? AGENT_EMPTY_ROW_ADD_LABELS\[field\] : "Edit";[\s\S]*\}/u);
 	assert.match(AGENT_SOURCE, /import EditIcon from "@atlaskit\/icon\/core\/edit";/u);
 	assert.match(AGENT_SOURCE, /import \{[\s\S]*DEFAULT_STARTER_ICON,[\s\S]*getStarterIcon,[\s\S]*type StarterIconKey,[\s\S]*\} from "@\/components\/blocks\/conversation-starters";/u);
 	assert.match(AGENT_SOURCE, /function getConversationStarterSummaryItems\(config: AgentConfigFormValue\)/u);
