@@ -247,6 +247,17 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	assert.match(AGENT_SOURCE, /<RichTextMentionVisualMark/u);
 	assert.match(AGENT_SOURCE, /type=\{elemBefore \? "default" : getRichTextMentionTagType\(visual\)\}/u);
 	assert.match(AGENT_SOURCE, /removeVariant="overlay"/u);
+	assert.match(AGENT_SOURCE, /import \{ HoverCard, HoverCardContent, HoverCardTrigger \} from "@\/components\/ui\/hover-card";/u);
+	assert.match(AGENT_SOURCE, /import \{ EntityCard \} from "@\/components\/ui-custom\/entity-card";/u);
+	assert.match(AGENT_SOURCE, /SmartLinkCard,[\s\S]*type SmartLinkItem/u);
+	assert.match(AGENT_SOURCE, /type AgentReferencePreview =[\s\S]*kind: "skill"[\s\S]*kind: "tool"[\s\S]*kind: "knowledge"/u);
+	assert.match(AGENT_SOURCE, /function getAgentReferencePreview/u);
+	assert.match(AGENT_SOURCE, /<EntityCard\.Skill[\s\S]*description=\{preview\.skill\.description\}/u);
+	assert.match(AGENT_SOURCE, /<EntityCard\.Tool[\s\S]*appLogo=\{getAgentReferenceToolLogo\(preview\.tool\)\}/u);
+	assert.match(AGENT_SOURCE, /<SmartLinkCard item=\{preview\.item\} \/>/u);
+	assert.doesNotMatch(AGENT_SOURCE, /const \[previewOpen, setPreviewOpen\] = useState\(false\);/u);
+	assert.doesNotMatch(AGENT_SOURCE, /onMouseEnter=\{preview \? openPreview : undefined\}/u);
+	assert.match(AGENT_SOURCE, /return preview \? \([\s\S]*<HoverCard>[\s\S]*<HoverCardTrigger closeDelay=\{80\} delay=\{120\} render=\{<span className="inline-flex max-w-full" \/>\}>[\s\S]*\{tag\}[\s\S]*<\/HoverCardTrigger>[\s\S]*<AgentReferencePreviewContent preview=\{preview\} \/>/u);
 	assert.doesNotMatch(AGENT_SOURCE, /function AgentSkillChip/u);
 	assert.match(AGENT_SOURCE, /onRemove=\{onRemove\}[\s\S]*removeButtonLabel=\{`Remove \$\{label\}`\}[\s\S]*removeVariant="overlay"/u);
 	for (const [rowLabel, category] of [
@@ -1043,7 +1054,7 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /data-list-overflow-after/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /black calc\(100% - var\(--rich-text-command-menu-scroll-mask-fade-size\)\), transparent 100%/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-search \{[\s\S]*flex: 0 0 44px;[\s\S]*grid-template-columns: 24px minmax\(0, 1fr\) auto;[\s\S]*height: 44px;[\s\S]*min-height: 44px;/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-search \{[\s\S]*padding: 0 6px 0 12px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-search \{[\s\S]*padding: 0 8px 0 12px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-search > \[data-slot="input"\] \{\s*height: 100%;/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /rich-text-command-menu-search-picker/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /data-first-item-input|rich-text-command-menu-input/u);
@@ -1057,7 +1068,7 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-description\b/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \.rich-text-command-menu-list \.menu-row-byline \{\s*pointer-events: none;/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*border-bottom/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*padding: 8px 6px 8px 12px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*padding: 0 8px 0 12px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item \{[\s\S]*?height: 44px;/u);
 	// `[^}]*?` keeps this scoped to the nested item rule's own block so it can't
 	// leak into a later rule (flat / non-nested rows carry 6px vertical padding).

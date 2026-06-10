@@ -35,6 +35,7 @@ import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
 import { AgentUsers } from "@/components/blocks/agent-users";
 import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
 import { DEMO_AGENT_TEMPLATES } from "@/components/blocks/agent-templates/data/demo-template-agents";
+import { SmartLinkCard, type SmartLinkItem, type SmartLinkVariant, type SmartLinkVisual } from "@/components/blocks/smart-link";
 import {
 	DEFAULT_STARTER_ICON,
 	getStarterIcon,
@@ -67,6 +68,22 @@ import {
 	EditorPaletteSearchPicker,
 	type EditorPaletteSearchCategory,
 } from "@/components/blocks/editor-palette/page";
+import {
+	DEFAULT_KNOWLEDGE_APPS,
+	DEFAULT_SKILLS,
+	DEMO_SESSION_TOOLS,
+	DEMO_TOOLS,
+	getDirectoryIcon,
+	getSkillIcon,
+	getSkillIconTileVariant,
+	getSkillPublisherName,
+	type DirectoryVisual,
+	type KnowledgeDirectoryApp,
+	type KnowledgeDirectoryContent,
+	type SkillsDirectorySkill,
+	type ToolsDirectoryTool,
+} from "@/app/data/directory";
+import { resolveCatalogIds } from "@/app/data/directory/resolve-ids";
 import { Accordion,
 	AccordionContent,
 	AccordionItem,
@@ -77,6 +94,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
+import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -97,6 +115,7 @@ import {
 } from "@/components/ui/menubar";
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { InlineEdit } from "@/components/ui/inline-edit";
 import { Input } from "@/components/ui/input";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
@@ -104,6 +123,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tag, type TagColor } from "@/components/ui/tag";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { MoreHorizontalIcon, PlusIcon } from "@/components/ui/vpk-icons";
+import { EntityCard } from "@/components/ui-custom/entity-card";
 import { computeContextBarOverflow } from "@/components/ui-custom/context-bar/overflow";
 import {
 	type RichTextMentionItem,
@@ -1917,10 +1937,192 @@ const iconColorToTagColor: Readonly<Record<string, TagColor>> = {
 	"text-yellow-400": "yellow",
 };
 
+type AgentReferencePreview =
+	| { kind: "skill"; skill: SkillsDirectorySkill }
+	| { kind: "tool"; tool: ToolsDirectoryTool }
+	| { kind: "knowledge"; item: SmartLinkItem };
+
+const AGENT_REFERENCE_TOOLS = [...DEMO_TOOLS, ...DEMO_SESSION_TOOLS] as readonly ToolsDirectoryTool[];
+
+const smartLinkVariantByKnowledgeAppId: Readonly<Record<string, SmartLinkVariant>> = {
+	confluence: "confluence",
+	jira: "jira",
+	loom: "loom",
+};
+
+const smartLinkToneByIconColor: Readonly<Record<string, "information" | "discovery" | "magenta" | "warning">> = {
+	"text-icon-information": "information",
+	"text-icon-brand": "information",
+	"text-icon-discovery": "discovery",
+	"text-icon-warning": "warning",
+	"text-icon-accent-magenta": "magenta",
+};
+
 function getTagColorForMentionVisual(visual: RichTextMentionItem["visual"]): TagColor | undefined {
 	return visual?.kind === "icon" && visual.iconColor
 		? iconColorToTagColor[visual.iconColor]
 		: undefined;
+}
+
+function resolveAgentReferenceCatalogId(
+	category: Extract<RichTextReferenceCategory, "knowledge" | "skill" | "tool">,
+	label: string,
+): string | undefined {
+	return resolveCatalogIds([label], category)[0];
+}
+
+function findAgentReferenceSkill(label: string): SkillsDirectorySkill | undefined {
+	const skillId = resolveAgentReferenceCatalogId("skill", label);
+	return skillId ? DEFAULT_SKILLS.find((skill) => skill.id === skillId) : undefined;
+}
+
+function findAgentReferenceTool(label: string): ToolsDirectoryTool | undefined {
+	const toolId = resolveAgentReferenceCatalogId("tool", label);
+	return toolId ? AGENT_REFERENCE_TOOLS.find((tool) => tool.id === toolId) : undefined;
+}
+
+function findAgentReferenceKnowledge(
+	label: string,
+): { app: KnowledgeDirectoryApp; content?: KnowledgeDirectoryContent; id: string } | undefined {
+	const knowledgeId = resolveAgentReferenceCatalogId("knowledge", label);
+	if (!knowledgeId) {
+		return undefined;
+	}
+
+	const [appId, contentId = "all"] = knowledgeId.split(":");
+	const app = DEFAULT_KNOWLEDGE_APPS.find((candidate) => candidate.id === appId);
+	if (!app) {
+		return undefined;
+	}
+
+	return {
+		app,
+		content: contentId === "all" ? undefined : app.contents.find((content) => content.id === contentId),
+		id: knowledgeId,
+	};
+}
+
+function directoryVisualToSmartLinkVisual(visual: DirectoryVisual, label: string): SmartLinkVisual {
+	switch (visual.kind) {
+		case "logo":
+			return { kind: "atlassian", name: visual.logoName };
+		case "icon":
+			return {
+				kind: "icon-tile",
+				icon: getDirectoryIcon(visual.iconKey),
+				tone: visual.iconColor ? smartLinkToneByIconColor[visual.iconColor] : undefined,
+			};
+		default:
+			return { kind: "image", src: visual.src, alt: label };
+	}
+}
+
+function getSmartLinkVariantForKnowledgeApp(app: KnowledgeDirectoryApp): SmartLinkVariant {
+	return smartLinkVariantByKnowledgeAppId[app.id] ?? "generic";
+}
+
+function getAgentReferenceKnowledgeSmartLink(label: string): SmartLinkItem | undefined {
+	const resolved = findAgentReferenceKnowledge(label);
+	if (!resolved) {
+		return undefined;
+	}
+
+	const { app, content, id } = resolved;
+	const title = content?.name ?? `${app.name} - all content`;
+	const visual = content?.visual ?? app.visual;
+
+	return {
+		id: `agent-reference-knowledge-${id.replace(/[^a-z0-9-]+/giu, "-")}`,
+		href: `#knowledge-${id}`,
+		title,
+		variant: getSmartLinkVariantForKnowledgeApp(app),
+		provider: {
+			name: app.providerName,
+			logo: directoryVisualToSmartLinkVisual(app.visual, app.name),
+		},
+		icon: directoryVisualToSmartLinkVisual(visual, title),
+		description: content?.description ?? app.description,
+		metadata: [
+			{ label: content ? content.type : "All content" },
+			{ label: `${app.teammateCount} teammates` },
+		],
+	};
+}
+
+function getAgentReferencePreview(
+	category: RichTextReferenceCategory | undefined,
+	label: string,
+): AgentReferencePreview | undefined {
+	switch (category) {
+		case "skill": {
+			const skill = findAgentReferenceSkill(label);
+			return skill ? { kind: "skill", skill } : undefined;
+		}
+		case "tool": {
+			const tool = findAgentReferenceTool(label);
+			return tool ? { kind: "tool", tool } : undefined;
+		}
+		case "knowledge": {
+			const item = getAgentReferenceKnowledgeSmartLink(label);
+			return item ? { kind: "knowledge", item } : undefined;
+		}
+		default:
+			return undefined;
+	}
+}
+
+function getAgentReferenceToolLogo(tool: ToolsDirectoryTool): ReactNode {
+	if (tool.logoName || tool.id === "atlassian") {
+		return <AtlassianLogoMark label={tool.name} name={tool.logoName ?? "atlassian"} size="medium" />;
+	}
+
+	const src = tool.logoSrc ?? tool.avatarSrc;
+	return src ? <BrandLogoMark frame="tile" label={tool.name} size="medium" src={src} /> : null;
+}
+
+function AgentReferencePreviewContent({ preview }: Readonly<{ preview: AgentReferencePreview }>) {
+	if (preview.kind === "knowledge") {
+		return (
+			<HoverCardContent
+				align="center"
+				className="w-auto border-0 bg-transparent p-0 text-text shadow-none"
+				side="top"
+				sideOffset={8}
+			>
+				<SmartLinkCard item={preview.item} />
+			</HoverCardContent>
+		);
+	}
+
+	return (
+		<HoverCardContent
+			align="center"
+			className="w-80 rounded-md bg-surface-overlay p-4 text-text shadow-2xl"
+			side="top"
+			sideOffset={8}
+		>
+			{preview.kind === "skill" ? (
+				<EntityCard.Skill
+					description={preview.skill.description}
+					icon={getSkillIcon(preview.skill.icon)}
+					iconVariant={getSkillIconTileVariant(preview.skill)}
+					name={preview.skill.name}
+					publisher={getSkillPublisherName(preview.skill)}
+					starCount={preview.skill.starCount}
+					teammateCount={preview.skill.teammateCount}
+					verified={preview.skill.verified}
+				/>
+			) : (
+				<EntityCard.Tool
+					appLogo={getAgentReferenceToolLogo(preview.tool)}
+					description={preview.tool.description}
+					name={preview.tool.name}
+					teammateCount={preview.tool.teammateCount}
+					toolCount={preview.tool.toolCount}
+				/>
+			)}
+		</HoverCardContent>
+	);
 }
 
 function AgentReferenceChip({
@@ -1943,6 +2145,7 @@ function AgentReferenceChip({
 	const item = category ? getDirectoryMentionItemOrFallback(category, label) : undefined;
 	const visual = item?.visual;
 	const resolvedTagColor = tagColor ?? getTagColorForMentionVisual(visual) ?? "blue";
+	const preview = getAgentReferencePreview(category, label);
 	// When no directory visual resolves (e.g. a freshly created, still-unnamed
 	// subagent that isn't in the demo agent directory), fall back to a
 	// category-appropriate icon — subagents use the same agent icon as the
@@ -1976,7 +2179,7 @@ function AgentReferenceChip({
 	// kill the remove control). Instead we dim it via opacity and suppress only
 	// the row's primary click (opening the directory), leaving the overlay remove
 	// button fully interactive.
-	return (
+	const tag = (
 		<Tag
 			aria-disabled={disabled || undefined}
 			className={cn(disabled && "opacity-(--opacity-disabled)")}
@@ -1991,6 +2194,15 @@ function AgentReferenceChip({
 			{label}
 		</Tag>
 	);
+
+	return preview ? (
+		<HoverCard>
+			<HoverCardTrigger closeDelay={80} delay={120} render={<span className="inline-flex max-w-full" />}>
+				{tag}
+			</HoverCardTrigger>
+			<AgentReferencePreviewContent preview={preview} />
+		</HoverCard>
+	) : tag;
 }
 
 function AgentAddValueButton({

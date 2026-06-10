@@ -73,10 +73,10 @@ const filledAgentConfig: AgentConfigFormValue = {
 	contextDescription: "",
 	triggerDefinitions: DEFAULT_CONFIGURED_TRIGGER_VALUES,
 	triggers: serializeAgentTriggerLabels(DEFAULT_CONFIGURED_TRIGGER_VALUES),
-	skills: ["create-work-items", "create-work-items"],
-	tools: ["Tool name", "Tool name"],
+	skills: ["Create work items", "Dependency mapper"],
+	tools: ["Jira", "Confluence"],
 	subagents: ["Subagent 1", "Subagent 1"],
-	knowledge: ["Knowledge 1", "Knowledge 2"],
+	knowledge: ["Confluence - all content", "Jira - all content"],
 	conversationStarters: [
 		"Can this policy answer an employee leave question?",
 		"Summarize the relevant HR guidance for a manager.",
