@@ -911,10 +911,6 @@ function getAgentCompactConfigNavItemOnClick(
 		return () => onEditTriggers?.([]);
 	}
 
-	if (item.agentFieldName === "apps") {
-		return () => openAgentDirectoryOrAppendListItem("apps", "apps", onOpenDirectory, onAppendListItem);
-	}
-
 	if (item.agentFieldName === "skills") {
 		return () => openAgentDirectoryOrAppendListItem("skills", "skills", onOpenDirectory, onAppendListItem);
 	}
@@ -1544,6 +1540,91 @@ function AgentCompactDirectoryNavButton({
 	);
 }
 
+// Apps reuse the Skills/Tools directory dropdown shell (configured rows that
+// scroll above a pinned footer) but WITHOUT the inline "Add ›" search flyout:
+// apps are intentionally not an inline-searchable palette category (see
+// EditorPaletteSearchCategory) and are added through the directory dialog (for
+// connection/detail), so the footer pins a single "Browse apps" that opens that
+// directory. Clicking the collapsed-nav trigger now opens this menu instead of
+// jumping straight to the directory.
+function AgentCompactAppsNavButton({
+	item,
+	apps,
+	disabledItems,
+	onBrowse,
+	onRemoveItem,
+	onSelectItem,
+	onToggleItem,
+	renderTrigger,
+	screenAssistantTargetId,
+}: Readonly<{
+	item: AgentCompactConfigNavItem;
+	apps: readonly string[];
+	disabledItems?: readonly string[];
+	onBrowse: () => void;
+	onRemoveItem?: (index: number) => void;
+	onSelectItem?: (item: string) => void;
+	onToggleItem?: (index: number, enabled: boolean) => void;
+	// Overrides the default collapsed-nav trigger button so other surfaces can
+	// open this same dropdown from their own inline control.
+	renderTrigger?: ReactElement;
+	screenAssistantTargetId?: string;
+}>) {
+	const isEmpty = apps.length === 0;
+	const disabledSet = useDisabledLabelSet(disabledItems);
+
+	return (
+		<MenubarMenu>
+			{renderTrigger ? (
+				<MenubarTrigger render={renderTrigger} />
+			) : (
+				<MenubarTrigger
+					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
+					render={(
+						<AgentCompactConfigNavButton
+							aria-label={item.label}
+							item={item}
+							screenAssistantTargetId={screenAssistantTargetId}
+						/>
+					)}
+				/>
+			)}
+			<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
+				{isEmpty ? null : (
+					<div className="min-h-0 flex-1 overflow-y-auto">
+						<AgentCompactNavMenuList>
+							<DropdownMenuGroup className="p-0">
+								{apps.map((value, index) => (
+									<AgentCompactReferenceRow
+										key={`apps-${value}-${index}`}
+										enabled={!disabledSet.has(value.trim())}
+										label={value}
+										onClick={onSelectItem ? () => onSelectItem(value) : undefined}
+										onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
+										onToggle={onToggleItem ? (enabled) => onToggleItem(index, enabled) : undefined}
+									/>
+								))}
+							</DropdownMenuGroup>
+						</AgentCompactNavMenuList>
+					</div>
+				)}
+				<AgentCompactNavMenuPinnedFooter bordered={!isEmpty}>
+					<DropdownMenuItem
+						elemBefore={
+							<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
+								<item.Icon label="" />
+							</span>
+						}
+						onClick={onBrowse}
+					>
+						Browse {item.label.toLowerCase()}
+					</DropdownMenuItem>
+				</AgentCompactNavMenuPinnedFooter>
+			</MenubarContent>
+		</MenubarMenu>
+	);
+}
+
 // Conversation starters dropdown always exposes the 3 starter text fields for
 // quick inline edits, with a "Manage conversation starters" footer that opens
 // the full modal.
@@ -1741,6 +1822,21 @@ function AgentCompactEmptyConfigNav({
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
 								triggerDefinitions={config?.triggerDefinitions}
 								triggers={config ? getAgentTriggerItems(config) : []}
+							/>
+						);
+					}
+					if (item.agentFieldName === "apps") {
+						return (
+							<AgentCompactAppsNavButton
+								apps={getNonEmptyConfigItems(config?.apps)}
+								disabledItems={config?.disabledItems?.apps}
+								item={item}
+								key={item.agentFieldName}
+								onBrowse={() => openAgentDirectoryOrAppendListItem("apps", "apps", onOpenDirectory, onAppendListItem)}
+								onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("apps", index) : undefined}
+								onSelectItem={onOpenDirectory ? (value) => onOpenDirectory("apps", value) : undefined}
+								onToggleItem={onToggleListItem ? (index, enabled) => onToggleListItem("apps", index, enabled) : undefined}
+								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:apps` : undefined}
 							/>
 						);
 					}
