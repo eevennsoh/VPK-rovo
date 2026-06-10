@@ -1,19 +1,35 @@
-import assert from "node:assert/strict";
-import { readdirSync, existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-import test from "node:test";
+const assert = require("node:assert/strict");
+const { readdirSync, existsSync } = require("node:fs");
+const path = require("node:path");
+const test = require("node:test");
 
-// @ts-expect-error Node's strip-types test runner requires the explicit .ts extension here.
-import {
-	THIRD_PARTY_BORDERLESS_LOGO_IDS,
-	resolveBrandLogoPresentation,
-	resolveAtlassianLogoBorder,
-} from "./logo-usage.ts";
+const { loadDirectoryModule } = require(path.join(
+	__dirname,
+	"..",
+	"..",
+	"..",
+	"app",
+	"data",
+	"directory",
+	"__tests__",
+	"load-directory-module.js",
+));
 
-const here = dirname(fileURLToPath(import.meta.url));
+let logoUsageModulePromise;
+
+function loadLogoUsageModule() {
+	logoUsageModulePromise ??= loadDirectoryModule(`
+		export {
+			THIRD_PARTY_BORDERLESS_LOGO_IDS,
+			resolveBrandLogoPresentation,
+			resolveAtlassianLogoBorder,
+		} from "@/components/ui/data/logo-usage";
+	`);
+	return logoUsageModulePromise;
+}
+
 // components/ui/data -> repo root -> public/3p
-const THIRD_PARTY_DIR = join(here, "..", "..", "..", "public", "3p");
+const THIRD_PARTY_DIR = path.join(__dirname, "..", "..", "..", "public", "3p");
 
 /**
  * The borderless ID list in logo-usage.json is a hand-maintained mirror of which
@@ -21,10 +37,11 @@ const THIRD_PARTY_DIR = join(here, "..", "..", "..", "public", "3p");
  * added (or a borderless variant added/removed) without updating the JSON, the
  * border treatment silently breaks — so assert the list equals on-disk reality.
  */
-test("THIRD_PARTY_BORDERLESS_LOGO_IDS matches the folders shipping 16-borderless.svg", () => {
+test("THIRD_PARTY_BORDERLESS_LOGO_IDS matches the folders shipping 16-borderless.svg", async () => {
+	const { THIRD_PARTY_BORDERLESS_LOGO_IDS } = await loadLogoUsageModule();
 	const onDisk = readdirSync(THIRD_PARTY_DIR, { withFileTypes: true })
 		.filter((entry) => entry.isDirectory())
-		.filter((entry) => existsSync(join(THIRD_PARTY_DIR, entry.name, "16-borderless.svg")))
+		.filter((entry) => existsSync(path.join(THIRD_PARTY_DIR, entry.name, "16-borderless.svg")))
 		.map((entry) => entry.name)
 		.sort();
 
@@ -38,39 +55,51 @@ test("THIRD_PARTY_BORDERLESS_LOGO_IDS matches the folders shipping 16-borderless
 	);
 });
 
-test("2P partner logos always get a bordered tile, src unchanged", () => {
+test("2P partner logos always get a bordered tile, src unchanged", async () => {
+	const { resolveBrandLogoPresentation } = await loadLogoUsageModule();
+
 	assert.deepEqual(resolveBrandLogoPresentation("/2p/appfire.png"), {
 		src: "/2p/appfire.png",
 		hasBorder: true,
 	});
 });
 
-test("white-tile 3P logos swap to the borderless variant and get a border", () => {
+test("white-tile 3P logos swap to the borderless variant and get a border", async () => {
+	const { resolveBrandLogoPresentation } = await loadLogoUsageModule();
+
 	assert.deepEqual(resolveBrandLogoPresentation("/3p/airtable/20.svg"), {
 		src: "/3p/airtable/16-borderless.svg",
 		hasBorder: true,
 	});
 });
 
-test("solid-fill 3P logos render bare (no border), src unchanged", () => {
+test("solid-fill 3P logos render bare (no border), src unchanged", async () => {
+	const { resolveBrandLogoPresentation } = await loadLogoUsageModule();
+
 	assert.deepEqual(resolveBrandLogoPresentation("/3p/github/24.svg"), {
 		src: "/3p/github/24.svg",
 		hasBorder: false,
 	});
 });
 
-test("unknown logo paths fall back to no border, src unchanged", () => {
+test("unknown logo paths fall back to no border, src unchanged", async () => {
+	const { resolveBrandLogoPresentation } = await loadLogoUsageModule();
+
 	assert.deepEqual(resolveBrandLogoPresentation("/illustration/foo.svg"), {
 		src: "/illustration/foo.svg",
 		hasBorder: false,
 	});
 });
 
-test("the Atlassian master logo (no solid background) gets a bordered tile", () => {
+test("the Atlassian master logo (no solid background) gets a bordered tile", async () => {
+	const { resolveAtlassianLogoBorder } = await loadLogoUsageModule();
+
 	assert.equal(resolveAtlassianLogoBorder("atlassian"), true);
 });
 
-test("solid-background 1P product logos render bare (no border)", () => {
+test("solid-background 1P product logos render bare (no border)", async () => {
+	const { resolveAtlassianLogoBorder } = await loadLogoUsageModule();
+
 	for (const name of ["jira", "confluence", "loom", "trello", "compass"]) {
 		assert.equal(
 			resolveAtlassianLogoBorder(name),

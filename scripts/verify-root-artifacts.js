@@ -2,17 +2,12 @@
 
 const { spawnSync } = require("node:child_process");
 
-const BLOCKED_ROOT_PATHS = new Set([
-	"--full-page",
-	"--out",
-	"--output",
-]);
-
+const ROOT_FLAG_PATTERN = /^--[^/]+$/u;
 const ROOT_IMAGE_PATTERN = /^[^/]+\.(?:png|jpe?g|gif|webp|bmp|tiff?|avif|hei[cf])$/iu;
 
 function findBlockedRootArtifacts(trackedFiles) {
 	return trackedFiles.filter((filePath) => {
-		return BLOCKED_ROOT_PATHS.has(filePath) || ROOT_IMAGE_PATTERN.test(filePath);
+		return ROOT_FLAG_PATTERN.test(filePath) || ROOT_IMAGE_PATTERN.test(filePath);
 	});
 }
 
