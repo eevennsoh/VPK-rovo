@@ -14,6 +14,10 @@ const DEMO_SESSION_AGENTS: readonly AgentsDirectoryAgent[] = [
 		attributionKind: "team",
 		avatarSrc: "/avatar-agent/teamwork-agents/progress-tracker.svg",
 		description: "Turns scattered requests into durable operating workflows.",
+		rating: 4.7,
+		feedbackCount: 428,
+		chatCount: 8400,
+		verified: true,
 	},
 	{
 		id: "research-brief-writer",
@@ -22,6 +26,10 @@ const DEMO_SESSION_AGENTS: readonly AgentsDirectoryAgent[] = [
 		attributionKind: "person",
 		avatarSrc: "/avatar-agent/teamwork-agents/wildcard-3.svg",
 		description: "Condenses long research inputs into crisp team-ready briefs.",
+		rating: 4.5,
+		feedbackCount: 214,
+		chatCount: 3600,
+		verified: false,
 	},
 ];
 

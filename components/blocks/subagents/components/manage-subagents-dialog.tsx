@@ -28,7 +28,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { DeleteIcon, GripVerticalIcon, PlusIcon } from "@/components/ui/vpk-icons";
+import { DeleteIcon, GripVerticalIcon } from "@/components/ui/vpk-icons";
 import type { SubagentPrompt } from "@/components/blocks/subagents/data/demo-agents";
 import { getSubagentDisplayName } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { cn } from "@/lib/utils";
@@ -76,7 +76,6 @@ export function ManageSubagentsDialog({
 					</DialogTitle>
 					<div className="flex items-center gap-2">
 						<Button onClick={onCreateSubagent} type="button" variant="outline">
-							<PlusIcon size="small" />
 							Create subagent
 						</Button>
 						<DialogClose render={<Button aria-label="Close" size="icon" variant="ghost" />}>

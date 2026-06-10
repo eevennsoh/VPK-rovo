@@ -71,7 +71,7 @@ export function HoverRevealLabel({
 	return (
 		<span
 			className={cn(
-				"block w-full truncate",
+				"block w-full truncate transition-[padding] duration-normal ease-out",
 				RESERVE_AT_REST[reserveAtRest],
 				RESERVE_ON_REVEAL[reserveOnReveal],
 				className,
@@ -99,9 +99,9 @@ export interface HoverRevealActionsProps {
 
 /**
  * Trailing controls overlay for a hover-reveal row. Absolutely positioned, so it
- * never participates in label layout. The toggle parks at the far right, then
- * uses transform to settle at `right-9` as the action reveals, keeping both
- * choreographed in lockstep on hover-in and hover-out.
+ * never participates in label layout. The toggle parks at the far right (`right-2`)
+ * and slides left to `right-9` to clear the `action` slot as the action reveals,
+ * keeping both choreographed in lockstep on hover-in and hover-out.
  */
 export function HoverRevealActions({
 	toggle,
@@ -113,9 +113,9 @@ export function HoverRevealActions({
 			{toggle ? (
 				<div
 					className={cn(
-						"absolute top-1/2 flex -translate-y-1/2 items-center transition-[opacity,transform] duration-normal ease-out group-hover/hover-reveal-row:opacity-100 group-has-[:focus-visible]/hover-reveal-row:opacity-100",
+						"absolute top-1/2 flex -translate-y-1/2 items-center transition-[right,opacity] duration-normal ease-out group-hover/hover-reveal-row:opacity-100 group-has-[:focus-visible]/hover-reveal-row:opacity-100",
 						action
-							? "right-9 translate-x-7 group-hover/hover-reveal-row:translate-x-0 group-has-[:focus-visible]/hover-reveal-row:translate-x-0"
+							? "right-2 group-hover/hover-reveal-row:right-9 group-has-[:focus-visible]/hover-reveal-row:right-9"
 							: "right-2",
 						toggleParked ? "opacity-100" : "opacity-0",
 					)}

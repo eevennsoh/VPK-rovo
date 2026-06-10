@@ -3,14 +3,27 @@
 import { cloneElement, isValidElement, useId, useState, type ComponentProps, type ReactElement } from "react";
 import Image from "next/image";
 import PageIcon from "@atlaskit/icon/core/page";
+import PriorityHighestIcon from "@atlaskit/icon/core/priority-highest";
+import PriorityHighIcon from "@atlaskit/icon/core/priority-high";
+import PriorityMediumIcon from "@atlaskit/icon/core/priority-medium";
+import PriorityLowIcon from "@atlaskit/icon/core/priority-low";
+import PriorityMinorIcon from "@atlaskit/icon/core/priority-minor";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { AtlassianLogo, CustomLogo, type AtlassianLogoName, type LogoProps } from "@/components/ui/logo";
 import { BrandLogoMark } from "@/components/ui/logo-mark";
-import { Lozenge, type LozengeProps } from "@/components/ui/lozenge";
+import { Lozenge, LozengeDropdownTrigger, type LozengeProps } from "@/components/ui/lozenge";
+import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 export type SmartLinkVariant =
@@ -75,14 +88,22 @@ export interface SmartLinkItem {
 	avatars?: ReadonlyArray<SmartLinkAvatar>;
 	avatarOverflow?: number;
 	previewImage?: SmartLinkPreviewImage;
+	assignee?: SmartLinkAvatar;
+	author?: SmartLinkAvatar;
+	date?: string;
+	priority?: SmartLinkPriority;
 	status?: {
 		label: string;
 		variant?: LozengeProps["variant"];
+		/** Render the status as an interactive lozenge dropdown (Jira-style). */
+		options?: ReadonlyArray<{ label: string; variant?: LozengeProps["variant"] }>;
 	};
 	score?: string;
 	dueDate?: string;
 	actions?: ReadonlyArray<SmartLinkAction>;
 }
+
+export type SmartLinkPriority = "highest" | "high" | "medium" | "low" | "lowest";
 
 export interface SmartLinkProps {
 	item: SmartLinkItem;
@@ -285,6 +306,82 @@ function getInitials(name: string) {
 		.toUpperCase();
 }
 
+const priorityPresentations: Record<SmartLinkPriority, { icon: ReactElement; label: string }> = {
+	highest: { icon: <PriorityHighestIcon label="" color={token("color.icon.danger")} />, label: "Highest" },
+	high: { icon: <PriorityHighIcon label="" color={token("color.icon.danger")} />, label: "High" },
+	medium: { icon: <PriorityMediumIcon label="" color={token("color.icon.warning")} />, label: "Medium" },
+	low: { icon: <PriorityLowIcon label="" color={token("color.icon.information")} />, label: "Low" },
+	lowest: { icon: <PriorityMinorIcon label="" color={token("color.icon.information")} />, label: "Minor" },
+};
+
+function SmartLinkAssigneeAvatar({ assignee }: Readonly<{ assignee: SmartLinkAvatar }>) {
+	return (
+		<Avatar label={assignee.name} size="sm">
+			{assignee.src ? <AvatarImage alt={assignee.name} src={assignee.src} /> : null}
+			<AvatarFallback>{getInitials(assignee.name)}</AvatarFallback>
+		</Avatar>
+	);
+}
+
+function SmartLinkPriorityIndicator({ priority }: Readonly<{ priority: SmartLinkPriority }>) {
+	const presentation = priorityPresentations[priority];
+
+	return (
+		<span className="inline-flex items-center gap-1 text-sm leading-5 text-text-subtle">
+			<Icon render={presentation.icon} aria-hidden />
+			{presentation.label}
+		</span>
+	);
+}
+
+function SmartLinkStatusDropdown({
+	status,
+}: Readonly<{ status: NonNullable<SmartLinkItem["status"]> }>) {
+	const [selected, setSelected] = useState({ label: status.label, variant: status.variant ?? "neutral" });
+	const options = status.options ?? [];
+
+	if (!options.length) {
+		return (
+			<Lozenge variant={status.variant ?? "neutral"}>
+				{status.label}
+			</Lozenge>
+		);
+	}
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger
+				render={
+					<LozengeDropdownTrigger
+						aria-label={`Status: ${selected.label}`}
+						maxWidth="160px"
+						variant={selected.variant}
+					/>
+				}
+			>
+				{selected.label}
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="start" className="w-44 p-0" sideOffset={6}>
+				<DropdownMenuGroup className="p-0 py-2">
+					{options.map((option) => (
+						<DropdownMenuItem
+							aria-current={option.label === selected.label ? "true" : undefined}
+							className={cn(
+								"rounded-none border-l-2 border-l-transparent px-0 py-2.5 pl-2.5",
+								option.label === selected.label && "border-l-border-selected bg-bg-neutral",
+							)}
+							key={option.label}
+							onSelect={() => setSelected({ label: option.label, variant: option.variant ?? "neutral" })}
+						>
+							<Lozenge variant={option.variant ?? "neutral"}>{option.label}</Lozenge>
+						</DropdownMenuItem>
+					))}
+				</DropdownMenuGroup>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
 function MetadataPill({ metadata }: Readonly<{ metadata: SmartLinkMetadata }>) {
 	return (
 		<span
@@ -302,22 +399,30 @@ function MetadataPill({ metadata }: Readonly<{ metadata: SmartLinkMetadata }>) {
 function SmartLinkMetadataRow({ item }: Readonly<{ item: SmartLinkItem }>) {
 	const hasMetadata = Boolean(item.metadata?.length);
 	const hasGoalDetails = item.status || item.score || item.dueDate;
+	const hasIssueDetails = item.assignee || item.priority;
+	const hasAuthorDetails = item.author || item.date;
 
-	if (!item.avatars?.length && !hasMetadata && !hasGoalDetails) {
+	if (!item.avatars?.length && !hasMetadata && !hasGoalDetails && !hasIssueDetails && !hasAuthorDetails) {
 		return null;
 	}
 
 	return (
 		<div className="flex min-w-0 flex-wrap items-center gap-2 text-sm leading-5 text-text-subtle">
 			<SmartLinkAvatarStack avatars={item.avatars} overflow={item.avatarOverflow} />
+			{item.assignee ? <SmartLinkAssigneeAvatar assignee={item.assignee} /> : null}
+			{item.author ? (
+				<span className="inline-flex min-w-0 items-center gap-2">
+					<SmartLinkAssigneeAvatar assignee={item.author} />
+					<span className="truncate">{item.author.name}</span>
+				</span>
+			) : null}
+			{item.author && item.date ? <span aria-hidden>·</span> : null}
+			{item.date ? <span className="truncate">{item.date}</span> : null}
 			{item.metadata?.map((metadata) => (
 				<MetadataPill key={metadata.label} metadata={metadata} />
 			))}
-			{item.status ? (
-				<Lozenge variant={item.status.variant ?? "neutral"}>
-					{item.status.label}
-				</Lozenge>
-			) : null}
+			{item.status ? <SmartLinkStatusDropdown status={item.status} /> : null}
+			{item.priority ? <SmartLinkPriorityIndicator priority={item.priority} /> : null}
 			{item.score ? (
 				<span className="inline-flex h-5 items-center rounded-sm border border-border-bold bg-bg-neutral px-1 text-xs leading-4 text-text">
 					{item.score}
@@ -375,11 +480,18 @@ function SmartLinkActionRow({
 
 	return (
 		<button
-			className="flex min-h-8 w-full cursor-pointer items-center gap-3 rounded-sm bg-transparent px-4 py-1.5 text-left text-sm leading-5 text-text outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:bg-bg-neutral-subtle-hovered focus-visible:ring-3 focus-visible:ring-ring/50"
+			className="flex min-h-8 w-full cursor-pointer items-center gap-3 bg-transparent px-4 py-1.5 text-left text-sm leading-5 text-text-subtle outline-none transition-colors duration-fast ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:bg-bg-neutral-subtle-hovered focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/50"
 			onClick={handleClick}
 			type="button"
 		>
-			<Icon className="text-icon" render={cloneIcon(action.icon, "medium")} />
+			<IconTile
+				aria-hidden
+				className="text-icon-subtle"
+				icon={cloneIcon(action.icon, "small")}
+				label=""
+				size="small"
+				variant="transparent"
+			/>
 			<span className="truncate">{action.label}</span>
 		</button>
 	);
@@ -387,8 +499,12 @@ function SmartLinkActionRow({
 
 function SmartLinkFooter({ provider }: Readonly<{ provider: SmartLinkProvider }>) {
 	return (
-		<div className="flex items-center gap-1 px-4 pt-2 pb-4 text-sm leading-5 text-text-subtlest">
-			{provider.logo ? renderVisual(provider.logo, "footer") : null}
+		<div className="flex items-center gap-1 px-4 pt-2 pb-4 text-xs leading-4 text-text-subtlest">
+			{provider.logo ? (
+				<span className="inline-flex size-4 shrink-0 items-center justify-center">
+					{renderVisual(provider.logo, "footer")}
+				</span>
+			) : null}
 			<span className="truncate">{provider.name}</span>
 		</div>
 	);

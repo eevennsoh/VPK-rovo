@@ -1,6 +1,6 @@
 "use client";
 
-import { SmartLink } from "@/components/blocks/smart-link/components/smart-link";
+import { SmartLink, SmartLinkCard } from "@/components/blocks/smart-link/components/smart-link";
 import { SMART_LINK_DEMO_ITEMS } from "@/components/blocks/smart-link/data/demo-smart-links";
 
 export interface SmartLinkPageProps {
@@ -12,7 +12,7 @@ export default function SmartLinkPage({
 }: Readonly<SmartLinkPageProps>): React.ReactElement {
 	return (
 		<div className="min-h-[560px] w-full bg-surface px-8 py-16 text-text">
-			<div className="mx-auto max-w-5xl">
+			<div className="mx-auto max-w-5xl space-y-12">
 				<div className="space-y-4 text-sm leading-6">
 					<p>
 						<SmartLink item={items[0]} /> keeps planning work connected to source context while updates flow through related references.
@@ -26,6 +26,18 @@ export default function SmartLinkPage({
 					<p>
 						Watch <SmartLink item={items[5]} /> and compare it with supporting files like <SmartLink item={items[6]} /> or <SmartLink item={items[7]} />.
 					</p>
+				</div>
+				<div className="max-h-[600px] overflow-y-auto rounded-lg border border-border p-4">
+					<div className="flex flex-wrap items-start gap-6">
+						{items.map((item) => (
+							<div className="flex flex-col gap-2" key={item.id}>
+								<span className="text-xs font-medium leading-4 text-text-subtlest">
+									{item.variant}
+								</span>
+								<SmartLinkCard item={item} />
+							</div>
+						))}
+					</div>
 				</div>
 			</div>
 		</div>

@@ -86,6 +86,9 @@ interface RovoAppAgentConfigPanelProps {
 		profileId: string,
 		patch: Partial<AgentResult>,
 	) => void;
+	// Opens the host-owned agents directory on its first template tab when the
+	// empty-instructions "start with a template" link is clicked.
+	onStartWithTemplate?: () => void;
 	className?: string;
 }
 
@@ -109,6 +112,7 @@ export function RovoAppAgentConfigPanel({
 	chatContextBar,
 	chatGreeting,
 	onUpdateDraft,
+	onStartWithTemplate,
 	className,
 }: Readonly<RovoAppAgentConfigPanelProps>) {
 	const draft = entry.draftResult;
@@ -660,6 +664,7 @@ export function RovoAppAgentConfigPanel({
 											onConnectTrigger={handleConnectTrigger}
 											onManageSubagents={() => setIsManageSubagentsOpen(true)}
 											onSelectListItem={handleSelectListItem}
+											onStartWithTemplate={onStartWithTemplate}
 											onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
 											onOpenDirectory={handleOpenDirectory}
 											selectedListItemIndexByField={{ subagents: selectedSubagentIndex }}

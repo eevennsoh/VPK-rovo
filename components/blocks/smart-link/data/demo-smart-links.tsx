@@ -47,7 +47,17 @@ export const SMART_LINK_DEMO_ITEMS = [
 		variant: "jira",
 		provider: { name: "Jira", logo: { kind: "atlassian", name: "jira" } },
 		icon: { kind: "atlassian", name: "jira" },
-		metadata: [{ label: "List" }],
+		assignee: { name: "Priya Hansra", src: "/avatar-human/priya-hansra.png" },
+		status: {
+			label: "In progress",
+			variant: "information",
+			options: [
+				{ label: "To do", variant: "neutral" },
+				{ label: "In progress", variant: "information" },
+				{ label: "Done", variant: "success" },
+			],
+		},
+		priority: "lowest",
 		description: "Planning board for platform foundation engineering work, motion design reviews, and rollout dependencies.",
 		actions: DEFAULT_ACTIONS,
 	},
@@ -78,10 +88,8 @@ export const SMART_LINK_DEMO_ITEMS = [
 		variant: "confluence",
 		provider: { name: "Confluence", logo: { kind: "atlassian", name: "confluence" } },
 		icon: { kind: "icon-tile", icon: <PageIcon label="" size="medium" />, tone: "information" },
-		metadata: [
-			{ label: "NV", tone: "warning" },
-			{ label: "Updated 5 days ago" },
-		],
+		author: { name: "Charlie Atlas", src: "/avatar-human/andrea-wilson.png" },
+		date: "Updated 5 days ago",
 		description:
 			"To further strengthen our security, reduce unnecessary risk, and support more responsible hardware management, we're updating Atlassian's 3-year laptop refresh process.",
 		actions: [

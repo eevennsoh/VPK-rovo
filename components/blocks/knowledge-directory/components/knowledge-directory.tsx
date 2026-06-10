@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { CardDirectoryKnowledge } from "@/components/ui-custom/card-directory";
-import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import {

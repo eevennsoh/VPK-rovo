@@ -15,7 +15,7 @@ import {
 } from "@/components/blocks/conversation-starters";
 import { CreateButton } from "@/components/blocks/top-navigation/components/create-button";
 import { AgentsDirectoryDialog } from "@/components/blocks/agents-directory";
-import { AgentTemplatesDialog, type AgentTemplatesAgent } from "@/components/blocks/agent-templates";
+import { AGENT_TEMPLATES_CATEGORIES, AgentTemplatesDialog, type AgentTemplatesAgent } from "@/components/blocks/agent-templates";
 import {
 	DEMO_AGENT_TEMPLATES,
 	DEMO_AGENT_TEMPLATES_SESSION,
@@ -2347,6 +2347,12 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		setIsSidebarAgentBrowserOpen(true);
 	}, []);
 
+	// The empty-instructions "start with a template" link opens the same agents
+	// directory as "Browse all", landing on the first template tab.
+	const handleStartAgentWithTemplate = useCallback(() => {
+		handleBrowseAgentsDirectory(AGENT_TEMPLATES_CATEGORIES[0].id);
+	}, [handleBrowseAgentsDirectory]);
+
 	const handleTemplateAgentSelect = useCallback((agent: AgentTemplatesAgent) => {
 		handleGallerySelect(
 			agent.templatePrompt ?? buildFallbackTemplatePrompt(agent),
@@ -4174,6 +4180,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			chatContextBar={agentEditContextBar}
 			chatGreeting={agentEditGreeting}
 			onUpdateDraft={handleUpdateAgentDraft}
+			onStartWithTemplate={handleStartAgentWithTemplate}
 		/>
 	) : null;
 

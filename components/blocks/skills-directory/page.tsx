@@ -25,7 +25,7 @@ const DEMO_SESSION_SKILLS: readonly SkillsDirectorySkill[] = [
 		instructions: "Inspect labels, focus order, contrast, landmarks, and keyboard-only completion paths.",
 	},
 	{
-		id: "draft-release-notes",
+		id: "demo-draft-release-notes",
 		name: "Draft release notes",
 		description: "Turn a list of merged changes into customer-ready release notes.",
 		icon: "edit",

@@ -72,8 +72,13 @@ test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /editorClassName=\{cn\("agent-instructions-tiptap-editor text-text", editorClassName\)\}/u);
 	assert.match(AGENT_SOURCE, /placeholder="Press \/ to help me describe the agent's role, or start with a template"/u);
 	assert.match(AGENT_SOURCE, /placeholderSlot=\{\([\s\S]*className="tiptap-editor text-sm leading-\[1\.55\] text-text-subtlest"[\s\S]*Press <code>\/<\/code> to help me describe the agent&apos;s role,[\s\S]*start with a template[\s\S]*\)\}/u);
-	assert.match(AGENT_SOURCE, /onClick=\{\(\) => \{[\s\S]*onStartWithTemplate\?\.\(\);[\s\S]*setTemplatesOpen\(true\);[\s\S]*\}\}/u);
+	// When a host provides onStartWithTemplate it takes over (opens its own
+	// agents directory) and the composer skips its built-in templates dialog;
+	// otherwise the link opens the local AgentTemplatesDialog.
+	assert.match(AGENT_SOURCE, /onClick=\{\(\) => \{[\s\S]*if \(onStartWithTemplate\) \{[\s\S]*onStartWithTemplate\(\);[\s\S]*return;[\s\S]*\}[\s\S]*setTemplatesOpen\(true\);[\s\S]*\}\}/u);
 	assert.match(AGENT_SOURCE, /<AgentTemplatesDialog[\s\S]*open=\{templatesOpen\}[\s\S]*onOpenChange=\{setTemplatesOpen\}/u);
+	// AgentConfigFields forwards the host handler down to the composer.
+	assert.match(AGENT_SOURCE, /onStartWithTemplate=\{onStartWithTemplate\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /showBubbleMenu=\{false\}/u);
 	assert.match(AGENT_SOURCE, /const handleInsertReferenceOption = useCallback\(\(category: RichTextReferenceCategory, label: string\): false => \{[\s\S]*AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY\[category\][\s\S]*onAddListValues\?\.\(field, \[label\]\);[\s\S]*return false;[\s\S]*\}, \[config, onAddListValues\]\);/u);
 	assert.match(AGENT_SOURCE, /const handleMentionInventoryChange = useCallback\(\(mentions: readonly RichTextMentionItem\[\]\): void => \{/u);

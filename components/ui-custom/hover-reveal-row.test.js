@@ -18,8 +18,9 @@ test("label reserves padding from a descendant so a self group-hover never misfi
 	// The reserve is keyed off the row group and applied to the label (a
 	// descendant) — the exact thing a self `group-hover` on the container cannot
 	// do. Literal strings so Tailwind can statically extract them.
-	assert.match(SOURCE, /block w-full truncate/u);
-	assert.doesNotMatch(SOURCE, /transition-\[padding\]/u);
+	// The label animates its reserve padding so the text reflows smoothly as the
+	// controls reveal on hover/focus, instead of snapping.
+	assert.match(SOURCE, /block w-full truncate transition-\[padding\]/u);
 	assert.match(
 		SOURCE,
 		/group-hover\/hover-reveal-row:pr-9 group-has-\[:focus-visible\]\/hover-reveal-row:pr-9/u,

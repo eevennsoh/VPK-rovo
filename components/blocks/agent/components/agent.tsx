@@ -3563,7 +3563,13 @@ function AgentInstructionsComposer({
 							onClick={() => {
 								// Choosing a template means the user is already mindful of
 								// templates — animate the onboarding tiles away.
-								onStartWithTemplate?.();
+								if (onStartWithTemplate) {
+									// A host (e.g. the Studio shell) owns the agents
+									// directory and takes over: don't also open the local
+									// templates dialog.
+									onStartWithTemplate();
+									return;
+								}
 								setTemplatesOpen(true);
 							}}
 						>
@@ -3971,6 +3977,10 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
+	// When provided, the empty-instructions "start with a template" link defers to
+	// the host (e.g. the Studio shell opens its agents directory on the first
+	// template tab) instead of opening the composer's built-in templates dialog.
+	onStartWithTemplate?: () => void;
 	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
 	profileAvatarSrc?: string;
 	profileConfig?: AgentConfigFormValue;
@@ -4006,6 +4016,7 @@ export const AgentConfigFields = memo(
 		onProfileTextChange,
 		onRemoveListItem,
 		onSelectListItem,
+		onStartWithTemplate,
 		onTextChange,
 		onToggleListItem,
 		onTriggerDefinitionsChange,
@@ -4148,6 +4159,7 @@ export const AgentConfigFields = memo(
 							onInstructionsChange={(value) => handleTextChange("instructions", value)}
 							onMentionRemovalRequestHandled={handleMentionRemovalRequestHandled}
 							onRemoveReferenceValue={handleRemoveReferenceValue}
+							onStartWithTemplate={onStartWithTemplate}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 							showSectionLabel={false}
 						/>
