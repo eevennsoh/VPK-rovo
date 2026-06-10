@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { motion, type Variants } from "motion/react";
 import Image from "next/image";
@@ -280,10 +280,30 @@ export function TriggerProviderSearchList({
 		[normalizedQuery],
 	);
 
+	// Drive the list's top fade-mask exactly like the live suggestion menu: track
+	// whether the scrollable list is scrolled away from the top (toggling
+	// `data-list-scrolled`), and snap back to the top whenever the query changes
+	// so a fresh result set always starts unscrolled.
+	const listRef = useRef<HTMLDivElement | null>(null);
+	const [hasScrolledList, setHasScrolledList] = useState(false);
+	const updateListScrollState = useCallback(() => {
+		const listElement = listRef.current;
+		setHasScrolledList(Boolean(listElement && listElement.scrollTop > 0));
+	}, []);
+
+	useEffect(() => {
+		const listElement = listRef.current;
+		if (listElement) {
+			listElement.scrollTop = 0;
+		}
+		updateListScrollState();
+	}, [normalizedQuery, updateListScrollState]);
+
 	return (
 		<div
 			className="rich-text-command-menu rich-text-command-menu-embedded"
 			data-has-header="true"
+			data-list-scrolled={hasScrolledList ? "true" : undefined}
 			role="presentation"
 		>
 			<RichTextCommandMenuSearchField
@@ -296,7 +316,11 @@ export function TriggerProviderSearchList({
 				placeholder="Search Triggers..."
 				value={query}
 			/>
-			<div className="rich-text-command-menu-list">
+			<div
+				className="rich-text-command-menu-list"
+				ref={listRef}
+				onScroll={updateListScrollState}
+			>
 				{filteredProviders.length > 0 ? (
 					<DropdownMenuGroup className="p-0">
 						{filteredProviders.map((provider) => (

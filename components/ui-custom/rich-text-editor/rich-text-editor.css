@@ -425,23 +425,25 @@
 	border: 0;
 }
 
-/* Strips all container chrome (border, shadow, bg, radius, sizing) so the menu
-   can be embedded as the list-only portion inside a parent shell element. The
-   parent owns the visual frame; the embedded menu contributes only its list. */
+/* Strips the container chrome (border, shadow, bg, radius) so the menu embeds
+   inside a host popup that owns the visual frame — while keeping the standalone
+   menu's scroll model: a fixed search header above a height-capped, scrolling
+   list with the top fade-mask. (It does NOT delegate scrolling to the host
+   popup; the inner list is the scroller, so the search header stays put and the
+   mask works, exactly like the live "/" suggestion menu.) `--available-height`
+   is published by the Base UI positioner hosting this menu; the fallback keeps
+   it bounded if rendered without one. */
 .rich-text-command-menu-embedded {
 	border: 0;
 	border-radius: 0;
 	background-color: transparent;
 	box-shadow: none;
 	width: 100%;
-	max-height: none;
-	overflow: visible;
-}
-
-.rich-text-command-menu-embedded .rich-text-command-menu-list {
-	max-height: none;
-	overflow-y: visible;
-	padding-top: 0;
+	max-height: min(
+		var(--rich-text-command-menu-max-height),
+		var(--available-height, calc(100dvh - 48px))
+	);
+	overflow: hidden;
 }
 
 .rich-text-command-menu-uncapped {

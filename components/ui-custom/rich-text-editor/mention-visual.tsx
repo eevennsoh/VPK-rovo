@@ -257,17 +257,20 @@ export function RichTextMentionVisualMark({
 			);
 		}
 
+		// Inline tag/pill chips: normalize the 1P logo into the SAME 16px
+		// `IconTile` xxsmall/transparent slot every other front-slot glyph uses
+		// (see `TagDemoFrontSlot`'s Atlassian example). This centers the mark in a
+		// transparent 16px box with NO bordered container, instead of dropping a
+		// bare rounded span that read as a misaligned/framed glyph.
 		return (
-			<span
-				aria-hidden="true"
-				className={cn(
-					"inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xs [&>span]:size-full! [&_svg]:size-full!",
-					imageSizeClassName,
-					className,
-				)}
-			>
-				<AtlassianLogo name={visual.logoName} size={logoSize} themeAware label={label} />
-			</span>
+			<IconTile
+				aria-hidden={true}
+				className={className}
+				icon={<AtlassianLogo name={visual.logoName} size={logoSize} themeAware label={label} />}
+				label={label}
+				size="xxsmall"
+				variant="transparent"
+			/>
 		);
 	}
 
