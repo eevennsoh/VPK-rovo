@@ -32,7 +32,7 @@ import { EDITOR_PALETTE_MENTION_SOURCES } from "./data/mention-sources";
 export type EditorPaletteVariant = "nested" | "flat" | "search";
 export type EditorPaletteSearchCategory = Extract<
 	RichTextMentionMenuCategory,
-	"knowledge" | "skill" | "subagent" | "tool"
+	"app" | "knowledge" | "skill" | "subagent" | "tool"
 >;
 
 export interface EditorPaletteProps {
@@ -142,6 +142,7 @@ interface PaletteVariantProps {
 }
 
 const SEARCH_CATEGORY_LABELS: Record<EditorPaletteSearchCategory, string> = {
+	app: "apps",
 	knowledge: "knowledge",
 	skill: "skills",
 	subagent: "subagents",

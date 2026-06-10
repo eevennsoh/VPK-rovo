@@ -324,9 +324,10 @@ const AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD: Record<AgentConfigReferenceListF
 	tools: "tool",
 	apps: "app",
 };
-type AgentInlineSearchField = Extract<AgentConfigReferenceListFieldName, "knowledge" | "skills" | "tools">;
+type AgentInlineSearchField = Extract<AgentConfigReferenceListFieldName, "apps" | "knowledge" | "skills" | "tools">;
 
 const AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD: Record<AgentInlineSearchField, EditorPaletteSearchCategory> = {
+	apps: "app",
 	knowledge: "knowledge",
 	skills: "skill",
 	tools: "tool",
@@ -1540,17 +1541,16 @@ function AgentCompactDirectoryNavButton({
 	);
 }
 
-// Apps reuse the Skills/Tools directory dropdown shell (configured rows that
-// scroll above a pinned footer) but WITHOUT the inline "Add ›" search flyout:
-// apps are intentionally not an inline-searchable palette category (see
-// EditorPaletteSearchCategory) and are added through the directory dialog (for
-// connection/detail), so the footer pins a single "Browse apps" that opens that
-// directory. Clicking the collapsed-nav trigger now opens this menu instead of
-// jumping straight to the directory.
+// Apps mirror the Skills/Tools directory dropdown shell exactly: configured
+// rows scroll above a pinned footer that holds an inline "Add app ›" search
+// flyout and a "Browse apps" item. Picking a flyout result adds the app by
+// label (via `onAddSearchItem`); "Browse apps" opens the full directory for
+// connection/detail. Clicking the collapsed-nav trigger opens this menu.
 function AgentCompactAppsNavButton({
 	item,
 	apps,
 	disabledItems,
+	onAddSearchItem,
 	onBrowse,
 	onRemoveItem,
 	onSelectItem,
@@ -1561,6 +1561,8 @@ function AgentCompactAppsNavButton({
 	item: AgentCompactConfigNavItem;
 	apps: readonly string[];
 	disabledItems?: readonly string[];
+	// Picking a flyout result adds it immediately (mirrors Skills).
+	onAddSearchItem?: (item: RichTextSuggestionMenuItem) => void;
 	onBrowse: () => void;
 	onRemoveItem?: (index: number) => void;
 	onSelectItem?: (item: string) => void;
@@ -1572,6 +1574,28 @@ function AgentCompactAppsNavButton({
 }>) {
 	const isEmpty = apps.length === 0;
 	const disabledSet = useDisabledLabelSet(disabledItems);
+	const addLabel = `Add ${item.label.toLowerCase()}`;
+	const addSearchFlyout = (
+		<DropdownMenuSub>
+			<DropdownMenuSubTrigger>
+				<span className="flex items-center gap-3">
+					<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
+						<PlusIcon />
+					</span>
+					{addLabel}
+				</span>
+			</DropdownMenuSubTrigger>
+			<DropdownMenuSubContent className="w-auto min-w-0 overflow-visible border-0 bg-transparent p-0 shadow-none">
+				<EditorPaletteSearchPicker
+					autoFocus
+					category={AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD.apps}
+					className="rich-text-command-menu-borderless"
+					onBrowseAll={onBrowse}
+					onSelectItem={onAddSearchItem}
+				/>
+			</DropdownMenuSubContent>
+		</DropdownMenuSub>
+	);
 
 	return (
 		<MenubarMenu>
@@ -1609,6 +1633,7 @@ function AgentCompactAppsNavButton({
 					</div>
 				)}
 				<AgentCompactNavMenuPinnedFooter bordered={!isEmpty}>
+					{addSearchFlyout}
 					<DropdownMenuItem
 						elemBefore={
 							<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
@@ -1832,6 +1857,12 @@ function AgentCompactEmptyConfigNav({
 								disabledItems={config?.disabledItems?.apps}
 								item={item}
 								key={item.agentFieldName}
+								onAddSearchItem={(searchItem) => {
+									if (searchItem.disabled) {
+										return;
+									}
+									onAddListValues?.("apps", [searchItem.label]);
+								}}
 								onBrowse={() => openAgentDirectoryOrAppendListItem("apps", "apps", onOpenDirectory, onAppendListItem)}
 								onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("apps", index) : undefined}
 								onSelectItem={onOpenDirectory ? (value) => onOpenDirectory("apps", value) : undefined}
@@ -2670,6 +2701,7 @@ function AgentFilledConfigSummary({
 	// inline "Add" button as their trigger. Look the catalog items up by field so
 	// the dropdowns inherit the same label/icon the collapsed strip uses.
 	const navItems = getAgentCompactEmptyConfigNavItems(config);
+	const appsNavItem = navItems.find((entry) => entry.agentFieldName === "apps");
 	const skillsNavItem = navItems.find((entry) => entry.agentFieldName === "skills");
 	const subagentsNavItem = navItems.find((entry) => entry.agentFieldName === "subagents");
 	const renderDirectoryAddControl = (
@@ -2736,7 +2768,27 @@ function AgentFilledConfigSummary({
 					isItemDisabled={(item) => isAgentListItemDisabled(config, "apps", item)}
 					items={appItems}
 					label="Apps"
-					onAdd={() => openAgentDirectoryOrAppendListItem("apps", "apps", onOpenDirectory, onAppendListItem)}
+					// The inline "Add apps" opens the SAME dropdown (list + "Add apps ›"
+					// search flyout + "Browse apps") as the collapsed nav, matching how
+					// Skills/Tools back their inline "Add" with the shared dropdown.
+					renderAddControl={appsNavItem ? ({ icon, label, className }) => (
+						<AgentCompactAppsNavButton
+							apps={appItems}
+							disabledItems={config.disabledItems?.apps}
+							item={appsNavItem}
+							onAddSearchItem={(searchItem) => {
+								if (searchItem.disabled) {
+									return;
+								}
+								onAddListValues?.("apps", [searchItem.label]);
+							}}
+							onBrowse={() => openAgentDirectoryOrAppendListItem("apps", "apps", onOpenDirectory, onAppendListItem)}
+							onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("apps", index) : undefined}
+							onSelectItem={onOpenDirectory ? (value) => onOpenDirectory("apps", value) : undefined}
+							onToggleItem={onToggleListItem ? (index, enabled) => onToggleListItem("apps", index, enabled) : undefined}
+							renderTrigger={<AgentAddValueButton className={className} icon={icon} label={label} />}
+						/>
+					) : undefined}
 					// Clicking an app chip opens the apps directory focused on that app.
 					onItemClick={onOpenDirectory ? (item) => onOpenDirectory("apps", item) : undefined}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("apps", index) : undefined}

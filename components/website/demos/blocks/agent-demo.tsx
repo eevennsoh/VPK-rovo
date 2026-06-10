@@ -73,6 +73,7 @@ const filledAgentConfig: AgentConfigFormValue = {
 	contextDescription: "",
 	triggerDefinitions: DEFAULT_CONFIGURED_TRIGGER_VALUES,
 	triggers: serializeAgentTriggerLabels(DEFAULT_CONFIGURED_TRIGGER_VALUES),
+	apps: ["Jira", "Confluence"],
 	skills: ["Create work items", "Dependency mapper"],
 	tools: ["Jira", "Confluence"],
 	subagents: ["Subagent 1", "Subagent 1"],
@@ -126,6 +127,15 @@ function useAgentDemoConfig(initialConfig: AgentConfigFormValue) {
 		});
 	}
 
+	function addListValues(field: AgentConfigListFieldName, values: readonly string[]) {
+		setConfig((current) => {
+			const items = Array.isArray(current[field]) ? current[field] : [];
+			const existing = new Set(items.map((item) => item.trim().toLowerCase()));
+			const additions = values.filter((value) => !existing.has(value.trim().toLowerCase()));
+			return additions.length > 0 ? { ...current, [field]: [...items, ...additions] } : current;
+		});
+	}
+
 	function handleTriggerDefinitionsChange(triggerDefinitions: readonly AgentTriggerValue[]) {
 		const triggerLabels = serializeAgentTriggerLabels(triggerDefinitions);
 		setConfig((current) => ({
@@ -163,6 +173,7 @@ function useAgentDemoConfig(initialConfig: AgentConfigFormValue) {
 
 	return {
 		config,
+		addListValues,
 		appendListItem,
 		conversationStarterDialogValue,
 		handleTextChange,
@@ -306,6 +317,7 @@ function AgentDemoCompactBody({
 
 export function AgentDemoFull() {
 	const {
+		addListValues,
 		appendListItem,
 		config,
 		conversationStarterDialogValue,
@@ -350,6 +362,7 @@ export function AgentDemoFull() {
 									onListItemChange={updateListItem}
 									onRemoveListItem={removeListItem}
 									onToggleListItem={toggleListItem}
+									onAddListValues={addListValues}
 									onAppendListItem={appendListItem}
 									onOpenDirectory={handleOpenDirectory}
 									onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
@@ -373,6 +386,7 @@ export function AgentDemoFull() {
 
 export function AgentDemoEmpty() {
 	const {
+		addListValues,
 		appendListItem,
 		config,
 		conversationStarterDialogValue,
@@ -417,6 +431,7 @@ export function AgentDemoEmpty() {
 									onListItemChange={updateListItem}
 									onRemoveListItem={removeListItem}
 									onToggleListItem={toggleListItem}
+									onAddListValues={addListValues}
 									onAppendListItem={appendListItem}
 									onOpenDirectory={handleOpenDirectory}
 									onTriggerDefinitionsChange={handleTriggerDefinitionsChange}

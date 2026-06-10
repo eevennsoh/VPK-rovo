@@ -625,6 +625,14 @@
 	padding-top: 4px;
 }
 
+/* When the first row is a section heading (e.g. the typing/narrowed slash state
+   that surfaces "Skills" up top), the heading's own 12px top padding already
+   supplies the gap below the header — so drop the list's extra 4px to avoid a
+   doubled gap. */
+.rich-text-command-menu[data-has-header="true"] .rich-text-command-menu-list:has(> .rich-text-command-menu-heading:first-child) {
+	padding-top: 0;
+}
+
 /* When a query matches nothing the slash list renders empty (just the Ask Rovo
    header remains). Collapse the list padding so the popup ends flush under the
    header instead of leaving a stray gap at the bottom. The mention menu still
