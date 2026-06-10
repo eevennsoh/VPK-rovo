@@ -263,10 +263,15 @@ export function AgentCardStat({ icon, children }: Readonly<AgentCardStatProps>) 
 	);
 }
 
-export function AgentCardSection({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
+export function AgentCardSection({
+	label,
+	children,
+	className,
+	labelClassName,
+}: Readonly<{ label: string; children: ReactNode; className?: string; labelClassName?: string }>) {
 	return (
-		<div className="flex flex-col gap-1" data-slot="agent-card-section">
-			<span className="text-xs font-semibold leading-4 text-text-subtlest">{label}</span>
+		<div className={cn("flex flex-col gap-1", className)} data-slot="agent-card-section">
+			<span className={cn("text-xs font-semibold leading-4 text-text-subtlest", labelClassName)}>{label}</span>
 			{children}
 		</div>
 	);
@@ -274,7 +279,7 @@ export function AgentCardSection({ label, children }: Readonly<{ label: string; 
 
 // --- Banner ---------------------------------------------------------------
 
-const BANNER_HEXAGON_PATH =
+export const BANNER_HEXAGON_PATH =
 	"M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
 const DEFAULT_BANNER_COVER_COLOR = "#1868DB";
 const BANNER_COVER_COLORS: Record<string, string> = {
@@ -285,7 +290,7 @@ const BANNER_COVER_COLORS: Record<string, string> = {
 	"teamwork-agents": DEFAULT_BANNER_COVER_COLOR,
 };
 
-function getBannerCoverColor(avatarSrc: string | undefined): string {
+export function getAgentCardBannerCoverColor(avatarSrc: string | undefined): string {
 	const category = avatarSrc?.match(/\/avatar-agent\/([^/]+)\//u)?.[1];
 	return (category ? BANNER_COVER_COLORS[category] : undefined) ?? DEFAULT_BANNER_COVER_COLOR;
 }
@@ -297,7 +302,7 @@ export interface AgentCardBannerProps {
 }
 
 export function AgentCardBanner({ avatarSrc, avatarBadge, backgroundColor }: Readonly<AgentCardBannerProps>) {
-	const coverColor = backgroundColor ?? getBannerCoverColor(avatarSrc);
+	const coverColor = backgroundColor ?? getAgentCardBannerCoverColor(avatarSrc);
 
 	return (
 		<div className="relative shrink-0 overflow-hidden bg-surface" data-slot="agent-card-banner">
@@ -394,7 +399,11 @@ export interface AgentCardCapability {
 }
 
 export interface AgentCardCapabilitiesProps {
+	className?: string;
+	iconClassName?: string;
 	label?: string;
+	labelClassName?: string;
+	itemClassName?: string;
 	items: readonly (string | AgentCardCapability)[];
 }
 
@@ -513,10 +522,17 @@ function getCapabilityIcon(icon: AgentCardCapabilityIcon | undefined): ReactElem
 	}
 }
 
-export function AgentCardCapabilities({ label, items }: Readonly<AgentCardCapabilitiesProps>) {
+export function AgentCardCapabilities({
+	className,
+	iconClassName,
+	label,
+	labelClassName,
+	itemClassName,
+	items,
+}: Readonly<AgentCardCapabilitiesProps>) {
 	return (
-		<div className="flex flex-col gap-1" data-slot="agent-card-capabilities">
-			{label ? <span className="text-xs font-semibold leading-4 text-text-subtlest">{label}</span> : null}
+		<div className={cn("flex flex-col gap-1", className)} data-slot="agent-card-capabilities">
+			{label ? <span className={cn("text-xs font-semibold leading-4 text-text-subtlest", labelClassName)}>{label}</span> : null}
 			<TooltipProvider>
 				<ul className="flex flex-col gap-1">
 					{items.map((item) => {
@@ -527,10 +543,10 @@ export function AgentCardCapabilities({ label, items }: Readonly<AgentCardCapabi
 								<TooltipTrigger render={<li className="flex items-center gap-2" />}>
 									<Icon
 										aria-hidden
-										className="size-4 shrink-0 text-icon-subtlest"
+										className={cn("size-4 shrink-0 text-icon-subtlest", iconClassName)}
 										render={getCapabilityIcon(capability.icon)}
 									/>
-									<span className="min-w-0 flex-1 truncate text-sm leading-5 text-text">{capability.label}</span>
+									<span className={cn("min-w-0 flex-1 truncate text-xs leading-4 text-text-subtlest", itemClassName)}>{capability.label}</span>
 								</TooltipTrigger>
 								<TooltipContent side="right">{capability.label}</TooltipContent>
 							</Tooltip>

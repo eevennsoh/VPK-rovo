@@ -202,7 +202,7 @@ function FormattingToolbar({ editor }: { editor: Editor }) {
 	},
 	"agent-card": {
 		description:
-			"Self-contained agent card with two layouts. The default \"expanded\" variant has a cover banner, attribution byline, \"Works with\" sources, \"Skills\" tags, a scrollable capabilities feature list, and a stats / collaborators footer that swaps to a \"Use template\" action on hover. The \"template\" variant is a flat card (icon + name, description, \"Works with\", \"Skills\"). Passing onSelect turns the whole card into a keyboard-operable select button.",
+			"Self-contained agent card with multiple layouts. The default \"expanded\" variant has a cover banner, attribution byline, \"Works with\" sources, \"Skills\" tags, a scrollable capabilities feature list, and a stats / collaborators footer that swaps to a \"Use template\" action on hover. The experimental template variant is a compact banner-first treatment with inline metrics, stacked app/skill sections, and a feature list. The experimental profile variant uses the same banner-first treatment for a built agent and stops after description + social proof. The \"template\" variant is a flat card (icon + name, description, \"Works with\", \"Skills\"). Passing onSelect turns the whole card into a keyboard-operable select button.",
 		importStatement: `import { AgentCard } from "@/components/blocks/agent-card";`,
 		usage: `import { AgentCard } from "@/components/blocks/agent-card";
 
@@ -237,7 +237,7 @@ function FormattingToolbar({ editor }: { editor: Editor }) {
 />`,
 		props: [
 			{ name: "name", type: "string", required: true, description: "Agent name shown in the card header." },
-			{ name: "variant", type: '"expanded" | "template"', default: '"expanded"', description: 'Layout: "expanded" (banner + capabilities + footer) or flat "template".' },
+			{ name: "variant", type: '"expanded" | "experimental" | "experimental-template" | "experimental-profile" | "template"', default: '"expanded"', description: 'Layout: "expanded" (banner + capabilities + footer), "experimental" / "experimental-template" (banner-first template card), "experimental-profile" (built-agent profile summary), or flat "template".' },
 			{ name: "publisher", type: "string", required: true, description: "Attribution publisher shown in the byline." },
 			{ name: "avatarSrc", type: "string", description: "Cover/avatar art rendered in the banner and hexagon (expanded variant)." },
 			{ name: "iconSrc", type: "string", description: 'Flat icon shown in the header of the "template" variant.' },
@@ -258,6 +258,18 @@ function FormattingToolbar({ editor }: { editor: Editor }) {
 				description:
 					"Full layout: cover banner, attribution byline, \"Works with\" sources, \"Skills\" tags, a scrollable capabilities feature list, and a stats / collaborators footer. Capped height shows the inner scroll mask.",
 				demoSlug: "agent-card-demo-expanded",
+			},
+			{
+				title: "Experimental (template)",
+				description:
+					"Compact banner-first treatment with inline metrics, \"Works with\" sources, \"Skills\" tags, and a feature list, shown across the five agent color families.",
+				demoSlug: "agent-card-demo-experimental-template",
+			},
+			{
+				title: "Experimental (profile)",
+				description:
+					"Built-agent profile treatment with the same experimental banner, description, and social proof, without Works with, Skills, or feature-list sections.",
+				demoSlug: "agent-card-demo-experimental-profile",
 			},
 			{
 				title: "Simple",

@@ -296,14 +296,16 @@ function AvatarCompanyBadge({
 		<span
 			data-slot="avatar-company-badge"
 			className={cn(
-				"bg-primary text-primary-foreground ring-background absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-lg ring-2 select-none",
+				"absolute right-0 bottom-0 z-10 inline-flex items-center justify-center overflow-hidden rounded-lg ring-2 select-none",
+				"bg-[#0C66E4] text-white ring-white",
 				"group-data-[size=xs]/avatar:size-2 group-data-[size=xs]/avatar:[&_svg]:hidden",
 				"group-data-[size=sm]/avatar:size-3 group-data-[size=sm]/avatar:[&_svg]:size-2",
 				"group-data-[size=default]/avatar:size-3.5 group-data-[size=default]/avatar:[&_svg]:size-2",
 				"group-data-[size=lg]/avatar:size-4 group-data-[size=lg]/avatar:[&_svg]:size-2.5",
 				"group-data-[size=xl]/avatar:size-4 group-data-[size=xl]/avatar:[&_svg]:size-2.5",
 				"group-data-[size=2xl]/avatar:size-6 group-data-[size=2xl]/avatar:[&_svg]:size-4",
-				className
+				className,
+				"bg-[#0C66E4] text-white"
 			)}
 			{...props}
 		>
