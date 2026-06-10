@@ -12,6 +12,8 @@ export interface KnowledgeDirectoryContent {
 	id: string;
 	name: string;
 	description: string;
+	type: string;
+	visual: DirectoryVisual;
 }
 
 /**

@@ -10,6 +10,7 @@ import PriorityLowIcon from "@atlaskit/icon/core/priority-low";
 import PriorityMinorIcon from "@atlaskit/icon/core/priority-minor";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -54,6 +55,9 @@ export interface SmartLinkMetadata {
 	label: string;
 	tone?: SmartLinkTone;
 	icon?: ReactElement;
+	/** When set, renders as a trailing-metric lozenge (leading icon + metric badge). */
+	metric?: string | number;
+	metricVariant?: LozengeProps["variant"];
 }
 
 export interface SmartLinkAvatar {
@@ -95,10 +99,11 @@ export interface SmartLinkItem {
 	status?: {
 		label: string;
 		variant?: LozengeProps["variant"];
+		/** Render a trailing metric badge inside the status lozenge (e.g. a goal score). */
+		metric?: string | number;
 		/** Render the status as an interactive lozenge dropdown (Jira-style). */
 		options?: ReadonlyArray<{ label: string; variant?: LozengeProps["variant"] }>;
 	};
-	score?: string;
 	dueDate?: string;
 	actions?: ReadonlyArray<SmartLinkAction>;
 }
@@ -334,6 +339,19 @@ function SmartLinkPriorityIndicator({ priority }: Readonly<{ priority: SmartLink
 	);
 }
 
+const lozengeToBadgeVariant: Partial<Record<NonNullable<LozengeProps["variant"]>, BadgeProps["variant"]>> = {
+	neutral: "neutral",
+	success: "success",
+	danger: "danger",
+	warning: "warning",
+	information: "information",
+	discovery: "discovery",
+};
+
+function badgeVariantForLozenge(variant: NonNullable<LozengeProps["variant"]>): BadgeProps["variant"] {
+	return lozengeToBadgeVariant[variant] ?? "neutral";
+}
+
 function SmartLinkStatusDropdown({
 	status,
 }: Readonly<{ status: NonNullable<SmartLinkItem["status"]> }>) {
@@ -341,9 +359,16 @@ function SmartLinkStatusDropdown({
 	const options = status.options ?? [];
 
 	if (!options.length) {
+		const variant = status.variant ?? "neutral";
+
 		return (
-			<Lozenge variant={status.variant ?? "neutral"}>
+			<Lozenge className={cn(status.metric != null && "pr-px")} variant={variant}>
 				{status.label}
+				{status.metric != null ? (
+					<Badge className="ml-1 min-w-0" variant={badgeVariantForLozenge(variant)}>
+						{status.metric}
+					</Badge>
+				) : null}
 			</Lozenge>
 		);
 	}
@@ -383,14 +408,31 @@ function SmartLinkStatusDropdown({
 }
 
 function MetadataPill({ metadata }: Readonly<{ metadata: SmartLinkMetadata }>) {
+	if (metadata.metric != null) {
+		const variant = metadata.metricVariant ?? "neutral";
+
+		return (
+			<Lozenge
+				className="pr-0.5"
+				icon={metadata.icon ? <Icon render={cloneIcon(metadata.icon, "small")} aria-hidden /> : undefined}
+				variant={variant}
+			>
+				{metadata.label ? metadata.label : null}
+				<Badge className="ml-1 min-w-0" variant="neutral">
+					{metadata.metric}
+				</Badge>
+			</Lozenge>
+		);
+	}
+
 	return (
 		<span
 			className={cn(
-				"inline-flex min-h-5 items-center gap-1 rounded-md px-1.5 text-sm leading-5 text-text-subtle",
-				metadata.tone ? toneClasses[metadata.tone] : null,
+				"inline-flex min-h-5 items-center gap-1 text-sm leading-5 text-text-subtle",
+				metadata.tone ? cn("rounded-md px-1.5", toneClasses[metadata.tone]) : null,
 			)}
 		>
-			{metadata.icon ? <Icon render={cloneIcon(metadata.icon, "medium")} /> : null}
+			{metadata.icon ? <Icon render={cloneIcon(metadata.icon, "small")} /> : null}
 			{metadata.label}
 		</span>
 	);
@@ -398,7 +440,7 @@ function MetadataPill({ metadata }: Readonly<{ metadata: SmartLinkMetadata }>) {
 
 function SmartLinkMetadataRow({ item }: Readonly<{ item: SmartLinkItem }>) {
 	const hasMetadata = Boolean(item.metadata?.length);
-	const hasGoalDetails = item.status || item.score || item.dueDate;
+	const hasGoalDetails = item.status || item.dueDate;
 	const hasIssueDetails = item.assignee || item.priority;
 	const hasAuthorDetails = item.author || item.date;
 
@@ -418,16 +460,14 @@ function SmartLinkMetadataRow({ item }: Readonly<{ item: SmartLinkItem }>) {
 			) : null}
 			{item.author && item.date ? <span aria-hidden>·</span> : null}
 			{item.date ? <span className="truncate">{item.date}</span> : null}
-			{item.metadata?.map((metadata) => (
-				<MetadataPill key={metadata.label} metadata={metadata} />
+			{item.metadata?.map((metadata, index) => (
+				<span className="inline-flex items-center gap-2" key={`${metadata.label}-${index}`}>
+					{index > 0 ? <span aria-hidden>·</span> : null}
+					<MetadataPill metadata={metadata} />
+				</span>
 			))}
 			{item.status ? <SmartLinkStatusDropdown status={item.status} /> : null}
 			{item.priority ? <SmartLinkPriorityIndicator priority={item.priority} /> : null}
-			{item.score ? (
-				<span className="inline-flex h-5 items-center rounded-sm border border-border-bold bg-bg-neutral px-1 text-xs leading-4 text-text">
-					{item.score}
-				</span>
-			) : null}
 			{item.dueDate ? (
 				<span className="inline-flex h-5 items-center rounded-sm border border-border-bold bg-surface px-1.5 text-xs leading-4 text-text">
 					{item.dueDate}
@@ -499,12 +539,8 @@ function SmartLinkActionRow({
 
 function SmartLinkFooter({ provider }: Readonly<{ provider: SmartLinkProvider }>) {
 	return (
-		<div className="flex items-center gap-1 px-4 pt-2 pb-4 text-xs leading-4 text-text-subtlest">
-			{provider.logo ? (
-				<span className="inline-flex size-4 shrink-0 items-center justify-center">
-					{renderVisual(provider.logo, "footer")}
-				</span>
-			) : null}
+		<div className="flex items-center gap-1 px-5 pt-2 pb-4 text-xs leading-4 text-text-subtlest">
+			{provider.logo ? renderVisual(provider.logo, "footer") : null}
 			<span className="truncate">{provider.name}</span>
 		</div>
 	);

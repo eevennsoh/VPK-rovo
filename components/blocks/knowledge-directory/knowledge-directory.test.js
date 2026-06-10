@@ -18,6 +18,16 @@ function readKnowledgeDetailsSection() {
 	return source.slice(start, end);
 }
 
+function readKnowledgeApps() {
+	return JSON.parse(readProjectFile("app/data/directory/knowledge.json"));
+}
+
+function getKnowledgeAppById(apps, id) {
+	const app = apps.find((candidate) => candidate.id === id);
+	assert.ok(app, `knowledge catalog should include ${id}`);
+	return app;
+}
+
 test("Knowledge Directory is exposed as a website block", () => {
 	assert.match(
 		readProjectFile("app/data/components.ts"),
@@ -85,7 +95,7 @@ test("Knowledge Directory exposes app, content, and callback props", () => {
 
 test("Knowledge Directory includes real connector defaults", () => {
 	// App data is now the single-source-of-truth JSON catalog.
-	const apps = JSON.parse(readProjectFile("app/data/directory/knowledge.json"));
+	const apps = readKnowledgeApps();
 	const byName = new Map(apps.map((app) => [app.name, app]));
 
 	for (const name of [
@@ -110,6 +120,72 @@ test("Knowledge Directory includes real connector defaults", () => {
 		assert.equal(typeof app.starCount, "number", `knowledge app ${app.id} should have starCount`);
 		assert.equal(typeof app.teammateCount, "number", `knowledge app ${app.id} should have teammateCount`);
 		assert.equal(typeof app.verified, "boolean", `knowledge app ${app.id} should have verified`);
+	}
+});
+
+test("Knowledge Directory includes Atlassian platform and software sources", () => {
+	const apps = readKnowledgeApps();
+	const ids = new Set(apps.map((app) => app.id));
+
+	for (const id of [
+		"goals",
+		"projects",
+		"atlassian-teams",
+		"analytics",
+		"assets",
+		"jira-product-discovery",
+		"customer-service-management",
+		"trello",
+		"jira-align",
+		"talent",
+		"focus",
+		"dx",
+	]) {
+		assert.ok(ids.has(id), `knowledge catalog should include ${id}`);
+	}
+
+	assert.equal(getKnowledgeAppById(apps, "atlassian-teams").visual.logoName, "teams");
+	assert.equal(getKnowledgeAppById(apps, "jira-align").visual.logoName, "align");
+	assert.equal(getKnowledgeAppById(apps, "dx").visual.kind, "icon");
+});
+
+test("Knowledge Directory custom content metadata and visuals follow source rules", () => {
+	const apps = readKnowledgeApps();
+	const confluenceTypes = new Set(getKnowledgeAppById(apps, "confluence").contents.map((content) => content.type));
+	const jiraTypes = new Set(getKnowledgeAppById(apps, "jira").contents.map((content) => content.type));
+
+	assert.deepEqual(confluenceTypes, new Set(["space", "page", "whiteboard", "blog"]));
+	assert.deepEqual(jiraTypes, new Set(["space", "jira work item"]));
+
+	for (const app of apps) {
+		for (const content of app.contents) {
+			assert.equal(typeof content.type, "string", `${app.id}/${content.id} should include type`);
+			assert.ok(content.type.length > 0, `${app.id}/${content.id} should include non-empty type`);
+			assert.ok(content.visual, `${app.id}/${content.id} should include visual`);
+
+			if (content.type === "space") {
+				assert.equal(content.visual.kind, "avatar", `${app.id}/${content.id} space should use a project avatar`);
+				assert.equal(content.visual.shape, "square", `${app.id}/${content.id} space avatar should be square`);
+				assert.match(content.visual.src, /^\/avatar-project\//u, `${app.id}/${content.id} space should use /avatar-project/`);
+			}
+
+			if (app.visual.kind === "image") {
+				assert.deepEqual(
+					content.visual,
+					app.visual,
+					`${app.id}/${content.id} 2p/3p content should reuse the parent company logo`,
+				);
+			}
+
+			if (app.providerName === "Atlassian" && content.type !== "space") {
+				assert.equal(content.visual.kind, "icon", `${app.id}/${content.id} Atlassian content should use icon visuals`);
+				assert.equal(
+					content.visual.iconColor,
+					"text-icon-accent-blue",
+					`${app.id}/${content.id} Atlassian content should use the blue accent`,
+				);
+			}
+		}
 	}
 });
 
@@ -140,7 +216,14 @@ test("Knowledge Directory custom content can be searched and removed", () => {
 
 	assert.match(source, /function filterContent/u);
 	assert.match(source, /selectedIdSet\.has\(content\.id\)/u);
+	assert.match(source, /content\.description, content\.type/u);
 	assert.match(source, /function SelectedContentList/u);
+	assert.match(source, /function KnowledgeContentVisual/u);
+	assert.match(source, /RichTextMentionVisualMark/u);
+	assert.match(source, /resolveDirectoryVisual\(content\.visual\)/u);
+	assert.match(source, /content\.type/u);
+	assert.doesNotMatch(source, /GlobeIcon/u);
+	assert.doesNotMatch(source, /content\.description\}<\/span>/u);
 	assert.match(source, /onRemoveContent/u);
 	assert.match(source, /DeleteIcon/u);
 	assert.match(source, /Remove \$\{content\.name\}/u);

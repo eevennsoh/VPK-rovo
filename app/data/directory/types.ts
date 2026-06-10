@@ -1,10 +1,9 @@
 import type { AtlassianLogoName } from "@/components/ui/logo";
 
 /**
- * Closed set of icon keys used by directory items whose visual is a raw
- * Atlaskit icon (currently skills). Kept as a pure type here so JSON data and
- * loaders can reference it without pulling in the JSX resolver in `visual.tsx`
- * (which would create an import cycle).
+ * Closed set of icon keys used by skill directory items. Kept as a pure type
+ * here so JSON data and loaders can reference it without pulling in the JSX
+ * resolver in `visual.tsx` (which would create an import cycle).
  */
 export type SkillIconKey =
 	| "page"
@@ -21,6 +20,32 @@ export type SkillIconKey =
 	| "paint-palette"
 	| "branch"
 	| "search";
+
+/**
+ * Closed set of icon keys used by every directory item whose visual is a raw
+ * Atlaskit icon. Skills keep their narrower {@link SkillIconKey}; knowledge
+ * content can use the broader set without embedding JSX in JSON.
+ */
+export type DirectoryIconKey =
+	| SkillIconKey
+	| "assets"
+	| "board"
+	| "book-with-bookmark"
+	| "briefcase"
+	| "chart-bar"
+	| "database"
+	| "files"
+	| "focus-area"
+	| "folder-closed"
+	| "goal"
+	| "lightbulb"
+	| "people-group"
+	| "project"
+	| "roadmap"
+	| "table"
+	| "teams"
+	| "whiteboard"
+	| "work-item";
 
 /**
  * JSON-serializable mirror of the rich-text editor's `RichTextMentionVisual`.
@@ -43,7 +68,7 @@ export type DirectoryVisual =
 	  }
 	| {
 			kind: "icon";
-			iconKey: SkillIconKey;
+			iconKey: DirectoryIconKey;
 			/** Decorative Tailwind text-color class applied to the icon. */
 			iconColor?: string;
 	  };

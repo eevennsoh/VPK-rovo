@@ -149,17 +149,32 @@ test("knowledge catalog is valid, with unique apps and unique nested contents", 
 	assert.ok(DEFAULT_KNOWLEDGE_APPS.length > 0);
 	assertUniqueIds(DEFAULT_KNOWLEDGE_APPS, "knowledge apps");
 	assertStringField(DEFAULT_KNOWLEDGE_APPS, "name", "knowledge apps");
+	assertStringField(DEFAULT_KNOWLEDGE_APPS, "description", "knowledge apps");
 	assertStringField(DEFAULT_KNOWLEDGE_APPS, "providerName", "knowledge apps");
 
 	for (const app of DEFAULT_KNOWLEDGE_APPS) {
 		assert.ok(Array.isArray(app.contents), `knowledge ${app.id}: contents must be an array`);
 		assertUniqueIds(app.contents, `knowledge ${app.id} contents`);
 		assertStringField(app.contents, "name", `knowledge ${app.id} contents`);
+		assertStringField(app.contents, "description", `knowledge ${app.id} contents`);
+		assertStringField(app.contents, "type", `knowledge ${app.id} contents`);
 		assert.equal(typeof app.starCount, "number", `knowledge ${app.id}: starCount must be a number`);
 		assert.equal(typeof app.teammateCount, "number", `knowledge ${app.id}: teammateCount must be a number`);
 		assert.equal(typeof app.verified, "boolean", `knowledge ${app.id}: verified must be a boolean`);
 		// Every app carries a serializable visual descriptor that must resolve.
 		assertVisualResolves(resolveDirectoryVisual, app.visual, `knowledge ${app.id}`);
+
+		for (const content of app.contents) {
+			assertVisualResolves(resolveDirectoryVisual, content.visual, `knowledge ${app.id} content ${content.id}`);
+			if (content.type === "space") {
+				assert.equal(content.visual.kind, "avatar", `knowledge ${app.id} content ${content.id}: spaces use project avatars`);
+				assert.equal(content.visual.shape, "square", `knowledge ${app.id} content ${content.id}: space avatars stay square`);
+				assert.ok(
+					content.visual.src.startsWith("/avatar-project/"),
+					`knowledge ${app.id} content ${content.id}: space avatar must use /avatar-project/`,
+				);
+			}
+		}
 	}
 });
 

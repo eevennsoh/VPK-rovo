@@ -30,17 +30,20 @@ import { cn } from "@/lib/utils";
 export const hoverRevealRowClassName = "group/hover-reveal-row relative";
 
 // Reserved right-padding so the label truncates clear of the trailing controls.
-// One ~28px control slot → pr-9; two → pr-16. Written as literal strings (not
-// built from template literals) so Tailwind's static extraction can see them.
+// One ~28px control slot → pr-9; two → pr-[72px]. The two-slot reserve clears a
+// switch parked at `right-9` plus the action slot with a few px of breathing room
+// so the ellipsis sits visibly left of the toggle (pr-16 / 64px lands ~4px short,
+// making the truncated tail render under the control). Written as literal strings
+// (not template literals) so Tailwind's static extraction can see them.
 const RESERVE_AT_REST = {
 	0: "",
 	1: "pr-9",
-	2: "pr-16",
+	2: "pr-[72px]",
 } as const;
 
 const RESERVE_ON_REVEAL = {
 	1: "group-hover/hover-reveal-row:pr-9 group-has-[:focus-visible]/hover-reveal-row:pr-9",
-	2: "group-hover/hover-reveal-row:pr-16 group-has-[:focus-visible]/hover-reveal-row:pr-16",
+	2: "group-hover/hover-reveal-row:pr-[72px] group-has-[:focus-visible]/hover-reveal-row:pr-[72px]",
 } as const;
 
 export interface HoverRevealLabelProps {

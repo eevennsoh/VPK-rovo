@@ -73,6 +73,17 @@ const logoEntries: ReadonlyArray<{ name: AtlassianLogoName; label: string }> = [
 	{ name: "studio", label: "Studio" },
 	{ name: "talent", label: "Talent" },
 	{ name: "trello", label: "Trello" },
+	{ name: "atlassian-administration", label: "Atlassian Administration" },
+	{ name: "atlassian-analytics", label: "Atlassian Analytics" },
+	{ name: "crowd", label: "Crowd" },
+	{ name: "dx", label: "DX" },
+	{ name: "feedback", label: "Feedback" },
+	{ name: "jira-align", label: "Jira Align" },
+	{ name: "loom-attribution", label: "Loom Attribution" },
+	{ name: "bitbucket-data-center", label: "Bitbucket Data Center" },
+	{ name: "confluence-data-center", label: "Confluence Data Center" },
+	{ name: "jira-data-center", label: "Jira Data Center" },
+	{ name: "jira-service-management-data-center", label: "JSM Data Center" },
 ];
 
 /* ── Overview demo (default export) ──────────────────────────────── */
@@ -131,6 +142,12 @@ const lockupEntries: ReadonlyArray<{ name: AtlassianLogoName; label: string }> =
 	{ name: "bamboo", label: "Bamboo" },
 	{ name: "opsgenie", label: "Opsgenie" },
 	{ name: "statuspage", label: "Statuspage" },
+	{ name: "atlassian-administration", label: "Atlassian Administration" },
+	{ name: "atlassian-analytics", label: "Atlassian Analytics" },
+	{ name: "crowd", label: "Crowd" },
+	{ name: "feedback", label: "Feedback" },
+	{ name: "jira-align", label: "Jira Align" },
+	{ name: "loom-attribution", label: "Loom Attribution" },
 ];
 
 export function LogoDemoLockups() {

@@ -11,12 +11,21 @@ import StatusWarningIcon from "@atlaskit/icon/core/status-warning";
 
 export default function BadgeDemo() {
 	return (
-		<div className="flex items-center gap-2">
+		<div className="flex flex-wrap items-center gap-2">
 			<Badge>8</Badge>
-			<Badge variant="information">12</Badge>
+			<Badge variant="neutral">8</Badge>
+			<Badge variant="important">150</Badge>
+			<Badge variant="primary">12</Badge>
+			<Badge variant="secondary">8</Badge>
+			<Badge variant="destructive">-50</Badge>
 			<Badge variant="success">+100</Badge>
-			<Badge variant="important">5</Badge>
-			<Badge variant="danger">-50</Badge>
+			<Badge variant="warning">5</Badge>
+			<Badge variant="info">12</Badge>
+			<Badge variant="discovery">3</Badge>
+			<Badge variant="inverse">12</Badge>
+			<Badge variant="outline">8</Badge>
+			<Badge variant="ghost">8</Badge>
+			<Badge variant="link">8</Badge>
 		</div>
 	);
 }
@@ -156,15 +165,15 @@ export function BadgeDemoWithIcon() {
 	return (
 		<div className="flex flex-wrap items-center gap-2">
 			<Badge variant="success">
-				<Icon render={<CheckCircleIcon label="" />} label="" className="text-icon-success" />
+				<Icon render={<CheckCircleIcon label="" size="small" />} label="" className="text-icon-success" />
 				+100
 			</Badge>
 			<Badge variant="info">
-				<Icon render={<InformationCircleIcon label="" />} label="" className="text-icon-information" />
+				<Icon render={<InformationCircleIcon label="" size="small" />} label="" className="text-icon-information" />
 				12
 			</Badge>
 			<Badge variant="warning">
-				<Icon render={<StatusWarningIcon label="" />} label="" className="text-icon-warning" />
+				<Icon render={<StatusWarningIcon label="" size="small" />} label="" className="text-icon-warning" />
 				5
 			</Badge>
 		</div>

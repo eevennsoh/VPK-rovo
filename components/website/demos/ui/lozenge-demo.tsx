@@ -3,6 +3,7 @@
 import ArrowDownRightIcon from "@atlaskit/icon/core/arrow-down-right"
 import ImageIcon from "@atlaskit/icon/core/image"
 
+import { Badge } from "@/components/ui/badge"
 import { Icon } from "@/components/ui/icon"
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge"
 
@@ -93,13 +94,37 @@ export function LozengeDemoWithIcon() {
 export function LozengeDemoTrailingMetric() {
 	return (
 		<div className="flex flex-col items-start gap-3">
-			<Lozenge variant="success" metric="0.8">
+			<Lozenge variant="neutral" className="pr-px">
+				Not started
+				<Badge
+					variant="secondary"
+					className="ml-1 min-w-0 bg-bg-neutral-pressed hover:bg-bg-neutral-pressed active:bg-bg-neutral-pressed"
+				>
+					0
+				</Badge>
+			</Lozenge>
+			<Lozenge variant="success" className="pr-px">
 				Completed
+				<Badge
+					variant="success"
+					className="ml-1 min-w-0 bg-bg-success-subtler-pressed hover:bg-bg-success-subtler-pressed active:bg-bg-success-subtler-pressed"
+				>
+					0.8
+				</Badge>
+			</Lozenge>
+			<Lozenge variant="information" className="pr-px">
+				In progress
+				<Badge
+					variant="information"
+					className="ml-1 min-w-0 bg-bg-information-subtler-pressed hover:bg-bg-information-subtler-pressed active:bg-bg-information-subtler-pressed"
+				>
+					0.5
+				</Badge>
 			</Lozenge>
 			<Lozenge
 				variant="danger"
 				size="spacious"
-				metric="0.3"
+				className="pr-1"
 				icon={
 					<Icon
 						render={<ArrowDownRightIcon label="" size="small" />}
@@ -108,6 +133,12 @@ export function LozengeDemoTrailingMetric() {
 				}
 			>
 				Off track
+				<Badge
+					variant="danger"
+					className="ml-1.5 h-5 min-w-0 rounded-sm bg-bg-danger-subtler-pressed px-1.5 text-sm leading-5 hover:bg-bg-danger-subtler-pressed active:bg-bg-danger-subtler-pressed"
+				>
+					0.3
+				</Badge>
 			</Lozenge>
 		</div>
 	)

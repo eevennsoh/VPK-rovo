@@ -2,12 +2,14 @@
 
 import AtlassianIntelligenceIcon from "@atlaskit/icon/core/atlassian-intelligence";
 import ClockIcon from "@atlaskit/icon/core/clock";
+import CommentIcon from "@atlaskit/icon/core/comment";
 import GrowDiagonalIcon from "@atlaskit/icon/core/grow-diagonal";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PageIcon from "@atlaskit/icon/core/page";
 import PanelRightIcon from "@atlaskit/icon/core/panel-right";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import TargetIcon from "@atlaskit/icon/core/target";
+import ThumbsUpIcon from "@atlaskit/icon/core/thumbs-up";
 
 import type { SmartLinkItem } from "@/components/blocks/smart-link/components/smart-link";
 
@@ -131,8 +133,7 @@ export const SMART_LINK_DEMO_ITEMS = [
 		provider: { name: "Goals", logo: { kind: "atlassian", name: "goals" } },
 		icon: { kind: "icon", icon: <TargetIcon label="" size="medium" /> },
 		avatars: [{ name: "Omar Salah", src: "/avatar-human/omar-salah.png" }],
-		status: { label: "Completed", variant: "neutral" },
-		score: "1.0",
+		status: { label: "Completed", variant: "success", metric: "1.0" },
 		dueDate: "Jun 30, 2025",
 		actions: [
 			...PANEL_ACTIONS,
@@ -150,6 +151,8 @@ export const SMART_LINK_DEMO_ITEMS = [
 		variant: "loom",
 		provider: { name: "Loom", logo: { kind: "atlassian", name: "loom" } },
 		icon: { kind: "atlassian", name: "loom" },
+		author: { name: "Olivia Yang", src: "/avatar-human/olivia-yang.png" },
+		date: "Updated 2 days ago",
 		description:
 			"This Loom reviews updated UI design for an agents directory and agent edit experience. It proposes an empty state by default for users without agency.",
 		actions: DEFAULT_ACTIONS,
@@ -186,8 +189,8 @@ export const SMART_LINK_DEMO_ITEMS = [
 		icon: { kind: "image", src: "/3p/slack/24.svg", alt: "Slack" },
 		metadata: [
 			{ label: "Sent on Feb 21, 2023" },
-			{ label: "4" },
-			{ label: "16" },
+			{ label: "", metric: 4, icon: <ThumbsUpIcon label="" size="small" /> },
+			{ label: "", metric: 16, icon: <CommentIcon label="" size="small" /> },
 		],
 		description:
 			"Project Slingshot is an AI-powered health monitoring app that helps pet owners keep track of their friend's health.",

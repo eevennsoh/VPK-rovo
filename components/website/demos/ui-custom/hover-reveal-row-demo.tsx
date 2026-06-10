@@ -73,7 +73,7 @@ function DemoRow({
 
 function DemoCard({ children }: Readonly<{ children: React.ReactNode }>) {
 	return (
-		<div className="w-72 rounded-xl border border-border bg-surface p-1 shadow-sm">
+		<div className="w-72 rounded-xl border border-border bg-surface p-1">
 			{children}
 		</div>
 	);

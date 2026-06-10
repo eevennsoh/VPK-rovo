@@ -15,9 +15,10 @@
 export type {
 	DirectoryVisual,
 	DirectoryCategory,
+	DirectoryIconKey,
 	SkillIconKey,
 } from "./types";
-export { getSkillIcon, resolveDirectoryVisual } from "./visual";
+export { getDirectoryIcon, getSkillIcon, resolveDirectoryVisual } from "./visual";
 
 // --- Skills ---
 export {

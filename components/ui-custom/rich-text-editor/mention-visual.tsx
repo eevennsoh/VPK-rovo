@@ -9,8 +9,8 @@ import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import { BrandLogoMark } from "@/components/ui/logo-mark";
 import type { TagColor } from "@/components/ui/tag";
 import { resolveBrandLogoPresentation } from "@/app/data/directory/brand-logos";
-import { getSkillIcon } from "@/app/data/directory/visual";
-import type { SkillIconKey } from "@/app/data/directory/types";
+import { getDirectoryIcon } from "@/app/data/directory/visual";
+import type { DirectoryIconKey } from "@/app/data/directory/types";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -127,7 +127,7 @@ export function getRichTextMentionVisualFromAttrs(
 	if (attrs.visualKind === "icon" && attrs.visualIconKey) {
 		return {
 			kind: "icon",
-			icon: getSkillIcon(attrs.visualIconKey as SkillIconKey),
+			icon: getDirectoryIcon(attrs.visualIconKey as DirectoryIconKey),
 			iconColor: attrs.visualIconColor ?? undefined,
 			iconKey: attrs.visualIconKey,
 		};

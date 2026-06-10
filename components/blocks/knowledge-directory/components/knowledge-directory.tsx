@@ -9,12 +9,12 @@ import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import SearchIcon from "@atlaskit/icon/core/search";
-import GlobeIcon from "@atlaskit/icon/core/globe";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { CardDirectoryKnowledge } from "@/components/ui-custom/card-directory";
+import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/mention-visual";
 import { cn } from "@/lib/utils";
 
 import {
@@ -24,6 +24,7 @@ import {
 	type KnowledgeDirectoryContent,
 	type KnowledgeDirectoryMode,
 } from "@/app/data/directory/knowledge";
+import { resolveDirectoryVisual } from "@/app/data/directory/visual";
 
 export type {
 	KnowledgeDirectoryApp,
@@ -104,7 +105,7 @@ function filterContent(
 		if (!selectedIdSet.has(content.id)) return false;
 		if (!normalizedQuery) return true;
 
-		return [content.name, content.description].join(" ").toLowerCase().includes(normalizedQuery);
+		return [content.name, content.description, content.type].join(" ").toLowerCase().includes(normalizedQuery);
 	});
 }
 
@@ -493,12 +494,10 @@ function SelectedContentList({
 							key={content.id}
 						>
 							<div className="flex h-14 items-center gap-3 px-3">
-								<span className="flex size-8 shrink-0 items-center justify-center rounded-tile bg-bg-neutral text-icon-subtle">
-									<GlobeIcon label="" size="small" color="currentColor" />
-								</span>
+								<KnowledgeContentVisual content={content} />
 								<span className="min-w-0 flex-1">
 									<span className="block truncate text-sm font-medium leading-5 text-text">{content.name}</span>
-									<span className="block truncate text-xs leading-4 text-text-subtlest">{content.description}</span>
+									<span className="block truncate text-xs leading-4 text-text-subtlest">{content.type}</span>
 								</span>
 								<Button
 									aria-label={`Remove ${content.name}`}
@@ -520,6 +519,18 @@ function SelectedContentList({
 			)}
 		</div>
 	);
+}
+
+function KnowledgeContentVisual({ content }: Readonly<{ content: KnowledgeDirectoryContent }>) {
+	const visual = resolveDirectoryVisual(content.visual);
+
+	return visual ? (
+		<RichTextMentionVisualMark
+			label={content.name}
+			size="menu"
+			visual={visual}
+		/>
+	) : null;
 }
 
 interface SearchFieldProps {

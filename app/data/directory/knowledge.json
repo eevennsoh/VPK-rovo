@@ -10,24 +10,48 @@
 		},
 		"contents": [
 			{
-				"id": "product-requirements",
+				"id": "product-requirements-space",
 				"name": "Product requirements",
-				"description": "Specs, goals, and release criteria across product spaces."
+				"description": "Specs, goals, and release criteria across product spaces.",
+				"type": "space",
+				"visual": {
+					"kind": "avatar",
+					"shape": "square",
+					"src": "/avatar-project/rocket.svg"
+				}
 			},
 			{
-				"id": "team-decisions",
+				"id": "team-decisions-page",
 				"name": "Team decisions",
-				"description": "Decision logs and supporting context from project pages."
+				"description": "Decision logs and supporting context from project pages.",
+				"type": "page",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "page",
+					"iconColor": "text-icon-accent-blue"
+				}
 			},
 			{
-				"id": "customer-research",
-				"name": "Customer research",
-				"description": "Interview notes, feedback summaries, and insight reports."
+				"id": "customer-research-whiteboard",
+				"name": "Customer research map",
+				"description": "Interview notes, feedback summaries, and insight clusters.",
+				"type": "whiteboard",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "whiteboard",
+					"iconColor": "text-icon-accent-blue"
+				}
 			},
 			{
-				"id": "runbooks",
-				"name": "Runbooks",
-				"description": "Operational guides and troubleshooting playbooks."
+				"id": "release-notes-blog",
+				"name": "Release notes",
+				"description": "Launch updates, change summaries, and adoption context.",
+				"type": "blog",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "book-with-bookmark",
+					"iconColor": "text-icon-accent-blue"
+				}
 			}
 		],
 		"starCount": 133,
@@ -48,22 +72,46 @@
 			{
 				"id": "strategy-folder",
 				"name": "Strategy folder",
-				"description": "Planning docs and team strategy materials."
+				"description": "Planning docs and team strategy materials.",
+				"type": "folder",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/google-drive/20.svg"
+				}
 			},
 			{
 				"id": "research-notes",
 				"name": "Research notes",
-				"description": "Collaborative notes and interview synthesis."
+				"description": "Collaborative notes and interview synthesis.",
+				"type": "doc",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/google-drive/20.svg"
+				}
 			},
 			{
 				"id": "launch-spreadsheet",
 				"name": "Launch spreadsheet",
-				"description": "Milestones, owners, and readiness tracking."
+				"description": "Milestones, owners, and readiness tracking.",
+				"type": "spreadsheet",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/google-drive/20.svg"
+				}
 			},
 			{
 				"id": "brand-assets",
 				"name": "Brand assets",
-				"description": "Shared references for campaign and product work."
+				"description": "Shared references for campaign and product work.",
+				"type": "deck",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/google-drive/20.svg"
+				}
 			}
 		],
 		"starCount": 85,
@@ -84,22 +132,46 @@
 			{
 				"id": "engineering-channel",
 				"name": "Engineering channel",
-				"description": "Implementation threads and technical decisions."
+				"description": "Implementation threads and technical decisions.",
+				"type": "channel",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/microsoft-teams/20.svg"
+				}
 			},
 			{
 				"id": "support-channel",
 				"name": "Support channel",
-				"description": "Customer issues, resolutions, and escalation notes."
+				"description": "Customer issues, resolutions, and escalation notes.",
+				"type": "channel",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/microsoft-teams/20.svg"
+				}
 			},
 			{
 				"id": "weekly-sync",
 				"name": "Weekly sync",
-				"description": "Team updates, blockers, and follow-up actions."
+				"description": "Team updates, blockers, and follow-up actions.",
+				"type": "meeting recap",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/microsoft-teams/20.svg"
+				}
 			},
 			{
 				"id": "sales-enablement",
 				"name": "Sales enablement",
-				"description": "Field questions and product positioning notes."
+				"description": "Field questions and product positioning notes.",
+				"type": "thread",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/microsoft-teams/20.svg"
+				}
 			}
 		],
 		"starCount": 184,
@@ -120,22 +192,46 @@
 			{
 				"id": "policy-library",
 				"name": "Policy library",
-				"description": "Governance, security, and compliance documents."
+				"description": "Governance, security, and compliance documents.",
+				"type": "document library",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/microsoft-sharepoint/20.svg"
+				}
 			},
 			{
 				"id": "team-site",
 				"name": "Team site",
-				"description": "Department resources and operating procedures."
+				"description": "Department resources and operating procedures.",
+				"type": "site",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/microsoft-sharepoint/20.svg"
+				}
 			},
 			{
 				"id": "proposal-library",
 				"name": "Proposal library",
-				"description": "Reusable sales and procurement responses."
+				"description": "Reusable sales and procurement responses.",
+				"type": "document library",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/microsoft-sharepoint/20.svg"
+				}
 			},
 			{
 				"id": "training-materials",
 				"name": "Training materials",
-				"description": "Enablement decks, guides, and onboarding docs."
+				"description": "Enablement decks, guides, and onboarding docs.",
+				"type": "policy",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/microsoft-sharepoint/20.svg"
+				}
 			}
 		],
 		"starCount": 158,
@@ -156,22 +252,46 @@
 			{
 				"id": "repository-readme",
 				"name": "Repository README",
-				"description": "Project overview, setup, and contribution guidance."
+				"description": "Project overview, setup, and contribution guidance.",
+				"type": "repository",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/github/20.svg"
+				}
 			},
 			{
 				"id": "open-issues",
 				"name": "Open issues",
-				"description": "Prioritized bug reports and feature requests."
+				"description": "Prioritized bug reports and feature requests.",
+				"type": "issue",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/github/20.svg"
+				}
 			},
 			{
 				"id": "pull-requests",
 				"name": "Pull requests",
-				"description": "Implementation discussion and review context."
+				"description": "Implementation discussion and review context.",
+				"type": "pull request",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/github/20.svg"
+				}
 			},
 			{
 				"id": "architecture-docs",
 				"name": "Architecture docs",
-				"description": "Technical decisions and system diagrams."
+				"description": "Technical decisions and system diagrams.",
+				"type": "discussion",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/github/20.svg"
+				}
 			}
 		],
 		"starCount": 188,
@@ -191,22 +311,46 @@
 			{
 				"id": "product-walkthroughs",
 				"name": "Product walkthroughs",
-				"description": "Recorded feature tours and demo flows."
+				"description": "Recorded feature tours and demo flows.",
+				"type": "video",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "video",
+					"iconColor": "text-icon-accent-blue"
+				}
 			},
 			{
 				"id": "customer-demos",
 				"name": "Customer demos",
-				"description": "Discovery calls and solution walkthroughs."
+				"description": "Discovery calls and solution walkthroughs.",
+				"type": "video",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "video",
+					"iconColor": "text-icon-accent-blue"
+				}
 			},
 			{
 				"id": "team-updates",
 				"name": "Team updates",
-				"description": "Async status updates and roadmap briefings."
+				"description": "Async status updates and roadmap briefings.",
+				"type": "recording",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "video",
+					"iconColor": "text-icon-accent-blue"
+				}
 			},
 			{
 				"id": "research-clips",
 				"name": "Research clips",
-				"description": "Short clips from usability sessions and interviews."
+				"description": "Short clips from usability sessions and interviews.",
+				"type": "clip",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "video",
+					"iconColor": "text-icon-accent-blue"
+				}
 			}
 		],
 		"starCount": 138,
@@ -224,24 +368,48 @@
 		},
 		"contents": [
 			{
-				"id": "epics",
-				"name": "Epics",
-				"description": "Initiative-level work with scope, status, and child issues."
+				"id": "delivery-space",
+				"name": "Delivery workspace",
+				"description": "Project-level context for active engineering delivery.",
+				"type": "space",
+				"visual": {
+					"kind": "avatar",
+					"shape": "square",
+					"src": "/avatar-project/tracking.svg"
+				}
 			},
 			{
-				"id": "sprint-board",
-				"name": "Sprint board",
-				"description": "Active sprint columns, owners, and in-flight progress."
-			},
-			{
-				"id": "bug-backlog",
-				"name": "Bug backlog",
-				"description": "Triaged defects ranked by severity and priority."
+				"id": "platform-space",
+				"name": "Platform workspace",
+				"description": "Component ownership, delivery streams, and dependency context.",
+				"type": "space",
+				"visual": {
+					"kind": "avatar",
+					"shape": "square",
+					"src": "/avatar-project/code.svg"
+				}
 			},
 			{
 				"id": "release-plan",
 				"name": "Release plan",
-				"description": "Versioned scope, target dates, and release readiness."
+				"description": "Versioned scope, target dates, and release readiness.",
+				"type": "jira work item",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "work-item",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "bug-backlog",
+				"name": "Bug backlog",
+				"description": "Triaged defects ranked by severity and priority.",
+				"type": "jira work item",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "work-item",
+					"iconColor": "text-icon-accent-blue"
+				}
 			}
 		],
 		"starCount": 169,
@@ -261,22 +429,46 @@
 			{
 				"id": "service-catalog",
 				"name": "Service catalog",
-				"description": "Registered services with tiers and dependencies."
+				"description": "Registered services with tiers and dependencies.",
+				"type": "component",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "curly-brackets",
+					"iconColor": "text-icon-accent-blue"
+				}
 			},
 			{
 				"id": "ownership-map",
 				"name": "Ownership map",
-				"description": "Teams accountable for each component and system."
+				"description": "Teams accountable for each component and system.",
+				"type": "team map",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "people-group",
+					"iconColor": "text-icon-accent-blue"
+				}
 			},
 			{
 				"id": "scorecards",
 				"name": "Scorecards",
-				"description": "Operational health checks and compliance metrics."
+				"description": "Operational health checks and compliance metrics.",
+				"type": "scorecard",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "chart-trend-up",
+					"iconColor": "text-icon-accent-blue"
+				}
 			},
 			{
 				"id": "tech-stack",
 				"name": "Tech stack",
-				"description": "Languages, frameworks, and tooling across services."
+				"description": "Languages, frameworks, and tooling across services.",
+				"type": "catalog",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "database",
+					"iconColor": "text-icon-accent-blue"
+				}
 			}
 		],
 		"starCount": 85,
@@ -297,22 +489,46 @@
 			{
 				"id": "team-wiki",
 				"name": "Team wiki",
-				"description": "Processes, policies, and onboarding documentation."
+				"description": "Processes, policies, and onboarding documentation.",
+				"type": "wiki",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/notion/20.svg"
+				}
 			},
 			{
 				"id": "project-tracker",
 				"name": "Project tracker",
-				"description": "Database of initiatives, status, and owners."
+				"description": "Database of initiatives, status, and owners.",
+				"type": "database",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/notion/20.svg"
+				}
 			},
 			{
 				"id": "meeting-notes",
 				"name": "Meeting notes",
-				"description": "Agendas, decisions, and action items by meeting."
+				"description": "Agendas, decisions, and action items by meeting.",
+				"type": "page",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/notion/20.svg"
+				}
 			},
 			{
 				"id": "product-specs",
 				"name": "Product specs",
-				"description": "Feature briefs, requirements, and design context."
+				"description": "Feature briefs, requirements, and design context.",
+				"type": "page",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/notion/20.svg"
+				}
 			}
 		],
 		"starCount": 158,
@@ -333,22 +549,46 @@
 			{
 				"id": "contracts",
 				"name": "Contracts",
-				"description": "Signed agreements and legal documentation."
+				"description": "Signed agreements and legal documentation.",
+				"type": "contract",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/box/20.svg"
+				}
 			},
 			{
 				"id": "finance-folder",
 				"name": "Finance folder",
-				"description": "Budgets, invoices, and procurement records."
+				"description": "Budgets, invoices, and procurement records.",
+				"type": "folder",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/box/20.svg"
+				}
 			},
 			{
 				"id": "shared-deliverables",
 				"name": "Shared deliverables",
-				"description": "Client-facing assets and project outputs."
+				"description": "Client-facing assets and project outputs.",
+				"type": "file",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/box/20.svg"
+				}
 			},
 			{
 				"id": "compliance-docs",
 				"name": "Compliance docs",
-				"description": "Audit reports and regulatory paperwork."
+				"description": "Audit reports and regulatory paperwork.",
+				"type": "file",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/box/20.svg"
+				}
 			}
 		],
 		"starCount": 40,
@@ -369,22 +609,46 @@
 			{
 				"id": "design-files",
 				"name": "Design files",
-				"description": "Source artwork, mockups, and exported assets."
+				"description": "Source artwork, mockups, and exported assets.",
+				"type": "file",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/dropbox/20.svg"
+				}
 			},
 			{
 				"id": "team-library",
 				"name": "Team library",
-				"description": "Shared reference materials and templates."
+				"description": "Shared reference materials and templates.",
+				"type": "folder",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/dropbox/20.svg"
+				}
 			},
 			{
 				"id": "client-deliverables",
 				"name": "Client deliverables",
-				"description": "Final files handed off to stakeholders."
+				"description": "Final files handed off to stakeholders.",
+				"type": "file",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/dropbox/20.svg"
+				}
 			},
 			{
 				"id": "archive",
 				"name": "Archive",
-				"description": "Historical projects and retired documentation."
+				"description": "Historical projects and retired documentation.",
+				"type": "folder",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/dropbox/20.svg"
+				}
 			}
 		],
 		"starCount": 197,
@@ -405,26 +669,759 @@
 			{
 				"id": "content-calendar",
 				"name": "Content calendar",
-				"description": "Scheduled campaigns, owners, and publish dates."
+				"description": "Scheduled campaigns, owners, and publish dates.",
+				"type": "base",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/airtable/20.svg"
+				}
 			},
 			{
 				"id": "feature-requests",
 				"name": "Feature requests",
-				"description": "Customer asks with votes, status, and themes."
+				"description": "Customer asks with votes, status, and themes.",
+				"type": "table",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/airtable/20.svg"
+				}
 			},
 			{
 				"id": "vendor-tracker",
 				"name": "Vendor tracker",
-				"description": "Suppliers, contracts, and renewal timelines."
+				"description": "Suppliers, contracts, and renewal timelines.",
+				"type": "record view",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/airtable/20.svg"
+				}
 			},
 			{
 				"id": "roadmap-base",
 				"name": "Roadmap base",
-				"description": "Initiatives mapped to quarters and dependencies."
+				"description": "Initiatives mapped to quarters and dependencies.",
+				"type": "base",
+				"visual": {
+					"kind": "image",
+					"shape": "square",
+					"src": "/3p/airtable/20.svg"
+				}
 			}
 		],
 		"starCount": 155,
 		"teammateCount": 8953,
+		"verified": true
+	},
+	{
+		"id": "goals",
+		"name": "Goals",
+		"description": "Connect company goals, outcomes, and progress signals from Atlassian Goals.",
+		"providerName": "Atlassian",
+		"visual": {
+			"kind": "logo",
+			"logoName": "goals"
+		},
+		"contents": [
+			{
+				"id": "company-objectives",
+				"name": "Company objectives",
+				"description": "Top-level outcomes, owners, and target dates.",
+				"type": "goal",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "goal",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "quarterly-priorities",
+				"name": "Quarterly priorities",
+				"description": "Current focus areas linked to measurable outcomes.",
+				"type": "goal",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "goal",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "risk-updates",
+				"name": "Risk updates",
+				"description": "Progress commentary and blockers by outcome.",
+				"type": "update",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "chart-trend-up",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "team-alignment",
+				"name": "Team alignment",
+				"description": "Linked teams and projects contributing to goals.",
+				"type": "alignment map",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "people-group",
+					"iconColor": "text-icon-accent-blue"
+				}
+			}
+		],
+		"starCount": 121,
+		"teammateCount": 12880,
+		"verified": true
+	},
+	{
+		"id": "projects",
+		"name": "Projects",
+		"description": "Connect project plans, owners, updates, and milestones from Atlassian Projects.",
+		"providerName": "Atlassian",
+		"visual": {
+			"kind": "logo",
+			"logoName": "projects"
+		},
+		"contents": [
+			{
+				"id": "launch-project",
+				"name": "Launch project",
+				"description": "A cross-functional launch plan with owners and milestones.",
+				"type": "project",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "project",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "migration-roadmap",
+				"name": "Migration roadmap",
+				"description": "A staged migration plan with dependencies and risks.",
+				"type": "roadmap",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "roadmap",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "program-updates",
+				"name": "Program updates",
+				"description": "Weekly project status, decisions, and next steps.",
+				"type": "update",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "chart-trend-up",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "dependency-board",
+				"name": "Dependency board",
+				"description": "Blocked work, upstream owners, and target resolution dates.",
+				"type": "board",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "board",
+					"iconColor": "text-icon-accent-blue"
+				}
+			}
+		],
+		"starCount": 92,
+		"teammateCount": 10142,
+		"verified": true
+	},
+	{
+		"id": "atlassian-teams",
+		"name": "Atlassian Teams",
+		"description": "Connect team profiles, membership, responsibilities, and collaboration context.",
+		"providerName": "Atlassian",
+		"visual": {
+			"kind": "logo",
+			"logoName": "teams"
+		},
+		"contents": [
+			{
+				"id": "platform-team",
+				"name": "Platform team",
+				"description": "Team profile with members, responsibilities, and links.",
+				"type": "team profile",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "teams",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "support-team",
+				"name": "Support team",
+				"description": "Ownership and escalation paths for customer support.",
+				"type": "team profile",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "teams",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "team-responsibilities",
+				"name": "Team responsibilities",
+				"description": "Area ownership, decision boundaries, and service scope.",
+				"type": "responsibility map",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "people-group",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "working-agreements",
+				"name": "Working agreements",
+				"description": "Norms, rituals, and collaboration expectations.",
+				"type": "page",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "page",
+					"iconColor": "text-icon-accent-blue"
+				}
+			}
+		],
+		"starCount": 109,
+		"teammateCount": 14726,
+		"verified": true
+	},
+	{
+		"id": "analytics",
+		"name": "Analytics",
+		"description": "Connect dashboards, metric views, and reporting insights from Atlassian Analytics.",
+		"providerName": "Atlassian",
+		"visual": {
+			"kind": "logo",
+			"logoName": "analytics"
+		},
+		"contents": [
+			{
+				"id": "executive-dashboard",
+				"name": "Executive dashboard",
+				"description": "Company-level metrics and trend summaries.",
+				"type": "dashboard",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "chart-bar",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "delivery-metrics",
+				"name": "Delivery metrics",
+				"description": "Throughput, cycle time, and delivery health indicators.",
+				"type": "report",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "chart-trend-up",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "product-funnel",
+				"name": "Product funnel",
+				"description": "Activation, conversion, and retention analysis.",
+				"type": "chart",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "chart-bar",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "query-library",
+				"name": "Query library",
+				"description": "Reusable analysis queries and metric definitions.",
+				"type": "dataset",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "database",
+					"iconColor": "text-icon-accent-blue"
+				}
+			}
+		],
+		"starCount": 144,
+		"teammateCount": 9328,
+		"verified": true
+	},
+	{
+		"id": "assets",
+		"name": "Assets",
+		"description": "Connect assets, services, ownership, and relationship context from Atlassian Assets.",
+		"providerName": "Atlassian",
+		"visual": {
+			"kind": "logo",
+			"logoName": "assets"
+		},
+		"contents": [
+			{
+				"id": "hardware-assets",
+				"name": "Hardware assets",
+				"description": "Devices, assignment state, and lifecycle ownership.",
+				"type": "asset object",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "assets",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "software-licenses",
+				"name": "Software licenses",
+				"description": "License inventory, renewals, and assigned users.",
+				"type": "asset object",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "assets",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "asset-schema",
+				"name": "Asset schema",
+				"description": "Object types, attributes, and relationship definitions.",
+				"type": "schema",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "database",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "ownership-graph",
+				"name": "Ownership graph",
+				"description": "Asset relationships, service links, and accountable teams.",
+				"type": "relationship map",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "people-group",
+					"iconColor": "text-icon-accent-blue"
+				}
+			}
+		],
+		"starCount": 116,
+		"teammateCount": 11091,
+		"verified": true
+	},
+	{
+		"id": "jira-product-discovery",
+		"name": "Jira Product Discovery",
+		"description": "Connect product ideas, insights, prioritization views, and roadmap decisions.",
+		"providerName": "Atlassian",
+		"visual": {
+			"kind": "logo",
+			"logoName": "jira-product-discovery"
+		},
+		"contents": [
+			{
+				"id": "ideas-backlog",
+				"name": "Ideas backlog",
+				"description": "Product ideas with value, effort, and opportunity signals.",
+				"type": "idea",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "lightbulb",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "customer-insights",
+				"name": "Customer insights",
+				"description": "Feedback evidence linked to ideas and themes.",
+				"type": "insight",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "comment",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "prioritization-board",
+				"name": "Prioritization board",
+				"description": "Ranked opportunity views and decision context.",
+				"type": "board",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "board",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "roadmap-view",
+				"name": "Roadmap view",
+				"description": "Planned ideas grouped by outcome and timeframe.",
+				"type": "roadmap",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "roadmap",
+					"iconColor": "text-icon-accent-blue"
+				}
+			}
+		],
+		"starCount": 171,
+		"teammateCount": 7420,
+		"verified": true
+	},
+	{
+		"id": "customer-service-management",
+		"name": "Customer Service Management",
+		"description": "Connect customer requests, escalations, service insights, and case history.",
+		"providerName": "Atlassian",
+		"visual": {
+			"kind": "logo",
+			"logoName": "customer-service-management"
+		},
+		"contents": [
+			{
+				"id": "customer-requests",
+				"name": "Customer requests",
+				"description": "Customer-facing service requests and status history.",
+				"type": "request",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "work-item",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "escalation-cases",
+				"name": "Escalation cases",
+				"description": "High-priority cases with owners and resolution notes.",
+				"type": "case",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "briefcase",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "support-playbooks",
+				"name": "Support playbooks",
+				"description": "Reusable guidance for customer support workflows.",
+				"type": "playbook",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "book-with-bookmark",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "service-insights",
+				"name": "Service insights",
+				"description": "Trends, service load, and customer satisfaction signals.",
+				"type": "report",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "chart-bar",
+					"iconColor": "text-icon-accent-blue"
+				}
+			}
+		],
+		"starCount": 97,
+		"teammateCount": 8152,
+		"verified": true
+	},
+	{
+		"id": "trello",
+		"name": "Trello",
+		"description": "Connect boards, lists, cards, and lightweight team planning from Trello.",
+		"providerName": "Atlassian",
+		"visual": {
+			"kind": "logo",
+			"logoName": "trello"
+		},
+		"contents": [
+			{
+				"id": "marketing-board",
+				"name": "Marketing board",
+				"description": "Campaign tasks, checklists, and launch coordination.",
+				"type": "board",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "board",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "content-cards",
+				"name": "Content cards",
+				"description": "Editorial ideas, owners, labels, and due dates.",
+				"type": "card",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "work-item",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "team-templates",
+				"name": "Team templates",
+				"description": "Reusable boards for recurring operating rhythms.",
+				"type": "template",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "files",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "sprint-planning",
+				"name": "Sprint planning",
+				"description": "Lightweight planning board for weekly execution.",
+				"type": "list",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "table",
+					"iconColor": "text-icon-accent-blue"
+				}
+			}
+		],
+		"starCount": 149,
+		"teammateCount": 16604,
+		"verified": true
+	},
+	{
+		"id": "jira-align",
+		"name": "Jira Align",
+		"description": "Connect portfolio strategy, program increments, dependencies, and delivery plans.",
+		"providerName": "Atlassian",
+		"visual": {
+			"kind": "logo",
+			"logoName": "align"
+		},
+		"contents": [
+			{
+				"id": "portfolio-roadmap",
+				"name": "Portfolio roadmap",
+				"description": "Strategic initiatives, milestones, and funding themes.",
+				"type": "roadmap",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "roadmap",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "program-increment",
+				"name": "Program increment",
+				"description": "PI objectives, planned capacity, and committed work.",
+				"type": "program increment",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "project",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "dependency-map",
+				"name": "Dependency map",
+				"description": "Cross-team dependencies and delivery risk.",
+				"type": "dependency",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "branch",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "enterprise-objectives",
+				"name": "Enterprise objectives",
+				"description": "Strategy goals tied to portfolios and delivery teams.",
+				"type": "objective",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "goal",
+					"iconColor": "text-icon-accent-blue"
+				}
+			}
+		],
+		"starCount": 88,
+		"teammateCount": 5048,
+		"verified": true
+	},
+	{
+		"id": "talent",
+		"name": "Talent",
+		"description": "Connect hiring plans, role context, talent decisions, and workforce planning.",
+		"providerName": "Atlassian",
+		"visual": {
+			"kind": "logo",
+			"logoName": "talent"
+		},
+		"contents": [
+			{
+				"id": "hiring-plan",
+				"name": "Hiring plan",
+				"description": "Open roles, hiring targets, and recruiting priorities.",
+				"type": "plan",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "briefcase",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "candidate-feedback",
+				"name": "Candidate feedback",
+				"description": "Interview loops, scorecards, and decision notes.",
+				"type": "feedback",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "comment",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "role-library",
+				"name": "Role library",
+				"description": "Role expectations, levels, and skills profiles.",
+				"type": "library",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "book-with-bookmark",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "workforce-dashboard",
+				"name": "Workforce dashboard",
+				"description": "Team capacity, headcount, and org planning signals.",
+				"type": "dashboard",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "chart-bar",
+					"iconColor": "text-icon-accent-blue"
+				}
+			}
+		],
+		"starCount": 63,
+		"teammateCount": 4317,
+		"verified": true
+	},
+	{
+		"id": "focus",
+		"name": "Focus",
+		"description": "Connect strategic focus areas, priorities, decisions, and progress narratives.",
+		"providerName": "Atlassian",
+		"visual": {
+			"kind": "logo",
+			"logoName": "focus"
+		},
+		"contents": [
+			{
+				"id": "focus-areas",
+				"name": "Focus areas",
+				"description": "Priority areas and rationale for the current planning cycle.",
+				"type": "focus area",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "focus-area",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "decision-briefs",
+				"name": "Decision briefs",
+				"description": "Strategic choices with supporting evidence and tradeoffs.",
+				"type": "brief",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "page",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "progress-narratives",
+				"name": "Progress narratives",
+				"description": "Updates that explain movement against priorities.",
+				"type": "update",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "chart-trend-up",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "leadership-alignment",
+				"name": "Leadership alignment",
+				"description": "Signals and decisions shared across leadership teams.",
+				"type": "alignment map",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "people-group",
+					"iconColor": "text-icon-accent-blue"
+				}
+			}
+		],
+		"starCount": 74,
+		"teammateCount": 5269,
+		"verified": true
+	},
+	{
+		"id": "dx",
+		"name": "DX",
+		"description": "Connect developer productivity, experience signals, and AI impact metrics.",
+		"providerName": "Atlassian",
+		"visual": {
+			"kind": "icon",
+			"iconKey": "chart-trend-up",
+			"iconColor": "text-icon-accent-blue"
+		},
+		"contents": [
+			{
+				"id": "developer-productivity",
+				"name": "Developer productivity",
+				"description": "Delivery, flow, and engineering effectiveness metrics.",
+				"type": "dashboard",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "chart-trend-up",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "ai-impact-report",
+				"name": "AI impact report",
+				"description": "Adoption and impact signals for AI-assisted work.",
+				"type": "report",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "chart-bar",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "engineering-surveys",
+				"name": "Engineering surveys",
+				"description": "Developer sentiment and friction themes.",
+				"type": "survey",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "comment",
+					"iconColor": "text-icon-accent-blue"
+				}
+			},
+			{
+				"id": "tooling-initiatives",
+				"name": "Tooling initiatives",
+				"description": "Projects improving developer experience and platform leverage.",
+				"type": "project",
+				"visual": {
+					"kind": "icon",
+					"iconKey": "project",
+					"iconColor": "text-icon-accent-blue"
+				}
+			}
+		],
+		"starCount": 101,
+		"teammateCount": 6744,
 		"verified": true
 	}
 ]
