@@ -162,7 +162,10 @@ function createAgentTestContextDescription(input: {
 }
 
 function buildAgentTestProfile(entry: StudioSessionAgentEntry): RovoAgentProfile {
-	const payload = entry.publishReadyResult as AgentResultPayload;
+	// Test mode mirrors the LIVE draft the Configure panel edits (not the
+	// publish-ready snapshot), so name, starters, and instructions stay in sync
+	// with whatever the user just configured instead of lagging until publish.
+	const payload = entry.draftResult as AgentResultPayload;
 	const id = `agent-test-${entry.profile.id}`;
 	const name = getPayloadString(payload, ["name", "agentName", "title"]) ?? entry.profile.name ?? "Agent test";
 	const byline = getPayloadString(payload, ["byline", "sourceLabel", "generatedBy", "source"]) ?? "Custom agent test";
@@ -207,9 +210,13 @@ export function AgentTestTriggerView({
 }: Readonly<{
 	entry: StudioSessionAgentEntry;
 }>): ReactElement {
+	// Read the LIVE draft, not the publish-ready snapshot. The Configure panel
+	// edits `entry.draftResult` (publish-ready only catches up on commit/publish),
+	// so reading the draft keeps the Test → Trigger tab in sync with whatever the
+	// user just configured instead of lagging behind until publish.
 	const triggerDefinitions = useMemo<readonly AgentTriggerValue[]>(
-		() => entry.publishReadyResult.triggerDefinitions ?? [],
-		[entry.publishReadyResult.triggerDefinitions],
+		() => entry.draftResult.triggerDefinitions ?? [],
+		[entry.draftResult.triggerDefinitions],
 	);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -217,10 +224,11 @@ export function AgentTestTriggerView({
 		<div className="flex min-h-[220px] items-start justify-center p-6">
 			<div className="w-full max-w-[48rem]">
 				{/*
-				 * Test mode mirrors the publish-ready snapshot, so the trigger
-				 * card is a read-only preview: clicking anywhere on it opens the
-				 * trigger modal. A transparent overlay button captures the click
-				 * while the configured `<Triggers>` card renders underneath.
+				 * Test mode mirrors the live draft, so the trigger card is a
+				 * read-only preview of the current configuration: clicking anywhere
+				 * on it opens the trigger modal. A transparent overlay button
+				 * captures the click while the configured `<Triggers>` card renders
+				 * underneath.
 				 */}
 				<div className="relative">
 					<Triggers triggers={triggerDefinitions} />
@@ -236,8 +244,8 @@ export function AgentTestTriggerView({
 				open={isDialogOpen}
 				onOpenChange={setIsDialogOpen}
 				triggerDefinitions={triggerDefinitions}
-				// Read-only preview: discard edits so the published snapshot stays
-				// the source of truth.
+				// Read-only preview: discard edits here. The Configure panel owns
+				// editing the draft (the source of truth Test now mirrors).
 				onSave={() => setIsDialogOpen(false)}
 			/>
 		</div>
@@ -249,7 +257,7 @@ export function AgentTestActivityView({
 }: Readonly<{
 	entry: StudioSessionAgentEntry;
 }>): ReactElement {
-	const tools = entry.publishReadyResult.tools ?? [];
+	const tools = entry.draftResult.tools ?? [];
 
 	return (
 		<div className="flex min-h-[220px] items-center justify-center p-6 text-center">
@@ -308,8 +316,12 @@ export function AgentTestPanel({
 	className,
 	entry,
 }: Readonly<AgentTestPanelProps>): ReactElement {
-	const publishReadySnapshotKey = JSON.stringify(entry.publishReadyResult);
-	const snapshotKey = `${entry.profile.id}:${publishReadySnapshotKey}`;
+	// Key on the LIVE draft so the test chat provider rebuilds the profile (name,
+	// starters, instructions) whenever the Configure panel edits the draft —
+	// keeping Test fully in sync with Configure instead of only updating on
+	// commit/publish.
+	const draftSnapshotKey = JSON.stringify(entry.draftResult);
+	const snapshotKey = `${entry.profile.id}:${draftSnapshotKey}`;
 	const testAgentProfile = useMemo(() => buildAgentTestProfile(entry), [entry]);
 
 	return (

@@ -196,6 +196,19 @@ Server-side enforcement still belongs in GitHub branch protection / rulesets: en
 
    Repeat the query with `after=<endCursor>` while `pageInfo.hasNextPage` is true. Only conclude "no unresolved threads" after checking every page.
 
+   **Reconcile against REST before trusting an empty or short result.** The GraphQL `reviewThreads` connection is eventually consistent and can momentarily return fewer threads than exist; an emptied/short list while `mergeStateStatus` is `BLOCKED` is the classic symptom of a stale read, not a clean PR. Cross-check the flat REST views, which tend to index first:
+
+   ```bash
+   gh api repos/<owner>/<repo>/pulls/<pr>/comments --paginate \
+     --jq '.[] | {id, author: .user.login, in_reply_to: .in_reply_to_id}'
+   gh api repos/<owner>/<repo>/pulls/<pr>/reviews --paginate \
+     --jq '.[] | select(.state != "APPROVED") | {id, author: .user.login, state}'
+   ```
+
+   Reconcile **by comment, not by author**: if REST surfaces any review comment or non-approving review (human or bot) that is not represented in a GraphQL thread, the GraphQL read is stale — re-fetch the threads after a short backoff (e.g. 5s, up to ~3 tries) and only conclude "no unresolved threads" once the two sources agree. REST has no resolution field, so it can prove a comment *exists* but never that its thread is *resolved*; GraphQL `isResolved` stays the resolution authority. Do **not** filter this reconciliation by head SHA — an unaddressed comment anchored to an older commit is still a blocking conversation.
+
+   This reconciliation is **source-agnostic and must never wait on any one reviewer**. A review tool that is not configured, disabled, or out of credits simply contributes no comments — that is a genuine clean-empty, not a stale read, and the merge proceeds. The only triggers for suspicion are *disagreement between REST and GraphQL* or *`BLOCKED` while required checks are green*; the mere absence of a Codex (or any) auto-review is never a blocker (see the [Universal Pre-Merge Gate](#universal-pre-merge-gate-applies-to-every-merge)).
+
 2. Filter to `isResolved == false`. If branch protection requires conversation resolution, process **all** unresolved threads, not only threads that look Codex-authored. Codex-only identification is best-effort from author login/body text (`codex`, `openai`, or automation bot names) and is not reliable enough to ignore other unresolved conversations.
 
 3. Classify each unresolved thread from source evidence:
@@ -267,7 +280,7 @@ Runs **Create PR -> PR Merge Back** against the current branch's work, fully aut
    - First poll after ~10s, then every 30s. Hard timeout: 15 minutes.
    - Report progress concisely (e.g. "checks: 2/3 pending"); do not flood the output with every poll.
    - On any failed check, `DIRTY` merge state, or timeout, stop and report. The PR remains open for the user to resolve manually. Do not retry automatically.
-   - If merge state is `BLOCKED`, run **PR Review Remediation** once before stopping. If remediation clears unresolved threads, re-queue auto-merge and continue polling. If the block is not review-thread related, or unresolved threads remain, stop and report.
+   - If merge state is `BLOCKED`, run **PR Review Remediation** once before stopping. `BLOCKED` while required checks are green and your thread fetch came back empty is the signature of a *stale or incomplete read*, not a clean PR — reconcile via REST and re-fetch threads (step 1) before doing anything else, and never reach for `--admin` to clear the block until the sources agree and every surfaced thread is resolved. If remediation clears unresolved threads, re-queue auto-merge and continue polling. If the block is genuinely not conversation-related (e.g. a required reviewer, CODEOWNERS, or other ruleset), or unresolved threads remain, stop and report.
 
 6. After merge confirms, sync `main` and decide whether to switch — but never remove a worktree or force a navigation that loses work:
    - **Sync the persistent `main` checkout.** If you are in the main checkout, `git switch main` (only per the rule below) then `git pull --ff-only origin main`. If you are in a secondary worktree, sync out-of-place instead: `git -C <main-checkout> fetch origin && git -C <main-checkout> pull --ff-only origin main`. You cannot check out `main` from a worktree — it is already checked out in the main checkout, and git forbids the same branch in two worktrees.

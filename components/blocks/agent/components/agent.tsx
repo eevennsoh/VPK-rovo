@@ -1354,7 +1354,7 @@ function AgentCompactTriggersNavButton({
 					Add trigger
 				</span>
 			</DropdownMenuSubTrigger>
-			<DropdownMenuSubContent className="w-80 overflow-hidden p-0">
+			<DropdownMenuSubContent className="w-80 p-0">
 				<TriggerProviderSearchList onSelectEvent={onSelectEvent} />
 			</DropdownMenuSubContent>
 		</DropdownMenuSub>
@@ -2624,11 +2624,13 @@ interface AgentFilledConfigSummaryProps {
 	onManageSubagents?: () => void;
 	onMemoryModeChange: (next: MemoryModeValue) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
+	onReasoningModeChange: (next: ReasoningModeValue) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	onToggleListItem?: (field: AgentConfigListFieldName, index: number, enabled: boolean) => void;
 	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
+	reasoningMode: ReasoningModeValue;
 	screenAssistantTargetPrefix?: string;
 	selectedListItemIndexByField?: Partial<Record<AgentConfigListFieldName, number>>;
 	showAddButtons?: boolean;
@@ -2645,10 +2647,12 @@ function AgentFilledConfigSummary({
 	onManageSubagents,
 	onMemoryModeChange,
 	onOpenDirectory,
+	onReasoningModeChange,
 	onRemoveListItem,
 	onSelectListItem,
 	onToggleListItem,
 	onTriggerDefinitionsChange,
+	reasoningMode,
 	screenAssistantTargetPrefix,
 	selectedListItemIndexByField,
 	showAddButtons = true,
@@ -2701,10 +2705,10 @@ function AgentFilledConfigSummary({
 	// within each group) so configured fields stay visually grouped at the top.
 	// Source order IS the canonical display order (assuming every row is filled):
 	// Triggers › Knowledge › Tools › Skills › Subagents › Memory › Conversation
-	// starters. Reasoning renders separately after this list, so it always sits
-	// last. `orderedRows` below preserves this order for filled rows, then sinks
-	// empty rows to the bottom in the same relative order — so the array order is
-	// the single source of truth for both groups. Reorder here, not in the sort.
+	// starters › Reasoning. Reasoning is never empty, so it always sits last.
+	// `orderedRows` below preserves this order for filled rows, then sinks empty
+	// rows to the bottom in the same relative order — so the array order is the
+	// single source of truth for both groups. Reorder here, not in the sort.
 	const rows: ReadonlyArray<{ key: string; isEmpty: boolean; node: ReactNode }> = [
 		{
 			key: "trigger",
@@ -2819,7 +2823,7 @@ function AgentFilledConfigSummary({
 						return (
 							<IconTile
 								aria-hidden
-								icon={<Icon aria-hidden render={<StarterIcon label="" size="small" color="currentColor" />} />}
+								icon={<Icon aria-hidden render={<StarterIcon label="" size="small" color="currentColor" />} className="text-icon-subtle" />}
 								label=""
 								size="xxsmall"
 								variant="transparent"
@@ -2832,6 +2836,19 @@ function AgentFilledConfigSummary({
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("conversationStarters", index) : undefined}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:conversation-starters` : undefined}
 					tagColor="standard"
+				/>
+			),
+		},
+		{
+			key: "reasoning",
+			// Reasoning is always a single selected mode, so this row is never empty
+			// and stays last in the canonical order.
+			isEmpty: false,
+			node: (
+				<AgentReasoningRow
+					onValueChange={onReasoningModeChange}
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:reasoning` : undefined}
+					value={reasoningMode}
 				/>
 			),
 		},
@@ -3127,7 +3144,7 @@ function AgentReasoningSelector({
 		<>
 			<DropdownMenu>
 				<DropdownMenuTrigger
-					render={<LozengeDropdownTrigger aria-label="Reasoning mode" icon={<AiComputeIcon label="" size="small" />} />}
+					render={<LozengeDropdownTrigger aria-label="Reasoning mode" icon={<Icon aria-hidden render={<AiComputeIcon label="" size="small" />} className="text-icon-subtle" />} />}
 				>
 					{sectionLabel}
 				</DropdownMenuTrigger>
@@ -3325,7 +3342,7 @@ function AgentMemorySelector({
 				render={(
 					<LozengeDropdownTrigger
 						aria-label="Memory mode"
-						icon={<AiModelIcon label="" size="small" />}
+						icon={<Icon aria-hidden render={<AiModelIcon label="" size="small" />} className="text-icon-subtle" />}
 					/>
 				)}
 			>
@@ -3880,18 +3897,15 @@ function AgentCompactConfigToolbarBelow({
 							onListItemChange={onListItemChange}
 							onManageSubagents={onManageSubagents}
 							onOpenDirectory={onOpenDirectory}
+							onReasoningModeChange={setReasoningValue}
 							onRemoveListItem={onRemoveListItem}
 							onSelectListItem={onSelectListItem}
 							onTextChange={onTextChange}
 							onToggleListItem={onToggleListItem}
 							onTriggerDefinitionsChange={onTriggerDefinitionsChange}
+							reasoningMode={reasoningValue}
 							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 							selectedListItemIndexByField={selectedListItemIndexByField}
-						/>
-						<AgentReasoningRow
-							value={reasoningValue}
-							onValueChange={setReasoningValue}
-							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:reasoning` : undefined}
 						/>
 					</motion.div>
 				) : (

@@ -577,6 +577,16 @@
 	background-color: var(--ds-background-neutral-subtle-hovered, #f1f2f4);
 }
 
+/* The sticky search field (e.g. the "Ask Rovo" bar) is an input, not a
+   selectable row, so it never participates in keyboard selection. Give it a
+   hover highlight in EVERY menu — including the live "/" surface that sets
+   `data-pointer-selects="true"` to avoid double-highlighting selectable rows —
+   so hovering the Ask Rovo bar reads as interactive just like in the static
+   showcases. Like `.rich-text-command-menu-back`, it owns its own hover. */
+.rich-text-command-menu-search:hover {
+	background-color: var(--ds-background-neutral-subtle-hovered, #f1f2f4);
+}
+
 /*
  * When the menu's own search field is focused (the user is typing into it), the
  * Return key submits THAT field — e.g. "Ask Rovo" or a category search — not a
@@ -590,7 +600,8 @@
 .rich-text-command-menu:focus-within .rich-text-command-menu-item:hover,
 .rich-text-command-menu:focus-within .rich-text-command-menu-item-selected,
 .rich-text-command-menu:focus-within .rich-text-command-menu-item-sticky:hover,
-.rich-text-command-menu:focus-within .rich-text-command-menu-item-sticky.rich-text-command-menu-item-selected {
+.rich-text-command-menu:focus-within .rich-text-command-menu-item-sticky.rich-text-command-menu-item-selected,
+.rich-text-command-menu:focus-within .rich-text-command-menu-search:hover {
 	background-color: transparent;
 }
 
@@ -708,6 +719,12 @@
 	   rows, so the back arrow lines up exactly with every other leading glyph
 	   across nested, flat, and search variants; 6px right matches the sticky
 	   search header. */
+	/* The Back button is a direct flex child of the height-capped `.rich-text-
+	   command-menu` column, so without an explicit shrink guard a tall nested
+	   list squeezes it below 44px (the default `flex-shrink: 1`). `flex: 0 0 44px`
+	   pins its cozy height — mirroring the sticky search field — so it always
+	   aligns with the search/Ask Rovo input and list rows. */
+	flex: 0 0 44px;
 	height: 44px;
 	padding: 0 6px 0 12px;
 	color: var(--ds-text-subtle, #44546f);

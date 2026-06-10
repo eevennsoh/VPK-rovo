@@ -285,6 +285,23 @@ test("compact chat suffixes duplicate session-created agent ids and names", () =
 	assert.match(context, /const name = explicitName[\s\S]*\? getSuffixedSessionAgentName\(baseName, reservedNames\)[\s\S]*: SESSION_AGENT_DEFAULT_NAME;/u);
 });
 
+test("created agents without an explicit avatar get a random one stamped at creation", () => {
+	// Regression: every newly created agent (from-scratch or AI-generated) used
+	// to fall back to a single fixed avatar, so they all looked identical. The
+	// avatar is now stamped once at creation from the shared full set when none
+	// is supplied, and persisted onto the result so it stays stable across edits.
+	const context = readProjectFile("app/contexts/context-rovo-chat.tsx");
+	assert.match(context, /import \{ getRandomAgentAvatarSrc \} from "@\/lib\/agent-avatars";/u);
+	assert.match(
+		context,
+		/const hasExplicitAvatar = Boolean\([\s\S]*getPayloadString\(normalizedResult as AgentResultPayload, \["avatarSrc", "avatarUrl", "iconSrc"\]\)[\s\S]*\);/u,
+	);
+	assert.match(
+		context,
+		/const agentResult: RovoDataParts\["agent-result"\] = hasExplicitAvatar[\s\S]*\? normalizedResult[\s\S]*: \{ \.\.\.normalizedResult, avatarSrc: getRandomAgentAvatarSrc\(\) \};/u,
+	);
+});
+
 test("compact chat resets the visible conversation when switching agents", () => {
 	const context = readProjectFile("app/contexts/context-rovo-chat.tsx");
 	const resetChatIndex = context.indexOf("const resetChat = useCallback(");

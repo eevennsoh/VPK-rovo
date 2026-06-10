@@ -108,7 +108,12 @@ test("Reasoning selector lives in the compact toolbar and shares state across co
 	assert.match(AGENT_SOURCE, /\{ agentFieldName: "reasoning", label: "Reasoning", kind: "reasoning", Icon: AiComputeIcon \}/u);
 	assert.match(AGENT_SOURCE, /case "reasoning":[\s\S]*count = 0;/u);
 	assert.match(AGENT_SOURCE, /render="nav-button"[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{onReasoningValueChange\}/u);
-	assert.match(AGENT_SOURCE, /<AgentReasoningRow[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{setReasoningValue\}/u);
+	// Reasoning now renders inside AgentFilledConfigSummary's shared row stack
+	// (value={reasoningMode}/onValueChange={onReasoningModeChange}); the compact
+	// toolbar feeds it via reasoningMode/onReasoningModeChange.
+	assert.match(AGENT_SOURCE, /<AgentReasoningRow[\s\S]*onValueChange=\{onReasoningModeChange\}[\s\S]*value=\{reasoningMode\}/u);
+	assert.match(AGENT_SOURCE, /reasoningMode=\{reasoningValue\}/u);
+	assert.match(AGENT_SOURCE, /onReasoningModeChange=\{setReasoningValue\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /<AgentReasoningOverflowMenu/u);
 	assert.match(AGENT_SOURCE, /import AiComputeIcon from "@atlaskit\/icon-lab\/core\/ai-compute";/u);
 	assert.match(AGENT_SOURCE, /render=\{<LozengeDropdownTrigger aria-label="Reasoning mode" icon=\{<AiComputeIcon label="" size="small" \/>\} \/>\}/u);

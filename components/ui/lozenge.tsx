@@ -313,6 +313,10 @@ function LozengeDropdownTrigger({
 	const resolvedVariant = variant ?? "neutral"
 	const resolvedSize = size ?? "compact"
 	const isOpen = isSelected || ariaExpanded === true || ariaExpanded === "true"
+	// A leading front-slot element (the `icon`) owns its own 16x16 box, so the
+	// trigger tightens its left inset to match `Lozenge` (and Tag's front slot):
+	// 1px for compact, 6px for spacious — instead of the default 4px / 12px.
+	const hasLeadingElement = icon != null
 
 	return (
 		<button
@@ -327,6 +331,7 @@ function LozengeDropdownTrigger({
 			className={cn(
 				lozengeTriggerVariants({ variant: resolvedVariant, size: resolvedSize, isBold }),
 				isLoading && "opacity-(--opacity-loading)",
+				hasLeadingElement && (resolvedSize === "compact" ? "ps-px" : "ps-1.5"),
 				metric != null && resolvedSize === "compact" && "pr-px",
 				className
 			)}

@@ -86,6 +86,7 @@ import {
 	VPK_HTML_SKILL_ID,
 } from "@/lib/work-item-report-intent";
 import { resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
+import { getRandomAgentAvatarSrc } from "@/lib/agent-avatars";
 import {
 	isRateLimitError,
 	isChatInProgressError,
@@ -1172,7 +1173,17 @@ function createSessionAgentEntryFromResult(params: {
 		return null;
 	}
 
-	const agentResult = normalizeSessionAgentResult(params.agentResult);
+	const normalizedResult = normalizeSessionAgentResult(params.agentResult);
+	// Stamp a random avatar (and, via its family, accent color) once at creation
+	// time when none was supplied — both from-scratch and AI-generated agents
+	// reach here. Persisting it onto the result keeps the avatar stable across
+	// later draft edits instead of re-rolling on every keystroke.
+	const hasExplicitAvatar = Boolean(
+		getPayloadString(normalizedResult as AgentResultPayload, ["avatarSrc", "avatarUrl", "iconSrc"])
+	);
+	const agentResult: RovoDataParts["agent-result"] = hasExplicitAvatar
+		? normalizedResult
+		: { ...normalizedResult, avatarSrc: getRandomAgentAvatarSrc() };
 	const payload = agentResult as AgentResultPayload;
 	const payloadResultKey = getCreatedAgentResultKey(payload);
 	const resultKey = params.sourceKey
