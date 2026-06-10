@@ -2010,21 +2010,22 @@ function AgentAddValueButton({
 	void icon;
 	void label;
 	return (
+		// Same visual chrome as the Triggers row "Edit" CTA (AgentTriggerSummaryRow):
+		// identical sizing/typography/focus classes + identical EditIcon + "Edit"
+		// span. The hover-reveal opacity (opacity-0 → group-hover/agent-row) is NOT
+		// baked in here — it is supplied via `className` ONLY for the filled-row spot
+		// (the last-chip Add), so empty rows keep their Edit button always visible.
 		<button
 			type="button"
 			className={cn(
-				// Match the Triggers row "Edit" CTA class-for-class. The hover-reveal
-				// opacity (opacity-0 + group-hover/agent-row:opacity-100 …) is supplied
-				// via `className` for the filled-row spot, exactly as the trigger button
-				// bakes it in; the empty-row spot passes no className so it stays visible.
-				"group/add-link inline-flex h-5 shrink-0 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest transition-opacity focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+				"inline-flex h-5 shrink-0 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest transition-opacity focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-expanded:opacity-100",
 				className
 			)}
 			onClick={onClick}
 			{...props}
 		>
 			<EditIcon label="" size="small" />
-			<span className="group-hover/add-link:underline group-focus-visible/add-link:underline">Edit</span>
+			<span className="group-hover/agent-row:underline">Edit</span>
 		</button>
 	);
 }

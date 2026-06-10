@@ -305,10 +305,13 @@ test("Compact agent config opts into the typed Triggers editor without replacing
 	assert.match(AGENT_SOURCE, /function getAgentTriggerItems\(config: AgentConfigFormValue\): readonly string\[\] \{[\s\S]*serializeAgentTriggerLabels\(config\.triggerDefinitions\)[\s\S]*const triggers = getNonEmptyConfigItems\(config\.triggers\)[\s\S]*const trigger = config\.trigger\?\.trim\(\);/u);
 	assert.match(AGENT_SOURCE, /onConnectTrigger\?: \(trigger: AgentTriggerValue\) => void;/u);
 	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
-	// Adding a trigger from the picker must APPEND to the existing definitions
-	// (seed `[...existing, next]`), not replace them with `[next]` — otherwise
-	// saving the rule-builder drops every previously configured trigger.
-	assert.match(AGENT_SOURCE, /<TriggerPicker[\s\S]*onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*const existing = triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\);/u);
+	// Adding a trigger from the summary row's picker must APPEND to the existing
+	// definitions (seed `[...existing, next]`), not replace them with `[next]` —
+	// otherwise saving the rule-builder drops every previously configured trigger.
+	// The summary row wires `<TriggerPicker onSelectEvent={handleSelectEvent} />`,
+	// so assert the named handler carries the append logic.
+	assert.match(AGENT_SOURCE, /const handleSelectEvent = \([\s\S]*const existing = triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\);/u);
+	assert.match(AGENT_SOURCE, /<TriggerPicker[\s\S]*onSelectEvent=\{handleSelectEvent\}/u);
 	// The collapsed-nav "Add trigger" flyout appends the same way, seeding from
 	// the agent's own config so the editor opens with the full trigger list.
 	assert.match(AGENT_SOURCE, /onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*const existing = config\?\.triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\);/u);
@@ -410,12 +413,13 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// The row-level skip guard for empty rows still drops rows that lack an
 	// addLabel, but with addLabel set (the default) every row renders.
 	assert.match(AGENT_SOURCE, /if \(isEmpty && \(hideWhenEmpty \|\| !addLabel\)\) \{/u);
-	// Every AgentAddValueButton renders as a uniform "Edit" affordance whose
-	// chrome matches the trigger row's edit button (transition-opacity + ring
-	// focus). The placement-specific hover-reveal opacity arrives via className.
-	assert.match(AGENT_SOURCE, /"group\/add-link inline-flex h-5 shrink-0 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest transition-opacity focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/u);
-	assert.doesNotMatch(AGENT_SOURCE, /group\/add-link inline-flex h-5 items-center gap-0\.5/u);
-	assert.match(AGENT_SOURCE, /<EditIcon label="" size="small" \/>\s*<span className="group-hover\/add-link:underline group-focus-visible\/add-link:underline">Edit<\/span>/u);
+	// AgentAddValueButton shares the Triggers row "Edit" CTA chrome (same sizing,
+	// typography, focus + aria-expanded states) and the same EditIcon + "Edit"
+	// span. The hover-reveal opacity is NOT baked into the base class — it is added
+	// via `className` ONLY for the filled-row spot, so empty rows stay visible.
+	assert.match(AGENT_SOURCE, /"inline-flex h-5 shrink-0 items-center gap-1 rounded-xs text-xs font-medium text-text-subtlest transition-opacity focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-expanded:opacity-100"/u);
+	assert.doesNotMatch(AGENT_SOURCE, /group\/add-link/u);
+	assert.match(AGENT_SOURCE, /<span className="group-hover\/agent-row:underline">Edit<\/span>/u);
 	// The final chip and the inline +Add link share a single non-wrapping group so
 	// they reflow to the next line together instead of leaving a gap when chips
 	// fill the row. The empty-row +Add link renders separately and stays visible.

@@ -35,6 +35,7 @@ import TextHeadingTwoIcon from "@atlaskit/icon-lab/core/text-heading-two";
 import { useClickOutside } from "@/components/hooks/use-click-outside";
 import { useToolbarOverflow } from "@/components/blocks/editor-toolbar/hooks/use-toolbar-overflow";
 import { Button } from "@/components/ui/button";
+import { IconTile } from "@/components/ui/icon-tile";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
@@ -167,7 +168,13 @@ function DropdownMenuItem({
 			)}
 			onClick={onClick}
 		>
-			{icon}
+			<IconTile
+				icon={icon}
+				label=""
+				variant="transparent"
+				size="small"
+				aria-hidden
+			/>
 			<span className="min-w-0 truncate">{label}</span>
 		</button>
 	);
