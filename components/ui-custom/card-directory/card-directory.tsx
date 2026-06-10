@@ -23,7 +23,8 @@ export interface CardDirectoryProps {
  * optional keyboard-operable button contract. Compose content with
  * `CardDirectoryHeader`, `CardDirectoryDescription`, `CardDirectoryFooter`, etc.,
  * or use a ready-made variant wrapper (`CardDirectoryAgent`, `CardDirectorySkill`,
- * `CardDirectoryTool`, `CardDirectoryKnowledge`, `CardDirectoryTemplate`).
+ * `CardDirectoryApp`, `CardDirectoryTool`, `CardDirectoryKnowledge`,
+ * `CardDirectoryTemplate`).
  */
 export function CardDirectory({
 	onSelect,

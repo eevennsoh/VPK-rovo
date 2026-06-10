@@ -10,6 +10,7 @@ import {
 } from "@/app/data/directory/knowledge";
 import {
 	CardDirectoryAgent,
+	CardDirectoryApp,
 	CardDirectoryKnowledge,
 	CardDirectorySkill,
 	CardDirectoryTool,
@@ -64,6 +65,16 @@ export default function EntityCardDemo() {
 					verified
 					teammateCount={6273}
 				/>
+				<CardDirectoryApp
+					appLogo={<ConfluenceLogo size="medium" />}
+					description="Create, search, and update pages across your Confluence sites."
+					knowledgeCount={4}
+					name="Confluence"
+					onMoreActions={() => {}}
+					onSelect={() => {}}
+					teammateCount={258}
+					toolCount={36}
+				/>
 				<CardDirectoryTool
 					appLogo={<ConfluenceLogo size="medium" />}
 					description="Create, search, and update pages across your Confluence sites."
@@ -115,6 +126,32 @@ export function EntityCardDemoSkills() {
 				publisher="Atlassian"
 				starCount={120}
 				teammateCount={4100}
+			/>
+		</div>
+	);
+}
+
+export function EntityCardDemoApps() {
+	return (
+		<div className="w-full max-w-2xl columns-1 gap-3 sm:columns-2 [&>*]:mb-3 [&>*]:break-inside-avoid">
+			<CardDirectoryApp
+				appLogo={<ConfluenceLogo size="medium" />}
+				description="Create, search, and update pages across your Confluence sites."
+				knowledgeCount={4}
+				name="Confluence"
+				onMoreActions={() => {}}
+				onSelect={() => {}}
+				teammateCount={258}
+				toolCount={36}
+			/>
+			<CardDirectoryApp
+				appLogo={<Image alt="" aria-hidden height={32} src="/3p/slack/32.svg" width={32} />}
+				description="Send messages and search conversations from your workspace."
+				name="Slack"
+				onMoreActions={() => {}}
+				onSelect={() => {}}
+				teammateCount={540}
+				toolCount={12}
 			/>
 		</div>
 	);

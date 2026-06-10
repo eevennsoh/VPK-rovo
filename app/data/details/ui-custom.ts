@@ -517,7 +517,7 @@ import { SidebarNavItem, SidebarNavItemAction, SidebarNavItemCount } from "@/com
 
 	"entity-card": {
 		description:
-			"Shared entity-card visual system for skills, tools, agents, templates, knowledge, and object tiles. Use CardDirectory adapters for embedded grids, or compose EntityCard variants directly inside HoverCardContent for hover previews.",
+			"Shared entity-card visual system for skills, apps, tools, agents, templates, knowledge, and object tiles. Use CardDirectory adapters for embedded grids, or compose EntityCard variants directly inside HoverCardContent for hover previews.",
 		usage: `import { CardDirectorySkill } from "@/components/ui-custom/card-directory"
 import PageIcon from "@atlaskit/icon/core/page"
 
@@ -562,6 +562,10 @@ import PageIcon from "@atlaskit/icon/core/page"
 				description: "Directory shell adapter for skill cards.",
 			},
 			{
+				name: "CardDirectoryApp",
+				description: "Directory shell adapter for app cards.",
+			},
+			{
 				name: "CardDirectoryTool",
 				description: "Directory shell adapter for tool cards.",
 			},
@@ -576,6 +580,10 @@ import PageIcon from "@atlaskit/icon/core/page"
 			{
 				name: "EntityCard.Skill",
 				description: "Skill entity visual for directory cards and hover previews.",
+			},
+			{
+				name: "EntityCard.App",
+				description: "App entity visual with app identity, tools, knowledge, and teammate metadata.",
 			},
 			{
 				name: "EntityCard.Tool",
@@ -608,6 +616,11 @@ import PageIcon from "@atlaskit/icon/core/page"
 				title: "Skills",
 				description: "Skill cards through the CardDirectorySkill adapter.",
 				demoSlug: "entity-card-demo-skills",
+			},
+			{
+				title: "Apps",
+				description: "App cards through the CardDirectoryApp adapter.",
+				demoSlug: "entity-card-demo-apps",
 			},
 			{
 				title: "Tools",
@@ -726,11 +739,12 @@ import SearchIcon from "@atlaskit/icon/core/search"
 
 	"card-directory": {
 		description:
-			"A directory listing card with a shared shell (bordered surface, hover elevation, optional keyboard-operable button) and six ready-made variants that swap the leading visual and footer: agent (hexagon avatar + rating/chats), agent (expanded) (cover banner + \"Works with\" sources, \"Skills\" tags, a scrollable feature list, and a metadata + collaborator-avatar footer), skill (icon tile + publisher + views), tool (app logo + tool/teammate counts), knowledge (app identity + provider metadata), and template (rich icon + \"Works with\" sources and \"Skills\" tags). Compose your own layout with the CardDirectory parts, or use a variant wrapper. Passing onSelect turns the card into a keyboard-operable button; onMoreActions reveals an overflow button on hover/focus.",
+			"A directory listing card with a shared shell (bordered surface, hover elevation, optional keyboard-operable button) and seven ready-made variants that swap the leading visual and footer: agent (hexagon avatar + rating/chats), agent (expanded) (cover banner + \"Works with\" sources, \"Skills\" tags, a scrollable feature list, and a metadata + collaborator-avatar footer), skill (icon tile + publisher + star/teammate counts), app (app logo + tool/knowledge/teammate counts), tool (app logo + tool/teammate counts), knowledge (app identity + provider metadata), and template (rich icon + \"Works with\" sources and \"Skills\" tags). Compose your own layout with the CardDirectory parts, or use a variant wrapper. Passing onSelect turns the card into a keyboard-operable button; onMoreActions reveals an overflow button on hover/focus.",
 		usage: `import {
   CardDirectoryAgent,
   CardDirectoryAgentExpanded,
   CardDirectorySkill,
+  CardDirectoryApp,
   CardDirectoryTool,
   CardDirectoryKnowledge,
   CardDirectoryTemplate,
@@ -785,7 +799,7 @@ import { ConfluenceLogo } from "@/components/ui/logo";
   onMoreActions={() => openMenu()}
 />
 
-// Skill — icon tile + byline attribution + star/view counts
+// Skill — icon tile + byline attribution + star/teammate counts
 <CardDirectorySkill
   name="Create page"
   icon={<PageIcon label="" />}
@@ -795,6 +809,17 @@ import { ConfluenceLogo } from "@/components/ui/logo";
   starCount={38}
   teammateCount={6273}
   onSelect={() => runSkill()}
+/>
+
+// App — app logo tile + tool/knowledge/teammate counts
+<CardDirectoryApp
+  name="Confluence"
+  appLogo={<ConfluenceLogo size="medium" />}
+  description="Create, search, and update pages."
+  toolCount={36}
+  knowledgeCount={4}
+  teammateCount={258}
+  onSelect={() => openApp()}
 />
 
 // Tool — app logo tile + tool/teammate counts
@@ -807,7 +832,7 @@ import { ConfluenceLogo } from "@/components/ui/logo";
   onSelect={() => openApp()}
 />
 
-// Knowledge — app identity, "By" byline, and star/view stats
+// Knowledge — app identity, "By" byline, and star/teammate stats
 <CardDirectoryKnowledge
   name="Google Drive"
   description="Bring in documents, folders, and shared files from Drive."

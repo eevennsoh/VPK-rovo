@@ -1,8 +1,9 @@
 "use client";
 
 import { type ReactNode } from "react";
-import WrenchIcon from "@atlaskit/icon-lab/core/wrench";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
+import BookWithBookmarkIcon from "@atlaskit/icon/core/book-with-bookmark";
+import WrenchIcon from "@atlaskit/icon-lab/core/wrench";
 
 import { Tile } from "@/components/ui/tile";
 import { cn } from "@/lib/utils";
@@ -15,11 +16,12 @@ import {
 	EntityCardStat,
 } from "./parts";
 
-export interface EntityCardToolProps {
+export interface EntityCardAppProps {
 	name: string;
 	appLogo: ReactNode;
 	description?: string;
 	toolCount?: number;
+	knowledgeCount?: number;
 	teammateCount?: number;
 	active?: boolean;
 	action?: ReactNode;
@@ -27,22 +29,24 @@ export interface EntityCardToolProps {
 	className?: string;
 }
 
-export function EntityCardTool({
+export function EntityCardApp({
 	name,
 	appLogo,
 	description,
 	toolCount,
+	knowledgeCount,
 	teammateCount,
 	active = false,
 	action,
 	onMoreActions,
 	className,
-}: Readonly<EntityCardToolProps>) {
+}: Readonly<EntityCardAppProps>) {
 	const showTools = typeof toolCount === "number";
+	const showKnowledge = typeof knowledgeCount === "number";
 	const showTeammates = typeof teammateCount === "number";
 
 	return (
-		<div data-slot="entity-card-tool" className={cn("contents", className)}>
+		<div data-slot="entity-card-app" className={cn("contents", className)}>
 			<div className="flex flex-col gap-2">
 				<EntityCardHeader
 					action={
@@ -50,10 +54,6 @@ export function EntityCardTool({
 							<EntityCardMoreButton active={active} label={`More actions for ${name}`} onClick={onMoreActions} />
 						) : null)
 					}
-					// Tool cards have no "By" attribution, but agent/skill/knowledge
-					// cards do. `reserveByline` keeps the header the same height as a
-					// title + byline header (so the cards line up) WITHOUT inserting a
-					// visible row — the logo + title stay vertically centered.
 					reserveByline
 					leading={
 						<Tile isInset={false} label={name} size="medium" variant="transparent">
@@ -68,13 +68,20 @@ export function EntityCardTool({
 				</EntityCardDescription>
 			</div>
 
-			{showTools || showTeammates ? (
+			{showTools || showKnowledge || showTeammates ? (
 				<EntityCardFooter>
 					{showTools ? (
 						<EntityCardStat
 							icon={<WrenchIcon label="" size="small" spacing="none" color="currentColor" />}
 						>
 							{toolCount} tools
+						</EntityCardStat>
+					) : null}
+					{showKnowledge ? (
+						<EntityCardStat
+							icon={<BookWithBookmarkIcon label="" size="small" spacing="none" color="currentColor" />}
+						>
+							{knowledgeCount} knowledge
 						</EntityCardStat>
 					) : null}
 					{showTeammates ? (

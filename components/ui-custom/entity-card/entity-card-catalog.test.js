@@ -30,12 +30,14 @@ test("Entity Card docs and demo use CardDirectory adapters instead of the SkillC
 	assert.match(DETAILS_SOURCE, /<CardDirectorySkill/u);
 	assert.doesNotMatch(DETAILS_SOURCE, /from "@\/components\/ui-custom\/skill-card"/u);
 	assert.match(DEMO_SOURCE, /CardDirectorySkill/u);
+	assert.match(DEMO_SOURCE, /CardDirectoryApp/u);
 	assert.match(DEMO_SOURCE, /CardDirectoryTool/u);
 	assert.match(DEMO_SOURCE, /CardDirectoryAgent/u);
 	assert.match(DEMO_SOURCE, /CardDirectoryKnowledge/u);
 	assert.doesNotMatch(DEMO_SOURCE, /SkillCard/u);
 	for (const demoSlug of [
 		"entity-card-demo-skills",
+		"entity-card-demo-apps",
 		"entity-card-demo-tools",
 		"entity-card-demo-agents",
 		"entity-card-demo-knowledge",

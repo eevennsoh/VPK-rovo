@@ -7,49 +7,55 @@ function readProjectFile(relativePath) {
 	return fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
 }
 
-test("Tools Directory is exposed as a website block", () => {
+test("Apps Directory is exposed as a website block", () => {
 	assert.match(
 		readProjectFile("app/data/components.ts"),
-		/blockComponent\("tools-directory", "Tools Directory"\)/u,
+		/blockComponent\("apps-directory", "Apps Directory"\)/u,
 	);
 	assert.match(
 		readProjectFile("app/data/component-manifest.ts"),
-		/blockComponent\("tools-directory", "Tools Directory"\)/u,
+		/blockComponent\("apps-directory", "Apps Directory"\)/u,
 	);
 	assert.match(
 		readProjectFile("app/data/details/blocks.ts"),
-		/import \{ ToolsDirectoryDialog \} from "@\/components\/blocks\/tools-directory";/u,
+		/import \{ AppsDirectoryDialog \} from "@\/components\/blocks\/apps-directory";/u,
 	);
 	assert.match(
 		readProjectFile("components/website/registry.ts"),
-		/"tools-directory": dynamic\(\s*\(\) => import\("\.\/demos\/blocks\/tools-directory-demo"\)/u,
+		/"apps-directory": dynamic\(\s*\(\) => import\("\.\/demos\/blocks\/apps-directory-demo"\)/u,
 	);
 });
 
-test("Tools Directory docs demo starts closed until the trigger is clicked", () => {
+test("Apps Directory docs demo starts closed until the trigger is clicked", () => {
 	assert.match(
-		readProjectFile("components/blocks/tools-directory/page.tsx"),
+		readProjectFile("components/blocks/apps-directory/page.tsx"),
 		/const \[open, setOpen\] = useState\(false\);/u,
 	);
 });
 
-test("Tools Directory owns the Figma modal instead of wrapping AgentBrowserDialog", () => {
-	const source = readProjectFile("components/blocks/tools-directory/components/tools-directory.tsx");
-	const cardDirectoryToolSource = readProjectFile("components/ui-custom/card-directory/card-directory-tool.tsx");
-	const entityCardToolSource = readProjectFile("components/ui-custom/entity-card/tool.tsx");
+test("Apps Directory owns the Figma modal instead of wrapping AgentBrowserDialog", () => {
+	const source = readProjectFile("components/blocks/apps-directory/components/apps-directory.tsx");
+	const cardDirectoryAppSource = readProjectFile("components/ui-custom/card-directory/card-directory-app.tsx");
+	const entityCardAppSource = readProjectFile("components/ui-custom/entity-card/app.tsx");
 
 	assert.doesNotMatch(source, /AgentBrowserDialog/u);
 	assert.match(source, /className="grid h-\[min\(768px,calc\(100svh-2rem\)\)\][\s\S]*sm:!max-w-\[1200px\]"/u);
-	assert.match(source, /New tool/u);
+	assert.match(source, /New app/u);
 	assert.match(source, /onBack=\{selectedTool \? \(\) => setSelectedToolId\(null\) : undefined\}/u);
-	assert.match(source, /aria-label="Back to tools"[\s\S]*size="icon"[\s\S]*<ArrowLeftIcon label="" color="currentColor" \/>/u);
+	assert.match(source, /onAddTool=\{selectedTool && !addedIds\.has\(selectedTool\.id\) \? \(\) => handleAddTool\(selectedTool\) : undefined\}/u);
+	assert.match(source, /onRemoveTool=\{selectedTool && addedIds\.has\(selectedTool\.id\) \? \(\) => handleRemoveTool\(selectedTool\) : undefined\}/u);
+	assert.match(source, /aria-label="Back to apps"[\s\S]*size="icon"[\s\S]*<ArrowLeftIcon label="" color="currentColor" \/>/u);
 	assert.doesNotMatch(source, />\s*Back\s*</u);
-	assert.match(source, /Search for a tool by name, or describe it/u);
+	assert.match(source, /Search for an app by name, or describe it/u);
 	assert.match(source, /Sort by latest/u);
 	assert.match(source, /Showing \{filteredTools\.length\.toLocaleString\("en-US"\)\} results/u);
-	assert.match(source, /<ToolCard onSelectTool=\{onSelectTool\} tool=\{tool\} \/>/u);
+	assert.match(source, /<AppCard onSelectTool=\{onSelectTool\} tool=\{tool\} \/>/u);
 	assert.match(source, /const \[moreMenuOpen, setMoreMenuOpen\] = useState\(false\);/u);
-	assert.match(source, /<CardDirectoryTool[\s\S]*active=\{moreMenuOpen\}[\s\S]*moreAction=\{[\s\S]*<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
+	assert.match(source, /import \{ CardDirectoryApp \} from "@\/components\/ui-custom\/card-directory";/u);
+	assert.match(source, /const knowledgeApp = findKnowledgeAppForTool\(tool\);/u);
+	assert.match(source, /<CardDirectoryApp[\s\S]*active=\{moreMenuOpen\}[\s\S]*moreAction=\{[\s\S]*<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
+	assert.match(source, /knowledgeCount=\{knowledgeApp\?\.contents\.length\}/u);
+	assert.doesNotMatch(source, /<CardDirectoryTool/u);
 	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
 	assert.match(source, /className="min-h-\[102px\] hover:border-transparent"/u);
 	assert.match(source, /import \{ AtlassianLogo, CustomLogo \} from "@\/components\/ui\/logo";/u);
@@ -71,11 +77,11 @@ test("Tools Directory owns the Figma modal instead of wrapping AgentBrowserDialo
 	assert.match(source, /const sidebarOverflow = useHasVerticalOverflow<HTMLElement>\(\);/u);
 	assert.match(source, /aria-label="Tool categories"[\s\S]*sidebarOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"[\s\S]*ref=\{sidebarOverflow\.ref\}/u);
 	assert.match(source, /className="hidden min-h-0 w-\[280px\] shrink-0 overflow-y-auto pl-6 md:block"/u);
-	assert.match(cardDirectoryToolSource, /<CardDirectory active=\{active\} className=\{cn\("gap-4", className\)\}/u);
-	assert.match(cardDirectoryToolSource, /<EntityCard\.Tool/u);
-	assert.match(cardDirectoryToolSource, /action=\{moreAction\}/u);
-	assert.match(cardDirectoryToolSource, /onMoreActions=\{onMoreActions\}/u);
-	assert.match(entityCardToolSource, /<EntityCardMoreButton active=\{active\}/u);
+	assert.match(cardDirectoryAppSource, /<CardDirectory active=\{active\} className=\{cn\("gap-4", className\)\}/u);
+	assert.match(cardDirectoryAppSource, /<EntityCard\.App/u);
+	assert.match(cardDirectoryAppSource, /action=\{moreAction\}/u);
+	assert.match(cardDirectoryAppSource, /onMoreActions=\{onMoreActions\}/u);
+	assert.match(entityCardAppSource, /<EntityCardMoreButton active=\{active\}/u);
 	assert.match(entityCardToolSource, /<div className="flex flex-col gap-2">[\s\S]*<EntityCardHeader[\s\S]*<EntityCardDescription>/u);
 	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /scrollTop > 1/u);
 	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /showTopScrollMask: hasVerticalOverflow && hasScrolledFromTop/u);
@@ -84,11 +90,11 @@ test("Tools Directory owns the Figma modal instead of wrapping AgentBrowserDialo
 	assert.doesNotMatch(source, /overflow-y-auto pl-6 pt-6/u);
 });
 
-test("Tools Directory keeps compatible types while adding tool detail fields", () => {
+test("Apps Directory keeps compatible types while adding tool detail fields", () => {
 	// The tool type is now owned by the data layer (single type identity) and
 	// re-exported from the component module for existing callers.
 	const loaderSource = readProjectFile("app/data/directory/tools.ts");
-	const componentSource = readProjectFile("components/blocks/tools-directory/components/tools-directory.tsx");
+	const componentSource = readProjectFile("components/blocks/apps-directory/components/apps-directory.tsx");
 
 	assert.match(loaderSource, /export interface ToolsDirectoryTool/u);
 	// The loader interface mirrors AgentBrowserAgent's identity fields...
@@ -115,13 +121,13 @@ test("Tools Directory keeps compatible types while adding tool detail fields", (
 	// sidebar-group alias to AgentBrowserSidebarGroup.
 	assert.match(
 		componentSource,
-		/export type \{ ToolsDirectoryPermission, ToolsDirectoryTool \} from "@\/app\/data\/directory\/tools";/u,
+		/ToolsDirectoryPermission as AppsDirectoryPermission,[\s\S]*ToolsDirectoryTool as AppsDirectoryTool,/u,
 	);
-	assert.match(componentSource, /export type ToolsDirectorySidebarGroup = AgentBrowserSidebarGroup;/u);
+	assert.match(componentSource, /export type AppsDirectorySidebarGroup = AgentBrowserSidebarGroup;/u);
 });
 
-test("Tools Directory supports controlled and uncontrolled added tool state", () => {
-	const source = readProjectFile("components/blocks/tools-directory/components/tools-directory.tsx");
+test("Apps Directory supports controlled and uncontrolled added tool state", () => {
+	const source = readProjectFile("components/blocks/apps-directory/components/apps-directory.tsx");
 
 	assert.match(source, /addedToolIds\?: readonly string\[\];/u);
 	assert.match(source, /defaultAddedToolIds\?: readonly string\[\];/u);
@@ -130,14 +136,18 @@ test("Tools Directory supports controlled and uncontrolled added tool state", ()
 	assert.match(source, /onAddedToolIdsChange\?\.\(\[\.\.\.nextAddedIds\]\);/u);
 	assert.match(source, /Add to agent/u);
 	assert.match(source, /Remove/u);
-	assert.match(source, /<Button variant="destructive" onClick=\{onRemoveTool\} type="button">[\s\S]*<DeleteIcon label="" size="small" \/>[\s\S]*Remove/u);
+	assert.match(source, /\{onRemoveTool \? \([\s\S]*<Button variant="destructive" onClick=\{onRemoveTool\} type="button">[\s\S]*<DeleteIcon label="" size="small" \/>[\s\S]*Remove[\s\S]*\) : onAddTool \? \([\s\S]*<Button onClick=\{onAddTool\} type="button">[\s\S]*Add to agent[\s\S]*\) : \([\s\S]*New app/u);
+	assert.match(source, /<ToolDetailView[\s\S]*added=\{addedIds\.has\(selectedTool\.id\)\}[\s\S]*onCheckGroup=\{\(permissions\) => checkPermissionGroup\(selectedTool, permissions\)\}[\s\S]*onPermissionChange=\{\(permissionId, checked\) => setPermission\(selectedTool, permissionId, checked\)\}[\s\S]*permissionSelections=\{permissionSelections\[selectedTool\.id\] \?\? \{\}\}[\s\S]*tool=\{selectedTool\}[\s\S]*\/>/u);
+	assert.doesNotMatch(source, /<ToolDetailView[\s\S]*onAddTool=\{\(\) => handleAddTool\(selectedTool\)\}/u);
+	assert.doesNotMatch(source, /<ToolDetailView[\s\S]*onRemoveTool=\{\(\) => handleRemoveTool\(selectedTool\)\}/u);
+	assert.doesNotMatch(source, /\{added \? null : \(/u);
 	assert.match(source, /const presentation = resolveBrandLogoPresentation\(src\);[\s\S]*presentation\.hasBorder && src\.startsWith\("\/3p\/"\)[\s\S]*<Image[\s\S]*src=\{presentation\.src\}/u);
 	assert.doesNotMatch(source, /size="sm"/u);
 	assert.doesNotMatch(source, /className="h-px bg-border"/u);
 });
 
-test("Tools Directory category data follows the requested category content", () => {
-	const source = readProjectFile("components/blocks/tools-directory/data/categories.ts");
+test("Apps Directory category data follows the requested category content", () => {
+	const source = readProjectFile("components/blocks/apps-directory/data/categories.ts");
 
 	for (const label of [
 		"Project management",
@@ -157,13 +167,13 @@ test("Tools Directory category data follows the requested category content", () 
 	assert.match(source, /Apps for CRM, lead tracking, and customer engagement\./u);
 });
 
-test("Tools Directory docs demo includes added and non-added detail states", () => {
-	const source = readProjectFile("components/blocks/tools-directory/page.tsx");
-	const componentSource = readProjectFile("components/blocks/tools-directory/components/tools-directory.tsx");
+test("Apps Directory docs demo includes added and non-added detail states", () => {
+	const source = readProjectFile("components/blocks/apps-directory/page.tsx");
+	const componentSource = readProjectFile("components/blocks/apps-directory/components/apps-directory.tsx");
 	// Tool data is now the single-source-of-truth JSON catalog (two groups).
 	const toolsData = JSON.parse(readProjectFile("app/data/directory/tools.json"));
 	const allTools = [...toolsData.tools, ...toolsData.sessionTools];
-	const sidebarGroupsSource = readProjectFile("components/blocks/tools-directory/data/sidebar-groups.ts");
+	const sidebarGroupsSource = readProjectFile("components/blocks/apps-directory/data/sidebar-groups.ts");
 
 	assert.match(source, /import \{ DEMO_SESSION_TOOLS, DEMO_TOOLS \} from "@\/app\/data\/directory\/tools";/u);
 	assert.match(source, /defaultAddedToolIds=\{\["atlassian"\]\}/u);
@@ -180,8 +190,24 @@ test("Tools Directory docs demo includes added and non-added detail states", () 
 			`a tool should be in the ${categoryId} category`,
 		);
 	}
-	assert.match(componentSource, /label: "Favourite tools"/u);
+	assert.match(componentSource, /label: "Favourite apps"/u);
 	assert.match(componentSource, /if \(activeCategory === "favorite-tools" && !tool\.favorite\) return false;/u);
+	assert.match(componentSource, /aria-label="Knowledge"/u);
+	assert.match(componentSource, /<KnowledgeContentModeSelector mode=\{mode\} onSelectMode=\{onSelectMode\} \/>/u);
+	assert.match(componentSource, /const badgeLabel = mode === "all"[\s\S]*\? "All"[\s\S]*: mode === "none"[\s\S]*\? "None"[\s\S]*: selectedContentCount;/u);
+	assert.match(componentSource, /<Badge max=\{false\}>\{badgeLabel\}<\/Badge>/u);
+	assert.match(componentSource, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
+	assert.match(componentSource, /<ToggleGroup[\s\S]*aria-label="Knowledge content mode"[\s\S]*value=\{\[mode\]\}[\s\S]*variant="outline"/u);
+	assert.match(componentSource, /All content/u);
+	assert.match(componentSource, /aria-label="Custom content"[\s\S]*value="custom"[\s\S]*Select content/u);
+	assert.doesNotMatch(componentSource, /mode === "custom" \? "Select content" : "Custom content"/u);
+	assert.match(componentSource, /aria-label="No knowledge"[\s\S]*value="none"[\s\S]*None/u);
+	assert.match(componentSource, /if \(nextMode === "none"\) \{[\s\S]*setSelectedKnowledgeContentIds\(\[\]\);[\s\S]*return;/u);
+	assert.match(componentSource, /Search for content by name, or describe it/u);
+	assert.match(componentSource, /<SelectedKnowledgeContentList/u);
+	assert.match(componentSource, /aria-label=\{`Remove \$\{content\.name\}`\}[\s\S]*className="hover:bg-bg-danger hover:text-text-danger hover:\[&_svg\]:text-icon-danger active:bg-bg-danger-pressed active:\[&_svg\]:text-icon-danger focus-visible:border-border-danger"[\s\S]*size="icon"[\s\S]*<DeleteIcon label="" color="currentColor" \/>/u);
+	assert.doesNotMatch(componentSource, /<DeleteIcon label="" size="small" color="currentColor" \/>/u);
+	assert.match(componentSource, /resolveDirectoryVisual\(content\.visual\)/u);
 	assert.match(componentSource, /teammateCount=\{tool\.teammateCount\}/u);
 	assert.match(componentSource, /toolCount=\{tool\.toolCount\}/u);
 	assert.match(componentSource, /<p className="flex items-center gap-1">[\s\S]*<span>By<\/span>[\s\S]*<span className="truncate text-link">\{publisher\}<\/span>[\s\S]*StatusVerifiedIcon label="Verified"/u);
@@ -192,9 +218,9 @@ test("Tools Directory docs demo includes added and non-added detail states", () 
 	assert.doesNotMatch(componentSource, /toolCount=\{tool\.toolCount \?\? 36\}/u);
 	assert.match(componentSource, /const MAX_VISIBLE_CATEGORY_ITEMS = 5;/u);
 	assert.match(componentSource, /const \[showAllCategories, setShowAllCategories\] = useState\(false\);/u);
-	assert.match(componentSource, /TOOLS_DIRECTORY_CATEGORIES\.slice\(0, MAX_VISIBLE_CATEGORY_ITEMS\)/u);
+	assert.match(componentSource, /APPS_DIRECTORY_CATEGORIES\.slice\(0, MAX_VISIBLE_CATEGORY_ITEMS\)/u);
 	assert.match(componentSource, /label="Show all"[\s\S]*onClick=\{\(\) => setShowAllCategories\(true\)\}/u);
-	assert.match(componentSource, /sidebarGroups = DEFAULT_TOOLS_DIRECTORY_SIDEBAR_GROUPS/u);
+	assert.match(componentSource, /sidebarGroups = DEFAULT_APPS_DIRECTORY_SIDEBAR_GROUPS/u);
 	assert.match(sidebarGroupsSource, /title: "By companies"/u);
 	assert.doesNotMatch(sidebarGroupsSource, /title: "By teams"/u);
 	assert.doesNotMatch(sidebarGroupsSource, /title: "Favourites"/u);

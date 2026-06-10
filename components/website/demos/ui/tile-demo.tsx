@@ -1,5 +1,7 @@
 "use client";
 
+import SearchIcon from "@atlaskit/icon/core/search";
+
 import { Tile } from "@/components/ui/tile";
 import { RovoColorIcon } from "@/components/ui/logo";
 
@@ -31,22 +33,22 @@ export function TileDemoSizes() {
 	return (
 		<div className="flex items-end gap-3">
 			<Tile label="xxsmall" variant="blueSubtle" size="xxsmall">
-				🎉
+				<SearchIcon label="" color="currentColor" />
 			</Tile>
 			<Tile label="xsmall" variant="blueSubtle" size="xsmall">
-				🎉
+				<SearchIcon label="" color="currentColor" />
 			</Tile>
 			<Tile label="small" variant="blueSubtle" size="small">
-				🎉
+				<SearchIcon label="" color="currentColor" />
 			</Tile>
 			<Tile label="medium" variant="blueSubtle" size="medium">
-				🎉
+				<SearchIcon label="" color="currentColor" />
 			</Tile>
 			<Tile label="large" variant="blueSubtle" size="large">
-				🎉
+				<SearchIcon label="" color="currentColor" />
 			</Tile>
 			<Tile label="xlarge" variant="blueSubtle" size="xlarge">
-				🎉
+				<SearchIcon label="" color="currentColor" />
 			</Tile>
 		</div>
 	);

@@ -5421,6 +5421,10 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoSkills })),
     { ssr: false },
   ),
+  "entity-card-demo-apps": dynamic(
+    () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoApps })),
+    { ssr: false },
+  ),
   "entity-card-demo-tools": dynamic(
     () => import("./demos/ui-custom/entity-card-demo").then((mod) => ({ default: mod.EntityCardDemoTools })),
     { ssr: false },
@@ -6774,6 +6778,10 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
   ),
   "agent-templates": dynamic(
     () => import("./demos/blocks/agent-templates-demo"),
+    { ssr: false },
+  ),
+  "apps-directory": dynamic(
+    () => import("./demos/blocks/apps-directory-demo"),
     { ssr: false },
   ),
   "tools-directory": dynamic(
