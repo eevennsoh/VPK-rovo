@@ -576,6 +576,7 @@ export const VISUAL_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	visualComponent("visual-tracing", "Visual Tracing", "@/components/visual/visual-tracing"),
 	visualComponent("scroll-mask", "Scroll Mask", "@/components/visual/scroll-mask"),
 	visualComponent("text-effects", "Text Effects", "@/components/visual/text-effects"),
+	visualComponent("text-morphing", "Text Morphing", "@/components/visual/text-morphing"),
 	visualComponent("ascii", "ASCII", "@/components/website/demos/visual/shaders/ascii"),
 	visualComponent("bloom", "Bloom", "@/components/website/demos/visual/shader-lab-effect-demo"),
 	visualComponent("circuit-bent", "Circuit Bent", "@/components/website/demos/visual/shader-lab-effect-demo"),
