@@ -22,11 +22,11 @@ function getMarkLogoBranchSource() {
 }
 
 // The inline (non-menu) return is whatever follows the closing of the
-// `if (size === "menu") { ... }` block within the logo branch.
+// `if (isMenu) { ... }` block within the logo branch.
 function getInlineLogoReturn() {
 	const logoBranch = getMarkLogoBranchSource();
-	const menuIndex = logoBranch.indexOf('if (size === "menu")');
-	assert.ok(menuIndex > -1, "expected a size === menu guard before the inline return");
+	const menuIndex = logoBranch.indexOf("if (isMenu)");
+	assert.ok(menuIndex > -1, "expected an isMenu guard before the inline return");
 	const inlineReturnIndex = logoBranch.indexOf("\t\treturn (", menuIndex);
 	assert.ok(inlineReturnIndex > -1, "expected an inline return after the menu guard");
 	return logoBranch.slice(inlineReturnIndex);

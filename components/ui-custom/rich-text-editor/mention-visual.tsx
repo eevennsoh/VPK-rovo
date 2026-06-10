@@ -164,17 +164,24 @@ export function RichTextMentionVisualMark({
 	category?: RichTextMentionCategory;
 	className?: string;
 	label: string;
-	size?: "menu" | "pill" | "tag";
+	size?: "menu" | "menu-compact" | "pill" | "tag";
 	visual: RichTextMentionVisual;
 }>) {
 	// Inside a "tag" (mention token) every visual kind must occupy the SAME 16px
 	// box so avatars, images, logos, and icons line up — previously avatar=24px,
 	// image=20px, icon=12px, which misaligned the chips. "pill" already matches at
-	// 16px; "menu" (dropdown rows) stays larger.
-	const avatarSize = size === "menu" ? "default" : "xs";
-	const imageSizeClassName = size === "menu" ? "size-8" : "size-4";
+	// 16px. "menu" (directory rows / autocomplete) renders the full 32px mark.
+	// "menu-compact" renders a native 24px `small` mark for the 24px front slot in
+	// suggestion-menu / trigger picker rows — drawn natively, NOT a scaled-down
+	// 32px tile, so the glyph follows ADS's `small` Tile inset (14px) to match
+	// /components/ui/logo. Scaling a 32px tile to 75% freezes the `medium` inset
+	// and renders the glyph at 12px instead.
+	const isMenu = size === "menu" || size === "menu-compact";
+	const isCompactMenu = size === "menu-compact";
+	const avatarSize = isCompactMenu ? "sm" : size === "menu" ? "default" : "xs";
 	const logoSize = "xxsmall";
-	const menuTileSize = MENU_VISUAL_TILE_SIZE;
+	const menuTileSize = isCompactMenu ? "small" : MENU_VISUAL_TILE_SIZE;
+	const menuLogoBoxClassName = isCompactMenu ? "size-6" : "size-8";
 
 	if (visual.kind === "avatar") {
 		// Menu rows keep the avatar's semi-opaque border (matching the avatar demo);
@@ -182,7 +189,7 @@ export function RichTextMentionVisualMark({
 		return (
 			<Avatar
 				aria-hidden={true}
-				className={cn(size !== "menu" && "after:border-0", className)}
+				className={cn(!isMenu && "after:border-0", className)}
 				shape={visual.shape ?? (category === "subagent" ? "hexagon" : "circle")}
 				size={avatarSize}
 			>
@@ -199,7 +206,7 @@ export function RichTextMentionVisualMark({
 		// the tile, while bordered marks follow Tile's inset content scale. Inline
 		// chips (tag/pill) use the 16px `chip` frame where bordered 2P/3P marks
 		// read as a bare centered glyph.
-		return size === "menu" ? (
+		return isMenu ? (
 			<BrandLogoMark
 				className={className}
 				frame="tile"
@@ -214,26 +221,24 @@ export function RichTextMentionVisualMark({
 
 	if (visual.kind === "logo") {
 		// Most 1p product logos ship their own colored background, so in menu rows
-		// they render as the bare 32px lockup with no surface tile. The plain
-		// "atlassian" mark has no background fill, so it keeps the bordered
-		// `IconTile` (16px glyph in a 32px tile) so the stroked container stays
-		// while the content matches the 16px glyph of every other menu tile.
-		// Tags/pills keep the bare inline 16px logo.
-		if (size === "menu") {
+		// they render as the bare lockup with no surface tile. The plain
+		// "atlassian" mark has no background fill, so it keeps a bordered
+		// `IconTile` whose glyph follows the tile's inset scale (14px in a 24px
+		// `small` tile, 16px in a 32px `medium` tile), matching every other menu
+		// tile and /components/ui/logo. Tags/pills keep the bare inline 16px logo.
+		if (isMenu) {
 			if (visual.logoName === "atlassian") {
 				return (
 					<IconTile
 						aria-hidden={true}
-						// IconTile's `medium` variant clamps inner spans/svgs to 16px; the
+						// IconTile clamps inner spans/svgs to the tile's inset size; the
 						// Atlassian logo wraps its svg in spans, so this keeps the glyph at
-						// 16px inside the stroked tile, matching the other menu tiles.
+						// the inset scale (14px small / 16px medium) inside the stroked tile.
 						className={cn("border border-border bg-surface", className)}
 						icon={
 							<AtlassianLogo
 								name={visual.logoName}
-								// `@atlaskit/logo` sizes the glyph from this prop; the runtime
-								// accepts a numeric px string even though the type lists named sizes.
-								size={"16" as React.ComponentProps<typeof AtlassianLogo>["size"]}
+								size={menuTileSize}
 								themeAware
 								label={label}
 							/>
@@ -248,11 +253,12 @@ export function RichTextMentionVisualMark({
 				<span
 					aria-hidden="true"
 					className={cn(
-						"inline-flex size-8 shrink-0 items-center justify-center [&>span]:size-full! [&_svg]:size-full!",
+						"inline-flex shrink-0 items-center justify-center [&>span]:size-full! [&_svg]:size-full!",
+						menuLogoBoxClassName,
 						className,
 					)}
 				>
-					<AtlassianLogo name={visual.logoName} size="medium" themeAware label={label} />
+					<AtlassianLogo name={visual.logoName} size={menuTileSize} themeAware label={label} />
 				</span>
 			);
 		}
@@ -275,7 +281,7 @@ export function RichTextMentionVisualMark({
 	}
 
 	if (visual.kind === "icon") {
-		if (size === "menu") {
+		if (isMenu) {
 			return (
 				<IconTile
 					aria-hidden={true}

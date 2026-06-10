@@ -150,18 +150,19 @@ function getTriggerProviderVisual(icon: AgentTriggerProviderIcon): RichTextMenti
 /**
  * Picker-row front slot, identical to the editor palette's
  * `RichTextSuggestionMenuItemVisual`: a 24px box (`.rich-text-command-menu-avatar`)
- * wrapping the shared `RichTextMentionVisualMark` at `size="menu"`, scaled to
- * fill the slot. Reuses the palette's logo/image/icon rules verbatim.
+ * wrapping the shared `RichTextMentionVisualMark` at `size="menu-compact"`, which
+ * draws a native 24px `small` mark to fill the slot. Reuses the palette's
+ * logo/image/icon rules verbatim.
  */
 function TriggerProviderTileIcon({
 	icon,
 	label,
 }: Readonly<{ icon: AgentTriggerProviderIcon; label: string }>): ReactElement {
 	return (
-		<span className="rich-text-command-menu-avatar inline-flex shrink-0 items-center justify-center [&>*]:scale-75">
+		<span className="rich-text-command-menu-avatar inline-flex shrink-0 items-center justify-center">
 			<RichTextMentionVisualMark
 				label={label}
-				size="menu"
+				size="menu-compact"
 				visual={getTriggerProviderVisual(icon)}
 			/>
 		</span>

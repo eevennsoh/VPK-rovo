@@ -64,7 +64,7 @@ import { ArrowLeftIcon, ReturnIcon } from "@/components/ui/vpk-icons";
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import { cn } from "@/lib/utils";
 
-import { MENU_VISUAL_TILE_SIZE, RichTextMentionVisualMark } from "./mention-visual";
+import { RichTextMentionVisualMark } from "./mention-visual";
 import {
 	RICH_TEXT_REFERENCE_CATEGORY_OPTIONS,
 	getRichTextReferenceCategoryIcon,
@@ -885,19 +885,21 @@ function getSuggestionMenuItemStickyClassName(
 function RichTextSuggestionMenuItemVisual({
 	item,
 }: Readonly<{ item: RichTextSuggestionMenuItem }>) {
-	// Single front-slot size everywhere: the shared menu tiles are scaled to 24px
-	// (tile + glyph + corners) inside the 24px front-slot box defined in CSS via
-	// `.rich-text-command-menu-avatar`. The `[&>*]:scale-75` wrapper shrinks the
-	// 32px mark to fill the 24px box exactly.
+	// Single front-slot size everywhere: every shared menu tile is drawn natively
+	// at 24px (`small`) inside the 24px front-slot box defined in CSS via
+	// `.rich-text-command-menu-avatar`. Rendering natively (rather than scaling a
+	// 32px mark down to 75%) keeps the glyph on ADS's `small` Tile inset (14px),
+	// matching /components/ui/logo — a scaled 32px tile would freeze the `medium`
+	// inset and shrink the glyph to 12px.
 	const visual = item.visual ? (
 		<RichTextMentionVisualMark
 			label={item.label}
-			size="menu"
+			size="menu-compact"
 			visual={item.visual}
 		/>
 	) : (
 		<IconTile
-			size={MENU_VISUAL_TILE_SIZE}
+			size="small"
 			label={item.label}
 			aria-hidden={true}
 			className="border border-border bg-surface text-icon-subtlest"
@@ -906,7 +908,7 @@ function RichTextSuggestionMenuItemVisual({
 	);
 
 	return (
-		<span className="rich-text-command-menu-avatar inline-flex shrink-0 items-center justify-center [&>*]:scale-75">
+		<span className="rich-text-command-menu-avatar inline-flex shrink-0 items-center justify-center">
 			{visual}
 		</span>
 	);
