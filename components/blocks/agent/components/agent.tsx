@@ -281,13 +281,11 @@ function getAgentCompactEmptyConfigNavItems(config?: AgentConfigFormValue) {
 
 const MENTION_SOURCE_LIMIT = 24;
 
-// Studio instructions editor: "@" expands people / teams / subagents inline
-// (flat), while "/" keeps the Skills / Tools / Knowledge / Format drill-in
-// (nested). Hoisted so the editor's extension memo stays referentially stable.
-const AGENT_INSTRUCTIONS_SUGGESTION_VARIANT: RichTextSuggestionVariantConfig = {
-	mention: "flat",
-	command: "nested",
-};
+// Studio instructions editor uses the shared nested-first suggestion behavior:
+// bare "@" / "/" show parent categories, while top-level typing searches flat
+// across that trigger's full set. Hoisted so the editor's extension memo stays
+// referentially stable.
+const AGENT_INSTRUCTIONS_SUGGESTION_VARIANT: RichTextSuggestionVariantConfig = "nested";
 
 function toMentionId(category: RichTextMentionItem["category"], id: string): string {
 	return `${category}:${id.trim().replace(/\s+/g, "-")}`;

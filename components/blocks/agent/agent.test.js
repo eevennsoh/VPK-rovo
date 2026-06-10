@@ -818,10 +818,16 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ RovoColorIcon \} from "@\/components\/ui\/logo";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const ASK_ROVO_SLASH_ITEM: RichTextSuggestionMenuItem = \{[\s\S]*id: "ask-rovo",[\s\S]*label: "Ask Rovo",/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /includeFormat = true/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /variant: SuggestionVariant = "nested"/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /suggestionVariant = "nested"/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function shouldUseFlatSurface\(query: string\): boolean \{[\s\S]*return isFlat \|\| \(!activeCategory && query\.trim\(\)\.length > 0\);[\s\S]*\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /if \(shouldUseFlatSurface\(query\)\) \{[\s\S]*return buildFlatSurfaceRows\(getFlatSections\(\), query, expandedSections\);/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /return \[\s*ASK_ROVO_SLASH_ITEM,[\s\S]*\.\.\.getSlashCategoryOrder\(includeFormat\)\.map/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /buildFlatSurfaceRows\(getFlatSections\(\), query, expandedSections, \[ASK_ROVO_SLASH_ITEM\]\)/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /item\.id === ASK_ROVO_SLASH_ITEM\.id/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function getAskRovoHeader\(\): ReactNode \{[\s\S]*<RichTextCommandMenuSearchField[\s\S]*icon=\{ASK_ROVO_SLASH_ITEM\.icon\}[\s\S]*label=\{ASK_ROVO_SLASH_ITEM\.label\}[\s\S]*onSubmit=\{submitAskRovoPrompt\}[\s\S]*onValueChange=\{updateAskRovoPrompt\}[\s\S]*value=\{askRovoPrompt\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function getAskRovoHeader\(\): ReactNode \{[\s\S]*<RichTextCommandMenuSearchField[\s\S]*icon=\{ASK_ROVO_SLASH_ITEM\.icon\}[\s\S]*label=\{ASK_ROVO_SLASH_ITEM\.label\}[\s\S]*onEscape=\{dismissSuggestion\}[\s\S]*onSubmit=\{submitAskRovoPrompt\}[\s\S]*onValueChange=\{updateAskRovoPrompt\}[\s\S]*value=\{askRovoPrompt\}/u);
+	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /import \{ Suggestion, exitSuggestion \} from "@tiptap\/suggestion";/u);
+	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /\(editor\) => exitSuggestion\(editor\.view, slashCommandPluginKey\)/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function shouldHideSlashRowsForAskRovoPrompt\(\): boolean \{[\s\S]*askRovoPrompt\.trim\(\)\.length > 0/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const items = shouldHideSlashRowsForAskRovoPrompt\(\)[\s\S]*\? \[\][\s\S]*: getVisibleItems\(props\.query\);/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /header: isFlat \|\| !activeCategory \? getAskRovoHeader\(\) : undefined/u);
@@ -922,7 +928,7 @@ test("Slash command menu contains every toolbar command", () => {
 	// RichTextEditor prop (kept current through a ref so the memoized extensions
 	// never capture a stale closure).
 	assert.match(RICH_TEXT_TYPES_SOURCE, /onOpenDirectory\?: \(category: RichTextSlashCategory\) => void;/u);
-	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /createSlashSuggestionRenderer\([\s\S]*this\.options\.onOpenDirectory\)/u);
+	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /createSlashSuggestionRenderer\([\s\S]*this\.options\.onOpenDirectory,[\s\S]*\(editor\) => exitSuggestion\(editor\.view, slashCommandPluginKey\)/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onOpenDirectory\?: \(category: RichTextSlashCategory\) => void;/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onOpenDirectoryRef = useRef\(onOpenDirectory\)/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onOpenDirectoryRef\.current = onOpenDirectory;/u);
@@ -1094,7 +1100,7 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-description\b/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \.rich-text-command-menu-list \.menu-row-byline \{\s*pointer-events: none;/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*border-bottom/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*padding: 8px 6px 8px 12px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*height: 44px;[\s\S]*padding: 0 6px 0 12px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item \{[\s\S]*?height: 44px;/u);
 	// `[^}]*?` keeps this scoped to the nested item rule's own block so it can't
 	// leak into a later rule (flat / non-nested rows carry 6px vertical padding).
@@ -1107,15 +1113,19 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-title/u);
 	assert.match(EDITOR_PALETTE_MENTION_SOURCES, /toMentionId\("skill"/u);
 	assert.match(AGENT_SOURCE, /toMentionId\("knowledge"/u);
-	// Per-trigger suggestion variant: the Studio instructions editor keeps "@"
-	// flat (inline people/teams/subagents) while "/" is nested (Skills/Tools/
-	// Knowledge/Format drill-in). The extension resolves each trigger separately.
+	// Per-trigger suggestion variant support stays available, but the Studio
+	// instructions editor now uses the shared nested-first behavior for both
+	// "@" and "/" so bare triggers show categories and typing searches flat
+	// across the trigger's whole set.
+	const RICH_TEXT_TYPES_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/types.ts");
 	assert.match(RICH_TEXT_TYPES_SOURCE, /export type RichTextSuggestionVariantConfig =/u);
 	assert.match(RICH_TEXT_TYPES_SOURCE, /export function resolveMentionVariant\(/u);
 	assert.match(RICH_TEXT_TYPES_SOURCE, /export function resolveCommandVariant\(/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /resolveCommandVariant\(this\.options\.suggestionVariant\)/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /resolveMentionVariant\(options\.suggestionVariant\)/u);
-	assert.match(AGENT_SOURCE, /const AGENT_INSTRUCTIONS_SUGGESTION_VARIANT: RichTextSuggestionVariantConfig = \{\s*mention: "flat",\s*command: "nested",\s*\};/u);
+	assert.match(RICH_TEXT_TYPES_SOURCE, /return config\?\.mention \?\? "nested";/u);
+	assert.match(RICH_TEXT_TYPES_SOURCE, /return config\?\.command \?\? "nested";/u);
+	assert.match(AGENT_SOURCE, /const AGENT_INSTRUCTIONS_SUGGESTION_VARIANT: RichTextSuggestionVariantConfig = "nested";/u);
 	assert.match(AGENT_SOURCE, /suggestionVariant=\{AGENT_INSTRUCTIONS_SUGGESTION_VARIANT\}/u);
 
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-mention/u);
