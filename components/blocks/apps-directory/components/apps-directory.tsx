@@ -75,6 +75,12 @@ export interface AppsDirectoryDialogProps {
 	addedToolIds?: readonly string[];
 	defaultAddedToolIds?: readonly string[];
 	onAddedToolIdsChange?: (toolIds: readonly string[]) => void;
+	/**
+	 * Fired when an app is added from its detail view, carrying the per-app
+	 * knowledge selection (All / Select content / None) so callers can wire the
+	 * knowledge facet to match what the user chose rather than defaulting to all.
+	 */
+	onAddApp?: (payload: AppsDirectoryAddPayload) => void;
 	onCreateTool?: () => void;
 	onOpenChange: (open: boolean) => void;
 	onSelectTool?: (tool: AppsDirectoryTool) => void;
@@ -95,6 +101,13 @@ export interface AppsDirectoryDialogProps {
 const EMPTY_APPS_DIRECTORY_TOOLS: readonly AppsDirectoryTool[] = [];
 const MAX_VISIBLE_CATEGORY_ITEMS = 5;
 type AppsDirectoryKnowledgeMode = KnowledgeDirectoryMode | "none";
+
+/** Payload emitted by {@link AppsDirectoryDialogProps.onAddApp} on a detail-view add. */
+export interface AppsDirectoryAddPayload {
+	appId: string;
+	knowledgeMode: "all" | "custom" | "none";
+	knowledgeContentIds: readonly string[];
+}
 
 const PRIMARY_CATEGORIES = [
 	{ id: "all", label: "All" },
@@ -349,6 +362,7 @@ export function AppsDirectoryDialog({
 	addedToolIds,
 	defaultAddedToolIds = [],
 	onAddedToolIdsChange,
+	onAddApp,
 	onCreateTool,
 	onOpenChange,
 	onSelectTool,
@@ -381,6 +395,12 @@ export function AppsDirectoryDialog({
 		() => new Set(defaultAddedToolIds),
 	);
 	const [permissionSelections, setPermissionSelections] = useState<Record<string, Record<string, boolean>>>({});
+	// Per-app knowledge selection (All / Select content / None), mirrored up from
+	// the detail view so the header "Add to agent" can wire the chosen knowledge
+	// facet via onAddApp instead of always defaulting to "all content".
+	const [knowledgeSelections, setKnowledgeSelections] = useState<
+		Record<string, { mode: AppsDirectoryKnowledgeMode; contentIds: readonly string[] }>
+	>({});
 	const controlledAddedIds = typeof addedToolIds !== "undefined";
 	const addedIds = useMemo(
 		() => new Set(controlledAddedIds ? addedToolIds : uncontrolledAddedToolIds),
@@ -411,14 +431,45 @@ export function AppsDirectoryDialog({
 	}
 
 	function handleSelectTool(tool: AppsDirectoryTool): void {
+		// Clear any mirrored knowledge selection for this app so reopening it starts
+		// from the "all" default (matching ToolDetailView's reset-on-open effect).
+		setKnowledgeSelections((current) => {
+			if (!(tool.id in current)) {
+				return current;
+			}
+			const next = { ...current };
+			delete next[tool.id];
+			return next;
+		});
 		setSelectedToolId(tool.id);
 		onSelectTool?.(tool);
 	}
 
 	function handleAddTool(tool: AppsDirectoryTool): void {
+		// When a caller wants the per-app knowledge selection (config panel), emit it
+		// via onAddApp so the chosen mode/content drives the knowledge facet. The
+		// dialog's added state is controlled from the caller's config, so it reflects
+		// the change on the next render without a local set here.
+		if (onAddApp) {
+			const selection = knowledgeSelections[tool.id];
+			const hasKnowledge = Boolean(getKnowledgeAppForTool(tool));
+			onAddApp({
+				appId: tool.id,
+				knowledgeMode: hasKnowledge ? (selection?.mode ?? "all") : "none",
+				knowledgeContentIds: selection?.contentIds ?? [],
+			});
+			return;
+		}
 		const nextAddedIds = new Set(addedIds);
 		nextAddedIds.add(tool.id);
 		commitAddedToolIds(nextAddedIds);
+	}
+
+	function handleKnowledgeSelectionChange(
+		appId: string,
+		selection: { mode: AppsDirectoryKnowledgeMode; contentIds: readonly string[] },
+	): void {
+		setKnowledgeSelections((current) => ({ ...current, [appId]: selection }));
 	}
 
 	function handleRemoveTool(tool: AppsDirectoryTool): void {
@@ -470,6 +521,7 @@ export function AppsDirectoryDialog({
 						added={addedIds.has(selectedTool.id)}
 						onCheckGroup={(permissions) => checkPermissionGroup(selectedTool, permissions)}
 						onPermissionChange={(permissionId, checked) => setPermission(selectedTool, permissionId, checked)}
+						onKnowledgeSelectionChange={(selection) => handleKnowledgeSelectionChange(selectedTool.id, selection)}
 						permissionSelections={permissionSelections[selectedTool.id] ?? {}}
 						tool={selectedTool}
 					/>
@@ -867,6 +919,9 @@ interface ToolDetailViewProps {
 	added: boolean;
 	onCheckGroup: (permissions: readonly AppsDirectoryPermission[]) => void;
 	onPermissionChange: (permissionId: string, checked: boolean) => void;
+	onKnowledgeSelectionChange?: (
+		selection: { mode: AppsDirectoryKnowledgeMode; contentIds: readonly string[] },
+	) => void;
 	permissionSelections: Readonly<Record<string, boolean>>;
 	tool: AppsDirectoryTool;
 }
@@ -875,6 +930,7 @@ function ToolDetailView({
 	added,
 	onCheckGroup,
 	onPermissionChange,
+	onKnowledgeSelectionChange,
 	permissionSelections,
 	tool,
 }: Readonly<ToolDetailViewProps>) {
@@ -893,6 +949,10 @@ function ToolDetailView({
 		[knowledgeApp, selectedKnowledgeContentIds, knowledgeQuery],
 	);
 
+	// Reset local knowledge state when the viewed app changes. The dialog clears
+	// its mirrored selection for the app on open, so the absence of an entry means
+	// "all" — matching this default without reporting from an effect (which would
+	// loop on the parent's setState).
 	useEffect(() => {
 		setKnowledgeMode("all");
 		setKnowledgeQuery("");
@@ -902,23 +962,25 @@ function ToolDetailView({
 	function handleSelectKnowledgeMode(nextMode: AppsDirectoryKnowledgeMode): void {
 		setKnowledgeMode(nextMode);
 
+		let nextContentIds: readonly string[];
 		if (nextMode === "none") {
-			setSelectedKnowledgeContentIds([]);
-			return;
+			nextContentIds = [];
+		} else if (nextMode === "all") {
+			nextContentIds = getKnowledgeContentIds(knowledgeApp);
+		} else {
+			nextContentIds =
+				knowledgeApp && selectedKnowledgeContentIds.length === 0
+					? getKnowledgeContentIds(knowledgeApp)
+					: selectedKnowledgeContentIds;
 		}
-
-		if (nextMode === "all") {
-			setSelectedKnowledgeContentIds(getKnowledgeContentIds(knowledgeApp));
-			return;
-		}
-
-		if (knowledgeApp && selectedKnowledgeContentIds.length === 0) {
-			setSelectedKnowledgeContentIds(getKnowledgeContentIds(knowledgeApp));
-		}
+		setSelectedKnowledgeContentIds(nextContentIds);
+		onKnowledgeSelectionChange?.({ mode: nextMode, contentIds: nextContentIds });
 	}
 
 	function handleRemoveKnowledgeContent(contentId: string): void {
-		setSelectedKnowledgeContentIds((currentIds) => currentIds.filter((id) => id !== contentId));
+		const nextContentIds = selectedKnowledgeContentIds.filter((id) => id !== contentId);
+		setSelectedKnowledgeContentIds(nextContentIds);
+		onKnowledgeSelectionChange?.({ mode: knowledgeMode, contentIds: nextContentIds });
 	}
 
 	return (

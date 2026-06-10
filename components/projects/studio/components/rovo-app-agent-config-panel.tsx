@@ -14,7 +14,7 @@ import { DEFAULT_KNOWLEDGE_APPS } from "@/app/data/directory/knowledge";
 import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/blocks/skills-directory";
 import { DEFAULT_SKILLS } from "@/app/data/directory/skills";
 import { ToolsDirectoryDialog } from "@/components/blocks/tools-directory";
-import { AppsDirectoryDialog } from "@/components/blocks/apps-directory";
+import { AppsDirectoryDialog, type AppsDirectoryAddPayload } from "@/components/blocks/apps-directory";
 import { DEMO_SESSION_TOOLS, DEMO_TOOLS } from "@/app/data/directory/tools";
 import { DIRECTORY_APPS, getAppById } from "@/app/data/directory/apps";
 import {
@@ -370,8 +370,46 @@ export function RovoAppAgentConfigPanel({
 	}, [activeConfig]);
 	const handleDirectoryAppIdsChange = useCallback(
 		(nextIds: readonly string[]) => {
-			const previousIds = new Set(addedAppIds);
-			const addedIds = nextIds.filter((id) => !previousIds.has(id));
+			const nextIdSet = new Set(nextIds);
+			const previousIdSet = new Set(addedAppIds);
+			const addedIds = nextIds.filter((id) => !previousIdSet.has(id));
+			const removedIds = addedAppIds.filter((id) => !nextIdSet.has(id));
+
+			// Removing an app strips its canonical apps[] membership and the facets it
+			// contributed (tool name + "<App> - all content" knowledge). Without this,
+			// addedAppIds (derived from apps[]) would re-add the removed app next render.
+			if (removedIds.length > 0) {
+				const removeAppNames = new Set<string>();
+				const removeToolNames = new Set<string>();
+				const removeKnowledgeNames = new Set<string>();
+				for (const id of removedIds) {
+					const app = getAppById(id);
+					if (!app) {
+						continue;
+					}
+					removeAppNames.add(app.name.toLowerCase());
+					if (app.hasToolFacet) {
+						removeToolNames.add(app.name.toLowerCase());
+					}
+					if (app.hasKnowledgeFacet && app.knowledgeApp) {
+						// Strip both the app-level "all content" entry and any per-content
+						// names — the app may have been added with custom content selected.
+						removeKnowledgeNames.add(`${app.knowledgeApp.name} - all content`.toLowerCase());
+						for (const content of app.knowledgeApp.contents) {
+							removeKnowledgeNames.add(content.name.toLowerCase());
+						}
+					}
+				}
+				updateActiveConfig((config) => ({
+					...config,
+					apps: getListItems(config, "apps").filter((name) => !removeAppNames.has(name.trim().toLowerCase())),
+					tools: getListItems(config, "tools").filter((name) => !removeToolNames.has(name.trim().toLowerCase())),
+					knowledge: getListItems(config, "knowledge").filter(
+						(name) => !removeKnowledgeNames.has(name.trim().toLowerCase()),
+					),
+				}));
+			}
+
 			// Adding an app wires BOTH facets: the canonical apps[] membership plus
 			// its tool (name) and knowledge ("<App> - all content") so the existing
 			// generation/persistence consumers stay populated. appendListValues dedupes.
@@ -392,7 +430,36 @@ export function RovoAppAgentConfigPanel({
 				setActiveDirectory(null);
 			}
 		},
-		[appendListValues, addedAppIds],
+		[appendListValues, updateActiveConfig, addedAppIds],
+	);
+	const handleAddApp = useCallback(
+		(payload: AppsDirectoryAddPayload) => {
+			const app = getAppById(payload.appId);
+			if (!app) {
+				return;
+			}
+			appendListValues("apps", [app.name]);
+			if (app.hasToolFacet) {
+				appendListValues("tools", [app.name]);
+			}
+			// Honor the per-app knowledge selection from the dialog: "all" → the app's
+			// all-content entry, "custom" → the chosen content names, "none" → nothing.
+			if (app.hasKnowledgeFacet && app.knowledgeApp) {
+				if (payload.knowledgeMode === "all") {
+					appendListValues("knowledge", [`${app.knowledgeApp.name} - all content`]);
+				} else if (payload.knowledgeMode === "custom") {
+					const contentNameById = new Map(
+						app.knowledgeApp.contents.map((content) => [content.id, content.name]),
+					);
+					appendListValues(
+						"knowledge",
+						payload.knowledgeContentIds.map((id) => contentNameById.get(id) ?? id),
+					);
+				}
+			}
+			setActiveDirectory(null);
+		},
+		[appendListValues],
 	);
 	const handleAddKnowledge = useCallback(
 		(payload: KnowledgeDirectoryAddPayload) => {
@@ -778,6 +845,7 @@ export function RovoAppAgentConfigPanel({
 				initialSelectedToolId={directorySelectedAppId}
 				open={activeDirectory === "apps"}
 				onAddedToolIdsChange={handleDirectoryAppIdsChange}
+					onAddApp={handleAddApp}
 				onOpenChange={(open) => {
 					setActiveDirectory(open ? "apps" : null);
 					if (!open) {
