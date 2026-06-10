@@ -24,6 +24,7 @@ export {
 	CardDirectoryAgentExpanded,
 	type CardDirectoryAgentExpandedProps,
 } from "./card-directory-agent-expanded";
+export { CardDirectoryApp, type CardDirectoryAppProps } from "./card-directory-app";
 export { CardDirectorySkill, type CardDirectorySkillProps } from "./card-directory-skill";
 export { CardDirectoryTool, type CardDirectoryToolProps } from "./card-directory-tool";
 export {

@@ -3,6 +3,7 @@
 import { EntityCardAgent } from "./agent";
 import { EntityCardAgentExpanded } from "./agent-expanded";
 import { EntityCardAgentProfile } from "./agent-profile";
+import { EntityCardApp } from "./app";
 import { EntityCardKnowledge } from "./knowledge";
 import { EntityCardObjectTile } from "./object-tile";
 import {
@@ -23,6 +24,7 @@ import { EntityCardTool } from "./tool";
 export { EntityCardAgent, type EntityCardAgentProps } from "./agent";
 export { EntityCardAgentExpanded, type EntityCardAgentExpandedProps } from "./agent-expanded";
 export { EntityCardAgentProfile, type EntityCardAgentProfileProps } from "./agent-profile";
+export { EntityCardApp, type EntityCardAppProps } from "./app";
 export { EntityCardKnowledge, type EntityCardKnowledgeProps } from "./knowledge";
 export { EntityCardObjectTile, type EntityCardObjectTileProps } from "./object-tile";
 export {
@@ -63,6 +65,7 @@ export const EntityCard = {
 	Agent: EntityCardAgent,
 	AgentExpanded: EntityCardAgentExpanded,
 	AgentProfile: EntityCardAgentProfile,
+	App: EntityCardApp,
 	Knowledge: EntityCardKnowledge,
 	ObjectTile: EntityCardObjectTile,
 	Skill: EntityCardSkill,

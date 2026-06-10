@@ -10,12 +10,14 @@ const INTERACTION_SOURCE = read("use-card-interaction.ts");
 const PARTS_SOURCE = read("card-directory-parts.tsx");
 const AGENT_WRAPPER_SOURCE = read("card-directory-agent.tsx");
 const AGENT_EXPANDED_WRAPPER_SOURCE = read("card-directory-agent-expanded.tsx");
+const APP_WRAPPER_SOURCE = read("card-directory-app.tsx");
 const SKILL_WRAPPER_SOURCE = read("card-directory-skill.tsx");
 const TOOL_WRAPPER_SOURCE = read("card-directory-tool.tsx");
 const TEMPLATE_WRAPPER_SOURCE = read("card-directory-template.tsx");
 const KNOWLEDGE_WRAPPER_SOURCE = read("card-directory-knowledge.tsx");
 const AGENT_SOURCE = read(join("..", "entity-card", "agent.tsx"));
 const AGENT_EXPANDED_SOURCE = read(join("..", "entity-card", "agent-expanded.tsx"));
+const APP_SOURCE = read(join("..", "entity-card", "app.tsx"));
 const SKILL_SOURCE = read(join("..", "entity-card", "skill.tsx"));
 const TOOL_SOURCE = read(join("..", "entity-card", "tool.tsx"));
 const TEMPLATE_SOURCE = read(join("..", "entity-card", "template.tsx"));
@@ -249,15 +251,31 @@ test("capabilities label is optional and omitted when not provided", () => {
 test("skill variant uses a 32px icon tile, header byline, and a teammate stat", () => {
 	assert.match(SKILL_SOURCE, /IconTile/u);
 	assert.match(SKILL_SOURCE, /size="medium"/u);
-	// Star + "Used by X teammates" stats (people-group icon), not an eye/view count.
+	// Star + "X teammates" stats (people-group icon), not an eye/view count.
 	assert.match(SKILL_SOURCE, /@atlaskit\/icon\/core\/star-unstarred/u);
 	assert.match(SKILL_SOURCE, /@atlaskit\/icon\/core\/people-group/u);
-	assert.match(SKILL_SOURCE, /Used by \{formatCompact\(teammateCount\)\} teammates/u);
+	assert.match(SKILL_SOURCE, /\{formatCompact\(teammateCount\)\} teammates/u);
+	assert.doesNotMatch(SKILL_SOURCE, /Used by/u);
 	assert.doesNotMatch(SKILL_SOURCE, /@atlaskit\/icon\/core\/eye-open/u);
 	assert.match(SKILL_SOURCE, /EntityCardByline/u);
 	assert.match(SKILL_SOURCE, /byline=\{publisher \? <EntityCardByline publisher=\{publisher\} verified=\{verified\} \/> : undefined\}/u);
 	assert.doesNotMatch(SKILL_SOURCE, /className="justify-between"/u);
 	assert.doesNotMatch(SKILL_SOURCE, /publisherLogo \?\? null/u);
+});
+
+test("app variant mirrors the tool card layout with tool, knowledge, and teammate counts", () => {
+	assert.match(APP_SOURCE, /data-slot="entity-card-app"/u);
+	assert.match(APP_SOURCE, /@atlaskit\/icon-lab\/core\/wrench/u);
+	assert.match(APP_SOURCE, /@atlaskit\/icon\/core\/book-with-bookmark/u);
+	assert.match(APP_SOURCE, /@atlaskit\/icon\/core\/people-group/u);
+	assert.match(APP_SOURCE, /knowledgeCount\?: number/u);
+	assert.match(APP_SOURCE, /<Tile isInset=\{false\} label=\{name\} size="medium" variant="transparent">[\s\S]*\{appLogo\}/u);
+	assert.match(APP_SOURCE, /\{toolCount\} tools/u);
+	assert.match(APP_SOURCE, /\{knowledgeCount\} knowledge/u);
+	assert.match(APP_SOURCE, /\{teammateCount\} teammates/u);
+	assert.doesNotMatch(APP_SOURCE, /Used by/u);
+	assert.match(APP_WRAPPER_SOURCE, /<CardDirectory active=\{active\}/u);
+	assert.match(APP_WRAPPER_SOURCE, /<EntityCard\.App/u);
 });
 
 test("tool variant uses an app-logo tile with tool and teammate counts", () => {
@@ -269,6 +287,7 @@ test("tool variant uses an app-logo tile with tool and teammate counts", () => {
 	assert.match(TOOL_SOURCE, /<EntityCardMoreButton active=\{active\}/u);
 	assert.match(TOOL_SOURCE, /tools/u);
 	assert.match(TOOL_SOURCE, /teammates/u);
+	assert.doesNotMatch(TOOL_SOURCE, /Used by/u);
 	assert.doesNotMatch(TOOL_SOURCE, /EntityCardByline/u);
 });
 
@@ -290,12 +309,13 @@ test("knowledge variant renders app identity, a publisher byline, and star/teamm
 	// verified checkmark), mirroring the agent/skill cards.
 	assert.match(KNOWLEDGE_SOURCE, /byline=\{bylinePublisher \? <EntityCardByline publisher=\{bylinePublisher\} verified=\{verified\} \/> : undefined\}/u);
 	assert.match(KNOWLEDGE_SOURCE, /const bylinePublisher = publisher \?\? providerName/u);
-	// The metadata row shows star + "Used by X teammates" stats (people-group
+	// The metadata row shows star + "X teammates" stats (people-group
 	// icon), like the tool card — not an eye/view count or the raw provider name.
 	assert.match(KNOWLEDGE_SOURCE, /@atlaskit\/icon\/core\/star-unstarred/u);
 	assert.match(KNOWLEDGE_SOURCE, /@atlaskit\/icon\/core\/people-group/u);
 	assert.match(KNOWLEDGE_SOURCE, /formatCompact\(starCount\)/u);
-	assert.match(KNOWLEDGE_SOURCE, /Used by \{formatCompact\(teammateCount\)\} teammates/u);
+	assert.match(KNOWLEDGE_SOURCE, /\{formatCompact\(teammateCount\)\} teammates/u);
+	assert.doesNotMatch(KNOWLEDGE_SOURCE, /Used by/u);
 	assert.doesNotMatch(KNOWLEDGE_SOURCE, /@atlaskit\/icon\/core\/eye-open/u);
 	assert.doesNotMatch(KNOWLEDGE_SOURCE, /<EntityCardFooter>[\s\S]*<span>\{providerName\}<\/span>/u);
 	assert.match(KNOWLEDGE_WRAPPER_SOURCE, /className=\{cn\("gap-4", className\)\}/u);
@@ -324,6 +344,7 @@ test("barrel exports the shell, parts, and variant wrappers", () => {
 		"CardDirectoryCapabilities",
 		"CardDirectoryAgent",
 		"CardDirectoryAgentExpanded",
+		"CardDirectoryApp",
 		"CardDirectorySkill",
 		"CardDirectoryTool",
 		"CardDirectoryKnowledge",
@@ -339,6 +360,7 @@ test("entity-card namespace owns the visual card variants and parts", () => {
 		"Agent",
 		"AgentExpanded",
 		"AgentProfile",
+		"App",
 		"Knowledge",
 		"ObjectTile",
 		"Skill",
@@ -363,6 +385,8 @@ test("card-directory variants are shell adapters around entity-card content", ()
 	assert.match(AGENT_WRAPPER_SOURCE, /<EntityCard\.Agent/u);
 	assert.match(AGENT_EXPANDED_WRAPPER_SOURCE, /<CardDirectory[\s\S]*className=\{cn\("gap-0 overflow-clip p-0", className\)\}/u);
 	assert.match(AGENT_EXPANDED_WRAPPER_SOURCE, /<EntityCard\.AgentExpanded/u);
+	assert.match(APP_WRAPPER_SOURCE, /<CardDirectory active=\{active\}/u);
+	assert.match(APP_WRAPPER_SOURCE, /<EntityCard\.App/u);
 	assert.match(SKILL_WRAPPER_SOURCE, /<CardDirectory className=\{className\}/u);
 	assert.match(SKILL_WRAPPER_SOURCE, /<EntityCard\.Skill/u);
 	assert.match(TOOL_WRAPPER_SOURCE, /<CardDirectory active=\{active\}/u);

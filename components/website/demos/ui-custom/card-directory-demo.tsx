@@ -10,6 +10,7 @@ import {
 import {
 	CardDirectoryAgent,
 	CardDirectoryAgentExpanded,
+	CardDirectoryApp,
 	CardDirectoryKnowledge,
 	CardDirectorySkill,
 	CardDirectoryTemplate,
@@ -184,6 +185,19 @@ export default function CardDirectoryDemo() {
 					publisher="Atlassian"
 					starCount={120}
 					teammateCount={4100}
+				/>
+			</DemoSection>
+
+			<DemoSection title="App">
+				<CardDirectoryApp
+					appLogo={<ConfluenceLogo size="medium" />}
+					description="Create, search, and update pages across your Confluence sites."
+					knowledgeCount={4}
+					name="Confluence"
+					onMoreActions={() => {}}
+					onSelect={() => {}}
+					teammateCount={258}
+					toolCount={36}
 				/>
 			</DemoSection>
 

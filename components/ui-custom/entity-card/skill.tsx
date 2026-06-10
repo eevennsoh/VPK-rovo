@@ -200,7 +200,7 @@ export function EntityCardSkill({
 						<EntityCardStat
 							icon={<PeopleGroupIcon label="" size="small" spacing="none" color="currentColor" />}
 						>
-							Used by {formatCompact(teammateCount)} teammates
+							{formatCompact(teammateCount)} teammates
 						</EntityCardStat>
 					) : null}
 				</EntityCardFooter>

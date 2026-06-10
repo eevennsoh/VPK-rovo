@@ -28,11 +28,18 @@ import type {
 	AgentBrowserSidebarItem,
 } from "@/components/blocks/agent-browser";
 import type {
-	ToolsDirectoryPermission,
-	ToolsDirectoryTool,
+	ToolsDirectoryPermission as AppsDirectoryPermission,
+	ToolsDirectoryTool as AppsDirectoryTool,
 } from "@/app/data/directory/tools";
-import { TOOLS_DIRECTORY_CATEGORIES } from "@/components/blocks/tools-directory/data/categories";
-import { DEFAULT_TOOLS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/tools-directory/data/sidebar-groups";
+import {
+	DEFAULT_KNOWLEDGE_APPS,
+	type KnowledgeDirectoryApp,
+	type KnowledgeDirectoryContent,
+	type KnowledgeDirectoryMode,
+} from "@/app/data/directory/knowledge";
+import { resolveDirectoryVisual } from "@/app/data/directory/visual";
+import { APPS_DIRECTORY_CATEGORIES } from "@/components/blocks/apps-directory/data/categories";
+import { DEFAULT_APPS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/apps-directory/data/sidebar-groups";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -49,31 +56,35 @@ import { AtlassianLogo, CustomLogo } from "@/components/ui/logo";
 import { AtlassianLogoGlyph, AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Switch } from "@/components/ui/switch";
 import { Tile } from "@/components/ui/tile";
-import { CardDirectoryTool } from "@/components/ui-custom/card-directory";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { CardDirectoryApp } from "@/components/ui-custom/card-directory";
+import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/mention-visual";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-// `ToolsDirectoryTool` and `ToolsDirectoryPermission` are owned by the data layer
-// (`@/app/data/directory/tools`) so JSON data and the directory UI share one type
-// identity. Re-exported here for existing callers that import them from this module.
-export type { ToolsDirectoryPermission, ToolsDirectoryTool } from "@/app/data/directory/tools";
+// Re-export the shared tools-directory data types under this block's API names
+// while Apps Directory intentionally mirrors Tools Directory.
+export type {
+	ToolsDirectoryPermission as AppsDirectoryPermission,
+	ToolsDirectoryTool as AppsDirectoryTool,
+} from "@/app/data/directory/tools";
 
-export type ToolsDirectorySidebarGroup = AgentBrowserSidebarGroup;
+export type AppsDirectorySidebarGroup = AgentBrowserSidebarGroup;
 
-export interface ToolsDirectoryDialogProps {
+export interface AppsDirectoryDialogProps {
 	addedToolIds?: readonly string[];
 	defaultAddedToolIds?: readonly string[];
 	onAddedToolIdsChange?: (toolIds: readonly string[]) => void;
 	onCreateTool?: () => void;
 	onOpenChange: (open: boolean) => void;
-	onSelectTool?: (tool: ToolsDirectoryTool) => void;
+	onSelectTool?: (tool: AppsDirectoryTool) => void;
 	open: boolean;
-	sessionTools?: readonly ToolsDirectoryTool[];
-	sidebarGroups?: readonly ToolsDirectorySidebarGroup[];
+	sessionTools?: readonly AppsDirectoryTool[];
+	sidebarGroups?: readonly AppsDirectorySidebarGroup[];
 	title?: string;
-	tools: readonly ToolsDirectoryTool[];
+	tools: readonly AppsDirectoryTool[];
 	/**
 	 * Tool to open directly in its detail view when the dialog opens. Lets callers
 	 * deep-link to a specific tool (e.g. clicking a tool chip in the agent config
@@ -83,16 +94,17 @@ export interface ToolsDirectoryDialogProps {
 	initialSelectedToolId?: string | null;
 }
 
-const EMPTY_TOOLS_DIRECTORY_TOOLS: readonly ToolsDirectoryTool[] = [];
+const EMPTY_APPS_DIRECTORY_TOOLS: readonly AppsDirectoryTool[] = [];
 const MAX_VISIBLE_CATEGORY_ITEMS = 5;
+type AppsDirectoryKnowledgeMode = KnowledgeDirectoryMode | "none";
 
 const PRIMARY_CATEGORIES = [
 	{ id: "all", label: "All" },
-	{ id: "favorite-tools", label: "Favourite tools" },
-	{ id: "my-tools", label: "My tools" },
+	{ id: "favorite-tools", label: "Favourite apps" },
+	{ id: "my-tools", label: "My apps" },
 ] as const;
 
-const DEFAULT_READ_ONLY_TOOLS: readonly ToolsDirectoryPermission[] = [
+const DEFAULT_READ_ONLY_TOOLS: readonly AppsDirectoryPermission[] = [
 	{
 		id: "search-projects",
 		name: "Search projects",
@@ -116,7 +128,7 @@ const DEFAULT_READ_ONLY_TOOLS: readonly ToolsDirectoryPermission[] = [
 	},
 ] as const;
 
-const DEFAULT_WRITE_DELETE_TOOLS: readonly ToolsDirectoryPermission[] = [
+const DEFAULT_WRITE_DELETE_TOOLS: readonly AppsDirectoryPermission[] = [
 	{
 		id: "create-tasks",
 		name: "Create tasks",
@@ -173,25 +185,25 @@ const CATEGORY_ICON_RENDERERS: Record<string, (label: string) => ReactNode> = {
 	"sales-and-customer-relations": (label) => <CartIcon label={label} size="small" color="currentColor" />,
 };
 
-function derivePublisher(tool: ToolsDirectoryTool): string {
+function derivePublisher(tool: AppsDirectoryTool): string {
 	if (tool.publisherName) return tool.publisherName;
 
 	const match = /\bby\s+(.+)$/i.exec(tool.byline);
 	return (match?.[1] ?? tool.byline).trim();
 }
 
-function isVerifiedTool(tool: ToolsDirectoryTool, publisher: string): boolean {
+function isVerifiedTool(tool: AppsDirectoryTool, publisher: string): boolean {
 	if (typeof tool.verified === "boolean") return tool.verified;
 	if (tool.attributionKind) return tool.attributionKind === "company";
 	return ["atlassian", "google", "github", "slack", "notion", "figma", "canva"].includes(publisher.toLowerCase());
 }
 
 function filterTools(
-	tools: readonly ToolsDirectoryTool[],
+	tools: readonly AppsDirectoryTool[],
 	query: string,
 	activeCategory: string,
 	addedIds: ReadonlySet<string>,
-): readonly ToolsDirectoryTool[] {
+): readonly AppsDirectoryTool[] {
 	const normalizedQuery = query.trim().toLowerCase();
 
 	return tools.filter((tool) => {
@@ -208,7 +220,7 @@ function filterTools(
 
 		if (!normalizedQuery) return true;
 
-		const category = TOOLS_DIRECTORY_CATEGORIES.find((item) => item.id === tool.categoryId);
+		const category = APPS_DIRECTORY_CATEGORIES.find((item) => item.id === tool.categoryId);
 		const haystack = [
 			tool.name,
 			tool.byline,
@@ -226,14 +238,14 @@ function filterTools(
 }
 
 function getSidebarGroupItems(
-	all: readonly ToolsDirectoryTool[],
-	group: ToolsDirectorySidebarGroup,
+	all: readonly AppsDirectoryTool[],
+	group: AppsDirectorySidebarGroup,
 ): readonly AgentBrowserSidebarItem[] {
 	if (group.items) return group.items;
 
 	return (group.agentIds ?? [])
 		.map((id) => all.find((tool) => tool.id === id))
-		.filter((tool): tool is ToolsDirectoryTool => Boolean(tool))
+		.filter((tool): tool is AppsDirectoryTool => Boolean(tool))
 		.map((tool) => ({
 			id: tool.id,
 			label: tool.name,
@@ -242,7 +254,7 @@ function getSidebarGroupItems(
 		}));
 }
 
-function getToolLogo(tool: ToolsDirectoryTool): ReactNode {
+function getToolLogo(tool: AppsDirectoryTool): ReactNode {
 	if (tool.logoName || tool.id === "atlassian") {
 		return <AtlassianLogoMark label={tool.name} name={tool.logoName ?? "atlassian"} size="medium" />;
 	}
@@ -251,7 +263,7 @@ function getToolLogo(tool: ToolsDirectoryTool): ReactNode {
 	return src ? <BrandLogoMark frame="tile" label={tool.name} size="medium" src={src} /> : null;
 }
 
-function getDetailLogo(tool: ToolsDirectoryTool): ReactNode {
+function getDetailLogo(tool: AppsDirectoryTool): ReactNode {
 	if (tool.logoName || tool.id === "atlassian") {
 		const logoName = tool.logoName ?? "atlassian";
 
@@ -292,22 +304,55 @@ function getDetailLogo(tool: ToolsDirectoryTool): ReactNode {
 	return <CustomLogo label={tool.name} size="xlarge" src={src} />;
 }
 
-function getPermissionGroups(tool: ToolsDirectoryTool) {
+function getPermissionGroups(tool: AppsDirectoryTool) {
 	return [
 		{
 			id: "read-only",
-			label: "Read-only tools",
+			label: "Read-only actions",
 			permissions: tool.readOnlyTools ?? DEFAULT_READ_ONLY_TOOLS,
 		},
 		{
 			id: "write-delete",
-			label: "Write / Delete tools",
+			label: "Write / Delete actions",
 			permissions: tool.writeDeleteTools ?? DEFAULT_WRITE_DELETE_TOOLS,
 		},
 	] as const;
 }
 
-export function ToolsDirectoryDialog({
+const EMPTY_KNOWLEDGE_CONTENT_IDS: readonly string[] = [];
+
+function getKnowledgeContentIds(app: KnowledgeDirectoryApp | null): readonly string[] {
+	return app?.contents.map((content) => content.id) ?? EMPTY_KNOWLEDGE_CONTENT_IDS;
+}
+
+function findKnowledgeAppForTool(tool: AppsDirectoryTool): KnowledgeDirectoryApp | undefined {
+	const normalizedToolName = tool.name.trim().toLowerCase();
+	return DEFAULT_KNOWLEDGE_APPS.find((app) => app.id === tool.id || app.name.trim().toLowerCase() === normalizedToolName);
+}
+
+function getKnowledgeAppForTool(tool: AppsDirectoryTool): KnowledgeDirectoryApp | null {
+	return findKnowledgeAppForTool(tool)
+		?? DEFAULT_KNOWLEDGE_APPS[0]
+		?? null;
+}
+
+function filterKnowledgeContent(
+	contents: readonly KnowledgeDirectoryContent[],
+	selectedIds: readonly string[],
+	query: string,
+): readonly KnowledgeDirectoryContent[] {
+	const selectedIdSet = new Set(selectedIds);
+	const normalizedQuery = query.trim().toLowerCase();
+
+	return contents.filter((content) => {
+		if (!selectedIdSet.has(content.id)) return false;
+		if (!normalizedQuery) return true;
+
+		return [content.name, content.description, content.type].join(" ").toLowerCase().includes(normalizedQuery);
+	});
+}
+
+export function AppsDirectoryDialog({
 	addedToolIds,
 	defaultAddedToolIds = [],
 	onAddedToolIdsChange,
@@ -315,12 +360,12 @@ export function ToolsDirectoryDialog({
 	onOpenChange,
 	onSelectTool,
 	open,
-	sessionTools = EMPTY_TOOLS_DIRECTORY_TOOLS,
-	sidebarGroups = DEFAULT_TOOLS_DIRECTORY_SIDEBAR_GROUPS,
+	sessionTools = EMPTY_APPS_DIRECTORY_TOOLS,
+	sidebarGroups = DEFAULT_APPS_DIRECTORY_SIDEBAR_GROUPS,
 	title,
 	tools,
 	initialSelectedToolId = null,
-}: Readonly<ToolsDirectoryDialogProps>) {
+}: Readonly<AppsDirectoryDialogProps>) {
 	const directoryTools = useMemo(
 		() => [...tools, ...sessionTools],
 		[tools, sessionTools],
@@ -372,24 +417,24 @@ export function ToolsDirectoryDialog({
 		onOpenChange(nextOpen);
 	}
 
-	function handleSelectTool(tool: ToolsDirectoryTool): void {
+	function handleSelectTool(tool: AppsDirectoryTool): void {
 		setSelectedToolId(tool.id);
 		onSelectTool?.(tool);
 	}
 
-	function handleAddTool(tool: ToolsDirectoryTool): void {
+	function handleAddTool(tool: AppsDirectoryTool): void {
 		const nextAddedIds = new Set(addedIds);
 		nextAddedIds.add(tool.id);
 		commitAddedToolIds(nextAddedIds);
 	}
 
-	function handleRemoveTool(tool: ToolsDirectoryTool): void {
+	function handleRemoveTool(tool: AppsDirectoryTool): void {
 		const nextAddedIds = new Set(addedIds);
 		nextAddedIds.delete(tool.id);
 		commitAddedToolIds(nextAddedIds);
 	}
 
-	function setPermission(tool: ToolsDirectoryTool, permissionId: string, checked: boolean): void {
+	function setPermission(tool: AppsDirectoryTool, permissionId: string, checked: boolean): void {
 		setPermissionSelections((current) => ({
 			...current,
 			[tool.id]: {
@@ -399,7 +444,7 @@ export function ToolsDirectoryDialog({
 		}));
 	}
 
-	function checkPermissionGroup(tool: ToolsDirectoryTool, permissions: readonly ToolsDirectoryPermission[]): void {
+	function checkPermissionGroup(tool: AppsDirectoryTool, permissions: readonly AppsDirectoryPermission[]): void {
 		setPermissionSelections((current) => {
 			const toolSelections = { ...current[tool.id] };
 
@@ -420,23 +465,23 @@ export function ToolsDirectoryDialog({
 				className="grid h-[min(768px,calc(100svh-2rem))] !max-w-[calc(100vw-2rem)] max-h-[calc(100svh-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:!max-w-[1200px]"
 				showCloseButton={false}
 			>
-				<ToolsDirectoryHeader
-					title={title ?? "Browse tools"}
+				<AppsDirectoryHeader
+					title={title ?? "Browse apps"}
 					onBack={selectedTool ? () => setSelectedToolId(null) : undefined}
+					onAddTool={selectedTool && !addedIds.has(selectedTool.id) ? () => handleAddTool(selectedTool) : undefined}
 					onCreateTool={onCreateTool}
+					onRemoveTool={selectedTool && addedIds.has(selectedTool.id) ? () => handleRemoveTool(selectedTool) : undefined}
 				/>
 				{selectedTool ? (
 					<ToolDetailView
 						added={addedIds.has(selectedTool.id)}
-						onAddTool={() => handleAddTool(selectedTool)}
 						onCheckGroup={(permissions) => checkPermissionGroup(selectedTool, permissions)}
 						onPermissionChange={(permissionId, checked) => setPermission(selectedTool, permissionId, checked)}
-						onRemoveTool={() => handleRemoveTool(selectedTool)}
 						permissionSelections={permissionSelections[selectedTool.id] ?? {}}
 						tool={selectedTool}
 					/>
 				) : (
-					<ToolsDirectoryView
+					<AppsDirectoryView
 						activeCategory={activeCategory}
 						addedIds={addedIds}
 						filteredTools={filteredTools}
@@ -453,19 +498,21 @@ export function ToolsDirectoryDialog({
 	);
 }
 
-interface ToolsDirectoryHeaderProps {
+interface AppsDirectoryHeaderProps {
+	onAddTool?: () => void;
 	onBack?: () => void;
 	onCreateTool?: () => void;
+	onRemoveTool?: () => void;
 	title: string;
 }
 
-function ToolsDirectoryHeader({ onBack, onCreateTool, title }: Readonly<ToolsDirectoryHeaderProps>) {
+function AppsDirectoryHeader({ onAddTool, onBack, onCreateTool, onRemoveTool, title }: Readonly<AppsDirectoryHeaderProps>) {
 	return (
 		<div className="flex items-center justify-between px-6 py-6">
 			<div className="flex min-w-0 items-center gap-2">
 				{onBack ? (
 					<Button
-						aria-label="Back to tools"
+						aria-label="Back to apps"
 						className="-ml-2 text-icon-subtle"
 						onClick={onBack}
 						size="icon"
@@ -480,9 +527,20 @@ function ToolsDirectoryHeader({ onBack, onCreateTool, title }: Readonly<ToolsDir
 				</DialogTitle>
 			</div>
 			<div className="flex items-center gap-2">
-				<Button onClick={onCreateTool} type="button">
-					New tool
-				</Button>
+				{onRemoveTool ? (
+					<Button variant="destructive" onClick={onRemoveTool} type="button">
+						<DeleteIcon label="" size="small" />
+						Remove
+					</Button>
+				) : onAddTool ? (
+					<Button onClick={onAddTool} type="button">
+						Add to agent
+					</Button>
+				) : (
+					<Button onClick={onCreateTool} type="button">
+						New app
+					</Button>
+				)}
 				<DialogClose render={<Button variant="ghost" size="icon" />}>
 					<CrossIcon label="" />
 					<span className="sr-only">Close</span>
@@ -492,19 +550,19 @@ function ToolsDirectoryHeader({ onBack, onCreateTool, title }: Readonly<ToolsDir
 	);
 }
 
-interface ToolsDirectoryViewProps {
+interface AppsDirectoryViewProps {
 	activeCategory: string;
 	addedIds: ReadonlySet<string>;
-	filteredTools: readonly ToolsDirectoryTool[];
+	filteredTools: readonly AppsDirectoryTool[];
 	onSelectCategory: (categoryId: string) => void;
-	onSelectTool: (tool: ToolsDirectoryTool) => void;
+	onSelectTool: (tool: AppsDirectoryTool) => void;
 	query: string;
 	setQuery: (query: string) => void;
-	sidebarGroups: readonly ToolsDirectorySidebarGroup[];
-	tools: readonly ToolsDirectoryTool[];
+	sidebarGroups: readonly AppsDirectorySidebarGroup[];
+	tools: readonly AppsDirectoryTool[];
 }
 
-function ToolsDirectoryView({
+function AppsDirectoryView({
 	activeCategory,
 	addedIds,
 	filteredTools,
@@ -514,12 +572,12 @@ function ToolsDirectoryView({
 	setQuery,
 	sidebarGroups,
 	tools,
-}: Readonly<ToolsDirectoryViewProps>) {
+}: Readonly<AppsDirectoryViewProps>) {
 	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
 
 	return (
 		<div className="grid min-h-0 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
-			<ToolsDirectorySidebar
+			<AppsDirectorySidebar
 				activeCategory={activeCategory}
 				addedIds={addedIds}
 				onSelectCategory={onSelectCategory}
@@ -539,8 +597,8 @@ function ToolsDirectoryView({
 						<SearchIcon label="" />
 					</InputGroupAddon>
 					<InputGroupInput
-						aria-label="Search tools"
-						placeholder="Search for a tool by name, or describe it"
+						aria-label="Search apps"
+						placeholder="Search for an app by name, or describe it"
 						value={query}
 						onChange={(event) => setQuery(event.target.value)}
 					/>
@@ -556,13 +614,13 @@ function ToolsDirectoryView({
 				</div>
 				{filteredTools.length === 0 ? (
 					<p className="py-6 text-sm text-text-subtlest">
-						No tools match &ldquo;{query}&rdquo;.
+						No apps match &ldquo;{query}&rdquo;.
 					</p>
 				) : (
 					<ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
 						{filteredTools.map((tool) => (
 							<li key={tool.id}>
-								<ToolCard onSelectTool={onSelectTool} tool={tool} />
+								<AppCard onSelectTool={onSelectTool} tool={tool} />
 							</li>
 						))}
 					</ul>
@@ -572,17 +630,18 @@ function ToolsDirectoryView({
 	);
 }
 
-interface ToolCardProps {
-	onSelectTool: (tool: ToolsDirectoryTool) => void;
-	tool: ToolsDirectoryTool;
+interface AppCardProps {
+	onSelectTool: (tool: AppsDirectoryTool) => void;
+	tool: AppsDirectoryTool;
 }
 
-function ToolCard({ onSelectTool, tool }: Readonly<ToolCardProps>) {
+function AppCard({ onSelectTool, tool }: Readonly<AppCardProps>) {
 	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+	const knowledgeApp = findKnowledgeAppForTool(tool);
 	const selectTool = () => onSelectTool(tool);
 
 	return (
-		<CardDirectoryTool
+		<CardDirectoryApp
 			active={moreMenuOpen}
 			appLogo={getToolLogo(tool)}
 			className="min-h-[102px] hover:border-transparent"
@@ -595,6 +654,7 @@ function ToolCard({ onSelectTool, tool }: Readonly<ToolCardProps>) {
 					open={moreMenuOpen}
 				/>
 			}
+			knowledgeCount={knowledgeApp?.contents.length}
 			name={tool.name}
 			onSelect={selectTool}
 			teammateCount={tool.teammateCount}
@@ -656,29 +716,29 @@ function DirectoryCardMoreMenu({
 	);
 }
 
-interface ToolsDirectorySidebarProps {
+interface AppsDirectorySidebarProps {
 	activeCategory: string;
 	addedIds: ReadonlySet<string>;
 	onSelectCategory: (categoryId: string) => void;
-	onSelectTool: (tool: ToolsDirectoryTool) => void;
-	sidebarGroups: readonly ToolsDirectorySidebarGroup[];
-	tools: readonly ToolsDirectoryTool[];
+	onSelectTool: (tool: AppsDirectoryTool) => void;
+	sidebarGroups: readonly AppsDirectorySidebarGroup[];
+	tools: readonly AppsDirectoryTool[];
 }
 
-function ToolsDirectorySidebar({
+function AppsDirectorySidebar({
 	activeCategory,
 	addedIds,
 	onSelectCategory,
 	onSelectTool,
 	sidebarGroups,
 	tools,
-}: Readonly<ToolsDirectorySidebarProps>) {
+}: Readonly<AppsDirectorySidebarProps>) {
 	const [showAllCategories, setShowAllCategories] = useState(false);
 	const visibleCategoryItems = showAllCategories
-		? TOOLS_DIRECTORY_CATEGORIES
-		: TOOLS_DIRECTORY_CATEGORIES.slice(0, MAX_VISIBLE_CATEGORY_ITEMS);
+		? APPS_DIRECTORY_CATEGORIES
+		: APPS_DIRECTORY_CATEGORIES.slice(0, MAX_VISIBLE_CATEGORY_ITEMS);
 	const hasHiddenCategoryItems =
-		!showAllCategories && TOOLS_DIRECTORY_CATEGORIES.length > MAX_VISIBLE_CATEGORY_ITEMS;
+		!showAllCategories && APPS_DIRECTORY_CATEGORIES.length > MAX_VISIBLE_CATEGORY_ITEMS;
 	const sidebarOverflow = useHasVerticalOverflow<HTMLElement>();
 
 	return (
@@ -733,7 +793,7 @@ function ToolsDirectorySidebar({
 			{sidebarGroups.length > 0 ? (
 				<div className="mt-5 flex w-64 flex-col gap-5 pb-6">
 					{sidebarGroups.map((group) => (
-						<ToolsDirectorySidebarGroup
+						<AppsDirectorySidebarGroup
 							key={group.title}
 							addedIds={addedIds}
 							group={group}
@@ -748,21 +808,21 @@ function ToolsDirectorySidebar({
 	);
 }
 
-interface ToolsDirectorySidebarGroupProps {
+interface AppsDirectorySidebarGroupProps {
 	addedIds: ReadonlySet<string>;
-	group: ToolsDirectorySidebarGroup;
+	group: AppsDirectorySidebarGroup;
 	onSelectCategory: (categoryId: string) => void;
-	onSelectTool: (tool: ToolsDirectoryTool) => void;
-	tools: readonly ToolsDirectoryTool[];
+	onSelectTool: (tool: AppsDirectoryTool) => void;
+	tools: readonly AppsDirectoryTool[];
 }
 
-function ToolsDirectorySidebarGroup({
+function AppsDirectorySidebarGroup({
 	addedIds,
 	group,
 	onSelectCategory,
 	onSelectTool,
 	tools,
-}: Readonly<ToolsDirectorySidebarGroupProps>) {
+}: Readonly<AppsDirectorySidebarGroupProps>) {
 	const items = getSidebarGroupItems(tools, group);
 
 	if (items.length === 0) return null;
@@ -812,20 +872,16 @@ function SidebarToolAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 
 interface ToolDetailViewProps {
 	added: boolean;
-	onAddTool: () => void;
-	onCheckGroup: (permissions: readonly ToolsDirectoryPermission[]) => void;
+	onCheckGroup: (permissions: readonly AppsDirectoryPermission[]) => void;
 	onPermissionChange: (permissionId: string, checked: boolean) => void;
-	onRemoveTool: () => void;
 	permissionSelections: Readonly<Record<string, boolean>>;
-	tool: ToolsDirectoryTool;
+	tool: AppsDirectoryTool;
 }
 
 function ToolDetailView({
 	added,
-	onAddTool,
 	onCheckGroup,
 	onPermissionChange,
-	onRemoveTool,
 	permissionSelections,
 	tool,
 }: Readonly<ToolDetailViewProps>) {
@@ -833,6 +889,44 @@ function ToolDetailView({
 	const verified = isVerifiedTool(tool, publisher);
 	const groups = getPermissionGroups(tool);
 	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	const knowledgeApp = useMemo(() => getKnowledgeAppForTool(tool), [tool]);
+	const [knowledgeMode, setKnowledgeMode] = useState<AppsDirectoryKnowledgeMode>("all");
+	const [knowledgeQuery, setKnowledgeQuery] = useState("");
+	const [selectedKnowledgeContentIds, setSelectedKnowledgeContentIds] = useState<readonly string[]>(
+		() => getKnowledgeContentIds(knowledgeApp),
+	);
+	const filteredKnowledgeContent = useMemo(
+		() => filterKnowledgeContent(knowledgeApp?.contents ?? [], selectedKnowledgeContentIds, knowledgeQuery),
+		[knowledgeApp, selectedKnowledgeContentIds, knowledgeQuery],
+	);
+
+	useEffect(() => {
+		setKnowledgeMode("all");
+		setKnowledgeQuery("");
+		setSelectedKnowledgeContentIds(getKnowledgeContentIds(knowledgeApp));
+	}, [knowledgeApp, tool.id]);
+
+	function handleSelectKnowledgeMode(nextMode: AppsDirectoryKnowledgeMode): void {
+		setKnowledgeMode(nextMode);
+
+		if (nextMode === "none") {
+			setSelectedKnowledgeContentIds([]);
+			return;
+		}
+
+		if (nextMode === "all") {
+			setSelectedKnowledgeContentIds(getKnowledgeContentIds(knowledgeApp));
+			return;
+		}
+
+		if (knowledgeApp && selectedKnowledgeContentIds.length === 0) {
+			setSelectedKnowledgeContentIds(getKnowledgeContentIds(knowledgeApp));
+		}
+	}
+
+	function handleRemoveKnowledgeContent(contentId: string): void {
+		setSelectedKnowledgeContentIds((currentIds) => currentIds.filter((id) => id !== contentId));
+	}
 
 	return (
 		<div className="grid min-h-0 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
@@ -874,16 +968,6 @@ function ToolDetailView({
 						<GlobeIcon label="Website" size="small" color="currentColor" />
 						<EmailIcon label="Email" size="small" color="currentColor" />
 					</div>
-					{added ? (
-						<Button variant="destructive" onClick={onRemoveTool} type="button">
-							<DeleteIcon label="" size="small" />
-							Remove
-						</Button>
-					) : (
-						<Button onClick={onAddTool} type="button">
-							Add to agent
-						</Button>
-					)}
 				</div>
 			</aside>
 			<div
@@ -905,18 +989,221 @@ function ToolDetailView({
 					</div>
 				</div>
 				{groups.map((group) => (
-					<ToolPermissionGroup
-						key={group.id}
-						added={added}
-						label={group.label}
-						onCheckAll={() => onCheckGroup(group.permissions)}
-						onPermissionChange={onPermissionChange}
-						permissionSelections={permissionSelections}
-						permissions={group.permissions}
-					/>
+					group.id === "read-only" ? (
+						<KnowledgeSection
+							key="knowledge"
+							contentQuery={knowledgeQuery}
+							filteredContent={filteredKnowledgeContent}
+							mode={knowledgeMode}
+							onRemoveContent={handleRemoveKnowledgeContent}
+							onSelectMode={handleSelectKnowledgeMode}
+							selectedContentCount={selectedKnowledgeContentIds.length}
+							setContentQuery={setKnowledgeQuery}
+						/>
+					) : (
+						<ToolPermissionGroup
+							key={group.id}
+							added={added}
+							label={group.label}
+							onCheckAll={() => onCheckGroup(group.permissions)}
+							onPermissionChange={onPermissionChange}
+							permissionSelections={permissionSelections}
+							permissions={group.permissions}
+						/>
+					)
 				))}
 			</div>
 		</div>
+	);
+}
+
+interface KnowledgeSectionProps {
+	contentQuery: string;
+	filteredContent: readonly KnowledgeDirectoryContent[];
+	mode: AppsDirectoryKnowledgeMode;
+	onRemoveContent: (contentId: string) => void;
+	onSelectMode: (mode: AppsDirectoryKnowledgeMode) => void;
+	selectedContentCount: number;
+	setContentQuery: (query: string) => void;
+}
+
+function KnowledgeSection({
+	contentQuery,
+	filteredContent,
+	mode,
+	onRemoveContent,
+	onSelectMode,
+	selectedContentCount,
+	setContentQuery,
+}: Readonly<KnowledgeSectionProps>) {
+	const badgeLabel = mode === "all"
+		? "All"
+		: mode === "none"
+			? "None"
+			: selectedContentCount;
+
+	return (
+		<section className="flex flex-col gap-2" aria-label="Knowledge">
+			<div className="flex h-8 items-center justify-between gap-3">
+				<div className="flex min-w-0 items-center gap-2">
+					<h3 className="text-text-subtlest" style={{ font: token("font.heading.xxsmall") }}>
+						Knowledge
+					</h3>
+					<Badge max={false}>{badgeLabel}</Badge>
+				</div>
+			</div>
+			<div className={cn("flex flex-col gap-6", mode === "custom" && "gap-4")}>
+				<KnowledgeContentModeSelector mode={mode} onSelectMode={onSelectMode} />
+				{mode === "custom" ? (
+					<div className="flex flex-col gap-4">
+						<DirectorySearchField
+							ariaLabel="Search selected knowledge content"
+							onChange={setContentQuery}
+							placeholder="Search for content by name, or describe it"
+							value={contentQuery}
+						/>
+						<SelectedKnowledgeContentList
+							contents={filteredContent}
+							onRemoveContent={onRemoveContent}
+							selectedContentCount={selectedContentCount}
+						/>
+					</div>
+				) : null}
+			</div>
+		</section>
+	);
+}
+
+interface KnowledgeContentModeSelectorProps {
+	mode: AppsDirectoryKnowledgeMode;
+	onSelectMode: (mode: AppsDirectoryKnowledgeMode) => void;
+}
+
+function KnowledgeContentModeSelector({ mode, onSelectMode }: Readonly<KnowledgeContentModeSelectorProps>) {
+	return (
+		<ToggleGroup
+			aria-label="Knowledge content mode"
+			className="w-full"
+			onValueChange={(value) => {
+				const nextMode = value[0] as AppsDirectoryKnowledgeMode | undefined;
+				if (nextMode) {
+					onSelectMode(nextMode);
+				}
+			}}
+			value={[mode]}
+			variant="outline"
+		>
+			<ToggleGroupItem
+				aria-label="All content"
+				className="h-9 flex-1"
+				value="all"
+			>
+				All content
+			</ToggleGroupItem>
+			<ToggleGroupItem
+				aria-label="Custom content"
+				className="h-9 flex-1"
+				value="custom"
+			>
+				Select content
+			</ToggleGroupItem>
+			<ToggleGroupItem
+				aria-label="No knowledge"
+				className="h-9 flex-1"
+				value="none"
+			>
+				None
+			</ToggleGroupItem>
+		</ToggleGroup>
+	);
+}
+
+interface SelectedKnowledgeContentListProps {
+	contents: readonly KnowledgeDirectoryContent[];
+	onRemoveContent: (contentId: string) => void;
+	selectedContentCount: number;
+}
+
+function SelectedKnowledgeContentList({
+	contents,
+	onRemoveContent,
+	selectedContentCount,
+}: Readonly<SelectedKnowledgeContentListProps>) {
+	return (
+		<div className="overflow-hidden rounded-xl border border-border">
+			{contents.length > 0 ? (
+				<ul>
+					{contents.map((content, index) => (
+						<li
+							className={cn("border-border bg-surface", index < contents.length - 1 && "border-b")}
+							key={content.id}
+						>
+							<div className="flex h-14 items-center gap-3 px-3">
+								<KnowledgeContentVisual content={content} />
+								<span className="min-w-0 flex-1">
+									<span className="block truncate text-sm font-medium leading-5 text-text">{content.name}</span>
+									<span className="block truncate text-xs leading-4 text-text-subtlest">{content.type}</span>
+								</span>
+								<Button
+									aria-label={`Remove ${content.name}`}
+									className="hover:bg-bg-danger hover:text-text-danger hover:[&_svg]:text-icon-danger active:bg-bg-danger-pressed active:[&_svg]:text-icon-danger focus-visible:border-border-danger"
+									onClick={() => onRemoveContent(content.id)}
+									size="icon"
+									type="button"
+									variant="ghost"
+								>
+									<DeleteIcon label="" color="currentColor" />
+								</Button>
+							</div>
+						</li>
+					))}
+				</ul>
+			) : (
+				<p className="px-4 py-6 text-sm text-text-subtlest">
+					{selectedContentCount === 0 ? "No custom content selected." : "No selected content matches this search."}
+				</p>
+			)}
+		</div>
+	);
+}
+
+function KnowledgeContentVisual({ content }: Readonly<{ content: KnowledgeDirectoryContent }>) {
+	const visual = resolveDirectoryVisual(content.visual);
+
+	return visual ? (
+		<RichTextMentionVisualMark
+			label={content.name}
+			size="menu"
+			visual={visual}
+		/>
+	) : null;
+}
+
+interface DirectorySearchFieldProps {
+	ariaLabel: string;
+	onChange: (query: string) => void;
+	placeholder: string;
+	value: string;
+}
+
+function DirectorySearchField({
+	ariaLabel,
+	onChange,
+	placeholder,
+	value,
+}: Readonly<DirectorySearchFieldProps>) {
+	return (
+		<InputGroup>
+			<InputGroupAddon>
+				<SearchIcon label="" />
+			</InputGroupAddon>
+			<InputGroupInput
+				aria-label={ariaLabel}
+				placeholder={placeholder}
+				value={value}
+				onChange={(event) => onChange(event.target.value)}
+			/>
+		</InputGroup>
 	);
 }
 
@@ -926,7 +1213,7 @@ interface ToolPermissionGroupProps {
 	onCheckAll: () => void;
 	onPermissionChange: (permissionId: string, checked: boolean) => void;
 	permissionSelections: Readonly<Record<string, boolean>>;
-	permissions: readonly ToolsDirectoryPermission[];
+	permissions: readonly AppsDirectoryPermission[];
 }
 
 function ToolPermissionGroup({

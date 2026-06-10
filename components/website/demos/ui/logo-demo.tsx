@@ -1,7 +1,7 @@
 "use client";
 
 import { Tag } from "@/components/ui/tag";
-import { BrandLogoMark } from "@/components/ui/logo-mark";
+import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import {
 	AtlassianLogo,
 	CustomLogo,
@@ -333,6 +333,17 @@ export function LogoDemoInTile() {
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex flex-col gap-3">
+				<div className="flex items-end gap-3">
+					{BRAND_TILE_SIZES.map((size) => (
+						<AtlassianLogoMark
+							key={size}
+							label={`Atlassian ${size}`}
+							name="atlassian"
+							size={size}
+						/>
+					))}
+					<span className="self-center text-sm text-text">Atlassian company</span>
+				</div>
 				{BRAND_LOGO_SAMPLES.map((sample) => (
 					<div key={sample.src} className="flex items-end gap-3">
 						{BRAND_TILE_SIZES.map((size) => (
@@ -349,11 +360,12 @@ export function LogoDemoInTile() {
 				))}
 			</div>
 			<p className="text-xs text-text-subtle">
-				Picker / suggestion-menu rows (e.g. the editor-palette). The mark is a plain{" "}
-				<code className="rounded bg-bg-neutral px-1 py-0.5">img</code> child that fills the{" "}
-				<code className="rounded bg-bg-neutral px-1 py-0.5">/components/ui/tile#sizes</code> box,
-				so the glyph scales with the tile at every step. Solid-fill 3P marks fill the box bare;
-				bordered 2P/white-tile 3P marks sit on a surface tile with a size-scaled inset.
+				Picker / suggestion-menu rows (e.g. the editor-palette). Atlassian company, 2P, and
+				white-tile 3P marks sit on a surface{" "}
+				<code className="rounded bg-bg-neutral px-1 py-0.5">Tile</code> and use the inset content scale
+				shown on{" "}
+				<code className="rounded bg-bg-neutral px-1 py-0.5">/components/ui/tile#sizes</code>.
+				Solid-fill 3P marks fill the whole tile because they already include their own background.
 			</p>
 		</div>
 	);
@@ -376,7 +388,7 @@ export function LogoDemoInTag() {
 			</div>
 			<p className="text-xs text-text-subtle">
 				Inline chips (e.g. the agent config panel&apos;s tags): every mark is normalized to a 16px box.
-				Borderless 3P + 2P marks render as a centered 12px glyph (no tile); solid-fill 3P marks fill the box.
+				Borderless 3P + 2P marks render as a centered 10px glyph (no tile); solid-fill 3P marks fill the box.
 			</p>
 		</div>
 	);

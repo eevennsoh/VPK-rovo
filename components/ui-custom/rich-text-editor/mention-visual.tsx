@@ -195,9 +195,10 @@ export function RichTextMentionVisualMark({
 		// 2P/3P brand logos — rendered through the shared `BrandLogoMark` so border
 		// treatment, the borderless-variant swap (resolved from `logo-usage.json`),
 		// and the size-scaled glyph fill stay identical to the `Logo` doc demos and
-		// can never drift. Menu rows use the `Tile` frame (32px tile, glyph tracks
-		// the tile size); inline chips (tag/pill) use the 16px `chip` frame where
-		// bordered 2P/3P marks read as a bare centered glyph.
+		// can never drift. Menu rows use the `Tile` frame: solid-fill logos fill
+		// the tile, while bordered marks follow Tile's inset content scale. Inline
+		// chips (tag/pill) use the 16px `chip` frame where bordered 2P/3P marks
+		// read as a bare centered glyph.
 		return size === "menu" ? (
 			<BrandLogoMark
 				className={className}

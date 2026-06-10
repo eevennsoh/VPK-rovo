@@ -17,6 +17,7 @@ import {
 	resolveBrandLogoPresentation,
 } from "@/components/ui/data/logo-usage";
 import { ROVO_LOGO_PATHS, ROVO_LOGO_VIEWBOX } from "@/components/ui/data/rovo-logo";
+import { Tile, type TileProps } from "@/components/ui/tile";
 
 export { ROVO_LOGO_DATA_URI } from "@/components/ui/data/rovo-logo";
 export type { AtlassianLogoName };
@@ -166,6 +167,10 @@ export interface CustomLogoProps {
 	className?: string;
 }
 
+function isTileLogoSize(size: LogoProps["size"]): size is NonNullable<TileProps["size"]> {
+	return typeof size === "string" && size in CUSTOM_LOGO_SIZES;
+}
+
 export function CustomLogo({
 	svg,
 	src,
@@ -174,24 +179,39 @@ export function CustomLogo({
 	label,
 	className,
 }: Readonly<CustomLogoProps>) {
-	const px = CUSTOM_LOGO_SIZES[size ?? "small"];
+	const px = getLogoSizePx(size ?? "small");
 
 	// `src` brand assets resolve their variant + border treatment from the
 	// centralized usage metadata (logo-usage.json): bare 2P PNGs and white-tile
 	// 3P marks get a bordered tile (swapping to the borderless glyph so borders
 	// don't double up); solid-fill 3P marks render bare.
 	const brand = src ? resolveBrandLogoPresentation(src) : null;
+	const shouldRenderBorderedTile = Boolean(brand?.hasBorder && isTileLogoSize(size));
 	const borderClassName =
-		brand?.hasBorder &&
+		brand?.hasBorder && !shouldRenderBorderedTile &&
 		"rounded-tile [outline:1px_solid_var(--color-border)] [outline-offset:-1px]";
 
-	// Bordered brand marks must inset the glyph inside the box so it doesn't touch
-	// the 1px outline — matching the `Tile` child-sizing convention (glyph fills
-	// ~75% of the box). Solid-fill / SVG marks keep filling the full box.
-	const iconPx = brand?.hasBorder ? Math.round(px * 0.75) : px;
-
-	const icon = brand ? (
-		<Image src={brand.src} alt="" aria-hidden width={iconPx} height={iconPx} className="object-contain" />
+	const icon = brand?.hasBorder && isTileLogoSize(size) ? (
+		<Tile
+			aria-hidden
+			className="bg-surface"
+			hasBorder
+			label={label ?? ""}
+			size={size}
+			variant="transparent"
+		>
+			<Image src={brand.src} alt="" aria-hidden width={px} height={px} className="object-contain" />
+		</Tile>
+	) : brand ? (
+		<Image
+			src={brand.src}
+			alt=""
+			aria-hidden
+			width={px}
+			height={px}
+			className="object-contain"
+			style={{ width: px, height: px }}
+		/>
 	) : svg ? (
 		React.cloneElement(svg, { width: px, height: px, "aria-hidden": true })
 	) : null;
