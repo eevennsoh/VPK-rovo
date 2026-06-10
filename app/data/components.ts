@@ -130,6 +130,7 @@ export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("entity-card", "Entity Card"),
 	customComponent("knowledge"),
 	customComponent("footer", "Footer"),
+	customComponent("hover-reveal-row", "Hover Reveal Row"),
 	customComponent("object-tile", "Object Tile"),
 	customComponent("progress-circle", "Progress Circle"),
 	customComponent("progress-rovo", "Progress Rovo"),

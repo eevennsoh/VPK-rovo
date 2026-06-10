@@ -537,8 +537,17 @@
 	cursor: pointer;
 }
 
-.rich-text-command-menu-item:hover,
-.rich-text-command-menu-item-selected {
+/* The row highlight has a single source of truth: the selected row. In
+   selection-driven menus (the live editor's "/" and "@" surfaces) pointer hover
+   moves `selectedIndex` onto the hovered row — see `onHover` in
+   suggestion-menu.tsx — so the keyboard cursor and the mouse can never light up
+   two rows at once. Pure-pointer menus (static showcases, the search picker)
+   have no keyboard cursor and opt out via the absence of `data-pointer-selects`,
+   so they keep a plain `:hover` highlight. The Back button is never a selectable
+   row, so it always keeps its own hover feedback. */
+.rich-text-command-menu-item-selected,
+.rich-text-command-menu:not([data-pointer-selects="true"]) .rich-text-command-menu-item:hover,
+.rich-text-command-menu-back:hover {
 	background-color: var(--ds-background-neutral-subtle-hovered, #f1f2f4);
 }
 
@@ -563,9 +572,35 @@
 	bottom: 0;
 }
 
-.rich-text-command-menu-item-sticky:hover,
-.rich-text-command-menu-item-sticky.rich-text-command-menu-item-selected {
+.rich-text-command-menu-item-sticky.rich-text-command-menu-item-selected,
+.rich-text-command-menu:not([data-pointer-selects="true"]) .rich-text-command-menu-item-sticky:hover {
 	background-color: var(--ds-background-neutral-subtle-hovered, #f1f2f4);
+}
+
+/*
+ * When the menu's own search field is focused (the user is typing into it), the
+ * Return key submits THAT field — e.g. "Ask Rovo" or a category search — not a
+ * menu row. Suppress BOTH highlight sources (the keyboard-selected row and any
+ * hover), the copy reflow, and the Return (↵) affordance so the menu never
+ * implies Return will activate a row while you are typing. Scoped to focus
+ * INSIDE the menu, so the live editor's caret-anchored "/" and "@" menus — where
+ * focus stays in the editor and Return DOES pick the highlighted row — are
+ * unaffected.
+ */
+.rich-text-command-menu:focus-within .rich-text-command-menu-item:hover,
+.rich-text-command-menu:focus-within .rich-text-command-menu-item-selected,
+.rich-text-command-menu:focus-within .rich-text-command-menu-item-sticky:hover,
+.rich-text-command-menu:focus-within .rich-text-command-menu-item-sticky.rich-text-command-menu-item-selected {
+	background-color: transparent;
+}
+
+.rich-text-command-menu:focus-within .rich-text-command-menu-item:hover .rich-text-command-menu-copy,
+.rich-text-command-menu:focus-within .rich-text-command-menu-item-selected .rich-text-command-menu-copy {
+	padding-right: 0;
+}
+
+.rich-text-command-menu:focus-within .rich-text-command-menu-return-shortcut {
+	display: none;
 }
 
 .rich-text-command-menu-item:disabled {
@@ -574,7 +609,16 @@
 }
 
 .rich-text-command-menu[data-has-header="true"] .rich-text-command-menu-list {
-	padding-top: 0;
+	padding-top: 4px;
+}
+
+/* When a query matches nothing the slash list renders empty (just the Ask Rovo
+   header remains). Collapse the list padding so the popup ends flush under the
+   header instead of leaving a stray gap at the bottom. The mention menu still
+   renders an empty-label row, so it keeps its padding. */
+.rich-text-command-menu-list:empty,
+.rich-text-command-menu[data-has-header="true"] .rich-text-command-menu-list:empty {
+	padding: 0;
 }
 
 .rich-text-command-menu-search {
@@ -586,7 +630,7 @@
 	width: 100%;
 	height: 44px;
 	min-height: 44px;
-	padding: 0 10px 0 12px;
+	padding: 0 6px 0 12px;
 	background-color: var(--ds-surface-overlay, #ffffff);
 	cursor: text;
 }
@@ -627,6 +671,22 @@
 	justify-self: end;
 }
 
+/* "Tab" affordance pinned to the trailing slot of the Ask Rovo field. It hints
+   that pressing Tab from the editor moves focus here to prompt Rovo. Hidden once
+   the field is focused (you are already in it) — the empty/unfocused placeholder
+   state is the only time it shows; a typed value swaps it for the clear button. */
+.rich-text-command-menu-search-hint {
+	display: inline-flex;
+	align-items: center;
+	justify-self: end;
+	padding-right: 6px;
+	pointer-events: none;
+}
+
+.rich-text-command-menu-search:focus-within .rich-text-command-menu-search-hint {
+	display: none;
+}
+
 /* Single front-slot size for every menu (live "@"/"/" surfaces, the agent
    composer, and the editor-palette showcases): a 24px box that lines up with the
    24px grid track on `.rich-text-command-menu-item` and the 24px-scaled tiles
@@ -643,7 +703,7 @@
 	/* 12px left padding matches the "Ask Rovo"/search input sticky header and the
 	   24px front slots in the list rows, so the back arrow lines up exactly with
 	   every other leading glyph across nested, flat, and search variants. */
-	padding: 8px 10px 8px 12px;
+	padding: 8px 6px 8px 12px;
 	color: var(--ds-text-subtle, #44546f);
 }
 
@@ -782,6 +842,7 @@
 
 .rich-text-mention-visual[data-visual-kind="avatar"],
 .rich-text-mention-visual[data-visual-kind="image"],
+.rich-text-mention-visual[data-visual-kind="icon"],
 .rich-text-mention-visual[data-visual-kind="logo"] {
 	width: 16px;
 	height: 16px;

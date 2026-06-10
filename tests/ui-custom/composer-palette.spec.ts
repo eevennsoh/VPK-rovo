@@ -30,8 +30,8 @@ test("`/` opens the slash menu with reference categories and excludes text forma
 	await editor.click();
 	await page.keyboard.type("/");
 
-	// The slash surface lists Ask Rovo + reference categories…
-	await expect(page.getByText("Ask Rovo", { exact: false })).toBeVisible();
+	// The slash surface pins Ask Rovo as a header input above reference categories…
+	await expect(page.getByRole("textbox", { name: "Ask Rovo" })).toBeVisible();
 	await expect(page.getByText(/skills/i).first()).toBeVisible();
 
 	// …but NOT the document editor's block-formatting commands (includeFormat:false).
@@ -54,9 +54,9 @@ test("selecting a `/` reference inserts an inline token, and Escape closes the m
 
 	// Escape closes the open menu without inserting anything.
 	await page.keyboard.type("/");
-	await expect(page.getByText("Ask Rovo", { exact: false })).toBeVisible();
+	await expect(page.getByRole("textbox", { name: "Ask Rovo" })).toBeVisible();
 	await page.keyboard.press("Escape");
-	await expect(page.getByText("Ask Rovo", { exact: false })).toHaveCount(0);
+	await expect(page.getByRole("textbox", { name: "Ask Rovo" })).toHaveCount(0);
 
 	// Re-open, narrow to a known skill, and select it -> inline mention token.
 	await page.keyboard.type("/Summarize");

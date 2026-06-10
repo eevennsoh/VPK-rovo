@@ -1,6 +1,12 @@
 import type { AtlassianLogoName } from "@/components/ui/logo";
 
 import skillsData from "./skills.json";
+import {
+	getSkillCollectionMetadata,
+	type SkillCollectionId,
+	SKILL_COLLECTIONS,
+	type SkillCollectionMetadata,
+} from "./skill-collections";
 import type { DirectoryVisual, SkillIconKey } from "./types";
 import { getSkillIcon } from "./visual";
 
@@ -53,6 +59,26 @@ export type SkillSource =
 	| "service"
 	| "product";
 
+export type { SkillCollectionId, SkillCollectionMetadata };
+export {
+	ATLASSIAN_SKILL_COLLECTION_IDS,
+	getSkillCollectionMetadata,
+	SKILL_COLLECTIONS,
+} from "./skill-collections";
+
+const SKILL_SOURCE_COLLECTION: Record<SkillSource, SkillCollectionId> = {
+	"2p": "marketplace",
+	"3p": "marketplace",
+	default: "default",
+	custom: "custom",
+	platform: "platform",
+	teamwork: "teamwork",
+	software: "software",
+	strategy: "strategy",
+	service: "service",
+	product: "product",
+};
+
 /**
  * Maps a {@link SkillSource} to the ADS accent icon-color class for its glyph.
  * App-family sources get their System-of-Work hue; default/custom/platform read
@@ -60,16 +86,16 @@ export type SkillSource =
  * map to grey only as a fallback when no publisher logo is available.
  */
 export const SKILL_SOURCE_ICON_COLOR: Record<SkillSource, string> = {
-	"2p": "text-icon-accent-gray",
-	"3p": "text-icon-accent-gray",
-	default: "text-icon-accent-gray",
-	custom: "text-icon-accent-gray",
-	platform: "text-icon-accent-gray",
-	teamwork: "text-icon-accent-blue",
-	software: "text-icon-accent-green",
-	strategy: "text-icon-accent-orange",
-	service: "text-icon-accent-yellow",
-	product: "text-icon-accent-purple",
+	"2p": SKILL_COLLECTIONS.marketplace.iconClassName,
+	"3p": SKILL_COLLECTIONS.marketplace.iconClassName,
+	default: SKILL_COLLECTIONS.default.iconClassName,
+	custom: SKILL_COLLECTIONS.custom.iconClassName,
+	platform: SKILL_COLLECTIONS.platform.iconClassName,
+	teamwork: SKILL_COLLECTIONS.teamwork.iconClassName,
+	software: SKILL_COLLECTIONS.software.iconClassName,
+	strategy: SKILL_COLLECTIONS.strategy.iconClassName,
+	service: SKILL_COLLECTIONS.service.iconClassName,
+	product: SKILL_COLLECTIONS.product.iconClassName,
 };
 
 export interface SkillsDirectoryToolTag {
@@ -100,12 +126,19 @@ export interface SkillsDirectorySkill {
 	iconColor?: string;
 	/** Provenance — drives the leading visual. See {@link SkillSource}. */
 	source?: SkillSource;
+	/** Collection taxonomy used by SkillTag and the Skills Directory sidebar. */
+	collectionId?: SkillCollectionId;
+	collectionDescription?: string;
+	collectionProducts?: readonly string[];
+	collectionDocsUrl?: string;
 	publisherName?: string;
 	publisherAvatarSrc?: string;
 	companyId?: string;
 	categoryId?: SkillCategory;
 	starCount?: number;
+	teammateCount?: number;
 	viewCount?: number;
+	verified?: boolean;
 	tools?: readonly SkillsDirectoryToolTag[];
 	instructions?: string;
 	fileTreeItems?: readonly SkillsDirectoryFileTreeItem[];
@@ -153,6 +186,15 @@ export function getSkillCategoryId(skill: SkillsDirectorySkill): SkillCategory |
 	return skill.categoryId ?? skill.category;
 }
 
+export function getSkillCollectionId(skill: Pick<SkillsDirectorySkill, "collectionId" | "source">): SkillCollectionId {
+	if (skill.collectionId) return skill.collectionId;
+	return skill.source ? SKILL_SOURCE_COLLECTION[skill.source] : "default";
+}
+
+export function getSkillCollection(skill: Pick<SkillsDirectorySkill, "collectionId" | "source">): SkillCollectionMetadata {
+	return getSkillCollectionMetadata(getSkillCollectionId(skill));
+}
+
 /**
  * Resolves the leading-glyph color class for a skill. When the skill declares a
  * {@link SkillSource}, the color is derived from that family's accent (the
@@ -160,7 +202,13 @@ export function getSkillCategoryId(skill: SkillsDirectorySkill): SkillCategory |
  * falls back to the skill's explicit `iconColor`.
  */
 export function getSkillIconColor(skill: SkillsDirectorySkill): string | undefined {
-	return skill.source ? SKILL_SOURCE_ICON_COLOR[skill.source] : skill.iconColor;
+	return skill.source || skill.collectionId
+		? getSkillCollection(skill).iconClassName
+		: skill.iconColor;
+}
+
+export function getSkillIconTileVariant(skill: Pick<SkillsDirectorySkill, "collectionId" | "source">) {
+	return getSkillCollection(skill).iconTileVariant;
 }
 
 /** Convenience lookup for sidebar references. */

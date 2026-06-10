@@ -1,41 +1,17 @@
 "use client";
 
-import Image from "next/image";
-import type { ReactNode } from "react";
 import { useState } from "react";
 import TagIcon from "@atlaskit/icon/core/tag";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
-import { AtlassianLogo, RovoColorIcon } from "@/components/ui/logo";
+import { IconTile } from "@/components/ui/icon-tile";
+import { AtlassianLogo, CustomLogo, RovoColorIcon } from "@/components/ui/logo";
+import { BrandLogoMark } from "@/components/ui/logo-mark";
 import { Tag, TagGroup } from "@/components/ui/tag";
-import { cn } from "@/lib/utils";
 
-function LogoSlot({ children, className }: Readonly<{ children: ReactNode; className?: string }>) {
-	return (
-		<span
-			className={cn(
-				"inline-flex size-4 shrink-0 items-center justify-center align-middle leading-none",
-				"[&_span]:!inline-flex [&_span]:!size-4 [&_span]:!items-center [&_span]:!justify-center [&_span]:!leading-none",
-				"[&_svg]:!block [&_svg]:!size-4",
-				className,
-			)}
-		>
-			{children}
-		</span>
-	);
-}
-
-function PublicLogoMark({ src }: Readonly<{ src: string }>) {
-	return (
-		<LogoSlot>
-			<Image src={src} alt="" aria-hidden width={16} height={16} className="block size-4 object-contain" />
-		</LogoSlot>
-	);
-}
-
-function ProductLogoMark({ children }: Readonly<{ children: ReactNode }>) {
-	return <LogoSlot>{children}</LogoSlot>;
+function RovoSvg(props: { width?: number; height?: number; "aria-hidden"?: boolean }) {
+	return <RovoColorIcon {...props} />;
 }
 
 export default function TagDemo() {
@@ -46,7 +22,17 @@ export default function TagDemo() {
 			<Tag variant="rounded" color="discovery">
 				Rounded
 			</Tag>
-			<Tag elemBefore={<Icon render={<TagIcon label="" size="small" />} aria-hidden className="size-3 [&_svg]:size-3" />}>
+			<Tag
+				elemBefore={
+					<IconTile
+						aria-hidden
+						icon={<Icon render={<TagIcon label="" size="small" />} aria-hidden />}
+						label=""
+						size="xxsmall"
+						variant="transparent"
+					/>
+				}
+			>
 				Label
 			</Tag>
 			<Tag
@@ -80,9 +66,7 @@ export function TagDemoFrontSlot() {
 			<Tag
 				color="blue"
 				elemBefore={
-					<ProductLogoMark>
-						<AtlassianLogo name="jira" label="" size="xxsmall" />
-					</ProductLogoMark>
+					<AtlassianLogo name="jira" label="Jira" size="xxsmall" withUsageBorder />
 				}
 			>
 				Jira
@@ -90,33 +74,29 @@ export function TagDemoFrontSlot() {
 			<Tag
 				color="purple"
 				elemBefore={
-					<ProductLogoMark>
-						<AtlassianLogo name="confluence" label="" size="xxsmall" />
-					</ProductLogoMark>
+					<AtlassianLogo name="atlassian" label="Atlassian" size="xxsmall" withUsageBorder />
 				}
 			>
-				Confluence
+				Atlassian
 			</Tag>
 			<Tag
 				color="green"
 				elemBefore={
-					<LogoSlot>
-						<RovoColorIcon width={16} height={16} className="block size-4" />
-					</LogoSlot>
+					<CustomLogo svg={<RovoSvg />} label="Rovo" size="xxsmall" />
 				}
 			>
 				Rovo
 			</Tag>
-			<Tag color="orange" elemBefore={<PublicLogoMark src="/2p/appfire.png" />}>
+			<Tag color="orange" elemBefore={<BrandLogoMark frame="chip" src="/2p/appfire.png" label="Appfire" />}>
 				Appfire
 			</Tag>
-			<Tag color="teal" elemBefore={<PublicLogoMark src="/2p/adaptavist.png" />}>
+			<Tag color="teal" elemBefore={<BrandLogoMark frame="chip" src="/2p/adaptavist.png" label="Adaptavist" />}>
 				Adaptavist
 			</Tag>
-			<Tag color="purple" elemBefore={<PublicLogoMark src="/3p/figma/16.svg" />}>
+			<Tag color="purple" elemBefore={<BrandLogoMark frame="chip" src="/3p/figma/16.svg" label="Figma" />}>
 				Figma
 			</Tag>
-			<Tag color="green" elemBefore={<PublicLogoMark src="/3p/google-drive/16.svg" />}>
+			<Tag color="green" elemBefore={<BrandLogoMark frame="chip" src="/3p/google-drive/16.svg" label="Google Drive" />}>
 				Drive
 			</Tag>
 		</div>

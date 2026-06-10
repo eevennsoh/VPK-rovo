@@ -232,14 +232,23 @@ test("Agents Directory uses one unsegmented results grid and updated sidebar lab
 	}
 
 	assert.match(source, /attributionKind\?: "company" \| "team" \| "person";/u);
-	assert.match(source, /function isVerified\(agent: AgentBrowserAgent, publisher: string\): boolean/u);
-	assert.match(source, /if \(agent\.attributionKind\) return agent\.attributionKind === "company";/u);
+	assert.match(source, /rating\?: number;/u);
+	assert.match(source, /feedbackCount\?: number;/u);
+	assert.match(source, /chatCount\?: number;/u);
+	assert.match(source, /verified\?: boolean;/u);
+	assert.doesNotMatch(source, /function isVerified/u);
 	// The unified catalog carries every attribution kind (company/team/person).
 	for (const kind of ["company", "team", "person"]) {
 		assert.ok(
 			agentsJson.some((agent) => agent.attributionKind === kind),
 			`unified catalog should have a ${kind}-attributed agent`,
 		);
+	}
+	for (const agent of agentsJson) {
+		assert.equal(typeof agent.rating, "number", `agent ${agent.id} should have rating`);
+		assert.equal(typeof agent.feedbackCount, "number", `agent ${agent.id} should have feedbackCount`);
+		assert.equal(typeof agent.chatCount, "number", `agent ${agent.id} should have chatCount`);
+		assert.equal(typeof agent.verified, "boolean", `agent ${agent.id} should have verified`);
 	}
 	assert.match(pageSource, /attributionKind: "team"/u);
 	assert.match(pageSource, /attributionKind: "person"/u);
@@ -258,6 +267,13 @@ test("Agents Directory cards render the shared CardDirectoryAgent with overlay e
 	assert.match(source, /function AgentCard\(\{ agent, onSelectAgent, publisher \}: Readonly<AgentCardProps>\)/u);
 	assert.match(source, /const \[moreMenuOpen, setMoreMenuOpen\] = useState\(false\);/u);
 	assert.match(source, /<CardDirectoryAgent[\s\S]*active=\{moreMenuOpen\}[\s\S]*avatarSrc=\{getDirectoryCardAvatarSrc\(agent\)\}[\s\S]*insetLogo=\{isBorderlessHexagonAgent\(agent\)\}/u);
+	assert.match(source, /chatCount=\{agent\.chatCount\}/u);
+	assert.match(source, /feedbackCount=\{agent\.feedbackCount\}/u);
+	assert.match(source, /rating=\{agent\.rating\}/u);
+	assert.match(source, /verified=\{agent\.verified\}/u);
+	assert.doesNotMatch(source, /syntheticRating/u);
+	assert.doesNotMatch(source, /syntheticChats/u);
+	assert.doesNotMatch(source, /syntheticFeedback/u);
 	assert.match(source, /className="hover:border-transparent"/u);
 	assert.match(source, /onSelect=\{selectAgent\}/u);
 	assert.match(source, /<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);

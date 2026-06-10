@@ -27,6 +27,9 @@ export interface KnowledgeDirectoryApp {
 	description: string;
 	providerName: string;
 	visual: DirectoryVisual;
+	starCount: number;
+	teammateCount: number;
+	verified: boolean;
 	contents: readonly KnowledgeDirectoryContent[];
 }
 

@@ -48,6 +48,10 @@ export interface AgentBrowserAgent {
 	logoName?: AtlassianLogoName;
 	description?: string;
 	favorite?: boolean;
+	rating?: number;
+	feedbackCount?: number;
+	chatCount?: number;
+	verified?: boolean;
 }
 
 export interface AgentBrowserSidebarGroup {
@@ -154,32 +158,6 @@ const AGENT_BROWSER_TEMPLATE_GRID_VARIANTS = {
 function derivePublisher(byline: string): string {
 	const match = /\bby\s+(.+)$/i.exec(byline);
 	return (match?.[1] ?? byline).trim();
-}
-
-function isVerified(agent: AgentBrowserAgent, publisher: string): boolean {
-	if (agent.attributionKind) return agent.attributionKind === "company";
-	return ["atlassian", "google", "github", "slack", "notion", "figma", "canva"].includes(publisher.toLowerCase());
-}
-
-function hashString(value: string): number {
-	let hash = 0;
-	for (let i = 0; i < value.length; i++) {
-		hash = (hash * 31 + value.charCodeAt(i)) | 0;
-	}
-	return Math.abs(hash);
-}
-
-function syntheticRating(id: string): number {
-	const remainder = hashString(id) % 16;
-	return Number((3.5 + remainder / 10).toFixed(1));
-}
-
-function syntheticChats(id: string): number {
-	return 100 + (hashString(`${id}-chats`) % 9900);
-}
-
-function syntheticFeedback(id: string): number {
-	return 50 + (hashString(`${id}-feedback`) % 2000);
 }
 
 function filterAgents(
@@ -794,10 +772,10 @@ function AgentCard({ agent, onSelectAgent, publisher }: Readonly<AgentCardProps>
 			active={moreMenuOpen}
 			avatarSrc={getDirectoryCardAvatarSrc(agent)}
 			insetLogo={isBorderlessHexagonAgent(agent)}
-			chatCount={syntheticChats(agent.id)}
+			chatCount={agent.chatCount}
 			className="hover:border-transparent"
 			description={agent.description}
-			feedbackCount={syntheticFeedback(agent.id)}
+			feedbackCount={agent.feedbackCount}
 			logoName={agent.logoName}
 			moreAction={
 				<DirectoryCardMoreMenu
@@ -810,8 +788,8 @@ function AgentCard({ agent, onSelectAgent, publisher }: Readonly<AgentCardProps>
 			name={agent.name}
 			onSelect={selectAgent}
 			publisher={publisher}
-			rating={syntheticRating(agent.id)}
-			verified={isVerified(agent, publisher)}
+			rating={agent.rating}
+			verified={agent.verified}
 		/>
 	);
 }

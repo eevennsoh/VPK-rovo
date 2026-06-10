@@ -1,5 +1,7 @@
 "use client";
 
+import { Tag } from "@/components/ui/tag";
+import { BrandLogoMark } from "@/components/ui/logo-mark";
 import {
 	AtlassianLogo,
 	CustomLogo,
@@ -258,6 +260,106 @@ export function LogoDemoCustom() {
 			</div>
 			<p className="text-xs text-text-subtle">
 				Pass any SVG element via the <code className="rounded bg-bg-neutral px-1 py-0.5">svg</code> prop. Add an optional <code className="rounded bg-bg-neutral px-1 py-0.5">wordmark</code> for a lockup layout.
+			</p>
+		</div>
+	);
+}
+
+/* ── Demo: Brand logos (1P / 2P / 3P) ─────────────────────────── */
+
+// Representative marks for each tier + each 3P sub-case. Border treatment is
+// NOT set here — it is resolved from components/ui/data/logo-usage.json.
+const BRAND_LOGO_SAMPLES: ReadonlyArray<{
+	src: string;
+	label: string;
+	caption: string;
+}> = [
+	// 3P, solid-fill (own background): renders bare, no border.
+	{ src: "/3p/github/24.svg", label: "GitHub", caption: "3P · solid-fill → bare" },
+	{ src: "/3p/figma/24.svg", label: "Figma", caption: "3P · solid-fill → bare" },
+	// 3P, white-tile (ships 16-borderless.svg): swaps to the borderless glyph
+	// inside a VPK-drawn bordered tile so borders don't double up.
+	{ src: "/3p/airtable/24.svg", label: "Airtable", caption: "3P · white-tile → borderless + tile" },
+	{ src: "/3p/slack/24.svg", label: "Slack", caption: "3P · white-tile → borderless + tile" },
+	// 2P partner marks: bare PNGs, always get a bordered tile.
+	{ src: "/2p/appfire.png", label: "Appfire", caption: "2P · bare PNG → tile" },
+	{ src: "/2p/adaptavist.png", label: "Adaptavist", caption: "2P · bare PNG → tile" },
+];
+
+export function LogoDemoBrandLogos() {
+	return (
+		<div className="flex flex-col gap-4">
+			<div className="flex flex-wrap items-start gap-x-6 gap-y-4">
+				{BRAND_LOGO_SAMPLES.map((sample) => (
+					<div key={sample.src} className="flex w-28 flex-col items-center gap-2 text-center">
+						<CustomLogo src={sample.src} label={sample.label} size="large" />
+						<span className="text-xs font-semibold text-text">{sample.label}</span>
+						<span className="text-[11px] leading-tight text-text-subtle">{sample.caption}</span>
+					</div>
+				))}
+			</div>
+			<p className="text-xs text-text-subtle">
+				Pass a 2P/3P asset path via the <code className="rounded bg-bg-neutral px-1 py-0.5">src</code> prop.
+				The bordered tile and borderless-variant swap come from{" "}
+				<code className="rounded bg-bg-neutral px-1 py-0.5">logo-usage.json</code> — no per-call border wiring.
+			</p>
+		</div>
+	);
+}
+
+/* ── Demo: Brand logos in a Tile (picker / menu rows) ─────────── */
+
+// Tile sizes whose child-sizing exactly follows /components/ui/tile#sizes.
+const BRAND_TILE_SIZES = ["xsmall", "small", "medium", "large", "xlarge"] as const;
+
+export function LogoDemoInTile() {
+	return (
+		<div className="flex flex-col gap-4">
+			<div className="flex flex-col gap-3">
+				{BRAND_LOGO_SAMPLES.map((sample) => (
+					<div key={sample.src} className="flex items-end gap-3">
+						{BRAND_TILE_SIZES.map((size) => (
+							<BrandLogoMark
+								key={size}
+								frame="tile"
+								src={sample.src}
+								label={`${sample.label} ${size}`}
+								size={size}
+							/>
+						))}
+						<span className="self-center text-sm text-text">{sample.label}</span>
+					</div>
+				))}
+			</div>
+			<p className="text-xs text-text-subtle">
+				Picker / suggestion-menu rows (e.g. the editor-palette). The mark is a plain{" "}
+				<code className="rounded bg-bg-neutral px-1 py-0.5">img</code> child that fills the{" "}
+				<code className="rounded bg-bg-neutral px-1 py-0.5">/components/ui/tile#sizes</code> box,
+				so the glyph scales with the tile at every step. Solid-fill 3P marks fill the box bare;
+				bordered 2P/white-tile 3P marks sit on a surface tile with a size-scaled inset.
+			</p>
+		</div>
+	);
+}
+
+/* ── Demo: Brand logos in a Tag (inline chips / config panel) ─── */
+
+export function LogoDemoInTag() {
+	return (
+		<div className="flex flex-col gap-4">
+			<div className="flex flex-wrap items-center gap-2">
+				{BRAND_LOGO_SAMPLES.map((sample) => (
+					<Tag
+						key={sample.src}
+						elemBefore={<BrandLogoMark frame="chip" src={sample.src} label={sample.label} />}
+					>
+						{sample.label}
+					</Tag>
+				))}
+			</div>
+			<p className="text-xs text-text-subtle">
+				Inline chips (e.g. the agent config panel&apos;s tags): every mark is normalized to a 16px box.
+				Borderless 3P + 2P marks render as a centered 12px glyph (no tile); solid-fill 3P marks fill the box.
 			</p>
 		</div>
 	);

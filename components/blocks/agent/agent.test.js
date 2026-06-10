@@ -95,7 +95,7 @@ test("Reasoning selector lives in the compact toolbar and shares state across co
 	assert.match(AGENT_SOURCE, /import \{ Lozenge, LozengeDropdownTrigger \} from "@\/components\/ui\/lozenge";/u);
 	assert.match(AGENT_SOURCE, /function AgentReasoningSelector/u);
 	assert.match(AGENT_SOURCE, /function AgentReasoningRow/u);
-	assert.match(AGENT_SOURCE, /function AgentReasoningOverflowMenu/u);
+	assert.doesNotMatch(AGENT_SOURCE, /function AgentReasoningOverflowMenu/u);
 	assert.match(AGENT_SOURCE, /const \[reasoningFallback, setReasoningFallback\] = useState<ReasoningModeValue \| null>\(null\);/u);
 	assert.match(AGENT_SOURCE, /const reasoningValue =[\s\S]*\(config\.reasoningMode as ReasoningModeValue \| undefined\) \?\? reasoningFallback \?\? "quick-auto";/u);
 	assert.match(AGENT_SOURCE, /const setReasoningValue = useCallback\([\s\S]*setReasoningFallback\(next\);[\s\S]*onTextChange\?\.\("reasoningMode", next\);/u);
@@ -103,7 +103,7 @@ test("Reasoning selector lives in the compact toolbar and shares state across co
 	assert.match(AGENT_SOURCE, /case "reasoning":[\s\S]*count = 0;/u);
 	assert.match(AGENT_SOURCE, /render="nav-button"[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{onReasoningValueChange\}/u);
 	assert.match(AGENT_SOURCE, /<AgentReasoningRow[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{setReasoningValue\}/u);
-	assert.match(AGENT_SOURCE, /<AgentReasoningOverflowMenu[\s\S]*value=\{reasoningValue\}[\s\S]*onValueChange=\{onReasoningValueChange\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /<AgentReasoningOverflowMenu/u);
 	assert.match(AGENT_SOURCE, /import AiComputeIcon from "@atlaskit\/icon-lab\/core\/ai-compute";/u);
 	assert.match(AGENT_SOURCE, /render=\{<LozengeDropdownTrigger aria-label="Reasoning mode" icon=\{<AiComputeIcon label="" size="small" \/>\} \/>\}/u);
 	assert.match(AGENT_SOURCE, /<Tag>\{current\?\.label \?\? "Recommended"\}<\/Tag>/u);
@@ -119,7 +119,7 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 	assert.match(AGENT_SOURCE, /\{ value: "none", label: "No organizational knowledge", tabLabel: "None" \}/u);
 	assert.match(AGENT_SOURCE, /function AgentKnowledgeSelector/u);
 	assert.match(AGENT_SOURCE, /function AgentKnowledgeRow/u);
-	assert.match(AGENT_SOURCE, /function AgentKnowledgeOverflowMenu/u);
+	assert.doesNotMatch(AGENT_SOURCE, /function AgentKnowledgeOverflowMenu/u);
 	assert.match(AGENT_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
 	assert.match(AGENT_SOURCE, /function AgentKnowledgeModeTabs/u);
 	assert.match(AGENT_SOURCE, /<Tabs[\s\S]*value=\{value\}[\s\S]*onValueChange=\{\(next\) => onValueChange\(next as KnowledgeModeValue\)\}[\s\S]*<TabsList className="w-full">[\s\S]*<TabsTrigger key=\{option\.value\} value=\{option\.value\}>[\s\S]*\{option\.tabLabel\}/u);
@@ -129,7 +129,7 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 	assert.match(AGENT_SOURCE, /const knowledgeMode =[\s\S]*\(config\.knowledgeMode as KnowledgeModeValue \| undefined\)[\s\S]*\?\? knowledgeFallback[\s\S]*\?\? \(getNonEmptyConfigItems\(config\.knowledge\)\.length > 0 \? "custom" : "all"\);/u);
 	assert.match(AGENT_SOURCE, /const setKnowledgeMode = useCallback\([\s\S]*setKnowledgeFallback\(next\);[\s\S]*onTextChange\?\.\("knowledgeMode", next\);/u);
 	assert.match(AGENT_SOURCE, /<AgentKnowledgeRow[\s\S]*value=\{knowledgeMode\}/u);
-	assert.match(AGENT_SOURCE, /<AgentKnowledgeOverflowMenu[\s\S]*value=\{knowledgeMode\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /<AgentKnowledgeOverflowMenu/u);
 	assert.match(AGENT_SOURCE, /const isCustom = value === "custom";/u);
 	assert.match(AGENT_SOURCE, /<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category="knowledge"[\s\S]*className="rich-text-command-menu-borderless"[\s\S]*items=\{EDITOR_PALETTE_KNOWLEDGE_APP_ITEMS\}[\s\S]*leadingItems=\{AGENT_KNOWLEDGE_UPLOAD_LEADING_ITEMS\}[\s\S]*onBrowseAll=\{onBrowse\}/u);
 	assert.match(AGENT_SOURCE, /onPickKnowledgeApp\(getKnowledgeAppIdFromMentionId\(item\.id\)\)/u);
@@ -147,7 +147,7 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 	// Memory selector is now driven by lifted state and renders as a row lozenge
 	// or a compact nav button, mirroring the knowledge selector.
 	assert.match(AGENT_SOURCE, /<AgentMemorySelector render="row" value=\{value\} onValueChange=\{onValueChange\} onManage=\{onManage\} \/>/u);
-	assert.match(AGENT_SOURCE, /function AgentMemoryOverflowMenu/u);
+	assert.doesNotMatch(AGENT_SOURCE, /function AgentMemoryOverflowMenu/u);
 	assert.doesNotMatch(AGENT_SOURCE, /<AgentReferenceChip label="Memory" \/>/u);
 });
 
@@ -170,12 +170,12 @@ test("Filled config summary sorts empty rows to the bottom while preserving cano
 		AGENT_SOURCE,
 		/AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = \[[\s\S]*"trigger"[\s\S]*"knowledge"[\s\S]*"tools"[\s\S]*"skills"[\s\S]*"subagents"[\s\S]*"memory"[\s\S]*"conversationStarters"[\s\S]*"reasoning"[\s\S]*\] as const;/u,
 	);
-	// Memory renders as a nav button (and overflow sub-menu) in the collapsed nav.
+	// Memory renders as a nav button in the collapsed nav.
 	assert.match(AGENT_SOURCE, /item\.agentFieldName === "memory"[\s\S]*<AgentMemorySelector[\s\S]*render="nav-button"[\s\S]*value=\{memoryMode\}[\s\S]*onManage=\{\(\) => onOpenDirectory\?\.\("memory"\)\}/u);
 	// The collapsed nav button surfaces the on/off state inline as a neutral badge
 	// so the current state reads without opening the dropdown.
 	assert.match(AGENT_SOURCE, /Memory[\s\S]*<Badge>\{selectedOption\.label\}<\/Badge>/u);
-	assert.match(AGENT_SOURCE, /item\.agentFieldName === "memory"[\s\S]*<AgentMemoryOverflowMenu[\s\S]*value=\{memoryMode\}[\s\S]*onManage=\{\(\) => onOpenDirectory\?\.\("memory"\)\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /<AgentMemoryOverflowMenu/u);
 	// Memory state is lifted to the toolbar so both views share one toggle.
 	assert.match(AGENT_SOURCE, /const \[memoryFallback, setMemoryFallback\] = useState<MemoryModeValue \| null>\(null\);/u);
 	assert.match(AGENT_SOURCE, /const memoryMode = \(config\.memoryMode as MemoryModeValue \| undefined\) \?\? memoryFallback \?\? "on";/u);
@@ -300,7 +300,15 @@ test("Compact agent config opts into the typed Triggers editor without replacing
 	assert.match(AGENT_SOURCE, /function getAgentTriggerItems\(config: AgentConfigFormValue\): readonly string\[\] \{[\s\S]*serializeAgentTriggerLabels\(config\.triggerDefinitions\)[\s\S]*const triggers = getNonEmptyConfigItems\(config\.triggers\)[\s\S]*const trigger = config\.trigger\?\.trim\(\);/u);
 	assert.match(AGENT_SOURCE, /onConnectTrigger\?: \(trigger: AgentTriggerValue\) => void;/u);
 	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
-	assert.match(AGENT_SOURCE, /<TriggerPicker[\s\S]*onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*createAgentTriggerValue\(providerId, eventId, 1\)[\s\S]*onEditTriggers\?\.\(next \? \[next\] : \[\]\);/u);
+	// Adding a trigger from the picker must APPEND to the existing definitions
+	// (seed `[...existing, next]`), not replace them with `[next]` — otherwise
+	// saving the rule-builder drops every previously configured trigger.
+	assert.match(AGENT_SOURCE, /<TriggerPicker[\s\S]*onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*const existing = triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\);/u);
+	// The collapsed-nav "Add trigger" flyout appends the same way, seeding from
+	// the agent's own config so the editor opens with the full trigger list.
+	assert.match(AGENT_SOURCE, /onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*const existing = config\?\.triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\);/u);
+	// Guard against the override regression returning anywhere in the source.
+	assert.doesNotMatch(AGENT_SOURCE, /onEditTriggers\?\.\(next \? \[next\] : \[\]\)/u);
 	assert.match(AGENT_SOURCE, /isEmpty: triggerItems\.length === 0/u);
 	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*items=\{triggerItems\}[\s\S]*onTriggerDefinitionsChange=\{onTriggerDefinitionsChange\}/u);
 	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange=\{onTriggerDefinitionsChange\}/u);
@@ -404,9 +412,13 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// The final chip and the inline +Add link share a single non-wrapping group so
 	// they reflow to the next line together instead of leaving a gap when chips
 	// fill the row. The empty-row +Add link renders separately and stays visible.
+	// Both spots route through `renderAddButton`, which yields either the default
+	// click link or a dropdown-backed control (renderAddControl) — the same
+	// dropdown the collapsed nav opens.
 	assert.match(AGENT_SOURCE, /const isLastItem = index === items\.length - 1;/u);
-	assert.match(AGENT_SOURCE, /if \(isLastItem && addLabel\) \{[\s\S]*className="inline-flex max-w-full items-center gap-1\.5"[\s\S]*<AgentAddValueButton[\s\S]*className="shrink-0 opacity-0 transition-opacity group-hover\/agent-row:opacity-100/u);
-	assert.match(AGENT_SOURCE, /\{isEmpty && addLabel \? \(\s*<AgentAddValueButton[\s\S]*label=\{addLabel\}/u);
+	assert.match(AGENT_SOURCE, /const renderAddButton = \(className\?: string\): ReactNode =>[\s\S]*renderAddControl\s*\? renderAddControl\(\{ icon: addIcon, label: addLabel, className \}\)[\s\S]*<AgentAddValueButton[\s\S]*className=\{className\}[\s\S]*onClick=\{onAdd\}/u);
+	assert.match(AGENT_SOURCE, /if \(isLastItem && addLabel\) \{[\s\S]*className="inline-flex max-w-full items-center gap-1\.5"[\s\S]*\{renderAddButton\(\s*"shrink-0 opacity-0 transition-opacity group-hover\/agent-row:opacity-100/u);
+	assert.match(AGENT_SOURCE, /\{isEmpty && addLabel \? renderAddButton\(\) : null\}/u);
 	assert.match(AGENT_SOURCE, /const AGENT_EMPTY_ROW_ADD_LABELS: Partial<Record<AgentConfigListFieldName, string>> = \{/u);
 	assert.match(AGENT_SOURCE, /triggers: "Add rules for when this agent runs"/u);
 	assert.match(AGENT_SOURCE, /conversationStarters: "Add prompts to help people start"/u);
@@ -433,15 +445,19 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /const StarterIcon = getStarterIcon\(starterSummaryItems\[index\]\?\.icon \?\? DEFAULT_STARTER_ICON\);[\s\S]*return <StarterIcon label="" size="small" color="currentColor" \/>;/u);
 	assert.match(AGENT_SOURCE, /tagColor="standard"/u);
 	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*addLabel=\{getAgentFilledSummaryAddLabel\("triggers", triggerItems\.length === 0, showAddButtons\)\}[\s\S]*onEditTriggers=\{onEditTriggers\}/u);
-	assert.match(AGENT_SOURCE, /label="Skills"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("skills", "skills", onOpenDirectory, onAppendListItem\)\}/u);
-	assert.match(AGENT_SOURCE, /label="Tools"\s+onAdd=\{\(\) => openInlineSearchPicker\("tools"\)\}/u);
-	assert.match(AGENT_SOURCE, /inlinePicker=\{inlineSearchField === "tools" \? \([\s\S]*<AgentInlineReferenceSearchPicker[\s\S]*field="tools"[\s\S]*onBrowseAll=\{\(\) => browseInlineSearchPicker\("tools"\)\}[\s\S]*onSelectItem=\{\(item\) => selectInlineSearchItem\("tools", item\)\}/u);
-	assert.match(AGENT_SOURCE, /function AgentInlineReferenceSearchPicker\([\s\S]*<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category=\{AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD\[field\]\}[\s\S]*className="rich-text-command-menu-borderless"[\s\S]*onBrowseAll=\{onBrowseAll\}[\s\S]*onSelectItem=\{onSelectItem\}/u);
-	assert.match(AGENT_SOURCE, /const \[inlineSearchField, setInlineSearchField\] = useState<AgentInlineSearchField \| null>\(null\);/u);
-	assert.match(AGENT_SOURCE, /const openInlineSearchPicker = \(field: AgentInlineSearchField\) => \{[\s\S]*if \(!onAddListValues\) \{[\s\S]*openAgentDirectoryOrAppendListItem\(field, field, onOpenDirectory, onAppendListItem\);[\s\S]*setInlineSearchField\(\(current\) => current === field \? null : field\);/u);
-	assert.match(AGENT_SOURCE, /const browseInlineSearchPicker = \(field: AgentInlineSearchField\) => \{[\s\S]*setInlineSearchField\(null\);[\s\S]*openAgentDirectoryOrAppendListItem\(field, field, onOpenDirectory, onAppendListItem\);/u);
-	assert.match(AGENT_SOURCE, /const selectInlineSearchItem = \([\s\S]*field: AgentInlineSearchField,[\s\S]*item: RichTextSuggestionMenuItem,[\s\S]*onAddListValues\?\.\(field, \[item\.label\]\);[\s\S]*setInlineSearchField\(null\);/u);
-	assert.match(AGENT_SOURCE, /label="Subagents"\s+onAdd=\{\(\) => onAppendListItem\?\.\("subagents"\)\}/u);
+	// Skills, Tools and Subagents "Add" buttons open the SAME dropdown the
+	// collapsed nav shows (list + add flyout + browse), wired via renderAddControl
+	// + renderTrigger so the two layouts share one experience.
+	assert.match(AGENT_SOURCE, /label="Skills"\s+renderAddControl=\{renderDirectoryAddControl\("skills", skillsNavItem, skillItems\)\}/u);
+	assert.match(AGENT_SOURCE, /label="Tools"\s+renderAddControl=\{renderDirectoryAddControl\("tools", toolsNavItem, toolItems\)\}/u);
+	assert.match(AGENT_SOURCE, /const renderDirectoryAddControl = \([\s\S]*<AgentCompactDirectoryNavButton[\s\S]*onBrowse=\{\(\) => openAgentDirectoryOrAppendListItem\(field, field, onOpenDirectory, onAppendListItem\)\}[\s\S]*renderTrigger=\{<AgentAddValueButton className=\{className\} icon=\{icon\} label=\{label\} \/>\}/u);
+	assert.match(AGENT_SOURCE, /label="Subagents"\s+renderAddControl=\{subagentsNavItem \? \(\{ label, className \}\) => \([\s\S]*<AgentCompactSubagentsNavButton[\s\S]*onCreateSubagent=\{\(\) => onAppendListItem\?\.\("subagents"\)\}[\s\S]*renderTrigger=\{<AgentAddValueButton className=\{className\} icon="add" label=\{label\} \/>\}/u);
+	// The inline-below-row Tools search picker is gone — Tools now uses the same
+	// dropdown as the other directory fields.
+	assert.doesNotMatch(AGENT_SOURCE, /openInlineSearchPicker|browseInlineSearchPicker|selectInlineSearchItem|inlineSearchField|function AgentInlineReferenceSearchPicker/u);
+	// Knowledge's "Add" opens the shared knowledge nav menu (mode tabs + custom
+	// list + add flyout + browse) under the inline Add button trigger.
+	assert.match(AGENT_SOURCE, /function AgentKnowledgeRow[\s\S]*<MenubarTrigger\s*render=\{\(\s*<AgentAddValueButton[\s\S]*\)\}\s*\/>\s*<AgentKnowledgeNavMenuContent/u);
 	assert.match(AGENT_SOURCE, /label="Knowledge"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("knowledge", "knowledge", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Conversation starters"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("conversationStarters", "conversationStarters", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactEmptyConfigNav/u);
@@ -456,32 +472,22 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /item\.count > 0 \? <Badge>\{item\.count\}<\/Badge> : null/u);
 	assert.match(AGENT_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/u);
 	assert.match(AGENT_SOURCE, /className="relative flex min-h-8 min-w-0 items-center"/u);
-	// Nav now rolls overflow into a "..." DropdownMenu instead of wrapping onto
-	// multiple lines (mirrors AgentCompactHeaderNav).
+	// Nav scrolls horizontally instead of wrapping or tucking items behind a
+	// "..." overflow menu.
 	assert.doesNotMatch(AGENT_SOURCE, /flex min-w-0 flex-wrap items-center gap-1/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_GAP = 2;/u);
-	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH = 24;/u);
-	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_RENDERED_OVERFLOW_THRESHOLD = 4;/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_SCROLL_EDGE_THRESHOLD = 4;/u);
+	assert.match(AGENT_SOURCE, /import \{ useHasHorizontalOverflow \} from "@\/components\/hooks\/use-has-horizontal-overflow";/u);
 	assert.match(AGENT_SOURCE, /import \{ buildHorizontalScrollMaskStyle \} from "@\/components\/visual\/scroll-mask\/lib";/u);
-	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_END_MASK_STYLE = buildHorizontalScrollMaskStyle\(\{\s*edge: "end",\s*endGutterWidth: AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH,\s*fadeSize: "var\(--ds-space-300\)",\s*\}\);/u);
-	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_EDGE_MASK_STYLE = buildHorizontalScrollMaskStyle\(\{\s*edge: "end",\s*fadeSize: "var\(--ds-space-300\)",\s*\}\);/u);
-	assert.match(AGENT_SOURCE, /computeContextBarOverflow\([\s\S]*AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH,[\s\S]*AGENT_COMPACT_CONFIG_NAV_GAP/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_START_MASK_STYLE = buildHorizontalScrollMaskStyle\(\{\s*edge: "start",\s*fadeSize: "var\(--ds-space-300\)",\s*\}\);/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_END_MASK_STYLE = buildHorizontalScrollMaskStyle\(\{\s*edge: "end",\s*fadeSize: "var\(--ds-space-300\)",\s*\}\);/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_CONFIG_NAV_BOTH_MASK_STYLE = buildHorizontalScrollMaskStyle\(\{\s*edge: "both",\s*fadeSize: "var\(--ds-space-300\)",\s*\}\);/u);
+	assert.match(AGENT_SOURCE, /const navOverflow = useHasHorizontalOverflow<HTMLDivElement>\(\{\s*edgeThreshold: AGENT_COMPACT_CONFIG_NAV_SCROLL_EDGE_THRESHOLD,\s*\}\);/u);
+	assert.match(AGENT_SOURCE, /const scrollMaskStyle = navOverflow\.canScrollLeft && navOverflow\.canScrollRight[\s\S]*\? AGENT_COMPACT_CONFIG_NAV_BOTH_MASK_STYLE[\s\S]*: navOverflow\.canScrollLeft[\s\S]*\? AGENT_COMPACT_CONFIG_NAV_START_MASK_STYLE[\s\S]*: navOverflow\.canScrollRight[\s\S]*\? AGENT_COMPACT_CONFIG_NAV_END_MASK_STYLE[\s\S]*: \{\};/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactConfigNavButton\(/u);
-	// Overflow trigger is a Menubar trigger (the nav is a Menubar so the active
-	// menu can move between items with arrow keys).
-	assert.match(AGENT_SOURCE, /<MenubarTrigger\s+aria-label="More configuration options"[\s\S]*<MoreHorizontalIcon size="small" \/>/u);
-	assert.match(AGENT_SOURCE, /<DropdownMenuItem\s+elemAfter=\{item\.count > 0 \? <Badge>\{item\.count\}<\/Badge> : undefined\}/u);
-	// The connected config Menubar clips horizontal overflow (so the "…" menu
-	// absorbs hidden items) but insets the first item (`pl-1`) and keeps a 6px
-	// clip margin + vertical room so edge focus-visible rings aren't sheared off.
-	// When the overflow menu is active, the trailing clip edge fades through the
-	// shared horizontal scroll-mask style rather than ending with a hard crop.
-	assert.match(AGENT_SOURCE, /const \[hasRenderedOverflow, setHasRenderedOverflow\] = useState\(false\);/u);
-	assert.match(AGENT_SOURCE, /setHasRenderedOverflow\(\s*container!\.scrollWidth - container!\.clientWidth > AGENT_COMPACT_CONFIG_NAV_RENDERED_OVERFLOW_THRESHOLD,\s*\);/u);
-	assert.match(AGENT_SOURCE, /const shouldShowEndMask = hiddenItems\.length > 0 \|\| hasRenderedOverflow;/u);
-	assert.match(AGENT_SOURCE, /const endMaskStyle = hiddenItems\.length > 0[\s\S]*\? AGENT_COMPACT_CONFIG_NAV_END_MASK_STYLE[\s\S]*: AGENT_COMPACT_CONFIG_NAV_EDGE_MASK_STYLE;/u);
-	assert.match(AGENT_SOURCE, /className="relative -my-1 flex h-auto min-w-0 flex-1 items-center overflow-x-clip overflow-y-visible rounded-none border-0 bg-transparent p-0 py-1 pl-1 \[overflow-clip-margin:6px\]"[\s\S]*style=\{\{\s*gap: AGENT_COMPACT_CONFIG_NAV_GAP,\s*\.\.\.\(shouldShowEndMask \? endMaskStyle : \{\}\),\s*\}\}/u);
-	assert.match(AGENT_SOURCE, /<div className="invisible flex items-center" ref=\{measureRef\}/u);
+	assert.doesNotMatch(AGENT_SOURCE, /aria-label="More configuration options"|AGENT_COMPACT_CONFIG_NAV_OVERFLOW_WIDTH|AGENT_COMPACT_CONFIG_NAV_RENDERED_OVERFLOW_THRESHOLD|AGENT_COMPACT_CONFIG_NAV_EDGE_MASK_STYLE/u);
+	assert.match(AGENT_SOURCE, /className="relative -my-1 flex h-auto min-w-0 flex-1 items-center overflow-x-auto overflow-y-visible overscroll-x-contain rounded-none border-0 bg-transparent p-0 py-1 pl-1 \[scrollbar-width:none\] \[&::-webkit-scrollbar\]:hidden"[\s\S]*ref=\{navOverflow\.ref\}[\s\S]*style=\{\{\s*gap: AGENT_COMPACT_CONFIG_NAV_GAP,\s*\.\.\.scrollMaskStyle,\s*\}\}/u);
+	assert.match(AGENT_SOURCE, /\{items\.map\(\(item\) => \{/u);
 	// Collapsible toolbar: outer wrapper now stacks a "rule row" (horizontal
 	// line + chevron at the far right) above an AnimatePresence crossfade that
 	// swaps between the collapsed nav and the expanded filled summary.
@@ -791,10 +797,16 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /"format"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ RovoColorIcon \} from "@\/components\/ui\/logo";/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const ASK_ROVO_SLASH_ITEM: RichTextSuggestionMenuItem = \{[\s\S]*id: "ask-rovo",[\s\S]*isSticky: true,[\s\S]*label: "Ask Rovo",/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const ASK_ROVO_SLASH_ITEM: RichTextSuggestionMenuItem = \{[\s\S]*id: "ask-rovo",[\s\S]*label: "Ask Rovo",/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /includeFormat = true/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /return \[\s*ASK_ROVO_SLASH_ITEM,[\s\S]*\.\.\.getSlashCategoryOrder\(includeFormat\)\.map/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.id === ASK_ROVO_SLASH_ITEM\.id[\s\S]*currentProps\.command\(\{ type: "ask-rovo", onAskRovo \}\)/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /return \[\s*ASK_ROVO_SLASH_ITEM,[\s\S]*\.\.\.getSlashCategoryOrder\(includeFormat\)\.map/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /buildFlatSurfaceRows\(getFlatSections\(\), query, expandedSections, \[ASK_ROVO_SLASH_ITEM\]\)/u);
+	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /item\.id === ASK_ROVO_SLASH_ITEM\.id/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function getAskRovoHeader\(\): ReactNode \{[\s\S]*<RichTextCommandMenuSearchField[\s\S]*icon=\{ASK_ROVO_SLASH_ITEM\.icon\}[\s\S]*label=\{ASK_ROVO_SLASH_ITEM\.label\}[\s\S]*onSubmit=\{submitAskRovoPrompt\}[\s\S]*onValueChange=\{updateAskRovoPrompt\}[\s\S]*value=\{askRovoPrompt\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function shouldHideSlashRowsForAskRovoPrompt\(\): boolean \{[\s\S]*askRovoPrompt\.trim\(\)\.length > 0/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const items = shouldHideSlashRowsForAskRovoPrompt\(\)[\s\S]*\? \[\][\s\S]*: getVisibleItems\(props\.query\);/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /header: isFlat \|\| !activeCategory \? getAskRovoHeader\(\) : undefined/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function submitAskRovoPrompt\(\): boolean \{[\s\S]*currentProps\.command\(\{ type: "ask-rovo", onAskRovo \}\)/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /props\.type === "ask-rovo"[\s\S]*props\.onAskRovo\?\.\(editor\)/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onAskRovoRef = useRef\(onAskRovo\)/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item-sticky \{\s*position: sticky;\s*top: 0;/u);
@@ -855,6 +867,8 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(EDITOR_PALETTE_SOURCE, /export function EditorPaletteSearchPicker\(/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /import \{[\s\S]*Empty,[\s\S]*EmptyContent,[\s\S]*EmptyDescription,[\s\S]*EmptyHeader,[\s\S]*EmptyTitle,[\s\S]*\} from "@\/components\/ui\/empty";/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /RichTextCommandMenuSearchField/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /function NestedPalette\([\s\S]*const \[commandPrompt, setCommandPrompt\] = useState\(""\);/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /title="Commands"[\s\S]*header=\{\([\s\S]*<RichTextCommandMenuSearchField[\s\S]*icon=\{ASK_ROVO_LEAD_ITEM\.icon\}[\s\S]*label=\{ASK_ROVO_LEAD_ITEM\.label\}[\s\S]*onClear=\{\(\) => setCommandPrompt\(""\)\}[\s\S]*onValueChange=\{setCommandPrompt\}[\s\S]*value=\{commandPrompt\}/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /id: SEARCH_BROWSE_ALL_ITEM_ID,[\s\S]*label: "Browse all"/u);
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /id: SEARCH_BROWSE_ALL_ITEM_ID,[\s\S]*stickyPosition: "bottom"/u);
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /SEARCH_INPUT_ITEM_ID/u);
@@ -869,6 +883,9 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(EDITOR_PALETTE_SOURCE, /function EditorPaletteSearchEmptyState\(/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /<Empty width="narrow" className="px-6 pt-4 pb-6">[\s\S]*<EmptyTitle headingSize="xsmall">\{label\}<\/EmptyTitle>[\s\S]*<EmptyDescription>Try a different search term\.<\/EmptyDescription>[\s\S]*<Button[\s\S]*variant="outline"[\s\S]*onClick=\{onBrowseAll\}[\s\S]*Browse all/u);
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /onInputClear|onInputValueChange|renderFirstItemAsInput/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /const \[leadPrompt, setLeadPrompt\] = useState\(""\);/u);
+	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /const rows = \[\s*\.\.\.\(leadItem \? \[leadItem\] : \[\]\),/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /header=\{leadItem \? \([\s\S]*<RichTextCommandMenuSearchField[\s\S]*icon=\{leadItem\.icon\}[\s\S]*label=\{leadItem\.label\}[\s\S]*onClear=\{\(\) => setLeadPrompt\(""\)\}[\s\S]*onSubmit=\{\(\) => handleSelect\(leadItem\)\}[\s\S]*onValueChange=\{setLeadPrompt\}[\s\S]*placeholder=\{leadItem\.label\}[\s\S]*value=\{leadPrompt\}/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /NESTED_MENTION_SHOWCASES/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /getSlashCommandFormatItems\(\)/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /caption="Format nested"/u);
@@ -929,7 +946,8 @@ test("Suggestion menu active selectable rows replace shortcut text with ReturnIc
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /RichTextSuggestionMenuInputOption|controlledValueProps|renderFirstItemAsInput/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /shouldShowReturnShortcut \? \([\s\S]*rich-text-command-menu-return-shortcut[\s\S]*<ReturnIcon className="size-3\.5 text-icon-subtlest" \/>[\s\S]*\) : item\.shortcut \? \(/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onFocus=\{\(\) => setIsInteractionActive\(true\)\}/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onMouseEnter=\{\(\) => setIsInteractionActive\(true\)\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const handleMouseEnter = \(\) => \{[\s\S]*setIsInteractionActive\(true\);[\s\S]*onHover\?\.\(\);/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onMouseEnter=\{handleMouseEnter\}/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /item\.headingLabel !== undefined \? \([\s\S]*className="rich-text-command-menu-heading"[\s\S]*role="presentation"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function isSelectableRow\(item: RichTextSuggestionMenuItem\): boolean \{[\s\S]*return item\.headingLabel === undefined && !item\.disabled;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item-sticky-bottom \{\s*top: auto;\s*bottom: 0;\s*\}/u);
@@ -989,6 +1007,7 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /\{header\}[\s\S]*<div[\s\S]*className="rich-text-command-menu-list"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /export function RichTextCommandMenuSearchField\(/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /<Input[\s\S]*variant="subtle"[\s\S]*value=\{value\}[\s\S]*onChange=\{\(event\) => onValueChange\(event\.currentTarget\.value\)\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onKeyDown=\{\(event\) => \{[\s\S]*onKeyDown\?\.\(event\);[\s\S]*event\.stopPropagation\(\);[\s\S]*if \(event\.defaultPrevented\)/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /<Button[\s\S]*aria-label="Clear search"[\s\S]*className="rich-text-command-menu-search-clear text-icon-subtle"[\s\S]*shape="circle"[\s\S]*size="icon-compact"[\s\S]*variant="ghost"[\s\S]*<CrossCircleIcon label="" size="small" \/>/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /const inputItem =|const listItems =|showClearButton|RichTextSuggestionMenuInputOption/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /<Input[\s\S]*variant="subtle"[\s\S]*isCompact/u);
@@ -999,13 +1018,14 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \{\s*max-height: min\(var\(--rich-text-command-menu-max-height\), calc\(100vh - 48px\)\);/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-borderless \{\s*border: 0;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-avatar \{\s*width: 24px;\s*height: 24px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-has-header="true"\] \.rich-text-command-menu-list \{\s*padding-top: 4px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-showcase\[data-nested="true"\] \.rich-text-command-menu-list \{\s*overflow-y: auto;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /--rich-text-command-menu-scroll-mask-fade-size: 48px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-list-scrolled="true"\] \.rich-text-command-menu-list \{[\s\S]*linear-gradient\(to bottom, transparent 0, black var\(--rich-text-command-menu-scroll-mask-fade-size\), black 100%\)/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /data-list-overflow-after/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /black calc\(100% - var\(--rich-text-command-menu-scroll-mask-fade-size\)\), transparent 100%/u);
-	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-has-header="true"\] \.rich-text-command-menu-list \{\s*padding-top: 0;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-search \{[\s\S]*flex: 0 0 44px;[\s\S]*grid-template-columns: 24px minmax\(0, 1fr\) auto;[\s\S]*height: 44px;[\s\S]*min-height: 44px;/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-search \{[\s\S]*padding: 0 6px 0 12px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-search > \[data-slot="input"\] \{\s*height: 100%;/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /rich-text-command-menu-search-picker/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /data-first-item-input|rich-text-command-menu-input/u);
@@ -1019,6 +1039,7 @@ test("Mention menu exposes people/agent and command categories and mention lozen
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-description\b/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu\[data-nested="true"\] \.rich-text-command-menu-list \.menu-row-byline \{\s*pointer-events: none;/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*border-bottom/u);
+	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-back \{[\s\S]*padding: 8px 6px 8px 12px;/u);
 	assert.match(RICH_TEXT_EDITOR_CSS, /\.rich-text-command-menu-item \{[\s\S]*?height: 44px;/u);
 	// `[^}]*?` keeps this scoped to the nested item rule's own block so it can't
 	// leak into a later rule (flat / non-nested rows carry 6px vertical padding).

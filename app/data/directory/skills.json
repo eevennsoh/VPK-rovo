@@ -9,7 +9,6 @@
 		"companyId": "you",
 		"categoryId": "content-and-communication",
 		"starCount": 30,
-		"viewCount": 6279,
 		"favorite": true,
 		"tools": [
 			{
@@ -29,7 +28,15 @@
 			}
 		],
 		"instructions": "# Design Landing Page\n\nThis skill guides creation of distinctive, production-grade frontend interfaces that avoid generic AI aesthetics. The goal is to implement real, working code with careful attention to aesthetic details and deliberate creative choices.\n\nThe user provides frontend requirements: a component, page, application, or interface to build. They may include context about the purpose, audience, or technical constraints.\n\n---\n\n## Design Thinking\n\nBefore coding, understand the context and commit to a bold aesthetic direction.",
-		"source": "custom"
+		"source": "custom",
+		"collectionId": "custom",
+		"collectionDescription": "User-authored skills tailored to local workflows, teams, and project-specific operating patterns.",
+		"collectionProducts": [
+			"Custom"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
+		"teammateCount": 8653,
+		"verified": false
 	},
 	{
 		"id": "develop-mobile-app-interface",
@@ -41,7 +48,6 @@
 		"companyId": "you",
 		"categoryId": "software-development",
 		"starCount": 45,
-		"viewCount": 8345,
 		"favorite": true,
 		"tools": [
 			{
@@ -56,7 +62,15 @@
 			}
 		],
 		"instructions": "# Develop Mobile App Interface\n\nCraft intuitive mobile app interfaces for iOS and Android. Use this skill for onboarding flows, productivity surfaces, detail views, and app experiences that need refined interaction patterns.\n\nPlan the primary task first, then design the smallest complete surface that lets a user accomplish it.",
-		"source": "custom"
+		"source": "custom",
+		"collectionId": "custom",
+		"collectionDescription": "User-authored skills tailored to local workflows, teams, and project-specific operating patterns.",
+		"collectionProducts": [
+			"Custom"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
+		"teammateCount": 24391,
+		"verified": false
 	},
 	{
 		"id": "create-brand-identity",
@@ -68,7 +82,6 @@
 		"companyId": "you",
 		"categoryId": "content-and-communication",
 		"starCount": 60,
-		"viewCount": 4921,
 		"favorite": true,
 		"tools": [
 			{
@@ -83,7 +96,15 @@
 			}
 		],
 		"instructions": "# Create Brand Identity\n\nCreate cohesive brand systems with logo direction, color palette, typography, voice, and reusable visual rules.\n\nUse when a project needs a recognizable visual identity before product or marketing screens are built.",
-		"source": "custom"
+		"source": "custom",
+		"collectionId": "custom",
+		"collectionDescription": "User-authored skills tailored to local workflows, teams, and project-specific operating patterns.",
+		"collectionProducts": [
+			"Custom"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
+		"teammateCount": 3836,
+		"verified": false
 	},
 	{
 		"id": "produce-marketing-materials",
@@ -95,7 +116,6 @@
 		"companyId": "you",
 		"categoryId": "content-and-communication",
 		"starCount": 25,
-		"viewCount": 3810,
 		"tools": [
 			{
 				"id": "campaign-kit",
@@ -104,7 +124,15 @@
 			}
 		],
 		"instructions": "Create polished campaign assets with clear hierarchy, strong brand fit, and production-ready copy blocks.",
-		"source": "custom"
+		"source": "custom",
+		"collectionId": "custom",
+		"collectionDescription": "User-authored skills tailored to local workflows, teams, and project-specific operating patterns.",
+		"collectionProducts": [
+			"Custom"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
+		"teammateCount": 449,
+		"verified": false
 	},
 	{
 		"id": "review-pull-request",
@@ -115,7 +143,6 @@
 		"companyId": "atlassian",
 		"categoryId": "software-development",
 		"starCount": 61,
-		"viewCount": 8120,
 		"tools": [
 			{
 				"id": "bitbucket",
@@ -124,7 +151,18 @@
 			}
 		],
 		"instructions": "Inspect changed files, summarize behavioral risk, and produce actionable review comments.",
-		"source": "software"
+		"source": "software",
+		"collectionId": "software",
+		"collectionDescription": "Ship high-quality software faster with developer agents, source control, CI/CD, and delivery insights.",
+		"collectionProducts": [
+			"Rovo Dev",
+			"DX",
+			"Pipelines",
+			"Bitbucket"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
+		"teammateCount": 20489,
+		"verified": true
 	},
 	{
 		"id": "summarize-thread",
@@ -136,7 +174,6 @@
 		"companyId": "slack",
 		"categoryId": "content-and-communication",
 		"starCount": 54,
-		"viewCount": 7045,
 		"tools": [
 			{
 				"id": "slack",
@@ -145,7 +182,16 @@
 			}
 		],
 		"instructions": "Extract decisions, unresolved questions, and owner/date pairs from long Slack-style discussions.",
-		"source": "3p"
+		"source": "3p",
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 2657,
+		"verified": true
 	},
 	{
 		"id": "schedule-meeting",
@@ -157,7 +203,6 @@
 		"companyId": "google",
 		"categoryId": "administrative-tools",
 		"starCount": 33,
-		"viewCount": 5210,
 		"tools": [
 			{
 				"id": "calendar",
@@ -166,7 +211,16 @@
 			}
 		],
 		"instructions": "Compare availability, propose meeting slots, and draft concise invites.",
-		"source": "3p"
+		"source": "3p",
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 3440,
+		"verified": true
 	},
 	{
 		"id": "build-report",
@@ -178,7 +232,6 @@
 		"companyId": "notion",
 		"categoryId": "data-and-analytics",
 		"starCount": 47,
-		"viewCount": 6940,
 		"tools": [
 			{
 				"id": "notion",
@@ -187,7 +240,16 @@
 			}
 		],
 		"instructions": "Structure metric snapshots into a short, evidence-backed status report.",
-		"source": "3p"
+		"source": "3p",
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 19998,
+		"verified": true
 	},
 	{
 		"id": "create-payment-flow",
@@ -199,7 +261,6 @@
 		"companyId": "stripe",
 		"categoryId": "project-management",
 		"starCount": 22,
-		"viewCount": 3384,
 		"tools": [
 			{
 				"id": "stripe",
@@ -208,7 +269,16 @@
 			}
 		],
 		"instructions": "Map payment states, error recovery, and confirmation copy for checkout-like flows.",
-		"source": "3p"
+		"source": "3p",
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 15441,
+		"verified": true
 	},
 	{
 		"id": "sprint-planner",
@@ -219,7 +289,17 @@
 		"categoryId": "project-management",
 		"publisherName": "Atlassian",
 		"starCount": 75,
-		"viewCount": 6415
+		"collectionId": "teamwork",
+		"collectionDescription": "Supercharge teamwork across planning, documentation, async updates, and AI-assisted collaboration.",
+		"collectionProducts": [
+			"Jira",
+			"Confluence",
+			"Loom",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
+		"teammateCount": 20450,
+		"verified": true
 	},
 	{
 		"id": "backlog-groomer",
@@ -230,7 +310,17 @@
 		"categoryId": "project-management",
 		"publisherName": "Atlassian",
 		"starCount": 14,
-		"viewCount": 7028
+		"collectionId": "teamwork",
+		"collectionDescription": "Supercharge teamwork across planning, documentation, async updates, and AI-assisted collaboration.",
+		"collectionProducts": [
+			"Jira",
+			"Confluence",
+			"Loom",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
+		"teammateCount": 9334,
+		"verified": true
 	},
 	{
 		"id": "create-work-items",
@@ -241,7 +331,17 @@
 		"categoryId": "project-management",
 		"publisherName": "Atlassian",
 		"starCount": 31,
-		"viewCount": 7641
+		"collectionId": "teamwork",
+		"collectionDescription": "Supercharge teamwork across planning, documentation, async updates, and AI-assisted collaboration.",
+		"collectionProducts": [
+			"Jira",
+			"Confluence",
+			"Loom",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
+		"teammateCount": 20784,
+		"verified": true
 	},
 	{
 		"id": "roadmap-builder",
@@ -252,7 +352,17 @@
 		"categoryId": "project-management",
 		"publisherName": "Atlassian",
 		"starCount": 48,
-		"viewCount": 8254
+		"collectionId": "strategy",
+		"collectionDescription": "Turn strategy into outcomes with portfolio planning, prioritization, talent alignment, and decision support.",
+		"collectionProducts": [
+			"Focus",
+			"Talent",
+			"Align",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
+		"teammateCount": 1821,
+		"verified": true
 	},
 	{
 		"id": "dependency-mapper",
@@ -263,7 +373,17 @@
 		"categoryId": "project-management",
 		"publisherName": "Atlassian",
 		"starCount": 65,
-		"viewCount": 8867
+		"collectionId": "teamwork",
+		"collectionDescription": "Supercharge teamwork across planning, documentation, async updates, and AI-assisted collaboration.",
+		"collectionProducts": [
+			"Jira",
+			"Confluence",
+			"Loom",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
+		"teammateCount": 24790,
+		"verified": true
 	},
 	{
 		"id": "milestone-tracker",
@@ -274,7 +394,17 @@
 		"categoryId": "project-management",
 		"publisherName": "Atlassian",
 		"starCount": 82,
-		"viewCount": 9480
+		"collectionId": "teamwork",
+		"collectionDescription": "Supercharge teamwork across planning, documentation, async updates, and AI-assisted collaboration.",
+		"collectionProducts": [
+			"Jira",
+			"Confluence",
+			"Loom",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
+		"teammateCount": 17018,
+		"verified": true
 	},
 	{
 		"id": "standup-summarizer",
@@ -285,7 +415,17 @@
 		"categoryId": "project-management",
 		"publisherName": "Atlassian",
 		"starCount": 21,
-		"viewCount": 1493
+		"collectionId": "teamwork",
+		"collectionDescription": "Supercharge teamwork across planning, documentation, async updates, and AI-assisted collaboration.",
+		"collectionProducts": [
+			"Jira",
+			"Confluence",
+			"Loom",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
+		"teammateCount": 23316,
+		"verified": true
 	},
 	{
 		"id": "bulk-issue-editor",
@@ -296,7 +436,16 @@
 		"categoryId": "administrative-tools",
 		"publisherName": "Atlassian",
 		"starCount": 38,
-		"viewCount": 2106
+		"collectionId": "platform",
+		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
+		"collectionProducts": [
+			"Atlassian Administration",
+			"Automation",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/platform",
+		"teammateCount": 2227,
+		"verified": true
 	},
 	{
 		"id": "user-provisioning",
@@ -307,7 +456,16 @@
 		"categoryId": "administrative-tools",
 		"publisherName": "Atlassian",
 		"starCount": 55,
-		"viewCount": 2719
+		"collectionId": "platform",
+		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
+		"collectionProducts": [
+			"Atlassian Administration",
+			"Automation",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/platform",
+		"teammateCount": 20494,
+		"verified": true
 	},
 	{
 		"id": "permission-auditor",
@@ -318,7 +476,16 @@
 		"categoryId": "administrative-tools",
 		"publisherName": "Atlassian",
 		"starCount": 72,
-		"viewCount": 3332
+		"collectionId": "platform",
+		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
+		"collectionProducts": [
+			"Atlassian Administration",
+			"Automation",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/platform",
+		"teammateCount": 17559,
+		"verified": true
 	},
 	{
 		"id": "license-optimizer",
@@ -329,7 +496,16 @@
 		"categoryId": "administrative-tools",
 		"publisherName": "Atlassian",
 		"starCount": 89,
-		"viewCount": 3945
+		"collectionId": "platform",
+		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
+		"collectionProducts": [
+			"Atlassian Administration",
+			"Automation",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/platform",
+		"teammateCount": 23808,
+		"verified": true
 	},
 	{
 		"id": "automation-rule-builder",
@@ -340,7 +516,16 @@
 		"categoryId": "administrative-tools",
 		"publisherName": "Atlassian",
 		"starCount": 28,
-		"viewCount": 4558
+		"collectionId": "platform",
+		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
+		"collectionProducts": [
+			"Atlassian Administration",
+			"Automation",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/platform",
+		"teammateCount": 9193,
+		"verified": true
 	},
 	{
 		"id": "use-computer",
@@ -351,7 +536,14 @@
 		"categoryId": "administrative-tools",
 		"publisherName": "Atlassian",
 		"starCount": 45,
-		"viewCount": 5171
+		"collectionId": "default",
+		"collectionDescription": "General-purpose skills available across many teams and workflows.",
+		"collectionProducts": [
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
+		"teammateCount": 24620,
+		"verified": true
 	},
 	{
 		"id": "appfire-automation",
@@ -364,7 +556,15 @@
 		"publisherAvatarSrc": "/2p/appfire.png",
 		"companyId": "appfire",
 		"starCount": 62,
-		"viewCount": 5784
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 20164,
+		"verified": true
 	},
 	{
 		"id": "confluence-page-drafter",
@@ -375,7 +575,17 @@
 		"categoryId": "content-and-communication",
 		"publisherName": "Atlassian",
 		"starCount": 79,
-		"viewCount": 6397
+		"collectionId": "teamwork",
+		"collectionDescription": "Supercharge teamwork across planning, documentation, async updates, and AI-assisted collaboration.",
+		"collectionProducts": [
+			"Jira",
+			"Confluence",
+			"Loom",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
+		"teammateCount": 14952,
+		"verified": true
 	},
 	{
 		"id": "release-announcement",
@@ -386,7 +596,17 @@
 		"categoryId": "content-and-communication",
 		"publisherName": "Atlassian",
 		"starCount": 18,
-		"viewCount": 7010
+		"collectionId": "software",
+		"collectionDescription": "Ship high-quality software faster with developer agents, source control, CI/CD, and delivery insights.",
+		"collectionProducts": [
+			"Rovo Dev",
+			"DX",
+			"Pipelines",
+			"Bitbucket"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
+		"teammateCount": 6364,
+		"verified": true
 	},
 	{
 		"id": "translate-content",
@@ -397,7 +617,16 @@
 		"categoryId": "content-and-communication",
 		"publisherName": "Atlassian",
 		"starCount": 35,
-		"viewCount": 7623
+		"collectionId": "platform",
+		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
+		"collectionProducts": [
+			"Atlassian Administration",
+			"Automation",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/platform",
+		"teammateCount": 14967,
+		"verified": true
 	},
 	{
 		"id": "brand-voice-editor",
@@ -408,7 +637,17 @@
 		"categoryId": "content-and-communication",
 		"publisherName": "Atlassian",
 		"starCount": 52,
-		"viewCount": 8236
+		"collectionId": "strategy",
+		"collectionDescription": "Turn strategy into outcomes with portfolio planning, prioritization, talent alignment, and decision support.",
+		"collectionProducts": [
+			"Focus",
+			"Talent",
+			"Align",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
+		"teammateCount": 12533,
+		"verified": true
 	},
 	{
 		"id": "explore-ideas",
@@ -419,7 +658,17 @@
 		"categoryId": "content-and-communication",
 		"publisherName": "Atlassian",
 		"starCount": 69,
-		"viewCount": 8849
+		"collectionId": "teamwork",
+		"collectionDescription": "Supercharge teamwork across planning, documentation, async updates, and AI-assisted collaboration.",
+		"collectionProducts": [
+			"Jira",
+			"Confluence",
+			"Loom",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
+		"teammateCount": 23589,
+		"verified": true
 	},
 	{
 		"id": "jql-query-builder",
@@ -430,7 +679,17 @@
 		"categoryId": "data-and-analytics",
 		"publisherName": "Atlassian",
 		"starCount": 86,
-		"viewCount": 9462
+		"collectionId": "software",
+		"collectionDescription": "Ship high-quality software faster with developer agents, source control, CI/CD, and delivery insights.",
+		"collectionProducts": [
+			"Rovo Dev",
+			"DX",
+			"Pipelines",
+			"Bitbucket"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
+		"teammateCount": 6967,
+		"verified": true
 	},
 	{
 		"id": "dashboard-generator",
@@ -441,7 +700,17 @@
 		"categoryId": "data-and-analytics",
 		"publisherName": "Atlassian",
 		"starCount": 25,
-		"viewCount": 1475
+		"collectionId": "strategy",
+		"collectionDescription": "Turn strategy into outcomes with portfolio planning, prioritization, talent alignment, and decision support.",
+		"collectionProducts": [
+			"Focus",
+			"Talent",
+			"Align",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
+		"teammateCount": 9511,
+		"verified": true
 	},
 	{
 		"id": "trend-spotter",
@@ -452,7 +721,17 @@
 		"categoryId": "data-and-analytics",
 		"publisherName": "Atlassian",
 		"starCount": 42,
-		"viewCount": 2088
+		"collectionId": "strategy",
+		"collectionDescription": "Turn strategy into outcomes with portfolio planning, prioritization, talent alignment, and decision support.",
+		"collectionProducts": [
+			"Focus",
+			"Talent",
+			"Align",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
+		"teammateCount": 20190,
+		"verified": true
 	},
 	{
 		"id": "report-compiler",
@@ -463,7 +742,17 @@
 		"categoryId": "data-and-analytics",
 		"publisherName": "Atlassian",
 		"starCount": 59,
-		"viewCount": 2701
+		"collectionId": "strategy",
+		"collectionDescription": "Turn strategy into outcomes with portfolio planning, prioritization, talent alignment, and decision support.",
+		"collectionProducts": [
+			"Focus",
+			"Talent",
+			"Align",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
+		"teammateCount": 15655,
+		"verified": true
 	},
 	{
 		"id": "search-web",
@@ -474,7 +763,14 @@
 		"categoryId": "data-and-analytics",
 		"publisherName": "Atlassian",
 		"starCount": 76,
-		"viewCount": 3314
+		"collectionId": "default",
+		"collectionDescription": "General-purpose skills available across many teams and workflows.",
+		"collectionProducts": [
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
+		"teammateCount": 7538,
+		"verified": true
 	},
 	{
 		"id": "run-deep-research",
@@ -485,7 +781,14 @@
 		"categoryId": "data-and-analytics",
 		"publisherName": "Atlassian",
 		"starCount": 15,
-		"viewCount": 3927
+		"collectionId": "default",
+		"collectionDescription": "General-purpose skills available across many teams and workflows.",
+		"collectionProducts": [
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
+		"teammateCount": 17359,
+		"verified": true
 	},
 	{
 		"id": "funnel-analytics",
@@ -498,7 +801,15 @@
 		"publisherAvatarSrc": "/3p/amplitude/24.svg",
 		"companyId": "amplitude",
 		"starCount": 32,
-		"viewCount": 4540
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 6738,
+		"verified": true
 	},
 	{
 		"id": "powerbi-reporter",
@@ -511,7 +822,15 @@
 		"publisherAvatarSrc": "/3p/powerbi/24.svg",
 		"companyId": "powerbi",
 		"starCount": 49,
-		"viewCount": 5153
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 16147,
+		"verified": true
 	},
 	{
 		"id": "tempo-timesheet-report",
@@ -524,7 +843,15 @@
 		"publisherAvatarSrc": "/2p/tempo-software.png",
 		"companyId": "tempo-software",
 		"starCount": 66,
-		"viewCount": 5766
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 21296,
+		"verified": true
 	},
 	{
 		"id": "generate-code",
@@ -535,7 +862,17 @@
 		"categoryId": "software-development",
 		"publisherName": "Atlassian",
 		"starCount": 83,
-		"viewCount": 6379
+		"collectionId": "software",
+		"collectionDescription": "Ship high-quality software faster with developer agents, source control, CI/CD, and delivery insights.",
+		"collectionProducts": [
+			"Rovo Dev",
+			"DX",
+			"Pipelines",
+			"Bitbucket"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
+		"teammateCount": 16236,
+		"verified": true
 	},
 	{
 		"id": "draft-release-notes",
@@ -546,7 +883,17 @@
 		"categoryId": "software-development",
 		"publisherName": "Atlassian",
 		"starCount": 22,
-		"viewCount": 6992
+		"collectionId": "software",
+		"collectionDescription": "Ship high-quality software faster with developer agents, source control, CI/CD, and delivery insights.",
+		"collectionProducts": [
+			"Rovo Dev",
+			"DX",
+			"Pipelines",
+			"Bitbucket"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
+		"teammateCount": 2358,
+		"verified": true
 	},
 	{
 		"id": "commit-message-writer",
@@ -557,7 +904,17 @@
 		"categoryId": "software-development",
 		"publisherName": "Atlassian",
 		"starCount": 39,
-		"viewCount": 7605
+		"collectionId": "software",
+		"collectionDescription": "Ship high-quality software faster with developer agents, source control, CI/CD, and delivery insights.",
+		"collectionProducts": [
+			"Rovo Dev",
+			"DX",
+			"Pipelines",
+			"Bitbucket"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
+		"teammateCount": 5090,
+		"verified": true
 	},
 	{
 		"id": "bug-report-assistant",
@@ -568,7 +925,17 @@
 		"categoryId": "software-development",
 		"publisherName": "Atlassian",
 		"starCount": 56,
-		"viewCount": 8218
+		"collectionId": "software",
+		"collectionDescription": "Ship high-quality software faster with developer agents, source control, CI/CD, and delivery insights.",
+		"collectionProducts": [
+			"Rovo Dev",
+			"DX",
+			"Pipelines",
+			"Bitbucket"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
+		"teammateCount": 11803,
+		"verified": true
 	},
 	{
 		"id": "test-plan-builder",
@@ -579,7 +946,17 @@
 		"categoryId": "software-development",
 		"publisherName": "Atlassian",
 		"starCount": 73,
-		"viewCount": 8831
+		"collectionId": "software",
+		"collectionDescription": "Ship high-quality software faster with developer agents, source control, CI/CD, and delivery insights.",
+		"collectionProducts": [
+			"Rovo Dev",
+			"DX",
+			"Pipelines",
+			"Bitbucket"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
+		"teammateCount": 4265,
+		"verified": true
 	},
 	{
 		"id": "github-pr-summary",
@@ -592,7 +969,15 @@
 		"publisherAvatarSrc": "/3p/github/24.svg",
 		"companyId": "github",
 		"starCount": 12,
-		"viewCount": 9444
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 19272,
+		"verified": true
 	},
 	{
 		"id": "gitkraken-branch-helper",
@@ -605,7 +990,15 @@
 		"publisherAvatarSrc": "/2p/gitkraken.png",
 		"companyId": "gitkraken",
 		"starCount": 29,
-		"viewCount": 1457
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 13443,
+		"verified": true
 	},
 	{
 		"id": "service-request-triage",
@@ -616,7 +1009,17 @@
 		"categoryId": "it-support-and-service",
 		"publisherName": "Atlassian",
 		"starCount": 46,
-		"viewCount": 2070
+		"collectionId": "service",
+		"collectionDescription": "Deliver high-velocity employee and customer service with connected assets, requests, and operational context.",
+		"collectionProducts": [
+			"Jira Service Management",
+			"Customer Service Management",
+			"Assets",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
+		"teammateCount": 22607,
+		"verified": true
 	},
 	{
 		"id": "analyze-root-cause",
@@ -627,7 +1030,17 @@
 		"categoryId": "it-support-and-service",
 		"publisherName": "Atlassian",
 		"starCount": 63,
-		"viewCount": 2683
+		"collectionId": "service",
+		"collectionDescription": "Deliver high-velocity employee and customer service with connected assets, requests, and operational context.",
+		"collectionProducts": [
+			"Jira Service Management",
+			"Customer Service Management",
+			"Assets",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
+		"teammateCount": 8518,
+		"verified": true
 	},
 	{
 		"id": "debug-log-issue",
@@ -638,7 +1051,17 @@
 		"categoryId": "it-support-and-service",
 		"publisherName": "Atlassian",
 		"starCount": 80,
-		"viewCount": 3296
+		"collectionId": "service",
+		"collectionDescription": "Deliver high-velocity employee and customer service with connected assets, requests, and operational context.",
+		"collectionProducts": [
+			"Jira Service Management",
+			"Customer Service Management",
+			"Assets",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
+		"teammateCount": 16475,
+		"verified": true
 	},
 	{
 		"id": "incident-responder",
@@ -649,7 +1072,17 @@
 		"categoryId": "it-support-and-service",
 		"publisherName": "Atlassian",
 		"starCount": 19,
-		"viewCount": 3909
+		"collectionId": "service",
+		"collectionDescription": "Deliver high-velocity employee and customer service with connected assets, requests, and operational context.",
+		"collectionProducts": [
+			"Jira Service Management",
+			"Customer Service Management",
+			"Assets",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
+		"teammateCount": 6762,
+		"verified": true
 	},
 	{
 		"id": "kb-article-writer",
@@ -660,7 +1093,17 @@
 		"categoryId": "it-support-and-service",
 		"publisherName": "Atlassian",
 		"starCount": 36,
-		"viewCount": 4522
+		"collectionId": "service",
+		"collectionDescription": "Deliver high-velocity employee and customer service with connected assets, requests, and operational context.",
+		"collectionProducts": [
+			"Jira Service Management",
+			"Customer Service Management",
+			"Assets",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
+		"teammateCount": 11073,
+		"verified": true
 	},
 	{
 		"id": "sla-monitor",
@@ -671,7 +1114,17 @@
 		"categoryId": "it-support-and-service",
 		"publisherName": "Atlassian",
 		"starCount": 53,
-		"viewCount": 5135
+		"collectionId": "service",
+		"collectionDescription": "Deliver high-velocity employee and customer service with connected assets, requests, and operational context.",
+		"collectionProducts": [
+			"Jira Service Management",
+			"Customer Service Management",
+			"Assets",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
+		"teammateCount": 15180,
+		"verified": true
 	},
 	{
 		"id": "response-drafter",
@@ -682,7 +1135,17 @@
 		"categoryId": "it-support-and-service",
 		"publisherName": "Atlassian",
 		"starCount": 70,
-		"viewCount": 5748
+		"collectionId": "service",
+		"collectionDescription": "Deliver high-velocity employee and customer service with connected assets, requests, and operational context.",
+		"collectionProducts": [
+			"Jira Service Management",
+			"Customer Service Management",
+			"Assets",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
+		"teammateCount": 10983,
+		"verified": true
 	},
 	{
 		"id": "servicenow-ticket-finder",
@@ -695,7 +1158,15 @@
 		"publisherAvatarSrc": "/3p/servicenow/24.svg",
 		"companyId": "servicenow",
 		"starCount": 87,
-		"viewCount": 6361
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 17346,
+		"verified": true
 	},
 	{
 		"id": "diagram-creator",
@@ -706,7 +1177,16 @@
 		"categoryId": "design-and-diagramming",
 		"publisherName": "Atlassian",
 		"starCount": 26,
-		"viewCount": 6974
+		"collectionId": "product",
+		"collectionDescription": "Build products with confidence by connecting feedback, discovery, prioritization, roadmaps, and delivery.",
+		"collectionProducts": [
+			"Feedback",
+			"Jira Product Discovery",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
+		"teammateCount": 9621,
+		"verified": true
 	},
 	{
 		"id": "architecture-diagrammer",
@@ -717,7 +1197,17 @@
 		"categoryId": "design-and-diagramming",
 		"publisherName": "Atlassian",
 		"starCount": 43,
-		"viewCount": 7587
+		"collectionId": "software",
+		"collectionDescription": "Ship high-quality software faster with developer agents, source control, CI/CD, and delivery insights.",
+		"collectionProducts": [
+			"Rovo Dev",
+			"DX",
+			"Pipelines",
+			"Bitbucket"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/software",
+		"teammateCount": 7356,
+		"verified": true
 	},
 	{
 		"id": "flowchart-builder",
@@ -728,7 +1218,16 @@
 		"categoryId": "design-and-diagramming",
 		"publisherName": "Atlassian",
 		"starCount": 60,
-		"viewCount": 8200
+		"collectionId": "product",
+		"collectionDescription": "Build products with confidence by connecting feedback, discovery, prioritization, roadmaps, and delivery.",
+		"collectionProducts": [
+			"Feedback",
+			"Jira Product Discovery",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
+		"teammateCount": 10041,
+		"verified": true
 	},
 	{
 		"id": "wireframe-generator",
@@ -739,7 +1238,16 @@
 		"categoryId": "design-and-diagramming",
 		"publisherName": "Atlassian",
 		"starCount": 77,
-		"viewCount": 8813
+		"collectionId": "product",
+		"collectionDescription": "Build products with confidence by connecting feedback, discovery, prioritization, roadmaps, and delivery.",
+		"collectionProducts": [
+			"Feedback",
+			"Jira Product Discovery",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
+		"teammateCount": 4727,
+		"verified": true
 	},
 	{
 		"id": "whiteboard-summarizer",
@@ -750,7 +1258,16 @@
 		"categoryId": "design-and-diagramming",
 		"publisherName": "Atlassian",
 		"starCount": 16,
-		"viewCount": 9426
+		"collectionId": "product",
+		"collectionDescription": "Build products with confidence by connecting feedback, discovery, prioritization, roadmaps, and delivery.",
+		"collectionProducts": [
+			"Feedback",
+			"Jira Product Discovery",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
+		"teammateCount": 3760,
+		"verified": true
 	},
 	{
 		"id": "figma-design-context",
@@ -763,7 +1280,15 @@
 		"publisherAvatarSrc": "/3p/figma/24.svg",
 		"companyId": "figma",
 		"starCount": 33,
-		"viewCount": 1439
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 2736,
+		"verified": true
 	},
 	{
 		"id": "miro-board-synth",
@@ -776,7 +1301,15 @@
 		"publisherAvatarSrc": "/3p/miro/24.svg",
 		"companyId": "miro",
 		"starCount": 50,
-		"viewCount": 2052
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 23332,
+		"verified": true
 	},
 	{
 		"id": "lucid-diagram-finder",
@@ -789,7 +1322,15 @@
 		"publisherAvatarSrc": "/3p/lucidchart/24.svg",
 		"companyId": "lucidchart",
 		"starCount": 67,
-		"viewCount": 2665
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 6799,
+		"verified": true
 	},
 	{
 		"id": "access-review",
@@ -800,7 +1341,16 @@
 		"categoryId": "security-and-compliance",
 		"publisherName": "Atlassian",
 		"starCount": 84,
-		"viewCount": 3278
+		"collectionId": "platform",
+		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
+		"collectionProducts": [
+			"Atlassian Administration",
+			"Automation",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/platform",
+		"teammateCount": 6748,
+		"verified": true
 	},
 	{
 		"id": "permission-audit",
@@ -811,7 +1361,16 @@
 		"categoryId": "security-and-compliance",
 		"publisherName": "Atlassian",
 		"starCount": 23,
-		"viewCount": 3891
+		"collectionId": "platform",
+		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
+		"collectionProducts": [
+			"Atlassian Administration",
+			"Automation",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/platform",
+		"teammateCount": 7508,
+		"verified": true
 	},
 	{
 		"id": "policy-drafter",
@@ -822,7 +1381,16 @@
 		"categoryId": "security-and-compliance",
 		"publisherName": "Atlassian",
 		"starCount": 40,
-		"viewCount": 4504
+		"collectionId": "platform",
+		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
+		"collectionProducts": [
+			"Atlassian Administration",
+			"Automation",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/platform",
+		"teammateCount": 13646,
+		"verified": true
 	},
 	{
 		"id": "audit-trail-reporter",
@@ -833,7 +1401,16 @@
 		"categoryId": "security-and-compliance",
 		"publisherName": "Atlassian",
 		"starCount": 57,
-		"viewCount": 5117
+		"collectionId": "platform",
+		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
+		"collectionProducts": [
+			"Atlassian Administration",
+			"Automation",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/platform",
+		"teammateCount": 19173,
+		"verified": true
 	},
 	{
 		"id": "compliance-check",
@@ -844,7 +1421,16 @@
 		"categoryId": "security-and-compliance",
 		"publisherName": "Atlassian",
 		"starCount": 74,
-		"viewCount": 5730
+		"collectionId": "platform",
+		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
+		"collectionProducts": [
+			"Atlassian Administration",
+			"Automation",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/platform",
+		"teammateCount": 5933,
+		"verified": true
 	},
 	{
 		"id": "data-residency-review",
@@ -855,7 +1441,16 @@
 		"categoryId": "security-and-compliance",
 		"publisherName": "Atlassian",
 		"starCount": 13,
-		"viewCount": 6343
+		"collectionId": "platform",
+		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
+		"collectionProducts": [
+			"Atlassian Administration",
+			"Automation",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/platform",
+		"teammateCount": 7537,
+		"verified": true
 	},
 	{
 		"id": "vulnerability-triage",
@@ -868,7 +1463,15 @@
 		"publisherAvatarSrc": "/3p/sentry/24.svg",
 		"companyId": "sentry",
 		"starCount": 30,
-		"viewCount": 6956
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 6484,
+		"verified": true
 	},
 	{
 		"id": "incident-disclosure",
@@ -879,7 +1482,17 @@
 		"categoryId": "security-and-compliance",
 		"publisherName": "Atlassian",
 		"starCount": 47,
-		"viewCount": 7569
+		"collectionId": "service",
+		"collectionDescription": "Deliver high-velocity employee and customer service with connected assets, requests, and operational context.",
+		"collectionProducts": [
+			"Jira Service Management",
+			"Customer Service Management",
+			"Assets",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/service",
+		"teammateCount": 22657,
+		"verified": true
 	},
 	{
 		"id": "user-manual-writer",
@@ -890,7 +1503,17 @@
 		"categoryId": "hr-and-team-building",
 		"publisherName": "Atlassian",
 		"starCount": 64,
-		"viewCount": 8182
+		"collectionId": "teamwork",
+		"collectionDescription": "Supercharge teamwork across planning, documentation, async updates, and AI-assisted collaboration.",
+		"collectionProducts": [
+			"Jira",
+			"Confluence",
+			"Loom",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
+		"teammateCount": 17905,
+		"verified": true
 	},
 	{
 		"id": "onboarding-plan",
@@ -901,7 +1524,17 @@
 		"categoryId": "hr-and-team-building",
 		"publisherName": "Atlassian",
 		"starCount": 81,
-		"viewCount": 8795
+		"collectionId": "teamwork",
+		"collectionDescription": "Supercharge teamwork across planning, documentation, async updates, and AI-assisted collaboration.",
+		"collectionProducts": [
+			"Jira",
+			"Confluence",
+			"Loom",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
+		"teammateCount": 7674,
+		"verified": true
 	},
 	{
 		"id": "create-teams",
@@ -912,7 +1545,16 @@
 		"categoryId": "hr-and-team-building",
 		"publisherName": "Atlassian",
 		"starCount": 20,
-		"viewCount": 9408
+		"collectionId": "platform",
+		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
+		"collectionProducts": [
+			"Atlassian Administration",
+			"Automation",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/platform",
+		"teammateCount": 3948,
+		"verified": true
 	},
 	{
 		"id": "team-health-survey-skill",
@@ -923,7 +1565,17 @@
 		"categoryId": "hr-and-team-building",
 		"publisherName": "Atlassian",
 		"starCount": 37,
-		"viewCount": 1421
+		"collectionId": "teamwork",
+		"collectionDescription": "Supercharge teamwork across planning, documentation, async updates, and AI-assisted collaboration.",
+		"collectionProducts": [
+			"Jira",
+			"Confluence",
+			"Loom",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
+		"teammateCount": 4190,
+		"verified": true
 	},
 	{
 		"id": "offboarding-checklist",
@@ -934,7 +1586,16 @@
 		"categoryId": "hr-and-team-building",
 		"publisherName": "Atlassian",
 		"starCount": 54,
-		"viewCount": 2034
+		"collectionId": "platform",
+		"collectionDescription": "Core platform skills for governance, automation, administration, and cross-product system operations.",
+		"collectionProducts": [
+			"Atlassian Administration",
+			"Automation",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/platform",
+		"teammateCount": 2459,
+		"verified": true
 	},
 	{
 		"id": "team-building-planner",
@@ -945,7 +1606,17 @@
 		"categoryId": "hr-and-team-building",
 		"publisherName": "Atlassian",
 		"starCount": 71,
-		"viewCount": 2647
+		"collectionId": "teamwork",
+		"collectionDescription": "Supercharge teamwork across planning, documentation, async updates, and AI-assisted collaboration.",
+		"collectionProducts": [
+			"Jira",
+			"Confluence",
+			"Loom",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/teamwork",
+		"teammateCount": 1432,
+		"verified": true
 	},
 	{
 		"id": "workday-people-lookup",
@@ -958,7 +1629,15 @@
 		"publisherAvatarSrc": "/3p/workday/24.svg",
 		"companyId": "workday",
 		"starCount": 88,
-		"viewCount": 3260
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 24317,
+		"verified": true
 	},
 	{
 		"id": "hiring-jd-drafter",
@@ -971,7 +1650,14 @@
 		"publisherAvatarSrc": "/avatar-human/andrea-wilson.png",
 		"companyId": "you",
 		"starCount": 27,
-		"viewCount": 3873
+		"collectionId": "custom",
+		"collectionDescription": "User-authored skills tailored to local workflows, teams, and project-specific operating patterns.",
+		"collectionProducts": [
+			"Custom"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/software/rovo",
+		"teammateCount": 18006,
+		"verified": false
 	},
 	{
 		"id": "account-brief-builder",
@@ -982,7 +1668,17 @@
 		"categoryId": "sales-and-customer-relations",
 		"publisherName": "Atlassian",
 		"starCount": 44,
-		"viewCount": 4486
+		"collectionId": "strategy",
+		"collectionDescription": "Turn strategy into outcomes with portfolio planning, prioritization, talent alignment, and decision support.",
+		"collectionProducts": [
+			"Focus",
+			"Talent",
+			"Align",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
+		"teammateCount": 23315,
+		"verified": true
 	},
 	{
 		"id": "renewal-risk-flagger",
@@ -993,7 +1689,17 @@
 		"categoryId": "sales-and-customer-relations",
 		"publisherName": "Atlassian",
 		"starCount": 61,
-		"viewCount": 5099
+		"collectionId": "strategy",
+		"collectionDescription": "Turn strategy into outcomes with portfolio planning, prioritization, talent alignment, and decision support.",
+		"collectionProducts": [
+			"Focus",
+			"Talent",
+			"Align",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
+		"teammateCount": 24570,
+		"verified": true
 	},
 	{
 		"id": "customer-insights",
@@ -1004,7 +1710,16 @@
 		"categoryId": "sales-and-customer-relations",
 		"publisherName": "Atlassian",
 		"starCount": 78,
-		"viewCount": 5712
+		"collectionId": "product",
+		"collectionDescription": "Build products with confidence by connecting feedback, discovery, prioritization, roadmaps, and delivery.",
+		"collectionProducts": [
+			"Feedback",
+			"Jira Product Discovery",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
+		"teammateCount": 1633,
+		"verified": true
 	},
 	{
 		"id": "deal-desk",
@@ -1015,7 +1730,17 @@
 		"categoryId": "sales-and-customer-relations",
 		"publisherName": "Atlassian",
 		"starCount": 17,
-		"viewCount": 6325
+		"collectionId": "strategy",
+		"collectionDescription": "Turn strategy into outcomes with portfolio planning, prioritization, talent alignment, and decision support.",
+		"collectionProducts": [
+			"Focus",
+			"Talent",
+			"Align",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/strategy",
+		"teammateCount": 17155,
+		"verified": true
 	},
 	{
 		"id": "capture-insights",
@@ -1026,7 +1751,16 @@
 		"categoryId": "sales-and-customer-relations",
 		"publisherName": "Atlassian",
 		"starCount": 34,
-		"viewCount": 6938
+		"collectionId": "product",
+		"collectionDescription": "Build products with confidence by connecting feedback, discovery, prioritization, roadmaps, and delivery.",
+		"collectionProducts": [
+			"Feedback",
+			"Jira Product Discovery",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
+		"teammateCount": 14641,
+		"verified": true
 	},
 	{
 		"id": "salesforce-deal-finder",
@@ -1039,7 +1773,15 @@
 		"publisherAvatarSrc": "/3p/salesforce/24.svg",
 		"companyId": "salesforce",
 		"starCount": 51,
-		"viewCount": 7551
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 17016,
+		"verified": true
 	},
 	{
 		"id": "hubspot-contact-finder",
@@ -1052,7 +1794,15 @@
 		"publisherAvatarSrc": "/3p/hubspot/24.svg",
 		"companyId": "hubspot",
 		"starCount": 68,
-		"viewCount": 8164
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 1320,
+		"verified": true
 	},
 	{
 		"id": "zendesk-ticket-summary",
@@ -1065,7 +1815,15 @@
 		"publisherAvatarSrc": "/3p/zendesk/24.svg",
 		"companyId": "zendesk",
 		"starCount": 85,
-		"viewCount": 8777
+		"collectionId": "marketplace",
+		"collectionDescription": "Partner and third-party skills that connect external apps into the Atlassian system of work.",
+		"collectionProducts": [
+			"Marketplace",
+			"Third-party apps"
+		],
+		"collectionDocsUrl": "https://marketplace.atlassian.com",
+		"teammateCount": 1199,
+		"verified": true
 	},
 	{
 		"id": "prioritize-ideas",
@@ -1076,7 +1834,16 @@
 		"categoryId": "project-management",
 		"publisherName": "Atlassian",
 		"starCount": 24,
-		"viewCount": 9390
+		"collectionId": "product",
+		"collectionDescription": "Build products with confidence by connecting feedback, discovery, prioritization, roadmaps, and delivery.",
+		"collectionProducts": [
+			"Feedback",
+			"Jira Product Discovery",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
+		"teammateCount": 20953,
+		"verified": true
 	},
 	{
 		"id": "prd-builder",
@@ -1087,6 +1854,15 @@
 		"categoryId": "content-and-communication",
 		"publisherName": "Atlassian",
 		"starCount": 41,
-		"viewCount": 1403
+		"collectionId": "product",
+		"collectionDescription": "Build products with confidence by connecting feedback, discovery, prioritization, roadmaps, and delivery.",
+		"collectionProducts": [
+			"Feedback",
+			"Jira Product Discovery",
+			"Rovo"
+		],
+		"collectionDocsUrl": "https://www.atlassian.com/collections/product",
+		"teammateCount": 19823,
+		"verified": true
 	}
 ]

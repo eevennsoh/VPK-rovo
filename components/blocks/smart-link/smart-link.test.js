@@ -70,3 +70,17 @@ test("SmartLink implementation uses semantic tokens instead of raw ds variable u
 		assert.doesNotMatch(source, /(?:bg|text)-\[var\(--ds-/u);
 	}
 });
+
+test("SmartLink visual rendering uses shared icon and logo primitives", () => {
+	assert.match(COMPONENT_SOURCE, /import \{ IconTile \} from "@\/components\/ui\/icon-tile";/u);
+	assert.match(COMPONENT_SOURCE, /import \{ AtlassianLogo, CustomLogo,[\s\S]*type LogoProps \} from "@\/components\/ui\/logo";/u);
+	assert.match(COMPONENT_SOURCE, /import \{ BrandLogoMark \} from "@\/components\/ui\/logo-mark";/u);
+	assert.match(COMPONENT_SOURCE, /<AtlassianLogo[\s\S]*withUsageBorder/u);
+	assert.match(COMPONENT_SOURCE, /<BrandLogoMark frame="chip" src=\{visual\.src\} label=\{visual\.alt\} \/>/u);
+	assert.match(COMPONENT_SOURCE, /<CustomLogo src=\{visual\.src\} label=\{visual\.alt\} size=\{logoSize\} \/>/u);
+	assert.match(COMPONENT_SOURCE, /if \(visual\.kind === "icon"\)[\s\S]*<IconTile[\s\S]*variant="transparent"/u);
+	assert.match(COMPONENT_SOURCE, /<IconTile[\s\S]*size=\{visualIconTileSizes\[size\]\}[\s\S]*variant=\{toneIconTileVariants\[visual\.tone \?\? "neutral"\]\}/u);
+	assert.match(COMPONENT_SOURCE, /size: iconSize/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /height=\{imageSize\}/u);
+	assert.doesNotMatch(COMPONENT_SOURCE, /width=\{imageSize\}/u);
+});

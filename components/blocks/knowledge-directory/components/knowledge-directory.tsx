@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
 	useMemo,
 	useState,
@@ -8,7 +9,6 @@ import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import SearchIcon from "@atlaskit/icon/core/search";
-import UploadIcon from "@atlaskit/icon/core/upload";
 import GlobeIcon from "@atlaskit/icon/core/globe";
 
 import { Button } from "@/components/ui/button";
@@ -345,7 +345,10 @@ function BrowseAppsStep({
 									icon={getKnowledgeAppIcon(app)}
 									name={app.name}
 									onSelect={() => onSelectApp(app)}
-									providerName={app.providerName}
+									publisher={app.providerName}
+									starCount={app.starCount}
+									teammateCount={app.teammateCount}
+									verified={app.verified}
 								/>
 							</li>
 						))}
@@ -367,9 +370,20 @@ function UploadDropZone({ onBrowseFiles }: Readonly<{ onBrowseFiles?: () => void
 			className="flex min-h-[120px] items-center justify-center gap-4 rounded-xl border border-dashed border-border bg-surface-sunken px-6 py-5"
 			role="group"
 		>
-			<div className="flex size-16 items-center justify-center rounded-full bg-bg-neutral">
-				<UploadIcon label="" color={token("color.icon.brand")} />
-			</div>
+			<Image
+				alt=""
+				className="dark:hidden [[data-color-mode=dark]_&]:hidden"
+				height={88}
+				src="/illustration-spot/empty-state/upload/light.svg"
+				width={88}
+			/>
+			<Image
+				alt=""
+				className="hidden dark:block [[data-color-mode=dark]_&]:block"
+				height={88}
+				src="/illustration-spot/empty-state/upload/dark.svg"
+				width={88}
+			/>
 			<div className="flex flex-col items-start gap-2">
 				<Button onClick={onBrowseFiles} type="button" variant="outline">
 					<SearchIcon label="" size="small" color="currentColor" />

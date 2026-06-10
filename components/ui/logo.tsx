@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { type LogoProps as AtlaskitLogoProps } from "@atlaskit/logo";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/utils/theme-wrapper";
@@ -37,6 +38,14 @@ export interface LogoProps extends AtlaskitLogoProps {
 	 * blue Jira over blue Confluence in an overlapping stack. Defaults to off.
 	 */
 	hasBorder?: boolean;
+	/**
+	 * Opt in to the centralized usage metadata's border treatment
+	 * (logo-usage.json): the Atlassian master logo gets a bordered tile while
+	 * solid-background product logos stay bare. Use this for standalone brand
+	 * tiles; leave it off when the logo is already wrapped in an avatar/cover.
+	 * An explicit `hasBorder` always wins. Defaults to off.
+	 */
+	withUsageBorder?: boolean;
 }
 
 export interface AtlassianLogoProps extends LogoProps {
@@ -79,7 +88,8 @@ export function AtlassianLogo({
 	size = "small",
 	variant = "icon",
 	shouldUseNewLogoDesign = true,
-	hasBorder = false,
+	hasBorder,
+	withUsageBorder = false,
 	color,
 	...props
 }: Readonly<AtlassianLogoProps>) {
@@ -90,12 +100,22 @@ export function AtlassianLogo({
 	const resolvedAppearance = getThemeAwareAppearance(appearance, themeAware, actualTheme);
 	void color;
 
+	// Border treatment is documented in the centralized usage metadata
+	// (logo-usage.json, via `resolveAtlassianLogoBorder`): solid-background
+	// product marks render bare, the Atlassian master logo wants a bordered tile.
+	// We only apply it when the caller opts in via `withUsageBorder` (or sets
+	// `hasBorder` explicitly) — many call sites already wrap the logo in their own
+	// avatar/hexagon/cover, where an unconditional square tile would be wrong.
+	// Lockups (icon + wordmark) are never tiled.
+	const resolvedHasBorder =
+		hasBorder ?? (withUsageBorder && variant !== "lockup" ? resolveAtlassianLogoBorder(name) : false);
+
 	const needsDarkFix = !appearance && actualTheme === "dark" && resolvedAppearance === "inverse";
 	const placeholderSize = getLogoSizePx(size);
 	// Hairline drawn as an outline with a negative offset: it sits 1px inside the
 	// mark's edge and — unlike an inset ring/box-shadow, which renders *behind*
 	// content — outlines paint on top of the filled logo svg, so it stays visible.
-	const borderClassName = hasBorder && "rounded-tile [outline:1px_solid_var(--color-border)] [outline-offset:-1px]";
+	const borderClassName = resolvedHasBorder && "rounded-tile [outline:1px_solid_var(--color-border)] [outline-offset:-1px]";
 
 	if (!isMounted) {
 		return (
@@ -124,8 +144,18 @@ export function AtlassianLogo({
 /* -- Custom Logo ------------------------------------------------- */
 
 export interface CustomLogoProps {
-	/** Custom SVG or image element to render as the logo icon */
-	svg: React.ReactElement<{ width?: number; height?: number; "aria-hidden"?: boolean }>;
+	/**
+	 * Custom SVG or image element to render as the logo icon. Provide either
+	 * `svg` (an inline element you control) or `src` (a 2P/3P brand asset path
+	 * that gets auto-resolved against `logo-usage.json`).
+	 */
+	svg?: React.ReactElement<{ width?: number; height?: number; "aria-hidden"?: boolean }>;
+	/**
+	 * Brand asset path (e.g. `/2p/appfire.png` or `/3p/airtable/24.svg`). When
+	 * set, border treatment and the borderless variant swap are applied
+	 * automatically from the centralized usage metadata.
+	 */
+	src?: string;
 	/** Optional wordmark text displayed beside the icon */
 	wordmark?: string;
 	/** Logo size */
@@ -138,6 +168,7 @@ export interface CustomLogoProps {
 
 export function CustomLogo({
 	svg,
+	src,
 	wordmark,
 	size = "small",
 	label,
@@ -145,18 +176,40 @@ export function CustomLogo({
 }: Readonly<CustomLogoProps>) {
 	const px = CUSTOM_LOGO_SIZES[size ?? "small"];
 
+	// `src` brand assets resolve their variant + border treatment from the
+	// centralized usage metadata (logo-usage.json): bare 2P PNGs and white-tile
+	// 3P marks get a bordered tile (swapping to the borderless glyph so borders
+	// don't double up); solid-fill 3P marks render bare.
+	const brand = src ? resolveBrandLogoPresentation(src) : null;
+	const borderClassName =
+		brand?.hasBorder &&
+		"rounded-tile [outline:1px_solid_var(--color-border)] [outline-offset:-1px]";
+
+	// Bordered brand marks must inset the glyph inside the box so it doesn't touch
+	// the 1px outline — matching the `Tile` child-sizing convention (glyph fills
+	// ~75% of the box). Solid-fill / SVG marks keep filling the full box.
+	const iconPx = brand?.hasBorder ? Math.round(px * 0.75) : px;
+
+	const icon = brand ? (
+		<Image src={brand.src} alt="" aria-hidden width={iconPx} height={iconPx} className="object-contain" />
+	) : svg ? (
+		React.cloneElement(svg, { width: px, height: px, "aria-hidden": true })
+	) : null;
+
 	return (
 		<span
 			role="img"
 			aria-label={label}
 			className={cn("inline-flex items-center gap-1", className)}
 		>
-			<span className="inline-flex shrink-0 items-center justify-center" style={{ width: px, height: px }}>
-				{React.cloneElement(svg, {
-					width: px,
-					height: px,
-					"aria-hidden": true,
-				})}
+			<span
+				className={cn(
+					"inline-flex shrink-0 items-center justify-center",
+					borderClassName,
+				)}
+				style={{ width: px, height: px }}
+			>
+				{icon}
 			</span>
 			{wordmark ? (
 				<span

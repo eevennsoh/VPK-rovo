@@ -303,6 +303,10 @@ test("knowledge variant renders app identity, a publisher byline, and star/teamm
 });
 
 test("skill tag group collapses wrapped rows into the overflow count", () => {
+	assert.match(SKILL_TAG_SOURCE, /getSkillCollectionMetadata/u);
+	assert.match(SKILL_TAG_SOURCE, /type SkillTagColor = SkillCollectionId \| "2p3p"/u);
+	assert.match(SKILL_TAG_SOURCE, /return color === "2p3p" \? "marketplace" : color;/u);
+	assert.doesNotMatch(SKILL_TAG_SOURCE, /const collectionStyles/u);
 	assert.match(SKILL_TAG_SOURCE, /maxRows\?: number/u);
 	assert.match(SKILL_TAG_SOURCE, /calculateVisibleSkillTagCount/u);
 	assert.match(SKILL_TAG_SOURCE, /<SkillTagCount count=\{hiddenCount\} \/>/u);

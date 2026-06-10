@@ -3,20 +3,17 @@
 import * as React from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 
+import {
+	getSkillCollectionMetadata,
+	type SkillCollectionId,
+} from "@/app/data/directory/skill-collections";
 import { cn } from "@/lib/utils";
 
-type SkillTagColor = "default" | "2p3p" | "platform" | "teamwork" | "software" | "strategy" | "service" | "product";
+type SkillTagColor = SkillCollectionId | "2p3p";
 
-const collectionStyles: Record<SkillTagColor, { slash: string; icon: string }> = {
-	default: { slash: "bg-border", icon: "text-icon-subtlest" },
-	"2p3p": { slash: "bg-border", icon: "text-icon-subtlest" },
-	platform: { slash: "bg-border", icon: "text-icon-subtlest" },
-	teamwork: { slash: "bg-border-brand", icon: "text-icon-brand" },
-	software: { slash: "bg-border-success", icon: "text-icon-success" },
-	strategy: { slash: "bg-border-warning", icon: "text-icon-warning" },
-	service: { slash: "bg-yellow-400", icon: "text-yellow-400" },
-	product: { slash: "bg-border-discovery", icon: "text-icon-discovery" },
-};
+function normalizeSkillTagColor(color: SkillTagColor): SkillCollectionId {
+	return color === "2p3p" ? "marketplace" : color;
+}
 
 interface SkillTagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	icon?: React.ReactNode;
@@ -39,6 +36,7 @@ function SkillTag({
 }: Readonly<SkillTagProps>) {
 	const isInteractive = Boolean(onClick);
 	const isOverlayRemove = Boolean(onRemove) && removeVariant === "overlay";
+	const collection = getSkillCollectionMetadata(normalizeSkillTagColor(color));
 
 	return (
 		<span
@@ -53,11 +51,11 @@ function SkillTag({
 			data-slot="skill-tag"
 		>
 			{/* Colored slash bar */}
-			<span className={cn("absolute top-0 bottom-0 left-0 z-[1] w-0.5 rounded-l-sm", collectionStyles[color].slash)} />
+			<span className={cn("absolute top-0 bottom-0 left-0 z-[1] w-0.5 rounded-l-sm", collection.slashClassName)} />
 
 			{/* Icon */}
 			{icon ? (
-				<span className={cn("relative z-[1] flex size-3 shrink-0 skew-x-12 items-center justify-center [&>span]:size-3! [&_svg]:size-3!", collectionStyles[color].icon)} data-slot="skill-tag-icon">
+				<span className={cn("relative z-[1] flex size-3 shrink-0 skew-x-12 items-center justify-center [&>span]:size-3! [&_svg]:size-3!", collection.iconClassName)} data-slot="skill-tag-icon">
 					{icon}
 				</span>
 			) : null}

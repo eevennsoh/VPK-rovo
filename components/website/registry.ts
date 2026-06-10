@@ -238,6 +238,10 @@ const UI_CHARTS_VARIANT_DEMOS: Record<string, ComponentType> = {
 const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
 
   footer: dynamic(() => import("./demos/ui-custom/footer-demo"), { ssr: false }),
+  "hover-reveal-row": dynamic(
+    () => import("./demos/ui-custom/hover-reveal-row-demo"),
+    { ssr: false },
+  ),
   "entity-card": dynamic(() => import("./demos/ui-custom/entity-card-demo"), {
     ssr: false,
   }),
@@ -4676,6 +4680,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "icon-tile-demo-transparent": dynamic(
+    () =>
+      import("./demos/ui/icon-tile-demo").then((mod) => ({
+        default: mod.IconTileDemoTransparent,
+      })),
+    { ssr: false },
+  ),
   "icon-tile-demo-appearances": dynamic(
     () =>
       import("./demos/ui/icon-tile-demo").then((mod) => ({
@@ -4773,6 +4784,27 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/ui/logo-demo").then((mod) => ({
         default: mod.LogoDemoNamedExports,
+      })),
+    { ssr: false },
+  ),
+  "logo-demo-brand-logos": dynamic(
+    () =>
+      import("./demos/ui/logo-demo").then((mod) => ({
+        default: mod.LogoDemoBrandLogos,
+      })),
+    { ssr: false },
+  ),
+  "logo-demo-in-tile": dynamic(
+    () =>
+      import("./demos/ui/logo-demo").then((mod) => ({
+        default: mod.LogoDemoInTile,
+      })),
+    { ssr: false },
+  ),
+  "logo-demo-in-tag": dynamic(
+    () =>
+      import("./demos/ui/logo-demo").then((mod) => ({
+        default: mod.LogoDemoInTag,
       })),
     { ssr: false },
   ),
@@ -5260,6 +5292,18 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
   ),
   "footer-demo-keyboard-hints": dynamic(
     () => import("./demos/ui-custom/footer-demo").then((mod) => ({ default: mod.FooterDemoKeyboardHints })),
+    { ssr: false },
+  ),
+  "hover-reveal-row-demo-toggle-and-action": dynamic(
+    () => import("./demos/ui-custom/hover-reveal-row-demo").then((mod) => ({ default: mod.HoverRevealRowDemoToggleAndAction })),
+    { ssr: false },
+  ),
+  "hover-reveal-row-demo-toggle-only": dynamic(
+    () => import("./demos/ui-custom/hover-reveal-row-demo").then((mod) => ({ default: mod.HoverRevealRowDemoToggleOnly })),
+    { ssr: false },
+  ),
+  "hover-reveal-row-demo-parked": dynamic(
+    () => import("./demos/ui-custom/hover-reveal-row-demo").then((mod) => ({ default: mod.HoverRevealRowDemoParked })),
     { ssr: false },
   ),
   "progress-circle-demo-default": dynamic(

@@ -5,21 +5,33 @@
 		"byline": "Agent by GitHub",
 		"avatarSrc": "/3p/github/24.svg",
 		"description": "Helps review code, explain repository changes, and suggest implementation paths.",
-		"attributionKind": "company"
+		"attributionKind": "company",
+		"rating": 3.7,
+		"feedbackCount": 207,
+		"chatCount": 2883,
+		"verified": true
 	},
 	{
 		"id": "release-notes-drafter",
 		"name": "Release Notes Drafter",
 		"byline": "Custom agent by Diego Alvarez",
 		"avatarSrc": "/avatar-agent/strategy-agents/wildcard-1.svg",
-		"description": "Turns merged changes and tickets into clear, customer-ready release notes."
+		"description": "Turns merged changes and tickets into clear, customer-ready release notes.",
+		"rating": 4.9,
+		"feedbackCount": 1103,
+		"chatCount": 4677,
+		"verified": false
 	},
 	{
 		"id": "rovo-dev",
 		"name": "Rovo Dev",
 		"byline": "by Atlassian",
 		"avatarSrc": "__ROVO_LOGO_DATA_URI__",
-		"starters": []
+		"starters": [],
+		"rating": 3.9,
+		"feedbackCount": 1489,
+		"chatCount": 3705,
+		"verified": true
 	},
 	{
 		"id": "readiness-checker",
@@ -27,21 +39,33 @@
 		"byline": "Rovo agent by Enterprise Solutions",
 		"avatarSrc": "/avatar-agent/service-agents/service-triage.svg",
 		"description": "Checks plans, launches, and work items for readiness gaps before handoff.",
-		"attributionKind": "team"
+		"attributionKind": "team",
+		"rating": 4.5,
+		"feedbackCount": 149,
+		"chatCount": 2113,
+		"verified": false
 	},
 	{
 		"id": "figma",
 		"name": "Figma",
 		"byline": "by Figma",
 		"avatarSrc": "/3p/figma/24.svg",
-		"description": "Finds design context, summarizes frames, and helps connect UI work to design intent."
+		"description": "Finds design context, summarizes frames, and helps connect UI work to design intent.",
+		"rating": 4.7,
+		"feedbackCount": 153,
+		"chatCount": 3635,
+		"verified": true
 	},
 	{
 		"id": "canva",
 		"name": "Canva",
 		"byline": "by Canva",
 		"avatarSrc": "/3p/canva/24.svg",
-		"description": "Helps draft visual assets, campaign ideas, and design-ready content."
+		"description": "Helps draft visual assets, campaign ideas, and design-ready content.",
+		"rating": 4.4,
+		"feedbackCount": 622,
+		"chatCount": 9164,
+		"verified": true
 	},
 	{
 		"id": "code-reviewer",
@@ -49,7 +73,11 @@
 		"byline": "Dev agent by Atlassian",
 		"avatarSrc": "/avatar-agent/dev-agents/code-reviewer.svg",
 		"description": "Reviews changes for correctness, maintainability, and test coverage.",
-		"attributionKind": "person"
+		"attributionKind": "person",
+		"rating": 4,
+		"feedbackCount": 364,
+		"chatCount": 3438,
+		"verified": true
 	},
 	{
 		"id": "pipeline-troubleshooter",
@@ -57,7 +85,11 @@
 		"byline": "Dev agent by Atlassian",
 		"avatarSrc": "/avatar-agent/dev-agents/pipeline-troubleshooter.svg",
 		"description": "Diagnoses failing builds, deployment issues, and CI configuration problems.",
-		"attributionKind": "team"
+		"attributionKind": "team",
+		"rating": 4.1,
+		"feedbackCount": 273,
+		"chatCount": 1835,
+		"verified": true
 	},
 	{
 		"id": "meeting-insights-reporter",
@@ -65,14 +97,22 @@
 		"byline": "Teamwork agent by Atlassian",
 		"avatarSrc": "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg",
 		"description": "Turns meeting notes and transcripts into summaries, decisions, and follow-ups.",
-		"attributionKind": "person"
+		"attributionKind": "person",
+		"rating": 4.4,
+		"feedbackCount": 1936,
+		"chatCount": 1214,
+		"verified": true
 	},
 	{
 		"id": "product-requirements-guide",
 		"name": "Product Requirements Guide",
 		"byline": "Teamwork agent by Atlassian",
 		"avatarSrc": "/avatar-agent/teamwork-agents/product-requirements-guide.svg",
-		"description": "Helps shape goals, requirements, risks, and acceptance criteria."
+		"description": "Helps shape goals, requirements, risks, and acceptance criteria.",
+		"rating": 4.8,
+		"feedbackCount": 64,
+		"chatCount": 7022,
+		"verified": true
 	},
 	{
 		"id": "feedback-analyzer",
@@ -81,7 +121,11 @@
 		"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
 		"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
 		"attributionKind": "company",
-		"favorite": true
+		"favorite": true,
+		"rating": 4.1,
+		"feedbackCount": 849,
+		"chatCount": 8503,
+		"verified": true
 	},
 	{
 		"id": "notion",
@@ -89,7 +133,11 @@
 		"byline": "by Notion",
 		"avatarSrc": "/3p/notion/24.svg",
 		"description": "Helps organize notes, docs, and project knowledge into structured pages.",
-		"attributionKind": "company"
+		"attributionKind": "company",
+		"rating": 4.2,
+		"feedbackCount": 1160,
+		"chatCount": 1226,
+		"verified": true
 	},
 	{
 		"id": "slack",
@@ -97,7 +145,11 @@
 		"byline": "by Slack",
 		"avatarSrc": "/3p/slack/24.svg",
 		"description": "Drafts, summarizes, and prepares Slack-ready team communication.",
-		"attributionKind": "company"
+		"attributionKind": "company",
+		"rating": 3.9,
+		"feedbackCount": 641,
+		"chatCount": 7699,
+		"verified": true
 	},
 	{
 		"id": "google-drive",
@@ -105,7 +157,11 @@
 		"byline": "by Google",
 		"avatarSrc": "/3p/google-drive/24.svg",
 		"description": "Helps locate, summarize, and work with Drive files and document context.",
-		"attributionKind": "company"
+		"attributionKind": "company",
+		"rating": 3.9,
+		"feedbackCount": 713,
+		"chatCount": 6733,
+		"verified": true
 	},
 	{
 		"id": "atlassian",
@@ -113,7 +169,11 @@
 		"byline": "by Atlassian",
 		"logoName": "atlassian",
 		"description": "Searches and connects work across Jira, Confluence, and the Teamwork Graph.",
-		"attributionKind": "company"
+		"attributionKind": "company",
+		"rating": 3.7,
+		"feedbackCount": 241,
+		"chatCount": 5857,
+		"verified": true
 	},
 	{
 		"id": "ai-insights-agent",
@@ -136,42 +196,66 @@
 				"id": "ai-insights-agent-industry-insights",
 				"label": "Give me AI industry insights and developments"
 			}
-		]
+		],
+		"rating": 4.9,
+		"feedbackCount": 409,
+		"chatCount": 3555,
+		"verified": true
 	},
 	{
 		"id": "untitled-agent",
 		"name": "Research Companion",
 		"byline": "Custom agent by Maya Chen",
 		"avatarSrc": "/avatar-agent/strategy-agents/wildcard-3.svg",
-		"description": "A flexible custom agent for open-ended research, writing, and planning tasks."
+		"description": "A flexible custom agent for open-ended research, writing, and planning tasks.",
+		"rating": 4.6,
+		"feedbackCount": 1972,
+		"chatCount": 8190,
+		"verified": false
 	},
 	{
 		"id": "chatgpt-wrapper-app",
 		"name": "ChatGPT Wrapper App",
 		"byline": "Custom agent by Sam Rivera",
 		"avatarSrc": "/avatar-agent/product-agents/wildcard-2.svg",
-		"description": "Wraps general chat workflows with lightweight task framing and response structure."
+		"description": "Wraps general chat workflows with lightweight task framing and response structure.",
+		"rating": 4,
+		"feedbackCount": 1092,
+		"chatCount": 9326,
+		"verified": false
 	},
 	{
 		"id": "social-media-writer",
 		"name": "Social Media Writer",
 		"byline": "Teamwork agent by Atlassian",
 		"avatarSrc": "/avatar-agent/strategy-agents/wildcard-2.svg",
-		"description": "Drafts concise social posts, campaign variations, and channel-ready copy."
+		"description": "Drafts concise social posts, campaign variations, and channel-ready copy.",
+		"rating": 3.9,
+		"feedbackCount": 709,
+		"chatCount": 5501,
+		"verified": true
 	},
 	{
 		"id": "progress-tracker",
 		"name": "Progress Tracker",
 		"byline": "Teamwork agent by Atlassian",
 		"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
-		"description": "Summarizes project movement, blockers, and next actions across work streams."
+		"description": "Summarizes project movement, blockers, and next actions across work streams.",
+		"rating": 4.5,
+		"feedbackCount": 619,
+		"chatCount": 195,
+		"verified": true
 	},
 	{
 		"id": "transcript-insights-reporter",
 		"name": "Transcript Insights Reporter",
 		"byline": "Teamwork agent by Atlassian",
 		"avatarSrc": "/avatar-agent/service-agents/wildcard-1.svg",
-		"description": "Extracts themes, decisions, and action items from long transcripts."
+		"description": "Extracts themes, decisions, and action items from long transcripts.",
+		"rating": 4.3,
+		"feedbackCount": 901,
+		"chatCount": 3781,
+		"verified": true
 	},
 	{
 		"id": "decision-director",
@@ -179,7 +263,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/teamwork-agents/decision-director.svg",
 		"description": "Applies the DACI framework to structure, document, and communicate decisions.",
-		"attributionKind": "team"
+		"attributionKind": "team",
+		"rating": 4.6,
+		"feedbackCount": 868,
+		"chatCount": 9438,
+		"verified": true
 	},
 	{
 		"id": "okr-generator",
@@ -187,7 +275,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/teamwork-agents/okr-generator.svg",
 		"description": "Creates, reviews, and refines measurable team and org OKRs.",
-		"attributionKind": "team"
+		"attributionKind": "team",
+		"rating": 4.9,
+		"feedbackCount": 1055,
+		"chatCount": 7091,
+		"verified": true
 	},
 	{
 		"id": "work-item-organizer",
@@ -195,7 +287,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/teamwork-agents/work-organizer.svg",
 		"description": "Finds and updates work items and assigns them to epics or sprints.",
-		"attributionKind": "team"
+		"attributionKind": "team",
+		"rating": 4.4,
+		"feedbackCount": 1316,
+		"chatCount": 9286,
+		"verified": true
 	},
 	{
 		"id": "blocker-checker",
@@ -203,7 +299,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/teamwork-agents/blocker-checker.svg",
 		"description": "Flags potentially blocked work items before they stall delivery.",
-		"attributionKind": "team"
+		"attributionKind": "team",
+		"rating": 3.9,
+		"feedbackCount": 607,
+		"chatCount": 461,
+		"verified": true
 	},
 	{
 		"id": "work-item-planner",
@@ -211,7 +311,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/teamwork-agents/work-item-planner.svg",
 		"description": "Breaks large projects into smaller, actionable, well-scoped tasks.",
-		"attributionKind": "team"
+		"attributionKind": "team",
+		"rating": 4.7,
+		"feedbackCount": 1357,
+		"chatCount": 4781,
+		"verified": true
 	},
 	{
 		"id": "jira-theme-analyzer",
@@ -219,7 +323,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/teamwork-agents/jira-theme-analyzer.svg",
 		"description": "Identifies themes across work items and drafts epics from groups.",
-		"attributionKind": "team"
+		"attributionKind": "team",
+		"rating": 4.2,
+		"feedbackCount": 568,
+		"chatCount": 5574,
+		"verified": true
 	},
 	{
 		"id": "bug-report-assistant",
@@ -227,7 +335,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/teamwork-agents/bug-report-assistant.svg",
 		"description": "Helps write clear, detailed, reproducible bug reports for triage.",
-		"attributionKind": "company"
+		"attributionKind": "company",
+		"rating": 4.5,
+		"feedbackCount": 481,
+		"chatCount": 4735,
+		"verified": true
 	},
 	{
 		"id": "brand-voice-crafter",
@@ -235,7 +347,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/teamwork-agents/brand-guardian.svg",
 		"description": "Produces content that matches your brand guidelines and tone.",
-		"attributionKind": "company"
+		"attributionKind": "company",
+		"rating": 4.9,
+		"feedbackCount": 1855,
+		"chatCount": 8489,
+		"verified": true
 	},
 	{
 		"id": "global-translator",
@@ -243,7 +359,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/teamwork-agents/global-translator.svg",
 		"description": "Translates pages, posts, and replies into multiple languages.",
-		"attributionKind": "company"
+		"attributionKind": "company",
+		"rating": 4.1,
+		"feedbackCount": 1271,
+		"chatCount": 1749,
+		"verified": true
 	},
 	{
 		"id": "user-manual-writer",
@@ -251,7 +371,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/teamwork-agents/user-manual-writer.svg",
 		"description": "Helps create a personal user manual of your working styles.",
-		"attributionKind": "company"
+		"attributionKind": "company",
+		"rating": 3.9,
+		"feedbackCount": 1979,
+		"chatCount": 1709,
+		"verified": true
 	},
 	{
 		"id": "customer-insights",
@@ -259,7 +383,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/teamwork-agents/customer-insights.svg",
 		"description": "Analyzes customer feedback from connected data sources for themes.",
-		"attributionKind": "company"
+		"attributionKind": "company",
+		"rating": 4.3,
+		"feedbackCount": 1527,
+		"chatCount": 2867,
+		"verified": true
 	},
 	{
 		"id": "rovo-ops",
@@ -267,7 +395,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/service-agents/ops-guide.svg",
 		"description": "Streamlines incident management and on-call guidance in service projects.",
-		"attributionKind": "team"
+		"attributionKind": "team",
+		"rating": 4.4,
+		"feedbackCount": 830,
+		"chatCount": 6060,
+		"verified": true
 	},
 	{
 		"id": "service-request-helper",
@@ -275,7 +407,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/service-agents/service-request-helper.svg",
 		"description": "Helps compose support responses and find the right assignee.",
-		"attributionKind": "team"
+		"attributionKind": "team",
+		"rating": 4.7,
+		"feedbackCount": 759,
+		"chatCount": 3341,
+		"verified": true
 	},
 	{
 		"id": "root-cause-analyzer",
@@ -283,7 +419,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/service-agents/rca-agent.svg",
 		"description": "Traces incidents to their root cause from signals and history.",
-		"attributionKind": "team"
+		"attributionKind": "team",
+		"rating": 4,
+		"feedbackCount": 1960,
+		"chatCount": 8114,
+		"verified": true
 	},
 	{
 		"id": "strategic-insight",
@@ -291,7 +431,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
 		"description": "Surfaces strategic insights and risks across initiatives.",
-		"attributionKind": "team"
+		"attributionKind": "team",
+		"rating": 3.6,
+		"feedbackCount": 926,
+		"chatCount": 6128,
+		"verified": true
 	},
 	{
 		"id": "talent-finder",
@@ -299,7 +443,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/strategy-agents/talent-finder.svg",
 		"description": "Finds people, skills, and availability across your organization.",
-		"attributionKind": "team"
+		"attributionKind": "team",
+		"rating": 3.6,
+		"feedbackCount": 666,
+		"chatCount": 9708,
+		"verified": true
 	},
 	{
 		"id": "diagram-creator",
@@ -307,7 +455,11 @@
 		"byline": "Rovo agent by Atlassian",
 		"avatarSrc": "/avatar-agent/teamwork-agents/diagram-creator.svg",
 		"description": "Generates diagrams and flowcharts from a plain-language description.",
-		"attributionKind": "company"
+		"attributionKind": "company",
+		"rating": 4.7,
+		"feedbackCount": 1157,
+		"chatCount": 7559,
+		"verified": true
 	},
 	{
 		"id": "code-planner",
@@ -315,7 +467,11 @@
 		"byline": "Dev agent by Atlassian",
 		"avatarSrc": "/avatar-agent/dev-agents/code-planner.svg",
 		"description": "Plans implementation steps and breaks down technical work.",
-		"attributionKind": "team"
+		"attributionKind": "team",
+		"rating": 4.9,
+		"feedbackCount": 207,
+		"chatCount": 3137,
+		"verified": true
 	},
 	{
 		"id": "unit-test-creator",
@@ -323,7 +479,11 @@
 		"byline": "Dev agent by Atlassian",
 		"avatarSrc": "/avatar-agent/dev-agents/unit-test-creator.svg",
 		"description": "Generates unit tests and coverage for changed code.",
-		"attributionKind": "person"
+		"attributionKind": "person",
+		"rating": 3.9,
+		"feedbackCount": 119,
+		"chatCount": 8905,
+		"verified": true
 	},
 	{
 		"id": "deployment-summarizer",
@@ -331,7 +491,11 @@
 		"byline": "Dev agent by Atlassian",
 		"avatarSrc": "/avatar-agent/dev-agents/deployment-summarizer.svg",
 		"description": "Summarizes deployments, changes, and rollout risk.",
-		"attributionKind": "team"
+		"attributionKind": "team",
+		"rating": 4.2,
+		"feedbackCount": 1804,
+		"chatCount": 1598,
+		"verified": true
 	},
 	{
 		"id": "rovo-expert",
@@ -339,6 +503,10 @@
 		"byline": "by Atlassian",
 		"logoName": "rovo",
 		"description": "Introduces Rovo features and provides hands-on usage guidance.",
-		"attributionKind": "company"
+		"attributionKind": "company",
+		"rating": 4.2,
+		"feedbackCount": 948,
+		"chatCount": 7990,
+		"verified": true
 	}
 ]

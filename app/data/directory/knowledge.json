@@ -4,155 +4,427 @@
 		"name": "Confluence",
 		"description": "Create, organize, and reuse rich pages, decisions, and project documentation.",
 		"providerName": "Atlassian",
-		"visual": { "kind": "logo", "logoName": "confluence" },
+		"visual": {
+			"kind": "logo",
+			"logoName": "confluence"
+		},
 		"contents": [
-			{ "id": "product-requirements", "name": "Product requirements", "description": "Specs, goals, and release criteria across product spaces." },
-			{ "id": "team-decisions", "name": "Team decisions", "description": "Decision logs and supporting context from project pages." },
-			{ "id": "customer-research", "name": "Customer research", "description": "Interview notes, feedback summaries, and insight reports." },
-			{ "id": "runbooks", "name": "Runbooks", "description": "Operational guides and troubleshooting playbooks." }
-		]
+			{
+				"id": "product-requirements",
+				"name": "Product requirements",
+				"description": "Specs, goals, and release criteria across product spaces."
+			},
+			{
+				"id": "team-decisions",
+				"name": "Team decisions",
+				"description": "Decision logs and supporting context from project pages."
+			},
+			{
+				"id": "customer-research",
+				"name": "Customer research",
+				"description": "Interview notes, feedback summaries, and insight reports."
+			},
+			{
+				"id": "runbooks",
+				"name": "Runbooks",
+				"description": "Operational guides and troubleshooting playbooks."
+			}
+		],
+		"starCount": 133,
+		"teammateCount": 11683,
+		"verified": true
 	},
 	{
 		"id": "google-drive",
 		"name": "Google Drive",
 		"description": "Connect shared documents, folders, spreadsheets, and team files from Drive.",
 		"providerName": "Google",
-		"visual": { "kind": "image", "shape": "square", "src": "/3p/google-drive/20.svg" },
+		"visual": {
+			"kind": "image",
+			"shape": "square",
+			"src": "/3p/google-drive/20.svg"
+		},
 		"contents": [
-			{ "id": "strategy-folder", "name": "Strategy folder", "description": "Planning docs and team strategy materials." },
-			{ "id": "research-notes", "name": "Research notes", "description": "Collaborative notes and interview synthesis." },
-			{ "id": "launch-spreadsheet", "name": "Launch spreadsheet", "description": "Milestones, owners, and readiness tracking." },
-			{ "id": "brand-assets", "name": "Brand assets", "description": "Shared references for campaign and product work." }
-		]
+			{
+				"id": "strategy-folder",
+				"name": "Strategy folder",
+				"description": "Planning docs and team strategy materials."
+			},
+			{
+				"id": "research-notes",
+				"name": "Research notes",
+				"description": "Collaborative notes and interview synthesis."
+			},
+			{
+				"id": "launch-spreadsheet",
+				"name": "Launch spreadsheet",
+				"description": "Milestones, owners, and readiness tracking."
+			},
+			{
+				"id": "brand-assets",
+				"name": "Brand assets",
+				"description": "Shared references for campaign and product work."
+			}
+		],
+		"starCount": 85,
+		"teammateCount": 3937,
+		"verified": true
 	},
 	{
 		"id": "microsoft-teams",
 		"name": "Microsoft Teams",
 		"description": "Reuse channel conversations, shared decisions, and collaboration history.",
 		"providerName": "Microsoft",
-		"visual": { "kind": "image", "shape": "square", "src": "/3p/microsoft-teams/20.svg" },
+		"visual": {
+			"kind": "image",
+			"shape": "square",
+			"src": "/3p/microsoft-teams/20.svg"
+		},
 		"contents": [
-			{ "id": "engineering-channel", "name": "Engineering channel", "description": "Implementation threads and technical decisions." },
-			{ "id": "support-channel", "name": "Support channel", "description": "Customer issues, resolutions, and escalation notes." },
-			{ "id": "weekly-sync", "name": "Weekly sync", "description": "Team updates, blockers, and follow-up actions." },
-			{ "id": "sales-enablement", "name": "Sales enablement", "description": "Field questions and product positioning notes." }
-		]
+			{
+				"id": "engineering-channel",
+				"name": "Engineering channel",
+				"description": "Implementation threads and technical decisions."
+			},
+			{
+				"id": "support-channel",
+				"name": "Support channel",
+				"description": "Customer issues, resolutions, and escalation notes."
+			},
+			{
+				"id": "weekly-sync",
+				"name": "Weekly sync",
+				"description": "Team updates, blockers, and follow-up actions."
+			},
+			{
+				"id": "sales-enablement",
+				"name": "Sales enablement",
+				"description": "Field questions and product positioning notes."
+			}
+		],
+		"starCount": 184,
+		"teammateCount": 18658,
+		"verified": true
 	},
 	{
 		"id": "sharepoint",
 		"name": "Microsoft SharePoint",
 		"description": "Connect team sites, policies, and document libraries from SharePoint.",
 		"providerName": "Microsoft",
-		"visual": { "kind": "image", "shape": "square", "src": "/3p/microsoft-sharepoint/20.svg" },
+		"visual": {
+			"kind": "image",
+			"shape": "square",
+			"src": "/3p/microsoft-sharepoint/20.svg"
+		},
 		"contents": [
-			{ "id": "policy-library", "name": "Policy library", "description": "Governance, security, and compliance documents." },
-			{ "id": "team-site", "name": "Team site", "description": "Department resources and operating procedures." },
-			{ "id": "proposal-library", "name": "Proposal library", "description": "Reusable sales and procurement responses." },
-			{ "id": "training-materials", "name": "Training materials", "description": "Enablement decks, guides, and onboarding docs." }
-		]
+			{
+				"id": "policy-library",
+				"name": "Policy library",
+				"description": "Governance, security, and compliance documents."
+			},
+			{
+				"id": "team-site",
+				"name": "Team site",
+				"description": "Department resources and operating procedures."
+			},
+			{
+				"id": "proposal-library",
+				"name": "Proposal library",
+				"description": "Reusable sales and procurement responses."
+			},
+			{
+				"id": "training-materials",
+				"name": "Training materials",
+				"description": "Enablement decks, guides, and onboarding docs."
+			}
+		],
+		"starCount": 158,
+		"teammateCount": 19932,
+		"verified": true
 	},
 	{
 		"id": "github",
 		"name": "GitHub",
 		"description": "Connect issues, pull requests, code discussions, and repository documentation.",
 		"providerName": "GitHub",
-		"visual": { "kind": "image", "shape": "square", "src": "/3p/github/20.svg" },
+		"visual": {
+			"kind": "image",
+			"shape": "square",
+			"src": "/3p/github/20.svg"
+		},
 		"contents": [
-			{ "id": "repository-readme", "name": "Repository README", "description": "Project overview, setup, and contribution guidance." },
-			{ "id": "open-issues", "name": "Open issues", "description": "Prioritized bug reports and feature requests." },
-			{ "id": "pull-requests", "name": "Pull requests", "description": "Implementation discussion and review context." },
-			{ "id": "architecture-docs", "name": "Architecture docs", "description": "Technical decisions and system diagrams." }
-		]
+			{
+				"id": "repository-readme",
+				"name": "Repository README",
+				"description": "Project overview, setup, and contribution guidance."
+			},
+			{
+				"id": "open-issues",
+				"name": "Open issues",
+				"description": "Prioritized bug reports and feature requests."
+			},
+			{
+				"id": "pull-requests",
+				"name": "Pull requests",
+				"description": "Implementation discussion and review context."
+			},
+			{
+				"id": "architecture-docs",
+				"name": "Architecture docs",
+				"description": "Technical decisions and system diagrams."
+			}
+		],
+		"starCount": 188,
+		"teammateCount": 2074,
+		"verified": true
 	},
 	{
 		"id": "loom",
 		"name": "Loom",
 		"description": "Use recorded walkthroughs, async updates, and product demos as knowledge.",
 		"providerName": "Atlassian",
-		"visual": { "kind": "logo", "logoName": "loom" },
+		"visual": {
+			"kind": "logo",
+			"logoName": "loom"
+		},
 		"contents": [
-			{ "id": "product-walkthroughs", "name": "Product walkthroughs", "description": "Recorded feature tours and demo flows." },
-			{ "id": "customer-demos", "name": "Customer demos", "description": "Discovery calls and solution walkthroughs." },
-			{ "id": "team-updates", "name": "Team updates", "description": "Async status updates and roadmap briefings." },
-			{ "id": "research-clips", "name": "Research clips", "description": "Short clips from usability sessions and interviews." }
-		]
+			{
+				"id": "product-walkthroughs",
+				"name": "Product walkthroughs",
+				"description": "Recorded feature tours and demo flows."
+			},
+			{
+				"id": "customer-demos",
+				"name": "Customer demos",
+				"description": "Discovery calls and solution walkthroughs."
+			},
+			{
+				"id": "team-updates",
+				"name": "Team updates",
+				"description": "Async status updates and roadmap briefings."
+			},
+			{
+				"id": "research-clips",
+				"name": "Research clips",
+				"description": "Short clips from usability sessions and interviews."
+			}
+		],
+		"starCount": 138,
+		"teammateCount": 17516,
+		"verified": true
 	},
 	{
 		"id": "jira",
 		"name": "Jira",
 		"description": "Pull in epics, sprints, and issue history to ground work in delivery context.",
 		"providerName": "Atlassian",
-		"visual": { "kind": "logo", "logoName": "jira" },
+		"visual": {
+			"kind": "logo",
+			"logoName": "jira"
+		},
 		"contents": [
-			{ "id": "epics", "name": "Epics", "description": "Initiative-level work with scope, status, and child issues." },
-			{ "id": "sprint-board", "name": "Sprint board", "description": "Active sprint columns, owners, and in-flight progress." },
-			{ "id": "bug-backlog", "name": "Bug backlog", "description": "Triaged defects ranked by severity and priority." },
-			{ "id": "release-plan", "name": "Release plan", "description": "Versioned scope, target dates, and release readiness." }
-		]
+			{
+				"id": "epics",
+				"name": "Epics",
+				"description": "Initiative-level work with scope, status, and child issues."
+			},
+			{
+				"id": "sprint-board",
+				"name": "Sprint board",
+				"description": "Active sprint columns, owners, and in-flight progress."
+			},
+			{
+				"id": "bug-backlog",
+				"name": "Bug backlog",
+				"description": "Triaged defects ranked by severity and priority."
+			},
+			{
+				"id": "release-plan",
+				"name": "Release plan",
+				"description": "Versioned scope, target dates, and release readiness."
+			}
+		],
+		"starCount": 169,
+		"teammateCount": 3535,
+		"verified": true
 	},
 	{
 		"id": "compass",
 		"name": "Compass",
 		"description": "Reference services, components, and ownership from your software catalog.",
 		"providerName": "Atlassian",
-		"visual": { "kind": "logo", "logoName": "compass" },
+		"visual": {
+			"kind": "logo",
+			"logoName": "compass"
+		},
 		"contents": [
-			{ "id": "service-catalog", "name": "Service catalog", "description": "Registered services with tiers and dependencies." },
-			{ "id": "ownership-map", "name": "Ownership map", "description": "Teams accountable for each component and system." },
-			{ "id": "scorecards", "name": "Scorecards", "description": "Operational health checks and compliance metrics." },
-			{ "id": "tech-stack", "name": "Tech stack", "description": "Languages, frameworks, and tooling across services." }
-		]
+			{
+				"id": "service-catalog",
+				"name": "Service catalog",
+				"description": "Registered services with tiers and dependencies."
+			},
+			{
+				"id": "ownership-map",
+				"name": "Ownership map",
+				"description": "Teams accountable for each component and system."
+			},
+			{
+				"id": "scorecards",
+				"name": "Scorecards",
+				"description": "Operational health checks and compliance metrics."
+			},
+			{
+				"id": "tech-stack",
+				"name": "Tech stack",
+				"description": "Languages, frameworks, and tooling across services."
+			}
+		],
+		"starCount": 85,
+		"teammateCount": 14157,
+		"verified": true
 	},
 	{
 		"id": "notion",
 		"name": "Notion",
 		"description": "Connect wikis, project docs, and structured databases from Notion workspaces.",
 		"providerName": "Notion",
-		"visual": { "kind": "image", "shape": "square", "src": "/3p/notion/20.svg" },
+		"visual": {
+			"kind": "image",
+			"shape": "square",
+			"src": "/3p/notion/20.svg"
+		},
 		"contents": [
-			{ "id": "team-wiki", "name": "Team wiki", "description": "Processes, policies, and onboarding documentation." },
-			{ "id": "project-tracker", "name": "Project tracker", "description": "Database of initiatives, status, and owners." },
-			{ "id": "meeting-notes", "name": "Meeting notes", "description": "Agendas, decisions, and action items by meeting." },
-			{ "id": "product-specs", "name": "Product specs", "description": "Feature briefs, requirements, and design context." }
-		]
+			{
+				"id": "team-wiki",
+				"name": "Team wiki",
+				"description": "Processes, policies, and onboarding documentation."
+			},
+			{
+				"id": "project-tracker",
+				"name": "Project tracker",
+				"description": "Database of initiatives, status, and owners."
+			},
+			{
+				"id": "meeting-notes",
+				"name": "Meeting notes",
+				"description": "Agendas, decisions, and action items by meeting."
+			},
+			{
+				"id": "product-specs",
+				"name": "Product specs",
+				"description": "Feature briefs, requirements, and design context."
+			}
+		],
+		"starCount": 158,
+		"teammateCount": 6904,
+		"verified": true
 	},
 	{
 		"id": "box",
 		"name": "Box",
 		"description": "Reuse documents, contracts, and shared folders stored in Box.",
 		"providerName": "Box",
-		"visual": { "kind": "image", "shape": "square", "src": "/3p/box/20.svg" },
+		"visual": {
+			"kind": "image",
+			"shape": "square",
+			"src": "/3p/box/20.svg"
+		},
 		"contents": [
-			{ "id": "contracts", "name": "Contracts", "description": "Signed agreements and legal documentation." },
-			{ "id": "finance-folder", "name": "Finance folder", "description": "Budgets, invoices, and procurement records." },
-			{ "id": "shared-deliverables", "name": "Shared deliverables", "description": "Client-facing assets and project outputs." },
-			{ "id": "compliance-docs", "name": "Compliance docs", "description": "Audit reports and regulatory paperwork." }
-		]
+			{
+				"id": "contracts",
+				"name": "Contracts",
+				"description": "Signed agreements and legal documentation."
+			},
+			{
+				"id": "finance-folder",
+				"name": "Finance folder",
+				"description": "Budgets, invoices, and procurement records."
+			},
+			{
+				"id": "shared-deliverables",
+				"name": "Shared deliverables",
+				"description": "Client-facing assets and project outputs."
+			},
+			{
+				"id": "compliance-docs",
+				"name": "Compliance docs",
+				"description": "Audit reports and regulatory paperwork."
+			}
+		],
+		"starCount": 40,
+		"teammateCount": 17538,
+		"verified": true
 	},
 	{
 		"id": "dropbox",
 		"name": "Dropbox",
 		"description": "Connect synced files, shared folders, and team libraries from Dropbox.",
 		"providerName": "Dropbox",
-		"visual": { "kind": "image", "shape": "square", "src": "/3p/dropbox/20.svg" },
+		"visual": {
+			"kind": "image",
+			"shape": "square",
+			"src": "/3p/dropbox/20.svg"
+		},
 		"contents": [
-			{ "id": "design-files", "name": "Design files", "description": "Source artwork, mockups, and exported assets." },
-			{ "id": "team-library", "name": "Team library", "description": "Shared reference materials and templates." },
-			{ "id": "client-deliverables", "name": "Client deliverables", "description": "Final files handed off to stakeholders." },
-			{ "id": "archive", "name": "Archive", "description": "Historical projects and retired documentation." }
-		]
+			{
+				"id": "design-files",
+				"name": "Design files",
+				"description": "Source artwork, mockups, and exported assets."
+			},
+			{
+				"id": "team-library",
+				"name": "Team library",
+				"description": "Shared reference materials and templates."
+			},
+			{
+				"id": "client-deliverables",
+				"name": "Client deliverables",
+				"description": "Final files handed off to stakeholders."
+			},
+			{
+				"id": "archive",
+				"name": "Archive",
+				"description": "Historical projects and retired documentation."
+			}
+		],
+		"starCount": 197,
+		"teammateCount": 22855,
+		"verified": true
 	},
 	{
 		"id": "airtable",
 		"name": "Airtable",
 		"description": "Pull in structured records, project bases, and tracked workflows from Airtable.",
 		"providerName": "Airtable",
-		"visual": { "kind": "image", "shape": "square", "src": "/3p/airtable/20.svg" },
+		"visual": {
+			"kind": "image",
+			"shape": "square",
+			"src": "/3p/airtable/20.svg"
+		},
 		"contents": [
-			{ "id": "content-calendar", "name": "Content calendar", "description": "Scheduled campaigns, owners, and publish dates." },
-			{ "id": "feature-requests", "name": "Feature requests", "description": "Customer asks with votes, status, and themes." },
-			{ "id": "vendor-tracker", "name": "Vendor tracker", "description": "Suppliers, contracts, and renewal timelines." },
-			{ "id": "roadmap-base", "name": "Roadmap base", "description": "Initiatives mapped to quarters and dependencies." }
-		]
+			{
+				"id": "content-calendar",
+				"name": "Content calendar",
+				"description": "Scheduled campaigns, owners, and publish dates."
+			},
+			{
+				"id": "feature-requests",
+				"name": "Feature requests",
+				"description": "Customer asks with votes, status, and themes."
+			},
+			{
+				"id": "vendor-tracker",
+				"name": "Vendor tracker",
+				"description": "Suppliers, contracts, and renewal timelines."
+			},
+			{
+				"id": "roadmap-base",
+				"name": "Roadmap base",
+				"description": "Initiatives mapped to quarters and dependencies."
+			}
+		],
+		"starCount": 155,
+		"teammateCount": 8953,
+		"verified": true
 	}
 ]

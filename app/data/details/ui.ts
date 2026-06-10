@@ -261,14 +261,18 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 
   logo: {
     description:
-      "Unified Atlassian product/app logo wrapper built on @atlaskit/logo with theme-aware defaults for light and dark mode. Supports icon-only and lockup (icon + wordmark) variants, a CustomLogo for rendering your own SVG, and a RovoColorIcon for the full-color Rovo brand mark.",
+      "Unified Atlassian product/app logo wrapper built on @atlaskit/logo with theme-aware defaults for light and dark mode. Supports icon-only and lockup (icon + wordmark) variants, a CustomLogo for rendering your own SVG or a 2P/3P brand asset, and a RovoColorIcon for the full-color Rovo brand mark. Logo usage decisions (bare vs. bordered tile vs. borderless-in-tile) are documented centrally in components/ui/data/logo-usage.json. CustomLogo with a src applies the 2P/3P treatment automatically; AtlassianLogo opts in to the 1P treatment (Atlassian master logo = tile, product logos = bare) via withUsageBorder.",
     adsUrl: "https://atlassian.design/components/logo",
     usage: `import { AtlassianLogo, JiraIcon, CustomLogo, RovoColorIcon } from "@/components/ui/logo";
 
 <AtlassianLogo name="jira" label="Jira" size="small" />
 <AtlassianLogo name="jira" label="Jira" variant="lockup" size="small" />
 <JiraIcon label="Jira" size="small" variant="lockup" />
+{/* withUsageBorder pulls the 1P treatment from logo-usage.json (atlassian = tile) */}
+<AtlassianLogo name="atlassian" label="Atlassian" size="small" withUsageBorder />
 <CustomLogo svg={<MySvg />} wordmark="Acme" size="small" label="Acme" />
+{/* src auto-resolves border + borderless variant from logo-usage.json */}
+<CustomLogo src="/3p/airtable/24.svg" size="small" label="Airtable" />
 <RovoColorIcon size="small" label="Rovo" />`,
     props: [
       {
@@ -316,7 +320,27 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
       {
         name: "svg",
         type: "ReactElement (CustomLogo only)",
-        description: "Custom SVG element to render as the logo icon.",
+        description:
+          "Custom SVG element to render as the logo icon. Provide either svg or src.",
+      },
+      {
+        name: "src",
+        type: "string (CustomLogo only)",
+        description:
+          "2P/3P brand asset path (e.g. /3p/airtable/24.svg). Border treatment and the borderless variant swap are resolved automatically from logo-usage.json.",
+      },
+      {
+        name: "hasBorder",
+        type: "boolean (AtlassianLogo)",
+        description:
+          "Explicitly draws a 1px bordered tile around the mark. Overrides withUsageBorder. Defaults to off.",
+      },
+      {
+        name: "withUsageBorder",
+        type: "boolean (AtlassianLogo)",
+        default: "false",
+        description:
+          "Opt in to the 1P border treatment documented in logo-usage.json (atlassian = bordered tile, product logos = bare). Leave off when the logo is already inside an avatar/cover.",
       },
       {
         name: "wordmark",
@@ -349,6 +373,24 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
         title: "Custom Logo",
         description: "Render a custom SVG with optional wordmark.",
         demoSlug: "logo-demo-custom",
+      },
+      {
+        title: "Brand Logos (1P / 2P / 3P)",
+        description:
+          "CustomLogo with a src auto-resolves border treatment from logo-usage.json: solid-fill 3P marks render bare, white-tile 3P marks swap to their borderless variant inside a tile, and bare 2P partner PNGs get a bordered tile.",
+        demoSlug: "logo-demo-brand-logos",
+      },
+      {
+        title: "Brand Logos in a Tile",
+        description:
+          "Picker / suggestion-menu rows (e.g. the editor-palette): every mark fills the Tile box so the glyph scales with the tile size. Solid-fill 3P marks render bare; bordered 2P/white-tile 3P marks sit in a surface Tile with a size-scaled inset — driven by the same metadata.",
+        demoSlug: "logo-demo-in-tile",
+      },
+      {
+        title: "Brand Logos in a Tag",
+        description:
+          "Inline chips (e.g. the agent config panel's tags): every mark is normalized to a 16px box; borderless 3P + 2P marks render as a centered glyph, solid-fill 3P marks fill the box.",
+        demoSlug: "logo-demo-in-tag",
       },
       {
         title: "Named Exports",
@@ -5072,13 +5114,15 @@ import SearchIcon from "@atlaskit/icon/core/search";
 
   "icon-tile": {
     description:
-      "A colored tile that wraps an icon, used for feature lists, navigation items, or visual indicators. Supports 20 color variants (10 subtle + 10 bold), 5 sizes, and square or circle shapes.",
+      "A tile that wraps an icon, used for feature lists, navigation items, or visual indicators. Supports a transparent sizing-only variant, 20 color variants (10 subtle + 10 bold), colored sizes from xsmall to xlarge, and square or circle shapes.",
     adsUrl: "https://atlassian.design/components/icon/icon-tile",
     usage: `import { IconTile } from "@/components/ui/icon-tile";
+import { Icon } from "@/components/ui/icon";
 import SearchIcon from "@atlaskit/icon/core/search";
 
-<IconTile icon={<SearchIcon label="" />} label="Search" variant="blue" />
-<IconTile icon={<SearchIcon label="" />} label="Search" variant="blueBold" size="large" shape="circle" />`,
+<IconTile icon={<Icon aria-hidden render={<SearchIcon label="" />} />} label="Search" variant="blue" />
+<IconTile icon={<Icon aria-hidden render={<SearchIcon label="" />} />} label="Search" variant="transparent" size="xxsmall" />
+<IconTile icon={<Icon aria-hidden render={<SearchIcon label="" />} />} label="Search" variant="blueBold" size="large" shape="circle" />`,
     props: [
       {
         name: "icon",
@@ -5094,16 +5138,16 @@ import SearchIcon from "@atlaskit/icon/core/search";
       },
       {
         name: "variant",
-        type: '"gray" | "blue" | "teal" | "green" | "lime" | "yellow" | "orange" | "red" | "magenta" | "purple" | "grayBold" | "blueBold" | ... (20 total)',
+        type: '"transparent" | "gray" | "blue" | "teal" | "green" | "lime" | "yellow" | "orange" | "red" | "magenta" | "purple" | "grayBold" | "blueBold" | ... (21 total)',
         default: '"gray"',
         description:
-          "Color variant of the tile. Subtle variants use light background with colored icon; bold variants use solid background with white icon.",
+          "Visual variant of the tile. Transparent keeps only the sizing box and is shown at 16, 24, and 32px; subtle variants use light background with colored icon; bold variants use solid background with white icon.",
       },
       {
         name: "size",
-        type: '"xsmall" | "small" | "medium" | "large" | "xlarge"',
+        type: '"xxsmall" | "xsmall" | "small" | "medium" | "large" | "xlarge"',
         default: '"medium"',
-        description: "Size of the tile.",
+        description: "Size of the tile. Colored examples use xsmall through xlarge; transparent uses xxsmall, small, and medium.",
       },
       {
         name: "shape",
@@ -5116,8 +5160,13 @@ import SearchIcon from "@atlaskit/icon/core/search";
       { title: "Default", demoSlug: "icon-tile-demo-default" },
       {
         title: "Sizes",
-        description: "All five tile sizes from xsmall to xlarge.",
+        description: "Colored tile sizes from xsmall to xlarge.",
         demoSlug: "icon-tile-demo-sizes",
+      },
+      {
+        title: "Transparent",
+        description: "Backgroundless tiles at 16, 24, and 32px with bespoke icon sizing.",
+        demoSlug: "icon-tile-demo-transparent",
       },
       {
         title: "Variants",

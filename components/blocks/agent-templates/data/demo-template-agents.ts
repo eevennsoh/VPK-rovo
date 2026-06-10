@@ -80,7 +80,7 @@ const SKILL_COLORS = [
 	"software",
 	"service",
 	"platform",
-	"2p3p",
+	"marketplace",
 	"default",
 ] satisfies readonly NonNullable<DemoTemplateSkill["color"]>[];
 

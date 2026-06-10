@@ -104,6 +104,19 @@ test("the subagent reference catalog resolves curated ids against the unified ca
 	}
 });
 
+test("agent browser projection carries card stats from agents.json", async () => {
+	const agents = await loadAgents();
+
+	for (const agent of agents.DEMO_AGENT_BROWSER_AGENTS) {
+		const source = AGENTS_JSON.find((record) => record.id === agent.id);
+		assert.ok(source, `expected source JSON for ${agent.id}`);
+		assert.equal(agent.rating, source.rating, `${agent.id}: rating should come from JSON`);
+		assert.equal(agent.feedbackCount, source.feedbackCount, `${agent.id}: feedbackCount should come from JSON`);
+		assert.equal(agent.chatCount, source.chatCount, `${agent.id}: chatCount should come from JSON`);
+		assert.equal(agent.verified, source.verified, `${agent.id}: verified should come from JSON`);
+	}
+});
+
 test("unified directory + selector are a superset floor of the legacy forks (nothing removed; additions allowed)", async () => {
 	const agents = await loadAgents();
 

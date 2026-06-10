@@ -73,6 +73,10 @@ interface UnifiedAgentRecord {
 	description?: string;
 	attributionKind?: AgentBrowserAgent["attributionKind"];
 	favorite?: boolean;
+	rating?: number;
+	feedbackCount?: number;
+	chatCount?: number;
+	verified?: boolean;
 	starters?: readonly AgentStarterSeed[];
 }
 
@@ -92,6 +96,10 @@ export interface RovoAgentProfile extends AgentSelectorAgent {
 	attributionKind?: AgentBrowserAgent["attributionKind"];
 	/** Salvaged from the agent-browser directory; surfaced as a directory favourite. */
 	favorite?: boolean;
+	rating?: number;
+	feedbackCount?: number;
+	chatCount?: number;
+	verified?: boolean;
 }
 
 const EMPTY_STARTERS: readonly RovoSuggestion[] = [];
@@ -181,6 +189,10 @@ function toAgentProfile(record: UnifiedAgentRecord): RovoAgentProfile {
 		description: record.description,
 		attributionKind: record.attributionKind,
 		favorite: record.favorite,
+		rating: record.rating,
+		feedbackCount: record.feedbackCount,
+		chatCount: record.chatCount,
+		verified: record.verified,
 		starters,
 	});
 }
@@ -247,6 +259,10 @@ function toAgentBrowserAgent(agent: RovoAgentProfile): AgentBrowserAgent {
 		logoName: agent.logoName,
 		description: agent.description,
 		favorite: agent.favorite,
+		rating: agent.rating,
+		feedbackCount: agent.feedbackCount,
+		chatCount: agent.chatCount,
+		verified: agent.verified,
 	};
 }
 

@@ -51,8 +51,8 @@ export interface ToolsDirectoryTool {
 	logoSrc?: string;
 	publisherName?: string;
 	readOnlyTools?: readonly ToolsDirectoryPermission[];
-	teammateCount?: number;
-	toolCount?: number;
+	teammateCount: number;
+	toolCount: number;
 	verified?: boolean;
 	writeDeleteTools?: readonly ToolsDirectoryPermission[];
 }
