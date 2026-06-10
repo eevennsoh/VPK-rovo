@@ -326,6 +326,13 @@ export function RichTextEditor({
 	const [isRefiningDataFlow, setIsRefiningDataFlow] = useState(false);
 	const isMarkdownMode = viewMode === "markdown";
 	const isDataFlowMode = viewMode === "data-flow";
+	// Pass the directory launcher only when a host actually supplies one. The
+	// renderer shows the empty state's "Browse all" button whenever this is
+	// defined, so an always-present wrapper would render a dead button on
+	// surfaces with no host directory (the showcase, the chat composer). Track
+	// presence (not identity) in the deps so toggling it rebuilds the editor
+	// while a changing handler is still read live through the ref.
+	const hasOpenDirectory = Boolean(onOpenDirectory);
 	const extensions = useMemo(
 		() => createRichTextEditorExtensions({
 			getMentionSources: () => mentionSourcesRef.current,
@@ -333,10 +340,12 @@ export function RichTextEditor({
 			// Read through a ref so a changing handler doesn't rebuild the editor
 			// (matches onAskRovo above); the slash menu calls this when the user
 			// clicks "Browse all" in a nested category's empty state.
-			onOpenDirectory: (category) => onOpenDirectoryRef.current?.(category),
+			onOpenDirectory: hasOpenDirectory
+				? (category) => onOpenDirectoryRef.current?.(category)
+				: undefined,
 			suggestionVariant,
 		}),
-		[suggestionVariant],
+		[hasOpenDirectory, suggestionVariant],
 	);
 	const editor = useEditor({
 		extensions,

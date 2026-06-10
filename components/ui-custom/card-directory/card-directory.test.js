@@ -85,6 +85,25 @@ test("inert card content lets clicks fall through to the select button", () => {
 	assert.match(SHELL_SOURCE, /\[&_input\]:pointer-events-auto/u);
 });
 
+test("scrollable card body stays scrollable inside an interactive (selectable) card", () => {
+	// Regression: when the expanded agent card is interactive (onSelect passed, e.g.
+	// the demo), the absolute z-0 select-overlay button was painted on top of the
+	// scroll body and swallowed wheel/drag scroll, so the body could not be scrolled —
+	// while in non-interactive contexts (no onSelect, no overlay) it scrolled fine.
+	// The fix raises the scroll body above the overlay (relative z-10) and gives it its
+	// own pointer-events so the wheel lands on it. Because it now covers the overlay
+	// button, plain clicks on the body are forwarded to onSelect so whole-card
+	// selection keeps working, and genuinely interactive descendants are excluded.
+	assert.match(AGENT_EXPANDED_SOURCE, /data-slot="card-directory-scroll"/u);
+	// The scroll body owns its stacking + pointer events so wheel events reach it.
+	assert.match(AGENT_EXPANDED_SOURCE, /pointer-events-auto relative z-10[^"]*overflow-y-auto/u);
+	// Scroll handler stays wired for the scroll-mask state.
+	assert.match(AGENT_EXPANDED_SOURCE, /data-slot="card-directory-scroll"[\s\S]*?onScroll=/u);
+	// Plain clicks on the (now covering) body forward to selection, excluding real controls.
+	assert.match(AGENT_EXPANDED_SOURCE, /onClick=\{onSelect \? handleBodyClick : undefined\}/u);
+	assert.match(AGENT_EXPANDED_SOURCE, /closest\("a,button,\[role=button\],\[role=menuitem\],input,select,textarea"\)/u);
+});
+
 test("interaction hook derives interactivity from onSelect and drops manual key handling", () => {
 	assert.match(INTERACTION_SOURCE, /const interactive = Boolean\(onSelect\)/u);
 	assert.match(INTERACTION_SOURCE, /useReducedMotion\(\)/u);

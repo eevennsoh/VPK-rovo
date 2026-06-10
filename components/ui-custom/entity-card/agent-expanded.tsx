@@ -180,6 +180,21 @@ export function EntityCardAgentExpanded({
 			currentBodyScrolled === nextBodyScrolled ? currentBodyScrolled : nextBodyScrolled
 		));
 	}, []);
+	// The scroll body sits above the shell's select-overlay button (so it can own
+	// wheel/drag scroll), which means clicks on it no longer fall through to that
+	// button. Forward plain clicks to onSelect so whole-card selection still works;
+	// clicks that originate on a genuinely interactive control (menus, the footer
+	// button, links) are ignored here so they keep their own behavior.
+	const handleBodyClick = useCallback(
+		(event: MouseEvent<HTMLDivElement>) => {
+			if (event.defaultPrevented) return;
+			if ((event.target as HTMLElement).closest("a,button,[role=button],[role=menuitem],input,select,textarea")) {
+				return;
+			}
+			onSelect?.();
+		},
+		[onSelect],
+	);
 	const projectBadgeAvatarSrc = getProjectBadgeAvatarSrc(`${publisher}:${name}`);
 	const avatarBadge = (() => {
 		if (attributionKind === "company") {
@@ -232,8 +247,17 @@ export function EntityCardAgentExpanded({
 				</div>
 			</div>
 
+			{/* Raise the scroll body above the absolute `z-0` select-overlay button and
+			    give it pointer-events so wheel/drag scroll lands here instead of being
+			    swallowed by the button painted on top — the parent is `display:contents`,
+			    so the shell's `[&>*]:relative [&>*]:z-10` never reaches this grandchild.
+			    Because the body now covers the select button, plain clicks on it are
+			    forwarded to onSelect (see handleBodyClick) so whole-card selection still
+			    works, while genuinely interactive descendants keep their own behavior. */}
 			<div
-				className="flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-2 [scrollbar-gutter:stable]"
+				className="pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-2 [scrollbar-gutter:stable]"
+				data-slot="card-directory-scroll"
+				onClick={onSelect ? handleBodyClick : undefined}
 				onScroll={handleBodyScroll}
 				style={bodyScrolled ? ENTITY_CARD_SCROLL_MASK_STYLE : undefined}
 			>

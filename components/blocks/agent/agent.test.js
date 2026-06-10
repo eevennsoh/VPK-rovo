@@ -926,7 +926,11 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onOpenDirectory\?: \(category: RichTextSlashCategory\) => void;/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onOpenDirectoryRef = useRef\(onOpenDirectory\)/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onOpenDirectoryRef\.current = onOpenDirectory;/u);
-	assert.match(RICH_TEXT_EDITOR_SOURCE, /onOpenDirectory: \(category\) => onOpenDirectoryRef\.current\?\.\(category\),/u);
+	// The directory wrapper is gated on a host actually supplying onOpenDirectory
+	// so surfaces without a directory (showcase, chat composer) don't render a
+	// dead "Browse all" button.
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /const hasOpenDirectory = Boolean\(onOpenDirectory\);/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /onOpenDirectory: hasOpenDirectory[\s\S]*\? \(category\) => onOpenDirectoryRef\.current\?\.\(category\)[\s\S]*: undefined,/u);
 	// agent.tsx maps a directory-backed slash category to the config-panel
 	// directory and forwards the editor's launch up through onOpenDirectory.
 	assert.match(AGENT_SOURCE, /const AGENT_DIRECTORY_BY_SLASH_CATEGORY: Record<[\s\S]*Exclude<RichTextSlashCategory, "format">,[\s\S]*AgentDirectoryKind[\s\S]*> = \{[\s\S]*skill: "skills",[\s\S]*tool: "tools",[\s\S]*knowledge: "knowledge",/u);
