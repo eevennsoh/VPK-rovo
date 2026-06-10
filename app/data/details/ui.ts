@@ -5581,9 +5581,16 @@ const [date, setDate] = useState<Date>()
           "Deprecated compatibility prop. ADS now renders the filled lozenge appearance by default.",
       },
       {
+        name: "elemBefore",
+        type: "ReactNode",
+        description:
+          "Element rendered before the lozenge text. A plain `<Icon>` is tinted to the variant tone; a logo, `IconTile`, `BrandLogoMark`, or avatar is rendered verbatim (keeping its own colors) in a fixed leading box.",
+      },
+      {
         name: "icon",
         type: "ReactNode",
-        description: "Optional leading icon element.",
+        description:
+          "Deprecated alias for `elemBefore`, kept for back-compat. Optional leading icon element.",
       },
       {
         name: "maxWidth",
@@ -5602,6 +5609,12 @@ const [date, setDate] = useState<Date>()
       { title: "Appearance", demoSlug: "lozenge-demo-appearances" },
       { title: "Accent colors", demoSlug: "lozenge-demo-accent-colors" },
       { title: "With icon", demoSlug: "lozenge-demo-with-icon" },
+      {
+        title: "Front slot",
+        description:
+          "Leading product logo and 2P/3P public-logo examples using `elemBefore`. Logos render verbatim in their own colors.",
+        demoSlug: "lozenge-demo-front-slot",
+      },
       {
         title: "Trailing metric",
         description: "Display inline metric text inside the lozenge.",

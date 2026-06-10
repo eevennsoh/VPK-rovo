@@ -4841,6 +4841,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "lozenge-demo-front-slot": dynamic(
+    () =>
+      import("./demos/ui/lozenge-demo").then((mod) => ({
+        default: mod.LozengeDemoFrontSlot,
+      })),
+    { ssr: false },
+  ),
   "lozenge-demo-trailing-metric": dynamic(
     () =>
       import("./demos/ui/lozenge-demo").then((mod) => ({

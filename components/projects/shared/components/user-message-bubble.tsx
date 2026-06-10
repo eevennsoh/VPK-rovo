@@ -87,6 +87,7 @@ export function UserMessageBubble({
 				from="user"
 				className={isEditing ? "w-full max-w-full" : undefined}
 				fitContent={!isEditing}
+				contain={!showClarificationSummary}
 			>
 				{attachments.length > 0 ? (
 					<Attachments className="justify-end" variant="grid">

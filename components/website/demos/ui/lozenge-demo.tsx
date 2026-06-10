@@ -2,10 +2,14 @@
 
 import ArrowDownRightIcon from "@atlaskit/icon/core/arrow-down-right"
 import ImageIcon from "@atlaskit/icon/core/image"
+import LockIcon from "@atlaskit/icon/core/lock-locked"
 
 import { Badge } from "@/components/ui/badge"
 import { Icon } from "@/components/ui/icon"
+import { IconTile } from "@/components/ui/icon-tile"
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge"
+import { AtlassianLogo, RovoColorIcon } from "@/components/ui/logo"
+import { BrandLogoMark } from "@/components/ui/logo-mark"
 
 export default function LozengeDemo() {
 	return (
@@ -88,6 +92,83 @@ export function LozengeDemoWithIcon() {
 		>
 			With icon
 		</Lozenge>
+	)
+}
+
+export function LozengeDemoFrontSlot() {
+	return (
+		<div className="flex flex-wrap items-center gap-2">
+			<Lozenge
+				variant="accent-blue"
+				elemBefore={
+					<AtlassianLogo name="jira" label="Jira" size="xxsmall" withUsageBorder />
+				}
+			>
+				Jira
+			</Lozenge>
+			<Lozenge
+				variant="accent-purple"
+				elemBefore={
+					<IconTile
+						aria-hidden
+						icon={<AtlassianLogo name="atlassian" label="Atlassian" size="xxsmall" />}
+						label="Atlassian"
+						size="xxsmall"
+						variant="transparent"
+					/>
+				}
+			>
+				Atlassian
+			</Lozenge>
+			<Lozenge
+				variant="accent-green"
+				elemBefore={
+					<IconTile
+						aria-hidden
+						icon={<RovoColorIcon aria-hidden />}
+						label="Rovo"
+						size="xxsmall"
+						variant="transparent"
+					/>
+				}
+			>
+				Rovo
+			</Lozenge>
+			<Lozenge
+				variant="accent-orange"
+				elemBefore={<BrandLogoMark frame="chip" src="/2p/appfire.png" label="Appfire" />}
+			>
+				Appfire
+			</Lozenge>
+			<Lozenge
+				variant="accent-purple"
+				elemBefore={<BrandLogoMark frame="chip" src="/3p/figma/16.svg" label="Figma" />}
+			>
+				Figma
+			</Lozenge>
+			<Lozenge
+				variant="accent-green"
+				elemBefore={
+					<BrandLogoMark frame="chip" src="/3p/google-drive/16.svg" label="Google Drive" />
+				}
+			>
+				Drive
+			</Lozenge>
+			<Lozenge
+				variant="danger"
+				elemBefore={
+					<IconTile
+						aria-hidden
+						icon={<Icon aria-hidden render={<LockIcon label="" size="small" />} />}
+						label=""
+						size="xxsmall"
+						variant="transparent"
+					/>
+				}
+			>
+				Restricted
+			</Lozenge>
+		</div>
 	)
 }
 

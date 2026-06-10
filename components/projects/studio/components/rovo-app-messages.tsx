@@ -428,6 +428,7 @@ function UserMessage({
 		<Message
 			animate
 			className={isEditing ? "w-full max-w-full" : undefined}
+			contain={!(isDismissed || clarificationSummaryRows.length > 0)}
 			data-rovo-app-scroll-anchor={isScrollAnchor ? "true" : undefined}
 			data-message-id={message.id}
 			data-role="user"

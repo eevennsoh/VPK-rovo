@@ -142,6 +142,17 @@ const lozengeTriggerVariants = cva(
 type LozengeVariant = NonNullable<VariantProps<typeof lozengeVariants>["variant"]>
 type LozengeSize = NonNullable<VariantProps<typeof lozengeVariants>["size"]>
 
+// A "verbatim" leading element (product logo, IconTile, BrandLogoMark, avatar)
+// keeps its own colors and is rendered as-is inside a fixed leading box —
+// mirroring Tag's `elemBefore` front slot. Plain `<Icon>` / atlaskit icons are
+// still routed through `<Icon>` and tinted with the variant tone.
+function isPlainLozengeIcon(icon: ReactNode): boolean {
+	if (!isValidElement(icon)) {
+		return false
+	}
+	return (icon as ReactElement).type === Icon
+}
+
 function renderLozengeIcon(icon: ReactNode) {
 	if (!isValidElement(icon)) {
 		return icon
@@ -179,19 +190,25 @@ function LozengeContent({
 	children?: ReactNode
 	trailing?: ReactNode
 }>) {
+	const hasLeadingElement = icon != null
+	// Mirror Tag's front slot exactly: a fixed 16x16 leading box that the
+	// element fills (`[&>*]:size-full [&>svg]:size-4`). Verbatim logos/avatars
+	// keep their own colors; a plain tinted icon gets the tone color on the box
+	// (same as Tag's `colorClasses.icon`) and fills the box at 16x16.
+	const isPlainIcon = isPlainLozengeIcon(icon)
 	return (
 		<span
 			className={cn(
 				"flex min-w-0 items-center",
-				size === "compact" ? "gap-1" : "gap-1.5"
+				size === "compact" ? "gap-0.5" : "gap-1.5"
 			)}
 		>
-			{icon != null ? (
+			{hasLeadingElement ? (
 				<span
 					data-slot="lozenge-leading-icon"
 					className={cn(
-						"inline-flex shrink-0 self-center items-center justify-center leading-none",
-						lozengeLeadingIconToneClasses[variant]
+						"flex size-4 shrink-0 items-center justify-center [&>*]:size-full [&>svg]:size-4",
+						isPlainIcon && lozengeLeadingIconToneClasses[variant]
 					)}
 				>
 					{renderLozengeIcon(icon)}
@@ -208,6 +225,14 @@ export interface LozengeProps
 	extends React.ComponentProps<"span">,
 		VariantProps<typeof lozengeVariants> {
 	maxWidth?: string | number
+	/**
+	 * Element rendered before the lozenge text. A plain `<Icon>` is tinted to the
+	 * variant tone; a logo, `IconTile`, `BrandLogoMark`, or avatar is rendered
+	 * verbatim (keeping its own colors) in a fixed leading box — mirroring Tag's
+	 * `elemBefore` front slot.
+	 */
+	elemBefore?: ReactNode
+	/** @deprecated Use `elemBefore`. Kept as an alias for back-compat. */
 	icon?: ReactNode
 	metric?: string | number
 }
@@ -218,6 +243,7 @@ function Lozenge({
 	size = "compact",
 	isBold = false,
 	maxWidth,
+	elemBefore,
 	icon,
 	metric,
 	children,
@@ -226,6 +252,11 @@ function Lozenge({
 }: Readonly<LozengeProps>) {
 	const resolvedVariant = variant ?? "neutral"
 	const resolvedSize = size ?? "compact"
+	const leading = elemBefore ?? icon
+	// Any leading element (plain tinted icon, logo, tile, or avatar) tightens the
+	// leading inset to match Tag's front slot: the leading box owns the spacing,
+	// so the lozenge drops to a 1px left inset.
+	const hasLeadingElement = leading != null
 
 	return (
 		<span
@@ -234,6 +265,7 @@ function Lozenge({
 			data-size={resolvedSize}
 			className={cn(
 				lozengeVariants({ variant: resolvedVariant, size: resolvedSize, isBold }),
+				hasLeadingElement && (resolvedSize === "compact" ? "ps-px" : "ps-1.5"),
 				metric != null && resolvedSize === "compact" && "pr-px",
 				className
 			)}
@@ -243,7 +275,7 @@ function Lozenge({
 			<LozengeContent
 				variant={resolvedVariant}
 				size={resolvedSize}
-				icon={icon}
+				icon={leading}
 				metric={metric}
 			>
 				{children}

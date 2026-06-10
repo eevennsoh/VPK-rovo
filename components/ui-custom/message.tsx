@@ -69,11 +69,21 @@ export interface MessageProps extends HTMLAttributes<HTMLDivElement> {
 	animate?: boolean;
 	fitContent?: boolean;
 	from: UIMessage["role"];
+	/**
+	 * Apply `content-visibility: auto` to cull off-screen messages. @default true
+	 *
+	 * Set to `false` for messages that host dynamically-growing contained
+	 * content (e.g. an AnswerCard that expands as answers stream in). The
+	 * containment box clips overflow at the `contain-intrinsic-size` estimate,
+	 * so live-growing content gets cut off mid-render.
+	 */
+	contain?: boolean;
 }
 
 export function Message({
 	animate,
 	className,
+	contain = true,
 	fitContent,
 	from,
 	...props
@@ -86,7 +96,10 @@ export function Message({
 				// message remember its real height once rendered, so scroll
 				// anchoring stays stable. Applied here so every chat surface
 				// (chatbot, cursor, rovo, studio) benefits from one place.
-				"group group/message flex flex-col gap-2 cv-auto",
+				// Opt out (`contain={false}`) when the message hosts content
+				// that grows after mount, since containment clips overflow.
+				"group group/message flex flex-col gap-2",
+				contain && "cv-auto",
 				from === "user"
 					? cn(
 							"is-user ml-auto w-fit items-end justify-end",

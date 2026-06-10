@@ -151,8 +151,8 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	const isInteractive = Boolean(onClick);
 	const shouldShowVerifiedIcon = isOtherAvatarTag && isVerified;
 	const isOverlayRemove = Boolean(onRemove) && removeVariant === "overlay";
-	// Any tag rendering the inline "x" remove button gets 3px right padding
-	// (the visual gap reads as 4px once the tag's 1px inner border is counted).
+	// Any tag rendering the inline "x" remove button gets the standard 4px
+	// right padding (matching non-removable logo/default tags).
 	const hasRemoveButton = Boolean(onRemove) && !isOverlayRemove;
 	// Round the remove button to match the tag shape: pill tags (user avatars or
 	// rounded tags) get a fully-rounded "x"; everything else stays `rounded-xs`.
@@ -184,13 +184,12 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 					// Front slot and avatar slot share one leading-padding/gap branch.
 					// 1px left padding so the visible inset reads correctly once the
 					// tag's 1px inner border is counted.
-					hasLeadingElement ? "gap-0.5 py-0 ps-px" : "gap-1 py-0.5 ps-[3px]",
+					hasLeadingElement ? "gap-0.5 py-0 ps-px" : "gap-1 py-0.5 ps-[4px]",
 					// Avatar types keep their fixed rounding; everything else honors `isRounded`.
 					isUserAvatarTag ? "rounded-full" : isOtherAvatarTag || type === "agent" ? "rounded-sm" : isRounded ? "rounded-full" : "rounded-sm",
-					// Removable tags get 3px right padding so the visible gap reads as
-					// 4px once the 1px inner border is counted; otherwise keep the
-					// non-removable defaults (avatar types 4-6px, logo/default 3px).
-					hasRemoveButton ? "pe-[3px]" : isUserAvatarTag ? "pe-1.5" : isAvatarType ? "pe-1" : "pe-[3px]",
+					// Removable tags and logo/default tags get 4px right padding;
+					// otherwise keep the avatar-type defaults (user 6px, other 4px).
+					hasRemoveButton ? "pe-[4px]" : isUserAvatarTag ? "pe-1.5" : isAvatarType ? "pe-1" : "pe-[4px]",
 				),
 				isInteractive ? "cursor-pointer hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed" : "cursor-default",
 				disabled && "pointer-events-none opacity-(--opacity-disabled)",
