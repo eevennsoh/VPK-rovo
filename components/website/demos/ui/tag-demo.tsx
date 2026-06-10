@@ -1,18 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import LockIcon from "@atlaskit/icon/core/lock-locked";
 import TagIcon from "@atlaskit/icon/core/tag";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
-import { AtlassianLogo, CustomLogo, RovoColorIcon } from "@/components/ui/logo";
+import { AtlassianLogo, RovoColorIcon } from "@/components/ui/logo";
 import { BrandLogoMark } from "@/components/ui/logo-mark";
 import { Tag, TagGroup } from "@/components/ui/tag";
-
-function RovoSvg(props: { width?: number; height?: number; "aria-hidden"?: boolean }) {
-	return <RovoColorIcon {...props} />;
-}
 
 export default function TagDemo() {
 	return (
@@ -74,7 +71,13 @@ export function TagDemoFrontSlot() {
 			<Tag
 				color="purple"
 				elemBefore={
-					<AtlassianLogo name="atlassian" label="Atlassian" size="xxsmall" withUsageBorder />
+					<IconTile
+						aria-hidden
+						icon={<AtlassianLogo name="atlassian" label="Atlassian" size="xxsmall" />}
+						label="Atlassian"
+						size="xxsmall"
+						variant="transparent"
+					/>
 				}
 			>
 				Atlassian
@@ -82,7 +85,13 @@ export function TagDemoFrontSlot() {
 			<Tag
 				color="green"
 				elemBefore={
-					<CustomLogo svg={<RovoSvg />} label="Rovo" size="xxsmall" />
+					<IconTile
+						aria-hidden
+						icon={<RovoColorIcon aria-hidden />}
+						label="Rovo"
+						size="xxsmall"
+						variant="transparent"
+					/>
 				}
 			>
 				Rovo
@@ -98,6 +107,20 @@ export function TagDemoFrontSlot() {
 			</Tag>
 			<Tag color="green" elemBefore={<BrandLogoMark frame="chip" src="/3p/google-drive/16.svg" label="Google Drive" />}>
 				Drive
+			</Tag>
+			<Tag
+				color="red"
+				elemBefore={
+					<IconTile
+						aria-hidden
+						icon={<Icon aria-hidden render={<LockIcon label="" size="small" />} />}
+						label=""
+						size="xxsmall"
+						variant="transparent"
+					/>
+				}
+			>
+				Restricted
 			</Tag>
 		</div>
 	);
