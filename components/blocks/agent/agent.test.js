@@ -686,6 +686,21 @@ test("Agent compact subagents dropdown keeps add and manage actions pinned", () 
 	assert.doesNotMatch(AGENT_SOURCE, /Browse subagents/u);
 });
 
+test("Agent compact apps field opens a dropdown menu instead of the directory", () => {
+	// Regression: clicking the collapsed-nav "Apps" trigger used to route through
+	// getAgentCompactConfigNavItemOnClick and open the apps directory immediately.
+	// Apps must now render its own dropdown (like Skills) with a pinned
+	// "Browse apps" footer that opens the directory.
+	assert.match(AGENT_SOURCE, /function AgentCompactAppsNavButton/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactAppsNavButton[\s\S]*<MenubarContent align="start" className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}>[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*Browse \{item\.label\.toLowerCase\(\)\}/u);
+	// The apps nav field is wired to the dropdown, not the fallback click button.
+	assert.match(AGENT_SOURCE, /item\.agentFieldName === "apps"\)\s*\{\s*return \(\s*<AgentCompactAppsNavButton[\s\S]*onBrowse=\{\(\) => openAgentDirectoryOrAppendListItem\("apps", "apps", onOpenDirectory, onAppendListItem\)\}/u);
+	// The old immediate-open path is gone from the click helper: the trigger
+	// branch is now directly followed by the skills branch, with no apps branch
+	// between them.
+	assert.match(AGENT_SOURCE, /item\.agentFieldName === "trigger"\)\s*\{\s*return \(\) => onEditTriggers\?\.\(\[\]\);\s*\}\s*if \(item\.agentFieldName === "skills"\)/u);
+});
+
 test("Bento carousel overflow hook reattaches listeners when the scroll node remounts", () => {
 	assert.match(HORIZONTAL_OVERFLOW_HOOK_SOURCE, /const \[element, setElement\] = useState<T \| null>\(null\);/u);
 	assert.match(HORIZONTAL_OVERFLOW_HOOK_SOURCE, /elementRef\.current = node;\s*setElement\(node\);/u);
