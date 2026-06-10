@@ -5,10 +5,10 @@ import {
 	type EntityCardAgentProfileProps,
 } from "@/components/ui-custom/entity-card";
 
-export type AgentCardProps = EntityCardAgentProfileProps;
+export type AgentProfileCardProps = EntityCardAgentProfileProps;
 
-function AgentCard(props: Readonly<AgentCardProps>) {
+function AgentProfileCard(props: Readonly<AgentProfileCardProps>) {
 	return <EntityCard.AgentProfile {...props} />;
 }
 
-export { AgentCard };
+export { AgentProfileCard };

@@ -35,7 +35,7 @@ test("Tools Directory docs demo starts closed until the trigger is clicked", () 
 
 test("Tools Directory owns the Figma modal instead of wrapping AgentBrowserDialog", () => {
 	const source = readProjectFile("components/blocks/tools-directory/components/tools-directory.tsx");
-	const cardDirectoryToolSource = readProjectFile("components/ui-custom/card-directory/card-directory-tool.tsx");
+	const variantsSource = readProjectFile("components/ui-custom/entity-card/variants.tsx");
 	const entityCardToolSource = readProjectFile("components/ui-custom/entity-card/tool.tsx");
 
 	assert.doesNotMatch(source, /AgentBrowserDialog/u);
@@ -49,7 +49,7 @@ test("Tools Directory owns the Figma modal instead of wrapping AgentBrowserDialo
 	assert.match(source, /Showing \{filteredTools\.length\.toLocaleString\("en-US"\)\} results/u);
 	assert.match(source, /<ToolCard onSelectTool=\{onSelectTool\} tool=\{tool\} \/>/u);
 	assert.match(source, /const \[moreMenuOpen, setMoreMenuOpen\] = useState\(false\);/u);
-	assert.match(source, /<CardDirectoryTool[\s\S]*active=\{moreMenuOpen\}[\s\S]*moreAction=\{[\s\S]*<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
+	assert.match(source, /<EntityCardToolCard[\s\S]*active=\{moreMenuOpen\}[\s\S]*moreAction=\{[\s\S]*<DirectoryCardMoreMenu[\s\S]*onOpenChange=\{setMoreMenuOpen\}[\s\S]*open=\{moreMenuOpen\}/u);
 	assert.match(source, /aria-pressed=\{open \|\| undefined\}/u);
 	assert.match(source, /className="min-h-\[102px\] hover:border-transparent"/u);
 	assert.match(source, /import \{ AtlassianLogo, CustomLogo \} from "@\/components\/ui\/logo";/u);
@@ -71,10 +71,10 @@ test("Tools Directory owns the Figma modal instead of wrapping AgentBrowserDialo
 	assert.match(source, /const sidebarOverflow = useHasVerticalOverflow<HTMLElement>\(\);/u);
 	assert.match(source, /aria-label="Tool categories"[\s\S]*sidebarOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"[\s\S]*ref=\{sidebarOverflow\.ref\}/u);
 	assert.match(source, /className="hidden min-h-0 w-\[280px\] shrink-0 overflow-y-auto pl-6 md:block"/u);
-	assert.match(cardDirectoryToolSource, /<CardDirectory active=\{active\} className=\{cn\("gap-4", className\)\}/u);
-	assert.match(cardDirectoryToolSource, /<EntityCard\.Tool/u);
-	assert.match(cardDirectoryToolSource, /action=\{moreAction\}/u);
-	assert.match(cardDirectoryToolSource, /onMoreActions=\{onMoreActions\}/u);
+	assert.match(variantsSource, /<EntityCardShell active=\{active\} className=\{cn\("gap-4", className\)\}/u);
+	assert.match(variantsSource, /<EntityCardTool/u);
+	assert.match(variantsSource, /action=\{moreAction\}/u);
+	assert.match(variantsSource, /onMoreActions=\{onMoreActions\}/u);
 	assert.match(entityCardToolSource, /<EntityCardMoreButton active=\{active\}/u);
 	assert.match(entityCardToolSource, /<div className="flex flex-col gap-2">[\s\S]*<EntityCardHeader[\s\S]*<EntityCardDescription>/u);
 	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /scrollTop > 1/u);
