@@ -197,6 +197,12 @@ export type RovoDataParts = {
 		skills?: string[];
 		knowledge?: string[];
 		subagents?: string[];
+		// Canonical "apps" membership (the tools + knowledge umbrella). Derived at
+		// ingest from the tools[]/knowledge[] facet arrays (joined via the unified
+		// apps catalog) plus any @[app:id] body tokens, and force-injected from the
+		// composer's app mentions. The facet arrays remain the source of granular
+		// detail (custom knowledge content, tool permissions); apps[] is membership.
+		apps?: string[];
 		// Full per-subagent configs (instructions, trigger, condition, tools, …).
 		// Persisted alongside the base agent so the studio subagents experience
 		// survives panel close/reopen, agent switching, and publish.

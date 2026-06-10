@@ -14,7 +14,9 @@ import { DEFAULT_KNOWLEDGE_APPS } from "@/app/data/directory/knowledge";
 import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/blocks/skills-directory";
 import { DEFAULT_SKILLS } from "@/app/data/directory/skills";
 import { ToolsDirectoryDialog } from "@/components/blocks/tools-directory";
+import { AppsDirectoryDialog } from "@/components/blocks/apps-directory";
 import { DEMO_SESSION_TOOLS, DEMO_TOOLS } from "@/app/data/directory/tools";
+import { DIRECTORY_APPS, getAppById } from "@/app/data/directory/apps";
 import {
 	ConversationStartersDialog,
 	DEFAULT_STARTER_ICON,
@@ -34,7 +36,6 @@ import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-
 import { useSubagentsNavigatorTop } from "@/components/projects/studio/hooks/use-subagents-navigator-top";
 import {
 	Agent,
-	AGENT_KNOWLEDGE_UPLOAD_TARGET,
 	AgentCompactHeaderNav,
 	type AgentCompactHeaderSection,
 	AgentConfigFields,
@@ -130,6 +131,8 @@ export function RovoAppAgentConfigPanel({
 	// Tool to focus when the tools directory opens (e.g. clicking a tool chip).
 	// Cleared on close so a plain "Add" opens at the directory list instead.
 	const [directorySelectedToolId, setDirectorySelectedToolId] = useState<string | null>(null);
+	// Unified Apps directory: the app to focus when it opens (chip click / picker).
+	const [directorySelectedAppId, setDirectorySelectedAppId] = useState<string | null>(null);
 	// App to open the knowledge directory on (e.g. picking an app in the "Add
 	// knowledge" flyout). Cleared on close so "Browse knowledge" opens the grid.
 	const [directoryKnowledgeAppId, setDirectoryKnowledgeAppId] = useState<string | null>(null);
@@ -338,16 +341,59 @@ export function RovoAppAgentConfigPanel({
 			} else {
 				setDirectorySelectedToolId(null);
 			}
-		} else if (directory === "knowledge") {
-			// The "Add knowledge" picker passes an app id (open that app's content
-			// step) or the upload sentinel (open the file browser). "Browse
-			// knowledge" passes nothing → open the app grid.
-			setDirectoryKnowledgeAppId(
-				selectedItem && selectedItem !== AGENT_KNOWLEDGE_UPLOAD_TARGET ? selectedItem : null,
-			);
+		} else if (directory === "apps") {
+			// Apps chips pass an app name; the picker passes an app id. Resolve
+			// either to the app id so the dialog opens on that app's detail.
+			if (selectedItem) {
+				const normalized = selectedItem.trim().toLowerCase();
+				const matched =
+					getAppById(selectedItem) ??
+					DIRECTORY_APPS.find((app) => app.name.trim().toLowerCase() === normalized);
+				setDirectorySelectedAppId(matched?.id ?? null);
+			} else {
+				setDirectorySelectedAppId(null);
+			}
 		}
 		setActiveDirectory(directory);
 	}, []);
+	// The apps already on the agent, as catalog ids — drives the Apps dialog's
+	// "added" state. Derived from the canonical apps[] (display names) so it stays
+	// in sync after every add/remove.
+	const addedAppIds = useMemo(() => {
+		const names = getListItems(activeConfig, "apps");
+		return names
+			.map((name) => {
+				const normalized = name.trim().toLowerCase();
+				return DIRECTORY_APPS.find((app) => app.name.trim().toLowerCase() === normalized)?.id;
+			})
+			.filter((id): id is string => Boolean(id));
+	}, [activeConfig]);
+	const handleDirectoryAppIdsChange = useCallback(
+		(nextIds: readonly string[]) => {
+			const previousIds = new Set(addedAppIds);
+			const addedIds = nextIds.filter((id) => !previousIds.has(id));
+			// Adding an app wires BOTH facets: the canonical apps[] membership plus
+			// its tool (name) and knowledge ("<App> - all content") so the existing
+			// generation/persistence consumers stay populated. appendListValues dedupes.
+			for (const id of addedIds) {
+				const app = getAppById(id);
+				if (!app) {
+					continue;
+				}
+				appendListValues("apps", [app.name]);
+				if (app.hasToolFacet) {
+					appendListValues("tools", [app.name]);
+				}
+				if (app.hasKnowledgeFacet && app.knowledgeApp) {
+					appendListValues("knowledge", [`${app.knowledgeApp.name} - all content`]);
+				}
+			}
+			if (addedIds.length > 0) {
+				setActiveDirectory(null);
+			}
+		},
+		[appendListValues, addedAppIds],
+	);
 	const handleAddKnowledge = useCallback(
 		(payload: KnowledgeDirectoryAddPayload) => {
 			const app = DEFAULT_KNOWLEDGE_APPS.find((candidate) => candidate.id === payload.appId);
@@ -725,6 +771,20 @@ export function RovoAppAgentConfigPanel({
 				}}
 				sessionTools={DEMO_SESSION_TOOLS}
 				tools={DEMO_TOOLS}
+			/>
+			<AppsDirectoryDialog
+				key={`apps-${directorySelectedAppId ?? "browse"}`}
+				addedToolIds={addedAppIds}
+				initialSelectedToolId={directorySelectedAppId}
+				open={activeDirectory === "apps"}
+				onAddedToolIdsChange={handleDirectoryAppIdsChange}
+				onOpenChange={(open) => {
+					setActiveDirectory(open ? "apps" : null);
+					if (!open) {
+						setDirectorySelectedAppId(null);
+					}
+				}}
+				tools={DIRECTORY_APPS}
 			/>
 			<SkillsDirectoryDialog
 				onAddSkills={handleAddSkills}

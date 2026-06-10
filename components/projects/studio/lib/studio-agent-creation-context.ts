@@ -127,6 +127,9 @@ const REQUIRED_AGENT_PROFILE_FIELDS: readonly string[] = [
 const CATALOG_SELECTION_RULE =
 	"Catalog rule: tools, skills, knowledge, and subagents MUST be selected from the [Catalog] projection below using its exact ids. Do not invent ids, rename them, or use display names. Every `@[category:id]` token in the instructions must reuse an id you placed in the matching array. Leave an array empty rather than guessing.";
 
+const HONOR_NAMED_SOURCES_RULE =
+	"Honor named sources: every app/tool/knowledge source the user explicitly names in their brief (e.g. Gmail, Salesforce, Slack, Jira, Google Calendar, Atlassian Projects) MUST be wired up — place each matching catalog id in the tools and/or knowledge array and reference it inline as a mention token. Map each named source to its closest catalog id (e.g. a calendar → google-calendar, project tracking → projects/jira). Do not drop a source the user named.";
+
 const CLARIFICATION_DIMENSIONS =
 	"Dimensions to cover (ask about whichever the brief and template context leave unclear): purpose & scope; target users; knowledge/data sources; tone & persona; key tasks & workflows; triggers (when the agent should act); tools/integrations (which catalog tools, skills, knowledge, and subagents it connects to); guardrails (what it must not do).";
 
@@ -377,6 +380,7 @@ export function buildStudioAgentCreationContext(
 		"Required agent profile fields (gather via the clarification answers; do not finalize them yet):",
 		...REQUIRED_AGENT_PROFILE_FIELDS,
 		CATALOG_SELECTION_RULE,
+		HONOR_NAMED_SOURCES_RULE,
 		`Expected output for THIS turn: emit only the ask_user_questions question card. Do NOT emit an AGENT_RESULT marker before the user has answered — that happens on the next turn. ${FENCE_RULE}`,
 		"[End Studio Agent Creation Request]",
 	].join("\n");
@@ -398,6 +402,7 @@ export function buildStudioAgentCreationContinuationContext(
 		"Required agent profile fields (fill from the brief, template context, and clarification answers):",
 		...REQUIRED_AGENT_PROFILE_FIELDS,
 		CATALOG_SELECTION_RULE,
+		HONOR_NAMED_SOURCES_RULE,
 		"Clarification rule: If essential profile details are still missing, you may ask ONE more concise question-card round using the existing ask_user_questions flow (never exceed 2 rounds total). Otherwise, do not ask again.",
 		`Expected output: otherwise, create the reusable custom agent now and emit exactly one structured AGENT_RESULT marker on its own line OUTSIDE any code fence. ${FENCE_RULE}`,
 		"[End Studio Agent Creation Request]",

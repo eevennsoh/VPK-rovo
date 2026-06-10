@@ -18,11 +18,16 @@ import {
 	DEFAULT_SKILLS,
 	DEMO_SESSION_TOOLS,
 	DEMO_TOOLS,
+	DIRECTORY_APPS,
 	ROVO_AGENT_PROFILES,
 } from "@/app/data/directory";
 
-/** The mention categories the ingest layer understands. */
-export type CatalogCategory = "tool" | "skill" | "knowledge" | "subagent";
+/**
+ * The mention categories the ingest layer understands. `app` is the umbrella
+ * over tools + knowledge (single-id, e.g. `@[app:jira]`); `tool`/`knowledge`
+ * remain so legacy tokens and the underlying facet arrays still resolve.
+ */
+export type CatalogCategory = "tool" | "skill" | "knowledge" | "subagent" | "app";
 
 /** A parsed mention token, e.g. `@[tool:jira]` → `{ category: "tool", id: "jira" }`. */
 export interface InstructionToken {
@@ -233,6 +238,10 @@ function buildIndex(category: CatalogCategory): readonly CatalogEntry[] {
 		case "subagent":
 			source = ROVO_AGENT_PROFILES.map((a) => ({ id: a.id, name: a.name }));
 			break;
+		case "app":
+			// The unified apps catalog (tools ∪ knowledge-only), single-id like tools.
+			source = DIRECTORY_APPS.map((a) => ({ id: a.id, name: a.name }));
+			break;
 	}
 
 	categoryIndexCache.set(category, source);
@@ -346,8 +355,8 @@ function nearestId(raw: string, index: readonly CatalogEntry[]): string | undefi
 	return bestScore >= MATCH_THRESHOLD ? bestId : undefined;
 }
 
-/** The four categories that may appear inside an `@[category:id]` token. */
-const TOKEN_CATEGORIES: readonly CatalogCategory[] = ["tool", "skill", "knowledge", "subagent"];
+/** The categories that may appear inside an `@[category:id]` token. */
+const TOKEN_CATEGORIES: readonly CatalogCategory[] = ["tool", "skill", "knowledge", "subagent", "app"];
 
 /**
  * Matches `@[category:id]` tokens. The category is constrained to the known set;
@@ -355,7 +364,7 @@ const TOKEN_CATEGORIES: readonly CatalogCategory[] = ["tool", "skill", "knowledg
  * we accept whatever is inside so a malformed id can still be repaired or
  * stripped rather than left dangling).
  */
-const TOKEN_PATTERN = /@\[(tool|skill|knowledge|subagent):([^\]]+)\]/g;
+const TOKEN_PATTERN = /@\[(tool|skill|knowledge|subagent|app):([^\]]+)\]/g;
 
 /**
  * Matches markdown code regions whose contents must be treated as literal text,
@@ -420,12 +429,14 @@ export function repairInstructionTokens(markdown: string): RepairedInstructions 
 		skill: [],
 		knowledge: [],
 		subagent: [],
+		app: [],
 	};
 	const seenPerCategory: Record<CatalogCategory, Set<string>> = {
 		tool: new Set(),
 		skill: new Set(),
 		knowledge: new Set(),
 		subagent: new Set(),
+		app: new Set(),
 	};
 
 	if (!markdown) {

@@ -5,7 +5,9 @@ import {
 	DEMO_SESSION_TOOLS,
 	DEMO_TEAMS,
 	DEMO_TOOLS,
+	DIRECTORY_APPS,
 	getAgentDirectoryVisual,
+	getAppDirectoryVisual,
 	getPersonDirectoryVisual,
 	getSkillDirectoryVisual,
 	getTeamDirectoryVisual,
@@ -13,6 +15,7 @@ import {
 	resolveDirectoryVisual,
 	SAMPLE_AGENT_PEOPLE,
 	type AgentPerson,
+	type DirectoryApp,
 	type DirectoryTeam,
 	type KnowledgeDirectoryApp,
 	type SkillsDirectorySkill,
@@ -62,6 +65,16 @@ function mapToolToMentionItem(tool: ToolsDirectoryTool): RichTextMentionItem {
 		id: toMentionId("tool", tool.id),
 		label: tool.name,
 		visual: resolveDirectoryVisual(getToolDirectoryVisual(tool)),
+	};
+}
+
+function mapAppToMentionItem(app: DirectoryApp): RichTextMentionItem {
+	return {
+		category: "app",
+		description: app.description,
+		id: toMentionId("app", app.id),
+		label: app.name,
+		visual: resolveDirectoryVisual(getAppDirectoryVisual(app)),
 	};
 }
 
@@ -127,6 +140,7 @@ function uniqueMentionItems(items: readonly RichTextMentionItem[]): readonly Ric
  * surfaces draw the same tokens the directories render.
  */
 export const EDITOR_PALETTE_MENTION_SOURCES: RichTextMentionSources = {
+	app: uniqueMentionItems(DIRECTORY_APPS.map(mapAppToMentionItem)),
 	knowledge: uniqueMentionItems(getKnowledgeMentionItems()),
 	skill: uniqueMentionItems(DEFAULT_SKILLS.map(mapSkillToMentionItem)),
 	subagent: uniqueMentionItems(DEMO_AGENT_BROWSER_AGENTS.map(mapAgentToMentionItem)),
@@ -174,6 +188,15 @@ function stripMentionCategoryPrefix(category: RichTextMentionCategory, id: strin
  */
 export function getToolIdFromMentionId(id: string): string {
 	return stripMentionCategoryPrefix("tool", id);
+}
+
+/**
+ * Extracts the app id from an `"app:<id>"` mention id (minted by
+ * `mapAppToMentionItem`). The Apps directory picker uses this to open the chosen
+ * app's detail screen.
+ */
+export function getAppIdFromMentionId(id: string): string {
+	return stripMentionCategoryPrefix("app", id);
 }
 
 /**

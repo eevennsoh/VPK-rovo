@@ -239,10 +239,10 @@ test("agents + subagents catalogs are valid, uniquely identified, with resolvabl
 	}
 });
 
-test("the unified mention catalog exposes all six categories, each non-empty with resolved visuals", async () => {
+test("the unified mention catalog exposes all expected categories, each non-empty with resolved visuals", async () => {
 	const { EDITOR_PALETTE_MENTION_SOURCES } = await loadCatalog();
 
-	const expectedCategories = ["skill", "tool", "subagent", "knowledge", "human", "team"];
+	const expectedCategories = ["app", "skill", "tool", "subagent", "knowledge", "human", "team"];
 	for (const category of expectedCategories) {
 		const items = EDITOR_PALETTE_MENTION_SOURCES[category];
 		assert.ok(Array.isArray(items), `mention category ${category} must be an array`);

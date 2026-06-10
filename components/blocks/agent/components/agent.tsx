@@ -12,7 +12,7 @@ import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
 import DeleteIcon from "@atlaskit/icon/core/delete";
-import ToolsIcon from "@atlaskit/icon/core/tools";
+import AppsIcon from "@atlaskit/icon/core/apps";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 import EditIcon from "@atlaskit/icon/core/edit";
@@ -20,11 +20,9 @@ import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
 import ScorecardIcon from "@atlaskit/icon/core/scorecard";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import UploadIcon from "@atlaskit/icon/core/upload";
 import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
-import BookOpenIcon from "@atlaskit/icon-lab/core/book-open";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import ViewsIcon from "@atlaskit/icon-lab/core/views";
 
@@ -58,10 +56,8 @@ import {
 	HoverRevealLabel,
 } from "@/components/ui-custom/hover-reveal-row";
 import {
-	EDITOR_PALETTE_KNOWLEDGE_APP_ITEMS,
 	EDITOR_PALETTE_MENTION_SOURCES,
 	getDirectoryMentionItemOrFallback,
-	getKnowledgeAppIdFromMentionId,
 	getToolIdFromMentionId,
 } from "@/components/blocks/editor-palette/data/mention-sources";
 import {
@@ -202,8 +198,7 @@ const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
 // always sits last. Keep both lists in sync when reordering.
 const AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = [
 	{ agentFieldName: "trigger", label: "Triggers", Icon: AutomationIcon },
-	{ agentFieldName: "knowledge", label: "Knowledge", kind: "knowledge", Icon: BookOpenIcon },
-	{ agentFieldName: "tools", label: "Tools", listFieldName: "tools", Icon: ToolsIcon },
+	{ agentFieldName: "apps", label: "Apps", listFieldName: "apps", Icon: AppsIcon },
 	{ agentFieldName: "skills", label: "Skills", listFieldName: "skills", Icon: SkillIcon },
 	{ agentFieldName: "subagents", label: "Subagents", listFieldName: "subagents", Icon: AiAgentIcon },
 	{ agentFieldName: "memory", label: "Memory", kind: "memory", Icon: AiModelIcon },
@@ -235,6 +230,7 @@ const AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS =
 const AGENT_EMPTY_ROW_ADD_LABELS: Record<AgentConfigListFieldName, string> = {
 	conversationStarters: "Add prompts to help people start",
 	knowledge: "Add knowledge to ground this agent",
+	apps: "Add apps to connect tools and knowledge",
 	skills: "Add skills to guide specialized tasks",
 	subagents: "Add subagents to handle specific scenarios",
 	tools: "Add tools to extend what this agent can do",
@@ -274,14 +270,11 @@ function getAgentCompactEmptyConfigNavItems(config?: AgentConfigFormValue) {
 				case "skills":
 					count = getNonEmptyConfigItems(config.skills).length;
 					break;
-				case "tools":
-					count = getNonEmptyConfigItems(config.tools).length;
+				case "apps":
+					count = getNonEmptyConfigItems(config.apps).length;
 					break;
 				case "subagents":
 					count = getNonEmptyConfigItems(config.subagents).length;
-					break;
-				case "knowledge":
-					count = 0;
 					break;
 				case "memory":
 					// Memory is an always-on knowledge source with no item count.
@@ -313,7 +306,7 @@ function toMentionId(category: RichTextMentionItem["category"], id: string): str
 
 export type AgentConfigReferenceListFieldName = Extract<
 	AgentConfigListFieldName,
-	"knowledge" | "skills" | "subagents" | "tools"
+	"knowledge" | "skills" | "subagents" | "tools" | "apps"
 >;
 
 const AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY: Record<RichTextReferenceCategory, AgentConfigReferenceListFieldName> = {
@@ -321,6 +314,7 @@ const AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY: Record<RichTextReferenceCategory
 	skill: "skills",
 	subagent: "subagents",
 	tool: "tools",
+	app: "apps",
 };
 
 const AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD: Record<AgentConfigReferenceListFieldName, RichTextReferenceCategory> = {
@@ -328,6 +322,7 @@ const AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD: Record<AgentConfigReferenceListF
 	skills: "skill",
 	subagents: "subagent",
 	tools: "tool",
+	apps: "app",
 };
 type AgentInlineSearchField = Extract<AgentConfigReferenceListFieldName, "knowledge" | "skills" | "tools">;
 
@@ -346,14 +341,6 @@ export const AGENT_KNOWLEDGE_UPLOAD_TARGET = "__upload__";
 
 // Sticky lead row above the knowledge app list, mirroring the directory's
 // upload drop zone. Selecting it opens the directory dialog's file browser.
-const AGENT_KNOWLEDGE_UPLOAD_ITEM: RichTextSuggestionMenuItem = {
-	id: `knowledge:${AGENT_KNOWLEDGE_UPLOAD_TARGET}`,
-	icon: <UploadIcon label="" size="small" />,
-	label: "Upload files",
-};
-const AGENT_KNOWLEDGE_UPLOAD_LEADING_ITEMS: readonly RichTextSuggestionMenuItem[] = [
-	AGENT_KNOWLEDGE_UPLOAD_ITEM,
-];
 
 function isAgentConfigReferenceListField(
 	field: AgentConfigListFieldName,
@@ -449,9 +436,10 @@ export type AgentConfigListFieldName =
 	| "tools"
 	| "subagents"
 	| "knowledge"
+	| "apps"
 	| "conversationStarters";
 
-export type AgentDirectoryKind = "knowledge" | "tools" | "skills" | "memory" | "conversationStarters";
+export type AgentDirectoryKind = "knowledge" | "tools" | "apps" | "skills" | "memory" | "conversationStarters";
 
 // Maps a directory-backed "/" slash category to the config-panel directory it
 // opens from a nested empty state's "Browse all". "format" has no directory and
@@ -464,6 +452,7 @@ const AGENT_DIRECTORY_BY_SLASH_CATEGORY: Record<
 	skill: "skills",
 	tool: "tools",
 	knowledge: "knowledge",
+	app: "apps",
 };
 
 // Config rows that can be suppressed by callers (e.g. while editing a subagent,
@@ -486,6 +475,7 @@ export interface AgentConfigFormValue {
 	tools?: readonly string[];
 	subagents?: readonly string[];
 	knowledge?: readonly string[];
+	apps?: readonly string[];
 	conversationStarters?: readonly string[];
 	conversationStarterIcons?: readonly string[];
 	// Per-field set of disabled list items, keyed by the item's label (not index)
@@ -921,8 +911,8 @@ function getAgentCompactConfigNavItemOnClick(
 		return () => onEditTriggers?.([]);
 	}
 
-	if (item.agentFieldName === "tools") {
-		return () => openAgentDirectoryOrAppendListItem("tools", "tools", onOpenDirectory, onAppendListItem);
+	if (item.agentFieldName === "apps") {
+		return () => openAgentDirectoryOrAppendListItem("apps", "apps", onOpenDirectory, onAppendListItem);
 	}
 
 	if (item.agentFieldName === "skills") {
@@ -1633,8 +1623,6 @@ function AgentCompactEmptyConfigNav({
 	onToggleListItem,
 	reasoningValue,
 	onReasoningValueChange,
-	knowledgeMode,
-	onKnowledgeModeChange,
 	memoryMode,
 	onMemoryModeChange,
 	screenAssistantTargetPrefix,
@@ -1707,25 +1695,6 @@ function AgentCompactEmptyConfigNav({
 							/>
 						);
 					}
-					if (item.agentFieldName === "knowledge") {
-						return (
-							<AgentKnowledgeSelector
-								key={item.agentFieldName}
-								render="nav-button"
-								value={knowledgeMode}
-								onValueChange={onKnowledgeModeChange}
-								itemCount={getNonEmptyConfigItems(config?.knowledge).length}
-								items={getNonEmptyConfigItems(config?.knowledge)}
-								onBrowse={() => openAgentDirectoryOrAppendListItem("knowledge", "knowledge", onOpenDirectory, onAppendListItem)}
-								disabledItems={config?.disabledItems?.knowledge}
-								onPickKnowledgeApp={onOpenDirectory ? (appIdOrUpload) => onOpenDirectory("knowledge", appIdOrUpload) : undefined}
-								onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
-								onSelectItem={onOpenDirectory ? (value) => onOpenDirectory("knowledge", value) : undefined}
-								onToggleItem={onToggleListItem ? (index, enabled) => onToggleListItem("knowledge", index, enabled) : undefined}
-								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
-							/>
-						);
-					}
 					if (item.agentFieldName === "memory") {
 						return (
 							<AgentMemorySelector
@@ -1775,14 +1744,14 @@ function AgentCompactEmptyConfigNav({
 							/>
 						);
 					}
-					if (item.agentFieldName === "tools" || item.agentFieldName === "skills") {
-						const directory = item.agentFieldName;
+					if (item.agentFieldName === "skills") {
+						const directory = "skills" as const;
 						return (
 							<AgentCompactDirectoryNavButton
 								browseLabel={`Browse ${item.label.toLowerCase()}`}
 								directory={directory}
 								item={item}
-								items={getNonEmptyConfigItems(directory === "tools" ? config?.tools : config?.skills)}
+								items={getNonEmptyConfigItems(config?.skills)}
 								key={item.agentFieldName}
 								onAddSearchItem={(searchItem) => {
 									if (searchItem.disabled) {
@@ -1791,7 +1760,7 @@ function AgentCompactEmptyConfigNav({
 									onAddListValues?.(directory, [searchItem.label]);
 								}}
 								disabledItems={config?.disabledItems?.[directory]}
-								onPickTool={directory === "tools" && onOpenDirectory ? (toolId) => onOpenDirectory("tools", toolId) : undefined}
+								onPickTool={undefined}
 								onBrowse={() => openAgentDirectoryOrAppendListItem(directory, directory, onOpenDirectory, onAppendListItem)}
 								onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem(directory, index) : undefined}
 								onToggleItem={onToggleListItem ? (index, enabled) => onToggleListItem(directory, index, enabled) : undefined}
@@ -2573,12 +2542,10 @@ function AgentFilledConfigSummary({
 	config,
 	hiddenConfigFields,
 	hideEmptyRows = false,
-	knowledgeMode,
 	memoryMode,
 	onAppendListItem,
 	onAddListValues,
 	onEditTriggers,
-	onKnowledgeModeChange,
 	onManageSubagents,
 	onMemoryModeChange,
 	onOpenDirectory,
@@ -2592,13 +2559,11 @@ function AgentFilledConfigSummary({
 }: Readonly<AgentFilledConfigSummaryProps>) {
 	const triggerItems = getAgentTriggerItems(config);
 	const skillItems = getNonEmptyConfigItems(config.skills);
-	const toolItems = getNonEmptyConfigItems(config.tools);
+	const appItems = getNonEmptyConfigItems(config.apps);
 	const subagentItems = getNonEmptyConfigItems(config.subagents);
-	const knowledgeItems = getNonEmptyConfigItems(config.knowledge);
 	const starterSummaryItems = getConversationStarterSummaryItems(config).slice(0, MAX_AGENT_CONVERSATION_STARTERS);
 	const starterItems = starterSummaryItems.map((item) => item.label);
 
-	const hasKnowledgeSelector = Boolean(knowledgeMode && onKnowledgeModeChange);
 	// Each summary row's inline "Add" opens the SAME dropdown as the collapsed
 	// nav (list + "Add ›" search flyout + "Browse"), so the two layouts share one
 	// experience. We reuse the collapsed nav components directly, passing the
@@ -2606,7 +2571,6 @@ function AgentFilledConfigSummary({
 	// the dropdowns inherit the same label/icon the collapsed strip uses.
 	const navItems = getAgentCompactEmptyConfigNavItems(config);
 	const skillsNavItem = navItems.find((entry) => entry.agentFieldName === "skills");
-	const toolsNavItem = navItems.find((entry) => entry.agentFieldName === "tools");
 	const subagentsNavItem = navItems.find((entry) => entry.agentFieldName === "subagents");
 	const renderDirectoryAddControl = (
 		field: Extract<AgentInlineSearchField, "skills" | "tools">,
@@ -2662,56 +2626,22 @@ function AgentFilledConfigSummary({
 			),
 		},
 		{
-			key: "knowledge",
-			// The new knowledge selector always renders its mode lozenge, so the row
-			// is never visually empty even when no custom items are configured.
-			isEmpty: hasKnowledgeSelector ? false : knowledgeItems.length === 0,
-			node: hasKnowledgeSelector && knowledgeMode && onKnowledgeModeChange ? (
-				<AgentKnowledgeRow
-					addLabel={showAddButtons ? "Add" : undefined}
-					isItemDisabled={(item) => isAgentListItemDisabled(config, "knowledge", item)}
-					items={knowledgeItems}
-					disabledItems={config.disabledItems?.knowledge}
-					onBrowse={() => openAgentDirectoryOrAppendListItem("knowledge", "knowledge", onOpenDirectory, onAppendListItem)}
-					onPickKnowledgeApp={onOpenDirectory ? (appIdOrUpload) => onOpenDirectory("knowledge", appIdOrUpload) : undefined}
-					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
-					onSelectItem={onOpenDirectory ? (value) => onOpenDirectory("knowledge", value) : undefined}
-					onToggleItem={onToggleListItem ? (index, enabled) => onToggleListItem("knowledge", index, enabled) : undefined}
-					onValueChange={onKnowledgeModeChange}
-					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
-					value={knowledgeMode}
-				/>
-			) : (
-				<AgentFilledSummaryRow
-					addLabel={showAddButtons ? "Add" : undefined}
-					hideWhenEmpty={hideEmptyRows}
-					isItemDisabled={(item) => isAgentListItemDisabled(config, "knowledge", item)}
-					items={knowledgeItems}
-					label="Knowledge"
-					onAdd={() => openAgentDirectoryOrAppendListItem("knowledge", "knowledge", onOpenDirectory, onAppendListItem)}
-					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("knowledge", index) : undefined}
-					referenceCategory="knowledge"
-					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:knowledge` : undefined}
-				/>
-			),
-		},
-		{
-			key: "tools",
-			isEmpty: toolItems.length === 0,
+			key: "apps",
+			isEmpty: appItems.length === 0,
 			node: (
 				<AgentFilledSummaryRow
-					addLabel={getAgentFilledSummaryAddLabel("tools", toolItems.length === 0, showAddButtons)}
+					addLabel={getAgentFilledSummaryAddLabel("apps", appItems.length === 0, showAddButtons)}
 					hideWhenEmpty={hideEmptyRows}
-					agentFieldName="tools"
-					isItemDisabled={(item) => isAgentListItemDisabled(config, "tools", item)}
-					items={toolItems}
-					label="Tools"
-					renderAddControl={renderDirectoryAddControl("tools", toolsNavItem, toolItems)}
-					// Clicking a tool chip opens the tools directory focused on that tool.
-					onItemClick={onOpenDirectory ? (item) => onOpenDirectory("tools", item) : undefined}
-					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("tools", index) : undefined}
-					referenceCategory="tool"
-					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:tools` : undefined}
+					agentFieldName="apps"
+					isItemDisabled={(item) => isAgentListItemDisabled(config, "apps", item)}
+					items={appItems}
+					label="Apps"
+					onAdd={() => openAgentDirectoryOrAppendListItem("apps", "apps", onOpenDirectory, onAppendListItem)}
+					// Clicking an app chip opens the apps directory focused on that app.
+					onItemClick={onOpenDirectory ? (item) => onOpenDirectory("apps", item) : undefined}
+					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("apps", index) : undefined}
+					referenceCategory="app"
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:apps` : undefined}
 				/>
 			),
 		},
@@ -3148,287 +3078,7 @@ function AgentReasoningRow({
 	);
 }
 
-const KNOWLEDGE_MODE_OPTIONS = [
-	{ value: "all", label: "All organizational knowledge", tabLabel: "All" },
-	{ value: "custom", label: "Custom knowledge", tabLabel: "Custom" },
-	{ value: "none", label: "No organizational knowledge", tabLabel: "None" },
-] as const;
-
-type KnowledgeModeValue = (typeof KNOWLEDGE_MODE_OPTIONS)[number]["value"];
-
-function findKnowledgeModeOption(value: KnowledgeModeValue) {
-	return KNOWLEDGE_MODE_OPTIONS.find((option) => option.value === value);
-}
-
-// Compact nav-button value shown after the "Knowledge" category word: "all"
-// reads as "All", "none" as "None". A "custom" selection has no text value —
-// its item count is rendered as a Badge instead (matching Tools/Skills), so
-// `getKnowledgeNavValueLabel` returns null for custom.
-function getKnowledgeNavValueLabel(value: KnowledgeModeValue): string | null {
-	if (value === "all") {
-		return "All";
-	}
-	if (value === "none") {
-		return "None";
-	}
-	return null;
-}
-
-function AgentKnowledgeSelectorMenu({
-	value,
-	onValueChange,
-}: Readonly<{
-	value: KnowledgeModeValue;
-	onValueChange: (next: KnowledgeModeValue) => void;
-}>) {
-	return (
-		<DropdownMenuContent align="start" className="min-w-[280px]">
-			<DropdownMenuGroup>
-				{KNOWLEDGE_MODE_OPTIONS.map((option) => (
-					<DropdownMenuItem
-						key={option.value}
-						onClick={() => onValueChange(option.value)}
-						selected={value === option.value}
-					>
-						{option.label}
-					</DropdownMenuItem>
-				))}
-			</DropdownMenuGroup>
-		</DropdownMenuContent>
-	);
-}
-
-// "All | Custom | None" tabs pinned to the bottom of the popup. The tabs ARE the
-// knowledge mode: picking a tab calls `onValueChange` directly. Kept inside the
-// popup's `p-1` frame so it lines up with the list/footer above it.
-function AgentKnowledgeModeTabs({
-	value,
-	onValueChange,
-}: Readonly<{
-	value: KnowledgeModeValue;
-	onValueChange: (next: KnowledgeModeValue) => void;
-}>) {
-	return (
-		<Tabs
-			// Base UI Tabs `value` must match a Tab `value`; map mode → tab 1:1.
-			value={value}
-			onValueChange={(next) => onValueChange(next as KnowledgeModeValue)}
-		>
-			<TabsList className="w-full">
-				{KNOWLEDGE_MODE_OPTIONS.map((option) => (
-					<TabsTrigger key={option.value} value={option.value}>
-						{option.tabLabel}
-					</TabsTrigger>
-				))}
-			</TabsList>
-		</Tabs>
-	);
-}
-
-// Nav-button knowledge popup: a flex column whose body scrolls (the custom
-// knowledge list, once any items exist) and whose footer is pinned. The footer
-// stacks, bottom-up: the "All | Custom | None" tabs (the mode), and — only when
-// "Custom" is active — "Add knowledge" + "Browse knowledge" just above the tabs.
-// A separator sits above those actions once the list has items, so the list,
-// actions, and tabs read as three banded sections.
-function AgentKnowledgeNavMenuContent({
-	value,
-	onValueChange,
-	items,
-	disabledItems,
-	onBrowse,
-	onPickKnowledgeApp,
-	onRemoveItem,
-	onSelectItem,
-	onToggleItem,
-}: Readonly<{
-	value: KnowledgeModeValue;
-	onValueChange: (next: KnowledgeModeValue) => void;
-	items: readonly string[];
-	disabledItems?: readonly string[];
-	onBrowse?: () => void;
-	// "Add knowledge" opens a nested flyout whose rows are the knowledge apps
-	// (plus an "Upload files" lead row), mirroring the directory grid. Picking a
-	// row opens the directory dialog on that app's content step rather than
-	// adding immediately; `__upload__` opens the file browser.
-	onPickKnowledgeApp?: (appIdOrUpload: string) => void;
-	onRemoveItem?: (index: number) => void;
-	onSelectItem?: (item: string) => void;
-	onToggleItem?: (index: number, enabled: boolean) => void;
-}>) {
-	const isCustom = value === "custom";
-	const hasItems = isCustom && items.length > 0;
-	const disabledSet = useDisabledLabelSet(disabledItems);
-
-	return (
-		<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
-			{hasItems ? (
-				<div className="min-h-0 flex-1 overflow-y-auto">
-					<AgentCompactNavMenuList>
-						<DropdownMenuGroup className="p-0">
-							{items.map((item, index) => {
-								const mention = getDirectoryMentionItemOrFallback("knowledge", item);
-								return (
-									<AgentCompactReferenceRow
-										key={`knowledge-${item}-${index}`}
-										enabled={!disabledSet.has(item.trim())}
-										elemBefore={
-											// The shared menu visual renders at a fixed 32px tile
-											// (MENU_VISUAL_TILE_SIZE). Scale the whole mark to 24px
-											// uniformly across avatar/image/icon kinds.
-											<span className="inline-flex size-6 shrink-0 items-center justify-center [&>*]:scale-75">
-												{mention.visual ? (
-													<RichTextMentionVisualMark
-														category="knowledge"
-														label={item}
-														size="menu"
-														visual={mention.visual}
-													/>
-												) : (
-													<IconTile
-														aria-hidden={true}
-														className="border border-border bg-surface text-icon-subtlest"
-														icon={<PageIcon label="" size="small" />}
-														label={item}
-														size="medium"
-													/>
-												)}
-											</span>
-										}
-										label={item}
-										onClick={onSelectItem ? () => onSelectItem(item) : undefined}
-										onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
-										onToggle={onToggleItem ? (enabled) => onToggleItem(index, enabled) : undefined}
-									/>
-								);
-							})}
-						</DropdownMenuGroup>
-					</AgentCompactNavMenuList>
-				</div>
-			) : null}
-			<div className="shrink-0">
-				{isCustom ? (
-					<>
-						{hasItems ? <DropdownMenuSeparator /> : null}
-						<DropdownMenuSub>
-							<DropdownMenuSubTrigger>
-								<span className="flex items-center gap-3">
-									<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
-										<PlusIcon />
-									</span>
-									Add knowledge
-								</span>
-							</DropdownMenuSubTrigger>
-							<DropdownMenuSubContent className="w-auto min-w-0 overflow-visible border-0 bg-transparent p-0 shadow-none">
-								<EditorPaletteSearchPicker
-									autoFocus
-									category="knowledge"
-									className="rich-text-command-menu-borderless"
-									items={EDITOR_PALETTE_KNOWLEDGE_APP_ITEMS}
-									leadingItems={AGENT_KNOWLEDGE_UPLOAD_LEADING_ITEMS}
-									onBrowseAll={onBrowse}
-									onSelectItem={onPickKnowledgeApp
-										? (item) => onPickKnowledgeApp(getKnowledgeAppIdFromMentionId(item.id))
-										: undefined}
-								/>
-							</DropdownMenuSubContent>
-						</DropdownMenuSub>
-						<DropdownMenuItem
-							elemBefore={
-								<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
-									<BookOpenIcon label="" />
-								</span>
-							}
-							onClick={onBrowse}
-						>
-							Browse knowledge
-						</DropdownMenuItem>
-					</>
-				) : null}
-				<div className={cn(isCustom && "pt-1")}>
-					<AgentKnowledgeModeTabs value={value} onValueChange={onValueChange} />
-				</div>
-			</div>
-		</MenubarContent>
-	);
-}
-
-interface AgentKnowledgeSelectorProps {
-	value: KnowledgeModeValue;
-	onValueChange: (next: KnowledgeModeValue) => void;
-	render: "nav-button" | "row";
-	itemCount?: number;
-	// Nav-button only: the custom knowledge items, plus browse/add/select
-	// handlers surfaced inside the dropdown when "Custom" is active.
-	items?: readonly string[];
-	onBrowse?: () => void;
-	disabledItems?: readonly string[];
-	// Picking an app row (or "Upload files") in the "Add knowledge" flyout.
-	onPickKnowledgeApp?: (appIdOrUpload: string) => void;
-	onRemoveItem?: (index: number) => void;
-	onSelectItem?: (item: string) => void;
-	onToggleItem?: (index: number, enabled: boolean) => void;
-	screenAssistantTargetId?: string;
-}
-
-function AgentKnowledgeSelector({
-	value,
-	onValueChange,
-	render,
-	itemCount = 0,
-	items = [],
-	disabledItems,
-	onBrowse,
-	onPickKnowledgeApp,
-	onRemoveItem,
-	onSelectItem,
-	onToggleItem,
-	screenAssistantTargetId,
-}: Readonly<AgentKnowledgeSelectorProps>) {
-	const current = findKnowledgeModeOption(value);
-	const label = current?.label ?? "Knowledge";
-
-	if (render === "nav-button") {
-		// Always lead with the "Knowledge" category word (like Tools/Skills), then
-		// the value in a Badge: "All"/"None" for those modes, or the item count for
-		// a custom selection — matching the grey Badge used by Tools/Skills.
-		const valueLabel = getKnowledgeNavValueLabel(value) ?? String(itemCount);
-		return (
-			<MenubarMenu>
-				<MenubarTrigger
-					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
-					data-agent-field="knowledge"
-					data-screen-assistant-target={screenAssistantTargetId}
-				>
-					Knowledge
-					<Badge>{valueLabel}</Badge>
-				</MenubarTrigger>
-				<AgentKnowledgeNavMenuContent
-					value={value}
-					onValueChange={onValueChange}
-					items={items}
-					disabledItems={disabledItems}
-					onBrowse={onBrowse}
-					onPickKnowledgeApp={onPickKnowledgeApp}
-					onRemoveItem={onRemoveItem}
-					onSelectItem={onSelectItem}
-					onToggleItem={onToggleItem}
-				/>
-			</MenubarMenu>
-		);
-	}
-
-	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger
-				render={<LozengeDropdownTrigger aria-label="Knowledge mode" icon={<BookOpenIcon label="" size="small" />} />}
-			>
-				{label}
-			</DropdownMenuTrigger>
-			<AgentKnowledgeSelectorMenu value={value} onValueChange={onValueChange} />
-		</DropdownMenu>
-	);
-}
+type KnowledgeModeValue = "all" | "custom" | "none";
 
 const MEMORY_MODE_OPTIONS = [
 	{ value: "on", label: "On" },
@@ -3614,99 +3264,6 @@ function AgentMemoryRow({
 			</div>
 			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
 				<AgentMemorySelector render="row" value={value} onValueChange={onValueChange} onManage={onManage} />
-			</div>
-		</div>
-	);
-}
-
-interface AgentKnowledgeRowProps {
-	value: KnowledgeModeValue;
-	onValueChange: (next: KnowledgeModeValue) => void;
-	items: readonly string[];
-	addLabel?: string;
-	disabledItems?: readonly string[];
-	isItemDisabled?: (item: string, index: number) => boolean;
-	onBrowse?: () => void;
-	onPickKnowledgeApp?: (appIdOrUpload: string) => void;
-	onRemoveItem?: (index: number) => void;
-	onSelectItem?: (item: string) => void;
-	onToggleItem?: (index: number, enabled: boolean) => void;
-	screenAssistantTargetId?: string;
-}
-
-function AgentKnowledgeRow({
-	value,
-	onValueChange,
-	items,
-	addLabel,
-	disabledItems,
-	isItemDisabled,
-	onBrowse,
-	onPickKnowledgeApp,
-	onRemoveItem,
-	onSelectItem,
-	onToggleItem,
-	screenAssistantTargetId,
-}: Readonly<AgentKnowledgeRowProps>) {
-	const isCustom = value === "custom";
-	const isEmpty = items.length === 0;
-
-	return (
-		<div
-			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-5"
-			data-agent-field="knowledge"
-			data-screen-assistant-target={screenAssistantTargetId}
-		>
-			<div className="sm:w-32 sm:shrink-0">
-				<AgentSectionLabel>Knowledge</AgentSectionLabel>
-			</div>
-			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
-				<AgentKnowledgeSelector
-					render="row"
-					value={value}
-					onValueChange={onValueChange}
-				/>
-				{isCustom ? (
-					<>
-						<div aria-hidden className="h-4 w-px shrink-0 bg-border" />
-						{items.map((item, index) => (
-							<AgentReferenceChip
-								category="knowledge"
-								disabled={isItemDisabled?.(item, index)}
-								key={`knowledge-${item}-${index}`}
-								label={item}
-								onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
-							/>
-						))}
-						{addLabel ? (
-							// "Add" opens the same dropdown the collapsed nav shows
-							// (custom list + "Add knowledge ›" flyout + "Browse" + mode tabs).
-							<MenubarMenu>
-								<MenubarTrigger
-									render={(
-										<AgentAddValueButton
-											className={isEmpty
-												? "aria-expanded:opacity-100"
-												: "opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-focus-within/agent-row:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100"}
-											label={addLabel}
-										/>
-									)}
-								/>
-								<AgentKnowledgeNavMenuContent
-									value={value}
-									onValueChange={onValueChange}
-									items={items}
-									disabledItems={disabledItems}
-									onBrowse={onBrowse}
-									onPickKnowledgeApp={onPickKnowledgeApp}
-									onRemoveItem={onRemoveItem}
-									onSelectItem={onSelectItem}
-									onToggleItem={onToggleItem}
-								/>
-							</MenubarMenu>
-						) : null}
-					</>
-				) : null}
 			</div>
 		</div>
 	);

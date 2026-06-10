@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { AppsDirectoryDialog } from "@/components/blocks/apps-directory";
-import { DEMO_SESSION_TOOLS, DEMO_TOOLS } from "@/app/data/directory/tools";
+import { DIRECTORY_APPS } from "@/app/data/directory/apps";
 import { Button } from "@/components/ui/button";
 
 export default function AppsDirectoryPage() {
@@ -16,8 +16,7 @@ export default function AppsDirectoryPage() {
 				defaultAddedToolIds={["atlassian"]}
 				open={open}
 				onOpenChange={setOpen}
-				sessionTools={DEMO_SESSION_TOOLS}
-				tools={DEMO_TOOLS}
+				tools={DIRECTORY_APPS}
 			/>
 		</div>
 	);

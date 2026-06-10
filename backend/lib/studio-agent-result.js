@@ -193,6 +193,7 @@ function normalizeStudioAgentResult(value) {
 		getNonEmptyString(definition.avatar?.url);
 	const avatarFallback = normalizeAvatarFallback(definition, name);
 	const tools = normalizeStringList(definition.tools, { maxItems: 12 });
+	const apps = normalizeStringList(definition.apps, { maxItems: 24 });
 	const skills = normalizeStringList(definition.skills, { maxItems: 24 });
 	const knowledge = normalizeStringList(definition.knowledge, { maxItems: 24 });
 	const subagents = normalizeStringList(definition.subagents, { maxItems: 24 });
@@ -234,6 +235,7 @@ function normalizeStudioAgentResult(value) {
 		...(trigger ? { trigger } : {}),
 		...(triggers.length > 0 ? { triggers } : {}),
 		...(tools.length > 0 ? { tools } : {}),
+		...(apps.length > 0 ? { apps } : {}),
 		...(skills.length > 0 ? { skills } : {}),
 		...(knowledge.length > 0 ? { knowledge } : {}),
 		...(subagents.length > 0 ? { subagents } : {}),
@@ -853,6 +855,16 @@ function deriveFallbackAgentName(brief) {
 		return "Incident Triage Agent";
 	}
 
+	// "Make me a chief of staff agent", "Create a policy checker agent" → use the
+	// role named between the article and "agent" as the agent name.
+	const roleMatch = /\b(?:an?)\s+([a-z][a-z\s-]{2,40}?)\s+agent\b/iu.exec(normalizedBrief);
+	if (roleMatch) {
+		const role = titleCase(roleMatch[1].trim().replace(/\s+/gu, " "));
+		if (role) {
+			return /\bagent$/iu.test(role) ? role : role;
+		}
+	}
+
 	const objective = deriveObjectiveFromBrief(normalizedBrief)
 		.split(/\b(?:,| and | then | while )\b/iu)[0]
 		.replace(/\b(?:incoming|requested|clear|best)\b/giu, "")
@@ -917,6 +929,58 @@ function detectToolsFromText(text) {
 	));
 }
 
+// App catalog ids the deterministic fallback can recognize from a brief, so the
+// generated agent wires the apps the user named even when the AI Gateway is
+// unavailable (rate-limited). Emitted as `@[app:<id>]` mention chips in the
+// instructions; the frontend ingest (repairGeneratedAgentCatalog) then derives
+// the canonical apps[] membership and expands each to its tool/knowledge facets.
+const FALLBACK_APP_PATTERNS = [
+	{ id: "jira-service-management", name: "Jira Service Management", pattern: /\bjira service management\b|\bjsm\b/iu },
+	{ id: "jira", name: "Jira", pattern: /\bjira\b/iu },
+	{ id: "confluence", name: "Confluence", pattern: /\bconfluence\b|\bwiki\b/iu },
+	{ id: "slack", name: "Slack", pattern: /\bslack\b/iu },
+	{ id: "gmail", name: "Gmail", pattern: /\bgmail\b/iu },
+	{ id: "google-calendar", name: "Google Calendar", pattern: /\bgoogle calendar\b|\bcalendar\b/iu },
+	{ id: "salesforce", name: "Salesforce", pattern: /\bsalesforce\b/iu },
+	{ id: "github", name: "GitHub", pattern: /\bgithub\b/iu },
+	{ id: "outlook", name: "Microsoft Outlook", pattern: /\boutlook\b/iu },
+	{ id: "notion", name: "Notion", pattern: /\bnotion\b/iu },
+	{ id: "projects", name: "Projects", pattern: /\batlassian projects\b|\bprojects\b/iu },
+];
+
+function detectAppsFromText(text) {
+	const apps = [];
+	const seen = new Set();
+	for (const { id, name, pattern } of FALLBACK_APP_PATTERNS) {
+		if (pattern.test(text) && !seen.has(id)) {
+			seen.add(id);
+			apps.push({ id, name });
+		}
+	}
+	// Prefer the more specific Jira Service Management over plain Jira.
+	if (seen.has("jira-service-management")) {
+		return apps.filter((app) => app.id !== "jira");
+	}
+	return apps;
+}
+
+// Maps a brief's recurring-schedule language to a trigger label that the
+// frontend `inferScheduledTriggerDefinitions` hydrates into a structured
+// scheduled trigger (e.g. the daily-at-7am preset). Returns null when the brief
+// describes no recurring cadence.
+function detectScheduleTrigger(text) {
+	if (/\b(7|seven)(:\.?0{0,2})?\s*(am|a\.m\.)\b|\b7\s*o'?clock\b/iu.test(text)) {
+		return "Every day at 7:00 AM.";
+	}
+	if (/\b(hourly|every hour|each hour)\b/iu.test(text)) {
+		return "Every hour.";
+	}
+	if (/\b(weekday morning|every morning|each morning|start of the workday|every weekday)\b/iu.test(text)) {
+		return "Every weekday morning.";
+	}
+	return null;
+}
+
 function buildClarificationSummary(entries) {
 	if (!Array.isArray(entries) || entries.length === 0) {
 		return "";
@@ -957,6 +1021,8 @@ function buildFallbackStudioAgentResult({
 	const answerText = entries.map((entry) => `${entry.question} ${entry.answer}`).join("\n");
 	const combinedText = [brief, answerText].filter(Boolean).join("\n");
 	const tools = detectToolsFromText(combinedText);
+	const apps = detectAppsFromText(combinedText);
+	const scheduleTrigger = detectScheduleTrigger(combinedText);
 	const description = sentenceCase(objective).replace(/\.$/u, ".");
 	const clarificationSummary = buildClarificationSummary(entries);
 	const instructions = [
@@ -976,12 +1042,28 @@ function buildFallbackStudioAgentResult({
 					clarificationSummary,
 				]
 			: []),
+		...(apps.length > 0
+			? [
+					"",
+					"## Apps",
+					"",
+					`Connect ${apps.map((app) => `@[app:${app.id}]`).join(", ")} and use them for the context this agent needs.`,
+				]
+			: []),
 		...(tools.length > 0
 			? [
 					"",
 					"## Tools",
 					"",
 					`Use ${tools.join(", ")} when the request requires context from those systems.`,
+				]
+			: []),
+		...(scheduleTrigger
+			? [
+					"",
+					"## Triggers",
+					"",
+					`- ${scheduleTrigger} Deliver the readout automatically on this schedule.`,
 				]
 			: []),
 		"",
@@ -999,7 +1081,9 @@ function buildFallbackStudioAgentResult({
 		contextDescription: instructions,
 		conversationStarters: buildFallbackConversationStarters({ brief, name }),
 		tools,
-		trigger: "When a user asks for help with this workflow.",
+		...(apps.length > 0 ? { apps: apps.map((app) => app.name) } : {}),
+		triggers: scheduleTrigger ? [scheduleTrigger] : [],
+		trigger: scheduleTrigger || "When a user asks for help with this workflow.",
 		guardrail:
 			"Ask for missing context before making priority, ownership, or escalation recommendations.",
 		avatarFallback: { initials: getInitials(name) },

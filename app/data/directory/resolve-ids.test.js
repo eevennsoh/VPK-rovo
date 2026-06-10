@@ -173,7 +173,7 @@ test("repairInstructionTokens leaves non-token prose untouched", async () => {
 
 	const { markdown, resolved } = repairInstructionTokens("Plain instructions with no tokens at all.");
 	assert.equal(markdown, "Plain instructions with no tokens at all.");
-	assert.deepEqual(resolved, { tool: [], skill: [], knowledge: [], subagent: [] });
+	assert.deepEqual(resolved, { tool: [], skill: [], knowledge: [], subagent: [], app: [] });
 });
 
 test("token extraction/repair ignores tokens inside code regions", async () => {
