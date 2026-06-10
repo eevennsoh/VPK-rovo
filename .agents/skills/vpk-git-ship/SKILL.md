@@ -37,6 +37,17 @@ If the user asks a descriptive question about the skill ("what does vpk-git-ship
 
 GitHub PR records generally are not deleted. When the user says "delete the PR once merged", interpret that as deleting the merged source branch and cleaning local worktrees/refs — that is the `vpk-git-clean` skill's job, run after the merge. If they want to abandon an unmerged PR, close it with `gh pr close --delete-branch` only after explicit confirmation.
 
+## Universal Pre-Merge Gate (applies to EVERY merge)
+
+This gate is **not optional** and **not tied to a flag**. Before any pull request is merged — by *any* mechanism — you MUST: (1) complete [PR Review Remediation](#pr-review-remediation) so **no review thread is left unresolved**, and (2) check the current head's Codex status via the [Cloud Codex Auto-Review Poll](#cloud-codex-auto-review-poll). The poll only *waits* for a fresh Codex review when you pushed the branch this turn; for an already-open PR with no new push it **inspects the existing review without delaying** — but it does not exempt the merge from remediation, and any unresolved thread on the current head must still be resolved first. The binding condition is therefore "no unresolved review threads + current-head Codex status checked", not "block on a fresh poll". The gate is on the *merge action itself*, not on one path to it. It applies even when:
+
+- **You only ran Create PR (`--pr`) and the user then says "merge it".** `--pr` deliberately stops at "PR opened" and contains **none** of the merge gating. Do NOT shortcut to a raw `gh pr merge`. Route the merge through **PR Merge Back** (`vpk-git-ship --merge <pr>`) so the poll + remediation run.
+- **The user says "merge immediately" / "right now".** "Immediately" means *don't wait around or ask for confirmation* — it does **not** mean *skip the review gate*. The poll + remediation are fast; run them, then merge.
+- **Branch protection blocks the merge and you reach for `--admin`.** `gh pr merge --admin` bypasses GitHub branch protection (required checks, the conversation-resolution rule) — it does **NOT** exempt you from this gate. Resolve every Codex/review thread first, then use `--admin` only to clear the *policy*, never to skip *review*.
+- **You are tempted to call `gh pr merge` / the GitHub merge button directly** instead of the skill. A direct merge skips the gate. If you genuinely must merge outside the `--merge` flow, run the Codex poll + PR Review Remediation by hand first, then merge.
+
+A merge that lands with unresolved review threads, or without polling the current head for a Codex review, is a **process failure even if it succeeds mechanically**. Missing/timed-out/unavailable Codex review is not a blocker (see the poll's non-blocking rule) — unresolved *conversations* are. The hard server-side backstop is the branch-protection rule **"Require conversation resolution before merging"** on the default branch; enable it — but note an `--admin` merge overrides it, which is exactly why this agent-side gate must hold regardless.
+
 ## Cleanup is a separate skill
 
 Removing landed worktrees, deleting local branches, and pruning stale tracking refs live in the **`vpk-git-clean`** skill, not here. This split is intentional and physical, not stylistic: VPK background agents (Codex, Claude) almost always run **inside** a `.claude/worktrees/<x>` checkout, and an agent cannot remove the worktree its own shell is sitting in — git refuses, and deleting the directory out from under a running process corrupts the session. Coupling cleanup to every ship therefore left half-done state in the common case and let worktrees pile up.
@@ -115,6 +126,8 @@ Use when the user wants to commit current edits, push, and open a PR in one comm
    - **Updating existing PR** (user approved in step 3): the push already updates it. Run `gh pr view <number> --json url` to capture the URL.
 
 7. Report: PR URL, branch name (and whether it was newly created), commit hash, CI status URL.
+
+> After Create PR, if the user asks to merge ("merge it", "land it", "merge immediately"), do NOT merge from here and do NOT call `gh pr merge` directly — Create PR has no review gate. Switch to **PR Merge Back** (`vpk-git-ship --merge <pr>`), which runs the [Universal Pre-Merge Gate](#universal-pre-merge-gate-applies-to-every-merge) (Codex poll + review remediation) before merging.
 
 Skip local validation. CI runs `pnpm run lint` and `pnpm run typecheck` on every PR — trust that signal. The Full Ship Sequence depends on CI passing before auto-merge; here, surface the status URL so the user can monitor independently.
 
@@ -278,8 +291,8 @@ Stop and hand back to the user (do not destroy state) if Create PR is blocked, a
    - Use merge commits unless the user explicitly asks for squash or rebase.
 4. Validate before final merge:
    - Prefer required GitHub checks when present.
-   - Run **Cloud Codex Auto-Review Poll** only when this workflow just pushed or updated the PR branch in the current turn. For already-open PRs with no new push, inspect and report existing Codex review status but do not delay merge-back just to wait for Codex.
-   - Run **PR Review Remediation** before merging. If unresolved ambiguous/product-judgment threads remain, stop and report them instead of merging.
+   - Run **Cloud Codex Auto-Review Poll** only when this workflow just pushed or updated the PR branch in the current turn. For already-open PRs with no new push, inspect and report existing Codex review status but do not delay merge-back just to wait for Codex. Either way this does not skip the gate — **PR Review Remediation** below is mandatory before merge (see the [Universal Pre-Merge Gate](#universal-pre-merge-gate-applies-to-every-merge)).
+   - Run **PR Review Remediation** before merging — required on every merge, including already-open PRs and `--admin` merges. If unresolved ambiguous/product-judgment threads remain, stop and report them instead of merging.
    - If there are no checks, run relevant local validation from `AGENTS.md`, usually `pnpm run lint`, `pnpm run typecheck`, and focused tests for the changed surface.
    - For UI-visible changes, include browser evidence when practical.
 5. Merge and sync:
@@ -296,7 +309,7 @@ Triggered by prompts that list more than one target, e.g. `merge PRs 303, 304, 3
    - Ready to merge cleanly.
    - Needs rebase / conflict resolution against current `origin/main`.
    - Blocked (failing checks, draft, or missing required human/GitHub review) — leave for the user.
-3. Inspect existing Codex auto-review status for every target, but do not delay batch merge-back to wait for missing Codex signals unless the PR branch is updated during this workflow.
+3. Inspect existing Codex auto-review status for every target, but do not delay batch merge-back to wait for missing Codex signals unless the PR branch is updated during this workflow. Not delaying for Codex never waives the gate — step 4's remediation is mandatory for every target (see the [Universal Pre-Merge Gate](#universal-pre-merge-gate-applies-to-every-merge)).
 4. Run **PR Review Remediation** for every target before treating it as ready. If any PR still has unresolved ambiguous/product-judgment threads after remediation, remove it from the ready group and report the thread URLs.
 5. Stash unrelated edits on the persistent `main` checkout **once**, not per PR. Restore unstaged at the end.
 6. Merge ready PRs sequentially in the order the user gave (or ascending PR number if unspecified). After each merge:
@@ -313,6 +326,7 @@ Worktree removal, local branch deletion, stale tracking-ref pruning, and closing
 
 Stop and report instead of changing state when:
 
+- Any merge is about to happen without first completing the [Universal Pre-Merge Gate](#universal-pre-merge-gate-applies-to-every-merge) (Codex poll + PR Review Remediation). This includes `gh pr merge --admin` and direct `gh`/UI merges — `--admin` clears branch protection, never the review gate.
 - The checkout has overlapping uncommitted user edits and no safe stash/restore path.
 - Required checks or blocking reviews are failing and the user did not ask you to fix them.
 - Merge conflicts touch files you cannot confidently resolve from source evidence.
