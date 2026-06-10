@@ -28,6 +28,7 @@ const RICH_TEXT_EXTENSIONS_SOURCE = readProjectFile("components/ui-custom/rich-t
 const RICH_TEXT_COMPOSER_EXTENSIONS_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/composer-extensions.ts");
 const RICH_TEXT_MENTION_NODE_VIEW_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/mention-node-view.tsx");
 const RICH_TEXT_MENTION_VISUAL_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/mention-visual.tsx");
+const RICH_TEXT_REFERENCE_PREVIEW_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/reference-preview.tsx");
 const RICH_TEXT_SUGGESTION_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
 const RICH_TEXT_TYPES_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/types.ts");
 const RICH_TEXT_REFERENCE_CATEGORIES_SOURCE = readProjectFile("components/ui-custom/rich-text-editor/reference-categories.tsx");
@@ -123,29 +124,15 @@ test("Reasoning selector lives in the compact toolbar and shares state across co
 	assert.match(AGENT_SOURCE, /<AgentSectionLabel>Reasoning<\/AgentSectionLabel>/u);
 });
 
-test("Knowledge selector mirrors reasoning with mode dropdown and custom tag list", () => {
-	assert.match(AGENT_SOURCE, /const KNOWLEDGE_MODE_OPTIONS = \[/u);
-	assert.match(AGENT_SOURCE, /\{ value: "all", label: "All organizational knowledge", tabLabel: "All" \}/u);
-	assert.match(AGENT_SOURCE, /\{ value: "custom", label: "Custom knowledge", tabLabel: "Custom" \}/u);
-	assert.match(AGENT_SOURCE, /\{ value: "none", label: "No organizational knowledge", tabLabel: "None" \}/u);
-	assert.match(AGENT_SOURCE, /function AgentKnowledgeSelector/u);
-	assert.match(AGENT_SOURCE, /function AgentKnowledgeRow/u);
+test("Apps config row unifies tool and knowledge references while memory keeps its mode dropdown", () => {
+	assert.match(AGENT_SOURCE, /import AppsIcon from "@atlaskit\/icon\/core\/apps";/u);
+	assert.match(AGENT_SOURCE, /\{ agentFieldName: "apps", label: "Apps", listFieldName: "apps", Icon: AppsIcon \}/u);
+	assert.match(AGENT_SOURCE, /case "apps":[\s\S]*count = getNonEmptyConfigItems\(config\.apps\)\.length;/u);
+	assert.match(AGENT_SOURCE, /app: "apps"/u);
+	assert.match(AGENT_SOURCE, /apps: "app"/u);
+	assert.match(AGENT_SOURCE, /export type AgentDirectoryKind = "knowledge" \| "tools" \| "apps" \| "skills" \| "memory" \| "conversationStarters";/u);
+	assert.doesNotMatch(AGENT_SOURCE, /function AgentKnowledgeSelector/u);
 	assert.doesNotMatch(AGENT_SOURCE, /function AgentKnowledgeOverflowMenu/u);
-	assert.match(AGENT_SOURCE, /import \{ Tabs, TabsList, TabsTrigger \} from "@\/components\/ui\/tabs";/u);
-	assert.match(AGENT_SOURCE, /function AgentKnowledgeModeTabs/u);
-	assert.match(AGENT_SOURCE, /<Tabs[\s\S]*value=\{value\}[\s\S]*onValueChange=\{\(next\) => onValueChange\(next as KnowledgeModeValue\)\}[\s\S]*<TabsList className="w-full">[\s\S]*<TabsTrigger key=\{option\.value\} value=\{option\.value\}>[\s\S]*\{option\.tabLabel\}/u);
-	assert.match(AGENT_SOURCE, /\{ agentFieldName: "knowledge", label: "Knowledge", kind: "knowledge", Icon: BookOpenIcon \}/u);
-	assert.match(AGENT_SOURCE, /case "knowledge":[\s\S]*count = 0;/u);
-	assert.match(AGENT_SOURCE, /const \[knowledgeFallback, setKnowledgeFallback\] = useState<KnowledgeModeValue \| null>\(null\);/u);
-	assert.match(AGENT_SOURCE, /const knowledgeMode =[\s\S]*\(config\.knowledgeMode as KnowledgeModeValue \| undefined\)[\s\S]*\?\? knowledgeFallback[\s\S]*\?\? \(getNonEmptyConfigItems\(config\.knowledge\)\.length > 0 \? "custom" : "all"\);/u);
-	assert.match(AGENT_SOURCE, /const setKnowledgeMode = useCallback\([\s\S]*setKnowledgeFallback\(next\);[\s\S]*onTextChange\?\.\("knowledgeMode", next\);/u);
-	assert.match(AGENT_SOURCE, /<AgentKnowledgeRow[\s\S]*value=\{knowledgeMode\}/u);
-	assert.doesNotMatch(AGENT_SOURCE, /<AgentKnowledgeOverflowMenu/u);
-	assert.match(AGENT_SOURCE, /const isCustom = value === "custom";/u);
-	assert.match(AGENT_SOURCE, /<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category="knowledge"[\s\S]*className="rich-text-command-menu-borderless"[\s\S]*items=\{EDITOR_PALETTE_KNOWLEDGE_APP_ITEMS\}[\s\S]*leadingItems=\{AGENT_KNOWLEDGE_UPLOAD_LEADING_ITEMS\}[\s\S]*onBrowseAll=\{onBrowse\}/u);
-	assert.match(AGENT_SOURCE, /onPickKnowledgeApp\(getKnowledgeAppIdFromMentionId\(item\.id\)\)/u);
-	assert.match(AGENT_SOURCE, /import BookOpenIcon from "@atlaskit\/icon-lab\/core\/book-open";/u);
-	assert.match(AGENT_SOURCE, /render=\{<LozengeDropdownTrigger aria-label="Knowledge mode" icon=\{<BookOpenIcon label="" size="small" \/>\} \/>\}/u);
 	assert.match(AGENT_SOURCE, /const MEMORY_MODE_OPTIONS = \[/u);
 	assert.match(AGENT_SOURCE, /\{ value: "on", label: "On" \}/u);
 	assert.match(AGENT_SOURCE, /\{ value: "off", label: "Off" \}/u);
@@ -155,8 +142,8 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 	assert.match(AGENT_SOURCE, /\{`Memory \$\{selectedOption\.label\.toLowerCase\(\)\}`\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Memory mode"[\s\S]{0,180}variant="information"/u);
 	assert.match(AGENT_SOURCE, /<DropdownMenuSeparator \/>[\s\S]*onClick=\{onManage\}[\s\S]*Manage memory/u);
-	// Memory selector is now driven by lifted state and renders as a row lozenge
-	// or a compact nav button, mirroring the knowledge selector.
+	// Memory selector is driven by lifted state and renders as a row lozenge
+	// or a compact nav button.
 	assert.match(AGENT_SOURCE, /<AgentMemorySelector render="row" value=\{value\} onValueChange=\{onValueChange\} onManage=\{onManage\} \/>/u);
 	assert.doesNotMatch(AGENT_SOURCE, /function AgentMemoryOverflowMenu/u);
 	assert.doesNotMatch(AGENT_SOURCE, /<AgentReferenceChip label="Memory" \/>/u);
@@ -165,12 +152,12 @@ test("Knowledge selector mirrors reasoning with mode dropdown and custom tag lis
 test("Filled config summary sorts empty rows to the bottom while preserving canonical order", () => {
 	assert.match(AGENT_SOURCE, /const rows: ReadonlyArray<\{ key: string; isEmpty: boolean; node: ReactNode \}>/u);
 	assert.match(AGENT_SOURCE, /const orderedRows = rows[\s\S]*\.sort\(\(a, b\) => \{[\s\S]*if \(a\.isEmpty !== b\.isEmpty\) return a\.isEmpty \? 1 : -1;[\s\S]*return a\.index - b\.index;/u);
-	assert.match(AGENT_SOURCE, /isEmpty: hasKnowledgeSelector \? false : knowledgeItems\.length === 0/u);
+	assert.match(AGENT_SOURCE, /isEmpty: appItems\.length === 0/u);
 	// The rows array source order IS the canonical display order. Reasoning is
 	// rendered separately after this list, so it is not a row key here.
 	assert.match(
 		AGENT_SOURCE,
-		/key: "trigger"[\s\S]*key: "knowledge"[\s\S]*key: "tools"[\s\S]*key: "skills"[\s\S]*key: "subagents"[\s\S]*key: "memory"[\s\S]*key: "conversationStarters"/u,
+		/key: "trigger"[\s\S]*key: "apps"[\s\S]*key: "skills"[\s\S]*key: "subagents"[\s\S]*key: "memory"[\s\S]*key: "conversationStarters"/u,
 	);
 	// Memory is its own always-on row (never empty), not a chip inside Knowledge.
 	assert.match(AGENT_SOURCE, /function AgentMemoryRow/u);
@@ -179,7 +166,7 @@ test("Filled config summary sorts empty rows to the bottom while preserving cano
 	// includes Memory, so the collapsed and expanded views stay symmetric.
 	assert.match(
 		AGENT_SOURCE,
-		/AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = \[[\s\S]*"trigger"[\s\S]*"knowledge"[\s\S]*"tools"[\s\S]*"skills"[\s\S]*"subagents"[\s\S]*"memory"[\s\S]*"conversationStarters"[\s\S]*"reasoning"[\s\S]*\] as const;/u,
+		/AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = \[[\s\S]*"trigger"[\s\S]*"apps"[\s\S]*"skills"[\s\S]*"subagents"[\s\S]*"memory"[\s\S]*"conversationStarters"[\s\S]*"reasoning"[\s\S]*\] as const;/u,
 	);
 	// Memory renders as a nav button in the collapsed nav.
 	assert.match(AGENT_SOURCE, /item\.agentFieldName === "memory"[\s\S]*<AgentMemorySelector[\s\S]*render="nav-button"[\s\S]*value=\{memoryMode\}[\s\S]*onManage=\{\(\) => onOpenDirectory\?\.\("memory"\)\}/u);
@@ -238,10 +225,9 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	// Every config field is represented in the empty-state nav item catalog.
 	for (const label of [
 		"Triggers",
+		"Apps",
 		"Skills",
-		"Tools",
 		"Subagents",
-		"Knowledge",
 		"Memory",
 		"Conversation starters",
 	]) {
@@ -253,22 +239,25 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	assert.match(AGENT_SOURCE, /<RichTextMentionVisualMark/u);
 	assert.match(AGENT_SOURCE, /type=\{elemBefore \? "default" : getRichTextMentionTagType\(visual\)\}/u);
 	assert.match(AGENT_SOURCE, /removeVariant="overlay"/u);
-	assert.match(AGENT_SOURCE, /import \{ HoverCard, HoverCardContent, HoverCardTrigger \} from "@\/components\/ui\/hover-card";/u);
-	assert.match(AGENT_SOURCE, /import \{ EntityCard \} from "@\/components\/ui-custom\/entity-card";/u);
-	assert.match(AGENT_SOURCE, /SmartLinkCard,[\s\S]*type SmartLinkItem/u);
-	assert.match(AGENT_SOURCE, /type AgentReferencePreview =[\s\S]*kind: "skill"[\s\S]*kind: "tool"[\s\S]*kind: "knowledge"/u);
-	assert.match(AGENT_SOURCE, /function getAgentReferencePreview/u);
-	assert.match(AGENT_SOURCE, /<EntityCard\.Skill[\s\S]*description=\{preview\.skill\.description\}/u);
-	assert.match(AGENT_SOURCE, /<EntityCard\.Tool[\s\S]*appLogo=\{getAgentReferenceToolLogo\(preview\.tool\)\}/u);
-	assert.match(AGENT_SOURCE, /<SmartLinkCard item=\{preview\.item\} \/>/u);
+	assert.match(AGENT_SOURCE, /import \{ HoverCard, HoverCardTrigger \} from "@\/components\/ui\/hover-card";/u);
+	assert.match(AGENT_SOURCE, /getRichTextReferencePreview,[\s\S]*RichTextReferencePreviewContent/u);
+	assert.match(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /import \{ HoverCardContent \} from "@\/components\/ui\/hover-card";/u);
+	assert.match(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /import \{ EntityCard \} from "@\/components\/ui-custom\/entity-card";/u);
+	assert.match(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /SmartLinkCard,[\s\S]*type SmartLinkItem/u);
+	assert.match(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /export type RichTextReferencePreview =[\s\S]*kind: "skill"[\s\S]*kind: "tool"[\s\S]*kind: "knowledge"/u);
+	assert.match(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /export function getRichTextReferencePreview/u);
+	assert.match(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /case "app":[\s\S]*findReferenceApp\(label\)[\s\S]*app\.hasToolFacet[\s\S]*kind: "tool"[\s\S]*getKnowledgeAppSmartLink/u);
+	assert.match(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /<EntityCard\.Skill[\s\S]*description=\{preview\.skill\.description\}/u);
+	assert.match(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /<EntityCard\.Tool[\s\S]*appLogo=\{getReferenceToolLogo\(preview\.tool\)\}/u);
+	assert.match(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /<SmartLinkCard item=\{preview\.item\} \/>/u);
 	assert.doesNotMatch(AGENT_SOURCE, /const \[previewOpen, setPreviewOpen\] = useState\(false\);/u);
 	assert.doesNotMatch(AGENT_SOURCE, /onMouseEnter=\{preview \? openPreview : undefined\}/u);
-	assert.match(AGENT_SOURCE, /return preview \? \([\s\S]*<HoverCard>[\s\S]*<HoverCardTrigger closeDelay=\{80\} delay=\{120\} render=\{<span className="inline-flex max-w-full" \/>\}>[\s\S]*\{tag\}[\s\S]*<\/HoverCardTrigger>[\s\S]*<AgentReferencePreviewContent preview=\{preview\} \/>/u);
+	assert.match(AGENT_SOURCE, /const preview = getRichTextReferencePreview\(category, label\);/u);
+	assert.match(AGENT_SOURCE, /return preview \? \([\s\S]*<HoverCard>[\s\S]*<HoverCardTrigger closeDelay=\{80\} delay=\{120\} render=\{<span className="inline-flex max-w-full" \/>\}>[\s\S]*\{tag\}[\s\S]*<\/HoverCardTrigger>[\s\S]*<RichTextReferencePreviewContent preview=\{preview\} \/>/u);
 	assert.doesNotMatch(AGENT_SOURCE, /function AgentSkillChip/u);
 	assert.match(AGENT_SOURCE, /onRemove=\{onRemove\}[\s\S]*removeButtonLabel=\{`Remove \$\{label\}`\}[\s\S]*removeVariant="overlay"/u);
 	for (const [rowLabel, category] of [
-		["Knowledge", "knowledge"],
-		["Tools", "tool"],
+		["Apps", "app"],
 		["Skills", "skill"],
 		["Subagents", "subagent"],
 	]) {
@@ -279,7 +268,7 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	}
 	// Triggers are edited via the triggers dialog (onEditTriggers), not removed
 	// via onRemoveListItem like the other list fields.
-	for (const field of ["skills", "tools", "subagents", "knowledge", "conversationStarters"]) {
+	for (const field of ["apps", "skills", "subagents", "conversationStarters"]) {
 		assert.match(AGENT_SOURCE, new RegExp(`onRemoveListItem\\("${field}", index\\)`, "u"));
 	}
 	assert.match(TAG_SOURCE, /group\/tag relative inline-flex/u);
@@ -466,11 +455,11 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// Every list-field row keeps a persistent +Add link. Directory-backed
 	// fields open their directory first and fall back to onAppendListItem when no
 	// directory opener is supplied.
-	assert.match(AGENT_SOURCE, /export type AgentDirectoryKind = "knowledge" \| "tools" \| "skills" \| "memory" \| "conversationStarters";/u);
+	assert.match(AGENT_SOURCE, /export type AgentDirectoryKind = "knowledge" \| "tools" \| "apps" \| "skills" \| "memory" \| "conversationStarters";/u);
 	assert.match(AGENT_SOURCE, /function openAgentDirectoryOrAppendListItem\([\s\S]*onOpenDirectory\?: \(directory: AgentDirectoryKind, selectedItem\?: string\) => void[\s\S]*onAppendListItem\?: \(field: AgentConfigListFieldName\) => void[\s\S]*onOpenDirectory\(directory\);[\s\S]*onAppendListItem\?\.\(field\);/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("triggers", triggerItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("skills", skillItems\.length === 0, showAddButtons\)\}/u);
-	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("tools", toolItems\.length === 0, showAddButtons\)\}/u);
+	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("apps", appItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("subagents", subagentItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addLabel=\{getAgentFilledSummaryAddLabel\("conversationStarters", starterItems\.length === 0, showAddButtons\)\}/u);
 	assert.match(AGENT_SOURCE, /addIcon=\{starterItems\.length > 0 \? "edit" : undefined\}/u);
@@ -480,20 +469,16 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /const StarterIcon = getStarterIcon\(starterSummaryItems\[index\]\?\.icon \?\? DEFAULT_STARTER_ICON\);[\s\S]*<IconTile[\s\S]*icon=\{<Icon aria-hidden render=\{<StarterIcon label="" size="small" color="currentColor" \/>\} \/>\}[\s\S]*size="xxsmall"[\s\S]*variant="transparent"/u);
 	assert.match(AGENT_SOURCE, /tagColor="standard"/u);
 	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*addLabel=\{getAgentFilledSummaryAddLabel\("triggers", triggerItems\.length === 0, showAddButtons\)\}[\s\S]*onEditTriggers=\{onEditTriggers\}/u);
-	// Skills, Tools and Subagents "Add" buttons open the SAME dropdown the
+	// Skills and Subagents "Add" buttons open the SAME dropdown the
 	// collapsed nav shows (list + add flyout + browse), wired via renderAddControl
 	// + renderTrigger so the two layouts share one experience.
 	assert.match(AGENT_SOURCE, /label="Skills"\s+renderAddControl=\{renderDirectoryAddControl\("skills", skillsNavItem, skillItems\)\}/u);
-	assert.match(AGENT_SOURCE, /label="Tools"\s+renderAddControl=\{renderDirectoryAddControl\("tools", toolsNavItem, toolItems\)\}/u);
 	assert.match(AGENT_SOURCE, /const renderDirectoryAddControl = \([\s\S]*<AgentCompactDirectoryNavButton[\s\S]*onBrowse=\{\(\) => openAgentDirectoryOrAppendListItem\(field, field, onOpenDirectory, onAppendListItem\)\}[\s\S]*renderTrigger=\{<AgentAddValueButton className=\{className\} icon=\{icon\} label=\{label\} \/>\}/u);
 	assert.match(AGENT_SOURCE, /label="Subagents"\s+renderAddControl=\{subagentsNavItem \? \(\{ label, className \}\) => \([\s\S]*<AgentCompactSubagentsNavButton[\s\S]*onCreateSubagent=\{\(\) => onAppendListItem\?\.\("subagents"\)\}[\s\S]*renderTrigger=\{<AgentAddValueButton className=\{className\} icon="add" label=\{label\} \/>\}/u);
 	// The inline-below-row Tools search picker is gone — Tools now uses the same
 	// dropdown as the other directory fields.
 	assert.doesNotMatch(AGENT_SOURCE, /openInlineSearchPicker|browseInlineSearchPicker|selectInlineSearchItem|inlineSearchField|function AgentInlineReferenceSearchPicker/u);
-	// Knowledge's "Add" opens the shared knowledge nav menu (mode tabs + custom
-	// list + add flyout + browse) under the inline Add button trigger.
-	assert.match(AGENT_SOURCE, /function AgentKnowledgeRow[\s\S]*<MenubarTrigger\s*render=\{\(\s*<AgentAddValueButton[\s\S]*\)\}\s*\/>\s*<AgentKnowledgeNavMenuContent/u);
-	assert.match(AGENT_SOURCE, /label="Knowledge"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("knowledge", "knowledge", onOpenDirectory, onAppendListItem\)\}/u);
+	assert.match(AGENT_SOURCE, /label="Apps"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("apps", "apps", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /label="Conversation starters"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("conversationStarters", "conversationStarters", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactEmptyConfigNav/u);
 	assert.match(AGENT_SOURCE, /function getAgentCompactEmptyConfigNavItems/u);
@@ -501,7 +486,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /const items = getAgentCompactEmptyConfigNavItems\(config\)\.filter\(\s*\(item\) => !hiddenConfigFields\?\.has\(item\.agentFieldName as AgentHideableConfigField\),\s*\);/u);
 	// Toolbar now always renders every supported field; counts come from the
 	// existing helpers and a neutral Badge appears when count > 0.
-	assert.match(AGENT_SOURCE, /case "tools":[\s\S]*count = getNonEmptyConfigItems\(config\.tools\)\.length/u);
+	assert.match(AGENT_SOURCE, /case "apps":[\s\S]*count = getNonEmptyConfigItems\(config\.apps\)\.length/u);
 	assert.match(AGENT_SOURCE, /case "conversationStarters":[\s\S]*count = getNonEmptyConfigItems\(config\.conversationStarters\)\.length/u);
 	assert.match(AGENT_SOURCE, /agentFieldName: "conversationStarters",\s*label: "Conversation starters",\s*listFieldName: "conversationStarters"/u);
 	assert.match(AGENT_SOURCE, /item\.count > 0 \? <Badge>\{item\.count\}<\/Badge> : null/u);
@@ -822,8 +807,14 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /data-visual-icon-color/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /visualSrc/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /data-type": "mention"/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ HoverCard, HoverCardTrigger \} from "@\/components\/ui\/hover-card";/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ Tag \} from "@\/components\/ui\/tag";/u);
-	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /<NodeViewWrapper[\s\S]*as=\{Tag\}[\s\S]*elemBefore=\{visual \? \(/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /getRichTextReferencePreview,[\s\S]*RichTextReferencePreviewContent/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const REFERENCE_CATEGORIES:[\s\S]*"app"[\s\S]*"skill"[\s\S]*"tool"[\s\S]*"knowledge"/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const preview = isReferenceCategory\(category\) \? getRichTextReferencePreview\(category, label\) : undefined;/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const tag = \([\s\S]*<Tag[\s\S]*elemBefore=\{visual \? \(/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /<NodeViewWrapper[\s\S]*as="span"[\s\S]*className="rich-text-mention-node inline-flex"/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /\{preview \? \([\s\S]*<HoverCard>[\s\S]*<HoverCardTrigger closeDelay=\{80\} delay=\{120\} render=\{<span className="inline-flex max-w-full" \/>\}>[\s\S]*\{tag\}[\s\S]*<\/HoverCardTrigger>[\s\S]*<RichTextReferencePreviewContent preview=\{preview\} \/>[\s\S]*<\/HoverCard>[\s\S]*\) : tag\}/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /type=\{getRichTextMentionTagType\(visual\)\}/u);
 	assert.doesNotMatch(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /className="rich-text-mention"/u);
 	// Mention tokens render with the visual-derived accent color (synced with the
