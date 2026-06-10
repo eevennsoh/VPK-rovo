@@ -230,29 +230,38 @@ export function RichTextReferencePreviewContent({ preview }: Readonly<{ preview:
 	return (
 		<HoverCardContent
 			align="center"
-			className="w-80 rounded-md bg-surface-overlay p-4 text-text shadow-2xl"
+			// Render the canonical EntityCardShell so the preview is visually
+			// identical to a directory card (bg-surface, border, gap, elevation).
+			// The popover content itself is a transparent, unstyled wrapper at a
+			// fixed directory-card width (w-80) since a floating preview has no
+			// grid cell to fill.
+			className="w-80 border-0 bg-transparent p-0 text-text shadow-none"
 			side="top"
 			sideOffset={8}
 		>
 			{preview.kind === "skill" ? (
-				<EntityCard.Skill
-					description={preview.skill.description}
-					icon={getSkillIcon(preview.skill.icon)}
-					iconVariant={getSkillIconTileVariant(preview.skill)}
-					name={preview.skill.name}
-					publisher={getSkillPublisherName(preview.skill)}
-					starCount={preview.skill.starCount}
-					teammateCount={preview.skill.teammateCount}
-					verified={preview.skill.verified}
-				/>
+				<EntityCard.Shell className="gap-4">
+					<EntityCard.Skill
+						description={preview.skill.description}
+						icon={getSkillIcon(preview.skill.icon)}
+						iconVariant={getSkillIconTileVariant(preview.skill)}
+						name={preview.skill.name}
+						publisher={getSkillPublisherName(preview.skill)}
+						starCount={preview.skill.starCount}
+						teammateCount={preview.skill.teammateCount}
+						verified={preview.skill.verified}
+					/>
+				</EntityCard.Shell>
 			) : (
-				<EntityCard.Tool
-					appLogo={getReferenceToolLogo(preview.tool)}
-					description={preview.tool.description}
-					name={preview.tool.name}
-					teammateCount={preview.tool.teammateCount}
-					toolCount={preview.tool.toolCount}
-				/>
+				<EntityCard.Shell className="min-h-[102px] gap-4">
+					<EntityCard.Tool
+						appLogo={getReferenceToolLogo(preview.tool)}
+						description={preview.tool.description}
+						name={preview.tool.name}
+						teammateCount={preview.tool.teammateCount}
+						toolCount={preview.tool.toolCount}
+					/>
+				</EntityCard.Shell>
 			)}
 		</HoverCardContent>
 	);
