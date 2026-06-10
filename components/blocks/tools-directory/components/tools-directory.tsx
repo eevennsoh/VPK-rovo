@@ -49,7 +49,7 @@ import { AtlassianLogo, CustomLogo } from "@/components/ui/logo";
 import { AtlassianLogoGlyph, AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Switch } from "@/components/ui/switch";
 import { Tile } from "@/components/ui/tile";
-import { CardDirectoryTool } from "@/components/ui-custom/card-directory";
+import { EntityCardToolCard } from "@/components/ui-custom/entity-card";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { token } from "@/lib/tokens";
@@ -582,7 +582,7 @@ function ToolCard({ onSelectTool, tool }: Readonly<ToolCardProps>) {
 	const selectTool = () => onSelectTool(tool);
 
 	return (
-		<CardDirectoryTool
+		<EntityCardToolCard
 			active={moreMenuOpen}
 			appLogo={getToolLogo(tool)}
 			className="min-h-[102px] hover:border-transparent"

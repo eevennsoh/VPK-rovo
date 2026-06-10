@@ -200,12 +200,12 @@ function FormattingToolbar({ editor }: { editor: Editor }) {
 			},
 		],
 	},
-	"agent-card": {
+	"agent-profile-card": {
 		description: "Figma-matched Rovo agent profile card with cover art, avatar attribution, partner byline, description, title actions, and an AI input affordance.",
-		importStatement: `import { AgentCard } from "@/components/blocks/agent-card";`,
-		usage: `import { AgentCard } from "@/components/blocks/agent-card";
+		importStatement: `import { AgentProfileCard } from "@/components/blocks/agent-profile-card";`,
+		usage: `import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
 
-<AgentCard
+<AgentProfileCard
   name="Task Improver"
   partnerName="Atlassian"
   description="Proactively assists by automatically suggesting subtasks when you start adding one and providing comment summaries."
@@ -383,7 +383,7 @@ const templates: AgentsDirectoryTemplateAgent[] = [];
 		usage: `import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
 import type { AgentTemplatesAgent } from "@/components/blocks/agent-templates";
 
-// Cards render via CardDirectoryAgentExpanded. The detail fields below are
+// Cards render via EntityCardAgentExpandedCard. The detail fields below are
 // optional — omit them and the card falls back to identity + a derived publisher.
 const agents: AgentTemplatesAgent[] = [
   {

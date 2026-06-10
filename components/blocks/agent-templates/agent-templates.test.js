@@ -33,13 +33,13 @@ test("Agent Templates docs demo starts closed until the trigger is clicked", () 
 	);
 });
 
-test("Agent Templates renders the strategy dialog layout with card-directory cards", () => {
+test("Agent Templates renders the strategy dialog layout with entity-card cards", () => {
 	const source = readProjectFile("components/blocks/agent-templates/components/agent-templates.tsx");
 	const pageSource = readProjectFile("components/blocks/agent-templates/page.tsx");
 	const demoAgentsSource = readProjectFile("components/blocks/agent-templates/data/demo-template-agents.ts");
 	const defaultSidebarGroupsSource = readProjectFile("components/blocks/agent-templates/data/sidebar-groups.ts");
 	const studioShellSource = readProjectFile("components/projects/studio/components/rovo-app-shell.tsx");
-	const expandedCardSource = readProjectFile("components/ui-custom/card-directory/card-directory-agent-expanded.tsx");
+	const expandedCardSource = readProjectFile("components/ui-custom/entity-card/variants.tsx");
 
 	assert.doesNotMatch(source, /AgentBrowserDialog/u);
 	assert.match(source, /AGENT_TEMPLATES_CATEGORIES/u);
@@ -69,9 +69,9 @@ test("Agent Templates renders the strategy dialog layout with card-directory car
 	assert.match(source, /flex flex-wrap justify-start gap-2/u);
 	assert.match(source, /relative isolate inline-flex h-8 shrink-0 items-center/u);
 	assert.match(source, /aria-pressed=\{active\}/u);
-	// Carousel cards now render via the card-directory expanded agent card.
+	// Carousel cards now render via the entity-card expanded agent card.
 	assert.match(source, /AgentTemplateCard/u);
-	assert.match(source, /CardDirectoryAgentExpanded/u);
+	assert.match(source, /EntityCardAgentExpandedCard/u);
 	assert.match(source, /className="h-\[400px\] w-90 shrink-0 \[will-change:transform,opacity\]"/u);
 	assert.match(source, /className="h-full w-full"/u);
 	assert.match(source, /NOOP_TEMPLATE_MORE_ACTIONS/u);
