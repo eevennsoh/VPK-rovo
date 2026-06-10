@@ -39,7 +39,7 @@ test("Agent Templates renders the strategy dialog layout with entity-card cards"
 	const demoAgentsSource = readProjectFile("components/blocks/agent-templates/data/demo-template-agents.ts");
 	const defaultSidebarGroupsSource = readProjectFile("components/blocks/agent-templates/data/sidebar-groups.ts");
 	const studioShellSource = readProjectFile("components/projects/studio/components/rovo-app-shell.tsx");
-	const expandedCardSource = readProjectFile("components/ui-custom/entity-card/variants.tsx");
+	const expandedCardSource = readProjectFile("components/ui-custom/entity-card/agent-expanded.tsx");
 
 	assert.doesNotMatch(source, /AgentBrowserDialog/u);
 	assert.match(source, /AGENT_TEMPLATES_CATEGORIES/u);
@@ -104,9 +104,9 @@ test("Agent Templates renders the strategy dialog layout with entity-card cards"
 	assert.match(source, /variants=\{AGENT_TEMPLATES_TAB_COPY_VARIANTS\}/u);
 	assert.match(source, /variants=\{AGENT_TEMPLATES_TAB_CARDS_VARIANTS\}/u);
 	assert.match(source, /AgentTemplatesCarouselControl/u);
-	assert.match(expandedCardSource, /CARD_DIRECTORY_SCROLL_MASK_IMAGE/u);
+	assert.match(expandedCardSource, /ENTITY_CARD_SCROLL_MASK_IMAGE/u);
 	assert.match(expandedCardSource, /maskRepeat: "no-repeat, no-repeat"/u);
-	assert.match(expandedCardSource, /bodyScrolled \? CARD_DIRECTORY_SCROLL_MASK_STYLE : undefined/u);
+	assert.match(expandedCardSource, /bodyScrolled \? ENTITY_CARD_SCROLL_MASK_STYLE : undefined/u);
 	assert.match(expandedCardSource, /\[scrollbar-gutter:stable\]/u);
 	assert.match(source, /setCarouselRef/u);
 	assert.match(source, /canScrollLeft/u);

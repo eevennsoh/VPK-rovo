@@ -258,7 +258,7 @@ test("Agents Directory uses one unsegmented results grid and updated sidebar lab
 	assert.doesNotMatch(pageSource, /Custom agent/u);
 });
 
-test("Agents Directory cards render the shared CardDirectoryAgent with overlay elevation", () => {
+test("Agents Directory cards render the shared EntityCardAgentCard with overlay elevation", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 	const entityAgentSource = readProjectFile("components/ui-custom/entity-card/agent.tsx");
 
