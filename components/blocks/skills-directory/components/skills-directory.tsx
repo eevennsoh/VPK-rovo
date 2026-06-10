@@ -57,6 +57,7 @@ import {
 	getSkillCollection,
 	getSkillCollectionId,
 	getSkillIcon,
+	getSkillIconColor,
 	getSkillIconTileVariant,
 	getSkillPublisherAvatarSrc,
 	getSkillPublisherLogoName,
