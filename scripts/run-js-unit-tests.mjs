@@ -26,6 +26,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// on-disk 16-borderless.svg <-> logo-usage.json sync. Lives under components/
 	// (which is not CI-gated wholesale) so it is included explicitly.
 	"components/ui/data/logo-usage.test.js",
+	// Scheduled-trigger inference (daily-at-7am + NL → structured definitions).
+	// Lives under components/ so it must be included explicitly to run in CI.
+	"components/blocks/triggers/data/trigger-inference.test.js",
 ]);
 
 const gitResult = spawnSync("git", [

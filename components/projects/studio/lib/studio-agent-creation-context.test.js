@@ -182,6 +182,8 @@ test("both builders embed the catalog projection and the real-ids contract", asy
 		assert.match(text, /- memoryMode: "on" or "off"/u, `${label} should require memoryMode`);
 		assert.match(text, /- reasoningMode: one of "quick-auto"/u, `${label} should require reasoningMode`);
 		assert.match(text, /- knowledgeMode: "all", "custom", or "none"/u, `${label} should require knowledgeMode`);
+		// Honor-named-sources rule (apps unification): every app the user names must be wired up.
+		assert.match(text, /Honor named sources:/u, `${label} should include the honor-named-sources rule`);
 	}
 
 	// The initial turn uses the full catalog; the scoped continuation announces its scope.
