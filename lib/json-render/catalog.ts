@@ -240,11 +240,12 @@ export const catalog = defineCatalog(schema, {
 					])
 					.nullable(),
 				isBold: z.boolean().nullable(),
+				metric: z.union([z.string(), z.number()]).nullable(),
 			}),
 			slots: [],
 			description:
 				"Status lozenge indicator for workflow states such as To Do, In Progress, In Review, Done, and Blocked. If variant is omitted, the renderer infers a sensible workflow appearance from the text.",
-			example: { text: "In Review", variant: "information", isBold: true },
+			example: { text: "In Review", variant: "information", isBold: true, metric: "0.5" },
 		},
 		Tag: {
 			props: z.object({

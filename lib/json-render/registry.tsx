@@ -1647,7 +1647,7 @@ export const { registry } = defineRegistry(catalog, {
 		},
 
 		Lozenge: ({ props }) => {
-			const { text, variant, isBold = false } = props;
+			const { text, variant, isBold = false, metric } = props;
 			const variantKey = typeof variant === "string" ? variant.toLowerCase() : "";
 			const normalizedVariant =
 				(variantKey ? LOZENGE_VARIANT_ALIASES[variantKey] : undefined) ??
@@ -1655,8 +1655,9 @@ export const { registry } = defineRegistry(catalog, {
 					? (variant as NonNullable<LozengeProps["variant"]>)
 					: undefined) ??
 				getWorkflowLozengeVariant(text);
+			const safeMetric = typeof metric === "number" ? metric : toSafeOptionalText(metric);
 			return (
-				<Lozenge variant={normalizedVariant} isBold={isBold}>
+				<Lozenge variant={normalizedVariant} isBold={isBold} metric={safeMetric}>
 					{toSafeText(text)}
 				</Lozenge>
 			);
