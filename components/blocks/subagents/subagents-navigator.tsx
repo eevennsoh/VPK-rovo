@@ -4,7 +4,6 @@ import { useId, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, 
 import { useReducedMotion } from "motion/react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import Image from "next/image";
-import { getDirectoryMentionItemOrFallback } from "@/components/blocks/editor-palette/data/mention-sources";
 import { IconTile } from "@/components/ui/icon-tile";
 import type { TagColor } from "@/components/ui/tag";
 import { DeleteIcon, PlusIcon } from "@/components/ui/vpk-icons";
@@ -14,7 +13,6 @@ import {
 	HoverRevealActions,
 	HoverRevealLabel,
 } from "@/components/ui-custom/hover-reveal-row";
-import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor";
 import type { SubagentPrompt, SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
 import { getSubagentDisplayName } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { token } from "@/lib/tokens";
@@ -121,30 +119,19 @@ function renderBaseAgentSwitcherVisual(avatarSrc: string | undefined): ReactNode
 	);
 }
 
-function renderSubagentSwitcherVisual(label: string, tagColor: TagColor | undefined): ReactNode {
-	const visual = getDirectoryMentionItemOrFallback("subagent", label).visual;
-
+function renderSubagentSwitcherVisual(tagColor: TagColor | undefined): ReactNode {
 	return (
 		<span className="inline-flex size-6 shrink-0 items-center justify-center">
-			{visual ? (
-				<RichTextMentionVisualMark
-					category="subagent"
-					label={label}
-					size="menu-compact"
-					visual={visual}
-				/>
-			) : (
-				<IconTile
-					aria-hidden
-					className={cn(
-						"border border-border bg-surface",
-						tagColor ? subagentTagColorIconClassName[tagColor] : "text-icon-subtlest",
-					)}
-					icon={<AiAgentIcon label="" size="small" />}
-					label=""
-					size="small"
-				/>
-			)}
+			<IconTile
+				aria-hidden
+				className={cn(
+					"border border-border bg-surface",
+					tagColor ? subagentTagColorIconClassName[tagColor] : "text-icon-subtlest",
+				)}
+				icon={<AiAgentIcon label="" size="small" />}
+				label=""
+				size="small"
+			/>
 		</span>
 	);
 }
@@ -314,7 +301,7 @@ export function SubagentsNavigator({
 										key={prompt.id}
 										label={label}
 										enabled={isEnabled}
-										frontSlot={renderSubagentSwitcherVisual(label, subagentTagColor)}
+										frontSlot={renderSubagentSwitcherVisual(subagentTagColor)}
 										onDelete={onDeleteSubagent ? () => onDeleteSubagent(prompt.id) : undefined}
 										onSelect={() => onSelectSubagent(prompt.id)}
 										onToggle={
