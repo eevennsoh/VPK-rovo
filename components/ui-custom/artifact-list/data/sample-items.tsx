@@ -2,7 +2,7 @@ import ChartBarIcon from "@atlaskit/icon/core/chart-bar";
 import PageIcon from "@atlaskit/icon/core/page";
 import ProjectIcon from "@atlaskit/icon/core/project";
 
-import type { ArtifactListItem } from "@/components/blocks/artifact-list";
+import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
 
 // Mirrors the Figma node "Search — Smart link / Card view mini". The third row
 // demonstrates the logo variant; the repo ships no `google-sheets` 3P asset, so

@@ -1,7 +1,7 @@
 "use client";
 
-import { ArtifactList } from "@/components/blocks/artifact-list";
-import { SAMPLE_ARTIFACT_ITEMS } from "@/components/blocks/artifact-list/data/sample-items";
+import { ArtifactList } from "@/components/ui-custom/artifact-list";
+import { SAMPLE_ARTIFACT_ITEMS } from "@/components/ui-custom/artifact-list/data/sample-items";
 
 export default function ArtifactListPage() {
 	return (

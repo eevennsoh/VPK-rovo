@@ -5,7 +5,6 @@ const ADS_UI_DISCOVERY_SLUGS = new Set(["entity-card", "sidebar-nav-item"]);
 const ADS_CUSTOM_SLUGS = new Set([
 	"animated-dots",
 	"animated-rovo",
-	"artifact",
 	"chain-of-thought",
 	"code-block",
 	"conversation",
@@ -25,6 +24,7 @@ const ADS_CUSTOM_SLUGS = new Set([
 
 const ADS_BLOCK_SLUGS = new Set([
 	"agent-progress",
+	"artifact",
 	"task-progress",
 	"answer-card",
 	"top-navigation",

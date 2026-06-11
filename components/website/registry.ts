@@ -268,7 +268,7 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
   "animated-dots": dynamic(() => import("./demos/ui-custom/animated-dots-demo"), {
     ssr: false,
   }),
-  artifact: dynamic(() => import("./demos/ui-custom/artifact-demo"), {
+  "artifact-list": dynamic(() => import("./demos/ui-custom/artifact-list-demo"), {
     ssr: false,
   }),
   attachments: dynamic(() => import("./demos/ui-custom/attachments-demo"), {
@@ -5620,41 +5620,6 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  "artifact-demo-code-preview": dynamic(
-    () =>
-      import("./demos/ui-custom/artifact-demo").then((mod) => ({
-        default: mod.ArtifactDemoCodePreview,
-      })),
-    { ssr: false },
-  ),
-  "artifact-demo-image-preview": dynamic(
-    () =>
-      import("./demos/ui-custom/artifact-demo").then((mod) => ({
-        default: mod.ArtifactDemoImagePreview,
-      })),
-    { ssr: false },
-  ),
-  "artifact-demo-streaming": dynamic(
-    () =>
-      import("./demos/ui-custom/artifact-demo").then((mod) => ({
-        default: mod.ArtifactDemoStreaming,
-      })),
-    { ssr: false },
-  ),
-  "artifact-demo-chip": dynamic(
-    () =>
-      import("./demos/ui-custom/artifact-demo").then((mod) => ({
-        default: mod.ArtifactDemoChip,
-      })),
-    { ssr: false },
-  ),
-  "artifact-demo-compound": dynamic(
-    () =>
-      import("./demos/ui-custom/artifact-demo").then((mod) => ({
-        default: mod.ArtifactDemoCompound,
-      })),
-    { ssr: false },
-  ),
   "checkpoint-demo-conversation": dynamic(
     () =>
       import("./demos/ui-custom/checkpoint-demo").then((mod) => ({
@@ -6793,7 +6758,7 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/blocks/apps-directory-demo"),
     { ssr: false },
   ),
-  "artifact-list": dynamic(() => import("./demos/blocks/artifact-list-demo"), {
+  artifact: dynamic(() => import("./demos/blocks/artifact-demo"), {
     ssr: false,
   }),
   "tools-directory": dynamic(
@@ -7028,6 +6993,42 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
 };
 
 const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
+  "artifact-demo-code-preview": dynamic(
+    () =>
+      import("./demos/blocks/artifact-demo").then((mod) => ({
+        default: mod.ArtifactDemoCodePreview,
+      })),
+    { ssr: false },
+  ),
+  "artifact-demo-image-preview": dynamic(
+    () =>
+      import("./demos/blocks/artifact-demo").then((mod) => ({
+        default: mod.ArtifactDemoImagePreview,
+      })),
+    { ssr: false },
+  ),
+  "artifact-demo-streaming": dynamic(
+    () =>
+      import("./demos/blocks/artifact-demo").then((mod) => ({
+        default: mod.ArtifactDemoStreaming,
+      })),
+    { ssr: false },
+  ),
+  "artifact-demo-chip": dynamic(
+    () =>
+      import("./demos/blocks/artifact-demo").then((mod) => ({
+        default: mod.ArtifactDemoChip,
+      })),
+    { ssr: false },
+  ),
+  "artifact-demo-compound": dynamic(
+    () =>
+      import("./demos/blocks/artifact-demo").then((mod) => ({
+        default: mod.ArtifactDemoCompound,
+      })),
+    { ssr: false },
+  ),
+
   // Editor palette
   "editor-palette-nested": dynamic(
     () =>
