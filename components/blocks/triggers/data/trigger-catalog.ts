@@ -476,6 +476,23 @@ export function getAgentTriggerDefaultConnectionState(
 	return provider.requiresConnection || event.requiresConnection ? "needs-connection" : "connected";
 }
 
+/**
+ * Session-scoped set of providers the user has "connected" this session. The
+ * connection flow is a fake demo affordance — connecting a provider once marks
+ * ALL its triggers connected and persists in memory until a full reload. Lives
+ * here (module scope) so both the rule-builder dialog and the studio config
+ * panel share one source of truth.
+ */
+const sessionConnectedProviders = new Set<AgentTriggerProviderId>();
+
+export function markSessionProviderConnected(providerId: AgentTriggerProviderId): void {
+	sessionConnectedProviders.add(providerId);
+}
+
+export function isSessionProviderConnected(providerId: AgentTriggerProviderId): boolean {
+	return sessionConnectedProviders.has(providerId);
+}
+
 export function createAgentTriggerValue(
 	providerId: AgentTriggerProviderId,
 	eventId: string,
@@ -499,7 +516,9 @@ export function createAgentTriggerValue(
 		providerId,
 		eventId,
 		params,
-		connectionState: getAgentTriggerDefaultConnectionState(provider, event),
+		connectionState: isSessionProviderConnected(providerId)
+			? "connected"
+			: getAgentTriggerDefaultConnectionState(provider, event),
 		prompt: "",
 	} satisfies AgentTriggerValue;
 
