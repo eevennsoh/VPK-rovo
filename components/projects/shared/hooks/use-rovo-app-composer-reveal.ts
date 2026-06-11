@@ -25,18 +25,13 @@ export interface UseRovoAppComposerRevealResult {
 	showReveal: () => void;
 	/** Schedule hiding the reveal after the grace period (call on pointer leave). */
 	scheduleHideReveal: () => void;
-	/** Mark the textarea focused (keeps the reveal open). */
-	setInputFocused: (focused: boolean) => void;
 }
 
 /**
- * Owns the Studio "floating" composer's hover/focus reveal of the
+ * Owns the Studio "floating" composer's hover/value reveal of the
  * "Browse templates / start from scratch" link and its decorative SVG traces.
- *
- * Extracted verbatim from the original Studio composer so behavior is unchanged.
  */
-export function useRovoAppComposerReveal(): UseRovoAppComposerRevealResult {
-	const [isInputFocused, setIsInputFocused] = useState(false);
+export function useRovoAppComposerReveal({ hasPromptValue }: Readonly<{ hasPromptValue: boolean }>): UseRovoAppComposerRevealResult {
 	const [isComposerHoverActive, setIsComposerHoverActive] = useState(false);
 	const [scratchScribbleReplayKey, setScratchScribbleReplayKey] = useState(0);
 	const [templateSweepReplayKey, setTemplateSweepReplayKey] = useState(0);
@@ -93,8 +88,9 @@ export function useRovoAppComposerReveal(): UseRovoAppComposerRevealResult {
 	}, []);
 
 	// Reveal shows while the composer is hovered (with a close grace period so
-	// the pointer can reach the link below) or while the textarea is focused.
-	const isRevealVisible = isInputFocused || isComposerHoverActive;
+	// the pointer can reach the link below), or once the prompt has content.
+	// Autofocus alone should not show the micro label on first landing paint.
+	const isRevealVisible = hasPromptValue || isComposerHoverActive;
 	const showTemplateSweep = isRevealVisible;
 	const showScratchScribble = isRevealVisible && isScratchScribblePlaying;
 
@@ -107,6 +103,5 @@ export function useRovoAppComposerReveal(): UseRovoAppComposerRevealResult {
 		replayRevealTraces,
 		showReveal,
 		scheduleHideReveal,
-		setInputFocused: setIsInputFocused,
 	};
 }

@@ -82,8 +82,10 @@ export function ComposerFloatingBody({
 	realtimeVoiceActive,
 	showBackgroundStop,
 	submitDisabled,
+	textValue,
 }: Readonly<ComposerFloatingBodyProps>) {
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+	const hasPromptValue = textValue.trim().length > 0;
 	const {
 		isRevealVisible,
 		showTemplateSweep,
@@ -93,8 +95,7 @@ export function ComposerFloatingBody({
 		replayRevealTraces,
 		showReveal,
 		scheduleHideReveal,
-		setInputFocused,
-	} = useRovoAppComposerReveal();
+	} = useRovoAppComposerReveal({ hasPromptValue });
 
 	usePrefillEffect(prefillText);
 
@@ -160,11 +161,9 @@ export function ComposerFloatingBody({
 					autoResize
 					className={cn(composerTextareaClassName, floatingComposerTextareaClassName)}
 					directoryAutocompleteListVisible={directoryAutocompleteListVisible}
-					onBlur={() => setInputFocused(false)}
 					onDirectoryAutocompleteChange={onDirectoryAutocompleteChange}
 					onDirectoryAutocompleteControllerChange={onDirectoryAutocompleteControllerChange}
 					onFocus={() => {
-						setInputFocused(true);
 						replayRevealTraces();
 					}}
 					placeholder={placeholder}

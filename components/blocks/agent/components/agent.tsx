@@ -100,8 +100,7 @@ import { Input } from "@/components/ui/input";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tag, type TagColor } from "@/components/ui/tag";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { MoreHorizontalIcon, PlusIcon } from "@/components/ui/vpk-icons";
+import { LayoutDashboardIcon, MoreHorizontalIcon, PlusIcon } from "@/components/ui/vpk-icons";
 import { computeContextBarOverflow } from "@/components/ui-custom/context-bar/overflow";
 import {
 	type RichTextMentionItem,
@@ -492,10 +491,8 @@ export const Agent = memo(({ className, ...props }: Readonly<AgentProps>) => (
 	/>
 ));
 
-// "Details" was dropped — it duplicated the "Configure" view already exposed by
-// the header's Configure/Test toggle, so the active config view is no longer a
-// nav tab here.
 const AGENT_COMPACT_HEADER_NAV_ITEMS = [
+	{ icon: <LayoutDashboardIcon size="small" />, label: "Details", value: "details" },
 	{ icon: <ChartTrendUpIcon label="" size="small" color="currentColor" />, label: "Insights", value: "insights" },
 	{ icon: <ViewsIcon label="" size="small" color="currentColor" />, label: "Surfaces", value: "surfaces" },
 	{ icon: <ScorecardIcon label="" size="small" color="currentColor" />, label: "Evaluation", value: "evaluation" },
@@ -506,6 +503,7 @@ const AGENT_COMPACT_HEADER_NAV_ITEMS = [
 export type AgentCompactHeaderSection = (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[number]["value"];
 
 const AGENT_COMPACT_HEADER_NAV_GAP = 4;
+const AGENT_COMPACT_HEADER_AVATAR_NAV_GAP = 8;
 const AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH = 24;
 
 function AgentCompactHeaderNavButton({
@@ -580,7 +578,7 @@ export function AgentCompactHeaderNav({
 	}, []);
 
 	return (
-		<div className="flex min-w-0 flex-1 items-center gap-1">
+		<div className="flex min-w-0 flex-1 items-center" style={{ gap: AGENT_COMPACT_HEADER_AVATAR_NAV_GAP }}>
 			<Avatar label="Agent" shape="hexagon" size="sm">
 				{isAtlassianLogoSource(avatarSrc) ? (
 					<AtlassianLogo name="atlassian" label="Agent" size="small" />
@@ -684,7 +682,6 @@ export type AgentHeaderProps = ComponentProps<"div"> & {
 	model?: string;
 	leadingContent?: ReactNode;
 	primaryActionLabel?: string;
-	secondaryActionLabel?: string;
 	publishLabel?: string;
 	showActions?: boolean;
 	actions?: ReactNode;
@@ -739,7 +736,6 @@ export const AgentHeader = memo(
 		model,
 		name,
 		primaryActionLabel = "Test",
-		secondaryActionLabel = "Configure",
 		publishLabel = "Publish",
 		showActions = true,
 		actions,
@@ -774,26 +770,11 @@ export const AgentHeader = memo(
 			{showActions ? (
 				<div className="flex shrink-0 items-center gap-2">
 					{actions ?? (
-						// Self-contained compact ToggleGroup so the default
-						// Configure/Test header works standalone. Consumers that need
-						// controlled tabs (e.g. the compact agent config panel) pass
-						// `actions` to supply their own tab parts wired to outer state
-						// instead. ToggleGroup carries its own context, so no wrapper
-						// is required here.
 						<>
 							<AgentMoreOptionsMenu />
-							<ToggleGroup
-								aria-label="Agent views"
-								defaultValue={["configure"]}
-								variant="outline"
-							>
-								<ToggleGroupItem value="test">
-									{primaryActionLabel}
-								</ToggleGroupItem>
-								<ToggleGroupItem value="configure">
-									{secondaryActionLabel}
-								</ToggleGroupItem>
-							</ToggleGroup>
+							<Button type="button" size="default" variant="outline">
+								{primaryActionLabel}
+							</Button>
 							<Button type="button" size="default" variant="default">
 								{publishLabel}
 							</Button>

@@ -336,13 +336,23 @@ test("Studio content surfaces keep their intended max widths", () => {
 	assert.match(COMPOSER_SOURCE, /className=\{cn\("relative z-10 mx-auto", fillWidth \? FLOATING_COMPOSER_SESSION_MAX_WIDTH_CLASS : FLOATING_COMPOSER_MAX_WIDTH_CLASS\)\}/u);
 });
 
-test("Studio home bento keeps tab auto-cycle active after manual tab selection", () => {
+test("Studio home bento keeps tab auto-cycle active without manual category tabs", () => {
+	const homeBentoSource = SHELL_SOURCE.slice(
+		SHELL_SOURCE.indexOf("function HomeStarterBento"),
+		SHELL_SOURCE.indexOf("function getCssDurationTokenMs"),
+	);
+
 	assert.match(SHELL_SOURCE, /const cycleRunning = !shouldReduceMotion && !templatesDialogOpen;/u);
 	assert.match(SHELL_SOURCE, /templatesDialogOpen: boolean;/u);
 	assert.match(SHELL_SOURCE, /const bentoInteractingRef = useRef\(false\);/u);
 	assert.match(SHELL_SOURCE, /const updateBentoInteracting = useCallback\(\(interacting: boolean\) => \{[\s\S]*bentoInteractingRef\.current = interacting;[\s\S]*setBentoInteracting\(interacting\);[\s\S]*\}, \[\]\);/u);
-	assert.match(SHELL_SOURCE, /const selectHomeStarterCategory = useCallback\(\(category: HomeStarterCategory\) => \{[\s\S]*setActiveCategory\(category\);[\s\S]*\}, \[\]\);/u);
+	assert.match(SHELL_SOURCE, /const nextIndex = \(currentIndex \+ 1\) % HOME_STARTER_CATEGORIES\.length;/u);
+	assert.match(SHELL_SOURCE, /return HOME_STARTER_CATEGORIES\[nextIndex\]\.id;/u);
 	assert.match(SHELL_SOURCE, /if \(bentoInteractingRef\.current\) \{[\s\S]*controls\.pause\(\);[\s\S]*\}[\s\S]*cycleControlsRef\.current = controls;/u);
+	assert.match(homeBentoSource, /Bridge the visual 8px gap[\s\S]*className="pointer-events-auto absolute left-full top-0 h-7 w-2"[\s\S]*aria-label="Dismiss prompt starters"/u);
+	assert.doesNotMatch(homeBentoSource, /className="flex flex-wrap justify-center gap-2"/u);
+	assert.doesNotMatch(homeBentoSource, /aria-pressed=\{isActive\}/u);
+	assert.doesNotMatch(homeBentoSource, /selectHomeStarterCategory/u);
 	assert.doesNotMatch(SHELL_SOURCE, /setCycleEnabled\(false\)/u);
 });
 
@@ -470,6 +480,19 @@ test("Studio agent insights panel frames agent performance and improvement oppor
 	assert.doesNotMatch(AGENT_INSIGHTS_PANEL_SOURCE, /text-\[var\(--ds-/u);
 });
 
+test("Studio agent config moves Details into compact nav and removes the config toggle group", () => {
+	assert.match(AGENT_BLOCK_SOURCE, /import \{ LayoutDashboardIcon, MoreHorizontalIcon, PlusIcon \} from "@\/components\/ui\/vpk-icons";/u);
+	assert.match(AGENT_BLOCK_SOURCE, /AGENT_COMPACT_HEADER_NAV_ITEMS = \[[\s\S]*<LayoutDashboardIcon size="small" \/>[\s\S]*label: "Details"[\s\S]*label: "Insights"/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const lastCompactSectionRef = useRef<AgentCompactHeaderSection>\("details"\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const activeHeaderSection: AgentCompactHeaderSection \| null =[\s\S]*activeView === "insights"[\s\S]*activeView === "configure"[\s\S]*activeCompactSection \?\? "details"[\s\S]*: null;/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const restoreCompactSection = useCallback\([\s\S]*if \(section === "details"\) \{[\s\S]*setActiveCompactSection\(null\);[\s\S]*return;[\s\S]*\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleCompactSectionChange = useCallback\([\s\S]*lastCompactSectionRef\.current = section;[\s\S]*restoreCompactSection\(section\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleTestPressedChange = useCallback\([\s\S]*if \(pressed\) \{[\s\S]*lastCompactSectionRef\.current = activeHeaderSection;[\s\S]*handleTest\(\);[\s\S]*return;[\s\S]*\}[\s\S]*restoreCompactSection\(lastCompactSectionRef\.current \?\? "details"\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentCompactHeaderNav[\s\S]*activeSection=\{activeHeaderSection\}[\s\S]*onSectionChange=\{handleCompactSectionChange\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<Toggle[\s\S]*aria-label="Toggle agent test view"[\s\S]*className="rounded-\[6px\] hover:border-border data-pressed:hover:border-border-selected"[\s\S]*data-testid="agent-config-test"[\s\S]*onPressedChange=\{handleTestPressedChange\}[\s\S]*pressed=\{activeView === "test"\}[\s\S]*Test[\s\S]*<\/Toggle>/u);
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /aria-label="Agent config views"|<ToggleGroup|<ToggleGroupItem|data-testid="agent-config-configure"|>Configure<\/ToggleGroupItem>/u);
+});
+
 test("Studio agent config panel renders the shared block agent config fields", () => {
 	assert.match(AGENT_BLOCK_SOURCE, /export const AgentConfigFields = memo/u);
 	assert.match(AGENT_BLOCK_SOURCE, /const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string>/u);
@@ -520,29 +543,31 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /AgentCompactHeaderNav,/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ Lozenge \} from "@\/components\/ui\/lozenge";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Tabs, TabsContent \} from "@\/components\/ui\/tabs";/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Toggle \} from "@\/components\/ui\/toggle";/u);
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /export type AgentConfigView = "configure" \| "insights" \| "test";/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function getPublishLabel/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleCompactSectionChange = useCallback\([\s\S]*if \(section === "insights"\) \{[\s\S]*setActiveCompactSection\(null\);[\s\S]*onViewChange\("insights"\);[\s\S]*return;[\s\S]*\}[\s\S]*onViewChange\("configure"\);[\s\S]*setActiveCompactSection\(\s*section === "surfaces" \|\|[\s\S]*section === "access" \|\|[\s\S]*section === "users" \|\|[\s\S]*section === "evaluation"[\s\S]*\? section[\s\S]*: null,/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /setActiveCompactSection\(null\);[\s\S]*if \(value === "test"\)/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentCompactHeaderNav[\s\S]*activeSection=\{activeView === "insights" \? "insights" : activeCompactSection\}[\s\S]*avatarSrc=\{agentAvatarSrc\}[\s\S]*onSectionChange=\{handleCompactSectionChange\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const restoreCompactSection = useCallback\([\s\S]*if \(section === "insights"\) \{[\s\S]*setActiveCompactSection\(null\);[\s\S]*onViewChange\("insights"\);[\s\S]*return;[\s\S]*\}[\s\S]*onViewChange\("configure"\);[\s\S]*if \(section === "details"\) \{[\s\S]*setActiveCompactSection\(null\);[\s\S]*return;[\s\S]*\}[\s\S]*setActiveCompactSection\(\s*section === "surfaces" \|\|[\s\S]*section === "access" \|\|[\s\S]*section === "users" \|\|[\s\S]*section === "evaluation"[\s\S]*\? section[\s\S]*: null,/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /if \(value === "test"\) \{[\s\S]*lastCompactSectionRef\.current = activeHeaderSection;[\s\S]*handleTest\(\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentCompactHeaderNav[\s\S]*activeSection=\{activeHeaderSection\}[\s\S]*avatarSrc=\{agentAvatarSrc\}[\s\S]*onSectionChange=\{handleCompactSectionChange\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /activeCompactSection === "surfaces" \? \([\s\S]*<AgentSurfaces className="-mr-4 pr-4" \/>[\s\S]*\) : \([\s\S]*<AgentConfigFields/u);
 	// Clicking the "Evaluation" compact-nav tab renders the full-bleed Evaluation screen.
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ AgentEvaluation \} from "@\/components\/blocks\/agent-evaluation";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /activeCompactSection === "evaluation" \? \([\s\S]*<AgentEvaluation \/>[\s\S]*\) : \(/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigActionButton/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function AgentConfigToggleItem/u);
-	// The disabled Test item is a plain ToggleGroupItem (no Tooltip wrapper) so the
-	// ToggleGroup renders as joined segments instead of separate pills.
+	// The Test action is a single controlled Toggle; Details owns the configure
+	// view through AgentCompactHeaderNav instead of a Configure/Test segmented control.
 	assert.ok(!AGENT_CONFIG_PANEL_SOURCE.includes('TooltipTrigger render={<span className="inline-flex" />}'));
-	// The Update button is removed from the studio header; only the Test/Configure
-	// toggle group and Publish remain (consistent with the reusable AgentHeader).
+	// The Update button is removed from the studio header; only Test and Publish
+	// remain in the action area.
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /disabledTooltip="Make a change to the agent before updating the testing version\."/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /data-testid="agent-config-update"/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /hasAgentInstructions/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<Tabs[\s\S]*onValueChange=\{handleViewChange\}[\s\S]*value=\{activeView\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<ToggleGroup[\s\S]*aria-label="Agent config views"[\s\S]*variant="outline"[\s\S]*value=\{\[activeView\]\}[\s\S]*<ToggleGroupItem[\s\S]*value="test"[\s\S]*data-testid="agent-config-test"[\s\S]*Test[\s\S]*<\/ToggleGroupItem>[\s\S]*<ToggleGroupItem[\s\S]*value="configure"[\s\S]*Configure[\s\S]*<\/ToggleGroupItem>[\s\S]*<\/ToggleGroup>/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<Toggle[\s\S]*className="rounded-\[6px\] hover:border-border data-pressed:hover:border-border-selected"[\s\S]*data-testid="agent-config-test"[\s\S]*onPressedChange=\{handleTestPressedChange\}[\s\S]*pressed=\{activeView === "test"\}[\s\S]*variant="outline"[\s\S]*Test[\s\S]*<\/Toggle>/u);
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /aria-label="Agent config views"|<ToggleGroup|<ToggleGroupItem|data-testid="agent-config-configure"|>Configure<\/ToggleGroupItem>/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /disabled=\{!hasAgentInstructions\}/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /aria-label="Agent config views"[\s\S]{0,160}size="sm"/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /<TabsList>|<TabsTrigger/u);
@@ -775,14 +800,17 @@ test("Studio threads template provenance into agent creation contexts", () => {
 	assert.match(SHELL_SOURCE, /creationTemplateRef\.current = null;/u);
 });
 
-test("Studio composer reveals 'Start from scratch' on focus or hover and lands on a blank untitled agent config", () => {
-	// Composer reveals the affordance underneath the prompt input on focus or hover.
+test("Studio composer reveals 'Start from scratch' on hover or prompt value and lands on a blank untitled agent config", () => {
+	// Composer reveals the affordance underneath the prompt input on hover or once
+	// the prompt has content; autofocus alone should not show the micro label.
 	assert.match(COMPOSER_SOURCE, /onStartFromScratch\?: \(\) => void;/u);
-	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /const \[isInputFocused, setIsInputFocused\] = useState\(false\);/u);
 	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /const \[isComposerHoverActive, setIsComposerHoverActive\] = useState\(false\);/u);
-	assert.match(COMPOSER_SOURCE, /onFocus=\{\(\) => \{[\s\S]*setInputFocused\(true\);/u);
-	assert.match(COMPOSER_SOURCE, /onBlur=\{\(\) => setInputFocused\(false\)\}/u);
-	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /const isRevealVisible = isInputFocused \|\| isComposerHoverActive;/u);
+	assert.match(COMPOSER_SOURCE, /const hasPromptValue = textValue\.trim\(\)\.length > 0;/u);
+	assert.match(COMPOSER_SOURCE, /useRovoAppComposerReveal\(\{ hasPromptValue \}\)/u);
+	assert.match(COMPOSER_SOURCE, /onFocus=\{\(\) => \{[\s\S]*replayRevealTraces\(\);[\s\S]*\}\}/u);
+	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /const isRevealVisible = hasPromptValue \|\| isComposerHoverActive;/u);
+	assert.doesNotMatch(COMPOSER_REVEAL_HOOK_SOURCE, /isInputFocused/u);
+	assert.doesNotMatch(COMPOSER_SOURCE, /setInputFocused/u);
 	assert.match(COMPOSER_SOURCE, /\{onStartFromScratch \? \([\s\S]*\{isRevealVisible \?/u);
 	// Reveal copy: default is "Or start from scratch"; when onBrowseTemplates is
 	// provided (bento dismissed) it becomes "Browse template or start from scratch".

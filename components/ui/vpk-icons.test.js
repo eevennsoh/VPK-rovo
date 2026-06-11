@@ -47,3 +47,9 @@ test("vpk icon module does not re-export deprecated Lucide-compatible aliases", 
 		);
 	}
 });
+
+test("layout dashboard icon uses the Atlaskit dashboard glyph", () => {
+	assert.match(VPK_ICONS_SOURCE, /import DashboardIconGlyph from "@atlaskit\/icon\/core\/dashboard";/u);
+	assert.match(VPK_ICONS_SOURCE, /export const LayoutDashboardIcon = createUnsafeVpkIcon\(DashboardIconGlyph\);/u);
+	assert.doesNotMatch(VPK_ICONS_SOURCE, /export const LayoutDashboardIcon = HomeIcon;/u);
+});
