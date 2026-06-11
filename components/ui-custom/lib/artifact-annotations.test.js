@@ -38,12 +38,12 @@ async function loadArtifactAnnotationsModule() {
 			.then((result) => loadCjsModuleFromText(result.outputFiles[0].text));
 	}
 
-	const module = await artifactAnnotationsModulePromise;
-	appendWithRingBuffer = module.appendWithRingBuffer;
-	buildVoiceContextDescription = module.buildVoiceContextDescription;
-	createAnnotationFromSelection = module.createAnnotationFromSelection;
-	formatAnnotationsForVoiceContext = module.formatAnnotationsForVoiceContext;
-	reindexAnnotations = module.reindexAnnotations;
+	const loadedModule = await artifactAnnotationsModulePromise;
+	appendWithRingBuffer = loadedModule.appendWithRingBuffer;
+	buildVoiceContextDescription = loadedModule.buildVoiceContextDescription;
+	createAnnotationFromSelection = loadedModule.createAnnotationFromSelection;
+	formatAnnotationsForVoiceContext = loadedModule.formatAnnotationsForVoiceContext;
+	reindexAnnotations = loadedModule.reindexAnnotations;
 }
 
 function createAnnotation(overrides = {}) {
