@@ -174,14 +174,16 @@ test("Agent Directory includes Agent Templates as a sidebar mode", () => {
 	assert.match(source, /activeTemplateCategoryOption \? \([\s\S]*<AnimatePresence custom=\{templateMotionCustom\} initial=\{false\} mode="wait">[\s\S]*<motion\.section[\s\S]*aria-label="Agent templates"[\s\S]*key=\{`templates-\$\{activeTemplateCategoryOption\.id\}`\}[\s\S]*variants=\{STANDARD_AGENT_BROWSER_TEMPLATE_GRID_VARIANTS\}[\s\S]*<AgentTemplateSection[\s\S]*onSelectAgent=\{onSelectTemplateAgent\}/u);
 	assert.match(source, /EntityCardAgentExpandedCard/u);
 	assert.match(source, /function ExperimentalTemplateMode/u);
-	assert.match(source, /<div className="flex min-h-0 flex-col gap-4">/u);
+	assert.match(source, /<div className="flex min-h-0 flex-1 flex-col gap-2">/u);
 	assert.match(source, /aria-label="Template categories"/u);
 	assert.match(source, /role="group"/u);
 	assert.match(source, /function ExperimentalTemplateCategoryButton/u);
 	assert.match(source, /function ExperimentalTemplateCarouselControl/u);
 	assert.match(source, /data-agent-templates-carousel/u);
 	assert.match(source, /scrollElement\.scrollBy\(\{/u);
-	assert.match(source, /className="h-\[456px\] w-90 shrink-0 \[will-change:transform,opacity\]"/u);
+	assert.match(source, /className="relative -mx-6 min-h-0 flex-1 overflow-hidden"/u);
+	assert.match(source, /className="flex h-full w-max gap-4 px-6 pt-0 pb-3"/u);
+	assert.match(source, /className="h-full min-h-0 w-90 shrink-0 \[will-change:transform,opacity\]"/u);
 	assert.match(source, /<ExperimentalTemplateCard[\s\S]*agent=\{agent\}[\s\S]*onSelectAgent=\{onSelectAgent\}/u);
 	assert.match(source, /<ExperimentalDirectoryCard[\s\S]*variant="experimental-template"/u);
 	assert.match(source, /className="h-\[400px\] \[will-change:transform,opacity\]"/u);
@@ -454,7 +456,7 @@ test("Agent Directory experimental cards use the latest blocks/agent-card varian
 	assert.match(card, /function isLastUpdateStat\(stat: \{ label: string \}\): boolean/u);
 	assert.match(card, /<ClockIcon label="" size="small" spacing="none" color="currentColor" \/>/u);
 	assert.match(card, /formatAgentCardStatText\(stat\)/u);
-	assert.match(card, /className="pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-4 pb-4 text-text \[scrollbar-gutter:stable\]"/u);
+	assert.match(card, /"pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col overflow-y-auto px-4 text-text \[scrollbar-gutter:stable\]"[\s\S]*isExperimentalTemplate \? "gap-1\.5 pt-2 pb-2" : "gap-3 pt-4 pb-4"/u);
 	assert.match(card, /const hasMoreAction = Boolean\(moreAction\) \|\| Boolean\(onMoreActions\);/u);
 	assert.match(card, /hasMoreAction[\s\S]*group-hover\/card:opacity-0/u);
 	assert.match(card, /\{moreAction \?\? \(onMoreActions \?/u);
