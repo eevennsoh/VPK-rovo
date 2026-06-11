@@ -120,7 +120,7 @@ test("Agent Directory experimental variation has searchable multi-select filters
 	assert.match(source, /<section aria-label=\{heading\} className="flex flex-col gap-2">/u);
 	assert.match(source, /<h2 className="px-1\.5 text-xs font-semibold leading-4 text-text-subtlest">/u);
 	assert.doesNotMatch(source, /<h2 style=\{\{ font: token\("font\.heading\.large"\) \}\} className="text-text">/u);
-	assert.match(source, /"flex h-full min-h-0 flex-col gap-4 overflow-y-auto px-6 pb-6"/u);
+	assert.match(source, /"flex h-full min-h-0 flex-col gap-4 overflow-y-auto px-6 pt-1 pb-8"/u);
 	assert.match(source, /aria-pressed=\{selectedMyAgents\.length > 0 \? true : undefined\}[\s\S]*?Filter by my agents/u);
 	assert.match(source, /Filter by teams/u);
 	assert.match(source, /Filter by companies/u);
@@ -129,7 +129,10 @@ test("Agent Directory experimental variation has searchable multi-select filters
 	assert.match(source, /const companyOptions = useMemo\(\(\) => getAttributionOptions\(agents, "company"\), \[agents\]\);/u);
 	assert.match(source, /function ExperimentalFilterOptionAvatar/u);
 	assert.match(source, /<ExperimentalFilterOptionAvatar option=\{option\} \/>/u);
-	assert.match(source, /activeFacet === null \? \([\s\S]*<span aria-hidden className="mx-2 hidden h-6 w-px bg-border md:block" \/>[\s\S]*activeFacet === null && visibleTemplateCategories\.length > 0 \? \([\s\S]*onClick=\{handleEnterTemplateMode\}[\s\S]*Agent templates/u);
+	// Mode switching now lives in an outline ToggleGroup next to the search input.
+	assert.match(source, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
+	assert.match(source, /<ToggleGroup[\s\S]*onValueChange=\{handleToggleMode\}[\s\S]*value=\{\[templateModeActive \? "templates" : "agents"\]\}[\s\S]*variant="outline"[\s\S]*<ToggleGroupItem value="agents">Agents<\/ToggleGroupItem>[\s\S]*<ToggleGroupItem value="templates">Templates<\/ToggleGroupItem>/u);
+	assert.match(source, /function handleToggleMode\(groupValue: readonly string\[\]\)[\s\S]*handleEnterTemplateMode\(\)[\s\S]*resetFilters\(\)/u);
 	assert.match(source, /placeholder="Search options"/u);
 	assert.match(source, /<InputGroup className="pl-\[7px\]">[\s\S]*?<InputGroupAddon className="w-4 p-0">[\s\S]*?className="px-2"[\s\S]*?placeholder="Search options"/u);
 	assert.match(source, /<Checkbox[\s\S]*checked=\{selectedValues\.includes\(option\.id\)\}/u);
@@ -174,7 +177,7 @@ test("Agent Directory includes Agent Templates as a sidebar mode", () => {
 	assert.match(source, /activeTemplateCategoryOption \? \([\s\S]*<AnimatePresence custom=\{templateMotionCustom\} initial=\{false\} mode="wait">[\s\S]*<motion\.section[\s\S]*aria-label="Agent templates"[\s\S]*key=\{`templates-\$\{activeTemplateCategoryOption\.id\}`\}[\s\S]*variants=\{STANDARD_AGENT_BROWSER_TEMPLATE_GRID_VARIANTS\}[\s\S]*<AgentTemplateSection[\s\S]*onSelectAgent=\{onSelectTemplateAgent\}/u);
 	assert.match(source, /EntityCardAgentExpandedCard/u);
 	assert.match(source, /function ExperimentalTemplateMode/u);
-	assert.match(source, /<div className="flex min-h-0 flex-1 flex-col gap-2">/u);
+	assert.match(source, /<div className="mt-2 flex min-h-0 flex-1 flex-col gap-2">/u);
 	assert.match(source, /aria-label="Template categories"/u);
 	assert.match(source, /role="group"/u);
 	assert.match(source, /function ExperimentalTemplateCategoryButton/u);
@@ -182,7 +185,7 @@ test("Agent Directory includes Agent Templates as a sidebar mode", () => {
 	assert.match(source, /data-agent-templates-carousel/u);
 	assert.match(source, /scrollElement\.scrollBy\(\{/u);
 	assert.match(source, /className="relative -mx-6 min-h-0 flex-1 overflow-hidden"/u);
-	assert.match(source, /className="flex h-full w-max gap-4 px-6 pt-0 pb-3"/u);
+	assert.match(source, /className="flex h-full w-max gap-4 px-6 pt-0 pb-6"/u);
 	assert.match(source, /className="h-full min-h-0 w-90 shrink-0 \[will-change:transform,opacity\]"/u);
 	assert.match(source, /<ExperimentalTemplateCard[\s\S]*agent=\{agent\}[\s\S]*onSelectAgent=\{onSelectAgent\}/u);
 	assert.match(source, /<ExperimentalDirectoryCard[\s\S]*variant="experimental-template"/u);
@@ -254,7 +257,7 @@ test("Agent Directory uses independent column scrolling without extra content pa
 	assert.match(source, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
 	assert.match(source, /const contentOverflow = useHasVerticalOverflow<HTMLDivElement>\(\);/u);
 	assert.match(source, /ref=\{contentOverflow\.ref\}/u);
-	assert.match(source, /"flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto px-6 pb-6 md:pl-4"/u);
+	assert.match(source, /"flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto px-6 pt-1 pb-8 md:pl-4"/u);
 	assert.match(source, /contentOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"/u);
 	assert.match(source, /const sidebarOverflow = useHasVerticalOverflow<HTMLElement>\(\);/u);
 	assert.match(source, /"hidden min-h-0 w-\[280px\] shrink-0 flex-col gap-4 overflow-y-auto pl-6 md:flex"/u);
@@ -456,7 +459,7 @@ test("Agent Directory experimental cards use the latest blocks/agent-card varian
 	assert.match(card, /function isLastUpdateStat\(stat: \{ label: string \}\): boolean/u);
 	assert.match(card, /<ClockIcon label="" size="small" spacing="none" color="currentColor" \/>/u);
 	assert.match(card, /formatAgentCardStatText\(stat\)/u);
-	assert.match(card, /"pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col overflow-y-auto px-4 text-text \[scrollbar-gutter:stable\]"[\s\S]*isExperimentalTemplate \? "gap-1\.5 pt-2 pb-2" : "gap-3 pt-4 pb-4"/u);
+	assert.match(card, /"pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col overflow-y-auto px-4 text-text \[scrollbar-gutter:stable\]"[\s\S]*isExperimentalTemplate \? "gap-3 pt-4 pb-2" : "gap-3 pt-4 pb-4"/u);
 	assert.match(card, /const hasMoreAction = Boolean\(moreAction\) \|\| Boolean\(onMoreActions\);/u);
 	assert.match(card, /hasMoreAction[\s\S]*group-hover\/card:opacity-0/u);
 	assert.match(card, /\{moreAction \?\? \(onMoreActions \?/u);

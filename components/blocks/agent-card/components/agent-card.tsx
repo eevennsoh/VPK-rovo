@@ -192,6 +192,10 @@ function getAgentCardStatIcon(stat: { label: string }, index: number): ReactElem
 		return <ClockIcon label="" size="small" spacing="none" color="currentColor" />;
 	}
 
+	if (isRemixStat(stat)) {
+		return <PeopleGroupIcon label="" size="small" spacing="none" color="currentColor" />;
+	}
+
 	return index === 0
 		? <PeopleGroupIcon label="" size="small" spacing="none" color="currentColor" />
 		: <ThumbsUpIcon label="" size="small" spacing="none" color="currentColor" />;
@@ -444,7 +448,15 @@ export function AgentCard({
 		const showInlineStats = visibleStats.length > 0 || showRating || showChats;
 
 		return (
-			<AgentCardShell active={active} className={className} onSelect={onSelect} selectLabel={`Select ${name}`}>
+			<AgentCardShell
+				active={active}
+				className={cn(
+					"rounded-[16px] after:rounded-[16px] [&_[data-slot=agent-card-select]]:rounded-[16px]",
+					className,
+				)}
+				onSelect={onSelect}
+				selectLabel={`Select ${name}`}
+			>
 				<AgentCardHeader
 					action={
 						moreAction ?? (onMoreActions ? (
@@ -473,6 +485,7 @@ export function AgentCard({
 							) : (
 								<AvatarFallback>{name.slice(0, 2)}</AvatarFallback>
 							)}
+							{avatarBadge}
 						</Avatar>
 					}
 					title={name}
@@ -528,10 +541,15 @@ export function AgentCard({
 			"--agent-card-detail-text-color": string;
 			"--agent-card-cover-text-color": string;
 		};
-		const visibleStats = displayStats.slice(0, 2);
+		// Template covers surface template-specific metadata (Remix + Last update);
+		// other experimental covers use the non-remix stats (e.g. users / reactions).
+		const coverStats = isExperimentalTemplate ? stats : displayStats;
+		const visibleStats = coverStats.slice(0, 2);
 		const showInlineStats = visibleStats.length > 0 || showRating || showChats;
 		const showExperimentalCollaborators = showCollaborators;
-		const showExperimentalSocialMetadata = showInlineStats || showExperimentalCollaborators;
+		// Cover keeps the inline stats + "Use template" CTA; collaborators move to the
+		// "Trusted by teammates" detail section below.
+		const showCoverActionRow = showInlineStats || showExperimentalCollaborators;
 		const unmaskedAvatarSrc = getUnmaskedAgentAvatarSrc(avatarSrc);
 		const hasMoreAction = Boolean(moreAction) || Boolean(onMoreActions);
 
@@ -546,37 +564,37 @@ export function AgentCard({
 				selectLabel={`Select ${name}`}
 			>
 				<div className="relative flex min-h-0 flex-auto flex-col overflow-visible" style={coverStyle}>
-					{avatarSrc ? (
-						<div
-							aria-hidden
-							className={cn(
-								"pointer-events-none absolute top-3 left-[100%] z-20 h-40 w-[218px] -translate-x-1/2 -translate-y-1/2",
-								// On hover the cover illustration clears out of the way so the
-								// more button underneath is revealed. Hover-driven only, so it
-								// never fires at first paint. Only when there is a button to reveal.
-								hasMoreAction
-									&& "transition-[opacity,transform] duration-medium ease-out group-hover/card:-translate-y-[64%] group-hover/card:opacity-0 group-focus-within/card:-translate-y-[64%] group-focus-within/card:opacity-0",
-							)}
-							style={{ willChange: "transform, opacity" }}
-						>
-							<Image
-								alt=""
-								aria-hidden
-								className="size-full object-contain opacity-95"
-								height={160}
-								src={unmaskedAvatarSrc ?? avatarSrc}
-								width={218}
-							/>
-						</div>
-					) : null}
 					<div
 						className={cn(
 							"relative z-10 flex shrink-0 flex-col rounded-t-[16px] bg-[var(--agent-card-cover-color)] px-4 text-text-inverse",
-							isExperimentalTemplate ? "gap-2 pt-3 pb-3" : "gap-3 pt-4 pb-4",
+							isExperimentalTemplate ? "gap-2 pt-3 pb-4" : "gap-3 pt-4 pb-4",
 						)}
 						style={isExperimentalTemplate ? undefined : STAMP_PERFORATION_BOTTOM_MASK_STYLE}
 					>
-						<div className="relative flex items-center gap-3">
+						{avatarSrc ? (
+							<div
+								aria-hidden
+								className={cn(
+									"pointer-events-none absolute top-1 left-[102%] z-0 h-40 w-[218px] -translate-x-1/2 -translate-y-1/2",
+									// On hover the cover illustration clears out of the way so the
+									// more button underneath is revealed. Hover-driven only, so it
+									// never fires at first paint. Only when there is a button to reveal.
+									hasMoreAction
+										&& "transition-[opacity,transform] duration-medium ease-out group-hover/card:-translate-y-[64%] group-hover/card:opacity-0 group-focus-within/card:-translate-y-[64%] group-focus-within/card:opacity-0",
+								)}
+								style={{ willChange: "transform, opacity" }}
+							>
+								<Image
+									alt=""
+									aria-hidden
+									className="size-full object-contain opacity-95"
+									height={160}
+									src={unmaskedAvatarSrc ?? avatarSrc}
+									width={218}
+								/>
+							</div>
+						) : null}
+						<div className="relative z-[1] flex items-center gap-3">
 							<div aria-hidden className="group/avatar relative h-10 w-[35px] shrink-0" data-size="lg">
 								{avatarSrc ? (
 									<Image alt="" aria-hidden className="absolute inset-0 size-full object-contain" height={40} src={avatarSrc} width={35} />
@@ -617,21 +635,22 @@ export function AgentCard({
 								/>
 							) : null)}
 						</div>
-						<div className={cn("relative flex flex-col", isExperimentalTemplate ? "gap-2" : "gap-3")}>
+						<div className={cn("relative z-[1] flex flex-col", isExperimentalTemplate ? "gap-2" : "gap-3")}>
 							<AgentCardDescription
 								className={cn(
-									"min-h-0",
-									isExperimentalTemplate ? "line-clamp-2" : "line-clamp-3",
+									// Reserve the clamped line count so covers stay equal height
+									// regardless of how many lines each description actually fills.
+									isExperimentalTemplate ? "line-clamp-2 min-h-10" : "line-clamp-3 min-h-15",
 									EXPERIMENTAL_COVER_TEXT_CLASS_NAME,
 								)}
 							>
 								{description ?? `Learn how ${name} can help your team work faster.`}
 							</AgentCardDescription>
 
-							{showExperimentalSocialMetadata ? (
+							{showCoverActionRow ? (
 								<>
-									<div className={cn("flex min-h-6 items-center gap-3", showInlineStats ? "justify-between" : "justify-end")}>
-										{showInlineStats ? (
+									{showInlineStats ? (
+										<div className="flex min-h-6 items-center justify-between gap-3">
 											<AgentCardFooter className={cn("min-h-6 min-w-0 flex-1 items-center gap-4 [&_[data-slot=icon]]:text-current", EXPERIMENTAL_COVER_TEXT_CLASS_NAME)}>
 												{visibleStats.length > 0 ? (
 													visibleStats.map((stat, index) => (
@@ -662,21 +681,8 @@ export function AgentCard({
 													</>
 												)}
 											</AgentCardFooter>
-										) : null}
-										{showExperimentalCollaborators ? (
-											<AvatarGroup className="items-center *:data-[slot=avatar]:ring-[var(--agent-card-cover-color)]" label="Collaborators">
-												{visibleCollaborators.map((person) => (
-													<Avatar key={person.src} size="sm">
-														<AvatarImage alt={person.name} src={person.src} />
-														<AvatarFallback>{person.name.slice(0, 2)}</AvatarFallback>
-													</Avatar>
-												))}
-												{showHiddenCollaboratorCount ? (
-													<AvatarGroupCount className="ring-[var(--agent-card-cover-color)]">+{hiddenCollaboratorCount}</AvatarGroupCount>
-												) : null}
-											</AvatarGroup>
-										) : null}
-									</div>
+										</div>
+									) : null}
 									<Button
 										className={cn(
 											"mt-2 w-full border-current bg-transparent hover:bg-white/20 active:bg-white/30",
@@ -700,13 +706,29 @@ export function AgentCard({
 						<div
 							className={cn(
 								"pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col overflow-y-auto px-4 text-text [scrollbar-gutter:stable]",
-								isExperimentalTemplate ? "gap-1.5 pt-2 pb-2" : "gap-3 pt-4 pb-4",
+								isExperimentalTemplate ? "gap-3 pt-4 pb-2" : "gap-3 pt-4 pb-4",
 							)}
 							data-slot="agent-card-scroll"
 							onClick={onSelect ? handleBodyClick : undefined}
 							onScroll={handleBodyScroll}
 							style={bodyScrolled ? SCROLL_MASK_STYLE : undefined}
 						>
+							{showExperimentalCollaborators ? (
+								<AgentCardSection label="Trusted by teammates" labelClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}>
+									<AvatarGroup className="items-center *:data-[slot=avatar]:ring-[var(--agent-card-detail-color)]" label="Collaborators">
+										{visibleCollaborators.map((person) => (
+											<Avatar key={person.src} size="sm">
+												<AvatarImage alt={person.name} src={person.src} />
+												<AvatarFallback>{person.name.slice(0, 2)}</AvatarFallback>
+											</Avatar>
+										))}
+										{showHiddenCollaboratorCount ? (
+											<AvatarGroupCount className="ring-[var(--agent-card-detail-color)]">+{hiddenCollaboratorCount}</AvatarGroupCount>
+										) : null}
+									</AvatarGroup>
+								</AgentCardSection>
+							) : null}
+
 							{sources.length > 0 ? (
 								<AgentCardSection label="Works with" labelClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}>
 									<TWGAppstack animated={false} className="justify-start" iconSize="md" maxVisible={7} sources={sources} />
@@ -731,14 +753,14 @@ export function AgentCard({
 
 							{capabilities.length > 0 ? (
 								<>
-									<div className={cn(isExperimentalTemplate ? "py-0.5" : "py-1.5", EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME)}>
+									<div className={cn("py-1.5", EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME)}>
 										<Separator className="bg-current opacity-30" />
 									</div>
 									<AgentCardCapabilities
-										className={isExperimentalTemplate ? "gap-0.5" : undefined}
 										iconClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}
 										items={capabilities}
 										itemClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}
+										listClassName="gap-2"
 									/>
 								</>
 							) : null}
@@ -816,13 +838,11 @@ export function AgentCard({
 					<AgentCardFooter className="justify-between px-4 py-3 transition-opacity duration-fast ease-out group-hover/card:opacity-0 group-focus-within/card:opacity-0">
 						<div className="flex items-center gap-6">
 							{showStats ? (
-								displayStats.map((stat, index) => (
-									<AgentCardStat
-										icon={getAgentCardStatIcon(stat, index)}
-										key={stat.label}
-									>
-										{formatAgentCardStatText(stat)}
-									</AgentCardStat>
+								stats.map((stat) => (
+									<div className="flex flex-col" key={stat.label}>
+										<span className="text-sm font-semibold leading-5 text-text">{stat.value}</span>
+										<span className="leading-4">{stat.label}</span>
+									</div>
 								))
 							) : (
 								<div className="flex items-center gap-4">
