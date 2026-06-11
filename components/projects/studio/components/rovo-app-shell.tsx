@@ -61,6 +61,7 @@ import {
 	buildCreationTemplateContextFromStarter,
 	buildStudioAgentCreationContext,
 	buildStudioAgentCreationContinuationContext,
+	resolveTemplateConfigForResult,
 	type StudioCreationTemplateContext,
 } from "@/components/projects/studio/lib/studio-agent-creation-context";
 import {
@@ -1753,9 +1754,22 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				: repaired.trigger
 					? [repaired.trigger]
 					: [];
-			const inferredTriggerDefinitions = !repaired.triggerDefinitions || repaired.triggerDefinitions.length === 0
+			const inferredBaseTriggerDefinitions = !repaired.triggerDefinitions || repaired.triggerDefinitions.length === 0
 				? inferTriggerDefinitions(triggerStrings)
 				: undefined;
+			// Pre-fill the shared automation prompt + name (the "Agent Instructions" /
+			// "Automation name" fields in the trigger dialog) from the originating
+			// template, so a template-based agent's automation isn't a blank form.
+			const templateForTriggers = resolveTemplateConfigForResult(repaired);
+			const inferredTriggerDefinitions = inferredBaseTriggerDefinitions && templateForTriggers?.triggerPrompt
+				? inferredBaseTriggerDefinitions.map((definition) => ({
+						...definition,
+						prompt: definition.prompt && definition.prompt.length > 0
+							? definition.prompt
+							: templateForTriggers.triggerPrompt ?? "",
+						automationName: definition.automationName ?? templateForTriggers.triggerAutomationName,
+					}))
+				: inferredBaseTriggerDefinitions;
 			const agentResult = inferredTriggerDefinitions
 				? { ...repaired, triggerDefinitions: inferredTriggerDefinitions }
 				: repaired;

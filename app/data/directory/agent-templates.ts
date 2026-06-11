@@ -87,6 +87,14 @@ export interface AgentTemplateConfig {
 	conversationStarterIcons?: readonly string[];
 	/** Event phrases that should auto-invoke this agent (0-3). */
 	triggers: readonly string[];
+	/**
+	 * Shared automation instruction shown in the trigger/automation dialog's
+	 * "Agent Instructions" field — what the agent should do when any trigger fires.
+	 * Applied to every generated trigger definition's `prompt`.
+	 */
+	triggerPrompt?: string;
+	/** Short automation name shown in the trigger/automation dialog. */
+	triggerAutomationName?: string;
 	/** Default memory toggle for agents created from this template. */
 	memoryMode: AgentTemplateMemoryMode;
 	/** Default reasoning preset for agents created from this template. */

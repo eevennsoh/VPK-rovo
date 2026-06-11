@@ -88,6 +88,14 @@ test("every template has the binding fields with sane shapes", async () => {
 		);
 		assert.equal(typeof t.bodyIntro, "string", `${t.id}.bodyIntro must be a string`);
 		assert.ok(t.bodyIntro.trim().length > 0, `${t.id}.bodyIntro must be non-empty`);
+		// Every template with triggers ships a shared automation prompt + name so the
+		// trigger/automation dialog isn't a blank form for generated agents.
+		if (t.triggers.length > 0) {
+			assert.equal(typeof t.triggerPrompt, "string", `${t.id}.triggerPrompt must be a string`);
+			assert.ok(t.triggerPrompt.trim().length > 0, `${t.id}.triggerPrompt must be non-empty`);
+			assert.equal(typeof t.triggerAutomationName, "string", `${t.id}.triggerAutomationName must be a string`);
+			assert.ok(t.triggerAutomationName.trim().length > 0, `${t.id}.triggerAutomationName must be non-empty`);
+		}
 		assert.ok(
 			!t.subagentIds.includes(t.id),
 			`${t.id}.subagentIds must not reference itself (self-delegation)`,
