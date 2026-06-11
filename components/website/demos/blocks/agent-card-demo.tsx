@@ -88,6 +88,7 @@ function ExperimentalAgentCard({
 			description={agent.description}
 			name={agent.name}
 			onSelect={() => {}}
+			onMoreActions={variant === "experimental-profile" ? () => {} : undefined}
 			publisher="Atlassian"
 			skills={SKILLS}
 			sources={SOURCES}

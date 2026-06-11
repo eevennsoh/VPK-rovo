@@ -15,6 +15,7 @@ import {
 	type AgentTemplatesCategory,
 	type AgentTemplatesCategoryId,
 } from "@/components/blocks/agent-templates";
+import { AgentCard as ExperimentalDirectoryCard } from "@/components/blocks/agent-card";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
@@ -855,18 +856,11 @@ function ExperimentalAgentSection({
 				{heading}
 			</h2>
 			<ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-				{agents.map((agent) => {
-					const publisher = derivePublisher(agent.byline);
-					return (
-						<li key={agent.id}>
-							<AgentCard
-								agent={agent}
-								onSelectAgent={onSelectAgent}
-								publisher={publisher}
-							/>
-						</li>
-					);
-				})}
+				{agents.map((agent) => (
+					<li key={agent.id}>
+						<ExperimentalProfileCard agent={agent} onSelectAgent={onSelectAgent} />
+					</li>
+				))}
 			</ul>
 		</section>
 	);
@@ -887,9 +881,23 @@ function ExperimentalTemplateSection({
 			<ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 				{agents.map((agent) => (
 					<li className="h-[400px]" key={agent.id}>
-						<AgentTemplateCard
-							agent={agent}
-							onSelectAgent={onSelectAgent}
+						<ExperimentalDirectoryCard
+							attributionKind={agent.attributionKind}
+							avatarSrc={agent.avatarSrc}
+							capabilities={agent.capabilities ?? EMPTY_TEMPLATE_CAPABILITIES}
+							className="h-full w-full"
+							collaboratorOverflow={agent.collaboratorOverflow}
+							collaborators={agent.collaborators}
+							description={agent.description}
+							name={agent.name}
+							onSelect={onSelectAgent ? () => onSelectAgent(agent) : undefined}
+							publisher={deriveTemplatePublisher(agent)}
+							publisherLogoSrc={agent.publisherLogoSrc}
+							skills={agent.skills}
+							sources={agent.sources}
+							stats={agent.stats}
+							variant="experimental-template"
+							verified={agent.verified}
 						/>
 					</li>
 				))}
@@ -1241,11 +1249,54 @@ function AgentCard({ agent, onSelectAgent, publisher }: Readonly<AgentCardProps>
 	);
 }
 
+// Experimental built-agent card — the "latest" banner-first profile treatment.
+// On hover the cover illustration clears to reveal the more menu (`triggerClassName`
+// tints the ⋯ trigger to the card's per-category cover text color, exposed by the
+// card as `--agent-card-cover-text-color`).
+function ExperimentalProfileCard({
+	agent,
+	onSelectAgent,
+}: Readonly<{
+	agent: AgentBrowserAgent;
+	onSelectAgent?: (agent: AgentBrowserAgent) => void;
+}>) {
+	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+	const selectAgent = onSelectAgent ? () => onSelectAgent(agent) : undefined;
+
+	return (
+		<ExperimentalDirectoryCard
+			active={moreMenuOpen}
+			attributionKind={agent.attributionKind}
+			avatarSrc={agent.avatarSrc}
+			chatCount={agent.chatCount}
+			description={agent.description}
+			feedbackCount={agent.feedbackCount}
+			moreAction={
+				<DirectoryCardMoreMenu
+					label={`More actions for ${agent.name}`}
+					onLearnMore={selectAgent}
+					onOpenChange={setMoreMenuOpen}
+					open={moreMenuOpen}
+					triggerClassName="text-[var(--agent-card-cover-text-color)] [&_svg]:text-current hover:bg-white/20 active:bg-white/30"
+				/>
+			}
+			name={agent.name}
+			onSelect={selectAgent}
+			publisher={derivePublisher(agent.byline)}
+			rating={agent.rating}
+			variant="experimental-profile"
+			verified={agent.verified}
+		/>
+	);
+}
+
 interface DirectoryCardMoreMenuProps {
 	label: string;
 	onLearnMore?: () => void;
 	onOpenChange: (open: boolean) => void;
 	open: boolean;
+	/** Extra classes for the trigger button (e.g. cover-tinted styling on the experimental card). */
+	triggerClassName?: string;
 }
 
 function DirectoryCardMoreMenu({
@@ -1253,6 +1304,7 @@ function DirectoryCardMoreMenu({
 	onLearnMore,
 	onOpenChange,
 	open,
+	triggerClassName,
 }: Readonly<DirectoryCardMoreMenuProps>) {
 	function stopPropagation(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
 		event.stopPropagation();
@@ -1268,6 +1320,7 @@ function DirectoryCardMoreMenu({
 						className={cn(
 							"size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
 							open && "opacity-100",
+							triggerClassName,
 						)}
 						onClick={stopPropagation}
 						onKeyDown={stopPropagation}

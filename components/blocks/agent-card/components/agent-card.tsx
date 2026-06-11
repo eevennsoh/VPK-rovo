@@ -250,6 +250,13 @@ export interface AgentCardProps {
 	chatCount?: number;
 	onSelect?: () => void;
 	onMoreActions?: () => void;
+	/**
+	 * Custom node rendered in place of the built-in more button (e.g. a dropdown
+	 * menu). Takes precedence over `onMoreActions` when provided.
+	 */
+	moreAction?: ReactNode;
+	/** Keeps the hover/elevation treatment active (e.g. while a more-menu is open). */
+	active?: boolean;
 	className?: string;
 }
 
@@ -286,6 +293,8 @@ export function AgentCard({
 	chatCount,
 	onSelect,
 	onMoreActions,
+	moreAction,
+	active = false,
 	className,
 }: Readonly<AgentCardProps>) {
 	const showStats = stats.length > 0;
@@ -359,7 +368,7 @@ export function AgentCard({
 
 	if (variant === "template") {
 		return (
-			<AgentCardShell className={className} onSelect={onSelect} selectLabel={`Select ${name}`}>
+			<AgentCardShell active={active} className={className} onSelect={onSelect} selectLabel={`Select ${name}`}>
 				<AgentCardHeader
 					action={
 						onMoreActions ? (
@@ -419,9 +428,11 @@ export function AgentCard({
 		const showExperimentalSocialMetadata = showInlineStats || showExperimentalCollaborators;
 		const showExperimentalUseTemplateAction = showExperimentalTemplateDetails;
 		const unmaskedAvatarSrc = getUnmaskedAgentAvatarSrc(avatarSrc);
+		const hasMoreAction = Boolean(moreAction) || Boolean(onMoreActions);
 
 		return (
 			<AgentCardShell
+				active={active}
 				className={cn(
 					"gap-0 overflow-clip rounded-[16px] bg-transparent p-0 after:rounded-[16px] after:border-0 [&_[data-slot=agent-card-select]]:rounded-[16px]",
 					className,
@@ -431,14 +442,27 @@ export function AgentCard({
 			>
 				<div className="relative flex min-h-0 flex-auto flex-col overflow-visible" style={coverStyle}>
 					{avatarSrc ? (
-						<Image
-							alt=""
+						<div
 							aria-hidden
-							className="pointer-events-none absolute top-3 left-[100%] z-20 h-40 w-[218px] -translate-x-1/2 -translate-y-1/2 object-contain opacity-95"
-							height={160}
-							src={unmaskedAvatarSrc ?? avatarSrc}
-							width={218}
-						/>
+							className={cn(
+								"pointer-events-none absolute top-3 left-[100%] z-20 h-40 w-[218px] -translate-x-1/2 -translate-y-1/2",
+								// On hover the cover illustration clears out of the way so the
+								// more button underneath is revealed. Hover-driven only, so it
+								// never fires at first paint. Only when there is a button to reveal.
+								hasMoreAction
+									&& "transition-[opacity,transform] duration-medium ease-out group-hover/card:-translate-y-[64%] group-hover/card:opacity-0 group-focus-within/card:-translate-y-[64%] group-focus-within/card:opacity-0",
+							)}
+							style={{ willChange: "transform, opacity" }}
+						>
+							<Image
+								alt=""
+								aria-hidden
+								className="size-full object-contain opacity-95"
+								height={160}
+								src={unmaskedAvatarSrc ?? avatarSrc}
+								width={218}
+							/>
+						</div>
 					) : null}
 					<div
 						className={cn(
@@ -477,7 +501,7 @@ export function AgentCard({
 									) : null}
 								</p>
 							</div>
-							{onMoreActions ? (
+							{moreAction ?? (onMoreActions ? (
 								<AgentCardMoreButton
 									className={cn(
 										EXPERIMENTAL_COVER_TEXT_CLASS_NAME,
@@ -486,7 +510,7 @@ export function AgentCard({
 									label={`More actions for ${name}`}
 									onClick={onMoreActions}
 								/>
-							) : null}
+							) : null)}
 						</div>
 						<div className="relative flex flex-col gap-3">
 							<AgentCardDescription className={cn("line-clamp-3 min-h-0", EXPERIMENTAL_COVER_TEXT_CLASS_NAME)}>
@@ -622,6 +646,7 @@ export function AgentCard({
 
 	return (
 		<AgentCardShell
+			active={active}
 			className={cn("gap-0 overflow-clip p-0", className)}
 			onSelect={onSelect}
 			selectLabel={`Select ${name}`}

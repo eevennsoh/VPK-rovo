@@ -388,3 +388,31 @@ test("Agents Directory cards render the shared EntityCardAgentCard with overlay 
 	assert.doesNotMatch(shell, /hover:-translate-y/u);
 	assert.doesNotMatch(shell, /hover:shadow-2xl/u);
 });
+
+test("Agents Directory experimental cards use the latest blocks/agent-card variants", () => {
+	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
+	const card = readProjectFile("components/blocks/agent-card/components/agent-card.tsx");
+
+	// The experimental browser renders the standalone agent-card block (aliased to
+	// avoid clashing with the local default-card wrapper).
+	assert.match(source, /import \{ AgentCard as ExperimentalDirectoryCard \} from "@\/components\/blocks\/agent-card";/u);
+
+	// Built (normal) agents -> experimental-profile, with the more-menu kept and the
+	// trigger tinted to the card's cover text color.
+	assert.match(source, /function ExperimentalProfileCard/u);
+	assert.match(source, /<ExperimentalProfileCard agent=\{agent\} onSelectAgent=\{onSelectAgent\} \/>/u);
+	assert.match(source, /variant="experimental-profile"/u);
+	assert.match(source, /<DirectoryCardMoreMenu[\s\S]*triggerClassName="text-\[var\(--agent-card-cover-text-color\)\]/u);
+	assert.match(source, /active=\{moreMenuOpen\}/u);
+
+	// Templates -> experimental-template, mapped 1:1 from the template agent shape.
+	assert.match(source, /<ExperimentalDirectoryCard[\s\S]*variant="experimental-template"/u);
+	assert.match(source, /capabilities=\{agent\.capabilities \?\? EMPTY_TEMPLATE_CAPABILITIES\}/u);
+
+	// The card exposes the moreAction slot + active passthrough, and the cover
+	// illustration clears on hover only when there is a more action to reveal.
+	assert.match(card, /moreAction\?: ReactNode;/u);
+	assert.match(card, /const hasMoreAction = Boolean\(moreAction\) \|\| Boolean\(onMoreActions\);/u);
+	assert.match(card, /hasMoreAction[\s\S]*group-hover\/card:opacity-0/u);
+	assert.match(card, /\{moreAction \?\? \(onMoreActions \?/u);
+});
