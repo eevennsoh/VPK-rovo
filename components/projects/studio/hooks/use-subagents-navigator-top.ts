@@ -13,7 +13,8 @@ const DEFAULT_TOP_PX = 36;
 
 /**
  * Keeps the floating {@link SubagentsNavigator} top-aligned with the first line
- * of the agent instructions editor.
+ * of the agent instructions editor, whether the user is viewing rendered text
+ * or Markdown source.
  *
  * The instructions editor lives inside a scrollable column (the agent profile
  * sits above it), so its first text line moves as the user scrolls or as the
@@ -46,6 +47,13 @@ export function useSubagentsNavigatorTop(
 			if (!section) {
 				return null;
 			}
+			const markdownSource = section.querySelector<HTMLElement>(
+				"[data-rich-text-markdown-source]",
+			);
+			if (markdownSource) {
+				return markdownSource;
+			}
+
 			// The ProseMirror editor carries this class; its first child is the
 			// first rendered line/paragraph. Fall back to the editor or section
 			// element itself when content hasn't mounted yet.

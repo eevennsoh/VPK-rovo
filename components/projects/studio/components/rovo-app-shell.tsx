@@ -914,9 +914,6 @@ function HomeStarterBento({
 		bentoInteractingRef.current = interacting;
 		setBentoInteracting(interacting);
 	}, []);
-	const selectHomeStarterCategory = useCallback((category: HomeStarterCategory) => {
-		setActiveCategory(category);
-	}, []);
 
 	useEffect(() => {
 		if (!cycleRunning) {
@@ -1024,53 +1021,7 @@ function HomeStarterBento({
 			onPointerLeave={resetBentoPointer}
 			onPointerMove={handleBentoPointerMove}
 		>
-			<div className="flex flex-wrap justify-center gap-2">
-				{HOME_STARTER_CATEGORIES.map((category) => {
-					const isActive = activeCategory === category.id;
-					const showProgress = isActive && cycleRunning;
-
-					return (
-						<button
-							key={category.id}
-							type="button"
-							aria-pressed={isActive}
-							onClick={() => {
-								selectHomeStarterCategory(category.id);
-							}}
-							className={cn(
-								"relative isolate inline-flex h-8 shrink-0 items-center overflow-hidden rounded-md border px-3 text-sm font-medium leading-5 outline-none transition-[border-color,color,box-shadow] duration-fast ease-out focus-visible:ring-3 focus-visible:ring-ring/50",
-								isActive
-									? "border-border-selected bg-bg-selected text-text-selected"
-									: "border-border bg-background text-text-subtle hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
-							)}
-						>
-							<span className="relative z-[2] inline-flex items-center gap-1.5">
-								{category.iconSrc ? (
-									<span aria-hidden className="inline-flex size-6 shrink-0 items-center justify-center">
-										<Image
-											alt=""
-											className={cn("size-6 object-contain", category.iconClassName)}
-											height={24}
-											src={category.iconSrc}
-											width={24}
-										/>
-									</span>
-								) : null}
-								<span>{category.label}</span>
-							</span>
-							{showProgress ? (
-								<motion.span
-									aria-hidden
-									className="pointer-events-none absolute inset-0 z-[1] origin-left bg-bg-selected-hovered"
-									style={{ scaleX: cycleProgress, willChange: "transform" }}
-								/>
-							) : null}
-						</button>
-					);
-				})}
-			</div>
-
-			<div className="@container/bento relative mt-6" style={HOME_STARTER_CARD_GLOW_EFFECT_STYLE}>
+			<div className="@container/bento relative" style={HOME_STARTER_CARD_GLOW_EFFECT_STYLE}>
 				{/*
 					`-mt-2 pt-2` gives the masked content top headroom that nets to zero
 					visual shift: the bottom-fade mask clips its children to the box, so
@@ -1219,26 +1170,31 @@ function HomeStarterBento({
 							{/* Absolutely positioned so "Browse all" stays centered at rest. */}
 							<AnimatePresence initial={false}>
 								{browseAllHovered ? (
-									<motion.div
-										key="dismiss"
-										className="absolute left-full top-0 ml-2"
-										initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
-										animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
-										exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
-										transition={{ type: "spring", visualDuration: 0.25, bounce: 0.2 }}
-									>
-										<Button
-											type="button"
-											aria-label="Dismiss prompt starters"
-											variant="ghost"
-											size="compact"
-											className="h-7 rounded-full border-0 bg-surface px-3 text-sm leading-5 font-normal text-text-subtle hover:bg-surface-hovered"
-											style={{ boxShadow: token("elevation.shadow.overlay") }}
-											onClick={onDismiss}
+									<>
+										{/* Bridge the visual 8px gap so pointer movement from "Browse all" to
+										    "Dismiss" cannot fall through and hover a bento tile behind it. */}
+										<div aria-hidden className="pointer-events-auto absolute left-full top-0 h-7 w-2" />
+										<motion.div
+											key="dismiss"
+											className="absolute left-full top-0 ml-2"
+											initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
+											animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
+											exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
+											transition={{ type: "spring", visualDuration: 0.25, bounce: 0.2 }}
 										>
-											Dismiss
-										</Button>
-									</motion.div>
+											<Button
+												type="button"
+												aria-label="Dismiss prompt starters"
+												variant="ghost"
+												size="compact"
+												className="h-7 rounded-full border-0 bg-surface px-3 text-sm leading-5 font-normal text-text-subtle hover:bg-surface-hovered"
+												style={{ boxShadow: token("elevation.shadow.overlay") }}
+												onClick={onDismiss}
+											>
+												Dismiss
+											</Button>
+										</motion.div>
+									</>
 								) : null}
 							</AnimatePresence>
 						</div>
@@ -4449,12 +4405,12 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				>
 					<Badge
 						variant={
-							activeSessionAgentEntry.publishStatus === "published"
+							activeSessionAgentEntry.publishedVersion > 0 || activeSessionAgentEntry.publishedResult
 								? "success"
 								: "primary"
 						}
 					>
-						{activeSessionAgentEntry.publishStatus === "published"
+						{activeSessionAgentEntry.publishedVersion > 0 || activeSessionAgentEntry.publishedResult
 							? "Published"
 							: "Testing"}
 					</Badge>

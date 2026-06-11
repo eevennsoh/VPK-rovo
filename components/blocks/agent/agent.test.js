@@ -72,9 +72,14 @@ test("Agent is exposed as a website block", () => {
 
 test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /RichTextEditor,[\s\S]*\} from "@\/components\/ui-custom\/rich-text-editor";/u);
+	assert.match(AGENT_SOURCE, /import type \{ EditorToolbarViewMode \} from "@\/components\/blocks\/editor-toolbar";/u);
 	assert.match(AGENT_SOURCE, /function AgentInstructionsComposer/u);
 	assert.match(AGENT_SOURCE, /<RichTextEditor[\s\S]*aria-label="Agent instructions"/u);
 	assert.match(AGENT_SOURCE, /editorClassName=\{cn\("agent-instructions-tiptap-editor text-text", editorClassName\)\}/u);
+	assert.match(AGENT_SOURCE, /onViewModeChange\?: \(mode: EditorToolbarViewMode\) => void;/u);
+	assert.match(AGENT_SOURCE, /onInstructionsViewModeChange\?: \(mode: EditorToolbarViewMode\) => void;/u);
+	assert.match(AGENT_SOURCE, /onViewModeChange=\{onViewModeChange\}/u);
+	assert.match(AGENT_SOURCE, /onViewModeChange=\{onInstructionsViewModeChange\}/u);
 	assert.match(AGENT_SOURCE, /placeholder="Press \/ to help me describe the agent's role, or start with a template"/u);
 	assert.match(AGENT_SOURCE, /placeholderSlot=\{\([\s\S]*className="tiptap-editor text-sm leading-\[1\.55\] text-text-subtlest"[\s\S]*Press <code>\/<\/code> to help me describe the agent&apos;s role,[\s\S]*start with a template[\s\S]*\)\}/u);
 	// When a host provides onStartWithTemplate it takes over (opens its own
@@ -357,27 +362,27 @@ test("Compact agent config opts into the typed Triggers editor without replacing
 	assert.doesNotMatch(AGENT_SOURCE, /<Triggers[\s\S]{0,400}layout="default"/u);
 });
 
-test("Agent header renders Test and Configure as a self-contained compact ToggleGroup", () => {
-	// The default header uses an outline ToggleGroup at the default size (32px /
-	// h-8) instead of the Tabs control. Consumers that need controlled tabs still
-	// override via the `actions` prop.
-	assert.match(AGENT_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
+test("Agent header renders Test as a button and leaves Details in the compact nav", () => {
 	assert.match(AGENT_SOURCE, /primaryActionLabel = "Test"/u);
-	assert.match(AGENT_SOURCE, /secondaryActionLabel = "Configure"/u);
 	assert.match(AGENT_SOURCE, /publishLabel = "Publish"/u);
-	// ToggleGroup carries its own context, so the default actions render it
-	// directly (variant="outline", default size) alongside a Publish button.
 	assert.match(
 		AGENT_SOURCE,
-		/\{actions \?\? \([\s\S]*<ToggleGroup[\s\S]*aria-label="Agent views"[\s\S]*defaultValue=\{\["configure"\]\}[\s\S]*variant="outline"[\s\S]*<ToggleGroupItem value="test">[\s\S]*\{primaryActionLabel\}[\s\S]*<ToggleGroupItem value="configure">[\s\S]*\{secondaryActionLabel\}[\s\S]*<\/ToggleGroup>[\s\S]*<Button[\s\S]*\{publishLabel\}[\s\S]*<\/Button>/u,
+		/\{actions \?\? \([\s\S]*<AgentMoreOptionsMenu \/>[\s\S]*<Button type="button" size="default" variant="outline">[\s\S]*\{primaryActionLabel\}[\s\S]*<\/Button>[\s\S]*<Button type="button" size="default" variant="default">[\s\S]*\{publishLabel\}[\s\S]*<\/Button>/u,
 	);
-	// Tabs still back the knowledge-mode segmented control, but the default
-	// header actions are ToggleGroup-owned.
 	const agentHeaderSource = AGENT_SOURCE.slice(
 		AGENT_SOURCE.indexOf("export const AgentHeader = memo"),
 		AGENT_SOURCE.indexOf("export type AgentContentProps"),
 	);
+	assert.doesNotMatch(AGENT_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
+	assert.doesNotMatch(agentHeaderSource, /<ToggleGroup/u);
+	assert.doesNotMatch(agentHeaderSource, /Configure/u);
 	assert.doesNotMatch(agentHeaderSource, /<TabsTrigger/u);
+});
+
+test("Agent compact header nav keeps 8px between avatar and nav items", () => {
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_HEADER_AVATAR_NAV_GAP = 8;/u);
+	assert.match(AGENT_SOURCE, /<div className="flex min-w-0 flex-1 items-center" style=\{\{ gap: AGENT_COMPACT_HEADER_AVATAR_NAV_GAP \}\}>/u);
+	assert.doesNotMatch(AGENT_SOURCE, /<div className="flex min-w-0 flex-1 items-center gap-1">/u);
 });
 
 test("Agent component page wires compact filled and empty placeholder variations", () => {
@@ -609,18 +614,20 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /isExpanded \? \(\s*<ChevronDownIcon label="" size="small" \/>\s*\) : \(\s*<ChevronUpIcon label="" size="small" \/>\s*\)/u);
 	// Reduced motion drops the animation duration.
 	assert.match(AGENT_SOURCE, /shouldReduceMotion \? \{ duration: 0 \} : \{ duration: 0\.2, ease: "easeOut" as const \}/u);
-	assert.match(AGENT_SOURCE, /import \{ MoreHorizontalIcon, PlusIcon \} from "@\/components\/ui\/vpk-icons";/u);
+	assert.match(AGENT_SOURCE, /import \{ LayoutDashboardIcon, MoreHorizontalIcon, PlusIcon \} from "@\/components\/ui\/vpk-icons";/u);
 	assert.doesNotMatch(AGENT_SOURCE, /PlusCircleIcon/u);
 	assert.doesNotMatch(AGENT_SOURCE, /agent-compact-config-marker/u);
 	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Add agent configuration"/u);
 	assert.match(AGENT_SOURCE, /export function AgentCompactHeaderNav/u);
-	assert.match(AGENT_SOURCE, /AGENT_COMPACT_HEADER_NAV_ITEMS = \[[\s\S]*label: "Insights"[\s\S]*label: "Access"/u);
-	assert.doesNotMatch(AGENT_SOURCE, /label: "Details"/u);
+	assert.match(AGENT_SOURCE, /AGENT_COMPACT_HEADER_NAV_ITEMS = \[[\s\S]*label: "Details"[\s\S]*label: "Insights"[\s\S]*label: "Access"/u);
+	assert.match(AGENT_SOURCE, /<LayoutDashboardIcon size="small" \/>/u);
 	assert.match(AGENT_SOURCE, /<ChartTrendUpIcon label="" size="small" color="currentColor" \/>/u);
 	assert.match(AGENT_SOURCE, /<ScorecardIcon label="" size="small" color="currentColor" \/>/u);
 	assert.match(AGENT_SOURCE, /import \{[\s\S]*DropdownMenu,[\s\S]*DropdownMenuContent,[\s\S]*DropdownMenuGroup,[\s\S]*DropdownMenuItem,[\s\S]*DropdownMenuTrigger,[\s\S]*\} from "@\/components\/ui\/dropdown-menu";/u);
 	assert.match(AGENT_SOURCE, /computeContextBarOverflow\([\s\S]*AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH,[\s\S]*AGENT_COMPACT_HEADER_NAV_GAP/u);
 	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_HEADER_NAV_GAP = 4;/u);
+	assert.match(AGENT_SOURCE, /const AGENT_COMPACT_HEADER_AVATAR_NAV_GAP = 8;/u);
+	assert.match(AGENT_SOURCE, /<div className="flex min-w-0 flex-1 items-center" style=\{\{ gap: AGENT_COMPACT_HEADER_AVATAR_NAV_GAP \}\}>/u);
 	// Header nav clips horizontal overflow (so the "…" menu absorbs hidden items)
 	// but keeps a 6px clip margin + vertical room so the active (outline) button's
 	// offset focus ring isn't sheared off at the edge.
@@ -675,11 +682,15 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// old "Compact"-named demos and the `layout` prop are gone.
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoFull/u);
 	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-full"/u);
-	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoFull[\s\S]*<AgentCompactHeaderNav activeSection=\{activeSection\} onSectionChange=\{setActiveSection\} \/>/u);
+	assert.match(AGENT_DEMO_SOURCE, /import \{ Toggle \} from "@\/components\/ui\/toggle";/u);
+	assert.match(AGENT_DEMO_SOURCE, /const \[activeSection, setActiveSection\] = useState<AgentCompactHeaderSection \| null>\("details"\);/u);
+	assert.match(AGENT_DEMO_SOURCE, /const lastSectionRef = useRef<AgentCompactHeaderSection>\("details"\);/u);
+	assert.match(AGENT_DEMO_SOURCE, /function handleHeaderSectionChange\(section: AgentCompactHeaderSection\) \{[\s\S]*lastSectionRef\.current = section;[\s\S]*setActiveView\("configure"\);[\s\S]*setActiveSection\(section\);[\s\S]*\}/u);
+	assert.match(AGENT_DEMO_SOURCE, /function handleTestPressedChange\(pressed: boolean\) \{[\s\S]*if \(pressed\) \{[\s\S]*lastSectionRef\.current = activeSection;[\s\S]*setActiveView\("test"\);[\s\S]*setActiveSection\(null\);[\s\S]*return;[\s\S]*\}[\s\S]*setActiveView\("configure"\);[\s\S]*setActiveSection\(lastSectionRef\.current \?\? "details"\);[\s\S]*\}/u);
+	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoFull[\s\S]*<AgentCompactHeaderNav activeSection=\{activeSection\} onSectionChange=\{handleHeaderSectionChange\} \/>/u);
 	assert.match(AGENT_DEMO_SOURCE, /function AgentDemoHeaderActions/u);
-	assert.match(AGENT_DEMO_SOURCE, /aria-label="Agent config views"[\s\S]*value=\{\[activeView\]\}[\s\S]*<ToggleGroupItem value="test"[\s\S]*>Test<\/ToggleGroupItem>[\s\S]*<ToggleGroupItem value="configure"[\s\S]*>Configure<\/ToggleGroupItem>/u);
-	assert.match(AGENT_DEMO_SOURCE, /<ToggleGroupItem value="test" onClick=\{\(\) => onViewChange\("test"\)\}>Test<\/ToggleGroupItem>/u);
-	assert.match(AGENT_DEMO_SOURCE, /<ToggleGroupItem value="configure" onClick=\{\(\) => onViewChange\("configure"\)\}>Configure<\/ToggleGroupItem>/u);
+	assert.match(AGENT_DEMO_SOURCE, /<Toggle[\s\S]*aria-label="Toggle agent test view"[\s\S]*onPressedChange=\{onTestPressedChange\}[\s\S]*pressed=\{activeView === "test"\}[\s\S]*variant="outline"[\s\S]*Test[\s\S]*<\/Toggle>/u);
+	assert.doesNotMatch(AGENT_DEMO_SOURCE, /aria-label="Agent config views"|<ToggleGroup|<ToggleGroupItem|>Configure<\/ToggleGroupItem>/u);
 	assert.match(AGENT_DEMO_SOURCE, /import \{ AgentTestPanel \} from "@\/components\/projects\/studio\/components\/rovo-app-agent-test-panel";/u);
 	assert.match(AGENT_DEMO_SOURCE, /ConversationStartersDialog,[\s\S]*DEFAULT_STARTER_ICON,[\s\S]*type ConversationStarter,[\s\S]*type StarterIconKey,/u);
 	assert.match(AGENT_DEMO_SOURCE, /function buildAgentDemoTestEntry\(config: AgentConfigFormValue\): StudioSessionAgentEntry/u);
@@ -694,7 +705,8 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_DEMO_SOURCE, /export default function AgentDemo/u);
 	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoEmpty/u);
 	assert.match(AGENT_DEMO_SOURCE, /idPrefix="agent-demo-empty"/u);
-	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoEmpty[\s\S]*<AgentCompactHeaderNav activeSection=\{activeSection\} onSectionChange=\{setActiveSection\} \/>/u);
+	assert.match(AGENT_DEMO_SOURCE, /export function AgentDemoEmpty[\s\S]*<AgentCompactHeaderNav activeSection=\{activeSection\} onSectionChange=\{handleHeaderSectionChange\} \/>/u);
+	assert.match(AGENT_DEMO_SOURCE, /activeSection === "details"[\s\S]*return configView;/u);
 	assert.match(AGENT_DEMO_SOURCE, /activeSection === "insights"[\s\S]*<AgentCompactInsightsPanel \/>/u);
 	assert.match(AGENT_DEMO_SOURCE, /activeSection === "surfaces"[\s\S]*<AgentCompactSurfacesPanel \/>/u);
 	assert.match(AGENT_DEMO_SOURCE, /activeSection === "evaluation"[\s\S]*<AgentCompactEvaluationPanel \/>/u);
@@ -1414,6 +1426,9 @@ test("Shared toolbar exposes far-right rendered and Markdown mode tabs gated by 
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, />\s*Markdown\s*</u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /Show Markdown source/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /dataFlowConfig\?: StudioAgentDataFlowConfig;/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /onViewModeChange\?: \(mode: EditorToolbarViewMode\) => void;/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /function updateViewMode\(nextMode: EditorToolbarViewMode\): void \{[\s\S]*setViewMode\(nextMode\);[\s\S]*onViewModeChange\?\.\(nextMode\);/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /useEffect\(\(\) => \{[\s\S]*onViewModeChange\?\.\(viewMode\);[\s\S]*\}, \[onViewModeChange, viewMode\]\);/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /mode=\{viewMode\}/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /showDataFlowMode=\{Boolean\(dataFlowConfig\)\}/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /data-rich-text-data-flow-diagram/u);

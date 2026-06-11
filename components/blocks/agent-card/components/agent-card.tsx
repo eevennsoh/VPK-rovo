@@ -515,6 +515,7 @@ export function AgentCard({
 	}
 
 	if (variant === "experimental" || variant === "experimental-template") {
+		const isExperimentalTemplate = variant === "experimental-template";
 		const coverColor = coverBackgroundColor ?? getAgentCardBannerCoverColor(avatarSrc);
 		const coverStyle = {
 			"--agent-card-cover-color": coverColor,
@@ -569,8 +570,11 @@ export function AgentCard({
 						</div>
 					) : null}
 					<div
-						className="relative z-10 flex shrink-0 flex-col gap-3 rounded-t-[16px] bg-[var(--agent-card-cover-color)] px-4 pt-4 pb-4 text-text-inverse"
-						style={STAMP_PERFORATION_BOTTOM_MASK_STYLE}
+						className={cn(
+							"relative z-10 flex shrink-0 flex-col rounded-t-[16px] bg-[var(--agent-card-cover-color)] px-4 text-text-inverse",
+							isExperimentalTemplate ? "gap-2 pt-3 pb-3" : "gap-3 pt-4 pb-4",
+						)}
+						style={isExperimentalTemplate ? undefined : STAMP_PERFORATION_BOTTOM_MASK_STYLE}
 					>
 						<div className="relative flex items-center gap-3">
 							<div aria-hidden className="group/avatar relative h-10 w-[35px] shrink-0" data-size="lg">
@@ -613,8 +617,14 @@ export function AgentCard({
 								/>
 							) : null)}
 						</div>
-						<div className="relative flex flex-col gap-3">
-							<AgentCardDescription className={cn("line-clamp-3 min-h-0", EXPERIMENTAL_COVER_TEXT_CLASS_NAME)}>
+						<div className={cn("relative flex flex-col", isExperimentalTemplate ? "gap-2" : "gap-3")}>
+							<AgentCardDescription
+								className={cn(
+									"min-h-0",
+									isExperimentalTemplate ? "line-clamp-2" : "line-clamp-3",
+									EXPERIMENTAL_COVER_TEXT_CLASS_NAME,
+								)}
+							>
 								{description ?? `Learn how ${name} can help your team work faster.`}
 							</AgentCardDescription>
 
@@ -685,10 +695,13 @@ export function AgentCard({
 
 					<div
 						className="relative z-10 flex min-h-0 flex-auto flex-col rounded-b-[16px] bg-[var(--agent-card-detail-color)]"
-						style={STAMP_PERFORATION_TOP_MASK_STYLE}
+						style={isExperimentalTemplate ? undefined : STAMP_PERFORATION_TOP_MASK_STYLE}
 					>
 						<div
-							className="pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-4 pb-4 text-text [scrollbar-gutter:stable]"
+							className={cn(
+								"pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col overflow-y-auto px-4 text-text [scrollbar-gutter:stable]",
+								isExperimentalTemplate ? "gap-1.5 pt-2 pb-2" : "gap-3 pt-4 pb-4",
+							)}
 							data-slot="agent-card-scroll"
 							onClick={onSelect ? handleBodyClick : undefined}
 							onScroll={handleBodyScroll}
@@ -718,10 +731,11 @@ export function AgentCard({
 
 							{capabilities.length > 0 ? (
 								<>
-									<div className={cn("py-1.5", EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME)}>
+									<div className={cn(isExperimentalTemplate ? "py-0.5" : "py-1.5", EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME)}>
 										<Separator className="bg-current opacity-30" />
 									</div>
 									<AgentCardCapabilities
+										className={isExperimentalTemplate ? "gap-0.5" : undefined}
 										iconClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}
 										items={capabilities}
 										itemClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}

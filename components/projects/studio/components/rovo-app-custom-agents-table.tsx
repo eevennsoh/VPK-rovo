@@ -129,11 +129,11 @@ function formatRelativeModifiedTime(timestamp: number): string {
 }
 
 function getVersionLabel(entry: StudioSessionAgentEntry): string {
-	return entry.publishStatus === "published" ? "V1" : "Draft";
+	return entry.publishedVersion > 0 || entry.publishedResult ? `V${entry.publishedVersion || 1}` : "Draft";
 }
 
 function getVersionVariant(entry: StudioSessionAgentEntry): "success" | "neutral" {
-	return entry.publishStatus === "published" ? "success" : "neutral";
+	return entry.publishedVersion > 0 || entry.publishedResult ? "success" : "neutral";
 }
 
 function derivePublisher(byline: string): string {

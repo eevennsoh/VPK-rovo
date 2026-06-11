@@ -17,6 +17,7 @@ const EXPECTED_SLUGS = [
 	"composed-chart",
 	"funnel-chart",
 	"gauge-chart",
+	"heatmap-chart",
 	"legend",
 	"line-chart",
 	"live-line-chart",

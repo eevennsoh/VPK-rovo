@@ -64,6 +64,7 @@ import {
 	EditorPaletteSearchPicker,
 	type EditorPaletteSearchCategory,
 } from "@/components/blocks/editor-palette/page";
+import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import { Accordion,
 	AccordionContent,
 	AccordionItem,
@@ -100,8 +101,7 @@ import { Input } from "@/components/ui/input";
 import { Lozenge, LozengeDropdownTrigger } from "@/components/ui/lozenge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tag, type TagColor } from "@/components/ui/tag";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { MoreHorizontalIcon, PlusIcon } from "@/components/ui/vpk-icons";
+import { LayoutDashboardIcon, MoreHorizontalIcon, PlusIcon } from "@/components/ui/vpk-icons";
 import { computeContextBarOverflow } from "@/components/ui-custom/context-bar/overflow";
 import {
 	type RichTextMentionItem,
@@ -492,10 +492,8 @@ export const Agent = memo(({ className, ...props }: Readonly<AgentProps>) => (
 	/>
 ));
 
-// "Details" was dropped — it duplicated the "Configure" view already exposed by
-// the header's Configure/Test toggle, so the active config view is no longer a
-// nav tab here.
 const AGENT_COMPACT_HEADER_NAV_ITEMS = [
+	{ icon: <LayoutDashboardIcon size="small" />, label: "Details", value: "details" },
 	{ icon: <ChartTrendUpIcon label="" size="small" color="currentColor" />, label: "Insights", value: "insights" },
 	{ icon: <ViewsIcon label="" size="small" color="currentColor" />, label: "Surfaces", value: "surfaces" },
 	{ icon: <ScorecardIcon label="" size="small" color="currentColor" />, label: "Evaluation", value: "evaluation" },
@@ -504,8 +502,12 @@ const AGENT_COMPACT_HEADER_NAV_ITEMS = [
 ] as const;
 
 export type AgentCompactHeaderSection = (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[number]["value"];
+export type AgentCompactHeaderNavItem = (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[number];
+export const AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS = AGENT_COMPACT_HEADER_NAV_ITEMS.filter((item) => item.value !== "details");
+export const AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM = AGENT_COMPACT_HEADER_NAV_ITEMS[0];
 
 const AGENT_COMPACT_HEADER_NAV_GAP = 4;
+const AGENT_COMPACT_HEADER_AVATAR_NAV_GAP = 8;
 const AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH = 24;
 
 function AgentCompactHeaderNavButton({
@@ -514,7 +516,7 @@ function AgentCompactHeaderNavButton({
 	onSectionChange,
 }: Readonly<{
 	activeSection?: AgentCompactHeaderSection | null;
-	item: (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[number];
+	item: AgentCompactHeaderNavItem;
 	onSectionChange?: (section: AgentCompactHeaderSection) => void;
 }>) {
 	const isSelected = activeSection === item.value;
@@ -542,17 +544,19 @@ function AgentCompactHeaderNavButton({
 export function AgentCompactHeaderNav({
 	activeSection = null,
 	avatarSrc = AGENT_AVATAR_SRC,
+	items = AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS,
 	onSectionChange,
 }: Readonly<{
 	activeSection?: AgentCompactHeaderSection | null;
 	avatarSrc?: string;
+	items?: readonly AgentCompactHeaderNavItem[];
 	onSectionChange?: (section: AgentCompactHeaderSection) => void;
 }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const measureRef = useRef<HTMLDivElement>(null);
-	const [visibleCount, setVisibleCount] = useState<number>(AGENT_COMPACT_HEADER_NAV_ITEMS.length);
-	const visibleItems = AGENT_COMPACT_HEADER_NAV_ITEMS.slice(0, visibleCount);
-	const hiddenItems = AGENT_COMPACT_HEADER_NAV_ITEMS.slice(visibleCount);
+	const [visibleCount, setVisibleCount] = useState<number>(items.length);
+	const visibleItems = items.slice(0, visibleCount);
+	const hiddenItems = items.slice(visibleCount);
 
 	useLayoutEffect(() => {
 		const container = containerRef.current;
@@ -577,10 +581,14 @@ export function AgentCompactHeaderNav({
 		const observer = new ResizeObserver(recompute);
 		observer.observe(container);
 		return () => observer.disconnect();
-	}, []);
+	}, [items]);
+
+	useEffect(() => {
+		setVisibleCount(items.length);
+	}, [items.length]);
 
 	return (
-		<div className="flex min-w-0 flex-1 items-center gap-1">
+		<div className="flex min-w-0 flex-1 items-center" style={{ gap: AGENT_COMPACT_HEADER_AVATAR_NAV_GAP }}>
 			<Avatar label="Agent" shape="hexagon" size="sm">
 				{isAtlassianLogoSource(avatarSrc) ? (
 					<AtlassianLogo name="atlassian" label="Agent" size="small" />
@@ -602,7 +610,7 @@ export function AgentCompactHeaderNav({
 			>
 				<div aria-hidden className="pointer-events-none absolute top-0 left-0 h-0 w-0 overflow-clip">
 					<div className="invisible flex items-center" ref={measureRef} style={{ gap: AGENT_COMPACT_HEADER_NAV_GAP }}>
-						{AGENT_COMPACT_HEADER_NAV_ITEMS.map((item) => (
+						{items.map((item) => (
 							<AgentCompactHeaderNavButton
 								activeSection={activeSection}
 								item={item}
@@ -684,7 +692,6 @@ export type AgentHeaderProps = ComponentProps<"div"> & {
 	model?: string;
 	leadingContent?: ReactNode;
 	primaryActionLabel?: string;
-	secondaryActionLabel?: string;
 	publishLabel?: string;
 	showActions?: boolean;
 	actions?: ReactNode;
@@ -739,7 +746,6 @@ export const AgentHeader = memo(
 		model,
 		name,
 		primaryActionLabel = "Test",
-		secondaryActionLabel = "Configure",
 		publishLabel = "Publish",
 		showActions = true,
 		actions,
@@ -774,26 +780,11 @@ export const AgentHeader = memo(
 			{showActions ? (
 				<div className="flex shrink-0 items-center gap-2">
 					{actions ?? (
-						// Self-contained compact ToggleGroup so the default
-						// Configure/Test header works standalone. Consumers that need
-						// controlled tabs (e.g. the compact agent config panel) pass
-						// `actions` to supply their own tab parts wired to outer state
-						// instead. ToggleGroup carries its own context, so no wrapper
-						// is required here.
 						<>
 							<AgentMoreOptionsMenu />
-							<ToggleGroup
-								aria-label="Agent views"
-								defaultValue={["configure"]}
-								variant="outline"
-							>
-								<ToggleGroupItem value="test">
-									{primaryActionLabel}
-								</ToggleGroupItem>
-								<ToggleGroupItem value="configure">
-									{secondaryActionLabel}
-								</ToggleGroupItem>
-							</ToggleGroup>
+							<Button type="button" size="default" variant="outline">
+								{primaryActionLabel}
+							</Button>
 							<Button type="button" size="default" variant="default">
 								{publishLabel}
 							</Button>
@@ -3557,6 +3548,7 @@ function AgentInstructionsComposer({
 	onOpenDirectory,
 	onRemoveReferenceValue,
 	onStartWithTemplate,
+	onViewModeChange,
 	screenAssistantTargetId,
 	showSectionLabel = true,
 	toolbarBelowSlot,
@@ -3575,6 +3567,7 @@ function AgentInstructionsComposer({
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	onRemoveReferenceValue?: (field: AgentConfigReferenceListFieldName, value: string) => void;
 	onStartWithTemplate?: () => void;
+	onViewModeChange?: (mode: EditorToolbarViewMode) => void;
 	screenAssistantTargetId?: string;
 	showSectionLabel?: boolean;
 	toolbarBelowSlot?: ReactNode;
@@ -3735,6 +3728,7 @@ function AgentInstructionsComposer({
 				)}
 				onInsertReferenceOption={handleInsertReferenceOption}
 				onOpenDirectory={handleOpenDirectory}
+				onViewModeChange={onViewModeChange}
 				suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
 				toolbarBelowSlot={toolbarBelowSlot}
 				value={instructions}
@@ -4126,6 +4120,7 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	// triggers, subagents, and conversation starters can't be configured.
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	idPrefix: string;
+	onInstructionsViewModeChange?: (mode: EditorToolbarViewMode) => void;
 	onManageSubagents?: () => void;
 	onProfileTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
@@ -4176,6 +4171,7 @@ export const AgentConfigFields = memo(
 		onAddListValues,
 		onAppendListItem,
 		onConnectTrigger,
+		onInstructionsViewModeChange,
 		onManageTriggers,
 		onManageSubagents,
 		onOpenDirectory,
@@ -4397,6 +4393,7 @@ export const AgentConfigFields = memo(
 							onOpenDirectory={handleOpenDirectory}
 							onRemoveReferenceValue={handleRemoveReferenceValue}
 							onStartWithTemplate={onStartWithTemplate}
+							onViewModeChange={onInstructionsViewModeChange}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 							showSectionLabel={false}
 						/>

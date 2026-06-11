@@ -2,7 +2,13 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
+import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CrossIcon from "@atlaskit/icon/core/cross";
+import ClockIcon from "@atlaskit/icon/core/clock";
+import LinkExternalIcon from "@atlaskit/icon/core/link-external";
+import PageIcon from "@atlaskit/icon/core/page";
 
 import { KnowledgeDirectoryDialog, type KnowledgeDirectoryAddPayload } from "@/components/blocks/knowledge-directory";
 import { Memory } from "@/components/blocks/memory";
@@ -42,6 +48,8 @@ import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-
 import { useSubagentsNavigatorTop } from "@/components/projects/studio/hooks/use-subagents-navigator-top";
 import {
 	Agent,
+	AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS,
+	AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM,
 	AgentCompactHeaderNav,
 	type AgentCompactHeaderSection,
 	AgentConfigFields,
@@ -53,22 +61,37 @@ import {
 	type AgentConfigTextFieldName,
 	type AgentHideableConfigField,
 } from "@/components/blocks/agent";
+import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import type { ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-chat/lib/chat-context-bar";
 import { getStudioSessionAgentDisplayName, useRovoChat } from "@/app/contexts";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Icon } from "@/components/ui/icon";
+import { SONNER_TOAST_AUTO_DISMISS_MS, SonnerToast, Toaster } from "@/components/ui/sonner";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Toggle } from "@/components/ui/toggle";
 import type {
 	StudioSessionAgentEntry,
 } from "@/app/contexts/context-rovo-chat";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { cn } from "@/lib/utils";
+import { getStudioAgentChangeSummary, type StudioAgentChangeSection, type StudioAgentChangeSummary } from "@/components/projects/studio/lib/studio-agent-versioning";
 
 type AgentResult = RovoDataParts["agent-result"];
 export type AgentConfigView = "configure" | "insights" | "test";
+type PublishDropdownView = "summary" | "draftChanges" | "history" | "versionDetail";
+
+const STUDIO_AGENT_PUBLISH_TOASTER_ID = "studio-agent-publish-toaster";
+const STUDIO_AGENT_PROFILE_BASE_PATH = "/agents";
 
 // Capabilities a subagent can't own. Hidden from the config rows while a
 // subagent prompt is selected/created (these aren't configurable per-subagent).
@@ -107,6 +130,381 @@ function stringifyForComparison(value: unknown): string {
 	}
 }
 
+function formatRelativeTime(timestamp: number | null): string {
+	if (!timestamp || !Number.isFinite(timestamp)) {
+		return "Not published yet";
+	}
+
+	const elapsedMs = Math.max(0, Date.now() - timestamp);
+	const elapsedMinutes = Math.floor(elapsedMs / 60_000);
+	if (elapsedMinutes < 1) {
+		return "Just now";
+	}
+	if (elapsedMinutes < 60) {
+		return `${elapsedMinutes}m ago`;
+	}
+
+	const elapsedHours = Math.floor(elapsedMinutes / 60);
+	if (elapsedHours < 24) {
+		return `${elapsedHours}h ago`;
+	}
+
+	const elapsedDays = Math.floor(elapsedHours / 24);
+	return `${elapsedDays}d ago`;
+}
+
+function formatAbsoluteDateTime(timestamp: number): string {
+	return new Intl.DateTimeFormat("en-US", {
+		dateStyle: "medium",
+		timeStyle: "short",
+	}).format(new Date(timestamp));
+}
+
+function getChangeCountLabel(changeSummary: StudioAgentChangeSummary): string {
+	return changeSummary.count === 1 ? "1 change" : `${changeSummary.count} changes`;
+}
+
+function getDraftChangeCountLabel(changeSummary: StudioAgentChangeSummary): string {
+	return changeSummary.count === 0
+		? "No unpublished changes"
+		: `${changeSummary.count} unpublished ${changeSummary.count === 1 ? "change" : "changes"}`;
+}
+
+function getDraftChangePreviewLabel(changeSummary: StudioAgentChangeSummary, publishedVersionLabel: string): string {
+	if (changeSummary.count === 0) {
+		return `Latest matches ${publishedVersionLabel}`;
+	}
+
+	const visibleLabels = changeSummary.sections.slice(0, 2).map((section) => section.label);
+	const hiddenCount = Math.max(0, changeSummary.sections.length - visibleLabels.length);
+
+	if (hiddenCount > 0) {
+		return `${visibleLabels.join(", ")} +${hiddenCount} more`;
+	}
+
+	return visibleLabels.join(", ");
+}
+
+function getChangeStatusLabel(section: StudioAgentChangeSection): string {
+	if (section.status === "Modified" && (section.addedCount || section.removedCount)) {
+		return `+${section.addedCount ?? 0} -${section.removedCount ?? 0}`;
+	}
+	return section.status;
+}
+
+function getChangeStatusClassName(section: StudioAgentChangeSection): string {
+	if (section.status === "Added") {
+		return "text-text-success";
+	}
+	if (section.status === "Removed") {
+		return "text-text-danger";
+	}
+	return "text-text-subtle";
+}
+
+function getPublishProfileHref(profileId: string): string {
+	return `${STUDIO_AGENT_PROFILE_BASE_PATH}?agent=${encodeURIComponent(profileId)}`;
+}
+
+function AgentSaveStatusIndicator({
+	savedAt,
+	status,
+}: Readonly<{
+	savedAt: number | null;
+	status: "idle" | "saving" | "saved" | "error";
+}>) {
+	const label = status === "saving"
+		? "Saving..."
+		: status === "error"
+			? "Unable to save"
+			: savedAt
+				? "Saved just now"
+				: "Saved";
+
+	return (
+		<div
+			className={cn(
+				"flex min-w-[92px] items-center gap-1.5 text-xs leading-4",
+				status === "error" ? "text-text-danger" : "text-text-subtle",
+			)}
+			aria-live="polite"
+		>
+			{status === "saving" ? <Spinner size="xs" className="text-text-subtle" /> : null}
+			<span>{label}</span>
+		</div>
+	);
+}
+
+function AgentPublishChangeList({
+	changeSummary,
+	limit = 4,
+}: Readonly<{
+	changeSummary: StudioAgentChangeSummary;
+	limit?: number;
+}>) {
+	const visibleSections = changeSummary.sections.slice(0, limit);
+	const hiddenCount = Math.max(0, changeSummary.sections.length - visibleSections.length);
+
+	if (changeSummary.count === 0) {
+		return (
+			<div className="rounded-sm bg-bg-neutral-subtle px-3 py-2 text-sm text-text-subtle">
+				No unpublished changes
+			</div>
+		);
+	}
+
+	return (
+		<div className="flex flex-col divide-y divide-border">
+			{visibleSections.map((section) => (
+				<div className="flex items-center gap-2 py-2 text-sm" key={section.id}>
+					<Icon aria-hidden render={<PageIcon label="" size="small" />} />
+					<span className="min-w-0 flex-1 truncate text-text">{section.label}</span>
+					<span className={cn("shrink-0", getChangeStatusClassName(section))}>
+						{getChangeStatusLabel(section)}
+					</span>
+				</div>
+			))}
+			{hiddenCount > 0 ? (
+				<div className="py-2 text-sm text-text-subtle">
+					+{hiddenCount} more
+				</div>
+			) : null}
+		</div>
+	);
+}
+
+function AgentPublishDropdown({
+	changeSummary,
+	entry,
+	onBackToLatest,
+	onPreviewVersion,
+	onPublishUpdate,
+	onRestoreVersion,
+	previewVersionId,
+}: Readonly<{
+	changeSummary: StudioAgentChangeSummary;
+	entry: StudioSessionAgentEntry;
+	onBackToLatest: () => void;
+	onPreviewVersion: (versionId: string) => void;
+	onPublishUpdate: () => void;
+	onRestoreVersion: (versionId: string) => void;
+	previewVersionId: string | null;
+}>) {
+	const [view, setView] = useState<PublishDropdownView>("summary");
+	const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+	const selectedVersion = selectedVersionId
+		? entry.versionHistory.find((version) => version.id === selectedVersionId) ?? null
+		: null;
+	const publishedVersions = entry.versionHistory.filter((version) => version.kind === "publish" || version.kind === "update");
+	const hasChanges = changeSummary.count > 0;
+	const profileHref = getPublishProfileHref(entry.profile.id);
+	const publishedVersionLabel = `V${entry.publishedVersion || 1}`;
+
+	const resetToSummary = () => {
+		setView("summary");
+		setSelectedVersionId(null);
+	};
+
+	return (
+		<DropdownMenu onOpenChange={(open) => {
+			if (!open) {
+				resetToSummary();
+			}
+		}}>
+			<DropdownMenuTrigger
+				render={(
+					<Button
+						type="button"
+						size="default"
+						variant="default"
+						data-testid="agent-config-publish"
+						data-screen-assistant-target="studio-agent-config-publish"
+					/>
+				)}
+			>
+				<span className="inline-flex items-center gap-2">
+					Publish
+					{hasChanges ? (
+						<Badge className="h-5 min-w-5 justify-center px-1.5" variant="primaryInverted">
+							{changeSummary.count}
+						</Badge>
+					) : null}
+				</span>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" className="w-[360px] p-0">
+				{view === "summary" ? (
+					<div className="flex flex-col">
+						<div className="flex items-start gap-3 p-4">
+							<Icon aria-hidden render={<LinkExternalIcon label="" size="small" />} />
+							<div className="min-w-0 flex-1">
+								<a className="block truncate text-sm font-medium text-link hover:underline" href={profileHref}>
+									{profileHref}
+								</a>
+								<div className="mt-1 text-xs text-text-subtle">
+									V{entry.publishedVersion || 1} · {formatRelativeTime(entry.lastPublishedAt)} · by {entry.lastPublishedBy ?? "Venn Soh"}
+								</div>
+							</div>
+						</div>
+						<DropdownMenuSeparator />
+						<button
+							type="button"
+							className="flex items-center gap-3 px-4 py-3 text-left hover:bg-bg-neutral-subtle-hovered"
+							onClick={() => setView("history")}
+						>
+							<Icon aria-hidden render={<ClockIcon label="" size="small" />} />
+							<span className="min-w-0 flex-1">
+								<span className="block text-sm font-medium text-text">Version history</span>
+								<span className="block text-xs text-text-subtle">
+									{publishedVersions.length} saved {publishedVersions.length === 1 ? "version" : "versions"}
+								</span>
+							</span>
+							<ChevronRightIcon label="" size="small" />
+						</button>
+						<DropdownMenuSeparator />
+						<div className="p-4">
+							{hasChanges ? (
+								<button
+									type="button"
+									className="flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left hover:bg-bg-neutral-subtle-hovered"
+									onClick={() => setView("draftChanges")}
+								>
+									<Icon aria-hidden render={<PageIcon label="" size="small" />} />
+									<span className="min-w-0 flex-1">
+										<span className="block text-sm font-medium text-text">
+											{getDraftChangeCountLabel(changeSummary)}
+										</span>
+										<span className="block truncate text-xs text-text-subtle">
+											{getDraftChangePreviewLabel(changeSummary, publishedVersionLabel)}
+										</span>
+									</span>
+									<ChevronRightIcon label="" size="small" />
+								</button>
+							) : (
+								<div className="flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left">
+									<Icon aria-hidden render={<PageIcon label="" size="small" />} />
+									<span className="min-w-0 flex-1">
+										<span className="block text-sm font-medium text-text">
+											{getDraftChangeCountLabel(changeSummary)}
+										</span>
+										<span className="block truncate text-xs text-text-subtle">
+											{getDraftChangePreviewLabel(changeSummary, publishedVersionLabel)}
+										</span>
+									</span>
+								</div>
+							)}
+							<Button
+								type="button"
+								className="mt-4 w-full"
+								disabled={!hasChanges}
+								onClick={onPublishUpdate}
+							>
+								Update
+							</Button>
+						</div>
+					</div>
+				) : null}
+				{view === "draftChanges" ? (
+					<div className="flex flex-col">
+						<div className="flex items-center gap-2 border-b border-border p-3">
+							<Button aria-label="Back to publish summary" size="icon-compact" type="button" variant="ghost" onClick={resetToSummary}>
+								<ArrowLeftIcon label="" size="small" />
+							</Button>
+							<div className="min-w-0 flex-1 truncate text-sm font-semibold text-text">Unpublished changes</div>
+						</div>
+						<div className="p-4">
+							<div className="text-xs font-semibold text-text-subtlest">
+								{getDraftChangeCountLabel(changeSummary)}
+							</div>
+							<div className="mt-2">
+								<AgentPublishChangeList changeSummary={changeSummary} />
+							</div>
+							<Button
+								type="button"
+								className="mt-4 w-full"
+								disabled={!hasChanges}
+								onClick={onPublishUpdate}
+							>
+								Update
+							</Button>
+						</div>
+					</div>
+				) : null}
+				{view === "history" ? (
+					<div className="flex flex-col">
+						<div className="flex items-center gap-2 border-b border-border p-3">
+							<Button aria-label="Back to publish summary" size="icon-compact" type="button" variant="ghost" onClick={resetToSummary}>
+								<ArrowLeftIcon label="" size="small" />
+							</Button>
+							<div className="text-sm font-semibold text-text">Version history</div>
+						</div>
+						<div className="p-2">
+							{publishedVersions.map((version) => (
+								<button
+									type="button"
+									className="flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left hover:bg-bg-neutral-subtle-hovered"
+									key={version.id}
+									onClick={() => {
+										setSelectedVersionId(version.id);
+										setView("versionDetail");
+									}}
+								>
+									<span className="min-w-0 flex-1">
+										<span className="flex items-center gap-2 text-sm font-medium text-text">
+											<span>{`V${version.version}`}</span>
+											{version.version === entry.publishedVersion ? <Badge variant="secondary">Live</Badge> : null}
+										</span>
+										<span className="block text-xs text-text-subtle">
+											{version.label} · {formatRelativeTime(version.createdAt)}
+										</span>
+									</span>
+									<ChevronRightIcon label="" size="small" />
+								</button>
+							))}
+						</div>
+					</div>
+				) : null}
+				{view === "versionDetail" && selectedVersion ? (
+					<div className="flex flex-col">
+						<div className="flex items-center gap-2 border-b border-border p-3">
+							<Button aria-label="Back to version history" size="icon-compact" type="button" variant="ghost" onClick={() => setView("history")}>
+								<ArrowLeftIcon label="" size="small" />
+							</Button>
+							<div className="min-w-0 flex-1 truncate text-sm font-semibold text-text">{`V${selectedVersion.version}`}</div>
+							{previewVersionId === selectedVersion.id ? <Badge variant="secondary">Previewing</Badge> : null}
+						</div>
+						<div className="p-4">
+							<div className="text-xs font-semibold text-text-subtlest">{selectedVersion.label}</div>
+							<div className="mt-1 text-sm text-text">{formatAbsoluteDateTime(selectedVersion.createdAt)}</div>
+							<div className="mt-4 text-xs font-semibold text-text-subtlest">Published by</div>
+							<div className="mt-1 text-sm text-text">{selectedVersion.createdBy}</div>
+							<div className="mt-4 text-xs font-semibold text-text-subtlest">
+								{getChangeCountLabel(selectedVersion.changeSummary)}
+							</div>
+							<div className="mt-2">
+								<AgentPublishChangeList changeSummary={selectedVersion.changeSummary} />
+							</div>
+							<div className="mt-4 grid grid-cols-2 gap-2">
+								<Button type="button" variant="outline" onClick={onBackToLatest}>
+									Back to latest
+								</Button>
+								{previewVersionId === selectedVersion.id ? (
+									<Button type="button" onClick={() => onRestoreVersion(selectedVersion.id)}>
+										Rollback
+									</Button>
+								) : (
+									<Button type="button" onClick={() => onPreviewVersion(selectedVersion.id)}>
+										Preview
+									</Button>
+								)}
+							</div>
+						</div>
+					</div>
+				) : null}
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
 export function RovoAppAgentConfigPanel({
 	activeView,
 	entry,
@@ -122,9 +520,15 @@ export function RovoAppAgentConfigPanel({
 	onStartWithTemplate,
 	className,
 }: Readonly<RovoAppAgentConfigPanelProps>) {
-	const draft = entry.draftResult;
 	const shouldReduceMotion = useReducedMotion();
 	const profileId = entry.profile.id;
+	const agentName = getStudioSessionAgentDisplayName(entry);
+	const [previewVersionId, setPreviewVersionId] = useState<string | null>(null);
+	const previewVersion = previewVersionId
+		? entry.versionHistory.find((version) => version.id === previewVersionId) ?? null
+		: null;
+	const isPreviewingVersion = Boolean(previewVersion);
+	const draft = previewVersion?.snapshot ?? entry.draftResult;
 	// The floating SubagentsNavigator must top-align with the first line of the
 	// instructions editor. That line moves as the profile/content above it
 	// reflows or scrolls, so measure it relative to the positioned TabsContent
@@ -133,6 +537,8 @@ export function RovoAppAgentConfigPanel({
 	const navigatorTop = useSubagentsNavigatorTop(configureTabRef);
 	const [activeDirectory, setActiveDirectory] = useState<AgentDirectoryKind | null>(null);
 	const [activeCompactSection, setActiveCompactSection] = useState<AgentCompactHeaderSection | null>(null);
+	const [instructionsViewMode, setInstructionsViewMode] = useState<EditorToolbarViewMode>("rendered");
+	const lastCompactSectionRef = useRef<AgentCompactHeaderSection>("details");
 	const [directoryToolIds, setDirectoryToolIds] = useState<readonly string[]>([]);
 	// Tool to focus when the tools directory opens (e.g. clicking a tool chip).
 	// Cleared on close so a plain "Add" opens at the directory list instead.
@@ -150,13 +556,23 @@ export function RovoAppAgentConfigPanel({
 	// it with product="home" — product only gates visibility, it has no visual
 	// effect — and pair it with the RovoFloatingChat surface the button opens,
 	// mirroring the components/projects/rovo-button demo.
-	const { chatSurface, openChat, resetAgentToRovo } = useRovoChat();
+	const {
+		chatSurface,
+		openChat,
+		resetAgentToRovo,
+		restoreSessionAgentVersion,
+		sessionAgentSaveStatus,
+		sessionAgentSavedAt,
+	} = useRovoChat();
 
 	const updateDraft = useCallback(
 		(patch: Partial<AgentResult>) => {
+			if (isPreviewingVersion) {
+				return;
+			}
 			onUpdateDraft(profileId, patch);
 		},
-		[onUpdateDraft, profileId],
+		[isPreviewingVersion, onUpdateDraft, profileId],
 	);
 
 	// Base agent + subagent prompts. `activeConfig` is the base draft or the
@@ -570,6 +986,11 @@ export function RovoAppAgentConfigPanel({
 		[updateActiveConfig],
 	);
 
+	const hasPublishedVersion = entry.publishedVersion > 0 || Boolean(entry.publishedResult);
+	const unpublishedChangeSummary = useMemo(
+		() => getStudioAgentChangeSummary(entry.publishedResult, entry.draftResult),
+		[entry.draftResult, entry.publishedResult],
+	);
 	const hasUpdateChanges = useMemo(() => {
 		return (
 			stringifyForComparison(entry.draftResult) !==
@@ -593,7 +1014,30 @@ export function RovoAppAgentConfigPanel({
 			onCommitPublishReady(profileId);
 		}
 		onPublish(profileId);
-	}, [hasUpdateChanges, onCommitPublishReady, onPublish, profileId]);
+		if (!hasPublishedVersion) {
+			toast.custom(
+				(id) => (
+					<SonnerToast
+						appearance="success"
+						title="Agent launched"
+						description={`${agentName} is live as V1.`}
+						dismissible
+						onDismiss={() => toast.dismiss(id)}
+					/>
+				),
+				{ id: `${STUDIO_AGENT_PUBLISH_TOASTER_ID}-${profileId}`, toasterId: STUDIO_AGENT_PUBLISH_TOASTER_ID, duration: SONNER_TOAST_AUTO_DISMISS_MS },
+			);
+		}
+		setPreviewVersionId(null);
+	}, [agentName, hasPublishedVersion, hasUpdateChanges, onCommitPublishReady, onPublish, profileId]);
+
+	const handleRestoreVersion = useCallback(
+		(versionId: string) => {
+			restoreSessionAgentVersion(profileId, versionId);
+			setPreviewVersionId(null);
+		},
+		[profileId, restoreSessionAgentVersion],
+	);
 
 	const handleTest = useCallback(() => {
 		if (hasUpdateChanges) {
@@ -606,31 +1050,29 @@ export function RovoAppAgentConfigPanel({
 		openChat("floating");
 	}, [openChat, resetAgentToRovo]);
 
-	const handleViewChange = useCallback(
-		(value: string | null) => {
-			if (value !== "configure" && value !== "insights" && value !== "test") {
-				return;
-			}
-			setActiveCompactSection(null);
-			if (value === "test") {
-				handleTest();
-				return;
-			}
-			onViewChange(value);
-		},
-		[handleTest, onViewChange],
-	);
+	const activeHeaderSection: AgentCompactHeaderSection | null =
+		activeView === "insights"
+			? "insights"
+			: activeView === "configure"
+				? activeCompactSection ?? "details"
+				: null;
+	const shouldShowSubagentsNavigator =
+		activeView === "configure" &&
+		activeCompactSection === null &&
+		instructionsViewMode !== "data-flow";
 
-	const handleCompactSectionChange = useCallback(
-		(section: AgentCompactHeaderSection) => {
+	const restoreCompactSection = useCallback(
+		(section: AgentCompactHeaderSection = lastCompactSectionRef.current) => {
 			if (section === "insights") {
 				setActiveCompactSection(null);
 				onViewChange("insights");
 				return;
 			}
 			onViewChange("configure");
-			// Only sections with a dedicated panel take over the configure view;
-			// the rest fall back to the standard config fields.
+			if (section === "details") {
+				setActiveCompactSection(null);
+				return;
+			}
 			setActiveCompactSection(
 				section === "surfaces" ||
 				section === "access" ||
@@ -643,12 +1085,59 @@ export function RovoAppAgentConfigPanel({
 		[onViewChange],
 	);
 
+	const handleViewChange = useCallback(
+		(value: string | null) => {
+			if (value !== "configure" && value !== "insights" && value !== "test") {
+				return;
+			}
+			if (value === "test") {
+				if (activeHeaderSection) {
+					lastCompactSectionRef.current = activeHeaderSection;
+				}
+				handleTest();
+				return;
+			}
+			lastCompactSectionRef.current = value === "insights" ? "insights" : "details";
+			setActiveCompactSection(null);
+			onViewChange(value);
+		},
+		[activeHeaderSection, handleTest, onViewChange],
+	);
+
+	const handleCompactSectionChange = useCallback(
+		(section: AgentCompactHeaderSection) => {
+			lastCompactSectionRef.current = section;
+			restoreCompactSection(section);
+		},
+		[restoreCompactSection],
+	);
+
+	const handleTestPressedChange = useCallback(
+		(pressed: boolean) => {
+			if (pressed) {
+				if (activeHeaderSection) {
+					lastCompactSectionRef.current = activeHeaderSection;
+				}
+				handleTest();
+				return;
+			}
+			restoreCompactSection(lastCompactSectionRef.current ?? "details");
+		},
+		[activeHeaderSection, handleTest, restoreCompactSection],
+	);
+
+	const compactHeaderNavItems = useMemo(
+		() => hasPublishedVersion
+			? [AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM, ...AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS]
+			: [AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM],
+		[hasPublishedVersion],
+	);
+
 	// Mirror the avatar the sidebar nav renders for this agent (entry.profile.avatarSrc)
 	// so the header + profile cover match instead of falling back to the static default.
 	const agentAvatarSrc = entry.profile.avatarSrc;
 	// `name` is still required by AgentHeader (accessibility/fallback); the compact
 	// nav supplied via `leadingContent` is what actually renders on the left.
-	const agentName = getStudioSessionAgentDisplayName(entry);
 
 	// Base agent shape the floating SubagentsNavigator expects. The navigator only
 	// reads `config.name` + `avatarSrc`, so derive both from the live draft.
@@ -676,48 +1165,55 @@ export function RovoAppAgentConfigPanel({
 						name={agentName}
 						leadingContent={
 							<AgentCompactHeaderNav
-								activeSection={activeView === "insights" ? "insights" : activeCompactSection}
+								activeSection={activeHeaderSection}
 								avatarSrc={agentAvatarSrc}
+								items={compactHeaderNavItems}
 								onSectionChange={handleCompactSectionChange}
 							/>
 						}
 						actions={
 							<>
+								<AgentSaveStatusIndicator
+									status={sessionAgentSaveStatus}
+									savedAt={sessionAgentSavedAt}
+								/>
 								<AgentMoreOptionsMenu />
-								<ToggleGroup
-									aria-label="Agent config views"
-									variant="outline"
-									value={[activeView]}
-									onValueChange={(value) =>
-										handleViewChange((value[0] as AgentConfigView | undefined) ?? null)
-									}
-								>
-									<ToggleGroupItem
-										value="test"
-										data-testid="agent-config-test"
-										data-screen-assistant-target="studio-agent-config-test"
-									>
-										Test
-									</ToggleGroupItem>
-									<ToggleGroupItem
-										value="configure"
-										data-testid="agent-config-configure"
-										data-screen-assistant-target="studio-agent-config-configure"
-									>
-										Configure
-									</ToggleGroupItem>
-								</ToggleGroup>
-								<Button
-									type="button"
+								<Toggle
+									aria-label="Toggle agent test view"
+									className="rounded-[6px] hover:border-border data-pressed:hover:border-border-selected"
+									data-testid="agent-config-test"
+									data-screen-assistant-target="studio-agent-config-test"
+									onPressedChange={handleTestPressedChange}
+									pressed={activeView === "test"}
 									size="default"
-									variant="default"
-									onClick={handlePublish}
-									disabled={!hasPublishChanges}
-									data-testid="agent-config-publish"
-									data-screen-assistant-target="studio-agent-config-publish"
+									type="button"
+									variant="outline"
 								>
-									Publish
-								</Button>
+									Test
+								</Toggle>
+								{hasPublishedVersion ? (
+									<AgentPublishDropdown
+										changeSummary={unpublishedChangeSummary}
+										entry={entry}
+										onBackToLatest={() => setPreviewVersionId(null)}
+										onPreviewVersion={setPreviewVersionId}
+										onPublishUpdate={handlePublish}
+										onRestoreVersion={handleRestoreVersion}
+										previewVersionId={previewVersionId}
+									/>
+								) : (
+									<Button
+										type="button"
+										size="default"
+										variant="default"
+										onClick={handlePublish}
+										disabled={!hasPublishChanges}
+										data-testid="agent-config-publish"
+										data-screen-assistant-target="studio-agent-config-publish"
+									>
+										Publish
+									</Button>
+								)}
 								{onClose ? (
 									<Button
 										type="button"
@@ -744,22 +1240,24 @@ export function RovoAppAgentConfigPanel({
 								    subagents. Self-hides until at least one subagent exists.
 								    The wrapper carries the measured `top` so the switcher
 								    top-aligns with the first line of the instructions editor. */}
-								<div
-									className="absolute right-4 z-20 hidden md:block"
-									style={{ top: navigatorTop }}
-								>
-									<SubagentsNavigator
-										activeSubagentId={activeSubagentId}
-										baseAgent={navigatorBaseAgent}
-										onCreateSubagent={createSubagent}
-										onDeleteSubagent={deleteSubagentById}
-										onManageSubagents={() => setIsManageSubagentsOpen(true)}
-										onSelectBaseAgent={selectBaseAgent}
-										onSelectSubagent={selectSubagent}
-										onToggleSubagent={toggleSubagent}
-										subagents={subagentPrompts}
-									/>
-								</div>
+								{shouldShowSubagentsNavigator ? (
+									<div
+										className="absolute right-4 z-20 hidden md:block"
+										style={{ top: navigatorTop }}
+									>
+										<SubagentsNavigator
+											activeSubagentId={activeSubagentId}
+											baseAgent={navigatorBaseAgent}
+											onCreateSubagent={createSubagent}
+											onDeleteSubagent={deleteSubagentById}
+											onManageSubagents={() => setIsManageSubagentsOpen(true)}
+											onSelectBaseAgent={selectBaseAgent}
+											onSelectSubagent={selectSubagent}
+											onToggleSubagent={toggleSubagent}
+											subagents={subagentPrompts}
+										/>
+									</div>
+								) : null}
 								<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-4 py-4">
 									{activeCompactSection === "access" ? (
 										<div className="-mr-4 min-h-0 flex-1 overflow-y-auto pr-4">
@@ -810,6 +1308,7 @@ export function RovoAppAgentConfigPanel({
 											onAddListValues={appendListValues}
 											onAppendListItem={appendListItem}
 											onConnectTrigger={handleConnectTrigger}
+											onInstructionsViewModeChange={setInstructionsViewMode}
 											onManageSubagents={() => setIsManageSubagentsOpen(true)}
 											onSelectListItem={handleSelectListItem}
 											onStartWithTemplate={onStartWithTemplate}
@@ -832,6 +1331,7 @@ export function RovoAppAgentConfigPanel({
 				</Tabs>
 			</Agent>
 		</motion.div>
+			<Toaster id={STUDIO_AGENT_PUBLISH_TOASTER_ID} position="bottom-left" expand={true} />
 			{chatSurface === null ? (
 				<FloatingRovoButton ariaLabel="Open Rovo chat" product="home" onButtonClick={handleOpenFloatingRovoChat} />
 			) : null}
