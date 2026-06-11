@@ -172,6 +172,51 @@ test("instructionsBody covers EVERY bound id (always renders a chip)", async () 
 	assert.deepEqual(failures, [], `bound ids not referenced as body chips:\n${failures.join("\n")}`);
 });
 
+test("subagentDefinitions are 1:1 with subagentIds and carry a smaller, resolvable config", async () => {
+	const { AGENT_TEMPLATE_CONFIGS } = await loadFixture();
+	const sets = await buildCatalogSets();
+	const failures = [];
+
+	for (const t of AGENT_TEMPLATE_CONFIGS) {
+		const defs = t.subagentDefinitions;
+		assert.ok(Array.isArray(defs), `${t.id}.subagentDefinitions must be an array`);
+		// 1:1 with subagentIds (same ids, same order) — defs provide each bound
+		// subagent's own config.
+		assert.deepEqual(
+			defs.map((d) => d.id),
+			[...t.subagentIds],
+			`${t.id}.subagentDefinitions must be 1:1 with subagentIds`,
+		);
+
+		const parentSkills = new Set(t.skillIds);
+		const parentTools = new Set(t.toolIds);
+		const parentKnowledge = new Set(t.knowledgeIds);
+
+		for (const d of defs) {
+			assert.ok(typeof d.name === "string" && d.name.trim().length > 0, `${t.id}/${d.id}.name`);
+			assert.ok(typeof d.description === "string" && d.description.trim().length > 0, `${t.id}/${d.id}.description`);
+			assert.ok(MEMORY_MODES.has(d.memoryMode), `${t.id}/${d.id}.memoryMode "${d.memoryMode}" not allowed`);
+			assert.ok(REASONING_MODES.has(d.reasoningMode), `${t.id}/${d.id}.reasoningMode "${d.reasoningMode}" not allowed`);
+
+			// Smaller subset: never larger than the parent, and a subset of its config.
+			assert.ok(d.skillIds.length <= t.skillIds.length, `${t.id}/${d.id} skills not smaller`);
+			for (const id of d.skillIds) {
+				if (!parentSkills.has(id)) failures.push(`${t.id}/${d.id}.skillIds: "${id}" not in parent`);
+				if (!sets.skill.has(id)) failures.push(`${t.id}/${d.id}.skillIds: "${id}" not in skill catalog`);
+			}
+			for (const id of d.toolIds) {
+				if (!parentTools.has(id)) failures.push(`${t.id}/${d.id}.toolIds: "${id}" not in parent`);
+				if (!sets.tool.has(id)) failures.push(`${t.id}/${d.id}.toolIds: "${id}" not in tool catalog`);
+			}
+			for (const id of d.knowledgeIds) {
+				if (!parentKnowledge.has(id)) failures.push(`${t.id}/${d.id}.knowledgeIds: "${id}" not in parent`);
+				if (!sets.knowledge.has(id)) failures.push(`${t.id}/${d.id}.knowledgeIds: "${id}" not in knowledge catalog`);
+			}
+		}
+	}
+	assert.deepEqual(failures, [], `subagentDefinitions config issues:\n${failures.join("\n")}`);
+});
+
 test("mode fields use the allowed value sets", async () => {
 	const { AGENT_TEMPLATE_CONFIGS } = await loadFixture();
 	for (const t of AGENT_TEMPLATE_CONFIGS) {

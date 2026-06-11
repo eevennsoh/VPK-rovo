@@ -50,7 +50,47 @@
 		"instructionsBody": "You drive DACI decisions to a confident close, closing context gaps and surfacing the next decision-ready resource.\n\n## Context\nGround your thinking in @[knowledge:confluence:all] and @[knowledge:jira:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the problem in order:\n1. Lead with @[skill:explore-ideas].\n2. Then bring in @[skill:prioritize-ideas].\n3. Next, apply @[skill:build-report].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:confluence], @[tool:jira], and @[tool:atlassian-home].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:strategic-insight] and @[subagent:feedback-analyzer].\n\n## Output\nA set of ranked options with rationale and clear next steps.",
 		"bodyIntro": "You drive DACI decisions to a confident close, closing context gaps and surfacing the next decision-ready resource.",
 		"triggerAutomationName": "DACI decision review",
-		"triggerPrompt": "When a DACI doc is shared or a decision is blocked, review it for context gaps, weigh the options against the team's criteria, and reply with a decision-ready summary and a recommended next step."
+		"triggerPrompt": "When a DACI doc is shared or a decision is blocked, review it for context gaps, weigh the options against the team's criteria, and reply with a decision-ready summary and a recommended next step.",
+		"subagentDefinitions": [
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"explore-ideas",
+					"prioritize-ideas"
+				],
+				"toolIds": [
+					"confluence",
+					"jira"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"skillIds": [
+					"prioritize-ideas",
+					"build-report"
+				],
+				"toolIds": [
+					"jira",
+					"atlassian-home"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "okr-generator",
@@ -103,7 +143,47 @@
 		"instructionsBody": "You turn strategy into clear, measurable OKRs and pressure-test draft objectives for clarity and alignment.\n\n## Context\nGround your thinking in @[knowledge:confluence:all] and @[knowledge:jira:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the problem in order:\n1. Lead with @[skill:roadmap-builder].\n2. Then bring in @[skill:build-report].\n3. Next, apply @[skill:prioritize-ideas].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:jira], @[tool:atlassian-home], and @[tool:confluence].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:strategic-insight] and @[subagent:progress-tracker].\n\n## Output\nA set of ranked options with rationale and clear next steps.",
 		"bodyIntro": "You turn strategy into clear, measurable OKRs and pressure-test draft objectives for clarity and alignment.",
 		"triggerAutomationName": "Quarterly OKR drafting",
-		"triggerPrompt": "When quarter planning kicks off or a goal changes, draft or refine measurable OKRs aligned to team priorities, and flag any objective missing a clear key result or owner."
+		"triggerPrompt": "When quarter planning kicks off or a goal changes, draft or refine measurable OKRs aligned to team priorities, and flag any objective missing a clear key result or owner.",
+		"subagentDefinitions": [
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"roadmap-builder",
+					"build-report"
+				],
+				"toolIds": [
+					"jira",
+					"atlassian-home"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"description": "Summarizes project movement, blockers, and next actions across work streams.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"skillIds": [
+					"build-report",
+					"prioritize-ideas"
+				],
+				"toolIds": [
+					"atlassian-home",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "opportunity-explorer",
@@ -155,7 +235,47 @@
 		"instructionsBody": "You push past the obvious to surface non-obvious directions worth exploring before the team commits.\n\n## Context\nGround your thinking in @[knowledge:confluence:all] and @[knowledge:jira-product-discovery:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the problem in order:\n1. Lead with @[skill:explore-ideas].\n2. Then bring in @[skill:trend-spotter].\n3. Next, apply @[skill:prioritize-ideas].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:jira-product-discovery], @[tool:confluence], and @[tool:miro].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:strategic-insight] and @[subagent:feedback-analyzer].\n\n## Output\nA set of ranked options with rationale and clear next steps.",
 		"bodyIntro": "You push past the obvious to surface non-obvious directions worth exploring before the team commits.",
 		"triggerAutomationName": "Discovery opportunity scan",
-		"triggerPrompt": "When a new idea lands or discovery opens, surface non-obvious adjacent opportunities, cluster them by potential, and recommend which are worth a deeper look."
+		"triggerPrompt": "When a new idea lands or discovery opens, surface non-obvious adjacent opportunities, cluster them by potential, and recommend which are worth a deeper look.",
+		"subagentDefinitions": [
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"explore-ideas",
+					"trend-spotter"
+				],
+				"toolIds": [
+					"jira-product-discovery",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"skillIds": [
+					"trend-spotter",
+					"prioritize-ideas"
+				],
+				"toolIds": [
+					"confluence",
+					"miro"
+				],
+				"knowledgeIds": [
+					"jira-product-discovery"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "experiment-planner",
@@ -206,7 +326,47 @@
 		"instructionsBody": "You turn raw ideas into crisp experiments with hypotheses, metrics, and explicit decision points.\n\n## Context\nGround your thinking in @[knowledge:confluence:all] and @[knowledge:jira-product-discovery:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the problem in order:\n1. Lead with @[skill:explore-ideas].\n2. Then bring in @[skill:test-plan-builder].\n3. Next, apply @[skill:build-report].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:jira-product-discovery], @[tool:jira], and @[tool:confluence].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:strategic-insight] and @[subagent:feedback-analyzer].\n\n## Output\nA set of ranked options with rationale and clear next steps.",
 		"bodyIntro": "You turn raw ideas into crisp experiments with hypotheses, metrics, and explicit decision points.",
 		"triggerAutomationName": "Experiment design",
-		"triggerPrompt": "When an experiment idea is raised, turn it into a testable plan with a hypothesis, success metrics, and explicit decision points, then note what to instrument."
+		"triggerPrompt": "When an experiment idea is raised, turn it into a testable plan with a hypothesis, success metrics, and explicit decision points, then note what to instrument.",
+		"subagentDefinitions": [
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"explore-ideas",
+					"test-plan-builder"
+				],
+				"toolIds": [
+					"jira-product-discovery",
+					"jira"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"skillIds": [
+					"test-plan-builder",
+					"build-report"
+				],
+				"toolIds": [
+					"jira",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"jira-product-discovery"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "tradeoff-mapper",
@@ -257,7 +417,47 @@
 		"instructionsBody": "You compare options head-to-head across upside, cost, and risk so the team can choose with eyes open.\n\n## Context\nGround your thinking in @[knowledge:confluence:all] and @[knowledge:jira:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the problem in order:\n1. Lead with @[skill:explore-ideas].\n2. Then bring in @[skill:prioritize-ideas].\n3. Next, apply @[skill:build-report].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:confluence], @[tool:jira], and @[tool:miro].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:strategic-insight] and @[subagent:diagram-creator].\n\n## Output\nA set of ranked options with rationale and clear next steps.",
 		"bodyIntro": "You compare options head-to-head across upside, cost, and risk so the team can choose with eyes open.",
 		"triggerAutomationName": "Tradeoff analysis",
-		"triggerPrompt": "When a decision request or options doc appears, compare the options across upside, cost, and risk, and reply with a tradeoff matrix and a recommended path."
+		"triggerPrompt": "When a decision request or options doc appears, compare the options across upside, cost, and risk, and reply with a tradeoff matrix and a recommended path.",
+		"subagentDefinitions": [
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"explore-ideas",
+					"prioritize-ideas"
+				],
+				"toolIds": [
+					"confluence",
+					"jira"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "diagram-creator",
+				"name": "Diagram Creator",
+				"description": "Generates diagrams and flowcharts from a plain-language description.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/diagram-creator.svg",
+				"skillIds": [
+					"prioritize-ideas",
+					"build-report"
+				],
+				"toolIds": [
+					"jira",
+					"miro"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "assumption-tester",
@@ -307,7 +507,47 @@
 		"instructionsBody": "You hunt down the weak assumptions a plan rests on and lay out the evidence that would confirm or break them.\n\n## Context\nGround your thinking in @[knowledge:confluence:all] and @[knowledge:jira-product-discovery:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the problem in order:\n1. Lead with @[skill:explore-ideas].\n2. Then bring in @[skill:run-deep-research].\n3. Next, apply @[skill:build-report].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:confluence] and @[tool:jira-product-discovery].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:feedback-analyzer] and @[subagent:strategic-insight].\n\n## Output\nA set of ranked options with rationale and clear next steps.",
 		"bodyIntro": "You hunt down the weak assumptions a plan rests on and lay out the evidence that would confirm or break them.",
 		"triggerAutomationName": "Assumption stress-test",
-		"triggerPrompt": "When a plan is shared or a risky bet is flagged, surface the weakest assumptions it rests on and list the evidence that would confirm or break each one."
+		"triggerPrompt": "When a plan is shared or a risky bet is flagged, surface the weakest assumptions it rests on and list the evidence that would confirm or break each one.",
+		"subagentDefinitions": [
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"skillIds": [
+					"explore-ideas",
+					"run-deep-research"
+				],
+				"toolIds": [
+					"confluence",
+					"jira-product-discovery"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"run-deep-research",
+					"build-report"
+				],
+				"toolIds": [
+					"jira-product-discovery",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"jira-product-discovery"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "criteria-builder",
@@ -357,7 +597,47 @@
 		"instructionsBody": "You translate fuzzy goals into a practical, weighted rubric the team can score real options against.\n\n## Context\nGround your thinking in @[knowledge:confluence:all] and @[knowledge:jira:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the problem in order:\n1. Lead with @[skill:prioritize-ideas].\n2. Then bring in @[skill:explore-ideas].\n3. Next, apply @[skill:build-report].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:confluence] and @[tool:jira].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:strategic-insight] and @[subagent:decision-director].\n\n## Output\nA set of ranked options with rationale and clear next steps.",
 		"bodyIntro": "You translate fuzzy goals into a practical, weighted rubric the team can score real options against.",
 		"triggerAutomationName": "Decision criteria setup",
-		"triggerPrompt": "When a decision doc opens, translate the goals into a weighted set of selection criteria the team can score options against, and call out any missing dimension."
+		"triggerPrompt": "When a decision doc opens, translate the goals into a weighted set of selection criteria the team can score options against, and call out any missing dimension.",
+		"subagentDefinitions": [
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"prioritize-ideas",
+					"explore-ideas"
+				],
+				"toolIds": [
+					"confluence",
+					"jira"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "decision-director",
+				"name": "Decision Director",
+				"description": "Applies the DACI framework to structure, document, and communicate decisions.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/decision-director.svg",
+				"skillIds": [
+					"explore-ideas",
+					"build-report"
+				],
+				"toolIds": [
+					"jira",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "brainstorm-facilitator",
@@ -408,7 +688,47 @@
 		"instructionsBody": "You guide a team from loose prompts to clustered, ranked concepts everyone can rally behind.\n\n## Context\nGround your thinking in @[knowledge:confluence:all] and @[knowledge:notion:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the problem in order:\n1. Lead with @[skill:explore-ideas].\n2. Then bring in @[skill:prioritize-ideas].\n3. Next, apply @[skill:whiteboard-summarizer].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:miro], @[tool:confluence], and @[tool:loom].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:diagram-creator] and @[subagent:strategic-insight].\n\n## Output\nA set of ranked options with rationale and clear next steps.",
 		"bodyIntro": "You guide a team from loose prompts to clustered, ranked concepts everyone can rally behind.",
 		"triggerAutomationName": "Workshop facilitation",
-		"triggerPrompt": "When a workshop is scheduled or a brainstorm thread starts, cluster the raw ideas, rank them, and post a shortlist of concepts with rationale and next steps."
+		"triggerPrompt": "When a workshop is scheduled or a brainstorm thread starts, cluster the raw ideas, rank them, and post a shortlist of concepts with rationale and next steps.",
+		"subagentDefinitions": [
+			{
+				"id": "diagram-creator",
+				"name": "Diagram Creator",
+				"description": "Generates diagrams and flowcharts from a plain-language description.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/diagram-creator.svg",
+				"skillIds": [
+					"explore-ideas",
+					"prioritize-ideas"
+				],
+				"toolIds": [
+					"miro",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"prioritize-ideas",
+					"whiteboard-summarizer"
+				],
+				"toolIds": [
+					"confluence",
+					"loom"
+				],
+				"knowledgeIds": [
+					"notion"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "customer-insights",
@@ -462,7 +782,47 @@
 		"instructionsBody": "You synthesize raw feedback into themes, customer needs, risks, and the product actions they imply.\n\n## Context\nGround your analysis in @[knowledge:confluence:all] and @[knowledge:google-drive:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork through the signal in order:\n1. Lead with @[skill:customer-insights].\n2. Then bring in @[skill:capture-insights].\n3. Next, apply @[skill:trend-spotter].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:salesforce], @[tool:zendesk], @[tool:confluence], and @[tool:dovetail].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:feedback-analyzer] and @[subagent:strategic-insight].\n\n## Output\nA decision-ready readout of findings, risks, and recommended actions.",
 		"bodyIntro": "You synthesize raw feedback into themes, customer needs, risks, and the product actions they imply.",
 		"triggerAutomationName": "Customer feedback synthesis",
-		"triggerPrompt": "When a new feedback batch arrives, synthesize it into themes, customer needs, and risks, and recommend the product actions each theme implies."
+		"triggerPrompt": "When a new feedback batch arrives, synthesize it into themes, customer needs, and risks, and recommend the product actions each theme implies.",
+		"subagentDefinitions": [
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"skillIds": [
+					"customer-insights",
+					"capture-insights"
+				],
+				"toolIds": [
+					"salesforce",
+					"zendesk"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"capture-insights",
+					"trend-spotter"
+				],
+				"toolIds": [
+					"zendesk",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"google-drive"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "jira-theme-analyzer",
@@ -520,7 +880,47 @@
 		"instructionsBody": "You scan delivery work to surface themes, candidate epics, and patterns worth acting on.\n\n## Context\nGround your analysis in @[knowledge:jira:all] and @[knowledge:confluence:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork through the signal in order:\n1. Lead with @[skill:jql-query-builder].\n2. Then bring in @[skill:trend-spotter].\n3. Next, apply @[skill:build-report].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:jira], @[tool:jira-product-discovery], and @[tool:confluence].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:feedback-analyzer] and @[subagent:strategic-insight].\n\n## Output\nA decision-ready readout of findings, risks, and recommended actions.",
 		"bodyIntro": "You scan delivery work to surface themes, candidate epics, and patterns worth acting on.",
 		"triggerAutomationName": "Backlog theme scan",
-		"triggerPrompt": "When a backlog review starts, scan the work items for recurring themes and candidate epics, and rank the patterns by impact."
+		"triggerPrompt": "When a backlog review starts, scan the work items for recurring themes and candidate epics, and rank the patterns by impact.",
+		"subagentDefinitions": [
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"skillIds": [
+					"jql-query-builder",
+					"trend-spotter"
+				],
+				"toolIds": [
+					"jira",
+					"jira-product-discovery"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"trend-spotter",
+					"build-report"
+				],
+				"toolIds": [
+					"jira-product-discovery",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "transcript-insights-reporter",
@@ -579,7 +979,47 @@
 		"instructionsBody": "You turn long transcripts into decisions, insights, owners, and concrete follow-up actions.\n\n## Context\nGround your analysis in @[knowledge:confluence:all] and @[knowledge:loom:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork through the signal in order:\n1. Lead with @[skill:summarize-thread].\n2. Then bring in @[skill:capture-insights].\n3. Next, apply @[skill:build-report].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:loom], @[tool:confluence], @[tool:zoom], and @[tool:microsoft-teams].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:meeting-insights-reporter] and @[subagent:feedback-analyzer].\n\n## Output\nA decision-ready readout of findings, risks, and recommended actions.",
 		"bodyIntro": "You turn long transcripts into decisions, insights, owners, and concrete follow-up actions.",
 		"triggerAutomationName": "Recording recap",
-		"triggerPrompt": "When a recording finishes or a meeting ends, turn the transcript into decisions, insights, owners, and follow-up actions ready to share."
+		"triggerPrompt": "When a recording finishes or a meeting ends, turn the transcript into decisions, insights, owners, and follow-up actions ready to share.",
+		"subagentDefinitions": [
+			{
+				"id": "meeting-insights-reporter",
+				"name": "Meeting Insights Reporter",
+				"description": "Turns meeting notes and transcripts into summaries, decisions, and follow-ups.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg",
+				"skillIds": [
+					"summarize-thread",
+					"capture-insights"
+				],
+				"toolIds": [
+					"loom",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"skillIds": [
+					"capture-insights",
+					"build-report"
+				],
+				"toolIds": [
+					"confluence",
+					"zoom"
+				],
+				"knowledgeIds": [
+					"loom"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "meeting-insights",
@@ -638,7 +1078,47 @@
 		"instructionsBody": "You mine meeting notes for the decisions, action items, and context people actually need.\n\n## Context\nGround your analysis in @[knowledge:confluence:all] and @[knowledge:microsoft-teams:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork through the signal in order:\n1. Lead with @[skill:summarize-thread].\n2. Then bring in @[skill:capture-insights].\n3. Next, apply @[skill:build-report].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:confluence], @[tool:loom], @[tool:microsoft-teams], and @[tool:google-calendar].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:meeting-insights-reporter] and @[subagent:transcript-insights-reporter].\n\n## Output\nA decision-ready readout of findings, risks, and recommended actions.",
 		"bodyIntro": "You mine meeting notes for the decisions, action items, and context people actually need.",
 		"triggerAutomationName": "Meeting recap",
-		"triggerPrompt": "When a meeting ends, pull the decisions, action items, and key context from the notes and post a concise recap with owners."
+		"triggerPrompt": "When a meeting ends, pull the decisions, action items, and key context from the notes and post a concise recap with owners.",
+		"subagentDefinitions": [
+			{
+				"id": "meeting-insights-reporter",
+				"name": "Meeting Insights Reporter",
+				"description": "Turns meeting notes and transcripts into summaries, decisions, and follow-ups.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg",
+				"skillIds": [
+					"summarize-thread",
+					"capture-insights"
+				],
+				"toolIds": [
+					"confluence",
+					"loom"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "transcript-insights-reporter",
+				"name": "Transcript Insights Reporter",
+				"description": "Extracts themes, decisions, and action items from long transcripts.",
+				"avatarSrc": "/avatar-agent/service-agents/wildcard-1.svg",
+				"skillIds": [
+					"capture-insights",
+					"build-report"
+				],
+				"toolIds": [
+					"loom",
+					"microsoft-teams"
+				],
+				"knowledgeIds": [
+					"microsoft-teams"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "trend-spotter",
@@ -689,7 +1169,47 @@
 		"instructionsBody": "You catch emerging trends across notes and feedback before they become obvious to everyone else.\n\n## Context\nGround your analysis in @[knowledge:confluence:all] and @[knowledge:jira-product-discovery:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork through the signal in order:\n1. Lead with @[skill:trend-spotter].\n2. Then bring in @[skill:capture-insights].\n3. Next, apply @[skill:build-report].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:confluence], @[tool:dovetail], and @[tool:amplitude].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:feedback-analyzer] and @[subagent:strategic-insight].\n\n## Output\nA decision-ready readout of findings, risks, and recommended actions.",
 		"bodyIntro": "You catch emerging trends across notes and feedback before they become obvious to everyone else.",
 		"triggerAutomationName": "Trend watch",
-		"triggerPrompt": "On each scan or when new feedback lands, surface emerging trends across notes and feedback, and explain the early signals behind each one."
+		"triggerPrompt": "On each scan or when new feedback lands, surface emerging trends across notes and feedback, and explain the early signals behind each one.",
+		"subagentDefinitions": [
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"skillIds": [
+					"trend-spotter",
+					"capture-insights"
+				],
+				"toolIds": [
+					"confluence",
+					"dovetail"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"capture-insights",
+					"build-report"
+				],
+				"toolIds": [
+					"dovetail",
+					"amplitude"
+				],
+				"knowledgeIds": [
+					"jira-product-discovery"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "sentiment-mapper",
@@ -740,7 +1260,47 @@
 		"instructionsBody": "You track how customer sentiment shifts over time and connect the swings to likely drivers.\n\n## Context\nGround your analysis in @[knowledge:confluence:all] and @[knowledge:customer-service-management:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork through the signal in order:\n1. Lead with @[skill:customer-insights].\n2. Then bring in @[skill:trend-spotter].\n3. Next, apply @[skill:capture-insights].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:zendesk], @[tool:salesforce], and @[tool:dovetail].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:feedback-analyzer] and @[subagent:customer-insights].\n\n## Output\nA decision-ready readout of findings, risks, and recommended actions.",
 		"bodyIntro": "You track how customer sentiment shifts over time and connect the swings to likely drivers.",
 		"triggerAutomationName": "Sentiment check",
-		"triggerPrompt": "On each check or when a support spike is flagged, map how customer sentiment has shifted and connect the swings to their likely drivers."
+		"triggerPrompt": "On each check or when a support spike is flagged, map how customer sentiment has shifted and connect the swings to their likely drivers.",
+		"subagentDefinitions": [
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"skillIds": [
+					"customer-insights",
+					"trend-spotter"
+				],
+				"toolIds": [
+					"zendesk",
+					"salesforce"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "customer-insights",
+				"name": "Customer Insights",
+				"description": "Analyzes customer feedback from connected data sources for themes.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/customer-insights.svg",
+				"skillIds": [
+					"trend-spotter",
+					"capture-insights"
+				],
+				"toolIds": [
+					"salesforce",
+					"dovetail"
+				],
+				"knowledgeIds": [
+					"customer-service-management"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "funnel-analyzer",
@@ -798,7 +1358,47 @@
 		"instructionsBody": "You trace product drop-offs, connect them to customer feedback, and point to the next investigation.\n\n## Context\nGround your analysis in @[knowledge:confluence:all] and @[knowledge:analytics:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork through the signal in order:\n1. Lead with @[skill:funnel-analytics].\n2. Then bring in @[skill:trend-spotter].\n3. Next, apply @[skill:build-report].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:amplitude], @[tool:datadog], and @[tool:confluence].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:feedback-analyzer] and @[subagent:strategic-insight].\n\n## Output\nA decision-ready readout of findings, risks, and recommended actions.",
 		"bodyIntro": "You trace product drop-offs, connect them to customer feedback, and point to the next investigation.",
 		"triggerAutomationName": "Funnel investigation",
-		"triggerPrompt": "When a funnel anomaly fires or on the weekly review, trace the product drop-offs, connect them to customer feedback, and recommend the next investigation."
+		"triggerPrompt": "When a funnel anomaly fires or on the weekly review, trace the product drop-offs, connect them to customer feedback, and recommend the next investigation.",
+		"subagentDefinitions": [
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"skillIds": [
+					"funnel-analytics",
+					"trend-spotter"
+				],
+				"toolIds": [
+					"amplitude",
+					"datadog"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"trend-spotter",
+					"build-report"
+				],
+				"toolIds": [
+					"datadog",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"analytics"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "research-synthesizer",
@@ -850,7 +1450,47 @@
 		"instructionsBody": "You pull scattered research into a single, decision-ready brief with clear recommendations.\n\n## Context\nGround your analysis in @[knowledge:confluence:all] and @[knowledge:google-drive:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork through the signal in order:\n1. Lead with @[skill:run-deep-research].\n2. Then bring in @[skill:capture-insights].\n3. Next, apply @[skill:build-report].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:confluence], @[tool:dovetail], and @[tool:google-drive].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:feedback-analyzer] and @[subagent:strategic-insight].\n\n## Output\nA decision-ready readout of findings, risks, and recommended actions.",
 		"bodyIntro": "You pull scattered research into a single, decision-ready brief with clear recommendations.",
 		"triggerAutomationName": "Research synthesis",
-		"triggerPrompt": "When a research doc is shared, pull the findings into a single decision-ready brief with clear recommendations and cited sources."
+		"triggerPrompt": "When a research doc is shared, pull the findings into a single decision-ready brief with clear recommendations and cited sources.",
+		"subagentDefinitions": [
+			{
+				"id": "feedback-analyzer",
+				"name": "Feedback Analyzer",
+				"description": "Clusters customer feedback and surfaces themes, sentiment, and product opportunities.",
+				"avatarSrc": "/avatar-agent/product-agents/feedback-analyzer.svg",
+				"skillIds": [
+					"run-deep-research",
+					"capture-insights"
+				],
+				"toolIds": [
+					"confluence",
+					"dovetail"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"capture-insights",
+					"build-report"
+				],
+				"toolIds": [
+					"dovetail",
+					"google-drive"
+				],
+				"knowledgeIds": [
+					"google-drive"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "service-triage",
@@ -903,7 +1543,47 @@
 		"instructionsBody": "You triage incoming service requests by risk and ownership and prep clean, actionable handoffs.\n\n## Context\nGround your review in @[knowledge:confluence:all] and @[knowledge:jira:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the queue in order:\n1. Lead with @[skill:service-request-triage].\n2. Then bring in @[skill:response-drafter].\n3. Next, apply @[skill:sla-monitor].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:jira-service-management], @[tool:servicenow], and @[tool:confluence].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:service-request-helper] and @[subagent:root-cause-analyzer].\n\n## Output\nA review-ready result with clear recommendations you can edit before sharing.",
 		"bodyIntro": "You triage incoming service requests by risk and ownership and prep clean, actionable handoffs.",
 		"triggerAutomationName": "Service request triage",
-		"triggerPrompt": "When a request is created or breaches SLA, triage it by risk and ownership, recommend field updates, and ask for any missing details."
+		"triggerPrompt": "When a request is created or breaches SLA, triage it by risk and ownership, recommend field updates, and ask for any missing details.",
+		"subagentDefinitions": [
+			{
+				"id": "service-request-helper",
+				"name": "Service Request Helper",
+				"description": "Helps compose support responses and find the right assignee.",
+				"avatarSrc": "/avatar-agent/service-agents/service-request-helper.svg",
+				"skillIds": [
+					"service-request-triage",
+					"response-drafter"
+				],
+				"toolIds": [
+					"jira-service-management",
+					"servicenow"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "root-cause-analyzer",
+				"name": "Root Cause Analyzer",
+				"description": "Traces incidents to their root cause from signals and history.",
+				"avatarSrc": "/avatar-agent/service-agents/rca-agent.svg",
+				"skillIds": [
+					"response-drafter",
+					"sla-monitor"
+				],
+				"toolIds": [
+					"servicenow",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "service-request-helper",
@@ -961,7 +1641,47 @@
 		"instructionsBody": "You draft support responses, suggest the right assignee, and summarize requests for fast resolution.\n\n## Context\nGround your review in @[knowledge:confluence:all] and @[knowledge:customer-service-management:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the queue in order:\n1. Lead with @[skill:response-drafter].\n2. Then bring in @[skill:service-request-triage].\n3. Next, apply @[skill:summarize-thread].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:jira-service-management], @[tool:zendesk], and @[tool:confluence].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:root-cause-analyzer] and @[subagent:rovo-ops].\n\n## Output\nA review-ready result with clear recommendations you can edit before sharing.",
 		"bodyIntro": "You draft support responses, suggest the right assignee, and summarize requests for fast resolution.",
 		"triggerAutomationName": "Support response drafting",
-		"triggerPrompt": "When a request is assigned or a customer replies, draft a support response, suggest an assignee, and summarize the request for a clean handoff."
+		"triggerPrompt": "When a request is assigned or a customer replies, draft a support response, suggest an assignee, and summarize the request for a clean handoff.",
+		"subagentDefinitions": [
+			{
+				"id": "root-cause-analyzer",
+				"name": "Root Cause Analyzer",
+				"description": "Traces incidents to their root cause from signals and history.",
+				"avatarSrc": "/avatar-agent/service-agents/rca-agent.svg",
+				"skillIds": [
+					"response-drafter",
+					"service-request-triage"
+				],
+				"toolIds": [
+					"jira-service-management",
+					"zendesk"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "rovo-ops",
+				"name": "Rovo Ops",
+				"description": "Streamlines incident management and on-call guidance in service projects.",
+				"avatarSrc": "/avatar-agent/service-agents/ops-guide.svg",
+				"skillIds": [
+					"service-request-triage",
+					"summarize-thread"
+				],
+				"toolIds": [
+					"zendesk",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"customer-service-management"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "rovo-ops",
@@ -1021,7 +1741,47 @@
 		"instructionsBody": "You run point on incidents — guiding response, drafting status updates, and steering toward recovery.\n\n## Context\nGround your review in @[knowledge:confluence:all] and @[knowledge:compass:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the queue in order:\n1. Lead with @[skill:incident-responder].\n2. Then bring in @[skill:analyze-root-cause].\n3. Next, apply @[skill:response-drafter].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:opsgenie], @[tool:statuspage], @[tool:pagerduty], and @[tool:jira-service-management].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:root-cause-analyzer] and @[subagent:pipeline-troubleshooter].\n\n## Output\nA review-ready result with clear recommendations you can edit before sharing.",
 		"bodyIntro": "You run point on incidents — guiding response, drafting status updates, and steering toward recovery.",
 		"triggerAutomationName": "Incident response",
-		"triggerPrompt": "When an alert pages on-call or an incident is declared, guide response, draft stakeholder status updates, and recommend the next mitigation toward recovery."
+		"triggerPrompt": "When an alert pages on-call or an incident is declared, guide response, draft stakeholder status updates, and recommend the next mitigation toward recovery.",
+		"subagentDefinitions": [
+			{
+				"id": "root-cause-analyzer",
+				"name": "Root Cause Analyzer",
+				"description": "Traces incidents to their root cause from signals and history.",
+				"avatarSrc": "/avatar-agent/service-agents/rca-agent.svg",
+				"skillIds": [
+					"incident-responder",
+					"analyze-root-cause"
+				],
+				"toolIds": [
+					"opsgenie",
+					"statuspage"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "pipeline-troubleshooter",
+				"name": "Pipeline Troubleshooter",
+				"description": "Diagnoses failing builds, deployment issues, and CI configuration problems.",
+				"avatarSrc": "/avatar-agent/dev-agents/pipeline-troubleshooter.svg",
+				"skillIds": [
+					"analyze-root-cause",
+					"response-drafter"
+				],
+				"toolIds": [
+					"statuspage",
+					"pagerduty"
+				],
+				"knowledgeIds": [
+					"compass"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "rovo-expert",
@@ -1073,7 +1833,47 @@
 		"instructionsBody": "You answer Rovo setup and usage questions with concise, trustworthy guidance and the right links.\n\n## Context\nGround your review in @[knowledge:confluence:all] and @[knowledge:atlassian-teams:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the queue in order:\n1. Lead with @[skill:kb-article-writer].\n2. Then bring in @[skill:summarize-thread].\n3. Next, apply @[skill:search-web].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:confluence] and @[tool:atlassian-home].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:rovo-ops] and @[subagent:user-manual-writer].\n\n## Output\nA review-ready result with clear recommendations you can edit before sharing.",
 		"bodyIntro": "You answer Rovo setup and usage questions with concise, trustworthy guidance and the right links.",
 		"triggerAutomationName": "Rovo help",
-		"triggerPrompt": "When a Rovo question is asked or a setup doc opens, answer with concise, accurate guidance and link the right docs."
+		"triggerPrompt": "When a Rovo question is asked or a setup doc opens, answer with concise, accurate guidance and link the right docs.",
+		"subagentDefinitions": [
+			{
+				"id": "rovo-ops",
+				"name": "Rovo Ops",
+				"description": "Streamlines incident management and on-call guidance in service projects.",
+				"avatarSrc": "/avatar-agent/service-agents/ops-guide.svg",
+				"skillIds": [
+					"kb-article-writer",
+					"summarize-thread"
+				],
+				"toolIds": [
+					"confluence",
+					"atlassian-home"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "user-manual-writer",
+				"name": "User Manual Writer",
+				"description": "Helps create a personal user manual of your working styles.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/user-manual-writer.svg",
+				"skillIds": [
+					"summarize-thread",
+					"search-web"
+				],
+				"toolIds": [
+					"atlassian-home",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"atlassian-teams"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "user-manual-writer",
@@ -1125,7 +1925,47 @@
 		"instructionsBody": "You help a teammate document their working style, communication norms, and collaboration preferences.\n\n## Context\nGround your review in @[knowledge:confluence:all] and @[knowledge:atlassian-teams:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the queue in order:\n1. Lead with @[skill:user-manual-writer].\n2. Then bring in @[skill:onboarding-plan].\n3. Next, apply @[skill:brand-voice-editor].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:confluence] and @[tool:loom].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:progress-tracker] and @[subagent:strategic-insight].\n\n## Output\nA review-ready result with clear recommendations you can edit before sharing.",
 		"bodyIntro": "You help a teammate document their working style, communication norms, and collaboration preferences.",
 		"triggerAutomationName": "Working-style capture",
-		"triggerPrompt": "When onboarding starts or a profile doc is shared, help the teammate document their working style, communication norms, and collaboration preferences."
+		"triggerPrompt": "When onboarding starts or a profile doc is shared, help the teammate document their working style, communication norms, and collaboration preferences.",
+		"subagentDefinitions": [
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"description": "Summarizes project movement, blockers, and next actions across work streams.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"skillIds": [
+					"user-manual-writer",
+					"onboarding-plan"
+				],
+				"toolIds": [
+					"confluence",
+					"loom"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"onboarding-plan",
+					"brand-voice-editor"
+				],
+				"toolIds": [
+					"loom",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"atlassian-teams"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "knowledge-base-guide",
@@ -1176,7 +2016,47 @@
 		"instructionsBody": "You answer policy and process questions strictly from trusted, cited context.\n\n## Context\nGround your review in @[knowledge:confluence:all] and @[knowledge:notion:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the queue in order:\n1. Lead with @[skill:kb-article-writer].\n2. Then bring in @[skill:summarize-thread].\n3. Next, apply @[skill:search-web].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:confluence], @[tool:atlassian-home], and @[tool:notion].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:rovo-expert] and @[subagent:user-manual-writer].\n\n## Output\nA review-ready result with clear recommendations you can edit before sharing.",
 		"bodyIntro": "You answer policy and process questions strictly from trusted, cited context.",
 		"triggerAutomationName": "Policy Q&A",
-		"triggerPrompt": "When a policy question is asked or a KB page changes, answer strictly from trusted context and cite the source."
+		"triggerPrompt": "When a policy question is asked or a KB page changes, answer strictly from trusted context and cite the source.",
+		"subagentDefinitions": [
+			{
+				"id": "rovo-expert",
+				"name": "Rovo Expert",
+				"description": "Introduces Rovo features and provides hands-on usage guidance.",
+				"logoName": "rovo",
+				"skillIds": [
+					"kb-article-writer",
+					"summarize-thread"
+				],
+				"toolIds": [
+					"confluence",
+					"atlassian-home"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "user-manual-writer",
+				"name": "User Manual Writer",
+				"description": "Helps create a personal user manual of your working styles.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/user-manual-writer.svg",
+				"skillIds": [
+					"summarize-thread",
+					"search-web"
+				],
+				"toolIds": [
+					"atlassian-home",
+					"notion"
+				],
+				"knowledgeIds": [
+					"notion"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "incident-recap-writer",
@@ -1228,7 +2108,47 @@
 		"instructionsBody": "You compile post-incident timelines, decisions, and follow-ups into a clear, shareable recap.\n\n## Context\nGround your review in @[knowledge:confluence:all] and @[knowledge:jira:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the queue in order:\n1. Lead with @[skill:incident-responder].\n2. Then bring in @[skill:analyze-root-cause].\n3. Next, apply @[skill:kb-article-writer].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:opsgenie], @[tool:statuspage], @[tool:confluence], and @[tool:jira-service-management].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:root-cause-analyzer] and @[subagent:rovo-ops].\n\n## Output\nA review-ready result with clear recommendations you can edit before sharing.",
 		"bodyIntro": "You compile post-incident timelines, decisions, and follow-ups into a clear, shareable recap.",
 		"triggerAutomationName": "Post-incident recap",
-		"triggerPrompt": "When an incident is resolved, compile the timeline, decisions, and follow-ups into a clear, shareable post-incident recap."
+		"triggerPrompt": "When an incident is resolved, compile the timeline, decisions, and follow-ups into a clear, shareable post-incident recap.",
+		"subagentDefinitions": [
+			{
+				"id": "root-cause-analyzer",
+				"name": "Root Cause Analyzer",
+				"description": "Traces incidents to their root cause from signals and history.",
+				"avatarSrc": "/avatar-agent/service-agents/rca-agent.svg",
+				"skillIds": [
+					"incident-responder",
+					"analyze-root-cause"
+				],
+				"toolIds": [
+					"opsgenie",
+					"statuspage"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "rovo-ops",
+				"name": "Rovo Ops",
+				"description": "Streamlines incident management and on-call guidance in service projects.",
+				"avatarSrc": "/avatar-agent/service-agents/ops-guide.svg",
+				"skillIds": [
+					"analyze-root-cause",
+					"kb-article-writer"
+				],
+				"toolIds": [
+					"statuspage",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "teamwork-coach",
@@ -1279,7 +2199,47 @@
 		"instructionsBody": "You read a team's collaboration patterns and recommend healthier, lighter-weight rituals.\n\n## Context\nGround your review in @[knowledge:confluence:all] and @[knowledge:atlassian-teams:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nWork the queue in order:\n1. Lead with @[skill:team-building-planner].\n2. Then bring in @[skill:team-health-survey-skill].\n3. Next, apply @[skill:summarize-thread].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:confluence], @[tool:slack], and @[tool:microsoft-teams].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:strategic-insight] and @[subagent:progress-tracker].\n\n## Output\nA review-ready result with clear recommendations you can edit before sharing.",
 		"bodyIntro": "You read a team's collaboration patterns and recommend healthier, lighter-weight rituals.",
 		"triggerAutomationName": "Team health review",
-		"triggerPrompt": "When a retro is scheduled or a health check posts, review the team's collaboration patterns and suggest lighter, healthier rituals."
+		"triggerPrompt": "When a retro is scheduled or a health check posts, review the team's collaboration patterns and suggest lighter, healthier rituals.",
+		"subagentDefinitions": [
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"team-building-planner",
+					"team-health-survey-skill"
+				],
+				"toolIds": [
+					"confluence",
+					"slack"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"description": "Summarizes project movement, blockers, and next actions across work streams.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"skillIds": [
+					"team-health-survey-skill",
+					"summarize-thread"
+				],
+				"toolIds": [
+					"slack",
+					"microsoft-teams"
+				],
+				"knowledgeIds": [
+					"atlassian-teams"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "product-requirements-guide",
@@ -1332,7 +2292,47 @@
 		"instructionsBody": "You shape and review PRDs grounded in customer evidence, sharp acceptance criteria, and direct feedback.\n\n## Context\nGround your summary in @[knowledge:confluence:all] and @[knowledge:jira:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nShape the narrative in order:\n1. Lead with @[skill:prd-builder].\n2. Then bring in @[skill:customer-insights].\n3. Next, apply @[skill:build-report].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:jira-product-discovery], @[tool:confluence], and @[tool:jira].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:customer-insights] and @[subagent:strategic-insight].\n\n## Output\nA clear, audience-ready summary you can edit before sharing.",
 		"bodyIntro": "You shape and review PRDs grounded in customer evidence, sharp acceptance criteria, and direct feedback.",
 		"triggerAutomationName": "PRD review",
-		"triggerPrompt": "When a new initiative is scoped or a PRD is shared, draft or review it for customer evidence, sharp acceptance criteria, and gaps, and give direct feedback."
+		"triggerPrompt": "When a new initiative is scoped or a PRD is shared, draft or review it for customer evidence, sharp acceptance criteria, and gaps, and give direct feedback.",
+		"subagentDefinitions": [
+			{
+				"id": "customer-insights",
+				"name": "Customer Insights",
+				"description": "Analyzes customer feedback from connected data sources for themes.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/customer-insights.svg",
+				"skillIds": [
+					"prd-builder",
+					"customer-insights"
+				],
+				"toolIds": [
+					"jira-product-discovery",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"customer-insights",
+					"build-report"
+				],
+				"toolIds": [
+					"confluence",
+					"jira"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "release-notes-drafter",
@@ -1391,7 +2391,47 @@
 		"instructionsBody": "You convert shipped work into grouped, customer-ready release notes stakeholders can scan.\n\n## Context\nGround your summary in @[knowledge:jira:all] and @[knowledge:github:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nShape the narrative in order:\n1. Lead with @[skill:draft-release-notes].\n2. Then bring in @[skill:release-announcement].\n3. Next, apply @[skill:build-report].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:jira], @[tool:confluence], @[tool:github], and @[tool:release-notes-composer].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:progress-tracker] and @[subagent:code-reviewer].\n\n## Output\nA clear, audience-ready summary you can edit before sharing.",
 		"bodyIntro": "You convert shipped work into grouped, customer-ready release notes stakeholders can scan.",
 		"triggerAutomationName": "Release notes",
-		"triggerPrompt": "When a release is cut or a version is marked released, convert the shipped work into grouped, customer-ready release notes stakeholders can scan."
+		"triggerPrompt": "When a release is cut or a version is marked released, convert the shipped work into grouped, customer-ready release notes stakeholders can scan.",
+		"subagentDefinitions": [
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"description": "Summarizes project movement, blockers, and next actions across work streams.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"skillIds": [
+					"draft-release-notes",
+					"release-announcement"
+				],
+				"toolIds": [
+					"jira",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "code-reviewer",
+				"name": "Code Reviewer",
+				"description": "Reviews changes for correctness, maintainability, and test coverage.",
+				"avatarSrc": "/avatar-agent/dev-agents/code-reviewer.svg",
+				"skillIds": [
+					"release-announcement",
+					"build-report"
+				],
+				"toolIds": [
+					"confluence",
+					"github"
+				],
+				"knowledgeIds": [
+					"github"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "brand-voice-crafter",
@@ -1444,7 +2484,47 @@
 		"instructionsBody": "You draft and review content against brand voice, tone guidance, and the audience in front of you.\n\n## Context\nGround your summary in @[knowledge:confluence:all] and @[knowledge:google-drive:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nShape the narrative in order:\n1. Lead with @[skill:brand-voice-editor].\n2. Then bring in @[skill:produce-marketing-materials].\n3. Next, apply @[skill:translate-content].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:confluence], @[tool:google-drive], and @[tool:canva].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:social-media-writer] and @[subagent:global-translator].\n\n## Output\nA clear, audience-ready summary you can edit before sharing.",
 		"bodyIntro": "You draft and review content against brand voice, tone guidance, and the audience in front of you.",
 		"triggerAutomationName": "Brand voice review",
-		"triggerPrompt": "When a draft is shared or a content request posts, draft or review the content against brand voice and tone for its audience."
+		"triggerPrompt": "When a draft is shared or a content request posts, draft or review the content against brand voice and tone for its audience.",
+		"subagentDefinitions": [
+			{
+				"id": "social-media-writer",
+				"name": "Social Media Writer",
+				"description": "Drafts concise social posts, campaign variations, and channel-ready copy.",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-2.svg",
+				"skillIds": [
+					"brand-voice-editor",
+					"produce-marketing-materials"
+				],
+				"toolIds": [
+					"confluence",
+					"google-drive"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "global-translator",
+				"name": "Global Translator",
+				"description": "Translates pages, posts, and replies into multiple languages.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/global-translator.svg",
+				"skillIds": [
+					"produce-marketing-materials",
+					"translate-content"
+				],
+				"toolIds": [
+					"google-drive",
+					"canva"
+				],
+				"knowledgeIds": [
+					"google-drive"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "social-media-writer",
@@ -1497,7 +2577,47 @@
 		"instructionsBody": "You draft channel-ready social posts and adapt the message to each audience and platform.\n\n## Context\nGround your summary in @[knowledge:confluence:all] and @[knowledge:google-drive:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nShape the narrative in order:\n1. Lead with @[skill:produce-marketing-materials].\n2. Then bring in @[skill:brand-voice-editor].\n3. Next, apply @[skill:translate-content].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:canva], @[tool:loom], and @[tool:confluence].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:brand-voice-crafter] and @[subagent:global-translator].\n\n## Output\nA clear, audience-ready summary you can edit before sharing.",
 		"bodyIntro": "You draft channel-ready social posts and adapt the message to each audience and platform.",
 		"triggerAutomationName": "Social drafting",
-		"triggerPrompt": "When a campaign brief is shared or a launch date arrives, draft channel-ready social posts adapted to each audience and platform."
+		"triggerPrompt": "When a campaign brief is shared or a launch date arrives, draft channel-ready social posts adapted to each audience and platform.",
+		"subagentDefinitions": [
+			{
+				"id": "brand-voice-crafter",
+				"name": "Brand Voice Crafter",
+				"description": "Produces content that matches your brand guidelines and tone.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/brand-guardian.svg",
+				"skillIds": [
+					"produce-marketing-materials",
+					"brand-voice-editor"
+				],
+				"toolIds": [
+					"canva",
+					"loom"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "global-translator",
+				"name": "Global Translator",
+				"description": "Translates pages, posts, and replies into multiple languages.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/global-translator.svg",
+				"skillIds": [
+					"brand-voice-editor",
+					"translate-content"
+				],
+				"toolIds": [
+					"loom",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"google-drive"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "global-translator",
@@ -1550,7 +2670,47 @@
 		"instructionsBody": "You translate writing while preserving meaning, tone, accessibility, and audience context.\n\n## Context\nGround your summary in @[knowledge:confluence:all] and @[knowledge:google-drive:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nShape the narrative in order:\n1. Lead with @[skill:translate-content].\n2. Then bring in @[skill:brand-voice-editor].\n3. Next, apply @[skill:summarize-thread].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:confluence], @[tool:google-drive], and @[tool:notion].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:brand-voice-crafter] and @[subagent:social-media-writer].\n\n## Output\nA clear, audience-ready summary you can edit before sharing.",
 		"bodyIntro": "You translate writing while preserving meaning, tone, accessibility, and audience context.",
 		"triggerAutomationName": "Translation",
-		"triggerPrompt": "When a doc is marked for translation, translate it while preserving meaning, tone, accessibility, and audience context."
+		"triggerPrompt": "When a doc is marked for translation, translate it while preserving meaning, tone, accessibility, and audience context.",
+		"subagentDefinitions": [
+			{
+				"id": "brand-voice-crafter",
+				"name": "Brand Voice Crafter",
+				"description": "Produces content that matches your brand guidelines and tone.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/brand-guardian.svg",
+				"skillIds": [
+					"translate-content",
+					"brand-voice-editor"
+				],
+				"toolIds": [
+					"confluence",
+					"google-drive"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "social-media-writer",
+				"name": "Social Media Writer",
+				"description": "Drafts concise social posts, campaign variations, and channel-ready copy.",
+				"avatarSrc": "/avatar-agent/strategy-agents/wildcard-2.svg",
+				"skillIds": [
+					"brand-voice-editor",
+					"summarize-thread"
+				],
+				"toolIds": [
+					"google-drive",
+					"notion"
+				],
+				"knowledgeIds": [
+					"google-drive"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "executive-briefing-writer",
@@ -1601,7 +2761,47 @@
 		"instructionsBody": "You condense dense context into a sharp, scannable briefing leadership can act on.\n\n## Context\nGround your summary in @[knowledge:confluence:all] and @[knowledge:jira:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nShape the narrative in order:\n1. Lead with @[skill:summarize-thread].\n2. Then bring in @[skill:build-report].\n3. Next, apply @[skill:report-compiler].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:confluence], @[tool:jira], and @[tool:google-drive].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:strategic-insight] and @[subagent:progress-tracker].\n\n## Output\nA clear, audience-ready summary you can edit before sharing.",
 		"bodyIntro": "You condense dense context into a sharp, scannable briefing leadership can act on.",
 		"triggerAutomationName": "Exec briefing",
-		"triggerPrompt": "When a leadership update is due or a board doc is shared, condense the dense context into a sharp, scannable briefing leadership can act on."
+		"triggerPrompt": "When a leadership update is due or a board doc is shared, condense the dense context into a sharp, scannable briefing leadership can act on.",
+		"subagentDefinitions": [
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"summarize-thread",
+					"build-report"
+				],
+				"toolIds": [
+					"confluence",
+					"jira"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"description": "Summarizes project movement, blockers, and next actions across work streams.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"skillIds": [
+					"build-report",
+					"report-compiler"
+				],
+				"toolIds": [
+					"jira",
+					"google-drive"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "stakeholder-update-builder",
@@ -1652,7 +2852,47 @@
 		"instructionsBody": "You package in-flight progress into stakeholder-ready updates that answer the obvious questions.\n\n## Context\nGround your summary in @[knowledge:jira:all] and @[knowledge:confluence:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nShape the narrative in order:\n1. Lead with @[skill:build-report].\n2. Then bring in @[skill:summarize-thread].\n3. Next, apply @[skill:report-compiler].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:jira], @[tool:confluence], and @[tool:slack].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:progress-tracker] and @[subagent:strategic-insight].\n\n## Output\nA clear, audience-ready summary you can edit before sharing.",
 		"bodyIntro": "You package in-flight progress into stakeholder-ready updates that answer the obvious questions.",
 		"triggerAutomationName": "Stakeholder update",
-		"triggerPrompt": "When the reporting cadence is due or a milestone closes, package the in-flight progress into a stakeholder-ready update that answers the obvious questions."
+		"triggerPrompt": "When the reporting cadence is due or a milestone closes, package the in-flight progress into a stakeholder-ready update that answers the obvious questions.",
+		"subagentDefinitions": [
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"description": "Summarizes project movement, blockers, and next actions across work streams.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"skillIds": [
+					"build-report",
+					"summarize-thread"
+				],
+				"toolIds": [
+					"jira",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"summarize-thread",
+					"report-compiler"
+				],
+				"toolIds": [
+					"confluence",
+					"slack"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "team-recap",
@@ -1703,7 +2943,47 @@
 		"instructionsBody": "You turn busy channels into a concise weekly recap of what shipped, what moved, and what's stuck.\n\n## Context\nGround your summary in @[knowledge:confluence:all] and @[knowledge:microsoft-teams:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nShape the narrative in order:\n1. Lead with @[skill:summarize-thread].\n2. Then bring in @[skill:standup-summarizer].\n3. Next, apply @[skill:build-report].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:slack], @[tool:microsoft-teams], and @[tool:confluence].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:progress-tracker] and @[subagent:meeting-insights-reporter].\n\n## Output\nA clear, audience-ready summary you can edit before sharing.",
 		"bodyIntro": "You turn busy channels into a concise weekly recap of what shipped, what moved, and what's stuck.",
 		"triggerAutomationName": "Weekly recap",
-		"triggerPrompt": "When the weekly recap is due, turn the busy channels into a concise summary of what shipped, what moved, and what's stuck."
+		"triggerPrompt": "When the weekly recap is due, turn the busy channels into a concise summary of what shipped, what moved, and what's stuck.",
+		"subagentDefinitions": [
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"description": "Summarizes project movement, blockers, and next actions across work streams.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"skillIds": [
+					"summarize-thread",
+					"standup-summarizer"
+				],
+				"toolIds": [
+					"slack",
+					"microsoft-teams"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "meeting-insights-reporter",
+				"name": "Meeting Insights Reporter",
+				"description": "Turns meeting notes and transcripts into summaries, decisions, and follow-ups.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/meeting-insights-reporter.svg",
+				"skillIds": [
+					"standup-summarizer",
+					"build-report"
+				],
+				"toolIds": [
+					"microsoft-teams",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"microsoft-teams"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "work-item-planner",
@@ -1756,7 +3036,47 @@
 		"instructionsBody": "You break large projects into sequenced, well-owned work items with clear next steps.\n\n## Context\nGround your work in @[knowledge:jira:all] and @[knowledge:confluence:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nBuild it out in order:\n1. Lead with @[skill:create-work-items].\n2. Then bring in @[skill:sprint-planner].\n3. Next, apply @[skill:dependency-mapper].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:jira], @[tool:jira-product-discovery], and @[tool:confluence].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:code-planner] and @[subagent:blocker-checker].\n\n## Output\nStructured, well-owned output ready to drop into delivery.",
 		"bodyIntro": "You break large projects into sequenced, well-owned work items with clear next steps.",
 		"triggerAutomationName": "Epic breakdown",
-		"triggerPrompt": "When a new epic is created, break it into sequenced, well-owned work items with clear next steps."
+		"triggerPrompt": "When a new epic is created, break it into sequenced, well-owned work items with clear next steps.",
+		"subagentDefinitions": [
+			{
+				"id": "code-planner",
+				"name": "Code Planner",
+				"description": "Plans implementation steps and breaks down technical work.",
+				"avatarSrc": "/avatar-agent/dev-agents/code-planner.svg",
+				"skillIds": [
+					"create-work-items",
+					"sprint-planner"
+				],
+				"toolIds": [
+					"jira",
+					"jira-product-discovery"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "blocker-checker",
+				"name": "Blocker Checker",
+				"description": "Flags potentially blocked work items before they stall delivery.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/blocker-checker.svg",
+				"skillIds": [
+					"sprint-planner",
+					"dependency-mapper"
+				],
+				"toolIds": [
+					"jira-product-discovery",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "work-item-organizer",
@@ -1809,7 +3129,47 @@
 		"instructionsBody": "You find, move, update, and tidy work items across sprints, epics, and stale queues.\n\n## Context\nGround your work in @[knowledge:jira:all] and @[knowledge:projects:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nBuild it out in order:\n1. Lead with @[skill:bulk-issue-editor].\n2. Then bring in @[skill:create-work-items].\n3. Next, apply @[skill:jql-query-builder].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:jira], @[tool:confluence], and @[tool:trello].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:work-item-planner] and @[subagent:progress-tracker].\n\n## Output\nStructured, well-owned output ready to drop into delivery.",
 		"bodyIntro": "You find, move, update, and tidy work items across sprints, epics, and stale queues.",
 		"triggerAutomationName": "Backlog tidy",
-		"triggerPrompt": "When a sprint boundary is reached or stale issues pile up, find, move, update, and tidy work items across sprints, epics, and stale queues."
+		"triggerPrompt": "When a sprint boundary is reached or stale issues pile up, find, move, update, and tidy work items across sprints, epics, and stale queues.",
+		"subagentDefinitions": [
+			{
+				"id": "work-item-planner",
+				"name": "Work Item Planner",
+				"description": "Breaks large projects into smaller, actionable, well-scoped tasks.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/work-item-planner.svg",
+				"skillIds": [
+					"bulk-issue-editor",
+					"create-work-items"
+				],
+				"toolIds": [
+					"jira",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"description": "Summarizes project movement, blockers, and next actions across work streams.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"skillIds": [
+					"create-work-items",
+					"jql-query-builder"
+				],
+				"toolIds": [
+					"confluence",
+					"trello"
+				],
+				"knowledgeIds": [
+					"projects"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "bug-report-assistant",
@@ -1868,7 +3228,47 @@
 		"instructionsBody": "You write tight bug reports with reproduction steps, impact, expected behavior, and triage notes.\n\n## Context\nGround your work in @[knowledge:jira:all] and @[knowledge:github:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nBuild it out in order:\n1. Lead with @[skill:bug-report-assistant].\n2. Then bring in @[skill:debug-log-issue].\n3. Next, apply @[skill:test-plan-builder].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:jira], @[tool:github], @[tool:sentry], and @[tool:bitbucket].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:unit-test-creator] and @[subagent:root-cause-analyzer].\n\n## Output\nStructured, well-owned output ready to drop into delivery.",
 		"bodyIntro": "You write tight bug reports with reproduction steps, impact, expected behavior, and triage notes.",
 		"triggerAutomationName": "Bug report",
-		"triggerPrompt": "When an error spikes in Sentry or a bug is filed, write a tight bug report with reproduction steps, impact, expected behavior, and triage notes."
+		"triggerPrompt": "When an error spikes in Sentry or a bug is filed, write a tight bug report with reproduction steps, impact, expected behavior, and triage notes.",
+		"subagentDefinitions": [
+			{
+				"id": "unit-test-creator",
+				"name": "Unit Test Creator",
+				"description": "Generates unit tests and coverage for changed code.",
+				"avatarSrc": "/avatar-agent/dev-agents/unit-test-creator.svg",
+				"skillIds": [
+					"bug-report-assistant",
+					"debug-log-issue"
+				],
+				"toolIds": [
+					"jira",
+					"github"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "root-cause-analyzer",
+				"name": "Root Cause Analyzer",
+				"description": "Traces incidents to their root cause from signals and history.",
+				"avatarSrc": "/avatar-agent/service-agents/rca-agent.svg",
+				"skillIds": [
+					"debug-log-issue",
+					"test-plan-builder"
+				],
+				"toolIds": [
+					"github",
+					"sentry"
+				],
+				"knowledgeIds": [
+					"github"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "blocker-checker",
@@ -1921,7 +3321,47 @@
 		"instructionsBody": "You detect blocked work, explain the evidence, and recommend the clearest move to unblock it.\n\n## Context\nGround your work in @[knowledge:jira:all] and @[knowledge:confluence:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nBuild it out in order:\n1. Lead with @[skill:dependency-mapper].\n2. Then bring in @[skill:standup-summarizer].\n3. Next, apply @[skill:jql-query-builder].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:jira], @[tool:confluence], and @[tool:slack].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:progress-tracker] and @[subagent:work-item-organizer].\n\n## Output\nStructured, well-owned output ready to drop into delivery.",
 		"bodyIntro": "You detect blocked work, explain the evidence, and recommend the clearest move to unblock it.",
 		"triggerAutomationName": "Blocker check",
-		"triggerPrompt": "When a standup is due or an issue is flagged blocked, detect the blocked work, explain the evidence, and recommend the clearest way to unblock it."
+		"triggerPrompt": "When a standup is due or an issue is flagged blocked, detect the blocked work, explain the evidence, and recommend the clearest way to unblock it.",
+		"subagentDefinitions": [
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"description": "Summarizes project movement, blockers, and next actions across work streams.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"skillIds": [
+					"dependency-mapper",
+					"standup-summarizer"
+				],
+				"toolIds": [
+					"jira",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "work-item-organizer",
+				"name": "Work Item Organizer",
+				"description": "Finds and updates work items and assigns them to epics or sprints.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/work-organizer.svg",
+				"skillIds": [
+					"standup-summarizer",
+					"jql-query-builder"
+				],
+				"toolIds": [
+					"confluence",
+					"slack"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "readiness-checker",
@@ -1973,7 +3413,47 @@
 		"instructionsBody": "You review work items against the team's definition of ready and flag the missing details.\n\n## Context\nGround your work in @[knowledge:jira:all] and @[knowledge:confluence:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nBuild it out in order:\n1. Lead with @[skill:create-work-items].\n2. Then bring in @[skill:build-report].\n3. Next, apply @[skill:jql-query-builder].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:jira] and @[tool:confluence].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:work-item-planner] and @[subagent:blocker-checker].\n\n## Output\nStructured, well-owned output ready to drop into delivery.",
 		"bodyIntro": "You review work items against the team's definition of ready and flag the missing details.",
 		"triggerAutomationName": "Definition-of-ready check",
-		"triggerPrompt": "When sprint planning starts or grooming is scheduled, review the work items against the definition of ready and flag the missing details."
+		"triggerPrompt": "When sprint planning starts or grooming is scheduled, review the work items against the definition of ready and flag the missing details.",
+		"subagentDefinitions": [
+			{
+				"id": "work-item-planner",
+				"name": "Work Item Planner",
+				"description": "Breaks large projects into smaller, actionable, well-scoped tasks.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/work-item-planner.svg",
+				"skillIds": [
+					"create-work-items",
+					"build-report"
+				],
+				"toolIds": [
+					"jira",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "blocker-checker",
+				"name": "Blocker Checker",
+				"description": "Flags potentially blocked work items before they stall delivery.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/blocker-checker.svg",
+				"skillIds": [
+					"build-report",
+					"jql-query-builder"
+				],
+				"toolIds": [
+					"confluence",
+					"jira"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "progress-tracker",
@@ -2026,7 +3506,47 @@
 		"instructionsBody": "You summarize in-flight projects — priorities, owners, progress, and the work that needs attention.\n\n## Context\nGround your work in @[knowledge:jira:all] and @[knowledge:confluence:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nBuild it out in order:\n1. Lead with @[skill:standup-summarizer].\n2. Then bring in @[skill:build-report].\n3. Next, apply @[skill:milestone-tracker].\n\nMove quickly and keep responses tight.\n\n## Tools\nPull live context and take action across @[tool:jira], @[tool:confluence], and @[tool:atlassian-home].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:blocker-checker] and @[subagent:strategic-insight].\n\n## Output\nStructured, well-owned output ready to drop into delivery.",
 		"bodyIntro": "You summarize in-flight projects — priorities, owners, progress, and the work that needs attention.",
 		"triggerAutomationName": "Progress summary",
-		"triggerPrompt": "When the status cadence is due or a milestone updates, summarize the in-flight projects: priorities, owners, progress, and what needs attention."
+		"triggerPrompt": "When the status cadence is due or a milestone updates, summarize the in-flight projects: priorities, owners, progress, and what needs attention.",
+		"subagentDefinitions": [
+			{
+				"id": "blocker-checker",
+				"name": "Blocker Checker",
+				"description": "Flags potentially blocked work items before they stall delivery.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/blocker-checker.svg",
+				"skillIds": [
+					"standup-summarizer",
+					"build-report"
+				],
+				"toolIds": [
+					"jira",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"build-report",
+					"milestone-tracker"
+				],
+				"toolIds": [
+					"confluence",
+					"atlassian-home"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "sprint-capacity-planner",
@@ -2084,7 +3604,47 @@
 		"instructionsBody": "You recommend balanced sprint scope using capacity, velocity, issue size, and delivery risk.\n\n## Context\nGround your work in @[knowledge:jira:all] and @[knowledge:confluence:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nBuild it out in order:\n1. Lead with @[skill:sprint-planner].\n2. Then bring in @[skill:backlog-groomer].\n3. Next, apply @[skill:milestone-tracker].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:jira], @[tool:confluence], and @[tool:trello].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:work-item-planner] and @[subagent:progress-tracker].\n\n## Output\nStructured, well-owned output ready to drop into delivery.",
 		"bodyIntro": "You recommend balanced sprint scope using capacity, velocity, issue size, and delivery risk.",
 		"triggerAutomationName": "Sprint capacity plan",
-		"triggerPrompt": "When sprint planning starts or a sprint closes, recommend balanced scope using capacity, velocity, issue size, and delivery risk."
+		"triggerPrompt": "When sprint planning starts or a sprint closes, recommend balanced scope using capacity, velocity, issue size, and delivery risk.",
+		"subagentDefinitions": [
+			{
+				"id": "work-item-planner",
+				"name": "Work Item Planner",
+				"description": "Breaks large projects into smaller, actionable, well-scoped tasks.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/work-item-planner.svg",
+				"skillIds": [
+					"sprint-planner",
+					"backlog-groomer"
+				],
+				"toolIds": [
+					"jira",
+					"confluence"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "progress-tracker",
+				"name": "Progress Tracker",
+				"description": "Summarizes project movement, blockers, and next actions across work streams.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/progress-tracker.svg",
+				"skillIds": [
+					"backlog-groomer",
+					"milestone-tracker"
+				],
+				"toolIds": [
+					"confluence",
+					"trello"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	},
 	{
 		"id": "workflow-synthesizer",
@@ -2135,6 +3695,46 @@
 		"instructionsBody": "You turn scattered, repeated requests into durable, documented operating workflows.\n\n## Context\nGround your work in @[knowledge:confluence:all] and @[knowledge:jira:all]. Draw on all connected organizational knowledge. Remember context across turns so each answer builds on the last.\n\n## How you work\nBuild it out in order:\n1. Lead with @[skill:automation-rule-builder].\n2. Then bring in @[skill:build-report].\n3. Next, apply @[skill:create-work-items].\n\nReason step-by-step before you commit to an answer.\n\n## Tools\nPull live context and take action across @[tool:confluence], @[tool:jira], and @[tool:workflow-synthesizer].\n\n## Escalation\nHand specialized or ambiguous work to @[subagent:work-item-organizer] and @[subagent:strategic-insight].\n\n## Output\nStructured, well-owned output ready to drop into delivery.",
 		"bodyIntro": "You turn scattered, repeated requests into durable, documented operating workflows.",
 		"triggerAutomationName": "Workflow synthesis",
-		"triggerPrompt": "When a repeated request pattern is spotted or a process doc is shared, turn the scattered requests into a durable, documented operating workflow."
+		"triggerPrompt": "When a repeated request pattern is spotted or a process doc is shared, turn the scattered requests into a durable, documented operating workflow.",
+		"subagentDefinitions": [
+			{
+				"id": "work-item-organizer",
+				"name": "Work Item Organizer",
+				"description": "Finds and updates work items and assigns them to epics or sprints.",
+				"avatarSrc": "/avatar-agent/teamwork-agents/work-organizer.svg",
+				"skillIds": [
+					"automation-rule-builder",
+					"build-report"
+				],
+				"toolIds": [
+					"confluence",
+					"jira"
+				],
+				"knowledgeIds": [
+					"confluence"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			},
+			{
+				"id": "strategic-insight",
+				"name": "Strategic Insight",
+				"description": "Surfaces strategic insights and risks across initiatives.",
+				"avatarSrc": "/avatar-agent/strategy-agents/strategic-insight.svg",
+				"skillIds": [
+					"build-report",
+					"create-work-items"
+				],
+				"toolIds": [
+					"jira",
+					"workflow-synthesizer"
+				],
+				"knowledgeIds": [
+					"jira"
+				],
+				"memoryMode": "off",
+				"reasoningMode": "quick-auto"
+			}
+		]
 	}
 ]

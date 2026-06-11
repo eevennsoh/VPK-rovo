@@ -53,6 +53,34 @@ export type AgentTemplateMemoryMode = "on" | "off";
  * `instructionsBody` is tokenized markdown whose `@[category:id]` references
  * point at those same catalog ids (see `resolve-ids.ts`).
  */
+/**
+ * A nested subagent owned by a parent template/agent. Subagents are NOT top-level
+ * custom agents — they exist only inside their parent, are only `@`-mentionable
+ * once the parent generates them, and carry their OWN smaller config (a lighter
+ * subset of skills/apps/knowledge plus their own memory/reasoning). The `id` is
+ * shared 1:1 with the parent's `subagentIds` so body `@[subagent:id]` tokens and
+ * the escalation row resolve to this definition.
+ */
+export interface TemplateSubagent {
+	id: string;
+	name: string;
+	description: string;
+	/** Hexagon agent avatar path, when the subagent has one. */
+	avatarSrc?: string;
+	/** ADS brand logo name, when the subagent renders a product logo instead. */
+	logoName?: string;
+	/** Smaller skill subset (skills.json ids) the subagent runs with. */
+	skillIds: readonly string[];
+	/** Smaller tool/app subset (tools.json ids) the subagent can use. */
+	toolIds: readonly string[];
+	/** Smaller knowledge subset (knowledge.json app ids) the subagent grounds against. */
+	knowledgeIds: readonly string[];
+	/** Subagent memory toggle (typically off — subagents are lightweight). */
+	memoryMode: AgentTemplateMemoryMode;
+	/** Subagent reasoning preset (typically quick-auto — lighter than the parent). */
+	reasoningMode: AgentTemplateReasoningMode;
+}
+
 export interface AgentTemplateConfig {
 	id: string;
 	categoryId: AgentTemplateCategoryId;
@@ -81,6 +109,14 @@ export interface AgentTemplateConfig {
 	knowledgeIds: readonly string[];
 	/** Real subagent ids (agents.json) this template can delegate to. */
 	subagentIds: readonly string[];
+	/**
+	 * Nested subagent definitions, 1:1 with `subagentIds`. Each carries the
+	 * subagent's own smaller config so the parent can generate real nested
+	 * subagents (with their own apps/skills/knowledge/memory/reasoning) rather
+	 * than delegating to other top-level agents. Only these become `@`-mentionable
+	 * once the parent is generated.
+	 */
+	subagentDefinitions?: readonly TemplateSubagent[];
 	/** Suggested first-turn prompts shown as conversation starters. */
 	conversationStarters: readonly string[];
 	/** Optional @atlaskit/icon/core names paired 1:1 with `conversationStarters`. */
