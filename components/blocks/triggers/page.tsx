@@ -17,6 +17,7 @@ import { SearchIcon } from "@/components/ui/vpk-icons";
 
 import { Button } from "@/components/ui/button";
 import { IconTile } from "@/components/ui/icon-tile";
+import { Textarea } from "@/components/ui/textarea";
 import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
 import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/mention-visual";
 import type { RichTextMentionVisual } from "@/components/ui-custom/rich-text-editor/types";
@@ -657,7 +658,7 @@ function TriggerRow({
 
 	if (!provider || !event) {
 		return (
-			<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3 rounded-xl border border-border bg-surface p-3">
+			<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3">
 				<IconTile
 					aria-hidden={true}
 					icon={<AutomationIcon label="" size="small" />}
@@ -676,32 +677,37 @@ function TriggerRow({
 	}
 
 	return (
-		<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 rounded-xl border border-border bg-surface p-3">
+		<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3">
 			{/* Connector rail — event node (top) linked by a vertical line to the
 			    prompt node (bottom). Purely decorative. Mirrors the right column's
 			    two rows so the prompt icon top-aligns with the textarea. */}
 			<div
-				className="grid grid-rows-[auto_1fr] justify-items-center gap-4"
+				className="relative grid grid-rows-[auto_1fr] justify-items-center gap-4"
 				aria-hidden={true}
 			>
-				<div className="flex flex-col items-center">
-					<IconTile
-						aria-hidden={true}
-						icon={renderTriggerProviderIcon(provider.icon, provider.label)}
-						label={provider.label}
-						size="medium"
-						variant="blue"
-					/>
-					<div className="mt-2 w-px flex-1 bg-border" />
-				</div>
-				<span className="flex size-8 shrink-0 items-center justify-center self-start rounded-tile bg-bg-neutral text-icon-subtle">
-					<GenerativeIndicatorIcon label="" size="small" />
-				</span>
+				<IconTile
+					aria-hidden={true}
+					icon={renderTriggerProviderIcon(provider.icon, provider.label)}
+					label={provider.label}
+					size="medium"
+					variant="blue"
+				/>
+				{/* Connector line spans the gap between the two tiles without
+				    affecting row heights, so the prompt tile stays top-aligned
+				    with the textarea regardless of the event node's height. */}
+				<div className="pointer-events-none absolute inset-x-0 top-8 bottom-8 mx-auto w-px bg-border" />
+				<IconTile
+					aria-hidden={true}
+					className="self-start bg-bg-neutral text-icon-subtle"
+					icon={<GenerativeIndicatorIcon label="" size="small" />}
+					label=""
+					size="medium"
+				/>
 			</div>
 			<div className="grid min-w-0 gap-4">
 				{/* Event node — what starts the trigger, including its connection state. */}
 				<div className="grid min-w-0 gap-1.5">
-					<div className="flex min-h-6 items-start gap-2">
+					<div className="flex min-h-8 items-center gap-2">
 						<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-text">
 							<TriggerSentence
 								disabled={paramsDisabled}
@@ -739,9 +745,9 @@ function TriggerRow({
 					) : null}
 				</div>
 				{/* Prompt node — the instruction that runs when this event fires. */}
-				<textarea
+				<Textarea
 					aria-label="Trigger prompt"
-					className="min-h-16 w-full resize-none rounded-lg border border-border bg-surface-sunken px-3 py-2 text-sm leading-5 text-text transition-colors duration-normal field-sizing-content placeholder:text-text-subtlest hover:bg-bg-neutral-subtle-hovered focus-visible:border-border-focused focus-visible:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focused"
+					className="resize-y"
 					onChange={(changeEvent) => onPromptChange(changeEvent.target.value)}
 					placeholder="Write a prompt for this trigger…"
 					rows={2}

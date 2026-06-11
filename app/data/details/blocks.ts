@@ -754,7 +754,7 @@ const skills: SkillsDirectorySkill[] = [
     collectionDescription: "User-authored skills tailored to local workflows.",
     collectionProducts: ["Custom"],
     collectionDocsUrl: "https://www.atlassian.com/software/rovo",
-    publisherName: "By you",
+    publisherName: "you",
     publisherAvatarSrc: "/avatar-human/maia-ma.png",
     categoryId: "content-and-communication",
     companyId: "you",

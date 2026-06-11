@@ -316,6 +316,9 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	}
 	assert.match(AGENT_SOURCE, /const resolvedTagColor = tagColor \?\? getTagColorForMentionVisual\(visual\) \?\? "blue";/u);
 	assert.match(AGENT_SOURCE, /color=\{resolvedTagColor\}/u);
+	assert.match(AGENT_SOURCE, /const tagColorToMenuIconClassName: Partial<Record<TagColor, string>> = \{/u);
+	assert.match(AGENT_SOURCE, /lime: "text-lime-400 \[&_svg\]:text-lime-400!"/u);
+	assert.match(AGENT_SOURCE, /className=\{cn\(\s*"border border-border bg-surface",\s*tagColor \? tagColorToMenuIconClassName\[tagColor\] : "text-icon-subtlest",\s*\)\}/u);
 });
 
 test("Compact agent config opts into the typed Triggers editor without replacing default rows", () => {
@@ -511,7 +514,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// + renderTrigger so the two layouts share one experience.
 	assert.match(AGENT_SOURCE, /label="Skills"\s+renderAddControl=\{renderDirectoryAddControl\("skills", skillsNavItem, skillItems\)\}/u);
 	assert.match(AGENT_SOURCE, /const renderDirectoryAddControl = \([\s\S]*<AgentCompactDirectoryNavButton[\s\S]*onBrowse=\{\(\) => openAgentDirectoryOrAppendListItem\(field, field, onOpenDirectory, onAppendListItem\)\}[\s\S]*renderTrigger=\{<AgentAddValueButton className=\{className\} icon=\{icon\} label=\{label\} \/>\}/u);
-	assert.match(AGENT_SOURCE, /label="Subagents"\s+renderAddControl=\{subagentsNavItem \? \(\{ label, className \}\) => \([\s\S]*<AgentCompactSubagentsNavButton[\s\S]*onCreateSubagent=\{\(\) => onAppendListItem\?\.\("subagents"\)\}[\s\S]*renderTrigger=\{<AgentAddValueButton className=\{className\} icon="add" label=\{label\} \/>\}/u);
+	assert.match(AGENT_SOURCE, /label="Subagents"\s+renderAddControl=\{subagentsNavItem \? \(\{ label, className \}\) => \([\s\S]*<AgentCompactSubagentsNavButton[\s\S]*onCreateSubagent=\{\(\) => onAppendListItem\?\.\("subagents"\)\}[\s\S]*tagColor=\{subagentTagColor\}[\s\S]*renderTrigger=\{<AgentAddValueButton className=\{className\} icon="add" label=\{label\} \/>\}/u);
 	// The inline-below-row Tools search picker is gone — Tools now uses the same
 	// dropdown as the other directory fields.
 	assert.doesNotMatch(AGENT_SOURCE, /openInlineSearchPicker|browseInlineSearchPicker|selectInlineSearchItem|inlineSearchField|function AgentInlineReferenceSearchPicker/u);
@@ -699,7 +702,7 @@ test("Agent compact directory dropdowns keep persistent add and browse footers",
 	assert.match(AGENT_SOURCE, /function AgentCompactDirectoryNavButton\(/u);
 	assert.match(AGENT_SOURCE, /directory: AgentInlineSearchField;/u);
 	assert.match(AGENT_SOURCE, /onAddSearchItem\?: \(item: RichTextSuggestionMenuItem\) => void;/u);
-	assert.match(AGENT_SOURCE, /function AgentCompactDirectoryNavButton[\s\S]*<MenubarContent align="start" className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}>[\s\S]*<div className="min-h-0 flex-1 overflow-y-auto">[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*\{addSearchFlyout\}[\s\S]*\{browseItem\}/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactDirectoryNavButton[\s\S]*<MenubarContent[\s\S]*align="start"[\s\S]*className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}[\s\S]*ref=\{compactNavMenu\.contentRef\}[\s\S]*>[\s\S]*<div className="min-h-0 flex-1 overflow-y-auto">[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*\{addSearchFlyout\}[\s\S]*\{browseItem\}/u);
 	assert.match(AGENT_SOURCE, /const addSearchFlyout = \([\s\S]*<DropdownMenuSub>[\s\S]*<DropdownMenuSubTrigger>[\s\S]*\{addLabel\}[\s\S]*<DropdownMenuSubContent className="w-auto min-w-0 overflow-visible border-0 bg-transparent p-0 shadow-none">[\s\S]*<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category=\{AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD\[directory\]\}[\s\S]*className="rich-text-command-menu-borderless"[\s\S]*onBrowseAll=\{onBrowse\}[\s\S]*onSelectItem=\{handlePickerSelect\}/u);
 	assert.match(AGENT_SOURCE, /onAddSearchItem=\{\(searchItem\) => \{[\s\S]*if \(searchItem\.disabled\) \{[\s\S]*return;[\s\S]*onAddListValues\?\.\(directory, \[searchItem\.label\]\);[\s\S]*\}\}/u);
 	assert.match(AGENT_SOURCE, /browseLabel=\{`Browse \$\{item\.label\.toLowerCase\(\)\}`\}[\s\S]*onBrowse=\{\(\) => openAgentDirectoryOrAppendListItem\(directory, directory, onOpenDirectory, onAppendListItem\)\}/u);
@@ -709,15 +712,20 @@ test("Agent compact directory dropdowns keep persistent add and browse footers",
 
 test("Agent compact subagents dropdown keeps add and manage actions pinned", () => {
 	assert.match(AGENT_SOURCE, /function AgentCompactSubagentsNavButton/u);
-	assert.match(AGENT_SOURCE, /function AgentCompactSubagentsNavButton[\s\S]*<MenubarContent align="start" className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}>[\s\S]*<div className="min-h-0 flex-1 overflow-y-auto">[\s\S]*selected=\{selectedIndex === index\}[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*Add subagent[\s\S]*Manage subagents/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactSubagentsNavButton[\s\S]*<MenubarContent[\s\S]*align="start"[\s\S]*className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}[\s\S]*ref=\{compactNavMenu\.contentRef\}[\s\S]*>[\s\S]*<div className="min-h-0 flex-1 overflow-y-auto">[\s\S]*selected=\{selectedIndex === index\}[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*Add subagent[\s\S]*Manage subagents/u);
+	assert.match(AGENT_SOURCE, /tagColor\?: TagColor;[\s\S]*<AgentCompactReferenceRow[\s\S]*category="subagent"[\s\S]*tagColor=\{tagColor\}/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactEmptyConfigNav\(\{[\s\S]*avatarSrc,[\s\S]*const subagentTagColor = getTagColorForAgentAvatar\(avatarSrc\);[\s\S]*tagColor=\{subagentTagColor\}/u);
+	assert.match(AGENT_SOURCE, /<AgentCompactEmptyConfigNav[\s\S]*avatarSrc=\{avatarSrc\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /Browse subagents/u);
 });
 
 test("Agent compact added-item dropdowns do not auto-highlight rows on pointer open", () => {
-	assert.match(AGENT_SOURCE, /import \{ Menu as MenuPrimitive \} from "@base-ui\/react\/menu";/u);
-	assert.match(AGENT_SOURCE, /function useCompactNavMenuNoInitialHighlight\(\)[\s\S]*MenuPrimitive\.createHandle\(\)[\s\S]*shouldClearCompactNavInitialHighlight\(eventDetails\)[\s\S]*clearCompactNavInitialHighlight\(menuHandle\)/u);
-	assert.match(AGENT_SOURCE, /function shouldClearCompactNavInitialHighlight[\s\S]*eventDetails\.reason === "trigger-hover"[\s\S]*eventDetails\.reason !== "trigger-press"[\s\S]*event\.detail !== 0/u);
-	assert.match(AGENT_SOURCE, /function clearCompactNavInitialHighlight[\s\S]*queueMicrotask[\s\S]*menuHandle\.store\.set\("activeIndex", null\)[\s\S]*requestAnimationFrame[\s\S]*menuHandle\.store\.set\("activeIndex", null\)/u);
+	assert.doesNotMatch(AGENT_SOURCE, /import \{ Menu as MenuPrimitive \} from "@base-ui\/react\/menu";/u);
+	assert.doesNotMatch(AGENT_SOURCE, /MenuPrimitive\.createHandle|handle=\{compactNavMenu\.handle\}|compactNavMenu\.handle/u);
+	assert.match(AGENT_SOURCE, /type AgentCompactNavMenuContentElement = HTMLDivElement \| null;/u);
+	assert.match(AGENT_SOURCE, /function useCompactNavMenuNoInitialHighlight\(\): \{[\s\S]*contentRef: \(element: AgentCompactNavMenuContentElement\) => void;[\s\S]*onOpenChange: AgentCompactNavMenuOpenChange;[\s\S]*\}[\s\S]*const contentRef = useRef<AgentCompactNavMenuContentElement>\(null\);[\s\S]*shouldClearCompactNavInitialHighlight\(eventDetails\)[\s\S]*clearCompactNavInitialHighlight\(contentRef\.current\)/u);
+	assert.match(AGENT_SOURCE, /function shouldClearCompactNavInitialHighlight[\s\S]*eventDetails\.reason === "trigger-focus"[\s\S]*eventDetails\.reason === "trigger-hover"[\s\S]*eventDetails\.reason === "sibling-open"[\s\S]*eventDetails\.reason !== "trigger-press"[\s\S]*event\.detail !== 0/u);
+	assert.match(AGENT_SOURCE, /function clearCompactNavInitialHighlight\(contentElement: AgentCompactNavMenuContentElement\)[\s\S]*contentElement\.querySelectorAll\("\[data-highlighted\]"\)\.forEach[\s\S]*highlightedElement\.removeAttribute\("data-highlighted"\)[\s\S]*highlightedElement\.setAttribute\("tabindex", "-1"\)[\s\S]*contentElement\.focus\(\{ preventScroll: true \}\)[\s\S]*queueMicrotask[\s\S]*requestAnimationFrame[\s\S]*window\.setTimeout\(clear, 120\)/u);
 	for (const [functionName, nextFunctionName] of [
 		["AgentCompactSubagentsNavButton", "AgentCompactTriggerRow"],
 		["AgentCompactTriggersNavButton", "AgentCompactDirectoryNavButton"],
@@ -729,9 +737,10 @@ test("Agent compact added-item dropdowns do not auto-highlight rows on pointer o
 		const end = AGENT_SOURCE.indexOf(`function ${nextFunctionName}`, start + 1);
 		assert.notEqual(end, -1, `${nextFunctionName} should follow ${functionName}`);
 		const source = AGENT_SOURCE.slice(start, end);
-		assert.match(source, /const compactNavMenu = useCompactNavMenuNoInitialHighlight\(\);/u, `${functionName} should create a compact menu handle`);
-		assert.match(source, /<MenubarMenu handle=\{compactNavMenu\.handle\} onOpenChange=\{compactNavMenu\.onOpenChange\}>/u, `${functionName} should wire the menu handle`);
-		assert.match(source, /<MenubarTrigger[\s\S]*handle=\{compactNavMenu\.handle\}/u, `${functionName} should wire the trigger handle`);
+		assert.match(source, /const compactNavMenu = useCompactNavMenuNoInitialHighlight\(\);/u, `${functionName} should create compact menu highlight cleanup`);
+		assert.match(source, /<MenubarMenu onOpenChange=\{compactNavMenu\.onOpenChange\}>/u, `${functionName} should wire the menu open handler`);
+		assert.match(source, /<MenubarTrigger(?![\s\S]*handle=\{compactNavMenu\.handle\})[\s\S]*render=/u, `${functionName} should let Base UI anchor the trigger normally`);
+		assert.match(source, /<MenubarContent[\s\S]*ref=\{compactNavMenu\.contentRef\}/u, `${functionName} should expose the content node for highlight cleanup`);
 	}
 });
 
@@ -741,7 +750,7 @@ test("Agent compact apps field opens a dropdown menu instead of the directory", 
 	// Apps must now render its own dropdown (like Skills) with a pinned
 	// "Browse apps" footer that opens the directory.
 	assert.match(AGENT_SOURCE, /function AgentCompactAppsNavButton/u);
-	assert.match(AGENT_SOURCE, /function AgentCompactAppsNavButton[\s\S]*<MenubarContent align="start" className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}>[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*Browse \{item\.label\.toLowerCase\(\)\}/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactAppsNavButton[\s\S]*<MenubarContent[\s\S]*align="start"[\s\S]*className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}[\s\S]*ref=\{compactNavMenu\.contentRef\}[\s\S]*>[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*Browse \{item\.label\.toLowerCase\(\)\}/u);
 	// The apps nav field is wired to the dropdown, not the fallback click button.
 	assert.match(AGENT_SOURCE, /item\.agentFieldName === "apps"\)\s*\{\s*return \(\s*<AgentCompactAppsNavButton[\s\S]*onBrowse=\{\(\) => openAgentDirectoryOrAppendListItem\("apps", "apps", onOpenDirectory, onAppendListItem\)\}/u);
 	// The old immediate-open path is gone from the click helper: the trigger

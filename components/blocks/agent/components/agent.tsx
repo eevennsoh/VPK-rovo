@@ -1,7 +1,6 @@
 "use client";
 
 import type { Tool } from "ai";
-import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform, type MotionProps } from "motion/react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -984,11 +983,15 @@ function AgentCompactNavMenuPinnedFooter({
 	);
 }
 
-type AgentCompactNavMenuHandle = ReturnType<typeof MenuPrimitive.createHandle>;
 type AgentCompactNavMenuOpenChange = NonNullable<ComponentProps<typeof MenubarMenu>["onOpenChange"]>;
+type AgentCompactNavMenuContentElement = HTMLDivElement | null;
 
 function shouldClearCompactNavInitialHighlight(eventDetails: Parameters<AgentCompactNavMenuOpenChange>[1]): boolean {
-	if (eventDetails.reason === "trigger-hover") {
+	if (
+		eventDetails.reason === "trigger-focus" ||
+		eventDetails.reason === "trigger-hover" ||
+		eventDetails.reason === "sibling-open"
+	) {
 		return true;
 	}
 
@@ -1000,31 +1003,48 @@ function shouldClearCompactNavInitialHighlight(eventDetails: Parameters<AgentCom
 	return !(event instanceof MouseEvent) || event.detail !== 0;
 }
 
-function clearCompactNavInitialHighlight(menuHandle: AgentCompactNavMenuHandle): void {
+function clearCompactNavInitialHighlight(contentElement: AgentCompactNavMenuContentElement): void {
+	const clear = () => {
+		if (!contentElement) {
+			return;
+		}
+
+		contentElement.querySelectorAll("[data-highlighted]").forEach((highlightedElement) => {
+			highlightedElement.removeAttribute("data-highlighted");
+			highlightedElement.setAttribute("tabindex", "-1");
+		});
+		contentElement.focus({ preventScroll: true });
+	};
+
 	queueMicrotask(() => {
-		menuHandle.store.set("activeIndex", null);
+		clear();
 
 		requestAnimationFrame(() => {
-			menuHandle.store.set("activeIndex", null);
+			clear();
 		});
+
+		window.setTimeout(clear, 120);
 	});
 }
 
 function useCompactNavMenuNoInitialHighlight(): {
-	handle: AgentCompactNavMenuHandle;
+	contentRef: (element: AgentCompactNavMenuContentElement) => void;
 	onOpenChange: AgentCompactNavMenuOpenChange;
 } {
-	const menuHandle = useMemo(() => MenuPrimitive.createHandle(), []);
+	const contentRef = useRef<AgentCompactNavMenuContentElement>(null);
 	const handleOpenChange = useCallback<AgentCompactNavMenuOpenChange>(
 		(open, eventDetails) => {
 			if (open && shouldClearCompactNavInitialHighlight(eventDetails)) {
-				clearCompactNavInitialHighlight(menuHandle);
+				clearCompactNavInitialHighlight(contentRef.current);
 			}
 		},
-		[menuHandle],
+		[],
 	);
+	const setContentRef = useCallback((element: AgentCompactNavMenuContentElement) => {
+		contentRef.current = element;
+	}, []);
 
-	return { handle: menuHandle, onOpenChange: handleOpenChange };
+	return { contentRef: setContentRef, onOpenChange: handleOpenChange };
 }
 
 // Memoize a trimmed Set of disabled labels for O(1) per-row lookups. The
@@ -1046,6 +1066,7 @@ function AgentCompactSubagentsNavButton({
 	screenAssistantTargetId,
 	selectedIndex,
 	subagents,
+	tagColor,
 }: Readonly<{
 	disabledItems?: readonly string[];
 	item: AgentCompactConfigNavItem;
@@ -1060,19 +1081,19 @@ function AgentCompactSubagentsNavButton({
 	screenAssistantTargetId?: string;
 	selectedIndex?: number;
 	subagents: readonly string[];
+	tagColor?: TagColor;
 }>) {
 	const isEmpty = item.count === 0;
 	const disabledSet = useDisabledLabelSet(disabledItems);
 	const compactNavMenu = useCompactNavMenuNoInitialHighlight();
 
 	return (
-		<MenubarMenu handle={compactNavMenu.handle} onOpenChange={compactNavMenu.onOpenChange}>
+		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
 			{renderTrigger ? (
-				<MenubarTrigger handle={compactNavMenu.handle} render={renderTrigger} />
+				<MenubarTrigger render={renderTrigger} />
 			) : (
 				<MenubarTrigger
 					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
-					handle={compactNavMenu.handle}
 					render={(
 						<AgentCompactConfigNavButton
 							aria-label="Subagents"
@@ -1082,7 +1103,11 @@ function AgentCompactSubagentsNavButton({
 					)}
 				/>
 			)}
-			<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
+			<MenubarContent
+				align="start"
+				className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}
+				ref={compactNavMenu.contentRef}
+			>
 				{isEmpty ? null : (
 					<div className="min-h-0 flex-1 overflow-y-auto">
 						<AgentCompactNavMenuList>
@@ -1097,6 +1122,7 @@ function AgentCompactSubagentsNavButton({
 										onRemove={onRemoveSubagent ? () => onRemoveSubagent(index) : undefined}
 										onToggle={onToggleItem ? (enabled) => onToggleItem(index, enabled) : undefined}
 										selected={selectedIndex === index}
+										tagColor={tagColor}
 									/>
 								))}
 							</DropdownMenuGroup>
@@ -1231,7 +1257,11 @@ function AgentCompactTriggerRow({
 // category-appropriate `small` icon tile, mirroring AgentReferenceChip's
 // fallback. Glyph icons inherit the menu's subtle front-slot treatment;
 // avatars/logos/images keep their color, exactly like the sibling Triggers rows.
-function renderAgentReferenceRowVisual(category: RichTextReferenceCategory, label: string): ReactNode {
+function renderAgentReferenceRowVisual(
+	category: RichTextReferenceCategory,
+	label: string,
+	tagColor?: TagColor,
+): ReactNode {
 	const visual = getDirectoryMentionItemOrFallback(category, label).visual;
 	const FallbackIcon = category === "subagent" ? AiAgentIcon : PageIcon;
 	return (
@@ -1241,7 +1271,10 @@ function renderAgentReferenceRowVisual(category: RichTextReferenceCategory, labe
 			) : (
 				<IconTile
 					aria-hidden
-					className="border border-border bg-surface text-icon-subtlest"
+					className={cn(
+						"border border-border bg-surface",
+						tagColor ? tagColorToMenuIconClassName[tagColor] : "text-icon-subtlest",
+					)}
 					icon={<FallbackIcon label="" size="small" />}
 					label=""
 					size="small"
@@ -1267,6 +1300,7 @@ function AgentCompactReferenceRow({
 	onRemove,
 	onToggle,
 	selected,
+	tagColor,
 }: Readonly<{
 	// Directory category for the row. When set (and no explicit `elemBefore` is
 	// passed), the row resolves its leading "front slot" visual from the directory
@@ -1279,6 +1313,7 @@ function AgentCompactReferenceRow({
 	onRemove?: () => void;
 	onToggle?: (enabled: boolean) => void;
 	selected?: boolean;
+	tagColor?: TagColor;
 }>) {
 	// See AgentCompactTriggerRow: preventDefault on the switch's pointer/mouse
 	// down stops Base UI from dismissing the menu when toggling.
@@ -1287,7 +1322,7 @@ function AgentCompactReferenceRow({
 	}
 	// Prefer an explicit elemBefore; otherwise derive the front slot from the row's
 	// directory category so skills/tools/apps/subagents each lead with their icon.
-	const frontSlot = elemBefore ?? (category ? renderAgentReferenceRowVisual(category, label) : undefined);
+	const frontSlot = elemBefore ?? (category ? renderAgentReferenceRowVisual(category, label, tagColor) : undefined);
 	const hasToggle = onToggle !== undefined;
 	// Reserve trailing width for whichever controls exist: switch + remove = 2,
 	// either alone = 1, neither = none.
@@ -1439,13 +1474,12 @@ function AgentCompactTriggersNavButton({
 	);
 
 	return (
-		<MenubarMenu handle={compactNavMenu.handle} onOpenChange={compactNavMenu.onOpenChange}>
+		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
 			{renderTrigger ? (
-				<MenubarTrigger handle={compactNavMenu.handle} render={renderTrigger} />
+				<MenubarTrigger render={renderTrigger} />
 			) : (
 				<MenubarTrigger
 					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
-					handle={compactNavMenu.handle}
 					render={(
 						<AgentCompactConfigNavButton
 							aria-label="Triggers"
@@ -1455,7 +1489,11 @@ function AgentCompactTriggersNavButton({
 					)}
 				/>
 			)}
-			<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
+			<MenubarContent
+				align="start"
+				className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}
+				ref={compactNavMenu.contentRef}
+			>
 				{isEmpty ? null : (
 					<div className="min-h-0 flex-1 overflow-y-auto">
 						<AgentCompactNavMenuList>
@@ -1577,13 +1615,12 @@ function AgentCompactDirectoryNavButton({
 	);
 
 	return (
-		<MenubarMenu handle={compactNavMenu.handle} onOpenChange={compactNavMenu.onOpenChange}>
+		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
 			{renderTrigger ? (
-				<MenubarTrigger handle={compactNavMenu.handle} render={renderTrigger} />
+				<MenubarTrigger render={renderTrigger} />
 			) : (
 				<MenubarTrigger
 					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
-					handle={compactNavMenu.handle}
 					render={(
 						<AgentCompactConfigNavButton
 							aria-label={item.label}
@@ -1593,7 +1630,11 @@ function AgentCompactDirectoryNavButton({
 					)}
 				/>
 			)}
-			<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
+			<MenubarContent
+				align="start"
+				className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}
+				ref={compactNavMenu.contentRef}
+			>
 				{isEmpty ? null : (
 					<div className="min-h-0 flex-1 overflow-y-auto">
 						<AgentCompactNavMenuList>
@@ -1680,13 +1721,12 @@ function AgentCompactAppsNavButton({
 	);
 
 	return (
-		<MenubarMenu handle={compactNavMenu.handle} onOpenChange={compactNavMenu.onOpenChange}>
+		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
 			{renderTrigger ? (
-				<MenubarTrigger handle={compactNavMenu.handle} render={renderTrigger} />
+				<MenubarTrigger render={renderTrigger} />
 			) : (
 				<MenubarTrigger
 					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
-					handle={compactNavMenu.handle}
 					render={(
 						<AgentCompactConfigNavButton
 							aria-label={item.label}
@@ -1696,7 +1736,11 @@ function AgentCompactAppsNavButton({
 					)}
 				/>
 			)}
-			<MenubarContent align="start" className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}>
+			<MenubarContent
+				align="start"
+				className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}
+				ref={compactNavMenu.contentRef}
+			>
 				{isEmpty ? null : (
 					<div className="min-h-0 flex-1 overflow-y-auto">
 						<AgentCompactNavMenuList>
@@ -1799,6 +1843,7 @@ function AgentCompactConversationStartersNavButton({
 }
 
 function AgentCompactEmptyConfigNav({
+	avatarSrc,
 	config,
 	hiddenConfigFields,
 	onManageSubagents,
@@ -1818,6 +1863,7 @@ function AgentCompactEmptyConfigNav({
 	screenAssistantTargetPrefix,
 	selectedListItemIndexByField,
 }: Readonly<{
+	avatarSrc?: string;
 	config?: AgentConfigFormValue;
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	onManageSubagents?: () => void;
@@ -1854,6 +1900,7 @@ function AgentCompactEmptyConfigNav({
 			: navOverflow.canScrollRight
 				? AGENT_COMPACT_CONFIG_NAV_END_MASK_STYLE
 				: {};
+	const subagentTagColor = getTagColorForAgentAvatar(avatarSrc);
 
 	if (items.length === 0) {
 		return null;
@@ -1912,6 +1959,7 @@ function AgentCompactEmptyConfigNav({
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
 								selectedIndex={selectedListItemIndexByField?.subagents}
 								subagents={getNonEmptyConfigItems(config?.subagents)}
+								tagColor={subagentTagColor}
 							/>
 						);
 					}
@@ -2148,6 +2196,33 @@ const agentAvatarGroupToTagColor: Readonly<Record<string, TagColor>> = {
 	"service-agents": "yellow",
 	"strategy-agents": "orange",
 	"teamwork-agents": "blue",
+};
+
+const tagColorToMenuIconClassName: Partial<Record<TagColor, string>> = {
+	blue: "text-blue-500 [&_svg]:text-blue-500!",
+	blueLight: "text-blue-500 [&_svg]:text-blue-500!",
+	discovery: "text-icon-discovery [&_svg]:text-icon-discovery!",
+	green: "text-green-400 [&_svg]:text-green-400!",
+	greenLight: "text-green-400 [&_svg]:text-green-400!",
+	gray: "text-neutral-500 [&_svg]:text-neutral-500!",
+	grayLight: "text-neutral-500 [&_svg]:text-neutral-500!",
+	grey: "text-neutral-500 [&_svg]:text-neutral-500!",
+	greyLight: "text-neutral-500 [&_svg]:text-neutral-500!",
+	lime: "text-lime-400 [&_svg]:text-lime-400!",
+	limeLight: "text-lime-400 [&_svg]:text-lime-400!",
+	magenta: "text-pink-500 [&_svg]:text-pink-500!",
+	magentaLight: "text-pink-500 [&_svg]:text-pink-500!",
+	orange: "text-orange-400 [&_svg]:text-orange-400!",
+	orangeLight: "text-orange-400 [&_svg]:text-orange-400!",
+	purple: "text-purple-500 [&_svg]:text-purple-500!",
+	purpleLight: "text-purple-500 [&_svg]:text-purple-500!",
+	red: "text-red-600 [&_svg]:text-red-600!",
+	redLight: "text-red-600 [&_svg]:text-red-600!",
+	standard: "text-neutral-500 [&_svg]:text-neutral-500!",
+	teal: "text-teal-400 [&_svg]:text-teal-400!",
+	tealLight: "text-teal-400 [&_svg]:text-teal-400!",
+	yellow: "text-yellow-400 [&_svg]:text-yellow-400!",
+	yellowLight: "text-yellow-400 [&_svg]:text-yellow-400!",
 };
 
 function getTagColorForAgentAvatar(avatarSrc: string | undefined): TagColor | undefined {
@@ -2778,6 +2853,7 @@ function AgentFilledConfigSummary({
 							onToggleItem={onToggleListItem ? (index, enabled) => onToggleListItem("subagents", index, enabled) : undefined}
 							selectedIndex={selectedListItemIndexByField?.subagents}
 							subagents={subagentItems}
+							tagColor={subagentTagColor}
 							renderTrigger={<AgentAddValueButton className={className} icon="add" label={label} />}
 						/>
 					) : undefined}
@@ -3922,6 +3998,7 @@ function AgentCompactConfigToolbarBelow({
 						style={{ willChange: "opacity" }}
 					>
 						<AgentCompactEmptyConfigNav
+							avatarSrc={avatarSrc}
 							config={config}
 							hiddenConfigFields={hiddenConfigFields}
 							onAddListValues={onAddListValues}
