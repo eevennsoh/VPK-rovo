@@ -616,6 +616,21 @@ function TriggerSentence({
 	);
 }
 
+function TriggerRowDeleteButton({ onRemove }: Readonly<{ onRemove: () => void }>): ReactElement {
+	return (
+		<Button
+			aria-label="Delete trigger"
+			className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 group-focus-within/trigger-row:opacity-100 focus-visible:opacity-100"
+			onClick={onRemove}
+			size="icon"
+			type="button"
+			variant="ghost"
+		>
+			<DeleteIcon label="" size="small" />
+		</Button>
+	);
+}
+
 /**
  * A single, self-contained trigger: the event (with its connection state) and
  * the editable prompt that runs when that event fires. Triggers never chain —
@@ -653,16 +668,7 @@ function TriggerRow({
 				<div className="min-w-0 flex-1 self-center text-sm text-text">
 					{trigger.label ?? "Unknown trigger"}
 				</div>
-				<Button
-					aria-label="Delete trigger"
-					className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 group-focus-within/trigger-row:opacity-100 focus-visible:opacity-100"
-					onClick={onRemove}
-					size="icon"
-					type="button"
-					variant="ghost"
-				>
-					<DeleteIcon label="" size="small" />
-				</Button>
+				<TriggerRowDeleteButton onRemove={onRemove} />
 			</div>
 		);
 	}
@@ -709,16 +715,7 @@ function TriggerRow({
 						</Button>
 					) : null}
 				</div>
-				<Button
-					aria-label="Delete trigger"
-					className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 group-focus-within/trigger-row:opacity-100 focus-visible:opacity-100"
-					onClick={onRemove}
-					size="icon"
-					type="button"
-					variant="ghost"
-				>
-					<DeleteIcon label="" size="small" />
-				</Button>
+				<TriggerRowDeleteButton onRemove={onRemove} />
 			</div>
 			{/* Prompt node — the instruction that runs when this event fires. */}
 			<textarea
