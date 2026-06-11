@@ -6743,6 +6743,9 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
   "agent-card": dynamic(() => import("./demos/blocks/agent-card-demo"), {
     ssr: false,
   }),
+  "twg-agent-card": dynamic(() => import("./demos/blocks/twg-agent-card-demo"), {
+    ssr: false,
+  }),
   "agent-profile-card": dynamic(() => import("./demos/blocks/agent-profile-card-demo"), {
     ssr: false,
   }),
