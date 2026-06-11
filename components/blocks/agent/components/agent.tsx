@@ -990,6 +990,9 @@ function shouldClearCompactNavInitialHighlight(eventDetails: Parameters<AgentCom
 	}
 
 	const event = eventDetails.event;
+	if (typeof PointerEvent !== "undefined" && event instanceof PointerEvent) {
+		return true;
+	}
 	return !(event instanceof MouseEvent) || event.detail !== 0;
 }
 
@@ -1007,7 +1010,7 @@ function clearCompactNavInitialHighlight(contentElement: HTMLElement): void {
 	if (
 		activeElement instanceof HTMLElement &&
 		contentElement.contains(activeElement) &&
-		activeElement.getAttribute("role") === "menuitem"
+		activeElement !== contentElement
 	) {
 		contentElement.focus({ preventScroll: true });
 	}
@@ -1851,9 +1854,10 @@ function AgentCompactConversationStartersNavButton({
 	const fields = Array.from({ length: MAX_AGENT_CONVERSATION_STARTERS }, (_, index) => ({
 		label: starters[index]?.label ?? "",
 	}));
+	const compactNavMenu = useCompactNavMenuNoInitialHighlight();
 
 	return (
-		<MenubarMenu>
+		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
 			<MenubarTrigger
 				className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
 				render={(
@@ -1865,6 +1869,10 @@ function AgentCompactConversationStartersNavButton({
 				)}
 			/>
 			<MenubarContent align="start" className="w-70">
+				<AgentCompactNavMenuInitialHighlightReset
+					enabled={compactNavMenu.resetInitialHighlight}
+					resetToken={compactNavMenu.resetToken}
+				/>
 				{/* 8px (`p-2`) of padding around the starter input fields. */}
 				<div className="flex flex-col gap-1.5 p-2">
 					{fields.map((field, index) => (

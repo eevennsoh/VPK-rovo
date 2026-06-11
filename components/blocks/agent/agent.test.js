@@ -750,14 +750,15 @@ test("Agent compact subagents dropdown keeps add and manage actions pinned", () 
 test("Agent compact added-item dropdowns do not auto-highlight rows on pointer open", () => {
 	assert.doesNotMatch(AGENT_SOURCE, /MenuPrimitive\.createHandle|handle=\{compactNavMenu\.handle\}/u);
 	assert.match(AGENT_SOURCE, /function useCompactNavMenuNoInitialHighlight\(\)[\s\S]*useRef\(false\)[\s\S]*useState\(0\)[\s\S]*shouldClearCompactNavInitialHighlight\(eventDetails\)[\s\S]*setResetToken\(\(currentResetToken\) => currentResetToken \+ 1\)/u);
-	assert.match(AGENT_SOURCE, /function shouldClearCompactNavInitialHighlight[\s\S]*eventDetails\.reason === "trigger-hover"[\s\S]*eventDetails\.reason !== "trigger-press"[\s\S]*event\.detail !== 0/u);
+	assert.match(AGENT_SOURCE, /function shouldClearCompactNavInitialHighlight[\s\S]*eventDetails\.reason === "trigger-hover"[\s\S]*eventDetails\.reason !== "trigger-press"[\s\S]*event instanceof PointerEvent[\s\S]*event\.detail !== 0/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactNavMenuInitialHighlightReset[\s\S]*closest<HTMLElement>\([\s\S]*"\[data-slot='menubar-content'\], \[data-slot='dropdown-menu-content'\]"[\s\S]*\)[\s\S]*queueMicrotask[\s\S]*requestAnimationFrame\(clear\)[\s\S]*window\.setTimeout\(clear, 120\)/u);
-	assert.match(AGENT_SOURCE, /function clearCompactNavInitialHighlight\(contentElement: HTMLElement\)[\s\S]*querySelectorAll<HTMLElement>\("\[data-highlighted\]"\)[\s\S]*removeAttribute\("data-highlighted"\)[\s\S]*setAttribute\("tabindex", "-1"\)[\s\S]*contentElement\.focus\(\{ preventScroll: true \}\)/u);
+	assert.match(AGENT_SOURCE, /function clearCompactNavInitialHighlight\(contentElement: HTMLElement\)[\s\S]*querySelectorAll<HTMLElement>\("\[data-highlighted\]"\)[\s\S]*removeAttribute\("data-highlighted"\)[\s\S]*setAttribute\("tabindex", "-1"\)[\s\S]*contentElement\.contains\(activeElement\)[\s\S]*activeElement !== contentElement[\s\S]*contentElement\.focus\(\{ preventScroll: true \}\)/u);
 	for (const [functionName, nextFunctionName] of [
 		["AgentCompactSubagentsNavButton", "AgentCompactTriggerRow"],
 		["AgentCompactTriggersNavButton", "AgentCompactDirectoryNavButton"],
 		["AgentCompactDirectoryNavButton", "AgentCompactAppsNavButton"],
 		["AgentCompactAppsNavButton", "AgentCompactConversationStartersNavButton"],
+		["AgentCompactConversationStartersNavButton", "AgentCompactEmptyConfigNav"],
 	]) {
 		const start = AGENT_SOURCE.indexOf(`function ${functionName}`);
 		assert.notEqual(start, -1, `${functionName} should exist`);
