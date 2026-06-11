@@ -29,6 +29,7 @@ import {
 	getAgentTemplateConfigById,
 } from "@/app/data/directory";
 import { REASONING_MODE_VALUES } from "@/app/data/directory/agent-modes";
+import { resolveCatalogNames } from "@/app/data/directory/resolve-ids";
 
 /**
  * Allowed `reasoningMode` values come from the canonical data-layer source
@@ -93,6 +94,19 @@ export interface StudioCreationTemplateContext {
 	skillIds?: readonly string[];
 	knowledgeIds?: readonly string[];
 	subagentIds?: readonly string[];
+	/**
+	 * Exact catalog display NAMES for the bound ids, surfaced so the backend
+	 * thinking-trace can narrate the real setup verbatim (no backend→catalog
+	 * coupling, no de-kebab guessing). Parallel to the *Ids fields above.
+	 */
+	toolNames?: readonly string[];
+	skillNames?: readonly string[];
+	knowledgeNames?: readonly string[];
+	subagentNames?: readonly string[];
+	/** The template's curated trigger event phrases, surfaced for trace narration. */
+	triggers?: readonly string[];
+	/** Behavior phrases describing reasoning/memory/knowledge modes, for trace narration. */
+	modeNarration?: readonly string[];
 	/**
 	 * The template's instructions already tokenized with `@[category:id]` mention
 	 * tokens — the model should adapt this body rather than rewrite from scratch.
@@ -276,6 +290,33 @@ export function buildCreationTemplateContextFromAgent(agent: TemplateAgentLike):
 	// the bound-ids / tokenized-instructions block in formatTemplateContextBlock.
 	const config = agent.id ? getAgentTemplateConfigById(agent.id) : undefined;
 	const tokenizedBody = config?.instructionsBody?.trim();
+	// Exact catalog display names for the bound ids, for backend trace narration.
+	const toolNames = config?.toolIds ? resolveCatalogNames(config.toolIds, "tool") : [];
+	const skillNames = config?.skillIds ? resolveCatalogNames(config.skillIds, "skill") : [];
+	// Knowledge ids are single-segment app ids; resolve the `<id>:all` display name
+	// and strip the " - all content" suffix down to the bare app name.
+	const knowledgeNames = config?.knowledgeIds
+		? resolveCatalogNames(config.knowledgeIds.map((id) => `${id}:all`), "knowledge").map((n) =>
+				n.replace(/\s*-\s*all content$/i, ""),
+			)
+		: [];
+	const subagentNames = config?.subagentIds ? resolveCatalogNames(config.subagentIds, "subagent") : [];
+	// Mode behavior phrases (reasoning/memory/knowledge) for trace narration.
+	const modeNarration: string[] = [];
+	if (config) {
+		const reasoning = {
+			"quick-auto": "quick reasoning",
+			"deep-auto": "deep step-by-step reasoning",
+			"gemini-flash-3": "the Gemini Flash 3 model",
+			"gpt-5.4": "the GPT-5.4 model",
+			"sonnet-4.6": "the Claude Sonnet 4.6 model",
+			"opus-4.6": "the Claude Opus 4.6 model",
+		}[config.reasoningMode];
+		if (reasoning) modeNarration.push(reasoning);
+		if (config.memoryMode === "on") modeNarration.push("memory across sessions");
+		const knowledge = { all: "all connected knowledge", custom: "selected knowledge sources", none: "conversation-only knowledge" }[config.knowledgeMode];
+		if (knowledge) modeNarration.push(knowledge);
+	}
 
 	return {
 		name: agent.name,
@@ -288,6 +329,12 @@ export function buildCreationTemplateContextFromAgent(agent: TemplateAgentLike):
 		...(config?.skillIds && config.skillIds.length > 0 ? { skillIds: config.skillIds } : {}),
 		...(config?.knowledgeIds && config.knowledgeIds.length > 0 ? { knowledgeIds: config.knowledgeIds } : {}),
 		...(config?.subagentIds && config.subagentIds.length > 0 ? { subagentIds: config.subagentIds } : {}),
+		...(toolNames.length > 0 ? { toolNames } : {}),
+		...(skillNames.length > 0 ? { skillNames } : {}),
+		...(knowledgeNames.length > 0 ? { knowledgeNames } : {}),
+		...(subagentNames.length > 0 ? { subagentNames } : {}),
+		...(config?.triggers && config.triggers.length > 0 ? { triggers: config.triggers } : {}),
+		...(modeNarration.length > 0 ? { modeNarration } : {}),
 		...(tokenizedBody ? { tokenizedBody } : {}),
 	};
 }
@@ -355,6 +402,22 @@ function formatTemplateContextBlock(template: StudioCreationTemplateContext): st
 			"- Template instructions (already tokenized with @[category:id] mentions — adapt this rather than rewriting from scratch):",
 			template.tokenizedBody.trim(),
 		);
+	}
+
+	// Display-name setup + trigger phrases for the backend thinking-trace to narrate
+	// the real configuration verbatim. Parsed by parseTemplateSetupFromContext in
+	// backend/lib/studio-agent-trace.js (kept on dedicated, stable-prefixed lines).
+	const setupParts: string[] = [];
+	if (template.toolNames && template.toolNames.length > 0) setupParts.push(`tools=[${template.toolNames.join(", ")}]`);
+	if (template.skillNames && template.skillNames.length > 0) setupParts.push(`skills=[${template.skillNames.join(", ")}]`);
+	if (template.knowledgeNames && template.knowledgeNames.length > 0) setupParts.push(`knowledge=[${template.knowledgeNames.join(", ")}]`);
+	if (template.subagentNames && template.subagentNames.length > 0) setupParts.push(`subagents=[${template.subagentNames.join(", ")}]`);
+	if (template.modeNarration && template.modeNarration.length > 0) setupParts.push(`modes=[${template.modeNarration.join(", ")}]`);
+	if (setupParts.length > 0) {
+		lines.push(`- Setup for narration (display names): ${setupParts.join("; ")}`);
+	}
+	if (template.triggers && template.triggers.length > 0) {
+		lines.push(`- Trigger events for narration: ${template.triggers.join(" | ")}`);
 	}
 
 	lines.push("[End template context]");
