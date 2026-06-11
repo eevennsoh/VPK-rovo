@@ -1,4 +1,4 @@
-import type { LegendItemData, SankeyData } from "@/components/ui-charts";
+import type { HeatmapColumn, LegendItemData, SankeyData } from "@/components/ui-charts";
 
 export const monthlyRevenue = [
 	{ date: new Date("2026-01-01"), revenue: 42, forecast: 36, cost: 24, margin: 18 },
@@ -131,6 +131,31 @@ export const sankeyData: SankeyData = {
 		{ source: 3, target: 5, value: 4 },
 	],
 };
+
+const HEATMAP_WEEK_COUNT = 18;
+const HEATMAP_DAYS_PER_WEEK = 7;
+const HEATMAP_START_DATE = Date.UTC(2026, 0, 4);
+
+export const contributionHeatmapSeries: HeatmapColumn[] = Array.from(
+	{ length: HEATMAP_WEEK_COUNT },
+	(_, columnIndex) => ({
+		bin: columnIndex,
+		bins: Array.from({ length: HEATMAP_DAYS_PER_WEEK }, (_, rowIndex) => {
+			const date = new Date(HEATMAP_START_DATE);
+			date.setUTCDate(date.getUTCDate() + columnIndex * HEATMAP_DAYS_PER_WEEK + rowIndex);
+
+			const wave = Math.sin((columnIndex + rowIndex) / 2.4);
+			const cadence = (columnIndex * 3 + rowIndex * 2) % 5;
+			const count = Math.max(0, Math.min(5, Math.round(wave * 2 + cadence)));
+
+			return {
+				bin: rowIndex,
+				count,
+				date,
+			};
+		}),
+	}),
+);
 
 export function compactNumber(value: number) {
 	return Intl.NumberFormat("en-US", { notation: "compact" }).format(value);

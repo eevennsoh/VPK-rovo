@@ -11,6 +11,7 @@ export * from "./composed-chart";
 export * from "./series-bar";
 export * from "./funnel-chart";
 export * from "./gauge";
+export * from "./heatmap";
 export * from "./line-chart";
 export * from "./line";
 export * from "./live-line-chart";

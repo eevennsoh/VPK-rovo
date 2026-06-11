@@ -212,6 +212,7 @@ export const UI_CHART_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	uiChartComponent("composed-chart", "Composed Chart"),
 	uiChartComponent("funnel-chart", "Funnel Chart"),
 	uiChartComponent("gauge-chart", "Gauge Chart", "@/components/ui-charts/gauge"),
+	uiChartComponent("heatmap-chart", "Heatmap Chart", "@/components/ui-charts/heatmap"),
 	uiChartComponent("legend", "Legend", "@/components/ui-charts/legend"),
 	uiChartComponent("line-chart", "Line Chart"),
 	uiChartComponent("live-line-chart", "Live Line Chart"),
