@@ -11,6 +11,7 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ClockIcon from "@atlaskit/icon/core/clock";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import IncidentIcon from "@atlaskit/icon/core/incident";
+import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
 import WebhookIcon from "@atlaskit/icon-lab/core/webhook";
 import { SearchIcon } from "@/components/ui/vpk-icons";
 
@@ -538,11 +539,10 @@ function TriggerParamMenu({
 				render={(
 					<Button
 						type="button"
-						size="compact"
-						variant="secondary"
+						variant="outline"
 						disabled={disabled}
 						aria-label={`${param.label}: ${label}`}
-						className="h-6 max-w-52 gap-0 rounded-md bg-bg-neutral py-0 pr-0 pl-2 text-sm font-medium text-text-subtle hover:bg-bg-neutral-hovered disabled:opacity-(--opacity-disabled)"
+						className="max-w-52"
 					/>
 				)}
 			>
@@ -550,8 +550,8 @@ function TriggerParamMenu({
 				<ChevronDownIcon label="" size="small" />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="min-w-56">
-				<DropdownMenuLabel>{param.label}</DropdownMenuLabel>
 				<DropdownMenuGroup>
+					<DropdownMenuLabel>{param.label}</DropdownMenuLabel>
 					{param.options.map((option) => (
 						<DropdownMenuItem
 							key={option.value}
@@ -657,7 +657,7 @@ function TriggerRow({
 
 	if (!provider || !event) {
 		return (
-			<div className="group/trigger-row flex min-w-0 items-start gap-3 rounded-xl border border-border bg-surface p-3">
+			<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3 rounded-xl border border-border bg-surface p-3">
 				<IconTile
 					aria-hidden={true}
 					icon={<AutomationIcon label="" size="small" />}
@@ -665,67 +665,89 @@ function TriggerRow({
 					size="small"
 					variant="blue"
 				/>
-				<div className="min-w-0 flex-1 self-center text-sm text-text">
-					{trigger.label ?? "Unknown trigger"}
+				<div className="flex min-h-8 min-w-0 items-start gap-2">
+					<div className="min-w-0 flex-1 self-center text-sm text-text">
+						{trigger.label ?? "Unknown trigger"}
+					</div>
+					<TriggerRowDeleteButton onRemove={onRemove} />
 				</div>
-				<TriggerRowDeleteButton onRemove={onRemove} />
 			</div>
 		);
 	}
 
 	return (
-		<div className="group/trigger-row grid min-w-0 gap-3 rounded-xl border border-border bg-surface p-3">
-			{/* Event node — what starts the trigger, including its connection state. */}
-			<div className="flex min-w-0 items-start gap-3">
-				<IconTile
-					aria-hidden={true}
-					icon={renderTriggerProviderIcon(provider.icon, provider.label)}
-					label={provider.label}
-					size="small"
-					variant="blue"
-				/>
-				<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1.5 self-center text-sm text-text">
-					<TriggerSentence
-						disabled={paramsDisabled}
-						event={event}
-						onParamChange={onParamChange}
-						trigger={trigger}
+		<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 rounded-xl border border-border bg-surface p-3">
+			{/* Connector rail — event node (top) linked by a vertical line to the
+			    prompt node (bottom). Purely decorative. Mirrors the right column's
+			    two rows so the prompt icon top-aligns with the textarea. */}
+			<div
+				className="grid grid-rows-[auto_1fr] justify-items-center gap-4"
+				aria-hidden={true}
+			>
+				<div className="flex flex-col items-center">
+					<IconTile
+						aria-hidden={true}
+						icon={renderTriggerProviderIcon(provider.icon, provider.label)}
+						label={provider.label}
+						size="small"
+						variant="blue"
 					/>
+					<div className="mt-2 w-px flex-1 bg-border" />
+				</div>
+				<span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-bg-neutral text-icon-subtle">
+					<GenerativeIndicatorIcon label="" size="small" />
+				</span>
+			</div>
+			<div className="grid min-w-0 gap-4">
+				{/* Event node — what starts the trigger, including its connection state. */}
+				<div className="grid min-w-0 gap-1.5">
+					<div className="flex min-h-6 items-start gap-2">
+						<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-text">
+							<TriggerSentence
+								disabled={paramsDisabled}
+								event={event}
+								onParamChange={onParamChange}
+								trigger={trigger}
+							/>
+						</div>
+						<TriggerRowDeleteButton onRemove={onRemove} />
+					</div>
 					{connectionLabel ? (
-						<span
-							className={cn(
-								"font-medium",
-								trigger.connectionState === "connection-error"
-									? "text-text-danger"
-									: "text-text-warning",
-							)}
-						>
-							{connectionLabel}
-						</span>
-					) : null}
-					{needsConnection ? (
-						<Button
-							type="button"
-							variant="outline"
-							size="compact"
-							isLoading={trigger.connectionState === "connecting"}
-							onClick={() => onConnect?.(trigger)}
-						>
-							{getConnectButtonLabel(trigger.connectionState)}
-						</Button>
+						<div className="flex min-w-0 flex-wrap items-center gap-2 text-sm leading-5">
+							<span
+								className={cn(
+									"font-medium",
+									trigger.connectionState === "connection-error"
+										? "text-text-danger"
+										: "text-text-warning",
+								)}
+							>
+								{connectionLabel}
+							</span>
+							{needsConnection ? (
+								<Button
+									type="button"
+									variant="outline"
+									size="compact"
+									isLoading={trigger.connectionState === "connecting"}
+									onClick={() => onConnect?.(trigger)}
+								>
+									{getConnectButtonLabel(trigger.connectionState)}
+								</Button>
+							) : null}
+						</div>
 					) : null}
 				</div>
-				<TriggerRowDeleteButton onRemove={onRemove} />
+				{/* Prompt node — the instruction that runs when this event fires. */}
+				<textarea
+					aria-label="Trigger prompt"
+					className="min-h-16 w-full resize-none rounded-lg border border-border bg-surface-sunken px-3 py-2 text-sm leading-5 text-text transition-colors duration-normal field-sizing-content placeholder:text-text-subtlest hover:bg-bg-neutral-subtle-hovered focus-visible:border-border-focused focus-visible:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focused"
+					onChange={(changeEvent) => onPromptChange(changeEvent.target.value)}
+					placeholder="Write a prompt for this trigger…"
+					rows={2}
+					value={trigger.prompt ?? ""}
+				/>
 			</div>
-			{/* Prompt node — the instruction that runs when this event fires. */}
-			<textarea
-				aria-label="Trigger prompt"
-				className="min-h-16 w-full resize-none rounded-lg border border-border bg-surface-sunken px-3 py-2 text-sm leading-5 text-text transition-colors duration-normal field-sizing-content placeholder:text-text-subtlest hover:bg-bg-neutral-subtle-hovered focus-visible:border-border-focused focus-visible:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focused"
-				onChange={(changeEvent) => onPromptChange(changeEvent.target.value)}
-				placeholder="Write a prompt for this trigger…"
-				rows={2}
-				value={trigger.prompt ?? ""}
-			/>
 		</div>
 	);
 }
@@ -868,13 +890,11 @@ export default function Triggers({
 			</div>
 		) : (
 			// Empty state keeps the picker so the first trigger can be added.
-			<div className="rounded-xl border border-border bg-surface p-2">
-				<TriggerPicker
-					defaultOpen={defaultPickerOpen}
-					label={addTriggerLabel}
-					onSelectEvent={handleSelectEvent}
-				/>
-			</div>
+			<TriggerPicker
+				defaultOpen={defaultPickerOpen}
+				label={addTriggerLabel}
+				onSelectEvent={handleSelectEvent}
+			/>
 		);
 
 	return (

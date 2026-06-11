@@ -58,7 +58,7 @@ export function TriggersDemoEmpty(): ReactElement {
 export function TriggersDemoPicker(): ReactElement {
 	return (
 		<TriggersDemoFrame>
-			<Triggers defaultPickerOpen />
+			<Triggers />
 		</TriggersDemoFrame>
 	);
 }

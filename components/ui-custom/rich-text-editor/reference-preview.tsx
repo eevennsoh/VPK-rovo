@@ -240,7 +240,7 @@ export function RichTextReferencePreviewContent({ preview }: Readonly<{ preview:
 			sideOffset={8}
 		>
 			{preview.kind === "skill" ? (
-				<EntityCard.Shell className="gap-4">
+				<EntityCard.Shell active className="gap-4">
 					<EntityCard.Skill
 						description={preview.skill.description}
 						icon={getSkillIcon(preview.skill.icon)}
@@ -253,7 +253,7 @@ export function RichTextReferencePreviewContent({ preview }: Readonly<{ preview:
 					/>
 				</EntityCard.Shell>
 			) : (
-				<EntityCard.Shell className="min-h-[102px] gap-4">
+				<EntityCard.Shell active className="min-h-[102px] gap-4">
 					<EntityCard.Tool
 						appLogo={getReferenceToolLogo(preview.tool)}
 						description={preview.tool.description}

@@ -158,4 +158,6 @@ test("Triggers demos and block docs export the required state variations", () =>
 		assert.match(REGISTRY_SOURCE, new RegExp(`"${demoSlug}"`, "u"));
 		assert.match(BLOCK_DETAILS_SOURCE, new RegExp(`demoSlug: "${demoSlug}"`, "u"));
 	}
+
+	assert.doesNotMatch(DEMO_SOURCE, /<Triggers defaultPickerOpen \/>/u);
 });
