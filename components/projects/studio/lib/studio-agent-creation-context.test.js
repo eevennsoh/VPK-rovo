@@ -345,6 +345,15 @@ test("applyTemplateDefaultsToResult backfills a thin template-based result", asy
 	assert.ok(out.subagents.length > 0, "subagents backfilled from template");
 	assert.match(out.instructions, /@\[/, "chip-less body replaced with the template's chipped body");
 	assert.ok(out.triggers.length > 0, "triggers backfilled from template");
+	// Nested subagents instantiated with their OWN smaller config.
+	assert.ok(Array.isArray(out.subagentPrompts) && out.subagentPrompts.length > 0, "subagentPrompts instantiated");
+	for (const sp of out.subagentPrompts) {
+		assert.ok(sp.id && sp.triggerName, "subagent prompt has id + name");
+		assert.ok(sp.config && typeof sp.config === "object", "subagent prompt has its own config");
+		assert.ok(Array.isArray(sp.config.skills), "subagent config has skills");
+		assert.ok(["on", "off"].includes(sp.config.memoryMode), "subagent config has its own memoryMode");
+		assert.ok(typeof sp.config.reasoningMode === "string", "subagent config has its own reasoningMode");
+	}
 });
 
 test("applyTemplateDefaultsToResult preserves model-populated fields and no-ops off-template", async () => {

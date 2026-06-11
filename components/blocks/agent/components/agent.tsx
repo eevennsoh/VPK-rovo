@@ -3588,10 +3588,11 @@ function AgentInstructionsComposer({
 		label: string;
 	}>());
 	const mentionSources = useMemo<RichTextMentionSources>(() => ({
-		subagent: mergeMentionItems(
-			mapConfigValuesToMentionItems("subagent", config.subagents),
-			EDITOR_PALETTE_MENTION_SOURCES.subagent,
-		),
+		// Subagents are NESTED agents owned by THIS agent — not globally
+		// at-mentionable top-level agents. So the `@subagent` list comes ONLY from
+		// this agent's own subagents (empty/0 until it generates some); the global
+		// parent-agent palette is intentionally NOT merged in here.
+		subagent: mapConfigValuesToMentionItems("subagent", config.subagents),
 		skill: mergeMentionItems(
 			mapConfigValuesToMentionItems("skill", config.skills),
 			EDITOR_PALETTE_MENTION_SOURCES.skill,

@@ -402,6 +402,7 @@ interface AgentResultLike {
 	subagents?: readonly string[];
 	triggers?: readonly string[];
 	triggerDefinitions?: readonly unknown[];
+	subagentPrompts?: readonly unknown[];
 }
 
 /** Resolve the originating template config for a generated result (by id, then name). */
@@ -453,6 +454,30 @@ export function applyTemplateDefaultsToResult<T extends AgentResultLike>(
 	}
 	if (isEmpty(out.subagents) && config.subagentIds.length > 0) {
 		out.subagents = resolveCatalogNames(config.subagentIds, "subagent");
+	}
+	// Instantiate the template's nested subagent definitions as real subagents,
+	// each with its OWN smaller config (a lighter subset of skills/apps/knowledge +
+	// its own memory/reasoning). These become the parent's `@`-mentionable subagents
+	// and get their own config page in the panel. Fill-when-empty so a model that
+	// already emitted subagentPrompts is preserved.
+	if (isEmpty(out.subagentPrompts) && config.subagentDefinitions && config.subagentDefinitions.length > 0) {
+		out.subagentPrompts = config.subagentDefinitions.map((def) => ({
+			id: def.id,
+			triggerName: def.name,
+			condition: def.description,
+			config: {
+				instructions: `You are ${def.name}, a focused subagent. ${def.description}`,
+				contextDescription: "",
+				triggers: [],
+				skills: resolveCatalogNames(def.skillIds, "skill"),
+				tools: resolveCatalogNames(def.toolIds, "tool"),
+				knowledge: resolveCatalogNames(def.knowledgeIds.map((id) => `${id}:all`), "knowledge"),
+				conversationStarters: [],
+				memoryMode: def.memoryMode,
+				reasoningMode: def.reasoningMode,
+				action: "draft",
+			},
+		}));
 	}
 	// Body: replace only when the model's body carries no mention chips, so a rich
 	// generated body is preserved but a plain one becomes the template's chipped body.
