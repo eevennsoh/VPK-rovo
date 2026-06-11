@@ -530,7 +530,12 @@ function ToolsDirectoryView({
 			<div
 				ref={contentOverflow.ref}
 				className={cn(
-					"flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto px-6 pb-6 md:pl-4",
+					// overflow-y-auto forces overflow-x to compute to auto, so this scroll
+					// viewport clips anything painted outside its content box. pt-1 gives the
+					// search input's focus ring (ring-3) room at the top; pb-8 gives the card
+					// hover shadow (elevation.shadow.overlay = 0 8px 12px, ~20px reach) room at
+					// the bottom so it is not clipped. px-6 already clears the ~12px side reach.
+					"flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto px-6 pt-1 pb-8 md:pl-4",
 					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
 				)}
 			>

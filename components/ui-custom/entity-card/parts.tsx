@@ -505,7 +505,7 @@ export function EntityCardCapabilities({ label, items }: Readonly<EntityCardCapa
 										className="size-4 shrink-0 text-icon-subtlest"
 										render={getCapabilityIcon(capability.icon)}
 									/>
-									<span className="min-w-0 flex-1 truncate text-sm leading-5 text-text">{capability.label}</span>
+									<span className="min-w-0 flex-1 truncate text-xs leading-4 text-text-subtlest">{capability.label}</span>
 								</TooltipTrigger>
 								<TooltipContent side="right">{capability.label}</TooltipContent>
 							</Tooltip>

@@ -406,6 +406,7 @@ export interface AgentCardCapabilitiesProps {
 	label?: string;
 	labelClassName?: string;
 	itemClassName?: string;
+	listClassName?: string;
 	items: readonly (string | AgentCardCapability)[];
 }
 
@@ -530,13 +531,14 @@ export function AgentCardCapabilities({
 	label,
 	labelClassName,
 	itemClassName,
+	listClassName,
 	items,
 }: Readonly<AgentCardCapabilitiesProps>) {
 	return (
 		<div className={cn("flex flex-col gap-1", className)} data-slot="agent-card-capabilities">
 			{label ? <span className={cn("text-xs font-semibold leading-4 text-text-subtlest", labelClassName)}>{label}</span> : null}
 			<TooltipProvider>
-				<ul className="flex flex-col gap-1">
+				<ul className={cn("flex flex-col gap-1", listClassName)}>
 					{items.map((item) => {
 						const capability = getCapabilityItem(item);
 
