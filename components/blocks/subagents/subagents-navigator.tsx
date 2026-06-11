@@ -48,7 +48,7 @@ const SWITCHER_SECTION_LABEL_HEIGHT_PX = 20;
 const SWITCHER_ROW_HEIGHT_PX = 36;
 const SWITCHER_ROW_GAP_PX = 2;
 const SWITCHER_LIST_FOOTER_GAP_PX = 8;
-const SWITCHER_FOOTER_CHROME_PX = 17;
+const SWITCHER_FOOTER_CHROME_PX = 9;
 const SWITCHER_FOOTER_ACTION_HEIGHT_PX = 32;
 
 function getBaseAgentDisplayName(baseAgent: SubagentsBaseAgent): string {
@@ -327,7 +327,7 @@ export function SubagentsNavigator({
 							})}
 						</div>
 					</div>
-					<div className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-surface-overlay py-2">
+					<div className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-surface-overlay pt-2">
 						<SubagentsActionButton
 							icon={<PlusIcon />}
 							label="Create subagent"
