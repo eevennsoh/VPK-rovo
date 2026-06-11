@@ -550,8 +550,8 @@
 			"person"
 		],
 		"triggers": [
-			"A recording finishes processing",
-			"A meeting ends in Microsoft Teams"
+			"A meeting recording is saved in Microsoft Teams",
+			"A weekly transcript digest is scheduled"
 		],
 		"memoryMode": "on",
 		"reasoningMode": "deep-auto",

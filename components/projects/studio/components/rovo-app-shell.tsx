@@ -15,7 +15,7 @@ import {
 } from "@/components/blocks/conversation-starters";
 import { CreateButton } from "@/components/blocks/top-navigation/components/create-button";
 import { AgentsDirectoryDialog } from "@/components/blocks/agents-directory";
-import { inferScheduledTriggerDefinitions } from "@/components/blocks/triggers/data/trigger-catalog";
+import { inferTriggerDefinitions } from "@/components/blocks/triggers/data/trigger-catalog";
 import { AGENT_TEMPLATES_CATEGORIES, AgentTemplatesDialog, type AgentTemplatesAgent } from "@/components/blocks/agent-templates";
 import {
 	DEMO_AGENT_TEMPLATES,
@@ -1737,16 +1737,17 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				...rawAgentResult,
 				...repairGeneratedAgentCatalog(rawAgentResult),
 			};
-			// Hydrate a generated schedule string (e.g. "every day at 7am") into a
-			// structured scheduled trigger so the config panel shows a real clock-icon
-			// trigger instead of a plain label-only chip. Only when none exist already.
+			// Hydrate generated trigger strings (e.g. "A Jira issue is blocked",
+			// "every day at 7am") into structured triggers so the config panel shows
+			// real provider-icon chips with connection state instead of plain labels.
+			// Maps each string to its provider; only when none exist already.
 			const triggerStrings = Array.isArray(repaired.triggers) && repaired.triggers.length > 0
 				? repaired.triggers
 				: repaired.trigger
 					? [repaired.trigger]
 					: [];
 			const inferredTriggerDefinitions = !repaired.triggerDefinitions || repaired.triggerDefinitions.length === 0
-				? inferScheduledTriggerDefinitions(triggerStrings)
+				? inferTriggerDefinitions(triggerStrings)
 				: undefined;
 			const agentResult = inferredTriggerDefinitions
 				? { ...repaired, triggerDefinitions: inferredTriggerDefinitions }
