@@ -262,11 +262,13 @@ function CustomAgentStarterItem({
 function CustomAgentGreeting({
 	agent,
 	isAgentTest = false,
+	isComposing = false,
 	itemVariants,
 	onSuggestionClick,
 }: Readonly<{
 	agent: RovoAgentProfile;
 	isAgentTest?: boolean;
+	isComposing?: boolean;
 	itemVariants: ChatGreetingItemVariants;
 	onSuggestionClick?: (suggestion: RovoSuggestion) => void;
 }>) {
@@ -282,18 +284,27 @@ function CustomAgentGreeting({
 			key={agent.id}
 			variants={CHAT_GREETING_CONTAINER_VARIANTS}
 		>
-			<div className="flex max-w-[360px] flex-col items-center gap-3">
-				<motion.div variants={itemVariants}>
-					<AgentAvatarVisual avatarSrc={agent.avatarSrc} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
-				</motion.div>
-				<motion.div className="flex flex-col items-center gap-2" variants={itemVariants}>
-					<Heading size="large" className="text-center">{agent.name}</Heading>
-					{agent.description ? (
-						<p className="text-sm leading-6 text-text-subtle">{agent.description}</p>
-					) : null}
-				</motion.div>
-			</div>
-			<motion.div className="w-full" variants={CHAT_GREETING_CONTAINER_VARIANTS}>
+			<AnimatePresence mode="popLayout" propagate>
+				{isComposing ? null : (
+					<motion.div
+						className="flex max-w-[360px] flex-col items-center gap-3"
+						exit="exit"
+						key="agent-hero"
+						variants={CHAT_GREETING_CONTAINER_VARIANTS}
+					>
+						<motion.div variants={itemVariants}>
+							<AgentAvatarVisual avatarSrc={agent.avatarSrc} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
+						</motion.div>
+						<motion.div className="flex flex-col items-center gap-2" variants={itemVariants}>
+							<Heading size="large" className="text-center">{agent.name}</Heading>
+							{agent.description ? (
+								<p className="text-sm leading-6 text-text-subtle">{agent.description}</p>
+							) : null}
+						</motion.div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+			<motion.div className="w-full" layout="position" variants={CHAT_GREETING_CONTAINER_VARIANTS}>
 				<div className="mx-auto flex w-fit max-w-full flex-col gap-1">
 					{agent.starters.map((suggestion) => (
 						<motion.div key={suggestion.id} variants={itemVariants}>
@@ -358,6 +369,7 @@ export default function ChatGreeting({
 					<CustomAgentGreeting
 						agent={customAgent}
 						isAgentTest={isAgentTest}
+						isComposing={isComposing}
 						itemVariants={itemVariants}
 						key={`agent-${customAgent.id}`}
 						onSuggestionClick={onSuggestionClick}
