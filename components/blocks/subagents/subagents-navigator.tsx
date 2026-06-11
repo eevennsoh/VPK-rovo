@@ -2,7 +2,9 @@
 
 import { useId, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
-import { DeleteIcon, PlusIcon, SettingsIcon } from "@/components/ui/vpk-icons";
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
+import Image from "next/image";
+import { DeleteIcon, PlusIcon } from "@/components/ui/vpk-icons";
 import { Switch } from "@/components/ui/switch";
 import {
 	hoverRevealRowClassName,
@@ -36,14 +38,14 @@ const MINIMAP_BASE_BAR_WIDTH_PX = 26;
 const MINIMAP_PROMPT_BAR_WIDTH_PX = 16;
 const SWITCHER_OPEN_WIDTH_PX = 280;
 const SWITCHER_PANEL_PADDING_Y_PX = 16;
-const SWITCHER_HEADER_HEIGHT_PX = 45;
+const SWITCHER_HEADER_HEIGHT_PX = 41;
 const SWITCHER_SECTION_PADDING_Y_PX = 16;
 const SWITCHER_SECTION_LABEL_HEIGHT_PX = 20;
-const SWITCHER_ROW_HEIGHT_PX = 36;
+const SWITCHER_ROW_HEIGHT_PX = 32;
 const SWITCHER_ROW_GAP_PX = 0;
-// Footer chrome = top border (1px) + pt-2 (8px); each action button is 36px tall.
+// Footer chrome = top border (1px) + pt-2 (8px); each action button is 32px tall.
 const SWITCHER_FOOTER_CHROME_PX = 9;
-const SWITCHER_FOOTER_ACTION_HEIGHT_PX = 36;
+const SWITCHER_FOOTER_ACTION_HEIGHT_PX = 32;
 
 function getBaseAgentDisplayName(baseAgent: SubagentsBaseAgent): string {
 	return baseAgent.config.name?.trim() || "Untitled agent";
@@ -125,7 +127,8 @@ export function SubagentsNavigator({
 				style={{
 					boxSizing: "border-box",
 					width: isSwitcherOpen ? SWITCHER_OPEN_WIDTH_PX : MINIMAP_WIDTH_PX,
-					height: isSwitcherOpen ? openHeight : closedHeight,
+					height: isSwitcherOpen ? undefined : closedHeight,
+					minHeight: isSwitcherOpen ? openHeight : closedHeight,
 					borderRadius: isSwitcherOpen ? 16 : 14,
 					backgroundColor: isSwitcherOpen ? "var(--ds-surface-overlay)" : "transparent",
 					boxShadow: isSwitcherOpen ? token("elevation.shadow.overlay") : "none",
@@ -194,6 +197,7 @@ export function SubagentsNavigator({
 				>
 					<div className="sticky top-0 z-10 shrink-0 bg-surface-overlay">
 						<SubagentsSwitcherButton
+							avatarSrc={baseAgent.avatarSrc}
 							isActive={activeSubagentId === null}
 							label={getBaseAgentDisplayName(baseAgent)}
 							onSelect={onSelectBaseAgent}
@@ -227,13 +231,13 @@ export function SubagentsNavigator({
 					</div>
 					<div className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-surface-overlay pt-2">
 						<SubagentsActionButton
-							icon={<PlusIcon size="small" />}
+							icon={<PlusIcon />}
 							label="Create subagent"
 							onClick={onCreateSubagent}
 						/>
 						{onManageSubagents ? (
 							<SubagentsActionButton
-								icon={<SettingsIcon size="small" />}
+								icon={<AiAgentIcon label="" />}
 								label="Manage subagents"
 								onClick={onManageSubagents}
 							/>
@@ -258,16 +262,19 @@ function SubagentsActionButton({
 		<button
 			type="button"
 			aria-label={label}
-			className="flex h-9 w-full items-center gap-2 rounded-lg px-2 text-left text-sm text-text-subtle transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected"
+			className="group/dropdown-menu-item relative flex h-8 w-full cursor-pointer select-none items-center gap-3 rounded-lg px-2 py-0 text-left text-sm leading-5 outline-none transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:ring-2 focus-visible:ring-border-selected [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-icon-subtle"
 			onClick={onClick}
 		>
-			{icon}
-			<span className="min-w-0 truncate">{label}</span>
+			<span className="inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle [&_svg]:size-4">
+				{icon}
+			</span>
+			<span className="min-w-0 flex-1 truncate">{label}</span>
 		</button>
 	);
 }
 
 function SubagentsSwitcherButton({
+	avatarSrc,
 	isActive,
 	label,
 	enabled = true,
@@ -275,6 +282,7 @@ function SubagentsSwitcherButton({
 	onSelect,
 	onToggle,
 }: Readonly<{
+	avatarSrc?: string;
 	isActive: boolean;
 	label: string;
 	enabled?: boolean;
@@ -295,10 +303,14 @@ function SubagentsSwitcherButton({
 				aria-label={`Select ${label}`}
 				aria-pressed={isActive}
 				className={cn(
-					"flex h-9 w-full min-w-0 items-center rounded-lg p-2 text-left transition-colors duration-normal ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected",
+					// Mirror the DropdownMenuItem default box + states used by
+					// AgentCompactReferenceRow: 32px minimum row, 6px vertical padding
+					// when text wraps, gap-3, subtle highlight on hover, selected surface
+					// with its own hover/pressed tokens.
+					"flex min-h-8 w-full min-w-0 cursor-pointer select-none items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm leading-5 outline-none transition-colors duration-normal ease-out focus-visible:ring-2 focus-visible:ring-border-selected",
 					isActive
-						? "bg-bg-selected text-text-selected"
-						: "bg-transparent text-text group-hover/hover-reveal-row:bg-surface-hovered group-hover/hover-reveal-row:text-text",
+						? "bg-bg-selected text-text-selected group-hover/hover-reveal-row:bg-bg-selected-hovered active:bg-bg-selected-pressed"
+						: "bg-transparent text-text group-hover/hover-reveal-row:bg-bg-neutral-subtle-hovered group-hover/hover-reveal-row:text-text active:bg-bg-neutral-subtle-pressed",
 					// A disabled (off) subagent reads as muted until re-enabled — keep it
 					// muted on hover too (the non-active branch's hover would otherwise
 					// re-darken the label).
@@ -306,9 +318,25 @@ function SubagentsSwitcherButton({
 				)}
 				onClick={onSelect}
 			>
+				{avatarSrc ? (
+					<span
+						data-slot="subagents-switcher-avatar"
+						aria-hidden="true"
+						className="flex size-6 shrink-0 items-center justify-center text-icon-selected [&_img]:shrink-0"
+					>
+						<Image
+							alt=""
+							aria-hidden="true"
+							className="size-5 object-contain"
+							height={20}
+							src={avatarSrc}
+							width={20}
+						/>
+					</span>
+				) : null}
 				{controlCount > 0 ? (
 					<HoverRevealLabel
-						className="text-sm leading-5"
+						className="whitespace-normal break-words"
 						reserveOnReveal={controlCount === 2 ? 2 : 1}
 						// An off subagent parks its switch at rest, so keep its single
 						// slot reserved; an on subagent gets the full label width.
@@ -317,7 +345,7 @@ function SubagentsSwitcherButton({
 						{label}
 					</HoverRevealLabel>
 				) : (
-					<span className="w-full truncate text-sm leading-5">{label}</span>
+					<span className="min-w-0 flex-1 whitespace-normal break-words">{label}</span>
 				)}
 			</button>
 			<HoverRevealActions
@@ -338,7 +366,7 @@ function SubagentsSwitcherButton({
 						<button
 							type="button"
 							aria-label={`Delete ${label}`}
-							className="flex size-7 items-center justify-center rounded-md text-text-subtlest transition-colors duration-normal ease-out hover:bg-bg-danger-hovered hover:text-text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected"
+							className="flex size-6 items-center justify-center rounded-md text-text-subtlest transition-colors duration-normal ease-out hover:bg-bg-danger-hovered hover:text-text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected [&_svg]:size-4"
 							onClick={onDelete}
 						>
 							<DeleteIcon size="small" />

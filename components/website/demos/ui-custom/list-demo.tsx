@@ -145,7 +145,7 @@ export default function ListDemo() {
 								<div className="flex justify-end gap-[4px]">
 									<Button
 										aria-label={`Edit ${agent.name}`}
-										className={cn("size-7", revealOnHover)}
+										className={cn("size-6", revealOnHover)}
 										size="icon"
 										type="button"
 										variant="ghost"
@@ -156,7 +156,7 @@ export default function ListDemo() {
 										aria-label={`${isPinned ? "Unpin" : "Pin"} ${agent.name}`}
 										aria-pressed={isPinned}
 										className={cn(
-											"size-7 aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:[&_svg]:text-icon-subtle!",
+											"size-6 aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:[&_svg]:text-icon-subtle!",
 											isPinned ? "opacity-100" : revealOnHover,
 										)}
 										onClick={() => togglePinned(agent.id)}

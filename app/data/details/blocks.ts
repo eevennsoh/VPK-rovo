@@ -1500,6 +1500,7 @@ import { DEFAULT_CONFIGURED_TRIGGER_VALUES } from "@/components/blocks/triggers/
 			{ title: "Configured", description: "Scheduled and repository event triggers with compact parameters.", demoSlug: "triggers-demo-configured" },
 			{ title: "Multiple", description: "Multiple configured triggers with connector rhythm.", demoSlug: "triggers-demo-multiple" },
 			{ title: "Needs connection", description: "Connection-required trigger with inline connect CTA.", demoSlug: "triggers-demo-needs-connection" },
+			{ title: "Manage", description: "List-management dialog to reorder, toggle, delete, and add triggers.", demoSlug: "triggers-demo-manage" },
 		],
 	},
 	"app-sidebar": {

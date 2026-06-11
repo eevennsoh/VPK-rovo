@@ -60,7 +60,7 @@ function DemoRow({
 						<button
 							type="button"
 							aria-label={`Edit ${label}`}
-							className="flex size-7 items-center justify-center rounded-md text-text-subtlest transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected [&_svg]:size-4"
+							className="flex size-6 items-center justify-center rounded-md text-text-subtlest transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected [&_svg]:size-4"
 						>
 							<EditIcon label="" size="small" />
 						</button>
@@ -146,7 +146,7 @@ export function HoverRevealRowDemoParked() {
 						<button
 							type="button"
 							aria-label={`Edit ${label}`}
-							className="flex size-7 items-center justify-center rounded-md text-text-subtlest transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected [&_svg]:size-4"
+							className="flex size-6 items-center justify-center rounded-md text-text-subtlest transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected [&_svg]:size-4"
 						>
 							<EditIcon label="" size="small" />
 						</button>

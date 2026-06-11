@@ -1,6 +1,7 @@
 "use client";
 
 import type { Tool } from "ai";
+import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform, type MotionProps } from "motion/react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -49,6 +50,7 @@ import {
 import { createAgentTriggerValue, getTriggerProvider } from "@/components/blocks/triggers/data/trigger-catalog";
 import { UNTITLED_SUBAGENT_NAME } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
+import { ManageTriggersDialog } from "@/components/blocks/triggers/components/manage-triggers-dialog";
 import {
 	hoverRevealRowClassName,
 	HoverRevealActions,
@@ -982,6 +984,49 @@ function AgentCompactNavMenuPinnedFooter({
 	);
 }
 
+type AgentCompactNavMenuHandle = ReturnType<typeof MenuPrimitive.createHandle>;
+type AgentCompactNavMenuOpenChange = NonNullable<ComponentProps<typeof MenubarMenu>["onOpenChange"]>;
+
+function shouldClearCompactNavInitialHighlight(eventDetails: Parameters<AgentCompactNavMenuOpenChange>[1]): boolean {
+	if (eventDetails.reason === "trigger-hover") {
+		return true;
+	}
+
+	if (eventDetails.reason !== "trigger-press") {
+		return false;
+	}
+
+	const event = eventDetails.event;
+	return !(event instanceof MouseEvent) || event.detail !== 0;
+}
+
+function clearCompactNavInitialHighlight(menuHandle: AgentCompactNavMenuHandle): void {
+	queueMicrotask(() => {
+		menuHandle.store.set("activeIndex", null);
+
+		requestAnimationFrame(() => {
+			menuHandle.store.set("activeIndex", null);
+		});
+	});
+}
+
+function useCompactNavMenuNoInitialHighlight(): {
+	handle: AgentCompactNavMenuHandle;
+	onOpenChange: AgentCompactNavMenuOpenChange;
+} {
+	const menuHandle = useMemo(() => MenuPrimitive.createHandle(), []);
+	const handleOpenChange = useCallback<AgentCompactNavMenuOpenChange>(
+		(open, eventDetails) => {
+			if (open && shouldClearCompactNavInitialHighlight(eventDetails)) {
+				clearCompactNavInitialHighlight(menuHandle);
+			}
+		},
+		[menuHandle],
+	);
+
+	return { handle: menuHandle, onOpenChange: handleOpenChange };
+}
+
 // Memoize a trimmed Set of disabled labels for O(1) per-row lookups. The
 // collapsed-nav dropdowns receive the field's disabled labels (derived from the
 // persisted config) and match by label so the state survives reorder/removal.
@@ -1018,14 +1063,16 @@ function AgentCompactSubagentsNavButton({
 }>) {
 	const isEmpty = item.count === 0;
 	const disabledSet = useDisabledLabelSet(disabledItems);
+	const compactNavMenu = useCompactNavMenuNoInitialHighlight();
 
 	return (
-		<MenubarMenu>
+		<MenubarMenu handle={compactNavMenu.handle} onOpenChange={compactNavMenu.onOpenChange}>
 			{renderTrigger ? (
-				<MenubarTrigger render={renderTrigger} />
+				<MenubarTrigger handle={compactNavMenu.handle} render={renderTrigger} />
 			) : (
 				<MenubarTrigger
 					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
+					handle={compactNavMenu.handle}
 					render={(
 						<AgentCompactConfigNavButton
 							aria-label="Subagents"
@@ -1117,8 +1164,7 @@ function AgentCompactTriggerRow({
 			closeOnClick={false}
 			className={cn(
 				hoverRevealRowClassName,
-				// Match the subagent switcher's roomier 36px row height.
-				"h-9 cursor-default",
+				"cursor-default",
 				// A disabled row reads as muted until re-enabled — keep it muted on
 				// hover too (the item's `data-[highlighted]:text-text` would otherwise
 				// re-darken the label).
@@ -1162,7 +1208,7 @@ function AgentCompactTriggerRow({
 						<button
 							type="button"
 							aria-label={`Edit ${label}`}
-							className="flex size-7 items-center justify-center rounded-md text-text-subtlest transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected [&_svg]:size-4"
+							className="flex size-6 items-center justify-center rounded-md text-text-subtlest transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected [&_svg]:size-4"
 							onClick={onEdit}
 						>
 							<EditIcon label="" size="small" />
@@ -1176,27 +1222,29 @@ function AgentCompactTriggerRow({
 
 // Resolves a configured reference row's leading "front slot" visual from its
 // directory category — the same avatar/logo/icon the inline AgentReferenceChip
-// shows. The shared mark renders at a fixed 32px tile (MENU_VISUAL_TILE_SIZE),
-// so it's wrapped in a 24px box scaled uniformly to match the trigger rows and
-// footer icons in these dropdowns. Values not present in the directory (e.g. a
-// freshly created, still-unnamed subagent) fall back to a category-appropriate
-// icon tile, mirroring AgentReferenceChip's fallback. Glyph icons inherit the
-// menu's subtle front-slot treatment (see dropdownMenuFrontSlotClassName);
+// shows. Rendered natively at `menu-compact` (a 24px `small` tile) to fill the
+// 24px front slot, matching the trigger rows and footer icons in these
+// dropdowns. Drawing natively (rather than scaling a 32px `menu` mark down to
+// 75%) keeps the glyph on ADS's `small` Tile inset (14px) instead of freezing
+// the `medium` inset and shrinking the glyph to 12px. Values not present in the
+// directory (e.g. a freshly created, still-unnamed subagent) fall back to a
+// category-appropriate `small` icon tile, mirroring AgentReferenceChip's
+// fallback. Glyph icons inherit the menu's subtle front-slot treatment;
 // avatars/logos/images keep their color, exactly like the sibling Triggers rows.
 function renderAgentReferenceRowVisual(category: RichTextReferenceCategory, label: string): ReactNode {
 	const visual = getDirectoryMentionItemOrFallback(category, label).visual;
 	const FallbackIcon = category === "subagent" ? AiAgentIcon : PageIcon;
 	return (
-		<span className="inline-flex size-6 shrink-0 items-center justify-center [&>*]:scale-75">
+		<span className="inline-flex size-6 shrink-0 items-center justify-center">
 			{visual ? (
-				<RichTextMentionVisualMark category={category} label={label} size="menu" visual={visual} />
+				<RichTextMentionVisualMark category={category} label={label} size="menu-compact" visual={visual} />
 			) : (
 				<IconTile
 					aria-hidden
 					className="border border-border bg-surface text-icon-subtlest"
 					icon={<FallbackIcon label="" size="small" />}
 					label=""
-					size="medium"
+					size="small"
 				/>
 			)}
 		</span>
@@ -1290,7 +1338,7 @@ function AgentCompactReferenceRow({
 							<button
 								type="button"
 								aria-label={`Remove ${label}`}
-								className="flex size-7 items-center justify-center rounded-md text-text-subtlest transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected [&_svg]:size-4"
+								className="flex size-6 items-center justify-center rounded-md text-text-subtlest transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected [&_svg]:size-4"
 								onClick={(event) => {
 									// Don't let the press bubble to the row's onClick (which would
 									// open the directory) or close the menu via item activation.
@@ -1320,6 +1368,7 @@ function AgentCompactTriggersNavButton({
 	triggerDefinitions,
 	onSelectEvent,
 	onEditTriggers,
+	onManageTriggers,
 	renderTrigger,
 	screenAssistantTargetId,
 }: Readonly<{
@@ -1328,6 +1377,10 @@ function AgentCompactTriggersNavButton({
 	triggerDefinitions?: readonly AgentTriggerValue[];
 	onSelectEvent: (providerId: Parameters<typeof createAgentTriggerValue>[0], eventId: string) => void;
 	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
+	// Opens the list-management dialog (reorder / toggle / delete / add), mirroring
+	// "Manage subagents". Falls back to the rule-builder (`onEditTriggers`) when
+	// not provided.
+	onManageTriggers?: () => void;
 	// Overrides the default collapsed-nav trigger button. The expanded Triggers
 	// summary row passes its inline chips / "Edit" button here so they open this
 	// same dropdown.
@@ -1365,6 +1418,7 @@ function AgentCompactTriggersNavButton({
 		},
 		[],
 	);
+	const compactNavMenu = useCompactNavMenuNoInitialHighlight();
 	// "Add trigger ›" reuses the picker's full searchable provider list (the
 	// editor-palette "search" variant), so the flyout shows the same sticky search
 	// input over the provider→event submenus as the expanded summary row's picker.
@@ -1379,18 +1433,19 @@ function AgentCompactTriggersNavButton({
 				</span>
 			</DropdownMenuSubTrigger>
 			<DropdownMenuSubContent className="w-80 p-0">
-				<TriggerProviderSearchList onSelectEvent={onSelectEvent} />
+				<TriggerProviderSearchList autoFocus onSelectEvent={onSelectEvent} />
 			</DropdownMenuSubContent>
 		</DropdownMenuSub>
 	);
 
 	return (
-		<MenubarMenu>
+		<MenubarMenu handle={compactNavMenu.handle} onOpenChange={compactNavMenu.onOpenChange}>
 			{renderTrigger ? (
-				<MenubarTrigger render={renderTrigger} />
+				<MenubarTrigger handle={compactNavMenu.handle} render={renderTrigger} />
 			) : (
 				<MenubarTrigger
 					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
+					handle={compactNavMenu.handle}
 					render={(
 						<AgentCompactConfigNavButton
 							aria-label="Triggers"
@@ -1431,7 +1486,7 @@ function AgentCompactTriggersNavButton({
 								<AutomationIcon label="" />
 							</span>
 						}
-						onClick={() => onEditTriggers?.()}
+						onClick={() => (onManageTriggers ?? onEditTriggers)?.()}
 					>
 						Manage triggers
 					</DropdownMenuItem>
@@ -1481,6 +1536,7 @@ function AgentCompactDirectoryNavButton({
 	const isEmpty = items.length === 0;
 	const disabledSet = useDisabledLabelSet(disabledItems);
 	const addLabel = `Add ${item.label.toLowerCase()}`;
+	const compactNavMenu = useCompactNavMenuNoInitialHighlight();
 	const browseItem = (
 		<DropdownMenuItem
 			elemBefore={
@@ -1521,12 +1577,13 @@ function AgentCompactDirectoryNavButton({
 	);
 
 	return (
-		<MenubarMenu>
+		<MenubarMenu handle={compactNavMenu.handle} onOpenChange={compactNavMenu.onOpenChange}>
 			{renderTrigger ? (
-				<MenubarTrigger render={renderTrigger} />
+				<MenubarTrigger handle={compactNavMenu.handle} render={renderTrigger} />
 			) : (
 				<MenubarTrigger
 					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
+					handle={compactNavMenu.handle}
 					render={(
 						<AgentCompactConfigNavButton
 							aria-label={item.label}
@@ -1599,6 +1656,7 @@ function AgentCompactAppsNavButton({
 	const isEmpty = apps.length === 0;
 	const disabledSet = useDisabledLabelSet(disabledItems);
 	const addLabel = `Add ${item.label.toLowerCase()}`;
+	const compactNavMenu = useCompactNavMenuNoInitialHighlight();
 	const addSearchFlyout = (
 		<DropdownMenuSub>
 			<DropdownMenuSubTrigger>
@@ -1622,12 +1680,13 @@ function AgentCompactAppsNavButton({
 	);
 
 	return (
-		<MenubarMenu>
+		<MenubarMenu handle={compactNavMenu.handle} onOpenChange={compactNavMenu.onOpenChange}>
 			{renderTrigger ? (
-				<MenubarTrigger render={renderTrigger} />
+				<MenubarTrigger handle={compactNavMenu.handle} render={renderTrigger} />
 			) : (
 				<MenubarTrigger
 					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
+					handle={compactNavMenu.handle}
 					render={(
 						<AgentCompactConfigNavButton
 							aria-label={item.label}
@@ -1710,9 +1769,8 @@ function AgentCompactConversationStartersNavButton({
 				)}
 			/>
 			<MenubarContent align="start" className="w-70">
-				{/* 8px (`pb-2`) below the last starter field so it doesn't crowd the
-				    footer separator — the rest of the frame keeps the popup's even 4px. */}
-				<div className="flex flex-col gap-1.5 pb-2">
+				{/* 8px (`p-2`) of padding around the starter input fields. */}
+				<div className="flex flex-col gap-1.5 p-2">
 					{fields.map((field, index) => (
 						<Input
 							key={`starter-${index}`}
@@ -1747,6 +1805,7 @@ function AgentCompactEmptyConfigNav({
 	onAddListValues,
 	onAppendListItem,
 	onEditTriggers,
+	onManageTriggers,
 	onListItemChange,
 	onOpenDirectory,
 	onRemoveListItem,
@@ -1765,6 +1824,7 @@ function AgentCompactEmptyConfigNav({
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
+	onManageTriggers?: () => void;
 	onListItemChange?: (field: AgentConfigListFieldName, index: number, value: string) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
@@ -1861,6 +1921,7 @@ function AgentCompactEmptyConfigNav({
 								item={item}
 								key={item.agentFieldName}
 								onEditTriggers={onEditTriggers}
+								onManageTriggers={onManageTriggers}
 								onSelectEvent={(providerId, eventId) => {
 									// Open the rule-builder scoped to JUST the newly added
 									// trigger (one trigger per modal). Save merges this back into
@@ -2077,6 +2138,23 @@ function getTagColorForMentionVisual(visual: RichTextMentionItem["visual"]): Tag
 		: undefined;
 }
 
+// Maps each agent avatar family (the `<group>` segment in `/avatar-agent/<group>/…`)
+// to the Tag color that matches its brand accent (see AGENT_AVATAR_GROUP_ACCENTS).
+// Used so a subagent chip is tinted with its base agent's custom color rather than
+// the generic fallback — e.g. a lime (dev-agents) agent shows lime subagent chips.
+const agentAvatarGroupToTagColor: Readonly<Record<string, TagColor>> = {
+	"dev-agents": "lime",
+	"product-agents": "purple",
+	"service-agents": "yellow",
+	"strategy-agents": "orange",
+	"teamwork-agents": "blue",
+};
+
+function getTagColorForAgentAvatar(avatarSrc: string | undefined): TagColor | undefined {
+	const group = avatarSrc?.match(/\/avatar-agent\/([^/]+)\//u)?.[1];
+	return group ? agentAvatarGroupToTagColor[group] : undefined;
+}
+
 function AgentReferenceChip({
 	category,
 	disabled = false,
@@ -2125,6 +2203,11 @@ function AgentReferenceChip({
 			// glyph, which reads as a misaligned icon with an oversized gap.
 			<IconTile
 				aria-hidden
+				// `text-inherit` lets the glyph pick up the Tag's color (the leading
+				// slot wrapper applies the resolved Tag color, e.g. `text-lime-400`)
+				// instead of the transparent variant's neutral `text-icon`. So a
+				// lime subagent chip shows a lime icon, etc.
+				className="text-inherit"
 				icon={<Icon aria-hidden render={<FallbackIcon label="" size="small" />} />}
 				label=""
 				size="xxsmall"
@@ -2494,6 +2577,10 @@ function AgentTriggerSummaryRow({
 
 interface AgentFilledConfigSummaryProps {
 	config: AgentConfigFormValue;
+	// Drives the subagent chips' Tag color so they match the base agent's custom
+	// brand color (derived from the avatar family). When omitted the chips fall
+	// back to their category default.
+	avatarSrc?: string;
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	hideEmptyRows?: boolean;
 	knowledgeMode?: KnowledgeModeValue;
@@ -2521,6 +2608,7 @@ interface AgentFilledConfigSummaryProps {
 
 function AgentFilledConfigSummary({
 	config,
+	avatarSrc,
 	hiddenConfigFields,
 	hideEmptyRows = false,
 	memoryMode,
@@ -2544,6 +2632,9 @@ function AgentFilledConfigSummary({
 	const skillItems = getNonEmptyConfigItems(config.skills);
 	const appItems = getNonEmptyConfigItems(config.apps);
 	const subagentItems = getNonEmptyConfigItems(config.subagents);
+	// Subagent chips inherit the base agent's custom brand color (from its avatar
+	// family) so a lime agent shows lime subagent chips, etc.
+	const subagentTagColor = getTagColorForAgentAvatar(avatarSrc);
 	const starterSummaryItems = getConversationStarterSummaryItems(config).slice(0, MAX_AGENT_CONVERSATION_STARTERS);
 	const starterItems = starterSummaryItems.map((item) => item.label);
 
@@ -2693,6 +2784,7 @@ function AgentFilledConfigSummary({
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("subagents", index) : undefined}
 					referenceCategory="subagent"
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
+					tagColor={subagentTagColor}
 				/>
 			),
 		},
@@ -3625,11 +3717,15 @@ function AgentConfigProfile({
 
 interface AgentCompactConfigToolbarBelowProps {
 	config: AgentConfigFormValue;
+	// Forwarded to the expanded summary so subagent chips can match the agent's
+	// custom brand color (derived from the avatar family).
+	avatarSrc?: string;
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
+	onManageTriggers?: () => void;
 	onListItemChange?: (field: AgentConfigListFieldName, index: number, value: string) => void;
 	onManageSubagents?: () => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
@@ -3644,11 +3740,13 @@ interface AgentCompactConfigToolbarBelowProps {
 
 function AgentCompactConfigToolbarBelow({
 	config,
+	avatarSrc,
 	hiddenConfigFields,
 	onAddListValues,
 	onAppendListItem,
 	onConnectTrigger,
 	onEditTriggers,
+	onManageTriggers,
 	onListItemChange,
 	onManageSubagents,
 	onOpenDirectory,
@@ -3789,6 +3887,7 @@ function AgentCompactConfigToolbarBelow({
 					>
 						<AgentFilledConfigSummary
 							config={config}
+							avatarSrc={avatarSrc}
 							hiddenConfigFields={hiddenConfigFields}
 							knowledgeMode={knowledgeMode}
 							onKnowledgeModeChange={setKnowledgeMode}
@@ -3828,6 +3927,7 @@ function AgentCompactConfigToolbarBelow({
 							onAddListValues={onAddListValues}
 							onAppendListItem={onAppendListItem}
 							onEditTriggers={onEditTriggers}
+							onManageTriggers={onManageTriggers}
 							onListItemChange={onListItemChange}
 							onManageSubagents={onManageSubagents}
 							onOpenDirectory={onOpenDirectory}
@@ -4015,6 +4115,61 @@ export const AgentConfigFields = memo(
 			onTriggerDefinitionsChange?.(merged);
 		}, [config.triggerDefinitions, onTriggerDefinitionsChange]);
 
+		// "Manage triggers" opens the list-management dialog (reorder / toggle /
+		// delete / add), mirroring "Manage subagents". Detailed single-trigger
+		// editing still routes through the rule-builder (`handleEditTriggers`).
+		const [manageTriggersOpen, setManageTriggersOpen] = useState(false);
+		const handleManageTriggers = useCallback(() => {
+			setManageTriggersOpen(true);
+		}, []);
+		const handleAddTriggerFromManage = useCallback(
+			(providerId: Parameters<typeof createAgentTriggerValue>[0], eventId: string) => {
+				const existing = config.triggerDefinitions ?? [];
+				const next = createAgentTriggerValue(providerId, eventId, existing.length + 1);
+				if (next) {
+					onTriggerDefinitionsChange?.([...existing, next]);
+				}
+			},
+			[config.triggerDefinitions, onTriggerDefinitionsChange],
+		);
+		const handleReorderTriggers = useCallback(
+			(activeId: string, overId: string) => {
+				const current = config.triggerDefinitions ?? [];
+				const from = current.findIndex((trigger) => trigger.id === activeId);
+				const to = current.findIndex((trigger) => trigger.id === overId);
+				if (from === -1 || to === -1) {
+					return;
+				}
+				const next = current.slice();
+				const [moved] = next.splice(from, 1);
+				next.splice(to, 0, moved);
+				onTriggerDefinitionsChange?.(next);
+			},
+			[config.triggerDefinitions, onTriggerDefinitionsChange],
+		);
+		const handleToggleTrigger = useCallback(
+			(id: string, enabled: boolean) => {
+				const current = config.triggerDefinitions ?? [];
+				onTriggerDefinitionsChange?.(
+					current.map((trigger) => (trigger.id === id ? { ...trigger, enabled } : trigger)),
+				);
+			},
+			[config.triggerDefinitions, onTriggerDefinitionsChange],
+		);
+		const handleDeleteTrigger = useCallback(
+			(id: string) => {
+				const current = config.triggerDefinitions ?? [];
+				onTriggerDefinitionsChange?.(current.filter((trigger) => trigger.id !== id));
+			},
+			[config.triggerDefinitions, onTriggerDefinitionsChange],
+		);
+		const handleEditTriggerFromManage = useCallback(
+			(trigger: AgentTriggerValue) => {
+				handleEditTriggers([trigger]);
+			},
+			[handleEditTriggers],
+		);
+
 		return (
 			<div
 				className={cn("flex min-h-0 flex-1 flex-col gap-6", className)}
@@ -4082,11 +4237,13 @@ export const AgentConfigFields = memo(
 					<div className="shrink-0">
 						<AgentCompactConfigToolbarBelow
 							config={config}
+							avatarSrc={profileAvatarSrc ?? avatarSrc}
 							hiddenConfigFields={hiddenConfigFields}
 							onAddListValues={handleAddListValues}
 							onAppendListItem={handleAppendListItem}
 							onConnectTrigger={onConnectTrigger}
 							onEditTriggers={handleEditTriggers}
+							onManageTriggers={handleManageTriggers}
 							onListItemChange={handleListItemChange}
 							onManageSubagents={onManageSubagents ? handleManageSubagents : undefined}
 							onOpenDirectory={handleOpenDirectory}
@@ -4105,6 +4262,16 @@ export const AgentConfigFields = memo(
 					onOpenChange={handleTriggersEditorOpenChange}
 					triggerDefinitions={triggersEditor.seed}
 					onSave={handleTriggersSave}
+				/>
+				<ManageTriggersDialog
+					open={manageTriggersOpen}
+					onOpenChange={setManageTriggersOpen}
+					triggers={config.triggerDefinitions ?? []}
+					onAddTrigger={handleAddTriggerFromManage}
+					onReorderTriggers={handleReorderTriggers}
+					onToggleTrigger={handleToggleTrigger}
+					onDeleteTrigger={handleDeleteTrigger}
+					onEditTrigger={handleEditTriggerFromManage}
 				/>
 			</div>
 		);

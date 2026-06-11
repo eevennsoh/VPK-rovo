@@ -23,21 +23,21 @@ test("label reserves padding from a descendant so a self group-hover never misfi
 	assert.match(SOURCE, /block w-full truncate transition-\[padding\]/u);
 	assert.match(
 		SOURCE,
-		/group-hover\/hover-reveal-row:pr-9 group-has-\[:focus-visible\]\/hover-reveal-row:pr-9/u,
+		/group-hover\/hover-reveal-row:pr-8 group-has-\[:focus-visible\]\/hover-reveal-row:pr-8/u,
 	);
 	assert.match(
 		SOURCE,
-		/group-hover\/hover-reveal-row:pr-\[72px\] group-has-\[:focus-visible\]\/hover-reveal-row:pr-\[72px\]/u,
+		/group-hover\/hover-reveal-row:pr-\[66px\] group-has-\[:focus-visible\]\/hover-reveal-row:pr-\[66px\]/u,
 	);
 	// Rest reserve is the static padding (no modifier) for parked controls.
-	assert.match(SOURCE, /0: "",\s*1: "pr-9",\s*2: "pr-\[72px\]",/u);
+	assert.match(SOURCE, /0: "",\s*1: "pr-8",\s*2: "pr-\[66px\]",/u);
 });
 
 test("actions overlay parks the toggle and slides controls in on reveal", () => {
 	// Toggle reveals on hover/focus, parks at the far right, and slides left to
 	// clear the action slot when an action is present.
 	assert.match(SOURCE, /group-hover\/hover-reveal-row:opacity-100 group-has-\[:focus-visible\]\/hover-reveal-row:opacity-100/u);
-	assert.match(SOURCE, /right-2 group-hover\/hover-reveal-row:right-9 group-has-\[:focus-visible\]\/hover-reveal-row:right-9/u);
+	assert.match(SOURCE, /right-1\.5 group-hover\/hover-reveal-row:right-\[34px\] group-has-\[:focus-visible\]\/hover-reveal-row:right-\[34px\]/u);
 	assert.match(SOURCE, /toggleParked \? "opacity-100" : "opacity-0"/u);
 	// Action slides in from translate-x-2 → 0 and fades in on reveal.
 	assert.match(SOURCE, /translate-x-2[\s\S]*group-hover\/hover-reveal-row:translate-x-0 group-hover\/hover-reveal-row:opacity-100/u);

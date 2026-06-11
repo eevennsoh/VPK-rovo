@@ -192,7 +192,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 												onClick={() => onRemoveQueuedPrompt(queuedPrompt.id)}
 												size="icon"
 												variant="ghost"
-												className="size-7 rounded-full text-icon-subtle opacity-0 transition-opacity group-hover:opacity-100"
+												className="size-6 rounded-full text-icon-subtle opacity-0 transition-opacity group-hover:opacity-100"
 											>
 												<DeleteIcon label="" size="small" />
 											</Button>

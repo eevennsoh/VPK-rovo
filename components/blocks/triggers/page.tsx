@@ -229,19 +229,15 @@ function TriggerAddRow({
 	...props
 }: Readonly<TriggerAddRowProps>): ReactElement {
 	return (
-		<button
+		<Button
 			type="button"
-			className={cn(
-				"grid h-8 w-full grid-cols-[2rem_minmax(0,1fr)] items-center gap-x-3 rounded-lg px-2 text-left text-sm text-text-subtle transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered focus-visible:bg-bg-neutral-subtle-hovered focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-				className,
-			)}
+			variant="ghost"
+			className={cn("w-full justify-start", className)}
 			{...props}
 		>
-			<span className="flex size-6 shrink-0 items-center justify-center justify-self-center text-icon-subtle">
-				<AddIcon label="" size="small" />
-			</span>
-			<span className="text-sm font-medium">{label}</span>
-		</button>
+			<AddIcon label="" size="small" />
+			{label}
+		</Button>
 	);
 }
 
@@ -252,9 +248,11 @@ function TriggerAddRow({
  * searchable provider list.
  */
 export function TriggerProviderSearchList({
+	autoFocus,
 	onSelectEvent,
 	searchId,
 }: Readonly<{
+	autoFocus?: boolean;
 	onSelectEvent: (providerId: AgentTriggerProviderId, eventId: string) => void;
 	searchId?: string;
 }>): ReactElement {
@@ -307,13 +305,14 @@ export function TriggerProviderSearchList({
 			role="presentation"
 		>
 			<RichTextCommandMenuSearchField
+				autoFocus={autoFocus}
 				id={searchId}
 				icon={<SearchIcon className="size-4 text-icon-subtle" />}
 				label="Search triggers"
 				onClear={() => setQuery("")}
 				onKeyDown={(event) => event.stopPropagation()}
 				onValueChange={setQuery}
-				placeholder="Search Triggers..."
+				placeholder="Search triggers"
 				value={query}
 			/>
 			<div
@@ -397,6 +396,7 @@ export function TriggerPicker({
 				sideOffset={6}
 			>
 				<TriggerProviderSearchList
+					autoFocus
 					onSelectEvent={handleSelectEvent}
 					searchId="trigger-picker-search"
 				/>
@@ -620,7 +620,7 @@ function TriggerRowDeleteButton({ onRemove }: Readonly<{ onRemove: () => void }>
 	return (
 		<Button
 			aria-label="Delete trigger"
-			className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 group-focus-within/trigger-row:opacity-100 focus-visible:opacity-100"
+			className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 group-focus-within/trigger-row:opacity-100 focus-visible:opacity-100 hover:bg-bg-danger-hovered hover:text-text-danger active:bg-bg-danger-pressed [&:hover_svg]:text-icon-danger"
 			onClick={onRemove}
 			size="icon"
 			type="button"
@@ -662,7 +662,7 @@ function TriggerRow({
 					aria-hidden={true}
 					icon={<AutomationIcon label="" size="small" />}
 					label="Automation"
-					size="small"
+					size="medium"
 					variant="blue"
 				/>
 				<div className="flex min-h-8 min-w-0 items-start gap-2">
@@ -689,12 +689,12 @@ function TriggerRow({
 						aria-hidden={true}
 						icon={renderTriggerProviderIcon(provider.icon, provider.label)}
 						label={provider.label}
-						size="small"
+						size="medium"
 						variant="blue"
 					/>
 					<div className="mt-2 w-px flex-1 bg-border" />
 				</div>
-				<span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-bg-neutral text-icon-subtle">
+				<span className="flex size-8 shrink-0 items-center justify-center self-start rounded-tile bg-bg-neutral text-icon-subtle">
 					<GenerativeIndicatorIcon label="" size="small" />
 				</span>
 			</div>

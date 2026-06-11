@@ -238,7 +238,7 @@ function RovoAppComposerInner({
 														size="icon"
 														type="button"
 														variant="ghost"
-														className="size-7 rounded-full text-icon-subtle opacity-0 transition-opacity group-hover:opacity-100"
+														className="size-6 rounded-full text-icon-subtle opacity-0 transition-opacity group-hover:opacity-100"
 													>
 														<ArrowUpIcon label="" size="small" />
 													</Button>
@@ -249,7 +249,7 @@ function RovoAppComposerInner({
 													size="icon"
 													type="button"
 													variant="ghost"
-													className="size-7 rounded-full text-icon-subtle opacity-0 transition-opacity group-hover:opacity-100"
+													className="size-6 rounded-full text-icon-subtle opacity-0 transition-opacity group-hover:opacity-100"
 												>
 													<DeleteIcon label="" size="small" />
 												</Button>

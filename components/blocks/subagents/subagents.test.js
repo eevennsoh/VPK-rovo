@@ -80,7 +80,12 @@ test("Subagents switcher uses base agent header and trigger-name prompt rows", (
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /variant ===|rounded-b-lg|rounded-t"/u);
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_OPEN_MAX_HEIGHT_PX|Math\.min\(|overflow-y-auto/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /sticky top-0[\s\S]*shrink-0 py-2[\s\S]*sticky bottom-0/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /gap-2 rounded-lg px-2 text-left text-sm text-text-subtle/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /min-h-8 w-full[\s\S]*gap-3 rounded-lg px-2 py-1\.5/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /className="whitespace-normal break-words"/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /height: isSwitcherOpen \? undefined : closedHeight/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /minHeight: isSwitcherOpen \? openHeight : closedHeight/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /data-slot="subagents-switcher-avatar"[\s\S]*className="flex size-6 shrink-0 items-center justify-center/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /className="size-5 object-contain"[\s\S]*height=\{20\}[\s\S]*width=\{20\}/u);
 });
 
 test("Subagents navigator footer exposes create and manage sticky actions", () => {

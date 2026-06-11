@@ -56,6 +56,8 @@ test("trigger catalog defines expected automation providers and events", () => {
 
 	assert.match(CATALOG_SOURCE, /export function createAgentTriggerValue/u);
 	assert.match(CATALOG_SOURCE, /export function getAgentTriggerReadableLabel/u);
+	assert.match(CATALOG_SOURCE, /export function isAgentTriggerEnabled/u);
+	assert.match(CATALOG_SOURCE, /enabled\?: boolean;/u);
 	assert.match(CATALOG_SOURCE, /export function serializeAgentTriggerLabels/u);
 	assert.match(CATALOG_SOURCE, /DEFAULT_CONFIGURED_TRIGGER_VALUES/u);
 	assert.match(CATALOG_SOURCE, /DEFAULT_NEEDS_CONNECTION_TRIGGER_VALUES/u);
@@ -131,10 +133,10 @@ test("each trigger renders a self-contained event node plus an editable prompt",
 		TRIGGERS_SOURCE,
 		/trigger\.id === triggerId \? \{ \.\.\.trigger, prompt: value \} : trigger/u,
 	);
-	// No more chained connector line or generative-indicator placeholder node.
-	// (event.description still feeds the picker search list, just not the row.)
-	assert.doesNotMatch(TRIGGERS_SOURCE, /GenerativeIndicatorIcon/u);
-	assert.doesNotMatch(TRIGGERS_SOURCE, /h-7 w-px bg-border/u);
+	// A decorative connector rail links the event node (top) to the prompt node
+	// (bottom), whose generative-indicator tile top-aligns with the textarea.
+	assert.match(TRIGGERS_SOURCE, /GenerativeIndicatorIcon/u);
+	assert.match(TRIGGERS_SOURCE, /self-start rounded-tile bg-bg-neutral/u);
 });
 
 test("Triggers demos and block docs export the required state variations", () => {
@@ -144,6 +146,7 @@ test("Triggers demos and block docs export the required state variations", () =>
 		"TriggersDemoConfigured",
 		"TriggersDemoMultiple",
 		"TriggersDemoNeedsConnection",
+		"TriggersDemoManage",
 	]) {
 		assert.match(DEMO_SOURCE, new RegExp(`export function ${exportName}`, "u"));
 	}
@@ -154,6 +157,7 @@ test("Triggers demos and block docs export the required state variations", () =>
 		"triggers-demo-configured",
 		"triggers-demo-multiple",
 		"triggers-demo-needs-connection",
+		"triggers-demo-manage",
 	]) {
 		assert.match(REGISTRY_SOURCE, new RegExp(`"${demoSlug}"`, "u"));
 		assert.match(BLOCK_DETAILS_SOURCE, new RegExp(`demoSlug: "${demoSlug}"`, "u"));

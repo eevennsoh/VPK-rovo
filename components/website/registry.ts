@@ -7343,6 +7343,13 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "triggers-demo-manage": dynamic(
+    () =>
+      import("./demos/blocks/triggers-demo").then((mod) => ({
+        default: mod.TriggersDemoManage,
+      })),
+    { ssr: false },
+  ),
 
   // Question Card
   "question-card-demo-single-select": dynamic(

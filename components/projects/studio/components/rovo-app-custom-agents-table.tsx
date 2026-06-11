@@ -513,7 +513,7 @@ function StudioCustomAgentsList({
 												<Button
 													aria-label={`More actions for ${agentName}`}
 													className={cn(
-														"size-7 data-[popup-open]:opacity-100",
+														"size-6 data-[popup-open]:opacity-100",
 														revealOnHover,
 													)}
 													size="icon"
@@ -542,7 +542,7 @@ function StudioCustomAgentsList({
 									</DropdownMenu>
 									<Button
 										aria-label={`Edit ${agentName}`}
-										className={cn("size-7", revealOnHover)}
+										className={cn("size-6", revealOnHover)}
 										onClick={() => onEditAgent(entry.profile.id)}
 										size="icon"
 										type="button"
@@ -554,7 +554,7 @@ function StudioCustomAgentsList({
 										aria-label={`${isPinned ? "Unpin" : "Pin"} ${agentName}`}
 										aria-pressed={isPinned}
 										className={cn(
-											"size-7 opacity-100 aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:[&_svg]:text-icon-subtle!",
+											"size-6 opacity-100 aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:[&_svg]:text-icon-subtle!",
 										)}
 										onClick={() => onTogglePinned(entry.profile.id)}
 										size="icon"

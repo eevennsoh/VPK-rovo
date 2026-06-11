@@ -713,6 +713,28 @@ test("Agent compact subagents dropdown keeps add and manage actions pinned", () 
 	assert.doesNotMatch(AGENT_SOURCE, /Browse subagents/u);
 });
 
+test("Agent compact added-item dropdowns do not auto-highlight rows on pointer open", () => {
+	assert.match(AGENT_SOURCE, /import \{ Menu as MenuPrimitive \} from "@base-ui\/react\/menu";/u);
+	assert.match(AGENT_SOURCE, /function useCompactNavMenuNoInitialHighlight\(\)[\s\S]*MenuPrimitive\.createHandle\(\)[\s\S]*shouldClearCompactNavInitialHighlight\(eventDetails\)[\s\S]*clearCompactNavInitialHighlight\(menuHandle\)/u);
+	assert.match(AGENT_SOURCE, /function shouldClearCompactNavInitialHighlight[\s\S]*eventDetails\.reason === "trigger-hover"[\s\S]*eventDetails\.reason !== "trigger-press"[\s\S]*event\.detail !== 0/u);
+	assert.match(AGENT_SOURCE, /function clearCompactNavInitialHighlight[\s\S]*queueMicrotask[\s\S]*menuHandle\.store\.set\("activeIndex", null\)[\s\S]*requestAnimationFrame[\s\S]*menuHandle\.store\.set\("activeIndex", null\)/u);
+	for (const [functionName, nextFunctionName] of [
+		["AgentCompactSubagentsNavButton", "AgentCompactTriggerRow"],
+		["AgentCompactTriggersNavButton", "AgentCompactDirectoryNavButton"],
+		["AgentCompactDirectoryNavButton", "AgentCompactAppsNavButton"],
+		["AgentCompactAppsNavButton", "AgentCompactConversationStartersNavButton"],
+	]) {
+		const start = AGENT_SOURCE.indexOf(`function ${functionName}`);
+		assert.notEqual(start, -1, `${functionName} should exist`);
+		const end = AGENT_SOURCE.indexOf(`function ${nextFunctionName}`, start + 1);
+		assert.notEqual(end, -1, `${nextFunctionName} should follow ${functionName}`);
+		const source = AGENT_SOURCE.slice(start, end);
+		assert.match(source, /const compactNavMenu = useCompactNavMenuNoInitialHighlight\(\);/u, `${functionName} should create a compact menu handle`);
+		assert.match(source, /<MenubarMenu handle=\{compactNavMenu\.handle\} onOpenChange=\{compactNavMenu\.onOpenChange\}>/u, `${functionName} should wire the menu handle`);
+		assert.match(source, /<MenubarTrigger[\s\S]*handle=\{compactNavMenu\.handle\}/u, `${functionName} should wire the trigger handle`);
+	}
+});
+
 test("Agent compact apps field opens a dropdown menu instead of the directory", () => {
 	// Regression: clicking the collapsed-nav "Apps" trigger used to route through
 	// getAgentCompactConfigNavItemOnClick and open the apps directory immediately.

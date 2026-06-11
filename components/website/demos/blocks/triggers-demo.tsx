@@ -1,11 +1,14 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import Triggers from "@/components/blocks/triggers/page";
+import { ManageTriggersDialog } from "@/components/blocks/triggers/components/manage-triggers-dialog";
+import { Button } from "@/components/ui/button";
 import {
 	DEFAULT_CONFIGURED_TRIGGER_VALUES,
 	DEFAULT_NEEDS_CONNECTION_TRIGGER_VALUES,
 	createAgentTriggerValue,
+	type AgentTriggerProviderId,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/data/trigger-catalog";
 
@@ -83,6 +86,62 @@ export function TriggersDemoNeedsConnection(): ReactElement {
 	return (
 		<TriggersDemoFrame>
 			<Triggers defaultTriggers={DEFAULT_NEEDS_CONNECTION_TRIGGER_VALUES} />
+		</TriggersDemoFrame>
+	);
+}
+
+export function TriggersDemoManage(): ReactElement {
+	const [triggers, setTriggers] = useState<readonly AgentTriggerValue[]>(MULTIPLE_TRIGGER_VALUES);
+	const [open, setOpen] = useState(false);
+
+	function handleAddTrigger(providerId: AgentTriggerProviderId, eventId: string): void {
+		const next = createAgentTriggerValue(providerId, eventId, triggers.length + 1);
+		if (next) {
+			setTriggers((prev) => [...prev, next]);
+		}
+	}
+
+	function handleReorderTriggers(activeId: string, overId: string): void {
+		setTriggers((prev) => {
+			const from = prev.findIndex((trigger) => trigger.id === activeId);
+			const to = prev.findIndex((trigger) => trigger.id === overId);
+			if (from === -1 || to === -1) {
+				return prev;
+			}
+			const next = prev.slice();
+			const [moved] = next.splice(from, 1);
+			next.splice(to, 0, moved);
+			return next;
+		});
+	}
+
+	function handleToggleTrigger(id: string, enabled: boolean): void {
+		setTriggers((prev) =>
+			prev.map((trigger) => (trigger.id === id ? { ...trigger, enabled } : trigger)),
+		);
+	}
+
+	function handleDeleteTrigger(id: string): void {
+		setTriggers((prev) => prev.filter((trigger) => trigger.id !== id));
+	}
+
+	return (
+		<TriggersDemoFrame>
+			<div className="flex justify-center">
+				<Button onClick={() => setOpen(true)} type="button" variant="outline">
+					Manage triggers
+				</Button>
+				<ManageTriggersDialog
+					open={open}
+					onOpenChange={setOpen}
+					triggers={triggers}
+					onAddTrigger={handleAddTrigger}
+					onReorderTriggers={handleReorderTriggers}
+					onToggleTrigger={handleToggleTrigger}
+					onDeleteTrigger={handleDeleteTrigger}
+					onEditTrigger={() => undefined}
+				/>
+			</div>
 		</TriggersDemoFrame>
 	);
 }

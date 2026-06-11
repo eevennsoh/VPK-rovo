@@ -30,20 +30,21 @@ import { cn } from "@/lib/utils";
 export const hoverRevealRowClassName = "group/hover-reveal-row relative";
 
 // Reserved right-padding so the label truncates clear of the trailing controls.
-// One ~28px control slot → pr-9; two → pr-[72px]. The two-slot reserve clears a
-// switch parked at `right-9` plus the action slot with a few px of breathing room
-// so the ellipsis sits visibly left of the toggle (pr-16 / 64px lands ~4px short,
-// making the truncated tail render under the control). Written as literal strings
-// (not template literals) so Tailwind's static extraction can see them.
+// One ~24px control slot at `right-1.5` (6px inset) → pr-8; two → pr-[66px]. The
+// 6px inset matches the rows' 6px vertical padding so the trailing control looks
+// evenly inset on all sides. The two-slot reserve clears a switch parked at
+// `right-[34px]` plus the action slot with a few px of breathing room so the
+// ellipsis sits visibly left of the toggle. Written as literal strings (not
+// template literals) so Tailwind's static extraction can see them.
 const RESERVE_AT_REST = {
 	0: "",
-	1: "pr-9",
-	2: "pr-[72px]",
+	1: "pr-8",
+	2: "pr-[66px]",
 } as const;
 
 const RESERVE_ON_REVEAL = {
-	1: "group-hover/hover-reveal-row:pr-9 group-has-[:focus-visible]/hover-reveal-row:pr-9",
-	2: "group-hover/hover-reveal-row:pr-[72px] group-has-[:focus-visible]/hover-reveal-row:pr-[72px]",
+	1: "group-hover/hover-reveal-row:pr-8 group-has-[:focus-visible]/hover-reveal-row:pr-8",
+	2: "group-hover/hover-reveal-row:pr-[66px] group-has-[:focus-visible]/hover-reveal-row:pr-[66px]",
 } as const;
 
 export interface HoverRevealLabelProps {
@@ -102,9 +103,12 @@ export interface HoverRevealActionsProps {
 
 /**
  * Trailing controls overlay for a hover-reveal row. Absolutely positioned, so it
- * never participates in label layout. The toggle parks at the far right (`right-2`)
- * and slides left to `right-9` to clear the `action` slot as the action reveals,
- * keeping both choreographed in lockstep on hover-in and hover-out.
+ * never participates in label layout. The toggle parks at the far right
+ * (`right-1.5`, a 6px inset matching the rows' vertical padding) and slides left
+ * to `right-[34px]` to clear the `action` slot as the action reveals, keeping
+ * both choreographed in lockstep on hover-in and hover-out. The 24px action
+ * button parks at `right-1.5` (6px from the row edge, even with top/bottom), and
+ * the slid toggle sits 4px to its left.
  */
 export function HoverRevealActions({
 	toggle,
@@ -118,8 +122,8 @@ export function HoverRevealActions({
 					className={cn(
 						"absolute top-1/2 flex -translate-y-1/2 items-center transition-[right,opacity] duration-normal ease-out group-hover/hover-reveal-row:opacity-100 group-has-[:focus-visible]/hover-reveal-row:opacity-100",
 						action
-							? "right-2 group-hover/hover-reveal-row:right-9 group-has-[:focus-visible]/hover-reveal-row:right-9"
-							: "right-2",
+							? "right-1.5 group-hover/hover-reveal-row:right-[34px] group-has-[:focus-visible]/hover-reveal-row:right-[34px]"
+							: "right-1.5",
 						toggleParked ? "opacity-100" : "opacity-0",
 					)}
 				>
@@ -127,7 +131,7 @@ export function HoverRevealActions({
 				</div>
 			) : null}
 			{action ? (
-				<div className="absolute right-1 top-1/2 flex -translate-y-1/2 translate-x-2 items-center opacity-0 transition-[opacity,transform] duration-normal ease-out group-hover/hover-reveal-row:translate-x-0 group-hover/hover-reveal-row:opacity-100 group-has-[:focus-visible]/hover-reveal-row:translate-x-0 group-has-[:focus-visible]/hover-reveal-row:opacity-100">
+				<div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 translate-x-2 items-center opacity-0 transition-[opacity,transform] duration-normal ease-out group-hover/hover-reveal-row:translate-x-0 group-hover/hover-reveal-row:opacity-100 group-has-[:focus-visible]/hover-reveal-row:translate-x-0 group-has-[:focus-visible]/hover-reveal-row:opacity-100">
 					{action}
 				</div>
 			) : null}
