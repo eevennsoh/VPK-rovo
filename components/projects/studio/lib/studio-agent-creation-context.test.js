@@ -347,6 +347,9 @@ test("applyTemplateDefaultsToResult backfills a thin template-based result", asy
 	assert.ok(out.triggers.length > 0, "triggers backfilled from template");
 	// Nested subagents instantiated with their OWN smaller config.
 	assert.ok(Array.isArray(out.subagentPrompts) && out.subagentPrompts.length > 0, "subagentPrompts instantiated");
+	// Required profile fields backfilled so normalizeStudioAgentResult won't drop the agent.
+	assert.ok(Array.isArray(out.conversationStarters) && out.conversationStarters.length > 0, "conversationStarters backfilled");
+	assert.ok(typeof out.description === "string" && out.description.length > 0, "description backfilled");
 	for (const sp of out.subagentPrompts) {
 		assert.ok(sp.id && sp.triggerName, "subagent prompt has id + name");
 		assert.ok(sp.config && typeof sp.config === "object", "subagent prompt has its own config");

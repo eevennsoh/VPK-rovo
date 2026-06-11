@@ -403,6 +403,10 @@ interface AgentResultLike {
 	triggers?: readonly string[];
 	triggerDefinitions?: readonly unknown[];
 	subagentPrompts?: readonly unknown[];
+	description?: string;
+	summary?: string;
+	conversationStarters?: readonly string[];
+	conversationStarterIcons?: readonly string[];
 }
 
 /** Resolve the originating template config for a generated result (by id, then name). */
@@ -488,6 +492,20 @@ export function applyTemplateDefaultsToResult<T extends AgentResultLike>(
 	// Triggers: backfill the template's provider-named triggers when none exist.
 	if (isEmpty(out.triggers) && isEmpty(out.triggerDefinitions) && config.triggers.length > 0) {
 		out.triggers = [...config.triggers];
+	}
+	// Required profile fields: the /studio ingest's normalizeStudioAgentResult
+	// returns null (so the agent never registers) without a description and at
+	// least one conversation starter. Backfill these from the template too, so a
+	// thin model result still produces a registerable, rich agent.
+	const hasText = (value: unknown): boolean => typeof value === "string" && value.trim().length > 0;
+	if (isEmpty(out.conversationStarters) && config.conversationStarters.length > 0) {
+		out.conversationStarters = [...config.conversationStarters];
+		if (config.conversationStarterIcons && config.conversationStarterIcons.length > 0) {
+			out.conversationStarterIcons = [...config.conversationStarterIcons];
+		}
+	}
+	if (!hasText(out.description) && !hasText(out.summary) && hasText(config.description)) {
+		out.description = config.description;
 	}
 	return out as T;
 }
