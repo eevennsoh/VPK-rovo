@@ -78,21 +78,30 @@ test("Subagents switcher uses base agent header and trigger-name prompt rows", (
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /MINIMAP_PROMPT_BAR_WIDTH_PX = 16/u);
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /getAgentDescription|toSnippet|config\.name\?\.trim\(\) \|\| \(agent\.kind/u);
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /variant ===|rounded-b-lg|rounded-t"/u);
-	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_OPEN_MAX_HEIGHT_PX|Math\.min\(|overflow-y-auto/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_HEADER_HEIGHT_PX = 45/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_PANEL_PADDING_Y_PX = 16/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_BASE_ROW_HEIGHT_PX = 36/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_DIVIDER_BLOCK_HEIGHT_PX = 17/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_ROW_HEIGHT_PX = 36/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /sticky top-0[\s\S]*shrink-0 py-2[\s\S]*sticky bottom-0/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /subagents\.length \* SWITCHER_ROW_HEIGHT_PX/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_LIST_FOOTER_GAP_PX = 8/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /<div className="shrink-0 pb-2">/u);
+	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_OPEN_MAX_HEIGHT_PX|Math\.min\(|overflow-y-auto/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_FOOTER_CHROME_PX = 17/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_FOOTER_ACTION_HEIGHT_PX = 32/u);
+	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_HEADER_HEIGHT_PX|footerActionCount/u);
+	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /sticky top-0/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /data-slot="dropdown-menu-item"[\s\S]*data-variant="default"/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /group\/dropdown-menu-item data-\[highlighted\]:bg-bg-neutral-subtle-hovered[\s\S]*relative flex min-h-8 w-full[\s\S]*gap-3 rounded-lg px-2 py-1\.5/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /data-selected:bg-bg-selected data-selected:text-text-selected/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /<CheckMarkIcon label="" size="small" \/>/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /const switcherHeight = isSwitcherOpen \? openHeight : closedHeight/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /height: switcherHeight/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /minHeight: switcherHeight/u);
-	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /height: isSwitcherOpen \? undefined : closedHeight/u);
+	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /CheckMarkIcon|check-mark/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /height: isSwitcherOpen \? openHeight : closedHeight/u);
+	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /const switcherHeight = isSwitcherOpen \? openHeight : closedHeight/u);
+	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /minHeight: switcherHeight/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /className="relative origin-top-right overflow-hidden text-left"/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /<span className="block min-w-0 truncate">\{label\}<\/span>/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /isSwitcherOpen\s*\?\s*"relative pointer-events-auto opacity-100"\s*:\s*"pointer-events-none absolute inset-0 opacity-0"/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /"absolute inset-0 flex flex-col p-2 text-left transition-opacity duration-normal ease-out"/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /isSwitcherOpen\s*\?\s*"pointer-events-auto opacity-100"\s*:\s*"pointer-events-none opacity-0"/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /sticky bottom-0 z-10 shrink-0 border-t border-border bg-surface-overlay py-2/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /data-slot="subagents-switcher-avatar"[\s\S]*className="flex size-6 shrink-0 items-center justify-center/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /className="size-5 object-contain"[\s\S]*height=\{20\}[\s\S]*width=\{20\}/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /"dev-agents": "lime"/u);
@@ -102,15 +111,13 @@ test("Subagents switcher uses base agent header and trigger-name prompt rows", (
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /frontSlot=\{renderSubagentSwitcherVisual\(label, subagentTagColor\)\}/u);
 });
 
-test("Subagents navigator footer exposes create and manage sticky actions", () => {
+test("Subagents navigator exposes create and manage actions", () => {
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /onManageSubagents\?: \(\) => void/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /function SubagentsActionButton/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /label="Create subagent"/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /label="Manage subagents"/u);
-	// The manage action only renders when wired, and lives in the sticky footer.
+	// The manage action only renders when wired.
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /onManageSubagents \? \(/u);
-	// Footer height accounts for the optional second action row.
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /footerActionCount = onManageSubagents \? 2 : 1/u);
 });
 
 test("Manage subagents dialog is connected to the navigator manage action", () => {
