@@ -79,8 +79,9 @@ test("Subagents switcher uses base agent header and trigger-name prompt rows", (
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /getAgentDescription|toSnippet|config\.name\?\.trim\(\) \|\| \(agent\.kind/u);
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /variant ===|rounded-b-lg|rounded-t"/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_PANEL_PADDING_Y_PX = 16/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_BASE_ROW_HEIGHT_PX = 32/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_BASE_ROW_HEIGHT_PX = 36/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_DIVIDER_BLOCK_HEIGHT_PX = 17/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_ROW_HEIGHT_PX = 36/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /subagents\.length \* SWITCHER_ROW_HEIGHT_PX/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_LIST_FOOTER_GAP_PX = 8/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /<div className="shrink-0 pb-2">/u);
