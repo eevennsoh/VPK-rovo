@@ -105,6 +105,13 @@ export interface ChatPanelCustomAgentTabs {
 	trigger?: ReactNode;
 }
 
+export interface ChatPanelAgentVersionOption {
+	id: string;
+	label: string;
+	variant?: "neutral" | "success";
+	sectionBreakBefore?: boolean;
+}
+
 interface ChatPanelProps {
 	onClose: () => void;
 	sendPromptOptions?: SendPromptOptions;
@@ -121,6 +128,9 @@ interface ChatPanelProps {
 	 * every other surface renders the tab list full width.
 	 */
 	showAgentTestControls?: boolean;
+	agentVersionOptions?: readonly ChatPanelAgentVersionOption[];
+	selectedAgentVersionId?: string;
+	onAgentVersionChange?: (versionId: string) => void;
 	/**
 	 * Optional override appended to the scrollable conversation content
 	 * wrapper. Used to align the conversation body's horizontal padding with
@@ -179,6 +189,11 @@ const CONTEXT_BAR_RESERVED_SPACE_PX = 48;
 const AGENT_TEST_COMPOSER_GAP_PX = 12;
 const REGULAR_CHAT_WIDTH_MAX = 900;
 const ARTIFACT_DIALOG_FLOATING_PIN_REASON = "sidebar-chat-artifact-dialog";
+const DEFAULT_AGENT_VERSION_OPTIONS: readonly ChatPanelAgentVersionOption[] = [
+	{ id: "draft", label: "Draft", variant: "neutral" },
+	{ id: "version-2", label: "Version 2", variant: "success", sectionBreakBefore: true },
+	{ id: "version-1", label: "Version 1", variant: "success" },
+];
 
 type SmartWidthClass = "compact" | "regular" | "wide";
 
@@ -234,6 +249,9 @@ export default function ChatPanel({
 	greetingSelectedAgent,
 	customAgentTabs,
 	showAgentTestControls = false,
+	agentVersionOptions = DEFAULT_AGENT_VERSION_OPTIONS,
+	selectedAgentVersionId,
+	onAgentVersionChange,
 	conversationContentClassName,
 	composerContainerClassName,
 	composerReservesContextBarSpace = false,
@@ -280,10 +298,26 @@ export default function ChatPanel({
 	const [selectedReasoning, setSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [directoryAutocompleteState, setDirectoryAutocompleteState] = useState<DirectoryAutocompleteState | null>(null);
 	const [directoryAutocompleteController, setDirectoryAutocompleteController] = useState<ComposerDirectoryAutocompleteController | null>(null);
-	const AGENT_VERSION_OPTIONS = ["Draft", "Version 2", "Version 1"] as const;
-	const [selectedAgentVersion, setSelectedAgentVersion] = useState<string>(AGENT_VERSION_OPTIONS[0]);
+	const [uncontrolledAgentVersionId, setUncontrolledAgentVersionId] = useState<string>(agentVersionOptions[0]?.id ?? "draft");
+	const resolvedAgentVersionId = selectedAgentVersionId ?? uncontrolledAgentVersionId;
+	const selectedAgentVersion =
+		agentVersionOptions.find((version) => version.id === resolvedAgentVersionId) ??
+		agentVersionOptions[0] ??
+		DEFAULT_AGENT_VERSION_OPTIONS[0];
 	const isCollapsibleEditContextBar = Boolean(chatContextBar?.collapsible && chatContextBar.variant === "edit");
 	const [isContextBarOpen, setIsContextBarOpen] = useState(true);
+
+	useEffect(() => {
+		if (agentVersionOptions.some((version) => version.id === resolvedAgentVersionId)) {
+			return;
+		}
+
+		const fallbackVersionId = agentVersionOptions[0]?.id ?? DEFAULT_AGENT_VERSION_OPTIONS[0].id;
+		if (selectedAgentVersionId === undefined) {
+			setUncontrolledAgentVersionId(fallbackVersionId);
+		}
+		onAgentVersionChange?.(fallbackVersionId);
+	}, [agentVersionOptions, onAgentVersionChange, resolvedAgentVersionId, selectedAgentVersionId]);
 
 	useEffect(() => {
 		setIsContextBarOpen(true);
@@ -1082,24 +1116,29 @@ export default function ChatPanel({
 											/>
 										}
 									>
-										<Lozenge variant={selectedAgentVersion === "Draft" ? "neutral" : "success"}>
-											{selectedAgentVersion}
+										<Lozenge variant={selectedAgentVersion.variant ?? "success"}>
+											{selectedAgentVersion.label}
 										</Lozenge>
 										<ChevronDownIcon label="" size="small" spacing="none" />
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="start" sideOffset={8}>
 										<DropdownMenuGroup>
-											{AGENT_VERSION_OPTIONS.map((version, versionIndex) => (
-												<Fragment key={version}>
-													{version !== "Draft" && AGENT_VERSION_OPTIONS[versionIndex - 1] === "Draft" ? (
+											{agentVersionOptions.map((version) => (
+												<Fragment key={version.id}>
+													{version.sectionBreakBefore ? (
 														<DropdownMenuSeparator />
 													) : null}
 													<DropdownMenuItem
-														onSelect={() => setSelectedAgentVersion(version)}
-														className={cn(version === "Draft" && "bg-popover sticky top-0 z-10")}
-														elemAfter={version === selectedAgentVersion ? <CheckMarkIcon label="Selected" /> : undefined}
+														onSelect={() => {
+															if (selectedAgentVersionId === undefined) {
+																setUncontrolledAgentVersionId(version.id);
+															}
+															onAgentVersionChange?.(version.id);
+														}}
+														className={cn((version.variant ?? "success") === "neutral" && "bg-popover sticky top-0 z-10")}
+														elemAfter={version.id === selectedAgentVersion.id ? <CheckMarkIcon label="Selected" /> : undefined}
 													>
-														<Lozenge variant={version === "Draft" ? "neutral" : "success"}>{version}</Lozenge>
+														<Lozenge variant={version.variant ?? "success"}>{version.label}</Lozenge>
 													</DropdownMenuItem>
 												</Fragment>
 											))}

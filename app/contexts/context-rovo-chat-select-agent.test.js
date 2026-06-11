@@ -58,3 +58,38 @@ test("touchSessionAgent still exists for intentional bumps (create/edit/test/pub
 	assert.match(CONTEXT_SOURCE, /const touchSessionAgent = useCallback\(/u);
 	assert.match(CONTEXT_SOURCE, /lastTouchedAt: Date\.now\(\)/u);
 });
+
+test("session-agent publishing increments metadata and records version history", () => {
+	assert.match(CONTEXT_SOURCE, /export interface StudioAgentVersionRecord/u);
+	assert.match(CONTEXT_SOURCE, /version: number;/u);
+	assert.match(CONTEXT_SOURCE, /publishedVersion: number;/u);
+	assert.match(CONTEXT_SOURCE, /lastPublishedAt: number \| null;/u);
+	assert.match(CONTEXT_SOURCE, /versionHistory: readonly StudioAgentVersionRecord\[\];/u);
+	assert.match(CONTEXT_SOURCE, /const versionKind: StudioAgentVersionRecord\["kind"\] = existing\.publishedResult \? "update" : "publish";/u);
+	assert.match(CONTEXT_SOURCE, /const nextPublishedVersion = existing\.publishedResult[\s\S]*\? Math\.max\(existing\.publishedVersion, 1\) \+ 1[\s\S]*: 1;/u);
+	assert.match(CONTEXT_SOURCE, /version: nextPublishedVersion/u);
+	assert.match(CONTEXT_SOURCE, /publishedVersion: nextPublishedVersion/u);
+	assert.match(CONTEXT_SOURCE, /versionHistory: \[versionRecord, \.\.\.existing\.versionHistory\]/u);
+});
+
+test("session-agent rollback restores a historical snapshot into the draft only", () => {
+	assert.match(CONTEXT_SOURCE, /restoreSessionAgentVersion: \(profileId: string, versionId: string\) => StudioSessionAgentEntry \| null;/u);
+	assert.match(CONTEXT_SOURCE, /const restoreSessionAgentVersion = useCallback/u);
+	assert.match(CONTEXT_SOURCE, /const restoredDraft = normalizeSessionAgentResult\(version\.snapshot\);/u);
+	assert.match(CONTEXT_SOURCE, /draftResult: restoredDraft/u);
+	assert.match(CONTEXT_SOURCE, /versionHistory: \[rollbackRecord, \.\.\.existing\.versionHistory\]/u);
+	assert.doesNotMatch(
+		CONTEXT_SOURCE.slice(
+			CONTEXT_SOURCE.indexOf("const restoreSessionAgentVersion = useCallback"),
+			CONTEXT_SOURCE.indexOf("const resetAgentToRovo = useCallback"),
+		),
+		/publishedResult: restoredDraft/u,
+	);
+});
+
+test("session-agent autosave is debounced instead of writing on every draft change", () => {
+	assert.match(CONTEXT_SOURCE, /const STUDIO_SESSION_AGENT_SAVE_DEBOUNCE_MS = 900;/u);
+	assert.match(CONTEXT_SOURCE, /const sessionAgentSaveTimerRef = useRef<ReturnType<typeof setTimeout> \| null>\(null\);/u);
+	assert.match(CONTEXT_SOURCE, /clearTimeout\(sessionAgentSaveTimerRef\.current\);/u);
+	assert.match(CONTEXT_SOURCE, /sessionAgentSaveTimerRef\.current = setTimeout\(\(\) => \{[\s\S]*persistSessionAgentEntries\(sessionAgentEntriesRef\.current\.map\(normalizeSessionAgentEntry\)\)[\s\S]*\}, STUDIO_SESSION_AGENT_SAVE_DEBOUNCE_MS\);/u);
+});

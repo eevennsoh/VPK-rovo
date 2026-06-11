@@ -254,6 +254,10 @@ function buildAgentDemoTestEntry(config: AgentConfigFormValue): StudioSessionAge
 		publishReadyResult: agentResult,
 		publishedResult: null,
 		publishStatus: "testing",
+		publishedVersion: 0,
+		lastPublishedAt: null,
+		lastPublishedBy: null,
+		versionHistory: [],
 	};
 }
 

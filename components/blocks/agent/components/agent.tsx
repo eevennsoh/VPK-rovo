@@ -501,6 +501,9 @@ const AGENT_COMPACT_HEADER_NAV_ITEMS = [
 ] as const;
 
 export type AgentCompactHeaderSection = (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[number]["value"];
+export type AgentCompactHeaderNavItem = (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[number];
+export const AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS = AGENT_COMPACT_HEADER_NAV_ITEMS.filter((item) => item.value !== "details");
+export const AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM = AGENT_COMPACT_HEADER_NAV_ITEMS[0];
 
 const AGENT_COMPACT_HEADER_NAV_GAP = 4;
 const AGENT_COMPACT_HEADER_AVATAR_NAV_GAP = 8;
@@ -512,7 +515,7 @@ function AgentCompactHeaderNavButton({
 	onSectionChange,
 }: Readonly<{
 	activeSection?: AgentCompactHeaderSection | null;
-	item: (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[number];
+	item: AgentCompactHeaderNavItem;
 	onSectionChange?: (section: AgentCompactHeaderSection) => void;
 }>) {
 	const isSelected = activeSection === item.value;
@@ -540,17 +543,19 @@ function AgentCompactHeaderNavButton({
 export function AgentCompactHeaderNav({
 	activeSection = null,
 	avatarSrc = AGENT_AVATAR_SRC,
+	items = AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS,
 	onSectionChange,
 }: Readonly<{
 	activeSection?: AgentCompactHeaderSection | null;
 	avatarSrc?: string;
+	items?: readonly AgentCompactHeaderNavItem[];
 	onSectionChange?: (section: AgentCompactHeaderSection) => void;
 }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const measureRef = useRef<HTMLDivElement>(null);
-	const [visibleCount, setVisibleCount] = useState<number>(AGENT_COMPACT_HEADER_NAV_ITEMS.length);
-	const visibleItems = AGENT_COMPACT_HEADER_NAV_ITEMS.slice(0, visibleCount);
-	const hiddenItems = AGENT_COMPACT_HEADER_NAV_ITEMS.slice(visibleCount);
+	const [visibleCount, setVisibleCount] = useState<number>(items.length);
+	const visibleItems = items.slice(0, visibleCount);
+	const hiddenItems = items.slice(visibleCount);
 
 	useLayoutEffect(() => {
 		const container = containerRef.current;
@@ -575,7 +580,11 @@ export function AgentCompactHeaderNav({
 		const observer = new ResizeObserver(recompute);
 		observer.observe(container);
 		return () => observer.disconnect();
-	}, []);
+	}, [items]);
+
+	useEffect(() => {
+		setVisibleCount(items.length);
+	}, [items.length]);
 
 	return (
 		<div className="flex min-w-0 flex-1 items-center" style={{ gap: AGENT_COMPACT_HEADER_AVATAR_NAV_GAP }}>
@@ -600,7 +609,7 @@ export function AgentCompactHeaderNav({
 			>
 				<div aria-hidden className="pointer-events-none absolute top-0 left-0 h-0 w-0 overflow-clip">
 					<div className="invisible flex items-center" ref={measureRef} style={{ gap: AGENT_COMPACT_HEADER_NAV_GAP }}>
-						{AGENT_COMPACT_HEADER_NAV_ITEMS.map((item) => (
+						{items.map((item) => (
 							<AgentCompactHeaderNavButton
 								activeSection={activeSection}
 								item={item}

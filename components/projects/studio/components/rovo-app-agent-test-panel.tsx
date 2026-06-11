@@ -10,12 +10,13 @@ import {
 } from "@/components/blocks/conversation-starters";
 import Triggers from "@/components/blocks/triggers/page";
 import type { AgentTriggerValue } from "@/components/blocks/triggers/data/trigger-catalog";
-import ChatPanel from "@/components/projects/sidebar-chat/page";
+import ChatPanel, { type ChatPanelAgentVersionOption } from "@/components/projects/sidebar-chat/page";
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
 import { cn } from "@/lib/utils";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
+import { areStudioAgentResultsEqual } from "@/components/projects/studio/lib/studio-agent-versioning";
 
 const AGENT_TEST_MAX_CONVERSATION_STARTERS = 3;
 
@@ -25,6 +26,10 @@ export interface AgentTestPanelProps {
 }
 
 type AgentResultPayload = RovoDataParts["agent-result"] & Record<string, unknown>;
+
+interface AgentTestVersionOption extends ChatPanelAgentVersionOption {
+	result: RovoDataParts["agent-result"];
+}
 
 function getNonEmptyString(value: unknown): string | null {
 	if (typeof value !== "string") {
@@ -137,6 +142,7 @@ function createAgentTestContextDescription(input: {
 	instructions?: string;
 	payload: AgentResultPayload;
 	profile: Pick<RovoAgentProfile, "byline" | "name" | "starters">;
+	versionLabel: string;
 }): string {
 	const tools = getPayloadStringArray(input.payload, ["tools", "skills"]);
 	const trigger = getPayloadString(input.payload, ["trigger"]);
@@ -146,6 +152,7 @@ function createAgentTestContextDescription(input: {
 	return [
 		"[Selected agent test]",
 		`Agent: ${input.profile.name}`,
+		`Version: ${input.versionLabel}`,
 		`Byline: ${input.profile.byline}`,
 		input.description ? `Description: ${input.description}` : null,
 		input.instructions ? `Instructions: ${input.instructions}` : null,
@@ -161,11 +168,12 @@ function createAgentTestContextDescription(input: {
 		.join("\n");
 }
 
-function buildAgentTestProfile(entry: StudioSessionAgentEntry): RovoAgentProfile {
-	// Test mode mirrors the LIVE draft the Configure panel edits (not the
-	// publish-ready snapshot), so name, starters, and instructions stay in sync
-	// with whatever the user just configured instead of lagging until publish.
-	const payload = entry.draftResult as AgentResultPayload;
+function buildAgentTestProfile(
+	entry: StudioSessionAgentEntry,
+	result: RovoDataParts["agent-result"],
+	versionLabel: string,
+): RovoAgentProfile {
+	const payload = result as AgentResultPayload;
 	const id = `agent-test-${entry.profile.id}`;
 	const name = getPayloadString(payload, ["name", "agentName", "title"]) ?? entry.profile.name ?? "Agent test";
 	const byline = getPayloadString(payload, ["byline", "sourceLabel", "generatedBy", "source"]) ?? "Custom agent test";
@@ -201,22 +209,55 @@ function buildAgentTestProfile(entry: StudioSessionAgentEntry): RovoAgentProfile
 				name,
 				starters,
 			},
+			versionLabel,
 		}),
 	};
 }
 
+function getAgentTestVersionOptions(entry: StudioSessionAgentEntry): readonly AgentTestVersionOption[] {
+	const publishedVersionLabel = `V${entry.publishedVersion || 1}`;
+	const latestIsPublished = entry.publishedResult
+		? areStudioAgentResultsEqual(entry.draftResult, entry.publishedResult)
+		: false;
+	const options: AgentTestVersionOption[] = [{
+		id: "latest",
+		label: "Draft",
+		variant: latestIsPublished ? "success" : "neutral",
+		result: entry.draftResult,
+	}];
+
+	if (entry.publishedResult) {
+		options.push({
+			id: "published",
+			label: `Published ${publishedVersionLabel}`,
+			variant: "success",
+			sectionBreakBefore: true,
+			result: entry.publishedResult,
+		});
+	}
+
+	const publishedVersions = entry.versionHistory.filter((version) => version.kind === "publish" || version.kind === "update");
+	for (const [versionIndex, version] of publishedVersions.entries()) {
+		options.push({
+			id: `history:${version.id}`,
+			label: `V${version.version} - ${version.label}`,
+			variant: "success",
+			sectionBreakBefore: !entry.publishedResult && versionIndex === 0,
+			result: version.snapshot,
+		});
+	}
+
+	return options;
+}
+
 export function AgentTestTriggerView({
-	entry,
+	result,
 }: Readonly<{
-	entry: StudioSessionAgentEntry;
+	result: RovoDataParts["agent-result"];
 }>): ReactElement {
-	// Read the LIVE draft, not the publish-ready snapshot. The Configure panel
-	// edits `entry.draftResult` (publish-ready only catches up on commit/publish),
-	// so reading the draft keeps the Test → Trigger tab in sync with whatever the
-	// user just configured instead of lagging behind until publish.
 	const triggerDefinitions = useMemo<readonly AgentTriggerValue[]>(
-		() => entry.draftResult.triggerDefinitions ?? [],
-		[entry.draftResult.triggerDefinitions],
+		() => result.triggerDefinitions ?? [],
+		[result.triggerDefinitions],
 	);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -253,11 +294,11 @@ export function AgentTestTriggerView({
 }
 
 export function AgentTestActivityView({
-	entry,
+	result,
 }: Readonly<{
-	entry: StudioSessionAgentEntry;
+	result: RovoDataParts["agent-result"];
 }>): ReactElement {
-	const tools = entry.draftResult.tools ?? [];
+	const tools = result.tools ?? [];
 
 	return (
 		<div className="flex min-h-[220px] items-center justify-center p-6 text-center">
@@ -272,11 +313,17 @@ export function AgentTestActivityView({
 }
 
 function AgentTestChatPanel({
-	entry,
+	result,
 	testAgentProfile,
+	versionOptions,
+	selectedVersionId,
+	onSelectVersion,
 }: Readonly<{
-	entry: StudioSessionAgentEntry;
+	result: RovoDataParts["agent-result"];
 	testAgentProfile: RovoAgentProfile;
+	versionOptions: readonly ChatPanelAgentVersionOption[];
+	selectedVersionId: string;
+	onSelectVersion: (versionId: string) => void;
 }>): ReactElement {
 	const { selectedAgentId, selectAgent } = useRovoChat();
 
@@ -296,9 +343,12 @@ function AgentTestChatPanel({
 			composerReservesContextBarSpace
 			conversationContentClassName="px-0"
 			customAgentTabs={{
-				trigger: <AgentTestTriggerView entry={entry} />,
-				activity: <AgentTestActivityView entry={entry} />,
+				trigger: <AgentTestTriggerView result={result} />,
+				activity: <AgentTestActivityView result={result} />,
 			}}
+			agentVersionOptions={versionOptions}
+			selectedAgentVersionId={selectedVersionId}
+			onAgentVersionChange={onSelectVersion}
 			showAgentTestControls
 			greeting={{
 				heading: testAgentProfile.name,
@@ -316,13 +366,21 @@ export function AgentTestPanel({
 	className,
 	entry,
 }: Readonly<AgentTestPanelProps>): ReactElement {
-	// Key on the LIVE draft so the test chat provider rebuilds the profile (name,
-	// starters, instructions) whenever the Configure panel edits the draft —
-	// keeping Test fully in sync with Configure instead of only updating on
-	// commit/publish.
-	const draftSnapshotKey = JSON.stringify(entry.draftResult);
-	const snapshotKey = `${entry.profile.id}:${draftSnapshotKey}`;
-	const testAgentProfile = useMemo(() => buildAgentTestProfile(entry), [entry]);
+	const versionOptions = useMemo(() => getAgentTestVersionOptions(entry), [entry]);
+	const [selectedVersionId, setSelectedVersionId] = useState("latest");
+	const selectedOption = versionOptions.find((option) => option.id === selectedVersionId) ?? versionOptions[0];
+	const selectedResult = selectedOption.result;
+	const snapshotKey = `${entry.profile.id}:${selectedOption.id}:${JSON.stringify(selectedResult)}`;
+	const testAgentProfile = useMemo(
+		() => buildAgentTestProfile(entry, selectedResult, selectedOption.label),
+		[entry, selectedOption.label, selectedResult],
+	);
+
+	useEffect(() => {
+		if (!versionOptions.some((option) => option.id === selectedVersionId)) {
+			setSelectedVersionId("latest");
+		}
+	}, [selectedVersionId, versionOptions]);
 
 	return (
 		<section
@@ -337,7 +395,13 @@ export function AgentTestPanel({
 				agentProfiles={[testAgentProfile]}
 				autoSelectAgentId={testAgentProfile.id}
 			>
-				<AgentTestChatPanel entry={entry} testAgentProfile={testAgentProfile} />
+				<AgentTestChatPanel
+					result={selectedResult}
+					testAgentProfile={testAgentProfile}
+					versionOptions={versionOptions}
+					selectedVersionId={selectedVersionId}
+					onSelectVersion={setSelectedVersionId}
+				/>
 			</RovoChatProvider>
 		</section>
 	);
