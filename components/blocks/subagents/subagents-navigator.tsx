@@ -3,7 +3,6 @@
 import { useId, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
-import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import Image from "next/image";
 import { getDirectoryMentionItemOrFallback } from "@/components/blocks/editor-palette/data/mention-sources";
 import { IconTile } from "@/components/ui/icon-tile";
@@ -43,13 +42,13 @@ const MINIMAP_BASE_BAR_WIDTH_PX = 26;
 const MINIMAP_PROMPT_BAR_WIDTH_PX = 16;
 const SWITCHER_OPEN_WIDTH_PX = 280;
 const SWITCHER_PANEL_PADDING_Y_PX = 16;
-const SWITCHER_HEADER_HEIGHT_PX = 45;
-const SWITCHER_SECTION_PADDING_Y_PX = 16;
+const SWITCHER_BASE_ROW_HEIGHT_PX = 32;
+const SWITCHER_DIVIDER_BLOCK_HEIGHT_PX = 17;
 const SWITCHER_SECTION_LABEL_HEIGHT_PX = 20;
-const SWITCHER_ROW_HEIGHT_PX = 36;
-const SWITCHER_ROW_GAP_PX = 0;
-// Footer chrome = top border (1px) + pt-2 (8px); each action button is 32px tall.
-const SWITCHER_FOOTER_CHROME_PX = 9;
+const SWITCHER_ROW_HEIGHT_PX = 32;
+const SWITCHER_ROW_GAP_PX = 2;
+const SWITCHER_LIST_FOOTER_GAP_PX = 8;
+const SWITCHER_FOOTER_CHROME_PX = 17;
 const SWITCHER_FOOTER_ACTION_HEIGHT_PX = 32;
 
 function getBaseAgentDisplayName(baseAgent: SubagentsBaseAgent): string {
@@ -167,23 +166,22 @@ export function SubagentsNavigator({
 	const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
 	const subagentTagColor = getTagColorForAgentAvatar(baseAgent.avatarSrc);
 	const switcherItemsCount = subagents.length + 1;
-	// The footer holds "Create subagent" and, when wired, "Manage subagents".
-	const footerActionCount = onManageSubagents ? 2 : 1;
-	const footerHeight =
-		SWITCHER_FOOTER_CHROME_PX + footerActionCount * SWITCHER_FOOTER_ACTION_HEIGHT_PX;
 	const closedHeight =
 		2 * MINIMAP_PADDING_Y_PX +
 		switcherItemsCount * BAR_HEIGHT_PX +
 		Math.max(0, switcherItemsCount - 1) * BAR_GAP_PX;
+	const footerHeight =
+		SWITCHER_FOOTER_CHROME_PX +
+		(onManageSubagents ? 2 : 1) * SWITCHER_FOOTER_ACTION_HEIGHT_PX;
 	const openHeight =
 		SWITCHER_PANEL_PADDING_Y_PX +
-		SWITCHER_HEADER_HEIGHT_PX +
-		SWITCHER_SECTION_PADDING_Y_PX +
+		SWITCHER_BASE_ROW_HEIGHT_PX +
+		SWITCHER_DIVIDER_BLOCK_HEIGHT_PX +
 		SWITCHER_SECTION_LABEL_HEIGHT_PX +
 		subagents.length * SWITCHER_ROW_HEIGHT_PX +
 		Math.max(0, subagents.length - 1) * SWITCHER_ROW_GAP_PX +
+		SWITCHER_LIST_FOOTER_GAP_PX +
 		footerHeight;
-	const switcherHeight = isSwitcherOpen ? openHeight : closedHeight;
 	const shellTransition = shouldReduceMotion
 		? undefined
 		: [
@@ -228,8 +226,7 @@ export function SubagentsNavigator({
 				style={{
 					boxSizing: "border-box",
 					width: isSwitcherOpen ? SWITCHER_OPEN_WIDTH_PX : MINIMAP_WIDTH_PX,
-					height: switcherHeight,
-					minHeight: switcherHeight,
+					height: isSwitcherOpen ? openHeight : closedHeight,
 					borderRadius: isSwitcherOpen ? 16 : 14,
 					backgroundColor: isSwitcherOpen ? "var(--ds-surface-overlay)" : "transparent",
 					boxShadow: isSwitcherOpen ? token("elevation.shadow.overlay") : "none",
@@ -289,27 +286,25 @@ export function SubagentsNavigator({
 				<div
 					aria-hidden={!isSwitcherOpen}
 					className={cn(
-						"flex flex-col p-2 text-left transition-opacity duration-normal ease-out",
+						"absolute inset-0 flex flex-col p-2 text-left transition-opacity duration-normal ease-out",
 						isSwitcherOpen
-							? "relative pointer-events-auto opacity-100"
-							: "pointer-events-none absolute inset-0 opacity-0",
+							? "pointer-events-auto opacity-100"
+							: "pointer-events-none opacity-0",
 					)}
 					inert={!isSwitcherOpen}
 				>
-					<div className="sticky top-0 z-10 shrink-0 bg-surface-overlay">
+					<div className="shrink-0 pb-2">
 						<SubagentsSwitcherButton
 							frontSlot={renderBaseAgentSwitcherVisual(baseAgent.avatarSrc)}
 							isActive={activeSubagentId === null}
 							label={getBaseAgentDisplayName(baseAgent)}
 							onSelect={onSelectBaseAgent}
 						/>
-						<div aria-hidden className="mt-2 h-px bg-border" />
-					</div>
-					<div className="shrink-0 py-2">
+						<div aria-hidden className="my-2 h-px bg-border" />
 						<div className="px-2 pb-1 text-xs font-semibold leading-4 text-text-subtlest">
 							Subagents
 						</div>
-						<div className="flex flex-col">
+						<div className="flex flex-col gap-0.5">
 							{subagents.map((prompt) => {
 								const isEnabled = prompt.enabled !== false;
 								const label = getSubagentDisplayName(prompt);
@@ -332,7 +327,7 @@ export function SubagentsNavigator({
 							})}
 						</div>
 					</div>
-					<div className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-surface-overlay pt-2">
+					<div className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-surface-overlay py-2">
 						<SubagentsActionButton
 							icon={<PlusIcon />}
 							label="Create subagent"
@@ -441,11 +436,6 @@ function SubagentsSwitcherButton({
 						<span className="block min-w-0 truncate">{label}</span>
 					)}
 				</span>
-				{isActive ? (
-					<span className="ml-auto inline-flex h-5 shrink-0 items-center justify-center text-icon-selected [&_svg]:size-3">
-						<CheckMarkIcon label="" size="small" />
-					</span>
-				) : null}
 			</button>
 			<HoverRevealActions
 				toggleParked={!enabled}
