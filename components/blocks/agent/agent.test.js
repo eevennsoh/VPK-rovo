@@ -450,25 +450,34 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// Triggers summary row: clicking a configured chip opens the Triggers MODAL
 	// directly (no dropdown) scoped to JUST that one trigger — the chip seeds the
 	// modal with its single `definition`. The trailing "Edit" button opens the
-	// generic (no-seed) editor.
+	// collapsed-nav management flyout instead (asserted below).
 	assert.match(
 		AGENT_SOURCE,
 		/<AgentReferenceChip[\s\S]*onClick=\{\s*onEditTriggers\s*\?\s*\(\) => onEditTriggers\(definition \? \[definition\] : undefined\)\s*:\s*undefined\s*\}[\s\S]*onRemove=\{canRemoveInline \? \(\) => handleRemoveTrigger\(index\) : undefined\}/u,
 	);
-	// The trailing "Edit" control opens the provider/event "Add trigger" flyout
-	// (a TriggerPicker wrapping the edit-styled button) — NOT the modal — so it
-	// mirrors the empty-state add. Picking an event seeds a single-trigger modal.
+	// The trailing "Edit" control opens the SAME collapsed-nav management flyout
+	// (trigger list + "Add trigger ›" + "Manage triggers") as the compact strip,
+	// by reusing AgentCompactTriggersNavButton with the edit-styled button as its
+	// renderTrigger — so the expanded summary row and the collapsed nav share one
+	// flyout. Picking an event from "Add trigger ›" seeds a single-trigger modal.
 	assert.match(
 		AGENT_SOURCE,
-		/\{onEditTriggers \? \([\s\S]*<TriggerPicker\s*\n\s*label=\{addLabel \?\? "Edit"\}\s*\n\s*onSelectEvent=\{handleSelectEvent\}\s*\n\s*trigger=\{\s*\n\s*<AgentAddValueButton\s*\n\s*className="opacity-0 group-hover\/agent-row:opacity-100"\s*\n\s*icon="edit"\s*\n\s*label=\{addLabel \?\? "Edit"\}\s*\n\s*\/>/u,
+		/\{onEditTriggers \? \([\s\S]*triggerNavItem \? \([\s\S]*<AgentCompactTriggersNavButton\s*\n\s*item=\{triggerNavItem\}[\s\S]*renderTrigger=\{\s*\n\s*<AgentAddValueButton\s*\n\s*className="opacity-0 group-hover\/agent-row:opacity-100"\s*\n\s*icon="edit"\s*\n\s*label=\{addLabel \?\? "Edit"\}\s*\n\s*\/>/u,
 	);
-	// The summary row no longer wraps chips in the dropdown nav button.
+	// It falls back to the bare provider/event TriggerPicker only when the
+	// collapsed-nav catalog entry (triggerNavItem) isn't supplied.
+	assert.match(
+		AGENT_SOURCE,
+		/\) : \(\s*\n\s*<TriggerPicker\s*\n\s*label=\{addLabel \?\? "Edit"\}\s*\n\s*onSelectEvent=\{handleSelectEvent\}\s*\n\s*trigger=\{\s*\n\s*<AgentAddValueButton/u,
+	);
+	// The summary row now wraps the trailing Edit control in the same collapsed-nav
+	// dropdown nav button the compact strip uses, keeping the two layouts consistent.
 	const triggerSummaryRowStart = AGENT_SOURCE.indexOf("function AgentTriggerSummaryRow");
 	const triggerSummaryRowSource = AGENT_SOURCE.slice(
 		triggerSummaryRowStart,
 		AGENT_SOURCE.indexOf("function AgentFilledConfigSummary"),
 	);
-	assert.doesNotMatch(triggerSummaryRowSource, /<AgentCompactTriggersNavButton/u);
+	assert.match(triggerSummaryRowSource, /<AgentCompactTriggersNavButton/u);
 	// The final chip and the inline +Add link share a single non-wrapping group so
 	// they reflow to the next line together instead of leaving a gap when chips
 	// fill the row. The empty-row +Add link renders separately and stays visible.

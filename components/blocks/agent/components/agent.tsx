@@ -2507,6 +2507,16 @@ interface AgentTriggerSummaryRowProps {
 	 */
 	triggerDefinitions?: readonly AgentTriggerValue[];
 	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
+	/**
+	 * The collapsed-nav catalog entry for Triggers. When present, the filled-row
+	 * "Edit" control opens the SAME flyout as the collapsed strip (list of
+	 * triggers + "Add trigger ›" + "Manage triggers") via
+	 * `AgentCompactTriggersNavButton`, keeping the two layouts consistent. Mirrors
+	 * how `appsNavItem` / `skillsNavItem` / `subagentsNavItem` back the other
+	 * summary rows' inline controls.
+	 */
+	triggerNavItem?: AgentCompactConfigNavItem;
+	onManageTriggers?: () => void;
 }
 
 /**
@@ -2516,7 +2526,9 @@ interface AgentTriggerSummaryRowProps {
  *   selecting an event seeds the modal with that one trigger;
  * - non-empty → each chip opens the modal on click and (when removal is wired)
  *   carries an overlay remove control, matching the other summary rows so a
- *   trigger can be removed inline without opening the modal.
+ *   trigger can be removed inline without opening the modal. The trailing "Edit"
+ *   control opens the same collapsed-nav management flyout as the compact strip
+ *   (via `AgentCompactTriggersNavButton`) when `triggerNavItem` is supplied.
  */
 function AgentTriggerSummaryRow({
 	items,
@@ -2526,6 +2538,8 @@ function AgentTriggerSummaryRow({
 	onEditTriggers,
 	triggerDefinitions,
 	onTriggerDefinitionsChange,
+	triggerNavItem,
+	onManageTriggers,
 }: Readonly<AgentTriggerSummaryRowProps>) {
 	const isEmpty = items.length === 0;
 
@@ -2626,22 +2640,45 @@ function AgentTriggerSummaryRow({
 							);
 						})}
 						{onEditTriggers ? (
-							// The trailing control opens the same provider/event "Add
-							// trigger" flyout as the empty-state picker — NOT the modal.
-							// Picking an event seeds a new single-trigger modal via
-							// handleSelectEvent. (Chips themselves still open their own
-							// trigger's modal on click.)
-							<TriggerPicker
-								label={addLabel ?? "Edit"}
-								onSelectEvent={handleSelectEvent}
-								trigger={
-									<AgentAddValueButton
-										className="opacity-0 group-hover/agent-row:opacity-100"
-										icon="edit"
-										label={addLabel ?? "Edit"}
-									/>
-								}
-							/>
+							// The trailing "Edit" control opens the SAME management flyout
+							// as the collapsed nav strip (list of triggers + "Add trigger ›"
+							// + "Manage triggers") by reusing `AgentCompactTriggersNavButton`
+							// with the edit-styled button as its trigger — mirroring how the
+							// Apps/Skills/Subagents rows back their inline controls with the
+							// collapsed-nav dropdown so both layouts share one experience.
+							// Picking an event from "Add trigger ›" seeds a new single-trigger
+							// modal via handleSelectEvent; chips still open their own trigger's
+							// modal on click. Falls back to the bare provider/event picker only
+							// when the collapsed-nav catalog entry isn't supplied.
+							triggerNavItem ? (
+								<AgentCompactTriggersNavButton
+									item={triggerNavItem}
+									onEditTriggers={onEditTriggers}
+									onManageTriggers={onManageTriggers}
+									onSelectEvent={handleSelectEvent}
+									renderTrigger={
+										<AgentAddValueButton
+											className="opacity-0 group-hover/agent-row:opacity-100"
+											icon="edit"
+											label={addLabel ?? "Edit"}
+										/>
+									}
+									triggerDefinitions={triggerDefinitions}
+									triggers={items}
+								/>
+							) : (
+								<TriggerPicker
+									label={addLabel ?? "Edit"}
+									onSelectEvent={handleSelectEvent}
+									trigger={
+										<AgentAddValueButton
+											className="opacity-0 group-hover/agent-row:opacity-100"
+											icon="edit"
+											label={addLabel ?? "Edit"}
+										/>
+									}
+								/>
+							)
 						) : null}
 					</div>
 				)}
@@ -2667,6 +2704,7 @@ interface AgentFilledConfigSummaryProps {
 	onKnowledgeModeChange?: (next: KnowledgeModeValue) => void;
 	onListItemChange?: (field: AgentConfigListFieldName, index: number, value: string) => void;
 	onManageSubagents?: () => void;
+	onManageTriggers?: () => void;
 	onMemoryModeChange: (next: MemoryModeValue) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	onReasoningModeChange: (next: ReasoningModeValue) => void;
@@ -2691,6 +2729,7 @@ function AgentFilledConfigSummary({
 	onAddListValues,
 	onEditTriggers,
 	onManageSubagents,
+	onManageTriggers,
 	onMemoryModeChange,
 	onOpenDirectory,
 	onReasoningModeChange,
@@ -2722,6 +2761,7 @@ function AgentFilledConfigSummary({
 	const appsNavItem = navItems.find((entry) => entry.agentFieldName === "apps");
 	const skillsNavItem = navItems.find((entry) => entry.agentFieldName === "skills");
 	const subagentsNavItem = navItems.find((entry) => entry.agentFieldName === "subagents");
+	const triggerNavItem = navItems.find((entry) => entry.agentFieldName === "trigger");
 	const renderDirectoryAddControl = (
 		field: Extract<AgentInlineSearchField, "skills" | "tools">,
 		navItem: AgentCompactConfigNavItem | undefined,
@@ -2769,9 +2809,11 @@ function AgentFilledConfigSummary({
 					hideWhenEmpty={hideEmptyRows}
 					items={triggerItems}
 					onEditTriggers={onEditTriggers}
+					onManageTriggers={onManageTriggers}
 					onTriggerDefinitionsChange={onTriggerDefinitionsChange}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
 					triggerDefinitions={config.triggerDefinitions}
+					triggerNavItem={triggerNavItem}
 				/>
 			),
 		},
@@ -3975,6 +4017,7 @@ function AgentCompactConfigToolbarBelow({
 							onEditTriggers={onEditTriggers}
 							onListItemChange={onListItemChange}
 							onManageSubagents={onManageSubagents}
+							onManageTriggers={onManageTriggers}
 							onOpenDirectory={onOpenDirectory}
 							onReasoningModeChange={setReasoningValue}
 							onRemoveListItem={onRemoveListItem}
