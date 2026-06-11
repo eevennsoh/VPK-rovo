@@ -98,6 +98,12 @@ interface ChatGreetingProps {
 	 * pass `false` to keep just the suggestions.
 	 */
 	showHero?: boolean;
+	/**
+	 * When the user has started composing in the chat input, hide the
+	 * illustration + heading hero so the suggestion list can rise to fill the
+	 * freed vertical space. The suggestion list stays visible.
+	 */
+	isComposing?: boolean;
 	/** Whether to render the Max-mode greeting and illustration. */
 	isMaxMode?: boolean;
 	/** Optional custom suggestions list */
@@ -308,6 +314,7 @@ export default function ChatGreeting({
 	illustrationSrc = DEFAULT_ILLUSTRATION_SRC,
 	illustrationDarkSrc,
 	isMaxMode = false,
+	isComposing = false,
 	selectedAgent = null,
 	isAgentTest = false,
 	showHero = true,
@@ -364,44 +371,50 @@ export default function ChatGreeting({
 						key={`rovo-${heroKey}-${resolvedHeading}`}
 						variants={CHAT_GREETING_CONTAINER_VARIANTS}
 					>
-						{showHero ? (
-							<motion.div
-								className="flex flex-col items-center gap-2"
-								variants={CHAT_GREETING_CONTAINER_VARIANTS}
-							>
-								<motion.div className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative")} style={{ willChange: "transform, opacity" }} variants={itemVariants}>
-									{shouldUseControlledChatIllustration ? (
-										<ControlledRovoIllustration illusId="chat" size={74} />
-									) : shouldUseControlledAgentIllustration ? (
-										<ControlledRovoIllustration illusId="ai" size={74} />
-									) : (
-										<>
-											<Image
-												src={resolvedIllustrationSrc}
-												alt=""
-												width={74}
-												height={67}
-												priority
-												className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "object-contain dark:hidden [[data-color-mode=dark]_&]:hidden")}
-											/>
-											<Image
-												src={resolvedIllustrationDarkSrc}
-												alt=""
-												width={74}
-												height={67}
-												priority
-												className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "hidden object-contain dark:block [[data-color-mode=dark]_&]:block")}
-											/>
-										</>
-									)}
+						<AnimatePresence mode="popLayout" propagate>
+							{showHero && !isComposing ? (
+								<motion.div
+									animate="visible"
+									className="flex flex-col items-center gap-2"
+									exit="exit"
+									initial="hidden"
+									key="hero"
+									variants={CHAT_GREETING_CONTAINER_VARIANTS}
+								>
+									<motion.div className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative")} style={{ willChange: "transform, opacity" }} variants={itemVariants}>
+										{shouldUseControlledChatIllustration ? (
+											<ControlledRovoIllustration illusId="chat" size={74} />
+										) : shouldUseControlledAgentIllustration ? (
+											<ControlledRovoIllustration illusId="ai" size={74} />
+										) : (
+											<>
+												<Image
+													src={resolvedIllustrationSrc}
+													alt=""
+													width={74}
+													height={67}
+													priority
+													className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "object-contain dark:hidden [[data-color-mode=dark]_&]:hidden")}
+												/>
+												<Image
+													src={resolvedIllustrationDarkSrc}
+													alt=""
+													width={74}
+													height={67}
+													priority
+													className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "hidden object-contain dark:block [[data-color-mode=dark]_&]:block")}
+												/>
+											</>
+										)}
+									</motion.div>
+									<motion.div style={{ willChange: "transform, opacity" }} variants={itemVariants}>
+										<Heading size="large" className="text-center">{resolvedHeading}</Heading>
+									</motion.div>
 								</motion.div>
-								<motion.div style={{ willChange: "transform, opacity" }} variants={itemVariants}>
-									<Heading size="large" className="text-center">{resolvedHeading}</Heading>
-								</motion.div>
-							</motion.div>
-						) : null}
+							) : null}
+						</AnimatePresence>
 						{shouldHideSuggestionList ? null : (
-							<motion.div className="w-full" variants={CHAT_GREETING_CONTAINER_VARIANTS}>
+							<motion.div className="w-full" layout="position" variants={CHAT_GREETING_CONTAINER_VARIANTS}>
 								<div className={cn(
 									"grid gap-1",
 									shouldRenderDirectoryMatches && useWideSuggestionLayout ? "grid-cols-2 gap-x-8" : "grid-cols-1",

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ComponentProps, CSSProperties, ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { mermaid } from "@streamdown/mermaid";
@@ -13,9 +13,18 @@ import {
 	type StudioAgentDataFlowConfig,
 } from "@/lib/studio-agent-data-flow";
 import { cn } from "@/lib/utils";
+import {
+	getDirectoryAutocompleteState,
+	type DirectoryAutocompleteState,
+} from "@/lib/directory-autocomplete";
 import { Spinner } from "@/components/ui/spinner";
 
-import { createRichTextEditorExtensions, getMentionCategory } from "./extensions";
+import { createRichTextEditorExtensions, getMentionCategory, getMentionNodeAttrs } from "./extensions";
+import {
+	createComposerDirectoryAutocomplete,
+	composerDirectoryAutocompletePluginKey,
+	type ComposerDirectoryAutocompleteController,
+} from "./composer-extensions";
 import {
 	applyMarkdownFormat,
 	type MarkdownFormatKind,
@@ -51,6 +60,14 @@ interface RichTextEditorProps
 	toolbarEndSlot?: ReactNode;
 	toolbarBelowSlot?: ReactNode;
 	mentionSources?: RichTextMentionSources;
+	/**
+	 * Enables inline "ghost text" autocomplete for skill/tool mentions, mirroring
+	 * the chat composer: as the user types, the remainder of the best-matching
+	 * skill/tool label is shown greyed inline and Tab / → inserts it as a mention
+	 * chip. Off by default so document/showcase editors are unaffected; the
+	 * suggestions are drawn from `mentionSources.skill` + `mentionSources.tool`.
+	 */
+	enableDirectoryAutocomplete?: boolean;
 	/**
 	 * Layout for the live "@" / "/" suggestion menus. `"flat"` (default) merges
 	 * each surface's sections into one list separated by headings; `"nested"`
@@ -293,6 +310,7 @@ export function RichTextEditor({
 	toolbarEndSlot,
 	toolbarBelowSlot,
 	mentionSources,
+	enableDirectoryAutocomplete = false,
 	suggestionVariant = "nested",
 	mentionRemovalRequest,
 	onMarkdownChange,
@@ -315,6 +333,99 @@ export function RichTextEditor({
 	const onPlainTextChangeRef = useRef(onPlainTextChange);
 	const onMentionInventoryChangeRef = useRef(onMentionInventoryChange);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const activeEditorRef = useRef<Editor | null>(null);
+	const directoryAutocompleteStateRef = useRef<DirectoryAutocompleteState | null>(null);
+	const enableDirectoryAutocompleteRef = useRef(enableDirectoryAutocomplete);
+	// Mirror the ghost decoration into the editor: push the greyed remainder as a
+	// widget at the cursor, or clear it when there is no suggestion.
+	const applyDirectoryAutocompleteGhost = useCallback((state: DirectoryAutocompleteState | null) => {
+		const activeEditor = activeEditorRef.current;
+		if (!activeEditor) {
+			return;
+		}
+		const meta = state?.ghostText
+			? { from: state.queryTo, text: state.ghostText }
+			: null;
+		activeEditor.view.dispatch(
+			activeEditor.state.tr.setMeta(composerDirectoryAutocompletePluginKey, meta),
+		);
+	}, []);
+	const setDirectoryAutocompleteState = useCallback((nextState: DirectoryAutocompleteState | null) => {
+		directoryAutocompleteStateRef.current = nextState;
+		applyDirectoryAutocompleteGhost(nextState);
+	}, [applyDirectoryAutocompleteGhost]);
+	// A live "@"/"/" suggestion menu owns the keystrokes; suppress the ghost while
+	// one is open (matches the chat composer).
+	const isAnySuggestionMenuOpen = useCallback((activeEditor: Editor): boolean => {
+		for (const plugin of activeEditor.view.state.plugins) {
+			const pluginState = plugin.getState(activeEditor.view.state) as
+				| { active?: boolean; query?: unknown; range?: unknown }
+				| undefined;
+			if (pluginState?.active === true && "query" in pluginState && "range" in pluginState) {
+				return true;
+			}
+		}
+		return false;
+	}, []);
+	const refreshDirectoryAutocomplete = useCallback((activeEditor: Editor) => {
+		if (!enableDirectoryAutocompleteRef.current || !activeEditor.isEditable) {
+			setDirectoryAutocompleteState(null);
+			return;
+		}
+		const { selection } = activeEditor.state;
+		if (activeEditor.view.composing || !selection.empty || isAnySuggestionMenuOpen(activeEditor)) {
+			setDirectoryAutocompleteState(null);
+			return;
+		}
+		const textBeforeCursor = selection.$from.parent.textBetween(
+			0,
+			selection.$from.parentOffset,
+			"\n",
+			"\uFFFC",
+		);
+		const nextState = getDirectoryAutocompleteState({
+			cursorPosition: selection.from,
+			sources: mentionSourcesRef.current,
+			textBeforeCursor,
+		});
+		setDirectoryAutocompleteState(nextState);
+	}, [isAnySuggestionMenuOpen, setDirectoryAutocompleteState]);
+	// Accept the ghost (Tab / →): replace the typed query with the matched skill /
+	// tool mention chip plus a trailing space, exactly like the chat composer.
+	const acceptDirectoryAutocompleteGhost = useCallback((): boolean => {
+		const activeEditor = activeEditorRef.current;
+		const currentState = directoryAutocompleteStateRef.current;
+		if (!activeEditor || !currentState || !currentState.ghostText) {
+			return false;
+		}
+		const match = currentState.matches[0];
+		if (!match) {
+			return false;
+		}
+		activeEditor
+			.chain()
+			.focus()
+			.insertContentAt(
+				{ from: currentState.queryFrom, to: currentState.queryTo },
+				[
+					{ type: "mention", attrs: getMentionNodeAttrs(match.mention) },
+					{ type: "text", text: " " },
+				],
+			)
+			.run();
+		setDirectoryAutocompleteState(null);
+		return true;
+	}, [setDirectoryAutocompleteState]);
+	// Ghost-only controller: this editor has no external suggestion list, so the
+	// list-navigation branches stay inert (hasVisibleList → false).
+	const directoryAutocompleteController = useMemo<ComposerDirectoryAutocompleteController>(() => ({
+		acceptActive: () => false,
+		acceptGhost: () => acceptDirectoryAutocompleteGhost(),
+		acceptIndex: () => false,
+		hasVisibleList: () => false,
+		moveActive: () => false,
+		setActiveIndex: () => false,
+	}), [acceptDirectoryAutocompleteGhost]);
 	const [isEmpty, setIsEmpty] = useState(() => !value?.trim());
 	const [viewMode, setViewMode] = useState<EditorToolbarViewMode>("rendered");
 	const [markdownSource, setMarkdownSource] = useState("");
@@ -334,18 +445,24 @@ export function RichTextEditor({
 	// while a changing handler is still read live through the ref.
 	const hasOpenDirectory = Boolean(onOpenDirectory);
 	const extensions = useMemo(
-		() => createRichTextEditorExtensions({
-			getMentionSources: () => mentionSourcesRef.current,
-			onAskRovo: (activeEditor) => onAskRovoRef.current?.(activeEditor),
-			// Read through a ref so a changing handler doesn't rebuild the editor
-			// (matches onAskRovo above); the slash menu calls this when the user
-			// clicks "Browse all" in a nested category's empty state.
-			onOpenDirectory: hasOpenDirectory
-				? (category) => onOpenDirectoryRef.current?.(category)
-				: undefined,
-			suggestionVariant,
-		}),
-		[hasOpenDirectory, suggestionVariant],
+		() => {
+			const richTextExtensions = createRichTextEditorExtensions({
+				getMentionSources: () => mentionSourcesRef.current,
+				onAskRovo: (activeEditor) => onAskRovoRef.current?.(activeEditor),
+				// Read through a ref so a changing handler doesn't rebuild the editor
+				// (matches onAskRovo above); the slash menu calls this when the user
+				// clicks "Browse all" in a nested category's empty state.
+				onOpenDirectory: hasOpenDirectory
+					? (category) => onOpenDirectoryRef.current?.(category)
+					: undefined,
+				suggestionVariant,
+			});
+			if (enableDirectoryAutocomplete) {
+				richTextExtensions.push(createComposerDirectoryAutocomplete(directoryAutocompleteController));
+			}
+			return richTextExtensions;
+		},
+		[directoryAutocompleteController, enableDirectoryAutocomplete, hasOpenDirectory, suggestionVariant],
 	);
 	const editor = useEditor({
 		extensions,
@@ -359,7 +476,9 @@ export function RichTextEditor({
 			},
 		},
 		onCreate: ({ editor: activeEditor }) => {
+			activeEditorRef.current = activeEditor;
 			onMentionInventoryChangeRef.current?.(getEditorMentionInventory(activeEditor));
+			refreshDirectoryAutocomplete(activeEditor);
 		},
 		onUpdate: ({ editor: activeEditor }) => {
 			setIsEmpty(activeEditor.isEmpty);
@@ -367,12 +486,20 @@ export function RichTextEditor({
 			onMarkdownChangeRef.current?.(markdown);
 			onPlainTextChangeRef.current?.(markdown);
 			onMentionInventoryChangeRef.current?.(getEditorMentionInventory(activeEditor));
+			refreshDirectoryAutocomplete(activeEditor);
+		},
+		onSelectionUpdate: ({ editor: activeEditor }) => {
+			refreshDirectoryAutocomplete(activeEditor);
 		},
 	});
 
 	useEffect(() => {
 		mentionSourcesRef.current = mentionSources;
 	}, [mentionSources]);
+
+	useEffect(() => {
+		enableDirectoryAutocompleteRef.current = enableDirectoryAutocomplete;
+	}, [enableDirectoryAutocomplete]);
 
 	useEffect(() => {
 		onAskRovoRef.current = onAskRovo;
@@ -420,7 +547,10 @@ export function RichTextEditor({
 		});
 		setIsEmpty(!nextValue.trim());
 		onMentionInventoryChangeRef.current?.(getEditorMentionInventory(editor));
-	}, [editor, value]);
+		// setContent above bypasses onUpdate (emitUpdate: false), so any ghost from
+		// the prior content is now stale — clear it.
+		setDirectoryAutocompleteState(null);
+	}, [editor, value, setDirectoryAutocompleteState]);
 
 	useEffect(() => {
 		setDataFlowMermaid(baselineDataFlowMermaid);

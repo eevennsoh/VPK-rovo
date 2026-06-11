@@ -849,6 +849,7 @@ export default function ChatPanel({
 							illustrationSrc={resolvedGreeting?.illustrationSrc}
 							illustrationDarkSrc={resolvedGreeting?.illustrationDarkSrc}
 							isAgentTest={showAgentTestControls}
+							isComposing={prompt.trim().length > 0}
 							isMaxMode={selectedReasoning === "max"}
 							selectedAgent={greetingSelectedAgent ?? selectedAgent}
 							showHero={resolvedGreeting?.showHero}
