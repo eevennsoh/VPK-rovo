@@ -8,6 +8,7 @@ import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Tile } from "@/components/ui/tile";
+import { TeamworkGraphMark } from "@/components/ui-custom/teamwork-graph-mark";
 import { TwgToolBannerBackground } from "@/components/ui-custom/twg-tool";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import { cn } from "@/lib/utils";
@@ -42,26 +43,6 @@ function KnowledgeIconTile({ children, label }: Readonly<{ children: ReactNode; 
 	);
 }
 
-function TeamworkGraphIcon() {
-	return (
-		<svg
-			className="size-4 text-icon"
-			width={16}
-			height={16}
-			viewBox="0 0 16 16"
-			fill="none"
-			xmlns="http://www.w3.org/2000/svg"
-			aria-hidden
-		>
-			<path d="M11 11L5 5" stroke="currentColor" strokeWidth={1.5} />
-			<circle cx="3.5" cy="3.5" r="1.75" stroke="#1868DB" strokeWidth={1.5} />
-			<circle cx="3.5" cy="12.5" r="1.75" stroke="#BF63F3" strokeWidth={1.5} />
-			<circle cx="12.5" cy="12.5" r="1.75" stroke="#FCA700" strokeWidth={1.5} />
-			<circle cx="12.5" cy="3.5" r="1.75" stroke="#6A9A23" strokeWidth={1.5} />
-		</svg>
-	);
-}
-
 export type KnowledgeProps = ComponentProps<"section">;
 
 /**
@@ -84,7 +65,7 @@ export function Knowledge({ className, ...props }: Readonly<KnowledgeProps>) {
 							size="medium"
 							variant="transparent"
 						>
-							<TeamworkGraphIcon />
+							<TeamworkGraphMark />
 						</Tile>
 						<span className="truncate text-sm font-medium text-text-subtle">Teamwork Graph</span>
 					</div>
