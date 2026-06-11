@@ -558,6 +558,51 @@ const agents: AgentTemplatesAgent[] = [
 			},
 		],
 	},
+	"artifact-list": {
+		description: "A card listing worked-on artifacts and smart links. Each row shows a neutral icon tile (or 3rd-party logo), a title, a source and owner metadata line, and an Open button revealed on row hover or keyboard focus.",
+		importStatement: `import { ArtifactList } from "@/components/blocks/artifact-list";`,
+		usage: `import { ArtifactList } from "@/components/blocks/artifact-list";
+import type { ArtifactListItem } from "@/components/blocks/artifact-list";
+import PageIcon from "@atlaskit/icon/core/page";
+
+const items: ArtifactListItem[] = [
+  {
+    id: "audience-engagement-report",
+    title: "Audience Engagement Report",
+    source: "Confluence page",
+    owner: "Vitafleet Team",
+    icon: <PageIcon label="" />,
+  },
+  {
+    id: "content-variation-analysis",
+    title: "Content Variation Analysis",
+    source: "Google Spreadsheet",
+    owner: "Vitafleet Team",
+    logoSrc: "/3p/google-drive/16.svg",
+  },
+];
+
+<ArtifactList items={items} onOpen={(item) => console.log(item.id)} />`,
+		demoLayout: { previewHeight: "fixed" },
+		props: [
+			{
+				name: "items",
+				type: "readonly ArtifactListItem[]",
+				required: true,
+				description: "Rows to render. Each item provides a title, source/owner metadata, and either an ADS icon or a logo path.",
+			},
+			{
+				name: "onOpen",
+				type: "(item: ArtifactListItem) => void",
+				description: "Called when a row's hover/focus-revealed Open button is activated.",
+			},
+			{
+				name: "openLabel",
+				type: "string",
+				description: "Label for the per-row Open button. Defaults to \"Open\".",
+			},
+		],
+	},
 	"apps-directory": {
 		description: "Duplicate of the tools directory for browsing app categories, inspecting an app, and adding or removing it from an agent.",
 		importStatement: `import { AppsDirectoryDialog } from "@/components/blocks/apps-directory";`,

@@ -353,6 +353,7 @@ export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("generative", "Generative UI"),
 	blockComponent("kanban-board", "Kanban Board"),
 	blockComponent("apps-directory", "Apps Directory"),
+	blockComponent("artifact-list", "Artifact List"),
 	blockComponent("tools-directory", "Tools Directory"),
 	blockComponent("mermaid-diagram", "Mermaid Diagram"),
 	blockComponent("memory", "Memory"),
