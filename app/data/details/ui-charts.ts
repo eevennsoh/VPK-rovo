@@ -143,6 +143,30 @@ export const UI_CHART_DETAILS: Record<string, ComponentDetail> = {
 		subComponents: [],
 		examples: [{ title: "Default", description: "Readiness gauge using chart CSS variables.", demoSlug: "gauge-chart-demo-default" }],
 	}),
+	"heatmap-chart": chartDetail({
+		description: "GitHub-style contribution heatmap with animated cells, axes, legend, and tooltip support.",
+		importStatement: 'import { HeatmapChart, HeatmapCells, HeatmapXAxis, HeatmapYAxis, HeatmapLegend, HeatmapTooltip } from "@/components/ui-charts";',
+		usage: `<HeatmapChart data={data}>
+	<HeatmapCells />
+	<HeatmapXAxis />
+	<HeatmapYAxis />
+	<HeatmapTooltip />
+</HeatmapChart>
+<HeatmapLegend />`,
+		props: [
+			{ name: "data", type: "HeatmapColumn[]", required: true, description: "Column data with one bin per row cell." },
+			{ name: "layout", type: "\"fluid\" | \"fill\"", default: "\"fluid\"", description: "Controls whether width drives square cells or the grid fills its parent." },
+			{ name: "levelColors / levelStyles", type: "tuple", description: "Optional Less-to-More color or pattern styles for five contribution levels." },
+			{ name: "status", type: "\"ready\" | \"loading\"", default: "\"ready\"", description: "Displays the loading shimmer and label while data is loading." },
+		],
+		subComponents: [
+			{ name: "HeatmapCells", description: "Draws animated, hoverable heatmap cells." },
+			{ name: "HeatmapXAxis / HeatmapYAxis", description: "Portal-backed month and weekday labels." },
+			{ name: "HeatmapLegend", description: "Less-to-More legend that can share hover state with the chart." },
+			{ name: "HeatmapTooltip", description: "Displays the hovered cell value and date." },
+		],
+		examples: [{ title: "Default", description: "Weekly contribution density with axes, tooltip, and legend.", demoSlug: "heatmap-chart-demo-default" }],
+	}),
 	"line-chart": chartDetail({
 		description: "Composable Bklit line chart for time-series trends and multi-line comparisons.",
 		importStatement: 'import { LineChart, Line, Grid, XAxis, YAxis, ChartTooltip } from "@/components/ui-charts";',
