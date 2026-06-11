@@ -217,8 +217,10 @@ function getProjectBadgeAvatarSrc(seed: string) {
  *   stats / collaborators footer. Matches the rich template-detail card.
  * - `"experimental"` / `"experimental-template"`: compact banner-first treatment
  *   with inline metrics, app stack, skill stack, and feature list in a raised body panel.
- * - `"experimental-profile"`: built-agent profile treatment with the same header,
- *   description, and social proof, but no template-building detail sections.
+ * - `"experimental-profile"`: built-agent profile card on a plain elevation surface
+ *   (1px border that fades on hover) with an entity-style lock-up — hexagon avatar,
+ *   name, "By <publisher>" byline — description, and a social-proof footer. No cover
+ *   color, corner illustration, or template-building detail sections.
  * - `"template"`: a flat card — icon + name header, description, "Works with"
  *   sources, and "Skills" tags. No banner, capabilities, or footer.
  */
@@ -266,7 +268,8 @@ export interface AgentCardProps {
  * scrollable capabilities feature list, and a stats / collaborators footer that swaps
  * to a "Use template" action on hover. The experimental template variant renders
  * a banner-first card with inline metrics and stacked body sections, while the
- * experimental profile variant stops after the built-agent summary. The `"template"`
+ * experimental profile variant is a plain-surface entity-style profile card
+ * (hexagon avatar, byline, description, social-proof footer). The `"template"`
  * variant renders a flat card (icon + name, description, "Works with", "Skills").
  * Self-contained block; passing onSelect makes the whole card selectable.
  */
@@ -408,7 +411,74 @@ export function AgentCard({
 		);
 	}
 
-	if (variant === "experimental" || variant === "experimental-template" || variant === "experimental-profile") {
+	if (variant === "experimental-profile") {
+		const visibleStats = stats.slice(0, 2);
+		const showInlineStats = visibleStats.length > 0 || showRating || showChats;
+
+		return (
+			<AgentCardShell active={active} className={className} onSelect={onSelect} selectLabel={`Select ${name}`}>
+				<AgentCardHeader
+					action={
+						moreAction ?? (onMoreActions ? (
+							<AgentCardMoreButton label={`More actions for ${name}`} onClick={onMoreActions} />
+						) : null)
+					}
+					byline={<AgentCardByline publisher={publisher} verified={verified} />}
+					leading={
+						<Avatar shape="hexagon" size="default">
+							{avatarSrc ? (
+								<Image alt="" aria-hidden className="size-full object-contain" height={32} src={avatarSrc} width={32} />
+							) : (
+								<AvatarFallback>{name.slice(0, 2)}</AvatarFallback>
+							)}
+						</Avatar>
+					}
+					title={name}
+				/>
+
+				<AgentCardDescription>
+					{description ?? `Learn how ${name} can help your team work faster.`}
+				</AgentCardDescription>
+
+				{showInlineStats ? (
+					<AgentCardFooter>
+						{visibleStats.length > 0 ? (
+							visibleStats.map((stat, index) => (
+								<AgentCardStat
+									icon={
+										index === 0 ? (
+											<PeopleGroupIcon label="" size="small" spacing="none" color="currentColor" />
+										) : (
+											<ThumbsUpIcon label="" size="small" spacing="none" color="currentColor" />
+										)
+									}
+									key={stat.label}
+								>
+									{stat.value} {stat.label.toLowerCase()}
+								</AgentCardStat>
+							))
+						) : (
+							<>
+								{showRating ? (
+									<AgentCardStat icon={<StarUnstarredIcon label="" size="small" spacing="none" color="currentColor" />}>
+										{rating.toFixed(1)}
+										{typeof feedbackCount === "number" ? ` (${formatCompact(feedbackCount)} feedback)` : null}
+									</AgentCardStat>
+								) : null}
+								{showChats ? (
+									<AgentCardStat icon={<AiChatIcon label="" size="small" spacing="none" color="currentColor" />}>
+										{formatCompact(chatCount)} chats
+									</AgentCardStat>
+								) : null}
+							</>
+						)}
+					</AgentCardFooter>
+				) : null}
+			</AgentCardShell>
+		);
+	}
+
+	if (variant === "experimental" || variant === "experimental-template") {
 		const coverColor = coverBackgroundColor ?? getAgentCardBannerCoverColor(avatarSrc);
 		const coverStyle = {
 			"--agent-card-cover-color": coverColor,
@@ -421,12 +491,10 @@ export function AgentCard({
 			"--agent-card-detail-text-color": string;
 			"--agent-card-cover-text-color": string;
 		};
-		const showExperimentalTemplateDetails = variant !== "experimental-profile";
 		const visibleStats = stats.slice(0, 2);
 		const showInlineStats = visibleStats.length > 0 || showRating || showChats;
-		const showExperimentalCollaborators = showExperimentalTemplateDetails && showCollaborators;
+		const showExperimentalCollaborators = showCollaborators;
 		const showExperimentalSocialMetadata = showInlineStats || showExperimentalCollaborators;
-		const showExperimentalUseTemplateAction = showExperimentalTemplateDetails;
 		const unmaskedAvatarSrc = getUnmaskedAgentAvatarSrc(avatarSrc);
 		const hasMoreAction = Boolean(moreAction) || Boolean(onMoreActions);
 
@@ -465,11 +533,8 @@ export function AgentCard({
 						</div>
 					) : null}
 					<div
-						className={cn(
-							"relative z-10 flex shrink-0 flex-col gap-3 rounded-t-[16px] bg-[var(--agent-card-cover-color)] px-4 pt-4 pb-4 text-text-inverse",
-							!showExperimentalTemplateDetails && "rounded-b-[16px]",
-						)}
-						style={showExperimentalTemplateDetails ? STAMP_PERFORATION_BOTTOM_MASK_STYLE : undefined}
+						className="relative z-10 flex shrink-0 flex-col gap-3 rounded-t-[16px] bg-[var(--agent-card-cover-color)] px-4 pt-4 pb-4 text-text-inverse"
+						style={STAMP_PERFORATION_BOTTOM_MASK_STYLE}
 					>
 						<div className="relative flex items-center gap-3">
 							<div aria-hidden className="group/avatar relative h-10 w-[35px] shrink-0" data-size="lg">
@@ -572,73 +637,69 @@ export function AgentCard({
 											</AvatarGroup>
 										) : null}
 									</div>
-									{showExperimentalUseTemplateAction ? (
-										<Button
-											className={cn(
-												"mt-2 w-full border-current bg-transparent hover:bg-white/20 active:bg-white/30",
-												EXPERIMENTAL_COVER_TEXT_CLASS_NAME,
-											)}
-											onClick={handleUseTemplateClick}
-											type="button"
-											variant="outline"
-										>
-											Use template
-										</Button>
-									) : null}
+									<Button
+										className={cn(
+											"mt-2 w-full border-current bg-transparent hover:bg-white/20 active:bg-white/30",
+											EXPERIMENTAL_COVER_TEXT_CLASS_NAME,
+										)}
+										onClick={handleUseTemplateClick}
+										type="button"
+										variant="outline"
+									>
+										Use template
+									</Button>
 								</>
 							) : null}
 						</div>
 					</div>
 
-					{showExperimentalTemplateDetails ? (
+					<div
+						className="relative z-10 flex min-h-0 flex-auto flex-col rounded-b-[16px] bg-[var(--agent-card-detail-color)]"
+						style={STAMP_PERFORATION_TOP_MASK_STYLE}
+					>
 						<div
-							className="relative z-10 flex min-h-0 flex-auto flex-col rounded-b-[16px] bg-[var(--agent-card-detail-color)]"
-							style={STAMP_PERFORATION_TOP_MASK_STYLE}
+							className="pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-5 pb-4 text-text [scrollbar-gutter:stable]"
+							data-slot="agent-card-scroll"
+							onClick={onSelect ? handleBodyClick : undefined}
+							onScroll={handleBodyScroll}
+							style={bodyScrolled ? SCROLL_MASK_STYLE : undefined}
 						>
-							<div
-								className="pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-5 pb-4 text-text [scrollbar-gutter:stable]"
-								data-slot="agent-card-scroll"
-								onClick={onSelect ? handleBodyClick : undefined}
-								onScroll={handleBodyScroll}
-								style={bodyScrolled ? SCROLL_MASK_STYLE : undefined}
-							>
-								{sources.length > 0 ? (
-									<AgentCardSection label="Works with" labelClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}>
-										<TWGAppstack animated={false} className="justify-start" iconSize="md" maxVisible={7} sources={sources} />
-									</AgentCardSection>
-								) : null}
+							{sources.length > 0 ? (
+								<AgentCardSection label="Works with" labelClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}>
+									<TWGAppstack animated={false} className="justify-start" iconSize="md" maxVisible={7} sources={sources} />
+								</AgentCardSection>
+							) : null}
 
-								{skills.length > 0 ? (
-									<AgentCardSection label="Skills" labelClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}>
-										<SkillTagGroup className={SKILLS_GROUP_CLASS_NAME} maxRows={SKILLS_MAX_ROWS}>
-											{skills.map((skill) => (
-												<SkillTag
-													color={skill.color ?? "default"}
-													icon={skill.icon ?? getSkillIcon(skill.label)}
-													key={skill.label}
-												>
-													{skill.label}
-												</SkillTag>
-											))}
-										</SkillTagGroup>
-									</AgentCardSection>
-								) : null}
+							{skills.length > 0 ? (
+								<AgentCardSection label="Skills" labelClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}>
+									<SkillTagGroup className={SKILLS_GROUP_CLASS_NAME} maxRows={SKILLS_MAX_ROWS}>
+										{skills.map((skill) => (
+											<SkillTag
+												color={skill.color ?? "default"}
+												icon={skill.icon ?? getSkillIcon(skill.label)}
+												key={skill.label}
+											>
+												{skill.label}
+											</SkillTag>
+										))}
+									</SkillTagGroup>
+								</AgentCardSection>
+							) : null}
 
-								{capabilities.length > 0 ? (
-									<>
-										<div className={cn("py-1.5", EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME)}>
-											<Separator className="bg-current opacity-30" />
-										</div>
-										<AgentCardCapabilities
-											iconClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}
-											items={capabilities}
-											itemClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}
-										/>
-									</>
-								) : null}
-							</div>
+							{capabilities.length > 0 ? (
+								<>
+									<div className={cn("py-1.5", EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME)}>
+										<Separator className="bg-current opacity-30" />
+									</div>
+									<AgentCardCapabilities
+										iconClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}
+										items={capabilities}
+										itemClassName={EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME}
+									/>
+								</>
+							) : null}
 						</div>
-					) : null}
+					</div>
 				</div>
 			</AgentCardShell>
 		);

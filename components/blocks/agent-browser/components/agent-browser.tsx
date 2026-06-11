@@ -1249,10 +1249,10 @@ function AgentCard({ agent, onSelectAgent, publisher }: Readonly<AgentCardProps>
 	);
 }
 
-// Experimental built-agent card — the "latest" banner-first profile treatment.
-// On hover the cover illustration clears to reveal the more menu (`triggerClassName`
-// tints the ⋯ trigger to the card's per-category cover text color, exposed by the
-// card as `--agent-card-cover-text-color`).
+// Experimental built-agent card — a plain elevation-surface profile card with a
+// 1px border that fades on hover and an entity-style lock-up (hexagon avatar,
+// name, "By <publisher>" byline). The ⋯ more menu uses the default ghost trigger,
+// revealed on hover/focus.
 function ExperimentalProfileCard({
 	agent,
 	onSelectAgent,
@@ -1277,7 +1277,6 @@ function ExperimentalProfileCard({
 					onLearnMore={selectAgent}
 					onOpenChange={setMoreMenuOpen}
 					open={moreMenuOpen}
-					triggerClassName="text-[var(--agent-card-cover-text-color)] [&_svg]:text-current hover:bg-white/20 active:bg-white/30"
 				/>
 			}
 			name={agent.name}
@@ -1295,8 +1294,6 @@ interface DirectoryCardMoreMenuProps {
 	onLearnMore?: () => void;
 	onOpenChange: (open: boolean) => void;
 	open: boolean;
-	/** Extra classes for the trigger button (e.g. cover-tinted styling on the experimental card). */
-	triggerClassName?: string;
 }
 
 function DirectoryCardMoreMenu({
@@ -1304,7 +1301,6 @@ function DirectoryCardMoreMenu({
 	onLearnMore,
 	onOpenChange,
 	open,
-	triggerClassName,
 }: Readonly<DirectoryCardMoreMenuProps>) {
 	function stopPropagation(event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void {
 		event.stopPropagation();
@@ -1320,7 +1316,6 @@ function DirectoryCardMoreMenu({
 						className={cn(
 							"size-6 shrink-0 cursor-pointer opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
 							open && "opacity-100",
-							triggerClassName,
 						)}
 						onClick={stopPropagation}
 						onKeyDown={stopPropagation}

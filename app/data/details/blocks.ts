@@ -202,7 +202,7 @@ function FormattingToolbar({ editor }: { editor: Editor }) {
 	},
 	"agent-card": {
 		description:
-			"Self-contained agent card with multiple layouts. The default \"expanded\" variant has a cover banner, attribution byline, \"Works with\" sources, \"Skills\" tags, a scrollable capabilities feature list, and a stats / collaborators footer that swaps to a \"Use template\" action on hover. The experimental template variant is a compact banner-first treatment with inline metrics, stacked app/skill sections, and a feature list. The experimental profile variant uses the same banner-first treatment for a built agent and stops after description + social proof. The \"template\" variant is a flat card (icon + name, description, \"Works with\", \"Skills\"). Passing onSelect turns the whole card into a keyboard-operable select button.",
+			"Self-contained agent card with multiple layouts. The default \"expanded\" variant has a cover banner, attribution byline, \"Works with\" sources, \"Skills\" tags, a scrollable capabilities feature list, and a stats / collaborators footer that swaps to a \"Use template\" action on hover. The experimental template variant is a compact banner-first treatment with inline metrics, stacked app/skill sections, and a feature list. The experimental profile variant is a plain-surface, entity-style profile card for a built agent — hexagon avatar, byline, description, and social proof, with a 1px border that fades on hover. The \"template\" variant is a flat card (icon + name, description, \"Works with\", \"Skills\"). Passing onSelect turns the whole card into a keyboard-operable select button.",
 		importStatement: `import { AgentCard } from "@/components/blocks/agent-card";`,
 		usage: `import { AgentCard } from "@/components/blocks/agent-card";
 
@@ -268,7 +268,7 @@ function FormattingToolbar({ editor }: { editor: Editor }) {
 			{
 				title: "Experimental (profile)",
 				description:
-					"Built-agent profile treatment with the same experimental banner, description, and social proof, without Works with, Skills, or feature-list sections.",
+					"Built-agent profile card on a plain elevation surface with an entity-style lock-up (hexagon avatar, byline), description, and social proof. No cover banner, illustration, Works with, Skills, or feature-list sections.",
 				demoSlug: "agent-card-demo-experimental-profile",
 			},
 			{
