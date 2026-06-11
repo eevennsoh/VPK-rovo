@@ -96,8 +96,14 @@ interface RovoAppMessagesProps {
 const ROVO_APP_SCROLL_ANCHOR_SELECTOR = "[data-rovo-app-scroll-anchor='true']";
 const ROVO_APP_EMPTY_STATE = {
 	default: {
+		alt: "AI",
+		darkIllustrationSrc: "/illustration-ai/ai/dark.svg",
 		heading: "Move work forward with agents",
+		height: 67,
 		id: "default",
+		illustrationClassName: "h-[67px] w-[74px]",
+		lightIllustrationSrc: "/illustration-ai/ai/light.svg",
+		width: 74,
 	},
 	max: {
 		alt: "Max",
