@@ -43,10 +43,10 @@ const MINIMAP_BASE_BAR_WIDTH_PX = 26;
 const MINIMAP_PROMPT_BAR_WIDTH_PX = 16;
 const SWITCHER_OPEN_WIDTH_PX = 280;
 const SWITCHER_PANEL_PADDING_Y_PX = 16;
-const SWITCHER_HEADER_HEIGHT_PX = 41;
+const SWITCHER_HEADER_HEIGHT_PX = 45;
 const SWITCHER_SECTION_PADDING_Y_PX = 16;
 const SWITCHER_SECTION_LABEL_HEIGHT_PX = 20;
-const SWITCHER_ROW_HEIGHT_PX = 32;
+const SWITCHER_ROW_HEIGHT_PX = 36;
 const SWITCHER_ROW_GAP_PX = 0;
 // Footer chrome = top border (1px) + pt-2 (8px); each action button is 32px tall.
 const SWITCHER_FOOTER_CHROME_PX = 9;
@@ -183,6 +183,7 @@ export function SubagentsNavigator({
 		subagents.length * SWITCHER_ROW_HEIGHT_PX +
 		Math.max(0, subagents.length - 1) * SWITCHER_ROW_GAP_PX +
 		footerHeight;
+	const switcherHeight = isSwitcherOpen ? openHeight : closedHeight;
 	const shellTransition = shouldReduceMotion
 		? undefined
 		: [
@@ -214,21 +215,22 @@ export function SubagentsNavigator({
 
 	return (
 		<div
-			className={className}
-			onBlur={handleBlur}
-			onFocusCapture={() => setIsSwitcherOpen(true)}
-			onKeyDown={handleKeyDown}
-			onMouseEnter={() => setIsSwitcherOpen(true)}
-			onMouseLeave={() => setIsSwitcherOpen(false)}
+			className={cn("pointer-events-none flex justify-end", className)}
+			style={{ width: SWITCHER_OPEN_WIDTH_PX }}
 		>
 			<div
-				className="relative origin-top-right overflow-hidden text-left"
+				className="pointer-events-auto relative origin-top-right overflow-hidden text-left"
 				id={switcherId}
+				onBlur={handleBlur}
+				onFocusCapture={() => setIsSwitcherOpen(true)}
+				onKeyDown={handleKeyDown}
+				onMouseEnter={() => setIsSwitcherOpen(true)}
+				onMouseLeave={() => setIsSwitcherOpen(false)}
 				style={{
 					boxSizing: "border-box",
 					width: isSwitcherOpen ? SWITCHER_OPEN_WIDTH_PX : MINIMAP_WIDTH_PX,
-					height: isSwitcherOpen ? undefined : closedHeight,
-					minHeight: isSwitcherOpen ? openHeight : closedHeight,
+					height: switcherHeight,
+					minHeight: switcherHeight,
 					borderRadius: isSwitcherOpen ? 16 : 14,
 					backgroundColor: isSwitcherOpen ? "var(--ds-surface-overlay)" : "transparent",
 					boxShadow: isSwitcherOpen ? token("elevation.shadow.overlay") : "none",
@@ -437,7 +439,7 @@ function SubagentsSwitcherButton({
 							{label}
 						</HoverRevealLabel>
 					) : (
-						<span className="min-w-0 whitespace-normal break-words">{label}</span>
+						<span className="block min-w-0 truncate">{label}</span>
 					)}
 				</span>
 				{isActive ? (

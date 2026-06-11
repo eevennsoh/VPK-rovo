@@ -15,9 +15,13 @@ import { cn } from "@/lib/utils";
  * ## Usage contract
  *
  * 1. Put {@link hoverRevealRowClassName} on the row's **relative** container
- *    (a Base UI `Menu.Item`, a `<button>` wrapper, a `<div>`, …).
+ *    (a Base UI `Menu.Item`, a non-interactive `<div>`, …).
  * 2. Render {@link HoverRevealLabel} for the truncating label.
  * 3. Render {@link HoverRevealActions} for the trailing controls.
+ *
+ * Rows with revealed controls should keep activation on the controls
+ * themselves. Do not make the label surface a catch-all row button when users
+ * need to intentionally choose the switch or the action button.
  *
  * Both `HoverRevealLabel` and `HoverRevealActions` MUST be **descendants** of
  * the container, because the reveal + padding-reserve are keyed off the

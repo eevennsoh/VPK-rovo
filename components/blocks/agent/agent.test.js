@@ -152,6 +152,18 @@ test("Apps config row unifies tool and knowledge references while memory keeps i
 	assert.doesNotMatch(AGENT_SOURCE, /<AgentReferenceChip label="Memory" \/>/u);
 });
 
+test("Configured reference menu rows do not wrap enabled visuals in an empty inline span", () => {
+	assert.match(
+		AGENT_SOURCE,
+		/const resolvedElemBefore = frontSlot[\s\S]*\? hasToggle && !enabled[\s\S]*\? <span className="inline-flex size-6 items-center justify-center opacity-\(--opacity-disabled\)">\{frontSlot\}<\/span>[\s\S]*: frontSlot[\s\S]*: undefined;/u,
+	);
+	assert.match(AGENT_SOURCE, /elemBefore=\{resolvedElemBefore\}/u);
+	assert.doesNotMatch(
+		AGENT_SOURCE,
+		/<span className=\{cn\(hasToggle && !enabled && "opacity-\(--opacity-disabled\)"\)\}>\{frontSlot\}<\/span>/u,
+	);
+});
+
 test("Filled config summary sorts empty rows to the bottom while preserving canonical order", () => {
 	assert.match(AGENT_SOURCE, /const rows: ReadonlyArray<\{ key: string; isEmpty: boolean; node: ReactNode \}>/u);
 	assert.match(AGENT_SOURCE, /const orderedRows = rows[\s\S]*\.sort\(\(a, b\) => \{[\s\S]*if \(a\.isEmpty !== b\.isEmpty\) return a\.isEmpty \? 1 : -1;[\s\S]*return a\.index - b\.index;/u);

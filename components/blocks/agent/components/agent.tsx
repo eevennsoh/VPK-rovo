@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
@@ -984,7 +985,7 @@ function AgentCompactNavMenuPinnedFooter({
 }
 
 type AgentCompactNavMenuOpenChange = NonNullable<ComponentProps<typeof MenubarMenu>["onOpenChange"]>;
-type AgentCompactNavMenuContentElement = HTMLDivElement | null;
+type AgentCompactNavMenuHandle = ReturnType<typeof MenuPrimitive.createHandle>;
 
 function shouldClearCompactNavInitialHighlight(eventDetails: Parameters<AgentCompactNavMenuOpenChange>[1]): boolean {
 	if (
@@ -1003,24 +1004,16 @@ function shouldClearCompactNavInitialHighlight(eventDetails: Parameters<AgentCom
 	return !(event instanceof MouseEvent) || event.detail !== 0;
 }
 
-function clearCompactNavInitialHighlight(contentElement: AgentCompactNavMenuContentElement): void {
+function clearCompactNavInitialHighlight(menuHandle: AgentCompactNavMenuHandle): void {
 	const clear = () => {
-		if (!contentElement) {
-			return;
-		}
-
-		contentElement.querySelectorAll("[data-highlighted]").forEach((highlightedElement) => {
-			highlightedElement.removeAttribute("data-highlighted");
-			highlightedElement.setAttribute("tabindex", "-1");
-		});
-		contentElement.focus({ preventScroll: true });
+		menuHandle.store.set("activeIndex", null);
 	};
 
 	queueMicrotask(() => {
-		clear();
+		menuHandle.store.set("activeIndex", null);
 
 		requestAnimationFrame(() => {
-			clear();
+			menuHandle.store.set("activeIndex", null);
 		});
 
 		window.setTimeout(clear, 120);
@@ -1028,23 +1021,20 @@ function clearCompactNavInitialHighlight(contentElement: AgentCompactNavMenuCont
 }
 
 function useCompactNavMenuNoInitialHighlight(): {
-	contentRef: (element: AgentCompactNavMenuContentElement) => void;
+	handle: AgentCompactNavMenuHandle;
 	onOpenChange: AgentCompactNavMenuOpenChange;
 } {
-	const contentRef = useRef<AgentCompactNavMenuContentElement>(null);
+	const menuHandle = useMemo(() => MenuPrimitive.createHandle(), []);
 	const handleOpenChange = useCallback<AgentCompactNavMenuOpenChange>(
 		(open, eventDetails) => {
 			if (open && shouldClearCompactNavInitialHighlight(eventDetails)) {
-				clearCompactNavInitialHighlight(contentRef.current);
+				clearCompactNavInitialHighlight(menuHandle);
 			}
 		},
-		[],
+		[menuHandle],
 	);
-	const setContentRef = useCallback((element: AgentCompactNavMenuContentElement) => {
-		contentRef.current = element;
-	}, []);
 
-	return { contentRef: setContentRef, onOpenChange: handleOpenChange };
+	return { handle: menuHandle, onOpenChange: handleOpenChange };
 }
 
 // Memoize a trimmed Set of disabled labels for O(1) per-row lookups. The
@@ -1088,12 +1078,13 @@ function AgentCompactSubagentsNavButton({
 	const compactNavMenu = useCompactNavMenuNoInitialHighlight();
 
 	return (
-		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
+		<MenubarMenu handle={compactNavMenu.handle} onOpenChange={compactNavMenu.onOpenChange}>
 			{renderTrigger ? (
-				<MenubarTrigger render={renderTrigger} />
+				<MenubarTrigger handle={compactNavMenu.handle} render={renderTrigger} />
 			) : (
 				<MenubarTrigger
 					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
+					handle={compactNavMenu.handle}
 					render={(
 						<AgentCompactConfigNavButton
 							aria-label="Subagents"
@@ -1106,7 +1097,6 @@ function AgentCompactSubagentsNavButton({
 			<MenubarContent
 				align="start"
 				className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}
-				ref={compactNavMenu.contentRef}
 			>
 				{isEmpty ? null : (
 					<div className="min-h-0 flex-1 overflow-y-auto">
@@ -1327,6 +1317,11 @@ function AgentCompactReferenceRow({
 	// Reserve trailing width for whichever controls exist: switch + remove = 2,
 	// either alone = 1, neither = none.
 	const reserveCount = (hasToggle ? 1 : 0) + (onRemove ? 1 : 0);
+	const resolvedElemBefore = frontSlot
+		? hasToggle && !enabled
+			? <span className="inline-flex size-6 items-center justify-center opacity-(--opacity-disabled)">{frontSlot}</span>
+			: frontSlot
+		: undefined;
 	return (
 		<DropdownMenuItem
 			closeOnClick={!hasToggle}
@@ -1337,11 +1332,7 @@ function AgentCompactReferenceRow({
 				// re-darken the label).
 				hasToggle && !enabled ? "text-text-disabled data-[highlighted]:text-text-disabled" : undefined,
 			)}
-			elemBefore={
-				frontSlot ? (
-					<span className={cn(hasToggle && !enabled && "opacity-(--opacity-disabled)")}>{frontSlot}</span>
-				) : undefined
-			}
+			elemBefore={resolvedElemBefore}
 			onClick={onClick}
 			selected={selected}
 		>
@@ -1474,12 +1465,13 @@ function AgentCompactTriggersNavButton({
 	);
 
 	return (
-		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
+		<MenubarMenu handle={compactNavMenu.handle} onOpenChange={compactNavMenu.onOpenChange}>
 			{renderTrigger ? (
-				<MenubarTrigger render={renderTrigger} />
+				<MenubarTrigger handle={compactNavMenu.handle} render={renderTrigger} />
 			) : (
 				<MenubarTrigger
 					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
+					handle={compactNavMenu.handle}
 					render={(
 						<AgentCompactConfigNavButton
 							aria-label="Triggers"
@@ -1492,7 +1484,6 @@ function AgentCompactTriggersNavButton({
 			<MenubarContent
 				align="start"
 				className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}
-				ref={compactNavMenu.contentRef}
 			>
 				{isEmpty ? null : (
 					<div className="min-h-0 flex-1 overflow-y-auto">
@@ -1616,12 +1607,13 @@ function AgentCompactDirectoryNavButton({
 	);
 
 	return (
-		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
+		<MenubarMenu handle={compactNavMenu.handle} onOpenChange={compactNavMenu.onOpenChange}>
 			{renderTrigger ? (
-				<MenubarTrigger render={renderTrigger} />
+				<MenubarTrigger handle={compactNavMenu.handle} render={renderTrigger} />
 			) : (
 				<MenubarTrigger
 					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
+					handle={compactNavMenu.handle}
 					render={(
 						<AgentCompactConfigNavButton
 							aria-label={item.label}
@@ -1634,7 +1626,6 @@ function AgentCompactDirectoryNavButton({
 			<MenubarContent
 				align="start"
 				className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}
-				ref={compactNavMenu.contentRef}
 			>
 				{isEmpty ? null : (
 					<div className="min-h-0 flex-1 overflow-y-auto">
@@ -1723,12 +1714,13 @@ function AgentCompactAppsNavButton({
 	);
 
 	return (
-		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
+		<MenubarMenu handle={compactNavMenu.handle} onOpenChange={compactNavMenu.onOpenChange}>
 			{renderTrigger ? (
-				<MenubarTrigger render={renderTrigger} />
+				<MenubarTrigger handle={compactNavMenu.handle} render={renderTrigger} />
 			) : (
 				<MenubarTrigger
 					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
+					handle={compactNavMenu.handle}
 					render={(
 						<AgentCompactConfigNavButton
 							aria-label={item.label}
@@ -1741,7 +1733,6 @@ function AgentCompactAppsNavButton({
 			<MenubarContent
 				align="start"
 				className={cn("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS)}
-				ref={compactNavMenu.contentRef}
 			>
 				{isEmpty ? null : (
 					<div className="min-h-0 flex-1 overflow-y-auto">

@@ -464,7 +464,7 @@ const templates: AgentsDirectoryTemplateAgent[] = [];
 			{
 				name: "title",
 				type: "string",
-				description: "Optional dialog title. Defaults to “Agent Directory”.",
+				description: "Optional dialog title. Defaults to “Browse agents”.",
 			},
 			{
 				name: "variant",

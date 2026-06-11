@@ -39,8 +39,11 @@ test("Agent Directory docs demo starts closed until the trigger is clicked", () 
 	);
 	assert.match(pageSource, /const \[variant, setVariant\] = useState<AgentsDirectoryVariant>\("default"\);/u);
 	assert.match(pageSource, /function openDirectory\(nextVariant: AgentsDirectoryVariant\)[\s\S]*setVariant\(nextVariant\);[\s\S]*setOpen\(true\);/u);
+	assert.match(pageSource, /function handleSelectAgent\(\)[\s\S]*setOpen\(false\);/u);
 	assert.match(pageSource, />\s*Open standard directory\s*<\/Button>/u);
 	assert.match(pageSource, />\s*Open experimental directory\s*<\/Button>/u);
+	assert.match(pageSource, /onSelectAgent=\{handleSelectAgent\}/u);
+	assert.match(pageSource, /onSelectTemplateAgent=\{handleSelectAgent\}/u);
 	assert.match(
 		pageSource,
 		/export function AgentsDirectoryExperimentalPage\(\) \{[\s\S]*const \[open, setOpen\] = useState\(false\);/u,
@@ -71,7 +74,8 @@ test("Agent Directory renders a New agent header action", () => {
 	assert.match(source, /onPrimaryAction\?: \(\) => void;/u);
 	assert.match(source, /primaryActionLabel \? \([\s\S]*<Button onClick=\{onPrimaryAction\} type="button">[\s\S]*\{primaryActionLabel\}/u);
 	assert.match(agentsDirectorySource, /onCreateAgent\?: \(\) => void;/u);
-	assert.match(agentsDirectorySource, /title=\{title \?\? "Agent Directory"\}/u);
+	assert.match(agentsDirectorySource, /title=\{title\}/u);
+	assert.match(source, /title = "Browse agents"/u);
 	assert.match(agentsDirectorySource, /primaryActionLabel="New agent"/u);
 	assert.match(agentsDirectorySource, /onPrimaryAction=\{onCreateAgent\}/u);
 	assert.match(detailsSource, /name: "onCreateAgent"[\s\S]*Optional handler for the New agent action/u);
@@ -112,6 +116,10 @@ test("Agent Directory experimental variation has searchable multi-select filters
 
 	assert.match(source, /function ExperimentalAgentBrowser/u);
 	assert.match(source, /function ExperimentalFilterDropdown/u);
+	assert.match(source, /function ExperimentalAgentSection/u);
+	assert.match(source, /<section aria-label=\{heading\} className="flex flex-col gap-2">/u);
+	assert.match(source, /<h2 className="px-1\.5 text-xs font-semibold leading-4 text-text-subtlest">/u);
+	assert.doesNotMatch(source, /<h2 style=\{\{ font: token\("font\.heading\.large"\) \}\} className="text-text">/u);
 	assert.match(source, /"flex h-full min-h-0 flex-col gap-4 overflow-y-auto px-6 pb-6"/u);
 	assert.match(source, /aria-pressed=\{selectedMyAgents\.length > 0 \? true : undefined\}[\s\S]*?Filter by my agents/u);
 	assert.match(source, /Filter by teams/u);
@@ -128,6 +136,7 @@ test("Agent Directory experimental variation has searchable multi-select filters
 	assert.match(source, /selectedCount > 0 \? <Badge>\{selectedCount\}<\/Badge> : null/u);
 	assert.match(source, />\s*Reset\s*<\/Button>/u);
 	assert.match(source, /Showing \{resultCount\.toLocaleString\("en-US"\)\} results/u);
+	assert.match(source, /<div className="flex flex-col gap-6">[\s\S]*<ExperimentalAgentSection heading="My agents"/u);
 	assert.match(source, /heading="My agents"/u);
 	assert.match(source, /heading="By teams"/u);
 	assert.match(source, /heading="By companies"/u);
@@ -156,13 +165,13 @@ test("Agent Directory includes Agent Templates as a sidebar mode", () => {
 	assert.match(source, /src=\{category\.iconSrc\}/u);
 	assert.match(source, /className=\{cn\("size-6 object-contain", category\.iconClassName\)\}/u);
 	assert.match(source, /activeTemplateCategoryOption \? \(/u);
-	assert.match(source, /activeTemplateCategoryOption \? \([\s\S]*<AnimatePresence custom=\{templateMotionCustom\} initial=\{false\} mode="wait">[\s\S]*<motion\.div[\s\S]*key=\{`template-title-\$\{activeTemplateCategoryOption\.id\}`\}[\s\S]*variants=\{AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS\}[\s\S]*<TemplateCategoryTitle category=\{activeTemplateCategoryOption\} \/>/u);
+	assert.match(source, /activeTemplateCategoryOption \? \([\s\S]*<AnimatePresence custom=\{templateMotionCustom\} initial=\{false\} mode="wait">[\s\S]*<motion\.div[\s\S]*key=\{`template-title-\$\{activeTemplateCategoryOption\.id\}`\}[\s\S]*variants=\{STANDARD_AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS\}[\s\S]*<TemplateCategoryTitle category=\{activeTemplateCategoryOption\} \/>/u);
 	assert.match(source, /:\s*\([\s\S]*<Button variant="outline">[\s\S]*Sort by popularity/u);
 	assert.doesNotMatch(source, /key="sort-button"[\s\S]*variants=\{AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS\}/u);
 	assert.match(source, /category\.titleLines\[0\]/u);
 	assert.match(source, /category\.titleLines\[1\]/u);
 	assert.match(source, /No templates match/u);
-	assert.match(source, /activeTemplateCategoryOption \? \([\s\S]*<AnimatePresence custom=\{templateMotionCustom\} initial=\{false\} mode="wait">[\s\S]*<motion\.section[\s\S]*aria-label="Agent templates"[\s\S]*key=\{`templates-\$\{activeTemplateCategoryOption\.id\}`\}[\s\S]*variants=\{AGENT_BROWSER_TEMPLATE_GRID_VARIANTS\}[\s\S]*<AgentTemplateSection[\s\S]*onSelectAgent=\{onSelectTemplateAgent\}/u);
+	assert.match(source, /activeTemplateCategoryOption \? \([\s\S]*<AnimatePresence custom=\{templateMotionCustom\} initial=\{false\} mode="wait">[\s\S]*<motion\.section[\s\S]*aria-label="Agent templates"[\s\S]*key=\{`templates-\$\{activeTemplateCategoryOption\.id\}`\}[\s\S]*variants=\{STANDARD_AGENT_BROWSER_TEMPLATE_GRID_VARIANTS\}[\s\S]*<AgentTemplateSection[\s\S]*onSelectAgent=\{onSelectTemplateAgent\}/u);
 	assert.match(source, /EntityCardAgentExpandedCard/u);
 	assert.match(source, /function ExperimentalTemplateMode/u);
 	assert.match(source, /<div className="flex min-h-0 flex-col gap-4">/u);
@@ -181,7 +190,8 @@ test("Agent Directory includes Agent Templates as a sidebar mode", () => {
 	assert.match(source, /AGENT_BROWSER_TEMPLATE_CARD_STAGGER = 0\.05/u);
 	assert.match(source, /translateX/u);
 	assert.match(source, /const AGENT_BROWSER_TEMPLATE_GRID_VARIANTS = \{[\s\S]*enter: \(\{ direction, shouldReduceMotion \}: AgentBrowserTemplateMotionCustom\) => \(\{[\s\S]*translateX\(\$\{AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET \* direction\}px\)[\s\S]*center: \{[\s\S]*translateX\(0px\)/u);
-	assert.doesNotMatch(source, /translateY\(\$\{AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET \* direction\}px\)/u);
+	assert.match(source, /const STANDARD_AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS = \{[\s\S]*translateY\(\$\{AGENT_BROWSER_TEMPLATE_TITLE_SWAP_OFFSET \* direction\}px\)[\s\S]*center: \{[\s\S]*translateY\(0px\)/u);
+	assert.match(source, /const STANDARD_AGENT_BROWSER_TEMPLATE_GRID_VARIANTS = \{[\s\S]*translateY\(\$\{AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET \* direction\}px\)[\s\S]*center: \{[\s\S]*translateY\(0px\)/u);
 	assert.match(source, /translateX\(\$\{motionCustom\.direction \* AGENT_BROWSER_TEMPLATE_CARD_ENTER_OFFSET\}px\)/u);
 	assert.match(source, /const handleSelectCategory = \(category: string\) => \{[\s\S]*setActiveTemplateCategory\(null\);[\s\S]*setActiveCategory\(category\);[\s\S]*\};/u);
 	assert.match(agentsDirectorySource, /DEMO_AGENT_TEMPLATES/u);

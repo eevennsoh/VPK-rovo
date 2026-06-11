@@ -70,7 +70,7 @@ export function AgentsDirectoryDialog({
 		<AgentBrowserDialog
 			open={open}
 			onOpenChange={onOpenChange}
-			title={title ?? "Agent Directory"}
+			title={title}
 			primaryActionLabel="New agent"
 			onPrimaryAction={onCreateAgent}
 			agents={directoryAgents}

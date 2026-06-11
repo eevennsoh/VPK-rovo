@@ -7,6 +7,14 @@ const SOURCE = fs.readFileSync(
 	path.join(__dirname, "hover-reveal-row.tsx"),
 	"utf8",
 );
+const DEMO_SOURCE = fs.readFileSync(
+	path.join(__dirname, "../website/demos/ui-custom/hover-reveal-row-demo.tsx"),
+	"utf8",
+);
+const DETAILS_SOURCE = fs.readFileSync(
+	path.join(__dirname, "../../app/data/details/ui-custom.ts"),
+	"utf8",
+);
 
 test("hover-reveal-row exposes the container class + label + actions primitives", () => {
 	assert.match(SOURCE, /export const hoverRevealRowClassName = "group\/hover-reveal-row relative";/u);
@@ -41,4 +49,14 @@ test("actions overlay parks the toggle and slides controls in on reveal", () => 
 	assert.match(SOURCE, /toggleParked \? "opacity-100" : "opacity-0"/u);
 	// Action slides in from translate-x-2 → 0 and fades in on reveal.
 	assert.match(SOURCE, /translate-x-2[\s\S]*group-hover\/hover-reveal-row:translate-x-0 group-hover\/hover-reveal-row:opacity-100/u);
+});
+
+test("demo rows leave activation on the revealed controls", () => {
+	assert.match(DEMO_SOURCE, /activation stays on the switch and edit button/u);
+	assert.match(DEMO_SOURCE, /group-hover\/hover-reveal-row:bg-bg-neutral-subtle-hovered/u);
+	assert.doesNotMatch(DEMO_SOURCE, /<button\s+type="button"[\s\S]{0,260}<HoverRevealLabel/u);
+	assert.match(DEMO_SOURCE, /<Switch[\s\S]*onCheckedChange=\{setEnabled\}/u);
+	assert.match(DEMO_SOURCE, /aria-label=\{`Edit \$\{label\}`\}/u);
+	assert.match(DETAILS_SOURCE, /keep activation on the switch\/action controls/u);
+	assert.doesNotMatch(DETAILS_SOURCE, /<button className="flex h-9 w-full min-w-0 items-center rounded-lg px-2">/u);
 });

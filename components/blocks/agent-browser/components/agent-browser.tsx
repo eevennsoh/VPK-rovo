@@ -161,6 +161,23 @@ const AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS = {
 	}),
 } as const;
 
+const STANDARD_AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS = {
+	enter: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
+		opacity: 0,
+		transform: shouldReduceMotion ? "translateY(0px)" : `translateY(${AGENT_BROWSER_TEMPLATE_TITLE_SWAP_OFFSET * direction}px)`,
+	}),
+	center: {
+		opacity: 1,
+		transform: "translateY(0px)",
+		transition: AGENT_BROWSER_TEMPLATE_TITLE_ENTER_TRANSITION,
+	},
+	exit: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
+		opacity: 0,
+		transform: shouldReduceMotion ? "translateY(0px)" : `translateY(${-AGENT_BROWSER_TEMPLATE_TITLE_SWAP_OFFSET * direction}px)`,
+		transition: AGENT_BROWSER_TEMPLATE_TAB_EXIT_TRANSITION,
+	}),
+} as const;
+
 const AGENT_BROWSER_TEMPLATE_GRID_VARIANTS = {
 	enter: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
 		opacity: 0,
@@ -174,6 +191,23 @@ const AGENT_BROWSER_TEMPLATE_GRID_VARIANTS = {
 	exit: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
 		opacity: 0,
 		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${-AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET * direction}px)`,
+		transition: AGENT_BROWSER_TEMPLATE_TAB_EXIT_TRANSITION,
+	}),
+} as const;
+
+const STANDARD_AGENT_BROWSER_TEMPLATE_GRID_VARIANTS = {
+	enter: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
+		opacity: 0,
+		transform: shouldReduceMotion ? "translateY(0px)" : `translateY(${AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET * direction}px)`,
+	}),
+	center: {
+		opacity: 1,
+		transform: "translateY(0px)",
+		transition: AGENT_BROWSER_TEMPLATE_TITLE_ENTER_TRANSITION,
+	},
+	exit: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
+		opacity: 0,
+		transform: shouldReduceMotion ? "translateY(0px)" : `translateY(${-AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET * direction}px)`,
 		transition: AGENT_BROWSER_TEMPLATE_TAB_EXIT_TRANSITION,
 	}),
 } as const;
@@ -533,7 +567,7 @@ function DefaultAgentBrowser({
 								initial="enter"
 								key={`template-title-${activeTemplateCategoryOption.id}`}
 								style={{ font: token("font.heading.medium"), willChange: "transform, opacity" }}
-								variants={AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS}
+								variants={STANDARD_AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS}
 							>
 								<TemplateCategoryTitle category={activeTemplateCategoryOption} />
 							</motion.div>
@@ -562,7 +596,7 @@ function DefaultAgentBrowser({
 								initial="enter"
 								key={`template-empty-${activeTemplateCategoryOption.id}`}
 								style={{ willChange: "transform, opacity" }}
-								variants={AGENT_BROWSER_TEMPLATE_GRID_VARIANTS}
+								variants={STANDARD_AGENT_BROWSER_TEMPLATE_GRID_VARIANTS}
 							>
 								No templates match &ldquo;{query}&rdquo;.
 							</motion.p>
@@ -575,7 +609,7 @@ function DefaultAgentBrowser({
 								initial="enter"
 								key={`templates-${activeTemplateCategoryOption.id}`}
 								style={{ willChange: "transform, opacity" }}
-								variants={AGENT_BROWSER_TEMPLATE_GRID_VARIANTS}
+								variants={STANDARD_AGENT_BROWSER_TEMPLATE_GRID_VARIANTS}
 							>
 								<AgentTemplateSection
 									agents={filteredTemplates}
@@ -847,7 +881,7 @@ function ExperimentalAgentBrowser({
 							No agents match &ldquo;{query}&rdquo;.
 						</p>
 					) : (
-						<div className="flex flex-col gap-7">
+						<div className="flex flex-col gap-6">
 							{showMyAgents ? (
 								<ExperimentalAgentSection heading="My agents" agents={myAgents} onSelectAgent={onSelectAgent} />
 							) : null}
@@ -1013,8 +1047,8 @@ function ExperimentalAgentSection({
 	onSelectAgent?: (agent: AgentBrowserAgent) => void;
 }>) {
 	return (
-		<section aria-label={heading} className="flex flex-col gap-4">
-			<h2 style={{ font: token("font.heading.large") }} className="text-text">
+		<section aria-label={heading} className="flex flex-col gap-2">
+			<h2 className="px-1.5 text-xs font-semibold leading-4 text-text-subtlest">
 				{heading}
 			</h2>
 			<ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

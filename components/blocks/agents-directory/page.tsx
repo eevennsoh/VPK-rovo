@@ -3,7 +3,11 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { AgentsDirectoryDialog, type AgentsDirectoryAgent, type AgentsDirectoryVariant } from "@/components/blocks/agents-directory";
+import {
+	AgentsDirectoryDialog,
+	type AgentsDirectoryAgent,
+	type AgentsDirectoryVariant,
+} from "@/components/blocks/agents-directory";
 import { DEMO_AGENT_BROWSER_AGENTS } from "@/app/data/directory/agents";
 
 const DEMO_SESSION_AGENTS: readonly AgentsDirectoryAgent[] = [
@@ -42,6 +46,10 @@ export default function AgentsDirectoryPage() {
 		setOpen(true);
 	}
 
+	function handleSelectAgent() {
+		setOpen(false);
+	}
+
 	return (
 		<div className="flex min-h-screen items-center justify-center gap-3 p-4">
 			<Button onClick={() => openDirectory("default")} variant="outline">
@@ -55,6 +63,8 @@ export default function AgentsDirectoryPage() {
 				onOpenChange={setOpen}
 				agents={DEMO_AGENT_BROWSER_AGENTS}
 				sessionAgents={DEMO_SESSION_AGENTS}
+				onSelectAgent={handleSelectAgent}
+				onSelectTemplateAgent={handleSelectAgent}
 				variant={variant}
 			/>
 		</div>
@@ -82,6 +92,10 @@ function AgentsDirectoryPageShell({
 	onOpenChange: (open: boolean) => void;
 	variant?: AgentsDirectoryVariant;
 }>) {
+	function handleSelectAgent() {
+		onOpenChange(false);
+	}
+
 	return (
 		<div className="flex min-h-screen items-center justify-center p-4">
 			<Button onClick={() => onOpenChange(true)}>
@@ -92,6 +106,8 @@ function AgentsDirectoryPageShell({
 				onOpenChange={onOpenChange}
 				agents={DEMO_AGENT_BROWSER_AGENTS}
 				sessionAgents={DEMO_SESSION_AGENTS}
+				onSelectAgent={handleSelectAgent}
+				onSelectTemplateAgent={handleSelectAgent}
 				variant={variant}
 			/>
 		</div>

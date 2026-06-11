@@ -4,7 +4,7 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 
   "hover-reveal-row": {
     description:
-      "A list-row interaction whose trailing controls (a toggle, an edit/delete action) stay hidden until the row is hovered or keyboard-focused, while the label dynamically truncates to clear those controls — and re-expands when they hide — instead of being overlapped. Compose it onto any relative container: a Base UI Menu.Item, a <button> wrapper, a <div>.",
+      "A list-row interaction whose trailing controls (a toggle, an edit/delete action) stay hidden until the row is hovered or keyboard-focused, while the label dynamically truncates to clear those controls — and re-expands when they hide — instead of being overlapped. For rows with revealed controls, keep activation on the switch/action controls instead of making the label surface a catch-all row button.",
     usage: `import {
   hoverRevealRowClassName,
   HoverRevealLabel,
@@ -14,9 +14,9 @@ export const UI_CUSTOM_DETAILS: Record<string, ComponentDetail> = {
 // Put the group class on the row's RELATIVE container, then render the label
 // and actions as descendants (a self group-hover utility never matches).
 <div className={hoverRevealRowClassName}>
-  <button className="flex h-9 w-full min-w-0 items-center rounded-lg px-2">
+  <div className="flex h-9 w-full min-w-0 items-center rounded-lg px-2">
     <HoverRevealLabel reserveOnReveal={2}>{label}</HoverRevealLabel>
-  </button>
+  </div>
   <HoverRevealActions
     toggle={<Switch size="sm" checked={enabled} onCheckedChange={setEnabled} />}
     toggleParked={!enabled}

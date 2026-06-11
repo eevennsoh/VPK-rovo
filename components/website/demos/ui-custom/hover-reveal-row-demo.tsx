@@ -18,10 +18,10 @@ const SAMPLE_LABELS = [
 ];
 
 /**
- * One hover-reveal row: a relative `group` container, a clickable button holding
- * the truncating label, and the absolutely-positioned trailing controls. The
- * label shows in full at rest and truncates to clear the controls on hover /
- * keyboard focus.
+ * One hover-reveal row: a relative `group` container, a non-interactive label
+ * surface, and the absolutely-positioned trailing controls. The label shows in
+ * full at rest and truncates to clear the controls on hover / keyboard focus;
+ * activation stays on the switch and edit button.
  */
 function DemoRow({
 	label,
@@ -31,10 +31,9 @@ function DemoRow({
 
 	return (
 		<div className={hoverRevealRowClassName}>
-			<button
-				type="button"
+			<div
 				className={cn(
-					"flex h-9 w-full min-w-0 items-center rounded-lg px-2 text-left text-sm transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected",
+					"flex h-9 w-full min-w-0 items-center rounded-lg px-2 text-left text-sm transition-colors duration-normal ease-out group-hover/hover-reveal-row:bg-bg-neutral-subtle-hovered group-has-[:focus-visible]/hover-reveal-row:bg-bg-neutral-subtle-hovered",
 					enabled ? "text-text" : "text-text-disabled group-hover/hover-reveal-row:text-text-disabled",
 				)}
 			>
@@ -44,7 +43,7 @@ function DemoRow({
 				>
 					{label}
 				</HoverRevealLabel>
-			</button>
+			</div>
 			<HoverRevealActions
 				toggleParked={!enabled}
 				toggle={
@@ -121,17 +120,16 @@ export function HoverRevealRowDemoParked() {
 		const [enabled, setEnabled] = useState(false);
 		return (
 			<div className={hoverRevealRowClassName}>
-				<button
-					type="button"
+				<div
 					className={cn(
-						"flex h-9 w-full min-w-0 items-center rounded-lg px-2 text-left text-sm transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected",
+						"flex h-9 w-full min-w-0 items-center rounded-lg px-2 text-left text-sm transition-colors duration-normal ease-out group-hover/hover-reveal-row:bg-bg-neutral-subtle-hovered group-has-[:focus-visible]/hover-reveal-row:bg-bg-neutral-subtle-hovered",
 						enabled ? "text-text" : "text-text-disabled group-hover/hover-reveal-row:text-text-disabled",
 					)}
 				>
 					<HoverRevealLabel reserveOnReveal={2} reserveAtRest={enabled ? 0 : 1}>
 						{label}
 					</HoverRevealLabel>
-				</button>
+				</div>
 				<HoverRevealActions
 					toggleParked={!enabled}
 					toggle={
