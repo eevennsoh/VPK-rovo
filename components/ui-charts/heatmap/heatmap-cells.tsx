@@ -184,8 +184,10 @@ const HeatmapMotionCell = memo(function HeatmapMotionCell({
   isFaded,
   onEnter,
   onLeave,
+  usesCustomColorScale,
 }: HeatmapCellRectProps & {
   fillScale: (count: number | null | undefined) => string;
+  usesCustomColorScale: boolean;
 }) {
   const {
     chartStatus,
@@ -207,7 +209,10 @@ const HeatmapMotionCell = memo(function HeatmapMotionCell({
     levelStyles[getHeatmapContributionLevel(bin.count ?? 0)] ?? levelStyles[0];
   const targetFill = fillScale(bin.count);
   const emptyFill = fillScale(0);
-  const patternFillOpacity = heatmapLevelCellFillOpacity(levelStyle);
+  const dataFill = usesCustomColorScale ? cell.color ?? targetFill : targetFill;
+  const patternFillOpacity = usesCustomColorScale
+    ? 1
+    : heatmapLevelCellFillOpacity(levelStyle);
   const dataOpacity = useMotionValue(0);
   /** Orchestration layer: conceal, static loading base. */
   const shimmerOpacity = useMotionValue(0);
@@ -360,7 +365,7 @@ const HeatmapMotionCell = memo(function HeatmapMotionCell({
     <g>
       <motion.rect
         {...cellProps}
-        fill={targetFill}
+        fill={dataFill}
         fillOpacity={(cell.opacity ?? 1) * patternFillOpacity}
         onPointerEnter={() =>
           onEnter(cell.column, cell.row, bin, cell.x, cell.y)
@@ -400,9 +405,12 @@ export const HeatmapCells = memo(function HeatmapCells({
     chartStatus,
     colorScale: contextColorScale,
     fillScale: contextFillScale,
+    usesCustomColorScale: contextUsesCustomColorScale,
   } = useHeatmap();
   const colorScale = colorScaleProp ?? contextColorScale;
   const fillScale = contextFillScale;
+  const usesCustomColorScale =
+    colorScaleProp != null || contextUsesCustomColorScale;
   const cellsInteractive = interactive && chartStatus !== "loading";
   const {
     hoveredCell,
@@ -497,6 +505,7 @@ export const HeatmapCells = memo(function HeatmapCells({
                   key={`heatmap-cell-${cell.column}-${cell.row}`}
                   onEnter={handleCellEnter}
                   onLeave={handleCellLeave}
+                  usesCustomColorScale={usesCustomColorScale}
                 />
               );
             })

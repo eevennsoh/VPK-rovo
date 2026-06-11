@@ -11,15 +11,17 @@ import {
 
 export const HeatmapPatternDefs = memo(function HeatmapPatternDefs({
   levelStyles,
+  patternIdPrefix,
 }: {
   levelStyles: HeatmapLevelStyles;
+  patternIdPrefix?: string;
 }) {
   const nodes = levelStyles.flatMap((style, level) => {
     if (!isHeatmapLevelPattern(style)) {
       return [];
     }
 
-    const id = heatmapLevelPatternId(level);
+    const id = heatmapLevelPatternId(level, patternIdPrefix);
     const pattern = style.pattern;
     if (!pattern) {
       return [];

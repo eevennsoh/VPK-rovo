@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useId } from "react";
 import { renderPatternPreset } from "../pattern-preset";
 import {
   type HeatmapLevelStyle,
@@ -20,6 +20,7 @@ export const HeatmapLegendSwatch = memo(function HeatmapLegendSwatch({
   cellSize: number;
   cornerRadius: number;
 }) {
+  const patternIdPrefix = useId().replace(/:/g, "");
   const shellStyle = {
     width: cellSize,
     height: cellSize,
@@ -27,7 +28,7 @@ export const HeatmapLegendSwatch = memo(function HeatmapLegendSwatch({
   };
 
   if (isHeatmapLevelPattern(style) && style.pattern) {
-    const patternId = heatmapLevelPatternId(level);
+    const patternId = heatmapLevelPatternId(level, patternIdPrefix);
     const patternNode = renderPatternPreset(
       style.pattern,
       patternId,

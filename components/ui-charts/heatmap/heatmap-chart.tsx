@@ -8,6 +8,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -179,7 +180,9 @@ interface HeatmapChartInnerProps {
   layout: HeatmapLayout;
   colorScale: (count: number | null | undefined) => string;
   fillScale: (count: number | null | undefined) => string;
+  usesCustomColorScale: boolean;
   levelStyles: HeatmapLevelStyles;
+  patternIdPrefix: string;
   chartStatus: ChartStatus;
   chartPhase: ChartPhase;
   isLoaded: boolean;
@@ -210,7 +213,9 @@ function HeatmapChartInner({
   layout,
   colorScale,
   fillScale,
+  usesCustomColorScale,
   levelStyles,
+  patternIdPrefix,
   chartStatus,
   chartPhase,
   isLoaded,
@@ -309,6 +314,8 @@ function HeatmapChartInner({
       isReady: chartWidth >= 10 && height >= 10,
       colorScale,
       fillScale,
+      usesCustomColorScale,
+      patternIdPrefix,
       levelStyles,
       containerRef,
       chartStatus,
@@ -338,6 +345,8 @@ function HeatmapChartInner({
       chartWidth,
       colorScale,
       fillScale,
+      usesCustomColorScale,
+      patternIdPrefix,
       enterStaggerScale,
       enterTransition,
       gap,
@@ -388,6 +397,7 @@ function HeatmapChartSurface({
     width,
     margin,
     levelStyles,
+    patternIdPrefix,
     chartPhase,
     loadingOpacity,
     loadingLabel,
@@ -407,7 +417,10 @@ function HeatmapChartSurface({
       style={{ opacity: reducedOpacity }}
     >
       <svg aria-hidden="true" height={height} width={width}>
-        <HeatmapPatternDefs levelStyles={levelStyles} />
+        <HeatmapPatternDefs
+          levelStyles={levelStyles}
+          patternIdPrefix={patternIdPrefix}
+        />
         <g transform={`translate(${margin.left},${margin.top})`}>{children}</g>
       </svg>
       {showLoadingLabel && loadingLabel?.trim() ? (
@@ -574,6 +587,8 @@ export function HeatmapChart({
   loadingCellRandomness = HEATMAP_DEFAULT_LOADING_CELL_RANDOMNESS,
   children,
 }: HeatmapChartProps) {
+  const generatedPatternId = useId().replace(/:/g, "");
+  const patternIdPrefix = `heatmap-${generatedPatternId}`;
   const margin = { ...DEFAULT_MARGIN, ...marginProp };
   const levelStyles = useMemo(
     () => resolveHeatmapLevelStyles(levelColors, levelStylesProp),
@@ -584,9 +599,10 @@ export function HeatmapChart({
     [colorScaleProp, levelStyles]
   );
   const fillScale = useMemo(
-    () => buildHeatmapFillScale(levelStyles),
-    [levelStyles]
+    () => buildHeatmapFillScale(levelStyles, patternIdPrefix),
+    [levelStyles, patternIdPrefix]
   );
+  const usesCustomColorScale = colorScaleProp != null;
 
   const { chartPhase, isLoaded, revealEpoch, revealMode, animateCells } =
     useHeatmapChartLifecycle({
@@ -629,6 +645,8 @@ export function HeatmapChart({
             isLoaded={isLoaded}
             layout={layout}
             levelStyles={levelStyles}
+            patternIdPrefix={patternIdPrefix}
+            usesCustomColorScale={usesCustomColorScale}
             loadingCellMaxOpacity={loadingCellMaxOpacity}
             loadingCellRandomness={loadingCellRandomness}
             loadingLabel={loadingLabel}

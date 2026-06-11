@@ -71,8 +71,13 @@ export const HEATMAP_DEFAULT_LEVEL_STYLES = [
   },
 ] as const satisfies HeatmapLevelStyles;
 
-export function heatmapLevelPatternId(level: number): string {
-  return `heatmap-level-${level}`;
+export function heatmapLevelPatternId(
+  level: number,
+  patternIdPrefix = ""
+): string {
+  return patternIdPrefix
+    ? `${patternIdPrefix}-heatmap-level-${level}`
+    : `heatmap-level-${level}`;
 }
 
 export function isHeatmapLevelPattern(style: HeatmapLevelStyle): boolean {
@@ -170,14 +175,15 @@ export function buildHeatmapColorScaleFromStyles(
 }
 
 export function buildHeatmapFillScale(
-  levelStyles: HeatmapLevelStyles
+  levelStyles: HeatmapLevelStyles,
+  patternIdPrefix?: string
 ): (count: number | null | undefined) => string {
   return (count: number | null | undefined) => {
     const level = getHeatmapContributionLevel(count ?? 0);
     const style = levelStyles[level] ?? levelStyles[0];
 
     if (isHeatmapLevelPattern(style)) {
-      return `url(#${heatmapLevelPatternId(level)})`;
+      return `url(#${heatmapLevelPatternId(level, patternIdPrefix)})`;
     }
 
     return style.color;

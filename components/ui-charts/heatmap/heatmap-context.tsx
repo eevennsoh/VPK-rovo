@@ -71,6 +71,8 @@ export interface HeatmapContextValue {
   isReady: boolean;
   colorScale: (count: number | null | undefined) => string;
   fillScale: (count: number | null | undefined) => string;
+  usesCustomColorScale: boolean;
+  patternIdPrefix: string;
   levelStyles: HeatmapLevelStyles;
   containerRef: RefObject<HTMLDivElement | null>;
   chartStatus: ChartStatus;
