@@ -56,6 +56,7 @@ import { useHermesEmbedEnabled } from "@/lib/hermes-feature-flags";
 import { buildRovoAppThreadPath } from "@/components/projects/studio/lib/rovo-app-thread-route-sync";
 import { createRovoAppUserMessage } from "@/components/projects/studio/lib/rovo-app-user-message";
 import {
+	applyTemplateDefaultsToResult,
 	buildCreationTemplateContextFromAgent,
 	buildCreationTemplateContextFromStarter,
 	buildStudioAgentCreationContext,
@@ -1733,9 +1734,15 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			// into the config arrays. Idempotent — the context-side create path repairs
 			// too, but applying here also covers non-create results. User panel edits go
 			// through updateSessionAgentDraft and are intentionally NOT repaired here.
+			// Deterministically enrich a template-based result from its originating
+			// template BEFORE repair, so an agent created from a template always looks
+			// rich (chipped body + bound skills/apps/knowledge/subagents + triggers)
+			// even when the model returns a thin profile. Fill-when-empty + chip-less-
+			// body-only replacement; a no-op for from-scratch (non-matching) results.
+			const templateEnriched = applyTemplateDefaultsToResult(rawAgentResult);
 			const repaired = {
-				...rawAgentResult,
-				...repairGeneratedAgentCatalog(rawAgentResult),
+				...templateEnriched,
+				...repairGeneratedAgentCatalog(templateEnriched),
 			};
 			// Hydrate generated trigger strings (e.g. "A Jira issue is blocked",
 			// "every day at 7am") into structured triggers so the config panel shows

@@ -688,20 +688,25 @@ function inferTriggerProviderEvent(
 	if (has(/\bwebhook\b/)) {
 		return { providerId: "webhook", eventId: "incoming-webhook" };
 	}
-	// Schedule / cadence catch-all (also covers "due", "weekly", "quarter", etc.).
+	// Schedule / cadence (covers "due", "weekly", "quarter", "every", etc.).
 	const scheduledEventId = inferScheduledEventId(trigger);
 	if (scheduledEventId || has(/\bschedul|\bevery\b|\bdaily\b|\bweekly\b|\bquarter|\bcadence\b|\bdue\b|\bmorning\b|\bhourly\b/)) {
 		return { providerId: "scheduled", eventId: scheduledEventId ?? "custom-schedule" };
 	}
-	return undefined;
+	// Universal fallback: a generic incoming event. This guarantees EVERY trigger
+	// resolves to a structured, editable definition (provider + event), so a
+	// trigger chip is never a dead label and clicking it always opens a populated
+	// rule builder rather than an empty one.
+	return { providerId: "webhook", eventId: "incoming-webhook" };
 }
 
 /**
  * Infers structured `triggerDefinitions` from generated/authored trigger strings,
- * mapping EACH string independently to a provider+event so every chip can show a
- * per-provider icon and carry connection state. Returns `undefined` only when a
- * string matches no provider at all (then the caller keeps plain label-only
- * chips). The returned array is index-aligned 1:1 with `triggers`.
+ * mapping EACH string independently to a provider+event so every chip shows a
+ * per-provider icon, carries connection state, AND opens a populated rule builder
+ * when clicked. inferTriggerProviderEvent always resolves (universal webhook
+ * fallback), so a non-empty input always yields a full, index-aligned array —
+ * never a dead label-only trigger. Returns `undefined` only for empty input.
  */
 export function inferTriggerDefinitions(
 	triggers: readonly string[] | undefined,
@@ -714,16 +719,15 @@ export function inferTriggerDefinitions(
 	for (let index = 0; index < triggers.length; index += 1) {
 		const match = inferTriggerProviderEvent(triggers[index]);
 		if (!match) {
-			return undefined;
+			continue;
 		}
 		const definition = createAgentTriggerValue(match.providerId, match.eventId, index + 1);
-		if (!definition) {
-			return undefined;
+		if (definition) {
+			definitions.push(definition);
 		}
-		definitions.push(definition);
 	}
 
-	return definitions;
+	return definitions.length > 0 ? definitions : undefined;
 }
 
 export function serializeAgentTriggerLabels(

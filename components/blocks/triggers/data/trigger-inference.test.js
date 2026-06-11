@@ -87,10 +87,15 @@ test("inferTriggerDefinitions stays index-aligned 1:1 with input", async () => {
 	assert.equal(defs.length, input.length);
 });
 
-test("inferTriggerDefinitions returns undefined when a string names no provider", async () => {
+test("inferTriggerDefinitions always resolves a non-empty input (universal fallback)", async () => {
 	const { inferTriggerDefinitions } = await loadCatalog();
-	// No provider keyword and no schedule/cadence cue -> unmappable -> undefined.
-	assert.equal(inferTriggerDefinitions(["a recording finishes processing"]), undefined);
+	// No provider keyword and no schedule cue -> universal webhook fallback, so the
+	// trigger still gets a structured, editable definition (never an empty rule builder).
+	const defs = inferTriggerDefinitions(["a recording finishes processing"]);
+	assert.ok(Array.isArray(defs) && defs.length === 1);
+	assert.equal(defs[0].providerId, "webhook");
+	assert.ok(defs[0].eventId, "fallback definition carries an eventId");
+	// Empty input still returns undefined (nothing to infer).
 	assert.equal(inferTriggerDefinitions([]), undefined);
 });
 

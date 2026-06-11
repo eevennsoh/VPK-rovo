@@ -21,15 +21,17 @@
  */
 
 import {
+	AGENT_TEMPLATE_CONFIGS,
 	DEFAULT_KNOWLEDGE_APPS,
 	DEFAULT_SKILLS,
 	DEMO_SESSION_TOOLS,
 	DEMO_TOOLS,
 	DIRECTORY_SUBAGENTS,
 	getAgentTemplateConfigById,
+	type AgentTemplateConfig,
 } from "@/app/data/directory";
 import { REASONING_MODE_VALUES } from "@/app/data/directory/agent-modes";
-import { resolveCatalogNames } from "@/app/data/directory/resolve-ids";
+import { extractInstructionTokens, resolveCatalogNames } from "@/app/data/directory/resolve-ids";
 
 /**
  * Allowed `reasoningMode` values come from the canonical data-layer source
@@ -278,6 +280,74 @@ function dedupeLabels(entries: ReadonlyArray<LabelledEntry> | undefined): string
 	return labels.length > 0 ? labels : undefined;
 }
 
+/**
+ * Build the config-derived part of a template context from a real
+ * `AgentTemplateConfig`: bound catalog ids (strong defaults), exact display names
+ * + trigger phrases + mode behaviors (for backend trace narration), and the
+ * tokenized (chipped) instructions body. Shared by both the Browse-all agent
+ * path and the home-bento starter path so BOTH produce rich, chipped agents.
+ */
+function enrichContextFromConfig(
+	config: AgentTemplateConfig | undefined,
+): Partial<StudioCreationTemplateContext> {
+	if (!config) {
+		return {};
+	}
+	const tokenizedBody = config.instructionsBody?.trim();
+	const toolNames = config.toolIds ? resolveCatalogNames(config.toolIds, "tool") : [];
+	const skillNames = config.skillIds ? resolveCatalogNames(config.skillIds, "skill") : [];
+	// Knowledge ids are single-segment app ids; resolve the `<id>:all` display name
+	// and strip the " - all content" suffix down to the bare app name.
+	const knowledgeNames = config.knowledgeIds
+		? resolveCatalogNames(config.knowledgeIds.map((id) => `${id}:all`), "knowledge").map((n) =>
+				n.replace(/\s*-\s*all content$/i, ""),
+			)
+		: [];
+	const subagentNames = config.subagentIds ? resolveCatalogNames(config.subagentIds, "subagent") : [];
+	const modeNarration: string[] = [];
+	const reasoning = {
+		"quick-auto": "quick reasoning",
+		"deep-auto": "deep step-by-step reasoning",
+		"gemini-flash-3": "the Gemini Flash 3 model",
+		"gpt-5.4": "the GPT-5.4 model",
+		"sonnet-4.6": "the Claude Sonnet 4.6 model",
+		"opus-4.6": "the Claude Opus 4.6 model",
+	}[config.reasoningMode];
+	if (reasoning) modeNarration.push(reasoning);
+	if (config.memoryMode === "on") modeNarration.push("memory across sessions");
+	const knowledge = { all: "all connected knowledge", custom: "selected knowledge sources", none: "conversation-only knowledge" }[config.knowledgeMode];
+	if (knowledge) modeNarration.push(knowledge);
+
+	return {
+		...(config.toolIds && config.toolIds.length > 0 ? { toolIds: config.toolIds } : {}),
+		...(config.skillIds && config.skillIds.length > 0 ? { skillIds: config.skillIds } : {}),
+		...(config.knowledgeIds && config.knowledgeIds.length > 0 ? { knowledgeIds: config.knowledgeIds } : {}),
+		...(config.subagentIds && config.subagentIds.length > 0 ? { subagentIds: config.subagentIds } : {}),
+		...(toolNames.length > 0 ? { toolNames } : {}),
+		...(skillNames.length > 0 ? { skillNames } : {}),
+		...(knowledgeNames.length > 0 ? { knowledgeNames } : {}),
+		...(subagentNames.length > 0 ? { subagentNames } : {}),
+		...(config.triggers && config.triggers.length > 0 ? { triggers: config.triggers } : {}),
+		...(modeNarration.length > 0 ? { modeNarration } : {}),
+		...(tokenizedBody ? { tokenizedBody } : {}),
+	};
+}
+
+/** Resolve a template config from a display title (starter path has no id). */
+function findTemplateConfigByTitle(title: string | undefined): AgentTemplateConfig | undefined {
+	if (!title) {
+		return undefined;
+	}
+	const trimmed = title.trim();
+	const byName = AGENT_TEMPLATE_CONFIGS.find((config) => config.name === trimmed);
+	if (byName) {
+		return byName;
+	}
+	// Fall back to a kebab-cased id match (e.g. "Decision Director" -> "decision-director").
+	const slug = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+	return getAgentTemplateConfigById(slug);
+}
+
 /** Distil a Browse-all template agent into its creation-context provenance. */
 export function buildCreationTemplateContextFromAgent(agent: TemplateAgentLike): StudioCreationTemplateContext {
 	const description = agent.description?.trim();
@@ -289,34 +359,6 @@ export function buildCreationTemplateContextFromAgent(agent: TemplateAgentLike):
 	// strongest defaults: they drive deriveTemplateCategoryIds (catalog scope) and
 	// the bound-ids / tokenized-instructions block in formatTemplateContextBlock.
 	const config = agent.id ? getAgentTemplateConfigById(agent.id) : undefined;
-	const tokenizedBody = config?.instructionsBody?.trim();
-	// Exact catalog display names for the bound ids, for backend trace narration.
-	const toolNames = config?.toolIds ? resolveCatalogNames(config.toolIds, "tool") : [];
-	const skillNames = config?.skillIds ? resolveCatalogNames(config.skillIds, "skill") : [];
-	// Knowledge ids are single-segment app ids; resolve the `<id>:all` display name
-	// and strip the " - all content" suffix down to the bare app name.
-	const knowledgeNames = config?.knowledgeIds
-		? resolveCatalogNames(config.knowledgeIds.map((id) => `${id}:all`), "knowledge").map((n) =>
-				n.replace(/\s*-\s*all content$/i, ""),
-			)
-		: [];
-	const subagentNames = config?.subagentIds ? resolveCatalogNames(config.subagentIds, "subagent") : [];
-	// Mode behavior phrases (reasoning/memory/knowledge) for trace narration.
-	const modeNarration: string[] = [];
-	if (config) {
-		const reasoning = {
-			"quick-auto": "quick reasoning",
-			"deep-auto": "deep step-by-step reasoning",
-			"gemini-flash-3": "the Gemini Flash 3 model",
-			"gpt-5.4": "the GPT-5.4 model",
-			"sonnet-4.6": "the Claude Sonnet 4.6 model",
-			"opus-4.6": "the Claude Opus 4.6 model",
-		}[config.reasoningMode];
-		if (reasoning) modeNarration.push(reasoning);
-		if (config.memoryMode === "on") modeNarration.push("memory across sessions");
-		const knowledge = { all: "all connected knowledge", custom: "selected knowledge sources", none: "conversation-only knowledge" }[config.knowledgeMode];
-		if (knowledge) modeNarration.push(knowledge);
-	}
 
 	return {
 		name: agent.name,
@@ -325,17 +367,7 @@ export function buildCreationTemplateContextFromAgent(agent: TemplateAgentLike):
 		...(apps ? { apps } : {}),
 		...(skills ? { skills } : {}),
 		...(capabilities ? { capabilities } : {}),
-		...(config?.toolIds && config.toolIds.length > 0 ? { toolIds: config.toolIds } : {}),
-		...(config?.skillIds && config.skillIds.length > 0 ? { skillIds: config.skillIds } : {}),
-		...(config?.knowledgeIds && config.knowledgeIds.length > 0 ? { knowledgeIds: config.knowledgeIds } : {}),
-		...(config?.subagentIds && config.subagentIds.length > 0 ? { subagentIds: config.subagentIds } : {}),
-		...(toolNames.length > 0 ? { toolNames } : {}),
-		...(skillNames.length > 0 ? { skillNames } : {}),
-		...(knowledgeNames.length > 0 ? { knowledgeNames } : {}),
-		...(subagentNames.length > 0 ? { subagentNames } : {}),
-		...(config?.triggers && config.triggers.length > 0 ? { triggers: config.triggers } : {}),
-		...(modeNarration.length > 0 ? { modeNarration } : {}),
-		...(tokenizedBody ? { tokenizedBody } : {}),
+		...enrichContextFromConfig(config),
 	};
 }
 
@@ -344,13 +376,95 @@ export function buildCreationTemplateContextFromStarter(template: StarterTemplat
 	const description = template.description?.trim();
 	const apps = dedupeLabels(template.hero?.sources);
 	const skills = dedupeLabels(template.hero?.skills);
+	// Resolve the starter to its real template config (by title) so the landing
+	// prompt-starters carry the SAME rich defaults as the Browse-all remix path:
+	// bound ids + tokenized chipped body + names/triggers/modes. Without this the
+	// LLM gets only hero labels and produces a thin, chip-less agent.
+	const config = findTemplateConfigByTitle(template.title);
 
 	return {
 		name: template.title,
 		...(description ? { description } : {}),
 		...(apps ? { apps } : {}),
 		...(skills ? { skills } : {}),
+		...enrichContextFromConfig(config),
 	};
+}
+
+/** Minimal shape of a generated agent-result the backfill reads/writes. */
+interface AgentResultLike {
+	agentId?: string;
+	name?: string;
+	instructions?: string;
+	tools?: readonly string[];
+	skills?: readonly string[];
+	knowledge?: readonly string[];
+	subagents?: readonly string[];
+	triggers?: readonly string[];
+	triggerDefinitions?: readonly unknown[];
+}
+
+/** Resolve the originating template config for a generated result (by id, then name). */
+export function resolveTemplateConfigForResult(
+	result: AgentResultLike,
+): AgentTemplateConfig | undefined {
+	if (typeof result.agentId === "string") {
+		const direct = getAgentTemplateConfigById(result.agentId);
+		if (direct) {
+			return direct;
+		}
+		// Generated ids often append a disambiguator, e.g. "decision-director-2".
+		const stripped = result.agentId.replace(/-\d+$/, "");
+		const byStripped = stripped !== result.agentId ? getAgentTemplateConfigById(stripped) : undefined;
+		if (byStripped) {
+			return byStripped;
+		}
+	}
+	return findTemplateConfigByTitle(result.name);
+}
+
+/**
+ * Deterministically enrich a generated agent-result from its originating template
+ * so an agent created from a template ALWAYS looks rich, regardless of what the
+ * model returned. Fill-when-empty semantics: a field the model populated is kept;
+ * only genuinely empty capability arrays are backfilled from the template's bound
+ * ids, and the instructions body is replaced with the template's tokenized
+ * (chipped) body only when the model produced a body with no `@[category:id]`
+ * chips. No-op when the result doesn't match any template (e.g. from-scratch).
+ */
+export function applyTemplateDefaultsToResult<T extends AgentResultLike>(
+	result: T,
+	config: AgentTemplateConfig | undefined = resolveTemplateConfigForResult(result),
+): T {
+	if (!config) {
+		return result;
+	}
+	const out: AgentResultLike = { ...result };
+
+	const isEmpty = (value: unknown): boolean => !Array.isArray(value) || value.length === 0;
+	if (isEmpty(out.tools) && config.toolIds.length > 0) {
+		out.tools = resolveCatalogNames(config.toolIds, "tool");
+	}
+	if (isEmpty(out.skills) && config.skillIds.length > 0) {
+		out.skills = resolveCatalogNames(config.skillIds, "skill");
+	}
+	if (isEmpty(out.knowledge) && config.knowledgeIds.length > 0) {
+		out.knowledge = resolveCatalogNames(config.knowledgeIds.map((id) => `${id}:all`), "knowledge");
+	}
+	if (isEmpty(out.subagents) && config.subagentIds.length > 0) {
+		out.subagents = resolveCatalogNames(config.subagentIds, "subagent");
+	}
+	// Body: replace only when the model's body carries no mention chips, so a rich
+	// generated body is preserved but a plain one becomes the template's chipped body.
+	const body = typeof out.instructions === "string" ? out.instructions : "";
+	if (extractInstructionTokens(body).length === 0 && config.instructionsBody.trim().length > 0) {
+		out.instructions = config.instructionsBody;
+	}
+	// Triggers: backfill the template's provider-named triggers when none exist.
+	if (isEmpty(out.triggers) && isEmpty(out.triggerDefinitions) && config.triggers.length > 0) {
+		out.triggers = [...config.triggers];
+	}
+	return out as T;
 }
 
 function formatTemplateContextBlock(template: StudioCreationTemplateContext): string[] {
