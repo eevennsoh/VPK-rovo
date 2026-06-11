@@ -701,6 +701,9 @@ test("Agent compact directory dropdowns keep persistent add and browse footers",
 	assert.match(AGENT_SOURCE, /onAddSearchItem\?: \(item: RichTextSuggestionMenuItem\) => void;/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactDirectoryNavButton[\s\S]*<MenubarContent align="start" className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}>[\s\S]*<div className="min-h-0 flex-1 overflow-y-auto">[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*\{addSearchFlyout\}[\s\S]*\{browseItem\}/u);
 	assert.match(AGENT_SOURCE, /const addSearchFlyout = \([\s\S]*<DropdownMenuSub>[\s\S]*<DropdownMenuSubTrigger>[\s\S]*\{addLabel\}[\s\S]*<DropdownMenuSubContent className="w-auto min-w-0 overflow-visible border-0 bg-transparent p-0 shadow-none">[\s\S]*<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category=\{AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD\[directory\]\}[\s\S]*className="rich-text-command-menu-borderless"[\s\S]*onBrowseAll=\{onBrowse\}[\s\S]*onSelectItem=\{handlePickerSelect\}/u);
+	// Already-added skills/tools are excluded from the inline "Add" search so the
+	// same item cannot be re-added from the flyout.
+	assert.match(AGENT_SOURCE, /function AgentCompactDirectoryNavButton[\s\S]*<EditorPaletteSearchPicker[\s\S]*excludeLabels=\{items\}/u);
 	assert.match(AGENT_SOURCE, /onAddSearchItem=\{\(searchItem\) => \{[\s\S]*if \(searchItem\.disabled\) \{[\s\S]*return;[\s\S]*onAddListValues\?\.\(directory, \[searchItem\.label\]\);[\s\S]*\}\}/u);
 	assert.match(AGENT_SOURCE, /browseLabel=\{`Browse \$\{item\.label\.toLowerCase\(\)\}`\}[\s\S]*onBrowse=\{\(\) => openAgentDirectoryOrAppendListItem\(directory, directory, onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(TRIGGERS_SOURCE, /<RichTextCommandMenuSearchField[\s\S]*label="Search triggers"[\s\S]*onValueChange=\{setQuery\}[\s\S]*placeholder="Search Triggers\.\.\."[\s\S]*value=\{query\}/u);
@@ -742,6 +745,8 @@ test("Agent compact apps field opens a dropdown menu instead of the directory", 
 	// "Browse apps" footer that opens the directory.
 	assert.match(AGENT_SOURCE, /function AgentCompactAppsNavButton/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactAppsNavButton[\s\S]*<MenubarContent align="start" className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}>[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*Browse \{item\.label\.toLowerCase\(\)\}/u);
+	// Already-added apps are excluded from the inline "Add apps" search.
+	assert.match(AGENT_SOURCE, /function AgentCompactAppsNavButton[\s\S]*<EditorPaletteSearchPicker[\s\S]*excludeLabels=\{apps\}/u);
 	// The apps nav field is wired to the dropdown, not the fallback click button.
 	assert.match(AGENT_SOURCE, /item\.agentFieldName === "apps"\)\s*\{\s*return \(\s*<AgentCompactAppsNavButton[\s\S]*onBrowse=\{\(\) => openAgentDirectoryOrAppendListItem\("apps", "apps", onOpenDirectory, onAppendListItem\)\}/u);
 	// The old immediate-open path is gone from the click helper: the trigger
@@ -971,6 +976,11 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(EDITOR_PALETTE_SOURCE, /variant === "search" \? \([\s\S]*<SearchPalette category=\{searchCategory\} mentionSources=\{mentionSources\} \/>/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /suggestionVariant=\{variant === "search" \? "flat" : variant\}/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /export function EditorPaletteSearchPicker\(/u);
+	// The picker drops already-configured rows by normalized label so an added
+	// app/skill cannot reappear in the inline "Add" search.
+	assert.match(EDITOR_PALETTE_SOURCE, /excludeLabels\?: readonly string\[\];/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /function excludeItemsByLabel\([\s\S]*item\.label\.trim\(\)\.toLowerCase\(\)/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /const sourceItems = excludeItemsByLabel\([\s\S]*excludeLabels,\s*\);/u);
 	// The empty state now comes from the shared RichTextSuggestionEmptyState
 	// (in suggestion-menu.tsx); the page no longer owns a local copy or the
 	// @/components/ui/empty imports it required.
@@ -986,7 +996,7 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /SEARCH_EMPTY_ITEM_ID/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /function normalizeSearchPickerItem\([\s\S]*item: RichTextSuggestionMenuItem,[\s\S]*\): RichTextSuggestionMenuItem \{[\s\S]*return item\.persistentDescription[\s\S]*\? \{ \.\.\.item, persistentDescription: false \}[\s\S]*: item;/u);
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /persistentDescription: true/u);
-	assert.match(EDITOR_PALETTE_SOURCE, /const sourceItems = \(itemsProp \?\? getMentionChildItems\(mentionSources, category\)\)[\s\S]*\.map\(normalizeSearchPickerItem\);/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /const sourceItems = excludeItemsByLabel\(\s*\(itemsProp \?\? getMentionChildItems\(mentionSources, category\)\)\.map\(normalizeSearchPickerItem\),[\s\S]*excludeLabels,\s*\);/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /const leadingRows = leadingItems\.map\(normalizeSearchPickerItem\);/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /const rows = items\.length > 0[\s\S]*\? \[\.\.\.leadingRows, \.\.\.items, browseAllItem\][\s\S]*: leadingRows;/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /const firstItem = items\[0\] \?\? leadingRows\[0\];/u);

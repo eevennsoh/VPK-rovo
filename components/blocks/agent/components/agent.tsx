@@ -1569,6 +1569,7 @@ function AgentCompactDirectoryNavButton({
 					autoFocus
 					category={AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD[directory]}
 					className="rich-text-command-menu-borderless"
+					excludeLabels={items}
 					onBrowseAll={onBrowse}
 					onSelectItem={handlePickerSelect}
 				/>
@@ -1672,6 +1673,7 @@ function AgentCompactAppsNavButton({
 					autoFocus
 					category={AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD.apps}
 					className="rich-text-command-menu-borderless"
+					excludeLabels={apps}
 					onBrowseAll={onBrowse}
 					onSelectItem={onAddSearchItem}
 				/>

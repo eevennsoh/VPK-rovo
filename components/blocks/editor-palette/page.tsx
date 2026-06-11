@@ -178,11 +178,36 @@ function normalizeSearchPickerItem(
 		: item;
 }
 
+/**
+ * Drops rows whose label matches an already-configured value. Matching is
+ * case-insensitive and trimmed to mirror the add handler's de-dupe
+ * (`appendListValues`), so an item the agent already has never reappears in the
+ * inline "Add" search.
+ */
+function excludeItemsByLabel(
+	items: readonly RichTextSuggestionMenuItem[],
+	excludeLabels: readonly string[],
+): readonly RichTextSuggestionMenuItem[] {
+	if (excludeLabels.length === 0) {
+		return items;
+	}
+
+	const excluded = new Set(excludeLabels.map((label) => label.trim().toLowerCase()));
+	return items.filter((item) => !excluded.has(item.label.trim().toLowerCase()));
+}
+
 export interface EditorPaletteSearchPickerProps {
 	autoFocus?: boolean;
 	category: EditorPaletteSearchCategory;
 	className?: string;
 	emptyLabel?: string;
+	/**
+	 * Labels already configured for this category. Matching rows are dropped from
+	 * the searchable list (case-insensitive, trimmed — mirroring the add
+	 * handler's de-dupe) so an item the agent already has cannot be added again
+	 * from the inline "Add" flyout. `leadingItems` are never excluded.
+	 */
+	excludeLabels?: readonly string[];
 	/**
 	 * Explicit rows to search over. When omitted, the picker derives its rows
 	 * from `mentionSources` for `category`. Callers pass this to surface a
@@ -204,6 +229,7 @@ export function EditorPaletteSearchPicker({
 	category,
 	className,
 	emptyLabel = "No matching items",
+	excludeLabels = [],
 	items: itemsProp,
 	leadingItems = [],
 	mentionSources = EDITOR_PALETTE_MENTION_SOURCES,
@@ -211,8 +237,10 @@ export function EditorPaletteSearchPicker({
 	onSelectItem,
 }: Readonly<EditorPaletteSearchPickerProps>) {
 	const [query, setQuery] = useState("");
-	const sourceItems = (itemsProp ?? getMentionChildItems(mentionSources, category))
-		.map(normalizeSearchPickerItem);
+	const sourceItems = excludeItemsByLabel(
+		(itemsProp ?? getMentionChildItems(mentionSources, category)).map(normalizeSearchPickerItem),
+		excludeLabels,
+	);
 	const leadingRows = leadingItems.map(normalizeSearchPickerItem);
 	const items = filterSearchItems(sourceItems, query);
 	const browseAllItem: RichTextSuggestionMenuItem = {
