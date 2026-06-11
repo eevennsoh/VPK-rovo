@@ -373,7 +373,6 @@ function RovoAppDirectoryAutocompleteRows({
 								match.mention.visual ? (
 									<RichTextMentionVisualMark
 										category={match.mention.category}
-										className="border border-border bg-surface"
 										label={match.mention.label}
 										size="menu"
 										visual={match.mention.visual}
