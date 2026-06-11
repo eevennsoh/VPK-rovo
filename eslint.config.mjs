@@ -18,7 +18,6 @@ const eslintConfig = defineConfig([
 		"next-env.d.ts",
 		// Generated runtime assets; linting bundled vendor code is noisy and not actionable.
 		"public/vad/**",
-		"components/ui-custom/**",
 		"components/blocks/login/**",
 	]),
 	{
@@ -105,6 +104,7 @@ const eslintConfig = defineConfig([
 			"react-hooks/purity": "off",
 			"react-hooks/refs": "off",
 			"react-hooks/set-state-in-effect": "off",
+			"react-hooks/static-components": "off",
 		},
 	},
 	{

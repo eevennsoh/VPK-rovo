@@ -41,6 +41,7 @@ const gitResult = spawnSync("git", [
 	"--others",
 	"--exclude-standard",
 	"*.test.js",
+	"*.test.ts",
 ], {
 	encoding: "utf8",
 	stdio: ["ignore", "pipe", "inherit"],
