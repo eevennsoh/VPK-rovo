@@ -95,6 +95,15 @@ export interface AgentTemplateConfig {
 	knowledgeMode: AgentTemplateKnowledgeMode;
 	/** Tokenized markdown body; `@[category:id]` tokens reference bound catalog ids. */
 	instructionsBody: string;
+	/**
+	 * Curated 2nd-person opening line for the instruction body. Authored per
+	 * template and preserved verbatim by the body generator
+	 * (`scripts/generate-agent-template-bodies.js`), which writes the rest of
+	 * `instructionsBody` around it.
+	 */
+	bodyIntro?: string;
+	/** Optional curated closing line; falls back to a category default when absent. */
+	bodyOutro?: string;
 }
 
 /**
