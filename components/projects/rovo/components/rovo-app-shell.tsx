@@ -4,7 +4,7 @@ import type { FileUIPart } from "ai";
 import { motion, useReducedMotion } from "motion/react";
 import { type CSSProperties, startTransition, useCallback, useEffect, useMemo, useRef, useState, ViewTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArtifactPanel } from "@/components/ui-custom/artifact";
+import { ArtifactPanel } from "@/components/blocks/artifact";
 import { ChatTimelineNavigator } from "@/components/blocks/chat-timeline/chat-timeline-navigator";
 import { CreateButton } from "@/components/blocks/top-navigation/components/create-button";
 import { RovoAppHeader } from "@/components/projects/rovo/components/rovo-app-header";

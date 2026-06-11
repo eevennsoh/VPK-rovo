@@ -122,7 +122,7 @@ function visualComponent(slug: string, name: string, importPath: string): Compon
 export const CUSTOM_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	customComponent("animated-dots", "Animated Dots"),
 	customComponent("animated-rovo", "Animated Rovo"),
-	customComponent("artifact"),
+	customComponent("artifact-list", "Artifact List"),
 	customComponent("attachments"),
 	customComponent("audio-player", "Audio Player"),
 	customComponent("canvas"),
@@ -353,7 +353,7 @@ export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("generative", "Generative UI"),
 	blockComponent("kanban-board", "Kanban Board"),
 	blockComponent("apps-directory", "Apps Directory"),
-	blockComponent("artifact-list", "Artifact List"),
+	blockComponent("artifact"),
 	blockComponent("tools-directory", "Tools Directory"),
 	blockComponent("mermaid-diagram", "Mermaid Diagram"),
 	blockComponent("memory", "Memory"),

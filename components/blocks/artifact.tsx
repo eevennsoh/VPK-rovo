@@ -417,7 +417,7 @@ export function ArtifactCard({
 						)}
 					</GenerativeCardContent>
 					{onOpen ? (
-						<GenerativeCardFooter>
+						<GenerativeCardFooter className="border-t-0 bg-transparent pt-0">
 							<Button
 								aria-label={resolvedOpenLabel}
 								className="min-w-0"

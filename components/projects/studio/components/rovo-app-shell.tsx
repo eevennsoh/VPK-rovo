@@ -5,7 +5,7 @@ import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, typ
 import { type CSSProperties, type PointerEvent as ReactPointerEvent, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, ViewTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArtifactPanel } from "@/components/ui-custom/artifact";
+import { ArtifactPanel } from "@/components/blocks/artifact";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import { ChatTimelineNavigator } from "@/components/blocks/chat-timeline/chat-timeline-navigator";
 import {
