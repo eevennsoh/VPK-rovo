@@ -130,6 +130,7 @@ const AGENT_BROWSER_TEMPLATE_TITLE_SWAP_OFFSET = 12;
 const AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET = 24;
 const AGENT_BROWSER_TEMPLATE_CARD_ENTER_OFFSET = 16;
 const AGENT_BROWSER_TEMPLATE_CARD_SCROLL_OFFSET = 376;
+const AGENT_BROWSER_TEMPLATE_CATEGORY_NAV_GAP = 4;
 const AGENT_BROWSER_TEMPLATE_SCROLL_EDGE_THRESHOLD = 2;
 const AGENT_BROWSER_TEMPLATE_CAROUSEL_CONTROL_TRANSITION = {
 	type: "spring",
@@ -667,6 +668,7 @@ function ExperimentalAgentBrowser({
 		direction: templateMotionDirection,
 		shouldReduceMotion,
 	};
+	const searchInputLabel = activeTemplateCategoryOption ? "Search templates" : "Search agents";
 
 	const selectedTeamLabels = useMemo(
 		() => selectedOptionLabels(teamOptions, selectedTeams),
@@ -713,9 +715,9 @@ function ExperimentalAgentBrowser({
 	);
 	const visibleTemplates = useMemo(
 		() => activeTemplateCategoryOption
-			? filterTemplateAgents(templateAgents, "", activeTemplateCategoryOption.id)
+			? filterTemplateAgents(templateAgents, query, activeTemplateCategoryOption.id)
 			: EMPTY_TEMPLATE_AGENTS,
-		[activeTemplateCategoryOption, templateAgents],
+		[activeTemplateCategoryOption, query, templateAgents],
 	);
 
 	const hasMyAgentFilter = selectedMyAgents.length > 0;
@@ -790,30 +792,49 @@ function ExperimentalAgentBrowser({
 				contentOverflow.showTopScrollMask ? "scroll-mask-top overscroll-contain" : null,
 			)}
 		>
-			{templateModeActive && activeTemplateCategoryOption ? (
-				<ExperimentalTemplateMode
-					activeCategory={activeTemplateCategoryOption}
-					categories={visibleTemplateCategories}
-					motionCustom={templateMotionCustom}
-					onReset={resetFilters}
-					onSelectAgent={onSelectTemplateAgent}
-					onSelectCategory={handleSelectTemplateCategory}
-					templates={visibleTemplates}
+			<InputGroup>
+				<InputGroupAddon>
+					<SearchIcon label="" />
+				</InputGroupAddon>
+				<InputGroupInput
+					aria-label={searchInputLabel}
+					placeholder={searchInputLabel}
+					value={query}
+					onChange={(event) => setQuery(event.target.value)}
 				/>
+			</InputGroup>
+
+			{templateModeActive && activeTemplateCategoryOption ? (
+				<>
+					<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+						<div className="flex flex-wrap items-center gap-2">
+							<Button
+								aria-pressed
+								onClick={resetFilters}
+								type="button"
+								variant="outline"
+							>
+								Filter by agent templates
+							</Button>
+							<Button type="button" variant="ghost" onClick={resetFilters}>
+								Reset
+							</Button>
+						</div>
+						<p className="text-sm leading-5 text-text-subtle">
+							Showing {visibleTemplates.length.toLocaleString("en-US")} {visibleTemplates.length === 1 ? "template" : "templates"}
+						</p>
+					</div>
+					<ExperimentalTemplateMode
+						activeCategory={activeTemplateCategoryOption}
+						categories={visibleTemplateCategories}
+						motionCustom={templateMotionCustom}
+						onSelectAgent={onSelectTemplateAgent}
+						onSelectCategory={handleSelectTemplateCategory}
+						templates={visibleTemplates}
+					/>
+				</>
 			) : (
 				<>
-					<InputGroup>
-						<InputGroupAddon>
-							<SearchIcon label="" />
-						</InputGroupAddon>
-						<InputGroupInput
-							aria-label="Search agents"
-							placeholder="Search agents"
-							value={query}
-							onChange={(event) => setQuery(event.target.value)}
-						/>
-					</InputGroup>
-
 					<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 						<div className="flex flex-wrap items-center gap-2">
 							{showFacet("myAgents") ? (
@@ -1066,7 +1087,6 @@ function ExperimentalTemplateMode({
 	activeCategory,
 	categories,
 	motionCustom,
-	onReset,
 	onSelectAgent,
 	onSelectCategory,
 	templates,
@@ -1074,7 +1094,6 @@ function ExperimentalTemplateMode({
 	activeCategory: AgentTemplatesCategory;
 	categories: readonly AgentTemplatesCategory[];
 	motionCustom: AgentBrowserTemplateMotionCustom;
-	onReset: () => void;
 	onSelectAgent?: (agent: AgentTemplatesAgent) => void;
 	onSelectCategory: (categoryId: AgentTemplatesCategoryId) => void;
 	templates: readonly AgentTemplatesAgent[];
@@ -1152,30 +1171,26 @@ function ExperimentalTemplateMode({
 	}
 
 	return (
-		<div className="flex min-h-0 flex-col gap-4">
-			<div className="flex flex-wrap items-center justify-between gap-3">
-				<div
-					aria-label="Template categories"
-					className="flex flex-wrap justify-start gap-2"
-					role="group"
-				>
-					{categories.map((category) => (
-						<ExperimentalTemplateCategoryButton
-							active={activeCategory.id === category.id}
-							category={category}
-							key={category.id}
-							onClick={() => onSelectCategory(category.id)}
-						/>
-					))}
-				</div>
-				<Button type="button" variant="ghost" onClick={onReset}>
-					Reset
-				</Button>
+		<div className="flex min-h-0 flex-1 flex-col gap-2">
+			<div
+				aria-label="Template categories"
+				className="relative -my-1 flex min-w-0 items-center overflow-x-auto overflow-y-visible overscroll-x-contain py-1 pl-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+				role="group"
+				style={{ gap: AGENT_BROWSER_TEMPLATE_CATEGORY_NAV_GAP }}
+			>
+				{categories.map((category) => (
+					<ExperimentalTemplateCategoryButton
+						active={activeCategory.id === category.id}
+						category={category}
+						key={category.id}
+						onClick={() => onSelectCategory(category.id)}
+					/>
+				))}
 			</div>
 			<AnimatePresence custom={motionCustom} initial={false} mode="wait">
 				<motion.div
 					animate="center"
-					className="min-h-16 overflow-hidden text-text"
+					className="min-h-12 overflow-hidden text-text"
 					custom={motionCustom}
 					exit="exit"
 					initial="enter"
@@ -1186,7 +1201,7 @@ function ExperimentalTemplateMode({
 					<TemplateCategoryTitle category={activeCategory} />
 				</motion.div>
 			</AnimatePresence>
-			<section aria-label="Agent templates" className="relative min-h-0 overflow-hidden">
+			<section aria-label="Agent templates" className="relative -mx-6 min-h-0 flex-1 overflow-hidden">
 				<div
 					className="h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 					data-agent-templates-carousel
@@ -1196,7 +1211,7 @@ function ExperimentalTemplateMode({
 					<AnimatePresence custom={motionCustom} initial={false} mode="wait">
 						<motion.div
 							animate="center"
-							className="flex h-full w-max gap-4 px-0 pt-2 pr-6 pb-6"
+							className="flex h-full w-max gap-4 px-6 pt-0 pb-3"
 							custom={motionCustom}
 							exit="exit"
 							initial="enter"
@@ -1207,7 +1222,7 @@ function ExperimentalTemplateMode({
 							{templates.map((agent, index) => (
 								<motion.div
 									animate={{ opacity: 1, transform: "translateX(0px)" }}
-									className="h-[456px] w-90 shrink-0 [will-change:transform,opacity]"
+									className="h-full min-h-0 w-90 shrink-0 [will-change:transform,opacity]"
 									initial={{
 										opacity: 0,
 										transform: motionCustom.shouldReduceMotion ? "translateX(0px)" : `translateX(${motionCustom.direction * AGENT_BROWSER_TEMPLATE_CARD_ENTER_OFFSET}px)`,
@@ -1258,30 +1273,39 @@ function ExperimentalTemplateCategoryButton({
 	onClick: () => void;
 }>) {
 	return (
-		<button
+		<Button
 			aria-pressed={active}
 			className={cn(
-				"relative isolate inline-flex h-8 shrink-0 items-center overflow-hidden rounded-md border px-3 text-sm font-medium leading-5 outline-none transition-[border-color,color,box-shadow] duration-fast ease-out focus-visible:ring-3 focus-visible:ring-ring/50",
+				"group/template-category h-6 shrink-0 rounded px-1.5 text-sm font-medium leading-5",
 				active
 					? "border-border-selected bg-bg-selected text-text-selected"
-					: "border-border bg-background text-text-subtle hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
+					: "text-text-subtle",
 			)}
 			onClick={onClick}
+			size="compact"
 			type="button"
+			variant={active ? "outline" : "ghost"}
 		>
-			<span className="relative z-[2] inline-flex items-center gap-1.5">
-				<span aria-hidden className="inline-flex size-6 shrink-0 items-center justify-center">
-					<Image
-						alt=""
-						className={cn("size-6 object-contain", category.iconClassName)}
-						height={24}
-						src={category.iconSrc}
-						width={24}
-					/>
-				</span>
-				<span>{category.label}</span>
+			<span aria-hidden className="inline-flex size-5 shrink-0 items-center justify-center">
+				<Image
+					alt=""
+					className={cn("size-5 object-contain", category.iconClassName)}
+					height={20}
+					src={category.iconSrc}
+					width={20}
+				/>
 			</span>
-		</button>
+			<span
+				className={cn(
+					"overflow-hidden whitespace-nowrap transition-[margin,max-width,opacity] duration-medium ease-out",
+					active
+						? "ml-1.5 max-w-40 opacity-100"
+						: "ml-0 max-w-0 opacity-0 group-hover/template-category:ml-1.5 group-hover/template-category:max-w-40 group-hover/template-category:opacity-100 group-focus/template-category:ml-1.5 group-focus/template-category:max-w-40 group-focus/template-category:opacity-100",
+				)}
+			>
+				{category.label}
+			</span>
+		</Button>
 	);
 }
 
