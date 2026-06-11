@@ -21,6 +21,8 @@ export interface UseRovoAppComposerRevealResult {
 	scratchScribbleReplayKey: number;
 	/** Restart both decorative traces (call on hover/focus). */
 	replayRevealTraces: () => void;
+	/** Show the reveal for deliberate input focus. */
+	setInputFocused: (focused: boolean) => void;
 	/** Show the reveal immediately (call on pointer enter). */
 	showReveal: () => void;
 	/** Schedule hiding the reveal after the grace period (call on pointer leave). */
@@ -33,6 +35,7 @@ export interface UseRovoAppComposerRevealResult {
  */
 export function useRovoAppComposerReveal({ hasPromptValue }: Readonly<{ hasPromptValue: boolean }>): UseRovoAppComposerRevealResult {
 	const [isComposerHoverActive, setIsComposerHoverActive] = useState(false);
+	const [isInputFocused, setIsInputFocused] = useState(false);
 	const [scratchScribbleReplayKey, setScratchScribbleReplayKey] = useState(0);
 	const [templateSweepReplayKey, setTemplateSweepReplayKey] = useState(0);
 	const [isScratchScribblePlaying, setIsScratchScribblePlaying] = useState(false);
@@ -88,9 +91,9 @@ export function useRovoAppComposerReveal({ hasPromptValue }: Readonly<{ hasPromp
 	}, []);
 
 	// Reveal shows while the composer is hovered (with a close grace period so
-	// the pointer can reach the link below), or once the prompt has content.
-	// Autofocus alone should not show the micro label on first landing paint.
-	const isRevealVisible = hasPromptValue || isComposerHoverActive;
+	// the pointer can reach the link below), when the user deliberately focuses
+	// the input for keyboard access, or once the prompt has content.
+	const isRevealVisible = hasPromptValue || isComposerHoverActive || isInputFocused;
 	const showTemplateSweep = isRevealVisible;
 	const showScratchScribble = isRevealVisible && isScratchScribblePlaying;
 
@@ -101,6 +104,7 @@ export function useRovoAppComposerReveal({ hasPromptValue }: Readonly<{ hasPromp
 		templateSweepReplayKey,
 		scratchScribbleReplayKey,
 		replayRevealTraces,
+		setInputFocused: setIsInputFocused,
 		showReveal,
 		scheduleHideReveal,
 	};

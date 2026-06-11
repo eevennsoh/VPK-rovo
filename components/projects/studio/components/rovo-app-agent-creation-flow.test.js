@@ -800,17 +800,19 @@ test("Studio threads template provenance into agent creation contexts", () => {
 	assert.match(SHELL_SOURCE, /creationTemplateRef\.current = null;/u);
 });
 
-test("Studio composer reveals 'Start from scratch' on hover or prompt value and lands on a blank untitled agent config", () => {
-	// Composer reveals the affordance underneath the prompt input on hover or once
-	// the prompt has content; autofocus alone should not show the micro label.
+test("Studio composer reveals 'Start from scratch' on hover, focus, or prompt value and lands on a blank untitled agent config", () => {
+	// Composer reveals the affordance underneath the prompt input on hover,
+	// deliberate focus, or once the prompt has content; autofocus alone should
+	// not show the micro label.
 	assert.match(COMPOSER_SOURCE, /onStartFromScratch\?: \(\) => void;/u);
 	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /const \[isComposerHoverActive, setIsComposerHoverActive\] = useState\(false\);/u);
+	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /const \[isInputFocused, setIsInputFocused\] = useState\(false\);/u);
 	assert.match(COMPOSER_SOURCE, /const hasPromptValue = textValue\.trim\(\)\.length > 0;/u);
+	assert.match(COMPOSER_SOURCE, /const shouldSuppressInitialAutoFocusRevealRef = useRef\(autoFocus\);/u);
 	assert.match(COMPOSER_SOURCE, /useRovoAppComposerReveal\(\{ hasPromptValue \}\)/u);
-	assert.match(COMPOSER_SOURCE, /onFocus=\{\(\) => \{[\s\S]*replayRevealTraces\(\);[\s\S]*\}\}/u);
-	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /const isRevealVisible = hasPromptValue \|\| isComposerHoverActive;/u);
-	assert.doesNotMatch(COMPOSER_REVEAL_HOOK_SOURCE, /isInputFocused/u);
-	assert.doesNotMatch(COMPOSER_SOURCE, /setInputFocused/u);
+	assert.match(COMPOSER_SOURCE, /onBlur=\{\(\) => setInputFocused\(false\)\}/u);
+	assert.match(COMPOSER_SOURCE, /onFocus=\{\(\) => \{[\s\S]*shouldSuppressInitialAutoFocusRevealRef\.current = false;[\s\S]*setInputFocused\(true\);[\s\S]*replayRevealTraces\(\);[\s\S]*\}\}/u);
+	assert.match(COMPOSER_REVEAL_HOOK_SOURCE, /const isRevealVisible = hasPromptValue \|\| isComposerHoverActive \|\| isInputFocused;/u);
 	assert.match(COMPOSER_SOURCE, /\{onStartFromScratch \? \([\s\S]*\{isRevealVisible \?/u);
 	// Reveal copy: default is "Or start from scratch"; when onBrowseTemplates is
 	// provided (bento dismissed) it becomes "Browse template or start from scratch".
