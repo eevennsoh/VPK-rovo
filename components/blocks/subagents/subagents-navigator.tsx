@@ -213,7 +213,7 @@ export function SubagentsNavigator({
 
 	return (
 		<div
-			className={className}
+			className={cn("group", className)}
 			onBlur={handleBlur}
 			onFocusCapture={() => setIsSwitcherOpen(true)}
 			onKeyDown={handleKeyDown}
@@ -242,7 +242,7 @@ export function SubagentsNavigator({
 						"absolute inset-0 flex flex-col items-end justify-start transition-opacity duration-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected",
 						isSwitcherOpen
 							? "pointer-events-none opacity-0"
-							: "pointer-events-auto opacity-100",
+							: "pointer-events-auto opacity-60 group-hover:opacity-100 group-focus-within:opacity-100",
 					)}
 					inert={isSwitcherOpen}
 					onClick={() => setIsSwitcherOpen(true)}
