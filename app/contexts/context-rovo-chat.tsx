@@ -1524,6 +1524,8 @@ export function RovoChatProvider({
 		return () => {
 			if (sessionAgentSaveTimerRef.current) {
 				clearTimeout(sessionAgentSaveTimerRef.current);
+				sessionAgentSaveTimerRef.current = null;
+				persistSessionAgentEntries(sessionAgentEntriesRef.current.map(normalizeSessionAgentEntry));
 			}
 		};
 	}, []);

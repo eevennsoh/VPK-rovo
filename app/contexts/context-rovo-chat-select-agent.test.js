@@ -92,4 +92,5 @@ test("session-agent autosave is debounced instead of writing on every draft chan
 	assert.match(CONTEXT_SOURCE, /const sessionAgentSaveTimerRef = useRef<ReturnType<typeof setTimeout> \| null>\(null\);/u);
 	assert.match(CONTEXT_SOURCE, /clearTimeout\(sessionAgentSaveTimerRef\.current\);/u);
 	assert.match(CONTEXT_SOURCE, /sessionAgentSaveTimerRef\.current = setTimeout\(\(\) => \{[\s\S]*persistSessionAgentEntries\(sessionAgentEntriesRef\.current\.map\(normalizeSessionAgentEntry\)\)[\s\S]*\}, STUDIO_SESSION_AGENT_SAVE_DEBOUNCE_MS\);/u);
+	assert.match(CONTEXT_SOURCE, /return \(\) => \{[\s\S]*if \(sessionAgentSaveTimerRef\.current\) \{[\s\S]*clearTimeout\(sessionAgentSaveTimerRef\.current\);[\s\S]*sessionAgentSaveTimerRef\.current = null;[\s\S]*persistSessionAgentEntries\(sessionAgentEntriesRef\.current\.map\(normalizeSessionAgentEntry\)\);[\s\S]*\}/u);
 });
