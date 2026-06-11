@@ -50,10 +50,19 @@ const MEMORY_MODES = new Set(["on", "off"]);
 // category → which catalog id-set a token of that category must resolve against.
 async function buildCatalogSets() {
 	const fx = await loadFixture();
+	// Knowledge mentions are two-segment (`<app>:all` + `<app>:<content>`), matching
+	// resolve-ids.ts / the editor palette, while the template `knowledgeIds` field
+	// stores single-segment app ids. Build both so each is validated correctly.
+	const knowledgeToken = new Set();
+	for (const app of fx.DEFAULT_KNOWLEDGE_APPS) {
+		knowledgeToken.add(`${app.id}:all`);
+		for (const content of app.contents ?? []) knowledgeToken.add(`${app.id}:${content.id}`);
+	}
 	return {
 		tool: new Set([...fx.DEMO_TOOLS, ...fx.DEMO_SESSION_TOOLS].map((t) => t.id)),
 		skill: new Set(fx.DEFAULT_SKILLS.map((s) => s.id)),
 		knowledge: new Set(fx.DEFAULT_KNOWLEDGE_APPS.map((k) => k.id)),
+		knowledgeToken,
 		subagent: new Set(fx.ROVO_AGENT_PROFILES.map((a) => a.id)),
 	};
 }
@@ -73,7 +82,24 @@ test("every template has the binding fields with sane shapes", async () => {
 			t.conversationStarters.length >= 2 && t.conversationStarters.length <= 4,
 			`${t.id}.conversationStarters must have 2-4 items`,
 		);
-		assert.ok(t.triggers.length <= 3, `${t.id}.triggers must have 0-3 items`);
+		assert.ok(
+			t.triggers.length >= 1 && t.triggers.length <= 3,
+			`${t.id}.triggers must have 1-3 items`,
+		);
+		assert.equal(typeof t.bodyIntro, "string", `${t.id}.bodyIntro must be a string`);
+		assert.ok(t.bodyIntro.trim().length > 0, `${t.id}.bodyIntro must be non-empty`);
+		// Every template with triggers ships a shared automation prompt + name so the
+		// trigger/automation dialog isn't a blank form for generated agents.
+		if (t.triggers.length > 0) {
+			assert.equal(typeof t.triggerPrompt, "string", `${t.id}.triggerPrompt must be a string`);
+			assert.ok(t.triggerPrompt.trim().length > 0, `${t.id}.triggerPrompt must be non-empty`);
+			assert.equal(typeof t.triggerAutomationName, "string", `${t.id}.triggerAutomationName must be a string`);
+			assert.ok(t.triggerAutomationName.trim().length > 0, `${t.id}.triggerAutomationName must be non-empty`);
+		}
+		assert.ok(
+			!t.subagentIds.includes(t.id),
+			`${t.id}.subagentIds must not reference itself (self-delegation)`,
+		);
 		if (t.conversationStarterIcons !== undefined) {
 			assert.equal(
 				t.conversationStarterIcons.length,
@@ -110,18 +136,85 @@ test("every bound tool/skill/knowledge/subagent id resolves against the real cat
 test("every instructionsBody token resolves against its catalog", async () => {
 	const { AGENT_TEMPLATE_CONFIGS, extractInstructionTokens } = await loadFixture();
 	const sets = await buildCatalogSets();
+	// Knowledge body tokens are two-segment, so validate them against knowledgeToken.
+	const setForCategory = (category) => (category === "knowledge" ? sets.knowledgeToken : sets[category]);
 
 	const failures = [];
 	for (const t of AGENT_TEMPLATE_CONFIGS) {
 		const tokens = extractInstructionTokens(t.instructionsBody);
 		assert.ok(tokens.length > 0, `${t.id}.instructionsBody should reference at least one token`);
 		for (const { category, id } of tokens) {
-			if (!sets[category].has(id)) {
+			const set = setForCategory(category);
+			if (!set || !set.has(id)) {
 				failures.push(`${t.id}.instructionsBody: @[${category}:${id}] not in ${category} catalog`);
 			}
 		}
 	}
 	assert.deepEqual(failures, [], `unresolved instructionsBody tokens:\n${failures.join("\n")}`);
+});
+
+test("instructionsBody covers EVERY bound id (always renders a chip)", async () => {
+	const { AGENT_TEMPLATE_CONFIGS, extractInstructionTokens } = await loadFixture();
+	const failures = [];
+	for (const t of AGENT_TEMPLATE_CONFIGS) {
+		const have = new Set(extractInstructionTokens(t.instructionsBody).map((x) => `${x.category}:${x.id}`));
+		const want = [
+			...t.toolIds.map((id) => `tool:${id}`),
+			...t.skillIds.map((id) => `skill:${id}`),
+			// knowledge field is single-segment; body references the `:all` chip.
+			...t.knowledgeIds.map((id) => `knowledge:${id}:all`),
+			...t.subagentIds.map((id) => `subagent:${id}`),
+		];
+		for (const token of want) {
+			if (!have.has(token)) failures.push(`${t.id}: bound id missing from body → @[${token}]`);
+		}
+	}
+	assert.deepEqual(failures, [], `bound ids not referenced as body chips:\n${failures.join("\n")}`);
+});
+
+test("subagentDefinitions are 1:1 with subagentIds and carry a smaller, resolvable config", async () => {
+	const { AGENT_TEMPLATE_CONFIGS } = await loadFixture();
+	const sets = await buildCatalogSets();
+	const failures = [];
+
+	for (const t of AGENT_TEMPLATE_CONFIGS) {
+		const defs = t.subagentDefinitions;
+		assert.ok(Array.isArray(defs), `${t.id}.subagentDefinitions must be an array`);
+		// 1:1 with subagentIds (same ids, same order) — defs provide each bound
+		// subagent's own config.
+		assert.deepEqual(
+			defs.map((d) => d.id),
+			[...t.subagentIds],
+			`${t.id}.subagentDefinitions must be 1:1 with subagentIds`,
+		);
+
+		const parentSkills = new Set(t.skillIds);
+		const parentTools = new Set(t.toolIds);
+		const parentKnowledge = new Set(t.knowledgeIds);
+
+		for (const d of defs) {
+			assert.ok(typeof d.name === "string" && d.name.trim().length > 0, `${t.id}/${d.id}.name`);
+			assert.ok(typeof d.description === "string" && d.description.trim().length > 0, `${t.id}/${d.id}.description`);
+			assert.ok(MEMORY_MODES.has(d.memoryMode), `${t.id}/${d.id}.memoryMode "${d.memoryMode}" not allowed`);
+			assert.ok(REASONING_MODES.has(d.reasoningMode), `${t.id}/${d.id}.reasoningMode "${d.reasoningMode}" not allowed`);
+
+			// Smaller subset: never larger than the parent, and a subset of its config.
+			assert.ok(d.skillIds.length <= t.skillIds.length, `${t.id}/${d.id} skills not smaller`);
+			for (const id of d.skillIds) {
+				if (!parentSkills.has(id)) failures.push(`${t.id}/${d.id}.skillIds: "${id}" not in parent`);
+				if (!sets.skill.has(id)) failures.push(`${t.id}/${d.id}.skillIds: "${id}" not in skill catalog`);
+			}
+			for (const id of d.toolIds) {
+				if (!parentTools.has(id)) failures.push(`${t.id}/${d.id}.toolIds: "${id}" not in parent`);
+				if (!sets.tool.has(id)) failures.push(`${t.id}/${d.id}.toolIds: "${id}" not in tool catalog`);
+			}
+			for (const id of d.knowledgeIds) {
+				if (!parentKnowledge.has(id)) failures.push(`${t.id}/${d.id}.knowledgeIds: "${id}" not in parent`);
+				if (!sets.knowledge.has(id)) failures.push(`${t.id}/${d.id}.knowledgeIds: "${id}" not in knowledge catalog`);
+			}
+		}
+	}
+	assert.deepEqual(failures, [], `subagentDefinitions config issues:\n${failures.join("\n")}`);
 });
 
 test("mode fields use the allowed value sets", async () => {

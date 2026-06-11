@@ -15,7 +15,7 @@ import {
 } from "@/components/blocks/conversation-starters";
 import { CreateButton } from "@/components/blocks/top-navigation/components/create-button";
 import { AgentsDirectoryDialog } from "@/components/blocks/agents-directory";
-import { inferScheduledTriggerDefinitions } from "@/components/blocks/triggers/data/trigger-catalog";
+import { inferTriggerDefinitions } from "@/components/blocks/triggers/data/trigger-catalog";
 import { AGENT_TEMPLATES_CATEGORIES, AgentTemplatesDialog, type AgentTemplatesAgent } from "@/components/blocks/agent-templates";
 import {
 	DEMO_AGENT_TEMPLATES,
@@ -56,10 +56,12 @@ import { useHermesEmbedEnabled } from "@/lib/hermes-feature-flags";
 import { buildRovoAppThreadPath } from "@/components/projects/studio/lib/rovo-app-thread-route-sync";
 import { createRovoAppUserMessage } from "@/components/projects/studio/lib/rovo-app-user-message";
 import {
+	applyTemplateDefaultsToResult,
 	buildCreationTemplateContextFromAgent,
 	buildCreationTemplateContextFromStarter,
 	buildStudioAgentCreationContext,
 	buildStudioAgentCreationContinuationContext,
+	resolveTemplateConfigForResult,
 	type StudioCreationTemplateContext,
 } from "@/components/projects/studio/lib/studio-agent-creation-context";
 import {
@@ -1689,21 +1691,41 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			// into the config arrays. Idempotent — the context-side create path repairs
 			// too, but applying here also covers non-create results. User panel edits go
 			// through updateSessionAgentDraft and are intentionally NOT repaired here.
+			// Deterministically enrich a template-based result from its originating
+			// template BEFORE repair, so an agent created from a template always looks
+			// rich (chipped body + bound skills/apps/knowledge/subagents + triggers)
+			// even when the model returns a thin profile. Fill-when-empty + chip-less-
+			// body-only replacement; a no-op for from-scratch (non-matching) results.
+			const templateEnriched = applyTemplateDefaultsToResult(rawAgentResult);
 			const repaired = {
-				...rawAgentResult,
-				...repairGeneratedAgentCatalog(rawAgentResult),
+				...templateEnriched,
+				...repairGeneratedAgentCatalog(templateEnriched),
 			};
-			// Hydrate a generated schedule string (e.g. "every day at 7am") into a
-			// structured scheduled trigger so the config panel shows a real clock-icon
-			// trigger instead of a plain label-only chip. Only when none exist already.
+			// Hydrate generated trigger strings (e.g. "A Jira issue is blocked",
+			// "every day at 7am") into structured triggers so the config panel shows
+			// real provider-icon chips with connection state instead of plain labels.
+			// Maps each string to its provider; only when none exist already.
 			const triggerStrings = Array.isArray(repaired.triggers) && repaired.triggers.length > 0
 				? repaired.triggers
 				: repaired.trigger
 					? [repaired.trigger]
 					: [];
-			const inferredTriggerDefinitions = !repaired.triggerDefinitions || repaired.triggerDefinitions.length === 0
-				? inferScheduledTriggerDefinitions(triggerStrings)
+			const inferredBaseTriggerDefinitions = !repaired.triggerDefinitions || repaired.triggerDefinitions.length === 0
+				? inferTriggerDefinitions(triggerStrings)
 				: undefined;
+			// Pre-fill the shared automation prompt + name (the "Agent Instructions" /
+			// "Automation name" fields in the trigger dialog) from the originating
+			// template, so a template-based agent's automation isn't a blank form.
+			const templateForTriggers = resolveTemplateConfigForResult(repaired);
+			const inferredTriggerDefinitions = inferredBaseTriggerDefinitions && templateForTriggers?.triggerPrompt
+				? inferredBaseTriggerDefinitions.map((definition) => ({
+						...definition,
+						prompt: definition.prompt && definition.prompt.length > 0
+							? definition.prompt
+							: templateForTriggers.triggerPrompt ?? "",
+						automationName: definition.automationName ?? templateForTriggers.triggerAutomationName,
+					}))
+				: inferredBaseTriggerDefinitions;
 			const agentResult = inferredTriggerDefinitions
 				? { ...repaired, triggerDefinitions: inferredTriggerDefinitions }
 				: repaired;

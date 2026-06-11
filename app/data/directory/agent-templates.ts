@@ -53,6 +53,34 @@ export type AgentTemplateMemoryMode = "on" | "off";
  * `instructionsBody` is tokenized markdown whose `@[category:id]` references
  * point at those same catalog ids (see `resolve-ids.ts`).
  */
+/**
+ * A nested subagent owned by a parent template/agent. Subagents are NOT top-level
+ * custom agents — they exist only inside their parent, are only `@`-mentionable
+ * once the parent generates them, and carry their OWN smaller config (a lighter
+ * subset of skills/apps/knowledge plus their own memory/reasoning). The `id` is
+ * shared 1:1 with the parent's `subagentIds` so body `@[subagent:id]` tokens and
+ * the escalation row resolve to this definition.
+ */
+export interface TemplateSubagent {
+	id: string;
+	name: string;
+	description: string;
+	/** Hexagon agent avatar path, when the subagent has one. */
+	avatarSrc?: string;
+	/** ADS brand logo name, when the subagent renders a product logo instead. */
+	logoName?: string;
+	/** Smaller skill subset (skills.json ids) the subagent runs with. */
+	skillIds: readonly string[];
+	/** Smaller tool/app subset (tools.json ids) the subagent can use. */
+	toolIds: readonly string[];
+	/** Smaller knowledge subset (knowledge.json app ids) the subagent grounds against. */
+	knowledgeIds: readonly string[];
+	/** Subagent memory toggle (typically off — subagents are lightweight). */
+	memoryMode: AgentTemplateMemoryMode;
+	/** Subagent reasoning preset (typically quick-auto — lighter than the parent). */
+	reasoningMode: AgentTemplateReasoningMode;
+}
+
 export interface AgentTemplateConfig {
 	id: string;
 	categoryId: AgentTemplateCategoryId;
@@ -81,12 +109,28 @@ export interface AgentTemplateConfig {
 	knowledgeIds: readonly string[];
 	/** Real subagent ids (agents.json) this template can delegate to. */
 	subagentIds: readonly string[];
+	/**
+	 * Nested subagent definitions, 1:1 with `subagentIds`. Each carries the
+	 * subagent's own smaller config so the parent can generate real nested
+	 * subagents (with their own apps/skills/knowledge/memory/reasoning) rather
+	 * than delegating to other top-level agents. Only these become `@`-mentionable
+	 * once the parent is generated.
+	 */
+	subagentDefinitions?: readonly TemplateSubagent[];
 	/** Suggested first-turn prompts shown as conversation starters. */
 	conversationStarters: readonly string[];
 	/** Optional @atlaskit/icon/core names paired 1:1 with `conversationStarters`. */
 	conversationStarterIcons?: readonly string[];
 	/** Event phrases that should auto-invoke this agent (0-3). */
 	triggers: readonly string[];
+	/**
+	 * Shared automation instruction shown in the trigger/automation dialog's
+	 * "Agent Instructions" field — what the agent should do when any trigger fires.
+	 * Applied to every generated trigger definition's `prompt`.
+	 */
+	triggerPrompt?: string;
+	/** Short automation name shown in the trigger/automation dialog. */
+	triggerAutomationName?: string;
 	/** Default memory toggle for agents created from this template. */
 	memoryMode: AgentTemplateMemoryMode;
 	/** Default reasoning preset for agents created from this template. */
@@ -95,6 +139,15 @@ export interface AgentTemplateConfig {
 	knowledgeMode: AgentTemplateKnowledgeMode;
 	/** Tokenized markdown body; `@[category:id]` tokens reference bound catalog ids. */
 	instructionsBody: string;
+	/**
+	 * Curated 2nd-person opening line for the instruction body. Authored per
+	 * template and preserved verbatim by the body generator
+	 * (`scripts/generate-agent-template-bodies.js`), which writes the rest of
+	 * `instructionsBody` around it.
+	 */
+	bodyIntro?: string;
+	/** Optional curated closing line; falls back to a category default when absent. */
+	bodyOutro?: string;
 }
 
 /**

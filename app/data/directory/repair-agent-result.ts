@@ -13,7 +13,9 @@ import {
 	type CatalogCategory,
 	catalogNameForId,
 	repairInstructionTokens,
+	resolveCatalogIds,
 	resolveCatalogNames,
+	weaveMissingTokens,
 } from "./resolve-ids";
 import { DIRECTORY_APPS, type DirectoryApp } from "./apps";
 import { isKnowledgeMode, isMemoryMode, isReasoningMode } from "./agent-modes";
@@ -214,7 +216,16 @@ export function repairGeneratedAgentCatalog(
 	reconcileApps(out);
 
 	if (typeof fields.instructions === "string") {
-		out.instructions = markdown;
+		// Best-effort weave: ensure the body renders a chip for EVERY capability the
+		// agent ends up with (config→body), symmetric to the body→config union above.
+		// Resolve the final (post-reconcile) name arrays back to ids and append any
+		// that the prose never mentioned.
+		out.instructions = weaveMissingTokens(markdown, {
+			tool: resolveCatalogIds(out.tools ?? [], "tool"),
+			skill: resolveCatalogIds(out.skills ?? [], "skill"),
+			knowledge: resolveCatalogIds(out.knowledge ?? [], "knowledge"),
+			subagent: resolveCatalogIds(out.subagents ?? [], "subagent"),
+		});
 	}
 
 	// Mode selectors: when present, keep a value only if it is in the allowed set,

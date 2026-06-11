@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { type ReactNode, useCallback, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
@@ -30,9 +30,15 @@ import {
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
 import {
+	getTriggerProvider,
+	markSessionProviderConnected,
 	serializeAgentTriggerLabels,
+	type AgentTriggerProviderId,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/data/trigger-catalog";
+import { renderAgentTriggerProviderTileIcon } from "@/components/blocks/triggers/page";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { ManageSubagentsDialog } from "@/components/blocks/subagents/components/manage-subagents-dialog";
 import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
 import type { SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
@@ -70,7 +76,6 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { Spinner } from "@/components/ui/spinner";
 import { SONNER_TOAST_AUTO_DISMISS_MS, SonnerToast, Toaster } from "@/components/ui/sonner";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
@@ -723,23 +728,52 @@ export function RovoAppAgentConfigPanel({
 		},
 		[updateActiveConfig],
 	);
+	// Fake provider connection flow: connecting a provider marks ALL its triggers
+	// connected after a short "Authorizing…" delay, and persists for the session.
+	const [connectingProvider, setConnectingProvider] = useState<{
+		providerId: AgentTriggerProviderId;
+		trigger: AgentTriggerValue;
+	} | null>(null);
+	const connectTimerRef = useRef<number | null>(null);
+	useEffect(() => {
+		return () => {
+			if (connectTimerRef.current !== null) {
+				window.clearTimeout(connectTimerRef.current);
+			}
+		};
+	}, []);
 	const handleConnectTrigger = useCallback(
 		(targetTrigger: AgentTriggerValue) => {
+			const { providerId } = targetTrigger;
+			// Mark every trigger sharing this provider as connecting (provider-level).
 			updateActiveConfig((config) => {
 				const triggerDefinitions = (config.triggerDefinitions ?? []).map((trigger) =>
-					trigger.id === targetTrigger.id
+					trigger.providerId === providerId
 						? { ...trigger, connectionState: "connecting" as const }
 						: trigger,
 				);
 				const triggerLabels = serializeAgentTriggerLabels(triggerDefinitions);
-
-				return {
-					...config,
-					triggerDefinitions,
-					trigger: triggerLabels[0] ?? "",
-					triggers: triggerLabels,
-				};
+				return { ...config, triggerDefinitions, trigger: triggerLabels[0] ?? "", triggers: triggerLabels };
 			});
+			setConnectingProvider({ providerId, trigger: targetTrigger });
+
+			if (connectTimerRef.current !== null) {
+				window.clearTimeout(connectTimerRef.current);
+			}
+			connectTimerRef.current = window.setTimeout(() => {
+				markSessionProviderConnected(providerId);
+				updateActiveConfig((config) => {
+					const triggerDefinitions = (config.triggerDefinitions ?? []).map((trigger) =>
+						trigger.providerId === providerId
+							? { ...trigger, connectionState: "connected" as const }
+							: trigger,
+					);
+					const triggerLabels = serializeAgentTriggerLabels(triggerDefinitions);
+					return { ...config, triggerDefinitions, trigger: triggerLabels[0] ?? "", triggers: triggerLabels };
+				});
+				setConnectingProvider(null);
+				connectTimerRef.current = null;
+			}, 1200);
 		},
 		[updateActiveConfig],
 	);
@@ -1388,6 +1422,36 @@ export function RovoAppAgentConfigPanel({
 				onToggleSubagent={toggleSubagent}
 				subagents={subagentPrompts}
 			/>
+			<Dialog
+				open={connectingProvider !== null}
+				onOpenChange={(open) => {
+					if (!open) {
+						setConnectingProvider(null);
+					}
+				}}
+			>
+				<DialogContent size="sm" showCloseButton={false} className="text-center">
+					<DialogTitle className="sr-only">
+						Connecting {connectingProvider ? getTriggerProvider(connectingProvider.providerId)?.label : "provider"}
+					</DialogTitle>
+					{connectingProvider ? (
+						<div className="flex flex-col items-center gap-4 py-2">
+							<div className="flex size-12 items-center justify-center">
+								{renderAgentTriggerProviderTileIcon(connectingProvider.trigger)}
+							</div>
+							<div className="flex items-center gap-2 text-text">
+								<Spinner />
+								<span className="text-sm font-medium">
+									Authorizing {getTriggerProvider(connectingProvider.providerId)?.label ?? "provider"}…
+								</span>
+							</div>
+							<p className="text-sm text-text-subtle">
+								Connecting your account so this agent&rsquo;s triggers can run.
+							</p>
+						</div>
+					) : null}
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 }

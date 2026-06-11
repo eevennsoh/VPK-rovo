@@ -53,6 +53,7 @@ import {
 	type RovoAgentProfile,
 } from "@/app/data/directory/agents";
 import { repairGeneratedAgentCatalog } from "@/app/data/directory/repair-agent-result";
+import { applyTemplateDefaultsToResult } from "@/components/projects/studio/lib/studio-agent-creation-context";
 import {
 	cancelRovoAppRun,
 	createRovoAppThread,
@@ -1238,7 +1239,10 @@ function buildSessionAgentProfileFromResult(params: {
 function applyGeneratedCatalogRepair(
 	result: RovoDataParts["agent-result"],
 ): RovoDataParts["agent-result"] {
-	return { ...result, ...repairGeneratedAgentCatalog(result) };
+	// Backfill template defaults first (chipped body + bound capabilities + triggers
+	// when the model returned a thin profile), then repair/union/weave catalog refs.
+	const enriched = applyTemplateDefaultsToResult(result);
+	return { ...enriched, ...repairGeneratedAgentCatalog(enriched) };
 }
 
 function createSessionAgentEntryFromResult(params: {

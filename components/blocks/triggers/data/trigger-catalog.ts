@@ -476,6 +476,23 @@ export function getAgentTriggerDefaultConnectionState(
 	return provider.requiresConnection || event.requiresConnection ? "needs-connection" : "connected";
 }
 
+/**
+ * Session-scoped set of providers the user has "connected" this session. The
+ * connection flow is a fake demo affordance — connecting a provider once marks
+ * ALL its triggers connected and persists in memory until a full reload. Lives
+ * here (module scope) so both the rule-builder dialog and the studio config
+ * panel share one source of truth.
+ */
+const sessionConnectedProviders = new Set<AgentTriggerProviderId>();
+
+export function markSessionProviderConnected(providerId: AgentTriggerProviderId): void {
+	sessionConnectedProviders.add(providerId);
+}
+
+export function isSessionProviderConnected(providerId: AgentTriggerProviderId): boolean {
+	return sessionConnectedProviders.has(providerId);
+}
+
 export function createAgentTriggerValue(
 	providerId: AgentTriggerProviderId,
 	eventId: string,
@@ -499,7 +516,9 @@ export function createAgentTriggerValue(
 		providerId,
 		eventId,
 		params,
-		connectionState: getAgentTriggerDefaultConnectionState(provider, event),
+		connectionState: isSessionProviderConnected(providerId)
+			? "connected"
+			: getAgentTriggerDefaultConnectionState(provider, event),
 		prompt: "",
 	} satisfies AgentTriggerValue;
 
@@ -589,6 +608,126 @@ export function inferScheduledTriggerDefinitions(
 	}
 
 	return definitions;
+}
+
+/**
+ * Keyword → (provider, event) inference for a single free-text trigger string.
+ * Each provider is matched by name/domain keywords, then a best-fit event is
+ * chosen from phrasing cues. A schedule/cadence catch-all ensures every string
+ * resolves to *some* provider so {@link inferTriggerDefinitions} can attach a
+ * per-trigger icon (templates author their triggers to name a provider, so this
+ * catch-all is only a safety net for arbitrary generated strings).
+ */
+function inferTriggerProviderEvent(
+	trigger: string,
+): { providerId: AgentTriggerProviderId; eventId: string } | undefined {
+	const text = trigger.toLowerCase();
+	const has = (re: RegExp) => re.test(text);
+
+	// PagerDuty / incidents (check before scheduled so "incident ... due" maps here).
+	if (has(/\bpagerduty\b|\bon[-\s]?call\b|\bpages?\b|\bincident\b|\balert\b/)) {
+		const eventId = has(/\bresolved\b/)
+			? "incident-resolved"
+			: has(/\backnowledg/)
+				? "incident-acknowledged"
+				: "incident-triggered";
+		return { providerId: "pagerduty", eventId };
+	}
+	// Sentry / errors.
+	if (has(/\bsentry\b|\berror\b|\bexception\b|\bcrash\b|\bspike/)) {
+		return { providerId: "sentry", eventId: has(/\bregress/) ? "issue-regressed" : "issue-created" };
+	}
+	// GitHub / GitLab / code.
+	if (has(/\bgithub\b|\bgitlab\b|\bpull request\b|\bpr\b|\bcommit\b|\bbranch\b|\brelease is cut\b|\bmerge/)) {
+		const eventId = has(/\brelease is cut\b|\bpush\b|\bmerge/)
+			? "push-to-branch"
+			: has(/\bcheck/)
+				? "checks-completed"
+				: has(/\bcomment\b/)
+					? "comment-added"
+					: "pull-request-opened";
+		return { providerId: "github-gitlab", eventId };
+	}
+	// Slack.
+	if (has(/\bslack\b|#|\bchannel\b/)) {
+		const eventId = has(/\bmention/) ? "mention" : has(/\breact|emoji/) ? "emoji-reaction" : "new-message";
+		return { providerId: "slack", eventId };
+	}
+	// Microsoft Teams.
+	if (has(/\bmicrosoft teams\b|\bteams\b/)) {
+		return { providerId: "microsoft-teams", eventId: has(/\bmention/) ? "mention" : "new-message" };
+	}
+	// Linear.
+	if (has(/\blinear\b/)) {
+		const eventId = has(/\bstatus\b/) ? "status-changed" : has(/\bupdated?\b/) ? "issue-updated" : "issue-created";
+		return { providerId: "linear", eventId };
+	}
+	// Confluence / docs / DACI.
+	if (has(/\bconfluence\b|\bdaci\b|\bpage\b|\bdoc\b|\bspace\b|\bwiki\b|\bpostmortem\b|\bprd\b/)) {
+		const eventId = has(/\breview\b/)
+			? "scheduled-page-review"
+			: has(/\bupdated?\b/)
+				? "page-updated"
+				: has(/\bcomment\b/)
+					? "comment-added"
+					: "page-published";
+		return { providerId: "confluence", eventId };
+	}
+	// Jira / delivery work.
+	if (has(/\bjira\b|\bissue\b|\bwork item\b|\bsprint\b|\bbacklog\b|\bepic\b|\bbug\b|\bmilestone\b|\bticket\b|\bgoal\b/)) {
+		const eventId = has(/\bblocked\b|\bstatus\b|\bmarked\b|\bclose|\breleased?\b/)
+			? "status-changed"
+			: has(/\bupdated?\b/)
+				? "work-item-updated"
+				: has(/\bcomment\b/)
+					? "comment-added"
+					: "work-item-created";
+		return { providerId: "jira", eventId };
+	}
+	// Explicit webhook.
+	if (has(/\bwebhook\b/)) {
+		return { providerId: "webhook", eventId: "incoming-webhook" };
+	}
+	// Schedule / cadence (covers "due", "weekly", "quarter", "every", etc.).
+	const scheduledEventId = inferScheduledEventId(trigger);
+	if (scheduledEventId || has(/\bschedul|\bevery\b|\bdaily\b|\bweekly\b|\bquarter|\bcadence\b|\bdue\b|\bmorning\b|\bhourly\b/)) {
+		return { providerId: "scheduled", eventId: scheduledEventId ?? "custom-schedule" };
+	}
+	// Universal fallback: a generic incoming event. This guarantees EVERY trigger
+	// resolves to a structured, editable definition (provider + event), so a
+	// trigger chip is never a dead label and clicking it always opens a populated
+	// rule builder rather than an empty one.
+	return { providerId: "webhook", eventId: "incoming-webhook" };
+}
+
+/**
+ * Infers structured `triggerDefinitions` from generated/authored trigger strings,
+ * mapping EACH string independently to a provider+event so every chip shows a
+ * per-provider icon, carries connection state, AND opens a populated rule builder
+ * when clicked. inferTriggerProviderEvent always resolves (universal webhook
+ * fallback), so a non-empty input always yields a full, index-aligned array —
+ * never a dead label-only trigger. Returns `undefined` only for empty input.
+ */
+export function inferTriggerDefinitions(
+	triggers: readonly string[] | undefined,
+): AgentTriggerValue[] | undefined {
+	if (!triggers || triggers.length === 0) {
+		return undefined;
+	}
+
+	const definitions: AgentTriggerValue[] = [];
+	for (let index = 0; index < triggers.length; index += 1) {
+		const match = inferTriggerProviderEvent(triggers[index]);
+		if (!match) {
+			continue;
+		}
+		const definition = createAgentTriggerValue(match.providerId, match.eventId, index + 1);
+		if (definition) {
+			definitions.push(definition);
+		}
+	}
+
+	return definitions.length > 0 ? definitions : undefined;
 }
 
 export function serializeAgentTriggerLabels(

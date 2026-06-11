@@ -219,7 +219,10 @@ test("Agent config syncs reference mentions with selected panel values", () => {
 	assert.match(AGENT_SOURCE, /const AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD: Record<AgentConfigReferenceListFieldName, RichTextReferenceCategory>/u);
 	assert.match(AGENT_SOURCE, /function mapConfigValuesToMentionItems\(/u);
 	assert.match(AGENT_SOURCE, /getDirectoryMentionItemOrFallback\(category, value\)/u);
-	assert.match(AGENT_SOURCE, /subagent: mergeMentionItems\([\s\S]*mapConfigValuesToMentionItems\("subagent", config\.subagents\),[\s\S]*EDITOR_PALETTE_MENTION_SOURCES\.subagent/u);
+	// Subagents are nested/owned: the `@subagent` list comes ONLY from this agent's
+	// own subagents (no global parent-agent palette merge), so it is 0 by default.
+	assert.match(AGENT_SOURCE, /subagent: mapConfigValuesToMentionItems\("subagent", config\.subagents\),/u);
+	assert.doesNotMatch(AGENT_SOURCE, /subagent: mergeMentionItems\([\s\S]*EDITOR_PALETTE_MENTION_SOURCES\.subagent/u);
 	assert.match(AGENT_SOURCE, /skill: mergeMentionItems\([\s\S]*mapConfigValuesToMentionItems\("skill", config\.skills\),[\s\S]*EDITOR_PALETTE_MENTION_SOURCES\.skill[\s\S]*\),/u);
 	assert.match(AGENT_SOURCE, /tool: mergeMentionItems\([\s\S]*mapConfigValuesToMentionItems\("tool", config\.tools\),[\s\S]*EDITOR_PALETTE_MENTION_SOURCES\.tool/u);
 	assert.match(AGENT_SOURCE, /knowledge: mergeMentionItems\([\s\S]*mapConfigValuesToMentionItems\("knowledge", config\.knowledge\),[\s\S]*EDITOR_PALETTE_MENTION_SOURCES\.knowledge,[\s\S]*knowledge/u);
