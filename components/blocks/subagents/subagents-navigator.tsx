@@ -3,7 +3,11 @@
 import { useId, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
+import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import Image from "next/image";
+import { getDirectoryMentionItemOrFallback } from "@/components/blocks/editor-palette/data/mention-sources";
+import { IconTile } from "@/components/ui/icon-tile";
+import type { TagColor } from "@/components/ui/tag";
 import { DeleteIcon, PlusIcon } from "@/components/ui/vpk-icons";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -11,6 +15,7 @@ import {
 	HoverRevealActions,
 	HoverRevealLabel,
 } from "@/components/ui-custom/hover-reveal-row";
+import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor";
 import type { SubagentPrompt, SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
 import { getSubagentDisplayName } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { token } from "@/lib/tokens";
@@ -51,6 +56,100 @@ function getBaseAgentDisplayName(baseAgent: SubagentsBaseAgent): string {
 	return baseAgent.config.name?.trim() || "Untitled agent";
 }
 
+const dropdownMenuFrontSlotClassName =
+	"inline-flex size-6 shrink-0 items-center justify-center text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:text-icon-danger group-data-selected/dropdown-menu-item:text-icon-selected [&_[data-slot=icon]]:text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:[&_[data-slot=icon]]:text-icon-danger group-data-selected/dropdown-menu-item:[&_[data-slot=icon]]:text-icon-selected [&_svg]:text-icon-subtle group-data-[variant=destructive]/dropdown-menu-item:[&_svg]:text-icon-danger group-data-selected/dropdown-menu-item:[&_svg]:text-icon-selected";
+
+const subagentTagColorIconClassName: Partial<Record<TagColor, string>> = {
+	blue: "text-blue-500 [&_svg]:text-blue-500!",
+	blueLight: "text-blue-500 [&_svg]:text-blue-500!",
+	discovery: "text-icon-discovery [&_svg]:text-icon-discovery!",
+	green: "text-green-400 [&_svg]:text-green-400!",
+	greenLight: "text-green-400 [&_svg]:text-green-400!",
+	gray: "text-neutral-500 [&_svg]:text-neutral-500!",
+	grayLight: "text-neutral-500 [&_svg]:text-neutral-500!",
+	grey: "text-neutral-500 [&_svg]:text-neutral-500!",
+	greyLight: "text-neutral-500 [&_svg]:text-neutral-500!",
+	lime: "text-lime-400 [&_svg]:text-lime-400!",
+	limeLight: "text-lime-400 [&_svg]:text-lime-400!",
+	magenta: "text-pink-500 [&_svg]:text-pink-500!",
+	magentaLight: "text-pink-500 [&_svg]:text-pink-500!",
+	orange: "text-orange-400 [&_svg]:text-orange-400!",
+	orangeLight: "text-orange-400 [&_svg]:text-orange-400!",
+	purple: "text-purple-500 [&_svg]:text-purple-500!",
+	purpleLight: "text-purple-500 [&_svg]:text-purple-500!",
+	red: "text-red-600 [&_svg]:text-red-600!",
+	redLight: "text-red-600 [&_svg]:text-red-600!",
+	standard: "text-neutral-500 [&_svg]:text-neutral-500!",
+	teal: "text-teal-400 [&_svg]:text-teal-400!",
+	tealLight: "text-teal-400 [&_svg]:text-teal-400!",
+	yellow: "text-yellow-400 [&_svg]:text-yellow-400!",
+	yellowLight: "text-yellow-400 [&_svg]:text-yellow-400!",
+};
+
+const agentAvatarGroupToTagColor: Readonly<Record<string, TagColor>> = {
+	"dev-agents": "lime",
+	"product-agents": "purple",
+	"service-agents": "yellow",
+	"strategy-agents": "orange",
+	"teamwork-agents": "blue",
+};
+
+function getTagColorForAgentAvatar(avatarSrc: string | undefined): TagColor | undefined {
+	const group = avatarSrc?.match(/\/avatar-agent\/([^/]+)\//u)?.[1];
+	return group ? agentAvatarGroupToTagColor[group] : undefined;
+}
+
+function renderBaseAgentSwitcherVisual(avatarSrc: string | undefined): ReactNode {
+	if (!avatarSrc) {
+		return null;
+	}
+
+	return (
+		<span
+			data-slot="subagents-switcher-avatar"
+			aria-hidden="true"
+			className="flex size-6 shrink-0 items-center justify-center text-icon-selected [&_img]:shrink-0"
+		>
+			<Image
+				alt=""
+				aria-hidden="true"
+				className="size-5 object-contain"
+				height={20}
+				src={avatarSrc}
+				width={20}
+			/>
+		</span>
+	);
+}
+
+function renderSubagentSwitcherVisual(label: string, tagColor: TagColor | undefined): ReactNode {
+	const visual = getDirectoryMentionItemOrFallback("subagent", label).visual;
+
+	return (
+		<span className="inline-flex size-6 shrink-0 items-center justify-center">
+			{visual ? (
+				<RichTextMentionVisualMark
+					category="subagent"
+					label={label}
+					size="menu-compact"
+					visual={visual}
+				/>
+			) : (
+				<IconTile
+					aria-hidden
+					className={cn(
+						"border border-border bg-surface",
+						tagColor ? subagentTagColorIconClassName[tagColor] : "text-icon-subtlest",
+					)}
+					icon={<AiAgentIcon label="" size="small" />}
+					label=""
+					size="small"
+				/>
+			)}
+		</span>
+	);
+}
+
 export function SubagentsNavigator({
 	activeSubagentId,
 	baseAgent,
@@ -66,6 +165,7 @@ export function SubagentsNavigator({
 	const switcherId = useId();
 	const shouldReduceMotion = useReducedMotion();
 	const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
+	const subagentTagColor = getTagColorForAgentAvatar(baseAgent.avatarSrc);
 	const switcherItemsCount = subagents.length + 1;
 	// The footer holds "Create subagent" and, when wired, "Manage subagents".
 	const footerActionCount = onManageSubagents ? 2 : 1;
@@ -197,7 +297,7 @@ export function SubagentsNavigator({
 				>
 					<div className="sticky top-0 z-10 shrink-0 bg-surface-overlay">
 						<SubagentsSwitcherButton
-							avatarSrc={baseAgent.avatarSrc}
+							frontSlot={renderBaseAgentSwitcherVisual(baseAgent.avatarSrc)}
 							isActive={activeSubagentId === null}
 							label={getBaseAgentDisplayName(baseAgent)}
 							onSelect={onSelectBaseAgent}
@@ -211,12 +311,14 @@ export function SubagentsNavigator({
 						<div className="flex flex-col">
 							{subagents.map((prompt) => {
 								const isEnabled = prompt.enabled !== false;
+								const label = getSubagentDisplayName(prompt);
 								return (
 									<SubagentsSwitcherButton
 										isActive={prompt.id === activeSubagentId}
 										key={prompt.id}
-										label={getSubagentDisplayName(prompt)}
+										label={label}
 										enabled={isEnabled}
+										frontSlot={renderSubagentSwitcherVisual(label, subagentTagColor)}
 										onDelete={onDeleteSubagent ? () => onDeleteSubagent(prompt.id) : undefined}
 										onSelect={() => onSelectSubagent(prompt.id)}
 										onToggle={
@@ -274,7 +376,7 @@ function SubagentsActionButton({
 }
 
 function SubagentsSwitcherButton({
-	avatarSrc,
+	frontSlot,
 	isActive,
 	label,
 	enabled = true,
@@ -282,7 +384,7 @@ function SubagentsSwitcherButton({
 	onSelect,
 	onToggle,
 }: Readonly<{
-	avatarSrc?: string;
+	frontSlot?: ReactNode;
 	isActive: boolean;
 	label: string;
 	enabled?: boolean;
@@ -290,6 +392,8 @@ function SubagentsSwitcherButton({
 	onSelect: () => void;
 	onToggle?: (enabled: boolean) => void;
 }>) {
+	const [isHighlighted, setIsHighlighted] = useState(false);
+
 	function handleSwitchMouseDown(event: MouseEvent<HTMLElement>) {
 		event.preventDefault();
 	}
@@ -302,51 +406,45 @@ function SubagentsSwitcherButton({
 				type="button"
 				aria-label={`Select ${label}`}
 				aria-pressed={isActive}
+				data-highlighted={isHighlighted || undefined}
+				data-selected={isActive || undefined}
+				data-slot="dropdown-menu-item"
+				data-variant="default"
 				className={cn(
-					// Mirror the DropdownMenuItem default box + states used by
-					// AgentCompactReferenceRow: 32px minimum row, 6px vertical padding
-					// when text wraps, gap-3, subtle highlight on hover, selected surface
-					// with its own hover/pressed tokens.
-					"flex min-h-8 w-full min-w-0 cursor-pointer select-none items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm leading-5 outline-none transition-colors duration-normal ease-out focus-visible:ring-2 focus-visible:ring-border-selected",
-					isActive
-						? "bg-bg-selected text-text-selected group-hover/hover-reveal-row:bg-bg-selected-hovered active:bg-bg-selected-pressed"
-						: "bg-transparent text-text group-hover/hover-reveal-row:bg-bg-neutral-subtle-hovered group-hover/hover-reveal-row:text-text active:bg-bg-neutral-subtle-pressed",
-					// A disabled (off) subagent reads as muted until re-enabled — keep it
-					// muted on hover too (the non-active branch's hover would otherwise
-					// re-darken the label).
-					!enabled && !isActive && "text-text-disabled group-hover/hover-reveal-row:text-text-disabled",
+					"group/dropdown-menu-item data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text data-[variant=destructive]:text-text-danger data-[variant=destructive]:data-[highlighted]:bg-bg-danger-subtler-hovered data-disabled:pointer-events-none data-disabled:text-text-disabled relative flex min-h-8 w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm leading-5 outline-none select-none active:bg-bg-neutral-subtle-pressed data-[variant=destructive]:active:bg-bg-danger-subtler-pressed data-inset:pl-8 [&_svg]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-icon-subtle data-[variant=destructive]:[&_svg]:text-icon-danger",
+					"data-selected:bg-bg-selected data-selected:text-text-selected data-selected:data-[highlighted]:bg-bg-selected-hovered data-selected:data-[highlighted]:text-text-selected data-selected:active:bg-bg-selected-pressed data-selected:[&_svg]:text-icon-selected",
+					!enabled ? "text-text-disabled data-[highlighted]:text-text-disabled" : undefined,
 				)}
+				onBlur={() => setIsHighlighted(false)}
 				onClick={onSelect}
+				onFocus={() => setIsHighlighted(true)}
+				onMouseEnter={() => setIsHighlighted(true)}
+				onMouseLeave={() => setIsHighlighted(false)}
 			>
-				{avatarSrc ? (
-					<span
-						data-slot="subagents-switcher-avatar"
-						aria-hidden="true"
-						className="flex size-6 shrink-0 items-center justify-center text-icon-selected [&_img]:shrink-0"
-					>
-						<Image
-							alt=""
-							aria-hidden="true"
-							className="size-5 object-contain"
-							height={20}
-							src={avatarSrc}
-							width={20}
-						/>
+				{frontSlot ? (
+					<span className={cn(dropdownMenuFrontSlotClassName, !enabled && "opacity-(--opacity-disabled)")}>
+						{frontSlot}
 					</span>
 				) : null}
-				{controlCount > 0 ? (
-					<HoverRevealLabel
-						className="whitespace-normal break-words"
-						reserveOnReveal={controlCount === 2 ? 2 : 1}
-						// An off subagent parks its switch at rest, so keep its single
-						// slot reserved; an on subagent gets the full label width.
-						reserveAtRest={!enabled && onToggle ? 1 : 0}
-					>
-						{label}
-					</HoverRevealLabel>
-				) : (
-					<span className="min-w-0 flex-1 whitespace-normal break-words">{label}</span>
-				)}
+				<span className="min-w-0 flex flex-1 flex-col">
+					{controlCount > 0 ? (
+						<HoverRevealLabel
+							reserveOnReveal={controlCount === 2 ? 2 : 1}
+							// An off subagent parks its switch at rest, so keep its single
+							// slot reserved; an on subagent gets the full label width.
+							reserveAtRest={!enabled && onToggle ? 1 : 0}
+						>
+							{label}
+						</HoverRevealLabel>
+					) : (
+						<span className="min-w-0 whitespace-normal break-words">{label}</span>
+					)}
+				</span>
+				{isActive ? (
+					<span className="ml-auto inline-flex h-5 shrink-0 items-center justify-center text-icon-selected [&_svg]:size-3">
+						<CheckMarkIcon label="" size="small" />
+					</span>
+				) : null}
 			</button>
 			<HoverRevealActions
 				toggleParked={!enabled}

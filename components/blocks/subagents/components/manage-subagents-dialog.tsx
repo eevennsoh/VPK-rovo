@@ -148,7 +148,7 @@ function ManageSubagentsRow({
 	return (
 		<div
 			className={cn(
-				"flex w-full items-center gap-3 rounded-lg border border-border bg-surface p-2 transition-[box-shadow,opacity] duration-normal",
+				"flex w-full items-center gap-2 rounded-lg border border-border bg-surface p-2 transition-[box-shadow,opacity] duration-normal",
 				!enabled && "opacity-60",
 				isDragging && "z-10 opacity-80 shadow-lg",
 			)}

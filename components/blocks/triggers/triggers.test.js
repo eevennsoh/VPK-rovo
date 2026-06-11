@@ -122,8 +122,10 @@ test("each trigger renders a self-contained event node plus an editable prompt",
 	assert.match(CATALOG_SOURCE, /\/\*\* Free-text prompt[^*]*\*\/\s*prompt\?: string;/u);
 	// New triggers seed an empty prompt.
 	assert.match(CATALOG_SOURCE, /prompt: "",/u);
-	// Editable prompt textarea bound to the trigger value.
-	assert.match(TRIGGERS_SOURCE, /<textarea/u);
+	// Editable prompt textarea bound to the trigger value. Uses the shared VPK
+	// Textarea primitive rather than a hand-styled <textarea>.
+	assert.match(TRIGGERS_SOURCE, /import \{ Textarea \} from "@\/components\/ui\/textarea";/u);
+	assert.match(TRIGGERS_SOURCE, /<Textarea/u);
 	assert.match(TRIGGERS_SOURCE, /aria-label="Trigger prompt"/u);
 	assert.match(TRIGGERS_SOURCE, /value=\{trigger\.prompt \?\? ""\}/u);
 	assert.match(TRIGGERS_SOURCE, /onPromptChange\(changeEvent\.target\.value\)/u);
