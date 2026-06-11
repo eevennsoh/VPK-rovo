@@ -290,10 +290,10 @@ function QuestionCard({
 			{...props}
 		>
 			<header data-slot="question-card-header" className="px-4 py-4">
-				{hasMultipleQuestions || onDismiss ? (
-					<div className="mb-3 flex h-8 items-center justify-between gap-2">
-						<div className="flex min-w-0 items-center gap-1">
-							{hasMultipleQuestions ? (
+				{hasMultipleQuestions ? (
+					<>
+						<div className="mb-3 flex h-8 items-center justify-between gap-2">
+							<div className="flex min-w-0 items-center gap-1">
 								<div className="flex items-center gap-2">
 									<Button
 										type="button"
@@ -321,16 +321,25 @@ function QuestionCard({
 										<ChevronRightIcon label="" size="small" />
 									</Button>
 								</div>
+							</div>
+							{onDismiss ? (
+								<Button aria-label="Dismiss questions" size="icon" variant="ghost" disabled={isSubmitting} className="-mr-1 shrink-0" onClick={handleDismiss} tabIndex={-1}>
+									<CrossIcon label="" size="small" />
+								</Button>
 							) : null}
 						</div>
+						<h5 className="min-w-0 whitespace-normal break-words text-text">{currentQuestion.label}</h5>
+					</>
+				) : (
+					<div className="flex items-center justify-between gap-2">
+						<h5 className="min-w-0 whitespace-normal break-words text-text">{currentQuestion.label}</h5>
 						{onDismiss ? (
 							<Button aria-label="Dismiss questions" size="icon" variant="ghost" disabled={isSubmitting} className="-mr-1 shrink-0" onClick={handleDismiss} tabIndex={-1}>
 								<CrossIcon label="" size="small" />
 							</Button>
 						) : null}
 					</div>
-				) : null}
-				<h5 className="min-w-0 whitespace-normal break-words text-text">{currentQuestion.label}</h5>
+				)}
 			</header>
 
 			<AnimatePresence initial={false} custom={direction}>
