@@ -47,9 +47,9 @@ import {
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/page";
 import { createAgentTriggerValue, getTriggerProvider } from "@/components/blocks/triggers/data/trigger-catalog";
+import { ManageTriggersDialog } from "@/components/blocks/triggers/components/manage-triggers-dialog";
 import { UNTITLED_SUBAGENT_NAME } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
-import { ManageTriggersDialog } from "@/components/blocks/triggers/components/manage-triggers-dialog";
 import {
 	hoverRevealRowClassName,
 	HoverRevealActions,
@@ -1973,13 +1973,9 @@ function AgentCompactEmptyConfigNav({
 								onEditTriggers={onEditTriggers}
 								onManageTriggers={onManageTriggers}
 								onSelectEvent={(providerId, eventId) => {
-									// Open the rule-builder scoped to JUST the newly added
-									// trigger (one trigger per modal). Save merges this back into
-									// the full set by id (append when new), so the other triggers
-									// are preserved without seeding the modal with them.
 									const existing = config?.triggerDefinitions ?? [];
 									const next = createAgentTriggerValue(providerId, eventId, existing.length + 1);
-									onEditTriggers?.(next ? [next] : existing);
+									onEditTriggers?.(next ? [...existing, next] : existing);
 								}}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
 								triggerDefinitions={config?.triggerDefinitions}
@@ -2523,10 +2519,9 @@ interface AgentTriggerSummaryRowProps {
 
 /**
  * Triggers row. Unlike the generic `AgentFilledSummaryRow`, the trigger entry
- * launches the rule-builder modal instead of inline editing:
- * - empty → the content area is the provider/event `TriggerPicker` dropdown;
- *   selecting an event seeds the modal with that one trigger;
- * - non-empty → each chip opens the modal on click and (when removal is wired)
+ * launches the automation modal instead of inline editing:
+ * - empty → the add affordance opens the modal with no triggers;
+ * - non-empty → each chip opens the full automation modal and (when removal is wired)
  *   carries an overlay remove control, matching the other summary rows so a
  *   trigger can be removed inline without opening the modal. The trailing "Edit"
  *   control opens the same collapsed-nav management flyout as the compact strip
@@ -2559,17 +2554,15 @@ function AgentTriggerSummaryRow({
 		onTriggerDefinitionsChange?.(triggerDefinitions.filter((_, i) => i !== index));
 	};
 
-	// Picking a provider event from the "Add trigger" flyout creates one new
-	// trigger and opens the rule-builder scoped to JUST that trigger (one trigger
-	// per modal). Save merges it back into the full set by id (append when new),
-	// so the other triggers are preserved.
+	// Picking a provider event from the legacy flyout appends one trigger and
+	// opens the automation modal seeded with the full current trigger set.
 	const handleSelectEvent = (
 		providerId: Parameters<typeof createAgentTriggerValue>[0],
 		eventId: string,
 	) => {
 		const existing = triggerDefinitions ?? [];
 		const next = createAgentTriggerValue(providerId, eventId, existing.length + 1);
-		onEditTriggers?.(next ? [next] : existing);
+		onEditTriggers?.(next ? [...existing, next] : existing);
 	};
 
 	if (isEmpty && (hideWhenEmpty || !addLabel)) {
@@ -2587,10 +2580,10 @@ function AgentTriggerSummaryRow({
 			</div>
 			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
 				{isEmpty ? (
-					<TriggerPicker
+					<AgentAddValueButton
+						icon="add"
 						label={addLabel ?? "Add"}
-						onSelectEvent={handleSelectEvent}
-						trigger={<AgentAddValueButton icon="add" label={addLabel ?? "Add"} />}
+						onClick={() => onEditTriggers?.([])}
 					/>
 				) : (
 					<div className="group/trigger-edit flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
@@ -2621,12 +2614,8 @@ function AgentTriggerSummaryRow({
 								) : (
 									providerIcon ?? undefined
 								);
-							// Clicking a configured trigger chip opens the Triggers modal
-							// directly (no intermediate dropdown) scoped to JUST that one
-							// trigger (reusing the `definition` resolved above), so the modal
-							// edits a single rule + prompt rather than the whole set. The
-							// chip's own "Remove" control stops propagation so it never also
-							// opens the modal.
+							// Clicking any configured trigger chip opens the full automation
+							// modal because prompt/name/active state is shared across rows.
 							return (
 								<AgentReferenceChip
 									key={`trigger-${item}-${index}`}
@@ -2634,7 +2623,7 @@ function AgentTriggerSummaryRow({
 									label={item}
 									onClick={
 										onEditTriggers
-											? () => onEditTriggers(definition ? [definition] : undefined)
+											? () => onEditTriggers(triggerDefinitions)
 											: undefined
 									}
 									onRemove={canRemoveInline ? () => handleRemoveTrigger(index) : undefined}
@@ -2648,10 +2637,6 @@ function AgentTriggerSummaryRow({
 							// with the edit-styled button as its trigger — mirroring how the
 							// Apps/Skills/Subagents rows back their inline controls with the
 							// collapsed-nav dropdown so both layouts share one experience.
-							// Picking an event from "Add trigger ›" seeds a new single-trigger
-							// modal via handleSelectEvent; chips still open their own trigger's
-							// modal on click. Falls back to the bare provider/event picker only
-							// when the collapsed-nav catalog entry isn't supplied.
 							triggerNavItem ? (
 								<AgentCompactTriggersNavButton
 									item={triggerNavItem}
@@ -4095,9 +4080,10 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
+	onManageTriggers?: () => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	// When provided, the empty-instructions "start with a template" link defers to
-	// the host (e.g. the Studio shell opens its agents directory on the first
+	// the host (e.g. the Studio shell opens its Agent Directory on the first
 	// template tab) instead of opening the composer's built-in templates dialog.
 	onStartWithTemplate?: () => void;
 	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
@@ -4130,6 +4116,7 @@ export const AgentConfigFields = memo(
 		onAddListValues,
 		onAppendListItem,
 		onConnectTrigger,
+		onManageTriggers,
 		onManageSubagents,
 		onOpenDirectory,
 		onProfileTextChange,
@@ -4220,37 +4207,38 @@ export const AgentConfigFields = memo(
 		const handleTriggersEditorOpenChange = useCallback((open: boolean) => {
 			setTriggersEditor((prev) => ({ ...prev, open }));
 		}, []);
-		// The modal scopes to a single trigger (edit one chip, or add one new),
-		// so its returned draft is merged back into the full set by id: existing
-		// ids are replaced in place and any new id is appended. This preserves the
-		// other triggers that were never part of this modal session.
 		const handleTriggersSave = useCallback((triggers: readonly AgentTriggerValue[]) => {
-			const current = config.triggerDefinitions ?? [];
-			const editedById = new Map(triggers.map((trigger) => [trigger.id, trigger]));
-			const merged = current.map((trigger) => editedById.get(trigger.id) ?? trigger);
-			const existingIds = new Set(current.map((trigger) => trigger.id));
-			for (const trigger of triggers) {
-				if (!existingIds.has(trigger.id)) {
-					merged.push(trigger);
-				}
-			}
-			onTriggerDefinitionsChange?.(merged);
-		}, [config.triggerDefinitions, onTriggerDefinitionsChange]);
+			onTriggerDefinitionsChange?.(triggers);
+		}, [onTriggerDefinitionsChange]);
 
-		// "Manage triggers" opens the list-management dialog (reorder / toggle /
-		// delete / add), mirroring "Manage subagents". Detailed single-trigger
-		// editing still routes through the rule-builder (`handleEditTriggers`).
 		const [manageTriggersOpen, setManageTriggersOpen] = useState(false);
 		const handleManageTriggers = useCallback(() => {
+			if (onManageTriggers) {
+				onManageTriggers();
+				return;
+			}
+
 			setManageTriggersOpen(true);
-		}, []);
+		}, [onManageTriggers]);
 		const handleAddTriggerFromManage = useCallback(
 			(providerId: Parameters<typeof createAgentTriggerValue>[0], eventId: string) => {
 				const existing = config.triggerDefinitions ?? [];
 				const next = createAgentTriggerValue(providerId, eventId, existing.length + 1);
-				if (next) {
-					onTriggerDefinitionsChange?.([...existing, next]);
+				if (!next) {
+					return;
 				}
+				const sharedPrompt = existing.find((trigger) => trigger.prompt?.trim())?.prompt ?? "";
+				const automationName = existing.find((trigger) => trigger.automationName?.trim())?.automationName ?? "";
+				const enabled = existing.find((trigger) => typeof trigger.enabled !== "undefined")?.enabled ?? true;
+				onTriggerDefinitionsChange?.([
+					...existing,
+					{
+						...next,
+						automationName,
+						enabled,
+						prompt: sharedPrompt,
+					},
+				]);
 			},
 			[config.triggerDefinitions, onTriggerDefinitionsChange],
 		);
@@ -4287,9 +4275,10 @@ export const AgentConfigFields = memo(
 		);
 		const handleEditTriggerFromManage = useCallback(
 			(trigger: AgentTriggerValue) => {
-				handleEditTriggers([trigger]);
+				setManageTriggersOpen(false);
+				handleEditTriggers(config.triggerDefinitions ?? [trigger]);
 			},
-			[handleEditTriggers],
+			[config.triggerDefinitions, handleEditTriggers],
 		);
 
 		return (

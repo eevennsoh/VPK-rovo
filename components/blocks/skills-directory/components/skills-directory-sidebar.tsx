@@ -23,13 +23,11 @@ import { cn } from "@/lib/utils";
 
 import {
 	getSkillById,
-	getSkillCollectionMetadata,
 	getSkillIcon,
 	type SkillsDirectorySkill,
 } from "@/app/data/directory/skills";
 import type {
 	SkillsDirectoryCategoryItem,
-	SkillsDirectoryCollectionItem,
 	SkillNavIcon,
 	SkillsDirectoryCompanyItem,
 	SkillsDirectoryPrimaryItem,
@@ -137,8 +135,6 @@ export function SkillsDirectorySidebar({
 				))}
 			</ul>
 
-			<div className="h-3 w-64 shrink-0" />
-
 			{taxonomyGroup ? (
 				<SkillsTaxonomyGroup
 					activeItem={activeItem}
@@ -168,14 +164,8 @@ function isCategorySidebarItem(item: SkillsDirectorySidebarItem): item is Skills
 	return item.kind === "category";
 }
 
-function isCollectionSidebarItem(item: SkillsDirectorySidebarItem): item is SkillsDirectoryCollectionItem {
-	return item.kind === "collection";
-}
-
-function isTaxonomySidebarItem(
-	item: SkillsDirectorySidebarItem,
-): item is SkillsDirectoryCategoryItem | SkillsDirectoryCollectionItem {
-	return isCategorySidebarItem(item) || isCollectionSidebarItem(item);
+function isTaxonomySidebarItem(item: SkillsDirectorySidebarItem): item is SkillsDirectoryCategoryItem {
+	return isCategorySidebarItem(item);
 }
 
 function isTaxonomySidebarGroup(group: SkillsDirectorySidebarGroup): boolean {
@@ -238,15 +228,8 @@ function SkillsTaxonomyGroup({
 
 function TaxonomyLeading({
 	item,
-}: Readonly<{ item: SkillsDirectoryCategoryItem | SkillsDirectoryCollectionItem }>) {
-	const icon = getCategoryNavIcon(item.icon, item.label);
-
-	if (item.kind === "collection") {
-		const collection = getSkillCollectionMetadata(item.id);
-		return <span className={collection.iconClassName}>{icon}</span>;
-	}
-
-	return icon;
+}: Readonly<{ item: SkillsDirectoryCategoryItem }>) {
+	return getCategoryNavIcon(item.icon, item.label);
 }
 
 interface SkillsSidebarGroupProps {
@@ -287,7 +270,7 @@ function SkillsSidebarGroup({
 						);
 					}
 
-					if (item.kind === "category" || item.kind === "collection") return null;
+					if (item.kind === "category") return null;
 
 					return (
 						<li key={`company-${item.id}`}>

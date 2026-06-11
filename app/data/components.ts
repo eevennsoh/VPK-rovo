@@ -320,7 +320,7 @@ export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("agent-bento", "Agent Bento"),
 	blockComponent("agent-card", "Agent Card"),
 	blockComponent("agent-profile-card", "Agent Profile Card"),
-	blockComponent("agents-directory", "Agents Directory"),
+	blockComponent("agents-directory", "Agent Directory"),
 	blockComponent("agent-progress", "Agent Progress"),
 	blockComponent("agent-selector", "Agent Selector"),
 	blockComponent("agent-templates", "Agent Templates"),

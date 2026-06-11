@@ -18,11 +18,18 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import AutomationIcon from "@atlaskit/icon/core/automation";
 import CrossIcon from "@atlaskit/icon/core/cross";
+import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
 
-import { TriggerPicker, renderAgentTriggerProviderTileIcon } from "@/components/blocks/triggers/page";
+import {
+	TriggerPicker,
+	renderAgentTriggerProviderIcon,
+} from "@/components/blocks/triggers/page";
 import {
 	getAgentTriggerReadableLabel,
+	getTriggerEvent,
+	getTriggerProvider,
 	isAgentTriggerEnabled,
 	type AgentTriggerProviderId,
 	type AgentTriggerValue,
@@ -34,6 +41,7 @@ import {
 	DialogContent,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { IconTile } from "@/components/ui/icon-tile";
 import { Switch } from "@/components/ui/switch";
 import { DeleteIcon, GripVerticalIcon } from "@/components/ui/vpk-icons";
 import { cn } from "@/lib/utils";
@@ -42,22 +50,19 @@ interface ManageTriggersDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	triggers: ReadonlyArray<AgentTriggerValue>;
-	/** Picking a provider event from the header "Add trigger" menu. */
+	/** Picking a provider event from the header "Add trigger event" menu. */
 	onAddTrigger: (providerId: AgentTriggerProviderId, eventId: string) => void;
 	onReorderTriggers: (activeId: string, overId: string) => void;
 	onToggleTrigger: (id: string, enabled: boolean) => void;
 	onDeleteTrigger: (id: string) => void;
-	/** Row click → open the rule-builder scoped to that one trigger. */
+	/** Row click opens the full automation editor for this trigger set. */
 	onEditTrigger: (trigger: AgentTriggerValue) => void;
 }
 
 /**
- * List-management modal for an agent's triggers. Mirrors `ManageSubagentsDialog`:
- * a compact, drag-reorderable list where each row carries the provider's
- * palette-style front-slot icon, the readable trigger label + prompt summary, an
- * enable/disable Switch, and a danger-hover delete button. The header "Add
- * trigger" action reuses the shared `TriggerPicker` provider/event menu, and
- * clicking a row opens the detailed rule-builder for that single trigger.
+ * Compact list-management modal for an automation's trigger events. The prompt,
+ * name, and automation-level Active state live in the shared automation editor;
+ * this dialog only manages the event rows that can start that same automation.
  */
 export function ManageTriggersDialog({
 	open,
@@ -87,13 +92,18 @@ export function ManageTriggersDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="gap-0 overflow-hidden p-0" showCloseButton={false} size="md">
-				<div className="flex items-center justify-between gap-2 p-6">
-					<DialogTitle className="text-xl font-semibold leading-6 text-text">
-						Manage triggers
-					</DialogTitle>
+				<div className="flex items-start justify-between gap-3 p-6">
+					<div className="grid gap-1">
+						<DialogTitle className="text-xl font-semibold leading-6 text-text">
+							Manage trigger events
+						</DialogTitle>
+						<p className="text-sm leading-5 text-text-subtle">
+							Any event in this list can start the same automation.
+						</p>
+					</div>
 					<div className="flex items-center gap-2">
 						<TriggerPicker
-							label="Add trigger"
+							label="Add trigger event"
 							onSelectEvent={onAddTrigger}
 							trigger={
 								<Button type="button" variant="outline">
@@ -130,7 +140,7 @@ export function ManageTriggersDialog({
 									))
 								) : (
 									<div className="rounded-lg border border-dashed border-border bg-surface p-4 text-center text-sm text-text-subtlest">
-										No triggers yet.
+										No trigger events yet.
 									</div>
 								)}
 							</div>
@@ -139,6 +149,63 @@ export function ManageTriggersDialog({
 				</div>
 			</DialogContent>
 		</Dialog>
+	);
+}
+
+function getManageTriggerConnectionLabel(trigger: AgentTriggerValue): string | null {
+	switch (trigger.connectionState) {
+		case "needs-connection":
+			return "Requires connection";
+		case "connecting":
+			return "Connecting";
+		case "connection-error":
+			return "Connection failed";
+		case "connected":
+		default:
+			return null;
+	}
+}
+
+function getManageTriggerSecondary(trigger: AgentTriggerValue): string {
+	const provider = getTriggerProvider(trigger.providerId);
+	const event = provider ? getTriggerEvent(provider.id, trigger.eventId) : undefined;
+	const connectionLabel = getManageTriggerConnectionLabel(trigger);
+
+	if (provider && connectionLabel) {
+		return `${provider.label} · ${connectionLabel}`;
+	}
+
+	if (provider) {
+		return provider.label;
+	}
+
+	return event?.description ?? "Trigger event";
+}
+
+function ManageTriggerFlowVisual({ trigger }: Readonly<{ trigger: AgentTriggerValue }>) {
+	const provider = getTriggerProvider(trigger.providerId);
+	const providerIcon = renderAgentTriggerProviderIcon(trigger) ?? (
+		<AutomationIcon label="" size="small" />
+	);
+
+	return (
+		<span className="flex shrink-0 items-center gap-1.5" aria-hidden={true}>
+			<IconTile
+				className="border border-border bg-bg-input text-icon-subtle"
+				icon={providerIcon}
+				label={provider?.label ?? "Trigger"}
+				size="small"
+				variant="transparent"
+			/>
+			<span className="h-px w-5 bg-border" />
+			<IconTile
+				className="bg-bg-neutral text-icon-subtle"
+				icon={<GenerativeIndicatorIcon label="" size="small" />}
+				label="Agent instructions"
+				size="small"
+				variant="transparent"
+			/>
+		</span>
 	);
 }
 
@@ -166,8 +233,7 @@ function ManageTriggersRow({
 	} = useSortable({ id: trigger.id });
 	const label = getAgentTriggerReadableLabel(trigger);
 	const enabled = isAgentTriggerEnabled(trigger);
-	const providerIcon = renderAgentTriggerProviderTileIcon(trigger);
-	const secondary = trigger.prompt?.trim() || "No prompt set.";
+	const secondary = getManageTriggerSecondary(trigger);
 	const style = {
 		transform: CSS.Transform.toString(transform),
 		transition,
@@ -194,16 +260,16 @@ function ManageTriggersRow({
 				<GripVerticalIcon size="small" />
 			</button>
 			<button
-				className="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-border-selected"
+				className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-md px-1 py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-border-selected"
 				onClick={() => onEdit(trigger)}
 				type="button"
 			>
-				{providerIcon}
-				<div className="min-w-0 flex-1">
-					<div className="truncate text-sm font-semibold leading-5 text-text">
+				<ManageTriggerFlowVisual trigger={trigger} />
+				<div className="min-w-0">
+					<div className="truncate text-sm font-medium leading-5 text-text">
 						{label}
 					</div>
-					<div className="truncate text-xs leading-4 text-text-subtlest">
+					<div className="truncate text-xs leading-4 text-text-subtle">
 						{secondary}
 					</div>
 				</div>

@@ -46,6 +46,9 @@ const HORIZONTAL_OVERFLOW_HOOK_SOURCE = readProjectFile("components/hooks/use-ha
 test("Agent demo defaults to the filled preview", () => {
 	assert.match(AGENT_DEMO_SOURCE, /export default function AgentDemo\(\) \{[\s\S]*return <AgentDemoFull \/>;/u);
 	assert.doesNotMatch(AGENT_DEMO_SOURCE, /AgentDemoMode|Agent demo state/u);
+	assert.match(AGENT_DEMO_SOURCE, /const TRIGGER_MANAGE_DOCS_PATH = "\/components\/blocks\/triggers#manage";/u);
+	assert.match(AGENT_DEMO_SOURCE, /function openTriggerManageDocs\(\) \{\s*window\.location\.assign\(TRIGGER_MANAGE_DOCS_PATH\);/u);
+	assert.match(AGENT_DEMO_SOURCE, /onManageTriggers=\{openTriggerManageDocs\}/u);
 	assert.match(
 		BLOCK_DETAILS_SOURCE,
 		/examples: \[[\s\S]*title: "Filled agent"[\s\S]*demoSlug: "agent-demo-full"[\s\S]*title: "Empty agent"[\s\S]*demoSlug: "agent-demo-empty"/u,
@@ -75,7 +78,7 @@ test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /placeholder="Press \/ to help me describe the agent's role, or start with a template"/u);
 	assert.match(AGENT_SOURCE, /placeholderSlot=\{\([\s\S]*className="tiptap-editor text-sm leading-\[1\.55\] text-text-subtlest"[\s\S]*Press <code>\/<\/code> to help me describe the agent&apos;s role,[\s\S]*start with a template[\s\S]*\)\}/u);
 	// When a host provides onStartWithTemplate it takes over (opens its own
-	// agents directory) and the composer skips its built-in templates dialog;
+	// Agent Directory) and the composer skips its built-in templates dialog;
 	// otherwise the link opens the local AgentTemplatesDialog.
 	assert.match(AGENT_SOURCE, /onClick=\{\(\) => \{[\s\S]*if \(onStartWithTemplate\) \{[\s\S]*onStartWithTemplate\(\);[\s\S]*return;[\s\S]*\}[\s\S]*setTemplatesOpen\(true\);[\s\S]*\}\}/u);
 	assert.match(AGENT_SOURCE, /<AgentTemplatesDialog[\s\S]*open=\{templatesOpen\}[\s\S]*onOpenChange=\{setTemplatesOpen\}/u);
@@ -323,22 +326,16 @@ test("Compact agent config opts into the typed Triggers editor without replacing
 	assert.match(AGENT_SOURCE, /triggerDefinitions\?: readonly AgentTriggerValue\[\];/u);
 	assert.match(AGENT_SOURCE, /function getAgentTriggerItems\(config: AgentConfigFormValue\): readonly string\[\] \{[\s\S]*serializeAgentTriggerLabels\(config\.triggerDefinitions\)[\s\S]*const triggers = getNonEmptyConfigItems\(config\.triggers\)[\s\S]*const trigger = config\.trigger\?\.trim\(\);/u);
 	assert.match(AGENT_SOURCE, /onConnectTrigger\?: \(trigger: AgentTriggerValue\) => void;/u);
+	assert.match(AGENT_SOURCE, /onManageTriggers\?: \(\) => void;/u);
 	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
-	// Adding a trigger opens the rule-builder scoped to JUST the new trigger
-	// (seed `[next]`, one trigger per modal). Save merges it back into the full
-	// set by id (append when new), so the other triggers are preserved without
-	// seeding the modal with them. The summary row wires
-	// `<TriggerPicker onSelectEvent={handleSelectEvent} />`, so assert the named
-	// handler carries the single-trigger seed.
-	assert.match(AGENT_SOURCE, /const handleSelectEvent = \([\s\S]*const existing = triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[next\] : existing\);/u);
-	assert.match(AGENT_SOURCE, /<TriggerPicker[\s\S]*onSelectEvent=\{handleSelectEvent\}/u);
-	// The collapsed-nav "Add trigger" flyout seeds the same single new trigger.
-	assert.match(AGENT_SOURCE, /onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*const existing = config\?\.triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[next\] : existing\);/u);
-	// Save merges the modal's single-trigger draft back into the full set by id
-	// (replace existing, append new) so sibling triggers are never dropped.
-	assert.match(AGENT_SOURCE, /const handleTriggersSave = useCallback\(\(triggers[\s\S]*editedById\.get\(trigger\.id\) \?\? trigger[\s\S]*if \(!existingIds\.has\(trigger\.id\)\)[\s\S]*onTriggerDefinitionsChange\?\.\(merged\);/u);
-	// Guard against the whole-list replace regression returning.
-	assert.doesNotMatch(AGENT_SOURCE, /onTriggerDefinitionsChange\?\.\(triggers\);/u);
+	// Adding a trigger opens the automation modal with the full current trigger
+	// set plus the new condition, preserving one shared prompt/name/active state.
+	assert.match(AGENT_SOURCE, /const handleSelectEvent = \([\s\S]*const existing = triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\);/u);
+	assert.match(AGENT_SOURCE, /onClick=\{\(\) => onEditTriggers\?\.\(\[\]\)\}/u);
+	assert.match(AGENT_SOURCE, /onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*const existing = config\?\.triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\);/u);
+	// Save commits the complete automation trigger array.
+	assert.match(AGENT_SOURCE, /const handleTriggersSave = useCallback\(\(triggers: readonly AgentTriggerValue\[\]\) => \{\s*onTriggerDefinitionsChange\?\.\(triggers\);/u);
+	assert.match(AGENT_SOURCE, /const handleManageTriggers = useCallback\(\(\) => \{\s*if \(onManageTriggers\) \{\s*onManageTriggers\(\);\s*return;\s*\}\s*handleEditTriggers\(config\.triggerDefinitions \?\? \[\]\);/u);
 	assert.match(AGENT_SOURCE, /isEmpty: triggerItems\.length === 0/u);
 	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*items=\{triggerItems\}[\s\S]*onTriggerDefinitionsChange=\{onTriggerDefinitionsChange\}/u);
 	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange=\{onTriggerDefinitionsChange\}/u);
@@ -444,19 +441,17 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /"inline-flex min-h-5 max-w-full shrink-0 items-center gap-1 rounded-xs p-0 text-left text-xs font-medium leading-4 text-text-subtlest transition-opacity hover:bg-transparent active:bg-transparent focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-transparent aria-expanded:opacity-100"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /group\/add-link/u);
 	assert.match(AGENT_SOURCE, /<span className="min-w-0 whitespace-normal group-hover\/agent-row:underline">\{label\}<\/span>/u);
-	// Triggers summary row: clicking a configured chip opens the Triggers MODAL
-	// directly (no dropdown) scoped to JUST that one trigger — the chip seeds the
-	// modal with its single `definition`. The trailing "Edit" button opens the
-	// collapsed-nav management flyout instead (asserted below).
+	// Triggers summary row: clicking a configured chip opens the Triggers modal
+	// with the complete automation definition set because instructions are shared.
 	assert.match(
 		AGENT_SOURCE,
-		/<AgentReferenceChip[\s\S]*onClick=\{\s*onEditTriggers\s*\?\s*\(\) => onEditTriggers\(definition \? \[definition\] : undefined\)\s*:\s*undefined\s*\}[\s\S]*onRemove=\{canRemoveInline \? \(\) => handleRemoveTrigger\(index\) : undefined\}/u,
+		/<AgentReferenceChip[\s\S]*onClick=\{\s*onEditTriggers\s*\?\s*\(\) => onEditTriggers\(triggerDefinitions\)\s*:\s*undefined\s*\}[\s\S]*onRemove=\{canRemoveInline \? \(\) => handleRemoveTrigger\(index\) : undefined\}/u,
 	);
 	// The trailing "Edit" control opens the SAME collapsed-nav management flyout
 	// (trigger list + "Add trigger ›" + "Manage triggers") as the compact strip,
 	// by reusing AgentCompactTriggersNavButton with the edit-styled button as its
 	// renderTrigger — so the expanded summary row and the collapsed nav share one
-	// flyout. Picking an event from "Add trigger ›" seeds a single-trigger modal.
+	// flyout. Picking an event from "Add trigger ›" appends to the same automation.
 	assert.match(
 		AGENT_SOURCE,
 		/\{onEditTriggers \? \([\s\S]*triggerNavItem \? \([\s\S]*<AgentCompactTriggersNavButton\s*\n\s*item=\{triggerNavItem\}[\s\S]*renderTrigger=\{\s*\n\s*<AgentAddValueButton\s*\n\s*className="opacity-0 group-hover\/agent-row:opacity-100"\s*\n\s*icon="edit"\s*\n\s*label=\{addLabel \?\? "Edit"\}\s*\n\s*\/>/u,

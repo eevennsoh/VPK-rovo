@@ -106,39 +106,41 @@ test("Triggers supports empty, picker, configured, remove, params, and connectio
 	assert.match(TRIGGERS_SOURCE, /onTriggersChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
 	assert.match(TRIGGERS_SOURCE, /onConnectTrigger\?: \(trigger: AgentTriggerValue\) => void;/u);
 	assert.match(TRIGGERS_SOURCE, /<DropdownMenuSub onOpenChange=\{setIsSubmenuOpen\}>/u);
-	assert.match(TRIGGERS_SOURCE, /placeholder="Search Triggers\.\.\."/u);
+	assert.match(TRIGGERS_SOURCE, /placeholder="Search triggers"/u);
 	assert.match(TRIGGERS_SOURCE, /No triggers found/u);
 	assert.match(TRIGGERS_SOURCE, /aria-label="Delete trigger"/u);
 	assert.match(TRIGGERS_SOURCE, /Requires connection/u);
 	assert.match(TRIGGERS_SOURCE, /Connection failed/u);
 	assert.match(TRIGGERS_SOURCE, /disabled=\{disabled\}/u);
 	assert.match(TRIGGERS_SOURCE, /onSelectEvent\(provider\.id, event\.id\)/u);
-	assert.match(TRIGGERS_SOURCE, /commitTriggers\(currentTriggers\.filter/u);
+	assert.match(TRIGGERS_SOURCE, /<TriggerAutomationDialog/u);
 	assert.match(TRIGGERS_SOURCE, /getAgentTriggerReadableLabel\(nextTrigger\)/u);
 });
 
-test("each trigger renders a self-contained event node plus an editable prompt", () => {
-	// Prompt is part of the trigger value model.
-	assert.match(CATALOG_SOURCE, /\/\*\* Free-text prompt[^*]*\*\/\s*prompt\?: string;/u);
-	// New triggers seed an empty prompt.
+test("trigger automation modal uses one shared prompt, name, and active state", () => {
+	// Prompt remains in the trigger value model as the legacy shared field.
+	assert.match(CATALOG_SOURCE, /\/\*\* Legacy shared automation prompt[^*]*\*\/\s*prompt\?: string;/u);
+	assert.match(CATALOG_SOURCE, /automationName\?: string;/u);
 	assert.match(CATALOG_SOURCE, /prompt: "",/u);
-	// Editable prompt textarea bound to the trigger value. Uses the shared VPK
-	// Textarea primitive rather than a hand-styled <textarea>.
+	// The modal owns one shared Agent Instructions textarea using the shared VPK
+	// Textarea primitive, not per-trigger textareas.
 	assert.match(TRIGGERS_SOURCE, /import \{ Textarea \} from "@\/components\/ui\/textarea";/u);
-	assert.match(TRIGGERS_SOURCE, /<Textarea/u);
-	assert.match(TRIGGERS_SOURCE, /aria-label="Trigger prompt"/u);
-	assert.match(TRIGGERS_SOURCE, /value=\{trigger\.prompt \?\? ""\}/u);
-	assert.match(TRIGGERS_SOURCE, /onPromptChange\(changeEvent\.target\.value\)/u);
-	// Prompt edits flow back through the controlled draft.
-	assert.match(TRIGGERS_SOURCE, /const handlePromptChange = useCallback\(/u);
-	assert.match(
-		TRIGGERS_SOURCE,
-		/trigger\.id === triggerId \? \{ \.\.\.trigger, prompt: value \} : trigger/u,
-	);
-	// A decorative connector rail links the event node (top) to the prompt node
-	// (bottom), whose generative-indicator tile top-aligns with the textarea.
+	assert.match(TRIGGERS_SOURCE, /aria-label="Agent Instructions"/u);
+	assert.match(TRIGGERS_SOURCE, /value=\{sharedPrompt\}/u);
+	assert.doesNotMatch(TRIGGERS_SOURCE, /aria-label="Trigger prompt"/u);
+	assert.doesNotMatch(TRIGGERS_SOURCE, /const handlePromptChange = useCallback\(/u);
+	// Save mirrors shared fields across every persisted trigger value.
+	assert.match(TRIGGERS_SOURCE, /function applySharedAutomationFields/u);
+	assert.match(TRIGGERS_SOURCE, /automationName: automationName\.trim\(\)/u);
+	assert.match(TRIGGERS_SOURCE, /enabled,/u);
+	assert.match(TRIGGERS_SOURCE, /prompt,/u);
+	assert.match(TRIGGERS_SOURCE, /Automation name/u);
+	assert.match(TRIGGERS_SOURCE, /<Switch checked=\{active\}/u);
 	assert.match(TRIGGERS_SOURCE, /GenerativeIndicatorIcon/u);
-	assert.match(TRIGGERS_SOURCE, /self-start rounded-tile bg-bg-neutral/u);
+	assert.match(TRIGGERS_SOURCE, /function TriggerAutomationFlowPreview/u);
+	assert.match(TRIGGERS_SOURCE, /const visibleTriggers = triggers\.slice\(0, 5\);/u);
+	assert.match(TRIGGERS_SOURCE, /className="h-px w-8 shrink-0 bg-border"/u);
+	assert.match(TRIGGERS_SOURCE, /label="Agent instructions"/u);
 });
 
 test("Triggers demos and block docs export the required state variations", () => {

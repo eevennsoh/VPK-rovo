@@ -55,7 +55,7 @@ test("shell uses a dedicated overlay <button> for selection, not a role=button w
 	assert.match(SHELL_SOURCE, /onClick=\{handleSelect\}/u);
 	assert.match(SHELL_SOURCE, /type="button"/u);
 	// Overlay sits beneath card content so nested controls stay clickable.
-	assert.match(SHELL_SOURCE, /absolute inset-0 z-0/u);
+	assert.match(SHELL_SOURCE, /absolute inset-0 z-0 cursor-pointer/u);
 	assert.match(SHELL_SOURCE, /\[&>\*\]:relative \[&>\*\]:z-10/u);
 	assert.match(SHELL_SOURCE, /whileTap: interactive \? tapAnimation : undefined/u);
 	// Focus ring follows the overlay button's focus-visible state, not the article's.

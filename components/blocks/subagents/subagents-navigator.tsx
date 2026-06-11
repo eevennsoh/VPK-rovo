@@ -288,10 +288,10 @@ export function SubagentsNavigator({
 				<div
 					aria-hidden={!isSwitcherOpen}
 					className={cn(
-						"absolute inset-0 flex flex-col p-2 text-left transition-opacity duration-normal ease-out",
+						"flex flex-col p-2 text-left transition-opacity duration-normal ease-out",
 						isSwitcherOpen
-							? "pointer-events-auto opacity-100"
-							: "pointer-events-none opacity-0",
+							? "relative pointer-events-auto opacity-100"
+							: "pointer-events-none absolute inset-0 opacity-0",
 					)}
 					inert={!isSwitcherOpen}
 				>

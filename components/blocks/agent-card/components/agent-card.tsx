@@ -1,8 +1,9 @@
 "use client";
 
-import { type CSSProperties, type MouseEvent, type ReactNode, type UIEvent, useCallback, useState } from "react";
+import { type CSSProperties, type MouseEvent, type ReactElement, type ReactNode, type UIEvent, useCallback, useState } from "react";
 import Image from "next/image";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
+import ClockIcon from "@atlaskit/icon/core/clock";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
@@ -11,7 +12,7 @@ import ThumbsUpIcon from "@atlaskit/icon/core/thumbs-up";
 import { Avatar, AvatarCompanyBadge, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage, AvatarProjectBadge } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { AtlassianLogo } from "@/components/ui/logo";
+import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import { Separator } from "@/components/ui/separator";
 import { SkillTag, SkillTagGroup, type SkillTagColor } from "@/components/ui-custom/skill-tag";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
@@ -176,7 +177,29 @@ const EXPERIMENTAL_DETAIL_TEXT_COLORS: Record<string, string> = {
 };
 const EXPERIMENTAL_COVER_TEXT_CLASS_NAME = "text-[var(--agent-card-cover-text-color)]";
 const EXPERIMENTAL_DETAIL_TEXT_CLASS_NAME = "text-[var(--agent-card-detail-text-color)]";
-const EXPERIMENTAL_VERIFIED_ICON_CLASS_NAME = "text-[#292A2E]";
+const EXPERIMENTAL_VERIFIED_ICON_CLASS_NAME = "text-white";
+
+function isRemixStat(stat: { label: string }): boolean {
+	return stat.label.trim().toLowerCase() === "remix";
+}
+
+function isLastUpdateStat(stat: { label: string }): boolean {
+	return stat.label.trim().toLowerCase() === "last update";
+}
+
+function getAgentCardStatIcon(stat: { label: string }, index: number): ReactElement {
+	if (isLastUpdateStat(stat)) {
+		return <ClockIcon label="" size="small" spacing="none" color="currentColor" />;
+	}
+
+	return index === 0
+		? <PeopleGroupIcon label="" size="small" spacing="none" color="currentColor" />
+		: <ThumbsUpIcon label="" size="small" spacing="none" color="currentColor" />;
+}
+
+function formatAgentCardStatText(stat: { value: string; label: string }): string {
+	return isLastUpdateStat(stat) ? stat.value : `${stat.value} ${stat.label.toLowerCase()}`;
+}
 
 function getAgentAvatarCategory(avatarSrc: string | undefined): string | undefined {
 	return avatarSrc?.match(/\/avatar-agent\/([^/]+)\//u)?.[1];
@@ -231,6 +254,8 @@ export interface AgentCardProps {
 	/** Layout variant. Defaults to `"expanded"`. */
 	variant?: AgentCardVariant;
 	avatarSrc?: string;
+	insetLogo?: boolean;
+	logoName?: AtlassianLogoName;
 	/** Flat icon shown by the `"template"` variant header (when there is no banner). */
 	iconSrc?: string;
 	publisher: string;
@@ -277,6 +302,8 @@ export function AgentCard({
 	name,
 	variant = "expanded",
 	avatarSrc,
+	insetLogo = false,
+	logoName,
 	iconSrc,
 	publisher,
 	attributionKind,
@@ -300,7 +327,8 @@ export function AgentCard({
 	active = false,
 	className,
 }: Readonly<AgentCardProps>) {
-	const showStats = stats.length > 0;
+	const displayStats = stats.filter((stat) => !isRemixStat(stat));
+	const showStats = displayStats.length > 0;
 	const showRating = !showStats && typeof rating === "number";
 	const showChats = !showStats && typeof chatCount === "number";
 	const showCollaborators = collaborators.length > 0;
@@ -412,7 +440,7 @@ export function AgentCard({
 	}
 
 	if (variant === "experimental-profile") {
-		const visibleStats = stats.slice(0, 2);
+		const visibleStats = displayStats.slice(0, 2);
 		const showInlineStats = visibleStats.length > 0 || showRating || showChats;
 
 		return (
@@ -426,8 +454,22 @@ export function AgentCard({
 					byline={<AgentCardByline publisher={publisher} verified={verified} />}
 					leading={
 						<Avatar shape="hexagon" size="default">
-							{avatarSrc ? (
-								<Image alt="" aria-hidden className="size-full object-contain" height={32} src={avatarSrc} width={32} />
+							{logoName ? (
+								<AtlassianLogo
+									name={logoName}
+									size={logoName === "atlassian" ? "xsmall" : "medium"}
+									themeAware
+									label={name}
+								/>
+							) : avatarSrc ? (
+								<Image
+									alt=""
+									aria-hidden
+									className={insetLogo ? "size-4 object-contain" : "size-full object-contain"}
+									height={insetLogo ? 16 : 32}
+									src={avatarSrc}
+									width={insetLogo ? 16 : 32}
+								/>
 							) : (
 								<AvatarFallback>{name.slice(0, 2)}</AvatarFallback>
 							)}
@@ -445,16 +487,10 @@ export function AgentCard({
 						{visibleStats.length > 0 ? (
 							visibleStats.map((stat, index) => (
 								<AgentCardStat
-									icon={
-										index === 0 ? (
-											<PeopleGroupIcon label="" size="small" spacing="none" color="currentColor" />
-										) : (
-											<ThumbsUpIcon label="" size="small" spacing="none" color="currentColor" />
-										)
-									}
+									icon={getAgentCardStatIcon(stat, index)}
 									key={stat.label}
 								>
-									{stat.value} {stat.label.toLowerCase()}
+									{formatAgentCardStatText(stat)}
 								</AgentCardStat>
 							))
 						) : (
@@ -491,7 +527,7 @@ export function AgentCard({
 			"--agent-card-detail-text-color": string;
 			"--agent-card-cover-text-color": string;
 		};
-		const visibleStats = stats.slice(0, 2);
+		const visibleStats = displayStats.slice(0, 2);
 		const showInlineStats = visibleStats.length > 0 || showRating || showChats;
 		const showExperimentalCollaborators = showCollaborators;
 		const showExperimentalSocialMetadata = showInlineStats || showExperimentalCollaborators;
@@ -590,16 +626,10 @@ export function AgentCard({
 												{visibleStats.length > 0 ? (
 													visibleStats.map((stat, index) => (
 														<AgentCardStat
-															icon={
-																index === 0 ? (
-																	<PeopleGroupIcon label="" size="small" spacing="none" color="currentColor" />
-																) : (
-																	<ThumbsUpIcon label="" size="small" spacing="none" color="currentColor" />
-																)
-															}
+															icon={getAgentCardStatIcon(stat, index)}
 															key={stat.label}
 														>
-															{stat.value} {stat.label.toLowerCase()}
+															{formatAgentCardStatText(stat)}
 														</AgentCardStat>
 													))
 												) : (
@@ -658,7 +688,7 @@ export function AgentCard({
 						style={STAMP_PERFORATION_TOP_MASK_STYLE}
 					>
 						<div
-							className="pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-5 pb-4 text-text [scrollbar-gutter:stable]"
+							className="pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-4 pb-4 text-text [scrollbar-gutter:stable]"
 							data-slot="agent-card-scroll"
 							onClick={onSelect ? handleBodyClick : undefined}
 							onScroll={handleBodyScroll}
@@ -772,11 +802,13 @@ export function AgentCard({
 					<AgentCardFooter className="justify-between px-4 py-3 transition-opacity duration-fast ease-out group-hover/card:opacity-0 group-focus-within/card:opacity-0">
 						<div className="flex items-center gap-6">
 							{showStats ? (
-								stats.map((stat) => (
-									<div className="flex flex-col" key={stat.label}>
-										<span className="text-sm font-semibold leading-5 text-text">{stat.value}</span>
-										<span className="leading-4">{stat.label}</span>
-									</div>
+								displayStats.map((stat, index) => (
+									<AgentCardStat
+										icon={getAgentCardStatIcon(stat, index)}
+										key={stat.label}
+									>
+										{formatAgentCardStatText(stat)}
+									</AgentCardStat>
 								))
 							) : (
 								<div className="flex items-center gap-4">

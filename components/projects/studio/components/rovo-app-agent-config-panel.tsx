@@ -87,7 +87,7 @@ interface RovoAppAgentConfigPanelProps {
 		profileId: string,
 		patch: Partial<AgentResult>,
 	) => void;
-	// Opens the host-owned agents directory on its first template tab when the
+	// Opens the host-owned Agent Directory on its first template tab when the
 	// empty-instructions "start with a template" link is clicked.
 	onStartWithTemplate?: () => void;
 	className?: string;

@@ -154,7 +154,7 @@ export const SMART_LINK_DEMO_ITEMS = [
 		author: { name: "Olivia Yang", src: "/avatar-human/olivia-yang.png" },
 		date: "Updated 2 days ago",
 		description:
-			"This Loom reviews updated UI design for an agents directory and agent edit experience. It proposes an empty state by default for users without agency.",
+			"This Loom reviews updated UI design for an Agent Directory and agent edit experience. It proposes an empty state by default for users without agency.",
 		actions: DEFAULT_ACTIONS,
 	},
 	{

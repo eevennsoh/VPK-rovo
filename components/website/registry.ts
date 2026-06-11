@@ -7062,7 +7062,7 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
     { ssr: false },
   ),
 
-  // Agents Directory
+  // Agent Directory
   "agents-directory-demo-standard": dynamic(
     () =>
       import("./demos/blocks/agents-directory-demo").then((mod) => ({

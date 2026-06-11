@@ -86,6 +86,7 @@ test("Subagents switcher uses base agent header and trigger-name prompt rows", (
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /<CheckMarkIcon label="" size="small" \/>/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /height: isSwitcherOpen \? undefined : closedHeight/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /minHeight: isSwitcherOpen \? openHeight : closedHeight/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /isSwitcherOpen\s*\?\s*"relative pointer-events-auto opacity-100"\s*:\s*"pointer-events-none absolute inset-0 opacity-0"/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /data-slot="subagents-switcher-avatar"[\s\S]*className="flex size-6 shrink-0 items-center justify-center/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /className="size-5 object-contain"[\s\S]*height=\{20\}[\s\S]*width=\{20\}/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /"dev-agents": "lime"/u);

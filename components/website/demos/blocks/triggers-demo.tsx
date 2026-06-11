@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
-import Triggers from "@/components/blocks/triggers/page";
+import { useCallback, useState, type ReactElement } from "react";
+import Triggers, {
+	TriggerAutomationDialog,
+} from "@/components/blocks/triggers/page";
 import { ManageTriggersDialog } from "@/components/blocks/triggers/components/manage-triggers-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -92,56 +94,89 @@ export function TriggersDemoNeedsConnection(): ReactElement {
 
 export function TriggersDemoManage(): ReactElement {
 	const [triggers, setTriggers] = useState<readonly AgentTriggerValue[]>(MULTIPLE_TRIGGER_VALUES);
-	const [open, setOpen] = useState(false);
+	const [manageOpen, setManageOpen] = useState(true);
+	const [automationOpen, setAutomationOpen] = useState(false);
 
-	function handleAddTrigger(providerId: AgentTriggerProviderId, eventId: string): void {
-		const next = createAgentTriggerValue(providerId, eventId, triggers.length + 1);
-		if (next) {
-			setTriggers((prev) => [...prev, next]);
-		}
-	}
-
-	function handleReorderTriggers(activeId: string, overId: string): void {
-		setTriggers((prev) => {
-			const from = prev.findIndex((trigger) => trigger.id === activeId);
-			const to = prev.findIndex((trigger) => trigger.id === overId);
-			if (from === -1 || to === -1) {
-				return prev;
+	const handleAddTrigger = useCallback((providerId: AgentTriggerProviderId, eventId: string) => {
+		setTriggers((current) => {
+			const next = createAgentTriggerValue(providerId, eventId, current.length + 1);
+			if (!next) {
+				return current;
 			}
-			const next = prev.slice();
+			const sharedPrompt = current.find((trigger) => trigger.prompt?.trim())?.prompt ?? "";
+			const automationName = current.find((trigger) => trigger.automationName?.trim())?.automationName ?? "";
+			const enabled = current.find((trigger) => typeof trigger.enabled !== "undefined")?.enabled ?? true;
+			return [
+				...current,
+				{
+					...next,
+					automationName,
+					enabled,
+					prompt: sharedPrompt,
+				},
+			];
+		});
+	}, []);
+
+	const handleReorderTriggers = useCallback((activeId: string, overId: string) => {
+		setTriggers((current) => {
+			const from = current.findIndex((trigger) => trigger.id === activeId);
+			const to = current.findIndex((trigger) => trigger.id === overId);
+			if (from === -1 || to === -1) {
+				return current;
+			}
+			const next = current.slice();
 			const [moved] = next.splice(from, 1);
 			next.splice(to, 0, moved);
 			return next;
 		});
-	}
+	}, []);
 
-	function handleToggleTrigger(id: string, enabled: boolean): void {
-		setTriggers((prev) =>
-			prev.map((trigger) => (trigger.id === id ? { ...trigger, enabled } : trigger)),
+	const handleToggleTrigger = useCallback((id: string, enabled: boolean) => {
+		setTriggers((current) =>
+			current.map((trigger) => (trigger.id === id ? { ...trigger, enabled } : trigger)),
 		);
-	}
+	}, []);
 
-	function handleDeleteTrigger(id: string): void {
-		setTriggers((prev) => prev.filter((trigger) => trigger.id !== id));
-	}
+	const handleDeleteTrigger = useCallback((id: string) => {
+		setTriggers((current) => current.filter((trigger) => trigger.id !== id));
+	}, []);
+
+	const handleEditTrigger = useCallback(() => {
+		setManageOpen(false);
+		setAutomationOpen(true);
+	}, []);
 
 	return (
 		<TriggersDemoFrame>
-			<div className="flex justify-center">
-				<Button onClick={() => setOpen(true)} type="button" variant="outline">
-					Manage triggers
-				</Button>
+			<div className="grid gap-3">
+				<ButtonShell onClick={() => setManageOpen(true)} />
 				<ManageTriggersDialog
-					open={open}
-					onOpenChange={setOpen}
+					open={manageOpen}
+					onOpenChange={setManageOpen}
 					triggers={triggers}
 					onAddTrigger={handleAddTrigger}
 					onReorderTriggers={handleReorderTriggers}
 					onToggleTrigger={handleToggleTrigger}
 					onDeleteTrigger={handleDeleteTrigger}
-					onEditTrigger={() => undefined}
+					onEditTrigger={handleEditTrigger}
+				/>
+				<TriggerAutomationDialog
+					open={automationOpen}
+					onOpenChange={setAutomationOpen}
+					triggers={triggers}
+					onSave={setTriggers}
+					title="Edit Automation"
 				/>
 			</div>
 		</TriggersDemoFrame>
+	);
+}
+
+function ButtonShell({ onClick }: Readonly<{ onClick: () => void }>): ReactElement {
+	return (
+		<Button className="w-fit" onClick={onClick} type="button" variant="outline">
+			Manage trigger events
+		</Button>
 	);
 }

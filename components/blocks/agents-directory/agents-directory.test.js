@@ -7,14 +7,14 @@ function readProjectFile(relativePath) {
 	return fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
 }
 
-test("Agents Directory is exposed as a website block and used by Studio", () => {
+test("Agent Directory is exposed as a website block and used by Studio", () => {
 	assert.match(
 		readProjectFile("app/data/components.ts"),
-		/blockComponent\("agents-directory", "Agents Directory"\)/u,
+		/blockComponent\("agents-directory", "Agent Directory"\)/u,
 	);
 	assert.match(
 		readProjectFile("app/data/component-manifest.ts"),
-		/blockComponent\("agents-directory", "Agents Directory"\)/u,
+		/blockComponent\("agents-directory", "Agent Directory"\)/u,
 	);
 	assert.match(
 		readProjectFile("app/data/details/blocks.ts"),
@@ -30,7 +30,7 @@ test("Agents Directory is exposed as a website block and used by Studio", () => 
 	);
 });
 
-test("Agents Directory docs demo starts closed until the trigger is clicked", () => {
+test("Agent Directory docs demo starts closed until the trigger is clicked", () => {
 	const pageSource = readProjectFile("components/blocks/agents-directory/page.tsx");
 
 	assert.match(
@@ -47,7 +47,7 @@ test("Agents Directory docs demo starts closed until the trigger is clicked", ()
 	);
 });
 
-test("Agents Directory close button sits in the dialog header", () => {
+test("Agent Directory close button sits in the dialog header", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 
 	assert.match(
@@ -62,7 +62,7 @@ test("Agents Directory close button sits in the dialog header", () => {
 	assert.doesNotMatch(source, /className="absolute top-4 right-4"/u);
 });
 
-test("Agents Directory renders a New agent header action", () => {
+test("Agent Directory renders a New agent header action", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 	const agentsDirectorySource = readProjectFile("components/blocks/agents-directory/components/agents-directory.tsx");
 	const detailsSource = readProjectFile("app/data/details/blocks.ts");
@@ -71,12 +71,13 @@ test("Agents Directory renders a New agent header action", () => {
 	assert.match(source, /onPrimaryAction\?: \(\) => void;/u);
 	assert.match(source, /primaryActionLabel \? \([\s\S]*<Button onClick=\{onPrimaryAction\} type="button">[\s\S]*\{primaryActionLabel\}/u);
 	assert.match(agentsDirectorySource, /onCreateAgent\?: \(\) => void;/u);
+	assert.match(agentsDirectorySource, /title=\{title \?\? "Agent Directory"\}/u);
 	assert.match(agentsDirectorySource, /primaryActionLabel="New agent"/u);
 	assert.match(agentsDirectorySource, /onPrimaryAction=\{onCreateAgent\}/u);
 	assert.match(detailsSource, /name: "onCreateAgent"[\s\S]*Optional handler for the New agent action/u);
 });
 
-test("Agents Directory exposes an opt-in experimental variation", () => {
+test("Agent Directory exposes an opt-in experimental variation", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 	const agentsDirectorySource = readProjectFile("components/blocks/agents-directory/components/agents-directory.tsx");
 	const indexSource = readProjectFile("components/blocks/agents-directory/index.ts");
@@ -106,28 +107,37 @@ test("Agents Directory exposes an opt-in experimental variation", () => {
 	assert.match(pageSource, /variant="experimental"/u);
 });
 
-test("Agents Directory experimental variation has searchable multi-select filters and sections", () => {
+test("Agent Directory experimental variation has searchable multi-select filters and sections", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 
 	assert.match(source, /function ExperimentalAgentBrowser/u);
 	assert.match(source, /function ExperimentalFilterDropdown/u);
-	assert.match(source, /Filter by my agents/u);
+	assert.match(source, /"flex h-full min-h-0 flex-col gap-4 overflow-y-auto px-6 pb-6"/u);
+	assert.match(source, /aria-pressed=\{selectedMyAgents\.length > 0 \? true : undefined\}[\s\S]*?Filter by my agents/u);
 	assert.match(source, /Filter by teams/u);
 	assert.match(source, /Filter by companies/u);
 	assert.match(source, /Filter by categories/u);
-	assert.match(source, /Filter by agent templates/u);
+	assert.match(source, /const teamOptions = useMemo\(\(\) => getAttributionOptions\(agents, "team"\), \[agents\]\);/u);
+	assert.match(source, /const companyOptions = useMemo\(\(\) => getAttributionOptions\(agents, "company"\), \[agents\]\);/u);
+	assert.match(source, /function ExperimentalFilterOptionAvatar/u);
+	assert.match(source, /<ExperimentalFilterOptionAvatar option=\{option\} \/>/u);
+	assert.match(source, /activeFacet === null \? \([\s\S]*<span aria-hidden className="mx-2 hidden h-6 w-px bg-border md:block" \/>[\s\S]*activeFacet === null && visibleTemplateCategories\.length > 0 \? \([\s\S]*onClick=\{handleEnterTemplateMode\}[\s\S]*Agent templates/u);
 	assert.match(source, /placeholder="Search options"/u);
+	assert.match(source, /<InputGroup className="pl-\[7px\]">[\s\S]*?<InputGroupAddon className="w-4 p-0">[\s\S]*?className="px-2"[\s\S]*?placeholder="Search options"/u);
 	assert.match(source, /<Checkbox[\s\S]*checked=\{selectedValues\.includes\(option\.id\)\}/u);
-	assert.match(source, /<Badge variant="secondary"[\s\S]*\{selectedCount\}/u);
+	assert.match(source, /selectedCount > 0 \? <Badge>\{selectedCount\}<\/Badge> : null/u);
 	assert.match(source, />\s*Reset\s*<\/Button>/u);
 	assert.match(source, /Showing \{resultCount\.toLocaleString\("en-US"\)\} results/u);
 	assert.match(source, /heading="My agents"/u);
 	assert.match(source, /heading="By teams"/u);
 	assert.match(source, /heading="By companies"/u);
 	assert.match(source, /Agent templates/u);
+	assert.match(source, /templateModeActive && activeTemplateCategoryOption \? \([\s\S]*<ExperimentalTemplateMode/u);
+	assert.match(source, /function handleEnterTemplateMode\(\)[\s\S]*setTemplateModeActive\(true\);/u);
+	assert.match(source, /function handleSelectTemplateCategory\(categoryId: AgentTemplatesCategoryId\)/u);
 });
 
-test("Agents Directory includes Agent Templates as a sidebar mode", () => {
+test("Agent Directory includes Agent Templates as a sidebar mode", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 	const agentsDirectorySource = readProjectFile("components/blocks/agents-directory/components/agents-directory.tsx");
 	const agentTemplatesSource = readProjectFile("components/blocks/agent-templates/components/agent-templates.tsx");
@@ -154,14 +164,25 @@ test("Agents Directory includes Agent Templates as a sidebar mode", () => {
 	assert.match(source, /No templates match/u);
 	assert.match(source, /activeTemplateCategoryOption \? \([\s\S]*<AnimatePresence custom=\{templateMotionCustom\} initial=\{false\} mode="wait">[\s\S]*<motion\.section[\s\S]*aria-label="Agent templates"[\s\S]*key=\{`templates-\$\{activeTemplateCategoryOption\.id\}`\}[\s\S]*variants=\{AGENT_BROWSER_TEMPLATE_GRID_VARIANTS\}[\s\S]*<AgentTemplateSection[\s\S]*onSelectAgent=\{onSelectTemplateAgent\}/u);
 	assert.match(source, /EntityCardAgentExpandedCard/u);
+	assert.match(source, /function ExperimentalTemplateMode/u);
+	assert.match(source, /<div className="flex min-h-0 flex-col gap-4">/u);
+	assert.match(source, /aria-label="Template categories"/u);
+	assert.match(source, /role="group"/u);
+	assert.match(source, /function ExperimentalTemplateCategoryButton/u);
+	assert.match(source, /function ExperimentalTemplateCarouselControl/u);
+	assert.match(source, /data-agent-templates-carousel/u);
+	assert.match(source, /scrollElement\.scrollBy\(\{/u);
+	assert.match(source, /className="h-\[456px\] w-90 shrink-0 \[will-change:transform,opacity\]"/u);
+	assert.match(source, /<ExperimentalTemplateCard[\s\S]*agent=\{agent\}[\s\S]*onSelectAgent=\{onSelectAgent\}/u);
+	assert.match(source, /<ExperimentalDirectoryCard[\s\S]*variant="experimental-template"/u);
 	assert.match(source, /className="h-\[400px\] \[will-change:transform,opacity\]"/u);
 	assert.match(source, /<ul className="grid grid-cols-1 gap-3 md:grid-cols-2">/u);
 	assert.match(source, /AGENT_BROWSER_TEMPLATE_MAX_VISIBLE_AGENTS = 8/u);
 	assert.match(source, /AGENT_BROWSER_TEMPLATE_CARD_STAGGER = 0\.05/u);
-	assert.match(source, /translateY/u);
-	assert.match(source, /const AGENT_BROWSER_TEMPLATE_GRID_VARIANTS = \{[\s\S]*enter: \{ opacity: 1 \},[\s\S]*center: \{ opacity: 1 \}/u);
+	assert.match(source, /translateX/u);
+	assert.match(source, /const AGENT_BROWSER_TEMPLATE_GRID_VARIANTS = \{[\s\S]*enter: \(\{ direction, shouldReduceMotion \}: AgentBrowserTemplateMotionCustom\) => \(\{[\s\S]*translateX\(\$\{AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET \* direction\}px\)[\s\S]*center: \{[\s\S]*translateX\(0px\)/u);
 	assert.doesNotMatch(source, /translateY\(\$\{AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET \* direction\}px\)/u);
-	assert.doesNotMatch(source, /translateX\(\$\{motionCustom\.direction \* AGENT_BROWSER_TEMPLATE_CARD_ENTER_OFFSET\}px\)/u);
+	assert.match(source, /translateX\(\$\{motionCustom\.direction \* AGENT_BROWSER_TEMPLATE_CARD_ENTER_OFFSET\}px\)/u);
 	assert.match(source, /const handleSelectCategory = \(category: string\) => \{[\s\S]*setActiveTemplateCategory\(null\);[\s\S]*setActiveCategory\(category\);[\s\S]*\};/u);
 	assert.match(agentsDirectorySource, /DEMO_AGENT_TEMPLATES/u);
 	assert.match(agentsDirectorySource, /DEMO_AGENT_TEMPLATES_SESSION/u);
@@ -171,7 +192,7 @@ test("Agents Directory includes Agent Templates as a sidebar mode", () => {
 	assert.match(studioShellSource, /onSelectTemplateAgent=\{handleTemplateAgentSelect\}/u);
 });
 
-test("Agents Directory sidebar nav uses the shared SidebarNavItem primitive", () => {
+test("Agent Directory sidebar nav uses the shared SidebarNavItem primitive", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 	const sidebarNavItemSource = readProjectFile("components/ui-custom/sidebar-nav-item.tsx");
 
@@ -209,7 +230,7 @@ test("Agents Directory sidebar nav uses the shared SidebarNavItem primitive", ()
 	);
 });
 
-test("Agents Directory uses independent column scrolling without extra content padding", () => {
+test("Agent Directory uses independent column scrolling without extra content padding", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 
 	assert.match(source, /className="grid h-\[min\(800px,calc\(100svh-2rem\)\)\] max-h-\[calc\(100svh-2rem\)\] grid-rows-\[auto_minmax\(0,1fr\)\] gap-0 overflow-hidden p-0 sm:max-w-\[1200px\]"/u);
@@ -221,9 +242,10 @@ test("Agents Directory uses independent column scrolling without extra content p
 	assert.match(source, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
 	assert.match(source, /const contentOverflow = useHasVerticalOverflow<HTMLDivElement>\(\);/u);
 	assert.match(source, /ref=\{contentOverflow\.ref\}/u);
-	assert.match(source, /"flex min-h-0 min-w-0 flex-col gap-5 overflow-y-auto px-6 pb-6 md:pl-4"/u);
+	assert.match(source, /"flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto px-6 pb-6 md:pl-4"/u);
 	assert.match(source, /contentOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"/u);
 	assert.match(source, /const sidebarOverflow = useHasVerticalOverflow<HTMLElement>\(\);/u);
+	assert.match(source, /"hidden min-h-0 w-\[280px\] shrink-0 flex-col gap-4 overflow-y-auto pl-6 md:flex"/u);
 	assert.match(source, /aria-label="Agent categories"[\s\S]*sidebarOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"[\s\S]*ref=\{sidebarOverflow\.ref\}/u);
 	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /scrollHeight - element\.clientHeight > 1/u);
 	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /scrollTop > 1/u);
@@ -253,7 +275,7 @@ test("Agents Directory uses independent column scrolling without extra content p
 	assert.doesNotMatch(source, /sticky top-0/u);
 });
 
-test("Agents Directory uses one unsegmented results grid and updated sidebar labels", () => {
+test("Agent Directory uses one unsegmented results grid and updated sidebar labels", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 	const defaultSidebarGroupsSource = readProjectFile("components/blocks/agents-directory/data/sidebar-groups.ts");
 	// The agent-browser sidebar groups + directory catalog now live in the unified
@@ -320,7 +342,7 @@ test("Agents Directory uses one unsegmented results grid and updated sidebar lab
 	assert.doesNotMatch(pageSource, /Custom agent/u);
 });
 
-test("Agents Directory cards render the shared EntityCardAgentCard with overlay elevation", () => {
+test("Agent Directory cards render the shared EntityCardAgentCard with overlay elevation", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 	const entityAgentSource = readProjectFile("components/ui-custom/entity-card/agent.tsx");
 
@@ -389,20 +411,23 @@ test("Agents Directory cards render the shared EntityCardAgentCard with overlay 
 	assert.doesNotMatch(shell, /hover:shadow-2xl/u);
 });
 
-test("Agents Directory experimental cards use the latest blocks/agent-card variants", () => {
+test("Agent Directory experimental cards use the latest blocks/agent-card variants", () => {
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 	const card = readProjectFile("components/blocks/agent-card/components/agent-card.tsx");
+	const cardParts = readProjectFile("components/blocks/agent-card/components/agent-card-parts.tsx");
 
 	// The experimental browser renders the standalone agent-card block (aliased to
 	// avoid clashing with the local default-card wrapper).
 	assert.match(source, /import \{ AgentCard as ExperimentalDirectoryCard \} from "@\/components\/blocks\/agent-card";/u);
 
-	// Built (normal) agents -> experimental-profile, with the more-menu kept and the
-	// trigger tinted to the card's cover text color.
+	// Built (normal) agents -> experimental-profile, with the more-menu kept.
 	assert.match(source, /function ExperimentalProfileCard/u);
 	assert.match(source, /<ExperimentalProfileCard agent=\{agent\} onSelectAgent=\{onSelectAgent\} \/>/u);
 	assert.match(source, /variant="experimental-profile"/u);
-	assert.match(source, /<DirectoryCardMoreMenu[\s\S]*triggerClassName="text-\[var\(--agent-card-cover-text-color\)\]/u);
+	assert.match(source, /avatarSrc=\{getDirectoryCardAvatarSrc\(agent\)\}/u);
+	assert.match(source, /insetLogo=\{isBorderlessHexagonAgent\(agent\)\}/u);
+	assert.match(source, /logoName=\{agent\.logoName\}/u);
+	assert.match(source, /moreAction=\{[\s\S]*<DirectoryCardMoreMenu[\s\S]*label=\{`More actions for \$\{agent\.name\}`\}[\s\S]*open=\{moreMenuOpen\}/u);
 	assert.match(source, /active=\{moreMenuOpen\}/u);
 
 	// Templates -> experimental-template, mapped 1:1 from the template agent shape.
@@ -412,7 +437,17 @@ test("Agents Directory experimental cards use the latest blocks/agent-card varia
 	// The card exposes the moreAction slot + active passthrough, and the cover
 	// illustration clears on hover only when there is a more action to reveal.
 	assert.match(card, /moreAction\?: ReactNode;/u);
+	assert.match(card, /insetLogo\?: boolean;/u);
+	assert.match(card, /logoName\?: AtlassianLogoName;/u);
+	assert.match(card, /const EXPERIMENTAL_VERIFIED_ICON_CLASS_NAME = "text-white";/u);
+	assert.match(card, /const displayStats = stats\.filter\(\(stat\) => !isRemixStat\(stat\)\);/u);
+	assert.match(card, /function isLastUpdateStat\(stat: \{ label: string \}\): boolean/u);
+	assert.match(card, /<ClockIcon label="" size="small" spacing="none" color="currentColor" \/>/u);
+	assert.match(card, /formatAgentCardStatText\(stat\)/u);
+	assert.match(card, /className="pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-4 pb-4 text-text \[scrollbar-gutter:stable\]"/u);
 	assert.match(card, /const hasMoreAction = Boolean\(moreAction\) \|\| Boolean\(onMoreActions\);/u);
 	assert.match(card, /hasMoreAction[\s\S]*group-hover\/card:opacity-0/u);
 	assert.match(card, /\{moreAction \?\? \(onMoreActions \?/u);
+	assert.match(cardParts, /className="absolute inset-0 z-0 cursor-pointer rounded-md outline-none"/u);
+	assert.match(cardParts, /data-slot="agent-card-select"/u);
 });

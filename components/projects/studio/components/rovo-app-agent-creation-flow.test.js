@@ -573,7 +573,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(SHELL_SOURCE, /testPanel=\{agentConfigTestPanel\}/u);
 	assert.match(SHELL_SOURCE, /onTest=\{handleTestAgent\}/u);
 	assert.match(SHELL_SOURCE, /<RovoAppAgentConfigPanel[\s\S]*testPanel=\{agentConfigTestPanel\}[\s\S]*chatContextBar=\{agentEditContextBar\}[\s\S]*chatGreeting=\{agentEditGreeting\}[\s\S]*onUpdateDraft=\{handleUpdateAgentDraft\}[\s\S]*\/>/u);
-	// "start with a template" link opens the agents directory on the first
+	// "start with a template" link opens the Agent Directory on the first
 	// template tab (AGENT_TEMPLATES_CATEGORIES[0].id) via the config panel.
 	assert.match(SHELL_SOURCE, /import \{ AGENT_TEMPLATES_CATEGORIES,[\s\S]*\} from "@\/components\/blocks\/agent-templates";/u);
 	assert.match(SHELL_SOURCE, /const handleStartAgentWithTemplate = useCallback\(\(\) => \{[\s\S]*handleBrowseAgentsDirectory\(AGENT_TEMPLATES_CATEGORIES\[0\]\.id\);[\s\S]*\}, \[handleBrowseAgentsDirectory\]\);/u);

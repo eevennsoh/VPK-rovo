@@ -158,8 +158,14 @@ export interface SkillsDirectorySkill {
 export const DEFAULT_SKILLS: readonly SkillsDirectorySkill[] =
 	skillsData as readonly SkillsDirectorySkill[];
 
+const PERSONAL_SKILL_PUBLISHERS = new Set(["you", "by you"]);
+
+function normalizeSkillPublisherName(publisher: string): string {
+	return PERSONAL_SKILL_PUBLISHERS.has(publisher.trim().toLowerCase()) ? "Venn" : publisher;
+}
+
 export function getSkillPublisherName(skill: SkillsDirectorySkill): string {
-	return skill.publisherName ?? skill.publisher ?? "Atlassian";
+	return normalizeSkillPublisherName(skill.publisherName ?? skill.publisher ?? "Atlassian");
 }
 
 export function getSkillPublisherAvatarSrc(skill: SkillsDirectorySkill): string | undefined {

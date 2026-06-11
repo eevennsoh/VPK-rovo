@@ -368,7 +368,7 @@ function FormattingToolbar({ editor }: { editor: Editor }) {
 		],
 	},
 	"agents-directory": {
-		description: "Dialog-based agents directory for browsing recommended, team, partner, and session-created agents.",
+		description: "Dialog-based Agent Directory for browsing recommended, team, partner, and session-created agents.",
 		importStatement: `import { AgentsDirectoryDialog } from "@/components/blocks/agents-directory";`,
 		usage: `import { AgentsDirectoryDialog } from "@/components/blocks/agents-directory";
 import type { AgentsDirectoryAgent, AgentsDirectoryTemplateAgent } from "@/components/blocks/agents-directory";
@@ -464,7 +464,7 @@ const templates: AgentsDirectoryTemplateAgent[] = [];
 			{
 				name: "title",
 				type: "string",
-				description: "Optional dialog title. Defaults to the underlying browser dialog title.",
+				description: "Optional dialog title. Defaults to “Agent Directory”.",
 			},
 			{
 				name: "variant",
@@ -754,7 +754,7 @@ const skills: SkillsDirectorySkill[] = [
     collectionDescription: "User-authored skills tailored to local workflows.",
     collectionProducts: ["Custom"],
     collectionDocsUrl: "https://www.atlassian.com/software/rovo",
-    publisherName: "you",
+    publisherName: "Venn",
     publisherAvatarSrc: "/avatar-human/maia-ma.png",
     categoryId: "content-and-communication",
     companyId: "you",
@@ -871,7 +871,7 @@ const skills: SkillsDirectorySkill[] = [
 			{
 				name: "agents / sessionAgents / onSelectAgent",
 				type: "compatibility aliases",
-				description: "Legacy Agents Directory-style props are still accepted and normalized into skill records.",
+				description: "Legacy Agent Directory-style props are still accepted and normalized into skill records.",
 			},
 		],
 	},
@@ -1500,7 +1500,7 @@ import { DEFAULT_CONFIGURED_TRIGGER_VALUES } from "@/components/blocks/triggers/
 			{ title: "Configured", description: "Scheduled and repository event triggers with compact parameters.", demoSlug: "triggers-demo-configured" },
 			{ title: "Multiple", description: "Multiple configured triggers with connector rhythm.", demoSlug: "triggers-demo-multiple" },
 			{ title: "Needs connection", description: "Connection-required trigger with inline connect CTA.", demoSlug: "triggers-demo-needs-connection" },
-			{ title: "Manage", description: "List-management dialog to reorder, toggle, delete, and add triggers.", demoSlug: "triggers-demo-manage" },
+			{ title: "Manage", description: "Shared automation editor entry point for managing the configured trigger events.", demoSlug: "triggers-demo-manage" },
 		],
 	},
 	"app-sidebar": {

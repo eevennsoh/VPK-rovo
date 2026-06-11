@@ -61,8 +61,10 @@ export interface AgentTriggerValue {
 	label?: string;
 	params?: Readonly<Record<string, string>>;
 	connectionState?: AgentTriggerConnectionState;
-	/** Free-text prompt that runs when this trigger's event fires. */
+	/** Legacy shared automation prompt mirrored across all trigger rows. */
 	prompt?: string;
+	/** Legacy shared automation name mirrored across all trigger rows. */
+	automationName?: string;
 	/** Whether the trigger is active. Treated as `true` when undefined. */
 	enabled?: boolean;
 }

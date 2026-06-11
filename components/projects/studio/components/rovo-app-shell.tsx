@@ -2327,7 +2327,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		setAgentTemplatesDialogOpen(true);
 	}, []);
 
-	// The home bento's "Browse all" pill opens the full agents directory instead
+	// The home bento's "Browse all" pill opens the full Agent Directory instead
 	// of the lighter templates dialog, landing straight on the category the user
 	// was exploring (e.g. "Planning") so the directory mirrors that tab.
 	const handleBrowseAgentsDirectory = useCallback((category: HomeStarterCategory = HOME_STARTER_DEFAULT_CATEGORY) => {

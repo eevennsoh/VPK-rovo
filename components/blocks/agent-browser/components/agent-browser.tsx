@@ -1,10 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { type KeyboardEvent, type MouseEvent, useMemo, useState } from "react";
+import { type KeyboardEvent, type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, cubicBezier, motion, useReducedMotion } from "motion/react";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import ChevronLeftIcon from "@atlaskit/icon/core/chevron-left";
+import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
@@ -127,6 +129,13 @@ const AGENT_BROWSER_TEMPLATE_CARD_STAGGER = 0.05;
 const AGENT_BROWSER_TEMPLATE_TITLE_SWAP_OFFSET = 12;
 const AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET = 24;
 const AGENT_BROWSER_TEMPLATE_CARD_ENTER_OFFSET = 16;
+const AGENT_BROWSER_TEMPLATE_CARD_SCROLL_OFFSET = 376;
+const AGENT_BROWSER_TEMPLATE_SCROLL_EDGE_THRESHOLD = 2;
+const AGENT_BROWSER_TEMPLATE_CAROUSEL_CONTROL_TRANSITION = {
+	type: "spring",
+	bounce: 0,
+	visualDuration: 0.2,
+} as const;
 const NOOP_TEMPLATE_MORE_ACTIONS = () => undefined;
 
 type AgentBrowserTemplateMotionDirection = 1 | -1;
@@ -138,26 +147,33 @@ type AgentBrowserTemplateMotionCustom = {
 const AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS = {
 	enter: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
 		opacity: 0,
-		transform: shouldReduceMotion ? "translateY(0px)" : `translateY(${AGENT_BROWSER_TEMPLATE_TITLE_SWAP_OFFSET * direction}px)`,
+		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${AGENT_BROWSER_TEMPLATE_TITLE_SWAP_OFFSET * direction}px)`,
 	}),
 	center: {
 		opacity: 1,
-		transform: "translateY(0px)",
+		transform: "translateX(0px)",
 		transition: AGENT_BROWSER_TEMPLATE_TITLE_ENTER_TRANSITION,
 	},
 	exit: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
 		opacity: 0,
-		transform: shouldReduceMotion ? "translateY(0px)" : `translateY(${-AGENT_BROWSER_TEMPLATE_TITLE_SWAP_OFFSET * direction}px)`,
+		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${-AGENT_BROWSER_TEMPLATE_TITLE_SWAP_OFFSET * direction}px)`,
 		transition: AGENT_BROWSER_TEMPLATE_TAB_EXIT_TRANSITION,
 	}),
 } as const;
 
 const AGENT_BROWSER_TEMPLATE_GRID_VARIANTS = {
-	enter: { opacity: 1 },
-	center: { opacity: 1 },
+	enter: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
+		opacity: 0,
+		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET * direction}px)`,
+	}),
+	center: {
+		opacity: 1,
+		transform: "translateX(0px)",
+		transition: AGENT_BROWSER_TEMPLATE_TITLE_ENTER_TRANSITION,
+	},
 	exit: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
 		opacity: 0,
-		transform: shouldReduceMotion ? "translateY(0px)" : `translateY(${-AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET * direction}px)`,
+		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${-AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET * direction}px)`,
 		transition: AGENT_BROWSER_TEMPLATE_TAB_EXIT_TRANSITION,
 	}),
 } as const;
@@ -217,22 +233,6 @@ function matchesAgentQuery(agent: AgentBrowserAgent, query: string): boolean {
 	return haystack.includes(normalized);
 }
 
-function matchesTemplateQuery(agent: AgentTemplatesAgent, query: string): boolean {
-	const normalized = query.trim().toLowerCase();
-	if (!normalized) return true;
-
-	const haystack = [
-		agent.name,
-		agent.byline,
-		agent.publisher,
-		agent.description,
-		agent.sources?.map((source) => source.label).join(" "),
-		agent.skills?.map((skill) => skill.label).join(" "),
-	].filter(Boolean).join(" ").toLowerCase();
-
-	return haystack.includes(normalized);
-}
-
 function deriveAgentCategory(agent: AgentBrowserAgent): string {
 	const [prefix] = agent.byline.split(/\s+by\s+/i);
 	const label = prefix.trim();
@@ -246,6 +246,69 @@ function createOptionId(label: string): string {
 interface ExperimentalFilterOption {
 	id: string;
 	label: string;
+	avatarSrc?: string;
+	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
+	logoName?: AtlassianLogoName;
+}
+
+const TEAM_PROJECT_AVATARS: readonly string[] = [
+	"/avatar-project/compass.svg",
+	"/avatar-project/code.svg",
+	"/avatar-project/service-bell.svg",
+	"/avatar-project/graph.svg",
+	"/avatar-project/rocket.svg",
+	"/avatar-project/lightning.svg",
+	"/avatar-project/megaphone.svg",
+	"/avatar-project/shield.svg",
+];
+
+function pickTeamProjectAvatar(label: string): string {
+	let hash = 0;
+	for (let index = 0; index < label.length; index += 1) {
+		hash = (hash * 31 + label.charCodeAt(index)) | 0;
+	}
+	return TEAM_PROJECT_AVATARS[Math.abs(hash) % TEAM_PROJECT_AVATARS.length];
+}
+
+function getAttributionOptions(
+	agents: readonly AgentBrowserAgent[],
+	kind: "team" | "company",
+): readonly ExperimentalFilterOption[] {
+	const order: string[] = [];
+	const byId = new Map<string, { label: string; agents: AgentBrowserAgent[] }>();
+
+	for (const agent of agents) {
+		if (agent.attributionKind !== kind) continue;
+
+		const label = derivePublisher(agent.byline);
+		const id = createOptionId(label);
+		if (!label) continue;
+
+		const existing = byId.get(id);
+		if (existing) {
+			existing.agents.push(agent);
+		} else {
+			order.push(id);
+			byId.set(id, { label, agents: [agent] });
+		}
+	}
+
+	return order.map((id) => {
+		const { label, agents: members } = byId.get(id)!;
+
+		if (kind === "team") {
+			return { id, label, avatarSrc: pickTeamProjectAvatar(label) };
+		}
+
+		const logoName = members.find((member) => member.logoName)?.logoName;
+		if (logoName) {
+			return { id, label, logoName };
+		}
+
+		const brandAvatar = members.find((member) => member.avatarSrc?.startsWith("/3p/"))?.avatarSrc
+			?? members.find((member) => member.avatarSrc)?.avatarSrc;
+		return { id, label, avatarSrc: brandAvatar };
+	});
 }
 
 function getUniqueOptions(labels: readonly string[]): readonly ExperimentalFilterOption[] {
@@ -441,7 +504,7 @@ function DefaultAgentBrowser({
 			<div
 				ref={contentOverflow.ref}
 				className={cn(
-					"flex min-h-0 min-w-0 flex-col gap-5 overflow-y-auto px-6 pb-6 md:pl-4",
+					"flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto px-6 pb-6 md:pl-4",
 					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
 				)}
 			>
@@ -546,27 +609,30 @@ function ExperimentalAgentBrowser({
 	const [selectedTeams, setSelectedTeams] = useState<readonly string[]>([]);
 	const [selectedCompanies, setSelectedCompanies] = useState<readonly string[]>([]);
 	const [selectedCategories, setSelectedCategories] = useState<readonly string[]>([]);
-	const [selectedTemplates, setSelectedTemplates] = useState<readonly string[]>([]);
+	const [templateModeActive, setTemplateModeActive] = useState(false);
+	const [activeTemplateCategory, setActiveTemplateCategory] = useState<AgentTemplatesCategoryId | null>(null);
+	const [templateMotionDirection, setTemplateMotionDirection] = useState<AgentBrowserTemplateMotionDirection>(1);
+	const shouldReduceMotion = useReducedMotion() ?? false;
 	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
 
-	const teamOptions = useMemo(
-		() => getUniqueOptions(agents.filter((agent) => agent.attributionKind === "team").map((agent) => derivePublisher(agent.byline))),
-		[agents],
-	);
-	const companyOptions = useMemo(
-		() => getUniqueOptions(agents.filter((agent) => agent.attributionKind === "company").map((agent) => derivePublisher(agent.byline))),
-		[agents],
-	);
+	const teamOptions = useMemo(() => getAttributionOptions(agents, "team"), [agents]);
+	const companyOptions = useMemo(() => getAttributionOptions(agents, "company"), [agents]);
 	const categoryOptions = useMemo(
 		() => getUniqueOptions(agents.map((agent) => deriveAgentCategory(agent))),
 		[agents],
 	);
-	const templateOptions = useMemo(
+	const visibleTemplateCategories = useMemo(
 		() => templateCategories
-			.filter((category) => templateAgents.some((agent) => agent.categoryId === category.id))
-			.map((category) => ({ id: category.id, label: category.label })),
+			.filter((category) => templateAgents.some((agent) => agent.categoryId === category.id)),
 		[templateAgents, templateCategories],
 	);
+	const activeTemplateCategoryOption = templateModeActive
+		? visibleTemplateCategories.find((category) => category.id === activeTemplateCategory) ?? visibleTemplateCategories[0] ?? null
+		: null;
+	const templateMotionCustom = {
+		direction: templateMotionDirection,
+		shouldReduceMotion,
+	};
 
 	const selectedTeamLabels = useMemo(
 		() => selectedOptionLabels(teamOptions, selectedTeams),
@@ -580,7 +646,6 @@ function ExperimentalAgentBrowser({
 		() => selectedOptionLabels(categoryOptions, selectedCategories),
 		[categoryOptions, selectedCategories],
 	);
-	const selectedTemplateIds = useMemo(() => new Set(selectedTemplates), [selectedTemplates]);
 
 	const queryMatchedAgents = useMemo(
 		() => agents.filter((agent) => matchesAgentQuery(agent, query)),
@@ -613,12 +678,10 @@ function ExperimentalAgentBrowser({
 		[matchesSelectedCategories, queryMatchedAgents, selectedCompanyLabels],
 	);
 	const visibleTemplates = useMemo(
-		() => selectedTemplateIds.size === 0
-			? EMPTY_TEMPLATE_AGENTS
-			: templateAgents
-					.filter((agent) => agent.categoryId ? selectedTemplateIds.has(agent.categoryId) && matchesTemplateQuery(agent, query) : false)
-					.slice(0, AGENT_BROWSER_TEMPLATE_MAX_VISIBLE_AGENTS),
-		[query, selectedTemplateIds, templateAgents],
+		() => activeTemplateCategoryOption
+			? filterTemplateAgents(templateAgents, "", activeTemplateCategoryOption.id)
+			: EMPTY_TEMPLATE_AGENTS,
+		[activeTemplateCategoryOption, templateAgents],
 	);
 
 	const hasMyAgentFilter = selectedMyAgents.length > 0;
@@ -626,12 +689,10 @@ function ExperimentalAgentBrowser({
 	const showMyAgents = myAgents.length > 0 && (!hasAgentGroupFilter || hasMyAgentFilter);
 	const showTeamAgents = teamAgents.length > 0 && !hasMyAgentFilter && (selectedTeams.length > 0 || !hasAgentGroupFilter);
 	const showCompanyAgents = companyAgents.length > 0 && !hasMyAgentFilter && (selectedCompanies.length > 0 || !hasAgentGroupFilter);
-	const showTemplates = visibleTemplates.length > 0;
 	const resultCount = [
 		showMyAgents ? myAgents.length : 0,
 		showTeamAgents ? teamAgents.length : 0,
 		showCompanyAgents ? companyAgents.length : 0,
-		showTemplates ? visibleTemplates.length : 0,
 	].reduce((total, count) => total + count, 0);
 	const hasActiveFilters = [
 		query.trim(),
@@ -639,8 +700,7 @@ function ExperimentalAgentBrowser({
 		...selectedTeams,
 		...selectedCompanies,
 		...selectedCategories,
-		...selectedTemplates,
-	].some(Boolean);
+	].some(Boolean) || templateModeActive;
 
 	function resetFilters() {
 		setQuery("");
@@ -648,97 +708,158 @@ function ExperimentalAgentBrowser({
 		setSelectedTeams([]);
 		setSelectedCompanies([]);
 		setSelectedCategories([]);
-		setSelectedTemplates([]);
+		setTemplateModeActive(false);
+		setActiveTemplateCategory(null);
+	}
+
+	const activeFacet = selectedMyAgents.length > 0
+		? "myAgents"
+		: selectedTeams.length > 0
+			? "teams"
+			: selectedCompanies.length > 0
+				? "companies"
+				: selectedCategories.length > 0
+					? "categories"
+					: null;
+	const showFacet = (facet: string) => activeFacet === null || activeFacet === facet;
+
+	function handleEnterTemplateMode() {
+		const defaultCategory = visibleTemplateCategories[0];
+		if (!defaultCategory) return;
+
+		setQuery("");
+		setSelectedMyAgents([]);
+		setSelectedTeams([]);
+		setSelectedCompanies([]);
+		setSelectedCategories([]);
+		setTemplateMotionDirection(1);
+		setActiveTemplateCategory(defaultCategory.id);
+		setTemplateModeActive(true);
+	}
+
+	function handleSelectTemplateCategory(categoryId: AgentTemplatesCategoryId) {
+		if (!activeTemplateCategoryOption || categoryId === activeTemplateCategoryOption.id) return;
+
+		setTemplateMotionDirection(
+			getTemplateCategoryIndex(visibleTemplateCategories, categoryId) < getTemplateCategoryIndex(visibleTemplateCategories, activeTemplateCategoryOption.id)
+				? -1
+				: 1,
+		);
+		setActiveTemplateCategory(categoryId);
 	}
 
 	return (
 		<div
 			ref={contentOverflow.ref}
 			className={cn(
-				"flex h-full min-h-0 flex-col gap-5 overflow-y-auto px-6 pb-6",
+				"flex h-full min-h-0 flex-col gap-4 overflow-y-auto px-6 pb-6",
 				contentOverflow.showTopScrollMask ? "scroll-mask-top overscroll-contain" : null,
 			)}
 		>
-			<InputGroup>
-				<InputGroupAddon>
-					<SearchIcon label="" />
-				</InputGroupAddon>
-				<InputGroupInput
-					aria-label="Search agents"
-					placeholder="Search agents"
-					value={query}
-					onChange={(event) => setQuery(event.target.value)}
+			{templateModeActive && activeTemplateCategoryOption ? (
+				<ExperimentalTemplateMode
+					activeCategory={activeTemplateCategoryOption}
+					categories={visibleTemplateCategories}
+					motionCustom={templateMotionCustom}
+					onReset={resetFilters}
+					onSelectAgent={onSelectTemplateAgent}
+					onSelectCategory={handleSelectTemplateCategory}
+					templates={visibleTemplates}
 				/>
-			</InputGroup>
-
-			<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-				<div className="flex flex-wrap items-center gap-2">
-					<ExperimentalFilterDropdown
-						label="Filter by my agents"
-						activeLabel="Filter by my agents"
-						options={[{ id: "my-agents", label: "My agents" }]}
-						selectedValues={selectedMyAgents}
-						onToggle={(value) => setSelectedMyAgents((current) => toggleSelectedValue(current, value))}
-					/>
-					<ExperimentalFilterDropdown
-						label="Teams"
-						activeLabel="Filter by teams"
-						options={teamOptions}
-						selectedValues={selectedTeams}
-						onToggle={(value) => setSelectedTeams((current) => toggleSelectedValue(current, value))}
-					/>
-					<ExperimentalFilterDropdown
-						label="Companies"
-						activeLabel="Filter by companies"
-						options={companyOptions}
-						selectedValues={selectedCompanies}
-						onToggle={(value) => setSelectedCompanies((current) => toggleSelectedValue(current, value))}
-					/>
-					<ExperimentalFilterDropdown
-						label="Categories"
-						activeLabel="Filter by categories"
-						options={categoryOptions}
-						selectedValues={selectedCategories}
-						onToggle={(value) => setSelectedCategories((current) => toggleSelectedValue(current, value))}
-					/>
-					<span aria-hidden className="mx-2 hidden h-6 w-px bg-border md:block" />
-					<ExperimentalFilterDropdown
-						label="Agent templates"
-						activeLabel="Filter by agent templates"
-						options={templateOptions}
-						selectedValues={selectedTemplates}
-						onToggle={(value) => setSelectedTemplates((current) => toggleSelectedValue(current, value))}
-					/>
-					{hasActiveFilters ? (
-						<Button type="button" variant="ghost" onClick={resetFilters}>
-							Reset
-						</Button>
-					) : null}
-				</div>
-				<p className="text-sm leading-5 text-text-subtle">
-					Showing {resultCount.toLocaleString("en-US")} results
-				</p>
-			</div>
-
-			{resultCount === 0 ? (
-				<p className="text-sm text-text-subtlest">
-					No agents match &ldquo;{query}&rdquo;.
-				</p>
 			) : (
-				<div className="flex flex-col gap-7">
-					{showMyAgents ? (
-						<ExperimentalAgentSection heading="My agents" agents={myAgents} onSelectAgent={onSelectAgent} />
-					) : null}
-					{showTeamAgents ? (
-						<ExperimentalAgentSection heading="By teams" agents={teamAgents} onSelectAgent={onSelectAgent} />
-					) : null}
-					{showCompanyAgents ? (
-						<ExperimentalAgentSection heading="By companies" agents={companyAgents} onSelectAgent={onSelectAgent} />
-					) : null}
-					{showTemplates ? (
-						<ExperimentalTemplateSection agents={visibleTemplates} onSelectAgent={onSelectTemplateAgent} />
-					) : null}
-				</div>
+				<>
+					<InputGroup>
+						<InputGroupAddon>
+							<SearchIcon label="" />
+						</InputGroupAddon>
+						<InputGroupInput
+							aria-label="Search agents"
+							placeholder="Search agents"
+							value={query}
+							onChange={(event) => setQuery(event.target.value)}
+						/>
+					</InputGroup>
+
+					<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+						<div className="flex flex-wrap items-center gap-2">
+							{showFacet("myAgents") ? (
+								<Button
+									aria-pressed={selectedMyAgents.length > 0 ? true : undefined}
+									onClick={() => setSelectedMyAgents((current) => toggleSelectedValue(current, "my-agents"))}
+									type="button"
+									variant="outline"
+								>
+									Filter by my agents
+								</Button>
+							) : null}
+							{showFacet("teams") ? (
+								<ExperimentalFilterDropdown
+									label="Teams"
+									activeLabel="Filter by teams"
+									options={teamOptions}
+									selectedValues={selectedTeams}
+									onToggle={(value) => setSelectedTeams((current) => toggleSelectedValue(current, value))}
+								/>
+							) : null}
+							{showFacet("companies") ? (
+								<ExperimentalFilterDropdown
+									label="Companies"
+									activeLabel="Filter by companies"
+									options={companyOptions}
+									selectedValues={selectedCompanies}
+									onToggle={(value) => setSelectedCompanies((current) => toggleSelectedValue(current, value))}
+								/>
+							) : null}
+							{showFacet("categories") ? (
+								<ExperimentalFilterDropdown
+									label="Categories"
+									activeLabel="Filter by categories"
+									options={categoryOptions}
+									selectedValues={selectedCategories}
+									onToggle={(value) => setSelectedCategories((current) => toggleSelectedValue(current, value))}
+								/>
+							) : null}
+							{activeFacet === null ? (
+								<span aria-hidden className="mx-2 hidden h-6 w-px bg-border md:block" />
+							) : null}
+							{activeFacet === null && visibleTemplateCategories.length > 0 ? (
+								<Button
+									onClick={handleEnterTemplateMode}
+									type="button"
+									variant="outline"
+								>
+									Agent templates
+								</Button>
+							) : null}
+							{hasActiveFilters ? (
+								<Button type="button" variant="ghost" onClick={resetFilters}>
+									Reset
+								</Button>
+							) : null}
+						</div>
+						<p className="text-sm leading-5 text-text-subtle">
+							Showing {resultCount.toLocaleString("en-US")} results
+						</p>
+					</div>
+
+					{resultCount === 0 ? (
+						<p className="text-sm text-text-subtlest">
+							No agents match &ldquo;{query}&rdquo;.
+						</p>
+					) : (
+						<div className="flex flex-col gap-7">
+							{showMyAgents ? (
+								<ExperimentalAgentSection heading="My agents" agents={myAgents} onSelectAgent={onSelectAgent} />
+							) : null}
+							{showTeamAgents ? (
+								<ExperimentalAgentSection heading="By teams" agents={teamAgents} onSelectAgent={onSelectAgent} />
+							) : null}
+							{showCompanyAgents ? (
+								<ExperimentalAgentSection heading="By companies" agents={companyAgents} onSelectAgent={onSelectAgent} />
+							) : null}
+						</div>
+					)}
+				</>
 			)}
 		</div>
 	);
@@ -766,7 +887,7 @@ function ExperimentalFilterDropdown({
 			: options;
 	}, [options, query]);
 	const selectedCount = selectedValues.length;
-	const triggerLabel = open || selectedCount > 0 ? activeLabel : label;
+	const triggerLabel = selectedCount > 0 ? activeLabel : label;
 
 	function handleOpenChange(nextOpen: boolean) {
 		setOpen(nextOpen);
@@ -789,23 +910,26 @@ function ExperimentalFilterDropdown({
 				}
 			>
 				<span>{triggerLabel}</span>
-				{selectedCount > 0 ? (
-					<Badge variant="secondary" className="h-5 min-w-5 px-1">
-						{selectedCount}
-					</Badge>
-				) : null}
+				{selectedCount > 0 ? <Badge>{selectedCount}</Badge> : null}
 				<Icon
 					render={<ChevronDownIcon label="" size="small" color="currentColor" />}
-					className={cn("text-icon-subtle transition-transform duration-fast", open ? "rotate-180" : null)}
+					className={cn(
+						"transition-transform duration-fast",
+						selectedCount > 0 || open
+							? "[&_svg]:text-icon-selected"
+							: "[&_svg]:text-icon-subtle",
+						open ? "rotate-180" : null,
+					)}
 				/>
 			</PopoverTrigger>
 			<PopoverContent align="start" className="w-72 gap-2 p-2">
-				<InputGroup>
-					<InputGroupAddon>
+				<InputGroup className="pl-[7px]">
+					<InputGroupAddon className="w-4 p-0">
 						<SearchIcon label="" />
 					</InputGroupAddon>
 					<InputGroupInput
 						aria-label={`Search ${label}`}
+						className="px-2"
 						placeholder="Search options"
 						value={query}
 						onChange={(event) => setQuery(event.target.value)}
@@ -829,6 +953,7 @@ function ExperimentalFilterDropdown({
 												}
 											}}
 										/>
+										<ExperimentalFilterOptionAvatar option={option} />
 										<span className="min-w-0 flex-1 truncate">{option.label}</span>
 									</label>
 								</li>
@@ -839,6 +964,43 @@ function ExperimentalFilterDropdown({
 			</PopoverContent>
 		</Popover>
 	);
+}
+
+function ExperimentalFilterOptionAvatar({ option }: Readonly<{ option: ExperimentalFilterOption }>) {
+	if (option.logoName) {
+		return (
+			<Tile label={option.label} variant="transparent" size="small" hasBorder className="shrink-0">
+				<AtlassianLogo name={option.logoName} label={option.label} size="xsmall" themeAware />
+			</Tile>
+		);
+	}
+
+	if (option.avatarSrc?.startsWith("/avatar-project/")) {
+		return (
+			<span className="flex size-6 shrink-0 items-center justify-center">
+				<Avatar size="sm" shape="square" label={option.label} className="size-5">
+					<AvatarImage alt="" aria-hidden src={option.avatarSrc} />
+				</Avatar>
+			</span>
+		);
+	}
+
+	if (option.avatarSrc) {
+		return (
+			<Avatar size="sm" shape="square" className="shrink-0 after:border-0">
+				<Image
+					alt=""
+					aria-hidden
+					className="size-full object-contain"
+					height={24}
+					src={option.avatarSrc}
+					width={24}
+				/>
+			</Avatar>
+		);
+	}
+
+	return null;
 }
 
 function ExperimentalAgentSection({
@@ -866,43 +1028,294 @@ function ExperimentalAgentSection({
 	);
 }
 
-function ExperimentalTemplateSection({
-	agents,
+function ExperimentalTemplateMode({
+	activeCategory,
+	categories,
+	motionCustom,
+	onReset,
+	onSelectAgent,
+	onSelectCategory,
+	templates,
+}: Readonly<{
+	activeCategory: AgentTemplatesCategory;
+	categories: readonly AgentTemplatesCategory[];
+	motionCustom: AgentBrowserTemplateMotionCustom;
+	onReset: () => void;
+	onSelectAgent?: (agent: AgentTemplatesAgent) => void;
+	onSelectCategory: (categoryId: AgentTemplatesCategoryId) => void;
+	templates: readonly AgentTemplatesAgent[];
+}>) {
+	const scrollRef = useRef<HTMLDivElement | null>(null);
+	const [scrollControls, setScrollControls] = useState({ canScrollLeft: false, canScrollRight: false });
+
+	const updateScrollControls = useCallback(() => {
+		const scrollElement = scrollRef.current;
+		if (!scrollElement) {
+			setScrollControls((currentControls) => (
+				currentControls.canScrollLeft || currentControls.canScrollRight
+					? { canScrollLeft: false, canScrollRight: false }
+					: currentControls
+			));
+			return;
+		}
+
+		const maxScrollLeft = scrollElement.scrollWidth - scrollElement.clientWidth;
+		const canScrollLeft = scrollElement.scrollLeft > AGENT_BROWSER_TEMPLATE_SCROLL_EDGE_THRESHOLD;
+		const canScrollRight = scrollElement.scrollLeft < maxScrollLeft - AGENT_BROWSER_TEMPLATE_SCROLL_EDGE_THRESHOLD;
+
+		setScrollControls((currentControls) => (
+			currentControls.canScrollLeft === canScrollLeft && currentControls.canScrollRight === canScrollRight
+				? currentControls
+				: { canScrollLeft, canScrollRight }
+		));
+	}, []);
+
+	const setCarouselRef = useCallback((scrollElement: HTMLDivElement | null) => {
+		scrollRef.current = scrollElement;
+		if (scrollElement) {
+			window.requestAnimationFrame(updateScrollControls);
+		}
+	}, [updateScrollControls]);
+
+	useEffect(() => {
+		const scrollElement = scrollRef.current;
+		if (!scrollElement) return;
+
+		const animationFrameId = window.requestAnimationFrame(updateScrollControls);
+		const resizeObserver = new ResizeObserver(updateScrollControls);
+		resizeObserver.observe(scrollElement);
+
+		return () => {
+			window.cancelAnimationFrame(animationFrameId);
+			resizeObserver.disconnect();
+		};
+	}, [templates.length, updateScrollControls]);
+
+	useEffect(() => {
+		const scrollElement = scrollRef.current;
+		if (!scrollElement) return;
+
+		scrollElement.scrollTo({ left: 0 });
+		window.requestAnimationFrame(updateScrollControls);
+	}, [activeCategory.id, templates.length, updateScrollControls]);
+
+	function handleScrollBy(direction: -1 | 1) {
+		const scrollElement = scrollRef.current;
+		if (!scrollElement) return;
+
+		const previousScrollLeft = scrollElement.scrollLeft;
+		scrollElement.scrollBy({
+			left: AGENT_BROWSER_TEMPLATE_CARD_SCROLL_OFFSET * direction,
+			behavior: "smooth",
+		});
+		window.setTimeout(() => {
+			if (scrollElement.scrollLeft !== previousScrollLeft) return;
+			scrollElement.scrollBy({
+				left: AGENT_BROWSER_TEMPLATE_CARD_SCROLL_OFFSET * direction,
+			});
+			updateScrollControls();
+		}, 150);
+	}
+
+	return (
+		<div className="flex min-h-0 flex-col gap-4">
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<div
+					aria-label="Template categories"
+					className="flex flex-wrap justify-start gap-2"
+					role="group"
+				>
+					{categories.map((category) => (
+						<ExperimentalTemplateCategoryButton
+							active={activeCategory.id === category.id}
+							category={category}
+							key={category.id}
+							onClick={() => onSelectCategory(category.id)}
+						/>
+					))}
+				</div>
+				<Button type="button" variant="ghost" onClick={onReset}>
+					Reset
+				</Button>
+			</div>
+			<AnimatePresence custom={motionCustom} initial={false} mode="wait">
+				<motion.div
+					animate="center"
+					className="min-h-16 overflow-hidden text-text"
+					custom={motionCustom}
+					exit="exit"
+					initial="enter"
+					key={`experimental-template-title-${activeCategory.id}`}
+					style={{ font: token("font.heading.xlarge"), willChange: "transform, opacity" }}
+					variants={AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS}
+				>
+					<TemplateCategoryTitle category={activeCategory} />
+				</motion.div>
+			</AnimatePresence>
+			<section aria-label="Agent templates" className="relative min-h-0 overflow-hidden">
+				<div
+					className="h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+					data-agent-templates-carousel
+					onScroll={updateScrollControls}
+					ref={setCarouselRef}
+				>
+					<AnimatePresence custom={motionCustom} initial={false} mode="wait">
+						<motion.div
+							animate="center"
+							className="flex h-full w-max gap-4 px-0 pt-2 pr-6 pb-6"
+							custom={motionCustom}
+							exit="exit"
+							initial="enter"
+							key={`experimental-templates-${activeCategory.id}`}
+							style={{ willChange: "transform, opacity" }}
+							variants={AGENT_BROWSER_TEMPLATE_GRID_VARIANTS}
+						>
+							{templates.map((agent, index) => (
+								<motion.div
+									animate={{ opacity: 1, transform: "translateX(0px)" }}
+									className="h-[456px] w-90 shrink-0 [will-change:transform,opacity]"
+									initial={{
+										opacity: 0,
+										transform: motionCustom.shouldReduceMotion ? "translateX(0px)" : `translateX(${motionCustom.direction * AGENT_BROWSER_TEMPLATE_CARD_ENTER_OFFSET}px)`,
+									}}
+									key={agent.id}
+									transition={{
+										...AGENT_BROWSER_TEMPLATE_CARD_ENTER_TRANSITION,
+										delay: motionCustom.shouldReduceMotion ? 0 : index * AGENT_BROWSER_TEMPLATE_CARD_STAGGER,
+									}}
+								>
+									<ExperimentalTemplateCard
+										agent={agent}
+										onSelectAgent={onSelectAgent}
+									/>
+								</motion.div>
+							))}
+						</motion.div>
+					</AnimatePresence>
+				</div>
+				<AnimatePresence initial={false}>
+					{scrollControls.canScrollLeft ? (
+						<ExperimentalTemplateCarouselControl
+							direction="previous"
+							key="previous"
+							onClick={() => handleScrollBy(-1)}
+						/>
+					) : null}
+					{scrollControls.canScrollRight ? (
+						<ExperimentalTemplateCarouselControl
+							direction="next"
+							key="next"
+							onClick={() => handleScrollBy(1)}
+						/>
+					) : null}
+				</AnimatePresence>
+			</section>
+		</div>
+	);
+}
+
+function ExperimentalTemplateCategoryButton({
+	active,
+	category,
+	onClick,
+}: Readonly<{
+	active: boolean;
+	category: AgentTemplatesCategory;
+	onClick: () => void;
+}>) {
+	return (
+		<button
+			aria-pressed={active}
+			className={cn(
+				"relative isolate inline-flex h-8 shrink-0 items-center overflow-hidden rounded-md border px-3 text-sm font-medium leading-5 outline-none transition-[border-color,color,box-shadow] duration-fast ease-out focus-visible:ring-3 focus-visible:ring-ring/50",
+				active
+					? "border-border-selected bg-bg-selected text-text-selected"
+					: "border-border bg-background text-text-subtle hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
+			)}
+			onClick={onClick}
+			type="button"
+		>
+			<span className="relative z-[2] inline-flex items-center gap-1.5">
+				<span aria-hidden className="inline-flex size-6 shrink-0 items-center justify-center">
+					<Image
+						alt=""
+						className={cn("size-6 object-contain", category.iconClassName)}
+						height={24}
+						src={category.iconSrc}
+						width={24}
+					/>
+				</span>
+				<span>{category.label}</span>
+			</span>
+		</button>
+	);
+}
+
+function ExperimentalTemplateCarouselControl({
+	direction,
+	onClick,
+}: Readonly<{
+	direction: "previous" | "next";
+	onClick: () => void;
+}>) {
+	const isPrevious = direction === "previous";
+	const hiddenTransform = `translateY(-50%) translateX(${isPrevious ? "-8px" : "8px"}) scale(0.96)`;
+
+	return (
+		<motion.div
+			animate={{ opacity: 1, transform: "translateY(-50%) translateX(0px) scale(1)" }}
+			className={cn(
+				"absolute top-1/2 z-10",
+				isPrevious ? "left-3" : "right-3",
+			)}
+			exit={{ opacity: 0, transform: hiddenTransform }}
+			initial={{ opacity: 0, transform: hiddenTransform }}
+			transition={AGENT_BROWSER_TEMPLATE_CAROUSEL_CONTROL_TRANSITION}
+		>
+			<Button
+				aria-label={isPrevious ? "Show previous agent templates" : "Show next agent templates"}
+				className="border-0 bg-surface-overlay text-icon-subtle opacity-100 hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed focus-visible:border-0"
+				onClick={onClick}
+				size="icon"
+				style={{ boxShadow: token("elevation.shadow.overlay") }}
+				type="button"
+				variant="ghost"
+			>
+				<Icon
+					className="pointer-events-none [&_*]:pointer-events-none"
+					render={isPrevious ? <ChevronLeftIcon label="" color="currentColor" /> : <ChevronRightIcon label="" color="currentColor" />}
+				/>
+			</Button>
+		</motion.div>
+	);
+}
+
+function ExperimentalTemplateCard({
+	agent,
 	onSelectAgent,
 }: Readonly<{
-	agents: readonly AgentTemplatesAgent[];
+	agent: AgentTemplatesAgent;
 	onSelectAgent?: (agent: AgentTemplatesAgent) => void;
 }>) {
 	return (
-		<section aria-label="Agent templates" className="flex flex-col gap-4">
-			<h2 style={{ font: token("font.heading.large") }} className="text-text">
-				Agent templates
-			</h2>
-			<ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-				{agents.map((agent) => (
-					<li className="h-[400px]" key={agent.id}>
-						<ExperimentalDirectoryCard
-							attributionKind={agent.attributionKind}
-							avatarSrc={agent.avatarSrc}
-							capabilities={agent.capabilities ?? EMPTY_TEMPLATE_CAPABILITIES}
-							className="h-full w-full"
-							collaboratorOverflow={agent.collaboratorOverflow}
-							collaborators={agent.collaborators}
-							description={agent.description}
-							name={agent.name}
-							onSelect={onSelectAgent ? () => onSelectAgent(agent) : undefined}
-							publisher={deriveTemplatePublisher(agent)}
-							publisherLogoSrc={agent.publisherLogoSrc}
-							skills={agent.skills}
-							sources={agent.sources}
-							stats={agent.stats}
-							variant="experimental-template"
-							verified={agent.verified}
-						/>
-					</li>
-				))}
-			</ul>
-		</section>
+		<ExperimentalDirectoryCard
+			attributionKind={agent.attributionKind}
+			avatarSrc={agent.avatarSrc}
+			capabilities={agent.capabilities ?? EMPTY_TEMPLATE_CAPABILITIES}
+			className="h-full w-full"
+			collaboratorOverflow={agent.collaboratorOverflow}
+			collaborators={agent.collaborators}
+			description={agent.description}
+			name={agent.name}
+			onSelect={onSelectAgent ? () => onSelectAgent(agent) : undefined}
+			publisher={deriveTemplatePublisher(agent)}
+			publisherLogoSrc={agent.publisherLogoSrc}
+			skills={agent.skills}
+			sources={agent.sources}
+			stats={agent.stats}
+			variant="experimental-template"
+			verified={agent.verified}
+		/>
 	);
 }
 
@@ -935,7 +1348,7 @@ function DirectorySidebar({
 		<nav
 			aria-label="Agent categories"
 			className={cn(
-				"hidden min-h-0 w-[280px] shrink-0 flex-col gap-5 overflow-y-auto pl-6 md:flex",
+				"hidden min-h-0 w-[280px] shrink-0 flex-col gap-4 overflow-y-auto pl-6 md:flex",
 				sidebarOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
 			)}
 			ref={sidebarOverflow.ref}
@@ -1264,16 +1677,18 @@ function ExperimentalProfileCard({
 	const selectAgent = onSelectAgent ? () => onSelectAgent(agent) : undefined;
 
 	return (
-		<ExperimentalDirectoryCard
-			active={moreMenuOpen}
-			attributionKind={agent.attributionKind}
-			avatarSrc={agent.avatarSrc}
-			chatCount={agent.chatCount}
-			description={agent.description}
-			feedbackCount={agent.feedbackCount}
-			moreAction={
-				<DirectoryCardMoreMenu
-					label={`More actions for ${agent.name}`}
+			<ExperimentalDirectoryCard
+				active={moreMenuOpen}
+				attributionKind={agent.attributionKind}
+				avatarSrc={getDirectoryCardAvatarSrc(agent)}
+				chatCount={agent.chatCount}
+				description={agent.description}
+				feedbackCount={agent.feedbackCount}
+				insetLogo={isBorderlessHexagonAgent(agent)}
+				logoName={agent.logoName}
+				moreAction={
+					<DirectoryCardMoreMenu
+						label={`More actions for ${agent.name}`}
 					onLearnMore={selectAgent}
 					onOpenChange={setMoreMenuOpen}
 					open={moreMenuOpen}

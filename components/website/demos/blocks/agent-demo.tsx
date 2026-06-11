@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 
 const AGENT_DEMO_SURFACE_CLASSNAME = "min-h-[852px] w-full";
 type AgentDemoView = "test" | "configure";
+const TRIGGER_MANAGE_DOCS_PATH = "/components/blocks/triggers#manage";
 
 const initialAgentConfig: AgentConfigFormValue = {
 	name: "",
@@ -260,6 +261,10 @@ function buildAgentDemoTestEntry(config: AgentConfigFormValue): StudioSessionAge
 	};
 }
 
+function openTriggerManageDocs() {
+	window.location.assign(TRIGGER_MANAGE_DOCS_PATH);
+}
+
 /**
  * Shared body for the compact agent demos. The header nav is a *controlled*
  * component — it only reacts when a parent owns `activeSection` and feeds it
@@ -355,18 +360,19 @@ export function AgentDemoFull() {
 						activeSection={activeSection}
 						configView={
 							<AgentContent>
-								<AgentConfigFields
-									config={config}
-									idPrefix="agent-demo-full"
+									<AgentConfigFields
+										config={config}
+										idPrefix="agent-demo-full"
 									onTextChange={handleTextChange}
 									onListItemChange={updateListItem}
 									onRemoveListItem={removeListItem}
 									onToggleListItem={toggleListItem}
-									onAddListValues={addListValues}
-									onAppendListItem={appendListItem}
-									onOpenDirectory={handleOpenDirectory}
-									onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
-								/>
+										onAddListValues={addListValues}
+										onAppendListItem={appendListItem}
+										onManageTriggers={openTriggerManageDocs}
+										onOpenDirectory={handleOpenDirectory}
+										onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
+									/>
 							</AgentContent>
 						}
 					/>
@@ -424,18 +430,19 @@ export function AgentDemoEmpty() {
 						activeSection={activeSection}
 						configView={
 							<AgentContent>
-								<AgentConfigFields
-									config={config}
-									idPrefix="agent-demo-empty"
+									<AgentConfigFields
+										config={config}
+										idPrefix="agent-demo-empty"
 									onTextChange={handleTextChange}
 									onListItemChange={updateListItem}
 									onRemoveListItem={removeListItem}
 									onToggleListItem={toggleListItem}
-									onAddListValues={addListValues}
-									onAppendListItem={appendListItem}
-									onOpenDirectory={handleOpenDirectory}
-									onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
-								/>
+										onAddListValues={addListValues}
+										onAppendListItem={appendListItem}
+										onManageTriggers={openTriggerManageDocs}
+										onOpenDirectory={handleOpenDirectory}
+										onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
+									/>
 							</AgentContent>
 						}
 					/>

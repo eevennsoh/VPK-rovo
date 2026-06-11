@@ -9,6 +9,7 @@ import AutomationIcon from "@atlaskit/icon/core/automation";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ClockIcon from "@atlaskit/icon/core/clock";
+import CrossIcon from "@atlaskit/icon/core/cross";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import IncidentIcon from "@atlaskit/icon/core/incident";
 import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
@@ -16,7 +17,15 @@ import WebhookIcon from "@atlaskit/icon-lab/core/webhook";
 import { SearchIcon } from "@/components/ui/vpk-icons";
 
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { IconTile } from "@/components/ui/icon-tile";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
 import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/mention-visual";
@@ -633,20 +642,18 @@ function TriggerRowDeleteButton({ onRemove }: Readonly<{ onRemove: () => void }>
 }
 
 /**
- * A single, self-contained trigger: the event (with its connection state) and
- * the editable prompt that runs when that event fires. Triggers never chain —
- * each renders as its own card with no shared connector to a sibling.
+ * One trigger condition row inside the automation modal. The prompt is shared
+ * by the automation, so this row only owns the event sentence, params, state,
+ * and delete affordance.
  */
 function TriggerRow({
 	onConnect,
 	onParamChange,
-	onPromptChange,
 	onRemove,
 	trigger,
 }: Readonly<{
 	onConnect?: (trigger: AgentTriggerValue) => void;
 	onParamChange: (paramId: string, value: string) => void;
-	onPromptChange: (value: string) => void;
 	onRemove: () => void;
 	trigger: AgentTriggerValue;
 }>): ReactElement {
@@ -677,14 +684,8 @@ function TriggerRow({
 	}
 
 	return (
-		<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3">
-			{/* Connector rail — event node (top) linked by a vertical line to the
-			    prompt node (bottom). Purely decorative. Mirrors the right column's
-			    two rows so the prompt icon top-aligns with the textarea. */}
-			<div
-				className="relative grid grid-rows-[auto_1fr] justify-items-center gap-4"
-				aria-hidden={true}
-			>
+		<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 rounded-lg px-2 py-2 transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered">
+			<div className="justify-items-center" aria-hidden={true}>
 				<IconTile
 					aria-hidden={true}
 					icon={renderTriggerProviderIcon(provider.icon, provider.label)}
@@ -692,69 +693,395 @@ function TriggerRow({
 					size="medium"
 					variant="blue"
 				/>
-				{/* Connector line spans the gap between the two tiles without
-				    affecting row heights, so the prompt tile stays top-aligned
-				    with the textarea regardless of the event node's height. */}
-				<div className="pointer-events-none absolute inset-x-0 top-8 bottom-8 mx-auto w-px bg-border" />
-				<IconTile
-					aria-hidden={true}
-					className="self-start bg-bg-neutral text-icon-subtle"
-					icon={<GenerativeIndicatorIcon label="" size="small" />}
-					label=""
-					size="medium"
-				/>
 			</div>
-			<div className="grid min-w-0 gap-4">
-				{/* Event node — what starts the trigger, including its connection state. */}
-				<div className="grid min-w-0 gap-1.5">
-					<div className="flex min-h-8 items-center gap-2">
-						<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-text">
-							<TriggerSentence
-								disabled={paramsDisabled}
-								event={event}
-								onParamChange={onParamChange}
-								trigger={trigger}
-							/>
-						</div>
-						<TriggerRowDeleteButton onRemove={onRemove} />
+			<div className="grid min-w-0 gap-1.5">
+				<div className="flex min-h-8 items-center gap-2">
+					<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-text">
+						<TriggerSentence
+							disabled={paramsDisabled}
+							event={event}
+							onParamChange={onParamChange}
+							trigger={trigger}
+						/>
 					</div>
-					{connectionLabel ? (
-						<div className="flex min-w-0 flex-wrap items-center gap-2 text-sm leading-5">
-							<span
-								className={cn(
-									"font-medium",
-									trigger.connectionState === "connection-error"
-										? "text-text-danger"
-										: "text-text-warning",
-								)}
-							>
-								{connectionLabel}
-							</span>
-							{needsConnection ? (
-								<Button
-									type="button"
-									variant="outline"
-									size="compact"
-									isLoading={trigger.connectionState === "connecting"}
-									onClick={() => onConnect?.(trigger)}
-								>
-									{getConnectButtonLabel(trigger.connectionState)}
-								</Button>
-							) : null}
-						</div>
-					) : null}
+					<TriggerRowDeleteButton onRemove={onRemove} />
 				</div>
-				{/* Prompt node — the instruction that runs when this event fires. */}
-				<Textarea
-					aria-label="Trigger prompt"
-					className="resize-y"
-					onChange={(changeEvent) => onPromptChange(changeEvent.target.value)}
-					placeholder="Write a prompt for this trigger…"
-					rows={2}
-					value={trigger.prompt ?? ""}
+				{connectionLabel ? (
+					<div className="flex min-w-0 flex-wrap items-center gap-2 text-sm leading-5">
+						<span
+							className={cn(
+								"font-medium",
+								trigger.connectionState === "connection-error"
+									? "text-text-danger"
+									: "text-text-warning",
+							)}
+						>
+							{connectionLabel}
+						</span>
+						{needsConnection ? (
+							<Button
+								type="button"
+								variant="outline"
+								size="compact"
+								isLoading={trigger.connectionState === "connecting"}
+								onClick={() => onConnect?.(trigger)}
+							>
+								{getConnectButtonLabel(trigger.connectionState)}
+							</Button>
+						) : null}
+					</div>
+				) : null}
+			</div>
+		</div>
+	);
+}
+
+function getSharedPrompt(triggers: readonly AgentTriggerValue[]): string {
+	return triggers.find((trigger) => trigger.prompt?.trim())?.prompt ?? "";
+}
+
+function getSharedAutomationName(triggers: readonly AgentTriggerValue[]): string {
+	return triggers.find((trigger) => trigger.automationName?.trim())?.automationName ?? "";
+}
+
+function getSharedAutomationEnabled(triggers: readonly AgentTriggerValue[]): boolean {
+	const firstConfigured = triggers.find((trigger) => typeof trigger.enabled !== "undefined");
+	return firstConfigured ? firstConfigured.enabled !== false : true;
+}
+
+function applySharedAutomationFields(
+	triggers: readonly AgentTriggerValue[],
+	{
+		automationName,
+		enabled,
+		prompt,
+	}: Readonly<{
+		automationName: string;
+		enabled: boolean;
+		prompt: string;
+	}>,
+): AgentTriggerValue[] {
+	return triggers.map((trigger) => ({
+		...trigger,
+		automationName: automationName.trim(),
+		enabled,
+		prompt,
+	}));
+}
+
+function TriggerConditionsPanel({
+	defaultPickerOpen,
+	onAddTrigger,
+	onConnectTrigger,
+	onParamChange,
+	onRemoveTrigger,
+	triggers,
+}: Readonly<{
+	defaultPickerOpen?: boolean;
+	onAddTrigger: (providerId: AgentTriggerProviderId, eventId: string) => void;
+	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
+	onParamChange: (triggerId: string, paramId: string, value: string) => void;
+	onRemoveTrigger: (triggerId: string) => void;
+	triggers: readonly AgentTriggerValue[];
+}>): ReactElement {
+	return (
+		<div className="overflow-hidden rounded-xl border border-border bg-bg-input">
+			<div className="grid gap-1 p-2">
+				{triggers.length > 0 ? (
+					triggers.map((trigger) => (
+						<TriggerRow
+							key={trigger.id}
+							onConnect={onConnectTrigger}
+							onParamChange={(paramId, value) => onParamChange(trigger.id, paramId, value)}
+							onRemove={() => onRemoveTrigger(trigger.id)}
+							trigger={trigger}
+						/>
+					))
+				) : (
+					<div className="px-3 py-6 text-center text-sm text-text-subtle">
+						No triggers configured.
+					</div>
+				)}
+			</div>
+			<div className="border-t border-border bg-surface px-2 py-2">
+				<TriggerPicker
+					defaultOpen={defaultPickerOpen}
+					label="Add Trigger"
+					onSelectEvent={onAddTrigger}
 				/>
 			</div>
 		</div>
+	);
+}
+
+function TriggerAutomationFlowPreview({
+	automationName,
+	prompt,
+	triggers,
+}: Readonly<{
+	automationName: string;
+	prompt: string;
+	triggers: readonly AgentTriggerValue[];
+}>): ReactElement {
+	const visibleTriggers = triggers.slice(0, 5);
+	const overflowCount = Math.max(0, triggers.length - visibleTriggers.length);
+	const title = automationName.trim() || "Automation";
+	const description = prompt.trim() || "Tell the agent what to do when any trigger starts this automation.";
+
+	return (
+		<div className="rounded-xl border border-border bg-surface px-4 py-4">
+			<div className="mb-4 flex items-center gap-2" aria-hidden={true}>
+				<div className="flex min-w-0 items-center gap-1">
+					{visibleTriggers.length > 0 ? (
+						visibleTriggers.map((trigger) => {
+							const provider = getTriggerProvider(trigger.providerId);
+							return (
+								<IconTile
+									className="border border-border bg-bg-input text-icon-subtle"
+									icon={provider ? renderTriggerProviderIcon(provider.icon, provider.label) : (
+										<AutomationIcon label="" size="small" />
+									)}
+									key={trigger.id}
+									label={provider?.label ?? "Trigger"}
+									size="small"
+									variant="transparent"
+								/>
+							);
+						})
+					) : (
+						<IconTile
+							className="border border-border bg-bg-input text-icon-subtle"
+							icon={<AutomationIcon label="" size="small" />}
+							label="Trigger"
+							size="small"
+							variant="transparent"
+						/>
+					)}
+					{overflowCount > 0 ? (
+						<span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-border bg-bg-input px-1.5 text-xs font-medium leading-4 text-text-subtle">
+							+{overflowCount}
+						</span>
+					) : null}
+				</div>
+				<div className="h-px w-8 shrink-0 bg-border" />
+				<IconTile
+					className="bg-bg-neutral text-icon-subtle"
+					icon={<GenerativeIndicatorIcon label="" size="small" />}
+					label="Agent instructions"
+					size="small"
+					variant="transparent"
+				/>
+			</div>
+			<div className="grid gap-1">
+				<div className="text-base font-semibold leading-6 text-text">
+					{title}
+				</div>
+				<div className="text-sm leading-5 text-text-subtle">
+					{description}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+export interface TriggerAutomationDialogProps {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	triggers: readonly AgentTriggerValue[];
+	onSave: (triggers: readonly AgentTriggerValue[]) => void;
+	defaultPickerOpen?: boolean;
+	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
+	title?: string;
+	saveLabel?: string;
+}
+
+export function TriggerAutomationDialog({
+	defaultPickerOpen,
+	onConnectTrigger,
+	onOpenChange,
+	onSave,
+	open,
+	saveLabel = "Save",
+	title = "New Automation",
+	triggers,
+}: Readonly<TriggerAutomationDialogProps>): ReactElement {
+	const seedRef = useRef<readonly AgentTriggerValue[]>(triggers);
+	seedRef.current = triggers;
+	const wasOpen = useRef(open);
+	const [draftTriggers, setDraftTriggers] = useState<readonly AgentTriggerValue[]>(triggers);
+	const [automationName, setAutomationName] = useState(() => getSharedAutomationName(triggers));
+	const [sharedPrompt, setSharedPrompt] = useState(() => getSharedPrompt(triggers));
+	const [active, setActive] = useState(() => getSharedAutomationEnabled(triggers));
+
+	useEffect(() => {
+		if (open && !wasOpen.current) {
+			const nextSeed = seedRef.current;
+			setDraftTriggers(nextSeed);
+			setAutomationName(getSharedAutomationName(nextSeed));
+			setSharedPrompt(getSharedPrompt(nextSeed));
+			setActive(getSharedAutomationEnabled(nextSeed));
+		}
+		wasOpen.current = open;
+	}, [open]);
+
+	const handleAddTrigger = useCallback(
+		(providerId: AgentTriggerProviderId, eventId: string) => {
+			setDraftTriggers((current) => {
+				const nextTrigger = createAgentTriggerValue(providerId, eventId, current.length + 1);
+				return nextTrigger ? [...current, nextTrigger] : current;
+			});
+		},
+		[],
+	);
+
+	const handleParamChange = useCallback((triggerId: string, paramId: string, value: string) => {
+		setDraftTriggers((current) =>
+			current.map((trigger) => {
+				if (trigger.id !== triggerId) {
+					return trigger;
+				}
+
+				const nextTrigger = {
+					...trigger,
+					params: {
+						...(trigger.params ?? {}),
+						[paramId]: value,
+					},
+				};
+
+				return {
+					...nextTrigger,
+					label: getAgentTriggerReadableLabel(nextTrigger),
+				};
+			}),
+		);
+	}, []);
+
+	const handleConnect = useCallback(
+		(trigger: AgentTriggerValue) => {
+			onConnectTrigger?.(trigger);
+			setDraftTriggers((current) =>
+				current.map((draftTrigger) =>
+					draftTrigger.id === trigger.id
+						? { ...draftTrigger, connectionState: "connecting" as const }
+						: draftTrigger,
+				),
+			);
+		},
+		[onConnectTrigger],
+	);
+
+	const handleRemoveTrigger = useCallback((triggerId: string) => {
+		setDraftTriggers((current) => current.filter((trigger) => trigger.id !== triggerId));
+	}, []);
+
+	const handleSave = useCallback(() => {
+		onSave(applySharedAutomationFields(draftTriggers, {
+			automationName,
+			enabled: active,
+			prompt: sharedPrompt,
+		}));
+		onOpenChange(false);
+	}, [active, automationName, draftTriggers, onOpenChange, onSave, sharedPrompt]);
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="max-h-[min(760px,calc(100vh-2rem))] gap-0 overflow-hidden p-0" showCloseButton={false} size="lg">
+				<div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+					<div className="grid gap-1">
+						<DialogTitle className="text-xl font-semibold leading-6 text-text">
+							{title}
+						</DialogTitle>
+						<p className="text-sm leading-5 text-text-subtle">
+							Configure the events that start this automation.
+						</p>
+					</div>
+					<div className="flex items-center gap-3">
+						<label className="flex items-center gap-2 text-sm font-medium text-text">
+							<span>Active</span>
+							<Switch checked={active} label="Active" onCheckedChange={setActive} size="sm" />
+						</label>
+						<DialogClose render={<Button aria-label="Close" size="icon" variant="ghost" />}>
+							<CrossIcon label="" size="small" />
+						</DialogClose>
+					</div>
+				</div>
+				<div className="grid max-h-[calc(100vh-13rem)] gap-5 overflow-y-auto px-6 py-5">
+					<TriggerAutomationFlowPreview
+						automationName={automationName}
+						prompt={sharedPrompt}
+						triggers={draftTriggers}
+					/>
+					<label className="grid gap-1.5">
+						<span className="text-sm font-medium leading-5 text-text">Automation name</span>
+						<Input
+							onChange={(event) => setAutomationName(event.target.value)}
+							placeholder="Name this automation"
+							value={automationName}
+						/>
+					</label>
+					<div className="grid gap-1.5">
+						<span className="text-sm font-medium leading-5 text-text">Source</span>
+						<DropdownMenu>
+							<DropdownMenuTrigger
+								render={<Button className="w-fit justify-start" type="button" variant="outline" />}
+							>
+								No Repository
+								<ChevronDownIcon label="" size="small" />
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="start" className="w-56">
+								<DropdownMenuItem onSelect={() => undefined}>No Repository</DropdownMenuItem>
+								<DropdownMenuItem onSelect={() => undefined}>Select repositories</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+					<div className="grid gap-2">
+						<div className="grid gap-0.5">
+							<h3 className="text-sm font-semibold leading-5 text-text">Triggers</h3>
+							<p className="text-sm leading-5 text-text-subtle">
+								Any configured event can start this automation.
+							</p>
+						</div>
+						<TriggerConditionsPanel
+							defaultPickerOpen={defaultPickerOpen}
+							onAddTrigger={handleAddTrigger}
+							onConnectTrigger={handleConnect}
+							onParamChange={handleParamChange}
+							onRemoveTrigger={handleRemoveTrigger}
+							triggers={draftTriggers}
+						/>
+					</div>
+					<label className="grid gap-2">
+						<span className="flex items-center gap-2 text-sm font-semibold leading-5 text-text">
+							<IconTile
+								aria-hidden={true}
+								className="bg-bg-neutral text-icon-subtle"
+								icon={<GenerativeIndicatorIcon label="" size="small" />}
+								label=""
+								size="small"
+							/>
+							Agent Instructions
+						</span>
+						<Textarea
+							aria-label="Agent Instructions"
+							className="min-h-28 resize-y"
+							onChange={(event) => setSharedPrompt(event.target.value)}
+							placeholder="Tell the agent what to do when any trigger starts this automation..."
+							rows={5}
+							value={sharedPrompt}
+						/>
+					</label>
+				</div>
+				<div className="flex items-center justify-end gap-2 border-t border-border bg-surface-overlay px-6 py-4">
+					<Button onClick={() => onOpenChange(false)} type="button" variant="ghost">
+						Cancel
+					</Button>
+					<Button onClick={handleSave} type="button">
+						{saveLabel}
+					</Button>
+				</div>
+			</DialogContent>
+		</Dialog>
 	);
 }
 
@@ -787,10 +1114,9 @@ export interface TriggersProps {
 }
 
 /**
- * Triggers — an agent automation trigger editor. Renders an add-trigger picker,
- * configured trigger rows, compact parameter menus, remove controls, and
- * UI-only connection states. It models only what starts an agent; conditions,
- * actions, and branches are handled by later automation surfaces.
+ * Triggers — an agent automation trigger editor. The block renders a compact
+ * summary surface; creation and editing happen in the automation modal so one
+ * shared instruction prompt can apply to multiple trigger conditions.
  */
 export default function Triggers({
 	addTriggerLabel = "Add Trigger",
@@ -808,6 +1134,7 @@ export default function Triggers({
 		getInitialTriggers({ defaultTriggers, hasTrigger }),
 	);
 	const currentTriggers = triggers ?? uncontrolledTriggers;
+	const [automationDialogOpen, setAutomationDialogOpen] = useState(Boolean(defaultPickerOpen));
 
 	const commitTriggers = useCallback(
 		(nextTriggers: readonly AgentTriggerValue[]) => {
@@ -819,93 +1146,72 @@ export default function Triggers({
 		[isControlled, onTriggersChange],
 	);
 
-	const handleSelectEvent = useCallback(
-		(providerId: AgentTriggerProviderId, eventId: string) => {
-			const nextTrigger = createAgentTriggerValue(providerId, eventId, currentTriggers.length + 1);
-
-			if (!nextTrigger) {
-				return;
+	const handleSave = useCallback(
+		(nextTriggers: readonly AgentTriggerValue[]) => {
+			if (nextTriggers.length < currentTriggers.length) {
+				onClearTrigger?.();
 			}
-
-			commitTriggers([...currentTriggers, nextTrigger]);
+			commitTriggers(nextTriggers);
 		},
-		[commitTriggers, currentTriggers],
-	);
-
-	const handleParamChange = useCallback(
-		(triggerId: string, paramId: string, value: string) => {
-			commitTriggers(
-				currentTriggers.map((trigger) => {
-					if (trigger.id !== triggerId) {
-						return trigger;
-					}
-
-					const nextTrigger = {
-						...trigger,
-						params: {
-							...(trigger.params ?? {}),
-							[paramId]: value,
-						},
-					};
-
-					return {
-						...nextTrigger,
-						label: getAgentTriggerReadableLabel(nextTrigger),
-					};
-				}),
-			);
-		},
-		[commitTriggers, currentTriggers],
-	);
-
-	const handlePromptChange = useCallback(
-		(triggerId: string, value: string) => {
-			commitTriggers(
-				currentTriggers.map((trigger) =>
-					trigger.id === triggerId ? { ...trigger, prompt: value } : trigger,
-				),
-			);
-		},
-		[commitTriggers, currentTriggers],
-	);
-
-	const handleRemove = useCallback(
-		(triggerId: string) => {
-			commitTriggers(currentTriggers.filter((trigger) => trigger.id !== triggerId));
-			onClearTrigger?.();
-		},
-		[commitTriggers, currentTriggers, onClearTrigger],
+		[commitTriggers, currentTriggers.length, onClearTrigger],
 	);
 
 	const cardChildren: ReactNode =
 		currentTriggers.length > 0 ? (
-			// One self-contained card per trigger. There is intentionally no
-			// "Add Trigger" affordance here — a trigger is added from the agent
-			// config surface, not from inside an existing trigger's editor.
-			<div className="grid gap-3">
-				{currentTriggers.map((trigger) => (
-					<TriggerRow
-						key={trigger.id}
-						onConnect={onConnectTrigger}
-						onParamChange={(paramId, value) => handleParamChange(trigger.id, paramId, value)}
-						onPromptChange={(value) => handlePromptChange(trigger.id, value)}
-						onRemove={() => handleRemove(trigger.id)}
-						trigger={trigger}
-					/>
-				))}
+			<div className="overflow-hidden rounded-xl border border-border bg-bg-input">
+				<button
+					className="grid w-full gap-3 p-4 text-left transition-colors duration-normal hover:bg-bg-input-hovered focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected"
+					onClick={() => setAutomationDialogOpen(true)}
+					type="button"
+				>
+					<div className="flex items-center justify-between gap-3">
+						<div className="min-w-0">
+							<div className="truncate text-sm font-semibold leading-5 text-text">
+								{getSharedAutomationName(currentTriggers) || "Automation"}
+							</div>
+							<div className="text-sm leading-5 text-text-subtle">
+								{currentTriggers.length} trigger{currentTriggers.length === 1 ? "" : "s"}
+							</div>
+						</div>
+						<span className="text-sm font-medium text-link">Edit</span>
+					</div>
+					<div className="grid gap-2">
+						{currentTriggers.map((trigger) => {
+							const provider = getTriggerProvider(trigger.providerId);
+							return (
+								<div className="flex min-w-0 items-center gap-2 text-sm text-text" key={trigger.id}>
+									<span className="flex size-6 shrink-0 items-center justify-center">
+										{provider ? renderTriggerProviderIcon(provider.icon, provider.label) : (
+											<AutomationIcon label="" size="small" />
+										)}
+									</span>
+									<span className="truncate">{getAgentTriggerReadableLabel(trigger)}</span>
+								</div>
+							);
+						})}
+					</div>
+				</button>
+				<div className="border-t border-border bg-surface px-2 py-2">
+					<TriggerAddRow label={addTriggerLabel} onClick={() => setAutomationDialogOpen(true)} />
+				</div>
 			</div>
 		) : (
-			// Empty state keeps the picker so the first trigger can be added.
-			<TriggerPicker
-				defaultOpen={defaultPickerOpen}
-				label={addTriggerLabel}
-				onSelectEvent={handleSelectEvent}
-			/>
+			<div className="rounded-xl border border-border bg-bg-input p-2">
+				<TriggerAddRow label={addTriggerLabel} onClick={() => setAutomationDialogOpen(true)} />
+			</div>
 		);
 
 	return (
 		<div className={cn("grid gap-5", className)}>
 			<section className="grid gap-3">{cardChildren}</section>
+			<TriggerAutomationDialog
+				defaultPickerOpen={defaultPickerOpen}
+				onConnectTrigger={onConnectTrigger}
+				onOpenChange={setAutomationDialogOpen}
+				onSave={handleSave}
+				open={automationDialogOpen}
+				triggers={currentTriggers}
+			/>
 		</div>
 	);
 }

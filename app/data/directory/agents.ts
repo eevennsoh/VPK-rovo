@@ -12,7 +12,7 @@ import { avatarVisualFromSrc } from "./visual";
 
 /**
  * Unified agents data layer — the single source of truth for every agent surface
- * in the app (Rovo chat selector, the Browse-agents directory, and the editor
+ * in the app (Rovo chat selector, the Agent Directory, and the editor
  * palette's `/` subagent references). It merges the two former catalogs:
  *
  *   - `components/projects/{studio,rovo}/data/agent-profiles.ts`
@@ -209,7 +209,7 @@ export const ROVO_AGENT_PROFILE_BY_ID = new Map(
 	ROVO_AGENT_PROFILES.map((agent) => [agent.id, agent]),
 );
 
-// The Browse agents directory lists addable agents only. Rovo Dev is the
+// The Agent Directory lists addable agents only. Rovo Dev is the
 // built-in platform default (not a custom agent you add), so it is excluded
 // here while remaining in ROVO_AGENT_PROFILES for default-agent lookups.
 export const ROVO_DIRECTORY_AGENT_PROFILES: readonly RovoAgentProfile[] = ROVO_AGENT_PROFILES
@@ -247,7 +247,7 @@ export function getRovoAgentPromptContext(agent: RovoAgentProfile): string | und
 
 /**
  * Projects a unified agent profile onto the {@link AgentBrowserAgent} shape used
- * by the Browse-agents directory and the editor palette's subagent references.
+ * by the Agent Directory and the editor palette's subagent references.
  */
 function toAgentBrowserAgent(agent: RovoAgentProfile): AgentBrowserAgent {
 	return {
@@ -288,7 +288,7 @@ export const DEMO_AGENT_BROWSER_AGENTS: readonly AgentBrowserAgent[] = (() => {
 })();
 
 /**
- * Sidebar groups for the Browse-agents directory. SALVAGED VERBATIM from the
+ * Sidebar groups for the Agent Directory. SALVAGED VERBATIM from the
  * former `components/blocks/agent-browser/data/demo-agents.ts` — this curated
  * grouping (teams + companies) has no equivalent in the agent profiles and would
  * be lost in the unification otherwise.

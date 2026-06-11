@@ -1,4 +1,4 @@
-import type { SkillCategory, SkillCollectionId } from "@/app/data/directory/skills";
+import type { SkillCategory } from "@/app/data/directory/skills";
 import type { AtlassianLogoName } from "@/components/ui/logo";
 
 /** Primary (sectionless) nav rows shown above the first group heading. */
@@ -33,13 +33,6 @@ export interface SkillsDirectoryCategoryItem {
 	icon: SkillNavIcon;
 }
 
-export interface SkillsDirectoryCollectionItem {
-	kind: "collection";
-	id: SkillCollectionId;
-	label: string;
-	icon: SkillNavIcon;
-}
-
 export interface SkillsDirectoryCompanyItem {
 	kind: "company";
 	id: string;
@@ -57,7 +50,6 @@ export interface SkillsDirectoryCompanyItem {
 export type SkillsDirectorySidebarItem =
 	| SkillsDirectoryFavouriteItem
 	| SkillsDirectoryCategoryItem
-	| SkillsDirectoryCollectionItem
 	| SkillsDirectoryCompanyItem;
 
 export interface SkillsDirectorySidebarGroup {
@@ -73,17 +65,6 @@ export const DEFAULT_SKILLS_DIRECTORY_PRIMARY_ITEMS: readonly SkillsDirectoryPri
 ];
 
 export const DEFAULT_SKILLS_DIRECTORY_SIDEBAR_GROUPS: readonly SkillsDirectorySidebarGroup[] = [
-	{
-		title: "Collections",
-		showAll: true,
-		items: [
-			{ kind: "collection", id: "teamwork", label: "Teamwork", icon: "people-group" },
-			{ kind: "collection", id: "strategy", label: "Strategy", icon: "timeline" },
-			{ kind: "collection", id: "service", label: "Service", icon: "support" },
-			{ kind: "collection", id: "software", label: "Software", icon: "angle-brackets" },
-			{ kind: "collection", id: "product", label: "Product", icon: "branch" },
-		],
-	},
 	{
 		title: "By companies",
 		items: [

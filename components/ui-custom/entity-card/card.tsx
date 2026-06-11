@@ -66,7 +66,7 @@ export function EntityCardShell({
 				    and are announced as siblings, not children, of this button. */}
 				<button
 					aria-label={selectLabel}
-					className="absolute inset-0 z-0 rounded-md outline-none"
+					className="absolute inset-0 z-0 cursor-pointer rounded-md outline-none"
 					data-slot="card-directory-select"
 					onClick={handleSelect}
 					type="button"

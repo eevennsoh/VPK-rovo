@@ -129,7 +129,7 @@ export function AgentCardShell({
 			<motion.article data-slot="agent-card" {...cardMotionProps}>
 				<button
 					aria-label={selectLabel}
-					className="absolute inset-0 z-0 rounded-md outline-none"
+					className="absolute inset-0 z-0 cursor-pointer rounded-md outline-none"
 					data-slot="agent-card-select"
 					onClick={handleSelect}
 					type="button"

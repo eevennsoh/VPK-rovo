@@ -43,7 +43,7 @@ test("Skills Directory owns a skill-specific modal instead of wrapping AgentBrow
 	assert.match(source, /title = "Browse all"/u);
 });
 
-test("Skills Directory uses the Agents Directory dialog header style", () => {
+test("Skills Directory uses the Agent Directory dialog header style", () => {
 	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory.tsx");
 
 	assert.match(
@@ -70,36 +70,31 @@ test("Skills Directory exposes canonical skill props and legacy agent compatibil
 	assert.match(indexSource, /SkillsDirectoryAgent/u);
 });
 
-test("Skills Directory sidebar uses Collections as the primary taxonomy", () => {
+test("Skills Directory sidebar does not include Collections as a default taxonomy", () => {
 	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory-sidebar.tsx");
 	const sidebarGroupsSource = readProjectFile("components/blocks/skills-directory/data/sidebar-groups.ts");
 
 	assert.match(source, /const MAX_VISIBLE_TAXONOMY_ITEMS = 5;/u);
-	assert.match(source, /function isCollectionSidebarItem/u);
 	assert.match(source, /function isTaxonomySidebarGroup/u);
 	assert.match(source, /const \[showAllTaxonomyItems, setShowAllTaxonomyItems\] = useState\(false\);/u);
 	assert.match(source, /showAllTaxonomyItems\s+\?\s+taxonomyItems\s+:\s+taxonomyItems\.slice\(0, MAX_VISIBLE_TAXONOMY_ITEMS\);/u);
 	assert.match(source, /const hasHiddenTaxonomyItems = !showAllTaxonomyItems && taxonomyItems\.length > MAX_VISIBLE_TAXONOMY_ITEMS;/u);
+	assert.doesNotMatch(source, /<div className="h-4 w-64 shrink-0" \/>/u);
+	assert.doesNotMatch(source, /<div className="h-3 w-64 shrink-0" \/>/u);
 	assert.match(source, /<ul className="flex w-64 flex-col">[\s\S]*visibleTaxonomyItems\.map/u);
 	assert.match(source, /leading=\{<TaxonomyLeading item=\{item\} \/>\}/u);
-	assert.match(source, /getSkillCollectionMetadata\(item\.id\)/u);
-	assert.match(source, /collection\.iconClassName/u);
+	assert.doesNotMatch(source, /getSkillCollectionMetadata/u);
+	assert.doesNotMatch(source, /collection\.iconClassName/u);
 	assert.match(source, /label="Show all"/u);
 	assert.match(source, /onClick=\{\(\) => setShowAllTaxonomyItems\(true\)\}/u);
 	assert.match(source, /import \{ AtlassianLogo \} from "@\/components\/ui\/logo";/u);
 	assert.match(source, /item\.logoName \? \([\s\S]*<AtlassianLogo name=\{item\.logoName\} size="small" themeAware label=\{item\.label\} \/>/u);
 	assert.match(source, /<SupportIcon label=\{label\} size="small" color="currentColor" \/>/u);
 	assert.doesNotMatch(source, /leading=\{<TileLeading>\{getCategoryNavIcon/u);
-	for (const label of [
-		"Collections",
-		"Teamwork",
-		"Strategy",
-		"Service",
-		"Software",
-		"Product",
-	]) {
-		assert.match(sidebarGroupsSource, new RegExp(label, "u"));
-	}
+	assert.doesNotMatch(sidebarGroupsSource, /title: "Collections"/u);
+	assert.doesNotMatch(sidebarGroupsSource, /kind: "collection"/u);
+	assert.doesNotMatch(sidebarGroupsSource, /SkillsDirectoryCollectionItem/u);
+	assert.match(sidebarGroupsSource, /title: "By companies"/u);
 	assert.doesNotMatch(sidebarGroupsSource, /Project management/u);
 });
 
@@ -168,6 +163,7 @@ test("Skills Directory renders skill info view with file tree and top scroll mas
 });
 
 test("Skills Directory demo and docs use skill-specific examples", () => {
+	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory.tsx");
 	const pageSource = readProjectFile("components/blocks/skills-directory/page.tsx");
 	const detailsSource = readProjectFile("app/data/details/blocks.ts");
 	// Skill data is now the single-source-of-truth JSON catalog; the loader + icon
@@ -185,6 +181,16 @@ test("Skills Directory demo and docs use skill-specific examples", () => {
 	assert.ok(skillIds.has("design-landing-page"));
 	assert.ok(skillIds.has("develop-mobile-app-interface"));
 	assert.ok(skillIds.has("create-brand-identity"));
+	assert.ok(
+		skillsJson.some((skill) => skill.id === "design-landing-page" && skill.publisherName === "Venn"),
+		"custom skills should display Venn as the publisher",
+	);
+	assert.ok(
+		skillsJson.every((skill) => skill.publisherName !== "you"),
+		"skills catalog should not author lowercase you as a publisher",
+	);
+	assert.doesNotMatch(detailsSource, /publisherName: "you"/u);
+	assert.match(detailsSource, /publisherName: "Venn"/u);
 	// The icon resolver owns the closed icon set + its Atlaskit imports.
 	assert.match(visualSource, /import DeviceMobileIcon from "@atlaskit\/icon\/core\/device-mobile";/u);
 	assert.ok(
@@ -236,6 +242,9 @@ test("Skills Directory demo and docs use skill-specific examples", () => {
 	assert.match(skillsLoaderSource, /function getSkillCollection/u);
 	assert.match(skillsLoaderSource, /function getSkillIconColor/u);
 	assert.match(skillsLoaderSource, /function getSkillIconTileVariant/u);
+	assert.match(skillsLoaderSource, /const PERSONAL_SKILL_PUBLISHERS = new Set\(\["you", "by you"\]\);/u);
+	assert.match(skillsLoaderSource, /PERSONAL_SKILL_PUBLISHERS\.has\(publisher\.trim\(\)\.toLowerCase\(\)\) \? "Venn" : publisher/u);
+	assert.match(source, /const publisher = \(skill\.publisherName \?\? skill\.publisher \?\? ""\)\.trim\(\)\.toLowerCase\(\);/u);
 	for (const accent of [
 		"text-icon-accent-blue",
 		"text-icon-accent-green",
@@ -258,7 +267,7 @@ test("Skills Directory demo and docs use skill-specific examples", () => {
 	assert.match(sidebarGroupsSource, /label: "All skills"/u);
 	assert.match(sidebarGroupsSource, /label: "Favourite skills"/u);
 	assert.match(sidebarGroupsSource, /label: "Your skills"/u);
-	assert.match(sidebarGroupsSource, /title: "Collections"/u);
+	assert.doesNotMatch(sidebarGroupsSource, /title: "Collections"/u);
 	// Category ids are still exercised by the data.
 	const categoryIds = new Set(skillsJson.map((skill) => skill.categoryId ?? skill.category));
 	assert.ok(categoryIds.has("content-and-communication"));

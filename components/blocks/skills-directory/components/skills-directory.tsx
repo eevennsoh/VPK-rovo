@@ -141,7 +141,7 @@ function normalizeActiveItem(item: string): string {
 }
 
 function isYourSkill(skill: SkillsDirectorySkill): boolean {
-	const publisher = getSkillPublisherName(skill).toLowerCase();
+	const publisher = (skill.publisherName ?? skill.publisher ?? "").trim().toLowerCase();
 	return skill.companyId === "you" || publisher === "by you" || publisher === "you";
 }
 
