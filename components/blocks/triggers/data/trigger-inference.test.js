@@ -56,3 +56,53 @@ test("inferScheduledTriggerDefinitions builds a structured 7am definition", asyn
 	);
 	assert.equal(inferScheduledTriggerDefinitions([]), undefined);
 });
+
+test("inferTriggerDefinitions maps each trigger to its provider (per-trigger)", async () => {
+	const { inferTriggerDefinitions } = await loadCatalog();
+
+	const defs = inferTriggerDefinitions([
+		"A new DACI doc is shared in Confluence",
+		"A Jira issue is marked blocked",
+		"An alert pages on-call in PagerDuty",
+		"A message in #launch (Slack)",
+		"An error spikes in Sentry",
+		"A release is cut in GitHub",
+		"The weekly recap is due (scheduled)",
+	]);
+	assert.ok(Array.isArray(defs) && defs.length === 7, "every trigger should resolve");
+	assert.deepEqual(
+		defs.map((d) => d.providerId),
+		["confluence", "jira", "pagerduty", "slack", "sentry", "github-gitlab", "scheduled"],
+	);
+	// Event selection reflects phrasing cues.
+	assert.equal(defs[1].eventId, "status-changed"); // "marked blocked"
+	assert.equal(defs[2].eventId, "incident-triggered");
+	assert.equal(defs[5].eventId, "push-to-branch"); // "release is cut"
+});
+
+test("inferTriggerDefinitions stays index-aligned 1:1 with input", async () => {
+	const { inferTriggerDefinitions } = await loadCatalog();
+	const input = ["A Jira issue is created", "A page is updated in Confluence"];
+	const defs = inferTriggerDefinitions(input);
+	assert.equal(defs.length, input.length);
+});
+
+test("inferTriggerDefinitions returns undefined when a string names no provider", async () => {
+	const { inferTriggerDefinitions } = await loadCatalog();
+	// No provider keyword and no schedule/cadence cue -> unmappable -> undefined.
+	assert.equal(inferTriggerDefinitions(["a recording finishes processing"]), undefined);
+	assert.equal(inferTriggerDefinitions([]), undefined);
+});
+
+test("connection helpers are session-scoped per provider", async () => {
+	const { isSessionProviderConnected, markSessionProviderConnected, createAgentTriggerValue } = await loadCatalog();
+	assert.equal(isSessionProviderConnected("slack"), false);
+	// A fresh slack trigger needs connection until the provider is connected.
+	const before = createAgentTriggerValue("slack", "new-message", 1);
+	assert.equal(before.connectionState, "needs-connection");
+	markSessionProviderConnected("slack");
+	assert.equal(isSessionProviderConnected("slack"), true);
+	// New triggers for an already-connected provider seed as connected.
+	const after = createAgentTriggerValue("slack", "mention", 2);
+	assert.equal(after.connectionState, "connected");
+});

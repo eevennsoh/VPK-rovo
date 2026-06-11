@@ -4,6 +4,9 @@ const {
 	buildStudioAgentCreationTrace,
 	__internals: {
 		detectMentionedTools,
+		parseTemplateSetupFromContext,
+		connectableProvidersFromTriggers,
+		joinNames,
 		summarizeQAExchange,
 		deriveAgentNameHint,
 		deriveAgentBriefFocus,
@@ -13,6 +16,13 @@ const {
 		truncate,
 	},
 } = require("./studio-agent-trace");
+
+const TEMPLATE_CONTEXT = [
+	"[Template context]",
+	"- Setup for narration (display names): tools=[Confluence, Jira]; skills=[Explore ideas, Prioritize ideas]; knowledge=[Confluence, Jira]; subagents=[Strategic insight, Feedback analyzer]; modes=[deep step-by-step reasoning, memory across sessions, all connected knowledge]",
+	"- Trigger events for narration: A new DACI doc is shared in Confluence | An alert pages on-call in PagerDuty",
+	"[End template context]",
+].join("\n");
 
 test("turn 1 stops at the clarification round with an open ask step", () => {
 	const steps = buildStudioAgentCreationTrace({
@@ -199,7 +209,7 @@ test("Selecting tools step reflects detected integrations in the input + preview
 	});
 	const selectStep = steps.find((s) => s.label === "Selecting agent tools");
 	assert.ok(selectStep);
-	assert.deepEqual(selectStep.input.mentioned.sort(), ["GitHub", "Slack"].sort());
+	assert.deepEqual(selectStep.input.selected.sort(), ["GitHub", "Slack"].sort());
 	assert.match(selectStep.outputPreview, /GitHub/);
 	assert.match(selectStep.outputPreview, /Slack/);
 });
@@ -356,4 +366,70 @@ test("toolCallIds are unique within a single trace so generated eventIds don't c
 	});
 	const ids = steps.map((s) => s.toolCallId);
 	assert.equal(new Set(ids).size, ids.length, `expected unique toolCallIds, got ${ids.join(", ")}`);
+});
+
+test("parseTemplateSetupFromContext extracts exact names, modes, and triggers", () => {
+	const setup = parseTemplateSetupFromContext(TEMPLATE_CONTEXT);
+	assert.ok(setup, "should parse a template context");
+	assert.deepEqual(setup.tools, ["Confluence", "Jira"]);
+	assert.deepEqual(setup.skills, ["Explore ideas", "Prioritize ideas"]);
+	assert.deepEqual(setup.subagents, ["Strategic insight", "Feedback analyzer"]);
+	assert.equal(setup.modes.length, 3);
+	assert.deepEqual(setup.triggers, [
+		"A new DACI doc is shared in Confluence",
+		"An alert pages on-call in PagerDuty",
+	]);
+	// From-scratch (no template context) returns null so the caller falls back.
+	assert.equal(parseTemplateSetupFromContext(""), null);
+	assert.equal(parseTemplateSetupFromContext("just a plain brief"), null);
+});
+
+test("connectableProvidersFromTriggers picks providers that require connection", () => {
+	assert.deepEqual(
+		connectableProvidersFromTriggers(["An alert pages on-call in PagerDuty", "A message in #launch"]),
+		["Slack", "PagerDuty"],
+	);
+	// Jira/Confluence/scheduled don't require connection.
+	assert.deepEqual(connectableProvidersFromTriggers(["A Jira issue is created"]), []);
+});
+
+test("joinNames renders an oxford-comma list", () => {
+	assert.equal(joinNames(["A"]), "A");
+	assert.equal(joinNames(["A", "B"]), "A and B");
+	assert.equal(joinNames(["A", "B", "C"]), "A, B, and C");
+});
+
+test("build turn narrates the real template setup (names, connect, triggers, modes)", () => {
+	const steps = buildStudioAgentCreationTrace({
+		userPrompt: "build it",
+		contextDescription: TEMPLATE_CONTEXT,
+		isFollowUpTurn: true,
+	});
+	const labels = steps.map((s) => s.label);
+	assert.ok(labels.includes("Selecting agent tools"));
+	assert.ok(labels.includes("Connecting integrations"), "connect step present when triggers name a connectable provider");
+	assert.ok(labels.includes("Configuring triggers"), "configure-triggers step present");
+
+	const select = steps.find((s) => s.label === "Selecting agent tools");
+	assert.match(select.content, /Confluence/);
+	assert.match(select.content, /Explore ideas/);
+
+	const connect = steps.find((s) => s.label === "Connecting integrations");
+	assert.match(connect.content, /PagerDuty/);
+
+	const draft = steps.find((s) => s.label === "Drafting agent instructions");
+	const draftRows = draft.contentRows.map((r) => r.content).join(" ");
+	assert.match(draftRows, /Confluence|Jira/); // knowledge grounding row
+});
+
+test("from-scratch build turn falls back to prompt-keyword narration", () => {
+	const steps = buildStudioAgentCreationTrace({
+		userPrompt: "an agent that watches Jira",
+		contextDescription: "",
+		isFollowUpTurn: true,
+	});
+	const labels = steps.map((s) => s.label);
+	assert.ok(labels.includes("Selecting agent tools"));
+	assert.equal(labels.includes("Connecting integrations"), false);
+	assert.equal(labels.includes("Configuring triggers"), false);
 });
