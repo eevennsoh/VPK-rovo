@@ -82,9 +82,9 @@ function ArtifactListRow({
 			<div className="min-w-0 flex-1 transition-[padding] duration-normal ease-out group-hover/hover-reveal-row:pr-[72px] group-has-[:focus-visible]/hover-reveal-row:pr-[72px]">
 				<p className="truncate text-sm font-medium leading-5 text-text">{item.title}</p>
 				<p className="flex items-center gap-1 text-xs leading-4">
-					<span className="text-text-subtle">{item.source}</span>
-					<span className="text-text-subtlest">•</span>
-					<span className="truncate text-text-subtle">{item.owner}</span>
+					<span className="shrink-0 text-text-subtle">{item.source}</span>
+					<span className="shrink-0 text-text-subtlest">•</span>
+					<span className="min-w-0 truncate text-text-subtle">{item.owner}</span>
 				</p>
 			</div>
 			<HoverRevealActions

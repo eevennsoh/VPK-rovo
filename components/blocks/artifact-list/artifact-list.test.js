@@ -61,9 +61,10 @@ test("Artifact List metadata renders source • owner with the subtlest dot", ()
 		"components/blocks/artifact-list/components/artifact-list.tsx",
 	);
 
-	assert.match(source, /<span className="text-text-subtle">\{item\.source\}<\/span>/u);
-	assert.match(source, /<span className="text-text-subtlest">•<\/span>/u);
-	assert.match(source, /<span className="truncate text-text-subtle">\{item\.owner\}<\/span>/u);
+	assert.match(source, /<span className="shrink-0 text-text-subtle">\{item\.source\}<\/span>/u);
+	assert.match(source, /<span className="shrink-0 text-text-subtlest">•<\/span>/u);
+	// Owner is the truncating element; min-w-0 lets the flex child shrink below content.
+	assert.match(source, /<span className="min-w-0 truncate text-text-subtle">\{item\.owner\}<\/span>/u);
 });
 
 test("Artifact List Open button is hover/focus-revealed and stays keyboard-reachable", () => {
