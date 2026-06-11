@@ -122,11 +122,18 @@ test("trigger automation modal uses one shared prompt, name, and active state", 
 	assert.match(CATALOG_SOURCE, /\/\*\* Legacy shared automation prompt[^*]*\*\/\s*prompt\?: string;/u);
 	assert.match(CATALOG_SOURCE, /automationName\?: string;/u);
 	assert.match(CATALOG_SOURCE, /prompt: "",/u);
-	// The modal owns one shared Agent Instructions textarea using the shared VPK
-	// Textarea primitive, not per-trigger textareas.
-	assert.match(TRIGGERS_SOURCE, /import \{ Textarea \} from "@\/components\/ui\/textarea";/u);
+	// The modal owns one shared Agent Instructions rich editor, not per-trigger
+	// textareas, while the legacy prompt field remains the persisted markdown.
+	assert.match(
+		TRIGGERS_SOURCE,
+		/import \{ RichTextCommandMenuSearchField, RichTextEditor \} from "@\/components\/ui-custom\/rich-text-editor";/u,
+	);
 	assert.match(TRIGGERS_SOURCE, /aria-label="Agent Instructions"/u);
 	assert.match(TRIGGERS_SOURCE, /value=\{sharedPrompt\}/u);
+	assert.match(TRIGGERS_SOURCE, /onMarkdownChange=\{setSharedPrompt\}/u);
+	assert.match(TRIGGERS_SOURCE, /dataFlowConfig=\{dataFlowConfig\}/u);
+	assert.match(TRIGGERS_SOURCE, /triggers: draftTriggers\.map\(getAgentTriggerReadableLabel\)/u);
+	assert.doesNotMatch(TRIGGERS_SOURCE, /from "@\/components\/ui\/textarea"/u);
 	assert.doesNotMatch(TRIGGERS_SOURCE, /aria-label="Trigger prompt"/u);
 	assert.doesNotMatch(TRIGGERS_SOURCE, /const handlePromptChange = useCallback\(/u);
 	// Save mirrors shared fields across every persisted trigger value.

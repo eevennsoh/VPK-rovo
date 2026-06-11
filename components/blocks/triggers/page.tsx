@@ -26,8 +26,7 @@ import {
 import { IconTile } from "@/components/ui/icon-tile";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor";
+import { RichTextCommandMenuSearchField, RichTextEditor } from "@/components/ui-custom/rich-text-editor";
 import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/mention-visual";
 import type { RichTextMentionVisual } from "@/components/ui-custom/rich-text-editor/types";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
@@ -912,6 +911,11 @@ export function TriggerAutomationDialog({
 	const [automationName, setAutomationName] = useState(() => getSharedAutomationName(triggers));
 	const [sharedPrompt, setSharedPrompt] = useState(() => getSharedPrompt(triggers));
 	const [active, setActive] = useState(() => getSharedAutomationEnabled(triggers));
+	const dataFlowConfig = useMemo(() => ({
+		name: automationName,
+		instructions: sharedPrompt,
+		triggers: draftTriggers.map(getAgentTriggerReadableLabel),
+	}), [automationName, draftTriggers, sharedPrompt]);
 
 	useEffect(() => {
 		if (open && !wasOpen.current) {
@@ -1051,7 +1055,7 @@ export function TriggerAutomationDialog({
 							triggers={draftTriggers}
 						/>
 					</div>
-					<label className="grid gap-2">
+					<div className="grid gap-2">
 						<span className="flex items-center gap-2 text-sm font-semibold leading-5 text-text">
 							<IconTile
 								aria-hidden={true}
@@ -1062,15 +1066,18 @@ export function TriggerAutomationDialog({
 							/>
 							Agent Instructions
 						</span>
-						<Textarea
+						<RichTextEditor
 							aria-label="Agent Instructions"
-							className="min-h-28 resize-y"
-							onChange={(event) => setSharedPrompt(event.target.value)}
+							className="space-y-2"
+							contentClassName="pt-2"
+							dataFlowConfig={dataFlowConfig}
+							editorClassName="agent-instructions-tiptap-editor text-text"
+							onMarkdownChange={setSharedPrompt}
 							placeholder="Tell the agent what to do when any trigger starts this automation..."
-							rows={5}
+							suggestionVariant="nested"
 							value={sharedPrompt}
 						/>
-					</label>
+					</div>
 				</div>
 				<div className="flex items-center justify-end gap-2 border-t border-border bg-surface-overlay px-6 py-4">
 					<Button onClick={() => onOpenChange(false)} type="button" variant="ghost">

@@ -215,17 +215,16 @@ export function SubagentsNavigator({
 
 	return (
 		<div
-			className={cn("pointer-events-none flex justify-end", className)}
-			style={{ width: SWITCHER_OPEN_WIDTH_PX }}
+			className={className}
+			onBlur={handleBlur}
+			onFocusCapture={() => setIsSwitcherOpen(true)}
+			onKeyDown={handleKeyDown}
+			onMouseEnter={() => setIsSwitcherOpen(true)}
+			onMouseLeave={() => setIsSwitcherOpen(false)}
 		>
 			<div
-				className="pointer-events-auto relative origin-top-right overflow-hidden text-left"
+				className="relative origin-top-right overflow-hidden text-left"
 				id={switcherId}
-				onBlur={handleBlur}
-				onFocusCapture={() => setIsSwitcherOpen(true)}
-				onKeyDown={handleKeyDown}
-				onMouseEnter={() => setIsSwitcherOpen(true)}
-				onMouseLeave={() => setIsSwitcherOpen(false)}
 				style={{
 					boxSizing: "border-box",
 					width: isSwitcherOpen ? SWITCHER_OPEN_WIDTH_PX : MINIMAP_WIDTH_PX,

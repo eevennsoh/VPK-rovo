@@ -733,10 +733,11 @@ test("Agent compact subagents dropdown keeps add and manage actions pinned", () 
 });
 
 test("Agent compact added-item dropdowns do not auto-highlight rows on pointer open", () => {
-	assert.match(AGENT_SOURCE, /import \{ Menu as MenuPrimitive \} from "@base-ui\/react\/menu";/u);
-	assert.match(AGENT_SOURCE, /function useCompactNavMenuNoInitialHighlight\(\)[\s\S]*MenuPrimitive\.createHandle\(\)[\s\S]*shouldClearCompactNavInitialHighlight\(eventDetails\)[\s\S]*clearCompactNavInitialHighlight\(menuHandle\)/u);
+	assert.doesNotMatch(AGENT_SOURCE, /MenuPrimitive\.createHandle|handle=\{compactNavMenu\.handle\}/u);
+	assert.match(AGENT_SOURCE, /function useCompactNavMenuNoInitialHighlight\(\)[\s\S]*useRef\(false\)[\s\S]*useState\(0\)[\s\S]*shouldClearCompactNavInitialHighlight\(eventDetails\)[\s\S]*setResetToken\(\(currentResetToken\) => currentResetToken \+ 1\)/u);
 	assert.match(AGENT_SOURCE, /function shouldClearCompactNavInitialHighlight[\s\S]*eventDetails\.reason === "trigger-hover"[\s\S]*eventDetails\.reason !== "trigger-press"[\s\S]*event\.detail !== 0/u);
-	assert.match(AGENT_SOURCE, /function clearCompactNavInitialHighlight[\s\S]*queueMicrotask[\s\S]*menuHandle\.store\.set\("activeIndex", null\)[\s\S]*requestAnimationFrame[\s\S]*menuHandle\.store\.set\("activeIndex", null\)/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactNavMenuInitialHighlightReset[\s\S]*closest<HTMLElement>\([\s\S]*"\[data-slot='menubar-content'\], \[data-slot='dropdown-menu-content'\]"[\s\S]*\)[\s\S]*queueMicrotask[\s\S]*requestAnimationFrame\(clear\)[\s\S]*window\.setTimeout\(clear, 120\)/u);
+	assert.match(AGENT_SOURCE, /function clearCompactNavInitialHighlight\(contentElement: HTMLElement\)[\s\S]*querySelectorAll<HTMLElement>\("\[data-highlighted\]"\)[\s\S]*removeAttribute\("data-highlighted"\)[\s\S]*setAttribute\("tabindex", "-1"\)[\s\S]*contentElement\.focus\(\{ preventScroll: true \}\)/u);
 	for (const [functionName, nextFunctionName] of [
 		["AgentCompactSubagentsNavButton", "AgentCompactTriggerRow"],
 		["AgentCompactTriggersNavButton", "AgentCompactDirectoryNavButton"],
@@ -748,9 +749,10 @@ test("Agent compact added-item dropdowns do not auto-highlight rows on pointer o
 		const end = AGENT_SOURCE.indexOf(`function ${nextFunctionName}`, start + 1);
 		assert.notEqual(end, -1, `${nextFunctionName} should follow ${functionName}`);
 		const source = AGENT_SOURCE.slice(start, end);
-		assert.match(source, /const compactNavMenu = useCompactNavMenuNoInitialHighlight\(\);/u, `${functionName} should create a compact menu handle`);
-		assert.match(source, /<MenubarMenu handle=\{compactNavMenu\.handle\} onOpenChange=\{compactNavMenu\.onOpenChange\}>/u, `${functionName} should wire the menu handle`);
-		assert.match(source, /<MenubarTrigger[\s\S]*handle=\{compactNavMenu\.handle\}/u, `${functionName} should wire the trigger handle`);
+		assert.match(source, /const compactNavMenu = useCompactNavMenuNoInitialHighlight\(\);/u, `${functionName} should create compact menu reset state`);
+		assert.match(source, /<MenubarMenu onOpenChange=\{compactNavMenu\.onOpenChange\}>/u, `${functionName} should keep the in-tree menu store for positioning`);
+		assert.match(source, /<AgentCompactNavMenuInitialHighlightReset[\s\S]*enabled=\{compactNavMenu\.resetInitialHighlight\}[\s\S]*resetToken=\{compactNavMenu\.resetToken\}/u, `${functionName} should reset the pointer-open highlight inside the real popup`);
+		assert.doesNotMatch(source, /handle=\{compactNavMenu\.handle\}/u, `${functionName} should not use a detached menu handle`);
 	}
 });
 

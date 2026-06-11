@@ -90,9 +90,7 @@ test("Subagents switcher uses base agent header and trigger-name prompt rows", (
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /height: switcherHeight/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /minHeight: switcherHeight/u);
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /height: isSwitcherOpen \? undefined : closedHeight/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /className=\{cn\("pointer-events-none flex justify-end", className\)\}/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /style=\{\{ width: SWITCHER_OPEN_WIDTH_PX \}\}/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /className="pointer-events-auto relative origin-top-right overflow-hidden text-left"/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /className="relative origin-top-right overflow-hidden text-left"/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /<span className="block min-w-0 truncate">\{label\}<\/span>/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /isSwitcherOpen\s*\?\s*"relative pointer-events-auto opacity-100"\s*:\s*"pointer-events-none absolute inset-0 opacity-0"/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /data-slot="subagents-switcher-avatar"[\s\S]*className="flex size-6 shrink-0 items-center justify-center/u);
