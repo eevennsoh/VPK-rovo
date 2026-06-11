@@ -6793,6 +6793,9 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/blocks/apps-directory-demo"),
     { ssr: false },
   ),
+  "artifact-list": dynamic(() => import("./demos/blocks/artifact-list-demo"), {
+    ssr: false,
+  }),
   "tools-directory": dynamic(
     () => import("./demos/blocks/tools-directory-demo"),
     { ssr: false },
