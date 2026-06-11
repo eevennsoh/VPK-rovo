@@ -366,6 +366,16 @@ function mapConfigValuesToMentionItems(
 	);
 }
 
+function mapSubagentConfigValuesToMentionItems(
+	values: readonly string[] | undefined,
+): RichTextMentionItem[] {
+	return getNonEmptyConfigItems(values).map((value) => ({
+		category: "subagent",
+		id: toMentionId("subagent", value),
+		label: value,
+	}));
+}
+
 function mapMemoryToKnowledgeItems(
 	explorer: WikiMemoryExplorerResponse | null,
 ): RichTextMentionItem[] {
@@ -1293,17 +1303,35 @@ function AgentCompactTriggerRow({
 // dropdowns. Drawing natively (rather than scaling a 32px `menu` mark down to
 // 75%) keeps the glyph on ADS's `small` Tile inset (14px) instead of freezing
 // the `medium` inset and shrinking the glyph to 12px. Values not present in the
-// directory (e.g. a freshly created, still-unnamed subagent) fall back to a
-// category-appropriate `small` icon tile, mirroring AgentReferenceChip's
-// fallback. Glyph icons inherit the menu's subtle front-slot treatment;
-// avatars/logos/images keep their color, exactly like the sibling Triggers rows.
+// directory fall back to a category-appropriate `small` icon tile, mirroring
+// AgentReferenceChip's fallback. Subagents are prompt references owned by the
+// parent agent, so they deliberately skip directory avatar resolution and always
+// use the AI-agent tile. Glyph icons inherit the menu's subtle front-slot
+// treatment; avatars/logos/images keep their color, exactly like the sibling
+// Triggers rows.
 function renderAgentReferenceRowVisual(
 	category: RichTextReferenceCategory,
 	label: string,
 	tagColor?: TagColor,
 ): ReactNode {
+	if (category === "subagent") {
+		return (
+			<span className="inline-flex size-6 shrink-0 items-center justify-center">
+				<IconTile
+					aria-hidden
+					className={cn(
+						"border border-border bg-surface",
+						tagColor ? tagColorToMenuIconClassName[tagColor] : "text-icon-subtlest",
+					)}
+					icon={<AiAgentIcon label="" size="small" />}
+					label=""
+					size="small"
+				/>
+			</span>
+		);
+	}
+
 	const visual = getDirectoryMentionItemOrFallback(category, label).visual;
-	const FallbackIcon = category === "subagent" ? AiAgentIcon : PageIcon;
 	return (
 		<span className="inline-flex size-6 shrink-0 items-center justify-center">
 			{visual ? (
@@ -1315,7 +1343,7 @@ function renderAgentReferenceRowVisual(
 						"border border-border bg-surface",
 						tagColor ? tagColorToMenuIconClassName[tagColor] : "text-icon-subtlest",
 					)}
-					icon={<FallbackIcon label="" size="small" />}
+					icon={<PageIcon label="" size="small" />}
 					label=""
 					size="small"
 				/>
@@ -2302,7 +2330,7 @@ function AgentReferenceChip({
 		tagColor?: TagColor;
 	}
 >) {
-	const item = category ? getDirectoryMentionItemOrFallback(category, label) : undefined;
+	const item = category && category !== "subagent" ? getDirectoryMentionItemOrFallback(category, label) : undefined;
 	const visual = item?.visual;
 	const resolvedTagColor = tagColor ?? getTagColorForMentionVisual(visual) ?? "blue";
 	const preview = getRichTextReferencePreview(category, label);
@@ -3585,7 +3613,9 @@ function AgentInstructionsComposer({
 		// at-mentionable top-level agents. So the `@subagent` list comes ONLY from
 		// this agent's own subagents (empty/0 until it generates some); the global
 		// parent-agent palette is intentionally NOT merged in here.
-		subagent: mapConfigValuesToMentionItems("subagent", config.subagents),
+		// Prompt references deliberately carry no directory visual/avatar: subagents
+		// are prompt copies under the parent agent, not nested parent-agent profiles.
+		subagent: mapSubagentConfigValuesToMentionItems(config.subagents),
 		skill: mergeMentionItems(
 			mapConfigValuesToMentionItems("skill", config.skills),
 			EDITOR_PALETTE_MENTION_SOURCES.skill,
