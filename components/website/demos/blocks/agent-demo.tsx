@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useMemo, useRef, useState } from "react";
 import {
 	Agent,
 	AgentCompactAccessPanel,
@@ -33,7 +33,7 @@ import {
 } from "@/components/blocks/conversation-starters";
 import { AgentTestPanel } from "@/components/projects/studio/components/rovo-app-agent-test-panel";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Toggle } from "@/components/ui/toggle";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { cn } from "@/lib/utils";
@@ -188,28 +188,24 @@ function useAgentDemoConfig(initialConfig: AgentConfigFormValue) {
 
 function AgentDemoHeaderActions({
 	activeView,
-	onViewChange,
+	onTestPressedChange,
 }: Readonly<{
 	activeView: AgentDemoView;
-	onViewChange: (view: AgentDemoView) => void;
+	onTestPressedChange: (pressed: boolean) => void;
 }>) {
 	return (
 		<>
 			<AgentMoreOptionsMenu />
-			<ToggleGroup
-				aria-label="Agent config views"
-				onValueChange={(value) => {
-					const nextView = value[value.length - 1];
-					if (nextView === "test" || nextView === "configure") {
-						onViewChange(nextView);
-					}
-				}}
-				value={[activeView]}
+			<Toggle
+				aria-label="Toggle agent test view"
+				onPressedChange={onTestPressedChange}
+				pressed={activeView === "test"}
+				size="default"
+				type="button"
 				variant="outline"
 			>
-				<ToggleGroupItem value="test" onClick={() => onViewChange("test")}>Test</ToggleGroupItem>
-				<ToggleGroupItem value="configure" onClick={() => onViewChange("configure")}>Configure</ToggleGroupItem>
-			</ToggleGroup>
+				Test
+			</Toggle>
 			<Button type="button" size="default" variant="default">
 				Publish
 			</Button>
@@ -280,6 +276,9 @@ function AgentDemoCompactBody({
 	activeSection: AgentCompactHeaderSection | null;
 	configView: ReactNode;
 }>) {
+	if (activeSection === "details") {
+		return configView;
+	}
 	if (activeSection === "insights") {
 		return (
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -333,10 +332,28 @@ export function AgentDemoFull() {
 		toggleListItem,
 		updateListItem,
 	} = useAgentDemoConfig(filledAgentConfig);
-	const [activeSection, setActiveSection] = useState<AgentCompactHeaderSection | null>(null);
+	const [activeSection, setActiveSection] = useState<AgentCompactHeaderSection | null>("details");
 	const [activeView, setActiveView] = useState<AgentDemoView>("configure");
 	const [activeDirectory, setActiveDirectory] = useState<AgentDirectoryKind | null>(null);
+	const lastSectionRef = useRef<AgentCompactHeaderSection>("details");
 	const testEntry = buildAgentDemoTestEntry(config);
+	function handleHeaderSectionChange(section: AgentCompactHeaderSection) {
+		lastSectionRef.current = section;
+		setActiveView("configure");
+		setActiveSection(section);
+	}
+	function handleTestPressedChange(pressed: boolean) {
+		if (pressed) {
+			if (activeSection) {
+				lastSectionRef.current = activeSection;
+			}
+			setActiveView("test");
+			setActiveSection(null);
+			return;
+		}
+		setActiveView("configure");
+		setActiveSection(lastSectionRef.current ?? "details");
+	}
 	function handleOpenDirectory(directory: AgentDirectoryKind) {
 		if (directory === "conversationStarters") {
 			setActiveDirectory("conversationStarters");
@@ -347,9 +364,9 @@ export function AgentDemoFull() {
 		<>
 			<Agent className={cn(AGENT_DEMO_SURFACE_CLASSNAME, "flex flex-col")}>
 				<AgentHeader
-					actions={<AgentDemoHeaderActions activeView={activeView} onViewChange={setActiveView} />}
+					actions={<AgentDemoHeaderActions activeView={activeView} onTestPressedChange={handleTestPressedChange} />}
 					leadingContent={
-						<AgentCompactHeaderNav activeSection={activeSection} onSectionChange={setActiveSection} />
+						<AgentCompactHeaderNav activeSection={activeSection} onSectionChange={handleHeaderSectionChange} />
 					}
 					name={config.name?.trim() || "Untitled agent"}
 				/>
@@ -403,10 +420,28 @@ export function AgentDemoEmpty() {
 		toggleListItem,
 		updateListItem,
 	} = useAgentDemoConfig(emptyAgentConfig);
-	const [activeSection, setActiveSection] = useState<AgentCompactHeaderSection | null>(null);
+	const [activeSection, setActiveSection] = useState<AgentCompactHeaderSection | null>("details");
 	const [activeView, setActiveView] = useState<AgentDemoView>("configure");
 	const [activeDirectory, setActiveDirectory] = useState<AgentDirectoryKind | null>(null);
+	const lastSectionRef = useRef<AgentCompactHeaderSection>("details");
 	const testEntry = buildAgentDemoTestEntry(config);
+	function handleHeaderSectionChange(section: AgentCompactHeaderSection) {
+		lastSectionRef.current = section;
+		setActiveView("configure");
+		setActiveSection(section);
+	}
+	function handleTestPressedChange(pressed: boolean) {
+		if (pressed) {
+			if (activeSection) {
+				lastSectionRef.current = activeSection;
+			}
+			setActiveView("test");
+			setActiveSection(null);
+			return;
+		}
+		setActiveView("configure");
+		setActiveSection(lastSectionRef.current ?? "details");
+	}
 	function handleOpenDirectory(directory: AgentDirectoryKind) {
 		if (directory === "conversationStarters") {
 			setActiveDirectory("conversationStarters");
@@ -417,9 +452,9 @@ export function AgentDemoEmpty() {
 		<>
 			<Agent className={cn(AGENT_DEMO_SURFACE_CLASSNAME, "flex flex-col")}>
 				<AgentHeader
-					actions={<AgentDemoHeaderActions activeView={activeView} onViewChange={setActiveView} />}
+					actions={<AgentDemoHeaderActions activeView={activeView} onTestPressedChange={handleTestPressedChange} />}
 					leadingContent={
-						<AgentCompactHeaderNav activeSection={activeSection} onSectionChange={setActiveSection} />
+						<AgentCompactHeaderNav activeSection={activeSection} onSectionChange={handleHeaderSectionChange} />
 					}
 					name={config.name?.trim() || "Untitled agent"}
 				/>

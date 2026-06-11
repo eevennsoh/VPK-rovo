@@ -54,7 +54,7 @@ import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-cha
 import { getStudioSessionAgentDisplayName, useRovoChat } from "@/app/contexts";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Toggle } from "@/components/ui/toggle";
 import type {
 	StudioSessionAgentEntry,
 } from "@/app/contexts/context-rovo-chat";
@@ -127,6 +127,7 @@ export function RovoAppAgentConfigPanel({
 	const navigatorTop = useSubagentsNavigatorTop(configureTabRef);
 	const [activeDirectory, setActiveDirectory] = useState<AgentDirectoryKind | null>(null);
 	const [activeCompactSection, setActiveCompactSection] = useState<AgentCompactHeaderSection | null>(null);
+	const lastCompactSectionRef = useRef<AgentCompactHeaderSection>("details");
 	const [directoryToolIds, setDirectoryToolIds] = useState<readonly string[]>([]);
 	// Tool to focus when the tools directory opens (e.g. clicking a tool chip).
 	// Cleared on close so a plain "Add" opens at the directory list instead.
@@ -571,31 +572,25 @@ export function RovoAppAgentConfigPanel({
 		openChat("floating");
 	}, [openChat, resetAgentToRovo]);
 
-	const handleViewChange = useCallback(
-		(value: string | null) => {
-			if (value !== "configure" && value !== "insights" && value !== "test") {
-				return;
-			}
-			setActiveCompactSection(null);
-			if (value === "test") {
-				handleTest();
-				return;
-			}
-			onViewChange(value);
-		},
-		[handleTest, onViewChange],
-	);
+	const activeHeaderSection: AgentCompactHeaderSection | null =
+		activeView === "insights"
+			? "insights"
+			: activeView === "configure"
+				? activeCompactSection ?? "details"
+				: null;
 
-	const handleCompactSectionChange = useCallback(
-		(section: AgentCompactHeaderSection) => {
+	const restoreCompactSection = useCallback(
+		(section: AgentCompactHeaderSection = lastCompactSectionRef.current) => {
 			if (section === "insights") {
 				setActiveCompactSection(null);
 				onViewChange("insights");
 				return;
 			}
 			onViewChange("configure");
-			// Only sections with a dedicated panel take over the configure view;
-			// the rest fall back to the standard config fields.
+			if (section === "details") {
+				setActiveCompactSection(null);
+				return;
+			}
 			setActiveCompactSection(
 				section === "surfaces" ||
 				section === "access" ||
@@ -606,6 +601,47 @@ export function RovoAppAgentConfigPanel({
 			);
 		},
 		[onViewChange],
+	);
+
+	const handleViewChange = useCallback(
+		(value: string | null) => {
+			if (value !== "configure" && value !== "insights" && value !== "test") {
+				return;
+			}
+			if (value === "test") {
+				if (activeHeaderSection) {
+					lastCompactSectionRef.current = activeHeaderSection;
+				}
+				handleTest();
+				return;
+			}
+			lastCompactSectionRef.current = value === "insights" ? "insights" : "details";
+			setActiveCompactSection(null);
+			onViewChange(value);
+		},
+		[activeHeaderSection, handleTest, onViewChange],
+	);
+
+	const handleCompactSectionChange = useCallback(
+		(section: AgentCompactHeaderSection) => {
+			lastCompactSectionRef.current = section;
+			restoreCompactSection(section);
+		},
+		[restoreCompactSection],
+	);
+
+	const handleTestPressedChange = useCallback(
+		(pressed: boolean) => {
+			if (pressed) {
+				if (activeHeaderSection) {
+					lastCompactSectionRef.current = activeHeaderSection;
+				}
+				handleTest();
+				return;
+			}
+			restoreCompactSection(lastCompactSectionRef.current ?? "details");
+		},
+		[activeHeaderSection, handleTest, restoreCompactSection],
 	);
 
 	// Mirror the avatar the sidebar nav renders for this agent (entry.profile.avatarSrc)
@@ -641,7 +677,7 @@ export function RovoAppAgentConfigPanel({
 						name={agentName}
 						leadingContent={
 							<AgentCompactHeaderNav
-								activeSection={activeView === "insights" ? "insights" : activeCompactSection}
+								activeSection={activeHeaderSection}
 								avatarSrc={agentAvatarSrc}
 								onSectionChange={handleCompactSectionChange}
 							/>
@@ -649,29 +685,19 @@ export function RovoAppAgentConfigPanel({
 						actions={
 							<>
 								<AgentMoreOptionsMenu />
-								<ToggleGroup
-									aria-label="Agent config views"
+								<Toggle
+									aria-label="Toggle agent test view"
+									className="rounded-[6px] hover:border-border data-pressed:hover:border-border-selected"
+									data-testid="agent-config-test"
+									data-screen-assistant-target="studio-agent-config-test"
+									onPressedChange={handleTestPressedChange}
+									pressed={activeView === "test"}
+									size="default"
+									type="button"
 									variant="outline"
-									value={[activeView]}
-									onValueChange={(value) =>
-										handleViewChange((value[0] as AgentConfigView | undefined) ?? null)
-									}
 								>
-									<ToggleGroupItem
-										value="test"
-										data-testid="agent-config-test"
-										data-screen-assistant-target="studio-agent-config-test"
-									>
-										Test
-									</ToggleGroupItem>
-									<ToggleGroupItem
-										value="configure"
-										data-testid="agent-config-configure"
-										data-screen-assistant-target="studio-agent-config-configure"
-									>
-										Configure
-									</ToggleGroupItem>
-								</ToggleGroup>
+									Test
+								</Toggle>
 								<Button
 									type="button"
 									size="default"

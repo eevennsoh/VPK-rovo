@@ -21,23 +21,21 @@ export interface UseRovoAppComposerRevealResult {
 	scratchScribbleReplayKey: number;
 	/** Restart both decorative traces (call on hover/focus). */
 	replayRevealTraces: () => void;
+	/** Show the reveal for deliberate input focus. */
+	setInputFocused: (focused: boolean) => void;
 	/** Show the reveal immediately (call on pointer enter). */
 	showReveal: () => void;
 	/** Schedule hiding the reveal after the grace period (call on pointer leave). */
 	scheduleHideReveal: () => void;
-	/** Mark the textarea focused (keeps the reveal open). */
-	setInputFocused: (focused: boolean) => void;
 }
 
 /**
- * Owns the Studio "floating" composer's hover/focus reveal of the
+ * Owns the Studio "floating" composer's hover/value reveal of the
  * "Browse templates / start from scratch" link and its decorative SVG traces.
- *
- * Extracted verbatim from the original Studio composer so behavior is unchanged.
  */
-export function useRovoAppComposerReveal(): UseRovoAppComposerRevealResult {
-	const [isInputFocused, setIsInputFocused] = useState(false);
+export function useRovoAppComposerReveal({ hasPromptValue }: Readonly<{ hasPromptValue: boolean }>): UseRovoAppComposerRevealResult {
 	const [isComposerHoverActive, setIsComposerHoverActive] = useState(false);
+	const [isInputFocused, setIsInputFocused] = useState(false);
 	const [scratchScribbleReplayKey, setScratchScribbleReplayKey] = useState(0);
 	const [templateSweepReplayKey, setTemplateSweepReplayKey] = useState(0);
 	const [isScratchScribblePlaying, setIsScratchScribblePlaying] = useState(false);
@@ -93,8 +91,9 @@ export function useRovoAppComposerReveal(): UseRovoAppComposerRevealResult {
 	}, []);
 
 	// Reveal shows while the composer is hovered (with a close grace period so
-	// the pointer can reach the link below) or while the textarea is focused.
-	const isRevealVisible = isInputFocused || isComposerHoverActive;
+	// the pointer can reach the link below), when the user deliberately focuses
+	// the input for keyboard access, or once the prompt has content.
+	const isRevealVisible = hasPromptValue || isComposerHoverActive || isInputFocused;
 	const showTemplateSweep = isRevealVisible;
 	const showScratchScribble = isRevealVisible && isScratchScribblePlaying;
 
@@ -105,8 +104,8 @@ export function useRovoAppComposerReveal(): UseRovoAppComposerRevealResult {
 		templateSweepReplayKey,
 		scratchScribbleReplayKey,
 		replayRevealTraces,
+		setInputFocused: setIsInputFocused,
 		showReveal,
 		scheduleHideReveal,
-		setInputFocused: setIsInputFocused,
 	};
 }
