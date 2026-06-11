@@ -72,9 +72,14 @@ test("Agent is exposed as a website block", () => {
 
 test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /RichTextEditor,[\s\S]*\} from "@\/components\/ui-custom\/rich-text-editor";/u);
+	assert.match(AGENT_SOURCE, /import type \{ EditorToolbarViewMode \} from "@\/components\/blocks\/editor-toolbar";/u);
 	assert.match(AGENT_SOURCE, /function AgentInstructionsComposer/u);
 	assert.match(AGENT_SOURCE, /<RichTextEditor[\s\S]*aria-label="Agent instructions"/u);
 	assert.match(AGENT_SOURCE, /editorClassName=\{cn\("agent-instructions-tiptap-editor text-text", editorClassName\)\}/u);
+	assert.match(AGENT_SOURCE, /onViewModeChange\?: \(mode: EditorToolbarViewMode\) => void;/u);
+	assert.match(AGENT_SOURCE, /onInstructionsViewModeChange\?: \(mode: EditorToolbarViewMode\) => void;/u);
+	assert.match(AGENT_SOURCE, /onViewModeChange=\{onViewModeChange\}/u);
+	assert.match(AGENT_SOURCE, /onViewModeChange=\{onInstructionsViewModeChange\}/u);
 	assert.match(AGENT_SOURCE, /placeholder="Press \/ to help me describe the agent's role, or start with a template"/u);
 	assert.match(AGENT_SOURCE, /placeholderSlot=\{\([\s\S]*className="tiptap-editor text-sm leading-\[1\.55\] text-text-subtlest"[\s\S]*Press <code>\/<\/code> to help me describe the agent&apos;s role,[\s\S]*start with a template[\s\S]*\)\}/u);
 	// When a host provides onStartWithTemplate it takes over (opens its own
@@ -1418,6 +1423,9 @@ test("Shared toolbar exposes far-right rendered and Markdown mode tabs gated by 
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, />\s*Markdown\s*</u);
 	assert.doesNotMatch(EDITOR_TOOLBAR_SOURCE, /Show Markdown source/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /dataFlowConfig\?: StudioAgentDataFlowConfig;/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /onViewModeChange\?: \(mode: EditorToolbarViewMode\) => void;/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /function updateViewMode\(nextMode: EditorToolbarViewMode\): void \{[\s\S]*setViewMode\(nextMode\);[\s\S]*onViewModeChange\?\.\(nextMode\);/u);
+	assert.match(RICH_TEXT_EDITOR_SOURCE, /useEffect\(\(\) => \{[\s\S]*onViewModeChange\?\.\(viewMode\);[\s\S]*\}, \[onViewModeChange, viewMode\]\);/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /mode=\{viewMode\}/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /showDataFlowMode=\{Boolean\(dataFlowConfig\)\}/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /data-rich-text-data-flow-diagram/u);
