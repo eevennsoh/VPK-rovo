@@ -67,6 +67,10 @@ const SUBAGENTS_HOOK_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "hooks", "use-agent-config-subagents.ts"),
 	"utf8",
 );
+const SUBAGENTS_NAVIGATOR_TOP_HOOK_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "hooks", "use-subagents-navigator-top.ts"),
+	"utf8",
+);
 const SUBAGENT_PROMPTS_LIB_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/blocks/subagents/lib/subagent-prompts.ts"),
 	"utf8",
@@ -679,7 +683,12 @@ test("Studio agent config panel wires the subagents experience into AgentConfigF
 	// The floating SubagentsNavigator is also rendered so users can quickly swap
 	// between the base agent and its subagents (self-hides when there are none).
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ SubagentsNavigator \} from "@\/components\/blocks\/subagents\/subagents-navigator";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[instructionsViewMode, setInstructionsViewMode\] = useState<EditorToolbarViewMode>\("rendered"\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const shouldShowSubagentsNavigator =[\s\S]*activeView === "configure" &&[\s\S]*activeCompactSection === null &&[\s\S]*instructionsViewMode !== "data-flow";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /\{shouldShowSubagentsNavigator \? \([\s\S]*<SubagentsNavigator/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<SubagentsNavigator[\s\S]*activeSubagentId=\{activeSubagentId\}[\s\S]*baseAgent=\{navigatorBaseAgent\}[\s\S]*onSelectBaseAgent=\{selectBaseAgent\}[\s\S]*onSelectSubagent=\{selectSubagent\}[\s\S]*subagents=\{subagentPrompts\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onInstructionsViewModeChange=\{setInstructionsViewMode\}/u);
+	assert.match(SUBAGENTS_NAVIGATOR_TOP_HOOK_SOURCE, /\[data-rich-text-markdown-source\]/u);
 	// Base name/description always edit the base agent, even while a subagent is selected.
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleBaseTextChange = useCallback\([\s\S]*updateDraft\(\{ description: value, summary: value \}\)/u);
 });

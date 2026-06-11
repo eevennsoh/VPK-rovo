@@ -72,6 +72,7 @@ interface RichTextEditorProps
 	 * keep the plain empty title with no button.
 	 */
 	onOpenDirectory?: (category: RichTextSlashCategory) => void;
+	onViewModeChange?: (mode: EditorToolbarViewMode) => void;
 	showToolbar?: boolean;
 	showBubbleMenu?: boolean;
 	showFloatingMenu?: boolean;
@@ -302,6 +303,7 @@ export function RichTextEditor({
 	onInsertReferenceOption,
 	onAskRovo,
 	onOpenDirectory,
+	onViewModeChange,
 	showToolbar = true,
 	showBubbleMenu = true,
 	showFloatingMenu = false,
@@ -326,6 +328,16 @@ export function RichTextEditor({
 	const [isRefiningDataFlow, setIsRefiningDataFlow] = useState(false);
 	const isMarkdownMode = viewMode === "markdown";
 	const isDataFlowMode = viewMode === "data-flow";
+
+	useEffect(() => {
+		onViewModeChange?.(viewMode);
+	}, [onViewModeChange, viewMode]);
+
+	function updateViewMode(nextMode: EditorToolbarViewMode): void {
+		setViewMode(nextMode);
+		onViewModeChange?.(nextMode);
+	}
+
 	// Pass the directory launcher only when a host actually supplies one. The
 	// renderer shows the empty state's "Browse all" button whenever this is
 	// defined, so an always-present wrapper would render a dead button on
@@ -495,7 +507,7 @@ export function RichTextEditor({
 			});
 			setIsEmpty(!markdownSource.trim());
 			onMentionInventoryChangeRef.current?.(getEditorMentionInventory(editor));
-			setViewMode(nextMode);
+			updateViewMode(nextMode);
 			return;
 		}
 
@@ -503,7 +515,7 @@ export function RichTextEditor({
 			setMarkdownSource(editor.getMarkdown());
 		}
 
-		setViewMode(nextMode);
+		updateViewMode(nextMode);
 	}
 
 	function handleToggleMarkdownMode(): void {

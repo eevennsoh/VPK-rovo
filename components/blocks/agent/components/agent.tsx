@@ -64,6 +64,7 @@ import {
 	EditorPaletteSearchPicker,
 	type EditorPaletteSearchCategory,
 } from "@/components/blocks/editor-palette/page";
+import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import { Accordion,
 	AccordionContent,
 	AccordionItem,
@@ -3538,6 +3539,7 @@ function AgentInstructionsComposer({
 	onOpenDirectory,
 	onRemoveReferenceValue,
 	onStartWithTemplate,
+	onViewModeChange,
 	screenAssistantTargetId,
 	showSectionLabel = true,
 	toolbarBelowSlot,
@@ -3556,6 +3558,7 @@ function AgentInstructionsComposer({
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	onRemoveReferenceValue?: (field: AgentConfigReferenceListFieldName, value: string) => void;
 	onStartWithTemplate?: () => void;
+	onViewModeChange?: (mode: EditorToolbarViewMode) => void;
 	screenAssistantTargetId?: string;
 	showSectionLabel?: boolean;
 	toolbarBelowSlot?: ReactNode;
@@ -3715,6 +3718,7 @@ function AgentInstructionsComposer({
 				)}
 				onInsertReferenceOption={handleInsertReferenceOption}
 				onOpenDirectory={handleOpenDirectory}
+				onViewModeChange={onViewModeChange}
 				suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
 				toolbarBelowSlot={toolbarBelowSlot}
 				value={instructions}
@@ -4106,6 +4110,7 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	// triggers, subagents, and conversation starters can't be configured.
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	idPrefix: string;
+	onInstructionsViewModeChange?: (mode: EditorToolbarViewMode) => void;
 	onManageSubagents?: () => void;
 	onProfileTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
@@ -4156,6 +4161,7 @@ export const AgentConfigFields = memo(
 		onAddListValues,
 		onAppendListItem,
 		onConnectTrigger,
+		onInstructionsViewModeChange,
 		onManageTriggers,
 		onManageSubagents,
 		onOpenDirectory,
@@ -4377,6 +4383,7 @@ export const AgentConfigFields = memo(
 							onOpenDirectory={handleOpenDirectory}
 							onRemoveReferenceValue={handleRemoveReferenceValue}
 							onStartWithTemplate={onStartWithTemplate}
+							onViewModeChange={onInstructionsViewModeChange}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 							showSectionLabel={false}
 						/>

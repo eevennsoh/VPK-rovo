@@ -47,6 +47,7 @@ import {
 	type AgentConfigTextFieldName,
 	type AgentHideableConfigField,
 } from "@/components/blocks/agent";
+import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import type { ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
@@ -127,6 +128,7 @@ export function RovoAppAgentConfigPanel({
 	const navigatorTop = useSubagentsNavigatorTop(configureTabRef);
 	const [activeDirectory, setActiveDirectory] = useState<AgentDirectoryKind | null>(null);
 	const [activeCompactSection, setActiveCompactSection] = useState<AgentCompactHeaderSection | null>(null);
+	const [instructionsViewMode, setInstructionsViewMode] = useState<EditorToolbarViewMode>("rendered");
 	const lastCompactSectionRef = useRef<AgentCompactHeaderSection>("details");
 	const [directoryToolIds, setDirectoryToolIds] = useState<readonly string[]>([]);
 	// Tool to focus when the tools directory opens (e.g. clicking a tool chip).
@@ -578,6 +580,10 @@ export function RovoAppAgentConfigPanel({
 			: activeView === "configure"
 				? activeCompactSection ?? "details"
 				: null;
+	const shouldShowSubagentsNavigator =
+		activeView === "configure" &&
+		activeCompactSection === null &&
+		instructionsViewMode !== "data-flow";
 
 	const restoreCompactSection = useCallback(
 		(section: AgentCompactHeaderSection = lastCompactSectionRef.current) => {
@@ -735,22 +741,24 @@ export function RovoAppAgentConfigPanel({
 								    subagents. Self-hides until at least one subagent exists.
 								    The wrapper carries the measured `top` so the switcher
 								    top-aligns with the first line of the instructions editor. */}
-								<div
-									className="absolute right-4 z-20 hidden md:block"
-									style={{ top: navigatorTop }}
-								>
-									<SubagentsNavigator
-										activeSubagentId={activeSubagentId}
-										baseAgent={navigatorBaseAgent}
-										onCreateSubagent={createSubagent}
-										onDeleteSubagent={deleteSubagentById}
-										onManageSubagents={() => setIsManageSubagentsOpen(true)}
-										onSelectBaseAgent={selectBaseAgent}
-										onSelectSubagent={selectSubagent}
-										onToggleSubagent={toggleSubagent}
-										subagents={subagentPrompts}
-									/>
-								</div>
+								{shouldShowSubagentsNavigator ? (
+									<div
+										className="absolute right-4 z-20 hidden md:block"
+										style={{ top: navigatorTop }}
+									>
+										<SubagentsNavigator
+											activeSubagentId={activeSubagentId}
+											baseAgent={navigatorBaseAgent}
+											onCreateSubagent={createSubagent}
+											onDeleteSubagent={deleteSubagentById}
+											onManageSubagents={() => setIsManageSubagentsOpen(true)}
+											onSelectBaseAgent={selectBaseAgent}
+											onSelectSubagent={selectSubagent}
+											onToggleSubagent={toggleSubagent}
+											subagents={subagentPrompts}
+										/>
+									</div>
+								) : null}
 								<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-4 py-4">
 									{activeCompactSection === "access" ? (
 										<div className="-mr-4 min-h-0 flex-1 overflow-y-auto pr-4">
@@ -801,6 +809,7 @@ export function RovoAppAgentConfigPanel({
 											onAddListValues={appendListValues}
 											onAppendListItem={appendListItem}
 											onConnectTrigger={handleConnectTrigger}
+											onInstructionsViewModeChange={setInstructionsViewMode}
 											onManageSubagents={() => setIsManageSubagentsOpen(true)}
 											onSelectListItem={handleSelectListItem}
 											onStartWithTemplate={onStartWithTemplate}
