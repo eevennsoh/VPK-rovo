@@ -166,7 +166,7 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /No agents yet/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /Browse templates/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /<Button onClick=\{onCreateAgent\} type="button">\s*Create\s*<\/Button>/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /entry\.publishStatus === "published" \? "V1" : "Draft"/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /entry\.publishedVersion > 0 \|\| entry\.publishedResult \? `V\$\{entry\.publishedVersion \|\| 1\}` : "Draft"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /formatRelativeModifiedTime\(entry\.lastTouchedAt\)/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /STUDIO_PINNED_AGENTS_STORAGE_KEY/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /onClick=\{\(\) => onEditAgent\(entry\.profile\.id\)\}/u);
@@ -505,7 +505,8 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_BLOCK_SOURCE, /style=\{\{ backgroundColor: coverBackgroundColor \}\}/u);
 	assert.match(AGENT_BLOCK_SOURCE, /Add rules for when this agent runs/u);
 	assert.match(AGENT_BLOCK_SOURCE, /Add prompts to help people start/u);
-	assert.match(AGENT_BLOCK_SOURCE, /aria-label="Knowledge mode"/u);
+	assert.match(AGENT_BLOCK_SOURCE, /knowledgeMode: KnowledgeModeValue;/u);
+	assert.match(AGENT_BLOCK_SOURCE, /onKnowledgeModeChange=\{setKnowledgeMode\}/u);
 	assert.match(AGENT_BLOCK_SOURCE, /Press \/ to help me describe the agent's role/u);
 	assert.match(AGENT_BLOCK_SOURCE, /dataFlowConfig=\{config\}/u);
 	assert.doesNotMatch(AGENT_BLOCK_SOURCE, /layout\?: "default" \| "compact";/u);
@@ -549,12 +550,13 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Tabs, TabsContent \} from "@\/components\/ui\/tabs";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Toggle \} from "@\/components\/ui\/toggle";/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
-	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Badge \} from "@\/components\/ui\/badge";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /export type AgentConfigView = "configure" \| "insights" \| "test";/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /function getPublishLabel/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const restoreCompactSection = useCallback\([\s\S]*if \(section === "insights"\) \{[\s\S]*setActiveCompactSection\(null\);[\s\S]*onViewChange\("insights"\);[\s\S]*return;[\s\S]*\}[\s\S]*onViewChange\("configure"\);[\s\S]*if \(section === "details"\) \{[\s\S]*setActiveCompactSection\(null\);[\s\S]*return;[\s\S]*\}[\s\S]*setActiveCompactSection\(\s*section === "surfaces" \|\|[\s\S]*section === "access" \|\|[\s\S]*section === "users" \|\|[\s\S]*section === "evaluation"[\s\S]*\? section[\s\S]*: null,/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /if \(value === "test"\) \{[\s\S]*lastCompactSectionRef\.current = activeHeaderSection;[\s\S]*handleTest\(\);/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentCompactHeaderNav[\s\S]*activeSection=\{activeHeaderSection\}[\s\S]*avatarSrc=\{agentAvatarSrc\}[\s\S]*onSectionChange=\{handleCompactSectionChange\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const compactHeaderNavItems = useMemo\([\s\S]*hasPublishedVersion[\s\S]*\? \[AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM, \.\.\.AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS\][\s\S]*: \[AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM\]/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentCompactHeaderNav[\s\S]*activeSection=\{activeHeaderSection\}[\s\S]*avatarSrc=\{agentAvatarSrc\}[\s\S]*items=\{compactHeaderNavItems\}[\s\S]*onSectionChange=\{handleCompactSectionChange\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /activeCompactSection === "surfaces" \? \([\s\S]*<AgentSurfaces className="-mr-4 pr-4" \/>[\s\S]*\) : \([\s\S]*<AgentConfigFields/u);
 	// Clicking the "Evaluation" compact-nav tab renders the full-bleed Evaluation screen.
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ AgentEvaluation \} from "@\/components\/blocks\/agent-evaluation";/u);
@@ -635,7 +637,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.doesNotMatch(askRovoChatPanelSource, /showAgentTestControls/u);
 	// The Ask Rovo tab memo is gone entirely now that the helper is plain chat.
 	assert.doesNotMatch(SHELL_SOURCE, /askRovoCustomAgentTabs/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \{ chatSurface, openChat, resetAgentToRovo \} = useRovoChat\(\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /restoreSessionAgentVersion,[\s\S]*sessionAgentSaveStatus,[\s\S]*sessionAgentSavedAt,[\s\S]*\} = useRovoChat\(\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenFloatingRovoChat = useCallback\(\(\) => \{[\s\S]*resetAgentToRovo\(\);[\s\S]*openChat\("floating"\);[\s\S]*\}, \[openChat, resetAgentToRovo\]\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<FloatingRovoButton ariaLabel="Open Rovo chat" product="home" onButtonClick=\{handleOpenFloatingRovoChat\} \/>/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /chatGreeting\?: ChatPanelGreetingProps;/u);
@@ -645,6 +647,21 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_TEST_PANEL_SOURCE, /aria-label="Agent test"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /data-testid="agent-test-panel"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /className=\{cn\("h-full min-h-0 px-4", className\)\}/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /function getAgentTestVersionOptions\(entry: StudioSessionAgentEntry\)/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /id: "latest"[\s\S]*result: entry\.draftResult/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /id: "published"[\s\S]*result: entry\.publishedResult/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /id: `history:\$\{version\.id\}`[\s\S]*result: version\.snapshot/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /label: `V\$\{version\.version\} - \$\{version\.label\}`/u);
+	assert.match(CHAT_PANEL_SOURCE, /export interface ChatPanelAgentVersionOption/u);
+	assert.match(CHAT_PANEL_SOURCE, /agentVersionOptions\?: readonly ChatPanelAgentVersionOption\[\];/u);
+	assert.match(CHAT_PANEL_SOURCE, /selectedAgentVersionId\?: string;/u);
+	assert.match(CHAT_PANEL_SOURCE, /onAgentVersionChange\?: \(versionId: string\) => void;/u);
+	assert.match(CHAT_PANEL_SOURCE, /aria-label="Switch version"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /agentVersionOptions=\{versionOptions\}/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /selectedAgentVersionId=\{selectedVersionId\}/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /onAgentVersionChange=\{onSelectVersion\}/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /buildAgentTestProfile\(entry, selectedResult, selectedOption\.label\)/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTestChatPanel[\s\S]*result=\{selectedResult\}[\s\S]*versionOptions=\{versionOptions\}[\s\S]*selectedVersionId=\{selectedVersionId\}[\s\S]*onSelectVersion=\{setSelectedVersionId\}[\s\S]*\/>/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /containerClassName="h-full min-h-0 w-full overflow-visible"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /composerContainerClassName="px-0"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /conversationContentClassName="px-0"/u);
@@ -656,6 +673,31 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /<Label htmlFor=\{`agent-\$\{profileId\}-name`\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /conversationStarterIcons: Array\.isArray\(config\.conversationStarterIcons\)[\s\S]*config\.conversationStarterIcons\.filter\(\(_, itemIndex\) => itemIndex !== index\)/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /saveLabel=\{conversationStarterDialogValue\.length > 0 \? "Save" : "Add"\}/u);
+});
+
+test("Studio publish dropdown separates draft changes from version history", () => {
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /type PublishDropdownView = "summary" \| "draftChanges" \| "history" \| "versionDetail";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /function getDraftChangeCountLabel\(changeSummary: StudioAgentChangeSummary\): string/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /function getDraftChangePreviewLabel\(changeSummary: StudioAgentChangeSummary, publishedVersionLabel: string\): string/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /setView\("draftChanges"\)/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<div className="min-w-0 flex-1 truncate text-sm font-semibold text-text">Unpublished changes<\/div>/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentPublishChangeList changeSummary=\{changeSummary\} \/>/u);
+
+	const historyViewSource = AGENT_CONFIG_PANEL_SOURCE.slice(
+		AGENT_CONFIG_PANEL_SOURCE.indexOf('{view === "history" ? ('),
+		AGENT_CONFIG_PANEL_SOURCE.indexOf('{view === "versionDetail"'),
+	);
+	assert.match(historyViewSource, /Version history/u);
+	assert.match(historyViewSource, /publishedVersions\.map/u);
+	assert.doesNotMatch(historyViewSource, /entry\.versionHistory\.map/u);
+	assert.doesNotMatch(historyViewSource, /<span>\{publishedVersionLabel\}<\/span>/u);
+	assert.match(historyViewSource, /<span>\{`V\$\{version\.version\}`\}<\/span>/u);
+	assert.match(historyViewSource, /\{version\.label\} · \{formatRelativeTime\(version\.createdAt\)\}/u);
+	assert.doesNotMatch(historyViewSource, /Latest/u);
+	assert.doesNotMatch(historyViewSource, /Same as/u);
+	assert.doesNotMatch(historyViewSource, /No unpublished changes since/u);
+	assert.doesNotMatch(historyViewSource, /getDraftChangeCountLabel|getDraftChangePreviewLabel/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /const publishedVersions = entry\.versionHistory\.filter\(\(version\) => version\.kind === "publish" \|\| version\.kind === "update"\);/u);
 });
 
 test("Studio agent config panel wires the subagents experience into AgentConfigFields", () => {
@@ -743,8 +785,8 @@ test("Chat greeting custom-agent starters prefer explicit icons and fall back to
 	// Managed conversation starters pass explicit icon components from the
 	// config panel. Older/iconless starters keep the neutral "ai-chat" fallback.
 	assert.match(CHAT_GREETING_SOURCE, /const CUSTOM_AGENT_STARTER_ICON_NAME = "ai-chat";/u);
-	assert.match(CHAT_GREETING_SOURCE, /const IconComponent = suggestion\.icon;/u);
-	assert.match(CHAT_GREETING_SOURCE, /IconComponent \? \(\s*<IconComponent label=\{suggestion\.label\} color=\{token\("color\.icon\.subtle"\)\} \/>/u);
+	assert.match(CHAT_GREETING_SOURCE, /icon=\{suggestion\.icon\}/u);
+	assert.match(CHAT_GREETING_SOURCE, /iconColor=\{token\("color\.icon\.subtle"\)\}/u);
 	assert.doesNotMatch(CHAT_GREETING_SOURCE, /resolveConversationStarterVisualIdentity/u);
 	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CardIdentityTile/u);
 	assert.match(

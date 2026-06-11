@@ -1,6 +1,7 @@
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import type {
 	StudioAgentPublishStatus,
+	StudioAgentVersionRecord,
 	StudioSessionAgentEntry,
 } from "@/app/contexts/context-rovo-chat";
 
@@ -20,6 +21,20 @@ export interface PersistedSessionAgentRecord {
 	readonly publishedResult: RovoDataParts["agent-result"] | null;
 	readonly publishStatus: StudioAgentPublishStatus;
 	readonly lastTouchedAt: number;
+	readonly publishedVersion: number;
+	readonly lastPublishedAt: number | null;
+	readonly lastPublishedBy: string | null;
+	readonly versionHistory: readonly StudioAgentVersionRecord[];
+}
+
+interface RawPersistedSessionAgentRecord extends Omit<
+	PersistedSessionAgentRecord,
+	"lastPublishedAt" | "lastPublishedBy" | "publishedVersion" | "versionHistory"
+> {
+	readonly publishedVersion?: number;
+	readonly lastPublishedAt?: number | null;
+	readonly lastPublishedBy?: string | null;
+	readonly versionHistory?: readonly StudioAgentVersionRecord[];
 }
 
 interface LegacyPublishedAgentRecord {
@@ -50,10 +65,56 @@ function isPublishStatus(value: unknown): value is StudioAgentPublishStatus {
 	return value === "testing" || value === "published";
 }
 
-function isPersistedSessionAgentRecord(value: unknown): value is PersistedSessionAgentRecord {
+function isVersionKind(value: unknown): value is StudioAgentVersionRecord["kind"] {
+	return value === "publish" || value === "update" || value === "rollback";
+}
+
+function isChangeSummary(value: unknown): value is StudioAgentVersionRecord["changeSummary"] {
+	if (!isPlainRecord(value) || typeof value.count !== "number" || !Number.isFinite(value.count)) {
+		return false;
+	}
+	return Array.isArray(value.sections);
+}
+
+function isStudioAgentVersionRecord(value: unknown): value is StudioAgentVersionRecord {
 	if (!isPlainRecord(value)) {
 		return false;
 	}
+	return (
+		typeof value.id === "string" &&
+		typeof value.label === "string" &&
+		(
+			value.version === undefined ||
+			(typeof value.version === "number" && Number.isFinite(value.version))
+		) &&
+		isVersionKind(value.kind) &&
+		typeof value.createdAt === "number" &&
+		Number.isFinite(value.createdAt) &&
+		typeof value.createdBy === "string" &&
+		isAgentResult(value.snapshot) &&
+		isChangeSummary(value.changeSummary)
+	);
+}
+
+function isPersistedSessionAgentRecord(value: unknown): value is RawPersistedSessionAgentRecord {
+	if (!isPlainRecord(value)) {
+		return false;
+	}
+	const hasValidPublishedVersion =
+		value.publishedVersion === undefined ||
+		(typeof value.publishedVersion === "number" && Number.isFinite(value.publishedVersion));
+	const hasValidLastPublishedAt =
+		value.lastPublishedAt === undefined ||
+		value.lastPublishedAt === null ||
+		(typeof value.lastPublishedAt === "number" && Number.isFinite(value.lastPublishedAt));
+	const hasValidLastPublishedBy =
+		value.lastPublishedBy === undefined ||
+		value.lastPublishedBy === null ||
+		typeof value.lastPublishedBy === "string";
+	const hasValidVersionHistory =
+		value.versionHistory === undefined ||
+		(Array.isArray(value.versionHistory) && value.versionHistory.every(isStudioAgentVersionRecord));
+
 	return (
 		typeof value.profileId === "string" &&
 		typeof value.resultKey === "string" &&
@@ -63,7 +124,11 @@ function isPersistedSessionAgentRecord(value: unknown): value is PersistedSessio
 		(value.publishedResult === null || isAgentResult(value.publishedResult)) &&
 		isPublishStatus(value.publishStatus) &&
 		typeof value.lastTouchedAt === "number" &&
-		Number.isFinite(value.lastTouchedAt)
+		Number.isFinite(value.lastTouchedAt) &&
+		hasValidPublishedVersion &&
+		hasValidLastPublishedAt &&
+		hasValidLastPublishedBy &&
+		hasValidVersionHistory
 	);
 }
 
@@ -93,6 +158,88 @@ function parseStoredArray<T>(raw: string | null, guard: (value: unknown) => valu
 	}
 }
 
+function createLegacyVersionHistory(
+	result: RovoDataParts["agent-result"] | null,
+	lastTouchedAt: number,
+	lastPublishedBy: string | null,
+): readonly StudioAgentVersionRecord[] {
+	if (!result) {
+		return [];
+	}
+
+	return [{
+		id: `legacy-publish-${lastTouchedAt}`,
+		label: "Agent published",
+		version: 1,
+		kind: "publish",
+		createdAt: lastTouchedAt,
+		createdBy: lastPublishedBy ?? "Venn Soh",
+		snapshot: result,
+		changeSummary: { count: 0, sections: [] },
+	}];
+}
+
+function normalizeVersionHistory(
+	versionHistory: readonly StudioAgentVersionRecord[],
+	publishedVersion: number,
+): readonly StudioAgentVersionRecord[] {
+	const ascendingVersion = [...versionHistory].reverse();
+	let derivedVersion = 0;
+	const normalizedAscending = ascendingVersion.map((versionRecord) => {
+		if (typeof versionRecord.version === "number" && Number.isFinite(versionRecord.version)) {
+			derivedVersion = Math.max(derivedVersion, Math.floor(versionRecord.version));
+			return {
+				...versionRecord,
+				version: Math.max(1, Math.floor(versionRecord.version)),
+			};
+		}
+
+		if (versionRecord.kind === "publish" || versionRecord.kind === "update") {
+			derivedVersion += 1;
+		}
+
+		return {
+			...versionRecord,
+			version: Math.max(1, derivedVersion || publishedVersion || 1),
+		};
+	});
+
+	return normalizedAscending.reverse();
+}
+
+function normalizePersistedRecord(record: RawPersistedSessionAgentRecord): PersistedSessionAgentRecord {
+	const publishedVersion =
+		typeof record.publishedVersion === "number" && Number.isFinite(record.publishedVersion)
+			? Math.max(0, Math.floor(record.publishedVersion))
+			: record.publishedResult
+				? 1
+				: 0;
+	const lastPublishedAt =
+		typeof record.lastPublishedAt === "number" && Number.isFinite(record.lastPublishedAt)
+			? record.lastPublishedAt
+			: record.publishedResult
+				? record.lastTouchedAt
+				: null;
+	const lastPublishedBy =
+		typeof record.lastPublishedBy === "string" && record.lastPublishedBy.trim()
+			? record.lastPublishedBy
+			: record.publishedResult
+				? "Venn Soh"
+				: null;
+	const versionHistory = record.versionHistory && record.versionHistory.length > 0
+		? record.versionHistory
+		: createLegacyVersionHistory(record.publishedResult, lastPublishedAt ?? record.lastTouchedAt, lastPublishedBy);
+	const normalizedVersionHistory = normalizeVersionHistory(versionHistory, publishedVersion);
+
+	return {
+		...record,
+		publishedVersion,
+		lastPublishedAt,
+		lastPublishedBy,
+		versionHistory: normalizedVersionHistory,
+	};
+}
+
 function migrateLegacyRecord(record: LegacyPublishedAgentRecord): PersistedSessionAgentRecord {
 	const lastTouchedAt =
 		typeof record.lastTouchedAt === "number" && Number.isFinite(record.lastTouchedAt)
@@ -108,6 +255,10 @@ function migrateLegacyRecord(record: LegacyPublishedAgentRecord): PersistedSessi
 		publishedResult: record.result,
 		publishStatus: "published",
 		lastTouchedAt,
+		publishedVersion: 1,
+		lastPublishedAt: lastTouchedAt,
+		lastPublishedBy: "Venn Soh",
+		versionHistory: createLegacyVersionHistory(record.result, lastTouchedAt, "Venn Soh"),
 	};
 }
 
@@ -143,7 +294,7 @@ export function readSessionAgentRecords(): PersistedSessionAgentRecord[] {
 		const currentRaw = storage.getItem(STUDIO_SESSION_AGENTS_STORAGE_KEY);
 		if (currentRaw !== null) {
 			return dedupeSessionAgentRecordsByProfileId(
-				parseStoredArray(currentRaw, isPersistedSessionAgentRecord),
+				parseStoredArray(currentRaw, isPersistedSessionAgentRecord).map(normalizePersistedRecord),
 			);
 		}
 
@@ -175,17 +326,19 @@ export function readSessionAgentRecords(): PersistedSessionAgentRecord[] {
 
 export function writeSessionAgentRecords(
 	records: readonly PersistedSessionAgentRecord[],
-): void {
+): boolean {
 	if (!isStorageAvailable()) {
-		return;
+		return true;
 	}
 	try {
 		window.localStorage.setItem(
 			STUDIO_SESSION_AGENTS_STORAGE_KEY,
 			JSON.stringify(records),
 		);
+		return true;
 	} catch {
 		// Ignore quota / serialization failures; persistence is best-effort.
+		return false;
 	}
 }
 
@@ -199,5 +352,9 @@ export function toPersistedRecord(entry: StudioSessionAgentEntry): PersistedSess
 		publishedResult: entry.publishedResult,
 		publishStatus: entry.publishStatus,
 		lastTouchedAt: entry.lastTouchedAt,
+		publishedVersion: entry.publishedVersion,
+		lastPublishedAt: entry.lastPublishedAt,
+		lastPublishedBy: entry.lastPublishedBy,
+		versionHistory: entry.versionHistory,
 	};
 }

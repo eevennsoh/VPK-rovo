@@ -32,6 +32,10 @@ function makeRecord(overrides = {}) {
 		publishedResult: null,
 		publishStatus: "testing",
 		lastTouchedAt: 1_700_000_000_000,
+		publishedVersion: 0,
+		lastPublishedAt: null,
+		lastPublishedBy: null,
+		versionHistory: [],
 		...overrides,
 	};
 }
@@ -94,6 +98,19 @@ test("round-trips draft and published records through localStorage", () => {
 		publishedResult,
 		publishStatus: "published",
 		lastTouchedAt: 1_700_000_000_002,
+		publishedVersion: 1,
+		lastPublishedAt: 1_700_000_000_002,
+		lastPublishedBy: "Venn Soh",
+		versionHistory: [{
+			id: "version-pub",
+			label: "Agent published",
+			version: 1,
+			kind: "publish",
+			createdAt: 1_700_000_000_002,
+			createdBy: "Venn Soh",
+			snapshot: publishedResult,
+			changeSummary: { count: 0, sections: [] },
+		}],
 	});
 
 	writeSessionAgentRecords([draft, published]);
@@ -120,12 +137,19 @@ test("migrates legacy published-agents key into the new key and removes the lega
 	const migrated = records[0];
 	assert.equal(migrated.profileId, "profile-legacy");
 	assert.equal(migrated.publishStatus, "published");
+	assert.equal(migrated.publishedVersion, 1);
+	assert.equal(migrated.lastPublishedAt, 1_699_999_999_999);
+	assert.equal(migrated.lastPublishedBy, "Venn Soh");
 	assert.equal(migrated.resultKey, "legacy-result-key");
 	assert.deepEqual(migrated.sourceResult, legacyResult);
 	assert.deepEqual(migrated.draftResult, legacyResult);
 	assert.deepEqual(migrated.publishReadyResult, legacyResult);
 	assert.deepEqual(migrated.publishedResult, legacyResult);
 	assert.equal(migrated.lastTouchedAt, 1_699_999_999_999);
+	assert.equal(migrated.versionHistory.length, 1);
+	assert.equal(migrated.versionHistory[0].label, "Agent published");
+	assert.equal(migrated.versionHistory[0].version, 1);
+	assert.deepEqual(migrated.versionHistory[0].snapshot, legacyResult);
 
 	const newKeyRaw = store.get(STUDIO_SESSION_AGENTS_STORAGE_KEY);
 	assert.ok(newKeyRaw, "new key should hold the migrated payload");
@@ -150,6 +174,43 @@ test("migrates legacy records that lack profileName", () => {
 	assert.equal(records[0].profileId, "profile-noname");
 });
 
+test("derives missing per-history version numbers from legacy session records", () => {
+	const store = installStorageShim();
+	const firstResult = makeAgentResult({ agentId: "agent-v1", name: "V1" });
+	const secondResult = makeAgentResult({ agentId: "agent-v2", name: "V2" });
+	const record = makeRecord({
+		publishedResult: secondResult,
+		publishStatus: "published",
+		publishedVersion: 2,
+		lastPublishedAt: 1_700_000_000_005,
+		lastPublishedBy: "Venn Soh",
+		versionHistory: [{
+			id: "version-2",
+			label: "1 update",
+			kind: "update",
+			createdAt: 1_700_000_000_005,
+			createdBy: "Venn Soh",
+			snapshot: secondResult,
+			changeSummary: { count: 1, sections: [] },
+		}, {
+			id: "version-1",
+			label: "Agent published",
+			kind: "publish",
+			createdAt: 1_700_000_000_001,
+			createdBy: "Venn Soh",
+			snapshot: firstResult,
+			changeSummary: { count: 0, sections: [] },
+		}],
+	});
+	store.set(STUDIO_SESSION_AGENTS_STORAGE_KEY, JSON.stringify([record]));
+
+	const records = readSessionAgentRecords();
+
+	assert.equal(records.length, 1);
+	assert.equal(records[0].versionHistory[0].version, 2);
+	assert.equal(records[0].versionHistory[1].version, 1);
+});
+
 test("preserves legacy key when migration write-back throws", () => {
 	const store = installStorageShim({
 		setItem(key) {
@@ -172,6 +233,7 @@ test("preserves legacy key when migration write-back throws", () => {
 
 	assert.equal(records.length, 1);
 	assert.equal(records[0].publishStatus, "published");
+	assert.equal(records[0].publishedVersion, 1);
 
 	assert.ok(store.has(LEGACY_KEY), "legacy key must be preserved on failed write-back");
 

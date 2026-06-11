@@ -4383,12 +4383,12 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				>
 					<Badge
 						variant={
-							activeSessionAgentEntry.publishStatus === "published"
+							activeSessionAgentEntry.publishedVersion > 0 || activeSessionAgentEntry.publishedResult
 								? "success"
 								: "primary"
 						}
 					>
-						{activeSessionAgentEntry.publishStatus === "published"
+						{activeSessionAgentEntry.publishedVersion > 0 || activeSessionAgentEntry.publishedResult
 							? "Published"
 							: "Testing"}
 					</Badge>
