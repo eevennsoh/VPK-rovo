@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
+
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { fetchUnprocessedCount } from "./lib/personal-graph-api";
@@ -17,7 +19,9 @@ export function PersonalGraphIngestButton({ onDone, refreshKey }: Readonly<Perso
 		void fetchUnprocessedCount().then((result) => setPaths(result.paths)).catch(() => setPaths([]));
 	}, []);
 
+	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- refreshKey triggers an external count fetch.
 	useEffect(() => refresh(), [refresh, refreshKey]);
+	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	return (
 		<div className="space-y-4 border-t border-border pt-4">

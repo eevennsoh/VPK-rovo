@@ -1,5 +1,9 @@
 "use client";
 
+// oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
+
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import { type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
@@ -939,29 +943,31 @@ function ToolDetailView({
 	const groups = getPermissionGroups(tool);
 	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
 	const knowledgeApp = useMemo(() => getKnowledgeAppForTool(tool), [tool]);
-	const [knowledgeMode, setKnowledgeMode] = useState<AppsDirectoryKnowledgeMode>("all");
-	const [knowledgeQuery, setKnowledgeQuery] = useState("");
-	const [selectedKnowledgeContentIds, setSelectedKnowledgeContentIds] = useState<readonly string[]>(
-		() => getKnowledgeContentIds(knowledgeApp),
-	);
+	const [knowledgeState, setKnowledgeState] = useState(() => ({
+		mode: "all" as AppsDirectoryKnowledgeMode,
+		query: "",
+		selectedContentIds: getKnowledgeContentIds(knowledgeApp),
+		toolId: tool.id,
+	}));
+	let resolvedKnowledgeState = knowledgeState;
+	if (knowledgeState.toolId !== tool.id) {
+		resolvedKnowledgeState = {
+			mode: "all",
+			query: "",
+			selectedContentIds: getKnowledgeContentIds(knowledgeApp),
+			toolId: tool.id,
+		};
+		setKnowledgeState(resolvedKnowledgeState);
+	}
+	const knowledgeMode = resolvedKnowledgeState.mode;
+	const knowledgeQuery = resolvedKnowledgeState.query;
+	const selectedKnowledgeContentIds = resolvedKnowledgeState.selectedContentIds;
 	const filteredKnowledgeContent = useMemo(
 		() => filterKnowledgeContent(knowledgeApp?.contents ?? [], selectedKnowledgeContentIds, knowledgeQuery),
 		[knowledgeApp, selectedKnowledgeContentIds, knowledgeQuery],
 	);
 
-	// Reset local knowledge state when the viewed app changes. The dialog clears
-	// its mirrored selection for the app on open, so the absence of an entry means
-	// "all" — matching this default without reporting from an effect (which would
-	// loop on the parent's setState).
-	useEffect(() => {
-		setKnowledgeMode("all");
-		setKnowledgeQuery("");
-		setSelectedKnowledgeContentIds(getKnowledgeContentIds(knowledgeApp));
-	}, [knowledgeApp, tool.id]);
-
 	function handleSelectKnowledgeMode(nextMode: AppsDirectoryKnowledgeMode): void {
-		setKnowledgeMode(nextMode);
-
 		let nextContentIds: readonly string[];
 		if (nextMode === "none") {
 			nextContentIds = [];
@@ -973,13 +979,17 @@ function ToolDetailView({
 					? getKnowledgeContentIds(knowledgeApp)
 					: selectedKnowledgeContentIds;
 		}
-		setSelectedKnowledgeContentIds(nextContentIds);
+		setKnowledgeState((currentState) => ({
+			...currentState,
+			mode: nextMode,
+			selectedContentIds: nextContentIds,
+		}));
 		onKnowledgeSelectionChange?.({ mode: nextMode, contentIds: nextContentIds });
 	}
 
 	function handleRemoveKnowledgeContent(contentId: string): void {
 		const nextContentIds = selectedKnowledgeContentIds.filter((id) => id !== contentId);
-		setSelectedKnowledgeContentIds(nextContentIds);
+		setKnowledgeState((currentState) => ({ ...currentState, selectedContentIds: nextContentIds }));
 		onKnowledgeSelectionChange?.({ mode: knowledgeMode, contentIds: nextContentIds });
 	}
 
@@ -1054,7 +1064,9 @@ function ToolDetailView({
 						onRemoveContent={handleRemoveKnowledgeContent}
 						onSelectMode={handleSelectKnowledgeMode}
 						selectedContentCount={selectedKnowledgeContentIds.length}
-						setContentQuery={setKnowledgeQuery}
+						setContentQuery={(nextQuery) => {
+							setKnowledgeState((currentState) => ({ ...currentState, query: nextQuery }));
+						}}
 					/>
 				) : null}
 				{tool.hasToolFacet

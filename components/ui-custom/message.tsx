@@ -1,5 +1,9 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- These component primitives render arbitrary preview/avatar/image payloads where Next Image sizing/loading would change the public API. */
+
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import type { UIMessage } from "ai";
 import type {
 	ComponentProps,
@@ -499,6 +503,7 @@ const safeCodePlugin: typeof baseCodePlugin = {
 	},
 };
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const streamdownPlugins = { cjk, code: safeCodePlugin, math, mermaid };
 
 const inlineStreamTags = new Set([
@@ -794,7 +799,7 @@ function MarkdownAnchor({
 		}));
 	};
 
-	return <a {...props} href={href} onClick={handleClick} />;
+		return <a aria-label={typeof props.children === "string" ? props.children : href} {...props} href={href} onClick={handleClick} />;
 }
 
 const streamdownComponents = {

@@ -104,6 +104,7 @@ function resolveTimeSeriesYDomain(
 }
 
 /** Markers render after the interaction overlay so they stay clickable. */
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function isPostOverlayComponent(child: ReactElement): boolean {
   const childType = child.type as {
     displayName?: string;
@@ -138,6 +139,7 @@ const CLIP_EXCLUDED_COMPONENT_NAMES = new Set([
 ]);
 
 /** Grid and axes stay visible during series clip reveal (e.g. loading → ready). */
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function isClipExcludedComponent(child: ReactElement): boolean {
   const childType = child.type as { displayName?: string; name?: string };
   const componentName =

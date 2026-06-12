@@ -96,4 +96,5 @@ function ProgressValue({ className, ...props }: ProgressPrimitive.Value.Props) {
 	return <ProgressPrimitive.Value className={cn("ml-auto text-sm tabular-nums text-text-subtle", className)} data-slot="progress-value" {...props} />;
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export { Progress, ProgressTrack, ProgressIndicator, ProgressLabel, ProgressValue, progressIndicatorVariants, progressTrackVariants, type ProgressTrackProps, type ProgressIndicatorProps };

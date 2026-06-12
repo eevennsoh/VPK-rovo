@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
 
 import { useEffect, useRef, useState, type RefObject } from "react";
@@ -192,6 +194,7 @@ export const ArtifactContent = ({
 
 export type ArtifactKind = "text" | "code" | "html" | "image" | "sheet" | "react" | "excalidraw" | "browser";
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const ARTIFACT_KIND_LABELS: Record<ArtifactKind, string> = {
 	browser: "Browser",
 	code: "Code",
@@ -851,13 +854,9 @@ export function ArtifactPanel({
 		};
 	}, [contentRef]);
 
-	useEffect(() => {
-		if (hasVersionHistory) {
-			return;
-		}
-
+	if (!hasVersionHistory && isVersionHistoryOpen) {
 		setVersionHistoryOpen(false);
-	}, [hasVersionHistory]);
+	}
 
 	return (
 		<div className={cn("flex h-full min-h-0 w-full min-w-0 flex-col bg-background", className)}>

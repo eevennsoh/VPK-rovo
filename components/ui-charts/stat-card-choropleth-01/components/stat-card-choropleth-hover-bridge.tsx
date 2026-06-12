@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-pass-data-to-parent -- Callbacks in this file intentionally report measured, generated, or selected data to an owning parent component.
+
 import { useChoropleth } from "@/components/ui-charts";
 import { useEffect } from "react";
 import { computeVisitorTrend, getVisitorValue } from "../data/visitors";

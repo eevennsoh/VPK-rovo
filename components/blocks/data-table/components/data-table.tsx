@@ -1,5 +1,7 @@
 "use client"
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import { useState, useMemo, useId } from "react"
 import {
   closestCenter,
@@ -116,6 +118,7 @@ import {
 } from "@/components/ui/vpk-icons"
 import { Spinner } from "@/components/ui/spinner"
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const schema = z.object({
   id: z.number(),
   header: z.string(),

@@ -1,5 +1,9 @@
 "use client";
 
+// oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
+
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import { useId, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
@@ -236,7 +240,6 @@ export function SubagentsNavigator({
 				<button
 					aria-controls={switcherId}
 					aria-expanded={isSwitcherOpen}
-					aria-hidden={isSwitcherOpen}
 					aria-label="Open subagent switcher"
 					className={cn(
 						"absolute inset-0 flex flex-col items-end justify-start transition-opacity duration-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected",

@@ -217,8 +217,11 @@ export {
 	EmptyDescription,
 	EmptyContent,
 	EmptyMedia,
+	// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 	emptyVariants,
+	// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 	emptyMediaVariants,
+	// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 	emptyTitleVariants,
 	type EmptyProps,
 }

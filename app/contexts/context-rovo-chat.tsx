@@ -1,5 +1,6 @@
 "use client";
 
+import { useLazyRef } from "@/lib/use-lazy-ref";
 import {
 	createContext,
 	use,
@@ -1042,12 +1043,14 @@ function normalizeSessionAgentResult(
 	};
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- Studio agent table/config consumers share this normalized display helper with the provider.
 export function getStudioSessionAgentResultDisplayName(
 	result: RovoDataParts["agent-result"],
 ): string {
 	return getNonEmptyString(result.name) ?? SESSION_AGENT_DEFAULT_NAME;
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- Studio agent table/config consumers share this normalized display helper with the provider.
 export function getStudioSessionAgentDisplayName(
 	entry: Pick<StudioSessionAgentEntry, "draftResult">,
 ): string {
@@ -1463,6 +1466,9 @@ export function RovoChatProvider({
 	const suggestionsAbortControllerRef = useRef<AbortController | null>(null);
 	const sessionAgentSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const sessionAgentEntriesRef = useRef<SessionAgentEntry[]>([]);
+	// oxlint-disable react-doctor/no-event-handler -- Agent profile props and session-agent storage are external inputs that reconcile selected-agent state after render.
+	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Removed or auto-selected agent profiles must fall back after the owning profile set changes.
+	// oxlint-disable react-doctor/no-chain-state-updates -- Selection reconciliation intentionally updates the selected-agent state/ref pair together.
 	const staticAgentProfiles = useMemo(
 		() => agentProfiles ?? ROVO_AGENT_PROFILES,
 		[agentProfiles]
@@ -1491,7 +1497,24 @@ export function RovoChatProvider({
 	);
 	const isCustomAgentSelected = !isRovoAgentProfile(selectedAgent);
 
-	const requestedSuggestionMessageIdsRef = useRef<Set<string>>(new Set());
+	// oxlint-disable react-doctor/no-event-handler -- Agent profile props and session-agent storage can remove the selected profile outside a user selection event.
+	useEffect(() => {
+		if (
+			!agentProfiles ||
+			selectedAgentId === ROVO_AGENT_ID ||
+			agentProfileById.has(selectedAgentId)
+		) {
+			return;
+		}
+
+		setSelectedAgentIdState(ROVO_AGENT_ID);
+	}, [agentProfileById, agentProfiles, selectedAgentId, setSelectedAgentIdState]);
+	// oxlint-enable react-doctor/no-chain-state-updates
+	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
+	// oxlint-enable react-doctor/no-event-handler
+
+	const requestedSuggestionMessageIdsRef = useLazyRef<Set<string>>(() => new Set());
+	const requestedSuggestionMessageIds = requestedSuggestionMessageIdsRef.current;
 	const [isMediaGenerating, setIsMediaGenerating] = useState(false);
 	const maybeFinalizeAndProcessRef = useRef<() => void>(() => {});
 	const processNextPromptRef = useRef<() => Promise<void>>(async () => {});
@@ -1508,7 +1531,7 @@ export function RovoChatProvider({
 			clearTimeout(sessionAgentSaveTimerRef.current);
 		}
 
-		sessionAgentSaveTimerRef.current = setTimeout(() => {
+		const saveTimer = setTimeout(() => {
 			sessionAgentSaveTimerRef.current = null;
 			const didPersist = persistSessionAgentEntries(sessionAgentEntriesRef.current.map(normalizeSessionAgentEntry));
 			if (didPersist) {
@@ -1518,8 +1541,17 @@ export function RovoChatProvider({
 				setSessionAgentSaveStatus("error");
 			}
 		}, STUDIO_SESSION_AGENT_SAVE_DEBOUNCE_MS);
+		sessionAgentSaveTimerRef.current = saveTimer;
+
+		return () => {
+			if (sessionAgentSaveTimerRef.current === saveTimer) {
+				clearTimeout(saveTimer);
+				sessionAgentSaveTimerRef.current = null;
+			}
+		};
 	}, [normalizedSessionAgentEntries]);
 
+	// oxlint-disable react-doctor/exhaustive-deps -- Unmount cleanup intentionally flushes whichever debounced session-agent save is still active.
 	useEffect(() => {
 		return () => {
 			if (sessionAgentSaveTimerRef.current) {
@@ -1529,7 +1561,9 @@ export function RovoChatProvider({
 			}
 		};
 	}, []);
+	// oxlint-enable react-doctor/exhaustive-deps
 
+	// oxlint-disable react-doctor/no-initialize-state -- Session agents are rehydrated from browser storage after mount because localStorage is unavailable during server render.
 	useEffect(() => {
 		if (hasRehydratedPublishedAgentsRef.current) {
 			return;
@@ -1557,13 +1591,10 @@ export function RovoChatProvider({
 			return next;
 		});
 	}, []);
+	// oxlint-enable react-doctor/no-initialize-state
 
-	useEffect(() => {
-		if (agentProfiles && !agentProfileById.has(selectedAgentId)) {
-			setSelectedAgentIdState(ROVO_AGENT_ID);
-		}
-	}, [agentProfileById, agentProfiles, selectedAgentId, setSelectedAgentIdState]);
-
+	// oxlint-disable react-doctor/no-derived-state -- The selected agent also changes from explicit user actions, so it cannot be purely derived from the auto-select prop.
+	// oxlint-disable react-doctor/no-event-handler -- Auto-selection is driven by route/provider props, not by a local user event handler.
 	useEffect(() => {
 		if (!autoSelectAgentId) {
 			autoSelectedAgentIdRef.current = null;
@@ -1583,6 +1614,8 @@ export function RovoChatProvider({
 			setSelectedAgentIdState(nextAgent.id);
 		}
 	}, [agentProfileById, autoSelectAgentId, selectedAgentId, setSelectedAgentIdState]);
+	// oxlint-enable react-doctor/no-event-handler
+	// oxlint-enable react-doctor/no-derived-state
 
 	const startSubmitPending = useCallback((startedAt: number) => {
 		if (isSubmitPendingRef.current) {
@@ -1701,6 +1734,7 @@ export function RovoChatProvider({
 		});
 	}, []);
 
+	// oxlint-disable react-doctor/no-event-handler -- The transport callback is invoked by the AI SDK request pipeline and must close over the current port index.
 	const transport = useMemo(
 		() =>
 			new DefaultChatTransport<RovoUIMessage>({
@@ -1729,6 +1763,7 @@ export function RovoChatProvider({
 			}),
 		[portIndex]
 	);
+	// oxlint-enable react-doctor/no-event-handler
 
 	const {
 		messages: rawUiMessages,
@@ -1913,6 +1948,7 @@ export function RovoChatProvider({
 
 	const isStreaming = status === "submitted" || status === "streaming";
 
+	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- AI SDK status changes are external stream state that clear the local pending affordance.
 	useEffect(() => {
 		if (
 			status !== "submitted" &&
@@ -1928,6 +1964,7 @@ export function RovoChatProvider({
 
 		clearSubmitPending();
 	}, [clearSubmitPending, status]);
+	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	useEffect(() => {
 		isStreamingRef.current = isStreaming;
@@ -1983,6 +2020,8 @@ export function RovoChatProvider({
 		}, MEDIA_GENERATION_TIMEOUT_MS);
 	}, [queueTick]);
 
+	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Media generation is driven by streamed backend data parts and timeout cleanup, not render-only derivation.
+	// oxlint-disable react-doctor/no-derived-state -- The timeout fallback needs local media state after the latest loading part stops changing.
 	useEffect(() => {
 		for (let i = rawUiMessages.length - 1; i >= 0; i--) {
 			const msg = rawUiMessages[i];
@@ -2021,6 +2060,8 @@ export function RovoChatProvider({
 			break;
 		}
 	}, [rawUiMessages, queueTick, clearMediaGenerating, scheduleMediaGenerationTimeout]);
+	// oxlint-enable react-doctor/no-derived-state
+	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	const uiMessages = useMemo(() => {
 		if (!submissionErrorMessage) {
@@ -2040,16 +2081,19 @@ export function RovoChatProvider({
 	useEffect(() => {
 		suggestionsAbortControllerRef.current?.abort();
 		suggestionsAbortControllerRef.current = null;
-		requestedSuggestionMessageIdsRef.current.clear();
-	}, [activeThreadId]);
+		requestedSuggestionMessageIds.clear();
+	}, [activeThreadId, requestedSuggestionMessageIds]);
 
+	// oxlint-disable react-doctor/exhaustive-deps -- Unmount cleanup intentionally aborts whichever suggestion request is currently active.
 	useEffect(() => {
 		return () => {
 			suggestionsAbortControllerRef.current?.abort();
 			suggestionsAbortControllerRef.current = null;
 		};
 	}, []);
+	// oxlint-enable react-doctor/exhaustive-deps
 
+	// oxlint-disable react-doctor/no-event-handler -- Suggested questions are an async bridge from completed chat state to a backend fetch, not a user event.
 	useEffect(() => {
 		const shouldSuppressSuggestionFetch =
 			isStreaming ||
@@ -2093,7 +2137,7 @@ export function RovoChatProvider({
 			return;
 		}
 
-		if (requestedSuggestionMessageIdsRef.current.has(latestAssistantMessage.id)) {
+		if (requestedSuggestionMessageIds.has(latestAssistantMessage.id)) {
 			return;
 		}
 
@@ -2108,7 +2152,7 @@ export function RovoChatProvider({
 		suggestionsAbortControllerRef.current?.abort();
 		const abortController = new AbortController();
 		suggestionsAbortControllerRef.current = abortController;
-		requestedSuggestionMessageIdsRef.current.add(suggestionRequest.assistantMessageId);
+		requestedSuggestionMessageIds.add(suggestionRequest.assistantMessageId);
 		const threadIdAtRequest = activeThreadIdRef.current;
 
 		void fetchRovoAppSuggestedQuestions({
@@ -2133,9 +2177,7 @@ export function RovoChatProvider({
 				);
 			})
 			.catch((error) => {
-				requestedSuggestionMessageIdsRef.current.delete(
-					suggestionRequest.assistantMessageId
-				);
+				requestedSuggestionMessageIds.delete(suggestionRequest.assistantMessageId);
 				if (abortController.signal.aborted) {
 					return;
 				}
@@ -2154,8 +2196,10 @@ export function RovoChatProvider({
 		isSubmitPending,
 		queuedPrompts.length,
 		rawUiMessages,
+		requestedSuggestionMessageIds,
 		setMessages,
 	]);
+	// oxlint-enable react-doctor/no-event-handler
 
 	const toggleChat = useCallback(
 		() => setChatSurface((prev) => (prev === "sidebar" ? null : "sidebar")),
@@ -2548,6 +2592,7 @@ export function RovoChatProvider({
 			return;
 		}
 
+		// oxlint-disable-next-line react-doctor/no-chain-state-updates -- Pending-submit state is split for existing context consumers and cleared atomically here once all async work is idle.
 		clearSubmitPending();
 	}, [clearSubmitPending, queuedPrompts]);
 

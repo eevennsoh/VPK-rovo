@@ -1,5 +1,9 @@
 "use client";
 
+// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
+
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";

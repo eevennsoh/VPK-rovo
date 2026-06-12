@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates coupled component parts as a compound component or demo surface API.
+
 import type { ProvidedZoom, TransformMatrix } from "@visx/zoom";
 import type { GeoPermissibleObjects } from "d3-geo";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
@@ -29,6 +31,7 @@ interface ChoroplethZoomContextValue {
   zoom: ZoomInstance<SVGSVGElement> | null;
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This context module intentionally exports the provider, hook, and context contract together.
 export const ChoroplethZoomContext = createContext<ChoroplethZoomContextValue>({
   zoom: null,
 });
@@ -245,6 +248,7 @@ export function useChoropleth(): ChoroplethContextValue {
 }
 
 // CSS variables for choropleth theming
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const choroplethCssVars = {
   feature1: "var(--chart-1)",
   feature2: "var(--chart-2)",
@@ -256,6 +260,7 @@ export const choroplethCssVars = {
 };
 
 // Default colors array for cycling through features
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const defaultChoroplethColors = [
   "var(--chart-1)",
   "var(--chart-2)",

@@ -10,6 +10,7 @@ import {
 } from "react";
 
 // CSS variable references for pie chart theming
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const pieCssVars = {
   background: "var(--chart-background)",
   foreground: "var(--chart-foreground)",
@@ -24,6 +25,7 @@ export const pieCssVars = {
 };
 
 // Default slice color palette
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const defaultPieColors = [
   pieCssVars.slice1,
   pieCssVars.slice2,

@@ -1,5 +1,7 @@
 "use client"
 
+// oxlint-disable react-doctor/jsx-no-constructed-context-values -- Context values in this file intentionally combine live state and setters; extracting them would not reduce meaningful consumer churn.
+
 import * as React from "react"
 
 import {
@@ -154,6 +156,7 @@ function ListCell({ edge, className, ...props }: Readonly<ListCellProps>) {
 	)
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const List = {
 	Root: ListRoot,
 	Heading: ListHeading,

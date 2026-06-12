@@ -14,6 +14,7 @@ export const statCardValueClassName =
 
 export const statCardLabelClassName = "mt-0 text-xs";
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const statCardChartHeights = {
   sm: "[--stat-card-chart-h:96px]",
   md: "[--stat-card-chart-h:190px]",

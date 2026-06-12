@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 
 import { RovoChatProvider, useRovoChat, type StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
@@ -368,6 +370,9 @@ export function AgentTestPanel({
 }: Readonly<AgentTestPanelProps>): ReactElement {
 	const versionOptions = useMemo(() => getAgentTestVersionOptions(entry), [entry]);
 	const [selectedVersionId, setSelectedVersionId] = useState("latest");
+	if (!versionOptions.some((option) => option.id === selectedVersionId)) {
+		setSelectedVersionId("latest");
+	}
 	const selectedOption = versionOptions.find((option) => option.id === selectedVersionId) ?? versionOptions[0];
 	const selectedResult = selectedOption.result;
 	const snapshotKey = `${entry.profile.id}:${selectedOption.id}:${JSON.stringify(selectedResult)}`;
@@ -375,12 +380,6 @@ export function AgentTestPanel({
 		() => buildAgentTestProfile(entry, selectedResult, selectedOption.label),
 		[entry, selectedOption.label, selectedResult],
 	);
-
-	useEffect(() => {
-		if (!versionOptions.some((option) => option.id === selectedVersionId)) {
-			setSelectedVersionId("latest");
-		}
-	}, [selectedVersionId, versionOptions]);
 
 	return (
 		<section

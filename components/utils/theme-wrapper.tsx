@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates coupled component parts as a compound component or demo surface API.
+
 import { createContext, use, useEffect, useRef, useState } from "react";
 import { setGlobalTheme } from "@atlaskit/tokens";
 import DevicesIcon from "@atlaskit/icon/core/devices";

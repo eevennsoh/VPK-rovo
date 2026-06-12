@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/prefer-module-scope-static-value -- These values are intentionally colocated with the component/demo contract for readability and token context.
+
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import type {

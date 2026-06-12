@@ -1,5 +1,8 @@
 "use client";
 
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+// oxlint-disable react-doctor/no-pass-live-state-to-parent -- Callbacks in this file intentionally stream live interaction state to the parent owner.
+
 import {
 	AnimatePresence,
 	motion,
@@ -276,11 +279,43 @@ export function CityRailEditor({
 	fillMeniscusHeightPxActive,
 	fillMeniscusCurveActive,
 }: Readonly<CityRailEditorProps>) {
-	const [isOpen, setIsOpen] = useState(false);
 	const [isPinned, setIsPinned] = useState(false);
 	const [hasManuallySelectedCity, setHasManuallySelectedCity] = useState(false);
-	const [search, setSearch] = useState("");
-	const [highlightedIndex, setHighlightedIndex] = useState(0);
+	const [openState, setOpenState] = useState({
+		handledOpenRequestKey: 0,
+		highlightedIndex: 0,
+		isOpen: false,
+		search: "",
+	});
+	let resolvedOpenState = openState;
+	if (openRequestKey > 0 && openRequestKey !== openState.handledOpenRequestKey) {
+		resolvedOpenState = {
+			...openState,
+			handledOpenRequestKey: openRequestKey,
+			highlightedIndex: 0,
+			isOpen: true,
+		};
+		setOpenState(resolvedOpenState);
+	} else if (!openState.isOpen && (openState.search || openState.highlightedIndex !== 0)) {
+		resolvedOpenState = { ...openState, highlightedIndex: 0, search: "" };
+		setOpenState(resolvedOpenState);
+	}
+	const { highlightedIndex, isOpen, search } = resolvedOpenState;
+	const setIsOpen = (updater: boolean | ((currentIsOpen: boolean) => boolean)) => {
+		setOpenState((currentState) => ({
+			...currentState,
+			isOpen: typeof updater === "function" ? updater(currentState.isOpen) : updater,
+		}));
+	};
+	const setSearch = (nextSearch: string) => {
+		setOpenState((currentState) => ({ ...currentState, search: nextSearch }));
+	};
+	const setHighlightedIndex = (updater: number | ((currentIndex: number) => number)) => {
+		setOpenState((currentState) => ({
+			...currentState,
+			highlightedIndex: typeof updater === "function" ? updater(currentState.highlightedIndex) : updater,
+		}));
+	};
 	const handleSearchChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
 		setSearch(event.target.value);
 		setHighlightedIndex(0);
@@ -339,7 +374,6 @@ export function CityRailEditor({
 	const shouldReduceMotion = useReducedMotion();
 	const rootRef = useRef<HTMLDivElement>(null);
 	const searchInputRef = useRef<HTMLInputElement>(null);
-	const handledOpenRequestKeyRef = useRef(0);
 	// scrollTop in px, clamped 0..SCROLL_FADE_PX, drives the height of
 	// the top mask fade so it ramps in only as the user scrolls down.
 	const [topFadePx, setTopFadePx] = useState(0);
@@ -386,22 +420,14 @@ export function CityRailEditor({
 	}, [isOpen, onOpenChange]);
 
 	useEffect(() => {
-		if (
-			openRequestKey <= 0 ||
-			openRequestKey === handledOpenRequestKeyRef.current
-		) {
+		if (openRequestKey <= 0 || openRequestKey !== resolvedOpenState.handledOpenRequestKey) {
 			return;
 		}
-		handledOpenRequestKeyRef.current = openRequestKey;
 		playSound("/sound/click-001.mp3");
-		setIsOpen(true);
-		setHighlightedIndex(0);
-	}, [openRequestKey]);
+	}, [openRequestKey, resolvedOpenState.handledOpenRequestKey]);
 
 	useEffect(() => {
 		if (!isOpen) {
-			setSearch("");
-			setHighlightedIndex(0);
 			return;
 		}
 
@@ -603,8 +629,9 @@ export function CityRailEditor({
 						<div className="relative z-10 flex h-full flex-col px-3 py-3">
 							<div className="mb-3 flex items-center gap-2 px-3 py-2 text-text-subtle">
 								<SearchIcon className="size-3.5 shrink-0 opacity-40" />
-								<input
-									ref={searchInputRef}
+									<input
+										aria-label="Search cities"
+										ref={searchInputRef}
 									type="text"
 									value={search}
 									onChange={handleSearchChange}

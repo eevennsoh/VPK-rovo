@@ -137,7 +137,7 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 											title={comp.name}
 											className="h-full w-full border-0"
 											loading="lazy"
-											sandbox="allow-same-origin allow-scripts"
+											sandbox="allow-scripts"
 										/>
 									</WebsiteCard>
 								))}
@@ -168,7 +168,7 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 											title={comp.name}
 											className="h-full w-full border-0"
 											loading="lazy"
-											sandbox="allow-same-origin allow-scripts"
+											sandbox="allow-scripts"
 										/>
 									</WebsiteCard>
 								))}

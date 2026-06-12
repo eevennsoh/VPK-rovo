@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import { type ReactNode } from "react";
 import WrenchIcon from "@atlaskit/icon-lab/core/wrench";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";

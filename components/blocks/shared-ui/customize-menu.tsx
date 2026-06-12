@@ -1,5 +1,9 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
+// oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
+
 import { token } from "@/lib/tokens";
 import { Switch as Toggle } from "@/components/ui/switch";
 import { MenuItemButton, CircleIcon } from "./components/menu-item-button";

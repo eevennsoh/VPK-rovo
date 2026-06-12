@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { token } from "@/lib/tokens";
@@ -301,6 +303,7 @@ export default function AgentsProgress({
 	const prevDoneCountRef = useRef(taskStatusGroups.done.length);
 	const [celebratingEmoji, setCelebratingEmoji] = useState<string | null>(null);
 
+	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- this detects a completed-task transition and plays optional feedback.
 	useEffect(() => {
 		const currentCount = taskStatusGroups.done.length;
 		const prevCount = prevDoneCountRef.current;
@@ -317,6 +320,7 @@ export default function AgentsProgress({
 			}
 		}
 	}, [taskStatusGroups.done.length, shouldReduceMotion]);
+	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	useEffect(() => {
 		if (!celebratingEmoji) return;

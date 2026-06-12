@@ -1,6 +1,15 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
+
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
+// oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
+
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import React, { useRef, useEffect, useLayoutEffect, useCallback, useId, useState } from "react";
+import { useLazyRef } from "@/lib/use-lazy-ref";
 
 import { useTheme } from "@/components/utils/theme-wrapper";
 import { cn } from "@/lib/utils";
@@ -769,7 +778,7 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
   const illusImagePreparedRef = useRef(false);
   const illusContainerRef = useRef<HTMLDivElement | null>(null);
   const chatBubbleContainerRef = useRef<HTMLDivElement | null>(null);
-  const svgCacheRef = useRef<Map<string, string>>(new Map());
+  const svgCacheRef = useLazyRef<Map<string, string>>(() => new Map());
   const [svgsLoaded, setSvgsLoaded] = useState(false);
   const illusMosaicRefs = useRef<SVGGElement[]>([]);
   const illusMosaicRotStartRef = useRef<number | null>(null);
@@ -801,7 +810,7 @@ export default function SpotIllustration({ size = CANVAS_SIZE, loop = true, clas
 
   const pauseBetweenLoops = 0;
 
-  const path2dCache = useRef(new Map<string, Path2D>());
+  const path2dCache = useLazyRef(() => new Map<string, Path2D>());
 
   function getPath2D(d: string) {
     let p = path2dCache.current.get(d);

@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
+
 import { token } from "@/lib/tokens";
 import { Button } from "@/components/ui/button";
 import { JiraIcon } from "@/components/ui/logo";

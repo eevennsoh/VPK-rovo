@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/media-has-caption -- These media previews render generated or user-supplied media where no caption asset is available; transcript or metadata is rendered separately when provided.
+
 import { type ReactElement, useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 

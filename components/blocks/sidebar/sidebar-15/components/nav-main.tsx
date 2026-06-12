@@ -22,7 +22,7 @@ export function NavMain({
     <SidebarMenu>
       {items.map((item) => (
         <SidebarMenuItem key={item.title}>
-          <SidebarMenuButton render={<a href={item.url} />} isActive={item.isActive}>
+          <SidebarMenuButton render={<a aria-label={item.title} href={item.url} />} isActive={item.isActive}>
               <item.icon />
               <span>{item.title}</span>
           </SidebarMenuButton>

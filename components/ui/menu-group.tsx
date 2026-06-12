@@ -1,3 +1,4 @@
+// oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
@@ -73,7 +74,7 @@ function MenuSection({
 }: Readonly<MenuSectionProps>) {
 	return (
 		<>
-			{hasSeparator ? <div className={menuSeparatorClassName} role="separator" /> : null}
+				{hasSeparator ? <div aria-label={`${title} separator`} className={menuSeparatorClassName} role="separator" /> : null}
 			<div
 				data-slot="menu-section"
 				role="group"

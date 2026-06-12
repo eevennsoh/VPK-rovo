@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import { useEffect, useMemo, useState } from "react";
 import { RovoCanvas, type RovoCanvasStatus, type RovoCanvasVersion, type RovoCanvasView } from "@/components/blocks/rovo-canvas/page";
 import ChatPanel, { type ChatPanelCustomAgentTabs, type ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
@@ -102,6 +104,7 @@ function useRfpHtmlReportPreview(state: AgentsRfpDemoState): RfpHtmlReportPrevie
 	const variant = resolveRfpReportVariant(state);
 	const contextDescription = useMemo(() => buildRfpReportContextDescription(state), [state]);
 
+	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- open canvas state starts an abortable preview fetch.
 	useEffect(() => {
 		if (!state.canvas.open) {
 			return;
@@ -160,6 +163,7 @@ function useRfpHtmlReportPreview(state: AgentsRfpDemoState): RfpHtmlReportPrevie
 
 		return () => abortController.abort();
 	}, [contextDescription, reloadKey, state.canvas.open, variant]);
+	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	return {
 		...previewState,
@@ -185,17 +189,16 @@ function RfpRenderedHtmlReport({
 
 	if (!html) {
 		return (
-			<div
+			<section
 				aria-busy="true"
 				aria-label="Report preview loading"
 				className="grid size-full place-items-center bg-surface"
-				role="region"
 			>
 				<Spinner
 					className="size-12 text-icon-subtle"
 					label="Report preview loading"
 				/>
-			</div>
+			</section>
 		);
 	}
 

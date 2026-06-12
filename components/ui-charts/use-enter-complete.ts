@@ -9,20 +9,21 @@ import { useEffect, useState } from "react";
  * enter completes — drops per-frame subscriptions during pan/hover.
  */
 export function useEnterComplete(mountProgress: MotionValue<number>): boolean {
-  const [complete, setComplete] = useState(() => mountProgress.get() >= 1);
+	const [complete, setComplete] = useState(() => mountProgress.get() >= 1);
 
-  useEffect(() => {
-    if (mountProgress.get() >= 1) {
-      setComplete(true);
-      return;
-    }
+	useEffect(() => {
+		if (mountProgress.get() >= 1) {
+			setComplete(true);
+			return;
+		}
 
-    return mountProgress.on("change", (value) => {
-      if (value >= 1) {
-        setComplete(true);
-      }
-    });
-  }, [mountProgress]);
+		const unsubscribe = mountProgress.on("change", (value) => {
+			if (value >= 1) {
+				setComplete(true);
+			}
+		});
+		return () => unsubscribe();
+	}, [mountProgress]);
 
-  return complete;
+	return complete;
 }

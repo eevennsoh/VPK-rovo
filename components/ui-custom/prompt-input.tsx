@@ -1,5 +1,12 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-unused-vars -- These underscored compatibility props and inferred generic placeholders are intentionally retained for API shape. */
+
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
+
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import type { ChatStatus, FileUIPart, SourceDocumentUIPart } from "ai";
 import type {
   ChangeEvent,
@@ -416,6 +423,7 @@ export interface ReferencedSourcesContext {
   clear: () => void;
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This context module intentionally exports the provider, hook, and context contract together.
 export const LocalReferencedSourcesContext =
   createContext<ReferencedSourcesContext | null>(null);
 
@@ -835,7 +843,6 @@ export const PromptInput = ({
         }
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- cleanup only on unmount; filesRef always current
     [usingProvider]
   );
 

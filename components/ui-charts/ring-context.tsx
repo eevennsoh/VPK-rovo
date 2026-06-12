@@ -10,6 +10,7 @@ import {
 } from "react";
 
 // CSS variable references for ring chart theming
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const ringCssVars = {
   background: "var(--chart-background)",
   foreground: "var(--chart-foreground)",
@@ -25,6 +26,7 @@ export const ringCssVars = {
 };
 
 // Default ring color palette
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const defaultRingColors = [
   ringCssVars.ring1,
   ringCssVars.ring2,

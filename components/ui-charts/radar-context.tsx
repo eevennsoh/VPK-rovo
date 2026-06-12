@@ -4,6 +4,7 @@ import type { Transition } from "motion/react";
 import { createContext, type ReactNode, useContext, useMemo } from "react";
 
 // CSS variable references for radar chart theming
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const radarCssVars = {
   background: "var(--chart-background)",
   foreground: "var(--chart-foreground)",
@@ -20,6 +21,7 @@ export const radarCssVars = {
 };
 
 // Default radar color palette
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const defaultRadarColors = [
   radarCssVars.area1,
   radarCssVars.area2,

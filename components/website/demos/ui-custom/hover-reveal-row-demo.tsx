@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-unstable-nested-components -- This demo-local nested component is stateless and intentionally coupled to its owning demo surface.
+
 import { useState } from "react";
 import EditIcon from "@atlaskit/icon/core/edit";
 

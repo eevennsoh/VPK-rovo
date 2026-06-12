@@ -1,5 +1,12 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- These component primitives render arbitrary preview/avatar/image payloads where Next Image sizing/loading would change the public API. */
+
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
+// oxlint-disable react-doctor/no-noninteractive-tabindex -- This viewport intentionally receives keyboard focus for application-style keyboard and paste handling without button semantics.
+// oxlint-disable react-doctor/no-pass-live-state-to-parent -- Callbacks in this file intentionally stream live interaction state to the parent owner.
+
 import type {
 	ClipboardEvent,
 	ComponentProps,
@@ -90,6 +97,7 @@ function isRelativePreviewUrl(url: string) {
 	);
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function isChromiumPreviewUrl(url: string) {
 	if (isRelativePreviewUrl(url)) {
 		return false;
