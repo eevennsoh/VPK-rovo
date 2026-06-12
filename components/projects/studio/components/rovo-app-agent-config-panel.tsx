@@ -252,20 +252,49 @@ function AgentSaveStatusIndicator({
 	return (
 		<AnimatePresence>
 			{showIndicator ? (
+				// Stable key so the wrapper stays mounted across saving → saved →
+				// error transitions; only the wrapper fades in on first appearance
+				// and out on dismissal. Swapping the label text is handled by the
+				// inner AnimatePresence so the two states never co-render and shift.
 				<motion.div
-					key={status === "saved" ? `saved-${savedAt}` : status}
-					className={cn(
-						"flex items-center gap-1.5 text-xs leading-4",
-						status === "error" ? "text-text-danger" : "text-text-subtle",
-					)}
+					key="save-indicator"
+					className="relative flex h-full items-center justify-end"
 					aria-live="polite"
 					initial={reduceMotion ? false : { opacity: 0 }}
 					animate={{ opacity: 1 }}
-					exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+					exit={{ opacity: 0 }}
 					transition={{ duration: reduceMotion ? 0 : 0.25, ease: "easeOut" }}
 				>
-					{status === "saving" ? <Spinner size="xs" className="text-text-subtle" /> : null}
-					<span>{label}</span>
+					{/* Gradient scrim that veils the nav behind the label, fading
+					    leftward into the nav. Mirrors the scroll-mask fade
+					    direction (solid → transparent). */}
+					<span
+						aria-hidden
+						className="pointer-events-none absolute inset-y-0 right-0 -z-10 bg-linear-to-l from-surface from-75% to-transparent"
+						style={{ width: "calc(100% + var(--ds-space-600))" }}
+					/>
+					{/* mode="wait" ensures the old label fully fades before the new
+					    one appears, so the two states never co-render (no "Saving…
+					    Saved just now" overlap). The label stays in normal flow so
+					    the right-anchored wrapper + scrim size to it; the wrapper
+					    lives in an absolute overlay, so width changes grow leftward
+					    into the scrim rather than pushing the action buttons. */}
+					<AnimatePresence initial={false} mode="wait">
+						<motion.span
+							key={status}
+							className={cn(
+								"pointer-events-auto flex items-center gap-1.5 pl-2 text-xs leading-4 whitespace-nowrap",
+								status === "error" ? "text-text-danger" : "text-text-subtle",
+							)}
+							initial={reduceMotion ? false : { opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+							transition={{ duration: reduceMotion ? 0 : 0.15, ease: "easeOut" }}
+						>
+							{status === "saving" ? <Spinner size="xs" className="text-text-subtle" /> : null}
+							<span>{label}</span>
+						</motion.span>
+					</AnimatePresence>
 				</motion.div>
 			) : null}
 		</AnimatePresence>
@@ -1208,12 +1237,14 @@ export function RovoAppAgentConfigPanel({
 								onSectionChange={handleCompactSectionChange}
 							/>
 						}
+						leadingOverlay={
+							<AgentSaveStatusIndicator
+								status={sessionAgentSaveStatus}
+								savedAt={sessionAgentSavedAt}
+							/>
+						}
 						actions={
 							<>
-								<AgentSaveStatusIndicator
-									status={sessionAgentSaveStatus}
-									savedAt={sessionAgentSavedAt}
-								/>
 								<AgentMoreOptionsMenu />
 								<Toggle
 									aria-label="Toggle agent test view"
