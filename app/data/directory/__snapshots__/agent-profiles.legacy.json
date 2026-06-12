@@ -231,7 +231,7 @@
 				"id": "product-requirements-guide",
 				"name": "Product Requirements Guide",
 				"byline": "Teamwork agent by Atlassian",
-				"avatarSrc": "/avatar-agent/teamwork-agents/product-requirements-guide.svg",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-3.svg",
 				"description": "Helps shape goals, requirements, risks, and acceptance criteria.",
 				"contextDescription": "[Selected custom agent]\nAgent: Product Requirements Guide\nByline: Teamwork agent by Atlassian\nDescription: Helps shape goals, requirements, risks, and acceptance criteria.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -617,7 +617,7 @@
 				"id": "product-requirements-guide",
 				"name": "Product Requirements Guide",
 				"byline": "Teamwork agent by Atlassian",
-				"avatarSrc": "/avatar-agent/teamwork-agents/product-requirements-guide.svg"
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-3.svg"
 			},
 			{
 				"id": "feedback-analyzer",
@@ -738,7 +738,7 @@
 				"id": "product-requirements-guide",
 				"name": "Product Requirements Guide",
 				"byline": "Teamwork agent by Atlassian",
-				"avatarSrc": "/avatar-agent/teamwork-agents/product-requirements-guide.svg"
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-3.svg"
 			},
 			{
 				"id": "feedback-analyzer",
@@ -1017,7 +1017,7 @@
 				"id": "product-requirements-guide",
 				"name": "Product Requirements Guide",
 				"byline": "Teamwork agent by Atlassian",
-				"avatarSrc": "/avatar-agent/teamwork-agents/product-requirements-guide.svg",
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-3.svg",
 				"description": "Helps shape goals, requirements, risks, and acceptance criteria.",
 				"contextDescription": "[Selected custom agent]\nAgent: Product Requirements Guide\nByline: Teamwork agent by Atlassian\nDescription: Helps shape goals, requirements, risks, and acceptance criteria.\nAnswer as this selected agent while using the existing Rovo chat capabilities and available context.\n[End selected custom agent]",
 				"starters": [
@@ -1369,7 +1369,7 @@
 				"id": "product-requirements-guide",
 				"name": "Product Requirements Guide",
 				"byline": "Teamwork agent by Atlassian",
-				"avatarSrc": "/avatar-agent/teamwork-agents/product-requirements-guide.svg"
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-3.svg"
 			},
 			{
 				"id": "feedback-analyzer",
@@ -1479,7 +1479,7 @@
 				"id": "product-requirements-guide",
 				"name": "Product Requirements Guide",
 				"byline": "Teamwork agent by Atlassian",
-				"avatarSrc": "/avatar-agent/teamwork-agents/product-requirements-guide.svg"
+				"avatarSrc": "/avatar-agent/product-agents/wildcard-3.svg"
 			},
 			{
 				"id": "feedback-analyzer",
