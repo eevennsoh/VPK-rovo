@@ -4,6 +4,7 @@ import { type CSSProperties, type MouseEvent, type ReactElement, type ReactNode,
 import Image from "next/image";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import ClockIcon from "@atlaskit/icon/core/clock";
+import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
@@ -444,8 +445,9 @@ export function AgentCard({
 	}
 
 	if (variant === "experimental-profile") {
+		const isPersonal = publisher === "You";
 		const visibleStats = displayStats.slice(0, 2);
-		const showInlineStats = visibleStats.length > 0 || showRating || showChats;
+		const showInlineStats = visibleStats.length > 0 || showRating || showChats || isPersonal;
 
 		return (
 			<AgentCardShell
@@ -517,6 +519,11 @@ export function AgentCard({
 								{showChats ? (
 									<AgentCardStat icon={<AiChatIcon label="" size="small" spacing="none" color="currentColor" />}>
 										{formatCompact(chatCount)} chats
+									</AgentCardStat>
+								) : null}
+								{isPersonal ? (
+									<AgentCardStat icon={<LockLockedIcon label="" size="small" spacing="none" color="currentColor" />}>
+										Private to you
 									</AgentCardStat>
 								) : null}
 							</>

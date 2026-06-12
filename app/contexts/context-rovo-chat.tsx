@@ -697,6 +697,9 @@ export interface SelectAgentOptions {
 export interface RegisterCreatedAgentOptions extends SelectAgentOptions {
 	select?: boolean;
 	sourceKey?: string;
+	// Persist the new entry without surfacing the "Saving…/Saved" indicator.
+	// Used for creating a brand-new blank agent, which has nothing to save yet.
+	silentSave?: boolean;
 }
 
 export type StudioAgentPublishStatus = "testing" | "published";
@@ -1466,6 +1469,10 @@ export function RovoChatProvider({
 	const mediaGenerationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const suggestionsAbortControllerRef = useRef<AbortController | null>(null);
 	const sessionAgentSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	// When set, the next session-agent persist runs silently (no "Saving…/Saved"
+	// indicator). Used for creating a brand-new blank agent, where there is no
+	// meaningful content to save yet, so the save progression would be noise.
+	const suppressNextSessionAgentSaveStatusRef = useRef(false);
 	const sessionAgentEntriesRef = useRef<SessionAgentEntry[]>([]);
 	const staticAgentProfiles = useMemo(
 		() => agentProfiles ?? ROVO_AGENT_PROFILES,
@@ -1512,9 +1519,17 @@ export function RovoChatProvider({
 			clearTimeout(sessionAgentSaveTimerRef.current);
 		}
 
+		// A silent persist (e.g. creating a blank agent with nothing to save yet)
+		// still writes to storage but skips the "Saving…/Saved" indicator.
+		const silentPersist = suppressNextSessionAgentSaveStatusRef.current;
+		suppressNextSessionAgentSaveStatusRef.current = false;
+
 		sessionAgentSaveTimerRef.current = setTimeout(() => {
 			sessionAgentSaveTimerRef.current = null;
 			const didPersist = persistSessionAgentEntries(sessionAgentEntriesRef.current.map(normalizeSessionAgentEntry));
+			if (silentPersist) {
+				return;
+			}
 			if (didPersist) {
 				setSessionAgentSaveStatus("saved");
 				setSessionAgentSavedAt(Date.now());
@@ -3079,7 +3094,12 @@ export function RovoChatProvider({
 			} else {
 				const nextEntries = [...sessionAgentEntriesRef.current, entry];
 				sessionAgentEntriesRef.current = nextEntries;
-				setSessionAgentSaveStatus("saving");
+				if (options?.silentSave) {
+					// Blank-agent creation: persist quietly, no save indicator.
+					suppressNextSessionAgentSaveStatusRef.current = true;
+				} else {
+					setSessionAgentSaveStatus("saving");
+				}
 				setSessionAgentEntries(nextEntries);
 			}
 

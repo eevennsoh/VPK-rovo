@@ -520,6 +520,14 @@ const AGENT_COMPACT_HEADER_NAV_GAP = 4;
 const AGENT_COMPACT_HEADER_AVATAR_NAV_GAP = 8;
 const AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH = 24;
 
+// Staggered entrance for nav items revealed when an agent is published (the
+// item list grows from just "Details" to the full section set). Only the newly
+// added trailing items animate; pre-existing items render statically.
+const AGENT_COMPACT_HEADER_NAV_REVEAL_STAGGER_S = 0.04;
+const AGENT_COMPACT_HEADER_NAV_REVEAL_INITIAL = { opacity: 0, x: -6, scale: 0.96 } as const;
+const AGENT_COMPACT_HEADER_NAV_REVEAL_ANIMATE = { opacity: 1, x: 0, scale: 1 } as const;
+const AGENT_COMPACT_HEADER_NAV_REVEAL_TRANSITION = { duration: 0.22, ease: [0, 0.4, 0, 1] } as const;
+
 function AgentCompactHeaderNavButton({
 	activeSection,
 	item,
@@ -562,11 +570,29 @@ export function AgentCompactHeaderNav({
 	items?: readonly AgentCompactHeaderNavItem[];
 	onSectionChange?: (section: AgentCompactHeaderSection) => void;
 }>) {
+	const shouldReduceMotion = useReducedMotion();
 	const containerRef = useRef<HTMLDivElement>(null);
 	const measureRef = useRef<HTMLDivElement>(null);
 	const [visibleCount, setVisibleCount] = useState<number>(items.length);
 	const visibleItems = items.slice(0, visibleCount);
 	const hiddenItems = items.slice(visibleCount);
+
+	// Index from which items are "newly revealed" and should animate in. On
+	// mount (including an already-published agent) this equals items.length, so
+	// nothing animates. When the list grows (publish), it holds the prior count
+	// so only the added trailing items stagger in. When it shrinks (unpublish /
+	// rollback) we reset to the new length so a later re-publish animates again.
+	const prevItemCountRef = useRef<number>(items.length);
+	const [revealFromIndex, setRevealFromIndex] = useState<number>(items.length);
+	useEffect(() => {
+		const prevCount = prevItemCountRef.current;
+		if (items.length > prevCount) {
+			setRevealFromIndex(prevCount);
+		} else if (items.length < prevCount) {
+			setRevealFromIndex(items.length);
+		}
+		prevItemCountRef.current = items.length;
+	}, [items.length]);
 
 	useLayoutEffect(() => {
 		const container = containerRef.current;
@@ -630,14 +656,37 @@ export function AgentCompactHeaderNav({
 						))}
 					</div>
 				</div>
-				{visibleItems.map((item) => (
-					<AgentCompactHeaderNavButton
-						activeSection={activeSection}
-						item={item}
-						key={item.label}
-						onSectionChange={onSectionChange}
-					/>
-				))}
+				{visibleItems.map((item, index) => {
+					const isRevealed = !shouldReduceMotion && index >= revealFromIndex;
+					if (!isRevealed) {
+						return (
+							<AgentCompactHeaderNavButton
+								activeSection={activeSection}
+								item={item}
+								key={item.label}
+								onSectionChange={onSectionChange}
+							/>
+						);
+					}
+					return (
+						<motion.div
+							className="inline-flex"
+							key={item.label}
+							initial={AGENT_COMPACT_HEADER_NAV_REVEAL_INITIAL}
+							animate={AGENT_COMPACT_HEADER_NAV_REVEAL_ANIMATE}
+							transition={{
+								...AGENT_COMPACT_HEADER_NAV_REVEAL_TRANSITION,
+								delay: (index - revealFromIndex) * AGENT_COMPACT_HEADER_NAV_REVEAL_STAGGER_S,
+							}}
+						>
+							<AgentCompactHeaderNavButton
+								activeSection={activeSection}
+								item={item}
+								onSectionChange={onSectionChange}
+							/>
+						</motion.div>
+					);
+				})}
 				{hiddenItems.length > 0 ? (
 					<DropdownMenu>
 						<DropdownMenuTrigger

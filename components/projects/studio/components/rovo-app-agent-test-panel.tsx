@@ -16,7 +16,6 @@ import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialo
 import { cn } from "@/lib/utils";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
-import { areStudioAgentResultsEqual } from "@/components/projects/studio/lib/studio-agent-versioning";
 
 const AGENT_TEST_MAX_CONVERSATION_STARTERS = 3;
 
@@ -215,34 +214,25 @@ function buildAgentTestProfile(
 }
 
 function getAgentTestVersionOptions(entry: StudioSessionAgentEntry): readonly AgentTestVersionOption[] {
-	const publishedVersionLabel = `V${entry.publishedVersion || 1}`;
-	const latestIsPublished = entry.publishedResult
-		? areStudioAgentResultsEqual(entry.draftResult, entry.publishedResult)
-		: false;
+	// Draft is always neutral gray; it is never the "current" published version.
 	const options: AgentTestVersionOption[] = [{
 		id: "latest",
 		label: "Draft",
-		variant: latestIsPublished ? "success" : "neutral",
+		variant: "neutral",
 		result: entry.draftResult,
 	}];
 
-	if (entry.publishedResult) {
-		options.push({
-			id: "published",
-			label: `Published ${publishedVersionLabel}`,
-			variant: "success",
-			sectionBreakBefore: true,
-			result: entry.publishedResult,
-		});
-	}
-
+	// Each published/updated entry is a real version. Label it just "V{n}"
+	// (no duplicate "Published V1" summary, no "- Agent published" suffix) and
+	// flag the live published version as current so the dropdown can mark it.
 	const publishedVersions = entry.versionHistory.filter((version) => version.kind === "publish" || version.kind === "update");
 	for (const [versionIndex, version] of publishedVersions.entries()) {
 		options.push({
 			id: `history:${version.id}`,
-			label: `V${version.version} - ${version.label}`,
+			label: `V${version.version}`,
 			variant: "success",
-			sectionBreakBefore: !entry.publishedResult && versionIndex === 0,
+			sectionBreakBefore: versionIndex === 0,
+			isCurrent: version.version === entry.publishedVersion,
 			result: version.snapshot,
 		});
 	}
