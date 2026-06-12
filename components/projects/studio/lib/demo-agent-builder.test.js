@@ -201,17 +201,15 @@ test("planDeterministicAgentBuild → update when an agent is open", async () =>
 	assert.equal(outcome.mode, "update");
 	assert.ok(outcome.patch && outcome.patch.apps.includes("Jira"));
 	assert.ok(outcome.assistantReply && /added/i.test(outcome.assistantReply));
-	assert.equal(outcome.createResult, undefined);
 });
 
-test("planDeterministicAgentBuild → create when no agent is open", async () => {
+test("planDeterministicAgentBuild → falls through when no agent is open", async () => {
 	const { planDeterministicAgentBuild } = await loadModule();
 	const outcome = planDeterministicAgentBuild(CANONICAL, null);
-	assert.equal(outcome.handled, true);
-	assert.equal(outcome.mode, "create");
-	assert.ok(outcome.createResult && outcome.createResult.action === "create");
-	assert.ok(outcome.assistantReply && /created/i.test(outcome.assistantReply));
+	assert.equal(outcome.handled, false);
+	assert.equal(outcome.mode, "none");
 	assert.equal(outcome.patch, undefined);
+	assert.equal(outcome.assistantReply, undefined);
 });
 
 test("planDeterministicAgentBuild → not handled for chit-chat", async () => {

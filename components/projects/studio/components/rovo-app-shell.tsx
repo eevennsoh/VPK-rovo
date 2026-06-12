@@ -2464,8 +2464,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		[
 			activeQuestionCard,
 			activeQuestionCardKey,
-			chat.activeThreadId,
-			chat.runtimeThreadId,
 			getStudioAgentCreationClarificationOptions,
 			hideQuestionCard,
 			studioCreationTemplate,
@@ -3440,13 +3438,13 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 			const trimmedText = text.trim();
 
-			// Deterministic demo agent-builder. Studio build prompts ("add a trigger
-			// to…", "give it Jira tools", "rename it to…") are mapped onto the fake
-			// directory catalogs and applied directly — no model call — so the demo
-			// is reliable and never returns gibberish. An open agent is UPDATED in
-			// place; otherwise a new agent is CREATED. Non-build prompts (chit-chat,
-			// questions) return isBuildIntent === false and fall through to the
-			// normal streaming path below. Voice/realtime is never intercepted.
+			// Deterministic demo agent-editor. Studio build prompts typed while an
+			// agent draft is open ("add a trigger to…", "give it Jira tools",
+			// "rename it to…") are mapped onto the fake directory catalogs and
+			// applied directly — no model call — so the demo is reliable and never
+			// returns gibberish. New-agent prompts fall through to the normal
+			// model-backed creation flow so the AI can ask clarification questions.
+			// Voice/realtime is never intercepted.
 			if (!isRealtimeActive && trimmedText) {
 				const openAgentEntry = activeSessionAgentEntry;
 				const buildPlan = planDeterministicAgentBuild(
@@ -3465,10 +3463,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					}
 					if (buildPlan.mode === "update" && openAgentEntry && buildPlan.patch) {
 						handleUpdateAgentDraft(openAgentEntry.profile.id, buildPlan.patch);
-					} else if (buildPlan.createResult) {
-						handleStudioAgentResultSelect(buildPlan.createResult, {
-							sourceKey: `demo-agent-builder:${createId("demo-agent")}`,
-						});
 					}
 					// The agent mutation above has already applied; only the transcript
 					// append can still reject (thread-ensure/persistence). On failure,
@@ -3550,7 +3544,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			appendRealtimeMessage,
 			activeSessionAgentEntry,
 			handleUpdateAgentDraft,
-			handleStudioAgentResultSelect,
 			chat.messages,
 			isRealtimeActive,
 			isClickyActive,
@@ -3592,14 +3585,10 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			}
 			if (buildPlan.mode === "update" && openAgentEntry && buildPlan.patch) {
 				handleUpdateAgentDraft(openAgentEntry.profile.id, buildPlan.patch);
-			} else if (buildPlan.createResult) {
-				handleStudioAgentResultSelect(buildPlan.createResult, {
-					sourceKey: `demo-agent-builder:${createId("demo-agent")}`,
-				});
 			}
 			return { handled: true, assistantReply: buildPlan.assistantReply };
 		},
-		[activeSessionAgentEntry, handleStudioAgentResultSelect, handleUpdateAgentDraft],
+		[activeSessionAgentEntry, handleUpdateAgentDraft],
 	);
 
 	// Keep the screen-assistant tool executor (created with the realtime hook

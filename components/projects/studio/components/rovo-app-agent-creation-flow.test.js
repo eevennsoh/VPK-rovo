@@ -92,6 +92,8 @@ test("RovoAppShell starts Studio agent creation only from the default-agent home
 	assert.match(SHELL_SOURCE, /const shouldStartStudioAgentCreation = isDefaultAgentHomeStateRef\.current && !isRealtimeActive;/u);
 	assert.match(SHELL_SOURCE, /\.\.\.\(shouldStartStudioAgentCreation \? \{ creationMode: "agent" as const \} : \{\}\)/u);
 	assert.ok((SHELL_SOURCE.match(/creationMode: "agent"/gu) ?? []).length >= 1);
+	assert.match(SHELL_SOURCE, /New-agent prompts fall through to the normal[\s\S]*model-backed creation flow/u);
+	assert.doesNotMatch(SHELL_SOURCE, /buildPlan\.createResult/u);
 });
 
 test("RovoAppShell does not render the Hermes turn-state card", () => {
