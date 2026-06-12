@@ -655,9 +655,17 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_TEST_PANEL_SOURCE, /className=\{cn\("h-full min-h-0 px-4", className\)\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /function getAgentTestVersionOptions\(entry: StudioSessionAgentEntry\)/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /id: "latest"[\s\S]*result: entry\.draftResult/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /id: "published"[\s\S]*result: entry\.publishedResult/u);
+	// Draft is always neutral gray and there is no separate "published" summary
+	// option (it duplicated the version-history entry for the same publish).
+	assert.match(AGENT_TEST_PANEL_SOURCE, /id: "latest",\s*\n\s*label: "Draft",\s*\n\s*variant: "neutral",/u);
+	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /id: "published"/u);
+	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /Published \$\{publishedVersionLabel\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /id: `history:\$\{version\.id\}`[\s\S]*result: version\.snapshot/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /label: `V\$\{version\.version\} - \$\{version\.label\}`/u);
+	// Version options are labelled just "V{n}" (no "- Agent published" suffix)
+	// and the live published version is flagged current.
+	assert.match(AGENT_TEST_PANEL_SOURCE, /label: `V\$\{version\.version\}`/u);
+	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /label: `V\$\{version\.version\} - \$\{version\.label\}`/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /isCurrent: version\.version === entry\.publishedVersion/u);
 	assert.match(CHAT_PANEL_SOURCE, /export interface ChatPanelAgentVersionOption/u);
 	assert.match(CHAT_PANEL_SOURCE, /agentVersionOptions\?: readonly ChatPanelAgentVersionOption\[\];/u);
 	assert.match(CHAT_PANEL_SOURCE, /selectedAgentVersionId\?: string;/u);
@@ -697,7 +705,8 @@ test("Studio publish dropdown separates draft changes from version history", () 
 	assert.match(historyViewSource, /publishedVersions\.map/u);
 	assert.doesNotMatch(historyViewSource, /entry\.versionHistory\.map/u);
 	assert.doesNotMatch(historyViewSource, /<span>\{publishedVersionLabel\}<\/span>/u);
-	assert.match(historyViewSource, /<span>\{`V\$\{version\.version\}`\}<\/span>/u);
+	// Version label renders as the same success Badge used in the Test dropdown.
+	assert.match(historyViewSource, /<Badge variant="success">\{`V\$\{version\.version\}`\}<\/Badge>/u);
 	assert.match(historyViewSource, /\{version\.label\} · \{formatRelativeTime\(version\.createdAt\)\}/u);
 	assert.doesNotMatch(historyViewSource, /Latest/u);
 	assert.doesNotMatch(historyViewSource, /Same as/u);
