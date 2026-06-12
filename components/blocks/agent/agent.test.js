@@ -949,6 +949,7 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /import \{ RovoColorIcon \} from "@\/components\/ui\/logo";/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const ASK_ROVO_SLASH_ITEM: RichTextSuggestionMenuItem = \{[\s\S]*id: "ask-rovo",[\s\S]*label: "Ask Rovo",/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /includeFormat = true/u);
+	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /const showAskRovoPrompt = this\.options\.showAskRovoPrompt \?\? true;/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /variant: SuggestionVariant = "nested"/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /suggestionVariant = "nested"/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function shouldUseFlatSurface\(query: string\): boolean \{[\s\S]*return isFlat \|\| \(!activeCategory && query\.trim\(\)\.length > 0\);[\s\S]*\}/u);
@@ -956,12 +957,15 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /return \[\s*ASK_ROVO_SLASH_ITEM,[\s\S]*\.\.\.getSlashCategoryOrder\(includeFormat\)\.map/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /buildFlatSurfaceRows\(getFlatSections\(\), query, expandedSections, \[ASK_ROVO_SLASH_ITEM\]\)/u);
 	assert.doesNotMatch(RICH_TEXT_SUGGESTION_SOURCE, /item\.id === ASK_ROVO_SLASH_ITEM\.id/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function getAskRovoHeader\(\): ReactNode \{[\s\S]*<RichTextCommandMenuSearchField[\s\S]*icon=\{ASK_ROVO_SLASH_ITEM\.icon\}[\s\S]*label=\{ASK_ROVO_SLASH_ITEM\.label\}[\s\S]*onEscape=\{dismissSuggestion\}[\s\S]*onSubmit=\{submitAskRovoPrompt\}[\s\S]*onValueChange=\{updateAskRovoPrompt\}[\s\S]*value=\{askRovoPrompt\}/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /showAskRovoPrompt = true/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function getAskRovoHeader\(\): ReactNode \| undefined \{[\s\S]*if \(!showAskRovoPrompt\)[\s\S]*<RichTextCommandMenuSearchField[\s\S]*icon=\{ASK_ROVO_SLASH_ITEM\.icon\}[\s\S]*label=\{ASK_ROVO_SLASH_ITEM\.label\}[\s\S]*onEscape=\{dismissSuggestion\}[\s\S]*onSubmit=\{submitAskRovoPrompt\}[\s\S]*onValueChange=\{updateAskRovoPrompt\}[\s\S]*value=\{askRovoPrompt\}/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /import \{ Suggestion, exitSuggestion \} from "@tiptap\/suggestion";/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /\(editor\) => exitSuggestion\(editor\.view, slashCommandPluginKey\)/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function shouldHideSlashRowsForAskRovoPrompt\(\): boolean \{[\s\S]*askRovoPrompt\.trim\(\)\.length > 0/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function shouldHideSlashRowsForAskRovoPrompt\(\): boolean \{[\s\S]*return showAskRovoPrompt && \(isFlat \|\| !activeCategory\) && askRovoPrompt\.trim\(\)\.length > 0/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const items = shouldHideSlashRowsForAskRovoPrompt\(\)[\s\S]*\? \[\][\s\S]*: getVisibleItems\(props\.query\);/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /header: isFlat \|\| !activeCategory \? getAskRovoHeader\(\) : undefined/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const shouldShowAskRovoHeader = showAskRovoPrompt && \(isFlat \|\| !activeCategory\);/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /emptyState: nestedCategory \? nestedEmptyState : shouldShowAskRovoHeader \? <><\/> : undefined/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /header: shouldShowAskRovoHeader \? getAskRovoHeader\(\) : undefined/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /function submitAskRovoPrompt\(\): boolean \{[\s\S]*currentProps\.command\(\{ type: "ask-rovo", onAskRovo \}\)/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /props\.type === "ask-rovo"[\s\S]*props\.onAskRovo\?\.\(editor\)/u);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /onAskRovoRef = useRef\(onAskRovo\)/u);
@@ -1056,11 +1060,11 @@ test("Slash command menu contains every toolbar command", () => {
 	// The "/" slash renderer accepts an onOpenDirectory callback and renders the
 	// contextual empty state (with a "Browse all" launch) for a nested category,
 	// while non-directory "format" gets the title-only variant and the top-level
-	// list keeps its collapse-to-header behavior.
+	// list collapses to just the header only when Ask Rovo is enabled.
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /onOpenDirectory\?: \(category: RichTextSlashCategory\) => void,/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /const nestedCategory = !isFlat && activeCategory \? activeCategory : null;/u);
 	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /<RichTextSuggestionEmptyState[\s\S]*onBrowseAll=\{[\s\S]*nestedCategory !== "format" && onOpenDirectory[\s\S]*\? \(\) => onOpenDirectory\(nestedCategory\)[\s\S]*: undefined[\s\S]*\}/u);
-	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /emptyState: nestedCategory \? nestedEmptyState : <><\/>,/u);
+	assert.match(RICH_TEXT_SUGGESTION_SOURCE, /emptyState: nestedCategory \? nestedEmptyState : shouldShowAskRovoHeader \? <><\/> : undefined/u);
 	// The callback is plumbed: extension option -> slash renderer call ->
 	// RichTextEditor prop (kept current through a ref so the memoized extensions
 	// never capture a stale closure).

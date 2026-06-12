@@ -131,6 +131,12 @@ export interface RichTextEditorExtensionOptions {
 	getMentionSources?: () => RichTextMentionSources | undefined;
 	onAskRovo?: (editor: Editor) => void;
 	/**
+	 * Whether the "/" command menu shows the sticky Ask Rovo prompt. Defaults to
+	 * `true` for editor surfaces; chat composers turn it off because the user is
+	 * already inside a Rovo composer.
+	 */
+	showAskRovoPrompt?: boolean;
+	/**
 	 * Layout for the live "@" / "/" suggestion menus. Accepts a single variant
 	 * (applied to both triggers) or a per-trigger object. Defaults to `"nested"`.
 	 */
