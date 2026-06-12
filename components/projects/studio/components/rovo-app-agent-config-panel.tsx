@@ -206,6 +206,10 @@ function getPublishProfileHref(profileId: string): string {
 	return `${STUDIO_AGENT_PROFILE_BASE_PATH}?agent=${encodeURIComponent(profileId)}`;
 }
 
+// How long the transient "Saved just now" confirmation lingers before it
+// fades away. "Saving..." and "Unable to save" stay visible until resolved.
+const AGENT_SAVE_CONFIRMATION_LINGER_MS = 2_500;
+
 function AgentSaveStatusIndicator({
 	savedAt,
 	status,
@@ -213,6 +217,26 @@ function AgentSaveStatusIndicator({
 	savedAt: number | null;
 	status: "idle" | "saving" | "saved" | "error";
 }>) {
+	const reduceMotion = useReducedMotion();
+	// The success confirmation is transient: show it briefly after a save, then
+	// fade it out. Persistent states ("saving"/"error") are never dismissed here.
+	const isTransientConfirmation = status === "saved" && savedAt != null;
+	const [confirmationVisible, setConfirmationVisible] = useState(isTransientConfirmation);
+
+	useEffect(() => {
+		if (!isTransientConfirmation) {
+			setConfirmationVisible(false);
+			return;
+		}
+		setConfirmationVisible(true);
+		const timer = setTimeout(
+			() => setConfirmationVisible(false),
+			AGENT_SAVE_CONFIRMATION_LINGER_MS,
+		);
+		return () => clearTimeout(timer);
+		// Re-arm the timer on each new save (savedAt changes per save).
+	}, [isTransientConfirmation, savedAt]);
+
 	const label = status === "saving"
 		? "Saving..."
 		: status === "error"
@@ -221,17 +245,30 @@ function AgentSaveStatusIndicator({
 				? "Saved just now"
 				: "Saved";
 
+	// Render nothing once the confirmation has faded out (avoids a lingering
+	// empty min-width slot in the header actions).
+	const showIndicator = isTransientConfirmation ? confirmationVisible : status !== "idle";
+
 	return (
-		<div
-			className={cn(
-				"flex min-w-[92px] items-center gap-1.5 text-xs leading-4",
-				status === "error" ? "text-text-danger" : "text-text-subtle",
-			)}
-			aria-live="polite"
-		>
-			{status === "saving" ? <Spinner size="xs" className="text-text-subtle" /> : null}
-			<span>{label}</span>
-		</div>
+		<AnimatePresence>
+			{showIndicator ? (
+				<motion.div
+					key={status === "saved" ? `saved-${savedAt}` : status}
+					className={cn(
+						"flex items-center gap-1.5 text-xs leading-4",
+						status === "error" ? "text-text-danger" : "text-text-subtle",
+					)}
+					aria-live="polite"
+					initial={reduceMotion ? false : { opacity: 0 }}
+					animate={{ opacity: 1 }}
+					exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+					transition={{ duration: reduceMotion ? 0 : 0.25, ease: "easeOut" }}
+				>
+					{status === "saving" ? <Spinner size="xs" className="text-text-subtle" /> : null}
+					<span>{label}</span>
+				</motion.div>
+			) : null}
+		</AnimatePresence>
 	);
 }
 

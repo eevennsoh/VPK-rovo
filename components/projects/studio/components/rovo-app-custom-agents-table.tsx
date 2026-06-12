@@ -325,7 +325,7 @@ export function StudioAgentsSection({
 	return (
 		<section
 			aria-label="Agents"
-			className="mx-auto mt-12 flex w-[90%] max-w-[800px] flex-col gap-6"
+			className="mx-auto mt-12 flex w-[90%] max-w-[800px] flex-col gap-6 pb-12"
 			data-testid="studio-agents-section"
 		>
 			<div className="flex flex-wrap items-center justify-between gap-3">
