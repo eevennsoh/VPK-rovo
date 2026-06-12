@@ -100,15 +100,15 @@ test("RovoAppShell does not render the Hermes turn-state card", () => {
 	assert.doesNotMatch(SHELL_SOURCE, /Auto-loaded on the last turn/u);
 });
 
-test("Studio landing empty state uses the illustrated heading by default", () => {
+test("Studio landing empty state is title-only by default", () => {
 	assert.match(MESSAGES_SOURCE, /default: \{[\s\S]*heading: "Move work forward with agents"[\s\S]*id: "default"[\s\S]*\}/u);
 	const defaultEmptyStateSource = MESSAGES_SOURCE.slice(
 		MESSAGES_SOURCE.indexOf("default: {"),
 		MESSAGES_SOURCE.indexOf("max: {"),
 	);
-	assert.match(defaultEmptyStateSource, /illustrationClassName: "h-\[67px\] w-\[74px\]"/u);
-	assert.match(defaultEmptyStateSource, /lightIllustrationSrc: "\/illustration-ai\/ai\/light\.svg"/u);
-	assert.match(defaultEmptyStateSource, /darkIllustrationSrc: "\/illustration-ai\/ai\/dark\.svg"/u);
+	assert.doesNotMatch(defaultEmptyStateSource, /illustrationClassName/u);
+	assert.doesNotMatch(defaultEmptyStateSource, /lightIllustrationSrc/u);
+	assert.doesNotMatch(defaultEmptyStateSource, /darkIllustrationSrc/u);
 	assert.match(MESSAGES_SOURCE, /function hasRovoAppEmptyStateIllustration\(emptyState: RovoAppEmptyState\): emptyState is RovoAppIllustratedEmptyState \{[\s\S]*return "illustrationClassName" in emptyState;/u);
 	assert.match(MESSAGES_SOURCE, /const hasEmptyStateIllustration = hasRovoAppEmptyStateIllustration\(emptyState\);/u);
 	assert.match(MESSAGES_SOURCE, /\{hasEmptyStateIllustration \? \([\s\S]*<motion\.div className=\{cn\(emptyState\.illustrationClassName, "relative"\)/u);
@@ -145,7 +145,7 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /DropdownMenu/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-label=\{`More actions for \$\{agentName\}`\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /export function StudioAgentsSection/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className="mx-auto mt-12 flex w-\[90%\] max-w-\[800px\] flex-col gap-6"/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className="mx-auto mt-12 flex w-\[90%\] max-w-\[800px\] flex-col gap-6 pb-12"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /ButtonGroup aria-label="Agent views"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "my-agents", label: "My agents"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "by-teams", label: "By teams"/u);

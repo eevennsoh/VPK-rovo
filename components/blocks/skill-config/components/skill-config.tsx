@@ -41,12 +41,12 @@ import {
 import {
 	renderAgentTriggerProviderIcon,
 	renderAgentTriggerProviderTileIcon,
-	serializeAgentTriggerLabels,
 	TriggerPicker,
 	TriggerProviderSearchList,
+	type AgentAutomationRule,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/page";
-import { createAgentTriggerValue, getTriggerProvider } from "@/components/blocks/triggers/data/trigger-catalog";
+import { createAgentAutomationRule, createAgentTriggerValue, getAgentAutomationRuleLabel, getTriggerProvider, inferAutomationRules } from "@/components/blocks/triggers/data/trigger-catalog";
 import { ManageTriggersDialog } from "@/components/blocks/triggers/components/manage-triggers-dialog";
 import { UNTITLED_SUBAGENT_NAME } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
@@ -179,11 +179,11 @@ const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
 };
 
 // Source order IS the canonical display order, kept in lockstep with the
-// AgentFilledConfigSummary rows array: Triggers › Knowledge › Tools › Skills ›
+// AgentFilledConfigSummary rows array: Automations › Knowledge › Tools › Skills ›
 // Subagents › Memory › Conversation starters. Reasoning renders separately and
 // always sits last. Keep both lists in sync when reordering.
 const AGENT_COMPACT_EMPTY_CONFIG_NAV_ITEMS = [
-	{ agentFieldName: "trigger", label: "Triggers", Icon: AutomationIcon },
+	{ agentFieldName: "trigger", label: "Automations", Icon: AutomationIcon },
 	{ agentFieldName: "apps", label: "Apps", listFieldName: "apps", Icon: AppsIcon },
 	{ agentFieldName: "skills", label: "Skills", listFieldName: "skills", Icon: SkillIcon },
 	{ agentFieldName: "subagents", label: "Subagents", listFieldName: "subagents", Icon: AiAgentIcon },
@@ -220,7 +220,7 @@ const AGENT_EMPTY_ROW_ADD_LABELS: Record<AgentConfigListFieldName, string> = {
 	skills: "Add skills to guide specialized tasks",
 	subagents: "Add subagents to handle specific scenarios",
 	tools: "Add tools to extend what this agent can do",
-	triggers: "Add rules for when this agent runs",
+	triggers: "Add automations for when this agent runs",
 };
 
 function getAgentFilledSummaryAddLabel(field: AgentConfigListFieldName, isEmpty: boolean, showAddButtons: boolean): string | undefined {
@@ -251,7 +251,7 @@ function getAgentCompactEmptyConfigNavItems(config?: AgentConfigFormValue) {
 		if (config) {
 			switch (item.agentFieldName) {
 				case "trigger":
-					count = getAgentTriggerItems(config).length;
+					count = getAgentAutomationItems(config).length;
 					break;
 				case "skills":
 					count = getNonEmptyConfigItems(config.skills).length;
@@ -366,6 +366,16 @@ function mapConfigValuesToMentionItems(
 	);
 }
 
+function mapSubagentConfigValuesToMentionItems(
+	values: readonly string[] | undefined,
+): RichTextMentionItem[] {
+	return getNonEmptyConfigItems(values).map((value) => ({
+		category: "subagent",
+		id: toMentionId("subagent", value),
+		label: value,
+	}));
+}
+
 function mapMemoryToKnowledgeItems(
 	explorer: WikiMemoryExplorerResponse | null,
 ): RichTextMentionItem[] {
@@ -456,7 +466,7 @@ export interface AgentConfigFormValue {
 	contextDescription?: string;
 	trigger?: string;
 	triggers?: readonly string[];
-	triggerDefinitions?: readonly AgentTriggerValue[];
+	automationRules?: readonly AgentAutomationRule[];
 	skills?: readonly string[];
 	guardrail?: string;
 	tools?: readonly string[];
@@ -510,6 +520,14 @@ const AGENT_COMPACT_HEADER_NAV_GAP = 4;
 const AGENT_COMPACT_HEADER_AVATAR_NAV_GAP = 8;
 const AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH = 24;
 
+// Staggered entrance for nav items revealed when an agent is published (the
+// item list grows from just "Details" to the full section set). Only the newly
+// added trailing items animate; pre-existing items render statically.
+const AGENT_COMPACT_HEADER_NAV_REVEAL_STAGGER_S = 0.04;
+const AGENT_COMPACT_HEADER_NAV_REVEAL_INITIAL = { opacity: 0, x: -6, scale: 0.96 } as const;
+const AGENT_COMPACT_HEADER_NAV_REVEAL_ANIMATE = { opacity: 1, x: 0, scale: 1 } as const;
+const AGENT_COMPACT_HEADER_NAV_REVEAL_TRANSITION = { duration: 0.22, ease: [0, 0.4, 0, 1] } as const;
+
 function AgentCompactHeaderNavButton({
 	activeSection,
 	item,
@@ -552,11 +570,29 @@ export function AgentCompactHeaderNav({
 	items?: readonly AgentCompactHeaderNavItem[];
 	onSectionChange?: (section: AgentCompactHeaderSection) => void;
 }>) {
+	const shouldReduceMotion = useReducedMotion();
 	const containerRef = useRef<HTMLDivElement>(null);
 	const measureRef = useRef<HTMLDivElement>(null);
 	const [visibleCount, setVisibleCount] = useState<number>(items.length);
 	const visibleItems = items.slice(0, visibleCount);
 	const hiddenItems = items.slice(visibleCount);
+
+	// Index from which items are "newly revealed" and should animate in. On
+	// mount (including an already-published agent) this equals items.length, so
+	// nothing animates. When the list grows (publish), it holds the prior count
+	// so only the added trailing items stagger in. When it shrinks (unpublish /
+	// rollback) we reset to the new length so a later re-publish animates again.
+	const prevItemCountRef = useRef<number>(items.length);
+	const [revealFromIndex, setRevealFromIndex] = useState<number>(items.length);
+	useEffect(() => {
+		const prevCount = prevItemCountRef.current;
+		if (items.length > prevCount) {
+			setRevealFromIndex(prevCount);
+		} else if (items.length < prevCount) {
+			setRevealFromIndex(items.length);
+		}
+		prevItemCountRef.current = items.length;
+	}, [items.length]);
 
 	useLayoutEffect(() => {
 		const container = containerRef.current;
@@ -620,14 +656,37 @@ export function AgentCompactHeaderNav({
 						))}
 					</div>
 				</div>
-				{visibleItems.map((item) => (
-					<AgentCompactHeaderNavButton
-						activeSection={activeSection}
-						item={item}
-						key={item.label}
-						onSectionChange={onSectionChange}
-					/>
-				))}
+				{visibleItems.map((item, index) => {
+					const isRevealed = !shouldReduceMotion && index >= revealFromIndex;
+					if (!isRevealed) {
+						return (
+							<AgentCompactHeaderNavButton
+								activeSection={activeSection}
+								item={item}
+								key={item.label}
+								onSectionChange={onSectionChange}
+							/>
+						);
+					}
+					return (
+						<motion.div
+							className="inline-flex"
+							key={item.label}
+							initial={AGENT_COMPACT_HEADER_NAV_REVEAL_INITIAL}
+							animate={AGENT_COMPACT_HEADER_NAV_REVEAL_ANIMATE}
+							transition={{
+								...AGENT_COMPACT_HEADER_NAV_REVEAL_TRANSITION,
+								delay: (index - revealFromIndex) * AGENT_COMPACT_HEADER_NAV_REVEAL_STAGGER_S,
+							}}
+						>
+							<AgentCompactHeaderNavButton
+								activeSection={activeSection}
+								item={item}
+								onSectionChange={onSectionChange}
+							/>
+						</motion.div>
+					);
+				})}
 				{hiddenItems.length > 0 ? (
 					<DropdownMenu>
 						<DropdownMenuTrigger
@@ -691,6 +750,10 @@ export type AgentHeaderProps = ComponentProps<"div"> & {
 	avatarSrc?: string;
 	model?: string;
 	leadingContent?: ReactNode;
+	// Floats above the right edge of the leading (nav) area without taking
+	// layout space — used for the transient save indicator, which veils the nav
+	// behind a gradient scrim instead of pushing the surrounding controls.
+	leadingOverlay?: ReactNode;
 	primaryActionLabel?: string;
 	publishLabel?: string;
 	showActions?: boolean;
@@ -743,6 +806,7 @@ export const AgentHeader = memo(
 		className,
 		avatarSrc = AGENT_AVATAR_SRC,
 		leadingContent,
+		leadingOverlay,
 		model,
 		name,
 		primaryActionLabel = "Test",
@@ -759,24 +823,31 @@ export const AgentHeader = memo(
 			)}
 			{...props}
 		>
-			{leadingContent ?? (
-				<div className="flex min-w-0 items-center gap-2">
-					<Avatar label="Agent" shape="hexagon" size="sm">
-						{isAtlassianLogoSource(avatarSrc) ? (
-							<AtlassianLogo name="atlassian" label={name} size="small" />
-						) : (
-							<AvatarImage alt="" src={avatarSrc} />
-						)}
-					</Avatar>
-					<span className="truncate text-sm font-semibold leading-5 text-text">{name}</span>
-					{model ? (
-						<Lozenge>
-							{model}
-						</Lozenge>
-					) : null}
-					{badge}
-				</div>
-			)}
+			<div className="relative flex min-w-0 flex-1 items-center">
+				{leadingContent ?? (
+					<div className="flex min-w-0 items-center gap-2">
+						<Avatar label="Agent" shape="hexagon" size="sm">
+							{isAtlassianLogoSource(avatarSrc) ? (
+								<AtlassianLogo name="atlassian" label={name} size="small" />
+							) : (
+								<AvatarImage alt="" src={avatarSrc} />
+							)}
+						</Avatar>
+						<span className="truncate text-sm font-semibold leading-5 text-text">{name}</span>
+						{model ? (
+							<Lozenge>
+								{model}
+							</Lozenge>
+						) : null}
+						{badge}
+					</div>
+				)}
+				{leadingOverlay ? (
+					<div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center justify-end">
+						{leadingOverlay}
+					</div>
+				) : null}
+			</div>
 			{showActions ? (
 				<div className="flex shrink-0 items-center gap-2">
 					{actions ?? (
@@ -883,10 +954,10 @@ function getAgentCompactConfigNavItemOnClick(
 	item: AgentCompactConfigNavItem,
 	onAppendListItem?: (field: AgentConfigListFieldName) => void,
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void,
-	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void,
+	onEditTriggers?: (seed?: AgentAutomationRule) => void,
 ): (() => void) | undefined {
 	if (item.agentFieldName === "trigger") {
-		return () => onEditTriggers?.([]);
+		return () => onEditTriggers?.();
 	}
 
 	if (item.agentFieldName === "skills") {
@@ -990,6 +1061,9 @@ function shouldClearCompactNavInitialHighlight(eventDetails: Parameters<AgentCom
 	}
 
 	const event = eventDetails.event;
+	if (typeof PointerEvent !== "undefined" && event instanceof PointerEvent) {
+		return true;
+	}
 	return !(event instanceof MouseEvent) || event.detail !== 0;
 }
 
@@ -1007,7 +1081,7 @@ function clearCompactNavInitialHighlight(contentElement: HTMLElement): void {
 	if (
 		activeElement instanceof HTMLElement &&
 		contentElement.contains(activeElement) &&
-		activeElement.getAttribute("role") === "menuitem"
+		activeElement !== contentElement
 	) {
 		contentElement.focus({ preventScroll: true });
 	}
@@ -1196,7 +1270,7 @@ function AgentCompactSubagentsNavButton({
 	);
 }
 
-// A single trigger row inside the collapsed Triggers dropdown. Mirrors the
+// A single automation row inside the collapsed Automations dropdown. Mirrors the
 // subagent switcher (SubagentsSwitcherButton) hover model: a Switch parks at the
 // far right and stays visible while off, an edit button slides in on hover, and a
 // disabled (off) trigger reads as muted. Unlike a DropdownMenuItem this is a plain
@@ -1293,17 +1367,35 @@ function AgentCompactTriggerRow({
 // dropdowns. Drawing natively (rather than scaling a 32px `menu` mark down to
 // 75%) keeps the glyph on ADS's `small` Tile inset (14px) instead of freezing
 // the `medium` inset and shrinking the glyph to 12px. Values not present in the
-// directory (e.g. a freshly created, still-unnamed subagent) fall back to a
-// category-appropriate `small` icon tile, mirroring AgentReferenceChip's
-// fallback. Glyph icons inherit the menu's subtle front-slot treatment;
-// avatars/logos/images keep their color, exactly like the sibling Triggers rows.
+// directory fall back to a category-appropriate `small` icon tile, mirroring
+// AgentReferenceChip's fallback. Subagents are prompt references owned by the
+// parent agent, so they deliberately skip directory avatar resolution and always
+// use the AI-agent tile. Glyph icons inherit the menu's subtle front-slot
+// treatment; avatars/logos/images keep their color, exactly like the sibling
+// Triggers rows.
 function renderAgentReferenceRowVisual(
 	category: RichTextReferenceCategory,
 	label: string,
 	tagColor?: TagColor,
 ): ReactNode {
+	if (category === "subagent") {
+		return (
+			<span className="inline-flex size-6 shrink-0 items-center justify-center">
+				<IconTile
+					aria-hidden
+					className={cn(
+						"border border-border bg-surface",
+						tagColor ? tagColorToMenuIconClassName[tagColor] : "text-icon-subtlest",
+					)}
+					icon={<AiAgentIcon label="" size="small" />}
+					label=""
+					size="small"
+				/>
+			</span>
+		);
+	}
+
 	const visual = getDirectoryMentionItemOrFallback(category, label).visual;
-	const FallbackIcon = category === "subagent" ? AiAgentIcon : PageIcon;
 	return (
 		<span className="inline-flex size-6 shrink-0 items-center justify-center">
 			{visual ? (
@@ -1315,7 +1407,7 @@ function renderAgentReferenceRowVisual(
 						"border border-border bg-surface",
 						tagColor ? tagColorToMenuIconClassName[tagColor] : "text-icon-subtlest",
 					)}
-					icon={<FallbackIcon label="" size="small" />}
+					icon={<PageIcon label="" size="small" />}
 					label=""
 					size="small"
 				/>
@@ -1433,26 +1525,28 @@ function AgentCompactReferenceRow({
 	);
 }
 
-// Trigger dropdown: the trigger list (when any) scrolls in the popup body, and
-// the "Add trigger ›" flyout + "Manage triggers" live in a permanent sticky
-// footer pinned to the bottom — so adding triggers grows the list at the top
+// Automations dropdown: the automation list (when any) scrolls in the popup body,
+// and the "Add automation ›" flyout + "Manage automations" live in a permanent
+// sticky footer pinned to the bottom — so adding automations grows the list at the top
 // while the footer stays anchored. The flyout reuses the full TriggerPicker
 // provider/event content so behavior matches the expanded summary row exactly.
 function AgentCompactTriggersNavButton({
+	automationRules,
 	item,
 	triggers,
-	triggerDefinitions,
 	onSelectEvent,
 	onEditTriggers,
 	onManageTriggers,
+	onAutomationRulesChange,
 	renderTrigger,
 	screenAssistantTargetId,
 }: Readonly<{
+	automationRules?: readonly AgentAutomationRule[];
 	item: AgentCompactConfigNavItem;
 	triggers: readonly string[];
-	triggerDefinitions?: readonly AgentTriggerValue[];
 	onSelectEvent: (providerId: Parameters<typeof createAgentTriggerValue>[0], eventId: string) => void;
-	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
+	onEditTriggers?: (seed?: AgentAutomationRule) => void;
+	onAutomationRulesChange?: (automationRules: readonly AgentAutomationRule[]) => void;
 	// Opens the list-management dialog (reorder / toggle / delete / add), mirroring
 	// "Manage subagents". Falls back to the rule-builder (`onEditTriggers`) when
 	// not provided.
@@ -1464,12 +1558,16 @@ function AgentCompactTriggersNavButton({
 	screenAssistantTargetId?: string;
 }>) {
 	const isEmpty = triggers.length === 0;
-	const definitionsAlignItems =
-		triggerDefinitions !== undefined && triggerDefinitions.length === triggers.length;
 	// Local enable/disable state keyed by row, mirroring the subagent switcher.
 	// Disabled rows read as muted but stay listed until removed via "Manage".
 	const [disabledTriggers, setDisabledTriggers] = useState<ReadonlySet<number>>(() => new Set());
 	const setTriggerEnabled = useCallback((index: number, enabled: boolean) => {
+		if (automationRules && onAutomationRulesChange) {
+			onAutomationRulesChange(
+				automationRules.map((rule, ruleIndex) => (ruleIndex === index ? { ...rule, enabled } : rule)),
+			);
+			return;
+		}
 		setDisabledTriggers((prev) => {
 			const next = new Set(prev);
 			if (enabled) {
@@ -1479,7 +1577,7 @@ function AgentCompactTriggersNavButton({
 			}
 			return next;
 		});
-	}, []);
+	}, [automationRules, onAutomationRulesChange]);
 	// Controlled open for the "Add trigger ›" flyout so typing in its search input
 	// (which blurs the submenu trigger) doesn't collapse the flyout: Base UI
 	// reports that as a `focus-out` close, which we ignore. All explicit closes
@@ -1495,7 +1593,7 @@ function AgentCompactTriggersNavButton({
 		[],
 	);
 	const compactNavMenu = useCompactNavMenuNoInitialHighlight();
-	// "Add trigger ›" reuses the picker's full searchable provider list (the
+	// "Add automation ›" reuses the picker's full searchable provider list (the
 	// editor-palette "search" variant), so the flyout shows the same sticky search
 	// input over the provider→event submenus as the expanded summary row's picker.
 	const addTriggerFlyout = (
@@ -1505,7 +1603,7 @@ function AgentCompactTriggersNavButton({
 					<span className="inline-flex size-6 shrink-0 items-center justify-center [&_svg]:size-4">
 						<PlusIcon />
 					</span>
-					Add trigger
+					Add automation
 				</span>
 			</DropdownMenuSubTrigger>
 			<DropdownMenuSubContent className="w-80 p-0">
@@ -1523,7 +1621,7 @@ function AgentCompactTriggersNavButton({
 					className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
 					render={(
 						<AgentCompactConfigNavButton
-							aria-label="Triggers"
+							aria-label="Automations"
 							item={item}
 							screenAssistantTargetId={screenAssistantTargetId}
 						/>
@@ -1543,16 +1641,17 @@ function AgentCompactTriggersNavButton({
 						<AgentCompactNavMenuList>
 							<DropdownMenuGroup className="p-0">
 								{triggers.map((trigger, index) => {
-									const definition = definitionsAlignItems ? triggerDefinitions?.[index] : undefined;
-									const providerIcon = definition ? renderAgentTriggerProviderTileIcon(definition) : undefined;
+									const rule = automationRules?.[index];
+									const firstTrigger = rule?.triggers[0];
+									const providerIcon = firstTrigger ? renderAgentTriggerProviderTileIcon(firstTrigger) : undefined;
 									return (
 										<AgentCompactTriggerRow
 											key={`trigger-${trigger}-${index}`}
 											icon={providerIcon ?? undefined}
 											label={trigger}
-											enabled={!disabledTriggers.has(index)}
+											enabled={(rule?.enabled !== false) && !disabledTriggers.has(index)}
 											onToggle={(enabled) => setTriggerEnabled(index, enabled)}
-											onEdit={onEditTriggers ? () => onEditTriggers() : undefined}
+											onEdit={onEditTriggers ? () => onEditTriggers(rule) : undefined}
 										/>
 									);
 								})}
@@ -1570,7 +1669,7 @@ function AgentCompactTriggersNavButton({
 						}
 						onClick={() => (onManageTriggers ?? onEditTriggers)?.()}
 					>
-						Manage triggers
+						Manage automations
 					</DropdownMenuItem>
 				</AgentCompactNavMenuPinnedFooter>
 			</MenubarContent>
@@ -1851,9 +1950,10 @@ function AgentCompactConversationStartersNavButton({
 	const fields = Array.from({ length: MAX_AGENT_CONVERSATION_STARTERS }, (_, index) => ({
 		label: starters[index]?.label ?? "",
 	}));
+	const compactNavMenu = useCompactNavMenuNoInitialHighlight();
 
 	return (
-		<MenubarMenu>
+		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
 			<MenubarTrigger
 				className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
 				render={(
@@ -1865,6 +1965,10 @@ function AgentCompactConversationStartersNavButton({
 				)}
 			/>
 			<MenubarContent align="start" className="w-70">
+				<AgentCompactNavMenuInitialHighlightReset
+					enabled={compactNavMenu.resetInitialHighlight}
+					resetToken={compactNavMenu.resetToken}
+				/>
 				{/* 8px (`p-2`) of padding around the starter input fields. */}
 				<div className="flex flex-col gap-1.5 p-2">
 					{fields.map((field, index) => (
@@ -1903,6 +2007,7 @@ function AgentCompactEmptyConfigNav({
 	onAppendListItem,
 	onEditTriggers,
 	onManageTriggers,
+	onAutomationRulesChange,
 	onListItemChange,
 	onOpenDirectory,
 	onRemoveListItem,
@@ -1921,8 +2026,9 @@ function AgentCompactEmptyConfigNav({
 	onManageSubagents?: () => void;
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
-	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
+	onEditTriggers?: (seed?: AgentAutomationRule) => void;
 	onManageTriggers?: () => void;
+	onAutomationRulesChange?: (automationRules: readonly AgentAutomationRule[]) => void;
 	onListItemChange?: (field: AgentConfigListFieldName, index: number, value: string) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
@@ -2016,20 +2122,21 @@ function AgentCompactEmptyConfigNav({
 						);
 					}
 					if (item.agentFieldName === "trigger") {
+						const automationRules = config ? getAgentAutomationRules(config) : [];
 						return (
 							<AgentCompactTriggersNavButton
+								automationRules={automationRules}
 								item={item}
 								key={item.agentFieldName}
+								onAutomationRulesChange={onAutomationRulesChange}
 								onEditTriggers={onEditTriggers}
 								onManageTriggers={onManageTriggers}
 								onSelectEvent={(providerId, eventId) => {
-									const existing = config?.triggerDefinitions ?? [];
-									const next = createAgentTriggerValue(providerId, eventId, existing.length + 1);
-									onEditTriggers?.(next ? [...existing, next] : existing);
+									const next = createAutomationRuleFromEvent(providerId, eventId, automationRules);
+									onEditTriggers?.(next ?? undefined);
 								}}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
-								triggerDefinitions={config?.triggerDefinitions}
-								triggers={config ? getAgentTriggerItems(config) : []}
+								triggers={serializeAgentAutomationRuleLabels(automationRules)}
 							/>
 						);
 					}
@@ -2193,19 +2300,52 @@ function getConversationStarterSummaryItems(config: AgentConfigFormValue): Reado
 		.filter((item) => item.label.length > 0);
 }
 
-function getAgentTriggerItems(config: AgentConfigFormValue): readonly string[] {
-	const triggerDefinitions = serializeAgentTriggerLabels(config.triggerDefinitions);
-	if (triggerDefinitions.length > 0) {
-		return triggerDefinitions;
+function getAgentAutomationRules(config: AgentConfigFormValue): readonly AgentAutomationRule[] {
+	if (Array.isArray(config.automationRules)) {
+		return config.automationRules;
 	}
-
 	const triggers = getNonEmptyConfigItems(config.triggers);
 	if (triggers.length > 0) {
-		return triggers;
+		return inferAutomationRules(triggers) ?? [];
 	}
 
 	const trigger = config.trigger?.trim();
-	return trigger ? [trigger] : [];
+	return trigger ? inferAutomationRules([trigger]) ?? [] : [];
+}
+
+function getAgentAutomationItems(config: AgentConfigFormValue): readonly string[] {
+	return serializeAgentAutomationRuleLabels(getAgentAutomationRules(config));
+}
+
+function serializeAgentAutomationRuleLabels(rules: readonly AgentAutomationRule[] | undefined): string[] {
+	return (rules ?? [])
+		.map((rule, index) => getAgentAutomationRuleLabel(rule, index).trim())
+		.filter(Boolean);
+}
+
+function getNextAutomationRuleIndex(rules: readonly AgentAutomationRule[] | undefined): number {
+	const usedIndexes = (rules ?? [])
+		.map((rule) => /^automation-(\d+)$/u.exec(rule.id)?.[1])
+		.map((value) => Number(value))
+		.filter((value) => Number.isFinite(value));
+	return usedIndexes.length > 0 ? Math.max(...usedIndexes) + 1 : (rules?.length ?? 0) + 1;
+}
+
+function createAutomationRuleFromEvent(
+	providerId: Parameters<typeof createAgentTriggerValue>[0],
+	eventId: string,
+	existingRules: readonly AgentAutomationRule[] | undefined,
+): AgentAutomationRule | null {
+	const nextIndex = getNextAutomationRuleIndex(existingRules);
+	const nextTrigger = createAgentTriggerValue(providerId, eventId, 1);
+	return nextTrigger
+		? createAgentAutomationRule({
+				id: `automation-${nextIndex}`,
+				name: "",
+				prompt: "",
+				triggers: [nextTrigger],
+			})
+		: null;
 }
 
 const iconColorToTagColor: Readonly<Record<string, TagColor>> = {
@@ -2302,7 +2442,7 @@ function AgentReferenceChip({
 		tagColor?: TagColor;
 	}
 >) {
-	const item = category ? getDirectoryMentionItemOrFallback(category, label) : undefined;
+	const item = category && category !== "subagent" ? getDirectoryMentionItemOrFallback(category, label) : undefined;
 	const visual = item?.visual;
 	const resolvedTagColor = tagColor ?? getTagColorForMentionVisual(visual) ?? "blue";
 	const preview = getRichTextReferencePreview(category, label);
@@ -2546,15 +2686,14 @@ interface AgentTriggerSummaryRowProps {
 	addLabel?: string;
 	hideWhenEmpty?: boolean;
 	screenAssistantTargetId?: string;
-	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
+	onEditTriggers?: (seed?: AgentAutomationRule) => void;
 	/**
-	 * The structured definitions backing `items`. Required for inline removal —
-	 * a single chip is removed by splicing this array (the source of truth),
-	 * because `items` is a serialized, possibly-filtered projection whose indices
-	 * may not align with the definitions.
+	 * The structured automation rules backing `items`. Required for inline
+	 * removal and provider icon previews because `items` is only the label
+	 * projection.
 	 */
-	triggerDefinitions?: readonly AgentTriggerValue[];
-	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
+	automationRules?: readonly AgentAutomationRule[];
+	onAutomationRulesChange?: (automationRules: readonly AgentAutomationRule[]) => void;
 	/**
 	 * The collapsed-nav catalog entry for Triggers. When present, the filled-row
 	 * "Edit" control opens the SAME flyout as the collapsed strip (list of
@@ -2568,7 +2707,7 @@ interface AgentTriggerSummaryRowProps {
 }
 
 /**
- * Triggers row. Unlike the generic `AgentFilledSummaryRow`, the trigger entry
+ * Automations row. Unlike the generic `AgentFilledSummaryRow`, the automation entry
  * launches the automation modal instead of inline editing:
  * - empty → the add affordance opens the modal with no triggers;
  * - non-empty → each chip opens the full automation modal and (when removal is wired)
@@ -2583,36 +2722,31 @@ function AgentTriggerSummaryRow({
 	hideWhenEmpty = false,
 	screenAssistantTargetId,
 	onEditTriggers,
-	triggerDefinitions,
-	onTriggerDefinitionsChange,
+	automationRules,
+	onAutomationRulesChange,
 	triggerNavItem,
 	onManageTriggers,
 }: Readonly<AgentTriggerSummaryRowProps>) {
 	const isEmpty = items.length === 0;
 
-	// The structured definitions back the displayed chips one-to-one only when
-	// they are present and index-aligned with the serialized `items`. Both the
-	// provider icon and inline removal depend on this alignment (removal also
-	// needs a change handler).
-	const definitionsAlignItems =
-		triggerDefinitions !== undefined && triggerDefinitions.length === items.length;
-	const canRemoveInline = definitionsAlignItems && Boolean(onTriggerDefinitionsChange);
-	const handleRemoveTrigger = (index: number) => {
-		if (!triggerDefinitions) {
+	const rulesAlignItems =
+		automationRules !== undefined && automationRules.length === items.length;
+	const canRemoveInline = rulesAlignItems && Boolean(onAutomationRulesChange);
+	const handleRemoveAutomation = (index: number) => {
+		if (!automationRules) {
 			return;
 		}
-		onTriggerDefinitionsChange?.(triggerDefinitions.filter((_, i) => i !== index));
+		onAutomationRulesChange?.(automationRules.filter((_, i) => i !== index));
 	};
 
-	// Picking a provider event from the legacy flyout appends one trigger and
-	// opens the automation modal seeded with the full current trigger set.
+	// Picking a provider event starts a brand-new automation rule seeded only
+	// with that event, so previous automations never appear in the new draft.
 	const handleSelectEvent = (
 		providerId: Parameters<typeof createAgentTriggerValue>[0],
 		eventId: string,
 	) => {
-		const existing = triggerDefinitions ?? [];
-		const next = createAgentTriggerValue(providerId, eventId, existing.length + 1);
-		onEditTriggers?.(next ? [...existing, next] : existing);
+		const next = createAutomationRuleFromEvent(providerId, eventId, automationRules);
+		onEditTriggers?.(next ?? undefined);
 	};
 
 	if (isEmpty && (hideWhenEmpty || !addLabel)) {
@@ -2626,31 +2760,28 @@ function AgentTriggerSummaryRow({
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
 			<div className="sm:w-32 sm:shrink-0">
-				<AgentSectionLabel>Triggers</AgentSectionLabel>
+				<AgentSectionLabel>Automations</AgentSectionLabel>
 			</div>
 			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
 				{isEmpty ? (
 					<AgentAddValueButton
 						icon="add"
 						label={addLabel ?? "Add"}
-						onClick={() => onEditTriggers?.([])}
+						onClick={() => onEditTriggers?.()}
 					/>
 				) : (
 					<div className="group/trigger-edit flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
 						{items.map((item, index) => {
-							// Show the provider's own logo/icon — identical to the trigger
-							// picker and rows — whenever the structured definition that backs
-							// this chip is available and index-aligned with `items`. Falls
-							// back to the chip's default icon for legacy label-only triggers.
-							const definition = definitionsAlignItems ? triggerDefinitions?.[index] : undefined;
-							const providerIcon = definition ? renderAgentTriggerProviderIcon(definition) : undefined;
+							const rule = rulesAlignItems ? automationRules?.[index] : undefined;
+							const firstTrigger = rule?.triggers[0];
+							const providerIcon = firstTrigger ? renderAgentTriggerProviderIcon(firstTrigger) : undefined;
 							// Product logos / brand images already render as a centered 16px
 							// mark; only the stroked `@atlaskit/icon` glyph kinds need the
 							// latest Tag standard's `IconTile` xxsmall/transparent wrap so the
 							// 12px glyph centers in the chip's leading slot instead of
 							// left-aligning with an oversized gap.
-							const providerIconKind = definition
-								? getTriggerProvider(definition.providerId)?.icon.kind
+							const providerIconKind = firstTrigger
+								? getTriggerProvider(firstTrigger.providerId)?.icon.kind
 								: undefined;
 							const elemBefore =
 								providerIcon && providerIconKind !== "atlassian-logo" && providerIconKind !== "image" ? (
@@ -2664,8 +2795,8 @@ function AgentTriggerSummaryRow({
 								) : (
 									providerIcon ?? undefined
 								);
-							// Clicking any configured trigger chip opens the full automation
-							// modal because prompt/name/active state is shared across rows.
+							// Clicking any configured automation chip opens that rule's editor;
+							// event triggers remain nested inside the automation.
 							return (
 								<AgentReferenceChip
 									key={`trigger-${item}-${index}`}
@@ -2673,22 +2804,23 @@ function AgentTriggerSummaryRow({
 									label={item}
 									onClick={
 										onEditTriggers
-											? () => onEditTriggers(triggerDefinitions)
+											? () => onEditTriggers(rule)
 											: undefined
 									}
-									onRemove={canRemoveInline ? () => handleRemoveTrigger(index) : undefined}
+									onRemove={canRemoveInline ? () => handleRemoveAutomation(index) : undefined}
 								/>
 							);
 						})}
 						{onEditTriggers ? (
 							// The trailing "Edit" control opens the SAME management flyout
-							// as the collapsed nav strip (list of triggers + "Add trigger ›"
-							// + "Manage triggers") by reusing `AgentCompactTriggersNavButton`
+							// as the collapsed nav strip (automation list + "Add automation ›"
+							// + "Manage automations") by reusing `AgentCompactTriggersNavButton`
 							// with the edit-styled button as its trigger — mirroring how the
 							// Apps/Skills/Subagents rows back their inline controls with the
 							// collapsed-nav dropdown so both layouts share one experience.
 							triggerNavItem ? (
 								<AgentCompactTriggersNavButton
+									automationRules={automationRules}
 									item={triggerNavItem}
 									onEditTriggers={onEditTriggers}
 									onManageTriggers={onManageTriggers}
@@ -2700,7 +2832,6 @@ function AgentTriggerSummaryRow({
 											label={addLabel ?? "Edit"}
 										/>
 									}
-									triggerDefinitions={triggerDefinitions}
 									triggers={items}
 								/>
 							) : (
@@ -2737,7 +2868,7 @@ interface AgentFilledConfigSummaryProps {
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
-	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
+	onEditTriggers?: (seed?: AgentAutomationRule) => void;
 	onKnowledgeModeChange?: (next: KnowledgeModeValue) => void;
 	onListItemChange?: (field: AgentConfigListFieldName, index: number, value: string) => void;
 	onManageSubagents?: () => void;
@@ -2749,7 +2880,7 @@ interface AgentFilledConfigSummaryProps {
 	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	onToggleListItem?: (field: AgentConfigListFieldName, index: number, enabled: boolean) => void;
-	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
+	onAutomationRulesChange?: (automationRules: readonly AgentAutomationRule[]) => void;
 	reasoningMode: ReasoningModeValue;
 	screenAssistantTargetPrefix?: string;
 	selectedListItemIndexByField?: Partial<Record<AgentConfigListFieldName, number>>;
@@ -2773,13 +2904,14 @@ function AgentFilledConfigSummary({
 	onRemoveListItem,
 	onSelectListItem,
 	onToggleListItem,
-	onTriggerDefinitionsChange,
+	onAutomationRulesChange,
 	reasoningMode,
 	screenAssistantTargetPrefix,
 	selectedListItemIndexByField,
 	showAddButtons = true,
 }: Readonly<AgentFilledConfigSummaryProps>) {
-	const triggerItems = getAgentTriggerItems(config);
+	const automationRules = getAgentAutomationRules(config);
+	const triggerItems = serializeAgentAutomationRuleLabels(automationRules);
 	const skillItems = getNonEmptyConfigItems(config.skills);
 	const appItems = getNonEmptyConfigItems(config.apps);
 	const subagentItems = getNonEmptyConfigItems(config.subagents);
@@ -2847,9 +2979,9 @@ function AgentFilledConfigSummary({
 					items={triggerItems}
 					onEditTriggers={onEditTriggers}
 					onManageTriggers={onManageTriggers}
-					onTriggerDefinitionsChange={onTriggerDefinitionsChange}
+					onAutomationRulesChange={onAutomationRulesChange}
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
-					triggerDefinitions={config.triggerDefinitions}
+					automationRules={automationRules}
 					triggerNavItem={triggerNavItem}
 				/>
 			),
@@ -3027,7 +3159,7 @@ function AgentFilledConfigSummary({
 
 function hasFilledAgentConfig(config: AgentConfigFormValue): boolean {
 	return (
-		getAgentTriggerItems(config).length > 0 ||
+		getAgentAutomationItems(config).length > 0 ||
 		getNonEmptyConfigItems(config.skills).length > 0 ||
 		getNonEmptyConfigItems(config.tools).length > 0 ||
 		getNonEmptyConfigItems(config.subagents).length > 0 ||
@@ -3581,10 +3713,13 @@ function AgentInstructionsComposer({
 		label: string;
 	}>());
 	const mentionSources = useMemo<RichTextMentionSources>(() => ({
-		subagent: mergeMentionItems(
-			mapConfigValuesToMentionItems("subagent", config.subagents),
-			EDITOR_PALETTE_MENTION_SOURCES.subagent,
-		),
+		// Subagents are NESTED agents owned by THIS agent — not globally
+		// at-mentionable top-level agents. So the `@subagent` list comes ONLY from
+		// this agent's own subagents (empty/0 until it generates some); the global
+		// parent-agent palette is intentionally NOT merged in here.
+		// Prompt references deliberately carry no directory visual/avatar: subagents
+		// are prompt copies under the parent agent, not nested parent-agent profiles.
+		subagent: mapSubagentConfigValuesToMentionItems(config.subagents),
 		skill: mergeMentionItems(
 			mapConfigValuesToMentionItems("skill", config.skills),
 			EDITOR_PALETTE_MENTION_SOURCES.skill,
@@ -3701,6 +3836,7 @@ function AgentInstructionsComposer({
 				className="space-y-2"
 				contentClassName={cn("pt-2", contentClassName)}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
+				enableDirectoryAutocomplete
 				placeholder="Press / to help me describe the agent's role, or start with a template"
 				placeholderSlot={(
 					<p className="tiptap-editor text-sm leading-[1.55] text-text-subtlest">
@@ -3882,7 +4018,7 @@ interface AgentCompactConfigToolbarBelowProps {
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
-	onEditTriggers?: (seed?: readonly AgentTriggerValue[]) => void;
+	onEditTriggers?: (seed?: AgentAutomationRule) => void;
 	onManageTriggers?: () => void;
 	onListItemChange?: (field: AgentConfigListFieldName, index: number, value: string) => void;
 	onManageSubagents?: () => void;
@@ -3891,7 +4027,7 @@ interface AgentCompactConfigToolbarBelowProps {
 	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	onToggleListItem?: (field: AgentConfigListFieldName, index: number, enabled: boolean) => void;
-	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
+	onAutomationRulesChange?: (automationRules: readonly AgentAutomationRule[]) => void;
 	screenAssistantTargetPrefix?: string;
 	selectedListItemIndexByField?: Partial<Record<AgentConfigListFieldName, number>>;
 }
@@ -3912,7 +4048,7 @@ function AgentCompactConfigToolbarBelow({
 	onSelectListItem,
 	onTextChange,
 	onToggleListItem,
-	onTriggerDefinitionsChange,
+	onAutomationRulesChange,
 	screenAssistantTargetPrefix,
 	selectedListItemIndexByField,
 }: Readonly<AgentCompactConfigToolbarBelowProps>) {
@@ -4064,7 +4200,7 @@ function AgentCompactConfigToolbarBelow({
 							onSelectListItem={onSelectListItem}
 							onTextChange={onTextChange}
 							onToggleListItem={onToggleListItem}
-							onTriggerDefinitionsChange={onTriggerDefinitionsChange}
+							onAutomationRulesChange={onAutomationRulesChange}
 							reasoningMode={reasoningValue}
 							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 							selectedListItemIndexByField={selectedListItemIndexByField}
@@ -4094,6 +4230,7 @@ function AgentCompactConfigToolbarBelow({
 							onRemoveListItem={onRemoveListItem}
 							onSelectListItem={onSelectListItem}
 							onToggleListItem={onToggleListItem}
+							onAutomationRulesChange={onAutomationRulesChange}
 							reasoningValue={reasoningValue}
 							onReasoningValueChange={setReasoningValue}
 							knowledgeMode={knowledgeMode}
@@ -4140,7 +4277,7 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	// the host (e.g. the Studio shell opens its Agent Directory on the first
 	// template tab) instead of opening the composer's built-in templates dialog.
 	onStartWithTemplate?: () => void;
-	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
+	onAutomationRulesChange?: (automationRules: readonly AgentAutomationRule[]) => void;
 	profileAvatarSrc?: string;
 	profileConfig?: AgentConfigFormValue;
 	screenAssistantTargetPrefix?: string;
@@ -4180,7 +4317,7 @@ export const AgentConfigFields = memo(
 		onStartWithTemplate,
 		onTextChange,
 		onToggleListItem,
-		onTriggerDefinitionsChange,
+		onAutomationRulesChange,
 		profileAvatarSrc,
 		profileConfig,
 		screenAssistantTargetPrefix,
@@ -4248,23 +4385,46 @@ export const AgentConfigFields = memo(
 		const handleOpenDirectory = useCallback((directory: AgentDirectoryKind, selectedItem?: string) => {
 			onOpenDirectory?.(directory, selectedItem);
 		}, [onOpenDirectory]);
-		// Trigger authoring routes through the rule-builder modal hosted here so a
+		const currentAutomationRules = useMemo(
+			() => getAgentAutomationRules(config),
+			[config],
+		);
+		// Automation authoring routes through the rule-builder modal hosted here so a
 		// single dialog instance serves every entry point (summary row, collapsed
-		// nav, missing-config tile). `seed` carries the definitions the modal opens
-		// with — the existing list when editing, or a freshly-picked trigger.
-		const [triggersEditor, setTriggersEditor] = useState<{ open: boolean; seed: readonly AgentTriggerValue[] }>({
+		// nav, missing-config tile). `seed` carries the automation rule the modal
+		// opens with — an existing rule when editing, or a freshly-picked event.
+		const [triggersEditor, setTriggersEditor] = useState<{ open: boolean; seed: AgentAutomationRule }>({
 			open: false,
-			seed: [],
+			seed: createAgentAutomationRule({
+					id: "automation-1",
+				name: "",
+				prompt: "",
+				triggers: [],
+			}),
 		});
-		const handleEditTriggers = useCallback((seed?: readonly AgentTriggerValue[]) => {
-			setTriggersEditor({ open: true, seed: seed ?? config.triggerDefinitions ?? [] });
-		}, [config.triggerDefinitions]);
+		const handleEditTriggers = useCallback((seed?: AgentAutomationRule) => {
+			setTriggersEditor({
+				open: true,
+				seed: seed ?? createAgentAutomationRule({
+					id: `automation-${getNextAutomationRuleIndex(currentAutomationRules)}`,
+					name: "",
+					prompt: "",
+					triggers: [],
+				}),
+			});
+		}, [currentAutomationRules]);
 		const handleTriggersEditorOpenChange = useCallback((open: boolean) => {
 			setTriggersEditor((prev) => ({ ...prev, open }));
 		}, []);
-		const handleTriggersSave = useCallback((triggers: readonly AgentTriggerValue[]) => {
-			onTriggerDefinitionsChange?.(triggers);
-		}, [onTriggerDefinitionsChange]);
+		const handleTriggersSave = useCallback((automationRule: AgentAutomationRule) => {
+			const current = currentAutomationRules;
+			const existingIndex = current.findIndex((rule) => rule.id === automationRule.id);
+			onAutomationRulesChange?.(
+				existingIndex >= 0
+					? current.map((rule, index) => (index === existingIndex ? automationRule : rule))
+					: [...current, automationRule],
+			);
+		}, [currentAutomationRules, onAutomationRulesChange]);
 
 		const [manageTriggersOpen, setManageTriggersOpen] = useState(false);
 		const handleManageTriggers = useCallback(() => {
@@ -4275,65 +4435,54 @@ export const AgentConfigFields = memo(
 
 			setManageTriggersOpen(true);
 		}, [onManageTriggers]);
-		const handleAddTriggerFromManage = useCallback(
+		const handleAddAutomationFromManage = useCallback(
 			(providerId: Parameters<typeof createAgentTriggerValue>[0], eventId: string) => {
-				const existing = config.triggerDefinitions ?? [];
-				const next = createAgentTriggerValue(providerId, eventId, existing.length + 1);
+				const next = createAutomationRuleFromEvent(providerId, eventId, currentAutomationRules);
 				if (!next) {
 					return;
 				}
-				const sharedPrompt = existing.find((trigger) => trigger.prompt?.trim())?.prompt ?? "";
-				const automationName = existing.find((trigger) => trigger.automationName?.trim())?.automationName ?? "";
-				const enabled = existing.find((trigger) => typeof trigger.enabled !== "undefined")?.enabled ?? true;
-				onTriggerDefinitionsChange?.([
-					...existing,
-					{
-						...next,
-						automationName,
-						enabled,
-						prompt: sharedPrompt,
-					},
-				]);
+				setManageTriggersOpen(false);
+				handleEditTriggers(next);
 			},
-			[config.triggerDefinitions, onTriggerDefinitionsChange],
+			[currentAutomationRules, handleEditTriggers],
 		);
-		const handleReorderTriggers = useCallback(
+		const handleReorderAutomations = useCallback(
 			(activeId: string, overId: string) => {
-				const current = config.triggerDefinitions ?? [];
-				const from = current.findIndex((trigger) => trigger.id === activeId);
-				const to = current.findIndex((trigger) => trigger.id === overId);
+				const current = currentAutomationRules;
+				const from = current.findIndex((rule) => rule.id === activeId);
+				const to = current.findIndex((rule) => rule.id === overId);
 				if (from === -1 || to === -1) {
 					return;
 				}
 				const next = current.slice();
 				const [moved] = next.splice(from, 1);
 				next.splice(to, 0, moved);
-				onTriggerDefinitionsChange?.(next);
+				onAutomationRulesChange?.(next);
 			},
-			[config.triggerDefinitions, onTriggerDefinitionsChange],
+			[currentAutomationRules, onAutomationRulesChange],
 		);
-		const handleToggleTrigger = useCallback(
+		const handleToggleAutomation = useCallback(
 			(id: string, enabled: boolean) => {
-				const current = config.triggerDefinitions ?? [];
-				onTriggerDefinitionsChange?.(
-					current.map((trigger) => (trigger.id === id ? { ...trigger, enabled } : trigger)),
+				const current = currentAutomationRules;
+				onAutomationRulesChange?.(
+					current.map((rule) => (rule.id === id ? { ...rule, enabled } : rule)),
 				);
 			},
-			[config.triggerDefinitions, onTriggerDefinitionsChange],
+			[currentAutomationRules, onAutomationRulesChange],
 		);
-		const handleDeleteTrigger = useCallback(
+		const handleDeleteAutomation = useCallback(
 			(id: string) => {
-				const current = config.triggerDefinitions ?? [];
-				onTriggerDefinitionsChange?.(current.filter((trigger) => trigger.id !== id));
+				const current = currentAutomationRules;
+				onAutomationRulesChange?.(current.filter((rule) => rule.id !== id));
 			},
-			[config.triggerDefinitions, onTriggerDefinitionsChange],
+			[currentAutomationRules, onAutomationRulesChange],
 		);
-		const handleEditTriggerFromManage = useCallback(
-			(trigger: AgentTriggerValue) => {
+		const handleEditAutomationFromManage = useCallback(
+			(automationRule: AgentAutomationRule) => {
 				setManageTriggersOpen(false);
-				handleEditTriggers(config.triggerDefinitions ?? [trigger]);
+				handleEditTriggers(automationRule);
 			},
-			[config.triggerDefinitions, handleEditTriggers],
+			[handleEditTriggers],
 		);
 
 		return (
@@ -4418,7 +4567,7 @@ export const AgentConfigFields = memo(
 							onSelectListItem={handleSelectListItem}
 							onTextChange={handleTextChange}
 							onToggleListItem={onToggleListItem}
-							onTriggerDefinitionsChange={onTriggerDefinitionsChange}
+							onAutomationRulesChange={onAutomationRulesChange}
 							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 							selectedListItemIndexByField={selectedListItemIndexByField}
 						/>
@@ -4427,18 +4576,18 @@ export const AgentConfigFields = memo(
 				<AgentTriggersDialog
 					open={triggersEditor.open}
 					onOpenChange={handleTriggersEditorOpenChange}
-					triggerDefinitions={triggersEditor.seed}
+					automationRule={triggersEditor.seed}
 					onSave={handleTriggersSave}
 				/>
 				<ManageTriggersDialog
 					open={manageTriggersOpen}
 					onOpenChange={setManageTriggersOpen}
-					triggers={config.triggerDefinitions ?? []}
-					onAddTrigger={handleAddTriggerFromManage}
-					onReorderTriggers={handleReorderTriggers}
-					onToggleTrigger={handleToggleTrigger}
-					onDeleteTrigger={handleDeleteTrigger}
-					onEditTrigger={handleEditTriggerFromManage}
+					automationRules={currentAutomationRules}
+					onAddAutomation={handleAddAutomationFromManage}
+					onReorderAutomations={handleReorderAutomations}
+					onToggleAutomation={handleToggleAutomation}
+					onDeleteAutomation={handleDeleteAutomation}
+					onEditAutomation={handleEditAutomationFromManage}
 				/>
 			</div>
 		);
