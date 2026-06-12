@@ -25,10 +25,12 @@ import { DIRECTORY_APPS } from "@/app/data/directory/apps";
 import { repairGeneratedAgentCatalog } from "@/app/data/directory/repair-agent-result";
 import { resolveCatalogNames } from "@/app/data/directory/resolve-ids";
 import {
+	createAgentAutomationRule,
 	createAgentTriggerValue,
+	getAgentAutomationRuleLabel,
 	inferScheduledEventId,
 	inferTriggerDefinitions,
-	serializeAgentTriggerLabels,
+	type AgentAutomationRule,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/data/trigger-catalog";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
@@ -521,6 +523,24 @@ function nextTriggerIndex(
 	return maxIndex + 1;
 }
 
+function nextAutomationRuleIndex(existing: readonly AgentAutomationRule[]): number {
+	let maxIndex = 0;
+	for (const rule of existing) {
+		const match = /^automation-(\d+)$/u.exec(rule.id);
+		const suffix = match ? Number(match[1]) : 0;
+		if (Number.isInteger(suffix) && suffix > maxIndex) {
+			maxIndex = suffix;
+		}
+	}
+	return maxIndex + 1;
+}
+
+function serializeAutomationRuleLabels(rules: readonly AgentAutomationRule[]): string[] {
+	return rules
+		.map((rule, index) => getAgentAutomationRuleLabel(rule, index).trim())
+		.filter(Boolean);
+}
+
 /**
  * Builds a `Partial<agent-result>` that MERGES the requested changes into the
  * open agent. Arrays are pre-unioned here because `updateSessionAgentDraft`
@@ -539,14 +559,16 @@ export function buildAgentUpdatePatch(
 	const patch: Partial<AgentResult> = {};
 
 	if (intent.triggerSpecs.length > 0) {
-		const existing = currentDraft.triggerDefinitions ?? [];
+		const existingRules = currentDraft.automationRules ?? [];
+		const existingTriggers = existingRules.flatMap((rule) => rule.triggers);
 		// Ids must stay unique across the merged set even after middle triggers
 		// were removed, so seed the counter past the highest existing suffix for
 		// each provider+event and bump again on any residual collision.
-		const usedIds = new Set(existing.map((def) => def.id));
-		const added: AgentTriggerValue[] = [];
+		const usedIds = new Set(existingTriggers.map((def) => def.id));
+		const addedRules: AgentAutomationRule[] = [];
+		let automationRuleIndex = nextAutomationRuleIndex(existingRules);
 		for (const spec of intent.triggerSpecs) {
-			let index = nextTriggerIndex(existing, spec.providerId, spec.eventId);
+			let index = nextTriggerIndex(existingTriggers, spec.providerId, spec.eventId);
 			let value = createAgentTriggerValue(spec.providerId, spec.eventId, index);
 			// createAgentTriggerValue can return null; skip those (preserves prior behavior).
 			while (value && usedIds.has(value.id)) {
@@ -555,12 +577,20 @@ export function buildAgentUpdatePatch(
 			}
 			if (value) {
 				usedIds.add(value.id);
-				added.push({ ...value, prompt: spec.prompt, automationName: spec.automationName });
+				addedRules.push(
+					createAgentAutomationRule({
+						id: `automation-${automationRuleIndex}`,
+						name: spec.automationName,
+						prompt: spec.prompt,
+						triggers: [value],
+					}),
+				);
+				automationRuleIndex += 1;
 			}
 		}
-		const merged = [...existing, ...added];
-		const labels = serializeAgentTriggerLabels(merged);
-		patch.triggerDefinitions = merged;
+		const merged = [...existingRules, ...addedRules];
+		const labels = serializeAutomationRuleLabels(merged);
+		patch.automationRules = merged;
 		patch.triggers = labels;
 		patch.trigger = labels[0] ?? "";
 	}

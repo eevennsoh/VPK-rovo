@@ -39,13 +39,15 @@ test("canonical example → scheduled trigger (NOT slack) with fake instruction 
 	assert.equal(intent.appNames.length, 0, "slack is the trigger destination, not an app");
 
 	const patch = buildAgentUpdatePatch(CANONICAL, {});
-	assert.ok(Array.isArray(patch.triggerDefinitions) && patch.triggerDefinitions.length === 1);
-	const def = patch.triggerDefinitions[0];
+	assert.ok(Array.isArray(patch.automationRules) && patch.automationRules.length === 1);
+	const rule = patch.automationRules[0];
+	assert.equal(rule.triggers.length, 1, "one nested event trigger");
+	const def = rule.triggers[0];
 	assert.equal(def.providerId, "scheduled", "cadence must win over the slack destination");
-	assert.ok(def.prompt && def.prompt.length > 0, "fake instruction present");
-	assert.ok(def.automationName && def.automationName.length > 0, "fake automation name present");
-	// Tri-field invariant: triggers/trigger derived + index-aligned with defs.
-	assert.equal(patch.triggers.length, patch.triggerDefinitions.length);
+	assert.ok(rule.prompt && rule.prompt.length > 0, "fake instruction present");
+	assert.ok(rule.name && rule.name.length > 0, "fake automation name present");
+	// Legacy label invariant: triggers/trigger derived + index-aligned with rules.
+	assert.equal(patch.triggers.length, patch.automationRules.length);
 	assert.equal(patch.trigger, patch.triggers[0]);
 });
 
@@ -122,14 +124,21 @@ test("update unions with existing draft — no clobber, no dupes", async () => {
 	const { buildAgentUpdatePatch } = await loadModule();
 	const current = {
 		apps: ["Slack"],
-		triggerDefinitions: [
-			{ id: "scheduled-every-hour-1", providerId: "scheduled", eventId: "every-hour" },
+		automationRules: [
+			{
+				id: "automation-1",
+				name: "Hourly digest",
+				prompt: "Summarize updates every hour.",
+				triggers: [
+					{ id: "scheduled-every-hour-1", providerId: "scheduled", eventId: "every-hour" },
+				],
+			},
 		],
-		triggers: ["Every hour"],
+		triggers: ["Hourly digest"],
 	};
 	const patch = buildAgentUpdatePatch("give it Jira tools and add a trigger every weekday morning", current);
 	assert.ok(patch.apps.includes("Slack") && patch.apps.includes("Jira"), "existing + new apps");
-	assert.ok(patch.triggerDefinitions.length === 2, "existing + new trigger");
+	assert.ok(patch.automationRules.length === 2, "existing + new automation rule");
 	// No duplicate app even if requested again.
 	const again = buildAgentUpdatePatch("give it Slack tools", { apps: ["Slack"] });
 	assert.deepEqual(again.apps, ["Slack"]);
@@ -141,12 +150,19 @@ test("trigger ids stay unique after a middle trigger was removed (#4)", async ()
 	// predecessor `-1` was removed). The naive `length + index + 1` would compute
 	// index 2 here and collide; the max-suffix derivation must skip past it.
 	const current = {
-		triggerDefinitions: [
+		automationRules: [
 			{
-				id: "scheduled-custom-schedule-2",
-				providerId: "scheduled",
-				eventId: "custom-schedule",
-				params: {},
+				id: "automation-1",
+				name: "Existing schedule",
+				prompt: "Existing instructions.",
+				triggers: [
+					{
+						id: "scheduled-custom-schedule-2",
+						providerId: "scheduled",
+						eventId: "custom-schedule",
+						params: {},
+					},
+				],
 			},
 		],
 	};
@@ -154,8 +170,8 @@ test("trigger ids stay unique after a middle trigger was removed (#4)", async ()
 		"add a trigger to summarize updates every Friday 9am",
 		current,
 	);
-	assert.equal(patch.triggerDefinitions.length, 2, "existing + new trigger");
-	const ids = patch.triggerDefinitions.map((def) => def.id);
+	assert.equal(patch.automationRules.length, 2, "existing + new automation rule");
+	const ids = patch.automationRules.flatMap((rule) => rule.triggers.map((def) => def.id));
 	assert.equal(new Set(ids).size, ids.length, "no duplicate trigger ids");
 	assert.ok(ids.includes("scheduled-custom-schedule-2"), "surviving id preserved");
 });
@@ -168,8 +184,8 @@ test("create returns a believable fresh agent", async () => {
 	assert.ok(result.summary && result.summary.length > 0);
 	assert.ok(Array.isArray(result.conversationStarters) && result.conversationStarters.length >= 3);
 	// The named trigger flows into the create too.
-	assert.ok(Array.isArray(result.triggerDefinitions) && result.triggerDefinitions.length === 1);
-	assert.equal(result.triggerDefinitions[0].providerId, "scheduled");
+	assert.ok(Array.isArray(result.automationRules) && result.automationRules.length === 1);
+	assert.equal(result.automationRules[0].triggers[0].providerId, "scheduled");
 });
 
 test("chit-chat is NOT a build intent", async () => {

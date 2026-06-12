@@ -27,7 +27,7 @@ const CHANGE_GROUPS: readonly ChangeGroup[] = [
 	{ id: "profile", label: "Agent profile", fields: ["name", "description", "summary", "byline", "sourceLabel"] },
 	{ id: "instructions", label: "Instructions", fields: ["instructions", "contextDescription", "guardrail", "reasoningMode"] },
 	{ id: "icon", label: "Icon", fields: ["avatarSrc", "avatarFallback"] },
-	{ id: "triggers", label: "Triggers", fields: ["trigger", "triggers", "triggerDefinitions"] },
+	{ id: "triggers", label: "Automations", fields: ["automationRules"] },
 	{ id: "memory", label: "Memory", fields: ["memoryMode"] },
 	{ id: "knowledge", label: "Knowledge", fields: ["knowledge", "knowledgeMode"] },
 	{ id: "skills", label: "Skills", fields: ["skills"] },

@@ -32,7 +32,7 @@ import {
 import {
 	getTriggerProvider,
 	markSessionProviderConnected,
-	serializeAgentTriggerLabels,
+	type AgentAutomationRule,
 	type AgentTriggerProviderId,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/data/trigger-catalog";
@@ -781,15 +781,11 @@ export function RovoAppAgentConfigPanel({
 		},
 		[selectSubagentByDerivedIndex],
 	);
-	const handleTriggerDefinitionsChange = useCallback(
-		(triggerDefinitions: readonly AgentTriggerValue[]) => {
-			const triggerLabels = serializeAgentTriggerLabels(triggerDefinitions);
-
+	const handleAutomationRulesChange = useCallback(
+		(automationRules: readonly AgentAutomationRule[]) => {
 			updateActiveConfig((config) => ({
 				...config,
-				triggerDefinitions,
-				trigger: triggerLabels[0] ?? "",
-				triggers: triggerLabels,
+				automationRules,
 			}));
 		},
 		[updateActiveConfig],
@@ -813,13 +809,15 @@ export function RovoAppAgentConfigPanel({
 			const { providerId } = targetTrigger;
 			// Mark every trigger sharing this provider as connecting (provider-level).
 			updateActiveConfig((config) => {
-				const triggerDefinitions = (config.triggerDefinitions ?? []).map((trigger) =>
-					trigger.providerId === providerId
-						? { ...trigger, connectionState: "connecting" as const }
-						: trigger,
-				);
-				const triggerLabels = serializeAgentTriggerLabels(triggerDefinitions);
-				return { ...config, triggerDefinitions, trigger: triggerLabels[0] ?? "", triggers: triggerLabels };
+				const automationRules = (config.automationRules ?? []).map((rule) => ({
+					...rule,
+					triggers: rule.triggers.map((trigger) =>
+						trigger.providerId === providerId
+							? { ...trigger, connectionState: "connecting" as const }
+							: trigger,
+					),
+				}));
+				return { ...config, automationRules };
 			});
 			setConnectingProvider({ providerId, trigger: targetTrigger });
 
@@ -829,13 +827,15 @@ export function RovoAppAgentConfigPanel({
 			connectTimerRef.current = window.setTimeout(() => {
 				markSessionProviderConnected(providerId);
 				updateActiveConfig((config) => {
-					const triggerDefinitions = (config.triggerDefinitions ?? []).map((trigger) =>
-						trigger.providerId === providerId
-							? { ...trigger, connectionState: "connected" as const }
-							: trigger,
-					);
-					const triggerLabels = serializeAgentTriggerLabels(triggerDefinitions);
-					return { ...config, triggerDefinitions, trigger: triggerLabels[0] ?? "", triggers: triggerLabels };
+					const automationRules = (config.automationRules ?? []).map((rule) => ({
+						...rule,
+						triggers: rule.triggers.map((trigger) =>
+							trigger.providerId === providerId
+								? { ...trigger, connectionState: "connected" as const }
+								: trigger,
+						),
+					}));
+					return { ...config, automationRules };
 				});
 				setConnectingProvider(null);
 				connectTimerRef.current = null;
@@ -1380,7 +1380,7 @@ export function RovoAppAgentConfigPanel({
 											onManageSubagents={() => setIsManageSubagentsOpen(true)}
 											onSelectListItem={handleSelectListItem}
 											onStartWithTemplate={onStartWithTemplate}
-											onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
+											onAutomationRulesChange={handleAutomationRulesChange}
 											onOpenDirectory={handleOpenDirectory}
 											selectedListItemIndexByField={{ subagents: selectedSubagentIndex }}
 											screenAssistantTargetPrefix="studio-agent-config"

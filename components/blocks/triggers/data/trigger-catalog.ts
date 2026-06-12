@@ -69,6 +69,15 @@ export interface AgentTriggerValue {
 	enabled?: boolean;
 }
 
+export interface AgentAutomationRule {
+	id: string;
+	name?: string;
+	prompt?: string;
+	/** Whether the automation rule is active. Treated as `true` when undefined. */
+	enabled?: boolean;
+	triggers: readonly AgentTriggerValue[];
+}
+
 const REPOSITORY_OPTIONS = [
 	{ label: "Select repos", value: "select-repos" },
 	{ label: "vpf", value: "vpf", description: "eevennsoh" },
@@ -730,6 +739,55 @@ export function inferTriggerDefinitions(
 	return definitions.length > 0 ? definitions : undefined;
 }
 
+export function createAgentAutomationRule({
+	enabled = true,
+	id,
+	name,
+	prompt,
+	triggers,
+}: Readonly<{
+	enabled?: boolean;
+	id: string;
+	name?: string;
+	prompt?: string;
+	triggers: readonly AgentTriggerValue[];
+}>): AgentAutomationRule {
+	return {
+		id,
+		name,
+		prompt,
+		enabled,
+		triggers: [...triggers],
+	};
+}
+
+export function inferAutomationRules(
+	triggers: readonly string[] | undefined,
+	options?: Readonly<{
+		automationName?: string;
+		prompt?: string;
+	}>,
+): AgentAutomationRule[] | undefined {
+	const triggerDefinitions = inferTriggerDefinitions(triggers);
+	if (!triggerDefinitions || triggerDefinitions.length === 0) {
+		return undefined;
+	}
+
+	return [
+		createAgentAutomationRule({
+			id: "automation-1",
+			name: options?.automationName,
+			prompt: options?.prompt,
+			triggers: triggerDefinitions,
+		}),
+	];
+}
+
+export function getAgentAutomationRuleLabel(rule: AgentAutomationRule, index = 0): string {
+	const name = rule.name?.trim();
+	return name && name.length > 0 ? name : `Automation ${index + 1}`;
+}
+
 export function serializeAgentTriggerLabels(
 	triggers: readonly AgentTriggerValue[] | undefined,
 ): string[] {
@@ -742,6 +800,14 @@ export const DEFAULT_CONFIGURED_TRIGGER_VALUES = [
 	createAgentTriggerValue("scheduled", "every-hour", 1),
 	createAgentTriggerValue("github-gitlab", "draft-opened", 2),
 ].filter(Boolean) as AgentTriggerValue[];
+
+export const DEFAULT_CONFIGURED_AUTOMATION_RULES = [
+	createAgentAutomationRule({
+		id: "automation-1",
+		name: "Draft review automation",
+		triggers: DEFAULT_CONFIGURED_TRIGGER_VALUES,
+	}),
+] as const satisfies readonly AgentAutomationRule[];
 
 export const DEFAULT_NEEDS_CONNECTION_TRIGGER_VALUES = [
 	{

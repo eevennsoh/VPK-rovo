@@ -8,11 +8,17 @@ import {
 	getStarterIcon,
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
-import Triggers from "@/components/blocks/triggers/page";
-import type { AgentTriggerValue } from "@/components/blocks/triggers/data/trigger-catalog";
+import { renderAgentTriggerProviderIcon } from "@/components/blocks/triggers/page";
+import {
+	getAgentAutomationRuleLabel,
+	getAgentTriggerReadableLabel,
+	getTriggerProvider,
+	type AgentAutomationRule,
+	type AgentTriggerValue,
+} from "@/components/blocks/triggers/data/trigger-catalog";
 import ChatPanel, { type ChatPanelAgentVersionOption } from "@/components/projects/sidebar-chat/page";
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
-import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
@@ -245,42 +251,277 @@ export function AgentTestTriggerView({
 }: Readonly<{
 	result: RovoDataParts["agent-result"];
 }>): ReactElement {
-	const triggerDefinitions = useMemo<readonly AgentTriggerValue[]>(
-		() => result.triggerDefinitions ?? [],
-		[result.triggerDefinitions],
+	const automationRules = useMemo<readonly AgentAutomationRule[]>(
+		() => result.automationRules ?? [],
+		[result.automationRules],
 	);
-	const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const [testResult, setTestResult] = useState<AutomationTestResult | null>(null);
+
+	useEffect(() => {
+		setTestResult(null);
+	}, [automationRules]);
 
 	return (
 		<div className="flex min-h-[220px] items-start justify-center p-6">
-			<div className="w-full max-w-[48rem]">
-				{/*
-				 * Test mode mirrors the live draft, so the trigger card is a
-				 * read-only preview of the current configuration: clicking anywhere
-				 * on it opens the trigger modal. A transparent overlay button
-				 * captures the click while the configured `<Triggers>` card renders
-				 * underneath.
-				 */}
-				<div className="relative">
-					<Triggers triggers={triggerDefinitions} />
-					<button
-						type="button"
-						aria-label="View triggers"
-						className="absolute inset-0 size-full cursor-pointer rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-border-focused"
-						onClick={() => setIsDialogOpen(true)}
-					/>
-				</div>
+			<div className="grid w-full max-w-[56rem] gap-4">
+				{automationRules.length > 0 ? (
+					automationRules.map((rule, ruleIndex) => (
+						<AutomationTestCard
+							key={rule.id}
+							onTest={(trigger) => setTestResult(createAutomationTestResult(rule, ruleIndex, trigger))}
+							rule={rule}
+							ruleIndex={ruleIndex}
+						/>
+					))
+				) : (
+					<div className="rounded-xl border border-dashed border-border bg-surface p-6 text-center text-sm text-text-subtle">
+						No automations configured.
+					</div>
+				)}
+				{testResult ? (
+					<div className="grid gap-3 rounded-xl border border-border bg-surface p-4">
+						<div>
+							<h3 className="text-sm font-semibold leading-5 text-text">Test callback</h3>
+							<p className="text-sm leading-5 text-text-subtle">
+								{testResult.summary}
+							</p>
+						</div>
+						<div className="grid gap-3 md:grid-cols-2">
+							<TestJsonBlock title="Sample event payload" value={testResult.payload} />
+							<TestJsonBlock title="Callback result" value={testResult.callback} />
+						</div>
+					</div>
+				) : null}
 			</div>
-			<AgentTriggersDialog
-				open={isDialogOpen}
-				onOpenChange={setIsDialogOpen}
-				triggerDefinitions={triggerDefinitions}
-				// Read-only preview: discard edits here. The Configure panel owns
-				// editing the draft (the source of truth Test now mirrors).
-				onSave={() => setIsDialogOpen(false)}
-			/>
 		</div>
 	);
+}
+
+interface AutomationTestResult {
+	summary: string;
+	payload: Record<string, unknown>;
+	callback: Record<string, unknown>;
+}
+
+function AutomationTestCard({
+	onTest,
+	rule,
+	ruleIndex,
+}: Readonly<{
+	onTest: (trigger: AgentTriggerValue) => void;
+	rule: AgentAutomationRule;
+	ruleIndex: number;
+}>): ReactElement {
+	const title = getAgentAutomationRuleLabel(rule, ruleIndex);
+	const prompt = rule.prompt?.trim() || "No instructions added yet.";
+	const activeLabel = rule.enabled === false ? "Inactive" : "Active";
+
+	return (
+		<div className="grid gap-3 rounded-xl border border-border bg-surface p-4">
+			<div className="flex min-w-0 items-start justify-between gap-3">
+				<div className="min-w-0">
+					<div className="flex min-w-0 items-center gap-2">
+						<h3 className="truncate text-sm font-semibold leading-5 text-text">{title}</h3>
+						<span className="shrink-0 rounded bg-bg-neutral px-1.5 py-0.5 text-xs font-medium leading-4 text-text-subtle">
+							{activeLabel}
+						</span>
+					</div>
+					<p className="mt-1 line-clamp-2 text-sm leading-5 text-text-subtle">{prompt}</p>
+				</div>
+				<div className="shrink-0 text-xs font-medium leading-4 text-text-subtle">
+					{rule.triggers.length} event{rule.triggers.length === 1 ? "" : "s"}
+				</div>
+			</div>
+			<div className="grid gap-2">
+				{rule.triggers.length > 0 ? (
+					rule.triggers.map((trigger) => (
+						<AutomationTestEventRow
+							key={trigger.id}
+							onTest={() => onTest(trigger)}
+							trigger={trigger}
+						/>
+					))
+				) : (
+					<div className="rounded-lg border border-dashed border-border bg-bg-input p-3 text-sm text-text-subtle">
+						No event triggers configured.
+					</div>
+				)}
+			</div>
+		</div>
+	);
+}
+
+function AutomationTestEventRow({
+	onTest,
+	trigger,
+}: Readonly<{
+	onTest: () => void;
+	trigger: AgentTriggerValue;
+}>): ReactElement {
+	const provider = getTriggerProvider(trigger.providerId);
+	const icon = renderAgentTriggerProviderIcon(trigger);
+	const label = getAgentTriggerReadableLabel(trigger);
+	const connectionLabel = getConnectionTestLabel(trigger);
+
+	return (
+		<div className="flex min-w-0 items-center gap-3 rounded-lg border border-border bg-bg-input px-3 py-2">
+			<span className="flex size-6 shrink-0 items-center justify-center text-icon-subtle">
+				{icon}
+			</span>
+			<div className="min-w-0 flex-1">
+				<div className="truncate text-sm font-medium leading-5 text-text">{label}</div>
+				<div className="truncate text-xs leading-4 text-text-subtle">
+					{provider?.label ?? "Event trigger"}{connectionLabel ? ` · ${connectionLabel}` : ""}
+				</div>
+			</div>
+			<Button onClick={onTest} size="compact" type="button" variant="outline">
+				Test
+			</Button>
+		</div>
+	);
+}
+
+function TestJsonBlock({
+	title,
+	value,
+}: Readonly<{
+	title: string;
+	value: Record<string, unknown>;
+}>): ReactElement {
+	return (
+		<div className="grid min-w-0 gap-2">
+			<div className="text-xs font-semibold uppercase leading-4 text-text-subtle">{title}</div>
+			<pre className="max-h-80 overflow-auto rounded-lg bg-surface-sunken p-3 text-xs leading-5 text-text">
+				{JSON.stringify(value, null, "\t")}
+			</pre>
+		</div>
+	);
+}
+
+function getConnectionTestLabel(trigger: AgentTriggerValue): string | null {
+	switch (trigger.connectionState) {
+		case "needs-connection":
+			return "Connection required, sample test available";
+		case "connecting":
+			return "Connecting, sample test available";
+		case "connection-error":
+			return "Connection failed, sample test available";
+		case "connected":
+		default:
+			return null;
+	}
+}
+
+function createAutomationTestResult(
+	rule: AgentAutomationRule,
+	ruleIndex: number,
+	trigger: AgentTriggerValue,
+): AutomationTestResult {
+	const provider = getTriggerProvider(trigger.providerId);
+	const automationName = getAgentAutomationRuleLabel(rule, ruleIndex);
+	const eventLabel = getAgentTriggerReadableLabel(trigger);
+	const receivedAt = "2026-06-12T00:00:00.000Z";
+	const payload = {
+		automationId: rule.id,
+		automationName,
+		eventTriggerId: trigger.id,
+		receivedAt,
+		source: provider?.label ?? trigger.providerId,
+		event: {
+			providerId: trigger.providerId,
+			eventId: trigger.eventId,
+			label: eventLabel,
+			params: trigger.params ?? {},
+		},
+		data: getProviderSampleData(trigger),
+	};
+	const callback = {
+		status: "ok",
+		callbackId: `callback-${rule.id}-${trigger.id}`,
+		processedAt: receivedAt,
+		automationId: rule.id,
+		eventTriggerId: trigger.id,
+		result: {
+			message: `Sample ${eventLabel} callback received for ${automationName}.`,
+			nextAction: "Agent instructions would run with this event payload.",
+		},
+	};
+
+	return {
+		summary: `${automationName} tested with ${eventLabel}.`,
+		payload,
+		callback,
+	};
+}
+
+function getProviderSampleData(trigger: AgentTriggerValue): Record<string, unknown> {
+	switch (trigger.providerId) {
+		case "jira":
+			return {
+				issueKey: "PROJ-248",
+				summary: "Refresh quarterly planning goals",
+				project: trigger.params?.project ?? "any-project",
+				actor: trigger.params?.actor ?? "anyone",
+				changeType: trigger.eventId,
+			};
+		case "confluence":
+			return {
+				pageId: "983421",
+				title: "Quarterly planning notes",
+				space: trigger.params?.space ?? "any-space",
+				actor: trigger.params?.actor ?? "anyone",
+				changeType: trigger.eventId,
+			};
+		case "github-gitlab":
+			return {
+				repository: trigger.params?.repository ?? "select-repos",
+				pullRequest: 128,
+				branch: "feature/automation-rule-test",
+				action: trigger.eventId,
+			};
+		case "slack":
+		case "microsoft-teams":
+			return {
+				channel: trigger.params?.channel ?? "triage",
+				messageTs: "1781200000.000100",
+				text: "Can this automation draft a summary?",
+				action: trigger.eventId,
+			};
+		case "sentry":
+			return {
+				issueId: "SENTRY-42",
+				service: trigger.params?.service ?? "any-service",
+				level: "error",
+				action: trigger.eventId,
+			};
+		case "linear":
+			return {
+				issueId: "LIN-321",
+				team: trigger.params?.team ?? "any-team",
+				status: "In review",
+				action: trigger.eventId,
+			};
+		case "webhook":
+			return {
+				method: "POST",
+				path: "/automations/sample-callback",
+				body: { ok: true, event: trigger.eventId },
+			};
+		case "pagerduty":
+			return {
+				incidentId: "P12345",
+				service: trigger.params?.service ?? "any-service",
+				urgency: "high",
+				action: trigger.eventId,
+			};
+		case "scheduled":
+		default:
+			return {
+				schedule: trigger.eventId,
+				timezone: "Australia/Sydney",
+				firedAt: "2026-06-12T09:00:00.000+10:00",
+			};
+	}
 }
 
 export function AgentTestActivityView({
