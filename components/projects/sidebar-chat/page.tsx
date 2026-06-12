@@ -112,7 +112,7 @@ export interface ChatPanelAgentVersionOption {
 	sectionBreakBefore?: boolean;
 	/**
 	 * Marks the currently published / live version. The dropdown renders a
-	 * "Current" text label (outside the lozenge) on this row so users can tell
+	 * "Current" text label (outside the badge) on this row so users can tell
 	 * which version is live, independent of which one they have selected to
 	 * preview.
 	 */
@@ -1124,9 +1124,9 @@ export default function ChatPanel({
 											/>
 										}
 									>
-										<Lozenge variant={selectedAgentVersion.variant ?? "success"}>
+										<Badge variant={selectedAgentVersion.variant ?? "success"}>
 											{selectedAgentVersion.label}
-										</Lozenge>
+										</Badge>
 										<ChevronDownIcon label="" size="small" spacing="none" />
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="start" sideOffset={8}>
@@ -1147,7 +1147,7 @@ export default function ChatPanel({
 														elemAfter={version.id === selectedAgentVersion.id ? <CheckMarkIcon label="Selected" /> : undefined}
 													>
 														<span className="flex min-w-0 items-center gap-2">
-															<Lozenge variant={version.variant ?? "success"}>{version.label}</Lozenge>
+															<Badge variant={version.variant ?? "success"}>{version.label}</Badge>
 															{version.isCurrent ? (
 																<span className="text-xs text-text-subtle">Current</span>
 															) : null}
