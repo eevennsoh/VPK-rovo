@@ -23,6 +23,7 @@ import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
 import type { AgentBrowserAgent } from "@/components/blocks/agent-browser";
+import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -36,7 +37,7 @@ import {
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { AtlassianLogo } from "@/components/ui/logo";
+import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { SplitButton } from "@/components/ui/split-button";
 import { Tile } from "@/components/ui/tile";
 import {
@@ -569,15 +570,11 @@ interface SkillsDirectoryEntityCardProps {
 	skill: SkillsDirectorySkill;
 }
 
-/** Publisher avatar — ADS brand logo when no custom image is set, else the image. */
+/** Publisher avatar — brand logos use the transparent Tile sizing (components/ui/tile) via the shared logo marks; human publishers stay a rounded avatar. */
 function SkillPublisherAvatar({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
 	const logoName = getSkillPublisherLogoName(skill);
 	if (logoName) {
-		return (
-			<span className="inline-flex size-4 shrink-0 items-center justify-center">
-				<AtlassianLogo name={logoName} size="xxsmall" themeAware label={getSkillPublisherName(skill)} />
-			</span>
-		);
+		return <AtlassianLogoMark name={logoName} size="xxsmall" transparent label={getSkillPublisherName(skill)} />;
 	}
 
 	const src = getSkillPublisherAvatarSrc(skill);
@@ -585,21 +582,23 @@ function SkillPublisherAvatar({ skill }: Readonly<{ skill: SkillsDirectorySkill 
 		return null;
 	}
 
-	// Human avatars are rounded circles; company logos stay square and uncropped.
-	const isPerson = isSkillPublisherPerson(skill);
-	return (
-		<Image
-			alt=""
-			aria-hidden
-			className={cn(
-				"size-4 shrink-0",
-				isPerson ? "rounded-full object-cover" : "object-contain",
-			)}
-			height={16}
-			src={src}
-			width={16}
-		/>
-	);
+	// Human avatars are rounded circles; company brand logos use the shared
+	// transparent-Tile logo mark so their inset/border treatment matches the rest
+	// of the app (editor-palette, logo docs).
+	if (isSkillPublisherPerson(skill)) {
+		return (
+			<Image
+				alt=""
+				aria-hidden
+				className="size-4 shrink-0 rounded-full object-cover"
+				height={16}
+				src={src}
+				width={16}
+			/>
+		);
+	}
+
+	return <BrandLogoMark src={src} size="xxsmall" transparent label={getSkillPublisherName(skill)} />;
 }
 
 function SkillsDirectoryEntityCard({ onLearnMore, onSelect, selected, skill }: Readonly<SkillsDirectoryEntityCardProps>) {
@@ -903,37 +902,27 @@ function SkillFileTreeSidebar({ skill }: Readonly<{ skill: SkillsDirectorySkill 
 		<aside className="hidden min-h-0 w-[280px] shrink-0 overflow-y-auto pl-6 pr-4 md:block">
 			<nav aria-label={`${skill.name} files`} className="flex w-full flex-col">
 				{items.map((item) => (
-					<button
-						key={item.id}
-						type="button"
-						className={cn(
-							"relative flex h-8 w-full items-center gap-1 rounded-sm px-1 text-left text-sm leading-5 text-text-subtle outline-none hover:bg-bg-neutral-subtle-hovered focus-visible:ring-3 focus-visible:ring-ring/50",
-							item.selected && "bg-bg-selected text-text-selected",
-						)}
-						style={{ paddingLeft: `${4 + (item.depth ?? 0) * 18}px` }}
-					>
-						{item.kind === "folder" ? (
-							<>
-								{item.expanded ? (
-									<ChevronDownIcon label="" size="small" color="currentColor" />
+					<div key={item.id} style={{ paddingLeft: `${(item.depth ?? 0) * 12}px` }}>
+						<SidebarNavItem
+							label={item.label}
+							leadingSize="small"
+							isSelected={item.selected ?? false}
+							isExpanded={item.kind === "folder" ? item.expanded : undefined}
+							leading={
+								item.kind === "folder" ? (
+									<span className="flex items-center gap-px">
+										{item.expanded ? <ChevronDownIcon label="" color="currentColor" /> : <ChevronRightIcon label="" color="currentColor" />}
+										{item.expanded ? <FolderOpenIcon label="" color="currentColor" /> : <FolderClosedIcon label="" color="currentColor" />}
+									</span>
 								) : (
-									<ChevronRightIcon label="" size="small" color="currentColor" />
-								)}
-								{item.expanded ? (
-									<FolderOpenIcon label="" size="small" color="currentColor" />
-								) : (
-									<FolderClosedIcon label="" size="small" color="currentColor" />
-								)}
-							</>
-						) : (
-							<>
-								<span className="size-4 shrink-0" />
-								<FileIcon label="" size="small" color="currentColor" />
-							</>
-						)}
-						<span className="truncate">{item.label}</span>
-						{item.selected ? <span className="absolute left-0 top-1/2 h-3 w-0.5 -translate-y-1/2 bg-border-selected" /> : null}
-					</button>
+									<span className="flex items-center gap-px">
+										<span className="size-3 shrink-0" />
+										<FileIcon label="" color="currentColor" />
+									</span>
+								)
+							}
+						/>
+					</div>
 				))}
 			</nav>
 		</aside>

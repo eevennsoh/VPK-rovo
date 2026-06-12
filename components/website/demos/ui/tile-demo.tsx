@@ -65,6 +65,18 @@ export function TileDemoSizes() {
 	);
 }
 
+export function TileDemoTransparent() {
+	return (
+		<div className="flex items-end gap-3">
+			{(["xxsmall", "xsmall", "small", "medium", "large", "xlarge"] as const).map((size) => (
+				<Tile key={size} label={`${size} transparent`} variant="transparent" size={size}>
+					<SearchIcon label="" color="currentColor" />
+				</Tile>
+			))}
+		</div>
+	);
+}
+
 export function TileDemoAppearances() {
 	return (
 		<div className="flex flex-col gap-4">

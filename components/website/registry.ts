@@ -5236,6 +5236,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "tile-demo-transparent": dynamic(
+    () =>
+      import("./demos/ui/tile-demo").then((mod) => ({
+        default: mod.TileDemoTransparent,
+      })),
+    { ssr: false },
+  ),
   "tile-demo-appearances": dynamic(
     () =>
       import("./demos/ui/tile-demo").then((mod) => ({
@@ -6737,6 +6744,9 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
 
 const BLOCK_DEMOS: Record<string, ComponentType> = {
   agent: dynamic(() => import("./demos/blocks/agent-demo"), { ssr: false }),
+  "skill-config": dynamic(() => import("./demos/blocks/skill-config-demo"), {
+    ssr: false,
+  }),
   "agent-bento": dynamic(() => import("./demos/blocks/agent-bento-demo"), {
     ssr: false,
   }),
@@ -7067,6 +7077,22 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/blocks/agent-demo").then((mod) => ({
         default: mod.AgentDemoEmpty,
+      })),
+    { ssr: false },
+  ),
+
+  // Skill Config
+  "skill-config-demo-full": dynamic(
+    () =>
+      import("./demos/blocks/skill-config-demo").then((mod) => ({
+        default: mod.SkillConfigDemoFull,
+      })),
+    { ssr: false },
+  ),
+  "skill-config-demo-empty": dynamic(
+    () =>
+      import("./demos/blocks/skill-config-demo").then((mod) => ({
+        default: mod.SkillConfigDemoEmpty,
       })),
     { ssr: false },
   ),
