@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/media-has-caption -- These media previews render generated or user-supplied media where no caption asset is available; transcript or metadata is rendered separately when provided.
+
 import { lazy, Suspense } from "react";
 import type { PreviewVideoBody } from "@/components/projects/shared/lib/generative-widget";
 import { cn } from "@/lib/utils";
@@ -34,9 +36,10 @@ export function VideoPreviewBody({ body, withContainer = true }: VideoPreviewBod
 
 	if (body.videoUrl) {
 		return (
-			<div className={cn(withContainer && "overflow-hidden rounded-md")}>
-				<video
-					className="h-auto max-h-[360px] w-full rounded-md bg-bg-neutral"
+				<div className={cn(withContainer && "overflow-hidden rounded-md")}>
+					<video
+						aria-label="Video preview"
+						className="h-auto max-h-[360px] w-full rounded-md bg-bg-neutral"
 					controls
 					playsInline
 					preload="metadata"

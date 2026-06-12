@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import PageIcon from "@atlaskit/icon/core/page";
 

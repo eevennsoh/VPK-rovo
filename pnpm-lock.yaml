@@ -91,6 +91,7 @@ overrides:
   express-rate-limit: ^8.2.2
   fast-uri: 3.1.2
   hono: ^4.12.4
+  lodash-es: ^4.18.1
   postcss: ^8.5.13
   qs: 6.15.2
   ws: ^8.21.0
@@ -6199,9 +6200,6 @@ packages:
     resolution: {integrity: sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==, tarball: https://packages.atlassian.com/api/npm/npm-remote/locate-path/-/locate-path-6.0.0.tgz}
     engines: {node: '>=10'}
 
-  lodash-es@4.17.21:
-    resolution: {integrity: sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==, tarball: https://packages.atlassian.com/api/npm/npm-remote/lodash-es/-/lodash-es-4.17.21.tgz}
-
   lodash-es@4.18.1:
     resolution: {integrity: sha512-J8xewKD/Gk22OZbhpOVSwcs60zhd95ESDwezOFuA3/099925PdHJ7OFHNTGtajL3AlZkykD32HykiMo+BIBI8A==, tarball: https://packages.atlassian.com/api/npm/npm-remote/lodash-es/-/lodash-es-4.18.1.tgz}
 
@@ -9237,12 +9235,12 @@ snapshots:
     dependencies:
       '@chevrotain/gast': 11.0.3
       '@chevrotain/types': 11.0.3
-      lodash-es: 4.17.21
+      lodash-es: 4.18.1
 
   '@chevrotain/gast@11.0.3':
     dependencies:
       '@chevrotain/types': 11.0.3
-      lodash-es: 4.17.21
+      lodash-es: 4.18.1
 
   '@chevrotain/regexp-to-ast@11.0.3': {}
 
@@ -12540,7 +12538,7 @@ snapshots:
       '@chevrotain/regexp-to-ast': 11.0.3
       '@chevrotain/types': 11.0.3
       '@chevrotain/utils': 11.0.3
-      lodash-es: 4.17.21
+      lodash-es: 4.18.1
 
   chmodrp@1.0.2: {}
 
@@ -14791,8 +14789,6 @@ snapshots:
   locate-path@6.0.0:
     dependencies:
       p-locate: 5.0.0
-
-  lodash-es@4.17.21: {}
 
   lodash-es@4.18.1: {}
 

@@ -18,13 +18,18 @@ const DEFAULT_TOP_PX = 36;
  *
  * The instructions editor lives inside a scrollable column (the agent profile
  * sits above it), so its first text line moves as the user scrolls or as the
- * profile/content reflows. A fixed `top` can't track that, so we measure the
- * editor's first line relative to the navigator's positioning container (the
- * nearest positioned ancestor — the `relative` TabsContent) and keep it synced.
+ * profile/content reflows. We measure the editor's first line relative to the
+ * navigator's positioning container (the nearest positioned ancestor — the
+ * `relative` TabsContent), then PIN that value to the first line's rest position
+ * by folding the scroll parent's `scrollTop` back in. The navigator therefore
+ * holds station at the first-line band while instruction text scrolls beneath it
+ * (rather than riding the line up and clipping off the top), and only moves
+ * downward when the profile/content above reflows and pushes the first line lower.
  *
  * @param containerRef - The navigator's positioning context. The returned
  *   `top` is expressed relative to this element's top padding edge.
- * @returns The pixel `top` to apply to the navigator wrapper.
+ * @returns The pixel `top` to apply to the navigator wrapper (pinned to the
+ *   first line's rest position).
  */
 export function useSubagentsNavigatorTop(
 	containerRef: RefObject<HTMLElement | null>,
@@ -85,7 +90,16 @@ export function useSubagentsNavigatorTop(
 				return;
 			}
 			const next = Math.round(lineRect.top - containerRect.top);
-			setTop((current) => (current === next ? current : next));
+			// `next` decreases as the user scrolls down (the first line rises),
+			// which would carry the navigator off the top. Folding the scroll
+			// parent's offset back in pins the navigator to the first line's
+			// rest position (`next + scrollTop` is scroll-invariant): it holds
+			// station while text scrolls beneath it, and still tracks downward
+			// reflows of the profile/content above. Clamp negative (overscroll)
+			// scrollTop to 0 so a rubber-band bounce can't shove it down.
+			const scrollOffset = Math.max(0, scrollTarget?.scrollTop ?? 0);
+			const pinned = next + scrollOffset;
+			setTop((current) => (current === pinned ? current : pinned));
 		}
 
 		function scheduleMeasure(): void {

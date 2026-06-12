@@ -1,5 +1,8 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-constructed-context-values -- Context values in this file intentionally combine live state and setters; extracting them would not reduce meaningful consumer churn.
+// oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates coupled component parts as a compound component or demo surface API.
+
 import type { ComponentProps } from "react";
 
 import {

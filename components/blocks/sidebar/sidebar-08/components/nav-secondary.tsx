@@ -25,7 +25,7 @@ export function NavSecondary({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton render={<a href={item.url} />} size="sm">
+              <SidebarMenuButton render={<a aria-label={item.title} href={item.url} />} size="sm">
                   <item.icon />
                   <span>{item.title}</span>
               </SidebarMenuButton>

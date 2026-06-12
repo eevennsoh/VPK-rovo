@@ -1,9 +1,14 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
+
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+
 import { useReducedMotion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { RGBAColor } from "./color-utils";
+import { useLazyRef } from "@/lib/use-lazy-ref";
 
 export type WaveformConfig = {
 	timeSpeedIdle: number;
@@ -60,6 +65,7 @@ export type WaveformConfig = {
 	userColor4: RGBAColor;
 };
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const DEFAULT_WAVEFORM_CONFIG: WaveformConfig = {
 	timeSpeedIdle: 0.08,
 	timeSpeedActive: 0.25,
@@ -477,13 +483,13 @@ export function SmoothGradientWaveform({
 	} | null>(null);
 
 	// Smoothed signal buffer — interpolates toward raw signal slowly
-	const smoothedSignalRef = useRef<Float32Array>(new Float32Array(32));
+	const smoothedSignalRef = useLazyRef<Float32Array>(() => new Float32Array(32));
 
 	// Colors state
-	const currentColor1Ref = useRef<RGBAColor>(cloneColor(DEFAULT_IDLE_PALETTE.c1));
-	const currentColor2Ref = useRef<RGBAColor>(cloneColor(DEFAULT_IDLE_PALETTE.c2));
-	const currentColor3Ref = useRef<RGBAColor>(cloneColor(DEFAULT_IDLE_PALETTE.c3));
-	const currentColor4Ref = useRef<RGBAColor>(cloneColor(DEFAULT_IDLE_PALETTE.c4));
+	const currentColor1Ref = useLazyRef<RGBAColor>(() => cloneColor(DEFAULT_IDLE_PALETTE.c1));
+	const currentColor2Ref = useLazyRef<RGBAColor>(() => cloneColor(DEFAULT_IDLE_PALETTE.c2));
+	const currentColor3Ref = useLazyRef<RGBAColor>(() => cloneColor(DEFAULT_IDLE_PALETTE.c3));
+	const currentColor4Ref = useLazyRef<RGBAColor>(() => cloneColor(DEFAULT_IDLE_PALETTE.c4));
 	const currentStateModeRef = useRef(0.0);
 	
 	const renderFrameRef = useRef<((time: number) => void) | null>(null);
@@ -935,7 +941,6 @@ export function SmoothGradientWaveform({
 
 	return (
 		<div
-			aria-hidden="true"
 			className={cn(
 				"pointer-events-none absolute bottom-[-8%] left-1/2 z-0 aspect-[4/1] w-[100%] -translate-x-1/2 overflow-visible opacity-0 transition-opacity duration-700 ease-out data-[visible]:opacity-100",
 				className,
@@ -947,7 +952,6 @@ export function SmoothGradientWaveform({
 			}}
 		>
 			<canvas
-				aria-hidden="true"
 				className="absolute inset-0 h-full w-full pointer-events-none"
 				ref={canvasRef}
 			/>

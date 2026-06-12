@@ -1,10 +1,14 @@
 "use client";
 
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+// oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates coupled component parts as a compound component or demo surface API.
+
 import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CheckIcon from "@atlaskit/icon/core/check-mark";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CopyIcon from "@atlaskit/icon/core/copy";
 import UndoIcon from "@atlaskit/icon/core/undo";
+import { useLazyRef } from "@/lib/use-lazy-ref";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,6 +72,7 @@ type GUIControlProps = Readonly<{
 	valueKeys?: string | readonly string[];
 }>;
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
 function GUIControl({
 	id,
 	label,
@@ -216,12 +221,13 @@ type GUIPanelProps = Readonly<{
 	children: React.ReactNode;
 }>;
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
 function GUIPanel({ title, values, defaultOpen = true, children }: GUIPanelProps) {
 	const [open, setOpen] = useState(defaultOpen);
 	const [copied, setCopied] = useState(false);
 	const [tooltipOpen, setTooltipOpen] = useState(false);
 	const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const registeredKeysRef = useRef<Map<string, number>>(new Map());
+	const registeredKeysRef = useLazyRef<Map<string, number>>(() => new Map());
 	const [mountedValueKeys, setMountedValueKeys] = useState<readonly string[]>([]);
 
 	const syncMountedValueKeys = useCallback(() => {
@@ -356,6 +362,7 @@ type GUIToggleProps = Readonly<{
 	valueKeys?: string | readonly string[];
 }>;
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
 function GUIToggle({ id, label, description, checked, disabled = false, onChange, valueKeys }: GUIToggleProps) {
 	useGUIValueKeys(valueKeys);
 	const switchId = `${id}-toggle`;
@@ -412,6 +419,7 @@ type GUISelectProps<T extends string> = Readonly<{
 	valueKeys?: string | readonly string[];
 }>;
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
 function GUISelect<T extends string>({
 	id,
 	label,
@@ -509,6 +517,7 @@ type GUITextInputProps = Readonly<{
 	valueKeys?: string | readonly string[];
 }>;
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
 function GUITextInput({ id, label, description, placeholder, value, onChange, valueKeys }: GUITextInputProps) {
 	useGUIValueKeys(valueKeys);
 	const inputId = `${id}-text`;
@@ -542,6 +551,7 @@ type GUISectionProps = Readonly<{
 	children: React.ReactNode;
 }>;
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
 function GUISection({ title, defaultOpen = true, borderTop = true, children }: GUISectionProps) {
 	const [open, setOpen] = useState(defaultOpen);
 

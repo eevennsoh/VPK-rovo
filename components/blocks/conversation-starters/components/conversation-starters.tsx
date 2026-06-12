@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
 	DndContext,
 	KeyboardSensor,
@@ -83,20 +83,34 @@ export function ConversationStartersDialog({
 	seedRef.current = isControlled ? starters : defaultStarters;
 
 	const idCounter = useRef(0);
-	const [draft, setDraft] = useState<ConversationStarter[]>(() =>
-		seedDraft(seedRef.current, maxStarters, idCounter),
-	);
-	const [isGenerating, setIsGenerating] = useState(false);
-	const wasOpen = useRef(open);
-
-	// Re-seed the working draft each time the dialog transitions to open.
-	useEffect(() => {
-		if (open && !wasOpen.current) {
-			setDraft(seedDraft(seedRef.current, maxStarters, idCounter));
-			setIsGenerating(false);
-		}
-		wasOpen.current = open;
-	}, [open, maxStarters]);
+	const [draftState, setDraftState] = useState(() => ({
+		draft: seedDraft(seedRef.current, maxStarters, idCounter),
+		isGenerating: false,
+		maxStarters,
+		open,
+	}));
+	let resolvedDraftState = draftState;
+	if (draftState.open !== open || (open && draftState.maxStarters !== maxStarters)) {
+		resolvedDraftState = open
+			? {
+				draft: seedDraft(seedRef.current, maxStarters, idCounter),
+				isGenerating: false,
+				maxStarters,
+				open,
+			}
+			: { ...draftState, maxStarters, open };
+		setDraftState(resolvedDraftState);
+	}
+	const { draft, isGenerating } = resolvedDraftState;
+	const setDraft = (updater: ConversationStarter[] | ((currentDraft: ConversationStarter[]) => ConversationStarter[])) => {
+		setDraftState((currentState) => ({
+			...currentState,
+			draft: typeof updater === "function" ? updater(currentState.draft) : updater,
+		}));
+	};
+	const setIsGenerating = (isNextGenerating: boolean) => {
+		setDraftState((currentState) => ({ ...currentState, isGenerating: isNextGenerating }));
+	};
 
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),

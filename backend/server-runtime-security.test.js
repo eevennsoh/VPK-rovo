@@ -32,6 +32,12 @@ test("runtime-control mutations require runtime admin authorization", () => {
 		["post", "/api/skills/hub/install-by-id"],
 		["post", "/api/skills/hub/taps"],
 		["post", "/api/skills/:category/:name/toggle"],
+		["post", "/api/wiki/captures"],
+		["post", "/api/wiki/synthesis"],
+		["delete", "/api/wiki/memories/:scope/blocks/:blockId"],
+		["delete", "/api/wiki/memories/proposals/:proposalId"],
+		["post", "/api/wiki/memories/reset"],
+		["post", "/api/wiki/sync"],
 	]) {
 		assertRouteUsesRuntimeAdmin(method, routePath);
 	}

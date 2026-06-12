@@ -1,5 +1,10 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+// oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
+
+// oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
+
 import Image from "next/image";
 import { type KeyboardEvent, type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, cubicBezier, motion, useReducedMotion } from "motion/react";
@@ -35,6 +40,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { Tile } from "@/components/ui/tile";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
 	EntityCardAgentCard,
 	EntityCardAgentExpandedCard,
@@ -130,7 +136,6 @@ const AGENT_BROWSER_TEMPLATE_TITLE_SWAP_OFFSET = 12;
 const AGENT_BROWSER_TEMPLATE_DECK_SWAP_OFFSET = 24;
 const AGENT_BROWSER_TEMPLATE_CARD_ENTER_OFFSET = 16;
 const AGENT_BROWSER_TEMPLATE_CARD_SCROLL_OFFSET = 376;
-const AGENT_BROWSER_TEMPLATE_CATEGORY_NAV_GAP = 4;
 const AGENT_BROWSER_TEMPLATE_SCROLL_EDGE_THRESHOLD = 2;
 const AGENT_BROWSER_TEMPLATE_CAROUSEL_CONTROL_TRANSITION = {
 	type: "spring",
@@ -144,23 +149,6 @@ type AgentBrowserTemplateMotionCustom = {
 	direction: AgentBrowserTemplateMotionDirection;
 	shouldReduceMotion: boolean;
 };
-
-const AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS = {
-	enter: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
-		opacity: 0,
-		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${AGENT_BROWSER_TEMPLATE_TITLE_SWAP_OFFSET * direction}px)`,
-	}),
-	center: {
-		opacity: 1,
-		transform: "translateX(0px)",
-		transition: AGENT_BROWSER_TEMPLATE_TITLE_ENTER_TRANSITION,
-	},
-	exit: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
-		opacity: 0,
-		transform: shouldReduceMotion ? "translateX(0px)" : `translateX(${-AGENT_BROWSER_TEMPLATE_TITLE_SWAP_OFFSET * direction}px)`,
-		transition: AGENT_BROWSER_TEMPLATE_TAB_EXIT_TRANSITION,
-	}),
-} as const;
 
 const STANDARD_AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS = {
 	enter: ({ direction, shouldReduceMotion }: AgentBrowserTemplateMotionCustom) => ({
@@ -438,10 +426,25 @@ export function AgentBrowserDialog({
 	variant = "default",
 	...browserProps
 }: Readonly<AgentBrowserDialogProps>) {
+	// The experimental browser locks to the Templates view's natural single-card-row
+	// height, so there is no dead space below the cards and the Agents view scrolls
+	// inside the exact same box (switching tabs never changes the dialog height). The
+	// 553px template card is a deterministic, uniform height across every category:
+	//   72 (header) + 108 (search + category-chip rows + gaps) + 32 (card row pt-2 +
+	//   pb-6) + 553 (card) = 765.
+	// min() clamps to the viewport on short screens; there the card stretch-fills the
+	// shrunken row and its detail region scrolls internally rather than clipping.
+	const isExperimental = variant === "experimental";
+
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent
-				className="grid h-[min(800px,calc(100svh-2rem))] max-h-[calc(100svh-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[1200px]"
+				className={cn(
+					"grid max-h-[calc(100svh-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[1200px]",
+					isExperimental
+						? "h-[min(765px,calc(100svh-2rem))]"
+						: "h-[min(800px,calc(100svh-2rem))]",
+				)}
 				showCloseButton={false}
 			>
 				<div className="flex items-center justify-between px-6 pt-6 pb-4">
@@ -539,7 +542,12 @@ function DefaultAgentBrowser({
 			<div
 				ref={contentOverflow.ref}
 				className={cn(
-					"flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto px-6 pb-6 md:pl-4",
+					// overflow-y-auto forces overflow-x to compute to auto, so this scroll
+					// viewport clips anything painted outside its content box. pt-1 gives the
+					// search input's focus ring (ring-3) room at the top; pb-8 gives the card
+					// hover shadow (elevation.shadow.overlay = 0 8px 12px, ~20px reach) room at
+					// the bottom so it is not clipped. px-6 already clears the ~12px side reach.
+					"flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto px-6 pt-1 pb-8 md:pl-4",
 					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
 				)}
 			>
@@ -773,6 +781,16 @@ function ExperimentalAgentBrowser({
 		setTemplateModeActive(true);
 	}
 
+	function handleToggleMode(groupValue: readonly string[]) {
+		const next = groupValue[0];
+		// Single-select: ignore deselect (empty) so a mode is always active.
+		if (next === "templates") {
+			if (!templateModeActive) handleEnterTemplateMode();
+		} else if (next === "agents" && templateModeActive) {
+			resetFilters();
+		}
+	}
+
 	function handleSelectTemplateCategory(categoryId: AgentTemplatesCategoryId) {
 		if (!activeTemplateCategoryOption || categoryId === activeTemplateCategoryOption.id) return;
 
@@ -788,34 +806,61 @@ function ExperimentalAgentBrowser({
 		<div
 			ref={contentOverflow.ref}
 			className={cn(
-				"flex h-full min-h-0 flex-col gap-4 overflow-y-auto px-6 pb-6",
+				// overflow-y-auto forces overflow-x to compute to auto, so this scroll
+				// viewport clips anything painted outside its content box. pt-1 gives the
+				// search input's focus ring (ring-3) room at the top. px-6 clears the
+				// side reach. In Agents mode the grid scrolls here, so pb-6 gives the last
+				// row a 24px bottom gap (symmetric with px-6) plus room for its hover
+				// shadow. Templates mode owns its bottom spacing inside the carousel row
+				// instead (see ExperimentalTemplateMode), so no pb-6 there to avoid
+				// doubling it.
+				"flex h-full min-h-0 flex-col gap-4 overflow-y-auto px-6 pt-1",
+				templateModeActive ? null : "pb-6",
 				contentOverflow.showTopScrollMask ? "scroll-mask-top overscroll-contain" : null,
 			)}
 		>
-			<InputGroup>
-				<InputGroupAddon>
-					<SearchIcon label="" />
-				</InputGroupAddon>
-				<InputGroupInput
-					aria-label={searchInputLabel}
-					placeholder={searchInputLabel}
-					value={query}
-					onChange={(event) => setQuery(event.target.value)}
-				/>
-			</InputGroup>
+			<div className="flex items-center gap-3">
+				<InputGroup className="flex-1">
+					<InputGroupAddon>
+						<SearchIcon label="" />
+					</InputGroupAddon>
+					<InputGroupInput
+						aria-label={searchInputLabel}
+						placeholder={searchInputLabel}
+						value={query}
+						onChange={(event) => setQuery(event.target.value)}
+					/>
+				</InputGroup>
+				{visibleTemplateCategories.length > 0 ? (
+					<ToggleGroup
+						aria-label="Browse agents or templates"
+						className="shrink-0"
+						onValueChange={handleToggleMode}
+						value={[templateModeActive ? "templates" : "agents"]}
+						variant="outline"
+					>
+						<ToggleGroupItem value="agents">Agents</ToggleGroupItem>
+						<ToggleGroupItem value="templates">Templates</ToggleGroupItem>
+					</ToggleGroup>
+				) : null}
+			</div>
 
 			{templateModeActive && activeTemplateCategoryOption ? (
 				<>
 					<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-						<div className="flex flex-wrap items-center gap-2">
-							<Button
-								aria-pressed
-								onClick={resetFilters}
-								type="button"
-								variant="outline"
-							>
-								Filter by agent templates
-							</Button>
+						<div
+							aria-label="Template categories"
+							className="relative -my-1 flex min-w-0 flex-wrap items-center gap-2 overflow-x-auto overflow-y-visible overscroll-x-contain py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+							role="group"
+						>
+							{visibleTemplateCategories.map((category) => (
+								<ExperimentalTemplateCategoryButton
+									active={activeTemplateCategoryOption.id === category.id}
+									category={category}
+									key={category.id}
+									onClick={() => handleSelectTemplateCategory(category.id)}
+								/>
+							))}
 							<Button type="button" variant="ghost" onClick={resetFilters}>
 								Reset
 							</Button>
@@ -826,10 +871,8 @@ function ExperimentalAgentBrowser({
 					</div>
 					<ExperimentalTemplateMode
 						activeCategory={activeTemplateCategoryOption}
-						categories={visibleTemplateCategories}
 						motionCustom={templateMotionCustom}
 						onSelectAgent={onSelectTemplateAgent}
-						onSelectCategory={handleSelectTemplateCategory}
 						templates={visibleTemplates}
 					/>
 				</>
@@ -873,18 +916,6 @@ function ExperimentalAgentBrowser({
 									selectedValues={selectedCategories}
 									onToggle={(value) => setSelectedCategories((current) => toggleSelectedValue(current, value))}
 								/>
-							) : null}
-							{activeFacet === null ? (
-								<span aria-hidden className="mx-2 hidden h-6 w-px bg-border md:block" />
-							) : null}
-							{activeFacet === null && visibleTemplateCategories.length > 0 ? (
-								<Button
-									onClick={handleEnterTemplateMode}
-									type="button"
-									variant="outline"
-								>
-									Agent templates
-								</Button>
 							) : null}
 							{hasActiveFilters ? (
 								<Button type="button" variant="ghost" onClick={resetFilters}>
@@ -1085,17 +1116,13 @@ function ExperimentalAgentSection({
 
 function ExperimentalTemplateMode({
 	activeCategory,
-	categories,
 	motionCustom,
 	onSelectAgent,
-	onSelectCategory,
 	templates,
 }: Readonly<{
 	activeCategory: AgentTemplatesCategory;
-	categories: readonly AgentTemplatesCategory[];
 	motionCustom: AgentBrowserTemplateMotionCustom;
 	onSelectAgent?: (agent: AgentTemplatesAgent) => void;
-	onSelectCategory: (categoryId: AgentTemplatesCategoryId) => void;
 	templates: readonly AgentTemplatesAgent[];
 }>) {
 	const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -1171,39 +1198,18 @@ function ExperimentalTemplateMode({
 	}
 
 	return (
-		<div className="flex min-h-0 flex-1 flex-col gap-2">
-			<div
-				aria-label="Template categories"
-				className="relative -my-1 flex min-w-0 items-center overflow-x-auto overflow-y-visible overscroll-x-contain py-1 pl-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-				role="group"
-				style={{ gap: AGENT_BROWSER_TEMPLATE_CATEGORY_NAV_GAP }}
-			>
-				{categories.map((category) => (
-					<ExperimentalTemplateCategoryButton
-						active={activeCategory.id === category.id}
-						category={category}
-						key={category.id}
-						onClick={() => onSelectCategory(category.id)}
-					/>
-				))}
-			</div>
-			<AnimatePresence custom={motionCustom} initial={false} mode="wait">
-				<motion.div
-					animate="center"
-					className="min-h-12 overflow-hidden text-text"
-					custom={motionCustom}
-					exit="exit"
-					initial="enter"
-					key={`experimental-template-title-${activeCategory.id}`}
-					style={{ font: token("font.heading.xlarge"), willChange: "transform, opacity" }}
-					variants={AGENT_BROWSER_TEMPLATE_TITLE_VARIANTS}
-				>
-					<TemplateCategoryTitle category={activeCategory} />
-				</motion.div>
-			</AnimatePresence>
-			<section aria-label="Agent templates" className="relative -mx-6 min-h-0 flex-1 overflow-hidden">
+		<div className="mt-2 flex min-h-0 flex-1 flex-col gap-2">
+			{/* The carousel fills this flex-1 section, which shrinks with the dialog on
+			    short viewports. Cards stretch to fill the carousel height (see the row's
+			    items-stretch below) so on a short viewport the card shrinks and its detail
+			    region scrolls internally instead of clipping. overflow-x-clip crops the
+			    horizontal carousel bleed; overflow-y-visible would be forced to auto by the
+			    carousel's overflow-x-auto, so the carousel clips vertically — the row's
+			    pb-6 keeps the card inset 24px from that bottom clip edge for the gap + the
+			    hover shadow (mirroring px-6 on the sides). */}
+			<section aria-label="Agent templates" className="relative -mx-6 min-h-0 flex-1 overflow-x-clip overflow-y-visible">
 				<div
-					className="h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+					className="h-full overflow-x-auto overflow-y-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 					data-agent-templates-carousel
 					onScroll={updateScrollControls}
 					ref={setCarouselRef}
@@ -1211,7 +1217,11 @@ function ExperimentalTemplateMode({
 					<AnimatePresence custom={motionCustom} initial={false} mode="wait">
 						<motion.div
 							animate="center"
-							className="flex h-full w-max gap-4 px-6 pt-0 pb-3"
+							// h-full + items-stretch so each card fills the carousel height: it
+							// shows at its natural height when there is room and shrinks (detail
+							// scrolls) on short viewports. px-6 + pb-6 inset the card 24px from the
+							// horizontal and bottom clip edges; pt-2 leaves a little top room.
+							className="flex h-full w-max items-stretch gap-4 px-6 pt-2 pb-6"
 							custom={motionCustom}
 							exit="exit"
 							initial="enter"
@@ -1276,15 +1286,12 @@ function ExperimentalTemplateCategoryButton({
 		<Button
 			aria-pressed={active}
 			className={cn(
-				"group/template-category h-6 shrink-0 rounded px-1.5 text-sm font-medium leading-5",
-				active
-					? "border-border-selected bg-bg-selected text-text-selected"
-					: "text-text-subtle",
+				"shrink-0",
+				active ? "border-border-selected bg-bg-selected text-text-selected" : null,
 			)}
 			onClick={onClick}
-			size="compact"
 			type="button"
-			variant={active ? "outline" : "ghost"}
+			variant="outline"
 		>
 			<span aria-hidden className="inline-flex size-5 shrink-0 items-center justify-center">
 				<Image
@@ -1295,16 +1302,7 @@ function ExperimentalTemplateCategoryButton({
 					width={20}
 				/>
 			</span>
-			<span
-				className={cn(
-					"overflow-hidden whitespace-nowrap transition-[margin,max-width,opacity] duration-medium ease-out",
-					active
-						? "ml-1.5 max-w-40 opacity-100"
-						: "ml-0 max-w-0 opacity-0 group-hover/template-category:ml-1.5 group-hover/template-category:max-w-40 group-hover/template-category:opacity-100 group-focus/template-category:ml-1.5 group-focus/template-category:max-w-40 group-focus/template-category:opacity-100",
-				)}
-			>
-				{category.label}
-			</span>
+			<span className="whitespace-nowrap">{category.label}</span>
 		</Button>
 	);
 }

@@ -1,15 +1,19 @@
 "use client";
 
+// oxlint-disable react-doctor/no-pass-data-to-parent -- Callbacks in this file intentionally report measured, generated, or selected data to an owning parent component.
+
 import { useChart } from "@/components/ui-charts";
 import { useEffect } from "react";
 import type { StatCardHoverState } from "./stat-card-chart";
 
 export type { StatCardHoverState } from "./stat-card-chart";
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function formatStatCardMonth(date: Date) {
   return date.toLocaleDateString("en-US", { month: "short" });
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function formatStatCardWeekday(date: Date) {
   return date.toLocaleDateString("en-US", { weekday: "long" });
 }

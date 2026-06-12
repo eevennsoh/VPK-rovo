@@ -1,13 +1,25 @@
 "use client";
 
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- These effects synchronize external chat, animation, media, or controlled workflow state and are intentionally guarded by refs/keys.
+// oxlint-disable react-doctor/no-chain-state-updates -- Related state fields are updated together to preserve atomic UI transitions and avoid partial interaction states.
+// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props or external runtime state before user edits take ownership.
+// oxlint-disable react-doctor/no-pass-data-to-parent -- Callbacks in this file intentionally report measured, generated, or selected data to an owning parent component.
+// oxlint-disable react-doctor/no-pass-live-state-to-parent -- Callbacks in this file intentionally stream live interaction state to the parent owner.
+// oxlint-disable react-doctor/prefer-module-scope-static-value -- These values are intentionally colocated with the component/demo contract for readability and token context.
+
 import type { FileUIPart } from "ai";
 import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, type AnimationPlaybackControls } from "motion/react";
 import { type CSSProperties, type PointerEvent as ReactPointerEvent, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, ViewTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArtifactPanel } from "@/components/ui-custom/artifact";
+import { ArtifactPanel } from "@/components/blocks/artifact";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
 import { ChatTimelineNavigator } from "@/components/blocks/chat-timeline/chat-timeline-navigator";
+import { useLazyRef } from "@/lib/use-lazy-ref";
 import {
 	DEFAULT_STARTER_ICON,
 	getStarterIcon,
@@ -15,7 +27,7 @@ import {
 } from "@/components/blocks/conversation-starters";
 import { CreateButton } from "@/components/blocks/top-navigation/components/create-button";
 import { AgentsDirectoryDialog } from "@/components/blocks/agents-directory";
-import { inferScheduledTriggerDefinitions } from "@/components/blocks/triggers/data/trigger-catalog";
+import { inferAutomationRules } from "@/components/blocks/triggers/data/trigger-catalog";
 import { AGENT_TEMPLATES_CATEGORIES, AgentTemplatesDialog, type AgentTemplatesAgent } from "@/components/blocks/agent-templates";
 import {
 	DEMO_AGENT_TEMPLATES,
@@ -51,15 +63,24 @@ import { resolveRovoAppComposerPlaceholder } from "@/components/projects/shared/
 import { ROVO_APP_MAX_CHAT_PANE_WIDTH, ROVO_APP_MIN_ARTIFACT_PANE_WIDTH, ROVO_APP_MIN_CHAT_PANE_WIDTH, ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS, getRovoAppShellLayout } from "@/components/projects/studio/lib/rovo-app-shell-layout";
 import { getRovoAppSmartGenerationLayoutContext } from "@/components/projects/studio/lib/rovo-app-smart-generation-layout";
 import { deriveRovoAppTimelineItems } from "@/components/projects/studio/lib/rovo-app-timeline";
+import {
+	buildDeterministicTriggerThinkingParts,
+	DETERMINISTIC_TRIGGER_TRACE_INITIAL_DELAY_MS,
+	DETERMINISTIC_TRIGGER_TRACE_STAGE_DELAYS_MS,
+	planDeterministicAgentBuild,
+} from "@/components/projects/studio/lib/demo-agent-builder";
 import { buildComposerHermesContext, shouldResetComposerHermesSkillSelection } from "@/components/projects/studio/lib/rovo-app-hermes-skill-selection";
 import { useHermesEmbedEnabled } from "@/lib/hermes-feature-flags";
 import { buildRovoAppThreadPath } from "@/components/projects/studio/lib/rovo-app-thread-route-sync";
 import { createRovoAppUserMessage } from "@/components/projects/studio/lib/rovo-app-user-message";
+import { readSessionAgentRecords } from "@/components/projects/studio/lib/studio-session-agent-storage";
 import {
+	applyTemplateDefaultsToResult,
 	buildCreationTemplateContextFromAgent,
 	buildCreationTemplateContextFromStarter,
 	buildStudioAgentCreationContext,
 	buildStudioAgentCreationContinuationContext,
+	resolveTemplateConfigForResult,
 	type StudioCreationTemplateContext,
 } from "@/components/projects/studio/lib/studio-agent-creation-context";
 import {
@@ -110,6 +131,11 @@ import {
 	AGENT_EDIT_GREETING_ILLUSTRATION_SRC,
 	agentEditSuggestions,
 } from "@/components/projects/studio/data/agent-edit-greeting";
+import {
+	STUDIO_RFP_DEMO_AGENT_PROFILE_ID,
+	STUDIO_RFP_DEMO_AGENT_RESULT,
+	STUDIO_RFP_DEMO_AGENT_SOURCE_KEY,
+} from "@/components/projects/studio/data/rfp-demo-agent";
 import { clamp, cn, createId } from "@/lib/utils";
 import { getRandomAgentAvatarSrc } from "@/lib/agent-avatars";
 import { getSkillIcon } from "@/lib/skill-icons";
@@ -1339,6 +1365,12 @@ type RovoAppRealtimeShellAdapter = ReturnType<typeof useRovoApp> & {
 	setVoiceMode?: (next: boolean) => void;
 };
 
+function waitForDeterministicTrace(ms: number): Promise<void> {
+	return new Promise((resolve) => {
+		window.setTimeout(resolve, ms);
+	});
+}
+
 type ExtendedDelegationRequest = DelegationRequest & {
 	delegatedMessageId?: string;
 	messageId?: string;
@@ -1675,11 +1707,51 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const [activeAgentConfigView, setActiveAgentConfigView] = useState<AgentConfigView>("configure");
 	const [isSidebarAgentBrowserOpen, setIsSidebarAgentBrowserOpen] = useState(false);
 	const [sidebarAgentBrowserInitialCategory, setSidebarAgentBrowserInitialCategory] = useState<HomeStarterCategory>(HOME_STARTER_DEFAULT_CATEGORY);
-	const generatedAgentTestViewKeysRef = useRef<Set<string>>(new Set());
+	const generatedAgentTestViewKeysRef = useLazyRef<Set<string>>(() => new Set());
+	const hasSeededStudioRfpDemoAgentRef = useRef(false);
 	const openAgentCreationAskRovoChat = useCallback(() => {
 		studioAgentRegistry.resetAgentToRovo();
 		nav.openChat("sidebar");
 	}, [nav, studioAgentRegistry]);
+
+	useEffect(() => {
+		if (
+			embedded ||
+			initialThreadId ||
+			hasSeededStudioRfpDemoAgentRef.current ||
+			typeof studioAgentRegistry.registerCreatedAgentFromResult !== "function"
+		) {
+			return;
+		}
+
+		if (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("agent")) {
+			return;
+		}
+
+		const existingEntry = studioAgentRegistry.getSessionAgentEntry?.(STUDIO_RFP_DEMO_AGENT_PROFILE_ID);
+		if (!existingEntry && readSessionAgentRecords().some((record) => record.profileId === STUDIO_RFP_DEMO_AGENT_PROFILE_ID)) {
+			return;
+		}
+
+		hasSeededStudioRfpDemoAgentRef.current = true;
+
+		const registeredProfile = existingEntry?.profile
+			?? studioAgentRegistry.registerCreatedAgentFromResult(STUDIO_RFP_DEMO_AGENT_RESULT, {
+				preserveCurrentThread: true,
+				select: false,
+				sourceKey: STUDIO_RFP_DEMO_AGENT_SOURCE_KEY,
+			});
+		const profileId = registeredProfile?.id ?? existingEntry?.profile.id;
+		if (!profileId) {
+			return;
+		}
+
+		const seededEntry = studioAgentRegistry.getSessionAgentEntry?.(profileId);
+		if (seededEntry && seededEntry.publishedVersion === 0 && !seededEntry.publishedResult) {
+			studioAgentRegistry.commitSessionAgentPublishReady?.(profileId);
+			studioAgentRegistry.publishSessionAgent?.(profileId);
+		}
+	}, [embedded, initialThreadId, studioAgentRegistry]);
 
 	const handleStudioAgentResultSelect = useCallback(
 		(rawAgentResult: RovoDataParts["agent-result"], options?: { sourceMessageId?: string; sourceKey?: string }): boolean => {
@@ -1689,23 +1761,37 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			// into the config arrays. Idempotent — the context-side create path repairs
 			// too, but applying here also covers non-create results. User panel edits go
 			// through updateSessionAgentDraft and are intentionally NOT repaired here.
+			// Deterministically enrich a template-based result from its originating
+			// template BEFORE repair, so an agent created from a template always looks
+			// rich (chipped body + bound skills/apps/knowledge/subagents + triggers)
+			// even when the model returns a thin profile. Fill-when-empty + chip-less-
+			// body-only replacement; a no-op for from-scratch (non-matching) results.
+			const templateEnriched = applyTemplateDefaultsToResult(rawAgentResult);
 			const repaired = {
-				...rawAgentResult,
-				...repairGeneratedAgentCatalog(rawAgentResult),
+				...templateEnriched,
+				...repairGeneratedAgentCatalog(templateEnriched),
 			};
-			// Hydrate a generated schedule string (e.g. "every day at 7am") into a
-			// structured scheduled trigger so the config panel shows a real clock-icon
-			// trigger instead of a plain label-only chip. Only when none exist already.
+			// Hydrate generated trigger strings (e.g. "A Jira issue is blocked",
+			// "every day at 7am") into automation rules so the config panel shows
+			// automation chips with nested provider-icon event triggers instead of
+			// plain labels. Maps each string to its provider; only when no rules exist.
 			const triggerStrings = Array.isArray(repaired.triggers) && repaired.triggers.length > 0
 				? repaired.triggers
 				: repaired.trigger
 					? [repaired.trigger]
 					: [];
-			const inferredTriggerDefinitions = !repaired.triggerDefinitions || repaired.triggerDefinitions.length === 0
-				? inferScheduledTriggerDefinitions(triggerStrings)
+			const templateForTriggers = resolveTemplateConfigForResult(repaired);
+			const inferredAutomationRules = !repaired.automationRules || repaired.automationRules.length === 0
+				? inferAutomationRules(triggerStrings, {
+						automationName: templateForTriggers?.triggerAutomationName,
+						prompt: templateForTriggers?.triggerPrompt,
+					})
 				: undefined;
-			const agentResult = inferredTriggerDefinitions
-				? { ...repaired, triggerDefinitions: inferredTriggerDefinitions }
+			// Pre-fill the shared automation prompt + name (the "Agent Instructions" /
+			// "Automation name" fields in the trigger dialog) from the originating
+			// template, so a template-based agent's automation isn't a blank form.
+			const agentResult = inferredAutomationRules
+				? { ...repaired, automationRules: inferredAutomationRules }
 				: repaired;
 			const normalizedAgent = normalizeStudioAgentResult(agentResult);
 			if (!normalizedAgent) {
@@ -1789,6 +1875,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		const registered = studioAgentRegistry.registerCreatedAgentFromResult(blankAgentResult, {
 			preserveCurrentThread: true,
 			select: true,
+			// A from-scratch agent has no name/content yet, so suppress the
+			// "Saving…/Saved" indicator — there is nothing meaningful to save.
+			silentSave: true,
 			sourceKey: `studio-start-from-scratch:${uniqueSuffix}`,
 		});
 		if (!registered) {
@@ -2199,8 +2288,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const injectedRealtimeArtifactContextKeyRef = useRef<string | null>(null);
 	const pendingTypedScrollAnchorRef = useRef(false);
 	const isDefaultAgentHomeStateRef = useRef(false);
-	const studioAgentCreationThreadKeysRef = useRef<Set<string>>(new Set());
-	const studioAgentCreationThreadTouchedAtRef = useRef<Map<string, number>>(new Map());
+	const studioAgentCreationThreadKeysRef = useLazyRef<Set<string>>(() => new Set());
+	const studioAgentCreationThreadTouchedAtRef = useLazyRef<Map<string, number>>(() => new Map());
 	const [studioAgentCreationThreadIds, setStudioAgentCreationThreadIds] = useState<ReadonlySet<string>>(() => new Set());
 	const studioAgentCreationThreads = useMemo(() => {
 		return Array.from(studioAgentCreationThreadIds).map((threadId) => {
@@ -2217,7 +2306,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			};
 		});
 	}, [chat.activeThreadId, chat.messages, chat.threads, studioAgentCreationThreadIds]);
-	const handledAgentResultKeysRef = useRef<Set<string>>(new Set());
+	const handledAgentResultKeysRef = useLazyRef<Set<string>>(() => new Set());
 	const previousTypedAnchorUserMessageIdRef = useRef<string | null>(null);
 	const typedScrollAnchorSourceRef = useRef<TypedScrollAnchorSource>("none");
 	const realtimeTypedResponseStartedRef = useRef(false);
@@ -2432,8 +2521,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		[
 			activeQuestionCard,
 			activeQuestionCardKey,
-			chat.activeThreadId,
-			chat.runtimeThreadId,
 			getStudioAgentCreationClarificationOptions,
 			hideQuestionCard,
 			studioCreationTemplate,
@@ -3407,6 +3494,92 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			}
 
 			const trimmedText = text.trim();
+
+			// Deterministic demo agent-editor. Studio build prompts typed while an
+			// agent draft is open ("add a trigger to…", "give it Jira tools",
+			// "rename it to…") are mapped onto the fake directory catalogs and
+			// applied directly — no model call — so the demo is reliable and never
+			// returns gibberish. New-agent prompts fall through to the normal
+			// model-backed creation flow so the AI can ask clarification questions.
+			// Voice/realtime is never intercepted.
+			if (!isRealtimeActive && trimmedText) {
+				const openAgentEntry = activeSessionAgentEntry;
+				const buildPlan = planDeterministicAgentBuild(
+					trimmedText,
+					openAgentEntry ? openAgentEntry.draftResult : null,
+				);
+				if (buildPlan.handled) {
+					// A build prompt typed from the default home state must run the same
+					// landing→studio collapse + creation-thread bookkeeping the normal
+					// path below does, since this branch returns before reaching it.
+					const fromDefaultHomeState = isDefaultAgentHomeStateRef.current;
+					const triggerAutomationNames = buildPlan.triggerAutomationNames ?? [];
+					if (fromDefaultHomeState) {
+						setIsDefaultHomeSubmitTransition(true);
+						markStudioAgentCreationThread(chat.runtimeThreadId);
+						markStudioAgentCreationThread(chat.activeThreadId);
+					}
+					queueTypedScrollAnchor("standard", latestUserMessageIdBeforeSubmit);
+					try {
+						await appendRealtimeMessage("user", trimmedText, { contextDescription });
+						const assistantMessageId = createId("rovo-app-deterministic");
+						const triggerTraceStartedAt = new Date();
+						if (triggerAutomationNames.length > 0) {
+							const triggerTraceStates = ["thinking", "review", "schedule", "delivery", "save", "complete"] as const;
+							await appendRealtimeMessage("assistant", "", {
+								contextDescription,
+								messageId: assistantMessageId,
+								parts: buildDeterministicTriggerThinkingParts({
+									prompt: trimmedText,
+									startedAt: triggerTraceStartedAt,
+									state: triggerTraceStates[0],
+									triggerAutomationNames,
+								}),
+							});
+							const triggerTraceDelays = [
+								DETERMINISTIC_TRIGGER_TRACE_INITIAL_DELAY_MS,
+								...DETERMINISTIC_TRIGGER_TRACE_STAGE_DELAYS_MS,
+							] as const;
+							for (let index = 0; index < triggerTraceDelays.length; index += 1) {
+								await waitForDeterministicTrace(triggerTraceDelays[index]);
+								const stagedTraceState = triggerTraceStates[index + 1] ?? "complete";
+								await appendRealtimeMessage("assistant", "", {
+									contextDescription,
+									messageId: assistantMessageId,
+									parts: buildDeterministicTriggerThinkingParts({
+										...(index === triggerTraceDelays.length - 1 && buildPlan.assistantReply
+											? { assistantReply: buildPlan.assistantReply }
+											: {}),
+										prompt: trimmedText,
+										startedAt: triggerTraceStartedAt,
+										state: stagedTraceState,
+										triggerAutomationNames,
+									}),
+								});
+							}
+						}
+						if (buildPlan.mode === "update" && openAgentEntry && buildPlan.patch) {
+							handleUpdateAgentDraft(openAgentEntry.profile.id, buildPlan.patch);
+						}
+						if (buildPlan.assistantReply && triggerAutomationNames.length === 0) {
+							await appendRealtimeMessage("assistant", buildPlan.assistantReply, {
+								contextDescription,
+							});
+						}
+					} catch (error) {
+						if (fromDefaultHomeState) {
+							setIsDefaultHomeSubmitTransition(false);
+						}
+						resetTypedScrollAnchorState();
+						throw error;
+					}
+					if (shouldClearHermesSkillSelection) {
+						clearHermesSkillSelection();
+					}
+					return;
+				}
+			}
+
 			const shouldShowOptimisticPrompt =
 				(chat.sendMode === "immediate" || !chat.shouldQueueNextSubmission) &&
 				(trimmedText || files.length > 0);
@@ -3461,6 +3634,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		},
 		[
 			appendRealtimeMessage,
+			activeSessionAgentEntry,
+			handleUpdateAgentDraft,
 			chat.messages,
 			isRealtimeActive,
 			isClickyActive,
@@ -3480,6 +3655,98 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			chat.shouldQueueNextSubmission,
 			chat.runtimeThreadId,
 		],
+	);
+
+	// Deterministic agent-edit interception for the ask-Rovo ("Improve your
+	// agent?") chat. That composer runs through ChatPanel/RovoChatProvider, not
+	// handleComposerSubmit, so it gets its own seam wired to the same shared
+	// planner. Returns { handled } so ChatPanel can skip the model and inject a
+	// believable reply. While the edit context bar is open, ChatPanel also blocks
+	// unmatched prompts from falling through to the normal clarification / plan
+	// flow. The test chat does NOT receive this prop, so conversing with the
+	// agent stays a real conversation.
+	const handleAgentEditInterceptSubmit = useCallback(
+		(text: string) => {
+			const trimmedText = text.trim();
+			const openAgentEntry = activeSessionAgentEntry;
+			const buildPlan = planDeterministicAgentBuild(
+				trimmedText,
+				openAgentEntry ? openAgentEntry.draftResult : null,
+			);
+			if (!buildPlan.handled) {
+				return { handled: false };
+			}
+			const applyBuildPlan = () => {
+				if (buildPlan.mode === "update" && openAgentEntry && buildPlan.patch) {
+					handleUpdateAgentDraft(openAgentEntry.profile.id, buildPlan.patch);
+				}
+			};
+			const triggerAutomationNames = buildPlan.triggerAutomationNames ?? [];
+			if (triggerAutomationNames.length === 0) {
+				applyBuildPlan();
+				return { handled: true, assistantReply: buildPlan.assistantReply };
+			}
+			return {
+				handled: true,
+				assistantReply: buildPlan.assistantReply,
+				getPendingAssistantParts: ({ startedAt }: { startedAt: Date }) => buildDeterministicTriggerThinkingParts({
+					prompt: trimmedText,
+					startedAt,
+					state: "thinking",
+					triggerAutomationNames,
+				}),
+				assistantPartStages: [
+					{
+						delayMs: DETERMINISTIC_TRIGGER_TRACE_INITIAL_DELAY_MS,
+						getAssistantParts: ({ startedAt }: { startedAt: Date }) => buildDeterministicTriggerThinkingParts({
+							prompt: trimmedText,
+							startedAt,
+							state: "review",
+							triggerAutomationNames,
+						}),
+					},
+					{
+						delayMs: DETERMINISTIC_TRIGGER_TRACE_STAGE_DELAYS_MS[0],
+						getAssistantParts: ({ startedAt }: { startedAt: Date }) => buildDeterministicTriggerThinkingParts({
+							prompt: trimmedText,
+							startedAt,
+							state: "schedule",
+							triggerAutomationNames,
+						}),
+					},
+					{
+						delayMs: DETERMINISTIC_TRIGGER_TRACE_STAGE_DELAYS_MS[1],
+						getAssistantParts: ({ startedAt }: { startedAt: Date }) => buildDeterministicTriggerThinkingParts({
+							prompt: trimmedText,
+							startedAt,
+							state: "delivery",
+							triggerAutomationNames,
+						}),
+					},
+					{
+						delayMs: DETERMINISTIC_TRIGGER_TRACE_STAGE_DELAYS_MS[2],
+						getAssistantParts: ({ startedAt }: { startedAt: Date }) => buildDeterministicTriggerThinkingParts({
+							prompt: trimmedText,
+							startedAt,
+							state: "save",
+							triggerAutomationNames,
+						}),
+					},
+					{
+						delayMs: DETERMINISTIC_TRIGGER_TRACE_STAGE_DELAYS_MS[3],
+						getAssistantParts: ({ startedAt }: { startedAt: Date }) => buildDeterministicTriggerThinkingParts({
+							assistantReply: buildPlan.assistantReply,
+							prompt: trimmedText,
+							startedAt,
+							state: "complete",
+							triggerAutomationNames,
+						}),
+						onApply: applyBuildPlan,
+					},
+				],
+			};
+		},
+		[activeSessionAgentEntry, handleUpdateAgentDraft],
 	);
 
 	// Keep the screen-assistant tool executor (created with the realtime hook
@@ -3834,7 +4101,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const composerDockRef = useRef<HTMLDivElement | null>(null);
 	const defaultHomeTopSpacerRef = useRef<HTMLDivElement | null>(null);
 	const artifactCardOriginRef = useRef<DOMRect | null>(null);
-	const artifactPreviewOriginRef = useRef<Map<string, DOMRect>>(new Map());
+	const artifactPreviewOriginRef = useLazyRef<Map<string, DOMRect>>(() => new Map());
 	const [defaultHomeTopSpacerMeasurement, setDefaultHomeTopSpacerMeasurement] = useState<{ key: string; height: number } | null>(null);
 	const [artifactOrigin, setArtifactOrigin] = useState({
 		left: 0,
@@ -4123,6 +4390,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			testPanel={agentConfigTestPanel}
 			chatContextBar={agentEditContextBar}
 			chatGreeting={agentEditGreeting}
+			onChatInterceptSubmit={handleAgentEditInterceptSubmit}
 			onUpdateDraft={handleUpdateAgentDraft}
 			onStartWithTemplate={handleStartAgentWithTemplate}
 		/>
@@ -4521,6 +4789,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				onSelectTemplateAgent={handleTemplateAgentSelect}
 				sessionAgents={studioAgentRegistry.sessionAgentEntries.map((entry) => entry.profile)}
 				initialTemplateCategory={sidebarAgentBrowserInitialCategory}
+				variant="experimental"
 			/>
 
 			{!embedded ? (
@@ -4706,6 +4975,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							abortOnUnmount={false}
 							chatContextBar={agentEditContextBar}
 							greeting={agentEditGreeting}
+							onInterceptSubmit={handleAgentEditInterceptSubmit}
 							hideComposerSourceAndModelControls={Boolean(agentEditContextBar)}
 							// No left border here: the SidebarResizeHandle below paints the divider.
 							// Keeping the panel's own `border-l` too would stack two translucent

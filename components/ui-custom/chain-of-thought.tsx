@@ -1,5 +1,9 @@
 "use client";
 
+// oxlint-disable react-doctor/no-reset-all-state-on-prop-change -- These prop/key changes intentionally restart a workflow to avoid carrying stale state across runs.
+
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import type { ComponentProps, ComponentType, ReactNode } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 
@@ -460,6 +464,72 @@ export const ChainOfThoughtImage = memo(
 	)
 );
 
+export type ChainOfThoughtScenarioState = NonNullable<ChainOfThoughtHeaderProps["state"]>;
+
+export interface ChainOfThoughtScenarioStep {
+	id: string;
+	label: ReactNode;
+	description?: ReactNode;
+	status: NonNullable<ChainOfThoughtStepProps["status"]>;
+	icon?: ComponentType<NewCoreIconProps>;
+	iconRender?: ReactNode;
+	collapsible?: boolean;
+	defaultOpen?: boolean;
+	className?: string;
+	children?: ReactNode;
+}
+
+export interface ChainOfThoughtScenarioProps extends Omit<ChainOfThoughtProps, "children" | "defaultOpen"> {
+	state: ChainOfThoughtScenarioState;
+	duration?: number;
+	steps: readonly ChainOfThoughtScenarioStep[];
+	headerLabel?: ReactNode;
+	contentClassName?: string;
+}
+
+export const ChainOfThoughtScenario = memo(
+	({
+		className,
+		contentClassName,
+		duration,
+		headerLabel,
+		state,
+		steps,
+		...props
+	}: ChainOfThoughtScenarioProps) => (
+		<ChainOfThought
+			className={className}
+			defaultOpen={state === "thinking"}
+			{...props}
+		>
+			<ChainOfThoughtHeader
+				duration={duration}
+				showChevron={state !== "preload" && steps.length > 0}
+				state={state}
+			>
+				{headerLabel}
+			</ChainOfThoughtHeader>
+			<ChainOfThoughtContent className={contentClassName}>
+				{steps.map((step) => (
+					<ChainOfThoughtStep
+						key={step.id}
+						className={step.className}
+						collapsible={step.collapsible}
+						defaultOpen={step.defaultOpen}
+						description={step.description}
+						icon={step.icon}
+						iconRender={step.iconRender}
+						label={step.label}
+						status={step.status}
+					>
+						{step.children}
+					</ChainOfThoughtStep>
+				))}
+			</ChainOfThoughtContent>
+		</ChainOfThought>
+	)
+);
+
 ChainOfThought.displayName = "ChainOfThought";
 ChainOfThoughtHeader.displayName = "ChainOfThoughtHeader";
 ChainOfThoughtStep.displayName = "ChainOfThoughtStep";
@@ -467,3 +537,4 @@ ChainOfThoughtSearchResults.displayName = "ChainOfThoughtSearchResults";
 ChainOfThoughtSearchResult.displayName = "ChainOfThoughtSearchResult";
 ChainOfThoughtContent.displayName = "ChainOfThoughtContent";
 ChainOfThoughtImage.displayName = "ChainOfThoughtImage";
+ChainOfThoughtScenario.displayName = "ChainOfThoughtScenario";

@@ -314,6 +314,7 @@ const statusVariants: Record<ToolPart["state"], ComponentProps<typeof Lozenge>["
   "output-error": "danger",
 };
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const getStatusLozenge = (
   status: ToolPart["state"],
   { icon }: { icon?: ReactNode } = {}

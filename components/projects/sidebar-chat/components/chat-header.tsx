@@ -1,5 +1,9 @@
 "use client";
 
+// oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
+
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {

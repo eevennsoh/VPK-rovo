@@ -65,6 +65,7 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 /** Compact count formatter — 1500 → "1.5K", 12000 → "12K". */
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function formatCompact(value: number): string {
 	if (value >= 10000) return `${Math.round(value / 1000)}K`;
 	if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
@@ -505,7 +506,7 @@ export function EntityCardCapabilities({ label, items }: Readonly<EntityCardCapa
 										className="size-4 shrink-0 text-icon-subtlest"
 										render={getCapabilityIcon(capability.icon)}
 									/>
-									<span className="min-w-0 flex-1 truncate text-sm leading-5 text-text">{capability.label}</span>
+									<span className="min-w-0 flex-1 truncate text-xs leading-4 text-text-subtlest">{capability.label}</span>
 								</TooltipTrigger>
 								<TooltipContent side="right">{capability.label}</TooltipContent>
 							</Tooltip>

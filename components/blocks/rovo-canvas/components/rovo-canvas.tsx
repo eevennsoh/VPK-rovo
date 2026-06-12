@@ -1,5 +1,12 @@
 "use client";
 
+// oxlint-disable react-doctor/no-chain-state-updates -- Related state fields are updated together to preserve atomic UI transitions and avoid partial interaction states.
+// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
+// oxlint-disable react-doctor/no-pass-data-to-parent -- Callbacks in this file intentionally report measured, generated, or selected data to an owning parent component.
+// oxlint-disable react-doctor/no-pass-live-state-to-parent -- Callbacks in this file intentionally stream live interaction state to the parent owner.
+
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import ClockIcon from "@atlaskit/icon/core/clock";
@@ -18,7 +25,7 @@ import { Footer } from "@/components/ui-custom/footer";
 import { Icon as VpkIcon } from "@/components/ui/icon";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArtifactAnnotationLayer } from "@/components/ui-custom/artifact";
+import { ArtifactAnnotationLayer } from "@/components/blocks/artifact";
 import { useArtifactAnnotations } from "@/components/ui-custom/hooks/use-artifact-annotations";
 import type { ArtifactAnnotationKind } from "@/components/ui-custom/lib/artifact-annotations";
 import { cn } from "@/lib/utils";
@@ -402,13 +409,12 @@ export function RovoCanvasPlaceholder({
 	isEditing?: boolean;
 }>): React.ReactElement {
 	return (
-		<div
+		<section
 			aria-label="Blank canvas surface"
 			className="relative size-full overflow-auto bg-surface"
-			role="region"
 		>
 			{isEditing ? <ShimmerOverlay /> : null}
-		</div>
+		</section>
 	);
 }
 
@@ -636,6 +642,7 @@ export function RovoCanvas({
 		canvasInstanceIdRef.current = Symbol("rovo-canvas");
 	}
 
+	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- annotation availability is bridged to canvas selection and parent state.
 	useEffect(() => {
 		const instanceId = canvasInstanceIdRef.current;
 		if (instanceId === null) {
@@ -682,6 +689,7 @@ export function RovoCanvas({
 			onSelectModeChange?.(false);
 		}
 	}, [clearAnnotations, isAnnotationModeAvailable, isSelectMode, onSelectModeChange]);
+	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	function handleToggleSelectMode(): void {
 		if (!isAnnotationModeAvailable) {

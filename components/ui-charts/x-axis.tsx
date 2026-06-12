@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
+
 import { memo, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
@@ -312,6 +314,7 @@ function isBetterTickLayout(
  * Picks tick indices with the most even on-screen spacing. Tries
  * `targetCount ± 1` and evaluates every gap layout when feasible.
  */
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function selectEvenlySpacedIndices(
   length: number,
   targetCount: number,

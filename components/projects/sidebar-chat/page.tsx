@@ -1,11 +1,20 @@
 "use client";
 
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props or external runtime state before user edits take ownership.
+// oxlint-disable react-doctor/no-pass-data-to-parent -- Callbacks in this file intentionally report measured, generated, or selected data to an owning parent component.
+
+/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
+
 import { Fragment, useEffect, useMemo, useCallback, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { DEFAULT_REASONING_OPTION_ID } from "@/components/blocks/shared-ui/data/customize-menu-data";
 import { useRovoChat } from "@/app/contexts";
 import type { SendPromptOptions } from "@/app/contexts";
 import type { ChatContextBarDescriptor } from "./lib/chat-context-bar";
 import type { ChatSurfaceSwitchHandler } from "@/components/projects/shared/components/chat-surface-switcher";
+import { useLazyRef } from "@/lib/use-lazy-ref";
 import {
 	Conversation,
 	ConversationContent,
@@ -21,7 +30,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Lozenge } from "@/components/ui/lozenge";
+import { Badge } from "@/components/ui/badge";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import EditIcon from "@atlaskit/icon/core/edit";
@@ -73,7 +82,7 @@ import { StreamingThinkingIndicator } from "./components/streaming-thinking-indi
 import { PreloadThinkingIndicator } from "@/components/projects/shared/components/preload-thinking-indicator";
 import { chatStyles } from "./data/styles";
 import { cn } from "@/lib/utils";
-import { useChatSubmit } from "./hooks/use-chat-submit";
+import { useChatSubmit, type ChatSubmitInterceptOutcome } from "./hooks/use-chat-submit";
 import { useScrollAnchor } from "./hooks/use-scroll-anchor";
 import { useThinkingStatus } from "./hooks/use-thinking-status";
 import { appendOptimisticCompactUserMessage } from "./lib/optimistic-user-message";
@@ -83,6 +92,8 @@ import { useClickyVoice } from "@/components/projects/rovo/hooks/use-clicky-voic
 import { ClickyOverlay } from "@/components/projects/rovo/components/clicky/clicky-overlay";
 import { parseClickyResponse } from "@/components/projects/rovo/lib/clicky-point-parser";
 import styles from "./chat.module.css";
+
+export type { ChatSubmitInterceptOutcome } from "./hooks/use-chat-submit";
 
 interface ChatPanelCardsProps {
 	generativeAnimation?: GenerativeCardAnimationProps;
@@ -110,6 +121,13 @@ export interface ChatPanelAgentVersionOption {
 	label: string;
 	variant?: "neutral" | "success";
 	sectionBreakBefore?: boolean;
+	/**
+	 * Marks the currently published / live version. The dropdown renders a
+	 * "Current" text label (outside the badge) on this row so users can tell
+	 * which version is live, independent of which one they have selected to
+	 * preview.
+	 */
+	isCurrent?: boolean;
 }
 
 interface ChatPanelProps {
@@ -159,6 +177,15 @@ interface ChatPanelProps {
 	hideHeader?: boolean;
 	headerVariant?: "default" | "minimal";
 	abortOnUnmount?: boolean;
+	/**
+	 * Optional deterministic submit interceptor. When provided and it reports the
+	 * prompt as handled, the composer submission skips the model entirely — the
+	 * user message and the returned `assistantReply` are injected locally. Used by
+	 * the studio agent-edit ("Improve your agent?") chat to apply scripted agent
+	 * edits; absent for normal conversational chats (including the agent test
+	 * chat, which must stay a real conversation).
+	 */
+	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 	containerClassName?: string;
 	containerStyle?: CSSProperties;
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
@@ -191,8 +218,8 @@ const REGULAR_CHAT_WIDTH_MAX = 900;
 const ARTIFACT_DIALOG_FLOATING_PIN_REASON = "sidebar-chat-artifact-dialog";
 const DEFAULT_AGENT_VERSION_OPTIONS: readonly ChatPanelAgentVersionOption[] = [
 	{ id: "draft", label: "Draft", variant: "neutral" },
-	{ id: "version-2", label: "Version 2", variant: "success", sectionBreakBefore: true },
-	{ id: "version-1", label: "Version 1", variant: "success" },
+	{ id: "version-2", label: "V2", variant: "success", sectionBreakBefore: true, isCurrent: true },
+	{ id: "version-1", label: "V1", variant: "success" },
 ];
 
 type SmartWidthClass = "compact" | "regular" | "wide";
@@ -260,6 +287,7 @@ export default function ChatPanel({
 	hideHeader = false,
 	headerVariant = "default",
 	abortOnUnmount = true,
+	onInterceptSubmit,
 	containerClassName,
 	containerStyle,
 	onSurfaceSwitch,
@@ -292,36 +320,47 @@ export default function ChatPanel({
 	} = useRovoChat();
 	const panelRef = useRef<HTMLDivElement | null>(null);
 	const artifactDialogFloatingPinRef = useRef(false);
-	const reportedArtifactResultKeysRef = useRef<Set<string>>(new Set());
+	const reportedArtifactResultKeysRef = useLazyRef<Set<string>>(() => new Set());
 	const [containerWidthPx, setContainerWidthPx] = useState<number | null>(null);
 	const [viewportWidthPx, setViewportWidthPx] = useState<number | null>(null);
 	const [selectedReasoning, setSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [directoryAutocompleteState, setDirectoryAutocompleteState] = useState<DirectoryAutocompleteState | null>(null);
 	const [directoryAutocompleteController, setDirectoryAutocompleteController] = useState<ComposerDirectoryAutocompleteController | null>(null);
 	const [uncontrolledAgentVersionId, setUncontrolledAgentVersionId] = useState<string>(agentVersionOptions[0]?.id ?? "draft");
-	const resolvedAgentVersionId = selectedAgentVersionId ?? uncontrolledAgentVersionId;
+	const fallbackAgentVersionId = agentVersionOptions[0]?.id ?? DEFAULT_AGENT_VERSION_OPTIONS[0].id;
+	const resolvedUncontrolledAgentVersionId = agentVersionOptions.some((version) => version.id === uncontrolledAgentVersionId)
+		? uncontrolledAgentVersionId
+		: fallbackAgentVersionId;
+	const resolvedAgentVersionId = selectedAgentVersionId ?? resolvedUncontrolledAgentVersionId;
 	const selectedAgentVersion =
 		agentVersionOptions.find((version) => version.id === resolvedAgentVersionId) ??
 		agentVersionOptions[0] ??
 		DEFAULT_AGENT_VERSION_OPTIONS[0];
 	const isCollapsibleEditContextBar = Boolean(chatContextBar?.collapsible && chatContextBar.variant === "edit");
-	const [isContextBarOpen, setIsContextBarOpen] = useState(true);
+	const [contextBarOpenState, setContextBarOpenState] = useState({
+		isOpen: true,
+		signature: chatContextBar?.signature,
+	});
+	let resolvedContextBarOpenState = contextBarOpenState;
+	if (contextBarOpenState.signature !== chatContextBar?.signature) {
+		resolvedContextBarOpenState = {
+			isOpen: true,
+			signature: chatContextBar?.signature,
+		};
+		setContextBarOpenState(resolvedContextBarOpenState);
+	}
+	const isContextBarOpen = resolvedContextBarOpenState.isOpen;
+	const setIsContextBarOpen = (isOpen: boolean) => {
+		setContextBarOpenState((currentState) => ({ ...currentState, isOpen }));
+	};
 
 	useEffect(() => {
 		if (agentVersionOptions.some((version) => version.id === resolvedAgentVersionId)) {
 			return;
 		}
 
-		const fallbackVersionId = agentVersionOptions[0]?.id ?? DEFAULT_AGENT_VERSION_OPTIONS[0].id;
-		if (selectedAgentVersionId === undefined) {
-			setUncontrolledAgentVersionId(fallbackVersionId);
-		}
-		onAgentVersionChange?.(fallbackVersionId);
-	}, [agentVersionOptions, onAgentVersionChange, resolvedAgentVersionId, selectedAgentVersionId]);
-
-	useEffect(() => {
-		setIsContextBarOpen(true);
-	}, [chatContextBar?.signature]);
+		onAgentVersionChange?.(fallbackAgentVersionId);
+	}, [agentVersionOptions, fallbackAgentVersionId, onAgentVersionChange, resolvedAgentVersionId]);
 
 	useEffect(() => {
 		const updateViewportWidth = () => {
@@ -380,16 +419,20 @@ export default function ChatPanel({
 		setPrompt,
 		handleSubmit,
 		submitPrompt,
+		interceptSubmit,
 		abort,
 		uiMessages,
 		isStreaming,
 		hasInFlightTurn,
 		isSubmitPending,
 		activeRequestStartedAt,
+		localThinkingAssistantMessageId,
 		queuedPrompts,
 		removeQueuedPrompt,
 	} = useChatSubmit({
 		defaultPromptOptions: resolvedSendPromptOptions,
+		onInterceptSubmit,
+		requireIntercept: isCollapsibleEditContextBar && isContextBarOpen,
 	});
 
 	// --- Rovo AI cursor companion (Clicky) ---
@@ -773,21 +816,31 @@ export default function ChatPanel({
 
 	const handleGreetingSuggestionClick = useCallback(
 		(suggestion: RovoSuggestion) => {
+			const promptText = suggestion.prompt ?? suggestion.label;
 			const hasSeparatePrompt = suggestion.prompt && suggestion.prompt !== suggestion.label;
 
-			void sendPrompt(suggestion.prompt ?? suggestion.label, {
-				...resolvedSendPromptOptions,
-				contextDescription: mergeRovoContextDescriptions(
-					resolvedSendPromptOptions?.contextDescription,
-					suggestion.contextDescription,
-				),
-				messageMetadata: {
-					...resolvedSendPromptOptions?.messageMetadata,
-					...(hasSeparatePrompt ? { displayLabel: suggestion.label } : {}),
-				},
-			});
+			void (async () => {
+				// Route build-intent greeting chips through the deterministic
+				// interceptor first so they get the scripted reply instead of the
+				// real model; fall back to the normal send for everything else.
+				if (await interceptSubmit(promptText)) {
+					return;
+				}
+
+				void sendPrompt(promptText, {
+					...resolvedSendPromptOptions,
+					contextDescription: mergeRovoContextDescriptions(
+						resolvedSendPromptOptions?.contextDescription,
+						suggestion.contextDescription,
+					),
+					messageMetadata: {
+						...resolvedSendPromptOptions?.messageMetadata,
+						...(hasSeparatePrompt ? { displayLabel: suggestion.label } : {}),
+					},
+				});
+			})();
 		},
-		[resolvedSendPromptOptions, sendPrompt],
+		[interceptSubmit, resolvedSendPromptOptions, sendPrompt],
 	);
 	const handleDirectoryAutocompleteSelect = useCallback((index: number) => {
 		directoryAutocompleteController?.acceptIndex(index);
@@ -883,6 +936,7 @@ export default function ChatPanel({
 							illustrationSrc={resolvedGreeting?.illustrationSrc}
 							illustrationDarkSrc={resolvedGreeting?.illustrationDarkSrc}
 							isAgentTest={showAgentTestControls}
+							isComposing={prompt.trim().length > 0}
 							isMaxMode={selectedReasoning === "max"}
 							selectedAgent={greetingSelectedAgent ?? selectedAgent}
 							showHero={resolvedGreeting?.showHero}
@@ -911,7 +965,7 @@ export default function ChatPanel({
 						renderMessage={(message) => (
 							<MessageBubble
 								message={message}
-								isThinkingLifecycleStreaming={isStreamingLifecycleActive && message.id === lastAssistantMessageId}
+								isThinkingLifecycleStreaming={(isStreamingLifecycleActive || message.id === localThinkingAssistantMessageId) && message.id === lastAssistantMessageId}
 								onSuggestionClick={handleFollowUpSuggestionClick}
 								showFollowUpSuggestions={message.id === lastAssistantMessageId && !hasPendingChatWork}
 								enableSmartWidgets={enableSmartWidgets}
@@ -1116,9 +1170,9 @@ export default function ChatPanel({
 											/>
 										}
 									>
-										<Lozenge variant={selectedAgentVersion.variant ?? "success"}>
+										<Badge variant={selectedAgentVersion.variant ?? "success"}>
 											{selectedAgentVersion.label}
-										</Lozenge>
+										</Badge>
 										<ChevronDownIcon label="" size="small" spacing="none" />
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="start" sideOffset={8}>
@@ -1138,7 +1192,12 @@ export default function ChatPanel({
 														className={cn((version.variant ?? "success") === "neutral" && "bg-popover sticky top-0 z-10")}
 														elemAfter={version.id === selectedAgentVersion.id ? <CheckMarkIcon label="Selected" /> : undefined}
 													>
-														<Lozenge variant={version.variant ?? "success"}>{version.label}</Lozenge>
+														<span className="flex min-w-0 items-center gap-2">
+															<Badge variant={version.variant ?? "success"}>{version.label}</Badge>
+															{version.isCurrent ? (
+																<span className="text-xs text-text-subtle">Current</span>
+															) : null}
+														</span>
 													</DropdownMenuItem>
 												</Fragment>
 											))}

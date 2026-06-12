@@ -41,7 +41,32 @@ export function PersonalGraphSearch({
 	onSelectSlug,
 }: Readonly<PersonalGraphSearchProps>) {
 	const [query, setQuery] = useState("");
-	const [isFlyoutOpen, setIsFlyoutOpen] = useState(false);
+	const [flyoutState, setFlyoutState] = useState(() => ({
+		collapseFlyoutKey,
+		isFlyoutDisabled,
+		isOpen: false,
+	}));
+	if (
+		flyoutState.collapseFlyoutKey !== collapseFlyoutKey ||
+		flyoutState.isFlyoutDisabled !== isFlyoutDisabled
+	) {
+		setFlyoutState({
+			collapseFlyoutKey,
+			isFlyoutDisabled,
+			isOpen: false,
+		});
+	}
+	const isFlyoutOpen =
+		flyoutState.collapseFlyoutKey === collapseFlyoutKey &&
+		flyoutState.isFlyoutDisabled === isFlyoutDisabled
+			? flyoutState.isOpen
+			: false;
+	function setIsFlyoutOpen(nextOpen: boolean | ((current: boolean) => boolean)): void {
+		setFlyoutState((current) => ({
+			...current,
+			isOpen: typeof nextOpen === "function" ? nextOpen(current.isOpen) : nextOpen,
+		}));
+	}
 	const isTwgMode = mode === "twg";
 	const { results, status } = useVaultSearch(isTwgMode ? "" : query);
 	const firstResult = results[0];
@@ -56,10 +81,6 @@ export function PersonalGraphSearch({
 	const shouldShowChatPanel = isTwgMode && (Boolean(chatError) || Boolean(assistantMessage) || chatStatus === "streaming");
 	const chatPanelTitle = chatError ? "TWG error" : chatStatus === "streaming" ? "Thinking…" : "Answer";
 	const chatPanelText = chatError ?? assistantMessage ?? "";
-
-	useEffect(() => {
-		setIsFlyoutOpen(false);
-	}, [collapseFlyoutKey, isFlyoutDisabled]);
 
 	useEffect(() => {
 		if (!isFlyoutOpen) return;

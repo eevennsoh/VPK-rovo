@@ -7,6 +7,7 @@ import {
   PROFIT_LOSS_POSITIVE_COLOR,
 } from "./profit-loss-line";
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const PROFIT_LOSS_LEGEND_ITEMS = [
   { label: "Profit", value: 0, color: PROFIT_LOSS_POSITIVE_COLOR },
   { label: "Loss", value: 0, color: PROFIT_LOSS_NEGATIVE_COLOR },

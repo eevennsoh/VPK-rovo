@@ -33,6 +33,13 @@ const INCLUDED_TEST_FILES = new Set([
 	// No source-grep assertions (so it won't drift like the wholesale component
 	// tests); included explicitly so the morph keying stays guarded in CI.
 	"components/visual/text-morphing/lib.test.js",
+	// Pure heatmap date-domain/filtering contracts behind the chart component.
+	// Components are not included wholesale, so this focused coverage is listed
+	// explicitly to keep it gated by CI.
+	"components/ui-charts/heatmap/heatmap-utils.test.js",
+	// Deterministic studio agent-builder: prompt → agent create/update patch
+	// against the fake catalogs. Pure module under components/, so gate explicitly.
+	"components/projects/studio/lib/demo-agent-builder.test.js",
 ]);
 
 const gitResult = spawnSync("git", [
@@ -41,6 +48,7 @@ const gitResult = spawnSync("git", [
 	"--others",
 	"--exclude-standard",
 	"*.test.js",
+	"*.test.ts",
 ], {
 	encoding: "utf8",
 	stdio: ["ignore", "pipe", "inherit"],

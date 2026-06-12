@@ -18,6 +18,7 @@ const {
 	getWikiStatus,
 	getWikiJobDefinitions,
 	ingestRawSources,
+	isPrivateHostname,
 	isSkippableUrl,
 	lintWiki,
 	parseFrontmatter,
@@ -155,6 +156,39 @@ test("validateUrl rejects private IP 10.x.x.x", () => {
 
 test("validateUrl rejects localhost", () => {
 	assert.throws(() => validateUrl("https://localhost:3000/test"), /rejected|private/iu);
+});
+
+test("validateUrl rejects localhost with a trailing root label", () => {
+	assert.throws(() => validateUrl("https://localhost./test"), /rejected|private/iu);
+});
+
+test("validateUrl rejects localhost subdomains", () => {
+	assert.throws(() => validateUrl("https://app.localhost/test"), /rejected|private/iu);
+});
+
+test("validateUrl rejects IPv4 link-local metadata addresses", () => {
+	assert.throws(() => validateUrl("http://169.254.169.254/latest/meta-data"), /rejected|private/iu);
+});
+
+test("validateUrl rejects IPv6 loopback and private ranges", () => {
+	for (const url of [
+		"http://[::]/",
+		"http://[::1]/",
+		"http://[::ffff:127.0.0.1]/",
+		"http://[fc00::1]/",
+		"http://[fd12:3456:789a::1]/",
+		"http://[fe80::1]/",
+		"http://[fe90::1]/",
+		"http://[fec0::1]/",
+	]) {
+		assert.throws(() => validateUrl(url), /rejected|private/iu);
+	}
+});
+
+test("isPrivateHostname normalizes bracketed and trailing-dot hosts", () => {
+	assert.equal(isPrivateHostname("[::1]"), true);
+	assert.equal(isPrivateHostname("localhost."), true);
+	assert.equal(isPrivateHostname("example.com"), false);
 });
 
 test("validateUrl rejects empty string", () => {

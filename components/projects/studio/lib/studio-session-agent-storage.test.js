@@ -119,6 +119,63 @@ test("round-trips draft and published records through localStorage", () => {
 	assert.deepEqual(read, [draft, published]);
 });
 
+test("removes stale Code Reviewer subagent from persisted RFP demo records", () => {
+	const store = installStorageShim();
+	const staleResult = makeAgentResult({
+		agentId: "rfp-drafting-agent",
+		name: "RFP Drafter",
+		subagents: ["Code Reviewer", "Security evidence reviewer"],
+		subagentPrompts: [{
+			id: "code-reviewer",
+			triggerName: "Code Reviewer",
+			config: { name: "Code Reviewer" },
+		}, {
+			id: "security-evidence-reviewer",
+			triggerName: "Security evidence reviewer",
+			config: { name: "Security evidence reviewer" },
+		}],
+	});
+	const record = makeRecord({
+		profileId: "rfp-drafting-agent",
+		sourceResult: staleResult,
+		draftResult: staleResult,
+		publishReadyResult: staleResult,
+		publishedResult: staleResult,
+		publishStatus: "published",
+		publishedVersion: 1,
+		lastPublishedAt: 1_700_000_000_000,
+		lastPublishedBy: "Venn Soh",
+		versionHistory: [{
+			id: "version-rfp",
+			label: "Agent published",
+			version: 1,
+			kind: "publish",
+			createdAt: 1_700_000_000_000,
+			createdBy: "Venn Soh",
+			snapshot: staleResult,
+			changeSummary: { count: 0, sections: [] },
+		}],
+	});
+	store.set(STUDIO_SESSION_AGENTS_STORAGE_KEY, JSON.stringify([record]));
+
+	const [read] = readSessionAgentRecords();
+
+	for (const result of [
+		read.sourceResult,
+		read.draftResult,
+		read.publishReadyResult,
+		read.publishedResult,
+		read.versionHistory[0].snapshot,
+	]) {
+		assert.ok(result, "result should exist");
+		assert.deepEqual(result.subagents, ["Security evidence reviewer"]);
+		assert.deepEqual(
+			result.subagentPrompts.map((prompt) => prompt.triggerName),
+			["Security evidence reviewer"],
+		);
+	}
+});
+
 test("migrates legacy published-agents key into the new key and removes the legacy key", () => {
 	const store = installStorageShim();
 	const legacyResult = makeAgentResult({ agentId: "legacy-agent", name: "Legacy" });

@@ -55,4 +55,5 @@ function Banner({ className, variant = "warning", children, ...props }: Readonly
 	)
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export { Banner, bannerVariants, type BannerProps }

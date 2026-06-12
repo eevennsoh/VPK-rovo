@@ -339,6 +339,46 @@ function FormattingToolbar({ editor }: { editor: Editor }) {
 			},
 		],
 	},
+	"twg-agent-card": {
+		description:
+			"Teamwork Graph recommendation card that suggests a small personal agent team from user context. It reuses the Agent Card shell footprint, TWG app stack, Rovo color accents, subtle grid treatment, and a gestural-line decoration.",
+		importStatement: `import { TWGAgentCard } from "@/components/blocks/twg-agent-card";`,
+		usage: `import { TWGAgentCard } from "@/components/blocks/twg-agent-card";
+import type { TWGAgentSuggestion } from "@/components/blocks/twg-agent-card";
+
+const suggestedAgents: TWGAgentSuggestion[] = [
+  {
+    id: "life-admin-agent",
+    name: "Life Admin Agent",
+    description: "Turns loose reminders, forms, and renewals into handled next steps.",
+  },
+];
+
+<TWGAgentCard
+  userName="Venn"
+  userAvatarSrc="/avatar-human/florence-applebee.png"
+  suggestedAgents={suggestedAgents}
+  onSelect={() => openRecommendations()}
+/>`,
+		demoLayout: { previewHeight: "default" },
+		props: [
+			{ name: "userName", type: "string", default: '"Venn"', description: "Name inserted into the conversational headline." },
+			{ name: "userAvatarSrc", type: "string", default: '"/avatar-human/florence-applebee.png"', description: "Avatar shown inline in the headline." },
+			{ name: "headline", type: "ReactNode", description: "Copy after the name and avatar in the main headline." },
+			{ name: "suggestedAgents", type: "readonly TWGAgentSuggestion[]", description: "Agent recommendations shown in the dream-team section. The count reflects the full array; the card displays the first three rows." },
+			{ name: "sources", type: "readonly TwgToolSource[]", description: "Connected apps rendered in the header app stack." },
+			{ name: "onSelect", type: "() => void", description: "Whole-card selection handler using the shared Agent Card shell behavior." },
+			{ name: "selectLabel", type: "string", default: '"Open Teamwork Graph agent recommendations"', description: "Accessible label for the whole-card select button." },
+			{ name: "className", type: "string", description: "Additional classes applied to the card shell." },
+		],
+		examples: [
+			{
+				title: "Default",
+				description: "Suggested Teamwork Graph agent team card using the Agent Card experimental template footprint.",
+				demoSlug: "twg-agent-card",
+			},
+		],
+	},
 	"agent-profile-card": {
 		description: "Figma-matched Rovo agent profile card with cover art, avatar attribution, partner byline, description, title actions, and an AI input affordance.",
 		importStatement: `import { AgentProfileCard } from "@/components/blocks/agent-profile-card";`,
@@ -616,6 +656,60 @@ const agents: AgentTemplatesAgent[] = [
 				type: "string",
 				description: "Optional dialog heading. Defaults to the Strategy heading copy.",
 			},
+		],
+	},
+	artifact: {
+		description:
+			"A card for displaying AI-generated artifacts like code, documents, images, or sheets. The high-level ArtifactCard component provides kind-based icons, expand/collapse, streaming state, and preview rendering built on GenerativeCard. Low-level compound components (Artifact, ArtifactHeader, etc.) are also available for custom layouts.",
+		usage: `import { ArtifactCard } from "@/components/blocks/artifact";
+
+<ArtifactCard
+  kind="code"
+  title="Algorithm Implementation"
+  previewContent={codeString}
+  onOpen={() => openArtifact()}
+/>
+
+{/* Or use compound components for custom layouts: */}
+import {
+  Artifact, ArtifactHeader, ArtifactTitle,
+  ArtifactActions, ArtifactAction, ArtifactContent,
+} from "@/components/blocks/artifact";`,
+		demoLayout: {
+			previewContentWidth: "full",
+			examplesContentWidth: "full",
+		},
+		props: [
+			{ name: "kind", type: '"text" | "code" | "image" | "sheet" | "react"', description: "The artifact content type. Determines the default icon tile and color." },
+			{ name: "visualIdentity", type: '{ iconName: string; tileVariant: "gray" | "blue" | "teal" | "green" | "lime" | "yellow" | "orange" | "red" | "magenta" | "purple" }', description: "Optional icon-tile override used instead of the kind-based default." },
+			{ name: "title", type: "string", description: "Artifact title text." },
+			{ name: "action", type: '"create" | "update" | null', description: "Optional action context for description text." },
+			{ name: "isStreaming", type: "boolean", description: "Whether the artifact is currently streaming." },
+			{ name: "displayMode", type: '"preview" | "chip"', description: 'Display mode. "preview" shows expanded card, "chip" shows compact inline card. Defaults to "preview".' },
+			{ name: "previewContent", type: "string", description: "Content string for the preview (code text, image URL, etc.)." },
+			{ name: "onOpen", type: "(element: HTMLDivElement) => void", description: 'Callback when the "Open" button is clicked. Receives the card root element.' },
+			{ name: "onRegister", type: "(element: HTMLDivElement) => void", description: "Optional callback fired when a preview-mode card mounts. Receives the card root element." },
+			{ name: "children", type: "ReactNode", description: "Optional children rendered inside the card content (overrides previewContent)." },
+			{ name: "className", type: "string", description: "Additional classes for the outer wrapper." },
+		],
+		subComponents: [
+			{ name: "ArtifactCard", description: "High-level artifact card built on GenerativeCard with kind-based icons, expand/collapse, and preview rendering." },
+			{ name: "ArtifactPanel", description: "Full artifact viewer/editor panel with title, kind badge, edit/preview toggle, copy, and close. Renders code, images, or text." },
+			{ name: "Artifact", description: "Low-level root container for custom artifact layouts." },
+			{ name: "ArtifactHeader", description: "Header bar with title area and actions. Uses flexbox with justify-between." },
+			{ name: "ArtifactTitle", description: "Title text rendered as a paragraph with medium font weight." },
+			{ name: "ArtifactDescription", description: "Subtitle/description text in muted foreground color." },
+			{ name: "ArtifactActions", description: "Container for grouping action buttons with gap spacing." },
+			{ name: "ArtifactAction", description: "Individual icon button with optional tooltip. Accepts icon (LucideIcon), tooltip (string), and label (string) props." },
+			{ name: "ArtifactClose", description: "Close button defaulting to an X icon. Renders a ghost Button." },
+			{ name: "ArtifactContent", description: "Scrollable content area with padding. Use className='p-0' for edge-to-edge content like CodeBlock." },
+		],
+		examples: [
+			{ title: "Code preview", description: "ArtifactCard displaying a code artifact with preview and expand/collapse.", demoSlug: "artifact-demo-code-preview" },
+			{ title: "Image preview", description: "ArtifactCard displaying an image artifact with gradient overlay.", demoSlug: "artifact-demo-image-preview" },
+			{ title: "Streaming", description: "ArtifactCard in streaming state showing skeleton loading and spinner.", demoSlug: "artifact-demo-streaming" },
+			{ title: "Chip mode", description: "Compact inline artifact card with 'Open' action button.", demoSlug: "artifact-demo-chip" },
+			{ title: "Compound (legacy)", description: "Custom layout using low-level compound components.", demoSlug: "artifact-demo-compound" },
 		],
 	},
 	"apps-directory": {

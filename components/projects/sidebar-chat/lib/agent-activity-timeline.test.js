@@ -78,7 +78,7 @@ test("buildConfigEntries emits done milestones for triggers/tools and a current 
 		makeEntry({
 			publishStatus: "testing",
 			publishReadyResult: {
-				triggerDefinitions: [{}, {}],
+				automationRules: [{ id: "automation-1", triggers: [{}] }, { id: "automation-2", triggers: [{}] }],
 				tools: ["Jira", "Confluence"],
 			},
 		}),
@@ -91,7 +91,7 @@ test("buildConfigEntries emits done milestones for triggers/tools and a current 
 			["config-status", "current"],
 		],
 	)
-	assert.equal(entries[0].label, "2 triggers configured")
+	assert.equal(entries[0].label, "2 automations configured")
 	assert.deepEqual(entries[1].toolTags, ["Jira", "Confluence"])
 	assert.equal(entries[2].label, "In testing")
 	assert.ok(typeof entries[2].byline === "string" && entries[2].byline.length > 0)
@@ -101,10 +101,10 @@ test("buildConfigEntries marks published agents done and singularizes labels", (
 	const entries = buildConfigEntries(
 		makeEntry({
 			publishStatus: "published",
-			publishReadyResult: { triggerDefinitions: [{}], tools: ["Jira"] },
+			publishReadyResult: { automationRules: [{ id: "automation-1", triggers: [{}] }], tools: ["Jira"] },
 		}),
 	)
-	assert.equal(entries[0].label, "Trigger configured")
+	assert.equal(entries[0].label, "Automation configured")
 	assert.equal(entries[1].label, "Tool connected")
 	assert.equal(entries[2].label, "Published")
 	assert.equal(entries[2].state, "done")
@@ -135,7 +135,7 @@ test("buildAgentActivitySteps clamps to 12 rows while preserving all config mile
 	}))
 	const steps = buildAgentActivitySteps({
 		runtimeEntries,
-		entry: makeEntry({ publishReadyResult: { triggerDefinitions: [{}], tools: ["Jira"] } }),
+		entry: makeEntry({ publishReadyResult: { automationRules: [{ id: "automation-1", triggers: [{}] }], tools: ["Jira"] } }),
 	})
 	assert.equal(steps.length, 12)
 	// 3 config milestones kept at the tail, 9 runtime rows (newest-first) on top.

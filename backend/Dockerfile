@@ -9,8 +9,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY backend/package.json ./backend/package.json
 RUN corepack enable && \
     corepack prepare pnpm@11.1.2 --activate && \
-    pnpm install --prod --frozen-lockfile --config.strict-dep-builds=false && \
-    cd backend && npm install --omit=dev --package-lock=false
+    pnpm install --prod --frozen-lockfile --config.strict-dep-builds=false
 
 COPY backend ./backend
 COPY lib ./lib

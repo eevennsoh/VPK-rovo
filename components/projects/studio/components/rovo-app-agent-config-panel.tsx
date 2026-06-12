@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { type ReactNode, useCallback, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
@@ -30,9 +30,15 @@ import {
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
 import {
-	serializeAgentTriggerLabels,
+	getTriggerProvider,
+	markSessionProviderConnected,
+	type AgentAutomationRule,
+	type AgentTriggerProviderId,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/data/trigger-catalog";
+import { renderAgentTriggerProviderTileIcon } from "@/components/blocks/triggers/page";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { ManageSubagentsDialog } from "@/components/blocks/subagents/components/manage-subagents-dialog";
 import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
 import type { SubagentsBaseAgent } from "@/components/blocks/subagents/data/demo-agents";
@@ -58,7 +64,7 @@ import {
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
-import type { ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
+import type { ChatPanelGreetingProps, ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-chat/lib/chat-context-bar";
 import { getStudioSessionAgentDisplayName, useRovoChat } from "@/app/contexts";
 import { Badge } from "@/components/ui/badge";
@@ -70,7 +76,6 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { Spinner } from "@/components/ui/spinner";
 import { SONNER_TOAST_AUTO_DISMISS_MS, SonnerToast, Toaster } from "@/components/ui/sonner";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
@@ -107,6 +112,7 @@ interface RovoAppAgentConfigPanelProps {
 	testPanel: ReactNode;
 	chatContextBar?: ChatContextBarDescriptor | null;
 	chatGreeting?: ChatPanelGreetingProps;
+	onChatInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 	onUpdateDraft: (
 		profileId: string,
 		patch: Partial<AgentResult>,
@@ -201,6 +207,10 @@ function getPublishProfileHref(profileId: string): string {
 	return `${STUDIO_AGENT_PROFILE_BASE_PATH}?agent=${encodeURIComponent(profileId)}`;
 }
 
+// How long the transient "Saved just now" confirmation lingers before it
+// fades away. "Saving..." and "Unable to save" stay visible until resolved.
+const AGENT_SAVE_CONFIRMATION_LINGER_MS = 2_500;
+
 function AgentSaveStatusIndicator({
 	savedAt,
 	status,
@@ -208,6 +218,26 @@ function AgentSaveStatusIndicator({
 	savedAt: number | null;
 	status: "idle" | "saving" | "saved" | "error";
 }>) {
+	const reduceMotion = useReducedMotion();
+	// The success confirmation is transient: show it briefly after a save, then
+	// fade it out. Persistent states ("saving"/"error") are never dismissed here.
+	const isTransientConfirmation = status === "saved" && savedAt != null;
+	const [confirmationVisible, setConfirmationVisible] = useState(isTransientConfirmation);
+
+	useEffect(() => {
+		if (!isTransientConfirmation) {
+			setConfirmationVisible(false);
+			return;
+		}
+		setConfirmationVisible(true);
+		const timer = setTimeout(
+			() => setConfirmationVisible(false),
+			AGENT_SAVE_CONFIRMATION_LINGER_MS,
+		);
+		return () => clearTimeout(timer);
+		// Re-arm the timer on each new save (savedAt changes per save).
+	}, [isTransientConfirmation, savedAt]);
+
 	const label = status === "saving"
 		? "Saving..."
 		: status === "error"
@@ -216,17 +246,59 @@ function AgentSaveStatusIndicator({
 				? "Saved just now"
 				: "Saved";
 
+	// Render nothing once the confirmation has faded out (avoids a lingering
+	// empty min-width slot in the header actions).
+	const showIndicator = isTransientConfirmation ? confirmationVisible : status !== "idle";
+
 	return (
-		<div
-			className={cn(
-				"flex min-w-[92px] items-center gap-1.5 text-xs leading-4",
-				status === "error" ? "text-text-danger" : "text-text-subtle",
-			)}
-			aria-live="polite"
-		>
-			{status === "saving" ? <Spinner size="xs" className="text-text-subtle" /> : null}
-			<span>{label}</span>
-		</div>
+		<AnimatePresence>
+			{showIndicator ? (
+				// Stable key so the wrapper stays mounted across saving → saved →
+				// error transitions; only the wrapper fades in on first appearance
+				// and out on dismissal. Swapping the label text is handled by the
+				// inner AnimatePresence so the two states never co-render and shift.
+				<motion.div
+					key="save-indicator"
+					className="relative flex h-full items-center justify-end"
+					aria-live="polite"
+					initial={reduceMotion ? false : { opacity: 0 }}
+					animate={{ opacity: 1 }}
+					exit={{ opacity: 0 }}
+					transition={{ duration: reduceMotion ? 0 : 0.25, ease: "easeOut" }}
+				>
+					{/* Gradient scrim that veils the nav behind the label, fading
+					    leftward into the nav. Mirrors the scroll-mask fade
+					    direction (solid → transparent). */}
+					<span
+						aria-hidden
+						className="pointer-events-none absolute inset-y-0 right-0 -z-10 bg-linear-to-l from-surface from-75% to-transparent"
+						style={{ width: "calc(100% + var(--ds-space-600))" }}
+					/>
+					{/* mode="wait" ensures the old label fully fades before the new
+					    one appears, so the two states never co-render (no "Saving…
+					    Saved just now" overlap). The label stays in normal flow so
+					    the right-anchored wrapper + scrim size to it; the wrapper
+					    lives in an absolute overlay, so width changes grow leftward
+					    into the scrim rather than pushing the action buttons. */}
+					<AnimatePresence initial={false} mode="wait">
+						<motion.span
+							key={status}
+							className={cn(
+								"pointer-events-auto flex items-center gap-1.5 pl-2 text-xs leading-4 whitespace-nowrap",
+								status === "error" ? "text-text-danger" : "text-text-subtle",
+							)}
+							initial={reduceMotion ? false : { opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+							transition={{ duration: reduceMotion ? 0 : 0.15, ease: "easeOut" }}
+						>
+							{status === "saving" ? <Spinner size="xs" className="text-text-subtle" /> : null}
+							<span>{label}</span>
+						</motion.span>
+					</AnimatePresence>
+				</motion.div>
+			) : null}
+		</AnimatePresence>
 	);
 }
 
@@ -444,11 +516,11 @@ function AgentPublishDropdown({
 									}}
 								>
 									<span className="min-w-0 flex-1">
-										<span className="flex items-center gap-2 text-sm font-medium text-text">
-											<span>{`V${version.version}`}</span>
+										<span className="flex items-center gap-2">
+											<Badge variant="success">{`V${version.version}`}</Badge>
 											{version.version === entry.publishedVersion ? <Badge variant="secondary">Live</Badge> : null}
 										</span>
-										<span className="block text-xs text-text-subtle">
+										<span className="mt-1 block text-xs text-text-subtle">
 											{version.label} · {formatRelativeTime(version.createdAt)}
 										</span>
 									</span>
@@ -511,6 +583,7 @@ export function RovoAppAgentConfigPanel({
 	testPanel,
 	chatContextBar,
 	chatGreeting,
+	onChatInterceptSubmit,
 	onUpdateDraft,
 	onStartWithTemplate,
 	className,
@@ -710,36 +783,67 @@ export function RovoAppAgentConfigPanel({
 		},
 		[selectSubagentByDerivedIndex],
 	);
-	const handleTriggerDefinitionsChange = useCallback(
-		(triggerDefinitions: readonly AgentTriggerValue[]) => {
-			const triggerLabels = serializeAgentTriggerLabels(triggerDefinitions);
-
+	const handleAutomationRulesChange = useCallback(
+		(automationRules: readonly AgentAutomationRule[]) => {
 			updateActiveConfig((config) => ({
 				...config,
-				triggerDefinitions,
-				trigger: triggerLabels[0] ?? "",
-				triggers: triggerLabels,
+				automationRules,
 			}));
 		},
 		[updateActiveConfig],
 	);
+	// Fake provider connection flow: connecting a provider marks ALL its triggers
+	// connected after a short "Authorizing…" delay, and persists for the session.
+	const [connectingProvider, setConnectingProvider] = useState<{
+		providerId: AgentTriggerProviderId;
+		trigger: AgentTriggerValue;
+	} | null>(null);
+	const connectTimerRef = useRef<number | null>(null);
+	// oxlint-disable react-doctor/exhaustive-deps -- Unmount cleanup intentionally clears whichever fake provider connection timer is still active.
+	useEffect(() => {
+		return () => {
+			if (connectTimerRef.current !== null) {
+				window.clearTimeout(connectTimerRef.current);
+			}
+		};
+	}, []);
+	// oxlint-enable react-doctor/exhaustive-deps
 	const handleConnectTrigger = useCallback(
 		(targetTrigger: AgentTriggerValue) => {
+			const { providerId } = targetTrigger;
+			// Mark every trigger sharing this provider as connecting (provider-level).
 			updateActiveConfig((config) => {
-				const triggerDefinitions = (config.triggerDefinitions ?? []).map((trigger) =>
-					trigger.id === targetTrigger.id
-						? { ...trigger, connectionState: "connecting" as const }
-						: trigger,
-				);
-				const triggerLabels = serializeAgentTriggerLabels(triggerDefinitions);
-
-				return {
-					...config,
-					triggerDefinitions,
-					trigger: triggerLabels[0] ?? "",
-					triggers: triggerLabels,
-				};
+				const automationRules = (config.automationRules ?? []).map((rule) => ({
+					...rule,
+					triggers: rule.triggers.map((trigger) =>
+						trigger.providerId === providerId
+							? { ...trigger, connectionState: "connecting" as const }
+							: trigger,
+					),
+				}));
+				return { ...config, automationRules };
 			});
+			setConnectingProvider({ providerId, trigger: targetTrigger });
+
+			if (connectTimerRef.current !== null) {
+				window.clearTimeout(connectTimerRef.current);
+			}
+			connectTimerRef.current = window.setTimeout(() => {
+				markSessionProviderConnected(providerId);
+				updateActiveConfig((config) => {
+					const automationRules = (config.automationRules ?? []).map((rule) => ({
+						...rule,
+						triggers: rule.triggers.map((trigger) =>
+							trigger.providerId === providerId
+								? { ...trigger, connectionState: "connected" as const }
+								: trigger,
+						),
+					}));
+					return { ...config, automationRules };
+				});
+				setConnectingProvider(null);
+				connectTimerRef.current = null;
+			}, 1200);
 		},
 		[updateActiveConfig],
 	);
@@ -1137,12 +1241,14 @@ export function RovoAppAgentConfigPanel({
 								onSectionChange={handleCompactSectionChange}
 							/>
 						}
+						leadingOverlay={
+							<AgentSaveStatusIndicator
+								status={sessionAgentSaveStatus}
+								savedAt={sessionAgentSavedAt}
+							/>
+						}
 						actions={
 							<>
-								<AgentSaveStatusIndicator
-									status={sessionAgentSaveStatus}
-									savedAt={sessionAgentSavedAt}
-								/>
 								<AgentMoreOptionsMenu />
 								<Toggle
 									aria-label="Toggle agent test view"
@@ -1278,7 +1384,7 @@ export function RovoAppAgentConfigPanel({
 											onManageSubagents={() => setIsManageSubagentsOpen(true)}
 											onSelectListItem={handleSelectListItem}
 											onStartWithTemplate={onStartWithTemplate}
-											onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
+											onAutomationRulesChange={handleAutomationRulesChange}
 											onOpenDirectory={handleOpenDirectory}
 											selectedListItemIndexByField={{ subagents: selectedSubagentIndex }}
 											screenAssistantTargetPrefix="studio-agent-config"
@@ -1308,6 +1414,7 @@ export function RovoAppAgentConfigPanel({
 						chatContextBar={chatContextBar}
 						greeting={chatGreeting}
 						hideComposerSourceAndModelControls={Boolean(chatContextBar)}
+						onInterceptSubmit={onChatInterceptSubmit}
 					/>
 				) : null}
 			</AnimatePresence>
@@ -1388,6 +1495,36 @@ export function RovoAppAgentConfigPanel({
 				onToggleSubagent={toggleSubagent}
 				subagents={subagentPrompts}
 			/>
+			<Dialog
+				open={connectingProvider !== null}
+				onOpenChange={(open) => {
+					if (!open) {
+						setConnectingProvider(null);
+					}
+				}}
+			>
+				<DialogContent size="sm" showCloseButton={false} className="text-center">
+					<DialogTitle className="sr-only">
+						Connecting {connectingProvider ? getTriggerProvider(connectingProvider.providerId)?.label : "provider"}
+					</DialogTitle>
+					{connectingProvider ? (
+						<div className="flex flex-col items-center gap-4 py-2">
+							<div className="flex size-12 items-center justify-center">
+								{renderAgentTriggerProviderTileIcon(connectingProvider.trigger)}
+							</div>
+							<div className="flex items-center gap-2 text-text">
+								<Spinner />
+								<span className="text-sm font-medium">
+									Authorizing {getTriggerProvider(connectingProvider.providerId)?.label ?? "provider"}…
+								</span>
+							</div>
+							<p className="text-sm text-text-subtle">
+								Connecting your account so this agent&rsquo;s triggers can run.
+							</p>
+						</div>
+					) : null}
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 }

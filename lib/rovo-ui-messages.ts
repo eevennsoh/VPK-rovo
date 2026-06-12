@@ -9,7 +9,7 @@ import {
 	type ToolUIPart,
 	type UIMessage,
 } from "ai";
-import type { AgentTriggerValue } from "@/components/blocks/triggers/data/trigger-catalog";
+import type { AgentAutomationRule } from "@/components/blocks/triggers/data/trigger-catalog";
 import type { RovoAppCreationMode, RovoAppPromptMode } from "@/lib/rovo-app-types";
 
 // ---------------------------------------------------------------------------
@@ -188,7 +188,7 @@ export type RovoDataParts = {
 		summary: string;
 		trigger?: string;
 		triggers?: string[];
-		triggerDefinitions?: AgentTriggerValue[];
+		automationRules?: AgentAutomationRule[];
 		tools?: string[];
 		// `skills`, `knowledge`, and `subagents` are edited via the agent config
 		// panel and have long been persisted on the draft through the

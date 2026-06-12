@@ -43,8 +43,9 @@ export function WorkItemComments({ comments }: WorkItemCommentsProps) {
 						<AvatarFallback>ME</AvatarFallback>
 					</Avatar>
 					<div className="flex-1">
-						<textarea
-							className="w-full p-3 rounded border border-border bg-bg-neutral text-text text-sm focus:outline-none focus:ring-2 focus:ring-color-border-focused"
+							<textarea
+								aria-label="Add a comment"
+								className="w-full p-3 rounded border border-border bg-bg-neutral text-text text-sm focus:outline-none focus:ring-2 focus:ring-color-border-focused"
 							placeholder="Add a comment..."
 							rows={3}
 						/>

@@ -17,7 +17,7 @@ export function NavMain() {
 						<SidebarMenuButton
 							tooltip={item.title}
 							isActive={"isActive" in item && item.isActive}
-							render={<a href={item.url} />}
+							render={<a aria-label={item.title} href={item.url} />}
 						>
 							<item.icon label="" />
 							<span>{item.title}</span>

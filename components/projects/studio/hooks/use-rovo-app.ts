@@ -698,6 +698,7 @@ export interface RovoAppHookResult {
 			createdAt?: string;
 			messageId?: string;
 			metadata?: RovoUIMessage["metadata"];
+			parts?: RovoUIMessage["parts"];
 			state?: "done" | "streaming";
 		},
 	) => Promise<string>;
@@ -3862,23 +3863,35 @@ export function useRovoApp({
 				createdAt?: string;
 				messageId?: string;
 				metadata?: RovoUIMessage["metadata"];
+				parts?: RovoUIMessage["parts"];
 				state?: "done" | "streaming";
 			},
 		) => {
 			const createdAt = options?.createdAt ?? new Date().toISOString();
 			const messageId = options?.messageId ?? createId("rovo-app-realtime");
 			const threadId = await ensureThread(content || `${role} message`);
-			const message = createRealtimeTextMessage({
-				id: messageId,
-				role,
-				content,
+			const metadata = {
 				createdAt,
-				state: options?.state ?? "done",
-				metadata: {
-					...(options?.metadata ?? {}),
-					realtimeMessageId: messageId,
-				},
-			});
+				updatedAt: createdAt,
+				origin: "realtime" as const,
+				...(options?.metadata ?? {}),
+				realtimeMessageId: messageId,
+			};
+			const message = options?.parts
+				? {
+					id: messageId,
+					role,
+					metadata,
+					parts: options.parts,
+				}
+				: createRealtimeTextMessage({
+					id: messageId,
+					role,
+					content,
+					createdAt,
+					state: options?.state ?? "done",
+					metadata,
+				});
 
 			const nextRealtimeMessages = mutateRealtimeMessagesState((previousMessages) => {
 				return upsertRealtimeMessage(previousMessages, message);

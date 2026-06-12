@@ -26,7 +26,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               {NAV_MAIN_ITEMS.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton render={<a href={item.url} className="font-medium" />}>
+	                  <SidebarMenuButton render={<a aria-label={item.title} href={item.url} className="font-medium" />}>
                       {item.title}
                   </SidebarMenuButton>
                   {item.items?.length ? (
@@ -34,7 +34,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       {item.items.map((item) => (
                         <SidebarMenuSubItem key={item.title}>
                           <SidebarMenuSubButton
-                            render={<a href={item.url} />}
+	                            render={<a aria-label={item.title} href={item.url} />}
                             isActive={item.isActive}
                           >
                             {item.title}

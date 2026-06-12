@@ -12,10 +12,9 @@ import {
 	toggleAgentConfigDisabledItem,
 } from "@/components/blocks/skill-config";
 import {
-	serializeAgentTriggerLabels,
-	type AgentTriggerValue,
+	type AgentAutomationRule,
 } from "@/components/blocks/triggers/page";
-import { DEFAULT_CONFIGURED_TRIGGER_VALUES } from "@/components/blocks/triggers/data/trigger-catalog";
+import { DEFAULT_CONFIGURED_AUTOMATION_RULES } from "@/components/blocks/triggers/data/trigger-catalog";
 import {
 	ConversationStartersDialog,
 	DEFAULT_STARTER_ICON,
@@ -57,8 +56,7 @@ const filledAgentConfig: AgentConfigFormValue = {
 		"This skill helps employees quickly find and understand company guidelines, HR policies, and benefits information.",
 	instructions: "",
 	contextDescription: "",
-	triggerDefinitions: DEFAULT_CONFIGURED_TRIGGER_VALUES,
-	triggers: serializeAgentTriggerLabels(DEFAULT_CONFIGURED_TRIGGER_VALUES),
+	automationRules: DEFAULT_CONFIGURED_AUTOMATION_RULES,
 	apps: ["Jira", "Confluence"],
 	skills: ["Create work items", "Dependency mapper"],
 	tools: ["Jira", "Confluence"],
@@ -122,13 +120,10 @@ function useSkillConfigDemoConfig(initialConfig: AgentConfigFormValue) {
 		});
 	}
 
-	function handleTriggerDefinitionsChange(triggerDefinitions: readonly AgentTriggerValue[]) {
-		const triggerLabels = serializeAgentTriggerLabels(triggerDefinitions);
+	function handleAutomationRulesChange(automationRules: readonly AgentAutomationRule[]) {
 		setConfig((current) => ({
 			...current,
-			triggerDefinitions,
-			trigger: triggerLabels[0] ?? "",
-			triggers: triggerLabels,
+			automationRules,
 		}));
 	}
 
@@ -162,9 +157,9 @@ function useSkillConfigDemoConfig(initialConfig: AgentConfigFormValue) {
 		addListValues,
 		appendListItem,
 		conversationStarterDialogValue,
+		handleAutomationRulesChange,
 		handleTextChange,
 		handleSaveConversationStarters,
-		handleTriggerDefinitionsChange,
 		removeListItem,
 		toggleListItem,
 		updateListItem,
@@ -181,9 +176,9 @@ export function SkillConfigDemoFull() {
 		appendListItem,
 		config,
 		conversationStarterDialogValue,
+		handleAutomationRulesChange,
 		handleSaveConversationStarters,
 		handleTextChange,
-		handleTriggerDefinitionsChange,
 		removeListItem,
 		toggleListItem,
 		updateListItem,
@@ -210,7 +205,7 @@ export function SkillConfigDemoFull() {
 						onAppendListItem={appendListItem}
 						onManageTriggers={openTriggerManageDocs}
 						onOpenDirectory={handleOpenDirectory}
-						onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
+						onAutomationRulesChange={handleAutomationRulesChange}
 					/>
 				</AgentContent>
 			</Agent>
@@ -232,9 +227,9 @@ export function SkillConfigDemoEmpty() {
 		appendListItem,
 		config,
 		conversationStarterDialogValue,
+		handleAutomationRulesChange,
 		handleSaveConversationStarters,
 		handleTextChange,
-		handleTriggerDefinitionsChange,
 		removeListItem,
 		toggleListItem,
 		updateListItem,
@@ -261,7 +256,7 @@ export function SkillConfigDemoEmpty() {
 						onAppendListItem={appendListItem}
 						onManageTriggers={openTriggerManageDocs}
 						onOpenDirectory={handleOpenDirectory}
-						onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
+						onAutomationRulesChange={handleAutomationRulesChange}
 					/>
 				</AgentContent>
 			</Agent>

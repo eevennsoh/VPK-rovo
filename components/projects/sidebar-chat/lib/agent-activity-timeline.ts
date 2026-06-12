@@ -98,11 +98,11 @@ export function buildConfigEntries(entry: StudioSessionAgentEntry): AgentActivit
 	const entries: AgentActivityEntry[] = []
 	const result = entry.publishReadyResult
 
-	const triggerCount = result.triggerDefinitions?.length ?? 0
-	if (triggerCount > 0) {
+	const automationCount = result.automationRules?.length ?? 0
+	if (automationCount > 0) {
 		entries.push({
 			id: "config-triggers",
-			label: triggerCount > 1 ? `${triggerCount} triggers configured` : "Trigger configured",
+			label: automationCount > 1 ? `${automationCount} automations configured` : "Automation configured",
 			state: "done",
 		})
 	}

@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
+
 import { motion, useSpring } from "motion/react";
 import type { RefObject } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -139,15 +141,19 @@ function TooltipBoxInner({
     animatedTop,
   ]);
 
-  const prevFlipRef = useRef(shouldFlipX);
-  const [flipKey, setFlipKey] = useState(0);
-
-  useEffect(() => {
-    if (prevFlipRef.current !== shouldFlipX) {
-      setFlipKey((k) => k + 1);
-      prevFlipRef.current = shouldFlipX;
-    }
-  }, [shouldFlipX]);
+  const [flipState, setFlipState] = useState(() => ({
+    flipKey: 0,
+    shouldFlipX,
+  }));
+  let resolvedFlipState = flipState;
+  if (flipState.shouldFlipX !== shouldFlipX) {
+    resolvedFlipState = {
+      flipKey: flipState.flipKey + 1,
+      shouldFlipX,
+    };
+    setFlipState(resolvedFlipState);
+  }
+  const { flipKey } = resolvedFlipState;
 
   const finalLeft = leftOverride ?? animatedLeft;
   const finalTop = topOverride ?? animatedTop;

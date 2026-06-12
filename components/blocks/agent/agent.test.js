@@ -80,8 +80,8 @@ test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /onInstructionsViewModeChange\?: \(mode: EditorToolbarViewMode\) => void;/u);
 	assert.match(AGENT_SOURCE, /onViewModeChange=\{onViewModeChange\}/u);
 	assert.match(AGENT_SOURCE, /onViewModeChange=\{onInstructionsViewModeChange\}/u);
-	assert.match(AGENT_SOURCE, /placeholder="Press \/ to help me describe the agent's role, or start with a template"/u);
-	assert.match(AGENT_SOURCE, /placeholderSlot=\{\([\s\S]*className="tiptap-editor text-sm leading-\[1\.55\] text-text-subtlest"[\s\S]*Press <code>\/<\/code> to help me describe the agent&apos;s role,[\s\S]*start with a template[\s\S]*\)\}/u);
+	assert.match(AGENT_SOURCE, /placeholder="Press \/ to help me create the agent, or start with a template"/u);
+	assert.match(AGENT_SOURCE, /placeholderSlot=\{\([\s\S]*className="tiptap-editor text-sm leading-\[1\.55\] text-text-subtlest"[\s\S]*Press <code>\/<\/code> to help me create the agent,[\s\S]*start with a template[\s\S]*\)\}/u);
 	// When a host provides onStartWithTemplate it takes over (opens its own
 	// Agent Directory) and the composer skips its built-in templates dialog;
 	// otherwise the link opens the local AgentTemplatesDialog.
@@ -125,7 +125,7 @@ test("Reasoning selector lives in the compact toolbar and shares state across co
 	assert.match(AGENT_SOURCE, /onReasoningModeChange=\{setReasoningValue\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /<AgentReasoningOverflowMenu/u);
 	assert.match(AGENT_SOURCE, /import AiComputeIcon from "@atlaskit\/icon-lab\/core\/ai-compute";/u);
-	assert.match(AGENT_SOURCE, /render=\{<LozengeDropdownTrigger aria-label="Reasoning mode" icon=\{<AiComputeIcon label="" size="small" \/>\} \/>\}/u);
+	assert.match(AGENT_SOURCE, /render=\{<LozengeDropdownTrigger aria-label="Reasoning mode" icon=\{<Icon aria-hidden render=\{<AiComputeIcon label="" size="small" \/>\} className="text-icon-subtle" \/>\} \/>\}/u);
 	assert.match(AGENT_SOURCE, /<Tag>\{current\?\.label \?\? "Recommended"\}<\/Tag>/u);
 	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Think deeper option"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /from "@\/components\/ui-custom\/model-selector"/u);
@@ -146,7 +146,7 @@ test("Apps config row unifies tool and knowledge references while memory keeps i
 	assert.match(AGENT_SOURCE, /\{ value: "off", label: "Off" \}/u);
 	assert.match(AGENT_SOURCE, /function AgentMemorySelector/u);
 	assert.match(AGENT_SOURCE, /const selectedOption = MEMORY_MODE_OPTIONS\.find\(\(option\) => option\.value === value\) \?\? MEMORY_MODE_OPTIONS\[0\];/u);
-	assert.match(AGENT_SOURCE, /render=\{\(\s*<LozengeDropdownTrigger[\s\S]*aria-label="Memory mode"[\s\S]*icon=\{<AiModelIcon label="" size="small" \/>\}/u);
+	assert.match(AGENT_SOURCE, /render=\{\(\s*<LozengeDropdownTrigger[\s\S]*aria-label="Memory mode"[\s\S]*icon=\{<Icon aria-hidden render=\{<AiModelIcon label="" size="small" \/>\} className="text-icon-subtle" \/>\}/u);
 	assert.match(AGENT_SOURCE, /\{`Memory \$\{selectedOption\.label\.toLowerCase\(\)\}`\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /aria-label="Memory mode"[\s\S]{0,180}variant="information"/u);
 	assert.match(AGENT_SOURCE, /<DropdownMenuSeparator \/>[\s\S]*onClick=\{onManage\}[\s\S]*Manage memory/u);
@@ -170,15 +170,19 @@ test("Configured reference menu rows do not wrap enabled visuals in an empty inl
 });
 
 test("Filled config summary sorts empty rows to the bottom while preserving canonical order", () => {
-	assert.match(AGENT_SOURCE, /const rows: ReadonlyArray<\{ key: string; isEmpty: boolean; node: ReactNode \}>/u);
-	assert.match(AGENT_SOURCE, /const orderedRows = rows[\s\S]*\.sort\(\(a, b\) => \{[\s\S]*if \(a\.isEmpty !== b\.isEmpty\) return a\.isEmpty \? 1 : -1;[\s\S]*return a\.index - b\.index;/u);
+	assert.match(AGENT_SOURCE, /const rows: ReadonlyArray<\{ key: string; isEmpty: boolean; alwaysLast\?: boolean; node: ReactNode \}>/u);
+	assert.match(AGENT_SOURCE, /const orderedRows = rows[\s\S]*\.sort\(\(a, b\) => \{[\s\S]*if \(a\.alwaysLast !== b\.alwaysLast\) return a\.alwaysLast \? 1 : -1;[\s\S]*if \(a\.isEmpty !== b\.isEmpty\) return a\.isEmpty \? 1 : -1;[\s\S]*return a\.index - b\.index;/u);
 	assert.match(AGENT_SOURCE, /isEmpty: appItems\.length === 0/u);
-	// The rows array source order IS the canonical display order. Reasoning is
-	// rendered separately after this list, so it is not a row key here.
+	// The rows array source order IS the canonical display order. Memory and
+	// Reasoning are `alwaysLast`, so they are declared last and pinned to the
+	// bottom of the list (below every other row, filled or empty).
 	assert.match(
 		AGENT_SOURCE,
-		/key: "trigger"[\s\S]*key: "apps"[\s\S]*key: "skills"[\s\S]*key: "subagents"[\s\S]*key: "memory"[\s\S]*key: "conversationStarters"/u,
+		/key: "trigger"[\s\S]*key: "apps"[\s\S]*key: "skills"[\s\S]*key: "subagents"[\s\S]*key: "conversationStarters"[\s\S]*key: "memory"[\s\S]*key: "reasoning"/u,
 	);
+	// Memory and Reasoning carry `alwaysLast` so the sort pins them to the bottom.
+	assert.match(AGENT_SOURCE, /key: "memory",[\s\S]*alwaysLast: true,/u);
+	assert.match(AGENT_SOURCE, /key: "reasoning",[\s\S]*alwaysLast: true,/u);
 	// Memory is its own always-on row (never empty), not a chip inside Knowledge.
 	assert.match(AGENT_SOURCE, /function AgentMemoryRow/u);
 	assert.match(AGENT_SOURCE, /key: "memory",[\s\S]*isEmpty: false,/u);
@@ -218,8 +222,15 @@ test("Agent config syncs reference mentions with selected panel values", () => {
 	assert.match(AGENT_SOURCE, /const AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY: Record<RichTextReferenceCategory, AgentConfigReferenceListFieldName>/u);
 	assert.match(AGENT_SOURCE, /const AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD: Record<AgentConfigReferenceListFieldName, RichTextReferenceCategory>/u);
 	assert.match(AGENT_SOURCE, /function mapConfigValuesToMentionItems\(/u);
+	assert.match(AGENT_SOURCE, /function mapSubagentConfigValuesToMentionItems\(/u);
 	assert.match(AGENT_SOURCE, /getDirectoryMentionItemOrFallback\(category, value\)/u);
-	assert.match(AGENT_SOURCE, /subagent: mergeMentionItems\([\s\S]*mapConfigValuesToMentionItems\("subagent", config\.subagents\),[\s\S]*EDITOR_PALETTE_MENTION_SOURCES\.subagent/u);
+	// Subagents are nested/owned: the `@subagent` list comes ONLY from this agent's
+	// own subagents (no global parent-agent palette merge), so it is 0 by default.
+	// They are prompt references, not directory-backed parent-agent avatars, so
+	// configured subagent mentions are mapped without a `visual`.
+	assert.match(AGENT_SOURCE, /subagent: mapSubagentConfigValuesToMentionItems\(config\.subagents\),/u);
+	assert.match(AGENT_SOURCE, /category: "subagent",[\s\S]*id: toMentionId\("subagent", value\),[\s\S]*label: value/u);
+	assert.doesNotMatch(AGENT_SOURCE, /subagent: mergeMentionItems\([\s\S]*EDITOR_PALETTE_MENTION_SOURCES\.subagent/u);
 	assert.match(AGENT_SOURCE, /skill: mergeMentionItems\([\s\S]*mapConfigValuesToMentionItems\("skill", config\.skills\),[\s\S]*EDITOR_PALETTE_MENTION_SOURCES\.skill[\s\S]*\),/u);
 	assert.match(AGENT_SOURCE, /tool: mergeMentionItems\([\s\S]*mapConfigValuesToMentionItems\("tool", config\.tools\),[\s\S]*EDITOR_PALETTE_MENTION_SOURCES\.tool/u);
 	assert.match(AGENT_SOURCE, /knowledge: mergeMentionItems\([\s\S]*mapConfigValuesToMentionItems\("knowledge", config\.knowledge\),[\s\S]*EDITOR_PALETTE_MENTION_SOURCES\.knowledge,[\s\S]*knowledge/u);
@@ -239,12 +250,12 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	// instead of the removed AgentMissingConfigActions grid.
 	assert.doesNotMatch(AGENT_SOURCE, /function AgentMissingConfigActions/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactEmptyConfigNav/u);
-	assert.match(AGENT_SOURCE, /getAgentTriggerItems\(config\)\.length > 0/u);
+	assert.match(AGENT_SOURCE, /getAgentAutomationItems\(config\)\.length > 0/u);
 	assert.match(AGENT_SOURCE, /MAX_AGENT_CONVERSATION_STARTERS = 3/u);
 
 	// Every config field is represented in the empty-state nav item catalog.
 	for (const label of [
-		"Triggers",
+		"Automations",
 		"Apps",
 		"Skills",
 		"Subagents",
@@ -255,7 +266,7 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	}
 
 	assert.match(AGENT_SOURCE, /function AgentReferenceChip/u);
-	assert.match(AGENT_SOURCE, /getDirectoryMentionItemOrFallback\(category, label\)/u);
+	assert.match(AGENT_SOURCE, /category && category !== "subagent" \? getDirectoryMentionItemOrFallback\(category, label\) : undefined/u);
 	assert.match(AGENT_SOURCE, /<RichTextMentionVisualMark/u);
 	assert.match(AGENT_SOURCE, /type=\{elemBefore \? "default" : getRichTextMentionTagType\(visual\)\}/u);
 	assert.match(AGENT_SOURCE, /removeVariant="overlay"/u);
@@ -305,7 +316,7 @@ test("Agent config renders filled summary rows once field data exists", () => {
 		assert.match(AGENT_SOURCE, new RegExp(`onRemoveListItem\\("${field}", index\\)`, "u"));
 	}
 	assert.match(TAG_SOURCE, /group\/tag relative inline-flex/u);
-	assert.match(TAG_SOURCE, /hasLeadingElement \? "gap-0\.5 py-0 ps-px" : "gap-1 py-0\.5 ps-\[3px\]"/u);
+	assert.match(TAG_SOURCE, /hasLeadingElement \? "gap-0\.5 py-0 ps-px" : "gap-1 py-0\.5 ps-\[4px\]"/u);
 	assert.doesNotMatch(TAG_SOURCE, /hasAvatarTagStyles\s*\?\s*cn\("h-6/u);
 	assert.match(TAG_SOURCE, /const avatarTagBeforeShapeClass = isUserAvatarTag \? "rounded-full" : isOtherAvatarTag \? "rounded-xs" : "";/u);
 	assert.match(TAG_SOURCE, /hasAvatarTagStyles \? cn\("overflow-hidden", avatarTagBeforeShapeClass\) : colorClasses\.icon/u);
@@ -336,26 +347,28 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	}
 	assert.match(AGENT_SOURCE, /const resolvedTagColor = tagColor \?\? getTagColorForMentionVisual\(visual\) \?\? "blue";/u);
 	assert.match(AGENT_SOURCE, /color=\{resolvedTagColor\}/u);
+	assert.match(AGENT_SOURCE, /if \(category === "subagent"\) \{[\s\S]*<IconTile[\s\S]*tagColor \? tagColorToMenuIconClassName\[tagColor\] : "text-icon-subtlest"[\s\S]*icon=\{<AiAgentIcon label="" size="small" \/>\}/u);
 });
 
-test("Compact agent config opts into the typed Triggers editor without replacing default rows", () => {
-	assert.match(AGENT_SOURCE, /import \{[\s\S]*renderAgentTriggerProviderIcon,[\s\S]*serializeAgentTriggerLabels,[\s\S]*TriggerPicker,[\s\S]*type AgentTriggerValue,[\s\S]*\} from "@\/components\/blocks\/triggers\/page";/u);
-	assert.match(AGENT_SOURCE, /triggerDefinitions\?: readonly AgentTriggerValue\[\];/u);
-	assert.match(AGENT_SOURCE, /function getAgentTriggerItems\(config: AgentConfigFormValue\): readonly string\[\] \{[\s\S]*serializeAgentTriggerLabels\(config\.triggerDefinitions\)[\s\S]*const triggers = getNonEmptyConfigItems\(config\.triggers\)[\s\S]*const trigger = config\.trigger\?\.trim\(\);/u);
+test("Compact agent config opts into the typed Automations editor without replacing default rows", () => {
+	assert.match(AGENT_SOURCE, /import \{[\s\S]*type AgentAutomationRule,[\s\S]*type AgentTriggerValue,[\s\S]*\} from "@\/components\/blocks\/triggers\/page";/u);
+	assert.match(AGENT_SOURCE, /automationRules\?: readonly AgentAutomationRule\[\];/u);
+	assert.match(AGENT_SOURCE, /function getAgentAutomationRules\(config: AgentConfigFormValue\): readonly AgentAutomationRule\[\] \{[\s\S]*Array\.isArray\(config\.automationRules\)[\s\S]*return config\.automationRules;[\s\S]*inferAutomationRules\(triggers\)[\s\S]*inferAutomationRules\(\[trigger\]\)/u);
+	assert.match(AGENT_SOURCE, /function getAgentAutomationItems\(config: AgentConfigFormValue\): readonly string\[\] \{[\s\S]*serializeAgentAutomationRuleLabels\(getAgentAutomationRules\(config\)\)/u);
 	assert.match(AGENT_SOURCE, /onConnectTrigger\?: \(trigger: AgentTriggerValue\) => void;/u);
 	assert.match(AGENT_SOURCE, /onManageTriggers\?: \(\) => void;/u);
-	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
-	// Adding a trigger opens the automation modal with the full current trigger
-	// set plus the new condition, preserving one shared prompt/name/active state.
-	assert.match(AGENT_SOURCE, /const handleSelectEvent = \([\s\S]*const existing = triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\);/u);
-	assert.match(AGENT_SOURCE, /onClick=\{\(\) => onEditTriggers\?\.\(\[\]\)\}/u);
-	assert.match(AGENT_SOURCE, /onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*const existing = config\?\.triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\);/u);
-	// Save commits the complete automation trigger array.
-	assert.match(AGENT_SOURCE, /const handleTriggersSave = useCallback\(\(triggers: readonly AgentTriggerValue\[\]\) => \{\s*onTriggerDefinitionsChange\?\.\(triggers\);/u);
-	assert.match(AGENT_SOURCE, /const handleManageTriggers = useCallback\(\(\) => \{\s*if \(onManageTriggers\) \{\s*onManageTriggers\(\);\s*return;\s*\}\s*handleEditTriggers\(config\.triggerDefinitions \?\? \[\]\);/u);
+	assert.match(AGENT_SOURCE, /onAutomationRulesChange\?: \(automationRules: readonly AgentAutomationRule\[\]\) => void;/u);
+	// Adding an event opens a new automation draft seeded only with that event.
+	assert.match(AGENT_SOURCE, /function createAutomationRuleFromEvent\([\s\S]*existingRules: readonly AgentAutomationRule\[\] \| undefined,[\s\S]*const nextIndex = getNextAutomationRuleIndex\(existingRules\);[\s\S]*createAgentTriggerValue\(providerId, eventId, 1\)[\s\S]*id: `automation-\$\{nextIndex\}`,[\s\S]*triggers: \[nextTrigger\],/u);
+	assert.match(AGENT_SOURCE, /onClick=\{\(\) => onEditTriggers\?\.\(\)\}/u);
+	assert.match(AGENT_SOURCE, /const automationRules = config \? getAgentAutomationRules\(config\) : \[\];[\s\S]*onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*const next = createAutomationRuleFromEvent\(providerId, eventId, automationRules\);[\s\S]*onEditTriggers\?\.\(next \?\? undefined\);/u);
+	assert.doesNotMatch(AGENT_SOURCE, /onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\)/u);
+	// Save commits one automation rule into the automationRules array.
+	assert.match(AGENT_SOURCE, /const currentAutomationRules = useMemo\([\s\S]*getAgentAutomationRules\(config\)[\s\S]*const handleTriggersSave = useCallback\(\(automationRule: AgentAutomationRule\) => \{[\s\S]*const current = currentAutomationRules;[\s\S]*onAutomationRulesChange\?\.\(/u);
+	assert.match(AGENT_SOURCE, /const handleManageTriggers = useCallback\(\(\) => \{\s*if \(onManageTriggers\) \{\s*onManageTriggers\(\);\s*return;\s*\}\s*setManageTriggersOpen\(true\);/u);
 	assert.match(AGENT_SOURCE, /isEmpty: triggerItems\.length === 0/u);
-	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*items=\{triggerItems\}[\s\S]*onTriggerDefinitionsChange=\{onTriggerDefinitionsChange\}/u);
-	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange=\{onTriggerDefinitionsChange\}/u);
+	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*items=\{triggerItems\}[\s\S]*onAutomationRulesChange=\{onAutomationRulesChange\}/u);
+	assert.match(AGENT_SOURCE, /onAutomationRulesChange=\{onAutomationRulesChange\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /<Triggers[\s\S]{0,400}layout="default"/u);
 });
 
@@ -458,20 +471,20 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /"inline-flex min-h-5 max-w-full shrink-0 items-center gap-1 rounded-xs p-0 text-left text-xs font-medium leading-4 text-text-subtlest transition-opacity hover:bg-transparent active:bg-transparent focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-transparent aria-expanded:opacity-100"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /group\/add-link/u);
 	assert.match(AGENT_SOURCE, /<span className="min-w-0 whitespace-normal group-hover\/agent-row:underline">\{label\}<\/span>/u);
-	// Triggers summary row: clicking a configured chip opens the Triggers modal
-	// with the complete automation definition set because instructions are shared.
+	// Automations summary row: clicking a configured chip opens that automation
+	// rule without appending the other saved rules into the draft.
 	assert.match(
 		AGENT_SOURCE,
-		/<AgentReferenceChip[\s\S]*onClick=\{\s*onEditTriggers\s*\?\s*\(\) => onEditTriggers\(triggerDefinitions\)\s*:\s*undefined\s*\}[\s\S]*onRemove=\{canRemoveInline \? \(\) => handleRemoveTrigger\(index\) : undefined\}/u,
+		/<AgentReferenceChip[\s\S]*onClick=\{\s*onEditTriggers[\s\S]*\? \(\) => onEditTriggers\(rule\)[\s\S]*: undefined[\s\S]*\}[\s\S]*onRemove=\{canRemoveInline \? \(\) => handleRemoveAutomation\(index\) : undefined\}/u,
 	);
 	// The trailing "Edit" control opens the SAME collapsed-nav management flyout
-	// (trigger list + "Add trigger ›" + "Manage triggers") as the compact strip,
+	// (automation list + "Add automation ›" + "Manage automations") as the compact strip,
 	// by reusing AgentCompactTriggersNavButton with the edit-styled button as its
 	// renderTrigger — so the expanded summary row and the collapsed nav share one
-	// flyout. Picking an event from "Add trigger ›" appends to the same automation.
+	// flyout. Picking an event from "Add automation ›" starts a new automation rule.
 	assert.match(
 		AGENT_SOURCE,
-		/\{onEditTriggers \? \([\s\S]*triggerNavItem \? \([\s\S]*<AgentCompactTriggersNavButton\s*\n\s*item=\{triggerNavItem\}[\s\S]*renderTrigger=\{\s*\n\s*<AgentAddValueButton\s*\n\s*className="opacity-0 group-hover\/agent-row:opacity-100"\s*\n\s*icon="edit"\s*\n\s*label=\{addLabel \?\? "Edit"\}\s*\n\s*\/>/u,
+		/\{onEditTriggers \? \([\s\S]*triggerNavItem \? \([\s\S]*<AgentCompactTriggersNavButton[\s\S]*automationRules=\{automationRules\}[\s\S]*item=\{triggerNavItem\}[\s\S]*renderTrigger=\{[\s\S]*<AgentAddValueButton[\s\S]*className="opacity-0 group-hover\/agent-row:opacity-100"[\s\S]*icon="edit"[\s\S]*label=\{addLabel \?\? "Edit"\}/u,
 	);
 	// It falls back to the bare provider/event TriggerPicker only when the
 	// collapsed-nav catalog entry (triggerNavItem) isn't supplied.
@@ -498,7 +511,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /if \(isLastItem && addLabel\) \{[\s\S]*className="inline-flex max-w-full items-center gap-1\.5"[\s\S]*\{renderAddButton\(\s*"shrink-0 opacity-0 transition-opacity group-hover\/agent-row:opacity-100/u);
 	assert.match(AGENT_SOURCE, /\{isEmpty && addLabel \? renderAddButton\(\) : null\}/u);
 	assert.match(AGENT_SOURCE, /const AGENT_EMPTY_ROW_ADD_LABELS: Record<AgentConfigListFieldName, string> = \{/u);
-	assert.match(AGENT_SOURCE, /triggers: "Add rules for when this agent runs"/u);
+	assert.match(AGENT_SOURCE, /triggers: "Add automations for when this agent runs"/u);
 	assert.match(AGENT_SOURCE, /conversationStarters: "Add prompts to help people start"/u);
 	assert.match(AGENT_SOURCE, /knowledge: "Add knowledge to ground this agent"/u);
 	assert.match(AGENT_SOURCE, /skills: "Add skills to guide specialized tasks"/u);
@@ -524,7 +537,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// Conversation starter chip icons follow the latest Tag standard: the glyph is
 	// wrapped in the `IconTile` xxsmall/transparent treatment so it centers in the
 	// chip's leading slot instead of left-aligning with an oversized gap.
-	assert.match(AGENT_SOURCE, /const StarterIcon = getStarterIcon\(starterSummaryItems\[index\]\?\.icon \?\? DEFAULT_STARTER_ICON\);[\s\S]*<IconTile[\s\S]*icon=\{<Icon aria-hidden render=\{<StarterIcon label="" size="small" color="currentColor" \/>\} \/>\}[\s\S]*size="xxsmall"[\s\S]*variant="transparent"/u);
+	assert.match(AGENT_SOURCE, /const StarterIcon = getStarterIcon\(starterSummaryItems\[index\]\?\.icon \?\? DEFAULT_STARTER_ICON\);[\s\S]*<IconTile[\s\S]*icon=\{<Icon aria-hidden render=\{<StarterIcon label="" size="small" color="currentColor" \/>\} className="text-icon-subtle" \/>\}[\s\S]*size="xxsmall"[\s\S]*variant="transparent"/u);
 	assert.match(AGENT_SOURCE, /tagColor="standard"/u);
 	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*addLabel=\{getAgentFilledSummaryAddLabel\("triggers", triggerItems\.length === 0, showAddButtons\)\}[\s\S]*onEditTriggers=\{onEditTriggers\}/u);
 	// Skills and Subagents "Add" buttons open the SAME dropdown the
@@ -536,7 +549,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	// The inline-below-row Tools search picker is gone — Tools now uses the same
 	// dropdown as the other directory fields.
 	assert.doesNotMatch(AGENT_SOURCE, /openInlineSearchPicker|browseInlineSearchPicker|selectInlineSearchItem|inlineSearchField|function AgentInlineReferenceSearchPicker/u);
-	assert.match(AGENT_SOURCE, /label="Apps"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("apps", "apps", onOpenDirectory, onAppendListItem\)\}/u);
+	assert.match(AGENT_SOURCE, /label="Apps"[\s\S]*renderAddControl=\{appsNavItem \? \(\{ icon, label, className \}\) => \([\s\S]*<AgentCompactAppsNavButton[\s\S]*onBrowse=\{\(\) => openAgentDirectoryOrAppendListItem\("apps", "apps", onOpenDirectory, onAppendListItem\)\}[\s\S]*renderTrigger=\{<AgentAddValueButton className=\{className\} icon=\{icon\} label=\{label\} \/>\}/u);
 	assert.match(AGENT_SOURCE, /label="Conversation starters"\s+onAdd=\{\(\) => openAgentDirectoryOrAppendListItem\("conversationStarters", "conversationStarters", onOpenDirectory, onAppendListItem\)\}/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactEmptyConfigNav/u);
 	assert.match(AGENT_SOURCE, /function getAgentCompactEmptyConfigNavItems/u);
@@ -727,34 +740,35 @@ test("Agent compact directory dropdowns keep persistent add and browse footers",
 	assert.match(AGENT_SOURCE, /function AgentCompactDirectoryNavButton\(/u);
 	assert.match(AGENT_SOURCE, /directory: AgentInlineSearchField;/u);
 	assert.match(AGENT_SOURCE, /onAddSearchItem\?: \(item: RichTextSuggestionMenuItem\) => void;/u);
-	assert.match(AGENT_SOURCE, /function AgentCompactDirectoryNavButton[\s\S]*<MenubarContent align="start" className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}>[\s\S]*<div className="min-h-0 flex-1 overflow-y-auto">[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*\{addSearchFlyout\}[\s\S]*\{browseItem\}/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactDirectoryNavButton[\s\S]*<MenubarContent[\s\S]*?align="start"[\s\S]*?className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}[\s\S]*?>[\s\S]*<div className="min-h-0 flex-1 overflow-y-auto">[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*\{addSearchFlyout\}[\s\S]*\{browseItem\}/u);
 	assert.match(AGENT_SOURCE, /const addSearchFlyout = \([\s\S]*<DropdownMenuSub>[\s\S]*<DropdownMenuSubTrigger>[\s\S]*\{addLabel\}[\s\S]*<DropdownMenuSubContent className="w-auto min-w-0 overflow-visible border-0 bg-transparent p-0 shadow-none">[\s\S]*<EditorPaletteSearchPicker[\s\S]*autoFocus[\s\S]*category=\{AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD\[directory\]\}[\s\S]*className="rich-text-command-menu-borderless"[\s\S]*onBrowseAll=\{onBrowse\}[\s\S]*onSelectItem=\{handlePickerSelect\}/u);
 	// Already-added skills/tools are excluded from the inline "Add" search so the
 	// same item cannot be re-added from the flyout.
 	assert.match(AGENT_SOURCE, /function AgentCompactDirectoryNavButton[\s\S]*<EditorPaletteSearchPicker[\s\S]*excludeLabels=\{items\}/u);
 	assert.match(AGENT_SOURCE, /onAddSearchItem=\{\(searchItem\) => \{[\s\S]*if \(searchItem\.disabled\) \{[\s\S]*return;[\s\S]*onAddListValues\?\.\(directory, \[searchItem\.label\]\);[\s\S]*\}\}/u);
 	assert.match(AGENT_SOURCE, /browseLabel=\{`Browse \$\{item\.label\.toLowerCase\(\)\}`\}[\s\S]*onBrowse=\{\(\) => openAgentDirectoryOrAppendListItem\(directory, directory, onOpenDirectory, onAppendListItem\)\}/u);
-	assert.match(TRIGGERS_SOURCE, /<RichTextCommandMenuSearchField[\s\S]*label="Search triggers"[\s\S]*onValueChange=\{setQuery\}[\s\S]*placeholder="Search Triggers\.\.\."[\s\S]*value=\{query\}/u);
+	assert.match(TRIGGERS_SOURCE, /<RichTextCommandMenuSearchField[\s\S]*label="Search triggers"[\s\S]*onValueChange=\{setQuery\}[\s\S]*placeholder="Search triggers"[\s\S]*value=\{query\}/u);
 	assert.doesNotMatch(TRIGGERS_SOURCE, /rich-text-command-menu-input|data-first-item-input|isCompact/u);
 });
 
 test("Agent compact subagents dropdown keeps add and manage actions pinned", () => {
 	assert.match(AGENT_SOURCE, /function AgentCompactSubagentsNavButton/u);
-	assert.match(AGENT_SOURCE, /function AgentCompactSubagentsNavButton[\s\S]*<MenubarContent align="start" className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}>[\s\S]*<div className="min-h-0 flex-1 overflow-y-auto">[\s\S]*selected=\{selectedIndex === index\}[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*Add subagent[\s\S]*Manage subagents/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactSubagentsNavButton[\s\S]*<MenubarContent[\s\S]*?align="start"[\s\S]*?className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}[\s\S]*?>[\s\S]*<div className="min-h-0 flex-1 overflow-y-auto">[\s\S]*selected=\{selectedIndex === index\}[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*Add subagent[\s\S]*Manage subagents/u);
 	assert.doesNotMatch(AGENT_SOURCE, /Browse subagents/u);
 });
 
 test("Agent compact added-item dropdowns do not auto-highlight rows on pointer open", () => {
 	assert.doesNotMatch(AGENT_SOURCE, /MenuPrimitive\.createHandle|handle=\{compactNavMenu\.handle\}/u);
 	assert.match(AGENT_SOURCE, /function useCompactNavMenuNoInitialHighlight\(\)[\s\S]*useRef\(false\)[\s\S]*useState\(0\)[\s\S]*shouldClearCompactNavInitialHighlight\(eventDetails\)[\s\S]*setResetToken\(\(currentResetToken\) => currentResetToken \+ 1\)/u);
-	assert.match(AGENT_SOURCE, /function shouldClearCompactNavInitialHighlight[\s\S]*eventDetails\.reason === "trigger-hover"[\s\S]*eventDetails\.reason !== "trigger-press"[\s\S]*event\.detail !== 0/u);
+	assert.match(AGENT_SOURCE, /function shouldClearCompactNavInitialHighlight[\s\S]*eventDetails\.reason === "trigger-hover"[\s\S]*eventDetails\.reason !== "trigger-press"[\s\S]*event instanceof PointerEvent[\s\S]*event\.detail !== 0/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactNavMenuInitialHighlightReset[\s\S]*closest<HTMLElement>\([\s\S]*"\[data-slot='menubar-content'\], \[data-slot='dropdown-menu-content'\]"[\s\S]*\)[\s\S]*queueMicrotask[\s\S]*requestAnimationFrame\(clear\)[\s\S]*window\.setTimeout\(clear, 120\)/u);
-	assert.match(AGENT_SOURCE, /function clearCompactNavInitialHighlight\(contentElement: HTMLElement\)[\s\S]*querySelectorAll<HTMLElement>\("\[data-highlighted\]"\)[\s\S]*removeAttribute\("data-highlighted"\)[\s\S]*setAttribute\("tabindex", "-1"\)[\s\S]*contentElement\.focus\(\{ preventScroll: true \}\)/u);
+	assert.match(AGENT_SOURCE, /function clearCompactNavInitialHighlight\(contentElement: HTMLElement\)[\s\S]*querySelectorAll<HTMLElement>\("\[data-highlighted\]"\)[\s\S]*removeAttribute\("data-highlighted"\)[\s\S]*setAttribute\("tabindex", "-1"\)[\s\S]*contentElement\.contains\(activeElement\)[\s\S]*activeElement !== contentElement[\s\S]*contentElement\.focus\(\{ preventScroll: true \}\)/u);
 	for (const [functionName, nextFunctionName] of [
 		["AgentCompactSubagentsNavButton", "AgentCompactTriggerRow"],
 		["AgentCompactTriggersNavButton", "AgentCompactDirectoryNavButton"],
 		["AgentCompactDirectoryNavButton", "AgentCompactAppsNavButton"],
 		["AgentCompactAppsNavButton", "AgentCompactConversationStartersNavButton"],
+		["AgentCompactConversationStartersNavButton", "AgentCompactEmptyConfigNav"],
 	]) {
 		const start = AGENT_SOURCE.indexOf(`function ${functionName}`);
 		assert.notEqual(start, -1, `${functionName} should exist`);
@@ -774,7 +788,7 @@ test("Agent compact apps field opens a dropdown menu instead of the directory", 
 	// Apps must now render its own dropdown (like Skills) with a pinned
 	// "Browse apps" footer that opens the directory.
 	assert.match(AGENT_SOURCE, /function AgentCompactAppsNavButton/u);
-	assert.match(AGENT_SOURCE, /function AgentCompactAppsNavButton[\s\S]*<MenubarContent align="start" className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}>[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*Browse \{item\.label\.toLowerCase\(\)\}/u);
+	assert.match(AGENT_SOURCE, /function AgentCompactAppsNavButton[\s\S]*<MenubarContent[\s\S]*?align="start"[\s\S]*?className=\{cn\("w-64", AGENT_COMPACT_NAV_MENU_FLEX_CONTENT_CLASS\)\}[\s\S]*?>[\s\S]*<AgentCompactNavMenuPinnedFooter bordered=\{!isEmpty\}>[\s\S]*Browse \{item\.label\.toLowerCase\(\)\}/u);
 	// Already-added apps are excluded from the inline "Add apps" search.
 	assert.match(AGENT_SOURCE, /function AgentCompactAppsNavButton[\s\S]*<EditorPaletteSearchPicker[\s\S]*excludeLabels=\{apps\}/u);
 	// The apps nav field is wired to the dropdown, not the fallback click button.
@@ -782,7 +796,7 @@ test("Agent compact apps field opens a dropdown menu instead of the directory", 
 	// The old immediate-open path is gone from the click helper: the trigger
 	// branch is now directly followed by the skills branch, with no apps branch
 	// between them.
-	assert.match(AGENT_SOURCE, /item\.agentFieldName === "trigger"\)\s*\{\s*return \(\) => onEditTriggers\?\.\(\[\]\);\s*\}\s*if \(item\.agentFieldName === "skills"\)/u);
+	assert.match(AGENT_SOURCE, /item\.agentFieldName === "trigger"\)\s*\{\s*return \(\) => onEditTriggers\?\.\(\);\s*\}\s*if \(item\.agentFieldName === "skills"\)/u);
 });
 
 test("Bento carousel overflow hook reattaches listeners when the scroll node remounts", () => {
@@ -856,6 +870,7 @@ test("Shared Tiptap editor is SSR-safe and emits markdown updates", () => {
 		/onUpdate: \(\{ editor: activeEditor \}\) => \{[\s\S]*const markdown = activeEditor\.getMarkdown\(\);[\s\S]*onMarkdownChangeRef\.current\?\.\(markdown\);/u,
 	);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /editor\.commands\.setContent\(nextValue, \{[\s\S]*contentType: "markdown",[\s\S]*emitUpdate: false/u);
+	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.tiptap-editor h[12] \{[\s\S]*border-bottom/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_SOURCE, /absolute top-0 left-0/u);
 });
 

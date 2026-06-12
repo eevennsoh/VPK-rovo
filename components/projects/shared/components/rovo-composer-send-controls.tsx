@@ -1,5 +1,9 @@
 "use client";
 
+// oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates coupled component parts as a compound component or demo surface API.
+
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import { cloneElement, useCallback, useEffect, useRef, useState, type HTMLAttributes, type ReactElement } from "react";
 import type { ChatStatus } from "ai";
 import { AnimatePresence, motion } from "motion/react";

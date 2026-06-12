@@ -50,6 +50,7 @@ export function PersonalGraphPage({
 	const [isLoading, setIsLoading] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 
+	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- slug changes start an abortable external page fetch.
 	useEffect(() => {
 		if (!slug) {
 			setPage(null);
@@ -83,6 +84,7 @@ export function PersonalGraphPage({
 			controller.abort();
 		};
 	}, [slug]);
+	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	const frontmatterRows = useMemo(() => {
 		const entries = Object.entries(page?.frontmatter ?? node?.frontmatter ?? {});

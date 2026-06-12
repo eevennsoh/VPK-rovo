@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- Dropdown menu item slot APIs intentionally accept React nodes for icons and adornments.
+
 import { useRouter } from "next/navigation";
 import FullscreenEnterIcon from "@atlaskit/icon/core/fullscreen-enter";
 import LinkExternalIcon from "@atlaskit/icon/core/link-external";

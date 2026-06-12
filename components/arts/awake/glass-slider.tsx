@@ -1,5 +1,9 @@
 "use client";
 
+// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
+
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 // Vertical port of chanhdai's Elastic Slider (https://chanhdai.com/components/elastic-slider)
 // Original: @ncdai — horizontal slider with rubber-band drag & magnetic snap.
 // This version flips to vertical: drag up = increase, fill grows from bottom.
@@ -86,6 +90,7 @@ const GLASS_SLIDER_TICK_EMBOSS_BOX_SHADOW =
 //
 // Exported so demos / playgrounds can spread the defaults and override
 // individual values for live tuning without re-stating every key.
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const DEFAULT_FILL_GLASS_PROPS: Partial<LiquidGlassProps> = {
 	borderRadius: 9999,
 	borderWidth: 0,

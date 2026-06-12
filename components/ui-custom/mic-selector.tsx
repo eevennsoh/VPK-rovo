@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import type { ComponentProps, ReactNode } from "react";
 
 import { useControllableState } from "@/hooks/use-controllable-state";

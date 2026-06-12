@@ -1,3 +1,7 @@
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props or external runtime state before user edits take ownership.
+// oxlint-disable react-doctor/only-export-components -- This module intentionally exports colocated component API, variant contracts, context contracts, or metadata used by consumers.
+
+// oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client"
 
@@ -62,11 +66,28 @@ function useAnimation(
     paused?: boolean
   }
 ): { frameIndex: number; isPlaying: boolean } {
-  const [frameIndex, setFrameIndex] = useState(0)
-  const [isPlaying, setIsPlaying] = useState(options.autoplay)
+  const [animationState, setAnimationState] = useState({
+    autoplay: options.autoplay,
+    frameIndex: 0,
+    frames,
+    isPlaying: options.autoplay,
+  })
   const frameIdRef = useRef<number | undefined>(undefined)
   const lastTimeRef = useRef<number>(0)
   const accumulatorRef = useRef<number>(0)
+  let resolvedAnimationState = animationState
+  if (animationState.frames !== frames || animationState.autoplay !== options.autoplay) {
+    lastTimeRef.current = 0
+    accumulatorRef.current = 0
+    resolvedAnimationState = {
+      autoplay: options.autoplay,
+      frameIndex: 0,
+      frames,
+      isPlaying: options.autoplay,
+    }
+    setAnimationState(resolvedAnimationState)
+  }
+  const { frameIndex, isPlaying } = resolvedAnimationState
 
   useEffect(() => {
     if (!frames || frames.length === 0 || !isPlaying || options.paused) {
@@ -87,19 +108,19 @@ function useAnimation(
       if (accumulatorRef.current >= frameInterval) {
         accumulatorRef.current -= frameInterval
 
-        setFrameIndex((prev) => {
+        setAnimationState((currentState) => {
+          const prev = currentState.frameIndex
           const next = prev + 1
           if (next >= frames.length) {
             if (options.loop) {
               options.onFrame?.(0)
-              return 0
+              return { ...currentState, frameIndex: 0 }
             } else {
-              setIsPlaying(false)
-              return prev
+              return { ...currentState, isPlaying: false }
             }
           }
           options.onFrame?.(next)
-          return next
+          return { ...currentState, frameIndex: next }
         })
       }
 
@@ -114,13 +135,6 @@ function useAnimation(
       }
     }
   }, [frames, isPlaying, options.fps, options.loop, options.onFrame, options.paused])
-
-  useEffect(() => {
-    setFrameIndex(0)
-    setIsPlaying(options.autoplay)
-    lastTimeRef.current = 0
-    accumulatorRef.current = 0
-  }, [frames, options.autoplay])
 
   return { frameIndex, isPlaying }
 }

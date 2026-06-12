@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import type { ComponentProps, ReactNode } from "react";
 
 import { useControllableState } from "@/hooks/use-controllable-state";
@@ -107,6 +109,7 @@ interface TimelineToolLabelParts {
 	toolName: string;
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function isTimelineOnlyContent(value: string): boolean {
 	return parseTimelineEntries(value).length > 0;
 }

@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/prefer-module-scope-static-value -- These values are intentionally colocated with the component/demo contract for readability and token context.
+
 import { TaskCard } from "./task-card";
 import { SAMPLE_TASKS, type TaskStatus } from "@/app/data/dashboard-sample";
 

@@ -32,20 +32,23 @@ export function ClickyResponseOverlay({
 	const [flipY, setFlipY] = useState(false);
 
 	// Stream characters
-	const [displayedText, setDisplayedText] = useState("");
+	const [displayState, setDisplayState] = useState(() => ({ displayedText: "", text }));
+	if (displayState.text !== text) {
+		setDisplayState({ displayedText: "", text });
+	}
+	const displayedText = displayState.text === text ? displayState.displayedText : "";
 
 	useEffect(() => {
-		setDisplayedText("");
 		if (!text) return;
 
 		let i = 0;
 		const interval = setInterval(() => {
 			i++;
 			if (i >= text.length) {
-				setDisplayedText(text);
+				setDisplayState({ displayedText: text, text });
 				clearInterval(interval);
 			} else {
-				setDisplayedText(text.slice(0, i));
+				setDisplayState({ displayedText: text.slice(0, i), text });
 			}
 		}, 25);
 

@@ -483,4 +483,55 @@ function dekebabLabel(id: string): string {
 		.join(" ");
 }
 
+/**
+ * Best-effort guarantee that the generated instruction body renders a chip for
+ * EVERY capability the agent carries. Given the resolved ids the agent has per
+ * category, appends `@[category:id]` tokens for any not already present in the
+ * markdown, grouped under a "## Capabilities" section. Symmetric to the body→config
+ * union in repair: this is the config→body direction, so a tool/skill/knowledge/
+ * subagent listed on the agent but never mentioned in the prose still shows up as
+ * a lozenge. Returns the markdown unchanged when nothing is missing.
+ */
+export function weaveMissingTokens(
+	markdown: string,
+	idsByCategory: Partial<Record<CatalogCategory, readonly string[]>>,
+): string {
+	const tokens = extractInstructionTokens(markdown);
+	const existing = new Set(tokens.map((t) => `${t.category}:${t.id}`));
+	// An explicit `@[app:X]` chip already renders X's tool AND knowledge facets,
+	// so treat those facet tokens as present. Without this, a body that uses the
+	// unified `@[app:id]` form (every agent template does) would have its
+	// reconcileApps-derived tool/knowledge facets re-woven below as duplicate
+	// lozenges. Facet ids are 1:1 with the app id, and knowledge weaves as the
+	// `<id>:all` chip — mirror both forms.
+	for (const t of tokens) {
+		if (t.category === "app") {
+			existing.add(`tool:${t.id}`);
+			existing.add(`knowledge:${t.id}:all`);
+		}
+	}
+	const WEAVE_ORDER: { category: CatalogCategory; label: string }[] = [
+		{ category: "tool", label: "Apps" },
+		{ category: "skill", label: "Skills" },
+		{ category: "knowledge", label: "Knowledge" },
+		{ category: "subagent", label: "Subagents" },
+	];
+
+	const lines: string[] = [];
+	for (const { category, label } of WEAVE_ORDER) {
+		const missing = (idsByCategory[category] ?? []).filter(
+			(id) => !existing.has(`${category}:${id}`),
+		);
+		if (missing.length > 0) {
+			lines.push(`${label}: ${missing.map((id) => `@[${category}:${id}]`).join(", ")}.`);
+		}
+	}
+
+	if (lines.length === 0) {
+		return markdown;
+	}
+	const base = markdown.trimEnd();
+	return `${base}${base ? "\n\n" : ""}## Capabilities\n${lines.join("\n")}`;
+}
+
 export { TOKEN_CATEGORIES };

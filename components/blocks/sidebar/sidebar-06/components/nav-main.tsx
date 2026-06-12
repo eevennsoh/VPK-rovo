@@ -55,7 +55,7 @@ export function NavMain({
                   className="min-w-56 rounded-lg"
                 >
                   {item.items.map((item) => (
-                    <DropdownMenuItem render={<a href={item.url} />} key={item.title}>
+	                    <DropdownMenuItem render={<a aria-label={item.title} href={item.url} />} key={item.title}>
                       {item.title}
                     </DropdownMenuItem>
                   ))}

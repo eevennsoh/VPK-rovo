@@ -145,6 +145,7 @@ function Sun(props: SunProps) {
 }
 
 export {
+  // react-doctor-disable-next-line react-doctor/only-export-components -- This generated icon module intentionally exports the icon component with its metadata/types.
   animations,
   Sun,
   Sun as SunIcon,

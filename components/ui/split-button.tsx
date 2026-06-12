@@ -1,5 +1,7 @@
 "use client"
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import * as React from "react"
 
 import { Button, type ButtonProps } from "@/components/ui/button"

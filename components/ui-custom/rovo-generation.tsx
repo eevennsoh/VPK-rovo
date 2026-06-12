@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+
 import { animate, motion, useMotionValue, useReducedMotion, type Transition } from "motion/react";
 import { useEffect, useRef } from "react";
 import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from "react";
@@ -54,6 +56,7 @@ function clamp(value: number, min: number, max: number): number {
 	return Math.max(min, Math.min(max, value));
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
 function RovoGenerationGradientLayer({
 	active,
 	animated,
@@ -141,6 +144,7 @@ function RovoGenerationGradientLayer({
 	);
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
 function RovoGenerationRoot({
 	size = 100,
 	radius = 12,

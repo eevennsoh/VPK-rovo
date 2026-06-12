@@ -1,5 +1,8 @@
 "use client";
 
+// oxlint-disable react-doctor/no-noninteractive-tabindex -- These surfaces intentionally receive keyboard focus for application-style keyboard handling or card-level shortcuts.
+// oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
+
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
@@ -487,6 +490,7 @@ export function KanbanBoard({
 	const [canScrollRight, setCanScrollRight] = useState(false);
 	const dragImageRef = useRef<HTMLDivElement | null>(null);
 
+	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- scroll affordance depends on measured DOM dimensions.
 	useEffect(() => {
 		const scrollContainer = scrollRef.current;
 
@@ -578,6 +582,7 @@ export function KanbanBoard({
 			dragImageRef.current = null;
 		};
 	}, []);
+	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	const handleCardDragStartInternal = (
 		card: KanbanBoardCardData,
@@ -613,10 +618,9 @@ export function KanbanBoard({
 				</div>
 			) : null}
 
-			<div
-				ref={scrollRef}
-				role="region"
-				tabIndex={0}
+				<section
+					ref={scrollRef}
+					tabIndex={0}
 				aria-label={ariaLabel}
 				className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
 				style={{
@@ -628,7 +632,7 @@ export function KanbanBoard({
 					overflowY: "hidden",
 					minHeight: 0,
 				}}
-			>
+				>
 				<div className="flex items-stretch gap-2" style={{ minWidth: "100%" }}>
 					{boardColumns.map((column) => (
 						<div
@@ -692,7 +696,7 @@ export function KanbanBoard({
 						</div>
 					))}
 				</div>
+				</section>
 			</div>
-		</div>
 	);
 }

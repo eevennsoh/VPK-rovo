@@ -1,5 +1,12 @@
 "use client";
 
+// oxlint-disable react-doctor/no-chain-state-updates -- Related state fields are updated together to preserve atomic UI transitions and avoid partial interaction states.
+// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
+
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { motion, type Variants } from "motion/react";
@@ -45,7 +52,9 @@ import {
 import { AtlassianLogo } from "@/components/ui/logo";
 import {
 	createAgentTriggerValue,
-	DEFAULT_CONFIGURED_TRIGGER_VALUES,
+	createAgentAutomationRule,
+	DEFAULT_CONFIGURED_AUTOMATION_RULES,
+	getAgentAutomationRuleLabel,
 	getAgentTriggerParamLabel,
 	getAgentTriggerReadableLabel,
 	getTriggerEvent,
@@ -53,6 +62,7 @@ import {
 	serializeAgentTriggerLabels,
 	TRIGGER_PROVIDERS,
 	type AgentTriggerConnectionState,
+	type AgentAutomationRule,
 	type AgentTriggerEventDefinition,
 	type AgentTriggerParamDefinition,
 	type AgentTriggerProviderDefinition,
@@ -65,6 +75,7 @@ import { cn } from "@/lib/utils";
 
 export type {
 	AgentTriggerConnectionState,
+	AgentAutomationRule,
 	AgentTriggerEventDefinition,
 	AgentTriggerParamDefinition,
 	AgentTriggerProviderDefinition,
@@ -177,18 +188,30 @@ function TriggerProviderTileIcon({
 	);
 }
 
-function getInitialTriggers({
+function getInitialAutomationRules({
+	defaultAutomationRules,
 	defaultTriggers,
 	hasTrigger,
 }: Readonly<{
+	defaultAutomationRules?: readonly AgentAutomationRule[];
 	defaultTriggers?: readonly AgentTriggerValue[];
 	hasTrigger?: boolean;
-}>): AgentTriggerValue[] {
-	if (defaultTriggers) {
-		return [...defaultTriggers];
+}>): AgentAutomationRule[] {
+	if (defaultAutomationRules) {
+		return [...defaultAutomationRules];
 	}
 
-	return hasTrigger === true ? [...DEFAULT_CONFIGURED_TRIGGER_VALUES] : [];
+	if (defaultTriggers) {
+		return [
+			createAgentAutomationRule({
+				id: "automation-1",
+				name: "Automation",
+				triggers: defaultTriggers,
+			}),
+		];
+	}
+
+	return hasTrigger === true ? [...DEFAULT_CONFIGURED_AUTOMATION_RULES] : [];
 }
 
 function getConnectionLabel(state: AgentTriggerConnectionState | undefined): string | null {
@@ -369,8 +392,8 @@ export function TriggerPicker({
 
 	const handleSelectEvent = useCallback(
 		(providerId: AgentTriggerProviderId, eventId: string) => {
-			onSelectEvent(providerId, eventId);
 			setOpen(false);
+			onSelectEvent(providerId, eventId);
 		},
 		[onSelectEvent],
 	);
@@ -735,37 +758,25 @@ function TriggerRow({
 	);
 }
 
-function getSharedPrompt(triggers: readonly AgentTriggerValue[]): string {
-	return triggers.find((trigger) => trigger.prompt?.trim())?.prompt ?? "";
+function getAutomationPrompt(rule: AgentAutomationRule): string {
+	return rule.prompt ?? "";
 }
 
-function getSharedAutomationName(triggers: readonly AgentTriggerValue[]): string {
-	return triggers.find((trigger) => trigger.automationName?.trim())?.automationName ?? "";
+function getAutomationName(rule: AgentAutomationRule): string {
+	return rule.name ?? "";
 }
 
-function getSharedAutomationEnabled(triggers: readonly AgentTriggerValue[]): boolean {
-	const firstConfigured = triggers.find((trigger) => typeof trigger.enabled !== "undefined");
-	return firstConfigured ? firstConfigured.enabled !== false : true;
+function isAutomationRuleEnabled(rule: AgentAutomationRule): boolean {
+	return rule.enabled !== false;
 }
 
-function applySharedAutomationFields(
-	triggers: readonly AgentTriggerValue[],
-	{
-		automationName,
-		enabled,
-		prompt,
-	}: Readonly<{
-		automationName: string;
-		enabled: boolean;
-		prompt: string;
-	}>,
-): AgentTriggerValue[] {
-	return triggers.map((trigger) => ({
-		...trigger,
-		automationName: automationName.trim(),
-		enabled,
-		prompt,
-	}));
+function createEmptyAutomationRule(index: number): AgentAutomationRule {
+	return createAgentAutomationRule({
+		id: `automation-${index}`,
+		name: "",
+		prompt: "",
+		triggers: [],
+	});
 }
 
 function TriggerConditionsPanel({
@@ -886,8 +897,8 @@ function TriggerAutomationFlowPreview({
 export interface TriggerAutomationDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	triggers: readonly AgentTriggerValue[];
-	onSave: (triggers: readonly AgentTriggerValue[]) => void;
+	automationRule: AgentAutomationRule;
+	onSave: (automationRule: AgentAutomationRule) => void;
 	defaultPickerOpen?: boolean;
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 	title?: string;
@@ -895,6 +906,7 @@ export interface TriggerAutomationDialogProps {
 }
 
 export function TriggerAutomationDialog({
+	automationRule,
 	defaultPickerOpen,
 	onConnectTrigger,
 	onOpenChange,
@@ -902,31 +914,35 @@ export function TriggerAutomationDialog({
 	open,
 	saveLabel = "Save",
 	title = "New Automation",
-	triggers,
 }: Readonly<TriggerAutomationDialogProps>): ReactElement {
-	const seedRef = useRef<readonly AgentTriggerValue[]>(triggers);
-	seedRef.current = triggers;
+	const seedRef = useRef<AgentAutomationRule>(automationRule);
+	seedRef.current = automationRule;
 	const wasOpen = useRef(open);
-	const [draftTriggers, setDraftTriggers] = useState<readonly AgentTriggerValue[]>(triggers);
-	const [automationName, setAutomationName] = useState(() => getSharedAutomationName(triggers));
-	const [sharedPrompt, setSharedPrompt] = useState(() => getSharedPrompt(triggers));
-	const [active, setActive] = useState(() => getSharedAutomationEnabled(triggers));
-	const dataFlowConfig = useMemo(() => ({
-		name: automationName,
-		instructions: sharedPrompt,
-		triggers: draftTriggers.map(getAgentTriggerReadableLabel),
-	}), [automationName, draftTriggers, sharedPrompt]);
+	const connectTimerRef = useRef<number | null>(null);
+	const [draftTriggers, setDraftTriggers] = useState<readonly AgentTriggerValue[]>(automationRule.triggers);
+	const [automationName, setAutomationName] = useState(() => getAutomationName(automationRule));
+	const [sharedPrompt, setSharedPrompt] = useState(() => getAutomationPrompt(automationRule));
+	const [active, setActive] = useState(() => isAutomationRuleEnabled(automationRule));
 
 	useEffect(() => {
 		if (open && !wasOpen.current) {
 			const nextSeed = seedRef.current;
-			setDraftTriggers(nextSeed);
-			setAutomationName(getSharedAutomationName(nextSeed));
-			setSharedPrompt(getSharedPrompt(nextSeed));
-			setActive(getSharedAutomationEnabled(nextSeed));
+			setDraftTriggers(nextSeed.triggers);
+			setAutomationName(getAutomationName(nextSeed));
+			setSharedPrompt(getAutomationPrompt(nextSeed));
+			setActive(isAutomationRuleEnabled(nextSeed));
 		}
 		wasOpen.current = open;
 	}, [open]);
+
+	// oxlint-disable-next-line react-doctor/exhaustive-deps -- Unmount-only cleanup for the fake provider connection timer.
+	useEffect(() => {
+		return () => {
+			if (connectTimerRef.current !== null) {
+				window.clearTimeout(connectTimerRef.current);
+			}
+		};
+	}, []);
 
 	const handleAddTrigger = useCallback(
 		(providerId: AgentTriggerProviderId, eventId: string) => {
@@ -964,13 +980,31 @@ export function TriggerAutomationDialog({
 	const handleConnect = useCallback(
 		(trigger: AgentTriggerValue) => {
 			onConnectTrigger?.(trigger);
+			const { providerId } = trigger;
+			// Fake connection: mark every trigger sharing this provider as connecting,
+			// then flip them to connected after a short "Connecting…" spin. The dialog
+			// owns the visible draft state, so the transition must happen here.
 			setDraftTriggers((current) =>
 				current.map((draftTrigger) =>
-					draftTrigger.id === trigger.id
+					draftTrigger.providerId === providerId
 						? { ...draftTrigger, connectionState: "connecting" as const }
 						: draftTrigger,
 				),
 			);
+
+			if (connectTimerRef.current !== null) {
+				window.clearTimeout(connectTimerRef.current);
+			}
+			connectTimerRef.current = window.setTimeout(() => {
+				setDraftTriggers((current) =>
+					current.map((draftTrigger) =>
+						draftTrigger.providerId === providerId
+							? { ...draftTrigger, connectionState: "connected" as const }
+							: draftTrigger,
+					),
+				);
+				connectTimerRef.current = null;
+			}, 1200);
 		},
 		[onConnectTrigger],
 	);
@@ -980,18 +1014,20 @@ export function TriggerAutomationDialog({
 	}, []);
 
 	const handleSave = useCallback(() => {
-		onSave(applySharedAutomationFields(draftTriggers, {
-			automationName,
+		onSave(createAgentAutomationRule({
+			...automationRule,
+			name: automationName.trim(),
 			enabled: active,
 			prompt: sharedPrompt,
+			triggers: draftTriggers,
 		}));
 		onOpenChange(false);
-	}, [active, automationName, draftTriggers, onOpenChange, onSave, sharedPrompt]);
+	}, [active, automationName, automationRule, draftTriggers, onOpenChange, onSave, sharedPrompt]);
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-[min(760px,calc(100vh-2rem))] gap-0 overflow-hidden p-0" showCloseButton={false} size="lg">
-				<div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+			<DialogContent className="flex max-h-[min(760px,calc(100vh-2rem))] flex-col gap-0 overflow-hidden p-0" showCloseButton={false} size="lg">
+				<div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-6 py-5">
 					<div className="grid gap-1">
 						<DialogTitle className="text-xl font-semibold leading-6 text-text">
 							{title}
@@ -1010,7 +1046,7 @@ export function TriggerAutomationDialog({
 						</DialogClose>
 					</div>
 				</div>
-				<div className="grid max-h-[calc(100vh-13rem)] gap-5 overflow-y-auto px-6 py-5">
+				<div className="grid min-h-0 flex-1 gap-5 overflow-y-auto px-6 py-5">
 					<TriggerAutomationFlowPreview
 						automationName={automationName}
 						prompt={sharedPrompt}
@@ -1024,21 +1060,6 @@ export function TriggerAutomationDialog({
 							value={automationName}
 						/>
 					</label>
-					<div className="grid gap-1.5">
-						<span className="text-sm font-medium leading-5 text-text">Source</span>
-						<DropdownMenu>
-							<DropdownMenuTrigger
-								render={<Button className="w-fit justify-start" type="button" variant="outline" />}
-							>
-								No Repository
-								<ChevronDownIcon label="" size="small" />
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="start" className="w-56">
-								<DropdownMenuItem onSelect={() => undefined}>No Repository</DropdownMenuItem>
-								<DropdownMenuItem onSelect={() => undefined}>Select repositories</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
 					<div className="grid gap-2">
 						<div className="grid gap-0.5">
 							<h3 className="text-sm font-semibold leading-5 text-text">Triggers</h3>
@@ -1070,7 +1091,6 @@ export function TriggerAutomationDialog({
 							aria-label="Agent Instructions"
 							className="space-y-2"
 							contentClassName="pt-2"
-							dataFlowConfig={dataFlowConfig}
 							editorClassName="agent-instructions-tiptap-editor text-text"
 							onMarkdownChange={setSharedPrompt}
 							placeholder="Tell the agent what to do when any trigger starts this automation..."
@@ -1079,11 +1099,11 @@ export function TriggerAutomationDialog({
 						/>
 					</div>
 				</div>
-				<div className="flex items-center justify-end gap-2 border-t border-border bg-surface-overlay px-6 py-4">
+				<div className="flex shrink-0 items-center justify-end gap-2 border-t border-border bg-surface-overlay px-6 py-4">
 					<Button onClick={() => onOpenChange(false)} type="button" variant="ghost">
 						Cancel
 					</Button>
-					<Button onClick={handleSave} type="button">
+					<Button disabled={draftTriggers.length === 0} onClick={handleSave} type="button">
 						{saveLabel}
 					</Button>
 				</div>
@@ -1093,6 +1113,12 @@ export function TriggerAutomationDialog({
 }
 
 export interface TriggersProps {
+	/** Controlled automation rules. */
+	automationRules?: readonly AgentAutomationRule[];
+	/** Initial automation rules for uncontrolled usage. */
+	defaultAutomationRules?: readonly AgentAutomationRule[];
+	/** Invoked whenever automation rules change. */
+	onAutomationRulesChange?: (automationRules: readonly AgentAutomationRule[]) => void;
 	/** Controlled trigger definitions. */
 	triggers?: readonly AgentTriggerValue[];
 	/** Initial trigger definitions for uncontrolled usage. */
@@ -1127,84 +1153,132 @@ export interface TriggersProps {
  */
 export default function Triggers({
 	addTriggerLabel = "Add Trigger",
+	automationRules,
 	className,
+	defaultAutomationRules,
 	defaultPickerOpen,
 	defaultTriggers,
 	hasTrigger,
 	onClearTrigger,
+	onAutomationRulesChange,
 	onConnectTrigger,
 	onTriggersChange,
 	triggers,
 }: Readonly<TriggersProps>): ReactElement {
-	const isControlled = typeof triggers !== "undefined";
-	const [uncontrolledTriggers, setUncontrolledTriggers] = useState<AgentTriggerValue[]>(() =>
-		getInitialTriggers({ defaultTriggers, hasTrigger }),
+	const derivedAutomationRules = automationRules
+		?? (triggers
+			? [
+					createAgentAutomationRule({
+						id: "automation-1",
+						name: "Automation",
+						triggers,
+					}),
+				]
+			: undefined);
+	const isControlled = typeof derivedAutomationRules !== "undefined";
+	const [uncontrolledAutomationRules, setUncontrolledAutomationRules] = useState<AgentAutomationRule[]>(() =>
+		getInitialAutomationRules({ defaultAutomationRules, defaultTriggers, hasTrigger }),
 	);
-	const currentTriggers = triggers ?? uncontrolledTriggers;
+	const currentAutomationRules = derivedAutomationRules ?? uncontrolledAutomationRules;
 	const [automationDialogOpen, setAutomationDialogOpen] = useState(Boolean(defaultPickerOpen));
+	const [draftAutomationRule, setDraftAutomationRule] = useState<AgentAutomationRule>(() =>
+		currentAutomationRules[0] ?? createEmptyAutomationRule(1),
+	);
 
-	const commitTriggers = useCallback(
-		(nextTriggers: readonly AgentTriggerValue[]) => {
+	const commitAutomationRules = useCallback(
+		(nextAutomationRules: readonly AgentAutomationRule[]) => {
 			if (!isControlled) {
-				setUncontrolledTriggers([...nextTriggers]);
+				setUncontrolledAutomationRules([...nextAutomationRules]);
 			}
-			onTriggersChange?.(nextTriggers);
+			onAutomationRulesChange?.(nextAutomationRules);
+			onTriggersChange?.(nextAutomationRules.flatMap((rule) => rule.triggers));
 		},
-		[isControlled, onTriggersChange],
+		[isControlled, onAutomationRulesChange, onTriggersChange],
 	);
 
 	const handleSave = useCallback(
-		(nextTriggers: readonly AgentTriggerValue[]) => {
-			if (nextTriggers.length < currentTriggers.length) {
+		(nextRule: AgentAutomationRule) => {
+			const existingIndex = currentAutomationRules.findIndex((rule) => rule.id === nextRule.id);
+			const nextAutomationRules = existingIndex >= 0
+				? currentAutomationRules.map((rule, index) => (index === existingIndex ? nextRule : rule))
+				: [...currentAutomationRules, nextRule];
+			if (nextAutomationRules.length < currentAutomationRules.length) {
 				onClearTrigger?.();
 			}
-			commitTriggers(nextTriggers);
+			commitAutomationRules(nextAutomationRules);
 		},
-		[commitTriggers, currentTriggers.length, onClearTrigger],
+		[commitAutomationRules, currentAutomationRules, onClearTrigger],
+	);
+	const openAutomationRule = useCallback((rule: AgentAutomationRule) => {
+		setDraftAutomationRule(rule);
+		setAutomationDialogOpen(true);
+	}, []);
+	const openNewAutomationRuleFromEvent = useCallback((providerId: AgentTriggerProviderId, eventId: string) => {
+		const nextTrigger = createAgentTriggerValue(providerId, eventId, 1);
+		if (!nextTrigger) {
+			return;
+		}
+		setDraftAutomationRule(createAgentAutomationRule({
+			id: `automation-${currentAutomationRules.length + 1}`,
+			name: "",
+			prompt: "",
+			triggers: [nextTrigger],
+		}));
+		setAutomationDialogOpen(true);
+	}, [currentAutomationRules.length]);
+	const addAutomationPicker = (
+		<TriggerPicker
+			label={addTriggerLabel}
+			onSelectEvent={openNewAutomationRuleFromEvent}
+		/>
 	);
 
 	const cardChildren: ReactNode =
-		currentTriggers.length > 0 ? (
-			<div className="overflow-hidden rounded-xl border border-border bg-bg-input">
-				<button
-					className="grid w-full gap-3 p-4 text-left transition-colors duration-normal hover:bg-bg-input-hovered focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected"
-					onClick={() => setAutomationDialogOpen(true)}
-					type="button"
-				>
-					<div className="flex items-center justify-between gap-3">
-						<div className="min-w-0">
-							<div className="truncate text-sm font-semibold leading-5 text-text">
-								{getSharedAutomationName(currentTriggers) || "Automation"}
-							</div>
-							<div className="text-sm leading-5 text-text-subtle">
-								{currentTriggers.length} trigger{currentTriggers.length === 1 ? "" : "s"}
-							</div>
-						</div>
-						<span className="text-sm font-medium text-link">Edit</span>
-					</div>
-					<div className="grid gap-2">
-						{currentTriggers.map((trigger) => {
-							const provider = getTriggerProvider(trigger.providerId);
-							return (
-								<div className="flex min-w-0 items-center gap-2 text-sm text-text" key={trigger.id}>
-									<span className="flex size-6 shrink-0 items-center justify-center">
-										{provider ? renderTriggerProviderIcon(provider.icon, provider.label) : (
-											<AutomationIcon label="" size="small" />
-										)}
-									</span>
-									<span className="truncate">{getAgentTriggerReadableLabel(trigger)}</span>
+		currentAutomationRules.length > 0 ? (
+			<div className="grid gap-2">
+				{currentAutomationRules.map((rule, index) => (
+					<div className="overflow-hidden rounded-xl border border-border bg-bg-input" key={rule.id}>
+						<button
+							className="grid w-full gap-3 p-4 text-left transition-colors duration-normal hover:bg-bg-input-hovered focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected"
+							onClick={() => openAutomationRule(rule)}
+							type="button"
+						>
+							<div className="flex items-center justify-between gap-3">
+								<div className="min-w-0">
+									<div className="truncate text-sm font-semibold leading-5 text-text">
+										{getAgentAutomationRuleLabel(rule, index)}
+									</div>
+									<div className="text-sm leading-5 text-text-subtle">
+										{rule.triggers.length} event trigger{rule.triggers.length === 1 ? "" : "s"}
+									</div>
 								</div>
-							);
-						})}
+								<span className="text-sm font-medium text-link">Edit</span>
+							</div>
+							<div className="grid gap-2">
+								{rule.triggers.map((trigger) => {
+									const provider = getTriggerProvider(trigger.providerId);
+									return (
+										<div className="flex min-w-0 items-center gap-2 text-sm text-text" key={trigger.id}>
+											<span className="flex size-6 shrink-0 items-center justify-center">
+												{provider ? renderTriggerProviderIcon(provider.icon, provider.label) : (
+													<AutomationIcon label="" size="small" />
+												)}
+											</span>
+											<span className="truncate">{getAgentTriggerReadableLabel(trigger)}</span>
+										</div>
+									);
+								})}
+							</div>
+						</button>
 					</div>
-				</button>
-				<div className="border-t border-border bg-surface px-2 py-2">
-					<TriggerAddRow label={addTriggerLabel} onClick={() => setAutomationDialogOpen(true)} />
+				))}
+				<div className="rounded-xl border border-border bg-bg-input p-2">
+					{addAutomationPicker}
 				</div>
 			</div>
 		) : (
 			<div className="rounded-xl border border-border bg-bg-input p-2">
-				<TriggerAddRow label={addTriggerLabel} onClick={() => setAutomationDialogOpen(true)} />
+				{addAutomationPicker}
 			</div>
 		);
 
@@ -1213,11 +1287,11 @@ export default function Triggers({
 			<section className="grid gap-3">{cardChildren}</section>
 			<TriggerAutomationDialog
 				defaultPickerOpen={defaultPickerOpen}
+				automationRule={draftAutomationRule}
 				onConnectTrigger={onConnectTrigger}
 				onOpenChange={setAutomationDialogOpen}
 				onSave={handleSave}
 				open={automationDialogOpen}
-				triggers={currentTriggers}
 			/>
 		</div>
 	);

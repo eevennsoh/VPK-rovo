@@ -16,7 +16,7 @@ import {
 	ArtifactContent,
 	ArtifactHeader,
 	ArtifactTitle,
-} from "@/components/ui-custom/artifact"
+} from "@/components/blocks/artifact"
 import {
 	CodeBlock,
 	CodeBlockCopyButton,

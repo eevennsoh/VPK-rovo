@@ -18,12 +18,14 @@ export const PROFIT_LOSS_NEGATIVE_COLOR = "var(--color-red-500)";
 
 const LEGEND_DIM_OPACITY = 0.25;
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function profitLossColor(value: number) {
   return value >= 0 ? PROFIT_LOSS_POSITIVE_COLOR : PROFIT_LOSS_NEGATIVE_COLOR;
 }
 
 export const PROFIT_LOSS_TOOLTIP_LABEL_FALLBACK = "Profit/Loss";
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function resolveProfitLossTooltipLabel(label: string) {
   const trimmed = label.trim();
   return trimmed || PROFIT_LOSS_TOOLTIP_LABEL_FALLBACK;

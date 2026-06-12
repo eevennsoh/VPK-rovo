@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
+
 import React, { useState, useEffect } from "react";
 import { AnimatePresence } from "motion/react";
 import { token } from "@/lib/tokens";

@@ -1,5 +1,11 @@
 "use client";
 
+// oxlint-disable react-doctor/no-noninteractive-element-to-interactive-role -- This custom selection list owns keyboard behavior outside native listbox constraints.
+// oxlint-disable react-doctor/no-noninteractive-tabindex -- These surfaces intentionally receive keyboard focus for application-style keyboard handling or card-level shortcuts.
+// oxlint-disable react-doctor/prefer-html-dialog -- These are embedded styled cards, not browser top-layer dialog elements.
+
+// oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import CloseIcon from "@atlaskit/icon/core/close";

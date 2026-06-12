@@ -81,14 +81,14 @@ export function SpinnerDemoInEmptyState() {
 			</EmptyHeader>
 			<EmptyContent>
 				<div className="flex gap-2">
-					<Button render={<a href="#" />} nativeButton={false}>
+					<Button render={<a aria-label="Spinner link" href="#" />} nativeButton={false}>
 						Create project
 					</Button>
 					<Button variant="outline">Import project</Button>
 				</div>
 				<Button
 					variant="link"
-					render={<a href="#" />}
+					render={<a aria-label="Spinner link" href="#" />}
 					nativeButton={false}
 					className="text-muted-foreground"
 				>

@@ -88,6 +88,23 @@ function normalizeStringList(value, { maxItems = 6 } = {}) {
 	return normalized;
 }
 
+function normalizeAutomationRules(value, { maxItems = 8 } = {}) {
+	if (!Array.isArray(value)) {
+		return [];
+	}
+
+	return value
+		.filter((rule) => isPlainObject(rule) && Array.isArray(rule.triggers) && rule.triggers.length > 0)
+		.slice(0, maxItems)
+		.map((rule, index) => ({
+			id: getNonEmptyString(rule.id) || `automation-${index + 1}`,
+			...(getNonEmptyString(rule.name) ? { name: getNonEmptyString(rule.name) } : {}),
+			...(getNonEmptyString(rule.prompt) ? { prompt: getNonEmptyString(rule.prompt) } : {}),
+			enabled: rule.enabled === false ? false : true,
+			triggers: rule.triggers.filter(isPlainObject).slice(0, 12),
+		}));
+}
+
 function unwrapAgentDefinition(value) {
 	if (!isPlainObject(value)) {
 		return null;
@@ -198,6 +215,7 @@ function normalizeStudioAgentResult(value) {
 	const knowledge = normalizeStringList(definition.knowledge, { maxItems: 24 });
 	const subagents = normalizeStringList(definition.subagents, { maxItems: 24 });
 	const triggers = normalizeStringList(definition.triggers, { maxItems: 12 });
+	const automationRules = normalizeAutomationRules(definition.automationRules || definition.automation_rules);
 	const conversationStarterIcons = normalizeStringList(
 		definition.conversationStarterIcons || definition.conversation_starter_icons,
 		{ maxItems: MAX_GENERATED_AGENT_CONVERSATION_STARTERS },
@@ -234,6 +252,7 @@ function normalizeStudioAgentResult(value) {
 		...(assignedColumn ? { assignedColumn } : {}),
 		...(trigger ? { trigger } : {}),
 		...(triggers.length > 0 ? { triggers } : {}),
+		...(automationRules.length > 0 ? { automationRules } : {}),
 		...(tools.length > 0 ? { tools } : {}),
 		...(apps.length > 0 ? { apps } : {}),
 		...(skills.length > 0 ? { skills } : {}),
@@ -1082,8 +1101,24 @@ function buildFallbackStudioAgentResult({
 		conversationStarters: buildFallbackConversationStarters({ brief, name }),
 		tools,
 		...(apps.length > 0 ? { apps: apps.map((app) => app.name) } : {}),
-		triggers: scheduleTrigger ? [scheduleTrigger] : [],
-		trigger: scheduleTrigger || "When a user asks for help with this workflow.",
+		automationRules: scheduleTrigger
+			? [
+					{
+						id: "automation-1",
+						name: "Scheduled workflow",
+						enabled: true,
+						prompt: `When this schedule runs, ${description.toLowerCase()}`,
+						triggers: [
+							{
+								id: "trigger-1",
+								providerId: "scheduled",
+								eventId: "daily-at-7am",
+								label: scheduleTrigger,
+							},
+						],
+					},
+				]
+			: [],
 		guardrail:
 			"Ask for missing context before making priority, ownership, or escalation recommendations.",
 		avatarFallback: { initials: getInitials(name) },
@@ -1100,8 +1135,8 @@ Before building, understand the user's brief and any template context provided, 
 Do not call POST /api/plan/agents or any persistence endpoint; durable agent persistence is out of scope for this v1.
 Write instructions as structured Markdown matching repo-local agent definitions: start with ## Instructions, use clear paragraphs, bullet lists with bold labels, and include optional ## Knowledge, ## Triggers, and ## Validation sections only when relevant.
 When ready, emit exactly one structured result marker outside code fences:
-AGENT_RESULT: {"agentId":"stable-slug","name":"Display name","byline":"Custom agent by You","description":"Short profile summary","instructions":"## Instructions\\n\\nYou are Display name. Describe the role, scope, and operating style.\\n\\n- **Summary** Explain the agent's main responsibility.\\n- **Workflow** Describe how it should handle requests.\\n\\n## Validation\\n\\n- Confirm the output is ready for the user's next step.","conversationStarters":["Starter prompt 1","Starter prompt 2","Starter prompt 3"],"tools":["Jira","Confluence"],"trigger":"When a user asks about X","guardrail":"Never modify data without explicit confirmation","avatarFallback":{"initials":"DA"},"action":"create"}
-Populate tools with the integrations the agent relies on (use [] when none apply); include trigger and guardrail when they apply, otherwise omit them.
+AGENT_RESULT: {"agentId":"stable-slug","name":"Display name","byline":"Custom agent by You","description":"Short profile summary","instructions":"## Instructions\\n\\nYou are Display name. Describe the role, scope, and operating style.\\n\\n- **Summary** Explain the agent's main responsibility.\\n- **Workflow** Describe how it should handle requests.\\n\\n## Validation\\n\\n- Confirm the output is ready for the user's next step.","conversationStarters":["Starter prompt 1","Starter prompt 2","Starter prompt 3"],"tools":["Jira","Confluence"],"automationRules":[{"id":"automation-1","name":"Display name automation","enabled":true,"prompt":"When the event happens, use the agent instructions to produce the expected output.","triggers":[{"id":"trigger-1","providerId":"jira","eventId":"work-item-updated"}]}],"guardrail":"Never modify data without explicit confirmation","avatarFallback":{"initials":"DA"},"action":"create"}
+Populate tools with the integrations the agent relies on (use [] when none apply); include automationRules and guardrail when they apply, otherwise omit them.
 Do not include edit, delete, approval, publishing, or real tool-binding controls in the result.
 [END AGENT CREATION MODE]`;
 	}

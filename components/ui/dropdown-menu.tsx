@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
  * Select imports these directly so popup, item, group, label, and separator
  * styling stays in sync without duplication.
  */
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const dropdownStyles = {
   popup:
     "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2 bg-popover text-popover-foreground max-h-[min(328px,var(--available-height,328px))] min-w-56 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-xl p-1 shadow-xl outline-none duration-fast data-closed:overflow-hidden",

@@ -1,3 +1,5 @@
+// oxlint-disable react-doctor/prefer-module-scope-static-value -- These values are intentionally colocated with the component/demo contract for readability and token context.
+
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

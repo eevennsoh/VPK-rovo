@@ -42,7 +42,7 @@ export function NavFavorites({
       <SidebarMenu>
         {favorites.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton render={<a href={item.url} title={item.name} />}>
+            <SidebarMenuButton render={<a aria-label={item.name} href={item.url} title={item.name} />}>
                 <span>{item.emoji}</span>
                 <span>{item.name}</span>
             </SidebarMenuButton>

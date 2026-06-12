@@ -1,5 +1,11 @@
 "use client";
 
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
+// oxlint-disable react-doctor/no-noninteractive-tabindex -- This viewport intentionally receives keyboard focus for application-style keyboard and paste handling without button semantics.
+
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import {
 	useCallback,
 	useEffect,

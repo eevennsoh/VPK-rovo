@@ -205,6 +205,7 @@ export function HeatmapInteractionRoot({ children }: { children: ReactNode }) {
 }
 
 /** @deprecated Use {@link HEATMAP_DEFAULT_LEVEL_COLORS} */
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const heatmapCssVars = {
   empty: HEATMAP_DEFAULT_LEVEL_COLORS[0],
   level1: HEATMAP_DEFAULT_LEVEL_COLORS[1],

@@ -6,7 +6,7 @@ import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { Attachment, AttachmentPreview, Attachments } from "@/components/ui-custom/attachments";
 import { Conversation, ConversationContent, ConversationScrollButton, type ConversationFollowMode, useConversationContext } from "@/components/ui-custom/conversation";
 import { Message, MessageActions, MessageContent, MessageCopyAction, MessageEditAction, MessageRegenerateAction, MessageResponse, MessageVoteActions } from "@/components/ui-custom/message";
-import { ArtifactCard, type ArtifactKind } from "@/components/ui-custom/artifact";
+import { ArtifactCard, type ArtifactKind } from "@/components/blocks/artifact";
 import { AdsReasoningTrigger, Reasoning, ReasoningContent } from "@/components/ui-custom/reasoning";
 import { Button } from "@/components/ui/button";
 import { GreetingPromptRow } from "@/components/projects/shared/components/greeting-prompt-row";

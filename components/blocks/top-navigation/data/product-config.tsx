@@ -16,6 +16,7 @@ interface ProductConfig {
 	name: string;
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
 function VpkRovoIcon() {
 	return (
 		<span className="inline-flex shrink-0 items-center">
