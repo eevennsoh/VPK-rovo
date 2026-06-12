@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { type ReactElement, type ReactNode } from "react";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
@@ -8,6 +7,7 @@ import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { IconTile, type IconTileVariant } from "@/components/ui/icon-tile";
+import { BrandLogoMark } from "@/components/ui/logo-mark";
 import { cn } from "@/lib/utils";
 
 import {
@@ -88,14 +88,7 @@ function EntityCardSourceRow({ source }: Readonly<{ source: EntityCardSource }>)
 			) : (
 				<>
 					{source.logoSrc ? (
-						<Image
-							src={source.logoSrc}
-							alt={`${source.name} logo`}
-							width={16}
-							height={16}
-							className="size-4 rounded-xs object-cover"
-							unoptimized
-						/>
+						<BrandLogoMark src={source.logoSrc} size="xxsmall" transparent label={source.name} />
 					) : (
 						<span aria-hidden className="size-4 rounded-full bg-bg-neutral" />
 					)}
@@ -182,26 +175,37 @@ export function EntityCardSkill({
 				{description ?? `Learn how ${name} can help your team work faster.`}
 			</EntityCardDescription>
 
-			{showStars || showTeammates ? (
+			{source || showStars || showTeammates ? (
 				<EntityCardFooter
 					className={cn(
-						revealStatsOnHover &&
+						revealStatsOnHover && !source &&
 							"opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
 					)}
 				>
-					{showStars ? (
-						<EntityCardStat
-							icon={<StarUnstarredIcon label="" size="small" spacing="none" color="currentColor" />}
+					{source ? <EntityCardSourceRow source={source} /> : null}
+					{showStars || showTeammates ? (
+						<span
+							className={cn(
+								"inline-flex shrink-0 items-center gap-4",
+								revealStatsOnHover &&
+									"opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
+							)}
 						>
-							{formatCompact(starCount)}
-						</EntityCardStat>
-					) : null}
-					{showTeammates ? (
-						<EntityCardStat
-							icon={<PeopleGroupIcon label="" size="small" spacing="none" color="currentColor" />}
-						>
-							{formatCompact(teammateCount)} teammates
-						</EntityCardStat>
+							{showStars ? (
+								<EntityCardStat
+									icon={<StarUnstarredIcon label="" size="small" spacing="none" color="currentColor" />}
+								>
+									{formatCompact(starCount)}
+								</EntityCardStat>
+							) : null}
+							{showTeammates ? (
+								<EntityCardStat
+									icon={<PeopleGroupIcon label="" size="small" spacing="none" color="currentColor" />}
+								>
+									{formatCompact(teammateCount)} teammates
+								</EntityCardStat>
+							) : null}
+						</span>
 					) : null}
 				</EntityCardFooter>
 			) : null}

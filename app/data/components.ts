@@ -318,6 +318,7 @@ export const UI_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 
 export const BLOCK_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	blockComponent("agent"),
+	blockComponent("skill-config", "Skill Config"),
 	blockComponent("agent-bento", "Agent Bento"),
 	blockComponent("agent-card", "Agent Card"),
 	blockComponent("agent-profile-card", "Agent Profile Card"),

@@ -112,7 +112,7 @@ export function EntityCardDemoSkills() {
 				name="Create page"
 				onMoreActions={() => {}}
 				onSelect={() => {}}
-				publisher="Atlassian"
+				source={{ type: "custom", name: "Venn", avatarSrc: "/avatar-human/maia-ma.png" }}
 				starCount={38}
 				teammateCount={6273}
 			/>
@@ -123,7 +123,7 @@ export function EntityCardDemoSkills() {
 				name="Find similar work"
 				onMoreActions={() => {}}
 				onSelect={() => {}}
-				publisher="Atlassian"
+				source={{ type: "app", name: "Slack", logoSrc: "/3p/slack/16.svg" }}
 				starCount={120}
 				teammateCount={4100}
 			/>
