@@ -750,6 +750,10 @@ export type AgentHeaderProps = ComponentProps<"div"> & {
 	avatarSrc?: string;
 	model?: string;
 	leadingContent?: ReactNode;
+	// Floats above the right edge of the leading (nav) area without taking
+	// layout space — used for the transient save indicator, which veils the nav
+	// behind a gradient scrim instead of pushing the surrounding controls.
+	leadingOverlay?: ReactNode;
 	primaryActionLabel?: string;
 	publishLabel?: string;
 	showActions?: boolean;
@@ -802,6 +806,7 @@ export const AgentHeader = memo(
 		className,
 		avatarSrc = AGENT_AVATAR_SRC,
 		leadingContent,
+		leadingOverlay,
 		model,
 		name,
 		primaryActionLabel = "Test",
@@ -818,24 +823,31 @@ export const AgentHeader = memo(
 			)}
 			{...props}
 		>
-			{leadingContent ?? (
-				<div className="flex min-w-0 items-center gap-2">
-					<Avatar label="Agent" shape="hexagon" size="sm">
-						{isAtlassianLogoSource(avatarSrc) ? (
-							<AtlassianLogo name="atlassian" label={name} size="small" />
-						) : (
-							<AvatarImage alt="" src={avatarSrc} />
-						)}
-					</Avatar>
-					<span className="truncate text-sm font-semibold leading-5 text-text">{name}</span>
-					{model ? (
-						<Lozenge>
-							{model}
-						</Lozenge>
-					) : null}
-					{badge}
-				</div>
-			)}
+			<div className="relative flex min-w-0 flex-1 items-center">
+				{leadingContent ?? (
+					<div className="flex min-w-0 items-center gap-2">
+						<Avatar label="Agent" shape="hexagon" size="sm">
+							{isAtlassianLogoSource(avatarSrc) ? (
+								<AtlassianLogo name="atlassian" label={name} size="small" />
+							) : (
+								<AvatarImage alt="" src={avatarSrc} />
+							)}
+						</Avatar>
+						<span className="truncate text-sm font-semibold leading-5 text-text">{name}</span>
+						{model ? (
+							<Lozenge>
+								{model}
+							</Lozenge>
+						) : null}
+						{badge}
+					</div>
+				)}
+				{leadingOverlay ? (
+					<div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center justify-end">
+						{leadingOverlay}
+					</div>
+				) : null}
+			</div>
 			{showActions ? (
 				<div className="flex shrink-0 items-center gap-2">
 					{actions ?? (
