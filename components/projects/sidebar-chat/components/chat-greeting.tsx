@@ -399,7 +399,12 @@ export default function ChatGreeting({
 	const shouldShowSuggestionList =
 		shouldRenderDirectoryMatches ||
 		((directoryAutocompleteState === null || hasEmptyDirectoryQuery) && greetingSuggestions.length > 0);
-	const shouldShowHero = showHero && (!isComposing || !shouldShowSuggestionList);
+	// While composing, the hero collapses to give the directory-match list room.
+	// But when the query has no matches and we fall back to the default prompts,
+	// keep the hero so the "no matching prompt/search results" state still shows
+	// the illustration + heading above the default prompts.
+	const shouldShowHero =
+		showHero && (!isComposing || !shouldRenderDirectoryMatches);
 	const activeContainerVariants = isComposing ? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_CONTAINER_VARIANTS;
 	const activeItemVariants = isComposing ? CHAT_GREETING_INSTANT_ITEM_VARIANTS : itemVariants;
 

@@ -315,11 +315,17 @@ test("ChatGreeting falls back to the default prompts when a directory query has 
 	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_INSTANT_CONTAINER_VARIANTS/u);
 	assert.match(CHAT_GREETING_SOURCE, /const activeContainerVariants = isComposing \? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_CONTAINER_VARIANTS;/u);
 	assert.match(CHAT_GREETING_SOURCE, /layout=\{isComposing \? false : "position"\}/u);
-	assert.match(CHAT_GREETING_SOURCE, /const shouldShowHero = showHero && \(!isComposing \|\| !shouldShowSuggestionList\);/u);
+	// The hero only collapses while composing when real directory matches exist;
+	// an empty-result fallback keeps the illustration + heading visible.
+	assert.match(CHAT_GREETING_SOURCE, /const shouldShowHero =\s*showHero && \(!isComposing \|\| !shouldRenderDirectoryMatches\);/u);
 	// An empty-result directory query must surface the default prompt list rather
 	// than collapsing to just the illustration + heading.
 	assert.match(CHAT_GREETING_SOURCE, /const hasEmptyDirectoryQuery =/u);
 	assert.match(CHAT_GREETING_SOURCE, /\(directoryAutocompleteState === null \|\| hasEmptyDirectoryQuery\) && greetingSuggestions\.length > 0/u);
+	// Both the hero (illustration + heading) AND the default prompts must show.
+	assert.match(markup, /Improve your agent\?/u);
+	assert.match(markup, /data-testid="controlled-rovo-illustration"/u);
+	assert.match(markup, /data-illus-id="ai"/u);
 	assert.match(markup, /Default prompt/u);
 	// The unmatched directory query text must never leak into the rendered rows.
 	assert.doesNotMatch(markup, /missing/u);

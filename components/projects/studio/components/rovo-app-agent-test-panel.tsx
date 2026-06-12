@@ -27,6 +27,7 @@ import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
 
 const AGENT_TEST_MAX_CONVERSATION_STARTERS = 3;
+const AGENT_TEST_CALLBACK_DELAY_MS = 900;
 
 export interface AgentTestPanelProps {
 	entry: StudioSessionAgentEntry;
@@ -259,6 +260,7 @@ export function AgentTestTriggerView({
 		[result.automationRules],
 	);
 	const [testSelection, setTestSelection] = useState<AutomationTestSelection | null>(null);
+	const [pendingSelection, setPendingSelection] = useState<AutomationTestSelection | null>(null);
 	const testResult = useMemo(() => {
 		if (!testSelection) {
 			return null;
@@ -274,6 +276,21 @@ export function AgentTestTriggerView({
 		return trigger ? createAutomationTestResult(rule, ruleIndex, trigger) : null;
 	}, [automationRules, testSelection]);
 
+	useEffect(() => {
+		if (!pendingSelection) {
+			return;
+		}
+
+		const timeoutId = window.setTimeout(() => {
+			setTestSelection(pendingSelection);
+			setPendingSelection(null);
+		}, AGENT_TEST_CALLBACK_DELAY_MS);
+
+		return () => {
+			window.clearTimeout(timeoutId);
+		};
+	}, [pendingSelection]);
+
 	return (
 		<div className="flex min-h-[220px] items-start justify-center p-6">
 			<div className="grid w-full max-w-[56rem] gap-4">
@@ -281,7 +298,13 @@ export function AgentTestTriggerView({
 					automationRules.map((rule, ruleIndex) => (
 						<AutomationTestCard
 							key={rule.id}
-							onTest={(trigger) => setTestSelection({ ruleId: rule.id, triggerId: trigger.id })}
+							onTest={(trigger) => {
+								setTestSelection(null);
+								setPendingSelection({ ruleId: rule.id, triggerId: trigger.id });
+							}}
+							pendingTriggerId={
+								pendingSelection?.ruleId === rule.id ? pendingSelection.triggerId : null
+							}
 							rule={rule}
 							ruleIndex={ruleIndex}
 						/>
@@ -323,10 +346,12 @@ interface AutomationTestResult {
 
 function AutomationTestCard({
 	onTest,
+	pendingTriggerId,
 	rule,
 	ruleIndex,
 }: Readonly<{
 	onTest: (trigger: AgentTriggerValue) => void;
+	pendingTriggerId: string | null;
 	rule: AgentAutomationRule;
 	ruleIndex: number;
 }>): ReactElement {
@@ -355,6 +380,7 @@ function AutomationTestCard({
 					rule.triggers.map((trigger) => (
 						<AutomationTestEventRow
 							key={trigger.id}
+							isPending={pendingTriggerId === trigger.id}
 							onTest={() => onTest(trigger)}
 							trigger={trigger}
 						/>
@@ -370,9 +396,11 @@ function AutomationTestCard({
 }
 
 function AutomationTestEventRow({
+	isPending,
 	onTest,
 	trigger,
 }: Readonly<{
+	isPending: boolean;
 	onTest: () => void;
 	trigger: AgentTriggerValue;
 }>): ReactElement {
@@ -392,8 +420,15 @@ function AutomationTestEventRow({
 					{provider?.label ?? "Event trigger"}{connectionLabel ? ` · ${connectionLabel}` : ""}
 				</div>
 			</div>
-			<Button onClick={onTest} size="compact" type="button" variant="outline">
-				Test
+			<Button
+				disabled={isPending}
+				isLoading={isPending}
+				onClick={onTest}
+				size="compact"
+				type="button"
+				variant="outline"
+			>
+				{isPending ? "Testing" : "Test"}
 			</Button>
 		</div>
 	);

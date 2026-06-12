@@ -918,6 +918,7 @@ export function TriggerAutomationDialog({
 	const seedRef = useRef<AgentAutomationRule>(automationRule);
 	seedRef.current = automationRule;
 	const wasOpen = useRef(open);
+	const connectTimerRef = useRef<number | null>(null);
 	const [draftTriggers, setDraftTriggers] = useState<readonly AgentTriggerValue[]>(automationRule.triggers);
 	const [automationName, setAutomationName] = useState(() => getAutomationName(automationRule));
 	const [sharedPrompt, setSharedPrompt] = useState(() => getAutomationPrompt(automationRule));
@@ -933,6 +934,15 @@ export function TriggerAutomationDialog({
 		}
 		wasOpen.current = open;
 	}, [open]);
+
+	// oxlint-disable-next-line react-doctor/exhaustive-deps -- Unmount-only cleanup for the fake provider connection timer.
+	useEffect(() => {
+		return () => {
+			if (connectTimerRef.current !== null) {
+				window.clearTimeout(connectTimerRef.current);
+			}
+		};
+	}, []);
 
 	const handleAddTrigger = useCallback(
 		(providerId: AgentTriggerProviderId, eventId: string) => {
@@ -970,13 +980,31 @@ export function TriggerAutomationDialog({
 	const handleConnect = useCallback(
 		(trigger: AgentTriggerValue) => {
 			onConnectTrigger?.(trigger);
+			const { providerId } = trigger;
+			// Fake connection: mark every trigger sharing this provider as connecting,
+			// then flip them to connected after a short "Connecting…" spin. The dialog
+			// owns the visible draft state, so the transition must happen here.
 			setDraftTriggers((current) =>
 				current.map((draftTrigger) =>
-					draftTrigger.id === trigger.id
+					draftTrigger.providerId === providerId
 						? { ...draftTrigger, connectionState: "connecting" as const }
 						: draftTrigger,
 				),
 			);
+
+			if (connectTimerRef.current !== null) {
+				window.clearTimeout(connectTimerRef.current);
+			}
+			connectTimerRef.current = window.setTimeout(() => {
+				setDraftTriggers((current) =>
+					current.map((draftTrigger) =>
+						draftTrigger.providerId === providerId
+							? { ...draftTrigger, connectionState: "connected" as const }
+							: draftTrigger,
+					),
+				);
+				connectTimerRef.current = null;
+			}, 1200);
 		},
 		[onConnectTrigger],
 	);
