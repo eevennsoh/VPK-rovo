@@ -1,7 +1,7 @@
 "use client";
 
-import { useId, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
-import { useReducedMotion } from "motion/react";
+import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
+import { animate, motion, useMotionValue, useReducedMotion } from "motion/react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import Image from "next/image";
 import { IconTile } from "@/components/ui/icon-tile";
@@ -36,6 +36,8 @@ const BAR_GAP_PX = 12;
 const MINIMAP_PADDING_Y_PX = 12;
 const MINIMAP_PADDING_X_PX = 4;
 const MINIMAP_WIDTH_PX = 32;
+const PROXIMITY_RADIUS_PX = 80;
+const MINIMAP_DIM_OPACITY = 0.4;
 const MINIMAP_BASE_BAR_WIDTH_PX = 26;
 const MINIMAP_PROMPT_BAR_WIDTH_PX = 16;
 const SWITCHER_OPEN_WIDTH_PX = 280;
@@ -151,6 +153,8 @@ export function SubagentsNavigator({
 	const switcherId = useId();
 	const shouldReduceMotion = useReducedMotion();
 	const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
+	const triggerRef = useRef<HTMLButtonElement>(null);
+	const minimapOpacity = useMotionValue(MINIMAP_DIM_OPACITY);
 	const subagentTagColor = getTagColorForAgentAvatar(baseAgent.avatarSrc);
 	const switcherItemsCount = subagents.length + 1;
 	const closedHeight =
@@ -178,6 +182,65 @@ export function SubagentsNavigator({
 			"background-color var(--duration-normal) var(--ease-out)",
 			"box-shadow var(--duration-medium) var(--ease-out)",
 		].join(", ");
+
+	// Proximity sensor: while the minimap is collapsed, brighten it from dim to
+	// full opacity once the cursor enters PROXIMITY_RADIUS_PX. This gives the
+	// full-opacity state a visible moment as the user approaches, before the
+	// hover-to-expand transition swaps it for the floating selector.
+	useEffect(() => {
+		// When expanded, fade the minimap out so it cross-fades with the panel.
+		if (isSwitcherOpen) {
+			if (shouldReduceMotion) {
+				minimapOpacity.set(0);
+			} else {
+				animate(minimapOpacity, 0, { type: "spring", bounce: 0, visualDuration: 0.22 });
+			}
+			return;
+		}
+
+		const trigger = triggerRef.current;
+		if (!trigger) {
+			return;
+		}
+
+		// Start collapsed cycles from the dim baseline; the listener below ramps
+		// back up if the cursor is already within range.
+		minimapOpacity.set(MINIMAP_DIM_OPACITY);
+		let wasNear = false;
+
+		function setNear(near: boolean) {
+			if (near === wasNear) {
+				return;
+			}
+			wasNear = near;
+			const target = near ? 1 : MINIMAP_DIM_OPACITY;
+			if (shouldReduceMotion) {
+				minimapOpacity.set(target);
+				return;
+			}
+			animate(minimapOpacity, target, {
+				type: "spring",
+				bounce: 0,
+				visualDuration: 0.22,
+			});
+		}
+
+		function handlePointerMove(event: PointerEvent) {
+			const node = triggerRef.current;
+			if (!node) {
+				return;
+			}
+			const rect = node.getBoundingClientRect();
+			const dx = Math.max(rect.left - event.clientX, 0, event.clientX - rect.right);
+			const dy = Math.max(rect.top - event.clientY, 0, event.clientY - rect.bottom);
+			setNear(dx * dx + dy * dy <= PROXIMITY_RADIUS_PX * PROXIMITY_RADIUS_PX);
+		}
+
+		window.addEventListener("pointermove", handlePointerMove, { passive: true });
+		return () => {
+			window.removeEventListener("pointermove", handlePointerMove);
+		};
+	}, [isSwitcherOpen, minimapOpacity, shouldReduceMotion]);
 
 	function handleBlur(event: FocusEvent<HTMLDivElement>) {
 		if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
@@ -220,20 +283,22 @@ export function SubagentsNavigator({
 					transition: shellTransition,
 				}}
 			>
-				<button
+				<motion.button
+					ref={triggerRef}
 					aria-controls={switcherId}
 					aria-expanded={isSwitcherOpen}
 					aria-hidden={isSwitcherOpen}
 					aria-label="Open subagent switcher"
 					className={cn(
-						"absolute inset-0 flex flex-col items-end justify-start transition-opacity duration-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected",
+						"absolute inset-0 flex flex-col items-end justify-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected",
 						isSwitcherOpen
-							? "pointer-events-none opacity-0"
-							: "pointer-events-auto opacity-60 group-hover:opacity-100 group-focus-within:opacity-100",
+							? "pointer-events-none"
+							: "pointer-events-auto group-focus-within:!opacity-100",
 					)}
 					inert={isSwitcherOpen}
 					onClick={() => setIsSwitcherOpen(true)}
 					style={{
+						opacity: minimapOpacity,
 						paddingTop: MINIMAP_PADDING_Y_PX,
 						paddingBottom: MINIMAP_PADDING_Y_PX,
 						paddingLeft: MINIMAP_PADDING_X_PX,
@@ -268,7 +333,7 @@ export function SubagentsNavigator({
 							/>
 						);
 					})}
-				</button>
+				</motion.button>
 
 				<div
 					aria-hidden={!isSwitcherOpen}
