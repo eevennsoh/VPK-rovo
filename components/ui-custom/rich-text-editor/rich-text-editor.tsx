@@ -557,15 +557,30 @@ export function RichTextEditor({
 			return;
 		}
 
-		editor.commands.setContent(nextValue, {
-			contentType: "markdown",
-			emitUpdate: false,
+		// setContent triggers TipTap's internal flushSync to keep React node views in
+		// sync. Calling it inline can land inside React's render/commit phase (React 19
+		// concurrent), where flushSync throws. Defer to a microtask so it runs after
+		// the current commit drains but before paint (no visible flash).
+		let cancelled = false;
+		queueMicrotask(() => {
+			if (cancelled || editor.isDestroyed) {
+				return;
+			}
+
+			editor.commands.setContent(nextValue, {
+				contentType: "markdown",
+				emitUpdate: false,
+			});
+			setIsEmpty(!nextValue.trim());
+			onMentionInventoryChangeRef.current?.(getEditorMentionInventory(editor));
+			// setContent above bypasses onUpdate (emitUpdate: false), so any ghost from
+			// the prior content is now stale — clear it.
+			setDirectoryAutocompleteState(null);
 		});
-		setIsEmpty(!nextValue.trim());
-		onMentionInventoryChangeRef.current?.(getEditorMentionInventory(editor));
-		// setContent above bypasses onUpdate (emitUpdate: false), so any ghost from
-		// the prior content is now stale — clear it.
-		setDirectoryAutocompleteState(null);
+
+		return () => {
+			cancelled = true;
+		};
 	}, [editor, value, setDirectoryAutocompleteState]);
 
 	useEffect(() => {

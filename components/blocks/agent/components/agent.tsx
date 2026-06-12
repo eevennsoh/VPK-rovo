@@ -376,6 +376,16 @@ function mapConfigValuesToMentionItems(
 	);
 }
 
+function mapSubagentConfigValuesToMentionItems(
+	values: readonly string[] | undefined,
+): RichTextMentionItem[] {
+	return getNonEmptyConfigItems(values).map((value) => ({
+		category: "subagent",
+		id: toMentionId("subagent", value),
+		label: value,
+	}));
+}
+
 function mapMemoryToKnowledgeItems(
 	explorer: WikiMemoryExplorerResponse | null,
 ): RichTextMentionItem[] {
@@ -594,10 +604,6 @@ export function AgentCompactHeaderNav({
 		return () => observer.disconnect();
 	}, [items]);
 
-	useEffect(() => {
-		setVisibleCount(items.length);
-	}, [items.length]);
-
 	return (
 		<div className="flex min-w-0 flex-1 items-center" style={{ gap: AGENT_COMPACT_HEADER_AVATAR_NAV_GAP }}>
 			<Avatar label="Agent" shape="hexagon" size="sm">
@@ -702,6 +708,10 @@ export type AgentHeaderProps = ComponentProps<"div"> & {
 	avatarSrc?: string;
 	model?: string;
 	leadingContent?: ReactNode;
+	// Floats above the right edge of the leading (nav) area without taking
+	// layout space — used for the transient save indicator, which veils the nav
+	// behind a gradient scrim instead of pushing the surrounding controls.
+	leadingOverlay?: ReactNode;
 	primaryActionLabel?: string;
 	publishLabel?: string;
 	showActions?: boolean;
@@ -754,6 +764,7 @@ export const AgentHeader = memo(
 		className,
 		avatarSrc = AGENT_AVATAR_SRC,
 		leadingContent,
+		leadingOverlay,
 		model,
 		name,
 		primaryActionLabel = "Test",
@@ -770,24 +781,31 @@ export const AgentHeader = memo(
 			)}
 			{...props}
 		>
-			{leadingContent ?? (
-				<div className="flex min-w-0 items-center gap-2">
-					<Avatar label="Agent" shape="hexagon" size="sm">
-						{isAtlassianLogoSource(avatarSrc) ? (
-							<AtlassianLogo name="atlassian" label={name} size="small" />
-						) : (
-							<AvatarImage alt="" src={avatarSrc} />
-						)}
-					</Avatar>
-					<span className="truncate text-sm font-semibold leading-5 text-text">{name}</span>
-					{model ? (
-						<Lozenge>
-							{model}
-						</Lozenge>
-					) : null}
-					{badge}
-				</div>
-			)}
+			<div className="relative flex min-w-0 flex-1 items-center">
+				{leadingContent ?? (
+					<div className="flex min-w-0 items-center gap-2">
+						<Avatar label="Agent" shape="hexagon" size="sm">
+							{isAtlassianLogoSource(avatarSrc) ? (
+								<AtlassianLogo name="atlassian" label={name} size="small" />
+							) : (
+								<AvatarImage alt="" src={avatarSrc} />
+							)}
+						</Avatar>
+						<span className="truncate text-sm font-semibold leading-5 text-text">{name}</span>
+						{model ? (
+							<Lozenge>
+								{model}
+							</Lozenge>
+						) : null}
+						{badge}
+					</div>
+				)}
+				{leadingOverlay ? (
+					<div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center justify-end">
+						{leadingOverlay}
+					</div>
+				) : null}
+			</div>
 			{showActions ? (
 				<div className="flex shrink-0 items-center gap-2">
 					{actions ?? (
@@ -1001,6 +1019,9 @@ function shouldClearCompactNavInitialHighlight(eventDetails: Parameters<AgentCom
 	}
 
 	const event = eventDetails.event;
+	if (typeof PointerEvent !== "undefined" && event instanceof PointerEvent) {
+		return true;
+	}
 	return !(event instanceof MouseEvent) || event.detail !== 0;
 }
 
@@ -1018,7 +1039,7 @@ function clearCompactNavInitialHighlight(contentElement: HTMLElement): void {
 	if (
 		activeElement instanceof HTMLElement &&
 		contentElement.contains(activeElement) &&
-		activeElement.getAttribute("role") === "menuitem"
+		activeElement !== contentElement
 	) {
 		contentElement.focus({ preventScroll: true });
 	}
@@ -1304,17 +1325,35 @@ function AgentCompactTriggerRow({
 // dropdowns. Drawing natively (rather than scaling a 32px `menu` mark down to
 // 75%) keeps the glyph on ADS's `small` Tile inset (14px) instead of freezing
 // the `medium` inset and shrinking the glyph to 12px. Values not present in the
-// directory (e.g. a freshly created, still-unnamed subagent) fall back to a
-// category-appropriate `small` icon tile, mirroring AgentReferenceChip's
-// fallback. Glyph icons inherit the menu's subtle front-slot treatment;
-// avatars/logos/images keep their color, exactly like the sibling Triggers rows.
+// directory fall back to a category-appropriate `small` icon tile, mirroring
+// AgentReferenceChip's fallback. Subagents are prompt references owned by the
+// parent agent, so they deliberately skip directory avatar resolution and always
+// use the AI-agent tile. Glyph icons inherit the menu's subtle front-slot
+// treatment; avatars/logos/images keep their color, exactly like the sibling
+// Triggers rows.
 function renderAgentReferenceRowVisual(
 	category: RichTextReferenceCategory,
 	label: string,
 	tagColor?: TagColor,
 ): ReactNode {
+	if (category === "subagent") {
+		return (
+			<span className="inline-flex size-6 shrink-0 items-center justify-center">
+				<IconTile
+					aria-hidden
+					className={cn(
+						"border border-border bg-surface",
+						tagColor ? tagColorToMenuIconClassName[tagColor] : "text-icon-subtlest",
+					)}
+					icon={<AiAgentIcon label="" size="small" />}
+					label=""
+					size="small"
+				/>
+			</span>
+		);
+	}
+
 	const visual = getDirectoryMentionItemOrFallback(category, label).visual;
-	const FallbackIcon = category === "subagent" ? AiAgentIcon : PageIcon;
 	return (
 		<span className="inline-flex size-6 shrink-0 items-center justify-center">
 			{visual ? (
@@ -1326,7 +1365,7 @@ function renderAgentReferenceRowVisual(
 						"border border-border bg-surface",
 						tagColor ? tagColorToMenuIconClassName[tagColor] : "text-icon-subtlest",
 					)}
-					icon={<FallbackIcon label="" size="small" />}
+					icon={<PageIcon label="" size="small" />}
 					label=""
 					size="small"
 				/>
@@ -1862,9 +1901,10 @@ function AgentCompactConversationStartersNavButton({
 	const fields = Array.from({ length: MAX_AGENT_CONVERSATION_STARTERS }, (_, index) => ({
 		label: starters[index]?.label ?? "",
 	}));
+	const compactNavMenu = useCompactNavMenuNoInitialHighlight();
 
 	return (
-		<MenubarMenu>
+		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
 			<MenubarTrigger
 				className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
 				render={(
@@ -1876,6 +1916,10 @@ function AgentCompactConversationStartersNavButton({
 				)}
 			/>
 			<MenubarContent align="start" className="w-70">
+				<AgentCompactNavMenuInitialHighlightReset
+					enabled={compactNavMenu.resetInitialHighlight}
+					resetToken={compactNavMenu.resetToken}
+				/>
 				{/* 8px (`p-2`) of padding around the starter input fields. */}
 				<div className="flex flex-col gap-1.5 p-2">
 					{fields.map((field, index) => (
@@ -2314,7 +2358,7 @@ function AgentReferenceChip({
 		tagColor?: TagColor;
 	}
 >) {
-	const item = category ? getDirectoryMentionItemOrFallback(category, label) : undefined;
+	const item = category && category !== "subagent" ? getDirectoryMentionItemOrFallback(category, label) : undefined;
 	const visual = item?.visual;
 	const resolvedTagColor = tagColor ?? getTagColorForMentionVisual(visual) ?? "blue";
 	const preview = getRichTextReferencePreview(category, label);
@@ -3593,10 +3637,13 @@ function AgentInstructionsComposer({
 		label: string;
 	}>());
 	const mentionSources = useMemo<RichTextMentionSources>(() => ({
-		subagent: mergeMentionItems(
-			mapConfigValuesToMentionItems("subagent", config.subagents),
-			EDITOR_PALETTE_MENTION_SOURCES.subagent,
-		),
+		// Subagents are NESTED agents owned by THIS agent — not globally
+		// at-mentionable top-level agents. So the `@subagent` list comes ONLY from
+		// this agent's own subagents (empty/0 until it generates some); the global
+		// parent-agent palette is intentionally NOT merged in here.
+		// Prompt references deliberately carry no directory visual/avatar: subagents
+		// are prompt copies under the parent agent, not nested parent-agent profiles.
+		subagent: mapSubagentConfigValuesToMentionItems(config.subagents),
 		skill: mergeMentionItems(
 			mapConfigValuesToMentionItems("skill", config.skills),
 			EDITOR_PALETTE_MENTION_SOURCES.skill,

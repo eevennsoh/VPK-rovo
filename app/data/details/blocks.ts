@@ -61,6 +61,66 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 			{ title: "Empty agent", description: "Default setup state with quick configuration links and Operations prompt starters before details are populated.", demoSlug: "agent-demo-empty" },
 		],
 	},
+	"skill-config": {
+		description:
+			"A structured skill strategy/configuration surface duplicated from the Agent block as a baseline for new skill configuration screens. Includes an app header, cover area, compact section navigation, section block wrappers, knowledge controls, and instructions composer.",
+		importStatement: `import {
+  Agent,
+  AgentHeader,
+  AgentContent,
+  AgentConfigFields,
+} from "@/components/blocks/skill-config";`,
+		usage: `import {
+  Agent,
+  AgentHeader,
+  AgentContent,
+  AgentConfigFields,
+} from "@/components/blocks/skill-config";
+
+<Agent>
+  <AgentHeader name="Policy Checker" model="Draft" />
+  <AgentContent>
+    <AgentConfigFields
+      config={agentConfig}
+      idPrefix="skill-config"
+      onTextChange={handleTextChange}
+      onListItemChange={updateListItem}
+      onRemoveListItem={removeListItem}
+      onAppendListItem={appendListItem}
+    />
+  </AgentContent>
+</Agent>`,
+		demoLayout: {
+			previewContentWidth: "full",
+			examplesContentWidth: "full",
+		},
+		props: [
+			{
+				name: "className",
+				type: "string",
+				description: "Additional classes applied to the outer container.",
+			},
+		],
+		subComponents: [
+			{ name: "AgentHeader", description: "Top app bar with avatar, name, status lozenge, and Configure/Test tabs (override via the `actions` prop)." },
+			{ name: "AgentContent", description: "Body container for the configuration surface." },
+			{ name: "AgentConfigFields", description: "Shared Figma-style strategy surface used by the catalog preview and Studio panel." },
+			{ name: "AgentCompactHeaderNav", description: "Compact section navigation for Insights, Surfaces, Evaluation, Users, and Access." },
+			{ name: "AgentCompactInsightsPanel", description: "Wrapper around the Agent Insights block for compact layouts." },
+			{ name: "AgentCompactSurfacesPanel", description: "Wrapper around the Agent Surfaces block for compact layouts." },
+			{ name: "AgentCompactEvaluationPanel", description: "Wrapper around the Agent Evaluation block for compact layouts." },
+			{ name: "AgentCompactUsersPanel", description: "Wrapper around the Agent Users block for compact layouts." },
+			{ name: "AgentCompactAccessPanel", description: "Wrapper around the Agent Access block for compact layouts." },
+			{ name: "AgentInstructions", description: "Instruction text block with label." },
+			{ name: "AgentTools", description: "Accordion container for tool definitions." },
+			{ name: "AgentTool", description: "Individual tool item with expandable JSON schema." },
+			{ name: "AgentOutput", description: "Output schema display with syntax highlighting." },
+		],
+		examples: [
+			{ title: "Filled skill", description: "Skill strategy surface after configuration fields have been populated.", demoSlug: "skill-config-demo-full" },
+			{ title: "Empty skill", description: "Default setup state with quick configuration links and Operations prompt starters before details are populated.", demoSlug: "skill-config-demo-empty" },
+		],
+	},
 	"agent-bento": {
 		description: "Two Rovo agent prompt-starter bentos: a tabbed landing variant with an auto-cycling category bar, a hero tile (\"Works with\" sources + \"Skills\"), and a \"Browse all\" pill; and a minimal five-tile \"Start with these agent templates\" row. Both use an avatar-colored hover glow and collapse from their desktop grid to a horizontal carousel below the lg breakpoint.",
 		importStatement: `import { HomeStarterBento, AgentCompactOperationsBento } from "@/components/blocks/agent-bento";`,
@@ -276,6 +336,46 @@ function FormattingToolbar({ editor }: { editor: Editor }) {
 				description:
 					"Flat \"template\" variant: icon + name header, description, \"Works with\", and \"Skills\". Hugs its content.",
 				demoSlug: "agent-card-demo-simple",
+			},
+		],
+	},
+	"twg-agent-card": {
+		description:
+			"Teamwork Graph recommendation card that suggests a small personal agent team from user context. It reuses the Agent Card shell footprint, TWG app stack, Rovo color accents, subtle grid treatment, and a gestural-line decoration.",
+		importStatement: `import { TWGAgentCard } from "@/components/blocks/twg-agent-card";`,
+		usage: `import { TWGAgentCard } from "@/components/blocks/twg-agent-card";
+import type { TWGAgentSuggestion } from "@/components/blocks/twg-agent-card";
+
+const suggestedAgents: TWGAgentSuggestion[] = [
+  {
+    id: "life-admin-agent",
+    name: "Life Admin Agent",
+    description: "Turns loose reminders, forms, and renewals into handled next steps.",
+  },
+];
+
+<TWGAgentCard
+  userName="Venn"
+  userAvatarSrc="/avatar-human/florence-applebee.png"
+  suggestedAgents={suggestedAgents}
+  onSelect={() => openRecommendations()}
+/>`,
+		demoLayout: { previewHeight: "default" },
+		props: [
+			{ name: "userName", type: "string", default: '"Venn"', description: "Name inserted into the conversational headline." },
+			{ name: "userAvatarSrc", type: "string", default: '"/avatar-human/florence-applebee.png"', description: "Avatar shown inline in the headline." },
+			{ name: "headline", type: "ReactNode", description: "Copy after the name and avatar in the main headline." },
+			{ name: "suggestedAgents", type: "readonly TWGAgentSuggestion[]", description: "Agent recommendations shown in the dream-team section. The count reflects the full array; the card displays the first three rows." },
+			{ name: "sources", type: "readonly TwgToolSource[]", description: "Connected apps rendered in the header app stack." },
+			{ name: "onSelect", type: "() => void", description: "Whole-card selection handler using the shared Agent Card shell behavior." },
+			{ name: "selectLabel", type: "string", default: '"Open Teamwork Graph agent recommendations"', description: "Accessible label for the whole-card select button." },
+			{ name: "className", type: "string", description: "Additional classes applied to the card shell." },
+		],
+		examples: [
+			{
+				title: "Default",
+				description: "Suggested Teamwork Graph agent team card using the Agent Card experimental template footprint.",
+				demoSlug: "twg-agent-card",
 			},
 		],
 	},
@@ -558,49 +658,58 @@ const agents: AgentTemplatesAgent[] = [
 			},
 		],
 	},
-	"artifact-list": {
-		description: "A card listing worked-on artifacts and smart links. Each row shows a neutral icon tile (or 3rd-party logo), a title, a source and owner metadata line, and an Open button revealed on row hover or keyboard focus.",
-		importStatement: `import { ArtifactList } from "@/components/blocks/artifact-list";`,
-		usage: `import { ArtifactList } from "@/components/blocks/artifact-list";
-import type { ArtifactListItem } from "@/components/blocks/artifact-list";
-import PageIcon from "@atlaskit/icon/core/page";
+	artifact: {
+		description:
+			"A card for displaying AI-generated artifacts like code, documents, images, or sheets. The high-level ArtifactCard component provides kind-based icons, expand/collapse, streaming state, and preview rendering built on GenerativeCard. Low-level compound components (Artifact, ArtifactHeader, etc.) are also available for custom layouts.",
+		usage: `import { ArtifactCard } from "@/components/blocks/artifact";
 
-const items: ArtifactListItem[] = [
-  {
-    id: "audience-engagement-report",
-    title: "Audience Engagement Report",
-    source: "Confluence page",
-    owner: "Vitafleet Team",
-    icon: <PageIcon label="" />,
-  },
-  {
-    id: "content-variation-analysis",
-    title: "Content Variation Analysis",
-    source: "Google Spreadsheet",
-    owner: "Vitafleet Team",
-    logoSrc: "/3p/google-drive/16.svg",
-  },
-];
+<ArtifactCard
+  kind="code"
+  title="Algorithm Implementation"
+  previewContent={codeString}
+  onOpen={() => openArtifact()}
+/>
 
-<ArtifactList items={items} onOpen={(item) => console.log(item.id)} />`,
-		demoLayout: { previewHeight: "fixed" },
+{/* Or use compound components for custom layouts: */}
+import {
+  Artifact, ArtifactHeader, ArtifactTitle,
+  ArtifactActions, ArtifactAction, ArtifactContent,
+} from "@/components/blocks/artifact";`,
+		demoLayout: {
+			previewContentWidth: "full",
+			examplesContentWidth: "full",
+		},
 		props: [
-			{
-				name: "items",
-				type: "readonly ArtifactListItem[]",
-				required: true,
-				description: "Rows to render. Each item provides a title, source/owner metadata, and either an ADS icon or a logo path.",
-			},
-			{
-				name: "onOpen",
-				type: "(item: ArtifactListItem) => void",
-				description: "Called when a row's hover/focus-revealed Open button is activated.",
-			},
-			{
-				name: "openLabel",
-				type: "string",
-				description: "Label for the per-row Open button. Defaults to \"Open\".",
-			},
+			{ name: "kind", type: '"text" | "code" | "image" | "sheet" | "react"', description: "The artifact content type. Determines the default icon tile and color." },
+			{ name: "visualIdentity", type: '{ iconName: string; tileVariant: "gray" | "blue" | "teal" | "green" | "lime" | "yellow" | "orange" | "red" | "magenta" | "purple" }', description: "Optional icon-tile override used instead of the kind-based default." },
+			{ name: "title", type: "string", description: "Artifact title text." },
+			{ name: "action", type: '"create" | "update" | null', description: "Optional action context for description text." },
+			{ name: "isStreaming", type: "boolean", description: "Whether the artifact is currently streaming." },
+			{ name: "displayMode", type: '"preview" | "chip"', description: 'Display mode. "preview" shows expanded card, "chip" shows compact inline card. Defaults to "preview".' },
+			{ name: "previewContent", type: "string", description: "Content string for the preview (code text, image URL, etc.)." },
+			{ name: "onOpen", type: "(element: HTMLDivElement) => void", description: 'Callback when the "Open" button is clicked. Receives the card root element.' },
+			{ name: "onRegister", type: "(element: HTMLDivElement) => void", description: "Optional callback fired when a preview-mode card mounts. Receives the card root element." },
+			{ name: "children", type: "ReactNode", description: "Optional children rendered inside the card content (overrides previewContent)." },
+			{ name: "className", type: "string", description: "Additional classes for the outer wrapper." },
+		],
+		subComponents: [
+			{ name: "ArtifactCard", description: "High-level artifact card built on GenerativeCard with kind-based icons, expand/collapse, and preview rendering." },
+			{ name: "ArtifactPanel", description: "Full artifact viewer/editor panel with title, kind badge, edit/preview toggle, copy, and close. Renders code, images, or text." },
+			{ name: "Artifact", description: "Low-level root container for custom artifact layouts." },
+			{ name: "ArtifactHeader", description: "Header bar with title area and actions. Uses flexbox with justify-between." },
+			{ name: "ArtifactTitle", description: "Title text rendered as a paragraph with medium font weight." },
+			{ name: "ArtifactDescription", description: "Subtitle/description text in muted foreground color." },
+			{ name: "ArtifactActions", description: "Container for grouping action buttons with gap spacing." },
+			{ name: "ArtifactAction", description: "Individual icon button with optional tooltip. Accepts icon (LucideIcon), tooltip (string), and label (string) props." },
+			{ name: "ArtifactClose", description: "Close button defaulting to an X icon. Renders a ghost Button." },
+			{ name: "ArtifactContent", description: "Scrollable content area with padding. Use className='p-0' for edge-to-edge content like CodeBlock." },
+		],
+		examples: [
+			{ title: "Code preview", description: "ArtifactCard displaying a code artifact with preview and expand/collapse.", demoSlug: "artifact-demo-code-preview" },
+			{ title: "Image preview", description: "ArtifactCard displaying an image artifact with gradient overlay.", demoSlug: "artifact-demo-image-preview" },
+			{ title: "Streaming", description: "ArtifactCard in streaming state showing skeleton loading and spinner.", demoSlug: "artifact-demo-streaming" },
+			{ title: "Chip mode", description: "Compact inline artifact card with 'Open' action button.", demoSlug: "artifact-demo-chip" },
+			{ title: "Compound (legacy)", description: "Custom layout using low-level compound components.", demoSlug: "artifact-demo-compound" },
 		],
 	},
 	"apps-directory": {

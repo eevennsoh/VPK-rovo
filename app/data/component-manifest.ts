@@ -117,7 +117,7 @@ function visualComponent(
 export const CUSTOM_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	customComponent("animated-dots", "Animated Dots"),
 	customComponent("animated-rovo", "Animated Rovo"),
-	customComponent("artifact"),
+	customComponent("artifact-list", "Artifact List"),
 	customComponent("attachments"),
 	customComponent("audio-player", "Audio Player"),
 	customComponent("canvas"),
@@ -310,8 +310,10 @@ export const UI_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 
 export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("agent"),
+	blockComponent("skill-config", "Skill Config"),
 	blockComponent("agent-bento", "Agent Bento"),
 	blockComponent("agent-card", "Agent Card"),
+	blockComponent("twg-agent-card", "TWG Agent Card"),
 	blockComponent("agent-profile-card", "Agent Profile Card"),
 	blockComponent("agents-directory", "Agent Directory"),
 	blockComponent("agent-progress", "Agent Progress"),
@@ -345,7 +347,7 @@ export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("generative", "Generative UI"),
 	blockComponent("kanban-board", "Kanban Board"),
 	blockComponent("apps-directory", "Apps Directory"),
-	blockComponent("artifact-list", "Artifact List"),
+	blockComponent("artifact"),
 	blockComponent("tools-directory", "Tools Directory"),
 	blockComponent("mermaid-diagram", "Mermaid Diagram"),
 	blockComponent("memory", "Memory"),

@@ -1,4 +1,4 @@
-import type { ArtifactKind } from "@/components/ui-custom/artifact";
+import type { ArtifactKind } from "@/components/blocks/artifact";
 import { collapseWhitespace, createId } from "@/lib/utils";
 
 export type ArtifactAnnotationKind = ArtifactKind;

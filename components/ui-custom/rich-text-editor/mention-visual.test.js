@@ -32,12 +32,31 @@ function getInlineLogoReturn() {
 	return logoBranch.slice(inlineReturnIndex);
 }
 
-test("inline logo chips use the transparent IconTile front-slot treatment", () => {
+test("inline logo chips keep the transparent IconTile treatment for backgroundless marks", () => {
 	const inlineReturn = getInlineLogoReturn();
 
+	// Atlassian master + Rovo (no solid background) stay framed in the tile, gated
+	// behind the backgroundless check.
+	assert.match(inlineReturn, /isBackgroundlessLogo\(visual\.logoName\)/u);
 	assert.match(inlineReturn, /<IconTile/u);
 	assert.match(inlineReturn, /variant="transparent"/u);
 	assert.match(inlineReturn, /size="xxsmall"/u);
+});
+
+test("inline logo chips render solid-background product logos bare so they fill the slot", () => {
+	const inlineReturn = getInlineLogoReturn();
+	// Solid-bg 1P marks (Jira, Confluence, …) must render the bare AtlassianLogo
+	// with `withUsageBorder` — NOT wrapped in the IconTile, which clamps the glyph
+	// to 10px. The Tag front-slot wrapper's `[&>*]:size-full` lets it fill 16px.
+	assert.match(inlineReturn, /<AtlassianLogo[\s\S]*withUsageBorder[\s\S]*\/>/u);
+});
+
+test("backgroundless-logo detection covers the Atlassian master logo and Rovo family", () => {
+	assert.match(SOURCE, /function isBackgroundlessLogo/u);
+	assert.match(SOURCE, /resolveAtlassianLogoBorder\(name\)/u);
+	for (const name of ["rovo", "rovo-dev", "rovo-dev-agent"]) {
+		assert.ok(SOURCE.includes(`"${name}"`), `expected Rovo mark "${name}" in the backgroundless set`);
+	}
 });
 
 test("inline logo chips no longer render a bordered/rounded bare-span container", () => {

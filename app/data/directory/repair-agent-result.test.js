@@ -73,6 +73,28 @@ test("two-segment knowledge tokens resolve and round-trip", async () => {
 	assert.match(out.instructions, /@\[knowledge:confluence:all\]/u);
 });
 
+test("an @[app:id] body does not re-weave its tool/knowledge facets as duplicate chips", async () => {
+	const { repairGeneratedAgentCatalog } = await loadRepair();
+
+	// Regression: agent templates now render apps as unified `@[app:id]` tokens.
+	// reconcileApps fans an explicit app into its tool + knowledge facet arrays;
+	// weaveMissingTokens must recognize the existing `@[app:jira]` chip already
+	// covers those facets and NOT append a `## Capabilities` section that lists
+	// Jira/Confluence again as `@[tool:…]` + `@[knowledge:…:all]` lozenges.
+	const out = repairGeneratedAgentCatalog({
+		instructions: "## Apps\nGround your thinking in @[app:confluence] and @[app:jira].",
+	});
+
+	assert.doesNotMatch(out.instructions, /## Capabilities/u, "no duplicate-facet section should be woven");
+	assert.doesNotMatch(out.instructions, /@\[tool:(confluence|jira)\]/u, "tool facets must not be re-woven");
+	assert.doesNotMatch(out.instructions, /@\[knowledge:(confluence|jira):all\]/u, "knowledge facets must not be re-woven");
+	// The unified app chips themselves are preserved, exactly once each.
+	assert.equal((out.instructions.match(/@\[app:confluence\]/gu) ?? []).length, 1);
+	assert.equal((out.instructions.match(/@\[app:jira\]/gu) ?? []).length, 1);
+	// reconcileApps still derives the canonical apps[] membership from the chips.
+	assert.deepEqual(out.apps, ["Confluence", "Jira"]);
+});
+
 test("de-dupes when a body token repeats a config entry", async () => {
 	const { repairGeneratedAgentCatalog } = await loadRepair();
 

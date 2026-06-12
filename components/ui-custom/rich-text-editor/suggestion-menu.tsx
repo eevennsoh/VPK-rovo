@@ -1650,7 +1650,10 @@ function getMergedMentionSources(
 	return {
 		...STATIC_MENTION_ITEMS,
 		...sources,
-		subagent: mergeCategoryItems("subagent"),
+		// Subagents are nested agents owned by the current agent — never sourced from
+		// the global parent-agent palette. Use ONLY the per-editor sources so the
+		// `@subagent` list is empty/0 until the agent has its own subagents.
+		subagent: [...(sources?.subagent ?? [])],
 		human: mergeCategoryItems("human"),
 		team: mergeCategoryItems("team"),
 		skill: mergeCategoryItems("skill"),

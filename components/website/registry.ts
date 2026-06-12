@@ -268,7 +268,7 @@ const UI_CUSTOM_DEMO: Record<string, ComponentType> = {
   "animated-dots": dynamic(() => import("./demos/ui-custom/animated-dots-demo"), {
     ssr: false,
   }),
-  artifact: dynamic(() => import("./demos/ui-custom/artifact-demo"), {
+  "artifact-list": dynamic(() => import("./demos/ui-custom/artifact-list-demo"), {
     ssr: false,
   }),
   attachments: dynamic(() => import("./demos/ui-custom/attachments-demo"), {
@@ -5236,6 +5236,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "tile-demo-transparent": dynamic(
+    () =>
+      import("./demos/ui/tile-demo").then((mod) => ({
+        default: mod.TileDemoTransparent,
+      })),
+    { ssr: false },
+  ),
   "tile-demo-appearances": dynamic(
     () =>
       import("./demos/ui/tile-demo").then((mod) => ({
@@ -5617,41 +5624,6 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/ui-custom/attachments-demo").then((mod) => ({
         default: mod.AttachmentsDemoEmpty,
-      })),
-    { ssr: false },
-  ),
-  "artifact-demo-code-preview": dynamic(
-    () =>
-      import("./demos/ui-custom/artifact-demo").then((mod) => ({
-        default: mod.ArtifactDemoCodePreview,
-      })),
-    { ssr: false },
-  ),
-  "artifact-demo-image-preview": dynamic(
-    () =>
-      import("./demos/ui-custom/artifact-demo").then((mod) => ({
-        default: mod.ArtifactDemoImagePreview,
-      })),
-    { ssr: false },
-  ),
-  "artifact-demo-streaming": dynamic(
-    () =>
-      import("./demos/ui-custom/artifact-demo").then((mod) => ({
-        default: mod.ArtifactDemoStreaming,
-      })),
-    { ssr: false },
-  ),
-  "artifact-demo-chip": dynamic(
-    () =>
-      import("./demos/ui-custom/artifact-demo").then((mod) => ({
-        default: mod.ArtifactDemoChip,
-      })),
-    { ssr: false },
-  ),
-  "artifact-demo-compound": dynamic(
-    () =>
-      import("./demos/ui-custom/artifact-demo").then((mod) => ({
-        default: mod.ArtifactDemoCompound,
       })),
     { ssr: false },
   ),
@@ -6772,10 +6744,16 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
 
 const BLOCK_DEMOS: Record<string, ComponentType> = {
   agent: dynamic(() => import("./demos/blocks/agent-demo"), { ssr: false }),
+  "skill-config": dynamic(() => import("./demos/blocks/skill-config-demo"), {
+    ssr: false,
+  }),
   "agent-bento": dynamic(() => import("./demos/blocks/agent-bento-demo"), {
     ssr: false,
   }),
   "agent-card": dynamic(() => import("./demos/blocks/agent-card-demo"), {
+    ssr: false,
+  }),
+  "twg-agent-card": dynamic(() => import("./demos/blocks/twg-agent-card-demo"), {
     ssr: false,
   }),
   "agent-profile-card": dynamic(() => import("./demos/blocks/agent-profile-card-demo"), {
@@ -6793,7 +6771,7 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/blocks/apps-directory-demo"),
     { ssr: false },
   ),
-  "artifact-list": dynamic(() => import("./demos/blocks/artifact-list-demo"), {
+  artifact: dynamic(() => import("./demos/blocks/artifact-demo"), {
     ssr: false,
   }),
   "tools-directory": dynamic(
@@ -7028,6 +7006,42 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
 };
 
 const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
+  "artifact-demo-code-preview": dynamic(
+    () =>
+      import("./demos/blocks/artifact-demo").then((mod) => ({
+        default: mod.ArtifactDemoCodePreview,
+      })),
+    { ssr: false },
+  ),
+  "artifact-demo-image-preview": dynamic(
+    () =>
+      import("./demos/blocks/artifact-demo").then((mod) => ({
+        default: mod.ArtifactDemoImagePreview,
+      })),
+    { ssr: false },
+  ),
+  "artifact-demo-streaming": dynamic(
+    () =>
+      import("./demos/blocks/artifact-demo").then((mod) => ({
+        default: mod.ArtifactDemoStreaming,
+      })),
+    { ssr: false },
+  ),
+  "artifact-demo-chip": dynamic(
+    () =>
+      import("./demos/blocks/artifact-demo").then((mod) => ({
+        default: mod.ArtifactDemoChip,
+      })),
+    { ssr: false },
+  ),
+  "artifact-demo-compound": dynamic(
+    () =>
+      import("./demos/blocks/artifact-demo").then((mod) => ({
+        default: mod.ArtifactDemoCompound,
+      })),
+    { ssr: false },
+  ),
+
   // Editor palette
   "editor-palette-nested": dynamic(
     () =>
@@ -7063,6 +7077,22 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/blocks/agent-demo").then((mod) => ({
         default: mod.AgentDemoEmpty,
+      })),
+    { ssr: false },
+  ),
+
+  // Skill Config
+  "skill-config-demo-full": dynamic(
+    () =>
+      import("./demos/blocks/skill-config-demo").then((mod) => ({
+        default: mod.SkillConfigDemoFull,
+      })),
+    { ssr: false },
+  ),
+  "skill-config-demo-empty": dynamic(
+    () =>
+      import("./demos/blocks/skill-config-demo").then((mod) => ({
+        default: mod.SkillConfigDemoEmpty,
       })),
     { ssr: false },
   ),

@@ -54,6 +54,7 @@ import {
 	type RovoAgentProfile,
 } from "@/app/data/directory/agents";
 import { repairGeneratedAgentCatalog } from "@/app/data/directory/repair-agent-result";
+import { applyTemplateDefaultsToResult } from "@/components/projects/studio/lib/studio-agent-creation-context";
 import {
 	cancelRovoAppRun,
 	createRovoAppThread,
@@ -697,6 +698,9 @@ export interface SelectAgentOptions {
 export interface RegisterCreatedAgentOptions extends SelectAgentOptions {
 	select?: boolean;
 	sourceKey?: string;
+	// Persist the new entry without surfacing the "Saving…/Saved" indicator.
+	// Used for creating a brand-new blank agent, which has nothing to save yet.
+	silentSave?: boolean;
 }
 
 export type StudioAgentPublishStatus = "testing" | "published";
@@ -1241,7 +1245,10 @@ function buildSessionAgentProfileFromResult(params: {
 function applyGeneratedCatalogRepair(
 	result: RovoDataParts["agent-result"],
 ): RovoDataParts["agent-result"] {
-	return { ...result, ...repairGeneratedAgentCatalog(result) };
+	// Backfill template defaults first (chipped body + bound capabilities + triggers
+	// when the model returned a thin profile), then repair/union/weave catalog refs.
+	const enriched = applyTemplateDefaultsToResult(result);
+	return { ...enriched, ...repairGeneratedAgentCatalog(enriched) };
 }
 
 function createSessionAgentEntryFromResult(params: {
@@ -1465,6 +1472,10 @@ export function RovoChatProvider({
 	const mediaGenerationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const suggestionsAbortControllerRef = useRef<AbortController | null>(null);
 	const sessionAgentSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	// When set, the next session-agent persist runs silently (no "Saving…/Saved"
+	// indicator). Used for creating a brand-new blank agent, where there is no
+	// meaningful content to save yet, so the save progression would be noise.
+	const suppressNextSessionAgentSaveStatusRef = useRef(false);
 	const sessionAgentEntriesRef = useRef<SessionAgentEntry[]>([]);
 	// oxlint-disable react-doctor/no-event-handler -- Agent profile props and session-agent storage are external inputs that reconcile selected-agent state after render.
 	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Removed or auto-selected agent profiles must fall back after the owning profile set changes.
@@ -1531,9 +1542,17 @@ export function RovoChatProvider({
 			clearTimeout(sessionAgentSaveTimerRef.current);
 		}
 
+		// A silent persist (e.g. creating a blank agent with nothing to save yet)
+		// still writes to storage but skips the "Saving…/Saved" indicator.
+		const silentPersist = suppressNextSessionAgentSaveStatusRef.current;
+		suppressNextSessionAgentSaveStatusRef.current = false;
+
 		const saveTimer = setTimeout(() => {
 			sessionAgentSaveTimerRef.current = null;
 			const didPersist = persistSessionAgentEntries(sessionAgentEntriesRef.current.map(normalizeSessionAgentEntry));
+			if (silentPersist) {
+				return;
+			}
 			if (didPersist) {
 				setSessionAgentSaveStatus("saved");
 				setSessionAgentSavedAt(Date.now());
@@ -3120,7 +3139,12 @@ export function RovoChatProvider({
 			} else {
 				const nextEntries = [...sessionAgentEntriesRef.current, entry];
 				sessionAgentEntriesRef.current = nextEntries;
-				setSessionAgentSaveStatus("saving");
+				if (options?.silentSave) {
+					// Blank-agent creation: persist quietly, no save indicator.
+					suppressNextSessionAgentSaveStatusRef.current = true;
+				} else {
+					setSessionAgentSaveStatus("saving");
+				}
 				setSessionAgentEntries(nextEntries);
 			}
 

@@ -42,6 +42,23 @@ test("QuestionCard renders navigation controls above the question heading", () =
 	assert.doesNotMatch(header, /\btruncate\b/u);
 });
 
+test("QuestionCard single-question header keeps the title and dismiss button on one centered row", () => {
+	const header = extractSlice(
+		"<header data-slot=\"question-card-header\"",
+		"</header>",
+	);
+
+	// The single-question branch uses a one-row layout distinct from the
+	// multi-question nav row (which carries `mb-3 flex h-8 ...`).
+	const singleRowIndex = header.indexOf("<div className=\"flex items-center justify-between gap-2\">");
+	assert.notEqual(singleRowIndex, -1, "Expected a single-row header layout for single-question cards");
+
+	const singleRow = header.slice(singleRowIndex);
+	assert.match(singleRow, /<h5/u, "Expected the title to live in the single-question row");
+	assert.match(singleRow, /aria-label="Dismiss questions"/u, "Expected the dismiss button in the single-question row");
+	assert.doesNotMatch(singleRow, /mb-3/u, "Single-question title and dismiss must share one row, not stack");
+});
+
 test("QuestionCard option text wraps instead of truncating", () => {
 	const optionContent = extractSlice(
 		"data-slot=\"question-card-option-content\"",

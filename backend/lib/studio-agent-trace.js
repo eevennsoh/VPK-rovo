@@ -94,6 +94,74 @@ function detectMentionedTools(text) {
 	return matched;
 }
 
+/**
+ * Parses the template's resolved setup (exact display names + trigger phrases +
+ * mode behaviors) out of the hidden `contextDescription`. The studio creation
+ * context emits two stable-prefixed lines for exactly this purpose
+ * (`Setup for narration (display names):` and `Trigger events for narration:`),
+ * so the trace can name the real configuration verbatim — no backend→catalog
+ * coupling, no de-kebab guessing. Returns `null` for from-scratch agents (no
+ * template context), so the caller falls back to prompt-keyword narration.
+ */
+function parseTemplateSetupFromContext(contextDescription) {
+	if (typeof contextDescription !== "string" || contextDescription.length === 0) {
+		return null;
+	}
+	const setup = { tools: [], skills: [], knowledge: [], subagents: [], modes: [], triggers: [] };
+
+	const setupLine = contextDescription.match(/Setup for narration \(display names\):\s*(.+)/);
+	if (setupLine) {
+		for (const segment of setupLine[1].split(";")) {
+			const m = segment.match(/\s*(tools|skills|knowledge|subagents|modes)=\[([^\]]*)\]/);
+			if (m) {
+				setup[m[1]] = m[2].split(",").map((s) => s.trim()).filter(Boolean);
+			}
+		}
+	}
+	const triggerLine = contextDescription.match(/Trigger events for narration:\s*(.+)/);
+	if (triggerLine) {
+		setup.triggers = triggerLine[1].split("|").map((s) => s.trim()).filter(Boolean);
+	}
+
+	const hasAny =
+		setup.tools.length > 0 ||
+		setup.skills.length > 0 ||
+		setup.knowledge.length > 0 ||
+		setup.subagents.length > 0 ||
+		setup.triggers.length > 0;
+	return hasAny ? setup : null;
+}
+
+// Providers that require a connection — the ones a connect step narrates.
+const CONNECTABLE_PROVIDERS = [
+	{ label: "Slack", pattern: /\bslack\b|#|\bchannel\b/i },
+	{ label: "GitHub", pattern: /\bgithub\b|\bgitlab\b|\bpull request\b|\bcommit\b|\bbranch\b|release is cut/i },
+	{ label: "Microsoft Teams", pattern: /\bteams\b/i },
+	{ label: "Sentry", pattern: /\bsentry\b|\berror\b|\bexception\b|\bcrash\b|spike/i },
+	{ label: "PagerDuty", pattern: /\bpagerduty\b|on-?call|\bincident\b|\balert\b|\bpages?\b/i },
+	{ label: "Linear", pattern: /\blinear\b/i },
+];
+
+/** Connectable provider labels referenced by the template's trigger phrases. */
+function connectableProvidersFromTriggers(triggers) {
+	const found = [];
+	for (const provider of CONNECTABLE_PROVIDERS) {
+		if (triggers.some((t) => provider.pattern.test(t)) && !found.includes(provider.label)) {
+			found.push(provider.label);
+		}
+	}
+	return found;
+}
+
+/** Joins a list into "a, b, and c" prose for trace narration. */
+function joinNames(items) {
+	const list = items.filter(Boolean);
+	if (list.length === 0) return "";
+	if (list.length === 1) return list[0];
+	if (list.length === 2) return `${list[0]} and ${list[1]}`;
+	return `${list.slice(0, -1).join(", ")}, and ${list[list.length - 1]}`;
+}
+
 function findPriorAssistantQuestion(messages) {
 	if (!Array.isArray(messages)) {
 		return null;
@@ -252,6 +320,9 @@ function buildProgressionRows(primary, detail = [], random) {
 function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescription, random, isFollowUpTurn } = {}) {
 	const promptText = typeof userPrompt === "string" ? userPrompt : "";
 	const traceIdPrefix = `studio-agent-trace-${Date.now()}`;
+	// When the turn carries a template context, narrate the real resolved setup
+	// (exact display names) instead of prompt-keyword guesses. Null for from-scratch.
+	const setup = parseTemplateSetupFromContext(contextDescription);
 	const steps = [];
 
 	// Attaches randomized 1–4 stacked narration rows to a step. Each row is its
@@ -405,9 +476,20 @@ function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescriptio
 	}
 
 	const mentionedTools = detectMentionedTools(promptText);
-	const toolSelectionPreview = mentionedTools.length > 0
-		? `Agent tools matched: ${mentionedTools.join(", ")}`
-		: "No named integrations in the brief; keeping the agent profile tool-neutral.";
+	// Prefer the template's resolved setup (exact names) over prompt keywords.
+	const setupTools = setup ? [...setup.tools, ...setup.skills] : [];
+	const toolSelectionPreview = setupTools.length > 0
+		? `Agent capabilities wired up: ${setupTools.join(", ")}`
+		: mentionedTools.length > 0
+			? `Agent tools matched: ${mentionedTools.join(", ")}`
+			: "No named integrations in the brief; keeping the agent profile tool-neutral.";
+	const subagentRow = setup && setup.subagents.length > 0
+		? [{
+			content: `Setting up delegation to ${joinNames(setup.subagents)}.`,
+			input: { step: "wire_subagents" },
+			outputPreview: `Subagents wired: ${setup.subagents.join(", ")}.`,
+		}]
+		: [];
 	steps.push(
 		withProgression(
 			{
@@ -416,30 +498,73 @@ function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescriptio
 				label: "Selecting agent tools",
 			},
 			{
-				content: "Matching the requested workflow to relevant tools and skills.",
-				input: { mentioned: mentionedTools },
+				content: setupTools.length > 0
+					? `Wiring up ${joinNames(setupTools)} for this agent.`
+					: "Matching the requested workflow to relevant tools and skills.",
+				input: { selected: setupTools.length > 0 ? setupTools : mentionedTools },
 				outputPreview: toolSelectionPreview,
 			},
 			[
 				{
-					content: "Scanning the brief for named integrations.",
+					content: setup && setup.tools.length > 0
+						? `Connecting apps: ${joinNames(setup.tools)}.`
+						: "Scanning the brief for named integrations.",
 					input: { step: "scan_integrations" },
-					outputPreview: `Integrations found: ${mentionedTools.length > 0 ? mentionedTools.join(", ") : "none"}.`,
+					outputPreview: setup && setup.tools.length > 0
+						? `Apps connected: ${setup.tools.join(", ")}.`
+						: `Integrations found: ${mentionedTools.length > 0 ? mentionedTools.join(", ") : "none"}.`,
 				},
 				{
-					content: "Mapping each task to a capable tool or skill.",
+					content: setup && setup.skills.length > 0
+						? `Adding skills: ${joinNames(setup.skills)}.`
+						: "Mapping each task to a capable tool or skill.",
 					input: { step: "map_tasks" },
-					outputPreview: "Tasks mapped to tools.",
+					outputPreview: "Tasks mapped to tools and skills.",
 				},
-				{
-					content: "Dropping tools that add no value to the workflow.",
-					input: { step: "prune_tools" },
-					outputPreview: "Tool set pruned to essentials.",
-				},
+				...subagentRow,
 			],
 		),
 	);
 
+	// Connect integrations — narrate the (fake) provider connections the agent's
+	// triggers depend on, when the template's triggers name connectable providers.
+	const connectProviders = setup ? connectableProvidersFromTriggers(setup.triggers) : [];
+	if (connectProviders.length > 0) {
+		steps.push(
+			withProgression(
+				{
+					toolName: "studio.connect_integrations",
+					toolCallId: `${traceIdPrefix}-connect-integrations`,
+					label: "Connecting integrations",
+				},
+				{
+					content: `Connecting ${joinNames(connectProviders)} so the agent's triggers can fire.`,
+					input: { providers: connectProviders },
+					outputPreview: `Connected: ${connectProviders.join(", ")}.`,
+				},
+				connectProviders.map((provider) => ({
+					content: `Authorizing ${provider}.`,
+					input: { step: "authorize", provider },
+					outputPreview: `${provider} connected.`,
+				})),
+			),
+		);
+	}
+
+	const knowledgeRow = setup && setup.knowledge.length > 0
+		? [{
+			content: `Grounding the agent in ${joinNames(setup.knowledge)}.`,
+			input: { step: "ground_knowledge" },
+			outputPreview: `Knowledge sources: ${setup.knowledge.join(", ")}.`,
+		}]
+		: [];
+	const modesRow = setup && setup.modes.length > 0
+		? [{
+			content: `Setting behavior: ${joinNames(setup.modes)}.`,
+			input: { step: "set_behavior" },
+			outputPreview: `Behavior configured: ${setup.modes.join(", ")}.`,
+		}]
+		: [];
 	steps.push(
 		withProgression(
 			{
@@ -456,11 +581,13 @@ function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescriptio
 				outputPreview: "Instruction draft covers role, boundaries, tools, and tone.",
 			},
 			[
+				...knowledgeRow,
 				{
 					content: "Defining what the agent should and shouldn't do.",
 					input: { step: "define_scope" },
 					outputPreview: "Scope boundaries defined.",
 				},
+				...modesRow,
 				{
 					content: "Setting the tone and response style.",
 					input: { step: "set_tone" },
@@ -474,6 +601,30 @@ function buildStudioAgentCreationTrace({ userPrompt, messages, contextDescriptio
 			],
 		),
 	);
+
+	// Configure triggers — name the agent's trigger events when the template
+	// supplied them, so the chain-of-thought reflects the automation setup.
+	if (setup && setup.triggers.length > 0) {
+		steps.push(
+			withProgression(
+				{
+					toolName: "studio.configure_triggers",
+					toolCallId: `${traceIdPrefix}-configure-triggers`,
+					label: "Configuring triggers",
+				},
+				{
+					content: `Setting up when the agent runs: ${joinNames(setup.triggers)}.`,
+					input: { triggers: setup.triggers },
+					outputPreview: `Triggers configured: ${setup.triggers.length}.`,
+				},
+				setup.triggers.map((trigger) => ({
+					content: `Adding trigger — ${trigger}.`,
+					input: { step: "add_trigger" },
+					outputPreview: "Trigger added.",
+				})),
+			),
+		);
+	}
 
 	const nameHint = deriveAgentNameHint(promptText);
 	steps.push(
@@ -547,6 +698,9 @@ module.exports = {
 	// Exported for tests:
 	__internals: {
 		detectMentionedTools,
+		parseTemplateSetupFromContext,
+		connectableProvidersFromTriggers,
+		joinNames,
 		summarizeQAExchange,
 		deriveAgentNameHint,
 		deriveAgentBriefFocus,

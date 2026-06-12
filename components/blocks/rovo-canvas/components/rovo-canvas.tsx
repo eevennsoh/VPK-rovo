@@ -25,7 +25,7 @@ import { Footer } from "@/components/ui-custom/footer";
 import { Icon as VpkIcon } from "@/components/ui/icon";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArtifactAnnotationLayer } from "@/components/ui-custom/artifact";
+import { ArtifactAnnotationLayer } from "@/components/blocks/artifact";
 import { useArtifactAnnotations } from "@/components/ui-custom/hooks/use-artifact-annotations";
 import type { ArtifactAnnotationKind } from "@/components/ui-custom/lib/artifact-annotations";
 import { cn } from "@/lib/utils";

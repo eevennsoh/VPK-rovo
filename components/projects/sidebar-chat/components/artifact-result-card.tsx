@@ -7,7 +7,7 @@ import { useRovoChat } from "@/app/contexts";
 import { RovoCanvas, type RovoCanvasStatus, type RovoCanvasVersion, type RovoCanvasView } from "@/components/blocks/rovo-canvas/page";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArtifactCard, ARTIFACT_KIND_LABELS, type ArtifactKind } from "@/components/ui-custom/artifact";
+import { ArtifactCard, ARTIFACT_KIND_LABELS, type ArtifactKind } from "@/components/blocks/artifact";
 import {
 	Dialog,
 	DialogContent,

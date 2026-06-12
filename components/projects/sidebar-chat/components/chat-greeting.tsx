@@ -85,6 +85,31 @@ const CHAT_GREETING_REDUCED_ITEM_VARIANTS = {
 		transition: CHAT_GREETING_REDUCED_TRANSITION,
 	},
 } as const;
+const CHAT_GREETING_INSTANT_CONTAINER_VARIANTS = {
+	hidden: {},
+	visible: {},
+	exit: {},
+} as const;
+const CHAT_GREETING_INSTANT_ITEM_VARIANTS = {
+	hidden: {
+		opacity: 1,
+		transform: "translateY(0px)",
+	},
+	visible: {
+		opacity: 1,
+		transform: "translateY(0px)",
+		transition: {
+			duration: 0,
+		},
+	},
+	exit: {
+		opacity: 0,
+		transform: "translateY(0px)",
+		transition: {
+			duration: 0,
+		},
+	},
+} as const;
 type ChatGreetingItemVariants = typeof CHAT_GREETING_ITEM_VARIANTS | typeof CHAT_GREETING_REDUCED_ITEM_VARIANTS;
 
 interface ChatGreetingProps {
@@ -274,6 +299,10 @@ function CustomAgentGreeting({
 	itemVariants: ChatGreetingItemVariants;
 	onSuggestionClick?: (suggestion: RovoSuggestion) => void;
 }>) {
+	const shouldShowHero = !isComposing || agent.starters.length === 0;
+	const activeContainerVariants = isComposing ? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_CONTAINER_VARIANTS;
+	const activeItemVariants = isComposing ? CHAT_GREETING_INSTANT_ITEM_VARIANTS : itemVariants;
+
 	return (
 		<motion.div
 			animate="visible"
@@ -284,32 +313,32 @@ function CustomAgentGreeting({
 			exit="exit"
 			initial="hidden"
 			key={agent.id}
-			variants={CHAT_GREETING_CONTAINER_VARIANTS}
+			variants={activeContainerVariants}
 		>
 			<AnimatePresence mode="popLayout" propagate>
-				{isComposing ? null : (
+				{shouldShowHero ? (
 					<motion.div
 						className="flex max-w-[360px] flex-col items-center gap-3"
 						exit="exit"
 						key="agent-hero"
-						variants={CHAT_GREETING_CONTAINER_VARIANTS}
+						variants={activeContainerVariants}
 					>
-						<motion.div variants={itemVariants}>
+						<motion.div variants={activeItemVariants}>
 							<AgentAvatarVisual avatarSrc={agent.avatarSrc} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
 						</motion.div>
-						<motion.div className="flex flex-col items-center gap-2" variants={itemVariants}>
+						<motion.div className="flex flex-col items-center gap-2" variants={activeItemVariants}>
 							<Heading size="large" className="text-center">{agent.name}</Heading>
 							{agent.description ? (
 								<p className="text-sm leading-6 text-text-subtle">{agent.description}</p>
 							) : null}
 						</motion.div>
 					</motion.div>
-				)}
+				) : null}
 			</AnimatePresence>
-			<motion.div className="w-full" layout="position" variants={CHAT_GREETING_CONTAINER_VARIANTS}>
+			<motion.div className="w-full" layout={isComposing ? false : "position"} variants={activeContainerVariants}>
 				<div className="mx-auto flex w-fit max-w-full flex-col gap-1">
 					{agent.starters.map((suggestion) => (
-						<motion.div key={suggestion.id} variants={itemVariants}>
+						<motion.div key={suggestion.id} variants={activeItemVariants}>
 							<CustomAgentStarterItem
 								suggestion={suggestion}
 								onClick={() => onSuggestionClick?.(suggestion)}
@@ -345,10 +374,6 @@ export default function ChatGreeting({
 		!customAgent &&
 		directoryAutocompleteState !== null &&
 		directoryAutocompleteState.matches.length > 0;
-	const shouldHideSuggestionList =
-		!customAgent &&
-		directoryAutocompleteState !== null &&
-		directoryAutocompleteState.matches.length === 0;
 	const resolvedHeading = isMaxMode ? MAX_MODE_HEADING : heading;
 	const resolvedIllustrationSrc = isMaxMode ? MAX_MODE_ILLUSTRATION_SRC : illustrationSrc;
 	const resolvedIllustrationDarkSrc = isMaxMode
@@ -363,6 +388,12 @@ export default function ChatGreeting({
 	const shouldUseControlledChatIllustration = !isMaxMode && resolvedIllustrationSrc === DEFAULT_ILLUSTRATION_SRC;
 	const heroKey = isMaxMode ? "max" : "default";
 	const itemVariants = shouldReduceMotion ? CHAT_GREETING_REDUCED_ITEM_VARIANTS : CHAT_GREETING_ITEM_VARIANTS;
+	const shouldShowSuggestionList =
+		shouldRenderDirectoryMatches ||
+		(directoryAutocompleteState === null && greetingSuggestions.length > 0);
+	const shouldShowHero = showHero && (!isComposing || !shouldShowSuggestionList);
+	const activeContainerVariants = isComposing ? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_CONTAINER_VARIANTS;
+	const activeItemVariants = isComposing ? CHAT_GREETING_INSTANT_ITEM_VARIANTS : itemVariants;
 
 	return (
 		<div className="w-full">
@@ -383,19 +414,19 @@ export default function ChatGreeting({
 						exit="exit"
 						initial="hidden"
 						key={`rovo-${heroKey}-${resolvedHeading}`}
-						variants={CHAT_GREETING_CONTAINER_VARIANTS}
+						variants={activeContainerVariants}
 					>
 						<AnimatePresence mode="popLayout" propagate>
-							{showHero && !isComposing ? (
+							{shouldShowHero ? (
 								<motion.div
 									animate="visible"
 									className="flex flex-col items-center gap-2"
 									exit="exit"
 									initial="hidden"
 									key="hero"
-									variants={CHAT_GREETING_CONTAINER_VARIANTS}
+									variants={activeContainerVariants}
 								>
-									<motion.div className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative")} style={{ willChange: "transform, opacity" }} variants={itemVariants}>
+									<motion.div className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative")} style={{ willChange: "transform, opacity" }} variants={activeItemVariants}>
 										{shouldUseControlledChatIllustration ? (
 											<ControlledRovoIllustration illusId="chat" size={74} />
 										) : shouldUseControlledAgentIllustration ? (
@@ -421,21 +452,21 @@ export default function ChatGreeting({
 											</>
 										)}
 									</motion.div>
-									<motion.div style={{ willChange: "transform, opacity" }} variants={itemVariants}>
+									<motion.div style={{ willChange: "transform, opacity" }} variants={activeItemVariants}>
 										<Heading size="large" className="text-center">{resolvedHeading}</Heading>
 									</motion.div>
 								</motion.div>
 							) : null}
 						</AnimatePresence>
-						{shouldHideSuggestionList ? null : (
-							<motion.div className="w-full" layout="position" variants={CHAT_GREETING_CONTAINER_VARIANTS}>
+						{shouldShowSuggestionList ? (
+							<motion.div className="w-full" layout={isComposing ? false : "position"} variants={activeContainerVariants}>
 								<div className={cn(
 									"grid gap-1",
 									shouldRenderDirectoryMatches && useWideSuggestionLayout ? "grid-cols-2 gap-x-8" : "grid-cols-1",
 								)}>
 									{shouldRenderDirectoryMatches
 										? directoryAutocompleteState.matches.map((match, index) => (
-												<motion.div key={match.mention.id} variants={itemVariants}>
+												<motion.div key={match.mention.id} variants={activeItemVariants}>
 													<DirectoryAutocompleteItem
 														active={directoryAutocompleteState.activeIndex === index}
 														index={index}
@@ -446,7 +477,7 @@ export default function ChatGreeting({
 												</motion.div>
 											))
 										: greetingSuggestions.map((suggestion) => (
-												<motion.div key={suggestion.id} variants={itemVariants}>
+												<motion.div key={suggestion.id} variants={activeItemVariants}>
 													<SkillListItem
 														suggestion={suggestion}
 														onClick={() => onSuggestionClick?.(suggestion)}
@@ -455,7 +486,7 @@ export default function ChatGreeting({
 											))}
 								</div>
 							</motion.div>
-						)}
+						) : null}
 					</motion.div>
 				)}
 			</AnimatePresence>

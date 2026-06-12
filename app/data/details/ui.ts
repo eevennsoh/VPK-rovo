@@ -6151,6 +6151,12 @@ import SearchIcon from "@atlaskit/icon/core/search";
         demoSlug: "tile-demo-sizes",
       },
       {
+        title: "Transparent",
+        description:
+          "All six sizes with a transparent backdrop — keeps the sizing box without a background fill.",
+        demoSlug: "tile-demo-transparent",
+      },
+      {
         title: "Variants",
         description: "Semantic, accent subtle, and accent bold variants.",
         demoSlug: "tile-demo-appearances",

@@ -7,28 +7,28 @@ function readProjectFile(relativePath) {
 	return fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
 }
 
-test("Artifact List is registered as a website block in all four registries", () => {
+test("Artifact List is registered as a UI Custom component in all four registries", () => {
 	assert.match(
 		readProjectFile("app/data/components.ts"),
-		/blockComponent\("artifact-list", "Artifact List"\)/u,
+		/customComponent\("artifact-list", "Artifact List"\)/u,
 	);
 	assert.match(
 		readProjectFile("app/data/component-manifest.ts"),
-		/blockComponent\("artifact-list", "Artifact List"\)/u,
+		/customComponent\("artifact-list", "Artifact List"\)/u,
 	);
 	assert.match(
-		readProjectFile("app/data/details/blocks.ts"),
-		/import \{ ArtifactList \} from "@\/components\/blocks\/artifact-list";/u,
+		readProjectFile("app/data/details/ui-custom.ts"),
+		/import \{ ArtifactList \} from "@\/components\/ui-custom\/artifact-list";/u,
 	);
 	assert.match(
 		readProjectFile("components/website/registry.ts"),
-		/"artifact-list": dynamic\(\(\) => import\("\.\/demos\/blocks\/artifact-list-demo"\)/u,
+		/"artifact-list": dynamic\(\(\) => import\("\.\/demos\/ui-custom\/artifact-list-demo"\)/u,
 	);
 });
 
 test("Artifact List card uses the raised-surface elevation skin from Figma", () => {
 	const source = readProjectFile(
-		"components/blocks/artifact-list/components/artifact-list.tsx",
+		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 
 	assert.match(source, /overflow-hidden rounded-lg bg-surface-raised/u);
@@ -37,7 +37,7 @@ test("Artifact List card uses the raised-surface elevation skin from Figma", () 
 
 test("Artifact List rows are 64px, hover to surface-hovered, and the last row is borderless", () => {
 	const source = readProjectFile(
-		"components/blocks/artifact-list/components/artifact-list.tsx",
+		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 
 	assert.match(source, /flex h-16 items-center gap-3 px-3 transition-colors hover:bg-surface-hovered/u);
@@ -48,7 +48,7 @@ test("Artifact List rows are 64px, hover to surface-hovered, and the last row is
 
 test("Artifact List leading visual is a neutral tile at the ADS tile radius", () => {
 	const source = readProjectFile(
-		"components/blocks/artifact-list/components/artifact-list.tsx",
+		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 
 	assert.match(source, /<Tile[\s\S]*variant="neutral"[\s\S]*size="medium"[\s\S]*className="rounded-tile"/u);
@@ -58,7 +58,7 @@ test("Artifact List leading visual is a neutral tile at the ADS tile radius", ()
 
 test("Artifact List metadata renders source • owner with the subtlest dot", () => {
 	const source = readProjectFile(
-		"components/blocks/artifact-list/components/artifact-list.tsx",
+		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 
 	assert.match(source, /<span className="shrink-0 text-text-subtle">\{item\.source\}<\/span>/u);
@@ -69,7 +69,7 @@ test("Artifact List metadata renders source • owner with the subtlest dot", ()
 
 test("Artifact List Open button is hover/focus-revealed and stays keyboard-reachable", () => {
 	const source = readProjectFile(
-		"components/blocks/artifact-list/components/artifact-list.tsx",
+		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 	const primitive = readProjectFile("components/ui-custom/hover-reveal-row.tsx");
 
@@ -84,10 +84,10 @@ test("Artifact List Open button is hover/focus-revealed and stays keyboard-reach
 });
 
 test("Artifact List docs demo renders the sample items card", () => {
-	const page = readProjectFile("components/blocks/artifact-list/page.tsx");
-	const demo = readProjectFile("components/website/demos/blocks/artifact-list-demo.tsx");
+	const page = readProjectFile("components/ui-custom/artifact-list/page.tsx");
+	const demo = readProjectFile("components/website/demos/ui-custom/artifact-list-demo.tsx");
 
-	assert.match(page, /import \{ ArtifactList \} from "@\/components\/blocks\/artifact-list";/u);
+	assert.match(page, /import \{ ArtifactList \} from "@\/components\/ui-custom\/artifact-list";/u);
 	assert.match(page, /items=\{SAMPLE_ARTIFACT_ITEMS\}/u);
-	assert.match(demo, /import ArtifactListPage from "@\/components\/blocks\/artifact-list\/page";/u);
+	assert.match(demo, /import ArtifactListPage from "@\/components\/ui-custom\/artifact-list\/page";/u);
 });

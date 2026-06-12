@@ -1,4 +1,4 @@
-import ArtifactListPage from "@/components/blocks/artifact-list/page";
+import ArtifactListPage from "@/components/ui-custom/artifact-list/page";
 
 export default function ArtifactListDemo(): React.ReactElement {
 	return <ArtifactListPage />;

@@ -55,5 +55,44 @@
 	},
 	{
 		"agentId": "user-manual-writer"
+	},
+	{
+		"agentId": "strategic-insight"
+	},
+	{
+		"agentId": "progress-tracker"
+	},
+	{
+		"agentId": "diagram-creator"
+	},
+	{
+		"agentId": "transcript-insights-reporter"
+	},
+	{
+		"agentId": "root-cause-analyzer"
+	},
+	{
+		"agentId": "rovo-expert"
+	},
+	{
+		"agentId": "social-media-writer"
+	},
+	{
+		"agentId": "global-translator"
+	},
+	{
+		"agentId": "brand-voice-crafter"
+	},
+	{
+		"agentId": "code-planner"
+	},
+	{
+		"agentId": "blocker-checker"
+	},
+	{
+		"agentId": "work-item-planner"
+	},
+	{
+		"agentId": "unit-test-creator"
 	}
 ]
