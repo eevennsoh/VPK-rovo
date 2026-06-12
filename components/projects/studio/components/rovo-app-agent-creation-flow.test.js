@@ -100,15 +100,15 @@ test("RovoAppShell does not render the Hermes turn-state card", () => {
 	assert.doesNotMatch(SHELL_SOURCE, /Auto-loaded on the last turn/u);
 });
 
-test("Studio landing empty state uses the illustrated heading by default", () => {
+test("Studio landing empty state is title-only by default", () => {
 	assert.match(MESSAGES_SOURCE, /default: \{[\s\S]*heading: "Move work forward with agents"[\s\S]*id: "default"[\s\S]*\}/u);
 	const defaultEmptyStateSource = MESSAGES_SOURCE.slice(
 		MESSAGES_SOURCE.indexOf("default: {"),
 		MESSAGES_SOURCE.indexOf("max: {"),
 	);
-	assert.match(defaultEmptyStateSource, /illustrationClassName: "h-\[67px\] w-\[74px\]"/u);
-	assert.match(defaultEmptyStateSource, /lightIllustrationSrc: "\/illustration-ai\/ai\/light\.svg"/u);
-	assert.match(defaultEmptyStateSource, /darkIllustrationSrc: "\/illustration-ai\/ai\/dark\.svg"/u);
+	assert.doesNotMatch(defaultEmptyStateSource, /illustrationClassName/u);
+	assert.doesNotMatch(defaultEmptyStateSource, /lightIllustrationSrc/u);
+	assert.doesNotMatch(defaultEmptyStateSource, /darkIllustrationSrc/u);
 	assert.match(MESSAGES_SOURCE, /function hasRovoAppEmptyStateIllustration\(emptyState: RovoAppEmptyState\): emptyState is RovoAppIllustratedEmptyState \{[\s\S]*return "illustrationClassName" in emptyState;/u);
 	assert.match(MESSAGES_SOURCE, /const hasEmptyStateIllustration = hasRovoAppEmptyStateIllustration\(emptyState\);/u);
 	assert.match(MESSAGES_SOURCE, /\{hasEmptyStateIllustration \? \([\s\S]*<motion\.div className=\{cn\(emptyState\.illustrationClassName, "relative"\)/u);
@@ -145,7 +145,7 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /DropdownMenu/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-label=\{`More actions for \$\{agentName\}`\}/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /export function StudioAgentsSection/u);
-	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className="mx-auto mt-12 flex w-\[90%\] max-w-\[800px\] flex-col gap-6"/u);
+	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /className="mx-auto mt-12 flex w-\[90%\] max-w-\[800px\] flex-col gap-6 pb-12"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /ButtonGroup aria-label="Agent views"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "my-agents", label: "My agents"/u);
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /id: "by-teams", label: "By teams"/u);
@@ -457,9 +457,9 @@ test("RovoAppMessages renders the block agent result card after generation compl
 	assert.match(MESSAGES_SOURCE, /resolvedArtifactDisplayForMessage \? \([\s\S]*<ArtifactCard/u);
 	assert.match(MESSAGES_SOURCE, /completedAgentResult \? \([\s\S]*<AgentResultCard[\s\S]*agent=\{completedAgentResult\}[\s\S]*sourceMessageId: message\.id/u);
 	assert.doesNotMatch(MESSAGES_SOURCE, /function StudioAgentResultCard/u);
-	assert.match(ROVO_UI_MESSAGES_SOURCE, /import type \{ AgentTriggerValue \} from "@\/components\/blocks\/triggers\/data\/trigger-catalog";/u);
+	assert.match(ROVO_UI_MESSAGES_SOURCE, /import type \{ AgentAutomationRule \} from "@\/components\/blocks\/triggers\/data\/trigger-catalog";/u);
 	assert.match(ROVO_UI_MESSAGES_SOURCE, /triggers\?: string\[\];/u);
-	assert.match(ROVO_UI_MESSAGES_SOURCE, /triggerDefinitions\?: AgentTriggerValue\[\];/u);
+	assert.match(ROVO_UI_MESSAGES_SOURCE, /automationRules\?: AgentAutomationRule\[\];/u);
 });
 
 test("Studio agent insights panel frames agent performance and improvement opportunities", () => {
@@ -505,15 +505,15 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_BLOCK_SOURCE, /"product-agents": "#BF63F3"/u);
 	assert.match(AGENT_BLOCK_SOURCE, /function getAgentProfileCoverBackgroundColor\(avatarSrc: string \| undefined\): string/u);
 	assert.match(AGENT_BLOCK_SOURCE, /style=\{\{ backgroundColor: coverBackgroundColor \}\}/u);
-	assert.match(AGENT_BLOCK_SOURCE, /Add rules for when this agent runs/u);
+	assert.match(AGENT_BLOCK_SOURCE, /Add automations for when this agent runs/u);
 	assert.match(AGENT_BLOCK_SOURCE, /Add prompts to help people start/u);
 	assert.match(AGENT_BLOCK_SOURCE, /knowledgeMode: KnowledgeModeValue;/u);
 	assert.match(AGENT_BLOCK_SOURCE, /onKnowledgeModeChange=\{setKnowledgeMode\}/u);
 	assert.match(AGENT_BLOCK_SOURCE, /Press \/ to help me describe the agent's role/u);
 	assert.match(AGENT_BLOCK_SOURCE, /dataFlowConfig=\{config\}/u);
 	assert.doesNotMatch(AGENT_BLOCK_SOURCE, /layout\?: "default" \| "compact";/u);
-	assert.match(AGENT_BLOCK_SOURCE, /triggerDefinitions\?: readonly AgentTriggerValue\[\];/u);
-	assert.match(AGENT_BLOCK_SOURCE, /onTriggerDefinitionsChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
+	assert.match(AGENT_BLOCK_SOURCE, /automationRules\?: readonly AgentAutomationRule\[\];/u);
+	assert.match(AGENT_BLOCK_SOURCE, /onAutomationRulesChange\?: \(automationRules: readonly AgentAutomationRule\[\]\) => void;/u);
 	assert.match(AGENT_BLOCK_SOURCE, /readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"/u);
 	assert.match(AGENT_BLOCK_SOURCE, /inputProps=\{\{ className: "h-auto border-2 px-1\.5 py-1 text-2xl leading-7 font-semibold focus:border-ring md:text-2xl" \}\}/u);
 	assert.match(AGENT_BLOCK_SOURCE, /textareaProps=\{\{ rows: 1, className: "min-h-10 border-2 bg-bg-neutral-subtle px-1\.5 focus:border-ring focus-visible:border-ring focus-visible:ring-0 focus-visible:ring-offset-0 data-\[variant=default\]:border-transparent data-\[variant=default\]:focus:border-ring data-\[variant=default\]:focus-visible:border-ring" \}\}/u);
@@ -525,7 +525,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onAddListValues=\{appendListValues\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onAppendListItem=\{appendListItem\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onConnectTrigger=\{handleConnectTrigger\}/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onTriggerDefinitionsChange=\{handleTriggerDefinitionsChange\}/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onAutomationRulesChange=\{handleAutomationRulesChange\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onOpenDirectory=\{handleOpenDirectory\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ KnowledgeDirectoryDialog, type KnowledgeDirectoryAddPayload \} from "@\/components\/blocks\/knowledge-directory";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Memory \} from "@\/components\/blocks\/memory";/u);
@@ -537,8 +537,8 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ AgentInsights \} from "@\/components\/blocks\/agent-insights";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[activeDirectory, setActiveDirectory\] = useState<AgentDirectoryKind \| null>\(null\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[activeCompactSection, setActiveCompactSection\] = useState<AgentCompactHeaderSection \| null>\(null\);/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleTriggerDefinitionsChange = useCallback\([\s\S]*serializeAgentTriggerLabels\(triggerDefinitions\)[\s\S]*triggerDefinitions,[\s\S]*trigger: triggerLabels\[0\] \?\? "",[\s\S]*triggers: triggerLabels,/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleConnectTrigger = useCallback\([\s\S]*connectionState: "connecting" as const[\s\S]*serializeAgentTriggerLabels\(triggerDefinitions\)/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAutomationRulesChange = useCallback\([\s\S]*automationRules: readonly AgentAutomationRule\[\][\s\S]*automationRules,[\s\S]*\},[\s\S]*\[updateActiveConfig\]/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleConnectTrigger = useCallback\([\s\S]*const automationRules = \(config\.automationRules \?\? \[\]\)\.map\(\(rule\) => \(\{[\s\S]*triggers: rule\.triggers\.map\(\(trigger\) =>[\s\S]*connectionState: "connecting" as const/u);
 	// The connect flow resolves (fake): provider-level, session-scoped, connecting -> connected.
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleConnectTrigger = useCallback\([\s\S]*trigger\.providerId === providerId[\s\S]*setTimeout\([\s\S]*markSessionProviderConnected\(providerId\)[\s\S]*connectionState: "connected" as const/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /setConnectingProvider\(\{ providerId, trigger: targetTrigger \}\)/u);

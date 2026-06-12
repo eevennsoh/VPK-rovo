@@ -20,11 +20,8 @@ import {
 	AgentMoreOptionsMenu,
 	toggleAgentConfigDisabledItem,
 } from "@/components/blocks/agent";
-import {
-	serializeAgentTriggerLabels,
-	type AgentTriggerValue,
-} from "@/components/blocks/triggers/page";
-import { DEFAULT_CONFIGURED_TRIGGER_VALUES } from "@/components/blocks/triggers/data/trigger-catalog";
+import type { AgentAutomationRule } from "@/components/blocks/triggers/page";
+import { DEFAULT_CONFIGURED_AUTOMATION_RULES } from "@/components/blocks/triggers/data/trigger-catalog";
 import {
 	ConversationStartersDialog,
 	DEFAULT_STARTER_ICON,
@@ -72,8 +69,7 @@ const filledAgentConfig: AgentConfigFormValue = {
 		"This agent helps employees quickly find and understand company guidelines, HR policies, and benefits information.",
 	instructions: "",
 	contextDescription: "",
-	triggerDefinitions: DEFAULT_CONFIGURED_TRIGGER_VALUES,
-	triggers: serializeAgentTriggerLabels(DEFAULT_CONFIGURED_TRIGGER_VALUES),
+	automationRules: DEFAULT_CONFIGURED_AUTOMATION_RULES,
 	apps: ["Jira", "Confluence"],
 	skills: ["Create work items", "Dependency mapper"],
 	tools: ["Jira", "Confluence"],
@@ -137,13 +133,10 @@ function useAgentDemoConfig(initialConfig: AgentConfigFormValue) {
 		});
 	}
 
-	function handleTriggerDefinitionsChange(triggerDefinitions: readonly AgentTriggerValue[]) {
-		const triggerLabels = serializeAgentTriggerLabels(triggerDefinitions);
+	function handleAutomationRulesChange(automationRules: readonly AgentAutomationRule[]) {
 		setConfig((current) => ({
 			...current,
-			triggerDefinitions,
-			trigger: triggerLabels[0] ?? "",
-			triggers: triggerLabels,
+			automationRules,
 		}));
 	}
 
@@ -179,7 +172,7 @@ function useAgentDemoConfig(initialConfig: AgentConfigFormValue) {
 		conversationStarterDialogValue,
 		handleTextChange,
 		handleSaveConversationStarters,
-		handleTriggerDefinitionsChange,
+		handleAutomationRulesChange,
 		removeListItem,
 		toggleListItem,
 		updateListItem,
@@ -228,9 +221,7 @@ function buildAgentDemoTestEntry(config: AgentConfigFormValue): StudioSessionAge
 		contextDescription: config.contextDescription,
 		conversationStarters: [...(config.conversationStarters ?? [])],
 		conversationStarterIcons: [...(config.conversationStarterIcons ?? [])],
-		trigger: config.trigger,
-		triggers: [...(config.triggers ?? [])],
-		triggerDefinitions: [...(config.triggerDefinitions ?? [])],
+		automationRules: [...(config.automationRules ?? [])],
 		tools: [...(config.tools ?? [])],
 		skills: [...(config.skills ?? [])],
 		knowledge: [...(config.knowledge ?? [])],
@@ -331,7 +322,7 @@ export function AgentDemoFull() {
 		conversationStarterDialogValue,
 		handleSaveConversationStarters,
 		handleTextChange,
-		handleTriggerDefinitionsChange,
+		handleAutomationRulesChange,
 		removeListItem,
 		toggleListItem,
 		updateListItem,
@@ -392,7 +383,7 @@ export function AgentDemoFull() {
 										onAppendListItem={appendListItem}
 										onManageTriggers={openTriggerManageDocs}
 										onOpenDirectory={handleOpenDirectory}
-										onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
+										onAutomationRulesChange={handleAutomationRulesChange}
 									/>
 							</AgentContent>
 						}
@@ -419,7 +410,7 @@ export function AgentDemoEmpty() {
 		conversationStarterDialogValue,
 		handleSaveConversationStarters,
 		handleTextChange,
-		handleTriggerDefinitionsChange,
+		handleAutomationRulesChange,
 		removeListItem,
 		toggleListItem,
 		updateListItem,
@@ -480,7 +471,7 @@ export function AgentDemoEmpty() {
 										onAppendListItem={appendListItem}
 										onManageTriggers={openTriggerManageDocs}
 										onOpenDirectory={handleOpenDirectory}
-										onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
+										onAutomationRulesChange={handleAutomationRulesChange}
 									/>
 							</AgentContent>
 						}

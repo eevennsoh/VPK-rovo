@@ -401,7 +401,7 @@ interface AgentResultLike {
 	knowledge?: readonly string[];
 	subagents?: readonly string[];
 	triggers?: readonly string[];
-	triggerDefinitions?: readonly unknown[];
+	automationRules?: readonly unknown[];
 	subagentPrompts?: readonly unknown[];
 	description?: string;
 	summary?: string;
@@ -490,7 +490,7 @@ export function applyTemplateDefaultsToResult<T extends AgentResultLike>(
 		out.instructions = config.instructionsBody;
 	}
 	// Triggers: backfill the template's provider-named triggers when none exist.
-	if (isEmpty(out.triggers) && isEmpty(out.triggerDefinitions) && config.triggers.length > 0) {
+	if (isEmpty(out.triggers) && isEmpty(out.automationRules) && config.triggers.length > 0) {
 		out.triggers = [...config.triggers];
 	}
 	// Required profile fields: the /studio ingest's normalizeStudioAgentResult
