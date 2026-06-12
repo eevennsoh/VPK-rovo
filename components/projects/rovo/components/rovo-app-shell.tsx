@@ -2311,6 +2311,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 								</div>
 							) : null}
 							<motion.div
+								className="relative overflow-visible"
 								initial={showHomeState && !shouldReduceMotion ? { opacity: 0, y: 20 } : false}
 								animate={{ opacity: 1, y: 0 }}
 								transition={{ duration: 0.4, ease: [0, 0.4, 0, 1], delay: 0.2 }}
@@ -2356,7 +2357,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 								/>
 								{showHomeState && shouldShowDirectoryAutocompleteList && directoryAutocompleteState ? (
 									<RovoAppDirectoryAutocompleteRows
-										className="mt-3"
+										className="absolute inset-x-0 top-full z-20 mt-3"
 										shouldReduceMotion={Boolean(shouldReduceMotion)}
 										state={directoryAutocompleteState}
 										useWideLayout={shouldUseWideDirectoryAutocompleteLayout}
@@ -2370,8 +2371,10 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					)}
 				</div>
 
-				{showHomeState && !isCustomAgentSelected && !shouldHideHomePromptGallery ? (
+				{showHomeState && !isCustomAgentSelected ? (
 					<motion.div
+						aria-hidden={shouldHideHomePromptGallery ? true : undefined}
+						className={cn(shouldHideHomePromptGallery && "pointer-events-none invisible")}
 						initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.4, ease: [0, 0.4, 0, 1], delay: 0.3 }}
