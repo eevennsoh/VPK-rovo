@@ -392,8 +392,8 @@ export function TriggerPicker({
 
 	const handleSelectEvent = useCallback(
 		(providerId: AgentTriggerProviderId, eventId: string) => {
-			onSelectEvent(providerId, eventId);
 			setOpen(false);
+			onSelectEvent(providerId, eventId);
 		},
 		[onSelectEvent],
 	);
