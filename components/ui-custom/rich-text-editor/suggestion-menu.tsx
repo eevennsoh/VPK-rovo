@@ -1245,9 +1245,10 @@ function getPagedSelectableIndex(
 }
 
 /**
- * Per-renderer counter so each live "/" menu gives its Ask Rovo field a unique,
- * stable DOM id. The id lets the editor's Tab handler move focus into that field
- * (client-only — the renderer is created by Tiptap on the client, never SSR).
+ * Per-renderer counter so each Ask Rovo-enabled "/" menu gives its field a
+ * unique, stable DOM id. The id lets the editor's Tab handler move focus into
+ * that field (client-only — the renderer is created by Tiptap on the client,
+ * never SSR).
  */
 let askRovoFieldIdCounter = 0;
 
@@ -1257,6 +1258,7 @@ export function createSlashSuggestionRenderer(
 	includeFormat = true,
 	anchorToInput = false,
 	variant: SuggestionVariant = "nested",
+	showAskRovoPrompt = true,
 	// Launches the directory for a nested "/" category from its empty-state
 	// "Browse all" button. Only directory-backed categories (everything but
 	// "format") invoke it; omit it to keep the plain empty title with no button.
@@ -1350,10 +1352,14 @@ export function createSlashSuggestionRenderer(
 	}
 
 	function shouldHideSlashRowsForAskRovoPrompt(): boolean {
-		return (isFlat || !activeCategory) && askRovoPrompt.trim().length > 0;
+		return showAskRovoPrompt && (isFlat || !activeCategory) && askRovoPrompt.trim().length > 0;
 	}
 
-	function getAskRovoHeader(): ReactNode {
+	function getAskRovoHeader(): ReactNode | undefined {
+		if (!showAskRovoPrompt) {
+			return undefined;
+		}
+
 		return (
 			<RichTextCommandMenuSearchField
 				id={askRovoFieldId}
@@ -1388,6 +1394,7 @@ export function createSlashSuggestionRenderer(
 		// the top-level category list), a non-matching query collapses to just
 		// that header — render an empty fragment so no "No commands found" row.
 		const nestedCategory = !isFlat && activeCategory ? activeCategory : null;
+		const shouldShowAskRovoHeader = showAskRovoPrompt && (isFlat || !activeCategory);
 		const nestedEmptyState = nestedCategory ? (
 			<RichTextSuggestionEmptyState
 				onBrowseAll={
@@ -1399,7 +1406,7 @@ export function createSlashSuggestionRenderer(
 		) : undefined;
 		popupState.component?.updateProps({
 			emptyLabel: nestedCategory ? "No matching items" : "No commands found",
-			emptyState: nestedCategory ? nestedEmptyState : <></>,
+			emptyState: nestedCategory ? nestedEmptyState : shouldShowAskRovoHeader ? <></> : undefined,
 			items,
 			onBack: !isFlat && activeCategory
 				? () => {
@@ -1408,7 +1415,7 @@ export function createSlashSuggestionRenderer(
 						update(props);
 					}
 				: undefined,
-			header: isFlat || !activeCategory ? getAskRovoHeader() : undefined,
+			header: shouldShowAskRovoHeader ? getAskRovoHeader() : undefined,
 			onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
 			onHover: selectIndex,
 			selectedIndex,
@@ -1586,18 +1593,20 @@ export function createSlashSuggestionRenderer(
 				// can prompt Rovo instead of inserting into the page. The header only
 				// renders for the flat surface and the nested top level, so fall back
 				// to selecting the row when there is no field to focus.
-				const askRovoField = document.getElementById(askRovoFieldId);
-				if (askRovoField instanceof HTMLInputElement && currentProps) {
-					// If the user already typed "/query", move that text out of the
-					// page and into the Ask Rovo field: keep the "/" trigger so the
-					// menu stays open, then delete just the query characters.
-					if (currentProps.query) {
-						askRovoPrompt += currentProps.query;
-						const { from, to } = currentProps.range;
-						currentProps.editor.commands.deleteRange({ from: from + 1, to });
+				if (showAskRovoPrompt) {
+					const askRovoField = document.getElementById(askRovoFieldId);
+					if (askRovoField instanceof HTMLInputElement && currentProps) {
+						// If the user already typed "/query", move that text out of the
+						// page and into the Ask Rovo field: keep the "/" trigger so the
+						// menu stays open, then delete just the query characters.
+						if (currentProps.query) {
+							askRovoPrompt += currentProps.query;
+							const { from, to } = currentProps.range;
+							currentProps.editor.commands.deleteRange({ from: from + 1, to });
+						}
+						askRovoField.focus();
+						return true;
 					}
-					askRovoField.focus();
-					return true;
 				}
 				return selectItem(items[selectedIndex]);
 			}

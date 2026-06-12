@@ -40,5 +40,5 @@ test("composer suggestions prefer above-input placement and only fall below when
 test("composer editor extensions remain the boundary for input-anchored suggestions", () => {
 	const source = readProjectFile("components/ui-custom/rich-text-editor/composer-extensions.ts");
 
-	assert.match(source, /const composerOptions = \{ \.\.\.options, anchorToInput: true \};/u);
+	assert.match(source, /const composerOptions = \{ \.\.\.options, anchorToInput: true, showAskRovoPrompt: false \};/u);
 });

@@ -30,9 +30,11 @@ test("`/` opens the slash menu with reference categories and excludes text forma
 	await editor.click();
 	await page.keyboard.type("/");
 
-	// The slash surface pins Ask Rovo as a header input above reference categories…
-	await expect(page.getByRole("textbox", { name: "Ask Rovo" })).toBeVisible();
-	await expect(page.getByText(/skills/i).first()).toBeVisible();
+	// Chat composers are already an Ask Rovo surface, so the editor-only Ask
+	// Rovo prompt is hidden while reference categories stay available.
+	await expect(page.getByRole("textbox", { name: "Ask Rovo" })).toHaveCount(0);
+	await expect(page.getByRole("option", { name: /Skills/i }).first()).toBeVisible();
+	await expect(page.getByRole("option", { name: /Apps/i }).first()).toBeVisible();
 
 	// …but NOT the document editor's block-formatting commands (includeFormat:false).
 	await expect(page.getByText(/^Heading 1$/)).toHaveCount(0);
@@ -54,9 +56,10 @@ test("top-level `/` search inserts a matching reference, and Escape closes the m
 
 	// Escape closes the open menu without inserting anything.
 	await page.keyboard.type("/");
-	await expect(page.getByRole("textbox", { name: "Ask Rovo" })).toBeVisible();
-	await page.keyboard.press("Escape");
+	await expect(page.getByRole("listbox", { name: "Commands" })).toBeVisible();
 	await expect(page.getByRole("textbox", { name: "Ask Rovo" })).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	await expect(page.getByRole("listbox", { name: "Commands" })).toHaveCount(0);
 	await page.keyboard.press("Backspace");
 
 	// Re-open, narrow to a known skill, and select it -> inline mention token.
@@ -96,19 +99,15 @@ test("top-level `@` search spans people and agents", async ({ page }) => {
 	await expect(editor).not.toContainText("@Andrea");
 });
 
-test("Tab copies the slash query into Ask Rovo, and Escape returns focus to the editor", async ({ page }) => {
+test("Tab in the composer slash menu selects a reference instead of focusing Ask Rovo", async ({ page }) => {
 	const editor = page.locator(EDITOR).first();
 	await editor.click();
 	await page.keyboard.type("/Design");
 	await page.keyboard.press("Tab");
 
-	const askRovo = page.getByRole("textbox", { name: "Ask Rovo" });
-	await expect(askRovo).toBeFocused();
-	await expect(askRovo).toHaveValue("Design");
-
-	await page.keyboard.press("Escape");
-	await expect(askRovo).toHaveCount(0);
-	await expect(editor).toBeFocused();
+	await expect(page.getByRole("textbox", { name: "Ask Rovo" })).toHaveCount(0);
+	await expect(editor).toContainText("Design landing page");
+	await expect(editor).not.toContainText("/Design");
 });
 
 test("Shift+Enter inserts a newline rather than submitting", async ({ page }) => {

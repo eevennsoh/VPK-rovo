@@ -178,6 +178,7 @@ export const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 	addProseMirrorPlugins() {
 		const getMentionSources = this.options.getMentionSources;
 		const includeFormat = this.options.includeFormat ?? true;
+		const showAskRovoPrompt = this.options.showAskRovoPrompt ?? true;
 		// The "/" command menu resolves to the command variant (object form lets
 		// Studio keep "/" nested while "@" stays flat).
 		const suggestionVariant = resolveCommandVariant(this.options.suggestionVariant);
@@ -220,6 +221,7 @@ export const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 					includeFormat,
 					this.options.anchorToInput,
 					suggestionVariant,
+					showAskRovoPrompt,
 					this.options.onOpenDirectory,
 					(editor) => exitSuggestion(editor.view, slashCommandPluginKey),
 				),
