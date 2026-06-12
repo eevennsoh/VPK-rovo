@@ -21,7 +21,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Lozenge } from "@/components/ui/lozenge";
+import { Badge } from "@/components/ui/badge";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import EditIcon from "@atlaskit/icon/core/edit";
@@ -110,6 +110,13 @@ export interface ChatPanelAgentVersionOption {
 	label: string;
 	variant?: "neutral" | "success";
 	sectionBreakBefore?: boolean;
+	/**
+	 * Marks the currently published / live version. The dropdown renders a
+	 * "Current" text label (outside the badge) on this row so users can tell
+	 * which version is live, independent of which one they have selected to
+	 * preview.
+	 */
+	isCurrent?: boolean;
 }
 
 interface ChatPanelProps {
@@ -159,6 +166,15 @@ interface ChatPanelProps {
 	hideHeader?: boolean;
 	headerVariant?: "default" | "minimal";
 	abortOnUnmount?: boolean;
+	/**
+	 * Optional deterministic submit interceptor. When provided and it reports the
+	 * prompt as handled, the composer submission skips the model entirely — the
+	 * user message and the returned `assistantReply` are injected locally. Used by
+	 * the studio agent-edit ("Improve your agent?") chat to apply scripted agent
+	 * edits; absent for normal conversational chats (including the agent test
+	 * chat, which must stay a real conversation).
+	 */
+	onInterceptSubmit?: (text: string) => { handled: boolean; assistantReply?: string };
 	containerClassName?: string;
 	containerStyle?: CSSProperties;
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
@@ -191,8 +207,8 @@ const REGULAR_CHAT_WIDTH_MAX = 900;
 const ARTIFACT_DIALOG_FLOATING_PIN_REASON = "sidebar-chat-artifact-dialog";
 const DEFAULT_AGENT_VERSION_OPTIONS: readonly ChatPanelAgentVersionOption[] = [
 	{ id: "draft", label: "Draft", variant: "neutral" },
-	{ id: "version-2", label: "Version 2", variant: "success", sectionBreakBefore: true },
-	{ id: "version-1", label: "Version 1", variant: "success" },
+	{ id: "version-2", label: "V2", variant: "success", sectionBreakBefore: true, isCurrent: true },
+	{ id: "version-1", label: "V1", variant: "success" },
 ];
 
 type SmartWidthClass = "compact" | "regular" | "wide";
@@ -260,6 +276,7 @@ export default function ChatPanel({
 	hideHeader = false,
 	headerVariant = "default",
 	abortOnUnmount = true,
+	onInterceptSubmit,
 	containerClassName,
 	containerStyle,
 	onSurfaceSwitch,
@@ -380,6 +397,7 @@ export default function ChatPanel({
 		setPrompt,
 		handleSubmit,
 		submitPrompt,
+		interceptSubmit,
 		abort,
 		uiMessages,
 		isStreaming,
@@ -390,6 +408,7 @@ export default function ChatPanel({
 		removeQueuedPrompt,
 	} = useChatSubmit({
 		defaultPromptOptions: resolvedSendPromptOptions,
+		onInterceptSubmit,
 	});
 
 	// --- Rovo AI cursor companion (Clicky) ---
@@ -773,21 +792,31 @@ export default function ChatPanel({
 
 	const handleGreetingSuggestionClick = useCallback(
 		(suggestion: RovoSuggestion) => {
+			const promptText = suggestion.prompt ?? suggestion.label;
 			const hasSeparatePrompt = suggestion.prompt && suggestion.prompt !== suggestion.label;
 
-			void sendPrompt(suggestion.prompt ?? suggestion.label, {
-				...resolvedSendPromptOptions,
-				contextDescription: mergeRovoContextDescriptions(
-					resolvedSendPromptOptions?.contextDescription,
-					suggestion.contextDescription,
-				),
-				messageMetadata: {
-					...resolvedSendPromptOptions?.messageMetadata,
-					...(hasSeparatePrompt ? { displayLabel: suggestion.label } : {}),
-				},
-			});
+			void (async () => {
+				// Route build-intent greeting chips through the deterministic
+				// interceptor first so they get the scripted reply instead of the
+				// real model; fall back to the normal send for everything else.
+				if (await interceptSubmit(promptText)) {
+					return;
+				}
+
+				void sendPrompt(promptText, {
+					...resolvedSendPromptOptions,
+					contextDescription: mergeRovoContextDescriptions(
+						resolvedSendPromptOptions?.contextDescription,
+						suggestion.contextDescription,
+					),
+					messageMetadata: {
+						...resolvedSendPromptOptions?.messageMetadata,
+						...(hasSeparatePrompt ? { displayLabel: suggestion.label } : {}),
+					},
+				});
+			})();
 		},
-		[resolvedSendPromptOptions, sendPrompt],
+		[interceptSubmit, resolvedSendPromptOptions, sendPrompt],
 	);
 	const handleDirectoryAutocompleteSelect = useCallback((index: number) => {
 		directoryAutocompleteController?.acceptIndex(index);
@@ -1117,9 +1146,9 @@ export default function ChatPanel({
 											/>
 										}
 									>
-										<Lozenge variant={selectedAgentVersion.variant ?? "success"}>
+										<Badge variant={selectedAgentVersion.variant ?? "success"}>
 											{selectedAgentVersion.label}
-										</Lozenge>
+										</Badge>
 										<ChevronDownIcon label="" size="small" spacing="none" />
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="start" sideOffset={8}>
@@ -1139,7 +1168,12 @@ export default function ChatPanel({
 														className={cn((version.variant ?? "success") === "neutral" && "bg-popover sticky top-0 z-10")}
 														elemAfter={version.id === selectedAgentVersion.id ? <CheckMarkIcon label="Selected" /> : undefined}
 													>
-														<Lozenge variant={version.variant ?? "success"}>{version.label}</Lozenge>
+														<span className="flex min-w-0 items-center gap-2">
+															<Badge variant={version.variant ?? "success"}>{version.label}</Badge>
+															{version.isCurrent ? (
+																<span className="text-xs text-text-subtle">Current</span>
+															) : null}
+														</span>
 													</DropdownMenuItem>
 												</Fragment>
 											))}

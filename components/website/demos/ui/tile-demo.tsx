@@ -29,27 +29,50 @@ export function TileDemoDefault() {
 	);
 }
 
+const TILE_SIZES = ["xxsmall", "xsmall", "small", "medium", "large", "xlarge"] as const;
+
 export function TileDemoSizes() {
 	return (
+		<div className="flex flex-col gap-8">
+			<div className="flex flex-col gap-2">
+				<p className="text-xs font-medium text-text-subtle">Border + transparent</p>
+				<div className="flex items-end gap-3">
+					{TILE_SIZES.map((size) => (
+						<Tile key={size} label={`${size} border transparent`} variant="transparent" size={size} hasBorder>
+							<SearchIcon label="" color="currentColor" />
+						</Tile>
+					))}
+				</div>
+			</div>
+			<div className="flex flex-col gap-2">
+				<p className="text-xs font-medium text-text-subtle">Border + white fill</p>
+				<div className="flex items-end gap-3">
+					{TILE_SIZES.map((size) => (
+						<Tile
+							key={size}
+							label={`${size} border white`}
+							variant="transparent"
+							size={size}
+							hasBorder
+							className="bg-surface"
+						>
+							<SearchIcon label="" color="currentColor" />
+						</Tile>
+					))}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+export function TileDemoTransparent() {
+	return (
 		<div className="flex items-end gap-3">
-			<Tile label="xxsmall" variant="blueSubtle" size="xxsmall">
-				<SearchIcon label="" color="currentColor" />
-			</Tile>
-			<Tile label="xsmall" variant="blueSubtle" size="xsmall">
-				<SearchIcon label="" color="currentColor" />
-			</Tile>
-			<Tile label="small" variant="blueSubtle" size="small">
-				<SearchIcon label="" color="currentColor" />
-			</Tile>
-			<Tile label="medium" variant="blueSubtle" size="medium">
-				<SearchIcon label="" color="currentColor" />
-			</Tile>
-			<Tile label="large" variant="blueSubtle" size="large">
-				<SearchIcon label="" color="currentColor" />
-			</Tile>
-			<Tile label="xlarge" variant="blueSubtle" size="xlarge">
-				<SearchIcon label="" color="currentColor" />
-			</Tile>
+			{(["xxsmall", "xsmall", "small", "medium", "large", "xlarge"] as const).map((size) => (
+				<Tile key={size} label={`${size} transparent`} variant="transparent" size={size}>
+					<SearchIcon label="" color="currentColor" />
+				</Tile>
+			))}
 		</div>
 	);
 }

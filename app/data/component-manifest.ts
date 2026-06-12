@@ -310,8 +310,10 @@ export const UI_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 
 export const BLOCK_COMPONENTS: ComponentManifestEntry[] = sortEntriesByName([
 	blockComponent("agent"),
+	blockComponent("skill-config", "Skill Config"),
 	blockComponent("agent-bento", "Agent Bento"),
 	blockComponent("agent-card", "Agent Card"),
+	blockComponent("twg-agent-card", "TWG Agent Card"),
 	blockComponent("agent-profile-card", "Agent Profile Card"),
 	blockComponent("agents-directory", "Agent Directory"),
 	blockComponent("agent-progress", "Agent Progress"),

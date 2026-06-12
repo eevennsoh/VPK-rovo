@@ -183,6 +183,22 @@ async function loadChatGreetingHarness() {
 						selectedAgent: getRovoAgentProfile(AI_INSIGHTS_AGENT_ID),
 					}));
 				}
+
+				export function renderComposingEmptyDirectoryGreeting() {
+					return renderToStaticMarkup(React.createElement(ChatGreeting, {
+						heading: "Improve your agent?",
+						illustrationSrc: "/illustration-ai/ai/light.svg",
+						illustrationDarkSrc: "/illustration-ai/ai/dark.svg",
+						isComposing: true,
+						directoryAutocompleteState: {
+							activeIndex: 0,
+							matches: [],
+							query: "missing",
+							trigger: "@",
+						},
+						suggestions: [],
+					}));
+				}
 			`,
 			loader: "tsx",
 			resolveDir: process.cwd(),
@@ -282,7 +298,21 @@ test("ChatGreeting staggers the illustration before the heading", () => {
 	assert.match(CHAT_GREETING_SOURCE, /staggerChildren: 0\.04/u);
 	assert.match(CHAT_GREETING_SOURCE, /transform: "translateY\(6px\)"/u);
 	assert.match(CHAT_GREETING_SOURCE, /transform: "translateY\(-6px\)"/u);
-	assert.match(CHAT_GREETING_SOURCE, /<motion\.div className=\{cn\(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative"\)[\s\S]*<motion\.div style=\{\{ willChange: "transform, opacity" \}\} variants=\{itemVariants\}>[\s\S]*<Heading size="large"/u);
+	assert.match(CHAT_GREETING_SOURCE, /<motion\.div className=\{cn\(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative"\)[\s\S]*<motion\.div style=\{\{ willChange: "transform, opacity" \}\} variants=\{activeItemVariants\}>[\s\S]*<Heading size="large"/u);
+});
+
+test("ChatGreeting switches composing suggestion movement to instant and restores hero when no rows exist", async () => {
+	const harness = await loadChatGreetingHarness();
+	const markup = harness.renderComposingEmptyDirectoryGreeting();
+
+	assert.match(CHAT_GREETING_SOURCE, /const CHAT_GREETING_INSTANT_CONTAINER_VARIANTS/u);
+	assert.match(CHAT_GREETING_SOURCE, /const activeContainerVariants = isComposing \? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_CONTAINER_VARIANTS;/u);
+	assert.match(CHAT_GREETING_SOURCE, /layout=\{isComposing \? false : "position"\}/u);
+	assert.match(CHAT_GREETING_SOURCE, /const shouldShowHero = showHero && \(!isComposing \|\| !shouldShowSuggestionList\);/u);
+	assert.match(markup, /Improve your agent\?/u);
+	assert.match(markup, /data-testid="controlled-rovo-illustration"/u);
+	assert.match(markup, /data-illus-id="ai"/u);
+	assert.doesNotMatch(markup, /missing/u);
 });
 
 test("ChatGreeting prompt rows render through the shared GreetingPromptRow", () => {
@@ -302,7 +332,7 @@ test("ChatGreeting renders selected custom agent profile and three starters", as
 	// Default (main Rovo App chat) renders the wide 800px custom-agent greeting.
 	assert.match(markup, /max-w-\[800px\]/u);
 	assert.doesNotMatch(markup, /max-w-\[600px\]/u);
-	assert.match(CHAT_GREETING_SOURCE, /<motion\.div key=\{suggestion\.id\} variants=\{itemVariants\}>/u);
+	assert.match(CHAT_GREETING_SOURCE, /<motion\.div key=\{suggestion\.id\} variants=\{activeItemVariants\}>/u);
 	assert.match(CHAT_GREETING_SOURCE, /<AnimatePresence mode="wait">[\s\S]*customAgent \? \(/u);
 	assert.match(markup, /AI Insights Agent/u);
 	assert.match(markup, /Researches and summarizes latest AI trends, breakthroughs, and industry developments for weekly insights\./u);

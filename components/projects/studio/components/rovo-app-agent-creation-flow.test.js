@@ -100,13 +100,15 @@ test("RovoAppShell does not render the Hermes turn-state card", () => {
 	assert.doesNotMatch(SHELL_SOURCE, /Auto-loaded on the last turn/u);
 });
 
-test("Studio landing empty state is title-only by default", () => {
+test("Studio landing empty state uses the illustrated heading by default", () => {
 	assert.match(MESSAGES_SOURCE, /default: \{[\s\S]*heading: "Move work forward with agents"[\s\S]*id: "default"[\s\S]*\}/u);
 	const defaultEmptyStateSource = MESSAGES_SOURCE.slice(
 		MESSAGES_SOURCE.indexOf("default: {"),
 		MESSAGES_SOURCE.indexOf("max: {"),
 	);
-	assert.doesNotMatch(defaultEmptyStateSource, /illustrationClassName|rovoIllustrationId|rovoIllustrationSize|lightIllustrationSrc/u);
+	assert.match(defaultEmptyStateSource, /illustrationClassName: "h-\[67px\] w-\[74px\]"/u);
+	assert.match(defaultEmptyStateSource, /lightIllustrationSrc: "\/illustration-ai\/ai\/light\.svg"/u);
+	assert.match(defaultEmptyStateSource, /darkIllustrationSrc: "\/illustration-ai\/ai\/dark\.svg"/u);
 	assert.match(MESSAGES_SOURCE, /function hasRovoAppEmptyStateIllustration\(emptyState: RovoAppEmptyState\): emptyState is RovoAppIllustratedEmptyState \{[\s\S]*return "illustrationClassName" in emptyState;/u);
 	assert.match(MESSAGES_SOURCE, /const hasEmptyStateIllustration = hasRovoAppEmptyStateIllustration\(emptyState\);/u);
 	assert.match(MESSAGES_SOURCE, /\{hasEmptyStateIllustration \? \([\s\S]*<motion\.div className=\{cn\(emptyState\.illustrationClassName, "relative"\)/u);
@@ -653,9 +655,17 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_TEST_PANEL_SOURCE, /className=\{cn\("h-full min-h-0 px-4", className\)\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /function getAgentTestVersionOptions\(entry: StudioSessionAgentEntry\)/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /id: "latest"[\s\S]*result: entry\.draftResult/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /id: "published"[\s\S]*result: entry\.publishedResult/u);
+	// Draft is always neutral gray and there is no separate "published" summary
+	// option (it duplicated the version-history entry for the same publish).
+	assert.match(AGENT_TEST_PANEL_SOURCE, /id: "latest",\s*\n\s*label: "Draft",\s*\n\s*variant: "neutral",/u);
+	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /id: "published"/u);
+	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /Published \$\{publishedVersionLabel\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /id: `history:\$\{version\.id\}`[\s\S]*result: version\.snapshot/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /label: `V\$\{version\.version\} - \$\{version\.label\}`/u);
+	// Version options are labelled just "V{n}" (no "- Agent published" suffix)
+	// and the live published version is flagged current.
+	assert.match(AGENT_TEST_PANEL_SOURCE, /label: `V\$\{version\.version\}`/u);
+	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /label: `V\$\{version\.version\} - \$\{version\.label\}`/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /isCurrent: version\.version === entry\.publishedVersion/u);
 	assert.match(CHAT_PANEL_SOURCE, /export interface ChatPanelAgentVersionOption/u);
 	assert.match(CHAT_PANEL_SOURCE, /agentVersionOptions\?: readonly ChatPanelAgentVersionOption\[\];/u);
 	assert.match(CHAT_PANEL_SOURCE, /selectedAgentVersionId\?: string;/u);
@@ -695,7 +705,8 @@ test("Studio publish dropdown separates draft changes from version history", () 
 	assert.match(historyViewSource, /publishedVersions\.map/u);
 	assert.doesNotMatch(historyViewSource, /entry\.versionHistory\.map/u);
 	assert.doesNotMatch(historyViewSource, /<span>\{publishedVersionLabel\}<\/span>/u);
-	assert.match(historyViewSource, /<span>\{`V\$\{version\.version\}`\}<\/span>/u);
+	// Version label renders as the same success Badge used in the Test dropdown.
+	assert.match(historyViewSource, /<Badge variant="success">\{`V\$\{version\.version\}`\}<\/Badge>/u);
 	assert.match(historyViewSource, /\{version\.label\} · \{formatRelativeTime\(version\.createdAt\)\}/u);
 	assert.doesNotMatch(historyViewSource, /Latest/u);
 	assert.doesNotMatch(historyViewSource, /Same as/u);

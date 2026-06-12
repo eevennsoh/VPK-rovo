@@ -526,7 +526,7 @@ import PageIcon from "@atlaskit/icon/core/page"
   description="Create a new formatted, rich text document or page in Confluence."
   icon={<PageIcon label="" />}
   iconVariant="blue"
-  publisher="Atlassian"
+  source={{ type: "custom", name: "Venn", avatarSrc: "/avatar-human/maia-ma.png" }}
   teammateCount={6273}
 />`,
 		props: [

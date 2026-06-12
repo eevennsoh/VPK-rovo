@@ -12,9 +12,10 @@
  * Contract:
  *   - `bodyIntro` (authored, per template) is preserved verbatim as the lead line.
  *   - Generated sections reference EVERY bound id exactly once:
- *       knowledge -> @[knowledge:<app>:all]   (two-segment so it renders as a chip)
+ *       apps      -> @[app:<id>]              (## Apps; unifies tool + knowledge
+ *                                              facets — knowledgeIds ∪ toolIds,
+ *                                              each app once)
  *       skills    -> @[skill:<id>]            (one numbered step each)
- *       tools     -> @[tool:<id>]
  *       subagents -> @[subagent:<id>]         (## Escalation; omitted when none)
  *   - A mode line describes reasoning/memory/knowledge behavior (not raw values).
  *   - Section lead-ins vary by categoryId so bodies don't read identically.
@@ -97,13 +98,23 @@ function buildBody(t) {
 
 	const sections = [intro];
 
-	// ## Context — knowledge as two-segment :all tokens (chip-renderable).
-	if (knowledgeIds.length > 0) {
-		const tokens = knowledgeIds.map((id) => `@[knowledge:${id}:all]`);
+	// ## Apps — tool + knowledge facets unify into one @[app:id] chip each.
+	// Knowledge ids lead (they set the grounding) then tool-only ids, deduped so
+	// an app carrying both facets (e.g. jira) is referenced exactly once.
+	const appIds = [];
+	const seenApp = new Set();
+	for (const id of [...knowledgeIds, ...toolIds]) {
+		if (!seenApp.has(id)) {
+			seenApp.add(id);
+			appIds.push(id);
+		}
+	}
+	if (appIds.length > 0) {
+		const tokens = appIds.map((id) => `@[app:${id}]`);
 		const memory = t.memoryMode === "on" ? " Remember context across turns so each answer builds on the last." : "";
 		const knowledgeBehavior = KNOWLEDGE_BEHAVIOR[t.knowledgeMode] ?? KNOWLEDGE_BEHAVIOR.all;
 		sections.push(
-			`## Context\n${copy.context} ${joinList(tokens)}. ${knowledgeBehavior}.${memory}`,
+			`## Apps\n${copy.context} ${joinList(tokens)}. ${knowledgeBehavior}.${memory}`,
 		);
 	}
 
@@ -115,12 +126,6 @@ function buildBody(t) {
 		});
 		const reasoning = REASONING_BEHAVIOR[t.reasoningMode] ?? REASONING_BEHAVIOR["deep-auto"];
 		sections.push(`## How you work\n${copy.how}\n${steps.join("\n")}\n\n${reasoning}`);
-	}
-
-	// ## Tools — every bound tool.
-	if (toolIds.length > 0) {
-		const tokens = toolIds.map((id) => `@[tool:${id}]`);
-		sections.push(`## Tools\nPull live context and take action across ${joinList(tokens)}.`);
 	}
 
 	// ## Escalation — every bound subagent (omitted when none).
@@ -136,17 +141,17 @@ function buildBody(t) {
 	return sections.join("\n\n");
 }
 
-/** Expected token set the body must cover (knowledge expanded to `<id>:all`). */
+/** Expected token set the body must cover (tool + knowledge unify to `app:<id>`). */
 function expectedTokens(t) {
 	const set = new Set();
-	for (const id of t.toolIds ?? []) set.add(`tool:${id}`);
+	for (const id of t.knowledgeIds ?? []) set.add(`app:${id}`);
+	for (const id of t.toolIds ?? []) set.add(`app:${id}`);
 	for (const id of t.skillIds ?? []) set.add(`skill:${id}`);
-	for (const id of t.knowledgeIds ?? []) set.add(`knowledge:${id}:all`);
 	for (const id of t.subagentIds ?? []) set.add(`subagent:${id}`);
 	return set;
 }
 
-const TOKEN_RE = /@\[(tool|skill|knowledge|subagent):([^\]]+)\]/g;
+const TOKEN_RE = /@\[(app|skill|subagent):([^\]]+)\]/g;
 function tokensIn(body) {
 	const set = new Set();
 	for (const m of body.matchAll(TOKEN_RE)) set.add(`${m[1]}:${m[2]}`);

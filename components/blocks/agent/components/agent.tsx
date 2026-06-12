@@ -520,6 +520,14 @@ const AGENT_COMPACT_HEADER_NAV_GAP = 4;
 const AGENT_COMPACT_HEADER_AVATAR_NAV_GAP = 8;
 const AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH = 24;
 
+// Staggered entrance for nav items revealed when an agent is published (the
+// item list grows from just "Details" to the full section set). Only the newly
+// added trailing items animate; pre-existing items render statically.
+const AGENT_COMPACT_HEADER_NAV_REVEAL_STAGGER_S = 0.04;
+const AGENT_COMPACT_HEADER_NAV_REVEAL_INITIAL = { opacity: 0, x: -6, scale: 0.96 } as const;
+const AGENT_COMPACT_HEADER_NAV_REVEAL_ANIMATE = { opacity: 1, x: 0, scale: 1 } as const;
+const AGENT_COMPACT_HEADER_NAV_REVEAL_TRANSITION = { duration: 0.22, ease: [0, 0.4, 0, 1] } as const;
+
 function AgentCompactHeaderNavButton({
 	activeSection,
 	item,
@@ -562,11 +570,29 @@ export function AgentCompactHeaderNav({
 	items?: readonly AgentCompactHeaderNavItem[];
 	onSectionChange?: (section: AgentCompactHeaderSection) => void;
 }>) {
+	const shouldReduceMotion = useReducedMotion();
 	const containerRef = useRef<HTMLDivElement>(null);
 	const measureRef = useRef<HTMLDivElement>(null);
 	const [visibleCount, setVisibleCount] = useState<number>(items.length);
 	const visibleItems = items.slice(0, visibleCount);
 	const hiddenItems = items.slice(visibleCount);
+
+	// Index from which items are "newly revealed" and should animate in. On
+	// mount (including an already-published agent) this equals items.length, so
+	// nothing animates. When the list grows (publish), it holds the prior count
+	// so only the added trailing items stagger in. When it shrinks (unpublish /
+	// rollback) we reset to the new length so a later re-publish animates again.
+	const prevItemCountRef = useRef<number>(items.length);
+	const [revealFromIndex, setRevealFromIndex] = useState<number>(items.length);
+	useEffect(() => {
+		const prevCount = prevItemCountRef.current;
+		if (items.length > prevCount) {
+			setRevealFromIndex(prevCount);
+		} else if (items.length < prevCount) {
+			setRevealFromIndex(items.length);
+		}
+		prevItemCountRef.current = items.length;
+	}, [items.length]);
 
 	useLayoutEffect(() => {
 		const container = containerRef.current;
@@ -630,14 +656,37 @@ export function AgentCompactHeaderNav({
 						))}
 					</div>
 				</div>
-				{visibleItems.map((item) => (
-					<AgentCompactHeaderNavButton
-						activeSection={activeSection}
-						item={item}
-						key={item.label}
-						onSectionChange={onSectionChange}
-					/>
-				))}
+				{visibleItems.map((item, index) => {
+					const isRevealed = !shouldReduceMotion && index >= revealFromIndex;
+					if (!isRevealed) {
+						return (
+							<AgentCompactHeaderNavButton
+								activeSection={activeSection}
+								item={item}
+								key={item.label}
+								onSectionChange={onSectionChange}
+							/>
+						);
+					}
+					return (
+						<motion.div
+							className="inline-flex"
+							key={item.label}
+							initial={AGENT_COMPACT_HEADER_NAV_REVEAL_INITIAL}
+							animate={AGENT_COMPACT_HEADER_NAV_REVEAL_ANIMATE}
+							transition={{
+								...AGENT_COMPACT_HEADER_NAV_REVEAL_TRANSITION,
+								delay: (index - revealFromIndex) * AGENT_COMPACT_HEADER_NAV_REVEAL_STAGGER_S,
+							}}
+						>
+							<AgentCompactHeaderNavButton
+								activeSection={activeSection}
+								item={item}
+								onSectionChange={onSectionChange}
+							/>
+						</motion.div>
+					);
+				})}
 				{hiddenItems.length > 0 ? (
 					<DropdownMenu>
 						<DropdownMenuTrigger
@@ -701,6 +750,10 @@ export type AgentHeaderProps = ComponentProps<"div"> & {
 	avatarSrc?: string;
 	model?: string;
 	leadingContent?: ReactNode;
+	// Floats above the right edge of the leading (nav) area without taking
+	// layout space — used for the transient save indicator, which veils the nav
+	// behind a gradient scrim instead of pushing the surrounding controls.
+	leadingOverlay?: ReactNode;
 	primaryActionLabel?: string;
 	publishLabel?: string;
 	showActions?: boolean;
@@ -753,6 +806,7 @@ export const AgentHeader = memo(
 		className,
 		avatarSrc = AGENT_AVATAR_SRC,
 		leadingContent,
+		leadingOverlay,
 		model,
 		name,
 		primaryActionLabel = "Test",
@@ -769,24 +823,31 @@ export const AgentHeader = memo(
 			)}
 			{...props}
 		>
-			{leadingContent ?? (
-				<div className="flex min-w-0 items-center gap-2">
-					<Avatar label="Agent" shape="hexagon" size="sm">
-						{isAtlassianLogoSource(avatarSrc) ? (
-							<AtlassianLogo name="atlassian" label={name} size="small" />
-						) : (
-							<AvatarImage alt="" src={avatarSrc} />
-						)}
-					</Avatar>
-					<span className="truncate text-sm font-semibold leading-5 text-text">{name}</span>
-					{model ? (
-						<Lozenge>
-							{model}
-						</Lozenge>
-					) : null}
-					{badge}
-				</div>
-			)}
+			<div className="relative flex min-w-0 flex-1 items-center">
+				{leadingContent ?? (
+					<div className="flex min-w-0 items-center gap-2">
+						<Avatar label="Agent" shape="hexagon" size="sm">
+							{isAtlassianLogoSource(avatarSrc) ? (
+								<AtlassianLogo name="atlassian" label={name} size="small" />
+							) : (
+								<AvatarImage alt="" src={avatarSrc} />
+							)}
+						</Avatar>
+						<span className="truncate text-sm font-semibold leading-5 text-text">{name}</span>
+						{model ? (
+							<Lozenge>
+								{model}
+							</Lozenge>
+						) : null}
+						{badge}
+					</div>
+				)}
+				{leadingOverlay ? (
+					<div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center justify-end">
+						{leadingOverlay}
+					</div>
+				) : null}
+			</div>
 			{showActions ? (
 				<div className="flex shrink-0 items-center gap-2">
 					{actions ?? (
@@ -1000,6 +1061,9 @@ function shouldClearCompactNavInitialHighlight(eventDetails: Parameters<AgentCom
 	}
 
 	const event = eventDetails.event;
+	if (typeof PointerEvent !== "undefined" && event instanceof PointerEvent) {
+		return true;
+	}
 	return !(event instanceof MouseEvent) || event.detail !== 0;
 }
 
@@ -1017,7 +1081,7 @@ function clearCompactNavInitialHighlight(contentElement: HTMLElement): void {
 	if (
 		activeElement instanceof HTMLElement &&
 		contentElement.contains(activeElement) &&
-		activeElement.getAttribute("role") === "menuitem"
+		activeElement !== contentElement
 	) {
 		contentElement.focus({ preventScroll: true });
 	}
@@ -1886,9 +1950,10 @@ function AgentCompactConversationStartersNavButton({
 	const fields = Array.from({ length: MAX_AGENT_CONVERSATION_STARTERS }, (_, index) => ({
 		label: starters[index]?.label ?? "",
 	}));
+	const compactNavMenu = useCompactNavMenuNoInitialHighlight();
 
 	return (
-		<MenubarMenu>
+		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
 			<MenubarTrigger
 				className={AGENT_COMPACT_CONFIG_NAV_TRIGGER_CLASS}
 				render={(
@@ -1900,6 +1965,10 @@ function AgentCompactConversationStartersNavButton({
 				)}
 			/>
 			<MenubarContent align="start" className="w-70">
+				<AgentCompactNavMenuInitialHighlightReset
+					enabled={compactNavMenu.resetInitialHighlight}
+					resetToken={compactNavMenu.resetToken}
+				/>
 				{/* 8px (`p-2`) of padding around the starter input fields. */}
 				<div className="flex flex-col gap-1.5 p-2">
 					{fields.map((field, index) => (
