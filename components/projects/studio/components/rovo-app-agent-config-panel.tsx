@@ -64,7 +64,7 @@ import {
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
-import type { ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
+import type { ChatPanelGreetingProps, ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-chat/lib/chat-context-bar";
 import { getStudioSessionAgentDisplayName, useRovoChat } from "@/app/contexts";
 import { Badge } from "@/components/ui/badge";
@@ -112,6 +112,7 @@ interface RovoAppAgentConfigPanelProps {
 	testPanel: ReactNode;
 	chatContextBar?: ChatContextBarDescriptor | null;
 	chatGreeting?: ChatPanelGreetingProps;
+	onChatInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 	onUpdateDraft: (
 		profileId: string,
 		patch: Partial<AgentResult>,
@@ -582,6 +583,7 @@ export function RovoAppAgentConfigPanel({
 	testPanel,
 	chatContextBar,
 	chatGreeting,
+	onChatInterceptSubmit,
 	onUpdateDraft,
 	onStartWithTemplate,
 	className,
@@ -1412,6 +1414,7 @@ export function RovoAppAgentConfigPanel({
 						chatContextBar={chatContextBar}
 						greeting={chatGreeting}
 						hideComposerSourceAndModelControls={Boolean(chatContextBar)}
+						onInterceptSubmit={onChatInterceptSubmit}
 					/>
 				) : null}
 			</AnimatePresence>

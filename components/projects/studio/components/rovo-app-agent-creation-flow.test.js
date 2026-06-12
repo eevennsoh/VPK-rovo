@@ -96,6 +96,45 @@ test("RovoAppShell starts Studio agent creation only from the default-agent home
 	assert.doesNotMatch(SHELL_SOURCE, /buildPlan\.createResult/u);
 });
 
+test("deterministic trigger edits stage a thinking trace before updating the draft", () => {
+	assert.match(SHELL_SOURCE, /buildDeterministicTriggerThinkingParts/u);
+	assert.match(SHELL_SOURCE, /DETERMINISTIC_TRIGGER_TRACE_INITIAL_DELAY_MS/u);
+	assert.match(SHELL_SOURCE, /DETERMINISTIC_TRIGGER_TRACE_STAGE_DELAYS_MS/u);
+	assert.doesNotMatch(SHELL_SOURCE, /DETERMINISTIC_TRIGGER_TRACE_DELAY_MS/u);
+	assert.match(SHELL_SOURCE, /const triggerTraceStates = \["thinking", "review", "schedule", "delivery", "save", "complete"\] as const/u);
+	assert.match(SHELL_SOURCE, /const triggerTraceDelays = \[[\s\S]*DETERMINISTIC_TRIGGER_TRACE_INITIAL_DELAY_MS,[\s\S]*\.\.\.DETERMINISTIC_TRIGGER_TRACE_STAGE_DELAYS_MS,[\s\S]*\] as const/u);
+	assert.match(SHELL_SOURCE, /for \(let index = 0; index < triggerTraceDelays\.length; index \+= 1\) \{[\s\S]*await waitForDeterministicTrace\(triggerTraceDelays\[index\]\);[\s\S]*state: stagedTraceState/u);
+	assert.match(SHELL_SOURCE, /state: "thinking"[\s\S]*assistantPartStages: \[/u);
+	assert.match(SHELL_SOURCE, /state: "schedule"[\s\S]*state: "delivery"[\s\S]*state: "save"[\s\S]*state: "complete"/u);
+	assert.match(SHELL_SOURCE, /onApply: applyBuildPlan/u);
+	assert.match(SHELL_SOURCE, /getPendingAssistantParts: \(\{ startedAt \}: \{ startedAt: Date \}\) => buildDeterministicTriggerThinkingParts\(\{[\s\S]*state: "thinking"/u);
+	assert.match(SHELL_SOURCE, /delayMs: DETERMINISTIC_TRIGGER_TRACE_INITIAL_DELAY_MS[\s\S]*state: "review"/u);
+	assert.match(SHELL_SOURCE, /delayMs: DETERMINISTIC_TRIGGER_TRACE_STAGE_DELAYS_MS\[0\][\s\S]*delayMs: DETERMINISTIC_TRIGGER_TRACE_STAGE_DELAYS_MS\[3\]/u);
+});
+
+test("RovoAppShell seeds the published RFP Drafter into the default Studio landing", () => {
+	const rfpSeedSource = SHELL_SOURCE.slice(
+		SHELL_SOURCE.indexOf("const hasSeededStudioRfpDemoAgentRef"),
+		SHELL_SOURCE.indexOf("const handleStudioAgentResultSelect"),
+	);
+
+	assert.match(SHELL_SOURCE, /STUDIO_RFP_DEMO_AGENT_RESULT/u);
+	assert.match(SHELL_SOURCE, /STUDIO_RFP_DEMO_AGENT_SOURCE_KEY/u);
+	assert.match(SHELL_SOURCE, /readSessionAgentRecords/u);
+	assert.match(rfpSeedSource, /hasSeededStudioRfpDemoAgentRef/u);
+	assert.match(rfpSeedSource, /new URLSearchParams\(window\.location\.search\)\.has\("agent"\)/u);
+	assert.match(rfpSeedSource, /readSessionAgentRecords\(\)\.some\(\(record\) => record\.profileId === STUDIO_RFP_DEMO_AGENT_PROFILE_ID\)/u);
+	assert.match(
+		rfpSeedSource,
+		/studioAgentRegistry\.registerCreatedAgentFromResult\(STUDIO_RFP_DEMO_AGENT_RESULT,[\s\S]*select: false,[\s\S]*sourceKey: STUDIO_RFP_DEMO_AGENT_SOURCE_KEY/u,
+	);
+	assert.match(rfpSeedSource, /studioAgentRegistry\.commitSessionAgentPublishReady\?\.\(profileId\);/u);
+	assert.match(rfpSeedSource, /studioAgentRegistry\.publishSessionAgent\?\.\(profileId\);/u);
+	assert.match(SHELL_SOURCE, /const shouldShowStudioAgentsSection = isDefaultAgentHomeState && shouldShowDefaultLandingContent;/u);
+	assert.match(SHELL_SOURCE, /<StudioAgentsSection[\s\S]*entries=\{studioAgentRegistry\.sessionAgentEntries\}[\s\S]*onEditAgent=\{handleStudioSidebarAgentSelect\}/u);
+	assert.doesNotMatch(rfpSeedSource, /setActiveAgentConfigState|setActiveAgentConfigView/u);
+});
+
 test("RovoAppShell does not render the Hermes turn-state card", () => {
 	assert.doesNotMatch(SHELL_SOURCE, /Hermes turn state/u);
 	assert.doesNotMatch(SHELL_SOURCE, /Server-resolved skills and Hermes draft-review state/u);
@@ -439,7 +478,7 @@ test("Studio lands generated agents in the Test tab and opens Ask Rovo", () => {
 	assert.doesNotMatch(agentResultSelectSource, /nav\.toggleChat/u);
 	assert.match(SHELL_SOURCE, /\[chat\.activeThreadId, chat\.runtimeThreadId, openAgentCreationAskRovoChat, setActiveAgentConfigState, studioAgentRegistry\]/u);
 	assert.match(SHELL_SOURCE, /const activeAgentConfigRef = useRef\(activeAgentConfig\);/u);
-	assert.match(SHELL_SOURCE, /const generatedAgentTestViewKeysRef = useRef<Set<string>>\(new Set\(\)\);/u);
+	assert.match(SHELL_SOURCE, /const generatedAgentTestViewKeysRef = useLazyRef<Set<string>>\(\(\) => new Set\(\)\);/u);
 	assert.match(SHELL_SOURCE, /const setActiveAgentConfigState = useCallback\(\(nextAgentConfig: typeof activeAgentConfig\) => \{[\s\S]*activeAgentConfigRef\.current = nextAgentConfig;[\s\S]*setActiveAgentConfig\(nextAgentConfig\);[\s\S]*\}, \[\]\);/u);
 	assert.match(SHELL_SOURCE, /const handleAgentRestoredFromUrl = useCallback\(\(agentId: string \| null\) => \{[\s\S]*if \(activeAgentConfigRef\.current\?\.profileId !== agentId\) \{[\s\S]*setActiveAgentConfigView\("configure"\);[\s\S]*\}[\s\S]*setActiveAgentConfigState\(agentId \? \{ profileId: agentId, sourceMessageId: null \} : null\);/u);
 	assert.match(SHELL_SOURCE, /if \(activeAgentConfig && !activeSessionAgentEntry\) \{[\s\S]*if \(studioAgentRegistry\.getSessionAgentEntry\?\.\(activeAgentConfig\.profileId\)\) \{[\s\S]*return;[\s\S]*\}[\s\S]*setActiveAgentConfigState\(null\);[\s\S]*setActiveAgentConfigView\("configure"\);/u);
@@ -611,7 +650,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(SHELL_SOURCE, /const agentConfigTestPanel = activeSessionAgentEntry \? \([\s\S]*<AgentTestPanel entry=\{activeSessionAgentEntry\} \/>/u);
 	assert.match(SHELL_SOURCE, /testPanel=\{agentConfigTestPanel\}/u);
 	assert.match(SHELL_SOURCE, /onTest=\{handleTestAgent\}/u);
-	assert.match(SHELL_SOURCE, /<RovoAppAgentConfigPanel[\s\S]*testPanel=\{agentConfigTestPanel\}[\s\S]*chatContextBar=\{agentEditContextBar\}[\s\S]*chatGreeting=\{agentEditGreeting\}[\s\S]*onUpdateDraft=\{handleUpdateAgentDraft\}[\s\S]*\/>/u);
+	assert.match(SHELL_SOURCE, /<RovoAppAgentConfigPanel[\s\S]*testPanel=\{agentConfigTestPanel\}[\s\S]*chatContextBar=\{agentEditContextBar\}[\s\S]*chatGreeting=\{agentEditGreeting\}[\s\S]*onChatInterceptSubmit=\{handleAgentEditInterceptSubmit\}[\s\S]*onUpdateDraft=\{handleUpdateAgentDraft\}[\s\S]*\/>/u);
 	// "start with a template" link opens the Agent Directory on the first
 	// template tab (AGENT_TEMPLATES_CATEGORIES[0].id) via the config panel.
 	assert.match(SHELL_SOURCE, /import \{ AGENT_TEMPLATES_CATEGORIES,[\s\S]*\} from "@\/components\/blocks\/agent-templates";/u);
@@ -649,7 +688,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenFloatingRovoChat = useCallback\(\(\) => \{[\s\S]*resetAgentToRovo\(\);[\s\S]*openChat\("floating"\);[\s\S]*\}, \[openChat, resetAgentToRovo\]\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<FloatingRovoButton ariaLabel="Open Rovo chat" product="home" onButtonClick=\{handleOpenFloatingRovoChat\} \/>/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /chatGreeting\?: ChatPanelGreetingProps;/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<RovoFloatingChat[\s\S]*chatContextBar=\{chatContextBar\}[\s\S]*greeting=\{chatGreeting\}[\s\S]*hideComposerSourceAndModelControls=\{Boolean\(chatContextBar\)\}[\s\S]*\/>/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<RovoFloatingChat[\s\S]*chatContextBar=\{chatContextBar\}[\s\S]*greeting=\{chatGreeting\}[\s\S]*hideComposerSourceAndModelControls=\{Boolean\(chatContextBar\)\}[\s\S]*onInterceptSubmit=\{onChatInterceptSubmit\}[\s\S]*\/>/u);
 	assert.match(SHELL_SOURCE, /<SidebarResizeHandle[\s\S]*side="left"[\s\S]*askRovoChatResize\.onResizeHandlePointerDown/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /export function AgentTestPanel/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /aria-label="Agent test"/u);

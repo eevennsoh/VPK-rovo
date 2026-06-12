@@ -104,6 +104,7 @@ async function loadRovoFloatingChatHarness() {
 							"data-hide-composer-controls": String(props.hideComposerSourceAndModelControls),
 							"data-has-custom-agent-tabs": String(Boolean(props.customAgentTabs)),
 							"data-has-artifact-dialog-open": String(typeof props.onArtifactDialogOpen === "function"),
+							"data-has-intercept-submit": String(typeof props.onInterceptSubmit === "function"),
 							"data-preserve-artifact-dialog": String(props.preserveFloatingSurfaceOnArtifactDialogOpen),
 							className: props.containerClassName,
 						},
@@ -158,6 +159,14 @@ async function loadRovoFloatingChatHarness() {
 					return renderToStaticMarkup(React.createElement(RovoFloatingChat, {
 						onArtifactDialogOpen() {},
 						preserveFloatingSurfaceOnArtifactDialogOpen: true,
+					}));
+				}
+
+				export function renderFloatingChatWithIntercept() {
+					return renderToStaticMarkup(React.createElement(RovoFloatingChat, {
+						onInterceptSubmit() {
+							return { handled: true, assistantReply: "Done" };
+						},
 					}));
 				}
 
@@ -266,6 +275,15 @@ test("RovoFloatingChat forwards composer source and model control visibility to 
 	assert.match(hiddenControlsMarkup, /data-hide-composer-controls="true"/);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /hideComposerSourceAndModelControls\?: boolean;/u);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /hideComposerSourceAndModelControls=\{hideComposerSourceAndModelControls\}/u);
+});
+
+test("RovoFloatingChat forwards deterministic submit interception to the shared chat panel", async () => {
+	const harness = await loadRovoFloatingChatHarness();
+	const markup = harness.renderFloatingChatWithIntercept();
+
+	assert.match(markup, /data-has-intercept-submit="true"/);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /onInterceptSubmit\?: \(text: string\) => ChatSubmitInterceptOutcome;/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /onInterceptSubmit=\{onInterceptSubmit\}/u);
 });
 
 test("RovoFloatingChat forwards custom agent tab content to the shared chat panel", async () => {

@@ -11,6 +11,8 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
 
 export const STUDIO_SESSION_AGENTS_STORAGE_KEY = "vpk:studio:session-agents:v1";
 const LEGACY_PUBLISHED_AGENTS_STORAGE_KEY = "vpk:studio:published-agents:v1";
+const RFP_DRAFTING_AGENT_PROFILE_ID = "rfp-drafting-agent";
+const STALE_RFP_DEMO_SUBAGENT_NAME = "code reviewer";
 
 export interface PersistedSessionAgentRecord {
 	readonly profileId: string;
@@ -207,6 +209,65 @@ function normalizeVersionHistory(
 	return normalizedAscending.reverse();
 }
 
+function isStaleRfpDemoSubagentName(value: unknown): boolean {
+	return typeof value === "string" && value.trim().toLowerCase() === STALE_RFP_DEMO_SUBAGENT_NAME;
+}
+
+function isStaleRfpDemoSubagentPrompt(value: unknown): boolean {
+	if (!isPlainRecord(value)) {
+		return false;
+	}
+
+	return (
+		isStaleRfpDemoSubagentName(value.triggerName) ||
+		isStaleRfpDemoSubagentName(value.name) ||
+		(isPlainRecord(value.config) && isStaleRfpDemoSubagentName(value.config.name))
+	);
+}
+
+function sanitizeRfpDemoAgentResult(
+	result: RovoDataParts["agent-result"],
+): RovoDataParts["agent-result"] {
+	const nextSubagents = Array.isArray(result.subagents)
+		? result.subagents.filter((name) => !isStaleRfpDemoSubagentName(name))
+		: result.subagents;
+	const nextSubagentPrompts = Array.isArray(result.subagentPrompts)
+		? result.subagentPrompts.filter((prompt) => !isStaleRfpDemoSubagentPrompt(prompt))
+		: result.subagentPrompts;
+
+	if (nextSubagents === result.subagents && nextSubagentPrompts === result.subagentPrompts) {
+		return result;
+	}
+
+	return {
+		...result,
+		subagents: nextSubagents,
+		subagentPrompts: nextSubagentPrompts,
+	};
+}
+
+function sanitizeRfpDemoSessionAgentRecord(
+	record: PersistedSessionAgentRecord,
+): PersistedSessionAgentRecord {
+	if (record.profileId !== RFP_DRAFTING_AGENT_PROFILE_ID) {
+		return record;
+	}
+
+	return {
+		...record,
+		sourceResult: sanitizeRfpDemoAgentResult(record.sourceResult),
+		draftResult: sanitizeRfpDemoAgentResult(record.draftResult),
+		publishReadyResult: sanitizeRfpDemoAgentResult(record.publishReadyResult),
+		publishedResult: record.publishedResult
+			? sanitizeRfpDemoAgentResult(record.publishedResult)
+			: null,
+		versionHistory: record.versionHistory.map((version) => ({
+			...version,
+			snapshot: sanitizeRfpDemoAgentResult(version.snapshot),
+		})),
+	};
+}
+
 function normalizePersistedRecord(record: RawPersistedSessionAgentRecord): PersistedSessionAgentRecord {
 	const publishedVersion =
 		typeof record.publishedVersion === "number" && Number.isFinite(record.publishedVersion)
@@ -231,13 +292,13 @@ function normalizePersistedRecord(record: RawPersistedSessionAgentRecord): Persi
 		: createLegacyVersionHistory(record.publishedResult, lastPublishedAt ?? record.lastTouchedAt, lastPublishedBy);
 	const normalizedVersionHistory = normalizeVersionHistory(versionHistory, publishedVersion);
 
-	return {
+	return sanitizeRfpDemoSessionAgentRecord({
 		...record,
 		publishedVersion,
 		lastPublishedAt,
 		lastPublishedBy,
 		versionHistory: normalizedVersionHistory,
-	};
+	});
 }
 
 function migrateLegacyRecord(record: LegacyPublishedAgentRecord): PersistedSessionAgentRecord {
@@ -246,7 +307,7 @@ function migrateLegacyRecord(record: LegacyPublishedAgentRecord): PersistedSessi
 			? record.lastTouchedAt
 			: Date.now();
 
-	return {
+	return sanitizeRfpDemoSessionAgentRecord({
 		profileId: record.profileId,
 		resultKey: record.resultKey,
 		sourceResult: record.result,
@@ -259,7 +320,7 @@ function migrateLegacyRecord(record: LegacyPublishedAgentRecord): PersistedSessi
 		lastPublishedAt: lastTouchedAt,
 		lastPublishedBy: "Venn Soh",
 		versionHistory: createLegacyVersionHistory(record.result, lastTouchedAt, "Venn Soh"),
-	};
+	});
 }
 
 // Collapse records that share a profileId, keeping the freshest (highest

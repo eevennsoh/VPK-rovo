@@ -5963,6 +5963,34 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "chain-of-thought-demo-studio-agent-generation-flow": dynamic(
+    () =>
+      import("./demos/ui-custom/chain-of-thought-demo").then((mod) => ({
+        default: mod.ChainOfThoughtDemoStudioAgentGenerationFlow,
+      })),
+    { ssr: false },
+  ),
+  "chain-of-thought-demo-automation-trigger-flow": dynamic(
+    () =>
+      import("./demos/ui-custom/chain-of-thought-demo").then((mod) => ({
+        default: mod.ChainOfThoughtDemoAutomationTriggerFlow,
+      })),
+    { ssr: false },
+  ),
+  "chain-of-thought-demo-research-retrieval-flow": dynamic(
+    () =>
+      import("./demos/ui-custom/chain-of-thought-demo").then((mod) => ({
+        default: mod.ChainOfThoughtDemoResearchRetrievalFlow,
+      })),
+    { ssr: false },
+  ),
+  "chain-of-thought-demo-tool-call-details-flow": dynamic(
+    () =>
+      import("./demos/ui-custom/chain-of-thought-demo").then((mod) => ({
+        default: mod.ChainOfThoughtDemoToolCallDetailsFlow,
+      })),
+    { ssr: false },
+  ),
   "chain-of-thought-demo-tool-icon-table": dynamic(
     () =>
       import("./demos/ui-custom/chain-of-thought-demo").then((mod) => ({

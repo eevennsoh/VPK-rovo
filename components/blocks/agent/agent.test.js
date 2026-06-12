@@ -866,6 +866,7 @@ test("Shared Tiptap editor is SSR-safe and emits markdown updates", () => {
 		/onUpdate: \(\{ editor: activeEditor \}\) => \{[\s\S]*const markdown = activeEditor\.getMarkdown\(\);[\s\S]*onMarkdownChangeRef\.current\?\.\(markdown\);/u,
 	);
 	assert.match(RICH_TEXT_EDITOR_SOURCE, /editor\.commands\.setContent\(nextValue, \{[\s\S]*contentType: "markdown",[\s\S]*emitUpdate: false/u);
+	assert.doesNotMatch(RICH_TEXT_EDITOR_CSS, /\.tiptap-editor h[12] \{[\s\S]*border-bottom/u);
 	assert.doesNotMatch(RICH_TEXT_EDITOR_SOURCE, /absolute top-0 left-0/u);
 });
 
