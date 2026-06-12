@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/compone
 import { cn } from "@/lib/utils";
 import AddIcon from "@atlaskit/icon/core/add";
 import CursorIcon from "@atlaskit/icon-lab/core/cursor";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { RovoAppComposerAddMenu } from "@/components/projects/shared/components/rovo-app-composer-add-menu";
 import { PendingAttachments } from "@/components/projects/shared/components/pending-attachments";
 import { RovoComposerSendControls } from "@/components/projects/shared/components/rovo-composer-send-controls";
@@ -115,14 +115,11 @@ export function ComposerCardBody({
 		}
 	}, []);
 
-	useEffect(() => {
-		if (isPlanMode) {
-			setSelectedReasoning("max");
-			return;
-		}
-
-		setSelectedReasoning((currentReasoning) => currentReasoning === "max" ? DEFAULT_REASONING_OPTION_ID : currentReasoning);
-	}, [isPlanMode]);
+	if (isPlanMode && selectedReasoning !== "max") {
+		setSelectedReasoning("max");
+	} else if (!isPlanMode && selectedReasoning === "max") {
+		setSelectedReasoning(DEFAULT_REASONING_OPTION_ID);
+	}
 
 	return (
 		<div

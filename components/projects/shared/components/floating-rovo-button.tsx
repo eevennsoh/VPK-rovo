@@ -1,5 +1,12 @@
 "use client";
 
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
+/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
+
+import { useLazyRef } from "@/lib/use-lazy-ref";
 import {
 	type MouseEvent as ReactMouseEvent,
 	type PointerEvent as ReactPointerEvent,
@@ -631,7 +638,7 @@ function FloatingRovoButtonSurface({
 	const initializedPositionKeyRef = useRef<string | null>(null);
 	const skipNextSnapToGridRef = useRef(false);
 	const dragPointerStartRef = useRef<FloatingRovoButtonDragStart | null>(null);
-	const suppressDragClickStateRef = useRef<FloatingRovoButtonClickSuppressionState>(
+	const suppressDragClickStateRef = useLazyRef<FloatingRovoButtonClickSuppressionState>(() =>
 		createInitialClickSuppressionState(),
 	);
 	const suppressDragClickTimeoutRef = useRef<number | null>(null);

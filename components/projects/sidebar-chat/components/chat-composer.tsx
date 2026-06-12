@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ChatStatus } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import type { QueuedPromptItem } from "@/app/contexts";
@@ -140,6 +140,10 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 	const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
 	const [isCustomizeMenuOpen, setIsCustomizeMenuOpen] = useState(false);
 	const [isAutoMenuOpen, setIsAutoMenuOpen] = useState(false);
+	if (hideSourceAndModelControls && (isCustomizeMenuOpen || isAutoMenuOpen)) {
+		setIsCustomizeMenuOpen(false);
+		setIsAutoMenuOpen(false);
+	}
 	const selectedReasoning = controlledSelectedReasoning ?? localSelectedReasoning;
 	const hasQueuedPrompts = queuedPrompts.length > 0;
 	const submitStatus = isStreaming
@@ -164,15 +168,6 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 		setLocalSelectedReasoning(value);
 		onReasoningChange?.(value);
 	};
-
-	useEffect(() => {
-		if (!hideSourceAndModelControls) {
-			return;
-		}
-
-		setIsCustomizeMenuOpen(false);
-		setIsAutoMenuOpen(false);
-	}, [hideSourceAndModelControls]);
 
 	return (
 		<div className={cn("relative min-w-0 px-3", containerClassName)}>

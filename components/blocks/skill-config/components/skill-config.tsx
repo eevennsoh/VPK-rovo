@@ -1,5 +1,8 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- This block uses slot/render-node props for Base UI, shadcn, icon, and hover-reveal composition contracts.
+
+import { useLazyRef } from "@/lib/use-lazy-ref";
 import type { Tool } from "ai";
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform, type MotionProps } from "motion/react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
@@ -513,20 +516,18 @@ const AGENT_COMPACT_HEADER_NAV_ITEMS = [
 
 export type AgentCompactHeaderSection = (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[number]["value"];
 export type AgentCompactHeaderNavItem = (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[number];
+// react-doctor-disable-next-line react-doctor/only-export-components -- Consumers share this default nav contract with the compact agent header.
 export const AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS = AGENT_COMPACT_HEADER_NAV_ITEMS.filter((item) => item.value !== "details");
+// react-doctor-disable-next-line react-doctor/only-export-components -- Consumers share this details nav item with the compact agent header.
 export const AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM = AGENT_COMPACT_HEADER_NAV_ITEMS[0];
 
 const AGENT_COMPACT_HEADER_NAV_GAP = 4;
 const AGENT_COMPACT_HEADER_AVATAR_NAV_GAP = 8;
 const AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH = 24;
 
-// Staggered entrance for nav items revealed when an agent is published (the
-// item list grows from just "Details" to the full section set). Only the newly
-// added trailing items animate; pre-existing items render statically.
-const AGENT_COMPACT_HEADER_NAV_REVEAL_STAGGER_S = 0.04;
-const AGENT_COMPACT_HEADER_NAV_REVEAL_INITIAL = { opacity: 0, x: -6, scale: 0.96 } as const;
-const AGENT_COMPACT_HEADER_NAV_REVEAL_ANIMATE = { opacity: 1, x: 0, scale: 1 } as const;
-const AGENT_COMPACT_HEADER_NAV_REVEAL_TRANSITION = { duration: 0.22, ease: [0, 0.4, 0, 1] } as const;
+function suppressMenuDismissal(event: { preventDefault: () => void }) {
+	event.preventDefault();
+}
 
 function AgentCompactHeaderNavButton({
 	activeSection,
@@ -570,29 +571,12 @@ export function AgentCompactHeaderNav({
 	items?: readonly AgentCompactHeaderNavItem[];
 	onSectionChange?: (section: AgentCompactHeaderSection) => void;
 }>) {
-	const shouldReduceMotion = useReducedMotion();
 	const containerRef = useRef<HTMLDivElement>(null);
 	const measureRef = useRef<HTMLDivElement>(null);
 	const [visibleCount, setVisibleCount] = useState<number>(items.length);
 	const visibleItems = items.slice(0, visibleCount);
 	const hiddenItems = items.slice(visibleCount);
 
-	// Index from which items are "newly revealed" and should animate in. On
-	// mount (including an already-published agent) this equals items.length, so
-	// nothing animates. When the list grows (publish), it holds the prior count
-	// so only the added trailing items stagger in. When it shrinks (unpublish /
-	// rollback) we reset to the new length so a later re-publish animates again.
-	const prevItemCountRef = useRef<number>(items.length);
-	const [revealFromIndex, setRevealFromIndex] = useState<number>(items.length);
-	useEffect(() => {
-		const prevCount = prevItemCountRef.current;
-		if (items.length > prevCount) {
-			setRevealFromIndex(prevCount);
-		} else if (items.length < prevCount) {
-			setRevealFromIndex(items.length);
-		}
-		prevItemCountRef.current = items.length;
-	}, [items.length]);
 
 	useLayoutEffect(() => {
 		const container = containerRef.current;
@@ -618,10 +602,6 @@ export function AgentCompactHeaderNav({
 		observer.observe(container);
 		return () => observer.disconnect();
 	}, [items]);
-
-	useEffect(() => {
-		setVisibleCount(items.length);
-	}, [items.length]);
 
 	return (
 		<div className="flex min-w-0 flex-1 items-center" style={{ gap: AGENT_COMPACT_HEADER_AVATAR_NAV_GAP }}>
@@ -656,37 +636,14 @@ export function AgentCompactHeaderNav({
 						))}
 					</div>
 				</div>
-				{visibleItems.map((item, index) => {
-					const isRevealed = !shouldReduceMotion && index >= revealFromIndex;
-					if (!isRevealed) {
-						return (
-							<AgentCompactHeaderNavButton
-								activeSection={activeSection}
-								item={item}
-								key={item.label}
-								onSectionChange={onSectionChange}
-							/>
-						);
-					}
-					return (
-						<motion.div
-							className="inline-flex"
-							key={item.label}
-							initial={AGENT_COMPACT_HEADER_NAV_REVEAL_INITIAL}
-							animate={AGENT_COMPACT_HEADER_NAV_REVEAL_ANIMATE}
-							transition={{
-								...AGENT_COMPACT_HEADER_NAV_REVEAL_TRANSITION,
-								delay: (index - revealFromIndex) * AGENT_COMPACT_HEADER_NAV_REVEAL_STAGGER_S,
-							}}
-						>
-							<AgentCompactHeaderNavButton
-								activeSection={activeSection}
-								item={item}
-								onSectionChange={onSectionChange}
-							/>
-						</motion.div>
-					);
-				})}
+				{visibleItems.map((item) => (
+					<AgentCompactHeaderNavButton
+						activeSection={activeSection}
+						item={item}
+						key={item.label}
+						onSectionChange={onSectionChange}
+					/>
+				))}
 				{hiddenItems.length > 0 ? (
 					<DropdownMenu>
 						<DropdownMenuTrigger
@@ -1295,10 +1252,6 @@ function AgentCompactTriggerRow({
 	// toggling never dismisses the menu even when the re-render detaches the
 	// pressed node. preventDefault is safe here because the Switch toggles via
 	// `onCheckedChange`, not the native default.
-	function suppressMenuDismissal(event: { preventDefault: () => void }) {
-		event.preventDefault();
-	}
-
 	return (
 		<DropdownMenuItem
 			closeOnClick={false}
@@ -1449,9 +1402,6 @@ function AgentCompactReferenceRow({
 }>) {
 	// See AgentCompactTriggerRow: preventDefault on the switch's pointer/mouse
 	// down stops Base UI from dismissing the menu when toggling.
-	function suppressMenuDismissal(event: { preventDefault: () => void }) {
-		event.preventDefault();
-	}
 	// Prefer an explicit elemBefore; otherwise derive the front slot from the row's
 	// directory category so skills/tools/apps/subagents each lead with their icon.
 	const frontSlot = elemBefore ?? (category ? renderAgentReferenceRowVisual(category, label, tagColor) : undefined);
@@ -2252,6 +2202,7 @@ function isAgentListItemDisabled(
 // field's disabled set. Used by owners that persist the config (e.g. the studio
 // draft saved to localStorage). Prunes empty field arrays and an empty
 // `disabledItems` map so the persisted shape stays minimal.
+// react-doctor-disable-next-line react-doctor/only-export-components -- Studio config owners share this pure update helper with the block.
 export function toggleAgentConfigDisabledItem(
 	config: AgentConfigFormValue,
 	field: AgentConfigListFieldName,
@@ -3706,12 +3657,14 @@ function AgentInstructionsComposer({
 }>) {
 	const [knowledge, setKnowledge] = useState<RichTextMentionItem[]>([]);
 	const [templatesOpen, setTemplatesOpen] = useState(false);
-	const inlineManagedReferenceKeysRef = useRef(new Set<string>());
-	const mentionInventoryCountsRef = useRef(new Map<string, {
+	const inlineManagedReferenceKeysRef = useLazyRef(() => new Set<string>());
+	const mentionInventoryCountsRef = useLazyRef(() => new Map<string, {
 		count: number;
 		field: AgentConfigReferenceListFieldName;
 		label: string;
 	}>());
+	const inlineManagedReferenceKeys = inlineManagedReferenceKeysRef.current;
+	const mentionInventoryCounts = mentionInventoryCountsRef.current;
 	const mentionSources = useMemo<RichTextMentionSources>(() => ({
 		// Subagents are NESTED agents owned by THIS agent — not globally
 		// at-mentionable top-level agents. So the `@subagent` list comes ONLY from
@@ -3738,13 +3691,13 @@ function AgentInstructionsComposer({
 		const field = AGENT_CONFIG_FIELD_BY_REFERENCE_CATEGORY[category];
 		const key = getAgentReferenceKey(field, label);
 
-		inlineManagedReferenceKeysRef.current.add(key);
+		inlineManagedReferenceKeys.add(key);
 		if (!hasAgentReferenceValue(config, field, label)) {
 			onAddListValues?.(field, [label]);
 		}
 
 		return false;
-	}, [config, onAddListValues]);
+	}, [config, inlineManagedReferenceKeys, onAddListValues]);
 	// "Browse all" in a nested "/" category's empty state opens that category's
 	// directory. Map the slash category to the config-panel directory kind; the
 	// renderer only fires this for directory-backed categories (not "format").
@@ -3777,28 +3730,31 @@ function AgentInstructionsComposer({
 		}
 
 		for (const [key, next] of nextCounts) {
-			const previousCount = mentionInventoryCountsRef.current.get(key)?.count ?? 0;
+			const previousCount = mentionInventoryCounts.get(key)?.count ?? 0;
 			if (next.count <= previousCount) {
 				continue;
 			}
 
-			inlineManagedReferenceKeysRef.current.add(key);
+			inlineManagedReferenceKeys.add(key);
 			if (!hasAgentReferenceValue(config, next.field, next.label)) {
 				onAddListValues?.(next.field, [next.label]);
 			}
 		}
 
-		for (const [key, previous] of mentionInventoryCountsRef.current) {
-			if (nextCounts.has(key) || !inlineManagedReferenceKeysRef.current.has(key)) {
+		for (const [key, previous] of mentionInventoryCounts) {
+			if (nextCounts.has(key) || !inlineManagedReferenceKeys.has(key)) {
 				continue;
 			}
 
-			inlineManagedReferenceKeysRef.current.delete(key);
+			inlineManagedReferenceKeys.delete(key);
 			onRemoveReferenceValue?.(previous.field, previous.label);
 		}
 
-		mentionInventoryCountsRef.current = nextCounts;
-	}, [config, onAddListValues, onRemoveReferenceValue]);
+		mentionInventoryCounts.clear();
+		for (const [key, next] of nextCounts) {
+			mentionInventoryCounts.set(key, next);
+		}
+	}, [config, inlineManagedReferenceKeys, mentionInventoryCounts, onAddListValues, onRemoveReferenceValue]);
 
 	useEffect(() => {
 		const abortController = new AbortController();

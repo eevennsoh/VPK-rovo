@@ -113,4 +113,5 @@ function IconTile({
 	)
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export { IconTile, iconTileVariants }

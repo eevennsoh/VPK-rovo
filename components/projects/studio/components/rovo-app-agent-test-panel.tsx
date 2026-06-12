@@ -1,5 +1,8 @@
 "use client";
 
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+// oxlint-disable react-doctor/no-multi-comp -- The test panel colocates tightly coupled tab and payload subviews so ChatPanel custom tabs share one local contract.
+
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 
 import { RovoChatProvider, useRovoChat, type StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
@@ -255,11 +258,21 @@ export function AgentTestTriggerView({
 		() => result.automationRules ?? [],
 		[result.automationRules],
 	);
-	const [testResult, setTestResult] = useState<AutomationTestResult | null>(null);
+	const [testSelection, setTestSelection] = useState<AutomationTestSelection | null>(null);
+	const testResult = useMemo(() => {
+		if (!testSelection) {
+			return null;
+		}
 
-	useEffect(() => {
-		setTestResult(null);
-	}, [automationRules]);
+		const ruleIndex = automationRules.findIndex((rule) => rule.id === testSelection.ruleId);
+		if (ruleIndex === -1) {
+			return null;
+		}
+
+		const rule = automationRules[ruleIndex];
+		const trigger = rule.triggers.find((item) => item.id === testSelection.triggerId);
+		return trigger ? createAutomationTestResult(rule, ruleIndex, trigger) : null;
+	}, [automationRules, testSelection]);
 
 	return (
 		<div className="flex min-h-[220px] items-start justify-center p-6">
@@ -268,7 +281,7 @@ export function AgentTestTriggerView({
 					automationRules.map((rule, ruleIndex) => (
 						<AutomationTestCard
 							key={rule.id}
-							onTest={(trigger) => setTestResult(createAutomationTestResult(rule, ruleIndex, trigger))}
+							onTest={(trigger) => setTestSelection({ ruleId: rule.id, triggerId: trigger.id })}
 							rule={rule}
 							ruleIndex={ruleIndex}
 						/>
@@ -295,6 +308,11 @@ export function AgentTestTriggerView({
 			</div>
 		</div>
 	);
+}
+
+interface AutomationTestSelection {
+	ruleId: string;
+	triggerId: string;
 }
 
 interface AutomationTestResult {
@@ -599,6 +617,9 @@ export function AgentTestPanel({
 }: Readonly<AgentTestPanelProps>): ReactElement {
 	const versionOptions = useMemo(() => getAgentTestVersionOptions(entry), [entry]);
 	const [selectedVersionId, setSelectedVersionId] = useState("latest");
+	if (!versionOptions.some((option) => option.id === selectedVersionId)) {
+		setSelectedVersionId("latest");
+	}
 	const selectedOption = versionOptions.find((option) => option.id === selectedVersionId) ?? versionOptions[0];
 	const selectedResult = selectedOption.result;
 	const snapshotKey = `${entry.profile.id}:${selectedOption.id}:${JSON.stringify(selectedResult)}`;
@@ -606,12 +627,6 @@ export function AgentTestPanel({
 		() => buildAgentTestProfile(entry, selectedResult, selectedOption.label),
 		[entry, selectedOption.label, selectedResult],
 	);
-
-	useEffect(() => {
-		if (!versionOptions.some((option) => option.id === selectedVersionId)) {
-			setSelectedVersionId("latest");
-		}
-	}, [selectedVersionId, versionOptions]);
 
 	return (
 		<section

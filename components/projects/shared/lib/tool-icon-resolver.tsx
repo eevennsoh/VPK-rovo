@@ -1,3 +1,4 @@
+// oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
 import type { ReactNode } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 

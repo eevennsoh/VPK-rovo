@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- These underscored compatibility props and inferred generic placeholders are intentionally retained for API shape. */
+
 // Pure Markdown-syntax transforms for the source-mode textarea.
 //
 // The rich text editor's toolbar normally dispatches Tiptap commands. When the

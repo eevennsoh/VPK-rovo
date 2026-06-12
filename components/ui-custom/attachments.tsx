@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- These component primitives render arbitrary preview/avatar/image payloads where Next Image sizing/loading would change the public API. */
+
 import type { FileUIPart, SourceDocumentUIPart } from "ai";
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
 
@@ -52,6 +54,7 @@ const mediaCategoryIcons: Record<AttachmentMediaCategory, typeof ImageIcon> = {
 // Utility Functions
 // ============================================================================
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function getMediaCategory(
   data: AttachmentData
 ): AttachmentMediaCategory {
@@ -77,6 +80,7 @@ export function getMediaCategory(
   return "unknown";
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function getAttachmentLabel(data: AttachmentData): string {
   if (data.type === "source-document") {
     return data.title || data.filename || "Source";
@@ -254,7 +258,7 @@ export function AttachmentPreview({
     }
 
     if (mediaCategory === "video" && data.type === "file" && data.url) {
-      return <video className="size-full object-cover" muted src={data.url} />;
+      return <video aria-label={data.filename ?? "Video attachment"} className="size-full object-cover" muted src={data.url} />;
     }
 
     const Icon = mediaCategoryIcons[mediaCategory];

@@ -50,7 +50,7 @@ export function SettingsDialog() {
 											<SidebarMenuItem key={item.name}>
 												<SidebarMenuButton
 													isActive={item.name === "Messages & media"}
-													render={<a href="#" />}
+													render={<a aria-label="Settings" href="#" />}
 												>
 													{item.icon}
 													<span>{item.name}</span>

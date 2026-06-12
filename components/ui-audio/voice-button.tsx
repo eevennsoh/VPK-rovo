@@ -117,21 +117,31 @@ export function VoiceButton({
   "aria-label": ariaLabelProp,
   ...props
 }: VoiceButtonProps) {
-  const [showFeedback, setShowFeedback] = React.useState(false)
+  const [feedbackState, setFeedbackState] = React.useState({
+    showFeedback: false,
+    status: state,
+  })
+  let resolvedFeedbackState = feedbackState
+  if (feedbackState.status !== state) {
+    resolvedFeedbackState = {
+      showFeedback: state === "success" || state === "error",
+      status: state,
+    }
+    setFeedbackState(resolvedFeedbackState)
+  }
+  const showFeedback = resolvedFeedbackState.showFeedback
 
   React.useEffect(() => {
-    if (state === "success" || state === "error") {
-      setShowFeedback(true)
-      const timeout = setTimeout(
-        () => setShowFeedback(false),
-        feedbackDuration
-      )
-      return () => clearTimeout(timeout)
-    } else {
-      // Reset feedback when state changes away from success/error
-      setShowFeedback(false)
+    if (!showFeedback) {
+      return
     }
-  }, [state, feedbackDuration])
+
+    const timeout = setTimeout(
+      () => setFeedbackState((currentState) => ({ ...currentState, showFeedback: false })),
+      feedbackDuration
+    )
+    return () => clearTimeout(timeout)
+  }, [feedbackDuration, showFeedback])
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     onClick?.(e)

@@ -43,7 +43,7 @@ export function AppSidebar({
 					<SidebarMenuItem>
 						<SidebarMenuButton
 							className="data-[slot=sidebar-menu-button]:p-1.5!"
-							render={<a href="#" />}
+							render={<a aria-label="Acme Inc." href="#" />}
 						>
 							<CommandIcon className="size-5!" />
 							<span className="text-base font-semibold">Acme Inc.</span>

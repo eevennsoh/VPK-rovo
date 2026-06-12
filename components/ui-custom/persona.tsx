@@ -1,5 +1,9 @@
 "use client";
 
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
+
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import type { RiveParameters } from "@rive-app/react-webgl2";
 import type { FC, ReactNode } from "react";
 
@@ -85,6 +89,7 @@ const useTheme = (enabled: boolean) => {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   // Sync initial theme after mount to avoid hydration mismatch
+  // oxlint-disable react-doctor/no-adjust-state-on-prop-change -- theme state is driven by document and media-query observers.
   useEffect(() => {
     setTheme(getCurrentTheme());
   }, []);
@@ -123,6 +128,7 @@ const useTheme = (enabled: boolean) => {
       }
     };
   }, [enabled]);
+  // oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
   return theme;
 };

@@ -12,7 +12,7 @@ import StatusWarningIcon from "@atlaskit/icon/core/status-warning";
 export default function HoverCardDemo() {
 	return (
 		<HoverCard>
-			<HoverCardTrigger render={<a href="#" />}>
+			<HoverCardTrigger render={<a aria-label="Open hover card" href="#" />}>
 				@nextjs
 			</HoverCardTrigger>
 			<HoverCardContent>
@@ -34,7 +34,7 @@ export default function HoverCardDemo() {
 export function HoverCardDemoDefault() {
 	return (
 		<HoverCard>
-			<HoverCardTrigger render={<a href="#" />}>
+			<HoverCardTrigger render={<a aria-label="Open hover card" href="#" />}>
 				@nextjs
 			</HoverCardTrigger>
 			<HoverCardContent>
@@ -88,7 +88,7 @@ export function HoverCardDemoInlineMessage() {
 	return (
 		<div className="flex flex-col gap-3">
 			<HoverCard>
-				<HoverCardTrigger render={<a href="#" />}>
+				<HoverCardTrigger render={<a aria-label="Open hover card" href="#" />}>
 					<span className="inline-flex items-center gap-1.5">
 						<Icon render={<StatusSuccessIcon label="" />} label="Success" className="text-icon-success" />
 						<span>Changes saved successfully</span>
@@ -104,7 +104,7 @@ export function HoverCardDemoInlineMessage() {
 				</HoverCardContent>
 			</HoverCard>
 			<HoverCard>
-				<HoverCardTrigger render={<a href="#" />}>
+				<HoverCardTrigger render={<a aria-label="Open hover card" href="#" />}>
 					<span className="inline-flex items-center gap-1.5">
 						<Icon render={<StatusWarningIcon label="" />} label="Warning" className="text-icon-warning" />
 						<span>3 issues need attention</span>
@@ -120,7 +120,7 @@ export function HoverCardDemoInlineMessage() {
 				</HoverCardContent>
 			</HoverCard>
 			<HoverCard>
-				<HoverCardTrigger render={<a href="#" />}>
+				<HoverCardTrigger render={<a aria-label="Open hover card" href="#" />}>
 					<span className="inline-flex items-center gap-1.5">
 						<Icon render={<StatusErrorIcon label="" />} label="Error" className="text-icon-danger" />
 						<span>Build failed</span>
@@ -136,7 +136,7 @@ export function HoverCardDemoInlineMessage() {
 				</HoverCardContent>
 			</HoverCard>
 			<HoverCard>
-				<HoverCardTrigger render={<a href="#" />}>
+				<HoverCardTrigger render={<a aria-label="Open hover card" href="#" />}>
 					<span className="inline-flex items-center gap-1.5">
 						<Icon render={<InformationCircleIcon label="" />} label="Info" className="text-icon-information" />
 						<span>New permissions model</span>
@@ -158,7 +158,7 @@ export function HoverCardDemoInlineMessage() {
 export function HoverCardDemoPlacement() {
 	return (
 		<HoverCard>
-			<HoverCardTrigger render={<a href="#" />}>
+			<HoverCardTrigger render={<a aria-label="Open hover card" href="#" />}>
 				@vercel
 			</HoverCardTrigger>
 			<HoverCardContent side="right">

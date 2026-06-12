@@ -293,7 +293,7 @@ export function WebPreviewBody({
 			<iframe
 				className={cn("size-full", className)}
 					referrerPolicy="no-referrer"
-					sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-presentation"
+					sandbox="allow-scripts allow-forms allow-popups allow-presentation"
 					src={rawTargetUrl || undefined}
 					title="Preview"
 					{...props}

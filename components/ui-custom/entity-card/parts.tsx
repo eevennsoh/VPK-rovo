@@ -65,6 +65,7 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 /** Compact count formatter — 1500 → "1.5K", 12000 → "12K". */
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function formatCompact(value: number): string {
 	if (value >= 10000) return `${Math.round(value / 1000)}K`;
 	if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;

@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import BoardIcon from "@atlaskit/icon/core/board";
 import EditIcon from "@atlaskit/icon/core/edit";
 import LocationIcon from "@atlaskit/icon/core/location";

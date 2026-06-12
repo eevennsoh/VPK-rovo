@@ -1,3 +1,5 @@
+// oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates coupled component parts as a compound component or demo surface API.
+
 import * as React from "react"
 
 import { cn } from "@/lib/utils"

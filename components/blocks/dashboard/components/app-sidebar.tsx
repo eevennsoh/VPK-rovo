@@ -30,7 +30,7 @@ export function AppSidebar({ ...props }: Readonly<React.ComponentProps<typeof Si
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton
-							render={<a href="#" />}
+							render={<a aria-label="Acme Inc." href="#" />}
 							className="data-[slot=sidebar-menu-button]:!p-1.5"
 						>
 							<LogoIcon className="h-5 w-5" />

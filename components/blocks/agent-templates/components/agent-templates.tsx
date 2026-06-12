@@ -1,5 +1,9 @@
 "use client";
 
+// oxlint-disable react-doctor/only-export-components -- This module intentionally exports colocated component API, variant contracts, context contracts, or metadata used by consumers.
+
+// oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, cubicBezier, motion, useReducedMotion } from "motion/react";
@@ -198,9 +202,24 @@ export function AgentTemplatesDialog({
 
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const shouldReduceMotion = useReducedMotion();
-	const [activeCategory, setActiveCategory] = useState(initialCategoryId);
+	const [activeCategoryState, setActiveCategoryState] = useState(() => ({
+		activeCategory: initialCategoryId,
+		initialCategoryId,
+		open,
+	}));
+	let resolvedActiveCategoryState = activeCategoryState;
+	if (activeCategoryState.open !== open || (open && activeCategoryState.initialCategoryId !== initialCategoryId)) {
+		resolvedActiveCategoryState = open
+			? { activeCategory: initialCategoryId, initialCategoryId, open }
+			: { ...activeCategoryState, initialCategoryId, open };
+		setActiveCategoryState(resolvedActiveCategoryState);
+	}
+	const activeCategory = resolvedActiveCategoryState.activeCategory;
 	const [tabMotionDirection, setTabMotionDirection] = useState<AgentTemplatesTabMotionDirection>(1);
 	const [scrollControls, setScrollControls] = useState({ canScrollLeft: false, canScrollRight: false });
+	if (!open && (scrollControls.canScrollLeft || scrollControls.canScrollRight)) {
+		setScrollControls({ canScrollLeft: false, canScrollRight: false });
+	}
 	const activeCategoryOption = AGENT_TEMPLATES_CATEGORIES.find((category) => category.id === activeCategory) ?? AGENT_TEMPLATES_CATEGORIES[0];
 	const tabMotionCustom = {
 		direction: tabMotionDirection,
@@ -246,18 +265,7 @@ export function AgentTemplatesDialog({
 	}, [updateScrollControls]);
 
 	useEffect(() => {
-		if (open) {
-			setActiveCategory(initialCategoryId);
-		}
-	}, [initialCategoryId, open]);
-
-	useEffect(() => {
 		if (!open) {
-			setScrollControls((currentControls) => (
-				currentControls.canScrollLeft || currentControls.canScrollRight
-					? { canScrollLeft: false, canScrollRight: false }
-					: currentControls
-			));
 			return;
 		}
 
@@ -304,7 +312,7 @@ export function AgentTemplatesDialog({
 		if (categoryId === activeCategory) return;
 
 		setTabMotionDirection(getAgentTemplatesCategoryIndex(categoryId) > getAgentTemplatesCategoryIndex(activeCategory) ? 1 : -1);
-		setActiveCategory(categoryId);
+		setActiveCategoryState((currentState) => ({ ...currentState, activeCategory: categoryId }));
 	};
 
 	return (

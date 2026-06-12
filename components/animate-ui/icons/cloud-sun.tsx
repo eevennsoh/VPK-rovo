@@ -127,6 +127,7 @@ function CloudSun(props: CloudSunProps) {
 }
 
 export {
+  // react-doctor-disable-next-line react-doctor/only-export-components -- This generated icon module intentionally exports the icon component with its metadata/types.
   animations,
   CloudSun,
   CloudSun as CloudSunIcon,

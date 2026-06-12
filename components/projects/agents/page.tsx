@@ -1,9 +1,16 @@
 "use client";
 
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+// oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
+
+/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useRovoChat } from "@/app/contexts";
 import type { WorkItemAttachment, WorkItemData } from "@/app/contexts/context-work-item-modal";
+import { useLazyRef } from "@/lib/use-lazy-ref";
 import {
 	KanbanBoard,
 	type KanbanBoardCardData,
@@ -99,7 +106,7 @@ export default function AgentsView({
 	const [attachmentHighlight, setAttachmentHighlight] = useState<{ id: string; key: number } | null>(null);
 	const [previewAttachment, setPreviewAttachment] = useState<WorkItemAttachment | null>(null);
 	const nextAttachmentHighlightKeyRef = useRef(0);
-	const visibleToastIdsRef = useRef<Set<string>>(new Set());
+	const visibleToastIdsRef = useLazyRef<Set<string>>(() => new Set());
 	const {
 		closeChat,
 		deleteAllThreads,

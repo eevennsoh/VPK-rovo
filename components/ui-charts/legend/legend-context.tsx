@@ -3,6 +3,7 @@
 import { createContext, useContext } from "react";
 
 // CSS variable references for legend theming
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const legendCssVars = {
   background: "var(--legend)",
   foreground: "var(--legend-foreground)",

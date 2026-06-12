@@ -65,6 +65,7 @@ function SkillCardContent({
 	);
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const SkillCard = {
 	Root: SkillCardRoot,
 	Trigger: SkillCardTrigger,

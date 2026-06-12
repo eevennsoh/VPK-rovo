@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -45,16 +45,28 @@ export function AddUserDialog({
 	title = "Add user",
 	addLabel = "Add",
 }: Readonly<AddUserDialogProps>) {
-	const [name, setName] = useState("");
-	const [role, setRole] = useState<AgentUserRole>(defaultRole);
-
-	// Reset the draft each time the dialog opens.
-	useEffect(() => {
-		if (open) {
-			setName("");
-			setRole(defaultRole);
-		}
-	}, [open, defaultRole]);
+	const [draft, setDraft] = useState(() => ({
+		defaultRole,
+		name: "",
+		open,
+		role: defaultRole,
+	}));
+	if (open && (!draft.open || draft.defaultRole !== defaultRole)) {
+		setDraft({
+			defaultRole,
+			name: "",
+			open,
+			role: defaultRole,
+		});
+	} else if (draft.open !== open || draft.defaultRole !== defaultRole) {
+		setDraft({
+			...draft,
+			defaultRole,
+			open,
+		});
+	}
+	const name = draft.open === open && draft.defaultRole === defaultRole ? draft.name : "";
+	const role = draft.open === open && draft.defaultRole === defaultRole ? draft.role : defaultRole;
 
 	const canAdd = name.trim().length > 0;
 
@@ -85,7 +97,10 @@ export function AddUserDialog({
 						id="add-user-name"
 						placeholder="Add people"
 						value={name}
-						onChange={(event) => setName(event.target.value)}
+						onChange={(event) => {
+							const nextName = event.target.value;
+							setDraft((current) => ({ ...current, name: nextName }));
+						}}
 						autoComplete="off"
 					/>
 				</div>
@@ -94,7 +109,13 @@ export function AddUserDialog({
 					<Label htmlFor="add-user-role" className="font-semibold text-text">
 						Role
 					</Label>
-					<RoleSelect id="add-user-role" value={role} onValueChange={setRole} />
+					<RoleSelect
+						id="add-user-role"
+						value={role}
+						onValueChange={(nextRole) => {
+							setDraft((current) => ({ ...current, role: nextRole }));
+						}}
+					/>
 				</div>
 
 				<DialogFooter className="items-center">

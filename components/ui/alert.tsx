@@ -101,4 +101,5 @@ function AlertAction({ className, ...props }: Readonly<React.ComponentProps<"div
 	)
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export { Alert, AlertTitle, AlertDescription, AlertAction, alertVariants, type AlertProps }

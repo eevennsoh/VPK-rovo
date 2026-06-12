@@ -797,6 +797,7 @@ export function RovoAppAgentConfigPanel({
 		trigger: AgentTriggerValue;
 	} | null>(null);
 	const connectTimerRef = useRef<number | null>(null);
+	// oxlint-disable react-doctor/exhaustive-deps -- Unmount cleanup intentionally clears whichever fake provider connection timer is still active.
 	useEffect(() => {
 		return () => {
 			if (connectTimerRef.current !== null) {
@@ -804,6 +805,7 @@ export function RovoAppAgentConfigPanel({
 			}
 		};
 	}, []);
+	// oxlint-enable react-doctor/exhaustive-deps
 	const handleConnectTrigger = useCallback(
 		(targetTrigger: AgentTriggerValue) => {
 			const { providerId } = targetTrigger;

@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-constructed-context-values -- Context values in this file intentionally combine live state and setters; extracting them would not reduce meaningful consumer churn.
+
 import type { ComponentProps } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -122,6 +124,7 @@ function OpenInProviderItem({
 			{...props}
 			render={
 				<a
+					aria-label={`Open in ${provider.title}`}
 					className="flex items-center gap-2"
 					href={provider.createUrl(query)}
 					rel="noopener"

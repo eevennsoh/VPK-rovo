@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
+
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import UndoIcon from "@atlaskit/icon/core/undo";

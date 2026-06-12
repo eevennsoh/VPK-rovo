@@ -1,5 +1,9 @@
 "use client";
 
+// oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates coupled component parts as a compound component or demo surface API.
+
+// oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
+
 import * as React from "react";
 import Image from "next/image";
 import { type LogoProps as AtlaskitLogoProps } from "@atlaskit/logo";

@@ -354,12 +354,9 @@ export function EditorToolbar({
 
 	useEditorTransactionRerender(editor);
 	useClickOutside(outsideRefs, () => setOpenDropdown(null), openDropdown !== null);
-
-	useEffect(() => {
-		if (currentMode !== "rendered") {
-			setOpenDropdown(null);
-		}
-	}, [currentMode]);
+	if (currentMode !== "rendered" && openDropdown !== null) {
+		setOpenDropdown(null);
+	}
 
 	function toggleDropdown(dropdown: DropdownType): void {
 		setOpenDropdown((current) => (current === dropdown ? null : dropdown));

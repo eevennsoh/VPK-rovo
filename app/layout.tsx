@@ -240,6 +240,7 @@ ${devStylesheetGuardScript}
 				<link rel="preconnect" href="https://ds-cdn.prod-east.frontend.public.atl-paas.net" />
 				<link rel="preload" href="https://ds-cdn.prod-east.frontend.public.atl-paas.net/assets/fonts/atlassian-sans/v3/AtlassianSans-latin.woff2" as="font" type="font/woff2" fetchPriority="high" crossOrigin="anonymous" />
 				<link rel="preload" href="https://ds-cdn.prod-east.frontend.public.atl-paas.net/assets/font-rules/v5/atlassian-fonts.css" as="style" fetchPriority="high" crossOrigin="anonymous" />
+				{/* oxlint-disable-next-line react-doctor/nextjs-no-css-link -- Atlassian DS font CSS is served by the design-system CDN and must load before first paint. */}
 				<link rel="stylesheet" href="https://ds-cdn.prod-east.frontend.public.atl-paas.net/assets/font-rules/v5/atlassian-fonts.css" fetchPriority="high" crossOrigin="anonymous" />
 				{/* Bitcount Grid Single + DotGothic16 + BBH Bartle + JetBrains Mono */}
 				<link rel="preconnect" href="https://fonts.googleapis.com" />

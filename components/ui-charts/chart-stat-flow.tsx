@@ -20,6 +20,7 @@ export interface ChartStatFlowFormat {
   unitDisplay?: "short" | "long" | "narrow";
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const defaultChartStatFlowFormat: ChartStatFlowFormat = {
   notation: "standard",
   maximumFractionDigits: 0,

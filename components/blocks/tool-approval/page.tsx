@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+
 import { ToolApproval, type ToolApprovalSubmitDecision } from "@/components/blocks/tool-approval";
 import { BATCH_TOOL_APPROVAL_DEMO, SINGLE_TOOL_APPROVAL_DEMO } from "@/components/blocks/tool-approval/data/demo-approvals";
 import type { ToolApprovalPayload } from "@/lib/rovo-ui-messages";

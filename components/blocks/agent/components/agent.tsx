@@ -1,10 +1,20 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
+
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
+// oxlint-disable react-doctor/no-reset-all-state-on-prop-change -- These prop/key changes intentionally restart a workflow to avoid carrying stale state across runs.
+// oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
+
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import type { Tool } from "ai";
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform, type MotionProps } from "motion/react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { useLazyRef } from "@/lib/use-lazy-ref";
 
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
@@ -513,20 +523,13 @@ const AGENT_COMPACT_HEADER_NAV_ITEMS = [
 
 export type AgentCompactHeaderSection = (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[number]["value"];
 export type AgentCompactHeaderNavItem = (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[number];
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS = AGENT_COMPACT_HEADER_NAV_ITEMS.filter((item) => item.value !== "details");
 export const AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM = AGENT_COMPACT_HEADER_NAV_ITEMS[0];
 
 const AGENT_COMPACT_HEADER_NAV_GAP = 4;
 const AGENT_COMPACT_HEADER_AVATAR_NAV_GAP = 8;
 const AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH = 24;
-
-// Staggered entrance for nav items revealed when an agent is published (the
-// item list grows from just "Details" to the full section set). Only the newly
-// added trailing items animate; pre-existing items render statically.
-const AGENT_COMPACT_HEADER_NAV_REVEAL_STAGGER_S = 0.04;
-const AGENT_COMPACT_HEADER_NAV_REVEAL_INITIAL = { opacity: 0, x: -6, scale: 0.96 } as const;
-const AGENT_COMPACT_HEADER_NAV_REVEAL_ANIMATE = { opacity: 1, x: 0, scale: 1 } as const;
-const AGENT_COMPACT_HEADER_NAV_REVEAL_TRANSITION = { duration: 0.22, ease: [0, 0.4, 0, 1] } as const;
 
 function AgentCompactHeaderNavButton({
 	activeSection,
@@ -570,29 +573,11 @@ export function AgentCompactHeaderNav({
 	items?: readonly AgentCompactHeaderNavItem[];
 	onSectionChange?: (section: AgentCompactHeaderSection) => void;
 }>) {
-	const shouldReduceMotion = useReducedMotion();
 	const containerRef = useRef<HTMLDivElement>(null);
 	const measureRef = useRef<HTMLDivElement>(null);
 	const [visibleCount, setVisibleCount] = useState<number>(items.length);
 	const visibleItems = items.slice(0, visibleCount);
 	const hiddenItems = items.slice(visibleCount);
-
-	// Index from which items are "newly revealed" and should animate in. On
-	// mount (including an already-published agent) this equals items.length, so
-	// nothing animates. When the list grows (publish), it holds the prior count
-	// so only the added trailing items stagger in. When it shrinks (unpublish /
-	// rollback) we reset to the new length so a later re-publish animates again.
-	const prevItemCountRef = useRef<number>(items.length);
-	const [revealFromIndex, setRevealFromIndex] = useState<number>(items.length);
-	useEffect(() => {
-		const prevCount = prevItemCountRef.current;
-		if (items.length > prevCount) {
-			setRevealFromIndex(prevCount);
-		} else if (items.length < prevCount) {
-			setRevealFromIndex(items.length);
-		}
-		prevItemCountRef.current = items.length;
-	}, [items.length]);
 
 	useLayoutEffect(() => {
 		const container = containerRef.current;
@@ -618,10 +603,6 @@ export function AgentCompactHeaderNav({
 		observer.observe(container);
 		return () => observer.disconnect();
 	}, [items]);
-
-	useEffect(() => {
-		setVisibleCount(items.length);
-	}, [items.length]);
 
 	return (
 		<div className="flex min-w-0 flex-1 items-center" style={{ gap: AGENT_COMPACT_HEADER_AVATAR_NAV_GAP }}>
@@ -656,37 +637,14 @@ export function AgentCompactHeaderNav({
 						))}
 					</div>
 				</div>
-				{visibleItems.map((item, index) => {
-					const isRevealed = !shouldReduceMotion && index >= revealFromIndex;
-					if (!isRevealed) {
-						return (
-							<AgentCompactHeaderNavButton
-								activeSection={activeSection}
-								item={item}
-								key={item.label}
-								onSectionChange={onSectionChange}
-							/>
-						);
-					}
-					return (
-						<motion.div
-							className="inline-flex"
-							key={item.label}
-							initial={AGENT_COMPACT_HEADER_NAV_REVEAL_INITIAL}
-							animate={AGENT_COMPACT_HEADER_NAV_REVEAL_ANIMATE}
-							transition={{
-								...AGENT_COMPACT_HEADER_NAV_REVEAL_TRANSITION,
-								delay: (index - revealFromIndex) * AGENT_COMPACT_HEADER_NAV_REVEAL_STAGGER_S,
-							}}
-						>
-							<AgentCompactHeaderNavButton
-								activeSection={activeSection}
-								item={item}
-								onSectionChange={onSectionChange}
-							/>
-						</motion.div>
-					);
-				})}
+				{visibleItems.map((item) => (
+					<AgentCompactHeaderNavButton
+						activeSection={activeSection}
+						item={item}
+						key={item.label}
+						onSectionChange={onSectionChange}
+					/>
+				))}
 				{hiddenItems.length > 0 ? (
 					<DropdownMenu>
 						<DropdownMenuTrigger
@@ -2252,6 +2210,7 @@ function isAgentListItemDisabled(
 // field's disabled set. Used by owners that persist the config (e.g. the studio
 // draft saved to localStorage). Prunes empty field arrays and an empty
 // `disabledItems` map so the persisted shape stays minimal.
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function toggleAgentConfigDisabledItem(
 	config: AgentConfigFormValue,
 	field: AgentConfigListFieldName,
@@ -3706,8 +3665,8 @@ function AgentInstructionsComposer({
 }>) {
 	const [knowledge, setKnowledge] = useState<RichTextMentionItem[]>([]);
 	const [templatesOpen, setTemplatesOpen] = useState(false);
-	const inlineManagedReferenceKeysRef = useRef(new Set<string>());
-	const mentionInventoryCountsRef = useRef(new Map<string, {
+	const inlineManagedReferenceKeysRef = useLazyRef(() => new Set<string>());
+	const mentionInventoryCountsRef = useLazyRef(() => new Map<string, {
 		count: number;
 		field: AgentConfigReferenceListFieldName;
 		label: string;

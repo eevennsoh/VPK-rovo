@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
+
 /**
  * TWG Loader — Teamwork Graph branded loading indicator.
  *
@@ -140,9 +142,8 @@ export function TWGLoader({
 	}, [reducedMotion]);
 
 	return (
-		<div
+		<output
 			data-slot="twg-loader"
-			role="status"
 			aria-label={label}
 			data-testid={testId}
 			className={cn("inline-flex leading-[0] text-surface", className)}
@@ -205,7 +206,7 @@ export function TWGLoader({
 					))}
 				</g>
 			</svg>
-		</div>
+		</output>
 	);
 }
 

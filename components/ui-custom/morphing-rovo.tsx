@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
+
 import { motion, useMotionValue, useTransform, animate, useReducedMotion, type Transition } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
@@ -208,6 +210,7 @@ export function MorphingRovoShape({
 // Compound namespace
 // ---------------------------------------------------------------------------
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const MorphingRovo = {
 	/** Morphing shape that cycles through circle, square, triangle, hexagon. */
 	Shape: MorphingRovoShape,

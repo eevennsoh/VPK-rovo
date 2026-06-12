@@ -202,7 +202,7 @@ export function EmptyDemoWithTertiary() {
 				</div>
 				<Button
 					variant="link"
-					render={<a href="#" />}
+					render={<a aria-label="Empty state link" href="#" />}
 					nativeButton={false}
 				>
 					Learn more <ArrowUpRightIcon className="size-3.5" />

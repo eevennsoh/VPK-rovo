@@ -164,10 +164,9 @@ function BreadcrumbPage({
 	)
 
 	return (
-		<span
-			data-slot="breadcrumb-page"
-			role="link"
-			aria-disabled="true"
+			<span
+				data-slot="breadcrumb-page"
+				aria-disabled="true"
 			aria-current="page"
 			className={cn("text-foreground font-normal", className)}
 			{...props}

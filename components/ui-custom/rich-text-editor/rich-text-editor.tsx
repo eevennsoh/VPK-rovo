@@ -1,5 +1,8 @@
 "use client";
 
+// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
+// oxlint-disable react-doctor/no-pass-live-state-to-parent -- Callbacks in this file intentionally stream live interaction state to the parent owner.
+
 import type { ComponentProps, CSSProperties, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
@@ -201,6 +204,7 @@ function DataFlowDiagramView({
 	// pixel-based transform that no longer matches a resized container, so the
 	// diagram looks off-centre/clipped after a layout change. Watch for width
 	// changes and re-fit by resetting streamdown's pan/zoom in that case.
+	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- data-flow refinement state is cancelled when editor mode/input becomes invalid.
 	useEffect(() => {
 		const container = containerRef.current;
 		if (!container || typeof ResizeObserver === "undefined") {
@@ -635,6 +639,7 @@ export function RichTextEditor({
 			setIsRefiningDataFlow(false);
 		};
 	}, [baselineDataFlowMermaid, dataFlowConfig, isDataFlowMode]);
+	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	function handleModeChange(nextMode: EditorToolbarViewMode): void {
 		if (!editor) {

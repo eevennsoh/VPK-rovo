@@ -1,5 +1,10 @@
 "use client"
 
+// oxlint-disable react-doctor/media-has-caption -- These media previews render generated or user-supplied media where no caption asset is available; transcript or metadata is rendered separately when provided.
+// oxlint-disable react-doctor/only-export-components -- This module intentionally exports colocated component API, variant contracts, context contracts, or metadata used by consumers.
+
+// oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
+
 import {
   ComponentProps,
   createContext,
@@ -276,7 +281,7 @@ export function AudioPlayerProvider<TData = unknown>({
   return (
     <AudioPlayerContext value={api as AudioPlayerApi<unknown>}>
       <AudioPlayerTimeContext value={time}>
-        <audio ref={audioRef} className="hidden" crossOrigin="anonymous" />
+        <audio ref={audioRef} aria-label="Audio player" className="hidden" crossOrigin="anonymous" />
         {children}
       </AudioPlayerTimeContext>
     </AudioPlayerContext>

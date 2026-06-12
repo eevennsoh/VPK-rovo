@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-unused-vars -- These underscored compatibility props and inferred generic placeholders are intentionally retained for API shape. */
+
 import type { scaleBand, scaleLinear, scaleTime } from "@visx/scale";
 
 type ScaleLinear<Output, _Input = number> = ReturnType<
@@ -28,6 +30,7 @@ import { DEFAULT_Y_AXIS_ID } from "./y-axis-scales";
 import type { YDomain } from "./y-domain-utils";
 
 // CSS variable references for theming
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const chartCssVars = {
   background: "var(--chart-background)",
   foreground: "var(--chart-foreground)",
@@ -56,6 +59,7 @@ export const chartCssVars = {
 };
 
 /** Default scatter series colors from the chart palette (`--chart-1` … `--chart-5`). */
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const defaultScatterColors = [
   chartCssVars.categorical1,
   chartCssVars.categorical2,

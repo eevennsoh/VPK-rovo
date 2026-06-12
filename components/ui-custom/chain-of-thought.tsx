@@ -1,5 +1,9 @@
 "use client";
 
+// oxlint-disable react-doctor/no-reset-all-state-on-prop-change -- These prop/key changes intentionally restart a workflow to avoid carrying stale state across runs.
+
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import type { ComponentProps, ComponentType, ReactNode } from "react";
 import type { NewCoreIconProps } from "@atlaskit/icon/base-new";
 

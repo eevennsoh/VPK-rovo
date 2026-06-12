@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-constructed-context-values -- Context values in this file intentionally combine live state and setters; extracting them would not reduce meaningful consumer churn.
+
 import { Mercator } from "@visx/geo";
 import type { TransformMatrix } from "@visx/zoom";
 import { Zoom } from "@visx/zoom";
@@ -385,6 +387,7 @@ function ChoroplethChartInner({
     [children]
   );
 
+  // oxlint-disable react-doctor/no-adjust-state-on-prop-change -- revealSignature restarts the timed chart reveal animation.
   // biome-ignore lint/correctness/useExhaustiveDependencies: revealSignature
   useEffect(() => {
     setRevealEpoch((n) => n + 1);
@@ -394,6 +397,7 @@ function ChoroplethChartInner({
     }, animationDuration);
     return () => clearTimeout(timeout);
   }, [animationDuration, revealSignature]);
+  // oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
   if (width < 10 || height < 10) {
     return null;

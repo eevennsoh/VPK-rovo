@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import ShortcutIcon from "@atlaskit/icon/core/shortcut";
 import { useCallback, useState } from "react";
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This private helper component is intentionally scoped to its owning module; exporting it would widen the public API only for Fast Refresh.
 function LinkSafetyDialog({
 	url,
 	isOpen,
@@ -64,8 +65,7 @@ function LinkSafetyDialog({
 							loading && "invisible",
 						)}
 						onLoad={handleLoad}
-						// oxlint-disable-next-line eslint-plugin-react(iframe-missing-sandbox)
-						sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+						sandbox="allow-scripts allow-forms allow-popups allow-presentation"
 						src={url}
 						title="External link"
 					/>

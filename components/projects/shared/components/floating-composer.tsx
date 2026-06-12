@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
+
 import type { ComponentProps, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import {

@@ -30,7 +30,7 @@ export function NavSecondary({
 						const Icon = item.icon
 						return (
 							<SidebarMenuItem key={item.title}>
-								<SidebarMenuButton render={<a href={item.url} />}>
+								<SidebarMenuButton render={<a aria-label={item.title} href={item.url} />}>
 									<Icon />
 									<span>{item.title}</span>
 								</SidebarMenuButton>

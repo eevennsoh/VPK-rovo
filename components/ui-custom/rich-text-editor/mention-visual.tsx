@@ -77,6 +77,7 @@ const ICON_COLOR_TO_TAG_COLOR: Readonly<Record<string, TagColor>> = {
  * mention reads as an interactive reference rather than a neutral gray chip —
  * matching the agent config panel reference chips.
  */
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function getRichTextMentionTagColor(
 	visual: RichTextMentionVisual | undefined,
 ): TagColor {
@@ -96,6 +97,7 @@ export interface RichTextMentionVisualAttrs {
 	visualSrc?: string | null;
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function getRichTextMentionVisualAttrs(
 	visual: RichTextMentionVisual | undefined,
 ): RichTextMentionVisualAttrs {
@@ -125,6 +127,7 @@ export function getRichTextMentionVisualAttrs(
 	};
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function getRichTextMentionVisualFromAttrs(
 	attrs: RichTextMentionVisualAttrs,
 ): RichTextMentionVisual | undefined {
@@ -157,6 +160,7 @@ export function getRichTextMentionVisualFromAttrs(
 	return undefined;
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function getRichTextMentionTagType(
 	visual: RichTextMentionVisual | undefined,
 ): "agent" | "default" | "other" | "user" {
@@ -346,6 +350,7 @@ export function RichTextMentionVisualMark({
 	return null;
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function getRichTextMentionVisualDOMSpec(
 	visual: RichTextMentionVisual | undefined,
 ): DOMOutputSpec | null {

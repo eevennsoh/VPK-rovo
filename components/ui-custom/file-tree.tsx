@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
+
 import type { HTMLAttributes, ReactNode } from "react";
 
 import {
@@ -143,6 +145,7 @@ export function FileTreeFolder({
         <div
           className={cn("relative", className)}
           role="treeitem"
+          aria-selected={isSelected}
           tabIndex={0}
           {...props}
         >
@@ -162,6 +165,7 @@ export function FileTreeFolder({
             <CollapsibleTrigger
               render={
                 <button
+                  aria-label={isExpanded ? "Collapse folder" : "Expand folder"}
                   className="flex shrink-0 items-center border-none bg-transparent p-0"
                   type="button"
                 />
@@ -254,6 +258,7 @@ export function FileTreeFile({
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         role="treeitem"
+        aria-selected={isSelected}
         tabIndex={0}
         {...props}
       >
