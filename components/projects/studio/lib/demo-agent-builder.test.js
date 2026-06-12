@@ -88,6 +88,16 @@ test("conversation starter request is detected with a count", async () => {
 	assert.ok(Array.isArray(patch.conversationStarters) && patch.conversationStarters.length >= 2);
 });
 
+test("multi-digit starter count clamps to the pool max (#10)", async () => {
+	const { classifyAgentBuildIntent, buildAgentUpdatePatch } = await loadModule();
+	// "12" must parse as twelve (not fall back to 3) and clamp to the max of 6.
+	assert.equal(classifyAgentBuildIntent("add 12 conversation starters").starterCount, 6);
+	const patch = buildAgentUpdatePatch("add 12 conversation starters", {});
+	assert.ok(Array.isArray(patch.conversationStarters));
+	assert.ok(patch.conversationStarters.length <= 6, "clamped to the pool size");
+	assert.ok(patch.conversationStarters.length >= 3, "more than the single-digit fallback");
+});
+
 test("instruction directive is captured", async () => {
 	const { buildAgentUpdatePatch } = await loadModule();
 	const patch = buildAgentUpdatePatch("always respond in a concise, friendly tone", {});
@@ -123,6 +133,31 @@ test("update unions with existing draft — no clobber, no dupes", async () => {
 	// No duplicate app even if requested again.
 	const again = buildAgentUpdatePatch("give it Slack tools", { apps: ["Slack"] });
 	assert.deepEqual(again.apps, ["Slack"]);
+});
+
+test("trigger ids stay unique after a middle trigger was removed (#4)", async () => {
+	const { buildAgentUpdatePatch } = await loadModule();
+	// Simulate a draft where the surviving trigger keeps the `-2` suffix (its
+	// predecessor `-1` was removed). The naive `length + index + 1` would compute
+	// index 2 here and collide; the max-suffix derivation must skip past it.
+	const current = {
+		triggerDefinitions: [
+			{
+				id: "scheduled-custom-schedule-2",
+				providerId: "scheduled",
+				eventId: "custom-schedule",
+				params: {},
+			},
+		],
+	};
+	const patch = buildAgentUpdatePatch(
+		"add a trigger to summarize updates every Friday 9am",
+		current,
+	);
+	assert.equal(patch.triggerDefinitions.length, 2, "existing + new trigger");
+	const ids = patch.triggerDefinitions.map((def) => def.id);
+	assert.equal(new Set(ids).size, ids.length, "no duplicate trigger ids");
+	assert.ok(ids.includes("scheduled-custom-schedule-2"), "surviving id preserved");
 });
 
 test("create returns a believable fresh agent", async () => {

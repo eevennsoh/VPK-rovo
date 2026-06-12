@@ -21,6 +21,7 @@
  *     destination, not a request to add the Slack app. Because a clause that IS a
  *     trigger never runs app extraction, the destination stays inside the trigger.
  */
+import { DIRECTORY_APPS } from "@/app/data/directory/apps";
 import { repairGeneratedAgentCatalog } from "@/app/data/directory/repair-agent-result";
 import { resolveCatalogNames } from "@/app/data/directory/resolve-ids";
 import {
@@ -96,35 +97,81 @@ const INSTRUCTION_MARKER_RE =
 	/\b(instructions?|system prompt|persona|guidelines?|behave|act as|always|never|make sure|ensure)\b/i;
 
 /**
- * Curated high-signal provider keywords → a seed the fuzzy resolver canonicalizes
+ * Provider keywords that wouldn't match an app by its `name`/`id` alone:
+ * abbreviations and alternate spellings. Each maps to a seed the fuzzy resolver
+ * canonicalizes to the real app name. The bulk of the keyword table is derived
+ * from {@link DIRECTORY_APPS} below — this is only for the gaps.
+ */
+const APP_KEYWORD_ALIASES: ReadonlyArray<readonly [RegExp, string]> = [
+	[/\bgdrive\b/i, "google drive"],
+	[/\bgoogle docs\b/i, "google drive"],
+	[/\bms teams\b/i, "microsoft teams"],
+	[/\bms office\b/i, "microsoft teams"],
+	[/\bsharepoint\b/i, "microsoft sharepoint"],
+	[/\bonedrive\b/i, "microsoft onedrive"],
+	[/\bo365\b|\boffice 365\b/i, "microsoft outlook"],
+	[/\bado\b/i, "azure devops"],
+	[/\bso\b/i, "stack overflow"],
+];
+
+/**
+ * Common English / ambiguous words that happen to equal (or fuzzy-match) a short
+ * app name. Deriving keywords blindly from the catalog would make "box", "focus",
+ * "guard", "goals", … trigger app additions inside ordinary sentences, so these
+ * names are excluded from the derived table. (They can still be added explicitly
+ * through the connector phrases or an alias.)
+ */
+const AMBIGUOUS_APP_NAMES = new Set([
+	"atlassian", "atlassian home", "atlassian teams", "box", "focus", "guard",
+	"goals", "projects", "analytics", "assets", "talent", "compass", "loom",
+	"mural", "lucid", "aha", "dx", "monday.com", "outreach", "canva", "webex",
+	"zoom",
+]);
+
+/** Shortest catalog name length allowed into the derived keyword table. */
+const MIN_DERIVED_KEYWORD_LENGTH = 3;
+
+/** Escapes a literal string for safe inclusion in a RegExp source. */
+function escapeRegExp(value: string): string {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Word-boundary, case-insensitive keyword regexes derived from the live app
+ * catalog, paired with the canonical app name (the seed the resolver echoes back).
+ * Built once from {@link DIRECTORY_APPS} so apps added/renamed in the directory
+ * are picked up automatically instead of silently drifting from a hardcoded list.
+ * Ambiguous/short names are skipped to avoid false positives in plain prose.
+ */
+const DERIVED_APP_KEYWORDS: ReadonlyArray<readonly [RegExp, string]> = (() => {
+	const out: Array<readonly [RegExp, string]> = [];
+	const seenPhrases = new Set<string>();
+	for (const app of DIRECTORY_APPS) {
+		const phrases = [app.name, app.id.replace(/-+/g, " ")];
+		for (const rawPhrase of phrases) {
+			const phrase = rawPhrase.trim().toLowerCase();
+			if (
+				phrase.length < MIN_DERIVED_KEYWORD_LENGTH ||
+				AMBIGUOUS_APP_NAMES.has(phrase) ||
+				seenPhrases.has(phrase)
+			) {
+				continue;
+			}
+			seenPhrases.add(phrase);
+			out.push([new RegExp(`\\b${escapeRegExp(phrase)}\\b`, "i"), app.name]);
+		}
+	}
+	return out;
+})();
+
+/**
+ * Curated + derived provider keywords → a seed the fuzzy resolver canonicalizes
  * to a real app name. Only consulted when a clause already shows app intent, so a
  * bare provider mention inside a trigger clause never leaks in.
  */
 const KNOWN_APP_KEYWORDS: ReadonlyArray<readonly [RegExp, string]> = [
-	[/\bjira\b/i, "jira"],
-	[/\bconfluence\b/i, "confluence"],
-	[/\bslack\b/i, "slack"],
-	[/\bgithub\b/i, "github"],
-	[/\bgitlab\b/i, "gitlab"],
-	[/\bbitbucket\b/i, "bitbucket"],
-	[/\bgoogle drive\b|\bgdrive\b/i, "google drive"],
-	[/\bgmail\b/i, "gmail"],
-	[/\bgoogle docs\b/i, "google docs"],
-	[/\boutlook\b/i, "microsoft outlook"],
-	[/\bmicrosoft teams\b|\bms teams\b/i, "microsoft teams"],
-	[/\bnotion\b/i, "notion"],
-	[/\bfigma\b/i, "figma"],
-	[/\blinear\b/i, "linear"],
-	[/\bsalesforce\b/i, "salesforce"],
-	[/\bzendesk\b/i, "zendesk"],
-	[/\bservicenow\b/i, "servicenow"],
-	[/\bsentry\b/i, "sentry"],
-	[/\bpagerduty\b/i, "pagerduty"],
-	[/\basana\b/i, "asana"],
-	[/\btrello\b/i, "trello"],
-	[/\bmiro\b/i, "miro"],
-	[/\bdropbox\b/i, "dropbox"],
-	[/\bsharepoint\b/i, "sharepoint"],
+	...APP_KEYWORD_ALIASES,
+	...DERIVED_APP_KEYWORDS,
 ];
 
 /** Connector phrases whose captured object is an app/tool/knowledge name. */
@@ -293,45 +340,61 @@ function resolveOrLiteral(phrases: readonly string[], category: "skill" | "subag
 	return out;
 }
 
-function extractSkillNames(clause: string): string[] {
-	if (!SKILL_MARKER_RE.test(clause)) {
+/**
+ * Shared "<noun> before / after a marker" phrase extractor for skills and
+ * subagents. Both categories follow the identical shape — a marker word with a
+ * candidate phrase on either side — and differ only by their regexes and the
+ * resolver category, so they share one implementation.
+ */
+function extractCatalogPhrases(
+	clause: string,
+	markerRe: RegExp,
+	beforeRe: RegExp,
+	afterRe: RegExp,
+	category: "skill" | "subagent",
+): string[] {
+	if (!markerRe.test(clause)) {
 		return [];
 	}
 	const phrases: string[] = [];
-	const before = clause.match(/(?:the\s+)?([a-z0-9][a-z0-9 ]*?)\s+skills?\b/i);
+	const before = clause.match(beforeRe);
 	if (before?.[1]) {
 		phrases.push(before[1].trim());
 	}
-	const after = clause.match(/\bskills?\s+(?:to|for|called|named|that|like)?\s*([a-z0-9][a-z0-9 ]+)/i);
+	const after = clause.match(afterRe);
 	if (after?.[1]) {
 		phrases.push(after[1].trim());
 	}
-	return phrases.length > 0 ? resolveOrLiteral(phrases, "skill") : [];
+	return phrases.length > 0 ? resolveOrLiteral(phrases, category) : [];
+}
+
+function extractSkillNames(clause: string): string[] {
+	return extractCatalogPhrases(
+		clause,
+		SKILL_MARKER_RE,
+		/(?:the\s+)?([a-z0-9][a-z0-9 ]*?)\s+skills?\b/i,
+		/\bskills?\s+(?:to|for|called|named|that|like)?\s*([a-z0-9][a-z0-9 ]+)/i,
+		"skill",
+	);
 }
 
 function extractSubagentNames(clause: string): string[] {
-	if (!SUBAGENT_MARKER_RE.test(clause)) {
-		return [];
-	}
-	const phrases: string[] = [];
-	const before = clause.match(/(?:the\s+)?([a-z0-9][a-z0-9 ]*?)\s+(?:sub-?agent|delegate|helper agent|child agent)/i);
-	if (before?.[1]) {
-		phrases.push(before[1].trim());
-	}
-	const after = clause.match(/(?:sub-?agent|delegate)\s+(?:to|for|called|named|that)?\s*([a-z0-9][a-z0-9 ]+)/i);
-	if (after?.[1]) {
-		phrases.push(after[1].trim());
-	}
-	return phrases.length > 0 ? resolveOrLiteral(phrases, "subagent") : [];
+	return extractCatalogPhrases(
+		clause,
+		SUBAGENT_MARKER_RE,
+		/(?:the\s+)?([a-z0-9][a-z0-9 ]*?)\s+(?:sub-?agent|delegate|helper agent|child agent)/i,
+		/(?:sub-?agent|delegate)\s+(?:to|for|called|named|that)?\s*([a-z0-9][a-z0-9 ]+)/i,
+		"subagent",
+	);
 }
 
 function extractStarterCount(clause: string): number {
 	if (!STARTER_MARKER_RE.test(clause)) {
 		return 0;
 	}
-	const digit = clause.match(/\b(\d)\b/);
-	if (digit) {
-		return Math.min(6, Math.max(1, Number(digit[1])));
+	const digits = clause.match(/\b(\d+)\b/);
+	if (digits) {
+		return Math.min(6, Math.max(1, Number(digits[1])));
 	}
 	for (const [word, value] of Object.entries(NUMBER_WORDS)) {
 		if (new RegExp(`\\b${word}\\b`, "i").test(clause)) {
@@ -434,27 +497,67 @@ function generateStarters(prompt: string, count: number): string[] {
 }
 
 /**
+ * Starting index for a new trigger of `providerId`+`eventId`: one past the
+ * highest numeric suffix already used by existing triggers of that same
+ * provider+event. createAgentTriggerValue stamps ids as
+ * `${providerId}-${eventId}-${index}`, so deriving from the live max (rather than
+ * `length + i`) keeps ids unique even after a middle trigger was removed.
+ */
+function nextTriggerIndex(
+	existing: readonly AgentTriggerValue[],
+	providerId: string,
+	eventId: string,
+): number {
+	const prefix = `${providerId}-${eventId}-`;
+	let maxIndex = 0;
+	for (const def of existing) {
+		if (typeof def.id === "string" && def.id.startsWith(prefix)) {
+			const suffix = Number(def.id.slice(prefix.length));
+			if (Number.isInteger(suffix) && suffix > maxIndex) {
+				maxIndex = suffix;
+			}
+		}
+	}
+	return maxIndex + 1;
+}
+
+/**
  * Builds a `Partial<agent-result>` that MERGES the requested changes into the
  * open agent. Arrays are pre-unioned here because `updateSessionAgentDraft`
  * shallow-merges (it would otherwise replace them). Only keys for intents that
  * actually fired are included, so unrelated fields stay untouched.
+ *
+ * Pass a precomputed `intent` to reuse a single classification (the shared plan
+ * path does this); when omitted it classifies the prompt itself so direct callers
+ * and tests keep working unchanged.
  */
 export function buildAgentUpdatePatch(
 	prompt: string,
 	currentDraft: Partial<AgentResult>,
+	intent: AgentBuildIntent = classifyAgentBuildIntent(prompt),
 ): Partial<AgentResult> {
-	const intent = classifyAgentBuildIntent(prompt);
 	const patch: Partial<AgentResult> = {};
 
 	if (intent.triggerSpecs.length > 0) {
 		const existing = currentDraft.triggerDefinitions ?? [];
+		// Ids must stay unique across the merged set even after middle triggers
+		// were removed, so seed the counter past the highest existing suffix for
+		// each provider+event and bump again on any residual collision.
+		const usedIds = new Set(existing.map((def) => def.id));
 		const added: AgentTriggerValue[] = [];
-		intent.triggerSpecs.forEach((spec, index) => {
-			const value = createAgentTriggerValue(spec.providerId, spec.eventId, existing.length + index + 1);
+		for (const spec of intent.triggerSpecs) {
+			let index = nextTriggerIndex(existing, spec.providerId, spec.eventId);
+			let value = createAgentTriggerValue(spec.providerId, spec.eventId, index);
+			// createAgentTriggerValue can return null; skip those (preserves prior behavior).
+			while (value && usedIds.has(value.id)) {
+				index += 1;
+				value = createAgentTriggerValue(spec.providerId, spec.eventId, index);
+			}
 			if (value) {
+				usedIds.add(value.id);
 				added.push({ ...value, prompt: spec.prompt, automationName: spec.automationName });
 			}
-		});
+		}
 		const merged = [...existing, ...added];
 		const labels = serializeAgentTriggerLabels(merged);
 		patch.triggerDefinitions = merged;
@@ -513,9 +616,14 @@ function deriveAgentName(prompt: string): string {
  * Builds a believable fresh agent (`action: "create"`) from the prompt, including
  * any components it named. The shell's existing create path repairs/hydrates and
  * opens the config panel.
+ *
+ * Pass a precomputed `intent` to reuse a single classification; when omitted it
+ * classifies the prompt itself (back-compat for direct callers and tests).
  */
-export function buildAgentCreateResult(prompt: string): AgentResult {
-	const intent = classifyAgentBuildIntent(prompt);
+export function buildAgentCreateResult(
+	prompt: string,
+	intent: AgentBuildIntent = classifyAgentBuildIntent(prompt),
+): AgentResult {
 	const name = intent.nameHint ?? deriveAgentName(prompt);
 	const summary = capitalizeSentence(prompt) || `${name} for your team.`;
 
@@ -532,8 +640,9 @@ export function buildAgentCreateResult(prompt: string): AgentResult {
 	};
 
 	// Reuse the merge logic over an empty draft so a create populates the same
-	// components an update would (triggers, apps, skills, …).
-	const patch = buildAgentUpdatePatch(prompt, base);
+	// components an update would (triggers, apps, skills, …). Reuse the same intent
+	// so the catalogs are only classified once for the whole create.
+	const patch = buildAgentUpdatePatch(prompt, base, intent);
 	const conversationStarters =
 		patch.conversationStarters && patch.conversationStarters.length >= 3
 			? patch.conversationStarters
@@ -578,14 +687,14 @@ export function planDeterministicAgentBuild(
 		return {
 			handled: true,
 			mode: "update",
-			patch: buildAgentUpdatePatch(prompt, currentAgent),
+			patch: buildAgentUpdatePatch(prompt, currentAgent, intent),
 			assistantReply,
 		};
 	}
 	return {
 		handled: true,
 		mode: "create",
-		createResult: buildAgentCreateResult(prompt),
+		createResult: buildAgentCreateResult(prompt, intent),
 		assistantReply,
 	};
 }

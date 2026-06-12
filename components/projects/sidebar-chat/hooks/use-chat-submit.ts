@@ -14,6 +14,14 @@ interface UseChatSubmitReturn {
 	setPrompt: (prompt: string) => void;
 	handleSubmit: (message: { text: string; files: FileUIPart[] }) => Promise<void>;
 	submitPrompt: (prompt: string, files?: ReadonlyArray<FileUIPart>) => Promise<void>;
+	/**
+	 * Runs the deterministic submit interceptor against `text`. When the prompt
+	 * is a handled build intent, this aborts any in-flight turn, injects the user
+	 * message + scripted reply locally, and returns `true` so the caller can skip
+	 * the model. Returns `false` when no interceptor is configured or the prompt
+	 * was not handled — the caller should fall back to its normal send path.
+	 */
+	interceptSubmit: (text: string, files?: ReadonlyArray<FileUIPart>) => Promise<boolean>;
 	abort: () => void;
 	uiMessages: RovoUIMessage[];
 	isStreaming: boolean;
@@ -55,6 +63,59 @@ export function useChatSubmit({
 		removeQueuedPrompt,
 	} = useRovoChat();
 
+	// `uiMessages` mutates on every streamed token. Keep it in a ref so the
+	// interception closure can read the latest list without pulling it into the
+	// `useCallback` deps below — otherwise `submitPrompt`/`handleSubmit` would get
+	// a new identity per token for every (app-wide) ChatPanel consumer.
+	const uiMessagesRef = useRef(uiMessages);
+	uiMessagesRef.current = uiMessages;
+	const isStreamingRef = useRef(isStreaming);
+	isStreamingRef.current = isStreaming;
+	const hasInFlightTurnRef = useRef(hasInFlightTurn);
+	hasInFlightTurnRef.current = hasInFlightTurn;
+
+	// Deterministic interception: when the prompt is a handled build intent, skip
+	// the model and inject the user message + scripted reply locally so the
+	// agent-edit conversation reads naturally. Returns true when handled.
+	const interceptSubmit = useCallback(
+		async (text: string, files: ReadonlyArray<FileUIPart> = []): Promise<boolean> => {
+			const promptText = text.trim();
+			if (!onInterceptSubmit || !promptText) {
+				return false;
+			}
+			const outcome = onInterceptSubmit(promptText);
+			if (!outcome.handled) {
+				return false;
+			}
+
+			setPrompt("");
+			// Abort any live turn before mutating the transcript — otherwise the
+			// stream keeps writing tokens over our injection and corrupts it.
+			if (isStreamingRef.current || hasInFlightTurnRef.current) {
+				await stopStreaming();
+			}
+
+			const createdAt = new Date().toISOString();
+			const userMessage = createRovoAppUserMessage({
+				id: createId("rovo-chat-user"),
+				createdAt,
+				files,
+				text: promptText,
+			});
+			const assistantMessage: RovoUIMessage = {
+				id: createId("rovo-chat-assistant"),
+				role: "assistant",
+				metadata: { origin: "rovo", createdAt, updatedAt: createdAt },
+				parts: outcome.assistantReply
+					? [{ type: "text", text: outcome.assistantReply, state: "done" }]
+					: [],
+			};
+			replaceMessages([...uiMessagesRef.current, userMessage, assistantMessage]);
+			return true;
+		},
+		[onInterceptSubmit, replaceMessages, stopStreaming]
+	);
+
 	const submitPrompt = useCallback(
 		async (nextPrompt: string, files: ReadonlyArray<FileUIPart> = []) => {
 			const promptText = nextPrompt.trim();
@@ -62,31 +123,8 @@ export function useChatSubmit({
 				return;
 			}
 
-			// Deterministic interception: when the prompt is a handled build intent,
-			// skip the model and inject the user message + scripted reply locally so
-			// the agent-edit conversation reads naturally.
-			if (onInterceptSubmit && promptText) {
-				const outcome = onInterceptSubmit(promptText);
-				if (outcome.handled) {
-					setPrompt("");
-					const createdAt = new Date().toISOString();
-					const userMessage = createRovoAppUserMessage({
-						id: createId("rovo-chat-user"),
-						createdAt,
-						files,
-						text: promptText,
-					});
-					const assistantMessage: RovoUIMessage = {
-						id: createId("rovo-chat-assistant"),
-						role: "assistant",
-						metadata: { origin: "rovo", createdAt, updatedAt: createdAt },
-						parts: outcome.assistantReply
-							? [{ type: "text", text: outcome.assistantReply, state: "done" }]
-							: [],
-					};
-					replaceMessages([...uiMessages, userMessage, assistantMessage]);
-					return;
-				}
+			if (await interceptSubmit(nextPrompt, files)) {
+				return;
 			}
 
 			isSubmittingRef.current = true;
@@ -98,7 +136,7 @@ export function useChatSubmit({
 				isSubmittingRef.current = false;
 			}
 		},
-		[defaultPromptOptions, onInterceptSubmit, replaceMessages, sendPrompt, uiMessages]
+		[defaultPromptOptions, interceptSubmit, sendPrompt]
 	);
 
 	const handleSubmit = useCallback(async ({ files, text }: { text: string; files: FileUIPart[] }) => {
@@ -114,6 +152,7 @@ export function useChatSubmit({
 		setPrompt,
 		handleSubmit,
 		submitPrompt,
+		interceptSubmit,
 		abort,
 		uiMessages,
 		isStreaming,

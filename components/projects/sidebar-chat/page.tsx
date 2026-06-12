@@ -390,6 +390,7 @@ export default function ChatPanel({
 		setPrompt,
 		handleSubmit,
 		submitPrompt,
+		interceptSubmit,
 		abort,
 		uiMessages,
 		isStreaming,
@@ -784,21 +785,31 @@ export default function ChatPanel({
 
 	const handleGreetingSuggestionClick = useCallback(
 		(suggestion: RovoSuggestion) => {
+			const promptText = suggestion.prompt ?? suggestion.label;
 			const hasSeparatePrompt = suggestion.prompt && suggestion.prompt !== suggestion.label;
 
-			void sendPrompt(suggestion.prompt ?? suggestion.label, {
-				...resolvedSendPromptOptions,
-				contextDescription: mergeRovoContextDescriptions(
-					resolvedSendPromptOptions?.contextDescription,
-					suggestion.contextDescription,
-				),
-				messageMetadata: {
-					...resolvedSendPromptOptions?.messageMetadata,
-					...(hasSeparatePrompt ? { displayLabel: suggestion.label } : {}),
-				},
-			});
+			void (async () => {
+				// Route build-intent greeting chips through the deterministic
+				// interceptor first so they get the scripted reply instead of the
+				// real model; fall back to the normal send for everything else.
+				if (await interceptSubmit(promptText)) {
+					return;
+				}
+
+				void sendPrompt(promptText, {
+					...resolvedSendPromptOptions,
+					contextDescription: mergeRovoContextDescriptions(
+						resolvedSendPromptOptions?.contextDescription,
+						suggestion.contextDescription,
+					),
+					messageMetadata: {
+						...resolvedSendPromptOptions?.messageMetadata,
+						...(hasSeparatePrompt ? { displayLabel: suggestion.label } : {}),
+					},
+				});
+			})();
 		},
-		[resolvedSendPromptOptions, sendPrompt],
+		[interceptSubmit, resolvedSendPromptOptions, sendPrompt],
 	);
 	const handleDirectoryAutocompleteSelect = useCallback((index: number) => {
 		directoryAutocompleteController?.acceptIndex(index);

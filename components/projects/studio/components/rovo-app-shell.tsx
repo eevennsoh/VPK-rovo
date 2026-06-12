@@ -3445,8 +3445,15 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					openAgentEntry ? openAgentEntry.draftResult : null,
 				);
 				if (buildPlan.handled) {
-					queueTypedScrollAnchor("standard", latestUserMessageIdBeforeSubmit);
-					await appendRealtimeMessage("user", trimmedText, { contextDescription });
+					// A build prompt typed from the default home state must run the same
+					// landing→studio collapse + creation-thread bookkeeping the normal
+					// path below does, since this branch returns before reaching it.
+					const fromDefaultHomeState = isDefaultAgentHomeStateRef.current;
+					if (fromDefaultHomeState) {
+						setIsDefaultHomeSubmitTransition(true);
+						markStudioAgentCreationThread(chat.runtimeThreadId);
+						markStudioAgentCreationThread(chat.activeThreadId);
+					}
 					if (buildPlan.mode === "update" && openAgentEntry && buildPlan.patch) {
 						handleUpdateAgentDraft(openAgentEntry.profile.id, buildPlan.patch);
 					} else if (buildPlan.createResult) {
@@ -3454,8 +3461,22 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							sourceKey: `demo-agent-builder:${createId("demo-agent")}`,
 						});
 					}
-					if (buildPlan.assistantReply) {
-						await appendRealtimeMessage("assistant", buildPlan.assistantReply, { contextDescription });
+					// The agent mutation above has already applied; only the transcript
+					// append can still reject (thread-ensure/persistence). On failure,
+					// reset the armed scroll anchor + home transition like the normal
+					// catch, then return — never fall through to the model path.
+					queueTypedScrollAnchor("standard", latestUserMessageIdBeforeSubmit);
+					try {
+						await appendRealtimeMessage("user", trimmedText, { contextDescription });
+						if (buildPlan.assistantReply) {
+							await appendRealtimeMessage("assistant", buildPlan.assistantReply, { contextDescription });
+						}
+					} catch (error) {
+						if (fromDefaultHomeState) {
+							setIsDefaultHomeSubmitTransition(false);
+						}
+						resetTypedScrollAnchorState();
+						throw error;
 					}
 					if (shouldClearHermesSkillSelection) {
 						clearHermesSkillSelection();
