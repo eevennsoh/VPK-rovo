@@ -550,7 +550,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_BLOCK_SOURCE, /Add prompts to help people start/u);
 	assert.match(AGENT_BLOCK_SOURCE, /knowledgeMode: KnowledgeModeValue;/u);
 	assert.match(AGENT_BLOCK_SOURCE, /onKnowledgeModeChange=\{setKnowledgeMode\}/u);
-	assert.match(AGENT_BLOCK_SOURCE, /Press \/ to help me describe the agent's role/u);
+	assert.match(AGENT_BLOCK_SOURCE, /Press \/ to help me create the agent/u);
 	assert.match(AGENT_BLOCK_SOURCE, /dataFlowConfig=\{config\}/u);
 	assert.doesNotMatch(AGENT_BLOCK_SOURCE, /layout\?: "default" \| "compact";/u);
 	assert.match(AGENT_BLOCK_SOURCE, /automationRules\?: readonly AgentAutomationRule\[\];/u);

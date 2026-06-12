@@ -80,8 +80,8 @@ test("Agent instructions composer uses the shared Tiptap editor", () => {
 	assert.match(AGENT_SOURCE, /onInstructionsViewModeChange\?: \(mode: EditorToolbarViewMode\) => void;/u);
 	assert.match(AGENT_SOURCE, /onViewModeChange=\{onViewModeChange\}/u);
 	assert.match(AGENT_SOURCE, /onViewModeChange=\{onInstructionsViewModeChange\}/u);
-	assert.match(AGENT_SOURCE, /placeholder="Press \/ to help me describe the agent's role, or start with a template"/u);
-	assert.match(AGENT_SOURCE, /placeholderSlot=\{\([\s\S]*className="tiptap-editor text-sm leading-\[1\.55\] text-text-subtlest"[\s\S]*Press <code>\/<\/code> to help me describe the agent&apos;s role,[\s\S]*start with a template[\s\S]*\)\}/u);
+	assert.match(AGENT_SOURCE, /placeholder="Press \/ to help me create the agent, or start with a template"/u);
+	assert.match(AGENT_SOURCE, /placeholderSlot=\{\([\s\S]*className="tiptap-editor text-sm leading-\[1\.55\] text-text-subtlest"[\s\S]*Press <code>\/<\/code> to help me create the agent,[\s\S]*start with a template[\s\S]*\)\}/u);
 	// When a host provides onStartWithTemplate it takes over (opens its own
 	// Agent Directory) and the composer skips its built-in templates dialog;
 	// otherwise the link opens the local AgentTemplatesDialog.
@@ -170,15 +170,19 @@ test("Configured reference menu rows do not wrap enabled visuals in an empty inl
 });
 
 test("Filled config summary sorts empty rows to the bottom while preserving canonical order", () => {
-	assert.match(AGENT_SOURCE, /const rows: ReadonlyArray<\{ key: string; isEmpty: boolean; node: ReactNode \}>/u);
-	assert.match(AGENT_SOURCE, /const orderedRows = rows[\s\S]*\.sort\(\(a, b\) => \{[\s\S]*if \(a\.isEmpty !== b\.isEmpty\) return a\.isEmpty \? 1 : -1;[\s\S]*return a\.index - b\.index;/u);
+	assert.match(AGENT_SOURCE, /const rows: ReadonlyArray<\{ key: string; isEmpty: boolean; alwaysLast\?: boolean; node: ReactNode \}>/u);
+	assert.match(AGENT_SOURCE, /const orderedRows = rows[\s\S]*\.sort\(\(a, b\) => \{[\s\S]*if \(a\.alwaysLast !== b\.alwaysLast\) return a\.alwaysLast \? 1 : -1;[\s\S]*if \(a\.isEmpty !== b\.isEmpty\) return a\.isEmpty \? 1 : -1;[\s\S]*return a\.index - b\.index;/u);
 	assert.match(AGENT_SOURCE, /isEmpty: appItems\.length === 0/u);
-	// The rows array source order IS the canonical display order. Reasoning is
-	// rendered separately after this list, so it is not a row key here.
+	// The rows array source order IS the canonical display order. Memory and
+	// Reasoning are `alwaysLast`, so they are declared last and pinned to the
+	// bottom of the list (below every other row, filled or empty).
 	assert.match(
 		AGENT_SOURCE,
-		/key: "trigger"[\s\S]*key: "apps"[\s\S]*key: "skills"[\s\S]*key: "subagents"[\s\S]*key: "memory"[\s\S]*key: "conversationStarters"/u,
+		/key: "trigger"[\s\S]*key: "apps"[\s\S]*key: "skills"[\s\S]*key: "subagents"[\s\S]*key: "conversationStarters"[\s\S]*key: "memory"[\s\S]*key: "reasoning"/u,
 	);
+	// Memory and Reasoning carry `alwaysLast` so the sort pins them to the bottom.
+	assert.match(AGENT_SOURCE, /key: "memory",[\s\S]*alwaysLast: true,/u);
+	assert.match(AGENT_SOURCE, /key: "reasoning",[\s\S]*alwaysLast: true,/u);
 	// Memory is its own always-on row (never empty), not a chip inside Knowledge.
 	assert.match(AGENT_SOURCE, /function AgentMemoryRow/u);
 	assert.match(AGENT_SOURCE, /key: "memory",[\s\S]*isEmpty: false,/u);

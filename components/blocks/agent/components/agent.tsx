@@ -2962,16 +2962,17 @@ function AgentFilledConfigSummary({
 					/>
 				)
 			: undefined;
-	// Rows declare their canonical order and whether they currently hold any user
-	// content. Empty rows get sorted to the bottom (preserving the canonical order
-	// within each group) so configured fields stay visually grouped at the top.
-	// Source order IS the canonical display order (assuming every row is filled):
-	// Triggers › Knowledge › Tools › Skills › Subagents › Memory › Conversation
-	// starters › Reasoning. Reasoning is never empty, so it always sits last.
-	// `orderedRows` below preserves this order for filled rows, then sinks empty
-	// rows to the bottom in the same relative order — so the array order is the
-	// single source of truth for both groups. Reorder here, not in the sort.
-	const rows: ReadonlyArray<{ key: string; isEmpty: boolean; node: ReactNode }> = [
+	// Rows declare their canonical order, whether they currently hold any user
+	// content, and whether they are pinned to the absolute bottom. Memory and
+	// Reasoning are `alwaysLast` so they sink below every other row (filled or
+	// empty), keeping the two always-on system rows grouped at the very bottom.
+	// Among the remaining rows, empty ones sort below filled ones (preserving the
+	// canonical order within each group) so configured fields stay grouped at the
+	// top. Source order IS the canonical display order: Triggers › Knowledge ›
+	// Tools › Skills › Subagents › Conversation starters › Memory › Reasoning.
+	// `orderedRows` below applies this in the sort, so the array order is the
+	// single source of truth. Reorder here, not in the sort.
+	const rows: ReadonlyArray<{ key: string; isEmpty: boolean; alwaysLast?: boolean; node: ReactNode }> = [
 		{
 			key: "trigger",
 			isEmpty: triggerItems.length === 0,
@@ -3099,20 +3100,6 @@ function AgentFilledConfigSummary({
 			),
 		},
 		{
-			key: "memory",
-			// Memory is a default, always-on knowledge source, so this row is never
-			// empty and stays directly under Subagents among the filled rows.
-			isEmpty: false,
-			node: (
-				<AgentMemoryRow
-					onManage={() => onOpenDirectory?.("memory")}
-					onValueChange={onMemoryModeChange}
-					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:memory` : undefined}
-					value={memoryMode}
-				/>
-			),
-		},
-		{
 			key: "conversationStarters",
 			isEmpty: starterItems.length === 0,
 			node: (
@@ -3146,10 +3133,28 @@ function AgentFilledConfigSummary({
 			),
 		},
 		{
-			key: "reasoning",
-			// Reasoning is always a single selected mode, so this row is never empty
-			// and stays last in the canonical order.
+			key: "memory",
+			// Memory is a default, always-on knowledge source, so this row is never
+			// empty. It is `alwaysLast` so it pins to the bottom (above Reasoning)
+			// regardless of how many other rows are empty.
 			isEmpty: false,
+			alwaysLast: true,
+			node: (
+				<AgentMemoryRow
+					onManage={() => onOpenDirectory?.("memory")}
+					onValueChange={onMemoryModeChange}
+					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:memory` : undefined}
+					value={memoryMode}
+				/>
+			),
+		},
+		{
+			key: "reasoning",
+			// Reasoning is always a single selected mode, so this row is never empty.
+			// It is `alwaysLast` and declared last, so it sits at the very bottom of
+			// the list regardless of how many other rows are empty.
+			isEmpty: false,
+			alwaysLast: true,
 			node: (
 				<AgentReasoningRow
 					onValueChange={onReasoningModeChange}
@@ -3167,6 +3172,9 @@ function AgentFilledConfigSummary({
 		.filter((row) => !hiddenConfigFields?.has(row.key as AgentHideableConfigField))
 		.map((row, index) => ({ ...row, index }))
 		.sort((a, b) => {
+			// `alwaysLast` rows (Memory, Reasoning) sink below every other row,
+			// filled or empty, so they stay pinned to the very bottom of the list.
+			if (a.alwaysLast !== b.alwaysLast) return a.alwaysLast ? 1 : -1;
 			if (a.isEmpty !== b.isEmpty) return a.isEmpty ? 1 : -1;
 			return a.index - b.index;
 		});
@@ -3860,10 +3868,10 @@ function AgentInstructionsComposer({
 				contentClassName={cn("pt-2", contentClassName)}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
 				enableDirectoryAutocomplete
-				placeholder="Press / to help me describe the agent's role, or start with a template"
+				placeholder="Press / to help me create the agent, or start with a template"
 				placeholderSlot={(
 					<p className="tiptap-editor text-sm leading-[1.55] text-text-subtlest">
-						Press <code>/</code> to help me describe the agent&apos;s role, or{" "}
+						Press <code>/</code> to help me create the agent, or{" "}
 						<button
 							type="button"
 							className="pointer-events-auto cursor-pointer rounded-sm text-link no-underline underline-offset-2 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
