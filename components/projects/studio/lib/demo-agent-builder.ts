@@ -688,43 +688,33 @@ export function buildAgentCreateResult(
 export interface DeterministicAgentBuildOutcome {
 	/** True when the prompt is a build intent the deterministic responder owns. */
 	handled: boolean;
-	mode: "update" | "create" | "none";
+	mode: "update" | "none";
 	/** Present when mode === "update": merge into the open agent's draft. */
 	patch?: Partial<AgentResult>;
-	/** Present when mode === "create": register as a new agent. */
-	createResult?: AgentResult;
 	/** Believable transcript reply (absent when not handled). */
 	assistantReply?: string;
 }
 
 /**
- * Single decision point shared by every interception seam (the landing composer
- * and the agent-edit chat). Classifies the prompt once and returns what to do:
- * update the open agent, create a new one, or fall through to the model. Keeping
- * this here means the seams never re-derive intent or drift apart.
+ * Single decision point shared by every agent-edit interception seam. Classifies
+ * the prompt once and returns what to do: update the open agent or fall through
+ * to the model. New-agent creation must stay on the model-backed Studio flow so
+ * the first turn can ask clarification questions before emitting an agent.
  */
 export function planDeterministicAgentBuild(
 	prompt: string,
 	currentAgent: Partial<AgentResult> | null,
 ): DeterministicAgentBuildOutcome {
 	const intent = classifyAgentBuildIntent(prompt);
-	if (!intent.isBuildIntent) {
+	if (!intent.isBuildIntent || !currentAgent) {
 		return { handled: false, mode: "none" };
 	}
 
 	const assistantReply = buildAssistantReplyText(intent, Boolean(currentAgent));
-	if (currentAgent) {
-		return {
-			handled: true,
-			mode: "update",
-			patch: buildAgentUpdatePatch(prompt, currentAgent, intent),
-			assistantReply,
-		};
-	}
 	return {
 		handled: true,
-		mode: "create",
-		createResult: buildAgentCreateResult(prompt, intent),
+		mode: "update",
+		patch: buildAgentUpdatePatch(prompt, currentAgent, intent),
 		assistantReply,
 	};
 }
