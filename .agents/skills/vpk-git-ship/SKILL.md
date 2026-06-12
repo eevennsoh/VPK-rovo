@@ -1,6 +1,6 @@
 ---
 name: vpk-git-ship
-description: "Use for VPK-rovo git shipping in two cases: PR creation and PR merge-back. PR creation commits current edits, derives a branch name when needed, pushes, and opens a GitHub PR. PR merge-back merges a PR, branch, or worktree into the default branch and syncs local/remote main. Bare `vpk-git-ship` with no flag runs the full ship end-to-end (create PR -> wait for auto-merge -> merge -> sync main) and then stops — it does NOT remove worktrees or delete local branches, because an agent cannot remove the worktree it is running in; that local cleanup is the separate `vpk-git-clean` skill, run later from the main checkout. Use whenever the user says \"vpk-git-ship\", \"vpk-git-ship --pr\", \"vpk-git-ship --merge\", \"vpk-git-ship --codex-unavailable\", \"commit and open a PR\", \"ship this branch\", \"merge this PR back to main\", \"land this worktree\", or says Codex Cloud review is unavailable / out of credit during shipping. For cleanup requests like \"clean up worktrees/branches\", \"delete the branch after merge\", or \"prune stale refs\", use the `vpk-git-clean` skill instead."
+description: "Use for VPK-rovo git shipping in two cases: PR creation and PR merge-back. PR creation commits current edits, derives a branch name when needed, pushes, and opens a GitHub PR. PR merge-back merges a PR, branch, or worktree into the default branch and syncs local/remote main. Bare `vpk-git-ship` with no flag runs the full ship end-to-end (create PR -> wait for auto-merge -> merge -> sync main) and then stops — it does NOT remove worktrees or delete local branches, because an agent cannot remove the worktree it is running in; that local cleanup is the separate `vpk-git-clean` skill, run later from the main checkout. Use whenever the user says \"vpk-git-ship\", \"vpk-git-ship --pr\", \"vpk-git-ship --merge\", \"vpk-git-ship --bypass\", \"commit and open a PR\", \"ship this branch\", \"merge this PR back to main\", \"land this worktree\", or says Codex Cloud review is unavailable / out of credit during shipping. For cleanup requests like \"clean up worktrees/branches\", \"delete the branch after merge\", or \"prune stale refs\", use the `vpk-git-clean` skill instead."
 ---
 
 # VPK Git Ship
@@ -23,9 +23,9 @@ Treat these prompt forms as explicit routing:
 - `vpk-git-ship --merge <PR number | branch | worktree path>` -> run **PR merge back**. Accepts a comma- or space-separated list (e.g. `--merge 303 304 305`) for batch merge-back; route into the **Batch Merge Back** subsection.
 - `vpk-git-ship` (no flag) -> run the **Full Ship Sequence**: Create PR -> PR Merge Back against the current branch's work, then stop.
 
-Treat `--codex-unavailable` as an optional modifier on any shipping workflow, not a separate workflow. Also apply it when the user says "no Codex credit", "Codex review unavailable", "skip waiting for Codex review", or equivalent during a ship. It means: do not wait for a fresh Codex Cloud auto-review signal in this run; record Codex auto-review as "declared unavailable/no credit" and continue to required checks plus PR Review Remediation. It does **not** skip unresolved review conversations, required GitHub checks, merge-conflict handling, or any other merge safety gate.
+Treat `--bypass` as an optional modifier on any shipping workflow, not a separate workflow. Also apply it when the user says "no Codex credit", "Codex review unavailable", "skip waiting for Codex review", or equivalent during a ship. It means: bypass the best-effort wait for a fresh Codex Cloud auto-review signal in this run; record Codex auto-review as "bypassed/no credit" and continue to required checks plus PR Review Remediation. It does **not** skip unresolved review conversations, required GitHub checks, merge-conflict handling, or any other merge safety gate.
 
-`--codex-unavailable` is not `--admin`. Do not use `gh pr merge --admin` just because Codex credit is unavailable; `--admin` is only for a separate branch-protection policy problem after review conversations are resolved.
+`--bypass` is not `--admin`. Do not use `gh pr merge --admin` just because Codex credit is unavailable; `--admin` is only for a separate branch-protection policy problem after review conversations are resolved.
 
 Examples:
 
@@ -33,7 +33,7 @@ Examples:
 [$vpk-git-ship] --pr
 [$vpk-git-ship] --pr "Add Hermes status panel"
 [$vpk-git-ship] --merge PR #321
-[$vpk-git-ship] --merge PR #321 --codex-unavailable
+[$vpk-git-ship] --merge PR #321 --bypass
 [$vpk-git-ship] --merge /path/to/vpk-rovo-worktree
 [$vpk-git-ship]
 ```
@@ -44,7 +44,7 @@ GitHub PR records generally are not deleted. When the user says "delete the PR o
 
 ## Universal Pre-Merge Gate (applies to EVERY merge)
 
-This gate is **not optional** and **not tied to a flag**. Before any pull request is merged — by *any* mechanism — you MUST: (1) complete [PR Review Remediation](#pr-review-remediation) so **no review thread is left unresolved**, and (2) check or explicitly account for the current head's Codex status via the [Cloud Codex Auto-Review Poll](#cloud-codex-auto-review-poll). The poll only *waits* for a fresh Codex review when you pushed the branch this turn and Codex review has not been declared unavailable; for an already-open PR with no new push it **inspects the existing review without delaying**. If the user explicitly says Codex credit/review is unavailable, record that and continue without waiting. None of these cases exempt the merge from remediation, and any unresolved thread on the current head must still be resolved first. The binding condition is therefore "no unresolved review threads + current-head Codex status checked or declared unavailable", not "block on a fresh poll". The gate is on the *merge action itself*, not on one path to it. It applies even when:
+This gate is **not optional** and **not tied to a flag**. Before any pull request is merged — by *any* mechanism — you MUST: (1) complete [PR Review Remediation](#pr-review-remediation) so **no review thread is left unresolved**, and (2) check or explicitly account for the current head's Codex status via the [Cloud Codex Auto-Review Poll](#cloud-codex-auto-review-poll). The poll only *waits* for a fresh Codex review when you pushed the branch this turn and `--bypass` was not used; for an already-open PR with no new push it **inspects the existing review without delaying**. If the user uses `--bypass` or explicitly says Codex credit/review is unavailable, record that and continue without waiting. None of these cases exempt the merge from remediation, and any unresolved thread on the current head must still be resolved first. The binding condition is therefore "no unresolved review threads + current-head Codex status checked or bypassed/no credit recorded", not "block on a fresh poll". The gate is on the *merge action itself*, not on one path to it. It applies even when:
 
 - **You only ran Create PR (`--pr`) and the user then says "merge it".** `--pr` deliberately stops at "PR opened" and contains **none** of the merge gating. Do NOT shortcut to a raw `gh pr merge`. Route the merge through **PR Merge Back** (`vpk-git-ship --merge <pr>`) so the poll + remediation run.
 - **The user says "merge immediately" / "right now".** "Immediately" means *don't wait around or ask for confirmation* — it does **not** mean *skip the review gate*. The poll + remediation are fast; run them, then merge.
@@ -140,7 +140,7 @@ Skip local validation. CI runs `pnpm run lint` and `pnpm run typecheck` on every
 
 Use this phase after creating or updating a PR when the current workflow intends to merge it. Codex Cloud automatic review is useful review coverage, but it is best-effort: missing Codex credit, auth problems, product outages, or no-op results must not block the normal PR path. Do **not** post `@codex review` from this skill. The repository already has Codex Cloud auto-review configured, and a manual trigger can double-request review.
 
-If the user gave the `--codex-unavailable` modifier or clearly said Codex review/credit is unavailable, do the lightweight status capture in step 1, skip the 3-minute wait in step 2, and continue directly to **PR Review Remediation**. Report the status as "Codex auto-review declared unavailable/no credit." This is a time-saving declaration, not a bypass: required checks and unresolved review conversations still control whether the PR can merge.
+If the user gave the `--bypass` modifier or clearly said Codex review/credit is unavailable, do the lightweight status capture in step 1, skip the 3-minute wait in step 2, and continue directly to **PR Review Remediation**. Report the status as "Codex auto-review bypassed/no credit." This is a time-saving bypass for best-effort review waiting, not a merge-safety bypass: required checks and unresolved review conversations still control whether the PR can merge.
 
 1. Capture the current PR head SHA and the time the PR was created or last pushed:
    - `gh pr view <number> --json headRefOid,updatedAt,reviews,url`
@@ -150,7 +150,7 @@ If the user gave the `--codex-unavailable` modifier or clearly said Codex review
    - **Current-head Codex `+1` reaction exists**: a `+1` issue reaction from `chatgpt-codex-connector[bot]` after the current head became active. Treat this as "Codex reviewed/no findings" and continue.
    - **Codex `eyes` reaction exists**: treat this as in-progress; keep polling until a terminal signal or timeout.
    - **Only stale Codex reviews/reactions exist**: report them as stale and keep polling until timeout.
-3. If the user declared Codex unavailable, the 3-minute poll times out, or GitHub/Codex reports an auth, credit, or availability problem, continue non-blocking. Record "Codex auto-review declared unavailable/no credit", "unavailable", or "timed out" in the final report as appropriate.
+3. If the user used `--bypass`, declared Codex unavailable, the 3-minute poll times out, or GitHub/Codex reports an auth, credit, or availability problem, continue non-blocking. Record "Codex auto-review bypassed/no credit", "unavailable", or "timed out" in the final report as appropriate.
 4. Never wait for Codex longer than this phase's timeout, never fail the ship only because Codex did not run, and never post `@codex review` as a fallback.
 
 ## PR Review Remediation
@@ -274,7 +274,7 @@ Runs **Create PR -> PR Merge Back** against the current branch's work, fully aut
 
 1. Run **Create PR**. Capture the PR number and branch name.
 
-2. Run **Cloud Codex Auto-Review Poll**, or record "declared unavailable/no credit" when the user used `--codex-unavailable` / said Codex credit is unavailable. Continue even if Codex does not produce a current-head signal before the 3-minute timeout.
+2. Run **Cloud Codex Auto-Review Poll**, or record "bypassed/no credit" when the user used `--bypass` / said Codex credit is unavailable. Continue even if Codex does not produce a current-head signal before the 3-minute timeout.
 
 3. Run **PR Review Remediation**. If any unresolved thread remains because it is ambiguous, requires product judgment, or GitHub API access cannot resolve it safely, stop before queueing auto-merge. Missing Codex auto-review is not a stop condition; unresolved conversations are.
 
@@ -346,7 +346,7 @@ Worktree removal, local branch deletion, stale tracking-ref pruning, and closing
 
 Stop and report instead of changing state when:
 
-- Any merge is about to happen without first completing the [Universal Pre-Merge Gate](#universal-pre-merge-gate-applies-to-every-merge) (Codex status check or declared-unavailable accounting + PR Review Remediation). This includes `gh pr merge --admin` and direct `gh`/UI merges — `--admin` clears branch protection, never the review gate.
+- Any merge is about to happen without first completing the [Universal Pre-Merge Gate](#universal-pre-merge-gate-applies-to-every-merge) (Codex status check or `--bypass`/no-credit accounting + PR Review Remediation). This includes `gh pr merge --admin` and direct `gh`/UI merges — `--admin` clears branch protection, never the review gate.
 - The checkout has overlapping uncommitted user edits and no safe stash/restore path.
 - Required checks or blocking reviews are failing and the user did not ask you to fix them.
 - Merge conflicts touch files you cannot confidently resolve from source evidence.
@@ -363,7 +363,7 @@ Keep the final report concise:
 - PR created / updated / merged / closed and its URL.
 - Branch created (with derived name), renamed (from old → new, with the reason), or reused as-is; push result. If the branch name was a poor fit for the diff but could not be renamed (open PR already attached), surface the mismatch explicitly so the user can rename next time.
 - PR merged or deliberately skipped; merge commit or final commit hash when available.
-- Codex auto-review status: current-head review, current-head no-findings reaction, stale only, timed out, unavailable, declared unavailable/no credit, or not waited because this was merge-back with no new push.
+- Codex auto-review status: current-head review, current-head no-findings reaction, stale only, timed out, unavailable, bypassed/no credit, or not waited because this was merge-back with no new push.
 - Review remediation performed: fixed, explained/resolved as invalid, or left unresolved with thread URLs and decision needed.
 - Validation performed and result (note when validation was deferred to CI).
 - Remote branch deleted on merge (server-side); whether you switched to `main` and deleted the local branch, or stayed put (with the reason).
