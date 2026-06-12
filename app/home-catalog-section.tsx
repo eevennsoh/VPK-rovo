@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/iframe-missing-sandbox -- These iframes render first-party internal preview routes; same-origin is required for Next dev assets and theme messaging.
+
 import { useMemo, useState } from "react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import { HomeSectionHeading } from "@/app/home-section-heading";
@@ -145,7 +147,7 @@ export function HomeCatalogSection({
 								title={component.name}
 								className="h-full w-full border-0"
 								loading="lazy"
-								sandbox="allow-scripts"
+								sandbox="allow-same-origin allow-scripts"
 							/>
 						</WebsiteCard>
 					))

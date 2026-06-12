@@ -1,3 +1,5 @@
+// oxlint-disable react-doctor/iframe-missing-sandbox -- These iframes render first-party internal preview routes; same-origin is required for Next dev assets and theme messaging.
+
 import { token } from "@/lib/tokens";
 import { WebsiteSidebarNav } from "@/components/website/website-sidebar-nav";
 import { WebsiteHeader } from "@/components/website/website-header";
@@ -137,7 +139,7 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 											title={comp.name}
 											className="h-full w-full border-0"
 											loading="lazy"
-											sandbox="allow-scripts"
+											sandbox="allow-same-origin allow-scripts"
 										/>
 									</WebsiteCard>
 								))}
@@ -168,7 +170,7 @@ export function HomeContent({ category, lastUpdatedAt, projectComponents, artCom
 											title={comp.name}
 											className="h-full w-full border-0"
 											loading="lazy"
-											sandbox="allow-scripts"
+											sandbox="allow-same-origin allow-scripts"
 										/>
 									</WebsiteCard>
 								))}
