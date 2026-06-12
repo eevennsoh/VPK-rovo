@@ -33,6 +33,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// No source-grep assertions (so it won't drift like the wholesale component
 	// tests); included explicitly so the morph keying stays guarded in CI.
 	"components/visual/text-morphing/lib.test.js",
+	// Deterministic studio agent-builder: prompt → agent create/update patch
+	// against the fake catalogs. Pure module under components/, so gate explicitly.
+	"components/projects/studio/lib/demo-agent-builder.test.js",
 ]);
 
 const gitResult = spawnSync("git", [

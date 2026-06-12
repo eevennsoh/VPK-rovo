@@ -166,6 +166,15 @@ interface ChatPanelProps {
 	hideHeader?: boolean;
 	headerVariant?: "default" | "minimal";
 	abortOnUnmount?: boolean;
+	/**
+	 * Optional deterministic submit interceptor. When provided and it reports the
+	 * prompt as handled, the composer submission skips the model entirely — the
+	 * user message and the returned `assistantReply` are injected locally. Used by
+	 * the studio agent-edit ("Improve your agent?") chat to apply scripted agent
+	 * edits; absent for normal conversational chats (including the agent test
+	 * chat, which must stay a real conversation).
+	 */
+	onInterceptSubmit?: (text: string) => { handled: boolean; assistantReply?: string };
 	containerClassName?: string;
 	containerStyle?: CSSProperties;
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
@@ -267,6 +276,7 @@ export default function ChatPanel({
 	hideHeader = false,
 	headerVariant = "default",
 	abortOnUnmount = true,
+	onInterceptSubmit,
 	containerClassName,
 	containerStyle,
 	onSurfaceSwitch,
@@ -387,6 +397,7 @@ export default function ChatPanel({
 		setPrompt,
 		handleSubmit,
 		submitPrompt,
+		interceptSubmit,
 		abort,
 		uiMessages,
 		isStreaming,
@@ -397,6 +408,7 @@ export default function ChatPanel({
 		removeQueuedPrompt,
 	} = useChatSubmit({
 		defaultPromptOptions: resolvedSendPromptOptions,
+		onInterceptSubmit,
 	});
 
 	// --- Rovo AI cursor companion (Clicky) ---
@@ -780,21 +792,31 @@ export default function ChatPanel({
 
 	const handleGreetingSuggestionClick = useCallback(
 		(suggestion: RovoSuggestion) => {
+			const promptText = suggestion.prompt ?? suggestion.label;
 			const hasSeparatePrompt = suggestion.prompt && suggestion.prompt !== suggestion.label;
 
-			void sendPrompt(suggestion.prompt ?? suggestion.label, {
-				...resolvedSendPromptOptions,
-				contextDescription: mergeRovoContextDescriptions(
-					resolvedSendPromptOptions?.contextDescription,
-					suggestion.contextDescription,
-				),
-				messageMetadata: {
-					...resolvedSendPromptOptions?.messageMetadata,
-					...(hasSeparatePrompt ? { displayLabel: suggestion.label } : {}),
-				},
-			});
+			void (async () => {
+				// Route build-intent greeting chips through the deterministic
+				// interceptor first so they get the scripted reply instead of the
+				// real model; fall back to the normal send for everything else.
+				if (await interceptSubmit(promptText)) {
+					return;
+				}
+
+				void sendPrompt(promptText, {
+					...resolvedSendPromptOptions,
+					contextDescription: mergeRovoContextDescriptions(
+						resolvedSendPromptOptions?.contextDescription,
+						suggestion.contextDescription,
+					),
+					messageMetadata: {
+						...resolvedSendPromptOptions?.messageMetadata,
+						...(hasSeparatePrompt ? { displayLabel: suggestion.label } : {}),
+					},
+				});
+			})();
 		},
-		[resolvedSendPromptOptions, sendPrompt],
+		[interceptSubmit, resolvedSendPromptOptions, sendPrompt],
 	);
 	const handleDirectoryAutocompleteSelect = useCallback((index: number) => {
 		directoryAutocompleteController?.acceptIndex(index);

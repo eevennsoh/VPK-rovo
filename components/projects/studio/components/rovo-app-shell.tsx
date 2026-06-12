@@ -51,6 +51,7 @@ import { resolveRovoAppComposerPlaceholder } from "@/components/projects/shared/
 import { ROVO_APP_MAX_CHAT_PANE_WIDTH, ROVO_APP_MIN_ARTIFACT_PANE_WIDTH, ROVO_APP_MIN_CHAT_PANE_WIDTH, ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS, getRovoAppShellLayout } from "@/components/projects/studio/lib/rovo-app-shell-layout";
 import { getRovoAppSmartGenerationLayoutContext } from "@/components/projects/studio/lib/rovo-app-smart-generation-layout";
 import { deriveRovoAppTimelineItems } from "@/components/projects/studio/lib/rovo-app-timeline";
+import { planDeterministicAgentBuild } from "@/components/projects/studio/lib/demo-agent-builder";
 import { buildComposerHermesContext, shouldResetComposerHermesSkillSelection } from "@/components/projects/studio/lib/rovo-app-hermes-skill-selection";
 import { useHermesEmbedEnabled } from "@/lib/hermes-feature-flags";
 import { buildRovoAppThreadPath } from "@/components/projects/studio/lib/rovo-app-thread-route-sync";
@@ -3432,6 +3433,61 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			}
 
 			const trimmedText = text.trim();
+
+			// Deterministic demo agent-builder. Studio build prompts ("add a trigger
+			// to…", "give it Jira tools", "rename it to…") are mapped onto the fake
+			// directory catalogs and applied directly — no model call — so the demo
+			// is reliable and never returns gibberish. An open agent is UPDATED in
+			// place; otherwise a new agent is CREATED. Non-build prompts (chit-chat,
+			// questions) return isBuildIntent === false and fall through to the
+			// normal streaming path below. Voice/realtime is never intercepted.
+			if (!isRealtimeActive && trimmedText) {
+				const openAgentEntry = activeSessionAgentEntry;
+				const buildPlan = planDeterministicAgentBuild(
+					trimmedText,
+					openAgentEntry ? openAgentEntry.draftResult : null,
+				);
+				if (buildPlan.handled) {
+					// A build prompt typed from the default home state must run the same
+					// landing→studio collapse + creation-thread bookkeeping the normal
+					// path below does, since this branch returns before reaching it.
+					const fromDefaultHomeState = isDefaultAgentHomeStateRef.current;
+					if (fromDefaultHomeState) {
+						setIsDefaultHomeSubmitTransition(true);
+						markStudioAgentCreationThread(chat.runtimeThreadId);
+						markStudioAgentCreationThread(chat.activeThreadId);
+					}
+					if (buildPlan.mode === "update" && openAgentEntry && buildPlan.patch) {
+						handleUpdateAgentDraft(openAgentEntry.profile.id, buildPlan.patch);
+					} else if (buildPlan.createResult) {
+						handleStudioAgentResultSelect(buildPlan.createResult, {
+							sourceKey: `demo-agent-builder:${createId("demo-agent")}`,
+						});
+					}
+					// The agent mutation above has already applied; only the transcript
+					// append can still reject (thread-ensure/persistence). On failure,
+					// reset the armed scroll anchor + home transition like the normal
+					// catch, then return — never fall through to the model path.
+					queueTypedScrollAnchor("standard", latestUserMessageIdBeforeSubmit);
+					try {
+						await appendRealtimeMessage("user", trimmedText, { contextDescription });
+						if (buildPlan.assistantReply) {
+							await appendRealtimeMessage("assistant", buildPlan.assistantReply, { contextDescription });
+						}
+					} catch (error) {
+						if (fromDefaultHomeState) {
+							setIsDefaultHomeSubmitTransition(false);
+						}
+						resetTypedScrollAnchorState();
+						throw error;
+					}
+					if (shouldClearHermesSkillSelection) {
+						clearHermesSkillSelection();
+					}
+					return;
+				}
+			}
+
 			const shouldShowOptimisticPrompt =
 				(chat.sendMode === "immediate" || !chat.shouldQueueNextSubmission) &&
 				(trimmedText || files.length > 0);
@@ -3486,6 +3542,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		},
 		[
 			appendRealtimeMessage,
+			activeSessionAgentEntry,
+			handleUpdateAgentDraft,
+			handleStudioAgentResultSelect,
 			chat.messages,
 			isRealtimeActive,
 			isClickyActive,
@@ -3505,6 +3564,36 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			chat.shouldQueueNextSubmission,
 			chat.runtimeThreadId,
 		],
+	);
+
+	// Deterministic agent-edit interception for the ask-Rovo ("Improve your
+	// agent?") chat. That composer runs through ChatPanel/RovoChatProvider, not
+	// handleComposerSubmit, so it gets its own seam wired to the same shared
+	// planner. Returns { handled } so ChatPanel can skip the model and inject a
+	// believable reply. Only build intents are handled; everything else falls
+	// through to the normal model chat. The test chat does NOT receive this prop,
+	// so conversing with the agent stays a real conversation.
+	const handleAgentEditInterceptSubmit = useCallback(
+		(text: string): { handled: boolean; assistantReply?: string } => {
+			const trimmedText = text.trim();
+			const openAgentEntry = activeSessionAgentEntry;
+			const buildPlan = planDeterministicAgentBuild(
+				trimmedText,
+				openAgentEntry ? openAgentEntry.draftResult : null,
+			);
+			if (!buildPlan.handled) {
+				return { handled: false };
+			}
+			if (buildPlan.mode === "update" && openAgentEntry && buildPlan.patch) {
+				handleUpdateAgentDraft(openAgentEntry.profile.id, buildPlan.patch);
+			} else if (buildPlan.createResult) {
+				handleStudioAgentResultSelect(buildPlan.createResult, {
+					sourceKey: `demo-agent-builder:${createId("demo-agent")}`,
+				});
+			}
+			return { handled: true, assistantReply: buildPlan.assistantReply };
+		},
+		[activeSessionAgentEntry, handleStudioAgentResultSelect, handleUpdateAgentDraft],
 	);
 
 	// Keep the screen-assistant tool executor (created with the realtime hook
@@ -4732,6 +4821,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							abortOnUnmount={false}
 							chatContextBar={agentEditContextBar}
 							greeting={agentEditGreeting}
+							onInterceptSubmit={handleAgentEditInterceptSubmit}
 							hideComposerSourceAndModelControls={Boolean(agentEditContextBar)}
 							// No left border here: the SidebarResizeHandle below paints the divider.
 							// Keeping the panel's own `border-l` too would stack two translucent
