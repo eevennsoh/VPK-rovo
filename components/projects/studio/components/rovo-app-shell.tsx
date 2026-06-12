@@ -51,12 +51,7 @@ import { resolveRovoAppComposerPlaceholder } from "@/components/projects/shared/
 import { ROVO_APP_MAX_CHAT_PANE_WIDTH, ROVO_APP_MIN_ARTIFACT_PANE_WIDTH, ROVO_APP_MIN_CHAT_PANE_WIDTH, ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS, getRovoAppShellLayout } from "@/components/projects/studio/lib/rovo-app-shell-layout";
 import { getRovoAppSmartGenerationLayoutContext } from "@/components/projects/studio/lib/rovo-app-smart-generation-layout";
 import { deriveRovoAppTimelineItems } from "@/components/projects/studio/lib/rovo-app-timeline";
-import {
-	buildAgentCreateResult,
-	buildAgentUpdatePatch,
-	buildAssistantReplyText,
-	classifyAgentBuildIntent,
-} from "@/components/projects/studio/lib/demo-agent-builder";
+import { planDeterministicAgentBuild } from "@/components/projects/studio/lib/demo-agent-builder";
 import { buildComposerHermesContext, shouldResetComposerHermesSkillSelection } from "@/components/projects/studio/lib/rovo-app-hermes-skill-selection";
 import { useHermesEmbedEnabled } from "@/lib/hermes-feature-flags";
 import { buildRovoAppThreadPath } from "@/components/projects/studio/lib/rovo-app-thread-route-sync";
@@ -3444,26 +3439,24 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			// questions) return isBuildIntent === false and fall through to the
 			// normal streaming path below. Voice/realtime is never intercepted.
 			if (!isRealtimeActive && trimmedText) {
-				const buildIntent = classifyAgentBuildIntent(trimmedText);
-				if (buildIntent.isBuildIntent) {
-					const openAgentEntry = activeSessionAgentEntry;
+				const openAgentEntry = activeSessionAgentEntry;
+				const buildPlan = planDeterministicAgentBuild(
+					trimmedText,
+					openAgentEntry ? openAgentEntry.draftResult : null,
+				);
+				if (buildPlan.handled) {
 					queueTypedScrollAnchor("standard", latestUserMessageIdBeforeSubmit);
 					await appendRealtimeMessage("user", trimmedText, { contextDescription });
-					if (openAgentEntry) {
-						handleUpdateAgentDraft(
-							openAgentEntry.profile.id,
-							buildAgentUpdatePatch(trimmedText, openAgentEntry.draftResult),
-						);
-					} else {
-						handleStudioAgentResultSelect(buildAgentCreateResult(trimmedText), {
+					if (buildPlan.mode === "update" && openAgentEntry && buildPlan.patch) {
+						handleUpdateAgentDraft(openAgentEntry.profile.id, buildPlan.patch);
+					} else if (buildPlan.createResult) {
+						handleStudioAgentResultSelect(buildPlan.createResult, {
 							sourceKey: `demo-agent-builder:${createId("demo-agent")}`,
 						});
 					}
-					await appendRealtimeMessage(
-						"assistant",
-						buildAssistantReplyText(buildIntent, Boolean(openAgentEntry)),
-						{ contextDescription },
-					);
+					if (buildPlan.assistantReply) {
+						await appendRealtimeMessage("assistant", buildPlan.assistantReply, { contextDescription });
+					}
 					if (shouldClearHermesSkillSelection) {
 						clearHermesSkillSelection();
 					}
@@ -3547,6 +3540,36 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			chat.shouldQueueNextSubmission,
 			chat.runtimeThreadId,
 		],
+	);
+
+	// Deterministic agent-edit interception for the ask-Rovo ("Improve your
+	// agent?") chat. That composer runs through ChatPanel/RovoChatProvider, not
+	// handleComposerSubmit, so it gets its own seam wired to the same shared
+	// planner. Returns { handled } so ChatPanel can skip the model and inject a
+	// believable reply. Only build intents are handled; everything else falls
+	// through to the normal model chat. The test chat does NOT receive this prop,
+	// so conversing with the agent stays a real conversation.
+	const handleAgentEditInterceptSubmit = useCallback(
+		(text: string): { handled: boolean; assistantReply?: string } => {
+			const trimmedText = text.trim();
+			const openAgentEntry = activeSessionAgentEntry;
+			const buildPlan = planDeterministicAgentBuild(
+				trimmedText,
+				openAgentEntry ? openAgentEntry.draftResult : null,
+			);
+			if (!buildPlan.handled) {
+				return { handled: false };
+			}
+			if (buildPlan.mode === "update" && openAgentEntry && buildPlan.patch) {
+				handleUpdateAgentDraft(openAgentEntry.profile.id, buildPlan.patch);
+			} else if (buildPlan.createResult) {
+				handleStudioAgentResultSelect(buildPlan.createResult, {
+					sourceKey: `demo-agent-builder:${createId("demo-agent")}`,
+				});
+			}
+			return { handled: true, assistantReply: buildPlan.assistantReply };
+		},
+		[activeSessionAgentEntry, handleStudioAgentResultSelect, handleUpdateAgentDraft],
 	);
 
 	// Keep the screen-assistant tool executor (created with the realtime hook
@@ -4773,6 +4796,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							abortOnUnmount={false}
 							chatContextBar={agentEditContextBar}
 							greeting={agentEditGreeting}
+							onInterceptSubmit={handleAgentEditInterceptSubmit}
 							hideComposerSourceAndModelControls={Boolean(agentEditContextBar)}
 							// No left border here: the SidebarResizeHandle below paints the divider.
 							// Keeping the panel's own `border-l` too would stack two translucent

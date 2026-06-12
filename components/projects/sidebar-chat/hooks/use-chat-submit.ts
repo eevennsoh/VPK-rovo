@@ -4,6 +4,8 @@ import { useCallback, useRef, useState } from "react";
 import { useRovoChat } from "@/app/contexts";
 import type { QueuedPromptItem } from "@/app/contexts";
 import type { SendPromptOptions } from "@/app/contexts";
+import { createRovoAppUserMessage } from "@/components/projects/studio/lib/rovo-app-user-message";
+import { createId } from "@/lib/utils";
 import type { RovoUIMessage } from "@/lib/rovo-ui-messages";
 import type { FileUIPart } from "ai";
 
@@ -24,16 +26,25 @@ interface UseChatSubmitReturn {
 
 interface UseChatSubmitOptions {
 	defaultPromptOptions?: SendPromptOptions;
+	/**
+	 * Deterministic submit interceptor. When it reports the prompt as handled,
+	 * the model call is skipped and the user message + returned `assistantReply`
+	 * are injected locally. Used by the studio agent-edit chat to apply scripted
+	 * agent edits without hitting the backend.
+	 */
+	onInterceptSubmit?: (text: string) => { handled: boolean; assistantReply?: string };
 }
 
 export function useChatSubmit({
 	defaultPromptOptions,
+	onInterceptSubmit,
 }: Readonly<UseChatSubmitOptions> = {}): UseChatSubmitReturn {
 	const [prompt, setPrompt] = useState("");
 	const isSubmittingRef = useRef(false);
 	const {
 		uiMessages,
 		sendPrompt,
+		replaceMessages,
 		stopStreaming,
 		isStreaming,
 		hasInFlightTurn,
@@ -51,6 +62,33 @@ export function useChatSubmit({
 				return;
 			}
 
+			// Deterministic interception: when the prompt is a handled build intent,
+			// skip the model and inject the user message + scripted reply locally so
+			// the agent-edit conversation reads naturally.
+			if (onInterceptSubmit && promptText) {
+				const outcome = onInterceptSubmit(promptText);
+				if (outcome.handled) {
+					setPrompt("");
+					const createdAt = new Date().toISOString();
+					const userMessage = createRovoAppUserMessage({
+						id: createId("rovo-chat-user"),
+						createdAt,
+						files,
+						text: promptText,
+					});
+					const assistantMessage: RovoUIMessage = {
+						id: createId("rovo-chat-assistant"),
+						role: "assistant",
+						metadata: { origin: "rovo", createdAt, updatedAt: createdAt },
+						parts: outcome.assistantReply
+							? [{ type: "text", text: outcome.assistantReply, state: "done" }]
+							: [],
+					};
+					replaceMessages([...uiMessages, userMessage, assistantMessage]);
+					return;
+				}
+			}
+
 			isSubmittingRef.current = true;
 			setPrompt("");
 
@@ -60,7 +98,7 @@ export function useChatSubmit({
 				isSubmittingRef.current = false;
 			}
 		},
-		[defaultPromptOptions, sendPrompt]
+		[defaultPromptOptions, onInterceptSubmit, replaceMessages, sendPrompt, uiMessages]
 	);
 
 	const handleSubmit = useCallback(async ({ files, text }: { text: string; files: FileUIPart[] }) => {

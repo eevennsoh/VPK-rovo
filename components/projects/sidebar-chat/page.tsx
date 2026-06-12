@@ -159,6 +159,15 @@ interface ChatPanelProps {
 	hideHeader?: boolean;
 	headerVariant?: "default" | "minimal";
 	abortOnUnmount?: boolean;
+	/**
+	 * Optional deterministic submit interceptor. When provided and it reports the
+	 * prompt as handled, the composer submission skips the model entirely — the
+	 * user message and the returned `assistantReply` are injected locally. Used by
+	 * the studio agent-edit ("Improve your agent?") chat to apply scripted agent
+	 * edits; absent for normal conversational chats (including the agent test
+	 * chat, which must stay a real conversation).
+	 */
+	onInterceptSubmit?: (text: string) => { handled: boolean; assistantReply?: string };
 	containerClassName?: string;
 	containerStyle?: CSSProperties;
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
@@ -260,6 +269,7 @@ export default function ChatPanel({
 	hideHeader = false,
 	headerVariant = "default",
 	abortOnUnmount = true,
+	onInterceptSubmit,
 	containerClassName,
 	containerStyle,
 	onSurfaceSwitch,
@@ -390,6 +400,7 @@ export default function ChatPanel({
 		removeQueuedPrompt,
 	} = useChatSubmit({
 		defaultPromptOptions: resolvedSendPromptOptions,
+		onInterceptSubmit,
 	});
 
 	// --- Rovo AI cursor companion (Clicky) ---

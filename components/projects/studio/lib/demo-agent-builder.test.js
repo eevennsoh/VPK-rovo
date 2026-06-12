@@ -142,3 +142,30 @@ test("chit-chat is NOT a build intent", async () => {
 	assert.equal(classifyAgentBuildIntent("hello there, how are you?").isBuildIntent, false);
 	assert.equal(classifyAgentBuildIntent("what can you do?").isBuildIntent, false);
 });
+
+test("planDeterministicAgentBuild → update when an agent is open", async () => {
+	const { planDeterministicAgentBuild } = await loadModule();
+	const outcome = planDeterministicAgentBuild("give it Jira tools", { apps: [] });
+	assert.equal(outcome.handled, true);
+	assert.equal(outcome.mode, "update");
+	assert.ok(outcome.patch && outcome.patch.apps.includes("Jira"));
+	assert.ok(outcome.assistantReply && /added/i.test(outcome.assistantReply));
+	assert.equal(outcome.createResult, undefined);
+});
+
+test("planDeterministicAgentBuild → create when no agent is open", async () => {
+	const { planDeterministicAgentBuild } = await loadModule();
+	const outcome = planDeterministicAgentBuild(CANONICAL, null);
+	assert.equal(outcome.handled, true);
+	assert.equal(outcome.mode, "create");
+	assert.ok(outcome.createResult && outcome.createResult.action === "create");
+	assert.ok(outcome.assistantReply && /created/i.test(outcome.assistantReply));
+	assert.equal(outcome.patch, undefined);
+});
+
+test("planDeterministicAgentBuild → not handled for chit-chat", async () => {
+	const { planDeterministicAgentBuild } = await loadModule();
+	const outcome = planDeterministicAgentBuild("thanks, that's great", { apps: [] });
+	assert.equal(outcome.handled, false);
+	assert.equal(outcome.mode, "none");
+});

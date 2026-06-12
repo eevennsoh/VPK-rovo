@@ -543,8 +543,52 @@ export function buildAgentCreateResult(prompt: string): AgentResult {
 }
 
 // ---------------------------------------------------------------------------
-// Transcript copy
+// Shared decision helper
 // ---------------------------------------------------------------------------
+
+export interface DeterministicAgentBuildOutcome {
+	/** True when the prompt is a build intent the deterministic responder owns. */
+	handled: boolean;
+	mode: "update" | "create" | "none";
+	/** Present when mode === "update": merge into the open agent's draft. */
+	patch?: Partial<AgentResult>;
+	/** Present when mode === "create": register as a new agent. */
+	createResult?: AgentResult;
+	/** Believable transcript reply (absent when not handled). */
+	assistantReply?: string;
+}
+
+/**
+ * Single decision point shared by every interception seam (the landing composer
+ * and the agent-edit chat). Classifies the prompt once and returns what to do:
+ * update the open agent, create a new one, or fall through to the model. Keeping
+ * this here means the seams never re-derive intent or drift apart.
+ */
+export function planDeterministicAgentBuild(
+	prompt: string,
+	currentAgent: Partial<AgentResult> | null,
+): DeterministicAgentBuildOutcome {
+	const intent = classifyAgentBuildIntent(prompt);
+	if (!intent.isBuildIntent) {
+		return { handled: false, mode: "none" };
+	}
+
+	const assistantReply = buildAssistantReplyText(intent, Boolean(currentAgent));
+	if (currentAgent) {
+		return {
+			handled: true,
+			mode: "update",
+			patch: buildAgentUpdatePatch(prompt, currentAgent),
+			assistantReply,
+		};
+	}
+	return {
+		handled: true,
+		mode: "create",
+		createResult: buildAgentCreateResult(prompt),
+		assistantReply,
+	};
+}
 
 const KIND_PHRASES: Record<AgentBuildIntentKind, string> = {
 	trigger: "a trigger",
