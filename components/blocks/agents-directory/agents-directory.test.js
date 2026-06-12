@@ -120,7 +120,7 @@ test("Agent Directory experimental variation has searchable multi-select filters
 	assert.match(source, /<section aria-label=\{heading\} className="flex flex-col gap-2">/u);
 	assert.match(source, /<h2 className="px-1\.5 text-xs font-semibold leading-4 text-text-subtlest">/u);
 	assert.doesNotMatch(source, /<h2 style=\{\{ font: token\("font\.heading\.large"\) \}\} className="text-text">/u);
-	assert.match(source, /"flex h-full min-h-0 flex-col gap-4 overflow-y-auto px-6 pt-1 pb-8"/u);
+	assert.match(source, /"flex h-full min-h-0 flex-col gap-4 overflow-y-auto px-6 pt-1"/u);
 	assert.match(source, /aria-pressed=\{selectedMyAgents\.length > 0 \? true : undefined\}[\s\S]*?Filter by my agents/u);
 	assert.match(source, /Filter by teams/u);
 	assert.match(source, /Filter by companies/u);

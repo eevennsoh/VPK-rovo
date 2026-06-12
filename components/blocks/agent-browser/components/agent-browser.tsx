@@ -421,10 +421,20 @@ export function AgentBrowserDialog({
 	variant = "default",
 	...browserProps
 }: Readonly<AgentBrowserDialogProps>) {
+	// The experimental browser uses a fixed height (the height of the Templates
+	// view at its tallest). Both the Agents and Templates views share it, so
+	// switching tabs never changes the dialog height.
+	const isExperimental = variant === "experimental";
+
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent
-				className="grid h-[min(800px,calc(100svh-2rem))] max-h-[calc(100svh-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[1200px]"
+				className={cn(
+					"grid max-h-[calc(100svh-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[1200px]",
+					isExperimental
+						? "h-[min(797px,calc(100svh-2rem))]"
+						: "h-[min(800px,calc(100svh-2rem))]",
+				)}
 				showCloseButton={false}
 			>
 				<div className="flex items-center justify-between px-6 pt-6 pb-4">
@@ -788,10 +798,11 @@ function ExperimentalAgentBrowser({
 			className={cn(
 				// overflow-y-auto forces overflow-x to compute to auto, so this scroll
 				// viewport clips anything painted outside its content box. pt-1 gives the
-				// search input's focus ring (ring-3) room at the top; pb-8 gives the card
-				// hover shadow (elevation.shadow.overlay = 0 8px 12px, ~20px reach) room at
-				// the bottom so it is not clipped. px-6 already clears the ~12px side reach.
-				"flex h-full min-h-0 flex-col gap-4 overflow-y-auto px-6 pt-1 pb-8",
+				// search input's focus ring (ring-3) room at the top. No bottom padding:
+				// the carousel/grid let the card hover shadow escape vertically
+				// (overflow-y-visible) and own their own bottom spacing. px-6 already
+				// clears the side reach.
+				"flex h-full min-h-0 flex-col gap-4 overflow-y-auto px-6 pt-1",
 				contentOverflow.showTopScrollMask ? "scroll-mask-top overscroll-contain" : null,
 			)}
 		>
@@ -1175,9 +1186,14 @@ function ExperimentalTemplateMode({
 
 	return (
 		<div className="mt-2 flex min-h-0 flex-1 flex-col gap-2">
-			<section aria-label="Agent templates" className="relative -mx-6 min-h-0 flex-1 overflow-hidden">
+			{/* Cards fill this flex-1 section (the dialog is a fixed height shared with the
+			    Agents view), so they keep their full height — no vertical padding here that
+			    would shrink them. overflow-x-clip still crops the horizontal carousel bleed,
+			    but overflow-y-visible lets the card hover shadow escape downward into the
+			    outer scroll viewport's pb-6, where it is not cropped. */}
+			<section aria-label="Agent templates" className="relative -mx-6 min-h-0 flex-1 overflow-x-clip overflow-y-visible">
 				<div
-					className="h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+					className="h-full overflow-x-auto overflow-y-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 					data-agent-templates-carousel
 					onScroll={updateScrollControls}
 					ref={setCarouselRef}
@@ -1185,7 +1201,9 @@ function ExperimentalTemplateMode({
 					<AnimatePresence custom={motionCustom} initial={false} mode="wait">
 						<motion.div
 							animate="center"
-							className="flex h-full w-max gap-4 px-6 pt-0 pb-6"
+							// items-start so each card hugs its own content height instead of
+							// stretching to fill the carousel's height.
+							className="flex w-max items-start gap-4 px-6 pt-0 pb-0"
 							custom={motionCustom}
 							exit="exit"
 							initial="enter"
@@ -1196,7 +1214,7 @@ function ExperimentalTemplateMode({
 							{templates.map((agent, index) => (
 								<motion.div
 									animate={{ opacity: 1, transform: "translateX(0px)" }}
-									className="h-full min-h-0 w-90 shrink-0 [will-change:transform,opacity]"
+									className="min-h-0 w-90 shrink-0 [will-change:transform,opacity]"
 									initial={{
 										opacity: 0,
 										transform: motionCustom.shouldReduceMotion ? "translateX(0px)" : `translateX(${motionCustom.direction * AGENT_BROWSER_TEMPLATE_CARD_ENTER_OFFSET}px)`,
@@ -1322,7 +1340,7 @@ function ExperimentalTemplateCard({
 			attributionKind={agent.attributionKind}
 			avatarSrc={agent.avatarSrc}
 			capabilities={agent.capabilities ?? EMPTY_TEMPLATE_CAPABILITIES}
-			className="h-full w-full"
+			className="w-full"
 			collaboratorOverflow={agent.collaboratorOverflow}
 			collaborators={agent.collaborators}
 			description={agent.description}
