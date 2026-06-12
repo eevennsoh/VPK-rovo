@@ -28,6 +28,8 @@ async function loadContextModule() {
 			buildStudioAgentCreationContinuationContext,
 			buildCreationTemplateContextFromAgent,
 			buildCreationTemplateContextFromStarter,
+			applyTemplateDefaultsToResult,
+			resolveTemplateConfigForResult,
 		} from "@/components/projects/studio/lib/studio-agent-creation-context";
 		export { DEMO_TOOLS, DEMO_SESSION_TOOLS, DEFAULT_SKILLS } from "@/app/data/directory";
 	`);
@@ -293,23 +295,84 @@ test("buildCreationTemplateContextFromAgent distils labels, dedupes apps, and dr
 	assert.deepEqual(mod.buildCreationTemplateContextFromAgent({ name: "Bare" }), { name: "Bare" });
 });
 
-test("buildCreationTemplateContextFromStarter reads hero apps/skills and omits absent fields", async () => {
+test("buildCreationTemplateContextFromStarter enriches from the matching template config", async () => {
 	const mod = await loadContextModule();
+	// "Release Notes Drafter" matches a real template, so the starter carries the
+	// SAME rich defaults as the Browse-all remix path: bound ids + tokenized chipped
+	// body + names/triggers/modes (not just hero labels).
 	const withHero = mod.buildCreationTemplateContextFromStarter({
 		title: "Release Notes Drafter",
 		description: "Drafts release notes",
 		hero: { sources: [{ label: "Bitbucket" }], skills: [{ label: "Summarize" }] },
 	});
 
-	assert.deepEqual(withHero, {
-		name: "Release Notes Drafter",
-		description: "Drafts release notes",
-		apps: ["Bitbucket"],
-		skills: ["Summarize"],
-	});
+	assert.equal(withHero.name, "Release Notes Drafter");
+	assert.equal(withHero.description, "Drafts release notes");
+	assert.deepEqual(withHero.apps, ["Bitbucket"]);
+	assert.deepEqual(withHero.skills, ["Summarize"]);
+	// Enrichment from the template config:
+	assert.ok(Array.isArray(withHero.toolIds) && withHero.toolIds.length > 0, "toolIds attached");
+	assert.ok(Array.isArray(withHero.skillIds) && withHero.skillIds.includes("draft-release-notes"));
+	assert.ok(Array.isArray(withHero.triggers) && withHero.triggers.length > 0, "triggers attached");
+	assert.equal(typeof withHero.tokenizedBody, "string");
+	assert.match(withHero.tokenizedBody, /@\[/, "tokenized chipped body attached");
+	assert.ok(Array.isArray(withHero.toolNames) && withHero.toolNames.length > 0, "display names attached");
 
+	// A title that matches no template carries only the hero-derived fields.
 	assert.deepEqual(
-		mod.buildCreationTemplateContextFromStarter({ title: "Bare", description: "" }),
-		{ name: "Bare" },
+		mod.buildCreationTemplateContextFromStarter({ title: "No Such Template XYZ", description: "" }),
+		{ name: "No Such Template XYZ" },
 	);
+});
+
+test("applyTemplateDefaultsToResult backfills a thin template-based result", async () => {
+	const mod = await loadContextModule();
+	// A thin model result (matches template by id, with the generated -2 suffix).
+	const thin = {
+		agentId: "decision-director-2",
+		name: "Decision Director",
+		instructions: "You are Decision Director. Help with decisions.", // no @[ chips
+		tools: [],
+		skills: [],
+		knowledge: [],
+		subagents: [],
+		triggers: [],
+	};
+	const out = mod.applyTemplateDefaultsToResult(thin);
+	assert.ok(out.skills.length > 0, "skills backfilled from template");
+	assert.ok(out.tools.length > 0, "tools backfilled from template");
+	assert.ok(out.knowledge.length > 0, "knowledge backfilled from template");
+	assert.ok(out.subagents.length > 0, "subagents backfilled from template");
+	assert.match(out.instructions, /@\[/, "chip-less body replaced with the template's chipped body");
+	assert.ok(out.triggers.length > 0, "triggers backfilled from template");
+	// Nested subagents instantiated with their OWN smaller config.
+	assert.ok(Array.isArray(out.subagentPrompts) && out.subagentPrompts.length > 0, "subagentPrompts instantiated");
+	// Required profile fields backfilled so normalizeStudioAgentResult won't drop the agent.
+	assert.ok(Array.isArray(out.conversationStarters) && out.conversationStarters.length > 0, "conversationStarters backfilled");
+	assert.ok(typeof out.description === "string" && out.description.length > 0, "description backfilled");
+	for (const sp of out.subagentPrompts) {
+		assert.ok(sp.id && sp.triggerName, "subagent prompt has id + name");
+		assert.ok(sp.config && typeof sp.config === "object", "subagent prompt has its own config");
+		assert.ok(Array.isArray(sp.config.skills), "subagent config has skills");
+		assert.ok(["on", "off"].includes(sp.config.memoryMode), "subagent config has its own memoryMode");
+		assert.ok(typeof sp.config.reasoningMode === "string", "subagent config has its own reasoningMode");
+	}
+});
+
+test("applyTemplateDefaultsToResult preserves model-populated fields and no-ops off-template", async () => {
+	const mod = await loadContextModule();
+	// Model already produced a chipped body + skills -> keep them.
+	const rich = {
+		agentId: "decision-director",
+		name: "Decision Director",
+		instructions: "## Instructions\nUse @[skill:explore-ideas].",
+		skills: ["Prioritize ideas"],
+		tools: [],
+	};
+	const keptRich = mod.applyTemplateDefaultsToResult(rich);
+	assert.deepEqual(keptRich.skills, ["Prioritize ideas"], "model skills preserved");
+	assert.equal(keptRich.instructions, rich.instructions, "chipped body preserved");
+	// Off-template result is returned unchanged.
+	const scratch = { agentId: "totally-custom-thing", name: "My Bespoke Bot", instructions: "Plain.", skills: [] };
+	assert.deepEqual(mod.applyTemplateDefaultsToResult(scratch), scratch);
 });

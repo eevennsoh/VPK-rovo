@@ -153,17 +153,17 @@ export function PersonalGraphSummaryPanel({
 				</div>
 			) : null}
 
-			<div
-				aria-live="polite"
+				<output
+					aria-live="polite"
 				className={cn(
 					"mt-3 flex items-center gap-2 rounded-md border border-border bg-bg-neutral px-3 py-2 text-xs text-text-subtle",
 					summary.error ? "border-border-danger text-text-danger" : null,
 				)}
 				role="status"
-			>
-				{isRunning ? <Spinner label="Generating summary article" size="xs" /> : null}
-				<span>{statusText}</span>
-			</div>
+				>
+					{isRunning ? <Spinner label="Generating summary article" size="xs" /> : null}
+					<span>{statusText}</span>
+				</output>
 
 			{isTwgSetupError ? (
 				<div className="mt-3 rounded-md border border-border-warning bg-bg-warning px-3 py-2 text-xs leading-5 text-text">

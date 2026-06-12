@@ -15,7 +15,7 @@ import {
 	ArtifactPanel,
 	ArtifactTitle,
 	type ArtifactDocument,
-} from "@/components/ui-custom/artifact";
+} from "@/components/blocks/artifact";
 import { useArtifactAnnotations } from "@/components/ui-custom/hooks/use-artifact-annotations";
 import { CodeBlock } from "@/components/ui-custom/code-block";
 import {

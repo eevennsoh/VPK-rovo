@@ -6,8 +6,9 @@ import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CustomizeIcon from "@atlaskit/icon/core/customize";
 import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
 import PersonIcon from "@atlaskit/icon/core/person";
+import type { ReactNode } from "react";
 
-export default function FilterButtonBar(): JSX.Element {
+export default function FilterButtonBar(): ReactNode {
 	return (
 		<div className="flex flex-col gap-2 px-2 pb-3 sm:flex-row sm:items-center sm:justify-between">
 			<div className="flex min-w-0 flex-wrap items-center gap-2">

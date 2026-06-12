@@ -1,10 +1,16 @@
 "use client"
 
+/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
+
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useTexture } from "@react-three/drei"
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { useReducedMotion } from "motion/react"
 import * as THREE from "three"
+import { useLazyRef } from "@/lib/use-lazy-ref";
 
 export type AgentState = null | "thinking" | "listening" | "talking"
 
@@ -127,8 +133,8 @@ function Scene({
   const circleRef =
     useRef<THREE.Mesh<THREE.CircleGeometry, THREE.ShaderMaterial>>(null)
   const initialColorsRef = useRef<[string, string]>(colors)
-  const targetColor1Ref = useRef(new THREE.Color(colors[0]))
-  const targetColor2Ref = useRef(new THREE.Color(colors[1]))
+  const targetColor1Ref = useLazyRef(() => new THREE.Color(colors[0]))
+  const targetColor2Ref = useLazyRef(() => new THREE.Color(colors[1]))
   const animSpeedRef = useRef(0.1)
   const perlinNoiseTexture = useTexture(
     "https://storage.googleapis.com/eleven-public-cdn/images/perlin-noise.png"

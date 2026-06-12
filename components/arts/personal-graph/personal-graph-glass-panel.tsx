@@ -1,5 +1,8 @@
 "use client";
 
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+// oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates coupled component parts as a compound component or demo surface API.
+
 import {
 	createContext,
 	use,
@@ -54,6 +57,7 @@ const PERSONAL_GRAPH_LIQUID_GLASS_POINTER_ACTIVATION_RADIUS = Number.POSITIVE_IN
 const PERSONAL_GRAPH_LIQUID_GLASS_POINTER_SMOOTHING = 0.2;
 const PERSONAL_GRAPH_ICON_BUTTON_RADIUS = 9999;
 const PERSONAL_GRAPH_ICON_BUTTON_POINTER_SMOOTHING_REST_DELTA = 0.01;
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const PERSONAL_GRAPH_DEMO_GLASS_PROPS = {
 	...LIQUID_GLASS_BUTTON_DEFAULT_GLASS_PROPS,
 	displace: 5,
@@ -64,6 +68,7 @@ export const PERSONAL_GRAPH_DEMO_GLASS_PROPS = {
 	yChannel: "G",
 } satisfies PersonalGraphGlassTuningProps;
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const PERSONAL_GRAPH_CHROMATIC_RGB_GLASS_PROPS = {
 	...PERSONAL_GRAPH_DEMO_GLASS_PROPS,
 	distortionScale: -180,

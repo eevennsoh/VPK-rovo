@@ -20,6 +20,7 @@ const RFP_DRAFTING_AGENT_ID = "rfp-drafting-agent";
 const DEFAULT_AGENT_PARTNER_NAME = "Atlassian";
 const DEFAULT_GENERATED_AGENT_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg";
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function isGeneratedAgentResult(
 	agent: AgentResult | null | undefined,
 ): agent is AgentResult {

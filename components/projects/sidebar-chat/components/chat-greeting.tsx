@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 import type { ReactNode } from "react";
@@ -83,6 +85,31 @@ const CHAT_GREETING_REDUCED_ITEM_VARIANTS = {
 		transition: CHAT_GREETING_REDUCED_TRANSITION,
 	},
 } as const;
+const CHAT_GREETING_INSTANT_CONTAINER_VARIANTS = {
+	hidden: {},
+	visible: {},
+	exit: {},
+} as const;
+const CHAT_GREETING_INSTANT_ITEM_VARIANTS = {
+	hidden: {
+		opacity: 1,
+		transform: "translateY(0px)",
+	},
+	visible: {
+		opacity: 1,
+		transform: "translateY(0px)",
+		transition: {
+			duration: 0,
+		},
+	},
+	exit: {
+		opacity: 0,
+		transform: "translateY(0px)",
+		transition: {
+			duration: 0,
+		},
+	},
+} as const;
 type ChatGreetingItemVariants = typeof CHAT_GREETING_ITEM_VARIANTS | typeof CHAT_GREETING_REDUCED_ITEM_VARIANTS;
 
 interface ChatGreetingProps {
@@ -98,6 +125,12 @@ interface ChatGreetingProps {
 	 * pass `false` to keep just the suggestions.
 	 */
 	showHero?: boolean;
+	/**
+	 * When the user has started composing in the chat input, hide the
+	 * illustration + heading hero so the suggestion list can rise to fill the
+	 * freed vertical space. The suggestion list stays visible.
+	 */
+	isComposing?: boolean;
 	/** Whether to render the Max-mode greeting and illustration. */
 	isMaxMode?: boolean;
 	/** Optional custom suggestions list */
@@ -256,14 +289,20 @@ function CustomAgentStarterItem({
 function CustomAgentGreeting({
 	agent,
 	isAgentTest = false,
+	isComposing = false,
 	itemVariants,
 	onSuggestionClick,
 }: Readonly<{
 	agent: RovoAgentProfile;
 	isAgentTest?: boolean;
+	isComposing?: boolean;
 	itemVariants: ChatGreetingItemVariants;
 	onSuggestionClick?: (suggestion: RovoSuggestion) => void;
 }>) {
+	const shouldShowHero = !isComposing || agent.starters.length === 0;
+	const activeContainerVariants = isComposing ? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_CONTAINER_VARIANTS;
+	const activeItemVariants = isComposing ? CHAT_GREETING_INSTANT_ITEM_VARIANTS : itemVariants;
+
 	return (
 		<motion.div
 			animate="visible"
@@ -274,23 +313,32 @@ function CustomAgentGreeting({
 			exit="exit"
 			initial="hidden"
 			key={agent.id}
-			variants={CHAT_GREETING_CONTAINER_VARIANTS}
+			variants={activeContainerVariants}
 		>
-			<div className="flex max-w-[360px] flex-col items-center gap-3">
-				<motion.div variants={itemVariants}>
-					<AgentAvatarVisual avatarSrc={agent.avatarSrc} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
-				</motion.div>
-				<motion.div className="flex flex-col items-center gap-2" variants={itemVariants}>
-					<Heading size="large" className="text-center">{agent.name}</Heading>
-					{agent.description ? (
-						<p className="text-sm leading-6 text-text-subtle">{agent.description}</p>
-					) : null}
-				</motion.div>
-			</div>
-			<motion.div className="w-full" variants={CHAT_GREETING_CONTAINER_VARIANTS}>
+			<AnimatePresence mode="popLayout" propagate>
+				{shouldShowHero ? (
+					<motion.div
+						className="flex max-w-[360px] flex-col items-center gap-3"
+						exit="exit"
+						key="agent-hero"
+						variants={activeContainerVariants}
+					>
+						<motion.div variants={activeItemVariants}>
+							<AgentAvatarVisual avatarSrc={agent.avatarSrc} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
+						</motion.div>
+						<motion.div className="flex flex-col items-center gap-2" variants={activeItemVariants}>
+							<Heading size="large" className="text-center">{agent.name}</Heading>
+							{agent.description ? (
+								<p className="line-clamp-3 text-sm leading-6 text-text-subtle">{agent.description}</p>
+							) : null}
+						</motion.div>
+					</motion.div>
+				) : null}
+			</AnimatePresence>
+			<motion.div className="w-full" layout={isComposing ? false : "position"} variants={activeContainerVariants}>
 				<div className="mx-auto flex w-fit max-w-full flex-col gap-1">
 					{agent.starters.map((suggestion) => (
-						<motion.div key={suggestion.id} variants={itemVariants}>
+						<motion.div key={suggestion.id} variants={activeItemVariants}>
 							<CustomAgentStarterItem
 								suggestion={suggestion}
 								onClick={() => onSuggestionClick?.(suggestion)}
@@ -308,6 +356,7 @@ export default function ChatGreeting({
 	illustrationSrc = DEFAULT_ILLUSTRATION_SRC,
 	illustrationDarkSrc,
 	isMaxMode = false,
+	isComposing = false,
 	selectedAgent = null,
 	isAgentTest = false,
 	showHero = true,
@@ -325,7 +374,11 @@ export default function ChatGreeting({
 		!customAgent &&
 		directoryAutocompleteState !== null &&
 		directoryAutocompleteState.matches.length > 0;
-	const shouldHideSuggestionList =
+	// A directory autocomplete query that returns no matches must not collapse the
+	// greeting to just the illustration + heading. Fall back to the default prompts
+	// so there is always something actionable to show when there are neither
+	// prompts nor search results to display.
+	const hasEmptyDirectoryQuery =
 		!customAgent &&
 		directoryAutocompleteState !== null &&
 		directoryAutocompleteState.matches.length === 0;
@@ -343,6 +396,17 @@ export default function ChatGreeting({
 	const shouldUseControlledChatIllustration = !isMaxMode && resolvedIllustrationSrc === DEFAULT_ILLUSTRATION_SRC;
 	const heroKey = isMaxMode ? "max" : "default";
 	const itemVariants = shouldReduceMotion ? CHAT_GREETING_REDUCED_ITEM_VARIANTS : CHAT_GREETING_ITEM_VARIANTS;
+	const shouldShowSuggestionList =
+		shouldRenderDirectoryMatches ||
+		((directoryAutocompleteState === null || hasEmptyDirectoryQuery) && greetingSuggestions.length > 0);
+	// While composing, the hero collapses to give the directory-match list room.
+	// But when the query has no matches and we fall back to the default prompts,
+	// keep the hero so the "no matching prompt/search results" state still shows
+	// the illustration + heading above the default prompts.
+	const shouldShowHero =
+		showHero && (!isComposing || !shouldRenderDirectoryMatches);
+	const activeContainerVariants = isComposing ? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_CONTAINER_VARIANTS;
+	const activeItemVariants = isComposing ? CHAT_GREETING_INSTANT_ITEM_VARIANTS : itemVariants;
 
 	return (
 		<div className="w-full">
@@ -351,6 +415,7 @@ export default function ChatGreeting({
 					<CustomAgentGreeting
 						agent={customAgent}
 						isAgentTest={isAgentTest}
+						isComposing={isComposing}
 						itemVariants={itemVariants}
 						key={`agent-${customAgent.id}`}
 						onSuggestionClick={onSuggestionClick}
@@ -362,53 +427,59 @@ export default function ChatGreeting({
 						exit="exit"
 						initial="hidden"
 						key={`rovo-${heroKey}-${resolvedHeading}`}
-						variants={CHAT_GREETING_CONTAINER_VARIANTS}
+						variants={activeContainerVariants}
 					>
-						{showHero ? (
-							<motion.div
-								className="flex flex-col items-center gap-2"
-								variants={CHAT_GREETING_CONTAINER_VARIANTS}
-							>
-								<motion.div className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative")} style={{ willChange: "transform, opacity" }} variants={itemVariants}>
-									{shouldUseControlledChatIllustration ? (
-										<ControlledRovoIllustration illusId="chat" size={74} />
-									) : shouldUseControlledAgentIllustration ? (
-										<ControlledRovoIllustration illusId="ai" size={74} />
-									) : (
-										<>
-											<Image
-												src={resolvedIllustrationSrc}
-												alt=""
-												width={74}
-												height={67}
-												priority
-												className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "object-contain dark:hidden [[data-color-mode=dark]_&]:hidden")}
-											/>
-											<Image
-												src={resolvedIllustrationDarkSrc}
-												alt=""
-												width={74}
-												height={67}
-												priority
-												className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "hidden object-contain dark:block [[data-color-mode=dark]_&]:block")}
-											/>
-										</>
-									)}
+						<AnimatePresence mode="popLayout" propagate>
+							{shouldShowHero ? (
+								<motion.div
+									animate="visible"
+									className="flex flex-col items-center gap-2"
+									exit="exit"
+									initial="hidden"
+									key="hero"
+									variants={activeContainerVariants}
+								>
+									<motion.div className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative")} style={{ willChange: "transform, opacity" }} variants={activeItemVariants}>
+										{shouldUseControlledChatIllustration ? (
+											<ControlledRovoIllustration illusId="chat" size={74} />
+										) : shouldUseControlledAgentIllustration ? (
+											<ControlledRovoIllustration illusId="ai" size={74} />
+										) : (
+											<>
+												<Image
+													src={resolvedIllustrationSrc}
+													alt=""
+													width={74}
+													height={67}
+													priority
+													className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "object-contain dark:hidden [[data-color-mode=dark]_&]:hidden")}
+												/>
+												<Image
+													src={resolvedIllustrationDarkSrc}
+													alt=""
+													width={74}
+													height={67}
+													priority
+													className={cn(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "hidden object-contain dark:block [[data-color-mode=dark]_&]:block")}
+												/>
+											</>
+										)}
+									</motion.div>
+									<motion.div style={{ willChange: "transform, opacity" }} variants={activeItemVariants}>
+										<Heading size="large" className="text-center">{resolvedHeading}</Heading>
+									</motion.div>
 								</motion.div>
-								<motion.div style={{ willChange: "transform, opacity" }} variants={itemVariants}>
-									<Heading size="large" className="text-center">{resolvedHeading}</Heading>
-								</motion.div>
-							</motion.div>
-						) : null}
-						{shouldHideSuggestionList ? null : (
-							<motion.div className="w-full" variants={CHAT_GREETING_CONTAINER_VARIANTS}>
+							) : null}
+						</AnimatePresence>
+						{shouldShowSuggestionList ? (
+							<motion.div className="w-full" layout={isComposing ? false : "position"} variants={activeContainerVariants}>
 								<div className={cn(
 									"grid gap-1",
 									shouldRenderDirectoryMatches && useWideSuggestionLayout ? "grid-cols-2 gap-x-8" : "grid-cols-1",
 								)}>
 									{shouldRenderDirectoryMatches
 										? directoryAutocompleteState.matches.map((match, index) => (
-												<motion.div key={match.mention.id} variants={itemVariants}>
+												<motion.div key={match.mention.id} variants={activeItemVariants}>
 													<DirectoryAutocompleteItem
 														active={directoryAutocompleteState.activeIndex === index}
 														index={index}
@@ -419,7 +490,7 @@ export default function ChatGreeting({
 												</motion.div>
 											))
 										: greetingSuggestions.map((suggestion) => (
-												<motion.div key={suggestion.id} variants={itemVariants}>
+												<motion.div key={suggestion.id} variants={activeItemVariants}>
 													<SkillListItem
 														suggestion={suggestion}
 														onClick={() => onSuggestionClick?.(suggestion)}
@@ -428,7 +499,7 @@ export default function ChatGreeting({
 											))}
 								</div>
 							</motion.div>
-						)}
+						) : null}
 					</motion.div>
 				)}
 			</AnimatePresence>

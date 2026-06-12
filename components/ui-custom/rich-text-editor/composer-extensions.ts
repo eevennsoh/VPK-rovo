@@ -198,7 +198,7 @@ export interface ComposerDirectoryAutocompleteDecoration {
 	text: string;
 }
 
-function createComposerDirectoryAutocomplete(
+export function createComposerDirectoryAutocomplete(
 	controller?: ComposerDirectoryAutocompleteController,
 ) {
 	return Extension.create({

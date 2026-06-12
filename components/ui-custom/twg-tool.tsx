@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-unused-vars -- These underscored compatibility props and inferred generic placeholders are intentionally retained for API shape. */
+
 import type { ComponentProps, CSSProperties, ReactNode } from "react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 

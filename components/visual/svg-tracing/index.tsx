@@ -1,5 +1,8 @@
 "use client";
 
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
+// oxlint-disable react-doctor/no-reset-all-state-on-prop-change -- These prop/key changes intentionally restart a workflow to avoid carrying stale state across runs.
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { animate, useMotionValue, useMotionValueEvent } from "motion/react";
 
@@ -158,6 +161,7 @@ function getSvgTraceEasing(
 function usePrefersReducedMotion(): boolean {
 	const [reduced, setReduced] = useState(false);
 
+	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- path length is measured from the rendered SVG path and window resizes.
 	useEffect(() => {
 		const query = window.matchMedia("(prefers-reduced-motion: reduce)");
 		const update = () => setReduced(query.matches);
@@ -231,6 +235,7 @@ function TracePath({
 		window.addEventListener("resize", measurePathLength);
 		return () => window.removeEventListener("resize", measurePathLength);
 	}, [d, measurePathLength]);
+	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	return (
 		<>
@@ -312,10 +317,12 @@ export default function SvgTracing({
 		[colorStopCount],
 	);
 
+	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- resetKey restarts the motion trace window for a new shape/config.
 	useEffect(() => {
 		progress.set(0);
 		setTraceWindowState({ start: 0, end: 0 });
 	}, [progress, resetKey, shape.id]);
+	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	useMotionValueEvent(progress, "change", (latest) => {
 		setTraceWindowState(getTraceWindow(latest, config.traceMode, traceLength));

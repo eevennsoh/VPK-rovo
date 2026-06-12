@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {

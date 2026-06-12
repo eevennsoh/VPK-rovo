@@ -65,9 +65,10 @@ export function ScreenAssistantControls({
 				</Button>
 			</div>
 
-			<div className="flex items-center gap-1.5">
-				<input
-					value={draft}
+				<div className="flex items-center gap-1.5">
+					<input
+						aria-label="Screen assistant command"
+						value={draft}
 					onChange={(event) => setDraft(event.target.value)}
 					onKeyDown={(event) => {
 						if (event.key === "Enter") {

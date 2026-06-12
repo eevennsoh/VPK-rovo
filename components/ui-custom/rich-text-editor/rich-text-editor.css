@@ -20,8 +20,8 @@
 }
 
 /*
- * Headings follow GitHub-flavored markdown rendering: 600 weight, generous top
- * margin, h1/h2 carry a bottom rule that separates the section from the body.
+ * Headings use weight, scale, and spacing only. Avoid adding separator rules
+ * that are not represented in the Markdown source.
  */
 .tiptap-editor h1,
 .tiptap-editor h2,
@@ -38,14 +38,10 @@
 
 .tiptap-editor h1 {
 	font-size: 2em;
-	padding-bottom: 0.3em;
-	border-bottom: 1px solid var(--ds-border, #dfe1e6);
 }
 
 .tiptap-editor h2 {
 	font-size: 1.5em;
-	padding-bottom: 0.3em;
-	border-bottom: 1px solid var(--ds-border, #dfe1e6);
 }
 
 .tiptap-editor h3 {

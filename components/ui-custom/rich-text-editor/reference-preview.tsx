@@ -171,6 +171,7 @@ function getKnowledgeAppSmartLink(app: KnowledgeDirectoryApp, id: string): Smart
 	};
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function getRichTextReferencePreview(
 	category: RichTextReferenceCategory | undefined,
 	label: string,

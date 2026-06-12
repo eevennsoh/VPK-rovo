@@ -56,8 +56,26 @@ export function ScatterChartInner({
   containerRef,
   lines,
 }: ScatterChartInnerProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [revealEpoch, setRevealEpoch] = useState(0);
+  const [revealState, setRevealState] = useState({
+    animationDuration,
+    isLoaded: false,
+    revealEpoch: 0,
+    revealSignature,
+  });
+  let resolvedRevealState = revealState;
+  if (
+    revealState.animationDuration !== animationDuration ||
+    revealState.revealSignature !== revealSignature
+  ) {
+    resolvedRevealState = {
+      animationDuration,
+      isLoaded: false,
+      revealEpoch: revealState.revealEpoch + 1,
+      revealSignature,
+    };
+    setRevealState(resolvedRevealState);
+  }
+  const { isLoaded, revealEpoch } = resolvedRevealState;
 
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
@@ -136,15 +154,16 @@ export function ScatterChartInner({
     [data, xAccessor]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: revealSignature
   useEffect(() => {
-    setRevealEpoch((n) => n + 1);
-    setIsLoaded(false);
+    if (isLoaded) {
+      return;
+    }
+
     const timer = setTimeout(() => {
-      setIsLoaded(true);
+      setRevealState((currentState) => ({ ...currentState, isLoaded: true }));
     }, animationDuration);
     return () => clearTimeout(timer);
-  }, [animationDuration, revealSignature]);
+  }, [animationDuration, isLoaded, revealEpoch]);
 
   const canInteract = isLoaded;
 

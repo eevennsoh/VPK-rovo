@@ -49,6 +49,7 @@ type BentoEdgeMaskStyle = CSSProperties & Record<"--bento-edge-mask", string>;
  * no-overflow renders without a side flash; the bottom layer is always present so
  * cards consistently dissolve at the bottom edge.
  */
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function buildHorizontalEdgeMask(canScrollLeft: boolean, canScrollRight: boolean): string {
 	const left = canScrollLeft ? `transparent 0, #000 ${EDGE_FADE}` : "#000 0";
 	const right = canScrollRight ? `#000 calc(100% - ${EDGE_FADE}), transparent 100%` : "#000 100%";
@@ -58,6 +59,7 @@ export function buildHorizontalEdgeMask(canScrollLeft: boolean, canScrollRight: 
 }
 
 /** Inline `style` carrying the edge-mask var; apply to the scroll container. */
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function getBentoEdgeMaskStyle(canScrollLeft: boolean, canScrollRight: boolean): BentoEdgeMaskStyle {
 	return { "--bento-edge-mask": buildHorizontalEdgeMask(canScrollLeft, canScrollRight) };
 }

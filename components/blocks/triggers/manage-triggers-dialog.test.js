@@ -17,54 +17,56 @@ const DEMO_SOURCE = readFileSync(
 );
 
 test("ManageTriggersDialog restores the compact drag-list modal", () => {
-	assert.match(DIALOG_SOURCE, /Manage trigger events/u);
-	assert.match(DIALOG_SOURCE, /Any event in this list can start the same automation\./u);
+	assert.match(DIALOG_SOURCE, /Manage automations/u);
+	assert.match(DIALOG_SOURCE, /Each automation can have multiple event triggers and one instruction prompt\./u);
+	assert.match(DIALOG_SOURCE, /\{open \? \(\s*<TriggerPicker/u);
 	assert.match(DIALOG_SOURCE, /<TriggerPicker/u);
-	assert.match(DIALOG_SOURCE, /onSelectEvent=\{onAddTrigger\}/u);
+	assert.match(DIALOG_SOURCE, /onSelectEvent=\{onAddAutomation\}/u);
 	assert.match(DIALOG_SOURCE, /<DialogClose/u);
 
 	assert.match(DIALOG_SOURCE, /<DndContext/u);
 	assert.match(DIALOG_SOURCE, /restrictToVerticalAxis/u);
 	assert.match(DIALOG_SOURCE, /<SortableContext/u);
-	assert.match(DIALOG_SOURCE, /useSortable\(\{ id: trigger\.id \}\)/u);
-	assert.match(DIALOG_SOURCE, /onReorderTriggers\(String\(active\.id\), String\(over\.id\)\)/u);
+	assert.match(DIALOG_SOURCE, /useSortable\(\{ id: automationRule\.id \}\)/u);
+	assert.match(DIALOG_SOURCE, /onReorderAutomations\(String\(active\.id\), String\(over\.id\)\)/u);
 
-	assert.match(DIALOG_SOURCE, /No trigger events yet\./u);
+	assert.match(DIALOG_SOURCE, /No automations yet\./u);
 });
 
-test("ManageTriggersDialog rows manage trigger events, not per-trigger prompts", () => {
-	assert.match(DIALOG_SOURCE, /function ManageTriggerFlowVisual/u);
+test("ManageTriggersDialog rows manage automation rules, not individual event triggers", () => {
+	assert.match(DIALOG_SOURCE, /function ManageAutomationFlowVisual/u);
 	assert.match(DIALOG_SOURCE, /renderAgentTriggerProviderIcon\(trigger\)/u);
 	assert.match(DIALOG_SOURCE, /GenerativeIndicatorIcon/u);
 	assert.match(DIALOG_SOURCE, /label="Agent instructions"/u);
 	assert.match(DIALOG_SOURCE, /className="h-px w-5 bg-border"/u);
-	assert.match(DIALOG_SOURCE, /getAgentTriggerReadableLabel\(trigger\)/u);
-	assert.match(DIALOG_SOURCE, /function getManageTriggerSecondary/u);
+	assert.match(DIALOG_SOURCE, /getAgentTriggerReadableLabel\(automationRule\.triggers\[0\]\)/u);
+	assert.match(DIALOG_SOURCE, /function getAutomationRuleSecondary/u);
 	assert.match(DIALOG_SOURCE, /getTriggerProvider\(trigger\.providerId\)/u);
-	assert.match(DIALOG_SOURCE, /getTriggerEvent\(provider\.id, trigger\.eventId\)/u);
-	assert.match(DIALOG_SOURCE, /Requires connection/u);
+	assert.match(DIALOG_SOURCE, /rule\.triggers\.length/u);
+	assert.match(DIALOG_SOURCE, /getAgentAutomationRuleLabel\(automationRule, index\)/u);
 
 	assert.doesNotMatch(DIALOG_SOURCE, /trigger\.prompt\?\.trim/u);
 	assert.doesNotMatch(DIALOG_SOURCE, /No prompt set/u);
 
-	assert.match(DIALOG_SOURCE, /isAgentTriggerEnabled\(trigger\)/u);
-	assert.match(DIALOG_SOURCE, /onCheckedChange=\{\(nextEnabled\) => onToggle\(trigger\.id, nextEnabled\)\}/u);
+	assert.match(DIALOG_SOURCE, /const enabled = automationRule\.enabled !== false;/u);
+	assert.match(DIALOG_SOURCE, /onCheckedChange=\{\(nextEnabled\) => onToggle\(automationRule\.id, nextEnabled\)\}/u);
 	assert.match(DIALOG_SOURCE, /hover:bg-bg-danger-hovered hover:text-text-danger/u);
-	assert.match(DIALOG_SOURCE, /onClick=\{\(\) => onDelete\(trigger\.id\)\}/u);
-	assert.match(DIALOG_SOURCE, /onClick=\{\(\) => onEdit\(trigger\)\}/u);
+	assert.match(DIALOG_SOURCE, /onClick=\{\(\) => onDelete\(automationRule\.id\)\}/u);
+	assert.match(DIALOG_SOURCE, /onClick=\{\(\) => onEdit\(automationRule\)\}/u);
 });
 
-test('agent config fallback wires "Manage triggers" to ManageTriggersDialog', () => {
+test('agent config fallback wires "Manage automations" to ManageTriggersDialog', () => {
 	assert.match(AGENT_SOURCE, /import \{ ManageTriggersDialog \}/u);
 	assert.match(AGENT_SOURCE, /const \[manageTriggersOpen, setManageTriggersOpen\] = useState\(false\)/u);
 	assert.match(AGENT_SOURCE, /setManageTriggersOpen\(true\)/u);
-	assert.match(AGENT_SOURCE, /const handleAddTriggerFromManage = useCallback\(/u);
-	assert.match(AGENT_SOURCE, /const handleReorderTriggers = useCallback\(/u);
-	assert.match(AGENT_SOURCE, /const handleToggleTrigger = useCallback\(/u);
-	assert.match(AGENT_SOURCE, /const handleDeleteTrigger = useCallback\(/u);
-	assert.match(AGENT_SOURCE, /handleEditTriggers\(config\.triggerDefinitions \?\? \[trigger\]\)/u);
+	assert.match(AGENT_SOURCE, /const handleAddAutomationFromManage = useCallback\(/u);
+	assert.match(AGENT_SOURCE, /const handleReorderAutomations = useCallback\(/u);
+	assert.match(AGENT_SOURCE, /const handleToggleAutomation = useCallback\(/u);
+	assert.match(AGENT_SOURCE, /const handleDeleteAutomation = useCallback\(/u);
+	assert.match(AGENT_SOURCE, /handleEditTriggers\(automationRule\)/u);
+	assert.match(AGENT_SOURCE, /const currentAutomationRules = useMemo\([\s\S]*getAgentAutomationRules\(config\)/u);
 	assert.match(AGENT_SOURCE, /<ManageTriggersDialog/u);
-	assert.match(AGENT_SOURCE, /triggers=\{config\.triggerDefinitions \?\? \[\]\}/u);
+	assert.match(AGENT_SOURCE, /automationRules=\{currentAutomationRules\}/u);
 });
 
 test("manage demo opens the restored dialog and keeps full automation editing available", () => {
@@ -74,5 +76,6 @@ test("manage demo opens the restored dialog and keeps full automation editing av
 	assert.match(DEMO_SOURCE, /const \[manageOpen, setManageOpen\] = useState\(true\)/u);
 	assert.match(DEMO_SOURCE, /const \[automationOpen, setAutomationOpen\] = useState\(false\)/u);
 	assert.match(DEMO_SOURCE, /setAutomationOpen\(true\)/u);
-	assert.match(DEMO_SOURCE, /onSave=\{setTriggers\}/u);
+	assert.match(DEMO_SOURCE, /automationRules=\{automationRules\}/u);
+	assert.match(DEMO_SOURCE, /onSave=\{handleSaveAutomation\}/u);
 });

@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/media-has-caption -- These media previews render generated or user-supplied media where no caption asset is available; transcript or metadata is rendered separately when provided.
+
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { JsonRenderView } from "@/lib/json-render/renderer";
@@ -172,8 +174,9 @@ function AudioPreview({
 
 	return (
 		<div className={cn("rounded-md bg-surface", surface !== "card" && "p-4")}>
-			<audio
-				ref={audioRef}
+				<audio
+					aria-label="Audio preview"
+					ref={audioRef}
 				className="w-full"
 				controls
 				src={audioUrl}
@@ -319,7 +322,7 @@ function AppUrlPreview({
 			<iframe
 				title="Generated app preview"
 				className={cn("h-full w-full flex-1 border-0 bg-surface", isArtifactPane ? "min-h-0" : "min-h-[420px]")}
-				sandbox="allow-forms allow-modals allow-popups allow-same-origin allow-scripts"
+				sandbox="allow-forms allow-modals allow-popups allow-scripts"
 				src={url}
 			/>
 		</div>

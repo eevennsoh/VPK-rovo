@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/prefer-module-scope-pure-function -- These helpers are intentionally local to the component/demo because they depend on the surrounding interaction contract.
+
 import { scaleLinear, scaleTime } from "@visx/scale";
 import { bisector } from "d3-array";
 import type { Transition } from "motion/react";

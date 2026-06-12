@@ -22,12 +22,12 @@ export default function ItemDemo() {
 export function ItemDemoAsChild() {
 	return (
 		<ItemGroup>
-			<Item render={<a href="#" />}>
+			<Item render={<a aria-label="Title Only (Link)" href="#" />}>
 				<ItemContent>
 					<ItemTitle>Title Only (Link)</ItemTitle>
 				</ItemContent>
 			</Item>
-			<Item render={<a href="#" />}>
+			<Item render={<a aria-label="Title + Description (Link)" href="#" />}>
 				<ItemContent>
 					<ItemTitle>Title + Description (Link)</ItemTitle>
 					<ItemDescription>
@@ -35,7 +35,7 @@ export function ItemDemoAsChild() {
 					</ItemDescription>
 				</ItemContent>
 			</Item>
-			<Item render={<a href="#" />}>
+			<Item render={<a aria-label="Media + Title (Link)" href="#" />}>
 				<ItemMedia variant="icon">
 					<InboxIcon />
 				</ItemMedia>
@@ -43,7 +43,7 @@ export function ItemDemoAsChild() {
 					<ItemTitle>Media + Title (Link)</ItemTitle>
 				</ItemContent>
 			</Item>
-			<Item render={<a href="#" />}>
+			<Item render={<a aria-label="Media + Title + Description (Link)" href="#" />}>
 				<ItemMedia variant="icon">
 					<InboxIcon />
 				</ItemMedia>
@@ -54,7 +54,7 @@ export function ItemDemoAsChild() {
 					</ItemDescription>
 				</ItemContent>
 			</Item>
-			<Item render={<a href="#" />}>
+			<Item render={<a aria-label="With Actions (Link)" href="#" />}>
 				<ItemContent>
 					<ItemTitle>With Actions (Link)</ItemTitle>
 					<ItemDescription>
@@ -561,12 +561,12 @@ export function ItemDemoItemSeparator() {
 export function ItemDemoMutedAsChild() {
 	return (
 		<ItemGroup>
-			<Item variant="muted" render={<a href="#" />}>
+			<Item variant="muted" render={<a aria-label="Title Only (Link)" href="#" />}>
 				<ItemContent>
 					<ItemTitle>Title Only (Link)</ItemTitle>
 				</ItemContent>
 			</Item>
-			<Item variant="muted" render={<a href="#" />}>
+			<Item variant="muted" render={<a aria-label="Title + Description (Link)" href="#" />}>
 				<ItemContent>
 					<ItemTitle>Title + Description (Link)</ItemTitle>
 					<ItemDescription>
@@ -574,7 +574,7 @@ export function ItemDemoMutedAsChild() {
 					</ItemDescription>
 				</ItemContent>
 			</Item>
-			<Item variant="muted" render={<a href="#" />}>
+			<Item variant="muted" render={<a aria-label="Media + Title (Link)" href="#" />}>
 				<ItemMedia variant="icon">
 					<InboxIcon />
 				</ItemMedia>
@@ -582,7 +582,7 @@ export function ItemDemoMutedAsChild() {
 					<ItemTitle>Media + Title (Link)</ItemTitle>
 				</ItemContent>
 			</Item>
-			<Item variant="muted" render={<a href="#" />}>
+			<Item variant="muted" render={<a aria-label="Media + Title + Description (Link)" href="#" />}>
 				<ItemMedia variant="icon">
 					<InboxIcon />
 				</ItemMedia>
@@ -593,7 +593,7 @@ export function ItemDemoMutedAsChild() {
 					</ItemDescription>
 				</ItemContent>
 			</Item>
-			<Item variant="muted" render={<a href="#" />}>
+			<Item variant="muted" render={<a aria-label="With Actions (Link)" href="#" />}>
 				<ItemContent>
 					<ItemTitle>With Actions (Link)</ItemTitle>
 					<ItemDescription>
@@ -1023,12 +1023,12 @@ export function ItemDemoMuted() {
 export function ItemDemoOutlineAsChild() {
 	return (
 		<ItemGroup>
-			<Item variant="outline" render={<a href="#" />}>
+			<Item variant="outline" render={<a aria-label="Title Only (Link)" href="#" />}>
 				<ItemContent>
 					<ItemTitle>Title Only (Link)</ItemTitle>
 				</ItemContent>
 			</Item>
-			<Item variant="outline" render={<a href="#" />}>
+			<Item variant="outline" render={<a aria-label="Title + Description (Link)" href="#" />}>
 				<ItemContent>
 					<ItemTitle>Title + Description (Link)</ItemTitle>
 					<ItemDescription>
@@ -1036,7 +1036,7 @@ export function ItemDemoOutlineAsChild() {
 					</ItemDescription>
 				</ItemContent>
 			</Item>
-			<Item variant="outline" render={<a href="#" />}>
+			<Item variant="outline" render={<a aria-label="Media + Title (Link)" href="#" />}>
 				<ItemMedia variant="icon">
 					<InboxIcon />
 				</ItemMedia>
@@ -1044,7 +1044,7 @@ export function ItemDemoOutlineAsChild() {
 					<ItemTitle>Media + Title (Link)</ItemTitle>
 				</ItemContent>
 			</Item>
-			<Item variant="outline" render={<a href="#" />}>
+			<Item variant="outline" render={<a aria-label="Media + Title + Description (Link)" href="#" />}>
 				<ItemMedia variant="icon">
 					<InboxIcon />
 				</ItemMedia>
@@ -1055,7 +1055,7 @@ export function ItemDemoOutlineAsChild() {
 					</ItemDescription>
 				</ItemContent>
 			</Item>
-			<Item variant="outline" render={<a href="#" />}>
+			<Item variant="outline" render={<a aria-label="With Actions (Link)" href="#" />}>
 				<ItemContent>
 					<ItemTitle>With Actions (Link)</ItemTitle>
 					<ItemDescription>

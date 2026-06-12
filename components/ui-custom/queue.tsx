@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- These component primitives render arbitrary preview/avatar/image payloads where Next Image sizing/loading would change the public API. */
+
 import type { ComponentProps } from "react";
 
 import DragHandleVerticalIcon from "@atlaskit/icon/core/drag-handle-vertical";

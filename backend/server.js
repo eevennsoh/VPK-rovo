@@ -15484,18 +15484,18 @@ app.get("/api/jobs", async (_req, res) => {
 });
 
 app.get("/api/wiki/status", wikiRouteHandlers.handleWikiStatus);
-app.post("/api/wiki/captures", wikiRouteHandlers.handleWikiCapture);
+app.post("/api/wiki/captures", requireRuntimeAdmin, wikiRouteHandlers.handleWikiCapture);
 app.get("/api/wiki/search", wikiRouteHandlers.handleWikiSearch);
-app.post("/api/wiki/synthesis", wikiRouteHandlers.handleWikiSynthesisSave);
+app.post("/api/wiki/synthesis", requireRuntimeAdmin, wikiRouteHandlers.handleWikiSynthesisSave);
 app.get("/api/wiki/memories", wikiRouteHandlers.handleWikiMemories);
 app.get("/api/wiki/memory-explorer", wikiRouteHandlers.handleWikiMemoryExplorer);
 app.get("/api/wiki/memory-explorer/export", wikiRouteHandlers.handleWikiMemoryExplorerExport);
 app.post("/api/wiki/memory-explorer/brief", wikiRouteHandlers.handleWikiMemoryBrief);
 app.post("/api/wiki/memory-explorer/deck", wikiRouteHandlers.handleWikiMemoryDeck);
-app.delete("/api/wiki/memories/:scope/blocks/:blockId", wikiRouteHandlers.handleWikiMemoryBlockDelete);
-app.delete("/api/wiki/memories/proposals/:proposalId", wikiRouteHandlers.handleWikiMemoryProposalDelete);
-app.post("/api/wiki/memories/reset", wikiRouteHandlers.handleWikiMemoryReset);
-app.post("/api/wiki/sync", wikiRouteHandlers.handleWikiSync);
+app.delete("/api/wiki/memories/:scope/blocks/:blockId", requireRuntimeAdmin, wikiRouteHandlers.handleWikiMemoryBlockDelete);
+app.delete("/api/wiki/memories/proposals/:proposalId", requireRuntimeAdmin, wikiRouteHandlers.handleWikiMemoryProposalDelete);
+app.post("/api/wiki/memories/reset", requireRuntimeAdmin, wikiRouteHandlers.handleWikiMemoryReset);
+app.post("/api/wiki/sync", requireRuntimeAdmin, wikiRouteHandlers.handleWikiSync);
 app.use("/api/personal-graph", personalGraphRoutes);
 
 app.post("/api/jobs", requireRuntimeAdmin, async (req, res) => {

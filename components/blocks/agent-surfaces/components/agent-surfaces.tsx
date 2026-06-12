@@ -41,6 +41,7 @@ export interface AgentExtendedSurface {
 	status: AgentSurfaceStatus;
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const AGENT_DEFAULT_SURFACES: ReadonlyArray<AgentDefaultSurface> = [
 	{
 		description: "Talk to this agent in Rovo Chat across Atlassian apps.",
@@ -73,6 +74,7 @@ export const AGENT_DEFAULT_SURFACES: ReadonlyArray<AgentDefaultSurface> = [
 	},
 ] as const;
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const AGENT_EXTENDED_SURFACES: ReadonlyArray<AgentExtendedSurface> = [
 	{
 		description: "Use this agent from the Rovo browser extension.",

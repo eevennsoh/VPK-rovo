@@ -1,5 +1,9 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
+
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+
 import { useState, useCallback, useRef, useMemo, useEffect, type CSSProperties, type FormEvent } from "react";
 import { cn } from "@/lib/utils";
 import { useRovoChat } from "@/app/contexts";
@@ -16,6 +20,7 @@ import TimelineIcon from "@atlaskit/icon/core/timeline";
 import TranslateIcon from "@atlaskit/icon/core/translate";
 import ChatPanel from "@/components/projects/sidebar-chat/page";
 import { Terminal, TerminalHeader, TerminalContent } from "@/components/ui-custom/terminal";
+import { useLazyRef } from "@/lib/use-lazy-ref";
 
 type ViewMode = "chat" | "terminal";
 
@@ -195,7 +200,7 @@ function getUndulateIntensity(cx: number, cy: number, grid: number[][]): number 
 function AnimatedRovoLogo() {
 	const [mounted, setMounted] = useState(false);
 	const [grid, setGrid] = useState(createRandomGrid);
-	const targetsRef = useRef(createRandomGrid());
+	const targetsRef = useLazyRef(() => createRandomGrid());
 
 	useEffect(() => {
 		const animationFrameId = window.requestAnimationFrame(() => {
@@ -379,8 +384,9 @@ function TerminalView() {
 					<span className="font-mono text-sm font-bold" style={{ color: TD.success }}>
 						❯
 					</span>
-					<input
-						ref={inputRef}
+						<input
+							aria-label="Terminal command"
+							ref={inputRef}
 						type="text"
 						value={commandInput}
 						onChange={(e) => setCommandInput(e.target.value)}

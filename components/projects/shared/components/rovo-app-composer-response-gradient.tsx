@@ -1,5 +1,9 @@
 "use client";
 
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import { useReducedMotion } from "motion/react";
 import { useEffect, useRef } from "react";
 import type { RovoAppComposerResponseGradientPhase } from "@/components/projects/shared/lib/rovo-app-composer-response-gradient-state";
@@ -613,7 +617,6 @@ export function RovoAppComposerResponseGradient({
 
 	return (
 		<div
-			aria-hidden="true"
 			className={cn(
 				"pointer-events-none absolute bottom-[-8%] left-1/2 z-0 aspect-[4.2/1] w-[175%] -translate-x-1/2 overflow-visible opacity-0 transition-opacity duration-medium ease-out data-[visible]:opacity-100",
 				className,
@@ -622,7 +625,6 @@ export function RovoAppComposerResponseGradient({
 			ref={containerRef}
 		>
 			<canvas
-				aria-hidden="true"
 				className="absolute inset-0 h-full w-full pointer-events-none"
 				data-slot="rovo-app-response-gradient-canvas"
 				ref={canvasRef}

@@ -1,3 +1,5 @@
+// oxlint-disable react-doctor/prefer-module-scope-static-value -- These values are intentionally colocated with the component/demo contract for readability and token context.
+
 import { token } from "@/lib/tokens";
 import type { ComponentDetail } from "@/app/data/component-detail-types";
 import type { ComponentCategory } from "@/app/data/component-manifest";

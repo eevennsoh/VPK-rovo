@@ -26,14 +26,123 @@ const SERP_PATTERNS = [
 ];
 
 const PRIVATE_HOST_PATTERNS = [
-	/^127\./u,
-	/^10\./u,
-	/^192\.168\./u,
-	/^172\.(1[6-9]|2\d|3[01])\./u,
-	/^0\./u,
 	/^localhost$/iu,
+	/\.localhost$/iu,
 	/\.local$/iu,
 ];
+
+function parseIpv4Address(hostname) {
+	const octets = hostname.split(".");
+	if (octets.length !== 4) {
+		return null;
+	}
+
+	const values = [];
+	for (const octet of octets) {
+		if (!/^\d{1,3}$/u.test(octet)) {
+			return null;
+		}
+		const value = Number(octet);
+		if (value > 255) {
+			return null;
+		}
+		values.push(value);
+	}
+
+	return values;
+}
+
+function isPrivateIpv4Address(hostname) {
+	const octets = Array.isArray(hostname) ? hostname : parseIpv4Address(hostname);
+	if (!octets) {
+		return false;
+	}
+
+	const [first, second] = octets;
+	return (
+		first === 0 ||
+		first === 10 ||
+		first === 127 ||
+		(first === 169 && second === 254) ||
+		(first === 172 && second >= 16 && second <= 31) ||
+		(first === 192 && second === 168)
+	);
+}
+
+function parseMappedIpv4Address(hostname) {
+	if (!hostname.startsWith("::ffff:") && !hostname.startsWith("::")) {
+		return null;
+	}
+
+	const tail = hostname.replace(/^::ffff:/u, "").replace(/^::/u, "");
+	const dottedAddress = parseIpv4Address(tail);
+	if (dottedAddress) {
+		return dottedAddress;
+	}
+
+	const hextets = tail.split(":");
+	if (
+		hextets.length !== 2 ||
+		!hextets.every((hextet) => /^[\da-f]{1,4}$/iu.test(hextet))
+	) {
+		return null;
+	}
+
+	const high = Number.parseInt(hextets[0], 16);
+	const low = Number.parseInt(hextets[1], 16);
+	return [high >> 8, high & 255, low >> 8, low & 255];
+}
+
+function isPrivateIpv6Address(hostname) {
+	if (!hostname.includes(":")) {
+		return false;
+	}
+
+	if (hostname === "::" || hostname === "::1") {
+		return true;
+	}
+
+	const firstHextet = hostname.startsWith("::")
+		? 0
+		: Number.parseInt(hostname.split(":")[0], 16);
+	if (Number.isFinite(firstHextet)) {
+		if ((firstHextet & 0xfe00) === 0xfc00) {
+			return true;
+		}
+		if ((firstHextet & 0xffc0) === 0xfe80 || (firstHextet & 0xffc0) === 0xfec0) {
+			return true;
+		}
+	}
+
+	const mappedAddress = parseMappedIpv4Address(hostname);
+	return Boolean(mappedAddress && isPrivateIpv4Address(mappedAddress));
+}
+
+function isPrivateHostname(hostname) {
+	if (typeof hostname !== "string" || hostname.trim().length === 0) {
+		return true;
+	}
+
+	const normalizedHostname = hostname.trim().toLowerCase().replace(/\.+$/u, "");
+	for (const pattern of PRIVATE_HOST_PATTERNS) {
+		if (pattern.test(normalizedHostname)) {
+			return true;
+		}
+	}
+
+	const unbracketedHostname =
+		normalizedHostname.startsWith("[") && normalizedHostname.endsWith("]")
+			? normalizedHostname.slice(1, -1)
+			: normalizedHostname;
+	if (
+		isPrivateIpv4Address(unbracketedHostname) ||
+		isPrivateIpv6Address(unbracketedHostname)
+	) {
+		return true;
+	}
+
+	return false;
+}
 
 // ---------------------------------------------------------------------------
 // Slug generation
@@ -244,12 +353,10 @@ function validateUrl(url) {
 	}
 
 	const hostname = parsed.hostname;
-	for (const pattern of PRIVATE_HOST_PATTERNS) {
-		if (pattern.test(hostname)) {
-			const error = new Error(`URL rejected: private/local address ${hostname}`);
-			error.code = "INVALID_INPUT";
-			throw error;
-		}
+	if (isPrivateHostname(hostname)) {
+		const error = new Error(`URL rejected: private/local address ${hostname}`);
+		error.code = "INVALID_INPUT";
+		throw error;
 	}
 
 	return parsed;
@@ -1212,6 +1319,7 @@ module.exports = {
 	getWikiStatus,
 	getWikiJobDefinitions,
 	ingestRawSources,
+	isPrivateHostname,
 	isSkippableUrl,
 	lintWiki,
 	parseFrontmatter,

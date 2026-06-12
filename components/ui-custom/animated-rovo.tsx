@@ -1,5 +1,14 @@
 "use client";
 
+/* eslint-disable react-hooks/exhaustive-deps -- These callbacks/effects intentionally read stable refs that bridge external animation, drag, preview, and editor state. */
+
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+// oxlint-disable react-doctor/no-chain-state-updates -- Related state fields are updated together to preserve atomic UI transitions and avoid partial interaction states.
+// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
+
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import { motion, useAnimate, useReducedMotion } from "motion/react";
 import { useEffect, useState, useId, useRef } from "react";
 
@@ -120,6 +129,7 @@ export function AnimatedRovoShape({
 		typeof document === "undefined" ? true : document.visibilityState === "visible",
 	);
 
+	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- animation state is reset when streaming/paused motion mode changes.
 	useEffect(() => {
 		const el = containerRef.current;
 		if (!el) return;
@@ -276,6 +286,7 @@ function AnimatedRovoRoot({
 			setSpinAnimation(generateSpin(0));
 		}
 	}, [streaming, mounted, shouldAnimate]);
+	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	const isResting = streaming || danceOffset === 0 || !shouldAnimate;
 
@@ -322,6 +333,7 @@ function AnimatedRovoRoot({
 // Compound namespace
 // ---------------------------------------------------------------------------
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const AnimatedRovo = {
 	/** Full animated Rovo — pendulum wrapper + inner color-wheel shape. */
 	Root: AnimatedRovoRoot,

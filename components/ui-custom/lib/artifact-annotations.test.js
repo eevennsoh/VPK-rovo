@@ -38,12 +38,12 @@ async function loadArtifactAnnotationsModule() {
 			.then((result) => loadCjsModuleFromText(result.outputFiles[0].text));
 	}
 
-	const module = await artifactAnnotationsModulePromise;
-	appendWithRingBuffer = module.appendWithRingBuffer;
-	buildVoiceContextDescription = module.buildVoiceContextDescription;
-	createAnnotationFromSelection = module.createAnnotationFromSelection;
-	formatAnnotationsForVoiceContext = module.formatAnnotationsForVoiceContext;
-	reindexAnnotations = module.reindexAnnotations;
+	const loadedModule = await artifactAnnotationsModulePromise;
+	appendWithRingBuffer = loadedModule.appendWithRingBuffer;
+	buildVoiceContextDescription = loadedModule.buildVoiceContextDescription;
+	createAnnotationFromSelection = loadedModule.createAnnotationFromSelection;
+	formatAnnotationsForVoiceContext = loadedModule.formatAnnotationsForVoiceContext;
+	reindexAnnotations = loadedModule.reindexAnnotations;
 }
 
 function createAnnotation(overrides = {}) {
@@ -74,7 +74,7 @@ function createAnnotation(overrides = {}) {
 				...anchorOverrides,
 			},
 			source: {
-				filePath: "components/ui-custom/artifact.tsx",
+				filePath: "components/blocks/artifact.tsx",
 				lineNumber: 1,
 				componentName: "ArtifactPanel",
 				stackString: "in ArtifactPanel",
@@ -153,7 +153,7 @@ test("formatAnnotationsForVoiceContext includes kind-specific code anchor detail
 	assert.match(codeContext, /#1: "Make this heading larger"/u);
 	assert.match(codeContext, /viewer anchor: code line 12/u);
 	assert.match(codeContext, /selected text: "Welcome to Rovo"/u);
-	assert.match(codeContext, /source: components\/ui-custom\/artifact\.tsx:1/u);
+	assert.match(codeContext, /source: components\/blocks\/artifact\.tsx:1/u);
 	assert.match(codeContext, /selector: pre code > span:nth-child\(12\)/u);
 
 	const imageContext = formatAnnotationsForVoiceContext([

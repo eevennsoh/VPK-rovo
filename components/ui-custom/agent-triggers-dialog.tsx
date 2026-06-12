@@ -4,16 +4,16 @@ import type { ReactElement } from "react";
 
 import {
 	TriggerAutomationDialog,
-	type AgentTriggerValue,
+	type AgentAutomationRule,
 } from "@/components/blocks/triggers/page";
 
 export interface AgentTriggersDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	/** Seed definitions the draft is reset to each time the dialog opens. */
-	triggerDefinitions: readonly AgentTriggerValue[];
+	/** Automation rule the draft is reset to each time the dialog opens. */
+	automationRule: AgentAutomationRule;
 	/** Commits the edited draft when the user saves. */
-	onSave: (triggers: readonly AgentTriggerValue[]) => void;
+	onSave: (automationRule: AgentAutomationRule) => void;
 	title?: string;
 	saveLabel?: string;
 }
@@ -24,18 +24,18 @@ export interface AgentTriggersDialogProps {
  * array with one shared prompt/name/active state.
  */
 export function AgentTriggersDialog({
+	automationRule,
 	open,
 	onOpenChange,
-	triggerDefinitions,
 	onSave,
 	title,
 	saveLabel,
 }: Readonly<AgentTriggersDialogProps>): ReactElement {
 	return (
 		<TriggerAutomationDialog
+			automationRule={automationRule}
 			open={open}
 			onOpenChange={onOpenChange}
-			triggers={triggerDefinitions}
 			onSave={onSave}
 			title={title}
 			saveLabel={saveLabel ?? "Save"}

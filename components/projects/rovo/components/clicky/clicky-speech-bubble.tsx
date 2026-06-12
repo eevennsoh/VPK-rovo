@@ -14,20 +14,23 @@ interface ClickySpeechBubbleProps {
 
 export function ClickySpeechBubble({ text }: Readonly<ClickySpeechBubbleProps>) {
 	// Stream characters for natural appearance
-	const [displayedText, setDisplayedText] = useState("");
+	const [displayState, setDisplayState] = useState(() => ({ displayedText: "", text }));
+	if (displayState.text !== text) {
+		setDisplayState({ displayedText: "", text });
+	}
+	const displayedText = displayState.text === text ? displayState.displayedText : "";
 
 	useEffect(() => {
-		setDisplayedText("");
 		if (!text) return;
 
 		let i = 0;
 		const interval = setInterval(() => {
 			i++;
 			if (i >= text.length) {
-				setDisplayedText(text);
+				setDisplayState({ displayedText: text, text });
 				clearInterval(interval);
 			} else {
-				setDisplayedText(text.slice(0, i));
+				setDisplayState({ displayedText: text.slice(0, i), text });
 			}
 		}, 30 + Math.random() * 30); // 30-60ms per char (reference uses variable delay)
 

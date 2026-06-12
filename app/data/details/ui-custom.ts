@@ -526,7 +526,7 @@ import PageIcon from "@atlaskit/icon/core/page"
   description="Create a new formatted, rich text document or page in Confluence."
   icon={<PageIcon label="" />}
   iconVariant="blue"
-  publisher="Atlassian"
+  source={{ type: "custom", name: "Venn", avatarSrc: "/avatar-human/maia-ma.png" }}
   teammateCount={6273}
 />`,
 		props: [
@@ -1462,33 +1462,59 @@ import SearchIcon from "@atlaskit/icon/core/search"
 
 	"chain-of-thought": {
 		description:
-			"A collapsible reasoning timeline that shows an assistant's step-by-step process with status states, search-result chips, and optional image context.",
+			"A collapsible visible-progress timeline for AI work. Use it for status traces, tool summaries, and staged progress — not hidden chain-of-thought.",
 		usage: `import {
-  ChainOfThought,
-  ChainOfThoughtHeader,
-  ChainOfThoughtContent,
-  ChainOfThoughtStep,
+  ChainOfThoughtScenario,
   ChainOfThoughtSearchResults,
   ChainOfThoughtSearchResult,
 } from "@/components/ui-custom/chain-of-thought";
 import { SearchIcon } from "@/components/ui/vpk-icons";
 
-<ChainOfThought defaultOpen>
-  <ChainOfThoughtHeader>Tracing model reasoning</ChainOfThoughtHeader>
-  <ChainOfThoughtContent>
-    <ChainOfThoughtStep icon={SearchIcon} label="Searching source profiles" status="active">
-      <ChainOfThoughtSearchResults>
-        <ChainOfThoughtSearchResult>github.com</ChainOfThoughtSearchResult>
-        <ChainOfThoughtSearchResult>x.com</ChainOfThoughtSearchResult>
-      </ChainOfThoughtSearchResults>
-    </ChainOfThoughtStep>
-  </ChainOfThoughtContent>
-</ChainOfThought>`,
+<ChainOfThoughtScenario
+  state="thinking"
+  steps={[
+    {
+      id: "search",
+      icon: SearchIcon,
+      label: "Searching approved sources",
+      description: "Looking across Confluence, Jira history, and proposal-library snippets.",
+      status: "active",
+      collapsible: true,
+      children: (
+        <ChainOfThoughtSearchResults>
+          <ChainOfThoughtSearchResult>Confluence</ChainOfThoughtSearchResult>
+          <ChainOfThoughtSearchResult>Jira history</ChainOfThoughtSearchResult>
+        </ChainOfThoughtSearchResults>
+      ),
+    },
+  ]}
+/>
+
+AI usage guidance:
+- Start staged AI workflows with a preload/thinking header so the morphing Rovo shape, shimmer label, and animated dots have time to read.
+- Reveal specific step labels only when that work begins.
+- Match labels to the domain: automation flows should mention triggers, schedules, delivery, and saving; research flows should mention search, source evaluation, and synthesis.
+- Never use placeholder labels such as "Reading agent brief" unless that is literally the work being performed.`,
 		demoLayout: {
 			previewContentWidth: "full",
 			examplesContentWidth: "full",
 		},
 		props: [
+			{
+				name: "state",
+				type: '"preload" | "thinking" | "completed"',
+				description: "Scenario state for the high-level helper. Drives the morphing Rovo preload/thinking header or completed summary.",
+			},
+			{
+				name: "steps",
+				type: "readonly ChainOfThoughtScenarioStep[]",
+				description: "Data-driven steps rendered through ChainOfThoughtStep. Each step owns its label, status, icon, and optional expanded content.",
+			},
+			{
+				name: "duration",
+				type: "number",
+				description: "Completed thinking duration in seconds for the scenario header.",
+			},
 			{
 				name: "open",
 				type: "boolean",
@@ -1512,6 +1538,7 @@ import { SearchIcon } from "@/components/ui/vpk-icons";
 			},
 		],
 		subComponents: [
+			{ name: "ChainOfThoughtScenario", description: "Data-driven recipe helper for preload, thinking, and completed AI progress traces." },
 			{ name: "ChainOfThoughtHeader", description: "Collapsible trigger row with label and chevron." },
 			{ name: "ChainOfThoughtContent", description: "Animated content panel shown when open." },
 			{ name: "ChainOfThoughtStep", description: "Individual reasoning step with icon, label, description, and status." },
@@ -1526,6 +1553,10 @@ import { SearchIcon } from "@/components/ui/vpk-icons";
 			{ title: "Status variants", description: "Compare complete, active, and pending step states in one reasoning chain.", demoSlug: "chain-of-thought-demo-status-variants" },
 			{ title: "Search results", description: "Standalone source-chip usage for search and retrieval phases.", demoSlug: "chain-of-thought-demo-search-results" },
 			{ title: "Image step", description: "Reasoning step with image evidence and caption.", demoSlug: "chain-of-thought-demo-image-step" },
+			{ title: "Studio agent generation flow", description: "Canonical staged agent-generation recipe: brief, clarification, tools, instructions, and save.", demoSlug: "chain-of-thought-demo-studio-agent-generation-flow" },
+			{ title: "Automation trigger flow", description: "Automation-specific recipe with preload, existing-rule review, schedule setup, Slack delivery, and save.", demoSlug: "chain-of-thought-demo-automation-trigger-flow" },
+			{ title: "Research retrieval flow", description: "Search/retrieval recipe with source lookup, source-fit evaluation, and synthesis.", demoSlug: "chain-of-thought-demo-research-retrieval-flow" },
+			{ title: "Tool-call details flow", description: "Completed trace with collapsed tool rows that expose parameters and results.", demoSlug: "chain-of-thought-demo-tool-call-details-flow" },
 			{ title: "Tool icon table", description: "Reference table showing the resolved icon or logo used for native tools, Atlassian/VPK servers, 3P MCP servers, and fallback cases.", demoSlug: "chain-of-thought-demo-tool-icon-table" },
 		],
 	},
@@ -2013,58 +2044,49 @@ import AddIcon from "@atlaskit/icon/core/add";
 		],
 	},
 
-	artifact: {
-		description:
-			"A card for displaying AI-generated artifacts like code, documents, images, or sheets. The high-level ArtifactCard component provides kind-based icons, expand/collapse, streaming state, and preview rendering built on GenerativeCard. Low-level compound components (Artifact, ArtifactHeader, etc.) are also available for custom layouts.",
-		usage: `import { ArtifactCard } from "@/components/ui-custom/artifact";
+	"artifact-list": {
+		description: "A card listing worked-on artifacts and smart links. Each row shows a neutral icon tile (or 3rd-party logo), a title, a source and owner metadata line, and an Open button revealed on row hover or keyboard focus.",
+		importStatement: `import { ArtifactList } from "@/components/ui-custom/artifact-list";`,
+		usage: `import { ArtifactList } from "@/components/ui-custom/artifact-list";
+import type { ArtifactListItem } from "@/components/ui-custom/artifact-list";
+import PageIcon from "@atlaskit/icon/core/page";
 
-<ArtifactCard
-  kind="code"
-  title="Algorithm Implementation"
-  previewContent={codeString}
-  onOpen={() => openArtifact()}
-/>
+const items: ArtifactListItem[] = [
+  {
+    id: "audience-engagement-report",
+    title: "Audience Engagement Report",
+    source: "Confluence page",
+    owner: "Vitafleet Team",
+    icon: <PageIcon label="" />,
+  },
+  {
+    id: "content-variation-analysis",
+    title: "Content Variation Analysis",
+    source: "Google Spreadsheet",
+    owner: "Vitafleet Team",
+    logoSrc: "/3p/google-drive/16.svg",
+  },
+];
 
-{/* Or use compound components for custom layouts: */}
-import {
-  Artifact, ArtifactHeader, ArtifactTitle,
-  ArtifactActions, ArtifactAction, ArtifactContent,
-} from "@/components/ui-custom/artifact";`,
-		demoLayout: {
-			previewContentWidth: "full",
-			examplesContentWidth: "full",
-		},
+<ArtifactList items={items} onOpen={(item) => console.log(item.id)} />`,
+		demoLayout: { previewHeight: "fixed" },
 		props: [
-			{ name: "kind", type: '"text" | "code" | "image" | "sheet" | "react"', description: "The artifact content type. Determines the default icon tile and color." },
-			{ name: "visualIdentity", type: '{ iconName: string; tileVariant: "gray" | "blue" | "teal" | "green" | "lime" | "yellow" | "orange" | "red" | "magenta" | "purple" }', description: "Optional icon-tile override used instead of the kind-based default." },
-			{ name: "title", type: "string", description: "Artifact title text." },
-			{ name: "action", type: '"create" | "update" | null', description: "Optional action context for description text." },
-			{ name: "isStreaming", type: "boolean", description: "Whether the artifact is currently streaming." },
-			{ name: "displayMode", type: '"preview" | "chip"', description: 'Display mode. "preview" shows expanded card, "chip" shows compact inline card. Defaults to "preview".' },
-			{ name: "previewContent", type: "string", description: "Content string for the preview (code text, image URL, etc.)." },
-			{ name: "onOpen", type: "(element: HTMLDivElement) => void", description: 'Callback when the "Open" button is clicked. Receives the card root element.' },
-			{ name: "onRegister", type: "(element: HTMLDivElement) => void", description: "Optional callback fired when a preview-mode card mounts. Receives the card root element." },
-			{ name: "children", type: "ReactNode", description: "Optional children rendered inside the card content (overrides previewContent)." },
-			{ name: "className", type: "string", description: "Additional classes for the outer wrapper." },
-		],
-		subComponents: [
-			{ name: "ArtifactCard", description: "High-level artifact card built on GenerativeCard with kind-based icons, expand/collapse, and preview rendering." },
-			{ name: "ArtifactPanel", description: "Full artifact viewer/editor panel with title, kind badge, edit/preview toggle, copy, and close. Renders code, images, or text." },
-			{ name: "Artifact", description: "Low-level root container for custom artifact layouts." },
-			{ name: "ArtifactHeader", description: "Header bar with title area and actions. Uses flexbox with justify-between." },
-			{ name: "ArtifactTitle", description: "Title text rendered as a paragraph with medium font weight." },
-			{ name: "ArtifactDescription", description: "Subtitle/description text in muted foreground color." },
-			{ name: "ArtifactActions", description: "Container for grouping action buttons with gap spacing." },
-			{ name: "ArtifactAction", description: "Individual icon button with optional tooltip. Accepts icon (LucideIcon), tooltip (string), and label (string) props." },
-			{ name: "ArtifactClose", description: "Close button defaulting to an X icon. Renders a ghost Button." },
-			{ name: "ArtifactContent", description: "Scrollable content area with padding. Use className='p-0' for edge-to-edge content like CodeBlock." },
-		],
-		examples: [
-			{ title: "Code preview", description: "ArtifactCard displaying a code artifact with preview and expand/collapse.", demoSlug: "artifact-demo-code-preview" },
-			{ title: "Image preview", description: "ArtifactCard displaying an image artifact with gradient overlay.", demoSlug: "artifact-demo-image-preview" },
-			{ title: "Streaming", description: "ArtifactCard in streaming state showing skeleton loading and spinner.", demoSlug: "artifact-demo-streaming" },
-			{ title: "Chip mode", description: "Compact inline artifact card with 'Open' action button.", demoSlug: "artifact-demo-chip" },
-			{ title: "Compound (legacy)", description: "Custom layout using low-level compound components.", demoSlug: "artifact-demo-compound" },
+			{
+				name: "items",
+				type: "readonly ArtifactListItem[]",
+				required: true,
+				description: "Rows to render. Each item provides a title, source/owner metadata, and either an ADS icon or a logo path.",
+			},
+			{
+				name: "onOpen",
+				type: "(item: ArtifactListItem) => void",
+				description: "Called when a row's hover/focus-revealed Open button is activated.",
+			},
+			{
+				name: "openLabel",
+				type: "string",
+				description: "Label for the per-row Open button. Defaults to \"Open\".",
+			},
 		],
 	},
 

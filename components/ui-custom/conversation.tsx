@@ -484,6 +484,7 @@ const defaultFormatMessage = (message: ConversationMessage | UIMessage): string 
 	return `**${roleLabel}:** ${getMessageText(message)}`
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const messagesToMarkdown = (
 	messages: ConversationMessage[] | UIMessage[],
 	formatMessage: (

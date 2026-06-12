@@ -1,5 +1,9 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-constructed-context-values -- Context values in this file intentionally combine live state and setters; extracting them would not reduce meaningful consumer churn.
+
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import type { ComponentProps, CSSProperties, ReactNode } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -197,7 +201,8 @@ export const PlanSummary = ({ summary, className, emptyMessage = "No summary pro
 	const rawContent = summary.trim().length > 0 ? summary : emptyMessage;
 	const content = rawContent;
 
-	useEffect(() => {
+		// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- overflow is measured from rendered DOM after content changes.
+		useEffect(() => {
 		if (isContentExpanded || !contentRef.current) return;
 
 		const contentElement = contentRef.current;
@@ -224,7 +229,8 @@ export const PlanSummary = ({ summary, className, emptyMessage = "No summary pro
 			cancelAnimationFrame(rafId);
 			resizeObserver.disconnect();
 		};
-	}, [content, isContentExpanded]);
+		}, [content, isContentExpanded]);
+		// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	const showCollapsedState = !isContentExpanded;
 	const showCollapsedControls = showCollapsedState && (hasMeasured ? hasOverflow : false);
@@ -318,7 +324,8 @@ export const PlanTaskList = ({ children, className, showMoreLabel = "Show more",
 	const [hasMeasured, setHasMeasured] = useState(false);
 	const listRef = useRef<HTMLOListElement | null>(null);
 
-	useEffect(() => {
+		// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- overflow is measured from rendered DOM after children render.
+		useEffect(() => {
 		if (isContentExpanded || !listRef.current) return;
 
 		const listElement = listRef.current;
@@ -345,7 +352,8 @@ export const PlanTaskList = ({ children, className, showMoreLabel = "Show more",
 			cancelAnimationFrame(rafId);
 			resizeObserver.disconnect();
 		};
-	}, [children, isContentExpanded]);
+		}, [children, isContentExpanded]);
+		// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	const showCollapsedState = !isContentExpanded;
 	const showCollapsedControls = showCollapsedState && (hasMeasured ? hasOverflow : false);

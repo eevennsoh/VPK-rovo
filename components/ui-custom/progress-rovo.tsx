@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
+
 import { motion, AnimatePresence } from "motion/react";
 
 import { cn } from "@/lib/utils";

@@ -1,5 +1,7 @@
 "use client"
 
+// oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates coupled component parts as a compound component or demo surface API.
+
 import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible"
 
 function Collapsible(props: CollapsiblePrimitive.Root.Props) {

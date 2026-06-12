@@ -5,6 +5,29 @@ const test = require("node:test");
 
 const ARTIFACT_SOURCE = fs.readFileSync(path.join(__dirname, "artifact.tsx"), "utf8");
 
+function readProjectFile(relativePath) {
+	return fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
+}
+
+test("Artifact is registered as a website block in all four registries", () => {
+	assert.match(
+		readProjectFile("app/data/components.ts"),
+		/blockComponent\("artifact"\)/u,
+	);
+	assert.match(
+		readProjectFile("app/data/component-manifest.ts"),
+		/blockComponent\("artifact"\)/u,
+	);
+	assert.match(
+		readProjectFile("app/data/details/blocks.ts"),
+		/import \{ ArtifactCard \} from "@\/components\/blocks\/artifact";/u,
+	);
+	assert.match(
+		readProjectFile("components/website/registry.ts"),
+		/artifact: dynamic\(\(\) => import\("\.\/demos\/blocks\/artifact-demo"\)/u,
+	);
+});
+
 test("ArtifactCard presents html artifacts as PDFs with acronym casing", () => {
 	assert.match(ARTIFACT_SOURCE, /html: "PDF"/u);
 	assert.match(ARTIFACT_SOURCE, /function formatArtifactKindActionLabel\(kindLabel: string\): string/u);
@@ -16,6 +39,13 @@ test("ArtifactCard presents html artifacts as PDFs with acronym casing", () => {
 	);
 	assert.doesNotMatch(ARTIFACT_SOURCE, /html: "HTML report"/u);
 	assert.doesNotMatch(ARTIFACT_SOURCE, /Open \$\{kindLabel\.toLowerCase\(\)\}/u);
+});
+
+test("ArtifactCard preview footer does not add a second border stroke", () => {
+	assert.match(
+		ARTIFACT_SOURCE,
+		/<GenerativeCardFooter className="border-t-0 bg-transparent pt-0">/u,
+	);
 });
 
 test("ArtifactPanel uses the Rovo Canvas version-history treatment instead of a select trigger", () => {

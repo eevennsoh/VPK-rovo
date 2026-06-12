@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/prefer-module-scope-static-value -- These values are intentionally colocated with the component/demo contract for readability and token context.
+
 import { type MouseEvent, type ReactElement, type ReactNode } from "react";
 import Image from "next/image";
 import { motion } from "motion/react";
@@ -67,6 +69,7 @@ import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 /** Compact count formatter — 1500 → "1.5K", 12000 → "12K". */
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function formatCompact(value: number): string {
 	if (value >= 10000) return `${Math.round(value / 1000)}K`;
 	if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
@@ -292,6 +295,7 @@ const BANNER_COVER_COLORS: Record<string, string> = {
 	"teamwork-agents": DEFAULT_BANNER_COVER_COLOR,
 };
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function getAgentCardBannerCoverColor(avatarSrc: string | undefined): string {
 	const category = avatarSrc?.match(/\/avatar-agent\/([^/]+)\//u)?.[1];
 	return (category ? BANNER_COVER_COLORS[category] : undefined) ?? DEFAULT_BANNER_COVER_COLOR;
@@ -406,6 +410,7 @@ export interface AgentCardCapabilitiesProps {
 	label?: string;
 	labelClassName?: string;
 	itemClassName?: string;
+	listClassName?: string;
 	items: readonly (string | AgentCardCapability)[];
 }
 
@@ -530,13 +535,14 @@ export function AgentCardCapabilities({
 	label,
 	labelClassName,
 	itemClassName,
+	listClassName,
 	items,
 }: Readonly<AgentCardCapabilitiesProps>) {
 	return (
 		<div className={cn("flex flex-col gap-1", className)} data-slot="agent-card-capabilities">
 			{label ? <span className={cn("text-xs font-semibold leading-4 text-text-subtlest", labelClassName)}>{label}</span> : null}
 			<TooltipProvider>
-				<ul className="flex flex-col gap-1">
+				<ul className={cn("flex flex-col gap-1", listClassName)}>
 					{items.map((item) => {
 						const capability = getCapabilityItem(item);
 

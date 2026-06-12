@@ -124,6 +124,7 @@ const defaultFormatMessage = (message: ConversationMessage): string => {
 	return `**${roleLabel}:** ${message.content}`
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const messagesToMarkdown = (
 	messages: ConversationMessage[],
 	formatMessage: (

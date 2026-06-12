@@ -86,7 +86,7 @@ test("Subagents switcher uses base agent header and trigger-name prompt rows", (
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_LIST_FOOTER_GAP_PX = 8/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /<div className="shrink-0 pb-2">/u);
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_OPEN_MAX_HEIGHT_PX|Math\.min\(|overflow-y-auto/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_FOOTER_CHROME_PX = 17/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_FOOTER_CHROME_PX = 9/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_FOOTER_ACTION_HEIGHT_PX = 32/u);
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /SWITCHER_HEADER_HEIGHT_PX|footerActionCount/u);
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /sticky top-0/u);
@@ -101,14 +101,15 @@ test("Subagents switcher uses base agent header and trigger-name prompt rows", (
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /<span className="block min-w-0 truncate">\{label\}<\/span>/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /"absolute inset-0 flex flex-col p-2 text-left transition-opacity duration-normal ease-out"/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /isSwitcherOpen\s*\?\s*"pointer-events-auto opacity-100"\s*:\s*"pointer-events-none opacity-0"/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /sticky bottom-0 z-10 shrink-0 border-t border-border bg-surface-overlay py-2/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /sticky bottom-0 z-10 shrink-0 border-t border-border bg-surface-overlay pt-2/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /data-slot="subagents-switcher-avatar"[\s\S]*className="flex size-6 shrink-0 items-center justify-center/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /className="size-5 object-contain"[\s\S]*height=\{20\}[\s\S]*width=\{20\}/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /"dev-agents": "lime"/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /lime: "text-lime-400 \[&_svg\]:text-lime-400!"/u);
 	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /"border border-border bg-surface"[\s\S]*tagColor \? subagentTagColorIconClassName\[tagColor\] : "text-icon-subtlest"/u);
 	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /variant="transparent"/u);
-	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /frontSlot=\{renderSubagentSwitcherVisual\(label, subagentTagColor\)\}/u);
+	assert.match(SUBAGENTS_NAVIGATOR_SOURCE, /frontSlot=\{renderSubagentSwitcherVisual\(subagentTagColor\)\}/u);
+	assert.doesNotMatch(SUBAGENTS_NAVIGATOR_SOURCE, /getDirectoryMentionItemOrFallback\("subagent"|RichTextMentionVisualMark/u);
 });
 
 test("Subagents navigator exposes create and manage actions", () => {

@@ -9,6 +9,7 @@ import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import { BrandLogoMark } from "@/components/ui/logo-mark";
 import type { TagColor } from "@/components/ui/tag";
 import { resolveBrandLogoPresentation } from "@/app/data/directory/brand-logos";
+import { resolveAtlassianLogoBorder } from "@/components/ui/data/logo-usage";
 import { getDirectoryIcon } from "@/app/data/directory/visual";
 import type { DirectoryIconKey } from "@/app/data/directory/types";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,26 @@ import type {
  * menu-row avatar, image, logo tile, and icon tile together.
  */
 export const MENU_VISUAL_TILE_SIZE = "medium" as const;
+
+// Rovo's brand marks ship NO solid background (like the Atlassian master logo),
+// so inline chips frame them in a transparent IconTile rather than letting a bare
+// glyph stretch edge-to-edge. `resolveAtlassianLogoBorder` already flags the
+// Atlassian master logo; this set adds the Rovo family on top.
+const BACKGROUNDLESS_LOGO_NAMES: ReadonlySet<AtlassianLogoName> = new Set([
+	"rovo",
+	"rovo-dev",
+	"rovo-dev-agent",
+]);
+
+/**
+ * Whether a 1P logo lacks a solid background fill. Such marks (the Atlassian
+ * master logo and the Rovo family) keep the transparent `IconTile` front-slot
+ * treatment in inline chips; everything else ships a solid superellipse
+ * background and fills the chip's 16px front slot bare.
+ */
+function isBackgroundlessLogo(name: AtlassianLogoName): boolean {
+	return resolveAtlassianLogoBorder(name) || BACKGROUNDLESS_LOGO_NAMES.has(name);
+}
 
 // Maps an icon's ADS color token to the closest `Tag` color so that mention
 // tokens in the TipTap editor and reference chips in the agent config panel
@@ -56,6 +77,7 @@ const ICON_COLOR_TO_TAG_COLOR: Readonly<Record<string, TagColor>> = {
  * mention reads as an interactive reference rather than a neutral gray chip —
  * matching the agent config panel reference chips.
  */
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function getRichTextMentionTagColor(
 	visual: RichTextMentionVisual | undefined,
 ): TagColor {
@@ -75,6 +97,7 @@ export interface RichTextMentionVisualAttrs {
 	visualSrc?: string | null;
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function getRichTextMentionVisualAttrs(
 	visual: RichTextMentionVisual | undefined,
 ): RichTextMentionVisualAttrs {
@@ -104,6 +127,7 @@ export function getRichTextMentionVisualAttrs(
 	};
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function getRichTextMentionVisualFromAttrs(
 	attrs: RichTextMentionVisualAttrs,
 ): RichTextMentionVisual | undefined {
@@ -136,6 +160,7 @@ export function getRichTextMentionVisualFromAttrs(
 	return undefined;
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function getRichTextMentionTagType(
 	visual: RichTextMentionVisual | undefined,
 ): "agent" | "default" | "other" | "user" {
@@ -263,12 +288,16 @@ export function RichTextMentionVisualMark({
 			);
 		}
 
-		// Inline tag/pill chips: normalize the 1P logo into the SAME 16px
-		// `IconTile` xxsmall/transparent slot every other front-slot glyph uses
-		// (see `TagDemoFrontSlot`'s Atlassian example). This centers the mark in a
-		// transparent 16px box with NO bordered container, instead of dropping a
-		// bare rounded span that read as a misaligned/framed glyph.
-		return (
+		// Inline tag/pill chips follow the Tag front-slot convention (see
+		// `TagDemoFrontSlot` in tag-demo.tsx and /components/ui/tag): 1P product
+		// logos ship a solid superellipse background, so they fill the 16px front
+		// slot bare — the Tag wrapper's `[&>*]:size-full` stretches the xxsmall
+		// (16px) mark edge-to-edge with NO padding. The Atlassian master logo and
+		// the Rovo family have no solid background, so they keep the transparent
+		// `IconTile` treatment that insets + centers the mark inside the 16px box
+		// (the tile would otherwise clamp a solid-bg mark down to 10px, which read
+		// as an undersized, padded logo — the reported bug).
+		return isBackgroundlessLogo(visual.logoName) ? (
 			<IconTile
 				aria-hidden={true}
 				className={className}
@@ -277,6 +306,19 @@ export function RichTextMentionVisualMark({
 				size="xxsmall"
 				variant="transparent"
 			/>
+		) : (
+			// `AtlassianLogo` styles its own outer span, so we carry the caller's
+			// `className` on a thin wrapper that fills the front slot. The xxsmall
+			// (16px) mark then fills it edge-to-edge.
+			<span className={cn("inline-flex size-full items-center justify-center", className)}>
+				<AtlassianLogo
+					label={label}
+					name={visual.logoName}
+					size="xxsmall"
+					themeAware
+					withUsageBorder
+				/>
+			</span>
 		);
 	}
 
@@ -308,6 +350,7 @@ export function RichTextMentionVisualMark({
 	return null;
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function getRichTextMentionVisualDOMSpec(
 	visual: RichTextMentionVisual | undefined,
 ): DOMOutputSpec | null {

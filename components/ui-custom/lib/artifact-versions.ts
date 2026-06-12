@@ -1,5 +1,5 @@
 import { formatDistanceToNow } from "date-fns";
-import type { ArtifactKind } from "@/components/ui-custom/artifact";
+import type { ArtifactKind } from "@/components/blocks/artifact";
 
 export interface ArtifactVersion {
 	id: string;

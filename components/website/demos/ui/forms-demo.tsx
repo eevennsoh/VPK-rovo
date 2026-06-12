@@ -198,7 +198,7 @@ const arrayFormSchema = z.object({
 	emails: z
 		.array(
 			z.object({
-				address: z.string().email("Enter a valid email address."),
+				address: z.email("Enter a valid email address."),
 			})
 		)
 		.min(1, "Add at least one email address.")
@@ -207,7 +207,7 @@ const arrayFormSchema = z.object({
 
 const adsBasicFormSchema = z.object({
 	username: z.string().min(3, "Username must be at least 3 characters."),
-	email: z.string().email("Please enter a valid email address."),
+	email: z.email("Please enter a valid email address."),
 	terms: z.boolean().refine((value) => value, {
 		message: "You must accept the terms to continue.",
 	}),

@@ -20,10 +20,39 @@ function loadResolver() {
 			catalogNameForId,
 			extractInstructionTokens,
 			repairInstructionTokens,
+			weaveMissingTokens,
 		} from "@/app/data/directory/resolve-ids";
 	`);
 	return modulePromise;
 }
+
+test("weaveMissingTokens appends only the ids missing from the body, as chips", async () => {
+	const { weaveMissingTokens, extractInstructionTokens } = await loadResolver();
+
+	const body = "## Instructions\nUse @[tool:jira] and @[skill:explore-ideas].";
+	const woven = weaveMissingTokens(body, {
+		tool: ["jira", "confluence"],
+		skill: ["explore-ideas"],
+		knowledge: ["confluence:all"],
+		subagent: ["strategic-insight"],
+	});
+
+	// The two already-present ids are not duplicated.
+	const jiraCount = woven.match(/@\[tool:jira\]/g)?.length ?? 0;
+	assert.equal(jiraCount, 1, "existing token not duplicated");
+	// Every supplied id is now present as a token (config -> body guarantee).
+	const have = new Set(extractInstructionTokens(woven).map((t) => `${t.category}:${t.id}`));
+	for (const want of ["tool:jira", "tool:confluence", "skill:explore-ideas", "knowledge:confluence:all", "subagent:strategic-insight"]) {
+		assert.ok(have.has(want), `expected @[${want}] in woven body`);
+	}
+	assert.match(woven, /## Capabilities/);
+});
+
+test("weaveMissingTokens is a no-op when the body already covers everything", async () => {
+	const { weaveMissingTokens } = await loadResolver();
+	const body = "Use @[tool:jira] and @[skill:explore-ideas].";
+	assert.equal(weaveMissingTokens(body, { tool: ["jira"], skill: ["explore-ideas"] }), body);
+});
 
 test("resolveCatalogIds keeps exact catalog ids verbatim", async () => {
 	const { resolveCatalogIds } = await loadResolver();

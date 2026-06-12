@@ -15,7 +15,7 @@ const EASE_OPTIONS = [
 export default function MorphingRovoDemo() {
 	const [size, setSize] = useState(64);
 	const [duration, setDuration] = useState(0.6);
-	const [ease, setEase] = useState<string>("backOut");
+	const [ease, setEase] = useState<(typeof EASE_OPTIONS)[number]["value"]>("backOut");
 	const [rotationPerStep, setRotationPerStep] = useState(180);
 	const [blur, setBlur] = useState(2);
 

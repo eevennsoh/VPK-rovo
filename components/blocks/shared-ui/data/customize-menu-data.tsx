@@ -18,6 +18,7 @@ export interface ReasoningOption {
 
 export const DEFAULT_REASONING_OPTION_ID = "let-rovo-decide";
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const REASONING_OPTIONS: ReasoningOption[] = [
 	{
 		id: "let-rovo-decide",
@@ -51,6 +52,7 @@ interface SourceToggle {
 	icon: React.ReactElement;
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const SOURCE_TOGGLES: SourceToggle[] = [
 	{
 		id: "web-results",

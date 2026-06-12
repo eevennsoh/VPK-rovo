@@ -348,7 +348,7 @@ export function ButtonDemoUsage() {
 					<ArrowRightIcon data-icon="inline-end" />
 				</Button>
 			</div>
-			<Button render={<a href="#" />} nativeButton={false}>
+			<Button render={<a aria-label="Button link" href="#" />} nativeButton={false}>
 				Link
 			</Button>
 		</div>

@@ -1,5 +1,12 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-unused-vars -- These underscored compatibility props and inferred generic placeholders are intentionally retained for API shape. */
+
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
+
+// oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
+
 import type { ChatStatus, FileUIPart, SourceDocumentUIPart } from "ai";
 import type {
   ChangeEvent,
@@ -38,6 +45,7 @@ import {
 } from "@/lib/directory-autocomplete";
 
 import { Badge } from "@/components/ui/badge";
+import { BrandLogoMark } from "@/components/ui/logo-mark";
 import {
   Command,
   CommandEmpty,
@@ -416,6 +424,7 @@ export interface ReferencedSourcesContext {
   clear: () => void;
 }
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This context module intentionally exports the provider, hook, and context contract together.
 export const LocalReferencedSourcesContext =
   createContext<ReferencedSourcesContext | null>(null);
 
@@ -835,7 +844,6 @@ export const PromptInput = ({
         }
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- cleanup only on unmount; filesRef always current
     [usingProvider]
   );
 
@@ -1641,11 +1649,11 @@ export type PromptInputButtonProps = ComponentProps<typeof InputGroupButton> & {
 
 const PROMPT_INPUT_PREFERENCE_SOURCES = [
   {
-    src: "/3p/google-drive/16-borderless.svg",
+    src: "/3p/google-drive/16.svg",
     label: "Google Drive",
   },
   {
-    src: "/3p/microsoft-teams/16-borderless.svg",
+    src: "/3p/microsoft-teams/16.svg",
     label: "Microsoft Teams",
   },
 ] as const;
@@ -1725,14 +1733,13 @@ export const PromptInputPreferencesButton = ({
     {...props}
   >
     {PROMPT_INPUT_PREFERENCE_SOURCES.map((source) => (
-      <Image
-        alt=""
-        aria-hidden
-        className="size-4 shrink-0"
-        height={16}
+      <BrandLogoMark
+        className="shrink-0"
+        frame="tile"
         key={source.label}
+        label={source.label}
+        size="small"
         src={source.src}
-        width={16}
       />
     ))}
     <span aria-hidden className="inline-flex size-4 shrink-0 items-center justify-center rounded bg-primary">

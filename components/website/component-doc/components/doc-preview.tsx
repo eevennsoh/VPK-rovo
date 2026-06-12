@@ -53,8 +53,8 @@ function ResolvedDocPreview({
 		return null;
 	}
 
-	const fullViewAction = (
-		<Button variant="link" size="default" nativeButton={false} render={<a href={`/preview/${category}/${slug}`} />}>
+		const fullViewAction = (
+			<Button variant="link" size="default" nativeButton={false} render={<a aria-label={`Open ${slug} preview fullscreen`} href={`/preview/${category}/${slug}`} />}>
 			<FullscreenEnterIcon label="" size="small" />
 			Fullscreen
 		</Button>

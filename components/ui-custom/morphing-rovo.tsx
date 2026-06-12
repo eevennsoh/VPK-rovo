@@ -1,6 +1,8 @@
 "use client";
 
-import { motion, useMotionValue, useTransform, animate, useReducedMotion } from "motion/react";
+// oxlint-disable react-doctor/no-initialize-state -- These components intentionally seed local interactive state from props once before user edits take ownership.
+
+import { motion, useMotionValue, useTransform, animate, useReducedMotion, type Transition } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 // ---------------------------------------------------------------------------
@@ -67,7 +69,7 @@ export interface MorphingRovoShapeProps {
 	/** Duration per morph step in seconds. @default 0.6 */
 	duration?: number;
 	/** Easing function for each morph transition. @default "easeInOut" */
-	ease?: string;
+	ease?: Transition["ease"];
 	/** Clockwise rotation in degrees applied during each morph step. @default 180 */
 	rotationPerStep?: number;
 	/** Max blur radius in pixels applied at transition midpoints. 0 disables. @default 2 */
@@ -148,7 +150,7 @@ export function MorphingRovoShape({
 					if (cancelledRef.current) break;
 					await animate(progress, i, {
 						duration,
-						ease: ease as any,
+						ease,
 					});
 				}
 				if (!cancelledRef.current) {
@@ -208,6 +210,7 @@ export function MorphingRovoShape({
 // Compound namespace
 // ---------------------------------------------------------------------------
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const MorphingRovo = {
 	/** Morphing shape that cycles through circle, square, triangle, hexagon. */
 	Shape: MorphingRovoShape,

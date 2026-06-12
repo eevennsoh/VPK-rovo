@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import * as React from "react";
 import Image from "next/image";
 import AddIcon from "@atlaskit/icon/core/add";
@@ -322,11 +324,9 @@ function StudioSidebarNavigation({
 	// recent agent becomes selected from outside the visible list; a direct header
 	// click can still collapse the group.
 	const [isAgentsExpanded, setIsAgentsExpanded] = React.useState(true);
-	React.useEffect(() => {
-		if (hasSelectedRecentAgent) {
-			setIsAgentsExpanded(true);
-		}
-	}, [activeThreadId, hasSelectedRecentAgent, selectedAgentId]);
+	if (hasSelectedRecentAgent && !isAgentsExpanded) {
+		setIsAgentsExpanded(true);
+	}
 
 	return (
 		<nav aria-label="Studio" className="flex shrink-0 flex-col gap-3">

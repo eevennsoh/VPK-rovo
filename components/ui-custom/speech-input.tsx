@@ -76,7 +76,8 @@ export const SpeechInput = ({ className, onTranscriptionChange, onAudioRecorded,
 	onAudioRecordedRef.current = onAudioRecorded;
 
 	// Initialize Speech Recognition when mode is speech-recognition
-	useEffect(() => {
+		// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- browser SpeechRecognition availability is discovered through an external API.
+		useEffect(() => {
 		if (mode !== "speech-recognition") {
 			return;
 		}
@@ -134,7 +135,8 @@ export const SpeechInput = ({ className, onTranscriptionChange, onAudioRecorded,
 			recognitionRef.current = null;
 			setIsRecognitionReady(false);
 		};
-	}, [mode, lang]);
+		}, [mode, lang]);
+		// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	// Cleanup MediaRecorder and stream on unmount
 	useEffect(

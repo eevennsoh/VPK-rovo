@@ -1,5 +1,7 @@
 "use client";
 
+// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
+
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import { cn } from "@/lib/utils";

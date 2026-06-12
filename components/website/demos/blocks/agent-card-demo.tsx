@@ -93,8 +93,8 @@ function ExperimentalAgentCard({
 			skills={SKILLS}
 			sources={SOURCES}
 			stats={[
-				{ label: "Users", value: "648" },
-				{ label: "Reactions", value: "1.2K" },
+				{ label: "Remix", value: "1.8K" },
+				{ label: "Last update", value: "2 weeks ago" },
 			]}
 			variant={variant}
 			verified

@@ -37,6 +37,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// Components are not included wholesale, so this focused coverage is listed
 	// explicitly to keep it gated by CI.
 	"components/ui-charts/heatmap/heatmap-utils.test.js",
+	// Deterministic studio agent-builder: prompt → agent create/update patch
+	// against the fake catalogs. Pure module under components/, so gate explicitly.
+	"components/projects/studio/lib/demo-agent-builder.test.js",
 ]);
 
 const gitResult = spawnSync("git", [
@@ -45,6 +48,7 @@ const gitResult = spawnSync("git", [
 	"--others",
 	"--exclude-standard",
 	"*.test.js",
+	"*.test.ts",
 ], {
 	encoding: "utf8",
 	stdio: ["ignore", "pipe", "inherit"],

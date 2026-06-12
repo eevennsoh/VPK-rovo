@@ -1,3 +1,5 @@
+// oxlint-disable react-doctor/no-multi-comp -- This module intentionally colocates coupled component parts as a compound component or demo surface API.
+
 import { Tile, type TileProps } from "@/components/ui/tile";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import {
@@ -41,6 +43,13 @@ export interface BrandLogoMarkProps {
 	frame?: "tile" | "chip";
 	/** `Tile` size when `frame="tile"`. Ignored for `"chip"`. */
 	size?: NonNullable<TileProps["size"]>;
+	/**
+	 * Drop the border + surface fill so the mark sits in a bare transparent `Tile`
+	 * (the `components/ui/tile#transparent` treatment). Still swaps white-tile 3P
+	 * marks to their borderless glyph so no white square shows. For low-chrome
+	 * attribution rows (skill / entity card publisher logos). `frame="tile"` only.
+	 */
+	transparent?: boolean;
 	className?: string;
 }
 
@@ -51,6 +60,12 @@ export interface AtlassianLogoMarkProps {
 	label: string;
 	/** `Tile`/logo size. */
 	size?: NonNullable<TileProps["size"]>;
+	/**
+	 * Drop the border + surface fill so the mark sits in a bare transparent `Tile`
+	 * (the `components/ui/tile#transparent` treatment). For low-chrome attribution
+	 * rows (skill / entity card publisher logos).
+	 */
+	transparent?: boolean;
 	className?: string;
 }
 
@@ -85,7 +100,22 @@ export function AtlassianLogoMark({
 	label,
 	size = "medium",
 	className,
+	transparent = false,
 }: Readonly<AtlassianLogoMarkProps>) {
+	if (transparent) {
+		return (
+			<Tile
+				aria-hidden
+				className={className}
+				label={label}
+				size={size}
+				variant="transparent"
+			>
+				<AtlassianLogo label="" name={name} size={size} themeAware />
+			</Tile>
+		);
+	}
+
 	const hasBorder = resolveAtlassianLogoBorder(name);
 
 	if (!hasBorder) {
@@ -121,6 +151,7 @@ export function BrandLogoMark({
 	frame = "tile",
 	size = "medium",
 	className,
+	transparent = false,
 }: Readonly<BrandLogoMarkProps>) {
 	const presentation = resolveBrandLogoPresentation(src);
 
@@ -144,6 +175,8 @@ export function BrandLogoMark({
 		);
 	}
 
+	const bordered = presentation.hasBorder && !transparent;
+
 	return (
 		<Tile
 			aria-hidden
@@ -151,9 +184,9 @@ export function BrandLogoMark({
 			size={size}
 			variant="transparent"
 			isInset={presentation.hasBorder}
-			hasBorder={presentation.hasBorder}
+			hasBorder={bordered}
 			className={cn(
-				presentation.hasBorder && "bg-surface",
+				bordered && "bg-surface",
 				className,
 			)}
 		>

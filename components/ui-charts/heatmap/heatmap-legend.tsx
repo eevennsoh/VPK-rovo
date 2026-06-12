@@ -11,6 +11,7 @@ import { useHeatmapInteractionOptional } from "./heatmap-context";
 import { HeatmapLegendSwatch } from "./heatmap-legend-swatch";
 import { getHeatmapContributionLevel } from "./heatmap-utils";
 
+// react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export const HEATMAP_LEGEND_LEVELS = [0, 1, 2, 3, 4] as const;
 
 const HEATMAP_FADED_OPACITY = 0.3;

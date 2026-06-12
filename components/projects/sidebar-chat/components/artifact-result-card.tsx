@@ -1,11 +1,13 @@
 "use client";
 
+// oxlint-disable react-doctor/no-derived-state -- These components maintain local derived display state for controlled animations, measurements, or draft editing that cannot be represented as render-only values without changing UX.
+
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRovoChat } from "@/app/contexts";
 import { RovoCanvas, type RovoCanvasStatus, type RovoCanvasVersion, type RovoCanvasView } from "@/components/blocks/rovo-canvas/page";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArtifactCard, ARTIFACT_KIND_LABELS, type ArtifactKind } from "@/components/ui-custom/artifact";
+import { ArtifactCard, ARTIFACT_KIND_LABELS, type ArtifactKind } from "@/components/blocks/artifact";
 import {
 	Dialog,
 	DialogContent,
@@ -76,7 +78,7 @@ function resolveCanvasStatus(isLoading: boolean, errorMessage: string | null): R
 
 function ArtifactResultCardPreviewSkeleton(): ReactNode {
 	return (
-		<div
+		<output
 			aria-busy="true"
 			aria-label="Artifact preview loading"
 			className="flex w-full flex-col gap-2"
@@ -85,7 +87,7 @@ function ArtifactResultCardPreviewSkeleton(): ReactNode {
 			<Skeleton className="h-4 w-full" />
 			<Skeleton className="h-4 w-full" />
 			<Skeleton className="h-4 w-3/4" />
-		</div>
+		</output>
 	);
 }
 
@@ -171,6 +173,7 @@ export function ArtifactResultCard({
 		handleOpenChange(true);
 	};
 
+	// oxlint-disable react-doctor/no-adjust-state-on-prop-change -- opening the artifact starts an abortable document fetch.
 	useEffect(() => {
 		if (!shouldOpenInRovoCanvas) {
 			return;
@@ -225,6 +228,7 @@ export function ArtifactResultCard({
 			ignore = true;
 		};
 	}, [artifact.documentId, isOpen, shouldOpenInRovoCanvas]);
+	// oxlint-enable react-doctor/no-adjust-state-on-prop-change
 
 	useEffect(() => {
 		setSelectedVersionId((currentVersionId) => {

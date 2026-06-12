@@ -444,8 +444,8 @@ test("Personal Graph lazily expands selected TWG nodes without blocking selectio
 	assert.match(SURFACE_SOURCE, /import \{ mergeSelectedNodeExpansion \} from "\.\/lib\/personal-graph-explorer-merge";/);
 	assert.match(SURFACE_SOURCE, /const \[expandedExplorer, setExpandedExplorer\] = useState<VaultExplorer \| null>\(null\);/);
 	assert.match(SURFACE_SOURCE, /const explorer = isTwgMode \? \(chatExplorer \?\? expandedExplorer \?\? rawExplorer\) : rawExplorer;/);
-	assert.match(SURFACE_SOURCE, /expandedTwgNodeIdsRef = useRef<Set<string>>\(new Set\(\)\);/);
-	assert.match(SURFACE_SOURCE, /expandingTwgNodeIdsRef = useRef<Set<string>>\(new Set\(\)\);/);
+	assert.match(SURFACE_SOURCE, /expandedTwgNodeIdsRef = useLazyRef<Set<string>>\(\(\) => new Set\(\)\);/);
+	assert.match(SURFACE_SOURCE, /expandingTwgNodeIdsRef = useLazyRef<Set<string>>\(\(\) => new Set\(\)\);/);
 	assert.match(SURFACE_SOURCE, /if \(!isTwgMode \|\| !selectedNodeId \|\| isLoading\)/);
 	assert.match(SURFACE_SOURCE, /selectedNode\.provider !== "twg"/);
 	assert.match(SURFACE_SOURCE, /expandTwgNode\(selectedNodeId, \{ signal: controller\.signal \}\)/);

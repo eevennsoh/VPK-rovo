@@ -1,5 +1,7 @@
 "use client"
 
+// oxlint-disable react-doctor/exhaustive-deps -- Effects in this file intentionally coordinate refs, external animation loops, timers, subscriptions, or measured DOM state; dependencies are constrained to avoid restarting those bridges.
+
 import * as React from "react"
 import { ConversationProvider, useConversation } from "@elevenlabs/react"
 import {
