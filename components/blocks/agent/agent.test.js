@@ -246,12 +246,12 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	// instead of the removed AgentMissingConfigActions grid.
 	assert.doesNotMatch(AGENT_SOURCE, /function AgentMissingConfigActions/u);
 	assert.match(AGENT_SOURCE, /function AgentCompactEmptyConfigNav/u);
-	assert.match(AGENT_SOURCE, /getAgentTriggerItems\(config\)\.length > 0/u);
+	assert.match(AGENT_SOURCE, /getAgentAutomationItems\(config\)\.length > 0/u);
 	assert.match(AGENT_SOURCE, /MAX_AGENT_CONVERSATION_STARTERS = 3/u);
 
 	// Every config field is represented in the empty-state nav item catalog.
 	for (const label of [
-		"Triggers",
+		"Automations",
 		"Apps",
 		"Skills",
 		"Subagents",
@@ -346,24 +346,25 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	assert.match(AGENT_SOURCE, /if \(category === "subagent"\) \{[\s\S]*<IconTile[\s\S]*tagColor \? tagColorToMenuIconClassName\[tagColor\] : "text-icon-subtlest"[\s\S]*icon=\{<AiAgentIcon label="" size="small" \/>\}/u);
 });
 
-test("Compact agent config opts into the typed Triggers editor without replacing default rows", () => {
-	assert.match(AGENT_SOURCE, /import \{[\s\S]*renderAgentTriggerProviderIcon,[\s\S]*serializeAgentTriggerLabels,[\s\S]*TriggerPicker,[\s\S]*type AgentTriggerValue,[\s\S]*\} from "@\/components\/blocks\/triggers\/page";/u);
-	assert.match(AGENT_SOURCE, /triggerDefinitions\?: readonly AgentTriggerValue\[\];/u);
-	assert.match(AGENT_SOURCE, /function getAgentTriggerItems\(config: AgentConfigFormValue\): readonly string\[\] \{[\s\S]*serializeAgentTriggerLabels\(config\.triggerDefinitions\)[\s\S]*const triggers = getNonEmptyConfigItems\(config\.triggers\)[\s\S]*const trigger = config\.trigger\?\.trim\(\);/u);
+test("Compact agent config opts into the typed Automations editor without replacing default rows", () => {
+	assert.match(AGENT_SOURCE, /import \{[\s\S]*type AgentAutomationRule,[\s\S]*type AgentTriggerValue,[\s\S]*\} from "@\/components\/blocks\/triggers\/page";/u);
+	assert.match(AGENT_SOURCE, /automationRules\?: readonly AgentAutomationRule\[\];/u);
+	assert.match(AGENT_SOURCE, /function getAgentAutomationRules\(config: AgentConfigFormValue\): readonly AgentAutomationRule\[\] \{[\s\S]*Array\.isArray\(config\.automationRules\)[\s\S]*return config\.automationRules;[\s\S]*inferAutomationRules\(triggers\)[\s\S]*inferAutomationRules\(\[trigger\]\)/u);
+	assert.match(AGENT_SOURCE, /function getAgentAutomationItems\(config: AgentConfigFormValue\): readonly string\[\] \{[\s\S]*serializeAgentAutomationRuleLabels\(getAgentAutomationRules\(config\)\)/u);
 	assert.match(AGENT_SOURCE, /onConnectTrigger\?: \(trigger: AgentTriggerValue\) => void;/u);
 	assert.match(AGENT_SOURCE, /onManageTriggers\?: \(\) => void;/u);
-	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange\?: \(triggers: readonly AgentTriggerValue\[\]\) => void;/u);
-	// Adding a trigger opens the automation modal with the full current trigger
-	// set plus the new condition, preserving one shared prompt/name/active state.
-	assert.match(AGENT_SOURCE, /const handleSelectEvent = \([\s\S]*const existing = triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\);/u);
-	assert.match(AGENT_SOURCE, /onClick=\{\(\) => onEditTriggers\?\.\(\[\]\)\}/u);
-	assert.match(AGENT_SOURCE, /onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*const existing = config\?\.triggerDefinitions \?\? \[\];[\s\S]*createAgentTriggerValue\(providerId, eventId, existing\.length \+ 1\)[\s\S]*onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\);/u);
-	// Save commits the complete automation trigger array.
-	assert.match(AGENT_SOURCE, /const handleTriggersSave = useCallback\(\(triggers: readonly AgentTriggerValue\[\]\) => \{\s*onTriggerDefinitionsChange\?\.\(triggers\);/u);
+	assert.match(AGENT_SOURCE, /onAutomationRulesChange\?: \(automationRules: readonly AgentAutomationRule\[\]\) => void;/u);
+	// Adding an event opens a new automation draft seeded only with that event.
+	assert.match(AGENT_SOURCE, /function createAutomationRuleFromEvent\([\s\S]*existingRules: readonly AgentAutomationRule\[\] \| undefined,[\s\S]*const nextIndex = getNextAutomationRuleIndex\(existingRules\);[\s\S]*createAgentTriggerValue\(providerId, eventId, 1\)[\s\S]*id: `automation-\$\{nextIndex\}`,[\s\S]*triggers: \[nextTrigger\],/u);
+	assert.match(AGENT_SOURCE, /onClick=\{\(\) => onEditTriggers\?\.\(\)\}/u);
+	assert.match(AGENT_SOURCE, /const automationRules = config \? getAgentAutomationRules\(config\) : \[\];[\s\S]*onSelectEvent=\{\(providerId, eventId\) => \{[\s\S]*const next = createAutomationRuleFromEvent\(providerId, eventId, automationRules\);[\s\S]*onEditTriggers\?\.\(next \?\? undefined\);/u);
+	assert.doesNotMatch(AGENT_SOURCE, /onEditTriggers\?\.\(next \? \[\.\.\.existing, next\] : existing\)/u);
+	// Save commits one automation rule into the automationRules array.
+	assert.match(AGENT_SOURCE, /const currentAutomationRules = useMemo\([\s\S]*getAgentAutomationRules\(config\)[\s\S]*const handleTriggersSave = useCallback\(\(automationRule: AgentAutomationRule\) => \{[\s\S]*const current = currentAutomationRules;[\s\S]*onAutomationRulesChange\?\.\(/u);
 	assert.match(AGENT_SOURCE, /const handleManageTriggers = useCallback\(\(\) => \{\s*if \(onManageTriggers\) \{\s*onManageTriggers\(\);\s*return;\s*\}\s*setManageTriggersOpen\(true\);/u);
 	assert.match(AGENT_SOURCE, /isEmpty: triggerItems\.length === 0/u);
-	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*items=\{triggerItems\}[\s\S]*onTriggerDefinitionsChange=\{onTriggerDefinitionsChange\}/u);
-	assert.match(AGENT_SOURCE, /onTriggerDefinitionsChange=\{onTriggerDefinitionsChange\}/u);
+	assert.match(AGENT_SOURCE, /<AgentTriggerSummaryRow[\s\S]*items=\{triggerItems\}[\s\S]*onAutomationRulesChange=\{onAutomationRulesChange\}/u);
+	assert.match(AGENT_SOURCE, /onAutomationRulesChange=\{onAutomationRulesChange\}/u);
 	assert.doesNotMatch(AGENT_SOURCE, /<Triggers[\s\S]{0,400}layout="default"/u);
 });
 
@@ -466,20 +467,20 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /"inline-flex min-h-5 max-w-full shrink-0 items-center gap-1 rounded-xs p-0 text-left text-xs font-medium leading-4 text-text-subtlest transition-opacity hover:bg-transparent active:bg-transparent focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-transparent aria-expanded:opacity-100"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /group\/add-link/u);
 	assert.match(AGENT_SOURCE, /<span className="min-w-0 whitespace-normal group-hover\/agent-row:underline">\{label\}<\/span>/u);
-	// Triggers summary row: clicking a configured chip opens the Triggers modal
-	// with the complete automation definition set because instructions are shared.
+	// Automations summary row: clicking a configured chip opens that automation
+	// rule without appending the other saved rules into the draft.
 	assert.match(
 		AGENT_SOURCE,
-		/<AgentReferenceChip[\s\S]*onClick=\{\s*onEditTriggers\s*\?\s*\(\) => onEditTriggers\(triggerDefinitions\)\s*:\s*undefined\s*\}[\s\S]*onRemove=\{canRemoveInline \? \(\) => handleRemoveTrigger\(index\) : undefined\}/u,
+		/<AgentReferenceChip[\s\S]*onClick=\{\s*onEditTriggers[\s\S]*\? \(\) => onEditTriggers\(rule\)[\s\S]*: undefined[\s\S]*\}[\s\S]*onRemove=\{canRemoveInline \? \(\) => handleRemoveAutomation\(index\) : undefined\}/u,
 	);
 	// The trailing "Edit" control opens the SAME collapsed-nav management flyout
-	// (trigger list + "Add trigger ›" + "Manage triggers") as the compact strip,
+	// (automation list + "Add automation ›" + "Manage automations") as the compact strip,
 	// by reusing AgentCompactTriggersNavButton with the edit-styled button as its
 	// renderTrigger — so the expanded summary row and the collapsed nav share one
-	// flyout. Picking an event from "Add trigger ›" appends to the same automation.
+	// flyout. Picking an event from "Add automation ›" starts a new automation rule.
 	assert.match(
 		AGENT_SOURCE,
-		/\{onEditTriggers \? \([\s\S]*triggerNavItem \? \([\s\S]*<AgentCompactTriggersNavButton\s*\n\s*item=\{triggerNavItem\}[\s\S]*renderTrigger=\{\s*\n\s*<AgentAddValueButton\s*\n\s*className="opacity-0 group-hover\/agent-row:opacity-100"\s*\n\s*icon="edit"\s*\n\s*label=\{addLabel \?\? "Edit"\}\s*\n\s*\/>/u,
+		/\{onEditTriggers \? \([\s\S]*triggerNavItem \? \([\s\S]*<AgentCompactTriggersNavButton[\s\S]*automationRules=\{automationRules\}[\s\S]*item=\{triggerNavItem\}[\s\S]*renderTrigger=\{[\s\S]*<AgentAddValueButton[\s\S]*className="opacity-0 group-hover\/agent-row:opacity-100"[\s\S]*icon="edit"[\s\S]*label=\{addLabel \?\? "Edit"\}/u,
 	);
 	// It falls back to the bare provider/event TriggerPicker only when the
 	// collapsed-nav catalog entry (triggerNavItem) isn't supplied.
@@ -506,7 +507,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_SOURCE, /if \(isLastItem && addLabel\) \{[\s\S]*className="inline-flex max-w-full items-center gap-1\.5"[\s\S]*\{renderAddButton\(\s*"shrink-0 opacity-0 transition-opacity group-hover\/agent-row:opacity-100/u);
 	assert.match(AGENT_SOURCE, /\{isEmpty && addLabel \? renderAddButton\(\) : null\}/u);
 	assert.match(AGENT_SOURCE, /const AGENT_EMPTY_ROW_ADD_LABELS: Record<AgentConfigListFieldName, string> = \{/u);
-	assert.match(AGENT_SOURCE, /triggers: "Add rules for when this agent runs"/u);
+	assert.match(AGENT_SOURCE, /triggers: "Add automations for when this agent runs"/u);
 	assert.match(AGENT_SOURCE, /conversationStarters: "Add prompts to help people start"/u);
 	assert.match(AGENT_SOURCE, /knowledge: "Add knowledge to ground this agent"/u);
 	assert.match(AGENT_SOURCE, /skills: "Add skills to guide specialized tasks"/u);
@@ -790,7 +791,7 @@ test("Agent compact apps field opens a dropdown menu instead of the directory", 
 	// The old immediate-open path is gone from the click helper: the trigger
 	// branch is now directly followed by the skills branch, with no apps branch
 	// between them.
-	assert.match(AGENT_SOURCE, /item\.agentFieldName === "trigger"\)\s*\{\s*return \(\) => onEditTriggers\?\.\(\[\]\);\s*\}\s*if \(item\.agentFieldName === "skills"\)/u);
+	assert.match(AGENT_SOURCE, /item\.agentFieldName === "trigger"\)\s*\{\s*return \(\) => onEditTriggers\?\.\(\);\s*\}\s*if \(item\.agentFieldName === "skills"\)/u);
 });
 
 test("Bento carousel overflow hook reattaches listeners when the scroll node remounts", () => {

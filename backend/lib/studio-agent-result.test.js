@@ -134,9 +134,9 @@ test("agent creation guidance uses structured result output instead of plan pers
 	assert.match(agentPrefix, /run ONE focused clarification round FIRST using the ask_user_questions tool/u);
 	assert.match(agentPrefix, /never exceed 2 rounds/u);
 	assert.doesNotMatch(agentPrefix, /Ask clarifying questions only when required profile fields are missing/u);
-	// Richer agents: the result example must request tools, trigger, and guardrail.
+	// Richer agents: the result example must request tools, automation rules, and guardrail.
 	assert.match(agentPrefix, /"tools":\["Jira","Confluence"\]/u);
-	assert.match(agentPrefix, /"trigger":/u);
+	assert.match(agentPrefix, /"automationRules":/u);
 	assert.match(agentPrefix, /"guardrail":/u);
 	assert.match(skillPrefix, /Once ready, call POST \/api\/plan\/skills/u);
 });
@@ -349,9 +349,14 @@ test("fallback wires named apps as @[app:id] chips and a 7am scheduled trigger",
 	assert.match(result.instructions, /@\[app:gmail\]/u);
 	assert.match(result.instructions, /@\[app:salesforce\]/u);
 	assert.match(result.instructions, /@\[app:google-calendar\]/u);
-	// The recurring 7am cadence becomes a schedule trigger the frontend can hydrate.
-	assert.equal(result.trigger, "Every day at 7:00 AM.");
-	assert.deepEqual(result.triggers, ["Every day at 7:00 AM."]);
+	// The recurring 7am cadence becomes an automation rule the frontend can hydrate.
+	assert.equal(result.automationRules.length, 1);
+	assert.equal(result.automationRules[0].name, "Scheduled workflow");
+	assert.match(result.automationRules[0].prompt, /When this schedule runs/u);
+	assert.match(result.automationRules[0].prompt, /7am/u);
+	assert.equal(result.automationRules[0].triggers.length, 1);
+	assert.equal(result.automationRules[0].triggers[0].providerId, "scheduled");
+	assert.equal(result.automationRules[0].triggers[0].eventId, "daily-at-7am");
 });
 
 test("fallback Studio agent result prefers the original agent brief after clarification submit", () => {

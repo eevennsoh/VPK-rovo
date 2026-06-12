@@ -7,6 +7,11 @@ export interface StudioAgentDataFlowConfig {
 	contextDescription?: string;
 	trigger?: string;
 	triggers?: readonly string[];
+	automationRules?: readonly {
+		id?: string;
+		name?: string;
+		triggers?: readonly unknown[];
+	}[];
 	skills?: readonly string[];
 	guardrail?: string;
 	tools?: readonly string[];
