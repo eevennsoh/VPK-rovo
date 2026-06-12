@@ -51,6 +51,12 @@ import { resolveRovoAppComposerPlaceholder } from "@/components/projects/shared/
 import { ROVO_APP_MAX_CHAT_PANE_WIDTH, ROVO_APP_MIN_ARTIFACT_PANE_WIDTH, ROVO_APP_MIN_CHAT_PANE_WIDTH, ROVO_APP_STUDIO_CONTENT_MAX_WIDTH_CLASS, getRovoAppShellLayout } from "@/components/projects/studio/lib/rovo-app-shell-layout";
 import { getRovoAppSmartGenerationLayoutContext } from "@/components/projects/studio/lib/rovo-app-smart-generation-layout";
 import { deriveRovoAppTimelineItems } from "@/components/projects/studio/lib/rovo-app-timeline";
+import {
+	buildAgentCreateResult,
+	buildAgentUpdatePatch,
+	buildAssistantReplyText,
+	classifyAgentBuildIntent,
+} from "@/components/projects/studio/lib/demo-agent-builder";
 import { buildComposerHermesContext, shouldResetComposerHermesSkillSelection } from "@/components/projects/studio/lib/rovo-app-hermes-skill-selection";
 import { useHermesEmbedEnabled } from "@/lib/hermes-feature-flags";
 import { buildRovoAppThreadPath } from "@/components/projects/studio/lib/rovo-app-thread-route-sync";
@@ -3429,6 +3435,42 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			}
 
 			const trimmedText = text.trim();
+
+			// Deterministic demo agent-builder. Studio build prompts ("add a trigger
+			// to…", "give it Jira tools", "rename it to…") are mapped onto the fake
+			// directory catalogs and applied directly — no model call — so the demo
+			// is reliable and never returns gibberish. An open agent is UPDATED in
+			// place; otherwise a new agent is CREATED. Non-build prompts (chit-chat,
+			// questions) return isBuildIntent === false and fall through to the
+			// normal streaming path below. Voice/realtime is never intercepted.
+			if (!isRealtimeActive && trimmedText) {
+				const buildIntent = classifyAgentBuildIntent(trimmedText);
+				if (buildIntent.isBuildIntent) {
+					const openAgentEntry = activeSessionAgentEntry;
+					queueTypedScrollAnchor("standard", latestUserMessageIdBeforeSubmit);
+					await appendRealtimeMessage("user", trimmedText, { contextDescription });
+					if (openAgentEntry) {
+						handleUpdateAgentDraft(
+							openAgentEntry.profile.id,
+							buildAgentUpdatePatch(trimmedText, openAgentEntry.draftResult),
+						);
+					} else {
+						handleStudioAgentResultSelect(buildAgentCreateResult(trimmedText), {
+							sourceKey: `demo-agent-builder:${createId("demo-agent")}`,
+						});
+					}
+					await appendRealtimeMessage(
+						"assistant",
+						buildAssistantReplyText(buildIntent, Boolean(openAgentEntry)),
+						{ contextDescription },
+					);
+					if (shouldClearHermesSkillSelection) {
+						clearHermesSkillSelection();
+					}
+					return;
+				}
+			}
+
 			const shouldShowOptimisticPrompt =
 				(chat.sendMode === "immediate" || !chat.shouldQueueNextSubmission) &&
 				(trimmedText || files.length > 0);
@@ -3483,6 +3525,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		},
 		[
 			appendRealtimeMessage,
+			activeSessionAgentEntry,
+			handleUpdateAgentDraft,
+			handleStudioAgentResultSelect,
 			chat.messages,
 			isRealtimeActive,
 			isClickyActive,
