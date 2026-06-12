@@ -1,23 +1,14 @@
 "use client";
 
-import { type ReactNode, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
 	Agent,
-	AgentCompactAccessPanel,
-	AgentCompactEvaluationPanel,
 	AgentConfigFields,
 	type AgentConfigFormValue,
 	type AgentDirectoryKind,
-	type AgentCompactHeaderSection,
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
 	AgentContent,
-	AgentCompactHeaderNav,
-	AgentCompactInsightsPanel,
-	AgentCompactSurfacesPanel,
-	AgentCompactUsersPanel,
-	AgentHeader,
-	AgentMoreOptionsMenu,
 	toggleAgentConfigDisabledItem,
 } from "@/components/blocks/skill-config";
 import {
@@ -31,15 +22,9 @@ import {
 	type ConversationStarter,
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
-import { AgentTestPanel } from "@/components/projects/studio/components/rovo-app-agent-test-panel";
-import { Button } from "@/components/ui/button";
-import { Toggle } from "@/components/ui/toggle";
-import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
-import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { cn } from "@/lib/utils";
 
 const AGENT_DEMO_SURFACE_CLASSNAME = "min-h-[852px] w-full";
-type SkillConfigDemoView = "test" | "configure";
 const TRIGGER_MANAGE_DOCS_PATH = "/components/blocks/triggers#manage";
 
 const initialAgentConfig: AgentConfigFormValue = {
@@ -58,7 +43,7 @@ const initialAgentConfig: AgentConfigFormValue = {
 
 const emptyAgentConfig: AgentConfigFormValue = {
 	...initialAgentConfig,
-	name: "Untitled agent",
+	name: "Untitled skill",
 	description: "",
 	summary: "",
 	agentId: "customer-insights",
@@ -67,9 +52,9 @@ const emptyAgentConfig: AgentConfigFormValue = {
 const filledAgentConfig: AgentConfigFormValue = {
 	name: "Policy Checker",
 	description:
-		"This agent helps employees quickly find and understand company guidelines, HR policies, and benefits information.",
+		"This skill helps employees quickly find and understand company guidelines, HR policies, and benefits information.",
 	summary:
-		"This agent helps employees quickly find and understand company guidelines, HR policies, and benefits information.",
+		"This skill helps employees quickly find and understand company guidelines, HR policies, and benefits information.",
 	instructions: "",
 	contextDescription: "",
 	triggerDefinitions: DEFAULT_CONFIGURED_TRIGGER_VALUES,
@@ -186,141 +171,8 @@ function useSkillConfigDemoConfig(initialConfig: AgentConfigFormValue) {
 	};
 }
 
-function SkillConfigDemoHeaderActions({
-	activeView,
-	onTestPressedChange,
-}: Readonly<{
-	activeView: SkillConfigDemoView;
-	onTestPressedChange: (pressed: boolean) => void;
-}>) {
-	return (
-		<>
-			<AgentMoreOptionsMenu />
-			<Toggle
-				aria-label="Toggle agent test view"
-				onPressedChange={onTestPressedChange}
-				pressed={activeView === "test"}
-				size="default"
-				type="button"
-				variant="outline"
-			>
-				Test
-			</Toggle>
-			<Button type="button" size="default" variant="default">
-				Publish
-			</Button>
-		</>
-	);
-}
-
-function buildSkillConfigDemoTestEntry(config: AgentConfigFormValue): StudioSessionAgentEntry {
-	const agentName = config.name?.trim() || "Untitled agent";
-	const description = config.description?.trim() || config.summary?.trim();
-	const summary = description || "Test this agent before it goes live.";
-	const action = config.action === "update" ? "update" : "create";
-	const agentResult: RovoDataParts["agent-result"] = {
-		agentId: config.agentId || "agent-demo-test",
-		name: agentName,
-		byline: "Custom agent test",
-		summary,
-		description: summary,
-		instructions: config.instructions,
-		contextDescription: config.contextDescription,
-		conversationStarters: [...(config.conversationStarters ?? [])],
-		conversationStarterIcons: [...(config.conversationStarterIcons ?? [])],
-		trigger: config.trigger,
-		triggers: [...(config.triggers ?? [])],
-		triggerDefinitions: [...(config.triggerDefinitions ?? [])],
-		tools: [...(config.tools ?? [])],
-		skills: [...(config.skills ?? [])],
-		knowledge: [...(config.knowledge ?? [])],
-		subagents: [...(config.subagents ?? [])],
-		guardrail: config.guardrail,
-		action,
-	};
-
-	return {
-		profile: {
-			id: agentResult.agentId,
-			name: agentName,
-			byline: "Custom agent test",
-			description: summary,
-			starters: [],
-		},
-		resultKey: `agent-demo:${agentResult.agentId}`,
-		sourceResult: agentResult,
-		draftResult: agentResult,
-		lastTouchedAt: 0,
-		publishReadyResult: agentResult,
-		publishedResult: null,
-		publishStatus: "testing",
-		publishedVersion: 0,
-		lastPublishedAt: null,
-		lastPublishedBy: null,
-		versionHistory: [],
-	};
-}
-
 function openTriggerManageDocs() {
 	window.location.assign(TRIGGER_MANAGE_DOCS_PATH);
-}
-
-/**
- * Shared body for the compact agent demos. The header nav is a *controlled*
- * component — it only reacts when a parent owns `activeSection` and feeds it
- * back — so every nav-bearing demo routes its selected section through here.
- * Each section's screen owns its own scroll container + padding, so panels
- * render inside a bounded `flex-1 min-h-0` region rather than the padded
- * `AgentContent`; when no section is active we fall back to `configView`.
- */
-function SkillConfigDemoCompactBody({
-	activeSection,
-	configView,
-}: Readonly<{
-	activeSection: AgentCompactHeaderSection | null;
-	configView: ReactNode;
-}>) {
-	if (activeSection === "details") {
-		return configView;
-	}
-	if (activeSection === "insights") {
-		return (
-			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-				<AgentCompactInsightsPanel />
-			</div>
-		);
-	}
-	if (activeSection === "evaluation") {
-		return (
-			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-				<AgentCompactEvaluationPanel />
-			</div>
-		);
-	}
-	if (activeSection === "access") {
-		return (
-			<div className="min-h-0 flex-1 overflow-y-auto">
-				<div className="mx-auto w-full max-w-4xl px-6 py-5">
-					<AgentCompactAccessPanel />
-				</div>
-			</div>
-		);
-	}
-	if (activeSection === "users") {
-		return (
-			<div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">
-				<AgentCompactUsersPanel />
-			</div>
-		);
-	}
-	if (activeSection === "surfaces") {
-		return (
-			<div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">
-				<AgentCompactSurfacesPanel />
-			</div>
-		);
-	}
-	return configView;
 }
 
 export function SkillConfigDemoFull() {
@@ -336,28 +188,7 @@ export function SkillConfigDemoFull() {
 		toggleListItem,
 		updateListItem,
 	} = useSkillConfigDemoConfig(filledAgentConfig);
-	const [activeSection, setActiveSection] = useState<AgentCompactHeaderSection | null>("details");
-	const [activeView, setActiveView] = useState<SkillConfigDemoView>("configure");
 	const [activeDirectory, setActiveDirectory] = useState<AgentDirectoryKind | null>(null);
-	const lastSectionRef = useRef<AgentCompactHeaderSection>("details");
-	const testEntry = buildSkillConfigDemoTestEntry(config);
-	function handleHeaderSectionChange(section: AgentCompactHeaderSection) {
-		lastSectionRef.current = section;
-		setActiveView("configure");
-		setActiveSection(section);
-	}
-	function handleTestPressedChange(pressed: boolean) {
-		if (pressed) {
-			if (activeSection) {
-				lastSectionRef.current = activeSection;
-			}
-			setActiveView("test");
-			setActiveSection(null);
-			return;
-		}
-		setActiveView("configure");
-		setActiveSection(lastSectionRef.current ?? "details");
-	}
 	function handleOpenDirectory(directory: AgentDirectoryKind) {
 		if (directory === "conversationStarters") {
 			setActiveDirectory("conversationStarters");
@@ -367,37 +198,21 @@ export function SkillConfigDemoFull() {
 	return (
 		<>
 			<Agent className={cn(AGENT_DEMO_SURFACE_CLASSNAME, "flex flex-col")}>
-				<AgentHeader
-					actions={<SkillConfigDemoHeaderActions activeView={activeView} onTestPressedChange={handleTestPressedChange} />}
-					leadingContent={
-						<AgentCompactHeaderNav activeSection={activeSection} onSectionChange={handleHeaderSectionChange} />
-					}
-					name={config.name?.trim() || "Untitled agent"}
-				/>
-				{activeView === "test" ? (
-					<AgentTestPanel entry={testEntry} />
-				) : (
-					<SkillConfigDemoCompactBody
-						activeSection={activeSection}
-						configView={
-							<AgentContent>
-									<AgentConfigFields
-										config={config}
-										idPrefix="agent-demo-full"
-									onTextChange={handleTextChange}
-									onListItemChange={updateListItem}
-									onRemoveListItem={removeListItem}
-									onToggleListItem={toggleListItem}
-										onAddListValues={addListValues}
-										onAppendListItem={appendListItem}
-										onManageTriggers={openTriggerManageDocs}
-										onOpenDirectory={handleOpenDirectory}
-										onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
-									/>
-							</AgentContent>
-						}
+				<AgentContent>
+					<AgentConfigFields
+						config={config}
+						idPrefix="agent-demo-full"
+						onTextChange={handleTextChange}
+						onListItemChange={updateListItem}
+						onRemoveListItem={removeListItem}
+						onToggleListItem={toggleListItem}
+						onAddListValues={addListValues}
+						onAppendListItem={appendListItem}
+						onManageTriggers={openTriggerManageDocs}
+						onOpenDirectory={handleOpenDirectory}
+						onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
 					/>
-				)}
+				</AgentContent>
 			</Agent>
 			<ConversationStartersDialog
 				open={activeDirectory === "conversationStarters"}
@@ -424,28 +239,7 @@ export function SkillConfigDemoEmpty() {
 		toggleListItem,
 		updateListItem,
 	} = useSkillConfigDemoConfig(emptyAgentConfig);
-	const [activeSection, setActiveSection] = useState<AgentCompactHeaderSection | null>("details");
-	const [activeView, setActiveView] = useState<SkillConfigDemoView>("configure");
 	const [activeDirectory, setActiveDirectory] = useState<AgentDirectoryKind | null>(null);
-	const lastSectionRef = useRef<AgentCompactHeaderSection>("details");
-	const testEntry = buildSkillConfigDemoTestEntry(config);
-	function handleHeaderSectionChange(section: AgentCompactHeaderSection) {
-		lastSectionRef.current = section;
-		setActiveView("configure");
-		setActiveSection(section);
-	}
-	function handleTestPressedChange(pressed: boolean) {
-		if (pressed) {
-			if (activeSection) {
-				lastSectionRef.current = activeSection;
-			}
-			setActiveView("test");
-			setActiveSection(null);
-			return;
-		}
-		setActiveView("configure");
-		setActiveSection(lastSectionRef.current ?? "details");
-	}
 	function handleOpenDirectory(directory: AgentDirectoryKind) {
 		if (directory === "conversationStarters") {
 			setActiveDirectory("conversationStarters");
@@ -455,37 +249,21 @@ export function SkillConfigDemoEmpty() {
 	return (
 		<>
 			<Agent className={cn(AGENT_DEMO_SURFACE_CLASSNAME, "flex flex-col")}>
-				<AgentHeader
-					actions={<SkillConfigDemoHeaderActions activeView={activeView} onTestPressedChange={handleTestPressedChange} />}
-					leadingContent={
-						<AgentCompactHeaderNav activeSection={activeSection} onSectionChange={handleHeaderSectionChange} />
-					}
-					name={config.name?.trim() || "Untitled agent"}
-				/>
-				{activeView === "test" ? (
-					<AgentTestPanel entry={testEntry} />
-				) : (
-					<SkillConfigDemoCompactBody
-						activeSection={activeSection}
-						configView={
-							<AgentContent>
-									<AgentConfigFields
-										config={config}
-										idPrefix="agent-demo-empty"
-									onTextChange={handleTextChange}
-									onListItemChange={updateListItem}
-									onRemoveListItem={removeListItem}
-									onToggleListItem={toggleListItem}
-										onAddListValues={addListValues}
-										onAppendListItem={appendListItem}
-										onManageTriggers={openTriggerManageDocs}
-										onOpenDirectory={handleOpenDirectory}
-										onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
-									/>
-							</AgentContent>
-						}
+				<AgentContent>
+					<AgentConfigFields
+						config={config}
+						idPrefix="agent-demo-empty"
+						onTextChange={handleTextChange}
+						onListItemChange={updateListItem}
+						onRemoveListItem={removeListItem}
+						onToggleListItem={toggleListItem}
+						onAddListValues={addListValues}
+						onAppendListItem={appendListItem}
+						onManageTriggers={openTriggerManageDocs}
+						onOpenDirectory={handleOpenDirectory}
+						onTriggerDefinitionsChange={handleTriggerDefinitionsChange}
 					/>
-				)}
+				</AgentContent>
 			</Agent>
 			<ConversationStartersDialog
 				open={activeDirectory === "conversationStarters"}

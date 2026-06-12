@@ -4,7 +4,6 @@ import type { Tool } from "ai";
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform, type MotionProps } from "motion/react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
@@ -31,8 +30,6 @@ import { AgentEvaluation } from "@/components/blocks/agent-evaluation";
 import { AgentInsights } from "@/components/blocks/agent-insights";
 import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
 import { AgentUsers } from "@/components/blocks/agent-users";
-import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
-import { DEMO_AGENT_TEMPLATES } from "@/components/blocks/agent-templates/data/demo-template-agents";
 import {
 	DEFAULT_STARTER_ICON,
 	getStarterIcon,
@@ -74,7 +71,7 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
+import { AtlassianLogo, isAtlassianLogoSource, type AtlassianLogoName } from "@/components/ui/logo";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -131,10 +128,14 @@ import { cn } from "@/lib/utils";
 
 import { CodeBlock } from "@/components/ui-custom/code-block";
 
-const AGENT_AVATAR_HEXAGON_PATH = "M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
 const AGENT_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg";
-const DEFAULT_AGENT_PROFILE_COVER_COLOR = "#1868DB";
 const MAX_AGENT_CONVERSATION_STARTERS = 3;
+// App tag front slots follow the Tag front-slot rule (see /components/ui/tag#front-slot):
+// Atlassian product marks render bare via AtlassianLogo + withUsageBorder.
+const APP_ATLASSIAN_LOGO_NAMES: Record<string, AtlassianLogoName> = {
+	Jira: "jira",
+	Confluence: "confluence",
+};
 const AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS = {
 	initial: "rest",
 	animate: "rest",
@@ -170,13 +171,6 @@ const AGENT_PROFILE_SWAP_TRANSITION = { type: "spring", bounce: 0.12, visualDura
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE = 24;
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP = 8;
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_REVEAL_DISTANCE = 72;
-const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
-	"dev-agents": "#82B536",
-	"product-agents": "#BF63F3",
-	"service-agents": "#FFC716",
-	"strategy-agents": "#FCA700",
-	"teamwork-agents": DEFAULT_AGENT_PROFILE_COVER_COLOR,
-};
 
 // Source order IS the canonical display order, kept in lockstep with the
 // AgentFilledConfigSummary rows array: Triggers › Knowledge › Tools › Skills ›
@@ -397,11 +391,6 @@ function mergeMentionItems(
 	}
 
 	return items;
-}
-
-function getAgentProfileCoverBackgroundColor(avatarSrc: string | undefined): string {
-	const category = avatarSrc?.match(/\/avatar-agent\/([^/]+)\//u)?.[1];
-	return (category ? AGENT_AVATAR_PROFILE_COVER_COLORS[category] : undefined) ?? DEFAULT_AGENT_PROFILE_COVER_COLOR;
 }
 
 export type AgentConfigTextFieldName =
@@ -1940,7 +1929,9 @@ function AgentCompactEmptyConfigNav({
 	// `agentFieldName` doubles as a hideable-field key for trigger/subagents/
 	// conversationStarters; other field names never appear in the hidden set.
 	const items = getAgentCompactEmptyConfigNavItems(config).filter(
-		(item) => !hiddenConfigFields?.has(item.agentFieldName as AgentHideableConfigField),
+		(item) =>
+			item.agentFieldName === "apps" &&
+			!hiddenConfigFields?.has(item.agentFieldName as AgentHideableConfigField),
 	);
 	const navOverflow = useHasHorizontalOverflow<HTMLDivElement>({
 		edgeThreshold: AGENT_COMPACT_CONFIG_NAV_SCROLL_EDGE_THRESHOLD,
@@ -2889,6 +2880,13 @@ function AgentFilledConfigSummary({
 					// Clicking an app chip opens the apps directory focused on that app.
 					onItemClick={onOpenDirectory ? (item) => onOpenDirectory("apps", item) : undefined}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("apps", index) : undefined}
+					// App tags lead with the canonical Tag front-slot logo: Atlassian
+					// product marks render bare (AtlassianLogo + withUsageBorder); other
+					// apps fall back to the directory mention visual.
+					itemElemBefore={(item) => {
+						const logoName = APP_ATLASSIAN_LOGO_NAMES[item];
+						return logoName ? <AtlassianLogo name={logoName} label={item} size="xxsmall" withUsageBorder /> : undefined;
+					}}
 					referenceCategory="app"
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:apps` : undefined}
 				/>
@@ -3009,7 +3007,7 @@ function AgentFilledConfigSummary({
 	// (`trigger`, `subagents`, `conversationStarters`) double as hideable-field
 	// keys, so suppressed rows are dropped before ordering.
 	const orderedRows = rows
-		.filter((row) => !hiddenConfigFields?.has(row.key as AgentHideableConfigField))
+		.filter((row) => row.key === "apps" && !hiddenConfigFields?.has(row.key as AgentHideableConfigField))
 		.map((row, index) => ({ ...row, index }))
 		.sort((a, b) => {
 			if (a.isEmpty !== b.isEmpty) return a.isEmpty ? 1 : -1;
@@ -3036,58 +3034,10 @@ function hasFilledAgentConfig(config: AgentConfigFormValue): boolean {
 	);
 }
 
-function AgentProfileCover({ avatarSrc = AGENT_AVATAR_SRC }: Readonly<{ avatarSrc?: string }>) {
-	const coverBackgroundColor = getAgentProfileCoverBackgroundColor(avatarSrc);
-	const isAtlassianAvatar = isAtlassianLogoSource(avatarSrc);
-
+function AgentProfileCover() {
 	return (
 		<div className="relative overflow-hidden rounded-t-xl bg-surface text-text">
-			<div className="relative h-12 overflow-hidden" style={{ backgroundColor: coverBackgroundColor }}>
-				{isAtlassianAvatar ? (
-					<span className="absolute top-1/2 left-[88%] -translate-x-1/2 -translate-y-1/2 opacity-95">
-						<AtlassianLogo name="atlassian" label="Atlassian" size="xlarge" />
-					</span>
-				) : (
-					<Image
-						alt=""
-						aria-hidden
-						className="absolute top-1/2 left-[88%] h-48 w-[168px] -translate-x-1/2 -translate-y-1/2 opacity-95"
-						height={192}
-						src={avatarSrc}
-						width={168}
-					/>
-				)}
-			</div>
-			<div aria-hidden className="h-6" />
-			<div className="absolute top-6 left-4 size-12">
-				{isAtlassianAvatar ? (
-					<span className="flex h-12 w-[42px] items-center justify-center">
-						<AtlassianLogo name="atlassian" label="Agent avatar" size="large" />
-					</span>
-				) : (
-					<Image
-						alt="Agent avatar"
-						className="h-12 w-[42px]"
-						height={48}
-						src={avatarSrc}
-						width={42}
-					/>
-				)}
-				<svg
-					aria-hidden="true"
-					className="pointer-events-none absolute top-0 left-0 h-12 w-[42px] overflow-visible"
-					focusable="false"
-					viewBox="0 0 43 48"
-				>
-					<path
-						className="stroke-surface"
-						d={AGENT_AVATAR_HEXAGON_PATH}
-						fill="none"
-						strokeWidth={2}
-						vectorEffect="non-scaling-stroke"
-					/>
-				</svg>
-			</div>
+			<IconTile aria-hidden icon={<SkillIcon label="" />} label="Skill" size="xlarge" variant="gray" />
 		</div>
 	);
 }
@@ -3547,7 +3497,6 @@ function AgentInstructionsComposer({
 	onInstructionsChange,
 	onOpenDirectory,
 	onRemoveReferenceValue,
-	onStartWithTemplate,
 	onViewModeChange,
 	screenAssistantTargetId,
 	showSectionLabel = true,
@@ -3566,14 +3515,12 @@ function AgentInstructionsComposer({
 	onInstructionsChange?: (value: string) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	onRemoveReferenceValue?: (field: AgentConfigReferenceListFieldName, value: string) => void;
-	onStartWithTemplate?: () => void;
 	onViewModeChange?: (mode: EditorToolbarViewMode) => void;
 	screenAssistantTargetId?: string;
 	showSectionLabel?: boolean;
 	toolbarBelowSlot?: ReactNode;
 }>) {
 	const [knowledge, setKnowledge] = useState<RichTextMentionItem[]>([]);
-	const [templatesOpen, setTemplatesOpen] = useState(false);
 	const inlineManagedReferenceKeysRef = useRef(new Set<string>());
 	const mentionInventoryCountsRef = useRef(new Map<string, {
 		count: number;
@@ -3701,28 +3648,10 @@ function AgentInstructionsComposer({
 				className="space-y-2"
 				contentClassName={cn("pt-2", contentClassName)}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
-				placeholder="Press / to help me describe the agent's role, or start with a template"
+				placeholder="Press / to help me create the skill"
 				placeholderSlot={(
 					<p className="tiptap-editor text-sm leading-[1.55] text-text-subtlest">
-						Press <code>/</code> to help me describe the agent&apos;s role, or{" "}
-						<button
-							type="button"
-							className="pointer-events-auto cursor-pointer rounded-sm text-link no-underline underline-offset-2 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-							onClick={() => {
-								// Choosing a template means the user is already mindful of
-								// templates — animate the onboarding tiles away.
-								if (onStartWithTemplate) {
-									// A host (e.g. the Studio shell) owns the agents
-									// directory and takes over: don't also open the local
-									// templates dialog.
-									onStartWithTemplate();
-									return;
-								}
-								setTemplatesOpen(true);
-							}}
-						>
-							start with a template
-						</button>
+						Press <code>/</code> to help me create the skill
 					</p>
 				)}
 				onInsertReferenceOption={handleInsertReferenceOption}
@@ -3731,8 +3660,6 @@ function AgentInstructionsComposer({
 				suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
 				toolbarBelowSlot={toolbarBelowSlot}
 				value={instructions}
-				dataFlowConfig={config}
-				dataFlowDiagramLabel="Architectural diagram"
 				mentionSources={mentionSources}
 				mentionRemovalRequest={mentionRemovalRequest}
 				onMarkdownChange={onInstructionsChange}
@@ -3744,12 +3671,6 @@ function AgentInstructionsComposer({
 					{bottomSlot}
 				</div>
 			) : null}
-			<AgentTemplatesDialog
-				agents={DEMO_AGENT_TEMPLATES}
-				open={templatesOpen}
-				onOpenChange={setTemplatesOpen}
-				onSelectAgent={() => setTemplatesOpen(false)}
-			/>
 		</section>
 	);
 }
@@ -3778,7 +3699,6 @@ interface AgentConfigProfileProps {
 
 function AgentConfigProfile({
 	config,
-	avatarSrc,
 	onTextChange,
 	screenAssistantTargetPrefix,
 	isSubagent = false,
@@ -3798,7 +3718,7 @@ function AgentConfigProfile({
 			className="flex flex-col gap-4"
 			data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:profile` : undefined}
 		>
-			<AgentProfileCover avatarSrc={avatarSrc} />
+			<AgentProfileCover />
 			<div className="flex flex-col gap-1" data-agent-field="name">
 				{/* The cover/avatar and the description below stay put; only the name
 				    row (title + inline back-arrow on subagents) crossfades and slides
@@ -3838,8 +3758,8 @@ function AgentConfigProfile({
 						<InlineEdit
 							className="min-w-0 flex-1"
 							value={isSubagent ? subagentName ?? "" : config.name ?? ""}
-							placeholder={isSubagent ? UNTITLED_SUBAGENT_NAME : "Untitled agent"}
-							editButtonLabel={isSubagent ? "Edit subagent name" : "Edit agent name"}
+							placeholder={isSubagent ? UNTITLED_SUBAGENT_NAME : "Untitled skill"}
+							editButtonLabel={isSubagent ? "Edit subagent name" : "Edit skill name"}
 							readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"
 							readViewMotionProps={AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS}
 							readViewBackdropClassName="-inset-0.5 bg-bg-neutral-subtle-hovered"
@@ -3858,7 +3778,7 @@ function AgentConfigProfile({
 					<InlineEdit
 						value={isSubagent ? subagentCondition ?? "" : config.description ?? config.summary ?? ""}
 						placeholder={isSubagent ? "Describe the situation that should trigger this subagent" : "Add a description"}
-						editButtonLabel={isSubagent ? "Edit subagent trigger condition" : "Edit agent description"}
+						editButtonLabel={isSubagent ? "Edit subagent trigger condition" : "Edit skill description"}
 						multiline
 						readViewClassName="relative overflow-visible border-2 bg-transparent px-0 hover:bg-transparent active:bg-transparent focus-visible:bg-transparent"
 						readViewMotionProps={AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS}
@@ -4137,9 +4057,6 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	onManageTriggers?: () => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	// When provided, the empty-instructions "start with a template" link defers to
-	// the host (e.g. the Studio shell opens its Agent Directory on the first
-	// template tab) instead of opening the composer's built-in templates dialog.
-	onStartWithTemplate?: () => void;
 	onTriggerDefinitionsChange?: (triggers: readonly AgentTriggerValue[]) => void;
 	profileAvatarSrc?: string;
 	profileConfig?: AgentConfigFormValue;
@@ -4177,7 +4094,6 @@ export const AgentConfigFields = memo(
 		onProfileTextChange,
 		onRemoveListItem,
 		onSelectListItem,
-		onStartWithTemplate,
 		onTextChange,
 		onToggleListItem,
 		onTriggerDefinitionsChange,
@@ -4391,7 +4307,6 @@ export const AgentConfigFields = memo(
 							onMentionRemovalRequestHandled={handleMentionRemovalRequestHandled}
 							onOpenDirectory={handleOpenDirectory}
 							onRemoveReferenceValue={handleRemoveReferenceValue}
-							onStartWithTemplate={onStartWithTemplate}
 							onViewModeChange={onInstructionsViewModeChange}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 							showSectionLabel={false}
