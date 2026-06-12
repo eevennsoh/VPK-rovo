@@ -82,7 +82,7 @@ import { StreamingThinkingIndicator } from "./components/streaming-thinking-indi
 import { PreloadThinkingIndicator } from "@/components/projects/shared/components/preload-thinking-indicator";
 import { chatStyles } from "./data/styles";
 import { cn } from "@/lib/utils";
-import { useChatSubmit } from "./hooks/use-chat-submit";
+import { useChatSubmit, type ChatSubmitInterceptOutcome } from "./hooks/use-chat-submit";
 import { useScrollAnchor } from "./hooks/use-scroll-anchor";
 import { useThinkingStatus } from "./hooks/use-thinking-status";
 import { appendOptimisticCompactUserMessage } from "./lib/optimistic-user-message";
@@ -92,6 +92,8 @@ import { useClickyVoice } from "@/components/projects/rovo/hooks/use-clicky-voic
 import { ClickyOverlay } from "@/components/projects/rovo/components/clicky/clicky-overlay";
 import { parseClickyResponse } from "@/components/projects/rovo/lib/clicky-point-parser";
 import styles from "./chat.module.css";
+
+export type { ChatSubmitInterceptOutcome } from "./hooks/use-chat-submit";
 
 interface ChatPanelCardsProps {
 	generativeAnimation?: GenerativeCardAnimationProps;
@@ -183,7 +185,7 @@ interface ChatPanelProps {
 	 * edits; absent for normal conversational chats (including the agent test
 	 * chat, which must stay a real conversation).
 	 */
-	onInterceptSubmit?: (text: string) => { handled: boolean; assistantReply?: string };
+	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 	containerClassName?: string;
 	containerStyle?: CSSProperties;
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
@@ -424,11 +426,13 @@ export default function ChatPanel({
 		hasInFlightTurn,
 		isSubmitPending,
 		activeRequestStartedAt,
+		localThinkingAssistantMessageId,
 		queuedPrompts,
 		removeQueuedPrompt,
 	} = useChatSubmit({
 		defaultPromptOptions: resolvedSendPromptOptions,
 		onInterceptSubmit,
+		requireIntercept: isCollapsibleEditContextBar && isContextBarOpen,
 	});
 
 	// --- Rovo AI cursor companion (Clicky) ---
@@ -961,7 +965,7 @@ export default function ChatPanel({
 						renderMessage={(message) => (
 							<MessageBubble
 								message={message}
-								isThinkingLifecycleStreaming={isStreamingLifecycleActive && message.id === lastAssistantMessageId}
+								isThinkingLifecycleStreaming={(isStreamingLifecycleActive || message.id === localThinkingAssistantMessageId) && message.id === lastAssistantMessageId}
 								onSuggestionClick={handleFollowUpSuggestionClick}
 								showFollowUpSuggestions={message.id === lastAssistantMessageId && !hasPendingChatWork}
 								enableSmartWidgets={enableSmartWidgets}

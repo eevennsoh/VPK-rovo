@@ -51,6 +51,100 @@ test("canonical example → scheduled trigger (NOT slack) with fake instruction 
 	assert.equal(patch.trigger, patch.triggers[0]);
 });
 
+test("RFP leadership Slack summary prompt adds a scheduled trigger to the open agent", async () => {
+	const {
+		buildDeterministicTriggerThinkingParts,
+		classifyAgentBuildIntent,
+		buildAgentUpdatePatch,
+		planDeterministicAgentBuild,
+	} = await loadModule();
+	const prompt = "add a trigger to send weekly RFPs summary to a Slack channel to the leadership team";
+
+	const intent = classifyAgentBuildIntent(prompt);
+	assert.ok(intent.isBuildIntent, "should be a build intent");
+	assert.deepEqual(intent.kinds, ["trigger"]);
+	assert.equal(intent.appNames.length, 0, "Slack is the delivery destination, not a tool/app add");
+
+	const patch = buildAgentUpdatePatch(prompt, {
+		automationRules: [
+			{
+				id: "automation-1",
+				name: "Draft RFP response package",
+				prompt: "Draft RFPs when Jira tickets enter Drafting.",
+				triggers: [
+					{ id: "jira-status-changed-1", providerId: "jira", eventId: "status-changed" },
+				],
+			},
+		],
+		triggers: ["Draft RFP response package"],
+	});
+	assert.equal(patch.automationRules.length, 2);
+	const addedRule = patch.automationRules[1];
+	assert.equal(addedRule.name, "Send Weekly RFPs Summary");
+	assert.match(addedRule.prompt, /Slack channel/u);
+	assert.equal(addedRule.triggers[0].providerId, "scheduled");
+	assert.equal(patch.triggers.length, 2);
+	assert.equal(patch.trigger, patch.triggers[0]);
+
+	const outcome = planDeterministicAgentBuild(prompt, {
+		automationRules: [],
+		triggers: [],
+	});
+	assert.deepEqual(outcome.triggerAutomationNames, ["Send Weekly RFPs Summary"]);
+	const thinkingParts = buildDeterministicTriggerThinkingParts({
+		prompt,
+		state: "thinking",
+		triggerAutomationNames: outcome.triggerAutomationNames,
+	});
+	assert.ok(thinkingParts.some((part) => part.type === "data-thinking-status" && part.data.label === "Thinking"));
+	assert.equal(thinkingParts.some((part) => part.type === "data-thinking-event"), false);
+	assert.equal(thinkingParts.some((part) => part.type === "text"), false);
+	const pendingParts = buildDeterministicTriggerThinkingParts({
+		prompt,
+		state: "review",
+		triggerAutomationNames: outcome.triggerAutomationNames,
+	});
+	assert.ok(pendingParts.some((part) => part.type === "data-thinking-status"));
+	assert.ok(pendingParts.some((part) => part.type === "data-thinking-event"));
+	assert.equal(pendingParts.some((part) => part.type === "text"), false);
+	assert.ok(pendingParts.some((part) => part.type === "data-thinking-status" && part.data.label === "Reviewing existing automations"));
+	assert.equal(pendingParts.some((part) => part.type === "data-thinking-status" && part.data.label === "Configuring Friday schedule"), false);
+	assert.ok(pendingParts.some((part) => part.type === "data-thinking-event" && part.data.toolName === "agent.define_trigger"));
+	const saveParts = buildDeterministicTriggerThinkingParts({
+		prompt,
+		state: "save",
+		triggerAutomationNames: outcome.triggerAutomationNames,
+	});
+	assert.ok(saveParts.some((part) => part.type === "data-thinking-status" && part.data.label === "Configuring Friday schedule"));
+	assert.ok(saveParts.some((part) => part.type === "data-thinking-status" && part.data.label === "Setting Slack delivery"));
+	assert.ok(saveParts.some((part) => part.type === "data-thinking-status" && part.data.label === "Saving automation trigger"));
+	assert.ok(saveParts.some((part) => part.type === "data-thinking-event" && part.data.toolName === "agent.configure_tools"));
+	assert.ok(saveParts.some((part) => part.type === "data-thinking-event" && part.data.toolName === "studio.save_profile"));
+	const completeParts = buildDeterministicTriggerThinkingParts({
+		assistantReply: outcome.assistantReply,
+		now: new Date("2026-06-12T00:00:04.200Z"),
+		prompt,
+		startedAt: new Date("2026-06-12T00:00:00.000Z"),
+		state: "complete",
+		triggerAutomationNames: outcome.triggerAutomationNames,
+	});
+	assert.ok(completeParts.some((part) => part.type === "data-turn-complete"));
+	assert.ok(completeParts.some((part) => part.type === "text"));
+	assert.ok(completeParts.some((part) => part.type === "data-thinking-status" && part.data.output));
+	assert.ok(completeParts.some((part) => part.type === "data-thinking-event" && part.data.phase === "result"));
+	assert.equal(completeParts[0].data.timestamp, "2026-06-12T00:00:00.000Z");
+	const turnCompletePart = completeParts.find((part) => part.type === "data-turn-complete");
+	assert.equal(turnCompletePart.data.timestamp, "2026-06-12T00:00:04.200Z");
+
+	const directSchedulePrompt = "Send me a /Slack message every Friday 9am on all RFPs outcome";
+	const directScheduleOutcome = planDeterministicAgentBuild(directSchedulePrompt, {
+		automationRules: [],
+		triggers: [],
+	});
+	assert.equal(directScheduleOutcome.handled, true);
+	assert.deepEqual(directScheduleOutcome.triggerAutomationNames, ["Send Slack Message Friday"]);
+});
+
 test("tool mention resolves to an APP and populates both facets", async () => {
 	const { buildAgentUpdatePatch } = await loadModule();
 	const patch = buildAgentUpdatePatch("give it Jira tools", {});

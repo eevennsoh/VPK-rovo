@@ -33,7 +33,7 @@ import {
 	type AgentAutomationRule,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/data/trigger-catalog";
-import type { RovoDataParts } from "@/lib/rovo-ui-messages";
+import type { RovoDataParts, RovoUIMessage } from "@/lib/rovo-ui-messages";
 
 type AgentResult = RovoDataParts["agent-result"];
 type TriggerProviderId = Parameters<typeof createAgentTriggerValue>[0];
@@ -693,7 +693,12 @@ export interface DeterministicAgentBuildOutcome {
 	patch?: Partial<AgentResult>;
 	/** Believable transcript reply (absent when not handled). */
 	assistantReply?: string;
+	/** Automation names when the deterministic edit includes trigger work. */
+	triggerAutomationNames?: readonly string[];
 }
+
+export const DETERMINISTIC_TRIGGER_TRACE_INITIAL_DELAY_MS = 3200;
+export const DETERMINISTIC_TRIGGER_TRACE_STAGE_DELAYS_MS = [1200, 1400, 1500, 1300] as const;
 
 /**
  * Single decision point shared by every agent-edit interception seam. Classifies
@@ -716,7 +721,363 @@ export function planDeterministicAgentBuild(
 		mode: "update",
 		patch: buildAgentUpdatePatch(prompt, currentAgent, intent),
 		assistantReply,
+		triggerAutomationNames: intent.triggerSpecs.map((spec) => spec.automationName),
 	};
+}
+
+export function buildDeterministicTriggerThinkingParts({
+	assistantReply,
+	now = new Date(),
+	prompt,
+	startedAt = now,
+	state,
+	triggerAutomationNames,
+}: Readonly<{
+	assistantReply?: string;
+	now?: Date;
+	prompt: string;
+	startedAt?: Date;
+	state: "thinking" | "review" | "schedule" | "delivery" | "save" | "complete";
+	triggerAutomationNames: readonly string[];
+}>): RovoUIMessage["parts"] {
+	if (triggerAutomationNames.length === 0) {
+		return assistantReply
+			? [{ type: "text", text: assistantReply, state: "done" }]
+			: [];
+	}
+
+	const startedTimestamp = startedAt.toISOString();
+	const timestamp = now.toISOString();
+	const automationName = triggerAutomationNames[0] ?? "Scheduled trigger";
+	if (state === "thinking") {
+		return [
+			{
+				type: "data-thinking-status",
+				data: {
+					label: "Thinking",
+					content: "Preparing to configure the scheduled RFP summary automation.",
+					activity: "data",
+					source: "fallback",
+					timestamp: startedTimestamp,
+				},
+			},
+		];
+	}
+
+	const reviewToolCallId = `deterministic-trigger-review-${startedAt.getTime()}`;
+	const scheduleToolCallId = `deterministic-trigger-schedule-${startedAt.getTime()}`;
+	const deliveryToolCallId = `deterministic-trigger-delivery-${startedAt.getTime()}`;
+	const saveToolCallId = `deterministic-trigger-save-${startedAt.getTime()}`;
+	const reviewLabel = "Reviewing existing automations";
+	const scheduleLabel = "Configuring Friday schedule";
+	const deliveryLabel = "Setting Slack delivery";
+	const saveLabel = "Saving automation trigger";
+	const parts: RovoUIMessage["parts"] = [
+		{
+			type: "data-thinking-status",
+			data: {
+				label: reviewLabel,
+				content: `Checking whether "${automationName}" conflicts with the existing Jira drafting automation.`,
+				toolCallId: reviewToolCallId,
+				input: {
+					agent: "RFP Drafter",
+					existingAutomation: "Draft RFP response package",
+					request: prompt,
+				},
+				activity: "data",
+				source: "fallback",
+				timestamp: startedTimestamp,
+			},
+		},
+		{
+			type: "data-thinking-event",
+			id: `${reviewToolCallId}-start`,
+			data: {
+				eventId: `${reviewToolCallId}-start`,
+				phase: "start",
+				toolName: "agent.define_trigger",
+				label: reviewLabel,
+				toolCallId: reviewToolCallId,
+				input: {
+					existingTriggers: ["Draft RFP response package"],
+					request: prompt,
+					automationName,
+				},
+				timestamp: startedTimestamp,
+			},
+		},
+	];
+
+	if (state === "review") {
+		return parts;
+	}
+
+	parts.push(
+		{
+			type: "data-thinking-event",
+			id: `${reviewToolCallId}-result`,
+			data: {
+				eventId: `${reviewToolCallId}-result`,
+				phase: "result",
+				toolName: "agent.define_trigger",
+				label: reviewLabel,
+				toolCallId: reviewToolCallId,
+				output: {
+					decision: "append",
+					kept: "Draft RFP response package",
+					nextAction: "Create a scheduled Slack summary trigger",
+				},
+				outputPreview: "Existing Jira drafting trigger kept unchanged.",
+				timestamp,
+			},
+		},
+		{
+			type: "data-thinking-status",
+			data: {
+				label: reviewLabel,
+				content: "Existing Jira drafting trigger stays in place; the Slack summary will be added as a separate scheduled automation.",
+				toolCallId: reviewToolCallId,
+				output: {
+					kept: "Draft RFP response package",
+					change: "Append one new scheduled trigger",
+				},
+				activity: "data",
+				source: "fallback",
+				timestamp,
+			},
+		},
+		{
+			type: "data-thinking-status",
+			data: {
+				label: scheduleLabel,
+				content: "Setting the recurring cadence for the leadership RFP outcome summary.",
+				toolCallId: scheduleToolCallId,
+				input: {
+					automationName,
+					cadence: "Weekly",
+					day: "Friday",
+					time: "9:00 AM",
+					scope: "All RFP outcomes",
+				},
+				activity: "data",
+				source: "fallback",
+				timestamp: startedTimestamp,
+			},
+		},
+		{
+			type: "data-thinking-event",
+			id: `${scheduleToolCallId}-start`,
+			data: {
+				eventId: `${scheduleToolCallId}-start`,
+				phase: "start",
+				toolName: "agent.define_trigger",
+				label: scheduleLabel,
+				toolCallId: scheduleToolCallId,
+				input: {
+					automationName,
+					triggerType: "scheduled",
+					schedule: "Every Friday at 9:00 AM",
+				},
+				timestamp: startedTimestamp,
+			},
+		},
+	);
+
+	if (state === "schedule") {
+		return parts;
+	}
+
+	parts.push(
+		{
+			type: "data-thinking-event",
+			id: `${scheduleToolCallId}-result`,
+			data: {
+				eventId: `${scheduleToolCallId}-result`,
+				phase: "result",
+				toolName: "agent.define_trigger",
+				label: scheduleLabel,
+				toolCallId: scheduleToolCallId,
+				output: {
+					schedule: "Every Friday at 9:00 AM",
+					status: "configured",
+				},
+				outputPreview: "Weekly Friday 9:00 AM schedule configured.",
+				timestamp,
+			},
+		},
+		{
+			type: "data-thinking-status",
+			data: {
+				label: scheduleLabel,
+				content: "The trigger will run every Friday at 9:00 AM.",
+				toolCallId: scheduleToolCallId,
+				output: {
+					cadence: "Weekly",
+					time: "Friday 9:00 AM",
+				},
+				activity: "data",
+				source: "fallback",
+				timestamp,
+			},
+		},
+		{
+			type: "data-thinking-status",
+			data: {
+				label: deliveryLabel,
+				content: "Mapping the weekly summary to the leadership Slack destination.",
+				toolCallId: deliveryToolCallId,
+				input: {
+					channel: "Leadership Slack channel",
+					message: "Weekly RFP outcome summary",
+					includes: ["bid/no-bid recommendations", "blockers", "owner follow-ups"],
+				},
+				activity: "data",
+				source: "fallback",
+				timestamp: startedTimestamp,
+			},
+		},
+		{
+			type: "data-thinking-event",
+			id: `${deliveryToolCallId}-start`,
+			data: {
+				eventId: `${deliveryToolCallId}-start`,
+				phase: "start",
+				toolName: "agent.configure_tools",
+				label: deliveryLabel,
+				toolCallId: deliveryToolCallId,
+				input: {
+					destination: "Slack",
+					audience: "Leadership team",
+					summary: "All RFP outcomes",
+				},
+				timestamp: startedTimestamp,
+			},
+		},
+	);
+
+	if (state === "delivery") {
+		return parts;
+	}
+
+	parts.push(
+		{
+			type: "data-thinking-event",
+			id: `${deliveryToolCallId}-result`,
+			data: {
+				eventId: `${deliveryToolCallId}-result`,
+				phase: "result",
+				toolName: "agent.configure_tools",
+				label: deliveryLabel,
+				toolCallId: deliveryToolCallId,
+				output: {
+					destination: "Slack",
+					audience: "Leadership team",
+					content: "Weekly RFP outcome summary",
+				},
+				outputPreview: "Slack delivery configured for the leadership team.",
+				timestamp,
+			},
+		},
+		{
+			type: "data-thinking-status",
+			data: {
+				label: deliveryLabel,
+				content: "Slack delivery is configured for the leadership team's weekly RFP outcome summary.",
+				toolCallId: deliveryToolCallId,
+				output: {
+					channel: "Leadership Slack channel",
+					summaryCadence: "Weekly",
+				},
+				activity: "data",
+				source: "fallback",
+				timestamp,
+			},
+		},
+		{
+			type: "data-thinking-status",
+			data: {
+				label: saveLabel,
+				content: "Saving the new scheduled trigger into the RFP Drafter automation list.",
+				toolCallId: saveToolCallId,
+				input: {
+					automationName,
+					triggerType: "scheduled",
+					destination: "Slack",
+				},
+				activity: "data",
+				source: "fallback",
+				timestamp: startedTimestamp,
+			},
+		},
+		{
+			type: "data-thinking-event",
+			id: `${saveToolCallId}-start`,
+			data: {
+				eventId: `${saveToolCallId}-start`,
+				phase: "start",
+				toolName: "studio.save_profile",
+				label: saveLabel,
+				toolCallId: saveToolCallId,
+				input: {
+					automationName,
+					triggerType: "scheduled",
+					destination: "Slack",
+				},
+				timestamp: startedTimestamp,
+			},
+		},
+	);
+
+	if (state === "save") {
+		return parts;
+	}
+
+	parts.push(
+		{
+			type: "data-thinking-event",
+			id: `${saveToolCallId}-result`,
+			data: {
+				eventId: `${saveToolCallId}-result`,
+				phase: "result",
+				toolName: "studio.save_profile",
+				label: saveLabel,
+				toolCallId: saveToolCallId,
+				output: {
+					automationName,
+					triggerType: "scheduled",
+					status: "ready",
+				},
+				outputPreview: `${automationName} is ready to review in the config panel.`,
+				timestamp,
+			},
+		},
+		{
+			type: "data-thinking-status",
+			data: {
+				label: saveLabel,
+				content: "The scheduled Slack summary trigger is saved and ready to review.",
+				toolCallId: saveToolCallId,
+				output: {
+					automationName,
+					status: "ready",
+				},
+				activity: "data",
+				source: "fallback",
+				timestamp,
+			},
+		},
+		...(assistantReply
+			? [{ type: "text" as const, text: assistantReply, state: "done" as const }]
+			: []),
+		{
+			type: "data-turn-complete",
+			data: {
+				timestamp,
+			},
+		},
+	);
+
+	return parts;
 }
 
 const KIND_PHRASES: Record<AgentBuildIntentKind, string> = {

@@ -215,6 +215,22 @@ test("compact chat submits add-menu files through the shared Rovo thread queue",
 	assert.match(context.slice(sendPromptIndex), /files: promptFiles/u);
 });
 
+test("compact chat edit context blocks unmatched prompts from normal Rovo chat", () => {
+	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const submitHook = readProjectFile("components/projects/sidebar-chat/hooks/use-chat-submit.ts");
+	const requireInterceptIndex = submitHook.indexOf("if (requireIntercept) {");
+	const sendPromptIndex = submitHook.indexOf("await sendPrompt(promptText, defaultPromptOptions, files)");
+
+	assert.match(sidebarPanel, /requireIntercept: isCollapsibleEditContextBar && isContextBarOpen/u);
+	assert.match(sidebarPanel, /isStreamingLifecycleActive \|\| message\.id === localThinkingAssistantMessageId/u);
+	assert.match(submitHook, /requiredInterceptReply = DEFAULT_REQUIRED_INTERCEPT_REPLY/u);
+	assert.match(submitHook, /localThinkingAssistantMessageId: string \| null/u);
+	assert.match(submitHook, /setLocalThinkingAssistantMessageId\(assistantMessageId\);[\s\S]*await waitForInterceptDelay\(delayMs\);/u);
+	assert.match(submitHook, /await injectLocalAssistantTurn\(\{[\s\S]*requiredInterceptReply[\s\S]*\}\);[\s\S]*return;/u);
+	assert.ok(requireInterceptIndex > -1);
+	assert.ok(sendPromptIndex > requireInterceptIndex);
+});
+
 test("compact chat merges selected custom agent context before queueing prompts", () => {
 	const context = readProjectFile("app/contexts/context-rovo-chat.tsx");
 	const sendPromptIndex = context.indexOf("const sendPrompt = useCallback(");
