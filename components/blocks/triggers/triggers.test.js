@@ -104,6 +104,13 @@ test("provider rows render an animated byline matching the command-menu reveal",
 	assert.match(TRIGGERS_SOURCE, /rich-text-command-menu-nested-copy-revealable/u);
 });
 
+test("TriggerPicker closes before selection can open the next dialog", () => {
+	const closeIndex = TRIGGERS_SOURCE.indexOf("setOpen(false);");
+	const selectIndex = TRIGGERS_SOURCE.indexOf("onSelectEvent(providerId, eventId);");
+	assert.ok(closeIndex >= 0, "TriggerPicker should explicitly close its menu");
+	assert.ok(selectIndex > closeIndex, "TriggerPicker should close before invoking selection side effects");
+});
+
 test("Triggers supports empty, picker, configured, remove, params, and connection states", () => {
 	assert.match(TRIGGERS_SOURCE, /automationRules\?: readonly AgentAutomationRule\[\];/u);
 	assert.match(TRIGGERS_SOURCE, /defaultAutomationRules\?: readonly AgentAutomationRule\[\];/u);

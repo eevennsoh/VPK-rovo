@@ -19,6 +19,7 @@ const DEMO_SOURCE = readFileSync(
 test("ManageTriggersDialog restores the compact drag-list modal", () => {
 	assert.match(DIALOG_SOURCE, /Manage automations/u);
 	assert.match(DIALOG_SOURCE, /Each automation can have multiple event triggers and one instruction prompt\./u);
+	assert.match(DIALOG_SOURCE, /\{open \? \(\s*<TriggerPicker/u);
 	assert.match(DIALOG_SOURCE, /<TriggerPicker/u);
 	assert.match(DIALOG_SOURCE, /onSelectEvent=\{onAddAutomation\}/u);
 	assert.match(DIALOG_SOURCE, /<DialogClose/u);

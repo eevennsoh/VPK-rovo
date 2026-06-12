@@ -100,15 +100,17 @@ export function ManageTriggersDialog({
 						</p>
 					</div>
 					<div className="flex items-center gap-2">
-						<TriggerPicker
-							label="Add automation"
-							onSelectEvent={onAddAutomation}
-							trigger={
-								<Button type="button" variant="outline">
-									Add automation
-								</Button>
-							}
-						/>
+						{open ? (
+							<TriggerPicker
+								label="Add automation"
+								onSelectEvent={onAddAutomation}
+								trigger={
+									<Button type="button" variant="outline">
+										Add automation
+									</Button>
+								}
+							/>
+						) : null}
 						<DialogClose render={<Button aria-label="Close" size="icon" variant="ghost" />}>
 							<CrossIcon label="" />
 						</DialogClose>
