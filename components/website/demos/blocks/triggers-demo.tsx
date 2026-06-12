@@ -92,7 +92,7 @@ export function TriggersDemoNeedsConnection(): ReactElement {
 
 export function TriggersDemoManage(): ReactElement {
 	const [automationRules, setAutomationRules] = useState<readonly AgentAutomationRule[]>(MULTIPLE_AUTOMATION_RULES);
-	const [manageOpen, setManageOpen] = useState(true);
+	const [manageOpen, setManageOpen] = useState(false);
 	const [automationOpen, setAutomationOpen] = useState(false);
 	const [selectedRule, setSelectedRule] = useState<AgentAutomationRule>(MULTIPLE_AUTOMATION_RULES[0]);
 
