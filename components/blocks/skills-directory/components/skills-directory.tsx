@@ -20,13 +20,29 @@ import FileIcon from "@atlaskit/icon/core/file";
 import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
 import FolderOpenIcon from "@atlaskit/icon/core/folder-open";
 import LinkIcon from "@atlaskit/icon/core/link";
-import PageIcon from "@atlaskit/icon/core/page";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
 import type { AgentBrowserAgent } from "@/components/blocks/agent-browser";
+import {
+	ConversationStartersDialog,
+	DEFAULT_STARTER_ICON,
+	type ConversationStarter,
+	type StarterIconKey,
+} from "@/components/blocks/conversation-starters";
+import {
+	Agent,
+	AgentConfigFields,
+	AgentContent,
+	toggleAgentConfigDisabledItem,
+	type AgentConfigFormValue,
+	type AgentConfigListFieldName,
+	type AgentConfigTextFieldName,
+	type AgentDirectoryKind,
+} from "@/components/blocks/skill-config";
+import type { AgentAutomationRule } from "@/components/blocks/triggers/page";
 import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,7 +59,6 @@ import { IconTile } from "@/components/ui/icon-tile";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { SplitButton } from "@/components/ui/split-button";
-import { Tile } from "@/components/ui/tile";
 import {
 	EntityCardShell,
 	EntityCardDescription,
@@ -62,17 +77,14 @@ import {
 	getSkillCollection,
 	getSkillCollectionId,
 	getSkillIcon,
-	getSkillIconColor,
 	getSkillIconTileVariant,
 	getSkillPublisherAvatarSrc,
 	getSkillPublisherLogoName,
 	getSkillPublisherName,
 	isSkillPublisherPerson,
 	type SkillCategory,
-	type SkillIconKey,
 	type SkillsDirectoryFileTreeItem,
 	type SkillsDirectorySkill,
-	type SkillsDirectoryToolTag,
 } from "@/app/data/directory/skills";
 import {
 	DEFAULT_SKILLS_DIRECTORY_PRIMARY_ITEMS,
@@ -872,29 +884,145 @@ function SkillDetailHeader({
 }
 
 function SkillDetailView({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
-	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
-
 	return (
 		<div className="grid min-h-0 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
 			<SkillFileTreeSidebar skill={skill} />
-			<div
-				ref={contentOverflow.ref}
-				className={cn(
-					"flex min-h-0 min-w-0 flex-col gap-6 overflow-y-auto px-6 pb-6 md:pl-4",
-					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
-				)}
-			>
-				<SkillDetailSummary skill={skill} />
-				<SkillToolsSection tools={skill.tools ?? []} />
-				<section className="flex flex-col gap-2" aria-labelledby="skill-detail-instructions">
-					<h3 id="skill-detail-instructions" className="text-xl font-semibold leading-6 text-text">
-						Instructions
-					</h3>
-					<pre className="max-h-none overflow-x-auto whitespace-pre-wrap rounded-md bg-surface-sunken p-3 font-mono text-xs leading-5 text-text">
-						<code>{getSkillInstructions(skill)}</code>
-					</pre>
-				</section>
-			</div>
+			<SkillDetailConfig key={skill.id} skill={skill} />
+		</div>
+	);
+}
+
+/** Seed the editable config form from a directory record so the detail view opens pre-filled with the skill's identity, tools, and instructions. */
+function skillToAgentConfig(skill: SkillsDirectorySkill): AgentConfigFormValue {
+	const description = skill.description ?? "";
+
+	return {
+		name: skill.name,
+		description,
+		summary: description,
+		instructions: getSkillInstructions(skill),
+		tools: (skill.tools ?? []).map((tool) => tool.name),
+		conversationStarters: [],
+		agentId: skill.id,
+		action: "draft",
+	};
+}
+
+/**
+ * Bridges a `SkillsDirectorySkill` into the editable skill-config screen
+ * (`AgentConfigFields`). `AgentConfigFields` is fully controlled, so this owns
+ * the `AgentConfigFormValue` state and mirrors the wiring contract from the
+ * skill-config demo (`useSkillConfigDemoConfig`). Blocks stay decoupled by
+ * composing skill-config + conversation-starters + triggers here at the
+ * consumer rather than inside the skill-config block itself.
+ */
+function SkillDetailConfig({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
+	const [config, setConfig] = useState<AgentConfigFormValue>(() => skillToAgentConfig(skill));
+	const [startersOpen, setStartersOpen] = useState(false);
+
+	function handleTextChange(field: AgentConfigTextFieldName, value: string) {
+		setConfig((current) => ({
+			...current,
+			[field]: value,
+			...(field === "description" ? { summary: value } : {}),
+		}));
+	}
+
+	function updateListItem(field: AgentConfigListFieldName, index: number, value: string) {
+		setConfig((current) => {
+			const items = Array.isArray(current[field]) ? [...current[field]] : [];
+			items[index] = value;
+			return { ...current, [field]: items };
+		});
+	}
+
+	function removeListItem(field: AgentConfigListFieldName, index: number) {
+		setConfig((current) => {
+			const items = Array.isArray(current[field]) ? current[field] : [];
+			return { ...current, [field]: items.filter((_, itemIndex) => itemIndex !== index) };
+		});
+	}
+
+	function toggleListItem(field: AgentConfigListFieldName, index: number, enabled: boolean) {
+		setConfig((current) => {
+			const label = (Array.isArray(current[field]) ? current[field] : [])[index];
+			return label ? toggleAgentConfigDisabledItem(current, field, label, enabled) : current;
+		});
+	}
+
+	function appendListItem(field: AgentConfigListFieldName) {
+		setConfig((current) => {
+			const items = Array.isArray(current[field]) ? current[field] : [];
+			return { ...current, [field]: [...items, ""] };
+		});
+	}
+
+	function addListValues(field: AgentConfigListFieldName, values: readonly string[]) {
+		setConfig((current) => {
+			const items = Array.isArray(current[field]) ? current[field] : [];
+			const existing = new Set(items.map((item) => item.trim().toLowerCase()));
+			const additions = values.filter((value) => !existing.has(value.trim().toLowerCase()));
+			return additions.length > 0 ? { ...current, [field]: [...items, ...additions] } : current;
+		});
+	}
+
+	function handleAutomationRulesChange(automationRules: readonly AgentAutomationRule[]) {
+		setConfig((current) => ({ ...current, automationRules }));
+	}
+
+	const conversationStarterDialogValue = useMemo<readonly ConversationStarter[]>(() => {
+		const texts = Array.isArray(config.conversationStarters) ? config.conversationStarters : [];
+		const icons = Array.isArray(config.conversationStarterIcons) ? config.conversationStarterIcons : [];
+
+		return texts
+			.filter((text) => text.trim().length > 0)
+			.map((text, index) => ({
+				id: `starter-${index}`,
+				text,
+				icon: (icons[index] as StarterIconKey | undefined) ?? DEFAULT_STARTER_ICON,
+			}));
+	}, [config.conversationStarterIcons, config.conversationStarters]);
+
+	function handleSaveConversationStarters(starters: readonly ConversationStarter[]) {
+		setConfig((current) => ({
+			...current,
+			conversationStarters: starters.map((starter) => starter.text),
+			conversationStarterIcons: starters.map((starter) => starter.icon),
+		}));
+	}
+
+	function handleOpenDirectory(directory: AgentDirectoryKind) {
+		if (directory === "conversationStarters") {
+			setStartersOpen(true);
+		}
+	}
+
+	return (
+		<div className="flex min-h-0 min-w-0 flex-col overflow-hidden md:pl-4">
+			<Agent className="flex min-h-0 flex-1 flex-col bg-transparent">
+				<AgentContent className="flex min-h-0 flex-1 flex-col">
+					<AgentConfigFields
+						config={config}
+						idPrefix={`skill-detail-${skill.id}`}
+						onTextChange={handleTextChange}
+						onListItemChange={updateListItem}
+						onRemoveListItem={removeListItem}
+						onToggleListItem={toggleListItem}
+						onAddListValues={addListValues}
+						onAppendListItem={appendListItem}
+						onOpenDirectory={handleOpenDirectory}
+						onAutomationRulesChange={handleAutomationRulesChange}
+					/>
+				</AgentContent>
+			</Agent>
+			<ConversationStartersDialog
+				open={startersOpen}
+				onOpenChange={setStartersOpen}
+				starters={conversationStarterDialogValue}
+				maxStarters={3}
+				saveLabel={conversationStarterDialogValue.length > 0 ? "Save" : "Add"}
+				onSave={handleSaveConversationStarters}
+			/>
 		</div>
 	);
 }
@@ -933,81 +1061,3 @@ function SkillFileTreeSidebar({ skill }: Readonly<{ skill: SkillsDirectorySkill 
 	);
 }
 
-function SkillDetailSummary({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
-	const publisher = getSkillPublisherName(skill);
-	const collection = getSkillCollection(skill);
-	const collectionDocsUrl = skill.collectionDocsUrl ?? collection.docsUrl;
-	const collectionProducts = skill.collectionProducts ?? collection.products;
-
-	return (
-		<section className="flex flex-col gap-6" aria-labelledby="skill-detail-title">
-			<div className="flex flex-col gap-2">
-				<Tile
-					className="rounded-lg text-icon-subtle"
-					hasBorder
-					isInset={false}
-					label={skill.name}
-					size="large"
-					variant="transparent"
-				>
-					<span className={cn("inline-flex items-center justify-center", getSkillIconColor(skill) ?? "text-icon-subtle")}>
-						{getSkillIcon(skill.icon)}
-					</span>
-				</Tile>
-				<h2 id="skill-detail-title" className="text-2xl font-semibold leading-7 text-text">
-					{skill.name}
-				</h2>
-				<p className="flex items-center gap-1 text-xs leading-4 text-text-subtle">
-					<SkillPublisherAvatar skill={skill} />
-					{publisher}
-				</p>
-			</div>
-			<div className="max-w-4xl text-sm leading-5 text-text">
-				<p>{skill.description}</p>
-			</div>
-			<div className="flex max-w-4xl flex-col gap-1 rounded-md border border-border bg-surface p-3 text-sm leading-5">
-				<p className="font-medium text-text">{collection.label}</p>
-				<p className="text-text-subtle">{skill.collectionDescription ?? collection.description}</p>
-				<p className="text-xs leading-4 text-text-subtlest">
-					{collectionProducts.join(" • ")}
-				</p>
-				<a
-					className="w-fit text-sm leading-5 text-link hover:underline"
-					href={collectionDocsUrl}
-					rel="noreferrer"
-					target="_blank"
-				>
-					Learn about this collection
-				</a>
-			</div>
-		</section>
-	);
-}
-
-function SkillToolsSection({ tools }: Readonly<{ tools: readonly SkillsDirectoryToolTag[] }>) {
-	const resolvedTools = tools.length > 0 ? tools : [
-		{ id: "tool-1", name: "Tool1", icon: "page" as SkillIconKey },
-		{ id: "tool-2", name: "Tool2", icon: "page" as SkillIconKey },
-		{ id: "tool-3", name: "Tool3", icon: "page" as SkillIconKey },
-	];
-
-	return (
-		<section className="flex flex-col gap-2" aria-labelledby="skill-detail-tools">
-			<h3 id="skill-detail-tools" className="text-xl font-semibold leading-6 text-text">
-				Tools
-			</h3>
-			<p className="text-sm leading-5 text-text">(Placeholder copy) Tools that are part of this skills.</p>
-			<div className="flex flex-wrap gap-2">
-				{resolvedTools.map((tool) => (
-					<span
-						key={tool.id}
-						className="inline-flex items-center gap-1 rounded border border-border px-1 py-0.5 text-xs leading-4 text-text"
-					>
-						<PageIcon label="" size="small" color="currentColor" />
-						{tool.name}
-					</span>
-				))}
-			</div>
-		</section>
-	);
-}
