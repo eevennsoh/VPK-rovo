@@ -496,9 +496,20 @@ export function weaveMissingTokens(
 	markdown: string,
 	idsByCategory: Partial<Record<CatalogCategory, readonly string[]>>,
 ): string {
-	const existing = new Set(
-		extractInstructionTokens(markdown).map((t) => `${t.category}:${t.id}`),
-	);
+	const tokens = extractInstructionTokens(markdown);
+	const existing = new Set(tokens.map((t) => `${t.category}:${t.id}`));
+	// An explicit `@[app:X]` chip already renders X's tool AND knowledge facets,
+	// so treat those facet tokens as present. Without this, a body that uses the
+	// unified `@[app:id]` form (every agent template does) would have its
+	// reconcileApps-derived tool/knowledge facets re-woven below as duplicate
+	// lozenges. Facet ids are 1:1 with the app id, and knowledge weaves as the
+	// `<id>:all` chip — mirror both forms.
+	for (const t of tokens) {
+		if (t.category === "app") {
+			existing.add(`tool:${t.id}`);
+			existing.add(`knowledge:${t.id}:all`);
+		}
+	}
 	const WEAVE_ORDER: { category: CatalogCategory; label: string }[] = [
 		{ category: "tool", label: "Apps" },
 		{ category: "skill", label: "Skills" },

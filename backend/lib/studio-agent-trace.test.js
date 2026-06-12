@@ -404,6 +404,10 @@ test("build turn narrates the real template setup (names, connect, triggers, mod
 		userPrompt: "build it",
 		contextDescription: TEMPLATE_CONTEXT,
 		isFollowUpTurn: true,
+		// Force every optional progression row in (the builder otherwise samples a
+		// random 0–N subset via Math.random()) so the knowledge-grounding row this
+		// test asserts on is deterministically present.
+		random: () => 1,
 	});
 	const labels = steps.map((s) => s.label);
 	assert.ok(labels.includes("Selecting agent tools"));
