@@ -26,6 +26,7 @@ function loadFixture() {
 			DEMO_SESSION_TOOLS,
 			DEFAULT_SKILLS,
 			DEFAULT_KNOWLEDGE_APPS,
+			DIRECTORY_APPS,
 			ROVO_AGENT_PROFILES,
 		} from "@/app/data/directory";
 		export { extractInstructionTokens } from "@/app/data/directory/resolve-ids";
@@ -50,15 +51,19 @@ const MEMORY_MODES = new Set(["on", "off"]);
 // category → which catalog id-set a token of that category must resolve against.
 async function buildCatalogSets() {
 	const fx = await loadFixture();
-	// Knowledge mentions are two-segment (`<app>:all` + `<app>:<content>`), matching
-	// resolve-ids.ts / the editor palette, while the template `knowledgeIds` field
-	// stores single-segment app ids. Build both so each is validated correctly.
+	// Body tokens now unify tool + knowledge facets into single-segment `@[app:id]`
+	// (see scripts/generate-agent-template-bodies.js). The template `toolIds`/
+	// `knowledgeIds` binding fields still store their own single-segment catalog
+	// ids, so resolve those against the tool/knowledge catalogs while body tokens
+	// resolve against the unified apps catalog. `knowledgeToken` (two-segment) is
+	// kept so any legacy `@[knowledge:<app>:all]` token still validates.
 	const knowledgeToken = new Set();
 	for (const app of fx.DEFAULT_KNOWLEDGE_APPS) {
 		knowledgeToken.add(`${app.id}:all`);
 		for (const content of app.contents ?? []) knowledgeToken.add(`${app.id}:${content.id}`);
 	}
 	return {
+		app: new Set(fx.DIRECTORY_APPS.map((a) => a.id)),
 		tool: new Set([...fx.DEMO_TOOLS, ...fx.DEMO_SESSION_TOOLS].map((t) => t.id)),
 		skill: new Set(fx.DEFAULT_SKILLS.map((s) => s.id)),
 		knowledge: new Set(fx.DEFAULT_KNOWLEDGE_APPS.map((k) => k.id)),
@@ -158,11 +163,12 @@ test("instructionsBody covers EVERY bound id (always renders a chip)", async () 
 	const failures = [];
 	for (const t of AGENT_TEMPLATE_CONFIGS) {
 		const have = new Set(extractInstructionTokens(t.instructionsBody).map((x) => `${x.category}:${x.id}`));
+		// tool + knowledge facets unify into one `@[app:id]` chip, so every bound
+		// toolId and knowledgeId must appear as `app:<id>` in the body.
 		const want = [
-			...t.toolIds.map((id) => `tool:${id}`),
+			...t.toolIds.map((id) => `app:${id}`),
+			...t.knowledgeIds.map((id) => `app:${id}`),
 			...t.skillIds.map((id) => `skill:${id}`),
-			// knowledge field is single-segment; body references the `:all` chip.
-			...t.knowledgeIds.map((id) => `knowledge:${id}:all`),
 			...t.subagentIds.map((id) => `subagent:${id}`),
 		];
 		for (const token of want) {
