@@ -486,11 +486,11 @@ function AgentPublishDropdown({
 									}}
 								>
 									<span className="min-w-0 flex-1">
-										<span className="flex items-center gap-2 text-sm font-medium text-text">
-											<span>{`V${version.version}`}</span>
+										<span className="flex items-center gap-2">
+											<Badge variant="success">{`V${version.version}`}</Badge>
 											{version.version === entry.publishedVersion ? <Badge variant="secondary">Live</Badge> : null}
 										</span>
-										<span className="block text-xs text-text-subtle">
+										<span className="mt-1 block text-xs text-text-subtle">
 											{version.label} · {formatRelativeTime(version.createdAt)}
 										</span>
 									</span>

@@ -1811,6 +1811,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		const registered = studioAgentRegistry.registerCreatedAgentFromResult(blankAgentResult, {
 			preserveCurrentThread: true,
 			select: true,
+			// A from-scratch agent has no name/content yet, so suppress the
+			// "Saving…/Saved" indicator — there is nothing meaningful to save.
+			silentSave: true,
 			sourceKey: `studio-start-from-scratch:${uniqueSuffix}`,
 		});
 		if (!registered) {
