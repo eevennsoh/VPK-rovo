@@ -143,8 +143,9 @@ test("trigger automation modal uses one shared prompt, name, and active state", 
 	assert.match(TRIGGERS_SOURCE, /aria-label="Agent Instructions"/u);
 	assert.match(TRIGGERS_SOURCE, /value=\{sharedPrompt\}/u);
 	assert.match(TRIGGERS_SOURCE, /onMarkdownChange=\{setSharedPrompt\}/u);
-	assert.match(TRIGGERS_SOURCE, /dataFlowConfig=\{dataFlowConfig\}/u);
-	assert.match(TRIGGERS_SOURCE, /triggers: draftTriggers\.map\(getAgentTriggerReadableLabel\)/u);
+	// The manage-automation editor intentionally omits the data flow diagram tab,
+	// so no dataFlowConfig is passed into the Agent Instructions editor here.
+	assert.doesNotMatch(TRIGGERS_SOURCE, /dataFlowConfig=\{dataFlowConfig\}/u);
 	assert.doesNotMatch(TRIGGERS_SOURCE, /from "@\/components\/ui\/textarea"/u);
 	assert.doesNotMatch(TRIGGERS_SOURCE, /aria-label="Trigger prompt"/u);
 	assert.doesNotMatch(TRIGGERS_SOURCE, /const handlePromptChange = useCallback\(/u);

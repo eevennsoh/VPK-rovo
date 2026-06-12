@@ -196,7 +196,14 @@ async function loadChatGreetingHarness() {
 							query: "missing",
 							trigger: "@",
 						},
-						suggestions: [],
+						suggestions: [
+							{
+								id: "default-prompt",
+								label: "Default prompt",
+								description: "Shown when there are no matches",
+								type: "skill",
+							},
+						],
 					}));
 				}
 			`,
@@ -301,7 +308,7 @@ test("ChatGreeting staggers the illustration before the heading", () => {
 	assert.match(CHAT_GREETING_SOURCE, /<motion\.div className=\{cn\(CHAT_GREETING_ILLUSTRATION_CLASS_NAME, "relative"\)[\s\S]*<motion\.div style=\{\{ willChange: "transform, opacity" \}\} variants=\{activeItemVariants\}>[\s\S]*<Heading size="large"/u);
 });
 
-test("ChatGreeting switches composing suggestion movement to instant and restores hero when no rows exist", async () => {
+test("ChatGreeting falls back to the default prompts when a directory query has no matches", async () => {
 	const harness = await loadChatGreetingHarness();
 	const markup = harness.renderComposingEmptyDirectoryGreeting();
 
@@ -309,9 +316,12 @@ test("ChatGreeting switches composing suggestion movement to instant and restore
 	assert.match(CHAT_GREETING_SOURCE, /const activeContainerVariants = isComposing \? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_CONTAINER_VARIANTS;/u);
 	assert.match(CHAT_GREETING_SOURCE, /layout=\{isComposing \? false : "position"\}/u);
 	assert.match(CHAT_GREETING_SOURCE, /const shouldShowHero = showHero && \(!isComposing \|\| !shouldShowSuggestionList\);/u);
-	assert.match(markup, /Improve your agent\?/u);
-	assert.match(markup, /data-testid="controlled-rovo-illustration"/u);
-	assert.match(markup, /data-illus-id="ai"/u);
+	// An empty-result directory query must surface the default prompt list rather
+	// than collapsing to just the illustration + heading.
+	assert.match(CHAT_GREETING_SOURCE, /const hasEmptyDirectoryQuery =/u);
+	assert.match(CHAT_GREETING_SOURCE, /\(directoryAutocompleteState === null \|\| hasEmptyDirectoryQuery\) && greetingSuggestions\.length > 0/u);
+	assert.match(markup, /Default prompt/u);
+	// The unmatched directory query text must never leak into the rendered rows.
 	assert.doesNotMatch(markup, /missing/u);
 });
 

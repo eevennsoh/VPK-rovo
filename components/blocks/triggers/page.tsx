@@ -922,11 +922,6 @@ export function TriggerAutomationDialog({
 	const [automationName, setAutomationName] = useState(() => getAutomationName(automationRule));
 	const [sharedPrompt, setSharedPrompt] = useState(() => getAutomationPrompt(automationRule));
 	const [active, setActive] = useState(() => isAutomationRuleEnabled(automationRule));
-	const dataFlowConfig = useMemo(() => ({
-		name: automationName,
-		instructions: sharedPrompt,
-		triggers: draftTriggers.map(getAgentTriggerReadableLabel),
-	}), [automationName, draftTriggers, sharedPrompt]);
 
 	useEffect(() => {
 		if (open && !wasOpen.current) {
@@ -1003,8 +998,8 @@ export function TriggerAutomationDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-[min(760px,calc(100vh-2rem))] gap-0 overflow-hidden p-0" showCloseButton={false} size="lg">
-				<div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+			<DialogContent className="flex max-h-[min(760px,calc(100vh-2rem))] flex-col gap-0 overflow-hidden p-0" showCloseButton={false} size="lg">
+				<div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-6 py-5">
 					<div className="grid gap-1">
 						<DialogTitle className="text-xl font-semibold leading-6 text-text">
 							{title}
@@ -1023,7 +1018,7 @@ export function TriggerAutomationDialog({
 						</DialogClose>
 					</div>
 				</div>
-				<div className="grid max-h-[calc(100vh-13rem)] gap-5 overflow-y-auto px-6 py-5">
+				<div className="grid min-h-0 flex-1 gap-5 overflow-y-auto px-6 py-5">
 					<TriggerAutomationFlowPreview
 						automationName={automationName}
 						prompt={sharedPrompt}
@@ -1037,21 +1032,6 @@ export function TriggerAutomationDialog({
 							value={automationName}
 						/>
 					</label>
-					<div className="grid gap-1.5">
-						<span className="text-sm font-medium leading-5 text-text">Source</span>
-						<DropdownMenu>
-							<DropdownMenuTrigger
-								render={<Button className="w-fit justify-start" type="button" variant="outline" />}
-							>
-								No Repository
-								<ChevronDownIcon label="" size="small" />
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="start" className="w-56">
-								<DropdownMenuItem onSelect={() => undefined}>No Repository</DropdownMenuItem>
-								<DropdownMenuItem onSelect={() => undefined}>Select repositories</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
 					<div className="grid gap-2">
 						<div className="grid gap-0.5">
 							<h3 className="text-sm font-semibold leading-5 text-text">Triggers</h3>
@@ -1083,7 +1063,6 @@ export function TriggerAutomationDialog({
 							aria-label="Agent Instructions"
 							className="space-y-2"
 							contentClassName="pt-2"
-							dataFlowConfig={dataFlowConfig}
 							editorClassName="agent-instructions-tiptap-editor text-text"
 							onMarkdownChange={setSharedPrompt}
 							placeholder="Tell the agent what to do when any trigger starts this automation..."
@@ -1092,7 +1071,7 @@ export function TriggerAutomationDialog({
 						/>
 					</div>
 				</div>
-				<div className="flex items-center justify-end gap-2 border-t border-border bg-surface-overlay px-6 py-4">
+				<div className="flex shrink-0 items-center justify-end gap-2 border-t border-border bg-surface-overlay px-6 py-4">
 					<Button onClick={() => onOpenChange(false)} type="button" variant="ghost">
 						Cancel
 					</Button>

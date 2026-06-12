@@ -329,7 +329,7 @@ function CustomAgentGreeting({
 						<motion.div className="flex flex-col items-center gap-2" variants={activeItemVariants}>
 							<Heading size="large" className="text-center">{agent.name}</Heading>
 							{agent.description ? (
-								<p className="text-sm leading-6 text-text-subtle">{agent.description}</p>
+								<p className="line-clamp-3 text-sm leading-6 text-text-subtle">{agent.description}</p>
 							) : null}
 						</motion.div>
 					</motion.div>
@@ -374,6 +374,14 @@ export default function ChatGreeting({
 		!customAgent &&
 		directoryAutocompleteState !== null &&
 		directoryAutocompleteState.matches.length > 0;
+	// A directory autocomplete query that returns no matches must not collapse the
+	// greeting to just the illustration + heading. Fall back to the default prompts
+	// so there is always something actionable to show when there are neither
+	// prompts nor search results to display.
+	const hasEmptyDirectoryQuery =
+		!customAgent &&
+		directoryAutocompleteState !== null &&
+		directoryAutocompleteState.matches.length === 0;
 	const resolvedHeading = isMaxMode ? MAX_MODE_HEADING : heading;
 	const resolvedIllustrationSrc = isMaxMode ? MAX_MODE_ILLUSTRATION_SRC : illustrationSrc;
 	const resolvedIllustrationDarkSrc = isMaxMode
@@ -390,7 +398,7 @@ export default function ChatGreeting({
 	const itemVariants = shouldReduceMotion ? CHAT_GREETING_REDUCED_ITEM_VARIANTS : CHAT_GREETING_ITEM_VARIANTS;
 	const shouldShowSuggestionList =
 		shouldRenderDirectoryMatches ||
-		(directoryAutocompleteState === null && greetingSuggestions.length > 0);
+		((directoryAutocompleteState === null || hasEmptyDirectoryQuery) && greetingSuggestions.length > 0);
 	const shouldShowHero = showHero && (!isComposing || !shouldShowSuggestionList);
 	const activeContainerVariants = isComposing ? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_CONTAINER_VARIANTS;
 	const activeItemVariants = isComposing ? CHAT_GREETING_INSTANT_ITEM_VARIANTS : itemVariants;

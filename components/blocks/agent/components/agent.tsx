@@ -140,6 +140,12 @@ import type {
 import { cn } from "@/lib/utils";
 
 import { CodeBlock } from "@/components/ui-custom/code-block";
+import { SkillTag, type SkillTagColor } from "@/components/ui-custom/skill-tag";
+import {
+	DEFAULT_SKILLS,
+	getSkillCollectionId,
+	getSkillIcon,
+} from "@/app/data/directory/skills";
 
 const AGENT_AVATAR_HEXAGON_PATH = "M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
 const AGENT_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg";
@@ -2372,6 +2378,18 @@ const tagColorToMenuIconClassName: Partial<Record<TagColor, string>> = {
 	yellowLight: "text-yellow-400 [&_svg]:text-yellow-400!",
 };
 
+// Resolves a configured Skills row item (a skill label) to its SkillTag color
+// (collection family) and leading icon by looking the label up in the skills
+// directory. Unknown labels fall back to the neutral "default" collection and
+// the page glyph so freshly added / off-directory skills still render a tag.
+function getSkillTagPropsForLabel(label: string): { color: SkillTagColor; icon: ReactNode } {
+	const skill = DEFAULT_SKILLS.find((entry) => entry.name === label);
+	return {
+		color: skill ? getSkillCollectionId(skill) : "default",
+		icon: getSkillIcon(skill?.icon ?? "page"),
+	};
+}
+
 function getTagColorForAgentAvatar(avatarSrc: string | undefined): TagColor | undefined {
 	const group = avatarSrc?.match(/\/avatar-agent\/([^/]+)\//u)?.[1];
 	return group ? agentAvatarGroupToTagColor[group] : undefined;
@@ -2521,6 +2539,17 @@ interface AgentFilledSummaryRowProps {
 	hideWhenEmpty?: boolean;
 	itemElemBefore?: (item: string, index: number) => ReactNode;
 	isItemDisabled?: (item: string, index: number) => boolean;
+	// When provided, each configured item is rendered by this callback instead of
+	// the default AgentReferenceChip — used by the Skills row to render SkillTag
+	// chips while every other row keeps the shared chip. The callback receives the
+	// resolved disabled/click/remove handlers so the row's behavior is preserved.
+	renderItem?: (opts: {
+		item: string;
+		index: number;
+		disabled: boolean;
+		onClick?: () => void;
+		onRemove?: () => void;
+	}) => ReactNode;
 	inlinePicker?: ReactNode;
 	onAdd?: () => void;
 	// When provided, the row's inline "Add" affordance is rendered by this
@@ -2550,6 +2579,7 @@ function AgentFilledSummaryRow({
 	onItemClick,
 	onRemoveItem,
 	referenceCategory,
+	renderItem,
 	screenAssistantTargetId,
 	tagColor,
 }: Readonly<AgentFilledSummaryRowProps>) {
@@ -2598,15 +2628,29 @@ function AgentFilledSummaryRow({
 							// this, a row-filling set of chips pushes "Add" onto its own line and
 							// leaves an awkward gap beside the last chip.
 							const isLastItem = index === items.length - 1;
-							const chip = (
+							const itemKey = `${label}-${item}-${index}`;
+							const itemDisabled = isItemDisabled?.(item, index) ?? false;
+							const handleItemClick = onItemClick ? () => onItemClick(item, index) : undefined;
+							const handleItemRemove = onRemoveItem ? () => onRemoveItem(index) : undefined;
+							const chip = renderItem ? (
+								<Fragment key={itemKey}>
+									{renderItem({
+										item,
+										index,
+										disabled: itemDisabled,
+										onClick: handleItemClick,
+										onRemove: handleItemRemove,
+									})}
+								</Fragment>
+							) : (
 								<AgentReferenceChip
 									category={referenceCategory}
-									disabled={isItemDisabled?.(item, index)}
+									disabled={itemDisabled}
 									elemBefore={itemElemBefore?.(item, index)}
-									key={`${label}-${item}-${index}`}
+									key={itemKey}
 									label={item}
-									onClick={onItemClick ? () => onItemClick(item, index) : undefined}
-									onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
+									onClick={handleItemClick}
+									onRemove={handleItemRemove}
 									tagColor={tagColor}
 								/>
 							);
@@ -2996,6 +3040,26 @@ function AgentFilledConfigSummary({
 					items={skillItems}
 					label="Skills"
 					renderAddControl={renderDirectoryAddControl("skills", skillsNavItem, skillItems)}
+					// The Skills row renders its configured items as SkillTag chips
+					// (slanted, collection-colored slash + icon) instead of the generic
+					// reference chip used by every other row.
+					renderItem={({ item, disabled, onClick, onRemove }) => {
+						const { color, icon } = getSkillTagPropsForLabel(item);
+						return (
+							<SkillTag
+								aria-disabled={disabled || undefined}
+								className={cn(disabled && "opacity-(--opacity-disabled)")}
+								color={color}
+								icon={icon}
+								onClick={disabled ? undefined : onClick}
+								onRemove={onRemove}
+								removeButtonLabel={`Remove ${item}`}
+								removeVariant="overlay"
+							>
+								{item}
+							</SkillTag>
+						);
+					}}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("skills", index) : undefined}
 					referenceCategory="skill"
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined}
