@@ -704,10 +704,7 @@ export function AgentCard({
 						style={isExperimentalTemplate ? undefined : STAMP_PERFORATION_TOP_MASK_STYLE}
 					>
 						<div
-							className={cn(
-								"pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col overflow-y-auto px-4 text-text [scrollbar-gutter:stable]",
-								isExperimentalTemplate ? "gap-3 pt-4 pb-2" : "gap-3 pt-4 pb-4",
-							)}
+							className="pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-4 pb-4 text-text [scrollbar-gutter:stable]"
 							data-slot="agent-card-scroll"
 							onClick={onSelect ? handleBodyClick : undefined}
 							onScroll={handleBodyScroll}

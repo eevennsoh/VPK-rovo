@@ -4543,6 +4543,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				onSelectTemplateAgent={handleTemplateAgentSelect}
 				sessionAgents={studioAgentRegistry.sessionAgentEntries.map((entry) => entry.profile)}
 				initialTemplateCategory={sidebarAgentBrowserInitialCategory}
+				variant="experimental"
 			/>
 
 			{!embedded ? (
