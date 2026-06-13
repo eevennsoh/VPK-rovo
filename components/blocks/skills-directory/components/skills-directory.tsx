@@ -829,6 +829,14 @@ function SkillDetailHeader({
 }: Readonly<SkillDetailHeaderProps>) {
 	return (
 		<div className="flex items-center justify-between border-b border-border px-6 py-4">
+			<button
+				type="button"
+				className="flex items-center gap-2 text-xl font-semibold leading-6 text-text outline-none hover:text-text-subtle focus-visible:rounded-md focus-visible:ring-3 focus-visible:ring-ring/50"
+				onClick={onBack}
+			>
+				<ArrowLeftIcon label="" size="small" color="currentColor" />
+				Back
+			</button>
 			<div className="flex items-center gap-2">
 				<DropdownMenu>
 					<DropdownMenuTrigger
@@ -838,7 +846,7 @@ function SkillDetailHeader({
 							</Button>
 						}
 					/>
-					<DropdownMenuContent align="start" sideOffset={6}>
+					<DropdownMenuContent align="end" sideOffset={6}>
 						<DropdownMenuItem elemBefore={<LinkIcon label="" />} onSelect={() => onCreateShareLink()}>
 							Create link to share
 						</DropdownMenuItem>
@@ -850,16 +858,6 @@ function SkillDetailHeader({
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
-				<button
-					type="button"
-					className="flex items-center gap-2 text-xl font-semibold leading-6 text-text outline-none hover:text-text-subtle focus-visible:rounded-md focus-visible:ring-3 focus-visible:ring-ring/50"
-					onClick={onBack}
-				>
-					<ArrowLeftIcon label="" size="small" color="currentColor" />
-					Back
-				</button>
-			</div>
-			<div className="flex items-center gap-2">
 				<SplitButton
 					items={[
 						{ label: "Open in new tab", onSelect: onOpenSkill },

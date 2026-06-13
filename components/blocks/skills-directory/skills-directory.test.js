@@ -147,8 +147,8 @@ test("Skills Directory renders the skill detail view with the config screen and 
 	assert.match(source, /function SkillDetailHeader/u);
 	assert.match(source, /<SplitButton/u);
 	assert.match(source, /Try in chat/u);
-	// The "more actions" menu now sits at the far left, ahead of the Back button.
-	assert.match(source, /aria-label="More skill actions"[\s\S]*onClick=\{onBack\}[\s\S]*Back/u);
+	// The "more actions" menu is the leftmost button of the right-hand CTA group (after Back, before Open).
+	assert.match(source, /onClick=\{onBack\}[\s\S]*aria-label="More skill actions"[\s\S]*<SplitButton/u);
 	assert.match(source, /function SkillDetailView/u);
 	// The detail view hosts the editable skill-config screen, seeded from the skill,
 	// with a permanently expanded footer (no collapse/expand toggle).
