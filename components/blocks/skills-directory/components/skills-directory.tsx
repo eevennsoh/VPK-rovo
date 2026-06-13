@@ -1078,7 +1078,6 @@ function SkillFileTreeSidebar({ skill }: Readonly<{ skill: SkillsDirectorySkill 
 		<aside className="hidden min-h-0 w-[280px] shrink-0 overflow-y-auto pl-6 pr-4 md:block">
 			<FileTree
 				aria-label={`${skill.name} files`}
-				className="bg-transparent text-text"
 				defaultExpanded={defaultExpanded}
 				selectedPath={selectedPath}
 			>
