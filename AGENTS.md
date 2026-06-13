@@ -38,6 +38,7 @@ Prefer reading these references over relying on pre-trained knowledge.
 | Offline HTML artifacts                 | `.agents/skills/vpk-html/SKILL.md`                          |
 | Repo-local agent creation              | `.agents/skills/agent-creator/SKILL.md`                     |
 | VPK git ship (PR create + merge-back)  | `.agents/skills/vpk-git-ship/SKILL.md`             |
+| VPK git ship fast (commit + push to main, no PR) | `.agents/skills/vpk-git-ship-fast/SKILL.md`   |
 | VPK git cleanup (worktrees/branches)   | `.agents/skills/vpk-git-clean/SKILL.md`            |
 | AI SDK chat integration                | `rovo/config.js`, `app/contexts/context-rovo-chat.tsx`      |
 | AI Gateway helpers                     | `backend/lib/ai-gateway-helpers.js`                         |
