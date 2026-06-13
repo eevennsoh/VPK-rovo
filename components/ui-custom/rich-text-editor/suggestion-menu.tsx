@@ -1055,10 +1055,35 @@ function attachComposerAnchor(
 	// Capture phase so we also catch scrolls inside scrollable ancestors; passive
 	// since we never preventDefault.
 	window.addEventListener("scroll", scheduleReposition, { capture: true, passive: true });
+
+	// The palette is BOTTOM-anchored: `positionComposerPopup` sets `top = anchorTop
+	// - height - gap`, so its bottom hugs `anchorTop - gap` ONLY when recomputed at
+	// the menu's current height. The list grows/shrinks AFTER the initial double
+	// rAF — filtering the "/" query down to a couple of rows, a category drill-in,
+	// or async row content — and neither the window resize nor scroll listener
+	// fires for an element's OWN size change. Without observing it, a menu that
+	// opened tall and then shrank keeps its stale `top` and floats high above the
+	// composer instead of hugging it. Observe the popup (its height) and the anchor
+	// box (its position/size) so every height change re-hugs the bottom edge.
+	const resizeObserver =
+		typeof ResizeObserver === "undefined"
+			? null
+			: new ResizeObserver(scheduleReposition);
+	if (resizeObserver) {
+		if (element) {
+			resizeObserver.observe(element);
+		}
+		const anchorBox = editorDom ? getComposerAnchorBox(editorDom) : null;
+		if (anchorBox) {
+			resizeObserver.observe(anchorBox);
+		}
+	}
+
 	return () => {
 		if (frame) {
 			cancelAnimationFrame(frame);
 		}
+		resizeObserver?.disconnect();
 		window.removeEventListener("resize", scheduleReposition);
 		window.removeEventListener("scroll", scheduleReposition, { capture: true });
 	};
