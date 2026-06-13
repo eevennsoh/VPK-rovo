@@ -24,7 +24,14 @@
 	},
 	"sandbox": {
 		"filesystem": {
-			"allowRead": ["./.env.local.example", "./.env.example"]
+			"allowRead": [
+				"./.env.local.example",
+				"./.env.example"
+			]
 		}
+	},
+	"worktree": {
+		"bgIsolation": "worktree",
+		"baseRef": "fresh"
 	}
 }

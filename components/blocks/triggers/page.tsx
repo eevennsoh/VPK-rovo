@@ -1037,24 +1037,27 @@ export function TriggerAutomationDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="flex max-h-[min(760px,calc(100vh-2rem))] flex-col gap-0 overflow-hidden p-0" showCloseButton={false} size="lg">
-				<div className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-6 py-5">
-					<DialogTitle className="sr-only">{title}</DialogTitle>
-					<Button
-						className="-ml-2 gap-1 px-2 text-base font-semibold text-text"
-						onClick={() => onOpenChange(false)}
-						type="button"
-						variant="ghost"
-					>
-						<ArrowLeftIcon label="" size="small" />
-						Back
-					</Button>
+				<div className="flex shrink-0 items-center justify-between px-6 py-6">
+					<div className="flex min-w-0 items-center gap-2">
+						<Button
+							aria-label="Back"
+							className="-ml-2 text-icon-subtle"
+							onClick={() => onOpenChange(false)}
+							size="icon"
+							type="button"
+							variant="ghost"
+						>
+							<ArrowLeftIcon label="" />
+						</Button>
+						<DialogTitle className="truncate text-xl font-semibold leading-6 text-text">{title}</DialogTitle>
+					</div>
 					<div className="flex items-center gap-3">
 						<label className="flex items-center gap-2 text-sm font-medium text-text">
-							<span>Active</span>
-							<Switch checked={active} label="Active" onCheckedChange={setActive} size="sm" />
+							<span>{active ? "Active" : "Inactive"}</span>
+							<Switch checked={active} label={active ? "Active" : "Inactive"} onCheckedChange={setActive} />
 						</label>
 						<DialogClose render={<Button aria-label="Close" size="icon" variant="ghost" />}>
-							<CrossIcon label="" size="small" />
+							<CrossIcon label="" />
 						</DialogClose>
 					</div>
 				</div>
@@ -1214,24 +1217,27 @@ export function TriggerConfigAutomationDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="flex max-h-[min(760px,calc(100vh-2rem))] flex-col gap-0 overflow-hidden p-0" showCloseButton={false} size="lg">
-				<div className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-6 py-5">
-					<DialogTitle className="sr-only">{title}</DialogTitle>
-					<Button
-						className="-ml-2 gap-1 px-2 text-base font-semibold text-text"
-						onClick={() => onOpenChange(false)}
-						type="button"
-						variant="ghost"
-					>
-						<ArrowLeftIcon label="" size="small" />
-						Back
-					</Button>
+				<div className="flex shrink-0 items-center justify-between px-6 py-6">
+					<div className="flex min-w-0 items-center gap-2">
+						<Button
+							aria-label="Back"
+							className="-ml-2 text-icon-subtle"
+							onClick={() => onOpenChange(false)}
+							size="icon"
+							type="button"
+							variant="ghost"
+						>
+							<ArrowLeftIcon label="" />
+						</Button>
+						<DialogTitle className="truncate text-xl font-semibold leading-6 text-text">{title}</DialogTitle>
+					</div>
 					<div className="flex items-center gap-3">
 						<label className="flex items-center gap-2 text-sm font-medium text-text">
-							<span>Active</span>
-							<Switch checked={active} label="Active" onCheckedChange={setActive} size="sm" />
+							<span>{active ? "Active" : "Inactive"}</span>
+							<Switch checked={active} label={active ? "Active" : "Inactive"} onCheckedChange={setActive} />
 						</label>
 						<DialogClose render={<Button aria-label="Close" size="icon" variant="ghost" />}>
-							<CrossIcon label="" size="small" />
+							<CrossIcon label="" />
 						</DialogClose>
 					</div>
 				</div>
