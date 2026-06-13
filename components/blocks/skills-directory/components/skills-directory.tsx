@@ -13,12 +13,8 @@ import {
 } from "react";
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import DownloadIcon from "@atlaskit/icon/core/download";
-import FileIcon from "@atlaskit/icon/core/file";
-import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
-import FolderOpenIcon from "@atlaskit/icon/core/folder-open";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import SearchIcon from "@atlaskit/icon/core/search";
@@ -43,7 +39,7 @@ import {
 	type AgentDirectoryKind,
 } from "@/components/blocks/skill-config";
 import type { AgentAutomationRule } from "@/components/blocks/triggers/page";
-import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
+import { FileTree, FileTreeFile, FileTreeFolder } from "@/components/ui-custom/file-tree";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -833,14 +829,36 @@ function SkillDetailHeader({
 }: Readonly<SkillDetailHeaderProps>) {
 	return (
 		<div className="flex items-center justify-between border-b border-border px-6 py-4">
-			<button
-				type="button"
-				className="flex items-center gap-2 text-xl font-semibold leading-6 text-text outline-none hover:text-text-subtle focus-visible:rounded-md focus-visible:ring-3 focus-visible:ring-ring/50"
-				onClick={onBack}
-			>
-				<ArrowLeftIcon label="" size="small" color="currentColor" />
-				Back
-			</button>
+			<div className="flex items-center gap-2">
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<Button aria-label="More skill actions" size="icon" type="button" variant="outline">
+								<ShowMoreHorizontalIcon label="" />
+							</Button>
+						}
+					/>
+					<DropdownMenuContent align="start" sideOffset={6}>
+						<DropdownMenuItem elemBefore={<LinkIcon label="" />} onSelect={() => onCreateShareLink()}>
+							Create link to share
+						</DropdownMenuItem>
+						<DropdownMenuItem elemBefore={<StarUnstarredIcon label="" />} onSelect={() => onFavoriteSkills()}>
+							Favorite
+						</DropdownMenuItem>
+						<DropdownMenuItem elemBefore={<DownloadIcon label="" />} onSelect={() => onDownloadSkills()}>
+							Download
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+				<button
+					type="button"
+					className="flex items-center gap-2 text-xl font-semibold leading-6 text-text outline-none hover:text-text-subtle focus-visible:rounded-md focus-visible:ring-3 focus-visible:ring-ring/50"
+					onClick={onBack}
+				>
+					<ArrowLeftIcon label="" size="small" color="currentColor" />
+					Back
+				</button>
+			</div>
 			<div className="flex items-center gap-2">
 				<SplitButton
 					items={[
@@ -854,26 +872,6 @@ function SkillDetailHeader({
 				<Button onClick={onTryInChat} type="button">
 					Try in chat
 				</Button>
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<Button aria-label="More skill actions" size="icon" type="button" variant="outline">
-								<ShowMoreHorizontalIcon label="" />
-							</Button>
-						}
-					/>
-					<DropdownMenuContent align="end" sideOffset={6}>
-						<DropdownMenuItem elemBefore={<LinkIcon label="" />} onSelect={() => onCreateShareLink()}>
-							Create link to share
-						</DropdownMenuItem>
-						<DropdownMenuItem elemBefore={<StarUnstarredIcon label="" />} onSelect={() => onFavoriteSkills()}>
-							Favorite
-						</DropdownMenuItem>
-						<DropdownMenuItem elemBefore={<DownloadIcon label="" />} onSelect={() => onDownloadSkills()}>
-							Download
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
 				<DialogClose render={<Button variant="ghost" size="icon" />}>
 					<CrossIcon label="" />
 					<span className="sr-only">Close</span>
@@ -1004,6 +1002,7 @@ function SkillDetailConfig({ skill }: Readonly<{ skill: SkillsDirectorySkill }>)
 					<AgentConfigFields
 						config={config}
 						idPrefix={`skill-detail-${skill.id}`}
+						footerCollapsible={false}
 						onTextChange={handleTextChange}
 						onListItemChange={updateListItem}
 						onRemoveListItem={removeListItem}
@@ -1027,36 +1026,64 @@ function SkillDetailConfig({ skill }: Readonly<{ skill: SkillsDirectorySkill }>)
 	);
 }
 
+interface SkillFileTreeNode extends SkillsDirectoryFileTreeItem {
+	children: SkillFileTreeNode[];
+}
+
+/** Convert the flat, depth-tagged file list into the nested shape the FileTree compound expects. */
+function buildSkillFileTree(items: readonly SkillsDirectoryFileTreeItem[]): SkillFileTreeNode[] {
+	const roots: SkillFileTreeNode[] = [];
+	const ancestors: SkillFileTreeNode[] = [];
+
+	for (const item of items) {
+		const depth = item.depth ?? 0;
+		const node: SkillFileTreeNode = { ...item, children: [] };
+		ancestors.length = depth;
+		const parent = ancestors[depth - 1];
+
+		if (parent) {
+			parent.children.push(node);
+		} else {
+			roots.push(node);
+		}
+
+		ancestors[depth] = node;
+	}
+
+	return roots;
+}
+
+function renderSkillFileTreeNode(node: SkillFileTreeNode) {
+	if (node.kind === "folder") {
+		return (
+			<FileTreeFolder key={node.id} name={node.label} path={node.id}>
+				{node.children.map(renderSkillFileTreeNode)}
+			</FileTreeFolder>
+		);
+	}
+
+	return <FileTreeFile key={node.id} name={node.label} path={node.id} />;
+}
+
 function SkillFileTreeSidebar({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
 	const items = skill.fileTreeItems ?? getDefaultFileTree(skill);
+	const nodes = useMemo(() => buildSkillFileTree(items), [items]);
+	const defaultExpanded = useMemo(
+		() => new Set(items.filter((item) => item.kind === "folder" && item.expanded).map((item) => item.id)),
+		[items],
+	);
+	const selectedPath = items.find((item) => item.selected)?.id;
 
 	return (
 		<aside className="hidden min-h-0 w-[280px] shrink-0 overflow-y-auto pl-6 pr-4 md:block">
-			<nav aria-label={`${skill.name} files`} className="flex w-full flex-col">
-				{items.map((item) => (
-					<div key={item.id} style={{ paddingLeft: `${(item.depth ?? 0) * 12}px` }}>
-						<SidebarNavItem
-							label={item.label}
-							leadingSize="small"
-							isSelected={item.selected ?? false}
-							isExpanded={item.kind === "folder" ? item.expanded : undefined}
-							leading={
-								item.kind === "folder" ? (
-									<span className="flex items-center gap-px">
-										{item.expanded ? <ChevronDownIcon label="" color="currentColor" /> : <ChevronRightIcon label="" color="currentColor" />}
-										{item.expanded ? <FolderOpenIcon label="" color="currentColor" /> : <FolderClosedIcon label="" color="currentColor" />}
-									</span>
-								) : (
-									<span className="flex items-center gap-px">
-										<span className="size-3 shrink-0" />
-										<FileIcon label="" color="currentColor" />
-									</span>
-								)
-							}
-						/>
-					</div>
-				))}
-			</nav>
+			<FileTree
+				aria-label={`${skill.name} files`}
+				className="bg-transparent text-text"
+				defaultExpanded={defaultExpanded}
+				selectedPath={selectedPath}
+			>
+				{nodes.map(renderSkillFileTreeNode)}
+			</FileTree>
 		</aside>
 	);
 }

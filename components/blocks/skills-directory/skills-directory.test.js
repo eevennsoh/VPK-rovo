@@ -127,11 +127,12 @@ test("Skills Directory uses multi-select cards, hover learn-more, and selected t
 	assert.match(source, /function SkillPublisherAvatar/u);
 	assert.match(source, /getSkillPublisherLogoName\(skill\)/u);
 	// Attribution marks are a uniform 16x16: brand logo uses the xxsmall (16px) size.
-	assert.match(source, /<AtlassianLogo name=\{logoName\} size="xxsmall" themeAware label=\{getSkillPublisherName\(skill\)\} \/>/u);
+	assert.match(source, /<AtlassianLogoMark name=\{logoName\} size="xxsmall" transparent label=\{getSkillPublisherName\(skill\)\} \/>/u);
 	assert.doesNotMatch(source, /size="xsmall" themeAware label=\{getSkillPublisherName/u);
-	// Only human avatars are rounded; company logos stay square.
-	assert.match(source, /const isPerson = isSkillPublisherPerson\(skill\);/u);
-	assert.match(source, /isPerson \? "rounded-full object-cover" : "object-contain"/u);
+	// Only human avatars are rounded; company logos use the shared transparent logo mark.
+	assert.match(source, /if \(isSkillPublisherPerson\(skill\)\) \{/u);
+	assert.match(source, /className="size-4 shrink-0 rounded-full object-cover"/u);
+	assert.match(source, /<BrandLogoMark src=\{src\} size="xxsmall" transparent label=\{getSkillPublisherName\(skill\)\} \/>/u);
 	assert.match(source, /Add skills/u);
 	assert.match(source, /Create link to share/u);
 	assert.match(source, /Favorite/u);
@@ -139,24 +140,38 @@ test("Skills Directory uses multi-select cards, hover learn-more, and selected t
 	assert.match(source, /Download[\s\S]*Add skills[\s\S]*aria-label="Clear selected skills"/u);
 });
 
-test("Skills Directory renders skill info view with file tree and top scroll mask", () => {
+test("Skills Directory renders the skill detail view with the config screen and FileTree sidebar", () => {
 	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory.tsx");
 	const sidebarSource = readProjectFile("components/blocks/skills-directory/components/skills-directory-sidebar.tsx");
 
 	assert.match(source, /function SkillDetailHeader/u);
 	assert.match(source, /<SplitButton/u);
 	assert.match(source, /Try in chat/u);
+	// The "more actions" menu now sits at the far left, ahead of the Back button.
+	assert.match(source, /aria-label="More skill actions"[\s\S]*onClick=\{onBack\}[\s\S]*Back/u);
 	assert.match(source, /function SkillDetailView/u);
-	assert.match(source, /const collection = getSkillCollection\(skill\);/u);
-	assert.match(source, /skill\.collectionDescription \?\? collection\.description/u);
-	assert.match(source, /collectionProducts\.join\(" • "\)/u);
-	assert.match(source, /Learn about this collection/u);
+	// The detail view hosts the editable skill-config screen, seeded from the skill,
+	// with a permanently expanded footer (no collapse/expand toggle).
+	assert.match(source, /<SkillDetailConfig key=\{skill\.id\} skill=\{skill\} \/>/u);
+	assert.match(source, /function SkillDetailConfig/u);
+	assert.match(source, /function skillToAgentConfig/u);
+	assert.match(source, /<AgentConfigFields/u);
+	assert.match(source, /footerCollapsible=\{false\}/u);
+	// The read-only summary/tools column was replaced by the config screen.
+	assert.doesNotMatch(source, /function SkillDetailSummary/u);
+	assert.doesNotMatch(source, /function SkillToolsSection/u);
+	// The file-tree sidebar uses the shared FileTree compound from ui-custom.
+	assert.match(source, /import \{ FileTree, FileTreeFile, FileTreeFolder \} from "@\/components\/ui-custom\/file-tree";/u);
 	assert.match(source, /function SkillFileTreeSidebar/u);
+	assert.match(source, /function buildSkillFileTree/u);
+	assert.match(source, /<FileTree\b/u);
+	assert.match(source, /<FileTreeFolder key=\{node\.id\} name=\{node\.label\} path=\{node\.id\}>/u);
+	assert.match(source, /<FileTreeFile key=\{node\.id\} name=\{node\.label\} path=\{node\.id\} \/>/u);
 	assert.match(source, /SKILL\.md/u);
 	assert.match(source, /LICENSE\.txt/u);
 	assert.match(source, /references/u);
 	assert.match(source, /scripts/u);
-	assert.match(source, /contentOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"/u);
+	// The left category sidebar (browse view) keeps its own top scroll mask.
 	assert.match(sidebarSource, /import \{ useHasVerticalOverflow \} from "@\/components\/hooks\/use-has-vertical-overflow";/u);
 	assert.match(sidebarSource, /const sidebarOverflow = useHasVerticalOverflow<HTMLElement>\(\);/u);
 	assert.match(sidebarSource, /aria-label="Skill categories"[\s\S]*sidebarOverflow\.showTopScrollMask && "scroll-mask-top overscroll-contain"[\s\S]*ref=\{sidebarOverflow\.ref\}/u);

@@ -3898,6 +3898,10 @@ interface AgentCompactConfigToolbarBelowProps {
 	// Forwarded to the expanded summary so subagent chips can match the agent's
 	// custom brand color (derived from the avatar family).
 	avatarSrc?: string;
+	// When false, the footer is permanently expanded: the collapse/expand toggle
+	// is hidden (the separator stays) and the compact nav is never shown. Used by
+	// single-row surfaces like the skills-directory detail view.
+	collapsible?: boolean;
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
@@ -3919,6 +3923,7 @@ interface AgentCompactConfigToolbarBelowProps {
 function AgentCompactConfigToolbarBelow({
 	config,
 	avatarSrc,
+	collapsible = true,
 	hiddenConfigFields,
 	onAddListValues,
 	onAppendListItem,
@@ -3983,10 +3988,16 @@ function AgentCompactConfigToolbarBelow({
 	const expandButtonVisualX = useTransform(expandButtonX, (latest): number =>
 		latest + (Math.abs(latest) > 0.5 ? AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP : 0),
 	);
-	const isExpanded = expanded;
+	// Non-collapsible callers stay locked open; the toggle and its compact-nav
+	// branch never render, so `expanded` state is ignored entirely.
+	const isExpanded = collapsible ? expanded : true;
 	const transition = shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeOut" as const };
 
 	useEffect(() => {
+		if (!collapsible) {
+			return;
+		}
+
 		const handlePointerMove = (event: PointerEvent) => {
 			const row = expandButtonRowRef.current;
 
@@ -4022,31 +4033,33 @@ function AgentCompactConfigToolbarBelow({
 			window.removeEventListener("pointermove", handlePointerMove, true);
 			window.removeEventListener("pointerleave", handlePointerLeave);
 		};
-	}, [expandButtonX]);
+	}, [collapsible, expandButtonX]);
 
 	return (
 		<div className="flex flex-col">
 			<div className="relative flex h-6 items-center" ref={expandButtonRowRef}>
 				<div aria-hidden className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border" />
-				<motion.div
-					className="relative z-10 ml-auto bg-surface pl-2"
-					style={{ paddingRight: expandButtonPaddingRight, x: expandButtonVisualX }}
-				>
-					<Button
-						aria-label={isExpanded ? "Collapse configuration" : "Expand configuration"}
-						className="size-6 rounded border-border bg-surface-overlay px-0 text-icon-subtle hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"
-						onClick={() => setExpanded((prev) => !prev)}
-						size="icon-compact"
-						type="button"
-						variant="ghost"
+				{collapsible ? (
+					<motion.div
+						className="relative z-10 ml-auto bg-surface pl-2"
+						style={{ paddingRight: expandButtonPaddingRight, x: expandButtonVisualX }}
 					>
-						{isExpanded ? (
-							<ChevronDownIcon label="" size="small" />
-						) : (
-							<ChevronUpIcon label="" size="small" />
-						)}
-					</Button>
-				</motion.div>
+						<Button
+							aria-label={isExpanded ? "Collapse configuration" : "Expand configuration"}
+							className="size-6 rounded border-border bg-surface-overlay px-0 text-icon-subtle hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"
+							onClick={() => setExpanded((prev) => !prev)}
+							size="icon-compact"
+							type="button"
+							variant="ghost"
+						>
+							{isExpanded ? (
+								<ChevronDownIcon label="" size="small" />
+							) : (
+								<ChevronUpIcon label="" size="small" />
+							)}
+						</Button>
+					</motion.div>
+				) : null}
 			</div>
 			<AnimatePresence initial={false} mode="wait">
 				{isExpanded ? (
@@ -4136,6 +4149,9 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	avatarSrc?: string;
 	compactScrollAreaClassName?: string;
 	compactFooterBefore?: ReactNode;
+	// When false, the footer config panel is locked open (no collapse/expand
+	// toggle; the separator stays). Defaults to collapsible.
+	footerCollapsible?: boolean;
 	// Config rows callers can suppress — e.g. while editing a subagent, where
 	// triggers, subagents, and conversation starters can't be configured.
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
@@ -4181,6 +4197,7 @@ export const AgentConfigFields = memo(
 		avatarSrc,
 		compactFooterBefore,
 		compactScrollAreaClassName,
+		footerCollapsible,
 		hiddenConfigFields,
 		idPrefix,
 		onListItemChange,
@@ -4432,6 +4449,7 @@ export const AgentConfigFields = memo(
 						<AgentCompactConfigToolbarBelow
 							config={config}
 							avatarSrc={profileAvatarSrc ?? avatarSrc}
+							collapsible={footerCollapsible}
 							hiddenConfigFields={hiddenConfigFields}
 							onAddListValues={handleAddListValues}
 							onAppendListItem={handleAppendListItem}
