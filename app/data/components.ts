@@ -457,6 +457,7 @@ export const VISUAL_COMPONENTS: ComponentEntry[] = sortEntriesByName([
 	visualComponent("fluid", "Fluid", "@/components/website/demos/visual/shader-lab-effect-demo"),
 	visualComponent("halftone", "Halftone", "@/components/website/demos/visual/shader-lab-effect-demo"),
 	visualComponent("ink", "Ink", "@/components/website/demos/visual/shader-lab-effect-demo"),
+	visualComponent("ink-wash", "Ink Wash", "@/components/visual/ink-wash"),
 	visualComponent("magnify-lens", "Magnify Lens", "@/components/website/demos/visual/shader-lab-effect-demo"),
 	visualComponent("mesh-gradient", "Mesh Gradient", "@/components/website/demos/visual/shader-lab-effect-demo"),
 	visualComponent("particle-grid", "Particle Grid", "@/components/website/demos/visual/shader-lab-effect-demo"),
