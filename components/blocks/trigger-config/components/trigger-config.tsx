@@ -40,7 +40,6 @@ import {
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
 import {
-	renderAgentTriggerProviderIcon,
 	renderAgentTriggerProviderTileIcon,
 	TriggerConditionsPanel,
 	TriggerPicker,
@@ -49,7 +48,7 @@ import {
 	type AgentTriggerProviderId,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/page";
-import { createAgentAutomationRule, createAgentTriggerValue, getAgentAutomationRuleLabel, getAgentTriggerReadableLabel, getTriggerProvider, inferAutomationRules } from "@/components/blocks/triggers/data/trigger-catalog";
+import { createAgentAutomationRule, createAgentTriggerValue, getAgentAutomationRuleLabel, getAgentTriggerReadableLabel, inferAutomationRules } from "@/components/blocks/triggers/data/trigger-catalog";
 import { ManageTriggersDialog } from "@/components/blocks/triggers/components/manage-triggers-dialog";
 import { UNTITLED_SUBAGENT_NAME } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
@@ -2634,8 +2633,8 @@ interface AgentTriggerSummaryRowProps {
 	onEditTriggers?: (seed?: AgentAutomationRule) => void;
 	/**
 	 * The structured automation rules backing `items`. Required for inline
-	 * removal and provider icon previews because `items` is only the label
-	 * projection.
+	 * removal and for opening each rule in the editor because `items` is only
+	 * the label projection.
 	 */
 	automationRules?: readonly AgentAutomationRule[];
 	onAutomationRulesChange?: (automationRules: readonly AgentAutomationRule[]) => void;
@@ -2649,6 +2648,13 @@ interface AgentTriggerSummaryRowProps {
 	 */
 	triggerNavItem?: AgentCompactConfigNavItem;
 	onManageTriggers?: () => void;
+	/**
+	 * Collection-derived Tag color (from the base agent's avatar family, via
+	 * `getTagColorForAgentAvatar`). Drives the automation chips' Tag color and the
+	 * leading automation icon so a lime (dev-agents) agent shows lime automation
+	 * chips — mirroring the subagent chip treatment.
+	 */
+	tagColor?: TagColor;
 }
 
 /**
@@ -2671,6 +2677,7 @@ function AgentTriggerSummaryRow({
 	onAutomationRulesChange,
 	triggerNavItem,
 	onManageTriggers,
+	tagColor,
 }: Readonly<AgentTriggerSummaryRowProps>) {
 	const isEmpty = items.length === 0;
 
@@ -2718,34 +2725,32 @@ function AgentTriggerSummaryRow({
 					<div className="group/trigger-edit flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
 						{items.map((item, index) => {
 							const rule = rulesAlignItems ? automationRules?.[index] : undefined;
-							const firstTrigger = rule?.triggers[0];
-							const providerIcon = firstTrigger ? renderAgentTriggerProviderIcon(firstTrigger) : undefined;
-							// Product logos / brand images already render as a centered 16px
-							// mark; only the stroked `@atlaskit/icon` glyph kinds need the
-							// latest Tag standard's `IconTile` xxsmall/transparent wrap so the
-							// 12px glyph centers in the chip's leading slot instead of
-							// left-aligning with an oversized gap.
-							const providerIconKind = firstTrigger
-								? getTriggerProvider(firstTrigger.providerId)?.icon.kind
-								: undefined;
-							const elemBefore =
-								providerIcon && providerIconKind !== "atlassian-logo" && providerIconKind !== "image" ? (
-									<IconTile
-										aria-hidden
-										icon={<Icon aria-hidden render={providerIcon} />}
-										label=""
-										size="xxsmall"
-										variant="transparent"
-									/>
-								) : (
-									providerIcon ?? undefined
-								);
+							// Every automation chip leads with the same automation glyph,
+							// tinted by the agent's collection color — NOT the first
+							// trigger's provider mark. An automation can now own multiple
+							// triggers, so a single provider icon would misrepresent it;
+							// the collection-colored automation icon mirrors the subagent
+							// chip treatment (`AiAgentIcon` + `tagColor`). `text-inherit`
+							// lets the 12px glyph pick up the Tag's resolved color from the
+							// leading slot (e.g. lime), and the `IconTile`
+							// xxsmall/transparent wrap centers it like the latest Tag
+							// standard's other leading icons.
+							const automationIcon = (
+								<IconTile
+									aria-hidden
+									className="text-inherit"
+									icon={<Icon aria-hidden render={<AutomationIcon label="" size="small" />} />}
+									label=""
+									size="xxsmall"
+									variant="transparent"
+								/>
+							);
 							// Clicking any configured automation chip opens that rule's editor;
 							// event triggers remain nested inside the automation.
 							return (
 								<AgentReferenceChip
 									key={`trigger-${item}-${index}`}
-									elemBefore={elemBefore ?? undefined}
+									elemBefore={automationIcon}
 									label={item}
 									onClick={
 										onEditTriggers
@@ -2753,6 +2758,7 @@ function AgentTriggerSummaryRow({
 											: undefined
 									}
 									onRemove={canRemoveInline ? () => handleRemoveAutomation(index) : undefined}
+									tagColor={tagColor}
 								/>
 							);
 						})}
@@ -2929,6 +2935,7 @@ function AgentFilledConfigSummary({
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
 					automationRules={automationRules}
 					triggerNavItem={triggerNavItem}
+					tagColor={subagentTagColor}
 				/>
 			),
 		},
