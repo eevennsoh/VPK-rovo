@@ -9,6 +9,7 @@ import {
 } from "./skill-collections";
 import type { DirectoryVisual, SkillIconKey } from "./types";
 import { getSkillIcon } from "./visual";
+import { serializeSkillMd, type FrontmatterEntries } from "./skill-frontmatter";
 
 /**
  * `SkillIconKey` is the closed set of Atlaskit icon keys directory items can
@@ -141,6 +142,18 @@ export interface SkillsDirectorySkill {
 	verified?: boolean;
 	tools?: readonly SkillsDirectoryToolTag[];
 	instructions?: string;
+	/**
+	 * The full raw SKILL.md (YAML frontmatter `---` block + markdown body),
+	 * following the Anthropic Agent Skills standard. Source of truth for the skill
+	 * detail editor; when absent, {@link getSkillMarkdown} synthesizes one.
+	 */
+	skillMd?: string;
+	/** Authoring org shown in the detail "Created by {org} ✓" row (falls back to the publisher). */
+	createdBy?: string;
+	/** Who added the skill to this workspace — "You" for personal skills. */
+	addedBy?: string;
+	/** ISO-8601 last-updated timestamp, rendered as a medium date in the meta row. */
+	lastUpdatedAt?: string;
 	fileTreeItems?: readonly SkillsDirectoryFileTreeItem[];
 	favorite?: boolean;
 	/** Legacy aliases kept for existing Skills Directory callers. */
@@ -215,6 +228,42 @@ export function getSkillIconColor(skill: SkillsDirectorySkill): string | undefin
 
 export function getSkillIconTileVariant(skill: Pick<SkillsDirectorySkill, "collectionId" | "source">) {
 	return getSkillCollection(skill).iconTileVariant;
+}
+
+const SKILL_MEDIUM_DATE = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
+
+/** Slugify a display name into a SKILL.md-standard `name` identifier. */
+export function slugifySkillName(name: string): string {
+	return name
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/gu, "-")
+		.replace(/^-|-$/gu, "");
+}
+
+/**
+ * The full raw SKILL.md for a skill. Returns the authored {@link SkillsDirectorySkill.skillMd}
+ * when present; otherwise synthesizes a minimal standard-compliant file from the
+ * skill's name/description/instructions so every skill renders a frontmatter card.
+ */
+export function getSkillMarkdown(skill: SkillsDirectorySkill): string {
+	if (skill.skillMd) {
+		return skill.skillMd;
+	}
+	const frontmatter: FrontmatterEntries = [
+		{ key: "name", value: slugifySkillName(skill.name) },
+		{ key: "description", value: skill.description },
+	];
+	return serializeSkillMd(frontmatter, skill.instructions ?? `# ${skill.name}\n\n${skill.description}`);
+}
+
+/** Authoring org for the detail "Created by" row (falls back to the publisher). */
+export function getSkillCreatedBy(skill: SkillsDirectorySkill): string {
+	return skill.createdBy ?? getSkillPublisherName(skill);
+}
+
+/** Medium-formatted last-updated label, or "" when the skill has no timestamp. */
+export function getSkillLastUpdatedLabel(skill: SkillsDirectorySkill): string {
+	return skill.lastUpdatedAt ? SKILL_MEDIUM_DATE.format(new Date(skill.lastUpdatedAt)) : "";
 }
 
 /** Convenience lookup for sidebar references. */
