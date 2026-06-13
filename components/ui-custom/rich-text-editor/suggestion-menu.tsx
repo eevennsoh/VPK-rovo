@@ -991,11 +991,42 @@ const COMPOSER_POPUP_GAP = 8;
 const PROMPT_INPUT_ROOT_SELECTOR = "[data-prompt-input-root]";
 
 function getComposerAnchorBox(editorDom: HTMLElement): HTMLElement | null {
-	return (
+	const root =
 		editorDom.closest<HTMLElement>(PROMPT_INPUT_ROOT_SELECTOR) ??
 		editorDom.closest<HTMLElement>(".chat-composer-form") ??
-		editorDom.closest<HTMLElement>("form")
-	);
+		editorDom.closest<HTMLElement>("form");
+	return root ? resolveComposerVisualBox(root) : null;
+}
+
+/**
+ * The palette must clear the VISIBLE composer card, but `[data-prompt-input-root]`
+ * is the inner `<form>`, which paints the visible border only for the floating
+ * composer. The card composer (e.g. the Rovo "/rovo" + Studio panels) wraps that
+ * border-less form in a padded, bordered container, so measuring the 8px gap from
+ * the form drops the palette ~12px INSIDE the visible card instead of outside it.
+ * Walk up from the form and adopt the outermost ancestor (within a few levels)
+ * that still tightly wraps it (≈ same width — not the whole panel) and paints a
+ * visible edge (a border or corner radius). That bordered card is the box the
+ * user perceives as the input, so the gap clears its real top/bottom edge.
+ */
+function resolveComposerVisualBox(root: HTMLElement): HTMLElement {
+	const rootWidth = root.getBoundingClientRect().width;
+	let box = root;
+	let element: HTMLElement | null = root;
+	for (let depth = 0; depth < 3 && element; depth++) {
+		const styles = window.getComputedStyle(element);
+		const paintsEdge =
+			Number.parseFloat(styles.borderTopWidth) > 0 ||
+			Number.parseFloat(styles.borderTopLeftRadius) > 0;
+		// Guard against climbing into a much larger layout container (e.g. the chat
+		// panel): only adopt an ancestor that hugs the form's width.
+		const tightlyWraps = element.getBoundingClientRect().width <= rootWidth + 48;
+		if (paintsEdge && tightlyWraps) {
+			box = element;
+		}
+		element = element.parentElement;
+	}
+	return box;
 }
 
 function positionComposerPopup(
