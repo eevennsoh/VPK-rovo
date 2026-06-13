@@ -33,7 +33,7 @@ Host key verification failed.
 fatal: Could not read from remote repository.
 ```
 
-**So in Step 6, run `git fetch` and `git push` unsandboxed from the first attempt** (Claude Code: `dangerouslyDisableSandbox: true`) — don't waste a failed sandboxed attempt first. Keep everything else sandboxed: `git add`, `git commit`, `git status`, `git update-index`, and `git merge-base` all work fine inside the sandbox and touch no SSH/network. Only the two ops that hit the remote need the bypass.
+**So in Step 6, run `git fetch` and `git push` unsandboxed from the first attempt** (Claude Code: `dangerouslyDisableSandbox: true`) — don't waste a failed sandboxed attempt first. The local-main sync commands in Step 6 (`git fetch origin main:main` and `git -C <path> merge --ff-only origin/main`) **also run unsandboxed** — the first is a remote SSH op, and the second writes another checkout's working tree outside this worktree's cwd (the sandbox denies both). Keep everything else sandboxed: `git add`, `git commit`, `git status`, `git update-index`, and `git merge-base` all work fine inside the sandbox and touch no SSH/network.
 
 Two other benign sandbox artifacts you'll see and should ignore: `.env.local.example: Operation not permitted` in `git status` (the sandbox denies reading `.env*`; it is *not* a real change — confirm it never stages), and `git update-index --refresh` exiting non-zero with "needs update" (a harmless stat refresh).
 
@@ -78,7 +78,15 @@ git -c color.ui=never diff HEAD
 6. **Fast-forward-safe push to `main`.** Force-push is forbidden, so confirm the push is a fast-forward of remote `main`. **Run the `git fetch`/`git push` commands here unsandboxed by default** (see "Sandbox" above — SSH remote ops fail sandboxed); `git merge-base` stays sandboxed.
    - `git fetch origin main` (unsandboxed)
    - `git merge-base --is-ancestor origin/main HEAD` (exit 0 = `origin/main` is an ancestor of your commit → the push will fast-forward).
-     - **Exit 0 → push (unsandboxed):** `git push origin HEAD:main`. If you are on `main`, that also advances local `main`. If you are on a feature branch, also bring local `main` along when it is safe: `git fetch origin main:main` (fails harmlessly if `main` is checked out elsewhere — ignore and report).
+     - **Exit 0 → push (unsandboxed):** `git push origin HEAD:main`. Then **sync local `main` automatically** so the local branch isn't left behind. The push already succeeded — local-main sync is best-effort cleanup, so if any step below fails, **report it and stop syncing; never undo or re-do the push, and never force.**
+       - **If you are on `main` in this checkout:** the push already advanced local `main`. Done.
+       - **If you are on a feature branch or in a worktree:** the earlier `git fetch origin main` already updated the `origin/main` remote-tracking ref (refs are shared across all worktrees of the repo). Fast-forward local `main` from it. **Both sync commands below must run unsandboxed** (`dangerouslyDisableSandbox: true`): `git fetch origin main:main` is a remote SSH op (fails sandboxed on `~/.ssh/known_hosts`), and `git -C <path> merge` writes another checkout's working tree *outside* this worktree (the sandbox denies writes outside cwd).
+         - First try `git fetch origin main:main` (unsandboxed) — updates local `main` directly, works when `main` is not checked out anywhere.
+         - If it refuses with `refusing to fetch into branch 'refs/heads/main' checked out at '<path>'`, then `main` is checked out in another worktree (the common case — e.g. you are shipping from `.claude/worktrees/...`). Take the `<path>` from that error message (or from `git worktree list`) and fast-forward it in place: `git -C <path> merge --ff-only origin/main` (unsandboxed).
+         - **`--ff-only` may legitimately refuse** — do not work around it, just report and move on:
+           - *"Not possible to fast-forward" / diverged* → local `main` has its own commits not on `origin/main`. The push is fine; report "local main has diverged from origin/main — reconcile it manually (`git -C <path> merge origin/main` or rebase), the push already landed."
+           - *"local changes would be overwritten" / dirty tree* → the main checkout has uncommitted edits blocking the FF. Report "local main has uncommitted changes blocking fast-forward — sync it manually once clean; the push already landed." Do not stash or discard those changes.
+         - On success, report which path updated local `main`, and to what commit.
      - **Non-zero → STOP, do not force.** `origin/main` has commits you don't have; a direct push would be rejected and force-pushing is blocked by protection. Report: "origin/main has advanced — integrate first (`git merge origin/main` or rebase onto it, resolve conflicts), then re-run `/vpk-git-ship-fast`." Leave the local commit in place.
 
 7. **Report concisely:**
@@ -87,6 +95,7 @@ git -c color.ui=never diff HEAD
    - Files committed; any secret/out-of-scope paths skipped.
    - Commit hash + subject.
    - Push result: pushed to `origin/main` (fast-forward), or stopped because `origin/main` diverged.
+   - Local `main` sync: how it was updated (push advanced it directly / `fetch origin main:main` / fast-forwarded in worktree `<path>`) and the resulting commit — or, if it could not be fast-forwarded (diverged / dirty tree), say so plainly and note the push still landed.
    - One line: "CI `PR checks` runs on `main` post-push; it does not gate this push and may report status afterward."
 
 ## Stop rules
