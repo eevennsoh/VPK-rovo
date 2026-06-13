@@ -55,6 +55,7 @@ function unquoteScalar(raw: string): string {
 
 function scalarNeedsQuotes(value: string): boolean {
 	return (
+		value.includes("\n") ||
 		value.includes(": ") ||
 		value.includes(":\t") ||
 		value.endsWith(":") ||
@@ -143,13 +144,12 @@ export function serializeFrontmatterYaml(entries: FrontmatterEntries): string {
 			}
 
 			const value = String(entry.value);
-			if (value.includes("\n")) {
-				// Raw nested block preserved verbatim.
-				return `${entry.key}:\n${value}`;
-			}
 			if (value === "") {
 				return `${entry.key}:`;
 			}
+			// Multi-line values (e.g. a multi-line description, or a parsed nested
+			// block) are JSON-quoted onto one line by quoteScalar so they survive the
+			// parse round-trip instead of being silently dropped as an unindented block.
 			return `${entry.key}: ${quoteScalar(value)}`;
 		})
 		.join("\n");

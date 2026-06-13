@@ -15,23 +15,25 @@ import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import DownloadIcon from "@atlaskit/icon/core/download";
-import GlobeIcon from "@atlaskit/icon/core/globe";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
-import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
 
 import type { AgentBrowserAgent } from "@/components/blocks/agent-browser";
 import {
 	Agent,
 	AgentConfigFields,
 	AgentContent,
-	type AgentConfigFormValue,
-	type AgentConfigTextFieldName,
 } from "@/components/blocks/skill-config";
 import { FileTree, FileTreeFile, FileTreeFolder } from "@/components/ui-custom/file-tree";
+import {
+	SkillProfileCover,
+	SkillProfileMeta,
+	useSkillMdDraft,
+	type SkillMdDraft,
+} from "./skill-md-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -62,8 +64,6 @@ import {
 	frontmatterValueToString,
 	getFrontmatterField,
 	parseSkillMd,
-	serializeSkillMd,
-	setFrontmatterField,
 } from "@/app/data/directory/skill-frontmatter";
 import { SkillsDirectorySidebar } from "./skills-directory-sidebar";
 import {
@@ -71,10 +71,8 @@ import {
 	getSkillCategoryId,
 	getSkillCollection,
 	getSkillCollectionId,
-	getSkillCreatedBy,
 	getSkillIcon,
 	getSkillIconTileVariant,
-	getSkillLastUpdatedLabel,
 	getSkillMarkdown,
 	getSkillPublisherAvatarSrc,
 	getSkillPublisherLogoName,
@@ -882,43 +880,64 @@ function SkillDetailView({ skill, onExit }: Readonly<{ skill: SkillsDirectorySki
 }
 
 const SKILL_DRAFT_KEY_PREFIX = "vpk:skill-draft:";
+const SKILL_DRAFT_VERSION = 1;
 const SKILL_NAME_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 
-/** The persisted shape of an in-progress skill edit. */
-interface SkillDraft {
-	skillMd: string;
-	displayName: string;
-	displayDescription: string;
+interface StoredSkillDraft extends SkillMdDraft {
+	version: number;
 }
 
-function loadSkillDraft(skillId: string): SkillDraft | null {
+/** Load a saved draft, discarding anything from an older/unknown schema. */
+function loadSkillDraft(skillId: string): SkillMdDraft | null {
 	if (typeof window === "undefined") {
 		return null;
 	}
 	try {
 		const raw = window.localStorage.getItem(`${SKILL_DRAFT_KEY_PREFIX}${skillId}`);
-		return raw ? (JSON.parse(raw) as SkillDraft) : null;
+		if (!raw) {
+			return null;
+		}
+		const parsed = JSON.parse(raw) as Partial<StoredSkillDraft>;
+		if (parsed.version !== SKILL_DRAFT_VERSION || typeof parsed.skillMd !== "string") {
+			return null;
+		}
+		return { skillMd: parsed.skillMd, descriptionOverride: parsed.descriptionOverride ?? null };
 	} catch {
 		return null;
 	}
 }
 
-function saveSkillDraft(skillId: string, draft: SkillDraft): void {
+function saveSkillDraft(skillId: string, draft: SkillMdDraft): void {
 	if (typeof window === "undefined") {
 		return;
 	}
 	try {
-		window.localStorage.setItem(`${SKILL_DRAFT_KEY_PREFIX}${skillId}`, JSON.stringify(draft));
+		const stored: StoredSkillDraft = { version: SKILL_DRAFT_VERSION, ...draft };
+		window.localStorage.setItem(`${SKILL_DRAFT_KEY_PREFIX}${skillId}`, JSON.stringify(stored));
 	} catch {
 		// Best-effort persistence (quota / privacy mode) — a failed write just means
 		// the edit isn't restored on reopen, which is acceptable for the prototype.
 	}
 }
 
-/** The canonical frontmatter description parsed out of a SKILL.md string. */
-function readFrontmatterDescription(skillMd: string): string {
+/**
+ * Required-field validation (per the agentskills spec): a valid SKILL.md needs a
+ * slug `name` and a non-empty `description` in its frontmatter. Returns "" when valid.
+ */
+function validateSkillMd(skillMd: string): string {
 	const { frontmatter } = parseSkillMd(skillMd);
-	return frontmatterValueToString(getFrontmatterField(frontmatter, "description"));
+	const name = frontmatterValueToString(getFrontmatterField(frontmatter, "name")).trim();
+	const description = frontmatterValueToString(getFrontmatterField(frontmatter, "description")).trim();
+	if (!name) {
+		return "Add a name to the frontmatter before saving.";
+	}
+	if (!SKILL_NAME_SLUG_RE.test(name)) {
+		return "The frontmatter name must be a lowercase slug (e.g. design-landing-page).";
+	}
+	if (!description) {
+		return "Add a description to the frontmatter before saving.";
+	}
+	return "";
 }
 
 /**
@@ -926,89 +945,28 @@ function readFrontmatterDescription(skillMd: string): string {
  * the in-editor frontmatter card) plus the outside name + human-friendly
  * description, committed via the Save/Cancel footer (localStorage-backed).
  *
- * Single source of truth = the draft. The editor content is the full SKILL.md;
- * the outside name re-slugs the frontmatter `name`; the outside description is a
- * display-only override (it does NOT change the canonical frontmatter
- * description, which is edited inside the card).
+ * State lives in the shared {@link useSkillMdDraft} hook (single source = the full
+ * SKILL.md); this component layers persistence, validation, and the commit flow.
  */
 function SkillDetailConfig({ skill, onExit }: Readonly<{ skill: SkillsDirectorySkill; onExit: () => void }>) {
-	const initialDraft = useMemo<SkillDraft>(() => {
-		const saved = loadSkillDraft(skill.id);
-		if (saved) {
-			return saved;
-		}
-		const skillMd = getSkillMarkdown(skill);
-		return { skillMd, displayName: skill.name, displayDescription: readFrontmatterDescription(skillMd) };
-	}, [skill]);
-
-	const [skillMd, setSkillMd] = useState(initialDraft.skillMd);
-	const [displayName, setDisplayName] = useState(initialDraft.displayName);
-	const [displayDescription, setDisplayDescription] = useState(initialDraft.displayDescription);
-	const [committedDraft, setCommittedDraft] = useState<SkillDraft>(initialDraft);
-
-	const config = useMemo<AgentConfigFormValue>(
-		() => ({
-			name: displayName,
-			description: displayDescription,
-			summary: displayDescription,
-			instructions: skillMd,
-			agentId: skill.id,
-			action: "draft",
-		}),
-		[displayName, displayDescription, skillMd, skill.id],
+	const initialDraft = useMemo<SkillMdDraft>(
+		() => loadSkillDraft(skill.id) ?? { skillMd: getSkillMarkdown(skill), descriptionOverride: null },
+		[skill],
 	);
+	const { config, draft, handleTextChange, getDraft } = useSkillMdDraft(skill, initialDraft);
 
 	const dirty =
-		skillMd !== committedDraft.skillMd ||
-		displayName !== committedDraft.displayName ||
-		displayDescription !== committedDraft.displayDescription;
-
-	// Required-field validation (per the agentskills spec): a valid SKILL.md needs
-	// a slug `name` and a non-empty `description` in its frontmatter.
-	const validationError = useMemo(() => {
-		const { frontmatter } = parseSkillMd(skillMd);
-		const name = frontmatterValueToString(getFrontmatterField(frontmatter, "name")).trim();
-		const description = frontmatterValueToString(getFrontmatterField(frontmatter, "description")).trim();
-		if (!name) {
-			return "Add a name to the frontmatter before saving.";
-		}
-		if (!SKILL_NAME_SLUG_RE.test(name)) {
-			return "The frontmatter name must be a lowercase slug (e.g. design-landing-page).";
-		}
-		if (!description) {
-			return "Add a description to the frontmatter before saving.";
-		}
-		return "";
-	}, [skillMd]);
-
-	function handleTextChange(field: AgentConfigTextFieldName, value: string) {
-		if (field === "name") {
-			// The outside name field drives the frontmatter slug (name ↔ SKILL.md).
-			setDisplayName(value);
-			setSkillMd((current) => {
-				const { frontmatter, body } = parseSkillMd(current);
-				return serializeSkillMd(setFrontmatterField(frontmatter, "name", slugifySkillName(value)), body);
-			});
-			return;
-		}
-		if (field === "description") {
-			// Display-only override; the canonical frontmatter description is edited
-			// inside the card (and flows through "instructions" below).
-			setDisplayDescription(value);
-			return;
-		}
-		if (field === "instructions") {
-			setSkillMd(value);
-		}
-	}
+		draft.skillMd !== initialDraft.skillMd || draft.descriptionOverride !== initialDraft.descriptionOverride;
+	const validationError = useMemo(() => validateSkillMd(draft.skillMd), [draft.skillMd]);
 
 	function handleSave() {
-		if (validationError) {
+		// Read the freshest draft from the hook's ref so a value committed on blur by
+		// the same click that triggers Save isn't missed by a not-yet-flushed update.
+		const current = getDraft();
+		if (validateSkillMd(current.skillMd)) {
 			return;
 		}
-		const draft: SkillDraft = { skillMd, displayName, displayDescription };
-		saveSkillDraft(skill.id, draft);
-		setCommittedDraft(draft);
+		saveSkillDraft(skill.id, current);
 		onExit();
 	}
 
@@ -1019,46 +977,6 @@ function SkillDetailConfig({ skill, onExit }: Readonly<{ skill: SkillsDirectoryS
 		onExit();
 	}
 
-	const profileCover = (
-		<div className="relative w-fit overflow-hidden rounded-t-xl bg-surface text-text">
-			<IconTile
-				aria-hidden
-				icon={<GlobeIcon label="" />}
-				label={skill.name}
-				size="xlarge"
-				variant={getSkillIconTileVariant(skill)}
-			/>
-		</div>
-	);
-
-	const lastUpdatedLabel = getSkillLastUpdatedLabel(skill);
-	const profileMetaSlot = (
-		<div className="flex flex-wrap gap-x-8 gap-y-2 pt-1">
-			<div className="flex flex-col">
-				<span className="flex items-center gap-1 text-sm font-semibold leading-5 text-text">
-					{getSkillCreatedBy(skill)}
-					{skill.verified ? (
-						<Icon
-							className="text-icon-information"
-							render={<StatusVerifiedIcon label="Verified" size="small" color="currentColor" />}
-						/>
-					) : null}
-				</span>
-				<span className="text-xs leading-4 text-text-subtlest">Created by</span>
-			</div>
-			<div className="flex flex-col">
-				<span className="text-sm font-semibold leading-5 text-text">{skill.addedBy ?? "You"}</span>
-				<span className="text-xs leading-4 text-text-subtlest">Added by</span>
-			</div>
-			{lastUpdatedLabel ? (
-				<div className="flex flex-col">
-					<span className="text-sm font-semibold leading-5 text-text">{lastUpdatedLabel}</span>
-					<span className="text-xs leading-4 text-text-subtlest">Last update</span>
-				</div>
-			) : null}
-		</div>
-	);
-
 	return (
 		<div className="flex min-h-0 min-w-0 flex-col overflow-hidden md:pl-4">
 			<Agent className="flex min-h-0 flex-1 flex-col bg-transparent">
@@ -1066,8 +984,8 @@ function SkillDetailConfig({ skill, onExit }: Readonly<{ skill: SkillsDirectoryS
 					<AgentConfigFields
 						config={config}
 						idPrefix={`skill-detail-${skill.id}`}
-						profileCover={profileCover}
-						profileMetaSlot={profileMetaSlot}
+						profileCover={<SkillProfileCover skill={skill} />}
+						profileMetaSlot={<SkillProfileMeta skill={skill} />}
 						showConfigToolbar={false}
 						frontmatter={{ enabled: true }}
 						onTextChange={handleTextChange}

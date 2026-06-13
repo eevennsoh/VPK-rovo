@@ -157,16 +157,22 @@ test("Skills Directory renders the skill detail view with the config screen and 
 	assert.match(source, /<AgentConfigFields/u);
 	assert.match(source, /frontmatter=\{\{ enabled: true \}\}/u);
 	assert.match(source, /showConfigToolbar=\{false\}/u);
-	// Globe cover + Created/Added/Last-update meta row, and a Save/Cancel footer.
-	assert.match(source, /profileCover=\{/u);
-	assert.match(source, /profileMetaSlot=\{/u);
-	assert.match(source, /getSkillCreatedBy\(skill\)/u);
-	assert.match(source, /getSkillLastUpdatedLabel\(skill\)/u);
+	// Globe cover + Created/Added/Last-update meta row via the shared slot components,
+	// and a Save/Cancel footer; draft state lives in the shared useSkillMdDraft hook.
+	assert.match(source, /profileCover=\{<SkillProfileCover skill=\{skill\} \/>\}/u);
+	assert.match(source, /profileMetaSlot=\{<SkillProfileMeta skill=\{skill\} \/>\}/u);
+	assert.match(source, /useSkillMdDraft\(skill, initialDraft\)/u);
 	assert.match(source, /function handleSave\(\)/u);
 	assert.match(source, /function handleCancel\(\)/u);
-	assert.match(source, /saveSkillDraft\(skill\.id, draft\)/u);
+	assert.match(source, /saveSkillDraft\(skill\.id, current\)/u);
 	// The editor is seeded with the full SKILL.md (frontmatter + body).
 	assert.match(source, /getSkillMarkdown\(skill\)/u);
+	// The shared cover + meta row + draft hook live in skill-md-editor.
+	const editorSource = readProjectFile("components/blocks/skills-directory/components/skill-md-editor.tsx");
+	assert.match(editorSource, /export function useSkillMdDraft/u);
+	assert.match(editorSource, /export function SkillProfileCover/u);
+	assert.match(editorSource, /getSkillCreatedBy\(skill\)/u);
+	assert.match(editorSource, /getSkillLastUpdatedLabel\(skill\)/u);
 	// The read-only summary/tools column was replaced by the config screen.
 	assert.doesNotMatch(source, /function SkillDetailSummary/u);
 	assert.doesNotMatch(source, /function SkillToolsSection/u);

@@ -296,11 +296,14 @@ export function createRichTextEditorExtensions(
 	options: RichTextEditorExtensionOptions = {},
 ) {
 	return [
-		...(options.frontmatter?.enabled ? [FrontmatterNode] : []),
 		StarterKit.configure({
 			link: false,
 			underline: false,
 		}),
+		// Registered AFTER StarterKit so `paragraph` stays the default block type for
+		// the doc's `block+` content (an empty/cleared doc fills with a paragraph,
+		// not this atom). Opt-in: only present for the skill editor.
+		...(options.frontmatter?.enabled ? [FrontmatterNode] : []),
 		Underline,
 		Link.configure({
 			openOnClick: false,

@@ -90,9 +90,23 @@ test("value coercion helpers", () => {
 	assert.deepEqual(frontmatterValueToList(""), []);
 });
 
-test("graceful passthrough: unknown nested block round-trips verbatim", () => {
+test("multi-line scalar (e.g. a wrapped description) survives the round-trip", () => {
+	const entries = [
+		{ key: "name", value: "note-taker" },
+		{ key: "description", value: "Summarize the thread.\nList owners and dates." },
+	];
+	const yaml = serializeFrontmatterYaml(entries);
+	// Multi-line value is JSON-quoted onto one line (not emitted as an unindented
+	// block that the parser would drop).
+	assert.match(yaml, /description: "Summarize the thread\.\\nList owners and dates\."/u);
+	assert.deepEqual(parseFrontmatterYaml(yaml), entries);
+});
+
+test("graceful passthrough: an unknown nested block preserves its value through the round-trip", () => {
 	const yaml = ["name: x", "metadata:", "  version: 1.2.0", "  author: maia"].join("\n");
 	const entries = parseFrontmatterYaml(yaml);
 	assert.equal(getFrontmatterField(entries, "name"), "x");
-	assert.equal(serializeFrontmatterYaml(entries), yaml);
+	// The nested block is captured as a multi-line scalar; re-parsing the
+	// serialized form yields the same entries (value-preserving, not byte-verbatim).
+	assert.deepEqual(parseFrontmatterYaml(serializeFrontmatterYaml(entries)), entries);
 });
