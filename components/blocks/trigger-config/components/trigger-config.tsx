@@ -46,9 +46,10 @@ import {
 	TriggerPicker,
 	TriggerProviderSearchList,
 	type AgentAutomationRule,
+	type AgentTriggerProviderId,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/page";
-import { createAgentAutomationRule, createAgentTriggerValue, getAgentAutomationRuleLabel, getTriggerProvider, inferAutomationRules } from "@/components/blocks/triggers/data/trigger-catalog";
+import { createAgentAutomationRule, createAgentTriggerValue, getAgentAutomationRuleLabel, getAgentTriggerReadableLabel, getTriggerProvider, inferAutomationRules } from "@/components/blocks/triggers/data/trigger-catalog";
 import { ManageTriggersDialog } from "@/components/blocks/triggers/components/manage-triggers-dialog";
 import { UNTITLED_SUBAGENT_NAME } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
@@ -3599,38 +3600,112 @@ function AgentMemoryRow({
 //   (components/blocks/triggers/page.tsx) so the rows, param dropdowns
 //   ("Comment added in [Any project] by [Anyone]"), and the "+ Add Trigger"
 //   footer match the trigger component exactly.
-// Triggers are flattened from the config's automation rules. Add/remove/param
-// handlers are not yet wired, so they fall back to no-ops.
+//
+// Triggers live on the config's FIRST automation rule. Add/remove/param edits
+// rewrite that rule's `triggers` and emit the full rules array via
+// `onAutomationRulesChange`, mirroring the proven logic in
+// `TriggerAutomationDialog`. The first rule is created on demand when the user
+// adds the first trigger to an empty config.
 function TriggerConfigAddBlock({
 	className,
 	config,
+	onAutomationRulesChange,
+	onConnectTrigger,
 }: Readonly<{
 	className?: string;
 	config: AgentConfigFormValue;
+	onAutomationRulesChange?: (automationRules: readonly AgentAutomationRule[]) => void;
+	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 }>): ReactElement {
-	const triggers = getAgentAutomationRules(config).flatMap((rule) => rule.triggers);
+	const automationRules = getAgentAutomationRules(config);
+	const primaryRule = automationRules[0];
+	const triggers = useMemo<readonly AgentTriggerValue[]>(
+		() => primaryRule?.triggers ?? [],
+		[primaryRule],
+	);
+
+	// Rewrite the first rule's triggers (creating the rule if absent) and emit the
+	// updated rules list. A `null` next value removes the (now-empty) rule.
+	const updatePrimaryTriggers = useCallback(
+		(nextTriggers: readonly AgentTriggerValue[]) => {
+			if (!onAutomationRulesChange) {
+				return;
+			}
+			if (primaryRule) {
+				onAutomationRulesChange(
+					automationRules.map((rule, index) =>
+						index === 0 ? { ...rule, triggers: nextTriggers } : rule,
+					),
+				);
+				return;
+			}
+			onAutomationRulesChange([
+				createAgentAutomationRule({
+					id: "automation-1",
+					name: "",
+					prompt: config.instructions ?? "",
+					triggers: nextTriggers,
+				}),
+				...automationRules,
+			]);
+		},
+		[automationRules, config.instructions, onAutomationRulesChange, primaryRule],
+	);
+
+	const handleAddTrigger = useCallback(
+		(providerId: AgentTriggerProviderId, eventId: string) => {
+			const nextTrigger = createAgentTriggerValue(providerId, eventId, triggers.length + 1);
+			if (nextTrigger) {
+				updatePrimaryTriggers([...triggers, nextTrigger]);
+			}
+		},
+		[triggers, updatePrimaryTriggers],
+	);
+
+	const handleParamChange = useCallback(
+		(triggerId: string, paramId: string, value: string) => {
+			updatePrimaryTriggers(
+				triggers.map((trigger) => {
+					if (trigger.id !== triggerId) {
+						return trigger;
+					}
+					const nextTrigger = {
+						...trigger,
+						params: { ...(trigger.params ?? {}), [paramId]: value },
+					};
+					return { ...nextTrigger, label: getAgentTriggerReadableLabel(nextTrigger) };
+				}),
+			);
+		},
+		[triggers, updatePrimaryTriggers],
+	);
+
+	const handleRemoveTrigger = useCallback(
+		(triggerId: string) => {
+			updatePrimaryTriggers(triggers.filter((trigger) => trigger.id !== triggerId));
+		},
+		[triggers, updatePrimaryTriggers],
+	);
+
 	if (triggers.length === 0) {
 		return (
 			<div className={cn("rounded-xl border border-border bg-bg-input p-2", className)}>
-				<TriggerPicker label="Add Trigger" onSelectEvent={NOOP_ADD_TRIGGER} />
+				<TriggerPicker label="Add Trigger" onSelectEvent={handleAddTrigger} />
 			</div>
 		);
 	}
 	return (
 		<div className={className}>
 			<TriggerConditionsPanel
-				onAddTrigger={NOOP_ADD_TRIGGER}
-				onParamChange={NOOP_PARAM_CHANGE}
-				onRemoveTrigger={NOOP_REMOVE_TRIGGER}
+				onAddTrigger={handleAddTrigger}
+				onConnectTrigger={onConnectTrigger}
+				onParamChange={handleParamChange}
+				onRemoveTrigger={handleRemoveTrigger}
 				triggers={triggers}
 			/>
 		</div>
 	);
 }
-
-const NOOP_ADD_TRIGGER = (): void => {};
-const NOOP_PARAM_CHANGE = (): void => {};
-const NOOP_REMOVE_TRIGGER = (): void => {};
 
 function AgentInstructionsComposer({
 	className,
@@ -3640,6 +3715,8 @@ function AgentInstructionsComposer({
 	instructions,
 	mentionRemovalRequest,
 	onAddListValues,
+	onAutomationRulesChange,
+	onConnectTrigger,
 	onMentionRemovalRequestHandled,
 	onInstructionsChange,
 	onOpenDirectory,
@@ -3655,6 +3732,8 @@ function AgentInstructionsComposer({
 	instructions?: string;
 	mentionRemovalRequest?: RichTextMentionRemovalRequest | null;
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
+	onAutomationRulesChange?: (automationRules: readonly AgentAutomationRule[]) => void;
+	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 	onMentionRemovalRequestHandled?: (key: string) => void;
 	onInstructionsChange?: (value: string) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
@@ -3797,8 +3876,13 @@ function AgentInstructionsComposer({
 			{/* Add-trigger block — reuses the shared `TriggerConditionsPanel`
 			    (components/blocks/triggers/page.tsx). Variations (no trigger /
 			    single trigger / multiple triggers) are driven by the config's
-			    triggers. Add/remove/param handlers are not yet wired. */}
-			<TriggerConfigAddBlock className="mb-2" config={config} />
+			    triggers; add/remove/param edits flow through onAutomationRulesChange. */}
+			<TriggerConfigAddBlock
+				className="mb-2"
+				config={config}
+				onAutomationRulesChange={onAutomationRulesChange}
+				onConnectTrigger={onConnectTrigger}
+			/>
 			<RichTextEditor
 				aria-label="Agent instructions"
 				className="space-y-2"
@@ -3995,6 +4079,7 @@ export const AgentConfigFields = memo(
 		compactScrollAreaClassName,
 		idPrefix,
 		onAddListValues,
+		onConnectTrigger,
 		onInstructionsViewModeChange,
 		onOpenDirectory,
 		onProfileTextChange,
@@ -4024,8 +4109,6 @@ export const AgentConfigFields = memo(
 		onListItemChange: _onListItemChange,
 		/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 		onAppendListItem: _onAppendListItem,
-		/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-		onConnectTrigger: _onConnectTrigger,
 		/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 		onManageTriggers: _onManageTriggers,
 		/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
@@ -4211,6 +4294,8 @@ export const AgentConfigFields = memo(
 							instructions={config.instructions}
 							mentionRemovalRequest={mentionRemovalRequest}
 							onAddListValues={handleAddListValues}
+							onAutomationRulesChange={onAutomationRulesChange}
+							onConnectTrigger={onConnectTrigger}
 							onInstructionsChange={(value) => handleTextChange("instructions", value)}
 							onMentionRemovalRequestHandled={handleMentionRemovalRequestHandled}
 							onOpenDirectory={handleOpenDirectory}

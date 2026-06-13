@@ -7,7 +7,7 @@
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { motion, type Variants } from "motion/react";
 import Image from "next/image";
@@ -72,6 +72,16 @@ import {
 } from "@/components/blocks/triggers/data/trigger-catalog";
 import { getTriggerByline } from "@/app/data/directory/trigger-bylines";
 import { cn } from "@/lib/utils";
+// The new trigger-config surface lives in `trigger-config.tsx`, which already
+// imports values from THIS module. Importing `AgentConfigFields` eagerly would
+// form a runtime import cycle, so it is loaded lazily (the type import below is
+// erased at build time and is cycle-safe).
+import type { AgentConfigFormValue } from "@/components/blocks/trigger-config/components/trigger-config";
+const AgentConfigFields = lazy(() =>
+	import("@/components/blocks/trigger-config/components/trigger-config").then((module) => ({
+		default: module.AgentConfigFields,
+	})),
+);
 
 export type {
 	AgentTriggerConnectionState,
@@ -1088,6 +1098,167 @@ export function TriggerAutomationDialog({
 	);
 }
 
+// Automation modal variant that hosts the new trigger-config surface
+// (`AgentConfigFields`) in its body instead of the inline flow-preview +
+// conditions panel + tiptap. Same header/footer chrome and the same rule-based
+// `onSave` contract as `TriggerAutomationDialog`, so it is a drop-in for the
+// `Triggers` component without changing the shared dialog used elsewhere.
+//
+// Bridge: the dialog owns a draft `AgentConfigFormValue` whose
+// `automationRules`/`instructions` mirror the editing rule. `AgentConfigFields`
+// reads triggers via `getAgentAutomationRules` (which prefers
+// `config.automationRules`) and emits edits through `onAutomationRulesChange`
+// (triggers) and `onTextChange("instructions", …)` (shared prompt).
+export function TriggerConfigAutomationDialog({
+	automationRule,
+	onConnectTrigger,
+	onOpenChange,
+	onSave,
+	open,
+	saveLabel = "Save",
+	title = "New Automation",
+}: Readonly<TriggerAutomationDialogProps>): ReactElement {
+	const seedRef = useRef<AgentAutomationRule>(automationRule);
+	seedRef.current = automationRule;
+	const wasOpen = useRef(open);
+	const connectTimerRef = useRef<number | null>(null);
+	const [draftRule, setDraftRule] = useState<AgentAutomationRule>(automationRule);
+	const [automationName, setAutomationName] = useState(() => getAutomationName(automationRule));
+	const [active, setActive] = useState(() => isAutomationRuleEnabled(automationRule));
+
+	useEffect(() => {
+		if (open && !wasOpen.current) {
+			const nextSeed = seedRef.current;
+			setDraftRule(nextSeed);
+			setAutomationName(getAutomationName(nextSeed));
+			setActive(isAutomationRuleEnabled(nextSeed));
+		}
+		wasOpen.current = open;
+	}, [open]);
+
+	// oxlint-disable-next-line react-doctor/exhaustive-deps -- Unmount-only cleanup for the fake provider connection timer.
+	useEffect(() => {
+		return () => {
+			if (connectTimerRef.current !== null) {
+				window.clearTimeout(connectTimerRef.current);
+			}
+		};
+	}, []);
+
+	const config = useMemo<AgentConfigFormValue>(
+		() => ({
+			automationRules: [draftRule],
+			instructions: getAutomationPrompt(draftRule),
+		}),
+		[draftRule],
+	);
+
+	const handleAutomationRulesChange = useCallback(
+		(nextRules: readonly AgentAutomationRule[]) => {
+			const nextRule = nextRules[0];
+			if (nextRule) {
+				setDraftRule(nextRule);
+			}
+		},
+		[],
+	);
+
+	const handleConfigTextChange = useCallback(
+		(field: string, value: string) => {
+			if (field === "instructions") {
+				setDraftRule((current) => ({ ...current, prompt: value }));
+			}
+		},
+		[],
+	);
+
+	// Fake provider connection: flip every trigger sharing the provider to
+	// "connecting", then "connected" after a short spin. Mirrors the transition
+	// `TriggerAutomationDialog` owned, but on the draft rule's triggers.
+	const handleConnect = useCallback(
+		(trigger: AgentTriggerValue) => {
+			onConnectTrigger?.(trigger);
+			const { providerId } = trigger;
+			const markProviderTriggers = (state: "connecting" | "connected") => {
+				setDraftRule((current) => ({
+					...current,
+					triggers: current.triggers.map((draftTrigger) =>
+						draftTrigger.providerId === providerId
+							? { ...draftTrigger, connectionState: state }
+							: draftTrigger,
+					),
+				}));
+			};
+
+			markProviderTriggers("connecting");
+			if (connectTimerRef.current !== null) {
+				window.clearTimeout(connectTimerRef.current);
+			}
+			connectTimerRef.current = window.setTimeout(() => {
+				markProviderTriggers("connected");
+				connectTimerRef.current = null;
+			}, 1200);
+		},
+		[onConnectTrigger],
+	);
+
+	const handleSave = useCallback(() => {
+		onSave(createAgentAutomationRule({
+			...draftRule,
+			name: automationName.trim(),
+			enabled: active,
+		}));
+		onOpenChange(false);
+	}, [active, automationName, draftRule, onOpenChange, onSave]);
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="flex max-h-[min(760px,calc(100vh-2rem))] flex-col gap-0 overflow-hidden p-0" showCloseButton={false} size="lg">
+				<div className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-6 py-5">
+					<DialogTitle className="sr-only">{title}</DialogTitle>
+					<Button
+						className="-ml-2 gap-1 px-2 text-base font-semibold text-text"
+						onClick={() => onOpenChange(false)}
+						type="button"
+						variant="ghost"
+					>
+						<ArrowLeftIcon label="" size="small" />
+						Back
+					</Button>
+					<div className="flex items-center gap-3">
+						<label className="flex items-center gap-2 text-sm font-medium text-text">
+							<span>Active</span>
+							<Switch checked={active} label="Active" onCheckedChange={setActive} size="sm" />
+						</label>
+						<DialogClose render={<Button aria-label="Close" size="icon" variant="ghost" />}>
+							<CrossIcon label="" size="small" />
+						</DialogClose>
+					</div>
+				</div>
+				<div className="grid min-h-0 flex-1 overflow-y-auto px-6 py-5">
+					<Suspense fallback={null}>
+						<AgentConfigFields
+							config={config}
+							idPrefix="trigger-config-automation"
+							onAutomationRulesChange={handleAutomationRulesChange}
+							onConnectTrigger={handleConnect}
+							onTextChange={handleConfigTextChange}
+						/>
+					</Suspense>
+				</div>
+				<div className="flex shrink-0 items-center justify-end gap-2 border-t border-border bg-surface-overlay px-6 py-4">
+					<Button onClick={() => onOpenChange(false)} type="button" variant="ghost">
+						Cancel
+					</Button>
+					<Button disabled={draftRule.triggers.length === 0} onClick={handleSave} type="button">
+						{saveLabel}
+					</Button>
+				</div>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
 export interface TriggersProps {
 	/** Controlled automation rules. */
 	automationRules?: readonly AgentAutomationRule[];
@@ -1261,8 +1432,7 @@ export default function Triggers({
 	return (
 		<div className={cn("grid gap-5", className)}>
 			<section className="grid gap-3">{cardChildren}</section>
-			<TriggerAutomationDialog
-				defaultPickerOpen={defaultPickerOpen}
+			<TriggerConfigAutomationDialog
 				automationRule={draftAutomationRule}
 				onConnectTrigger={onConnectTrigger}
 				onOpenChange={setAutomationDialogOpen}
