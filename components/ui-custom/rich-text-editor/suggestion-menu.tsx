@@ -1000,33 +1000,39 @@ function getComposerAnchorBox(editorDom: HTMLElement): HTMLElement | null {
 
 /**
  * The palette must clear the VISIBLE composer card, but `[data-prompt-input-root]`
- * is the inner `<form>`, which paints the visible border only for the floating
- * composer. The card composer (e.g. the Rovo "/rovo" + Studio panels) wraps that
- * border-less form in a padded, bordered container, so measuring the 8px gap from
- * the form drops the palette ~12px INSIDE the visible card instead of outside it.
- * Walk up from the form and adopt the outermost ancestor (within a few levels)
- * that still tightly wraps it (≈ same width — not the whole panel) and paints a
- * visible edge (a border or corner radius). That bordered card is the box the
- * user perceives as the input, so the gap clears its real top/bottom edge.
+ * is the inner `<form>`, which paints the visible border only for the floating /
+ * blocks composers. The card composer (e.g. the Rovo "/rovo" + Studio panels)
+ * wraps that border-less form in a padded, bordered container, so measuring the
+ * 8px gap from the form drops the palette ~12px INSIDE the visible card instead of
+ * outside it.
+ *
+ * Walk up from the form and return the first (innermost) ancestor that tightly
+ * wraps it (≈ same width — not the whole panel) and is a ROUNDED card (has a
+ * corner radius). Requiring a radius — not merely a top border — is deliberate:
+ * composers are wrapped in `border-t p-*` footer/divider containers (e.g.
+ * components/blocks/cursor/page.tsx, components/blocks/workflow/page.tsx) whose
+ * top border would otherwise be mistaken for the input's edge, climbing the
+ * anchor PAST the real (already-rounded) composer into the footer. Returning at
+ * the first rounded match means an already-rounded form (floating / blocks) stops
+ * there, while a border-less card form ascends one level to its rounded wrapper.
  */
 function resolveComposerVisualBox(root: HTMLElement): HTMLElement {
 	const rootWidth = root.getBoundingClientRect().width;
-	let box = root;
 	let element: HTMLElement | null = root;
 	for (let depth = 0; depth < 3 && element; depth++) {
 		const styles = window.getComputedStyle(element);
-		const paintsEdge =
-			Number.parseFloat(styles.borderTopWidth) > 0 ||
-			Number.parseFloat(styles.borderTopLeftRadius) > 0;
+		const isRoundedCard = Number.parseFloat(styles.borderTopLeftRadius) > 0;
 		// Guard against climbing into a much larger layout container (e.g. the chat
 		// panel): only adopt an ancestor that hugs the form's width.
 		const tightlyWraps = element.getBoundingClientRect().width <= rootWidth + 48;
-		if (paintsEdge && tightlyWraps) {
-			box = element;
+		if (isRoundedCard && tightlyWraps) {
+			return element;
 		}
 		element = element.parentElement;
 	}
-	return box;
+	// No rounded card within reach (border-less / square composer): fall back to the
+	// form so behavior is unchanged for those surfaces.
+	return root;
 }
 
 function positionComposerPopup(
