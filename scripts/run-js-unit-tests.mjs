@@ -37,6 +37,10 @@ const INCLUDED_TEST_FILES = new Set([
 	// Components are not included wholesale, so this focused coverage is listed
 	// explicitly to keep it gated by CI.
 	"components/ui-charts/heatmap/heatmap-utils.test.js",
+	// Pure config helper and registry wiring coverage for the Ink Wash visual.
+	// Components are not included wholesale, so keep this focused coverage gated.
+	"components/visual/ink-wash/data.test.js",
+	"components/visual/ink-wash/registry.test.js",
 	// Deterministic studio agent-builder: prompt → agent create/update patch
 	// against the fake catalogs. Pure module under components/, so gate explicitly.
 	"components/projects/studio/lib/demo-agent-builder.test.js",

@@ -8200,6 +8200,9 @@ const VISUAL_DEMOS: Record<string, ComponentType> = {
   ink: dynamic(() => import("./demos/visual/ink-demo"), {
     ssr: false,
   }),
+  "ink-wash": dynamic(() => import("./demos/visual/ink-wash-demo"), {
+    ssr: false,
+  }),
   "magnify-lens": dynamic(() => import("./demos/visual/magnify-lens-demo"), {
     ssr: false,
   }),
@@ -8305,6 +8308,51 @@ const VISUAL_DEMOS: Record<string, ComponentType> = {
   "mesh-02": dynamic(() => import("./demos/visual/mesh-02-demo"), {
     ssr: false,
   }),
+};
+
+const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
+  "ink-wash-demo-landscape": dynamic(
+    () =>
+      import("./demos/visual/ink-wash-demo").then((mod) => ({
+        default: mod.InkWashDemoLandscapeWash,
+      })),
+    { ssr: false },
+  ),
+  "ink-wash-demo-flow-comparison": dynamic(
+    () =>
+      import("./demos/visual/ink-wash-demo").then((mod) => ({
+        default: mod.InkWashDemoFlowComparison,
+      })),
+    { ssr: false },
+  ),
+  "ink-wash-demo-drying-window": dynamic(
+    () =>
+      import("./demos/visual/ink-wash-demo").then((mod) => ({
+        default: mod.InkWashDemoDryingWindow,
+      })),
+    { ssr: false },
+  ),
+  "ink-wash-demo-bleed-chroma": dynamic(
+    () =>
+      import("./demos/visual/ink-wash-demo").then((mod) => ({
+        default: mod.InkWashDemoBleedChroma,
+      })),
+    { ssr: false },
+  ),
+  "ink-wash-demo-layered-white": dynamic(
+    () =>
+      import("./demos/visual/ink-wash-demo").then((mod) => ({
+        default: mod.InkWashDemoLayeredWhiteInk,
+      })),
+    { ssr: false },
+  ),
+  "ink-wash-demo-gallery": dynamic(
+    () =>
+      import("./demos/visual/ink-wash-demo").then((mod) => ({
+        default: mod.InkWashDemoGallery,
+      })),
+    { ssr: false },
+  ),
 };
 
 const CATEGORY_REGISTRIES: Record<string, Record<string, ComponentType>> = {
@@ -8483,6 +8531,7 @@ const VARIANT_REGISTRIES: Record<string, Record<string, ComponentType>> = {
   "ui-custom": UI_CUSTOM_VARIANT_DEMOS,
   blocks: BLOCK_VARIANT_DEMOS,
   ui: UI_VARIANT_DEMOS,
+  visual: VISUAL_VARIANT_DEMOS,
 };
 
 export function getVariantDemoComponent(
