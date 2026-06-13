@@ -12,6 +12,7 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { motion, type Variants } from "motion/react";
 import Image from "next/image";
 import AddIcon from "@atlaskit/icon/core/add";
+import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
@@ -31,7 +32,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { IconTile } from "@/components/ui/icon-tile";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { RichTextCommandMenuSearchField, RichTextEditor } from "@/components/ui-custom/rich-text-editor";
 import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/mention-visual";
@@ -835,12 +835,12 @@ function TriggerAutomationFlowPreview({
 }>): ReactElement {
 	const visibleTriggers = triggers.slice(0, 5);
 	const overflowCount = Math.max(0, triggers.length - visibleTriggers.length);
-	const title = automationName.trim() || "Automation";
-	const description = prompt.trim() || "Tell the agent what to do when any trigger starts this automation.";
+	const title = automationName.trim() || "Untitled automation";
+	const description = prompt.trim() || "Automation description";
 
 	return (
-		<div className="rounded-xl border border-border bg-surface px-4 py-4">
-			<div className="mb-4 flex items-center gap-2" aria-hidden={true}>
+		<div>
+			<div className="mb-3 flex items-center gap-2" aria-hidden={true}>
 				<div className="flex min-w-0 items-center gap-1">
 					{visibleTriggers.length > 0 ? (
 						visibleTriggers.map((trigger) => {
@@ -1028,11 +1028,16 @@ export function TriggerAutomationDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="flex max-h-[min(760px,calc(100vh-2rem))] flex-col gap-0 overflow-hidden p-0" showCloseButton={false} size="lg">
 				<div className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-6 py-5">
-					<div className="grid gap-1">
-						<DialogTitle className="text-xl font-semibold leading-6 text-text">
-							{title}
-						</DialogTitle>
-					</div>
+					<DialogTitle className="sr-only">{title}</DialogTitle>
+					<Button
+						className="-ml-2 gap-1 px-2 text-base font-semibold text-text"
+						onClick={() => onOpenChange(false)}
+						type="button"
+						variant="ghost"
+					>
+						<ArrowLeftIcon label="" size="small" />
+						Back
+					</Button>
 					<div className="flex items-center gap-3">
 						<label className="flex items-center gap-2 text-sm font-medium text-text">
 							<span>Active</span>
@@ -1049,41 +1054,15 @@ export function TriggerAutomationDialog({
 						prompt={sharedPrompt}
 						triggers={draftTriggers}
 					/>
-					<label className="grid gap-1.5">
-						<span className="text-sm font-medium leading-5 text-text">Automation name</span>
-						<Input
-							onChange={(event) => setAutomationName(event.target.value)}
-							placeholder="Name this automation"
-							value={automationName}
-						/>
-					</label>
+					<TriggerConditionsPanel
+						defaultPickerOpen={defaultPickerOpen}
+						onAddTrigger={handleAddTrigger}
+						onConnectTrigger={handleConnect}
+						onParamChange={handleParamChange}
+						onRemoveTrigger={handleRemoveTrigger}
+						triggers={draftTriggers}
+					/>
 					<div className="grid gap-2">
-						<div className="grid gap-0.5">
-							<h3 className="text-sm font-semibold leading-5 text-text">Triggers</h3>
-							<p className="text-sm leading-5 text-text-subtle">
-								Any configured event can start this automation.
-							</p>
-						</div>
-						<TriggerConditionsPanel
-							defaultPickerOpen={defaultPickerOpen}
-							onAddTrigger={handleAddTrigger}
-							onConnectTrigger={handleConnect}
-							onParamChange={handleParamChange}
-							onRemoveTrigger={handleRemoveTrigger}
-							triggers={draftTriggers}
-						/>
-					</div>
-					<div className="grid gap-2">
-						<span className="flex items-center gap-2 text-sm font-semibold leading-5 text-text">
-							<IconTile
-								aria-hidden={true}
-								className="bg-bg-neutral text-icon-subtle"
-								icon={<GenerativeIndicatorIcon label="" size="small" />}
-								label=""
-								size="small"
-							/>
-							Agent Instructions
-						</span>
 						<RichTextEditor
 							aria-label="Agent Instructions"
 							className="space-y-2"

@@ -23,6 +23,20 @@ Commit every uncommitted change and push it straight to remote `main`, with a co
 
 `main` has branch protection with a required `PR checks` status check, but `enforce_admins` is **false**, so the repo owner/admin can push directly. CI still runs on the push — it just does not *gate* it, and can go red after the fact. Force-pushes are disabled, so every push must be a fast-forward.
 
+## Sandbox: remote git ops run unsandboxed by default
+
+The remote uses an SSH URL (`git@github.com:...`). Under a sandboxed harness, the sandbox denies access to `~/.ssh/known_hosts`, so `git fetch` and `git push` fail with:
+
+```
+hostkeys_foreach failed for ~/.ssh/known_hosts: Operation not permitted
+Host key verification failed.
+fatal: Could not read from remote repository.
+```
+
+**So in Step 5, run `git fetch` and `git push` unsandboxed from the first attempt** (Claude Code: `dangerouslyDisableSandbox: true`) — don't waste a failed sandboxed attempt first. Keep everything else sandboxed: `git add`, `git commit`, `git status`, `git update-index`, and `git merge-base` all work fine inside the sandbox and touch no SSH/network. Only the two ops that hit the remote need the bypass.
+
+Two other benign sandbox artifacts you'll see and should ignore: `.env.local.example: Operation not permitted` in `git status` (the sandbox denies reading `.env*`; it is *not* a real change — confirm it never stages), and `git update-index --refresh` exiting non-zero with "needs update" (a harmless stat refresh).
+
 ## Pre-loaded working-tree state
 
 Branch: !`git rev-parse --abbrev-ref HEAD`
@@ -59,10 +73,10 @@ git -c color.ui=never diff HEAD
    - Match repo log style: **no `Co-Authored-By` footer** unless the user explicitly asks.
    - Commit: `git commit -m "<subject>"` (add `-m "<body>"` only if you wrote a body).
 
-5. **Fast-forward-safe push to `main`.** Force-push is forbidden, so confirm the push is a fast-forward of remote `main`:
-   - `git fetch origin main`
+5. **Fast-forward-safe push to `main`.** Force-push is forbidden, so confirm the push is a fast-forward of remote `main`. **Run the `git fetch`/`git push` commands here unsandboxed by default** (see "Sandbox" above — SSH remote ops fail sandboxed); `git merge-base` stays sandboxed.
+   - `git fetch origin main` (unsandboxed)
    - `git merge-base --is-ancestor origin/main HEAD` (exit 0 = `origin/main` is an ancestor of your commit → the push will fast-forward).
-     - **Exit 0 → push:** `git push origin HEAD:main`. If you are on `main`, that also advances local `main`. If you are on a feature branch, also bring local `main` along when it is safe: `git fetch origin main:main` (fails harmlessly if `main` is checked out elsewhere — ignore and report).
+     - **Exit 0 → push (unsandboxed):** `git push origin HEAD:main`. If you are on `main`, that also advances local `main`. If you are on a feature branch, also bring local `main` along when it is safe: `git fetch origin main:main` (fails harmlessly if `main` is checked out elsewhere — ignore and report).
      - **Non-zero → STOP, do not force.** `origin/main` has commits you don't have; a direct push would be rejected and force-pushing is blocked by protection. Report: "origin/main has advanced — integrate first (`git merge origin/main` or rebase onto it, resolve conflicts), then re-run `/vpk-git-ship-fast`." Leave the local commit in place.
 
 6. **Report concisely:**
@@ -77,4 +91,4 @@ git -c color.ui=never diff HEAD
 - Nothing to commit and nothing ahead of `origin/main`.
 - `origin/main` diverged (push would not be a fast-forward) — never reach for `--force`; ask the user to integrate first.
 - Staging would include `.env*`/keys/secrets you cannot confidently exclude.
-- `git push` fails for any non-fast-forward, auth, or network reason — report the exact git error, leave the commit intact, do not retry blindly.
+- `git push` fails for any non-fast-forward, auth, or network reason — report the exact git error, leave the commit intact, do not retry blindly. **Exception:** an SSH `known_hosts: Operation not permitted` / `Host key verification failed` error is the sandbox, not a real failure — retry that one command unsandboxed (per "Sandbox" above) before reporting.
