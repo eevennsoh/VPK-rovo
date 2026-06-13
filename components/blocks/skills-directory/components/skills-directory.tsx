@@ -13,21 +13,27 @@ import {
 } from "react";
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import DownloadIcon from "@atlaskit/icon/core/download";
-import FileIcon from "@atlaskit/icon/core/file";
-import FolderClosedIcon from "@atlaskit/icon/core/folder-closed";
-import FolderOpenIcon from "@atlaskit/icon/core/folder-open";
 import LinkIcon from "@atlaskit/icon/core/link";
-import PageIcon from "@atlaskit/icon/core/page";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
 
 import type { AgentBrowserAgent } from "@/components/blocks/agent-browser";
-import { SidebarNavItem } from "@/components/ui-custom/sidebar-nav-item";
+import {
+	Agent,
+	AgentConfigFields,
+	AgentContent,
+} from "@/components/blocks/skill-config";
+import { FileTree, FileTreeFile, FileTreeFolder } from "@/components/ui-custom/file-tree";
+import {
+	SkillProfileCover,
+	SkillProfileMeta,
+	useSkillMdDraft,
+	type SkillMdDraft,
+} from "./skill-md-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -43,7 +49,6 @@ import { IconTile } from "@/components/ui/icon-tile";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { SplitButton } from "@/components/ui/split-button";
-import { Tile } from "@/components/ui/tile";
 import {
 	EntityCardShell,
 	EntityCardDescription,
@@ -55,6 +60,11 @@ import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-over
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+import {
+	frontmatterValueToString,
+	getFrontmatterField,
+	parseSkillMd,
+} from "@/app/data/directory/skill-frontmatter";
 import { SkillsDirectorySidebar } from "./skills-directory-sidebar";
 import {
 	DEFAULT_SKILLS,
@@ -62,17 +72,16 @@ import {
 	getSkillCollection,
 	getSkillCollectionId,
 	getSkillIcon,
-	getSkillIconColor,
 	getSkillIconTileVariant,
+	getSkillMarkdown,
 	getSkillPublisherAvatarSrc,
 	getSkillPublisherLogoName,
 	getSkillPublisherName,
 	isSkillPublisherPerson,
+	slugifySkillName,
 	type SkillCategory,
-	type SkillIconKey,
 	type SkillsDirectoryFileTreeItem,
 	type SkillsDirectorySkill,
-	type SkillsDirectoryToolTag,
 } from "@/app/data/directory/skills";
 import {
 	DEFAULT_SKILLS_DIRECTORY_PRIMARY_ITEMS,
@@ -234,10 +243,6 @@ function getSelectedSkills(
 		.filter((skill): skill is SkillsDirectorySkill => Boolean(skill));
 }
 
-function slugifySkillName(name: string): string {
-	return name.toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "");
-}
-
 function getDefaultFileTree(skill: SkillsDirectorySkill): readonly SkillsDirectoryFileTreeItem[] {
 	const slug = slugifySkillName(skill.name);
 	return [
@@ -247,12 +252,6 @@ function getDefaultFileTree(skill: SkillsDirectorySkill): readonly SkillsDirecto
 		{ id: "references", label: "references", kind: "folder", depth: 1 },
 		{ id: "scripts", label: "scripts", kind: "folder", depth: 1 },
 	];
-}
-
-function getSkillInstructions(skill: SkillsDirectorySkill): string {
-	return skill.instructions ?? `# ${skill.name}
-
-${skill.description}`;
 }
 
 export function SkillsDirectoryDialog({
@@ -384,7 +383,7 @@ export function SkillsDirectoryDialog({
 					/>
 				)}
 				{selectedDetailSkill ? (
-					<SkillDetailView skill={selectedDetailSkill} />
+					<SkillDetailView skill={selectedDetailSkill} onExit={() => setSelectedDetailSkillId(null)} />
 				) : (
 					<>
 						<SkillsDirectoryView
@@ -830,18 +829,6 @@ function SkillDetailHeader({
 				Back
 			</button>
 			<div className="flex items-center gap-2">
-				<SplitButton
-					items={[
-						{ label: "Open in new tab", onSelect: onOpenSkill },
-						{ label: "Copy link", onSelect: onCreateShareLink },
-					]}
-					label="Open"
-					onClick={onOpenSkill}
-					variant="outline"
-				/>
-				<Button onClick={onTryInChat} type="button">
-					Try in chat
-				</Button>
 				<DropdownMenu>
 					<DropdownMenuTrigger
 						render={
@@ -862,6 +849,18 @@ function SkillDetailHeader({
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
+				<SplitButton
+					items={[
+						{ label: "Open in new tab", onSelect: onOpenSkill },
+						{ label: "Copy link", onSelect: onCreateShareLink },
+					]}
+					label="Open"
+					onClick={onOpenSkill}
+					variant="outline"
+				/>
+				<Button onClick={onTryInChat} type="button">
+					Try in chat
+				</Button>
 				<DialogClose render={<Button variant="ghost" size="icon" />}>
 					<CrossIcon label="" />
 					<span className="sr-only">Close</span>
@@ -871,143 +870,202 @@ function SkillDetailHeader({
 	);
 }
 
-function SkillDetailView({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
-	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
-
+function SkillDetailView({ skill, onExit }: Readonly<{ skill: SkillsDirectorySkill; onExit: () => void }>) {
 	return (
 		<div className="grid min-h-0 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
 			<SkillFileTreeSidebar skill={skill} />
-			<div
-				ref={contentOverflow.ref}
-				className={cn(
-					"flex min-h-0 min-w-0 flex-col gap-6 overflow-y-auto px-6 pb-6 md:pl-4",
-					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
-				)}
-			>
-				<SkillDetailSummary skill={skill} />
-				<SkillToolsSection tools={skill.tools ?? []} />
-				<section className="flex flex-col gap-2" aria-labelledby="skill-detail-instructions">
-					<h3 id="skill-detail-instructions" className="text-xl font-semibold leading-6 text-text">
-						Instructions
-					</h3>
-					<pre className="max-h-none overflow-x-auto whitespace-pre-wrap rounded-md bg-surface-sunken p-3 font-mono text-xs leading-5 text-text">
-						<code>{getSkillInstructions(skill)}</code>
-					</pre>
-				</section>
+			<SkillDetailConfig key={skill.id} skill={skill} onExit={onExit} />
+		</div>
+	);
+}
+
+const SKILL_DRAFT_KEY_PREFIX = "vpk:skill-draft:";
+const SKILL_DRAFT_VERSION = 1;
+const SKILL_NAME_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+
+interface StoredSkillDraft extends SkillMdDraft {
+	version: number;
+}
+
+/** Load a saved draft, discarding anything from an older/unknown schema. */
+function loadSkillDraft(skillId: string): SkillMdDraft | null {
+	if (typeof window === "undefined") {
+		return null;
+	}
+	try {
+		const raw = window.localStorage.getItem(`${SKILL_DRAFT_KEY_PREFIX}${skillId}`);
+		if (!raw) {
+			return null;
+		}
+		const parsed = JSON.parse(raw) as Partial<StoredSkillDraft>;
+		if (parsed.version !== SKILL_DRAFT_VERSION || typeof parsed.skillMd !== "string") {
+			return null;
+		}
+		return { skillMd: parsed.skillMd, descriptionOverride: parsed.descriptionOverride ?? null };
+	} catch {
+		return null;
+	}
+}
+
+function saveSkillDraft(skillId: string, draft: SkillMdDraft): void {
+	if (typeof window === "undefined") {
+		return;
+	}
+	try {
+		const stored: StoredSkillDraft = { version: SKILL_DRAFT_VERSION, ...draft };
+		window.localStorage.setItem(`${SKILL_DRAFT_KEY_PREFIX}${skillId}`, JSON.stringify(stored));
+	} catch {
+		// Best-effort persistence (quota / privacy mode) — a failed write just means
+		// the edit isn't restored on reopen, which is acceptable for the prototype.
+	}
+}
+
+/**
+ * Required-field validation (per the agentskills spec): a valid SKILL.md needs a
+ * slug `name` and a non-empty `description` in its frontmatter. Returns "" when valid.
+ */
+function validateSkillMd(skillMd: string): string {
+	const { frontmatter } = parseSkillMd(skillMd);
+	const name = frontmatterValueToString(getFrontmatterField(frontmatter, "name")).trim();
+	const description = frontmatterValueToString(getFrontmatterField(frontmatter, "description")).trim();
+	if (!name) {
+		return "Add a name to the frontmatter before saving.";
+	}
+	if (!SKILL_NAME_SLUG_RE.test(name)) {
+		return "The frontmatter name must be a lowercase slug (e.g. design-landing-page).";
+	}
+	if (!description) {
+		return "Add a description to the frontmatter before saving.";
+	}
+	return "";
+}
+
+/**
+ * The skill detail editor. Edits a draft of the skill's SKILL.md (rendered with
+ * the in-editor frontmatter card) plus the outside name + human-friendly
+ * description, committed via the Save/Cancel footer (localStorage-backed).
+ *
+ * State lives in the shared {@link useSkillMdDraft} hook (single source = the full
+ * SKILL.md); this component layers persistence, validation, and the commit flow.
+ */
+function SkillDetailConfig({ skill, onExit }: Readonly<{ skill: SkillsDirectorySkill; onExit: () => void }>) {
+	const initialDraft = useMemo<SkillMdDraft>(
+		() => loadSkillDraft(skill.id) ?? { skillMd: getSkillMarkdown(skill), descriptionOverride: null },
+		[skill],
+	);
+	const { config, draft, handleTextChange, getDraft } = useSkillMdDraft(skill, initialDraft);
+
+	const dirty =
+		draft.skillMd !== initialDraft.skillMd || draft.descriptionOverride !== initialDraft.descriptionOverride;
+	const validationError = useMemo(() => validateSkillMd(draft.skillMd), [draft.skillMd]);
+
+	function handleSave() {
+		// Read the freshest draft from the hook's ref so a value committed on blur by
+		// the same click that triggers Save isn't missed by a not-yet-flushed update.
+		const current = getDraft();
+		if (validateSkillMd(current.skillMd)) {
+			return;
+		}
+		saveSkillDraft(skill.id, current);
+		onExit();
+	}
+
+	function handleCancel() {
+		if (dirty && typeof window !== "undefined" && !window.confirm("Discard unsaved changes to this skill?")) {
+			return;
+		}
+		onExit();
+	}
+
+	return (
+		<div className="flex min-h-0 min-w-0 flex-col overflow-hidden md:pl-4">
+			<Agent className="flex min-h-0 flex-1 flex-col bg-transparent">
+				<AgentContent className="flex min-h-0 flex-1 flex-col">
+					<AgentConfigFields
+						config={config}
+						idPrefix={`skill-detail-${skill.id}`}
+						profileCover={<SkillProfileCover skill={skill} />}
+						profileMetaSlot={<SkillProfileMeta skill={skill} />}
+						showConfigToolbar={false}
+						frontmatter={{ enabled: true }}
+						onTextChange={handleTextChange}
+					/>
+				</AgentContent>
+			</Agent>
+			<div className="flex shrink-0 items-center justify-between gap-3 border-t border-border px-6 py-3">
+				<p className="min-w-0 truncate text-xs leading-4 text-text-danger">{validationError}</p>
+				<div className="flex shrink-0 items-center gap-2">
+					<Button onClick={handleCancel} type="button" variant="outline">
+						Cancel
+					</Button>
+					<Button disabled={Boolean(validationError)} onClick={handleSave} type="button">
+						Save
+					</Button>
+				</div>
 			</div>
 		</div>
 	);
 }
 
+interface SkillFileTreeNode extends SkillsDirectoryFileTreeItem {
+	children: SkillFileTreeNode[];
+}
+
+/** Convert the flat, depth-tagged file list into the nested shape the FileTree compound expects. */
+function buildSkillFileTree(items: readonly SkillsDirectoryFileTreeItem[]): SkillFileTreeNode[] {
+	const roots: SkillFileTreeNode[] = [];
+	const ancestors: SkillFileTreeNode[] = [];
+
+	for (const item of items) {
+		const depth = item.depth ?? 0;
+		const node: SkillFileTreeNode = { ...item, children: [] };
+		ancestors.length = depth;
+		const parent = ancestors[depth - 1];
+
+		if (parent) {
+			parent.children.push(node);
+		} else {
+			roots.push(node);
+		}
+
+		ancestors[depth] = node;
+	}
+
+	return roots;
+}
+
+function renderSkillFileTreeNode(node: SkillFileTreeNode) {
+	if (node.kind === "folder") {
+		return (
+			<FileTreeFolder key={node.id} name={node.label} path={node.id}>
+				{node.children.map(renderSkillFileTreeNode)}
+			</FileTreeFolder>
+		);
+	}
+
+	return <FileTreeFile key={node.id} name={node.label} path={node.id} />;
+}
+
 function SkillFileTreeSidebar({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
 	const items = skill.fileTreeItems ?? getDefaultFileTree(skill);
+	const nodes = useMemo(() => buildSkillFileTree(items), [items]);
+	const defaultExpanded = useMemo(
+		() => new Set(items.filter((item) => item.kind === "folder" && item.expanded).map((item) => item.id)),
+		[items],
+	);
+	const selectedPath = items.find((item) => item.selected)?.id;
 
 	return (
 		<aside className="hidden min-h-0 w-[280px] shrink-0 overflow-y-auto pl-6 pr-4 md:block">
-			<nav aria-label={`${skill.name} files`} className="flex w-full flex-col">
-				{items.map((item) => (
-					<div key={item.id} style={{ paddingLeft: `${(item.depth ?? 0) * 12}px` }}>
-						<SidebarNavItem
-							label={item.label}
-							leadingSize="small"
-							isSelected={item.selected ?? false}
-							isExpanded={item.kind === "folder" ? item.expanded : undefined}
-							leading={
-								item.kind === "folder" ? (
-									<span className="flex items-center gap-px">
-										{item.expanded ? <ChevronDownIcon label="" color="currentColor" /> : <ChevronRightIcon label="" color="currentColor" />}
-										{item.expanded ? <FolderOpenIcon label="" color="currentColor" /> : <FolderClosedIcon label="" color="currentColor" />}
-									</span>
-								) : (
-									<span className="flex items-center gap-px">
-										<span className="size-3 shrink-0" />
-										<FileIcon label="" color="currentColor" />
-									</span>
-								)
-							}
-						/>
-					</div>
-				))}
-			</nav>
+			<FileTree
+				aria-label={`${skill.name} files`}
+				className="text-xs"
+				defaultExpanded={defaultExpanded}
+				selectedPath={selectedPath}
+			>
+				{nodes.map(renderSkillFileTreeNode)}
+			</FileTree>
 		</aside>
 	);
 }
 
-function SkillDetailSummary({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
-	const publisher = getSkillPublisherName(skill);
-	const collection = getSkillCollection(skill);
-	const collectionDocsUrl = skill.collectionDocsUrl ?? collection.docsUrl;
-	const collectionProducts = skill.collectionProducts ?? collection.products;
-
-	return (
-		<section className="flex flex-col gap-6" aria-labelledby="skill-detail-title">
-			<div className="flex flex-col gap-2">
-				<Tile
-					className="rounded-lg text-icon-subtle"
-					hasBorder
-					isInset={false}
-					label={skill.name}
-					size="large"
-					variant="transparent"
-				>
-					<span className={cn("inline-flex items-center justify-center", getSkillIconColor(skill) ?? "text-icon-subtle")}>
-						{getSkillIcon(skill.icon)}
-					</span>
-				</Tile>
-				<h2 id="skill-detail-title" className="text-2xl font-semibold leading-7 text-text">
-					{skill.name}
-				</h2>
-				<p className="flex items-center gap-1 text-xs leading-4 text-text-subtle">
-					<SkillPublisherAvatar skill={skill} />
-					{publisher}
-				</p>
-			</div>
-			<div className="max-w-4xl text-sm leading-5 text-text">
-				<p>{skill.description}</p>
-			</div>
-			<div className="flex max-w-4xl flex-col gap-1 rounded-md border border-border bg-surface p-3 text-sm leading-5">
-				<p className="font-medium text-text">{collection.label}</p>
-				<p className="text-text-subtle">{skill.collectionDescription ?? collection.description}</p>
-				<p className="text-xs leading-4 text-text-subtlest">
-					{collectionProducts.join(" • ")}
-				</p>
-				<a
-					className="w-fit text-sm leading-5 text-link hover:underline"
-					href={collectionDocsUrl}
-					rel="noreferrer"
-					target="_blank"
-				>
-					Learn about this collection
-				</a>
-			</div>
-		</section>
-	);
-}
-
-function SkillToolsSection({ tools }: Readonly<{ tools: readonly SkillsDirectoryToolTag[] }>) {
-	const resolvedTools = tools.length > 0 ? tools : [
-		{ id: "tool-1", name: "Tool1", icon: "page" as SkillIconKey },
-		{ id: "tool-2", name: "Tool2", icon: "page" as SkillIconKey },
-		{ id: "tool-3", name: "Tool3", icon: "page" as SkillIconKey },
-	];
-
-	return (
-		<section className="flex flex-col gap-2" aria-labelledby="skill-detail-tools">
-			<h3 id="skill-detail-tools" className="text-xl font-semibold leading-6 text-text">
-				Tools
-			</h3>
-			<p className="text-sm leading-5 text-text">(Placeholder copy) Tools that are part of this skills.</p>
-			<div className="flex flex-wrap gap-2">
-				{resolvedTools.map((tool) => (
-					<span
-						key={tool.id}
-						className="inline-flex items-center gap-1 rounded border border-border px-1 py-0.5 text-xs leading-4 text-text"
-					>
-						<PageIcon label="" size="small" color="currentColor" />
-						{tool.name}
-					</span>
-				))}
-			</div>
-		</section>
-	);
-}

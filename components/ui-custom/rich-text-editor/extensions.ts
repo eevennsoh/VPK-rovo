@@ -22,6 +22,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
+import { FrontmatterNode } from "./frontmatter-node";
 import { RichTextMentionNodeView } from "./mention-node-view";
 import {
 	createMentionTokenParser,
@@ -301,6 +302,10 @@ export function createRichTextEditorExtensions(
 			link: false,
 			underline: false,
 		}),
+		// Registered AFTER StarterKit so `paragraph` stays the default block type for
+		// the doc's `block+` content (an empty/cleared doc fills with a paragraph,
+		// not this atom). Opt-in: only present for the skill editor.
+		...(options.frontmatter?.enabled ? [FrontmatterNode] : []),
 		Underline,
 		Link.configure({
 			openOnClick: false,

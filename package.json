@@ -31,6 +31,7 @@
 		"sync:rovo:skills": "node scripts/sync-rovo-skills.js",
 		"generate:prompt": "node --experimental-strip-types scripts/generate-catalog-prompt.js",
 		"gen:agent-bodies": "node scripts/generate-agent-template-bodies.js",
+		"gen:skill-bodies": "node --experimental-strip-types scripts/generate-skill-md-bodies.mjs",
 		"dev:stt": ".venv/bin/python scripts/stt-server.py",
 		"dev:stt:install": "python3 -m venv .venv && .venv/bin/pip install -r scripts/stt-requirements.txt",
 		"symphony": "./scripts/symphony.sh"

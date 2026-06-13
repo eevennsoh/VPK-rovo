@@ -3581,6 +3581,7 @@ function AgentInstructionsComposer({
 	config,
 	contentClassName,
 	editorClassName,
+	frontmatter,
 	instructions,
 	mentionRemovalRequest,
 	onAddListValues,
@@ -3599,6 +3600,7 @@ function AgentInstructionsComposer({
 	config: AgentConfigFormValue;
 	contentClassName?: string;
 	editorClassName?: string;
+	frontmatter?: { enabled?: boolean };
 	instructions?: string;
 	mentionRemovalRequest?: RichTextMentionRemovalRequest | null;
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
@@ -3748,6 +3750,7 @@ function AgentInstructionsComposer({
 				contentClassName={cn("pt-2", contentClassName)}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
 				enableDirectoryAutocomplete
+				frontmatter={frontmatter}
 				placeholder="Press / to help me create the skill"
 				placeholderSlot={(
 					<p className="tiptap-editor text-sm leading-[1.55] text-text-subtlest">
@@ -3778,6 +3781,13 @@ function AgentInstructionsComposer({
 interface AgentConfigProfileProps {
 	config: AgentConfigFormValue;
 	avatarSrc?: string;
+	// Optional override for the cover tile (defaults to <AgentProfileCover />) and
+	// an optional metadata slot rendered under the description. Both default to the
+	// existing behavior so non-skill consumers (agent/subagents/studio) are
+	// unchanged; the skills-directory detail view supplies a globe cover + a
+	// "Created by / Added by / Last update" row.
+	profileCover?: ReactNode;
+	profileMetaSlot?: ReactNode;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	screenAssistantTargetPrefix?: string;
 	// Subagent editing context. When `isSubagent` is true the profile header
@@ -3799,6 +3809,8 @@ interface AgentConfigProfileProps {
 
 function AgentConfigProfile({
 	config,
+	profileCover,
+	profileMetaSlot,
 	onTextChange,
 	screenAssistantTargetPrefix,
 	isSubagent = false,
@@ -3818,7 +3830,7 @@ function AgentConfigProfile({
 			className="flex flex-col gap-4"
 			data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:profile` : undefined}
 		>
-			<AgentProfileCover />
+			{profileCover ?? <AgentProfileCover />}
 			<div className="flex flex-col gap-1" data-agent-field="name">
 				{/* The cover/avatar and the description below stay put; only the name
 				    row (title + inline back-arrow on subagents) crossfades and slides
@@ -3889,6 +3901,7 @@ function AgentConfigProfile({
 					/>
 				</div>
 			</div>
+			{profileMetaSlot ?? null}
 		</section>
 	);
 }
@@ -3898,6 +3911,10 @@ interface AgentCompactConfigToolbarBelowProps {
 	// Forwarded to the expanded summary so subagent chips can match the agent's
 	// custom brand color (derived from the avatar family).
 	avatarSrc?: string;
+	// When false, the footer is permanently expanded: the collapse/expand toggle
+	// is hidden (the separator stays) and the compact nav is never shown. Used by
+	// single-row surfaces like the skills-directory detail view.
+	collapsible?: boolean;
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
@@ -3919,6 +3936,7 @@ interface AgentCompactConfigToolbarBelowProps {
 function AgentCompactConfigToolbarBelow({
 	config,
 	avatarSrc,
+	collapsible = true,
 	hiddenConfigFields,
 	onAddListValues,
 	onAppendListItem,
@@ -3983,10 +4001,16 @@ function AgentCompactConfigToolbarBelow({
 	const expandButtonVisualX = useTransform(expandButtonX, (latest): number =>
 		latest + (Math.abs(latest) > 0.5 ? AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP : 0),
 	);
-	const isExpanded = expanded;
+	// Non-collapsible callers stay locked open; the toggle and its compact-nav
+	// branch never render, so `expanded` state is ignored entirely.
+	const isExpanded = collapsible ? expanded : true;
 	const transition = shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeOut" as const };
 
 	useEffect(() => {
+		if (!collapsible) {
+			return;
+		}
+
 		const handlePointerMove = (event: PointerEvent) => {
 			const row = expandButtonRowRef.current;
 
@@ -4022,31 +4046,33 @@ function AgentCompactConfigToolbarBelow({
 			window.removeEventListener("pointermove", handlePointerMove, true);
 			window.removeEventListener("pointerleave", handlePointerLeave);
 		};
-	}, [expandButtonX]);
+	}, [collapsible, expandButtonX]);
 
 	return (
 		<div className="flex flex-col">
 			<div className="relative flex h-6 items-center" ref={expandButtonRowRef}>
 				<div aria-hidden className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border" />
-				<motion.div
-					className="relative z-10 ml-auto bg-surface pl-2"
-					style={{ paddingRight: expandButtonPaddingRight, x: expandButtonVisualX }}
-				>
-					<Button
-						aria-label={isExpanded ? "Collapse configuration" : "Expand configuration"}
-						className="size-6 rounded border-border bg-surface-overlay px-0 text-icon-subtle hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"
-						onClick={() => setExpanded((prev) => !prev)}
-						size="icon-compact"
-						type="button"
-						variant="ghost"
+				{collapsible ? (
+					<motion.div
+						className="relative z-10 ml-auto bg-surface pl-2"
+						style={{ paddingRight: expandButtonPaddingRight, x: expandButtonVisualX }}
 					>
-						{isExpanded ? (
-							<ChevronDownIcon label="" size="small" />
-						) : (
-							<ChevronUpIcon label="" size="small" />
-						)}
-					</Button>
-				</motion.div>
+						<Button
+							aria-label={isExpanded ? "Collapse configuration" : "Expand configuration"}
+							className="size-6 rounded border-border bg-surface-overlay px-0 text-icon-subtle hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"
+							onClick={() => setExpanded((prev) => !prev)}
+							size="icon-compact"
+							type="button"
+							variant="ghost"
+						>
+							{isExpanded ? (
+								<ChevronDownIcon label="" size="small" />
+							) : (
+								<ChevronUpIcon label="" size="small" />
+							)}
+						</Button>
+					</motion.div>
+				) : null}
 			</div>
 			<AnimatePresence initial={false} mode="wait">
 				{isExpanded ? (
@@ -4136,6 +4162,21 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	avatarSrc?: string;
 	compactScrollAreaClassName?: string;
 	compactFooterBefore?: ReactNode;
+	// Optional cover override + metadata slot, forwarded to AgentConfigProfile.
+	// Default-undefined → existing cover / no meta row, so other consumers are
+	// unchanged.
+	profileCover?: ReactNode;
+	profileMetaSlot?: ReactNode;
+	// When false, the bottom config toolbar (AgentCompactConfigToolbarBelow) is
+	// not rendered at all — used by the skill detail surface, which adds apps via
+	// the editor's `/` command instead of a footer panel. Defaults to shown.
+	showConfigToolbar?: boolean;
+	// Enables the in-editor SKILL.md frontmatter card. Off by default; the skill
+	// detail surface passes `{ enabled: true }`.
+	frontmatter?: { enabled?: boolean };
+	// When false, the footer config panel is locked open (no collapse/expand
+	// toggle; the separator stays). Defaults to collapsible.
+	footerCollapsible?: boolean;
 	// Config rows callers can suppress — e.g. while editing a subagent, where
 	// triggers, subagents, and conversation starters can't be configured.
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
@@ -4181,6 +4222,11 @@ export const AgentConfigFields = memo(
 		avatarSrc,
 		compactFooterBefore,
 		compactScrollAreaClassName,
+		profileCover,
+		profileMetaSlot,
+		showConfigToolbar = true,
+		frontmatter,
+		footerCollapsible,
 		hiddenConfigFields,
 		idPrefix,
 		onListItemChange,
@@ -4396,6 +4442,8 @@ export const AgentConfigFields = memo(
 							<AgentConfigProfile
 								config={profileConfig ?? config}
 								avatarSrc={profileAvatarSrc ?? avatarSrc}
+								profileCover={profileCover}
+								profileMetaSlot={profileMetaSlot}
 								onTextChange={handleProfileTextChange}
 								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 								isSubagent={isSubagent}
@@ -4410,6 +4458,7 @@ export const AgentConfigFields = memo(
 						<AgentInstructionsComposer
 							className="relative flex min-h-0 flex-1 flex-col"
 							config={config}
+							frontmatter={frontmatter}
 							contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]")}
 							editorClassName={isFilledConfig ? undefined : "agent-instructions-tiptap-editor-compact-empty"}
 							instructions={config.instructions}
@@ -4428,10 +4477,12 @@ export const AgentConfigFields = memo(
 					    separator/expand row stays transparent so content scrolls
 					    visibly behind it; only the field rows carry a solid surface. */}
 					{compactFooterBefore}
+					{showConfigToolbar ? (
 					<div className="shrink-0">
 						<AgentCompactConfigToolbarBelow
 							config={config}
 							avatarSrc={profileAvatarSrc ?? avatarSrc}
+							collapsible={footerCollapsible}
 							hiddenConfigFields={hiddenConfigFields}
 							onAddListValues={handleAddListValues}
 							onAppendListItem={handleAppendListItem}
@@ -4450,6 +4501,7 @@ export const AgentConfigFields = memo(
 							selectedListItemIndexByField={selectedListItemIndexByField}
 						/>
 					</div>
+					) : null}
 				</div>
 				<AgentTriggersDialog
 					open={triggersEditor.open}
