@@ -80,7 +80,7 @@ export function SettingsDialog() {
                     {data.nav.map((item) => (
                       <SidebarMenuItem key={item.name}>
                         <SidebarMenuButton
-                          render={<a aria-label="Settings" href="#" />}
+                          render={<a aria-label={item.name} href="#" />}
                           isActive={item.name === "Messages & media"}
                         >
                           <item.icon />
