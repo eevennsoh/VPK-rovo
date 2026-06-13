@@ -15,30 +15,22 @@ import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import DownloadIcon from "@atlaskit/icon/core/download";
+import GlobeIcon from "@atlaskit/icon/core/globe";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StarUnstarredIcon from "@atlaskit/icon/core/star-unstarred";
+import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
 
 import type { AgentBrowserAgent } from "@/components/blocks/agent-browser";
-import {
-	ConversationStartersDialog,
-	DEFAULT_STARTER_ICON,
-	type ConversationStarter,
-	type StarterIconKey,
-} from "@/components/blocks/conversation-starters";
 import {
 	Agent,
 	AgentConfigFields,
 	AgentContent,
-	toggleAgentConfigDisabledItem,
 	type AgentConfigFormValue,
-	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
-	type AgentDirectoryKind,
 } from "@/components/blocks/skill-config";
-import type { AgentAutomationRule } from "@/components/blocks/triggers/page";
 import { FileTree, FileTreeFile, FileTreeFolder } from "@/components/ui-custom/file-tree";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,18 +58,29 @@ import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-over
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
+import {
+	frontmatterValueToString,
+	getFrontmatterField,
+	parseSkillMd,
+	serializeSkillMd,
+	setFrontmatterField,
+} from "@/app/data/directory/skill-frontmatter";
 import { SkillsDirectorySidebar } from "./skills-directory-sidebar";
 import {
 	DEFAULT_SKILLS,
 	getSkillCategoryId,
 	getSkillCollection,
 	getSkillCollectionId,
+	getSkillCreatedBy,
 	getSkillIcon,
 	getSkillIconTileVariant,
+	getSkillLastUpdatedLabel,
+	getSkillMarkdown,
 	getSkillPublisherAvatarSrc,
 	getSkillPublisherLogoName,
 	getSkillPublisherName,
 	isSkillPublisherPerson,
+	slugifySkillName,
 	type SkillCategory,
 	type SkillsDirectoryFileTreeItem,
 	type SkillsDirectorySkill,
@@ -242,10 +245,6 @@ function getSelectedSkills(
 		.filter((skill): skill is SkillsDirectorySkill => Boolean(skill));
 }
 
-function slugifySkillName(name: string): string {
-	return name.toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "");
-}
-
 function getDefaultFileTree(skill: SkillsDirectorySkill): readonly SkillsDirectoryFileTreeItem[] {
 	const slug = slugifySkillName(skill.name);
 	return [
@@ -255,12 +254,6 @@ function getDefaultFileTree(skill: SkillsDirectorySkill): readonly SkillsDirecto
 		{ id: "references", label: "references", kind: "folder", depth: 1 },
 		{ id: "scripts", label: "scripts", kind: "folder", depth: 1 },
 	];
-}
-
-function getSkillInstructions(skill: SkillsDirectorySkill): string {
-	return skill.instructions ?? `# ${skill.name}
-
-${skill.description}`;
 }
 
 export function SkillsDirectoryDialog({
@@ -392,7 +385,7 @@ export function SkillsDirectoryDialog({
 					/>
 				)}
 				{selectedDetailSkill ? (
-					<SkillDetailView skill={selectedDetailSkill} />
+					<SkillDetailView skill={selectedDetailSkill} onExit={() => setSelectedDetailSkillId(null)} />
 				) : (
 					<>
 						<SkillsDirectoryView
@@ -879,119 +872,192 @@ function SkillDetailHeader({
 	);
 }
 
-function SkillDetailView({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
+function SkillDetailView({ skill, onExit }: Readonly<{ skill: SkillsDirectorySkill; onExit: () => void }>) {
 	return (
 		<div className="grid min-h-0 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
 			<SkillFileTreeSidebar skill={skill} />
-			<SkillDetailConfig key={skill.id} skill={skill} />
+			<SkillDetailConfig key={skill.id} skill={skill} onExit={onExit} />
 		</div>
 	);
 }
 
-/** Seed the editable config form from a directory record so the detail view opens pre-filled with the skill's identity, tools, and instructions. */
-function skillToAgentConfig(skill: SkillsDirectorySkill): AgentConfigFormValue {
-	const description = skill.description ?? "";
+const SKILL_DRAFT_KEY_PREFIX = "vpk:skill-draft:";
+const SKILL_NAME_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 
-	return {
-		name: skill.name,
-		description,
-		summary: description,
-		instructions: getSkillInstructions(skill),
-		tools: (skill.tools ?? []).map((tool) => tool.name),
-		conversationStarters: [],
-		agentId: skill.id,
-		action: "draft",
-	};
+/** The persisted shape of an in-progress skill edit. */
+interface SkillDraft {
+	skillMd: string;
+	displayName: string;
+	displayDescription: string;
+}
+
+function loadSkillDraft(skillId: string): SkillDraft | null {
+	if (typeof window === "undefined") {
+		return null;
+	}
+	try {
+		const raw = window.localStorage.getItem(`${SKILL_DRAFT_KEY_PREFIX}${skillId}`);
+		return raw ? (JSON.parse(raw) as SkillDraft) : null;
+	} catch {
+		return null;
+	}
+}
+
+function saveSkillDraft(skillId: string, draft: SkillDraft): void {
+	if (typeof window === "undefined") {
+		return;
+	}
+	try {
+		window.localStorage.setItem(`${SKILL_DRAFT_KEY_PREFIX}${skillId}`, JSON.stringify(draft));
+	} catch {
+		// Best-effort persistence (quota / privacy mode) — a failed write just means
+		// the edit isn't restored on reopen, which is acceptable for the prototype.
+	}
+}
+
+/** The canonical frontmatter description parsed out of a SKILL.md string. */
+function readFrontmatterDescription(skillMd: string): string {
+	const { frontmatter } = parseSkillMd(skillMd);
+	return frontmatterValueToString(getFrontmatterField(frontmatter, "description"));
 }
 
 /**
- * Bridges a `SkillsDirectorySkill` into the editable skill-config screen
- * (`AgentConfigFields`). `AgentConfigFields` is fully controlled, so this owns
- * the `AgentConfigFormValue` state and mirrors the wiring contract from the
- * skill-config demo (`useSkillConfigDemoConfig`). Blocks stay decoupled by
- * composing skill-config + conversation-starters + triggers here at the
- * consumer rather than inside the skill-config block itself.
+ * The skill detail editor. Edits a draft of the skill's SKILL.md (rendered with
+ * the in-editor frontmatter card) plus the outside name + human-friendly
+ * description, committed via the Save/Cancel footer (localStorage-backed).
+ *
+ * Single source of truth = the draft. The editor content is the full SKILL.md;
+ * the outside name re-slugs the frontmatter `name`; the outside description is a
+ * display-only override (it does NOT change the canonical frontmatter
+ * description, which is edited inside the card).
  */
-function SkillDetailConfig({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
-	const [config, setConfig] = useState<AgentConfigFormValue>(() => skillToAgentConfig(skill));
-	const [startersOpen, setStartersOpen] = useState(false);
+function SkillDetailConfig({ skill, onExit }: Readonly<{ skill: SkillsDirectorySkill; onExit: () => void }>) {
+	const initialDraft = useMemo<SkillDraft>(() => {
+		const saved = loadSkillDraft(skill.id);
+		if (saved) {
+			return saved;
+		}
+		const skillMd = getSkillMarkdown(skill);
+		return { skillMd, displayName: skill.name, displayDescription: readFrontmatterDescription(skillMd) };
+	}, [skill]);
+
+	const [skillMd, setSkillMd] = useState(initialDraft.skillMd);
+	const [displayName, setDisplayName] = useState(initialDraft.displayName);
+	const [displayDescription, setDisplayDescription] = useState(initialDraft.displayDescription);
+	const [committedDraft, setCommittedDraft] = useState<SkillDraft>(initialDraft);
+
+	const config = useMemo<AgentConfigFormValue>(
+		() => ({
+			name: displayName,
+			description: displayDescription,
+			summary: displayDescription,
+			instructions: skillMd,
+			agentId: skill.id,
+			action: "draft",
+		}),
+		[displayName, displayDescription, skillMd, skill.id],
+	);
+
+	const dirty =
+		skillMd !== committedDraft.skillMd ||
+		displayName !== committedDraft.displayName ||
+		displayDescription !== committedDraft.displayDescription;
+
+	// Required-field validation (per the agentskills spec): a valid SKILL.md needs
+	// a slug `name` and a non-empty `description` in its frontmatter.
+	const validationError = useMemo(() => {
+		const { frontmatter } = parseSkillMd(skillMd);
+		const name = frontmatterValueToString(getFrontmatterField(frontmatter, "name")).trim();
+		const description = frontmatterValueToString(getFrontmatterField(frontmatter, "description")).trim();
+		if (!name) {
+			return "Add a name to the frontmatter before saving.";
+		}
+		if (!SKILL_NAME_SLUG_RE.test(name)) {
+			return "The frontmatter name must be a lowercase slug (e.g. design-landing-page).";
+		}
+		if (!description) {
+			return "Add a description to the frontmatter before saving.";
+		}
+		return "";
+	}, [skillMd]);
 
 	function handleTextChange(field: AgentConfigTextFieldName, value: string) {
-		setConfig((current) => ({
-			...current,
-			[field]: value,
-			...(field === "description" ? { summary: value } : {}),
-		}));
-	}
-
-	function updateListItem(field: AgentConfigListFieldName, index: number, value: string) {
-		setConfig((current) => {
-			const items = Array.isArray(current[field]) ? [...current[field]] : [];
-			items[index] = value;
-			return { ...current, [field]: items };
-		});
-	}
-
-	function removeListItem(field: AgentConfigListFieldName, index: number) {
-		setConfig((current) => {
-			const items = Array.isArray(current[field]) ? current[field] : [];
-			return { ...current, [field]: items.filter((_, itemIndex) => itemIndex !== index) };
-		});
-	}
-
-	function toggleListItem(field: AgentConfigListFieldName, index: number, enabled: boolean) {
-		setConfig((current) => {
-			const label = (Array.isArray(current[field]) ? current[field] : [])[index];
-			return label ? toggleAgentConfigDisabledItem(current, field, label, enabled) : current;
-		});
-	}
-
-	function appendListItem(field: AgentConfigListFieldName) {
-		setConfig((current) => {
-			const items = Array.isArray(current[field]) ? current[field] : [];
-			return { ...current, [field]: [...items, ""] };
-		});
-	}
-
-	function addListValues(field: AgentConfigListFieldName, values: readonly string[]) {
-		setConfig((current) => {
-			const items = Array.isArray(current[field]) ? current[field] : [];
-			const existing = new Set(items.map((item) => item.trim().toLowerCase()));
-			const additions = values.filter((value) => !existing.has(value.trim().toLowerCase()));
-			return additions.length > 0 ? { ...current, [field]: [...items, ...additions] } : current;
-		});
-	}
-
-	function handleAutomationRulesChange(automationRules: readonly AgentAutomationRule[]) {
-		setConfig((current) => ({ ...current, automationRules }));
-	}
-
-	const conversationStarterDialogValue = useMemo<readonly ConversationStarter[]>(() => {
-		const texts = Array.isArray(config.conversationStarters) ? config.conversationStarters : [];
-		const icons = Array.isArray(config.conversationStarterIcons) ? config.conversationStarterIcons : [];
-
-		return texts
-			.filter((text) => text.trim().length > 0)
-			.map((text, index) => ({
-				id: `starter-${index}`,
-				text,
-				icon: (icons[index] as StarterIconKey | undefined) ?? DEFAULT_STARTER_ICON,
-			}));
-	}, [config.conversationStarterIcons, config.conversationStarters]);
-
-	function handleSaveConversationStarters(starters: readonly ConversationStarter[]) {
-		setConfig((current) => ({
-			...current,
-			conversationStarters: starters.map((starter) => starter.text),
-			conversationStarterIcons: starters.map((starter) => starter.icon),
-		}));
-	}
-
-	function handleOpenDirectory(directory: AgentDirectoryKind) {
-		if (directory === "conversationStarters") {
-			setStartersOpen(true);
+		if (field === "name") {
+			// The outside name field drives the frontmatter slug (name ↔ SKILL.md).
+			setDisplayName(value);
+			setSkillMd((current) => {
+				const { frontmatter, body } = parseSkillMd(current);
+				return serializeSkillMd(setFrontmatterField(frontmatter, "name", slugifySkillName(value)), body);
+			});
+			return;
+		}
+		if (field === "description") {
+			// Display-only override; the canonical frontmatter description is edited
+			// inside the card (and flows through "instructions" below).
+			setDisplayDescription(value);
+			return;
+		}
+		if (field === "instructions") {
+			setSkillMd(value);
 		}
 	}
+
+	function handleSave() {
+		if (validationError) {
+			return;
+		}
+		const draft: SkillDraft = { skillMd, displayName, displayDescription };
+		saveSkillDraft(skill.id, draft);
+		setCommittedDraft(draft);
+		onExit();
+	}
+
+	function handleCancel() {
+		if (dirty && typeof window !== "undefined" && !window.confirm("Discard unsaved changes to this skill?")) {
+			return;
+		}
+		onExit();
+	}
+
+	const profileCover = (
+		<div className="relative w-fit overflow-hidden rounded-t-xl bg-surface text-text">
+			<IconTile
+				aria-hidden
+				icon={<GlobeIcon label="" />}
+				label={skill.name}
+				size="xlarge"
+				variant={getSkillIconTileVariant(skill)}
+			/>
+		</div>
+	);
+
+	const lastUpdatedLabel = getSkillLastUpdatedLabel(skill);
+	const profileMetaSlot = (
+		<div className="flex flex-wrap gap-x-8 gap-y-2 pt-1">
+			<div className="flex flex-col">
+				<span className="flex items-center gap-1 text-sm font-semibold leading-5 text-text">
+					{getSkillCreatedBy(skill)}
+					{skill.verified ? (
+						<Icon
+							className="text-icon-information"
+							render={<StatusVerifiedIcon label="Verified" size="small" color="currentColor" />}
+						/>
+					) : null}
+				</span>
+				<span className="text-xs leading-4 text-text-subtlest">Created by</span>
+			</div>
+			<div className="flex flex-col">
+				<span className="text-sm font-semibold leading-5 text-text">{skill.addedBy ?? "You"}</span>
+				<span className="text-xs leading-4 text-text-subtlest">Added by</span>
+			</div>
+			{lastUpdatedLabel ? (
+				<div className="flex flex-col">
+					<span className="text-sm font-semibold leading-5 text-text">{lastUpdatedLabel}</span>
+					<span className="text-xs leading-4 text-text-subtlest">Last update</span>
+				</div>
+			) : null}
+		</div>
+	);
 
 	return (
 		<div className="flex min-h-0 min-w-0 flex-col overflow-hidden md:pl-4">
@@ -1000,26 +1066,25 @@ function SkillDetailConfig({ skill }: Readonly<{ skill: SkillsDirectorySkill }>)
 					<AgentConfigFields
 						config={config}
 						idPrefix={`skill-detail-${skill.id}`}
-						footerCollapsible={false}
+						profileCover={profileCover}
+						profileMetaSlot={profileMetaSlot}
+						showConfigToolbar={false}
+						frontmatter={{ enabled: true }}
 						onTextChange={handleTextChange}
-						onListItemChange={updateListItem}
-						onRemoveListItem={removeListItem}
-						onToggleListItem={toggleListItem}
-						onAddListValues={addListValues}
-						onAppendListItem={appendListItem}
-						onOpenDirectory={handleOpenDirectory}
-						onAutomationRulesChange={handleAutomationRulesChange}
 					/>
 				</AgentContent>
 			</Agent>
-			<ConversationStartersDialog
-				open={startersOpen}
-				onOpenChange={setStartersOpen}
-				starters={conversationStarterDialogValue}
-				maxStarters={3}
-				saveLabel={conversationStarterDialogValue.length > 0 ? "Save" : "Add"}
-				onSave={handleSaveConversationStarters}
-			/>
+			<div className="flex shrink-0 items-center justify-between gap-3 border-t border-border px-6 py-3">
+				<p className="min-w-0 truncate text-xs leading-4 text-text-danger">{validationError}</p>
+				<div className="flex shrink-0 items-center gap-2">
+					<Button onClick={handleCancel} type="button" variant="outline">
+						Cancel
+					</Button>
+					<Button disabled={Boolean(validationError)} onClick={handleSave} type="button">
+						Save
+					</Button>
+				</div>
+			</div>
 		</div>
 	);
 }

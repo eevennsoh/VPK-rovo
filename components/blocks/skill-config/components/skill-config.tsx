@@ -3581,6 +3581,7 @@ function AgentInstructionsComposer({
 	config,
 	contentClassName,
 	editorClassName,
+	frontmatter,
 	instructions,
 	mentionRemovalRequest,
 	onAddListValues,
@@ -3599,6 +3600,7 @@ function AgentInstructionsComposer({
 	config: AgentConfigFormValue;
 	contentClassName?: string;
 	editorClassName?: string;
+	frontmatter?: { enabled?: boolean };
 	instructions?: string;
 	mentionRemovalRequest?: RichTextMentionRemovalRequest | null;
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
@@ -3748,6 +3750,7 @@ function AgentInstructionsComposer({
 				contentClassName={cn("pt-2", contentClassName)}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
 				enableDirectoryAutocomplete
+				frontmatter={frontmatter}
 				placeholder="Press / to help me create the skill"
 				placeholderSlot={(
 					<p className="tiptap-editor text-sm leading-[1.55] text-text-subtlest">
@@ -4168,6 +4171,9 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	// not rendered at all — used by the skill detail surface, which adds apps via
 	// the editor's `/` command instead of a footer panel. Defaults to shown.
 	showConfigToolbar?: boolean;
+	// Enables the in-editor SKILL.md frontmatter card. Off by default; the skill
+	// detail surface passes `{ enabled: true }`.
+	frontmatter?: { enabled?: boolean };
 	// When false, the footer config panel is locked open (no collapse/expand
 	// toggle; the separator stays). Defaults to collapsible.
 	footerCollapsible?: boolean;
@@ -4219,6 +4225,7 @@ export const AgentConfigFields = memo(
 		profileCover,
 		profileMetaSlot,
 		showConfigToolbar = true,
+		frontmatter,
 		footerCollapsible,
 		hiddenConfigFields,
 		idPrefix,
@@ -4451,6 +4458,7 @@ export const AgentConfigFields = memo(
 						<AgentInstructionsComposer
 							className="relative flex min-h-0 flex-1 flex-col"
 							config={config}
+							frontmatter={frontmatter}
 							contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]")}
 							editorClassName={isFilledConfig ? undefined : "agent-instructions-tiptap-editor-compact-empty"}
 							instructions={config.instructions}

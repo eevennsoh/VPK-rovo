@@ -93,6 +93,12 @@ interface RichTextEditorProps
 	 */
 	onOpenDirectory?: (category: RichTextSlashCategory) => void;
 	onViewModeChange?: (mode: EditorToolbarViewMode) => void;
+	/**
+	 * When `{ enabled: true }`, a leading SKILL.md `---` YAML block renders as the
+	 * editable frontmatter card and round-trips as a fence in the markdown view.
+	 * Off by default.
+	 */
+	frontmatter?: { enabled?: boolean };
 	showToolbar?: boolean;
 	showBubbleMenu?: boolean;
 	showFloatingMenu?: boolean;
@@ -326,6 +332,7 @@ export function RichTextEditor({
 	onAskRovo,
 	onOpenDirectory,
 	onViewModeChange,
+	frontmatter,
 	showToolbar = true,
 	showBubbleMenu = true,
 	showFloatingMenu = false,
@@ -460,6 +467,7 @@ export function RichTextEditor({
 	// presence (not identity) in the deps so toggling it rebuilds the editor
 	// while a changing handler is still read live through the ref.
 	const hasOpenDirectory = Boolean(onOpenDirectory);
+	const frontmatterEnabled = Boolean(frontmatter?.enabled);
 	const extensions = useMemo(
 		() => {
 			const richTextExtensions = createRichTextEditorExtensions({
@@ -472,13 +480,14 @@ export function RichTextEditor({
 					? (category) => onOpenDirectoryRef.current?.(category)
 					: undefined,
 				suggestionVariant,
+				frontmatter: frontmatterEnabled ? { enabled: true } : undefined,
 			});
 			if (enableDirectoryAutocomplete) {
 				richTextExtensions.push(createComposerDirectoryAutocomplete(directoryAutocompleteController));
 			}
 			return richTextExtensions;
 		},
-		[directoryAutocompleteController, enableDirectoryAutocomplete, hasOpenDirectory, suggestionVariant],
+		[directoryAutocompleteController, enableDirectoryAutocomplete, frontmatterEnabled, hasOpenDirectory, suggestionVariant],
 	);
 	const editor = useEditor({
 		extensions,

@@ -22,6 +22,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
+import { FrontmatterNode } from "./frontmatter-node";
 import { RichTextMentionNodeView } from "./mention-node-view";
 import {
 	createMentionTokenParser,
@@ -295,6 +296,7 @@ export function createRichTextEditorExtensions(
 	options: RichTextEditorExtensionOptions = {},
 ) {
 	return [
+		...(options.frontmatter?.enabled ? [FrontmatterNode] : []),
 		StarterKit.configure({
 			link: false,
 			underline: false,

@@ -158,4 +158,11 @@ export interface RichTextEditorExtensionOptions {
 	 * composer) leave it unset.
 	 */
 	onOpenDirectory?: (category: RichTextSlashCategory) => void;
+	/**
+	 * When `{ enabled: true }`, registers the block-level `frontmatter` node so a
+	 * leading SKILL.md `---` YAML block renders as the editable frontmatter card
+	 * (and round-trips as a fence in the markdown view). Off by default — only the
+	 * skill detail editor opts in; every other consumer is unaffected.
+	 */
+	frontmatter?: { enabled?: boolean };
 }
