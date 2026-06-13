@@ -3778,6 +3778,13 @@ function AgentInstructionsComposer({
 interface AgentConfigProfileProps {
 	config: AgentConfigFormValue;
 	avatarSrc?: string;
+	// Optional override for the cover tile (defaults to <AgentProfileCover />) and
+	// an optional metadata slot rendered under the description. Both default to the
+	// existing behavior so non-skill consumers (agent/subagents/studio) are
+	// unchanged; the skills-directory detail view supplies a globe cover + a
+	// "Created by / Added by / Last update" row.
+	profileCover?: ReactNode;
+	profileMetaSlot?: ReactNode;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	screenAssistantTargetPrefix?: string;
 	// Subagent editing context. When `isSubagent` is true the profile header
@@ -3799,6 +3806,8 @@ interface AgentConfigProfileProps {
 
 function AgentConfigProfile({
 	config,
+	profileCover,
+	profileMetaSlot,
 	onTextChange,
 	screenAssistantTargetPrefix,
 	isSubagent = false,
@@ -3818,7 +3827,7 @@ function AgentConfigProfile({
 			className="flex flex-col gap-4"
 			data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:profile` : undefined}
 		>
-			<AgentProfileCover />
+			{profileCover ?? <AgentProfileCover />}
 			<div className="flex flex-col gap-1" data-agent-field="name">
 				{/* The cover/avatar and the description below stay put; only the name
 				    row (title + inline back-arrow on subagents) crossfades and slides
@@ -3889,6 +3898,7 @@ function AgentConfigProfile({
 					/>
 				</div>
 			</div>
+			{profileMetaSlot ?? null}
 		</section>
 	);
 }
@@ -4149,6 +4159,15 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	avatarSrc?: string;
 	compactScrollAreaClassName?: string;
 	compactFooterBefore?: ReactNode;
+	// Optional cover override + metadata slot, forwarded to AgentConfigProfile.
+	// Default-undefined → existing cover / no meta row, so other consumers are
+	// unchanged.
+	profileCover?: ReactNode;
+	profileMetaSlot?: ReactNode;
+	// When false, the bottom config toolbar (AgentCompactConfigToolbarBelow) is
+	// not rendered at all — used by the skill detail surface, which adds apps via
+	// the editor's `/` command instead of a footer panel. Defaults to shown.
+	showConfigToolbar?: boolean;
 	// When false, the footer config panel is locked open (no collapse/expand
 	// toggle; the separator stays). Defaults to collapsible.
 	footerCollapsible?: boolean;
@@ -4197,6 +4216,9 @@ export const AgentConfigFields = memo(
 		avatarSrc,
 		compactFooterBefore,
 		compactScrollAreaClassName,
+		profileCover,
+		profileMetaSlot,
+		showConfigToolbar = true,
 		footerCollapsible,
 		hiddenConfigFields,
 		idPrefix,
@@ -4413,6 +4435,8 @@ export const AgentConfigFields = memo(
 							<AgentConfigProfile
 								config={profileConfig ?? config}
 								avatarSrc={profileAvatarSrc ?? avatarSrc}
+								profileCover={profileCover}
+								profileMetaSlot={profileMetaSlot}
 								onTextChange={handleProfileTextChange}
 								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 								isSubagent={isSubagent}
@@ -4445,6 +4469,7 @@ export const AgentConfigFields = memo(
 					    separator/expand row stays transparent so content scrolls
 					    visibly behind it; only the field rows carry a solid surface. */}
 					{compactFooterBefore}
+					{showConfigToolbar ? (
 					<div className="shrink-0">
 						<AgentCompactConfigToolbarBelow
 							config={config}
@@ -4468,6 +4493,7 @@ export const AgentConfigFields = memo(
 							selectedListItemIndexByField={selectedListItemIndexByField}
 						/>
 					</div>
+					) : null}
 				</div>
 				<AgentTriggersDialog
 					open={triggersEditor.open}
