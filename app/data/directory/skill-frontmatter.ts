@@ -37,6 +37,9 @@ export type FrontmatterEntries = readonly FrontmatterEntry[];
 const LIST_ITEM_RE = /^\s*-\s+(.*)$/u;
 const TOP_LEVEL_RE = /^([^\s:][^:]*?):\s*(.*)$/u;
 const FLOW_LIST_RE = /^\[(.*)\]$/u;
+// YAML block scalar indicator: `|` (literal) or `>` (folded), with optional
+// chomping (`+`/`-`) and explicit-indent digits, e.g. `|`, `|-`, `>`, `>2`.
+const BLOCK_SCALAR_RE = /^([|>])[+-]?\d*$/u;
 
 function unquoteScalar(raw: string): string {
 	const value = raw.trim();
@@ -92,6 +95,34 @@ export function parseFrontmatterYaml(yaml: string): FrontmatterEntries {
 		const inline = match[2];
 
 		if (inline.trim() !== "") {
+			const blockScalar = BLOCK_SCALAR_RE.exec(inline.trim());
+			if (blockScalar) {
+				// YAML block scalar (`|` literal / `>` folded): the marker is not the
+				// value — gather the indented continuation lines (so they aren't dropped),
+				// dedent, and join. Re-serializes as a quoted scalar, preserving the text.
+				const blockLines: string[] = [];
+				let j = i + 1;
+				while (j < lines.length && (lines[j].trim() === "" || /^[ \t]/u.test(lines[j]))) {
+					blockLines.push(lines[j]);
+					j += 1;
+				}
+				while (blockLines.length > 0 && blockLines[blockLines.length - 1].trim() === "") {
+					blockLines.pop();
+				}
+				const indents = blockLines
+					.filter((blockLine) => blockLine.trim() !== "")
+					.map((blockLine) => /^[ \t]*/u.exec(blockLine)![0].length);
+				const minIndent = indents.length > 0 ? Math.min(...indents) : 0;
+				const content = blockLines.map((blockLine) => blockLine.slice(minIndent));
+				const value =
+					blockScalar[1] === ">"
+						? content.map((blockLine) => blockLine.trim()).filter((blockLine) => blockLine !== "").join(" ")
+						: content.join("\n");
+				entries.push({ key, value });
+				i = j;
+				continue;
+			}
+
 			const flow = FLOW_LIST_RE.exec(inline.trim());
 			if (flow) {
 				const items = flow[1]

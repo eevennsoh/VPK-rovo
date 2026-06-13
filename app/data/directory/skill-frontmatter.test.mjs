@@ -98,6 +98,17 @@ test("multi-line scalar (e.g. a wrapped description) survives the round-trip", (
 	assert.deepEqual(parseFrontmatterYaml(yaml), entries);
 });
 
+test("YAML block scalars (| literal, > folded) capture their content instead of dropping it", () => {
+	const literal = parseFrontmatterYaml(["name: x", "description: |", "  Line one.", "  Line two."].join("\n"));
+	assert.equal(getFrontmatterField(literal, "description"), "Line one.\nLine two.");
+
+	const folded = parseFrontmatterYaml(["name: x", "description: >", "  Line one", "  line two."].join("\n"));
+	assert.equal(getFrontmatterField(folded, "description"), "Line one line two.");
+
+	// The captured value re-serializes (quoted) and round-trips losslessly.
+	assert.deepEqual(parseFrontmatterYaml(serializeFrontmatterYaml(literal)), literal);
+});
+
 test("graceful passthrough: an unknown nested block preserves its value through the round-trip", () => {
 	const yaml = ["name: x", "metadata:", "  version: 1.2.0", "  author: maia"].join("\n");
 	const entries = parseFrontmatterYaml(yaml);
