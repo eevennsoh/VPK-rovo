@@ -121,6 +121,66 @@ export const BLOCK_DETAILS: Record<string, ComponentDetail> = {
 			{ title: "Empty skill", description: "Default setup state with quick configuration links and Operations prompt starters before details are populated.", demoSlug: "skill-config-demo-empty" },
 		],
 	},
+	"trigger-config": {
+		description:
+			"A structured trigger strategy/configuration surface duplicated from the Skill Config block as a baseline for new trigger configuration screens. Includes an app header, cover area, compact section navigation, section block wrappers, knowledge controls, and instructions composer.",
+		importStatement: `import {
+  Agent,
+  AgentHeader,
+  AgentContent,
+  AgentConfigFields,
+} from "@/components/blocks/trigger-config";`,
+		usage: `import {
+  Agent,
+  AgentHeader,
+  AgentContent,
+  AgentConfigFields,
+} from "@/components/blocks/trigger-config";
+
+<Agent>
+  <AgentHeader name="Policy Checker" model="Draft" />
+  <AgentContent>
+    <AgentConfigFields
+      config={agentConfig}
+      idPrefix="trigger-config"
+      onTextChange={handleTextChange}
+      onListItemChange={updateListItem}
+      onRemoveListItem={removeListItem}
+      onAppendListItem={appendListItem}
+    />
+  </AgentContent>
+</Agent>`,
+		demoLayout: {
+			previewContentWidth: "full",
+			examplesContentWidth: "full",
+		},
+		props: [
+			{
+				name: "className",
+				type: "string",
+				description: "Additional classes applied to the outer container.",
+			},
+		],
+		subComponents: [
+			{ name: "AgentHeader", description: "Top app bar with avatar, name, status lozenge, and Configure/Test tabs (override via the `actions` prop)." },
+			{ name: "AgentContent", description: "Body container for the configuration surface." },
+			{ name: "AgentConfigFields", description: "Shared Figma-style strategy surface used by the catalog preview and Studio panel." },
+			{ name: "AgentCompactHeaderNav", description: "Compact section navigation for Insights, Surfaces, Evaluation, Users, and Access." },
+			{ name: "AgentCompactInsightsPanel", description: "Wrapper around the Agent Insights block for compact layouts." },
+			{ name: "AgentCompactSurfacesPanel", description: "Wrapper around the Agent Surfaces block for compact layouts." },
+			{ name: "AgentCompactEvaluationPanel", description: "Wrapper around the Agent Evaluation block for compact layouts." },
+			{ name: "AgentCompactUsersPanel", description: "Wrapper around the Agent Users block for compact layouts." },
+			{ name: "AgentCompactAccessPanel", description: "Wrapper around the Agent Access block for compact layouts." },
+			{ name: "AgentInstructions", description: "Instruction text block with label." },
+			{ name: "AgentTools", description: "Accordion container for tool definitions." },
+			{ name: "AgentTool", description: "Individual tool item with expandable JSON schema." },
+			{ name: "AgentOutput", description: "Output schema display with syntax highlighting." },
+		],
+		examples: [
+			{ title: "Filled trigger", description: "Trigger strategy surface after configuration fields have been populated.", demoSlug: "trigger-config-demo-full" },
+			{ title: "Empty trigger", description: "Default setup state with quick configuration links and Operations prompt starters before details are populated.", demoSlug: "trigger-config-demo-empty" },
+		],
+	},
 	"agent-bento": {
 		description: "Two Rovo agent prompt-starter bentos: a tabbed landing variant with an auto-cycling category bar, a hero tile (\"Works with\" sources + \"Skills\"), and a \"Browse all\" pill; and a minimal five-tile \"Start with these agent templates\" row. Both use an avatar-colored hover glow and collapse from their desktop grid to a horizontal carousel below the lg breakpoint.",
 		importStatement: `import { HomeStarterBento, AgentCompactOperationsBento } from "@/components/blocks/agent-bento";`,

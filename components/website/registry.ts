@@ -6775,6 +6775,9 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
   "skill-config": dynamic(() => import("./demos/blocks/skill-config-demo"), {
     ssr: false,
   }),
+  "trigger-config": dynamic(() => import("./demos/blocks/trigger-config-demo"), {
+    ssr: false,
+  }),
   "agent-bento": dynamic(() => import("./demos/blocks/agent-bento-demo"), {
     ssr: false,
   }),
@@ -7121,6 +7124,22 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/blocks/skill-config-demo").then((mod) => ({
         default: mod.SkillConfigDemoEmpty,
+      })),
+    { ssr: false },
+  ),
+
+  // Trigger Config
+  "trigger-config-demo-full": dynamic(
+    () =>
+      import("./demos/blocks/trigger-config-demo").then((mod) => ({
+        default: mod.TriggerConfigDemoFull,
+      })),
+    { ssr: false },
+  ),
+  "trigger-config-demo-empty": dynamic(
+    () =>
+      import("./demos/blocks/trigger-config-demo").then((mod) => ({
+        default: mod.TriggerConfigDemoEmpty,
       })),
     { ssr: false },
   ),
