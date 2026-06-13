@@ -3128,25 +3128,43 @@ function hasFilledAgentConfig(config: AgentConfigFormValue): boolean {
 	);
 }
 
-function AgentProfileCover() {
+function AgentProfileCover({ config }: Readonly<{ config: AgentConfigFormValue }>) {
+	const primaryRule = getAgentAutomationRules(config)[0];
+	const triggers = primaryRule?.triggers ?? [];
+	const visibleTriggers = triggers.slice(0, 5);
+	const overflowCount = Math.max(0, triggers.length - visibleTriggers.length);
+
 	return (
 		<div className="flex items-center gap-2" aria-hidden={true}>
 			<div className="flex min-w-0 items-center gap-1">
-				<IconTile
-					className="border border-border bg-bg-input text-icon-subtle"
-					icon={<AutomationIcon label="" size="small" />}
-					label="Trigger"
-					size="small"
-					variant="transparent"
-				/>
+				{visibleTriggers.length > 0 ? (
+					visibleTriggers.map((trigger) => (
+						<span key={trigger.id} className="rich-text-command-menu-avatar inline-flex size-8 shrink-0 items-center justify-center">
+							{renderAgentTriggerProviderTileIcon(trigger) ?? <AutomationIcon label="" size="small" />}
+						</span>
+					))
+				) : (
+					<IconTile
+						aria-hidden={true}
+						icon={<AutomationIcon label="" size="small" />}
+						label="Trigger"
+						size="medium"
+						variant="blue"
+					/>
+				)}
+				{overflowCount > 0 ? (
+					<span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-border bg-bg-input px-1.5 text-xs font-medium leading-4 text-text-subtle">
+						+{overflowCount}
+					</span>
+				) : null}
 			</div>
 			<div className="h-px w-6 shrink-0 bg-border" />
 			<IconTile
-				className="bg-bg-neutral text-icon-subtle"
+				aria-hidden={true}
 				icon={<GenerativeIndicatorIcon label="" size="small" />}
 				label="Agent instructions"
 				size="small"
-				variant="transparent"
+				variant="gray"
 			/>
 		</div>
 	);
@@ -3953,7 +3971,7 @@ function AgentConfigProfile({
 			className="flex flex-col gap-2"
 			data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:profile` : undefined}
 		>
-			<AgentProfileCover />
+			<AgentProfileCover config={config} />
 			<div className="flex flex-col gap-1" data-agent-field="name">
 				{/* The cover/avatar and the description below stay put; only the name
 				    row (title + inline back-arrow on subagents) crossfades and slides
@@ -4159,8 +4177,9 @@ export const AgentConfigFields = memo(
 		// single dialog instance serves every entry point (summary row, collapsed
 		// nav, missing-config tile). `seed` carries the automation rule the modal
 		// opens with — an existing rule when editing, or a freshly-picked event.
-		const [triggersEditor, setTriggersEditor] = useState<{ open: boolean; seed: AgentAutomationRule }>({
+		const [triggersEditor, setTriggersEditor] = useState<{ open: boolean; fromManage: boolean; seed: AgentAutomationRule }>({
 			open: false,
+			fromManage: false,
 			seed: createAgentAutomationRule({
 					id: "automation-1",
 				name: "",
@@ -4168,9 +4187,10 @@ export const AgentConfigFields = memo(
 				triggers: [],
 			}),
 		});
-		const handleEditTriggers = useCallback((seed?: AgentAutomationRule) => {
+		const handleEditTriggers = useCallback((seed?: AgentAutomationRule, fromManage = false) => {
 			setTriggersEditor({
 				open: true,
+				fromManage,
 				seed: seed ?? createAgentAutomationRule({
 					id: `automation-${getNextAutomationRuleIndex(currentAutomationRules)}`,
 					name: "",
@@ -4238,7 +4258,7 @@ export const AgentConfigFields = memo(
 		const handleEditAutomationFromManage = useCallback(
 			(automationRule: AgentAutomationRule) => {
 				setManageTriggersOpen(false);
-				handleEditTriggers(automationRule);
+				handleEditTriggers(automationRule, true);
 			},
 			[handleEditTriggers],
 		);
@@ -4266,7 +4286,7 @@ export const AgentConfigFields = memo(
 						// because that would pull those full-width inputs back to the
 						// clip edge and re-clip their rings.
 						className={cn(
-							"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-1.5",
+							"flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto",
 							compactScrollOverflow.showBottomScrollMask && "scroll-mask-bottom",
 							compactScrollAreaClassName,
 						)}
@@ -4307,6 +4327,7 @@ export const AgentConfigFields = memo(
 					</div>
 				</div>
 				<AgentTriggersDialog
+				showBack={triggersEditor.fromManage}
 					open={triggersEditor.open}
 					onOpenChange={handleTriggersEditorOpenChange}
 					automationRule={triggersEditor.seed}

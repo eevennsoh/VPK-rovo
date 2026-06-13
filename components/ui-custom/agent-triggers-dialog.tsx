@@ -16,6 +16,8 @@ export interface AgentTriggersDialogProps {
 	onSave: (automationRule: AgentAutomationRule) => void;
 	title?: string;
 	saveLabel?: string;
+	/** Show the back arrow — true only when navigating from the manage automations dialog. */
+	showBack?: boolean;
 }
 
 /**
@@ -30,6 +32,7 @@ export function AgentTriggersDialog({
 	onSave,
 	title,
 	saveLabel,
+	showBack = false,
 }: Readonly<AgentTriggersDialogProps>): ReactElement {
 	return (
 		<TriggerConfigAutomationDialog
@@ -37,6 +40,7 @@ export function AgentTriggersDialog({
 			open={open}
 			onOpenChange={onOpenChange}
 			onSave={onSave}
+			showBack={showBack}
 			title={title}
 			saveLabel={saveLabel ?? "Save"}
 		/>

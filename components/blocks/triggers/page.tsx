@@ -271,15 +271,19 @@ function TriggerAddRow({
 	...props
 }: Readonly<TriggerAddRowProps>): ReactElement {
 	return (
-		<Button
+		<button
 			type="button"
-			variant="ghost"
-			className={cn("w-full justify-start", className)}
+			className={cn(
+				"flex h-8 w-full shrink-0 cursor-pointer items-center gap-3 rounded-lg px-1.5 text-sm text-text-subtle outline-none select-none transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+				className,
+			)}
 			{...props}
 		>
-			<AddIcon label="" size="small" />
+			<span aria-hidden="true" className="flex size-6 shrink-0 items-center justify-center">
+				<AddIcon label="" size="small" />
+			</span>
 			{label}
-		</Button>
+		</button>
 	);
 }
 
@@ -582,6 +586,7 @@ function TriggerParamMenu({
 					<Button
 						type="button"
 						variant="outline"
+						size="compact"
 						disabled={disabled}
 						aria-label={`${param.label}: ${label}`}
 						className="max-w-52"
@@ -664,7 +669,7 @@ function TriggerRowDeleteButton({ onRemove }: Readonly<{ onRemove: () => void }>
 			aria-label="Delete trigger"
 			className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 group-focus-within/trigger-row:opacity-100 focus-visible:opacity-100 hover:bg-bg-danger-hovered hover:text-text-danger active:bg-bg-danger-pressed [&:hover_svg]:text-icon-danger"
 			onClick={onRemove}
-			size="icon"
+			size="icon-compact"
 			type="button"
 			variant="ghost"
 		>
@@ -697,7 +702,7 @@ function TriggerRow({
 
 	if (!provider || !event) {
 		return (
-			<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3">
+			<div className="group/trigger-row grid grid-cols-[1.5rem_minmax(0,1fr)] items-start gap-x-3">
 				<IconTile
 					aria-hidden={true}
 					icon={<AutomationIcon label="" size="small" />}
@@ -716,18 +721,12 @@ function TriggerRow({
 	}
 
 	return (
-		<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 rounded-lg px-2 py-2 transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered">
-			<div className="justify-items-center" aria-hidden={true}>
-				<IconTile
-					aria-hidden={true}
-					icon={renderTriggerProviderIcon(provider.icon, provider.label)}
-					label={provider.label}
-					size="medium"
-					variant="blue"
-				/>
+		<div className="group/trigger-row grid grid-cols-[1.5rem_minmax(0,1fr)] gap-x-3 rounded-lg p-1.5 transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered">
+			<div className="flex size-6 items-center justify-center" aria-hidden={true}>
+				<TriggerProviderTileIcon icon={provider.icon} label={provider.label} />
 			</div>
 			<div className="grid min-w-0 gap-1.5">
-				<div className="flex min-h-8 items-center gap-2">
+				<div className="flex items-center gap-2">
 					<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-text">
 						<TriggerSentence
 							disabled={paramsDisabled}
@@ -806,7 +805,7 @@ export function TriggerConditionsPanel({
 }>): ReactElement {
 	return (
 		<div className="overflow-hidden rounded-xl border border-border bg-bg-input">
-			<div className="grid gap-1 p-2">
+			<div className="grid p-1.5">
 				{triggers.length > 0 ? (
 					triggers.map((trigger) => (
 						<TriggerRow
@@ -823,10 +822,10 @@ export function TriggerConditionsPanel({
 					</div>
 				)}
 			</div>
-			<div className="border-t border-border bg-surface px-2 py-2">
+			<div className="border-t border-border bg-surface p-1.5">
 				<TriggerPicker
 					defaultOpen={defaultPickerOpen}
-					label="Add Trigger"
+					label="Add trigger"
 					onSelectEvent={onAddTrigger}
 				/>
 			</div>
@@ -905,6 +904,7 @@ function TriggerAutomationFlowPreview({
 }
 
 export interface TriggerAutomationDialogProps {
+	showBack?: boolean;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	automationRule: AgentAutomationRule;
@@ -1119,7 +1119,8 @@ export function TriggerConfigAutomationDialog({
 	onSave,
 	open,
 	saveLabel = "Save",
-	title = "New Automation",
+	showBack = false,
+	title = "Edit automation",
 }: Readonly<TriggerAutomationDialogProps>): ReactElement {
 	const seedRef = useRef<AgentAutomationRule>(automationRule);
 	seedRef.current = automationRule;
@@ -1219,6 +1220,7 @@ export function TriggerConfigAutomationDialog({
 			<DialogContent className="flex max-h-[min(760px,calc(100vh-2rem))] flex-col gap-0 overflow-hidden p-0" showCloseButton={false} size="lg">
 				<div className="flex shrink-0 items-center justify-between px-6 py-6">
 					<div className="flex min-w-0 items-center gap-2">
+					{showBack ? (
 						<Button
 							aria-label="Back"
 							className="-ml-2 text-icon-subtle"
@@ -1229,6 +1231,7 @@ export function TriggerConfigAutomationDialog({
 						>
 							<ArrowLeftIcon label="" />
 						</Button>
+					) : null}
 						<DialogTitle className="truncate text-xl font-semibold leading-6 text-text">{title}</DialogTitle>
 					</div>
 					<div className="flex items-center gap-3">
@@ -1241,7 +1244,7 @@ export function TriggerConfigAutomationDialog({
 						</DialogClose>
 					</div>
 				</div>
-				<div className="grid min-h-0 flex-1 overflow-y-auto px-6 py-5">
+				<div className="grid min-h-0 flex-1 overflow-y-auto px-6 pb-5">
 					<Suspense fallback={null}>
 						<AgentConfigFields
 							config={config}
@@ -1305,7 +1308,7 @@ export interface TriggersProps {
  * shared instruction prompt can apply to multiple trigger conditions.
  */
 export default function Triggers({
-	addTriggerLabel = "Add Trigger",
+	addTriggerLabel = "Add trigger",
 	automationRules,
 	className,
 	defaultAutomationRules,

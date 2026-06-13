@@ -4318,8 +4318,9 @@ export const AgentConfigFields = memo(
 		// single dialog instance serves every entry point (summary row, collapsed
 		// nav, missing-config tile). `seed` carries the automation rule the modal
 		// opens with — an existing rule when editing, or a freshly-picked event.
-		const [triggersEditor, setTriggersEditor] = useState<{ open: boolean; seed: AgentAutomationRule }>({
+		const [triggersEditor, setTriggersEditor] = useState<{ open: boolean; fromManage: boolean; seed: AgentAutomationRule }>({
 			open: false,
+			fromManage: false,
 			seed: createAgentAutomationRule({
 					id: "automation-1",
 				name: "",
@@ -4327,9 +4328,10 @@ export const AgentConfigFields = memo(
 				triggers: [],
 			}),
 		});
-		const handleEditTriggers = useCallback((seed?: AgentAutomationRule) => {
+		const handleEditTriggers = useCallback((seed?: AgentAutomationRule, fromManage = false) => {
 			setTriggersEditor({
 				open: true,
+				fromManage,
 				seed: seed ?? createAgentAutomationRule({
 					id: `automation-${getNextAutomationRuleIndex(currentAutomationRules)}`,
 					name: "",
@@ -4405,7 +4407,7 @@ export const AgentConfigFields = memo(
 		const handleEditAutomationFromManage = useCallback(
 			(automationRule: AgentAutomationRule) => {
 				setManageTriggersOpen(false);
-				handleEditTriggers(automationRule);
+				handleEditTriggers(automationRule, true);
 			},
 			[handleEditTriggers],
 		);
@@ -4504,6 +4506,7 @@ export const AgentConfigFields = memo(
 					) : null}
 				</div>
 				<AgentTriggersDialog
+				showBack={triggersEditor.fromManage}
 					open={triggersEditor.open}
 					onOpenChange={handleTriggersEditorOpenChange}
 					automationRule={triggersEditor.seed}
