@@ -779,7 +779,7 @@ function createEmptyAutomationRule(index: number): AgentAutomationRule {
 	});
 }
 
-function TriggerConditionsPanel({
+export function TriggerConditionsPanel({
 	defaultPickerOpen,
 	onAddTrigger,
 	onConnectTrigger,

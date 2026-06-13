@@ -25,6 +25,7 @@ import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
+import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import ViewsIcon from "@atlaskit/icon-lab/core/views";
 
@@ -41,6 +42,7 @@ import {
 import {
 	renderAgentTriggerProviderIcon,
 	renderAgentTriggerProviderTileIcon,
+	TriggerConditionsPanel,
 	TriggerPicker,
 	TriggerProviderSearchList,
 	type AgentAutomationRule,
@@ -3127,8 +3129,24 @@ function hasFilledAgentConfig(config: AgentConfigFormValue): boolean {
 
 function AgentProfileCover() {
 	return (
-		<div className="relative overflow-hidden rounded-t-xl bg-surface text-text">
-			<IconTile aria-hidden icon={<SkillIcon label="" />} label="Skill" size="xlarge" variant="gray" />
+		<div className="mb-3 flex items-center gap-2" aria-hidden={true}>
+			<div className="flex min-w-0 items-center gap-1">
+				<IconTile
+					className="border border-border bg-bg-input text-icon-subtle"
+					icon={<AutomationIcon label="" size="small" />}
+					label="Trigger"
+					size="small"
+					variant="transparent"
+				/>
+			</div>
+			<div className="h-px w-8 shrink-0 bg-border" />
+			<IconTile
+				className="bg-bg-neutral text-icon-subtle"
+				icon={<GenerativeIndicatorIcon label="" size="small" />}
+				label="Agent instructions"
+				size="small"
+				variant="transparent"
+			/>
 		</div>
 	);
 }
@@ -3574,9 +3592,47 @@ function AgentMemoryRow({
 	);
 }
 
+// Add-trigger block rendered above the instructions editor.
+// - No triggers: a single rounded card with just the "Add Trigger" picker
+//   (kept intentionally minimal — no "No triggers configured." empty state).
+// - One or more triggers: the shared `TriggerConditionsPanel`
+//   (components/blocks/triggers/page.tsx) so the rows, param dropdowns
+//   ("Comment added in [Any project] by [Anyone]"), and the "+ Add Trigger"
+//   footer match the trigger component exactly.
+// Triggers are flattened from the config's automation rules. Add/remove/param
+// handlers are not yet wired, so they fall back to no-ops.
+function TriggerConfigAddBlock({
+	className,
+	config,
+}: Readonly<{
+	className?: string;
+	config: AgentConfigFormValue;
+}>): ReactElement {
+	const triggers = getAgentAutomationRules(config).flatMap((rule) => rule.triggers);
+	if (triggers.length === 0) {
+		return (
+			<div className={cn("rounded-xl border border-border bg-bg-input p-2", className)}>
+				<TriggerPicker label="Add Trigger" onSelectEvent={NOOP_ADD_TRIGGER} />
+			</div>
+		);
+	}
+	return (
+		<div className={className}>
+			<TriggerConditionsPanel
+				onAddTrigger={NOOP_ADD_TRIGGER}
+				onParamChange={NOOP_PARAM_CHANGE}
+				onRemoveTrigger={NOOP_REMOVE_TRIGGER}
+				triggers={triggers}
+			/>
+		</div>
+	);
+}
+
+const NOOP_ADD_TRIGGER = (): void => {};
+const NOOP_PARAM_CHANGE = (): void => {};
+const NOOP_REMOVE_TRIGGER = (): void => {};
+
 function AgentInstructionsComposer({
-	bottomSlot,
-	bottomSlotClassName,
 	className,
 	config,
 	contentClassName,
@@ -3591,10 +3647,7 @@ function AgentInstructionsComposer({
 	onViewModeChange,
 	screenAssistantTargetId,
 	showSectionLabel = true,
-	toolbarBelowSlot,
 }: Readonly<{
-	bottomSlot?: ReactNode;
-	bottomSlotClassName?: string;
 	className?: string;
 	config: AgentConfigFormValue;
 	contentClassName?: string;
@@ -3609,7 +3662,6 @@ function AgentInstructionsComposer({
 	onViewModeChange?: (mode: EditorToolbarViewMode) => void;
 	screenAssistantTargetId?: string;
 	showSectionLabel?: boolean;
-	toolbarBelowSlot?: ReactNode;
 }>) {
 	const [knowledge, setKnowledge] = useState<RichTextMentionItem[]>([]);
 	const inlineManagedReferenceKeysRef = useLazyRef(() => new Set<string>());
@@ -3742,6 +3794,11 @@ function AgentInstructionsComposer({
 			{showSectionLabel ? (
 				<AgentSectionLabel>Instructions</AgentSectionLabel>
 			) : null}
+			{/* Add-trigger block — reuses the shared `TriggerConditionsPanel`
+			    (components/blocks/triggers/page.tsx). Variations (no trigger /
+			    single trigger / multiple triggers) are driven by the config's
+			    triggers. Add/remove/param handlers are not yet wired. */}
+			<TriggerConfigAddBlock className="mb-2" config={config} />
 			<RichTextEditor
 				aria-label="Agent instructions"
 				className="space-y-2"
@@ -3758,7 +3815,6 @@ function AgentInstructionsComposer({
 				onOpenDirectory={handleOpenDirectory}
 				onViewModeChange={onViewModeChange}
 				suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
-				toolbarBelowSlot={toolbarBelowSlot}
 				value={instructions}
 				mentionSources={mentionSources}
 				mentionRemovalRequest={mentionRemovalRequest}
@@ -3766,11 +3822,6 @@ function AgentInstructionsComposer({
 				onMentionInventoryChange={handleMentionInventoryChange}
 				onMentionRemovalRequestHandled={onMentionRemovalRequestHandled}
 			/>
-			{bottomSlot ? (
-				<div className={bottomSlotClassName}>
-					{bottomSlot}
-				</div>
-			) : null}
 		</section>
 	);
 }
@@ -3893,244 +3944,6 @@ function AgentConfigProfile({
 	);
 }
 
-interface AgentCompactConfigToolbarBelowProps {
-	config: AgentConfigFormValue;
-	// Forwarded to the expanded summary so subagent chips can match the agent's
-	// custom brand color (derived from the avatar family).
-	avatarSrc?: string;
-	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
-	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
-	onAppendListItem?: (field: AgentConfigListFieldName) => void;
-	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
-	onEditTriggers?: (seed?: AgentAutomationRule) => void;
-	onManageTriggers?: () => void;
-	onListItemChange?: (field: AgentConfigListFieldName, index: number, value: string) => void;
-	onManageSubagents?: () => void;
-	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
-	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
-	onSelectListItem?: (field: AgentConfigListFieldName, index: number) => void;
-	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
-	onToggleListItem?: (field: AgentConfigListFieldName, index: number, enabled: boolean) => void;
-	onAutomationRulesChange?: (automationRules: readonly AgentAutomationRule[]) => void;
-	screenAssistantTargetPrefix?: string;
-	selectedListItemIndexByField?: Partial<Record<AgentConfigListFieldName, number>>;
-}
-
-function AgentCompactConfigToolbarBelow({
-	config,
-	avatarSrc,
-	hiddenConfigFields,
-	onAddListValues,
-	onAppendListItem,
-	onConnectTrigger,
-	onEditTriggers,
-	onManageTriggers,
-	onListItemChange,
-	onManageSubagents,
-	onOpenDirectory,
-	onRemoveListItem,
-	onSelectListItem,
-	onTextChange,
-	onToggleListItem,
-	onAutomationRulesChange,
-	screenAssistantTargetPrefix,
-	selectedListItemIndexByField,
-}: Readonly<AgentCompactConfigToolbarBelowProps>) {
-	const [expanded, setExpanded] = useState(true);
-	// Mode selectors are controlled from the persisted config when present (so a
-	// generated or published agent shows its saved modes) and fall back to local
-	// state otherwise (standalone demo, or before the first edit). Changes persist
-	// through onTextChange — the same draft→publish channel as the text fields —
-	// and also update the local fallback so the collapsed nav button and expanded
-	// row stay in sync as the toolbar toggles between the two views.
-	const [reasoningFallback, setReasoningFallback] = useState<ReasoningModeValue | null>(null);
-	const [knowledgeFallback, setKnowledgeFallback] = useState<KnowledgeModeValue | null>(null);
-	const [memoryFallback, setMemoryFallback] = useState<MemoryModeValue | null>(null);
-	const reasoningValue =
-		(config.reasoningMode as ReasoningModeValue | undefined) ?? reasoningFallback ?? "quick-auto";
-	const knowledgeMode =
-		(config.knowledgeMode as KnowledgeModeValue | undefined)
-		?? knowledgeFallback
-		?? (getNonEmptyConfigItems(config.knowledge).length > 0 ? "custom" : "all");
-	const memoryMode = (config.memoryMode as MemoryModeValue | undefined) ?? memoryFallback ?? "on";
-	const setReasoningValue = useCallback(
-		(next: ReasoningModeValue) => {
-			setReasoningFallback(next);
-			onTextChange?.("reasoningMode", next);
-		},
-		[onTextChange],
-	);
-	const setKnowledgeMode = useCallback(
-		(next: KnowledgeModeValue) => {
-			setKnowledgeFallback(next);
-			onTextChange?.("knowledgeMode", next);
-		},
-		[onTextChange],
-	);
-	const setMemoryMode = useCallback(
-		(next: MemoryModeValue) => {
-			setMemoryFallback(next);
-			onTextChange?.("memoryMode", next);
-		},
-		[onTextChange],
-	);
-	const shouldReduceMotion = useReducedMotion();
-	const expandButtonRowRef = useRef<HTMLDivElement | null>(null);
-	const expandButtonX = useMotionValue(0);
-	const expandButtonPaddingRight = useTransform(expandButtonX, (latest): number =>
-		Math.abs(latest) > 0.5 ? AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP : 0,
-	);
-	const expandButtonVisualX = useTransform(expandButtonX, (latest): number =>
-		latest + (Math.abs(latest) > 0.5 ? AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP : 0),
-	);
-	const isExpanded = expanded;
-	const transition = shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeOut" as const };
-
-	useEffect(() => {
-		const handlePointerMove = (event: PointerEvent) => {
-			const row = expandButtonRowRef.current;
-
-			if (!row) {
-				return;
-			}
-
-			const rect = row.getBoundingClientRect();
-			const pointerDistanceFromBottom = rect.bottom - event.clientY;
-			const isNearBottom = pointerDistanceFromBottom >= -AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE
-				&& pointerDistanceFromBottom <= AGENT_COMPACT_CONFIG_EXPAND_BUTTON_REVEAL_DISTANCE;
-
-			if (!isNearBottom) {
-				expandButtonX.set(0);
-				return;
-			}
-
-			const restingCenterX = rect.right - AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE / 2;
-			const minCenterX = rect.left + AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE / 2;
-			const maxCenterX = rect.right - AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE / 2;
-			const targetCenterX = Math.min(Math.max(event.clientX, minCenterX), maxCenterX);
-
-			expandButtonX.set(targetCenterX - restingCenterX);
-		};
-		const handlePointerLeave = () => {
-			expandButtonX.set(0);
-		};
-
-		window.addEventListener("pointermove", handlePointerMove, true);
-		window.addEventListener("pointerleave", handlePointerLeave);
-
-		return () => {
-			window.removeEventListener("pointermove", handlePointerMove, true);
-			window.removeEventListener("pointerleave", handlePointerLeave);
-		};
-	}, [expandButtonX]);
-
-	return (
-		<div className="flex flex-col">
-			<div className="relative flex h-6 items-center" ref={expandButtonRowRef}>
-				<div aria-hidden className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border" />
-				<motion.div
-					className="relative z-10 ml-auto bg-surface pl-2"
-					style={{ paddingRight: expandButtonPaddingRight, x: expandButtonVisualX }}
-				>
-					<Button
-						aria-label={isExpanded ? "Collapse configuration" : "Expand configuration"}
-						className="size-6 rounded border-border bg-surface-overlay px-0 text-icon-subtle hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"
-						onClick={() => setExpanded((prev) => !prev)}
-						size="icon-compact"
-						type="button"
-						variant="ghost"
-					>
-						{isExpanded ? (
-							<ChevronDownIcon label="" size="small" />
-						) : (
-							<ChevronUpIcon label="" size="small" />
-						)}
-					</Button>
-				</motion.div>
-			</div>
-			<AnimatePresence initial={false} mode="wait">
-				{isExpanded ? (
-					<motion.div
-						key="expanded"
-						// No `overflow-hidden`: the crossfade only animates opacity, so
-						// clipping isn't needed — and it would square off each row's
-						// `rounded-md` hover highlight, whose `-mx-2` bleed sits exactly at
-						// the clip edge.
-						className="bg-surface pt-2"
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
-						transition={transition}
-						style={{ willChange: "opacity" }}
-					>
-						<AgentFilledConfigSummary
-							config={config}
-							avatarSrc={avatarSrc}
-							hiddenConfigFields={hiddenConfigFields}
-							knowledgeMode={knowledgeMode}
-							onKnowledgeModeChange={setKnowledgeMode}
-							memoryMode={memoryMode}
-							onMemoryModeChange={setMemoryMode}
-							onAddListValues={onAddListValues}
-							onAppendListItem={onAppendListItem}
-							onConnectTrigger={onConnectTrigger}
-							onEditTriggers={onEditTriggers}
-							onListItemChange={onListItemChange}
-							onManageSubagents={onManageSubagents}
-							onManageTriggers={onManageTriggers}
-							onOpenDirectory={onOpenDirectory}
-							onReasoningModeChange={setReasoningValue}
-							onRemoveListItem={onRemoveListItem}
-							onSelectListItem={onSelectListItem}
-							onTextChange={onTextChange}
-							onToggleListItem={onToggleListItem}
-							onAutomationRulesChange={onAutomationRulesChange}
-							reasoningMode={reasoningValue}
-							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-							selectedListItemIndexByField={selectedListItemIndexByField}
-						/>
-					</motion.div>
-				) : (
-					<motion.div
-						key="collapsed"
-						className="overflow-hidden bg-surface pt-2"
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
-						transition={transition}
-						style={{ willChange: "opacity" }}
-					>
-						<AgentCompactEmptyConfigNav
-							avatarSrc={avatarSrc}
-							config={config}
-							hiddenConfigFields={hiddenConfigFields}
-							onAddListValues={onAddListValues}
-							onAppendListItem={onAppendListItem}
-							onEditTriggers={onEditTriggers}
-							onManageTriggers={onManageTriggers}
-							onListItemChange={onListItemChange}
-							onManageSubagents={onManageSubagents}
-							onOpenDirectory={onOpenDirectory}
-							onRemoveListItem={onRemoveListItem}
-							onSelectListItem={onSelectListItem}
-							onToggleListItem={onToggleListItem}
-							onAutomationRulesChange={onAutomationRulesChange}
-							reasoningValue={reasoningValue}
-							onReasoningValueChange={setReasoningValue}
-							knowledgeMode={knowledgeMode}
-							onKnowledgeModeChange={setKnowledgeMode}
-							memoryMode={memoryMode}
-							onMemoryModeChange={setMemoryMode}
-							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-							selectedListItemIndexByField={selectedListItemIndexByField}
-						/>
-					</motion.div>
-				)}
-			</AnimatePresence>
-		</div>
-	);
-}
-
 export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	config: AgentConfigFormValue;
 	avatarSrc?: string;
@@ -4179,28 +3992,18 @@ export const AgentConfigFields = memo(
 		className,
 		config,
 		avatarSrc,
-		compactFooterBefore,
 		compactScrollAreaClassName,
-		hiddenConfigFields,
 		idPrefix,
-		onListItemChange,
 		onAddListValues,
-		onAppendListItem,
-		onConnectTrigger,
 		onInstructionsViewModeChange,
-		onManageTriggers,
-		onManageSubagents,
 		onOpenDirectory,
 		onProfileTextChange,
 		onRemoveListItem,
-		onSelectListItem,
 		onTextChange,
-		onToggleListItem,
 		onAutomationRulesChange,
 		profileAvatarSrc,
 		profileConfig,
 		screenAssistantTargetPrefix,
-		selectedListItemIndexByField,
 		isSubagent,
 		baseAgentName,
 		subagentName,
@@ -4208,6 +4011,31 @@ export const AgentConfigFields = memo(
 		onSubagentNameChange,
 		subagentCondition,
 		onSubagentConditionChange,
+		// Destructured purely to keep them out of `...props` (which is spread onto
+		// the root <div>) so React doesn't warn about unknown DOM handlers. These
+		// props remain part of the shared AgentConfigFieldsProps contract for other
+		// consumers, but the trigger-config panel no longer renders the bottom
+		// toolbar that used them.
+		/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+		compactFooterBefore: _compactFooterBefore,
+		/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+		hiddenConfigFields: _hiddenConfigFields,
+		/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+		onListItemChange: _onListItemChange,
+		/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+		onAppendListItem: _onAppendListItem,
+		/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+		onConnectTrigger: _onConnectTrigger,
+		/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+		onManageTriggers: _onManageTriggers,
+		/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+		onManageSubagents: _onManageSubagents,
+		/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+		onSelectListItem: _onSelectListItem,
+		/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+		onToggleListItem: _onToggleListItem,
+		/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+		selectedListItemIndexByField: _selectedListItemIndexByField,
 		...props
 	}: Readonly<AgentConfigFieldsProps>) => {
 		const isFilledConfig = hasFilledAgentConfig(config);
@@ -4219,21 +4047,6 @@ export const AgentConfigFields = memo(
 		const handleProfileTextChange = useCallback((field: AgentConfigTextFieldName, value: string) => {
 			(onProfileTextChange ?? onTextChange)?.(field, value);
 		}, [onProfileTextChange, onTextChange]);
-		const handleListItemChange = useCallback((field: AgentConfigListFieldName, index: number, value: string) => {
-			onListItemChange?.(field, index, value);
-		}, [onListItemChange]);
-		const handleRemoveListItem = useCallback((field: AgentConfigListFieldName, index: number) => {
-			const removedValue = config[field]?.[index]?.trim();
-
-			onRemoveListItem?.(field, index);
-			if (removedValue && isAgentConfigReferenceListField(field)) {
-				setMentionRemovalRequest({
-					category: AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD[field],
-					key: `${field}:${index}:${removedValue}:${Date.now()}`,
-					label: removedValue,
-				});
-			}
-		}, [config, onRemoveListItem]);
 		const handleAddListValues = useCallback((field: AgentConfigReferenceListFieldName, values: readonly string[]) => {
 			onAddListValues?.(field, values);
 		}, [onAddListValues]);
@@ -4252,15 +4065,6 @@ export const AgentConfigFields = memo(
 		const handleMentionRemovalRequestHandled = useCallback((key: string) => {
 			setMentionRemovalRequest((current) => current?.key === key ? null : current);
 		}, []);
-		const handleAppendListItem = useCallback((field: AgentConfigListFieldName) => {
-			onAppendListItem?.(field);
-		}, [onAppendListItem]);
-		const handleManageSubagents = useCallback(() => {
-			onManageSubagents?.();
-		}, [onManageSubagents]);
-		const handleSelectListItem = useCallback((field: AgentConfigListFieldName, index: number) => {
-			onSelectListItem?.(field, index);
-		}, [onSelectListItem]);
 		const handleOpenDirectory = useCallback((directory: AgentDirectoryKind, selectedItem?: string) => {
 			onOpenDirectory?.(directory, selectedItem);
 		}, [onOpenDirectory]);
@@ -4306,14 +4110,6 @@ export const AgentConfigFields = memo(
 		}, [currentAutomationRules, onAutomationRulesChange]);
 
 		const [manageTriggersOpen, setManageTriggersOpen] = useState(false);
-		const handleManageTriggers = useCallback(() => {
-			if (onManageTriggers) {
-				onManageTriggers();
-				return;
-			}
-
-			setManageTriggersOpen(true);
-		}, [onManageTriggers]);
 		const handleAddAutomationFromManage = useCallback(
 			(providerId: Parameters<typeof createAgentTriggerValue>[0], eventId: string) => {
 				const next = createAutomationRuleFromEvent(providerId, eventId, currentAutomationRules);
@@ -4422,32 +4218,6 @@ export const AgentConfigFields = memo(
 							onViewModeChange={onInstructionsViewModeChange}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 							showSectionLabel={false}
-						/>
-					</div>
-					{/* Bottom-anchored footer: always flush to the panel bottom. The
-					    separator/expand row stays transparent so content scrolls
-					    visibly behind it; only the field rows carry a solid surface. */}
-					{compactFooterBefore}
-					<div className="shrink-0">
-						<AgentCompactConfigToolbarBelow
-							config={config}
-							avatarSrc={profileAvatarSrc ?? avatarSrc}
-							hiddenConfigFields={hiddenConfigFields}
-							onAddListValues={handleAddListValues}
-							onAppendListItem={handleAppendListItem}
-							onConnectTrigger={onConnectTrigger}
-							onEditTriggers={handleEditTriggers}
-							onManageTriggers={handleManageTriggers}
-							onListItemChange={handleListItemChange}
-							onManageSubagents={onManageSubagents ? handleManageSubagents : undefined}
-							onOpenDirectory={handleOpenDirectory}
-							onRemoveListItem={handleRemoveListItem}
-							onSelectListItem={handleSelectListItem}
-							onTextChange={handleTextChange}
-							onToggleListItem={onToggleListItem}
-							onAutomationRulesChange={onAutomationRulesChange}
-							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-							selectedListItemIndexByField={selectedListItemIndexByField}
 						/>
 					</div>
 				</div>
