@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
-	frontmatterValueToList,
 	frontmatterValueToString,
 	getFrontmatterField,
 	parseFrontmatterYaml,
@@ -81,13 +80,10 @@ test("setFrontmatterField replaces in place and appends new keys", () => {
 	assert.equal(appended.length, 3);
 });
 
-test("value coercion helpers", () => {
+test("frontmatterValueToString coerces lists + undefined", () => {
 	assert.equal(frontmatterValueToString(["a", "b"]), "a, b");
 	assert.equal(frontmatterValueToString("solo"), "solo");
 	assert.equal(frontmatterValueToString(undefined), "");
-	assert.deepEqual(frontmatterValueToList("solo"), ["solo"]);
-	assert.deepEqual(frontmatterValueToList(["a", "b"]), ["a", "b"]);
-	assert.deepEqual(frontmatterValueToList(""), []);
 });
 
 test("multi-line scalar (e.g. a wrapped description) survives the round-trip", () => {

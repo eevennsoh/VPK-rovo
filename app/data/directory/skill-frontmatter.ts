@@ -206,11 +206,3 @@ export function frontmatterValueToString(value: FrontmatterValue | undefined): s
 	}
 	return Array.isArray(value) ? value.join(", ") : String(value);
 }
-
-/** Coerce a frontmatter value into a string list (scalars → single-item list). */
-export function frontmatterValueToList(value: FrontmatterValue | undefined): readonly string[] {
-	if (value === undefined || value === "") {
-		return [];
-	}
-	return Array.isArray(value) ? value : [String(value)];
-}

@@ -67,7 +67,11 @@ function FrontmatterScalarRow({
 			{isDescription ? (
 				<textarea
 					{...sharedProps}
-					rows={Math.min(6, Math.max(2, draft.split("\n").length))}
+					rows={1}
+					// `field-sizing-content` auto-grows the textarea to its content (same
+					// mechanism as components/ui/textarea.tsx) — no manual row counting,
+					// which mis-sizes against soft-wrapped lines.
+					className={`${sharedProps.className} field-sizing-content min-h-[2lh]`}
 					onChange={(event) => setDraft(event.target.value)}
 					aria-label="Edit description"
 				/>
