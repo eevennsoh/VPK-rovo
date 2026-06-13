@@ -1027,14 +1027,11 @@ export function TriggerAutomationDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="flex max-h-[min(760px,calc(100vh-2rem))] flex-col gap-0 overflow-hidden p-0" showCloseButton={false} size="lg">
-				<div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-6 py-5">
+				<div className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-6 py-5">
 					<div className="grid gap-1">
 						<DialogTitle className="text-xl font-semibold leading-6 text-text">
 							{title}
 						</DialogTitle>
-						<p className="text-sm leading-5 text-text-subtle">
-							Configure the events that start this automation.
-						</p>
 					</div>
 					<div className="flex items-center gap-3">
 						<label className="flex items-center gap-2 text-sm font-medium text-text">

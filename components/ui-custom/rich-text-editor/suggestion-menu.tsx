@@ -702,12 +702,28 @@ export function RichTextCommandMenuSearchField({
 	tabHint,
 	value,
 }: Readonly<RichTextCommandMenuSearchFieldProps>) {
+	const inputRef = useRef<HTMLInputElement | null>(null);
+	// When this field is rendered inside a Base UI menu/popover, the
+	// `FloatingFocusManager` moves focus to the popup container on open, which
+	// beats the input's plain `autoFocus` attribute. Imperatively focus on mount
+	// (after the focus manager settles) so opening "Add automation", "Add apps",
+	// "Add skills", etc. lands the caret in the search box ready for typing.
+	useEffect(() => {
+		if (!autoFocus) {
+			return;
+		}
+		const frame = requestAnimationFrame(() => {
+			inputRef.current?.focus();
+		});
+		return () => cancelAnimationFrame(frame);
+	}, [autoFocus]);
 	return (
 		<div className="rich-text-command-menu-search rich-text-command-menu-item-sticky">
 			<span className="rich-text-command-menu-search-logo" aria-hidden={true}>
 				{icon}
 			</span>
 			<Input
+				ref={inputRef}
 				id={id}
 				variant="subtle"
 				value={value}

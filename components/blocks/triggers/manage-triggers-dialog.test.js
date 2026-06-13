@@ -18,7 +18,6 @@ const DEMO_SOURCE = readFileSync(
 
 test("ManageTriggersDialog restores the compact drag-list modal", () => {
 	assert.match(DIALOG_SOURCE, /Manage automations/u);
-	assert.match(DIALOG_SOURCE, /Each automation can have multiple event triggers and one instruction prompt\./u);
 	assert.match(DIALOG_SOURCE, /\{open \? \(\s*<TriggerPicker/u);
 	assert.match(DIALOG_SOURCE, /<TriggerPicker/u);
 	assert.match(DIALOG_SOURCE, /onSelectEvent=\{onAddAutomation\}/u);
@@ -35,10 +34,13 @@ test("ManageTriggersDialog restores the compact drag-list modal", () => {
 
 test("ManageTriggersDialog rows manage automation rules, not individual event triggers", () => {
 	assert.match(DIALOG_SOURCE, /function ManageAutomationFlowVisual/u);
-	assert.match(DIALOG_SOURCE, /renderAgentTriggerProviderIcon\(trigger\)/u);
-	assert.match(DIALOG_SOURCE, /GenerativeIndicatorIcon/u);
-	assert.match(DIALOG_SOURCE, /label="Agent instructions"/u);
-	assert.match(DIALOG_SOURCE, /className="h-px w-5 bg-border"/u);
+	assert.match(DIALOG_SOURCE, /renderAgentTriggerProviderTileIcon\(trigger\)/u);
+	// Figma reposition: trigger icon tiles stack above the text, with no
+	// connector line or trailing agent-instructions tile in the row visual.
+	assert.doesNotMatch(DIALOG_SOURCE, /GenerativeIndicatorIcon/u);
+	assert.doesNotMatch(DIALOG_SOURCE, /label="Agent instructions"/u);
+	assert.doesNotMatch(DIALOG_SOURCE, /className="h-px w-5 bg-border"/u);
+	assert.match(DIALOG_SOURCE, /flex min-w-0 flex-1 flex-col items-start/u);
 	assert.match(DIALOG_SOURCE, /getAgentTriggerReadableLabel\(automationRule\.triggers\[0\]\)/u);
 	assert.match(DIALOG_SOURCE, /function getAutomationRuleSecondary/u);
 	assert.match(DIALOG_SOURCE, /getTriggerProvider\(trigger\.providerId\)/u);
@@ -73,7 +75,9 @@ test("manage demo opens the restored dialog and keeps full automation editing av
 	assert.match(DEMO_SOURCE, /export function TriggersDemoManage/u);
 	assert.match(DEMO_SOURCE, /<ManageTriggersDialog/u);
 	assert.match(DEMO_SOURCE, /<TriggerAutomationDialog/u);
-	assert.match(DEMO_SOURCE, /const \[manageOpen, setManageOpen\] = useState\(true\)/u);
+	// The manage dialog stays closed on landing and opens from its button.
+	assert.match(DEMO_SOURCE, /const \[manageOpen, setManageOpen\] = useState\(false\)/u);
+	assert.match(DEMO_SOURCE, /setManageOpen\(true\)/u);
 	assert.match(DEMO_SOURCE, /const \[automationOpen, setAutomationOpen\] = useState\(false\)/u);
 	assert.match(DEMO_SOURCE, /setAutomationOpen\(true\)/u);
 	assert.match(DEMO_SOURCE, /automationRules=\{automationRules\}/u);

@@ -76,7 +76,7 @@ export function ManageSubagentsDialog({
 					</DialogTitle>
 					<div className="flex items-center gap-2">
 						<Button onClick={onCreateSubagent} type="button" variant="outline">
-							Create subagent
+							Add subagent
 						</Button>
 						<DialogClose render={<Button aria-label="Close" size="icon" variant="ghost" />}>
 							<CrossIcon label="" />

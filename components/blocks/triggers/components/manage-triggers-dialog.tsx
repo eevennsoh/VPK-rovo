@@ -20,11 +20,10 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import CrossIcon from "@atlaskit/icon/core/cross";
-import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
 
 import {
 	TriggerPicker,
-	renderAgentTriggerProviderIcon,
+	renderAgentTriggerProviderTileIcon,
 	type AgentAutomationRule,
 } from "@/components/blocks/triggers/page";
 import {
@@ -90,15 +89,10 @@ export function ManageTriggersDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="gap-0 overflow-hidden p-0" showCloseButton={false} size="md">
-				<div className="flex items-start justify-between gap-3 p-6">
-					<div className="grid gap-1">
-						<DialogTitle className="text-xl font-semibold leading-6 text-text">
-							Manage automations
-						</DialogTitle>
-						<p className="text-sm leading-5 text-text-subtle">
-							Each automation can have multiple event triggers and one instruction prompt.
-						</p>
-					</div>
+				<div className="flex items-center justify-between gap-3 p-6">
+					<DialogTitle className="text-xl font-semibold leading-6 text-text">
+						Manage automations
+					</DialogTitle>
 					<div className="flex items-center gap-2">
 						{open ? (
 							<TriggerPicker
@@ -169,45 +163,43 @@ function ManageAutomationFlowVisual({ rule }: Readonly<{ rule: AgentAutomationRu
 	const overflowCount = Math.max(0, rule.triggers.length - visibleTriggers.length);
 
 	return (
-		<span className="flex shrink-0 items-center gap-1.5" aria-hidden={true}>
-			<span className="flex items-center gap-1">
-				{visibleTriggers.length > 0 ? (
-					visibleTriggers.map((trigger) => {
-						const provider = getTriggerProvider(trigger.providerId);
-						return (
-							<IconTile
-								className="border border-border bg-bg-input text-icon-subtle"
-								icon={renderAgentTriggerProviderIcon(trigger) ?? <AutomationIcon label="" size="small" />}
-								key={trigger.id}
-								label={provider?.label ?? "Event trigger"}
-								size="small"
-								variant="transparent"
-							/>
-						);
-					})
-				) : (
-					<IconTile
-						className="border border-border bg-bg-input text-icon-subtle"
-						icon={<AutomationIcon label="" size="small" />}
-						label="Event trigger"
-						size="small"
-						variant="transparent"
-					/>
-				)}
-				{overflowCount > 0 ? (
-					<span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-border bg-bg-input px-1.5 text-xs font-medium leading-4 text-text-subtle">
-						+{overflowCount}
-					</span>
-				) : null}
-			</span>
-			<span className="h-px w-5 bg-border" />
-			<IconTile
-				className="bg-bg-neutral text-icon-subtle"
-				icon={<GenerativeIndicatorIcon label="" size="small" />}
-				label="Agent instructions"
-				size="small"
-				variant="transparent"
-			/>
+		<span className="flex shrink-0 items-center gap-1" aria-hidden={true}>
+			{visibleTriggers.length > 0 ? (
+				visibleTriggers.map((trigger) => {
+					const provider = getTriggerProvider(trigger.providerId);
+					// Mirror the editor-palette / picker logo treatment: 1P product
+					// logos render bare (they ship their own fill), 2P/3P marks are
+					// border-resolved, and stroked glyphs sit in a bordered tile.
+					// Only fall back to the bordered glyph tile when no provider
+					// icon resolves.
+					const tileIcon = renderAgentTriggerProviderTileIcon(trigger);
+					return tileIcon ? (
+						<span key={trigger.id}>{tileIcon}</span>
+					) : (
+						<IconTile
+							className="border border-border bg-bg-input text-icon-subtle"
+							icon={<AutomationIcon label="" size="small" />}
+							key={trigger.id}
+							label={provider?.label ?? "Event trigger"}
+							size="small"
+							variant="transparent"
+						/>
+					);
+				})
+			) : (
+				<IconTile
+					className="border border-border bg-bg-input text-icon-subtle"
+					icon={<AutomationIcon label="" size="small" />}
+					label="Event trigger"
+					size="small"
+					variant="transparent"
+				/>
+			)}
+			{overflowCount > 0 ? (
+				<span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-border bg-bg-input px-1.5 text-xs font-medium leading-4 text-text-subtle">
+					+{overflowCount}
+				</span>
+			) : null}
 		</span>
 	);
 }
@@ -266,12 +258,12 @@ function ManageTriggersRow({
 				<GripVerticalIcon size="small" />
 			</button>
 			<button
-				className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-md px-1 py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-border-selected"
+				className="flex min-w-0 flex-1 flex-col items-start gap-2 rounded-md px-1 py-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-border-selected"
 				onClick={() => onEdit(automationRule)}
 				type="button"
 			>
 				<ManageAutomationFlowVisual rule={automationRule} />
-				<div className="min-w-0">
+				<div className="min-w-0 self-stretch">
 					<div className="truncate text-sm font-medium leading-5 text-text">
 						{label}
 					</div>
@@ -287,7 +279,6 @@ function ManageTriggersRow({
 				checked={enabled}
 				label={`${enabled ? "Disable" : "Enable"} ${label}`}
 				onCheckedChange={(nextEnabled) => onToggle(automationRule.id, nextEnabled)}
-				size="sm"
 			/>
 			<button
 				aria-label={`Delete ${label}`}
@@ -295,7 +286,7 @@ function ManageTriggersRow({
 				onClick={() => onDelete(automationRule.id)}
 				type="button"
 			>
-				<DeleteIcon size="small" />
+				<DeleteIcon />
 			</button>
 		</div>
 	);
