@@ -33,7 +33,7 @@ Host key verification failed.
 fatal: Could not read from remote repository.
 ```
 
-**So in Step 5, run `git fetch` and `git push` unsandboxed from the first attempt** (Claude Code: `dangerouslyDisableSandbox: true`) — don't waste a failed sandboxed attempt first. Keep everything else sandboxed: `git add`, `git commit`, `git status`, `git update-index`, and `git merge-base` all work fine inside the sandbox and touch no SSH/network. Only the two ops that hit the remote need the bypass.
+**So in Step 6, run `git fetch` and `git push` unsandboxed from the first attempt** (Claude Code: `dangerouslyDisableSandbox: true`) — don't waste a failed sandboxed attempt first. Keep everything else sandboxed: `git add`, `git commit`, `git status`, `git update-index`, and `git merge-base` all work fine inside the sandbox and touch no SSH/network. Only the two ops that hit the remote need the bypass.
 
 Two other benign sandbox artifacts you'll see and should ignore: `.env.local.example: Operation not permitted` in `git status` (the sandbox denies reading `.env*`; it is *not* a real change — confirm it never stages), and `git update-index --refresh` exiting non-zero with "needs update" (a harmless stat refresh).
 
@@ -65,22 +65,25 @@ git -c color.ui=never diff HEAD
    - If it is `main`: proceed silently.
    - If it is any other branch, or `HEAD` (detached): emit one clear warning line and continue — e.g. `⚠️ On '<branch>', not main. Landing these changes directly on main.` The user has opted into always landing on `main`; warn, then proceed. Do **not** ask for confirmation.
 
-3. **Stage everything, minus secrets.** Prefer `git add -A`. Scan the status above first: if it includes `.env`, `.env.*`, `*.pem`, `*.key`, or anything clearly secret/out-of-scope, stage selectively instead and list the skipped paths in the report. Never commit secrets to `main`.
+3. **Unrelated-change warning (do not stop).** This skill sweeps the *entire* working tree with `git add -A`, so it will commit changes you did not make. Before staging, compare the changed files above against what was actually touched in this session/conversation. For every changed (or untracked) path that does **not** trace to your own work this session, emit a warning listing them — e.g. `⚠️ Also committing changes not made in this session: components/blocks/triggers/page.tsx, lib/foo.ts. These look concurrent/unrelated — landing them on main too.` The user has opted into landing everything, so **warn, then proceed** — do not ask for confirmation and do not drop them. If every changed file traces to this session's work, say nothing. When unsure whether a file is yours, treat it as unrelated and warn (false positives are cheap; silently shipping someone else's in-progress edit is not).
 
-4. **Write the commit message** from the diff:
+4. **Stage everything, minus secrets.** Prefer `git add -A`. Scan the status above first: if it includes `.env`, `.env.*`, `*.pem`, `*.key`, or anything clearly secret/out-of-scope, stage selectively instead and list the skipped paths in the report. Never commit secrets to `main`.
+
+5. **Write the commit message** from the diff:
    - Imperative subject, ~50 chars, describing *what the change does* (e.g. `Fix Hermes panel overflow`, not `update code`).
    - Optional short body only when the change spans multiple distinct concerns.
    - Match repo log style: **no `Co-Authored-By` footer** unless the user explicitly asks.
    - Commit: `git commit -m "<subject>"` (add `-m "<body>"` only if you wrote a body).
 
-5. **Fast-forward-safe push to `main`.** Force-push is forbidden, so confirm the push is a fast-forward of remote `main`. **Run the `git fetch`/`git push` commands here unsandboxed by default** (see "Sandbox" above — SSH remote ops fail sandboxed); `git merge-base` stays sandboxed.
+6. **Fast-forward-safe push to `main`.** Force-push is forbidden, so confirm the push is a fast-forward of remote `main`. **Run the `git fetch`/`git push` commands here unsandboxed by default** (see "Sandbox" above — SSH remote ops fail sandboxed); `git merge-base` stays sandboxed.
    - `git fetch origin main` (unsandboxed)
    - `git merge-base --is-ancestor origin/main HEAD` (exit 0 = `origin/main` is an ancestor of your commit → the push will fast-forward).
      - **Exit 0 → push (unsandboxed):** `git push origin HEAD:main`. If you are on `main`, that also advances local `main`. If you are on a feature branch, also bring local `main` along when it is safe: `git fetch origin main:main` (fails harmlessly if `main` is checked out elsewhere — ignore and report).
      - **Non-zero → STOP, do not force.** `origin/main` has commits you don't have; a direct push would be rejected and force-pushing is blocked by protection. Report: "origin/main has advanced — integrate first (`git merge origin/main` or rebase onto it, resolve conflicts), then re-run `/vpk-git-ship-fast`." Leave the local commit in place.
 
-6. **Report concisely:**
+7. **Report concisely:**
    - Branch warning emitted (if any).
+   - Unrelated-change warning emitted (if any), with the file list.
    - Files committed; any secret/out-of-scope paths skipped.
    - Commit hash + subject.
    - Push result: pushed to `origin/main` (fast-forward), or stopped because `origin/main` diverged.
