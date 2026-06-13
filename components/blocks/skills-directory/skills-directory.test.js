@@ -150,13 +150,23 @@ test("Skills Directory renders the skill detail view with the config screen and 
 	// The "more actions" menu is the leftmost button of the right-hand CTA group (after Back, before Open).
 	assert.match(source, /onClick=\{onBack\}[\s\S]*aria-label="More skill actions"[\s\S]*<SplitButton/u);
 	assert.match(source, /function SkillDetailView/u);
-	// The detail view hosts the editable skill-config screen, seeded from the skill,
-	// with a permanently expanded footer (no collapse/expand toggle).
-	assert.match(source, /<SkillDetailConfig key=\{skill\.id\} skill=\{skill\} \/>/u);
+	// The detail view hosts the SKILL.md editor (frontmatter card enabled, no apps
+	// panel) seeded from the skill's full SKILL.md, committed via Save/Cancel.
+	assert.match(source, /<SkillDetailConfig key=\{skill\.id\} skill=\{skill\} onExit=\{onExit\} \/>/u);
 	assert.match(source, /function SkillDetailConfig/u);
-	assert.match(source, /function skillToAgentConfig/u);
 	assert.match(source, /<AgentConfigFields/u);
-	assert.match(source, /footerCollapsible=\{false\}/u);
+	assert.match(source, /frontmatter=\{\{ enabled: true \}\}/u);
+	assert.match(source, /showConfigToolbar=\{false\}/u);
+	// Globe cover + Created/Added/Last-update meta row, and a Save/Cancel footer.
+	assert.match(source, /profileCover=\{/u);
+	assert.match(source, /profileMetaSlot=\{/u);
+	assert.match(source, /getSkillCreatedBy\(skill\)/u);
+	assert.match(source, /getSkillLastUpdatedLabel\(skill\)/u);
+	assert.match(source, /function handleSave\(\)/u);
+	assert.match(source, /function handleCancel\(\)/u);
+	assert.match(source, /saveSkillDraft\(skill\.id, draft\)/u);
+	// The editor is seeded with the full SKILL.md (frontmatter + body).
+	assert.match(source, /getSkillMarkdown\(skill\)/u);
 	// The read-only summary/tools column was replaced by the config screen.
 	assert.doesNotMatch(source, /function SkillDetailSummary/u);
 	assert.doesNotMatch(source, /function SkillToolsSection/u);
