@@ -3130,7 +3130,7 @@ function hasFilledAgentConfig(config: AgentConfigFormValue): boolean {
 
 function AgentProfileCover() {
 	return (
-		<div className="mb-3 flex items-center gap-2" aria-hidden={true}>
+		<div className="flex items-center gap-2" aria-hidden={true}>
 			<div className="flex min-w-0 items-center gap-1">
 				<IconTile
 					className="border border-border bg-bg-input text-icon-subtle"
@@ -3140,7 +3140,7 @@ function AgentProfileCover() {
 					variant="transparent"
 				/>
 			</div>
-			<div className="h-px w-8 shrink-0 bg-border" />
+			<div className="h-px w-6 shrink-0 bg-border" />
 			<IconTile
 				className="bg-bg-neutral text-icon-subtle"
 				icon={<GenerativeIndicatorIcon label="" size="small" />}
@@ -3878,7 +3878,7 @@ function AgentInstructionsComposer({
 			    single trigger / multiple triggers) are driven by the config's
 			    triggers; add/remove/param edits flow through onAutomationRulesChange. */}
 			<TriggerConfigAddBlock
-				className="mb-2"
+				className="mb-6"
 				config={config}
 				onAutomationRulesChange={onAutomationRulesChange}
 				onConnectTrigger={onConnectTrigger}
@@ -3889,10 +3889,10 @@ function AgentInstructionsComposer({
 				contentClassName={cn("pt-2", contentClassName)}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
 				enableDirectoryAutocomplete
-				placeholder="Press / to help me create the skill"
+				placeholder="Press / to help me create the automation"
 				placeholderSlot={(
 					<p className="tiptap-editor text-sm leading-[1.55] text-text-subtlest">
-						Press <code>/</code> to help me create the skill
+						Press <code>/</code> to help me create the automation
 					</p>
 				)}
 				onInsertReferenceOption={handleInsertReferenceOption}
@@ -3950,7 +3950,7 @@ function AgentConfigProfile({
 	const direction = shouldReduceMotion ? 0 : isSubagent ? 1 : -1;
 	return (
 		<section
-			className="flex flex-col gap-4"
+			className="flex flex-col gap-2"
 			data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:profile` : undefined}
 		>
 			<AgentProfileCover />
@@ -3993,8 +3993,8 @@ function AgentConfigProfile({
 						<InlineEdit
 							className="min-w-0 flex-1"
 							value={isSubagent ? subagentName ?? "" : config.name ?? ""}
-							placeholder={isSubagent ? UNTITLED_SUBAGENT_NAME : "Untitled skill"}
-							editButtonLabel={isSubagent ? "Edit subagent name" : "Edit skill name"}
+							placeholder={isSubagent ? UNTITLED_SUBAGENT_NAME : "Untitled automation"}
+							editButtonLabel={isSubagent ? "Edit subagent name" : "Edit automation name"}
 							readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"
 							readViewMotionProps={AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS}
 							readViewBackdropClassName="-inset-0.5 bg-bg-neutral-subtle-hovered"
@@ -4013,7 +4013,7 @@ function AgentConfigProfile({
 					<InlineEdit
 						value={isSubagent ? subagentCondition ?? "" : config.description ?? config.summary ?? ""}
 						placeholder={isSubagent ? "Describe the situation that should trigger this subagent" : "Add a description"}
-						editButtonLabel={isSubagent ? "Edit subagent trigger condition" : "Edit skill description"}
+						editButtonLabel={isSubagent ? "Edit subagent trigger condition" : "Edit automation description"}
 						multiline
 						readViewClassName="relative overflow-visible border-2 bg-transparent px-0 hover:bg-transparent active:bg-transparent focus-visible:bg-transparent"
 						readViewMotionProps={AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS}

@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 
 import {
-	TriggerAutomationDialog,
+	TriggerConfigAutomationDialog,
 	type AgentAutomationRule,
 } from "@/components/blocks/triggers/page";
 
@@ -32,7 +32,7 @@ export function AgentTriggersDialog({
 	saveLabel,
 }: Readonly<AgentTriggersDialogProps>): ReactElement {
 	return (
-		<TriggerAutomationDialog
+		<TriggerConfigAutomationDialog
 			automationRule={automationRule}
 			open={open}
 			onOpenChange={onOpenChange}

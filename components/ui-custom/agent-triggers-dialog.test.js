@@ -17,34 +17,32 @@ const AGENT_DEMO_SOURCE = readFileSync(
 	"utf8",
 );
 
-test("AgentTriggersDialog delegates to the shared automation modal", () => {
-	assert.match(DIALOG_SOURCE, /TriggerAutomationDialog/u);
+test("AgentTriggersDialog delegates to the trigger-config automation modal", () => {
+	// The shared wrapper now hosts the new trigger-config surface inside the modal.
+	assert.match(DIALOG_SOURCE, /TriggerConfigAutomationDialog/u);
 	assert.match(DIALOG_SOURCE, /type AgentAutomationRule/u);
 	assert.match(DIALOG_SOURCE, /automationRule=\{automationRule\}/u);
 	assert.match(DIALOG_SOURCE, /onSave=\{onSave\}/u);
 });
 
-test("shared TriggerAutomationDialog has name, Active, trigger list, instructions, Save and Cancel", () => {
-	assert.match(TRIGGERS_PAGE_SOURCE, /export function TriggerAutomationDialog/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /Automation name/u);
+test("TriggerConfigAutomationDialog hosts AgentConfigFields with Active, Save and Cancel", () => {
+	assert.match(TRIGGERS_PAGE_SOURCE, /export function TriggerConfigAutomationDialog/u);
 	assert.match(TRIGGERS_PAGE_SOURCE, /<Switch checked=\{active\}/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /<TriggerAutomationFlowPreview/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /<TriggerConditionsPanel/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /Agent Instructions/u);
+	assert.match(TRIGGERS_PAGE_SOURCE, /<AgentConfigFields/u);
+	assert.match(TRIGGERS_PAGE_SOURCE, /onAutomationRulesChange=\{handleAutomationRulesChange\}/u);
+	assert.match(TRIGGERS_PAGE_SOURCE, /onTextChange=\{handleConfigTextChange\}/u);
 	assert.match(TRIGGERS_PAGE_SOURCE, /Cancel/u);
 	assert.match(TRIGGERS_PAGE_SOURCE, /\{saveLabel\}/u);
 });
 
-test("TriggerAutomationDialog re-seeds draft on open so Cancel discards", () => {
+test("TriggerConfigAutomationDialog re-seeds draft on open so Cancel discards", () => {
 	assert.match(TRIGGERS_PAGE_SOURCE, /if \(open && !wasOpen\.current\)/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /setDraftTriggers\(nextSeed\.triggers\)/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /setSharedPrompt\(getAutomationPrompt\(nextSeed\)\)/u);
+	assert.match(TRIGGERS_PAGE_SOURCE, /setDraftRule\(nextSeed\)/u);
 });
 
-test("TriggerAutomationDialog Save commits the automation rule and closes; Cancel only closes", () => {
+test("TriggerConfigAutomationDialog Save commits the automation rule and closes; Cancel only closes", () => {
 	assert.match(TRIGGERS_PAGE_SOURCE, /onSave\(createAgentAutomationRule\(\{/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /triggers: draftTriggers,/u);
-	assert.match(TRIGGERS_PAGE_SOURCE, /disabled=\{draftTriggers\.length === 0\}/u);
+	assert.match(TRIGGERS_PAGE_SOURCE, /disabled=\{draftRule\.triggers\.length === 0\}/u);
 	assert.match(TRIGGERS_PAGE_SOURCE, /onOpenChange\(false\)/u);
 	assert.match(TRIGGERS_PAGE_SOURCE, /<Button onClick=\{\(\) => onOpenChange\(false\)\} type="button" variant="ghost">/u);
 });
