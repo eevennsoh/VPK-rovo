@@ -2393,6 +2393,7 @@ const questions: QuestionCardQuestion[] = [
 		examples: [
 			{ title: "Single-select", description: "Numbered options with auto-advance on selection.", demoSlug: "question-card-demo-single-select" },
 			{ title: "Multi-select", description: "Checkbox indicators on the right allow multiple selections.", demoSlug: "question-card-demo-multi-select" },
+			{ title: "Multi-step multi-select", description: "Several multi-select questions in sequence; the footer reads Next once the step has a selection, then Submit on the last step.", demoSlug: "question-card-demo-multi-step-multi-select" },
 			{ title: "Text only", description: "Single free-form text input with no pre-defined options.", demoSlug: "question-card-demo-text-only" },
 			{ title: "Mixed flow", description: "Multi-question flow combining single-select and multi-select with pagination.", demoSlug: "question-card-demo-mixed" },
 			{ title: "Without custom input", description: "Custom input row hidden via showCustomInput={false}.", demoSlug: "question-card-demo-no-custom-input" },

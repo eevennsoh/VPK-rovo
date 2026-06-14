@@ -131,5 +131,8 @@ test("QuestionCard persists in-progress keyed answers across remounts", () => {
 	assert.match(QUESTION_CARD_HOOK_SOURCE, /questionSignature/u);
 	assert.match(QUESTION_CARD_HOOK_SOURCE, /currentQuestionIndex/u);
 	assert.match(QUESTION_CARD_HOOK_SOURCE, /persistQuestionCardState\(nextAnswers, nextIndex\)/u);
-	assert.match(QUESTION_CARD_HOOK_SOURCE, /submitAnswers\(answers\)/u);
+	// Submit clears persisted state via submitAnswers; the footer Submit path stamps any
+	// unanswered (incl. paged-past) questions as skipped before submitting.
+	assert.match(QUESTION_CARD_HOOK_SOURCE, /submitAnswers\(nextAnswers\)/u);
+	assert.match(QUESTION_CARD_HOOK_SOURCE, /onSubmit: submitWithImplicitSkips/u);
 });

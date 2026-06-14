@@ -257,6 +257,7 @@ function QuestionCard({
 		goToNextQuestion,
 		goToPreviousQuestion,
 		handleSkip,
+		handleNext,
 		handleAnswerChange,
 		handleCustomInputFocus,
 		handleKeyDown,
@@ -397,7 +398,7 @@ function QuestionCard({
 						{footerActionLabel}
 					</Button>
 				) : primaryAction === "next" ? (
-					<Button ref={footerButtonRef} variant="outline" disabled={isSubmitting} onClick={handleSkip} tabIndex={-1} className="shrink-0">
+					<Button ref={footerButtonRef} variant="outline" disabled={isSubmitting} onClick={handleNext} tabIndex={-1} className="shrink-0">
 						{footerActionLabel}
 					</Button>
 				) : (

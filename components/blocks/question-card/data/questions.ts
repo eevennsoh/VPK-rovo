@@ -136,3 +136,75 @@ export const QUESTION_CARD_MULTI_SELECT_DEMO: ReadonlyArray<QuestionCardDemoQues
 		],
 	},
 ];
+
+export const QUESTION_CARD_MULTI_STEP_MULTI_SELECT_DEMO: ReadonlyArray<QuestionCardDemoQuestion> = [
+	{
+		id: "data-sources",
+		label: "Which data sources should the agent connect to?",
+		description: "Select every system the agent may read from when answering questions.",
+		kind: "multi-select",
+		options: [
+			{
+				id: "confluence",
+				label: "Confluence",
+				description: "Search pages, spaces, and documentation.",
+			},
+			{
+				id: "jira",
+				label: "Jira",
+				description: "Read issues, sprints, and project status.",
+			},
+			{
+				id: "bitbucket",
+				label: "Bitbucket",
+				description: "Inspect repositories, pull requests, and pipelines.",
+			},
+		],
+	},
+	{
+		id: "permitted-actions",
+		label: "Which actions is the agent allowed to take?",
+		description: "Pick every action the agent can perform on your behalf without extra approval.",
+		kind: "multi-select",
+		options: [
+			{
+				id: "create-issues",
+				label: "Create issues",
+				description: "Open new Jira issues from detected work.",
+			},
+			{
+				id: "comment",
+				label: "Post comments",
+				description: "Reply on issues and pages to share findings.",
+			},
+			{
+				id: "update-status",
+				label: "Update status",
+				description: "Transition issues across workflow states.",
+			},
+		],
+	},
+	{
+		id: "notify-audiences",
+		label: "Who should be notified about agent activity?",
+		description: "Choose every audience that should receive a summary of what the agent did.",
+		kind: "multi-select",
+		options: [
+			{
+				id: "assignee",
+				label: "Issue assignees",
+				description: "Notify the person responsible for each item.",
+			},
+			{
+				id: "team-channel",
+				label: "Team channel",
+				description: "Post a digest to the shared team channel.",
+			},
+			{
+				id: "watchers",
+				label: "Watchers",
+				description: "Alert everyone watching the affected items.",
+			},
+		],
+	},
+];

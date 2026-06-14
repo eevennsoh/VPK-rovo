@@ -139,10 +139,10 @@ export function useQuestionCard({
 	const visibleOptionCount = getVisibleOptionCount(currentQuestion.options.length, maxVisibleOptions);
 	const customOptionIndex = visibleOptionCount;
 	const customInputValue = getCustomInputValue(currentQuestion, answers[currentQuestion.id]);
-	const hasCustomInputText = Boolean(customInputValue && customInputValue.trim().length > 0);
+	const currentQuestionAnswered = isQuestionAnswered(currentQuestion, answers);
 
 	const allQuestionsAnswered = questions.every((question) => isQuestionAnswered(question, answers));
-	const primaryAction = getQuestionCardPrimaryAction(allQuestionsAnswered, hasCustomInputText);
+	const primaryAction = getQuestionCardPrimaryAction(allQuestionsAnswered, currentQuestionAnswered, canGoToNextQuestion);
 
 	useEffect(() => {
 		cardRef.current?.focus();
@@ -227,6 +227,22 @@ export function useQuestionCard({
 		[clearPersistedState, onSubmit],
 	);
 
+	// Submit from the final step. Any question the user never answered — including ones they
+	// only paged past with the chevron/ArrowRight — is explicitly stamped "Skipped" so the
+	// submission never silently omits a question while still preserving every real answer.
+	const submitWithImplicitSkips = useCallback(() => {
+		if (isSubmitting) return;
+
+		const nextAnswers: QuestionCardAnswers = { ...answers };
+		for (const question of questions) {
+			if (!isQuestionAnswered(question, nextAnswers)) {
+				nextAnswers[question.id] = QUESTION_CARD_SKIPPED_VALUE;
+			}
+		}
+		setAnswers(nextAnswers);
+		submitAnswers(nextAnswers);
+	}, [isSubmitting, answers, questions, submitAnswers]);
+
 	const handleDismiss = useCallback(() => {
 		clearPersistedState();
 		onDismiss?.();
@@ -256,6 +272,19 @@ export function useQuestionCard({
 			}
 		}
 	}, [isSubmitting, currentQuestion, canGoToNextQuestion, goToNextQuestion, questions, answers, submitAnswers, handleDismiss]);
+
+	// Advance while preserving the current question's answer. Distinct from handleSkip, which
+	// stamps the question as "Skipped". Used by the footer "Next"/"Submit" CTA once the current
+	// question has a real answer (e.g. multi-select picks or custom text).
+	const handleNext = useCallback(() => {
+		if (isSubmitting) return;
+
+		if (canGoToNextQuestion) {
+			goToNextQuestion(answers);
+		} else {
+			submitWithImplicitSkips();
+		}
+	}, [isSubmitting, canGoToNextQuestion, goToNextQuestion, answers, submitWithImplicitSkips]);
 
 	const handleSelectOption = useCallback(
 		(optionId: string) => {
@@ -542,10 +571,11 @@ export function useQuestionCard({
 		goToNextQuestion,
 		goToPreviousQuestion,
 		handleSkip,
+		handleNext,
 		handleAnswerChange,
 		handleCustomInputFocus,
 		handleKeyDown,
-		onSubmit: () => submitAnswers(answers),
+		onSubmit: submitWithImplicitSkips,
 		onDismiss: handleDismiss,
 	};
 }
