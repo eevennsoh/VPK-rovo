@@ -164,6 +164,8 @@ __pycache__/
 venv/
 target/
 vendor/
+!components/visual/liquid-metal/vendor/
+!components/visual/liquid-metal/vendor/**
 *.log
 coverage/
 .cache/

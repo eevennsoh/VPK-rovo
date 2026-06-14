@@ -8178,6 +8178,9 @@ const VISUAL_DEMOS: Record<string, ComponentType> = {
   "ink-wash": dynamic(() => import("./demos/visual/ink-wash-demo"), {
     ssr: false,
   }),
+  "liquid-metal": dynamic(() => import("./demos/visual/liquid-metal-demo"), {
+    ssr: false,
+  }),
   "magnify-lens": dynamic(() => import("./demos/visual/magnify-lens-demo"), {
     ssr: false,
   }),
@@ -8381,6 +8384,41 @@ const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/visual/ink-wash-demo").then((mod) => ({
         default: mod.InkWashDemoGallery,
+      })),
+    { ssr: false },
+  ),
+  "liquid-metal-demo-chromatic-pill": dynamic(
+    () =>
+      import("./demos/visual/liquid-metal-demo").then((mod) => ({
+        default: mod.LiquidMetalDemoChromaticPill,
+      })),
+    { ssr: false },
+  ),
+  "liquid-metal-demo-silver-pill": dynamic(
+    () =>
+      import("./demos/visual/liquid-metal-demo").then((mod) => ({
+        default: mod.LiquidMetalDemoSilverPill,
+      })),
+    { ssr: false },
+  ),
+  "liquid-metal-demo-gold-send": dynamic(
+    () =>
+      import("./demos/visual/liquid-metal-demo").then((mod) => ({
+        default: mod.LiquidMetalDemoGoldSend,
+      })),
+    { ssr: false },
+  ),
+  "liquid-metal-demo-toolbar-reflection": dynamic(
+    () =>
+      import("./demos/visual/liquid-metal-demo").then((mod) => ({
+        default: mod.LiquidMetalDemoToolbarReflection,
+      })),
+    { ssr: false },
+  ),
+  "liquid-metal-demo-chat-reflection": dynamic(
+    () =>
+      import("./demos/visual/liquid-metal-demo").then((mod) => ({
+        default: mod.LiquidMetalDemoChatReflection,
       })),
     { ssr: false },
   ),
