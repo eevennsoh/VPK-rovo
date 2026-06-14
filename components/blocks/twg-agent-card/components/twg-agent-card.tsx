@@ -1,14 +1,13 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { AgentCardShell } from "@/components/blocks/agent-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tile } from "@/components/ui/tile";
-import { TeamworkGraphMark } from "@/components/ui-custom/teamwork-graph-mark";
 import { TWGAppstack, type TwgToolSource } from "@/components/ui-custom/twg-appstack";
-import { TwgToolBannerBackground } from "@/components/ui-custom/twg-tool";
-import { ROVO_COLOR_SWATCHES } from "@/lib/rovo-colors";
+import { TWGLoader } from "@/components/ui-custom/twg-loader";
+import PatternTile, { type PatternStrokeOptions } from "@/components/website/demos/visual/pattern-tile";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +20,7 @@ export interface TWGAgentSuggestion {
 	id: string;
 	name: string;
 	description: string;
+	avatarSrc: string;
 }
 
 export interface TWGAgentCardProps {
@@ -34,26 +34,12 @@ export interface TWGAgentCardProps {
 	className?: string;
 }
 
-const DEFAULT_USER_AVATAR_SRC = "/avatar-human/florence-applebee.png";
-const DEFAULT_HEADLINE = "we think we can help you complete your life by creating a team of autonomous agents for you.";
-
-const GESTURAL_LINE_STYLE = {
-	maskImage: `url("/gestural-line/eyelash-3.svg")`,
-	maskPosition: "center",
-	maskRepeat: "no-repeat",
-	maskSize: "contain",
-	WebkitMaskImage: `url("/gestural-line/eyelash-3.svg")`,
-	WebkitMaskPosition: "center",
-	WebkitMaskRepeat: "no-repeat",
-	WebkitMaskSize: "contain",
-} satisfies CSSProperties;
-
-const CARD_ACCENT_STYLE = {
-	"--twg-agent-card-blue": ROVO_COLOR_SWATCHES[0].cssVar,
-	"--twg-agent-card-orange": ROVO_COLOR_SWATCHES[1].cssVar,
-	"--twg-agent-card-purple": ROVO_COLOR_SWATCHES[2].cssVar,
-	"--twg-agent-card-lime": ROVO_COLOR_SWATCHES[3].cssVar,
-} as CSSProperties;
+const DEFAULT_USER_AVATAR_SRC = "/avatar-user/venn/venn.png";
+const DEFAULT_HEADLINE = "based on what we know from Teamwork Graph, these are the agents we suggest for you.";
+const GRID_SCALE = 16;
+const GRID_STRIP_STROKE = {
+	width: 1,
+} satisfies PatternStrokeOptions;
 
 function TWGAgentCardHeadline({
 	headline,
@@ -65,25 +51,89 @@ function TWGAgentCardHeadline({
 	userName: string;
 }>) {
 	return (
-		<p className="relative z-10 text-text [text-wrap:balance]" style={{ font: token("font.heading.medium") }}>
-			<span className="inline-flex items-center gap-2 align-middle">
-				<span>Hey</span>
-				<Avatar aria-hidden>
-					<AvatarImage alt="" src={userAvatarSrc} />
-					<AvatarFallback>{userName.slice(0, 2).toUpperCase()}</AvatarFallback>
-				</Avatar>
-				<span>{userName},</span>
-			</span>{" "}
-			{headline}
-		</p>
+		<div className="grid w-full gap-1 text-text" style={{ font: token("font.body") }}>
+			<p aria-hidden="true" style={{ font: token("font.heading.large") }}>👋</p>
+			<p>
+				<span className="inline-flex items-center gap-2 align-middle">
+					<span>G&apos;day</span>
+					<Avatar aria-hidden size="xs">
+						<AvatarImage alt="" src={userAvatarSrc} />
+						<AvatarFallback>{userName.slice(0, 2).toUpperCase()}</AvatarFallback>
+					</Avatar>
+					<span>{userName},</span>
+				</span>{" "}
+				{headline}
+			</p>
+		</div>
 	);
 }
 
 function TWGAgentSuggestionRow({ suggestion }: Readonly<{ suggestion: TWGAgentSuggestion }>) {
 	return (
-		<div className="grid min-w-0 gap-0.5">
-			<p className="truncate text-sm font-semibold leading-5 text-text">{suggestion.name}</p>
-			<p className="line-clamp-2 text-xs leading-4 text-text-subtle">{suggestion.description}</p>
+		<div className="flex min-w-0 items-center gap-2.5">
+			<Avatar aria-hidden shape="hexagon" size="sm">
+				<AvatarImage alt="" src={suggestion.avatarSrc} />
+				<AvatarFallback>{suggestion.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+			</Avatar>
+			<div className="grid min-w-0 gap-0">
+				<p className="truncate text-text" style={{ font: token("font.heading.xxsmall") }}>
+					{suggestion.name}
+				</p>
+				<p className="truncate text-text-subtlest" style={{ font: token("font.body.small") }}>
+					{suggestion.description}
+				</p>
+			</div>
+		</div>
+	);
+}
+
+function TWGAgentCardStats({
+	connectedSourceCount,
+	suggestedAgentCount,
+}: Readonly<{ connectedSourceCount: number; suggestedAgentCount: number }>) {
+	return (
+		<div
+			className="relative z-10 isolate h-[208px] shrink-0 overflow-hidden bg-surface p-4"
+			data-slot="twg-agent-card-stats"
+		>
+			<div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+				<div className="h-[calc(100%+16px)] w-[calc(100%+16px)] -translate-x-[0.5px] -translate-y-[0.5px]">
+					<PatternTile
+						patternType="grid"
+						front={token("color.border")}
+						back="transparent"
+						scale={GRID_SCALE}
+						stroke={GRID_STRIP_STROKE}
+						fill="tile"
+						opacity={1}
+						position="top-left"
+					/>
+				</div>
+			</div>
+			<div className="relative z-10 grid h-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4">
+				<div className="relative flex min-w-0 flex-col justify-end px-3 pt-2 pb-4" data-slot="twg-agent-card-stat-tile">
+					<div aria-hidden="true" className="pointer-events-none absolute inset-px bg-surface" />
+					<div
+						aria-label={`${suggestedAgentCount} suggested agents`}
+						className="relative z-10 font-mono text-[148px]/[0.7] font-thin tabular-nums text-text"
+					>
+						{suggestedAgentCount}
+					</div>
+					<p className="relative z-10 mt-4 text-text-subtlest" style={{ font: token("font.body.small") }}>suggested agents</p>
+				</div>
+				<div className="grid min-w-0 grid-rows-2 gap-4">
+					<div className="relative flex flex-col justify-center px-3 py-2" data-slot="twg-agent-card-stat-tile">
+						<div aria-hidden="true" className="pointer-events-none absolute inset-px bg-surface" />
+						<p className="relative z-10 font-mono text-[28px]/[1] font-semibold tabular-nums text-text">6</p>
+						<p className="relative z-10 mt-1 text-text-subtlest" style={{ font: token("font.body.small") }}>hours saved per week</p>
+					</div>
+					<div className="relative flex flex-col justify-center px-3 py-2" data-slot="twg-agent-card-stat-tile">
+						<div aria-hidden="true" className="pointer-events-none absolute inset-px bg-surface" />
+						<p className="relative z-10 font-mono text-[28px]/[1] font-semibold tabular-nums text-text">{connectedSourceCount}</p>
+						<p className="relative z-10 mt-1 text-text-subtlest" style={{ font: token("font.body.small") }}>connected apps</p>
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 }
@@ -103,43 +153,33 @@ export function TWGAgentCard({
 	return (
 		<AgentCardShell
 			className={cn(
-				"h-[423px] w-full max-w-[376px] gap-0 overflow-hidden rounded-[16px] bg-surface p-0 after:rounded-[16px] [&_[data-slot=agent-card-select]]:rounded-[16px]",
+				"h-[553px] w-[368px] max-w-[368px] gap-0 overflow-hidden rounded-[24px] bg-surface p-0 after:rounded-[24px] [&_[data-slot=agent-card-select]]:rounded-[24px]",
 				className,
 			)}
 			onSelect={onSelect}
 			selectLabel={selectLabel}
 		>
 			<div
-				className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[16px]"
+				className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[24px]"
 				data-slot="twg-agent-card"
-				style={CARD_ACCENT_STYLE}
 			>
-				<TwgToolBannerBackground />
-				<div
-					aria-hidden
-					className="pointer-events-none absolute -right-2 top-[52%] z-0 h-16 w-[136px] -rotate-6 bg-orange-300 opacity-95"
-					style={GESTURAL_LINE_STYLE}
-				/>
-				<div aria-hidden className="absolute right-4 top-4 size-2 rounded-full bg-blue-600 opacity-70" />
-				<div aria-hidden className="absolute right-8 top-8 size-1.5 rounded-full bg-purple-500 opacity-70" />
-				<div aria-hidden className="absolute right-3 top-12 size-2 rounded-full bg-lime-400 opacity-70" />
-
-				<div className="relative z-10 flex shrink-0 items-start gap-3 px-4 pt-4">
+				<div className="relative z-10 flex shrink-0 items-center gap-3 px-4 pt-4">
 					<Tile
+						className="bg-surface"
 						hasBorder
 						label="Teamwork Graph"
-						size="xlarge"
-						variant="neutral"
+						size="large"
+						variant="transparent"
 					>
-						<TeamworkGraphMark />
+						<TWGLoader label="Teamwork Graph" size="small" />
 					</Tile>
-					<div className="min-w-0 flex-1 pt-0.5">
-						<p className="truncate text-base font-semibold leading-5 text-text-subtle">
-							Suggested by Teamwork Graph
-						</p>
+					<div className="min-w-0 flex-1">
+						<h3 className="truncate text-text-subtle" style={{ font: token("font.heading.xxsmall") }}>
+							Powered by Teamwork Graph
+						</h3>
 						<TWGAppstack
-							animated
-							className="mt-2 justify-start"
+							animated={false}
+							className="mt-1 justify-start"
 							iconSize="md"
 							maxVisible={7}
 							sources={sources}
@@ -147,7 +187,7 @@ export function TWGAgentCard({
 					</div>
 				</div>
 
-				<div className="relative z-10 flex min-h-0 flex-1 flex-col px-4 pt-4">
+				<div className="relative z-10 shrink-0 px-4 pt-4 pb-4">
 					<TWGAgentCardHeadline
 						headline={headline}
 						userAvatarSrc={userAvatarSrc}
@@ -155,21 +195,12 @@ export function TWGAgentCard({
 					/>
 				</div>
 
-				<div className="relative z-10 grid shrink-0 grid-cols-[96px_minmax(0,1fr)] gap-x-4 px-4 pb-4">
-					<p className="col-span-2 mb-2 text-xs font-semibold leading-4 text-text-subtlest">
-						Your dream team
-					</p>
-					<div
-						aria-label={`${suggestedAgents.length} suggested agents`}
-						className="self-start text-[128px]/[0.76] font-black text-text"
-					>
-						{suggestedAgents.length}
-					</div>
-					<div className="flex min-w-0 flex-col gap-2.5 pt-1">
-						{visibleSuggestions.map((suggestion) => (
-							<TWGAgentSuggestionRow key={suggestion.id} suggestion={suggestion} />
-						))}
-					</div>
+				<TWGAgentCardStats connectedSourceCount={sources.length} suggestedAgentCount={suggestedAgents.length} />
+
+				<div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3.5 px-4 pt-4 pb-4" data-slot="twg-agent-card-suggestions">
+					{visibleSuggestions.map((suggestion) => (
+						<TWGAgentSuggestionRow key={suggestion.id} suggestion={suggestion} />
+					))}
 				</div>
 			</div>
 		</AgentCardShell>

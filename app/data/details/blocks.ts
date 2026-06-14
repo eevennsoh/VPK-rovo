@@ -401,7 +401,7 @@ function FormattingToolbar({ editor }: { editor: Editor }) {
 	},
 	"twg-agent-card": {
 		description:
-			"Teamwork Graph recommendation card that suggests a small personal agent team from user context. It reuses the Agent Card shell footprint, TWG app stack, Rovo color accents, subtle grid treatment, and a gestural-line decoration.",
+			"Teamwork Graph recommendation card that suggests a small personal agent team from user context. It reuses the Agent Card shell footprint, animated TWG logo tile, TWG app stack, and subtle grid treatment.",
 		importStatement: `import { TWGAgentCard } from "@/components/blocks/twg-agent-card";`,
 		usage: `import { TWGAgentCard } from "@/components/blocks/twg-agent-card";
 import type { TWGAgentSuggestion } from "@/components/blocks/twg-agent-card";
@@ -410,20 +410,21 @@ const suggestedAgents: TWGAgentSuggestion[] = [
   {
     id: "life-admin-agent",
     name: "Life Admin Agent",
-    description: "Turns loose reminders, forms, and renewals into handled next steps.",
+    description: "Handles reminders, forms, and renewals.",
+    avatarSrc: "/avatar-agent/service-agents/service-request-helper.svg",
   },
 ];
 
 <TWGAgentCard
   userName="Venn"
-  userAvatarSrc="/avatar-human/florence-applebee.png"
+  userAvatarSrc="/avatar-user/venn/venn.png"
   suggestedAgents={suggestedAgents}
   onSelect={() => openRecommendations()}
 />`,
 		demoLayout: { previewHeight: "default" },
 		props: [
 			{ name: "userName", type: "string", default: '"Venn"', description: "Name inserted into the conversational headline." },
-			{ name: "userAvatarSrc", type: "string", default: '"/avatar-human/florence-applebee.png"', description: "Avatar shown inline in the headline." },
+			{ name: "userAvatarSrc", type: "string", default: '"/avatar-user/venn/venn.png"', description: "Avatar shown inline in the headline." },
 			{ name: "headline", type: "ReactNode", description: "Copy after the name and avatar in the main headline." },
 			{ name: "suggestedAgents", type: "readonly TWGAgentSuggestion[]", description: "Agent recommendations shown in the dream-team section. The count reflects the full array; the card displays the first three rows." },
 			{ name: "sources", type: "readonly TwgToolSource[]", description: "Connected apps rendered in the header app stack." },

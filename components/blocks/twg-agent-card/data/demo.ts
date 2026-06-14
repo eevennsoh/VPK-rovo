@@ -2,7 +2,7 @@ import type { TWGAgentSuggestion } from "@/components/blocks/twg-agent-card/comp
 import type { TwgToolSource } from "@/components/ui-custom/twg-appstack";
 
 export const DEFAULT_TWG_AGENT_CARD_SOURCES = [
-	{ id: "twg", label: "Teamwork Graph", provider: "twg" },
+	{ id: "jira-product-discovery", label: "Jira Product Discovery", provider: "jira-product-discovery" },
 	{ id: "jira", label: "Jira", provider: "jira" },
 	{ id: "google-drive", label: "Google Drive", provider: "google-drive" },
 	{ id: "confluence", label: "Confluence", provider: "confluence" },
@@ -15,16 +15,19 @@ export const DEFAULT_TWG_AGENT_CARD_SUGGESTIONS = [
 	{
 		id: "life-admin-agent",
 		name: "Life Admin Agent",
-		description: "Turns loose reminders, forms, and renewals into handled next steps.",
+		description: "Handles reminders, forms, and renewals.",
+		avatarSrc: "/avatar-agent/service-agents/service-request-helper.svg",
 	},
 	{
 		id: "relationship-rhythm-agent",
 		name: "Relationship Rhythm Agent",
-		description: "Suggests thoughtful follow-ups from your recent conversations and plans.",
+		description: "Drafts timely follow-ups.",
+		avatarSrc: "/avatar-agent/strategy-agents/talent-finder.svg",
 	},
 	{
 		id: "focus-recovery-agent",
 		name: "Focus Recovery Agent",
-		description: "Finds recurring distractions and drafts a calmer weekly operating rhythm.",
+		description: "Finds distraction patterns.",
+		avatarSrc: "/avatar-agent/product-agents/wildcard-6.svg",
 	},
 ] as const satisfies readonly TWGAgentSuggestion[];
