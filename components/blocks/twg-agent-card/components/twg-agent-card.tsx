@@ -178,8 +178,8 @@ export function TWGAgentCard({
 							Powered by Teamwork Graph
 						</h3>
 						<TWGAppstack
-							animated={false}
 							className="mt-1 justify-start"
+							direction="left-to-right"
 							iconSize="md"
 							maxVisible={7}
 							sources={sources}

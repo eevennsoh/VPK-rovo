@@ -28,11 +28,14 @@ export type TwgToolSourceIconProps = Omit<ComponentProps<typeof Tile>, "children
 	size?: TwgToolSourceIconSize;
 };
 
+export type TwgAppstackAnimationDirection = "left-to-right" | "right-to-left";
+
 export type TWGAppstackProps = ComponentProps<"div"> & {
 	sources: ReadonlyArray<TwgToolSource>;
 	iconSize?: TwgToolSourceIconSize;
 	maxVisible?: number;
 	animated?: boolean;
+	direction?: TwgAppstackAnimationDirection;
 };
 
 export type TwgToolSourceStackProps = TWGAppstackProps;
@@ -52,8 +55,9 @@ function getAppstackRotation(index: number) {
 	return APPSTACK_ROTATIONS[index % APPSTACK_ROTATIONS.length];
 }
 
-function getAppstackDelay(index: number, itemCount: number) {
-	return (itemCount - index - 1) * APPSTACK_STAGGER_SECONDS;
+function getAppstackDelay(index: number, itemCount: number, direction: TwgAppstackAnimationDirection) {
+	const order = direction === "left-to-right" ? index : itemCount - index - 1;
+	return order * APPSTACK_STAGGER_SECONDS;
 }
 
 function getAppstackInitialRotation(rotation: number) {
@@ -206,6 +210,7 @@ export function TwgToolSourceIcon({
 export function TWGAppstack({
 	animated = true,
 	className,
+	direction = "right-to-left",
 	iconSize = "md",
 	maxVisible = 6,
 	sources,
@@ -237,7 +242,7 @@ export function TWGAppstack({
 			);
 		}
 
-		const delay = getAppstackDelay(index, itemCount);
+		const delay = getAppstackDelay(index, itemCount, direction);
 
 		return (
 			<motion.div
