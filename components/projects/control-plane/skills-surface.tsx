@@ -85,12 +85,12 @@ function groupSkillsByCategory(skills: ReadonlyArray<HermesSkillSummary>) {
 
 function resolveDraftBadgeVariant(
 	status: HermesSkillDraftSummary["status"],
-): "danger" | "neutral" | "success" | "warning" {
+): "destructive" | "default" | "success" | "warning" {
 	if (status === "approved") {
 		return "success";
 	}
 	if (status === "rejected") {
-		return "danger";
+		return "destructive";
 	}
 	return "warning";
 }
@@ -525,7 +525,7 @@ export function SkillsSurfacePage({
 			title="Skills"
 			actions={
 				<div className="flex items-center gap-2">
-					<Badge variant="neutral">
+					<Badge variant="default">
 						{activeView === "installed"
 								? `${filteredSkills.length} visible`
 								: activeView === "hub"
@@ -633,7 +633,7 @@ export function SkillsSurfacePage({
 										</Button>
 									) : (
 										<div className="flex items-center">
-											<Badge variant="neutral">{pendingDraftCount} pending</Badge>
+											<Badge variant="default">{pendingDraftCount} pending</Badge>
 										</div>
 									)}
 								</div>
@@ -714,7 +714,7 @@ export function SkillsSurfacePage({
 																		<Badge variant={
 																			skill.trustLevel === "trusted" ? "success"
 																				: skill.trustLevel === "builtin" ? "info"
-																					: "neutral"
+																					: "default"
 																		}>
 																			{skill.trustLevel ?? "community"}
 																		</Badge>
@@ -813,7 +813,7 @@ export function SkillsSurfacePage({
 											</div>
 											{selectedSkill ? (
 												<div className="flex items-center gap-2">
-													<Badge variant={selectedSkill.disabled ? "neutral" : "success"}>
+													<Badge variant={selectedSkill.disabled ? "default" : "success"}>
 														{selectedSkill.disabled ? "disabled" : "enabled"}
 													</Badge>
 													<Button variant="outline" onClick={() => void handleToggleSkill()} disabled={isMutating}>
@@ -895,7 +895,7 @@ export function SkillsSurfacePage({
 														<Badge variant={
 															hubSelectedSkill.trustLevel === "trusted" ? "success"
 																: hubSelectedSkill.trustLevel === "builtin" ? "info"
-																	: "neutral"
+																	: "default"
 														}>
 															{hubSelectedSkill.trustLevel}
 														</Badge>
@@ -930,7 +930,7 @@ export function SkillsSurfacePage({
 												{hubSelectedSkill.tags.length > 0 ? (
 													<div className="flex flex-wrap gap-1">
 														{hubSelectedSkill.tags.map((tag) => (
-															<Badge key={tag} variant="neutral">{tag}</Badge>
+															<Badge key={tag} variant="default">{tag}</Badge>
 														))}
 													</div>
 												) : null}
@@ -1097,7 +1097,7 @@ export function SkillsSurfacePage({
 													<div className="text-sm font-medium">Draft bundle files</div>
 													<div className="flex flex-wrap gap-2">
 														{selectedDraft.files.map((file) => (
-															<Badge key={file.path} variant="neutral">
+															<Badge key={file.path} variant="default">
 																{file.path}
 															</Badge>
 														))}

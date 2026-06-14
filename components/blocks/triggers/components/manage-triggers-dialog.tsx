@@ -19,6 +19,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import AutomationIcon from "@atlaskit/icon/core/automation";
+import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
 import CrossIcon from "@atlaskit/icon/core/cross";
 
 import {
@@ -159,48 +160,42 @@ function getAutomationRuleSecondary(rule: AgentAutomationRule): string {
 }
 
 function ManageAutomationFlowVisual({ rule }: Readonly<{ rule: AgentAutomationRule }>) {
-	const visibleTriggers = rule.triggers.slice(0, 3);
+	const visibleTriggers = rule.triggers.slice(0, 5);
 	const overflowCount = Math.max(0, rule.triggers.length - visibleTriggers.length);
 
 	return (
-		<span className="flex shrink-0 items-center gap-1" aria-hidden={true}>
-			{visibleTriggers.length > 0 ? (
-				visibleTriggers.map((trigger) => {
-					const provider = getTriggerProvider(trigger.providerId);
-					// Mirror the editor-palette / picker logo treatment: 1P product
-					// logos render bare (they ship their own fill), 2P/3P marks are
-					// border-resolved, and stroked glyphs sit in a bordered tile.
-					// Only fall back to the bordered glyph tile when no provider
-					// icon resolves.
-					const tileIcon = renderAgentTriggerProviderTileIcon(trigger);
-					return tileIcon ? (
-						<span key={trigger.id}>{tileIcon}</span>
-					) : (
-						<IconTile
-							className="border border-border bg-bg-input text-icon-subtle"
-							icon={<AutomationIcon label="" size="small" />}
-							key={trigger.id}
-							label={provider?.label ?? "Event trigger"}
-							size="small"
-							variant="transparent"
-						/>
-					);
-				})
-			) : (
-				<IconTile
-					className="border border-border bg-bg-input text-icon-subtle"
-					icon={<AutomationIcon label="" size="small" />}
-					label="Event trigger"
-					size="small"
-					variant="transparent"
-				/>
-			)}
-			{overflowCount > 0 ? (
-				<span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-border bg-bg-input px-1.5 text-xs font-medium leading-4 text-text-subtle">
-					+{overflowCount}
-				</span>
-			) : null}
-		</span>
+		<div className="flex items-center gap-2" aria-hidden={true}>
+			<div className="flex min-w-0 items-center gap-1">
+				{visibleTriggers.length > 0 ? (
+					visibleTriggers.map((trigger) => (
+						<span key={trigger.id} className="rich-text-command-menu-avatar inline-flex size-8 shrink-0 items-center justify-center">
+							{renderAgentTriggerProviderTileIcon(trigger) ?? <AutomationIcon label="" size="small" />}
+						</span>
+					))
+				) : (
+					<IconTile
+						aria-hidden={true}
+						icon={<AutomationIcon label="" size="small" />}
+						label="Trigger"
+						size="medium"
+						variant="blue"
+					/>
+				)}
+				{overflowCount > 0 ? (
+					<span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-border bg-bg-input px-1.5 text-xs font-medium leading-4 text-text-subtle">
+						+{overflowCount}
+					</span>
+				) : null}
+			</div>
+			<div className="h-px w-6 shrink-0 bg-border" />
+			<IconTile
+				aria-hidden={true}
+				icon={<GenerativeIndicatorIcon label="" size="small" />}
+				label="Agent instructions"
+				size="small"
+				variant="gray"
+			/>
+		</div>
 	);
 }
 

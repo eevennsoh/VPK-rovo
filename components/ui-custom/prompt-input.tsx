@@ -1757,7 +1757,7 @@ export const PromptInputPreferencesButton = ({
       aria-hidden
       className="pointer-events-none h-4 min-w-0 rounded-xs bg-surface-pressed px-1.5 text-xs font-normal leading-4 text-text hover:bg-surface-pressed active:bg-surface-pressed"
       max={false}
-      variant="neutral"
+      variant="default"
     >
       +{overflowCount}
     </Badge>

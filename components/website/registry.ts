@@ -551,31 +551,10 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  "badge-demo-primary": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoPrimary,
-      })),
-    { ssr: false },
-  ),
   "badge-demo-important": dynamic(
     () =>
       import("./demos/ui/badge-demo").then((mod) => ({
         default: mod.BadgeDemoImportant,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-added": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoAdded,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-removed": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoRemoved,
       })),
     { ssr: false },
   ),
@@ -639,20 +618,6 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/ui/badge-demo").then((mod) => ({
         default: mod.BadgeDemoLink,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-ads-appearances": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoAdsAppearances,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-ads-legacy-aliases": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoAdsLegacyAliases,
       })),
     { ssr: false },
   ),

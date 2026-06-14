@@ -33,14 +33,14 @@ function getStatusVariant(status: TaskStatus): "neutral" | "information" | "succ
 /**
  * Maps task priority to Badge variant
  */
-function getPriorityVariant(priority: string): "default" | "neutral" | "destructive" | "warning" {
+function getPriorityVariant(priority: string): "default" | "destructive" | "warning" {
 	switch (priority) {
 		case "High":
 			return "destructive";
 		case "Medium":
 			return "warning";
 		case "Low":
-			return "neutral";
+			return "default";
 		default:
 			return "default";
 	}

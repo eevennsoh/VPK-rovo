@@ -4050,6 +4050,8 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	config: AgentConfigFormValue;
 	avatarSrc?: string;
 	compactScrollAreaClassName?: string;
+	/** Overrides the instructions editor's contentClassName — use to scope scroll to the editor only. */
+	compactInstructionsContentClassName?: string;
 	compactFooterBefore?: ReactNode;
 	// Config rows callers can suppress — e.g. while editing a subagent, where
 	// triggers, subagents, and conversation starters can't be configured.
@@ -4095,6 +4097,7 @@ export const AgentConfigFields = memo(
 		config,
 		avatarSrc,
 		compactScrollAreaClassName,
+		compactInstructionsContentClassName,
 		idPrefix,
 		onAddListValues,
 		onConnectTrigger,
@@ -4177,9 +4180,10 @@ export const AgentConfigFields = memo(
 		// single dialog instance serves every entry point (summary row, collapsed
 		// nav, missing-config tile). `seed` carries the automation rule the modal
 		// opens with — an existing rule when editing, or a freshly-picked event.
-		const [triggersEditor, setTriggersEditor] = useState<{ open: boolean; fromManage: boolean; seed: AgentAutomationRule }>({
+		const [triggersEditor, setTriggersEditor] = useState<{ open: boolean; fromManage: boolean; seed: AgentAutomationRule; title: string }>({
 			open: false,
 			fromManage: false,
+			title: "New automation",
 			seed: createAgentAutomationRule({
 					id: "automation-1",
 				name: "",
@@ -4187,10 +4191,11 @@ export const AgentConfigFields = memo(
 				triggers: [],
 			}),
 		});
-		const handleEditTriggers = useCallback((seed?: AgentAutomationRule, fromManage = false) => {
+		const handleEditTriggers = useCallback((seed?: AgentAutomationRule, fromManage = false, isNew = false) => {
 			setTriggersEditor({
 				open: true,
 				fromManage,
+				title: !seed || isNew ? "Add automation" : "Edit automation",
 				seed: seed ?? createAgentAutomationRule({
 					id: `automation-${getNextAutomationRuleIndex(currentAutomationRules)}`,
 					name: "",
@@ -4220,7 +4225,7 @@ export const AgentConfigFields = memo(
 					return;
 				}
 				setManageTriggersOpen(false);
-				handleEditTriggers(next);
+				handleEditTriggers(next, false, true);
 			},
 			[currentAutomationRules, handleEditTriggers],
 		);
@@ -4309,7 +4314,7 @@ export const AgentConfigFields = memo(
 						<AgentInstructionsComposer
 							className="relative flex min-h-0 flex-1 flex-col"
 							config={config}
-							contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]")}
+							contentClassName={cn("pt-4", compactInstructionsContentClassName ?? (isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]"))}
 							editorClassName={isFilledConfig ? undefined : "agent-instructions-tiptap-editor-compact-empty"}
 							instructions={config.instructions}
 							mentionRemovalRequest={mentionRemovalRequest}
@@ -4332,6 +4337,7 @@ export const AgentConfigFields = memo(
 					onOpenChange={handleTriggersEditorOpenChange}
 					automationRule={triggersEditor.seed}
 					onSave={handleTriggersSave}
+				title={triggersEditor.title}
 				/>
 				<ManageTriggersDialog
 					open={manageTriggersOpen}

@@ -173,7 +173,7 @@ export type SidebarNavItemCountProps = Omit<BadgeProps, "variant">;
 function SidebarNavItemCount({ children, className, ...props }: Readonly<SidebarNavItemCountProps>) {
 	return (
 		<Badge
-			variant="neutral"
+			variant="default"
 			max={false}
 			className={cn(
 				"pointer-events-none tabular-nums transition-opacity duration-fast ease-out group-data-[selected=true]/sidebar-nav-item:opacity-0 group-hover/sidebar-nav-item:!opacity-100",

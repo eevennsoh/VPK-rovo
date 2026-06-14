@@ -1235,7 +1235,7 @@ export function TriggerConfigAutomationDialog({
 						<DialogTitle className="truncate text-xl font-semibold leading-6 text-text">{title}</DialogTitle>
 					</div>
 					<div className="flex items-center gap-3">
-						<label className="flex items-center gap-2 text-sm font-medium text-text">
+						<label className="flex items-center gap-2 text-sm font-medium text-text-subtle">
 							<span>{active ? "Active" : "Inactive"}</span>
 							<Switch checked={active} label={active ? "Active" : "Inactive"} onCheckedChange={setActive} />
 						</label>
@@ -1244,9 +1244,11 @@ export function TriggerConfigAutomationDialog({
 						</DialogClose>
 					</div>
 				</div>
-				<div className="grid min-h-0 flex-1 overflow-y-auto px-6 pb-5">
+				<div className="flex min-h-0 flex-1 flex-col px-6 pb-5">
 					<Suspense fallback={null}>
 						<AgentConfigFields
+							compactScrollAreaClassName="overflow-y-hidden"
+							compactInstructionsContentClassName="min-h-[120px] max-h-[320px] overflow-y-auto"
 							config={config}
 							idPrefix="trigger-config-automation"
 							onAutomationRulesChange={handleAutomationRulesChange}
@@ -1412,14 +1414,17 @@ export default function Triggers({
 							</div>
 							<div className="grid gap-2">
 								{rule.triggers.map((trigger) => {
-									const provider = getTriggerProvider(trigger.providerId);
 									return (
 										<div className="flex min-w-0 items-center gap-2 text-sm text-text" key={trigger.id}>
-											<span className="flex size-6 shrink-0 items-center justify-center">
-												{provider ? renderTriggerProviderIcon(provider.icon, provider.label) : (
-													<AutomationIcon label="" size="small" />
-												)}
-											</span>
+											{renderAgentTriggerProviderTileIcon(trigger) ?? (
+												<IconTile
+													aria-hidden={true}
+													icon={<AutomationIcon label="" size="small" />}
+													label="Trigger"
+													size="medium"
+													variant="blue"
+												/>
+											)}
 											<span className="truncate">{getAgentTriggerReadableLabel(trigger)}</span>
 										</div>
 									);

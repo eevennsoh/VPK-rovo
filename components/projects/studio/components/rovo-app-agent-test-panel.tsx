@@ -228,7 +228,7 @@ function getAgentTestVersionOptions(entry: StudioSessionAgentEntry): readonly Ag
 	const options: AgentTestVersionOption[] = [{
 		id: "latest",
 		label: "Draft",
-		variant: "neutral",
+		variant: "default",
 		result: entry.draftResult,
 	}];
 

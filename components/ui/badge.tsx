@@ -24,10 +24,6 @@ const badgeVariants = cva(
 				default:
 					`bg-surface-pressed text-foreground hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed ${boldDisabled}`,
 
-				// ADS: "neutral" — same visual as default; canonical ADS semantic name
-				neutral:
-					`bg-surface-pressed text-foreground hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed ${boldDisabled}`,
-
 				// VPK-only subtle grey (color.background.neutral / bg-bg-neutral)
 				secondary:
 					`bg-bg-neutral text-text-subtle hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed ${boldDisabled}`,
@@ -41,48 +37,26 @@ const badgeVariants = cva(
 					`bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed ${boldDisabled}`,
 
 				// ---------------------------------------------------------------
-				// ADS semantic status — subtler palette
-				// "destructive" / "danger" / "removed"
-				// color.background.danger.subtler
+				// Semantic status — subtler palette
 				// ---------------------------------------------------------------
 				destructive:
 					`bg-bg-danger-subtler text-text-danger-bolder hover:bg-bg-danger-subtler-hovered active:bg-bg-danger-subtler-pressed ${boldDisabled}`,
-				danger:
-					`bg-bg-danger-subtler text-text-danger-bolder hover:bg-bg-danger-subtler-hovered active:bg-bg-danger-subtler-pressed ${boldDisabled}`,
-				removed:
-					`bg-bg-danger-subtler text-text-danger-bolder hover:bg-bg-danger-subtler-hovered active:bg-bg-danger-subtler-pressed ${boldDisabled}`,
 
-				// "success" / "added" — color.background.success.subtler
+				// color.background.success.subtler
 				success:
 					`bg-bg-success-subtler text-text-success-bolder hover:bg-bg-success-subtler-hovered active:bg-bg-success-subtler-pressed ${boldDisabled}`,
-				added:
-					`bg-bg-success-subtler text-text-success-bolder hover:bg-bg-success-subtler-hovered active:bg-bg-success-subtler-pressed ${boldDisabled}`,
 
-				// "warning" — color.background.warning.subtler
+				// color.background.warning.subtler
 				warning:
 					`bg-bg-warning-subtler text-text-warning-bolder hover:bg-bg-warning-subtler-hovered active:bg-bg-warning-subtler-pressed ${boldDisabled}`,
 
-				// "information" / "info" / "primary" — color.background.information.subtler
+				// color.background.information.subtler
 				info:
 					`bg-bg-information-subtler text-text-information-bolder hover:bg-bg-information-subtler-hovered active:bg-bg-information-subtler-pressed ${boldDisabled}`,
-				information:
-					`bg-bg-information-subtler text-text-information-bolder hover:bg-bg-information-subtler-hovered active:bg-bg-information-subtler-pressed ${boldDisabled}`,
-				primary:
-					`bg-bg-information-subtler text-text-information-bolder hover:bg-bg-information-subtler-hovered active:bg-bg-information-subtler-pressed ${boldDisabled}`,
 
-				// "discovery" — color.background.discovery.subtler
+				// color.background.discovery.subtler
 				discovery:
 					`bg-bg-discovery-subtler text-text-discovery-bolder hover:bg-bg-discovery-subtler-hovered active:bg-bg-discovery-subtler-pressed ${boldDisabled}`,
-
-				// ---------------------------------------------------------------
-				// ADS: "inverse" / "primaryInverted"
-				// Inverted surface: white/light background with dark foreground.
-				// Used on dark surfaces where a contrasting badge is needed.
-				// ---------------------------------------------------------------
-				inverse:
-					`bg-text-inverse text-foreground hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed ${boldDisabled}`,
-				primaryInverted:
-					`bg-text-inverse text-foreground hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed ${boldDisabled}`,
 
 				// ---------------------------------------------------------------
 				// VPK-only structural variants — not part of ADS Badge API

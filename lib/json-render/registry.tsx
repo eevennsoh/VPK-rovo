@@ -918,7 +918,14 @@ export const { registry } = defineRegistry(catalog, {
 
 		// ── Data Display ───────────────────────────────
 		Badge: ({ props }) => {
-			const { variant = "default" } = props;
+			const rawVariant = props.variant ?? "default";
+			// Map removed ADS legacy aliases to canonical variants
+			const ALIAS_MAP: Record<string, string> = {
+				neutral: "default", danger: "destructive", removed: "destructive",
+				added: "success", information: "info", primary: "info",
+				inverse: "default", primaryInverted: "default",
+			};
+			const variant = (ALIAS_MAP[rawVariant as string] ?? rawVariant) as Parameters<typeof Badge>[0]["variant"];
 			const text = toSafeText(props.text);
 			return <Badge variant={variant}>{text}</Badge>;
 		},

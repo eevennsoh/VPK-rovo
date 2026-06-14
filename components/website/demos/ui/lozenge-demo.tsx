@@ -196,7 +196,7 @@ export function LozengeDemoTrailingMetric() {
 			<Lozenge variant="information" className="pr-px">
 				In progress
 				<Badge
-					variant="information"
+					variant="info"
 					className="ml-1 min-w-0 bg-bg-information-subtler-pressed hover:bg-bg-information-subtler-pressed active:bg-bg-information-subtler-pressed"
 				>
 					0.5
@@ -215,7 +215,7 @@ export function LozengeDemoTrailingMetric() {
 			>
 				Off track
 				<Badge
-					variant="danger"
+					variant="destructive"
 					className="ml-1.5 h-5 min-w-0 rounded-sm bg-bg-danger-subtler-pressed px-1.5 text-sm leading-5 hover:bg-bg-danger-subtler-pressed active:bg-bg-danger-subtler-pressed"
 				>
 					0.3

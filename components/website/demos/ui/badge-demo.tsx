@@ -13,16 +13,13 @@ export default function BadgeDemo() {
 	return (
 		<div className="flex flex-wrap items-center gap-2">
 			<Badge>8</Badge>
-			<Badge variant="neutral">8</Badge>
 			<Badge variant="important">150</Badge>
-			<Badge variant="primary">12</Badge>
 			<Badge variant="secondary">8</Badge>
 			<Badge variant="destructive">-50</Badge>
 			<Badge variant="success">+100</Badge>
 			<Badge variant="warning">5</Badge>
 			<Badge variant="info">12</Badge>
 			<Badge variant="discovery">3</Badge>
-			<Badge variant="inverse">12</Badge>
 			<Badge variant="outline">8</Badge>
 			<Badge variant="ghost">8</Badge>
 			<Badge variant="link">8</Badge>
@@ -37,24 +34,9 @@ export function BadgeDemoDefault() {
 	return <Badge>8</Badge>;
 }
 
-/** Primary — ADS "primary"/"information" appearance (blue informational count) */
-export function BadgeDemoPrimary() {
-	return <Badge variant="primary">5</Badge>;
-}
-
 /** Important — ADS "important" appearance (bold red, high-urgency count) */
 export function BadgeDemoImportant() {
 	return <Badge variant="important">150</Badge>;
-}
-
-/** Added — ADS "added" appearance (green, items added) */
-export function BadgeDemoAdded() {
-	return <Badge variant="added">+8</Badge>;
-}
-
-/** Removed — ADS "removed" appearance (red subtle, items removed) */
-export function BadgeDemoRemoved() {
-	return <Badge variant="removed">-3</Badge>;
 }
 
 /** Max value — ADS max prop: values exceeding max show as "max+" */
@@ -106,53 +88,18 @@ export function BadgeDemoLink() {
 	return <Badge variant="link">8</Badge>;
 }
 
-/** ADS appearances — all semantic appearances from @atlaskit/badge */
-export function BadgeDemoAdsAppearances() {
-	return (
-		<div className="flex flex-wrap items-center gap-2">
-			<Badge variant="neutral">8</Badge>
-			<Badge variant="primary">5</Badge>
-			<Badge variant="important">150</Badge>
-			<Badge variant="added">+8</Badge>
-			<Badge variant="removed">-3</Badge>
-			<Badge variant="information">12</Badge>
-			<Badge variant="inverse">12</Badge>
-			<Badge variant="success">+100</Badge>
-			<Badge variant="danger">-50</Badge>
-			<Badge variant="warning">5</Badge>
-			<Badge variant="discovery">3</Badge>
-		</div>
-	);
-}
-
-/** ADS legacy aliases — legacy appearance names supported for parity */
-export function BadgeDemoAdsLegacyAliases() {
-	return (
-		<div className="flex flex-wrap items-center gap-2">
-			<Badge variant="default">8</Badge>
-			<Badge variant="primary">12</Badge>
-			<Badge variant="primaryInverted">12</Badge>
-			<Badge variant="added">+100</Badge>
-			<Badge variant="removed">-50</Badge>
-		</div>
-	);
-}
-
 /** All variants — all badge variants side by side */
 export function BadgeDemoVariants() {
 	return (
 		<div className="flex flex-wrap items-center gap-2">
 			<Badge>8</Badge>
-			<Badge variant="neutral">8</Badge>
 			<Badge variant="important">150</Badge>
-			<Badge variant="primary">12</Badge>
 			<Badge variant="secondary">8</Badge>
 			<Badge variant="destructive">-50</Badge>
 			<Badge variant="success">+100</Badge>
 			<Badge variant="warning">5</Badge>
 			<Badge variant="info">12</Badge>
 			<Badge variant="discovery">3</Badge>
-			<Badge variant="inverse">12</Badge>
 			<Badge variant="outline">8</Badge>
 			<Badge variant="ghost">8</Badge>
 			<Badge variant="link">8</Badge>

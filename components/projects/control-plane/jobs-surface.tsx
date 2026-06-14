@@ -448,7 +448,7 @@ export function JobsSurfacePage() {
 													{isEventTriggeredJob(job) ? (
 														<Badge variant="secondary">event</Badge>
 													) : null}
-													<Badge variant={job.enabled ? "success" : "neutral"}>{job.enabled ? "enabled" : "disabled"}</Badge>
+													<Badge variant={job.enabled ? "success" : "default"}>{job.enabled ? "enabled" : "disabled"}</Badge>
 												</div>
 											</div>
 											<div className="mt-3 grid gap-2 text-xs text-text-subtle sm:grid-cols-3">
