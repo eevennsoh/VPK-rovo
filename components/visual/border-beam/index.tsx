@@ -42,6 +42,28 @@ function useSystemTheme(): 'dark' | 'light' {
   return theme;
 }
 
+function usePrefersReducedMotion(): boolean {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handler = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches);
+    };
+
+    setPrefersReducedMotion(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  return prefersReducedMotion;
+}
+
 function resolveTheme(theme: BorderBeamTheme, systemTheme: 'dark' | 'light'): 'dark' | 'light' {
   return theme === 'auto' ? systemTheme : theme;
 }
@@ -82,6 +104,7 @@ export function BorderBeam(
     const baseId = useId();
     const id = baseId.replace(/:/g, '-');
     const systemTheme = useSystemTheme();
+    const prefersReducedMotion = usePrefersReducedMotion();
     const internalRef = useRef<HTMLDivElement>(null);
 
     const [isActive, setIsActive] = useState(active);
@@ -115,27 +138,32 @@ export function BorderBeam(
     }, [customBorderRadius, children]);
 
     useEffect(() => {
-      if (active && !isActive && !isFading) {
-        setIsActive(true);
-        if (
-          typeof window !== 'undefined' &&
-          window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-        ) {
-          onActivate?.();
+      if (prefersReducedMotion) {
+        if (active) {
+          if (!isActive) {
+            setIsActive(true);
+            onActivate?.();
+          }
+          if (isFading) {
+            setIsFading(false);
+          }
+          return;
         }
-      } else if (!active && isActive && !isFading) {
-        if (
-          typeof window !== 'undefined' &&
-          window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-        ) {
+
+        if (isActive || isFading) {
           setIsActive(false);
           setIsFading(false);
           onDeactivate?.();
-          return;
         }
+        return;
+      }
+
+      if (active && !isActive && !isFading) {
+        setIsActive(true);
+      } else if (!active && isActive && !isFading) {
         setIsFading(true);
       }
-    }, [active, isActive, isFading, onActivate, onDeactivate]);
+    }, [active, isActive, isFading, onActivate, onDeactivate, prefersReducedMotion]);
 
     // Pause the (paint-heavy) animations while the element is scrolled offscreen.
     // This stops per-frame painting entirely for hidden instances without changing
@@ -287,15 +315,12 @@ export function BorderBeam(
       const el = internalRef.current;
       if (!el) return;
 
-      if (
-        typeof window !== 'undefined' &&
-        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-      ) {
+      if (prefersReducedMotion) {
         return;
       }
 
       return registerPulseInstance(el, driverConfig);
-    }, [driverConfig, isActive, isFading, isVisible]);
+    }, [driverConfig, isActive, isFading, isVisible, prefersReducedMotion]);
 
     const setRefs = useCallback(
       (node: HTMLDivElement | null) => {
