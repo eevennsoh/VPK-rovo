@@ -24,7 +24,7 @@ export function PerformanceCards() {
 							</CardTitle>
 							<div className="absolute right-4 top-4">
 								<Badge
-									variant="outline"
+									variant="default"
 									className="flex gap-1 rounded-lg text-xs"
 								>
 									<BadgeIcon className="size-3" />

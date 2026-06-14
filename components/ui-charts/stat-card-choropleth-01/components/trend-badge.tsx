@@ -22,7 +22,7 @@ export function TrendBadge({
           "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
         className
       )}
-      variant={positive ? "outline" : "destructive"}
+      variant={positive ? "default" : "destructive"}
     >
       <Icon color="currentColor" label="" size="small" data-icon="inline-start" />
       {positive ? "+" : ""}

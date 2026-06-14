@@ -446,7 +446,7 @@ export function JobsSurfacePage() {
 												<div className="flex items-center gap-2">
 													<Lozenge variant={getJobStatusTone(job.status)}>{job.status}</Lozenge>
 													{isEventTriggeredJob(job) ? (
-														<Badge variant="secondary">event</Badge>
+														<Badge variant="neutral">event</Badge>
 													) : null}
 													<Badge variant={job.enabled ? "success" : "default"}>{job.enabled ? "enabled" : "disabled"}</Badge>
 												</div>
@@ -642,9 +642,9 @@ export function JobsSurfacePage() {
 													<Lozenge variant={getJobStatusTone(run.status === "failed" ? "failed" : "scheduled")}>{run.status}</Lozenge>
 												</div>
 												<div className="flex flex-wrap gap-2 text-xs text-text-subtle">
-													<Badge variant="secondary">Processed {run.processedTicketCodes.length}</Badge>
-													<Badge variant="secondary">Skipped {run.skippedTicketCodes.length}</Badge>
-													<Badge variant="secondary">Failed {run.failedTicketCodes.length}</Badge>
+													<Badge variant="neutral">Processed {run.processedTicketCodes.length}</Badge>
+													<Badge variant="neutral">Skipped {run.skippedTicketCodes.length}</Badge>
+													<Badge variant="neutral">Failed {run.failedTicketCodes.length}</Badge>
 												</div>
 												{run.threadLinks.length > 0 ? (
 													<div className="flex flex-wrap gap-2">

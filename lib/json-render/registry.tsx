@@ -1212,7 +1212,7 @@ export const { registry } = defineRegistry(catalog, {
 														</Lozenge>
 													</div>
 													<div className="flex flex-wrap items-center gap-2">
-														{item.priority ? <Badge variant="secondary">{item.priority}</Badge> : null}
+														{item.priority ? <Badge variant="neutral">{item.priority}</Badge> : null}
 														{item.type ? (
 															<TagPrimitive color="blue">{item.type}</TagPrimitive>
 														) : null}

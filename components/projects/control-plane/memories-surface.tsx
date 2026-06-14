@@ -421,7 +421,7 @@ export function MemoriesSurfacePage() {
 				actions={(
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant="default">{explorer?.stats.nodeCount ?? 0} visible nodes</Badge>
-						<Badge variant="outline">{explorer?.stats.edgeCount ?? 0} visible edges</Badge>
+						<Badge variant="default">{explorer?.stats.edgeCount ?? 0} visible edges</Badge>
 						<Button
 							variant="outline"
 							onClick={() => void refreshExplorer(filterInput)}
@@ -850,7 +850,7 @@ export function MemoriesSurfacePage() {
 								<div className="space-y-4">
 									<div className="space-y-2">
 										<div className="flex flex-wrap items-center gap-2">
-											<Badge variant="outline">{formatScopeLabel(selectedNode.scope)}</Badge>
+											<Badge variant="default">{formatScopeLabel(selectedNode.scope)}</Badge>
 											{selectedNode.status ? (
 												<Lozenge variant={formatProposalTone(selectedNode.status)}>{selectedNode.status}</Lozenge>
 											) : null}
@@ -965,7 +965,7 @@ export function MemoriesSurfacePage() {
 												<div key={block.id} className="rounded-2xl border border-border bg-background px-3 py-3">
 													<div className="flex items-center justify-between gap-3">
 														<div className="flex gap-2">
-															<Badge variant="outline">{block.lineCount} lines</Badge>
+															<Badge variant="default">{block.lineCount} lines</Badge>
 															<Badge variant="default">{block.charCount.toLocaleString()} chars</Badge>
 														</div>
 														<Button

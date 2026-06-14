@@ -283,7 +283,7 @@ export function FieldDemoInputFields() {
 			<Field>
 				<FieldLabel htmlFor="input-badge">
 					Input with Badge{" "}
-					<Badge variant="secondary" className="ml-auto">
+					<Badge variant="neutral" className="ml-auto">
 						Recommended
 					</Badge>
 				</FieldLabel>

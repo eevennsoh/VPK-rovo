@@ -58,7 +58,7 @@ export function WorkItemSidebar({ workItem }: Readonly<WorkItemSidebarProps>) {
 				<div className="space-y-3">
 					<div className="text-xs font-semibold text-text-subtle uppercase">Priority</div>
 					<Badge
-						variant="secondary"
+						variant="neutral"
 						className={cn(
 							workItem.priority === "Critical" && "bg-bg-danger text-text",
 							workItem.priority === "High" && "bg-bg-warning text-text",
@@ -109,7 +109,7 @@ export function WorkItemSidebar({ workItem }: Readonly<WorkItemSidebarProps>) {
 						<div className="text-xs font-semibold text-text-subtle uppercase">Labels</div>
 						<div className="flex flex-wrap gap-2">
 							{workItem.labels.map((label) => (
-								<Badge key={label} variant="secondary">
+								<Badge key={label} variant="neutral">
 									{label}
 								</Badge>
 							))}

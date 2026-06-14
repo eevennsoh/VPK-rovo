@@ -59,7 +59,7 @@ export function JsxPreviewDemoStreaming() {
 	return (
 		<div className="flex w-full flex-col gap-3">
 			<div className="flex items-center gap-2">
-				<Badge variant={isStreaming ? "default" : "secondary"}>
+				<Badge variant={isStreaming ? "default" : "neutral"}>
 					{isStreaming ? "Streaming" : "Complete"}
 				</Badge>
 				<Button variant="outline" size="default" onClick={restart}>
@@ -81,8 +81,8 @@ export function JsxPreviewDemoStreaming() {
 
 const COMPONENTS_JSX = `<div style={{ display: "flex", gap: "8px", padding: "16px", flexWrap: "wrap" }}>
   <Badge>Default</Badge>
-  <Badge variant="secondary">Secondary</Badge>
-  <Badge variant="outline">Outline</Badge>
+  <Badge variant="neutral">Neutral</Badge>
+  <Badge variant="primary">Primary</Badge>
   <Badge variant="destructive">Destructive</Badge>
 </div>`;
 

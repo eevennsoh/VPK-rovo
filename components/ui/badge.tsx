@@ -24,9 +24,34 @@ const badgeVariants = cva(
 				default:
 					`bg-surface-pressed text-foreground hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed ${boldDisabled}`,
 
-				// VPK-only subtle grey (color.background.neutral / bg-bg-neutral)
-				secondary:
+				// ADS "neutral" — subtle grey (color.background.neutral)
+				neutral:
 					`bg-bg-neutral text-text-subtle hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed ${boldDisabled}`,
+
+				// ---------------------------------------------------------------
+				// ADS: "primary" — brand-bold blue pill with inverse text
+				// color.background.brand.bold + color.text.inverse
+				// ---------------------------------------------------------------
+				primary:
+					`bg-primary text-primary-foreground hover:bg-primary-hovered active:bg-primary-pressed ${boldDisabled}`,
+
+				// ---------------------------------------------------------------
+				// ADS: "primaryInverted" — white surface + brand text, for
+				// placement on bold/brand backgrounds (inverse of primary).
+				// Opacity-based disabled so the on-bold context is preserved.
+				// color.elevation.surface + color.text.brand
+				// ---------------------------------------------------------------
+				primaryInverted:
+					`bg-surface text-text-brand hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed ${subtleDisabled}`,
+
+				// ---------------------------------------------------------------
+				// ADS: "inverse" — translucent dark fill + inverse text, intended
+				// for placement on bold/colored surfaces. Uses opacity-based
+				// disabled so the on-bold context is preserved (no opaque swatch).
+				// color.background.inverse.subtle + color.text.inverse
+				// ---------------------------------------------------------------
+				inverse:
+					`bg-bg-inverse-subtle text-text-inverse hover:bg-bg-inverse-subtle-hovered active:bg-bg-inverse-subtle-pressed ${subtleDisabled}`,
 
 				// ---------------------------------------------------------------
 				// ADS: "important" — bold neutral (opaque dark badge)
@@ -36,8 +61,17 @@ const badgeVariants = cva(
 				important:
 					`bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed ${boldDisabled}`,
 
+				// ADS "added" — green badge (color.background.success)
+				added:
+					`bg-bg-success text-text-success-bolder hover:bg-bg-success-hovered active:bg-bg-success-pressed ${boldDisabled}`,
+
+				// ADS "removed" — red badge (color.background.danger)
+				removed:
+					`bg-bg-danger text-text-danger-bolder hover:bg-bg-danger-hovered active:bg-bg-danger-pressed ${boldDisabled}`,
+
 				// ---------------------------------------------------------------
 				// Semantic status — subtler palette
+				// (destructive = ADS "danger", info = ADS "information")
 				// ---------------------------------------------------------------
 				destructive:
 					`bg-bg-danger-subtler text-text-danger-bolder hover:bg-bg-danger-subtler-hovered active:bg-bg-danger-subtler-pressed ${boldDisabled}`,
@@ -57,17 +91,6 @@ const badgeVariants = cva(
 				// color.background.discovery.subtler
 				discovery:
 					`bg-bg-discovery-subtler text-text-discovery-bolder hover:bg-bg-discovery-subtler-hovered active:bg-bg-discovery-subtler-pressed ${boldDisabled}`,
-
-				// ---------------------------------------------------------------
-				// VPK-only structural variants — not part of ADS Badge API
-				// These use opacity-based disabled since they have no fill.
-				// ---------------------------------------------------------------
-				outline:
-					`border border-border text-foreground hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed ${subtleDisabled}`,
-				ghost:
-					`text-foreground hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed ${subtleDisabled}`,
-				link:
-					`text-link underline-offset-4 hover:underline active:text-link-pressed ${subtleDisabled}`,
 			},
 		},
 		defaultVariants: {

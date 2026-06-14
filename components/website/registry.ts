@@ -558,10 +558,45 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  "badge-demo-secondary": dynamic(
+  "badge-demo-neutral": dynamic(
     () =>
       import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoSecondary,
+        default: mod.BadgeDemoNeutral,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-primary": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoPrimary,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-primary-inverted": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoPrimaryInverted,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-inverse": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoInverse,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-added": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoAdded,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-removed": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoRemoved,
       })),
     { ssr: false },
   ),
@@ -597,27 +632,6 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/ui/badge-demo").then((mod) => ({
         default: mod.BadgeDemoDiscovery,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-outline": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoOutline,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-ghost": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoGhost,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-link": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoLink,
       })),
     { ssr: false },
   ),

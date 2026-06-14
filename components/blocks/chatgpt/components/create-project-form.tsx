@@ -87,7 +87,7 @@ export function CreateProjectForm() {
 									<Badge
 										key={category.id}
 										variant={
-											selectedCategory === category.id ? "default" : "outline"
+											selectedCategory === category.id ? "default" : "neutral"
 										}
 										data-checked={selectedCategory === category.id}
 										render={

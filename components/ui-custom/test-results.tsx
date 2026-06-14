@@ -110,7 +110,7 @@ export function TestResultsSummary({
 				<>
 					<Badge
 						className="gap-1 bg-green-100 text-green-700"
-						variant="secondary"
+						variant="neutral"
 					>
 						<CheckCircle2Icon className="size-3" />
 						{summary.passed} passed
@@ -118,7 +118,7 @@ export function TestResultsSummary({
 					{summary.failed > 0 ? (
 						<Badge
 							className="gap-1 bg-red-100 text-red-700"
-							variant="secondary"
+							variant="neutral"
 						>
 							<XCircleIcon className="size-3" />
 							{summary.failed} failed
@@ -127,7 +127,7 @@ export function TestResultsSummary({
 					{summary.skipped > 0 ? (
 						<Badge
 							className="gap-1 bg-yellow-100 text-yellow-700"
-							variant="secondary"
+							variant="neutral"
 						>
 							<CircleIcon className="size-3" />
 							{summary.skipped} skipped

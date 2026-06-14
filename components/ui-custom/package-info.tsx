@@ -129,7 +129,7 @@ export const PackageInfoChangeType = ({
         changeTypeStyles[changeType],
         className
       )}
-      variant="secondary"
+      variant="neutral"
       {...props}
     >
       {changeTypeIcons[changeType]}

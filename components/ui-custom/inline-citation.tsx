@@ -78,7 +78,7 @@ export function InlineCitationCardTrigger({
 			render={
 				<Badge
 					className={cn("ml-1 rounded-full", className)}
-					variant="secondary"
+					variant="neutral"
 					{...props}
 				/>
 			}
