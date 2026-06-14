@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icon";
 import { AtlassianLogo } from "@/components/ui/logo";
-import { Tile } from "@/components/ui/tile";
 import {
 	TwgToolSourceStack,
 	type TwgToolSource,
@@ -32,6 +31,7 @@ export {
 } from "@/components/ui-custom/twg-appstack";
 
 export type TwgToolStatus = "active" | "complete" | "pending";
+export type TwgToolBannerBackgroundFadeDirection = "horizontal" | "vertical";
 
 export type TwgToolProps = Omit<ComponentProps<typeof Collapsible>, "children"> & {
 	title?: ReactNode;
@@ -42,16 +42,28 @@ export type TwgToolProps = Omit<ComponentProps<typeof Collapsible>, "children"> 
 	children?: ReactNode;
 };
 
+export interface TwgToolBannerBackgroundProps {
+	fadeDirection?: TwgToolBannerBackgroundFadeDirection;
+}
+
 const bannerGridStroke = {
 	width: 1,
 } satisfies PatternStrokeOptions;
 
-const bannerGridFadeStyle = {
-	backgroundImage:
-		"linear-gradient(90deg, var(--color-surface-raised) 0%, color-mix(in srgb, var(--color-surface-raised) 18%, transparent) 44%)",
-} satisfies CSSProperties;
+const bannerGridFadeStyles = {
+	horizontal: {
+		backgroundImage:
+			"linear-gradient(90deg, var(--color-surface-raised) 0%, color-mix(in srgb, var(--color-surface-raised) 18%, transparent) 44%)",
+	},
+	vertical: {
+		backgroundImage:
+			"linear-gradient(to bottom, var(--color-surface-raised) 0%, color-mix(in srgb, var(--color-surface-raised) 18%, transparent) 44%)",
+	},
+} satisfies Record<TwgToolBannerBackgroundFadeDirection, CSSProperties>;
 
-export function TwgToolBannerBackground() {
+export function TwgToolBannerBackground({
+	fadeDirection = "horizontal",
+}: Readonly<TwgToolBannerBackgroundProps>) {
 	return (
 		<div aria-hidden="true" className="pointer-events-none absolute inset-0">
 			<PatternTile
@@ -64,7 +76,7 @@ export function TwgToolBannerBackground() {
 				fill="tile"
 				opacity={0.72}
 			/>
-			<div className="absolute inset-0" style={bannerGridFadeStyle} />
+			<div className="absolute inset-0" style={bannerGridFadeStyles[fadeDirection]} />
 		</div>
 	);
 }
