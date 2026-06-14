@@ -172,6 +172,8 @@ const CSS = /* css */ `
 }
 .metal-fx-root[data-normalize='true'] .metal-fx-content > * {
   background: transparent !important;
+}
+.metal-fx-root[data-normalize='true'] .metal-fx-content > *:not(:focus-visible) {
   border: 0 !important;
   outline: 0 !important;
   box-shadow: none !important;

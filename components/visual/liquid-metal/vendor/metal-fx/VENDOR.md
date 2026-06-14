@@ -12,4 +12,7 @@
 - `LICENSE`
 - `README.md`
 
-The upstream files above were copied from the commit archive without local edits. No repository compatibility shim is currently applied.
+The upstream files above were copied from the commit archive, then patched locally for VPK integration:
+
+- Preserve consumer `:focus-visible` border, outline, and ring styles while normalizing idle child chrome.
+- Keep shader preset/theme state per `MetalFx` instance so mixed demo examples can render independent materials on one page.

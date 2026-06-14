@@ -11,7 +11,7 @@
  *      makes higher rates imperceptible.
  */
 import { CANONICAL_GL_SIZE, GL_DPR_CAP } from '../perfConfig';
-import { PRESETS, type PresetMode, type PresetName, type PresetTheme } from '../presets';
+import type { PresetMode } from '../presets';
 import { compileShader, FRAG_SHADER_SRC, linkProgram, VERT_SHADER_SRC } from '../shaders';
 export const CANONICAL_PILL_W = 140;
 export const CANONICAL_PILL_H = 40;
@@ -48,6 +48,10 @@ export interface MetalFxInstance {
   /** One-shot callback fired after the very first copyShaderToInstance.
    *  Auto-cleared by the loop so it never fires twice. */
   onFirstCopy?: () => void;
+  /** Per-instance material. The shared GL canvas renders one preset at a time,
+   *  then copies that frame into the owning instance before rendering the next
+   *  material. */
+  preset: PresetMode;
 }
 
 export interface SharedRenderer {
@@ -56,7 +60,7 @@ export interface SharedRenderer {
   program: WebGLProgram;
   buffer: WebGLBuffer;
   uniforms: Record<string, WebGLUniformLocation | null>;
-  preset: PresetMode;
+  activePreset: PresetMode | null;
   presetDirty: boolean;
   contextLost: boolean;
   useOffscreen: boolean;
@@ -164,7 +168,7 @@ export function ensureSharedRenderer(): SharedRenderer {
 
   SHARED = {
     glCanvas, gl, program, buffer, uniforms,
-    preset: PRESETS.chromatic.modes.dark, presetDirty: true,
+    activePreset: null, presetDirty: true,
     contextLost: false, useOffscreen, frameBitmap: null,
     startMs: performance.now(), pausedMs: 0, pausedAtMs: null,
     rafId: 0, dpr, instances: new Set(), frameCount: 0,

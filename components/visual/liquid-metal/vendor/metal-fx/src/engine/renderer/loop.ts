@@ -1,7 +1,7 @@
 /** Animation loop, per-frame compositing, and instance lifecycle. */
 import { hexToRgb } from '../color';
 import { FRAME_INTERVAL_MS, GLOW_SKIP_FRAMES } from '../perfConfig';
-import { PRESETS, type PresetName, type PresetTheme } from '../presets';
+import { PRESETS, type PresetMode, type PresetName, type PresetTheme } from '../presets';
 import {
   SHARED,
   CANONICAL_PILL_W,
@@ -41,6 +41,8 @@ interface CreateInstanceOptions {
   cssHeight: number;
   cornerRadius: number;
   kind: 'pill' | 'circle';
+  presetName: PresetName;
+  presetTheme: PresetTheme;
   shaderScale?: number;
   ringCssPx?: number;
   opacityMul?: number;
@@ -71,6 +73,7 @@ export function createInstance(opts: CreateInstanceOptions): MetalFxInstance {
     scale,
     onAfterFrame: opts.onAfterFrame,
     onFirstCopy: opts.onFirstCopy,
+    preset: PRESETS[opts.presetName].modes[opts.presetTheme],
   };
   resizeInstanceCanvas(inst);
   renderer.instances.add(inst);
@@ -134,8 +137,15 @@ export function setInstanceVisible(inst: MetalFxInstance, visible: boolean): voi
 
 export function setSharedPreset(name: PresetName, theme: PresetTheme): void {
   const s = ensureSharedRenderer();
-  s.preset = PRESETS[name].modes[theme];
+  s.activePreset = PRESETS[name].modes[theme];
   s.presetDirty = true;
+}
+
+export function setInstancePreset(inst: MetalFxInstance, name: PresetName, theme: PresetTheme): void {
+  inst.preset = PRESETS[name].modes[theme];
+  if (SHARED && SHARED.rafId === 0 && SHARED.pausedAtMs === null && !SHARED.contextLost) {
+    startSharedLoop();
+  }
 }
 
 export function pauseShared(): void {
@@ -214,9 +224,9 @@ function copyShaderToInstance(inst: MetalFxInstance): void {
   inst.onAfterFrame?.();
 }
 
-function uploadPresetUniforms(): void {
+function uploadPresetUniforms(preset: PresetMode): void {
   if (!SHARED) return;
-  const { gl, uniforms, preset, glCanvas } = SHARED;
+  const { gl, uniforms, glCanvas } = SHARED;
   if (uniforms.u_resolution) gl.uniform2f(uniforms.u_resolution, glCanvas.width, glCanvas.height);
   for (let i = 0; i < 7; i++) {
     const cLoc = uniforms[`u_color${i + 1}`];
@@ -235,19 +245,20 @@ function uploadPresetUniforms(): void {
   if (uniforms.u_vigOpacity) gl.uniform1f(uniforms.u_vigOpacity, preset.vigOpacity);
   if (uniforms.u_blur) gl.uniform1f(uniforms.u_blur, preset.blur);
   if (uniforms.u_shaderOpacity) gl.uniform1f(uniforms.u_shaderOpacity, preset.shaderOpacity);
+  SHARED.activePreset = preset;
   SHARED.presetDirty = false;
 }
 
-function renderSharedFrame(now: number): void {
+function renderSharedFrame(now: number, preset: PresetMode): void {
   if (!SHARED) return;
-  const { gl, uniforms, preset, glCanvas } = SHARED;
+  const { gl, uniforms, glCanvas } = SHARED;
   const t = ((now - SHARED.startMs - SHARED.pausedMs) / 1000) * preset.speed;
 
   gl.viewport(0, 0, glCanvas.width, glCanvas.height);
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
-  if (SHARED.presetDirty) uploadPresetUniforms();
+  if (SHARED.presetDirty || SHARED.activePreset !== preset) uploadPresetUniforms(preset);
   if (uniforms.u_time) gl.uniform1f(uniforms.u_time, t);
 
   gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -273,29 +284,28 @@ function tick(now: number): void {
   if (now - lastFrameMs < FRAME_INTERVAL_MS) return;
   lastFrameMs = now;
 
-  renderSharedFrame(now);
-
-  if (SHARED.useOffscreen) {
-    if (SHARED.glowQueue.length > 0) ensureGlowPixels();
-    SHARED.frameBitmap?.close();
-    SHARED.frameBitmap = (SHARED.glCanvas as OffscreenCanvas).transferToImageBitmap();
+  let glowTarget: MetalFxInstance | null = null;
+  if (_glowCallback && SHARED.glowQueue.length > 0 && ++SHARED.glowSkip % GLOW_SKIP_FRAMES === 0) {
+    const queue = SHARED.glowQueue;
+    if (SHARED.glowIdx >= queue.length) SHARED.glowIdx = 0;
+    const inst = queue[SHARED.glowIdx];
+    if (inst.visible && !inst.paused) glowTarget = inst;
+    SHARED.glowIdx++;
   }
 
   for (const inst of SHARED.instances) {
     if (!inst.visible) continue;
     if (inst.paused && inst.everCopied) continue;
+    renderSharedFrame(now, inst.preset);
+    const glowCallback = glowTarget === inst ? _glowCallback : null;
+    if (glowCallback) ensureGlowPixels();
+    if (SHARED.useOffscreen) {
+      SHARED.frameBitmap?.close();
+      SHARED.frameBitmap = (SHARED.glCanvas as OffscreenCanvas).transferToImageBitmap();
+    }
     copyShaderToInstance(inst);
+    if (glowCallback) glowCallback(inst, now);
     inst.everCopied = true;
-  }
-
-  if (_glowCallback && SHARED.glowQueue.length > 0 && ++SHARED.glowSkip % GLOW_SKIP_FRAMES === 0) {
-    const queue = SHARED.glowQueue;
-    if (SHARED.glowIdx >= queue.length) SHARED.glowIdx = 0;
-    const inst = queue[SHARED.glowIdx];
-    // Skip glow frames for paused instances so their halo also freezes
-    // (otherwise the catch-light would keep travelling on a frozen ring).
-    if (inst.visible && !inst.paused) _glowCallback(inst, now);
-    SHARED.glowIdx++;
   }
 }
 
