@@ -88,6 +88,7 @@ function synthesizeKnowledgeOnlyApp(app: KnowledgeDirectoryApp): DirectoryApp {
 		teammateCount: app.teammateCount,
 		toolCount: 0,
 		verified: app.verified,
+		promptSuggestion: app.promptSuggestion,
 		...brandFieldsFromVisual(app.visual),
 		hasToolFacet: false,
 		hasKnowledgeFacet: true,

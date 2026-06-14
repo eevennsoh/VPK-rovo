@@ -49,6 +49,8 @@ export interface ToolsDirectoryTool {
 	categoryId?: string;
 	lastUpdatedLabel?: string;
 	logoSrc?: string;
+	/** Short example prompt revealed on the app card's hover state to help users get started. */
+	promptSuggestion?: string;
 	publisherName?: string;
 	readOnlyTools?: readonly ToolsDirectoryPermission[];
 	teammateCount: number;

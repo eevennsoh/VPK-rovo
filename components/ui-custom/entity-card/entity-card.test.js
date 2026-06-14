@@ -197,6 +197,21 @@ test("app variant mirrors the tool card layout with tool, knowledge, and teammat
 	assert.match(APP_SOURCE, /\{teammateCount\} teammates/u);
 });
 
+test("app variant reveals an onboarding prompt suggestion + handle on hover", () => {
+	assert.match(APP_SOURCE, /promptSuggestion\?: string/u);
+	assert.match(APP_SOURCE, /mentionHandle\?: string/u);
+	// The swap only renders when a prompt is supplied; otherwise the card keeps its
+	// plain description (backward compatible).
+	assert.match(APP_SOURCE, /if \(promptSuggestion\) \{/u);
+	// Resting (description + stats) and the prompt layer share one grid cell so the
+	// card height never shifts; they cross-fade on card hover/focus-within.
+	assert.match(APP_SOURCE, /\[grid-area:1\/1\][\s\S]*group-hover\/card:opacity-0 group-focus-within\/card:opacity-0/u);
+	assert.match(APP_SOURCE, /opacity-0 \[grid-area:1\/1\][\s\S]*group-hover\/card:opacity-100 group-focus-within\/card:opacity-100/u);
+	// Prompt is quoted; handle reads "@ <lowercase-id>".
+	assert.match(APP_SOURCE, /“\$\{promptSuggestion\}”/u);
+	assert.match(APP_SOURCE, /@ \{mentionHandle\}/u);
+});
+
 test("tool variant uses an app-logo tile with tool and teammate counts", () => {
 	assert.match(TOOL_SOURCE, /@atlaskit\/icon-lab\/core\/wrench/u);
 	assert.match(TOOL_SOURCE, /@atlaskit\/icon\/core\/people-group/u);

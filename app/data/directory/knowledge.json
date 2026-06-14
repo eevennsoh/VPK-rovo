@@ -772,7 +772,8 @@
 		],
 		"starCount": 121,
 		"teammateCount": 12880,
-		"verified": true
+		"verified": true,
+		"promptSuggestion": "Show our company objectives for this quarter and flag any goals that are off track."
 	},
 	{
 		"id": "projects",
@@ -831,7 +832,8 @@
 		],
 		"starCount": 92,
 		"teammateCount": 10142,
-		"verified": true
+		"verified": true,
+		"promptSuggestion": "Find the launch project plan and tell me which milestones are at risk and who owns them."
 	},
 	{
 		"id": "atlassian-teams",
@@ -890,7 +892,8 @@
 		],
 		"starCount": 109,
 		"teammateCount": 14726,
-		"verified": true
+		"verified": true,
+		"promptSuggestion": "Show me the platform team's profile, members, and what they're responsible for."
 	},
 	{
 		"id": "analytics",
@@ -949,7 +952,8 @@
 		],
 		"starCount": 144,
 		"teammateCount": 9328,
-		"verified": true
+		"verified": true,
+		"promptSuggestion": "Pull up our delivery metrics dashboard and tell me which throughput trends shifted this quarter."
 	},
 	{
 		"id": "assets",
@@ -1008,7 +1012,8 @@
 		],
 		"starCount": 116,
 		"teammateCount": 11091,
-		"verified": true
+		"verified": true,
+		"promptSuggestion": "Find which team owns this service and list the hardware and license assets linked to it."
 	},
 	{
 		"id": "jira-product-discovery",
@@ -1126,7 +1131,8 @@
 		],
 		"starCount": 97,
 		"teammateCount": 8152,
-		"verified": true
+		"verified": true,
+		"promptSuggestion": "Summarize the open escalation cases and surface the playbook for resolving them."
 	},
 	{
 		"id": "trello",
@@ -1244,7 +1250,8 @@
 		],
 		"starCount": 88,
 		"teammateCount": 5048,
-		"verified": true
+		"verified": true,
+		"promptSuggestion": "Map the cross-team dependencies for this program increment and highlight delivery risks."
 	},
 	{
 		"id": "talent",
@@ -1303,7 +1310,8 @@
 		],
 		"starCount": 63,
 		"teammateCount": 4317,
-		"verified": true
+		"verified": true,
+		"promptSuggestion": "Show me the open roles in our hiring plan and where each one stands in the pipeline."
 	},
 	{
 		"id": "focus",
@@ -1422,6 +1430,7 @@
 		],
 		"starCount": 101,
 		"teammateCount": 6744,
-		"verified": true
+		"verified": true,
+		"promptSuggestion": "Show our developer productivity signals and where AI adoption is having the biggest impact."
 	}
 ]

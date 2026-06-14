@@ -82,7 +82,13 @@ test("Apps Directory owns the Figma modal instead of wrapping AgentBrowserDialog
 	assert.match(variantsSource, /action=\{moreAction\}/u);
 	assert.match(variantsSource, /onMoreActions=\{onMoreActions\}/u);
 	assert.match(entityCardAppSource, /<EntityCardMoreButton active=\{active\}/u);
-	assert.match(entityCardAppSource, /<div className="flex flex-col gap-2">[\s\S]*<EntityCardHeader[\s\S]*<EntityCardDescription>/u);
+	// The app card composes a header + description inside a tight gap-2 column. The
+	// header/description/footer are hoisted into locals so the hover prompt-swap
+	// branch can reuse them, so assert the pieces are present rather than a single
+	// inline ordering.
+	assert.match(entityCardAppSource, /<div className="flex flex-col gap-2">/u);
+	assert.match(entityCardAppSource, /<EntityCardHeader/u);
+	assert.match(entityCardAppSource, /<EntityCardDescription>/u);
 	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /scrollTop > 1/u);
 	assert.match(readProjectFile("components/hooks/use-has-vertical-overflow.ts"), /showTopScrollMask: hasVerticalOverflow && hasScrolledFromTop/u);
 	assert.match(readProjectFile("app/tailwind-theme.css"), /@utility scroll-mask-top/u);
@@ -144,6 +150,41 @@ test("Apps Directory supports controlled and uncontrolled added tool state", () 
 	assert.match(source, /const presentation = resolveBrandLogoPresentation\(src\);[\s\S]*presentation\.hasBorder && src\.startsWith\("\/3p\/"\)[\s\S]*<Image[\s\S]*src=\{presentation\.src\}/u);
 	assert.doesNotMatch(source, /size="sm"/u);
 	assert.doesNotMatch(source, /className="h-px bg-border"/u);
+});
+
+test("Apps Directory app cards surface a per-app prompt suggestion on hover", () => {
+	const source = readProjectFile("components/blocks/apps-directory/components/apps-directory.tsx");
+	const loaderSource = readProjectFile("app/data/directory/tools.ts");
+	const knowledgeLoaderSource = readProjectFile("app/data/directory/knowledge.ts");
+	const appsSource = readProjectFile("app/data/directory/apps.ts");
+	const toolsData = JSON.parse(readProjectFile("app/data/directory/tools.json"));
+	const knowledgeData = JSON.parse(readProjectFile("app/data/directory/knowledge.json"));
+	const allTools = [...toolsData.tools, ...toolsData.sessionTools];
+
+	// The data layer carries the optional onboarding prompt on both verticals...
+	assert.match(loaderSource, /promptSuggestion\?: string/u);
+	assert.match(knowledgeLoaderSource, /promptSuggestion\?: string/u);
+	// ...and knowledge-only apps thread it onto the unified record.
+	assert.match(appsSource, /promptSuggestion: app\.promptSuggestion/u);
+	// The card consumer wires the prompt + the lowercase-id mention handle.
+	assert.match(source, /promptSuggestion=\{tool\.promptSuggestion\}/u);
+	assert.match(source, /mentionHandle=\{tool\.id\}/u);
+
+	// Every catalog app ships a non-empty prompt suggestion (onboarding coverage).
+	for (const tool of allTools) {
+		assert.equal(typeof tool.promptSuggestion, "string", `tool ${tool.id} should have a promptSuggestion`);
+		assert.ok(tool.promptSuggestion.trim().length > 0, `tool ${tool.id} promptSuggestion should be non-empty`);
+	}
+
+	// Knowledge-only apps (no matching tool id) must also carry a prompt suggestion.
+	const KNOWLEDGE_ALIASES = { sharepoint: "microsoft-sharepoint" };
+	const toolIds = new Set(allTools.map((tool) => tool.id));
+	for (const app of knowledgeData) {
+		const canonicalId = KNOWLEDGE_ALIASES[app.id] ?? app.id;
+		if (toolIds.has(canonicalId)) continue; // dual-facet apps inherit the tool's prompt
+		assert.equal(typeof app.promptSuggestion, "string", `knowledge-only app ${app.id} should have a promptSuggestion`);
+		assert.ok(app.promptSuggestion.trim().length > 0, `knowledge-only app ${app.id} promptSuggestion should be non-empty`);
+	}
 });
 
 test("Apps Directory category data follows the requested category content", () => {
