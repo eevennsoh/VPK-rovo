@@ -9,6 +9,7 @@ test("shows a background stop CTA when background work exists and the composer i
 	assert.equal(
 		resolveRovoAppComposerIdleAction({
 			canStartRealtimeVoice: true,
+			canStartDictation: true,
 			canSubmit: false,
 			isComposerBusy: false,
 			realtimeVoiceActive: false,
@@ -23,6 +24,7 @@ test("keeps the submit CTA when the user has typed text, even if background work
 	assert.equal(
 		resolveRovoAppComposerIdleAction({
 			canStartRealtimeVoice: true,
+			canStartDictation: true,
 			canSubmit: true,
 			isComposerBusy: false,
 			realtimeVoiceActive: false,
@@ -36,7 +38,8 @@ test("keeps the submit CTA when the user has typed text, even if background work
 test("shows the voice CTA when the composer is empty and no background work exists", () => {
 	assert.equal(
 		resolveRovoAppComposerIdleAction({
-			canStartRealtimeVoice: true,
+			canStartRealtimeVoice: false,
+			canStartDictation: true,
 			canSubmit: false,
 			isComposerBusy: false,
 			realtimeVoiceActive: false,
@@ -51,6 +54,7 @@ test("shows no idle CTA when the composer is empty and neither background stop n
 	assert.equal(
 		resolveRovoAppComposerIdleAction({
 			canStartRealtimeVoice: false,
+			canStartDictation: false,
 			canSubmit: false,
 			isComposerBusy: false,
 			realtimeVoiceActive: false,

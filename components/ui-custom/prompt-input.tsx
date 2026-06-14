@@ -28,19 +28,26 @@ import { EditorContent, useEditor } from "@tiptap/react";
 
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import {
+  clearComposerTraceDecorations,
   composerDirectoryAutocompletePluginKey,
   createComposerEditorExtensions,
   getMentionNodeAttrs,
+  setComposerTraceDecorations,
   type ComposerDirectoryAutocompleteController,
+  type ComposerTraceDecoration,
   type RichTextMentionSources,
 } from "@/components/ui-custom/rich-text-editor";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
+import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import {
   serializeComposerDoc,
   setComposerPlainText,
 } from "@/lib/composer-serialize";
 import {
+  getDirectoryAutocompleteExactLabelMatches,
   getDirectoryAutocompleteState,
+  type DirectoryAutocompleteExactLabelMatch,
   type DirectoryAutocompleteState,
 } from "@/lib/directory-autocomplete";
 
@@ -893,20 +900,20 @@ export const PromptInput = ({
       event.preventDefault();
 
       const form = event.currentTarget;
-      const text = usingProvider
-        ? controller.textInput.value
-        : (() => {
-            // Read the composer's synced hidden field by data-slot so a custom
-            // `name` prop can't desync it from the field this submit path reads.
-            const field = form.querySelector<HTMLInputElement>(
-              '[data-slot="prompt-input-message"]'
-            );
-            if (field) {
-              return field.value;
-            }
-            const formData = new FormData(form);
-            return (formData.get("message") as string) || "";
-          })();
+      // Prefer the composer's synced hidden field so a submit-time rich-text
+      // flush (e.g. auto-tag conversion) is captured synchronously even when a
+      // provider-backed controller state update has not rendered yet.
+      const field = form.querySelector<HTMLInputElement>(
+        '[data-slot="prompt-input-message"]'
+      );
+      const text = field
+        ? field.value
+        : usingProvider
+          ? controller.textInput.value
+          : (() => {
+              const formData = new FormData(form);
+              return (formData.get("message") as string) || "";
+            })();
 
       // Reset form immediately after capturing text to avoid race condition
       // where user input during async blob conversion would be lost
@@ -1017,6 +1024,11 @@ export type PromptInputTextareaProps = ComponentProps<
 > & {
   autoResize?: boolean;
   /**
+   * Opt-in Rovo composer behavior that converts exact unprefixed, "/" skill/app,
+   * and "@" mention labels into true mention nodes after a short idle.
+   */
+  enableVisualTraceAutoTagging?: boolean;
+  /**
    * Enables plain-text skill/tool autocomplete backed by the directory mention
    * catalog. Defaults to true so every prompt composer exposes the discoverable
    * token path; pass false for exceptional surfaces.
@@ -1076,8 +1088,167 @@ function createSyntheticChangeEvent(
   } as unknown as ChangeEvent<HTMLTextAreaElement>;
 }
 
+const VISUAL_TRACE_AUTO_TAG_TYPED_IDLE_MS = 180;
+const VISUAL_TRACE_AUTO_TAG_CONVERT_MS = 940;
+const VISUAL_TRACE_AUTO_TAG_STAGGER_MS = 140;
+const VISUAL_TRACE_OBJECT_REPLACEMENT = "\uFFFC";
+
+interface VisualTraceAutoTagPendingMatch {
+  expectedText: string;
+  from: number;
+  id: string;
+  label: string;
+  match: DirectoryAutocompleteExactLabelMatch;
+  to: number;
+  traceFrom: number;
+  traceText: string;
+  traceTo: number;
+}
+
+interface VisualTraceAutoTagUndoSnapshot {
+  afterText: string;
+  beforeJSON: ReturnType<Editor["getJSON"]>;
+  beforeText: string;
+}
+
+interface VisualTraceTextSegment {
+  from: number;
+  textFrom: number;
+  textTo: number;
+  to: number;
+}
+
+interface VisualTraceBlockText {
+  blockFrom: number;
+  segments: readonly VisualTraceTextSegment[];
+  text: string;
+}
+
+function getCurrentVisualTraceBlockText(editor: Editor): VisualTraceBlockText {
+  const { selection } = editor.state;
+  const blockFrom = selection.$from.start();
+  const segments: VisualTraceTextSegment[] = [];
+  let text = "";
+
+  selection.$from.parent.descendants((node, offset) => {
+    if (node.isText && node.text) {
+      const textFrom = text.length;
+      text += node.text;
+      segments.push({
+        from: blockFrom + offset,
+        textFrom,
+        textTo: text.length,
+        to: blockFrom + offset + node.text.length,
+      });
+      return false;
+    }
+
+    if (node.type.name === "hardBreak") {
+      text += "\n";
+      return false;
+    }
+
+    if (node.type.name === "mention") {
+      text += VISUAL_TRACE_OBJECT_REPLACEMENT;
+      return false;
+    }
+
+    return true;
+  });
+
+  return {
+    blockFrom,
+    segments,
+    text,
+  };
+}
+
+function getVisualTraceDocumentText(editor: Editor): VisualTraceBlockText {
+  const segments: VisualTraceTextSegment[] = [];
+  let text = "";
+
+  editor.state.doc.forEach((block, blockOffset, blockIndex) => {
+    if (blockIndex > 0) {
+      text += "\n";
+    }
+
+    block.descendants((node, offset) => {
+      if (node.isText && node.text) {
+        const position = blockOffset + 1 + offset;
+        const textFrom = text.length;
+        text += node.text;
+        segments.push({
+          from: position,
+          textFrom,
+          textTo: text.length,
+          to: position + node.text.length,
+        });
+        return false;
+      }
+
+      if (node.type.name === "hardBreak") {
+        text += "\n";
+        return false;
+      }
+
+      if (node.type.name === "mention") {
+        text += VISUAL_TRACE_OBJECT_REPLACEMENT;
+        return false;
+      }
+
+      return true;
+    });
+  });
+
+  return {
+    blockFrom: 0,
+    segments,
+    text,
+  };
+}
+
+function getVisualTraceDocPosition(
+  block: VisualTraceBlockText,
+  textOffset: number,
+): number | null {
+  for (const segment of block.segments) {
+    if (textOffset >= segment.textFrom && textOffset <= segment.textTo) {
+      return segment.from + textOffset - segment.textFrom;
+    }
+  }
+
+  return null;
+}
+
+function getVisualTraceDocRange(
+  block: VisualTraceBlockText,
+  match: DirectoryAutocompleteExactLabelMatch,
+): { from: number; to: number } | null {
+  const from = getVisualTraceDocPosition(block, match.from);
+  const to = getVisualTraceDocPosition(block, match.to);
+  if (from === null || to === null || from >= to) {
+    return null;
+  }
+
+  return { from, to };
+}
+
+function getVisualTraceDocTraceRange(
+  block: VisualTraceBlockText,
+  match: DirectoryAutocompleteExactLabelMatch,
+): { from: number; to: number } | null {
+  const from = getVisualTraceDocPosition(block, match.from);
+  const to = getVisualTraceDocPosition(block, match.to);
+  if (from === null || to === null || from >= to) {
+    return null;
+  }
+
+  return { from, to };
+}
+
 export const PromptInputTextarea = ({
   autoResize: _autoResize = true,
+  enableVisualTraceAutoTagging = false,
   enableDirectoryAutocomplete = true,
   directoryAutocompleteListVisible = false,
   onDirectoryAutocompleteChange,
@@ -1129,6 +1300,13 @@ export const PromptInputTextarea = ({
   const controllerRef = useRef(controller);
   const nameRef = useRef(name);
   const activeEditorRef = useRef<Editor | null>(null);
+  const visualTraceApplyingRef = useRef(false);
+  const visualTraceGenerationRef = useRef(0);
+  const visualTraceImmediateUpdateRef = useRef(false);
+  const visualTracePendingRef = useRef(false);
+  const visualTracePendingMatchesRef = useRef<readonly VisualTraceAutoTagPendingMatch[]>([]);
+  const visualTraceTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const visualTraceUndoSnapshotRef = useRef<VisualTraceAutoTagUndoSnapshot | null>(null);
   const directoryAutocompleteStateRef = useRef<DirectoryAutocompleteState | null>(null);
   const directoryAutocompleteListVisibleRef = useRef(directoryAutocompleteListVisible);
   const onDirectoryAutocompleteChangeRef = useRef(onDirectoryAutocompleteChange);
@@ -1168,6 +1346,15 @@ export const PromptInputTextarea = ({
     const initial = controller ? controller.textInput.value : normalizedValueProp;
     return !initial;
   });
+  const {
+    ref: composerScrollOverflowRef,
+    showBottomScrollMask: showComposerBottomScrollMask,
+    showTopScrollMask: showComposerTopScrollMask,
+  } = useHasVerticalOverflow<HTMLElement>();
+  const composerScrollMaskStyle = useMemo(
+    () => buildScrollMaskStyle({ fadeSize: "var(--ds-space-200)" }),
+    []
+  );
 
   // Mirror the serialized text into the hidden input + the optional consumer
   // handlers. `fromEditor` distinguishes user edits (fire onChange) from
@@ -1223,6 +1410,144 @@ export const PromptInputTextarea = ({
     onDirectoryAutocompleteChangeRef.current?.(nextState);
   }, [applyDirectoryAutocompleteGhost]);
 
+  const getVisualTraceAutoTagMatches = useCallback((activeEditor: Editor, scope: "block" | "document"): readonly VisualTraceAutoTagPendingMatch[] => {
+    const mentionType = activeEditor.schema.nodes.mention;
+    if (!enableVisualTraceAutoTagging || !activeEditor.isEditable || !mentionType) {
+      return [];
+    }
+
+    const block = scope === "document"
+      ? getVisualTraceDocumentText(activeEditor)
+      : getCurrentVisualTraceBlockText(activeEditor);
+    const matches = getDirectoryAutocompleteExactLabelMatches({
+      sources: mentionSourcesRef.current,
+      suppressTrailingPrefixMatches: scope === "block",
+      text: block.text,
+    });
+    if (matches.length === 0) {
+      return [];
+    }
+
+    return matches.flatMap((match, index): VisualTraceAutoTagPendingMatch[] => {
+      const range = getVisualTraceDocRange(block, match);
+      const traceRange = getVisualTraceDocTraceRange(block, match);
+      if (!range || !traceRange) {
+        return [];
+      }
+
+      const currentText = activeEditor.state.doc.textBetween(
+        range.from,
+        range.to,
+        "\n",
+        VISUAL_TRACE_OBJECT_REPLACEMENT
+      );
+      const expectedText = block.text.slice(match.from, match.to);
+      if (
+        currentText.includes(VISUAL_TRACE_OBJECT_REPLACEMENT) ||
+        currentText.toLowerCase() !== expectedText.toLowerCase()
+      ) {
+        return [];
+      }
+
+      return [{
+        expectedText,
+        from: range.from,
+        id: `visual-trace-auto-tag-${visualTraceGenerationRef.current}-${index}`,
+        label: match.label,
+        match,
+        to: range.to,
+        traceFrom: traceRange.from,
+        traceText: block.text.slice(match.from, match.to),
+        traceTo: traceRange.to,
+      }];
+    });
+  }, [enableVisualTraceAutoTagging]);
+
+  const convertVisualTraceAutoTagMatches = useCallback((activeEditor: Editor, pendingMatches: readonly VisualTraceAutoTagPendingMatch[]): boolean => {
+    const mentionType = activeEditor.schema.nodes.mention;
+    if (!mentionType || pendingMatches.length === 0) {
+      return false;
+    }
+
+    let transaction = activeEditor.state.tr;
+    for (const pendingMatch of [...pendingMatches].sort((a, b) => b.from - a.from)) {
+      const currentText = transaction.doc.textBetween(
+        pendingMatch.from,
+        pendingMatch.to,
+        "\n",
+        VISUAL_TRACE_OBJECT_REPLACEMENT
+      );
+      if (
+        currentText.includes(VISUAL_TRACE_OBJECT_REPLACEMENT) ||
+        currentText.toLowerCase() !== pendingMatch.expectedText.toLowerCase()
+      ) {
+        continue;
+      }
+
+      const nodeAfter = transaction.doc.resolve(pendingMatch.to).nodeAfter;
+      const textAfter = nodeAfter?.isText ? nodeAfter.text?.charAt(0) : undefined;
+      const shouldInsertTrailingSpace = textAfter === undefined;
+      const replacement = shouldInsertTrailingSpace
+        ? [
+            mentionType.create(getMentionNodeAttrs(pendingMatch.match.mention)),
+            transaction.doc.type.schema.text(" "),
+          ]
+        : mentionType.create(getMentionNodeAttrs(pendingMatch.match.mention));
+
+      transaction = transaction.replaceWith(
+        pendingMatch.from,
+        pendingMatch.to,
+        replacement,
+      );
+    }
+
+    if (!transaction.docChanged) {
+      return false;
+    }
+    visualTraceApplyingRef.current = true;
+    try {
+      activeEditor.view.dispatch(transaction);
+      clearComposerTraceDecorations(activeEditor.view);
+    } finally {
+      visualTraceApplyingRef.current = false;
+    }
+    return true;
+  }, []);
+
+  const restoreVisualTraceUndoSnapshot = useCallback((activeEditor: Editor, snapshot: VisualTraceAutoTagUndoSnapshot): boolean => {
+    if (serializeComposerDoc(activeEditor) !== snapshot.afterText) {
+      return false;
+    }
+
+    visualTraceUndoSnapshotRef.current = null;
+    visualTraceApplyingRef.current = true;
+    try {
+      activeEditor.commands.setContent(snapshot.beforeJSON, {
+        emitUpdate: false,
+      });
+      activeEditor.commands.setTextSelection(activeEditor.state.doc.content.size);
+      clearComposerTraceDecorations(activeEditor.view);
+      publishText(snapshot.beforeText, activeEditor.view.dom, true);
+    } finally {
+      visualTraceApplyingRef.current = false;
+    }
+    return true;
+  }, [publishText]);
+
+  const clearPendingVisualTraceAutoTagging = useCallback(() => {
+    visualTraceGenerationRef.current += 1;
+    visualTracePendingRef.current = false;
+    visualTracePendingMatchesRef.current = [];
+    for (const timeout of visualTraceTimeoutsRef.current) {
+      clearTimeout(timeout);
+    }
+    visualTraceTimeoutsRef.current = [];
+    const activeEditor = activeEditorRef.current;
+    if (activeEditor) {
+      clearComposerTraceDecorations(activeEditor.view);
+    }
+  }, []);
+
   const isAnySuggestionMenuOpen = useCallback((activeEditor: Editor): boolean => {
     for (const plugin of activeEditor.view.state.plugins) {
       const pluginState = plugin.getState(activeEditor.view.state) as
@@ -1237,7 +1562,13 @@ export const PromptInputTextarea = ({
   }, []);
 
   const refreshDirectoryAutocomplete = useCallback((activeEditor: Editor) => {
-    if (!enableDirectoryAutocomplete || !activeEditor.isEditable) {
+    if (
+      !enableDirectoryAutocomplete ||
+      !activeEditor.isEditable ||
+      visualTracePendingRef.current ||
+      visualTracePendingMatchesRef.current.length > 0 ||
+      visualTraceApplyingRef.current
+    ) {
       setDirectoryAutocompleteState(null);
       return;
     }
@@ -1262,6 +1593,121 @@ export const PromptInputTextarea = ({
     });
     setDirectoryAutocompleteState(nextState);
   }, [enableDirectoryAutocomplete, isAnySuggestionMenuOpen, setDirectoryAutocompleteState]);
+
+  const runVisualTraceAutoTagging = useCallback((activeEditor: Editor, generation: number, scope: "block" | "document"): boolean => {
+    if (generation !== visualTraceGenerationRef.current) {
+      return false;
+    }
+
+    visualTracePendingRef.current = false;
+    setDirectoryAutocompleteState(null);
+
+    const pendingMatches = getVisualTraceAutoTagMatches(activeEditor, scope);
+    if (pendingMatches.length === 0) {
+      visualTracePendingMatchesRef.current = [];
+      clearComposerTraceDecorations(activeEditor.view);
+      refreshDirectoryAutocomplete(activeEditor);
+      return false;
+    }
+
+    visualTracePendingRef.current = true;
+    visualTracePendingMatchesRef.current = pendingMatches;
+    const undoBaseline = {
+      beforeJSON: activeEditor.getJSON(),
+      beforeText: serializeComposerDoc(activeEditor),
+    };
+    let convertedAny = false;
+    const reducedMotion = typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+    const decorations: ComposerTraceDecoration[] = pendingMatches.map((pendingMatch, index) => ({
+      from: pendingMatch.traceFrom,
+      id: pendingMatch.id,
+      label: pendingMatch.traceText,
+      motion: reducedMotion ? "static" : "active",
+      pending: index > 0,
+      to: pendingMatch.traceTo,
+    }));
+    setComposerTraceDecorations(activeEditor.view, decorations);
+
+    const conversionOrder = [...pendingMatches].sort((a, b) => b.from - a.from);
+    conversionOrder.forEach((pendingMatch, index) => {
+      const timeout = setTimeout(() => {
+        if (generation !== visualTraceGenerationRef.current) {
+          return;
+        }
+
+        const converted = convertVisualTraceAutoTagMatches(activeEditor, [pendingMatch]);
+        convertedAny = convertedAny || converted;
+        visualTracePendingMatchesRef.current = visualTracePendingMatchesRef.current.filter((match) => match.id !== pendingMatch.id);
+        const remainingDecorations = visualTracePendingMatchesRef.current.map((match, remainingIndex) => ({
+          from: match.traceFrom,
+          id: match.id,
+          label: match.traceText,
+          motion: reducedMotion ? "static" : "active",
+          pending: remainingIndex > 0,
+          to: match.traceTo,
+        } satisfies ComposerTraceDecoration));
+        if (remainingDecorations.length > 0) {
+          setComposerTraceDecorations(activeEditor.view, remainingDecorations);
+        } else {
+          visualTracePendingRef.current = false;
+          clearComposerTraceDecorations(activeEditor.view);
+          if (convertedAny) {
+            visualTraceUndoSnapshotRef.current = {
+              ...undoBaseline,
+              afterText: serializeComposerDoc(activeEditor),
+            };
+          }
+          refreshDirectoryAutocomplete(activeEditor);
+        }
+        if (converted) {
+          publishText(serializeComposerDoc(activeEditor), activeEditor.view.dom, true);
+        }
+      }, index * VISUAL_TRACE_AUTO_TAG_STAGGER_MS + VISUAL_TRACE_AUTO_TAG_CONVERT_MS);
+      visualTraceTimeoutsRef.current.push(timeout);
+    });
+
+    return true;
+  }, [convertVisualTraceAutoTagMatches, getVisualTraceAutoTagMatches, publishText, refreshDirectoryAutocomplete, setDirectoryAutocompleteState]);
+
+  const flushVisualTraceAutoTagging = useCallback((activeEditor: Editor | null = activeEditorRef.current): boolean => {
+    if (!enableVisualTraceAutoTagging || !activeEditor) {
+      return false;
+    }
+
+    clearPendingVisualTraceAutoTagging();
+    const undoBaseline = {
+      beforeJSON: activeEditor.getJSON(),
+      beforeText: serializeComposerDoc(activeEditor),
+    };
+    const pendingMatches = getVisualTraceAutoTagMatches(activeEditor, "document");
+    const converted = convertVisualTraceAutoTagMatches(activeEditor, pendingMatches);
+    if (converted) {
+      visualTraceUndoSnapshotRef.current = {
+        ...undoBaseline,
+        afterText: serializeComposerDoc(activeEditor),
+      };
+      publishText(serializeComposerDoc(activeEditor), activeEditor.view.dom, true);
+    }
+    return converted;
+  }, [clearPendingVisualTraceAutoTagging, convertVisualTraceAutoTagMatches, enableVisualTraceAutoTagging, getVisualTraceAutoTagMatches, publishText]);
+
+  const scheduleVisualTraceAutoTagging = useCallback((activeEditor: Editor, immediate: boolean) => {
+    if (!enableVisualTraceAutoTagging) {
+      return;
+    }
+
+    clearPendingVisualTraceAutoTagging();
+    visualTracePendingRef.current = true;
+    setDirectoryAutocompleteState(null);
+
+    const generation = visualTraceGenerationRef.current;
+    const delay = immediate ? 0 : VISUAL_TRACE_AUTO_TAG_TYPED_IDLE_MS;
+    const timeout = setTimeout(() => {
+      runVisualTraceAutoTagging(activeEditor, generation, immediate ? "document" : "block");
+    }, delay);
+    visualTraceTimeoutsRef.current = [timeout];
+  }, [clearPendingVisualTraceAutoTagging, enableVisualTraceAutoTagging, runVisualTraceAutoTagging, setDirectoryAutocompleteState]);
 
   acceptDirectoryAutocompleteIndexRef.current = (index: number, requireGhost = false): boolean => {
     const activeEditor = activeEditorRef.current;
@@ -1326,6 +1772,8 @@ export const PromptInputTextarea = ({
   // Plain Enter (menu closed, no IME) submits the host form unless its submit
   // button is disabled. Returns true to consume the keystroke.
   const handleEnterSubmit = useCallback((view: { dom: HTMLElement }) => {
+    flushVisualTraceAutoTagging();
+
     const form = view.dom.closest("form");
     if (!form) {
       return false;
@@ -1341,7 +1789,7 @@ export const PromptInputTextarea = ({
 
     form.requestSubmit();
     return true;
-  }, []);
+  }, [flushVisualTraceAutoTagging]);
 
   const extensions = useMemo(
     () =>
@@ -1378,7 +1826,11 @@ export const PromptInputTextarea = ({
         setComposerPlainText(activeEditor, initial);
       }
       publishText(serializeComposerDoc(activeEditor), activeEditor.view.dom, false);
-      refreshDirectoryAutocomplete(activeEditor);
+      if (enableVisualTraceAutoTagging && initial) {
+        scheduleVisualTraceAutoTagging(activeEditor, true);
+      } else {
+        refreshDirectoryAutocomplete(activeEditor);
+      }
       onEditorReadyRef.current?.(activeEditor);
     },
     onSelectionUpdate: ({ editor: activeEditor }) => {
@@ -1386,6 +1838,16 @@ export const PromptInputTextarea = ({
     },
     onUpdate: ({ editor: activeEditor }) => {
       publishText(serializeComposerDoc(activeEditor), activeEditor.view.dom, true);
+      if (visualTraceApplyingRef.current) {
+        setDirectoryAutocompleteState(null);
+        return;
+      }
+      if (enableVisualTraceAutoTagging) {
+        const immediate = visualTraceImmediateUpdateRef.current;
+        visualTraceImmediateUpdateRef.current = false;
+        scheduleVisualTraceAutoTagging(activeEditor, immediate);
+        return;
+      }
       refreshDirectoryAutocomplete(activeEditor);
     },
   });
@@ -1410,6 +1872,60 @@ export const PromptInputTextarea = ({
       setDirectoryAutocompleteState(null);
     };
   }, [editor, refreshDirectoryAutocomplete, setDirectoryAutocompleteState]);
+
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+
+    composerScrollOverflowRef(editor.view.dom);
+    return () => {
+      composerScrollOverflowRef(null);
+    };
+  }, [composerScrollOverflowRef, editor]);
+
+  useEffect(() => {
+    if (!editor || !enableVisualTraceAutoTagging) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const snapshot = visualTraceUndoSnapshotRef.current;
+      if (
+        !snapshot ||
+        event.key.toLowerCase() !== "z" ||
+        event.shiftKey ||
+        !(event.metaKey || event.ctrlKey)
+      ) {
+        return;
+      }
+
+      if (restoreVisualTraceUndoSnapshot(editor, snapshot)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    const handlePaste = () => {
+      visualTraceImmediateUpdateRef.current = true;
+    };
+    const handleSubmit = () => {
+      flushVisualTraceAutoTagging(editor);
+    };
+    const form = editor.view.dom.closest("form");
+
+    editor.view.dom.addEventListener("keydown", handleKeyDown, { capture: true });
+    editor.view.dom.addEventListener("paste", handlePaste, { capture: true });
+    form?.addEventListener("submit", handleSubmit, { capture: true });
+    return () => {
+      editor.view.dom.removeEventListener("keydown", handleKeyDown, { capture: true });
+      editor.view.dom.removeEventListener("paste", handlePaste, { capture: true });
+      form?.removeEventListener("submit", handleSubmit, { capture: true });
+    };
+  }, [editor, enableVisualTraceAutoTagging, flushVisualTraceAutoTagging, restoreVisualTraceUndoSnapshot]);
+
+  useEffect(() => () => {
+    clearPendingVisualTraceAutoTagging();
+  }, [clearPendingVisualTraceAutoTagging]);
 
   // Forward the ref to the contentEditable DOM (escape hatch for consumers that
   // previously held a textarea ref to call .focus()/measure).
@@ -1455,6 +1971,7 @@ export const PromptInputTextarea = ({
     }
 
     const handleReset = () => {
+      visualTraceUndoSnapshotRef.current = null;
       setComposerPlainText(editor, "");
       publishText("", editor.view.dom, false);
       setDirectoryAutocompleteState(null);
@@ -1480,9 +1997,14 @@ export const PromptInputTextarea = ({
     }
 
     setComposerPlainText(editor, resolvedValue);
-    publishText(resolvedValue, editor.view.dom, false);
-    refreshDirectoryAutocomplete(editor);
-  }, [editor, refreshDirectoryAutocomplete, resolvedValue, publishText]);
+    visualTraceUndoSnapshotRef.current = null;
+    publishText(serializeComposerDoc(editor), editor.view.dom, false);
+    if (enableVisualTraceAutoTagging) {
+      scheduleVisualTraceAutoTagging(editor, true);
+    } else {
+      refreshDirectoryAutocomplete(editor);
+    }
+  }, [editor, enableVisualTraceAutoTagging, refreshDirectoryAutocomplete, resolvedValue, publishText, scheduleVisualTraceAutoTagging]);
 
   // Backspace on an empty composer removes the last attachment, matching the
   // previous textarea behavior.
@@ -1519,7 +2041,24 @@ export const PromptInputTextarea = ({
       >
         <EditorContent
           editor={editor}
-          className="min-w-0 flex-1 self-stretch"
+          className={cn(
+            "min-w-0 flex-1 self-stretch",
+            showComposerTopScrollMask &&
+              !showComposerBottomScrollMask &&
+              "scroll-mask-top",
+            showComposerBottomScrollMask &&
+              !showComposerTopScrollMask &&
+              "scroll-mask-bottom",
+            (showComposerTopScrollMask ||
+              showComposerBottomScrollMask) &&
+              "overscroll-contain"
+          )}
+          style={
+            showComposerTopScrollMask &&
+            showComposerBottomScrollMask
+              ? composerScrollMaskStyle
+              : undefined
+          }
         />
       </div>
       {/* Hidden input keeps FormData.get("message") working for demos that read

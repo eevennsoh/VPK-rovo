@@ -77,7 +77,7 @@ export interface UseRealtimeVoiceOptions {
 }
 
 export interface UseRealtimeVoiceResult {
-	connect: () => void;
+	connect: (options?: { transcriptionOnly?: boolean }) => void;
 	disconnect: () => void;
 	sendTextInput: (payload: {
 		contextDescription?: string;
@@ -603,6 +603,7 @@ export function useRealtimeVoice({
 		contextDescription?: string;
 		text: string;
 	}>>([]);
+	const transcriptionOnlyModeRef = useRef(false);
 	const connectWsRef = useRef<() => void>(() => {});
 	const disconnectRef = useRef<() => void>(() => {});
 	const cleanupConnectionRef = useRef<() => void>(() => {});
@@ -803,14 +804,14 @@ export function useRealtimeVoice({
 	}, []);
 
 	const scheduleResponseCreateFallback = useCallback(() => {
-		if (!isAwaitingSpeechResponseRef.current) {
+		if (!isAwaitingSpeechResponseRef.current || transcriptionOnlyModeRef.current) {
 			return;
 		}
 
 		clearResponseCreateFallbackTimer();
 		responseCreateFallbackTimerRef.current = setTimeout(() => {
 			responseCreateFallbackTimerRef.current = null;
-			if (!activeRef.current || !isAwaitingSpeechResponseRef.current) {
+			if (!activeRef.current || !isAwaitingSpeechResponseRef.current || transcriptionOnlyModeRef.current) {
 				return;
 			}
 
@@ -1301,6 +1302,20 @@ export function useRealtimeVoice({
 					setConnectionState("connected");
 					setStatusMessage(null);
 					setVoice("listening");
+					if (transcriptionOnlyModeRef.current) {
+						sendWsMessage({
+							type: "session_update",
+							config: {
+								transcription_only: true,
+								turn_detection: {
+									type: "semantic_vad",
+									eagerness: "auto",
+									create_response: false,
+									interrupt_response: false,
+								},
+							},
+						});
+					}
 					// Inject initial thread context
 					{
 						const summary = buildThreadSummary(chatMessagesRef.current);
@@ -1597,6 +1612,7 @@ export function useRealtimeVoice({
 			scheduleResponseCreateFallback,
 			resetGenerationStateSoon,
 			resetAssistantTextStream,
+			sendWsMessage,
 			setVoice,
 			stopPlayback,
 		],
@@ -1642,6 +1658,7 @@ export function useRealtimeVoice({
 		pausedInputCaptureEpochRef.current = null;
 		lastAudioAppendCaptureEpochRef.current = null;
 		isAwaitingSpeechResponseRef.current = false;
+		transcriptionOnlyModeRef.current = false;
 		resetSpeechTurnTracking();
 		resetAssistantTextStream();
 		setOutputWaveformBars([]);
@@ -1759,10 +1776,11 @@ export function useRealtimeVoice({
 
 	// -- Public API ----------------------------------------------------------
 
-	const connect = useCallback(() => {
+	const connect = useCallback((options?: { transcriptionOnly?: boolean }) => {
 		if (activeRef.current) {
 			return;
 		}
+		transcriptionOnlyModeRef.current = Boolean(options?.transcriptionOnly);
 		activeRef.current = true;
 		isCaptureAvailableRef.current = resolveCaptureAvailability();
 		if (!isCaptureAvailableRef.current) {
@@ -1846,6 +1864,7 @@ export function useRealtimeVoice({
 	const disconnect = useCallback(() => {
 		activeRef.current = false;
 		isCaptureAvailableRef.current = false;
+		transcriptionOnlyModeRef.current = false;
 		queuedTextInputsRef.current = [];
 		resetSpeechTurnTracking();
 		cleanupConnection();

@@ -50,21 +50,28 @@ export function ComposerCardBody({
 	compact,
 	composerStatus,
 	directoryAutocompleteListVisible,
+	dictationState,
+	dictationTranscriptPreview,
 	experimentalDarkCta,
 	galleryExpanded,
 	isPlanMode,
 	micStream,
+	onAcceptDictation,
+	onCancelDictation,
 	onDirectoryAutocompleteChange,
 	onDirectoryAutocompleteControllerChange,
 	onPromptSubmit,
+	onStartDictation,
 	onStop,
 	onTogglePlanMode,
 	onToggleClicky,
 	onToggleRealtimeVoice,
 	placeholder,
+	prefillRequestKey,
 	prefillText,
 	previewPrompt,
 	realtimeVoiceActive,
+	realtimeVoiceState,
 	showBackgroundStop,
 	submitDisabled,
 	textValue,
@@ -88,7 +95,7 @@ export function ComposerCardBody({
 		previewPrompt,
 	});
 
-	usePrefillEffect(prefillText);
+	usePrefillEffect(prefillText, prefillRequestKey);
 
 	const handleReasoningChange = useCallback((reasoning: string) => {
 		setSelectedReasoning(reasoning);
@@ -149,6 +156,7 @@ export function ComposerCardBody({
 						autoResize={!composerHeight}
 						className={cn(composerTextareaClassName, composerHeight ? "h-full max-h-none min-h-0" : undefined)}
 						directoryAutocompleteListVisible={directoryAutocompleteListVisible}
+						enableVisualTraceAutoTagging
 						onDirectoryAutocompleteChange={onDirectoryAutocompleteChange}
 						onDirectoryAutocompleteControllerChange={onDirectoryAutocompleteControllerChange}
 						placeholder={placeholder}
@@ -202,16 +210,22 @@ export function ComposerCardBody({
 						className="flex-1"
 						companyKnowledgeEnabled={companyKnowledgeEnabled}
 						composerStatus={composerStatus}
+						dictationState={dictationState}
+						dictationTranscriptPreview={dictationTranscriptPreview}
 						experimentalDarkCta={experimentalDarkCta}
 						isComposerBusy={isComposerBusy}
 						micStream={micStream}
+						onAcceptDictation={onAcceptDictation}
+						onCancelDictation={onCancelDictation}
 						onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
 						onOpenChange={handleAutoMenuOpenChange}
 						onReasoningChange={handleReasoningChange}
 						onStop={onStop}
+						onStartDictation={onStartDictation}
 						onToggleRealtimeVoice={onToggleRealtimeVoice}
 						open={isAutoMenuOpen}
 						realtimeVoiceActive={realtimeVoiceActive}
+						realtimeVoiceState={realtimeVoiceState}
 						selectedReasoning={selectedReasoning}
 						showBackgroundStop={showBackgroundStop}
 						submitDisabled={submitDisabled}

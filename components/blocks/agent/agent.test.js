@@ -981,12 +981,16 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /data-type": "mention"/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ HoverCard, HoverCardTrigger \} from "@\/components\/ui\/hover-card";/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ Tag \} from "@\/components\/ui\/tag";/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ SkillTag, type SkillTagColor \} from "@\/components\/ui-custom\/skill-tag";/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ DEFAULT_SKILLS, getSkillCollectionId, getSkillIcon \} from "@\/app\/data\/directory\/skills";/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /getRichTextReferencePreview,[\s\S]*RichTextReferencePreviewContent/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const REFERENCE_CATEGORIES:[\s\S]*"app"[\s\S]*"skill"[\s\S]*"tool"[\s\S]*"knowledge"/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const preview = isReferenceCategory\(category\) \? getRichTextReferencePreview\(category, label\) : undefined;/u);
-	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const tag = \([\s\S]*<Tag[\s\S]*elemBefore=\{visual \? \(/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /function getSkillMentionTagProps\(label: string\): \{ color: SkillTagColor; icon: ReactNode \}/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const skillTagProps = category === "skill" \? getSkillMentionTagProps\(label\) : undefined;/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const tag = skillTagProps \? \([\s\S]*<SkillTag className="rich-text-mention-chip mx-0\.5" color=\{skillTagProps\.color\} icon=\{skillTagProps\.icon\}>[\s\S]*\{label\}[\s\S]*<\/SkillTag>[\s\S]*\) : \([\s\S]*<Tag[\s\S]*className="rich-text-mention-chip"[\s\S]*elemBefore=\{visual \? \(/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /<NodeViewWrapper[\s\S]*as="span"[\s\S]*className="rich-text-mention-node inline-flex"/u);
-	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /\{preview \? \([\s\S]*<HoverCard>[\s\S]*<HoverCardTrigger closeDelay=\{80\} delay=\{120\} render=\{<span className="inline-flex max-w-full" \/>\}>[\s\S]*\{tag\}[\s\S]*<\/HoverCardTrigger>[\s\S]*<RichTextReferencePreviewContent preview=\{preview\} \/>[\s\S]*<\/HoverCard>[\s\S]*\) : tag\}/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /\{preview \? \([\s\S]*<HoverCard>[\s\S]*<HoverCardTrigger closeDelay=\{80\} delay=\{120\} render=\{<span className="rich-text-mention-trigger-wrapper inline-flex max-w-full" \/>\}>[\s\S]*\{tag\}[\s\S]*<\/HoverCardTrigger>[\s\S]*<RichTextReferencePreviewContent preview=\{preview\} \/>[\s\S]*<\/HoverCard>[\s\S]*\) : tag\}/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /type=\{getRichTextMentionTagType\(visual\)\}/u);
 	assert.doesNotMatch(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /className="rich-text-mention"/u);
 	// Mention tokens render with the visual-derived accent color (synced with the

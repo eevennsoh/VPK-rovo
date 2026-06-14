@@ -4,10 +4,13 @@
 
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import PageIcon from "@atlaskit/icon/core/page";
+import type { ReactNode } from "react";
 
+import { DEFAULT_SKILLS, getSkillCollectionId, getSkillIcon } from "@/app/data/directory/skills";
 import { getDirectoryMentionItemOrFallback } from "@/components/blocks/editor-palette/data/mention-sources";
 import { HoverCard, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tag } from "@/components/ui/tag";
+import { SkillTag, type SkillTagColor } from "@/components/ui-custom/skill-tag";
 import { getMentionCategory } from "./extensions";
 import {
 	RichTextMentionVisualMark,
@@ -59,14 +62,28 @@ function resolveMentionVisual(
 	return undefined;
 }
 
+function getSkillMentionTagProps(label: string): { color: SkillTagColor; icon: ReactNode } {
+	const skill = DEFAULT_SKILLS.find((entry) => entry.name === label);
+	return {
+		color: skill ? getSkillCollectionId(skill) : "default",
+		icon: getSkillIcon(skill?.icon ?? "page"),
+	};
+}
+
 export function RichTextMentionNodeView({ node }: Readonly<ReactNodeViewProps>) {
 	const attrs = node.attrs;
 	const category = getMentionCategory(attrs.id, attrs.category);
 	const label = String(attrs.label ?? attrs.id ?? "");
 	const visual = resolveMentionVisual(category, label, attrs);
 	const preview = isReferenceCategory(category) ? getRichTextReferencePreview(category, label) : undefined;
-	const tag = (
+	const skillTagProps = category === "skill" ? getSkillMentionTagProps(label) : undefined;
+	const tag = skillTagProps ? (
+		<SkillTag className="rich-text-mention-chip mx-0.5" color={skillTagProps.color} icon={skillTagProps.icon}>
+			{label}
+		</SkillTag>
+	) : (
 		<Tag
+			className="rich-text-mention-chip"
 			color={getRichTextMentionTagColor(visual)}
 			elemBefore={visual ? (
 				<RichTextMentionVisualMark
@@ -89,13 +106,13 @@ export function RichTextMentionNodeView({ node }: Readonly<ReactNodeViewProps>) 
 			className="rich-text-mention-node inline-flex"
 			data-mention-category={category}
 			data-mention-has-visual={visual ? "true" : undefined}
-		>
-			{preview ? (
-				<HoverCard>
-					<HoverCardTrigger closeDelay={80} delay={120} render={<span className="inline-flex max-w-full" />}>
-						{tag}
-					</HoverCardTrigger>
-					<RichTextReferencePreviewContent preview={preview} />
+			>
+				{preview ? (
+					<HoverCard>
+						<HoverCardTrigger closeDelay={80} delay={120} render={<span className="rich-text-mention-trigger-wrapper inline-flex max-w-full" />}>
+							{tag}
+						</HoverCardTrigger>
+						<RichTextReferencePreviewContent preview={preview} />
 				</HoverCard>
 			) : tag}
 		</NodeViewWrapper>

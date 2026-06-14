@@ -1,6 +1,6 @@
 ---
 name: vpk-git-ship
-description: "Use for VPK-rovo git shipping: create PRs, merge PRs/branches/worktrees back to main, or run the full create-PR-to-merge flow. Use for \"vpk-git-ship\", \"vpk-git-ship --pr\", \"vpk-git-ship --merge\", \"vpk-git-ship --bypass\", \"commit and open a PR\", \"ship this branch\", \"merge this PR\", or \"land this worktree\". Use vpk-git-clean for local worktree/branch cleanup."
+description: "Use for VPK-rovo git shipping: create/update PRs, merge PRs back to main, or run the full create-PR -> wait/merge -> sync-main flow when the user invokes vpk-git-ship. For cleanup, use vpk-git-clean."
 ---
 
 # VPK Git Ship

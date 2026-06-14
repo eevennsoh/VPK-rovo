@@ -364,6 +364,7 @@ class RealtimeSession {
 		this._sessionRefreshTimer = null;
 		this._plannedCloseReason = null;
 		this._manualTurnTaking = false;
+		this._transcriptionOnly = false;
 		this._manualTurnTranscriptBuffer = "";
 		this._manualTurnCoalesceTimer = null;
 		this._manualTurnHardCapTimer = null;
@@ -704,6 +705,7 @@ class RealtimeSession {
 			this._clearManualTurnTranscription();
 		}
 		this._manualTurnTaking = manualTurnTaking;
+		this._transcriptionOnly = clientConfig.transcription_only === true;
 		const session = buildRealtimeSessionConfig({
 			instructions:
 				typeof clientConfig.instructions === "string" && clientConfig.instructions
@@ -779,6 +781,11 @@ class RealtimeSession {
 			return;
 		}
 
+		if (this._transcriptionOnly) {
+			this._log("REALTIME", "Response create ignored — transcription-only mode");
+			return;
+		}
+
 		if (this._activeResponseId) {
 			this._pendingResponseCreate = true;
 			this._log("REALTIME", "Response create deferred — active response in progress");
@@ -844,7 +851,9 @@ class RealtimeSession {
 			type: "transcription_completed",
 			transcript,
 		});
-		this._requestResponse();
+		if (!this._transcriptionOnly) {
+			this._requestResponse();
+		}
 	}
 
 	_clearManualTurnTranscription() {

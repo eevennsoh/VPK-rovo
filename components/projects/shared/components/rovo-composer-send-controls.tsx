@@ -21,11 +21,15 @@ import { resolveRovoAppComposerWaveformState } from "@/components/projects/share
 import { ROVO_WAVEFORM_COLOR_CSS_VARS } from "@/lib/rovo-colors";
 import { cn } from "@/lib/utils";
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
+import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import CrossIcon from "@atlaskit/icon/core/cross";
+import MicrophoneIcon from "@atlaskit/icon/core/microphone";
 import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
 
 const ROVO_COMPOSER_WAVEFORM_INTRO_MS = 500;
 const EXPERIMENTAL_DARK_CTA_CLASS_NAME = "bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
+
+export type RovoComposerDictationState = "idle" | "recording" | "processing";
 
 const autoReasoningButtonClassName = [
 	"whitespace-nowrap",
@@ -96,12 +100,18 @@ export function RovoComposerReasoningSelector({
 export interface RovoComposerActionButtonProps {
 	canSubmit: boolean;
 	composerStatus: ChatStatus;
+	dictationState?: RovoComposerDictationState;
+	dictationTranscriptPreview?: string | null;
 	experimentalDarkCta?: boolean;
 	isComposerBusy?: boolean;
 	micStream?: MediaStream | null;
+	onAcceptDictation?: () => void;
+	onCancelDictation?: () => void;
+	onStartDictation?: () => void;
 	onStop: () => Promise<void> | void;
 	onToggleRealtimeVoice?: () => void;
 	realtimeVoiceActive?: boolean;
+	realtimeVoiceState?: "idle" | "connecting" | "listening" | "speaking";
 	screenAssistantTargetPrefix?: string;
 	showBackgroundStop?: boolean;
 	submitButtonClassName?: string;
@@ -112,12 +122,18 @@ export interface RovoComposerActionButtonProps {
 export function RovoComposerActionButton({
 	canSubmit,
 	composerStatus,
+	dictationState = "idle",
+	dictationTranscriptPreview = null,
 	experimentalDarkCta = false,
 	isComposerBusy,
 	micStream = null,
+	onAcceptDictation,
+	onCancelDictation,
+	onStartDictation,
 	onStop,
 	onToggleRealtimeVoice,
 	realtimeVoiceActive = false,
+	realtimeVoiceState = "idle",
 	screenAssistantTargetPrefix,
 	showBackgroundStop = false,
 	submitButtonClassName,
@@ -126,8 +142,11 @@ export function RovoComposerActionButton({
 }: Readonly<RovoComposerActionButtonProps>): ReactElement {
 	const realtimeWaveformIntroTimeoutRef = useRef<number | null>(null);
 	const [isRealtimeWaveformIntroActive, setIsRealtimeWaveformIntroActive] = useState(false);
+	const [isDictationOptimisticActive, setIsDictationOptimisticActive] = useState(false);
 	const resolvedComposerBusy = isComposerBusy ?? (composerStatus === "submitted" || composerStatus === "streaming");
+	const isDictationActive = dictationState !== "idle" || isDictationOptimisticActive;
 	const idleAction = resolveRovoAppComposerIdleAction({
+		canStartDictation: Boolean(onStartDictation),
 		canStartRealtimeVoice: Boolean(onToggleRealtimeVoice),
 		canSubmit,
 		isComposerBusy: resolvedComposerBusy,
@@ -140,8 +159,13 @@ export function RovoComposerActionButton({
 		isIntroActive: isRealtimeWaveformIntroActive,
 		realtimeVoiceActive,
 	});
-	const isRealtimeWaveformProcessing = realtimeWaveformState.processing;
+	const isRealtimeListening = realtimeVoiceState === "listening" && realtimeWaveformState.active;
+	const isRealtimeWaveformProcessing = !isRealtimeListening && realtimeVoiceActive;
+	const isDictationProcessing = dictationState === "processing";
+	const isDictationRecording = dictationState === "recording" && micStream !== null;
 	const experimentalDarkCtaClassName = experimentalDarkCta ? EXPERIMENTAL_DARK_CTA_CLASS_NAME : undefined;
+	const shouldShowDictationStart = Boolean(onStartDictation) && !resolvedComposerBusy && !realtimeVoiceActive && !submitDisabled;
+	const shouldShowRealtimeVoiceStart = idleAction === "voice-start" && !canSubmit && Boolean(onToggleRealtimeVoice);
 
 	const clearRealtimeWaveformIntro = useCallback(() => {
 		if (realtimeWaveformIntroTimeoutRef.current !== null) {
@@ -170,6 +194,31 @@ export function RovoComposerActionButton({
 		onToggleRealtimeVoice();
 	}, [clearRealtimeWaveformIntro, onToggleRealtimeVoice, realtimeVoiceActive]);
 
+	const handleStartDictation = useCallback(() => {
+		setIsDictationOptimisticActive(true);
+		onStartDictation?.();
+	}, [onStartDictation]);
+
+	const handleCancelDictation = useCallback(() => {
+		setIsDictationOptimisticActive(false);
+		onCancelDictation?.();
+	}, [onCancelDictation]);
+
+	const handleAcceptDictation = useCallback(() => {
+		if (isDictationProcessing) {
+			return;
+		}
+
+		setIsDictationOptimisticActive(false);
+		onAcceptDictation?.();
+	}, [isDictationProcessing, onAcceptDictation]);
+
+	useEffect(() => {
+		if (dictationState !== "idle" || realtimeVoiceActive) {
+			setIsDictationOptimisticActive(false);
+		}
+	}, [dictationState, realtimeVoiceActive]);
+
 	useEffect(() => {
 		return () => {
 			clearRealtimeWaveformIntro();
@@ -179,7 +228,68 @@ export function RovoComposerActionButton({
 	return (
 		<>
 			<AnimatePresence mode="popLayout" initial={false}>
-				{realtimeVoiceActive ? (
+				{isDictationActive ? (
+					<motion.div
+						key="dictation-active"
+						initial={{ opacity: 0, transform: "scale(0.8)" }}
+						animate={{ opacity: 1, transform: "scale(1)" }}
+						exit={{ opacity: 0, transform: "scale(0.8)" }}
+						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
+						style={{ willChange: "transform, opacity" }}
+					>
+						<div className="flex h-8 w-28 items-center gap-1 overflow-hidden rounded-md bg-bg-neutral-bold px-1 text-text-inverse shadow-sm">
+							<button
+								aria-hidden="true"
+								className="hidden"
+								disabled
+								tabIndex={-1}
+								type="submit"
+							/>
+							<button
+								aria-label="Cancel dictation"
+								className="flex size-6 shrink-0 items-center justify-center rounded-sm text-text-inverse transition-colors hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"
+								onClick={handleCancelDictation}
+								type="button"
+							>
+								<CrossIcon label="" size="small" />
+							</button>
+							<span className="flex h-full min-w-0 flex-1 items-center">
+								<LiveWaveform
+									active={isDictationRecording}
+									barColor="currentColor"
+									barColors={[...ROVO_WAVEFORM_COLOR_CSS_VARS]}
+									barGap={2}
+									barHeightScale={isDictationProcessing ? 1.15 : 1}
+									barOpacityMax={1}
+									barOpacityMin={0.7}
+									barWidth={2}
+									barRadius={0}
+									className="min-h-0 min-w-0 flex-1 animate-in fade-in duration-300"
+									entranceAnimation="stagger"
+									entranceDurationMs={180}
+									entranceStaggerMs={14}
+									fadeEdges={false}
+									height="100%"
+									mediaStream={isDictationRecording ? micStream : null}
+									mode={isDictationRecording ? "scrolling" : "static"}
+									processing={isDictationActive && !isDictationRecording}
+								/>
+							</span>
+							<button
+								aria-label="Accept dictation"
+								className="flex size-6 shrink-0 items-center justify-center rounded-sm text-text-inverse transition-colors hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed disabled:pointer-events-none disabled:opacity-50"
+								disabled={isDictationProcessing}
+								onClick={handleAcceptDictation}
+								type="button"
+							>
+								<CheckMarkIcon label="" size="small" />
+							</button>
+							{dictationTranscriptPreview ? (
+								<span className="sr-only">Latest dictation transcript: {dictationTranscriptPreview}</span>
+							) : null}
+						</div>
+					</motion.div>
+				) : realtimeVoiceActive ? (
 					<motion.div
 						key="waveform"
 						initial={{ opacity: 0, transform: "scale(0.8)" }}
@@ -196,7 +306,7 @@ export function RovoComposerActionButton({
 						>
 							<span className="flex h-full min-w-0 flex-1 items-center">
 								<LiveWaveform
-									active={realtimeWaveformState.active}
+									active={isRealtimeListening}
 									barColor="currentColor"
 									barColors={[...ROVO_WAVEFORM_COLOR_CSS_VARS]}
 									barGap={2}
@@ -211,8 +321,8 @@ export function RovoComposerActionButton({
 									entranceStaggerMs={14}
 									fadeEdges={false}
 									height="100%"
-									mediaStream={micStream}
-									mode="static"
+									mediaStream={isRealtimeListening ? micStream : null}
+									mode={isRealtimeListening ? "scrolling" : "static"}
 									processing={isRealtimeWaveformProcessing}
 								/>
 							</span>
@@ -221,18 +331,46 @@ export function RovoComposerActionButton({
 							</span>
 						</button>
 					</motion.div>
-				) : idleAction === "submit" ? (
+				) : idleAction === "submit" || idleAction === "voice-start" ? (
 					<motion.div
-						key="submit"
+						key={idleAction === "submit" ? "submit-actions" : "voice-start"}
 						initial={{ opacity: 0, transform: "scale(0.8)" }}
 						animate={{ opacity: 1, transform: "scale(1)" }}
 						exit={{ opacity: 0, transform: "scale(0.8)" }}
 						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
 						style={{ willChange: "transform, opacity" }}
 					>
-						<PromptInputSubmit aria-label="Submit" className={cn("hover:opacity-90 active:opacity-80", experimentalDarkCtaClassName, submitButtonClassName)} disabled={submitDisabled || !canSubmit} onStop={() => void onStop()} size="icon-sm" status={composerStatus}>
-							<ArrowUpIcon label="" />
-						</PromptInputSubmit>
+						<div className="flex items-center gap-1">
+							{shouldShowDictationStart ? (
+								<PromptInputButton
+									variant="ghost"
+									aria-label="Start dictation"
+									className="size-8 hover:opacity-90 active:opacity-80"
+									data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:dictation` : undefined}
+									onClick={handleStartDictation}
+									tooltip={{ content: "Dictate", delay: 0 }}
+								>
+									<MicrophoneIcon label="" />
+								</PromptInputButton>
+							) : null}
+							{idleAction === "submit" ? (
+								<PromptInputSubmit aria-label="Submit" className={cn("hover:opacity-90 active:opacity-80", experimentalDarkCtaClassName, submitButtonClassName)} disabled={submitDisabled || !canSubmit} onStop={() => void onStop()} size="icon-sm" status={composerStatus}>
+									<ArrowUpIcon label="" />
+								</PromptInputSubmit>
+							) : null}
+							{shouldShowRealtimeVoiceStart ? (
+								<PromptInputButton
+									variant="default"
+									aria-label="Start live voice"
+									className={cn("size-8 hover:opacity-90 active:opacity-80", experimentalDarkCtaClassName, voiceStartButtonClassName)}
+									data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:voice` : undefined}
+									onClick={handleToggleRealtimeVoice}
+									tooltip={{ content: "Live chat", delay: 0 }}
+								>
+									<AudioWaveformIcon label="" />
+								</PromptInputButton>
+							) : null}
+						</div>
 					</motion.div>
 				) : idleAction === "background-stop" ? (
 					<motion.div
@@ -251,26 +389,6 @@ export function RovoComposerActionButton({
 						>
 							<ArrowUpIcon label="" />
 						</PromptInputSubmit>
-					</motion.div>
-				) : idleAction === "voice-start" ? (
-					<motion.div
-						key="voice-start"
-						initial={{ opacity: 0, transform: "scale(0.8)" }}
-						animate={{ opacity: 1, transform: "scale(1)" }}
-						exit={{ opacity: 0, transform: "scale(0.8)" }}
-						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
-						style={{ willChange: "transform, opacity" }}
-					>
-						<PromptInputButton
-							variant="default"
-							aria-label="Start live voice"
-							className={cn("size-8 hover:opacity-90 active:opacity-80", experimentalDarkCtaClassName, voiceStartButtonClassName)}
-							data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:voice` : undefined}
-							onClick={handleToggleRealtimeVoice}
-							tooltip={{ content: "Live chat", delay: 0 }}
-						>
-							<AudioWaveformIcon label="" />
-						</PromptInputButton>
 					</motion.div>
 				) : null}
 			</AnimatePresence>
@@ -305,17 +423,23 @@ export function RovoComposerSendControls({
 	className,
 	companyKnowledgeEnabled,
 	composerStatus,
+	dictationState,
+	dictationTranscriptPreview,
 	experimentalDarkCta,
 	hideReasoningSelector = false,
 	isComposerBusy,
 	micStream,
+	onAcceptDictation,
+	onCancelDictation,
 	onCompanyKnowledgeChange,
 	onOpenChange,
 	onReasoningChange,
 	onStop,
+	onStartDictation,
 	onToggleRealtimeVoice,
 	open,
 	realtimeVoiceActive,
+	realtimeVoiceState,
 	screenAssistantTargetPrefix,
 	selectedReasoning,
 	showBackgroundStop,
@@ -360,12 +484,18 @@ export function RovoComposerSendControls({
 			<RovoComposerActionButton
 				canSubmit={canSubmit}
 				composerStatus={composerStatus}
+				dictationState={dictationState}
+				dictationTranscriptPreview={dictationTranscriptPreview}
 				experimentalDarkCta={experimentalDarkCta}
 				isComposerBusy={isComposerBusy}
 				micStream={micStream}
+				onAcceptDictation={onAcceptDictation}
+				onCancelDictation={onCancelDictation}
 				onStop={onStop}
+				onStartDictation={onStartDictation}
 				onToggleRealtimeVoice={onToggleRealtimeVoice}
 				realtimeVoiceActive={realtimeVoiceActive}
+				realtimeVoiceState={realtimeVoiceState}
 				screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 				showBackgroundStop={showBackgroundStop}
 				submitButtonClassName={submitButtonClassName}

@@ -65,21 +65,28 @@ export function ComposerFloatingBody({
 	clickyActive,
 	composerStatus,
 	directoryAutocompleteListVisible,
+	dictationState,
+	dictationTranscriptPreview,
 	experimentalDarkCta,
 	fillWidth,
 	focusRequestKey,
 	micStream,
+	onAcceptDictation,
 	onDirectoryAutocompleteChange,
 	onDirectoryAutocompleteControllerChange,
 	onBrowseTemplates,
+	onCancelDictation,
 	onPromptSubmit,
 	onStartFromScratch,
+	onStartDictation,
 	onStop,
 	onToggleClicky,
 	onToggleRealtimeVoice,
 	placeholder,
+	prefillRequestKey,
 	prefillText,
 	realtimeVoiceActive,
+	realtimeVoiceState,
 	showBackgroundStop,
 	submitDisabled,
 	textValue,
@@ -99,7 +106,7 @@ export function ComposerFloatingBody({
 		setInputFocused,
 	} = useRovoAppComposerReveal({ hasPromptValue });
 
-	usePrefillEffect(prefillText);
+	usePrefillEffect(prefillText, prefillRequestKey);
 
 	useEffect(() => {
 		if (typeof focusRequestKey !== "number" || focusRequestKey <= 0) {
@@ -146,11 +153,17 @@ export function ComposerFloatingBody({
 					<RovoComposerActionButton
 						canSubmit={canSubmit}
 						composerStatus={composerStatus}
+						dictationState={dictationState}
+						dictationTranscriptPreview={dictationTranscriptPreview}
 						experimentalDarkCta={experimentalDarkCta}
 						micStream={micStream}
+						onAcceptDictation={onAcceptDictation}
+						onCancelDictation={onCancelDictation}
 						onStop={onStop}
+						onStartDictation={onStartDictation}
 						onToggleRealtimeVoice={onToggleRealtimeVoice}
 						realtimeVoiceActive={realtimeVoiceActive}
+						realtimeVoiceState={realtimeVoiceState}
 						screenAssistantTargetPrefix="studio-composer"
 						showBackgroundStop={showBackgroundStop}
 						submitDisabled={submitDisabled}
@@ -163,6 +176,7 @@ export function ComposerFloatingBody({
 					autoResize
 					className={cn(composerTextareaClassName, floatingComposerTextareaClassName)}
 					directoryAutocompleteListVisible={directoryAutocompleteListVisible}
+					enableVisualTraceAutoTagging
 					onBlur={() => setInputFocused(false)}
 					onDirectoryAutocompleteChange={onDirectoryAutocompleteChange}
 					onDirectoryAutocompleteControllerChange={onDirectoryAutocompleteControllerChange}

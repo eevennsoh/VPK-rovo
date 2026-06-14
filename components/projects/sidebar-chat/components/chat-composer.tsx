@@ -34,7 +34,7 @@ import AddIcon from "@atlaskit/icon/core/add";
 import CursorIcon from "@atlaskit/icon-lab/core/cursor";
 import { PendingAttachments } from "@/components/projects/shared/components/pending-attachments";
 import { RovoAppComposerAddMenu } from "@/components/projects/shared/components/rovo-app-composer-add-menu";
-import { RovoComposerSendControls } from "@/components/projects/shared/components/rovo-composer-send-controls";
+import { RovoComposerSendControls, type RovoComposerDictationState } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { cn } from "@/lib/utils";
 
 interface ChatComposerProps {
@@ -46,8 +46,13 @@ interface ChatComposerProps {
 	hideAiCursor?: boolean;
 	hideSourceAndModelControls?: boolean;
 	micStream?: MediaStream | null;
+	dictationState?: RovoComposerDictationState;
+	dictationTranscriptPreview?: string | null;
 	clickyActive?: boolean;
+	onAcceptDictation?: () => void;
+	onCancelDictation?: () => void;
 	onPromptChange: (value: string) => void;
+	onStartDictation?: () => void;
 	onSubmit: (message: PromptInputMessage) => Promise<void> | void;
 	onStop: () => void;
 	onToggleClicky?: () => void;
@@ -55,6 +60,7 @@ interface ChatComposerProps {
 	onRemoveQueuedPrompt: (id: string) => void;
 	onReasoningChange?: (value: string) => void;
 	realtimeVoiceActive?: boolean;
+	realtimeVoiceState?: "idle" | "connecting" | "listening" | "speaking";
 	selectedReasoning?: string;
 	containerClassName?: string;
 	chatContextBar?: ChatContextBarDescriptor | null;
@@ -67,18 +73,24 @@ interface ChatComposerProps {
 interface ChatComposerSendControlsProps {
 	companyKnowledgeEnabled: boolean;
 	composerStatus: ChatStatus;
+	dictationState: RovoComposerDictationState;
+	dictationTranscriptPreview?: string | null;
 	experimentalDarkCta?: boolean;
 	hideReasoningSelector?: boolean;
 	isComposerBusy: boolean;
 	micStream: MediaStream | null;
+	onAcceptDictation?: () => void;
+	onCancelDictation?: () => void;
 	onCompanyKnowledgeChange: (value: boolean) => void;
 	onOpenChange: (open: boolean) => void;
 	onReasoningChange: (value: string) => void;
 	onStop: () => void;
+	onStartDictation?: () => void;
 	onToggleRealtimeVoice?: () => void;
 	open: boolean;
 	prompt: string;
 	realtimeVoiceActive: boolean;
+	realtimeVoiceState: "idle" | "connecting" | "listening" | "speaking";
 	selectedReasoning: string;
 	webResultsEnabled: boolean;
 	onWebResultsChange: (value: boolean) => void;
@@ -91,18 +103,24 @@ function getQueuedPromptLabel(queuedPrompt: QueuedPromptItem): string {
 function ChatComposerSendControls({
 	companyKnowledgeEnabled,
 	composerStatus,
+	dictationState,
+	dictationTranscriptPreview = null,
 	experimentalDarkCta = false,
 	hideReasoningSelector = false,
 	isComposerBusy,
 	micStream,
+	onAcceptDictation,
+	onCancelDictation,
 	onCompanyKnowledgeChange,
 	onOpenChange,
 	onReasoningChange,
 	onStop,
+	onStartDictation,
 	onToggleRealtimeVoice,
 	open,
 	prompt,
 	realtimeVoiceActive,
+	realtimeVoiceState,
 	selectedReasoning,
 	webResultsEnabled,
 	onWebResultsChange,
@@ -115,17 +133,23 @@ function ChatComposerSendControls({
 			canSubmit={canSubmit}
 			companyKnowledgeEnabled={companyKnowledgeEnabled}
 			composerStatus={composerStatus}
+			dictationState={dictationState}
+			dictationTranscriptPreview={dictationTranscriptPreview}
 			experimentalDarkCta={experimentalDarkCta}
 			hideReasoningSelector={hideReasoningSelector}
 			isComposerBusy={isComposerBusy}
 			micStream={micStream}
+			onAcceptDictation={onAcceptDictation}
+			onCancelDictation={onCancelDictation}
 			onCompanyKnowledgeChange={onCompanyKnowledgeChange}
 			onOpenChange={onOpenChange}
 			onReasoningChange={onReasoningChange}
 			onStop={onStop}
+			onStartDictation={onStartDictation}
 			onToggleRealtimeVoice={onToggleRealtimeVoice}
 			open={open}
 			realtimeVoiceActive={realtimeVoiceActive}
+			realtimeVoiceState={realtimeVoiceState}
 			selectedReasoning={selectedReasoning}
 			webResultsEnabled={webResultsEnabled}
 			onWebResultsChange={onWebResultsChange}
@@ -133,7 +157,7 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, clickyActive = false, onPromptChange, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, directoryAutocompleteListVisible = false, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, clickyActive = false, onAcceptDictation, onCancelDictation, onPromptChange, onStartDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, directoryAutocompleteListVisible = false, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -206,6 +230,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 						<PromptInputTextarea
 							value={prompt}
 							directoryAutocompleteListVisible={directoryAutocompleteListVisible}
+							enableVisualTraceAutoTagging
 							onChange={(event) => onPromptChange(event.currentTarget.value)}
 							onDirectoryAutocompleteChange={onDirectoryAutocompleteChange}
 							onDirectoryAutocompleteControllerChange={onDirectoryAutocompleteControllerChange}
@@ -280,18 +305,24 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 						<ChatComposerSendControls
 							companyKnowledgeEnabled={companyKnowledgeEnabled}
 							composerStatus={submitStatus}
+							dictationState={dictationState}
+							dictationTranscriptPreview={dictationTranscriptPreview}
 							experimentalDarkCta={experimentalDarkCta}
 							hideReasoningSelector={hideSourceAndModelControls}
 							isComposerBusy={isComposerBusy}
 							micStream={micStream}
+							onAcceptDictation={onAcceptDictation}
+							onCancelDictation={onCancelDictation}
 							onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
 							onOpenChange={handleAutoMenuOpenChange}
 							onReasoningChange={handleReasoningChange}
 							onStop={onStop}
+							onStartDictation={onStartDictation}
 							onToggleRealtimeVoice={onToggleRealtimeVoice}
 							open={isAutoMenuOpen}
 							prompt={prompt}
 							realtimeVoiceActive={realtimeVoiceActive}
+							realtimeVoiceState={realtimeVoiceState}
 							selectedReasoning={selectedReasoning}
 							webResultsEnabled={webResultsEnabled}
 							onWebResultsChange={setWebResultsEnabled}
