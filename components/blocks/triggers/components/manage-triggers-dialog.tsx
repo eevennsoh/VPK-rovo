@@ -147,7 +147,7 @@ export function ManageTriggersDialog({
 	);
 }
 
-function getAutomationRuleSecondary(rule: AgentAutomationRule): string {
+export function getAutomationRuleSecondary(rule: AgentAutomationRule): string {
 	const triggerCount = rule.triggers.length;
 	const providers = Array.from(new Set(
 		rule.triggers
@@ -265,7 +265,7 @@ function ManageTriggersRow({
 					<div className="truncate text-xs leading-4 text-text-subtle">
 						{secondary}
 					</div>
-					<div className="truncate text-xs leading-4 text-text-subtlest">
+					<div className="mt-2 truncate text-xs leading-4 text-text">
 						Starts with {firstTriggerLabel}
 					</div>
 				</div>

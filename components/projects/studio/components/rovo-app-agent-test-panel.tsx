@@ -13,7 +13,8 @@ import {
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
 import { AgentAutomationFlowCover } from "@/components/blocks/triggers/components/agent-automation-flow-cover";
-import { renderAgentTriggerProviderIcon } from "@/components/blocks/triggers/page";
+import { getAutomationRuleSecondary } from "@/components/blocks/triggers/components/manage-triggers-dialog";
+import { renderAgentTriggerProviderTileIcon, TriggerConfigAutomationDialog } from "@/components/blocks/triggers/page";
 import {
 	getAgentAutomationRuleLabel,
 	getAgentTriggerReadableLabel,
@@ -25,6 +26,7 @@ import ChatPanel, { type ChatPanelAgentVersionOption } from "@/components/projec
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Lozenge } from "@/components/ui/lozenge";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -38,13 +40,14 @@ import { cn } from "@/lib/utils";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
+import AutomationIcon from "@atlaskit/icon/core/automation";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 
 const AGENT_TEST_MAX_CONVERSATION_STARTERS = 3;
-const AGENT_TEST_CALLBACK_DELAY_MS = 900;
+const AGENT_TEST_CALLBACK_DELAY_MS = 1600;
 const AGENT_TEST_CHAT_ILLUSTRATION_LIGHT_SRC = "/illustration-spot/general/chat-6/light.svg";
 const AGENT_TEST_CHAT_ILLUSTRATION_DARK_SRC = "/illustration-spot/general/chat-6/dark.svg";
 const AGENT_TEST_AUTOMATION_ILLUSTRATION_LIGHT_SRC = "/illustration-spot/general/automation-2/light.svg";
@@ -585,18 +588,24 @@ export function AgentTestAutomationDetailView({
 }>): ReactElement {
 	const [testSelection, setTestSelection] = useState<AutomationTestSelection | null>(null);
 	const [pendingSelection, setPendingSelection] = useState<AutomationTestSelection | null>(null);
+	const [isEditOpen, setIsEditOpen] = useState(false);
+	// Edits made in the in-situ "Edit automation" modal are reflected locally so
+	// the test card updates without leaving the Test view (the test snapshot is
+	// ephemeral, so a local override is the source of truth here).
+	const [editedRule, setEditedRule] = useState<AgentAutomationRule | null>(null);
+	const effectiveRule = editedRule ?? rule;
 	const testResult = useMemo(() => {
 		if (!testSelection) {
 			return null;
 		}
 
-		if (rule.id !== testSelection.ruleId) {
+		if (effectiveRule.id !== testSelection.ruleId) {
 			return null;
 		}
 
-		const trigger = rule.triggers.find((item) => item.id === testSelection.triggerId);
-		return trigger ? createAutomationTestResult(rule, ruleIndex, trigger) : null;
-	}, [rule, ruleIndex, testSelection]);
+		const trigger = effectiveRule.triggers.find((item) => item.id === testSelection.triggerId);
+		return trigger ? createAutomationTestResult(effectiveRule, ruleIndex, trigger) : null;
+	}, [effectiveRule, ruleIndex, testSelection]);
 
 	useEffect(() => {
 		if (!pendingSelection) {
@@ -614,33 +623,36 @@ export function AgentTestAutomationDetailView({
 	}, [pendingSelection]);
 
 	return (
-		<div className="flex min-h-0 flex-1 items-start justify-center overflow-y-auto p-6">
+		<div className="scroll-mask-top flex min-h-0 flex-1 items-start justify-center overflow-y-auto pb-6 pt-6">
 			<div className="grid w-full max-w-[56rem] gap-4">
-				<AutomationTestCard
-					onTest={(trigger) => {
-						setTestSelection(null);
-						setPendingSelection({ ruleId: rule.id, triggerId: trigger.id });
-					}}
-					pendingTriggerId={
-						pendingSelection?.ruleId === rule.id ? pendingSelection.triggerId : null
-					}
-					rule={rule}
-					ruleIndex={ruleIndex}
-				/>
-				{testResult ? (
-					<div className="grid gap-3 rounded-xl border border-border bg-surface p-4">
-						<div>
-							<h3 className="text-sm font-semibold leading-5 text-text">Test callback</h3>
-							<p className="text-sm leading-5 text-text-subtle">
-								{testResult.summary}
-							</p>
-						</div>
-						<div className="grid gap-3 md:grid-cols-2">
+				<div className="grid">
+					<AutomationTestCard
+						attached={Boolean(testResult)}
+						onEdit={() => setIsEditOpen(true)}
+						onTest={(trigger) => {
+							setTestSelection(null);
+							setPendingSelection({ ruleId: effectiveRule.id, triggerId: trigger.id });
+						}}
+						pendingTriggerId={
+							pendingSelection?.ruleId === effectiveRule.id ? pendingSelection.triggerId : null
+						}
+						rule={effectiveRule}
+						ruleIndex={ruleIndex}
+						testedTriggerId={testResult ? testSelection?.triggerId ?? null : null}
+					/>
+					{testResult ? (
+						<div className="grid gap-4 rounded-b-xl border border-border bg-surface p-4">
 							<TestJsonBlock title="Sample event payload" value={testResult.payload} />
 							<TestJsonBlock title="Callback result" value={testResult.callback} />
 						</div>
-					</div>
-				) : null}
+					) : null}
+				</div>
+				<TriggerConfigAutomationDialog
+					automationRule={effectiveRule}
+					onOpenChange={setIsEditOpen}
+					onSave={(savedRule) => setEditedRule(savedRule)}
+					open={isEditOpen}
+				/>
 			</div>
 		</div>
 	);
@@ -652,80 +664,116 @@ interface AutomationTestSelection {
 }
 
 interface AutomationTestResult {
-	summary: string;
 	payload: Record<string, unknown>;
 	callback: Record<string, unknown>;
 }
 
 function AutomationTestCard({
+	attached = false,
+	onEdit,
 	onTest,
 	pendingTriggerId,
 	rule,
 	ruleIndex,
+	testedTriggerId,
 }: Readonly<{
+	attached?: boolean;
+	onEdit?: () => void;
 	onTest: (trigger: AgentTriggerValue) => void;
 	pendingTriggerId: string | null;
 	rule: AgentAutomationRule;
 	ruleIndex: number;
+	testedTriggerId: string | null;
 }>): ReactElement {
 	const title = getAgentAutomationRuleLabel(rule, ruleIndex);
-	const prompt = rule.prompt?.trim() || "No instructions added yet.";
+	const secondary = getAutomationRuleSecondary(rule);
 	const activeLabel = rule.enabled === false ? "Inactive" : "Active";
+	const firstTriggerLabel = rule.triggers[0]
+		? getAgentTriggerReadableLabel(rule.triggers[0])
+		: "No event triggers";
 
 	return (
-		<div className="grid gap-3 rounded-xl border border-border bg-surface p-4">
-			<div className="flex min-w-0 items-start justify-between gap-3">
+		<div
+			className={cn(
+				"grid gap-4 rounded-xl border border-border bg-surface p-4",
+				rule.triggers.length > 0 && "pb-0",
+				attached && "rounded-b-none border-b-0",
+			)}
+		>
+			<div className="grid gap-2">
+				<div className="flex items-center justify-between gap-3">
+					<AgentTestAutomationFlow rule={rule} />
+					{onEdit ? (
+						<Button
+							className="shrink-0"
+							onClick={onEdit}
+							size="compact"
+							type="button"
+							variant="outline"
+						>
+							Edit
+						</Button>
+					) : null}
+				</div>
 				<div className="min-w-0">
 					<div className="flex min-w-0 items-center gap-2">
-						<h3 className="truncate text-sm font-semibold leading-5 text-text">{title}</h3>
-						<span className="shrink-0 rounded bg-bg-neutral px-1.5 py-0.5 text-xs font-medium leading-4 text-text-subtle">
+						<h3 className="truncate text-sm font-medium leading-5 text-text">{title}</h3>
+						<Lozenge className="shrink-0" variant={rule.enabled === false ? "neutral" : "success"}>
 							{activeLabel}
-						</span>
+						</Lozenge>
 					</div>
-					<p className="mt-1 line-clamp-2 text-sm leading-5 text-text-subtle">{prompt}</p>
-				</div>
-				<div className="shrink-0 text-xs font-medium leading-4 text-text-subtle">
-					{rule.triggers.length} event{rule.triggers.length === 1 ? "" : "s"}
+					<p className="truncate text-xs leading-4 text-text-subtle">{secondary}</p>
+					<p className="mt-2 truncate text-xs leading-4 text-text">
+						Starts with {firstTriggerLabel}
+					</p>
 				</div>
 			</div>
-			<div className="grid gap-2">
-				{rule.triggers.length > 0 ? (
-					rule.triggers.map((trigger) => (
+			{rule.triggers.length > 0 ? (
+				<div className="grid">
+					{rule.triggers.map((trigger) => (
 						<AutomationTestEventRow
 							key={trigger.id}
 							isPending={pendingTriggerId === trigger.id}
+							isTested={testedTriggerId === trigger.id}
 							onTest={() => onTest(trigger)}
 							trigger={trigger}
 						/>
-					))
-				) : (
-					<div className="rounded-lg border border-dashed border-border bg-bg-input p-3 text-sm text-text-subtle">
-						No event triggers configured.
-					</div>
-				)}
-			</div>
+					))}
+				</div>
+			) : (
+				<div className="rounded-lg border border-dashed border-border bg-bg-input p-3 text-sm text-text-subtle">
+					No event triggers configured.
+				</div>
+			)}
 		</div>
 	);
 }
 
 function AutomationTestEventRow({
 	isPending,
+	isTested,
 	onTest,
 	trigger,
 }: Readonly<{
 	isPending: boolean;
+	isTested: boolean;
 	onTest: () => void;
 	trigger: AgentTriggerValue;
 }>): ReactElement {
 	const provider = getTriggerProvider(trigger.providerId);
-	const icon = renderAgentTriggerProviderIcon(trigger);
+	const tileIcon = renderAgentTriggerProviderTileIcon(trigger);
 	const label = getAgentTriggerReadableLabel(trigger);
 	const connectionLabel = getConnectionTestLabel(trigger);
+	const testButtonLabel = isPending
+		? "Testing"
+		: isTested
+			? `Test (${getFakeTestDurationLabel(trigger.id)})`
+			: "Test";
 
 	return (
-		<div className="flex min-w-0 items-center gap-3 rounded-lg border border-border bg-bg-input px-3 py-2">
-			<span className="flex size-6 shrink-0 items-center justify-center text-icon-subtle">
-				{icon}
+		<div className="flex w-full items-center gap-3 border-t border-border py-3">
+			<span className="rich-text-command-menu-avatar inline-flex size-8 shrink-0 items-center justify-center">
+				{tileIcon ?? <AutomationIcon label="" size="small" />}
 			</span>
 			<div className="min-w-0 flex-1">
 				<div className="truncate text-sm font-medium leading-5 text-text">{label}</div>
@@ -734,6 +782,7 @@ function AutomationTestEventRow({
 				</div>
 			</div>
 			<Button
+				className="shrink-0"
 				disabled={isPending}
 				isLoading={isPending}
 				onClick={onTest}
@@ -741,7 +790,7 @@ function AutomationTestEventRow({
 				type="button"
 				variant="outline"
 			>
-				{isPending ? "Testing" : "Test"}
+				{testButtonLabel}
 			</Button>
 		</div>
 	);
@@ -756,12 +805,27 @@ function TestJsonBlock({
 }>): ReactElement {
 	return (
 		<div className="grid min-w-0 gap-2">
-			<div className="text-xs font-semibold uppercase leading-4 text-text-subtle">{title}</div>
+			<div className="text-xs font-semibold leading-4 text-text-subtlest">{title}</div>
 			<pre className="max-h-80 overflow-auto rounded-lg bg-surface-sunken p-3 text-xs leading-5 text-text">
 				{JSON.stringify(value, null, "\t")}
 			</pre>
 		</div>
 	);
+}
+
+// Fabricates a stable "X min Y seconds" run time for a completed test. The
+// real callback is near-instant, so we derive a deterministic, believably
+// longer duration from the trigger id (same trigger → same reported time).
+function getFakeTestDurationLabel(seed: string): string {
+	let hash = 0;
+	for (let index = 0; index < seed.length; index += 1) {
+		hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+	}
+	const totalSeconds = 68 + (hash % 112); // ~1–3 minutes
+	const minutes = Math.floor(totalSeconds / 60);
+	const seconds = totalSeconds % 60;
+	const secondsLabel = `${seconds} second${seconds === 1 ? "" : "s"}`;
+	return minutes > 0 ? `${minutes} min ${secondsLabel}` : secondsLabel;
 }
 
 function getConnectionTestLabel(trigger: AgentTriggerValue): string | null {
@@ -814,7 +878,6 @@ function createAutomationTestResult(
 	};
 
 	return {
-		summary: `${automationName} tested with ${eventLabel}.`,
 		payload,
 		callback,
 	};
