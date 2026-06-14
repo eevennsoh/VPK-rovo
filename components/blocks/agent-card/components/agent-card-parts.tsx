@@ -92,6 +92,8 @@ export interface AgentCardShellProps {
 	selectLabel?: string;
 	/** Keeps the hover visual treatment active while a child popup/menu is open. */
 	active?: boolean;
+	/** Allows shaped variants to provide their own non-rectangular hover elevation. */
+	hoverShadow?: "default" | "none";
 	className?: string;
 	children: ReactNode;
 }
@@ -104,12 +106,14 @@ export function AgentCardShell({
 	onSelect,
 	selectLabel = "Select item",
 	active = false,
+	hoverShadow = "default",
 	className,
 	children,
 }: Readonly<AgentCardShellProps>) {
 	const interactive = Boolean(onSelect);
 	const shouldReduceMotion = useReducedMotion();
-	const hoverAnimation = { boxShadow: OVERLAY_SHADOW } as const;
+	const hoverAnimation = hoverShadow === "default" ? ({ boxShadow: OVERLAY_SHADOW } as const) : undefined;
+	const restAnimation = hoverShadow === "default" ? ({ boxShadow: "none" } as const) : undefined;
 	const tapAnimation = shouldReduceMotion ? undefined : ({ scale: 0.998 } as const);
 	const handleSelect = () => onSelect?.();
 
@@ -121,7 +125,7 @@ export function AgentCardShell({
 			className,
 		),
 		style: { willChange: "transform" },
-		animate: active ? hoverAnimation : ({ boxShadow: "none" } as const),
+		animate: hoverAnimation ? (active ? hoverAnimation : restAnimation) : undefined,
 		transition: CARD_HOVER_TRANSITION,
 		whileHover: hoverAnimation,
 		whileTap: interactive ? tapAnimation : undefined,

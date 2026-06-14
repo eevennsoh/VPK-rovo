@@ -56,7 +56,7 @@ export default function AgentCardPage(): React.ReactElement {
 					attributionKind="company"
 					avatarSrc="/avatar-agent/teamwork-agents/decision-director.svg"
 					capabilities={CAPABILITIES}
-					className="max-h-[400px] w-[420px]"
+					className="w-full max-w-[376px]"
 					collaborators={COLLABORATORS}
 					description="Review DACI decisions, close context gaps, and suggest the next decision-ready resources."
 					name="Decision Director"
@@ -116,6 +116,7 @@ export default function AgentCardPage(): React.ReactElement {
 			<DemoSection label="Simple">
 				<AgentCard
 					className="w-[420px]"
+					collaborators={COLLABORATORS}
 					description="Review DACI decisions, close context gaps, and suggest the next decision-ready resources."
 					iconSrc="/avatar-agent/teamwork-agents/decision-director.svg"
 					name="Decision Director"

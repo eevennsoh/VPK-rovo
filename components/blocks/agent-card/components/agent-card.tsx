@@ -4,7 +4,7 @@
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
-import { type CSSProperties, type MouseEvent, type ReactElement, type ReactNode, type UIEvent, useCallback, useState } from "react";
+import { type CSSProperties, type MouseEvent, type ReactElement, type ReactNode, type UIEvent, useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import ClockIcon from "@atlaskit/icon/core/clock";
@@ -123,6 +123,58 @@ const SCROLL_MASK_STYLE = {
 	"--scroll-mask-fade-size": string;
 	"--scroll-mask-scrollbar-width": string;
 };
+const EXPANDED_TICKET_TOP_MASK_IMAGE = [
+	"radial-gradient(circle 8px at 0 100%, transparent 0 7.5px, black 8px)",
+	"radial-gradient(circle 8px at 100% 100%, transparent 0 7.5px, black 8px)",
+].join(", ");
+const EXPANDED_TICKET_BOTTOM_MASK_IMAGE = [
+	"radial-gradient(circle 8px at 0 0, transparent 0 7.5px, black 8px)",
+	"radial-gradient(circle 8px at 100% 0, transparent 0 7.5px, black 8px)",
+].join(", ");
+const EXPANDED_TICKET_SHADOW_MASK_IMAGE = [
+	"radial-gradient(circle 8px at 0 var(--agent-card-ticket-seam-y, 0px), transparent 0 7.5px, black 8px)",
+	"radial-gradient(circle 8px at 100% var(--agent-card-ticket-seam-y, 0px), transparent 0 7.5px, black 8px)",
+].join(", ");
+const EXPANDED_TICKET_TOP_STYLE = {
+	maskComposite: "intersect",
+	maskImage: EXPANDED_TICKET_TOP_MASK_IMAGE,
+	maskRepeat: "no-repeat, no-repeat",
+	maskSize: "100% 100%, 100% 100%",
+	WebkitMaskComposite: "source-in",
+	WebkitMaskImage: EXPANDED_TICKET_TOP_MASK_IMAGE,
+	WebkitMaskRepeat: "no-repeat, no-repeat",
+	WebkitMaskSize: "100% 100%, 100% 100%",
+} satisfies CSSProperties;
+const EXPANDED_TICKET_BOTTOM_STYLE = {
+	maskComposite: "intersect",
+	maskImage: EXPANDED_TICKET_BOTTOM_MASK_IMAGE,
+	maskRepeat: "no-repeat, no-repeat",
+	maskSize: "100% 100%, 100% 100%",
+	WebkitMaskComposite: "source-in",
+	WebkitMaskImage: EXPANDED_TICKET_BOTTOM_MASK_IMAGE,
+	WebkitMaskRepeat: "no-repeat, no-repeat",
+	WebkitMaskSize: "100% 100%, 100% 100%",
+} satisfies CSSProperties;
+const EXPANDED_TICKET_ELEVATION_CLASS_NAME = "agent-card-ticket-shadow";
+const EXPANDED_TICKET_WRAPPER_CLASS_NAME = "relative flex min-h-0 flex-auto flex-col rounded-[16px]";
+const EXPANDED_TICKET_SHADOW_CLASS_NAME = cn(
+	"pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100",
+	EXPANDED_TICKET_ELEVATION_CLASS_NAME,
+);
+const EXPANDED_TICKET_SHADOW_STYLE = {
+	maskComposite: "intersect",
+	maskImage: EXPANDED_TICKET_SHADOW_MASK_IMAGE,
+	maskRepeat: "no-repeat, no-repeat",
+	maskSize: "100% 100%, 100% 100%",
+	WebkitMaskComposite: "source-in",
+	WebkitMaskImage: EXPANDED_TICKET_SHADOW_MASK_IMAGE,
+	WebkitMaskRepeat: "no-repeat, no-repeat",
+	WebkitMaskSize: "100% 100%, 100% 100%",
+} satisfies CSSProperties;
+const EXPANDED_TICKET_TEAR_LINE_STYLE = {
+	maskImage: "repeating-linear-gradient(to right, black 0 6px, transparent 6px 16px)",
+	WebkitMaskImage: "repeating-linear-gradient(to right, black 0 6px, transparent 6px 16px)",
+} satisfies CSSProperties;
 const STAMP_PERFORATION_INTERVAL_COUNT = 29;
 const STAMP_PERFORATION_INTERVAL = `calc(100% / ${STAMP_PERFORATION_INTERVAL_COUNT})`;
 const STAMP_PERFORATION_PATTERN_OFFSET = `calc(${STAMP_PERFORATION_INTERVAL} / -2)`;
@@ -243,10 +295,27 @@ function getProjectBadgeAvatarSrc(seed: string) {
 	return PROJECT_BADGE_AVATAR_SRCS[hash % PROJECT_BADGE_AVATAR_SRCS.length];
 }
 
+function AgentCardTicketSeam() {
+	return (
+		<div
+			aria-hidden
+			className="agent-card-ticket-seam pointer-events-none relative h-0"
+			data-slot="agent-card-ticket-seam"
+			style={{ zIndex: 30 }}
+		>
+			<span
+				className="pointer-events-none absolute top-0 right-2 left-2 h-px bg-border"
+				data-slot="agent-card-ticket-tear-line"
+				style={EXPANDED_TICKET_TEAR_LINE_STYLE}
+			/>
+		</div>
+	);
+}
+
 /**
  * Agent card layout:
- * - `"expanded"` (default): cover banner, byline, capabilities feature list, and a
- *   stats / collaborators footer. Matches the rich template-detail card.
+ * - `"expanded"` (default): cover banner, byline, inline template stats,
+ *   sources, skills, and a stacked template-detail body.
  * - `"experimental"` / `"experimental-template"`: compact banner-first treatment
  *   with inline metrics, app stack, skill stack, and feature list in a raised body panel.
  * - `"experimental-profile"`: built-agent profile card on a plain elevation surface
@@ -298,10 +367,10 @@ export interface AgentCardProps {
 
 /**
  * Agent card — a bordered, hover-elevating surface. The default `"expanded"` variant
- * shows a cover banner, attribution byline, "Works with" sources, "Skills" tags, a
- * scrollable capabilities feature list, and a stats / collaborators footer that swaps
- * to a "Use template" action on hover. The experimental template variant renders
- * a banner-first card with inline metrics and stacked body sections, while the
+ * shows a cover banner, attribution byline, inline template stats, "Works with"
+ * sources, "Skills" tags, and a scrollable capabilities feature list. The
+ * experimental template variant renders a banner-first card with inline metrics
+ * and stacked body sections, while the
  * experimental profile variant is a plain-surface entity-style profile card
  * (hexagon avatar, byline, description, social-proof footer). The `"template"`
  * variant renders a flat card (icon + name, description, "Works with", "Skills").
@@ -341,13 +410,16 @@ export function AgentCard({
 	const showRating = !showStats && typeof rating === "number";
 	const showChats = !showStats && typeof chatCount === "number";
 	const showCollaborators = collaborators.length > 0;
-	const showFooter = showStats || showRating || showChats || showCollaborators;
 	const [bodyScrolled, setBodyScrolled] = useState(false);
+	const ticketRef = useRef<HTMLDivElement | null>(null);
+	const ticketHeaderRef = useRef<HTMLDivElement | null>(null);
 	const visibleCollaborators = collaborators.slice(0, MAX_VISIBLE_COLLABORATORS);
 	const hiddenCollaboratorCount =
 		Math.max(collaborators.length - MAX_VISIBLE_COLLABORATORS, 0) + (collaboratorOverflow ?? 0);
 	const showHiddenCollaboratorCount =
 		visibleCollaborators.length === MAX_VISIBLE_COLLABORATORS && hiddenCollaboratorCount > 0;
+	const expandedStats = stats.slice(0, 2);
+	const showExpandedInlineStats = expandedStats.length > 0 || showRating || showChats;
 	const handleUseTemplateClick = (event: MouseEvent<HTMLButtonElement>) => {
 		event.stopPropagation();
 		onSelect?.();
@@ -372,6 +444,27 @@ export function AgentCard({
 		},
 		[onSelect],
 	);
+	useEffect(() => {
+		if (variant !== "expanded") return undefined;
+
+		const ticket = ticketRef.current;
+		const header = ticketHeaderRef.current;
+
+		if (!ticket || !header) return undefined;
+
+		const updateSeamOffset = () => {
+			ticket.style.setProperty("--agent-card-ticket-seam-y", `${header.offsetHeight}px`);
+		};
+
+		updateSeamOffset();
+
+		if (typeof ResizeObserver === "undefined") return undefined;
+
+		const resizeObserver = new ResizeObserver(updateSeamOffset);
+		resizeObserver.observe(header);
+
+		return () => resizeObserver.disconnect();
+	}, [variant]);
 	const projectBadgeAvatarSrc = getProjectBadgeAvatarSrc(`${publisher}:${name}`);
 	const renderAvatarBadge = (badgeClassName?: string) => {
 		if (attributionKind === "company") {
@@ -426,6 +519,22 @@ export function AgentCard({
 				<AgentCardDescription>
 					{description ?? `Learn how ${name} can help your team work faster.`}
 				</AgentCardDescription>
+
+				{showCollaborators ? (
+					<AgentCardSection label="Trusted by teammates">
+						<AvatarGroup className="items-center" label="Collaborators">
+							{visibleCollaborators.map((person) => (
+								<Avatar key={person.src} size="sm">
+									<AvatarImage alt={person.name} src={person.src} />
+									<AvatarFallback>{person.name.slice(0, 2)}</AvatarFallback>
+								</Avatar>
+							))}
+							{showHiddenCollaboratorCount ? (
+								<AvatarGroupCount>+{hiddenCollaboratorCount}</AvatarGroupCount>
+							) : null}
+						</AvatarGroup>
+					</AgentCardSection>
+				) : null}
 
 				{sources.length > 0 ? (
 					<AgentCardSection label="Works with">
@@ -782,123 +891,133 @@ export function AgentCard({
 	return (
 		<AgentCardShell
 			active={active}
-			className={cn("gap-0 overflow-clip p-0", className)}
+			className={cn(
+				"gap-0 overflow-visible rounded-[16px] bg-transparent p-0 after:rounded-[16px] after:border-0 [&_[data-slot=agent-card-select]]:rounded-[16px]",
+				className,
+			)}
+			hoverShadow="none"
 			onSelect={onSelect}
 			selectLabel={`Select ${name}`}
 		>
-			<div className="shrink-0 bg-surface" data-slot="agent-card-sticky-header">
-				<AgentCardBanner avatarBadge={avatarBadge} avatarSrc={avatarSrc} backgroundColor={coverBackgroundColor} />
-				<div className="px-4 pt-3">
-					<AgentCardHeader
-						action={
-							onMoreActions ? (
-								<AgentCardMoreButton label={`More actions for ${name}`} onClick={onMoreActions} />
-							) : null
-						}
-						byline={<AgentCardByline publisher={publisher} verified={verified} />}
-						title={name}
+			<div className={EXPANDED_TICKET_WRAPPER_CLASS_NAME} data-slot="agent-card-ticket" ref={ticketRef}>
+				<div
+					aria-hidden
+					className={cn(EXPANDED_TICKET_SHADOW_CLASS_NAME, active && "opacity-100")}
+					data-slot="agent-card-ticket-shadow"
+				>
+					<div
+						className="size-full rounded-[16px] bg-surface"
+						data-slot="agent-card-ticket-shadow-shape"
+						style={EXPANDED_TICKET_SHADOW_STYLE}
 					/>
-					<AgentCardDescription className="mt-1">
-						{description ?? `Learn how ${name} can help your team work faster.`}
-					</AgentCardDescription>
 				</div>
-			</div>
-
-			{/* Raise the scroll body above the absolute z-0 select-overlay button and give
-			    it pointer-events so wheel/drag scroll lands here. Plain clicks are forwarded
-			    to onSelect (see handleBodyClick); interactive descendants keep their behavior. */}
-			<div
-				className="pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-2 [scrollbar-gutter:stable]"
-				data-slot="agent-card-scroll"
-				onClick={onSelect ? handleBodyClick : undefined}
-				onScroll={handleBodyScroll}
-				style={bodyScrolled ? SCROLL_MASK_STYLE : undefined}
-			>
-				{sources.length > 0 ? (
-					<AgentCardSection label="Works with">
-						<TWGAppstack animated={false} className="justify-start" iconSize="md" maxVisible={8} sources={sources} />
-					</AgentCardSection>
-				) : null}
-
-				{skills.length > 0 ? (
-					<AgentCardSection label="Skills">
-						<SkillTagGroup className={SKILLS_GROUP_CLASS_NAME} maxRows={SKILLS_MAX_ROWS}>
-							{skills.map((skill) => (
-								<SkillTag color={skill.color ?? "default"} icon={skill.icon ?? getSkillIcon(skill.label)} key={skill.label}>
-									{skill.label}
-								</SkillTag>
-							))}
-						</SkillTagGroup>
-					</AgentCardSection>
-				) : null}
-
-				<div className="py-1.5">
-					<Separator />
-				</div>
-
-				<div className="pb-4">
-					<AgentCardCapabilities items={capabilities} label={capabilitiesLabel} />
-				</div>
-			</div>
-
-			{showFooter ? (
-				<div className="relative shrink-0 overflow-clip border-t border-border bg-surface">
-					<AgentCardFooter className="justify-between px-4 py-3 transition-opacity duration-fast ease-out group-hover/card:opacity-0 group-focus-within/card:opacity-0">
-						<div className="flex items-center gap-6">
-							{showStats ? (
-								stats.map((stat) => (
-									<div className="flex flex-col" key={stat.label}>
-										<span className="text-sm font-semibold leading-5 text-text">{stat.value}</span>
-										<span className="leading-4">{stat.label}</span>
-									</div>
-								))
-							) : (
-								<div className="flex items-center gap-4">
-									{showRating ? (
-										<AgentCardStat
-											icon={<StarUnstarredIcon label="" size="small" spacing="none" color="currentColor" />}
-										>
-											{rating.toFixed(1)}
-											{typeof feedbackCount === "number" ? ` (${formatCompact(feedbackCount)} feedback)` : null}
-										</AgentCardStat>
-									) : null}
-									{showChats ? (
-										<AgentCardStat
-											icon={<AiChatIcon label="" size="small" spacing="none" color="currentColor" />}
-										>
-											{formatCompact(chatCount)} chats
-										</AgentCardStat>
-									) : null}
-								</div>
-							)}
+				<div className="relative z-10 shrink-0" ref={ticketHeaderRef}>
+					<div
+						className="relative z-10 overflow-hidden rounded-t-[16px] border-x border-t border-border bg-surface [&_[data-slot=agent-card-banner]>div:first-child]:mb-[-1px] [&_[data-slot=agent-card-banner]>div:first-child]:h-[49px]"
+						data-slot="agent-card-sticky-header"
+						style={EXPANDED_TICKET_TOP_STYLE}
+					>
+						<AgentCardBanner avatarBadge={avatarBadge} avatarSrc={avatarSrc} backgroundColor={coverBackgroundColor} />
+						<div className="px-4 pt-3 pb-4">
+							<AgentCardHeader
+								action={
+									onMoreActions ? (
+										<AgentCardMoreButton label={`More actions for ${name}`} onClick={onMoreActions} />
+									) : null
+								}
+								byline={<AgentCardByline publisher={publisher} verified={verified} />}
+								title={name}
+							/>
+							<AgentCardDescription className="mt-1">
+								{description ?? `Learn how ${name} can help your team work faster.`}
+							</AgentCardDescription>
+							{showExpandedInlineStats ? (
+								<AgentCardFooter className="mt-4">
+									{expandedStats.length > 0 ? (
+										expandedStats.map((stat, index) => (
+											<AgentCardStat
+												icon={getAgentCardStatIcon(stat, index)}
+												key={stat.label}
+											>
+												{formatAgentCardStatText(stat)}
+											</AgentCardStat>
+										))
+									) : (
+										<>
+											{showRating ? (
+												<AgentCardStat
+													icon={<StarUnstarredIcon label="" size="small" spacing="none" color="currentColor" />}
+												>
+													{rating.toFixed(1)}
+													{typeof feedbackCount === "number" ? ` (${formatCompact(feedbackCount)} feedback)` : null}
+												</AgentCardStat>
+											) : null}
+											{showChats ? (
+												<AgentCardStat
+													icon={<AiChatIcon label="" size="small" spacing="none" color="currentColor" />}
+												>
+													{formatCompact(chatCount)} chats
+												</AgentCardStat>
+											) : null}
+										</>
+									)}
+								</AgentCardFooter>
+							) : null}
 						</div>
-						{showCollaborators ? (
-							<AvatarGroup label="Collaborators">
-								{visibleCollaborators.map((person) => (
-									<Avatar key={person.src} size="sm">
-										<AvatarImage alt={person.name} src={person.src} />
-										<AvatarFallback>{person.name.slice(0, 2)}</AvatarFallback>
-									</Avatar>
-								))}
-								{showHiddenCollaboratorCount ? (
-									<AvatarGroupCount>+{hiddenCollaboratorCount}</AvatarGroupCount>
-								) : null}
-							</AvatarGroup>
-						) : null}
-					</AgentCardFooter>
-					<div className="pointer-events-none absolute inset-0 flex items-center px-4 py-2 opacity-0 transition-opacity duration-fast ease-out group-hover/card:pointer-events-auto group-hover/card:opacity-100 group-focus-within/card:pointer-events-auto group-focus-within/card:opacity-100">
-						<Button
-							className="w-full"
-							onClick={handleUseTemplateClick}
-							tabIndex={-1}
-							type="button"
-							variant="outline"
-						>
-							Use template
-						</Button>
 					</div>
 				</div>
-			) : null}
+
+				<AgentCardTicketSeam />
+
+				<div className="relative z-10 flex min-h-0 flex-auto flex-col">
+					{/* Raise the ticket body above the absolute z-0 select-overlay button. The
+					    inner div owns wheel/drag scrolling; plain clicks are forwarded to onSelect
+					    (see handleBodyClick), while interactive descendants keep their behavior. */}
+					<div
+						className="pointer-events-auto relative z-10 flex min-h-0 flex-auto flex-col overflow-hidden rounded-b-[16px] border-x border-b border-border bg-surface"
+						data-slot="agent-card-scroll"
+						onClick={onSelect ? handleBodyClick : undefined}
+						style={EXPANDED_TICKET_BOTTOM_STYLE}
+					>
+						<div
+							className="relative z-10 flex min-h-0 flex-auto flex-col gap-3 overflow-y-auto px-4 pt-4 pb-4 text-text [scrollbar-gutter:stable]"
+							onScroll={handleBodyScroll}
+							style={bodyScrolled ? SCROLL_MASK_STYLE : undefined}
+						>
+							{sources.length > 0 ? (
+								<AgentCardSection label="Works with">
+									<TWGAppstack animated={false} className="justify-start" iconSize="md" maxVisible={7} sources={sources} />
+								</AgentCardSection>
+							) : null}
+
+							{skills.length > 0 ? (
+								<AgentCardSection label="Skills">
+									<SkillTagGroup className={SKILLS_GROUP_CLASS_NAME} maxRows={SKILLS_MAX_ROWS}>
+										{skills.map((skill) => (
+											<SkillTag color={skill.color ?? "default"} icon={skill.icon ?? getSkillIcon(skill.label)} key={skill.label}>
+												{skill.label}
+											</SkillTag>
+										))}
+									</SkillTagGroup>
+								</AgentCardSection>
+							) : null}
+
+							{capabilities.length > 0 ? (
+								<>
+									<div className="py-1.5">
+										<Separator />
+									</div>
+									<AgentCardCapabilities
+										items={capabilities}
+										label={capabilitiesLabel}
+										listClassName="gap-2"
+									/>
+								</>
+							) : null}
+						</div>
+					</div>
+				</div>
+			</div>
 		</AgentCardShell>
 	);
 }

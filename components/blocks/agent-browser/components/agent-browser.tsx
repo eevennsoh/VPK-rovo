@@ -426,14 +426,6 @@ export function AgentBrowserDialog({
 	variant = "default",
 	...browserProps
 }: Readonly<AgentBrowserDialogProps>) {
-	// The experimental browser locks to the Templates view's natural single-card-row
-	// height, so there is no dead space below the cards and the Agents view scrolls
-	// inside the exact same box (switching tabs never changes the dialog height). The
-	// 553px template card is a deterministic, uniform height across every category:
-	//   72 (header) + 108 (search + category-chip rows + gaps) + 32 (card row pt-2 +
-	//   pb-6) + 553 (card) = 765.
-	// min() clamps to the viewport on short screens; there the card stretch-fills the
-	// shrunken row and its detail region scrolls internally rather than clipping.
 	const isExperimental = variant === "experimental";
 
 	return (
@@ -442,7 +434,7 @@ export function AgentBrowserDialog({
 				className={cn(
 					"grid max-h-[calc(100svh-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[1200px]",
 					isExperimental
-						? "h-[min(765px,calc(100svh-2rem))]"
+						? "h-auto"
 						: "h-[min(800px,calc(100svh-2rem))]",
 				)}
 				showCloseButton={false}
@@ -814,7 +806,7 @@ function ExperimentalAgentBrowser({
 				// shadow. Templates mode owns its bottom spacing inside the carousel row
 				// instead (see ExperimentalTemplateMode), so no pb-6 there to avoid
 				// doubling it.
-				"flex h-full min-h-0 flex-col gap-4 overflow-y-auto px-6 pt-1",
+				"flex min-h-0 flex-col gap-4 overflow-y-auto px-6 pt-1",
 				templateModeActive ? null : "pb-6",
 				contentOverflow.showTopScrollMask ? "scroll-mask-top overscroll-contain" : null,
 			)}
@@ -1198,18 +1190,13 @@ function ExperimentalTemplateMode({
 	}
 
 	return (
-		<div className="mt-2 flex min-h-0 flex-1 flex-col gap-2">
-			{/* The carousel fills this flex-1 section, which shrinks with the dialog on
-			    short viewports. Cards stretch to fill the carousel height (see the row's
-			    items-stretch below) so on a short viewport the card shrinks and its detail
-			    region scrolls internally instead of clipping. overflow-x-clip crops the
-			    horizontal carousel bleed; overflow-y-visible would be forced to auto by the
-			    carousel's overflow-x-auto, so the carousel clips vertically — the row's
-			    pb-6 keeps the card inset 24px from that bottom clip edge for the gap + the
-			    hover shadow (mirroring px-6 on the sides). */}
-			<section aria-label="Agent templates" className="relative -mx-6 min-h-0 flex-1 overflow-x-clip overflow-y-visible">
+		<div className="mt-2 flex flex-col gap-2">
+			{/* The template row is content-height: the expanded AgentCard determines the
+			    directory height, while pb-6 keeps the ticket hover shadow away from the
+			    carousel's vertical clip edge. */}
+			<section aria-label="Agent templates" className="relative -mx-6 overflow-x-clip overflow-y-visible">
 				<div
-					className="h-full overflow-x-auto overflow-y-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+					className="overflow-x-auto overflow-y-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 					data-agent-templates-carousel
 					onScroll={updateScrollControls}
 					ref={setCarouselRef}
@@ -1217,11 +1204,7 @@ function ExperimentalTemplateMode({
 					<AnimatePresence custom={motionCustom} initial={false} mode="wait">
 						<motion.div
 							animate="center"
-							// h-full + items-stretch so each card fills the carousel height: it
-							// shows at its natural height when there is room and shrinks (detail
-							// scrolls) on short viewports. px-6 + pb-6 inset the card 24px from the
-							// horizontal and bottom clip edges; pt-2 leaves a little top room.
-							className="flex h-full w-max items-stretch gap-4 px-6 pt-2 pb-6"
+							className="flex w-max items-start gap-4 px-6 pt-2 pb-6"
 							custom={motionCustom}
 							exit="exit"
 							initial="enter"
@@ -1232,7 +1215,7 @@ function ExperimentalTemplateMode({
 							{templates.map((agent, index) => (
 								<motion.div
 									animate={{ opacity: 1, transform: "translateX(0px)" }}
-									className="h-full min-h-0 w-90 shrink-0 [will-change:transform,opacity]"
+									className="w-90 shrink-0 [will-change:transform,opacity]"
 									initial={{
 										opacity: 0,
 										transform: motionCustom.shouldReduceMotion ? "translateX(0px)" : `translateX(${motionCustom.direction * AGENT_BROWSER_TEMPLATE_CARD_ENTER_OFFSET}px)`,
@@ -1358,7 +1341,7 @@ function ExperimentalTemplateCard({
 			attributionKind={agent.attributionKind}
 			avatarSrc={agent.avatarSrc}
 			capabilities={agent.capabilities ?? EMPTY_TEMPLATE_CAPABILITIES}
-			className="h-full w-full"
+			className="w-full"
 			collaboratorOverflow={agent.collaboratorOverflow}
 			collaborators={agent.collaborators}
 			description={agent.description}
@@ -1369,7 +1352,7 @@ function ExperimentalTemplateCard({
 			skills={agent.skills}
 			sources={agent.sources}
 			stats={agent.stats}
-			variant="experimental-template"
+			variant="expanded"
 			verified={agent.verified}
 		/>
 	);
