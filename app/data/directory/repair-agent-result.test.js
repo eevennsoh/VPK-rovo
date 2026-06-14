@@ -95,6 +95,22 @@ test("an @[app:id] body does not re-weave its tool/knowledge facets as duplicate
 	assert.deepEqual(out.apps, ["Confluence", "Jira"]);
 });
 
+test("an explicit apps array weaves unified app chips, not duplicate facet chips", async () => {
+	const { repairGeneratedAgentCatalog } = await loadRepair();
+
+	const out = repairGeneratedAgentCatalog({
+		apps: ["Jira"],
+		instructions: "Use it for triage.",
+	});
+
+	assert.deepEqual(out.apps, ["Jira"]);
+	assert.deepEqual(out.tools, ["Jira"]);
+	assert.deepEqual(out.knowledge, ["Jira - all content"]);
+	assert.match(out.instructions, /@\[app:jira\]/u);
+	assert.doesNotMatch(out.instructions, /@\[tool:jira\]/u);
+	assert.doesNotMatch(out.instructions, /@\[knowledge:jira:all\]/u);
+});
+
 test("de-dupes when a body token repeats a config entry", async () => {
 	const { repairGeneratedAgentCatalog } = await loadRepair();
 
@@ -202,4 +218,3 @@ test("caps the union to the backend per-category maximum", async () => {
 	// 14 distinct valid tools → capped at the backend's tools maximum (12).
 	assert.equal(out.tools.length, 12);
 });
-

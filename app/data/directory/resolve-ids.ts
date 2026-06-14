@@ -510,7 +510,14 @@ export function weaveMissingTokens(
 			existing.add(`knowledge:${t.id}:all`);
 		}
 	}
+	// App ids supplied by config→body weaving are about to render as `@[app:id]`
+	// chips too; mark their facets covered before filtering lower-level entries.
+	for (const id of idsByCategory.app ?? []) {
+		existing.add(`tool:${id}`);
+		existing.add(`knowledge:${id}:all`);
+	}
 	const WEAVE_ORDER: { category: CatalogCategory; label: string }[] = [
+		{ category: "app", label: "Apps" },
 		{ category: "tool", label: "Apps" },
 		{ category: "skill", label: "Skills" },
 		{ category: "knowledge", label: "Knowledge" },

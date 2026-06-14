@@ -181,6 +181,7 @@ export function repairGeneratedAgentCatalog(
 	const { markdown, resolved } = repairInstructionTokens(instructions);
 
 	const out: RepairedAgentCatalog = {};
+	let explicitAppIds: string[] = [];
 
 	for (const category of Object.keys(FIELD_BY_CATEGORY) as CatalogCategory[]) {
 		const field = FIELD_BY_CATEGORY[category];
@@ -204,6 +205,9 @@ export function repairGeneratedAgentCatalog(
 				union.push(name);
 			}
 		}
+		if (category === "app") {
+			explicitAppIds = resolveCatalogIds(union, "app");
+		}
 
 		// Don't introduce an empty array on a field the result never carried, and
 		// cap to the backend's per-category maximum so the union can't exceed it.
@@ -221,6 +225,7 @@ export function repairGeneratedAgentCatalog(
 		// Resolve the final (post-reconcile) name arrays back to ids and append any
 		// that the prose never mentioned.
 		out.instructions = weaveMissingTokens(markdown, {
+			app: explicitAppIds,
 			tool: resolveCatalogIds(out.tools ?? [], "tool"),
 			skill: resolveCatalogIds(out.skills ?? [], "skill"),
 			knowledge: resolveCatalogIds(out.knowledge ?? [], "knowledge"),
