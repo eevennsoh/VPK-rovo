@@ -399,27 +399,30 @@ function AgentTestStartView({
 			className="flex h-full min-h-0 items-center justify-center overflow-y-auto bg-surface px-4 py-10"
 			data-testid="agent-test-start"
 		>
-			<div className="w-full max-w-xl overflow-hidden rounded-3xl border border-border bg-surface">
-				<AgentTestOptionRow
-					onSelect={onSelectChat}
-					testId="agent-test-chat-option"
-					thumbnail={<AgentTestChatThumbnail />}
-					title="Chat"
-				/>
-				{automationRules.length > 0 ? (
-					automationRules.map((rule, ruleIndex) => (
-						<AgentTestOptionRow
-							key={rule.id}
-							metadata={<AgentTestAutomationFlow rule={rule} />}
-							onSelect={() => onSelectAutomation(rule.id)}
-							testId={`agent-test-automation-option-${rule.id}`}
-							thumbnail={<AgentTestAutomationThumbnail />}
-							title={getAgentAutomationRuleLabel(rule, ruleIndex)}
-						/>
-					))
-				) : (
-					<AgentTestNoAutomationRow />
-				)}
+			<div className="flex w-full max-w-xl flex-col gap-2">
+				<span className="px-1 text-xs font-semibold text-text-subtle">Pick your testing options</span>
+				<div className="w-full overflow-hidden rounded-3xl border border-border bg-surface">
+					<AgentTestOptionRow
+						onSelect={onSelectChat}
+						testId="agent-test-chat-option"
+						thumbnail={<AgentTestChatThumbnail />}
+						title="Chat"
+					/>
+					{automationRules.length > 0 ? (
+						automationRules.map((rule, ruleIndex) => (
+							<AgentTestOptionRow
+								key={rule.id}
+								metadata={<AgentTestAutomationFlow rule={rule} />}
+								onSelect={() => onSelectAutomation(rule.id)}
+								testId={`agent-test-automation-option-${rule.id}`}
+								thumbnail={<AgentTestAutomationThumbnail />}
+								title={getAgentAutomationRuleLabel(rule, ruleIndex)}
+							/>
+						))
+					) : (
+						<AgentTestNoAutomationRow />
+					)}
+				</div>
 			</div>
 		</div>
 	);
