@@ -8100,6 +8100,9 @@ const VISUAL_DEMOS: Record<string, ComponentType> = {
   "card-glow": dynamic(() => import("./demos/visual/card-glow-demo"), {
     ssr: false,
   }),
+  "border-beam": dynamic(() => import("./demos/visual/border-beam-demo"), {
+    ssr: false,
+  }),
   squircle: dynamic(() => import("./demos/visual/squircle-demo"), {
     ssr: false,
   }),
@@ -8283,6 +8286,62 @@ const VISUAL_DEMOS: Record<string, ComponentType> = {
 };
 
 const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
+  "border-beam-demo-rotate-large": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoRotateLarge,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-rotate-small": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoRotateSmall,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-line-search": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoLineSearch,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-pulse-inner-working": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoPulseInnerWorking,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-pulse-pill": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoPulsePill,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-pulse-outside": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoPulseOutside,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-mono-pulse-search": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoMonoPulseSearch,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-compact-gallery": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoCompactGallery,
+      })),
+    { ssr: false },
+  ),
   "ink-wash-demo-landscape": dynamic(
     () =>
       import("./demos/visual/ink-wash-demo").then((mod) => ({
