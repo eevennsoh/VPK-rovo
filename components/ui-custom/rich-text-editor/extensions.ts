@@ -88,6 +88,16 @@ export function getMentionNodeAttrs(mention: RichTextMentionItem) {
  * so the codec leaves the token as plain text. Lookup is by exact `id` because a
  * token carries the id, not the label.
  */
+/** Humanizes a mention id (`"app:google-calendar"` → `"Google Calendar"`) for the unknown-app chip label. */
+function labelFromMentionId(id: string): string {
+	const lastSegment = id.split(":").pop() ?? id;
+	return lastSegment
+		.split(/[-_\s]+/u)
+		.filter(Boolean)
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(" ") || lastSegment;
+}
+
 const resolveMentionToken: MentionTokenResolver = (category, id) => {
 	if (!isRichTextReferenceCategory(category)) {
 		return undefined;
@@ -96,14 +106,22 @@ const resolveMentionToken: MentionTokenResolver = (category, id) => {
 	const item = EDITOR_PALETTE_MENTION_SOURCES[category]?.find(
 		(candidate) => candidate.id === id,
 	);
-	if (!item) {
-		return undefined;
+	if (item) {
+		return {
+			label: item.label,
+			attrs: getRichTextMentionVisualAttrs(item.visual),
+		};
 	}
 
-	return {
-		label: item.label,
-		attrs: getRichTextMentionVisualAttrs(item.visual),
-	};
+	// Unknown `app` id: still render a chip (a default lozenge with no brand logo)
+	// so generated or typed app references like `/foobar` become tags instead of
+	// literal `@[app:foobar]` text. Scoped to `app` only — other categories keep
+	// the passthrough-as-text behavior so a later ingest pass can repair them.
+	if (category === "app") {
+		return { label: labelFromMentionId(id), attrs: {} };
+	}
+
+	return undefined;
 };
 
 export const RichTextMention = Mention.extend({

@@ -775,6 +775,10 @@ function getAutomationName(rule: AgentAutomationRule): string {
 	return rule.name ?? "";
 }
 
+function getAutomationDescription(rule: AgentAutomationRule): string {
+	return rule.description ?? "";
+}
+
 function isAutomationRuleEnabled(rule: AgentAutomationRule): boolean {
 	return rule.enabled !== false;
 }
@@ -1127,14 +1131,12 @@ export function TriggerConfigAutomationDialog({
 	const wasOpen = useRef(open);
 	const connectTimerRef = useRef<number | null>(null);
 	const [draftRule, setDraftRule] = useState<AgentAutomationRule>(automationRule);
-	const [automationName, setAutomationName] = useState(() => getAutomationName(automationRule));
 	const [active, setActive] = useState(() => isAutomationRuleEnabled(automationRule));
 
 	useEffect(() => {
 		if (open && !wasOpen.current) {
 			const nextSeed = seedRef.current;
 			setDraftRule(nextSeed);
-			setAutomationName(getAutomationName(nextSeed));
 			setActive(isAutomationRuleEnabled(nextSeed));
 		}
 		wasOpen.current = open;
@@ -1149,10 +1151,16 @@ export function TriggerConfigAutomationDialog({
 		};
 	}, []);
 
+	// The shared profile header reads `config.name`/`config.description`, so mirror
+	// the editing rule's name + description onto the throwaway config. Without this
+	// the header always falls back to the "Untitled automation" / "Add a
+	// description" placeholders even when generation produced real values.
 	const config = useMemo<AgentConfigFormValue>(
 		() => ({
 			automationRules: [draftRule],
 			instructions: getAutomationPrompt(draftRule),
+			name: getAutomationName(draftRule),
+			description: getAutomationDescription(draftRule),
 		}),
 		[draftRule],
 	);
@@ -1171,6 +1179,10 @@ export function TriggerConfigAutomationDialog({
 		(field: string, value: string) => {
 			if (field === "instructions") {
 				setDraftRule((current) => ({ ...current, prompt: value }));
+			} else if (field === "name") {
+				setDraftRule((current) => ({ ...current, name: value }));
+			} else if (field === "description") {
+				setDraftRule((current) => ({ ...current, description: value }));
 			}
 		},
 		[],
@@ -1209,11 +1221,12 @@ export function TriggerConfigAutomationDialog({
 	const handleSave = useCallback(() => {
 		onSave(createAgentAutomationRule({
 			...draftRule,
-			name: automationName.trim(),
+			name: getAutomationName(draftRule).trim(),
+			description: getAutomationDescription(draftRule).trim() || undefined,
 			enabled: active,
 		}));
 		onOpenChange(false);
-	}, [active, automationName, draftRule, onOpenChange, onSave]);
+	}, [active, draftRule, onOpenChange, onSave]);
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>

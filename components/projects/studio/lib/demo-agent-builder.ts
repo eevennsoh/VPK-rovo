@@ -23,7 +23,7 @@
  */
 import { DIRECTORY_APPS } from "@/app/data/directory/apps";
 import { repairGeneratedAgentCatalog } from "@/app/data/directory/repair-agent-result";
-import { resolveCatalogNames } from "@/app/data/directory/resolve-ids";
+import { convertBareMentionsToTokens, resolveCatalogNames } from "@/app/data/directory/resolve-ids";
 import {
 	createAgentAutomationRule,
 	createAgentTriggerValue,
@@ -54,6 +54,8 @@ interface TriggerSpec {
 	prompt: string;
 	/** Fake automation name shown in the trigger rule builder. */
 	automationName: string;
+	/** Short summary shown under the automation name in the rule builder. */
+	description: string;
 }
 
 export interface AgentBuildIntent {
@@ -276,9 +278,23 @@ function deriveAutomationName(instruction: string): string {
 	return words.length > 0 ? titleCase(words.join(" ")) : "Scheduled automation";
 }
 
+/** First sentence of the instruction, capped, for the automation's short description subtitle. */
+function deriveAutomationDescription(instruction: string): string {
+	const firstSentence = instruction.split(/(?<=[.!?])\s/u)[0]?.trim() ?? instruction.trim();
+	if (firstSentence.length <= 96) {
+		return firstSentence;
+	}
+	return `${firstSentence.slice(0, 95).trimEnd()}…`;
+}
+
 function deriveTriggerSpec(clause: string): TriggerSpec | null {
-	const instruction = deriveTriggerInstruction(clause);
-	const automationName = deriveAutomationName(instruction);
+	// Name + description come from the plain instruction (token markup would
+	// corrupt the title/summary); the stored prompt gets `@name`/`/name`
+	// references rewritten into `@[app:id]` chips for the rule-builder editor.
+	const plainInstruction = deriveTriggerInstruction(clause);
+	const automationName = deriveAutomationName(plainInstruction);
+	const description = deriveAutomationDescription(plainInstruction);
+	const prompt = convertBareMentionsToTokens(plainInstruction);
 
 	const isScheduled =
 		CADENCE_RE.test(clause) &&
@@ -286,7 +302,7 @@ function deriveTriggerSpec(clause: string): TriggerSpec | null {
 
 	if (isScheduled) {
 		const eventId = inferScheduledEventId(clause) ?? "custom-schedule";
-		return { providerId: "scheduled", eventId, prompt: instruction, automationName };
+		return { providerId: "scheduled", eventId, prompt, automationName, description };
 	}
 
 	const inferred = inferTriggerDefinitions([clause]);
@@ -297,8 +313,9 @@ function deriveTriggerSpec(clause: string): TriggerSpec | null {
 	return {
 		providerId: first.providerId,
 		eventId: first.eventId,
-		prompt: instruction,
+		prompt,
 		automationName,
+		description,
 	};
 }
 
@@ -581,6 +598,7 @@ export function buildAgentUpdatePatch(
 					createAgentAutomationRule({
 						id: `automation-${automationRuleIndex}`,
 						name: spec.automationName,
+						description: spec.description,
 						prompt: spec.prompt,
 						triggers: [value],
 					}),
@@ -624,7 +642,7 @@ export function buildAgentUpdatePatch(
 	}
 
 	if (intent.instructionText) {
-		patch.instructions = [currentDraft.instructions, intent.instructionText]
+		patch.instructions = [currentDraft.instructions, convertBareMentionsToTokens(intent.instructionText)]
 			.map((part) => (part ?? "").trim())
 			.filter(Boolean)
 			.join("\n");
