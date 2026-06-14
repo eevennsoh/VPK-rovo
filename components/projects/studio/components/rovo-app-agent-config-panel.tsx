@@ -735,6 +735,12 @@ export function RovoAppAgentConfigPanel({
 		},
 		[updateDraft],
 	);
+	const handleBaseAvatarChange = useCallback(
+		(avatarSrc: string) => {
+			updateDraft({ avatarSrc });
+		},
+		[updateDraft],
+	);
 
 	// Instructions and other config text edit whichever config is active.
 	const handleConfigTextChange = useCallback(
@@ -1430,6 +1436,7 @@ export function RovoAppAgentConfigPanel({
 											idPrefix={`agent-${profileId}-${activeConfigId}`}
 											onTextChange={handleConfigTextChange}
 											onProfileTextChange={handleBaseTextChange}
+											onProfileAvatarChange={handleBaseAvatarChange}
 											onListItemChange={updateListItem}
 											onRemoveListItem={removeListItem}
 											onToggleListItem={toggleListItem}

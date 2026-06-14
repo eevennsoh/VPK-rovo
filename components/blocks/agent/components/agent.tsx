@@ -90,6 +90,8 @@ import {
 	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
 	DropdownMenuSeparator,
 	DropdownMenuSub,
 	DropdownMenuSubContent,
@@ -145,9 +147,14 @@ import {
 	getSkillCollectionId,
 	getSkillIcon,
 } from "@/app/data/directory/skills";
+import {
+	AGENT_AVATAR_OPTION_GROUPS,
+	AGENT_AVATAR_OPTION_SRCS,
+} from "@/components/blocks/agent/data/agent-avatar-options";
 
 const AGENT_AVATAR_HEXAGON_PATH = "M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
 const AGENT_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg";
+const AGENT_AVATAR_OPTION_SRC_SET = new Set<string>(AGENT_AVATAR_OPTION_SRCS);
 const DEFAULT_AGENT_PROFILE_COVER_COLOR = "#1868DB";
 const MAX_AGENT_CONVERSATION_STARTERS = 3;
 const AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS = {
@@ -3206,7 +3213,140 @@ function hasFilledAgentConfig(config: AgentConfigFormValue): boolean {
 	);
 }
 
-function AgentProfileCover({ avatarSrc = AGENT_AVATAR_SRC }: Readonly<{ avatarSrc?: string }>) {
+function AgentProfileAvatarGraphic({
+	avatarSrc,
+	isAtlassianAvatar,
+}: Readonly<{
+	avatarSrc: string;
+	isAtlassianAvatar: boolean;
+}>) {
+	return isAtlassianAvatar ? (
+		<span className="flex h-12 w-[42px] items-center justify-center">
+			<AtlassianLogo name="atlassian" label="Agent avatar" size="large" />
+		</span>
+	) : (
+		<Image
+			alt="Agent avatar"
+			className="h-12 w-[42px]"
+			height={48}
+			src={avatarSrc}
+			width={42}
+		/>
+	);
+}
+
+function AgentProfileAvatarHexStroke() {
+	return (
+		<svg
+			aria-hidden="true"
+			className="pointer-events-none absolute top-0 left-0 size-auto h-12 w-[42px] overflow-visible"
+			focusable="false"
+			viewBox="0 0 43 48"
+		>
+			<path
+				className="stroke-surface"
+				d={AGENT_AVATAR_HEXAGON_PATH}
+				fill="none"
+				strokeWidth={2}
+				vectorEffect="non-scaling-stroke"
+			/>
+		</svg>
+	);
+}
+
+function AgentAvatarOptionPreview({ src }: Readonly<{ src: string }>) {
+	return (
+		<span className="relative block h-10 w-[35px]">
+			<Image
+				alt=""
+				aria-hidden
+				className="h-10 w-[35px] object-contain"
+				height={40}
+				src={src}
+				width={35}
+			/>
+		</span>
+	);
+}
+
+function AgentAvatarPickerMenu({
+	avatarSrc,
+	isAtlassianAvatar,
+	onAvatarChange,
+}: Readonly<{
+	avatarSrc: string;
+	isAtlassianAvatar: boolean;
+	onAvatarChange: (avatarSrc: string) => void;
+}>) {
+	const [open, setOpen] = useState(false);
+	const selectedAvatarSrc = AGENT_AVATAR_OPTION_SRC_SET.has(avatarSrc) ? avatarSrc : "";
+
+	return (
+		<DropdownMenu open={open} onOpenChange={setOpen}>
+			<DropdownMenuTrigger
+				aria-label="Change agent avatar"
+				render={(
+					<Button
+						className="group/avatar-picker relative h-12 w-[42px] overflow-visible rounded-xl border-0 bg-transparent p-0 hover:bg-transparent active:bg-transparent aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:text-text-subtle focus-visible:ring-3 focus-visible:ring-ring/50"
+						size="icon"
+						type="button"
+						variant="ghost"
+					/>
+				)}
+			>
+				<AgentProfileAvatarGraphic avatarSrc={avatarSrc} isAtlassianAvatar={isAtlassianAvatar} />
+				{!open ? (
+					<span
+						aria-hidden
+						className="pointer-events-none absolute top-0 left-0 flex h-12 w-[42px] items-center justify-center bg-blanket/80 text-icon-inverse opacity-0 transition-opacity [clip-path:polygon(50%_0%,100%_25%,100%_75%,50%_100%,0%_75%,0%_25%)] group-hover/avatar-picker:opacity-100 group-focus-visible/avatar-picker:opacity-100 [&_svg]:size-4"
+						data-agent-avatar-edit-cue
+					>
+						<EditIcon label="" size="small" />
+					</span>
+				) : null}
+				<AgentProfileAvatarHexStroke />
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="start" className="w-[348px] p-2" sideOffset={8}>
+				<DropdownMenuRadioGroup
+					value={selectedAvatarSrc}
+					onValueChange={(nextAvatarSrc) => {
+						onAvatarChange(nextAvatarSrc);
+						setOpen(false);
+					}}
+				>
+					{AGENT_AVATAR_OPTION_GROUPS.map((group) => (
+						<Fragment key={group.id}>
+							<div className="px-1 pt-2 pb-1 text-xs leading-4 font-semibold text-text-subtlest">{group.label}</div>
+							<div className="grid grid-cols-7 gap-1 px-1 pb-1">
+								{group.options.map((option) => (
+									<DropdownMenuRadioItem
+										aria-label={`Use ${option.label} avatar`}
+										className="group/avatar-option h-12 min-h-0 w-11 justify-center rounded-lg bg-transparent p-1! pr-1! pl-1! data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text active:bg-bg-neutral-subtle-pressed data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed [&_[data-slot=dropdown-menu-radio-item-indicator]]:hidden"
+										key={option.src}
+										title={option.label}
+										value={option.src}
+									>
+										<AgentAvatarOptionPreview
+											src={option.src}
+										/>
+									</DropdownMenuRadioItem>
+								))}
+							</div>
+						</Fragment>
+					))}
+				</DropdownMenuRadioGroup>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
+function AgentProfileCover({
+	avatarSrc = AGENT_AVATAR_SRC,
+	onAvatarChange,
+}: Readonly<{
+	avatarSrc?: string;
+	onAvatarChange?: (avatarSrc: string) => void;
+}>) {
 	const coverBackgroundColor = getAgentProfileCoverBackgroundColor(avatarSrc);
 	const isAtlassianAvatar = isAtlassianLogoSource(avatarSrc);
 
@@ -3230,33 +3370,18 @@ function AgentProfileCover({ avatarSrc = AGENT_AVATAR_SRC }: Readonly<{ avatarSr
 			</div>
 			<div aria-hidden className="h-6" />
 			<div className="absolute top-6 left-4 size-12">
-				{isAtlassianAvatar ? (
-					<span className="flex h-12 w-[42px] items-center justify-center">
-						<AtlassianLogo name="atlassian" label="Agent avatar" size="large" />
-					</span>
+				{onAvatarChange ? (
+					<AgentAvatarPickerMenu
+						avatarSrc={avatarSrc}
+						isAtlassianAvatar={isAtlassianAvatar}
+						onAvatarChange={onAvatarChange}
+					/>
 				) : (
-					<Image
-						alt="Agent avatar"
-						className="h-12 w-[42px]"
-						height={48}
-						src={avatarSrc}
-						width={42}
-					/>
+					<>
+						<AgentProfileAvatarGraphic avatarSrc={avatarSrc} isAtlassianAvatar={isAtlassianAvatar} />
+						<AgentProfileAvatarHexStroke />
+					</>
 				)}
-				<svg
-					aria-hidden="true"
-					className="pointer-events-none absolute top-0 left-0 h-12 w-[42px] overflow-visible"
-					focusable="false"
-					viewBox="0 0 43 48"
-				>
-					<path
-						className="stroke-surface"
-						d={AGENT_AVATAR_HEXAGON_PATH}
-						fill="none"
-						strokeWidth={2}
-						vectorEffect="non-scaling-stroke"
-					/>
-				</svg>
 			</div>
 		</div>
 	);
@@ -3929,6 +4054,7 @@ function AgentInstructionsComposer({
 interface AgentConfigProfileProps {
 	config: AgentConfigFormValue;
 	avatarSrc?: string;
+	onAvatarChange?: (avatarSrc: string) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	screenAssistantTargetPrefix?: string;
 	// Subagent editing context. When `isSubagent` is true the profile header
@@ -3951,6 +4077,7 @@ interface AgentConfigProfileProps {
 function AgentConfigProfile({
 	config,
 	avatarSrc,
+	onAvatarChange,
 	onTextChange,
 	screenAssistantTargetPrefix,
 	isSubagent = false,
@@ -3970,7 +4097,7 @@ function AgentConfigProfile({
 			className="flex flex-col gap-4"
 			data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:profile` : undefined}
 		>
-			<AgentProfileCover avatarSrc={avatarSrc} />
+			<AgentProfileCover avatarSrc={avatarSrc} onAvatarChange={onAvatarChange} />
 			<div className="flex flex-col gap-1" data-agent-field="name">
 				{/* The cover/avatar and the description below stay put; only the name
 				    row (title + inline back-arrow on subagents) crossfades and slides
@@ -4295,6 +4422,7 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	onInstructionsViewModeChange?: (mode: EditorToolbarViewMode) => void;
 	onManageSubagents?: () => void;
 	onProfileTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
+	onProfileAvatarChange?: (avatarSrc: string) => void;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	onListItemChange?: (field: AgentConfigListFieldName, index: number, value: string) => void;
 	onRemoveListItem?: (field: AgentConfigListFieldName, index: number) => void;
@@ -4347,6 +4475,7 @@ export const AgentConfigFields = memo(
 		onManageTriggers,
 		onManageSubagents,
 		onOpenDirectory,
+		onProfileAvatarChange,
 		onProfileTextChange,
 		onRemoveListItem,
 		onSelectListItem,
@@ -4557,6 +4686,7 @@ export const AgentConfigFields = memo(
 							<AgentConfigProfile
 								config={profileConfig ?? config}
 								avatarSrc={profileAvatarSrc ?? avatarSrc}
+								onAvatarChange={onProfileAvatarChange}
 								onTextChange={handleProfileTextChange}
 								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 								isSubagent={isSubagent}

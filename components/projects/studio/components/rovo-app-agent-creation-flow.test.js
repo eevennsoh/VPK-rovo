@@ -758,6 +758,11 @@ test("Studio publish dropdown separates draft changes from version history", () 
 	assert.match(AGENT_TEST_PANEL_SOURCE, /const publishedVersions = entry\.versionHistory\.filter\(\(version\) => version\.kind === "publish" \|\| version\.kind === "update"\);/u);
 });
 
+test("Studio agent config panel persists base avatar edits through the draft", () => {
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleBaseAvatarChange = useCallback\([\s\S]*avatarSrc: string[\s\S]*updateDraft\(\{ avatarSrc \}\);[\s\S]*\[updateDraft\]/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentConfigFields[\s\S]*avatarSrc=\{agentAvatarSrc\}[\s\S]*profileAvatarSrc=\{agentAvatarSrc\}[\s\S]*onProfileAvatarChange=\{handleBaseAvatarChange\}/u);
+});
+
 test("Studio agent config panel wires the subagents experience into AgentConfigFields", () => {
 	// Panel consumes the subagents hook and routes edits through the active config
 	// (base agent or selected subagent) rather than the raw draft.
