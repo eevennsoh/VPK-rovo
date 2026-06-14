@@ -2,11 +2,42 @@
 
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import { useEffect, useRef, useState } from "react";
+import ToolsIcon from "@atlaskit/icon/core/tools";
 
 import type { FrontmatterEntries, FrontmatterValue } from "@/app/data/directory/skill-frontmatter";
+import { getDirectoryMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
+import { Input } from "@/components/ui/input";
 import { Tag, TagGroup } from "@/components/ui/tag";
+import { Textarea } from "@/components/ui/textarea";
+
+import {
+	getRichTextMentionTagColor,
+	getRichTextMentionTagType,
+	RichTextMentionVisualMark,
+} from "./mention-visual";
+import type { RichTextMentionVisual, RichTextReferenceCategory } from "./types";
 
 const READONLY_KEYS = new Set(["name"]);
+
+// `allowed-tools` labels are mirrored from body app/tool/knowledge mentions (see
+// `ALLOWED_TOOL_MENTION_CATEGORIES` in frontmatter-node.ts). The card only keeps
+// the bare label, so we re-resolve it against the same directory mention catalog
+// the editor palette draws from — probing those categories in order and using
+// the first that carries a visual — so a card chip and its `@`/`/` body token
+// render the identical logo + accent.
+const ALLOWED_TOOL_CATEGORIES = ["app", "tool", "knowledge"] as const satisfies readonly RichTextReferenceCategory[];
+
+function resolveAllowedToolMention(
+	label: string,
+): { category: RichTextReferenceCategory; visual: RichTextMentionVisual } | undefined {
+	for (const category of ALLOWED_TOOL_CATEGORIES) {
+		const visual = getDirectoryMentionItem(category, label)?.visual;
+		if (visual) {
+			return { category, visual };
+		}
+	}
+	return undefined;
+}
 
 function asEntries(value: unknown): FrontmatterEntries {
 	return Array.isArray(value) ? (value as FrontmatterEntries) : [];
@@ -47,6 +78,12 @@ function FrontmatterScalarRow({
 
 	const sharedProps = {
 		value: draft,
+		// The `subtle` field variant gives the inline-edit affordance its ADS
+		// interaction states (transparent at rest, `bg-bg-input-hovered` on hover,
+		// `bg-bg-input` + focus ring on focus). Negative margin lets that padded
+		// hit area bleed into the grid gutter while the text stays aligned to the
+		// value column; `text-xs leading-4` matches the card's type scale.
+		variant: "subtle",
 		onMouseDown: stopEditorCapture,
 		onKeyDown: stopEditorCapture,
 		onFocus: () => {
@@ -58,25 +95,26 @@ function FrontmatterScalarRow({
 				onCommit(draft);
 			}
 		},
-		className:
-			"w-full resize-none rounded-xs border border-transparent bg-transparent px-1 py-0.5 text-text outline-none hover:border-border focus:border-border-focused",
+		className: "-mx-1.5 h-auto px-1.5 py-0.5 text-xs leading-4 text-text",
 	} as const;
 
 	return (
 		<dd className="min-w-0">
 			{isDescription ? (
-				<textarea
+				<Textarea
 					{...sharedProps}
 					rows={1}
-					// `field-sizing-content` auto-grows the textarea to its content (same
-					// mechanism as components/ui/textarea.tsx) — no manual row counting,
-					// which mis-sizes against soft-wrapped lines.
-					className={`${sharedProps.className} field-sizing-content min-h-[2lh]`}
+					// Behaves like a single-line field that only wraps when it runs out of
+					// horizontal space: `field-sizing-content` grows the height to fit the
+					// wrapped content, `min-h-[1lh]` starts it at one line (no forced
+					// minimum), and `resize-none` drops the manual drag grabber so every
+					// line stays the same `leading-4` height with uniform spacing.
+					className={`${sharedProps.className} min-h-[1lh] resize-none`}
 					onChange={(event) => setDraft(event.target.value)}
 					aria-label="Edit description"
 				/>
 			) : (
-				<input
+				<Input
 					{...sharedProps}
 					type="text"
 					onChange={(event) => setDraft(event.target.value)}
@@ -120,28 +158,50 @@ export function FrontmatterNodeView({ node, updateAttributes, editor }: ReactNod
 			as="div"
 			contentEditable={false}
 			data-frontmatter-card=""
-			className="my-3 overflow-hidden rounded-md border border-border bg-surface-sunken"
+			className="mb-3 overflow-hidden rounded-xl bg-surface-sunken"
 		>
-			<dl className="grid grid-cols-[max-content_minmax(0,1fr)] items-start gap-x-6 gap-y-2 p-4 text-sm leading-5">
+			<dl className="grid grid-cols-[max-content_minmax(0,1fr)] items-start gap-x-6 gap-y-2 p-4 text-xs leading-4">
 				{entries.map((entry) => (
 					<div key={entry.key} className="contents">
-						<dt className="pt-0.5 font-medium text-text-subtle">{entry.key}</dt>
+						<dt className="pt-0.5 font-semibold text-text-subtlest">{entry.key}</dt>
 						{Array.isArray(entry.value) ? (
 							<dd className="min-w-0">
 								<TagGroup className="flex flex-wrap gap-1" onMouseDown={stopEditorCapture}>
 									{entry.value.length === 0 ? (
 										<span className="text-text-subtlest">None</span>
 									) : (
-										entry.value.map((item, index) => (
-											<Tag
-												key={`${entry.key}-${item}-${index}`}
-												color="standard"
-												onRemove={editable ? () => removeListItem(entry.key, index) : undefined}
-												removeButtonLabel={`Remove ${item}`}
-											>
-												{item}
-											</Tag>
-										))
+										entry.value.map((item, index) => {
+											// Match the editor palette token: logo/icon front slot,
+											// accent color, and chip shape all derived from the same
+											// resolved visual. `removeVariant="overlay"` mirrors the
+											// agent config panel reference chips so the remove control
+											// floats over the colored chip instead of widening it.
+											const mention = resolveAllowedToolMention(item);
+											const visual = mention?.visual;
+											return (
+												<Tag
+													key={`${entry.key}-${item}-${index}`}
+													color={getRichTextMentionTagColor(visual)}
+													elemBefore={
+														visual ? (
+															<RichTextMentionVisualMark
+																category={mention.category}
+																label={item}
+																visual={visual}
+															/>
+														) : (
+															<ToolsIcon label="" size="small" />
+														)
+													}
+													type={getRichTextMentionTagType(visual)}
+													onRemove={editable ? () => removeListItem(entry.key, index) : undefined}
+													removeButtonLabel={`Remove ${item}`}
+													removeVariant="overlay"
+												>
+													{item}
+												</Tag>
+											);
+										})
 									)}
 								</TagGroup>
 							</dd>

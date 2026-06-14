@@ -3753,7 +3753,8 @@ function AgentInstructionsComposer({
 			) : null}
 			<RichTextEditor
 				aria-label="Agent instructions"
-				className="space-y-2"
+				// 16px gap below the editor toolbar (space between toolbar and content).
+				className="space-y-4"
 				contentClassName={cn("pt-2", contentClassName)}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
 				enableDirectoryAutocomplete
@@ -3834,7 +3835,7 @@ function AgentConfigProfile({
 	const direction = shouldReduceMotion ? 0 : isSubagent ? 1 : -1;
 	return (
 		<section
-			className="flex flex-col gap-4"
+			className="flex flex-col gap-2"
 			data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:profile` : undefined}
 		>
 			{profileCover ?? <AgentProfileCover />}
@@ -4444,7 +4445,7 @@ export const AgentConfigFields = memo(
 						// because that would pull those full-width inputs back to the
 						// clip edge and re-clip their rings.
 						className={cn(
-							"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-1.5",
+							"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto",
 							compactScrollOverflow.showBottomScrollMask && "scroll-mask-bottom",
 							compactScrollAreaClassName,
 						)}
@@ -4467,10 +4468,13 @@ export const AgentConfigFields = memo(
 							/>
 						</div>
 						<AgentInstructionsComposer
-							className="relative flex min-h-0 flex-1 flex-col"
+							// 24px gap between the skill metadata row and the editor
+							// toolbar: the scroll container contributes 8px via `gap-2`,
+							// so add 16px here (8 + 16 = 24).
+							className="relative mt-4 flex min-h-0 flex-1 flex-col"
 							config={config}
 							frontmatter={frontmatter}
-							contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]")}
+							contentClassName={cn("pt-0", isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]")}
 							editorClassName={isFilledConfig ? undefined : "agent-instructions-tiptap-editor-compact-empty"}
 							instructions={config.instructions}
 							mentionRemovalRequest={mentionRemovalRequest}

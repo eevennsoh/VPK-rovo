@@ -108,7 +108,7 @@ export function SkillProfileCover({ skill }: Readonly<{ skill: SkillsDirectorySk
 				aria-hidden
 				icon={<GlobeIcon label="" />}
 				label={skill.name}
-				size="xlarge"
+				size="medium"
 				variant={getSkillIconTileVariant(skill)}
 			/>
 		</div>
@@ -119,7 +119,7 @@ export function SkillProfileCover({ skill }: Readonly<{ skill: SkillsDirectorySk
 export function SkillProfileMeta({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
 	const lastUpdatedLabel = getSkillLastUpdatedLabel(skill);
 	return (
-		<div className="flex flex-wrap gap-x-8 gap-y-2 pt-1">
+		<div className="flex flex-wrap gap-x-8 gap-y-2">
 			<div className="flex flex-col">
 				<span className="flex items-center gap-1 text-sm font-semibold leading-5 text-text">
 					{getSkillCreatedBy(skill)}
