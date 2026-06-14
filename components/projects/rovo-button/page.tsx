@@ -2,10 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "motion/react";
+import CursorIcon from "@atlaskit/icon-lab/core/cursor";
+import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
 import AppLayout from "@/components/projects/page";
 import FloatingRovoButton, {
 	type FloatingRovoButtonOnboardingConfig,
 	type FloatingRovoButtonOnboardingStatus,
+	type FloatingRovoButtonPersistentBar,
 	type FloatingRovoButtonPlacement,
 	type FloatingRovoButtonPositioning,
 	type FloatingRovoButtonSuggestion,
@@ -17,6 +20,7 @@ const RFP_DRAFTER_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.sv
 const CHAT_BUTTON_PLACEMENT = { right: "176px", bottom: "32px" } satisfies FloatingRovoButtonPlacement;
 const SUGGESTION_BUTTON_PLACEMENT = { right: "328px", bottom: "32px" } satisfies FloatingRovoButtonPlacement;
 const ONBOARDING_BUTTON_PLACEMENT = { right: "24px", bottom: "32px" } satisfies FloatingRovoButtonPlacement;
+const TOOLBAR_BUTTON_PLACEMENT = { right: "480px", bottom: "32px" } satisfies FloatingRovoButtonPlacement;
 
 type DemoSuggestionState = "hidden" | "visible" | "accepted";
 
@@ -46,11 +50,13 @@ function getDemoStatusLabel(status: FloatingRovoButtonOnboardingStatus): string 
 
 function RovoButtonDemoCaption({
 	detail,
+	liftPx = 60,
 	placement,
 	positioning,
 	title,
 }: Readonly<{
 	detail: string;
+	liftPx?: number;
 	placement: FloatingRovoButtonPlacement;
 	positioning: FloatingRovoButtonPositioning;
 	title: string;
@@ -61,7 +67,7 @@ function RovoButtonDemoCaption({
 			className={`pointer-events-none ${positioning === "container" ? "absolute" : "fixed"} z-[500] flex w-28 flex-col items-end gap-0.5 text-right`}
 			style={{
 				right: placement.right,
-				bottom: `calc(${placement.bottom ?? "32px"} + 60px)`,
+				bottom: `calc(${placement.bottom ?? "32px"} + ${liftPx}px)`,
 			}}
 		>
 			<span className="rounded bg-surface-raised px-2 py-0.5 text-xs leading-4 font-semibold text-text">
@@ -180,6 +186,22 @@ export default function RovoButtonProjectPage({
 		isOnboardingOpen,
 	]);
 
+	const persistentBar = useMemo<FloatingRovoButtonPersistentBar>(() => ({
+		ariaLabel: "Rovo quick actions",
+		items: [
+			{
+				id: "rovo-button-bar-cursor",
+				ariaLabel: "Point and select",
+				icon: <CursorIcon label="" color="currentColor" />,
+			},
+			{
+				id: "rovo-button-bar-voice",
+				ariaLabel: "Talk to Rovo",
+				icon: <AudioWaveformIcon label="" color="currentColor" />,
+			},
+		],
+	}), []);
+
 	return (
 		<AppLayout product="home" embedded={embedded} embeddedHeight={embeddedHeight} hideFloatingRovo>
 			<div className="relative h-full w-full">
@@ -200,6 +222,13 @@ export default function RovoButtonProjectPage({
 					placement={ONBOARDING_BUTTON_PLACEMENT}
 					positioning={demoButtonPositioning}
 					title="Onboarding"
+				/>
+				<RovoButtonDemoCaption
+					detail="persistent bar"
+					liftPx={188}
+					placement={TOOLBAR_BUTTON_PLACEMENT}
+					positioning={demoButtonPositioning}
+					title="Toolbar"
 				/>
 				{chatSurface === null ? (
 					<FloatingRovoButton
@@ -224,6 +253,14 @@ export default function RovoButtonProjectPage({
 					forceVisible
 					onboarding={onboarding}
 					placement={ONBOARDING_BUTTON_PLACEMENT}
+					positioning={demoButtonPositioning}
+					product="home"
+				/>
+				<FloatingRovoButton
+					ariaLabel="Open Rovo chat demo with persistent toolbar"
+					forceVisible
+					persistentBar={persistentBar}
+					placement={TOOLBAR_BUTTON_PLACEMENT}
 					positioning={demoButtonPositioning}
 					product="home"
 				/>

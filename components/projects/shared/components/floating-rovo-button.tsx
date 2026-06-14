@@ -10,6 +10,7 @@ import { useLazyRef } from "@/lib/use-lazy-ref";
 import {
 	type MouseEvent as ReactMouseEvent,
 	type PointerEvent as ReactPointerEvent,
+	type ReactNode,
 	useCallback,
 	useEffect,
 	useMemo,
@@ -47,6 +48,27 @@ export interface FloatingRovoButtonSuggestion {
 	ariaLabel?: string;
 	onSelect: () => void;
 	onDismiss?: () => void;
+}
+
+export interface FloatingRovoButtonPersistentBarItem {
+	id: string;
+	icon: ReactNode;
+	ariaLabel: string;
+	onClick?: () => void;
+	indicator?: boolean;
+}
+
+export type FloatingRovoButtonPersistentBarSide = "auto" | "top" | "bottom";
+
+export interface FloatingRovoButtonPersistentBar {
+	items: FloatingRovoButtonPersistentBarItem[];
+	/**
+	 * Which edge of the button the bar attaches to. `"auto"` (default) places it
+	 * above the button when the button sits in the lower half of its space and
+	 * below it otherwise, so the bar always opens toward open space.
+	 */
+	side?: FloatingRovoButtonPersistentBarSide;
+	ariaLabel?: string;
 }
 
 export interface FloatingRovoButtonOnboardingConfig {
@@ -91,6 +113,7 @@ interface FloatingRovoButtonProps {
 	onButtonClick?: () => void;
 	suggestion?: FloatingRovoButtonSuggestion | null;
 	onboarding?: FloatingRovoButtonOnboardingConfig | null;
+	persistentBar?: FloatingRovoButtonPersistentBar | null;
 }
 
 const DEFAULT_BUTTON_RIGHT = "24px";
@@ -276,6 +299,121 @@ function getClampedFloatingRovoButtonTarget(
 	const clampedTop = clampFloatingRovoButtonValue(rect.top, minTop, maxTop);
 
 	return { left: clampedLeft, top: clampedTop };
+}
+
+function resolveFloatingRovoButtonBarSide(
+	configuredSide: FloatingRovoButtonPersistentBarSide,
+	targetTop: number,
+	rectHeight: number,
+	spaceHeight: number,
+): "top" | "bottom" {
+	if (configuredSide !== "auto") {
+		return configuredSide;
+	}
+
+	// Button in the lower half of its space → open the bar upward, and vice versa.
+	const center = targetTop + rectHeight / 2;
+	return center >= spaceHeight / 2 ? "top" : "bottom";
+}
+
+function FloatingRovoButtonPersistentBarRail({
+	bar,
+	side,
+	shouldReduceMotion,
+}: Readonly<{
+	bar: FloatingRovoButtonPersistentBar;
+	side: "top" | "bottom";
+	shouldReduceMotion: boolean;
+}>) {
+	// Tuck the bar slightly toward the button as it leaves/enters so the motion
+	// reads as "snapping out of / back into" the button rather than a flat fade.
+	const tuckOffset = side === "top" ? 10 : -10;
+	// Centering rides on `x: "-50%"`; it must stay constant across every variant
+	// so Motion never animates the horizontal offset (it owns the transform).
+	const railVariants = shouldReduceMotion
+		? {
+			hidden: { opacity: 0, x: "-50%" as const },
+			visible: { opacity: 1, x: "-50%" as const, transition: { duration: 0 } },
+			exit: { opacity: 0, x: "-50%" as const, transition: { duration: 0 } },
+		}
+		: {
+			hidden: { opacity: 0, scale: 0.9, x: "-50%" as const, y: tuckOffset },
+			visible: {
+				opacity: 1,
+				scale: 1,
+				x: "-50%" as const,
+				y: 0,
+				transition: {
+					type: "spring" as const,
+					bounce: 0,
+					visualDuration: 0.26,
+					delayChildren: 0.06,
+					staggerChildren: 0.05,
+				},
+			},
+			exit: {
+				opacity: 0,
+				scale: 0.88,
+				x: "-50%" as const,
+				y: tuckOffset,
+				transition: { duration: 0.12, ease: [0.6, 0, 0.8, 0.6] as const },
+			},
+		};
+	const itemVariants = shouldReduceMotion
+		? {
+			hidden: { opacity: 0 },
+			visible: { opacity: 1, transition: { duration: 0 } },
+		}
+		: {
+			hidden: { opacity: 0, scale: 0.5 },
+			visible: {
+				opacity: 1,
+				scale: 1,
+				transition: { type: "spring" as const, bounce: 0.3, visualDuration: 0.3 },
+			},
+		};
+
+	return (
+		<motion.div
+			key="floating-rovo-button-persistent-bar"
+			role="toolbar"
+			aria-orientation="vertical"
+			aria-label={bar.ariaLabel ?? "Rovo quick actions"}
+			className={cn(
+				"pointer-events-auto absolute left-1/2 z-[505] flex cursor-default flex-col items-center gap-1 rounded-2xl bg-surface-raised p-1.5",
+				side === "top" ? "bottom-full mb-3" : "top-full mt-3",
+			)}
+			variants={railVariants}
+			initial="hidden"
+			animate="visible"
+			exit="exit"
+			style={{
+				boxShadow: token("elevation.shadow.overlay"),
+				transformOrigin: side === "top" ? "center bottom" : "center top",
+				willChange: "transform, opacity",
+			}}
+		>
+			{bar.items.map((item) => (
+				<motion.button
+					key={item.id}
+					aria-label={item.ariaLabel}
+					className="relative flex size-9 items-center justify-center rounded-xl text-icon transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none active:bg-bg-neutral-subtle-pressed"
+					variants={itemVariants}
+					onClick={item.onClick}
+					type="button"
+					style={{ willChange: "transform, opacity" }}
+				>
+					{item.icon}
+					{item.indicator ? (
+						<span
+							aria-hidden="true"
+							className="absolute top-1.5 right-1.5 size-2 rounded-full bg-bg-information ring-2 ring-surface-raised"
+						/>
+					) : null}
+				</motion.button>
+			))}
+		</motion.div>
+	);
 }
 
 function FloatingRovoButtonNudge({
@@ -613,6 +751,7 @@ function FloatingRovoButtonSurface({
 	positioning = "viewport",
 	ariaLabel,
 	onButtonClick,
+	persistentBar,
 	shouldReduceMotion,
 }: Readonly<{
 	onboardingOpen: boolean;
@@ -622,9 +761,17 @@ function FloatingRovoButtonSurface({
 	positioning?: FloatingRovoButtonPositioning;
 	ariaLabel: string;
 	onButtonClick: () => void;
+	persistentBar: FloatingRovoButtonPersistentBar | null | undefined;
 	shouldReduceMotion: boolean;
 }>) {
 	const resolvedPlacement = resolveFloatingRovoButtonPlacement(placement);
+	const configuredBarSide = persistentBar?.side ?? "auto";
+	const [barSide, setBarSide] = useState<"top" | "bottom">(
+		configuredBarSide === "bottom" ? "bottom" : "top",
+	);
+	// Drives the persistent bar's exit/enter: it tucks away once a drag actually
+	// moves the button and springs back when the drag is released.
+	const [isDragging, setIsDragging] = useState(false);
 	const surfaceRef = useRef<HTMLDivElement | null>(null);
 	const buttonX = useMotionValue(0);
 	const buttonY = useMotionValue(0);
@@ -734,9 +881,10 @@ function FloatingRovoButtonSurface({
 		buttonY.set(0);
 		setDragOrigin(target);
 		setDragConstraints(getFloatingRovoButtonDragConstraints(target, rect, space.width, space.height));
+		setBarSide(resolveFloatingRovoButtonBarSide(configuredBarSide, target.top, rect.height, space.height));
 		initializedPositionKeyRef.current = positionKey;
 		skipNextSnapToGridRef.current = true;
-	}, [buttonX, buttonY, placement, positioning, resolvedPlacement.bottom, resolvedPlacement.right]);
+	}, [buttonX, buttonY, configuredBarSide, placement, positioning, resolvedPlacement.bottom, resolvedPlacement.right]);
 
 	useEffect(() => {
 		return () => {
@@ -764,6 +912,7 @@ function FloatingRovoButtonSurface({
 	useEffect(() => {
 		if (onboardingOpen) {
 			dragPointerStartRef.current = null;
+			setIsDragging(false);
 			suppressDragClickStateRef.current = createInitialClickSuppressionState();
 			clearDragClickSuppressionTimeout();
 		}
@@ -784,11 +933,12 @@ function FloatingRovoButtonSurface({
 		const target = getNearestFloatingRovoButtonSnapTarget(rect, space.width, space.height);
 
 		setDragConstraints(getFloatingRovoButtonDragConstraints(dragOrigin, rect, space.width, space.height));
+		setBarSide(resolveFloatingRovoButtonBarSide(configuredBarSide, target.top, rect.height, space.height));
 		buttonX.jump(buttonX.get());
 		buttonY.jump(buttonY.get());
 		animate(buttonX, target.left - dragOrigin.left, dragSnapTransition);
 		animate(buttonY, target.top - dragOrigin.top, dragSnapTransition);
-	}, [buttonX, buttonY, dragOrigin, dragSnapTransition, positioning]);
+	}, [buttonX, buttonY, configuredBarSide, dragOrigin, dragSnapTransition, positioning]);
 
 	useEffect(() => {
 		if (!dragOrigin) {
@@ -868,6 +1018,7 @@ function FloatingRovoButtonSurface({
 		}
 
 		armDragClickSuppression();
+		setIsDragging(true);
 		buttonX.set(clampFloatingRovoButtonValue(start.offsetX + deltaX, dragConstraints.left, dragConstraints.right));
 		buttonY.set(clampFloatingRovoButtonValue(start.offsetY + deltaY, dragConstraints.top, dragConstraints.bottom));
 	}, [armDragClickSuppression, buttonX, buttonY, dragConstraints]);
@@ -879,6 +1030,7 @@ function FloatingRovoButtonSurface({
 		}
 
 		dragPointerStartRef.current = null;
+		setIsDragging(false);
 
 		if (!suppressDragClickStateRef.current.active) {
 			return;
@@ -957,27 +1109,45 @@ function FloatingRovoButtonSurface({
 			}}
 			style={surfaceStyle}
 			onClickCapture={handleClickCapture}
-			whileHover={hoverScale}
-			whileTap={tapScale}
 		>
-			<AnimatePresence mode="popLayout" initial={false}>
-				{onboardingOpen && onboarding ? (
-					<FloatingRovoButtonOnboardingPanelInner
-						key="panel"
-						onboarding={onboarding}
-						onOpenChange={onOpenChange}
+			{/* Hover/tap scale lives on this inner wrapper, not the surface, so the
+			    persistent bar (a sibling below) is not dragged around by the
+			    button's hover animation. */}
+			<motion.div
+				className="h-full w-full"
+				style={{ borderRadius: "inherit", transformOrigin: "center", willChange: "transform" }}
+				whileHover={hoverScale}
+				whileTap={tapScale}
+			>
+				<AnimatePresence mode="popLayout" initial={false}>
+					{onboardingOpen && onboarding ? (
+						<FloatingRovoButtonOnboardingPanelInner
+							key="panel"
+							onboarding={onboarding}
+							onOpenChange={onOpenChange}
+							shouldReduceMotion={shouldReduceMotion}
+						/>
+					) : (
+						<FloatingRovoButtonInner
+							key="button"
+							onClick={handleButtonClick}
+							onDragMouseDown={handleDragMouseDown}
+							onDragPointerDown={handleDragPointerDown}
+							ariaLabel={ariaLabel}
+							shouldReduceMotion={shouldReduceMotion}
+						/>
+					)}
+				</AnimatePresence>
+			</motion.div>
+			<AnimatePresence>
+				{persistentBar && persistentBar.items.length > 0 && dragOrigin && !onboardingOpen && !isDragging ? (
+					<FloatingRovoButtonPersistentBarRail
+						key="persistent-bar"
+						bar={persistentBar}
+						side={barSide}
 						shouldReduceMotion={shouldReduceMotion}
 					/>
-				) : (
-					<FloatingRovoButtonInner
-						key="button"
-						onClick={handleButtonClick}
-						onDragMouseDown={handleDragMouseDown}
-						onDragPointerDown={handleDragPointerDown}
-						ariaLabel={ariaLabel}
-						shouldReduceMotion={shouldReduceMotion}
-					/>
-				)}
+				) : null}
 			</AnimatePresence>
 		</motion.div>
 	);
@@ -993,6 +1163,7 @@ export default function FloatingRovoButton({
 	onButtonClick,
 	suggestion,
 	onboarding,
+	persistentBar,
 }: Readonly<FloatingRovoButtonProps>) {
 	const { isOpen, openChat } = useRovoChat();
 	const shouldReduceMotion = Boolean(useReducedMotion());
@@ -1060,6 +1231,7 @@ export default function FloatingRovoButton({
 						positioning={positioning}
 						ariaLabel={resolvedAriaLabel}
 						onButtonClick={handleButtonClick}
+						persistentBar={persistentBar}
 						shouldReduceMotion={shouldReduceMotion}
 					/>
 				) : null}
