@@ -1675,7 +1675,18 @@ ${pausedAnimationsRule(id)}
 
 @media (prefers-reduced-motion: reduce) {
   [data-beam="${id}"][data-active],
-  [data-beam="${id}"][data-fading],
+  [data-beam="${id}"][data-fading] {
+    animation: none !important;
+  }
+
+  [data-beam="${id}"][data-active] {
+    --beam-opacity-${id}: 1;
+  }
+
+  [data-beam="${id}"][data-fading] {
+    --beam-opacity-${id}: 0;
+  }
+
   [data-beam="${id}"][data-active]::after,
   [data-beam="${id}"][data-fading]::after,
   [data-beam="${id}"][data-active]::before,
@@ -1856,7 +1867,18 @@ ${pausedAnimationsRule(id)}
 
 @media (prefers-reduced-motion: reduce) {
   [data-beam="${id}"][data-active],
-  [data-beam="${id}"][data-fading],
+  [data-beam="${id}"][data-fading] {
+    animation: none !important;
+  }
+
+  [data-beam="${id}"][data-active] {
+    --beam-opacity-${id}: 1;
+  }
+
+  [data-beam="${id}"][data-fading] {
+    --beam-opacity-${id}: 0;
+  }
+
   [data-beam="${id}"][data-active]::after,
   [data-beam="${id}"][data-fading]::after,
   [data-beam="${id}"][data-active]::before,

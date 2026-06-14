@@ -45,6 +45,7 @@ const INCLUDED_TEST_FILES = new Set([
 	// Components are not included wholesale, so keep this focused coverage gated.
 	"components/visual/border-beam/data.test.js",
 	"components/visual/border-beam/registry.test.js",
+	"components/visual/border-beam/source.test.js",
 	// Deterministic studio agent-builder: prompt → agent create/update patch
 	// against the fake catalogs. Pure module under components/, so gate explicitly.
 	"components/projects/studio/lib/demo-agent-builder.test.js",

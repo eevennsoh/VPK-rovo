@@ -117,10 +117,25 @@ export function BorderBeam(
     useEffect(() => {
       if (active && !isActive && !isFading) {
         setIsActive(true);
+        if (
+          typeof window !== 'undefined' &&
+          window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+        ) {
+          onActivate?.();
+        }
       } else if (!active && isActive && !isFading) {
+        if (
+          typeof window !== 'undefined' &&
+          window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+        ) {
+          setIsActive(false);
+          setIsFading(false);
+          onDeactivate?.();
+          return;
+        }
         setIsFading(true);
       }
-    }, [active, isActive, isFading]);
+    }, [active, isActive, isFading, onActivate, onDeactivate]);
 
     // Pause the (paint-heavy) animations while the element is scrolled offscreen.
     // This stops per-frame painting entirely for hidden instances without changing
@@ -186,17 +201,19 @@ export function BorderBeam(
       (e: AnimationEvent<HTMLDivElement>) => {
         const animationName = e.animationName;
 
-        if (animationName.includes('fade-out')) {
-          setIsActive(false);
-          setIsFading(false);
-          onDeactivate?.();
-        } else if (animationName.includes('fade-in')) {
-          onActivate?.();
+        if (e.target === e.currentTarget) {
+          if (animationName === `beam-fade-out-${id}`) {
+            setIsActive(false);
+            setIsFading(false);
+            onDeactivate?.();
+          } else if (animationName === `beam-fade-in-${id}`) {
+            onActivate?.();
+          }
         }
 
         consumerOnAnimationEnd?.(e);
       },
-      [onActivate, onDeactivate, consumerOnAnimationEnd]
+      [id, onActivate, onDeactivate, consumerOnAnimationEnd]
     );
 
     const resolvedTheme = resolveTheme(theme, systemTheme);
