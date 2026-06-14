@@ -72,6 +72,8 @@ export interface AgentTriggerValue {
 export interface AgentAutomationRule {
 	id: string;
 	name?: string;
+	/** Short human summary of what the automation does, shown under the name in the editor. */
+	description?: string;
 	prompt?: string;
 	/** Whether the automation rule is active. Treated as `true` when undefined. */
 	enabled?: boolean;
@@ -743,18 +745,21 @@ export function createAgentAutomationRule({
 	enabled = true,
 	id,
 	name,
+	description,
 	prompt,
 	triggers,
 }: Readonly<{
 	enabled?: boolean;
 	id: string;
 	name?: string;
+	description?: string;
 	prompt?: string;
 	triggers: readonly AgentTriggerValue[];
 }>): AgentAutomationRule {
 	return {
 		id,
 		name,
+		description,
 		prompt,
 		enabled,
 		triggers: [...triggers],

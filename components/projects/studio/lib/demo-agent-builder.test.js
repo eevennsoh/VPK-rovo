@@ -312,3 +312,26 @@ test("planDeterministicAgentBuild → not handled for chit-chat", async () => {
 	assert.equal(outcome.handled, false);
 	assert.equal(outcome.mode, "none");
 });
+
+test("generated scheduled automation carries a description and app-chip tokens", async () => {
+	const { buildAgentUpdatePatch } = await loadModule();
+
+	const prompt =
+		"every day at 7am give me a readout referencing my /gmail /jira /google calendar";
+	const patch = buildAgentUpdatePatch(prompt, {});
+	assert.ok(Array.isArray(patch.automationRules) && patch.automationRules.length === 1);
+	const rule = patch.automationRules[0];
+
+	// Name + description are both populated (no empty placeholders).
+	assert.ok(typeof rule.name === "string" && rule.name.length > 0, "name populated");
+	assert.ok(typeof rule.description === "string" && rule.description.length > 0, "description populated");
+
+	// Slash app references in the prompt become @[app:id] chips.
+	assert.match(rule.prompt, /@\[app:gmail\]/u);
+	assert.match(rule.prompt, /@\[app:jira\]/u);
+	assert.match(rule.prompt, /@\[app:google-calendar\]/u);
+	assert.doesNotMatch(rule.prompt, /\/gmail|\/jira|\/google calendar/u);
+
+	// The short description stays plain text (no token markup leaking in).
+	assert.doesNotMatch(rule.description, /@\[app:/u);
+});

@@ -580,3 +580,36 @@ test("a never-resolving gateway call still terminates and yields a fallback agen
 		true,
 	);
 });
+
+test("normalizes automation rule description and rewrites slash/at app refs into @[app:id] chips", () => {
+	const result = normalizeStudioAgentResult({
+		agentId: "chief-of-staff",
+		name: "Chief of Staff",
+		description: "Daily executive readout.",
+		instructions: "## Instructions\n\nReview my /gmail and @salesforce each morning.",
+		conversationStarters: ["Give me today's readout."],
+		automationRules: [
+			{
+				id: "automation-1",
+				name: "Morning readout",
+				description: "Summarize the day ahead at 7am.",
+				prompt: "When this runs, read my /gmail /salesforce /google calendar /jira.",
+				triggers: [{ id: "trigger-1", providerId: "scheduled", eventId: "daily-at-7am" }],
+			},
+		],
+	});
+
+	assert.ok(result, "definition should normalize");
+	const rule = result.automationRules[0];
+	// Description survives normalization.
+	assert.equal(rule.description, "Summarize the day ahead at 7am.");
+	// Slash references in the automation prompt become @[app:id] chips.
+	assert.match(rule.prompt, /@\[app:gmail\]/u);
+	assert.match(rule.prompt, /@\[app:salesforce\]/u);
+	assert.match(rule.prompt, /@\[app:google-calendar\]/u);
+	assert.match(rule.prompt, /@\[app:jira\]/u);
+	assert.doesNotMatch(rule.prompt, /\/gmail|\/salesforce|\/google calendar|\/jira/u);
+	// The agent body handles both `/` and `@` palette prefixes.
+	assert.match(result.instructions, /@\[app:gmail\]/u);
+	assert.match(result.instructions, /@\[app:salesforce\]/u);
+});
