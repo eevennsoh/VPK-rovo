@@ -102,7 +102,7 @@ function ExperimentalAgentCard({
 	);
 }
 
-/** Expanded variant — cover banner, byline, capabilities feature list, footer. */
+/** Expanded variant — cover banner, byline, inline stats, and template detail sections. */
 export function AgentCardDemoExpanded() {
 	return (
 		<div className="flex w-full justify-center p-6">
@@ -110,7 +110,7 @@ export function AgentCardDemoExpanded() {
 				attributionKind="company"
 				avatarSrc="/avatar-agent/teamwork-agents/decision-director.svg"
 				capabilities={CAPABILITIES}
-				className="max-h-[400px] w-[420px]"
+				className="w-full max-w-[376px]"
 				collaborators={COLLABORATORS}
 				description="Review DACI decisions, close context gaps, and suggest the next decision-ready resources."
 				name="Decision Director"
@@ -163,6 +163,7 @@ export function AgentCardDemoSimple() {
 		<div className="flex w-full justify-center p-6">
 			<AgentCard
 				className="w-[420px]"
+				collaborators={COLLABORATORS}
 				description="Review DACI decisions, close context gaps, and suggest the next decision-ready resources."
 				iconSrc="/avatar-agent/teamwork-agents/decision-director.svg"
 				name="Decision Director"
