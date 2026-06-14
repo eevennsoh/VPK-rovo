@@ -45,9 +45,17 @@ const INCLUDED_TEST_FILES = new Set([
 	// Components are not included wholesale, so keep this focused coverage gated.
 	"components/visual/liquid-metal/data.test.js",
 	"components/visual/liquid-metal/registry.test.js",
+	// Border Beam vendored upstream defaults and visual docs wiring.
+	// Components are not included wholesale, so keep this focused coverage gated.
+	"components/visual/border-beam/data.test.js",
+	"components/visual/border-beam/registry.test.js",
+	"components/visual/border-beam/source.test.js",
 	// Deterministic studio agent-builder: prompt → agent create/update patch
 	// against the fake catalogs. Pure module under components/, so gate explicitly.
 	"components/projects/studio/lib/demo-agent-builder.test.js",
+	// Shared automation flow cover used by trigger config and the test landing
+	// page, so both surfaces keep the same trigger → agent visual treatment.
+	"components/blocks/triggers/components/agent-automation-flow-cover.test.js",
 ]);
 
 const gitResult = spawnSync("git", [

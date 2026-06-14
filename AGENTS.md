@@ -200,7 +200,9 @@ static export used by deployment.
 - GitHub Actions runs `.github/workflows/ci.yml` on PRs and manual dispatch.
   The remote `CI / PR checks` status check verifies lockfile registry URLs with
   `scripts/verify-pnpm-lockfile.js`, installs with `pnpm install --frozen-lockfile`,
-  then runs `pnpm run ci:pr` (lint, typecheck, and unit tests via `pnpm run test:unit:js`); treat it as
+  then runs `pnpm run ci:pr` (root-level screenshot artifact verification via
+  `pnpm run verify:root-artifacts`, lint, typecheck, and unit tests via
+  `pnpm run test:unit:js`); treat it as
   PR confirmation, not a substitute for local validation. This check is
   required by branch protection on `main` — `/vpk-git-ship` auto-merge will wait
   for it to pass.

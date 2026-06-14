@@ -34,9 +34,13 @@ export function compareByNameNatural(
 export function sortByUpdatedAtDesc<T extends { updatedAt: string }>(
 	items: ReadonlyArray<T>,
 ): T[] {
-	return [...items].sort(
-		(left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt),
-	);
+	return items
+		.map((item) => ({
+			item,
+			updatedAtMs: Date.parse(item.updatedAt),
+		}))
+		.sort((left, right) => right.updatedAtMs - left.updatedAtMs)
+		.map(({ item }) => item);
 }
 
 export function sleep(ms: number): Promise<void> {

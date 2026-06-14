@@ -146,6 +146,12 @@ interface ChatPanelProps {
 	 * every other surface renders the tab list full width.
 	 */
 	showAgentTestControls?: boolean;
+	/**
+	 * Agent Test can own its own starting-state chooser while still using the
+	 * selected custom agent inside ChatPanel. Suppress the automatic custom-agent
+	 * tab strip for that chat-only surface.
+	 */
+	suppressCustomAgentTabs?: boolean;
 	agentVersionOptions?: readonly ChatPanelAgentVersionOption[];
 	selectedAgentVersionId?: string;
 	onAgentVersionChange?: (versionId: string) => void;
@@ -276,6 +282,7 @@ export default function ChatPanel({
 	greetingSelectedAgent,
 	customAgentTabs,
 	showAgentTestControls = false,
+	suppressCustomAgentTabs = false,
 	agentVersionOptions = DEFAULT_AGENT_VERSION_OPTIONS,
 	selectedAgentVersionId,
 	onAgentVersionChange,
@@ -908,7 +915,10 @@ export default function ChatPanel({
 	};
 	const isHeaderHistoryEnabled = !hideHeader && headerVariant === "default";
 	const shouldRenderHeaderHistory = isHeaderHistoryEnabled && chatSurface !== "floating";
-	const shouldRenderCustomAgentTabs = Boolean(customAgentTabs) || (isCustomAgentSelected && isCustomAgentTabsProfile(selectedAgent));
+	const shouldRenderCustomAgentTabs = !suppressCustomAgentTabs && (
+		Boolean(customAgentTabs) ||
+		(isCustomAgentSelected && isCustomAgentTabsProfile(selectedAgent))
+	);
 	const chatConversationBody = (
 		<Conversation
 			className="min-h-0 min-w-0 flex-1"
