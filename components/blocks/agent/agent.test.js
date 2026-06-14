@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { readFileSync } = require("node:fs");
+const { readFileSync, readdirSync } = require("node:fs");
 const { join } = require("node:path");
 const { test } = require("node:test");
 
@@ -7,7 +7,24 @@ function readProjectFile(relativePath) {
 	return readFileSync(join(process.cwd(), relativePath), "utf8");
 }
 
+function escapeRegExp(value) {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function listAgentAvatarAssetSrcs() {
+	const avatarRoot = join(process.cwd(), "public/avatar-agent");
+	return readdirSync(avatarRoot, { withFileTypes: true })
+		.filter((entry) => entry.isDirectory())
+		.flatMap((groupEntry) =>
+			readdirSync(join(avatarRoot, groupEntry.name), { withFileTypes: true })
+				.filter((assetEntry) => assetEntry.isFile() && assetEntry.name.endsWith(".svg"))
+				.map((assetEntry) => `/avatar-agent/${groupEntry.name}/${assetEntry.name}`)
+		)
+		.sort();
+}
+
 const AGENT_SOURCE = readProjectFile("components/blocks/agent/components/agent.tsx");
+const AGENT_AVATAR_OPTIONS_SOURCE = readProjectFile("components/blocks/agent/data/agent-avatar-options.ts");
 const AGENT_INDEX_SOURCE = readProjectFile("components/blocks/agent/index.ts");
 const AGENT_PAGE_SOURCE = readProjectFile("components/blocks/agent/page.tsx");
 const AGENT_PREVIEW_PAGE_SOURCE = readProjectFile("app/preview/blocks/agent/page.tsx");
@@ -68,6 +85,52 @@ test("Agent is exposed as a website block", () => {
 	assert.doesNotMatch(UI_CUSTOM_DETAILS_SOURCE, /\n\tagent: \{/u);
 	assert.match(WEBSITE_REGISTRY_SOURCE, /const BLOCK_DEMOS: Record<string, ComponentType> = \{[\s\S]*agent: dynamic\(\(\) => import\("\.\/demos\/blocks\/agent-demo"\), \{ ssr: false \}\)/u);
 	assert.doesNotMatch(WEBSITE_REGISTRY_SOURCE, /const UI_CUSTOM_DEMO: Record<string, ComponentType> = \{[\s\S]*agent: dynamic\(\(\) => import\("\.\/demos\/blocks\/agent-demo"\), \{ ssr: false \}\)[\s\S]*const BLOCK_DEMOS/u);
+});
+
+test("Agent profile cover exposes a grouped avatar picker when profile avatar edits are enabled", () => {
+	assert.match(AGENT_SOURCE, /import \{[\s\S]*AGENT_AVATAR_OPTION_GROUPS,[\s\S]*AGENT_AVATAR_OPTION_SRCS,[\s\S]*\} from "@\/components\/blocks\/agent\/data\/agent-avatar-options";/u);
+	assert.match(AGENT_SOURCE, /DropdownMenuRadioGroup,[\s\S]*DropdownMenuRadioItem,/u);
+	assert.match(AGENT_SOURCE, /const AGENT_AVATAR_OPTION_SRC_SET = new Set<string>\(AGENT_AVATAR_OPTION_SRCS\);/u);
+	assert.match(AGENT_SOURCE, /function AgentAvatarPickerMenu/u);
+	assert.match(AGENT_SOURCE, /aria-label="Change agent avatar"/u);
+	assert.match(AGENT_SOURCE, /data-agent-avatar-edit-cue/u);
+	assert.match(AGENT_SOURCE, /\{!open \? \(/u);
+	assert.doesNotMatch(AGENT_SOURCE, /open && "\[&_\[data-agent-avatar-edit-cue\]\]:opacity-100"/u);
+	assert.doesNotMatch(AGENT_SOURCE, />Agent avatar<\/div>/u);
+	assert.match(AGENT_SOURCE, /group-hover\/avatar-picker:opacity-100/u);
+	assert.match(AGENT_SOURCE, /group-focus-visible\/avatar-picker:opacity-100/u);
+	assert.match(AGENT_SOURCE, /aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:text-text-subtle/u);
+	assert.match(AGENT_SOURCE, /\[clip-path:polygon\(50%_0%,100%_25%,100%_75%,50%_100%,0%_75%,0%_25%\)\]/u);
+	assert.match(AGENT_SOURCE, /<DropdownMenuRadioGroup[\s\S]*value=\{selectedAvatarSrc\}[\s\S]*onValueChange=\{\(nextAvatarSrc\) => \{[\s\S]*onAvatarChange\(nextAvatarSrc\);[\s\S]*setOpen\(false\);/u);
+	assert.match(AGENT_SOURCE, /AGENT_AVATAR_OPTION_GROUPS\.map\(\(group\) =>/u);
+	assert.doesNotMatch(AGENT_SOURCE, /<DropdownMenuSeparator className="mx-1 my-2" \/>/u);
+	assert.match(AGENT_SOURCE, /<DropdownMenuRadioItem[\s\S]*aria-label=\{`Use \$\{option\.label\} avatar`\}[\s\S]*value=\{option\.src\}/u);
+	assert.match(AGENT_SOURCE, /function AgentAvatarOptionPreview/u);
+	assert.doesNotMatch(AGENT_SOURCE, /group-data-\[highlighted\]\/avatar-option:stroke-border/u);
+	assert.doesNotMatch(AGENT_SOURCE, /stroke-border-selected/u);
+	assert.doesNotMatch(AGENT_SOURCE, /data-\[checked\]:ring-2/u);
+	assert.match(AGENT_SOURCE, /data-\[highlighted\]:bg-bg-neutral-subtle-hovered/u);
+	assert.match(AGENT_SOURCE, /active:bg-bg-neutral-subtle-pressed/u);
+	assert.match(AGENT_SOURCE, /data-checked:bg-bg-selected/u);
+	assert.match(AGENT_SOURCE, /data-checked:data-\[highlighted\]:bg-bg-selected-hovered/u);
+	assert.match(AGENT_SOURCE, /data-checked:active:bg-bg-selected-pressed/u);
+	assert.match(AGENT_SOURCE, /onAvatarChange\?: \(avatarSrc: string\) => void;/u);
+	assert.match(AGENT_SOURCE, /onProfileAvatarChange\?: \(avatarSrc: string\) => void;/u);
+	assert.match(AGENT_SOURCE, /<AgentProfileCover avatarSrc=\{avatarSrc\} onAvatarChange=\{onAvatarChange\} \/>/u);
+	assert.match(AGENT_SOURCE, /onAvatarChange=\{onProfileAvatarChange\}/u);
+
+	const avatarAssetSrcs = listAgentAvatarAssetSrcs();
+	assert.equal(avatarAssetSrcs.length, 70);
+	assert.equal((AGENT_AVATAR_OPTIONS_SOURCE.match(/src: "\/avatar-agent\//gu) ?? []).length, avatarAssetSrcs.length);
+	for (const groupLabel of ["Lime", "Purple", "Yellow", "Orange", "Blue"]) {
+		assert.match(AGENT_AVATAR_OPTIONS_SOURCE, new RegExp(`label: "${groupLabel}"`, "u"));
+	}
+	for (const oldGroupLabel of ["Development", "Product", "Service", "Strategy", "Teamwork"]) {
+		assert.doesNotMatch(AGENT_AVATAR_OPTIONS_SOURCE, new RegExp(`label: "${oldGroupLabel}"`, "u"));
+	}
+	for (const avatarSrc of avatarAssetSrcs) {
+		assert.match(AGENT_AVATAR_OPTIONS_SOURCE, new RegExp(escapeRegExp(avatarSrc), "u"));
+	}
 });
 
 test("Agent instructions composer uses the shared Tiptap editor", () => {
