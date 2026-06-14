@@ -7,6 +7,7 @@ const COMPOSER_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-app-composer.
 const CARD_BODY_SOURCE = fs.readFileSync(path.join(__dirname, "composer-card-body.tsx"), "utf8");
 const FLOATING_BODY_SOURCE = fs.readFileSync(path.join(__dirname, "composer-floating-body.tsx"), "utf8");
 const FLOATING_COMPOSER_SOURCE = fs.readFileSync(path.join(__dirname, "floating-composer.tsx"), "utf8");
+const SEND_CONTROLS_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-composer-send-controls.tsx"), "utf8");
 const COMPOSER_EXTENSIONS_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/composer-extensions.ts"), "utf8");
 const PROMPT_INPUT_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/prompt-input.tsx"), "utf8");
 const RICH_TEXT_EDITOR_CSS = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/rich-text-editor.css"), "utf8");
@@ -112,6 +113,8 @@ test("composer plain Enter submits before Tiptap can split the paragraph", () =>
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /isSuggestionMenuOpen\(view\)/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /return onEnter \? onEnter\(view\) : false;/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /"Shift-Enter": insertHardBreak/u);
+	assert.match(PROMPT_INPUT_SOURCE, /const submitButton = form\.querySelector\([\s\S]*button\[type="submit"\][\s\S]*if \(submitButton\?\.disabled\)/u);
+	assert.match(SEND_CONTROLS_SOURCE, /key="dictation-active"[\s\S]*aria-hidden="true"[\s\S]*disabled[\s\S]*type="submit"/u);
 });
 
 test("visual trace auto-tagging uses mention nodes and hides autocomplete while tracing", () => {

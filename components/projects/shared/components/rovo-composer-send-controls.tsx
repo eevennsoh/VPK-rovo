@@ -239,6 +239,13 @@ export function RovoComposerActionButton({
 					>
 						<div className="flex h-8 w-28 items-center gap-1 overflow-hidden rounded-md bg-bg-neutral-bold px-1 text-text-inverse shadow-sm">
 							<button
+								aria-hidden="true"
+								className="hidden"
+								disabled
+								tabIndex={-1}
+								type="submit"
+							/>
+							<button
 								aria-label="Cancel dictation"
 								className="flex size-6 shrink-0 items-center justify-center rounded-sm text-text-inverse transition-colors hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"
 								onClick={handleCancelDictation}
