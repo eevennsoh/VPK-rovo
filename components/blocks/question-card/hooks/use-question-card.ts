@@ -139,10 +139,10 @@ export function useQuestionCard({
 	const visibleOptionCount = getVisibleOptionCount(currentQuestion.options.length, maxVisibleOptions);
 	const customOptionIndex = visibleOptionCount;
 	const customInputValue = getCustomInputValue(currentQuestion, answers[currentQuestion.id]);
-	const hasCustomInputText = Boolean(customInputValue && customInputValue.trim().length > 0);
+	const currentQuestionAnswered = isQuestionAnswered(currentQuestion, answers);
 
 	const allQuestionsAnswered = questions.every((question) => isQuestionAnswered(question, answers));
-	const primaryAction = getQuestionCardPrimaryAction(allQuestionsAnswered, hasCustomInputText);
+	const primaryAction = getQuestionCardPrimaryAction(allQuestionsAnswered, currentQuestionAnswered, canGoToNextQuestion);
 
 	useEffect(() => {
 		cardRef.current?.focus();
@@ -256,6 +256,19 @@ export function useQuestionCard({
 			}
 		}
 	}, [isSubmitting, currentQuestion, canGoToNextQuestion, goToNextQuestion, questions, answers, submitAnswers, handleDismiss]);
+
+	// Advance while preserving the current question's answer. Distinct from handleSkip, which
+	// stamps the question as "Skipped". Used by the footer "Next"/"Submit" CTA once the current
+	// question has a real answer (e.g. multi-select picks or custom text).
+	const handleNext = useCallback(() => {
+		if (isSubmitting) return;
+
+		if (canGoToNextQuestion) {
+			goToNextQuestion(answers);
+		} else {
+			submitAnswers(answers);
+		}
+	}, [isSubmitting, canGoToNextQuestion, goToNextQuestion, answers, submitAnswers]);
 
 	const handleSelectOption = useCallback(
 		(optionId: string) => {
@@ -542,6 +555,7 @@ export function useQuestionCard({
 		goToNextQuestion,
 		goToPreviousQuestion,
 		handleSkip,
+		handleNext,
 		handleAnswerChange,
 		handleCustomInputFocus,
 		handleKeyDown,

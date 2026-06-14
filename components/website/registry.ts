@@ -7420,6 +7420,13 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "question-card-demo-multi-step-multi-select": dynamic(
+    () =>
+      import("./demos/blocks/question-card-demo").then((mod) => ({
+        default: mod.QuestionCardDemoMultiStepMultiSelect,
+      })),
+    { ssr: false },
+  ),
   "question-card-demo-text-only": dynamic(
     () =>
       import("./demos/blocks/question-card-demo").then((mod) => ({
