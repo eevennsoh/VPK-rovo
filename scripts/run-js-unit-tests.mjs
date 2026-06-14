@@ -41,6 +41,10 @@ const INCLUDED_TEST_FILES = new Set([
 	// Components are not included wholesale, so keep this focused coverage gated.
 	"components/visual/ink-wash/data.test.js",
 	"components/visual/ink-wash/registry.test.js",
+	// Upstream option contract and registry wiring coverage for Liquid Metal.
+	// Components are not included wholesale, so keep this focused coverage gated.
+	"components/visual/liquid-metal/data.test.js",
+	"components/visual/liquid-metal/registry.test.js",
 	// Deterministic studio agent-builder: prompt → agent create/update patch
 	// against the fake catalogs. Pure module under components/, so gate explicitly.
 	"components/projects/studio/lib/demo-agent-builder.test.js",
