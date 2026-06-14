@@ -10,6 +10,7 @@ export function resolveRovoAppComposerIdleAction(input: {
 	realtimeVoiceActive: boolean;
 	showBackgroundStop: boolean;
 	submitDisabled: boolean;
+	canStartDictation: boolean;
 	canStartRealtimeVoice: boolean;
 }): RovoAppComposerIdleAction {
 	if (input.realtimeVoiceActive || input.isComposerBusy) {
@@ -28,7 +29,7 @@ export function resolveRovoAppComposerIdleAction(input: {
 		return "none";
 	}
 
-	if (input.canStartRealtimeVoice) {
+	if (input.canStartDictation || input.canStartRealtimeVoice) {
 		return "voice-start";
 	}
 

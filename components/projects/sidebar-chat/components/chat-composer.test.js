@@ -60,6 +60,15 @@ test("compact chat composer padding can be overridden by opt-in surfaces", () =>
 	assert.match(sidebarComposer, /className=\{cn\("relative min-w-0 px-3", containerClassName\)\}/u);
 });
 
+test("compact chat opts its Rovo composer textarea into visual trace auto-tagging", () => {
+	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
+	const promptInput = readProjectFile("components/ui-custom/prompt-input.tsx");
+
+	assert.match(promptInput, /enableVisualTraceAutoTagging\?: boolean;/u);
+	assert.match(promptInput, /enableVisualTraceAutoTagging = false/u);
+	assert.match(sidebarComposer, /<PromptInputTextarea[\s\S]*directoryAutocompleteListVisible=\{directoryAutocompleteListVisible\}[\s\S]*enableVisualTraceAutoTagging[\s\S]*onChange=\{\(event\) => onPromptChange\(event\.currentTarget\.value\)\}/u);
+});
+
 test("Rovo app sources selector opens a reasoning-free customize popover", () => {
 	const source = readProjectFile("components/projects/shared/components/composer-card-body.tsx");
 	const popoverIndex = source.indexOf("<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>");
@@ -101,23 +110,62 @@ test("shared composer auto reasoning button opens a sources-free customize popov
 	assert.match(source, /const autoReasoningButtonClassName = \[/u);
 	assert.match(source, /className=\{autoReasoningButtonClassName\}/u);
 	assert.match(source, /\[&\[aria-expanded=true\]\]:bg-transparent/u);
+	assert.match(source, /aria-label="Start dictation"/u);
 	assert.match(source, /aria-label="Start live voice"/u);
 	assert.match(source, /aria-label="Stop live voice"/u);
+	assert.match(source, /aria-label="Cancel dictation"/u);
+	assert.match(source, /aria-label="Accept dictation"/u);
 	assert.match(source, /aria-label="Submit"/u);
 });
 
-test("shared composer experimental dark CTA prop is opt-in and covers submit plus live voice", () => {
+test("shared composer keeps dictation accept disabled while final audio is processing", () => {
+	const source = readProjectFile("components/projects/shared/components/rovo-composer-send-controls.tsx");
+
+	assert.match(source, /if \(isDictationProcessing\) \{\s*return;\s*\}/u);
+	assert.match(source, /aria-label="Accept dictation"[\s\S]*disabled=\{isDictationProcessing\}/u);
+});
+
+test("shared composer waveform uses live stream while listening and processing animation otherwise", () => {
+	const source = readProjectFile("components/projects/shared/components/rovo-composer-send-controls.tsx");
+
+	assert.match(source, /const isDictationRecording = dictationState === "recording" && micStream !== null;/u);
+	assert.match(source, /active=\{isDictationRecording\}/u);
+	assert.match(source, /mediaStream=\{isDictationRecording \? micStream : null\}/u);
+	assert.match(source, /mode=\{isDictationRecording \? "scrolling" : "static"\}/u);
+	assert.match(source, /const isRealtimeListening = realtimeVoiceState === "listening" && realtimeWaveformState\.active;/u);
+	assert.match(source, /active=\{isRealtimeListening\}/u);
+	assert.match(source, /mediaStream=\{isRealtimeListening \? micStream : null\}/u);
+	assert.match(source, /mode=\{isRealtimeListening \? "scrolling" : "static"\}/u);
+});
+
+test("shared composer keeps dictation beside typed submit and live voice empty-only", () => {
+	const source = readProjectFile("components/projects/shared/components/rovo-composer-send-controls.tsx");
+
+	assert.match(source, /const shouldShowDictationStart = Boolean\(onStartDictation\) && !resolvedComposerBusy && !realtimeVoiceActive && !submitDisabled;/u);
+	assert.match(source, /const shouldShowRealtimeVoiceStart = idleAction === "voice-start" && !canSubmit && Boolean\(onToggleRealtimeVoice\);/u);
+	assert.match(source, /idleAction === "submit" \|\| idleAction === "voice-start"/u);
+	assert.match(source, /\{shouldShowDictationStart \? \([\s\S]*aria-label="Start dictation"[\s\S]*\) : null\}/u);
+	assert.match(source, /\{idleAction === "submit" \? \([\s\S]*aria-label="Submit"[\s\S]*\) : null\}/u);
+	assert.match(source, /\{shouldShowRealtimeVoiceStart \? \([\s\S]*aria-label="Start live voice"[\s\S]*\) : null\}/u);
+});
+
+test("shared composer experimental dark CTA prop is opt-in and leaves dictation as a ghost action", () => {
 	const source = readProjectFile("components/projects/shared/components/rovo-composer-send-controls.tsx");
 	const neutralBoldClass = "bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
 	const submitIndex = source.indexOf('<PromptInputSubmit aria-label="Submit"');
+	const dictationStartIndex = source.indexOf('aria-label="Start dictation"');
 	const voiceStartIndex = source.indexOf('aria-label="Start live voice"');
 
 	assert.match(source, /experimentalDarkCta\?: boolean/u);
 	assert.match(source, /experimentalDarkCta = false/u);
 	assert.match(source, new RegExp(`const EXPERIMENTAL_DARK_CTA_CLASS_NAME = "${neutralBoldClass}"`, "u"));
 	assert.notEqual(submitIndex, -1);
+	assert.notEqual(dictationStartIndex, -1);
 	assert.notEqual(voiceStartIndex, -1);
 	assert.match(source.slice(submitIndex, source.indexOf("</PromptInputSubmit>", submitIndex)), /experimentalDarkCtaClassName/u);
+	const dictationButtonStartIndex = source.lastIndexOf("<PromptInputButton", dictationStartIndex);
+	assert.match(source.slice(dictationButtonStartIndex, source.indexOf("</PromptInputButton>", dictationStartIndex)), /variant="ghost"/u);
+	assert.doesNotMatch(source.slice(dictationButtonStartIndex, source.indexOf("</PromptInputButton>", dictationStartIndex)), /experimentalDarkCtaClassName/u);
 	assert.match(source.slice(voiceStartIndex, source.indexOf("</PromptInputButton>", voiceStartIndex)), /experimentalDarkCtaClassName/u);
 });
 
@@ -129,7 +177,7 @@ test("Rovo composers default reasoning to Auto", () => {
 	assert.match(sharedMenuData, /export const DEFAULT_REASONING_OPTION_ID = "let-rovo-decide"/u);
 	assert.match(sidebarComposer, /useState\(DEFAULT_REASONING_OPTION_ID\)/u);
 	assert.match(rovoComposer, /useState\(DEFAULT_REASONING_OPTION_ID\)/u);
-	assert.match(rovoComposer, /currentReasoning === "max" \? DEFAULT_REASONING_OPTION_ID : currentReasoning/u);
+	assert.match(rovoComposer, /if \(isPlanMode && selectedReasoning !== "max"\) \{[\s\S]*setSelectedReasoning\("max"\);[\s\S]*\} else if \(!isPlanMode && selectedReasoning === "max"\) \{[\s\S]*setSelectedReasoning\(DEFAULT_REASONING_OPTION_ID\);/u);
 	assert.doesNotMatch(sidebarComposer, /useState\("deep-research"\)/u);
 	assert.doesNotMatch(rovoComposer, /useState\("deep-research"\)/u);
 });
@@ -157,6 +205,11 @@ test("sidebar chat and Rovo app composers use the shared Auto plus CTA controls"
 
 	for (const source of [sidebarComposer, rovoComposer]) {
 		assert.match(source, /RovoComposerSendControls/u);
+		assert.match(source, /dictationState=\{dictationState\}/u);
+		assert.match(source, /dictationTranscriptPreview=\{dictationTranscriptPreview\}/u);
+		assert.match(source, /onStartDictation=\{onStartDictation\}/u);
+		assert.match(source, /onCancelDictation=\{onCancelDictation\}/u);
+		assert.match(source, /onAcceptDictation=\{onAcceptDictation\}/u);
 		assert.match(source, /onToggleRealtimeVoice=\{onToggleRealtimeVoice\}/u);
 		assert.match(source, /experimentalDarkCta=\{experimentalDarkCta\}/u);
 		assert.doesNotMatch(source, /<PromptInputSendControls/u);
@@ -168,9 +221,15 @@ test("sidebar chat and Rovo app composers use the shared Auto plus CTA controls"
 	assert.match(rovoComposerProps, /experimentalDarkCta = false/u);
 
 	assert.match(sidebarPanel, /useRealtimeVoice/u);
+	assert.doesNotMatch(sidebarPanel, /useLiveVoice/u);
+	assert.match(sidebarPanel, /appendDictationTranscript\(promptRef\.current, transcriptText\)/u);
+	assert.match(sidebarPanel, /realtime\.connect\(\{ transcriptionOnly: true \}\);/u);
 	assert.match(sidebarPanel, /experimentalDarkCta/u);
 	assert.match(rovoShell, /experimentalDarkCta/u);
+	assert.match(rovoShell, /appendDictationTranscript\(composerTextRef\.current, transcript\)/u);
 	assert.match(sidebarPanel, /micStream=\{realtime\.micStream\}/u);
+	assert.match(sidebarPanel, /dictationState=\{dictationState\}/u);
+	assert.match(sidebarPanel, /onStartDictation=\{handleStartDictation\}/u);
 	assert.match(sidebarPanel, /realtimeVoiceActive=\{isRealtimeVoiceActive\}/u);
 });
 
@@ -286,7 +345,7 @@ test("compact chat exposes normalized Untitled agent names for session-created a
 	assert.match(context, /\.\.\.normalizedSessionAgentEntries\.map\(\(entry\) => entry\.profile\)/u);
 	assert.match(context, /\.\.\.normalizedSessionAgentEntries\.map\(\(entry\) => toAgentSelectorAgent\(entry\.profile\)\)/u);
 	assert.match(context, /sessionAgentEntriesRef\.current = normalizedSessionAgentEntries;/u);
-	assert.match(context, /persistSessionAgentEntries\(normalizedSessionAgentEntries\);/u);
+	assert.match(context, /persistSessionAgentEntries\(sessionAgentEntriesRef\.current\.map\(normalizeSessionAgentEntry\)\);/u);
 	assert.match(context, /sessionAgentEntries: normalizedSessionAgentEntries,/u);
 	assert.match(contextsIndex, /getStudioSessionAgentDisplayName,/u);
 });

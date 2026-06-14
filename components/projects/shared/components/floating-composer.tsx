@@ -30,17 +30,13 @@ export type FloatingComposerProps = Omit<
 /**
  * Shared floating prompt composer shell.
  *
- * Single-line: lays out `[ + ] [ textarea ] [ actions ]` on one vertically-centered flex row.
- * Multi-line: once the textarea wraps to 2+ lines, the `+` and `actions` cluster drop into
- * their own bottom strip below a full-width textarea (mirroring the default chat composer's
- * `PromptInputFooter`). The transition is an instant reflow.
- *
  * This is the single source of truth for the floating composer layout: the Studio composer and
  * the Prompt Input demo both render it, so any layout change here propagates to both surfaces.
  *
- * The reflow uses a stable DOM order with flex `order`/`basis`/`flex-wrap` rather than swapping
- * subtrees — the textarea is passed in as `children` and owns focus/cursor/value, so it must
- * never unmount across the transition.
+ * Compact mode keeps `[ + ] [ editor ] [ actions ]` in one row. Once the text would wrap at
+ * compact-row width, the editor takes the top row and controls sit together on a bottom row.
+ * Measurement is always based on compact geometry, even while expanded, so the layout cannot
+ * oscillate when expanding gives the editor more width.
  */
 export function FloatingComposer({
 	actions,
@@ -51,130 +47,170 @@ export function FloatingComposer({
 	...props
 }: Readonly<FloatingComposerProps>) {
 	const containerRef = useRef<HTMLDivElement>(null);
-	const [isMultiline, setIsMultiline] = useState(false);
+	const addButtonRef = useRef<HTMLDivElement>(null);
+	const textFieldRef = useRef<HTMLDivElement>(null);
+	const actionsRef = useRef<HTMLDivElement>(null);
+	const [isExpanded, setIsExpanded] = useState(false);
 
-	// Detecting whether the field has wrapped to a second line can't be done in pure CSS
-	// (`:has()`/container queries can't observe text wrapping), so we measure `scrollHeight`.
-	// The field is the core composer's ProseMirror contentEditable (no longer a <textarea>).
 	useEffect(() => {
 		const container = containerRef.current;
-		if (!container) {
+		const addButtonContainer = addButtonRef.current;
+		const textFieldContainer = textFieldRef.current;
+		const actionsContainer = actionsRef.current;
+		if (!container || !addButtonContainer || !textFieldContainer || !actionsContainer) {
 			return;
 		}
 
-		// The contentEditable is mounted asynchronously by the editor
-		// (`immediatelyRender: false`), so it may not exist on this first commit.
-		// Re-query inside `measure()`/`bind()` and retry until it appears rather than
-		// bailing out once (which previously left the layout permanently single-row).
 		const findField = () =>
-			container.querySelector<HTMLElement>(
+			textFieldContainer.querySelector<HTMLElement>(
 				"textarea, [contenteditable='true']",
 			);
 
-		let lastFieldWidth = 0;
+		const getComposerPlainText = (field: HTMLElement): string => {
+			const form = field.closest("form");
+			const hiddenValue = form
+				?.querySelector<HTMLInputElement>('[data-slot="prompt-input-message"]')
+				?.value;
+			if (typeof hiddenValue === "string" && hiddenValue.length > 0) {
+				return hiddenValue;
+			}
+
+			const clone = field.cloneNode(true) as HTMLElement;
+			for (const element of clone.querySelectorAll<HTMLElement>(
+				".prompt-input-directory-autocomplete-ghost, [aria-hidden='true']",
+			)) {
+				element.remove();
+			}
+			return clone.textContent ?? "";
+		};
+
+		let frameId: number | null = null;
+
+		const getDistinctLineCount = (element: HTMLElement): number => {
+			const range = document.createRange();
+			range.selectNodeContents(element);
+			const lineTops: number[] = [];
+			for (const rect of Array.from(range.getClientRects())) {
+				if (rect.width <= 0 || rect.height <= 0) {
+					continue;
+				}
+				if (!lineTops.some((top) => Math.abs(top - rect.top) < 2)) {
+					lineTops.push(rect.top);
+				}
+			}
+			range.detach();
+			return lineTops.length;
+		};
 
 		const measure = () => {
+			frameId = null;
 			const field = findField();
 			if (!field) {
 				return;
 			}
-			const styles = window.getComputedStyle(field);
-			const lineHeight = parseFloat(styles.lineHeight) || 20;
-			const verticalPadding =
-				(parseFloat(styles.paddingTop) || 0) +
-				(parseFloat(styles.paddingBottom) || 0);
-			const contentHeight = field.scrollHeight - verticalPadding;
-			// 1.5× line-height cleanly separates one line (≈1×) from two lines (≈2×).
-			setIsMultiline(contentHeight > lineHeight * 1.5);
-		};
 
-		// Observe the field for height changes from typing *and* programmatic value
-		// changes — gallery prefill, voice transcript streaming, paste, and clear all
-		// update the editor without firing a DOM `input` event, so a typing-only
-		// listener would miss them and the layout would never stack.
-		//
-		// ResizeObserver alone is unreliable for the ProseMirror contentEditable: a
-		// soft wrap that grows height but not width doesn't always deliver a callback,
-		// so we pair it with a MutationObserver on the field subtree (which catches the
-		// DOM/text mutations ProseMirror commits on every edit).
-		//
-		// The hazard is a feedback loop: stacking widens the field (it gains the button
-		// row's width), which can un-wrap borderline content and flip the layout straight
-		// back. We break the loop in the ResizeObserver by ignoring callbacks caused by
-		// our own width change and only re-measuring when the height changes at a stable
-		// width.
-		const fieldObserver = new ResizeObserver((entries) => {
-			const width = entries[0]?.contentRect.width ?? lastFieldWidth;
-			if (width !== lastFieldWidth) {
-				lastFieldWidth = width;
+			const fieldText = getComposerPlainText(field);
+			if (fieldText.trim().length === 0) {
+				setIsExpanded(false);
 				return;
 			}
-			measure();
-		});
-		const mutationObserver = new MutationObserver(() => {
-			measure();
-		});
 
+			const containerStyles = window.getComputedStyle(container);
+			const gap = parseFloat(containerStyles.columnGap || containerStyles.gap) || 0;
+			const compactFieldWidth = Math.max(
+				0,
+				container.getBoundingClientRect().width -
+					addButtonContainer.getBoundingClientRect().width -
+					actionsContainer.getBoundingClientRect().width -
+					gap * 2,
+			);
+			if (compactFieldWidth <= 0) {
+				setIsExpanded(true);
+				return;
+			}
+
+			const probe = document.createElement("div");
+			probe.removeAttribute("id");
+			probe.removeAttribute("contenteditable");
+			probe.removeAttribute("tabindex");
+			probe.setAttribute("aria-hidden", "true");
+			probe.textContent = fieldText;
+			probe.className = field.className;
+			Object.assign(probe.style, {
+				position: "absolute",
+				left: "-10000px",
+				top: "0",
+				width: `${compactFieldWidth}px`,
+				maxWidth: `${compactFieldWidth}px`,
+				minWidth: "0",
+				height: "auto",
+				maxHeight: "none",
+				whiteSpace: "pre-wrap",
+				wordBreak: "break-word",
+				overflow: "visible",
+				pointerEvents: "none",
+				visibility: "hidden",
+			});
+
+			document.body.appendChild(probe);
+			const lineCount = getDistinctLineCount(probe);
+			document.body.removeChild(probe);
+			setIsExpanded(lineCount > 1);
+		};
+
+		const scheduleMeasure = () => {
+			if (frameId !== null) {
+				return;
+			}
+			frameId = window.requestAnimationFrame(measure);
+		};
+
+		const resizeObserver = new ResizeObserver(scheduleMeasure);
+		resizeObserver.observe(container);
+		resizeObserver.observe(addButtonContainer);
+		resizeObserver.observe(actionsContainer);
+
+		const mutationObserver = new MutationObserver(scheduleMeasure);
 		let boundField: HTMLElement | null = null;
-		const bind = () => {
+		const bindField = () => {
 			const field = findField();
 			if (!field || field === boundField) {
 				return Boolean(boundField);
 			}
 			if (boundField) {
-				fieldObserver.unobserve(boundField);
+				resizeObserver.unobserve(boundField);
 			}
 			boundField = field;
-			lastFieldWidth = field.getBoundingClientRect().width;
-			fieldObserver.observe(field);
+			resizeObserver.observe(field);
 			mutationObserver.observe(field, {
 				characterData: true,
 				childList: true,
 				subtree: true,
 			});
-			measure();
+			scheduleMeasure();
 			return true;
 		};
 
-		// Bind now if the field already exists; otherwise poll briefly until the editor
-		// mounts its contentEditable, then stop.
 		let pollId: ReturnType<typeof setInterval> | null = null;
-		if (!bind()) {
+		if (!bindField()) {
 			pollId = setInterval(() => {
-				if (bind() && pollId) {
+				if (bindField() && pollId) {
 					clearInterval(pollId);
 					pollId = null;
 				}
 			}, 50);
 		}
-
-		// React to real responsive width changes of the whole composer. The outer container's
-		// width is set by its parent and does not change when the internal layout reflows, so
-		// guarding on width keeps our own height growth from feeding back into a measurement.
-		let lastWidth = container.getBoundingClientRect().width;
-		const containerObserver = new ResizeObserver((entries) => {
-			const width = entries[0]?.contentRect.width ?? lastWidth;
-			if (width === lastWidth) {
-				return;
-			}
-			lastWidth = width;
-			// The field width tracks the container here, so resync the baseline to keep the
-			// field observer from treating this genuine reflow as a content change next tick.
-			const field = findField();
-			if (field) {
-				lastFieldWidth = field.getBoundingClientRect().width;
-			}
-			measure();
-		});
-		containerObserver.observe(container);
+		scheduleMeasure();
 
 		return () => {
+			if (frameId !== null) {
+				window.cancelAnimationFrame(frameId);
+			}
 			if (pollId) {
 				clearInterval(pollId);
 			}
-			fieldObserver.disconnect();
+			resizeObserver.disconnect();
 			mutationObserver.disconnect();
-			containerObserver.disconnect();
 		};
 	}, []);
 
@@ -200,18 +236,28 @@ export function FloatingComposer({
 					ref={containerRef}
 					className="flex w-full flex-wrap items-center gap-2"
 				>
-					<div className={cn(isMultiline ? "order-2" : "order-1")}>
+					<div
+						ref={addButtonRef}
+						className={cn(
+							"flex shrink-0 items-center gap-1",
+							isExpanded ? "order-2" : "order-1",
+						)}
+					>
 						{addButtonNode}
 					</div>
 					<div
+						ref={textFieldRef}
 						className={cn(
 							"flex min-w-0",
-							isMultiline ? "order-1 basis-full" : "order-2 flex-1",
+							isExpanded ? "order-1 basis-full" : "order-2 flex-1",
 						)}
 					>
 						{children}
 					</div>
-					<div className="order-3 ml-auto flex shrink-0 items-center gap-1">
+					<div
+						ref={actionsRef}
+						className="order-3 ml-auto flex shrink-0 items-center gap-1"
+					>
 						{actions}
 					</div>
 				</div>

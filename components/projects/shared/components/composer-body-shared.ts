@@ -4,6 +4,7 @@ import type { ChatStatus, FileUIPart } from "ai";
 import { useEffect, useRef } from "react";
 import { usePromptInputController } from "@/components/ui-custom/prompt-input";
 import type { ComposerDirectoryAutocompleteController } from "@/components/ui-custom/rich-text-editor";
+import type { RovoComposerDictationState } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 
 /** Props shared by both composer bodies (card + floating). */
@@ -13,16 +14,23 @@ export interface ComposerBodyBaseProps {
 	clickyActive: boolean;
 	composerStatus: ChatStatus;
 	directoryAutocompleteListVisible: boolean;
+	dictationState: RovoComposerDictationState;
+	dictationTranscriptPreview?: string | null;
 	micStream: MediaStream | null | undefined;
+	onAcceptDictation?: () => void;
+	onCancelDictation?: () => void;
 	onDirectoryAutocompleteChange?: (state: DirectoryAutocompleteState | null) => void;
 	onDirectoryAutocompleteControllerChange?: (controller: ComposerDirectoryAutocompleteController | null) => void;
 	onPromptSubmit: (payload: { text: string; files: FileUIPart[] }) => void;
+	onStartDictation?: () => void;
 	onStop: () => Promise<void>;
 	onToggleClicky?: () => void;
 	onToggleRealtimeVoice?: () => void;
 	placeholder: string;
 	prefillText: string | null | undefined;
+	prefillRequestKey: number;
 	realtimeVoiceActive: boolean;
+	realtimeVoiceState: "idle" | "connecting" | "listening" | "speaking";
 	showBackgroundStop: boolean;
 	submitDisabled: boolean;
 	textValue: string;
@@ -35,17 +43,34 @@ export interface ComposerBodyBaseProps {
  * contentEditable (via setComposerPlainText), which auto-grows on its own —
  * no manual textarea height management is needed anymore.
  */
-export function usePrefillEffect(prefillText: string | null | undefined) {
+export function usePrefillEffect(prefillText: string | null | undefined, prefillRequestKey = 0) {
 	const controller = usePromptInputController();
-	const appliedPrefillRef = useRef<string | null>(null);
+	const appliedPrefillRef = useRef<{
+		key: number;
+		text: string | null;
+	}>({
+		key: 0,
+		text: null,
+	});
 	useEffect(() => {
-		if (prefillText && prefillText !== appliedPrefillRef.current) {
-			appliedPrefillRef.current = prefillText;
-			controller.textInput.setInput(prefillText);
-		} else if (prefillText === null && appliedPrefillRef.current !== null) {
-			// Voice transcript cleared (auto-sent) — clear the input
-			appliedPrefillRef.current = null;
-			controller.textInput.clear();
+		if (prefillText === undefined) {
+			return;
 		}
-	}, [prefillText, controller.textInput]);
+
+		if (prefillText === appliedPrefillRef.current.text && prefillRequestKey === appliedPrefillRef.current.key) {
+			return;
+		}
+
+		appliedPrefillRef.current = {
+			key: prefillRequestKey,
+			text: prefillText,
+		};
+
+		if (prefillText === null) {
+			// Voice transcript cleared (auto-sent) — clear the input.
+			controller.textInput.clear();
+		} else {
+			controller.textInput.setInput(prefillText);
+		}
+	}, [prefillRequestKey, prefillText, controller.textInput]);
 }

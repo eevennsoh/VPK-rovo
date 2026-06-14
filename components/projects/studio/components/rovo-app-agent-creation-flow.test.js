@@ -263,16 +263,46 @@ test("Studio template browse reveal uses a single-path svg tracing sweep", () =>
 	assert.doesNotMatch(COMPOSER_SOURCE, /fill="#101214"/u);
 });
 
-test("Studio composer clears shell-owned prefill sources when a prompt is submitted", () => {
+test("Studio composer clears shell-owned prefill sources only after submit succeeds", () => {
 	assert.match(
 		SHELL_SOURCE,
-		/const clearPrefillSources = useCallback\(\(\) => \{\s*setPrefillText\(null\);\s*setVoiceTranscript\(null\);\s*prefillTextRef\.current = null;\s*\}, \[\]\);/u,
+		/const clearPrefillSources = useCallback\(\(\) => \{\s*setPrefillText\(null\);\s*setVoiceTranscript\(null\);\s*composerTextRef\.current = "";\s*prefillTextRef\.current = null;\s*\}, \[\]\);/u,
 	);
-	assert.match(
+	assert.doesNotMatch(
 		SHELL_SOURCE,
 		/const latestUserMessageIdBeforeSubmit = getLatestUserMessageId\(chat\.messages\);\s*clearPrefillSources\(\);\s*if \(isRealtimeActive\)/u,
 	);
+	assert.match(
+		SHELL_SOURCE,
+		/await realtimeChat\.submitRealtimeText\(\{[\s\S]*?\}\);\s*if \(shouldClearHermesSkillSelection\) \{[\s\S]*?\}\s*clearPrefillSources\(\);/u,
+	);
+	assert.match(
+		SHELL_SOURCE,
+		/await realtimeVoice\.sendTextInput\(\{[\s\S]*?\}\);\s*\} catch \(error\) \{[\s\S]*?\}\s*clearPrefillSources\(\);\s*return;/u,
+	);
+	assert.match(
+		SHELL_SOURCE,
+		/if \(shouldClearHermesSkillSelection\) \{[\s\S]*?clearHermesSkillSelection\(\);[\s\S]*?\}\s*clearPrefillSources\(\);\s*return;/u,
+	);
+	assert.match(
+		SHELL_SOURCE,
+		/await submitPrompt\(\{[\s\S]*?\}\);\s*if \(shouldClearHermesSkillSelection\) \{[\s\S]*?\}\s*clearPrefillSources\(\);/u,
+	);
 	assert.match(SHELL_SOURCE, /clearPrefillSources,/u);
+});
+
+test("Studio composer wires dictation separately from realtime live voice", () => {
+	assert.doesNotMatch(SHELL_SOURCE, /useLiveVoice/u);
+	assert.match(SHELL_SOURCE, /appendDictationTranscript\(composerTextRef\.current, transcript\)/u);
+	assert.match(SHELL_SOURCE, /resolveComposerDictationState\(\{[\s\S]*active: isDictationActive,[\s\S]*voiceState: realtime\.voiceState,[\s\S]*\}\)/u);
+	assert.match(SHELL_SOURCE, /dictationState=\{dictationState\}/u);
+	assert.match(SHELL_SOURCE, /dictationTranscriptPreview=\{dictationTranscriptPreview\}/u);
+	assert.match(SHELL_SOURCE, /onStartDictation=\{handleStartDictation\}/u);
+	assert.match(SHELL_SOURCE, /onCancelDictation=\{handleCancelDictation\}/u);
+	assert.match(SHELL_SOURCE, /onAcceptDictation=\{handleAcceptDictation\}/u);
+	assert.match(SHELL_SOURCE, /onTextChange=\{handleComposerTextChange\}/u);
+	assert.match(SHELL_SOURCE, /if \(isDictationActiveRef\.current\) \{[\s\S]*return;[\s\S]*\}[\s\S]*const c = chatRef\.current/u);
+	assert.match(SHELL_SOURCE, /realtime\.connect\(\{ transcriptionOnly: true \}\);/u);
 });
 
 test("Studio home starters frame agent building instead of generic one-off tasks", () => {

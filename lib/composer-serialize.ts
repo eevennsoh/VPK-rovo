@@ -15,17 +15,18 @@ import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
  * DOM. `serializeComposerDoc` is the thin `Editor`-facing convenience wrapper.
  */
 
-/** Categories surfaced through the "@" mention menu (people and teams). */
-const AT_SIGIL_CATEGORIES: ReadonlySet<string> = new Set(["human", "team"]);
+/** Categories surfaced through the "@" mention menu (people, teams, and subagents). */
+const AT_SIGIL_CATEGORIES: ReadonlySet<string> = new Set(["human", "team", "subagent"]);
 
 /**
- * Resolve the sigil a mention serializes with. People/teams come from the "@"
- * surface; skills/tools/knowledge/subagents come from the "/" surface. Anything
- * unknown defaults to "@" so a stray mention still round-trips to a usable token.
+ * Resolve the sigil a mention serializes with. People/teams/subagents come from
+ * the "@" surface; skills/tools/knowledge/apps come from the "/" surface.
+ * Anything unknown defaults to "@" so a stray mention still round-trips to a
+ * usable token.
  */
 function getMentionSigil(category: unknown): "@" | "/" {
 	if (typeof category === "string" && !AT_SIGIL_CATEGORIES.has(category)) {
-		// skill | tool | knowledge | subagent (and any future "/" category).
+		// skill | tool | knowledge | app (and any future "/" category).
 		return "/";
 	}
 

@@ -17,25 +17,19 @@ import {
 import { textareaCSS } from "@/components/blocks/shared-ui/composer-styles";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import type { VoiceButtonState } from "@/components/ui-audio/voice-button";
 import ChatContextBar from "@/components/projects/sidebar-chat/components/chat-context-bar";
-import {
-	resolveRovoAppComposerResponseGradientState,
-	type RovoAppComposerResponseGradientGenerationState,
-} from "@/components/projects/shared/lib/rovo-app-composer-response-gradient-state";
 import type { RovoAppPlanExecutionTrackerViewModel } from "@/components/projects/shared/lib/rovo-app-plan-execution-tracker";
 import type { RovoAppQueuedAction } from "@/lib/rovo-app-types";
 import ArrowUpIcon from "@atlaskit/icon/core/arrow-up";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { RovoAppPlanExecutionTracker } from "@/components/projects/shared/components/rovo-app-plan-execution-tracker";
-import { RovoAppComposerResponseGradient } from "@/components/projects/shared/components/rovo-app-composer-response-gradient";
 import { ComposerCardBody } from "@/components/projects/shared/components/composer-card-body";
 import { ComposerFloatingBody } from "@/components/projects/shared/components/composer-floating-body";
+import type { RovoComposerDictationState } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
 
-const EMPTY_REALTIME_OUTPUT_WAVEFORM_BARS: number[] = [];
 const EMPTY_QUEUED_PROMPTS: ReadonlyArray<RovoAppQueuedAction> = [];
 
 /**
@@ -58,6 +52,8 @@ export interface RovoAppComposerProps {
 	composerStatus: ChatStatus;
 	compact?: boolean;
 	directoryAutocompleteListVisible?: boolean;
+	dictationState?: RovoComposerDictationState;
+	dictationTranscriptPreview?: string | null;
 	errorMessage?: string | null;
 	experimentalDarkCta?: boolean;
 	/** Floating chrome: bumps the prompt input to the in-session 800px width. */
@@ -79,32 +75,25 @@ export interface RovoAppComposerProps {
 	onBrowseTemplates?: () => void;
 	/** Floating chrome: when provided, reveals a "start from scratch" link. */
 	onStartFromScratch?: () => void;
+	onAcceptDictation?: () => void;
+	onCancelDictation?: () => void;
+	onStartDictation?: () => void;
 	onSubmit: (payload: { text: string; files: FileUIPart[] }) => Promise<void>;
+	onTextChange?: (value: string) => void;
 	onToggleClicky?: () => void;
 	onTogglePlanMode?: () => void;
 	onToggleRealtimeVoice?: () => void;
-	onToggleVoice?: () => void;
 	galleryExpanded?: boolean;
 	placeholder?: string;
 	planExecutionTracker?: RovoAppPlanExecutionTrackerViewModel | null;
+	prefillRequestKey?: number;
 	prefillText?: string | null;
 	previewPrompt?: string | null;
-	realtimeGenerationState?: RovoAppComposerResponseGradientGenerationState;
-	realtimeOutputWaveformBars?: number[];
 	realtimeVoiceActive?: boolean;
 	realtimeVoiceState?: "idle" | "connecting" | "listening" | "speaking";
 	clickyActive?: boolean;
-	renderResponseGradient?: (props: {
-		active: boolean;
-		phase: "warmup" | "speaking";
-		signal: number[];
-		voiceState: "idle" | "connecting" | "listening" | "speaking";
-		generationState: string;
-		micStream?: MediaStream | null;
-	}) => React.ReactNode;
 	showBackgroundStop?: boolean;
 	submitDisabled?: boolean;
-	voiceState?: VoiceButtonState;
 }
 
 function RovoAppComposerInner({
@@ -115,6 +104,8 @@ function RovoAppComposerInner({
 	composerStatus,
 	compact = false,
 	directoryAutocompleteListVisible = false,
+	dictationState = "idle",
+	dictationTranscriptPreview = null,
 	errorMessage,
 	experimentalDarkCta = false,
 	fillWidth = false,
@@ -132,30 +123,32 @@ function RovoAppComposerInner({
 	onSendQueuedPromptNow,
 	onBrowseTemplates,
 	onStartFromScratch,
+	onAcceptDictation,
+	onCancelDictation,
+	onStartDictation,
 	onSubmit,
+	onTextChange,
 	onToggleClicky,
 	onTogglePlanMode,
 	onToggleRealtimeVoice,
 	placeholder = "Describe what it should do",
 	planExecutionTracker = null,
+	prefillRequestKey = 0,
 	prefillText,
 	previewPrompt = null,
-	realtimeGenerationState = "idle",
-	realtimeOutputWaveformBars = EMPTY_REALTIME_OUTPUT_WAVEFORM_BARS,
 	realtimeVoiceActive = false,
 	realtimeVoiceState = "idle",
 	clickyActive = false,
-	renderResponseGradient,
 	showBackgroundStop = false,
 	submitDisabled = false,
 }: Readonly<RovoAppComposerProps>) {
 	const controller = usePromptInputController();
 	const canSubmit = controller.textInput.value.trim().length > 0 || controller.attachments.files.length > 0;
 	const hasQueuedPrompts = queuedPrompts.length > 0;
-	const realtimeResponseGradientState = resolveRovoAppComposerResponseGradientState({
-		realtimeGenerationState,
-		realtimeVoiceState,
-	});
+
+	useEffect(() => {
+		onTextChange?.(controller.textInput.value);
+	}, [controller.textInput.value, onTextChange]);
 
 	const handlePromptSubmit = useCallback(
 		(payload: { text: string; files: FileUIPart[] }) => {
@@ -183,16 +176,23 @@ function RovoAppComposerInner({
 		clickyActive,
 		composerStatus,
 		directoryAutocompleteListVisible,
+		dictationState,
+		dictationTranscriptPreview,
 		micStream,
+		onAcceptDictation,
+		onCancelDictation,
 		onDirectoryAutocompleteChange,
 		onDirectoryAutocompleteControllerChange,
 		onPromptSubmit: handlePromptSubmit,
+		onStartDictation,
 		onStop,
 		onToggleClicky,
 		onToggleRealtimeVoice,
 		placeholder,
+		prefillRequestKey,
 		prefillText,
 		realtimeVoiceActive,
+		realtimeVoiceState,
 		showBackgroundStop,
 		submitDisabled,
 		textValue: controller.textInput.value,
@@ -201,20 +201,6 @@ function RovoAppComposerInner({
 
 	return (
 		<div className="relative isolate overflow-visible">
-			<div className="pointer-events-none absolute inset-0 overflow-visible">
-				{renderResponseGradient ? (
-					renderResponseGradient({
-						active: chrome === "card" ? realtimeVoiceActive || realtimeResponseGradientState.visible : realtimeResponseGradientState.visible,
-						phase: realtimeResponseGradientState.phase ?? "warmup",
-						signal: realtimeOutputWaveformBars,
-						voiceState: realtimeVoiceState,
-						generationState: realtimeGenerationState,
-						micStream,
-					})
-				) : (
-					<RovoAppComposerResponseGradient active={realtimeResponseGradientState.visible} phase={realtimeResponseGradientState.phase ?? "warmup"} signal={realtimeOutputWaveformBars} />
-				)}
-			</div>
 			<div className="flex w-full flex-col overflow-visible">
 				{errorMessage ? <Alert variant="danger">{errorMessage}</Alert> : null}
 				{backgroundArtifactLabel ? <p className="px-1 text-text-subtlest text-xs">{backgroundArtifactLabel}</p> : null}

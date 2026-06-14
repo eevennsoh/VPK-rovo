@@ -98,7 +98,7 @@ export interface UseRealtimeVoiceOptions {
 }
 
 export interface UseRealtimeVoiceResult {
-	connect: () => void;
+	connect: (options?: { transcriptionOnly?: boolean }) => void;
 	disconnect: () => void;
 	sendTextInput: (payload: {
 		contextDescription?: string;
@@ -625,6 +625,7 @@ export function useRealtimeVoice({
 	const hasReceivedServerDeltaRef = useRef(false);
 	const serverTranscriptionActiveRef = useRef(false);
 	const manualTurnTakingRef = useRef(false);
+	const transcriptionOnlyModeRef = useRef(false);
 	const assistantTextStreamRef = useRef(createRealtimeAssistantTextStreamState());
 	const queuedTextInputsRef = useRef<Array<{
 		contextDescription?: string;
@@ -835,7 +836,7 @@ export function useRealtimeVoice({
 	}, []);
 
 	const scheduleResponseCreateFallback = useCallback(() => {
-		if (!isAwaitingSpeechResponseRef.current || manualTurnTakingRef.current) {
+		if (!isAwaitingSpeechResponseRef.current || manualTurnTakingRef.current || transcriptionOnlyModeRef.current) {
 			return;
 		}
 
@@ -846,6 +847,7 @@ export function useRealtimeVoice({
 				!activeRef.current
 				|| !isAwaitingSpeechResponseRef.current
 				|| manualTurnTakingRef.current
+				|| transcriptionOnlyModeRef.current
 			) {
 				return;
 			}
@@ -1353,7 +1355,17 @@ export function useRealtimeVoice({
 					setVoice("listening");
 					sendWsMessage({
 						type: "session_update",
-						config: STUDIO_MANUAL_TURN_TAKING_CONFIG,
+						config: transcriptionOnlyModeRef.current
+							? {
+									transcription_only: true,
+									turn_detection: {
+										type: "semantic_vad",
+										eagerness: "auto",
+										create_response: false,
+										interrupt_response: false,
+									},
+								}
+							: STUDIO_MANUAL_TURN_TAKING_CONFIG,
 					});
 					// Inject initial thread context
 					{
@@ -1709,6 +1721,7 @@ export function useRealtimeVoice({
 		pausedInputCaptureEpochRef.current = null;
 		lastAudioAppendCaptureEpochRef.current = null;
 		isAwaitingSpeechResponseRef.current = false;
+		transcriptionOnlyModeRef.current = false;
 		resetSpeechTurnTracking();
 		resetAssistantTextStream();
 		setOutputWaveformBars([]);
@@ -1826,10 +1839,11 @@ export function useRealtimeVoice({
 
 	// -- Public API ----------------------------------------------------------
 
-	const connect = useCallback(() => {
+	const connect = useCallback((options?: { transcriptionOnly?: boolean }) => {
 		if (activeRef.current) {
 			return;
 		}
+		transcriptionOnlyModeRef.current = Boolean(options?.transcriptionOnly);
 		activeRef.current = true;
 		serverTranscriptionActiveRef.current = false;
 		manualTurnTakingRef.current = false;
@@ -1908,6 +1922,7 @@ export function useRealtimeVoice({
 
 	const disconnect = useCallback(() => {
 		activeRef.current = false;
+		transcriptionOnlyModeRef.current = false;
 		isCaptureAvailableRef.current = false;
 		queuedTextInputsRef.current = [];
 		resetSpeechTurnTracking();

@@ -341,6 +341,65 @@ test("manual turn-taking coalesces transcript completions into one client turn",
 	]);
 });
 
+test("transcription-only manual turns do not request a model response", (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	t.after(() => t.mock.timers.reset());
+	const { session, clientMessages, openaiMessages } = createReadySession();
+
+	session.handleClientMessage(JSON.stringify({
+		type: "session_update",
+		config: {
+			transcription_only: true,
+			turn_detection: {
+				type: "semantic_vad",
+				create_response: false,
+			},
+		},
+	}));
+	openaiMessages.length = 0;
+
+	sendOpenAIEvent(session, {
+		type: "conversation.item.input_audio_transcription.completed",
+		transcript: "review this first",
+	});
+
+	t.mock.timers.tick(800);
+
+	assert.deepEqual(clientMessages, [
+		{
+			type: "transcription_completed",
+			transcript: "review this first",
+		},
+	]);
+	assert.deepEqual(openaiMessages, []);
+});
+
+test("transcription-only mode ignores explicit response_create fallback requests", () => {
+	const { session, openaiMessages, logEntries } = createReadySession();
+
+	session.handleClientMessage(JSON.stringify({
+		type: "session_update",
+		config: {
+			transcription_only: true,
+			turn_detection: {
+				type: "semantic_vad",
+				create_response: false,
+			},
+		},
+	}));
+	openaiMessages.length = 0;
+
+	session.handleClientMessage(JSON.stringify({
+		type: "response_create",
+	}));
+
+	assert.deepEqual(openaiMessages, []);
+	assert.deepEqual(logEntries.at(-1), {
+		scope: "REALTIME",
+		message: "Response create ignored — transcription-only mode",
+	});
+});
+
 test("default turn-taking forwards transcript completions one-to-one", () => {
 	const { session, clientMessages, openaiMessages } = createReadySession();
 

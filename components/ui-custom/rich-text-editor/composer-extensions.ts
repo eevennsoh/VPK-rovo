@@ -1,7 +1,10 @@
 "use client";
 
 import { Extension, Node } from "@tiptap/core";
+import { history, redo, undo } from "@tiptap/pm/history";
+import { keymap } from "@tiptap/pm/keymap";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
+import type { EditorState, Transaction } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import type { EditorView } from "@tiptap/pm/view";
 
@@ -71,8 +74,247 @@ const ComposerHardBreak = Node.create({
 	},
 });
 
+function createComposerHistoryExtension() {
+	return Extension.create({
+		name: "composerHistory",
+		addProseMirrorPlugins() {
+			return [
+				history(),
+				keymap({
+					"Mod-z": undo,
+					"Shift-Mod-z": redo,
+					"Mod-y": redo,
+				}),
+			];
+		},
+	});
+}
+
 const composerSubmitPluginKey = new PluginKey("composer-submit");
 export const composerDirectoryAutocompletePluginKey = new PluginKey<DecorationSet>("composer-directory-autocomplete");
+export const composerTraceDecorationPluginKey = new PluginKey<ComposerTraceDecorationPluginState>("composer-trace-decoration");
+export const COMPOSER_TRACE_DECORATION_CLASS_NAME = "prompt-input-trace-decoration";
+export const COMPOSER_TRACE_DECORATION_PENDING_CLASS_NAME = "prompt-input-trace-decoration-pending";
+export const COMPOSER_TRACE_DECORATION_STATIC_CLASS_NAME = "prompt-input-trace-decoration-static";
+
+export type ComposerTraceDecorationMotion = "active" | "static";
+
+export interface ComposerTraceDecoration {
+	from: number;
+	id: string;
+	label: string;
+	motion?: ComposerTraceDecorationMotion;
+	pending?: boolean;
+	to: number;
+}
+
+export interface ComposerTraceDecorationPluginState {
+	decorations: DecorationSet;
+	traces: readonly ComposerTraceDecoration[];
+}
+
+export type ComposerTraceDecorationPendingState =
+	| { type: "clear" }
+	| { decorations: readonly ComposerTraceDecoration[]; type: "set" };
+
+export interface ComposerTraceDecorationController {
+	clearTraceDecorations: () => boolean;
+	flushPendingTraceDecorations: () => boolean;
+	flushPendingTraceDecorationState: () => boolean;
+	getPendingTraceDecorationState: () => ComposerTraceDecorationPendingState | null;
+	getPendingTraceDecorations: () => readonly ComposerTraceDecoration[];
+	getTraceDecorations: () => readonly ComposerTraceDecoration[];
+	hasPendingTraceDecorationState: () => boolean;
+	setTraceDecorations: (decorations: readonly ComposerTraceDecoration[]) => boolean;
+}
+
+type ComposerTraceDecorationDocumentState = Pick<EditorState, "doc">;
+
+const EMPTY_COMPOSER_TRACE_DECORATION_STATE: ComposerTraceDecorationPluginState = {
+	decorations: DecorationSet.empty,
+	traces: [],
+};
+
+function isTraceDecorationMeta(value: unknown): value is ComposerTraceDecorationPendingState {
+	return typeof value === "object"
+		&& value !== null
+		&& (
+			(value as { type?: unknown }).type === "clear"
+			|| (
+				(value as { type?: unknown }).type === "set"
+				&& Array.isArray((value as { decorations?: unknown }).decorations)
+			)
+		);
+}
+
+function getComposerTraceDecorationMotion(decoration: ComposerTraceDecoration): ComposerTraceDecorationMotion {
+	return decoration.motion === "static" ? "static" : "active";
+}
+
+function isValidComposerTraceDecoration(
+	state: ComposerTraceDecorationDocumentState,
+	decoration: ComposerTraceDecoration,
+): decoration is ComposerTraceDecoration {
+	if (
+		!Number.isSafeInteger(decoration.from)
+		|| !Number.isSafeInteger(decoration.to)
+		|| decoration.from < 0
+		|| decoration.to > state.doc.content.size
+		|| decoration.from >= decoration.to
+		|| typeof decoration.id !== "string"
+		|| typeof decoration.label !== "string"
+		|| decoration.id.trim().length === 0
+		|| decoration.label.length === 0
+	) {
+		return false;
+	}
+
+	return state.doc
+		.textBetween(decoration.from, decoration.to, "\n", "\uFFFC")
+		.toLowerCase() === decoration.label.toLowerCase();
+}
+
+function createComposerTraceDecorationAttributes(decoration: ComposerTraceDecoration) {
+	const motion = getComposerTraceDecorationMotion(decoration);
+	const className = [
+		COMPOSER_TRACE_DECORATION_CLASS_NAME,
+		decoration.pending ? COMPOSER_TRACE_DECORATION_PENDING_CLASS_NAME : null,
+		motion === "static" ? COMPOSER_TRACE_DECORATION_STATIC_CLASS_NAME : null,
+	].filter(Boolean).join(" ");
+
+	return {
+		class: className,
+		"data-composer-trace": "true",
+		"data-composer-trace-id": decoration.id,
+		"data-composer-trace-label": decoration.label,
+		"data-composer-trace-motion": motion,
+		"data-composer-trace-pending": decoration.pending ? "true" : "false",
+	};
+}
+
+function createComposerTraceDecorationState(
+	state: ComposerTraceDecorationDocumentState,
+	decorations: readonly ComposerTraceDecoration[],
+): ComposerTraceDecorationPluginState {
+	const validDecorations = decorations.filter((decoration) =>
+		isValidComposerTraceDecoration(state, decoration)
+	);
+
+	if (validDecorations.length === 0) {
+		return EMPTY_COMPOSER_TRACE_DECORATION_STATE;
+	}
+
+	return {
+		decorations: DecorationSet.create(
+			state.doc,
+			validDecorations.map((decoration) =>
+				Decoration.inline(
+					decoration.from,
+					decoration.to,
+					createComposerTraceDecorationAttributes(decoration),
+					{ inclusiveEnd: false, inclusiveStart: false },
+				)
+			),
+		),
+		traces: validDecorations,
+	};
+}
+
+function mapComposerTraceDecorations(
+	transaction: Transaction,
+	decorations: readonly ComposerTraceDecoration[],
+): readonly ComposerTraceDecoration[] {
+	return decorations
+		.map((decoration): ComposerTraceDecoration => ({
+			...decoration,
+			from: transaction.mapping.map(decoration.from, 1),
+			to: transaction.mapping.map(decoration.to, -1),
+		}))
+		.filter((decoration) => isValidComposerTraceDecoration(transaction, decoration));
+}
+
+export function getComposerTraceDecorationState(state: EditorState): ComposerTraceDecorationPluginState {
+	return composerTraceDecorationPluginKey.getState(state) ?? EMPTY_COMPOSER_TRACE_DECORATION_STATE;
+}
+
+export function setComposerTraceDecorations(
+	view: EditorView,
+	decorations: readonly ComposerTraceDecoration[],
+): boolean {
+	view.dispatch(
+		view.state.tr.setMeta(composerTraceDecorationPluginKey, {
+			decorations,
+			type: "set",
+		} satisfies ComposerTraceDecorationPendingState),
+	);
+	return true;
+}
+
+export function clearComposerTraceDecorations(view: EditorView): boolean {
+	view.dispatch(
+		view.state.tr.setMeta(composerTraceDecorationPluginKey, {
+			type: "clear",
+		} satisfies ComposerTraceDecorationPendingState),
+	);
+	return true;
+}
+
+export function createComposerTraceDecorationController(
+	getEditorView: () => EditorView | null,
+): ComposerTraceDecorationController {
+	let pendingState: ComposerTraceDecorationPendingState | null = null;
+
+	const applyState = (state: ComposerTraceDecorationPendingState): boolean => {
+		const view = getEditorView();
+		if (!view) {
+			pendingState = state;
+			return false;
+		}
+
+		if (state.type === "clear") {
+			clearComposerTraceDecorations(view);
+		} else {
+			setComposerTraceDecorations(view, state.decorations);
+		}
+		pendingState = null;
+		return true;
+	};
+
+	const flushPendingTraceDecorationState = (): boolean => {
+		if (!pendingState) {
+			return true;
+		}
+		return applyState(pendingState);
+	};
+
+	return {
+		clearTraceDecorations: () => applyState({ type: "clear" }),
+		flushPendingTraceDecorations: flushPendingTraceDecorationState,
+		flushPendingTraceDecorationState,
+		getPendingTraceDecorationState: () => pendingState,
+		getPendingTraceDecorations: () => {
+			const view = getEditorView();
+			const traces = view
+				? getComposerTraceDecorationState(view.state).traces
+				: pendingState?.type === "set"
+					? pendingState.decorations
+					: [];
+			return traces.filter((decoration) => decoration.pending === true);
+		},
+		getTraceDecorations: () => {
+			const view = getEditorView();
+			if (view) {
+				return getComposerTraceDecorationState(view.state).traces;
+			}
+			return pendingState?.type === "set" ? pendingState.decorations : [];
+		},
+		hasPendingTraceDecorationState: () => pendingState !== null,
+		setTraceDecorations: (decorations) => applyState({
+			decorations,
+			type: "set",
+		}),
+	};
+}
 
 /**
  * True when any `@tiptap/suggestion`-backed palette (the `@` mention menu or the
@@ -101,8 +343,9 @@ function isSuggestionMenuOpen(view: EditorView): boolean {
  * Plain Enter (no Shift, not during IME composition) submits the host form;
  * Shift+Enter inserts a hard break (handled by ComposerHardBreak). Also forces
  * pasted clipboard content to plain text so no formatting (and no foreign
- * schema nodes) ever enters the mentions-only document. Runs at a lower priority
- * than the suggestion plugins so an open `@`/`/` menu consumes Enter first.
+ * schema nodes) ever enters the mentions-only document. Runs above Tiptap's
+ * base keymap, whose default Enter binding splits the paragraph; explicit menu
+ * checks below still let open `@`/`/` suggestions consume Enter.
  */
 function createComposerBehavior(
 	onEnter?: (view: EditorView) => boolean,
@@ -110,9 +353,11 @@ function createComposerBehavior(
 ) {
 	return Extension.create({
 		name: "composerBehavior",
-		// Below the default (100) so suggestion plugins handle Enter when a menu
-		// is open before this submit handler ever sees it.
-		priority: 50,
+		// Higher than Tiptap's default core keymap priority (100), so plain Enter
+		// submits instead of falling through to `splitBlock()`. Still lower than
+		// the external directory autocomplete plugin (150), so visible ghost-list
+		// rows can accept Enter first.
+		priority: 125,
 		addProseMirrorPlugins() {
 			return [
 				new Plugin({
@@ -314,6 +559,47 @@ export function createComposerDirectoryAutocomplete(
 	});
 }
 
+export function createComposerTraceDecorationExtension() {
+	return Extension.create({
+		name: "composerTraceDecoration",
+		addProseMirrorPlugins() {
+			return [
+				new Plugin<ComposerTraceDecorationPluginState>({
+					key: composerTraceDecorationPluginKey,
+					state: {
+						init: () => EMPTY_COMPOSER_TRACE_DECORATION_STATE,
+						apply(transaction, current) {
+							const meta = transaction.getMeta(composerTraceDecorationPluginKey);
+
+							if (isTraceDecorationMeta(meta)) {
+								if (meta.type === "clear") {
+									return EMPTY_COMPOSER_TRACE_DECORATION_STATE;
+								}
+
+								return createComposerTraceDecorationState(transaction, meta.decorations);
+							}
+
+							if (current.traces.length === 0) {
+								return current;
+							}
+
+							return createComposerTraceDecorationState(
+								transaction,
+								mapComposerTraceDecorations(transaction, current.traces),
+							);
+						},
+					},
+					props: {
+						decorations(state) {
+							return getComposerTraceDecorationState(state).decorations;
+						},
+					},
+				}),
+			];
+		},
+	});
+}
+
 export interface ComposerEditorExtensionOptions extends RichTextEditorExtensionOptions {
 	directoryAutocomplete?: ComposerDirectoryAutocompleteController;
 	/**
@@ -339,9 +625,11 @@ export function createComposerEditorExtensions(
 		ComposerParagraph,
 		ComposerText,
 		ComposerHardBreak,
+		createComposerHistoryExtension(),
 		createRichTextMentionExtension(composerOptions),
 		// The composer's "/" menu surfaces references only — no Format category.
 		SlashCommand.configure({ ...composerOptions, includeFormat: false }),
+		createComposerTraceDecorationExtension(),
 		createComposerDirectoryAutocomplete(options.directoryAutocomplete),
 		createComposerBehavior(options.onEnter, options.onPasteFiles),
 	];

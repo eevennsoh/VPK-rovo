@@ -1,6 +1,6 @@
 ---
 name: vpk-git-ship
-description: "Use for VPK-rovo git shipping in two cases: PR creation and PR merge-back. PR creation commits current edits, derives a branch name when needed, pushes, and opens a GitHub PR. PR merge-back merges a PR, branch, or worktree into the default branch and syncs local/remote main. Bare `vpk-git-ship` with no flag runs the full ship end-to-end (create PR -> wait for auto-merge -> merge -> sync main) and then stops — it does NOT remove worktrees or delete local branches, because an agent cannot remove the worktree it is running in; that local cleanup is the separate `vpk-git-clean` skill, run later from the main checkout. Use whenever the user says \"vpk-git-ship\", \"vpk-git-ship --pr\", \"vpk-git-ship --merge\", \"vpk-git-ship --bypass\", \"commit and open a PR\", \"ship this branch\", \"merge this PR back to main\", \"land this worktree\", or says Codex Cloud review is unavailable / out of credit during shipping. For cleanup requests like \"clean up worktrees/branches\", \"delete the branch after merge\", or \"prune stale refs\", use the `vpk-git-clean` skill instead."
+description: "Use for VPK-rovo git shipping: create/update PRs, merge PRs back to main, or run the full create-PR -> wait/merge -> sync-main flow when the user invokes vpk-git-ship. For cleanup, use vpk-git-clean."
 ---
 
 # VPK Git Ship

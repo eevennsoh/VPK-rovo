@@ -87,6 +87,7 @@ import { useScrollAnchor } from "./hooks/use-scroll-anchor";
 import { useThinkingStatus } from "./hooks/use-thinking-status";
 import { appendOptimisticCompactUserMessage } from "./lib/optimistic-user-message";
 import { type DelegationRequest, useRealtimeVoice } from "@/components/projects/rovo/hooks/use-realtime-voice";
+import { appendDictationTranscript, resolveComposerDictationState, restoreDictationBaseline } from "@/lib/composer-dictation";
 import { useClicky } from "@/components/projects/rovo/hooks/use-clicky";
 import { useClickyVoice } from "@/components/projects/rovo/hooks/use-clicky-voice";
 import { ClickyOverlay } from "@/components/projects/rovo/components/clicky/clicky-overlay";
@@ -480,8 +481,23 @@ export default function ChatPanel({
 	}, [deactivateClicky, hideAiCursor, isClickyActive, toggleClicky]);
 
 	const realtimeTranscriptRef = useRef("");
+	const promptRef = useRef(prompt);
+	const dictationBaselineRef = useRef<string | null>(null);
+	const isDictationActiveRef = useRef(false);
+	const [isDictationActive, setIsDictationActive] = useState(false);
+	const [dictationTranscriptPreview, setDictationTranscriptPreview] = useState<string | null>(null);
+
+	useEffect(() => {
+		promptRef.current = prompt;
+	}, [prompt]);
+
 	const handleRealtimeSpeechStarted = useCallback(() => {
 		realtimeTranscriptRef.current = "";
+
+		if (isDictationActiveRef.current) {
+			setDictationTranscriptPreview(null);
+			return;
+		}
 
 		// Clicky runs a private voice + screenshot loop; leave the composer untouched.
 		if (isClickyActive) {
@@ -502,11 +518,24 @@ export default function ChatPanel({
 			return;
 		}
 
+		if (isDictationActiveRef.current) {
+			setDictationTranscriptPreview(transcriptText);
+			return;
+		}
+
 		realtimeTranscriptRef.current = transcriptText;
 		setPrompt(transcriptText);
 	}, [isClickyActive, setPrompt]);
 	const handleRealtimeTranscriptCompleted = useCallback((payload: RealtimeTranscriptPayload) => {
 		const transcriptText = getRealtimeTranscriptText(payload);
+
+		if (isDictationActiveRef.current) {
+			const nextText = appendDictationTranscript(promptRef.current, transcriptText);
+			promptRef.current = nextText;
+			setDictationTranscriptPreview(transcriptText);
+			setPrompt(nextText);
+			return;
+		}
 
 		// Clicky: transition to processing and record the user's spoken question
 		// instead of routing it into the chat composer/thread.
@@ -526,6 +555,10 @@ export default function ChatPanel({
 		setPrompt(transcriptText);
 	}, [isClickyActive, clickyStartProcessing, clickyAddExchange, setPrompt]);
 	const handleRealtimeAssistantTextCompleted = useCallback((payload: { messageId?: string; text?: string } | string) => {
+		if (isDictationActiveRef.current) {
+			return;
+		}
+
 		// Only Clicky consumes the realtime model's own text response (POINT tags);
 		// normal voice mode delegates to the Rovo chat stream instead.
 		if (!isClickyActive) {
@@ -547,6 +580,10 @@ export default function ChatPanel({
 	}, [isClickyActive, clickyScreenshotDimensions, clickyAddExchange, clickyStartPointing, clickyStartSpeaking]);
 	const handleRealtimeDelegateToRovo = useCallback(
 		(request: DelegationRequest) => {
+			if (isDictationActiveRef.current) {
+				return;
+			}
+
 			// Clicky's spoken queries must never delegate into the chat thread.
 			if (isClickyActive) {
 				return;
@@ -595,8 +632,49 @@ export default function ChatPanel({
 		onScreenshotCaptured: clickySetScreenshotDimensions,
 	});
 	const isRealtimeVoiceActive = realtime.voiceState !== "idle";
+	const dictationState = resolveComposerDictationState({
+		active: isDictationActive,
+		voiceState: realtime.voiceState,
+	});
+	const handleCancelDictation = useCallback(() => {
+		const restoredText = restoreDictationBaseline(dictationBaselineRef.current);
+		dictationBaselineRef.current = null;
+		isDictationActiveRef.current = false;
+		promptRef.current = restoredText;
+		setIsDictationActive(false);
+		setDictationTranscriptPreview(null);
+		setPrompt(restoredText);
+		realtime.disconnect();
+	}, [realtime, setPrompt]);
+	const handleAcceptDictation = useCallback(() => {
+		dictationBaselineRef.current = null;
+		isDictationActiveRef.current = false;
+		setIsDictationActive(false);
+		setDictationTranscriptPreview(null);
+		realtime.disconnect();
+	}, [realtime]);
+	const handleStartDictation = useCallback(() => {
+		if (realtime.voiceState !== "idle") {
+			realtimeTranscriptRef.current = "";
+			realtime.disconnect();
+		}
+
+		const baselineText = promptRef.current;
+		dictationBaselineRef.current = baselineText;
+		isDictationActiveRef.current = true;
+		setIsDictationActive(true);
+		setDictationTranscriptPreview(null);
+		realtime.connect({ transcriptionOnly: true });
+	}, [realtime]);
 	const handleToggleRealtimeVoice = useCallback(() => {
 		if (realtime.voiceState === "idle") {
+			if (isDictationActiveRef.current) {
+				dictationBaselineRef.current = null;
+				isDictationActiveRef.current = false;
+				setIsDictationActive(false);
+				setDictationTranscriptPreview(null);
+			}
+
 			realtimeTranscriptRef.current = "";
 			setPrompt("");
 			realtime.connect();
@@ -1087,8 +1165,13 @@ export default function ChatPanel({
 						hideAiCursor={hideAiCursor}
 						hideSourceAndModelControls={hideComposerSourceAndModelControls}
 						micStream={realtime.micStream}
+						dictationState={dictationState}
+						dictationTranscriptPreview={dictationTranscriptPreview}
 						clickyActive={!hideAiCursor && isClickyActive}
+						onAcceptDictation={handleAcceptDictation}
+						onCancelDictation={handleCancelDictation}
 						onPromptChange={setPrompt}
+						onStartDictation={handleStartDictation}
 						onSubmit={handleSubmit}
 						onStop={abort}
 						onToggleClicky={toggleClicky}
@@ -1096,6 +1179,7 @@ export default function ChatPanel({
 						onRemoveQueuedPrompt={removeQueuedPrompt}
 						onReasoningChange={setSelectedReasoning}
 						realtimeVoiceActive={isRealtimeVoiceActive}
+						realtimeVoiceState={realtime.voiceState}
 						selectedReasoning={selectedReasoning}
 						chatContextBar={chatContextBar}
 						directoryAutocompleteListVisible={shouldShowDirectoryAutocompleteList}

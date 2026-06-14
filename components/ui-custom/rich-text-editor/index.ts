@@ -7,10 +7,16 @@ export {
 export { createRichTextEditorExtensions } from "./extensions";
 export {
 	createComposerEditorExtensions,
+	clearComposerTraceDecorations,
 	composerDirectoryAutocompletePluginKey,
+	createComposerTraceDecorationController,
+	getComposerTraceDecorationState,
+	setComposerTraceDecorations,
 	type ComposerDirectoryAutocompleteController,
 	type ComposerDirectoryAutocompleteDecoration,
 	type ComposerEditorExtensionOptions,
+	type ComposerTraceDecoration,
+	type ComposerTraceDecorationController,
 } from "./composer-extensions";
 export { getMentionNodeAttrs } from "./extensions";
 export {

@@ -25,8 +25,6 @@ import { RovoAppMessages } from "@/components/projects/rovo/components/rovo-app-
 import { RovoAppHermesSkillDraftBar } from "@/components/projects/rovo/components/rovo-app-hermes-skill-draft-bar";
 import { RovoAppShellPaneLayout } from "@/components/projects/rovo/components/rovo-app-shell-pane-layout";
 import { RovoAppSidebar } from "@/components/projects/rovo/components/rovo-app-sidebar";
-import { type RovoAppSteeringPhase } from "@/components/projects/rovo/components/rovo-app-steering-lane";
-import { SmoothGradientWaveform } from "@/components/blocks/visual-waveform/smooth-gradient-waveform";
 import { useArtifactAnnotations } from "@/components/ui-custom/hooks/use-artifact-annotations";
 import { formatAnnotationsForVoiceContext } from "@/components/ui-custom/lib/artifact-annotations";
 import type { ArtifactAnnotation } from "@/components/ui-custom/lib/artifact-annotations";
@@ -40,6 +38,7 @@ import {
 	shouldShowReopenRovoAppBrowserArtifactControl,
 } from "@/components/projects/rovo/lib/rovo-app-browser-preview";
 import { resolveRovoAppComposerPlaceholder } from "@/components/projects/shared/lib/rovo-app-composer-placeholder";
+import { appendDictationTranscript, resolveComposerDictationState, restoreDictationBaseline } from "@/lib/composer-dictation";
 import { ROVO_APP_MAX_CHAT_PANE_WIDTH, ROVO_APP_MIN_ARTIFACT_PANE_WIDTH, ROVO_APP_MIN_CHAT_PANE_WIDTH, getRovoAppShellLayout } from "@/components/projects/rovo/lib/rovo-app-shell-layout";
 import { getRovoAppSmartGenerationLayoutContext } from "@/components/projects/rovo/lib/rovo-app-smart-generation-layout";
 import { deriveRovoAppTimelineItems } from "@/components/projects/rovo/lib/rovo-app-timeline";
@@ -47,9 +46,7 @@ import { buildComposerHermesContext, shouldResetComposerHermesSkillSelection } f
 import { useHermesEmbedEnabled } from "@/lib/hermes-feature-flags";
 import { buildRovoAppThreadPath } from "@/components/projects/rovo/lib/rovo-app-thread-route-sync";
 import { createRovoAppUserMessage } from "@/components/projects/rovo/lib/rovo-app-user-message";
-import { useLiveVoice } from "@/components/projects/rovo/hooks/use-live-voice";
 import { type DelegationRequest, useRealtimeVoice } from "@/components/projects/rovo/hooks/use-realtime-voice";
-import type { VoiceButtonState } from "@/components/ui-audio/voice-button";
 import type { ConversationFollowMode } from "@/components/ui-custom/conversation";
 import { RichTextMentionVisualMark, type ComposerDirectoryAutocompleteController } from "@/components/ui-custom/rich-text-editor";
 import { useSidebar as useGlobalSidebar } from "@/app/contexts/context-sidebar";
@@ -80,7 +77,7 @@ import { parseClickyResponse } from "@/components/projects/rovo/lib/clicky-point
 import { useSidebarResize } from "@/components/projects/rovo/hooks/use-sidebar-resize";
 import { clamp, cn, createId } from "@/lib/utils";
 import { token } from "@/lib/tokens";
-import { getLatestDataPart, getLatestUserMessageId, getMessageArtifactResult, getMessageInterruption, getMessageText } from "@/lib/rovo-ui-messages";
+import { getLatestDataPart, getLatestUserMessageId, getMessageArtifactResult, getMessageText } from "@/lib/rovo-ui-messages";
 import { ApprovalCard } from "@/components/blocks/approval-card/page";
 import { ClarificationQuestionCard } from "@/components/projects/shared/components/clarification-question-card";
 import { QuestionCardShortcutsFooter } from "@/components/projects/shared/components/question-card-shortcuts-footer";
@@ -642,17 +639,11 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const isHoverOpen = hoverRevealActive && !chat.sidebarOpen;
 
 	const artifactContentRef = useRef<HTMLDivElement | null>(null);
-	const stopSpeakingRef = useRef<() => void>(() => {});
-	const skipNextAutoSpeakRef = useRef(false);
 	const annotationContextRef = useRef<string | null>(null);
 	const realtimeInjectContextRef = useRef<((payload: RealtimeInjectContextPayload) => void) | null>(null);
-	const pendingVoiceTranscriptRef = useRef<{
-		id: number;
-		text: string;
-	} | null>(null);
-	const voiceTranscriptIdRef = useRef(0);
-	const voiceDrainEpochRef = useRef(0);
-	const isDrainingVoiceRef = useRef(false);
+	const composerTextRef = useRef("");
+	const dictationBaselineRef = useRef<string | null>(null);
+	const isDictationActiveRef = useRef(false);
 	const sidebarResize = useSidebarResize({
 		defaultWidth: ROVO_APP_SEPARATOR_LINE_OFFSET_PX,
 		minWidth: ROVO_APP_SIDEBAR_MIN_WIDTH,
@@ -667,18 +658,14 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const headerHeightStyle: CSSProperties = {
 		height: `${TOP_NAV_HEADER_HEIGHT_PX}px`,
 	};
-	const [steeringState, setSteeringState] = useState<{
-		phase: RovoAppSteeringPhase;
-		text: string | null;
-	}>({
-		phase: "idle",
-		text: null,
-	});
 	const [cursorMode, setCursorMode] = useState(false);
 	const [galleryExpanded, setGalleryExpanded] = useState(false);
 	const [previewPrompt, setPreviewPrompt] = useState<string | null>(null);
 	const [prefillText, setPrefillText] = useState<string | null>(null);
 	const [voiceTranscript, setVoiceTranscript] = useState<string | null>(null);
+	const [isDictationActive, setIsDictationActive] = useState(false);
+	const [dictationTranscriptPreview, setDictationTranscriptPreview] = useState<string | null>(null);
+	const [dictationPrefillRequestKey, setDictationPrefillRequestKey] = useState(0);
 	const [scrollActiveTimelineSelection, setScrollActiveTimelineSelection] = useState<ScrollActiveTimelineSelection | null>(null);
 	const [scrollAnchorMessageId, setScrollAnchorMessageId] = useState<string | null>(null);
 	const [scrollFollowMode, setScrollFollowMode] = useState<ConversationFollowMode>("bottom");
@@ -708,6 +695,15 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const handleGallerySelect = useCallback((prompt: string) => {
 		setPrefillText(prompt);
 		setPreviewPrompt(null);
+	}, []);
+
+	const clearPrefillSources = useCallback(() => {
+		setPrefillText(null);
+		setVoiceTranscript(null);
+	}, []);
+
+	const handleComposerTextChange = useCallback((value: string) => {
+		composerTextRef.current = value;
 	}, []);
 
 	const handleRovoAppSuggestionSelect = useCallback(
@@ -940,280 +936,10 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		[appendRealtimeMessage],
 	);
 
-	const clearSteeringState = useCallback(() => {
-		setSteeringState({
-			phase: "idle",
-			text: null,
-		});
-	}, []);
-
-	const clearPendingVoiceWork = useCallback(
-		(reason: string) => {
-			voiceDrainEpochRef.current += 1;
-			pendingVoiceTranscriptRef.current = null;
-			clearSteeringState();
-			console.info("[RovoAppVoice] Cleared pending voice work", { reason });
-		},
-		[clearSteeringState],
-	);
-
-	const drainLatestVoiceTranscript = useCallback(() => {
-		if (isDrainingVoiceRef.current) {
-			return;
-		}
-
-		isDrainingVoiceRef.current = true;
-		const drainEpoch = voiceDrainEpochRef.current;
-
-		void (async () => {
-			try {
-				while (true) {
-					const pendingTranscript = pendingVoiceTranscriptRef.current;
-					if (!pendingTranscript) {
-						return;
-					}
-
-					const shouldArtifactSteer = chatRef.current.panelState === "preview";
-					if (!shouldArtifactSteer) {
-						await chatRef.current.interruptActiveTurn({
-							source: "voice-barge-in",
-						});
-					}
-
-					if (voiceDrainEpochRef.current !== drainEpoch) {
-						return;
-					}
-
-					if (pendingVoiceTranscriptRef.current?.id !== pendingTranscript.id) {
-						console.info("[RovoAppVoice] Dropped stale finalized transcript", {
-							droppedTranscriptId: pendingTranscript.id,
-							latestTranscriptId: pendingVoiceTranscriptRef.current?.id ?? null,
-						});
-						continue;
-					}
-
-					pendingVoiceTranscriptRef.current = null;
-					console.info("[RovoAppVoice] Submitting finalized transcript", {
-						transcriptId: pendingTranscript.id,
-						length: pendingTranscript.text.length,
-					});
-					setSteeringState({
-						phase: shouldArtifactSteer ? "applying" : "idle",
-						text: shouldArtifactSteer ? pendingTranscript.text : null,
-					});
-					const annotationContext = annotationContextRef.current ?? undefined;
-					if (shouldArtifactSteer) {
-						void chatRef.current
-							.applyVoiceSteer({
-								...buildHermesPromptOptions(annotationContext),
-								text: pendingTranscript.text,
-							})
-							.catch((error) => {
-								clearSteeringState();
-								console.error("[RovoAppVoice] Voice steer submission failed:", error);
-							});
-					} else {
-						void chatRef.current
-							.submitPrompt({
-								...buildHermesPromptOptions(annotationContext),
-								text: pendingTranscript.text,
-								files: [],
-							})
-							.catch((error) => {
-								console.error("[RovoAppVoice] Voice transcript submission failed:", error);
-							});
-					}
-
-					// Let the newly-submitted turn start before checking for a newer transcript.
-					await Promise.resolve();
-				}
-			} finally {
-				isDrainingVoiceRef.current = false;
-				if (pendingVoiceTranscriptRef.current) {
-					drainLatestVoiceTranscript();
-				}
-			}
-		})().catch((error) => {
-			console.error("[RovoAppVoice] Voice drain failed:", error);
-		});
-	}, [buildHermesPromptOptions, clearSteeringState]);
-
-	const voice = useLiveVoice({
-		onBargeInStart: useCallback(() => {
-			stopSpeakingRef.current();
-			if (chatRef.current.panelState === "preview") {
-				if (chatRef.current.isStreaming) {
-					skipNextAutoSpeakRef.current = true;
-				}
-				setSteeringState((currentState) =>
-					currentState.phase === "pending" || currentState.phase === "applying"
-						? currentState
-						: {
-								phase: "listening",
-								text: null,
-							},
-				);
-				console.info("[RovoAppVoice] Barge-in detected for artifact steering");
-				return;
-			}
-
-			if (chatRef.current.isStreaming) {
-				skipNextAutoSpeakRef.current = true;
-				console.info("[RovoAppVoice] Barge-in detected while assistant turn is active");
-				void chatRef.current
-					.interruptActiveTurn({
-						source: "voice-barge-in",
-					})
-					.catch((error) => {
-						console.error("[RovoAppVoice] Failed to interrupt active turn:", error);
-					});
-			}
-		}, []),
-		onTranscription: useCallback(
-			(text: string) => {
-				const trimmedText = text.trim();
-				if (!trimmedText) {
-					return;
-				}
-
-				const transcriptId = voiceTranscriptIdRef.current + 1;
-				voiceTranscriptIdRef.current = transcriptId;
-				pendingVoiceTranscriptRef.current = {
-					id: transcriptId,
-					text: trimmedText,
-				};
-				if (chatRef.current.panelState === "preview") {
-					setSteeringState({
-						phase: "pending",
-						text: trimmedText,
-					});
-				}
-				console.info("[RovoAppVoice] Final transcript ready", {
-					transcriptId,
-					length: trimmedText.length,
-				});
-				drainLatestVoiceTranscript();
-			},
-			[drainLatestVoiceTranscript],
-		),
-		preferBrowserRecognition: false,
-	});
-	stopSpeakingRef.current = voice.stopSpeaking;
-	const wasStreamingRef = useRef(false);
-
-	const isVoiceActive = voice.state !== "idle";
-
-	useEffect(() => {
-		setSteeringState((currentState) => {
-			if (currentState.phase === "idle" || currentState.phase === "pending" || currentState.phase === "applying") {
-				return currentState;
-			}
-
-			if (voice.state === "processing") {
-				return {
-					...currentState,
-					phase: "transcribing",
-				};
-			}
-
-			if (voice.state === "recording" && currentState.phase === "transcribing") {
-				return {
-					...currentState,
-					phase: "listening",
-				};
-			}
-
-			if (voice.state === "idle") {
-				return {
-					phase: "idle",
-					text: null,
-				};
-			}
-
-			return currentState;
-		});
-	}, [voice.state]);
-
-	useEffect(() => {
-		if (steeringState.phase !== "applying") {
-			return;
-		}
-
-		if (chat.status !== "submitted" && chat.status !== "streaming") {
-			return;
-		}
-
-		const timeoutId = window.setTimeout(() => {
-			setSteeringState((currentState) =>
-				currentState.phase === "applying"
-					? {
-							phase: "idle",
-							text: null,
-						}
-					: currentState,
-			);
-		}, 220);
-
-		return () => {
-			window.clearTimeout(timeoutId);
-		};
-	}, [chat.status, steeringState.phase]);
-
-	useEffect(() => {
-		if (wasStreamingRef.current && !chat.isStreaming && voice.state !== "idle") {
-			if (skipNextAutoSpeakRef.current) {
-				skipNextAutoSpeakRef.current = false;
-				wasStreamingRef.current = chat.isStreaming;
-				return;
-			}
-
-			const lastAssistantMessage = [...chat.messages].reverse().find((message) => message.role === "assistant");
-			if (lastAssistantMessage && getMessageInterruption(lastAssistantMessage)) {
-				wasStreamingRef.current = chat.isStreaming;
-				return;
-			}
-
-			const text = lastAssistantMessage ? getMessageText(lastAssistantMessage) : null;
-			if (text) {
-				// If the response created an artifact, the text part already says
-				// 'Created artifact "Title".' — use the document title directly
-				// to avoid double-wrapping that confuses TTS.
-				const createdArtifact = lastAssistantMessage ? getMessageArtifactResult(lastAssistantMessage) : null;
-				const spokenText = createdArtifact ? `${createdArtifact.action === "update" ? "Updated" : "Created"} artifact ${createdArtifact.title}.` : text;
-				voice.speak(spokenText);
-			}
-		}
-		wasStreamingRef.current = chat.isStreaming;
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- voice.speak is stable; including voice object would cause spurious re-runs
-	}, [chat.isStreaming, chat.messages, chat.documents, voice.state, voice.speak]);
-
-	const handleToggleVoice = useCallback(() => {
-		if (voice.state === "idle") {
-			clearSteeringState();
-			voice.start();
-		} else {
-			// Clear any pending transcript without incrementing the drain epoch.
-			// This avoids aborting an in-flight drain mid-interrupt, which would
-			// leave the active generation stopped with no replacement prompt.
-			// voice.stop() disables the mic/VAD/TTS so no new transcripts arrive.
-			pendingVoiceTranscriptRef.current = null;
-			clearSteeringState();
-			voice.stop();
-		}
-	}, [clearSteeringState, voice]);
-
 	const handleStop = useCallback(async () => {
-		const hadActiveTurn = chatRef.current.isStreaming;
-		clearPendingVoiceWork("manual-stop");
-		voice.cancelPendingTranscription();
-		stopSpeakingRef.current();
-		if (hadActiveTurn) {
-			skipNextAutoSpeakRef.current = true;
-		}
+		manualVoiceStopRef.current = true;
 		await chat.interruptActiveTurn({ source: "user-stop" });
-	}, [chat, clearPendingVoiceWork, voice]);
-
-	const voiceButtonState: VoiceButtonState = voice.state === "speaking" ? "processing" : voice.state;
+	}, [chat]);
 
 	// --- Rovo AI cursor companion ---
 	const clicky = useClicky();
@@ -1256,10 +982,14 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	}, [isClickyActive, deactivateClicky, toggleClicky]);
 
 	// --- Realtime voice (live conversation mode) ---
-	const realtime = useRealtimeVoice({
-		onDelegateToRovo: useCallback(
-			async (request: DelegationRequest) => {
-				try {
+		const realtime = useRealtimeVoice({
+			onDelegateToRovo: useCallback(
+				async (request: DelegationRequest) => {
+					if (isDictationActiveRef.current) {
+						return;
+					}
+
+					try {
 					const c = chatRef.current as RovoAppRealtimeShellAdapter;
 					const contextDescription = mergeContextDescriptions(request.conversationSummary ? `[Voice context] ${request.conversationSummary}` : undefined, annotationContextRef.current);
 					const extendedRequest = request as ExtendedDelegationRequest;
@@ -1302,9 +1032,14 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				}
 			},
 			[buildHermesPromptOptions, injectRealtimeContext],
-		),
-		onSpeechStarted: useCallback(() => {
-			activateTailFollowMode();
+			),
+			onSpeechStarted: useCallback(() => {
+				if (isDictationActiveRef.current) {
+					setDictationTranscriptPreview(null);
+					return;
+				}
+
+				activateTailFollowMode();
 			speechStartedAtRef.current = new Date().toISOString();
 			realtimeUserTranscriptHasDeltaRef.current = false;
 			resetRealtimeAssistantMessageState();
@@ -1331,18 +1066,31 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			// OpenAI transcription deltas send { delta, text } (accumulated).
 			// In both cases, `text` is the complete current transcript — use SET, not APPEND.
 			const text = typeof payload === "string" ? payload : (payload.text ?? payload.delta ?? "");
-			if (!text) {
-				return;
-			}
+				if (!text) {
+					return;
+				}
 
-			realtimeUserTranscriptHasDeltaRef.current = true;
-			setVoiceTranscript(text);
-		}, []),
-		onSpeechTranscriptCompleted: useCallback(
-			async (payload: RealtimeSpeechTranscriptPayload) => {
-				const transcript = typeof payload === "string" ? payload : (payload.transcript ?? payload.text ?? "");
+				if (isDictationActiveRef.current) {
+					setDictationTranscriptPreview(text);
+					return;
+				}
 
-				// Rovo: transition to processing and record user exchange
+				realtimeUserTranscriptHasDeltaRef.current = true;
+				setVoiceTranscript(text);
+			}, []),
+			onSpeechTranscriptCompleted: useCallback(
+				async (payload: RealtimeSpeechTranscriptPayload) => {
+					const transcript = typeof payload === "string" ? payload : (payload.transcript ?? payload.text ?? "");
+
+					if (isDictationActiveRef.current) {
+						const nextText = appendDictationTranscript(composerTextRef.current, transcript);
+						composerTextRef.current = nextText;
+						setDictationTranscriptPreview(transcript);
+						setVoiceTranscript(nextText);
+						return;
+					}
+
+					// Rovo: transition to processing and record user exchange
 				if (isClickyActive) {
 					clickyStartProcessing();
 					if (transcript) {
@@ -1377,18 +1125,26 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			},
 			[appendRealtimeMessage, isClickyActive, clickyStartProcessing, clickyAddExchange],
 		),
-		onTextResponseStart: useCallback(
-			async (payload?: { messageId?: string }) => {
-				if (typedScrollAnchorSourceRef.current === "realtime") {
+			onTextResponseStart: useCallback(
+				async (payload?: { messageId?: string }) => {
+					if (isDictationActiveRef.current) {
+						return;
+					}
+
+					if (typedScrollAnchorSourceRef.current === "realtime") {
 					realtimeTypedResponseStartedRef.current = true;
 				}
 				realtimeAssistantMessageIdRef.current = await ensureRealtimeAssistantMessage(payload?.messageId ?? null);
 			},
 			[ensureRealtimeAssistantMessage],
 		),
-		onAssistantTextDelta: useCallback(
-			async (payload: RealtimeAssistantTextPayload) => {
-				const delta = typeof payload === "string" ? payload : (payload.delta ?? payload.text ?? "");
+			onAssistantTextDelta: useCallback(
+				async (payload: RealtimeAssistantTextPayload) => {
+					if (isDictationActiveRef.current) {
+						return;
+					}
+
+					const delta = typeof payload === "string" ? payload : (payload.delta ?? payload.text ?? "");
 				if (!delta) {
 					return;
 				}
@@ -1398,9 +1154,13 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			},
 			[ensureRealtimeAssistantMessage, updateRealtimeMessage],
 		),
-		onAssistantTextCompleted: useCallback(
-			async (payload: RealtimeAssistantTextCompletedPayload) => {
-				const text = typeof payload === "string" ? payload : (payload.text ?? "");
+			onAssistantTextCompleted: useCallback(
+				async (payload: RealtimeAssistantTextCompletedPayload) => {
+					if (isDictationActiveRef.current) {
+						return;
+					}
+
+					const text = typeof payload === "string" ? payload : (payload.text ?? "");
 				if (!text) {
 					return;
 				}
@@ -1442,9 +1202,13 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	});
 
 	const realtimeStatusMessage = resolveRealtimeStatusMessage(realtime);
-	const shouldChatVoiceModeBeEnabled = isVoiceActive || isRealtimeActive;
+	const shouldChatVoiceModeBeEnabled = isRealtimeActive;
 	const realtimeSessionIdentity = resolveRealtimeSessionIdentity(realtime, chat.activeThreadId, chat.runtimeThreadId);
 	const wasRealtimeStreamingRef = useRef(false);
+	const dictationState = resolveComposerDictationState({
+		active: isDictationActive,
+		voiceState: realtime.voiceState,
+	});
 
 	useEffect(() => {
 		realtimeInjectContextRef.current = realtime.injectContext as typeof realtimeInjectContextRef.current;
@@ -1496,13 +1260,13 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 	const handleToggleRealtimeVoice = useCallback(() => {
 		if (realtime.voiceState === "idle") {
-			// Stop legacy voice if active
-			if (voice.state !== "idle") {
-				pendingVoiceTranscriptRef.current = null;
-				clearSteeringState();
-				voice.stop();
+			if (isDictationActiveRef.current) {
+				isDictationActiveRef.current = false;
+				dictationBaselineRef.current = null;
+				setIsDictationActive(false);
+				setDictationTranscriptPreview(null);
 			}
-			clearSteeringState();
+
 			manualVoiceStopRef.current = false;
 			realtime.connect();
 		} else {
@@ -1511,8 +1275,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			// (setting currentTranscript) but no streaming deltas arrived
 			// (voiceTranscript would still be empty).
 			const transcriptToPreserve = realtime.currentTranscript;
-			pendingVoiceTranscriptRef.current = null;
-			clearSteeringState();
 			realtimeUserMessageIdRef.current = null;
 			resetRealtimeAssistantMessageState();
 			speechStartedAtRef.current = null;
@@ -1526,7 +1288,49 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				setVoiceTranscript(transcriptToPreserve);
 			}
 		}
-	}, [clearSteeringState, realtime, resetRealtimeAssistantMessageState, voice]);
+	}, [realtime, resetRealtimeAssistantMessageState]);
+
+	const handleStartDictation = useCallback(() => {
+		if (realtime.voiceState !== "idle") {
+			realtimeUserMessageIdRef.current = null;
+			resetRealtimeAssistantMessageState();
+			speechStartedAtRef.current = null;
+			manualVoiceStopRef.current = true;
+			realtime.disconnect();
+		}
+
+		const baselineText = composerTextRef.current;
+		dictationBaselineRef.current = baselineText;
+		isDictationActiveRef.current = true;
+		setIsDictationActive(true);
+		setDictationTranscriptPreview(null);
+		setPrefillText(null);
+		setVoiceTranscript(baselineText);
+		realtime.connect({ transcriptionOnly: true });
+	}, [realtime, resetRealtimeAssistantMessageState]);
+
+	const handleCancelDictation = useCallback(() => {
+		const restoredText = restoreDictationBaseline(dictationBaselineRef.current);
+		dictationBaselineRef.current = null;
+		isDictationActiveRef.current = false;
+		composerTextRef.current = restoredText;
+		setIsDictationActive(false);
+		setDictationTranscriptPreview(null);
+		setPrefillText(null);
+		setVoiceTranscript(restoredText);
+		setDictationPrefillRequestKey((currentKey) => currentKey + 1);
+		realtime.disconnect();
+	}, [realtime]);
+
+	const handleAcceptDictation = useCallback(() => {
+		dictationBaselineRef.current = null;
+		isDictationActiveRef.current = false;
+		setIsDictationActive(false);
+		setDictationTranscriptPreview(null);
+		setPrefillText(null);
+		setVoiceTranscript(composerTextRef.current);
+		realtime.disconnect();
+	}, [realtime]);
 
 	const handleComposerSubmit = useCallback(
 		async ({ files, text }: { files: FileUIPart[]; text: string }) => {
@@ -1549,6 +1353,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						if (shouldClearHermesSkillSelection) {
 							clearHermesSkillSelection();
 						}
+						clearPrefillSources();
 					} catch (error) {
 						resetTypedScrollAnchorState();
 						throw error;
@@ -1576,19 +1381,20 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						}
 					}
 
-					try {
-						await realtimeVoice.sendTextInput({
-							contextDescription,
-							messageId: messageId ?? undefined,
-							text,
-						});
-					} catch (error) {
-						resetTypedScrollAnchorState();
-						throw error;
+						try {
+							await realtimeVoice.sendTextInput({
+								contextDescription,
+								messageId: messageId ?? undefined,
+								text,
+							});
+						} catch (error) {
+							resetTypedScrollAnchorState();
+							throw error;
+						}
+						clearPrefillSources();
+						return;
 					}
-					return;
 				}
-			}
 
 			const trimmedText = text.trim();
 			const shouldShowOptimisticPrompt = !chat.shouldQueueNextSubmission && (trimmedText || files.length > 0);
@@ -1613,6 +1419,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				if (shouldClearHermesSkillSelection) {
 					clearHermesSkillSelection();
 				}
+				clearPrefillSources();
 			} catch (error) {
 				setOptimisticUserMessage(null);
 				resetTypedScrollAnchorState();
@@ -1633,6 +1440,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			setOptimisticUserMessage,
 			buildHermesPromptOptions,
 			clearHermesSkillSelection,
+			clearPrefillSources,
 			chat.shouldQueueNextSubmission,
 		],
 	);
@@ -2324,6 +2132,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									composerStatus={chat.composerStatus}
 									compact={isArtifactOpen}
 									directoryAutocompleteListVisible={shouldShowDirectoryAutocompleteList}
+									dictationState={dictationState}
+									dictationTranscriptPreview={dictationTranscriptPreview}
 									errorMessage={chat.inputError}
 									experimentalDarkCta
 									galleryExpanded={galleryExpanded}
@@ -2333,26 +2143,26 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									onDismissPlanExecutionTracker={chat.dismissPlanExecutionTracker}
 									onDirectoryAutocompleteChange={setDirectoryAutocompleteState}
 									onDirectoryAutocompleteControllerChange={setDirectoryAutocompleteController}
+									onAcceptDictation={handleAcceptDictation}
+									onCancelDictation={handleCancelDictation}
 									onStop={handleStop}
 									onRemoveQueuedPrompt={chat.removeQueuedPrompt}
 									onSubmit={handleComposerSubmit}
+									onTextChange={handleComposerTextChange}
+									onStartDictation={handleStartDictation}
 									onTogglePlanMode={chat.togglePlanMode}
 									onToggleRealtimeVoice={handleToggleRealtimeVoice}
 									onToggleClicky={handleToggleClicky}
 									clickyActive={isClickyActive}
-									onToggleVoice={handleToggleVoice}
 									placeholder={composerPreviewState.placeholder}
+									prefillRequestKey={dictationPrefillRequestKey}
 									prefillText={voiceTranscript ?? prefillText}
 									previewPrompt={composerPreviewState.activePreviewPrompt}
 									planExecutionTracker={chat.planExecutionTracker}
 									queuedPrompts={chat.queuedPrompts}
-									realtimeGenerationState={realtime.generationState}
-									realtimeOutputWaveformBars={realtime.outputWaveformBars}
 									realtimeVoiceActive={isRealtimeActive}
 									realtimeVoiceState={realtime.voiceState}
-									renderResponseGradient={(props) => <SmoothGradientWaveform {...props} />}
 									showBackgroundStop={chat.hasBackgroundDelegation}
-									voiceState={voiceButtonState}
 								/>
 								{showHomeState && shouldShowDirectoryAutocompleteList && directoryAutocompleteState ? (
 									<RovoAppDirectoryAutocompleteRows

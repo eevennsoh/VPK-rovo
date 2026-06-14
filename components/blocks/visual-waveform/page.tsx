@@ -664,16 +664,8 @@ export default function VisualWaveformPage() {
 							onToggleRealtimeVoice={handleToggleRealtimeVoice}
 							placeholder="Ask, @mention, or / for skills"
 							prefillText={voiceTranscript}
-							realtimeGenerationState={realtime.generationState}
-							realtimeOutputWaveformBars={realtime.outputWaveformBars}
 							realtimeVoiceActive={isRealtimeActive}
 							realtimeVoiceState={realtime.voiceState}
-							renderResponseGradient={(props) => (
-								<SmoothGradientWaveform
-									{...props}
-									config={speakingWaveformConfig}
-								/>
-							)}
 						/>
 					</div>
 
