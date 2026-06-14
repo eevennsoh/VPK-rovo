@@ -41,6 +41,10 @@ const INCLUDED_TEST_FILES = new Set([
 	// Components are not included wholesale, so keep this focused coverage gated.
 	"components/visual/ink-wash/data.test.js",
 	"components/visual/ink-wash/registry.test.js",
+	// Border Beam vendored upstream defaults and visual docs wiring.
+	// Components are not included wholesale, so keep this focused coverage gated.
+	"components/visual/border-beam/data.test.js",
+	"components/visual/border-beam/registry.test.js",
 	// Deterministic studio agent-builder: prompt → agent create/update patch
 	// against the fake catalogs. Pure module under components/, so gate explicitly.
 	"components/projects/studio/lib/demo-agent-builder.test.js",
