@@ -49,3 +49,12 @@ test("compact chat renders approval card before falling back to the composer", (
 		/<QuestionCardShortcutsFooter escLabel="cancel" \/>/,
 	);
 });
+
+test("compact chat can suppress automatic custom agent tabs", () => {
+	assert.match(CHAT_PANEL_SOURCE, /suppressCustomAgentTabs\?: boolean;/);
+	assert.match(CHAT_PANEL_SOURCE, /suppressCustomAgentTabs = false,/);
+	assert.match(
+		CHAT_PANEL_SOURCE,
+		/const shouldRenderCustomAgentTabs = !suppressCustomAgentTabs && \([\s\S]*Boolean\(customAgentTabs\)[\s\S]*isCustomAgentTabsProfile\(selectedAgent\)[\s\S]*\);/,
+	);
+});
