@@ -178,7 +178,7 @@ export function LozengeDemoTrailingMetric() {
 			<Lozenge variant="neutral" className="pr-px">
 				Not started
 				<Badge
-					variant="secondary"
+					variant="neutral"
 					className="ml-1 min-w-0 bg-bg-neutral-pressed hover:bg-bg-neutral-pressed active:bg-bg-neutral-pressed"
 				>
 					0

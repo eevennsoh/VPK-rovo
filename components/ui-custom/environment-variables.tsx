@@ -333,7 +333,7 @@ export function EnvironmentVariableRequired({
   ...props
 }: Readonly<EnvironmentVariableRequiredProps>) {
   return (
-    <Badge className={cn("text-xs", className)} variant="secondary" {...props}>
+    <Badge className={cn("text-xs", className)} variant="neutral" {...props}>
       {children ?? "Required"}
     </Badge>
   );

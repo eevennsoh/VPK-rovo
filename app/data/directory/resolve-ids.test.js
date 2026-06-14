@@ -21,6 +21,7 @@ function loadResolver() {
 			extractInstructionTokens,
 			repairInstructionTokens,
 			weaveMissingTokens,
+			convertBareMentionsToTokens,
 		} from "@/app/data/directory/resolve-ids";
 	`);
 	return modulePromise;
@@ -225,4 +226,40 @@ test("token extraction/repair ignores tokens inside code regions", async () => {
 	// Code regions survive verbatim.
 	assert.match(markdown, /fenced @\[tool:github\]/u);
 	assert.match(markdown, /`@\[tool:slack\]`/u);
+});
+
+test("convertBareMentionsToTokens rewrites slash + at app references into @[app:id] chips", async () => {
+	const { convertBareMentionsToTokens } = await loadResolver();
+
+	// Known apps (incl. the multi-word "Google Calendar") resolve to canonical ids.
+	const md = "Refer to my /gmail /salesforce /google calendar /jira each morning.";
+	const converted = convertBareMentionsToTokens(md);
+	assert.match(converted, /@\[app:gmail\]/u);
+	assert.match(converted, /@\[app:salesforce\]/u);
+	assert.match(converted, /@\[app:google-calendar\]/u);
+	assert.match(converted, /@\[app:jira\]/u);
+	// The literal slash references are gone.
+	assert.doesNotMatch(converted, /\/gmail|\/salesforce|\/google calendar|\/jira/u);
+
+	// The "@" palette prefix is handled the same way.
+	assert.match(convertBareMentionsToTokens("Check @gmail now."), /@\[app:gmail\]/u);
+});
+
+test("convertBareMentionsToTokens converts unknown references to slugged app tokens", async () => {
+	const { convertBareMentionsToTokens } = await loadResolver();
+
+	// "all slash references" → even an unknown app becomes a token (the editor
+	// renders a logo-less chip for it).
+	assert.equal(convertBareMentionsToTokens("Use /foobar today."), "Use @[app:foobar] today.");
+});
+
+test("convertBareMentionsToTokens leaves existing tokens, code, and emails untouched", async () => {
+	const { convertBareMentionsToTokens } = await loadResolver();
+
+	// Already-tokenized references are not re-wrapped.
+	assert.equal(convertBareMentionsToTokens("Use @[app:gmail]."), "Use @[app:gmail].");
+	// Email addresses are not mentions (the `@` is preceded by a word char).
+	assert.equal(convertBareMentionsToTokens("Email me at foo@bar.com."), "Email me at foo@bar.com.");
+	// Code spans/fences survive verbatim.
+	assert.match(convertBareMentionsToTokens("Run `/gmail` literally."), /`\/gmail`/u);
 });

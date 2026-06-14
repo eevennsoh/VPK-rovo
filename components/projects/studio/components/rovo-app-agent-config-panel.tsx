@@ -1,14 +1,22 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactElement, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
+import AppsIcon from "@atlaskit/icon/core/apps";
+import AutomationIcon from "@atlaskit/icon/core/automation";
+import ChangesIcon from "@atlaskit/icon/core/changes";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
+import CommentIcon from "@atlaskit/icon/core/comment";
 import CrossIcon from "@atlaskit/icon/core/cross";
-import ClockIcon from "@atlaskit/icon/core/clock";
 import LinkExternalIcon from "@atlaskit/icon/core/link-external";
 import PageIcon from "@atlaskit/icon/core/page";
+import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
+import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
+import HistoryIcon from "@atlaskit/icon-lab/core/history";
+import SkillIcon from "@atlaskit/icon-lab/core/skill";
 
 import { KnowledgeDirectoryDialog, type KnowledgeDirectoryAddPayload } from "@/components/blocks/knowledge-directory";
 import { Memory } from "@/components/blocks/memory";
@@ -46,6 +54,7 @@ import { getListItems, updateConfigListItem } from "@/components/blocks/subagent
 import { AgentUsers } from "@/components/blocks/agent-users";
 import { useAgentConfigSubagents } from "@/components/projects/studio/hooks/use-agent-config-subagents";
 import { useSubagentsNavigatorTop } from "@/components/projects/studio/hooks/use-subagents-navigator-top";
+import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import {
 	Agent,
 	AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS,
@@ -67,6 +76,7 @@ import RovoFloatingChat from "@/components/projects/rovo-floating-chat/component
 import type { ChatPanelGreetingProps, ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-chat/lib/chat-context-bar";
 import { getStudioSessionAgentDisplayName, useRovoChat } from "@/app/contexts";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -76,6 +86,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import { IconTile } from "@/components/ui/icon-tile";
 import { SONNER_TOAST_AUTO_DISMISS_MS, SonnerToast, Toaster } from "@/components/ui/sonner";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
@@ -302,6 +313,20 @@ function AgentSaveStatusIndicator({
 	);
 }
 
+const PUBLISH_CHANGE_SECTION_ICONS: Record<string, ReactNode> = {
+	triggers: <AutomationIcon label="" size="small" />,
+	skills: <SkillIcon label="" size="small" />,
+	tools: <AppsIcon label="" size="small" />,
+	subagents: <AiAgentIcon label="" size="small" />,
+	memory: <AiModelIcon label="" size="small" />,
+	conversationStarters: <CommentIcon label="" size="small" />,
+	reasoning: <AiComputeIcon label="" size="small" />,
+};
+
+function getPublishChangeSectionIcon(id: string): ReactElement {
+	return (PUBLISH_CHANGE_SECTION_ICONS[id] ?? <PageIcon label="" size="small" />) as ReactElement;
+}
+
 function AgentPublishChangeList({
 	changeSummary,
 	limit = 4,
@@ -309,8 +334,9 @@ function AgentPublishChangeList({
 	changeSummary: StudioAgentChangeSummary;
 	limit?: number;
 }>) {
-	const visibleSections = changeSummary.sections.slice(0, limit);
-	const hiddenCount = Math.max(0, changeSummary.sections.length - visibleSections.length);
+	const [expanded, setExpanded] = useState(false);
+	const visibleSections = expanded ? changeSummary.sections : changeSummary.sections.slice(0, limit);
+	const hiddenCount = Math.max(0, changeSummary.sections.length - limit);
 
 	if (changeSummary.count === 0) {
 		return (
@@ -324,17 +350,21 @@ function AgentPublishChangeList({
 		<div className="flex flex-col divide-y divide-border">
 			{visibleSections.map((section) => (
 				<div className="flex items-center gap-2 py-2 text-sm" key={section.id}>
-					<Icon aria-hidden render={<PageIcon label="" size="small" />} />
+					<Icon aria-hidden render={getPublishChangeSectionIcon(section.id)} className="text-text-subtle" />
 					<span className="min-w-0 flex-1 truncate text-text">{section.label}</span>
-					<span className={cn("shrink-0", getChangeStatusClassName(section))}>
+					<span className={cn("shrink-0 text-xs", getChangeStatusClassName(section))}>
 						{getChangeStatusLabel(section)}
 					</span>
 				</div>
 			))}
 			{hiddenCount > 0 ? (
-				<div className="py-2 text-sm text-text-subtle">
-					+{hiddenCount} more
-				</div>
+				<button
+					type="button"
+					className="py-2 text-left text-sm text-text-subtle"
+					onClick={() => setExpanded((prev) => !prev)}
+				>
+					{expanded ? "Show less" : `+${hiddenCount} more`}
+				</button>
 			) : null}
 		</div>
 	);
@@ -357,8 +387,17 @@ function AgentPublishDropdown({
 	onRestoreVersion: (versionId: string) => void;
 	previewVersionId: string | null;
 }>) {
+	const [open, setOpen] = useState(false);
 	const [view, setView] = useState<PublishDropdownView>("summary");
 	const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+	// Scroll-driven fade beneath the pinned back header — mirrors the editor
+	// palette's nested "back" experience (no hard divider; the list top fades
+	// once it scrolls under the sticky header).
+	const historyOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	// Scroll-driven fades on the version detail body so content dissolves under
+	// the pinned back header and above the pinned action footer instead of
+	// hitting a hard edge.
+	const versionDetailOverflow = useHasVerticalOverflow<HTMLDivElement>();
 	const selectedVersion = selectedVersionId
 		? entry.versionHistory.find((version) => version.id === selectedVersionId) ?? null
 		: null;
@@ -366,6 +405,8 @@ function AgentPublishDropdown({
 	const hasChanges = changeSummary.count > 0;
 	const profileHref = getPublishProfileHref(entry.profile.id);
 	const publishedVersionLabel = `V${entry.publishedVersion || 1}`;
+	const agentName = getStudioSessionAgentDisplayName(entry);
+	const agentAvatarSrc = entry.profile.avatarSrc;
 
 	const resetToSummary = () => {
 		setView("summary");
@@ -373,8 +414,9 @@ function AgentPublishDropdown({
 	};
 
 	return (
-		<DropdownMenu onOpenChange={(open) => {
-			if (!open) {
+		<DropdownMenu open={open} onOpenChange={(next) => {
+			setOpen(next);
+			if (!next) {
 				resetToSummary();
 			}
 		}}>
@@ -392,102 +434,103 @@ function AgentPublishDropdown({
 				<span className="inline-flex items-center gap-2">
 					Publish
 					{hasChanges ? (
-						<Badge className="h-5 min-w-5 justify-center px-1.5" variant="primaryInverted">
-							{changeSummary.count}
-						</Badge>
+						<Badge variant="inverse">{changeSummary.count}</Badge>
 					) : null}
 				</span>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end" className="w-[360px] p-0">
+			<DropdownMenuContent align="end" className="flex max-h-[min(480px,var(--available-height,480px))] w-[360px] flex-col overflow-hidden rounded-2xl p-0">
 				{view === "summary" ? (
-					<div className="flex flex-col">
-						<div className="flex items-start gap-3 p-4">
-							<Icon aria-hidden render={<LinkExternalIcon label="" size="small" />} />
-							<div className="min-w-0 flex-1">
-								<a className="block truncate text-sm font-medium text-link hover:underline" href={profileHref}>
-									{profileHref}
-								</a>
-								<div className="mt-1 text-xs text-text-subtle">
-									V{entry.publishedVersion || 1} · {formatRelativeTime(entry.lastPublishedAt)} · by {entry.lastPublishedBy ?? "Venn Soh"}
-								</div>
-							</div>
-						</div>
-						<DropdownMenuSeparator />
-						<button
-							type="button"
-							className="flex items-center gap-3 px-4 py-3 text-left hover:bg-bg-neutral-subtle-hovered"
-							onClick={() => setView("history")}
-						>
-							<Icon aria-hidden render={<ClockIcon label="" size="small" />} />
-							<span className="min-w-0 flex-1">
-								<span className="block text-sm font-medium text-text">Version history</span>
-								<span className="block text-xs text-text-subtle">
-									{publishedVersions.length} saved {publishedVersions.length === 1 ? "version" : "versions"}
-								</span>
-							</span>
-							<ChevronRightIcon label="" size="small" />
-						</button>
-						<DropdownMenuSeparator />
-						<div className="p-4">
-							{hasChanges ? (
-								<button
-									type="button"
-									className="flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left hover:bg-bg-neutral-subtle-hovered"
-									onClick={() => setView("draftChanges")}
-								>
-									<Icon aria-hidden render={<PageIcon label="" size="small" />} />
-									<span className="min-w-0 flex-1">
-										<span className="block text-sm font-medium text-text">
-											{getDraftChangeCountLabel(changeSummary)}
-										</span>
-										<span className="block truncate text-xs text-text-subtle">
-											{getDraftChangePreviewLabel(changeSummary, publishedVersionLabel)}
-										</span>
-									</span>
-									<ChevronRightIcon label="" size="small" />
-								</button>
-							) : (
-								<div className="flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left">
-									<Icon aria-hidden render={<PageIcon label="" size="small" />} />
-									<span className="min-w-0 flex-1">
-										<span className="block text-sm font-medium text-text">
-											{getDraftChangeCountLabel(changeSummary)}
-										</span>
-										<span className="block truncate text-xs text-text-subtle">
-											{getDraftChangePreviewLabel(changeSummary, publishedVersionLabel)}
-										</span>
-									</span>
-								</div>
-							)}
-							<Button
-								type="button"
-								className="mt-4 w-full"
-								disabled={!hasChanges}
-								onClick={onPublishUpdate}
+					<div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+						<div className="px-2 pt-2">
+							<a
+								className="flex items-center gap-3 rounded-lg py-2 pr-3 pl-2 no-underline hover:bg-bg-neutral-subtle-hovered hover:no-underline"
+								href={profileHref}
 							>
-								Update
-							</Button>
+								<Avatar aria-hidden="true" shape="hexagon" size="default" className="shrink-0 after:border-0">
+									{agentAvatarSrc ? <AvatarImage alt="" src={agentAvatarSrc} /> : null}
+									<AvatarFallback>{agentName.slice(0, 2).toUpperCase()}</AvatarFallback>
+								</Avatar>
+								<span className="min-w-0 flex-1">
+									<span className="block truncate text-sm font-medium text-text">View agent profile</span>
+									<span className="mt-1 flex items-center gap-1 text-xs text-text-subtle">
+										<Badge variant="success">{publishedVersionLabel}</Badge>
+										<span aria-hidden>·</span>
+										<span className="shrink-0">{formatRelativeTime(entry.lastPublishedAt)}</span>
+										<span aria-hidden>·</span>
+										<span className="truncate">by {entry.lastPublishedBy ?? "Venn Soh"}</span>
+									</span>
+								</span>
+								<Icon aria-hidden className="shrink-0 text-icon-subtle" render={<LinkExternalIcon label="" size="small" />} />
+							</a>
+						</div>
+						<DropdownMenuSeparator className="mx-4 my-2" />
+						<div className="px-2">
+							<button
+								type="button"
+								className="flex w-full items-center gap-3 rounded-lg py-2 pr-3 pl-2 text-left hover:bg-bg-neutral-subtle-hovered"
+								onClick={() => setView("history")}
+							>
+								<IconTile aria-hidden icon={<HistoryIcon label="" />} label="" />
+								<span className="min-w-0 flex-1">
+									<span className="block text-sm font-medium text-text-subtle">Version history</span>
+									<span className="block text-xs text-text-subtle">
+										{publishedVersions.length} saved {publishedVersions.length === 1 ? "version" : "versions"}
+									</span>
+								</span>
+								<Icon aria-hidden className="shrink-0 text-icon-subtle" render={<ChevronRightIcon label="" size="small" />} />
+							</button>
+						</div>
+						<DropdownMenuSeparator className="mx-4 my-2" />
+						<div className="flex flex-col gap-2 px-2 pb-4">
+							<button
+								type="button"
+								className="flex w-full items-center gap-3 rounded-lg py-1.5 pr-3 pl-2 text-left hover:bg-bg-neutral-subtle-hovered"
+								onClick={() => setView("draftChanges")}
+							>
+								<IconTile aria-hidden icon={<ChangesIcon label="" />} label="" />
+								<span className="min-w-0 flex-1">
+									<span className="block text-sm font-medium text-text-subtle">
+										{getDraftChangeCountLabel(changeSummary)}
+									</span>
+									<span className="block truncate text-xs text-text-subtle">
+										{getDraftChangePreviewLabel(changeSummary, publishedVersionLabel)}
+									</span>
+								</span>
+								<Icon aria-hidden className="shrink-0 text-icon-subtle" render={<ChevronRightIcon label="" size="small" />} />
+							</button>
+							<div className="px-2">
+								<Button
+									type="button"
+									className="w-full"
+									disabled={!hasChanges}
+									onClick={onPublishUpdate}
+								>
+									Update
+								</Button>
+							</div>
 						</div>
 					</div>
 				) : null}
 				{view === "draftChanges" ? (
-					<div className="flex flex-col">
-						<div className="flex items-center gap-2 border-b border-border p-3">
+					<div className="flex min-h-0 flex-1 flex-col">
+						<div className="shrink-0 sticky top-0 z-10 flex items-center gap-2 bg-popover p-3">
 							<Button aria-label="Back to publish summary" size="icon-compact" type="button" variant="ghost" onClick={resetToSummary}>
 								<ArrowLeftIcon label="" size="small" />
 							</Button>
 							<div className="min-w-0 flex-1 truncate text-sm font-semibold text-text">Unpublished changes</div>
 						</div>
-						<div className="p-4">
+						<div className="min-h-0 flex-1 overflow-y-auto px-4 py-2">
 							<div className="text-xs font-semibold text-text-subtlest">
 								{getDraftChangeCountLabel(changeSummary)}
 							</div>
-							<div className="mt-2">
+							<div className="mt-1">
 								<AgentPublishChangeList changeSummary={changeSummary} />
 							</div>
+						</div>
+						<div className="shrink-0 p-4 pt-2">
 							<Button
 								type="button"
-								className="mt-4 w-full"
+								className="w-full"
 								disabled={!hasChanges}
 								onClick={onPublishUpdate}
 							>
@@ -497,18 +540,24 @@ function AgentPublishDropdown({
 					</div>
 				) : null}
 				{view === "history" ? (
-					<div className="flex flex-col">
-						<div className="flex items-center gap-2 border-b border-border p-3">
+					<div className="flex min-h-0 flex-1 flex-col">
+						<div className="shrink-0 sticky top-0 z-10 flex items-center gap-2 bg-popover p-3">
 							<Button aria-label="Back to publish summary" size="icon-compact" type="button" variant="ghost" onClick={resetToSummary}>
 								<ArrowLeftIcon label="" size="small" />
 							</Button>
 							<div className="text-sm font-semibold text-text">Version history</div>
 						</div>
-						<div className="p-2">
+						<div
+							ref={historyOverflow.ref}
+							className={cn(
+								"min-h-0 flex-1 overflow-y-auto p-2",
+								historyOverflow.showTopScrollMask && "scroll-mask-top",
+							)}
+						>
 							{publishedVersions.map((version) => (
 								<button
 									type="button"
-									className="flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left hover:bg-bg-neutral-subtle-hovered"
+									className="flex w-full items-center gap-3 rounded-lg py-2 pr-3 pl-2 text-left hover:bg-bg-neutral-subtle-hovered"
 									key={version.id}
 									onClick={() => {
 										setSelectedVersionId(version.id);
@@ -518,28 +567,35 @@ function AgentPublishDropdown({
 									<span className="min-w-0 flex-1">
 										<span className="flex items-center gap-2">
 											<Badge variant="success">{`V${version.version}`}</Badge>
-											{version.version === entry.publishedVersion ? <Badge variant="secondary">Live</Badge> : null}
+											{version.version === entry.publishedVersion ? <Badge variant="neutral">Live</Badge> : null}
 										</span>
 										<span className="mt-1 block text-xs text-text-subtle">
 											{version.label} · {formatRelativeTime(version.createdAt)}
 										</span>
 									</span>
-									<ChevronRightIcon label="" size="small" />
+									<Icon aria-hidden className="shrink-0 text-icon-subtle" render={<ChevronRightIcon label="" size="small" />} />
 								</button>
 							))}
 						</div>
 					</div>
 				) : null}
 				{view === "versionDetail" && selectedVersion ? (
-					<div className="flex flex-col">
-						<div className="flex items-center gap-2 border-b border-border p-3">
+					<div className="flex min-h-0 flex-1 flex-col">
+						<div className="shrink-0 sticky top-0 z-10 flex items-center gap-2 bg-popover p-3">
 							<Button aria-label="Back to version history" size="icon-compact" type="button" variant="ghost" onClick={() => setView("history")}>
 								<ArrowLeftIcon label="" size="small" />
 							</Button>
 							<div className="min-w-0 flex-1 truncate text-sm font-semibold text-text">{`V${selectedVersion.version}`}</div>
-							{previewVersionId === selectedVersion.id ? <Badge variant="secondary">Previewing</Badge> : null}
+							{previewVersionId === selectedVersion.id ? <Badge variant="neutral">Previewing</Badge> : null}
 						</div>
-						<div className="p-4">
+						<div
+							ref={versionDetailOverflow.ref}
+							className={cn(
+								"min-h-0 flex-1 overflow-y-auto px-4 pt-1 pb-2",
+								versionDetailOverflow.showTopScrollMask && "scroll-mask-top",
+								versionDetailOverflow.showBottomScrollMask && "scroll-mask-bottom",
+							)}
+						>
 							<div className="text-xs font-semibold text-text-subtlest">{selectedVersion.label}</div>
 							<div className="mt-1 text-sm text-text">{formatAbsoluteDateTime(selectedVersion.createdAt)}</div>
 							<div className="mt-4 text-xs font-semibold text-text-subtlest">Published by</div>
@@ -547,23 +603,23 @@ function AgentPublishDropdown({
 							<div className="mt-4 text-xs font-semibold text-text-subtlest">
 								{getChangeCountLabel(selectedVersion.changeSummary)}
 							</div>
-							<div className="mt-2">
+							<div className="mt-1">
 								<AgentPublishChangeList changeSummary={selectedVersion.changeSummary} />
 							</div>
-							<div className="mt-4 grid grid-cols-2 gap-2">
-								<Button type="button" variant="outline" onClick={onBackToLatest}>
-									Back to latest
+						</div>
+						<div className="shrink-0 grid grid-cols-2 gap-2 p-4 pt-2">
+							<Button type="button" variant="outline" onClick={onBackToLatest}>
+								Back to latest
+							</Button>
+							{previewVersionId === selectedVersion.id ? (
+								<Button type="button" onClick={() => onRestoreVersion(selectedVersion.id)}>
+									Rollback
 								</Button>
-								{previewVersionId === selectedVersion.id ? (
-									<Button type="button" onClick={() => onRestoreVersion(selectedVersion.id)}>
-										Rollback
-									</Button>
-								) : (
-									<Button type="button" onClick={() => onPreviewVersion(selectedVersion.id)}>
-										Preview
-									</Button>
-								)}
-							</div>
+							) : (
+								<Button type="button" onClick={() => onPreviewVersion(selectedVersion.id)}>
+									Preview
+								</Button>
+							)}
 						</div>
 					</div>
 				) : null}
@@ -676,6 +732,12 @@ export function RovoAppAgentConfigPanel({
 				return;
 			}
 			updateDraft({ [field]: value } as Partial<AgentResult>);
+		},
+		[updateDraft],
+	);
+	const handleBaseAvatarChange = useCallback(
+		(avatarSrc: string) => {
+			updateDraft({ avatarSrc });
 		},
 		[updateDraft],
 	);
@@ -1374,6 +1436,7 @@ export function RovoAppAgentConfigPanel({
 											idPrefix={`agent-${profileId}-${activeConfigId}`}
 											onTextChange={handleConfigTextChange}
 											onProfileTextChange={handleBaseTextChange}
+											onProfileAvatarChange={handleBaseAvatarChange}
 											onListItemChange={updateListItem}
 											onRemoveListItem={removeListItem}
 											onToggleListItem={toggleListItem}

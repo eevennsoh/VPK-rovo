@@ -1,7 +1,7 @@
 # VPK (Venn Prototype Kit)
 
 > Provider-neutral project context for AI coding assistants (Cursor, Claude Code, Codex, and others).
-> Canonical source: `AGENTS.md`. `CLAUDE.md` symlinks here. Provider dirs (`.cursor/`, `.claude/`, `.codex/`, `.rovodev/`, `.rovo/`) contain provider-specific config plus symlinks back to `.agents/`.
+> Canonical source: `AGENTS.md`. `CLAUDE.md` symlinks here. Provider dirs (`.cursor/`, `.claude/`, `.codex/`, `.rovo/`) contain provider-specific config plus symlinks back to `.agents/`.
 
 Next.js 16 (React 19, Tailwind CSS v4) + Express backend with AI SDK (Vercel), AI Gateway, and Rovo Serve integration.
 
@@ -38,6 +38,7 @@ Prefer reading these references over relying on pre-trained knowledge.
 | Offline HTML artifacts                 | `.agents/skills/vpk-html/SKILL.md`                          |
 | Repo-local agent creation              | `.agents/skills/agent-creator/SKILL.md`                     |
 | VPK git ship (PR create + merge-back)  | `.agents/skills/vpk-git-ship/SKILL.md`             |
+| VPK git ship fast (commit + push to main, no PR) | `.agents/skills/vpk-git-ship-fast/SKILL.md`   |
 | VPK git cleanup (worktrees/branches)   | `.agents/skills/vpk-git-clean/SKILL.md`            |
 | AI SDK chat integration                | `rovo/config.js`, `app/contexts/context-rovo-chat.tsx`      |
 | AI Gateway helpers                     | `backend/lib/ai-gateway-helpers.js`                         |
@@ -81,7 +82,7 @@ If instructions overlap, use this precedence:
 ### Rule Sources
 
 - Canonical source: `.agents/rules/`
-- Provider symlinks: `.cursor/rules/`, `.claude/rules/`, `.codex/rules/`, `.rovodev/rules/`, `.rovo/rules/`
+- Provider symlinks: `.cursor/rules/`, `.claude/rules/`, `.codex/rules/`, `.rovo/rules/`
 - Cursor-only format: `.agents/rules/*.mdc`
 
 ### Non-negotiable Defaults
@@ -199,7 +200,9 @@ static export used by deployment.
 - GitHub Actions runs `.github/workflows/ci.yml` on PRs and manual dispatch.
   The remote `CI / PR checks` status check verifies lockfile registry URLs with
   `scripts/verify-pnpm-lockfile.js`, installs with `pnpm install --frozen-lockfile`,
-  then runs `pnpm run ci:pr` (lint, typecheck, and unit tests via `pnpm run test:unit:js`); treat it as
+  then runs `pnpm run ci:pr` (root-level screenshot artifact verification via
+  `pnpm run verify:root-artifacts`, lint, typecheck, and unit tests via
+  `pnpm run test:unit:js`); treat it as
   PR confirmation, not a substitute for local validation. This check is
   required by branch protection on `main` — `/vpk-git-ship` auto-merge will wait
   for it to pass.

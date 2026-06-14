@@ -544,52 +544,17 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
     { ssr: false },
   ),
   // Badge
-  "badge-demo-default": dynamic(
+  "badge-demo-neutral": dynamic(
     () =>
       import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoDefault,
+        default: mod.BadgeDemoNeutral,
       })),
     { ssr: false },
   ),
-  "badge-demo-primary": dynamic(
+  "badge-demo-danger": dynamic(
     () =>
       import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoPrimary,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-important": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoImportant,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-added": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoAdded,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-removed": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoRemoved,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-secondary": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoSecondary,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-destructive": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoDestructive,
+        default: mod.BadgeDemoDanger,
       })),
     { ssr: false },
   ),
@@ -607,10 +572,52 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  "badge-demo-info": dynamic(
+  "badge-demo-information": dynamic(
     () =>
       import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoInfo,
+        default: mod.BadgeDemoInformation,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-inverse": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoInverse,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-information-bold": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoInformationBold,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-success-bold": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoSuccessBold,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-danger-bold": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoDangerBold,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-warning-bold": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoWarningBold,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-discovery-bold": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoDiscoveryBold,
       })),
     { ssr: false },
   ),
@@ -618,41 +625,6 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/ui/badge-demo").then((mod) => ({
         default: mod.BadgeDemoDiscovery,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-outline": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoOutline,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-ghost": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoGhost,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-link": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoLink,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-ads-appearances": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoAdsAppearances,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-ads-legacy-aliases": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoAdsLegacyAliases,
       })),
     { ssr: false },
   ),
@@ -6775,6 +6747,9 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
   "skill-config": dynamic(() => import("./demos/blocks/skill-config-demo"), {
     ssr: false,
   }),
+  "trigger-config": dynamic(() => import("./demos/blocks/trigger-config-demo"), {
+    ssr: false,
+  }),
   "agent-bento": dynamic(() => import("./demos/blocks/agent-bento-demo"), {
     ssr: false,
   }),
@@ -7125,6 +7100,22 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
     { ssr: false },
   ),
 
+  // Trigger Config
+  "trigger-config-demo-full": dynamic(
+    () =>
+      import("./demos/blocks/trigger-config-demo").then((mod) => ({
+        default: mod.TriggerConfigDemoFull,
+      })),
+    { ssr: false },
+  ),
+  "trigger-config-demo-empty": dynamic(
+    () =>
+      import("./demos/blocks/trigger-config-demo").then((mod) => ({
+        default: mod.TriggerConfigDemoEmpty,
+      })),
+    { ssr: false },
+  ),
+
   // Agent Directory
   "agents-directory-demo-standard": dynamic(
     () =>
@@ -7426,6 +7417,13 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/blocks/question-card-demo").then((mod) => ({
         default: mod.QuestionCardDemoMultiSelect,
+      })),
+    { ssr: false },
+  ),
+  "question-card-demo-multi-step-multi-select": dynamic(
+    () =>
+      import("./demos/blocks/question-card-demo").then((mod) => ({
+        default: mod.QuestionCardDemoMultiStepMultiSelect,
       })),
     { ssr: false },
   ),
@@ -8109,6 +8107,9 @@ const VISUAL_DEMOS: Record<string, ComponentType> = {
   "card-glow": dynamic(() => import("./demos/visual/card-glow-demo"), {
     ssr: false,
   }),
+  "border-beam": dynamic(() => import("./demos/visual/border-beam-demo"), {
+    ssr: false,
+  }),
   squircle: dynamic(() => import("./demos/visual/squircle-demo"), {
     ssr: false,
   }),
@@ -8179,6 +8180,12 @@ const VISUAL_DEMOS: Record<string, ComponentType> = {
     ssr: false,
   }),
   ink: dynamic(() => import("./demos/visual/ink-demo"), {
+    ssr: false,
+  }),
+  "ink-wash": dynamic(() => import("./demos/visual/ink-wash-demo"), {
+    ssr: false,
+  }),
+  "liquid-metal": dynamic(() => import("./demos/visual/liquid-metal-demo"), {
     ssr: false,
   }),
   "magnify-lens": dynamic(() => import("./demos/visual/magnify-lens-demo"), {
@@ -8286,6 +8293,142 @@ const VISUAL_DEMOS: Record<string, ComponentType> = {
   "mesh-02": dynamic(() => import("./demos/visual/mesh-02-demo"), {
     ssr: false,
   }),
+};
+
+const VISUAL_VARIANT_DEMOS: Record<string, ComponentType> = {
+  "border-beam-demo-rotate-large": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoRotateLarge,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-rotate-small": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoRotateSmall,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-line-search": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoLineSearch,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-pulse-inner-working": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoPulseInnerWorking,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-pulse-pill": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoPulsePill,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-pulse-outside": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoPulseOutside,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-mono-pulse-search": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoMonoPulseSearch,
+      })),
+    { ssr: false },
+  ),
+  "border-beam-demo-compact-gallery": dynamic(
+    () =>
+      import("./demos/visual/border-beam-demo").then((mod) => ({
+        default: mod.BorderBeamDemoCompactGallery,
+      })),
+    { ssr: false },
+  ),
+  "ink-wash-demo-landscape": dynamic(
+    () =>
+      import("./demos/visual/ink-wash-demo").then((mod) => ({
+        default: mod.InkWashDemoLandscapeWash,
+      })),
+    { ssr: false },
+  ),
+  "ink-wash-demo-flow-comparison": dynamic(
+    () =>
+      import("./demos/visual/ink-wash-demo").then((mod) => ({
+        default: mod.InkWashDemoFlowComparison,
+      })),
+    { ssr: false },
+  ),
+  "ink-wash-demo-drying-window": dynamic(
+    () =>
+      import("./demos/visual/ink-wash-demo").then((mod) => ({
+        default: mod.InkWashDemoDryingWindow,
+      })),
+    { ssr: false },
+  ),
+  "ink-wash-demo-bleed-chroma": dynamic(
+    () =>
+      import("./demos/visual/ink-wash-demo").then((mod) => ({
+        default: mod.InkWashDemoBleedChroma,
+      })),
+    { ssr: false },
+  ),
+  "ink-wash-demo-layered-white": dynamic(
+    () =>
+      import("./demos/visual/ink-wash-demo").then((mod) => ({
+        default: mod.InkWashDemoLayeredWhiteInk,
+      })),
+    { ssr: false },
+  ),
+  "ink-wash-demo-gallery": dynamic(
+    () =>
+      import("./demos/visual/ink-wash-demo").then((mod) => ({
+        default: mod.InkWashDemoGallery,
+      })),
+    { ssr: false },
+  ),
+  "liquid-metal-demo-chromatic-pill": dynamic(
+    () =>
+      import("./demos/visual/liquid-metal-demo").then((mod) => ({
+        default: mod.LiquidMetalDemoChromaticPill,
+      })),
+    { ssr: false },
+  ),
+  "liquid-metal-demo-silver-pill": dynamic(
+    () =>
+      import("./demos/visual/liquid-metal-demo").then((mod) => ({
+        default: mod.LiquidMetalDemoSilverPill,
+      })),
+    { ssr: false },
+  ),
+  "liquid-metal-demo-gold-send": dynamic(
+    () =>
+      import("./demos/visual/liquid-metal-demo").then((mod) => ({
+        default: mod.LiquidMetalDemoGoldSend,
+      })),
+    { ssr: false },
+  ),
+  "liquid-metal-demo-toolbar-reflection": dynamic(
+    () =>
+      import("./demos/visual/liquid-metal-demo").then((mod) => ({
+        default: mod.LiquidMetalDemoToolbarReflection,
+      })),
+    { ssr: false },
+  ),
+  "liquid-metal-demo-chat-reflection": dynamic(
+    () =>
+      import("./demos/visual/liquid-metal-demo").then((mod) => ({
+        default: mod.LiquidMetalDemoChatReflection,
+      })),
+    { ssr: false },
+  ),
 };
 
 const CATEGORY_REGISTRIES: Record<string, Record<string, ComponentType>> = {
@@ -8464,6 +8607,7 @@ const VARIANT_REGISTRIES: Record<string, Record<string, ComponentType>> = {
   "ui-custom": UI_CUSTOM_VARIANT_DEMOS,
   blocks: BLOCK_VARIANT_DEMOS,
   ui: UI_VARIANT_DEMOS,
+  visual: VISUAL_VARIANT_DEMOS,
 };
 
 export function getVariantDemoComponent(

@@ -7,7 +7,6 @@ import type { Tool } from "ai";
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform, type MotionProps } from "motion/react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
@@ -34,22 +33,19 @@ import { AgentEvaluation } from "@/components/blocks/agent-evaluation";
 import { AgentInsights } from "@/components/blocks/agent-insights";
 import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
 import { AgentUsers } from "@/components/blocks/agent-users";
-import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
-import { DEMO_AGENT_TEMPLATES } from "@/components/blocks/agent-templates/data/demo-template-agents";
 import {
 	DEFAULT_STARTER_ICON,
 	getStarterIcon,
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
 import {
-	renderAgentTriggerProviderIcon,
 	renderAgentTriggerProviderTileIcon,
 	TriggerPicker,
 	TriggerProviderSearchList,
 	type AgentAutomationRule,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/page";
-import { createAgentAutomationRule, createAgentTriggerValue, getAgentAutomationRuleLabel, getTriggerProvider, inferAutomationRules } from "@/components/blocks/triggers/data/trigger-catalog";
+import { createAgentAutomationRule, createAgentTriggerValue, getAgentAutomationRuleLabel, inferAutomationRules } from "@/components/blocks/triggers/data/trigger-catalog";
 import { ManageTriggersDialog } from "@/components/blocks/triggers/components/manage-triggers-dialog";
 import { UNTITLED_SUBAGENT_NAME } from "@/components/blocks/subagents/lib/subagent-prompts";
 import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
@@ -77,7 +73,7 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
+import { AtlassianLogo, isAtlassianLogoSource, type AtlassianLogoName } from "@/components/ui/logo";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -134,10 +130,14 @@ import { cn } from "@/lib/utils";
 
 import { CodeBlock } from "@/components/ui-custom/code-block";
 
-const AGENT_AVATAR_HEXAGON_PATH = "M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
 const AGENT_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg";
-const DEFAULT_AGENT_PROFILE_COVER_COLOR = "#1868DB";
 const MAX_AGENT_CONVERSATION_STARTERS = 3;
+// App tag front slots follow the Tag front-slot rule (see /components/ui/tag#front-slot):
+// Atlassian product marks render bare via AtlassianLogo + withUsageBorder.
+const APP_ATLASSIAN_LOGO_NAMES: Record<string, AtlassianLogoName> = {
+	Jira: "jira",
+	Confluence: "confluence",
+};
 const AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS = {
 	initial: "rest",
 	animate: "rest",
@@ -173,13 +173,6 @@ const AGENT_PROFILE_SWAP_TRANSITION = { type: "spring", bounce: 0.12, visualDura
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE = 24;
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP = 8;
 const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_REVEAL_DISTANCE = 72;
-const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string> = {
-	"dev-agents": "#82B536",
-	"product-agents": "#BF63F3",
-	"service-agents": "#FFC716",
-	"strategy-agents": "#FCA700",
-	"teamwork-agents": DEFAULT_AGENT_PROFILE_COVER_COLOR,
-};
 
 // Source order IS the canonical display order, kept in lockstep with the
 // AgentFilledConfigSummary rows array: Automations › Knowledge › Tools › Skills ›
@@ -410,11 +403,6 @@ function mergeMentionItems(
 	}
 
 	return items;
-}
-
-function getAgentProfileCoverBackgroundColor(avatarSrc: string | undefined): string {
-	const category = avatarSrc?.match(/\/avatar-agent\/([^/]+)\//u)?.[1];
-	return (category ? AGENT_AVATAR_PROFILE_COVER_COLORS[category] : undefined) ?? DEFAULT_AGENT_PROFILE_COVER_COLOR;
 }
 
 export type AgentConfigTextFieldName =
@@ -1996,7 +1984,9 @@ function AgentCompactEmptyConfigNav({
 	// `agentFieldName` doubles as a hideable-field key for trigger/subagents/
 	// conversationStarters; other field names never appear in the hidden set.
 	const items = getAgentCompactEmptyConfigNavItems(config).filter(
-		(item) => !hiddenConfigFields?.has(item.agentFieldName as AgentHideableConfigField),
+		(item) =>
+			item.agentFieldName === "apps" &&
+			!hiddenConfigFields?.has(item.agentFieldName as AgentHideableConfigField),
 	);
 	const navOverflow = useHasHorizontalOverflow<HTMLDivElement>({
 		edgeThreshold: AGENT_COMPACT_CONFIG_NAV_SCROLL_EDGE_THRESHOLD,
@@ -2640,8 +2630,8 @@ interface AgentTriggerSummaryRowProps {
 	onEditTriggers?: (seed?: AgentAutomationRule) => void;
 	/**
 	 * The structured automation rules backing `items`. Required for inline
-	 * removal and provider icon previews because `items` is only the label
-	 * projection.
+	 * removal and for opening each rule in the editor because `items` is only
+	 * the label projection.
 	 */
 	automationRules?: readonly AgentAutomationRule[];
 	onAutomationRulesChange?: (automationRules: readonly AgentAutomationRule[]) => void;
@@ -2655,6 +2645,13 @@ interface AgentTriggerSummaryRowProps {
 	 */
 	triggerNavItem?: AgentCompactConfigNavItem;
 	onManageTriggers?: () => void;
+	/**
+	 * Collection-derived Tag color (from the base agent's avatar family, via
+	 * `getTagColorForAgentAvatar`). Drives the automation chips' Tag color and the
+	 * leading automation icon so a lime (dev-agents) agent shows lime automation
+	 * chips — mirroring the subagent chip treatment.
+	 */
+	tagColor?: TagColor;
 }
 
 /**
@@ -2677,6 +2674,7 @@ function AgentTriggerSummaryRow({
 	onAutomationRulesChange,
 	triggerNavItem,
 	onManageTriggers,
+	tagColor,
 }: Readonly<AgentTriggerSummaryRowProps>) {
 	const isEmpty = items.length === 0;
 
@@ -2724,34 +2722,32 @@ function AgentTriggerSummaryRow({
 					<div className="group/trigger-edit flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
 						{items.map((item, index) => {
 							const rule = rulesAlignItems ? automationRules?.[index] : undefined;
-							const firstTrigger = rule?.triggers[0];
-							const providerIcon = firstTrigger ? renderAgentTriggerProviderIcon(firstTrigger) : undefined;
-							// Product logos / brand images already render as a centered 16px
-							// mark; only the stroked `@atlaskit/icon` glyph kinds need the
-							// latest Tag standard's `IconTile` xxsmall/transparent wrap so the
-							// 12px glyph centers in the chip's leading slot instead of
-							// left-aligning with an oversized gap.
-							const providerIconKind = firstTrigger
-								? getTriggerProvider(firstTrigger.providerId)?.icon.kind
-								: undefined;
-							const elemBefore =
-								providerIcon && providerIconKind !== "atlassian-logo" && providerIconKind !== "image" ? (
-									<IconTile
-										aria-hidden
-										icon={<Icon aria-hidden render={providerIcon} />}
-										label=""
-										size="xxsmall"
-										variant="transparent"
-									/>
-								) : (
-									providerIcon ?? undefined
-								);
+							// Every automation chip leads with the same automation glyph,
+							// tinted by the agent's collection color — NOT the first
+							// trigger's provider mark. An automation can now own multiple
+							// triggers, so a single provider icon would misrepresent it;
+							// the collection-colored automation icon mirrors the subagent
+							// chip treatment (`AiAgentIcon` + `tagColor`). `text-inherit`
+							// lets the 12px glyph pick up the Tag's resolved color from the
+							// leading slot (e.g. lime), and the `IconTile`
+							// xxsmall/transparent wrap centers it like the latest Tag
+							// standard's other leading icons.
+							const automationIcon = (
+								<IconTile
+									aria-hidden
+									className="text-inherit"
+									icon={<Icon aria-hidden render={<AutomationIcon label="" size="small" />} />}
+									label=""
+									size="xxsmall"
+									variant="transparent"
+								/>
+							);
 							// Clicking any configured automation chip opens that rule's editor;
 							// event triggers remain nested inside the automation.
 							return (
 								<AgentReferenceChip
 									key={`trigger-${item}-${index}`}
-									elemBefore={elemBefore ?? undefined}
+									elemBefore={automationIcon}
 									label={item}
 									onClick={
 										onEditTriggers
@@ -2759,6 +2755,7 @@ function AgentTriggerSummaryRow({
 											: undefined
 									}
 									onRemove={canRemoveInline ? () => handleRemoveAutomation(index) : undefined}
+									tagColor={tagColor}
 								/>
 							);
 						})}
@@ -2935,6 +2932,7 @@ function AgentFilledConfigSummary({
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
 					automationRules={automationRules}
 					triggerNavItem={triggerNavItem}
+					tagColor={subagentTagColor}
 				/>
 			),
 		},
@@ -2973,6 +2971,13 @@ function AgentFilledConfigSummary({
 					// Clicking an app chip opens the apps directory focused on that app.
 					onItemClick={onOpenDirectory ? (item) => onOpenDirectory("apps", item) : undefined}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("apps", index) : undefined}
+					// App tags lead with the canonical Tag front-slot logo: Atlassian
+					// product marks render bare (AtlassianLogo + withUsageBorder); other
+					// apps fall back to the directory mention visual.
+					itemElemBefore={(item) => {
+						const logoName = APP_ATLASSIAN_LOGO_NAMES[item];
+						return logoName ? <AtlassianLogo name={logoName} label={item} size="xxsmall" withUsageBorder /> : undefined;
+					}}
 					referenceCategory="app"
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:apps` : undefined}
 				/>
@@ -3097,7 +3102,7 @@ function AgentFilledConfigSummary({
 	// (`trigger`, `subagents`, `conversationStarters`) double as hideable-field
 	// keys, so suppressed rows are dropped before ordering.
 	const orderedRows = rows
-		.filter((row) => !hiddenConfigFields?.has(row.key as AgentHideableConfigField))
+		.filter((row) => row.key === "apps" && !hiddenConfigFields?.has(row.key as AgentHideableConfigField))
 		.map((row, index) => ({ ...row, index }))
 		.sort((a, b) => {
 			// `alwaysLast` rows (Memory, Reasoning) sink below every other row,
@@ -3127,58 +3132,10 @@ function hasFilledAgentConfig(config: AgentConfigFormValue): boolean {
 	);
 }
 
-function AgentProfileCover({ avatarSrc = AGENT_AVATAR_SRC }: Readonly<{ avatarSrc?: string }>) {
-	const coverBackgroundColor = getAgentProfileCoverBackgroundColor(avatarSrc);
-	const isAtlassianAvatar = isAtlassianLogoSource(avatarSrc);
-
+function AgentProfileCover() {
 	return (
 		<div className="relative overflow-hidden rounded-t-xl bg-surface text-text">
-			<div className="relative h-12 overflow-hidden" style={{ backgroundColor: coverBackgroundColor }}>
-				{isAtlassianAvatar ? (
-					<span className="absolute top-1/2 left-[88%] -translate-x-1/2 -translate-y-1/2 opacity-95">
-						<AtlassianLogo name="atlassian" label="Atlassian" size="xlarge" />
-					</span>
-				) : (
-					<Image
-						alt=""
-						aria-hidden
-						className="absolute top-1/2 left-[88%] h-48 w-[168px] -translate-x-1/2 -translate-y-1/2 opacity-95"
-						height={192}
-						src={avatarSrc}
-						width={168}
-					/>
-				)}
-			</div>
-			<div aria-hidden className="h-6" />
-			<div className="absolute top-6 left-4 size-12">
-				{isAtlassianAvatar ? (
-					<span className="flex h-12 w-[42px] items-center justify-center">
-						<AtlassianLogo name="atlassian" label="Agent avatar" size="large" />
-					</span>
-				) : (
-					<Image
-						alt="Agent avatar"
-						className="h-12 w-[42px]"
-						height={48}
-						src={avatarSrc}
-						width={42}
-					/>
-				)}
-				<svg
-					aria-hidden="true"
-					className="pointer-events-none absolute top-0 left-0 h-12 w-[42px] overflow-visible"
-					focusable="false"
-					viewBox="0 0 43 48"
-				>
-					<path
-						className="stroke-surface"
-						d={AGENT_AVATAR_HEXAGON_PATH}
-						fill="none"
-						strokeWidth={2}
-						vectorEffect="non-scaling-stroke"
-					/>
-				</svg>
-			</div>
+			<IconTile aria-hidden icon={<SkillIcon label="" />} label="Skill" size="xlarge" variant="gray" />
 		</div>
 	);
 }
@@ -3631,6 +3588,7 @@ function AgentInstructionsComposer({
 	config,
 	contentClassName,
 	editorClassName,
+	frontmatter,
 	instructions,
 	mentionRemovalRequest,
 	onAddListValues,
@@ -3638,7 +3596,6 @@ function AgentInstructionsComposer({
 	onInstructionsChange,
 	onOpenDirectory,
 	onRemoveReferenceValue,
-	onStartWithTemplate,
 	onViewModeChange,
 	screenAssistantTargetId,
 	showSectionLabel = true,
@@ -3650,6 +3607,7 @@ function AgentInstructionsComposer({
 	config: AgentConfigFormValue;
 	contentClassName?: string;
 	editorClassName?: string;
+	frontmatter?: { enabled?: boolean };
 	instructions?: string;
 	mentionRemovalRequest?: RichTextMentionRemovalRequest | null;
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
@@ -3657,14 +3615,12 @@ function AgentInstructionsComposer({
 	onInstructionsChange?: (value: string) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	onRemoveReferenceValue?: (field: AgentConfigReferenceListFieldName, value: string) => void;
-	onStartWithTemplate?: () => void;
 	onViewModeChange?: (mode: EditorToolbarViewMode) => void;
 	screenAssistantTargetId?: string;
 	showSectionLabel?: boolean;
 	toolbarBelowSlot?: ReactNode;
 }>) {
 	const [knowledge, setKnowledge] = useState<RichTextMentionItem[]>([]);
-	const [templatesOpen, setTemplatesOpen] = useState(false);
 	const inlineManagedReferenceKeysRef = useLazyRef(() => new Set<string>());
 	const mentionInventoryCountsRef = useLazyRef(() => new Map<string, {
 		count: number;
@@ -3797,32 +3753,16 @@ function AgentInstructionsComposer({
 			) : null}
 			<RichTextEditor
 				aria-label="Agent instructions"
-				className="space-y-2"
+				// 16px gap below the editor toolbar (space between toolbar and content).
+				className="space-y-4"
 				contentClassName={cn("pt-2", contentClassName)}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
 				enableDirectoryAutocomplete
-				placeholder="Press / to help me create the agent, or start with a template"
+				frontmatter={frontmatter}
+				placeholder="Press / to help me create the skill"
 				placeholderSlot={(
 					<p className="tiptap-editor text-sm leading-[1.55] text-text-subtlest">
-						Press <code>/</code> to help me create the agent, or{" "}
-						<button
-							type="button"
-							className="pointer-events-auto cursor-pointer rounded-sm text-link no-underline underline-offset-2 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-							onClick={() => {
-								// Choosing a template means the user is already mindful of
-								// templates — animate the onboarding tiles away.
-								if (onStartWithTemplate) {
-									// A host (e.g. the Studio shell) owns the agents
-									// directory and takes over: don't also open the local
-									// templates dialog.
-									onStartWithTemplate();
-									return;
-								}
-								setTemplatesOpen(true);
-							}}
-						>
-							start with a template
-						</button>
+						Press <code>/</code> to help me create the skill
 					</p>
 				)}
 				onInsertReferenceOption={handleInsertReferenceOption}
@@ -3831,8 +3771,6 @@ function AgentInstructionsComposer({
 				suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
 				toolbarBelowSlot={toolbarBelowSlot}
 				value={instructions}
-				dataFlowConfig={config}
-				dataFlowDiagramLabel="Architectural diagram"
 				mentionSources={mentionSources}
 				mentionRemovalRequest={mentionRemovalRequest}
 				onMarkdownChange={onInstructionsChange}
@@ -3844,12 +3782,6 @@ function AgentInstructionsComposer({
 					{bottomSlot}
 				</div>
 			) : null}
-			<AgentTemplatesDialog
-				agents={DEMO_AGENT_TEMPLATES}
-				open={templatesOpen}
-				onOpenChange={setTemplatesOpen}
-				onSelectAgent={() => setTemplatesOpen(false)}
-			/>
 		</section>
 	);
 }
@@ -3857,6 +3789,13 @@ function AgentInstructionsComposer({
 interface AgentConfigProfileProps {
 	config: AgentConfigFormValue;
 	avatarSrc?: string;
+	// Optional override for the cover tile (defaults to <AgentProfileCover />) and
+	// an optional metadata slot rendered under the description. Both default to the
+	// existing behavior so non-skill consumers (agent/subagents/studio) are
+	// unchanged; the skills-directory detail view supplies a globe cover + a
+	// "Created by / Added by / Last update" row.
+	profileCover?: ReactNode;
+	profileMetaSlot?: ReactNode;
 	onTextChange?: (field: AgentConfigTextFieldName, value: string) => void;
 	screenAssistantTargetPrefix?: string;
 	// Subagent editing context. When `isSubagent` is true the profile header
@@ -3878,7 +3817,8 @@ interface AgentConfigProfileProps {
 
 function AgentConfigProfile({
 	config,
-	avatarSrc,
+	profileCover,
+	profileMetaSlot,
 	onTextChange,
 	screenAssistantTargetPrefix,
 	isSubagent = false,
@@ -3895,10 +3835,10 @@ function AgentConfigProfile({
 	const direction = shouldReduceMotion ? 0 : isSubagent ? 1 : -1;
 	return (
 		<section
-			className="flex flex-col gap-4"
+			className="flex flex-col gap-2"
 			data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:profile` : undefined}
 		>
-			<AgentProfileCover avatarSrc={avatarSrc} />
+			{profileCover ?? <AgentProfileCover />}
 			<div className="flex flex-col gap-1" data-agent-field="name">
 				{/* The cover/avatar and the description below stay put; only the name
 				    row (title + inline back-arrow on subagents) crossfades and slides
@@ -3938,8 +3878,8 @@ function AgentConfigProfile({
 						<InlineEdit
 							className="min-w-0 flex-1"
 							value={isSubagent ? subagentName ?? "" : config.name ?? ""}
-							placeholder={isSubagent ? UNTITLED_SUBAGENT_NAME : "Untitled agent"}
-							editButtonLabel={isSubagent ? "Edit subagent name" : "Edit agent name"}
+							placeholder={isSubagent ? UNTITLED_SUBAGENT_NAME : "Untitled skill"}
+							editButtonLabel={isSubagent ? "Edit subagent name" : "Edit skill name"}
 							readViewClassName="relative h-auto overflow-visible border-2 bg-transparent px-0 py-1 text-2xl leading-7 font-semibold hover:bg-transparent active:bg-transparent focus:border-border-focused focus-visible:border-border-focused focus-visible:bg-transparent"
 							readViewMotionProps={AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS}
 							readViewBackdropClassName="-inset-0.5 bg-bg-neutral-subtle-hovered"
@@ -3958,7 +3898,7 @@ function AgentConfigProfile({
 					<InlineEdit
 						value={isSubagent ? subagentCondition ?? "" : config.description ?? config.summary ?? ""}
 						placeholder={isSubagent ? "Describe the situation that should trigger this subagent" : "Add a description"}
-						editButtonLabel={isSubagent ? "Edit subagent trigger condition" : "Edit agent description"}
+						editButtonLabel={isSubagent ? "Edit subagent trigger condition" : "Edit skill description"}
 						multiline
 						readViewClassName="relative overflow-visible border-2 bg-transparent px-0 hover:bg-transparent active:bg-transparent focus-visible:bg-transparent"
 						readViewMotionProps={AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS}
@@ -3969,6 +3909,7 @@ function AgentConfigProfile({
 					/>
 				</div>
 			</div>
+			{profileMetaSlot ?? null}
 		</section>
 	);
 }
@@ -3978,6 +3919,10 @@ interface AgentCompactConfigToolbarBelowProps {
 	// Forwarded to the expanded summary so subagent chips can match the agent's
 	// custom brand color (derived from the avatar family).
 	avatarSrc?: string;
+	// When false, the footer is permanently expanded: the collapse/expand toggle
+	// is hidden (the separator stays) and the compact nav is never shown. Used by
+	// single-row surfaces like the skills-directory detail view.
+	collapsible?: boolean;
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
 	onAddListValues?: (field: AgentConfigReferenceListFieldName, values: readonly string[]) => void;
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
@@ -3999,6 +3944,7 @@ interface AgentCompactConfigToolbarBelowProps {
 function AgentCompactConfigToolbarBelow({
 	config,
 	avatarSrc,
+	collapsible = true,
 	hiddenConfigFields,
 	onAddListValues,
 	onAppendListItem,
@@ -4063,10 +4009,16 @@ function AgentCompactConfigToolbarBelow({
 	const expandButtonVisualX = useTransform(expandButtonX, (latest): number =>
 		latest + (Math.abs(latest) > 0.5 ? AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP : 0),
 	);
-	const isExpanded = expanded;
+	// Non-collapsible callers stay locked open; the toggle and its compact-nav
+	// branch never render, so `expanded` state is ignored entirely.
+	const isExpanded = collapsible ? expanded : true;
 	const transition = shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeOut" as const };
 
 	useEffect(() => {
+		if (!collapsible) {
+			return;
+		}
+
 		const handlePointerMove = (event: PointerEvent) => {
 			const row = expandButtonRowRef.current;
 
@@ -4102,31 +4054,33 @@ function AgentCompactConfigToolbarBelow({
 			window.removeEventListener("pointermove", handlePointerMove, true);
 			window.removeEventListener("pointerleave", handlePointerLeave);
 		};
-	}, [expandButtonX]);
+	}, [collapsible, expandButtonX]);
 
 	return (
 		<div className="flex flex-col">
 			<div className="relative flex h-6 items-center" ref={expandButtonRowRef}>
 				<div aria-hidden className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border" />
-				<motion.div
-					className="relative z-10 ml-auto bg-surface pl-2"
-					style={{ paddingRight: expandButtonPaddingRight, x: expandButtonVisualX }}
-				>
-					<Button
-						aria-label={isExpanded ? "Collapse configuration" : "Expand configuration"}
-						className="size-6 rounded border-border bg-surface-overlay px-0 text-icon-subtle hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"
-						onClick={() => setExpanded((prev) => !prev)}
-						size="icon-compact"
-						type="button"
-						variant="ghost"
+				{collapsible ? (
+					<motion.div
+						className="relative z-10 ml-auto bg-surface pl-2"
+						style={{ paddingRight: expandButtonPaddingRight, x: expandButtonVisualX }}
 					>
-						{isExpanded ? (
-							<ChevronDownIcon label="" size="small" />
-						) : (
-							<ChevronUpIcon label="" size="small" />
-						)}
-					</Button>
-				</motion.div>
+						<Button
+							aria-label={isExpanded ? "Collapse configuration" : "Expand configuration"}
+							className="size-6 rounded border-border bg-surface-overlay px-0 text-icon-subtle hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed"
+							onClick={() => setExpanded((prev) => !prev)}
+							size="icon-compact"
+							type="button"
+							variant="ghost"
+						>
+							{isExpanded ? (
+								<ChevronDownIcon label="" size="small" />
+							) : (
+								<ChevronUpIcon label="" size="small" />
+							)}
+						</Button>
+					</motion.div>
+				) : null}
 			</div>
 			<AnimatePresence initial={false} mode="wait">
 				{isExpanded ? (
@@ -4216,6 +4170,21 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	avatarSrc?: string;
 	compactScrollAreaClassName?: string;
 	compactFooterBefore?: ReactNode;
+	// Optional cover override + metadata slot, forwarded to AgentConfigProfile.
+	// Default-undefined → existing cover / no meta row, so other consumers are
+	// unchanged.
+	profileCover?: ReactNode;
+	profileMetaSlot?: ReactNode;
+	// When false, the bottom config toolbar (AgentCompactConfigToolbarBelow) is
+	// not rendered at all — used by the skill detail surface, which adds apps via
+	// the editor's `/` command instead of a footer panel. Defaults to shown.
+	showConfigToolbar?: boolean;
+	// Enables the in-editor SKILL.md frontmatter card. Off by default; the skill
+	// detail surface passes `{ enabled: true }`.
+	frontmatter?: { enabled?: boolean };
+	// When false, the footer config panel is locked open (no collapse/expand
+	// toggle; the separator stays). Defaults to collapsible.
+	footerCollapsible?: boolean;
 	// Config rows callers can suppress — e.g. while editing a subagent, where
 	// triggers, subagents, and conversation starters can't be configured.
 	hiddenConfigFields?: ReadonlySet<AgentHideableConfigField>;
@@ -4237,10 +4206,6 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 	onManageTriggers?: () => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
-	// When provided, the empty-instructions "start with a template" link defers to
-	// the host (e.g. the Studio shell opens its Agent Directory on the first
-	// template tab) instead of opening the composer's built-in templates dialog.
-	onStartWithTemplate?: () => void;
 	onAutomationRulesChange?: (automationRules: readonly AgentAutomationRule[]) => void;
 	profileAvatarSrc?: string;
 	profileConfig?: AgentConfigFormValue;
@@ -4265,6 +4230,11 @@ export const AgentConfigFields = memo(
 		avatarSrc,
 		compactFooterBefore,
 		compactScrollAreaClassName,
+		profileCover,
+		profileMetaSlot,
+		showConfigToolbar = true,
+		frontmatter,
+		footerCollapsible,
 		hiddenConfigFields,
 		idPrefix,
 		onListItemChange,
@@ -4278,7 +4248,6 @@ export const AgentConfigFields = memo(
 		onProfileTextChange,
 		onRemoveListItem,
 		onSelectListItem,
-		onStartWithTemplate,
 		onTextChange,
 		onToggleListItem,
 		onAutomationRulesChange,
@@ -4357,8 +4326,10 @@ export const AgentConfigFields = memo(
 		// single dialog instance serves every entry point (summary row, collapsed
 		// nav, missing-config tile). `seed` carries the automation rule the modal
 		// opens with — an existing rule when editing, or a freshly-picked event.
-		const [triggersEditor, setTriggersEditor] = useState<{ open: boolean; seed: AgentAutomationRule }>({
+		const [triggersEditor, setTriggersEditor] = useState<{ open: boolean; fromManage: boolean; seed: AgentAutomationRule; title: string }>({
 			open: false,
+			fromManage: false,
+			title: "New automation",
 			seed: createAgentAutomationRule({
 					id: "automation-1",
 				name: "",
@@ -4366,9 +4337,11 @@ export const AgentConfigFields = memo(
 				triggers: [],
 			}),
 		});
-		const handleEditTriggers = useCallback((seed?: AgentAutomationRule) => {
+		const handleEditTriggers = useCallback((seed?: AgentAutomationRule, fromManage = false, isNew = false) => {
 			setTriggersEditor({
 				open: true,
+				fromManage,
+				title: !seed || isNew ? "Add automation" : "Edit automation",
 				seed: seed ?? createAgentAutomationRule({
 					id: `automation-${getNextAutomationRuleIndex(currentAutomationRules)}`,
 					name: "",
@@ -4406,7 +4379,7 @@ export const AgentConfigFields = memo(
 					return;
 				}
 				setManageTriggersOpen(false);
-				handleEditTriggers(next);
+				handleEditTriggers(next, false, true);
 			},
 			[currentAutomationRules, handleEditTriggers],
 		);
@@ -4444,7 +4417,7 @@ export const AgentConfigFields = memo(
 		const handleEditAutomationFromManage = useCallback(
 			(automationRule: AgentAutomationRule) => {
 				setManageTriggersOpen(false);
-				handleEditTriggers(automationRule);
+				handleEditTriggers(automationRule, true);
 			},
 			[handleEditTriggers],
 		);
@@ -4472,7 +4445,7 @@ export const AgentConfigFields = memo(
 						// because that would pull those full-width inputs back to the
 						// clip edge and re-clip their rings.
 						className={cn(
-							"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-1.5",
+							"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto",
 							compactScrollOverflow.showBottomScrollMask && "scroll-mask-bottom",
 							compactScrollAreaClassName,
 						)}
@@ -4481,6 +4454,8 @@ export const AgentConfigFields = memo(
 							<AgentConfigProfile
 								config={profileConfig ?? config}
 								avatarSrc={profileAvatarSrc ?? avatarSrc}
+								profileCover={profileCover}
+								profileMetaSlot={profileMetaSlot}
 								onTextChange={handleProfileTextChange}
 								screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 								isSubagent={isSubagent}
@@ -4493,9 +4468,13 @@ export const AgentConfigFields = memo(
 							/>
 						</div>
 						<AgentInstructionsComposer
-							className="relative flex min-h-0 flex-1 flex-col"
+							// 24px gap between the skill metadata row and the editor
+							// toolbar: the scroll container contributes 8px via `gap-2`,
+							// so add 16px here (8 + 16 = 24).
+							className="relative mt-4 flex min-h-0 flex-1 flex-col"
 							config={config}
-							contentClassName={cn("pt-4", isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]")}
+							frontmatter={frontmatter}
+							contentClassName={cn("pt-0", isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]")}
 							editorClassName={isFilledConfig ? undefined : "agent-instructions-tiptap-editor-compact-empty"}
 							instructions={config.instructions}
 							mentionRemovalRequest={mentionRemovalRequest}
@@ -4504,7 +4483,6 @@ export const AgentConfigFields = memo(
 							onMentionRemovalRequestHandled={handleMentionRemovalRequestHandled}
 							onOpenDirectory={handleOpenDirectory}
 							onRemoveReferenceValue={handleRemoveReferenceValue}
-							onStartWithTemplate={onStartWithTemplate}
 							onViewModeChange={onInstructionsViewModeChange}
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 							showSectionLabel={false}
@@ -4514,10 +4492,12 @@ export const AgentConfigFields = memo(
 					    separator/expand row stays transparent so content scrolls
 					    visibly behind it; only the field rows carry a solid surface. */}
 					{compactFooterBefore}
+					{showConfigToolbar ? (
 					<div className="shrink-0">
 						<AgentCompactConfigToolbarBelow
 							config={config}
 							avatarSrc={profileAvatarSrc ?? avatarSrc}
+							collapsible={footerCollapsible}
 							hiddenConfigFields={hiddenConfigFields}
 							onAddListValues={handleAddListValues}
 							onAppendListItem={handleAppendListItem}
@@ -4536,12 +4516,15 @@ export const AgentConfigFields = memo(
 							selectedListItemIndexByField={selectedListItemIndexByField}
 						/>
 					</div>
+					) : null}
 				</div>
 				<AgentTriggersDialog
+				showBack={triggersEditor.fromManage}
 					open={triggersEditor.open}
 					onOpenChange={handleTriggersEditorOpenChange}
 					automationRule={triggersEditor.seed}
 					onSave={handleTriggersSave}
+				title={triggersEditor.title}
 				/>
 				<ManageTriggersDialog
 					open={manageTriggersOpen}

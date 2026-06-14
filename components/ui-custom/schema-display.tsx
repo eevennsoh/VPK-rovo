@@ -149,7 +149,7 @@ export const SchemaDisplayMethod = ({
   return (
     <Badge
       className={cn("font-mono text-xs", methodStyles[method], className)}
-      variant="secondary"
+      variant="neutral"
       {...props}
     >
       {children ?? method}
@@ -237,7 +237,7 @@ export const SchemaDisplayParameters = ({
       <CollapsibleTrigger className="group flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/50">
         <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
         <span className="font-medium text-sm">Parameters</span>
-        <Badge className="ml-auto text-xs" variant="secondary">
+        <Badge className="ml-auto text-xs" variant="neutral">
           {parameters?.length}
         </Badge>
       </CollapsibleTrigger>
@@ -268,18 +268,18 @@ export const SchemaDisplayParameter = ({
   <div className={cn("px-4 py-3 pl-10", className)} {...props}>
     <div className="flex items-center gap-2">
       <span className="font-mono text-sm">{name}</span>
-      <Badge className="text-xs" variant="outline">
+      <Badge className="text-xs" variant="neutral">
         {type}
       </Badge>
       {location && (
-        <Badge className="text-xs" variant="secondary">
+        <Badge className="text-xs" variant="neutral">
           {location}
         </Badge>
       )}
       {required && (
         <Badge
           className="bg-red-100 text-red-700 text-xs"
-          variant="secondary"
+          variant="neutral"
         >
           required
         </Badge>
@@ -388,13 +388,13 @@ export const SchemaDisplayProperty = ({
         >
           <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
           <span className="font-mono text-sm">{name}</span>
-          <Badge className="text-xs" variant="outline">
+          <Badge className="text-xs" variant="neutral">
             {type}
           </Badge>
           {required && (
             <Badge
               className="bg-red-100 text-red-700 text-xs"
-              variant="secondary"
+              variant="neutral"
             >
               required
             </Badge>
@@ -440,13 +440,13 @@ export const SchemaDisplayProperty = ({
         {/* Spacer for alignment */}
         <span className="size-4" />
         <span className="font-mono text-sm">{name}</span>
-        <Badge className="text-xs" variant="outline">
+        <Badge className="text-xs" variant="neutral">
           {type}
         </Badge>
         {required && (
           <Badge
             className="bg-red-100 text-red-700 text-xs"
-            variant="secondary"
+            variant="neutral"
           >
             required
           </Badge>

@@ -4457,7 +4457,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						variant={
 							activeSessionAgentEntry.publishedVersion > 0 || activeSessionAgentEntry.publishedResult
 								? "success"
-								: "primary"
+								: "information"
 						}
 					>
 						{activeSessionAgentEntry.publishedVersion > 0 || activeSessionAgentEntry.publishedResult

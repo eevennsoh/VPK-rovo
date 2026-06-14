@@ -22,6 +22,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
+import { FrontmatterNode } from "./frontmatter-node";
 import { RichTextMentionNodeView } from "./mention-node-view";
 import {
 	createMentionTokenParser,
@@ -87,6 +88,16 @@ export function getMentionNodeAttrs(mention: RichTextMentionItem) {
  * so the codec leaves the token as plain text. Lookup is by exact `id` because a
  * token carries the id, not the label.
  */
+/** Humanizes a mention id (`"app:google-calendar"` → `"Google Calendar"`) for the unknown-app chip label. */
+function labelFromMentionId(id: string): string {
+	const lastSegment = id.split(":").pop() ?? id;
+	return lastSegment
+		.split(/[-_\s]+/u)
+		.filter(Boolean)
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(" ") || lastSegment;
+}
+
 const resolveMentionToken: MentionTokenResolver = (category, id) => {
 	if (!isRichTextReferenceCategory(category)) {
 		return undefined;
@@ -95,14 +106,22 @@ const resolveMentionToken: MentionTokenResolver = (category, id) => {
 	const item = EDITOR_PALETTE_MENTION_SOURCES[category]?.find(
 		(candidate) => candidate.id === id,
 	);
-	if (!item) {
-		return undefined;
+	if (item) {
+		return {
+			label: item.label,
+			attrs: getRichTextMentionVisualAttrs(item.visual),
+		};
 	}
 
-	return {
-		label: item.label,
-		attrs: getRichTextMentionVisualAttrs(item.visual),
-	};
+	// Unknown `app` id: still render a chip (a default lozenge with no brand logo)
+	// so generated or typed app references like `/foobar` become tags instead of
+	// literal `@[app:foobar]` text. Scoped to `app` only — other categories keep
+	// the passthrough-as-text behavior so a later ingest pass can repair them.
+	if (category === "app") {
+		return { label: labelFromMentionId(id), attrs: {} };
+	}
+
+	return undefined;
 };
 
 export const RichTextMention = Mention.extend({
@@ -178,6 +197,7 @@ export const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 	addProseMirrorPlugins() {
 		const getMentionSources = this.options.getMentionSources;
 		const includeFormat = this.options.includeFormat ?? true;
+		const showAskRovoPrompt = this.options.showAskRovoPrompt ?? true;
 		// The "/" command menu resolves to the command variant (object form lets
 		// Studio keep "/" nested while "@" stays flat).
 		const suggestionVariant = resolveCommandVariant(this.options.suggestionVariant);
@@ -220,6 +240,7 @@ export const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 					includeFormat,
 					this.options.anchorToInput,
 					suggestionVariant,
+					showAskRovoPrompt,
 					this.options.onOpenDirectory,
 					(editor) => exitSuggestion(editor.view, slashCommandPluginKey),
 				),
@@ -299,6 +320,10 @@ export function createRichTextEditorExtensions(
 			link: false,
 			underline: false,
 		}),
+		// Registered AFTER StarterKit so `paragraph` stays the default block type for
+		// the doc's `block+` content (an empty/cleared doc fills with a paragraph,
+		// not this atom). Opt-in: only present for the skill editor.
+		...(options.frontmatter?.enabled ? [FrontmatterNode] : []),
 		Underline,
 		Link.configure({
 			openOnClick: false,

@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 
 import {
-	TriggerAutomationDialog,
+	TriggerConfigAutomationDialog,
 	type AgentAutomationRule,
 } from "@/components/blocks/triggers/page";
 
@@ -16,6 +16,8 @@ export interface AgentTriggersDialogProps {
 	onSave: (automationRule: AgentAutomationRule) => void;
 	title?: string;
 	saveLabel?: string;
+	/** Show the back arrow — true only when navigating from the manage automations dialog. */
+	showBack?: boolean;
 }
 
 /**
@@ -30,13 +32,15 @@ export function AgentTriggersDialog({
 	onSave,
 	title,
 	saveLabel,
+	showBack = false,
 }: Readonly<AgentTriggersDialogProps>): ReactElement {
 	return (
-		<TriggerAutomationDialog
+		<TriggerConfigAutomationDialog
 			automationRule={automationRule}
 			open={open}
 			onOpenChange={onOpenChange}
 			onSave={onSave}
+			showBack={showBack}
 			title={title}
 			saveLabel={saveLabel ?? "Save"}
 		/>

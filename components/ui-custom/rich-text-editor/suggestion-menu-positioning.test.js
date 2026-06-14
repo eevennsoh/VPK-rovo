@@ -37,8 +37,26 @@ test("composer suggestions prefer above-input placement and only fall below when
 	assert.match(source, /rect\.bottom \+ COMPOSER_POPUP_GAP/u);
 });
 
+test("composer palette re-hugs the container on its own height change (not just window resize/scroll)", () => {
+	const source = readProjectFile("components/ui-custom/rich-text-editor/suggestion-menu.tsx");
+
+	// The palette is bottom-anchored, so it must reposition whenever its measured
+	// height changes (query filtering, drill-in, async rows) — otherwise a menu
+	// that opened tall and then shrank keeps a stale `top` and floats above the
+	// composer instead of hugging it. A window resize/scroll listener alone does
+	// not fire for an element's own size change, so we observe the popup itself.
+	const attachStart = source.indexOf("function attachComposerAnchor(");
+	assert.ok(attachStart > -1, "attachComposerAnchor must exist");
+	const attachBody = source.slice(attachStart, attachStart + 2600);
+
+	assert.match(attachBody, /new ResizeObserver\(scheduleReposition\)/u);
+	assert.match(attachBody, /resizeObserver\.observe\(element\)/u);
+	assert.match(attachBody, /getComposerAnchorBox\(editorDom\)/u);
+	assert.match(attachBody, /resizeObserver\?\.disconnect\(\)/u);
+});
+
 test("composer editor extensions remain the boundary for input-anchored suggestions", () => {
 	const source = readProjectFile("components/ui-custom/rich-text-editor/composer-extensions.ts");
 
-	assert.match(source, /const composerOptions = \{ \.\.\.options, anchorToInput: true \};/u);
+	assert.match(source, /const composerOptions = \{ \.\.\.options, anchorToInput: true, showAskRovoPrompt: false \};/u);
 });

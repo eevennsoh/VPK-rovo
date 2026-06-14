@@ -702,12 +702,28 @@ export function RichTextCommandMenuSearchField({
 	tabHint,
 	value,
 }: Readonly<RichTextCommandMenuSearchFieldProps>) {
+	const inputRef = useRef<HTMLInputElement | null>(null);
+	// When this field is rendered inside a Base UI menu/popover, the
+	// `FloatingFocusManager` moves focus to the popup container on open, which
+	// beats the input's plain `autoFocus` attribute. Imperatively focus on mount
+	// (after the focus manager settles) so opening "Add automation", "Add apps",
+	// "Add skills", etc. lands the caret in the search box ready for typing.
+	useEffect(() => {
+		if (!autoFocus) {
+			return;
+		}
+		const frame = requestAnimationFrame(() => {
+			inputRef.current?.focus();
+		});
+		return () => cancelAnimationFrame(frame);
+	}, [autoFocus]);
 	return (
 		<div className="rich-text-command-menu-search rich-text-command-menu-item-sticky">
 			<span className="rich-text-command-menu-search-logo" aria-hidden={true}>
 				{icon}
 			</span>
 			<Input
+				ref={inputRef}
 				id={id}
 				variant="subtle"
 				value={value}
@@ -975,11 +991,48 @@ const COMPOSER_POPUP_GAP = 8;
 const PROMPT_INPUT_ROOT_SELECTOR = "[data-prompt-input-root]";
 
 function getComposerAnchorBox(editorDom: HTMLElement): HTMLElement | null {
-	return (
+	const root =
 		editorDom.closest<HTMLElement>(PROMPT_INPUT_ROOT_SELECTOR) ??
 		editorDom.closest<HTMLElement>(".chat-composer-form") ??
-		editorDom.closest<HTMLElement>("form")
-	);
+		editorDom.closest<HTMLElement>("form");
+	return root ? resolveComposerVisualBox(root) : null;
+}
+
+/**
+ * The palette must clear the VISIBLE composer card, but `[data-prompt-input-root]`
+ * is the inner `<form>`, which paints the visible border only for the floating /
+ * blocks composers. The card composer (e.g. the Rovo "/rovo" + Studio panels)
+ * wraps that border-less form in a padded, bordered container, so measuring the
+ * 8px gap from the form drops the palette ~12px INSIDE the visible card instead of
+ * outside it.
+ *
+ * Walk up from the form and return the first (innermost) ancestor that tightly
+ * wraps it (≈ same width — not the whole panel) and is a ROUNDED card (has a
+ * corner radius). Requiring a radius — not merely a top border — is deliberate:
+ * composers are wrapped in `border-t p-*` footer/divider containers (e.g.
+ * components/blocks/cursor/page.tsx, components/blocks/workflow/page.tsx) whose
+ * top border would otherwise be mistaken for the input's edge, climbing the
+ * anchor PAST the real (already-rounded) composer into the footer. Returning at
+ * the first rounded match means an already-rounded form (floating / blocks) stops
+ * there, while a border-less card form ascends one level to its rounded wrapper.
+ */
+function resolveComposerVisualBox(root: HTMLElement): HTMLElement {
+	const rootWidth = root.getBoundingClientRect().width;
+	let element: HTMLElement | null = root;
+	for (let depth = 0; depth < 3 && element; depth++) {
+		const styles = window.getComputedStyle(element);
+		const isRoundedCard = Number.parseFloat(styles.borderTopLeftRadius) > 0;
+		// Guard against climbing into a much larger layout container (e.g. the chat
+		// panel): only adopt an ancestor that hugs the form's width.
+		const tightlyWraps = element.getBoundingClientRect().width <= rootWidth + 48;
+		if (isRoundedCard && tightlyWraps) {
+			return element;
+		}
+		element = element.parentElement;
+	}
+	// No rounded card within reach (border-less / square composer): fall back to the
+	// form so behavior is unchanged for those surfaces.
+	return root;
 }
 
 function positionComposerPopup(
@@ -1039,10 +1092,35 @@ function attachComposerAnchor(
 	// Capture phase so we also catch scrolls inside scrollable ancestors; passive
 	// since we never preventDefault.
 	window.addEventListener("scroll", scheduleReposition, { capture: true, passive: true });
+
+	// The palette is BOTTOM-anchored: `positionComposerPopup` sets `top = anchorTop
+	// - height - gap`, so its bottom hugs `anchorTop - gap` ONLY when recomputed at
+	// the menu's current height. The list grows/shrinks AFTER the initial double
+	// rAF — filtering the "/" query down to a couple of rows, a category drill-in,
+	// or async row content — and neither the window resize nor scroll listener
+	// fires for an element's OWN size change. Without observing it, a menu that
+	// opened tall and then shrank keeps its stale `top` and floats high above the
+	// composer instead of hugging it. Observe the popup (its height) and the anchor
+	// box (its position/size) so every height change re-hugs the bottom edge.
+	const resizeObserver =
+		typeof ResizeObserver === "undefined"
+			? null
+			: new ResizeObserver(scheduleReposition);
+	if (resizeObserver) {
+		if (element) {
+			resizeObserver.observe(element);
+		}
+		const anchorBox = editorDom ? getComposerAnchorBox(editorDom) : null;
+		if (anchorBox) {
+			resizeObserver.observe(anchorBox);
+		}
+	}
+
 	return () => {
 		if (frame) {
 			cancelAnimationFrame(frame);
 		}
+		resizeObserver?.disconnect();
 		window.removeEventListener("resize", scheduleReposition);
 		window.removeEventListener("scroll", scheduleReposition, { capture: true });
 	};
@@ -1245,9 +1323,10 @@ function getPagedSelectableIndex(
 }
 
 /**
- * Per-renderer counter so each live "/" menu gives its Ask Rovo field a unique,
- * stable DOM id. The id lets the editor's Tab handler move focus into that field
- * (client-only — the renderer is created by Tiptap on the client, never SSR).
+ * Per-renderer counter so each Ask Rovo-enabled "/" menu gives its field a
+ * unique, stable DOM id. The id lets the editor's Tab handler move focus into
+ * that field (client-only — the renderer is created by Tiptap on the client,
+ * never SSR).
  */
 let askRovoFieldIdCounter = 0;
 
@@ -1257,6 +1336,7 @@ export function createSlashSuggestionRenderer(
 	includeFormat = true,
 	anchorToInput = false,
 	variant: SuggestionVariant = "nested",
+	showAskRovoPrompt = true,
 	// Launches the directory for a nested "/" category from its empty-state
 	// "Browse all" button. Only directory-backed categories (everything but
 	// "format") invoke it; omit it to keep the plain empty title with no button.
@@ -1350,10 +1430,14 @@ export function createSlashSuggestionRenderer(
 	}
 
 	function shouldHideSlashRowsForAskRovoPrompt(): boolean {
-		return (isFlat || !activeCategory) && askRovoPrompt.trim().length > 0;
+		return showAskRovoPrompt && (isFlat || !activeCategory) && askRovoPrompt.trim().length > 0;
 	}
 
-	function getAskRovoHeader(): ReactNode {
+	function getAskRovoHeader(): ReactNode | undefined {
+		if (!showAskRovoPrompt) {
+			return undefined;
+		}
+
 		return (
 			<RichTextCommandMenuSearchField
 				id={askRovoFieldId}
@@ -1388,6 +1472,7 @@ export function createSlashSuggestionRenderer(
 		// the top-level category list), a non-matching query collapses to just
 		// that header — render an empty fragment so no "No commands found" row.
 		const nestedCategory = !isFlat && activeCategory ? activeCategory : null;
+		const shouldShowAskRovoHeader = showAskRovoPrompt && (isFlat || !activeCategory);
 		const nestedEmptyState = nestedCategory ? (
 			<RichTextSuggestionEmptyState
 				onBrowseAll={
@@ -1399,7 +1484,7 @@ export function createSlashSuggestionRenderer(
 		) : undefined;
 		popupState.component?.updateProps({
 			emptyLabel: nestedCategory ? "No matching items" : "No commands found",
-			emptyState: nestedCategory ? nestedEmptyState : <></>,
+			emptyState: nestedCategory ? nestedEmptyState : shouldShowAskRovoHeader ? <></> : undefined,
 			items,
 			onBack: !isFlat && activeCategory
 				? () => {
@@ -1408,7 +1493,7 @@ export function createSlashSuggestionRenderer(
 						update(props);
 					}
 				: undefined,
-			header: isFlat || !activeCategory ? getAskRovoHeader() : undefined,
+			header: shouldShowAskRovoHeader ? getAskRovoHeader() : undefined,
 			onSelect: (item: RichTextSuggestionMenuItem) => selectItem(item),
 			onHover: selectIndex,
 			selectedIndex,
@@ -1586,18 +1671,20 @@ export function createSlashSuggestionRenderer(
 				// can prompt Rovo instead of inserting into the page. The header only
 				// renders for the flat surface and the nested top level, so fall back
 				// to selecting the row when there is no field to focus.
-				const askRovoField = document.getElementById(askRovoFieldId);
-				if (askRovoField instanceof HTMLInputElement && currentProps) {
-					// If the user already typed "/query", move that text out of the
-					// page and into the Ask Rovo field: keep the "/" trigger so the
-					// menu stays open, then delete just the query characters.
-					if (currentProps.query) {
-						askRovoPrompt += currentProps.query;
-						const { from, to } = currentProps.range;
-						currentProps.editor.commands.deleteRange({ from: from + 1, to });
+				if (showAskRovoPrompt) {
+					const askRovoField = document.getElementById(askRovoFieldId);
+					if (askRovoField instanceof HTMLInputElement && currentProps) {
+						// If the user already typed "/query", move that text out of the
+						// page and into the Ask Rovo field: keep the "/" trigger so the
+						// menu stays open, then delete just the query characters.
+						if (currentProps.query) {
+							askRovoPrompt += currentProps.query;
+							const { from, to } = currentProps.range;
+							currentProps.editor.commands.deleteRange({ from: from + 1, to });
+						}
+						askRovoField.focus();
+						return true;
 					}
-					askRovoField.focus();
-					return true;
 				}
 				return selectItem(items[selectedIndex]);
 			}

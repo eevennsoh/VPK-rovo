@@ -7,57 +7,130 @@ import CheckCircleIcon from "@atlaskit/icon/core/check-circle";
 import InformationCircleIcon from "@atlaskit/icon/core/information-circle";
 import StatusWarningIcon from "@atlaskit/icon/core/status-warning";
 
-// --- Overview (default export used by UI_DEMO) ---
-
-export default function BadgeDemo() {
+/** All 12 badge appearances in one wrapping row (used by both hero theme rows). */
+function BadgeRow() {
 	return (
 		<div className="flex flex-wrap items-center gap-2">
 			<Badge>8</Badge>
-			<Badge variant="neutral">8</Badge>
-			<Badge variant="important">150</Badge>
-			<Badge variant="primary">12</Badge>
-			<Badge variant="secondary">8</Badge>
-			<Badge variant="destructive">-50</Badge>
+			<Badge variant="danger">3</Badge>
 			<Badge variant="success">+100</Badge>
 			<Badge variant="warning">5</Badge>
-			<Badge variant="info">12</Badge>
-			<Badge variant="discovery">3</Badge>
+			<Badge variant="information">12</Badge>
+			<Badge variant="discovery">7</Badge>
 			<Badge variant="inverse">12</Badge>
-			<Badge variant="outline">8</Badge>
-			<Badge variant="ghost">8</Badge>
-			<Badge variant="link">8</Badge>
+			<Badge variant="informationBold">12</Badge>
+			<Badge variant="successBold">+100</Badge>
+			<Badge variant="dangerBold">3</Badge>
+			<Badge variant="warningBold">5</Badge>
+			<Badge variant="discoveryBold">7</Badge>
 		</div>
 	);
 }
 
-// --- ADS-mirroring demos (mirror atlassian.design/components/badge/examples) ---
+/**
+ * Renders `children` twice: once in light mode, once in a dark-mode subtree.
+ * The dark row uses ADS subtree theming (data-subtree-theme + data-color-mode
+ * ="dark") so every semantic token flips to its dark value — no hardcoded
+ * colors or `dark:` utilities.
+ */
+function LightDarkRows({ children }: Readonly<{ children: React.ReactNode }>) {
+	return (
+		<div className="flex w-full flex-col gap-3">
+			<div className="rounded-lg p-4">{children}</div>
+			<div
+				className="rounded-lg bg-surface p-4"
+				data-subtree-theme=""
+				data-color-mode="dark"
+				data-theme="dark:dark spacing:spacing typography:typography shape:shape"
+			>
+				{children}
+			</div>
+		</div>
+	);
+}
 
-/** Default — ADS "neutral" appearance (gray pill, numeric count) */
-export function BadgeDemoDefault() {
+// --- Overview (default export used by UI_DEMO) ---
+
+/** Hero preview — every flat + bold appearance, shown in light and dark mode. */
+export default function BadgeDemo() {
+	return (
+		<LightDarkRows>
+			<BadgeRow />
+		</LightDarkRows>
+	);
+}
+
+// --- ADS appearance demos (mirror atlassian.design/components/badge/examples) ---
+
+/** Neutral — gray (default appearance, replaces legacy "default") */
+export function BadgeDemoNeutral() {
 	return <Badge>8</Badge>;
 }
 
-/** Primary — ADS "primary"/"information" appearance (blue informational count) */
-export function BadgeDemoPrimary() {
-	return <Badge variant="primary">5</Badge>;
+/** Danger — red (replaces legacy "removed" and "important") */
+export function BadgeDemoDanger() {
+	return <Badge variant="danger">3</Badge>;
 }
 
-/** Important — ADS "important" appearance (bold red, high-urgency count) */
-export function BadgeDemoImportant() {
-	return <Badge variant="important">150</Badge>;
+/** Success — green (replaces legacy "added") */
+export function BadgeDemoSuccess() {
+	return <Badge variant="success">+100</Badge>;
 }
 
-/** Added — ADS "added" appearance (green, items added) */
-export function BadgeDemoAdded() {
-	return <Badge variant="added">+8</Badge>;
+/** Warning — yellow */
+export function BadgeDemoWarning() {
+	return <Badge variant="warning">5</Badge>;
 }
 
-/** Removed — ADS "removed" appearance (red subtle, items removed) */
-export function BadgeDemoRemoved() {
-	return <Badge variant="removed">-3</Badge>;
+/** Information — blue (replaces legacy "primary") */
+export function BadgeDemoInformation() {
+	return <Badge variant="information">12</Badge>;
 }
 
-/** Max value — ADS max prop: values exceeding max show as "max+" */
+/** Discovery — purple */
+export function BadgeDemoDiscovery() {
+	return <Badge variant="discovery">7</Badge>;
+}
+
+/**
+ * Inverse — inverted colors for high contrast on a darker surface (replaces
+ * legacy "primaryInverted"). Shown in both light and dark mode on its required
+ * bold backdrop.
+ */
+export function BadgeDemoInverse() {
+	return (
+		<LightDarkRows>
+			<Badge variant="inverse">12</Badge>
+		</LightDarkRows>
+	);
+}
+
+/** Information bold — bold blue */
+export function BadgeDemoInformationBold() {
+	return <Badge variant="informationBold">12</Badge>;
+}
+
+/** Success bold — bold green */
+export function BadgeDemoSuccessBold() {
+	return <Badge variant="successBold">+100</Badge>;
+}
+
+/** Danger bold — bold red */
+export function BadgeDemoDangerBold() {
+	return <Badge variant="dangerBold">3</Badge>;
+}
+
+/** Warning bold — bold yellow */
+export function BadgeDemoWarningBold() {
+	return <Badge variant="warningBold">5</Badge>;
+}
+
+/** Discovery bold — bold purple */
+export function BadgeDemoDiscoveryBold() {
+	return <Badge variant="discoveryBold">7</Badge>;
+}
+
+/** Max value — values exceeding max display as "max+". Defaults to 99. */
 export function BadgeDemoMaxValue() {
 	return (
 		<div className="flex items-center gap-2">
@@ -68,94 +141,22 @@ export function BadgeDemoMaxValue() {
 	);
 }
 
-// --- Per-variant showcase demos ---
-
-export function BadgeDemoSecondary() {
-	return <Badge variant="secondary">8</Badge>;
-}
-
-export function BadgeDemoDestructive() {
-	return <Badge variant="destructive">-50</Badge>;
-}
-
-export function BadgeDemoSuccess() {
-	return <Badge variant="success">+100</Badge>;
-}
-
-export function BadgeDemoWarning() {
-	return <Badge variant="warning">5</Badge>;
-}
-
-export function BadgeDemoInfo() {
-	return <Badge variant="info">12</Badge>;
-}
-
-export function BadgeDemoDiscovery() {
-	return <Badge variant="discovery">3</Badge>;
-}
-
-export function BadgeDemoOutline() {
-	return <Badge variant="outline">8</Badge>;
-}
-
-export function BadgeDemoGhost() {
-	return <Badge variant="ghost">8</Badge>;
-}
-
-export function BadgeDemoLink() {
-	return <Badge variant="link">8</Badge>;
-}
-
-/** ADS appearances — all semantic appearances from @atlaskit/badge */
-export function BadgeDemoAdsAppearances() {
-	return (
-		<div className="flex flex-wrap items-center gap-2">
-			<Badge variant="neutral">8</Badge>
-			<Badge variant="primary">5</Badge>
-			<Badge variant="important">150</Badge>
-			<Badge variant="added">+8</Badge>
-			<Badge variant="removed">-3</Badge>
-			<Badge variant="information">12</Badge>
-			<Badge variant="inverse">12</Badge>
-			<Badge variant="success">+100</Badge>
-			<Badge variant="danger">-50</Badge>
-			<Badge variant="warning">5</Badge>
-			<Badge variant="discovery">3</Badge>
-		</div>
-	);
-}
-
-/** ADS legacy aliases — legacy appearance names supported for parity */
-export function BadgeDemoAdsLegacyAliases() {
-	return (
-		<div className="flex flex-wrap items-center gap-2">
-			<Badge variant="default">8</Badge>
-			<Badge variant="primary">12</Badge>
-			<Badge variant="primaryInverted">12</Badge>
-			<Badge variant="added">+100</Badge>
-			<Badge variant="removed">-50</Badge>
-		</div>
-	);
-}
-
-/** All variants — all badge variants side by side */
+/** All variants — every badge appearance side by side */
 export function BadgeDemoVariants() {
 	return (
 		<div className="flex flex-wrap items-center gap-2">
 			<Badge>8</Badge>
-			<Badge variant="neutral">8</Badge>
-			<Badge variant="important">150</Badge>
-			<Badge variant="primary">12</Badge>
-			<Badge variant="secondary">8</Badge>
-			<Badge variant="destructive">-50</Badge>
+			<Badge variant="danger">3</Badge>
 			<Badge variant="success">+100</Badge>
 			<Badge variant="warning">5</Badge>
-			<Badge variant="info">12</Badge>
-			<Badge variant="discovery">3</Badge>
+			<Badge variant="information">12</Badge>
+			<Badge variant="discovery">7</Badge>
 			<Badge variant="inverse">12</Badge>
-			<Badge variant="outline">8</Badge>
-			<Badge variant="ghost">8</Badge>
-			<Badge variant="link">8</Badge>
+			<Badge variant="informationBold">12</Badge>
+			<Badge variant="successBold">+100</Badge>
+			<Badge variant="dangerBold">3</Badge>
+			<Badge variant="warningBold">5</Badge>
+			<Badge variant="discoveryBold">7</Badge>
 		</div>
 	);
 }
@@ -168,7 +169,7 @@ export function BadgeDemoWithIcon() {
 				<Icon render={<CheckCircleIcon label="" size="small" />} label="" className="text-icon-success" />
 				+100
 			</Badge>
-			<Badge variant="info">
+			<Badge variant="information">
 				<Icon render={<InformationCircleIcon label="" size="small" />} label="" className="text-icon-information" />
 				12
 			</Badge>
@@ -188,7 +189,7 @@ export function BadgeDemoWithSpinner() {
 				<Spinner data-icon="inline-start" />
 				8
 			</Badge>
-			<Badge variant="info">
+			<Badge variant="information">
 				<Spinner data-icon="inline-start" />
 				12
 			</Badge>
@@ -208,8 +209,8 @@ export function BadgeDemoDisabled() {
 	return (
 		<div className="flex items-center gap-4">
 			<Badge className="pointer-events-none bg-bg-disabled text-text-disabled">8</Badge>
-			<Badge variant="important" className="pointer-events-none bg-bg-disabled text-text-disabled">5</Badge>
-			<Badge variant="outline" className="pointer-events-none opacity-(--opacity-disabled)">8</Badge>
+			<Badge variant="danger" className="pointer-events-none bg-bg-disabled text-text-disabled">5</Badge>
+			<Badge variant="information" className="pointer-events-none bg-bg-disabled text-text-disabled">12</Badge>
 		</div>
 	);
 }

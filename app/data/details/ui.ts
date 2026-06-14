@@ -152,23 +152,22 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 
   badge: {
     description:
-      "A numeric status badge aligned with the latest Atlassian Badge styles, including semantic and legacy appearance aliases, optional icons, and built-in numeric capping.",
+      "A numeric status badge that mirrors the full @atlaskit/badge appearance API (12 appearances, new semantic naming), with optional icons and built-in numeric capping. Legacy appearances (default, primary, primaryInverted, important, added, removed) have been removed.",
     adsUrl: "https://atlassian.design/components/badge",
     usage: `import { Badge } from "@/components/ui/badge";
 
 <Badge>8</Badge>
 <Badge variant="information">12</Badge>
 <Badge variant="success">+100</Badge>
-<Badge variant="important">150</Badge>
-<Badge variant="danger">-50</Badge>
-<Badge variant="inverse">12</Badge>`,
+<Badge variant="dangerBold">3</Badge>
+<Badge variant="discoveryBold">7</Badge>`,
     props: [
       {
         name: "variant",
-        type: '"default" | "neutral" | "secondary" | "important" | "destructive" | "danger" | "success" | "added" | "warning" | "info" | "information" | "primary" | "discovery" | "inverse" | "primaryInverted" | "removed" | "outline" | "ghost" | "link"',
-        default: '"default"',
+        type: '"neutral" | "danger" | "success" | "warning" | "information" | "discovery" | "inverse" | "informationBold" | "successBold" | "dangerBold" | "warningBold" | "discoveryBold"',
+        default: '"neutral"',
         description:
-          "Visual style variant of the badge. Includes ADS semantic appearances (neutral, primary, important, added, removed) and legacy aliases.",
+          "Visual style variant of the badge, mirroring the full ADS Badge appearance API (new semantic naming convention). Bold appearances use opaque bold-tone fills.",
       },
       {
         name: "max",
@@ -184,61 +183,77 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
       },
     ],
     examples: [
-      // ADS-mirroring examples (mirror atlassian.design/components/badge/examples)
+      // ADS appearances — new semantic naming (mirror atlassian.design/components/badge/examples)
       {
-        title: "Default",
-        description: "ADS 'neutral' appearance — gray pill for numeric counts.",
-        demoSlug: "badge-demo-default",
+        title: "Neutral",
+        description: "Gray count — the default appearance.",
+        demoSlug: "badge-demo-neutral",
       },
       {
-        title: "Primary",
-        description: "ADS 'primary' appearance — blue informational count.",
-        demoSlug: "badge-demo-primary",
+        title: "Danger",
+        description: "Red count for errors or removals.",
+        demoSlug: "badge-demo-danger",
       },
       {
-        title: "Important",
+        title: "Success",
+        description: "Green count for positive or added values.",
+        demoSlug: "badge-demo-success",
+      },
+      {
+        title: "Warning",
+        description: "Yellow count for cautionary values.",
+        demoSlug: "badge-demo-warning",
+      },
+      {
+        title: "Information",
+        description: "Blue count for informational values.",
+        demoSlug: "badge-demo-information",
+      },
+      {
+        title: "Discovery",
+        description: "Purple count for discovery or new features.",
+        demoSlug: "badge-demo-discovery",
+      },
+      {
+        title: "Inverse",
         description:
-          "ADS 'important' appearance — bold dark badge for high-urgency counts.",
-        demoSlug: "badge-demo-important",
+          "Inverted colors for high contrast against a darker background.",
+        demoSlug: "badge-demo-inverse",
+      },
+      // Bold appearances — opaque bold-tone fills
+      {
+        title: "Information bold",
+        description: "Bold blue fill with inverse text.",
+        demoSlug: "badge-demo-information-bold",
       },
       {
-        title: "Added",
-        description: "ADS 'added' appearance — green success count.",
-        demoSlug: "badge-demo-added",
+        title: "Success bold",
+        description: "Bold green fill with inverse text.",
+        demoSlug: "badge-demo-success-bold",
       },
       {
-        title: "Removed",
-        description: "ADS 'removed' appearance — red danger count.",
-        demoSlug: "badge-demo-removed",
+        title: "Danger bold",
+        description: "Bold red fill with inverse text.",
+        demoSlug: "badge-demo-danger-bold",
+      },
+      {
+        title: "Warning bold",
+        description: "Bold yellow fill with dark inverse text.",
+        demoSlug: "badge-demo-warning-bold",
+      },
+      {
+        title: "Discovery bold",
+        description: "Bold purple fill with inverse text.",
+        demoSlug: "badge-demo-discovery-bold",
       },
       {
         title: "Max value",
         description: "Values exceeding max display as 'max+'. Defaults to 99.",
         demoSlug: "badge-demo-max-value",
       },
-      // Additional VPK variant demos
-      { title: "Secondary", demoSlug: "badge-demo-secondary" },
-      { title: "Destructive", demoSlug: "badge-demo-destructive" },
-      { title: "Success", demoSlug: "badge-demo-success" },
-      { title: "Warning", demoSlug: "badge-demo-warning" },
-      { title: "Info", demoSlug: "badge-demo-info" },
-      { title: "Discovery", demoSlug: "badge-demo-discovery" },
-      { title: "Outline", demoSlug: "badge-demo-outline" },
-      { title: "Ghost", demoSlug: "badge-demo-ghost" },
-      { title: "Link", demoSlug: "badge-demo-link" },
-      {
-        title: "ADS appearances",
-        description: "All semantic badge appearances from @atlaskit/badge.",
-        demoSlug: "badge-demo-ads-appearances",
-      },
-      {
-        title: "ADS legacy aliases",
-        description: "Legacy appearance aliases supported for parity.",
-        demoSlug: "badge-demo-ads-legacy-aliases",
-      },
       {
         title: "All variants",
-        description: "All badge variants side by side.",
+        description: "Every badge appearance side by side.",
         demoSlug: "badge-demo-variants",
       },
       {

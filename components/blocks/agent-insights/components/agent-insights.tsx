@@ -171,7 +171,7 @@ const AGENT_INSIGHTS_RECOMMENDATIONS = [
 		title: "Reduce after-hours handoffs",
 		description: "Create a fallback path for access requests after 4pm, when escalations are 22% higher.",
 		meta: "Operational",
-		variant: "info" as const,
+		variant: "information" as const,
 	},
 	{
 		title: "Expand workflow setup examples",
@@ -394,7 +394,7 @@ export function AgentInsights({ className, ...props }: Readonly<AgentInsightsPro
 				<div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
 					<div className="min-w-0">
 						<div className="flex flex-wrap items-center gap-2">
-							<Badge variant="info">Insights available from September 2025</Badge>
+							<Badge variant="information">Insights available from September 2025</Badge>
 							<Badge variant="success">Sample data</Badge>
 						</div>
 						<h2 className="mt-3 text-text" style={{ font: token("font.heading.large") }}>

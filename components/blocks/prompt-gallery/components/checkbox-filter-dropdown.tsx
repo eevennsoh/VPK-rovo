@@ -41,7 +41,7 @@ export function CheckboxFilterDropdown({
 			>
 				{label}
 				{selectedValues.length > 0 && (
-					<Badge variant="primary">
+					<Badge variant="information">
 						{selectedValues.length}
 					</Badge>
 				)}

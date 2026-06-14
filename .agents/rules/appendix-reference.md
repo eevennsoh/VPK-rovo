@@ -87,7 +87,6 @@ public/
 .cursor/                       # Cursor config (symlinks to .agents/)
 .claude/                       # Claude config (symlinks to .agents/)
 .codex/                        # Codex config (symlinks to .agents/)
-.rovodev/                      # Legacy Rovo config (symlinks to .agents/)
 .rovo/                         # Rovo config (symlinks to .agents/)
 ```
 

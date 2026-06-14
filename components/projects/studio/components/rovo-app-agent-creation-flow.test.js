@@ -581,7 +581,9 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_BLOCK_SOURCE, /knowledgeMode: KnowledgeModeValue;/u);
 	assert.match(AGENT_BLOCK_SOURCE, /onKnowledgeModeChange=\{setKnowledgeMode\}/u);
 	assert.match(AGENT_BLOCK_SOURCE, /Press \/ to help me create the agent/u);
-	assert.match(AGENT_BLOCK_SOURCE, /dataFlowConfig=\{config\}/u);
+	// The data-flow diagram tab is hidden for now: the agent config no longer
+	// passes dataFlowConfig, so the Rich Text editor's showDataFlowMode stays false.
+	assert.doesNotMatch(AGENT_BLOCK_SOURCE, /dataFlowConfig=\{config\}/u);
 	assert.doesNotMatch(AGENT_BLOCK_SOURCE, /layout\?: "default" \| "compact";/u);
 	assert.match(AGENT_BLOCK_SOURCE, /automationRules\?: readonly AgentAutomationRule\[\];/u);
 	assert.match(AGENT_BLOCK_SOURCE, /onAutomationRulesChange\?: \(automationRules: readonly AgentAutomationRule\[\]\) => void;/u);
@@ -784,6 +786,11 @@ test("Studio publish dropdown separates draft changes from version history", () 
 	assert.doesNotMatch(historyViewSource, /No unpublished changes since/u);
 	assert.doesNotMatch(historyViewSource, /getDraftChangeCountLabel|getDraftChangePreviewLabel/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /const publishedVersions = entry\.versionHistory\.filter\(\(version\) => version\.kind === "publish" \|\| version\.kind === "update"\);/u);
+});
+
+test("Studio agent config panel persists base avatar edits through the draft", () => {
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleBaseAvatarChange = useCallback\([\s\S]*avatarSrc: string[\s\S]*updateDraft\(\{ avatarSrc \}\);[\s\S]*\[updateDraft\]/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<AgentConfigFields[\s\S]*avatarSrc=\{agentAvatarSrc\}[\s\S]*profileAvatarSrc=\{agentAvatarSrc\}[\s\S]*onProfileAvatarChange=\{handleBaseAvatarChange\}/u);
 });
 
 test("Studio agent config panel wires the subagents experience into AgentConfigFields", () => {

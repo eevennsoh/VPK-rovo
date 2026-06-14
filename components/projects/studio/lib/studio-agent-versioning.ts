@@ -31,7 +31,7 @@ const CHANGE_GROUPS: readonly ChangeGroup[] = [
 	{ id: "memory", label: "Memory", fields: ["memoryMode"] },
 	{ id: "knowledge", label: "Knowledge", fields: ["knowledge", "knowledgeMode"] },
 	{ id: "skills", label: "Skills", fields: ["skills"] },
-	{ id: "tools", label: "Tools", fields: ["tools", "apps"] },
+	{ id: "tools", label: "Apps", fields: ["tools", "apps"] },
 	{ id: "subagents", label: "Subagents", fields: ["subagents", "subagentPrompts"] },
 	{ id: "conversationStarters", label: "Conversation starters", fields: ["conversationStarters", "conversationStarterIcons"] },
 ];

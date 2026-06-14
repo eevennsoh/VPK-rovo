@@ -713,7 +713,7 @@ export function SkillsSurfacePage({
 																	<div className="flex flex-col items-end gap-1">
 																		<Badge variant={
 																			skill.trustLevel === "trusted" ? "success"
-																				: skill.trustLevel === "builtin" ? "info"
+																				: skill.trustLevel === "builtin" ? "information"
 																					: "neutral"
 																		}>
 																			{skill.trustLevel ?? "community"}
@@ -894,7 +894,7 @@ export function SkillsSurfacePage({
 													{hubSelectedSkill.trustLevel ? (
 														<Badge variant={
 															hubSelectedSkill.trustLevel === "trusted" ? "success"
-																: hubSelectedSkill.trustLevel === "builtin" ? "info"
+																: hubSelectedSkill.trustLevel === "builtin" ? "information"
 																	: "neutral"
 														}>
 															{hubSelectedSkill.trustLevel}

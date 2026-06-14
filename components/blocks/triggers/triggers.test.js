@@ -164,7 +164,6 @@ test("trigger automation modal uses one shared prompt, name, and active state", 
 	assert.match(TRIGGERS_SOURCE, /prompt: sharedPrompt,/u);
 	assert.match(TRIGGERS_SOURCE, /triggers: draftTriggers,/u);
 	assert.match(TRIGGERS_SOURCE, /disabled=\{draftTriggers\.length === 0\}/u);
-	assert.match(TRIGGERS_SOURCE, /Automation name/u);
 	assert.match(TRIGGERS_SOURCE, /<Switch checked=\{active\}/u);
 	assert.match(TRIGGERS_SOURCE, /GenerativeIndicatorIcon/u);
 	assert.match(TRIGGERS_SOURCE, /function TriggerAutomationFlowPreview/u);

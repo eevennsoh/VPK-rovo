@@ -99,7 +99,10 @@ function normalizeAutomationRules(value, { maxItems = 8 } = {}) {
 		.map((rule, index) => ({
 			id: getNonEmptyString(rule.id) || `automation-${index + 1}`,
 			...(getNonEmptyString(rule.name) ? { name: getNonEmptyString(rule.name) } : {}),
-			...(getNonEmptyString(rule.prompt) ? { prompt: getNonEmptyString(rule.prompt) } : {}),
+			...(getNonEmptyString(rule.description) ? { description: getNonEmptyString(rule.description) } : {}),
+			...(getNonEmptyString(rule.prompt)
+				? { prompt: convertBareAppMentionsToTokens(getNonEmptyString(rule.prompt)) }
+				: {}),
 			enabled: rule.enabled === false ? false : true,
 			triggers: rule.triggers.filter(isPlainObject).slice(0, 12),
 		}));
@@ -241,11 +244,14 @@ function normalizeStudioAgentResult(value) {
 		sourceLabel: byline,
 		description,
 		summary: getNonEmptyString(definition.summary) || description,
-		instructions,
-		contextDescription:
+		// Rewrite bare `@name` / `/name` app references the model echoed into the
+		// body into `@[app:id]` chips so the editor renders them as tags.
+		instructions: convertBareAppMentionsToTokens(instructions),
+		contextDescription: convertBareAppMentionsToTokens(
 			getNonEmptyString(definition.contextDescription) ||
-			getNonEmptyString(definition.context_description) ||
-			instructions,
+				getNonEmptyString(definition.context_description) ||
+				instructions,
+		),
 		conversationStarters,
 		...(avatarSrc ? { avatarSrc } : {}),
 		...(avatarFallback ? { avatarFallback } : {}),
@@ -983,6 +989,78 @@ function detectAppsFromText(text) {
 	return apps;
 }
 
+function escapeRegExp(value) {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function slugifyAppMentionId(value) {
+	return value
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "");
+}
+
+// `[@/]name` matchers for the known fallback apps, longest name first so a
+// multi-word name like "Google Calendar" wins over a bare "Google". The leading
+// boundary char is captured (group 1) so it survives the rewrite.
+let appMentionMatchers = null;
+function getAppMentionMatchers() {
+	if (appMentionMatchers) {
+		return appMentionMatchers;
+	}
+	appMentionMatchers = [...FALLBACK_APP_PATTERNS]
+		.map(({ id, name }) => ({ id, name: (name ?? "").trim() }))
+		.filter((entry) => entry.name.length > 0)
+		.sort((a, b) => b.name.length - a.name.length)
+		.map(({ id, name }) => ({
+			id,
+			pattern: new RegExp(
+				`(^|[\\s(>"'])[@/](?!\\[)(?:${escapeRegExp(name).replace(/\s+/g, "\\s+")})(?=$|[\\s.,;:!?)\\]"'])`,
+				"giu",
+			),
+		}));
+	return appMentionMatchers;
+}
+
+const BARE_APP_MENTION_PATTERN = /(^|[\s(>"'])[@/](?!\[)([A-Za-z][A-Za-z0-9.+_-]*)/giu;
+const CODE_REGION_PATTERN = /```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`/g;
+
+// Mirror of the frontend `convertBareMentionsToTokens` (app/data/directory/
+// resolve-ids.ts): rewrite bare `@name` / `/name` references the model or the
+// brief echoed into generated text into `@[app:<id>]` tokens so the rich-text
+// editor renders them as app chips. Known fallback apps resolve to their id;
+// anything else becomes `@[app:<slug>]` (the editor renders a logo-less chip).
+// Code spans/fences and existing `@[...]` tokens are left untouched.
+function convertBareAppMentionsToTokens(text) {
+	if (typeof text !== "string" || text.length === 0) {
+		return text;
+	}
+
+	const transform = (segment) => {
+		let next = segment;
+		for (const { id, pattern } of getAppMentionMatchers()) {
+			next = next.replace(pattern, (_full, lead) => `${lead}@[app:${id}]`);
+		}
+		next = next.replace(BARE_APP_MENTION_PATTERN, (full, lead, word) => {
+			const slug = slugifyAppMentionId(word);
+			return slug ? `${lead}@[app:${slug}]` : full;
+		});
+		return next;
+	};
+
+	let result = "";
+	let lastIndex = 0;
+	for (const match of text.matchAll(CODE_REGION_PATTERN)) {
+		const index = match.index ?? 0;
+		result += transform(text.slice(lastIndex, index));
+		result += match[0];
+		lastIndex = index + match[0].length;
+	}
+	result += transform(text.slice(lastIndex));
+	return result;
+}
+
 // Maps a brief's recurring-schedule language to a trigger label that the
 // frontend `inferScheduledTriggerDefinitions` hydrates into a structured
 // scheduled trigger (e.g. the daily-at-7am preset). Returns null when the brief
@@ -1106,6 +1184,7 @@ function buildFallbackStudioAgentResult({
 					{
 						id: "automation-1",
 						name: "Scheduled workflow",
+						description,
 						enabled: true,
 						prompt: `When this schedule runs, ${description.toLowerCase()}`,
 						triggers: [
@@ -1135,7 +1214,7 @@ Before building, understand the user's brief and any template context provided, 
 Do not call POST /api/plan/agents or any persistence endpoint; durable agent persistence is out of scope for this v1.
 Write instructions as structured Markdown matching repo-local agent definitions: start with ## Instructions, use clear paragraphs, bullet lists with bold labels, and include optional ## Knowledge, ## Triggers, and ## Validation sections only when relevant.
 When ready, emit exactly one structured result marker outside code fences:
-AGENT_RESULT: {"agentId":"stable-slug","name":"Display name","byline":"Custom agent by You","description":"Short profile summary","instructions":"## Instructions\\n\\nYou are Display name. Describe the role, scope, and operating style.\\n\\n- **Summary** Explain the agent's main responsibility.\\n- **Workflow** Describe how it should handle requests.\\n\\n## Validation\\n\\n- Confirm the output is ready for the user's next step.","conversationStarters":["Starter prompt 1","Starter prompt 2","Starter prompt 3"],"tools":["Jira","Confluence"],"automationRules":[{"id":"automation-1","name":"Display name automation","enabled":true,"prompt":"When the event happens, use the agent instructions to produce the expected output.","triggers":[{"id":"trigger-1","providerId":"jira","eventId":"work-item-updated"}]}],"guardrail":"Never modify data without explicit confirmation","avatarFallback":{"initials":"DA"},"action":"create"}
+AGENT_RESULT: {"agentId":"stable-slug","name":"Display name","byline":"Custom agent by You","description":"Short profile summary","instructions":"## Instructions\\n\\nYou are Display name. Describe the role, scope, and operating style.\\n\\n- **Summary** Explain the agent's main responsibility.\\n- **Workflow** Describe how it should handle requests.\\n\\n## Validation\\n\\n- Confirm the output is ready for the user's next step.","conversationStarters":["Starter prompt 1","Starter prompt 2","Starter prompt 3"],"tools":["Jira","Confluence"],"automationRules":[{"id":"automation-1","name":"Display name automation","description":"Short summary of what this automation does","enabled":true,"prompt":"When the event happens, use the agent instructions to produce the expected output. Reference apps as @[app:jira] chips.","triggers":[{"id":"trigger-1","providerId":"jira","eventId":"work-item-updated"}]}],"guardrail":"Never modify data without explicit confirmation","avatarFallback":{"initials":"DA"},"action":"create"}
 Populate tools with the integrations the agent relies on (use [] when none apply); include automationRules and guardrail when they apply, otherwise omit them.
 Do not include edit, delete, approval, publishing, or real tool-binding controls in the result.
 [END AGENT CREATION MODE]`;

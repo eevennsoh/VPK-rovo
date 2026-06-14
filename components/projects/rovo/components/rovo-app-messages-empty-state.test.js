@@ -47,7 +47,7 @@ test("Rovo app empty state renders selected custom agent profile and starters", 
 	assert.match(MESSAGES_SOURCE, /itemVariants=\{emptyStateItemVariants\}/u);
 	assert.match(SHELL_SOURCE, /const \{ selectedAgent \} = useRovoSelectedAgent\(\);/u);
 	assert.match(SHELL_SOURCE, /selectedAgent=\{selectedAgent\}/u);
-	assert.match(SHELL_SOURCE, /showHomeState && !isCustomAgentSelected && !shouldHideHomePromptGallery \? \(/u);
+	assert.match(SHELL_SOURCE, /showHomeState && !isCustomAgentSelected \? \(/u);
 });
 
 test("Rovo app empty state keeps directory autocomplete rows below the composer", () => {
@@ -70,9 +70,11 @@ test("Rovo app empty state keeps directory autocomplete rows below the composer"
 	assert.match(SHELL_SOURCE, /<RichTextMentionVisualMark/u);
 	assert.match(SHELL_SOURCE, /<ReturnIcon className="size-3\.5 text-icon-subtlest" \/>/u);
 	assert.match(SHELL_SOURCE, /⌘\{index \+ 1\}/u);
-	assert.match(SHELL_SOURCE, /<RovoAppComposer[\s\S]*\/>[\s\S]*<RovoAppDirectoryAutocompleteRows/u);
-	assert.match(SHELL_SOURCE, /className="mt-3"/u);
+	assert.match(SHELL_SOURCE, /<motion\.div[\s\S]*className="relative overflow-visible"[\s\S]*<RovoAppComposer[\s\S]*\/>[\s\S]*<RovoAppDirectoryAutocompleteRows/u);
+	assert.match(SHELL_SOURCE, /className="absolute inset-x-0 top-full z-20 mt-3"/u);
 	assert.match(SHELL_SOURCE, /state=\{directoryAutocompleteState\}/u);
+	assert.match(SHELL_SOURCE, /aria-hidden=\{shouldHideHomePromptGallery \? true : undefined\}/u);
+	assert.match(SHELL_SOURCE, /className=\{cn\(shouldHideHomePromptGallery && "pointer-events-none invisible"\)\}/u);
 });
 
 test("Rovo app shell wires directory autocomplete to composer, messages, and home gallery", () => {
@@ -91,7 +93,7 @@ test("Rovo app shell wires directory autocomplete to composer, messages, and hom
 	assert.match(SHELL_SOURCE, /onDirectoryAutocompleteControllerChange=\{setDirectoryAutocompleteController\}/u);
 	assert.match(SHELL_SOURCE, /useWideLayout=\{shouldUseWideDirectoryAutocompleteLayout\}/u);
 	assert.doesNotMatch(SHELL_SOURCE, /useWideLayout=\{!isArtifactOpen\}/u);
-	assert.match(SHELL_SOURCE, /showHomeState && !isCustomAgentSelected && !shouldHideHomePromptGallery/u);
+	assert.match(SHELL_SOURCE, /showHomeState && !isCustomAgentSelected/u);
 });
 
 test("Rovo app selected custom agent context is merged into fullscreen submissions", () => {

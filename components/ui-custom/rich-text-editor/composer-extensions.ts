@@ -619,7 +619,7 @@ export function createComposerEditorExtensions(
 ) {
 	// The chat composer anchors its `@`/`/` palette to the prompt-input box
 	// (full width, 8px gap, viewport-aware up/down flip) rather than the caret.
-	const composerOptions = { ...options, anchorToInput: true };
+	const composerOptions = { ...options, anchorToInput: true, showAskRovoPrompt: false };
 	return [
 		ComposerDocument,
 		ComposerParagraph,

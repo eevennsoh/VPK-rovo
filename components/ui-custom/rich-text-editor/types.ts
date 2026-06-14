@@ -131,6 +131,12 @@ export interface RichTextEditorExtensionOptions {
 	getMentionSources?: () => RichTextMentionSources | undefined;
 	onAskRovo?: (editor: Editor) => void;
 	/**
+	 * Whether the "/" command menu shows the sticky Ask Rovo prompt. Defaults to
+	 * `true` for editor surfaces; chat composers turn it off because the user is
+	 * already inside a Rovo composer.
+	 */
+	showAskRovoPrompt?: boolean;
+	/**
 	 * Layout for the live "@" / "/" suggestion menus. Accepts a single variant
 	 * (applied to both triggers) or a per-trigger object. Defaults to `"nested"`.
 	 */
@@ -158,4 +164,11 @@ export interface RichTextEditorExtensionOptions {
 	 * composer) leave it unset.
 	 */
 	onOpenDirectory?: (category: RichTextSlashCategory) => void;
+	/**
+	 * When `{ enabled: true }`, registers the block-level `frontmatter` node so a
+	 * leading SKILL.md `---` YAML block renders as the editable frontmatter card
+	 * (and round-trips as a fence in the markdown view). Off by default — only the
+	 * skill detail editor opts in; every other consumer is unaffected.
+	 */
+	frontmatter?: { enabled?: boolean };
 }

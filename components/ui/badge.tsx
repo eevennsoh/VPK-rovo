@@ -4,100 +4,81 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
-// Disabled class groups:
-//   boldDisabled   — for opaque-background variants (use bg-bg-disabled swatch)
-//   subtleDisabled — for transparent/outline/ghost variants (use opacity pattern)
+// Disabled treatment for opaque-background variants (use bg-bg-disabled swatch).
 const boldDisabled =
 	"disabled:pointer-events-none disabled:bg-bg-disabled disabled:text-text-disabled"
-const subtleDisabled =
-	"disabled:pointer-events-none disabled:opacity-(--opacity-disabled)"
 
 const badgeVariants = cva(
 	"inline-flex h-4 min-w-6 w-fit shrink-0 items-center justify-center gap-1 whitespace-nowrap overflow-hidden rounded-xs px-1 text-xs leading-4 font-normal has-data-[icon=inline-end]:pr-0.5 has-data-[icon=inline-start]:pl-0.5 [&>svg]:size-3! [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 group/badge",
 	{
 		variants: {
 			variant: {
-				// ---------------------------------------------------------------
-				// ADS semantic appearances — surface-pressed neutral base
-				// ADS: "default" — neutral grey pill (color.surface.pressed)
-				// ---------------------------------------------------------------
-				default:
-					`bg-surface-pressed text-foreground hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed ${boldDisabled}`,
+				// ===============================================================
+				// Variants mirror the @atlaskit/badge appearance API (new naming
+				// convention). Legacy appearances removed (default/primary/
+				// primaryInverted/important/added/removed). ADS migration:
+				// neutral←default, information←primary, inverse←primaryInverted,
+				// danger←important/removed, success←added.
+				// ===============================================================
 
-				// ADS: "neutral" — same visual as default; canonical ADS semantic name
+				// "neutral" — gray (color.background.neutral). Default appearance.
 				neutral:
-					`bg-surface-pressed text-foreground hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed ${boldDisabled}`,
-
-				// VPK-only subtle grey (color.background.neutral / bg-bg-neutral)
-				secondary:
 					`bg-bg-neutral text-text-subtle hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed ${boldDisabled}`,
 
-				// ---------------------------------------------------------------
-				// ADS: "important" — bold neutral (opaque dark badge)
-				// Used in ADS for high-urgency numeric counts (e.g. notification dot)
-				// color.background.neutral.bold
-				// ---------------------------------------------------------------
-				important:
-					`bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed ${boldDisabled}`,
-
-				// ---------------------------------------------------------------
-				// ADS semantic status — subtler palette
-				// "destructive" / "danger" / "removed"
-				// color.background.danger.subtler
-				// ---------------------------------------------------------------
-				destructive:
-					`bg-bg-danger-subtler text-text-danger-bolder hover:bg-bg-danger-subtler-hovered active:bg-bg-danger-subtler-pressed ${boldDisabled}`,
+				// "danger" — red (color.background.danger.subtler)
 				danger:
 					`bg-bg-danger-subtler text-text-danger-bolder hover:bg-bg-danger-subtler-hovered active:bg-bg-danger-subtler-pressed ${boldDisabled}`,
-				removed:
-					`bg-bg-danger-subtler text-text-danger-bolder hover:bg-bg-danger-subtler-hovered active:bg-bg-danger-subtler-pressed ${boldDisabled}`,
 
-				// "success" / "added" — color.background.success.subtler
+				// "success" — green (color.background.success.subtler)
 				success:
 					`bg-bg-success-subtler text-text-success-bolder hover:bg-bg-success-subtler-hovered active:bg-bg-success-subtler-pressed ${boldDisabled}`,
-				added:
-					`bg-bg-success-subtler text-text-success-bolder hover:bg-bg-success-subtler-hovered active:bg-bg-success-subtler-pressed ${boldDisabled}`,
 
-				// "warning" — color.background.warning.subtler
+				// "warning" — yellow (color.background.warning.subtler)
 				warning:
 					`bg-bg-warning-subtler text-text-warning-bolder hover:bg-bg-warning-subtler-hovered active:bg-bg-warning-subtler-pressed ${boldDisabled}`,
 
-				// "information" / "info" / "primary" — color.background.information.subtler
-				info:
-					`bg-bg-information-subtler text-text-information-bolder hover:bg-bg-information-subtler-hovered active:bg-bg-information-subtler-pressed ${boldDisabled}`,
+				// "information" — blue (color.background.information.subtler)
 				information:
 					`bg-bg-information-subtler text-text-information-bolder hover:bg-bg-information-subtler-hovered active:bg-bg-information-subtler-pressed ${boldDisabled}`,
-				primary:
-					`bg-bg-information-subtler text-text-information-bolder hover:bg-bg-information-subtler-hovered active:bg-bg-information-subtler-pressed ${boldDisabled}`,
 
-				// "discovery" — color.background.discovery.subtler
+				// "discovery" — purple (color.background.discovery.subtler)
 				discovery:
 					`bg-bg-discovery-subtler text-text-discovery-bolder hover:bg-bg-discovery-subtler-hovered active:bg-bg-discovery-subtler-pressed ${boldDisabled}`,
 
-				// ---------------------------------------------------------------
-				// ADS: "inverse" / "primaryInverted"
-				// Inverted surface: white/light background with dark foreground.
-				// Used on dark surfaces where a contrasting badge is needed.
-				// ---------------------------------------------------------------
+				// "inverse" — surface fill + default text (per ADS Beta Badge:
+				// color.elevation.surface + color.text). Context-adaptive: white +
+				// dark text on light surfaces, dark + light text on dark surfaces.
 				inverse:
-					`bg-text-inverse text-foreground hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed ${boldDisabled}`,
-				primaryInverted:
-					`bg-text-inverse text-foreground hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed ${boldDisabled}`,
+					`bg-surface text-foreground hover:bg-surface-overlay-hovered active:bg-surface-overlay-pressed ${boldDisabled}`,
 
 				// ---------------------------------------------------------------
-				// VPK-only structural variants — not part of ADS Badge API
-				// These use opacity-based disabled since they have no fill.
+				// Bold appearances — opaque bold-tone fills with inverse text.
+				// (uses shadcn aliases mapping to color.background.{tone}.bold)
 				// ---------------------------------------------------------------
-				outline:
-					`border border-border text-foreground hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed ${subtleDisabled}`,
-				ghost:
-					`text-foreground hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed ${subtleDisabled}`,
-				link:
-					`text-link underline-offset-4 hover:underline active:text-link-pressed ${subtleDisabled}`,
+
+				// "informationBold" — bold blue
+				informationBold:
+					`bg-info text-info-foreground hover:bg-info-hovered active:bg-info-pressed ${boldDisabled}`,
+
+				// "successBold" — bold green
+				successBold:
+					`bg-success text-success-foreground hover:bg-success-hovered active:bg-success-pressed ${boldDisabled}`,
+
+				// "dangerBold" — bold red
+				dangerBold:
+					`bg-destructive text-destructive-foreground hover:bg-destructive-hovered active:bg-destructive-pressed ${boldDisabled}`,
+
+				// "warningBold" — bold yellow (dark inverse text)
+				warningBold:
+					`bg-warning text-warning-foreground hover:bg-warning-hovered active:bg-warning-pressed ${boldDisabled}`,
+
+				// "discoveryBold" — bold purple
+				discoveryBold:
+					`bg-discovery text-discovery-foreground hover:bg-discovery-hovered active:bg-discovery-pressed ${boldDisabled}`,
 			},
 		},
 		defaultVariants: {
-			variant: "default",
+			variant: "neutral",
 		},
 	}
 )
@@ -136,7 +117,7 @@ export interface BadgeProps
 
 function Badge({
 	className,
-	variant = "default",
+	variant = "neutral",
 	max = 99,
 	children,
 	render,

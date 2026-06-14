@@ -809,6 +809,158 @@ const [value, setValue] = React.useState<ThemeMode>("location");
 			{ name: "style", type: "React.CSSProperties", description: "Inline styles merged onto the pattern surface." },
 		],
 	},
+	"border-beam": {
+		description: "Animated traveling and breathing border glow adapted from Jakubantalik/border-beam. It wraps any opaque surface, auto-detects the first child's border radius, renders decorative beam layers with pointer-events disabled, pauses pulse animation offscreen, and supports rotate, line, pulse-inner, and pulse-outside presets.",
+		importStatement: `import BorderBeam, {
+	BORDER_BEAM_DEFAULTS,
+	type BorderBeamProps,
+} from "@/components/visual/border-beam";`,
+		usage: `<BorderBeam
+	size="pulse-outside"
+	colorVariant="colorful"
+	theme="dark"
+	strength={0.7}
+>
+	<div className="rounded-2xl border bg-surface p-4">Content</div>
+</BorderBeam>`,
+		demoLayout: {
+			previewContentWidth: "full",
+			previewHeight: "fit",
+			examplesContentWidth: "full",
+		},
+		examples: [
+			{ title: "Rotate large card", description: "Full-border traveling beam around a chat input surface.", demoSlug: "border-beam-demo-rotate-large" },
+			{ title: "Rotate small button", description: "Compact rotating beam tuned for small icon controls.", demoSlug: "border-beam-demo-rotate-small" },
+			{ title: "Line search", description: "Bottom-only line beam moving across a rounded search input.", demoSlug: "border-beam-demo-line-search" },
+			{ title: "Pulse inner working card", description: "Contained breathing border glow over a task progress card.", demoSlug: "border-beam-demo-pulse-inner-working" },
+			{ title: "Pulse pill", description: "Contained pulse around a compact pill action.", demoSlug: "border-beam-demo-pulse-pill" },
+			{ title: "Pulse outside", description: "Outward-blooming halo around an opaque chat input.", demoSlug: "border-beam-demo-pulse-outside" },
+			{ title: "Mono pulse search", description: "Grayscale pulse variant on a rounded search surface.", demoSlug: "border-beam-demo-mono-pulse-search" },
+			{ title: "Compact gallery", description: "Ocean, sunset, and colorful variants in a dense grid.", demoSlug: "border-beam-demo-compact-gallery" },
+		],
+		props: [
+			{ name: "children", type: "React.ReactNode", description: "Opaque wrapped content. `pulse-outside` renders its core behind the child, so transparent children show the inner glow through the surface." },
+			{ name: "size", type: `"sm" | "md" | "line" | "pulse-outside" | "pulse-inner"`, default: `"md"`, description: "Effect preset. `sm`, `md`, and `line` are rotating/traveling beams; pulse presets breathe without rotation." },
+			{ name: "colorVariant", type: `"colorful" | "mono" | "ocean" | "sunset"`, default: `"colorful"`, description: "Beam palette. `mono` forces static colors; other palettes can hue-shift." },
+			{ name: "theme", type: `"dark" | "light" | "auto"`, default: `"dark"`, description: "Color tuning for dark or light backgrounds. `auto` follows `prefers-color-scheme`." },
+			{ name: "staticColors", type: "boolean", default: "false", description: "Disables hue-shift animation. The `mono` palette always behaves as static." },
+			{ name: "duration", type: "number", default: "1.96 / 3.1 / 2.3", description: "Animation cycle duration in seconds for rotate, line, and pulse presets respectively." },
+			{ name: "active", type: "boolean", default: "true", description: "Turns the effect on or off with the upstream fade-in/fade-out transition." },
+			{ name: "borderRadius", type: "number", description: "Optional explicit radius in pixels. When omitted, the component reads the first child's computed top-left radius and falls back to the preset." },
+			{ name: "brightness", type: "number", default: "1.3", description: "Glow brightness multiplier. Pulse presets have tuned defaults per size and theme." },
+			{ name: "saturation", type: "number", default: "theme preset", description: "Glow saturation multiplier from the selected size/theme preset unless explicitly overridden." },
+			{ name: "hueRange", type: "number", default: "30", description: "Hue rotation range in degrees. The line preset clamps this internally to 13 degrees." },
+			{ name: "strength", type: "number", default: "1", description: "Overall beam, glow, and bloom intensity from 0 to 1. Does not affect child opacity." },
+			{ name: "className", type: "string", description: "Class names applied to the beam wrapper." },
+			{ name: "style", type: "React.CSSProperties", description: "Inline styles merged onto the beam wrapper. The component owns `--beam-strength` and pulse scale CSS variables." },
+			{ name: "ref", type: "React.Ref<HTMLDivElement>", description: "Ref for the beam wrapper, using the repo's React 19 ref-as-prop convention." },
+			{ name: "onActivate", type: "() => void", description: "Called when the fade-in animation completes." },
+			{ name: "onDeactivate", type: "() => void", description: "Called when the fade-out animation completes." },
+		],
+	},
+	"ink-wash": {
+		description: "Pen-and-waterbrush WebGL2 painting surface adapted from johnowhitaker/inkwash. The pen lays optical-density ink into floating-point pigment textures; the water brush wets the paper, advects pigment through a Stable Fluids-style velocity field, lets ink bleed only where wet, and bakes fixed layers into paper.",
+		importStatement: `import InkWash, {
+	DEFAULT_INK_WASH_CONFIG,
+	INK_WASH_PRESETS,
+	type InkWashConfig,
+} from "@/components/visual/ink-wash";`,
+		usage: `<InkWash
+	presetId="landscape"
+	config={{
+		...DEFAULT_INK_WASH_CONFIG,
+		mode: "water",
+		flow: 0.72,
+		bleed: 0.62,
+		color: 0.8,
+	}}
+/>`,
+		demoLayout: {
+			previewContentWidth: "full",
+			previewHeight: "fit",
+			examplesContentWidth: "full",
+		},
+		examples: [
+			{ title: "Landscape wash", description: "Scripted linework, water washes, sun color, and white highlights.", demoSlug: "ink-wash-demo-landscape" },
+			{ title: "Flow comparison", description: "The same stroke sequence at low and high flow settings.", demoSlug: "ink-wash-demo-flow-comparison" },
+			{ title: "Drying window", description: "Wet paper opens a short working window before pigment settles.", demoSlug: "ink-wash-demo-drying-window" },
+			{ title: "Bleed and chroma", description: "A circling water brush pulls chromatic bleed from dense ink.", demoSlug: "ink-wash-demo-bleed-chroma" },
+			{ title: "Layered white ink", description: "Fixed dark washes, baked white ink, then dark overpainting.", demoSlug: "ink-wash-demo-layered-white" },
+			{ title: "Compact gallery", description: "Leaf, bloom, and night presets in a smaller grid.", demoSlug: "ink-wash-demo-gallery" },
+		],
+		props: [
+			{ name: "presetId", type: "InkWashPresetId | string", default: `"landscape"`, description: "Scripted preset to run when the surface is replayed. Built-in presets include landscape, flow-low, flow-high, dry-window, bleed-chroma, layered-white, leaf, bloom, and night." },
+			{ name: "config", type: "Partial<InkWashConfig>", description: "Drawing, simulation, display, and runtime overrides merged over the selected preset and DEFAULT_INK_WASH_CONFIG." },
+			{ name: "mode", type: `"pen" | "water" | "white"`, default: `"pen"`, description: "Current manual input mode. Pen deposits dark ink, water deposits wetness and velocity, and white deposits gouache-like coverage." },
+			{ name: "inkColor", type: "string", default: `"#16161e"`, description: "Hex color converted into the optical-density ink absorption vector used by the shader." },
+			{ name: "size", type: "number", default: "0.5", description: "Pen and brush size from 0 to 1. Maps exponentially from roughly one-third to three-times the house size." },
+			{ name: "flow", type: "number", default: "0.6", description: "Velocity push, damping, and vorticity strength for the water simulation." },
+			{ name: "bleed", type: "number", default: "0.5", description: "How quickly mobile pigment diffuses through wet paper." },
+			{ name: "dry", type: "number", default: "0.45", description: "Drying speed. Higher values shorten the wet working window." },
+			{ name: "color", type: "number", default: "0.5", description: "Chromatic separation amount used when wet pigment bleeds into neighboring pixels." },
+			{ name: "brushInk", type: "number", default: "0", description: "Pigment load carried by the water brush." },
+			{ name: "view", type: `"painting" | "pigment" | "water" | "flow"`, default: `"painting"`, description: "Debug view selector for composed painting, raw pigment, wetness, or velocity flow." },
+			{ name: "inkStrength", type: "number", default: "1.9", description: "Display shader optical-density multiplier." },
+			{ name: "edgeStrength", type: "number", default: "1.35", description: "Display shader edge darkening around pigment gradients." },
+			{ name: "grainStrength", type: "number", default: "0.55", description: "Paper granulation amount applied to dense pigment." },
+			{ name: "paper", type: "boolean", default: "true", description: "Whether the display shader renders procedural fiber and tooth in the paper." },
+			{ name: "wetSheen", type: "boolean", default: "true", description: "Whether wet areas darken and cool the paper while still damp." },
+			{ name: "vignette", type: "boolean", default: "true", description: "Whether the display shader applies the subtle paper-edge vignette." },
+			{ name: "quality", type: `"low" | "medium" | "high"`, default: `"medium"`, description: "Resolution tier for the velocity/pressure and pigment/wetness textures." },
+			{ name: "playing", type: "boolean", default: "true", description: "Runs or pauses the simulation loop." },
+			{ name: "interactive", type: "boolean", default: "true", description: "Enables pointer drawing. Manual drawing disables the active script until replay." },
+			{ name: "height", type: "number | string", default: "460", description: "CSS height for the canvas wrapper." },
+			{ name: "ref", type: "React.Ref<InkWashHandle>", description: "Imperative handle with replay, clear, fix, and savePNG actions for demos and tool surfaces." },
+		],
+	},
+	"liquid-metal": {
+		description: "Liquid metal wrapper vendored from Jakub Antalik's metal-fx. It paints an animated shared WebGL metal shader into a rounded host ring, with chromatic, silver, and gold presets, dark/light theme tuning, optional glow, and dark-mode proximity reflections for supplied target refs.",
+		importStatement: `import LiquidMetal, {
+	DEFAULT_LIQUID_METAL_CONFIG,
+	type MetalFxProps,
+} from "@/components/visual/liquid-metal";`,
+		usage: `<LiquidMetal
+	variant="button"
+	preset="chromatic"
+	theme="auto"
+	strength={1}
+	borderRadius={999}
+>
+	<button type="button" className="rounded-full px-5 py-2">
+		Liquid Metal
+	</button>
+</LiquidMetal>`,
+		demoLayout: {
+			previewContentWidth: "full",
+			previewHeight: "fit",
+			examplesContentWidth: "full",
+		},
+		examples: [
+			{ title: "Chromatic pill", description: "The upstream chromatic preset on a rotating pill host.", demoSlug: "liquid-metal-demo-chromatic-pill" },
+			{ title: "Silver pill", description: "The upstream silver preset on a pulsing pill host.", demoSlug: "liquid-metal-demo-silver-pill" },
+			{ title: "Gold send", description: "The upstream circle variant with the gold preset.", demoSlug: "liquid-metal-demo-gold-send" },
+			{ title: "Toolbar reflection", description: "A silver toolbar with reflectionTargets wired to adjacent icon buttons.", demoSlug: "liquid-metal-demo-toolbar-reflection" },
+			{ title: "Chat reflection", description: "A compact chat composer with reflectionTargets wired to neighboring message surfaces.", demoSlug: "liquid-metal-demo-chat-reflection" },
+		],
+		props: [
+			{ name: "children", type: "React.ReactNode", description: "Single wrapped host element or node measured by metal-fx for the painted ring." },
+			{ name: "variant", type: `"button" | "circle"`, default: `"button"`, description: "Upstream geometry variant. Button uses the pill baseline; circle uses compact circular ring tuning." },
+			{ name: "preset", type: `"chromatic" | "silver" | "gold"`, default: `"chromatic"`, description: "Bundled upstream material palette." },
+			{ name: "theme", type: `"auto" | "dark" | "light"`, default: `"auto"`, description: "Theme tuning. Auto follows prefers-color-scheme; dark and light pin a mode." },
+			{ name: "strength", type: "number", default: "1", description: "Rendered alpha multiplier for the shader bitmap and glow." },
+			{ name: "paused", type: "boolean", default: "false", description: "Freezes this instance's visible canvas while preserving the last painted frame." },
+			{ name: "borderRadius", type: "number", description: "Optional explicit CSS-pixel corner radius. When omitted, metal-fx reads the wrapped host radius." },
+			{ name: "normalizeHostStyles", type: "boolean", default: "true", description: "Removes host chrome that would visually clash with the metal ring while preserving inner content." },
+			{ name: "reflectionTargets", type: "ReadonlyArray<React.RefObject<HTMLElement | null>>", description: "Adjacent target refs that receive dark-mode proximity reflections." },
+			{ name: "disableGlow", type: "boolean", default: "false", description: "Disables the wandering halo overlay while keeping the shader ring." },
+			{ name: "shaderScale", type: "number", description: "Optional shader sampling scale override." },
+			{ name: "ringCssPx", type: "number", description: "Optional ring thickness override in CSS pixels." },
+			{ name: "scale", type: "number", default: "1", description: "Master multiplier for shader, ring, glow, and reflection absolute-pixel constants." },
+			{ name: "className", type: "string", description: "Class names forwarded to the metal-fx wrapper element." },
+			{ name: "style", type: "React.CSSProperties", description: "Inline styles forwarded to the metal-fx wrapper element." },
+			{ name: "ref", type: "React.Ref<HTMLDivElement>", description: "Ref forwarded to the metal-fx wrapper div." },
+		],
+	},
 	"noise": {
 		description: "CSS-based tiling noise texture overlay with configurable opacity, grain size, and border radius.",
 	},

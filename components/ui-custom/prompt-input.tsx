@@ -52,7 +52,7 @@ import {
 } from "@/lib/directory-autocomplete";
 
 import { Badge } from "@/components/ui/badge";
-import { BrandLogoMark } from "@/components/ui/logo-mark";
+import { resolveBrandLogoPresentation } from "@/components/ui/data/logo-usage";
 import {
   Command,
   CommandEmpty,
@@ -2272,13 +2272,14 @@ export const PromptInputPreferencesButton = ({
     {...props}
   >
     {PROMPT_INPUT_PREFERENCE_SOURCES.map((source) => (
-      <BrandLogoMark
-        className="shrink-0"
-        frame="tile"
+      <Image
+        alt=""
+        aria-hidden
+        className="size-4 shrink-0 object-contain"
+        height={16}
         key={source.label}
-        label={source.label}
-        size="small"
-        src={source.src}
+        src={resolveBrandLogoPresentation(source.src).src}
+        width={16}
       />
     ))}
     <span aria-hidden className="inline-flex size-4 shrink-0 items-center justify-center rounded bg-primary">

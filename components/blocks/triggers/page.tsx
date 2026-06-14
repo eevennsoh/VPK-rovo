@@ -7,11 +7,12 @@
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { motion, type Variants } from "motion/react";
 import Image from "next/image";
 import AddIcon from "@atlaskit/icon/core/add";
+import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import BranchIcon from "@atlaskit/icon/core/branch";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
@@ -31,7 +32,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { IconTile } from "@/components/ui/icon-tile";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { RichTextCommandMenuSearchField, RichTextEditor } from "@/components/ui-custom/rich-text-editor";
 import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/mention-visual";
@@ -72,6 +72,16 @@ import {
 } from "@/components/blocks/triggers/data/trigger-catalog";
 import { getTriggerByline } from "@/app/data/directory/trigger-bylines";
 import { cn } from "@/lib/utils";
+// The new trigger-config surface lives in `trigger-config.tsx`, which already
+// imports values from THIS module. Importing `AgentConfigFields` eagerly would
+// form a runtime import cycle, so it is loaded lazily (the type import below is
+// erased at build time and is cycle-safe).
+import type { AgentConfigFormValue } from "@/components/blocks/trigger-config/components/trigger-config";
+const AgentConfigFields = lazy(() =>
+	import("@/components/blocks/trigger-config/components/trigger-config").then((module) => ({
+		default: module.AgentConfigFields,
+	})),
+);
 
 export type {
 	AgentTriggerConnectionState,
@@ -261,15 +271,19 @@ function TriggerAddRow({
 	...props
 }: Readonly<TriggerAddRowProps>): ReactElement {
 	return (
-		<Button
+		<button
 			type="button"
-			variant="ghost"
-			className={cn("w-full justify-start", className)}
+			className={cn(
+				"flex h-8 w-full shrink-0 cursor-pointer items-center gap-3 rounded-lg px-1.5 text-sm text-text-subtle outline-none select-none transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+				className,
+			)}
 			{...props}
 		>
-			<AddIcon label="" size="small" />
+			<span aria-hidden="true" className="flex size-6 shrink-0 items-center justify-center">
+				<AddIcon label="" size="small" />
+			</span>
 			{label}
-		</Button>
+		</button>
 	);
 }
 
@@ -572,6 +586,7 @@ function TriggerParamMenu({
 					<Button
 						type="button"
 						variant="outline"
+						size="compact"
 						disabled={disabled}
 						aria-label={`${param.label}: ${label}`}
 						className="max-w-52"
@@ -654,7 +669,7 @@ function TriggerRowDeleteButton({ onRemove }: Readonly<{ onRemove: () => void }>
 			aria-label="Delete trigger"
 			className="self-start opacity-0 transition-opacity duration-normal group-hover/trigger-row:opacity-100 group-focus-within/trigger-row:opacity-100 focus-visible:opacity-100 hover:bg-bg-danger-hovered hover:text-text-danger active:bg-bg-danger-pressed [&:hover_svg]:text-icon-danger"
 			onClick={onRemove}
-			size="icon"
+			size="icon-compact"
 			type="button"
 			variant="ghost"
 		>
@@ -687,7 +702,7 @@ function TriggerRow({
 
 	if (!provider || !event) {
 		return (
-			<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3">
+			<div className="group/trigger-row grid grid-cols-[1.5rem_minmax(0,1fr)] items-start gap-x-3">
 				<IconTile
 					aria-hidden={true}
 					icon={<AutomationIcon label="" size="small" />}
@@ -706,18 +721,12 @@ function TriggerRow({
 	}
 
 	return (
-		<div className="group/trigger-row grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 rounded-lg px-2 py-2 transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered">
-			<div className="justify-items-center" aria-hidden={true}>
-				<IconTile
-					aria-hidden={true}
-					icon={renderTriggerProviderIcon(provider.icon, provider.label)}
-					label={provider.label}
-					size="medium"
-					variant="blue"
-				/>
+		<div className="group/trigger-row grid grid-cols-[1.5rem_minmax(0,1fr)] gap-x-3 rounded-lg p-1.5 transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered">
+			<div className="flex size-6 items-center justify-center" aria-hidden={true}>
+				<TriggerProviderTileIcon icon={provider.icon} label={provider.label} />
 			</div>
 			<div className="grid min-w-0 gap-1.5">
-				<div className="flex min-h-8 items-center gap-2">
+				<div className="flex items-center gap-2">
 					<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-text">
 						<TriggerSentence
 							disabled={paramsDisabled}
@@ -766,6 +775,10 @@ function getAutomationName(rule: AgentAutomationRule): string {
 	return rule.name ?? "";
 }
 
+function getAutomationDescription(rule: AgentAutomationRule): string {
+	return rule.description ?? "";
+}
+
 function isAutomationRuleEnabled(rule: AgentAutomationRule): boolean {
 	return rule.enabled !== false;
 }
@@ -779,7 +792,7 @@ function createEmptyAutomationRule(index: number): AgentAutomationRule {
 	});
 }
 
-function TriggerConditionsPanel({
+export function TriggerConditionsPanel({
 	defaultPickerOpen,
 	onAddTrigger,
 	onConnectTrigger,
@@ -796,7 +809,7 @@ function TriggerConditionsPanel({
 }>): ReactElement {
 	return (
 		<div className="overflow-hidden rounded-xl border border-border bg-bg-input">
-			<div className="grid gap-1 p-2">
+			<div className="grid p-1.5">
 				{triggers.length > 0 ? (
 					triggers.map((trigger) => (
 						<TriggerRow
@@ -813,10 +826,10 @@ function TriggerConditionsPanel({
 					</div>
 				)}
 			</div>
-			<div className="border-t border-border bg-surface px-2 py-2">
+			<div className="border-t border-border bg-surface p-1.5">
 				<TriggerPicker
 					defaultOpen={defaultPickerOpen}
-					label="Add Trigger"
+					label="Add trigger"
 					onSelectEvent={onAddTrigger}
 				/>
 			</div>
@@ -835,12 +848,12 @@ function TriggerAutomationFlowPreview({
 }>): ReactElement {
 	const visibleTriggers = triggers.slice(0, 5);
 	const overflowCount = Math.max(0, triggers.length - visibleTriggers.length);
-	const title = automationName.trim() || "Automation";
-	const description = prompt.trim() || "Tell the agent what to do when any trigger starts this automation.";
+	const title = automationName.trim() || "Untitled automation";
+	const description = prompt.trim() || "Automation description";
 
 	return (
-		<div className="rounded-xl border border-border bg-surface px-4 py-4">
-			<div className="mb-4 flex items-center gap-2" aria-hidden={true}>
+		<div>
+			<div className="mb-3 flex items-center gap-2" aria-hidden={true}>
 				<div className="flex min-w-0 items-center gap-1">
 					{visibleTriggers.length > 0 ? (
 						visibleTriggers.map((trigger) => {
@@ -895,6 +908,7 @@ function TriggerAutomationFlowPreview({
 }
 
 export interface TriggerAutomationDialogProps {
+	showBack?: boolean;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	automationRule: AgentAutomationRule;
@@ -1027,22 +1041,27 @@ export function TriggerAutomationDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="flex max-h-[min(760px,calc(100vh-2rem))] flex-col gap-0 overflow-hidden p-0" showCloseButton={false} size="lg">
-				<div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-6 py-5">
-					<div className="grid gap-1">
-						<DialogTitle className="text-xl font-semibold leading-6 text-text">
-							{title}
-						</DialogTitle>
-						<p className="text-sm leading-5 text-text-subtle">
-							Configure the events that start this automation.
-						</p>
+				<div className="flex shrink-0 items-center justify-between px-6 py-6">
+					<div className="flex min-w-0 items-center gap-2">
+						<Button
+							aria-label="Back"
+							className="-ml-2 text-icon-subtle"
+							onClick={() => onOpenChange(false)}
+							size="icon"
+							type="button"
+							variant="ghost"
+						>
+							<ArrowLeftIcon label="" />
+						</Button>
+						<DialogTitle className="truncate text-xl font-semibold leading-6 text-text">{title}</DialogTitle>
 					</div>
 					<div className="flex items-center gap-3">
 						<label className="flex items-center gap-2 text-sm font-medium text-text">
-							<span>Active</span>
-							<Switch checked={active} label="Active" onCheckedChange={setActive} size="sm" />
+							<span>{active ? "Active" : "Inactive"}</span>
+							<Switch checked={active} label={active ? "Active" : "Inactive"} onCheckedChange={setActive} />
 						</label>
 						<DialogClose render={<Button aria-label="Close" size="icon" variant="ghost" />}>
-							<CrossIcon label="" size="small" />
+							<CrossIcon label="" />
 						</DialogClose>
 					</div>
 				</div>
@@ -1052,41 +1071,15 @@ export function TriggerAutomationDialog({
 						prompt={sharedPrompt}
 						triggers={draftTriggers}
 					/>
-					<label className="grid gap-1.5">
-						<span className="text-sm font-medium leading-5 text-text">Automation name</span>
-						<Input
-							onChange={(event) => setAutomationName(event.target.value)}
-							placeholder="Name this automation"
-							value={automationName}
-						/>
-					</label>
+					<TriggerConditionsPanel
+						defaultPickerOpen={defaultPickerOpen}
+						onAddTrigger={handleAddTrigger}
+						onConnectTrigger={handleConnect}
+						onParamChange={handleParamChange}
+						onRemoveTrigger={handleRemoveTrigger}
+						triggers={draftTriggers}
+					/>
 					<div className="grid gap-2">
-						<div className="grid gap-0.5">
-							<h3 className="text-sm font-semibold leading-5 text-text">Triggers</h3>
-							<p className="text-sm leading-5 text-text-subtle">
-								Any configured event can start this automation.
-							</p>
-						</div>
-						<TriggerConditionsPanel
-							defaultPickerOpen={defaultPickerOpen}
-							onAddTrigger={handleAddTrigger}
-							onConnectTrigger={handleConnect}
-							onParamChange={handleParamChange}
-							onRemoveTrigger={handleRemoveTrigger}
-							triggers={draftTriggers}
-						/>
-					</div>
-					<div className="grid gap-2">
-						<span className="flex items-center gap-2 text-sm font-semibold leading-5 text-text">
-							<IconTile
-								aria-hidden={true}
-								className="bg-bg-neutral text-icon-subtle"
-								icon={<GenerativeIndicatorIcon label="" size="small" />}
-								label=""
-								size="small"
-							/>
-							Agent Instructions
-						</span>
 						<RichTextEditor
 							aria-label="Agent Instructions"
 							className="space-y-2"
@@ -1104,6 +1097,184 @@ export function TriggerAutomationDialog({
 						Cancel
 					</Button>
 					<Button disabled={draftTriggers.length === 0} onClick={handleSave} type="button">
+						{saveLabel}
+					</Button>
+				</div>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+// Automation modal variant that hosts the new trigger-config surface
+// (`AgentConfigFields`) in its body instead of the inline flow-preview +
+// conditions panel + tiptap. Same header/footer chrome and the same rule-based
+// `onSave` contract as `TriggerAutomationDialog`, so it is a drop-in for the
+// `Triggers` component without changing the shared dialog used elsewhere.
+//
+// Bridge: the dialog owns a draft `AgentConfigFormValue` whose
+// `automationRules`/`instructions` mirror the editing rule. `AgentConfigFields`
+// reads triggers via `getAgentAutomationRules` (which prefers
+// `config.automationRules`) and emits edits through `onAutomationRulesChange`
+// (triggers) and `onTextChange("instructions", …)` (shared prompt).
+export function TriggerConfigAutomationDialog({
+	automationRule,
+	onConnectTrigger,
+	onOpenChange,
+	onSave,
+	open,
+	saveLabel = "Save",
+	showBack = false,
+	title = "Edit automation",
+}: Readonly<TriggerAutomationDialogProps>): ReactElement {
+	const seedRef = useRef<AgentAutomationRule>(automationRule);
+	seedRef.current = automationRule;
+	const wasOpen = useRef(open);
+	const connectTimerRef = useRef<number | null>(null);
+	const [draftRule, setDraftRule] = useState<AgentAutomationRule>(automationRule);
+	const [active, setActive] = useState(() => isAutomationRuleEnabled(automationRule));
+
+	useEffect(() => {
+		if (open && !wasOpen.current) {
+			const nextSeed = seedRef.current;
+			setDraftRule(nextSeed);
+			setActive(isAutomationRuleEnabled(nextSeed));
+		}
+		wasOpen.current = open;
+	}, [open]);
+
+	// oxlint-disable-next-line react-doctor/exhaustive-deps -- Unmount-only cleanup for the fake provider connection timer.
+	useEffect(() => {
+		return () => {
+			if (connectTimerRef.current !== null) {
+				window.clearTimeout(connectTimerRef.current);
+			}
+		};
+	}, []);
+
+	// The shared profile header reads `config.name`/`config.description`, so mirror
+	// the editing rule's name + description onto the throwaway config. Without this
+	// the header always falls back to the "Untitled automation" / "Add a
+	// description" placeholders even when generation produced real values.
+	const config = useMemo<AgentConfigFormValue>(
+		() => ({
+			automationRules: [draftRule],
+			instructions: getAutomationPrompt(draftRule),
+			name: getAutomationName(draftRule),
+			description: getAutomationDescription(draftRule),
+		}),
+		[draftRule],
+	);
+
+	const handleAutomationRulesChange = useCallback(
+		(nextRules: readonly AgentAutomationRule[]) => {
+			const nextRule = nextRules[0];
+			if (nextRule) {
+				setDraftRule(nextRule);
+			}
+		},
+		[],
+	);
+
+	const handleConfigTextChange = useCallback(
+		(field: string, value: string) => {
+			if (field === "instructions") {
+				setDraftRule((current) => ({ ...current, prompt: value }));
+			} else if (field === "name") {
+				setDraftRule((current) => ({ ...current, name: value }));
+			} else if (field === "description") {
+				setDraftRule((current) => ({ ...current, description: value }));
+			}
+		},
+		[],
+	);
+
+	// Fake provider connection: flip every trigger sharing the provider to
+	// "connecting", then "connected" after a short spin. Mirrors the transition
+	// `TriggerAutomationDialog` owned, but on the draft rule's triggers.
+	const handleConnect = useCallback(
+		(trigger: AgentTriggerValue) => {
+			onConnectTrigger?.(trigger);
+			const { providerId } = trigger;
+			const markProviderTriggers = (state: "connecting" | "connected") => {
+				setDraftRule((current) => ({
+					...current,
+					triggers: current.triggers.map((draftTrigger) =>
+						draftTrigger.providerId === providerId
+							? { ...draftTrigger, connectionState: state }
+							: draftTrigger,
+					),
+				}));
+			};
+
+			markProviderTriggers("connecting");
+			if (connectTimerRef.current !== null) {
+				window.clearTimeout(connectTimerRef.current);
+			}
+			connectTimerRef.current = window.setTimeout(() => {
+				markProviderTriggers("connected");
+				connectTimerRef.current = null;
+			}, 1200);
+		},
+		[onConnectTrigger],
+	);
+
+	const handleSave = useCallback(() => {
+		onSave(createAgentAutomationRule({
+			...draftRule,
+			name: getAutomationName(draftRule).trim(),
+			description: getAutomationDescription(draftRule).trim() || undefined,
+			enabled: active,
+		}));
+		onOpenChange(false);
+	}, [active, draftRule, onOpenChange, onSave]);
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="flex max-h-[min(760px,calc(100vh-2rem))] flex-col gap-0 overflow-hidden p-0" showCloseButton={false} size="lg">
+				<div className="flex shrink-0 items-center justify-between px-6 py-6">
+					<div className="flex min-w-0 items-center gap-2">
+					{showBack ? (
+						<Button
+							aria-label="Back"
+							className="-ml-2 text-icon-subtle"
+							onClick={() => onOpenChange(false)}
+							size="icon"
+							type="button"
+							variant="ghost"
+						>
+							<ArrowLeftIcon label="" />
+						</Button>
+					) : null}
+						<DialogTitle className="truncate text-xl font-semibold leading-6 text-text">{title}</DialogTitle>
+					</div>
+					<div className="flex items-center gap-3">
+						<label className="flex items-center gap-2 text-sm font-medium text-text-subtle">
+							<span>{active ? "Active" : "Inactive"}</span>
+							<Switch checked={active} label={active ? "Active" : "Inactive"} onCheckedChange={setActive} />
+						</label>
+						<DialogClose render={<Button aria-label="Close" size="icon" variant="ghost" />}>
+							<CrossIcon label="" />
+						</DialogClose>
+					</div>
+				</div>
+				<div className="flex min-h-0 flex-1 flex-col px-6 pb-5">
+					<Suspense fallback={null}>
+						<AgentConfigFields
+							compactScrollAreaClassName="overflow-y-hidden"
+							compactInstructionsContentClassName="min-h-[120px] max-h-[320px] overflow-y-auto"
+							config={config}
+							idPrefix="trigger-config-automation"
+							onAutomationRulesChange={handleAutomationRulesChange}
+							onConnectTrigger={handleConnect}
+							onTextChange={handleConfigTextChange}
+						/>
+					</Suspense>
+				</div>
+				<div className="flex shrink-0 items-center justify-end gap-2 border-t border-border bg-surface-overlay px-6 py-4">
+					<Button onClick={() => onOpenChange(false)} type="button" variant="ghost">
+						Cancel
+					</Button>
+					<Button disabled={draftRule.triggers.length === 0} onClick={handleSave} type="button">
 						{saveLabel}
 					</Button>
 				</div>
@@ -1152,7 +1323,7 @@ export interface TriggersProps {
  * shared instruction prompt can apply to multiple trigger conditions.
  */
 export default function Triggers({
-	addTriggerLabel = "Add Trigger",
+	addTriggerLabel = "Add trigger",
 	automationRules,
 	className,
 	defaultAutomationRules,
@@ -1256,14 +1427,17 @@ export default function Triggers({
 							</div>
 							<div className="grid gap-2">
 								{rule.triggers.map((trigger) => {
-									const provider = getTriggerProvider(trigger.providerId);
 									return (
 										<div className="flex min-w-0 items-center gap-2 text-sm text-text" key={trigger.id}>
-											<span className="flex size-6 shrink-0 items-center justify-center">
-												{provider ? renderTriggerProviderIcon(provider.icon, provider.label) : (
-													<AutomationIcon label="" size="small" />
-												)}
-											</span>
+											{renderAgentTriggerProviderTileIcon(trigger) ?? (
+												<IconTile
+													aria-hidden={true}
+													icon={<AutomationIcon label="" size="small" />}
+													label="Trigger"
+													size="medium"
+													variant="blue"
+												/>
+											)}
 											<span className="truncate">{getAgentTriggerReadableLabel(trigger)}</span>
 										</div>
 									);
@@ -1285,8 +1459,7 @@ export default function Triggers({
 	return (
 		<div className={cn("grid gap-5", className)}>
 			<section className="grid gap-3">{cardChildren}</section>
-			<TriggerAutomationDialog
-				defaultPickerOpen={defaultPickerOpen}
+			<TriggerConfigAutomationDialog
 				automationRule={draftAutomationRule}
 				onConnectTrigger={onConnectTrigger}
 				onOpenChange={setAutomationDialogOpen}

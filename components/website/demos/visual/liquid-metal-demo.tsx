@@ -1,0 +1,669 @@
+"use client";
+
+import {
+	useMemo,
+	useRef,
+	useState,
+	type CSSProperties,
+	type Dispatch,
+	type ReactNode,
+	type RefObject,
+	type SetStateAction,
+} from "react";
+import CopyIcon from "@atlaskit/icon/core/copy";
+import SearchIcon from "@atlaskit/icon/core/search";
+import SendIcon from "@atlaskit/icon/core/send";
+import SettingsIcon from "@atlaskit/icon/core/settings";
+import { motion, useReducedMotion } from "motion/react";
+
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { GUI } from "@/components/utils/gui";
+import {
+	DEFAULT_LIQUID_METAL_CONFIG,
+	LIQUID_METAL_CONTROL_RANGES,
+	LIQUID_METAL_PRESET_OPTIONS,
+	LIQUID_METAL_REFLECTION_TARGET_MODE_OPTIONS,
+	LIQUID_METAL_THEME_OPTIONS,
+	LIQUID_METAL_VARIANT_OPTIONS,
+	LiquidMetal,
+	type LiquidMetalControlConfig,
+	type LiquidMetalDemoSurface,
+	type LiquidMetalReflectionTargetsMode,
+	type MetalFxPreset,
+	type MetalFxProps,
+	type MetalFxTheme,
+	type MetalFxVariant,
+} from "@/components/visual/liquid-metal";
+import { cn } from "@/lib/utils";
+
+type RequiredLiquidMetalControls = Required<Pick<
+	LiquidMetalControlConfig,
+	"borderRadius" | "ringCssPx" | "shaderScale"
+>>;
+type LiquidMetalDemoConfig = LiquidMetalControlConfig & RequiredLiquidMetalControls;
+type LiquidMetalConfigKey = keyof LiquidMetalDemoConfig;
+type LiquidMetalHostSurface = LiquidMetalDemoSurface | "panel";
+type ShowcaseMotion = "none" | "pulse" | "rotate";
+type ReflectionTargets = NonNullable<MetalFxProps["reflectionTargets"]>;
+
+const DEFAULT_CONFIG: LiquidMetalDemoConfig = {
+	...DEFAULT_LIQUID_METAL_CONFIG,
+	borderRadius: LIQUID_METAL_CONTROL_RANGES.borderRadius.defaultValue,
+	ringCssPx: LIQUID_METAL_CONTROL_RANGES.ringCssPx.defaultValue,
+	shaderScale: LIQUID_METAL_CONTROL_RANGES.shaderScale.defaultValue,
+};
+
+const STAGE_BACKDROP_CLASS: Record<MetalFxTheme, string> = {
+	auto: "bg-neutral-950 text-white",
+	dark: "bg-neutral-950 text-white",
+	light: "bg-surface text-text",
+};
+
+const PRESET_GLOW_CLASS: Record<MetalFxPreset, string> = {
+	chromatic: "from-cyan-300/25 via-magenta-400/25 to-amber-200/25",
+	silver: "from-white/35 via-slate-200/25 to-zinc-500/30",
+	gold: "from-yellow-200/35 via-amber-400/30 to-rose-400/20",
+};
+
+function setConfigValue<K extends LiquidMetalConfigKey>(
+	setConfig: Dispatch<SetStateAction<LiquidMetalDemoConfig>>,
+	key: K,
+	value: LiquidMetalDemoConfig[K],
+) {
+	setConfig((current) => ({
+		...current,
+		[key]: value,
+	}));
+}
+
+function getDefaultSurface(variant: MetalFxVariant): LiquidMetalHostSurface {
+	return variant === "circle" ? "icon" : "pill";
+}
+
+function getHostClass(surface: LiquidMetalHostSurface): string {
+	if (surface === "icon") {
+		return "size-24 rounded-full";
+	}
+
+	if (surface === "toolbar") {
+		return "min-h-12 min-w-64 rounded-full px-2 py-1";
+	}
+
+	if (surface === "panel") {
+		return "min-h-36 w-full max-w-sm rounded-lg p-4";
+	}
+
+	return "min-h-14 min-w-52 rounded-full px-6 py-3";
+}
+
+function coerceReflectionTargets(refs: readonly unknown[]): ReflectionTargets {
+	return refs as ReflectionTargets;
+}
+
+function LiquidMetalHost({
+	children,
+	className,
+	config,
+	overrides,
+	reflectionTargets,
+	surface,
+}: Readonly<{
+	children: ReactNode;
+	className?: string;
+	config: LiquidMetalDemoConfig;
+	overrides?: Partial<LiquidMetalDemoConfig>;
+	reflectionTargets?: ReflectionTargets;
+	surface?: LiquidMetalHostSurface;
+}>) {
+	const merged = { ...config, ...overrides };
+	const effectiveBorderRadius = merged.variant === "circle" ? 999 : merged.borderRadius;
+	const resolvedSurface = surface ?? getDefaultSurface(merged.variant);
+	const hostStyle: CSSProperties = {
+		borderRadius: effectiveBorderRadius,
+	};
+
+	return (
+		<LiquidMetal
+			variant={merged.variant}
+			preset={merged.preset}
+			theme={merged.theme}
+			strength={merged.strength}
+			paused={merged.paused}
+			borderRadius={effectiveBorderRadius}
+			normalizeHostStyles={merged.normalizeHostStyles}
+			reflectionTargets={merged.reflectionTargetsMode === "refs" ? reflectionTargets : undefined}
+			disableGlow={merged.disableGlow}
+			shaderScale={merged.shaderScale}
+			ringCssPx={merged.ringCssPx}
+			scale={merged.scale}
+			style={hostStyle}
+			className={cn(
+				"relative isolate inline-flex shrink-0 items-center justify-center overflow-hidden border border-border/70 bg-surface-raised/90 text-text shadow-sm",
+				getHostClass(resolvedSurface),
+				className,
+			)}
+		>
+			{children}
+		</LiquidMetal>
+	);
+}
+
+function AnimatedShowcaseShell({
+	active,
+	children,
+	mode,
+}: Readonly<{
+	active: boolean;
+	children: ReactNode;
+	mode: ShowcaseMotion;
+}>) {
+	const animate = active
+		? mode === "rotate"
+			? { rotate: 360, scale: 1 }
+			: mode === "pulse"
+				? { rotate: 0, scale: [1, 1.045, 1] }
+				: { rotate: 0, scale: 1 }
+		: { rotate: 0, scale: 1 };
+	const transition = active
+		? mode === "rotate"
+			? { duration: 16, ease: "linear" as const, repeat: Number.POSITIVE_INFINITY }
+			: mode === "pulse"
+				? { duration: 2.4, ease: "easeInOut" as const, repeat: Number.POSITIVE_INFINITY }
+				: { duration: 0 }
+		: { duration: 0 };
+
+	return (
+		<motion.div
+			animate={animate}
+			transition={transition}
+			className="flex items-center justify-center"
+		>
+			{children}
+		</motion.div>
+	);
+}
+
+function MetalLabel({
+	children,
+	className,
+}: Readonly<{
+	children: ReactNode;
+	className?: string;
+}>) {
+	return (
+		<span className={cn("text-[11px] font-semibold uppercase tracking-wide text-text-subtlest", className)}>
+			{children}
+		</span>
+	);
+}
+
+function PlaygroundContent({ variant }: Readonly<{ variant: MetalFxVariant }>) {
+	if (variant === "circle") {
+		return <Icon render={<SendIcon label="" size="medium" />} aria-hidden className="text-current" />;
+	}
+
+	return <span className="text-sm font-semibold text-current">Liquid Metal</span>;
+}
+
+function ReflectionToolbarTargets({
+	copyRef,
+	searchRef,
+	settingsRef,
+}: Readonly<{
+	copyRef: RefObject<HTMLButtonElement | null>;
+	searchRef: RefObject<HTMLButtonElement | null>;
+	settingsRef: RefObject<HTMLButtonElement | null>;
+}>) {
+	return (
+		<div className="flex items-center gap-2">
+			<Button ref={searchRef} type="button" aria-label="Search target" variant="secondary" size="icon">
+				<Icon render={<SearchIcon label="" size="small" />} aria-hidden />
+			</Button>
+			<Button ref={copyRef} type="button" aria-label="Copy target" variant="secondary" size="icon">
+				<Icon render={<CopyIcon label="" size="small" />} aria-hidden />
+			</Button>
+			<Button ref={settingsRef} type="button" aria-label="Settings target" variant="secondary" size="icon">
+				<Icon render={<SettingsIcon label="" size="small" />} aria-hidden />
+			</Button>
+		</div>
+	);
+}
+
+function ShowcasePill({
+	active,
+	config,
+	label,
+	mode,
+	preset,
+}: Readonly<{
+	active: boolean;
+	config: LiquidMetalDemoConfig;
+	label: string;
+	mode: ShowcaseMotion;
+	preset: MetalFxPreset;
+}>) {
+	return (
+		<div className="flex min-h-48 flex-col items-center justify-center gap-3 overflow-hidden rounded-lg border border-border bg-surface p-4">
+			<AnimatedShowcaseShell active={active} mode={mode}>
+				<LiquidMetalHost
+					config={config}
+					overrides={{ preset, variant: "button", borderRadius: 999 }}
+				>
+					<span className="text-sm font-semibold text-current">{label}</span>
+				</LiquidMetalHost>
+			</AnimatedShowcaseShell>
+			<MetalLabel>{label}</MetalLabel>
+		</div>
+	);
+}
+
+function SendCircleShowcase({
+	active,
+	config,
+}: Readonly<{
+	active: boolean;
+	config: LiquidMetalDemoConfig;
+}>) {
+	return (
+		<div className="flex min-h-48 flex-col items-center justify-center gap-3 overflow-hidden rounded-lg border border-border bg-surface p-4">
+			<AnimatedShowcaseShell active={active} mode="pulse">
+				<LiquidMetalHost
+					config={config}
+					overrides={{ preset: "gold", variant: "circle", borderRadius: 999 }}
+					className="size-20 text-amber-950"
+				>
+					<Icon render={<SendIcon label="" size="medium" />} aria-hidden />
+				</LiquidMetalHost>
+			</AnimatedShowcaseShell>
+			<MetalLabel>Gold send</MetalLabel>
+		</div>
+	);
+}
+
+function ToolbarShowcase({ config }: Readonly<{ config: LiquidMetalDemoConfig }>) {
+	const searchRef = useRef<HTMLButtonElement | null>(null);
+	const copyRef = useRef<HTMLButtonElement | null>(null);
+	const settingsRef = useRef<HTMLButtonElement | null>(null);
+	const reflectionTargets = useMemo(
+		() => coerceReflectionTargets([searchRef, copyRef, settingsRef]),
+		[],
+	);
+
+	return (
+		<div className="flex min-h-48 flex-col items-center justify-center gap-3 overflow-hidden rounded-lg border border-border bg-surface p-4">
+			<ReflectionToolbarTargets
+				copyRef={copyRef}
+				searchRef={searchRef}
+				settingsRef={settingsRef}
+			/>
+			<LiquidMetalHost
+				config={config}
+				overrides={{ preset: "silver", variant: "button", borderRadius: 999, reflectionTargetsMode: "refs" }}
+				reflectionTargets={reflectionTargets}
+				surface="toolbar"
+			>
+				<div className="flex items-center gap-1">
+					<Button type="button" aria-label="Search" variant="ghost" size="icon">
+						<Icon render={<SearchIcon label="" size="small" />} aria-hidden />
+					</Button>
+					<Button type="button" aria-label="Copy" variant="ghost" size="icon">
+						<Icon render={<CopyIcon label="" size="small" />} aria-hidden />
+					</Button>
+					<Button type="button" aria-label="Settings" variant="ghost" size="icon">
+						<Icon render={<SettingsIcon label="" size="small" />} aria-hidden />
+					</Button>
+				</div>
+			</LiquidMetalHost>
+			<MetalLabel>Toolbar refs</MetalLabel>
+		</div>
+	);
+}
+
+function ChatShowcase({ config }: Readonly<{ config: LiquidMetalDemoConfig }>) {
+	const promptRef = useRef<HTMLDivElement | null>(null);
+	const statusRef = useRef<HTMLDivElement | null>(null);
+	const reflectionTargets = useMemo(
+		() => coerceReflectionTargets([promptRef, statusRef]),
+		[],
+	);
+
+	return (
+		<div className="flex min-h-40 flex-col justify-end gap-3 rounded-lg border border-border bg-surface p-4">
+			<div ref={promptRef} className="ml-auto max-w-48 rounded-lg rounded-br-sm bg-bg-neutral px-3 py-2 text-xs text-text">
+				Review the shader state.
+			</div>
+			<div ref={statusRef} className="mr-auto max-w-52 rounded-lg rounded-bl-sm bg-bg-neutral-subtle px-3 py-2 text-xs text-text">
+				Ready.
+			</div>
+			<LiquidMetalHost
+				config={config}
+				overrides={{ preset: "silver", variant: "button", borderRadius: 999, reflectionTargetsMode: "refs" }}
+				reflectionTargets={reflectionTargets}
+				className="ml-auto min-w-44 justify-between gap-3 px-3"
+			>
+				<span className="text-xs text-text-subtle">Ask Rovo</span>
+				<Icon render={<SendIcon label="" size="small" />} aria-hidden />
+			</LiquidMetalHost>
+			<MetalLabel className="text-left">Chat refs</MetalLabel>
+		</div>
+	);
+}
+
+function ReflectionPanel({
+	config,
+	label,
+	preset,
+	targetClassName,
+}: Readonly<{
+	config: LiquidMetalDemoConfig;
+	label: string;
+	preset: MetalFxPreset;
+	targetClassName: string;
+}>) {
+	const topRef = useRef<HTMLDivElement | null>(null);
+	const dotRef = useRef<HTMLDivElement | null>(null);
+	const reflectionTargets = useMemo(
+		() => coerceReflectionTargets([topRef, dotRef]),
+		[],
+	);
+
+	return (
+		<div
+			className={cn(
+				"relative flex min-h-40 items-center justify-center overflow-hidden rounded-lg border border-border p-4",
+				targetClassName,
+			)}
+		>
+			<div ref={topRef} className="absolute inset-x-6 top-6 h-1 rounded-full bg-white/60" />
+			<div ref={dotRef} className="absolute right-7 bottom-7 size-14 rounded-full bg-white/35" />
+			<LiquidMetalHost
+				config={config}
+				overrides={{ preset, variant: "button", borderRadius: 999, reflectionTargetsMode: "refs" }}
+				reflectionTargets={reflectionTargets}
+				className="min-w-36 bg-white/20 px-5 py-2"
+			>
+				<span className="text-xs font-semibold text-current">{label}</span>
+			</LiquidMetalHost>
+		</div>
+	);
+}
+
+function LiquidMetalControls({
+	config,
+	onConfigChange,
+}: Readonly<{
+	config: LiquidMetalDemoConfig;
+	onConfigChange: Dispatch<SetStateAction<LiquidMetalDemoConfig>>;
+}>) {
+	return (
+		<GUI.Panel title="Liquid Metal controls" values={{ ...config }}>
+			<GUI.Section title="Material" borderTop={false}>
+				<GUI.Select
+					id="liquid-metal-variant"
+					label="Variant"
+					value={config.variant}
+					options={LIQUID_METAL_VARIANT_OPTIONS}
+					onChange={(variant) => setConfigValue(onConfigChange, "variant", variant)}
+					valueKeys="variant"
+				/>
+				<GUI.Select
+					id="liquid-metal-preset"
+					label="Preset"
+					value={config.preset}
+					options={LIQUID_METAL_PRESET_OPTIONS}
+					onChange={(preset) => setConfigValue(onConfigChange, "preset", preset)}
+					valueKeys="preset"
+				/>
+				<GUI.Select
+					id="liquid-metal-theme"
+					label="Theme"
+					value={config.theme}
+					options={LIQUID_METAL_THEME_OPTIONS}
+					onChange={(theme) => setConfigValue(onConfigChange, "theme", theme)}
+					valueKeys="theme"
+				/>
+				<GUI.Control
+					id="liquid-metal-strength"
+					label="Strength"
+					value={config.strength}
+					defaultValue={DEFAULT_CONFIG.strength}
+					min={LIQUID_METAL_CONTROL_RANGES.strength.min}
+					max={LIQUID_METAL_CONTROL_RANGES.strength.max}
+					step={LIQUID_METAL_CONTROL_RANGES.strength.step}
+					onChange={(strength) => setConfigValue(onConfigChange, "strength", strength)}
+					valueKeys="strength"
+				/>
+			</GUI.Section>
+
+			<GUI.Section title="Playback">
+				<GUI.Toggle
+					id="liquid-metal-paused"
+					label="Paused"
+					checked={config.paused}
+					onChange={(paused) => setConfigValue(onConfigChange, "paused", paused)}
+					valueKeys="paused"
+				/>
+				<GUI.Toggle
+					id="liquid-metal-disable-glow"
+					label="Disable glow"
+					checked={config.disableGlow}
+					onChange={(disableGlow) => setConfigValue(onConfigChange, "disableGlow", disableGlow)}
+					valueKeys="disableGlow"
+				/>
+			</GUI.Section>
+
+			<GUI.Section title="Host">
+				<GUI.Control
+					id="liquid-metal-border-radius"
+					label="Radius"
+					value={config.borderRadius}
+					defaultValue={DEFAULT_CONFIG.borderRadius}
+					min={LIQUID_METAL_CONTROL_RANGES.borderRadius.min}
+					max={LIQUID_METAL_CONTROL_RANGES.borderRadius.max}
+					step={LIQUID_METAL_CONTROL_RANGES.borderRadius.step}
+					unit="px"
+					onChange={(borderRadius) => setConfigValue(onConfigChange, "borderRadius", borderRadius)}
+					valueKeys="borderRadius"
+				/>
+				<GUI.Control
+					id="liquid-metal-scale"
+					label="Scale"
+					value={config.scale}
+					defaultValue={DEFAULT_CONFIG.scale}
+					min={LIQUID_METAL_CONTROL_RANGES.scale.min}
+					max={LIQUID_METAL_CONTROL_RANGES.scale.max}
+					step={LIQUID_METAL_CONTROL_RANGES.scale.step}
+					onChange={(scale) => setConfigValue(onConfigChange, "scale", scale)}
+					valueKeys="scale"
+				/>
+				<GUI.Toggle
+					id="liquid-metal-normalize-host-styles"
+					label="Normalize host"
+					checked={config.normalizeHostStyles}
+					onChange={(normalizeHostStyles) => setConfigValue(onConfigChange, "normalizeHostStyles", normalizeHostStyles)}
+					valueKeys="normalizeHostStyles"
+				/>
+			</GUI.Section>
+
+			<GUI.Section title="Reflection and shader">
+				<GUI.Select
+					id="liquid-metal-reflection-targets"
+					label="Reflection targets"
+					value={config.reflectionTargetsMode}
+					options={LIQUID_METAL_REFLECTION_TARGET_MODE_OPTIONS}
+					onChange={(reflectionTargetsMode: LiquidMetalReflectionTargetsMode) => setConfigValue(onConfigChange, "reflectionTargetsMode", reflectionTargetsMode)}
+					valueKeys="reflectionTargetsMode"
+				/>
+				<GUI.Control
+					id="liquid-metal-shader-scale"
+					label="Shader scale"
+					value={config.shaderScale}
+					defaultValue={DEFAULT_CONFIG.shaderScale}
+					min={LIQUID_METAL_CONTROL_RANGES.shaderScale.min}
+					max={LIQUID_METAL_CONTROL_RANGES.shaderScale.max}
+					step={LIQUID_METAL_CONTROL_RANGES.shaderScale.step}
+					onChange={(shaderScale) => setConfigValue(onConfigChange, "shaderScale", shaderScale)}
+					valueKeys="shaderScale"
+				/>
+				<GUI.Control
+					id="liquid-metal-ring-css-px"
+					label="Ring"
+					value={config.ringCssPx}
+					defaultValue={DEFAULT_CONFIG.ringCssPx}
+					min={LIQUID_METAL_CONTROL_RANGES.ringCssPx.min}
+					max={LIQUID_METAL_CONTROL_RANGES.ringCssPx.max}
+					step={LIQUID_METAL_CONTROL_RANGES.ringCssPx.step}
+					unit="px"
+					onChange={(ringCssPx) => setConfigValue(onConfigChange, "ringCssPx", ringCssPx)}
+					valueKeys="ringCssPx"
+				/>
+			</GUI.Section>
+		</GUI.Panel>
+	);
+}
+
+function MainPlayground({
+	config,
+	motionActive,
+	onConfigChange,
+}: Readonly<{
+	config: LiquidMetalDemoConfig;
+	motionActive: boolean;
+	onConfigChange: Dispatch<SetStateAction<LiquidMetalDemoConfig>>;
+}>) {
+	const searchRef = useRef<HTMLButtonElement | null>(null);
+	const copyRef = useRef<HTMLButtonElement | null>(null);
+	const settingsRef = useRef<HTMLButtonElement | null>(null);
+	const reflectionTargets = useMemo(
+		() => coerceReflectionTargets([searchRef, copyRef, settingsRef]),
+		[],
+	);
+
+	return (
+		<section
+			className={cn(
+				"relative isolate min-h-[460px] overflow-hidden rounded-lg border border-border p-4 shadow-sm",
+				STAGE_BACKDROP_CLASS[config.theme],
+			)}
+		>
+			<div className={cn("absolute inset-0 bg-gradient-to-br opacity-80", PRESET_GLOW_CLASS[config.preset])} />
+			<div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,.08)_1px,transparent_1px),linear-gradient(180deg,rgba(255,255,255,.08)_1px,transparent_1px)] bg-[size:44px_44px] opacity-25" />
+			<div className="relative grid h-full min-h-[428px] gap-4 lg:grid-cols-[1fr_20rem]">
+				<div className="flex min-h-80 flex-col items-center justify-center gap-6 rounded-lg border border-white/10 bg-black/10 p-6">
+					<MetalLabel className={config.theme === "light" ? "text-text-subtle" : "text-white/70"}>
+						Playground
+					</MetalLabel>
+					<ReflectionToolbarTargets
+						copyRef={copyRef}
+						searchRef={searchRef}
+						settingsRef={settingsRef}
+					/>
+					<AnimatedShowcaseShell active={motionActive} mode={config.variant === "circle" ? "pulse" : "rotate"}>
+						<LiquidMetalHost
+							config={config}
+							reflectionTargets={reflectionTargets}
+							className="text-current"
+						>
+							<PlaygroundContent variant={config.variant} />
+						</LiquidMetalHost>
+					</AnimatedShowcaseShell>
+				</div>
+				<div className="self-start rounded-lg border border-border bg-surface/95 p-4 text-text shadow-sm">
+					<LiquidMetalControls config={config} onConfigChange={onConfigChange} />
+				</div>
+			</div>
+		</section>
+	);
+}
+
+export function LiquidMetalDemoChromaticPill() {
+	return (
+		<ShowcasePill
+			active
+			config={DEFAULT_CONFIG}
+			label="Chromatic"
+			mode="rotate"
+			preset="chromatic"
+		/>
+	);
+}
+
+export function LiquidMetalDemoSilverPill() {
+	return (
+		<ShowcasePill
+			active
+			config={DEFAULT_CONFIG}
+			label="Silver"
+			mode="pulse"
+			preset="silver"
+		/>
+	);
+}
+
+export function LiquidMetalDemoGoldSend() {
+	return <SendCircleShowcase active config={DEFAULT_CONFIG} />;
+}
+
+export function LiquidMetalDemoToolbarReflection() {
+	return <ToolbarShowcase config={{ ...DEFAULT_CONFIG, theme: "dark", reflectionTargetsMode: "refs" }} />;
+}
+
+export function LiquidMetalDemoChatReflection() {
+	return <ChatShowcase config={{ ...DEFAULT_CONFIG, theme: "dark", reflectionTargetsMode: "refs" }} />;
+}
+
+export default function LiquidMetalDemo() {
+	const [config, setConfig] = useState<LiquidMetalDemoConfig>(DEFAULT_CONFIG);
+	const shouldReduceMotion = useReducedMotion();
+	const resolvedConfig = useMemo<LiquidMetalDemoConfig>(() => ({
+		...config,
+		paused: config.paused || Boolean(shouldReduceMotion),
+	}), [config, shouldReduceMotion]);
+	const motionActive = !resolvedConfig.paused;
+
+	return (
+		<div className="flex w-full max-w-6xl flex-col gap-4">
+			<MainPlayground
+				config={resolvedConfig}
+				motionActive={motionActive}
+				onConfigChange={setConfig}
+			/>
+
+			<section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+				<ShowcasePill
+					active={motionActive}
+					config={resolvedConfig}
+					label="Chromatic"
+					mode="rotate"
+					preset="chromatic"
+				/>
+				<ShowcasePill
+					active={motionActive}
+					config={resolvedConfig}
+					label="Silver"
+					mode="pulse"
+					preset="silver"
+				/>
+				<SendCircleShowcase active={motionActive} config={resolvedConfig} />
+				<ToolbarShowcase config={resolvedConfig} />
+			</section>
+
+			<section className="grid gap-3 lg:grid-cols-[1fr_1fr_1.15fr]">
+				<ReflectionPanel
+					config={resolvedConfig}
+					label="Aurora"
+					preset="chromatic"
+					targetClassName="bg-[linear-gradient(135deg,#38bdf8,#e879f9_48%,#fde68a)]"
+				/>
+				<ReflectionPanel
+					config={resolvedConfig}
+					label="Goldline"
+					preset="gold"
+					targetClassName="bg-[linear-gradient(135deg,#111827,#c084fc_46%,#f59e0b)]"
+				/>
+				<ChatShowcase config={resolvedConfig} />
+			</section>
+		</div>
+	);
+}

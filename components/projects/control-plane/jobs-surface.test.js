@@ -14,7 +14,7 @@ test("Jobs surface displays event-triggered Hermes jobs without adding trigger e
 	assert.match(JOBS_SURFACE_SOURCE, /function isEventTriggeredJob\(job: ControlPlaneJob \| null\): boolean/u);
 	assert.match(JOBS_SURFACE_SOURCE, /job\?\.trigger\?\.type === "jira-column-entered"/u);
 	assert.match(JOBS_SURFACE_SOURCE, /getJobTriggerLabel\(job\)/u);
-	assert.match(JOBS_SURFACE_SOURCE, /<Badge variant="secondary">event<\/Badge>/u);
+	assert.match(JOBS_SURFACE_SOURCE, /<Badge variant="neutral">event<\/Badge>/u);
 	assert.match(JOBS_SURFACE_SOURCE, /This job is event-triggered; the trigger is displayed below\./u);
 	assert.match(JOBS_SURFACE_SOURCE, /<div className="font-medium text-text">Event trigger<\/div>/u);
 	assert.match(JOBS_SURFACE_SOURCE, /<div className="text-sm font-medium">Run history<\/div>/u);

@@ -30,15 +30,15 @@ export function SpinnerDemoInBadges() {
 				<Spinner data-icon="inline-start" />
 				Badge
 			</Badge>
-			<Badge variant="secondary">
+			<Badge variant="neutral">
 				<Spinner data-icon="inline-start" />
 				Badge
 			</Badge>
-			<Badge variant="destructive">
+			<Badge variant="danger">
 				<Spinner data-icon="inline-start" />
 				Badge
 			</Badge>
-			<Badge variant="outline">
+			<Badge variant="neutral">
 				<Spinner data-icon="inline-start" />
 				Badge
 			</Badge>
