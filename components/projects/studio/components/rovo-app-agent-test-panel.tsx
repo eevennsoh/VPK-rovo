@@ -3,7 +3,8 @@
 // oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
 // oxlint-disable react-doctor/no-multi-comp -- The test panel colocates tightly coupled tab and payload subviews so ChatPanel custom tabs share one local contract.
 
-import { useEffect, useMemo, useState, type ReactElement } from "react";
+import Image from "next/image";
+import { Fragment, useEffect, useMemo, useState, type ReactElement } from "react";
 
 import { RovoChatProvider, useRovoChat, type StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
 import {
@@ -11,6 +12,7 @@ import {
 	getStarterIcon,
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
+import { AgentAutomationFlowCover } from "@/components/blocks/triggers/components/agent-automation-flow-cover";
 import { renderAgentTriggerProviderIcon } from "@/components/blocks/triggers/page";
 import {
 	getAgentAutomationRuleLabel,
@@ -21,13 +23,32 @@ import {
 } from "@/components/blocks/triggers/data/trigger-catalog";
 import ChatPanel, { type ChatPanelAgentVersionOption } from "@/components/projects/sidebar-chat/page";
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
+import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
+import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
+import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
+import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
+import RefreshIcon from "@atlaskit/icon/core/refresh";
 
 const AGENT_TEST_MAX_CONVERSATION_STARTERS = 3;
 const AGENT_TEST_CALLBACK_DELAY_MS = 900;
+const AGENT_TEST_CHAT_ILLUSTRATION_LIGHT_SRC = "/illustration-spot/general/chat-6/light.svg";
+const AGENT_TEST_CHAT_ILLUSTRATION_DARK_SRC = "/illustration-spot/general/chat-6/dark.svg";
+const AGENT_TEST_AUTOMATION_ILLUSTRATION_LIGHT_SRC = "/illustration-spot/general/automation-2/light.svg";
+const AGENT_TEST_AUTOMATION_ILLUSTRATION_DARK_SRC = "/illustration-spot/general/automation-2/dark.svg";
 
 export interface AgentTestPanelProps {
 	entry: StudioSessionAgentEntry;
@@ -250,15 +271,315 @@ function getAgentTestVersionOptions(entry: StudioSessionAgentEntry): readonly Ag
 	return options;
 }
 
-export function AgentTestTriggerView({
-	result,
+type AgentTestSurface =
+	| { kind: "start" }
+	| { kind: "chat" }
+	| { kind: "automation"; ruleId: string };
+
+function AgentTestVersionSelect({
+	onSelectVersion,
+	selectedVersionId,
+	versionOptions,
 }: Readonly<{
-	result: RovoDataParts["agent-result"];
+	onSelectVersion: (versionId: string) => void;
+	selectedVersionId: string;
+	versionOptions: readonly ChatPanelAgentVersionOption[];
 }>): ReactElement {
-	const automationRules = useMemo<readonly AgentAutomationRule[]>(
-		() => result.automationRules ?? [],
-		[result.automationRules],
+	const selectedVersion =
+		versionOptions.find((version) => version.id === selectedVersionId) ??
+		versionOptions[0];
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger
+				render={
+					<Button
+						aria-label="Switch test version"
+						className="h-8 shrink-0 gap-1.5 px-2 text-sm font-medium text-text"
+						type="button"
+						variant="ghost"
+					/>
+				}
+			>
+				<Badge variant={selectedVersion?.variant ?? "neutral"}>
+					{selectedVersion?.label ?? "Draft"}
+				</Badge>
+				<ChevronDownIcon label="" size="small" spacing="none" />
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" sideOffset={8}>
+				<DropdownMenuGroup>
+					{versionOptions.map((version) => (
+						<Fragment key={version.id}>
+							{version.sectionBreakBefore ? <DropdownMenuSeparator /> : null}
+							<DropdownMenuItem
+								onSelect={() => onSelectVersion(version.id)}
+								className={cn((version.variant ?? "success") === "neutral" && "bg-popover sticky top-0 z-10")}
+								elemAfter={version.id === selectedVersion?.id ? <CheckMarkIcon label="Selected" /> : undefined}
+							>
+								<span className="flex min-w-0 items-center gap-2">
+									<Badge variant={version.variant ?? "success"}>{version.label}</Badge>
+									{version.isCurrent ? (
+										<span className="text-xs text-text-subtle">Current</span>
+									) : null}
+								</span>
+							</DropdownMenuItem>
+						</Fragment>
+					))}
+				</DropdownMenuGroup>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
+}
+
+function AgentTestSelectedHeader({
+	onBack,
+	onReset,
+	onSelectVersion,
+	selectedVersionId,
+	title,
+	versionOptions,
+}: Readonly<{
+	onBack: () => void;
+	onReset: () => void;
+	onSelectVersion: (versionId: string) => void;
+	selectedVersionId: string;
+	title: string;
+	versionOptions: readonly ChatPanelAgentVersionOption[];
+}>): ReactElement {
+	return (
+		<div className="flex shrink-0 items-center justify-between gap-3 py-3">
+			<div className="flex min-w-0 items-center gap-2">
+				<Button
+					type="button"
+					variant="ghost"
+					size="default"
+					className="shrink-0 gap-1.5"
+					onClick={onBack}
+				>
+					<ArrowLeftIcon label="" size="small" spacing="none" />
+					Back to testing options
+				</Button>
+				<div className="hidden h-4 w-px shrink-0 bg-border md:block" />
+				<AgentTestVersionSelect
+					onSelectVersion={onSelectVersion}
+					selectedVersionId={selectedVersionId}
+					versionOptions={versionOptions}
+				/>
+				<div className="hidden min-w-0 md:block">
+					<h2 className="truncate text-sm font-semibold leading-5 text-text">
+						{title}
+					</h2>
+				</div>
+			</div>
+			<Button
+				type="button"
+				variant="ghost"
+				size="default"
+				className="shrink-0 gap-1.5"
+				onClick={onReset}
+			>
+				<RefreshIcon label="" size="small" spacing="none" />
+				Reset
+			</Button>
+		</div>
+	);
+}
+
+function AgentTestStartView({
+	automationRules,
+	onSelectAutomation,
+	onSelectChat,
+}: Readonly<{
+	automationRules: readonly AgentAutomationRule[];
+	onSelectAutomation: (ruleId: string) => void;
+	onSelectChat: () => void;
+}>): ReactElement {
+	return (
+		<div
+			className="flex h-full min-h-0 items-center justify-center overflow-y-auto bg-surface px-4 py-10"
+			data-testid="agent-test-start"
+		>
+			<div className="w-full max-w-xl overflow-hidden rounded-3xl border border-border bg-surface">
+				<AgentTestOptionRow
+					onSelect={onSelectChat}
+					testId="agent-test-chat-option"
+					thumbnail={<AgentTestChatThumbnail />}
+					title="Chat"
+				/>
+				{automationRules.length > 0 ? (
+					automationRules.map((rule, ruleIndex) => (
+						<AgentTestOptionRow
+							key={rule.id}
+							metadata={<AgentTestAutomationFlow rule={rule} />}
+							onSelect={() => onSelectAutomation(rule.id)}
+							testId={`agent-test-automation-option-${rule.id}`}
+							thumbnail={<AgentTestAutomationThumbnail />}
+							title={getAgentAutomationRuleLabel(rule, ruleIndex)}
+						/>
+					))
+				) : (
+					<AgentTestNoAutomationRow />
+				)}
+			</div>
+		</div>
+	);
+}
+
+function AgentTestOptionRow({
+	metadata,
+	onSelect,
+	testId,
+	thumbnail,
+	title,
+}: Readonly<{
+	metadata?: ReactElement;
+	onSelect: () => void;
+	testId: string;
+	thumbnail: ReactElement;
+	title: string;
+}>): ReactElement {
+	return (
+		<Button
+			aria-label={`Test ${title}`}
+			className="h-auto w-full justify-start gap-4 rounded-none border-x-0 border-t-0 border-b border-border p-2 pr-4 text-left shadow-none last:border-b-0"
+			data-testid={testId}
+			onClick={onSelect}
+			type="button"
+			variant="ghost"
+		>
+			{thumbnail}
+			<span className="flex min-w-0 flex-1 flex-col items-start justify-center gap-1">
+				<span className="max-w-full truncate text-sm font-semibold leading-5 text-text">{title}</span>
+				{metadata}
+			</span>
+			<span className="ml-auto flex size-6 shrink-0 items-center justify-center text-icon-subtle opacity-0 transition-opacity duration-normal ease-out group-hover/button:opacity-100 group-focus-visible/button:opacity-100">
+				<ChevronRightIcon label="" color={token("color.icon.subtle")} size="small" spacing="none" />
+			</span>
+		</Button>
+	);
+}
+
+function AgentTestChatThumbnail(): ReactElement {
+	return (
+		<span className="flex h-14 w-28 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-surface">
+			<AgentTestThemeImage
+				alt=""
+				className="size-20 object-contain"
+				darkSrc={AGENT_TEST_CHAT_ILLUSTRATION_DARK_SRC}
+				height={80}
+				lightSrc={AGENT_TEST_CHAT_ILLUSTRATION_LIGHT_SRC}
+				width={80}
+			/>
+		</span>
+	);
+}
+
+function AgentTestAutomationThumbnail({
+	disabled = false,
+	imageClassName,
+}: Readonly<{
+	disabled?: boolean;
+	imageClassName?: string;
+}> = {}): ReactElement {
+	return (
+		<span
+			className={cn(
+				"flex h-14 w-28 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-surface",
+				disabled && "border-dashed",
+			)}
+		>
+			<AgentTestThemeImage
+				alt=""
+				className={cn("size-10 object-contain", imageClassName)}
+				darkSrc={AGENT_TEST_AUTOMATION_ILLUSTRATION_DARK_SRC}
+				height={40}
+				lightSrc={AGENT_TEST_AUTOMATION_ILLUSTRATION_LIGHT_SRC}
+				width={40}
+			/>
+		</span>
+	);
+}
+
+function AgentTestNoAutomationRow(): ReactElement {
+	return (
+		<div className="flex min-w-0 items-center gap-4 p-2 pr-4" data-testid="agent-test-no-automation-empty">
+			<AgentTestAutomationThumbnail disabled imageClassName="grayscale opacity-(--opacity-disabled)" />
+			<div className="min-w-0 flex-1">
+				<div className="truncate text-sm font-semibold leading-5 text-text-disabled">No automations yet</div>
+			</div>
+		</div>
+	);
+}
+
+function AgentTestAutomationFlow({
+	rule,
+}: Readonly<{
+	rule: AgentAutomationRule;
+}>): ReactElement {
+	return (
+		<AgentAutomationFlowCover
+			aria-hidden={false}
+			aria-label={getAutomationOptionMetadata(rule)}
+			rootElement="span"
+			triggers={rule.triggers}
+		/>
+	);
+}
+
+function getAutomationOptionMetadata(rule: AgentAutomationRule): string {
+	const triggerLabels = rule.triggers
+		.map((trigger) => getAgentTriggerReadableLabel(trigger).trim())
+		.filter(Boolean);
+
+	if (triggerLabels.length === 0) {
+		return "No event triggers to agent instructions";
+	}
+
+	return `${triggerLabels.join(" and ")} to agent instructions`;
+}
+
+function AgentTestThemeImage({
+	alt,
+	className,
+	darkSrc,
+	height,
+	lightSrc,
+	width,
+}: Readonly<{
+	alt: string;
+	className: string;
+	darkSrc: string;
+	height: number;
+	lightSrc: string;
+	width: number;
+}>): ReactElement {
+	return (
+		<>
+			<Image
+				alt={alt}
+				className={cn(className, "dark:hidden [[data-color-mode=dark]_&]:hidden")}
+				height={height}
+				src={lightSrc}
+				width={width}
+			/>
+			<Image
+				alt={alt}
+				className={cn(className, "hidden dark:block [[data-color-mode=dark]_&]:block")}
+				height={height}
+				src={darkSrc}
+				width={width}
+			/>
+		</>
+	);
+}
+
+export function AgentTestAutomationDetailView({
+	rule,
+	ruleIndex,
+}: Readonly<{
+	rule: AgentAutomationRule;
+	ruleIndex: number;
+}>): ReactElement {
 	const [testSelection, setTestSelection] = useState<AutomationTestSelection | null>(null);
 	const [pendingSelection, setPendingSelection] = useState<AutomationTestSelection | null>(null);
 	const testResult = useMemo(() => {
@@ -266,15 +587,13 @@ export function AgentTestTriggerView({
 			return null;
 		}
 
-		const ruleIndex = automationRules.findIndex((rule) => rule.id === testSelection.ruleId);
-		if (ruleIndex === -1) {
+		if (rule.id !== testSelection.ruleId) {
 			return null;
 		}
 
-		const rule = automationRules[ruleIndex];
 		const trigger = rule.triggers.find((item) => item.id === testSelection.triggerId);
 		return trigger ? createAutomationTestResult(rule, ruleIndex, trigger) : null;
-	}, [automationRules, testSelection]);
+	}, [rule, ruleIndex, testSelection]);
 
 	useEffect(() => {
 		if (!pendingSelection) {
@@ -292,28 +611,19 @@ export function AgentTestTriggerView({
 	}, [pendingSelection]);
 
 	return (
-		<div className="flex min-h-[220px] items-start justify-center p-6">
+		<div className="flex min-h-0 flex-1 items-start justify-center overflow-y-auto p-6">
 			<div className="grid w-full max-w-[56rem] gap-4">
-				{automationRules.length > 0 ? (
-					automationRules.map((rule, ruleIndex) => (
-						<AutomationTestCard
-							key={rule.id}
-							onTest={(trigger) => {
-								setTestSelection(null);
-								setPendingSelection({ ruleId: rule.id, triggerId: trigger.id });
-							}}
-							pendingTriggerId={
-								pendingSelection?.ruleId === rule.id ? pendingSelection.triggerId : null
-							}
-							rule={rule}
-							ruleIndex={ruleIndex}
-						/>
-					))
-				) : (
-					<div className="rounded-xl border border-dashed border-border bg-surface p-6 text-center text-sm text-text-subtle">
-						No automations configured.
-					</div>
-				)}
+				<AutomationTestCard
+					onTest={(trigger) => {
+						setTestSelection(null);
+						setPendingSelection({ ruleId: rule.id, triggerId: trigger.id });
+					}}
+					pendingTriggerId={
+						pendingSelection?.ruleId === rule.id ? pendingSelection.triggerId : null
+					}
+					rule={rule}
+					ruleIndex={ruleIndex}
+				/>
 				{testResult ? (
 					<div className="grid gap-3 rounded-xl border border-border bg-surface p-4">
 						<div>
@@ -577,37 +887,10 @@ function getProviderSampleData(trigger: AgentTriggerValue): Record<string, unkno
 	}
 }
 
-export function AgentTestActivityView({
-	result,
-}: Readonly<{
-	result: RovoDataParts["agent-result"];
-}>): ReactElement {
-	const tools = result.tools ?? [];
-
-	return (
-		<div className="flex min-h-[220px] items-center justify-center p-6 text-center">
-			<div className="max-w-[320px] space-y-2">
-				<h3 className="text-sm font-semibold text-text">Activity</h3>
-				<p className="text-sm leading-6 text-text-subtle">
-					{tools.length > 0 ? `Tools: ${tools.join(", ")}` : "No activity yet"}
-				</p>
-			</div>
-		</div>
-	);
-}
-
 function AgentTestChatPanel({
-	result,
 	testAgentProfile,
-	versionOptions,
-	selectedVersionId,
-	onSelectVersion,
 }: Readonly<{
-	result: RovoDataParts["agent-result"];
 	testAgentProfile: RovoAgentProfile;
-	versionOptions: readonly ChatPanelAgentVersionOption[];
-	selectedVersionId: string;
-	onSelectVersion: (versionId: string) => void;
 }>): ReactElement {
 	const { selectedAgentId, selectAgent } = useRovoChat();
 
@@ -626,14 +909,8 @@ function AgentTestChatPanel({
 			composerContainerClassName="px-0"
 			composerReservesContextBarSpace
 			conversationContentClassName="px-0"
-			customAgentTabs={{
-				trigger: <AgentTestTriggerView result={result} />,
-				activity: <AgentTestActivityView result={result} />,
-			}}
-			agentVersionOptions={versionOptions}
-			selectedAgentVersionId={selectedVersionId}
-			onAgentVersionChange={onSelectVersion}
 			showAgentTestControls
+			suppressCustomAgentTabs
 			greeting={{
 				heading: testAgentProfile.name,
 				suggestions: testAgentProfile.starters,
@@ -652,16 +929,34 @@ export function AgentTestPanel({
 }: Readonly<AgentTestPanelProps>): ReactElement {
 	const versionOptions = useMemo(() => getAgentTestVersionOptions(entry), [entry]);
 	const [selectedVersionId, setSelectedVersionId] = useState("latest");
+	const [selectedSurface, setSelectedSurface] = useState<AgentTestSurface>({ kind: "start" });
+	const [resetKey, setResetKey] = useState(0);
 	if (!versionOptions.some((option) => option.id === selectedVersionId)) {
 		setSelectedVersionId("latest");
 	}
 	const selectedOption = versionOptions.find((option) => option.id === selectedVersionId) ?? versionOptions[0];
 	const selectedResult = selectedOption.result;
+	const automationRules = useMemo<readonly AgentAutomationRule[]>(
+		() => selectedResult.automationRules ?? [],
+		[selectedResult.automationRules],
+	);
+	const selectedAutomationIndex = selectedSurface.kind === "automation"
+		? automationRules.findIndex((rule) => rule.id === selectedSurface.ruleId)
+		: -1;
+	const selectedAutomation = selectedAutomationIndex >= 0
+		? automationRules[selectedAutomationIndex]
+		: null;
 	const snapshotKey = `${entry.profile.id}:${selectedOption.id}:${JSON.stringify(selectedResult)}`;
 	const testAgentProfile = useMemo(
 		() => buildAgentTestProfile(entry, selectedResult, selectedOption.label),
 		[entry, selectedOption.label, selectedResult],
 	);
+
+	useEffect(() => {
+		if (selectedSurface.kind === "automation" && !selectedAutomation) {
+			setSelectedSurface({ kind: "start" });
+		}
+	}, [selectedAutomation, selectedSurface]);
 
 	return (
 		<section
@@ -671,19 +966,45 @@ export function AgentTestPanel({
 			// chat tab strip and composer align with the header above.
 			className={cn("h-full min-h-0 px-4", className)}
 		>
-			<RovoChatProvider
-				key={snapshotKey}
-				agentProfiles={[testAgentProfile]}
-				autoSelectAgentId={testAgentProfile.id}
-			>
-				<AgentTestChatPanel
-					result={selectedResult}
-					testAgentProfile={testAgentProfile}
-					versionOptions={versionOptions}
-					selectedVersionId={selectedVersionId}
-					onSelectVersion={setSelectedVersionId}
+			{selectedSurface.kind === "start" ? (
+				<AgentTestStartView
+					automationRules={automationRules}
+					onSelectAutomation={(ruleId) => setSelectedSurface({ kind: "automation", ruleId })}
+					onSelectChat={() => setSelectedSurface({ kind: "chat" })}
 				/>
-			</RovoChatProvider>
+			) : (
+				<div className="flex h-full min-h-0 flex-col bg-surface">
+					<AgentTestSelectedHeader
+						onBack={() => setSelectedSurface({ kind: "start" })}
+						onReset={() => setResetKey((currentKey) => currentKey + 1)}
+						onSelectVersion={setSelectedVersionId}
+						selectedVersionId={selectedVersionId}
+						title={
+							selectedSurface.kind === "chat"
+								? "Chat"
+								: selectedAutomation
+									? getAgentAutomationRuleLabel(selectedAutomation, selectedAutomationIndex)
+									: "Automation"
+						}
+						versionOptions={versionOptions}
+					/>
+					{selectedSurface.kind === "chat" ? (
+						<RovoChatProvider
+							key={`${snapshotKey}:${resetKey}`}
+							agentProfiles={[testAgentProfile]}
+							autoSelectAgentId={testAgentProfile.id}
+						>
+							<AgentTestChatPanel testAgentProfile={testAgentProfile} />
+						</RovoChatProvider>
+					) : selectedAutomation ? (
+						<AgentTestAutomationDetailView
+							key={`${selectedAutomation.id}:${resetKey}`}
+							rule={selectedAutomation}
+							ruleIndex={selectedAutomationIndex}
+						/>
+					) : null}
+				</div>
+			)}
 		</section>
 	);
 }

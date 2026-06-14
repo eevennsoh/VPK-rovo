@@ -25,7 +25,6 @@ import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
-import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import ViewsIcon from "@atlaskit/icon-lab/core/views";
 
@@ -39,6 +38,7 @@ import {
 	getStarterIcon,
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
+import { AgentAutomationFlowCover } from "@/components/blocks/triggers/components/agent-automation-flow-cover";
 import {
 	renderAgentTriggerProviderIcon,
 	renderAgentTriggerProviderTileIcon,
@@ -3130,44 +3130,8 @@ function hasFilledAgentConfig(config: AgentConfigFormValue): boolean {
 
 function AgentProfileCover({ config }: Readonly<{ config: AgentConfigFormValue }>) {
 	const primaryRule = getAgentAutomationRules(config)[0];
-	const triggers = primaryRule?.triggers ?? [];
-	const visibleTriggers = triggers.slice(0, 5);
-	const overflowCount = Math.max(0, triggers.length - visibleTriggers.length);
 
-	return (
-		<div className="flex items-center gap-2" aria-hidden={true}>
-			<div className="flex min-w-0 items-center gap-1">
-				{visibleTriggers.length > 0 ? (
-					visibleTriggers.map((trigger) => (
-						<span key={trigger.id} className="rich-text-command-menu-avatar inline-flex size-8 shrink-0 items-center justify-center">
-							{renderAgentTriggerProviderTileIcon(trigger) ?? <AutomationIcon label="" size="small" />}
-						</span>
-					))
-				) : (
-					<IconTile
-						aria-hidden={true}
-						icon={<AutomationIcon label="" size="small" />}
-						label="Trigger"
-						size="medium"
-						variant="blue"
-					/>
-				)}
-				{overflowCount > 0 ? (
-					<span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-border bg-bg-input px-1.5 text-xs font-medium leading-4 text-text-subtle">
-						+{overflowCount}
-					</span>
-				) : null}
-			</div>
-			<div className="h-px w-6 shrink-0 bg-border" />
-			<IconTile
-				aria-hidden={true}
-				icon={<GenerativeIndicatorIcon label="" size="small" />}
-				label="Agent instructions"
-				size="small"
-				variant="gray"
-			/>
-		</div>
-	);
+	return <AgentAutomationFlowCover triggers={primaryRule?.triggers ?? []} />;
 }
 
 // The Knowledge panel now lives in its own reusable component; agent.tsx
