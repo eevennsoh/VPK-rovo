@@ -3905,8 +3905,6 @@ function AgentInstructionsComposer({
 				suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
 				toolbarBelowSlot={toolbarBelowSlot}
 				value={instructions}
-				dataFlowConfig={config}
-				dataFlowDiagramLabel="Architectural diagram"
 				mentionSources={mentionSources}
 				mentionRemovalRequest={mentionRemovalRequest}
 				onMarkdownChange={onInstructionsChange}
