@@ -204,7 +204,6 @@ export function repairGeneratedAgentCatalog(
 				union.push(name);
 			}
 		}
-
 		// Don't introduce an empty array on a field the result never carried, and
 		// cap to the backend's per-category maximum so the union can't exceed it.
 		if (union.length > 0 || hadField) {
@@ -221,6 +220,7 @@ export function repairGeneratedAgentCatalog(
 		// Resolve the final (post-reconcile) name arrays back to ids and append any
 		// that the prose never mentioned.
 		out.instructions = weaveMissingTokens(markdown, {
+			app: resolveCatalogIds(out.apps ?? [], "app"),
 			tool: resolveCatalogIds(out.tools ?? [], "tool"),
 			skill: resolveCatalogIds(out.skills ?? [], "skill"),
 			knowledge: resolveCatalogIds(out.knowledge ?? [], "knowledge"),
