@@ -19,6 +19,15 @@ function loadRepair() {
 	return modulePromise;
 }
 
+let appsPromise;
+function loadAppNames() {
+	appsPromise ??= loadDirectoryModule(`
+		import { DIRECTORY_APPS } from "@/app/data/directory/apps";
+		export const appNames = DIRECTORY_APPS.map((app) => app.name);
+	`);
+	return appsPromise;
+}
+
 test("resolves ids to display names and repairs near-misses across all four arrays", async () => {
 	const { repairGeneratedAgentCatalog } = await loadRepair();
 
@@ -217,4 +226,22 @@ test("caps the union to the backend per-category maximum", async () => {
 
 	// 14 distinct valid tools → capped at the backend's tools maximum (12).
 	assert.equal(out.tools.length, 12);
+});
+
+test("weaves app chips only for the capped repaired apps, not the pre-cap union", async () => {
+	const { repairGeneratedAgentCatalog } = await loadRepair();
+	const { appNames } = await loadAppNames();
+
+	// Feed more distinct apps than the backend's app cap (24). `out.apps` is
+	// capped, so the body weave must advertise only that capped set — regression
+	// for weaving from the pre-cap explicit union, which emitted a chip per input
+	// app (e.g. 30), advertising apps absent from the repaired config.
+	assert.ok(appNames.length > 24, `need >24 catalog apps, have ${appNames.length}`);
+	const apps = appNames.slice(0, 30);
+
+	const out = repairGeneratedAgentCatalog({ apps, instructions: "Body with no chips." });
+
+	assert.equal(out.apps.length, 24);
+	const appTokenCount = (out.instructions.match(/@\[app:[^\]]+\]/gu) ?? []).length;
+	assert.equal(appTokenCount, out.apps.length);
 });
