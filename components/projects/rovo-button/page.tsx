@@ -89,7 +89,7 @@ export default function RovoButtonProjectPage({
 	embedded = false,
 	embeddedHeight = "viewport",
 }: Readonly<RovoButtonProjectPageProps>) {
-	const { chatSurface } = useRovoChat();
+	const { chatSurface, openChat } = useRovoChat();
 	const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 	const [demoOnboardingStatus, setDemoOnboardingStatus] =
 		useState<FloatingRovoButtonOnboardingStatus>("idle");
@@ -193,14 +193,16 @@ export default function RovoButtonProjectPage({
 				id: "rovo-button-bar-cursor",
 				ariaLabel: "Point and select",
 				icon: <CursorIcon label="" color="currentColor" />,
+				onClick: () => openChat("floating"),
 			},
 			{
 				id: "rovo-button-bar-voice",
 				ariaLabel: "Talk to Rovo",
 				icon: <AudioWaveformIcon label="" color="currentColor" />,
+				onClick: () => openChat("floating"),
 			},
 		],
-	}), []);
+	}), [openChat]);
 
 	return (
 		<AppLayout product="home" embedded={embedded} embeddedHeight={embeddedHeight} hideFloatingRovo>

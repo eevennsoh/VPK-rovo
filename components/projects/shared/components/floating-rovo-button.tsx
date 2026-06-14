@@ -397,9 +397,10 @@ function FloatingRovoButtonPersistentBarRail({
 				<motion.button
 					key={item.id}
 					aria-label={item.ariaLabel}
-					className="relative flex size-9 items-center justify-center rounded-xl text-icon transition-colors duration-normal ease-out hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none active:bg-bg-neutral-subtle-pressed"
+					className="relative flex size-9 items-center justify-center rounded-xl text-icon transition-colors duration-normal ease-out enabled:hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none enabled:active:bg-bg-neutral-subtle-pressed disabled:cursor-default disabled:text-icon-disabled"
 					variants={itemVariants}
 					onClick={item.onClick}
+					disabled={!item.onClick}
 					type="button"
 					style={{ willChange: "transform, opacity" }}
 				>
