@@ -152,23 +152,22 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
 
   badge: {
     description:
-      "A numeric status badge that mirrors the @atlaskit/badge appearance API, with optional icons and built-in numeric capping. Two shadcn-style synonyms are kept for semantic appearances: destructive (ADS 'danger') and info (ADS 'information').",
+      "A numeric status badge that mirrors the full @atlaskit/badge appearance API (12 appearances, new semantic naming), with optional icons and built-in numeric capping. Legacy appearances (default, primary, primaryInverted, important, added, removed) have been removed.",
     adsUrl: "https://atlassian.design/components/badge",
     usage: `import { Badge } from "@/components/ui/badge";
 
 <Badge>8</Badge>
-<Badge variant="info">12</Badge>
+<Badge variant="information">12</Badge>
 <Badge variant="success">+100</Badge>
-<Badge variant="important">150</Badge>
-<Badge variant="destructive">-50</Badge>
-<Badge variant="primary">5</Badge>`,
+<Badge variant="dangerBold">3</Badge>
+<Badge variant="discoveryBold">7</Badge>`,
     props: [
       {
         name: "variant",
-        type: '"default" | "neutral" | "primary" | "primaryInverted" | "inverse" | "important" | "added" | "removed" | "destructive" | "success" | "warning" | "info" | "discovery"',
-        default: '"default"',
+        type: '"neutral" | "danger" | "success" | "warning" | "information" | "discovery" | "inverse" | "informationBold" | "successBold" | "dangerBold" | "warningBold" | "discoveryBold"',
+        default: '"neutral"',
         description:
-          "Visual style variant of the badge, mirroring the ADS Badge appearance API (destructive = ADS 'danger', info = ADS 'information').",
+          "Visual style variant of the badge, mirroring the full ADS Badge appearance API (new semantic naming convention). Bold appearances use opaque bold-tone fills.",
       },
       {
         name: "max",
@@ -184,75 +183,68 @@ export const UI_DETAILS: Record<string, ComponentDetail> = {
       },
     ],
     examples: [
-      // ADS appearances (mirror atlassian.design/components/badge/examples)
-      {
-        title: "Default",
-        description: "ADS 'default' appearance — gray pill for numeric counts.",
-        demoSlug: "badge-demo-default",
-      },
+      // ADS appearances — new semantic naming (mirror atlassian.design/components/badge/examples)
       {
         title: "Neutral",
-        description: "ADS 'neutral' appearance — subtle gray count.",
+        description: "Gray count — the default appearance.",
         demoSlug: "badge-demo-neutral",
       },
       {
-        title: "Primary",
-        description: "ADS 'primary' appearance — brand-bold blue count.",
-        demoSlug: "badge-demo-primary",
-      },
-      {
-        title: "Primary inverted",
-        description:
-          "ADS 'primaryInverted' appearance — white + brand text, for bold/brand backgrounds.",
-        demoSlug: "badge-demo-primary-inverted",
-      },
-      {
-        title: "Inverse",
-        description:
-          "ADS 'inverse' appearance — translucent dark fill + inverse text, for bold/colored surfaces.",
-        demoSlug: "badge-demo-inverse",
-      },
-      {
-        title: "Important",
-        description:
-          "ADS 'important' appearance — bold dark badge for high-urgency counts.",
-        demoSlug: "badge-demo-important",
-      },
-      {
-        title: "Added",
-        description: "ADS 'added' appearance — green count.",
-        demoSlug: "badge-demo-added",
-      },
-      {
-        title: "Removed",
-        description: "ADS 'removed' appearance — red count.",
-        demoSlug: "badge-demo-removed",
-      },
-      // Semantic status appearances (destructive = ADS 'danger', info = ADS 'information')
-      {
-        title: "Destructive",
-        description: "ADS 'danger' appearance — red, subtler palette.",
-        demoSlug: "badge-demo-destructive",
+        title: "Danger",
+        description: "Red count for errors or removals.",
+        demoSlug: "badge-demo-danger",
       },
       {
         title: "Success",
-        description: "ADS 'success' appearance — green, subtler palette.",
+        description: "Green count for positive or added values.",
         demoSlug: "badge-demo-success",
       },
       {
         title: "Warning",
-        description: "ADS 'warning' appearance — yellow.",
+        description: "Yellow count for cautionary values.",
         demoSlug: "badge-demo-warning",
       },
       {
-        title: "Info",
-        description: "ADS 'information' appearance — blue.",
-        demoSlug: "badge-demo-info",
+        title: "Information",
+        description: "Blue count for informational values.",
+        demoSlug: "badge-demo-information",
       },
       {
         title: "Discovery",
-        description: "ADS 'discovery' appearance — purple.",
+        description: "Purple count for discovery or new features.",
         demoSlug: "badge-demo-discovery",
+      },
+      {
+        title: "Inverse",
+        description:
+          "Inverted colors for high contrast against a darker background.",
+        demoSlug: "badge-demo-inverse",
+      },
+      // Bold appearances — opaque bold-tone fills
+      {
+        title: "Information bold",
+        description: "Bold blue fill with inverse text.",
+        demoSlug: "badge-demo-information-bold",
+      },
+      {
+        title: "Success bold",
+        description: "Bold green fill with inverse text.",
+        demoSlug: "badge-demo-success-bold",
+      },
+      {
+        title: "Danger bold",
+        description: "Bold red fill with inverse text.",
+        demoSlug: "badge-demo-danger-bold",
+      },
+      {
+        title: "Warning bold",
+        description: "Bold yellow fill with dark inverse text.",
+        demoSlug: "badge-demo-warning-bold",
+      },
+      {
+        title: "Discovery bold",
+        description: "Bold purple fill with inverse text.",
+        demoSlug: "badge-demo-discovery-bold",
       },
       {
         title: "Max value",

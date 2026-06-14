@@ -434,7 +434,7 @@ function AgentPublishDropdown({
 				<span className="inline-flex items-center gap-2">
 					Publish
 					{hasChanges ? (
-						<Badge variant={open ? "info" : "important"}>{changeSummary.count}</Badge>
+						<Badge variant="inverse">{changeSummary.count}</Badge>
 					) : null}
 				</span>
 			</DropdownMenuTrigger>

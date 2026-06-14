@@ -119,7 +119,7 @@ export interface ChatPanelCustomAgentTabs {
 export interface ChatPanelAgentVersionOption {
 	id: string;
 	label: string;
-	variant?: "default" | "success";
+	variant?: "neutral" | "success";
 	sectionBreakBefore?: boolean;
 	/**
 	 * Marks the currently published / live version. The dropdown renders a
@@ -217,7 +217,7 @@ const AGENT_TEST_COMPOSER_GAP_PX = 12;
 const REGULAR_CHAT_WIDTH_MAX = 900;
 const ARTIFACT_DIALOG_FLOATING_PIN_REASON = "sidebar-chat-artifact-dialog";
 const DEFAULT_AGENT_VERSION_OPTIONS: readonly ChatPanelAgentVersionOption[] = [
-	{ id: "draft", label: "Draft", variant: "default" },
+	{ id: "draft", label: "Draft", variant: "neutral" },
 	{ id: "version-2", label: "V2", variant: "success", sectionBreakBefore: true, isCurrent: true },
 	{ id: "version-1", label: "V1", variant: "success" },
 ];
@@ -1189,7 +1189,7 @@ export default function ChatPanel({
 															}
 															onAgentVersionChange?.(version.id);
 														}}
-														className={cn((version.variant ?? "success") === "default" && "bg-popover sticky top-0 z-10")}
+														className={cn((version.variant ?? "success") === "neutral" && "bg-popover sticky top-0 z-10")}
 														elemAfter={version.id === selectedAgentVersion.id ? <CheckMarkIcon label="Selected" /> : undefined}
 													>
 														<span className="flex min-w-0 items-center gap-2">

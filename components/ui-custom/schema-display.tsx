@@ -268,7 +268,7 @@ export const SchemaDisplayParameter = ({
   <div className={cn("px-4 py-3 pl-10", className)} {...props}>
     <div className="flex items-center gap-2">
       <span className="font-mono text-sm">{name}</span>
-      <Badge className="text-xs" variant="default">
+      <Badge className="text-xs" variant="neutral">
         {type}
       </Badge>
       {location && (
@@ -388,7 +388,7 @@ export const SchemaDisplayProperty = ({
         >
           <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
           <span className="font-mono text-sm">{name}</span>
-          <Badge className="text-xs" variant="default">
+          <Badge className="text-xs" variant="neutral">
             {type}
           </Badge>
           {required && (
@@ -440,7 +440,7 @@ export const SchemaDisplayProperty = ({
         {/* Spacer for alignment */}
         <span className="size-4" />
         <span className="font-mono text-sm">{name}</span>
-        <Badge className="text-xs" variant="default">
+        <Badge className="text-xs" variant="neutral">
           {type}
         </Badge>
         {required && (

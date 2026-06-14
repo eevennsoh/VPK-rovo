@@ -420,8 +420,8 @@ export function MemoriesSurfacePage() {
 				title="Memories"
 				actions={(
 					<div className="flex flex-wrap items-center gap-2">
-						<Badge variant="default">{explorer?.stats.nodeCount ?? 0} visible nodes</Badge>
-						<Badge variant="default">{explorer?.stats.edgeCount ?? 0} visible edges</Badge>
+						<Badge variant="neutral">{explorer?.stats.nodeCount ?? 0} visible nodes</Badge>
+						<Badge variant="neutral">{explorer?.stats.edgeCount ?? 0} visible edges</Badge>
 						<Button
 							variant="outline"
 							onClick={() => void refreshExplorer(filterInput)}
@@ -617,9 +617,9 @@ export function MemoriesSurfacePage() {
 										</CardDescription>
 									</div>
 									<div className="flex flex-wrap gap-2">
-										<Badge variant="default">{explorer?.stats.visibleKindCounts["canonical-memory"] ?? 0} canonical</Badge>
-										<Badge variant="default">{explorer?.stats.visibleKindCounts["raw-proposal"] ?? 0} proposals</Badge>
-										<Badge variant="default">{explorer?.stats.visibleKindCounts["linked-knowledge"] ?? 0} knowledge</Badge>
+										<Badge variant="neutral">{explorer?.stats.visibleKindCounts["canonical-memory"] ?? 0} canonical</Badge>
+										<Badge variant="neutral">{explorer?.stats.visibleKindCounts["raw-proposal"] ?? 0} proposals</Badge>
+										<Badge variant="neutral">{explorer?.stats.visibleKindCounts["linked-knowledge"] ?? 0} knowledge</Badge>
 									</div>
 								</div>
 							</CardHeader>
@@ -679,7 +679,7 @@ export function MemoriesSurfacePage() {
 																<TableCell className="max-w-[220px] whitespace-normal">
 																	<div className="flex flex-wrap gap-1">
 																		{node.tags.slice(0, 4).map((tag) => (
-																			<Badge key={tag} variant="default">{tag}</Badge>
+																			<Badge key={tag} variant="neutral">{tag}</Badge>
 																		))}
 																	</div>
 																</TableCell>
@@ -850,12 +850,12 @@ export function MemoriesSurfacePage() {
 								<div className="space-y-4">
 									<div className="space-y-2">
 										<div className="flex flex-wrap items-center gap-2">
-											<Badge variant="default">{formatScopeLabel(selectedNode.scope)}</Badge>
+											<Badge variant="neutral">{formatScopeLabel(selectedNode.scope)}</Badge>
 											{selectedNode.status ? (
 												<Lozenge variant={formatProposalTone(selectedNode.status)}>{selectedNode.status}</Lozenge>
 											) : null}
 											{selectedNode.target ? (
-												<Badge variant="default">{selectedNode.target}</Badge>
+												<Badge variant="neutral">{selectedNode.target}</Badge>
 											) : null}
 										</div>
 										<div className="text-xl font-semibold">{selectedNode.title}</div>
@@ -965,8 +965,8 @@ export function MemoriesSurfacePage() {
 												<div key={block.id} className="rounded-2xl border border-border bg-background px-3 py-3">
 													<div className="flex items-center justify-between gap-3">
 														<div className="flex gap-2">
-															<Badge variant="default">{block.lineCount} lines</Badge>
-															<Badge variant="default">{block.charCount.toLocaleString()} chars</Badge>
+															<Badge variant="neutral">{block.lineCount} lines</Badge>
+															<Badge variant="neutral">{block.charCount.toLocaleString()} chars</Badge>
 														</div>
 														<Button
 															size="default"

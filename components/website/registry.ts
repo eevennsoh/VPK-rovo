@@ -544,20 +544,6 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
     { ssr: false },
   ),
   // Badge
-  "badge-demo-default": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoDefault,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-important": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoImportant,
-      })),
-    { ssr: false },
-  ),
   "badge-demo-neutral": dynamic(
     () =>
       import("./demos/ui/badge-demo").then((mod) => ({
@@ -565,45 +551,10 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  "badge-demo-primary": dynamic(
+  "badge-demo-danger": dynamic(
     () =>
       import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoPrimary,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-primary-inverted": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoPrimaryInverted,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-inverse": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoInverse,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-added": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoAdded,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-removed": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoRemoved,
-      })),
-    { ssr: false },
-  ),
-  "badge-demo-destructive": dynamic(
-    () =>
-      import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoDestructive,
+        default: mod.BadgeDemoDanger,
       })),
     { ssr: false },
   ),
@@ -621,10 +572,52 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
-  "badge-demo-info": dynamic(
+  "badge-demo-information": dynamic(
     () =>
       import("./demos/ui/badge-demo").then((mod) => ({
-        default: mod.BadgeDemoInfo,
+        default: mod.BadgeDemoInformation,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-inverse": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoInverse,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-information-bold": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoInformationBold,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-success-bold": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoSuccessBold,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-danger-bold": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoDangerBold,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-warning-bold": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoWarningBold,
+      })),
+    { ssr: false },
+  ),
+  "badge-demo-discovery-bold": dynamic(
+    () =>
+      import("./demos/ui/badge-demo").then((mod) => ({
+        default: mod.BadgeDemoDiscoveryBold,
       })),
     { ssr: false },
   ),

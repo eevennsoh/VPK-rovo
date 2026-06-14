@@ -344,16 +344,16 @@ function SmartLinkPriorityIndicator({ priority }: Readonly<{ priority: SmartLink
 }
 
 const lozengeToBadgeVariant: Partial<Record<NonNullable<LozengeProps["variant"]>, BadgeProps["variant"]>> = {
-	neutral: "default",
+	neutral: "neutral",
 	success: "success",
-	danger: "destructive",
+	danger: "danger",
 	warning: "warning",
-	information: "info",
+	information: "information",
 	discovery: "discovery",
 };
 
 function badgeVariantForLozenge(variant: NonNullable<LozengeProps["variant"]>): BadgeProps["variant"] {
-	return lozengeToBadgeVariant[variant] ?? "default";
+	return lozengeToBadgeVariant[variant] ?? "neutral";
 }
 
 function SmartLinkStatusDropdown({
@@ -422,7 +422,7 @@ function MetadataPill({ metadata }: Readonly<{ metadata: SmartLinkMetadata }>) {
 				variant={variant}
 			>
 				{metadata.label ? metadata.label : null}
-				<Badge className="ml-1 min-w-0" variant="default">
+				<Badge className="ml-1 min-w-0" variant="neutral">
 					{metadata.metric}
 				</Badge>
 			</Lozenge>

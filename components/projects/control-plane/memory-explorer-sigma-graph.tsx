@@ -262,8 +262,8 @@ export function MemoryExplorerSigmaGraph({
 				</div>
 
 				<div className="pointer-events-auto flex items-center gap-2 rounded-2xl border border-border bg-background/94 px-3 py-2 shadow-sm backdrop-blur">
-					<Badge variant="default">{explorer?.stats.nodeCount ?? 0} nodes</Badge>
-					<Badge variant="default">{explorer?.stats.edgeCount ?? 0} edges</Badge>
+					<Badge variant="neutral">{explorer?.stats.nodeCount ?? 0} nodes</Badge>
+					<Badge variant="neutral">{explorer?.stats.edgeCount ?? 0} edges</Badge>
 					<Button
 						size="default"
 						variant="outline"

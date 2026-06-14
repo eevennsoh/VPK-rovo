@@ -245,7 +245,7 @@ export function SettingsSurfacePage() {
 			title="Settings"
 			actions={
 				<div className="flex items-center gap-2">
-					<Badge variant="default">
+					<Badge variant="neutral">
 						{wikiStatus?.proposalCounts?.queued ?? 0} queued proposals
 					</Badge>
 					<Button variant="outline" isLoading={isRefreshing} onClick={() => void refreshSurfaceData()}>
@@ -294,7 +294,7 @@ export function SettingsSurfacePage() {
 								<div key={surface} className="space-y-2">
 									<div className="flex items-center justify-between gap-3">
 										<div className="text-sm font-medium capitalize">{surface}</div>
-										<Badge variant="default">{settings.providerRoutes[surface]}</Badge>
+										<Badge variant="neutral">{settings.providerRoutes[surface]}</Badge>
 									</div>
 									<div className="flex flex-wrap gap-2">
 										{PROVIDER_OPTIONS[surface].map((option) => (
@@ -375,7 +375,7 @@ export function SettingsSurfacePage() {
 												<div className="text-sm font-medium">{label}</div>
 												<div className="text-sm text-text-subtle">{description}</div>
 											</div>
-											<Badge variant="default">
+											<Badge variant="neutral">
 												{document?.exists ? "ready" : "missing"}
 											</Badge>
 										</div>
@@ -420,7 +420,7 @@ export function SettingsSurfacePage() {
 								<div className="rounded-xl border border-border bg-surface-raised px-3 py-3">
 									<div className="flex items-center justify-between gap-2">
 										<div className="text-sm font-medium">Canonical pages</div>
-										<Badge variant="default">
+										<Badge variant="neutral">
 											{wikiStatus ? formatCountLabel(wikiStatus.totalCanonicalPages, "page", "pages") : "Loading"}
 										</Badge>
 									</div>
@@ -437,7 +437,7 @@ export function SettingsSurfacePage() {
 								<div className="rounded-xl border border-border bg-surface-raised px-3 py-3">
 									<div className="flex items-center justify-between gap-2">
 										<div className="text-sm font-medium">Raw captures</div>
-										<Badge variant="default">
+										<Badge variant="neutral">
 											{wikiStatus ? formatCountLabel(wikiStatus.totalRawCaptures, "capture", "captures") : "Loading"}
 										</Badge>
 									</div>
@@ -482,7 +482,7 @@ export function SettingsSurfacePage() {
 										Provisioned Hermes jobs that keep canonical wiki memory and compiled context artifacts in sync.
 									</CardDescription>
 								</div>
-								<Badge variant="default">
+								<Badge variant="neutral">
 									{formatCountLabel(wikiJobs.filter(({ job }) => job !== null).length, "job", "jobs")}
 								</Badge>
 							</div>

@@ -220,7 +220,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     header: "Section Type",
     cell: ({ row }) => (
       <div className="w-32">
-        <Badge variant="default" className="px-1.5 text-muted-foreground">
+        <Badge variant="neutral" className="px-1.5 text-muted-foreground">
           {row.original.type}
         </Badge>
       </div>
@@ -231,7 +231,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     header: "Status",
     cell: ({ row }) => (
       <Badge
-        variant="default"
+        variant="neutral"
         className="flex gap-1 px-1.5 text-muted-foreground [&_svg]:size-3"
       >
         {row.original.status === "Done" ? (

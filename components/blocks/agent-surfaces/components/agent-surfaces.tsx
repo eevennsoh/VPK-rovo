@@ -133,10 +133,10 @@ function AgentSurfaceStatusBadge({ status }: Readonly<{ status: AgentSurfaceStat
 	}
 
 	if (status === "managed") {
-		return <Badge variant="info">Managed elsewhere</Badge>;
+		return <Badge variant="information">Managed elsewhere</Badge>;
 	}
 
-	return <Badge variant="default">Available</Badge>;
+	return <Badge variant="neutral">Available</Badge>;
 }
 
 function AgentSurfaceIconFrame({ children }: Readonly<{ children: ReactNode }>) {
@@ -222,7 +222,7 @@ export function AgentSurfaces({ className, ...props }: Readonly<AgentSurfacesPro
 					<h3 id="agent-extended-surfaces-heading" className="text-sm font-semibold text-text">
 						Extended surfaces
 					</h3>
-					<Badge variant="default">4 available</Badge>
+					<Badge variant="neutral">4 available</Badge>
 				</div>
 				<Accordion className="overflow-hidden rounded-lg border border-border bg-surface">
 					{AGENT_EXTENDED_SURFACES.map((surface) => (

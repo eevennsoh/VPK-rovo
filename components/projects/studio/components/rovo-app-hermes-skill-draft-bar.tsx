@@ -81,11 +81,11 @@ export function RovoAppHermesSkillDraftBar({
 						<Lozenge size="compact" variant={getActionVariant(draft.action)}>
 							{draft.action}
 						</Lozenge>
-						<Badge variant="default">
+						<Badge variant="neutral">
 							{draftDetail?.files.length ?? 0} file{draftDetail?.files.length === 1 ? "" : "s"}
 						</Badge>
 						{draft.sourceThreadId ? (
-							<Badge variant="default">{draft.sourceThreadId}</Badge>
+							<Badge variant="neutral">{draft.sourceThreadId}</Badge>
 						) : null}
 					</div>
 

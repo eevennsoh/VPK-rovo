@@ -34,11 +34,11 @@ export function SpinnerDemoInBadges() {
 				<Spinner data-icon="inline-start" />
 				Badge
 			</Badge>
-			<Badge variant="destructive">
+			<Badge variant="danger">
 				<Spinner data-icon="inline-start" />
 				Badge
 			</Badge>
-			<Badge variant="default">
+			<Badge variant="neutral">
 				<Spinner data-icon="inline-start" />
 				Badge
 			</Badge>
