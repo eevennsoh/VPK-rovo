@@ -998,7 +998,7 @@ export function AgentTestPanel({
 						</RovoChatProvider>
 					) : selectedAutomation ? (
 						<AgentTestAutomationDetailView
-							key={`${selectedAutomation.id}:${resetKey}`}
+							key={`${snapshotKey}:${selectedAutomation.id}:${resetKey}`}
 							rule={selectedAutomation}
 							ruleIndex={selectedAutomationIndex}
 						/>

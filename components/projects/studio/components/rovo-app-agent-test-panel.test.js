@@ -98,7 +98,7 @@ test("AgentTestPanel opens selected automation detail before running callbacks",
 	assert.match(AGENT_TEST_PANEL_SOURCE, /onSelectAutomation=\{\(ruleId\) => setSelectedSurface\(\{ kind: "automation", ruleId \}\)\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /key=\{`\$\{snapshotKey\}:\$\{resetKey\}`\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTestAutomationDetailView[\s\S]*rule=\{selectedAutomation\}[\s\S]*ruleIndex=\{selectedAutomationIndex\}/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /key=\{`\$\{selectedAutomation\.id\}:\$\{resetKey\}`\}/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /key=\{`\$\{snapshotKey\}:\$\{selectedAutomation\.id\}:\$\{resetKey\}`\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /export function AgentTestAutomationDetailView\(/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /<AutomationTestCard[\s\S]*setPendingSelection\(\{ ruleId: rule\.id, triggerId: trigger\.id \}\)/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /rule\.triggers\.map\(\(trigger\) => \([\s\S]*<AutomationTestEventRow/u);
