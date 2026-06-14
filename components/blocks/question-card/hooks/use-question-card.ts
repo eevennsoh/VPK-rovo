@@ -227,6 +227,22 @@ export function useQuestionCard({
 		[clearPersistedState, onSubmit],
 	);
 
+	// Submit from the final step. Any question the user never answered — including ones they
+	// only paged past with the chevron/ArrowRight — is explicitly stamped "Skipped" so the
+	// submission never silently omits a question while still preserving every real answer.
+	const submitWithImplicitSkips = useCallback(() => {
+		if (isSubmitting) return;
+
+		const nextAnswers: QuestionCardAnswers = { ...answers };
+		for (const question of questions) {
+			if (!isQuestionAnswered(question, nextAnswers)) {
+				nextAnswers[question.id] = QUESTION_CARD_SKIPPED_VALUE;
+			}
+		}
+		setAnswers(nextAnswers);
+		submitAnswers(nextAnswers);
+	}, [isSubmitting, answers, questions, submitAnswers]);
+
 	const handleDismiss = useCallback(() => {
 		clearPersistedState();
 		onDismiss?.();
@@ -266,9 +282,9 @@ export function useQuestionCard({
 		if (canGoToNextQuestion) {
 			goToNextQuestion(answers);
 		} else {
-			submitAnswers(answers);
+			submitWithImplicitSkips();
 		}
-	}, [isSubmitting, canGoToNextQuestion, goToNextQuestion, answers, submitAnswers]);
+	}, [isSubmitting, canGoToNextQuestion, goToNextQuestion, answers, submitWithImplicitSkips]);
 
 	const handleSelectOption = useCallback(
 		(optionId: string) => {
@@ -559,7 +575,7 @@ export function useQuestionCard({
 		handleAnswerChange,
 		handleCustomInputFocus,
 		handleKeyDown,
-		onSubmit: () => submitAnswers(answers),
+		onSubmit: submitWithImplicitSkips,
 		onDismiss: handleDismiss,
 	};
 }
