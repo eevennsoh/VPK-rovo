@@ -100,7 +100,7 @@ test("AgentTestPanel opens selected automation detail before running callbacks",
 	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTestAutomationDetailView[\s\S]*rule=\{selectedAutomation\}[\s\S]*ruleIndex=\{selectedAutomationIndex\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /key=\{`\$\{snapshotKey\}:\$\{selectedAutomation\.id\}:\$\{resetKey\}`\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /export function AgentTestAutomationDetailView\(/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /<AutomationTestCard[\s\S]*setPendingSelection\(\{ ruleId: rule\.id, triggerId: trigger\.id \}\)/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /<AutomationTestCard[\s\S]*setPendingSelection\(\{ ruleId: effectiveRule\.id, triggerId: trigger\.id \}\)/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /rule\.triggers\.map\(\(trigger\) => \([\s\S]*<AutomationTestEventRow/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /<Button[\s\S]*onClick=\{onTest\}[\s\S]*size="compact"[\s\S]*type="button"[\s\S]*variant="outline"[\s\S]*Test/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /function createAutomationTestResult\([\s\S]*automationName = getAgentAutomationRuleLabel\(rule, ruleIndex\)[\s\S]*automationId: rule\.id[\s\S]*eventTriggerId: trigger\.id[\s\S]*getProviderSampleData\(trigger\)/u);
