@@ -709,8 +709,10 @@ function AppCard({ onSelectTool, tool }: Readonly<AppCardProps>) {
 				/>
 			}
 			knowledgeCount={knowledgeApp?.contents.length}
+			mentionHandle={tool.id}
 			name={tool.name}
 			onSelect={selectTool}
+			promptSuggestion={tool.promptSuggestion}
 			teammateCount={tool.teammateCount}
 			toolCount={tool.toolCount}
 		/>

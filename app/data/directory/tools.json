@@ -35,7 +35,8 @@
 					"description": "View team membership and responsibilities.",
 					"enabled": false
 				}
-			]
+			],
+			"promptSuggestion": "Search across my Jira, Confluence, and goals to show what needs my attention this week."
 		},
 		{
 			"id": "google-drive",
@@ -49,7 +50,8 @@
 			"publisherName": "Google",
 			"teammateCount": 216,
 			"toolCount": 18,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Find the most relevant document for this project and summarize its key points."
 		},
 		{
 			"id": "github-copilot",
@@ -62,7 +64,8 @@
 			"publisherName": "GitHub",
 			"teammateCount": 184,
 			"toolCount": 24,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Pair with me to refactor this function and add the missing unit tests."
 		},
 		{
 			"id": "slack",
@@ -75,7 +78,8 @@
 			"publisherName": "Slack",
 			"teammateCount": 301,
 			"toolCount": 12,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Find the thread where we decided on the launch date and summarize what was agreed."
 		},
 		{
 			"id": "servicenow",
@@ -88,7 +92,8 @@
 			"publisherName": "ServiceNow",
 			"teammateCount": 142,
 			"toolCount": 21,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show me my open incidents and service requests, and flag anything past its SLA."
 		},
 		{
 			"id": "asana",
@@ -101,7 +106,8 @@
 			"publisherName": "Asana",
 			"teammateCount": 126,
 			"toolCount": 15,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show the upcoming milestones across my projects and flag anything at risk of slipping."
 		},
 		{
 			"id": "salesforce",
@@ -114,7 +120,8 @@
 			"publisherName": "Salesforce",
 			"teammateCount": 119,
 			"toolCount": 28,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Summarize my top accounts and highlight the leads with the most recent engagement."
 		},
 		{
 			"id": "miro",
@@ -127,7 +134,8 @@
 			"publisherName": "Miro",
 			"teammateCount": 93,
 			"toolCount": 11,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Turn the notes on our latest workshop board into a list of follow-up tasks."
 		},
 		{
 			"id": "sentry",
@@ -140,7 +148,8 @@
 			"publisherName": "Sentry",
 			"teammateCount": 76,
 			"toolCount": 14,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show the top errors from the last release and explain what's causing the regressions."
 		},
 		{
 			"id": "outlook",
@@ -153,7 +162,8 @@
 			"publisherName": "Microsoft",
 			"teammateCount": 204,
 			"toolCount": 17,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Summarize my unread emails and draft replies to the ones that need a response today."
 		},
 		{
 			"id": "stripe",
@@ -166,7 +176,8 @@
 			"publisherName": "Stripe",
 			"teammateCount": 61,
 			"toolCount": 10,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Review this week's payments and invoices and flag any failed charges or unpaid balances."
 		},
 		{
 			"id": "guard",
@@ -180,7 +191,8 @@
 			"publisherName": "Atlassian",
 			"teammateCount": 88,
 			"toolCount": 19,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Check recent permission and policy changes and flag anything that looks compliance-sensitive."
 		},
 		{
 			"id": "jira",
@@ -211,7 +223,8 @@
 					"description": "List boards and their columns.",
 					"enabled": false
 				}
-			]
+			],
+			"promptSuggestion": "Show my open issues for this sprint and report what's blocking the release."
 		},
 		{
 			"id": "confluence",
@@ -236,7 +249,8 @@
 					"name": "Read comments",
 					"description": "Retrieve inline and page-level comments."
 				}
-			]
+			],
+			"promptSuggestion": "Find the latest decision records for this project and summarize what changed."
 		},
 		{
 			"id": "jira-service-management",
@@ -249,7 +263,8 @@
 			"publisherName": "Atlassian",
 			"teammateCount": 167,
 			"toolCount": 26,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Triage my incoming requests and incidents and tell me which ones to escalate first."
 		},
 		{
 			"id": "jira-product-discovery",
@@ -262,7 +277,8 @@
 			"publisherName": "Atlassian",
 			"teammateCount": 98,
 			"toolCount": 13,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Summarize the top ideas and insights, then suggest how to prioritize them this quarter."
 		},
 		{
 			"id": "trello",
@@ -275,7 +291,8 @@
 			"publisherName": "Atlassian",
 			"teammateCount": 134,
 			"toolCount": 12,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show the cards on my board by list and tell me what's overdue or stuck."
 		},
 		{
 			"id": "bitbucket",
@@ -288,7 +305,8 @@
 			"publisherName": "Atlassian",
 			"teammateCount": 156,
 			"toolCount": 20,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Summarize my open pull requests and pipeline runs, and flag anything failing or blocking."
 		},
 		{
 			"id": "compass",
@@ -301,7 +319,8 @@
 			"publisherName": "Atlassian",
 			"teammateCount": 72,
 			"toolCount": 14,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show my team's components and scorecards, and flag any failing health or ownership gaps."
 		},
 		{
 			"id": "loom",
@@ -314,7 +333,8 @@
 			"publisherName": "Atlassian",
 			"teammateCount": 121,
 			"toolCount": 9,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Find the latest recorded updates for this project and summarize the key takeaways."
 		},
 		{
 			"id": "opsgenie",
@@ -327,7 +347,8 @@
 			"publisherName": "Atlassian",
 			"teammateCount": 84,
 			"toolCount": 16,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show me who's on call right now and summarize the open alerts that haven't been acknowledged yet."
 		},
 		{
 			"id": "statuspage",
@@ -340,7 +361,8 @@
 			"publisherName": "Atlassian",
 			"teammateCount": 47,
 			"toolCount": 8,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Draft a clear customer-facing update for the current incident and show recent uptime for affected components."
 		},
 		{
 			"id": "atlassian-home",
@@ -353,7 +375,8 @@
 			"publisherName": "Atlassian",
 			"teammateCount": 193,
 			"toolCount": 11,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Pull together my assigned work and recent activity, then tell me what needs attention today."
 		},
 		{
 			"id": "focus",
@@ -366,7 +389,8 @@
 			"publisherName": "Atlassian",
 			"teammateCount": 64,
 			"toolCount": 10,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show how my team's projects ladder up to our goals and flag any focus areas that are off track."
 		},
 		{
 			"id": "github",
@@ -379,7 +403,8 @@
 			"publisherName": "GitHub",
 			"teammateCount": 221,
 			"toolCount": 27,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Summarize the open pull requests in my repo and flag anything blocking a release."
 		},
 		{
 			"id": "gitlab",
@@ -392,7 +417,8 @@
 			"publisherName": "GitLab",
 			"teammateCount": 138,
 			"toolCount": 23,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "List my open merge requests and tell me which pipelines are failing right now."
 		},
 		{
 			"id": "azure-devops",
@@ -405,7 +431,8 @@
 			"publisherName": "Microsoft",
 			"teammateCount": 112,
 			"toolCount": 25,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show my active board items and let me know which build pipelines are red across our delivery teams."
 		},
 		{
 			"id": "jenkins",
@@ -418,7 +445,8 @@
 			"publisherName": "Jenkins",
 			"teammateCount": 67,
 			"toolCount": 13,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show the status of my recent build jobs and surface any pipelines that failed overnight."
 		},
 		{
 			"id": "launchdarkly",
@@ -431,7 +459,8 @@
 			"publisherName": "LaunchDarkly",
 			"teammateCount": 54,
 			"toolCount": 12,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "List the feature flags I own and tell me which rollouts are still partially enabled."
 		},
 		{
 			"id": "spinnaker",
@@ -444,7 +473,8 @@
 			"publisherName": "Spinnaker",
 			"teammateCount": 39,
 			"toolCount": 9,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show the status of my active deployment pipelines and flag any releases stuck before production."
 		},
 		{
 			"id": "stack-overflow",
@@ -457,7 +487,8 @@
 			"publisherName": "Stack Overflow",
 			"teammateCount": 96,
 			"toolCount": 7,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Find the internal answer on how we handle auth token refresh and link the source."
 		},
 		{
 			"id": "datadog",
@@ -470,7 +501,8 @@
 			"publisherName": "Datadog",
 			"teammateCount": 103,
 			"toolCount": 18,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Correlate the latency spike on my service with recent traces and logs from the last hour."
 		},
 		{
 			"id": "figma",
@@ -483,7 +515,8 @@
 			"publisherName": "Figma",
 			"teammateCount": 174,
 			"toolCount": 14,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Find the latest designs for this project and list what changed since last week."
 		},
 		{
 			"id": "lucidchart",
@@ -496,7 +529,8 @@
 			"publisherName": "Lucid",
 			"teammateCount": 58,
 			"toolCount": 10,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Turn our latest architecture flowchart into a written summary I can drop into a doc."
 		},
 		{
 			"id": "lucid",
@@ -509,7 +543,8 @@
 			"publisherName": "Lucid",
 			"teammateCount": 45,
 			"toolCount": 9,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Pull the action items off our planning whiteboard and turn them into next steps."
 		},
 		{
 			"id": "mural",
@@ -522,7 +557,8 @@
 			"publisherName": "Mural",
 			"teammateCount": 51,
 			"toolCount": 8,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Summarize our retro board and turn the sticky notes into a list of follow-up actions."
 		},
 		{
 			"id": "zeplin",
@@ -535,7 +571,8 @@
 			"publisherName": "Zeplin",
 			"teammateCount": 33,
 			"toolCount": 7,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Pull the specs and assets for this screen so I can hand them off to engineering."
 		},
 		{
 			"id": "canva",
@@ -548,7 +585,8 @@
 			"publisherName": "Canva",
 			"teammateCount": 88,
 			"toolCount": 11,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Find an on-brand template and draft a social graphic for our upcoming launch."
 		},
 		{
 			"id": "adobe-xd",
@@ -561,7 +599,8 @@
 			"publisherName": "Adobe",
 			"teammateCount": 41,
 			"toolCount": 8,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Surface the latest prototype for this flow and walk me through the interactions."
 		},
 		{
 			"id": "notion",
@@ -574,7 +613,8 @@
 			"publisherName": "Notion",
 			"teammateCount": 162,
 			"toolCount": 15,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Search my workspace for the project spec and summarize the key decisions and open questions."
 		},
 		{
 			"id": "box",
@@ -587,7 +627,8 @@
 			"publisherName": "Box",
 			"teammateCount": 79,
 			"toolCount": 12,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Find the latest version of our contract files and tell me which folder they live in."
 		},
 		{
 			"id": "dropbox",
@@ -600,7 +641,8 @@
 			"publisherName": "Dropbox",
 			"teammateCount": 108,
 			"toolCount": 10,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Locate the shared deck for this project across our team folders and link me to it."
 		},
 		{
 			"id": "airtable",
@@ -613,7 +655,8 @@
 			"publisherName": "Airtable",
 			"teammateCount": 87,
 			"toolCount": 16,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Pull the records from my project base that are still marked in progress and group them by owner."
 		},
 		{
 			"id": "gmail",
@@ -626,7 +669,8 @@
 			"publisherName": "Google",
 			"teammateCount": 198,
 			"toolCount": 14,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Summarize the unread threads in my inbox and draft replies to the ones that need a response."
 		},
 		{
 			"id": "google-calendar",
@@ -639,7 +683,8 @@
 			"publisherName": "Google",
 			"teammateCount": 187,
 			"toolCount": 11,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Check my availability this week and find a 30-minute slot for a meeting with the team."
 		},
 		{
 			"id": "microsoft-onedrive",
@@ -652,7 +697,8 @@
 			"publisherName": "Microsoft",
 			"teammateCount": 145,
 			"toolCount": 12,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Find the most recent budget spreadsheet in my files and share it with my manager."
 		},
 		{
 			"id": "microsoft-sharepoint",
@@ -665,7 +711,8 @@
 			"publisherName": "Microsoft",
 			"teammateCount": 121,
 			"toolCount": 13,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Search our team site for the onboarding documents and list the most recently updated pages."
 		},
 		{
 			"id": "microsoft-teams",
@@ -678,7 +725,8 @@
 			"publisherName": "Microsoft",
 			"teammateCount": 176,
 			"toolCount": 15,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Catch me up on what I missed in my key channels and chats over the last few days."
 		},
 		{
 			"id": "webex",
@@ -691,7 +739,8 @@
 			"publisherName": "Cisco",
 			"teammateCount": 62,
 			"toolCount": 9,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Summarize yesterday's meeting recording and list the action items assigned to me."
 		},
 		{
 			"id": "zoom",
@@ -704,7 +753,8 @@
 			"publisherName": "Zoom",
 			"teammateCount": 158,
 			"toolCount": 11,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Give me a recap of my last meeting from the transcript and outline the follow-ups."
 		},
 		{
 			"id": "hubspot",
@@ -717,7 +767,8 @@
 			"publisherName": "HubSpot",
 			"teammateCount": 114,
 			"toolCount": 22,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show me my open deals closing this month and flag any contacts I haven't engaged recently."
 		},
 		{
 			"id": "pipedrive",
@@ -730,7 +781,8 @@
 			"publisherName": "Pipedrive",
 			"teammateCount": 49,
 			"toolCount": 12,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Review my sales pipeline and tell me which deals are stalling and need a follow-up activity."
 		},
 		{
 			"id": "outreach",
@@ -743,7 +795,8 @@
 			"publisherName": "Outreach",
 			"teammateCount": 43,
 			"toolCount": 13,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "List my active sequences and show which prospects are due for outreach today."
 		},
 		{
 			"id": "workday",
@@ -756,7 +809,8 @@
 			"publisherName": "Workday",
 			"teammateCount": 132,
 			"toolCount": 19,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Tell me how much time off I have left and who reports into my manager's org."
 		},
 		{
 			"id": "powerbi",
@@ -769,7 +823,8 @@
 			"publisherName": "Microsoft",
 			"teammateCount": 97,
 			"toolCount": 16,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Surface the key metrics from my sales dashboard and explain what changed this month."
 		},
 		{
 			"id": "amplitude",
@@ -782,7 +837,8 @@
 			"publisherName": "Amplitude",
 			"teammateCount": 68,
 			"toolCount": 14,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show me the signup funnel for last month and tell me where users are dropping off."
 		},
 		{
 			"id": "tableau",
@@ -795,7 +851,8 @@
 			"publisherName": "Salesforce",
 			"teammateCount": 91,
 			"toolCount": 15,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Pull the latest revenue dashboard and summarize the biggest trends since last quarter."
 		},
 		{
 			"id": "databricks",
@@ -808,7 +865,8 @@
 			"publisherName": "Databricks",
 			"teammateCount": 74,
 			"toolCount": 17,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Query our sales table for last quarter's totals and break them down by region."
 		},
 		{
 			"id": "coupa",
@@ -821,7 +879,8 @@
 			"publisherName": "Coupa",
 			"teammateCount": 38,
 			"toolCount": 11,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show me my pending purchase requests and flag any invoices awaiting my approval."
 		},
 		{
 			"id": "clickup",
@@ -834,7 +893,8 @@
 			"publisherName": "ClickUp",
 			"teammateCount": 83,
 			"toolCount": 18,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "List my tasks due this week across all spaces and tell me which ones are at risk."
 		},
 		{
 			"id": "monday",
@@ -847,7 +907,8 @@
 			"publisherName": "monday.com",
 			"teammateCount": 95,
 			"toolCount": 16,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show me my boards and flag any tasks that are overdue or stuck this week."
 		},
 		{
 			"id": "smartsheet",
@@ -860,7 +921,8 @@
 			"publisherName": "Smartsheet",
 			"teammateCount": 57,
 			"toolCount": 13,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Roll up the status of my active program sheets and highlight what's slipping."
 		},
 		{
 			"id": "aha",
@@ -873,7 +935,8 @@
 			"publisherName": "Aha!",
 			"teammateCount": 44,
 			"toolCount": 12,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Summarize my product roadmap and list which features are planned for next release."
 		},
 		{
 			"id": "todoist",
@@ -886,7 +949,8 @@
 			"publisherName": "Doist",
 			"teammateCount": 71,
 			"toolCount": 8,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "List my tasks due today and help me prioritize what to tackle first."
 		},
 		{
 			"id": "docusign",
@@ -899,7 +963,8 @@
 			"publisherName": "DocuSign",
 			"teammateCount": 86,
 			"toolCount": 10,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show me agreements still awaiting signature and who I'm waiting on."
 		},
 		{
 			"id": "adobe-sign",
@@ -912,7 +977,8 @@
 			"publisherName": "Adobe",
 			"teammateCount": 52,
 			"toolCount": 9,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "List my pending signature requests and flag any that are overdue."
 		},
 		{
 			"id": "zendesk",
@@ -925,7 +991,8 @@
 			"publisherName": "Zendesk",
 			"teammateCount": 117,
 			"toolCount": 20,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Summarize my open support tickets and surface any trending customer issues."
 		},
 		{
 			"id": "freshservice",
@@ -938,7 +1005,8 @@
 			"publisherName": "Freshworks",
 			"teammateCount": 63,
 			"toolCount": 17,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show me my open IT tickets and flag any service requests that are overdue."
 		},
 		{
 			"id": "pagerduty",
@@ -951,7 +1019,8 @@
 			"publisherName": "PagerDuty",
 			"teammateCount": 79,
 			"toolCount": 15,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show me who's on call now and summarize any active incidents I should know about."
 		},
 		{
 			"id": "dovetail",
@@ -964,7 +1033,8 @@
 			"publisherName": "Dovetail",
 			"teammateCount": 41,
 			"toolCount": 10,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Surface the top themes from recent customer research and what they mean for us."
 		},
 		{
 			"id": "egnyte",
@@ -977,7 +1047,8 @@
 			"publisherName": "Egnyte",
 			"teammateCount": 35,
 			"toolCount": 11,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Find the latest files for this project and flag anything shared too broadly."
 		},
 		{
 			"id": "simpplr",
@@ -990,7 +1061,8 @@
 			"publisherName": "Simpplr",
 			"teammateCount": 46,
 			"toolCount": 8,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Catch me up on the latest company news and announcements I may have missed."
 		},
 		{
 			"id": "ziprecruiter",
@@ -1003,7 +1075,8 @@
 			"publisherName": "ZipRecruiter",
 			"teammateCount": 29,
 			"toolCount": 9,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show me new candidates in my hiring pipeline and where each one stands."
 		},
 		{
 			"id": "brightspot",
@@ -1016,7 +1089,8 @@
 			"publisherName": "Brightspot",
 			"teammateCount": 31,
 			"toolCount": 10,
-			"verified": true
+			"verified": true,
+			"promptSuggestion": "Show me content scheduled to publish this week and flag anything still in draft."
 		}
 	],
 	"sessionTools": [
@@ -1031,7 +1105,8 @@
 			"publisherName": "People Operations",
 			"teammateCount": 48,
 			"toolCount": 8,
-			"verified": false
+			"verified": false,
+			"promptSuggestion": "Build a quick pulse survey for my team and summarize where engagement stands."
 		},
 		{
 			"id": "workflow-synthesizer",
@@ -1044,7 +1119,8 @@
 			"publisherName": "Revenue Operations",
 			"teammateCount": 36,
 			"toolCount": 6,
-			"verified": false
+			"verified": false,
+			"promptSuggestion": "Turn these recurring requests into a clear, repeatable operating workflow."
 		},
 		{
 			"id": "incident-retro-builder",
@@ -1057,7 +1133,8 @@
 			"publisherName": "Platform Reliability",
 			"teammateCount": 27,
 			"toolCount": 7,
-			"verified": false
+			"verified": false,
+			"promptSuggestion": "Draft a timeline and retrospective for last night's incident from the signals."
 		},
 		{
 			"id": "release-notes-composer",
@@ -1070,7 +1147,8 @@
 			"publisherName": "Developer Experience",
 			"teammateCount": 22,
 			"toolCount": 5,
-			"verified": false
+			"verified": false,
+			"promptSuggestion": "Compile the merged work from this release into customer-ready release notes."
 		},
 		{
 			"id": "deal-desk-assistant",
@@ -1083,7 +1161,8 @@
 			"publisherName": "Revenue Operations",
 			"teammateCount": 19,
 			"toolCount": 6,
-			"verified": false
+			"verified": false,
+			"promptSuggestion": "Review this quote and flag any approvals or contract terms that need attention."
 		},
 		{
 			"id": "onboarding-buddy",
@@ -1096,7 +1175,8 @@
 			"publisherName": "People Operations",
 			"teammateCount": 33,
 			"toolCount": 7,
-			"verified": false
+			"verified": false,
+			"promptSuggestion": "Walk me through my first-week setup, policies, and tasks as a new hire."
 		}
 	]
 }

@@ -28,6 +28,8 @@ export interface EntityCardAppProps {
 	active?: boolean;
 	action?: ReactNode;
 	onMoreActions?: () => void;
+	promptSuggestion?: string;
+	mentionHandle?: string;
 	className?: string;
 }
 
@@ -41,60 +43,99 @@ export function EntityCardApp({
 	active = false,
 	action,
 	onMoreActions,
+	promptSuggestion,
+	mentionHandle,
 	className,
 }: Readonly<EntityCardAppProps>) {
 	const showTools = typeof toolCount === "number";
 	const showKnowledge = typeof knowledgeCount === "number";
 	const showTeammates = typeof teammateCount === "number";
 
+	const descriptionContent = (
+		<EntityCardDescription>
+			{description ?? `Learn how ${name} can help your team work faster.`}
+		</EntityCardDescription>
+	);
+
+	const footerContent = showTools || showKnowledge || showTeammates ? (
+		<EntityCardFooter>
+			{showTools ? (
+				<EntityCardStat
+					icon={<WrenchIcon label="" size="small" spacing="none" color="currentColor" />}
+				>
+					{toolCount} tools
+				</EntityCardStat>
+			) : null}
+			{showKnowledge ? (
+				<EntityCardStat
+					icon={<BookWithBookmarkIcon label="" size="small" spacing="none" color="currentColor" />}
+				>
+					{knowledgeCount} knowledge
+				</EntityCardStat>
+			) : null}
+			{showTeammates ? (
+				<EntityCardStat
+					icon={<PeopleGroupIcon label="" size="small" spacing="none" color="currentColor" />}
+				>
+					{teammateCount} teammates
+				</EntityCardStat>
+			) : null}
+		</EntityCardFooter>
+	) : null;
+
+	const header = (
+		<EntityCardHeader
+			action={
+				action ?? (onMoreActions ? (
+					<EntityCardMoreButton active={active} label={`More actions for ${name}`} onClick={onMoreActions} />
+				) : null)
+			}
+			reserveByline
+			leading={
+				<Tile isInset={false} label={name} size="medium" variant="transparent">
+					{appLogo}
+				</Tile>
+			}
+			title={name}
+		/>
+	);
+
+	if (promptSuggestion) {
+		return (
+			<div data-slot="entity-card-app" className={cn("contents", className)}>
+				<div className="flex flex-col gap-2">
+					{header}
+
+					{/* Hover swap: the resting description + stats and the onboarding prompt
+					    share one grid cell so the card height never shifts, and cross-fade
+					    on card hover/focus-within (the `group/card` context lives on the shell). */}
+					<div className="grid">
+						<div className="flex flex-col gap-2 [grid-area:1/1] transition-opacity duration-fast ease-out group-hover/card:opacity-0 group-focus-within/card:opacity-0">
+							{descriptionContent}
+							{footerContent}
+						</div>
+
+						<div className="flex flex-col gap-2 opacity-0 [grid-area:1/1] transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100">
+							<p className="line-clamp-2 text-sm italic leading-5 text-text-subtle">
+								{`“${promptSuggestion}”`}
+							</p>
+							<p className="text-xs leading-4 text-text-subtlest">@ {mentionHandle}</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div data-slot="entity-card-app" className={cn("contents", className)}>
 			<div className="flex flex-col gap-2">
-				<EntityCardHeader
-					action={
-						action ?? (onMoreActions ? (
-							<EntityCardMoreButton active={active} label={`More actions for ${name}`} onClick={onMoreActions} />
-						) : null)
-					}
-					reserveByline
-					leading={
-						<Tile isInset={false} label={name} size="medium" variant="transparent">
-							{appLogo}
-						</Tile>
-					}
-					title={name}
-				/>
+				{header}
 
-				<EntityCardDescription>
-					{description ?? `Learn how ${name} can help your team work faster.`}
-				</EntityCardDescription>
+				{descriptionContent}
 			</div>
 
-			{showTools || showKnowledge || showTeammates ? (
-				<EntityCardFooter>
-					{showTools ? (
-						<EntityCardStat
-							icon={<WrenchIcon label="" size="small" spacing="none" color="currentColor" />}
-						>
-							{toolCount} tools
-						</EntityCardStat>
-					) : null}
-					{showKnowledge ? (
-						<EntityCardStat
-							icon={<BookWithBookmarkIcon label="" size="small" spacing="none" color="currentColor" />}
-						>
-							{knowledgeCount} knowledge
-						</EntityCardStat>
-					) : null}
-					{showTeammates ? (
-						<EntityCardStat
-							icon={<PeopleGroupIcon label="" size="small" spacing="none" color="currentColor" />}
-						>
-							{teammateCount} teammates
-						</EntityCardStat>
-					) : null}
-				</EntityCardFooter>
-			) : null}
+			{footerContent}
 		</div>
 	);
 }

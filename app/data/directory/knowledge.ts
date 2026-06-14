@@ -32,6 +32,8 @@ export interface KnowledgeDirectoryApp {
 	starCount: number;
 	teammateCount: number;
 	verified: boolean;
+	/** Short example prompt revealed on the app card's hover state to help users get started. */
+	promptSuggestion?: string;
 	contents: readonly KnowledgeDirectoryContent[];
 }
 

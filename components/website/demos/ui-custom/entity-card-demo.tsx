@@ -138,18 +138,22 @@ export function EntityCardDemoApps() {
 				appLogo={<ConfluenceLogo size="medium" />}
 				description="Create, search, and update pages across your Confluence sites."
 				knowledgeCount={4}
+				mentionHandle="confluence"
 				name="Confluence"
 				onMoreActions={() => {}}
 				onSelect={() => {}}
+				promptSuggestion="Find the latest release notes and summarize what changed this sprint."
 				teammateCount={258}
 				toolCount={36}
 			/>
 			<EntityCardAppCard
 				appLogo={<Image alt="" aria-hidden height={32} src="/3p/slack/32.svg" width={32} />}
 				description="Send messages and search conversations from your workspace."
+				mentionHandle="slack"
 				name="Slack"
 				onMoreActions={() => {}}
 				onSelect={() => {}}
+				promptSuggestion="Summarize the unread threads in my team channel from today."
 				teammateCount={540}
 				toolCount={12}
 			/>
