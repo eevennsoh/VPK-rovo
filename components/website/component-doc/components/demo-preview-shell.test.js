@@ -26,7 +26,7 @@ async function loadDemoPreviewShellHarness() {
 					});
 
 					return {
-						surface: token("elevation.surface"),
+						surface: token("elevation.surface", "#FFFFFF"),
 						defaultStyle: defaultShell.props.style,
 						fullPageStyle: fullPageShell.props.style,
 						fullWidthPadding: fullWidthShell.props.children.props.style.padding,
@@ -54,6 +54,16 @@ test("DemoPreviewShell keeps a raised surface background in embedded and full-pa
 
 	assert.equal(defaultStyle.backgroundColor, surface);
 	assert.equal(fullPageStyle.backgroundColor, surface);
+});
+
+test("DemoPreviewShell uses a fallback-backed 1px border for preview outlines", async () => {
+	const harness = await loadDemoPreviewShellHarness();
+	const { defaultStyle, fullPageStyle } = harness.getShellStyles();
+
+	assert.match(defaultStyle.border, /var\(--ds-border, rgba\(9, 30, 66, 0\.14\)\)/u);
+	assert.equal(defaultStyle.boxShadow, undefined);
+	assert.equal(fullPageStyle.border, defaultStyle.border);
+	assert.equal(fullPageStyle.boxShadow, undefined);
 });
 
 test("DemoPreviewShell lets full-width demos fill the embedded preview surface", async () => {

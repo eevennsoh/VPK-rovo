@@ -7,6 +7,14 @@ const DEMO_SHELL_MIN_HEIGHT_PX = 400;
 const DEMO_SHELL_PADDING_PX = 24;
 const DEMO_CONTENT_MIN_HEIGHT_PX = DEMO_SHELL_MIN_HEIGHT_PX - DEMO_SHELL_PADDING_PX * 2;
 const FULL_PAGE_HEIGHT_PX = 1000;
+const DEMO_SHELL_BORDER_COLOR = token("color.border", "rgba(9, 30, 66, 0.14)");
+const DEMO_SHELL_BORDER_RADIUS = token("radius.large", "8px");
+const DEMO_SHELL_SURFACE_COLOR = token("elevation.surface", "#FFFFFF");
+const DEMO_SHELL_FRAME_STYLE = {
+	border: `1px solid ${DEMO_SHELL_BORDER_COLOR}`,
+	borderRadius: DEMO_SHELL_BORDER_RADIUS,
+	backgroundColor: DEMO_SHELL_SURFACE_COLOR,
+};
 interface DemoPreviewShellProps {
 	children: ReactNode;
 	contentWidth?: DemoContentWidth;
@@ -30,10 +38,8 @@ export function DemoPreviewShell({ children, contentWidth = "fit", fullPage, fit
 					"[&_[data-slot=sidebar-inset]]:!min-h-0 [&_[data-slot=sidebar-inset]]:!h-full",
 				)}
 				style={{
+					...DEMO_SHELL_FRAME_STYLE,
 					...(!fitContent && { height: FULL_PAGE_HEIGHT_PX }),
-					border: `1px solid ${token("color.border")}`,
-					borderRadius: token("radius.large"),
-					backgroundColor: token("elevation.surface"),
 					transform: "translateZ(0)",
 				}}
 			>
@@ -45,12 +51,10 @@ export function DemoPreviewShell({ children, contentWidth = "fit", fullPage, fit
 	return (
 		<div
 			style={{
+				...DEMO_SHELL_FRAME_STYLE,
 				position: "relative",
 				width: "100%",
 				maxWidth: "100%",
-				border: `1px solid ${token("color.border")}`,
-				borderRadius: token("radius.large"),
-				backgroundColor: token("elevation.surface"),
 				overflow: "auto",
 			}}
 		>

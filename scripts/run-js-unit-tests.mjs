@@ -22,6 +22,9 @@ const INCLUDED_TEST_PREFIXES = [
 const INCLUDED_TEST_FILES = new Set([
 	"components/projects/studio/lib/studio-agent-creation-context.test.js",
 	"components/projects/sidebar-chat/lib/agent-activity-timeline.test.js",
+	// Shared docs preview shell frame and sizing behavior.
+	// Components are not included wholesale, so keep this focused coverage gated.
+	"components/website/component-doc/components/demo-preview-shell.test.js",
 	// Canonical logo usage metadata (1P/2P/3P border treatment) — guards the
 	// on-disk 16-borderless.svg <-> logo-usage.json sync. Lives under components/
 	// (which is not CI-gated wholesale) so it is included explicitly.
