@@ -3205,6 +3205,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		dictationBaselineRef.current = null;
 		dictationCommittedTextRef.current = null;
 		isDictationActiveRef.current = false;
+		manualVoiceStopRef.current = true;
 		setIsDictationActive(false);
 		setDictationTranscriptPreview(null);
 		setPrefillText(null);
