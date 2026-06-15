@@ -293,7 +293,10 @@ test("Studio composer clears shell-owned prefill sources only after submit succe
 
 test("Studio composer wires dictation separately from realtime live voice", () => {
 	assert.doesNotMatch(SHELL_SOURCE, /useLiveVoice/u);
-	assert.match(SHELL_SOURCE, /appendDictationTranscript\(composerTextRef\.current, transcript\)/u);
+	assert.match(SHELL_SOURCE, /const dictationCommittedTextRef = useRef<string \| null>\(null\);/u);
+	assert.match(SHELL_SOURCE, /appendDictationTranscript\(dictationCommittedTextRef\.current \?\? dictationBaselineRef\.current \?\? "", text\)/u);
+	assert.match(SHELL_SOURCE, /appendDictationTranscript\(dictationCommittedTextRef\.current \?\? dictationBaselineRef\.current \?\? "", transcript\)/u);
+	assert.match(SHELL_SOURCE, /dictationCommittedTextRef\.current = nextText;/u);
 	assert.match(SHELL_SOURCE, /setVoiceTranscript\(nextText\)/u);
 	assert.doesNotMatch(SHELL_SOURCE, /setVoiceTranscript\(text\)/u);
 	assert.doesNotMatch(SHELL_SOURCE, /setVoiceTranscript\(transcript\)/u);
@@ -303,8 +306,9 @@ test("Studio composer wires dictation separately from realtime live voice", () =
 	assert.match(SHELL_SOURCE, /dictationState=\{dictationState\}/u);
 	assert.match(SHELL_SOURCE, /dictationTranscriptPreview=\{dictationTranscriptPreview\}/u);
 	assert.match(SHELL_SOURCE, /onStartDictation=\{handleStartDictation\}/u);
-	assert.match(SHELL_SOURCE, /onCancelDictation=\{handleCancelDictation\}/u);
-	assert.match(SHELL_SOURCE, /onAcceptDictation=\{handleAcceptDictation\}/u);
+	assert.match(SHELL_SOURCE, /onStopDictation=\{handleStopDictation\}/u);
+	assert.match(SHELL_SOURCE, /const handleStopDictation = useCallback/u);
+	assert.match(SHELL_SOURCE, /const handleStopDictation = useCallback\(\(\) => \{[\s\S]*manualVoiceStopRef\.current = true;/u);
 	assert.match(SHELL_SOURCE, /onTextChange=\{handleComposerTextChange\}/u);
 	assert.match(SHELL_SOURCE, /if \(isDictationActiveRef\.current\) \{[\s\S]*return;[\s\S]*\}[\s\S]*const c = chatRef\.current/u);
 	assert.match(SHELL_SOURCE, /realtime\.connect\(\{ transcriptionOnly: true \}\);/u);

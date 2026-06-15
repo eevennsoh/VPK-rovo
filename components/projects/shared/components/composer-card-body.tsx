@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/compone
 import { cn } from "@/lib/utils";
 import AddIcon from "@atlaskit/icon/core/add";
 import CursorIcon from "@atlaskit/icon-lab/core/cursor";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { RovoAppComposerAddMenu } from "@/components/projects/shared/components/rovo-app-composer-add-menu";
 import { PendingAttachments } from "@/components/projects/shared/components/pending-attachments";
 import { RovoComposerSendControls } from "@/components/projects/shared/components/rovo-composer-send-controls";
@@ -53,15 +53,15 @@ export function ComposerCardBody({
 	dictationState,
 	dictationTranscriptPreview,
 	experimentalDarkCta,
+	focusRequestKey,
 	galleryExpanded,
 	isPlanMode,
 	micStream,
-	onAcceptDictation,
-	onCancelDictation,
 	onDirectoryAutocompleteChange,
 	onDirectoryAutocompleteControllerChange,
 	onPromptSubmit,
 	onStartDictation,
+	onStopDictation,
 	onStop,
 	onTogglePlanMode,
 	onToggleClicky,
@@ -96,6 +96,16 @@ export function ComposerCardBody({
 	});
 
 	usePrefillEffect(prefillText, prefillRequestKey);
+
+	useEffect(() => {
+		if (typeof focusRequestKey !== "number" || focusRequestKey <= 0) {
+			return;
+		}
+
+		requestAnimationFrame(() => {
+			textareaRef.current?.focus();
+		});
+	}, [focusRequestKey, textareaRef]);
 
 	const handleReasoningChange = useCallback((reasoning: string) => {
 		setSelectedReasoning(reasoning);
@@ -215,13 +225,12 @@ export function ComposerCardBody({
 						experimentalDarkCta={experimentalDarkCta}
 						isComposerBusy={isComposerBusy}
 						micStream={micStream}
-						onAcceptDictation={onAcceptDictation}
-						onCancelDictation={onCancelDictation}
 						onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
 						onOpenChange={handleAutoMenuOpenChange}
 						onReasoningChange={handleReasoningChange}
 						onStop={onStop}
 						onStartDictation={onStartDictation}
+						onStopDictation={onStopDictation}
 						onToggleRealtimeVoice={onToggleRealtimeVoice}
 						open={isAutoMenuOpen}
 						realtimeVoiceActive={realtimeVoiceActive}

@@ -113,16 +113,18 @@ test("shared composer auto reasoning button opens a sources-free customize popov
 	assert.match(source, /aria-label="Start dictation"/u);
 	assert.match(source, /aria-label="Start live voice"/u);
 	assert.match(source, /aria-label="Stop live voice"/u);
-	assert.match(source, /aria-label="Cancel dictation"/u);
-	assert.match(source, /aria-label="Accept dictation"/u);
+	assert.match(source, /aria-label="Stop dictation"/u);
+	assert.doesNotMatch(source, /aria-label="Accept dictation"/u);
 	assert.match(source, /aria-label="Submit"/u);
 });
 
-test("shared composer keeps dictation accept disabled while final audio is processing", () => {
+test("shared composer uses one stop control for active dictation", () => {
 	const source = readProjectFile("components/projects/shared/components/rovo-composer-send-controls.tsx");
 
-	assert.match(source, /if \(isDictationProcessing\) \{\s*return;\s*\}/u);
-	assert.match(source, /aria-label="Accept dictation"[\s\S]*disabled=\{isDictationProcessing\}/u);
+	assert.match(source, /const handleStopDictation = useCallback/u);
+	assert.match(source, /aria-label="Stop dictation"[\s\S]*onClick=\{handleStopDictation\}/u);
+	assert.doesNotMatch(source, /CheckMarkIcon/u);
+	assert.doesNotMatch(source, /onAcceptDictation/u);
 });
 
 test("shared composer waveform uses live stream while listening and processing animation otherwise", () => {
@@ -215,8 +217,7 @@ test("sidebar chat and Rovo app composers use the shared Auto plus CTA controls"
 		assert.match(source, /dictationState=\{dictationState\}/u);
 		assert.match(source, /dictationTranscriptPreview=\{dictationTranscriptPreview\}/u);
 		assert.match(source, /onStartDictation=\{onStartDictation\}/u);
-		assert.match(source, /onCancelDictation=\{onCancelDictation\}/u);
-		assert.match(source, /onAcceptDictation=\{onAcceptDictation\}/u);
+		assert.match(source, /onStopDictation=\{onStopDictation\}/u);
 		assert.match(source, /onToggleRealtimeVoice=\{onToggleRealtimeVoice\}/u);
 		assert.match(source, /experimentalDarkCta=\{experimentalDarkCta\}/u);
 		assert.doesNotMatch(source, /<PromptInputSendControls/u);
@@ -229,13 +230,15 @@ test("sidebar chat and Rovo app composers use the shared Auto plus CTA controls"
 
 	assert.match(sidebarPanel, /useRealtimeVoice/u);
 	assert.doesNotMatch(sidebarPanel, /useLiveVoice/u);
-	assert.match(sidebarPanel, /appendDictationTranscript\(promptRef\.current, transcriptText\)/u);
+	assert.match(sidebarPanel, /const dictationCommittedTextRef = useRef<string \| null>\(null\);/u);
+	assert.match(sidebarPanel, /appendDictationTranscript\(dictationCommittedTextRef\.current \?\? dictationBaselineRef\.current \?\? "", transcriptText\)/u);
+	assert.match(sidebarPanel, /dictationCommittedTextRef\.current = nextText;/u);
 	assert.doesNotMatch(sidebarPanel, /setPrompt\(transcriptText\)/u);
 	assert.doesNotMatch(sidebarPanel, /transcriptToPreserve/u);
 	assert.match(sidebarPanel, /realtime\.connect\(\{ transcriptionOnly: true \}\);/u);
 	assert.match(sidebarPanel, /experimentalDarkCta/u);
 	assert.match(rovoShell, /experimentalDarkCta/u);
-	assert.match(rovoShell, /appendDictationTranscript\(composerTextRef\.current, transcript\)/u);
+	assert.match(rovoShell, /appendDictationTranscript\(dictationCommittedTextRef\.current \?\? dictationBaselineRef\.current \?\? "", transcript\)/u);
 	assert.doesNotMatch(rovoShell, /setVoiceTranscript\(text\)/u);
 	assert.doesNotMatch(rovoShell, /setVoiceTranscript\(transcript\)/u);
 	assert.doesNotMatch(rovoShell, /transcriptToPreserve/u);

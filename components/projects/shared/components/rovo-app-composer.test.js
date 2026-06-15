@@ -230,8 +230,7 @@ test("RovoAppComposer threads dictation controls and text snapshots through both
 	assert.match(COMPOSER_SOURCE, /dictationTranscriptPreview\?: string \| null;/u);
 	assert.match(COMPOSER_SOURCE, /realtimeVoiceState\?: "idle" \| "connecting" \| "listening" \| "speaking";/u);
 	assert.match(COMPOSER_SOURCE, /onStartDictation\?: \(\) => void;/u);
-	assert.match(COMPOSER_SOURCE, /onCancelDictation\?: \(\) => void;/u);
-	assert.match(COMPOSER_SOURCE, /onAcceptDictation\?: \(\) => void;/u);
+	assert.match(COMPOSER_SOURCE, /onStopDictation\?: \(\) => void;/u);
 	assert.match(COMPOSER_SOURCE, /onTextChange\?: \(value: string\) => void;/u);
 	assert.match(COMPOSER_SOURCE, /onTextChange\?\.\(controller\.textInput\.value\);/u);
 	for (const source of [CARD_BODY_SOURCE, FLOATING_BODY_SOURCE]) {
@@ -239,7 +238,6 @@ test("RovoAppComposer threads dictation controls and text snapshots through both
 		assert.match(source, /dictationTranscriptPreview/u);
 		assert.match(source, /realtimeVoiceState/u);
 		assert.match(source, /onStartDictation/u);
-		assert.match(source, /onCancelDictation/u);
-		assert.match(source, /onAcceptDictation/u);
+		assert.match(source, /onStopDictation/u);
 	}
 });

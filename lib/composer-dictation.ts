@@ -14,10 +14,6 @@ export function appendDictationTranscript(currentText: string, transcript: strin
 	return `${currentText}${separator}${trimmedTranscript}`;
 }
 
-export function restoreDictationBaseline(baselineText: string | null | undefined): string {
-	return baselineText ?? "";
-}
-
 export function resolveComposerDictationState(input: {
 	active: boolean;
 	voiceState: "idle" | "recording" | "processing" | "speaking" | "connecting" | "listening";

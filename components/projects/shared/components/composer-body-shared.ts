@@ -16,13 +16,13 @@ export interface ComposerBodyBaseProps {
 	directoryAutocompleteListVisible: boolean;
 	dictationState: RovoComposerDictationState;
 	dictationTranscriptPreview?: string | null;
+	focusRequestKey: number | undefined;
 	micStream: MediaStream | null | undefined;
-	onAcceptDictation?: () => void;
-	onCancelDictation?: () => void;
 	onDirectoryAutocompleteChange?: (state: DirectoryAutocompleteState | null) => void;
 	onDirectoryAutocompleteControllerChange?: (controller: ComposerDirectoryAutocompleteController | null) => void;
 	onPromptSubmit: (payload: { text: string; files: FileUIPart[] }) => void;
 	onStartDictation?: () => void;
+	onStopDictation?: () => void;
 	onStop: () => Promise<void>;
 	onToggleClicky?: () => void;
 	onToggleRealtimeVoice?: () => void;

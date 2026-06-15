@@ -38,7 +38,7 @@ import {
 	shouldShowReopenRovoAppBrowserArtifactControl,
 } from "@/components/projects/rovo/lib/rovo-app-browser-preview";
 import { resolveRovoAppComposerPlaceholder } from "@/components/projects/shared/lib/rovo-app-composer-placeholder";
-import { appendDictationTranscript, resolveComposerDictationState, restoreDictationBaseline } from "@/lib/composer-dictation";
+import { appendDictationTranscript, resolveComposerDictationState } from "@/lib/composer-dictation";
 import { ROVO_APP_MAX_CHAT_PANE_WIDTH, ROVO_APP_MIN_ARTIFACT_PANE_WIDTH, ROVO_APP_MIN_CHAT_PANE_WIDTH, getRovoAppShellLayout } from "@/components/projects/rovo/lib/rovo-app-shell-layout";
 import { getRovoAppSmartGenerationLayoutContext } from "@/components/projects/rovo/lib/rovo-app-smart-generation-layout";
 import { deriveRovoAppTimelineItems } from "@/components/projects/rovo/lib/rovo-app-timeline";
@@ -643,6 +643,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const realtimeInjectContextRef = useRef<((payload: RealtimeInjectContextPayload) => void) | null>(null);
 	const composerTextRef = useRef("");
 	const dictationBaselineRef = useRef<string | null>(null);
+	const dictationCommittedTextRef = useRef<string | null>(null);
 	const isDictationActiveRef = useRef(false);
 	const sidebarResize = useSidebarResize({
 		defaultWidth: ROVO_APP_SEPARATOR_LINE_OFFSET_PX,
@@ -665,7 +666,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const [voiceTranscript, setVoiceTranscript] = useState<string | null>(null);
 	const [isDictationActive, setIsDictationActive] = useState(false);
 	const [dictationTranscriptPreview, setDictationTranscriptPreview] = useState<string | null>(null);
-	const [dictationPrefillRequestKey, setDictationPrefillRequestKey] = useState(0);
+	const [composerFocusRequestKey, setComposerFocusRequestKey] = useState(0);
 	const [scrollActiveTimelineSelection, setScrollActiveTimelineSelection] = useState<ScrollActiveTimelineSelection | null>(null);
 	const [scrollAnchorMessageId, setScrollAnchorMessageId] = useState<string | null>(null);
 	const [scrollFollowMode, setScrollFollowMode] = useState<ConversationFollowMode>("bottom");
@@ -1073,6 +1074,10 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 				if (isDictationActiveRef.current) {
 					setDictationTranscriptPreview(text);
+					const nextText = appendDictationTranscript(dictationCommittedTextRef.current ?? dictationBaselineRef.current ?? "", text);
+					composerTextRef.current = nextText;
+					setVoiceTranscript(nextText);
+					setComposerFocusRequestKey((currentKey) => currentKey + 1);
 					return;
 				}
 
@@ -1083,10 +1088,16 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					const transcript = typeof payload === "string" ? payload : (payload.transcript ?? payload.text ?? "");
 
 					if (isDictationActiveRef.current) {
-						const nextText = appendDictationTranscript(composerTextRef.current, transcript);
+						if (!transcript.trim()) {
+							return;
+						}
+
+						const nextText = appendDictationTranscript(dictationCommittedTextRef.current ?? dictationBaselineRef.current ?? "", transcript);
+						dictationCommittedTextRef.current = nextText;
 						composerTextRef.current = nextText;
 						setDictationTranscriptPreview(transcript);
 						setVoiceTranscript(nextText);
+						setComposerFocusRequestKey((currentKey) => currentKey + 1);
 						return;
 					}
 
@@ -1261,6 +1272,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			if (isDictationActiveRef.current) {
 				isDictationActiveRef.current = false;
 				dictationBaselineRef.current = null;
+				dictationCommittedTextRef.current = null;
 				setIsDictationActive(false);
 				setDictationTranscriptPreview(null);
 			}
@@ -1289,30 +1301,21 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 		const baselineText = composerTextRef.current;
 		dictationBaselineRef.current = baselineText;
+		dictationCommittedTextRef.current = baselineText;
 		isDictationActiveRef.current = true;
 		setIsDictationActive(true);
 		setDictationTranscriptPreview(null);
 		setPrefillText(null);
 		setVoiceTranscript(baselineText);
+		setComposerFocusRequestKey((currentKey) => currentKey + 1);
 		realtime.connect({ transcriptionOnly: true });
 	}, [realtime, resetRealtimeAssistantMessageState]);
 
-	const handleCancelDictation = useCallback(() => {
-		const restoredText = restoreDictationBaseline(dictationBaselineRef.current);
+	const handleStopDictation = useCallback(() => {
 		dictationBaselineRef.current = null;
+		dictationCommittedTextRef.current = null;
 		isDictationActiveRef.current = false;
-		composerTextRef.current = restoredText;
-		setIsDictationActive(false);
-		setDictationTranscriptPreview(null);
-		setPrefillText(null);
-		setVoiceTranscript(restoredText);
-		setDictationPrefillRequestKey((currentKey) => currentKey + 1);
-		realtime.disconnect();
-	}, [realtime]);
-
-	const handleAcceptDictation = useCallback(() => {
-		dictationBaselineRef.current = null;
-		isDictationActiveRef.current = false;
+		manualVoiceStopRef.current = true;
 		setIsDictationActive(false);
 		setDictationTranscriptPreview(null);
 		setPrefillText(null);
@@ -2125,6 +2128,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									dictationTranscriptPreview={dictationTranscriptPreview}
 									errorMessage={chat.inputError}
 									experimentalDarkCta
+									focusRequestKey={composerFocusRequestKey}
 									galleryExpanded={galleryExpanded}
 									isPlanMode={chat.isPlanMode}
 									micStream={realtime.micStream}
@@ -2132,19 +2136,17 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									onDismissPlanExecutionTracker={chat.dismissPlanExecutionTracker}
 									onDirectoryAutocompleteChange={setDirectoryAutocompleteState}
 									onDirectoryAutocompleteControllerChange={setDirectoryAutocompleteController}
-									onAcceptDictation={handleAcceptDictation}
-									onCancelDictation={handleCancelDictation}
 									onStop={handleStop}
 									onRemoveQueuedPrompt={chat.removeQueuedPrompt}
 									onSubmit={handleComposerSubmit}
 									onTextChange={handleComposerTextChange}
 									onStartDictation={handleStartDictation}
+									onStopDictation={handleStopDictation}
 									onTogglePlanMode={chat.togglePlanMode}
 									onToggleRealtimeVoice={handleToggleRealtimeVoice}
 									onToggleClicky={handleToggleClicky}
 									clickyActive={isClickyActive}
 									placeholder={composerPreviewState.placeholder}
-									prefillRequestKey={dictationPrefillRequestKey}
 									prefillText={voiceTranscript ?? prefillText}
 									previewPrompt={composerPreviewState.activePreviewPrompt}
 									planExecutionTracker={chat.planExecutionTracker}

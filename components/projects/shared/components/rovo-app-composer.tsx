@@ -75,9 +75,8 @@ export interface RovoAppComposerProps {
 	onBrowseTemplates?: () => void;
 	/** Floating chrome: when provided, reveals a "start from scratch" link. */
 	onStartFromScratch?: () => void;
-	onAcceptDictation?: () => void;
-	onCancelDictation?: () => void;
 	onStartDictation?: () => void;
+	onStopDictation?: () => void;
 	onSubmit: (payload: { text: string; files: FileUIPart[] }) => Promise<void>;
 	onTextChange?: (value: string) => void;
 	onToggleClicky?: () => void;
@@ -123,9 +122,8 @@ function RovoAppComposerInner({
 	onSendQueuedPromptNow,
 	onBrowseTemplates,
 	onStartFromScratch,
-	onAcceptDictation,
-	onCancelDictation,
 	onStartDictation,
+	onStopDictation,
 	onSubmit,
 	onTextChange,
 	onToggleClicky,
@@ -178,13 +176,13 @@ function RovoAppComposerInner({
 		directoryAutocompleteListVisible,
 		dictationState,
 		dictationTranscriptPreview,
+		focusRequestKey,
 		micStream,
-		onAcceptDictation,
-		onCancelDictation,
 		onDirectoryAutocompleteChange,
 		onDirectoryAutocompleteControllerChange,
 		onPromptSubmit: handlePromptSubmit,
 		onStartDictation,
+		onStopDictation,
 		onStop,
 		onToggleClicky,
 		onToggleRealtimeVoice,
@@ -274,7 +272,6 @@ function RovoAppComposerInner({
 						{...bodyBaseProps}
 						experimentalDarkCta
 						fillWidth={fillWidth}
-						focusRequestKey={focusRequestKey}
 						onBrowseTemplates={onBrowseTemplates}
 						onStartFromScratch={onStartFromScratch}
 					/>
