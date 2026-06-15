@@ -24,6 +24,7 @@ import ScorecardIcon from "@atlaskit/icon/core/scorecard";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import LockLockedIcon from "@atlaskit/icon/core/lock-locked";
 import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
+import GenerativeIndicatorIcon from "@atlaskit/icon-lab/core/generative-indicator";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
 import ViewsIcon from "@atlaskit/icon-lab/core/views";
@@ -141,6 +142,7 @@ const APP_ATLASSIAN_LOGO_NAMES: Record<string, AtlassianLogoName> = {
 	Jira: "jira",
 	Confluence: "confluence",
 };
+type AgentRunPromptMode = "run-agent" | "custom-prompt";
 const AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS = {
 	initial: "rest",
 	animate: "rest",
@@ -3732,6 +3734,9 @@ function AgentInstructionsComposer({
 	showSectionLabel?: boolean;
 }>) {
 	const [knowledge, setKnowledge] = useState<RichTextMentionItem[]>([]);
+	const [runPromptMode, setRunPromptMode] = useState<AgentRunPromptMode>(() =>
+		instructions?.trim() ? "custom-prompt" : "run-agent",
+	);
 	const inlineManagedReferenceKeysRef = useLazyRef(() => new Set<string>());
 	const mentionInventoryCountsRef = useLazyRef(() => new Map<string, {
 		count: number;
@@ -3830,6 +3835,13 @@ function AgentInstructionsComposer({
 			mentionInventoryCounts.set(key, next);
 		}
 	}, [config, inlineManagedReferenceKeys, mentionInventoryCounts, onAddListValues, onRemoveReferenceValue]);
+	const handleRunPromptModeChange = useCallback((value: AgentRunPromptMode): void => {
+		setRunPromptMode(value);
+		if (value === "run-agent") {
+			onInstructionsChange?.("");
+		}
+	}, [onInstructionsChange]);
+	const showCustomPromptEditor = runPromptMode === "custom-prompt";
 
 	useEffect(() => {
 		const abortController = new AbortController();
@@ -3853,6 +3865,12 @@ function AgentInstructionsComposer({
 		return () => abortController.abort();
 	}, []);
 
+	useEffect(() => {
+		if (instructions?.trim()) {
+			setRunPromptMode("custom-prompt");
+		}
+	}, [instructions]);
+
 	return (
 		<section
 			className={cn("space-y-0", className)}
@@ -3872,29 +3890,62 @@ function AgentInstructionsComposer({
 				onAutomationRulesChange={onAutomationRulesChange}
 				onConnectTrigger={onConnectTrigger}
 			/>
-			<RichTextEditor
-				aria-label="Agent instructions"
-				className="space-y-2"
-				contentClassName={cn("pt-2", contentClassName)}
-				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
-				enableDirectoryAutocomplete
-				placeholder="Press / to help me create the automation"
-				placeholderSlot={(
-					<p className="tiptap-editor text-sm leading-[1.55] text-text-subtlest">
-						Press <code>/</code> to help me create the automation
-					</p>
-				)}
-				onInsertReferenceOption={handleInsertReferenceOption}
-				onOpenDirectory={handleOpenDirectory}
-				onViewModeChange={onViewModeChange}
-				suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
-				value={instructions}
-				mentionSources={mentionSources}
-				mentionRemovalRequest={mentionRemovalRequest}
-				onMarkdownChange={onInstructionsChange}
-				onMentionInventoryChange={handleMentionInventoryChange}
-				onMentionRemovalRequestHandled={onMentionRemovalRequestHandled}
-			/>
+			<div
+				aria-label="Agent run prompt mode"
+				className="mb-3 inline-flex h-8 w-fit items-center justify-center rounded-lg bg-muted p-[3px] text-text-subtle"
+				role="radiogroup"
+			>
+				<button
+					aria-checked={runPromptMode === "run-agent"}
+					className={cn(
+						"relative inline-flex h-[25px] items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-3 py-0.5 text-sm font-medium transition-all hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+						runPromptMode === "run-agent" && "bg-surface text-text shadow-sm",
+					)}
+					onClick={() => handleRunPromptModeChange("run-agent")}
+					role="radio"
+					type="button"
+				>
+					<GenerativeIndicatorIcon label="" size="small" />
+					Run agent
+				</button>
+				<button
+					aria-checked={runPromptMode === "custom-prompt"}
+					className={cn(
+						"relative inline-flex h-[25px] items-center justify-center whitespace-nowrap rounded-md border border-transparent px-3 py-0.5 text-sm font-medium transition-all hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+						runPromptMode === "custom-prompt" && "bg-surface text-text shadow-sm",
+					)}
+					onClick={() => handleRunPromptModeChange("custom-prompt")}
+					role="radio"
+					type="button"
+				>
+					Pass a custom prompt
+				</button>
+			</div>
+			{showCustomPromptEditor ? (
+				<RichTextEditor
+					aria-label="Agent instructions"
+					className="space-y-2"
+					contentClassName={cn("pt-2", contentClassName)}
+					editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
+					enableDirectoryAutocomplete
+					placeholder="Press / to help me create the automation"
+					placeholderSlot={(
+						<p className="tiptap-editor text-sm leading-[1.55] text-text-subtlest">
+							Press <code>/</code> to help me create the automation
+						</p>
+					)}
+					onInsertReferenceOption={handleInsertReferenceOption}
+					onOpenDirectory={handleOpenDirectory}
+					onViewModeChange={onViewModeChange}
+					suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
+					value={instructions}
+					mentionSources={mentionSources}
+					mentionRemovalRequest={mentionRemovalRequest}
+					onMarkdownChange={onInstructionsChange}
+					onMentionInventoryChange={handleMentionInventoryChange}
+					onMentionRemovalRequestHandled={onMentionRemovalRequestHandled}
+				/>
+			) : null}
 		</section>
 	);
 }
