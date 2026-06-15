@@ -87,7 +87,7 @@ import { useScrollAnchor } from "./hooks/use-scroll-anchor";
 import { useThinkingStatus } from "./hooks/use-thinking-status";
 import { appendOptimisticCompactUserMessage } from "./lib/optimistic-user-message";
 import { type DelegationRequest, useRealtimeVoice } from "@/components/projects/rovo/hooks/use-realtime-voice";
-import { appendDictationTranscript, resolveComposerDictationState, restoreDictationBaseline } from "@/lib/composer-dictation";
+import { appendDictationTranscript, resolveComposerDictationState } from "@/lib/composer-dictation";
 import { useClicky } from "@/components/projects/rovo/hooks/use-clicky";
 import { useClickyVoice } from "@/components/projects/rovo/hooks/use-clicky-voice";
 import { ClickyOverlay } from "@/components/projects/rovo/components/clicky/clicky-overlay";
@@ -490,9 +490,11 @@ export default function ChatPanel({
 	const realtimeTranscriptRef = useRef("");
 	const promptRef = useRef(prompt);
 	const dictationBaselineRef = useRef<string | null>(null);
+	const dictationCommittedTextRef = useRef<string | null>(null);
 	const isDictationActiveRef = useRef(false);
 	const [isDictationActive, setIsDictationActive] = useState(false);
 	const [dictationTranscriptPreview, setDictationTranscriptPreview] = useState<string | null>(null);
+	const [composerFocusRequestKey, setComposerFocusRequestKey] = useState(0);
 
 	useEffect(() => {
 		promptRef.current = prompt;
@@ -525,6 +527,10 @@ export default function ChatPanel({
 
 		if (isDictationActiveRef.current) {
 			setDictationTranscriptPreview(transcriptText);
+			const nextText = appendDictationTranscript(dictationCommittedTextRef.current ?? dictationBaselineRef.current ?? "", transcriptText);
+			promptRef.current = nextText;
+			setPrompt(nextText);
+			setComposerFocusRequestKey((currentKey) => currentKey + 1);
 			return;
 		}
 
@@ -534,10 +540,16 @@ export default function ChatPanel({
 		const transcriptText = getRealtimeTranscriptText(payload);
 
 		if (isDictationActiveRef.current) {
-			const nextText = appendDictationTranscript(promptRef.current, transcriptText);
+			if (!transcriptText.trim()) {
+				return;
+			}
+
+			const nextText = appendDictationTranscript(dictationCommittedTextRef.current ?? dictationBaselineRef.current ?? "", transcriptText);
+			dictationCommittedTextRef.current = nextText;
 			promptRef.current = nextText;
 			setDictationTranscriptPreview(transcriptText);
 			setPrompt(nextText);
+			setComposerFocusRequestKey((currentKey) => currentKey + 1);
 			return;
 		}
 
@@ -639,18 +651,9 @@ export default function ChatPanel({
 		active: isDictationActive,
 		voiceState: realtime.voiceState,
 	});
-	const handleCancelDictation = useCallback(() => {
-		const restoredText = restoreDictationBaseline(dictationBaselineRef.current);
+	const handleStopDictation = useCallback(() => {
 		dictationBaselineRef.current = null;
-		isDictationActiveRef.current = false;
-		promptRef.current = restoredText;
-		setIsDictationActive(false);
-		setDictationTranscriptPreview(null);
-		setPrompt(restoredText);
-		realtime.disconnect();
-	}, [realtime, setPrompt]);
-	const handleAcceptDictation = useCallback(() => {
-		dictationBaselineRef.current = null;
+		dictationCommittedTextRef.current = null;
 		isDictationActiveRef.current = false;
 		setIsDictationActive(false);
 		setDictationTranscriptPreview(null);
@@ -664,15 +667,18 @@ export default function ChatPanel({
 
 		const baselineText = promptRef.current;
 		dictationBaselineRef.current = baselineText;
+		dictationCommittedTextRef.current = baselineText;
 		isDictationActiveRef.current = true;
 		setIsDictationActive(true);
 		setDictationTranscriptPreview(null);
+		setComposerFocusRequestKey((currentKey) => currentKey + 1);
 		realtime.connect({ transcriptionOnly: true });
 	}, [realtime]);
 	const handleToggleRealtimeVoice = useCallback(() => {
 		if (realtime.voiceState === "idle") {
 			if (isDictationActiveRef.current) {
 				dictationBaselineRef.current = null;
+				dictationCommittedTextRef.current = null;
 				isDictationActiveRef.current = false;
 				setIsDictationActive(false);
 				setDictationTranscriptPreview(null);
@@ -1169,11 +1175,11 @@ export default function ChatPanel({
 						micStream={realtime.micStream}
 						dictationState={dictationState}
 						dictationTranscriptPreview={dictationTranscriptPreview}
+						focusRequestKey={composerFocusRequestKey}
 						clickyActive={!hideAiCursor && isClickyActive}
-						onAcceptDictation={handleAcceptDictation}
-						onCancelDictation={handleCancelDictation}
 						onPromptChange={setPrompt}
 						onStartDictation={handleStartDictation}
+						onStopDictation={handleStopDictation}
 						onSubmit={handleSubmit}
 						onStop={abort}
 						onToggleClicky={toggleClicky}

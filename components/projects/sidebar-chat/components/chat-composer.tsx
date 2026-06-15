@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChatStatus } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import type { QueuedPromptItem } from "@/app/contexts";
@@ -48,11 +48,11 @@ interface ChatComposerProps {
 	micStream?: MediaStream | null;
 	dictationState?: RovoComposerDictationState;
 	dictationTranscriptPreview?: string | null;
+	focusRequestKey?: number;
 	clickyActive?: boolean;
-	onAcceptDictation?: () => void;
-	onCancelDictation?: () => void;
 	onPromptChange: (value: string) => void;
 	onStartDictation?: () => void;
+	onStopDictation?: () => void;
 	onSubmit: (message: PromptInputMessage) => Promise<void> | void;
 	onStop: () => void;
 	onToggleClicky?: () => void;
@@ -79,13 +79,12 @@ interface ChatComposerSendControlsProps {
 	hideReasoningSelector?: boolean;
 	isComposerBusy: boolean;
 	micStream: MediaStream | null;
-	onAcceptDictation?: () => void;
-	onCancelDictation?: () => void;
 	onCompanyKnowledgeChange: (value: boolean) => void;
 	onOpenChange: (open: boolean) => void;
 	onReasoningChange: (value: string) => void;
 	onStop: () => void;
 	onStartDictation?: () => void;
+	onStopDictation?: () => void;
 	onToggleRealtimeVoice?: () => void;
 	open: boolean;
 	prompt: string;
@@ -109,13 +108,12 @@ function ChatComposerSendControls({
 	hideReasoningSelector = false,
 	isComposerBusy,
 	micStream,
-	onAcceptDictation,
-	onCancelDictation,
 	onCompanyKnowledgeChange,
 	onOpenChange,
 	onReasoningChange,
 	onStop,
 	onStartDictation,
+	onStopDictation,
 	onToggleRealtimeVoice,
 	open,
 	prompt,
@@ -139,13 +137,12 @@ function ChatComposerSendControls({
 			hideReasoningSelector={hideReasoningSelector}
 			isComposerBusy={isComposerBusy}
 			micStream={micStream}
-			onAcceptDictation={onAcceptDictation}
-			onCancelDictation={onCancelDictation}
 			onCompanyKnowledgeChange={onCompanyKnowledgeChange}
 			onOpenChange={onOpenChange}
 			onReasoningChange={onReasoningChange}
 			onStop={onStop}
 			onStartDictation={onStartDictation}
+			onStopDictation={onStopDictation}
 			onToggleRealtimeVoice={onToggleRealtimeVoice}
 			open={open}
 			realtimeVoiceActive={realtimeVoiceActive}
@@ -157,13 +154,14 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, clickyActive = false, onAcceptDictation, onCancelDictation, onPromptChange, onStartDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, directoryAutocompleteListVisible = false, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, directoryAutocompleteListVisible = false, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
 	const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
 	const [isCustomizeMenuOpen, setIsCustomizeMenuOpen] = useState(false);
 	const [isAutoMenuOpen, setIsAutoMenuOpen] = useState(false);
+	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 	if (hideSourceAndModelControls && (isCustomizeMenuOpen || isAutoMenuOpen)) {
 		setIsCustomizeMenuOpen(false);
 		setIsAutoMenuOpen(false);
@@ -192,6 +190,16 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 		setLocalSelectedReasoning(value);
 		onReasoningChange?.(value);
 	};
+
+	useEffect(() => {
+		if (typeof focusRequestKey !== "number" || focusRequestKey <= 0) {
+			return;
+		}
+
+		requestAnimationFrame(() => {
+			textareaRef.current?.focus();
+		});
+	}, [focusRequestKey]);
 
 	return (
 		<div className={cn("relative min-w-0 px-3", containerClassName)}>
@@ -228,6 +236,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 					<PendingAttachments />
 					<PromptInputBody>
 						<PromptInputTextarea
+							ref={textareaRef}
 							value={prompt}
 							directoryAutocompleteListVisible={directoryAutocompleteListVisible}
 							enableVisualTraceAutoTagging
@@ -311,13 +320,12 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 							hideReasoningSelector={hideSourceAndModelControls}
 							isComposerBusy={isComposerBusy}
 							micStream={micStream}
-							onAcceptDictation={onAcceptDictation}
-							onCancelDictation={onCancelDictation}
 							onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
 							onOpenChange={handleAutoMenuOpenChange}
 							onReasoningChange={handleReasoningChange}
 							onStop={onStop}
 							onStartDictation={onStartDictation}
+							onStopDictation={onStopDictation}
 							onToggleRealtimeVoice={onToggleRealtimeVoice}
 							open={isAutoMenuOpen}
 							prompt={prompt}
