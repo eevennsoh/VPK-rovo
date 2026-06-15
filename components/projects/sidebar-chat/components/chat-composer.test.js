@@ -7,6 +7,17 @@ function readProjectFile(filePath) {
 	return fs.readFileSync(path.join(process.cwd(), filePath), "utf8");
 }
 
+const CLICKY_VOICE_HOOK_SOURCE = readProjectFile("components/projects/rovo/hooks/use-clicky-voice.ts");
+
+function sourceBetween(source, startNeedle, endNeedle) {
+	const start = source.indexOf(startNeedle);
+	const end = source.indexOf(endNeedle, start);
+
+	assert.notEqual(start, -1, `Missing source marker: ${startNeedle}`);
+	assert.notEqual(end, -1, `Missing source marker: ${endNeedle}`);
+	return source.slice(start, end);
+}
+
 test("compact chat sources selector opens a reasoning-free customize popover", () => {
 	const source = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
 	const popoverIndex = source.indexOf("<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>");
@@ -48,6 +59,30 @@ test("compact chat can hide the AI cursor control without changing the default",
 	assert.match(sidebarComposer, /hideAiCursor\?: boolean;/u);
 	assert.match(sidebarComposer, /hideAiCursor = false/u);
 	assert.match(sidebarComposer, /\{hideAiCursor \? null : \([\s\S]*aria-label="Rovo cursor"/u);
+});
+
+test("compact chat cursor activation starts live voice while cursor deactivation leaves live voice running", () => {
+	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const realtimeToggleSource = sourceBetween(sidebarPanel, "const handleToggleRealtimeVoice", "const handleToggleClicky");
+	const clickyToggleSource = sourceBetween(sidebarPanel, "const handleToggleClicky", "// Cmd+Shift+K");
+	const keyboardShortcutSource = sourceBetween(sidebarPanel, "// Cmd+Shift+K", "const isStreamingLifecycleActive");
+
+	assert.match(sidebarPanel, /activate: activateClicky,/u);
+	assert.match(sidebarPanel, /const startRealtimeVoice = useCallback\(\(\) => \{[\s\S]*realtimeTranscriptRef\.current = "";[\s\S]*realtime\.connect\(\);[\s\S]*\}, \[realtime\]\);/u);
+
+	assert.match(clickyToggleSource, /if \(isClickyActive\) \{[\s\S]*deactivateClicky\(\);[\s\S]*return;[\s\S]*\}/u);
+	assert.match(clickyToggleSource, /activateClicky\(\);[\s\S]*if \(realtime\.voiceState === "idle"\) \{[\s\S]*startRealtimeVoice\(\);[\s\S]*\}/u);
+	assert.doesNotMatch(clickyToggleSource, /realtime\.disconnect\(\)/u);
+
+	assert.match(realtimeToggleSource, /if \(realtime\.voiceState === "idle"\) \{[\s\S]*startRealtimeVoice\(\);[\s\S]*return;[\s\S]*\}/u);
+	assert.match(realtimeToggleSource, /realtime\.disconnect\(\);[\s\S]*deactivateClicky\(\);/u);
+
+	assert.match(keyboardShortcutSource, /if \(e\.key === "K" && e\.shiftKey && \(e\.metaKey \|\| e\.ctrlKey\)\) \{[\s\S]*handleToggleClicky\(\);/u);
+	assert.match(keyboardShortcutSource, /if \(e\.key === "Escape" && isClickyActive\) \{[\s\S]*deactivateClicky\(\);/u);
+	assert.match(sidebarPanel, /onToggleClicky=\{handleToggleClicky\}/u);
+	assert.doesNotMatch(sidebarPanel, /toggleClicky/u);
+	assert.match(CLICKY_VOICE_HOOK_SOURCE, /Cursor deactivation must not stop/u);
+	assert.doesNotMatch(CLICKY_VOICE_HOOK_SOURCE, /disconnectRealtime\(\)/u);
 });
 
 test("compact chat composer padding can be overridden by opt-in surfaces", () => {

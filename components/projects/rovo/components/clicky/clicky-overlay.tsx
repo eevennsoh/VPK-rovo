@@ -32,6 +32,9 @@ const FLIGHT_SCALE_BOOST = 0.3;
 const POINT_HOLD_MS = 3000;
 /** Bubble fade-out duration before return flight (ms) */
 const BUBBLE_FADE_MS = 500;
+const WELCOME_MESSAGE = "Yo, let's cook!";
+const WELCOME_DISMISS_AFTER_TYPE_MS = 1600;
+const ROVO_CURSOR_TRIGGER_SELECTOR = 'button[aria-label="Rovo Cursor"]';
 /** Mouse movement threshold to interrupt return flight (px) */
 const RETURN_INTERRUPT_DISTANCE = 100;
 
@@ -179,6 +182,9 @@ export function ClickyOverlay({
 	const flightTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 	const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const welcomeDismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const wasActiveRef = useRef(false);
+	const hasMousePositionRef = useRef(false);
 
 	// Flight animation state
 	const [rotation, setRotation] = useState(IDLE_ROTATION);
@@ -186,11 +192,8 @@ export function ClickyOverlay({
 	const [flightPhase, setFlightPhase] = useState<FlightPhase>("idle");
 	const [navPhrase, setNavPhrase] = useState("");
 	const [bubbleOpacity, setBubbleOpacity] = useState(1);
-
-	// Welcome message state
-	const hasShownWelcomeRef = useRef(false);
 	const [showWelcome, setShowWelcome] = useState(false);
-	const welcomeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const [cursorPositionReady, setCursorPositionReady] = useState(false);
 
 	// Return flight interruption
 	const returnStartMouseRef = useRef({ x: 0, y: 0 });
@@ -218,6 +221,7 @@ export function ClickyOverlay({
 	// Track mouse position
 	const handleMouseMove = useCallback((e: MouseEvent) => {
 		mouseRef.current = { x: e.clientX, y: e.clientY };
+		hasMousePositionRef.current = true;
 
 		// Interrupt return flight if mouse moved >100px
 		if (flightPhaseRef.current === "returning") {
@@ -261,32 +265,77 @@ export function ClickyOverlay({
 		return () => cancelAnimationFrame(rafRef.current);
 	}, [isActive, x, y]);
 
-	// Register/unregister mouse listener
+	// Keep the last pointer position warm even while the overlay is off, so the
+	// activation frame never falls back to the viewport origin.
 	useEffect(() => {
-		if (!isActive) return;
 		window.addEventListener("mousemove", handleMouseMove, { passive: true });
-		return () => window.removeEventListener("mousemove", handleMouseMove);
-	}, [isActive, handleMouseMove]);
+		window.addEventListener("pointerdown", handleMouseMove, { passive: true, capture: true });
+		return () => {
+			window.removeEventListener("mousemove", handleMouseMove);
+			window.removeEventListener("pointerdown", handleMouseMove, { capture: true });
+		};
+	}, [handleMouseMove]);
 
-	// Welcome message on first activation
-	useEffect(() => {
-		if (isActive && !hasShownWelcomeRef.current) {
-			hasShownWelcomeRef.current = true;
-			welcomeTimerRef.current = setTimeout(() => {
-				setShowWelcome(true);
-				welcomeTimerRef.current = setTimeout(() => {
-					setShowWelcome(false);
-				}, 4000);
-			}, 2000);
+	const seedCursorPosition = useCallback(() => {
+		if (!hasMousePositionRef.current) {
+			const trigger = document.querySelector<HTMLElement>(ROVO_CURSOR_TRIGGER_SELECTOR);
+			const rect = trigger?.getBoundingClientRect();
+
+			mouseRef.current = rect
+				? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+				: { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+			hasMousePositionRef.current = true;
 		}
 
+		const targetX = mouseRef.current.x + TRACKING_OFFSET_X;
+		const targetY = mouseRef.current.y + TRACKING_OFFSET_Y;
+		x.jump(targetX);
+		y.jump(targetY);
+		springX.jump(targetX);
+		springY.jump(targetY);
+		setCursorPositionReady(true);
+	}, [springX, springY, x, y]);
+
+	const dismissWelcomeAfterTyping = useCallback(() => {
+		if (welcomeDismissTimerRef.current) {
+			clearTimeout(welcomeDismissTimerRef.current);
+		}
+		welcomeDismissTimerRef.current = setTimeout(() => {
+			setShowWelcome(false);
+			welcomeDismissTimerRef.current = null;
+		}, WELCOME_DISMISS_AFTER_TYPE_MS);
+	}, []);
+
+	useEffect(() => {
+		if (!isActive) {
+			wasActiveRef.current = false;
+			setCursorPositionReady(false);
+			setShowWelcome(false);
+			if (welcomeDismissTimerRef.current) {
+				clearTimeout(welcomeDismissTimerRef.current);
+				welcomeDismissTimerRef.current = null;
+			}
+			return;
+		}
+
+		if (!wasActiveRef.current) {
+			wasActiveRef.current = true;
+			seedCursorPosition();
+			setShowWelcome(true);
+			if (welcomeDismissTimerRef.current) {
+				clearTimeout(welcomeDismissTimerRef.current);
+				welcomeDismissTimerRef.current = null;
+			}
+		}
+	}, [isActive, seedCursorPosition]);
+
+	useEffect(() => {
 		return () => {
-			if (welcomeTimerRef.current) {
-				clearTimeout(welcomeTimerRef.current);
-				welcomeTimerRef.current = null;
+			if (welcomeDismissTimerRef.current) {
+				clearTimeout(welcomeDismissTimerRef.current);
 			}
 		};
-	}, [isActive]);
+	}, []);
 
 	// Full pointing cycle: fly → hold → fade → return → idle
 	// react-doctor-disable-next-line react-doctor/effect-needs-cleanup
@@ -420,6 +469,7 @@ export function ClickyOverlay({
 
 	const showNavBubble = (flightPhase === "holding" || flightPhase === "fading") && isPointing;
 	const showResponseOverlay = (isPointing || isSpeaking) && responseText;
+	const shouldRenderOverlay = isActive && cursorPositionReady;
 
 	if (!mounted) {
 		return null;
@@ -427,7 +477,7 @@ export function ClickyOverlay({
 
 	return createPortal(
 		<AnimatePresence>
-			{isActive ? (
+			{shouldRenderOverlay ? (
 				<motion.div
 					className="pointer-events-none fixed inset-0"
 					data-clicky-overlay
@@ -460,28 +510,23 @@ export function ClickyOverlay({
 							flightScale={flightScale}
 						/>
 
-						{/* Navigation phrase bubble (small blue pill at target) */}
-						<AnimatePresence>
-							{showNavBubble ? (
-								<motion.div
-									style={{ opacity: bubbleOpacity }}
-									transition={{ duration: 0.5, ease: "easeOut" }}
-								>
-									<ClickySpeechBubble text={navPhrase} />
-								</motion.div>
-							) : null}
-						</AnimatePresence>
+						{/* Navigation phrase bubble */}
+						{showNavBubble ? <ClickySpeechBubble text={navPhrase} opacity={bubbleOpacity} /> : null}
 
 						{/* Welcome message */}
 						<AnimatePresence>
-							{showWelcome && flightPhase === "idle" && !isPointing && !isSpeaking ? (
+							{showWelcome ? (
 								<motion.div
 									initial={{ opacity: 0 }}
 									animate={{ opacity: 1 }}
 									exit={{ opacity: 0 }}
 									transition={{ duration: 0.5, ease: "easeOut" }}
 								>
-									<ClickySpeechBubble text="hey! i'm rovo" />
+									<ClickySpeechBubble
+										text={WELCOME_MESSAGE}
+										typewriter
+										onTypewriterComplete={dismissWelcomeAfterTyping}
+									/>
 								</motion.div>
 							) : null}
 						</AnimatePresence>

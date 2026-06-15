@@ -191,7 +191,7 @@ test("extracts pointer context from elementFromPoint", () => {
 	});
 });
 
-test("grounds targets by id, field, label, then pointer fallback", () => {
+test("grounds targets by id, field, and label", () => {
 	const visibleTargets = [
 		{
 			fieldId: "instructions",
@@ -204,6 +204,11 @@ test("grounds targets by id, field, label, then pointer fallback", () => {
 			id: "studio-agent-config:tools",
 			label: "Add tools",
 			rect: { height: 44, width: 180, x: 40, y: 220 },
+		},
+		{
+			id: "top-navigation:studio-logo",
+			label: "Open Studio",
+			rect: { height: 32, width: 96, x: 92, y: 12 },
 		},
 	];
 	const pointerTarget = {
@@ -238,7 +243,38 @@ test("grounds targets by id, field, label, then pointer fallback", () => {
 	);
 	assert.equal(
 		groundStudioScreenAssistantTarget({
+			label: "Studio logo",
+			pointerTarget,
+			visibleTargets,
+		}),
+		visibleTargets[2],
+	);
+	assert.equal(
+		groundStudioScreenAssistantTarget({
 			label: "missing",
+			pointerTarget,
+			visibleTargets,
+		}),
+		null,
+	);
+});
+
+test("grounds to pointer fallback only when no explicit locator is provided", () => {
+	const visibleTargets = [
+		{
+			id: "studio-agent-config:tools",
+			label: "Add tools",
+			rect: { height: 44, width: 180, x: 40, y: 220 },
+		},
+	];
+	const pointerTarget = {
+		id: "pointer-target",
+		label: "Pointer fallback",
+		rect: { height: 20, width: 20, x: 1, y: 2 },
+	};
+
+	assert.equal(
+		groundStudioScreenAssistantTarget({
 			pointerTarget,
 			visibleTargets,
 		}),

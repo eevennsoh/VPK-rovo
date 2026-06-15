@@ -31,10 +31,10 @@ import { Footer } from "@/components/ui-custom/footer";
 import ChatContextBar from "./chat-context-bar";
 import type { ChatContextBarDescriptor } from "../lib/chat-context-bar";
 import AddIcon from "@atlaskit/icon/core/add";
-import CursorIcon from "@atlaskit/icon-lab/core/cursor";
 import { PendingAttachments } from "@/components/projects/shared/components/pending-attachments";
 import { RovoAppComposerAddMenu } from "@/components/projects/shared/components/rovo-app-composer-add-menu";
 import { RovoComposerSendControls, type RovoComposerDictationState } from "@/components/projects/shared/components/rovo-composer-send-controls";
+import { RovoCursorTrackingIcon } from "@/components/projects/shared/components/rovo-cursor-tracking-icon";
 import { cn } from "@/lib/utils";
 
 interface ChatComposerProps {
@@ -276,7 +276,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 									aria-pressed={clickyActive}
 									tooltip={{ content: "Rovo cursor", delay: 0 }}
 								>
-									<CursorIcon label="" />
+									<RovoCursorTrackingIcon active={clickyActive} />
 								</PromptInputButton>
 							)}
 

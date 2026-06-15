@@ -149,7 +149,7 @@ export interface RovoCursorProps {
 /**
  * RovoCursor — an inline agent-presence indicator that swaps glyph per state:
  * a charcoal pointer wrapped in a Rovo-gradient stroke (`cursor`), a
- * rainbow-ringed microphone badge above a static caret stick (`typing`), a
+ * rainbow-ringed microphone badge (`typing`), a
  * blue text-insertion caret with a rainbow-bordered "Rovo" name pill
  * (`telepointer`), a rainbow indeterminate spinner (`loading`), and a 4-bar
  * brand equalizer (`speaking`). The rainbow on `cursor`, `typing`, and
@@ -253,10 +253,9 @@ function Cursor({ scale, animated }: Readonly<{ scale: number; animated: boolean
 }
 
 /**
- * Microphone badge wearing a Rovo conic-gradient ring above a static caret
- * stick (20×36 at scale 1, mic icon `size="small"` = 12px). The ring uses the mask-composite border technique
- * and rotates when `animated`; the caret stick below the badge is a plain
- * rectangle (no radius, no animation) marking the typing insertion point.
+ * Microphone badge wearing a Rovo conic-gradient ring (20×20 at scale 1, mic
+ * icon `size="small"` = 12px). The ring uses the mask-composite border
+ * technique and rotates when `animated`.
  */
 function Typing({ scale, animated }: Readonly<{ scale: number; animated: boolean }>) {
 	// 20u badge with a 12u small-sized microphone icon centered inside (4u
@@ -273,7 +272,7 @@ function Typing({ scale, animated }: Readonly<{ scale: number; animated: boolean
 		maskComposite: "exclude",
 	};
 	return (
-		<span className="inline-flex flex-col items-center" style={{ width: badge }}>
+		<span className="inline-flex items-center justify-center" style={{ width: badge, height: badge }}>
 			<span
 				className="relative box-border inline-flex items-center justify-center rounded-full bg-[#101214] text-white"
 				style={{ width: badge, height: badge, padding }}
@@ -305,11 +304,6 @@ function Typing({ scale, animated }: Readonly<{ scale: number; animated: boolean
 					className="relative"
 				/>
 			</span>
-			<span
-				aria-hidden
-				className="bg-icon"
-				style={{ width: 1, height: 16 }}
-			/>
 		</span>
 	);
 }

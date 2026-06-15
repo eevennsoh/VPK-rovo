@@ -12,6 +12,7 @@ import {
 	textareaCSS,
 } from "@/components/blocks/shared-ui/composer-styles";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
+import { RovoCursorTrackingIcon } from "@/components/projects/shared/components/rovo-cursor-tracking-icon";
 import {
 	RovoComposerActionButton,
 	RovoComposerSendControls,
@@ -39,7 +40,6 @@ import MentionIcon from "@atlaskit/icon/core/mention";
 import PageIcon from "@atlaskit/icon/core/page";
 import ScreenIcon from "@atlaskit/icon/core/screen";
 import UploadIcon from "@atlaskit/icon/core/upload";
-import CursorIcon from "@atlaskit/icon-lab/core/cursor";
 
 interface DemoFrameProps {
 	children: ReactNode;
@@ -160,7 +160,7 @@ export function PromptInputDemoChatComposer() {
 									aria-pressed={clickyActive}
 									tooltip={{ content: "Rovo cursor", delay: 0 }}
 								>
-									<CursorIcon label="" />
+									<RovoCursorTrackingIcon active={clickyActive} />
 								</PromptInputButton>
 
 								<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
@@ -247,7 +247,7 @@ function FloatingBarDemo({ experimentalDarkCta = false }: Readonly<FloatingBarDe
 							aria-pressed={clickyActive}
 							tooltip={{ content: "AI Cursor ⌘⇧K", delay: 0 }}
 						>
-							<CursorIcon label="" />
+							<RovoCursorTrackingIcon active={clickyActive} />
 						</PromptInputButton>
 					</div>
 				}

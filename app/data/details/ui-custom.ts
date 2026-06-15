@@ -963,7 +963,7 @@ import SearchIcon from "@atlaskit/icon/core/search"
 
 	"rovo-cursor": {
 		description:
-			"An inline agent-presence indicator that swaps glyph per state: a charcoal pointer wrapped in a Rovo conic-gradient stroke (cursor), a rainbow-ringed microphone badge above a static caret stick (typing), a blue text-insertion caret with a rainbow-bordered \"Rovo\" name pill (telepointer), a rainbow indeterminate spinner reused from `ui/spinner` (loading), and a 4-bar brand equalizer (speaking). The rainbow on `cursor`, `typing`, and `telepointer` can rotate or sit static via the `animated` prop, and all motion respects prefers-reduced-motion.",
+			"An inline agent-presence indicator that swaps glyph per state: a charcoal pointer wrapped in a Rovo conic-gradient stroke (cursor), a rainbow-ringed microphone badge (typing), a blue text-insertion caret with a rainbow-bordered \"Rovo\" name pill (telepointer), a rainbow indeterminate spinner reused from `ui/spinner` (loading), and a 4-bar brand equalizer (speaking). The rainbow on `cursor`, `typing`, and `telepointer` can rotate or sit static via the `animated` prop, and all motion respects prefers-reduced-motion.",
 		demoLayout: { previewContentWidth: "full" },
 		usage: `import { RovoCursor } from "@/components/ui-custom/rovo-cursor";
 
@@ -991,7 +991,7 @@ import SearchIcon from "@atlaskit/icon/core/search"
 				type: "boolean",
 				default: "true",
 				description:
-					"Rotate the rainbow on the `cursor` arrow, `typing` ring, and `telepointer` border. The loading spinner and speaking equalizer always animate; the typing caret stick stays static.",
+					"Rotate the rainbow on the `cursor` arrow, `typing` ring, and `telepointer` border. The loading spinner and speaking equalizer always animate.",
 			},
 			{
 				name: "aria-label",

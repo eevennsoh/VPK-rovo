@@ -65,7 +65,7 @@ interface UseClickyVoiceOptions {
 	isRealtimeConnected: boolean;
 	/** Connect to the Realtime voice session. */
 	connectRealtime: () => void;
-	/** Disconnect from the Realtime voice session. */
+	/** Disconnect from the Realtime voice session. Live voice owners handle this directly. */
 	disconnectRealtime: () => void;
 	/** Inject context into the Realtime session (used for system prompt swap). */
 	injectContext: (data: {
@@ -92,7 +92,7 @@ interface UseClickyVoiceOptions {
  *
  * - On activation: connects to Realtime, injects Clicky's system prompt
  * - On speech end (processing state): captures screenshot, sends as image
- * - On deactivation: disconnects Realtime
+ * - On deactivation: clears Clicky prompt state without tearing down voice
  */
 export function useClickyVoice({
 	clickyState,
@@ -100,14 +100,14 @@ export function useClickyVoice({
 	sendImageInput,
 	isRealtimeConnected,
 	connectRealtime,
-	disconnectRealtime,
 	injectContext,
 	onScreenshotCaptured,
 }: UseClickyVoiceOptions) {
 	const wasActiveRef = useRef(false);
 	const hasInjectedPromptRef = useRef(false);
 
-	// Connect/disconnect Realtime when Clicky activates/deactivates
+	// Connect Realtime when Clicky activates. Cursor deactivation must not stop
+	// a voice session; live voice controls own disconnect semantics.
 	useEffect(() => {
 		if (isClickyActive && !wasActiveRef.current) {
 			wasActiveRef.current = true;
@@ -116,9 +116,8 @@ export function useClickyVoice({
 		} else if (!isClickyActive && wasActiveRef.current) {
 			wasActiveRef.current = false;
 			hasInjectedPromptRef.current = false;
-			disconnectRealtime();
 		}
-	}, [isClickyActive, connectRealtime, disconnectRealtime]);
+	}, [isClickyActive, connectRealtime]);
 
 	// Inject Clicky system prompt once connected
 	useEffect(() => {

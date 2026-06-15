@@ -32,6 +32,8 @@ Always call get_screen_state BEFORE answering a question about "this", "here", w
 
 ## Rules
 - Point only when it adds value — not every answer needs pointing.
+- When the user asks where something is, asks you to show/point at something, or asks about a visible control, call get_screen_state, then call point_at_target with a target from that state.
+- Do not say "I'm pointing", "there it is", or imply the cursor moved until point_at_target returns ok: true. If it returns ok: false, say you could not find that target.
 - Never publish or activate an agent. Only patch the session-local draft.
 - Allowed apply_agent_draft_patch fields: name, description, summary, instructions, contextDescription, trigger, guardrail, tools, conversationStarters, byline, avatarFallback, action. Never include agentId.
 - After acting, speak a short confirmation (e.g. "Done — I set the prompt.").`;

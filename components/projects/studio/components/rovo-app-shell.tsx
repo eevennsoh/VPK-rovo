@@ -2712,7 +2712,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	// --- Studio AI cursor companion ---
 	const clicky = useClicky();
 	const {
-		toggle: toggleClicky,
+		activate: activateClicky,
 		isActive: isClickyActive,
 		deactivate: deactivateClicky,
 		startListening: clickyStartListening,
@@ -2752,10 +2752,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		composerTextRef.current = value;
 	}, []);
 
-	const handleToggleClicky = useCallback(() => {
-		toggleClicky();
-	}, [toggleClicky]);
-
 	useEffect(() => {
 		const handlePointerMove = (event: PointerEvent) => {
 			screenAssistantPointerRef.current = {
@@ -2786,19 +2782,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			},
 		});
 	}, [activeSessionAgentEntry, chat.panelState, selectedAgent.id, selectedAgent.name]);
-
-	// Keyboard shortcuts for Rovo
-	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			// Escape deactivates Rovo
-			if (e.key === "Escape" && isClickyActive) {
-				deactivateClicky();
-			}
-		};
-
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [isClickyActive, deactivateClicky]);
 
 	// --- Realtime voice (live conversation mode) ---
 		const realtime = useRealtimeVoice({
@@ -3156,28 +3139,66 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		injectedRealtimeThreadContextKeyRef.current = contextKey;
 	}, [chat.activeThreadId, chat.messages, chat.runtimeThreadId, injectRealtimeContext, isRealtimeActive, realtimeSessionIdentity]);
 
+	const startRealtimeVoice = useCallback(() => {
+		if (isDictationActiveRef.current) {
+			isDictationActiveRef.current = false;
+			dictationBaselineRef.current = null;
+			dictationCommittedTextRef.current = null;
+			setIsDictationActive(false);
+			setDictationTranscriptPreview(null);
+		}
+
+		manualVoiceStopRef.current = false;
+		realtime.connect();
+	}, [realtime]);
+
 	const handleToggleRealtimeVoice = useCallback(() => {
 		if (realtime.voiceState === "idle") {
-			if (isDictationActiveRef.current) {
-				isDictationActiveRef.current = false;
-				dictationBaselineRef.current = null;
-				dictationCommittedTextRef.current = null;
-				setIsDictationActive(false);
-				setDictationTranscriptPreview(null);
+			startRealtimeVoice();
+			return;
+		}
+
+		realtimeUserMessageIdRef.current = null;
+		resetRealtimeAssistantMessageState();
+		speechStartedAtRef.current = null;
+		// Set flag to prevent auto-submit race from a late transcription_completed
+		manualVoiceStopRef.current = true;
+		setVoiceTranscript(null);
+		realtime.disconnect();
+		deactivateClicky();
+	}, [deactivateClicky, realtime, resetRealtimeAssistantMessageState, startRealtimeVoice]);
+
+	const handleToggleClicky = useCallback(() => {
+		if (isClickyActive) {
+			deactivateClicky();
+			return;
+		}
+
+		activateClicky();
+		if (realtime.voiceState === "idle") {
+			startRealtimeVoice();
+		}
+	}, [activateClicky, deactivateClicky, isClickyActive, realtime.voiceState, startRealtimeVoice]);
+
+	// Keyboard shortcuts for Rovo
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			// Cmd+Shift+K (Mac) / Ctrl+Shift+K (other) toggles Rovo
+			if (e.key === "K" && e.shiftKey && (e.metaKey || e.ctrlKey)) {
+				e.preventDefault();
+				handleToggleClicky();
+				return;
 			}
 
-			manualVoiceStopRef.current = false;
-			realtime.connect();
-		} else {
-			realtimeUserMessageIdRef.current = null;
-			resetRealtimeAssistantMessageState();
-			speechStartedAtRef.current = null;
-			// Set flag to prevent auto-submit race from a late transcription_completed
-			manualVoiceStopRef.current = true;
-			setVoiceTranscript(null);
-			realtime.disconnect();
-		}
-	}, [realtime, resetRealtimeAssistantMessageState]);
+			// Escape deactivates Rovo
+			if (e.key === "Escape" && isClickyActive) {
+				deactivateClicky();
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [deactivateClicky, handleToggleClicky, isClickyActive]);
 
 	const handleStartDictation = useCallback(() => {
 		if (realtime.voiceState !== "idle") {
