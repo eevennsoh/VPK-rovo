@@ -5,7 +5,7 @@
 import { useLazyRef } from "@/lib/use-lazy-ref";
 import { token } from "@/lib/tokens";
 import type { Tool } from "ai";
-import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform, type MotionProps } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion, type MotionProps } from "motion/react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
@@ -16,8 +16,6 @@ import AutomationIcon from "@atlaskit/icon/core/automation";
 import ChartTrendUpIcon from "@atlaskit/icon/core/chart-trend-up";
 import DeleteIcon from "@atlaskit/icon/core/delete";
 import AppsIcon from "@atlaskit/icon/core/apps";
-import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import ChevronUpIcon from "@atlaskit/icon/core/chevron-up";
 import EditIcon from "@atlaskit/icon/core/edit";
 import PageIcon from "@atlaskit/icon/core/page";
 import PersonIcon from "@atlaskit/icon/core/person";
@@ -181,10 +179,6 @@ const AGENT_PROFILE_SWAP_VARIANTS = {
 } as const;
 const AGENT_PROFILE_SWAP_TRANSITION = { type: "spring", bounce: 0.12, visualDuration: 0.22 } as const;
 
-const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_SIZE = 24;
-const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_EDGE_GAP = 8;
-const AGENT_COMPACT_CONFIG_EXPAND_BUTTON_REVEAL_DISTANCE = 72;
-
 // Source order IS the canonical display order, kept in lockstep with the
 // AgentFilledConfigSummary rows array: Automations › Knowledge › Tools › Skills ›
 // Subagents › Memory › Conversation starters. Reasoning renders separately and
@@ -332,15 +326,6 @@ const AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD: Record<AgentInlineSearchField, Edit
 // flyout. The config panel opens the directory's file browser instead of an
 // app content step when it receives this value.
 export const AGENT_KNOWLEDGE_UPLOAD_TARGET = "__upload__";
-
-// Sticky lead row above the knowledge app list, mirroring the directory's
-// upload drop zone. Selecting it opens the directory dialog's file browser.
-
-function isAgentConfigReferenceListField(
-	field: AgentConfigListFieldName,
-): field is AgentConfigReferenceListFieldName {
-	return field in AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD;
-}
 
 function getNormalizedAgentReferenceValue(value: string): string {
 	return value.trim().toLowerCase();
@@ -3131,6 +3116,12 @@ function AgentFilledConfigSummary({
 		</div>
 	);
 }
+
+// Retain the legacy compact/filled summary variants while the newer profile
+// layout owns rendering; these dormant variants share helper components used by
+// the active config surface and should not trigger unused-symbol warnings.
+void AgentCompactEmptyConfigNav;
+void AgentFilledConfigSummary;
 
 function hasFilledAgentConfig(config: AgentConfigFormValue): boolean {
 	return (

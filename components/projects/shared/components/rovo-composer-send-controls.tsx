@@ -16,7 +16,6 @@ import {
 } from "@/components/ui-custom/prompt-input";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { LiveWaveform } from "@/components/ui-audio/live-waveform";
-import BorderBeam from "@/components/visual/border-beam";
 import { resolveRovoAppComposerIdleAction } from "@/components/projects/shared/lib/rovo-app-composer-idle-action";
 import { resolveRovoAppComposerWaveformState } from "@/components/projects/shared/lib/rovo-app-composer-waveform-state";
 import { ROVO_WAVEFORM_COLOR_CSS_VARS } from "@/lib/rovo-colors";
@@ -28,12 +27,6 @@ import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
 
 const ROVO_COMPOSER_WAVEFORM_INTRO_MS = 500;
 const EXPERIMENTAL_DARK_CTA_CLASS_NAME = "bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
-const ACTIVE_VOICE_BEAM_PROPS = {
-	colorVariant: "rovo" as const,
-	size: "line" as const,
-	strength: 0.95,
-	theme: "dark" as const,
-};
 
 export type RovoComposerDictationState = "idle" | "recording" | "processing";
 
@@ -231,50 +224,48 @@ export function RovoComposerActionButton({
 						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
 						style={{ willChange: "transform, opacity" }}
 					>
-						<BorderBeam {...ACTIVE_VOICE_BEAM_PROPS} className="inline-flex h-8 rounded-md">
-							<div className="flex h-8 items-center gap-1 overflow-hidden rounded-md bg-bg-neutral-bold pl-1 pr-3 text-text-inverse shadow-sm">
-								<button
-									aria-hidden="true"
-									className="hidden"
-									disabled
-									tabIndex={-1}
-									type="submit"
+						<div className="flex h-8 items-center gap-1 overflow-hidden rounded-md bg-bg-neutral-bold pl-1 pr-3 text-text-inverse shadow-sm">
+							<button
+								aria-hidden="true"
+								className="hidden"
+								disabled
+								tabIndex={-1}
+								type="submit"
+							/>
+							<button
+								aria-label="Stop dictation"
+								className="flex size-6 shrink-0 items-center justify-center rounded-sm text-text-inverse transition-colors hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"
+								onClick={handleStopDictation}
+								type="button"
+							>
+								<CrossIcon label="" size="small" />
+							</button>
+							<span className="flex h-full w-8 shrink-0 items-center">
+								<LiveWaveform
+									active={isDictationRecording}
+									barColor="currentColor"
+									barColors={[...ROVO_WAVEFORM_COLOR_CSS_VARS]}
+									barGap={2}
+									barHeightScale={dictationState === "processing" ? 1.15 : 1}
+									barOpacityMax={1}
+									barOpacityMin={1}
+									barWidth={2}
+									barRadius={0}
+									className="min-h-0 min-w-0 flex-1 animate-in fade-in duration-300"
+									entranceAnimation="stagger"
+									entranceDurationMs={180}
+									entranceStaggerMs={14}
+									fadeEdges={false}
+									height="100%"
+									mediaStream={isDictationRecording ? micStream : null}
+									mode={isDictationRecording ? "scrolling" : "static"}
+									processing={isDictationActive && !isDictationRecording}
 								/>
-								<button
-									aria-label="Stop dictation"
-									className="flex size-6 shrink-0 items-center justify-center rounded-sm text-text-inverse transition-colors hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"
-									onClick={handleStopDictation}
-									type="button"
-								>
-									<CrossIcon label="" size="small" />
-								</button>
-								<span className="flex h-full w-8 shrink-0 items-center">
-									<LiveWaveform
-										active={isDictationRecording}
-										barColor="currentColor"
-										barColors={[...ROVO_WAVEFORM_COLOR_CSS_VARS]}
-										barGap={2}
-										barHeightScale={dictationState === "processing" ? 1.15 : 1}
-										barOpacityMax={1}
-										barOpacityMin={1}
-										barWidth={2}
-										barRadius={0}
-										className="min-h-0 min-w-0 flex-1 animate-in fade-in duration-300"
-										entranceAnimation="stagger"
-										entranceDurationMs={180}
-										entranceStaggerMs={14}
-										fadeEdges={false}
-										height="100%"
-										mediaStream={isDictationRecording ? micStream : null}
-										mode={isDictationRecording ? "scrolling" : "static"}
-										processing={isDictationActive && !isDictationRecording}
-									/>
-								</span>
-								{dictationTranscriptPreview ? (
-									<span className="sr-only">Latest dictation transcript: {dictationTranscriptPreview}</span>
-								) : null}
-							</div>
-						</BorderBeam>
+							</span>
+							{dictationTranscriptPreview ? (
+								<span className="sr-only">Latest dictation transcript: {dictationTranscriptPreview}</span>
+							) : null}
+						</div>
 					</motion.div>
 				) : realtimeVoiceActive ? (
 					<motion.div
@@ -285,37 +276,35 @@ export function RovoComposerActionButton({
 						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
 						style={{ willChange: "transform, opacity" }}
 					>
-						<BorderBeam {...ACTIVE_VOICE_BEAM_PROPS} className="inline-flex size-8 rounded-md">
-							<button
-								aria-label="Stop live voice"
-								className="flex size-8 items-center justify-center overflow-hidden rounded-md bg-bg-neutral-bold p-0 text-text-inverse shadow-sm transition-colors hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"
-								onClick={handleToggleRealtimeVoice}
-								type="button"
-							>
-								<span className="flex size-4 min-w-0 items-center justify-center overflow-hidden">
-									<LiveWaveform
-										active={isRealtimeListening}
-										barColor="currentColor"
-										barColors={[...ROVO_WAVEFORM_COLOR_CSS_VARS]}
-										barGap={2}
-										barHeightScale={isRealtimeWaveformProcessing ? 1.15 : 1}
-										barOpacityMax={1}
-										barOpacityMin={1}
-										barWidth={2}
-										barRadius={0}
-										className="min-h-0 min-w-0 flex-1 animate-in fade-in duration-300"
-										entranceAnimation="stagger"
-										entranceDurationMs={180}
-										entranceStaggerMs={14}
-										fadeEdges={false}
-										height="16px"
-										mediaStream={isRealtimeListening ? micStream : null}
-										mode={isRealtimeListening ? "scrolling" : "static"}
-										processing={isRealtimeWaveformProcessing}
-									/>
-								</span>
-							</button>
-						</BorderBeam>
+						<button
+							aria-label="Stop live voice"
+							className="flex size-8 items-center justify-center overflow-hidden rounded-md bg-bg-neutral-bold p-0 text-text-inverse shadow-sm transition-colors hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"
+							onClick={handleToggleRealtimeVoice}
+							type="button"
+						>
+							<span className="flex size-4 min-w-0 items-center justify-center overflow-hidden">
+								<LiveWaveform
+									active={isRealtimeListening}
+									barColor="currentColor"
+									barColors={[...ROVO_WAVEFORM_COLOR_CSS_VARS]}
+									barGap={2}
+									barHeightScale={isRealtimeWaveformProcessing ? 1.15 : 1}
+									barOpacityMax={1}
+									barOpacityMin={1}
+									barWidth={2}
+									barRadius={0}
+									className="min-h-0 min-w-0 flex-1 animate-in fade-in duration-300"
+									entranceAnimation="stagger"
+									entranceDurationMs={180}
+									entranceStaggerMs={14}
+									fadeEdges={false}
+									height="16px"
+									mediaStream={isRealtimeListening ? micStream : null}
+									mode={isRealtimeListening ? "scrolling" : "static"}
+									processing={isRealtimeWaveformProcessing}
+								/>
+							</span>
+						</button>
 					</motion.div>
 				) : idleAction === "submit" || idleAction === "voice-start" ? (
 					<motion.div

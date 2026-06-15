@@ -1841,16 +1841,16 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		[chat],
 	);
 
-	const handleRegisterArtifactCard = useCallback((documentId: string, element: HTMLElement) => {
-		const shellElement = shellRef.current;
-		if (!shellElement) {
-			return;
-		}
+		const handleRegisterArtifactCard = useCallback((documentId: string, element: HTMLElement) => {
+			const shellElement = shellRef.current;
+			if (!shellElement) {
+				return;
+			}
 
-		const shellRect = shellElement.getBoundingClientRect();
-		const cardRect = element.getBoundingClientRect();
-		artifactPreviewOriginRef.current.set(documentId, new DOMRect(cardRect.left - shellRect.left, cardRect.top - shellRect.top, cardRect.width, cardRect.height));
-	}, []);
+			const shellRect = shellElement.getBoundingClientRect();
+			const cardRect = element.getBoundingClientRect();
+			artifactPreviewOriginRef.current.set(documentId, new DOMRect(cardRect.left - shellRect.left, cardRect.top - shellRect.top, cardRect.width, cardRect.height));
+		}, [artifactPreviewOriginRef]);
 
 	useEffect(() => {
 		if (!isArtifactOpen) {
@@ -1899,7 +1899,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			width: nextWidth,
 			height: nextHeight,
 		});
-	}, [isArtifactOpen, workspaceDocument?.id]);
+		}, [artifactPreviewOriginRef, isArtifactOpen, workspaceDocument?.id]);
 
 	const handleArtifactSplitLayoutChanged = useCallback(
 		(layout: Record<string, number>) => {

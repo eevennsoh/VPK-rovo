@@ -232,7 +232,7 @@ function GUIPanel({ title, values, defaultOpen = true, children }: GUIPanelProps
 
 	const syncMountedValueKeys = useCallback(() => {
 		setMountedValueKeys(Array.from(registeredKeysRef.current.keys()));
-	}, []);
+	}, [registeredKeysRef]);
 
 	const registerValueKeys = useCallback((keys: readonly string[]) => {
 		let changed = false;
@@ -242,7 +242,7 @@ function GUIPanel({ title, values, defaultOpen = true, children }: GUIPanelProps
 			if (currentCount === 0) changed = true;
 		}
 		if (changed) syncMountedValueKeys();
-	}, [syncMountedValueKeys]);
+	}, [registeredKeysRef, syncMountedValueKeys]);
 
 	const unregisterValueKeys = useCallback((keys: readonly string[]) => {
 		let changed = false;
@@ -255,7 +255,7 @@ function GUIPanel({ title, values, defaultOpen = true, children }: GUIPanelProps
 			}
 		}
 		if (changed) syncMountedValueKeys();
-	}, [syncMountedValueKeys]);
+	}, [registeredKeysRef, syncMountedValueKeys]);
 
 	const panelContext = useMemo<GUIPanelContextValue>(() => ({
 		registerKeys: registerValueKeys,

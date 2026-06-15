@@ -12,6 +12,16 @@ export function getScrollingBarX({
 	return width - barWidth - index * (barWidth + barGap);
 }
 
+export function getScrollingBarVisualIndex({
+	barCount,
+	index,
+}: {
+	barCount: number;
+	index: number;
+}) {
+	return Math.max(0, barCount - 1 - index);
+}
+
 export const STATIC_PROCESSING_TRAVEL_DURATION_MS = 500;
 export const STATIC_ACTIVE_HANDOFF_DURATION_MS = 220;
 

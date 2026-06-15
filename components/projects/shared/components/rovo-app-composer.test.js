@@ -59,13 +59,12 @@ test("FloatingComposer restores compact mode and expands from compact-width meas
 	assert.doesNotMatch(FLOATING_COMPOSER_SOURCE, /isMultiline/u);
 });
 
-test("active voice beam belongs to the voice buttons, not the prompt shell", () => {
+test("active voice controls do not use border beam visual effects", () => {
 	assert.doesNotMatch(FLOATING_COMPOSER_SOURCE, /BorderBeam/u);
 	assert.doesNotMatch(FLOATING_BODY_SOURCE, /beamActive/u);
-	assert.match(SEND_CONTROLS_SOURCE, /import BorderBeam from "@\/components\/visual\/border-beam";/u);
-	assert.match(SEND_CONTROLS_SOURCE, /colorVariant: "rovo" as const/u);
-	assert.match(SEND_CONTROLS_SOURCE, /<BorderBeam \{\.\.\.ACTIVE_VOICE_BEAM_PROPS\} className="inline-flex h-8 rounded-md">[\s\S]*aria-label="Stop dictation"/u);
-	assert.match(SEND_CONTROLS_SOURCE, /<BorderBeam \{\.\.\.ACTIVE_VOICE_BEAM_PROPS\} className="inline-flex size-8 rounded-md">[\s\S]*aria-label="Stop live voice"/u);
+	assert.doesNotMatch(SEND_CONTROLS_SOURCE, /BorderBeam|ACTIVE_VOICE_BEAM_PROPS/u);
+	assert.match(SEND_CONTROLS_SOURCE, /aria-label="Stop dictation"/u);
+	assert.match(SEND_CONTROLS_SOURCE, /aria-label="Stop live voice"/u);
 });
 
 test("RovoAppComposer forwards directory autocomplete control to both composer bodies", () => {

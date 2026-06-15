@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const {
 	STATIC_ACTIVE_HANDOFF_DURATION_MS,
 	STATIC_PROCESSING_TRAVEL_DURATION_MS,
+	getScrollingBarVisualIndex,
 	getStaticBarDataIndex,
 	getStaticProcessingBarValue,
 	getStaticProcessingTravelHead,
@@ -185,14 +186,26 @@ test("samples transition source bars across the full destination width", () => {
 	);
 });
 
-test("uses one palette sequence for processing and live waveform bars", () => {
+test("uses one visual palette sequence for processing and live waveform bars", () => {
 	const paletteLength = 4;
-	const indexes = Array.from({ length: 8 }, (_, index) =>
+	const barCount = 4;
+	const staticColorsByPosition = Array.from({ length: barCount }, (_, index) =>
 		getWaveformPaletteIndex({
 			index,
 			paletteLength,
 		}),
 	);
+	const scrollingColorsByPosition = Array.from({ length: barCount }, (_, visualIndex) => {
+		const drawIndex = barCount - 1 - visualIndex;
+		return getWaveformPaletteIndex({
+			index: getScrollingBarVisualIndex({
+				barCount,
+				index: drawIndex,
+			}),
+			paletteLength,
+		});
+	});
 
-	assert.deepEqual(indexes, [1, 2, 3, 0, 1, 2, 3, 0]);
+	assert.deepEqual(scrollingColorsByPosition, staticColorsByPosition);
+	assert.deepEqual(staticColorsByPosition, [1, 2, 3, 0]);
 });

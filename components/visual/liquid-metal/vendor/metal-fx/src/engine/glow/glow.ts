@@ -19,7 +19,6 @@ import {
   type GlowOptions,
   type PerimSample,
   type Pt,
-  PERIM_SAMPLES,
   buildPerimTable,
   buildStaticBlobPath,
   buildSvgMarkup,

@@ -2135,7 +2135,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				break;
 			}
 		}
-	}, [activeAgentConfig, activeAgentConfigView, activeSessionAgentEntry, chat.messages, chat.runtimeThreadId, openAgentCreationAskRovoChat]);
+		}, [activeAgentConfig, activeAgentConfigView, activeSessionAgentEntry, chat.messages, chat.runtimeThreadId, generatedAgentTestViewKeysRef, openAgentCreationAskRovoChat]);
 
 	// Bridge the global sidebar context (TopNavigation toggle) with the local
 	// shadcn SidebarProvider so the nav bar button controls the thread sidebar.
@@ -2292,7 +2292,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				isAwaitingResponse: Boolean(getLatestQuestionCardPayload(threadMessages)),
 			};
 		});
-	}, [chat.activeThreadId, chat.messages, chat.threads, studioAgentCreationThreadIds]);
+		}, [chat.activeThreadId, chat.messages, chat.threads, studioAgentCreationThreadIds, studioAgentCreationThreadTouchedAtRef]);
 	const handledAgentResultKeysRef = useLazyRef<Set<string>>(() => new Set());
 	const previousTypedAnchorUserMessageIdRef = useRef<string | null>(null);
 	const typedScrollAnchorSourceRef = useRef<TypedScrollAnchorSource>("none");
@@ -2311,7 +2311,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			nextThreadIds.add(threadId);
 			return nextThreadIds;
 		});
-	}, []);
+		}, [studioAgentCreationThreadKeysRef, studioAgentCreationThreadTouchedAtRef]);
 
 	const unmarkStudioAgentCreationThread = useCallback((threadId: string | null) => {
 		if (!threadId) {
@@ -2329,7 +2329,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			nextThreadIds.delete(threadId);
 			return nextThreadIds;
 		});
-	}, []);
+		}, [studioAgentCreationThreadKeysRef, studioAgentCreationThreadTouchedAtRef]);
 
 	// Provenance of the template a user started agent creation from. The ref holds
 	// the pending selection (set when a template/bento card is chosen, consumed +
@@ -3576,7 +3576,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		if (studioAgentCreationThreadKeysRef.current.has(chat.runtimeThreadId) && chat.activeThreadId) {
 			markStudioAgentCreationThread(chat.activeThreadId);
 		}
-	}, [chat.activeThreadId, chat.runtimeThreadId, markStudioAgentCreationThread]);
+		}, [chat.activeThreadId, chat.runtimeThreadId, markStudioAgentCreationThread, studioAgentCreationThreadKeysRef]);
 	useEffect(() => {
 		for (const message of chat.messages.toReversed()) {
 			const agentResult = getMessageAgentResult(message);
@@ -3596,7 +3596,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				break;
 			}
 		}
-	}, [chat.activeThreadId, chat.messages, chat.runtimeThreadId, handleStudioAgentResultSelect, unmarkStudioAgentCreationThread]);
+		}, [chat.activeThreadId, chat.messages, chat.runtimeThreadId, handledAgentResultKeysRef, handleStudioAgentResultSelect, unmarkStudioAgentCreationThread]);
 	const timelineItems = useMemo(() => {
 		return deriveRovoAppTimelineItems(displayMessages);
 	}, [displayMessages]);
@@ -4069,16 +4069,16 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		[chat],
 	);
 
-	const handleRegisterArtifactCard = useCallback((documentId: string, element: HTMLElement) => {
-		const shellElement = shellRef.current;
-		if (!shellElement) {
-			return;
-		}
+		const handleRegisterArtifactCard = useCallback((documentId: string, element: HTMLElement) => {
+			const shellElement = shellRef.current;
+			if (!shellElement) {
+				return;
+			}
 
-		const shellRect = shellElement.getBoundingClientRect();
-		const cardRect = element.getBoundingClientRect();
-		artifactPreviewOriginRef.current.set(documentId, new DOMRect(cardRect.left - shellRect.left, cardRect.top - shellRect.top, cardRect.width, cardRect.height));
-	}, []);
+			const shellRect = shellElement.getBoundingClientRect();
+			const cardRect = element.getBoundingClientRect();
+			artifactPreviewOriginRef.current.set(documentId, new DOMRect(cardRect.left - shellRect.left, cardRect.top - shellRect.top, cardRect.width, cardRect.height));
+		}, [artifactPreviewOriginRef]);
 
 	useEffect(() => {
 		if (!isArtifactOpen) {
@@ -4127,7 +4127,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			width: nextWidth,
 			height: nextHeight,
 		});
-	}, [isArtifactOpen, workspaceDocument?.id]);
+		}, [artifactPreviewOriginRef, isArtifactOpen, workspaceDocument?.id]);
 
 	const handleArtifactSplitLayoutChanged = useCallback(
 		(layout: Record<string, number>) => {

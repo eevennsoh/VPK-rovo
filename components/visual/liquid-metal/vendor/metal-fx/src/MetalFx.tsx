@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
@@ -131,7 +132,7 @@ export const MetalFx = forwardRef<HTMLDivElement, MetalFxProps>(function MetalFx
 
   useImperativeHandle(forwardedRef, () => rootRef.current as HTMLDivElement, []);
 
-  const resolveRadius = (w: number, h: number) => {
+  const resolveRadius = useCallback((w: number, h: number) => {
     // variant='circle' is the user's explicit promise that the wrapped
     // element should render as a circle. Always pick min(w,h)/2 so the
     // engine produces a true circle even when the child's CSS border-radius
@@ -151,7 +152,7 @@ export const MetalFx = forwardRef<HTMLDivElement, MetalFxProps>(function MetalFx
           return initialWrapperRadiusRef.current;
         })();
     return Math.min(raw, Math.min(w, h) / 2);
-  };
+  }, [borderRadius, shape]);
 
   useEffect(() => {
     const inst = instanceRef.current;
@@ -285,6 +286,7 @@ export const MetalFx = forwardRef<HTMLDivElement, MetalFxProps>(function MetalFx
       glowHandlesRef.current = null;
       if (glowHost) glowHost.innerHTML = '';
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Instance lifecycle is keyed by shape; preset/theme/pause/scale/radius props are re-synced by dedicated effects above and below.
   }, [shape]);
 
   // strength=1 maps directly to a full-opacity composite (opacityMul=1) for
@@ -325,7 +327,7 @@ export const MetalFx = forwardRef<HTMLDivElement, MetalFxProps>(function MetalFx
     updateInstance(inst, { cornerRadius });
     root.style.setProperty('--mfx-radius', `${cornerRadius}px`);
     root.style.borderRadius = `${cornerRadius}px`;
-  }, [borderRadius, resolvedTheme, variant, shape]);
+  }, [borderRadius, resolveRadius, resolvedTheme, variant, shape]);
 
   // --mfx-strength is consumed by downstream CSS (e.g. content opacity rules).
   // Spread style last so consumer inline styles can still override other props.

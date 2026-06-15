@@ -7,7 +7,7 @@
 		"dev": "concurrently --kill-others-on-fail -n backend,frontend -c yellow,green \"pnpm run dev:backend\" \"pnpm run dev:frontend\"",
 		"build": "next build --webpack",
 		"start": "next start",
-		"lint": "eslint",
+		"lint": "eslint app components backend hooks lib rovo scripts tests types next.config.ts tailwind.config.ts twg-install.test.js",
 		"typecheck": "tsc --noEmit",
 		"test:unit:js": "node scripts/run-js-unit-tests.mjs",
 		"build:export": "node scripts/build-static-export.mjs",

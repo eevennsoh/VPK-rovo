@@ -13,6 +13,7 @@ import { useReducedMotion } from "motion/react"
 
 import {
   STATIC_ACTIVE_HANDOFF_DURATION_MS,
+  getScrollingBarVisualIndex,
   getScrollingBarX,
   getStaticBarDataIndex,
   getStaticProcessingBarValue,
@@ -720,7 +721,10 @@ export const LiveWaveform = ({
 
           ctx.fillStyle = getBarFillColor({
             fallbackColor: computedBarColor,
-            index: i,
+            index: getScrollingBarVisualIndex({
+              barCount,
+              index: i,
+            }),
             palette: resolvedBarColors,
           })
           ctx.globalAlpha =
