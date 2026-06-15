@@ -31,12 +31,14 @@ import {
   clearComposerTraceDecorations,
   composerDirectoryAutocompletePluginKey,
   createComposerEditorExtensions,
+  clearDismissedAutoTags,
+  getDismissedAutoTagRanges,
   getMentionNodeAttrs,
+  RICH_TEXT_OBJECT_REPLACEMENT,
   setComposerTraceDecorations,
   type ComposerDirectoryAutocompleteController,
   type ComposerTraceDecoration,
   type RichTextMentionSources,
-  type RichTextMentionStorage,
 } from "@/components/ui-custom/rich-text-editor";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
@@ -1092,7 +1094,6 @@ function createSyntheticChangeEvent(
 const VISUAL_TRACE_AUTO_TAG_TYPED_IDLE_MS = 180;
 const VISUAL_TRACE_AUTO_TAG_CONVERT_MS = 940;
 const VISUAL_TRACE_AUTO_TAG_STAGGER_MS = 140;
-const VISUAL_TRACE_OBJECT_REPLACEMENT = "\uFFFC";
 
 interface VisualTraceAutoTagPendingMatch {
   expectedText: string;
@@ -1112,12 +1113,15 @@ interface VisualTraceAutoTagUndoSnapshot {
   beforeText: string;
 }
 
-// The mention extension stores a per-draft set of source texts the user reverted
-// (lowercased) so the auto-tagger can skip re-converting them. The extension's
-// name is "mention"; surfaces without it leave `editor.storage.mention` undefined.
-function getDismissedAutoTags(editor: Editor): Set<string> | undefined {
-  const mentionStorage = (editor.storage as unknown as { mention?: RichTextMentionStorage }).mention;
-  return mentionStorage?.dismissedAutoTags;
+// The mention extension tracks reverted spots by position (see the dismissed-tag
+// plugin). A candidate match is skipped when its document range overlaps one of
+// those spots, so a reverted word stays text until the user edits it there.
+function overlapsDismissedAutoTag(
+  ranges: readonly { from: number; to: number }[],
+  from: number,
+  to: number,
+): boolean {
+  return ranges.some((range) => range.from < to && from < range.to);
 }
 
 /** A mention node that the composer auto-tagged (carries the typed `sourceText`). */
@@ -1198,7 +1202,7 @@ function getCurrentVisualTraceBlockText(editor: Editor): VisualTraceBlockText {
     }
 
     if (node.type.name === "mention") {
-      text += VISUAL_TRACE_OBJECT_REPLACEMENT;
+      text += RICH_TEXT_OBJECT_REPLACEMENT;
       return false;
     }
 
@@ -1241,7 +1245,7 @@ function getVisualTraceDocumentText(editor: Editor): VisualTraceBlockText {
       }
 
       if (node.type.name === "mention") {
-        text += VISUAL_TRACE_OBJECT_REPLACEMENT;
+        text += RICH_TEXT_OBJECT_REPLACEMENT;
         return false;
       }
 
@@ -1270,19 +1274,6 @@ function getVisualTraceDocPosition(
 }
 
 function getVisualTraceDocRange(
-  block: VisualTraceBlockText,
-  match: DirectoryAutocompleteExactLabelMatch,
-): { from: number; to: number } | null {
-  const from = getVisualTraceDocPosition(block, match.from);
-  const to = getVisualTraceDocPosition(block, match.to);
-  if (from === null || to === null || from >= to) {
-    return null;
-  }
-
-  return { from, to };
-}
-
-function getVisualTraceDocTraceRange(
   block: VisualTraceBlockText,
   match: DirectoryAutocompleteExactLabelMatch,
 ): { from: number; to: number } | null {
@@ -1468,24 +1459,27 @@ export const PromptInputTextarea = ({
     const block = scope === "document"
       ? getVisualTraceDocumentText(activeEditor)
       : getCurrentVisualTraceBlockText(activeEditor);
-    // Skip occurrences the user explicitly reverted in this draft (Backspace or the
-    // chip's swap control), so an un-tagged word doesn't get re-converted moments
-    // later. Keyed by the exact matched text, lowercased — matching the dismissal
-    // recorded by `restoreAutoTaggedMention`.
-    const dismissed = getDismissedAutoTags(activeEditor);
     const matches = getDirectoryAutocompleteExactLabelMatches({
       sources: mentionSourcesRef.current,
       suppressTrailingPrefixMatches: scope === "block",
       text: block.text,
-    }).filter((match) => !dismissed?.has(block.text.slice(match.from, match.to).toLowerCase()));
+    });
     if (matches.length === 0) {
       return [];
     }
 
+    // Spots the user reverted (Backspace or the chip's swap control). The plugin
+    // maps these as the doc changes and drops one once its text is edited, so a
+    // reverted word stays text in place but a fresh retype tags again.
+    const dismissedRanges = getDismissedAutoTagRanges(activeEditor.state);
+
     return matches.flatMap((match, index): VisualTraceAutoTagPendingMatch[] => {
       const range = getVisualTraceDocRange(block, match);
-      const traceRange = getVisualTraceDocTraceRange(block, match);
-      if (!range || !traceRange) {
+      if (!range) {
+        return [];
+      }
+
+      if (overlapsDismissedAutoTag(dismissedRanges, range.from, range.to)) {
         return [];
       }
 
@@ -1493,11 +1487,11 @@ export const PromptInputTextarea = ({
         range.from,
         range.to,
         "\n",
-        VISUAL_TRACE_OBJECT_REPLACEMENT
+        RICH_TEXT_OBJECT_REPLACEMENT
       );
       const expectedText = block.text.slice(match.from, match.to);
       if (
-        currentText.includes(VISUAL_TRACE_OBJECT_REPLACEMENT) ||
+        currentText.includes(RICH_TEXT_OBJECT_REPLACEMENT) ||
         currentText.toLowerCase() !== expectedText.toLowerCase()
       ) {
         return [];
@@ -1510,9 +1504,9 @@ export const PromptInputTextarea = ({
         label: match.label,
         match,
         to: range.to,
-        traceFrom: traceRange.from,
+        traceFrom: range.from,
         traceText: block.text.slice(match.from, match.to),
-        traceTo: traceRange.to,
+        traceTo: range.to,
       }];
     });
   }, [enableVisualTraceAutoTagging]);
@@ -1529,10 +1523,10 @@ export const PromptInputTextarea = ({
         pendingMatch.from,
         pendingMatch.to,
         "\n",
-        VISUAL_TRACE_OBJECT_REPLACEMENT
+        RICH_TEXT_OBJECT_REPLACEMENT
       );
       if (
-        currentText.includes(VISUAL_TRACE_OBJECT_REPLACEMENT) ||
+        currentText.includes(RICH_TEXT_OBJECT_REPLACEMENT) ||
         currentText.toLowerCase() !== pendingMatch.expectedText.toLowerCase()
       ) {
         continue;
@@ -1589,6 +1583,9 @@ export const PromptInputTextarea = ({
       });
       activeEditor.commands.setTextSelection(activeEditor.state.doc.content.size);
       clearComposerTraceDecorations(activeEditor.view);
+      // The whole-doc restore invalidates any reverted-spot positions; drop them
+      // explicitly rather than relying on how setContent maps them.
+      clearDismissedAutoTags(activeEditor);
       publishText(snapshot.beforeText, activeEditor.view.dom, true);
     } finally {
       visualTraceApplyingRef.current = false;
@@ -1645,7 +1642,7 @@ export const PromptInputTextarea = ({
       0,
       selection.$from.parentOffset,
       "\n",
-      "\uFFFC"
+      RICH_TEXT_OBJECT_REPLACEMENT
     );
     const nextState = getDirectoryAutocompleteState({
       activeIndex: directoryAutocompleteStateRef.current?.activeIndex ?? 0,
@@ -2048,8 +2045,8 @@ export const PromptInputTextarea = ({
 
     const handleReset = () => {
       visualTraceUndoSnapshotRef.current = null;
-      getDismissedAutoTags(editor)?.clear();
       setComposerPlainText(editor, "");
+      clearDismissedAutoTags(editor);
       publishText("", editor.view.dom, false);
       setDirectoryAutocompleteState(null);
     };
@@ -2075,7 +2072,7 @@ export const PromptInputTextarea = ({
 
     setComposerPlainText(editor, resolvedValue);
     visualTraceUndoSnapshotRef.current = null;
-    getDismissedAutoTags(editor)?.clear();
+    clearDismissedAutoTags(editor);
     publishText(serializeComposerDoc(editor), editor.view.dom, false);
     if (enableVisualTraceAutoTagging) {
       scheduleVisualTraceAutoTagging(editor, true);

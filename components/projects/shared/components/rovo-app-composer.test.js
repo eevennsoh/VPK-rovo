@@ -146,7 +146,7 @@ test("visual trace auto-tagging uses mention nodes and hides autocomplete while 
 	assert.match(PROMPT_INPUT_SOURCE, /event\.key\.toLowerCase\(\) !== "z"/u);
 	assert.match(PROMPT_INPUT_SOURCE, /restoreVisualTraceUndoSnapshot\(editor, snapshot\)/u);
 	assert.match(PROMPT_INPUT_SOURCE, /activeEditor\.commands\.setContent\(snapshot\.beforeJSON, \{[\s\S]*emitUpdate: false/u);
-	assert.match(PROMPT_INPUT_SOURCE, /currentText\.includes\(VISUAL_TRACE_OBJECT_REPLACEMENT\)/u);
+	assert.match(PROMPT_INPUT_SOURCE, /currentText\.includes\(RICH_TEXT_OBJECT_REPLACEMENT\)/u);
 	assert.match(PROMPT_INPUT_SOURCE, /currentText\.toLowerCase\(\) !== expectedText\.toLowerCase\(\)/u);
 	assert.match(PROMPT_INPUT_SOURCE, /visualTracePendingRef\.current \|\|[\s\S]*visualTraceApplyingRef\.current[\s\S]*setDirectoryAutocompleteState\(null\);/u);
 	assert.match(PROMPT_INPUT_SOURCE, /visualTraceImmediateUpdateRef\.current = true;/u);
@@ -159,7 +159,9 @@ test("composer trace auto-tagging keeps native undo history available", () => {
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /import \{ history, redo, undo \} from "@tiptap\/pm\/history";/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /import \{ keymap \} from "@tiptap\/pm\/keymap";/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /function createComposerHistoryExtension\(\)/u);
-	assert.match(COMPOSER_EXTENSIONS_SOURCE, /textBetween\(decoration\.from, decoration\.to, "\\n", "\\uFFFC"\)[\s\S]*\.toLowerCase\(\) === decoration\.label\.toLowerCase\(\)/u);
+	// Trace-decoration validation/mapping reuse the shared range helpers.
+	assert.match(COMPOSER_EXTENSIONS_SOURCE, /return rangeTextMatches\(state\.doc, decoration\.from, decoration\.to, decoration\.label\);/u);
+	assert.match(COMPOSER_EXTENSIONS_SOURCE, /mapRangeThroughTransaction\(transaction\.mapping, decoration\.from, decoration\.to\)/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /history\(\)/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /"Mod-z": undo/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /"Shift-Mod-z": redo/u);
@@ -170,20 +172,36 @@ test("auto-tagged tokens carry sourceText and a restore command on the mention n
 	// The exact typed text is stored on the node so a revert restores it precisely,
 	// and its presence is what scopes the revert affordances to auto-tagged tokens.
 	assert.match(MENTION_EXTENSIONS_SOURCE, /sourceText: \{[\s\S]*parseHTML:[\s\S]*data-source-text[\s\S]*renderHTML:[\s\S]*data-source-text/u);
-	// Per-draft dismissal registry so reverted tokens are not re-converted.
-	assert.match(MENTION_EXTENSIONS_SOURCE, /addStorage\(\): RichTextMentionStorage \{[\s\S]*dismissedAutoTags: new Set<string>\(\),/u);
-	// Shared restore command: replace node with sourceText and record the dismissal.
+	// Reverted spots are tracked by position via a plugin (not by text), so a
+	// revert is local and a later retype re-tags.
+	assert.match(MENTION_EXTENSIONS_SOURCE, /function createDismissedAutoTagPlugin\(\)/u);
+	assert.match(MENTION_EXTENSIONS_SOURCE, /const dismissedAutoTagPluginKey = new PluginKey/u);
+	// Mapped through edits (inward bias via the shared helper) and dropped once
+	// the text at that spot changes.
+	assert.match(MENTION_EXTENSIONS_SOURCE, /map\(from, 1\)[\s\S]*map\(to, -1\)/u);
+	assert.match(MENTION_EXTENSIONS_SOURCE, /mapRangeThroughTransaction\(tr\.mapping, range\.from, range\.to\)/u);
+	// Shared restore command: replace node with sourceText and record the spot.
 	assert.match(MENTION_EXTENSIONS_SOURCE, /restoreAutoTaggedMention:[\s\S]*\(pos: number\) =>/u);
 	assert.match(MENTION_EXTENSIONS_SOURCE, /node\.type\.name !== "mention"/u);
 	assert.match(MENTION_EXTENSIONS_SOURCE, /typeof sourceText !== "string" \|\| !sourceText/u);
 	assert.match(MENTION_EXTENSIONS_SOURCE, /tr\.replaceWith\(from, to, state\.schema\.text\(sourceText\)\)/u);
-	// The revert + dismissal side effects are gated behind the dispatch guard so a
+	// The revert + recording the spot are gated behind the dispatch guard so a
 	// dry-run (editor.can()) stays side-effect-free.
-	assert.match(MENTION_EXTENSIONS_SOURCE, /if \(dispatch\) \{[\s\S]*this\.storage\.dismissedAutoTags\.add\(sourceText\.toLowerCase\(\)\);[\s\S]*\}/u);
+	assert.match(MENTION_EXTENSIONS_SOURCE, /if \(dispatch\) \{[\s\S]*tr\.setMeta\(dismissedAutoTagPluginKey, \{[\s\S]*type: "add"[\s\S]*\}\);[\s\S]*\}/u);
 	assert.match(MENTION_EXTENSIONS_SOURCE, /restoreAutoTaggedMention: \(pos: number\) => ReturnType;/u);
-	// Storage is typed via the exported interface, not a loose cast.
-	assert.match(MENTION_EXTENSIONS_SOURCE, /addStorage\(\): RichTextMentionStorage/u);
-	assert.match(MENTION_EXTENSIONS_SOURCE, /export interface RichTextMentionStorage/u);
+	// The plugin ships as a standalone extension (not bolted onto the mention node)
+	// and is registered ONLY by the composer, never the full document editor.
+	assert.match(MENTION_EXTENSIONS_SOURCE, /export const DismissedAutoTagTracker = Extension\.create\(\{[\s\S]*createDismissedAutoTagPlugin\(\)/u);
+	assert.doesNotMatch(MENTION_EXTENSIONS_SOURCE, /addNodeView\(\)[\s\S]*addProseMirrorPlugins\(\)[\s\S]*createDismissedAutoTagPlugin/u);
+	assert.match(COMPOSER_EXTENSIONS_SOURCE, /DismissedAutoTagTracker,/u);
+	// Empty-ranges early-out: no per-keystroke map/filter when nothing is tracked.
+	assert.match(MENTION_EXTENSIONS_SOURCE, /if \(tr\.docChanged && ranges\.length > 0\)/u);
+	// Shared object-replacement sentinel (one source for matcher/trace/prune).
+	assert.match(MENTION_EXTENSIONS_SOURCE, /export const RICH_TEXT_OBJECT_REPLACEMENT/u);
+	// Shared range helpers (used by both the plugin and the trace-decoration mapper).
+	assert.match(MENTION_EXTENSIONS_SOURCE, /export function mapRangeThroughTransaction\(/u);
+	assert.match(MENTION_EXTENSIONS_SOURCE, /export function rangeTextMatches\(/u);
+	assert.match(MENTION_EXTENSIONS_SOURCE, /rangeTextMatches\(newState\.doc, range\.from, range\.to, range\.text\)/u);
 });
 
 test("Backspace next to an auto-tagged token reverts it, including across a trailing space", () => {
@@ -199,14 +217,21 @@ test("Backspace next to an auto-tagged token reverts it, including across a trai
 	assert.match(PROMPT_INPUT_SOURCE, /editor\.commands\.restoreAutoTaggedMention\(backspaceRevertPos\)/u);
 });
 
-test("auto-tagger skips and clears reverted occurrences for the draft", () => {
-	assert.match(PROMPT_INPUT_SOURCE, /function getDismissedAutoTags\(editor: Editor\): Set<string> \| undefined/u);
-	// Typed via the exported storage interface rather than an inline shape.
-	assert.match(PROMPT_INPUT_SOURCE, /as unknown as \{ mention\?: RichTextMentionStorage \}/u);
-	assert.match(PROMPT_INPUT_SOURCE, /const dismissed = getDismissedAutoTags\(activeEditor\);/u);
-	assert.match(PROMPT_INPUT_SOURCE, /!dismissed\?\.has\(block\.text\.slice\(match\.from, match\.to\)\.toLowerCase\(\)\)/u);
-	// Cleared wherever the draft resets so a fresh message can re-tag.
-	assert.match(PROMPT_INPUT_SOURCE, /getDismissedAutoTags\(editor\)\?\.clear\(\);/u);
+test("auto-tagger skips reverted spots by position and clears them on draft reset", () => {
+	// Candidate matches whose document range overlaps a reverted spot are skipped.
+	assert.match(PROMPT_INPUT_SOURCE, /function overlapsDismissedAutoTag\(/u);
+	assert.match(PROMPT_INPUT_SOURCE, /const dismissedRanges = getDismissedAutoTagRanges\(activeEditor\.state\);/u);
+	assert.match(PROMPT_INPUT_SOURCE, /if \(overlapsDismissedAutoTag\(dismissedRanges, range\.from, range\.to\)\) \{[\s\S]*return \[\];/u);
+	// Cleared wherever the draft resets so a fresh draft starts clean.
+	assert.match(PROMPT_INPUT_SOURCE, /clearDismissedAutoTags\(editor\);/u);
+	// Also cleared when the auto-tag conversion is undone (whole-doc restore).
+	assert.match(PROMPT_INPUT_SOURCE, /clearComposerTraceDecorations\(activeEditor\.view\);[\s\S]*clearDismissedAutoTags\(activeEditor\);/u);
+	// Object-replacement sentinel is the shared constant, not a re-declared literal.
+	// The sentinel is the imported shared constant used directly — no local alias.
+	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /VISUAL_TRACE_OBJECT_REPLACEMENT/u);
+	assert.match(PROMPT_INPUT_SOURCE, /textBetween\([\s\S]*RICH_TEXT_OBJECT_REPLACEMENT/u);
+	// The duplicate trace-range helper was collapsed into getVisualTraceDocRange.
+	assert.doesNotMatch(PROMPT_INPUT_SOURCE, /getVisualTraceDocTraceRange/u);
 });
 
 test("auto-tagged chip exposes a swap-back-to-text overlay action", () => {

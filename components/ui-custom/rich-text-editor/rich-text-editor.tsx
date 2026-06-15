@@ -22,7 +22,7 @@ import {
 } from "@/lib/directory-autocomplete";
 import { Spinner } from "@/components/ui/spinner";
 
-import { createRichTextEditorExtensions, getMentionCategory, getMentionNodeAttrs } from "./extensions";
+import { createRichTextEditorExtensions, getMentionCategory, getMentionNodeAttrs, RICH_TEXT_OBJECT_REPLACEMENT } from "./extensions";
 import {
 	createComposerDirectoryAutocomplete,
 	composerDirectoryAutocompletePluginKey,
@@ -394,7 +394,7 @@ export function RichTextEditor({
 			0,
 			selection.$from.parentOffset,
 			"\n",
-			"\uFFFC",
+			RICH_TEXT_OBJECT_REPLACEMENT,
 		);
 		const nextState = getDirectoryAutocompleteState({
 			cursorPosition: selection.from,
