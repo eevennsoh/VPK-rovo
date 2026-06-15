@@ -2864,7 +2864,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			realtimeUserTranscriptHasDeltaRef.current = false;
 			resetRealtimeAssistantMessageState();
 			realtimeUserMessageIdRef.current = null;
-			setVoiceTranscript("");
+			setVoiceTranscript(null);
 
 			// Rovo: transition to listening
 			if (isClickyActive) {
@@ -2884,7 +2884,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		onSpeechTranscriptDelta: useCallback((payload: RealtimeSpeechTranscriptPayload) => {
 			// Browser SpeechRecognition sends { text } (full replacement);
 			// OpenAI transcription deltas send { delta, text } (accumulated).
-			// In both cases, `text` is the complete current transcript — use SET, not APPEND.
+			// Live chat keeps these deltas out of the composer; dictation owns
+			// visible transcript preview and explicit accept/cancel behavior.
 			const text = typeof payload === "string" ? payload : (payload.text ?? payload.delta ?? "");
 				if (!text) {
 					return;
@@ -2896,7 +2897,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				}
 
 				realtimeUserTranscriptHasDeltaRef.current = true;
-				setVoiceTranscript(text);
 			}, []),
 		onSpeechTranscriptCompleted: useCallback(
 				async (payload: RealtimeSpeechTranscriptPayload) => {
@@ -2918,13 +2918,11 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					}
 				}
 
-				// If the user manually stopped voice, skip auto-submit and leave
-				// the transcribed text in the composer for manual review/submit
+				// If the user manually stopped voice, skip auto-submit and keep
+				// partial transcript text out of the composer.
 				if (manualVoiceStopRef.current) {
 					manualVoiceStopRef.current = false;
-					if (transcript) {
-						setVoiceTranscript(transcript);
-					}
+					setVoiceTranscript(null);
 					return;
 				}
 
@@ -3161,23 +3159,13 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			manualVoiceStopRef.current = false;
 			realtime.connect();
 		} else {
-			// Capture the hook's transcript before disconnect clears it.
-			// This covers the case where transcription_completed fired
-			// (setting currentTranscript) but no streaming deltas arrived
-			// (voiceTranscript would still be empty).
-			const transcriptToPreserve = realtime.currentTranscript;
 			realtimeUserMessageIdRef.current = null;
 			resetRealtimeAssistantMessageState();
 			speechStartedAtRef.current = null;
 			// Set flag to prevent auto-submit race from a late transcription_completed
 			manualVoiceStopRef.current = true;
-			// Don't clear voiceTranscript — leave text in composer for manual review/submit
+			setVoiceTranscript(null);
 			realtime.disconnect();
-			// If voiceTranscript is empty but the hook had a completed transcript,
-			// populate the composer so the user can review/submit
-			if (transcriptToPreserve.trim()) {
-				setVoiceTranscript(transcriptToPreserve);
-			}
 		}
 	}, [realtime, resetRealtimeAssistantMessageState]);
 

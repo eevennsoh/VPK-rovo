@@ -294,6 +294,11 @@ test("Studio composer clears shell-owned prefill sources only after submit succe
 test("Studio composer wires dictation separately from realtime live voice", () => {
 	assert.doesNotMatch(SHELL_SOURCE, /useLiveVoice/u);
 	assert.match(SHELL_SOURCE, /appendDictationTranscript\(composerTextRef\.current, transcript\)/u);
+	assert.match(SHELL_SOURCE, /setVoiceTranscript\(nextText\)/u);
+	assert.doesNotMatch(SHELL_SOURCE, /setVoiceTranscript\(text\)/u);
+	assert.doesNotMatch(SHELL_SOURCE, /setVoiceTranscript\(transcript\)/u);
+	assert.doesNotMatch(SHELL_SOURCE, /setVoiceTranscript\(""\)/u);
+	assert.doesNotMatch(SHELL_SOURCE, /transcriptToPreserve/u);
 	assert.match(SHELL_SOURCE, /resolveComposerDictationState\(\{[\s\S]*active: isDictationActive,[\s\S]*voiceState: realtime\.voiceState,[\s\S]*\}\)/u);
 	assert.match(SHELL_SOURCE, /dictationState=\{dictationState\}/u);
 	assert.match(SHELL_SOURCE, /dictationTranscriptPreview=\{dictationTranscriptPreview\}/u);

@@ -127,6 +127,8 @@ test("shared composer keeps dictation accept disabled while final audio is proce
 
 test("shared composer waveform uses live stream while listening and processing animation otherwise", () => {
 	const source = readProjectFile("components/projects/shared/components/rovo-composer-send-controls.tsx");
+	const stopVoiceIndex = source.indexOf('aria-label="Stop live voice"');
+	const stopVoiceButton = source.slice(stopVoiceIndex, source.indexOf("</button>", stopVoiceIndex));
 
 	assert.match(source, /const isDictationRecording = dictationState === "recording" && micStream !== null;/u);
 	assert.match(source, /active=\{isDictationRecording\}/u);
@@ -136,6 +138,11 @@ test("shared composer waveform uses live stream while listening and processing a
 	assert.match(source, /active=\{isRealtimeListening\}/u);
 	assert.match(source, /mediaStream=\{isRealtimeListening \? micStream : null\}/u);
 	assert.match(source, /mode=\{isRealtimeListening \? "scrolling" : "static"\}/u);
+	assert.notEqual(stopVoiceIndex, -1);
+	assert.match(stopVoiceButton, /className="flex size-8 items-center justify-center overflow-hidden rounded-md border border-border bg-background p-0 text-icon-subtle/u);
+	assert.match(stopVoiceButton, /className="flex size-5 min-w-0 items-center justify-center overflow-hidden"/u);
+	assert.match(stopVoiceButton, /height="20px"/u);
+	assert.doesNotMatch(stopVoiceButton, /CrossIcon/u);
 });
 
 test("shared composer keeps dictation beside typed submit and live voice empty-only", () => {
@@ -223,10 +230,15 @@ test("sidebar chat and Rovo app composers use the shared Auto plus CTA controls"
 	assert.match(sidebarPanel, /useRealtimeVoice/u);
 	assert.doesNotMatch(sidebarPanel, /useLiveVoice/u);
 	assert.match(sidebarPanel, /appendDictationTranscript\(promptRef\.current, transcriptText\)/u);
+	assert.doesNotMatch(sidebarPanel, /setPrompt\(transcriptText\)/u);
+	assert.doesNotMatch(sidebarPanel, /transcriptToPreserve/u);
 	assert.match(sidebarPanel, /realtime\.connect\(\{ transcriptionOnly: true \}\);/u);
 	assert.match(sidebarPanel, /experimentalDarkCta/u);
 	assert.match(rovoShell, /experimentalDarkCta/u);
 	assert.match(rovoShell, /appendDictationTranscript\(composerTextRef\.current, transcript\)/u);
+	assert.doesNotMatch(rovoShell, /setVoiceTranscript\(text\)/u);
+	assert.doesNotMatch(rovoShell, /setVoiceTranscript\(transcript\)/u);
+	assert.doesNotMatch(rovoShell, /transcriptToPreserve/u);
 	assert.match(sidebarPanel, /micStream=\{realtime\.micStream\}/u);
 	assert.match(sidebarPanel, /dictationState=\{dictationState\}/u);
 	assert.match(sidebarPanel, /onStartDictation=\{handleStartDictation\}/u);

@@ -300,11 +300,11 @@ export function RovoComposerActionButton({
 					>
 						<button
 							aria-label="Stop live voice"
-							className="flex h-8 w-20 items-center gap-1.5 overflow-hidden rounded-md border border-border bg-background pl-2 pr-2 text-icon-subtle transition-colors hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed"
+							className="flex size-8 items-center justify-center overflow-hidden rounded-md border border-border bg-background p-0 text-icon-subtle transition-colors hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed"
 							onClick={handleToggleRealtimeVoice}
 							type="button"
 						>
-							<span className="flex h-full min-w-0 flex-1 items-center">
+							<span className="flex size-5 min-w-0 items-center justify-center overflow-hidden">
 								<LiveWaveform
 									active={isRealtimeListening}
 									barColor="currentColor"
@@ -320,14 +320,11 @@ export function RovoComposerActionButton({
 									entranceDurationMs={180}
 									entranceStaggerMs={14}
 									fadeEdges={false}
-									height="100%"
+									height="20px"
 									mediaStream={isRealtimeListening ? micStream : null}
 									mode={isRealtimeListening ? "scrolling" : "static"}
 									processing={isRealtimeWaveformProcessing}
 								/>
-							</span>
-							<span aria-hidden="true" className="flex shrink-0 items-center justify-center">
-								<CrossIcon label="" size="small" />
 							</span>
 						</button>
 					</motion.div>

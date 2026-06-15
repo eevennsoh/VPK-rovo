@@ -511,9 +511,7 @@ export default function ChatPanel({
 			clickyStartListening();
 			return;
 		}
-
-		setPrompt("");
-	}, [isClickyActive, clickyStartListening, setPrompt]);
+	}, [isClickyActive, clickyStartListening]);
 	const handleRealtimeTranscript = useCallback((payload: RealtimeTranscriptPayload) => {
 		// Suppress live transcript deltas in the composer while Clicky is active.
 		if (isClickyActive) {
@@ -531,8 +529,7 @@ export default function ChatPanel({
 		}
 
 		realtimeTranscriptRef.current = transcriptText;
-		setPrompt(transcriptText);
-	}, [isClickyActive, setPrompt]);
+	}, [isClickyActive]);
 	const handleRealtimeTranscriptCompleted = useCallback((payload: RealtimeTranscriptPayload) => {
 		const transcriptText = getRealtimeTranscriptText(payload);
 
@@ -559,7 +556,6 @@ export default function ChatPanel({
 		}
 
 		realtimeTranscriptRef.current = transcriptText;
-		setPrompt(transcriptText);
 	}, [isClickyActive, clickyStartProcessing, clickyAddExchange, setPrompt]);
 	const handleRealtimeAssistantTextCompleted = useCallback((payload: { messageId?: string; text?: string } | string) => {
 		if (isDictationActiveRef.current) {
@@ -683,17 +679,13 @@ export default function ChatPanel({
 			}
 
 			realtimeTranscriptRef.current = "";
-			setPrompt("");
 			realtime.connect();
 			return;
 		}
 
-		const transcriptToPreserve = realtime.currentTranscript || realtimeTranscriptRef.current;
+		realtimeTranscriptRef.current = "";
 		realtime.disconnect();
-		if (transcriptToPreserve.trim()) {
-			setPrompt(transcriptToPreserve);
-		}
-	}, [realtime, setPrompt]);
+	}, [realtime]);
 	const isStreamingLifecycleActive = isStreaming || isSubmitPending;
 	const isRequestInFlight = hasInFlightTurn;
 	const hasPendingChatWork = isRequestInFlight || queuedPrompts.length > 0;
