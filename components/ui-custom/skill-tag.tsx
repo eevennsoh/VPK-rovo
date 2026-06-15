@@ -9,6 +9,8 @@ import {
 	getSkillCollectionMetadata,
 	type SkillCollectionId,
 } from "@/app/data/directory/skill-collections";
+import type { TagOverlayAction } from "@/components/ui/tag";
+import { withTooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 type SkillTagColor = SkillCollectionId | "2p3p";
@@ -23,6 +25,14 @@ interface SkillTagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	onRemove?: () => void;
 	removeVariant?: "inline" | "overlay";
 	removeButtonLabel?: string;
+	/**
+	 * A non-remove control occupying the same hover-reveal overlay slot as the
+	 * remove "×" (mutually exclusive with `onRemove` overlay). Use for actions
+	 * that aren't a removal — e.g. a swap icon that reverts an auto-tagged token
+	 * back to text. Kept distinct from `onRemove` so "remove" selectors never
+	 * match this action.
+	 */
+	overlayAction?: TagOverlayAction;
 }
 
 function SkillTag({
@@ -33,12 +43,42 @@ function SkillTag({
 	onRemove,
 	removeVariant = "inline",
 	removeButtonLabel = "Remove",
+	overlayAction,
 	className,
 	...props
 }: Readonly<SkillTagProps>) {
 	const isInteractive = Boolean(onClick);
 	const isOverlayRemove = Boolean(onRemove) && removeVariant === "overlay";
 	const collection = getSkillCollectionMetadata(normalizeSkillTagColor(color));
+	// Resolve the single hover-reveal overlay control: a custom action takes
+	// precedence over the remove "×". `isOverlay` drives the floating reveal +
+	// label-fade scrim; a plain inline remove stays laid out after the label.
+	const overlayControl: {
+		icon: React.ReactElement;
+		label: string;
+		tooltip?: string;
+		slot: string;
+		isOverlay: boolean;
+		onClick: () => void;
+	} | null = overlayAction
+		? {
+			icon: overlayAction.icon,
+			label: overlayAction.label,
+			tooltip: overlayAction.tooltip,
+			slot: "skill-tag-overlay-action",
+			isOverlay: true,
+			onClick: overlayAction.onClick,
+		}
+		: onRemove
+			? {
+				icon: <CrossIcon label="" size="small" />,
+				label: removeButtonLabel,
+				slot: "skill-tag-remove",
+				isOverlay: isOverlayRemove,
+				onClick: onRemove,
+			}
+			: null;
+	const hasOverlayReveal = Boolean(overlayControl?.isOverlay);
 
 	return (
 		<span
@@ -66,39 +106,42 @@ function SkillTag({
 			<span
 				className={cn(
 					"relative z-[1] min-w-0 skew-x-12 truncate whitespace-nowrap",
-					isOverlayRemove && "group-hover/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-focus-within/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-hover/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-focus-within/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)]"
+					hasOverlayReveal && "group-hover/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-focus-within/skill-tag:[mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-hover/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)] group-focus-within/skill-tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-3rem),transparent)]"
 				)}
 				data-slot="skill-tag-label"
 			>
 				{children}
 			</span>
 
-			{isOverlayRemove ? (
+			{hasOverlayReveal ? (
 				<span
 					aria-hidden
 					className="pointer-events-none absolute inset-y-0 end-0 z-[2] w-12 rounded-r-sm bg-linear-to-l from-bg-neutral from-55% to-transparent opacity-0 transition-opacity duration-fast ease-out group-hover/skill-tag:opacity-100 group-focus-within/skill-tag:opacity-100"
-					data-slot="skill-tag-remove-overlay-scrim"
+					data-slot="skill-tag-overlay-scrim"
 				/>
 			) : null}
 
-			{onRemove ? (
-				<button
-					type="button"
-					aria-label={removeButtonLabel}
-					onClick={(event) => {
-						event.stopPropagation();
-						onRemove();
-					}}
-					className={cn(
-						"inline-flex size-3.5 shrink-0 skew-x-12 items-center justify-center rounded-xs text-icon-subtle transition-[opacity,background-color,color] duration-fast ease-out hover:bg-bg-neutral-hovered hover:text-icon active:bg-bg-neutral-pressed",
-						isOverlayRemove
-							? "pointer-events-none absolute end-1 top-1/2 z-[3] -translate-y-1/2 opacity-0 group-hover/skill-tag:pointer-events-auto group-hover/skill-tag:opacity-100 group-focus-within/skill-tag:pointer-events-auto group-focus-within/skill-tag:opacity-100"
-							: "opacity-100",
-					)}
-					data-slot="skill-tag-remove"
-				>
-					<CrossIcon label="" size="small" />
-				</button>
+			{overlayControl ? (
+				withTooltip(
+					<button
+						type="button"
+						aria-label={overlayControl.label}
+						onClick={(event) => {
+							event.stopPropagation();
+							overlayControl.onClick();
+						}}
+						className={cn(
+							"inline-flex size-3.5 shrink-0 skew-x-12 items-center justify-center rounded-xs text-icon-subtle transition-[opacity,background-color,color] duration-fast ease-out hover:bg-bg-neutral-hovered hover:text-icon active:bg-bg-neutral-pressed",
+							overlayControl.isOverlay
+								? "pointer-events-none absolute end-1 top-1/2 z-[3] -translate-y-1/2 opacity-0 group-hover/skill-tag:pointer-events-auto group-hover/skill-tag:opacity-100 group-focus-within/skill-tag:pointer-events-auto group-focus-within/skill-tag:opacity-100"
+								: "opacity-100",
+						)}
+						data-slot={overlayControl.slot}
+					>
+						{overlayControl.icon}
+					</button>,
+					overlayControl.tooltip,
+				)
 			) : null}
 		</span>
 	);

@@ -16,7 +16,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
 import { Markdown } from "@tiptap/markdown";
-import { PluginKey } from "@tiptap/pm/state";
+import { PluginKey, TextSelection } from "@tiptap/pm/state";
 import { Suggestion, exitSuggestion } from "@tiptap/suggestion";
 import StarterKit from "@tiptap/starter-kit";
 import { ReactNodeViewRenderer } from "@tiptap/react";
@@ -142,6 +142,19 @@ export const RichTextMention = Mention.extend({
 					attributes.category ? { "data-mention-category": attributes.category } : {}
 				),
 			},
+			// Set only by the composer's visual-trace auto-tagging when it converts
+			// typed text into a token. Holds the exact original text so a revert
+			// (Backspace at the caret, or the chip's swap control) restores what the
+			// user typed. Its presence also marks a token as auto-converted, so the
+			// revert affordances stay off deliberate `@`/`/` mentions (which leave
+			// this null).
+			sourceText: {
+				default: null,
+				parseHTML: (element: HTMLElement) => element.getAttribute("data-source-text"),
+				renderHTML: (attributes: Record<string, unknown>) => (
+					attributes.sourceText ? { "data-source-text": attributes.sourceText } : {}
+				),
+			},
 			visualIconKey: {
 				default: null,
 				parseHTML: (element: HTMLElement) => element.getAttribute("data-visual-icon-key"),
@@ -189,7 +202,63 @@ export const RichTextMention = Mention.extend({
 	addNodeView() {
 		return ReactNodeViewRenderer(RichTextMentionNodeView);
 	},
+	addStorage(): RichTextMentionStorage {
+		return {
+			// Lowercased source texts the user has explicitly reverted in the current
+			// draft. The composer's auto-tagger consults this so a token the user
+			// un-tagged doesn't get re-converted moments later. Cleared on draft reset.
+			dismissedAutoTags: new Set<string>(),
+		};
+	},
+	addCommands() {
+		return {
+			// Replace the auto-tagged mention node at `pos` with the exact text it was
+			// converted from, and remember the revert so the auto-tagger skips it for
+			// the rest of this draft. No-op for non-auto-tagged mentions (no sourceText).
+			restoreAutoTaggedMention:
+				(pos: number) =>
+				({ state, dispatch, tr }) => {
+					const node = state.doc.nodeAt(pos);
+					if (!node || node.type.name !== "mention") {
+						return false;
+					}
+
+					const sourceText = node.attrs.sourceText;
+					if (typeof sourceText !== "string" || !sourceText) {
+						return false;
+					}
+
+					// Side effects (the revert + recording the dismissal) only run on a
+					// real dispatch — a dry-run (`editor.can()`) must stay side-effect-free,
+					// or a probe would permanently suppress auto-tagging of this word.
+					if (dispatch) {
+						const from = pos;
+						const to = pos + node.nodeSize;
+						tr.replaceWith(from, to, state.schema.text(sourceText));
+						tr.setSelection(TextSelection.create(tr.doc, from + sourceText.length));
+						dispatch(tr);
+						this.storage.dismissedAutoTags.add(sourceText.toLowerCase());
+					}
+
+					return true;
+				},
+		};
+	},
 });
+
+declare module "@tiptap/core" {
+	interface Commands<ReturnType> {
+		richTextMention: {
+			/** Revert an auto-tagged mention node (one with `sourceText`) back to plain text. */
+			restoreAutoTaggedMention: (pos: number) => ReturnType;
+		};
+	}
+}
+
+/** Storage shape exposed on `editor.storage.mention` by {@link RichTextMention}. */
+export interface RichTextMentionStorage {
+	dismissedAutoTags: Set<string>;
+}
 
 export const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({
 	name: "slashCommand",

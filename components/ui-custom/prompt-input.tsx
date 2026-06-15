@@ -36,6 +36,7 @@ import {
   type ComposerDirectoryAutocompleteController,
   type ComposerTraceDecoration,
   type RichTextMentionSources,
+  type RichTextMentionStorage,
 } from "@/components/ui-custom/rich-text-editor";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
@@ -1111,6 +1112,54 @@ interface VisualTraceAutoTagUndoSnapshot {
   beforeText: string;
 }
 
+// The mention extension stores a per-draft set of source texts the user reverted
+// (lowercased) so the auto-tagger can skip re-converting them. The extension's
+// name is "mention"; surfaces without it leave `editor.storage.mention` undefined.
+function getDismissedAutoTags(editor: Editor): Set<string> | undefined {
+  const mentionStorage = (editor.storage as unknown as { mention?: RichTextMentionStorage }).mention;
+  return mentionStorage?.dismissedAutoTags;
+}
+
+/** A mention node that the composer auto-tagged (carries the typed `sourceText`). */
+function isAutoTaggedMention(
+  node: { type: { name: string }; attrs: { sourceText?: unknown } } | null | undefined,
+): boolean {
+  return (
+    node?.type.name === "mention" &&
+    typeof node.attrs.sourceText === "string" &&
+    Boolean(node.attrs.sourceText)
+  );
+}
+
+/**
+ * Resolve the document position of an auto-tagged mention a Backspace should
+ * revert, or null. Handles the caret sitting directly after the chip, and the
+ * common just-typed case where conversion appended a trailing space so the caret
+ * lands after that space (a lone space is treated as adjacency to the chip).
+ */
+function getBackspaceRevertPos(editor: Editor): number | null {
+  const { selection } = editor.state;
+  if (!selection.empty) {
+    return null;
+  }
+
+  const { $from } = selection;
+  const before = $from.nodeBefore;
+  if (isAutoTaggedMention(before)) {
+    return $from.pos - before!.nodeSize;
+  }
+
+  if (before?.isText && before.text === " ") {
+    const spaceStart = $from.pos - before.nodeSize;
+    const beforeSpace = editor.state.doc.resolve(spaceStart).nodeBefore;
+    if (isAutoTaggedMention(beforeSpace)) {
+      return spaceStart - beforeSpace!.nodeSize;
+    }
+  }
+
+  return null;
+}
+
 interface VisualTraceTextSegment {
   from: number;
   textFrom: number;
@@ -1419,11 +1468,16 @@ export const PromptInputTextarea = ({
     const block = scope === "document"
       ? getVisualTraceDocumentText(activeEditor)
       : getCurrentVisualTraceBlockText(activeEditor);
+    // Skip occurrences the user explicitly reverted in this draft (Backspace or the
+    // chip's swap control), so an un-tagged word doesn't get re-converted moments
+    // later. Keyed by the exact matched text, lowercased — matching the dismissal
+    // recorded by `restoreAutoTaggedMention`.
+    const dismissed = getDismissedAutoTags(activeEditor);
     const matches = getDirectoryAutocompleteExactLabelMatches({
       sources: mentionSourcesRef.current,
       suppressTrailingPrefixMatches: scope === "block",
       text: block.text,
-    });
+    }).filter((match) => !dismissed?.has(block.text.slice(match.from, match.to).toLowerCase()));
     if (matches.length === 0) {
       return [];
     }
@@ -1487,12 +1541,20 @@ export const PromptInputTextarea = ({
       const nodeAfter = transaction.doc.resolve(pendingMatch.to).nodeAfter;
       const textAfter = nodeAfter?.isText ? nodeAfter.text?.charAt(0) : undefined;
       const shouldInsertTrailingSpace = textAfter === undefined;
+      // Stamp the exact typed text on the node so a later revert (Backspace at the
+      // caret, or the chip's swap control) restores precisely what was typed. Only
+      // this auto-tag path sets `sourceText`; deliberate `@`/`/` mentions leave it
+      // null, which is what scopes the revert affordances to auto-tagged tokens.
+      const mentionAttrs = {
+        ...getMentionNodeAttrs(pendingMatch.match.mention),
+        sourceText: pendingMatch.expectedText,
+      };
       const replacement = shouldInsertTrailingSpace
         ? [
-            mentionType.create(getMentionNodeAttrs(pendingMatch.match.mention)),
+            mentionType.create(mentionAttrs),
             transaction.doc.type.schema.text(" "),
           ]
-        : mentionType.create(getMentionNodeAttrs(pendingMatch.match.mention));
+        : mentionType.create(mentionAttrs);
 
       transaction = transaction.replaceWith(
         pendingMatch.from,
@@ -1890,6 +1952,20 @@ export const PromptInputTextarea = ({
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Backspace next to an auto-tagged token un-tags it back to the exact text
+      // that was typed (instead of the mention extension's default
+      // delete-and-reinsert-"@"). Scoped to auto-tagged nodes via `sourceText`;
+      // deliberate `@`/`/` mentions fall through to the default behavior.
+      const backspaceRevertPos =
+        event.key === "Backspace" && !event.metaKey && !event.ctrlKey && !event.altKey
+          ? getBackspaceRevertPos(editor)
+          : null;
+      if (backspaceRevertPos !== null && editor.commands.restoreAutoTaggedMention(backspaceRevertPos)) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
       const snapshot = visualTraceUndoSnapshotRef.current;
       if (
         !snapshot ||
@@ -1972,6 +2048,7 @@ export const PromptInputTextarea = ({
 
     const handleReset = () => {
       visualTraceUndoSnapshotRef.current = null;
+      getDismissedAutoTags(editor)?.clear();
       setComposerPlainText(editor, "");
       publishText("", editor.view.dom, false);
       setDirectoryAutocompleteState(null);
@@ -1998,6 +2075,7 @@ export const PromptInputTextarea = ({
 
     setComposerPlainText(editor, resolvedValue);
     visualTraceUndoSnapshotRef.current = null;
+    getDismissedAutoTags(editor)?.clear();
     publishText(serializeComposerDoc(editor), editor.view.dom, false);
     if (enableVisualTraceAutoTagging) {
       scheduleVisualTraceAutoTagging(editor, true);

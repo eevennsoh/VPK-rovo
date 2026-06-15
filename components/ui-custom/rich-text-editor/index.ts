@@ -18,7 +18,7 @@ export {
 	type ComposerTraceDecoration,
 	type ComposerTraceDecorationController,
 } from "./composer-extensions";
-export { getMentionNodeAttrs } from "./extensions";
+export { getMentionNodeAttrs, type RichTextMentionStorage } from "./extensions";
 export {
 	RichTextCommandMenuSearchField,
 	RichTextSuggestionEmptyState,
