@@ -17,6 +17,7 @@ const TRIGGER_CONFIG_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../../trigger-config/components/trigger-config.tsx"),
 	"utf8",
 );
+const AGENT_PROFILE_COVER_SOURCE = TRIGGER_CONFIG_SOURCE.match(/function AgentProfileCover[\s\S]*?\n\}/u)?.[0] ?? "";
 
 test("AgentAutomationFlowCover owns the automation-to-agent visual treatment", () => {
 	assert.match(COMPONENT_SOURCE, /export function AgentAutomationFlowCover\(/u);
@@ -31,11 +32,26 @@ test("AgentAutomationFlowCover owns the automation-to-agent visual treatment", (
 test("AgentProfileCover and AgentTestAutomationFlow use the same shared cover", () => {
 	assert.match(TRIGGER_CONFIG_SOURCE, /import \{ AgentAutomationFlowCover \} from "@\/components\/blocks\/triggers\/components\/agent-automation-flow-cover";/u);
 	assert.match(TRIGGER_CONFIG_SOURCE, /function AgentProfileCover\([\s\S]*return <AgentAutomationFlowCover triggers=\{primaryRule\?\.triggers \?\? \[\]\} \/>;/u);
-	assert.doesNotMatch(TRIGGER_CONFIG_SOURCE, /function AgentProfileCover[\s\S]*GenerativeIndicatorIcon/u);
-	assert.doesNotMatch(TRIGGER_CONFIG_SOURCE, /function AgentProfileCover[\s\S]*visibleTriggers = triggers\.slice/u);
+	assert.doesNotMatch(AGENT_PROFILE_COVER_SOURCE, /GenerativeIndicatorIcon/u);
+	assert.doesNotMatch(AGENT_PROFILE_COVER_SOURCE, /visibleTriggers = triggers\.slice/u);
 
 	assert.match(TEST_PANEL_SOURCE, /import \{ AgentAutomationFlowCover \} from "@\/components\/blocks\/triggers\/components\/agent-automation-flow-cover";/u);
 	assert.match(TEST_PANEL_SOURCE, /function AgentTestAutomationFlow[\s\S]*<AgentAutomationFlowCover[\s\S]*rootElement="span"[\s\S]*triggers=\{rule\.triggers\}/u);
 	assert.doesNotMatch(TEST_PANEL_SOURCE, /function AgentTestAutomationFlow[\s\S]*AiSparkleIcon/u);
 	assert.doesNotMatch(TEST_PANEL_SOURCE, /function AgentTestAutomationFlow[\s\S]*rule\.triggers\.slice\(0, 2\)/u);
+});
+
+test("TriggerConfig instructions can run with or without a custom prompt", () => {
+	assert.match(TRIGGER_CONFIG_SOURCE, /type AgentRunPromptMode = "run-agent" \| "custom-prompt";/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /const \[runPromptMode, setRunPromptMode\] = useState<AgentRunPromptMode>/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /if \(value === "run-agent"\) \{[\s\S]*handleMentionInventoryChange\(\[\]\);[\s\S]*onInstructionsChange\?\.\(""\);[\s\S]*\}/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /\}, \[handleMentionInventoryChange, onInstructionsChange\]\);/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /aria-label="Agent run prompt mode"/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /role="radiogroup"/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /role="radio"/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /aria-checked=\{runPromptMode === "run-agent"\}/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /aria-checked=\{runPromptMode === "custom-prompt"\}/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /onClick=\{\(\) => handleRunPromptModeChange\("run-agent"\)\}[\s\S]*<GenerativeIndicatorIcon label="" size="small" \/>[\s\S]*Run agent/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /onClick=\{\(\) => handleRunPromptModeChange\("custom-prompt"\)\}[\s\S]*Pass a custom prompt/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /\{showCustomPromptEditor \? \([\s\S]*<RichTextEditor[\s\S]*aria-label="Agent instructions"[\s\S]*onMarkdownChange=\{onInstructionsChange\}/u);
 });
