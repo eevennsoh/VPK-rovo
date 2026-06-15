@@ -128,6 +128,39 @@ function normalizeText(value: unknown): string | undefined {
 	return trimmed.length > 0 ? trimmed : undefined;
 }
 
+function normalizeSearchText(value: unknown): string | undefined {
+	const normalized = normalizeText(value)
+		?.toLowerCase()
+		.replace(/[^\p{L}\p{N}]+/gu, " ")
+		.trim();
+	return normalized && normalized.length > 0 ? normalized : undefined;
+}
+
+function getSearchTokens(value: unknown): string[] {
+	return normalizeSearchText(value)?.split(/\s+/u).filter(Boolean) ?? [];
+}
+
+function textMatchesSearch(candidate: unknown, query: string): boolean {
+	const normalizedCandidate = normalizeSearchText(candidate);
+	const normalizedQuery = normalizeSearchText(query);
+	if (!normalizedCandidate || !normalizedQuery) {
+		return false;
+	}
+	if (normalizedCandidate.includes(normalizedQuery) || normalizedQuery.includes(normalizedCandidate)) {
+		return true;
+	}
+
+	const candidateTokens = new Set(getSearchTokens(normalizedCandidate));
+	const queryTokens = getSearchTokens(normalizedQuery);
+	return queryTokens.length > 0 && queryTokens.every((token) => candidateTokens.has(token));
+}
+
+function targetMatchesSearch(target: StudioScreenAssistantTarget, query: string): boolean {
+	return [target.id, target.fieldId, target.label].some((candidate) =>
+		textMatchesSearch(candidate, query),
+	);
+}
+
 function normalizeTextArray(value: unknown): string[] | undefined {
 	if (!Array.isArray(value)) {
 		return undefined;
@@ -413,6 +446,10 @@ export function groundStudioScreenAssistantTarget(input: {
 	pointerTarget?: StudioScreenAssistantTarget | null;
 	visibleTargets: readonly StudioScreenAssistantVisibleTarget[];
 }): StudioScreenAssistantTarget | null {
+	const hasExplicitLocator = Boolean(
+		normalizeText(input.id) ?? normalizeText(input.fieldId) ?? normalizeText(input.label),
+	);
+
 	const byId = input.id
 		? input.visibleTargets.find((target) => target.id === input.id)
 		: null;
@@ -427,12 +464,16 @@ export function groundStudioScreenAssistantTarget(input: {
 		return byField;
 	}
 
-	const normalizedLabel = normalizeText(input.label)?.toLowerCase();
+	const normalizedLabel = normalizeText(input.label);
 	const byLabel = normalizedLabel
-		? input.visibleTargets.find((target) => target.label?.toLowerCase().includes(normalizedLabel))
+		? input.visibleTargets.find((target) => targetMatchesSearch(target, normalizedLabel))
 		: null;
 	if (byLabel) {
 		return byLabel;
+	}
+
+	if (hasExplicitLocator) {
+		return null;
 	}
 
 	return input.pointerTarget ?? null;

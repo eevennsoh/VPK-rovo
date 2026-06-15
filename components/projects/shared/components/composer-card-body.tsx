@@ -17,7 +17,6 @@ import CustomizeMenu from "@/components/blocks/shared-ui/customize-menu";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import AddIcon from "@atlaskit/icon/core/add";
-import CursorIcon from "@atlaskit/icon-lab/core/cursor";
 import { useCallback, useEffect, useState } from "react";
 import { RovoAppComposerAddMenu } from "@/components/projects/shared/components/rovo-app-composer-add-menu";
 import { PendingAttachments } from "@/components/projects/shared/components/pending-attachments";
@@ -25,6 +24,7 @@ import { RovoComposerSendControls } from "@/components/projects/shared/component
 import { useRovoAppComposerHeight } from "@/components/projects/shared/hooks/use-rovo-app-composer-height";
 import { DEFAULT_REASONING_OPTION_ID } from "@/components/blocks/shared-ui/data/customize-menu-data";
 import { type ComposerBodyBaseProps, usePrefillEffect } from "@/components/projects/shared/components/composer-body-shared";
+import { RovoCursorTrackingIcon } from "@/components/projects/shared/components/rovo-cursor-tracking-icon";
 
 export interface ComposerCardBodyProps extends ComposerBodyBaseProps {
 	artifactTitle: string | null | undefined;
@@ -195,7 +195,7 @@ export function ComposerCardBody({
 							aria-pressed={clickyActive}
 							tooltip={{ content: "Rovo cursor", delay: 0 }}
 						>
-							<CursorIcon label="" />
+							<RovoCursorTrackingIcon active={clickyActive} />
 						</PromptInputButton>
 						<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
 							<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />

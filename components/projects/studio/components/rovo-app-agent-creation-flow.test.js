@@ -55,8 +55,16 @@ const NAV_HOOK_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/blocks/top-navigation/hooks/use-top-navigation.ts"),
 	"utf8",
 );
+const LEFT_NAVIGATION_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/blocks/top-navigation/components/left-navigation.tsx"),
+	"utf8",
+);
 const COMPOSER_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/shared/components/composer-floating-body.tsx"),
+	"utf8",
+);
+const COMPOSER_BODY_SHARED_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/shared/components/composer-body-shared.ts"),
 	"utf8",
 );
 const COMPOSER_REVEAL_HOOK_SOURCE = fs.readFileSync(
@@ -79,6 +87,15 @@ const ROVO_UI_MESSAGES_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "lib/rovo-ui-messages.ts"),
 	"utf8",
 );
+
+function sourceBetween(source, startNeedle, endNeedle) {
+	const start = source.indexOf(startNeedle);
+	const end = source.indexOf(endNeedle, start);
+
+	assert.notEqual(start, -1, `Missing source marker: ${startNeedle}`);
+	assert.notEqual(end, -1, `Missing source marker: ${endNeedle}`);
+	return source.slice(start, end);
+}
 
 test("RovoAppShell starts Studio agent creation only from the default-agent home composer", () => {
 	assert.match(SHELL_SOURCE, /const DEFAULT_COMPOSER_PLACEHOLDER = "Describe the agent you want to build";/u);
@@ -224,7 +241,7 @@ test("Studio default landing shows the agents card section below the composer", 
 	assert.match(CUSTOM_AGENTS_TABLE_SOURCE, /aria-pressed:border-transparent! aria-pressed:bg-transparent! aria-pressed:text-text-subtle! aria-pressed:\[&_svg\]:text-icon-subtle!/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /text-icon-selected/u);
 	assert.doesNotMatch(CUSTOM_AGENTS_TABLE_SOURCE, /isFirstRow|isLastRow|rounded-tl-\[12px\]|rounded-br-\[12px\]/u);
-	assert.match(COMPOSER_SOURCE, /focusRequestKey: number \| undefined;/u);
+	assert.match(COMPOSER_BODY_SHARED_SOURCE, /focusRequestKey: number \| undefined;/u);
 	assert.match(COMPOSER_SOURCE, /if \(typeof focusRequestKey !== "number" \|\| focusRequestKey <= 0\)/u);
 	assert.match(COMPOSER_SOURCE, /textareaRef\.current\?\.focus\(\);/u);
 });
@@ -314,6 +331,26 @@ test("Studio composer wires dictation separately from realtime live voice", () =
 	assert.match(SHELL_SOURCE, /onTextChange=\{handleComposerTextChange\}/u);
 	assert.match(SHELL_SOURCE, /if \(isDictationActiveRef\.current\) \{[\s\S]*return;[\s\S]*\}[\s\S]*const c = chatRef\.current/u);
 	assert.match(SHELL_SOURCE, /realtime\.connect\(\{ transcriptionOnly: true \}\);/u);
+});
+
+test("Studio cursor activation starts live voice while cursor deactivation leaves live voice running", () => {
+	const realtimeToggleSource = sourceBetween(SHELL_SOURCE, "const handleToggleRealtimeVoice", "const handleToggleClicky");
+	const clickyToggleSource = sourceBetween(SHELL_SOURCE, "const handleToggleClicky", "// Keyboard shortcuts for Rovo");
+	const keyboardShortcutSource = sourceBetween(SHELL_SOURCE, "// Keyboard shortcuts for Rovo", "const handleStartDictation");
+
+	assert.match(SHELL_SOURCE, /activate: activateClicky,/u);
+	assert.match(SHELL_SOURCE, /const startRealtimeVoice = useCallback\(\(\) => \{[\s\S]*manualVoiceStopRef\.current = false;[\s\S]*realtime\.connect\(\);[\s\S]*\}, \[realtime\]\);/u);
+
+	assert.match(clickyToggleSource, /if \(isClickyActive\) \{[\s\S]*deactivateClicky\(\);[\s\S]*return;[\s\S]*\}/u);
+	assert.match(clickyToggleSource, /activateClicky\(\);[\s\S]*if \(realtime\.voiceState === "idle"\) \{[\s\S]*startRealtimeVoice\(\);[\s\S]*\}/u);
+	assert.doesNotMatch(clickyToggleSource, /realtime\.disconnect\(\)/u);
+
+	assert.match(realtimeToggleSource, /if \(realtime\.voiceState === "idle"\) \{[\s\S]*startRealtimeVoice\(\);[\s\S]*return;[\s\S]*\}/u);
+	assert.match(realtimeToggleSource, /realtime\.disconnect\(\);[\s\S]*deactivateClicky\(\);/u);
+
+	assert.match(keyboardShortcutSource, /if \(e\.key === "K" && e\.shiftKey && \(e\.metaKey \|\| e\.ctrlKey\)\) \{[\s\S]*handleToggleClicky\(\);/u);
+	assert.match(keyboardShortcutSource, /if \(e\.key === "Escape" && isClickyActive\) \{[\s\S]*deactivateClicky\(\);/u);
+	assert.doesNotMatch(SHELL_SOURCE, /toggleClicky/u);
 });
 
 test("Studio home starters frame agent building instead of generic one-off tasks", () => {
@@ -731,7 +768,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.doesNotMatch(SHELL_SOURCE, /askRovoCustomAgentTabs/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /restoreSessionAgentVersion,[\s\S]*sessionAgentSaveStatus,[\s\S]*sessionAgentSavedAt,[\s\S]*\} = useRovoChat\(\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenFloatingRovoChat = useCallback\(\(\) => \{[\s\S]*resetAgentToRovo\(\);[\s\S]*openChat\("floating"\);[\s\S]*\}, \[openChat, resetAgentToRovo\]\);/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<FloatingRovoButton ariaLabel="Open Rovo chat" product="home" onButtonClick=\{handleOpenFloatingRovoChat\} \/>/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<FloatingRovoButton[\s\S]*ariaLabel="Open Rovo chat"[\s\S]*product="home"[\s\S]*onButtonClick=\{handleOpenFloatingRovoChat\}[\s\S]*persistentBar=\{rovoButtonPersistentBar\}[\s\S]*\/>/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /chatGreeting\?: ChatPanelGreetingProps;/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<RovoFloatingChat[\s\S]*chatContextBar=\{chatContextBar\}[\s\S]*greeting=\{chatGreeting\}[\s\S]*hideComposerSourceAndModelControls=\{Boolean\(chatContextBar\)\}[\s\S]*onInterceptSubmit=\{onChatInterceptSubmit\}[\s\S]*\/>/u);
 	assert.match(SHELL_SOURCE, /<SidebarResizeHandle[\s\S]*side="left"[\s\S]*askRovoChatResize\.onResizeHandlePointerDown/u);
@@ -757,11 +794,10 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(CHAT_PANEL_SOURCE, /selectedAgentVersionId\?: string;/u);
 	assert.match(CHAT_PANEL_SOURCE, /onAgentVersionChange\?: \(versionId: string\) => void;/u);
 	assert.match(CHAT_PANEL_SOURCE, /aria-label="Switch version"/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /agentVersionOptions=\{versionOptions\}/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /selectedAgentVersionId=\{selectedVersionId\}/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /onAgentVersionChange=\{onSelectVersion\}/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTestSelectedHeader[\s\S]*onSelectVersion=\{setSelectedVersionId\}[\s\S]*selectedVersionId=\{selectedVersionId\}[\s\S]*versionOptions=\{versionOptions\}/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTestVersionSelect[\s\S]*onSelectVersion=\{onSelectVersion\}[\s\S]*selectedVersionId=\{selectedVersionId\}[\s\S]*versionOptions=\{versionOptions\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /buildAgentTestProfile\(entry, selectedResult, selectedOption\.label\)/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTestChatPanel[\s\S]*result=\{selectedResult\}[\s\S]*versionOptions=\{versionOptions\}[\s\S]*selectedVersionId=\{selectedVersionId\}[\s\S]*onSelectVersion=\{setSelectedVersionId\}[\s\S]*\/>/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTestChatPanel testAgentProfile=\{testAgentProfile\} \/>/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /containerClassName="h-full min-h-0 w-full overflow-visible"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /composerContainerClassName="px-0"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /conversationContentClassName="px-0"/u);
@@ -905,6 +941,17 @@ test("Studio screen assistant applies draft patches without publishing agents", 
 	assert.match(SHELL_SOURCE, /onToolCall: useCallback/u);
 	assert.match(SHELL_SOURCE, /normalizeAgentDraftPatch/u);
 	assert.match(SHELL_SOURCE, /studioAgentRegistry\.updateSessionAgentDraft/u);
+	assert.match(LEFT_NAVIGATION_SOURCE, /data-screen-assistant-target=\{`top-navigation:\$\{product\}-logo`\}/u);
+	const pointAtTargetIndex = SHELL_SOURCE.indexOf('case "point_at_target":');
+	assert.notEqual(pointAtTargetIndex, -1);
+	const pointAtTargetSource = SHELL_SOURCE.slice(
+		pointAtTargetIndex,
+		SHELL_SOURCE.indexOf('case "set_composer_text":', pointAtTargetIndex),
+	);
+	assert.match(pointAtTargetSource, /const grounded = groundStudioScreenAssistantTarget/u);
+	assert.match(pointAtTargetSource, /const point = getViewportPointFromScreenAssistantTarget\(grounded\);/u);
+	assert.match(pointAtTargetSource, /if \(point && isClickyActive\) \{[\s\S]*clickyStartPointing\(point, label\);/u);
+	assert.match(pointAtTargetSource, /ok: Boolean\(point\)/u);
 	const applyAgentDraftPatchIndex = SHELL_SOURCE.indexOf('case "apply_agent_draft_patch":');
 	assert.notEqual(applyAgentDraftPatchIndex, -1);
 	const screenAssistantHandlerSource = SHELL_SOURCE.slice(

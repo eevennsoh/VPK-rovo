@@ -7,11 +7,11 @@ import {
 import { composerTextareaClassName, floatingComposerTextareaClassName } from "@/components/blocks/shared-ui/composer-styles";
 import { cn } from "@/lib/utils";
 import AddIcon from "@atlaskit/icon/core/add";
-import CursorIcon from "@atlaskit/icon-lab/core/cursor";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
+import { RovoCursorTrackingIcon } from "@/components/projects/shared/components/rovo-cursor-tracking-icon";
 import { useRovoAppComposerReveal } from "@/components/projects/shared/hooks/use-rovo-app-composer-reveal";
 import SvgTracing from "@/components/visual/svg-tracing";
 import {
@@ -143,7 +143,7 @@ export function ComposerFloatingBody({
 							aria-pressed={clickyActive}
 							tooltip={{ content: "Rovo Cursor", delay: 0 }}
 						>
-							<CursorIcon label="" />
+							<RovoCursorTrackingIcon active={clickyActive} />
 						</PromptInputButton>
 					</div>
 				}

@@ -446,7 +446,7 @@ export default function ChatPanel({
 	// --- Rovo AI cursor companion (Clicky) ---
 	const clicky = useClicky();
 	const {
-		toggle: toggleClicky,
+		activate: activateClicky,
 		isActive: isClickyActive,
 		deactivate: deactivateClicky,
 		startListening: clickyStartListening,
@@ -464,28 +464,6 @@ export default function ChatPanel({
 			deactivateClicky();
 		}
 	}, [deactivateClicky, hideAiCursor, isClickyActive]);
-
-	// Cmd+Shift+K (Mac) / Ctrl+Shift+K toggles the AI cursor; Escape deactivates it.
-	useEffect(() => {
-		if (hideAiCursor) {
-			return;
-		}
-
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "K" && e.shiftKey && (e.metaKey || e.ctrlKey)) {
-				e.preventDefault();
-				toggleClicky();
-				return;
-			}
-
-			if (e.key === "Escape" && isClickyActive) {
-				deactivateClicky();
-			}
-		};
-
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [deactivateClicky, hideAiCursor, isClickyActive, toggleClicky]);
 
 	const realtimeTranscriptRef = useRef("");
 	const promptRef = useRef(prompt);
@@ -674,24 +652,64 @@ export default function ChatPanel({
 		setComposerFocusRequestKey((currentKey) => currentKey + 1);
 		realtime.connect({ transcriptionOnly: true });
 	}, [realtime]);
+
+	const startRealtimeVoice = useCallback(() => {
+		if (isDictationActiveRef.current) {
+			dictationBaselineRef.current = null;
+			dictationCommittedTextRef.current = null;
+			isDictationActiveRef.current = false;
+			setIsDictationActive(false);
+			setDictationTranscriptPreview(null);
+		}
+
+		realtimeTranscriptRef.current = "";
+		realtime.connect();
+	}, [realtime]);
+
 	const handleToggleRealtimeVoice = useCallback(() => {
 		if (realtime.voiceState === "idle") {
-			if (isDictationActiveRef.current) {
-				dictationBaselineRef.current = null;
-				dictationCommittedTextRef.current = null;
-				isDictationActiveRef.current = false;
-				setIsDictationActive(false);
-				setDictationTranscriptPreview(null);
-			}
-
-			realtimeTranscriptRef.current = "";
-			realtime.connect();
+			startRealtimeVoice();
 			return;
 		}
 
 		realtimeTranscriptRef.current = "";
 		realtime.disconnect();
-	}, [realtime]);
+		deactivateClicky();
+	}, [deactivateClicky, realtime, startRealtimeVoice]);
+
+	const handleToggleClicky = useCallback(() => {
+		if (isClickyActive) {
+			deactivateClicky();
+			return;
+		}
+
+		activateClicky();
+		if (realtime.voiceState === "idle") {
+			startRealtimeVoice();
+		}
+	}, [activateClicky, deactivateClicky, isClickyActive, realtime.voiceState, startRealtimeVoice]);
+
+	// Cmd+Shift+K (Mac) / Ctrl+Shift+K toggles the AI cursor; Escape deactivates it.
+	useEffect(() => {
+		if (hideAiCursor) {
+			return;
+		}
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "K" && e.shiftKey && (e.metaKey || e.ctrlKey)) {
+				e.preventDefault();
+				handleToggleClicky();
+				return;
+			}
+
+			if (e.key === "Escape" && isClickyActive) {
+				deactivateClicky();
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [deactivateClicky, handleToggleClicky, hideAiCursor, isClickyActive]);
 	const isStreamingLifecycleActive = isStreaming || isSubmitPending;
 	const isRequestInFlight = hasInFlightTurn;
 	const hasPendingChatWork = isRequestInFlight || queuedPrompts.length > 0;
@@ -1182,7 +1200,7 @@ export default function ChatPanel({
 						onStopDictation={handleStopDictation}
 						onSubmit={handleSubmit}
 						onStop={abort}
-						onToggleClicky={toggleClicky}
+						onToggleClicky={handleToggleClicky}
 						onToggleRealtimeVoice={handleToggleRealtimeVoice}
 						onRemoveQueuedPrompt={removeQueuedPrompt}
 						onReasoningChange={setSelectedReasoning}

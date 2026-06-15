@@ -148,6 +148,7 @@ export function LeftNavigation({
 			>
 				<Button
 					aria-label={`Open ${name}`}
+					data-screen-assistant-target={`top-navigation:${product}-logo`}
 					variant="ghost"
 					className="flex items-center gap-1.5"
 					style={{ height: 32, padding: token("space.050"), pointerEvents: "auto" }}

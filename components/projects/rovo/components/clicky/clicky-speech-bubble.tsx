@@ -3,52 +3,59 @@
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 
-// ---------------------------------------------------------------------------
-// Speech bubble — VPK tooltip styling (dark neutral pill, char stream). Kept
-// inside the cursor's transformed subtree so it tracks the moving cursor.
-// ---------------------------------------------------------------------------
+const TYPEWRITER_INTERVAL_MS = 40;
 
 interface ClickySpeechBubbleProps {
 	text: string;
+	opacity?: number;
+	typewriter?: boolean;
+	onTypewriterComplete?: () => void;
 }
 
-export function ClickySpeechBubble({ text }: Readonly<ClickySpeechBubbleProps>) {
-	// Stream characters for natural appearance
-	const [displayState, setDisplayState] = useState(() => ({ displayedText: "", text }));
-	if (displayState.text !== text) {
-		setDisplayState({ displayedText: "", text });
-	}
-	const displayedText = displayState.text === text ? displayState.displayedText : "";
+export function ClickySpeechBubble({
+	text,
+	opacity = 1,
+	typewriter = false,
+	onTypewriterComplete,
+}: Readonly<ClickySpeechBubbleProps>) {
+	const [displayedText, setDisplayedText] = useState(typewriter ? "" : text);
 
 	useEffect(() => {
+		if (!typewriter) {
+			setDisplayedText(text);
+			return;
+		}
+
+		setDisplayedText("");
 		if (!text) return;
 
-		let i = 0;
+		let index = 0;
 		const interval = setInterval(() => {
-			i++;
-			if (i >= text.length) {
-				setDisplayState({ displayedText: text, text });
+			index += 1;
+			const nextText = text.slice(0, index);
+			setDisplayedText(nextText);
+
+			if (index >= text.length) {
 				clearInterval(interval);
-			} else {
-				setDisplayState({ displayedText: text.slice(0, i), text });
+				onTypewriterComplete?.();
 			}
-		}, 30 + Math.random() * 30); // 30-60ms per char (reference uses variable delay)
+		}, TYPEWRITER_INTERVAL_MS);
 
 		return () => clearInterval(interval);
-	}, [text]);
+	}, [onTypewriterComplete, text, typewriter]);
 
 	if (!displayedText) return null;
 
 	return (
 		<motion.div
-			className="absolute"
+			className="pointer-events-none absolute w-max"
 			style={{
 				left: 10,
 				top: 18,
 				willChange: "transform, opacity",
 			}}
 			initial={{ scale: 0.5, opacity: 0 }}
-			animate={{ scale: 1, opacity: 1 }}
+			animate={{ scale: 1, opacity }}
 			exit={{ scale: 0.5, opacity: 0 }}
 			transition={{
 				type: "spring",
@@ -56,7 +63,7 @@ export function ClickySpeechBubble({ text }: Readonly<ClickySpeechBubbleProps>) 
 				bounce: 0.4,
 			}}
 		>
-			<div className="max-w-xs rounded-md bg-bg-neutral-bold px-3 py-1.5 text-xs text-text-inverse shadow-md">
+			<div className="inline-block w-max max-w-none whitespace-nowrap rounded-md bg-bg-neutral-bold px-3 py-1.5 text-xs text-text-inverse shadow-md outline-hidden">
 				{displayedText}
 			</div>
 		</motion.div>

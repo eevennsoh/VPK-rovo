@@ -7,7 +7,7 @@ import type { ClickyState } from "@/components/projects/studio/hooks/use-clicky"
 
 // ---------------------------------------------------------------------------
 // Clicky cursor — rendered with the shared RovoCursor design so the AI
-// companion matches the brand pointer / typing / loading / speaking glyphs.
+// companion matches the brand pointer / loading / speaking glyphs.
 // ---------------------------------------------------------------------------
 
 /** Base glyph unit (px). RovoCursor scales every state from this. */
@@ -23,7 +23,7 @@ const IDLE_ROTATION = -35;
 function toRovoCursorState(state: ClickyState): RovoCursorState {
 	switch (state) {
 		case "listening":
-			return "typing"; // mic badge — capturing the user's voice
+			return "cursor"; // keep the pointer stable while the user talks
 		case "processing":
 			return "loading"; // rainbow spinner — thinking
 		case "speaking":

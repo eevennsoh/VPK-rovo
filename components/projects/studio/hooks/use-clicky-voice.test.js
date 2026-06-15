@@ -10,12 +10,13 @@ const SOURCE = fs.readFileSync(
 
 test("Clicky deactivation does not disconnect the Realtime voice session", () => {
 	assert.doesNotMatch(SOURCE, /disconnectRealtime/u);
-	assert.match(SOURCE, /stops visual capture\/pointing without tearing down voice/u);
+	assert.match(SOURCE, /Cursor deactivation must not stop/u);
 	assert.match(SOURCE, /connectedForClickyRef\.current/u);
 });
 
-test("Clicky sends structured Studio screen assistant context with screenshots", () => {
-	assert.match(SOURCE, /getScreenAssistantSnapshot/u);
-	assert.match(SOURCE, /screenAssistant: \{ \.\.\.screenAssistant, turnId \}/u);
-	assert.match(SOURCE, /Studio screen assistant context JSON/u);
+test("Clicky must use point_at_target before claiming the cursor is pointing", () => {
+	assert.match(SOURCE, /call get_screen_state, then call point_at_target/u);
+	assert.match(SOURCE, /Do not say "I'm pointing", "there it is"/u);
+	assert.match(SOURCE, /point_at_target returns ok: true/u);
+	assert.match(SOURCE, /If it returns ok: false/u);
 });

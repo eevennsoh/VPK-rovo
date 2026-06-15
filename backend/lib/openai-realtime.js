@@ -163,7 +163,10 @@ const SESSION_TOOLS = [
 		name: "point_at_target",
 		description:
 			"Move the on-screen cursor to a visible target to direct the user's attention. " +
-			"Identify the target using one of the ids/labels returned by get_screen_state.",
+			"Identify the target using one of the ids/labels returned by get_screen_state. " +
+			"When the user asks where something is or asks you to point/show it, call this " +
+			"before claiming the cursor moved. Only say you are pointing after the tool " +
+			"returns ok: true; if it returns ok: false, say you could not find that target.",
 		parameters: {
 			type: "object",
 			properties: {
