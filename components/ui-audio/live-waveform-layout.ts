@@ -122,3 +122,17 @@ export function getWaveformSeriesValue({
 
 	return bars[clampedIndex] || 0.05;
 }
+
+export function getWaveformPaletteIndex({
+	index,
+	paletteLength,
+}: {
+	index: number;
+	paletteLength: number;
+}) {
+	if (paletteLength <= 0) {
+		return -1;
+	}
+
+	return (Math.imul(index + 1, 2654435761) >>> 0) % paletteLength;
+}

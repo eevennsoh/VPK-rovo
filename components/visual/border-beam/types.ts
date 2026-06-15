@@ -31,8 +31,9 @@ export type BorderBeamTheme = 'dark' | 'light' | 'auto';
  * - 'mono': Monochromatic grayscale
  * - 'ocean': Blue and purple tones
  * - 'sunset': Warm orange, yellow, and red tones
+ * - 'rovo': Rovo brand blue, orange, purple, and lime
  */
-export type BorderBeamColorVariant = 'colorful' | 'mono' | 'ocean' | 'sunset';
+export type BorderBeamColorVariant = 'colorful' | 'mono' | 'ocean' | 'sunset' | 'rovo';
 
 /**
  * Configuration for a size preset
@@ -87,6 +88,7 @@ export interface BorderBeamProps extends Omit<HTMLAttributes<HTMLDivElement>, 'c
    * - 'mono': Monochromatic grayscale
    * - 'ocean': Blue and purple tones
    * - 'sunset': Warm orange, yellow, and red tones
+   * - 'rovo': Rovo brand blue, orange, purple, and lime
    * @default 'colorful'
    */
   colorVariant?: BorderBeamColorVariant;

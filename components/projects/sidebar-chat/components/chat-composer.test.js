@@ -141,9 +141,9 @@ test("shared composer waveform uses live stream while listening and processing a
 	assert.match(source, /mediaStream=\{isRealtimeListening \? micStream : null\}/u);
 	assert.match(source, /mode=\{isRealtimeListening \? "scrolling" : "static"\}/u);
 	assert.notEqual(stopVoiceIndex, -1);
-	assert.match(stopVoiceButton, /className="flex size-8 items-center justify-center overflow-hidden rounded-md border border-border bg-background p-0 text-icon-subtle/u);
-	assert.match(stopVoiceButton, /className="flex size-5 min-w-0 items-center justify-center overflow-hidden"/u);
-	assert.match(stopVoiceButton, /height="20px"/u);
+	assert.match(stopVoiceButton, /className="flex size-8 items-center justify-center overflow-hidden rounded-md bg-bg-neutral-bold p-0 text-text-inverse/u);
+	assert.match(stopVoiceButton, /className="flex size-4 min-w-0 items-center justify-center overflow-hidden"/u);
+	assert.match(stopVoiceButton, /height="16px"/u);
 	assert.doesNotMatch(stopVoiceButton, /CrossIcon/u);
 });
 

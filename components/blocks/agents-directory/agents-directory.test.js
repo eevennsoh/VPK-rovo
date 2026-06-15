@@ -130,6 +130,9 @@ test("Agent Directory experimental variation has searchable multi-select filters
 	assert.match(source, /const companyOptions = useMemo\(\(\) => getAttributionOptions\(agents, "company"\), \[agents\]\);/u);
 	assert.match(source, /function ExperimentalFilterOptionAvatar/u);
 	assert.match(source, /<ExperimentalFilterOptionAvatar option=\{option\} \/>/u);
+	assert.match(source, /function ExperimentalAgentBrowser\(\{[\s\S]*initialTemplateCategory = null,[\s\S]*\}: Readonly<AgentBrowserProps>\)/u);
+	assert.match(source, /const \[templateModeActive, setTemplateModeActive\] = useState\(Boolean\(initialTemplateCategory\)\);/u);
+	assert.match(source, /const \[activeTemplateCategory, setActiveTemplateCategory\] = useState<AgentTemplatesCategoryId \| null>\(initialTemplateCategory\);/u);
 	// Mode switching now lives in an outline ToggleGroup next to the search input.
 	assert.match(source, /import \{ ToggleGroup, ToggleGroupItem \} from "@\/components\/ui\/toggle-group";/u);
 	assert.match(source, /<ToggleGroup[\s\S]*onValueChange=\{handleToggleMode\}[\s\S]*value=\{\[templateModeActive \? "templates" : "agents"\]\}[\s\S]*variant="outline"[\s\S]*<ToggleGroupItem value="agents">Agents<\/ToggleGroupItem>[\s\S]*<ToggleGroupItem value="templates">Templates<\/ToggleGroupItem>/u);

@@ -6,6 +6,19 @@
 
 import type { SizeConfig, ThemeColors, BorderBeamColorVariant, BorderBeamSize } from './types';
 
+function rgba(color: string, alpha: number): string {
+  return color.replace("rgb(", "rgba(").replace(")", `, ${alpha})`);
+}
+
+// Must match `ROVO_COLOR_SWATCHES` in `lib/rovo-colors.ts`.
+// `data.test.js` compares these generated RGB values against the shared swatches.
+const ROVO_BEAM = {
+  blue: "rgb(24, 104, 219)",
+  orange: "rgb(252, 167, 0)",
+  purple: "rgb(175, 89, 225)",
+  lime: "rgb(106, 154, 35)",
+} as const;
+
 /**
  * Size presets for border radius and dimensions
  */
@@ -160,6 +173,21 @@ const colorPalettes = {
     spike: { primary: 'rgb(255, 60, 80)', secondary: 'rgba(40, 190, 180, 0.98)' },
     spikeLt: { primary: 'rgb(200, 30, 60)', secondary: 'rgb(20, 150, 140)' },
   },
+  rovo: {
+    border: [
+      { color: ROVO_BEAM.blue, pos: '33% -7.4%', size: '70px 40px' },
+      { color: ROVO_BEAM.orange, pos: '12% -5%', size: '60px 35px' },
+      { color: ROVO_BEAM.lime, pos: '2.1% 68.3%', size: '40px 70px' },
+      { color: ROVO_BEAM.blue, pos: '2.1% 68.3%', size: '20px 35px' },
+      { color: ROVO_BEAM.purple, pos: '74.4% 100%', size: '180px 32px' },
+      { color: ROVO_BEAM.blue, pos: '55% 100%', size: '85px 26px' },
+      { color: ROVO_BEAM.orange, pos: '93.9% 0%', size: '74px 32px' },
+      { color: ROVO_BEAM.purple, pos: '100% 27.1%', size: '26px 42px' },
+      { color: ROVO_BEAM.lime, pos: '100% 27.1%', size: '52px 48px' },
+    ],
+    spike: { primary: ROVO_BEAM.blue, secondary: rgba(ROVO_BEAM.purple, 0.98) },
+    spikeLt: { primary: ROVO_BEAM.blue, secondary: ROVO_BEAM.lime },
+  },
   mono: {
     border: [
       { color: 'rgb(180, 180, 180)', pos: '33% -7.4%', size: '70px 40px' },
@@ -231,6 +259,28 @@ const smallColorPalettes = {
       { color: 'rgba(180, 40, 240, 0.4)', pos: '100% 27%', size: '10px 18px' },
       { color: 'rgba(40, 140, 255, 0.3)', pos: '100% 27%', size: '5px 10px' },
       { color: 'rgba(255, 50, 100, 0.3)', pos: '100% 27%', size: '11px 12px' },
+    ],
+  },
+  rovo: {
+    border: [
+      { color: ROVO_BEAM.lime, pos: '2% 68%', size: '9px 18px' },
+      { color: ROVO_BEAM.blue, pos: '2% 68%', size: '4px 8px' },
+      { color: ROVO_BEAM.orange, pos: '72% -3%', size: '59px 9px' },
+      { color: ROVO_BEAM.purple, pos: '74% 100%', size: '42px 7px' },
+      { color: ROVO_BEAM.blue, pos: '100% 27%', size: '10px 17px' },
+      { color: ROVO_BEAM.purple, pos: '100% 27%', size: '10px 18px' },
+      { color: ROVO_BEAM.orange, pos: '100% 27%', size: '5px 10px' },
+      { color: ROVO_BEAM.lime, pos: '100% 27%', size: '11px 12px' },
+    ],
+    inner: [
+      { color: rgba(ROVO_BEAM.lime, 0.5), pos: '2% 68%', size: '9px 18px' },
+      { color: rgba(ROVO_BEAM.blue, 0.45), pos: '2% 68%', size: '4px 8px' },
+      { color: rgba(ROVO_BEAM.orange, 0.35), pos: '72% -3%', size: '59px 9px' },
+      { color: rgba(ROVO_BEAM.purple, 0.35), pos: '74% 100%', size: '42px 7px' },
+      { color: rgba(ROVO_BEAM.blue, 0.3), pos: '100% 27%', size: '10px 17px' },
+      { color: rgba(ROVO_BEAM.purple, 0.4), pos: '100% 27%', size: '10px 18px' },
+      { color: rgba(ROVO_BEAM.orange, 0.3), pos: '100% 27%', size: '5px 10px' },
+      { color: rgba(ROVO_BEAM.lime, 0.3), pos: '100% 27%', size: '11px 12px' },
     ],
   },
   mono: {
@@ -368,6 +418,30 @@ const lineColorPalettes = {
       { color: 'rgb(240, 50, 180)', sizeW: 30, sizeH: 30, offsetX: -110, offsetY: -1 },
     ],
   },
+  rovo: {
+    dark: [
+      { color: ROVO_BEAM.blue, sizeW: 36, sizeH: 36, offsetX: 0, offsetY: 2 },
+      { color: ROVO_BEAM.orange, sizeW: 30, sizeH: 32, offsetX: 39, offsetY: 0 },
+      { color: ROVO_BEAM.lime, sizeW: 33, sizeH: 28, offsetX: -36, offsetY: 2 },
+      { color: ROVO_BEAM.purple, sizeW: 29, sizeH: 34, offsetX: -54, offsetY: 0 },
+      { color: ROVO_BEAM.orange, sizeW: 27, sizeH: 30, offsetX: 51, offsetY: -1 },
+      { color: ROVO_BEAM.purple, sizeW: 36, sizeH: 24, offsetX: 21, offsetY: 1 },
+      { color: ROVO_BEAM.blue, sizeW: 30, sizeH: 22, offsetX: -21, offsetY: 0 },
+      { color: ROVO_BEAM.lime, sizeW: 25, sizeH: 28, offsetX: 66, offsetY: 1 },
+      { color: ROVO_BEAM.blue, sizeW: 23, sizeH: 30, offsetX: -66, offsetY: -1 },
+    ],
+    light: [
+      { color: ROVO_BEAM.blue, sizeW: 45, sizeH: 36, offsetX: 0, offsetY: 2 },
+      { color: ROVO_BEAM.orange, sizeW: 35, sizeH: 32, offsetX: 65, offsetY: 0 },
+      { color: ROVO_BEAM.lime, sizeW: 40, sizeH: 28, offsetX: -60, offsetY: 2 },
+      { color: ROVO_BEAM.purple, sizeW: 35, sizeH: 34, offsetX: -90, offsetY: 0 },
+      { color: ROVO_BEAM.orange, sizeW: 38, sizeH: 30, offsetX: 85, offsetY: -1 },
+      { color: ROVO_BEAM.purple, sizeW: 50, sizeH: 24, offsetX: 35, offsetY: 1 },
+      { color: ROVO_BEAM.blue, sizeW: 40, sizeH: 22, offsetX: -35, offsetY: 0 },
+      { color: ROVO_BEAM.lime, sizeW: 35, sizeH: 28, offsetX: 110, offsetY: 1 },
+      { color: ROVO_BEAM.blue, sizeW: 30, sizeH: 30, offsetX: -110, offsetY: -1 },
+    ],
+  },
   mono: {
     dark: [
       { color: 'rgb(200, 200, 200)', sizeW: 36, sizeH: 36, offsetX: 0, offsetY: 2 },
@@ -466,6 +540,17 @@ const lineInnerGradientData = {
     { color: 'rgba(240, 50, 180, 0.45)', sizeW: 21, sizeH: 24, offsetX: 66, offsetY: 0 },
     { color: 'rgba(30, 185, 170, 0.52)', sizeW: 18, sizeH: 26, offsetX: -66, offsetY: -1 },
   ],
+  rovo: [
+    { color: rgba(ROVO_BEAM.blue, 0.48), sizeW: 33, sizeH: 30, offsetX: 0, offsetY: 0 },
+    { color: rgba(ROVO_BEAM.orange, 0.42), sizeW: 24, sizeH: 26, offsetX: 39, offsetY: -3 },
+    { color: rgba(ROVO_BEAM.lime, 0.48), sizeW: 27, sizeH: 24, offsetX: -36, offsetY: 0 },
+    { color: rgba(ROVO_BEAM.purple, 0.42), sizeW: 23, sizeH: 28, offsetX: -54, offsetY: -2 },
+    { color: rgba(ROVO_BEAM.orange, 0.5), sizeW: 24, sizeH: 24, offsetX: 51, offsetY: -1 },
+    { color: rgba(ROVO_BEAM.purple, 0.45), sizeW: 30, sizeH: 20, offsetX: 21, offsetY: 0 },
+    { color: rgba(ROVO_BEAM.blue, 0.4), sizeW: 25, sizeH: 18, offsetX: -21, offsetY: -2 },
+    { color: rgba(ROVO_BEAM.lime, 0.45), sizeW: 21, sizeH: 24, offsetX: 66, offsetY: 0 },
+    { color: rgba(ROVO_BEAM.blue, 0.52), sizeW: 18, sizeH: 26, offsetX: -66, offsetY: -1 },
+  ],
   mono: [
     { color: 'rgba(200, 200, 200, 0.48)', sizeW: 33, sizeH: 30, offsetX: 0, offsetY: 0 },
     { color: 'rgba(170, 170, 170, 0.42)', sizeW: 24, sizeH: 26, offsetX: 39, offsetY: -3 },
@@ -530,6 +615,26 @@ const lineBloomColors = {
         { color1: 'rgb(30, 160, 70)', color2: 'rgba(30, 160, 70, 0.82)' },     // 64%
         { color1: 'rgb(160, 30, 190)', color2: 'rgba(160, 30, 190, 0.7)' },    // 78%
         { color1: 'rgb(30, 100, 200)', color2: 'rgba(30, 100, 200, 0.78)' },   // 92%
+      ],
+    },
+  },
+  rovo: {
+    dark: {
+      spikes: [
+        { color1: ROVO_BEAM.purple, color2: ROVO_BEAM.purple },
+        { color1: rgba(ROVO_BEAM.orange, 0.59), color2: rgba(ROVO_BEAM.orange, 0.29) },
+        { color1: ROVO_BEAM.lime, color2: ROVO_BEAM.lime },
+        { color1: rgba(ROVO_BEAM.blue, 0.91), color2: rgba(ROVO_BEAM.blue, 0.45) },
+        { color1: ROVO_BEAM.orange, color2: ROVO_BEAM.orange },
+      ],
+    },
+    light: {
+      spikes: [
+        { color1: ROVO_BEAM.purple, color2: rgba(ROVO_BEAM.purple, 0.8) },
+        { color1: rgba(ROVO_BEAM.orange, 0.7), color2: rgba(ROVO_BEAM.orange, 0.46) },
+        { color1: ROVO_BEAM.lime, color2: rgba(ROVO_BEAM.lime, 0.82) },
+        { color1: ROVO_BEAM.blue, color2: rgba(ROVO_BEAM.blue, 0.7) },
+        { color1: ROVO_BEAM.orange, color2: rgba(ROVO_BEAM.orange, 0.78) },
       ],
     },
   },

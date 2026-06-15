@@ -652,6 +652,7 @@ function ExperimentalAgentBrowser({
 	agents,
 	templateCategories = DEFAULT_TEMPLATE_CATEGORIES,
 	templateAgents = EMPTY_TEMPLATE_AGENTS,
+	initialTemplateCategory = null,
 	onSelectAgent,
 	onSelectTemplateAgent,
 }: Readonly<AgentBrowserProps>) {
@@ -660,8 +661,8 @@ function ExperimentalAgentBrowser({
 	const [selectedTeams, setSelectedTeams] = useState<readonly string[]>([]);
 	const [selectedCompanies, setSelectedCompanies] = useState<readonly string[]>([]);
 	const [selectedCategories, setSelectedCategories] = useState<readonly string[]>([]);
-	const [templateModeActive, setTemplateModeActive] = useState(false);
-	const [activeTemplateCategory, setActiveTemplateCategory] = useState<AgentTemplatesCategoryId | null>(null);
+	const [templateModeActive, setTemplateModeActive] = useState(Boolean(initialTemplateCategory));
+	const [activeTemplateCategory, setActiveTemplateCategory] = useState<AgentTemplatesCategoryId | null>(initialTemplateCategory);
 	const [templateMotionDirection, setTemplateMotionDirection] = useState<AgentBrowserTemplateMotionDirection>(1);
 	const shouldReduceMotion = useReducedMotion() ?? false;
 	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();

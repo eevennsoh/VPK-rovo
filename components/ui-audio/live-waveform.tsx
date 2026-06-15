@@ -17,6 +17,7 @@ import {
   getStaticBarDataIndex,
   getStaticProcessingBarValue,
   getWaveformEaseOutProgress,
+  getWaveformPaletteIndex,
   getWaveformSeriesValue,
 } from "@/components/ui-audio/live-waveform-layout"
 import { cn } from "@/lib/utils"
@@ -66,7 +67,7 @@ export const LiveWaveform = ({
   barOpacityMax = 1,
   fadeEdges = true,
   fadeWidth = 24,
-  barHeight: baseBarHeight = 4,
+  barHeight: baseBarHeight = 6,
   height = 64,
   barHeightScale = 0.8,
   entranceAnimation = "none",
@@ -168,26 +169,20 @@ export const LiveWaveform = ({
   const getBarFillColor = ({
     fallbackColor,
     index,
-    mode,
     palette,
-    totalBars,
   }: {
     fallbackColor: string
     index: number
-    mode: LiveWaveformProps["mode"]
     palette: string[]
-    totalBars: number
   }) => {
     if (palette.length === 0) {
       return fallbackColor
     }
 
-    const paletteSeed =
-      mode === "static"
-        ? Math.min(index, Math.max(0, totalBars - 1 - index))
-        : index
-    const paletteIndex =
-      (Math.imul(paletteSeed + 1, 2654435761) >>> 0) % palette.length
+    const paletteIndex = getWaveformPaletteIndex({
+      index,
+      paletteLength: palette.length,
+    })
 
     return palette[paletteIndex] || fallbackColor
   }
@@ -654,9 +649,19 @@ export const LiveWaveform = ({
               ? staticBarsRef.current
               : []
 
-        for (let i = 0; i < barCount && i < dataToRender.length; i++) {
-          const value = dataToRender[i] || 0.1
-          const x = i * step
+        // Always render the full bar count, centered, so the resting/idle
+        // state keeps the same quantity and position as the active state
+        // instead of collapsing to a short, left-anchored cluster.
+        const renderedWidth = Math.max(0, barCount * step - barGap)
+        const centerOffset = Math.max(0, (width - renderedWidth) / 2)
+
+        for (let i = 0; i < barCount; i++) {
+          const value = getWaveformSeriesValue({
+            bars: dataToRender,
+            index: i,
+            totalCount: barCount,
+          })
+          const x = centerOffset + i * step
           const entranceProgress = getEntranceProgress({
             index: i,
             totalBars: barCount,
@@ -671,9 +676,7 @@ export const LiveWaveform = ({
           ctx.fillStyle = getBarFillColor({
             fallbackColor: computedBarColor,
             index: i,
-            mode,
             palette: resolvedBarColors,
-            totalBars: barCount,
           })
           ctx.globalAlpha =
             (minBarOpacity + value * (maxBarOpacity - minBarOpacity)) *
@@ -688,16 +691,22 @@ export const LiveWaveform = ({
           }
         }
       } else {
-        // Scrolling mode - original behavior
+        // Scrolling mode - bars scroll in from the right, but keep the same
+        // centered horizontal envelope as static mode so the active <-> idle
+        // handoff doesn't shift the row left/right.
+        const renderedWidth = Math.max(0, barCount * step - barGap)
+        const centerOffset = Math.max(0, (width - renderedWidth) / 2)
+
         for (let i = 0; i < barCount && i < historyRef.current.length; i++) {
           const dataIndex = historyRef.current.length - 1 - i
           const value = historyRef.current[dataIndex] || 0.1
-          const x = getScrollingBarX({
-            barGap,
-            barWidth,
-            index: i,
-            width,
-          })
+          const x =
+            getScrollingBarX({
+              barGap,
+              barWidth,
+              index: i,
+              width: renderedWidth,
+            }) + centerOffset
           const entranceProgress = getEntranceProgress({
             index: i,
             totalBars: barCount,
@@ -712,9 +721,7 @@ export const LiveWaveform = ({
           ctx.fillStyle = getBarFillColor({
             fallbackColor: computedBarColor,
             index: i,
-            mode,
             palette: resolvedBarColors,
-            totalBars: barCount,
           })
           ctx.globalAlpha =
             (minBarOpacity + value * (maxBarOpacity - minBarOpacity)) *

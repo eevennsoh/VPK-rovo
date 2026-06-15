@@ -54,6 +54,7 @@ export const BORDER_BEAM_COLOR_VARIANT_OPTIONS: readonly {
 	{ value: "mono", label: "Mono" },
 	{ value: "ocean", label: "Ocean" },
 	{ value: "sunset", label: "Sunset" },
+	{ value: "rovo", label: "Rovo" },
 ];
 
 export const BORDER_BEAM_THEME_OPTIONS: readonly { value: BorderBeamTheme; label: string }[] = [

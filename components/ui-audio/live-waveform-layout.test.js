@@ -8,6 +8,7 @@ const {
 	getStaticProcessingBarValue,
 	getStaticProcessingTravelHead,
 	getWaveformEaseOutProgress,
+	getWaveformPaletteIndex,
 	getWaveformSeriesValue,
 	getScrollingBarX,
 } = require("./live-waveform-layout.ts");
@@ -182,4 +183,16 @@ test("samples transition source bars across the full destination width", () => {
 		}),
 		0.8,
 	);
+});
+
+test("uses one palette sequence for processing and live waveform bars", () => {
+	const paletteLength = 4;
+	const indexes = Array.from({ length: 8 }, (_, index) =>
+		getWaveformPaletteIndex({
+			index,
+			paletteLength,
+		}),
+	);
+
+	assert.deepEqual(indexes, [1, 2, 3, 0, 1, 2, 3, 0]);
 });

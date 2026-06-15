@@ -302,7 +302,7 @@ export default function BorderBeamDemo() {
 	};
 
 	return (
-		<div className="flex w-full max-w-5xl flex-col gap-4">
+		<div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 sm:p-6">
 			<div className="overflow-hidden rounded-lg border border-border bg-[#0C0D12]">
 				<BorderBeamPreview config={config} className="mx-auto max-w-2xl">
 					{config.size === "sm" ? (

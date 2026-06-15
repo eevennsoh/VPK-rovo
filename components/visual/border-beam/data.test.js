@@ -13,6 +13,7 @@ import {
 	getBorderBeamSizeOptions,
 } from "./data.ts";
 import { generateBeamCSS } from "./styles.ts";
+import { ROVO_COLOR_SWATCHES } from "../../../lib/rovo-colors.ts";
 
 const ROOT = process.cwd();
 
@@ -44,12 +45,28 @@ test("Border Beam exposes every upstream size, color, and theme option", () => {
 	);
 	assert.deepEqual(
 		BORDER_BEAM_COLOR_VARIANT_OPTIONS.map((option) => option.value),
-		["colorful", "mono", "ocean", "sunset"],
+		["colorful", "mono", "ocean", "sunset", "rovo"],
 	);
 	assert.deepEqual(
 		BORDER_BEAM_THEME_OPTIONS.map((option) => option.value),
 		["dark", "light", "auto"],
 	);
+});
+
+test("Border Beam Rovo variant uses the shared Rovo color swatches", () => {
+	const css = generateBeamCSS({
+		...BASE_STYLE_OPTIONS,
+		colorVariant: "rovo",
+		size: "line",
+	});
+
+	for (const { hex } of ROVO_COLOR_SWATCHES) {
+		const normalized = hex.replace(/^#/u, "");
+		const value = Number.parseInt(normalized, 16);
+		const rgb = `rgb(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255})`;
+		assert.match(css, new RegExp(rgb.replace(/[()]/gu, "\\$&"), "u"));
+	}
+	assert.doesNotMatch(css, /rgb\(255, 50, 100\)/u);
 });
 
 test("Border Beam family options constrain size controls to matching presets", () => {
