@@ -1,6 +1,6 @@
 "use client";
 
-import { Extension, mergeAttributes } from "@tiptap/core";
+import { Extension, mergeAttributes, type Editor } from "@tiptap/core";
 import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Link from "@tiptap/extension-link";
@@ -16,7 +16,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
 import { Markdown } from "@tiptap/markdown";
-import { PluginKey, TextSelection } from "@tiptap/pm/state";
+import { Plugin, PluginKey, TextSelection, type EditorState } from "@tiptap/pm/state";
 import { Suggestion, exitSuggestion } from "@tiptap/suggestion";
 import StarterKit from "@tiptap/starter-kit";
 import { ReactNodeViewRenderer } from "@tiptap/react";
@@ -124,6 +124,142 @@ const resolveMentionToken: MentionTokenResolver = (category, id) => {
 	return undefined;
 };
 
+/**
+ * A spot the user reverted from tag → text. The auto-tagger leaves it as text
+ * until the content there changes, at which point the spot is forgotten so a
+ * later retype of the same word converts to a tag again.
+ */
+interface DismissedAutoTagRange {
+	from: number;
+	to: number;
+	/** The reverted text; the spot is dropped once the content here no longer matches. */
+	text: string;
+}
+
+interface DismissedAutoTagPluginState {
+	ranges: readonly DismissedAutoTagRange[];
+}
+
+type DismissedAutoTagMeta =
+	| { type: "add"; range: DismissedAutoTagRange }
+	| { type: "clear" };
+
+const dismissedAutoTagPluginKey = new PluginKey<DismissedAutoTagPluginState>(
+	"rich-text-dismissed-auto-tags",
+);
+
+/**
+ * Placeholder substituted for non-text leaf nodes (e.g. mentions) in
+ * `Node.textBetween` reads. Shared so the auto-tag matcher, trace-decoration
+ * validation, and dismissed-spot pruning all compare against one sentinel.
+ */
+export const RICH_TEXT_OBJECT_REPLACEMENT = "￼";
+
+/**
+ * Map a `[from, to]` range through a transaction, biasing the endpoints inward
+ * (`from` forward, `to` backward) so the range does not swallow inserts at its
+ * boundaries. Shared by the dismissed-spot plugin and the trace-decoration mapper
+ * so both track positions identically.
+ */
+export function mapRangeThroughTransaction(
+	mapping: { map(pos: number, assoc?: number): number },
+	from: number,
+	to: number,
+): { from: number; to: number } {
+	return { from: mapping.map(from, 1), to: mapping.map(to, -1) };
+}
+
+/**
+ * Whether the document text in `[from, to]` still equals `text`
+ * (case-insensitive, with non-text leaves read as {@link RICH_TEXT_OBJECT_REPLACEMENT}).
+ * Callers must ensure `from < to`. Used to decide a mapped range is still "live".
+ */
+export function rangeTextMatches(
+	doc: { textBetween(from: number, to: number, blockSeparator?: string, leafText?: string): string },
+	from: number,
+	to: number,
+	text: string,
+): boolean {
+	return (
+		doc.textBetween(from, to, "\n", RICH_TEXT_OBJECT_REPLACEMENT).toLowerCase() ===
+		text.toLowerCase()
+	);
+}
+
+/**
+ * Tracks reverted occurrences by position (not by text), mapping them through
+ * every edit and dropping any whose text changed. This makes a revert local and
+ * temporary: the specific word stays text until you edit/remove it, while a fresh
+ * retype — or the same word typed elsewhere — auto-tags normally.
+ */
+function createDismissedAutoTagPlugin(): Plugin<DismissedAutoTagPluginState> {
+	return new Plugin<DismissedAutoTagPluginState>({
+		key: dismissedAutoTagPluginKey,
+		state: {
+			init: () => ({ ranges: [] }),
+			apply(tr, value, _oldState, newState) {
+				const meta = tr.getMeta(dismissedAutoTagPluginKey) as DismissedAutoTagMeta | undefined;
+				if (meta?.type === "clear") {
+					return value.ranges.length === 0 ? value : { ranges: [] };
+				}
+
+				// Fold a newly reverted spot (recorded in pre-transaction coords) into
+				// the set so it maps through this same transaction uniformly with the
+				// existing spots — no second coordinate frame to keep in sync.
+				let ranges = meta?.type === "add" ? [...value.ranges, meta.range] : value.ranges;
+
+				// Skip the per-edit map/filter entirely in the common empty case so a
+				// keystroke with no tracked spots allocates nothing and preserves the
+				// state object identity.
+				if (tr.docChanged && ranges.length > 0) {
+					ranges = ranges
+						.map((range) => ({
+							...range,
+							...mapRangeThroughTransaction(tr.mapping, range.from, range.to),
+						}))
+						// Case-insensitive on purpose: a reverted word stays text through a
+						// re-casing; only a content change re-enables auto-tagging.
+						.filter((range) => range.from < range.to && rangeTextMatches(newState.doc, range.from, range.to, range.text));
+				}
+
+				return ranges === value.ranges ? value : { ranges };
+			},
+		},
+	});
+}
+
+/**
+ * Registers the dismissed-auto-tag plugin. Deliberately composer-only — added to
+ * {@link createComposerEditorExtensions}, NOT the full document editor — since only
+ * the composer auto-tags (and therefore reverts) tokens. Kept beside the
+ * {@link RichTextMention} command that drives it; mirrors the position-mapping
+ * pattern in `mapComposerTraceDecorations` (composer-extensions.ts).
+ */
+export const DismissedAutoTagTracker = Extension.create({
+	name: "dismissedAutoTagTracker",
+	addProseMirrorPlugins() {
+		return [createDismissedAutoTagPlugin()];
+	},
+});
+
+/**
+ * Reverted spots the auto-tagger should leave as text, mapped to current
+ * positions. Empty when the mention extension (and its plugin) isn't installed.
+ */
+export function getDismissedAutoTagRanges(
+	state: EditorState,
+): readonly { from: number; to: number }[] {
+	return dismissedAutoTagPluginKey.getState(state)?.ranges ?? [];
+}
+
+/** Forget every reverted spot (e.g. when the draft is cleared or replaced). */
+export function clearDismissedAutoTags(editor: Editor): void {
+	const { state, view } = editor;
+	if (dismissedAutoTagPluginKey.getState(state)?.ranges.length) {
+		view.dispatch(state.tr.setMeta(dismissedAutoTagPluginKey, { type: "clear" }));
+	}
+}
+
 export const RichTextMention = Mention.extend({
 	// Teach tiptap-markdown to round-trip a mention as `@[category:id]`. Without
 	// these the node is dropped from the markdown `value` (it has no default
@@ -202,19 +338,11 @@ export const RichTextMention = Mention.extend({
 	addNodeView() {
 		return ReactNodeViewRenderer(RichTextMentionNodeView);
 	},
-	addStorage(): RichTextMentionStorage {
-		return {
-			// Lowercased source texts the user has explicitly reverted in the current
-			// draft. The composer's auto-tagger consults this so a token the user
-			// un-tagged doesn't get re-converted moments later. Cleared on draft reset.
-			dismissedAutoTags: new Set<string>(),
-		};
-	},
 	addCommands() {
 		return {
 			// Replace the auto-tagged mention node at `pos` with the exact text it was
-			// converted from, and remember the revert so the auto-tagger skips it for
-			// the rest of this draft. No-op for non-auto-tagged mentions (no sourceText).
+			// converted from, and record that spot so the auto-tagger leaves it as text
+			// until the user edits it. No-op for non-auto-tagged mentions (no sourceText).
 			restoreAutoTaggedMention:
 				(pos: number) =>
 				({ state, dispatch, tr }) => {
@@ -228,16 +356,20 @@ export const RichTextMention = Mention.extend({
 						return false;
 					}
 
-					// Side effects (the revert + recording the dismissal) only run on a
-					// real dispatch — a dry-run (`editor.can()`) must stay side-effect-free,
-					// or a probe would permanently suppress auto-tagging of this word.
+					// Side effects (the revert + recording the dismissed spot) only run on
+					// a real dispatch — a dry-run (`editor.can()`) must stay side-effect-free.
 					if (dispatch) {
 						const from = pos;
 						const to = pos + node.nodeSize;
 						tr.replaceWith(from, to, state.schema.text(sourceText));
 						tr.setSelection(TextSelection.create(tr.doc, from + sourceText.length));
+						// Record the spot in pre-replace coords (the mention's span); the
+						// plugin maps it through this transaction to land on the inserted text.
+						tr.setMeta(dismissedAutoTagPluginKey, {
+							type: "add",
+							range: { from, to, text: sourceText },
+						});
 						dispatch(tr);
-						this.storage.dismissedAutoTags.add(sourceText.toLowerCase());
 					}
 
 					return true;
@@ -253,11 +385,6 @@ declare module "@tiptap/core" {
 			restoreAutoTaggedMention: (pos: number) => ReturnType;
 		};
 	}
-}
-
-/** Storage shape exposed on `editor.storage.mention` by {@link RichTextMention}. */
-export interface RichTextMentionStorage {
-	dismissedAutoTags: Set<string>;
 }
 
 export const SlashCommand = Extension.create<RichTextEditorExtensionOptions>({

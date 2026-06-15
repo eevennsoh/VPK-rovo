@@ -10,6 +10,9 @@ import type { EditorView } from "@tiptap/pm/view";
 
 import {
 	createRichTextMentionExtension,
+	DismissedAutoTagTracker,
+	mapRangeThroughTransaction,
+	rangeTextMatches,
 	SlashCommand,
 } from "./extensions";
 import type { RichTextEditorExtensionOptions } from "./types";
@@ -169,9 +172,7 @@ function isValidComposerTraceDecoration(
 		return false;
 	}
 
-	return state.doc
-		.textBetween(decoration.from, decoration.to, "\n", "\uFFFC")
-		.toLowerCase() === decoration.label.toLowerCase();
+	return rangeTextMatches(state.doc, decoration.from, decoration.to, decoration.label);
 }
 
 function createComposerTraceDecorationAttributes(decoration: ComposerTraceDecoration) {
@@ -227,8 +228,7 @@ function mapComposerTraceDecorations(
 	return decorations
 		.map((decoration): ComposerTraceDecoration => ({
 			...decoration,
-			from: transaction.mapping.map(decoration.from, 1),
-			to: transaction.mapping.map(decoration.to, -1),
+			...mapRangeThroughTransaction(transaction.mapping, decoration.from, decoration.to),
 		}))
 		.filter((decoration) => isValidComposerTraceDecoration(transaction, decoration));
 }
@@ -629,6 +629,8 @@ export function createComposerEditorExtensions(
 		createRichTextMentionExtension(composerOptions),
 		// The composer's "/" menu surfaces references only — no Format category.
 		SlashCommand.configure({ ...composerOptions, includeFormat: false }),
+		// Composer-only: tracks reverted auto-tag spots so they aren't re-converted.
+		DismissedAutoTagTracker,
 		createComposerTraceDecorationExtension(),
 		createComposerDirectoryAutocomplete(options.directoryAutocomplete),
 		createComposerBehavior(options.onEnter, options.onPasteFiles),
