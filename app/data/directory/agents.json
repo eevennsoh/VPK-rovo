@@ -203,6 +203,33 @@
 		"verified": true
 	},
 	{
+		"id": "rfp-drafting-agent",
+		"name": "RFP Drafter",
+		"byline": "Custom agent by Maya Chen",
+		"avatarSrc": "/avatar-agent/dev-agents/feature-flag-cleaner.svg",
+		"description": "Drafts first-pass RFP response packages for Enterprise RFP Response",
+		"attributionKind": "person",
+		"favorite": true,
+		"starters": [
+			{
+				"id": "rfp-drafting-agent-next-ticket",
+				"label": "Draft the response package for the next Drafting ticket."
+			},
+			{
+				"id": "rfp-drafting-agent-blockers",
+				"label": "Summarize blockers before this RFP can move to Review."
+			},
+			{
+				"id": "rfp-drafting-agent-snippets",
+				"label": "Create reusable answer snippets from the attached RFP packet."
+			}
+		],
+		"rating": 4.1,
+		"feedbackCount": 1370,
+		"chatCount": 8364,
+		"verified": false
+	},
+	{
 		"id": "untitled-agent",
 		"name": "Research Companion",
 		"byline": "Custom agent by Maya Chen",

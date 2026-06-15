@@ -35,6 +35,7 @@ export default function MorphingRovoDemo() {
 			<div className="flex h-full min-h-[350px] w-full items-center justify-center rounded-lg bg-surface p-12">
 				<MorphingRovo.Shape size={size} duration={duration} ease={ease} rotationPerStep={rotationPerStep} blur={blur} />
 			</div>
+			<div className="pt-6 pr-6">
 			<GUI.Panel title="Morphing Rovo controls" values={config}>
 				<GUI.Control
 					id="morphing-size"
@@ -93,6 +94,7 @@ export default function MorphingRovoDemo() {
 					onChange={setBlur}
 				/>
 			</GUI.Panel>
+			</div>
 		</div>
 	);
 }

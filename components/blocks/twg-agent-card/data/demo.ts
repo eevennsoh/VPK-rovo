@@ -22,7 +22,7 @@ export const DEFAULT_TWG_AGENT_CARD_SUGGESTIONS = [
 		id: "relationship-rhythm-agent",
 		name: "Relationship Rhythm Agent",
 		description: "Drafts timely follow-ups.",
-		avatarSrc: "/avatar-agent/strategy-agents/talent-finder.svg",
+		avatarSrc: "/avatar-agent/dev-agents/code-planner.svg",
 	},
 	{
 		id: "focus-recovery-agent",

@@ -97,7 +97,8 @@ test("Agent Directory exposes an opt-in experimental variation", () => {
 	assert.match(agentsDirectorySource, /export type AgentsDirectoryVariant = AgentBrowserVariant;/u);
 	assert.match(agentsDirectorySource, /variant\?: AgentsDirectoryVariant;/u);
 	assert.match(agentsDirectorySource, /variant = "default"/u);
-	assert.match(agentsDirectorySource, /variant === "experimental" \? \{ \.\.\.agent, favorite: true \} : agent/u);
+	assert.match(agentsDirectorySource, /variant === "experimental"[\s\S]*\? \{ \.\.\.sessionAgent, favorite: true \}[\s\S]*: sessionAgent/u);
+	assert.match(agentsDirectorySource, /mergeDirectoryAgents\(\{ agents, sessionAgents, variant \}\)/u);
 	assert.match(agentsDirectorySource, /variant=\{variant\}/u);
 	assert.match(indexSource, /AgentsDirectoryVariant/u);
 	assert.match(detailsSource, /title: "Standard"[\s\S]*demoSlug: "agents-directory-demo-standard"/u);
@@ -186,10 +187,14 @@ test("Agent Directory includes Agent Templates as a sidebar mode", () => {
 	assert.match(source, /scrollElement\.scrollBy\(\{/u);
 	assert.match(source, /className="relative -mx-6 overflow-x-clip overflow-y-visible"/u);
 	assert.match(source, /className="overflow-x-auto overflow-y-visible \[scrollbar-width:none\] \[&::-webkit-scrollbar\]:hidden"/u);
+	// Locked-height dialog hugs the template card's natural content: the carousel track
+	// and cards stay at content height (items-start, no h-full stretch) so the card is
+	// never padded into dead space; the dialog lock makes the Agents grid match by
+	// scrolling inside the same box.
 	assert.match(source, /className="flex w-max items-start gap-4 px-6 pt-2 pb-6"/u);
 	assert.match(source, /className="w-90 shrink-0 \[will-change:transform,opacity\]"/u);
-	assert.doesNotMatch(source, /className="flex h-full w-max items-stretch/u);
-	assert.doesNotMatch(source, /className="h-full min-h-0 w-90 shrink-0/u);
+	assert.doesNotMatch(source, /className="flex h-full w-max items-stretch gap-4 px-6 pt-2 pb-6"/u);
+	assert.doesNotMatch(source, /className="h-full min-h-0 w-90 shrink-0 \[will-change:transform,opacity\]"/u);
 	assert.match(source, /<ExperimentalTemplateCard[\s\S]*agent=\{agent\}[\s\S]*onSelectAgent=\{onSelectAgent\}/u);
 	assert.match(source, /<ExperimentalDirectoryCard[\s\S]*className="w-full"[\s\S]*variant="expanded"/u);
 	assert.match(source, /className="h-\[400px\] \[will-change:transform,opacity\]"/u);
@@ -252,7 +257,8 @@ test("Agent Directory uses independent column scrolling without extra content pa
 	const source = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
 
 	assert.match(source, /"grid max-h-\[calc\(100svh-2rem\)\] grid-rows-\[auto_minmax\(0,1fr\)\] gap-0 overflow-hidden p-0 sm:max-w-\[1200px\]"/u);
-	assert.match(source, /isExperimental[\s\S]*\? "h-auto"[\s\S]*: "h-\[min\(800px,calc\(100svh-2rem\)\)\]"/u);
+	assert.match(source, /isExperimental[\s\S]*\? "h-\[min\(727px,calc\(100svh-2rem\)\)\]"[\s\S]*: "h-\[min\(800px,calc\(100svh-2rem\)\)\]"/u);
+	assert.doesNotMatch(source, /\? "h-auto"/u);
 	assert.doesNotMatch(source, /h-\[min\(765px,calc\(100svh-2rem\)\)\]/u);
 	assert.doesNotMatch(source, /h-\[min\(920px,calc\(100svh-2rem\)\)\] sm:max-w-\[1440px\]/u);
 	assert.doesNotMatch(source, /max-h-\[85vh\]/u);
@@ -301,6 +307,7 @@ test("Agent Directory uses one unsegmented results grid and updated sidebar labe
 	// The agent-browser sidebar groups + directory catalog now live in the unified
 	// agents data layer (DEMO_AGENT_BROWSER_SIDEBAR_GROUPS salvaged verbatim there).
 	const agentsLoaderSource = readProjectFile("app/data/directory/agents.ts");
+	const agentsDirectorySource = readProjectFile("components/blocks/agents-directory/components/agents-directory.tsx");
 	const agentsJson = JSON.parse(readProjectFile("app/data/directory/agents.json"));
 	const pageSource = readProjectFile("components/blocks/agents-directory/page.tsx");
 
@@ -308,6 +315,9 @@ test("Agent Directory uses one unsegmented results grid and updated sidebar labe
 	assert.match(source, /favorite\?: boolean;/u);
 	assert.match(source, /label: "Favourite agents"/u);
 	assert.match(source, /if \(activeCategory === "favorite-agents" && !agent\.favorite\) return false;/u);
+	assert.match(agentsDirectorySource, /function mergeDirectoryAgents/u);
+	assert.match(agentsDirectorySource, /const existingAgent = byId\.get\(sessionAgent\.id\);/u);
+	assert.match(agentsDirectorySource, /rating: normalizedSessionAgent\.rating \?\? existingAgent\?\.rating/u);
 	assert.match(source, /<section aria-label="Agents">/u);
 	assert.doesNotMatch(source, /recommendedCount/u);
 	assert.doesNotMatch(source, /DEFAULT_RECOMMENDED_COUNT/u);
@@ -354,6 +364,34 @@ test("Agent Directory uses one unsegmented results grid and updated sidebar labe
 		assert.equal(typeof agent.chatCount, "number", `agent ${agent.id} should have chatCount`);
 		assert.equal(typeof agent.verified, "boolean", `agent ${agent.id} should have verified`);
 	}
+	const rfpDrafter = agentsJson.find((agent) => agent.id === "rfp-drafting-agent");
+	assert.ok(rfpDrafter, "RFP Drafter should exist in the unified catalog");
+	assert.deepEqual(
+		{
+			name: rfpDrafter.name,
+			byline: rfpDrafter.byline,
+			avatarSrc: rfpDrafter.avatarSrc,
+			description: rfpDrafter.description,
+			attributionKind: rfpDrafter.attributionKind,
+			favorite: rfpDrafter.favorite,
+			rating: rfpDrafter.rating,
+			feedbackCount: rfpDrafter.feedbackCount,
+			chatCount: rfpDrafter.chatCount,
+			verified: rfpDrafter.verified,
+		},
+		{
+			name: "RFP Drafter",
+			byline: "Custom agent by Maya Chen",
+			avatarSrc: "/avatar-agent/dev-agents/feature-flag-cleaner.svg",
+			description: "Drafts first-pass RFP response packages for Enterprise RFP Response",
+			attributionKind: "person",
+			favorite: true,
+			rating: 4.1,
+			feedbackCount: 1370,
+			chatCount: 8364,
+			verified: false,
+		},
+	);
 	assert.match(pageSource, /attributionKind: "team"/u);
 	assert.match(pageSource, /attributionKind: "person"/u);
 	assert.match(pageSource, /by Revenue Operations/u);

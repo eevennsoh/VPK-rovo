@@ -128,6 +128,8 @@ test("RovoAppShell seeds the published RFP Drafter into the default Studio landi
 		rfpSeedSource,
 		/studioAgentRegistry\.registerCreatedAgentFromResult\(STUDIO_RFP_DEMO_AGENT_RESULT,[\s\S]*select: false,[\s\S]*sourceKey: STUDIO_RFP_DEMO_AGENT_SOURCE_KEY/u,
 	);
+	assert.match(ROVO_CONTEXT_SOURCE, /const explicitId = getPayloadString\(payload, \["agentId", "id"\]\);/u);
+	assert.match(ROVO_CONTEXT_SOURCE, /const staticReservedProfiles = explicitId[\s\S]*params\.staticAgentProfiles\.filter\(\(profile\) => profile\.id !== baseId\)/u);
 	assert.match(rfpSeedSource, /studioAgentRegistry\.commitSessionAgentPublishReady\?\.\(profileId\);/u);
 	assert.match(rfpSeedSource, /studioAgentRegistry\.publishSessionAgent\?\.\(profileId\);/u);
 	assert.match(SHELL_SOURCE, /const shouldShowStudioAgentsSection = isDefaultAgentHomeState && shouldShowDefaultLandingContent;/u);
@@ -692,10 +694,12 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(SHELL_SOURCE, /testPanel=\{agentConfigTestPanel\}/u);
 	assert.match(SHELL_SOURCE, /onTest=\{handleTestAgent\}/u);
 	assert.match(SHELL_SOURCE, /<RovoAppAgentConfigPanel[\s\S]*testPanel=\{agentConfigTestPanel\}[\s\S]*chatContextBar=\{agentEditContextBar\}[\s\S]*chatGreeting=\{agentEditGreeting\}[\s\S]*onChatInterceptSubmit=\{handleAgentEditInterceptSubmit\}[\s\S]*onUpdateDraft=\{handleUpdateAgentDraft\}[\s\S]*\/>/u);
-	// "start with a template" link opens the Agent Directory on the first
-	// template tab (AGENT_TEMPLATES_CATEGORIES[0].id) via the config panel.
+	// "Browse all" (and the "start with a template" link) open the Agent Directory
+	// on the first template tab (AGENT_TEMPLATES_CATEGORIES[0].id) via the config
+	// panel, regardless of the bento's auto-cycling category.
 	assert.match(SHELL_SOURCE, /import \{ AGENT_TEMPLATES_CATEGORIES,[\s\S]*\} from "@\/components\/blocks\/agent-templates";/u);
-	assert.match(SHELL_SOURCE, /const handleStartAgentWithTemplate = useCallback\(\(\) => \{[\s\S]*handleBrowseAgentsDirectory\(AGENT_TEMPLATES_CATEGORIES\[0\]\.id\);[\s\S]*\}, \[handleBrowseAgentsDirectory\]\);/u);
+	assert.match(SHELL_SOURCE, /const handleBrowseAgentsDirectory = useCallback\(\(\) => \{[\s\S]*setSidebarAgentBrowserInitialCategory\(AGENT_TEMPLATES_CATEGORIES\[0\]\.id\);[\s\S]*\}, \[\]\);/u);
+	assert.match(SHELL_SOURCE, /const handleStartAgentWithTemplate = handleBrowseAgentsDirectory;/u);
 	assert.match(SHELL_SOURCE, /<RovoAppAgentConfigPanel[\s\S]*onStartWithTemplate=\{handleStartAgentWithTemplate\}[\s\S]*\/>/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /onStartWithTemplate=\{onStartWithTemplate\}/u);
 	assert.match(SHELL_SOURCE, /isChatOpen=\{nav\.isSidebarChatOpen\}[\s\S]*onToggleChat=\{handleToggleAskRovoChat\}/u);

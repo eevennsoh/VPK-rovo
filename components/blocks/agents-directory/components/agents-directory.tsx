@@ -39,6 +39,40 @@ export interface AgentsDirectoryDialogProps {
 
 const EMPTY_AGENTS_DIRECTORY_AGENTS: readonly AgentsDirectoryAgent[] = [];
 
+function mergeDirectoryAgents({
+	agents,
+	sessionAgents,
+	variant,
+}: {
+	agents: readonly AgentsDirectoryAgent[];
+	sessionAgents: readonly AgentsDirectoryAgent[];
+	variant: AgentsDirectoryVariant;
+}): readonly AgentsDirectoryAgent[] {
+	const byId = new Map<string, AgentsDirectoryAgent>();
+
+	for (const agent of agents) {
+		byId.set(agent.id, agent);
+	}
+
+	for (const sessionAgent of sessionAgents) {
+		const existingAgent = byId.get(sessionAgent.id);
+		const normalizedSessionAgent = variant === "experimental"
+			? { ...sessionAgent, favorite: true }
+			: sessionAgent;
+		byId.set(sessionAgent.id, {
+			...(existingAgent ?? {}),
+			...normalizedSessionAgent,
+			attributionKind: normalizedSessionAgent.attributionKind ?? existingAgent?.attributionKind,
+			rating: normalizedSessionAgent.rating ?? existingAgent?.rating,
+			feedbackCount: normalizedSessionAgent.feedbackCount ?? existingAgent?.feedbackCount,
+			chatCount: normalizedSessionAgent.chatCount ?? existingAgent?.chatCount,
+			verified: normalizedSessionAgent.verified ?? existingAgent?.verified,
+		});
+	}
+
+	return [...byId.values()];
+}
+
 export function AgentsDirectoryDialog({
 	agents,
 	onCreateAgent,
@@ -55,10 +89,7 @@ export function AgentsDirectoryDialog({
 	variant = "default",
 }: Readonly<AgentsDirectoryDialogProps>) {
 	const directoryAgents = useMemo(
-		() => [
-			...agents,
-			...sessionAgents.map((agent) => variant === "experimental" ? { ...agent, favorite: true } : agent),
-		],
+		() => mergeDirectoryAgents({ agents, sessionAgents, variant }),
 		[agents, sessionAgents, variant],
 	);
 	const directoryTemplateAgents = useMemo(

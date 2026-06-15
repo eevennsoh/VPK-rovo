@@ -593,17 +593,17 @@ function DirectoryAgentsGrid({
 						<EntityCardAgentCard
 							avatarSrc={getDirectoryCardAvatarSrc(agent)}
 							insetLogo={isBorderlessHexagonAgent(agent)}
-							chatCount={syntheticChats(agent.id)}
+							chatCount={agent.chatCount ?? syntheticChats(agent.id)}
 							className="hover:border-transparent"
 							description={agent.description}
-							feedbackCount={syntheticFeedback(agent.id)}
+							feedbackCount={agent.feedbackCount ?? syntheticFeedback(agent.id)}
 							logoName={agent.logoName}
 							name={agent.name}
 							onMoreActions={() => {}}
 							onSelect={() => onSelectAgent(agent)}
 							publisher={publisher}
-							rating={syntheticRating(agent.id)}
-							verified={isVerified(agent, publisher)}
+							rating={agent.rating ?? syntheticRating(agent.id)}
+							verified={agent.verified ?? isVerified(agent, publisher)}
 						/>
 					</li>
 				);

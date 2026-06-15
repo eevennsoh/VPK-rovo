@@ -2360,18 +2360,17 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	}, []);
 
 	// The home bento's "Browse all" pill opens the full Agent Directory instead
-	// of the lighter templates dialog, landing straight on the category the user
-	// was exploring (e.g. "Planning") so the directory mirrors that tab.
-	const handleBrowseAgentsDirectory = useCallback((category: HomeStarterCategory = HOME_STARTER_DEFAULT_CATEGORY) => {
-		setSidebarAgentBrowserInitialCategory(category);
+	// of the lighter templates dialog. The bento auto-cycles its category, but we
+	// always land the directory on the first template tab ("Planning") for a
+	// predictable entry point, so the cycling tab is intentionally ignored.
+	const handleBrowseAgentsDirectory = useCallback(() => {
+		setSidebarAgentBrowserInitialCategory(AGENT_TEMPLATES_CATEGORIES[0].id);
 		setIsSidebarAgentBrowserOpen(true);
 	}, []);
 
 	// The empty-instructions "start with a template" link opens the same agents
 	// directory as "Browse all", landing on the first template tab.
-	const handleStartAgentWithTemplate = useCallback(() => {
-		handleBrowseAgentsDirectory(AGENT_TEMPLATES_CATEGORIES[0].id);
-	}, [handleBrowseAgentsDirectory]);
+	const handleStartAgentWithTemplate = handleBrowseAgentsDirectory;
 
 	const handleTemplateAgentSelect = useCallback((agent: AgentTemplatesAgent) => {
 		handleGallerySelect(

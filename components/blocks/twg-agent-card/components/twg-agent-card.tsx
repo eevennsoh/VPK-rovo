@@ -197,7 +197,7 @@ export function TWGAgentCard({
 
 				<TWGAgentCardStats connectedSourceCount={sources.length} suggestedAgentCount={suggestedAgents.length} />
 
-				<div className="relative z-10 flex min-h-0 flex-1 flex-col gap-3.5 px-4 pt-4 pb-4" data-slot="twg-agent-card-suggestions">
+				<div className="relative z-10 flex min-h-0 flex-1 flex-col justify-center gap-4 px-4 pt-4 pb-4" data-slot="twg-agent-card-suggestions">
 					{visibleSuggestions.map((suggestion) => (
 						<TWGAgentSuggestionRow key={suggestion.id} suggestion={suggestion} />
 					))}

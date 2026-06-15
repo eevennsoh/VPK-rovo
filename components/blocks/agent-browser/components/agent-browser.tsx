@@ -431,6 +431,17 @@ export function AgentBrowserDialog({
 	variant = "default",
 	...browserProps
 }: Readonly<AgentBrowserDialogProps>) {
+	// The experimental browser locks to the Templates view's natural single-card-row
+	// height: the expanded template card hugs its own content (a deterministic 515px,
+	// uniform across every category — see ExperimentalTemplateMode), and the dialog is
+	// pinned to that height so the Agents grid scrolls inside the exact same box.
+	// Switching tabs never changes the dialog height, and the card is never stretched
+	// into dead space. Measured natural height (h-auto) at a tall viewport:
+	//   72 (header) + 96 (search + category-chip rows + gaps) + 32 (card row pt-2 +
+	//   pb-6) + 515 (card) + 12 (carousel mt-2) = 727.
+	// Re-measure and re-pin if the expanded card layout changes. min() clamps to the
+	// viewport on short screens; the dialog's overflow-hidden + the card's internal
+	// overflow-y-auto then scroll rather than clip.
 	const isExperimental = variant === "experimental";
 
 	return (
@@ -439,7 +450,7 @@ export function AgentBrowserDialog({
 				className={cn(
 					"grid max-h-[calc(100svh-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[1200px]",
 					isExperimental
-						? "h-auto"
+						? "h-[min(727px,calc(100svh-2rem))]"
 						: "h-[min(800px,calc(100svh-2rem))]",
 				)}
 				showCloseButton={false}
@@ -811,7 +822,7 @@ function ExperimentalAgentBrowser({
 				// shadow. Templates mode owns its bottom spacing inside the carousel row
 				// instead (see ExperimentalTemplateMode), so no pb-6 there to avoid
 				// doubling it.
-				"flex min-h-0 flex-col gap-4 overflow-y-auto px-6 pt-1",
+				"flex h-full min-h-0 flex-col gap-4 overflow-y-auto px-6 pt-1",
 				templateModeActive ? null : "pb-6",
 				contentOverflow.showTopScrollMask ? "scroll-mask-top overscroll-contain" : null,
 			)}
@@ -1196,9 +1207,12 @@ function ExperimentalTemplateMode({
 
 	return (
 		<div className="mt-2 flex flex-col gap-2">
-			{/* The template row is content-height: the expanded AgentCard determines the
-			    directory height, while pb-6 keeps the ticket hover shadow away from the
-			    carousel's vertical clip edge. */}
+			{/* The template row is content-height: the expanded AgentCard hugs its own
+			    content, and that natural height decides the row. The dialog is locked to
+			    this same height (see AgentBrowserDialog) so the Agents grid scrolls inside
+			    the exact same box — both tabs match without stretching the card into dead
+			    space. pb-6 keeps the ticket hover shadow off the carousel's vertical clip
+			    edge. */}
 			<section aria-label="Agent templates" className="relative -mx-6 overflow-x-clip overflow-y-visible">
 				<div
 					className="overflow-x-auto overflow-y-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -1207,7 +1221,9 @@ function ExperimentalTemplateMode({
 					ref={setCarouselRef}
 				>
 					{/* Static track: owns the row's width/padding so the persistent card
-					    and the animated deck share one horizontal-scroll context. */}
+					    and the animated deck share one horizontal-scroll context. items-start
+					    keeps each card at its natural content height; the TWG card self-stretches
+					    to match the tallest card so the row reads as one uniform height. */}
 					<div className="flex w-max items-start gap-4 px-6 pt-2 pb-6">
 						{/* Persistent across category tabs: lives outside AnimatePresence,
 						    so switching tabs never re-keys or re-animates it. It scrolls

@@ -1286,11 +1286,15 @@ function createSessionAgentEntryFromResult(params: {
 
 	const explicitName = getPayloadString(payload, ["name", "agentName", "title"]);
 	const baseName = explicitName ?? SESSION_AGENT_DEFAULT_NAME;
+	const explicitId = getPayloadString(payload, ["agentId", "id"]);
 	const baseId = normalizeGeneratedAgentId(
-		getPayloadString(payload, ["agentId", "id"]) ?? baseName
+		explicitId ?? baseName
 	);
+	const staticReservedProfiles = explicitId
+		? params.staticAgentProfiles.filter((profile) => profile.id !== baseId)
+		: params.staticAgentProfiles;
 	const reservedProfiles = [
-		...params.staticAgentProfiles,
+		...staticReservedProfiles,
 		getRovoAgentProfile(ROVO_AGENT_ID),
 		...params.sessionAgentEntries.map((entry) => entry.profile),
 	];

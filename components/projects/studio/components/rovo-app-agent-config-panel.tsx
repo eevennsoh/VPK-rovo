@@ -15,6 +15,8 @@ import PageIcon from "@atlaskit/icon/core/page";
 import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
+import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
+import CursorIcon from "@atlaskit/icon-lab/core/cursor";
 import HistoryIcon from "@atlaskit/icon-lab/core/history";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
 
@@ -71,7 +73,9 @@ import {
 	type AgentHideableConfigField,
 } from "@/components/blocks/agent";
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
-import FloatingRovoButton from "@/components/projects/shared/components/floating-rovo-button";
+import FloatingRovoButton, {
+	type FloatingRovoButtonPersistentBar,
+} from "@/components/projects/shared/components/floating-rovo-button";
 import RovoFloatingChat from "@/components/projects/rovo-floating-chat/components/rovo-floating-chat";
 import type { ChatPanelGreetingProps, ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-chat/lib/chat-context-bar";
@@ -1182,6 +1186,26 @@ export function RovoAppAgentConfigPanel({
 		openChat("floating");
 	}, [openChat, resetAgentToRovo]);
 
+	// On the agent config screen the floating Rovo button shows its persistent
+	// toolbar variant (point/select + talk), mirroring the rovo-button demo.
+	const rovoButtonPersistentBar = useMemo<FloatingRovoButtonPersistentBar>(() => ({
+		ariaLabel: "Rovo quick actions",
+		items: [
+			{
+				id: "agent-config-rovo-bar-cursor",
+				ariaLabel: "Point and select",
+				icon: <CursorIcon label="" color="currentColor" />,
+				onClick: handleOpenFloatingRovoChat,
+			},
+			{
+				id: "agent-config-rovo-bar-voice",
+				ariaLabel: "Talk to Rovo",
+				icon: <AudioWaveformIcon label="" color="currentColor" />,
+				onClick: handleOpenFloatingRovoChat,
+			},
+		],
+	}), [handleOpenFloatingRovoChat]);
+
 	const activeHeaderSection: AgentCompactHeaderSection | null =
 		activeView === "insights"
 			? "insights"
@@ -1468,7 +1492,12 @@ export function RovoAppAgentConfigPanel({
 		</motion.div>
 			<Toaster id={STUDIO_AGENT_PUBLISH_TOASTER_ID} position="bottom-left" expand={true} />
 			{chatSurface === null ? (
-				<FloatingRovoButton ariaLabel="Open Rovo chat" product="home" onButtonClick={handleOpenFloatingRovoChat} />
+				<FloatingRovoButton
+					ariaLabel="Open Rovo chat"
+					product="home"
+					onButtonClick={handleOpenFloatingRovoChat}
+					persistentBar={rovoButtonPersistentBar}
+				/>
 			) : null}
 			<AnimatePresence>
 				{chatSurface === "floating" ? (

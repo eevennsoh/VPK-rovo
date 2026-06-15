@@ -25,35 +25,37 @@ export default function RovoCursorDemo() {
 			<div className="flex h-full min-h-[350px] w-full items-center justify-center rounded-lg bg-surface p-12 text-text">
 				<RovoCursor state={state} size={size} animated={animated} />
 			</div>
-			<GUI.Panel title="Rovo cursor controls" values={config}>
-				<GUI.Select
-					id="rovo-cursor-state"
-					label="State"
-					description="Which animated state to render."
-					value={state}
-					options={STATE_OPTIONS}
-					onChange={setState}
-				/>
-				<GUI.Control
-					id="rovo-cursor-size"
-					label="Size"
-					description="Glyph height in pixels (width scales per state)."
-					value={size}
-					defaultValue={16}
-					min={12}
-					max={96}
-					step={1}
-					unit="px"
-					onChange={setSize}
-				/>
-				<GUI.Toggle
-					id="rovo-cursor-animated"
-					label="Animated rainbow"
-					description="Rotate the rainbow around the cursor arrow and typing ring."
-					checked={animated}
-					onChange={setAnimated}
-				/>
-			</GUI.Panel>
+			<div className="flex h-full flex-col justify-center pt-6 pr-6">
+				<GUI.Panel title="Rovo cursor controls" values={config}>
+					<GUI.Select
+						id="rovo-cursor-state"
+						label="State"
+						description="Which animated state to render."
+						value={state}
+						options={STATE_OPTIONS}
+						onChange={setState}
+					/>
+					<GUI.Control
+						id="rovo-cursor-size"
+						label="Size"
+						description="Glyph height in pixels (width scales per state)."
+						value={size}
+						defaultValue={16}
+						min={12}
+						max={96}
+						step={1}
+						unit="px"
+						onChange={setSize}
+					/>
+					<GUI.Toggle
+						id="rovo-cursor-animated"
+						label="Animated rainbow"
+						description="Rotate the rainbow around the cursor arrow and typing ring."
+						checked={animated}
+						onChange={setAnimated}
+					/>
+				</GUI.Panel>
+			</div>
 		</div>
 	);
 }
