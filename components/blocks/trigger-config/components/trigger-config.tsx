@@ -3838,9 +3838,10 @@ function AgentInstructionsComposer({
 	const handleRunPromptModeChange = useCallback((value: AgentRunPromptMode): void => {
 		setRunPromptMode(value);
 		if (value === "run-agent") {
+			handleMentionInventoryChange([]);
 			onInstructionsChange?.("");
 		}
-	}, [onInstructionsChange]);
+	}, [handleMentionInventoryChange, onInstructionsChange]);
 	const showCustomPromptEditor = runPromptMode === "custom-prompt";
 
 	useEffect(() => {
