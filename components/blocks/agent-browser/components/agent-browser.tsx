@@ -23,6 +23,7 @@ import {
 	type AgentTemplatesCategoryId,
 } from "@/components/blocks/agent-templates";
 import { AgentCard as ExperimentalDirectoryCard } from "@/components/blocks/agent-card";
+import { TWGAgentCard, DEFAULT_TWG_AGENT_CARD_SUGGESTIONS } from "@/components/blocks/twg-agent-card";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
@@ -143,6 +144,10 @@ const AGENT_BROWSER_TEMPLATE_CAROUSEL_CONTROL_TRANSITION = {
 	visualDuration: 0.2,
 } as const;
 const NOOP_TEMPLATE_MORE_ACTIONS = () => undefined;
+// Presentation-only: the persistent Teamwork Graph card in the Templates carousel
+// shows 2 suggested agents (and the matching stat number) instead of the block's
+// default 3. Scoped here so the standalone block/preview/demo keep their full set.
+const TWG_TEMPLATE_CARD_SUGGESTIONS = DEFAULT_TWG_AGENT_CARD_SUGGESTIONS.slice(0, 2);
 
 type AgentBrowserTemplateMotionDirection = 1 | -1;
 type AgentBrowserTemplateMotionCustom = {
@@ -1201,39 +1206,50 @@ function ExperimentalTemplateMode({
 					onScroll={updateScrollControls}
 					ref={setCarouselRef}
 				>
-					<AnimatePresence custom={motionCustom} initial={false} mode="wait">
-						<motion.div
-							animate="center"
-							className="flex w-max items-start gap-4 px-6 pt-2 pb-6"
-							custom={motionCustom}
-							exit="exit"
-							initial="enter"
-							key={`experimental-templates-${activeCategory.id}`}
-							style={{ willChange: "transform, opacity" }}
-							variants={AGENT_BROWSER_TEMPLATE_GRID_VARIANTS}
-						>
-							{templates.map((agent, index) => (
-								<motion.div
-									animate={{ opacity: 1, transform: "translateX(0px)" }}
-									className="w-90 shrink-0 [will-change:transform,opacity]"
-									initial={{
-										opacity: 0,
-										transform: motionCustom.shouldReduceMotion ? "translateX(0px)" : `translateX(${motionCustom.direction * AGENT_BROWSER_TEMPLATE_CARD_ENTER_OFFSET}px)`,
-									}}
-									key={agent.id}
-									transition={{
-										...AGENT_BROWSER_TEMPLATE_CARD_ENTER_TRANSITION,
-										delay: motionCustom.shouldReduceMotion ? 0 : index * AGENT_BROWSER_TEMPLATE_CARD_STAGGER,
-									}}
-								>
-									<ExperimentalTemplateCard
-										agent={agent}
-										onSelectAgent={onSelectAgent}
-									/>
-								</motion.div>
-							))}
-						</motion.div>
-					</AnimatePresence>
+					{/* Static track: owns the row's width/padding so the persistent card
+					    and the animated deck share one horizontal-scroll context. */}
+					<div className="flex w-max items-start gap-4 px-6 pt-2 pb-6">
+						{/* Persistent across category tabs: lives outside AnimatePresence,
+						    so switching tabs never re-keys or re-animates it. It scrolls
+						    with the row like any other card. */}
+						<div className="shrink-0 self-stretch">
+							<TWGAgentCard className="h-full" suggestedAgents={TWG_TEMPLATE_CARD_SUGGESTIONS} />
+						</div>
+
+						<AnimatePresence custom={motionCustom} initial={false} mode="wait">
+							<motion.div
+								animate="center"
+								className="flex items-start gap-4"
+								custom={motionCustom}
+								exit="exit"
+								initial="enter"
+								key={`experimental-templates-${activeCategory.id}`}
+								style={{ willChange: "transform, opacity" }}
+								variants={AGENT_BROWSER_TEMPLATE_GRID_VARIANTS}
+							>
+								{templates.map((agent, index) => (
+									<motion.div
+										animate={{ opacity: 1, transform: "translateX(0px)" }}
+										className="w-90 shrink-0 [will-change:transform,opacity]"
+										initial={{
+											opacity: 0,
+											transform: motionCustom.shouldReduceMotion ? "translateX(0px)" : `translateX(${motionCustom.direction * AGENT_BROWSER_TEMPLATE_CARD_ENTER_OFFSET}px)`,
+										}}
+										key={agent.id}
+										transition={{
+											...AGENT_BROWSER_TEMPLATE_CARD_ENTER_TRANSITION,
+											delay: motionCustom.shouldReduceMotion ? 0 : index * AGENT_BROWSER_TEMPLATE_CARD_STAGGER,
+										}}
+									>
+										<ExperimentalTemplateCard
+											agent={agent}
+											onSelectAgent={onSelectAgent}
+										/>
+									</motion.div>
+								))}
+							</motion.div>
+						</AnimatePresence>
+					</div>
 				</div>
 				<AnimatePresence initial={false}>
 					{scrollControls.canScrollLeft ? (
