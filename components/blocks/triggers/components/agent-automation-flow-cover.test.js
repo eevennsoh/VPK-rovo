@@ -43,9 +43,15 @@ test("AgentProfileCover and AgentTestAutomationFlow use the same shared cover", 
 
 test("TriggerConfig instructions can run with or without a custom prompt", () => {
 	assert.match(TRIGGER_CONFIG_SOURCE, /type AgentRunPromptMode = "run-agent" \| "custom-prompt";/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /const AGENT_RUN_PROMPT_CONNECTOR_LEFT = "0px";/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /const AGENT_RUN_PROMPT_CONNECTOR_TOP = `calc\(-1 \* \$\{token\("space\.200"\)\}\)`;/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /const AGENT_RUN_PROMPT_CONNECTOR_WIDTH = token\("space\.200"\);/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /const AGENT_RUN_PROMPT_CONNECTOR_HEIGHT = "33px";/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /const AGENT_RUN_PROMPT_ROW_PADDING_LEFT = token\("space\.300"\);/u);
 	assert.match(TRIGGER_CONFIG_SOURCE, /const \[runPromptMode, setRunPromptMode\] = useState<AgentRunPromptMode>/u);
 	assert.match(TRIGGER_CONFIG_SOURCE, /if \(value === "run-agent"\) \{[\s\S]*handleMentionInventoryChange\(\[\]\);[\s\S]*onInstructionsChange\?\.\(""\);[\s\S]*\}/u);
 	assert.match(TRIGGER_CONFIG_SOURCE, /\}, \[handleMentionInventoryChange, onInstructionsChange\]\);/u);
+	assert.match(TRIGGER_CONFIG_SOURCE, /aria-hidden="true"[\s\S]*className="pointer-events-none absolute border-b border-l border-border"[\s\S]*borderBottomLeftRadius: token\("radius\.large"\)/u);
 	assert.match(TRIGGER_CONFIG_SOURCE, /aria-label="Agent run prompt mode"/u);
 	assert.match(TRIGGER_CONFIG_SOURCE, /role="radiogroup"/u);
 	assert.match(TRIGGER_CONFIG_SOURCE, /role="radio"/u);

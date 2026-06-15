@@ -3,6 +3,7 @@
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- This block uses slot/render-node props for Base UI, shadcn, icon, and hover-reveal composition contracts.
 
 import { useLazyRef } from "@/lib/use-lazy-ref";
+import { token } from "@/lib/tokens";
 import type { Tool } from "ai";
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform, type MotionProps } from "motion/react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
@@ -143,6 +144,11 @@ const APP_ATLASSIAN_LOGO_NAMES: Record<string, AtlassianLogoName> = {
 	Confluence: "confluence",
 };
 type AgentRunPromptMode = "run-agent" | "custom-prompt";
+const AGENT_RUN_PROMPT_CONNECTOR_LEFT = "0px";
+const AGENT_RUN_PROMPT_CONNECTOR_TOP = `calc(-1 * ${token("space.200")})`;
+const AGENT_RUN_PROMPT_CONNECTOR_WIDTH = token("space.200");
+const AGENT_RUN_PROMPT_CONNECTOR_HEIGHT = "33px";
+const AGENT_RUN_PROMPT_ROW_PADDING_LEFT = token("space.300");
 const AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS = {
 	initial: "rest",
 	animate: "rest",
@@ -3885,42 +3891,57 @@ function AgentInstructionsComposer({
 			    (components/blocks/triggers/page.tsx). Variations (no trigger /
 			    single trigger / multiple triggers) are driven by the config's
 			    triggers; add/remove/param edits flow through onAutomationRulesChange. */}
-			<TriggerConfigAddBlock
-				className="mb-6"
-				config={config}
-				onAutomationRulesChange={onAutomationRulesChange}
-				onConnectTrigger={onConnectTrigger}
-			/>
-			<div
-				aria-label="Agent run prompt mode"
-				className="mb-3 inline-flex h-8 w-fit items-center justify-center rounded-lg bg-muted p-[3px] text-text-subtle"
-				role="radiogroup"
-			>
-				<button
-					aria-checked={runPromptMode === "run-agent"}
-					className={cn(
-						"relative inline-flex h-[25px] items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-3 py-0.5 text-sm font-medium transition-all hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-						runPromptMode === "run-agent" && "bg-surface text-text shadow-sm",
-					)}
-					onClick={() => handleRunPromptModeChange("run-agent")}
-					role="radio"
-					type="button"
-				>
-					<GenerativeIndicatorIcon label="" size="small" />
-					Run agent
-				</button>
-				<button
-					aria-checked={runPromptMode === "custom-prompt"}
-					className={cn(
-						"relative inline-flex h-[25px] items-center justify-center whitespace-nowrap rounded-md border border-transparent px-3 py-0.5 text-sm font-medium transition-all hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-						runPromptMode === "custom-prompt" && "bg-surface text-text shadow-sm",
-					)}
-					onClick={() => handleRunPromptModeChange("custom-prompt")}
-					role="radio"
-					type="button"
-				>
-					Pass a custom prompt
-				</button>
+			<div className="relative mb-3">
+				<TriggerConfigAddBlock
+					className="mb-6"
+					config={config}
+					onAutomationRulesChange={onAutomationRulesChange}
+					onConnectTrigger={onConnectTrigger}
+				/>
+				<div className="relative" style={{ paddingLeft: AGENT_RUN_PROMPT_ROW_PADDING_LEFT }}>
+					<span
+						aria-hidden="true"
+						className="pointer-events-none absolute border-b border-l border-border"
+						style={{
+							borderBottomLeftRadius: token("radius.large"),
+							height: AGENT_RUN_PROMPT_CONNECTOR_HEIGHT,
+							left: AGENT_RUN_PROMPT_CONNECTOR_LEFT,
+							top: AGENT_RUN_PROMPT_CONNECTOR_TOP,
+							width: AGENT_RUN_PROMPT_CONNECTOR_WIDTH,
+						}}
+					/>
+					<div
+						aria-label="Agent run prompt mode"
+						className="relative inline-flex h-8 w-fit items-center justify-center rounded-lg bg-muted p-[3px] text-text-subtle"
+						role="radiogroup"
+					>
+						<button
+							aria-checked={runPromptMode === "run-agent"}
+							className={cn(
+								"relative inline-flex h-[25px] items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-3 py-0.5 text-sm font-medium transition-all hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+								runPromptMode === "run-agent" && "bg-surface text-text shadow-sm",
+							)}
+							onClick={() => handleRunPromptModeChange("run-agent")}
+							role="radio"
+							type="button"
+						>
+							<GenerativeIndicatorIcon label="" size="small" />
+							Run agent
+						</button>
+						<button
+							aria-checked={runPromptMode === "custom-prompt"}
+							className={cn(
+								"relative inline-flex h-[25px] items-center justify-center whitespace-nowrap rounded-md border border-transparent px-3 py-0.5 text-sm font-medium transition-all hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+								runPromptMode === "custom-prompt" && "bg-surface text-text shadow-sm",
+							)}
+							onClick={() => handleRunPromptModeChange("custom-prompt")}
+							role="radio"
+							type="button"
+						>
+							Pass a custom prompt
+						</button>
+					</div>
+				</div>
 			</div>
 			{showCustomPromptEditor ? (
 				<RichTextEditor
