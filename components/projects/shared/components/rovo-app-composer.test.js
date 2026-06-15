@@ -11,6 +11,10 @@ const SEND_CONTROLS_SOURCE = fs.readFileSync(path.join(__dirname, "rovo-composer
 const COMPOSER_EXTENSIONS_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/composer-extensions.ts"), "utf8");
 const PROMPT_INPUT_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/prompt-input.tsx"), "utf8");
 const RICH_TEXT_EDITOR_CSS = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/rich-text-editor.css"), "utf8");
+const MENTION_EXTENSIONS_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/extensions.ts"), "utf8");
+const MENTION_NODE_VIEW_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/rich-text-editor/mention-node-view.tsx"), "utf8");
+const TAG_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui/tag.tsx"), "utf8");
+const SKILL_TAG_SOURCE = fs.readFileSync(path.join(__dirname, "../../../ui-custom/skill-tag.tsx"), "utf8");
 
 test("RovoAppComposer uses the shared edit context bar for open artifacts", () => {
 	assert.match(COMPOSER_SOURCE, /import ChatContextBar from "@\/components\/projects\/sidebar-chat\/components\/chat-context-bar";/u);
@@ -118,7 +122,8 @@ test("composer plain Enter submits before Tiptap can split the paragraph", () =>
 });
 
 test("visual trace auto-tagging uses mention nodes and hides autocomplete while tracing", () => {
-	assert.match(PROMPT_INPUT_SOURCE, /mentionType\.create\(getMentionNodeAttrs\(pendingMatch\.match\.mention\)\)/u);
+	assert.match(PROMPT_INPUT_SOURCE, /\.\.\.getMentionNodeAttrs\(pendingMatch\.match\.mention\),[\s\S]*sourceText: pendingMatch\.expectedText,/u);
+	assert.match(PROMPT_INPUT_SOURCE, /mentionType\.create\(mentionAttrs\)/u);
 	assert.match(PROMPT_INPUT_SOURCE, /const shouldInsertTrailingSpace = textAfter === undefined;/u);
 	assert.match(PROMPT_INPUT_SOURCE, /const conversionOrder = \[\.\.\.pendingMatches\]\.sort\(\(a, b\) => b\.from - a\.from\);/u);
 	assert.match(PROMPT_INPUT_SOURCE, /editor\.state\.doc\.forEach\(\(block, blockOffset, blockIndex\) => \{[\s\S]*text \+= "\\n";/u);
@@ -151,6 +156,73 @@ test("composer trace auto-tagging keeps native undo history available", () => {
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /"Mod-z": undo/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /"Shift-Mod-z": redo/u);
 	assert.match(COMPOSER_EXTENSIONS_SOURCE, /createComposerHistoryExtension\(\),[\s\S]*createRichTextMentionExtension/u);
+});
+
+test("auto-tagged tokens carry sourceText and a restore command on the mention node", () => {
+	// The exact typed text is stored on the node so a revert restores it precisely,
+	// and its presence is what scopes the revert affordances to auto-tagged tokens.
+	assert.match(MENTION_EXTENSIONS_SOURCE, /sourceText: \{[\s\S]*parseHTML:[\s\S]*data-source-text[\s\S]*renderHTML:[\s\S]*data-source-text/u);
+	// Per-draft dismissal registry so reverted tokens are not re-converted.
+	assert.match(MENTION_EXTENSIONS_SOURCE, /addStorage\(\): RichTextMentionStorage \{[\s\S]*dismissedAutoTags: new Set<string>\(\),/u);
+	// Shared restore command: replace node with sourceText and record the dismissal.
+	assert.match(MENTION_EXTENSIONS_SOURCE, /restoreAutoTaggedMention:[\s\S]*\(pos: number\) =>/u);
+	assert.match(MENTION_EXTENSIONS_SOURCE, /node\.type\.name !== "mention"/u);
+	assert.match(MENTION_EXTENSIONS_SOURCE, /typeof sourceText !== "string" \|\| !sourceText/u);
+	assert.match(MENTION_EXTENSIONS_SOURCE, /tr\.replaceWith\(from, to, state\.schema\.text\(sourceText\)\)/u);
+	// The revert + dismissal side effects are gated behind the dispatch guard so a
+	// dry-run (editor.can()) stays side-effect-free.
+	assert.match(MENTION_EXTENSIONS_SOURCE, /if \(dispatch\) \{[\s\S]*this\.storage\.dismissedAutoTags\.add\(sourceText\.toLowerCase\(\)\);[\s\S]*\}/u);
+	assert.match(MENTION_EXTENSIONS_SOURCE, /restoreAutoTaggedMention: \(pos: number\) => ReturnType;/u);
+	// Storage is typed via the exported interface, not a loose cast.
+	assert.match(MENTION_EXTENSIONS_SOURCE, /addStorage\(\): RichTextMentionStorage/u);
+	assert.match(MENTION_EXTENSIONS_SOURCE, /export interface RichTextMentionStorage/u);
+});
+
+test("Backspace next to an auto-tagged token reverts it, including across a trailing space", () => {
+	// Scoped to auto-tagged nodes (sourceText present); deliberate mentions fall
+	// through to the mention extension's default delete-and-reinsert-"@".
+	assert.match(PROMPT_INPUT_SOURCE, /event\.key === "Backspace"/u);
+	assert.match(PROMPT_INPUT_SOURCE, /function getBackspaceRevertPos\(editor: Editor\): number \| null/u);
+	assert.match(PROMPT_INPUT_SOURCE, /function isAutoTaggedMention\(/u);
+	// Caret directly after the chip.
+	assert.match(PROMPT_INPUT_SOURCE, /if \(isAutoTaggedMention\(before\)\) \{[\s\S]*return \$from\.pos - before!\.nodeSize;/u);
+	// Caret after the conversion-inserted trailing space (treat lone space as adjacency).
+	assert.match(PROMPT_INPUT_SOURCE, /before\?\.isText && before\.text === " "/u);
+	assert.match(PROMPT_INPUT_SOURCE, /editor\.commands\.restoreAutoTaggedMention\(backspaceRevertPos\)/u);
+});
+
+test("auto-tagger skips and clears reverted occurrences for the draft", () => {
+	assert.match(PROMPT_INPUT_SOURCE, /function getDismissedAutoTags\(editor: Editor\): Set<string> \| undefined/u);
+	// Typed via the exported storage interface rather than an inline shape.
+	assert.match(PROMPT_INPUT_SOURCE, /as unknown as \{ mention\?: RichTextMentionStorage \}/u);
+	assert.match(PROMPT_INPUT_SOURCE, /const dismissed = getDismissedAutoTags\(activeEditor\);/u);
+	assert.match(PROMPT_INPUT_SOURCE, /!dismissed\?\.has\(block\.text\.slice\(match\.from, match\.to\)\.toLowerCase\(\)\)/u);
+	// Cleared wherever the draft resets so a fresh message can re-tag.
+	assert.match(PROMPT_INPUT_SOURCE, /getDismissedAutoTags\(editor\)\?\.clear\(\);/u);
+});
+
+test("auto-tagged chip exposes a swap-back-to-text overlay action", () => {
+	assert.match(MENTION_NODE_VIEW_SOURCE, /import SwapIcon from "@atlaskit\/icon-lab\/core\/swap";/u);
+	assert.match(MENTION_NODE_VIEW_SOURCE, /const isAutoTagged = Boolean\(attrs\.sourceText\);/u);
+	assert.match(MENTION_NODE_VIEW_SOURCE, /const overlayAction: TagOverlayAction \| undefined = isAutoTagged/u);
+	assert.match(MENTION_NODE_VIEW_SOURCE, /icon: <SwapIcon label="" size="small" \/>/u);
+	assert.match(MENTION_NODE_VIEW_SOURCE, /tooltip: "Switch back to text"/u);
+	assert.match(MENTION_NODE_VIEW_SOURCE, /editor\.commands\.restoreAutoTaggedMention\(pos\)/u);
+	// Passed to both tag primitives via the dedicated action prop (not onRemove).
+	assert.match(MENTION_NODE_VIEW_SOURCE, /overlayAction=\{overlayAction\}/u);
+});
+
+test("Tag and SkillTag expose a distinct overlayAction (separate from remove semantics)", () => {
+	for (const source of [TAG_SOURCE, SKILL_TAG_SOURCE]) {
+		assert.match(source, /overlayAction\?: TagOverlayAction;/u);
+		// Reuses the shared tooltip wrapper instead of re-implementing it.
+		assert.match(source, /withTooltip\(/u);
+		// The action gets its own data-slot so "remove" selectors never match it.
+		assert.match(source, /overlay-action/u);
+	}
+	// The shared helper lives in the tooltip primitive module.
+	assert.match(TAG_SOURCE, /import \{ withTooltip \} from "@\/components\/ui\/tooltip";/u);
+	assert.match(TAG_SOURCE, /interface TagOverlayAction/u);
 });
 
 test("RovoAppComposer threads dictation controls and text snapshots through both composer bodies", () => {

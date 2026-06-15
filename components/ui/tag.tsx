@@ -4,6 +4,7 @@ import CrossIcon from "@atlaskit/icon/core/cross";
 import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
 
 import { Icon } from "@/components/ui/icon";
+import { withTooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 type LegacyTagVariant = "success" | "removed" | "inprogress" | "new" | "moved";
@@ -91,6 +92,18 @@ const tagColorClasses: Record<ResolvedTagColor, { border: string; icon: string }
 	teal: { border: "border-teal-400", icon: "text-teal-400" },
 };
 
+/** A non-remove control rendered in the tag's hover-reveal overlay slot. */
+interface TagOverlayAction {
+	/** Icon shown inside the control (wrapped in the shared `Icon` for sizing). */
+	icon: React.ReactElement;
+	/** Accessible name for the control's button. */
+	label: string;
+	/** Optional tooltip text shown on hover/focus. */
+	tooltip?: string;
+	/** Invoked when the control is activated. */
+	onClick: () => void;
+}
+
 interface TagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	as?: React.ElementType;
 	children: React.ReactNode;
@@ -108,6 +121,14 @@ interface TagProps extends Omit<React.ComponentProps<"span">, "color"> {
 	 */
 	removeVariant?: "inline" | "overlay";
 	removeButtonLabel?: string;
+	/**
+	 * A non-remove control occupying the same hover-reveal overlay slot as the
+	 * remove "×" (mutually exclusive with `onRemove` overlay). Use for actions
+	 * that aren't a removal — e.g. a swap icon that reverts an auto-tagged token
+	 * back to text. Kept distinct from `onRemove` so "remove" styling/selectors
+	 * (`data-slot="tag-remove-overlay-button"`) never match this action.
+	 */
+	overlayAction?: TagOverlayAction;
 	/** Element rendered before the tag text, such as an icon, logo, or avatar. */
 	elemBefore?: React.ReactNode;
 	isVerified?: boolean;
@@ -125,6 +146,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	onRemove,
 	removeVariant = "inline",
 	removeButtonLabel = "Remove",
+	overlayAction,
 	elemBefore,
 	isVerified = false,
 	maxWidth,
@@ -154,6 +176,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	// Any tag rendering the inline "x" remove button gets the standard 4px
 	// right padding (matching non-removable logo/default tags).
 	const hasRemoveButton = Boolean(onRemove) && !isOverlayRemove;
+	const hasOverlayControl = isOverlayRemove || Boolean(overlayAction);
 	// Round the remove button to match the tag shape: pill tags (user avatars or
 	// rounded tags) get a fully-rounded "x"; everything else stays `rounded-xs`.
 	const removeButtonShapeClass = isUserAvatarTag || isRounded ? "rounded-full" : "rounded-xs";
@@ -168,6 +191,32 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 		event.stopPropagation();
 		onRemove?.();
 	};
+
+	// Resolve the single hover-reveal overlay control: a custom action takes
+	// precedence; otherwise the overlay-variant remove "×". Built lazily (null
+	// when neither applies) so non-removable tags allocate no icon/closure.
+	const overlayControl: {
+		icon: React.ReactElement;
+		label: string;
+		tooltip?: string;
+		slot: string;
+		onClick: () => void;
+	} | null = overlayAction
+		? {
+			icon: overlayAction.icon,
+			label: overlayAction.label,
+			tooltip: overlayAction.tooltip,
+			slot: "tag-overlay-action-button",
+			onClick: overlayAction.onClick,
+		}
+		: isOverlayRemove
+			? {
+				icon: <CrossIcon label="" size="small" color="currentColor" />,
+				label: resolvedRemoveButtonLabel,
+				slot: "tag-remove-overlay-button",
+				onClick: () => onRemove?.(),
+			}
+			: null;
 
 	return (
 		<span
@@ -214,12 +263,12 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 			<span
 				className={cn(
 					"min-w-0 grow truncate whitespace-nowrap",
-					// Overlay-remove tags fade the trailing edge of the *label itself*
-					// (mask to transparent) on hover/focus so the floating X stays
+					// Overlay-control tags fade the trailing edge of the *label itself*
+					// (mask to transparent) on hover/focus so the floating control stays
 					// legible. Masking the text — rather than painting a colored
 					// gradient scrim on top — keeps the effect correct regardless of
 					// the surface color behind the tag.
-					isOverlayRemove &&
+					hasOverlayControl &&
 						"group-hover/tag:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-focus-within/tag:[mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-hover/tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))] group-focus-within/tag:[-webkit-mask-image:linear-gradient(to_right,#000_calc(100%-2.25rem),transparent_calc(100%-1.25rem))]",
 				)}
 				data-tag-text
@@ -231,7 +280,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 					<Icon render={<StatusVerifiedIcon label="" size="small" />} label="Verified" />
 				</span>
 			) : null}
-			{onRemove && !isOverlayRemove ? (
+			{hasRemoveButton ? (
 				<span className="inline-flex shrink-0 items-center" data-slot="tag-after">
 					<button
 						type="button"
@@ -248,26 +297,30 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 					</button>
 				</span>
 			) : null}
-			{isOverlayRemove ? (
-				<>
-					{/* No colored scrim: the trailing edge of the label text is masked
-					    to transparent on hover/focus (see data-tag-text above) so the X
-					    stays legible without assuming the surface color behind the tag. */}
+			{overlayControl ? (
+				/* No colored scrim: the trailing edge of the label text is masked to
+				   transparent on hover/focus (see data-tag-text above) so the floating
+				   control stays legible without assuming the surface color behind the tag. */
+				withTooltip(
 					<button
 						type="button"
-						aria-label={resolvedRemoveButtonLabel}
+						aria-label={overlayControl.label}
 						disabled={disabled}
-						onClick={handleRemoveClick}
-						data-slot="tag-remove-overlay-button"
+						onClick={(event) => {
+							event.stopPropagation();
+							overlayControl.onClick();
+						}}
+						data-slot={overlayControl.slot}
 						className={cn(
 							"absolute end-px top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center border-0 bg-transparent text-text opacity-0 transition-[opacity,background-color] duration-fast ease-out hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none",
 							removeButtonShapeClass,
 							"pointer-events-none group-hover/tag:pointer-events-auto group-hover/tag:opacity-100 group-focus-within/tag:pointer-events-auto group-focus-within/tag:opacity-100",
 						)}
 					>
-						<Icon render={<CrossIcon label="" size="small" color="currentColor" />} aria-hidden />
-					</button>
-				</>
+						<Icon render={overlayControl.icon} aria-hidden />
+					</button>,
+					overlayControl.tooltip,
+				)
 			) : null}
 		</span>
 	);
@@ -279,4 +332,4 @@ function TagGroup({ className, ...props }: Readonly<TagGroupProps>) {
 	return <div data-slot="tag-group" className={cn("flex flex-wrap gap-2", className)} {...props} />;
 }
 
-export { Tag, TagGroup, type TagProps, type TagGroupProps, type TagVariant, type TagColor, type TagType };
+export { Tag, TagGroup, type TagProps, type TagGroupProps, type TagVariant, type TagColor, type TagType, type TagOverlayAction };
