@@ -220,7 +220,7 @@ export function SpotlightPlacementsExample(): React.ReactElement {
 
 export default function SpotlightPage(): React.ReactElement {
 	return (
-		<div className="flex min-h-screen flex-col items-center justify-center gap-8 p-6">
+		<div className="flex w-full flex-col items-center gap-8 p-10">
 			<SpotlightBasicExample />
 			<SpotlightMediaExample />
 			<SpotlightTourExample />

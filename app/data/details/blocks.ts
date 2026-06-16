@@ -1840,7 +1840,7 @@ const rows: AnswerCardRow[] = [
 		description:
 			"Introduces users to points of interest, from a single focused message to a multi-step tour. A compound dark inverse card (heading, body, media, footer actions, step count, dismiss control) that can stand alone or anchor to a real element with a pulse highlight.",
 		adsUrl: "https://atlassian.design/components/spotlight/examples",
-		demoLayout: { previewHeight: "fixed" },
+		demoLayout: { previewHeight: "fit" },
 		importStatement: `import {
   SpotlightCard,
   SpotlightHeader,
