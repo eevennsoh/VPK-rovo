@@ -405,7 +405,7 @@ function CustomAgentGreeting({
 						</motion.div>
 					))}
 					{agentTestSection ? (
-						<motion.div className="mt-3" variants={activeItemVariants}>
+						<motion.div className="mt-4" variants={activeItemVariants}>
 							{agentTestSection}
 						</motion.div>
 					) : null}

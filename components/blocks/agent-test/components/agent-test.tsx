@@ -613,7 +613,7 @@ function AgentTestAutomationGreetingRow({
 				label={label}
 				size="medium"
 			/>
-			<span className="flex min-w-0 flex-col gap-1">
+			<span className="flex min-w-0 flex-col gap-0.5">
 				<span className="menu-row-title text-left">{label}</span>
 				<AgentTestAutomationFlow rule={rule} />
 			</span>
@@ -654,9 +654,9 @@ function AgentTestChatPanel({
 			abortOnUnmount={false}
 			containerClassName="h-full min-h-0 w-full overflow-visible"
 			containerStyle={{ borderRadius: 0, borderWidth: 0, overflow: "visible" }}
-			composerContainerClassName="px-0"
+			composerContainerClassName="px-0 [&_.chat-composer-surface]:max-w-[600px]"
 			composerReservesContextBarSpace
-			conversationContentClassName="px-0"
+			conversationContentClassName="px-0 max-w-[600px]"
 			showAgentTestControls
 			suppressCustomAgentTabs
 			greeting={{

@@ -831,7 +831,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTestChatPanel[\s\S]*automationRules=\{automationRules\}[\s\S]*testAgentProfile=\{testAgentProfile\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /containerClassName="h-full min-h-0 w-full overflow-visible"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /composerContainerClassName="px-0"/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /conversationContentClassName="px-0"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /conversationContentClassName="px-0 max-w-\[600px\]"/u);
 	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /containerClassName="mx-auto h-full min-h-0 w-full max-w-\[800px\] overflow-visible"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /containerStyle=\{\{ borderRadius: 0, borderWidth: 0, overflow: "visible" \}\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /greetingSelectedAgent=\{testAgentProfile\}/u);

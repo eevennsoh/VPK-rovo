@@ -40,7 +40,7 @@ test("AgentTestPanel chat panel wires the grouped greeting (Chat + Automation)",
 	assert.match(AGENT_TEST_PANEL_SOURCE, /<ChatPanel[\s\S]*abortOnUnmount=\{false\}[\s\S]*showAgentTestControls[\s\S]*suppressCustomAgentTabs[\s\S]*hideHeader/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /containerClassName="h-full min-h-0 w-full overflow-visible"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /composerContainerClassName="px-0"/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /conversationContentClassName="px-0"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /conversationContentClassName="px-0 max-w-\[600px\]"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /greeting=\{\{[\s\S]*heading: testAgentProfile\.name,[\s\S]*suggestions: testAgentProfile\.starters,[\s\S]*showStarterGroupLabel,[\s\S]*agentTestSection: \([\s\S]*<AgentTestAutomationGreetingSection/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /greetingSelectedAgent=\{testAgentProfile\}/u);
 	// The "Chat" group label only shows when there are both starters and automations.
