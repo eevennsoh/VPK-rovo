@@ -1665,28 +1665,15 @@ function AgentCompactDirectoryNavButton({
 	const disabledSet = useDisabledLabelSet(disabledItems);
 	const addLabel = `Add ${item.label.toLowerCase()}`;
 	const compactNavMenu = useCompactNavMenuNoInitialHighlight();
-	// Multi-select (skills): keep both the menu and the "Add ..." picker open
-	// after each pick so several skills can be added in a row. Selecting a picker
-	// option would otherwise dismiss the whole menu tree; `keepOpenAfterAddRef`
-	// suppresses that close (set on pick, self-clears once the click settles).
+	// Multi-select (skills): keep the "Add ..." picker open after each pick so
+	// several skills can be added in a row. Selecting an option would otherwise
+	// dismiss the menu; the picker submenu is controlled and the post-pick close
+	// is suppressed (via `keepOpenAfterAddRef`, set on pick, self-clearing once the
+	// click settles), so the picker — and therefore its parent menu — stays open.
 	// Tools are excluded — picking a tool intentionally closes to open the
 	// directory dialog on that tool's detail.
-	const [menuOpen, setMenuOpen] = useState(false);
 	const [addOpen, setAddOpen] = useState(false);
 	const keepOpenAfterAddRef = useRef(false);
-	const handleMenuOpenChange = useCallback<AgentCompactNavMenuOpenChange>(
-		(nextOpen, eventDetails) => {
-			compactNavMenu.onOpenChange(nextOpen, eventDetails);
-			if (!nextOpen && keepOpenAfterAddRef.current) {
-				return;
-			}
-			setMenuOpen(nextOpen);
-			if (!nextOpen) {
-				setAddOpen(false);
-			}
-		},
-		[compactNavMenu],
-	);
 	const handleAddOpenChange = useCallback((nextOpen: boolean) => {
 		if (!nextOpen && keepOpenAfterAddRef.current) {
 			return;
@@ -1742,7 +1729,7 @@ function AgentCompactDirectoryNavButton({
 	);
 
 	return (
-		<MenubarMenu open={menuOpen} onOpenChange={handleMenuOpenChange}>
+		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
 			{renderTrigger ? (
 				<MenubarTrigger render={renderTrigger} />
 			) : (
@@ -1822,26 +1809,13 @@ function AgentCompactAppsNavButton({
 	const disabledSet = useDisabledLabelSet(disabledItems);
 	const addLabel = `Add ${item.label.toLowerCase()}`;
 	const compactNavMenu = useCompactNavMenuNoInitialHighlight();
-	// Multi-select: keep both the menu and the "Add ..." picker open after each
-	// pick so several apps can be added in a row. Selecting a picker option would
-	// otherwise dismiss the whole menu tree; `keepOpenAfterAddRef` suppresses that
-	// close (set on pick, self-clears once the click settles).
-	const [menuOpen, setMenuOpen] = useState(false);
+	// Multi-select: keep the "Add ..." picker open after each pick so several apps
+	// can be added in a row. Selecting an option would otherwise dismiss the menu;
+	// the picker submenu is controlled and the post-pick close is suppressed (via
+	// `keepOpenAfterAddRef`, set on pick, self-clearing once the click settles), so
+	// the picker — and therefore its parent menu — stays open for the next add.
 	const [addOpen, setAddOpen] = useState(false);
 	const keepOpenAfterAddRef = useRef(false);
-	const handleMenuOpenChange = useCallback<AgentCompactNavMenuOpenChange>(
-		(nextOpen, eventDetails) => {
-			compactNavMenu.onOpenChange(nextOpen, eventDetails);
-			if (!nextOpen && keepOpenAfterAddRef.current) {
-				return;
-			}
-			setMenuOpen(nextOpen);
-			if (!nextOpen) {
-				setAddOpen(false);
-			}
-		},
-		[compactNavMenu],
-	);
 	const handleAddOpenChange = useCallback((nextOpen: boolean) => {
 		if (!nextOpen && keepOpenAfterAddRef.current) {
 			return;
@@ -1882,7 +1856,7 @@ function AgentCompactAppsNavButton({
 	);
 
 	return (
-		<MenubarMenu open={menuOpen} onOpenChange={handleMenuOpenChange}>
+		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
 			{renderTrigger ? (
 				<MenubarTrigger render={renderTrigger} />
 			) : (
@@ -4322,7 +4296,7 @@ function AgentCompactConfigPanel({
 	summaryHiddenConfigFields.add("conversationStarters");
 
 	return (
-		<div className="flex flex-col gap-2 rounded-2xl border border-border px-4 py-2">
+		<div className="mb-2 flex flex-col gap-2 rounded-2xl border border-border px-4 py-2">
 			{hasRows ? (
 				<AgentFilledConfigSummary
 					config={config}
