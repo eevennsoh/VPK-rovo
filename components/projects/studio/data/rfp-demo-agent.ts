@@ -18,7 +18,12 @@ import {
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 
 export const STUDIO_RFP_DEMO_AGENT_PROFILE_ID = RFP_DRAFTING_AGENT_ID;
-export const STUDIO_RFP_DEMO_AGENT_SOURCE_KEY = "studio-rfp-demo-agent:v1";
+// Bump this version whenever the seeded RFP demo body changes (e.g. weaving in
+// new app/skill mention chips). The seed effect in rovo-app-shell keys off the
+// persisted record's `resultKey` (which embeds this source key), so a bump
+// re-seeds returning users' localStorage copies with the latest instructions
+// instead of leaving them on the old body.
+export const STUDIO_RFP_DEMO_AGENT_SOURCE_KEY = "studio-rfp-demo-agent:v2";
 
 function requireTrigger(trigger: AgentTriggerValue | null): AgentTriggerValue {
 	if (!trigger) {

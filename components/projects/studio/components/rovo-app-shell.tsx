@@ -1726,13 +1726,38 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		}
 
 		const existingEntry = studioAgentRegistry.getSessionAgentEntry?.(STUDIO_RFP_DEMO_AGENT_PROFILE_ID);
-		if (!existingEntry && readSessionAgentRecords().some((record) => record.profileId === STUDIO_RFP_DEMO_AGENT_PROFILE_ID)) {
+		const persistedRecord = readSessionAgentRecords().find(
+			(record) => record.profileId === STUDIO_RFP_DEMO_AGENT_PROFILE_ID,
+		);
+
+		// A hydrated entry or persisted record whose resultKey predates the current
+		// seed version carries the OLD instruction body (before apps/skills were woven
+		// in as inline mention chips). resultKey is `${sourceKey}:…`, so a bump of
+		// STUDIO_RFP_DEMO_AGENT_SOURCE_KEY marks every prior copy stale — re-seed it so
+		// returning users pick up the new lozenge-rich instructions instead of keeping
+		// their localStorage copy.
+		const seedVersionPrefix = `${STUDIO_RFP_DEMO_AGENT_SOURCE_KEY}:`;
+		const persistedResultKey = existingEntry?.resultKey ?? persistedRecord?.resultKey;
+		const hasStaleSeed =
+			typeof persistedResultKey === "string" && !persistedResultKey.startsWith(seedVersionPrefix);
+
+		// An up-to-date persisted record not yet hydrated into an entry: leave it for
+		// the rehydration effect to surface, and don't reseed.
+		if (!existingEntry && persistedRecord && !hasStaleSeed) {
 			return;
 		}
 
 		hasSeededStudioRfpDemoAgentRef.current = true;
 
-		const registeredProfile = existingEntry?.profile
+		// Drop a stale hydrated entry first so the re-register replaces it instead of
+		// adding a second entry with the same profileId. removeSessionAgent updates the
+		// entries ref synchronously, so the register below sees the cleared state.
+		if (hasStaleSeed && existingEntry) {
+			studioAgentRegistry.removeSessionAgent?.(STUDIO_RFP_DEMO_AGENT_PROFILE_ID);
+		}
+
+		const reuseExistingProfile = hasStaleSeed ? undefined : existingEntry?.profile;
+		const registeredProfile = reuseExistingProfile
 			?? studioAgentRegistry.registerCreatedAgentFromResult(STUDIO_RFP_DEMO_AGENT_RESULT, {
 				preserveCurrentThread: true,
 				select: false,

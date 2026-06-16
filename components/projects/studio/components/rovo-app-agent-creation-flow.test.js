@@ -140,7 +140,17 @@ test("RovoAppShell seeds the published RFP Drafter into the default Studio landi
 	assert.match(SHELL_SOURCE, /readSessionAgentRecords/u);
 	assert.match(rfpSeedSource, /hasSeededStudioRfpDemoAgentRef/u);
 	assert.match(rfpSeedSource, /new URLSearchParams\(window\.location\.search\)\.has\("agent"\)/u);
-	assert.match(rfpSeedSource, /readSessionAgentRecords\(\)\.some\(\(record\) => record\.profileId === STUDIO_RFP_DEMO_AGENT_PROFILE_ID\)/u);
+	assert.match(rfpSeedSource, /readSessionAgentRecords\(\)\.find\(\s*\(record\) => record\.profileId === STUDIO_RFP_DEMO_AGENT_PROFILE_ID,?\s*\)/u);
+	// A persisted/hydrated record whose resultKey predates the current seed version
+	// is treated as stale, so returning users get the new lozenge-rich body instead
+	// of keeping their old localStorage copy.
+	assert.match(rfpSeedSource, /const seedVersionPrefix = `\$\{STUDIO_RFP_DEMO_AGENT_SOURCE_KEY\}:`;/u);
+	assert.match(rfpSeedSource, /!persistedResultKey\.startsWith\(seedVersionPrefix\)/u);
+	// Up-to-date persisted record not yet hydrated: leave it for rehydration.
+	assert.match(rfpSeedSource, /if \(!existingEntry && persistedRecord && !hasStaleSeed\) \{\s*return;/u);
+	// A stale hydrated entry is removed before re-registering so no duplicate
+	// profileId entry is created.
+	assert.match(rfpSeedSource, /if \(hasStaleSeed && existingEntry\) \{\s*studioAgentRegistry\.removeSessionAgent\?\.\(STUDIO_RFP_DEMO_AGENT_PROFILE_ID\);/u);
 	assert.match(
 		rfpSeedSource,
 		/studioAgentRegistry\.registerCreatedAgentFromResult\(STUDIO_RFP_DEMO_AGENT_RESULT,[\s\S]*select: false,[\s\S]*sourceKey: STUDIO_RFP_DEMO_AGENT_SOURCE_KEY/u,

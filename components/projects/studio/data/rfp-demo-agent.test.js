@@ -33,7 +33,7 @@ test("Studio RFP demo agent matches the /agents RFP story and starts with the Ji
 	} = await loadModule();
 
 	assert.equal(STUDIO_RFP_DEMO_AGENT_PROFILE_ID, "rfp-drafting-agent");
-	assert.equal(STUDIO_RFP_DEMO_AGENT_SOURCE_KEY, "studio-rfp-demo-agent:v1");
+	assert.equal(STUDIO_RFP_DEMO_AGENT_SOURCE_KEY, "studio-rfp-demo-agent:v2");
 	assert.equal(STUDIO_RFP_DEMO_AGENT_RESULT.agentId, "rfp-drafting-agent");
 	assert.equal(STUDIO_RFP_DEMO_AGENT_RESULT.name, "RFP Drafter");
 	assert.equal(STUDIO_RFP_DEMO_AGENT_RESULT.avatarSrc, "/avatar-agent/dev-agents/feature-flag-cleaner.svg");
