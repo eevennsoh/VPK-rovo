@@ -39,7 +39,7 @@ import { StudioAgentsSection } from "@/components/projects/studio/components/rov
 import { RovoAppMessages } from "@/components/projects/studio/components/rovo-app-messages";
 import { RovoAppHermesSkillDraftBar } from "@/components/projects/studio/components/rovo-app-hermes-skill-draft-bar";
 import { RovoAppAgentConfigPanel, type AgentConfigView } from "@/components/projects/studio/components/rovo-app-agent-config-panel";
-import { AgentTestPanel } from "@/components/projects/studio/components/rovo-app-agent-test-panel";
+import { AgentTestPanel } from "@/components/blocks/agent-test";
 import { RovoAppShellPaneLayout } from "@/components/projects/studio/components/rovo-app-shell-pane-layout";
 import { RovoAppSidebar } from "@/components/projects/studio/components/rovo-app-sidebar";
 import { isGeneratedAgentResult } from "@/components/projects/sidebar-chat/components/agent-result-card";

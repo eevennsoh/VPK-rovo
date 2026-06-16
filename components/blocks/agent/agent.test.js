@@ -764,7 +764,7 @@ test("Agent component page wires compact filled and empty placeholder variations
 	assert.match(AGENT_DEMO_SOURCE, /function AgentDemoHeaderActions/u);
 	assert.match(AGENT_DEMO_SOURCE, /<Toggle[\s\S]*aria-label="Toggle agent test view"[\s\S]*onPressedChange=\{onTestPressedChange\}[\s\S]*pressed=\{activeView === "test"\}[\s\S]*variant="outline"[\s\S]*Test[\s\S]*<\/Toggle>/u);
 	assert.doesNotMatch(AGENT_DEMO_SOURCE, /aria-label="Agent config views"|<ToggleGroup|<ToggleGroupItem|>Configure<\/ToggleGroupItem>/u);
-	assert.match(AGENT_DEMO_SOURCE, /import \{ AgentTestPanel \} from "@\/components\/projects\/studio\/components\/rovo-app-agent-test-panel";/u);
+	assert.match(AGENT_DEMO_SOURCE, /import \{ AgentTestPanel \} from "@\/components\/blocks\/agent-test";/u);
 	assert.match(AGENT_DEMO_SOURCE, /ConversationStartersDialog,[\s\S]*DEFAULT_STARTER_ICON,[\s\S]*type ConversationStarter,[\s\S]*type StarterIconKey,/u);
 	assert.match(AGENT_DEMO_SOURCE, /function buildAgentDemoTestEntry\(config: AgentConfigFormValue\): StudioSessionAgentEntry/u);
 	assert.match(AGENT_DEMO_SOURCE, /AgentTestPanel entry=\{testEntry\}/u);

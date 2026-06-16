@@ -9,7 +9,7 @@ const COMPONENT_SOURCE = fs.readFileSync(
 );
 
 const TEST_PANEL_SOURCE = fs.readFileSync(
-	path.join(__dirname, "../../../projects/studio/components/rovo-app-agent-test-panel.tsx"),
+	path.join(__dirname, "../../agent-test/components/agent-test.tsx"),
 	"utf8",
 );
 

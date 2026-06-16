@@ -28,7 +28,7 @@ import {
 	type ConversationStarter,
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
-import { AgentTestPanel } from "@/components/projects/studio/components/rovo-app-agent-test-panel";
+import { AgentTestPanel } from "@/components/blocks/agent-test";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import type { StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";

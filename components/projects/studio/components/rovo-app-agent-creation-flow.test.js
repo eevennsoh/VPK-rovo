@@ -24,7 +24,7 @@ const AGENT_INSIGHTS_PANEL_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const AGENT_TEST_PANEL_SOURCE = fs.readFileSync(
-	path.join(__dirname, "rovo-app-agent-test-panel.tsx"),
+	path.join(__dirname, "../../../blocks/agent-test/components/agent-test.tsx"),
 	"utf8",
 );
 const CUSTOM_AGENTS_TABLE_SOURCE = fs.readFileSync(
@@ -751,7 +751,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	);
 	assert.match(handleAgentConfigViewChangeSource, /setActiveAgentConfigView\(view\);/u);
 	assert.doesNotMatch(handleAgentConfigViewChangeSource, /nav\.openChat|nav\.toggleChat/u);
-	assert.match(SHELL_SOURCE, /import \{ AgentTestPanel \} from "@\/components\/projects\/studio\/components\/rovo-app-agent-test-panel";/u);
+	assert.match(SHELL_SOURCE, /import \{ AgentTestPanel \} from "@\/components\/blocks\/agent-test";/u);
 	assert.match(SHELL_SOURCE, /const agentConfigTestPanel = activeSessionAgentEntry \? \([\s\S]*<AgentTestPanel entry=\{activeSessionAgentEntry\} \/>/u);
 	assert.match(SHELL_SOURCE, /testPanel=\{agentConfigTestPanel\}/u);
 	assert.match(SHELL_SOURCE, /onTest=\{handleTestAgent\}/u);
@@ -825,10 +825,10 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(CHAT_PANEL_SOURCE, /selectedAgentVersionId\?: string;/u);
 	assert.match(CHAT_PANEL_SOURCE, /onAgentVersionChange\?: \(versionId: string\) => void;/u);
 	assert.match(CHAT_PANEL_SOURCE, /aria-label="Switch version"/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTestSelectedHeader[\s\S]*onSelectVersion=\{setSelectedVersionId\}[\s\S]*selectedVersionId=\{selectedVersionId\}[\s\S]*versionOptions=\{versionOptions\}/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTestHeader[\s\S]*onSelectVersion=\{setSelectedVersionId\}[\s\S]*selectedVersionId=\{selectedVersionId\}[\s\S]*versionOptions=\{versionOptions\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTestVersionSelect[\s\S]*onSelectVersion=\{onSelectVersion\}[\s\S]*selectedVersionId=\{selectedVersionId\}[\s\S]*versionOptions=\{versionOptions\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /buildAgentTestProfile\(entry, selectedResult, selectedOption\.label\)/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTestChatPanel testAgentProfile=\{testAgentProfile\} \/>/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTestChatPanel[\s\S]*automationRules=\{automationRules\}[\s\S]*testAgentProfile=\{testAgentProfile\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /containerClassName="h-full min-h-0 w-full overflow-visible"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /composerContainerClassName="px-0"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /conversationContentClassName="px-0"/u);

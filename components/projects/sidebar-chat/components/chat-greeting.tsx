@@ -135,6 +135,17 @@ interface ChatGreetingProps {
 	isMaxMode?: boolean;
 	/** Optional custom suggestions list */
 	suggestions?: ReadonlyArray<RovoSuggestion>;
+	/**
+	 * Render a "Chat" group label above the custom-agent starter list. Used by
+	 * the agent test panel to separate starters from the automation group.
+	 * Custom-agent branch only.
+	 */
+	showStarterGroupLabel?: boolean;
+	/**
+	 * Extra labeled section rendered below the custom-agent starter list (e.g.
+	 * the agent test "Automation" group). Custom-agent branch only.
+	 */
+	agentTestSection?: ReactNode;
 	/** Composer-owned skill/tool autocomplete state for filtered empty-state rows. */
 	directoryAutocompleteState?: DirectoryAutocompleteState | null;
 	/** Uses two columns for large Rovo-style empty states only. */
@@ -286,18 +297,38 @@ function CustomAgentStarterItem({
 	);
 }
 
+// Small left-aligned group header for the custom-agent greeting (e.g. "Chat").
+// The icon is a 32px spot illustration that sits in the same 32px column as the
+// row tiles below it (gap-3 matches the rows). The agent test panel mirrors this
+// exact treatment for its "Flows" group label so the two groups read as a set.
+function GreetingGroupLabel({
+	icon,
+	label,
+}: Readonly<{ icon: ReactNode; label: string }>) {
+	return (
+		<div className="flex items-center gap-3 px-1.5 text-xs font-semibold leading-4 text-text-subtle">
+			{icon}
+			{label}
+		</div>
+	);
+}
+
 function CustomAgentGreeting({
 	agent,
+	agentTestSection,
 	isAgentTest = false,
 	isComposing = false,
 	itemVariants,
 	onSuggestionClick,
+	showStarterGroupLabel = false,
 }: Readonly<{
 	agent: RovoAgentProfile;
+	agentTestSection?: ReactNode;
 	isAgentTest?: boolean;
 	isComposing?: boolean;
 	itemVariants: ChatGreetingItemVariants;
 	onSuggestionClick?: (suggestion: RovoSuggestion) => void;
+	showStarterGroupLabel?: boolean;
 }>) {
 	const shouldShowHero = !isComposing || agent.starters.length === 0;
 	const activeContainerVariants = isComposing ? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_CONTAINER_VARIANTS;
@@ -307,8 +338,11 @@ function CustomAgentGreeting({
 		<motion.div
 			animate="visible"
 			className={cn(
-				"mx-auto flex w-full flex-col items-center gap-8 text-center",
-				isAgentTest ? "max-w-[600px]" : "max-w-[800px]",
+				"flex w-full flex-col gap-8",
+				// The agent test greeting is flush-left and fills the container width
+				// (avatar, heading, groups all left-aligned, lining up with the
+				// composer); the main Rovo custom-agent greeting stays a centered column.
+				isAgentTest ? "items-start text-left" : "mx-auto max-w-[800px] items-center text-center",
 			)}
 			exit="exit"
 			initial="hidden"
@@ -318,7 +352,7 @@ function CustomAgentGreeting({
 			<AnimatePresence mode="popLayout" propagate>
 				{shouldShowHero ? (
 					<motion.div
-						className="flex max-w-[360px] flex-col items-center gap-3"
+						className={cn("flex flex-col gap-3", isAgentTest ? "items-start" : "max-w-[360px] items-center")}
 						exit="exit"
 						key="agent-hero"
 						variants={activeContainerVariants}
@@ -326,8 +360,8 @@ function CustomAgentGreeting({
 						<motion.div variants={activeItemVariants}>
 							<AgentAvatarVisual avatarSrc={agent.avatarSrc} logoName={agent.logoName} label={agent.name} sizePx={40} className="size-10 object-contain" loading="eager" />
 						</motion.div>
-						<motion.div className="flex flex-col items-center gap-2" variants={activeItemVariants}>
-							<Heading size="large" className="text-center">{agent.name}</Heading>
+						<motion.div className={cn("flex flex-col gap-2", isAgentTest ? "items-start" : "items-center")} variants={activeItemVariants}>
+							<Heading size="large" className={isAgentTest ? "text-left" : "text-center"}>{agent.name}</Heading>
 							{agent.description ? (
 								<p className="line-clamp-3 text-sm leading-6 text-text-subtle">{agent.description}</p>
 							) : null}
@@ -336,7 +370,32 @@ function CustomAgentGreeting({
 				) : null}
 			</AnimatePresence>
 			<motion.div className="w-full" layout={isComposing ? false : "position"} variants={activeContainerVariants}>
-				<div className="mx-auto flex w-fit max-w-full flex-col gap-1">
+				<div className={cn("flex max-w-full flex-col gap-1", isAgentTest ? "w-full" : "mx-auto w-fit")}>
+					{showStarterGroupLabel ? (
+						<motion.div variants={activeItemVariants}>
+							<GreetingGroupLabel
+								icon={
+									<span className="block size-8 shrink-0">
+										<Image
+											alt=""
+											className="size-8 object-contain dark:hidden [[data-color-mode=dark]_&]:hidden"
+											height={32}
+											src="/illustration-spot/general/chat-6/light.svg"
+											width={32}
+										/>
+										<Image
+											alt=""
+											className="hidden size-8 object-contain dark:block [[data-color-mode=dark]_&]:block"
+											height={32}
+											src="/illustration-spot/general/chat-6/dark.svg"
+											width={32}
+										/>
+									</span>
+								}
+								label="Chat"
+							/>
+						</motion.div>
+					) : null}
 					{agent.starters.map((suggestion) => (
 						<motion.div key={suggestion.id} variants={activeItemVariants}>
 							<CustomAgentStarterItem
@@ -345,6 +404,11 @@ function CustomAgentGreeting({
 							/>
 						</motion.div>
 					))}
+					{agentTestSection ? (
+						<motion.div className="mt-3" variants={activeItemVariants}>
+							{agentTestSection}
+						</motion.div>
+					) : null}
 				</div>
 			</motion.div>
 		</motion.div>
@@ -360,6 +424,8 @@ export default function ChatGreeting({
 	selectedAgent = null,
 	isAgentTest = false,
 	showHero = true,
+	showStarterGroupLabel = false,
+	agentTestSection,
 	suggestions,
 	directoryAutocompleteState = null,
 	useWideSuggestionLayout = false,
@@ -414,11 +480,13 @@ export default function ChatGreeting({
 				{customAgent ? (
 					<CustomAgentGreeting
 						agent={customAgent}
+						agentTestSection={agentTestSection}
 						isAgentTest={isAgentTest}
 						isComposing={isComposing}
 						itemVariants={itemVariants}
 						key={`agent-${customAgent.id}`}
 						onSuggestionClick={onSuggestionClick}
+						showStarterGroupLabel={showStarterGroupLabel}
 					/>
 				) : (
 					<motion.div
