@@ -103,6 +103,13 @@ export interface HoverRevealActionsProps {
 	toggleParked?: boolean;
 	/** Secondary action (e.g. an edit / delete button). Always reveal-only. */
 	action?: ReactNode;
+	/**
+	 * Tailwind right-inset utility for the `action` slot's resting position.
+	 * Defaults to `"right-1.5"` (6px, matching icon-button rows). Rows with wider
+	 * content padding (e.g. `px-3`) can pass `"right-3"` so a text action aligns
+	 * to the row's 12px content edge. Only applies when there's no `toggle`.
+	 */
+	actionInsetClassName?: string;
 }
 
 /**
@@ -118,6 +125,7 @@ export function HoverRevealActions({
 	toggle,
 	toggleParked = false,
 	action,
+	actionInsetClassName = "right-1.5",
 }: Readonly<HoverRevealActionsProps>) {
 	return (
 		<>
@@ -135,7 +143,12 @@ export function HoverRevealActions({
 				</div>
 			) : null}
 			{action ? (
-				<div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 translate-x-2 items-center opacity-0 transition-[opacity,transform] duration-normal ease-out group-hover/hover-reveal-row:translate-x-0 group-hover/hover-reveal-row:opacity-100 group-has-[:focus-visible]/hover-reveal-row:translate-x-0 group-has-[:focus-visible]/hover-reveal-row:opacity-100">
+				<div
+					className={cn(
+						"absolute top-1/2 flex -translate-y-1/2 translate-x-2 items-center opacity-0 transition-[opacity,transform] duration-normal ease-out group-hover/hover-reveal-row:translate-x-0 group-hover/hover-reveal-row:opacity-100 group-has-[:focus-visible]/hover-reveal-row:translate-x-0 group-has-[:focus-visible]/hover-reveal-row:opacity-100",
+						actionInsetClassName,
+					)}
+				>
 					{action}
 				</div>
 			) : null}

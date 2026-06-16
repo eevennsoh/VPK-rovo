@@ -14,6 +14,7 @@ export const SAMPLE_ARTIFACT_ITEMS: readonly ArtifactListItem[] = [
 		source: "Confluence page",
 		owner: "Vitafleet Team",
 		icon: <PageIcon label="" />,
+		tileVariant: "blueSubtle",
 	},
 	{
 		id: "engagement-data",
@@ -21,6 +22,7 @@ export const SAMPLE_ARTIFACT_ITEMS: readonly ArtifactListItem[] = [
 		source: "Analytics",
 		owner: "Vitafleet Team",
 		icon: <ChartBarIcon label="" />,
+		tileVariant: "greenSubtle",
 	},
 	{
 		id: "content-variation-analysis",
@@ -35,5 +37,13 @@ export const SAMPLE_ARTIFACT_ITEMS: readonly ArtifactListItem[] = [
 		source: "Projects",
 		owner: "Vitafleet Team",
 		icon: <ProjectIcon label="" />,
+		tileVariant: "purpleSubtle",
+	},
+	{
+		id: "hr-policy-assistant",
+		title: "HR Policy Assistant",
+		source: "Rovo agent",
+		owner: "Vitafleet Team",
+		avatarSrc: "/avatar-agent/teamwork-agents/teamwork-coach.svg",
 	},
 ];

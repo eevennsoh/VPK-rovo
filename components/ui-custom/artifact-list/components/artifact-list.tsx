@@ -2,6 +2,7 @@
 
 import { type ReactNode } from "react";
 
+import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import {
 	HoverRevealActions,
 	hoverRevealRowClassName,
@@ -20,13 +21,24 @@ export interface ArtifactListItem {
 	source: string;
 	/** Metadata owner label, e.g. "Vitafleet Team". */
 	owner: string;
-	/** ADS icon for the neutral leading tile (e.g. `<PageIcon label="" />`). */
+	/** ADS icon for the leading tile (e.g. `<PageIcon label="" />`). */
 	icon?: ReactNode;
 	/**
-	 * 2P/3P logo path (e.g. `/3p/google-drive/16.svg`) rendered inset on the same
+	 * Tile color appearance for the `icon` variant — any `Tile` variant, e.g.
+	 * `"blueSubtle"`. Defaults to `"neutral"`. Ignored for `logoSrc`/`avatarSrc`
+	 * rows, which always use the neutral tile.
+	 */
+	tileVariant?: React.ComponentProps<typeof Tile>["variant"];
+	/**
+	 * 2P/3P logo path (e.g. `/3p/google-drive/16.svg`) rendered 24px inset on the
 	 * neutral tile. Takes precedence over `icon`.
 	 */
 	logoSrc?: string;
+	/**
+	 * Agent avatar image path (e.g. `/avatar-agent/teamwork-agents/teamwork-coach.svg`)
+	 * rendered 20px inset on the neutral tile. Takes precedence over `logoSrc`/`icon`.
+	 */
+	avatarSrc?: string;
 }
 
 export interface ArtifactListProps extends React.ComponentProps<"div"> {
@@ -37,21 +49,35 @@ export interface ArtifactListProps extends React.ComponentProps<"div"> {
 	openLabel?: string;
 }
 
+function ArtifactListTileContent({ item }: Readonly<{ item: ArtifactListItem }>) {
+	if (item.avatarSrc) {
+		return <AgentAvatarVisual avatarSrc={item.avatarSrc} sizePx={20} className="object-contain" />;
+	}
+	if (item.logoSrc) {
+		// eslint-disable-next-line @next/next/no-img-element -- Tile child-sizing CSS targets [&_img]; mirrors logo-mark.tsx
+		return <img alt="" aria-hidden className="object-contain" src={item.logoSrc} />;
+	}
+	return item.icon;
+}
+
 function ArtifactListLeadingTile({ item }: Readonly<{ item: ArtifactListItem }>) {
+	// Logo + agent-avatar rows stay neutral; logos render 24px inset and agent
+	// avatars 20px, while plain icon rows can opt into a color appearance and keep
+	// the tile's default 16px inset.
+	const usesInsetImage = Boolean(item.avatarSrc || item.logoSrc);
 	return (
 		<Tile
 			aria-hidden
 			label={item.source}
-			variant="neutral"
+			variant={usesInsetImage ? "neutral" : item.tileVariant ?? "neutral"}
 			size="medium"
-			className="rounded-tile"
-		>
-			{item.logoSrc ? (
-				// eslint-disable-next-line @next/next/no-img-element -- Tile child-sizing CSS targets [&_img]; mirrors logo-mark.tsx
-				<img alt="" aria-hidden className="object-contain" src={item.logoSrc} />
-			) : (
-				item.icon
+			className={cn(
+				"rounded-tile",
+				item.logoSrc && "[&_img]:size-6!",
+				item.avatarSrc && "[&_img]:size-5!",
 			)}
+		>
+			<ArtifactListTileContent item={item} />
 		</Tile>
 	);
 }
@@ -79,7 +105,7 @@ function ArtifactListRow({
 			{/* Reserve right-padding on hover/focus so both lines truncate clear of the
 			    revealed "Open" button (a text button is wider than the hover-reveal-row
 			    primitive's 24px icon-button presets). */}
-			<div className="min-w-0 flex-1 transition-[padding] duration-normal ease-out group-hover/hover-reveal-row:pr-[72px] group-has-[:focus-visible]/hover-reveal-row:pr-[72px]">
+			<div className="min-w-0 flex-1 transition-[padding] duration-normal ease-out group-hover/hover-reveal-row:pr-[78px] group-has-[:focus-visible]/hover-reveal-row:pr-[78px]">
 				<p className="truncate text-sm font-medium leading-5 text-text">{item.title}</p>
 				<p className="flex items-center gap-1 text-xs leading-4">
 					<span className="shrink-0 text-text-subtle">{item.source}</span>
@@ -88,6 +114,7 @@ function ArtifactListRow({
 				</p>
 			</div>
 			<HoverRevealActions
+				actionInsetClassName="right-3"
 				action={
 					<Button variant="outline" size="default" type="button" onClick={() => onOpen?.(item)}>
 						{openLabel}
