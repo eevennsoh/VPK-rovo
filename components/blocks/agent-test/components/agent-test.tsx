@@ -601,21 +601,23 @@ function AgentTestAutomationGreetingRow({
 	return (
 		<button
 			aria-label={`Test ${label}`}
-			className="grid w-full grid-cols-[32px_minmax(0,1fr)] items-center gap-3 rounded-[12px] px-1.5 py-2 text-left transition-colors hover:bg-bg-neutral-subtle-hovered disabled:pointer-events-none disabled:opacity-(--opacity-disabled)"
+			className="flex w-full items-center gap-3 rounded-[12px] py-2 pl-1.5 pr-2 text-left transition-colors hover:bg-bg-neutral-subtle-hovered disabled:pointer-events-none disabled:opacity-(--opacity-disabled)"
 			disabled={!hasTrigger}
 			onClick={onRun}
 			type="button"
 		>
 			<IconTile
 				aria-hidden
-				className="border border-border bg-surface"
+				className="shrink-0 border border-border bg-surface"
 				icon={<AutomationIcon color={token("color.icon.subtle")} label={label} />}
 				label={label}
 				size="medium"
 			/>
-			<span className="flex min-w-0 flex-col gap-0.5">
-				<span className="menu-row-title text-left">{label}</span>
-				<AgentTestAutomationFlow rule={rule} />
+			<span className="flex min-w-0 flex-1 items-center justify-between gap-3">
+				<span className="menu-row-title min-w-0 truncate text-left">{label}</span>
+				<span className="shrink-0">
+					<AgentTestAutomationFlow rule={rule} />
+				</span>
 			</span>
 		</button>
 	);

@@ -187,7 +187,15 @@ export function EntityCardAgentProfile({
 
 			<Avatar
 				aria-hidden={avatarAlt === ""}
-				className="absolute top-6 left-4"
+				className={cn(
+					"absolute top-6 left-4",
+					// Card-only 2px white border tracing the hexagon. The shared hexagon
+					// border draws via an SVG <polygon> with mix-blend-darken, which would
+					// erase a white stroke — so reset the blend mode, then recolor/thicken
+					// the stroke to match the white ring on the adjacent company badge.
+					"[&>svg]:mix-blend-normal dark:[&>svg]:mix-blend-normal",
+					"[&>svg>polygon]:stroke-white [&>svg>polygon]:[stroke-width:2]",
+				)}
 				shape="hexagon"
 				size="xl"
 			>
