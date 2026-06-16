@@ -79,6 +79,11 @@ test("stripMentionMarkup renders mentions as plain prose for descriptions", asyn
 	);
 	assert.equal(stripMentionMarkup("Uses @[app:jira] for context"), "Uses Jira for context");
 	assert.equal(stripMentionMarkup("Handles read/write and https://x.test paths"), "Handles read/write and https://x.test paths");
+	// Literal routes and scoped packages continue as a path → trigger is preserved.
+	assert.equal(
+		stripMentionMarkup("Checks /api/health and imports @atlaskit/tokens from /docs/foo"),
+		"Checks /api/health and imports @atlaskit/tokens from /docs/foo",
+	);
 });
 
 test("resolveCatalogIds keeps exact catalog ids verbatim", async () => {

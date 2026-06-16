@@ -596,8 +596,10 @@ function joinList(items: readonly string[]): string {
  * `description`/`summary`, which render as plain text (no chips) and must not show
  * `@[app:id]` tokens or slash/at mention triggers like `/Jira`. Converts each
  * `@[category:id]` token to its catalog display name, then drops a leading `@`/`/`
- * trigger before a word (`/Jira` → `Jira`). Leaves code regions and mid-word
- * slashes (`and/or`, `https://`, `12/25`) untouched.
+ * trigger before a word (`/Jira` → `Jira`). Leaves code regions, mid-word slashes
+ * (`and/or`, `https://`, `12/25`), and names that continue as a path or scoped
+ * identifier (`/api/health`, `@atlaskit/tokens`) untouched — those are literal
+ * routes/packages, not leaked mention markup.
  */
 export function stripMentionMarkup(text: string): string {
 	if (!text) {
@@ -612,8 +614,11 @@ export function stripMentionMarkup(text: string): string {
 			const name = resolvedId !== undefined ? catalogNameForId(category, resolvedId) : undefined;
 			return name ?? dekebabLabel(rawId);
 		});
-		// 2. Bare `@name` / `/name` trigger → drop just the trigger char, keep the name.
-		next = next.replace(/(^|[\s(>"'])[@/](?!\[)(?=[A-Za-z])/giu, "$1");
+		// 2. Bare `@name` / `/name` trigger → drop just the trigger char, keep the name —
+		// but only when the name does NOT continue as a path/scoped id (trailing `/`),
+		// so literal routes (`/api/health`) and scoped packages (`@atlaskit/tokens`)
+		// survive intact. The captured name is preserved; only the trigger is removed.
+		next = next.replace(/(^|[\s(>"'])[@/](?!\[)([A-Za-z][A-Za-z0-9._+-]*)(?![A-Za-z0-9._+/-])/giu, "$1$2");
 		return next;
 	});
 }
