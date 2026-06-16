@@ -31,9 +31,9 @@
 			"feedback-analyzer"
 		],
 		"conversationStarters": [
-			"Review this DACI decision for gaps",
-			"Compare these options against our criteria",
-			"What's the next decision-ready resource?"
+			"Review this DACI decision in Confluence for gaps",
+			"Compare these options and prioritize ideas",
+			"Build report on the next decision-ready resource"
 		],
 		"conversationStarterIcons": [
 			"list-checklist",
@@ -124,9 +124,9 @@
 			"progress-tracker"
 		],
 		"conversationStarters": [
-			"Draft measurable OKRs for this quarter",
-			"Review these OKRs for clarity",
-			"Align objectives to team priorities"
+			"Draft measurable OKRs in Jira for this quarter",
+			"Use roadmap builder to align these OKRs",
+			"Build report on objectives and team priorities"
 		],
 		"conversationStarterIcons": [
 			"target",
@@ -216,9 +216,9 @@
 			"feedback-analyzer"
 		],
 		"conversationStarters": [
-			"Surface non-obvious directions here",
-			"What opportunities are we missing?",
-			"Explore adjacent problem spaces"
+			"Explore ideas in Jira Product Discovery",
+			"What opportunities are we missing in Miro?",
+			"Run the trend spotter across adjacent problem spaces"
 		],
 		"conversationStarterIcons": [
 			"lightbulb",
@@ -307,9 +307,9 @@
 			"feedback-analyzer"
 		],
 		"conversationStarters": [
-			"Turn this idea into an experiment",
-			"Define the decision points for this test",
-			"What should we measure here?"
+			"Explore ideas and turn this into an experiment",
+			"Use test plan builder for the decision points",
+			"Build report on what we should measure"
 		],
 		"conversationStarterIcons": [
 			"lightbulb",
@@ -398,9 +398,9 @@
 			"diagram-creator"
 		],
 		"conversationStarters": [
-			"Compare these options by cost and risk",
-			"Map the tradeoffs for this decision",
-			"Which path has the best upside?"
+			"Compare these options in Confluence by cost and risk",
+			"Map the tradeoffs for this decision in Miro",
+			"Prioritize ideas by upside"
 		],
 		"conversationStarterIcons": [
 			"comparison",
@@ -488,9 +488,9 @@
 			"strategic-insight"
 		],
 		"conversationStarters": [
-			"Stress-test the assumptions here",
-			"Which assumptions are weakest?",
-			"What evidence would change this plan?"
+			"Stress-test the assumptions in Confluence",
+			"Run deep research on the weakest assumptions",
+			"Build report on evidence that would change this plan"
 		],
 		"conversationStarterIcons": [
 			"warning",
@@ -578,9 +578,9 @@
 			"decision-director"
 		],
 		"conversationStarters": [
-			"Define criteria for choosing a path",
-			"What should we weigh in this decision?",
-			"Turn these goals into selection criteria"
+			"Define criteria to prioritize ideas here",
+			"Explore ideas on what we should weigh",
+			"Turn these Confluence goals into selection criteria"
 		],
 		"conversationStarterIcons": [
 			"list-checklist",
@@ -669,9 +669,9 @@
 			"strategic-insight"
 		],
 		"conversationStarters": [
-			"Facilitate a brainstorm on this topic",
-			"Cluster and rank these raw ideas",
-			"Help the team converge on concepts"
+			"Facilitate a brainstorm in Miro on this topic",
+			"Explore ideas and prioritize ideas from these notes",
+			"Summarize whiteboard so the team converges"
 		],
 		"conversationStarterIcons": [
 			"people-group",
@@ -763,9 +763,9 @@
 			"strategic-insight"
 		],
 		"conversationStarters": [
-			"Synthesize this feedback into themes",
-			"What are customers asking for most?",
-			"Surface risks from recent signals"
+			"Synthesize this Zendesk feedback into customer insights",
+			"What are customers asking for most in Salesforce?",
+			"Capture insights and spot the trend in recent signals"
 		],
 		"conversationStarterIcons": [
 			"people-group",
@@ -861,9 +861,9 @@
 			"strategic-insight"
 		],
 		"conversationStarters": [
-			"Find themes across these Jira items",
-			"What candidate epics emerge here?",
-			"Spot patterns worth acting on"
+			"Use the JQL query builder to find themes in Jira",
+			"What candidate epics emerge in Jira Product Discovery?",
+			"Build report on patterns worth acting on"
 		],
 		"conversationStarterIcons": [
 			"search",
@@ -960,9 +960,9 @@
 			"feedback-analyzer"
 		],
 		"conversationStarters": [
-			"Turn this transcript into decisions",
-			"Extract owners and follow-ups",
-			"What were the key insights here?"
+			"Summarize thread from this Loom transcript",
+			"Build report on owners and follow-ups",
+			"Capture insights from this meeting"
 		],
 		"conversationStarterIcons": [
 			"document",
@@ -1059,9 +1059,9 @@
 			"transcript-insights-reporter"
 		],
 		"conversationStarters": [
-			"Find decisions in these meeting notes",
-			"List action items and owners",
-			"What context should I know here?"
+			"Find decisions in these Confluence meeting notes",
+			"Summarize thread into action items and owners",
+			"Capture insights from this Microsoft Teams meeting"
 		],
 		"conversationStarterIcons": [
 			"calendar",
@@ -1150,9 +1150,9 @@
 			"strategic-insight"
 		],
 		"conversationStarters": [
-			"Spot emerging trends in this data",
-			"What's shifting across our feedback?",
-			"Surface early signals worth watching"
+			"Spot the trend in this Amplitude data",
+			"Capture insights on what's shifting in Confluence",
+			"Build report on early signals worth watching"
 		],
 		"conversationStarterIcons": [
 			"graph-line",
@@ -1241,9 +1241,9 @@
 			"customer-insights"
 		],
 		"conversationStarters": [
-			"Map sentiment shifts over time",
-			"Where is sentiment trending down?",
-			"Connect sentiment to recent changes"
+			"Map sentiment shifts from Zendesk over time",
+			"Run the trend spotter where sentiment is dropping",
+			"Capture insights linking sentiment to recent changes"
 		],
 		"conversationStarterIcons": [
 			"graph-line",
@@ -1339,9 +1339,9 @@
 			"strategic-insight"
 		],
 		"conversationStarters": [
-			"Trace drop-offs in this funnel",
-			"Connect drop-offs to feedback",
-			"What should we investigate next?"
+			"Use funnel analytics to trace drop-offs in Amplitude",
+			"Run the trend spotter connecting drop-offs to feedback",
+			"Build report on what we should investigate next"
 		],
 		"conversationStarterIcons": [
 			"graph-bar",
@@ -1431,9 +1431,9 @@
 			"strategic-insight"
 		],
 		"conversationStarters": [
-			"Pull this research into one brief",
-			"Summarize findings for a decision",
-			"What does the evidence point to?"
+			"Run deep research and pull this into one brief",
+			"Build report on findings for a decision",
+			"Capture insights on what the evidence points to"
 		],
 		"conversationStarterIcons": [
 			"book",
@@ -1524,9 +1524,9 @@
 			"root-cause-analyzer"
 		],
 		"conversationStarters": [
-			"Triage this service request",
-			"Recommend field updates here",
-			"What details are missing?"
+			"Triage service request in Jira Service Management",
+			"Run the SLA monitor on these requests",
+			"Draft support reply for the missing details"
 		],
 		"conversationStarterIcons": [
 			"list-checklist",
@@ -1622,9 +1622,9 @@
 			"rovo-ops"
 		],
 		"conversationStarters": [
-			"Draft a support response for this",
-			"Suggest an assignee for this request",
-			"Summarize this request for handoff"
+			"Draft support reply for this Zendesk request",
+			"Triage service request and suggest an assignee",
+			"Summarize thread for handoff"
 		],
 		"conversationStarterIcons": [
 			"comment",
@@ -1722,9 +1722,9 @@
 			"pipeline-troubleshooter"
 		],
 		"conversationStarters": [
-			"Guide me through this incident",
-			"Draft a status update for stakeholders",
-			"What's the next mitigation step?"
+			"Use the incident responder for this Opsgenie alert",
+			"Draft support reply with a Statuspage update",
+			"Analyze root cause for the next mitigation step"
 		],
 		"conversationStarterIcons": [
 			"warning",
@@ -1814,9 +1814,9 @@
 			"user-manual-writer"
 		],
 		"conversationStarters": [
-			"How do I set up Rovo for my team?",
-			"Explain this Rovo feature",
-			"Point me to the right Rovo docs"
+			"Write KB article on setting up Rovo for my team",
+			"Search the web to explain this Rovo feature",
+			"Point me to the right Rovo docs in Confluence"
 		],
 		"conversationStarterIcons": [
 			"question-circle",
@@ -1906,9 +1906,9 @@
 			"strategic-insight"
 		],
 		"conversationStarters": [
-			"Help me document my working style",
-			"Draft my communication norms",
-			"Capture my collaboration preferences"
+			"Write user manual for my working style",
+			"Use the brand voice editor on my communication norms",
+			"Capture my collaboration preferences in Confluence"
 		],
 		"conversationStarterIcons": [
 			"document",
@@ -1997,9 +1997,9 @@
 			"user-manual-writer"
 		],
 		"conversationStarters": [
-			"Answer this policy question",
-			"Where's the process for this?",
-			"Summarize the relevant guidance"
+			"Write KB article answering this policy question",
+			"Search the web for the process behind this",
+			"Summarize thread of the relevant Confluence guidance"
 		],
 		"conversationStarterIcons": [
 			"book",
@@ -2089,9 +2089,9 @@
 			"rovo-ops"
 		],
 		"conversationStarters": [
-			"Compile a post-incident recap",
-			"Build the incident timeline",
-			"List follow-ups and owners"
+			"Use the incident responder to compile a recap",
+			"Analyze root cause across this Opsgenie timeline",
+			"Write KB article with follow-ups and owners"
 		],
 		"conversationStarterIcons": [
 			"document",
@@ -2180,9 +2180,9 @@
 			"progress-tracker"
 		],
 		"conversationStarters": [
-			"Review our collaboration patterns",
-			"Suggest healthier team rituals",
-			"Where are we losing momentum?"
+			"Summarize thread on our collaboration patterns",
+			"Plan team activity for healthier rituals",
+			"Run a team health survey on our momentum"
 		],
 		"conversationStarterIcons": [
 			"people-group",
@@ -2273,9 +2273,9 @@
 			"strategic-insight"
 		],
 		"conversationStarters": [
-			"Draft a PRD from this context",
-			"Review this PRD for gaps",
-			"Add acceptance criteria here"
+			"Build PRD from this Jira Product Discovery context",
+			"Review this PRD with customer insights",
+			"Build report on the acceptance criteria"
 		],
 		"conversationStarterIcons": [
 			"document",
@@ -2372,9 +2372,9 @@
 			"code-reviewer"
 		],
 		"conversationStarters": [
-			"Draft release notes from these items",
-			"Group changes for customers",
-			"Write a stakeholder summary"
+			"Draft release notes from these Jira items",
+			"Write a release announcement for customers",
+			"Build report with a stakeholder summary"
 		],
 		"conversationStarterIcons": [
 			"document",
@@ -2465,9 +2465,9 @@
 			"global-translator"
 		],
 		"conversationStarters": [
-			"Draft this in our brand voice",
-			"Review this copy against tone guidance",
-			"Adapt this for our audience"
+			"Use the brand voice editor on this draft",
+			"Review this Confluence copy against tone guidance",
+			"Translate content for our audience"
 		],
 		"conversationStarterIcons": [
 			"edit",
@@ -2558,9 +2558,9 @@
 			"global-translator"
 		],
 		"conversationStarters": [
-			"Draft posts for this launch",
-			"Adapt this message per channel",
-			"Improve engagement on this post"
+			"Produce marketing materials for this Canva launch",
+			"Translate content for each channel",
+			"Use the brand voice editor to lift engagement"
 		],
 		"conversationStarterIcons": [
 			"megaphone",
@@ -2651,9 +2651,9 @@
 			"social-media-writer"
 		],
 		"conversationStarters": [
-			"Translate this while keeping tone",
-			"Localize this for our audience",
-			"Check this translation for accessibility"
+			"Translate content while keeping tone",
+			"Localize this Confluence page for our audience",
+			"Use the brand voice editor to check accessibility"
 		],
 		"conversationStarterIcons": [
 			"globe",
@@ -2742,9 +2742,9 @@
 			"progress-tracker"
 		],
 		"conversationStarters": [
-			"Condense this for leadership",
-			"Write an executive summary here",
-			"What should leaders know first?"
+			"Summarize thread to condense this for leadership",
+			"Use the report compiler for an executive summary",
+			"Build report on what leaders should know first"
 		],
 		"conversationStarterIcons": [
 			"document",
@@ -2833,9 +2833,9 @@
 			"strategic-insight"
 		],
 		"conversationStarters": [
-			"Package progress for stakeholders",
-			"Write this week's status update",
-			"Highlight risks for stakeholders"
+			"Build report on Jira progress for stakeholders",
+			"Use the report compiler for this week's update",
+			"Summarize thread to highlight risks for stakeholders"
 		],
 		"conversationStarterIcons": [
 			"document",
@@ -2924,9 +2924,9 @@
 			"meeting-insights-reporter"
 		],
 		"conversationStarters": [
-			"Turn this channel into a recap",
-			"Summarize the week for the team",
-			"What did we ship and decide?"
+			"Summarize thread from this Slack channel",
+			"Use the standup summarizer for the week",
+			"Build report on what we shipped and decided"
 		],
 		"conversationStarterIcons": [
 			"comment",
@@ -3017,9 +3017,9 @@
 			"blocker-checker"
 		],
 		"conversationStarters": [
-			"Break this project into tasks",
-			"Sequence work and assign owners",
-			"What are the next steps here?"
+			"Create work items to break this project down",
+			"Use the sprint planner to sequence and assign owners",
+			"Map dependencies for the next steps in Jira"
 		],
 		"conversationStarterIcons": [
 			"list-checklist",
@@ -3111,8 +3111,8 @@
 		],
 		"conversationStarters": [
 			"Organize these Jira work items",
-			"Move stale issues out of the sprint",
-			"Bulk-update these items"
+			"Use the JQL query builder to find stale issues",
+			"Run the bulk issue editor on these items"
 		],
 		"conversationStarterIcons": [
 			"folder",
@@ -3209,9 +3209,9 @@
 			"root-cause-analyzer"
 		],
 		"conversationStarters": [
-			"Write a bug report for this",
-			"Add reproduction steps",
-			"What's the impact and triage note?"
+			"Use the bug report assistant on this Sentry error",
+			"Debug log issue and add reproduction steps",
+			"Use the test plan builder for impact and triage"
 		],
 		"conversationStarterIcons": [
 			"bug",
@@ -3302,9 +3302,9 @@
 			"work-item-organizer"
 		],
 		"conversationStarters": [
-			"Find blocked work and why",
-			"What's the clearest way to unblock this?",
-			"Show me dependencies at risk"
+			"Use the JQL query builder to find blocked work in Jira",
+			"Run the standup summarizer on how to unblock this",
+			"Run the dependency mapper on work at risk"
 		],
 		"conversationStarterIcons": [
 			"warning",
@@ -3394,9 +3394,9 @@
 			"blocker-checker"
 		],
 		"conversationStarters": [
-			"Check these items against definition of ready",
-			"What's missing before we start?",
-			"Flag items not ready for sprint"
+			"Check these Jira items against definition of ready",
+			"Use the JQL query builder to find what's missing",
+			"Build report on items not ready for sprint"
 		],
 		"conversationStarterIcons": [
 			"list-checklist",
@@ -3487,9 +3487,9 @@
 			"strategic-insight"
 		],
 		"conversationStarters": [
-			"Summarize in-flight projects",
-			"Who owns what right now?",
-			"What needs attention this week?"
+			"Use the standup summarizer on in-flight Jira projects",
+			"Use the milestone tracker to see who owns what",
+			"Build report on what needs attention this week"
 		],
 		"conversationStarterIcons": [
 			"graph-bar",
@@ -3585,9 +3585,9 @@
 			"progress-tracker"
 		],
 		"conversationStarters": [
-			"Recommend balanced sprint scope",
-			"What can we commit to this sprint?",
-			"Flag delivery risk in this plan"
+			"Use the sprint planner for balanced scope in Jira",
+			"Run the backlog groomer on this sprint",
+			"Use the milestone tracker to flag delivery risk"
 		],
 		"conversationStarterIcons": [
 			"graph-bar",
@@ -3676,9 +3676,9 @@
 			"strategic-insight"
 		],
 		"conversationStarters": [
-			"Turn these requests into a workflow",
-			"Codify this recurring process",
-			"Build an operating runbook here"
+			"Use the automation rule builder on these requests",
+			"Create work items to codify this process in Jira",
+			"Build report into an operating runbook"
 		],
 		"conversationStarterIcons": [
 			"settings",

@@ -89,10 +89,10 @@ export const SAMPLE_CONVERSATION_STARTERS: readonly Omit<
 	ConversationStarter,
 	"id"
 >[] = [
-	{ text: "Summarize the latest updates on this project", icon: "ai-sparkle" },
-	{ text: "Draft a status update for stakeholders", icon: "edit-bulk" },
-	{ text: "What are the open risks and blockers?", icon: "question-circle" },
-	{ text: "Break this goal down into actionable tasks", icon: "list-bulleted" },
-	{ text: "Compare this quarter's metrics to last quarter", icon: "chart-bar" },
-	{ text: "Find related docs and decisions", icon: "book-with-bookmark" },
+	{ text: "Summarize the latest Jira updates on this project", icon: "ai-sparkle" },
+	{ text: "Draft a status update for stakeholders in Confluence", icon: "edit-bulk" },
+	{ text: "What are the open risks and blockers in Jira?", icon: "question-circle" },
+	{ text: "Break this goal down into actionable Jira work items", icon: "list-bulleted" },
+	{ text: "Compare this quarter's Jira metrics to last quarter", icon: "chart-bar" },
+	{ text: "Find related Confluence docs and decisions", icon: "book-with-bookmark" },
 ] as const;

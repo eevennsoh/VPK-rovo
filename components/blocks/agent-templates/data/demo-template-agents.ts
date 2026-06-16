@@ -43,7 +43,7 @@ const SOURCE = {
 	jiraServiceManagement: { id: "jira-service-management", label: "Jira Service Management", provider: "jira-service-management" },
 	loom: { id: "loom", label: "Loom", provider: "loom" },
 	microsoftTeams: { id: "microsoft-teams", label: "Microsoft Teams", provider: "teams", iconSrc: "/3p/microsoft-teams/24.svg" },
-	monday: { id: "monday", label: "Monday", provider: "teams", iconSrc: "/3p/monday/24.svg" },
+	monday: { id: "monday", label: "monday.com", provider: "teams", iconSrc: "/3p/monday/24.svg" },
 	pagerDuty: { id: "pagerduty", label: "PagerDuty", provider: "teams", iconSrc: "/3p/pagerduty/24.svg" },
 	powerBi: { id: "powerbi", label: "Power BI", provider: "teams", iconSrc: "/3p/powerbi/24.svg" },
 	salesforce: { id: "salesforce", label: "Salesforce", provider: "salesforce" },
