@@ -21,13 +21,14 @@ function loadResolver() {
 			extractInstructionTokens,
 			repairInstructionTokens,
 			weaveMissingTokens,
+			stripMentionMarkup,
 			convertBareMentionsToTokens,
 		} from "@/app/data/directory/resolve-ids";
 	`);
 	return modulePromise;
 }
 
-test("weaveMissingTokens appends only the ids missing from the body, as chips", async () => {
+test("weaveMissingTokens weaves only the ids missing from the body, as chips", async () => {
 	const { weaveMissingTokens, extractInstructionTokens } = await loadResolver();
 
 	const body = "## Instructions\nUse @[tool:jira] and @[skill:explore-ideas].";
@@ -46,13 +47,38 @@ test("weaveMissingTokens appends only the ids missing from the body, as chips", 
 	for (const want of ["tool:jira", "tool:confluence", "skill:explore-ideas", "knowledge:confluence:all", "subagent:strategic-insight"]) {
 		assert.ok(have.has(want), `expected @[${want}] in woven body`);
 	}
-	assert.match(woven, /## Capabilities/);
+	// Missing capabilities read as a natural usage sentence, not a trailing
+	// "## Capabilities" section.
+	assert.match(woven, /This agent can /);
+	assert.doesNotMatch(woven, /## Capabilities/);
+});
+
+test("weaveMissingTokens inserts the usage sentence after the lead paragraph, not at the end", async () => {
+	const { weaveMissingTokens } = await loadResolver();
+	const body = "## Instructions\n\nYou are Demo. Your job is to help.\n\n- **Intake** Read the request.";
+	const woven = weaveMissingTokens(body, { skill: ["build-report"] });
+	const leadIndex = woven.indexOf("Your job is to help.");
+	const sentenceIndex = woven.indexOf("This agent can ");
+	const intakeIndex = woven.indexOf("- **Intake**");
+	assert.ok(leadIndex >= 0 && sentenceIndex > leadIndex && intakeIndex > sentenceIndex,
+		"usage sentence sits between the lead paragraph and the first bullet");
 });
 
 test("weaveMissingTokens is a no-op when the body already covers everything", async () => {
 	const { weaveMissingTokens } = await loadResolver();
 	const body = "Use @[tool:jira] and @[skill:explore-ideas].";
 	assert.equal(weaveMissingTokens(body, { tool: ["jira"], skill: ["explore-ideas"] }), body);
+});
+
+test("stripMentionMarkup renders mentions as plain prose for descriptions", async () => {
+	const { stripMentionMarkup } = await loadResolver();
+	// Slash/at triggers are dropped; tokens become catalog names; mid-word slashes stay.
+	assert.equal(
+		stripMentionMarkup("Summarizes /Jira work and runs /Draft release notes in @Confluence"),
+		"Summarizes Jira work and runs Draft release notes in Confluence",
+	);
+	assert.equal(stripMentionMarkup("Uses @[app:jira] for context"), "Uses Jira for context");
+	assert.equal(stripMentionMarkup("Handles read/write and https://x.test paths"), "Handles read/write and https://x.test paths");
 });
 
 test("resolveCatalogIds keeps exact catalog ids verbatim", async () => {

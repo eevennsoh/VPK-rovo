@@ -15,6 +15,7 @@ import {
 	repairInstructionTokens,
 	resolveCatalogIds,
 	resolveCatalogNames,
+	stripMentionMarkup,
 	weaveMissingTokens,
 } from "./resolve-ids";
 import { DIRECTORY_APPS, type DirectoryApp } from "./apps";
@@ -49,6 +50,8 @@ export interface AgentCatalogFields {
 	subagents?: readonly string[];
 	apps?: readonly string[];
 	instructions?: string;
+	description?: string;
+	summary?: string;
 	memoryMode?: string;
 	reasoningMode?: string;
 	knowledgeMode?: string;
@@ -61,6 +64,8 @@ export interface RepairedAgentCatalog {
 	subagents?: string[];
 	apps?: string[];
 	instructions?: string;
+	description?: string;
+	summary?: string;
 	memoryMode?: string;
 	reasoningMode?: string;
 	knowledgeMode?: string;
@@ -226,6 +231,16 @@ export function repairGeneratedAgentCatalog(
 			knowledge: resolveCatalogIds(out.knowledge ?? [], "knowledge"),
 			subagent: resolveCatalogIds(out.subagents ?? [], "subagent"),
 		});
+	}
+
+	// The description/summary render as plain text (no chips), so strip any mention
+	// markup the generator leaked in — `@[app:id]` tokens and slash/at triggers like
+	// "/Jira" — leaving a clean descriptive sentence.
+	if (typeof fields.description === "string") {
+		out.description = stripMentionMarkup(fields.description);
+	}
+	if (typeof fields.summary === "string") {
+		out.summary = stripMentionMarkup(fields.summary);
 	}
 
 	// Mode selectors: when present, keep a value only if it is in the allowed set,

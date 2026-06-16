@@ -484,13 +484,43 @@ function dekebabLabel(id: string): string {
 }
 
 /**
- * Best-effort guarantee that the generated instruction body renders a chip for
- * EVERY capability the agent carries. Given the resolved ids the agent has per
- * category, appends `@[category:id]` tokens for any not already present in the
- * markdown, grouped under a "## Capabilities" section. Symmetric to the body→config
- * union in repair: this is the config→body direction, so a tool/skill/knowledge/
- * subagent listed on the agent but never mentioned in the prose still shows up as
- * a lozenge. Returns the markdown unchanged when nothing is missing.
+ * Inserts `sentence` as its own paragraph right after the body's first prose
+ * paragraph (the lead "You are X…" sentence), so woven capabilities read as part
+ * of the intro rather than a trailing section. Skips leading `#` headings and
+ * blank lines; if the body is only headings (or empty) the sentence is prepended
+ * after any leading heading. Pure string surgery on `\n\n`-delimited blocks.
+ */
+function insertAfterFirstParagraph(markdown: string, sentence: string): string {
+	const base = markdown.trimEnd();
+	if (!base) {
+		return sentence;
+	}
+
+	const blocks = base.split("\n\n");
+	// The first block that is non-empty and not a pure heading line is the lead
+	// paragraph; insert immediately after it.
+	for (let index = 0; index < blocks.length; index += 1) {
+		const block = blocks[index].trim();
+		if (block && !block.startsWith("#")) {
+			blocks.splice(index + 1, 0, sentence);
+			return blocks.join("\n\n");
+		}
+	}
+
+	// No prose paragraph (heading-only / empty): drop it in after the last leading
+	// heading so it still lands near the top.
+	blocks.splice(1, 0, sentence);
+	return blocks.join("\n\n");
+}
+
+/**
+ * Best-effort guarantee that the generated instruction body MENTIONS every
+ * capability the agent carries, as inline chips. For any tool/skill/knowledge/
+ * subagent/app id the agent has but the prose never references, this weaves a
+ * single natural sentence near the top describing HOW the agent uses them (so the
+ * chips read as part of the instructions, not a trailing "Capabilities" dump).
+ * Symmetric to the body→config union in repair. Returns the markdown unchanged
+ * when the prose already covers everything.
  */
 export function weaveMissingTokens(
 	markdown: string,
@@ -516,29 +546,76 @@ export function weaveMissingTokens(
 		existing.add(`tool:${id}`);
 		existing.add(`knowledge:${id}:all`);
 	}
-	const WEAVE_ORDER: { category: CatalogCategory; label: string }[] = [
-		{ category: "app", label: "Apps" },
-		{ category: "tool", label: "Apps" },
-		{ category: "skill", label: "Skills" },
-		{ category: "knowledge", label: "Knowledge" },
-		{ category: "subagent", label: "Subagents" },
-	];
 
-	const lines: string[] = [];
-	for (const { category, label } of WEAVE_ORDER) {
-		const missing = (idsByCategory[category] ?? []).filter(
-			(id) => !existing.has(`${category}:${id}`),
-		);
-		if (missing.length > 0) {
-			lines.push(`${label}: ${missing.map((id) => `@[${category}:${id}]`).join(", ")}.`);
-		}
+	const missingChips = (category: CatalogCategory): string[] =>
+		(idsByCategory[category] ?? [])
+			.filter((id) => !existing.has(`${category}:${id}`))
+			.map((id) => `@[${category}:${id}]`);
+
+	// Apps and tools both surface as "draw on … for context"; tool ids are 1:1 with
+	// app ids, so the facet-dedup above usually leaves tools empty.
+	const appChips = [...missingChips("app"), ...missingChips("tool")];
+	const skillChips = missingChips("skill");
+	const knowledgeChips = missingChips("knowledge");
+	const subagentChips = missingChips("subagent");
+
+	const clauses: string[] = [];
+	if (appChips.length > 0) {
+		clauses.push(`draw on ${joinList(appChips)} for the context it needs`);
+	}
+	if (skillChips.length > 0) {
+		clauses.push(`apply ${joinList(skillChips)} to do the work`);
+	}
+	if (knowledgeChips.length > 0) {
+		clauses.push(`reference ${joinList(knowledgeChips)} for grounding`);
+	}
+	if (subagentChips.length > 0) {
+		clauses.push(`hand off to ${joinList(subagentChips)} when a task needs a specialist`);
 	}
 
-	if (lines.length === 0) {
+	if (clauses.length === 0) {
 		return markdown;
 	}
-	const base = markdown.trimEnd();
-	return `${base}${base ? "\n\n" : ""}## Capabilities\n${lines.join("\n")}`;
+
+	return insertAfterFirstParagraph(markdown, `This agent can ${joinList(clauses)}.`);
+}
+
+/** Joins items as a natural English list: "a", "a and b", "a, b, and c". */
+function joinList(items: readonly string[]): string {
+	if (items.length <= 1) {
+		return items[0] ?? "";
+	}
+	if (items.length === 2) {
+		return `${items[0]} and ${items[1]}`;
+	}
+	return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+}
+
+/**
+ * Strips mention markup so a string reads as plain prose — used for the agent
+ * `description`/`summary`, which render as plain text (no chips) and must not show
+ * `@[app:id]` tokens or slash/at mention triggers like `/Jira`. Converts each
+ * `@[category:id]` token to its catalog display name, then drops a leading `@`/`/`
+ * trigger before a word (`/Jira` → `Jira`). Leaves code regions and mid-word
+ * slashes (`and/or`, `https://`, `12/25`) untouched.
+ */
+export function stripMentionMarkup(text: string): string {
+	if (!text) {
+		return text ?? "";
+	}
+
+	return mapOutsideCode(text, (segment) => {
+		// 1. `@[category:id]` → catalog display name (or a de-kebabed id fallback).
+		let next = segment.replace(TOKEN_PATTERN, (_full, rawCategory: string, rawId: string) => {
+			const category = rawCategory as CatalogCategory;
+			const [resolvedId] = resolveCatalogIds([rawId], category);
+			const name = resolvedId !== undefined ? catalogNameForId(category, resolvedId) : undefined;
+			return name ?? dekebabLabel(rawId);
+		});
+		// 2. Bare `@name` / `/name` trigger → drop just the trigger char, keep the name.
+		next = next.replace(/(^|[\s(>"'])[@/](?!\[)(?=[A-Za-z])/giu, "$1");
+		return next;
+	});
 }
 
 // --- Bare `@name` / `/name` → `@[app:id]` conversion -----------------------
