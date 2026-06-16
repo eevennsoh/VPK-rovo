@@ -370,7 +370,12 @@ function CustomAgentGreeting({
 				) : null}
 			</AnimatePresence>
 			<motion.div className="w-full" layout={isComposing ? false : "position"} variants={activeContainerVariants}>
-				<div className={cn("flex max-w-full flex-col gap-1", isAgentTest ? "w-full" : "mx-auto w-fit")}>
+				<div
+					className={cn("flex max-w-full flex-col gap-1", isAgentTest ? "w-full" : "mx-auto w-fit")}
+					// Onboarding-tour anchor: only the agent-test greeting exposes its
+					// starters group as a spotlight target ("Test it right away" step).
+					data-spotlight-anchor={isAgentTest ? "chat-starters" : undefined}
+				>
 					{showStarterGroupLabel ? (
 						<motion.div variants={activeItemVariants}>
 							<GreetingGroupLabel

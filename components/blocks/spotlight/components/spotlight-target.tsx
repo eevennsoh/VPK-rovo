@@ -70,8 +70,19 @@ function SpotlightPulse({ shape = "rounded", className }: Readonly<SpotlightPuls
 // ---------------------------------------------------------------------------
 
 export interface SpotlightTargetProps {
-	/** The single interactive element to highlight; it becomes the popover trigger. */
-	children: ReactElement;
+	/**
+	 * The single interactive element to highlight; it becomes the popover
+	 * trigger. Optional when `anchor` is supplied (the spotlight then attaches to
+	 * an element it does not own).
+	 */
+	children?: ReactElement;
+	/**
+	 * Attach the spotlight to an external element the component does not render
+	 * (an element, a ref, or a getter). When set, `children` and the wrapping
+	 * pulse are skipped — highlight the live element yourself (e.g. a glow
+	 * utility toggled by the caller). Useful for tours that point at existing UI.
+	 */
+	anchor?: PopoverPrimitive.Positioner.Props["anchor"];
 	/** The spotlight card (or any node) rendered in the anchored popover. */
 	content: ReactNode;
 	open?: boolean;
@@ -91,6 +102,7 @@ export interface SpotlightTargetProps {
 
 function SpotlightTarget({
 	children,
+	anchor,
 	content,
 	open,
 	defaultOpen,
@@ -117,12 +129,17 @@ function SpotlightTarget({
 
 	return (
 		<PopoverPrimitive.Root open={open} defaultOpen={defaultOpen} onOpenChange={handleOpenChange}>
-			<span className="relative inline-flex">
-				<PopoverPrimitive.Trigger render={children} />
-				{pulse && isOpen ? <SpotlightPulse shape={shape} /> : null}
-			</span>
+			{/* External-anchor mode skips the trigger/pulse wrapper: the spotlight
+			    points at an element it does not render. */}
+			{anchor ? null : (
+				<span className="relative inline-flex">
+					{children ? <PopoverPrimitive.Trigger render={children} /> : null}
+					{pulse && isOpen ? <SpotlightPulse shape={shape} /> : null}
+				</span>
+			)}
 			<PopoverPrimitive.Portal>
 				<PopoverPrimitive.Positioner
+					anchor={anchor}
 					side={resolved.side}
 					align={resolved.align}
 					sideOffset={sideOffset}

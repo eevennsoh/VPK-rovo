@@ -40,6 +40,21 @@ import { RovoAppMessages } from "@/components/projects/studio/components/rovo-ap
 import { RovoAppHermesSkillDraftBar } from "@/components/projects/studio/components/rovo-app-hermes-skill-draft-bar";
 import { RovoAppAgentConfigPanel, type AgentConfigView } from "@/components/projects/studio/components/rovo-app-agent-config-panel";
 import { AgentTestPanel } from "@/components/blocks/agent-test";
+import {
+	SpotlightActions,
+	SpotlightBody,
+	SpotlightCard,
+	SpotlightControls,
+	SpotlightDismissControl,
+	SpotlightFooter,
+	SpotlightHeader,
+	SpotlightHeadline,
+	SpotlightPrimaryAction,
+	SpotlightSecondaryAction,
+	SpotlightStepCount,
+	SpotlightTarget,
+} from "@/components/blocks/spotlight";
+import { useAgentOnboardingTour } from "@/components/projects/studio/hooks/use-agent-onboarding-tour";
 import { RovoAppShellPaneLayout } from "@/components/projects/studio/components/rovo-app-shell-pane-layout";
 import { RovoAppSidebar } from "@/components/projects/studio/components/rovo-app-sidebar";
 import { isGeneratedAgentResult } from "@/components/projects/sidebar-chat/components/agent-result-card";
@@ -1735,8 +1750,15 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const [sidebarAgentBrowserInitialCategory, setSidebarAgentBrowserInitialCategory] = useState<HomeStarterCategory>(HOME_STARTER_DEFAULT_CATEGORY);
 	const generatedAgentTestViewKeysRef = useLazyRef<Set<string>>(() => new Set());
 	const hasSeededStudioRfpDemoAgentRef = useRef(false);
+	// Bumped each time an agent is created from a generated result, so a later
+	// effect (declared after the onboarding-tour hook) can kick off the tour
+	// without the earlier create handler needing the tour controller in scope.
+	const [agentCreationTourSignal, setAgentCreationTourSignal] = useState(0);
 	const openAgentCreationAskRovoChat = useCallback(() => {
-		studioAgentRegistry.resetAgentToRovo();
+		// Preserve the current thread so the Rovo conversation that just
+		// generated the agent stays visible in the Ask Rovo panel instead of
+		// resetting to the "Improve your agent?" greeting.
+		studioAgentRegistry.resetAgentToRovo({ preserveCurrentThread: true });
 		nav.openChat("sidebar");
 	}, [nav, studioAgentRegistry]);
 
@@ -1869,6 +1891,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				});
 				setActiveAgentConfigView("test");
 				openAgentCreationAskRovoChat();
+				setAgentCreationTourSignal((signal) => signal + 1);
 				return true;
 			}
 
@@ -1899,6 +1922,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			});
 			setActiveAgentConfigView("test");
 			openAgentCreationAskRovoChat();
+			setAgentCreationTourSignal((signal) => signal + 1);
 			return true;
 		},
 		[chat.activeThreadId, chat.runtimeThreadId, openAgentCreationAskRovoChat, setActiveAgentConfigState, studioAgentRegistry],
@@ -2134,12 +2158,12 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const askRovoChatPanelWidth = askRovoChatResize.sidebarWidth;
 	const isStudioAskRovoChatActive = !embedded && shouldShowAgentConfigPane && nav.isSidebarChatOpen;
 	// "Ask Rovo" must always talk to the default Rovo agent, not the custom agent
-	// being edited in the config pane. Reset the selected agent to Rovo when the
-	// chat is being opened (resetAgentToRovo no-ops when Rovo is already active,
-	// so reopening an existing Rovo session keeps its thread).
+	// being edited in the config pane. Point the selected agent back to Rovo when
+	// the chat is being opened, but preserve the current thread so a generation
+	// transcript (or in-progress edit conversation) stays visible on reopen.
 	const handleToggleAskRovoChat = useCallback(() => {
 		if (!nav.isSidebarChatOpen) {
-			studioAgentRegistry.resetAgentToRovo();
+			studioAgentRegistry.resetAgentToRovo({ preserveCurrentThread: true });
 		}
 		nav.toggleChat();
 	}, [nav, studioAgentRegistry]);
@@ -3970,6 +3994,25 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	);
 
 	const shellRef = useRef<HTMLDivElement | null>(null);
+	// Onboarding tour: anchors steps to the right "Ask Rovo" panel (result card +
+	// composer) and the center config panel (chat starters + Activate). shellRef
+	// wraps the center <main> and excludes the right panel, so it scopes those
+	// center selectors cleanly.
+	const askRovoPanelRef = useRef<HTMLDivElement | null>(null);
+	const agentOnboardingTour = useAgentOnboardingTour({
+		rightPanelRef: askRovoPanelRef,
+		centerRef: shellRef,
+	});
+	const { start: startAgentOnboardingTour } = agentOnboardingTour;
+	useEffect(() => {
+		if (agentCreationTourSignal === 0) {
+			return;
+		}
+		// Defer a frame so the freshly opened right panel, result card, and test
+		// view are mounted before the tour resolves its first anchor.
+		const frame = requestAnimationFrame(() => startAgentOnboardingTour());
+		return () => cancelAnimationFrame(frame);
+	}, [agentCreationTourSignal, startAgentOnboardingTour]);
 	const composerDockRef = useRef<HTMLDivElement | null>(null);
 	const defaultHomeTopSpacerRef = useRef<HTMLDivElement | null>(null);
 	const artifactCardOriginRef = useRef<DOMRect | null>(null);
@@ -4823,6 +4866,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				</main>
 				{!embedded && shouldShowAgentConfigPane ? (
 					<div
+						ref={askRovoPanelRef}
 						data-shell-chrome=""
 						aria-hidden={!isStudioAskRovoChatActive}
 						{...(!isStudioAskRovoChatActive ? { inert: true } : {})}
@@ -4874,6 +4918,51 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				screenshotDimensions={clickyScreenshotDimensions}
 				onReturnToIdle={clickyReturnToIdle}
 			/>
+			{agentOnboardingTour.isActive && agentOnboardingTour.anchorElement && agentOnboardingTour.step ? (
+				<SpotlightTarget
+					open
+					anchor={agentOnboardingTour.anchorElement}
+					placement={agentOnboardingTour.step.placement}
+					onOpenChange={(next) => {
+						if (!next) {
+							agentOnboardingTour.dismiss();
+						}
+					}}
+					content={
+						<SpotlightCard className="w-72">
+							<SpotlightHeader>
+								<SpotlightHeadline>{agentOnboardingTour.step.headline}</SpotlightHeadline>
+								<SpotlightControls>
+									<SpotlightDismissControl onClick={agentOnboardingTour.dismiss} />
+								</SpotlightControls>
+							</SpotlightHeader>
+							<SpotlightBody>{agentOnboardingTour.step.body}</SpotlightBody>
+							<SpotlightFooter>
+								<SpotlightStepCount
+									current={agentOnboardingTour.stepIndex + 1}
+									total={agentOnboardingTour.total}
+								/>
+								<SpotlightActions>
+									{!agentOnboardingTour.isFirst ? (
+										<SpotlightSecondaryAction onClick={agentOnboardingTour.back}>
+											Back
+										</SpotlightSecondaryAction>
+									) : null}
+									<SpotlightPrimaryAction
+										onClick={
+											agentOnboardingTour.isLast
+												? agentOnboardingTour.dismiss
+												: agentOnboardingTour.next
+										}
+									>
+										{agentOnboardingTour.isLast ? "Finish" : "Next"}
+									</SpotlightPrimaryAction>
+								</SpotlightActions>
+							</SpotlightFooter>
+						</SpotlightCard>
+					}
+				/>
+			) : null}
 		</SidebarProvider>
 	);
 }

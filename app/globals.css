@@ -431,6 +431,37 @@
 	white-space: nowrap;
 }
 
+/* Spotlight tour highlight: a soft brand glow drawn directly on an element the
+   spotlight points at but does not wrap (see SpotlightTarget `anchor`). The
+   box-shadow follows the element's own border-radius, so no layout/radius
+   changes are needed. Mirrors the SpotlightPulse look. */
+@keyframes spotlight-anchor-glow-pulse {
+	0%,
+	100% {
+		box-shadow:
+			0 0 0 3px color-mix(in srgb, var(--ds-background-brand-bold, #1868db) 50%, transparent),
+			0 0 14px 4px color-mix(in srgb, var(--ds-background-brand-bold, #1868db) 24%, transparent);
+	}
+	50% {
+		box-shadow:
+			0 0 0 3px color-mix(in srgb, var(--ds-background-brand-bold, #1868db) 75%, transparent),
+			0 0 20px 8px color-mix(in srgb, var(--ds-background-brand-bold, #1868db) 40%, transparent);
+	}
+}
+
+@utility spotlight-anchor-glow {
+	box-shadow:
+		0 0 0 3px color-mix(in srgb, var(--ds-background-brand-bold, #1868db) 55%, transparent),
+		0 0 16px 4px color-mix(in srgb, var(--ds-background-brand-bold, #1868db) 30%, transparent);
+	animation: spotlight-anchor-glow-pulse 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.spotlight-anchor-glow {
+		animation: none;
+	}
+}
+
 /* -----------------------------------------------------------------
    Unlayered Overrides
 

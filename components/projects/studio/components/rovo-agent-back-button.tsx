@@ -63,7 +63,7 @@ export function RovoAgentBackButton() {
 					key="back-to-rovo"
 					variants={buttonVariants}
 				>
-					<Button aria-label="Back to Rovo" size="icon" variant="ghost" onClick={resetAgentToRovo}>
+					<Button aria-label="Back to Rovo" size="icon" variant="ghost" onClick={() => resetAgentToRovo()}>
 						<Icon aria-hidden render={<ArrowLeftIcon label="" />} />
 					</Button>
 				</motion.div>
