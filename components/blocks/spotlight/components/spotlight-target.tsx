@@ -1,0 +1,146 @@
+"use client";
+
+import type { ReactElement, ReactNode } from "react";
+import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
+import { cn } from "@/lib/utils";
+
+// ---------------------------------------------------------------------------
+// Placement — ADS-style names mapped to base-ui side/align
+// ---------------------------------------------------------------------------
+
+type Side = "top" | "bottom" | "left" | "right";
+type Align = "start" | "center" | "end";
+
+export type SpotlightPlacement =
+	| "top-start"
+	| "top-center"
+	| "top-end"
+	| "bottom-start"
+	| "bottom-center"
+	| "bottom-end"
+	| "left-start"
+	| "left-end"
+	| "right-start"
+	| "right-end";
+
+const PLACEMENTS: Record<SpotlightPlacement, { side: Side; align: Align }> = {
+	"top-start": { side: "top", align: "start" },
+	"top-center": { side: "top", align: "center" },
+	"top-end": { side: "top", align: "end" },
+	"bottom-start": { side: "bottom", align: "start" },
+	"bottom-center": { side: "bottom", align: "center" },
+	"bottom-end": { side: "bottom", align: "end" },
+	"left-start": { side: "left", align: "start" },
+	"left-end": { side: "left", align: "end" },
+	"right-start": { side: "right", align: "start" },
+	"right-end": { side: "right", align: "end" },
+};
+
+/** All supported placements, in the ADS dropdown order. */
+export const SPOTLIGHT_PLACEMENTS = Object.keys(PLACEMENTS) as SpotlightPlacement[];
+
+// ---------------------------------------------------------------------------
+// Pulse — animated highlight glow drawn around the target element
+// ---------------------------------------------------------------------------
+
+export interface SpotlightPulseProps {
+	/** Match the target's corner style. @default "rounded" */
+	shape?: "rounded" | "circle";
+	className?: string;
+}
+
+function SpotlightPulse({ shape = "rounded", className }: Readonly<SpotlightPulseProps>) {
+	const radius = shape === "circle" ? "rounded-full" : "rounded-lg";
+	return (
+		<span aria-hidden className={cn("pointer-events-none absolute -inset-1", className)}>
+			{/* Soft glow halo that gently pulses behind the target — no ring outline. */}
+			<span
+				className={cn(
+					"absolute inset-0 animate-pulse bg-primary/25 blur-md [animation-duration:1.8s] motion-reduce:hidden",
+					radius,
+				)}
+			/>
+		</span>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// Target — anchors a spotlight card to a real element with a notch + pulse
+// ---------------------------------------------------------------------------
+
+export interface SpotlightTargetProps {
+	/** The single interactive element to highlight; it becomes the popover trigger. */
+	children: ReactElement;
+	/** The spotlight card (or any node) rendered in the anchored popover. */
+	content: ReactNode;
+	open?: boolean;
+	defaultOpen?: boolean;
+	onOpenChange?: PopoverPrimitive.Root.Props["onOpenChange"];
+	/** ADS-style placement. Overrides `side`/`align` when set. */
+	placement?: SpotlightPlacement;
+	/** base-ui side, used when `placement` is not provided. @default "bottom" */
+	side?: Side;
+	align?: Align;
+	sideOffset?: number;
+	/** Render the animated pulse glow around the target. @default true */
+	pulse?: boolean;
+	/** Corner style for the pulse glow. @default "rounded" */
+	shape?: "rounded" | "circle";
+}
+
+function SpotlightTarget({
+	children,
+	content,
+	open,
+	defaultOpen,
+	onOpenChange,
+	placement,
+	side = "bottom",
+	align = "center",
+	sideOffset = 8,
+	pulse = true,
+	shape = "rounded",
+}: Readonly<SpotlightTargetProps>) {
+	const resolved = placement ? PLACEMENTS[placement] : { side, align };
+	const isOpen = open ?? defaultOpen ?? false;
+
+	return (
+		<PopoverPrimitive.Root open={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange}>
+			<span className="relative inline-flex">
+				<PopoverPrimitive.Trigger render={children} />
+				{pulse && isOpen ? <SpotlightPulse shape={shape} /> : null}
+			</span>
+			<PopoverPrimitive.Portal>
+				<PopoverPrimitive.Positioner
+					side={resolved.side}
+					align={resolved.align}
+					sideOffset={sideOffset}
+					className="isolate z-[200]"
+				>
+					<PopoverPrimitive.Popup
+						data-slot="spotlight-popup"
+						className="relative origin-(--transform-origin) outline-hidden transition-[opacity,scale] duration-fast ease-out data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0"
+					>
+						{content}
+						{/* Notch: a rotated square sat ON the card edge and tucked behind it (negative z),
+						    so only a triangle pokes toward the anchor. base-ui centers it on the cross axis;
+						    we set the main-axis edge per side. */}
+						<PopoverPrimitive.Arrow
+							className={cn(
+								"z-[-1] size-3",
+								"data-[side=bottom]:top-0 data-[side=bottom]:-translate-y-1/2",
+								"data-[side=top]:bottom-0 data-[side=top]:translate-y-1/2",
+								"data-[side=left]:right-0 data-[side=left]:translate-x-1/2",
+								"data-[side=right]:left-0 data-[side=right]:-translate-x-1/2",
+							)}
+						>
+							<span className="block size-3 rotate-45 rounded-[2px] bg-bg-neutral-bold" />
+						</PopoverPrimitive.Arrow>
+					</PopoverPrimitive.Popup>
+				</PopoverPrimitive.Positioner>
+			</PopoverPrimitive.Portal>
+		</PopoverPrimitive.Root>
+	);
+}
+
+export { SpotlightPulse, SpotlightTarget };

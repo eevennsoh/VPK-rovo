@@ -6844,6 +6844,9 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
   "answer-card": dynamic(() => import("./demos/blocks/answer-card-demo"), {
     ssr: false,
   }),
+  spotlight: dynamic(() => import("./demos/blocks/spotlight-demo"), {
+    ssr: false,
+  }),
   "chat-timeline": dynamic(() => import("./demos/blocks/chat-timeline-demo"), {
     ssr: false,
   }),
@@ -7052,6 +7055,43 @@ const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
     () =>
       import("./demos/blocks/artifact-demo").then((mod) => ({
         default: mod.ArtifactDemoCompound,
+      })),
+    { ssr: false },
+  ),
+
+  // Spotlight
+  "spotlight-basic": dynamic(
+    () =>
+      import("./demos/blocks/spotlight-demo").then((mod) => ({
+        default: mod.SpotlightBasicExample,
+      })),
+    { ssr: false },
+  ),
+  "spotlight-media": dynamic(
+    () =>
+      import("./demos/blocks/spotlight-demo").then((mod) => ({
+        default: mod.SpotlightMediaExample,
+      })),
+    { ssr: false },
+  ),
+  "spotlight-tour": dynamic(
+    () =>
+      import("./demos/blocks/spotlight-demo").then((mod) => ({
+        default: mod.SpotlightTourExample,
+      })),
+    { ssr: false },
+  ),
+  "spotlight-target": dynamic(
+    () =>
+      import("./demos/blocks/spotlight-demo").then((mod) => ({
+        default: mod.SpotlightTargetExample,
+      })),
+    { ssr: false },
+  ),
+  "spotlight-placements": dynamic(
+    () =>
+      import("./demos/blocks/spotlight-demo").then((mod) => ({
+        default: mod.SpotlightPlacementsExample,
       })),
     { ssr: false },
   ),
