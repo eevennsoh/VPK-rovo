@@ -613,7 +613,7 @@ function AgentTestAutomationGreetingRow({
 				label={label}
 				size="medium"
 			/>
-			<span className="flex min-w-0 flex-col gap-1.5">
+			<span className="flex min-w-0 flex-col gap-1">
 				<span className="menu-row-title text-left">{label}</span>
 				<AgentTestAutomationFlow rule={rule} />
 			</span>

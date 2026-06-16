@@ -160,6 +160,24 @@ export function renderAgentTriggerProviderTileIcon(trigger: AgentTriggerValue): 
 }
 
 /**
+ * Compact 16px provider icon for a configured trigger value, using the same
+ * editor-palette logo treatment as `renderAgentTriggerProviderTileIcon` but at
+ * the chip scale (`RichTextMentionVisualMark size="pill"`): solid-background 1P
+ * logos fill the 16px slot bare, the backgroundless Atlassian/Rovo marks and
+ * stroked icons keep their transparent inset tile, and 2P/3P brand images use
+ * the 16px chip frame. Use where a dense flow row should show the exact same
+ * logo as the picker without the surrounding `Tile` frame, e.g. the agent-test
+ * greeting flow cover. Returns `null` for an unknown provider id.
+ */
+export function renderAgentTriggerProviderChipIcon(trigger: AgentTriggerValue): ReactElement | null {
+	const provider = getTriggerProvider(trigger.providerId);
+	if (!provider) {
+		return null;
+	}
+	return <RichTextMentionVisualMark label={provider.label} size="pill" visual={getTriggerProviderVisual(provider.icon)} />;
+}
+
+/**
  * Maps a trigger provider icon to the editor palette's `RichTextMentionVisual`
  * so picker rows get the EXACT same logo treatment as editor-palette menu rows:
  * 1p product logos render bare (they ship their own fill), 2p/3p brand images

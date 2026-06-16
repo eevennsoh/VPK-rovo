@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 
-import { renderAgentTriggerProviderIcon, renderAgentTriggerProviderTileIcon, type AgentTriggerValue } from "@/components/blocks/triggers/page";
+import { renderAgentTriggerProviderChipIcon, renderAgentTriggerProviderTileIcon, type AgentTriggerValue } from "@/components/blocks/triggers/page";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Tile } from "@/components/ui/tile";
 import AutomationIcon from "@atlaskit/icon/core/automation";
@@ -38,17 +38,12 @@ export function AgentAutomationFlowCover({
 				<span className="flex min-w-0 items-center gap-1">
 					{visibleTriggers.length > 0 ? (
 						visibleTriggers.map((trigger) => (
-							<Tile
+							<span
 								key={trigger.id}
-								aria-hidden={true}
-								className="bg-surface"
-								hasBorder
-								label=""
-								size="xxsmall"
-								variant="transparent"
+								className="inline-flex size-4 shrink-0 items-center justify-center"
 							>
-								{renderAgentTriggerProviderIcon(trigger) ?? <AutomationIcon label="" size="small" />}
-							</Tile>
+								{renderAgentTriggerProviderChipIcon(trigger) ?? <AutomationIcon label="" size="small" />}
+							</span>
 						))
 					) : (
 						<Tile aria-hidden={true} hasBorder label="Trigger" size="xxsmall" variant="blueSubtle">
