@@ -106,6 +106,7 @@ async function loadRovoFloatingChatHarness() {
 							"data-has-artifact-dialog-open": String(typeof props.onArtifactDialogOpen === "function"),
 							"data-has-intercept-submit": String(typeof props.onInterceptSubmit === "function"),
 							"data-preserve-artifact-dialog": String(props.preserveFloatingSurfaceOnArtifactDialogOpen),
+							"data-start-realtime-key": String(props.startRealtimeVoiceRequestKey),
 							className: props.containerClassName,
 						},
 						"Shared chat panel",
@@ -167,6 +168,12 @@ async function loadRovoFloatingChatHarness() {
 						onInterceptSubmit() {
 							return { handled: true, assistantReply: "Done" };
 						},
+					}));
+				}
+
+				export function renderFloatingChatWithRealtimeStartRequest() {
+					return renderToStaticMarkup(React.createElement(RovoFloatingChat, {
+						startRealtimeVoiceRequestKey: 3,
 					}));
 				}
 
@@ -284,6 +291,20 @@ test("RovoFloatingChat forwards deterministic submit interception to the shared 
 	assert.match(markup, /data-has-intercept-submit="true"/);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /onInterceptSubmit\?: \(text: string\) => ChatSubmitInterceptOutcome;/u);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /onInterceptSubmit=\{onInterceptSubmit\}/u);
+});
+
+test("RovoFloatingChat forwards live voice start requests to the shared chat panel", async () => {
+	const harness = await loadRovoFloatingChatHarness();
+	const markup = harness.renderFloatingChatWithRealtimeStartRequest();
+
+	assert.match(markup, /data-start-realtime-key="3"/);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /startRealtimeVoiceRequestKey\?: number;/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /startRealtimeVoiceRequestKey = 0/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /startRealtimeVoiceRequestKey=\{startRealtimeVoiceRequestKey\}/u);
+	assert.match(CHAT_PANEL_SOURCE, /startRealtimeVoiceRequestKey\?: number;/u);
+	assert.match(CHAT_PANEL_SOURCE, /startRealtimeVoiceRequestKey = 0/u);
+	assert.match(CHAT_PANEL_SOURCE, /const lastStartRealtimeVoiceRequestKeyRef = useRef\(0\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /lastStartRealtimeVoiceRequestKeyRef\.current = startRealtimeVoiceRequestKey;[\s\S]*realtime\.voiceState !== "idle"[\s\S]*startRealtimeVoice\(\);/u);
 });
 
 test("RovoFloatingChat forwards custom agent tab content to the shared chat panel", async () => {

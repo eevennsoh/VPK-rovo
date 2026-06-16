@@ -19,6 +19,7 @@ interface RovoFloatingChatProps {
 	onInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 	onArtifactDialogOpen?: () => void;
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
+	startRealtimeVoiceRequestKey?: number;
 }
 
 export default function RovoFloatingChat({
@@ -30,6 +31,7 @@ export default function RovoFloatingChat({
 	onInterceptSubmit,
 	onArtifactDialogOpen,
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
+	startRealtimeVoiceRequestKey = 0,
 }: Readonly<RovoFloatingChatProps>) {
 	const { closeChat, isHistoryOpen, resetChat, toggleHistory } = useRovoChat();
 
@@ -75,6 +77,7 @@ export default function RovoFloatingChat({
 					chatContextBar={chatContextBar}
 					onArtifactDialogOpen={onArtifactDialogOpen}
 					preserveFloatingSurfaceOnArtifactDialogOpen={preserveFloatingSurfaceOnArtifactDialogOpen}
+					startRealtimeVoiceRequestKey={startRealtimeVoiceRequestKey}
 				/>
 			</div>
 			<ChatHistoryDrawer />

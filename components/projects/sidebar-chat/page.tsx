@@ -200,6 +200,7 @@ interface ChatPanelProps {
 	onArtifactResult?: (artifact: ArtifactResult) => void;
 	onArtifactDialogOpen?: (artifact: ArtifactResult) => void;
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
+	startRealtimeVoiceRequestKey?: number;
 }
 
 const COMPACT_CHAT_WIDTH_MAX = 520;
@@ -303,6 +304,7 @@ export default function ChatPanel({
 	onArtifactResult,
 	onArtifactDialogOpen,
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
+	startRealtimeVoiceRequestKey = 0,
 }: Readonly<ChatPanelProps>): React.ReactElement {
 	const {
 		resetChat,
@@ -665,6 +667,22 @@ export default function ChatPanel({
 		realtimeTranscriptRef.current = "";
 		realtime.connect();
 	}, [realtime]);
+	const lastStartRealtimeVoiceRequestKeyRef = useRef(0);
+	useEffect(() => {
+		if (
+			startRealtimeVoiceRequestKey <= 0 ||
+			lastStartRealtimeVoiceRequestKeyRef.current === startRealtimeVoiceRequestKey
+		) {
+			return;
+		}
+
+		lastStartRealtimeVoiceRequestKeyRef.current = startRealtimeVoiceRequestKey;
+		if (realtime.voiceState !== "idle") {
+			return;
+		}
+
+		startRealtimeVoice();
+	}, [realtime.voiceState, startRealtimeVoice, startRealtimeVoiceRequestKey]);
 
 	const handleToggleRealtimeVoice = useCallback(() => {
 		if (realtime.voiceState === "idle") {

@@ -79,8 +79,23 @@ test("Rovo button project page shows chat, proactive suggestion, and onboarding 
 	);
 	assert.match(
 		ROVO_BUTTON_PAGE_SOURCE,
-		/\{chatSurface === "floating" \? <RovoFloatingChat key="floating-chat" \/> : null\}/u,
+		/\{chatSurface === "floating" \? \([\s\S]*<RovoFloatingChat[\s\S]*key="floating-chat"[\s\S]*startRealtimeVoiceRequestKey=\{floatingLiveChatRequestKey\}[\s\S]*\/>[\s\S]*\) : null\}/u,
 	);
+});
+
+test("Rovo button persistent bar only shows the voice action", () => {
+	assert.doesNotMatch(ROVO_BUTTON_PAGE_SOURCE, /import CursorIcon/u);
+	assert.doesNotMatch(ROVO_BUTTON_PAGE_SOURCE, /rovo-button-bar-cursor/u);
+	assert.doesNotMatch(ROVO_BUTTON_PAGE_SOURCE, /Point and select/u);
+	assert.match(ROVO_BUTTON_PAGE_SOURCE, /const \[floatingLiveChatRequestKey, setFloatingLiveChatRequestKey\] = useState\(0\);/u);
+	assert.match(ROVO_BUTTON_PAGE_SOURCE, /const handleOpenFloatingLiveChat = useCallback\(\(\) => \{[\s\S]*setFloatingLiveChatRequestKey\(\(currentKey\) => currentKey \+ 1\);[\s\S]*openChat\("floating"\);[\s\S]*\}, \[openChat\]\);/u);
+	assert.match(ROVO_BUTTON_PAGE_SOURCE, /useEffect\(\(\) => \{[\s\S]*if \(chatSurface !== "floating"\) \{[\s\S]*setFloatingLiveChatRequestKey\(0\);[\s\S]*\}[\s\S]*\}, \[chatSurface\]\);/u);
+	assert.match(ROVO_BUTTON_PAGE_SOURCE, /id: "rovo-button-bar-voice"/u);
+	assert.match(ROVO_BUTTON_PAGE_SOURCE, /ariaLabel: "Talk to Rovo"/u);
+	assert.match(ROVO_BUTTON_PAGE_SOURCE, /tooltipLabel: "Live chat"/u);
+	assert.match(ROVO_BUTTON_PAGE_SOURCE, /onClick: handleOpenFloatingLiveChat/u);
+	assert.match(ROVO_BUTTON_PAGE_SOURCE, /ariaLabel="Open Rovo chat demo with persistent toolbar"[\s\S]*onButtonClick=\{handleOpenFloatingLiveChat\}[\s\S]*persistentBar=\{persistentBar\}/u);
+	assert.match(ROVO_BUTTON_PAGE_SOURCE, /<RovoFloatingChat[\s\S]*startRealtimeVoiceRequestKey=\{floatingLiveChatRequestKey\}/u);
 });
 
 test("Rovo button catalog demo uses parent-height embedded preview positioning", () => {

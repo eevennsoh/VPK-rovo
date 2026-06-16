@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "motion/react";
-import CursorIcon from "@atlaskit/icon-lab/core/cursor";
 import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
 import AppLayout from "@/components/projects/page";
 import FloatingRovoButton, {
@@ -95,6 +94,7 @@ export default function RovoButtonProjectPage({
 		useState<FloatingRovoButtonOnboardingStatus>("idle");
 	const [demoSuggestionState, setDemoSuggestionState] = useState<DemoSuggestionState>("hidden");
 	const [demoSuggestionRun, setDemoSuggestionRun] = useState(0);
+	const [floatingLiveChatRequestKey, setFloatingLiveChatRequestKey] = useState(0);
 	const demoButtonPositioning: FloatingRovoButtonPositioning = embedded ? "container" : "viewport";
 
 	useEffect(() => {
@@ -135,6 +135,15 @@ export default function RovoButtonProjectPage({
 	const handleSuggestionDismiss = useCallback(() => {
 		setDemoSuggestionState("hidden");
 	}, []);
+	const handleOpenFloatingLiveChat = useCallback(() => {
+		setFloatingLiveChatRequestKey((currentKey) => currentKey + 1);
+		openChat("floating");
+	}, [openChat]);
+	useEffect(() => {
+		if (chatSurface !== "floating") {
+			setFloatingLiveChatRequestKey(0);
+		}
+	}, [chatSurface]);
 
 	const suggestion = useMemo<FloatingRovoButtonSuggestion | null>(() => {
 		if (demoSuggestionState === "hidden") {
@@ -190,19 +199,14 @@ export default function RovoButtonProjectPage({
 		ariaLabel: "Rovo quick actions",
 		items: [
 			{
-				id: "rovo-button-bar-cursor",
-				ariaLabel: "Point and select",
-				icon: <CursorIcon label="" color="currentColor" />,
-				onClick: () => openChat("floating"),
-			},
-			{
 				id: "rovo-button-bar-voice",
 				ariaLabel: "Talk to Rovo",
+				tooltipLabel: "Live chat",
 				icon: <AudioWaveformIcon label="" color="currentColor" />,
-				onClick: () => openChat("floating"),
+				onClick: handleOpenFloatingLiveChat,
 			},
 		],
-	}), [openChat]);
+	}), [handleOpenFloatingLiveChat]);
 
 	return (
 		<AppLayout product="home" embedded={embedded} embeddedHeight={embeddedHeight} hideFloatingRovo>
@@ -261,13 +265,19 @@ export default function RovoButtonProjectPage({
 				<FloatingRovoButton
 					ariaLabel="Open Rovo chat demo with persistent toolbar"
 					forceVisible
+					onButtonClick={handleOpenFloatingLiveChat}
 					persistentBar={persistentBar}
 					placement={TOOLBAR_BUTTON_PLACEMENT}
 					positioning={demoButtonPositioning}
 					product="home"
 				/>
 				<AnimatePresence>
-					{chatSurface === "floating" ? <RovoFloatingChat key="floating-chat" /> : null}
+					{chatSurface === "floating" ? (
+						<RovoFloatingChat
+							key="floating-chat"
+							startRealtimeVoiceRequestKey={floatingLiveChatRequestKey}
+						/>
+					) : null}
 				</AnimatePresence>
 			</div>
 		</AppLayout>

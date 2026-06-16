@@ -337,6 +337,33 @@ test("floating Rovo button can render a collapsed proactive suggestion nudge", (
 	);
 });
 
+test("floating Rovo button persistent bar actions are 32px square", () => {
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/"pointer-events-auto absolute left-1\/2 z-\[505\] flex cursor-default flex-col items-center gap-1 rounded-2xl bg-surface-raised p-2"/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/<motion\.button[\s\S]*aria-label=\{item\.ariaLabel\}[\s\S]*className="relative flex size-8 items-center justify-center rounded-xl/u,
+	);
+	assert.doesNotMatch(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/<motion\.button[\s\S]*aria-label=\{item\.ariaLabel\}[\s\S]*className="relative flex size-9 items-center justify-center rounded-xl/u,
+	);
+});
+
+test("floating Rovo button persistent bar can show item tooltips", () => {
+	assert.match(FLOATING_ROVO_BUTTON_SOURCE, /tooltipLabel\?: string;/u);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/import \{ Tooltip, TooltipContent, TooltipProvider, TooltipTrigger \} from "@\/components\/ui\/tooltip";/u,
+	);
+	assert.match(
+		FLOATING_ROVO_BUTTON_SOURCE,
+		/<TooltipProvider delay=\{0\}>[\s\S]*<TooltipTrigger render=\{actionButton\} \/>[\s\S]*<TooltipContent side="left">\{item\.tooltipLabel\}<\/TooltipContent>/u,
+	);
+});
+
 test("floating Rovo button supports demo initial placement while preserving default chat behavior", () => {
 	assert.match(
 		FLOATING_ROVO_BUTTON_SOURCE,
