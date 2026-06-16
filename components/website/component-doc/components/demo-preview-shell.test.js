@@ -11,6 +11,7 @@ async function loadDemoPreviewShellHarness() {
 				import React from "react";
 				import { token } from "./lib/tokens";
 				import { DemoPreviewShell } from "./components/website/component-doc/components/demo-preview-shell.tsx";
+				import { shouldUseFullPagePreview } from "./components/website/component-doc/components/preview-layout.ts";
 
 				export function getShellStyles() {
 					const defaultShell = DemoPreviewShell({
@@ -31,6 +32,24 @@ async function loadDemoPreviewShellHarness() {
 						fullPageStyle: fullPageShell.props.style,
 						fullWidthPadding: fullWidthShell.props.children.props.style.padding,
 						fullWidthInnerStyle: fullWidthShell.props.children.props.children.props.style,
+					};
+				}
+
+				export function getFullPagePreviewDecisions() {
+					return {
+						implicitBlock: shouldUseFullPagePreview("blocks", {
+							previewContentWidth: "full",
+							examplesContentWidth: "full",
+						}),
+						fixedBlock: shouldUseFullPagePreview("blocks", {
+							previewHeight: "fixed",
+						}),
+						fitProject: shouldUseFullPagePreview("projects", {
+							previewHeight: "fit",
+						}),
+						fixedUi: shouldUseFullPagePreview("ui-custom", {
+							previewHeight: "fixed",
+						}),
 					};
 				}
 			`,
@@ -73,4 +92,14 @@ test("DemoPreviewShell lets full-width demos fill the embedded preview surface",
 	assert.equal(fullWidthPadding, 0);
 	assert.equal(fullWidthInnerStyle.alignItems, "stretch");
 	assert.equal(fullWidthInnerStyle.justifyContent, "stretch");
+});
+
+test("DocPreview requires an explicit height mode before using the full-page shell", async () => {
+	const harness = await loadDemoPreviewShellHarness();
+	const decisions = harness.getFullPagePreviewDecisions();
+
+	assert.equal(decisions.implicitBlock, false);
+	assert.equal(decisions.fixedBlock, true);
+	assert.equal(decisions.fitProject, true);
+	assert.equal(decisions.fixedUi, false);
 });
