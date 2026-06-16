@@ -5,7 +5,7 @@ import { startTransition, useCallback, useMemo, useState } from "react";
 import type {
 	AgentConfigFormValue,
 	AgentConfigListFieldName,
-} from "@/components/blocks/agent";
+} from "@/components/blocks/agent-2";
 import {
 	cloneConfig,
 	createDraftSubagentPrompt,

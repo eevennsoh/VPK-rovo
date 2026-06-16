@@ -1,7 +1,7 @@
 import type {
 	AgentConfigFormValue,
 	AgentConfigListFieldName,
-} from "@/components/blocks/agent";
+} from "@/components/blocks/agent-2";
 import {
 	DEFAULT_SUBAGENTS_BASE_AGENT,
 	SUBAGENTS_DEMO_PROMPTS,

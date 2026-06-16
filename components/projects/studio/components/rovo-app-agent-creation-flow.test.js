@@ -48,7 +48,7 @@ const ROVO_SUGGESTIONS_SOURCE = fs.readFileSync(
 	"utf8",
 );
 const AGENT_BLOCK_SOURCE = fs.readFileSync(
-	path.join(process.cwd(), "components/blocks/agent/components/agent.tsx"),
+	path.join(process.cwd(), "components/blocks/agent-2/components/agent-2.tsx"),
 	"utf8",
 );
 const NAV_HOOK_SOURCE = fs.readFileSync(
@@ -649,7 +649,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_BLOCK_SOURCE, /"product-agents": "#BF63F3"/u);
 	assert.match(AGENT_BLOCK_SOURCE, /function getAgentProfileCoverBackgroundColor\(avatarSrc: string \| undefined\): string/u);
 	assert.match(AGENT_BLOCK_SOURCE, /style=\{\{ backgroundColor: coverBackgroundColor \}\}/u);
-	assert.match(AGENT_BLOCK_SOURCE, /Add automations for when this agent runs/u);
+	assert.match(AGENT_BLOCK_SOURCE, /Add flows for when this agent runs/u);
 	assert.match(AGENT_BLOCK_SOURCE, /Add prompts to help people start/u);
 	assert.match(AGENT_BLOCK_SOURCE, /knowledgeMode: KnowledgeModeValue;/u);
 	assert.match(AGENT_BLOCK_SOURCE, /onKnowledgeModeChange=\{setKnowledgeMode\}/u);

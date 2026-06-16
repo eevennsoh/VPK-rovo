@@ -14,7 +14,7 @@ import {
 	AgentContent,
 	AgentHeader,
 	AgentInstructions,
-} from "@/components/blocks/agent"
+} from "@/components/blocks/agent-2"
 import {
 	Plan,
 	PlanAvatar,

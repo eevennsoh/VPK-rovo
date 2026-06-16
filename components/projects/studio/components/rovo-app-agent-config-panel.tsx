@@ -70,7 +70,7 @@ import {
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
 	type AgentHideableConfigField,
-} from "@/components/blocks/agent";
+} from "@/components/blocks/agent-2";
 import type { EditorToolbarViewMode } from "@/components/blocks/editor-toolbar";
 import FloatingRovoButton, {
 	type FloatingRovoButtonPersistentBar,
