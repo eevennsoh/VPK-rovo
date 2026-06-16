@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { cn } from "@/lib/utils";
@@ -102,10 +103,20 @@ function SpotlightTarget({
 	shape = "rounded",
 }: Readonly<SpotlightTargetProps>) {
 	const resolved = placement ? PLACEMENTS[placement] : { side, align };
-	const isOpen = open ?? defaultOpen ?? false;
+
+	// Mirror the popover's open state so the pulse matches the popup even in
+	// uncontrolled usage (when `open` is omitted, base-ui owns the real state).
+	const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false);
+	const isOpen = open ?? uncontrolledOpen;
+	const handleOpenChange: NonNullable<PopoverPrimitive.Root.Props["onOpenChange"]> = (next, details) => {
+		if (open === undefined) {
+			setUncontrolledOpen(next);
+		}
+		onOpenChange?.(next, details);
+	};
 
 	return (
-		<PopoverPrimitive.Root open={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange}>
+		<PopoverPrimitive.Root open={open} defaultOpen={defaultOpen} onOpenChange={handleOpenChange}>
 			<span className="relative inline-flex">
 				<PopoverPrimitive.Trigger render={children} />
 				{pulse && isOpen ? <SpotlightPulse shape={shape} /> : null}
