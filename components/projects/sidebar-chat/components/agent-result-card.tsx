@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { RFP_DRAFTING_AGENT_AVATAR_SRC } from "@/components/projects/agents/lib/rfp-demo-state";
 import { AgentProfileCard } from "@/components/blocks/agent-profile-card";
+import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +19,6 @@ interface AgentResultCardProps {
 
 const RFP_DRAFTING_AGENT_ID = "rfp-drafting-agent";
 const DEFAULT_AGENT_PARTNER_NAME = "Atlassian";
-const DEFAULT_GENERATED_AGENT_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg";
 
 // react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function isGeneratedAgentResult(
@@ -44,7 +44,14 @@ function getAgentAvatarSrc(agent: AgentResult): string {
 		return RFP_DRAFTING_AGENT_AVATAR_SRC;
 	}
 
-	return agent.avatarSrc?.trim() || DEFAULT_GENERATED_AGENT_AVATAR_SRC;
+	// When the result carries no avatar, derive one deterministically from the
+	// agent's identity — the same seed and helper the persisted session entry
+	// uses (see createSessionAgentEntryFromResult) — so this card and the final
+	// generated agent render the identical avatar and banner color.
+	return (
+		agent.avatarSrc?.trim() ||
+		getDeterministicAgentAvatarSrc(agent.agentId?.trim() || agent.name)
+	);
 }
 
 export function AgentResultCard({

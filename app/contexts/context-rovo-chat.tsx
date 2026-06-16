@@ -93,7 +93,7 @@ import {
 	VPK_HTML_SKILL_ID,
 } from "@/lib/work-item-report-intent";
 import { resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
-import { getRandomAgentAvatarSrc } from "@/lib/agent-avatars";
+import { getDeterministicAgentAvatarSrc } from "@/lib/agent-avatars";
 import {
 	isRateLimitError,
 	isChatInProgressError,
@@ -1262,16 +1262,20 @@ function createSessionAgentEntryFromResult(params: {
 	}
 
 	const normalizedResult = normalizeSessionAgentResult(params.agentResult);
-	// Stamp a random avatar (and, via its family, accent color) once at creation
-	// time when none was supplied — both from-scratch and AI-generated agents
-	// reach here. Persisting it onto the result keeps the avatar stable across
-	// later draft edits instead of re-rolling on every keystroke.
+	// Stamp an avatar (and, via its family, accent color) once at creation time
+	// when none was supplied — both from-scratch and AI-generated agents reach
+	// here. Persisting it onto the result keeps the avatar stable across later
+	// draft edits instead of re-rolling on every keystroke. Derive it
+	// deterministically from the agent's identity so the streamed result card
+	// (which reads the raw, avatar-less data part) lands on the *same* avatar and
+	// banner color as this persisted entry — see getDeterministicAgentAvatarSrc.
 	const hasExplicitAvatar = Boolean(
 		getPayloadString(normalizedResult as AgentResultPayload, ["avatarSrc", "avatarUrl", "iconSrc"])
 	);
+	const avatarSeed = getPayloadString(normalizedResult as AgentResultPayload, ["agentId", "id", "name"]);
 	const agentResult: RovoDataParts["agent-result"] = hasExplicitAvatar
 		? normalizedResult
-		: { ...normalizedResult, avatarSrc: getRandomAgentAvatarSrc() };
+		: { ...normalizedResult, avatarSrc: getDeterministicAgentAvatarSrc(avatarSeed) };
 	const payload = agentResult as AgentResultPayload;
 	const payloadResultKey = getCreatedAgentResultKey(payload);
 	const resultKey = params.sourceKey
