@@ -2,7 +2,7 @@
 
 // oxlint-disable react-doctor/prefer-module-scope-static-value -- These values are intentionally colocated with the component/demo contract for readability and token context.
 
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
@@ -224,14 +224,6 @@ export interface EditorPaletteSearchPickerProps {
 	mentionSources?: RichTextMentionSources;
 	onBrowseAll?: () => void;
 	onSelectItem?: (item: RichTextSuggestionMenuItem) => void;
-	/**
-	 * Keep the picker usable for back-to-back selections: after a (non-browse)
-	 * pick, focus is returned to the search field. This matters when the picker
-	 * lives inside a popup/menu — selecting a row filters it out (via
-	 * `excludeLabels`), unmounting the focused option, which would otherwise let
-	 * focus fall to the body and force the surrounding menu to close on focus-out.
-	 */
-	keepOpenOnSelect?: boolean;
 }
 
 export function EditorPaletteSearchPicker({
@@ -245,10 +237,8 @@ export function EditorPaletteSearchPicker({
 	mentionSources = EDITOR_PALETTE_MENTION_SOURCES,
 	onBrowseAll,
 	onSelectItem,
-	keepOpenOnSelect = false,
 }: Readonly<EditorPaletteSearchPickerProps>) {
 	const [query, setQuery] = useState("");
-	const pickerRef = useRef<HTMLDivElement | null>(null);
 	const sourceItems = excludeItemsByLabel(
 		(itemsProp ?? getMentionChildItems(mentionSources, category)).map(normalizeSearchPickerItem),
 		excludeLabels,
@@ -278,45 +268,34 @@ export function EditorPaletteSearchPicker({
 		}
 
 		onSelectItem?.(item);
-
-		if (keepOpenOnSelect) {
-			// Return focus to the search field synchronously, before React unmounts
-			// the just-picked row (it gets filtered out via `excludeLabels`). If
-			// focus fell to the body, a surrounding popup/menu would close on
-			// focus-out; keeping it on the search field lets the caller add several
-			// items in a row and immediately type the next query.
-			pickerRef.current?.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
-		}
 	};
 
 	return (
-		<div ref={pickerRef} className="contents">
-			<RichTextSuggestionMenu
-				className={className}
-				title={getSearchPlaceholder(category)}
-				emptyLabel={emptyLabel}
-				emptyState={
-					<RichTextSuggestionEmptyState
-						label={emptyLabel}
-						onBrowseAll={onBrowseAll}
-					/>
-				}
-				header={(
-					<RichTextCommandMenuSearchField
-						autoFocus={autoFocus}
-						icon={<SearchIcon className="size-4 text-icon-subtle" />}
-						label={getSearchPlaceholder(category)}
-						onClear={() => setQuery("")}
-						onSubmit={selectFirstResult}
-						onValueChange={setQuery}
-						value={query}
-					/>
-				)}
-				items={rows}
-				onSelect={handleSelect}
-				selectedIndex={-1}
-			/>
-		</div>
+		<RichTextSuggestionMenu
+			className={className}
+			title={getSearchPlaceholder(category)}
+			emptyLabel={emptyLabel}
+			emptyState={
+				<RichTextSuggestionEmptyState
+					label={emptyLabel}
+					onBrowseAll={onBrowseAll}
+				/>
+			}
+			header={(
+				<RichTextCommandMenuSearchField
+					autoFocus={autoFocus}
+					icon={<SearchIcon className="size-4 text-icon-subtle" />}
+					label={getSearchPlaceholder(category)}
+					onClear={() => setQuery("")}
+					onSubmit={selectFirstResult}
+					onValueChange={setQuery}
+					value={query}
+				/>
+			)}
+			items={rows}
+			onSelect={handleSelect}
+			selectedIndex={-1}
+		/>
 	);
 }
 
