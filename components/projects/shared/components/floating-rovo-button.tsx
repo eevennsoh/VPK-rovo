@@ -30,6 +30,7 @@ import {
 } from "motion/react";
 import { useRovoChat } from "@/app/contexts";
 import { RovoColorIcon } from "@/components/ui/logo";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import {
@@ -54,6 +55,7 @@ export interface FloatingRovoButtonPersistentBarItem {
 	id: string;
 	icon: ReactNode;
 	ariaLabel: string;
+	tooltipLabel?: string;
 	onClick?: () => void;
 	indicator?: boolean;
 }
@@ -380,7 +382,7 @@ function FloatingRovoButtonPersistentBarRail({
 			aria-orientation="vertical"
 			aria-label={bar.ariaLabel ?? "Rovo quick actions"}
 			className={cn(
-				"pointer-events-auto absolute left-1/2 z-[505] flex cursor-default flex-col items-center gap-1 rounded-2xl bg-surface-raised p-1.5",
+				"pointer-events-auto absolute left-1/2 z-[505] flex cursor-default flex-col items-center gap-1 rounded-2xl bg-surface-raised p-2",
 				side === "top" ? "bottom-full mb-3" : "top-full mt-3",
 			)}
 			variants={railVariants}
@@ -393,26 +395,37 @@ function FloatingRovoButtonPersistentBarRail({
 				willChange: "transform, opacity",
 			}}
 		>
-			{bar.items.map((item) => (
-				<motion.button
-					key={item.id}
-					aria-label={item.ariaLabel}
-					className="relative flex size-9 items-center justify-center rounded-xl text-icon transition-colors duration-normal ease-out enabled:hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none enabled:active:bg-bg-neutral-subtle-pressed disabled:cursor-default disabled:text-icon-disabled"
-					variants={itemVariants}
-					onClick={item.onClick}
-					disabled={!item.onClick}
-					type="button"
-					style={{ willChange: "transform, opacity" }}
-				>
-					{item.icon}
-					{item.indicator ? (
-						<span
-							aria-hidden="true"
-							className="absolute top-1.5 right-1.5 size-2 rounded-full bg-bg-information ring-2 ring-surface-raised"
-						/>
-					) : null}
-				</motion.button>
-			))}
+			<TooltipProvider delay={0}>
+				{bar.items.map((item) => {
+					const actionButton = (
+						<motion.button
+							key={item.id}
+							aria-label={item.ariaLabel}
+							className="relative flex size-8 items-center justify-center rounded-xl text-icon transition-colors duration-normal ease-out enabled:hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none enabled:active:bg-bg-neutral-subtle-pressed disabled:cursor-default disabled:text-icon-disabled"
+							variants={itemVariants}
+							onClick={item.onClick}
+							disabled={!item.onClick}
+							type="button"
+							style={{ willChange: "transform, opacity" }}
+						>
+							{item.icon}
+							{item.indicator ? (
+								<span
+									aria-hidden="true"
+									className="absolute top-1.5 right-1.5 size-2 rounded-full bg-bg-information ring-2 ring-surface-raised"
+								/>
+							) : null}
+						</motion.button>
+					);
+
+					return item.tooltipLabel ? (
+						<Tooltip key={item.id}>
+							<TooltipTrigger render={actionButton} />
+							<TooltipContent side="left">{item.tooltipLabel}</TooltipContent>
+						</Tooltip>
+					) : actionButton;
+				})}
+			</TooltipProvider>
 		</motion.div>
 	);
 }

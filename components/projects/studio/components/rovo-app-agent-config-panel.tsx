@@ -16,7 +16,6 @@ import AiComputeIcon from "@atlaskit/icon-lab/core/ai-compute";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
 import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
-import CursorIcon from "@atlaskit/icon-lab/core/cursor";
 import HistoryIcon from "@atlaskit/icon-lab/core/history";
 import SkillIcon from "@atlaskit/icon-lab/core/skill";
 
@@ -1181,25 +1180,22 @@ export function RovoAppAgentConfigPanel({
 		}
 		onTest(profileId);
 	}, [hasUpdateChanges, onCommitPublishReady, onTest, profileId]);
+	const [floatingLiveChatRequestKey, setFloatingLiveChatRequestKey] = useState(0);
 	const handleOpenFloatingRovoChat = useCallback(() => {
 		resetAgentToRovo();
+		setFloatingLiveChatRequestKey((currentKey) => currentKey + 1);
 		openChat("floating");
 	}, [openChat, resetAgentToRovo]);
 
 	// On the agent config screen the floating Rovo button shows its persistent
-	// toolbar variant (point/select + talk), mirroring the rovo-button demo.
+	// toolbar variant, mirroring the rovo-button demo.
 	const rovoButtonPersistentBar = useMemo<FloatingRovoButtonPersistentBar>(() => ({
 		ariaLabel: "Rovo quick actions",
 		items: [
 			{
-				id: "agent-config-rovo-bar-cursor",
-				ariaLabel: "Point and select",
-				icon: <CursorIcon label="" color="currentColor" />,
-				onClick: handleOpenFloatingRovoChat,
-			},
-			{
 				id: "agent-config-rovo-bar-voice",
 				ariaLabel: "Talk to Rovo",
+				tooltipLabel: "Live chat",
 				icon: <AudioWaveformIcon label="" color="currentColor" />,
 				onClick: handleOpenFloatingRovoChat,
 			},
@@ -1507,6 +1503,7 @@ export function RovoAppAgentConfigPanel({
 						greeting={chatGreeting}
 						hideComposerSourceAndModelControls={Boolean(chatContextBar)}
 						onInterceptSubmit={onChatInterceptSubmit}
+						startRealtimeVoiceRequestKey={floatingLiveChatRequestKey}
 					/>
 				) : null}
 			</AnimatePresence>
