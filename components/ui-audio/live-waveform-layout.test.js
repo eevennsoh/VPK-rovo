@@ -8,6 +8,10 @@ const {
 	getStaticBarDataIndex,
 	getStaticProcessingBarValue,
 	getStaticProcessingTravelHead,
+	getCompressedVoiceEnergy,
+	getNoiseGatedVoiceEnergy,
+	getVoiceResponsiveBarValue,
+	getWaveformBarHeight,
 	getWaveformEaseOutProgress,
 	getWaveformPaletteIndex,
 	getWaveformSeriesValue,
@@ -74,6 +78,120 @@ test("mirrors even static waveform layouts around the center seam", () => {
 	);
 
 	assert.deepEqual(indexes, [5, 0, 0, 5]);
+});
+
+test("maps voice data into independent responsive frequency bars", () => {
+	const data = new Uint8Array(64);
+	data.fill(8);
+	data.fill(240, 20, 28);
+
+	const bars = Array.from({ length: 4 }, (_, index) =>
+		getVoiceResponsiveBarValue({
+			barCount: 4,
+			data,
+			index,
+			sensitivity: 1,
+		}),
+	);
+
+	assert.ok(bars[2] > bars[0] * 2);
+	assert.ok(bars[2] > bars[3] * 2);
+	assert.notEqual(new Set(bars).size, 1);
+});
+
+test("keeps quiet room noise at the resting waveform floor", () => {
+	const data = new Uint8Array(64);
+	data.fill(12);
+
+	const bars = Array.from({ length: 4 }, (_, index) =>
+		getVoiceResponsiveBarValue({
+			barCount: 4,
+			data,
+			index,
+			sensitivity: 2.4,
+		}),
+	);
+
+	assert.deepEqual(bars, [0.05, 0.05, 0.05, 0.05]);
+	assert.equal(getNoiseGatedVoiceEnergy({ value: 0.04 }), 0);
+	assert.equal(getCompressedVoiceEnergy({ value: 0.04, sensitivity: 2.4 }), 0);
+});
+
+test("keeps voice bars responsive to sensitivity without exceeding the visual range", () => {
+	const data = new Uint8Array(32);
+	data.fill(96);
+
+	const normal = getVoiceResponsiveBarValue({
+		barCount: 8,
+		data,
+		index: 3,
+		sensitivity: 1,
+	});
+	const boosted = getVoiceResponsiveBarValue({
+		barCount: 8,
+		data,
+		index: 3,
+		sensitivity: 2.4,
+	});
+
+	assert.ok(boosted > normal);
+	assert.ok(boosted <= 1);
+});
+
+test("caps loud voice bars below a full-height plateau", () => {
+	const data = new Uint8Array(64);
+	data.fill(255);
+
+	const bars = Array.from({ length: 4 }, (_, index) =>
+		getVoiceResponsiveBarValue({
+			barCount: 4,
+			data,
+			index,
+			sensitivity: 2.4,
+		}),
+	);
+
+	const tallestBar = Math.max(...bars);
+	const nearPeakBars = bars.filter((value) => value >= tallestBar - 0.03);
+
+	assert.ok(tallestBar < 0.7);
+	assert.ok(nearPeakBars.length < bars.length);
+	assert.ok(tallestBar - Math.min(...bars) >= 0.04);
+	assert.ok(new Set(bars).size > 1);
+});
+
+test("preserves band contrast when voice input is boosted", () => {
+	const data = new Uint8Array(64);
+	data.fill(18);
+	data.fill(96, 10, 18);
+	data.fill(210, 20, 28);
+	data.fill(132, 34, 44);
+
+	const bars = Array.from({ length: 4 }, (_, index) =>
+		getVoiceResponsiveBarValue({
+			barCount: 4,
+			data,
+			index,
+			sensitivity: 2.4,
+		}),
+	);
+
+	assert.ok(bars[2] > bars[1]);
+	assert.ok(bars[2] > bars[3]);
+	assert.ok(bars[2] - bars[0] > 0.25);
+	assert.ok(bars.filter((value) => value > 0.62).length <= 1);
+});
+
+test("caps rendered waveform bars below the full button height", () => {
+	assert.equal(
+		getWaveformBarHeight({
+			baseBarHeight: 4,
+			barHeightScale: 1.15,
+			height: 28,
+			value: 1,
+		}),
+		20.16,
+	);
 });
 
 test("animates the static processing waveform over time", () => {

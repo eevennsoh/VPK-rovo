@@ -12,7 +12,6 @@ import {
 	PromptInputActionMenuContent,
 	PromptInputActionMenuTrigger,
 	PromptInputBody,
-	PromptInputButton,
 	PromptInputFooter,
 	PromptInputPreferencesButton,
 	PromptInputTextarea,
@@ -34,7 +33,6 @@ import AddIcon from "@atlaskit/icon/core/add";
 import { PendingAttachments } from "@/components/projects/shared/components/pending-attachments";
 import { RovoAppComposerAddMenu } from "@/components/projects/shared/components/rovo-app-composer-add-menu";
 import { RovoComposerSendControls, type RovoComposerDictationState } from "@/components/projects/shared/components/rovo-composer-send-controls";
-import { RovoCursorTrackingIcon } from "@/components/projects/shared/components/rovo-cursor-tracking-icon";
 import { cn } from "@/lib/utils";
 
 interface ChatComposerProps {
@@ -78,6 +76,7 @@ interface ChatComposerSendControlsProps {
 	experimentalDarkCta?: boolean;
 	hideReasoningSelector?: boolean;
 	isComposerBusy: boolean;
+	clickyActive: boolean;
 	micStream: MediaStream | null;
 	onCompanyKnowledgeChange: (value: boolean) => void;
 	onOpenChange: (open: boolean) => void;
@@ -85,6 +84,7 @@ interface ChatComposerSendControlsProps {
 	onStop: () => void;
 	onStartDictation?: () => void;
 	onStopDictation?: () => void;
+	onToggleClicky?: () => void;
 	onToggleRealtimeVoice?: () => void;
 	open: boolean;
 	prompt: string;
@@ -107,6 +107,7 @@ function ChatComposerSendControls({
 	experimentalDarkCta = false,
 	hideReasoningSelector = false,
 	isComposerBusy,
+	clickyActive,
 	micStream,
 	onCompanyKnowledgeChange,
 	onOpenChange,
@@ -114,6 +115,7 @@ function ChatComposerSendControls({
 	onStop,
 	onStartDictation,
 	onStopDictation,
+	onToggleClicky,
 	onToggleRealtimeVoice,
 	open,
 	prompt,
@@ -136,6 +138,7 @@ function ChatComposerSendControls({
 			experimentalDarkCta={experimentalDarkCta}
 			hideReasoningSelector={hideReasoningSelector}
 			isComposerBusy={isComposerBusy}
+			clickyActive={clickyActive}
 			micStream={micStream}
 			onCompanyKnowledgeChange={onCompanyKnowledgeChange}
 			onOpenChange={onOpenChange}
@@ -143,6 +146,7 @@ function ChatComposerSendControls({
 			onStop={onStop}
 			onStartDictation={onStartDictation}
 			onStopDictation={onStopDictation}
+			onToggleClicky={onToggleClicky}
 			onToggleRealtimeVoice={onToggleRealtimeVoice}
 			open={open}
 			realtimeVoiceActive={realtimeVoiceActive}
@@ -231,7 +235,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 					</Queue>
 				</div>
 			) : null}
-			<div className="relative z-10 mx-auto w-full max-w-[800px] rounded-xl border border-border bg-surface px-4 pb-3 pt-4" style={{ boxShadow: composerUpwardShadow }}>
+			<div className="relative z-10 mx-auto w-full max-w-[800px] rounded-xl border border-border bg-surface px-4 pb-2.5 pt-3.5" style={{ boxShadow: composerUpwardShadow }}>
 				<PromptInput allowOverflow onSubmit={onSubmit} className={`${composerPromptInputClassName} relative z-10`}>
 					<PendingAttachments />
 					<PromptInputBody>
@@ -266,19 +270,6 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 									/>
 								</PromptInputActionMenuContent>
 							</PromptInputActionMenu>
-
-							{hideAiCursor ? null : (
-								<PromptInputButton
-									size="icon-sm"
-									variant={clickyActive ? "default" : "ghost"}
-									onClick={onToggleClicky}
-									aria-label="Rovo cursor"
-									aria-pressed={clickyActive}
-									tooltip={{ content: "Rovo cursor", delay: 0 }}
-								>
-									<RovoCursorTrackingIcon active={clickyActive} />
-								</PromptInputButton>
-							)}
 
 							<AnimatePresence initial={false} mode="popLayout">
 								{hideSourceAndModelControls ? null : (
@@ -319,6 +310,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 							experimentalDarkCta={experimentalDarkCta}
 							hideReasoningSelector={hideSourceAndModelControls}
 							isComposerBusy={isComposerBusy}
+							clickyActive={!hideAiCursor && clickyActive}
 							micStream={micStream}
 							onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
 							onOpenChange={handleAutoMenuOpenChange}
@@ -326,6 +318,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 							onStop={onStop}
 							onStartDictation={onStartDictation}
 							onStopDictation={onStopDictation}
+							onToggleClicky={hideAiCursor ? undefined : onToggleClicky}
 							onToggleRealtimeVoice={onToggleRealtimeVoice}
 							open={isAutoMenuOpen}
 							prompt={prompt}

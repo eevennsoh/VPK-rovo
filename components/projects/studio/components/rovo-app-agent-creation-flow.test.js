@@ -87,6 +87,10 @@ const ROVO_UI_MESSAGES_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "lib/rovo-ui-messages.ts"),
 	"utf8",
 );
+const REALTIME_VOICE_HOOK_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "hooks", "use-realtime-voice.ts"),
+	"utf8",
+);
 
 function sourceBetween(source, startNeedle, endNeedle) {
 	const start = source.indexOf(startNeedle);
@@ -341,6 +345,17 @@ test("Studio composer wires dictation separately from realtime live voice", () =
 	assert.match(SHELL_SOURCE, /onTextChange=\{handleComposerTextChange\}/u);
 	assert.match(SHELL_SOURCE, /if \(isDictationActiveRef\.current\) \{[\s\S]*return;[\s\S]*\}[\s\S]*const c = chatRef\.current/u);
 	assert.match(SHELL_SOURCE, /realtime\.connect\(\{ transcriptionOnly: true \}\);/u);
+});
+
+test("Studio realtime voice streams browser interim dictation until server deltas arrive", () => {
+	const browserResultHandler = sourceBetween(
+		REALTIME_VOICE_HOOK_SOURCE,
+		"recognition.onresult = (event: SpeechRecognitionEvent) => {",
+		"recognition.onerror = (event: SpeechRecognitionErrorEvent) => {",
+	);
+
+	assert.match(browserResultHandler, /if \(!hasReceivedServerDeltaRef\.current\) \{[\s\S]*onSpeechTranscriptDeltaRef\.current\?\.\(\{ text: trimmed \}\);/u);
+	assert.doesNotMatch(browserResultHandler, /!serverTranscriptionActiveRef\.current\s*&&\s*!hasReceivedServerDeltaRef\.current/u);
 });
 
 test("Studio cursor activation starts live voice while cursor deactivation leaves live voice running", () => {

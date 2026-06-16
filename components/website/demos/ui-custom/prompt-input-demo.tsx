@@ -12,7 +12,6 @@ import {
 	textareaCSS,
 } from "@/components/blocks/shared-ui/composer-styles";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
-import { RovoCursorTrackingIcon } from "@/components/projects/shared/components/rovo-cursor-tracking-icon";
 import {
 	RovoComposerActionButton,
 	RovoComposerSendControls,
@@ -67,6 +66,7 @@ export function PromptInputDemoChatComposer() {
 	const [isCustomizeMenuOpen, setIsCustomizeMenuOpen] = useState(false);
 	const [isAutoMenuOpen, setIsAutoMenuOpen] = useState(false);
 	const [clickyActive, setClickyActive] = useState(false);
+	const [realtimeVoiceActive, setRealtimeVoiceActive] = useState(false);
 
 	const handleCustomizeMenuOpenChange = useCallback((open: boolean) => {
 		setIsCustomizeMenuOpen(open);
@@ -79,7 +79,25 @@ export function PromptInputDemoChatComposer() {
 	}, []);
 
 	const handleStop = useCallback(async () => {}, []);
-	const handleToggleRealtimeVoice = useCallback(() => {}, []);
+	const handleToggleRealtimeVoice = useCallback(() => {
+		setRealtimeVoiceActive((active) => {
+			if (active) {
+				setClickyActive(false);
+			}
+
+			return !active;
+		});
+	}, []);
+	const handleToggleClicky = useCallback(() => {
+		setClickyActive((active) => {
+			if (active) {
+				return false;
+			}
+
+			setRealtimeVoiceActive(true);
+			return true;
+		});
+	}, []);
 
 	const canSubmit = prompt.trim().length > 0;
 
@@ -87,7 +105,7 @@ export function PromptInputDemoChatComposer() {
 		<DemoFrame>
 			<div className="px-1">
 				<div
-					className="relative z-10 rounded-xl border border-border bg-surface px-4 pb-3 pt-3"
+					className="relative z-10 rounded-xl border border-border bg-surface px-4 py-2.5"
 					style={{ boxShadow: composerUpwardShadow }}
 				>
 					<PromptInput
@@ -152,17 +170,6 @@ export function PromptInputDemoChatComposer() {
 									</PromptInputActionMenuContent>
 								</PromptInputActionMenu>
 
-								<PromptInputButton
-									size="icon-sm"
-									variant={clickyActive ? "default" : "ghost"}
-									onClick={() => setClickyActive((prev) => !prev)}
-									aria-label="Rovo cursor"
-									aria-pressed={clickyActive}
-									tooltip={{ content: "Rovo cursor", delay: 0 }}
-								>
-									<RovoCursorTrackingIcon active={clickyActive} />
-								</PromptInputButton>
-
 								<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
 									<PopoverTrigger
 										render={<PromptInputPreferencesButton aria-label="Customize" />}
@@ -188,13 +195,16 @@ export function PromptInputDemoChatComposer() {
 								className="flex-1"
 								companyKnowledgeEnabled={companyKnowledgeEnabled}
 								composerStatus="ready"
+								clickyActive={clickyActive}
 								onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
 								onOpenChange={handleAutoMenuOpenChange}
 								onReasoningChange={setSelectedReasoning}
 								onStop={handleStop}
+								onToggleClicky={handleToggleClicky}
 								onToggleRealtimeVoice={handleToggleRealtimeVoice}
 								onWebResultsChange={setWebResultsEnabled}
 								open={isAutoMenuOpen}
+								realtimeVoiceActive={realtimeVoiceActive}
 								selectedReasoning={selectedReasoning}
 								webResultsEnabled={webResultsEnabled}
 							/>
@@ -220,11 +230,28 @@ function FloatingBarDemo({ experimentalDarkCta = false }: Readonly<FloatingBarDe
 	const [clickyActive, setClickyActive] = useState(false);
 
 	const handleToggleRealtimeVoice = useCallback(() => {
-		setRealtimeVoiceActive((prev) => !prev);
+		setRealtimeVoiceActive((active) => {
+			if (active) {
+				setClickyActive(false);
+			}
+
+			return !active;
+		});
 	}, []);
 
 	const handleStop = useCallback(() => {
 		setRealtimeVoiceActive(false);
+		setClickyActive(false);
+	}, []);
+	const handleToggleClicky = useCallback(() => {
+		setClickyActive((active) => {
+			if (active) {
+				return false;
+			}
+
+			setRealtimeVoiceActive(true);
+			return true;
+		});
 	}, []);
 
 	const canSubmit = Boolean(prompt.trim());
@@ -235,28 +262,18 @@ function FloatingBarDemo({ experimentalDarkCta = false }: Readonly<FloatingBarDe
 				allowOverflow
 				onSubmit={() => setPrompt("")}
 				addButton={
-					<div className="flex items-center gap-1">
-						<PromptInputButton size="icon-sm" variant="ghost" aria-label="Add">
-							<AddIcon label="" />
-						</PromptInputButton>
-						<PromptInputButton
-							size="icon-sm"
-							variant={clickyActive ? "default" : "ghost"}
-							onClick={() => setClickyActive((prev) => !prev)}
-							aria-label="AI cursor"
-							aria-pressed={clickyActive}
-							tooltip={{ content: "AI Cursor ⌘⇧K", delay: 0 }}
-						>
-							<RovoCursorTrackingIcon active={clickyActive} />
-						</PromptInputButton>
-					</div>
+					<PromptInputButton size="icon-sm" variant="ghost" aria-label="Add">
+						<AddIcon label="" />
+					</PromptInputButton>
 				}
 				actions={
 					<RovoComposerActionButton
 						canSubmit={canSubmit}
 						composerStatus="ready"
 						experimentalDarkCta={experimentalDarkCta}
+						clickyActive={clickyActive}
 						onStop={handleStop}
+						onToggleClicky={handleToggleClicky}
 						onToggleRealtimeVoice={handleToggleRealtimeVoice}
 						realtimeVoiceActive={realtimeVoiceActive}
 					/>

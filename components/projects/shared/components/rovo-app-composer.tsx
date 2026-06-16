@@ -35,10 +35,10 @@ const EMPTY_QUEUED_PROMPTS: ReadonlyArray<RovoAppQueuedAction> = [];
 /**
  * Visual chrome of the composer body:
  * - "card" — Rovo's bordered card with the smooth height-animation system, the
- *   Add action-menu, the Rovo Cursor + Customize controls, and the full
+ *   Add action-menu, Customize controls, and the full
  *   reasoning-aware send controls.
  * - "floating" — Studio's FloatingComposer single-row layout with inline
- *   +/Cursor buttons, the send-only action button, and the hover-revealed
+ *   add button, the send-only action button, and the hover-revealed
  *   "Browse templates / start from scratch" links.
  */
 export type RovoAppComposerChrome = "card" | "floating";

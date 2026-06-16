@@ -1098,10 +1098,7 @@ export function useRealtimeVoice({
 			}
 
 			ensureActiveSpeechTurn();
-			if (
-				!serverTranscriptionActiveRef.current
-				&& !hasReceivedServerDeltaRef.current
-			) {
+			if (!hasReceivedServerDeltaRef.current) {
 				pendingTranscriptRef.current = trimmed;
 				setCurrentTranscript(trimmed);
 				onSpeechTranscriptDeltaRef.current?.({ text: trimmed });

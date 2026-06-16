@@ -8,15 +8,18 @@
 
 // oxlint-disable react-doctor/prefer-tag-over-role -- This file uses ARIA roles for custom generated visuals or composite widgets where the suggested native tag would change semantics or behavior.
 
-import { useEffect, useRef, useState, type HTMLAttributes } from "react"
+import { useCallback, useEffect, useRef, useState, type HTMLAttributes } from "react"
 import { useReducedMotion } from "motion/react"
 
 import {
   STATIC_ACTIVE_HANDOFF_DURATION_MS,
+  getWaveformBarHeight,
   getScrollingBarVisualIndex,
   getScrollingBarX,
   getStaticBarDataIndex,
   getStaticProcessingBarValue,
+  getCompressedVoiceEnergy,
+  getVoiceResponsiveBarValue,
   getWaveformEaseOutProgress,
   getWaveformPaletteIndex,
   getWaveformSeriesValue,
@@ -29,6 +32,7 @@ export type LiveWaveformProps = HTMLAttributes<HTMLDivElement> & {
   deviceId?: string
   mediaStream?: MediaStream | null
   barWidth?: number
+  barCount?: number
   barHeight?: number
   barGap?: number
   barRadius?: number
@@ -60,6 +64,7 @@ export const LiveWaveform = ({
   deviceId,
   mediaStream: externalStream,
   barWidth = 3,
+  barCount: fixedBarCount,
   barGap = 1,
   barRadius = 1.5,
   barColor,
@@ -110,6 +115,14 @@ export const LiveWaveform = ({
   const heightStyle = typeof height === "number" ? `${height}px` : height
   const minBarOpacity = Math.max(0, Math.min(1, barOpacityMin))
   const maxBarOpacity = Math.max(minBarOpacity, Math.min(1, barOpacityMax))
+  const getBarCount = useCallback(
+    (width: number) =>
+      Math.max(
+        0,
+        Math.floor(fixedBarCount ?? width / Math.max(1, barWidth + barGap))
+      ),
+    [barGap, barWidth, fixedBarCount]
+  )
 
   const reduced = useReducedMotion()
   const [inView, setInView] = useState(false)
@@ -266,9 +279,7 @@ export const LiveWaveform = ({
         )
 
         const processingData = []
-        const barCount = Math.floor(
-          (getContainerSize().width || 200) / (barWidth + barGap)
-        )
+        const barCount = getBarCount(getContainerSize().width || 200)
 
         if (mode === "static") {
           for (let i = 0; i < barCount; i++) {
@@ -375,7 +386,7 @@ export const LiveWaveform = ({
         fadeToIdle()
       }
     }
-  }, [processing, active, barWidth, barGap, mode, shouldAnimate])
+  }, [processing, active, barWidth, barGap, fixedBarCount, getBarCount, mode, shouldAnimate])
 
   // Handle microphone setup and teardown
   useEffect(() => {
@@ -546,20 +557,31 @@ export const LiveWaveform = ({
             const startFreq = Math.floor(dataArray.length * 0.05)
             const endFreq = Math.floor(dataArray.length * 0.4)
             const relevantData = dataArray.slice(startFreq, endFreq)
-            const barCount = Math.floor(width / (barWidth + barGap))
+            const barCount = getBarCount(width)
             const newBars: number[] = []
 
-            // Keep the static layout symmetric without dropping the center bar
+            // Render current frequency bands in place so compact mic surfaces
+            // respond to the user's voice instead of scrolling averaged history.
             for (let i = 0; i < barCount; i++) {
-              const dataIndex = getStaticBarDataIndex({
+              const mirroredDataIndex = getStaticBarDataIndex({
                 barCount,
                 dataLength: relevantData.length,
                 index: i,
               })
-              const value = Math.min(
+              const responsiveValue = getVoiceResponsiveBarValue({
+                barCount,
+                data: relevantData,
+                index: i,
+                sensitivity,
+              })
+              const mirroredValue = Math.min(
                 1,
-                (relevantData[dataIndex] / 255) * sensitivity
+                getCompressedVoiceEnergy({
+                  sensitivity,
+                  value: relevantData[mirroredDataIndex] / 255,
+                })
               )
+              const value = Math.max(responsiveValue, mirroredValue * 0.42)
               newBars.push(Math.max(0.05, value))
             }
 
@@ -636,7 +658,7 @@ export const LiveWaveform = ({
         []
 
       const step = barWidth + barGap
-      const barCount = Math.floor(width / step)
+      const barCount = getBarCount(width)
       const centerY = height / 2
 
       // Draw bars based on mode
@@ -667,11 +689,12 @@ export const LiveWaveform = ({
             index: i,
             totalBars: barCount,
           })
-          const barHeight =
-            Math.max(
+          const barHeight = getWaveformBarHeight({
             baseBarHeight,
-            value * height * barHeightScale
-            ) * entranceProgress
+            barHeightScale,
+            height,
+            value,
+          }) * entranceProgress
           const y = centerY - barHeight / 2
 
           ctx.fillStyle = getBarFillColor({
@@ -712,11 +735,12 @@ export const LiveWaveform = ({
             index: i,
             totalBars: barCount,
           })
-          const barHeight =
-            Math.max(
+          const barHeight = getWaveformBarHeight({
             baseBarHeight,
-            value * height * barHeightScale
-            ) * entranceProgress
+            barHeightScale,
+            height,
+            value,
+          }) * entranceProgress
           const y = centerY - barHeight / 2
 
           ctx.fillStyle = getBarFillColor({
@@ -787,6 +811,7 @@ export const LiveWaveform = ({
     updateRate,
     historySize,
     barWidth,
+    fixedBarCount,
     baseBarHeight,
     barHeightScale,
     entranceAnimation,
@@ -802,6 +827,7 @@ export const LiveWaveform = ({
     barOpacityMax,
     fadeEdges,
     fadeWidth,
+    getBarCount,
     mode,
     shouldAnimate,
   ])

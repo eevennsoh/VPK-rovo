@@ -311,6 +311,10 @@ const OPENAI_EVENT_NO_OPS = new Set([
 	OPENAI_EVENT.RESPONSE_CONTENT_PART_DONE,
 ]);
 
+function isNoActiveResponseCancelError(errorMessage) {
+	return /cancellation failed:\s*no active response found/iu.test(errorMessage);
+}
+
 function normalizeOpenAIEventType(type) {
 	if (typeof type !== "string") {
 		return "";
@@ -333,6 +337,7 @@ function buildRealtimeSessionConfig({
 				format: REALTIME_AUDIO_FORMAT,
 				transcription: {
 					model: "gpt-4o-mini-transcribe",
+					language: "en",
 				},
 				turn_detection: turnDetection,
 			},
@@ -1141,8 +1146,13 @@ class RealtimeSession {
 				const isActiveResponseRace =
 					errorCode === "conversation_already_has_active_response" ||
 					/active response in progress/iu.test(errorMessage);
+				const isStaleResponseCancel = isNoActiveResponseCancelError(errorMessage);
 				// These are recoverable, non-fatal warnings — don't surface to the client.
-				if (errorCode === "input_audio_buffer_commit_empty" || isActiveResponseRace) {
+				if (errorCode === "input_audio_buffer_commit_empty" || isActiveResponseRace || isStaleResponseCancel) {
+					if (isStaleResponseCancel) {
+						this._activeResponseId = null;
+						this._pendingResponseCreate = false;
+					}
 					this._log("REALTIME", `OpenAI warning: ${errorMessage}`);
 				} else {
 					this._log("REALTIME", `OpenAI error: ${errorCode} — ${errorMessage}`);
