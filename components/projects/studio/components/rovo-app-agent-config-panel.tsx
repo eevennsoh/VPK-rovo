@@ -1370,7 +1370,7 @@ export function RovoAppAgentConfigPanel({
 										data-testid="agent-config-publish"
 										data-screen-assistant-target="studio-agent-config-publish"
 									>
-										Publish
+										Activate
 									</Button>
 								)}
 								{onClose ? (
