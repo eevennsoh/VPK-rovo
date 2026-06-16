@@ -871,12 +871,7 @@ function SkillDetailHeader({
 }
 
 function SkillDetailView({ skill, onExit }: Readonly<{ skill: SkillsDirectorySkill; onExit: () => void }>) {
-	return (
-		<div className="grid min-h-0 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
-			<SkillFileTreeSidebar skill={skill} />
-			<SkillDetailConfig key={skill.id} skill={skill} onExit={onExit} />
-		</div>
-	);
+	return <SkillDetailConfig key={skill.id} skill={skill} onExit={onExit} />;
 }
 
 const SKILL_DRAFT_KEY_PREFIX = "vpk:skill-draft:";
@@ -978,20 +973,25 @@ function SkillDetailConfig({ skill, onExit }: Readonly<{ skill: SkillsDirectoryS
 	}
 
 	return (
-		<div className="flex min-h-0 min-w-0 flex-col overflow-hidden md:pl-4">
-			<Agent className="flex min-h-0 flex-1 flex-col bg-transparent">
-				<AgentContent className="flex min-h-0 flex-1 flex-col">
-					<AgentConfigFields
-						config={config}
-						idPrefix={`skill-detail-${skill.id}`}
-						profileCover={<SkillProfileCover skill={skill} />}
-						profileMetaSlot={<SkillProfileMeta skill={skill} />}
-						showConfigToolbar={false}
-						frontmatter={{ enabled: true }}
-						onTextChange={handleTextChange}
-					/>
-				</AgentContent>
-			</Agent>
+		<div className="flex min-h-0 min-w-0 flex-col overflow-hidden">
+			<div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
+				<SkillFileTreeSidebar skill={skill} />
+				<div className="flex min-h-0 min-w-0 flex-col overflow-hidden md:pl-4">
+					<Agent className="flex min-h-0 flex-1 flex-col bg-transparent">
+						<AgentContent className="flex min-h-0 flex-1 flex-col">
+							<AgentConfigFields
+								config={config}
+								idPrefix={`skill-detail-${skill.id}`}
+								profileCover={<SkillProfileCover skill={skill} />}
+								profileMetaSlot={<SkillProfileMeta skill={skill} />}
+								showConfigToolbar={false}
+								frontmatter={{ enabled: true }}
+								onTextChange={handleTextChange}
+							/>
+						</AgentContent>
+					</Agent>
+				</div>
+			</div>
 			<div className="flex shrink-0 items-center justify-between gap-3 border-t border-border px-6 py-3">
 				<p className="min-w-0 truncate text-xs leading-4 text-text-danger">{validationError}</p>
 				<div className="flex shrink-0 items-center gap-2">
@@ -1056,7 +1056,7 @@ function SkillFileTreeSidebar({ skill }: Readonly<{ skill: SkillsDirectorySkill 
 	const selectedPath = items.find((item) => item.selected)?.id;
 
 	return (
-		<aside className="hidden min-h-0 w-[280px] shrink-0 overflow-y-auto pl-6 pr-4 md:block">
+		<aside className="hidden min-h-0 w-[280px] shrink-0 overflow-y-auto pl-6 pr-4 pt-6 md:block">
 			<FileTree
 				aria-label={`${skill.name} files`}
 				className="text-xs"

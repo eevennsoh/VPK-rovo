@@ -6,6 +6,7 @@ import {
 	FileTreeFolder,
 	FileTreeFile,
 	FileTreeActions,
+	FileTreeIcon,
 } from "@/components/ui-custom/file-tree";
 import {
 	CodeIcon,
@@ -123,8 +124,10 @@ export function FileTreeDemoWithActions() {
 		>
 			<FileTreeFolder path="src" name="src">
 				<FileTreeFile path="src/index.ts" name="index.ts">
-					<span className="size-4" />
-					<CodeIcon className="size-4 shrink-0 text-blue-500" />
+					<span className="w-3 shrink-0" />
+					<FileTreeIcon>
+						<CodeIcon className="text-blue-500" />
+					</FileTreeIcon>
 					<span className="truncate">index.ts</span>
 					<FileTreeActions>
 						<Button variant="ghost" size="icon" className="size-5">
@@ -139,8 +142,10 @@ export function FileTreeDemoWithActions() {
 					</FileTreeActions>
 				</FileTreeFile>
 				<FileTreeFile path="src/utils.ts" name="utils.ts">
-					<span className="size-4" />
-					<CodeIcon className="size-4 shrink-0 text-blue-500" />
+					<span className="w-3 shrink-0" />
+					<FileTreeIcon>
+						<CodeIcon className="text-blue-500" />
+					</FileTreeIcon>
 					<span className="truncate">utils.ts</span>
 					<FileTreeActions>
 						<Button variant="ghost" size="icon" className="size-5">

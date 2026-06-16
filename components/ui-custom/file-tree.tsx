@@ -154,14 +154,18 @@ export function FileTreeFolder({
               (Atlaskit small chevron is 12px wide).
               top-7 skips the header row height. */}
           {isExpanded && (
-            <div className="absolute bottom-0 left-3.5 top-7 w-px bg-muted-foreground/20" />
+            <div className="absolute bottom-0 left-3.5 top-7 w-px bg-icon-subtlest/20" />
           )}
           <div
             className={cn(
-              "flex w-full items-center gap-1 rounded px-2 py-1 text-left transition-colors hover:bg-muted/50",
-              isSelected && "bg-muted"
+              "relative flex w-full items-center gap-1 rounded px-2 py-1 text-left transition-colors hover:bg-muted/50",
+              isSelected && "bg-bg-selected hover:bg-bg-selected-hovered"
             )}
           >
+            {/* Selected indicator: 2px blue bar pinned to the row's left edge. */}
+            {isSelected && (
+              <div className="absolute bottom-0 left-0 top-0 my-auto h-2 w-0.5 rounded-full bg-bg-selected-bold" />
+            )}
             <CollapsibleTrigger
               render={
                 <button
@@ -174,7 +178,8 @@ export function FileTreeFolder({
               <ChevronRightIcon
                 size="small"
                 className={cn(
-                  "shrink-0 leading-[0] text-muted-foreground transition-transform",
+                  "size-3 shrink-0 leading-[0] text-icon-subtle transition-transform [&_span]:size-3! [&_svg]:size-3!",
+                  isSelected && "text-icon-selected",
                   isExpanded && "rotate-90"
                 )}
               />
@@ -186,12 +191,18 @@ export function FileTreeFolder({
             >
               <FileTreeIcon>
                 {isExpanded ? (
-                  <FolderOpenIcon size="small" className="text-blue-500" />
+                  <FolderOpenIcon
+                    size="small"
+                    className={cn("text-icon-subtle", isSelected && "text-icon-selected")}
+                  />
                 ) : (
-                  <FolderIcon size="small" className="text-blue-500" />
+                  <FolderIcon
+                    size="small"
+                    className={cn("text-icon-subtle", isSelected && "text-icon-selected")}
+                  />
                 )}
               </FileTreeIcon>
-              <FileTreeName>{name}</FileTreeName>
+              <FileTreeName className={cn(isSelected && "text-text-selected")}>{name}</FileTreeName>
             </button>
           </div>
           <CollapsibleContent>
@@ -251,8 +262,12 @@ export function FileTreeFile({
     <FileTreeFileContext value={fileContextValue}>
       <div
         className={cn(
-          "flex cursor-pointer items-center gap-1 rounded px-2 py-1 transition-colors hover:bg-muted/50",
-          isSelected && "bg-muted",
+          "relative flex cursor-pointer items-center gap-1 rounded px-2 transition-colors",
+          // Custom-content rows keep the legacy full-row highlight. The default
+          // (icon + name) row highlights an inner block instead, so the selected
+          // state is indented to the icon column (Figma 2556:28320).
+          children != null && "py-1 hover:bg-muted/50",
+          children != null && isSelected && "bg-bg-selected hover:bg-bg-selected-hovered",
           className
         )}
         onClick={handleClick}
@@ -262,15 +277,36 @@ export function FileTreeFile({
         tabIndex={0}
         {...props}
       >
+        {/* Custom-content branch: 2px blue bar pinned to the row's left edge. */}
+        {children != null && isSelected && (
+          <div className="absolute bottom-0 left-0 top-0 my-auto h-2 w-0.5 rounded-full bg-bg-selected-bold" />
+        )}
         {children ?? (
           <>
-            {/* Spacer matches the chevron width (Atlaskit small chevron = 12px)
-                so file icons align with folder icons at the same level. */}
+            {/* Chevron-width spacer (Atlaskit small chevron = 12px) aligns file
+                icons under folder icons. It sits OUTSIDE the highlight below so the
+                selected state starts at the icon, indented from the tree edge. */}
             <span className="w-3 shrink-0" />
-            <FileTreeIcon>
-              {icon ?? <FileIcon size="small" className="text-muted-foreground" />}
-            </FileTreeIcon>
-            <FileTreeName>{name}</FileTreeName>
+            <div
+              className={cn(
+                "relative -ml-1 flex min-w-0 flex-1 items-center gap-1 rounded py-1 pl-1 transition-colors hover:bg-muted/50",
+                isSelected && "bg-bg-selected hover:bg-bg-selected-hovered"
+              )}
+            >
+              {/* Selected indicator: 2px blue bar pinned to the highlight's left edge. */}
+              {isSelected && (
+                <div className="absolute bottom-0 left-0 top-0 my-auto h-2 w-0.5 rounded-full bg-bg-selected-bold" />
+              )}
+              <FileTreeIcon>
+                {icon ?? (
+                  <FileIcon
+                    size="small"
+                    className={cn("text-icon-subtle", isSelected && "text-icon-selected")}
+                  />
+                )}
+              </FileTreeIcon>
+              <FileTreeName className={cn(isSelected && "text-text-selected")}>{name}</FileTreeName>
+            </div>
           </>
         )}
       </div>
@@ -288,7 +324,11 @@ export function FileTreeIcon({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center justify-center leading-none",
+        // Front-slot icons are locked to 12×12 per the Figma spec; this clamps
+        // ADS glyphs (which render at small=16px) and any custom icon child.
+        // ADS sizes its icon span/svg via unlayered CSS, so `!` is required for
+        // these utilities to win from Tailwind's utilities layer.
+        "inline-flex size-3 shrink-0 items-center justify-center leading-none [&_img]:size-3! [&_span]:size-3! [&_svg]:size-3!",
         className
       )}
       {...props}
