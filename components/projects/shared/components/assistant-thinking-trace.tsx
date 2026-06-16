@@ -28,6 +28,7 @@ import { Shimmer } from "@/components/ui-custom/shimmer";
 import { AnimatedDots } from "@/components/ui-custom/animated-dots";
 import { Spinner } from "@/components/ui/spinner";
 import { ToolInput, ToolOutput } from "@/components/ui-custom/tool";
+import { TwgTool, type TwgToolSource } from "@/components/ui-custom/twg-tool";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icon";
 import { Lozenge } from "@/components/ui/lozenge";
@@ -124,6 +125,90 @@ const StepAgentsIcon = ({ label = "", size = "small", spacing = "none", ...props
 const StepStreamIcon = ({ label = "", size = "small", spacing = "none", ...props }: NewCoreIconProps) => (
 	<Icon render={<AiGenerativeTextSummaryIcon label={label} size={size} spacing={spacing} {...props} />} />
 );
+const STUDIO_AUTOMATION_TWG_TOOL_NAME = "twg.search_work_patterns";
+const STUDIO_AUTOMATION_TWG_SOURCES = [
+	{ id: "twg", label: "Teamwork Graph", provider: "twg" },
+	{ id: "loom", label: "Loom", provider: "loom" },
+	{ id: "slack", label: "Slack", provider: "twg", iconSrc: "/3p/slack/16.svg" },
+	{ id: "confluence", label: "Confluence", provider: "confluence" },
+	{ id: "jira", label: "Jira", provider: "jira" },
+	{ id: "figma", label: "Figma", provider: "twg", iconSrc: "/3p/figma/16.svg" },
+	{ id: "github", label: "GitHub", provider: "twg", iconSrc: "/3p/github/16.svg" },
+] satisfies ReadonlyArray<TwgToolSource>;
+type StudioAutomationToolCycleDetail = {
+	title: string;
+	description: string;
+	sources: ReadonlyArray<TwgToolSource>;
+};
+const STUDIO_AUTOMATION_TOOL_CYCLE_DETAILS: Record<string, StudioAutomationToolCycleDetail> = {
+	"parallel.source_scan": {
+		title: "Cycling through source apps",
+		description: "Checking Slack, Jira, Confluence, Loom, Figma, GitHub, Calendar, and TWG for repeatable work signals.",
+		sources: STUDIO_AUTOMATION_TWG_SOURCES,
+	},
+	"loom.scan_recent_videos": {
+		title: "Cycling Loom distribution signals",
+		description: "Following each new Loom into Slack, stakeholder messages, and Atlas update drafts.",
+		sources: [
+			{ id: "loom", label: "Loom", provider: "loom" },
+			{ id: "slack", label: "Slack", provider: "twg", iconSrc: "/3p/slack/16.svg" },
+			{ id: "confluence", label: "Confluence", provider: "confluence" },
+			{ id: "atlas", label: "Atlas", provider: "home" },
+			{ id: "twg", label: "Teamwork Graph", provider: "twg" },
+		],
+	},
+	"jira.search_agent_reaper": {
+		title: "Cycling lifecycle triage signals",
+		description: "Comparing agent-reaper-bot tickets with project, inventory, and review signals.",
+		sources: [
+			{ id: "jira", label: "Jira", provider: "jira" },
+			{ id: "studio", label: "Studio inventory", provider: "twg" },
+			{ id: "slack", label: "Slack", provider: "twg", iconSrc: "/3p/slack/16.svg" },
+			{ id: "twg", label: "Teamwork Graph", provider: "twg" },
+		],
+	},
+	"confluence.atlas_update_scan": {
+		title: "Cycling weekly update evidence",
+		description: "Checking Confluence, Atlas, Loom, Slack, and calendar rhythms for repeated synthesis work.",
+		sources: [
+			{ id: "confluence", label: "Confluence", provider: "confluence" },
+			{ id: "atlas", label: "Atlas", provider: "home" },
+			{ id: "loom", label: "Loom", provider: "loom" },
+			{ id: "slack", label: "Slack", provider: "twg", iconSrc: "/3p/slack/16.svg" },
+			{ id: "calendar", label: "Calendar", provider: "twg" },
+		],
+	},
+	"studio.rank_automation_candidates": {
+		title: "Cycling create, skip, and evidence buckets",
+		description: "Ranking candidates by recurrence, trigger clarity, and approval safety before asking for draft boundaries.",
+		sources: [
+			{ id: "twg", label: "Teamwork Graph", provider: "twg" },
+			{ id: "loom", label: "Loom", provider: "loom" },
+			{ id: "jira", label: "Jira", provider: "jira" },
+			{ id: "confluence", label: "Confluence", provider: "confluence" },
+			{ id: "slack", label: "Slack", provider: "twg", iconSrc: "/3p/slack/16.svg" },
+		],
+	},
+	"studio.resolve_creation_boundaries": {
+		title: "Cycling final draft boundaries",
+		description: "Applying create, skip, and needs-evidence choices before Studio creates the drafts.",
+		sources: [
+			{ id: "create", label: "Create", provider: "twg" },
+			{ id: "skip", label: "Skip", provider: "twg" },
+			{ id: "evidence", label: "Needs evidence", provider: "twg" },
+			{ id: "studio", label: "Studio", provider: "studio" },
+		],
+	},
+	"studio.create_agent_drafts": {
+		title: "Cycling through three Studio drafts",
+		description: "Creating the Loom distribution, lifecycle triage, and weekly digest agents.",
+		sources: [
+			{ id: "loom-agent", label: "Loom Distribution Agent", provider: "twg", iconSrc: "/avatar-agent/teamwork-agents/transcript-insights-reporter.svg" },
+			{ id: "triage-agent", label: "Inactive Agent Triage Agent", provider: "twg", iconSrc: "/avatar-agent/teamwork-agents/work-organizer.svg" },
+			{ id: "digest-agent", label: "Weekly Sprint/Atlas Digest Agent", provider: "twg", iconSrc: "/avatar-agent/teamwork-agents/team-recap.svg" },
+		],
+	},
+};
 
 function toolStateToCoTStatus(state: string): "complete" | "active" | "pending" {
 	if (state === "running" || state === "awaiting-input" || state === "approval-requested") {
@@ -177,6 +262,14 @@ function getTodoProgressLabel(status: RovoAppTodoProgressItem["status"]): string
 		return "In progress";
 	}
 	return "Pending";
+}
+
+function isStudioAutomationTwgToolCall(toolCall: ThinkingToolCallSummary): boolean {
+	return toolCall.toolName === STUDIO_AUTOMATION_TWG_TOOL_NAME;
+}
+
+function getStudioAutomationToolCycleDetail(toolCall: ThinkingToolCallSummary): StudioAutomationToolCycleDetail | null {
+	return STUDIO_AUTOMATION_TOOL_CYCLE_DETAILS[toolCall.toolName] ?? null;
 }
 
 function TraceStepsSection({
@@ -535,6 +628,84 @@ function ToolNarrationDisclosure({
 	);
 }
 
+function StudioAutomationTwgTraceDetail({
+	detailRows,
+	toolCall,
+}: Readonly<{
+	detailRows: readonly ThinkingNarrationDetailRow[] | undefined;
+	toolCall: ThinkingToolCallSummary;
+}>): ReactNode {
+	const rows = (detailRows ?? []).filter((row) => row.content.trim().length > 0);
+	const status = toolStateToCoTStatus(toolCall.state);
+
+	return (
+		<div className="space-y-2">
+			<TwgTool
+				defaultOpen
+				description={toolCall.outputPreview ?? "Correlating source signals, collaborators, projects, and candidate workflows."}
+				showChevron={false}
+				sources={STUDIO_AUTOMATION_TWG_SOURCES}
+				status={status}
+				title="Correlating through Teamwork Graph"
+			/>
+			{rows.length > 0 ? (
+				<div className="ml-11 space-y-1 text-xs leading-5 text-text-subtle">
+					{rows.map((row, index) => (
+						<div key={`${index}-${row.content}`} className="rounded-md border border-border/60 bg-surface px-2.5 py-2">
+							<p>{row.content}</p>
+							{row.output !== undefined ? (
+								<p className="mt-1 text-text-subtlest">
+									{typeof row.output === "string" ? row.output : JSON.stringify(row.output)}
+								</p>
+							) : null}
+						</div>
+					))}
+				</div>
+			) : null}
+		</div>
+	);
+}
+
+function StudioAutomationToolCycleTraceDetail({
+	detailRows,
+	toolCall,
+	cycleDetail,
+}: Readonly<{
+	detailRows: readonly ThinkingNarrationDetailRow[] | undefined;
+	toolCall: ThinkingToolCallSummary;
+	cycleDetail: StudioAutomationToolCycleDetail;
+}>): ReactNode {
+	const rows = (detailRows ?? []).filter((row) => row.content.trim().length > 0);
+	const status = toolStateToCoTStatus(toolCall.state);
+
+	return (
+		<div className="space-y-2">
+			<TwgTool
+				defaultOpen
+				description={toolCall.state === "completed" ? toolCall.outputPreview ?? cycleDetail.description : cycleDetail.description}
+				showChevron={false}
+				sources={cycleDetail.sources}
+				status={status}
+				title={cycleDetail.title}
+			/>
+			{rows.length > 0 ? (
+				<div className="ml-11 space-y-1 text-xs leading-5 text-text-subtle">
+					{rows.map((row, index) => (
+						<div key={`${index}-${row.content}`} className="rounded-md border border-border/60 bg-surface px-2.5 py-2">
+							<p>{row.content}</p>
+							{row.output !== undefined ? (
+								<p className="mt-1 text-text-subtlest">
+									{typeof row.output === "string" ? row.output : JSON.stringify(row.output)}
+								</p>
+							) : null}
+						</div>
+					))}
+				</div>
+			) : null}
+		</div>
+	);
+}
+
 function ThinkingToolCallStep({
 	messageId,
 	narration,
@@ -553,6 +724,8 @@ function ThinkingToolCallStep({
 	onOpenChange: (open: boolean) => void;
 }>): ReactNode {
 	const status = toolStateToCoTStatus(toolCall.state);
+	const isStudioAutomationTwgTool = isStudioAutomationTwgToolCall(toolCall);
+	const studioAutomationToolCycleDetail = getStudioAutomationToolCycleDetail(toolCall);
 	const resolvedToolIcon = resolveToolIcon({
 		toolName: toolCall.toolName,
 		title: toolCall.toolName,
@@ -564,8 +737,8 @@ function ThinkingToolCallStep({
 		<ChainOfThoughtStep
 			key={`${messageId}-cot-tool-${toolCall.id}-${index}`}
 			collapsible
-			defaultOpen={isToolCallStepOpenByDefault(toolCall.state)}
-			open={open}
+			defaultOpen={isStudioAutomationTwgTool || Boolean(studioAutomationToolCycleDetail) || isToolCallStepOpenByDefault(toolCall.state)}
+			open={isStudioAutomationTwgTool ? true : open}
 			onOpenChange={onOpenChange}
 			iconRender={renderResolvedToolIcon(resolvedToolIcon, {
 				className: "size-4",
@@ -578,18 +751,28 @@ function ThinkingToolCallStep({
 			}
 			status={status}
 		>
-			<ToolNarrationDisclosure detailRows={detailRows}>
-				{toolCall.input !== undefined ? <ToolInput codeBlockSize="sm" input={toolCall.input} /> : null}
-				<ToolOutput
-					codeBlockSize="sm"
-					errorText={toolCall.errorText}
-					output={toolCall.output}
-					outputPreview={toolCall.outputPreview}
-					outputBytes={toolCall.outputBytes}
-					outputTruncated={toolCall.outputTruncated}
-					suppressedRawOutput={toolCall.suppressedRawOutput}
+			{isStudioAutomationTwgTool ? (
+				<StudioAutomationTwgTraceDetail detailRows={detailRows} toolCall={toolCall} />
+			) : studioAutomationToolCycleDetail ? (
+				<StudioAutomationToolCycleTraceDetail
+					cycleDetail={studioAutomationToolCycleDetail}
+					detailRows={detailRows}
+					toolCall={toolCall}
 				/>
-			</ToolNarrationDisclosure>
+			) : (
+				<ToolNarrationDisclosure detailRows={detailRows}>
+					{toolCall.input !== undefined ? <ToolInput codeBlockSize="sm" input={toolCall.input} /> : null}
+					<ToolOutput
+						codeBlockSize="sm"
+						errorText={toolCall.errorText}
+						output={toolCall.output}
+						outputPreview={toolCall.outputPreview}
+						outputBytes={toolCall.outputBytes}
+						outputTruncated={toolCall.outputTruncated}
+						suppressedRawOutput={toolCall.suppressedRawOutput}
+					/>
+				</ToolNarrationDisclosure>
+			)}
 		</ChainOfThoughtStep>
 	);
 }

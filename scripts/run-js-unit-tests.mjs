@@ -56,6 +56,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// Deterministic studio agent-builder: prompt → agent create/update patch
 	// against the fake catalogs. Pure module under components/, so gate explicitly.
 	"components/projects/studio/lib/demo-agent-builder.test.js",
+	// Studio-only automation-discovery demo: custom ArtifactList widget and TWG
+	// trace wiring live under components/, so gate this focused source coverage.
+	"components/projects/studio/components/rovo-app-automation-discovery-widget.test.js",
 	// Shared automation flow cover used by trigger config and the test landing
 	// page, so both surfaces keep the same trigger → agent visual treatment.
 	"components/blocks/triggers/components/agent-automation-flow-cover.test.js",

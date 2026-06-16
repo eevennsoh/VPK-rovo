@@ -4,6 +4,10 @@ const path = require("node:path");
 const test = require("node:test");
 
 const SOURCE = fs.readFileSync(path.join(__dirname, "rovo-app-sidebar.tsx"), "utf8");
+const RECENT_AGENTS_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "lib", "studio-sidebar-recent-agents.ts"),
+	"utf8",
+);
 
 test("Studio sidebar selects Agents by default instead of Insights", () => {
 	assert.match(
@@ -62,4 +66,14 @@ test("Studio sidebar does not select View all agents while a session agent is ac
 		SOURCE,
 		/isSelected=\{isAgentsHomeActive && !hasSelectedRecentAgent && !hasSelectedSessionAgent\}/u,
 	);
+});
+
+test("Studio sidebar renders automation discovery generated agents as transient creating rows", () => {
+	assert.match(RECENT_AGENTS_SOURCE, /export type StudioSidebarRecentAgentKind = "agent" \| "generating" \| "wip";/u);
+	assert.match(SOURCE, /generatingAgents\?: ReadonlyArray<StudioSidebarGeneratingAgent>;/u);
+	assert.match(SOURCE, /generatingAgents = \[\],[\s\S]*sessionAgentEntries = \[\]/u);
+	assert.match(SOURCE, /kind: "generating" as const,[\s\S]*label: agent\.label,[\s\S]*lastTouchedAt: agent\.lastTouchedAt/u);
+	assert.match(SOURCE, /const isGenerating = recentAgent\.kind === "generating";[\s\S]*const isCreating = recentAgent\.kind === "wip" \|\| isGenerating;/u);
+	assert.match(SOURCE, /onClick=\{isGenerating \? undefined : \(\) => \{/u);
+	assert.match(SOURCE, /actions=\{\s*isGenerating \? null : \(/u);
 });

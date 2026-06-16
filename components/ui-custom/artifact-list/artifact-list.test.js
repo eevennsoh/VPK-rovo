@@ -35,25 +35,29 @@ test("Artifact List card uses the raised-surface elevation skin from Figma", () 
 	assert.match(source, /boxShadow: token\("elevation\.shadow\.raised"\)/u);
 });
 
-test("Artifact List rows are 64px, hover to surface-hovered, and the last row is borderless", () => {
+test("Artifact List rows are at least 64px, hover to surface-hovered, and the last row is borderless", () => {
 	const source = readProjectFile(
 		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 
-	assert.match(source, /flex h-16 items-center gap-3 px-3 transition-colors hover:bg-surface-hovered/u);
+	assert.match(source, /flex min-h-16 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered/u);
 	// Every row except the last draws a bottom border.
 	assert.match(source, /!isLast && "border-b border-border"/u);
 	assert.match(source, /isLast=\{index === items\.length - 1\}/u);
 });
 
-test("Artifact List leading visual is a neutral tile at the ADS tile radius", () => {
+test("Artifact List leading visual uses the ADS tile radius and neutral inset-image rows", () => {
 	const source = readProjectFile(
 		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 
-	assert.match(source, /<Tile[\s\S]*variant="neutral"[\s\S]*size="medium"[\s\S]*className="rounded-tile"/u);
-	// Logo path renders inset on the same tile; icon is the fallback.
-	assert.match(source, /item\.logoSrc \?[\s\S]*<img[\s\S]*src=\{item\.logoSrc\}[\s\S]*\) : \([\s\S]*item\.icon/u);
+	assert.match(source, /const usesInsetImage = Boolean\(item\.avatarSrc \|\| item\.logoSrc\);/u);
+	assert.match(source, /variant=\{usesInsetImage \? "neutral" : item\.tileVariant \?\? "neutral"\}/u);
+	assert.match(source, /size="medium"[\s\S]*className=\{cn\([\s\S]*"rounded-tile"/u);
+	// Avatar/logo paths render inset on the same tile; icon is the fallback.
+	assert.match(source, /if \(item\.avatarSrc\)[\s\S]*<AgentAvatarVisual[\s\S]*avatarSrc=\{item\.avatarSrc\}/u);
+	assert.match(source, /if \(item\.logoSrc\)[\s\S]*<img[\s\S]*src=\{item\.logoSrc\}/u);
+	assert.match(source, /return item\.icon;/u);
 });
 
 test("Artifact List metadata renders source • owner with the subtlest dot", () => {
@@ -76,11 +80,21 @@ test("Artifact List Open button is hover/focus-revealed and stays keyboard-reach
 	// The row opts into the reveal group and renders the button through the
 	// reveal-actions overlay (a real, focusable Button — never inert/hidden).
 	assert.match(source, /hoverRevealRowClassName/u);
-	assert.match(source, /<HoverRevealActions[\s\S]*action=\{[\s\S]*<Button variant="outline" size="default" type="button" onClick=\{\(\) => onOpen\?\.\(item\)\}/u);
+	assert.match(source, /<HoverRevealActions[\s\S]*action=\{[\s\S]*<Button[\s\S]*className="whitespace-nowrap"[\s\S]*variant="outline"[\s\S]*size="default"[\s\S]*type="button"[\s\S]*event\.stopPropagation\(\);[\s\S]*handleOpen\(\);/u);
+	assert.match(source, /openOnRowClick\?: boolean;/u);
 	assert.doesNotMatch(source, /\binert\b/u);
 	// The primitive reveals on keyboard focus, not hover alone, so the button is
 	// reachable for keyboard users.
 	assert.match(primitive, /group-has-\[:focus-visible\]\/hover-reveal-row:opacity-100/u);
+});
+
+test("Artifact List reserves room for the Open action at compact widths", () => {
+	const source = readProjectFile(
+		"components/ui-custom/artifact-list/components/artifact-list.tsx",
+	);
+
+	assert.match(source, /className="min-w-0 flex-1 pr-\[92px\] transition-\[padding\] duration-normal ease-out"/u);
+	assert.doesNotMatch(source, /group-hover\/hover-reveal-row:pr-\[72px\]/u);
 });
 
 test("Artifact List docs demo renders the sample items card", () => {
