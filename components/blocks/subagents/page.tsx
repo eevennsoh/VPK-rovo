@@ -9,7 +9,7 @@ import {
 	type AgentConfigTextFieldName,
 	AgentContent,
 	toggleAgentConfigDisabledItem,
-} from "@/components/blocks/agent";
+} from "@/components/blocks/agent-2";
 import { SubagentsNavigator } from "@/components/blocks/subagents/subagents-navigator";
 import { useSubagentsNavigatorTop } from "@/components/projects/studio/hooks/use-subagents-navigator-top";
 import { ManageSubagentsDialog } from "@/components/blocks/subagents/components/manage-subagents-dialog";
