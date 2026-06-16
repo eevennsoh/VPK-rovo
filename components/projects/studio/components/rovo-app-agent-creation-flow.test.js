@@ -794,6 +794,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /restoreSessionAgentVersion,[\s\S]*sessionAgentSaveStatus,[\s\S]*sessionAgentSavedAt,[\s\S]*\} = useRovoChat\(\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const \[floatingLiveChatRequestKey, setFloatingLiveChatRequestKey\] = useState\(0\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenFloatingRovoChat = useCallback\(\(\) => \{[\s\S]*resetAgentToRovo\(\);[\s\S]*setFloatingLiveChatRequestKey\(\(currentKey\) => currentKey \+ 1\);[\s\S]*openChat\("floating"\);[\s\S]*\}, \[openChat, resetAgentToRovo\]\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /useEffect\(\(\) => \{[\s\S]*if \(chatSurface !== "floating"\) \{[\s\S]*setFloatingLiveChatRequestKey\(0\);[\s\S]*\}[\s\S]*\}, \[chatSurface\]\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<FloatingRovoButton[\s\S]*ariaLabel="Open Rovo chat"[\s\S]*product="home"[\s\S]*onButtonClick=\{handleOpenFloatingRovoChat\}[\s\S]*persistentBar=\{rovoButtonPersistentBar\}[\s\S]*\/>/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /agent-config-rovo-bar-cursor/u);
 	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /Point and select/u);

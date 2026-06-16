@@ -89,6 +89,7 @@ test("Rovo button persistent bar only shows the voice action", () => {
 	assert.doesNotMatch(ROVO_BUTTON_PAGE_SOURCE, /Point and select/u);
 	assert.match(ROVO_BUTTON_PAGE_SOURCE, /const \[floatingLiveChatRequestKey, setFloatingLiveChatRequestKey\] = useState\(0\);/u);
 	assert.match(ROVO_BUTTON_PAGE_SOURCE, /const handleOpenFloatingLiveChat = useCallback\(\(\) => \{[\s\S]*setFloatingLiveChatRequestKey\(\(currentKey\) => currentKey \+ 1\);[\s\S]*openChat\("floating"\);[\s\S]*\}, \[openChat\]\);/u);
+	assert.match(ROVO_BUTTON_PAGE_SOURCE, /useEffect\(\(\) => \{[\s\S]*if \(chatSurface !== "floating"\) \{[\s\S]*setFloatingLiveChatRequestKey\(0\);[\s\S]*\}[\s\S]*\}, \[chatSurface\]\);/u);
 	assert.match(ROVO_BUTTON_PAGE_SOURCE, /id: "rovo-button-bar-voice"/u);
 	assert.match(ROVO_BUTTON_PAGE_SOURCE, /ariaLabel: "Talk to Rovo"/u);
 	assert.match(ROVO_BUTTON_PAGE_SOURCE, /tooltipLabel: "Live chat"/u);

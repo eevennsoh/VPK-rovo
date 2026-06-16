@@ -1186,6 +1186,11 @@ export function RovoAppAgentConfigPanel({
 		setFloatingLiveChatRequestKey((currentKey) => currentKey + 1);
 		openChat("floating");
 	}, [openChat, resetAgentToRovo]);
+	useEffect(() => {
+		if (chatSurface !== "floating") {
+			setFloatingLiveChatRequestKey(0);
+		}
+	}, [chatSurface]);
 
 	// On the agent config screen the floating Rovo button shows its persistent
 	// toolbar variant, mirroring the rovo-button demo.

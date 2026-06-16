@@ -139,6 +139,11 @@ export default function RovoButtonProjectPage({
 		setFloatingLiveChatRequestKey((currentKey) => currentKey + 1);
 		openChat("floating");
 	}, [openChat]);
+	useEffect(() => {
+		if (chatSurface !== "floating") {
+			setFloatingLiveChatRequestKey(0);
+		}
+	}, [chatSurface]);
 
 	const suggestion = useMemo<FloatingRovoButtonSuggestion | null>(() => {
 		if (demoSuggestionState === "hidden") {
