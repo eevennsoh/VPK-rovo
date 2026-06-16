@@ -33,7 +33,7 @@ test("Studio RFP demo agent matches the /agents RFP story and starts with the Ji
 	} = await loadModule();
 
 	assert.equal(STUDIO_RFP_DEMO_AGENT_PROFILE_ID, "rfp-drafting-agent");
-	assert.equal(STUDIO_RFP_DEMO_AGENT_SOURCE_KEY, "studio-rfp-demo-agent:v1");
+	assert.equal(STUDIO_RFP_DEMO_AGENT_SOURCE_KEY, "studio-rfp-demo-agent:v2");
 	assert.equal(STUDIO_RFP_DEMO_AGENT_RESULT.agentId, "rfp-drafting-agent");
 	assert.equal(STUDIO_RFP_DEMO_AGENT_RESULT.name, "RFP Drafter");
 	assert.equal(STUDIO_RFP_DEMO_AGENT_RESULT.avatarSrc, "/avatar-agent/dev-agents/feature-flag-cleaner.svg");
@@ -45,11 +45,19 @@ test("Studio RFP demo agent matches the /agents RFP story and starts with the Ji
 	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /## Analysis Checklist/u);
 	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /## Response Package Requirements/u);
 	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /## Leadership Summary Behavior/u);
-	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /Enterprise RFP Response Jira project/u);
-	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /- Primary workspace: the Enterprise RFP Response Jira project\./u);
-	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /1\. Inspect the Jira work item/u);
+	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /Enterprise RFP Response @\[app:jira\] project/u);
+	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /- Primary workspace: the Enterprise RFP Response @\[app:jira\] project\./u);
+	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /1\. Inspect the @\[app:jira\] work item/u);
 	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /Only send the Friday leadership Slack summary when a scheduled Slack trigger exists\./u);
 	assert.doesNotMatch(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /Code Reviewer/u);
+
+	// Apps, skills, and knowledge are referenced inline as `@[category:id]` mention
+	// tokens so the instruction body renders the same visual lozenges as the config
+	// rows below it, instead of the capabilities only living in a separate section.
+	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /@\[app:confluence\]/u);
+	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /@\[knowledge:sharepoint:proposal-library\]/u);
+	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /@\[skill:build-report\]/u);
+	assert.match(STUDIO_RFP_DEMO_AGENT_RESULT.instructions, /@\[skill:audit-trail-reporter\]/u);
 
 	assert.deepEqual(STUDIO_RFP_DEMO_AGENT_RESULT.apps, ["Jira", "Confluence"]);
 	assert.deepEqual(STUDIO_RFP_DEMO_AGENT_RESULT.skills, ["Build report", "Audit trail report"]);
