@@ -68,6 +68,7 @@ import {
 	planDeterministicAgentBuild,
 } from "@/components/projects/studio/lib/demo-agent-builder";
 import { buildComposerHermesContext, shouldResetComposerHermesSkillSelection } from "@/components/projects/studio/lib/rovo-app-hermes-skill-selection";
+import { getStudioAutomationGeneratingAgents } from "@/components/projects/studio/lib/studio-automation-generating-agents";
 import { useHermesEmbedEnabled } from "@/lib/hermes-feature-flags";
 import { buildRovoAppThreadPath } from "@/components/projects/studio/lib/rovo-app-thread-route-sync";
 import { createRovoAppUserMessage } from "@/components/projects/studio/lib/rovo-app-user-message";
@@ -227,6 +228,7 @@ const REALTIME_THREAD_SUMMARY_MAX_MESSAGES = 10;
 const REALTIME_RESULT_SUMMARY_MAX_CHARS = 500;
 const ROVO_APP_SPLIT_CHAT_PANEL_ID = "rovo-app-chat-pane";
 const ROVO_APP_SPLIT_ARTIFACT_PANEL_ID = "rovo-app-artifact-pane";
+const STUDIO_AUTOMATION_DISCOVERY_SOURCE_PATTERN = /\b(?:slack|jira|confluence|loom|figma|github|bitbucket|calendar|atlas|twg|teamwork graph)\b/giu;
 type HomeStarterCategory = "analyze" | "brainstorm" | "review" | "summarize" | "create";
 
 interface HomeStarterCategoryOption {
@@ -246,6 +248,33 @@ interface HomeStarterHeroDecoration {
 	bannerClassName: string;
 	skills: ReadonlyArray<HomeStarterHeroSkill>;
 	sources: ReadonlyArray<TwgToolSource>;
+}
+
+function isStudioAutomationDiscoveryDemoPrompt(prompt: string): boolean {
+	const normalized = prompt
+		.toLowerCase()
+		.replace(/[^\p{L}\p{N}]+/gu, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+	if (!normalized) {
+		return false;
+	}
+
+	const sourceMatches = new Set(normalized.match(STUDIO_AUTOMATION_DISCOVERY_SOURCE_PATTERN) ?? []).size;
+	const hasRecentWorkSignal =
+		/\b(?:last|past|recent)\s+(?:30|thirty)\s+days?\b/u.test(normalized) ||
+		/\b(?:last|past|recent)\s+month\b/u.test(normalized) ||
+		normalized.includes("work history") ||
+		normalized.includes("recent work");
+	const hasAutomationSignal =
+		normalized.includes("manual workflow") ||
+		normalized.includes("manual workflows") ||
+		normalized.includes("repeated workflow") ||
+		normalized.includes("automation") ||
+		normalized.includes("agentic") ||
+		/\bcreate\s+(?:an?\s+)?agents?\b/u.test(normalized);
+
+	return hasRecentWorkSignal && hasAutomationSignal && sourceMatches >= 3;
 }
 
 interface HomeStarterTemplate {
@@ -2318,6 +2347,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			};
 		});
 		}, [chat.activeThreadId, chat.messages, chat.threads, studioAgentCreationThreadIds, studioAgentCreationThreadTouchedAtRef]);
+	const studioAutomationGeneratingAgents = useMemo(() => (
+		getStudioAutomationGeneratingAgents(chat.messages)
+	), [chat.messages]);
 	const handledAgentResultKeysRef = useLazyRef<Set<string>>(() => new Set());
 	const previousTypedAnchorUserMessageIdRef = useRef<string | null>(null);
 	const typedScrollAnchorSourceRef = useRef<TypedScrollAnchorSource>("none");
@@ -3262,7 +3294,12 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		async ({ files, text }: { files: FileUIPart[]; text: string }) => {
 			const realtimeChat = chatRef.current as RovoAppRealtimeShellAdapter;
 			const realtimeVoice = realtime as RealtimeVoiceShellResult;
-			const shouldStartStudioAgentCreation = isDefaultAgentHomeStateRef.current && !isRealtimeActive;
+			const trimmedText = text.trim();
+			const isAutomationDiscoveryDemoPrompt = isStudioAutomationDiscoveryDemoPrompt(trimmedText);
+			const shouldStartStudioAgentCreation =
+				isDefaultAgentHomeStateRef.current &&
+				!isRealtimeActive &&
+				!isAutomationDiscoveryDemoPrompt;
 			const creationTemplate = shouldStartStudioAgentCreation ? (creationTemplateRef.current ?? undefined) : undefined;
 			const studioAgentCreationContext = shouldStartStudioAgentCreation ? buildStudioAgentCreationContext(text, creationTemplate) : undefined;
 			const contextDescription = mergeContextDescriptions(annotationContextRef.current, studioAgentCreationContext);
@@ -3327,8 +3364,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						return;
 					}
 				}
-
-			const trimmedText = text.trim();
 
 			// Deterministic demo agent-editor. Studio build prompts typed while an
 			// agent draft is open ("add a trigger to…", "give it Jira tools",
@@ -4554,10 +4589,11 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	);
 
 	return (
-			<SidebarProvider className={cn(embedded ? "h-full" : "h-svh", "overflow-hidden")} defaultOpen={!embedded} onOpenChange={chat.setSidebarOpen} open={chat.sidebarOpen} style={rovoAppSidebarStyle}>
+		<SidebarProvider className={cn(embedded ? "h-full" : "h-svh", "overflow-hidden")} defaultOpen={!embedded} onOpenChange={chat.setSidebarOpen} open={chat.sidebarOpen} style={rovoAppSidebarStyle}>
 			<RovoAppSidebar
 				activeThreadId={chat.activeThreadId}
 				agentCreationThreads={studioAgentCreationThreads}
+				generatingAgents={studioAutomationGeneratingAgents}
 				hoverOpen={isHoverOpen}
 				isAgentsHomeActive={isDefaultAgentHomeState}
 				isResizing={sidebarResize.isResizing}

@@ -1,6 +1,6 @@
 export const STUDIO_SIDEBAR_RECENT_AGENT_LIMIT = 5;
 
-export type StudioSidebarRecentAgentKind = "agent" | "wip";
+export type StudioSidebarRecentAgentKind = "agent" | "generating" | "wip";
 
 export interface StudioSidebarRecentAgentItem {
 	avatarSrc?: string;

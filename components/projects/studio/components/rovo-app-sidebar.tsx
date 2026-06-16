@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils";
 interface RovoAppSidebarProps {
 	activeThreadId: string | null;
 	agentCreationThreads?: ReadonlyArray<StudioAgentCreationThread>;
+	generatingAgents?: ReadonlyArray<StudioSidebarGeneratingAgent>;
 	selectedAgentId?: string;
 	sessionAgentEntries?: ReadonlyArray<StudioSessionAgentEntry>;
 	onCancelThreadRun: (threadId: string) => Promise<void>;
@@ -128,6 +129,13 @@ interface StudioAgentCreationThread {
 	lastTouchedAt: number;
 	title: string;
 	isAwaitingResponse?: boolean;
+}
+
+interface StudioSidebarGeneratingAgent {
+	avatarSrc?: string;
+	id: string;
+	label: string;
+	lastTouchedAt: number;
 }
 
 function StudioSidebarNavItem({ actions, icon, isExpanded, isSelected = false, label, onClick }: Readonly<StudioSidebarNavItem>) {
@@ -275,6 +283,7 @@ function RecentAgentRowActions({
 function StudioSidebarNavigation({
 	activeThreadId,
 	agentCreationThreads = [],
+	generatingAgents = [],
 	isAgentsHomeActive = false,
 	onDeleteAgent,
 	onDeleteAgentCreationThread,
@@ -287,6 +296,7 @@ function StudioSidebarNavigation({
 }: Readonly<{
 	activeThreadId: string | null;
 	agentCreationThreads?: ReadonlyArray<StudioAgentCreationThread>;
+	generatingAgents?: ReadonlyArray<StudioSidebarGeneratingAgent>;
 	isAgentsHomeActive?: boolean;
 	onDeleteAgent?: (agentId: string) => void;
 	onDeleteAgentCreationThread?: (threadId: string) => void;
@@ -298,6 +308,13 @@ function StudioSidebarNavigation({
 	sessionAgentEntries?: ReadonlyArray<StudioSessionAgentEntry>;
 }>) {
 	const recentAgents = React.useMemo(() => getStudioSidebarRecentAgents([
+		...generatingAgents.map((agent) => ({
+			avatarSrc: agent.avatarSrc,
+			id: agent.id,
+			kind: "generating" as const,
+			label: agent.label,
+			lastTouchedAt: agent.lastTouchedAt,
+		})),
 		...agentCreationThreads.map((thread) => ({
 			id: thread.id,
 			kind: "wip" as const,
@@ -312,7 +329,7 @@ function StudioSidebarNavigation({
 			label: entry.profile.name,
 			lastTouchedAt: entry.lastTouchedAt,
 		})),
-	]), [agentCreationThreads, sessionAgentEntries]);
+	]), [agentCreationThreads, generatingAgents, sessionAgentEntries]);
 	const hasRecentAgents = recentAgents.items.length > 0;
 	const hasSelectedRecentAgent = recentAgents.items.some((item) =>
 		getStudioSidebarRecentAgentSelected(item, recentAgents.items, activeThreadId, selectedAgentId)
@@ -324,9 +341,11 @@ function StudioSidebarNavigation({
 	// recent agent becomes selected from outside the visible list; a direct header
 	// click can still collapse the group.
 	const [isAgentsExpanded, setIsAgentsExpanded] = React.useState(true);
-	if (hasSelectedRecentAgent && !isAgentsExpanded) {
-		setIsAgentsExpanded(true);
-	}
+	React.useEffect(() => {
+		if (hasSelectedRecentAgent) {
+			setIsAgentsExpanded(true);
+		}
+	}, [hasSelectedRecentAgent]);
 
 	return (
 		<nav aria-label="Studio" className="flex shrink-0 flex-col gap-3">
@@ -377,7 +396,8 @@ function StudioSidebarNavigation({
 										{shouldShowRecentAgents && isAgentsExpanded ? (
 											<div className="flex flex-col pl-3">
 												{recentAgents.items.map((recentAgent) => {
-													const isCreating = recentAgent.kind === "wip";
+													const isGenerating = recentAgent.kind === "generating";
+													const isCreating = recentAgent.kind === "wip" || isGenerating;
 													const isAwaitingResponse = isCreating && recentAgent.isAwaitingResponse === true;
 
 													return (
@@ -405,7 +425,7 @@ function StudioSidebarNavigation({
 															}
 															leadingSize="medium"
 															isSelected={getStudioSidebarRecentAgentSelected(recentAgent, recentAgents.items, activeThreadId, selectedAgentId)}
-															onClick={() => {
+															onClick={isGenerating ? undefined : () => {
 																if (recentAgent.kind === "wip") {
 																	onSelectAgentCreationThread?.(recentAgent.id);
 																} else {
@@ -413,23 +433,25 @@ function StudioSidebarNavigation({
 																}
 															}}
 															actions={
-																<RecentAgentRowActions
-																	label={recentAgent.label}
-																	onEdit={() => {
-																		if (recentAgent.kind === "wip") {
-																			onSelectAgentCreationThread?.(recentAgent.id);
-																		} else {
-																			onSelectAgent?.(recentAgent.id);
-																		}
-																	}}
-																	onDelete={() => {
-																		if (recentAgent.kind === "wip") {
-																			onDeleteAgentCreationThread?.(recentAgent.id);
-																		} else {
-																			onDeleteAgent?.(recentAgent.id);
-																		}
-																	}}
-																/>
+																isGenerating ? null : (
+																	<RecentAgentRowActions
+																		label={recentAgent.label}
+																		onEdit={() => {
+																			if (recentAgent.kind === "wip") {
+																				onSelectAgentCreationThread?.(recentAgent.id);
+																			} else {
+																				onSelectAgent?.(recentAgent.id);
+																			}
+																		}}
+																		onDelete={() => {
+																			if (recentAgent.kind === "wip") {
+																				onDeleteAgentCreationThread?.(recentAgent.id);
+																			} else {
+																				onDeleteAgent?.(recentAgent.id);
+																			}
+																		}}
+																	/>
+																)
 															}
 															className="min-h-7"
 														/>
@@ -461,6 +483,7 @@ function StudioSidebarNavigation({
 export function RovoAppSidebar({
 	activeThreadId,
 	agentCreationThreads,
+	generatingAgents,
 	hoverOpen = false,
 	headerOffsetPx = TOP_NAV_HEADER_HEIGHT_PX,
 	isAgentsHomeActive = false,
@@ -508,6 +531,7 @@ export function RovoAppSidebar({
 				<StudioSidebarNavigation
 					activeThreadId={activeThreadId}
 					agentCreationThreads={agentCreationThreads}
+					generatingAgents={generatingAgents}
 					isAgentsHomeActive={isAgentsHomeActive}
 					onDeleteAgent={onDeleteAgent}
 					onDeleteAgentCreationThread={(threadId) => {

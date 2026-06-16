@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { ErrorInfo, ReactNode, RefObject } from "react";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
+import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/artifact-list";
 import { Attachment, AttachmentPreview, Attachments } from "@/components/ui-custom/attachments";
 import { Conversation, ConversationContent, ConversationScrollButton, type ConversationFollowMode, useConversationContext } from "@/components/ui-custom/conversation";
 import { Message, MessageActions, MessageContent, MessageCopyAction, MessageEditAction, MessageRegenerateAction, MessageResponse, MessageVoteActions } from "@/components/ui-custom/message";
@@ -168,6 +169,107 @@ const ROVO_APP_EMPTY_STATE_REDUCED_ITEM_VARIANTS = {
 	},
 } as const;
 type RovoAppEmptyStateItemVariants = typeof ROVO_APP_EMPTY_STATE_ITEM_VARIANTS | typeof ROVO_APP_EMPTY_STATE_REDUCED_ITEM_VARIANTS;
+const STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE = "studio-automation-artifact-list";
+
+interface StudioAutomationArtifactListEntry {
+	item: ArtifactListItem;
+	agentResult: RovoDataParts["agent-result"];
+}
+
+interface StudioAutomationArtifactListPayload {
+	type: typeof STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE;
+	title: string;
+	summary?: string;
+	agents: StudioAutomationArtifactListEntry[];
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+	return value !== null && typeof value === "object" && !Array.isArray(value)
+		? value as Record<string, unknown>
+		: null;
+}
+
+function getString(value: unknown): string | null {
+	return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
+function parseStudioAutomationArtifactListPayload(payload: unknown): StudioAutomationArtifactListPayload | null {
+	const record = asRecord(payload);
+	if (!record || record.type !== STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE) {
+		return null;
+	}
+
+	const title = getString(record.title) ?? "Generated agents";
+	const rawAgents = Array.isArray(record.agents) ? record.agents : [];
+	const agents = rawAgents.flatMap((entry): StudioAutomationArtifactListEntry[] => {
+		const entryRecord = asRecord(entry);
+		const itemRecord = asRecord(entryRecord?.item);
+		const agentResult = entryRecord?.agentResult as RovoDataParts["agent-result"] | null | undefined;
+		const id = getString(itemRecord?.id);
+		const itemTitle = getString(itemRecord?.title);
+		if (!id || !itemTitle || !isGeneratedAgentResult(agentResult)) {
+			return [];
+		}
+
+		return [{
+			item: {
+				id,
+				title: itemTitle,
+				source: getString(itemRecord?.source) ?? "Studio draft",
+				owner: getString(itemRecord?.owner) ?? agentResult.byline ?? "Generated agent",
+				logoSrc: getString(itemRecord?.logoSrc) ?? agentResult.avatarSrc,
+			},
+			agentResult,
+		}];
+	});
+
+	if (agents.length === 0) {
+		return null;
+	}
+
+	return {
+		type: STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE,
+		title,
+		summary: getString(record.summary) ?? undefined,
+		agents,
+	};
+}
+
+function StudioAutomationArtifactListWidget({
+	messageId,
+	onAgentResultSelect,
+	payload,
+}: Readonly<{
+	messageId: string;
+	onAgentResultSelect?: (agent: RovoDataParts["agent-result"], options?: { sourceMessageId?: string }) => void;
+	payload: StudioAutomationArtifactListPayload;
+}>) {
+	const agentByItemId = useMemo(
+		() => new Map(payload.agents.map((agent) => [agent.item.id, agent.agentResult] as const)),
+		[payload.agents],
+	);
+
+	return (
+		<Fragment>
+			<div className="mb-2 w-full max-w-3xl">
+				<h3 className="text-sm font-semibold leading-5 text-text">{payload.title}</h3>
+				{payload.summary ? <p className="mt-0.5 text-xs leading-4 text-text-subtle">{payload.summary}</p> : null}
+			</div>
+			<ArtifactList
+				className="w-full max-w-3xl"
+				items={payload.agents.map((agent) => agent.item)}
+				openLabel="Open draft"
+				openOnRowClick
+				onOpen={(item) => {
+					const agent = agentByItemId.get(item.id);
+					if (agent) {
+						onAgentResultSelect?.(agent, { sourceMessageId: messageId });
+					}
+				}}
+			/>
+		</Fragment>
+	);
+}
 
 function hasRovoAppEmptyStateIllustration(emptyState: RovoAppEmptyState): emptyState is RovoAppIllustratedEmptyState {
 	return "illustrationClassName" in emptyState;
@@ -538,6 +640,7 @@ function AssistantMessage({
 	isThinkingLifecycleStreaming,
 	message,
 	onBuildPlan,
+	onAgentResultSelect,
 	onOpenBrowserPreview,
 	onOpenPlanPreview,
 	onRegenerate,
@@ -554,6 +657,7 @@ function AssistantMessage({
 	isThinkingLifecycleStreaming: boolean;
 	message: RovoUIMessage;
 	onBuildPlan?: (planWidget: ParsedPlanWidgetPayload) => void | Promise<void>;
+	onAgentResultSelect?: (agent: RovoDataParts["agent-result"], options?: { sourceMessageId?: string }) => void;
 	onOpenBrowserPreview?: () => void;
 	onOpenPlanPreview?: (planWidget: ParsedPlanWidgetPayload, sourceMessageId?: string) => void;
 	onRegenerate: () => void;
@@ -595,6 +699,12 @@ function AssistantMessage({
 	const isFallbackRoute = routeDecision !== null && routeDecision.confidence < 0.3;
 
 	const shouldRenderPlanWidget = shouldShowWidget && parsedPlanWidget !== null;
+	const studioAutomationArtifactListPayload =
+		widgetType === STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE
+			? parseStudioAutomationArtifactListPayload(widget?.data.payload)
+			: null;
+	const shouldRenderStudioAutomationArtifactList =
+		shouldShowWidget && studioAutomationArtifactListPayload !== null;
 	const hasTurnComplete = hasTurnCompleteSignal(message);
 	const isResponseInFlight = isMessageTextStreaming(message) || isThinkingLifecycleStreaming || widgetLoading?.data.loading === true;
 	const thinkingTraceState = useAssistantThinkingTraceState({
@@ -712,6 +822,12 @@ function AssistantMessage({
 									shouldAutoCollapse={planBuildDisabled === true}
 								/>
 							</div>
+						) : shouldRenderStudioAutomationArtifactList ? (
+							<StudioAutomationArtifactListWidget
+								messageId={message.id}
+								onAgentResultSelect={onAgentResultSelect}
+								payload={studioAutomationArtifactListPayload}
+							/>
 						) : shouldShowWidget && widget && !shouldHideResolvedQuestionCard ? (
 							<div className="w-full">
 								<GenerativeWidgetCard thinkingToolCalls={thinkingToolCalls} widgetData={widget.data.payload} widgetType={widget.data.type ?? "message"} />
@@ -1049,7 +1165,7 @@ export function RovoAppMessages({
 
 			<ConversationContent
 				className={cn(
-					"mx-auto flex min-w-0 flex-col gap-4 py-6 md:gap-6",
+					"mx-auto flex min-w-0 flex-col gap-4 pt-6 pb-32 md:gap-6",
 					extraHorizontalPaddingWhenCompact && compact ? "px-9" : "px-4",
 					compact ? "max-w-none" : "max-w-[800px]",
 					shouldShowEmptyConversationState && "hidden",
@@ -1147,6 +1263,7 @@ export function RovoAppMessages({
 								isThinkingLifecycleStreaming={isStreaming && message.id === streamingAssistantMessageId}
 								message={message}
 								onBuildPlan={onBuildPlan}
+								onAgentResultSelect={onAgentResultSelect}
 								onOpenBrowserPreview={onOpenBrowserPreview}
 								onOpenPlanPreview={onOpenPlanPreview}
 								onRegenerate={onRegenerate}

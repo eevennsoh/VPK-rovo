@@ -13,6 +13,7 @@ const ROVO_APP_TOOL_DRIVEN_WIDGET_TYPES = new Set([
 	"video-preview",
 	"plan",
 	"question-card",
+	"studio-automation-artifact-list",
 ]);
 const ROVO_APP_BROWSER_FALLBACK_TEXT_PATTERN =
 	/(?:screenshot image(?: itself)? (?:can'?t|cannot) be rendered|chrome devtools remote debugging is blocked|what would you like to do instead\?|try a local\/internal url|screenshots work fine for localhost)/iu;

@@ -47,6 +47,8 @@ export interface ArtifactListProps extends React.ComponentProps<"div"> {
 	onOpen?: (item: ArtifactListItem) => void;
 	/** Open-button label. Defaults to "Open". */
 	openLabel?: string;
+	/** Also fire `onOpen` when the row body is clicked. */
+	openOnRowClick?: boolean;
 }
 
 function ArtifactListTileContent({ item }: Readonly<{ item: ArtifactListItem }>) {
@@ -86,26 +88,42 @@ function ArtifactListRow({
 	item,
 	isLast,
 	openLabel,
+	openOnRowClick,
 	onOpen,
 }: Readonly<{
 	item: ArtifactListItem;
 	isLast: boolean;
 	openLabel: string;
+	openOnRowClick?: boolean;
 	onOpen?: (item: ArtifactListItem) => void;
 }>) {
+	const handleOpen = () => onOpen?.(item);
+
 	return (
 		<div
+			role={openOnRowClick ? "button" : undefined}
+			tabIndex={openOnRowClick ? 0 : undefined}
 			className={cn(
 				hoverRevealRowClassName,
-				"flex h-16 items-center gap-3 px-3 transition-colors hover:bg-surface-hovered",
+				"flex min-h-16 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered",
+				openOnRowClick && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 				!isLast && "border-b border-border",
 			)}
+			onClick={openOnRowClick ? handleOpen : undefined}
+			onKeyDown={openOnRowClick
+				? (event) => {
+						if (event.key === "Enter" || event.key === " ") {
+							event.preventDefault();
+							handleOpen();
+						}
+					}
+				: undefined}
 		>
 			<ArtifactListLeadingTile item={item} />
 			{/* Reserve right-padding on hover/focus so both lines truncate clear of the
 			    revealed "Open" button (a text button is wider than the hover-reveal-row
 			    primitive's 24px icon-button presets). */}
-			<div className="min-w-0 flex-1 transition-[padding] duration-normal ease-out group-hover/hover-reveal-row:pr-[78px] group-has-[:focus-visible]/hover-reveal-row:pr-[78px]">
+			<div className="min-w-0 flex-1 pr-[92px] transition-[padding] duration-normal ease-out">
 				<p className="truncate text-sm font-medium leading-5 text-text">{item.title}</p>
 				<p className="flex items-center gap-1 text-xs leading-4">
 					<span className="shrink-0 text-text-subtle">{item.source}</span>
@@ -116,7 +134,16 @@ function ArtifactListRow({
 			<HoverRevealActions
 				actionInsetClassName="right-3"
 				action={
-					<Button variant="outline" size="default" type="button" onClick={() => onOpen?.(item)}>
+					<Button
+						className="whitespace-nowrap"
+						variant="outline"
+						size="default"
+						type="button"
+						onClick={(event) => {
+							event.stopPropagation();
+							handleOpen();
+						}}
+					>
 						{openLabel}
 					</Button>
 				}
@@ -129,6 +156,7 @@ export function ArtifactList({
 	items,
 	onOpen,
 	openLabel = "Open",
+	openOnRowClick = false,
 	className,
 	...props
 }: Readonly<ArtifactListProps>) {
@@ -144,6 +172,7 @@ export function ArtifactList({
 					item={item}
 					isLast={index === items.length - 1}
 					openLabel={openLabel}
+					openOnRowClick={openOnRowClick}
 					onOpen={onOpen}
 				/>
 			))}

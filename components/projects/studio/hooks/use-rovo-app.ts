@@ -1303,6 +1303,7 @@ export function useRovoApp({
 							smartGeneration: resolvedSmartGenerationRequest,
 							activeArtifact: buildActiveArtifactMetadata(activeDocument),
 							artifactCreationRetry: pendingArtifactCreationRetryRef.current || undefined,
+							chatSdkSource: "studio",
 							origin: body?.origin === "voice" ? "voice" : "text",
 							recentHistory: buildRecentHistory(messages),
 							isPlanMode: requestedPlanMode,

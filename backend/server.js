@@ -259,6 +259,21 @@ const {
 	buildStudioAgentCreationTrace,
 } = require("./lib/studio-agent-trace");
 const {
+	DEMO_QUESTION_TOOL_NAME: STUDIO_AUTOMATION_DISCOVERY_QUESTION_TOOL_NAME,
+	DEMO_WIDGET_TYPE: STUDIO_AUTOMATION_DISCOVERY_WIDGET_TYPE,
+	buildStudioAutomationDiscoveryFinalText,
+	buildStudioAutomationDiscoveryFollowupQuestionCardPayload,
+	buildStudioAutomationDiscoveryQuestionCardPayload,
+	buildStudioAutomationDiscoveryTrace,
+	buildStudioAutomationDiscoveryWidgetPayload,
+	isStudioAutomationDiscoveryDismissalPrompt,
+	isStudioAutomationDiscoveryFollowupDismissalPrompt,
+	isStudioAutomationDiscoveryFollowupSession,
+	isStudioAutomationDiscoveryInitialDismissalPrompt,
+	isStudioAutomationDiscoveryInitialSession,
+	isStudioAutomationDiscoveryPrompt,
+} = require("./lib/studio-automation-discovery-demo");
+const {
 	writeThinkingTraceSteps: writeGenericThinkingTraceSteps,
 } = require("./lib/thinking-trace-writer");
 const {
@@ -4311,7 +4326,7 @@ async function executeRovoAppManagedRun(run) {
 	});
 	await persistRovoAppRunBackend(threadId, requestBody.backendPreference);
 	requestBody.resolvedPlanModeActive = requestIsPlanMode || autoPlanTriggered;
-	requestBody.chatSdkSource = "rovo";
+	requestBody.chatSdkSource = getNonEmptyString(requestBody.chatSdkSource) || "rovo";
 	requestBody.threadId = threadId;
 
 	const internalProxyStartedAtMs = Date.now();
@@ -6232,6 +6247,273 @@ function withStudioAgentGatewayFallbackTimeout(promise, timeoutMs) {
 	});
 }
 
+function writeStudioAutomationDiscoveryText(writer, text) {
+	const textId = `studio-automation-discovery-text-${Date.now()}`;
+	writer.write({ type: "text-start", id: textId });
+	writer.write({ type: "text-delta", id: textId, delta: text });
+	writer.write({ type: "text-end", id: textId });
+}
+
+function buildStudioAutomationDiscoveryQuestionCardForRound({
+	round,
+	toolCallId,
+}) {
+	return round === "followup"
+		? buildStudioAutomationDiscoveryFollowupQuestionCardPayload({ toolCallId })
+		: buildStudioAutomationDiscoveryQuestionCardPayload({ toolCallId });
+}
+
+function getStudioAutomationDiscoveryQuestionIntro(round) {
+	if (round === "followup") {
+		return "I found five plausible repeated workflows and narrowed the strongest three. Before I create the drafts, I need one more boundary check so Studio knows what to create, skip, and defer.";
+	}
+	return "I found the automation-discovery brief. Before I create draft agents, I need three quick choices so the ranking matches your presentation goals.";
+}
+
+function getStudioAutomationDiscoveryQuestionStatus(round) {
+	if (round === "followup") {
+		return {
+			content: "Waiting for your create, approval, and hero-moment boundaries.",
+			label: "Asking for draft boundaries",
+			questions: ["creation-boundary", "approval-boundary", "hero-moment"],
+			reason: "studio_automation_discovery_demo_followup",
+		};
+	}
+	return {
+		content: "Waiting for your priority, source weighting, and confidence choices.",
+		label: "Asking clarification questions",
+		questions: ["priority", "source-weighting", "conservatism"],
+		reason: "studio_automation_discovery_demo_clarification",
+	};
+}
+
+function writeStudioAutomationDiscoveryQuestionCard({
+	round = "initial",
+	requestOrigin,
+	toolCallId,
+	widgetId,
+	writer,
+}) {
+	const questionCardPayload = sanitizeQuestionCardPayload(
+		buildStudioAutomationDiscoveryQuestionCardForRound({ round, toolCallId }),
+		{
+			widgetType: CLARIFICATION_WIDGET_TYPE,
+			maxRounds: 2,
+			maxPresetOptions: CLARIFICATION_MAX_PRESET_OPTIONS,
+			customOptionPlaceholder: CLARIFICATION_CUSTOM_OPTION_PLACEHOLDER,
+			maxLabelLength: CLARIFICATION_MAX_LABEL_LENGTH,
+		}
+	);
+
+	if (!questionCardPayload) {
+		return false;
+	}
+
+	_requestUserInputQuestionMetaStore.set(
+		questionCardPayload.sessionId,
+		buildQuestionMetaFromQuestionCardPayload(questionCardPayload)
+	);
+
+	const status = getStudioAutomationDiscoveryQuestionStatus(round);
+	writer.write({
+		type: "data-thinking-status",
+		id: `${toolCallId}-status-0`,
+		data: {
+			label: status.label,
+			content: status.content,
+			toolCallId,
+			activity: "data",
+			source: "backend",
+			timestamp: new Date().toISOString(),
+		},
+	});
+	writer.write({
+		type: "data-thinking-event",
+		id: `${toolCallId}-start`,
+		data: {
+			eventId: `${toolCallId}-start`,
+			phase: "start",
+			toolName: STUDIO_AUTOMATION_DISCOVERY_QUESTION_TOOL_NAME,
+			label: status.label,
+			toolCallId,
+			input: {
+				questions: status.questions,
+			},
+			timestamp: new Date().toISOString(),
+		},
+	});
+	writeStudioAutomationDiscoveryText(
+		writer,
+		getStudioAutomationDiscoveryQuestionIntro(round),
+	);
+	writer.write({
+		type: "data-widget-loading",
+		id: widgetId,
+		data: {
+			type: CLARIFICATION_WIDGET_TYPE,
+			loading: true,
+		},
+	});
+	writer.write({
+		type: "data-widget-data",
+		id: widgetId,
+		data: {
+			type: CLARIFICATION_WIDGET_TYPE,
+			payload: questionCardPayload,
+		},
+	});
+	writer.write({
+		type: "data-widget-loading",
+		id: widgetId,
+		data: {
+			type: CLARIFICATION_WIDGET_TYPE,
+			loading: false,
+		},
+	});
+	writer.write(createRouteDecisionPart({
+		intent: "chat",
+		origin: requestOrigin,
+		reason: status.reason,
+	}));
+	return true;
+}
+
+function streamStudioAutomationDiscoveryQuestionCard({
+	res,
+	requestOrigin,
+	round = "initial",
+}) {
+	const toolCallId = createAIGatewayDeferredToolCallId(
+		STUDIO_AUTOMATION_DISCOVERY_QUESTION_TOOL_NAME
+	);
+	const widgetId = `studio-automation-discovery-question-${round}-${Date.now()}`;
+
+	const stream = createUIMessageStream({
+		execute: async ({ writer }) => {
+			const didWriteQuestionCard = writeStudioAutomationDiscoveryQuestionCard({
+				round,
+				requestOrigin,
+				toolCallId,
+				writer,
+				widgetId,
+			});
+			if (!didWriteQuestionCard) {
+				writeStudioAutomationDiscoveryText(
+					writer,
+					"I could not prepare the demo question card.",
+				);
+			}
+			writer.write({
+				type: "data-turn-complete",
+				data: { timestamp: new Date().toISOString() },
+			});
+		},
+		onError: (error) =>
+			error instanceof Error
+				? error.message
+				: "Failed to stream Studio automation discovery clarification",
+	});
+
+	pipeUIMessageStreamToResponse({ response: res, stream });
+	return true;
+}
+
+function streamStudioAutomationDiscoveryResult({
+	clarificationSubmission,
+	requestOrigin,
+	res,
+	phase = "generation",
+}) {
+	const stream = createUIMessageStream({
+		execute: async ({ writer }) => {
+			writer.write({
+				type: "data-thinking-status",
+				data: {
+					label: phase === "discovery" ? "Analyzing your work patterns" : "Creating agent drafts",
+					content: phase === "discovery"
+						? "Reading recent activity, cycling through source apps, and correlating source signals through TWG."
+						: "Applying draft boundaries, cycling through the final candidates, and creating draft Studio agents.",
+					activity: "data",
+					source: "backend",
+				},
+			});
+			await writeGenericThinkingTraceSteps(
+				writer,
+				buildStudioAutomationDiscoveryTrace({
+					clarificationSubmission: phase === "discovery" ? clarificationSubmission : undefined,
+					followupSubmission: phase === "generation" ? clarificationSubmission : undefined,
+					phase,
+				}),
+				{
+					defaultDelayMs: 1800,
+					narrationRowDelayMs: 900,
+				},
+			);
+			if (phase === "discovery") {
+				const toolCallId = createAIGatewayDeferredToolCallId(
+					STUDIO_AUTOMATION_DISCOVERY_QUESTION_TOOL_NAME
+				);
+				writeStudioAutomationDiscoveryQuestionCard({
+					round: "followup",
+					requestOrigin,
+					toolCallId,
+					widgetId: `studio-automation-discovery-question-followup-${Date.now()}`,
+					writer,
+				});
+				writer.write({
+					type: "data-turn-complete",
+					data: { timestamp: new Date().toISOString() },
+				});
+				return;
+			}
+			writeStudioAutomationDiscoveryText(
+				writer,
+				buildStudioAutomationDiscoveryFinalText(),
+			);
+			const widgetId = `studio-automation-discovery-widget-${Date.now()}`;
+			writer.write({
+				type: "data-widget-loading",
+				id: widgetId,
+				data: {
+					type: STUDIO_AUTOMATION_DISCOVERY_WIDGET_TYPE,
+					loading: true,
+				},
+			});
+			writer.write({
+				type: "data-widget-data",
+				id: widgetId,
+				data: {
+					type: STUDIO_AUTOMATION_DISCOVERY_WIDGET_TYPE,
+					payload: buildStudioAutomationDiscoveryWidgetPayload(),
+				},
+			});
+			writer.write({
+				type: "data-widget-loading",
+				id: widgetId,
+				data: {
+					type: STUDIO_AUTOMATION_DISCOVERY_WIDGET_TYPE,
+					loading: false,
+				},
+			});
+			writer.write(createRouteDecisionPart({
+				intent: "chat",
+				origin: requestOrigin,
+				reason: "studio_automation_discovery_demo",
+			}));
+			writer.write({
+				type: "data-turn-complete",
+				data: { timestamp: new Date().toISOString() },
+			});
+		},
+		onError: (error) =>
+			error instanceof Error
+				? error.message
+				: "Failed to stream Studio automation discovery demo",
+	});
+
+	pipeUIMessageStreamToResponse({ response: res, stream });
+}
+
 async function handleChatSdkRequest(req, res) {
 	let stageTrace = null;
 	let cleanupChatSdkAbortTracking = null;
@@ -6464,6 +6746,8 @@ async function handleChatSdkRequest(req, res) {
 			return res.status(400).json({ error: "A user message is required" });
 		}
 
+		const latestVisiblePromptText =
+			getNonEmptyString(latestVisibleUserMessage?.text) || latestUserMessage;
 		let workItemReportRequest = resolveWorkItemReportRequest({
 			contextDescription,
 			promptText: latestUserMessage,
@@ -6631,6 +6915,72 @@ async function handleChatSdkRequest(req, res) {
 			return;
 		}
 
+		const isStudioAutomationDiscoverySource = chatSdkSource === "studio";
+		const isStudioAutomationDiscoveryFollowupContinuation =
+			isStudioAutomationDiscoverySource &&
+			(
+				isStudioAutomationDiscoveryFollowupSession(clarificationSubmission?.sessionId) ||
+				(
+					latestUserMessageSource === "clarification-submit" &&
+					isStudioAutomationDiscoveryFollowupSession(clarificationToolCallId)
+				) ||
+				isStudioAutomationDiscoveryFollowupDismissalPrompt(latestVisiblePromptText)
+			);
+		if (isStudioAutomationDiscoveryFollowupContinuation) {
+			stageTrace.mark("pre_route_branch_entered", {
+				branch: "studio_automation_discovery_demo",
+				phase: "generation",
+			});
+			streamStudioAutomationDiscoveryResult({
+				clarificationSubmission,
+				phase: "generation",
+				requestOrigin,
+				res,
+			});
+			return;
+		}
+
+		const isStudioAutomationDiscoveryInitialContinuation =
+			isStudioAutomationDiscoverySource &&
+			(
+				isStudioAutomationDiscoveryInitialSession(clarificationSubmission?.sessionId) ||
+				(
+					latestUserMessageSource === "clarification-submit" &&
+					isStudioAutomationDiscoveryInitialSession(clarificationToolCallId)
+				) ||
+				isStudioAutomationDiscoveryInitialDismissalPrompt(latestVisiblePromptText) ||
+				(
+					isStudioAutomationDiscoveryDismissalPrompt(latestVisiblePromptText) &&
+					!isStudioAutomationDiscoveryFollowupDismissalPrompt(latestVisiblePromptText)
+				)
+			);
+		if (isStudioAutomationDiscoveryInitialContinuation) {
+			stageTrace.mark("pre_route_branch_entered", {
+				branch: "studio_automation_discovery_demo",
+				phase: "discovery",
+			});
+			streamStudioAutomationDiscoveryResult({
+				clarificationSubmission,
+				phase: "discovery",
+				requestOrigin,
+				res,
+			});
+			return;
+		}
+
+		if (
+			isStudioAutomationDiscoverySource &&
+			isStudioAutomationDiscoveryPrompt(latestVisiblePromptText)
+		) {
+			stageTrace.mark("pre_route_branch_entered", {
+				branch: "studio_automation_discovery_demo",
+				phase: "clarification",
+			});
+			if (streamStudioAutomationDiscoveryQuestionCard({ res, requestOrigin })) {
+				return;
+			}
+		}
+
 		// ── Local model shortcut (bypasses Rovo and all smart routing) ──
 		if (isLocalModelRequest(provider, rawModel)) {
 			console.info("[CHAT-SDK] Routing through local MLX model", { provider, model: rawModel });
@@ -6665,8 +7015,6 @@ async function handleChatSdkRequest(req, res) {
 			return;
 		}
 
-		const latestVisiblePromptText =
-			getNonEmptyString(latestVisibleUserMessage?.text) || latestUserMessage;
 		const translationRequestState = clarificationSubmission
 			? resolveTranslationRequestFromClarification({
 				clarificationSubmission,
