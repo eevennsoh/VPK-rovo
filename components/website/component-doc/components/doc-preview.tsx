@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { DocSection } from "./doc-section";
 import { DemoPreviewShell } from "./demo-preview-shell";
+import { shouldUseFullPagePreview } from "./preview-layout";
 import FullscreenEnterIcon from "@atlaskit/icon/core/fullscreen-enter";
 
 interface DocPreviewProps {
@@ -60,7 +61,7 @@ function ResolvedDocPreview({
 		</Button>
 	);
 
-	const isFullPage = (category === "projects" || category === "blocks") && demoLayout?.previewHeight !== "default";
+	const isFullPage = shouldUseFullPagePreview(category, demoLayout);
 	const fitContent = demoLayout?.previewHeight === "fit";
 
 	return (

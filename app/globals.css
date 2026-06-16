@@ -304,6 +304,17 @@
 	}
 }
 
+/* Suppress the one-frame "hover flash" when an agent-2 compact nav dropdown
+   opens under a stationary cursor: the popup materializes over an item, that
+   item fires `pointerenter`, and Base UI highlights it before the reset can
+   react. While `data-agent-suppress-initial-highlight` is set (added on open by
+   AgentCompactNavMenuInitialHighlightReset, removed on the first pointer/keyboard
+   interaction) highlighted rows are forced transparent. Unlayered + !important
+   so it beats the layered `data-[highlighted]:bg-*` Tailwind utility. */
+[data-agent-suppress-initial-highlight] [data-highlighted] {
+	background-color: transparent !important;
+}
+
 /* Website sidebar layout — push main content to clear the fixed sidebar.
    Invariant: do not stack ml-* utilities on .website-main-content elements.
    The body:has() rule below has 1 property and would tie with `ml-N` on

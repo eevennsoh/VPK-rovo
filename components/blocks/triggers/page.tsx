@@ -597,18 +597,22 @@ function TriggerParamMenu({
 				<ChevronDownIcon label="" size="small" />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="min-w-56">
-				<DropdownMenuGroup>
-					<DropdownMenuLabel>{param.label}</DropdownMenuLabel>
-					{param.options.map((option) => (
-						<DropdownMenuItem
-							key={option.value}
-							description={option.description}
-							onSelect={() => onValueChange(option.value)}
-						>
-							{option.label}
-						</DropdownMenuItem>
-					))}
-				</DropdownMenuGroup>
+				{/* The repo list scrolls within a bounded area so the Add/Refresh
+				    actions below stay pinned as a sticky footer. */}
+				<div className={param.id === "repository" ? "max-h-60 overflow-y-auto" : undefined}>
+					<DropdownMenuGroup>
+						<DropdownMenuLabel>{param.label}</DropdownMenuLabel>
+						{param.options.map((option) => (
+							<DropdownMenuItem
+								key={option.value}
+								description={option.description}
+								onSelect={() => onValueChange(option.value)}
+							>
+								{option.label}
+							</DropdownMenuItem>
+						))}
+					</DropdownMenuGroup>
+				</div>
 				{param.id === "repository" ? (
 					<>
 						<DropdownMenuSeparator />
