@@ -572,7 +572,7 @@ test("Studio lands generated agents in the Test tab and opens Ask Rovo", () => {
 		(SHELL_SOURCE.match(/setActiveAgentConfigView\("test"\);/gu) ?? []).length >= 2,
 		"both registration success paths should land in the Test tab",
 	);
-	assert.match(SHELL_SOURCE, /const openAgentCreationAskRovoChat = useCallback\(\(\) => \{[\s\S]*studioAgentRegistry\.resetAgentToRovo\(\);[\s\S]*nav\.openChat\("sidebar"\);[\s\S]*\}, \[nav, studioAgentRegistry\]\);/u);
+	assert.match(SHELL_SOURCE, /const openAgentCreationAskRovoChat = useCallback\(\(\) => \{[\s\S]*studioAgentRegistry\.resetAgentToRovo\(\{ preserveCurrentThread: true \}\);[\s\S]*nav\.openChat\("sidebar"\);[\s\S]*\}, \[nav, studioAgentRegistry\]\);/u);
 	const agentResultSelectSource = SHELL_SOURCE.slice(
 		SHELL_SOURCE.indexOf("const handleStudioAgentResultSelect = useCallback"),
 		SHELL_SOURCE.indexOf("// \"Start from scratch\""),
@@ -772,7 +772,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 		SHELL_SOURCE.indexOf("const handleToggleAskRovoChat = useCallback"),
 		SHELL_SOURCE.indexOf("// When the active agent disappears"),
 	);
-	assert.match(handleToggleAskRovoChatSource, /if \(!nav\.isSidebarChatOpen\) \{[\s\S]*studioAgentRegistry\.resetAgentToRovo\(\);[\s\S]*\}[\s\S]*nav\.toggleChat\(\);/u);
+	assert.match(handleToggleAskRovoChatSource, /if \(!nav\.isSidebarChatOpen\) \{[\s\S]*studioAgentRegistry\.resetAgentToRovo\(\{ preserveCurrentThread: true \}\);[\s\S]*\}[\s\S]*nav\.toggleChat\(\);/u);
 	const agentEditContextBarSource = SHELL_SOURCE.slice(
 		SHELL_SOURCE.indexOf("const agentEditContextBar = useMemo"),
 		SHELL_SOURCE.indexOf("// When the \"Edit agent\" context bar is active"),

@@ -758,7 +758,7 @@ interface RovoChatContextType {
 	removeSessionAgent: (profileId: string) => void;
 	sessionAgentSaveStatus: StudioSessionAgentSaveStatus;
 	sessionAgentSavedAt: number | null;
-	resetAgentToRovo: () => void;
+	resetAgentToRovo: (options?: { preserveCurrentThread?: boolean }) => void;
 	chatSurface: ChatSurface | null;
 	openChat: (surface: ChatSurface) => void;
 	switchSurface: (surface: ChatSurface) => void;
@@ -3344,13 +3344,19 @@ export function RovoChatProvider({
 		[]
 	);
 
-	const resetAgentToRovo = useCallback(() => {
+	const resetAgentToRovo = useCallback((options?: { preserveCurrentThread?: boolean }) => {
 		if (selectedAgentIdRef.current === ROVO_AGENT_ID) {
 			return;
 		}
 
 		setSelectedAgentIdState(ROVO_AGENT_ID);
-		resetChat();
+		// Callers that want Ask Rovo to keep talking to the default Rovo agent
+		// WITHOUT discarding the current transcript (e.g. the studio
+		// agent-creation flow, which leaves the generation conversation visible
+		// in the Ask Rovo panel) pass preserveCurrentThread.
+		if (!options?.preserveCurrentThread) {
+			resetChat();
+		}
 	}, [resetChat, setSelectedAgentIdState]);
 
 	const removeSessionAgent = useCallback((profileId: string) => {

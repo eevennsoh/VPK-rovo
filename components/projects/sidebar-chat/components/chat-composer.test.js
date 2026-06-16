@@ -394,7 +394,7 @@ test("compact chat merges selected custom agent context before queueing prompts"
 	assert.match(context, /const autoSelectedAgentIdRef = useRef<string \| null>\(null\);/u);
 	assert.match(context, /const selectableAgents = useMemo<readonly AgentSelectorAgent\[\]>/u);
 	assert.match(context, /selectAgent: \(agentId: string, options\?: SelectAgentOptions\) => void;/u);
-	assert.match(context, /resetAgentToRovo: \(\) => void;/u);
+	assert.match(context, /resetAgentToRovo: \(options\?: \{ preserveCurrentThread\?: boolean \}\) => void;/u);
 	assert.match(context, /const nextAgent = agentProfileById\.get\(autoSelectAgentId\);/u);
 	assert.match(context, /function mergeSelectedAgentPromptOptions/u);
 	assert.match(context, /getRovoAgentPromptContext\(selectedAgent\)/u);
