@@ -11,7 +11,7 @@
 
 import type { Tool } from "ai";
 import { AnimatePresence, motion, useReducedMotion, type MotionProps } from "motion/react";
-import type { ComponentProps, ReactElement, ReactNode } from "react";
+import type { ComponentProps, ReactElement, ReactNode, RefObject } from "react";
 import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useLazyRef } from "@/lib/use-lazy-ref";
@@ -1045,26 +1045,48 @@ function AgentCompactNavMenuInitialHighlightReset({
 
 		clear();
 
-		// Declaratively neutralize the highlight while the popup is opening so the
-		// item it materializes over can't flash highlighted (Base UI re-applies
-		// `data-highlighted` after our synchronous clear, faster than we can react).
-		// The CSS rule keyed on this attribute forces highlighted rows transparent;
-		// we drop it on the first real pointer/keyboard interaction so normal hover
-		// and keyboard navigation light up immediately.
+		// While the popup is opening, Base UI applies two auto-behaviors right after
+		// our synchronous clear — too fast to react to — that we don't want:
+		//   1. the item the popup materializes over flashes `data-highlighted` (the
+		//      CSS rule keyed on the attribute below forces highlighted rows
+		//      transparent for the brief open window); and
+		//   2. initial focus auto-lands on the first form field (e.g. the
+		//      Conversation starters inputs) — we bounce that *programmatic* focus
+		//      back to the menu content, while leaving a deliberate user click alone.
+		// The guards lift on the first real interaction (pointerdown/keydown), which
+		// — unlike pointermove — never fires coincidentally while a cursor is still
+		// gliding to a rest as the menu opens, or after a short fallback timeout.
 		contentElement.setAttribute("data-agent-suppress-initial-highlight", "");
-		let suppressionReleased = false;
-		const releaseHighlightSuppression = () => {
-			if (suppressionReleased) {
+
+		let guardsReleased = false;
+		const redirectInitialAutoFocus = (event: FocusEvent) => {
+			if (guardsReleased) {
 				return;
 			}
-			suppressionReleased = true;
-			contentElement.removeAttribute("data-agent-suppress-initial-highlight");
-			window.removeEventListener("pointermove", releaseHighlightSuppression, true);
-			window.removeEventListener("keydown", releaseHighlightSuppression, true);
+			const target = event.target;
+			if (
+				target instanceof HTMLElement &&
+				target !== contentElement &&
+				contentElement.contains(target) &&
+				target.matches("input, textarea, [contenteditable='true']")
+			) {
+				contentElement.focus({ preventScroll: true });
+			}
 		};
-		window.addEventListener("pointermove", releaseHighlightSuppression, true);
-		window.addEventListener("keydown", releaseHighlightSuppression, true);
-		const suppressionTimeoutId = window.setTimeout(releaseHighlightSuppression, 200);
+		const releaseInitialOpenGuards = () => {
+			if (guardsReleased) {
+				return;
+			}
+			guardsReleased = true;
+			contentElement.removeAttribute("data-agent-suppress-initial-highlight");
+			contentElement.removeEventListener("focusin", redirectInitialAutoFocus);
+			window.removeEventListener("pointerdown", releaseInitialOpenGuards, true);
+			window.removeEventListener("keydown", releaseInitialOpenGuards, true);
+		};
+		contentElement.addEventListener("focusin", redirectInitialAutoFocus);
+		window.addEventListener("pointerdown", releaseInitialOpenGuards, true);
+		window.addEventListener("keydown", releaseInitialOpenGuards, true);
+		const guardTimeoutId = window.setTimeout(releaseInitialOpenGuards, 250);
 
 		queueMicrotask(() => {
 			clear();
@@ -1073,8 +1095,8 @@ function AgentCompactNavMenuInitialHighlightReset({
 		});
 
 		return () => {
-			window.clearTimeout(suppressionTimeoutId);
-			releaseHighlightSuppression();
+			window.clearTimeout(guardTimeoutId);
+			releaseInitialOpenGuards();
 		};
 	}, [enabled, resetToken]);
 
@@ -1114,6 +1136,56 @@ function useCompactNavMenuNoInitialHighlight(): {
 		onOpenChange: handleOpenChange,
 		resetInitialHighlight: shouldResetInitialHighlightRef.current,
 		resetToken,
+	};
+}
+
+// Multi-select support for the Apps/Skills add menus. Picking a result adds it
+// to the picker's `excludeLabels`, which unmounts the focused option button — so
+// focus leaves the menu and Base UI closes the whole tree (submenu AND root) on
+// focus-out. To let several items be added in a row we CONTROL the root menu's
+// open state and ignore the close request triggered by a pick (flagged via
+// `suppressNextClose`, which self-clears once the focus-out settles). Only the
+// standalone row "Edit" instances opt in (`controlled`); the chip-strip
+// instances stay uncontrolled because Base UI's `Menubar` coordinates its child
+// menus' open state itself (and adding the first item there promotes the field
+// to a row, unmounting the chip regardless).
+function useCompactNavMenuKeepOpen(controlled: boolean): {
+	resetInitialHighlight: boolean;
+	resetToken: number;
+	rootProps: { open?: boolean; onOpenChange: AgentCompactNavMenuOpenChange };
+	keepOpenRef: RefObject<boolean>;
+	suppressNextClose: () => void;
+} {
+	const base = useCompactNavMenuNoInitialHighlight();
+	const baseOnOpenChange = base.onOpenChange;
+	const [open, setOpen] = useState(false);
+	const keepOpenRef = useRef(false);
+	const handleRootOpenChange = useCallback<AgentCompactNavMenuOpenChange>(
+		(next, eventDetails) => {
+			if (!next && keepOpenRef.current) {
+				return;
+			}
+			setOpen(next);
+			baseOnOpenChange(next, eventDetails);
+		},
+		[baseOnOpenChange],
+	);
+	const suppressNextClose = useCallback(() => {
+		keepOpenRef.current = true;
+		// Cleared after the focus-out close has had a chance to fire and be
+		// ignored, so a later deliberate dismiss (outside press / Escape) still
+		// closes the menu.
+		window.setTimeout(() => {
+			keepOpenRef.current = false;
+		}, 150);
+	}, []);
+
+	return {
+		resetInitialHighlight: base.resetInitialHighlight,
+		resetToken: base.resetToken,
+		rootProps: controlled ? { open, onOpenChange: handleRootOpenChange } : { onOpenChange: baseOnOpenChange },
+		keepOpenRef,
+		suppressNextClose,
 	};
 }
 
@@ -1664,22 +1736,22 @@ function AgentCompactDirectoryNavButton({
 	const isEmpty = items.length === 0;
 	const disabledSet = useDisabledLabelSet(disabledItems);
 	const addLabel = `Add ${item.label.toLowerCase()}`;
-	const compactNavMenu = useCompactNavMenuNoInitialHighlight();
-	// Multi-select (skills): keep the "Add ..." picker open after each pick so
-	// several skills can be added in a row. Selecting an option would otherwise
-	// dismiss the menu; the picker submenu is controlled and the post-pick close
-	// is suppressed (via `keepOpenAfterAddRef`, set on pick, self-clearing once the
-	// click settles), so the picker — and therefore its parent menu — stays open.
+	// Multi-select (skills): keep the menu open after each pick so several skills
+	// can be added in a row. Both the picker submenu and (for the controllable row
+	// "Edit" instances) the root menu ignore the focus-out close a pick triggers.
 	// Tools are excluded — picking a tool intentionally closes to open the
 	// directory dialog on that tool's detail.
+	const nav = useCompactNavMenuKeepOpen(Boolean(renderTrigger));
 	const [addOpen, setAddOpen] = useState(false);
-	const keepOpenAfterAddRef = useRef(false);
-	const handleAddOpenChange = useCallback((nextOpen: boolean) => {
-		if (!nextOpen && keepOpenAfterAddRef.current) {
-			return;
-		}
-		setAddOpen(nextOpen);
-	}, []);
+	const handleAddOpenChange = useCallback(
+		(nextOpen: boolean) => {
+			if (!nextOpen && nav.keepOpenRef.current) {
+				return;
+			}
+			setAddOpen(nextOpen);
+		},
+		[nav.keepOpenRef],
+	);
 	const browseItem = (
 		<DropdownMenuItem
 			elemBefore={
@@ -1698,11 +1770,8 @@ function AgentCompactDirectoryNavButton({
 		? (onPickTool ? (picked: RichTextSuggestionMenuItem) => onPickTool(getToolIdFromMentionId(picked.id)) : undefined)
 		: (onAddSearchItem
 			? (picked: RichTextSuggestionMenuItem) => {
-					keepOpenAfterAddRef.current = true;
+					nav.suppressNextClose();
 					onAddSearchItem(picked);
-					window.setTimeout(() => {
-						keepOpenAfterAddRef.current = false;
-					}, 0);
 				}
 			: undefined);
 	const addSearchFlyout = (
@@ -1721,6 +1790,7 @@ function AgentCompactDirectoryNavButton({
 					category={AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD[directory]}
 					className="rich-text-command-menu-borderless"
 					excludeLabels={items}
+					keepOpenOnSelect={directory !== "tools"}
 					onBrowseAll={onBrowse}
 					onSelectItem={handlePickerSelect}
 				/>
@@ -1729,7 +1799,7 @@ function AgentCompactDirectoryNavButton({
 	);
 
 	return (
-		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
+		<MenubarMenu {...nav.rootProps}>
 			{renderTrigger ? (
 				<MenubarTrigger render={renderTrigger} />
 			) : (
@@ -1746,8 +1816,8 @@ function AgentCompactDirectoryNavButton({
 			)}
 			<MenubarContent align="start" className="w-64">
 				<AgentCompactNavMenuInitialHighlightReset
-					enabled={compactNavMenu.resetInitialHighlight}
-					resetToken={compactNavMenu.resetToken}
+					enabled={nav.resetInitialHighlight}
+					resetToken={nav.resetToken}
 				/>
 				{addSearchFlyout}
 				{browseItem}
@@ -1808,29 +1878,26 @@ function AgentCompactAppsNavButton({
 	const isEmpty = apps.length === 0;
 	const disabledSet = useDisabledLabelSet(disabledItems);
 	const addLabel = `Add ${item.label.toLowerCase()}`;
-	const compactNavMenu = useCompactNavMenuNoInitialHighlight();
-	// Multi-select: keep the "Add ..." picker open after each pick so several apps
-	// can be added in a row. Selecting an option would otherwise dismiss the menu;
-	// the picker submenu is controlled and the post-pick close is suppressed (via
-	// `keepOpenAfterAddRef`, set on pick, self-clearing once the click settles), so
-	// the picker — and therefore its parent menu — stays open for the next add.
+	// Multi-select: keep the menu open after each pick so several apps can be added
+	// in a row. Both the picker submenu and (for the controllable row "Edit"
+	// instances) the root menu ignore the focus-out close that a pick triggers.
+	const nav = useCompactNavMenuKeepOpen(Boolean(renderTrigger));
 	const [addOpen, setAddOpen] = useState(false);
-	const keepOpenAfterAddRef = useRef(false);
-	const handleAddOpenChange = useCallback((nextOpen: boolean) => {
-		if (!nextOpen && keepOpenAfterAddRef.current) {
-			return;
-		}
-		setAddOpen(nextOpen);
-	}, []);
+	const handleAddOpenChange = useCallback(
+		(nextOpen: boolean) => {
+			if (!nextOpen && nav.keepOpenRef.current) {
+				return;
+			}
+			setAddOpen(nextOpen);
+		},
+		[nav.keepOpenRef],
+	);
 	const handleAddItem = useCallback(
 		(picked: RichTextSuggestionMenuItem) => {
-			keepOpenAfterAddRef.current = true;
+			nav.suppressNextClose();
 			onAddSearchItem?.(picked);
-			window.setTimeout(() => {
-				keepOpenAfterAddRef.current = false;
-			}, 0);
 		},
-		[onAddSearchItem],
+		[nav.suppressNextClose, onAddSearchItem],
 	);
 	const addSearchFlyout = (
 		<DropdownMenuSub open={addOpen} onOpenChange={handleAddOpenChange}>
@@ -1848,6 +1915,7 @@ function AgentCompactAppsNavButton({
 					category={AGENT_INLINE_SEARCH_CATEGORY_BY_FIELD.apps}
 					className="rich-text-command-menu-borderless"
 					excludeLabels={apps}
+					keepOpenOnSelect
 					onBrowseAll={onBrowse}
 					onSelectItem={handleAddItem}
 				/>
@@ -1856,7 +1924,7 @@ function AgentCompactAppsNavButton({
 	);
 
 	return (
-		<MenubarMenu onOpenChange={compactNavMenu.onOpenChange}>
+		<MenubarMenu {...nav.rootProps}>
 			{renderTrigger ? (
 				<MenubarTrigger render={renderTrigger} />
 			) : (
@@ -1873,8 +1941,8 @@ function AgentCompactAppsNavButton({
 			)}
 			<MenubarContent align="start" className="w-64">
 				<AgentCompactNavMenuInitialHighlightReset
-					enabled={compactNavMenu.resetInitialHighlight}
-					resetToken={compactNavMenu.resetToken}
+					enabled={nav.resetInitialHighlight}
+					resetToken={nav.resetToken}
 				/>
 				{addSearchFlyout}
 				<DropdownMenuItem
@@ -2681,14 +2749,21 @@ function AgentFilledSummaryRow({
 
 							if (isLastItem && addLabel) {
 								return (
+									// Constant key (not tied to the last item) so adding an item
+									// doesn't remount this group — and the add control's stable
+									// `row-tail-add` key keeps its menu mounted across adds, which
+									// is what lets the Apps/Skills pickers stay open for
+									// back-to-back selections. The last chip still updates in place.
 									<div
-										key={`${label}-${item}-${index}-group`}
+										key={`${label}-add-tail`}
 										className="inline-flex max-w-full items-center gap-1.5"
 									>
 										{chip}
-										{renderAddButton(
-											"shrink-0 opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-focus-within/agent-row:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100",
-										)}
+										<Fragment key="row-tail-add">
+											{renderAddButton(
+												"shrink-0 opacity-0 transition-opacity group-hover/agent-row:opacity-100 group-focus-within/agent-row:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100",
+											)}
+										</Fragment>
 									</div>
 								);
 							}
