@@ -58,6 +58,15 @@ test("same-phase tasks stay independent", () => {
 	assert.deepEqual(result[1].blockedBy, []);
 });
 
+test("phase keywords alone do not create subject overlap", () => {
+	const tasks = [
+		{ id: "t1", label: "Research build", blockedBy: [] },
+		{ id: "t2", label: "Test build", blockedBy: [] },
+	];
+	const result = inferTaskDependencies(tasks);
+	assert.deepEqual(result[1].blockedBy, []);
+});
+
 test("join node depends on all earlier-phase tasks", () => {
 	const tasks = [
 		{ id: "t1", label: "Draft marketing copy", blockedBy: [] },
