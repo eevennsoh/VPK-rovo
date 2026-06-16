@@ -170,7 +170,6 @@ export const defaultSuggestions: RovoSuggestion[] = [
 		id: "translate-text",
 		label: "Translate this text",
 		description: "Translate content into another language",
-		prompt: "Translate this text into another language",
 		icon: TranslateIcon,
 		type: "skill",
 	},
