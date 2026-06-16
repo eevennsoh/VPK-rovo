@@ -613,6 +613,43 @@ const MapWidgetCanvas = dynamic<MapWidgetCanvasProps>(() => import("./map-widget
 	loading: () => <div className="flex h-full w-full items-center justify-center text-xs text-text-subtle">Loading map...</div>,
 });
 
+type BadgeVariant = NonNullable<Parameters<typeof Badge>[0]["variant"]>;
+
+const JSON_RENDER_BADGE_VARIANT_ALIASES: Record<string, BadgeVariant> = {
+	neutral: "neutral",
+	default: "neutral",
+	secondary: "neutral",
+	outline: "neutral",
+	ghost: "neutral",
+	link: "neutral",
+	danger: "danger",
+	destructive: "danger",
+	important: "danger",
+	removed: "danger",
+	success: "success",
+	added: "success",
+	warning: "warning",
+	information: "information",
+	info: "information",
+	primary: "information",
+	discovery: "discovery",
+	inverse: "inverse",
+	primaryInverted: "inverse",
+	informationBold: "informationBold",
+	successBold: "successBold",
+	dangerBold: "dangerBold",
+	warningBold: "warningBold",
+	discoveryBold: "discoveryBold",
+};
+
+function normalizeJsonRenderBadgeVariant(value: unknown): BadgeVariant {
+	if (typeof value !== "string") {
+		return "neutral";
+	}
+
+	return JSON_RENDER_BADGE_VARIANT_ALIASES[value.trim()] ?? "neutral";
+}
+
 // ── Chart helpers ─────────────────────────────────────────────
 const PIE_COLORS = ["var(--color-chart-1)", "var(--color-chart-2)", "var(--color-chart-3)", "var(--color-chart-4)", "var(--color-chart-5)"];
 
@@ -918,14 +955,7 @@ export const { registry } = defineRegistry(catalog, {
 
 		// ── Data Display ───────────────────────────────
 		Badge: ({ props }) => {
-			const rawVariant = props.variant ?? "default";
-			// Map removed ADS legacy aliases to canonical variants
-			const ALIAS_MAP: Record<string, string> = {
-				neutral: "default", danger: "destructive", removed: "destructive",
-				added: "success", information: "info", primary: "info",
-				inverse: "default", primaryInverted: "default",
-			};
-			const variant = (ALIAS_MAP[rawVariant as string] ?? rawVariant) as Parameters<typeof Badge>[0]["variant"];
+			const variant = normalizeJsonRenderBadgeVariant(props.variant);
 			const text = toSafeText(props.text);
 			return <Badge variant={variant}>{text}</Badge>;
 		},
