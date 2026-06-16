@@ -5486,6 +5486,13 @@ const UI_CUSTOM_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "agent-test-demo-chat-only": dynamic(
+    () =>
+      import("./demos/blocks/agent-test-demo").then((mod) => ({
+        default: mod.AgentTestDemoChatOnly,
+      })),
+    { ssr: false },
+  ),
   "animated-dots-demo-custom-colors": dynamic(
     () =>
       import("./demos/ui-custom/animated-dots-demo").then((mod) => ({
@@ -6811,6 +6818,9 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/blocks/agent-insights-demo"),
     { ssr: false },
   ),
+  "agent-test": dynamic(() => import("./demos/blocks/agent-test-demo"), {
+    ssr: false,
+  }),
   "agent-surfaces": dynamic(
     () => import("./demos/blocks/agent-surfaces-demo"),
     { ssr: false },

@@ -1,7 +1,7 @@
 "use client";
 
 // oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
-// oxlint-disable react-doctor/no-multi-comp -- The test panel colocates tightly coupled tab and payload subviews so ChatPanel custom tabs share one local contract.
+// oxlint-disable react-doctor/no-multi-comp -- The test panel colocates the chat surface, header, and automation greeting subviews so they share one local contract.
 
 import Image from "next/image";
 import { Fragment, useEffect, useMemo, useState, type ReactElement } from "react";
@@ -13,8 +13,6 @@ import {
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
 import { AgentAutomationFlowCover } from "@/components/blocks/triggers/components/agent-automation-flow-cover";
-import { getAutomationRuleSecondary } from "@/components/blocks/triggers/components/manage-triggers-dialog";
-import { renderAgentTriggerProviderTileIcon, TriggerConfigAutomationDialog } from "@/components/blocks/triggers/page";
 import {
 	getAgentAutomationRuleLabel,
 	getAgentTriggerReadableLabel,
@@ -26,7 +24,7 @@ import ChatPanel, { type ChatPanelAgentVersionOption } from "@/components/projec
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Lozenge } from "@/components/ui/lozenge";
+import { IconTile } from "@/components/ui/icon-tile";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -37,21 +35,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-import type { RovoDataParts } from "@/lib/rovo-ui-messages";
+import { createAssistantTextMessage, type RovoDataParts, type RovoUIMessage } from "@/lib/rovo-ui-messages";
 import { resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
-import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
-import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 
 const AGENT_TEST_MAX_CONVERSATION_STARTERS = 3;
-const AGENT_TEST_CALLBACK_DELAY_MS = 1600;
-const AGENT_TEST_CHAT_ILLUSTRATION_LIGHT_SRC = "/illustration-spot/general/chat-6/light.svg";
-const AGENT_TEST_CHAT_ILLUSTRATION_DARK_SRC = "/illustration-spot/general/chat-6/dark.svg";
-const AGENT_TEST_AUTOMATION_ILLUSTRATION_LIGHT_SRC = "/illustration-spot/general/automation-2/light.svg";
-const AGENT_TEST_AUTOMATION_ILLUSTRATION_DARK_SRC = "/illustration-spot/general/automation-2/dark.svg";
 
 export interface AgentTestPanelProps {
 	entry: StudioSessionAgentEntry;
@@ -274,11 +265,6 @@ function getAgentTestVersionOptions(entry: StudioSessionAgentEntry): readonly Ag
 	return options;
 }
 
-type AgentTestSurface =
-	| { kind: "start" }
-	| { kind: "chat" }
-	| { kind: "automation"; ruleId: string };
-
 function AgentTestVersionSelect({
 	onSelectVersion,
 	selectedVersionId,
@@ -334,45 +320,25 @@ function AgentTestVersionSelect({
 	);
 }
 
-function AgentTestSelectedHeader({
-	onBack,
+function AgentTestHeader({
 	onReset,
 	onSelectVersion,
 	selectedVersionId,
-	title,
 	versionOptions,
 }: Readonly<{
-	onBack: () => void;
 	onReset: () => void;
 	onSelectVersion: (versionId: string) => void;
 	selectedVersionId: string;
-	title: string;
 	versionOptions: readonly ChatPanelAgentVersionOption[];
 }>): ReactElement {
 	return (
 		<div className="flex shrink-0 items-center justify-between gap-3 py-3">
 			<div className="flex min-w-0 items-center gap-2">
-				<Button
-					type="button"
-					variant="ghost"
-					size="default"
-					className="shrink-0 gap-1.5"
-					onClick={onBack}
-				>
-					<ArrowLeftIcon label="" size="small" spacing="none" />
-					Back to testing options
-				</Button>
-				<div className="hidden h-4 w-px shrink-0 bg-border md:block" />
 				<AgentTestVersionSelect
 					onSelectVersion={onSelectVersion}
 					selectedVersionId={selectedVersionId}
 					versionOptions={versionOptions}
 				/>
-				<div className="hidden min-w-0 md:block">
-					<h2 className="truncate text-sm font-semibold leading-5 text-text">
-						{title}
-					</h2>
-				</div>
 			</div>
 			<Button
 				type="button"
@@ -388,135 +354,6 @@ function AgentTestSelectedHeader({
 	);
 }
 
-function AgentTestStartView({
-	automationRules,
-	onSelectAutomation,
-	onSelectChat,
-}: Readonly<{
-	automationRules: readonly AgentAutomationRule[];
-	onSelectAutomation: (ruleId: string) => void;
-	onSelectChat: () => void;
-}>): ReactElement {
-	return (
-		<div
-			className="flex h-full min-h-0 items-center justify-center overflow-y-auto bg-surface px-4 py-10"
-			data-testid="agent-test-start"
-		>
-			<div className="flex w-full max-w-xl flex-col gap-2">
-				<span className="px-1 text-xs font-semibold text-text-subtle">Pick your testing options</span>
-				<div className="w-full overflow-hidden rounded-3xl border border-border bg-surface">
-					<AgentTestOptionRow
-						onSelect={onSelectChat}
-						testId="agent-test-chat-option"
-						thumbnail={<AgentTestChatThumbnail />}
-						title="Chat"
-					/>
-					{automationRules.length > 0 ? (
-						automationRules.map((rule, ruleIndex) => (
-							<AgentTestOptionRow
-								key={rule.id}
-								metadata={<AgentTestAutomationFlow rule={rule} />}
-								onSelect={() => onSelectAutomation(rule.id)}
-								testId={`agent-test-automation-option-${rule.id}`}
-								thumbnail={<AgentTestAutomationThumbnail />}
-								title={getAgentAutomationRuleLabel(rule, ruleIndex)}
-							/>
-						))
-					) : (
-						<AgentTestNoAutomationRow />
-					)}
-				</div>
-			</div>
-		</div>
-	);
-}
-
-function AgentTestOptionRow({
-	metadata,
-	onSelect,
-	testId,
-	thumbnail,
-	title,
-}: Readonly<{
-	metadata?: ReactElement;
-	onSelect: () => void;
-	testId: string;
-	thumbnail: ReactElement;
-	title: string;
-}>): ReactElement {
-	return (
-		<Button
-			aria-label={`Test ${title}`}
-			className="h-auto w-full justify-start gap-4 rounded-none border-x-0 border-t-0 border-b border-border p-2 pr-4 text-left shadow-none last:border-b-0"
-			data-testid={testId}
-			onClick={onSelect}
-			type="button"
-			variant="ghost"
-		>
-			{thumbnail}
-			<span className="flex min-w-0 flex-1 flex-col items-start justify-center gap-1">
-				<span className="max-w-full truncate text-sm font-semibold leading-5 text-text">{title}</span>
-				{metadata}
-			</span>
-			<span className="ml-auto flex size-6 shrink-0 items-center justify-center text-icon-subtle opacity-0 transition-opacity duration-normal ease-out group-hover/button:opacity-100 group-focus-visible/button:opacity-100">
-				<ChevronRightIcon label="" color={token("color.icon.subtle")} size="small" spacing="none" />
-			</span>
-		</Button>
-	);
-}
-
-function AgentTestChatThumbnail(): ReactElement {
-	return (
-		<span className="flex h-14 w-28 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-surface">
-			<AgentTestThemeImage
-				alt=""
-				className="size-20 object-contain"
-				darkSrc={AGENT_TEST_CHAT_ILLUSTRATION_DARK_SRC}
-				height={80}
-				lightSrc={AGENT_TEST_CHAT_ILLUSTRATION_LIGHT_SRC}
-				width={80}
-			/>
-		</span>
-	);
-}
-
-function AgentTestAutomationThumbnail({
-	disabled = false,
-	imageClassName,
-}: Readonly<{
-	disabled?: boolean;
-	imageClassName?: string;
-}> = {}): ReactElement {
-	return (
-		<span
-			className={cn(
-				"flex h-14 w-28 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-surface",
-				disabled && "border-dashed",
-			)}
-		>
-			<AgentTestThemeImage
-				alt=""
-				className={cn("size-10 object-contain", imageClassName)}
-				darkSrc={AGENT_TEST_AUTOMATION_ILLUSTRATION_DARK_SRC}
-				height={40}
-				lightSrc={AGENT_TEST_AUTOMATION_ILLUSTRATION_LIGHT_SRC}
-				width={40}
-			/>
-		</span>
-	);
-}
-
-function AgentTestNoAutomationRow(): ReactElement {
-	return (
-		<div className="flex min-w-0 items-center gap-4 p-2 pr-4" data-testid="agent-test-no-automation-empty">
-			<AgentTestAutomationThumbnail disabled imageClassName="grayscale opacity-(--opacity-disabled)" />
-			<div className="min-w-0 flex-1">
-				<div className="truncate text-sm font-semibold leading-5 text-text-disabled">No automations yet</div>
-			</div>
-		</div>
-	);
-}
-
 function AgentTestAutomationFlow({
 	rule,
 }: Readonly<{
@@ -527,6 +364,7 @@ function AgentTestAutomationFlow({
 			aria-hidden={false}
 			aria-label={getAutomationOptionMetadata(rule)}
 			rootElement="span"
+			size="compact"
 			triggers={rule.triggers}
 		/>
 	);
@@ -544,302 +382,9 @@ function getAutomationOptionMetadata(rule: AgentAutomationRule): string {
 	return `${triggerLabels.join(" and ")} to agent instructions`;
 }
 
-function AgentTestThemeImage({
-	alt,
-	className,
-	darkSrc,
-	height,
-	lightSrc,
-	width,
-}: Readonly<{
-	alt: string;
-	className: string;
-	darkSrc: string;
-	height: number;
-	lightSrc: string;
-	width: number;
-}>): ReactElement {
-	return (
-		<>
-			<Image
-				alt={alt}
-				className={cn(className, "dark:hidden [[data-color-mode=dark]_&]:hidden")}
-				height={height}
-				src={lightSrc}
-				width={width}
-			/>
-			<Image
-				alt={alt}
-				className={cn(className, "hidden dark:block [[data-color-mode=dark]_&]:block")}
-				height={height}
-				src={darkSrc}
-				width={width}
-			/>
-		</>
-	);
-}
-
-export function AgentTestAutomationDetailView({
-	rule,
-	ruleIndex,
-}: Readonly<{
-	rule: AgentAutomationRule;
-	ruleIndex: number;
-}>): ReactElement {
-	const [testSelection, setTestSelection] = useState<AutomationTestSelection | null>(null);
-	const [pendingSelection, setPendingSelection] = useState<AutomationTestSelection | null>(null);
-	const [isEditOpen, setIsEditOpen] = useState(false);
-	// Edits made in the in-situ "Edit automation" modal are reflected locally so
-	// the test card updates without leaving the Test view (the test snapshot is
-	// ephemeral, so a local override is the source of truth here).
-	const [editedRule, setEditedRule] = useState<AgentAutomationRule | null>(null);
-	const effectiveRule = editedRule ?? rule;
-	const testResult = useMemo(() => {
-		if (!testSelection) {
-			return null;
-		}
-
-		if (effectiveRule.id !== testSelection.ruleId) {
-			return null;
-		}
-
-		const trigger = effectiveRule.triggers.find((item) => item.id === testSelection.triggerId);
-		return trigger ? createAutomationTestResult(effectiveRule, ruleIndex, trigger) : null;
-	}, [effectiveRule, ruleIndex, testSelection]);
-
-	useEffect(() => {
-		if (!pendingSelection) {
-			return;
-		}
-
-		const timeoutId = window.setTimeout(() => {
-			setTestSelection(pendingSelection);
-			setPendingSelection(null);
-		}, AGENT_TEST_CALLBACK_DELAY_MS);
-
-		return () => {
-			window.clearTimeout(timeoutId);
-		};
-	}, [pendingSelection]);
-
-	return (
-		<div className="scroll-mask-top flex min-h-0 flex-1 items-start justify-center overflow-y-auto pb-6 pt-6">
-			<div className="grid w-full max-w-[56rem] gap-4">
-				<div className="grid">
-					<AutomationTestCard
-						attached={Boolean(testResult)}
-						onEdit={() => setIsEditOpen(true)}
-						onTest={(trigger) => {
-							setTestSelection(null);
-							setPendingSelection({ ruleId: effectiveRule.id, triggerId: trigger.id });
-						}}
-						pendingTriggerId={
-							pendingSelection?.ruleId === effectiveRule.id ? pendingSelection.triggerId : null
-						}
-						rule={effectiveRule}
-						ruleIndex={ruleIndex}
-						testedTriggerId={testResult ? testSelection?.triggerId ?? null : null}
-					/>
-					{testResult ? (
-						<div className="grid gap-4 rounded-b-xl border border-border bg-surface p-4">
-							<TestJsonBlock title="Sample event payload" value={testResult.payload} />
-							<TestJsonBlock title="Callback result" value={testResult.callback} />
-						</div>
-					) : null}
-				</div>
-				<TriggerConfigAutomationDialog
-					automationRule={effectiveRule}
-					onOpenChange={setIsEditOpen}
-					onSave={(savedRule) => setEditedRule(savedRule)}
-					open={isEditOpen}
-				/>
-			</div>
-		</div>
-	);
-}
-
-interface AutomationTestSelection {
-	ruleId: string;
-	triggerId: string;
-}
-
 interface AutomationTestResult {
 	payload: Record<string, unknown>;
 	callback: Record<string, unknown>;
-}
-
-function AutomationTestCard({
-	attached = false,
-	onEdit,
-	onTest,
-	pendingTriggerId,
-	rule,
-	ruleIndex,
-	testedTriggerId,
-}: Readonly<{
-	attached?: boolean;
-	onEdit?: () => void;
-	onTest: (trigger: AgentTriggerValue) => void;
-	pendingTriggerId: string | null;
-	rule: AgentAutomationRule;
-	ruleIndex: number;
-	testedTriggerId: string | null;
-}>): ReactElement {
-	const title = getAgentAutomationRuleLabel(rule, ruleIndex);
-	const secondary = getAutomationRuleSecondary(rule);
-	const activeLabel = rule.enabled === false ? "Inactive" : "Active";
-	const firstTriggerLabel = rule.triggers[0]
-		? getAgentTriggerReadableLabel(rule.triggers[0])
-		: "No event triggers";
-
-	return (
-		<div
-			className={cn(
-				"grid gap-4 rounded-xl border border-border bg-surface p-4",
-				rule.triggers.length > 0 && "pb-0",
-				attached && "rounded-b-none border-b-0",
-			)}
-		>
-			<div className="grid gap-2">
-				<div className="flex items-center justify-between gap-3">
-					<AgentTestAutomationFlow rule={rule} />
-					{onEdit ? (
-						<Button
-							className="shrink-0"
-							onClick={onEdit}
-							size="compact"
-							type="button"
-							variant="outline"
-						>
-							Edit
-						</Button>
-					) : null}
-				</div>
-				<div className="min-w-0">
-					<div className="flex min-w-0 items-center gap-2">
-						<h3 className="truncate text-sm font-medium leading-5 text-text">{title}</h3>
-						<Lozenge className="shrink-0" variant={rule.enabled === false ? "neutral" : "success"}>
-							{activeLabel}
-						</Lozenge>
-					</div>
-					<p className="truncate text-xs leading-4 text-text-subtle">{secondary}</p>
-					<p className="mt-2 truncate text-xs leading-4 text-text">
-						Starts with {firstTriggerLabel}
-					</p>
-				</div>
-			</div>
-			{rule.triggers.length > 0 ? (
-				<div className="grid">
-					{rule.triggers.map((trigger) => (
-						<AutomationTestEventRow
-							key={trigger.id}
-							isPending={pendingTriggerId === trigger.id}
-							isTested={testedTriggerId === trigger.id}
-							onTest={() => onTest(trigger)}
-							trigger={trigger}
-						/>
-					))}
-				</div>
-			) : (
-				<div className="rounded-lg border border-dashed border-border bg-bg-input p-3 text-sm text-text-subtle">
-					No event triggers configured.
-				</div>
-			)}
-		</div>
-	);
-}
-
-function AutomationTestEventRow({
-	isPending,
-	isTested,
-	onTest,
-	trigger,
-}: Readonly<{
-	isPending: boolean;
-	isTested: boolean;
-	onTest: () => void;
-	trigger: AgentTriggerValue;
-}>): ReactElement {
-	const provider = getTriggerProvider(trigger.providerId);
-	const tileIcon = renderAgentTriggerProviderTileIcon(trigger);
-	const label = getAgentTriggerReadableLabel(trigger);
-	const connectionLabel = getConnectionTestLabel(trigger);
-	const testButtonLabel = isPending
-		? "Testing"
-		: isTested
-			? `Test (${getFakeTestDurationLabel(trigger.id)})`
-			: "Test";
-
-	return (
-		<div className="flex w-full items-center gap-3 border-t border-border py-3">
-			<span className="rich-text-command-menu-avatar inline-flex size-8 shrink-0 items-center justify-center">
-				{tileIcon ?? <AutomationIcon label="" size="small" />}
-			</span>
-			<div className="min-w-0 flex-1">
-				<div className="truncate text-sm font-medium leading-5 text-text">{label}</div>
-				<div className="truncate text-xs leading-4 text-text-subtle">
-					{provider?.label ?? "Event trigger"}{connectionLabel ? ` · ${connectionLabel}` : ""}
-				</div>
-			</div>
-			<Button
-				className="shrink-0"
-				disabled={isPending}
-				isLoading={isPending}
-				onClick={onTest}
-				size="compact"
-				type="button"
-				variant="outline"
-			>
-				{testButtonLabel}
-			</Button>
-		</div>
-	);
-}
-
-function TestJsonBlock({
-	title,
-	value,
-}: Readonly<{
-	title: string;
-	value: Record<string, unknown>;
-}>): ReactElement {
-	return (
-		<div className="grid min-w-0 gap-2">
-			<div className="text-xs font-semibold leading-4 text-text-subtlest">{title}</div>
-			<pre className="max-h-80 overflow-auto rounded-lg bg-surface-sunken p-3 text-xs leading-5 text-text">
-				{JSON.stringify(value, null, "\t")}
-			</pre>
-		</div>
-	);
-}
-
-// Fabricates a stable "X min Y seconds" run time for a completed test. The
-// real callback is near-instant, so we derive a deterministic, believably
-// longer duration from the trigger id (same trigger → same reported time).
-function getFakeTestDurationLabel(seed: string): string {
-	let hash = 0;
-	for (let index = 0; index < seed.length; index += 1) {
-		hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
-	}
-	const totalSeconds = 68 + (hash % 112); // ~1–3 minutes
-	const minutes = Math.floor(totalSeconds / 60);
-	const seconds = totalSeconds % 60;
-	const secondsLabel = `${seconds} second${seconds === 1 ? "" : "s"}`;
-	return minutes > 0 ? `${minutes} min ${secondsLabel}` : secondsLabel;
-}
-
-function getConnectionTestLabel(trigger: AgentTriggerValue): string | null {
-	switch (trigger.connectionState) {
-		case "needs-connection":
-			return "Connection required, sample test available";
-		case "connecting":
-			return "Connecting, sample test available";
-		case "connection-error":
-			return "Connection failed, sample test available";
-		case "connected":
-		default:
-			return null;
-	}
 }
 
 function createAutomationTestResult(
@@ -953,18 +498,155 @@ function getProviderSampleData(trigger: AgentTriggerValue): Record<string, unkno
 	}
 }
 
+// Builds the scripted user + assistant turn injected into the chat when an
+// automation is run inline. The assistant turn renders the sample event payload
+// and callback result as JSON code blocks. No backend is involved — the messages
+// are written directly into the conversation via `replaceMessages`.
+function buildAutomationRunMessages(
+	rule: AgentAutomationRule,
+	ruleIndex: number,
+): RovoUIMessage[] {
+	const trigger = rule.triggers[0];
+	if (!trigger) {
+		return [];
+	}
+
+	const label = getAgentAutomationRuleLabel(rule, ruleIndex);
+	const result = createAutomationTestResult(rule, ruleIndex, trigger);
+	const userMessage: RovoUIMessage = {
+		id: crypto.randomUUID(),
+		role: "user",
+		parts: [{ type: "text", text: `Test "${label}"`, state: "done" }],
+	};
+	const assistantMessage = createAssistantTextMessage(
+		crypto.randomUUID(),
+		[
+			"**Sample event payload**",
+			"",
+			"```json",
+			JSON.stringify(result.payload, null, 2),
+			"```",
+			"",
+			"**Callback result**",
+			"",
+			"```json",
+			JSON.stringify(result.callback, null, 2),
+			"```",
+		].join("\n"),
+	);
+
+	return [userMessage, assistantMessage];
+}
+
+// The "Automation" group rendered below the conversation starters in the chat
+// greeting. One row per automation rule; clicking a row runs its sample inline.
+function AgentTestAutomationGreetingSection({
+	automationRules,
+	onRunAutomation,
+}: Readonly<{
+	automationRules: readonly AgentAutomationRule[];
+	onRunAutomation: (rule: AgentAutomationRule, ruleIndex: number) => void;
+}>): ReactElement | null {
+	if (automationRules.length === 0) {
+		return null;
+	}
+
+	return (
+		<div className="flex flex-col gap-1">
+			{/* Group label mirrors the "Chat" label treatment in chat-greeting.tsx:
+			    a 32px spot illustration aligned to the row tile column (gap-3). */}
+			<div className="flex items-center gap-3 px-1.5 text-xs font-semibold leading-4 text-text-subtle">
+				<span className="block size-8 shrink-0">
+					<Image
+						alt=""
+						className="size-8 object-contain dark:hidden [[data-color-mode=dark]_&]:hidden"
+						height={32}
+						src="/illustration-spot/general/automation-2/light.svg"
+						width={32}
+					/>
+					<Image
+						alt=""
+						className="hidden size-8 object-contain dark:block [[data-color-mode=dark]_&]:block"
+						height={32}
+						src="/illustration-spot/general/automation-2/dark.svg"
+						width={32}
+					/>
+				</span>
+				Flows
+			</div>
+			{automationRules.map((rule, ruleIndex) => (
+				<AgentTestAutomationGreetingRow
+					key={rule.id}
+					onRun={() => onRunAutomation(rule, ruleIndex)}
+					rule={rule}
+					ruleIndex={ruleIndex}
+				/>
+			))}
+		</div>
+	);
+}
+
+function AgentTestAutomationGreetingRow({
+	onRun,
+	rule,
+	ruleIndex,
+}: Readonly<{
+	onRun: () => void;
+	rule: AgentAutomationRule;
+	ruleIndex: number;
+}>): ReactElement {
+	const label = getAgentAutomationRuleLabel(rule, ruleIndex);
+	const hasTrigger = rule.triggers.length > 0;
+
+	return (
+		<button
+			aria-label={`Test ${label}`}
+			className="grid w-full grid-cols-[32px_minmax(0,1fr)] items-center gap-3 rounded-[12px] px-1.5 py-2 text-left transition-colors hover:bg-bg-neutral-subtle-hovered disabled:pointer-events-none disabled:opacity-(--opacity-disabled)"
+			disabled={!hasTrigger}
+			onClick={onRun}
+			type="button"
+		>
+			<IconTile
+				aria-hidden
+				className="border border-border bg-surface"
+				icon={<AutomationIcon color={token("color.icon.subtle")} label={label} />}
+				label={label}
+				size="medium"
+			/>
+			<span className="flex min-w-0 flex-col gap-1.5">
+				<span className="menu-row-title text-left">{label}</span>
+				<AgentTestAutomationFlow rule={rule} />
+			</span>
+		</button>
+	);
+}
+
 function AgentTestChatPanel({
+	automationRules,
 	testAgentProfile,
 }: Readonly<{
+	automationRules: readonly AgentAutomationRule[];
 	testAgentProfile: RovoAgentProfile;
 }>): ReactElement {
-	const { selectedAgentId, selectAgent } = useRovoChat();
+	const { selectedAgentId, selectAgent, replaceMessages } = useRovoChat();
 
 	useEffect(() => {
 		if (selectedAgentId !== testAgentProfile.id) {
 			selectAgent(testAgentProfile.id, { preserveCurrentThread: true });
 		}
 	}, [selectAgent, selectedAgentId, testAgentProfile.id]);
+
+	function handleRunAutomation(rule: AgentAutomationRule, ruleIndex: number): void {
+		const messages = buildAutomationRunMessages(rule, ruleIndex);
+		if (messages.length > 0) {
+			replaceMessages(messages);
+		}
+	}
+
+	// Only label the starter list with a "Chat" header when both groups are
+	// present, so a chat-only agent keeps its plain starter list.
+	const showStarterGroupLabel =
+		testAgentProfile.starters.length > 0 && automationRules.length > 0;
 
 	return (
 		<ChatPanel
@@ -980,6 +662,13 @@ function AgentTestChatPanel({
 			greeting={{
 				heading: testAgentProfile.name,
 				suggestions: testAgentProfile.starters,
+				showStarterGroupLabel,
+				agentTestSection: (
+					<AgentTestAutomationGreetingSection
+						automationRules={automationRules}
+						onRunAutomation={handleRunAutomation}
+					/>
+				),
 			}}
 			greetingSelectedAgent={testAgentProfile}
 			hideAiCursor
@@ -995,7 +684,6 @@ export function AgentTestPanel({
 }: Readonly<AgentTestPanelProps>): ReactElement {
 	const versionOptions = useMemo(() => getAgentTestVersionOptions(entry), [entry]);
 	const [selectedVersionId, setSelectedVersionId] = useState("latest");
-	const [selectedSurface, setSelectedSurface] = useState<AgentTestSurface>({ kind: "start" });
 	const [resetKey, setResetKey] = useState(0);
 	if (!versionOptions.some((option) => option.id === selectedVersionId)) {
 		setSelectedVersionId("latest");
@@ -1006,23 +694,11 @@ export function AgentTestPanel({
 		() => selectedResult.automationRules ?? [],
 		[selectedResult.automationRules],
 	);
-	const selectedAutomationIndex = selectedSurface.kind === "automation"
-		? automationRules.findIndex((rule) => rule.id === selectedSurface.ruleId)
-		: -1;
-	const selectedAutomation = selectedAutomationIndex >= 0
-		? automationRules[selectedAutomationIndex]
-		: null;
 	const snapshotKey = `${entry.profile.id}:${selectedOption.id}:${JSON.stringify(selectedResult)}`;
 	const testAgentProfile = useMemo(
 		() => buildAgentTestProfile(entry, selectedResult, selectedOption.label),
 		[entry, selectedOption.label, selectedResult],
 	);
-
-	useEffect(() => {
-		if (selectedSurface.kind === "automation" && !selectedAutomation) {
-			setSelectedSurface({ kind: "start" });
-		}
-	}, [selectedAutomation, selectedSurface]);
 
 	return (
 		<section
@@ -1032,45 +708,24 @@ export function AgentTestPanel({
 			// chat tab strip and composer align with the header above.
 			className={cn("h-full min-h-0 px-4", className)}
 		>
-			{selectedSurface.kind === "start" ? (
-				<AgentTestStartView
-					automationRules={automationRules}
-					onSelectAutomation={(ruleId) => setSelectedSurface({ kind: "automation", ruleId })}
-					onSelectChat={() => setSelectedSurface({ kind: "chat" })}
+			<div className="flex h-full min-h-0 flex-col bg-surface">
+				<AgentTestHeader
+					onReset={() => setResetKey((currentKey) => currentKey + 1)}
+					onSelectVersion={setSelectedVersionId}
+					selectedVersionId={selectedVersionId}
+					versionOptions={versionOptions}
 				/>
-			) : (
-				<div className="flex h-full min-h-0 flex-col bg-surface">
-					<AgentTestSelectedHeader
-						onBack={() => setSelectedSurface({ kind: "start" })}
-						onReset={() => setResetKey((currentKey) => currentKey + 1)}
-						onSelectVersion={setSelectedVersionId}
-						selectedVersionId={selectedVersionId}
-						title={
-							selectedSurface.kind === "chat"
-								? "Chat"
-								: selectedAutomation
-									? getAgentAutomationRuleLabel(selectedAutomation, selectedAutomationIndex)
-									: "Automation"
-						}
-						versionOptions={versionOptions}
+				<RovoChatProvider
+					key={`${snapshotKey}:${resetKey}`}
+					agentProfiles={[testAgentProfile]}
+					autoSelectAgentId={testAgentProfile.id}
+				>
+					<AgentTestChatPanel
+						automationRules={automationRules}
+						testAgentProfile={testAgentProfile}
 					/>
-					{selectedSurface.kind === "chat" ? (
-						<RovoChatProvider
-							key={`${snapshotKey}:${resetKey}`}
-							agentProfiles={[testAgentProfile]}
-							autoSelectAgentId={testAgentProfile.id}
-						>
-							<AgentTestChatPanel testAgentProfile={testAgentProfile} />
-						</RovoChatProvider>
-					) : selectedAutomation ? (
-						<AgentTestAutomationDetailView
-							key={`${snapshotKey}:${selectedAutomation.id}:${resetKey}`}
-							rule={selectedAutomation}
-							ruleIndex={selectedAutomationIndex}
-						/>
-					) : null}
-				</div>
-			)}
+				</RovoChatProvider>
+			</div>
 		</section>
 	);
 }
