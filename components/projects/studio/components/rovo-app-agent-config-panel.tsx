@@ -1417,7 +1417,20 @@ export function RovoAppAgentConfigPanel({
 										/>
 									</div>
 								) : null}
-								<div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-4 py-4">
+								<div
+									className={cn(
+										"mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-4",
+										// Agent config takes its 24px top space inside the scroll
+										// region (compactScrollAreaClassName `pt-6`) so it collapses
+										// as soon as the content scrolls; access/surfaces/users keep
+										// the fixed `py-4` since they don't share that scroll area.
+										activeCompactSection === "access" ||
+											activeCompactSection === "surfaces" ||
+											activeCompactSection === "users"
+											? "py-4"
+											: "",
+									)}
+								>
 									{activeCompactSection === "access" ? (
 										<div className="-mr-4 min-h-0 flex-1 overflow-y-auto pr-4">
 											<div className="mx-auto w-full max-w-4xl pb-6">
@@ -1455,9 +1468,12 @@ export function RovoAppAgentConfigPanel({
 											// cancels part of the shared px-4 wrapper. Combined with the
 											// scroll area's own px-1.5 ring-clearance inset, content lands
 											// flush at 16px from the panel edge (10px wrapper + 6px inset)
-											// while the focus-ring clip clearance is preserved. Scoped to
-											// this config branch only; access/surfaces/users keep px-4.
-											compactScrollAreaClassName="-ml-1.5 -mr-4 pr-4"
+											// while the focus-ring clip clearance is preserved. `pt-4`
+											// lives inside the scrollport so the 16px top gap shows at
+											// rest but scrolls away once the content scrolls (the wrapper
+											// drops its fixed py-4 for this branch). Scoped to this config
+											// branch only; access/surfaces/users keep px-4.
+											compactScrollAreaClassName="-ml-1.5 -mr-4 pr-4 pt-4"
 											idPrefix={`agent-${profileId}-${activeConfigId}`}
 											onTextChange={handleConfigTextChange}
 											onProfileTextChange={handleBaseTextChange}

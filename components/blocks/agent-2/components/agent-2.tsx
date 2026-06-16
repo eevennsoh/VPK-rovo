@@ -131,7 +131,6 @@ import {
 } from "@/components/ui-custom/rich-text-editor/reference-preview";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import { useHasHorizontalOverflow } from "@/components/hooks/use-has-horizontal-overflow";
-import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { buildHorizontalScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import type {
 	WikiMemoryExplorerResponse,
@@ -4444,7 +4443,6 @@ export const AgentConfigFields = memo(
 		...props
 	}: Readonly<AgentConfigFieldsProps>) => {
 		const isFilledConfig = hasFilledAgentConfig(config);
-		const compactScrollOverflow = useHasVerticalOverflow<HTMLDivElement>();
 		const [mentionRemovalRequest, setMentionRemovalRequest] = useState<RichTextMentionRemovalRequest | null>(null);
 		const handleTextChange = useCallback((field: AgentConfigTextFieldName, value: string) => {
 			onTextChange?.(field, value);
@@ -4610,11 +4608,8 @@ export const AgentConfigFields = memo(
 			>
 				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 					{/* Scrollable region: profile + instructions grow to fill, the
-					    sibling footer below stays anchored to the panel bottom. The
-					    bottom scroll mask fades content into the footer while there's
-					    more below, and clears once the region is scrolled to the end. */}
+					    sibling footer below stays anchored to the panel bottom. */}
 					<div
-						ref={compactScrollOverflow.ref}
 						// `overflow-y-auto` forces `overflow-x` to compute to `auto`,
 						// which clips the left/right edges of descendant focus-visible
 						// rings. `px-1.5` insets the content 6px so full-width controls
@@ -4625,7 +4620,6 @@ export const AgentConfigFields = memo(
 						// clip edge and re-clip their rings.
 						className={cn(
 							"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-1.5",
-							compactScrollOverflow.showBottomScrollMask && "scroll-mask-bottom",
 							compactScrollAreaClassName,
 						)}
 					>
