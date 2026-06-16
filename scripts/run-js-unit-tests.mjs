@@ -59,6 +59,9 @@ const INCLUDED_TEST_FILES = new Set([
 	// Shared automation flow cover used by trigger config and the test landing
 	// page, so both surfaces keep the same trigger → agent visual treatment.
 	"components/blocks/triggers/components/agent-automation-flow-cover.test.js",
+	// Pure waveform layout and audio-band mapping used by compact composer voice
+	// affordances. Components are not included wholesale, so gate explicitly.
+	"components/ui-audio/live-waveform-layout.test.js",
 ]);
 
 const gitResult = spawnSync("git", [

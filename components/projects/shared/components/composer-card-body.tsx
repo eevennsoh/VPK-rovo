@@ -6,7 +6,6 @@ import {
 	PromptInputActionMenuContent,
 	PromptInputActionMenuTrigger,
 	PromptInputBody,
-	PromptInputButton,
 	PromptInputFooter,
 	PromptInputPreferencesButton,
 	PromptInputTextarea,
@@ -24,7 +23,6 @@ import { RovoComposerSendControls } from "@/components/projects/shared/component
 import { useRovoAppComposerHeight } from "@/components/projects/shared/hooks/use-rovo-app-composer-height";
 import { DEFAULT_REASONING_OPTION_ID } from "@/components/blocks/shared-ui/data/customize-menu-data";
 import { type ComposerBodyBaseProps, usePrefillEffect } from "@/components/projects/shared/components/composer-body-shared";
-import { RovoCursorTrackingIcon } from "@/components/projects/shared/components/rovo-cursor-tracking-icon";
 
 export interface ComposerCardBodyProps extends ComposerBodyBaseProps {
 	artifactTitle: string | null | undefined;
@@ -38,7 +36,7 @@ export interface ComposerCardBodyProps extends ComposerBodyBaseProps {
 
 /**
  * Rovo "card" composer body: bordered card with the height-animation system,
- * the Add action-menu, Rovo Cursor + Customize controls, and the full
+ * the Add action-menu, Customize controls, and the full
  * reasoning-aware send controls.
  */
 export function ComposerCardBody({
@@ -141,7 +139,7 @@ export function ComposerCardBody({
 	return (
 		<div
 			ref={composerRef}
-			className={cn("relative z-10 rounded-xl border border-border bg-surface px-4 pb-3 pt-3", composerHeight ? "flex flex-col" : undefined, compact ? "pb-2.5 pt-3.5" : undefined)}
+			className={cn("relative z-10 rounded-xl border border-border bg-surface px-4 py-2.5", composerHeight ? "flex flex-col" : undefined, compact ? "pb-2 pt-3" : undefined)}
 			style={{
 				boxShadow: composerUpwardShadow,
 				...(composerHeight
@@ -187,16 +185,6 @@ export function ComposerCardBody({
 								/>
 							</PromptInputActionMenuContent>
 						</PromptInputActionMenu>
-						<PromptInputButton
-							size="icon-sm"
-							variant={clickyActive ? "default" : "ghost"}
-							onClick={onToggleClicky}
-							aria-label="Rovo cursor"
-							aria-pressed={clickyActive}
-							tooltip={{ content: "Rovo cursor", delay: 0 }}
-						>
-							<RovoCursorTrackingIcon active={clickyActive} />
-						</PromptInputButton>
 						<Popover open={isCustomizeMenuOpen} onOpenChange={handleCustomizeMenuOpenChange}>
 							<PopoverTrigger render={<PromptInputPreferencesButton aria-label="Customize" />} />
 							<PopoverContent side="top" align="start" sideOffset={8} positionerClassName="z-[600]" className="w-auto p-2">
@@ -224,6 +212,7 @@ export function ComposerCardBody({
 						dictationTranscriptPreview={dictationTranscriptPreview}
 						experimentalDarkCta={experimentalDarkCta}
 						isComposerBusy={isComposerBusy}
+						clickyActive={clickyActive}
 						micStream={micStream}
 						onCompanyKnowledgeChange={setCompanyKnowledgeEnabled}
 						onOpenChange={handleAutoMenuOpenChange}
@@ -231,6 +220,7 @@ export function ComposerCardBody({
 						onStop={onStop}
 						onStartDictation={onStartDictation}
 						onStopDictation={onStopDictation}
+						onToggleClicky={onToggleClicky}
 						onToggleRealtimeVoice={onToggleRealtimeVoice}
 						open={isAutoMenuOpen}
 						realtimeVoiceActive={realtimeVoiceActive}

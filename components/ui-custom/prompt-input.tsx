@@ -25,6 +25,8 @@ import Image from "next/image";
 
 import type { Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import { TextSelection } from "@tiptap/pm/state";
 
 import { EDITOR_PALETTE_MENTION_SOURCES } from "@/components/blocks/editor-palette/data/mention-sources";
 import {
@@ -44,6 +46,7 @@ import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import {
+  serializeComposerMentionAttrs,
   serializeComposerDoc,
   setComposerPlainText,
 } from "@/lib/composer-serialize";
@@ -1177,6 +1180,15 @@ interface VisualTraceBlockText {
   text: string;
 }
 
+interface VisualTraceRangeScope {
+  from: number;
+  to: number;
+  type: "range";
+}
+
+type VisualTraceAutoTagScope = "block" | "document" | VisualTraceRangeScope;
+const VISUAL_TRACE_EXTERNAL_SYNC_LOOKBACK_CHARS = 96;
+
 function getCurrentVisualTraceBlockText(editor: Editor): VisualTraceBlockText {
   const { selection } = editor.state;
   const blockFrom = selection.$from.start();
@@ -1258,6 +1270,170 @@ function getVisualTraceDocumentText(editor: Editor): VisualTraceBlockText {
     segments,
     text,
   };
+}
+
+function getVisualTraceRangeText(editor: Editor, range: VisualTraceRangeScope): VisualTraceBlockText {
+  const segments: VisualTraceTextSegment[] = [];
+  const docTo = editor.state.doc.content.size;
+  const from = Math.max(0, Math.min(range.from, docTo));
+  const to = Math.max(from, Math.min(range.to, docTo));
+  let text = "";
+
+  editor.state.doc.nodesBetween(from, to, (node, pos) => {
+    if (node.isText && node.text) {
+      const nodeFrom = pos;
+      const nodeTo = pos + node.nodeSize;
+      const sliceFrom = Math.max(0, from - nodeFrom);
+      const sliceTo = Math.min(node.text.length, to - nodeFrom);
+      if (sliceFrom < sliceTo) {
+        const textFrom = text.length;
+        text += node.text.slice(sliceFrom, sliceTo);
+        segments.push({
+          from: nodeFrom + sliceFrom,
+          textFrom,
+          textTo: text.length,
+          to: nodeFrom + sliceTo,
+        });
+      }
+      return false;
+    }
+
+    if (node.type.name === "hardBreak") {
+      text += "\n";
+      return false;
+    }
+
+    if (node.type.name === "mention") {
+      text += RICH_TEXT_OBJECT_REPLACEMENT;
+      return false;
+    }
+
+    return true;
+  });
+
+  return {
+    blockFrom: from,
+    segments,
+    text,
+  };
+}
+
+function getCommonPrefixLength(left: string, right: string): number {
+  const limit = Math.min(left.length, right.length);
+  let index = 0;
+  while (index < limit && left.charCodeAt(index) === right.charCodeAt(index)) {
+    index += 1;
+  }
+
+  return index;
+}
+
+function getVisualTraceExternalSyncTextOffset(text: string, changedFromOffset: number): number {
+  const safeChangedFromOffset = Math.max(0, Math.min(changedFromOffset, text.length));
+  let offset = safeChangedFromOffset;
+  const floor = Math.max(0, safeChangedFromOffset - VISUAL_TRACE_EXTERNAL_SYNC_LOOKBACK_CHARS);
+
+  while (offset > floor) {
+    const character = text.charAt(offset - 1);
+    if (character === "\n" || character === "." || character === "!" || character === "?") {
+      break;
+    }
+    offset -= 1;
+  }
+
+  while (offset < safeChangedFromOffset && /\s/u.test(text.charAt(offset))) {
+    offset += 1;
+  }
+
+  return offset;
+}
+
+function getComposerNodeSerializedText(node: ProseMirrorNode): string {
+  if (node.isText) {
+    return node.text ?? "";
+  }
+
+  if (node.type.name === "mention") {
+    return serializeComposerMentionAttrs(node.attrs);
+  }
+
+  if (node.type.name === "hardBreak") {
+    return "\n";
+  }
+
+  return "";
+}
+
+function getComposerDocPositionAtSerializedOffset(editor: Editor, textOffset: number): number {
+  const targetOffset = Math.max(0, textOffset);
+  let serializedOffset = 0;
+  let position: number | null = null;
+
+  editor.state.doc.forEach((block, blockOffset, blockIndex) => {
+    if (position !== null) {
+      return;
+    }
+
+    if (blockIndex > 0) {
+      const nextOffset = serializedOffset + 1;
+      if (targetOffset <= nextOffset) {
+        position = targetOffset === serializedOffset ? blockOffset : blockOffset + 1;
+        return;
+      }
+      serializedOffset = nextOffset;
+    }
+
+    block.descendants((node, offset) => {
+      if (position !== null) {
+        return false;
+      }
+
+      const serializedText = getComposerNodeSerializedText(node);
+      if (!serializedText) {
+        return true;
+      }
+
+      const nodeFrom = blockOffset + 1 + offset;
+      const nodeTo = nodeFrom + node.nodeSize;
+      const nextOffset = serializedOffset + serializedText.length;
+      if (targetOffset <= nextOffset) {
+        if (node.type.name === "mention") {
+          position = targetOffset === nextOffset ? nodeTo : nodeFrom;
+          return false;
+        }
+
+        position = nodeFrom + Math.max(0, targetOffset - serializedOffset);
+        return false;
+      }
+
+      serializedOffset = nextOffset;
+      return false;
+    });
+
+    if (position === null && targetOffset <= serializedOffset) {
+      position = blockOffset + block.nodeSize - 1;
+    }
+  });
+
+  return position ?? TextSelection.atEnd(editor.state.doc).from;
+}
+
+function replaceComposerPlainTextFrom(editor: Editor, from: number, text: string): void {
+  const replaceTo = TextSelection.atEnd(editor.state.doc).from;
+  const transaction = text
+    ? editor.state.tr.insertText(text, from, replaceTo)
+    : editor.state.tr.delete(from, replaceTo);
+  transaction.setSelection(TextSelection.atEnd(transaction.doc));
+  editor.view.dispatch(transaction);
+}
+
+function appendComposerPlainTextAtEnd(editor: Editor, text: string): void {
+  if (!text) {
+    return;
+  }
+
+  const insertFrom = TextSelection.atEnd(editor.state.doc).from;
+  replaceComposerPlainTextFrom(editor, insertFrom, text);
 }
 
 function getVisualTraceDocPosition(
@@ -1347,6 +1523,9 @@ export const PromptInputTextarea = ({
   const visualTracePendingMatchesRef = useRef<readonly VisualTraceAutoTagPendingMatch[]>([]);
   const visualTraceTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const visualTraceUndoSnapshotRef = useRef<VisualTraceAutoTagUndoSnapshot | null>(null);
+  const visualTraceExternalAppendFromRef = useRef<number | null>(null);
+  const visualTraceExternalAppendRangeRef = useRef<VisualTraceRangeScope | null>(null);
+  const lastEditorPublishedTextRef = useRef<string | null>(null);
   const directoryAutocompleteStateRef = useRef<DirectoryAutocompleteState | null>(null);
   const directoryAutocompleteListVisibleRef = useRef(directoryAutocompleteListVisible);
   const onDirectoryAutocompleteChangeRef = useRef(onDirectoryAutocompleteChange);
@@ -1407,9 +1586,11 @@ export const PromptInputTextarea = ({
       setDomEmpty(text === "");
 
       if (!fromEditor) {
+        lastEditorPublishedTextRef.current = null;
         return;
       }
 
+      lastEditorPublishedTextRef.current = text;
       const activeController = controllerRef.current;
       if (activeController) {
         activeController.textInput.setInput(text);
@@ -1450,7 +1631,7 @@ export const PromptInputTextarea = ({
     onDirectoryAutocompleteChangeRef.current?.(nextState);
   }, [applyDirectoryAutocompleteGhost]);
 
-  const getVisualTraceAutoTagMatches = useCallback((activeEditor: Editor, scope: "block" | "document"): readonly VisualTraceAutoTagPendingMatch[] => {
+  const getVisualTraceAutoTagMatches = useCallback((activeEditor: Editor, scope: VisualTraceAutoTagScope): readonly VisualTraceAutoTagPendingMatch[] => {
     const mentionType = activeEditor.schema.nodes.mention;
     if (!enableVisualTraceAutoTagging || !activeEditor.isEditable || !mentionType) {
       return [];
@@ -1458,10 +1639,12 @@ export const PromptInputTextarea = ({
 
     const block = scope === "document"
       ? getVisualTraceDocumentText(activeEditor)
-      : getCurrentVisualTraceBlockText(activeEditor);
+      : scope === "block"
+        ? getCurrentVisualTraceBlockText(activeEditor)
+        : getVisualTraceRangeText(activeEditor, scope);
     const matches = getDirectoryAutocompleteExactLabelMatches({
       sources: mentionSourcesRef.current,
-      suppressTrailingPrefixMatches: scope === "block",
+      suppressTrailingPrefixMatches: scope !== "document",
       text: block.text,
     });
     if (matches.length === 0) {
@@ -1653,7 +1836,7 @@ export const PromptInputTextarea = ({
     setDirectoryAutocompleteState(nextState);
   }, [enableDirectoryAutocomplete, isAnySuggestionMenuOpen, setDirectoryAutocompleteState]);
 
-  const runVisualTraceAutoTagging = useCallback((activeEditor: Editor, generation: number, scope: "block" | "document"): boolean => {
+  const runVisualTraceAutoTagging = useCallback((activeEditor: Editor, generation: number, scope: VisualTraceAutoTagScope): boolean => {
     if (generation !== visualTraceGenerationRef.current) {
       return false;
     }
@@ -1669,12 +1852,12 @@ export const PromptInputTextarea = ({
       return false;
     }
 
-    visualTracePendingRef.current = true;
-    visualTracePendingMatchesRef.current = pendingMatches;
     const undoBaseline = {
       beforeJSON: activeEditor.getJSON(),
       beforeText: serializeComposerDoc(activeEditor),
     };
+    visualTracePendingRef.current = true;
+    visualTracePendingMatchesRef.current = pendingMatches;
     let convertedAny = false;
     const reducedMotion = typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
@@ -1751,21 +1934,22 @@ export const PromptInputTextarea = ({
     return converted;
   }, [clearPendingVisualTraceAutoTagging, convertVisualTraceAutoTagMatches, enableVisualTraceAutoTagging, getVisualTraceAutoTagMatches, publishText]);
 
-  const scheduleVisualTraceAutoTagging = useCallback((activeEditor: Editor, immediate: boolean) => {
+  const scheduleVisualTraceAutoTagging = useCallback((activeEditor: Editor, immediate: boolean, scope: VisualTraceAutoTagScope = immediate ? "document" : "block"): boolean => {
     if (!enableVisualTraceAutoTagging) {
-      return;
+      return false;
     }
 
     clearPendingVisualTraceAutoTagging();
-    visualTracePendingRef.current = true;
-    setDirectoryAutocompleteState(null);
 
     const generation = visualTraceGenerationRef.current;
+    visualTracePendingRef.current = true;
+    setDirectoryAutocompleteState(null);
     const delay = immediate ? 0 : VISUAL_TRACE_AUTO_TAG_TYPED_IDLE_MS;
     const timeout = setTimeout(() => {
-      runVisualTraceAutoTagging(activeEditor, generation, immediate ? "document" : "block");
+      runVisualTraceAutoTagging(activeEditor, generation, scope);
     }, delay);
     visualTraceTimeoutsRef.current = [timeout];
+    return true;
   }, [clearPendingVisualTraceAutoTagging, enableVisualTraceAutoTagging, runVisualTraceAutoTagging, setDirectoryAutocompleteState]);
 
   acceptDirectoryAutocompleteIndexRef.current = (index: number, requireGhost = false): boolean => {
@@ -1886,7 +2070,7 @@ export const PromptInputTextarea = ({
       }
       publishText(serializeComposerDoc(activeEditor), activeEditor.view.dom, false);
       if (enableVisualTraceAutoTagging && initial) {
-        scheduleVisualTraceAutoTagging(activeEditor, true);
+        scheduleVisualTraceAutoTagging(activeEditor, true, "document");
       } else {
         refreshDirectoryAutocomplete(activeEditor);
       }
@@ -1902,11 +2086,20 @@ export const PromptInputTextarea = ({
         return;
       }
       if (enableVisualTraceAutoTagging) {
+        const externalAppendScope = visualTraceExternalAppendRangeRef.current;
+        visualTraceExternalAppendRangeRef.current = null;
         const immediate = visualTraceImmediateUpdateRef.current;
         visualTraceImmediateUpdateRef.current = false;
-        scheduleVisualTraceAutoTagging(activeEditor, immediate);
+        if (externalAppendScope) {
+          scheduleVisualTraceAutoTagging(activeEditor, true, externalAppendScope);
+          return;
+        }
+        visualTraceExternalAppendFromRef.current = null;
+        scheduleVisualTraceAutoTagging(activeEditor, immediate, immediate ? "document" : "block");
         return;
       }
+      visualTraceExternalAppendFromRef.current = null;
+      visualTraceExternalAppendRangeRef.current = null;
       refreshDirectoryAutocomplete(activeEditor);
     },
   });
@@ -2045,6 +2238,8 @@ export const PromptInputTextarea = ({
 
     const handleReset = () => {
       visualTraceUndoSnapshotRef.current = null;
+      visualTraceExternalAppendFromRef.current = null;
+      visualTraceExternalAppendRangeRef.current = null;
       setComposerPlainText(editor, "");
       clearDismissedAutoTags(editor);
       publishText("", editor.view.dom, false);
@@ -2066,16 +2261,67 @@ export const PromptInputTextarea = ({
       return;
     }
 
-    if (serializeComposerDoc(editor) === resolvedValue) {
+    const currentText = serializeComposerDoc(editor);
+    if (currentText === resolvedValue) {
+      if (lastEditorPublishedTextRef.current === resolvedValue) {
+        lastEditorPublishedTextRef.current = null;
+      }
       return;
     }
 
+    if (lastEditorPublishedTextRef.current === resolvedValue) {
+      return;
+    }
+
+    const setExternalVisualTraceRange = (changedFromTextOffset: number, rangeTo: number) => {
+      if (!enableVisualTraceAutoTagging) {
+        visualTraceExternalAppendFromRef.current = null;
+        visualTraceExternalAppendRangeRef.current = null;
+        return;
+      }
+
+      const traceTextOffset = getVisualTraceExternalSyncTextOffset(
+        resolvedValue,
+        changedFromTextOffset,
+      );
+      const traceFrom = getComposerDocPositionAtSerializedOffset(editor, traceTextOffset);
+      visualTraceExternalAppendFromRef.current = traceFrom;
+      visualTraceExternalAppendRangeRef.current = {
+        from: traceFrom,
+        to: rangeTo,
+        type: "range",
+      };
+    };
+
+    const appendedText = resolvedValue.startsWith(currentText)
+      ? resolvedValue.slice(currentText.length)
+      : "";
+    if (appendedText) {
+      const from = TextSelection.atEnd(editor.state.doc).from;
+      const to = from + appendedText.length;
+      setExternalVisualTraceRange(currentText.length, to);
+      appendComposerPlainTextAtEnd(editor, appendedText);
+      return;
+    }
+
+    const commonPrefixLength = getCommonPrefixLength(currentText, resolvedValue);
+    if (commonPrefixLength > 0) {
+      const from = getComposerDocPositionAtSerializedOffset(editor, commonPrefixLength);
+      const replacementText = resolvedValue.slice(commonPrefixLength);
+      const to = from + replacementText.length;
+      setExternalVisualTraceRange(commonPrefixLength, to);
+      replaceComposerPlainTextFrom(editor, from, replacementText);
+      return;
+    }
+
+    visualTraceExternalAppendFromRef.current = null;
+    visualTraceExternalAppendRangeRef.current = null;
     setComposerPlainText(editor, resolvedValue);
     visualTraceUndoSnapshotRef.current = null;
     clearDismissedAutoTags(editor);
     publishText(serializeComposerDoc(editor), editor.view.dom, false);
     if (enableVisualTraceAutoTagging) {
-      scheduleVisualTraceAutoTagging(editor, true);
+      scheduleVisualTraceAutoTagging(editor, true, "document");
     } else {
       refreshDirectoryAutocomplete(editor);
     }

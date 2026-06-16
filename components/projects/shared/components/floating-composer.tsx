@@ -228,7 +228,7 @@ export function FloatingComposer({
 	return (
 		<PromptInput
 			variant="floating"
-			className={cn(composerPromptInputClassName, className)}
+			className={cn(composerPromptInputClassName, "px-4 py-3.5", className)}
 			{...props}
 		>
 			<PromptInputBody>

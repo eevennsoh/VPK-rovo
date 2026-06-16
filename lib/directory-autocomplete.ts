@@ -108,7 +108,11 @@ function getExactLabelCandidates(
 				...(sources?.subagent ?? []),
 			];
 		case "plain":
-			return getDirectoryCandidates(sources);
+			return [
+				...(sources?.skill ?? []),
+				...(sources?.tool ?? []),
+				...(sources?.app ?? []),
+			];
 	}
 }
 

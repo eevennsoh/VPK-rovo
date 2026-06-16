@@ -11,7 +11,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { RovoComposerActionButton } from "@/components/projects/shared/components/rovo-composer-send-controls";
 import { FloatingComposer } from "@/components/projects/shared/components/floating-composer";
-import { RovoCursorTrackingIcon } from "@/components/projects/shared/components/rovo-cursor-tracking-icon";
 import { useRovoAppComposerReveal } from "@/components/projects/shared/hooks/use-rovo-app-composer-reveal";
 import SvgTracing from "@/components/visual/svg-tracing";
 import {
@@ -55,7 +54,7 @@ export interface ComposerFloatingBodyProps extends ComposerBodyBaseProps {
 
 /**
  * Studio "floating" composer body: FloatingComposer single-row layout with
- * inline +/Cursor buttons, the send-only action button, and the hover-revealed
+ * inline add button, the send-only action button, and the hover-revealed
  * "Browse templates / start from scratch" links with decorative SVG traces.
  */
 export function ComposerFloatingBody({
@@ -131,21 +130,9 @@ export function ComposerFloatingBody({
 				data-screen-assistant-target="studio-composer"
 				onSubmit={onPromptSubmit}
 				addButton={
-					<div className="flex items-center gap-1">
-						<PromptInputButton size="icon-sm" variant="ghost" aria-label="Add">
-							<AddIcon label="" />
-						</PromptInputButton>
-						<PromptInputButton
-							size="icon-sm"
-							variant={clickyActive ? "default" : "ghost"}
-							onClick={onToggleClicky}
-							aria-label="Rovo Cursor"
-							aria-pressed={clickyActive}
-							tooltip={{ content: "Rovo Cursor", delay: 0 }}
-						>
-							<RovoCursorTrackingIcon active={clickyActive} />
-						</PromptInputButton>
-					</div>
+					<PromptInputButton size="icon-sm" variant="ghost" aria-label="Add">
+						<AddIcon label="" />
+					</PromptInputButton>
 				}
 				actions={
 					<RovoComposerActionButton
@@ -154,10 +141,12 @@ export function ComposerFloatingBody({
 						dictationState={dictationState}
 						dictationTranscriptPreview={dictationTranscriptPreview}
 						experimentalDarkCta={experimentalDarkCta}
+						clickyActive={clickyActive}
 						micStream={micStream}
 						onStop={onStop}
 						onStartDictation={onStartDictation}
 						onStopDictation={onStopDictation}
+						onToggleClicky={onToggleClicky}
 						onToggleRealtimeVoice={onToggleRealtimeVoice}
 						realtimeVoiceActive={realtimeVoiceActive}
 						realtimeVoiceState={realtimeVoiceState}

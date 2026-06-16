@@ -8,6 +8,8 @@ function readProjectFile(filePath) {
 }
 
 const CLICKY_VOICE_HOOK_SOURCE = readProjectFile("components/projects/rovo/hooks/use-clicky-voice.ts");
+const LIVE_WAVEFORM_SOURCE = readProjectFile("components/ui-audio/live-waveform.tsx");
+const ROVO_CURSOR_SOURCE = readProjectFile("components/ui-custom/rovo-cursor.tsx");
 
 function sourceBetween(source, startNeedle, endNeedle) {
 	const start = source.indexOf(startNeedle);
@@ -58,7 +60,9 @@ test("compact chat can hide the AI cursor control without changing the default",
 	assert.match(sidebarPanel, /\{hideAiCursor \? null : \([\s\S]*<ClickyOverlay/u);
 	assert.match(sidebarComposer, /hideAiCursor\?: boolean;/u);
 	assert.match(sidebarComposer, /hideAiCursor = false/u);
-	assert.match(sidebarComposer, /\{hideAiCursor \? null : \([\s\S]*aria-label="Rovo cursor"/u);
+	assert.match(sidebarComposer, /clickyActive=\{!hideAiCursor && clickyActive\}/u);
+	assert.match(sidebarComposer, /onToggleClicky=\{hideAiCursor \? undefined : onToggleClicky\}/u);
+	assert.doesNotMatch(sidebarComposer, /<PromptInputButton[\s\S]*aria-label="Rovo cursor"/u);
 });
 
 test("compact chat cursor activation starts live voice while cursor deactivation leaves live voice running", () => {
@@ -93,6 +97,7 @@ test("compact chat composer padding can be overridden by opt-in surfaces", () =>
 	assert.match(sidebarPanel, /containerClassName=\{composerContainerClassName\}/u);
 	assert.match(sidebarComposer, /containerClassName\?: string;/u);
 	assert.match(sidebarComposer, /className=\{cn\("relative min-w-0 px-3", containerClassName\)\}/u);
+	assert.match(sidebarComposer, /rounded-xl border border-border bg-surface px-4 pb-2\.5 pt-3\.5/u);
 });
 
 test("compact chat opts its Rovo composer textarea into visual trace auto-tagging", () => {
@@ -164,22 +169,56 @@ test("shared composer uses one stop control for active dictation", () => {
 
 test("shared composer waveform uses live stream while listening and processing animation otherwise", () => {
 	const source = readProjectFile("components/projects/shared/components/rovo-composer-send-controls.tsx");
-	const stopVoiceIndex = source.indexOf('aria-label="Stop live voice"');
-	const stopVoiceButton = source.slice(stopVoiceIndex, source.indexOf("</button>", stopVoiceIndex));
 
 	assert.match(source, /const isDictationRecording = dictationState === "recording" && micStream !== null;/u);
 	assert.match(source, /active=\{isDictationRecording\}/u);
 	assert.match(source, /mediaStream=\{isDictationRecording \? micStream : null\}/u);
-	assert.match(source, /mode=\{isDictationRecording \? "scrolling" : "static"\}/u);
-	assert.match(source, /const isRealtimeListening = realtimeVoiceState === "listening" && realtimeWaveformState\.active;/u);
-	assert.match(source, /active=\{isRealtimeListening\}/u);
-	assert.match(source, /mediaStream=\{isRealtimeListening \? micStream : null\}/u);
-	assert.match(source, /mode=\{isRealtimeListening \? "scrolling" : "static"\}/u);
-	assert.notEqual(stopVoiceIndex, -1);
-	assert.match(stopVoiceButton, /className="flex size-8 items-center justify-center overflow-hidden rounded-md bg-bg-neutral-bold p-0 text-text-inverse/u);
-	assert.match(stopVoiceButton, /className="flex size-4 min-w-0 items-center justify-center overflow-hidden"/u);
-	assert.match(stopVoiceButton, /height="16px"/u);
-	assert.doesNotMatch(stopVoiceButton, /CrossIcon/u);
+	assert.doesNotMatch(source, /mode=\{isDictationRecording \? "scrolling" : "static"\}/u);
+	assert.match(source, /const isRealtimeMicWaveformActive = realtimeVoiceState === "listening" && realtimeWaveformState\.active;/u);
+	assert.match(source, /const isRealtimeWaveformProcessing = !isRealtimeMicWaveformActive && realtimeVoiceActive;/u);
+	assert.match(source, /active=\{isRealtimeMicWaveformActive\}/u);
+	assert.match(source, /mediaStream=\{isRealtimeMicWaveformActive \? micStream : null\}/u);
+	assert.doesNotMatch(source, /mode=\{isRealtimeMicWaveformActive \? "scrolling" : "static"\}/u);
+	assert.equal((source.match(/^\s*<ComposerVoiceWaveform\b/gmu) ?? []).length, 3);
+	assert.equal((source.match(/mode="static"/gu) ?? []).length, 1);
+	assert.equal((source.match(/sensitivity=\{2\.4\}/gu) ?? []).length, 1);
+	assert.equal((source.match(/smoothingTimeConstant=\{0\.35\}/gu) ?? []).length, 1);
+	assert.equal((source.match(/fftSize=\{512\}/gu) ?? []).length, 1);
+	assert.match(source, /const shouldShowRealtimeVoiceRail = realtimeVoiceActive && Boolean\(onToggleClicky\);/u);
+	assert.match(source, /key="live-voice-active"/u);
+	assert.doesNotMatch(source, /live-voice-cursor-active/u);
+	assert.match(source, /const ACTION_FRAME_CLASS_NAME = "flex h-9 shrink-0 items-center justify-center";/u);
+	assert.match(source, /function ComposerActionFrame/u);
+	assert.match(source, /className=\{cn\("relative flex h-9 w-\[68px\] items-center justify-center overflow-hidden rounded-\[8px\]", clickyActive \? "text-text-inverse" : undefined\)\}/u);
+	assert.match(source, /<span aria-hidden="true" className="absolute inset-0 rounded-\[8px\] bg-bg-neutral" \/>/u);
+	assert.match(source, /"absolute top-0\.5 bottom-0\.5 rounded-md bg-bg-neutral-bold shadow-sm transition-all"[\s\S]*clickyActive \? "left-0\.5 right-0\.5" : "right-0\.5 w-8"/u);
+	assert.match(source, /<div className="relative z-10 flex h-8 w-16 items-center gap-0">/u);
+	assert.match(source, /<div className="flex h-9 items-center gap-1">[\s\S]*className="relative flex size-9 shrink-0 items-center justify-center rounded-md bg-transparent"[\s\S]*aria-label="Start live voice"/u);
+	assert.match(source, /className=\{cn\("flex h-9 min-w-0 shrink-0 items-center justify-end gap-1\.5", className\)\}/u);
+	assert.doesNotMatch(source, /className="flex h-8 w-16 overflow-hidden rounded-md bg-bg-neutral-bold text-text-inverse shadow-sm"/u);
+	assert.match(source, /import \{ RovoCursor \} from "@\/components\/ui-custom\/rovo-cursor";/u);
+	assert.match(source, /aria-label="Rovo cursor"[\s\S]*aria-pressed=\{clickyActive\}[\s\S]*"group\/rovo-cursor-button flex size-8 shrink-0 items-center justify-center rounded-md/u);
+	assert.match(source, /clickyActive \? \([\s\S]*<RovoCursorTrackingIcon active \/>[\s\S]*\) : \(/u);
+	assert.match(source, /group-hover\/rovo-cursor-button:opacity-100 group-focus-visible\/rovo-cursor-button:opacity-100"[\s\S]*<RovoCursor state="cursor" size=\{16\} \/>/u);
+	const cursorButtonStart = source.indexOf('aria-label="Rovo cursor"');
+	const cursorButtonSource = source.slice(cursorButtonStart, source.indexOf("</button>", cursorButtonStart));
+	assert.doesNotMatch(cursorButtonSource, /hover:bg-bg-neutral/u);
+	assert.doesNotMatch(cursorButtonSource, /active:bg-bg-neutral/u);
+	assert.match(ROVO_CURSOR_SOURCE, /const ARROW_STROKE_WIDTH = 2;/u);
+	assert.match(source, /aria-label="Stop live voice"[\s\S]*className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md p-0 text-text-inverse outline-none transition-colors hover:bg-bg-neutral-bold-hovered/u);
+	assert.match(source, /function ComposerVoiceWaveform/u);
+	assert.match(source, /barCount\?: 4 \| 8;/u);
+	assert.match(source, /barCount = 8/u);
+	assert.match(source, /className=\{cn\("flex h-full shrink-0 items-center", barCount === 4 \? "w-4" : "w-8"\)\}/u);
+	assert.match(source, /barCount=\{barCount\}/u);
+	assert.equal((source.match(/barCount=\{4\}/gu) ?? []).length, 2);
+	assert.match(LIVE_WAVEFORM_SOURCE, /barCount\?: number/u);
+	assert.match(LIVE_WAVEFORM_SOURCE, /barCount: fixedBarCount/u);
+	assert.equal((LIVE_WAVEFORM_SOURCE.match(/const barCount = getBarCount\(/gu) ?? []).length, 3);
+	assert.match(source, /height="100%"/u);
+	assert.doesNotMatch(source, /className="flex size-4 min-w-0 items-center justify-center overflow-hidden"/u);
+	assert.doesNotMatch(source, /height="16px"/u);
+	assert.doesNotMatch(source, /aria-label="Stop live voice"[\s\S]*CrossIcon/u);
 });
 
 test("shared composer keeps dictation beside typed submit and live voice empty-only", () => {
@@ -193,7 +232,7 @@ test("shared composer keeps dictation beside typed submit and live voice empty-o
 	assert.match(source, /\{shouldShowRealtimeVoiceStart \? \([\s\S]*aria-label="Start live voice"[\s\S]*\) : null\}/u);
 });
 
-test("shared composer experimental dark CTA prop is opt-in and leaves dictation as a ghost action", () => {
+test("shared composer uses a dark live chat CTA while submit dark styling remains opt-in", () => {
 	const source = readProjectFile("components/projects/shared/components/rovo-composer-send-controls.tsx");
 	const neutralBoldClass = "bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
 	const submitIndex = source.indexOf('<PromptInputSubmit aria-label="Submit"');
@@ -203,6 +242,9 @@ test("shared composer experimental dark CTA prop is opt-in and leaves dictation 
 	assert.match(source, /experimentalDarkCta\?: boolean/u);
 	assert.match(source, /experimentalDarkCta = false/u);
 	assert.match(source, new RegExp(`const EXPERIMENTAL_DARK_CTA_CLASS_NAME = "${neutralBoldClass}"`, "u"));
+	assert.match(source, new RegExp(`const LIVE_VOICE_CTA_CLASS_NAME = "${neutralBoldClass}"`, "u"));
+	assert.match(source, /const liveVoiceCtaClassName = experimentalDarkCtaClassName \?\? LIVE_VOICE_CTA_CLASS_NAME;/u);
+	assert.match(source, /<TooltipProvider delay=\{0\}>[\s\S]*<TooltipTrigger[\s\S]*aria-label="Start live voice"[\s\S]*<TooltipContent side="top">Live chat<\/TooltipContent>/u);
 	assert.notEqual(submitIndex, -1);
 	assert.notEqual(dictationStartIndex, -1);
 	assert.notEqual(voiceStartIndex, -1);
@@ -210,7 +252,8 @@ test("shared composer experimental dark CTA prop is opt-in and leaves dictation 
 	const dictationButtonStartIndex = source.lastIndexOf("<PromptInputButton", dictationStartIndex);
 	assert.match(source.slice(dictationButtonStartIndex, source.indexOf("</PromptInputButton>", dictationStartIndex)), /variant="ghost"/u);
 	assert.doesNotMatch(source.slice(dictationButtonStartIndex, source.indexOf("</PromptInputButton>", dictationStartIndex)), /experimentalDarkCtaClassName/u);
-	assert.match(source.slice(voiceStartIndex, source.indexOf("</PromptInputButton>", voiceStartIndex)), /experimentalDarkCtaClassName/u);
+	assert.doesNotMatch(source.slice(voiceStartIndex, source.indexOf("</button>", voiceStartIndex)), /shadow-sm/u);
+	assert.match(source.slice(voiceStartIndex, source.indexOf("</button>", voiceStartIndex)), /liveVoiceCtaClassName/u);
 });
 
 test("Rovo composers default reasoning to Auto", () => {

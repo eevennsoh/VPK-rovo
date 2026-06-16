@@ -81,8 +81,8 @@ function maskOfStroke(path: string, w: number, h: number, strokeWidth: number, p
 
 const ARROW_VIEWBOX = 14.7568;
 const ARROW_MASK = maskOf(ARROW_PATH, ARROW_VIEWBOX, ARROW_VIEWBOX);
-/** ~10% of glyph width on each side, matching Figma's `inset[-3.64%]` outline. */
-const ARROW_STROKE_WIDTH = 1.5;
+/** Rainbow outline width around the pointer arrow, in viewBox units. */
+const ARROW_STROKE_WIDTH = 2;
 /** Padding (in viewBox units) added around the stroke mask so the dilated arrow
  * isn't clipped by the SVG viewBox; ½ stroke width plus a comfortable margin. */
 const ARROW_STROKE_PAD = 1;

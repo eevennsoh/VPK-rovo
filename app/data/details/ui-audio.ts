@@ -182,6 +182,7 @@ export const UI_AUDIO_DETAILS: Record<string, ComponentDetail> = {
 			{ name: "active", type: "boolean", default: "false", description: "Starts microphone capture when true." },
 			{ name: "processing", type: "boolean", default: "false", description: "Renders a synthetic waveform animation without opening the microphone." },
 			{ name: "height", type: "string | number", default: "64", description: "Rendered waveform height." },
+			{ name: "barCount", type: "number", description: "Optional fixed number of bars; otherwise the waveform derives the count from its rendered width." },
 			{ name: "mode", type: '"scrolling" | "static"', default: '"static"', description: "Selects between centered or left-to-right animated rendering." },
 			classNameProp,
 		],

@@ -34,7 +34,7 @@ const POINT_HOLD_MS = 3000;
 const BUBBLE_FADE_MS = 500;
 const WELCOME_MESSAGE = "Yo, let's cook!";
 const WELCOME_DISMISS_AFTER_TYPE_MS = 1600;
-const ROVO_CURSOR_TRIGGER_SELECTOR = 'button[aria-label="Rovo Cursor"]';
+const ROVO_CURSOR_TRIGGER_SELECTOR = 'button[aria-label="Rovo cursor"], button[aria-label="Rovo Cursor"]';
 /** Mouse movement threshold to interrupt return flight (px) */
 const RETURN_INTERRUPT_DISTANCE = 100;
 
@@ -470,6 +470,7 @@ export function ClickyOverlay({
 	const showNavBubble = (flightPhase === "holding" || flightPhase === "fading") && isPointing;
 	const showResponseOverlay = (isPointing || isSpeaking) && responseText;
 	const shouldRenderOverlay = isActive && cursorPositionReady;
+	const shouldUseFlightTransform = flightPhase === "flying" || flightPhase === "returning";
 
 	if (!mounted) {
 		return null;
@@ -506,8 +507,8 @@ export function ClickyOverlay({
 					>
 						<ClickyCursor
 							state={state}
-							rotation={rotation}
-							flightScale={flightScale}
+							rotation={shouldUseFlightTransform ? rotation : IDLE_ROTATION}
+							flightScale={shouldUseFlightTransform ? flightScale : 1}
 						/>
 
 						{/* Navigation phrase bubble */}

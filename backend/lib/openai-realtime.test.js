@@ -254,6 +254,10 @@ test("session updates use the GA realtime audio session schema", () => {
 		type: "audio/pcm",
 		rate: 24_000,
 	});
+	assert.deepEqual(openaiMessages[0].session?.audio?.input?.transcription, {
+		model: "gpt-4o-mini-transcribe",
+		language: "en",
+	});
 	assert.deepEqual(openaiMessages[0].session?.audio?.output?.format, {
 		type: "audio/pcm",
 		rate: 24_000,
@@ -425,6 +429,22 @@ test("default turn-taking forwards transcript completions one-to-one", () => {
 	assert.deepEqual(openaiMessages, []);
 });
 
+test("transcription deltas stream to the client immediately", () => {
+	const { session, clientMessages } = createReadySession();
+
+	sendOpenAIEvent(session, {
+		type: "conversation.item.input_audio_transcription.delta",
+		delta: "hel",
+	});
+
+	assert.deepEqual(clientMessages, [
+		{
+			type: "transcription_delta",
+			delta: "hel",
+		},
+	]);
+});
+
 test("manual barge-in sends response.cancel only in manual mode", () => {
 	const manual = createReadySession();
 	manual.session.handleClientMessage(JSON.stringify({
@@ -498,6 +518,31 @@ test("manual barge-in clears stale pending response creation", (t) => {
 	assert.equal(
 		openaiMessages.some((message) => message.type === "response.create"),
 		false,
+	);
+});
+
+test("stale response cancel errors clear active response state without notifying client", () => {
+	const { session, clientMessages, logEntries } = createReadySession();
+
+	session._activeResponseId = "response-stale";
+	session._pendingResponseCreate = true;
+
+	sendOpenAIEvent(session, {
+		type: "error",
+		error: {
+			code: "invalid_request_error",
+			message: "Cancellation failed: no active response found",
+		},
+	});
+
+	assert.equal(session._activeResponseId, null);
+	assert.equal(session._pendingResponseCreate, false);
+	assert.deepEqual(clientMessages, []);
+	assert.ok(
+		logEntries.some((entry) =>
+			entry.scope === "REALTIME"
+			&& entry.message === "OpenAI warning: Cancellation failed: no active response found",
+		),
 	);
 });
 

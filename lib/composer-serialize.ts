@@ -7,8 +7,8 @@ import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
  * The composer document is intentionally minimal: a `doc` of `paragraph`s, each
  * holding inline `text`, `hardBreak`, and `mention` nodes. These helpers walk
  * that structure into the plain string the chat transports expect, turning each
- * mention back into its `@`/`/` sigil + label so the serialized text reads the
- * way the user typed it.
+ * mention back into the text the user typed so the serialized text stays
+ * aligned with controlled composer values.
  *
  * The core logic operates on a ProseMirror `Node` (the document) rather than a
  * live `Editor`, so it can be unit-tested by constructing a doc/JSON without a
@@ -33,15 +33,31 @@ function getMentionSigil(category: unknown): "@" | "/" {
 	return "@";
 }
 
-/** Serialize a single mention node to its sigil + label (e.g. "@Andrea Wilson"). */
-function serializeMention(node: ProseMirrorNode): string {
-	const sigil = getMentionSigil(node.attrs.category);
+/**
+ * Serialize a single mention node to its source text or sigil + label
+ * (e.g. "@Andrea Wilson").
+ */
+export function serializeComposerMentionAttrs(attrs: {
+	category?: unknown;
+	id?: unknown;
+	label?: unknown;
+	sourceText?: unknown;
+}): string {
+	if (typeof attrs.sourceText === "string" && attrs.sourceText) {
+		return attrs.sourceText;
+	}
+
+	const sigil = getMentionSigil(attrs.category);
 	const label =
-		typeof node.attrs.label === "string" && node.attrs.label.trim()
-			? node.attrs.label
-			: String(node.attrs.id ?? "");
+		typeof attrs.label === "string" && attrs.label.trim()
+			? attrs.label
+			: String(attrs.id ?? "");
 
 	return `${sigil}${label}`;
+}
+
+function serializeMention(node: ProseMirrorNode): string {
+	return serializeComposerMentionAttrs(node.attrs);
 }
 
 /** Serialize the inline content of one block (paragraph) to a string. */
@@ -69,10 +85,11 @@ function serializeInline(block: ProseMirrorNode): string {
 
 /**
  * Serialize a ProseMirror composer document to plain text. Block (paragraph)
- * boundaries and hard breaks both become "\n"; mentions become their sigil +
- * label. Trailing blank lines are trimmed so an empty trailing paragraph (which
- * ProseMirror keeps as the editing caret line) does not leak a stray newline —
- * but intentional trailing spaces on the last line are preserved.
+ * boundaries and hard breaks both become "\n"; mentions become source text when
+ * available, otherwise sigil + label. Trailing blank lines are trimmed so an
+ * empty trailing paragraph (which ProseMirror keeps as the editing caret line)
+ * does not leak a stray newline — but intentional trailing spaces on the last
+ * line are preserved.
  */
 export function serializeComposerNode(doc: ProseMirrorNode): string {
 	const blocks: string[] = [];
