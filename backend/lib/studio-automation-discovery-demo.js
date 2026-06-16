@@ -124,6 +124,12 @@ function countMatches(text, keywords) {
 	), 0);
 }
 
+function createStudioAutomationDiscoverySessionId(baseSessionId) {
+	const timestamp = Date.now().toString(36);
+	const entropy = Math.random().toString(36).slice(2, 8);
+	return `${baseSessionId}-${timestamp}-${entropy}`;
+}
+
 function isStudioAutomationDiscoveryPrompt(prompt) {
 	const normalized = normalizePromptText(prompt);
 	if (!normalized) {
@@ -157,11 +163,15 @@ function isStudioAutomationDiscoverySession(sessionId) {
 }
 
 function isStudioAutomationDiscoveryInitialSession(sessionId) {
-	return getNonEmptyString(sessionId) === DEMO_INITIAL_QUESTION_SESSION_ID;
+	const normalized = getNonEmptyString(sessionId);
+	return normalized === DEMO_INITIAL_QUESTION_SESSION_ID ||
+		normalized?.startsWith(`${DEMO_INITIAL_QUESTION_SESSION_ID}-`) === true;
 }
 
 function isStudioAutomationDiscoveryFollowupSession(sessionId) {
-	return getNonEmptyString(sessionId) === DEMO_FOLLOWUP_QUESTION_SESSION_ID;
+	const normalized = getNonEmptyString(sessionId);
+	return normalized === DEMO_FOLLOWUP_QUESTION_SESSION_ID ||
+		normalized?.startsWith(`${DEMO_FOLLOWUP_QUESTION_SESSION_ID}-`) === true;
 }
 
 function isStudioAutomationDiscoveryDismissalPrompt(prompt) {
@@ -192,7 +202,7 @@ function isStudioAutomationDiscoveryFollowupDismissalPrompt(prompt) {
 }
 
 function buildStudioAutomationDiscoveryQuestionCardPayload({
-	sessionId = DEMO_INITIAL_QUESTION_SESSION_ID,
+	sessionId = createStudioAutomationDiscoverySessionId(DEMO_INITIAL_QUESTION_SESSION_ID),
 	toolCallId,
 } = {}) {
 	return {
@@ -291,7 +301,7 @@ function buildStudioAutomationDiscoveryQuestionCardPayload({
 }
 
 function buildStudioAutomationDiscoveryFollowupQuestionCardPayload({
-	sessionId = DEMO_FOLLOWUP_QUESTION_SESSION_ID,
+	sessionId = createStudioAutomationDiscoverySessionId(DEMO_FOLLOWUP_QUESTION_SESSION_ID),
 	toolCallId,
 } = {}) {
 	return {

@@ -81,14 +81,19 @@ test("detects dismissed clarification card prompts for the default-answer contin
 	);
 });
 
-test("builds the initial fixed clarification card with a demo session", () => {
+test("builds the initial clarification card with a unique demo session", () => {
 	const payload = buildStudioAutomationDiscoveryQuestionCardPayload({
 		toolCallId: "tool-demo",
+	});
+	const nextPayload = buildStudioAutomationDiscoveryQuestionCardPayload({
+		toolCallId: "tool-demo-next",
 	});
 
 	assert.equal(payload.type, "question-card");
 	assert.equal(isStudioAutomationDiscoverySession(payload.sessionId), true);
 	assert.equal(isStudioAutomationDiscoveryInitialSession(payload.sessionId), true);
+	assert.equal(isStudioAutomationDiscoveryInitialSession(nextPayload.sessionId), true);
+	assert.notEqual(payload.sessionId, nextPayload.sessionId);
 	assert.equal(payload.maxRounds, 2);
 	assert.equal(payload.requiredCount, 3);
 	assert.deepEqual(payload.questions.map((question) => question.id), [
@@ -100,14 +105,19 @@ test("builds the initial fixed clarification card with a demo session", () => {
 	assert.equal(payload.deferredToolCallId, "tool-demo");
 });
 
-test("builds the follow-up clarification card for the mid-flow pause", () => {
+test("builds the follow-up clarification card with a unique demo session", () => {
 	const payload = buildStudioAutomationDiscoveryFollowupQuestionCardPayload({
 		toolCallId: "tool-followup",
+	});
+	const nextPayload = buildStudioAutomationDiscoveryFollowupQuestionCardPayload({
+		toolCallId: "tool-followup-next",
 	});
 
 	assert.equal(payload.type, "question-card");
 	assert.equal(isStudioAutomationDiscoverySession(payload.sessionId), true);
 	assert.equal(isStudioAutomationDiscoveryFollowupSession(payload.sessionId), true);
+	assert.equal(isStudioAutomationDiscoveryFollowupSession(nextPayload.sessionId), true);
+	assert.notEqual(payload.sessionId, nextPayload.sessionId);
 	assert.equal(payload.round, 2);
 	assert.equal(payload.maxRounds, 2);
 	assert.deepEqual(payload.questions.map((question) => question.id), [
