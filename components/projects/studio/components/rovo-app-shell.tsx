@@ -584,7 +584,7 @@ const HOME_STARTER_VIEWS: Readonly<Record<HomeStarterCategory, ReadonlyArray<Hom
 			description: "Convert Jira work items into grouped release notes for customers and stakeholders.",
 			iconSrc: "/avatar-agent/dev-agents/deployment-summarizer.svg",
 			layoutClassName: "lg:col-start-3 lg:row-start-1 lg:row-span-2",
-			prompt: "Build a Rovo agent named Release Notes Drafter that summarizes up to 20 Jira work items, groups them into themes, and runs Draft release notes to produce clear notes in Confluence for stakeholders.",
+			prompt: "Build a Rovo agent named Release Notes Drafter that reviews recent Jira work, groups it into themes, and drafts clear release notes in Confluence for stakeholders.",
 			title: "Release Notes Drafter",
 		},
 		{
