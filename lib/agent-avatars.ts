@@ -189,76 +189,116 @@ export function getDeterministicAgentAvatarSrc(seed: string | null | undefined):
 }
 
 // Cover-banner artwork for the agent profile/config cover, under
-// `/public/smart-folders`. Every agent's cover picks one of these so the banners
-// vary by design and color instead of all sharing one hardcoded artwork. The set
-// is the 40 cleanly-named `<design>-<color>.svg` files: 8 designs × 5 colors
-// (blue, gray, lime, orange, purple), evenly balanced so a flat pick already
-// gives each color the same odds. The legacy `*_yellow.svg` files use
-// inconsistent underscore naming and are intentionally excluded.
-export const SMART_FOLDER_BANNER_SRCS = [
-	"/smart-folders/abstract-blue.svg",
-	"/smart-folders/abstract-gray.svg",
-	"/smart-folders/abstract-lime.svg",
-	"/smart-folders/abstract-orange.svg",
-	"/smart-folders/abstract-purple.svg",
-	"/smart-folders/abstract-2-blue.svg",
-	"/smart-folders/abstract-2-gray.svg",
-	"/smart-folders/abstract-2-lime.svg",
-	"/smart-folders/abstract-2-orange.svg",
-	"/smart-folders/abstract-2-purple.svg",
-	"/smart-folders/cloud-blue.svg",
-	"/smart-folders/cloud-gray.svg",
-	"/smart-folders/cloud-lime.svg",
-	"/smart-folders/cloud-orange.svg",
-	"/smart-folders/cloud-purple.svg",
-	"/smart-folders/default-blue.svg",
-	"/smart-folders/default-gray.svg",
-	"/smart-folders/default-lime.svg",
-	"/smart-folders/default-orange.svg",
-	"/smart-folders/default-purple.svg",
-	"/smart-folders/default-2-blue.svg",
-	"/smart-folders/default-2-gray.svg",
-	"/smart-folders/default-2-lime.svg",
-	"/smart-folders/default-2-orange.svg",
-	"/smart-folders/default-2-purple.svg",
-	"/smart-folders/dev-blue.svg",
-	"/smart-folders/dev-gray.svg",
-	"/smart-folders/dev-lime.svg",
-	"/smart-folders/dev-orange.svg",
-	"/smart-folders/dev-purple.svg",
-	"/smart-folders/launch-blue.svg",
-	"/smart-folders/launch-gray.svg",
-	"/smart-folders/launch-lime.svg",
-	"/smart-folders/launch-orange.svg",
-	"/smart-folders/launch-purple.svg",
-	"/smart-folders/meetings-blue.svg",
-	"/smart-folders/meetings-gray.svg",
-	"/smart-folders/meetings-lime.svg",
-	"/smart-folders/meetings-orange.svg",
-	"/smart-folders/meetings-purple.svg",
-] as const;
+// `/public/smart-folders`. The banner's COLOR follows the agent's avatar family
+// (so a green dev-agent gets a lime banner, a purple product-agent a purple one,
+// etc. — see AGENT_AVATAR_GROUP_ACCENTS); only the DESIGN is randomized per agent.
+// Grey is intentionally NEVER used — it reads as a disabled/empty state, so a
+// banner always carries a brand color.
+//
+// Files are grouped by color subfolder (`/smart-folders/<color>/…`). Each color
+// ships the same 8 designs in the same order, so the hashed design index maps
+// consistently across colors. The `yellow` set is spelled with the underscore
+// filenames the assets actually ship with (`abstract_2_yellow.svg`), unlike the
+// hyphenated rest.
+const SMART_FOLDER_BANNER_SRCS_BY_COLOR = {
+	blue: [
+		"/smart-folders/blue/abstract-blue.svg",
+		"/smart-folders/blue/abstract-2-blue.svg",
+		"/smart-folders/blue/cloud-blue.svg",
+		"/smart-folders/blue/default-blue.svg",
+		"/smart-folders/blue/default-2-blue.svg",
+		"/smart-folders/blue/dev-blue.svg",
+		"/smart-folders/blue/launch-blue.svg",
+		"/smart-folders/blue/meetings-blue.svg",
+	],
+	lime: [
+		"/smart-folders/lime/abstract-lime.svg",
+		"/smart-folders/lime/abstract-2-lime.svg",
+		"/smart-folders/lime/cloud-lime.svg",
+		"/smart-folders/lime/default-lime.svg",
+		"/smart-folders/lime/default-2-lime.svg",
+		"/smart-folders/lime/dev-lime.svg",
+		"/smart-folders/lime/launch-lime.svg",
+		"/smart-folders/lime/meetings-lime.svg",
+	],
+	orange: [
+		"/smart-folders/orange/abstract-orange.svg",
+		"/smart-folders/orange/abstract-2-orange.svg",
+		"/smart-folders/orange/cloud-orange.svg",
+		"/smart-folders/orange/default-orange.svg",
+		"/smart-folders/orange/default-2-orange.svg",
+		"/smart-folders/orange/dev-orange.svg",
+		"/smart-folders/orange/launch-orange.svg",
+		"/smart-folders/orange/meetings-orange.svg",
+	],
+	purple: [
+		"/smart-folders/purple/abstract-purple.svg",
+		"/smart-folders/purple/abstract-2-purple.svg",
+		"/smart-folders/purple/cloud-purple.svg",
+		"/smart-folders/purple/default-purple.svg",
+		"/smart-folders/purple/default-2-purple.svg",
+		"/smart-folders/purple/dev-purple.svg",
+		"/smart-folders/purple/launch-purple.svg",
+		"/smart-folders/purple/meetings-purple.svg",
+	],
+	yellow: [
+		"/smart-folders/yellow/abstract_yellow.svg",
+		"/smart-folders/yellow/abstract_2_yellow.svg",
+		"/smart-folders/yellow/cloud_yellow.svg",
+		"/smart-folders/yellow/default_yellow.svg",
+		"/smart-folders/yellow/default_2_yellow.svg",
+		"/smart-folders/yellow/dev_yellow.svg",
+		"/smart-folders/yellow/launch_yellow.svg",
+		"/smart-folders/yellow/meetings_yellow.svg",
+	],
+} as const satisfies Record<string, readonly string[]>;
 
-export type SmartFolderBannerSrc = (typeof SMART_FOLDER_BANNER_SRCS)[number];
+export type SmartFolderBannerColor = keyof typeof SMART_FOLDER_BANNER_SRCS_BY_COLOR;
+export type SmartFolderBannerSrc = (typeof SMART_FOLDER_BANNER_SRCS_BY_COLOR)[SmartFolderBannerColor][number];
 
-const FALLBACK_BANNER_SRC: SmartFolderBannerSrc = SMART_FOLDER_BANNER_SRCS[0];
+// Maps each avatar family to its banner color, parallel to
+// AGENT_AVATAR_GROUP_ACCENTS. Grey has no entry — it is never a banner color.
+const AGENT_AVATAR_GROUP_BANNER_COLORS: Readonly<Record<string, SmartFolderBannerColor>> = {
+	"dev-agents": "lime",
+	"product-agents": "purple",
+	"service-agents": "yellow",
+	"strategy-agents": "orange",
+	"teamwork-agents": "blue",
+};
+
+export const FALLBACK_BANNER_COLOR: SmartFolderBannerColor = "blue";
 
 /**
- * Deterministic banner picker, mirroring {@link getDeterministicAgentAvatarSrc}:
- * the same `seed` (typically an agent's `agentId`) always returns the same cover
- * banner, so every render of that agent agrees and the banner never flickers
- * between re-renders. The 40 banners are color-balanced, so a flat hash index is
- * enough — no family bucketing needed. An empty seed falls back to a stable
- * default.
- *
- * The hash is shifted (`>>> 16`) before indexing so an agent's banner pick does
- * not correlate with its avatar pick, even though both seed on the same id.
+ * Returns the banner color for an avatar, derived from its family group so the
+ * cover banner matches the avatar's brand color. Falls back to blue for
+ * unrecognized paths.
  */
-export function getDeterministicAgentBannerSrc(seed: string | null | undefined): SmartFolderBannerSrc {
-	const normalizedSeed = seed?.trim();
+export function getAgentBannerColor(avatarSrc: string | null | undefined): SmartFolderBannerColor {
+	const group = avatarSrc ? getAgentAvatarGroup(avatarSrc) : undefined;
+	return (group && AGENT_AVATAR_GROUP_BANNER_COLORS[group]) || FALLBACK_BANNER_COLOR;
+}
+
+/**
+ * Picks the cover banner for an agent: the COLOR comes from `avatarSrc`'s family
+ * (so the banner matches the avatar's brand color, never grey), and the DESIGN is
+ * chosen deterministically from `seed` (typically the agent's `agentId`) so the
+ * same agent always shows the same banner and it never flickers between renders.
+ *
+ * `seed` falls back to `avatarSrc` when an id isn't available; an empty seed
+ * lands on the first design. The hash is shifted (`>>> 16`) before indexing so
+ * the design pick doesn't correlate with the avatar pick that seeds on the same id.
+ */
+export function getDeterministicAgentBannerSrc(
+	avatarSrc: string | null | undefined,
+	seed: string | null | undefined,
+): SmartFolderBannerSrc {
+	const color = getAgentBannerColor(avatarSrc);
+	const designs = SMART_FOLDER_BANNER_SRCS_BY_COLOR[color];
+	const normalizedSeed = seed?.trim() || avatarSrc?.trim();
 	if (!normalizedSeed) {
-		return FALLBACK_BANNER_SRC;
+		return designs[0];
 	}
 	const hash = hashSeed(normalizedSeed);
-	const bannerIndex = (hash >>> 16) % SMART_FOLDER_BANNER_SRCS.length;
-	return SMART_FOLDER_BANNER_SRCS[bannerIndex] ?? FALLBACK_BANNER_SRC;
+	const designIndex = (hash >>> 16) % designs.length;
+	return designs[designIndex] ?? designs[0];
 }
