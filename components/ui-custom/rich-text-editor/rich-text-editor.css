@@ -358,8 +358,8 @@
 			/*
 			 * Read as a flush extension of the page header: a single hairline
 			 * divider below the bar separates it from the content scrolling
-			 * under it. Drawn as a box-shadow (not border-bottom) so sticking
-			 * doesn't add 1px and shift the layout.
+			 * under it. Drawn as a box-shadow rather than a real bottom border
+			 * so sticking doesn't add 1px and shift the layout.
 			 */
 			box-shadow: 0 1px 0 0 var(--ds-border, #091e4224);
 		}
