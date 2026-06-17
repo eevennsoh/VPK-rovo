@@ -7,7 +7,6 @@ import { getDerivedSubagentNames } from "@/components/blocks/subagents/lib/subag
 import {
 	createAgentAutomationRule,
 	createAgentTriggerValue,
-	inferAutomationRules,
 	type AgentAutomationRule,
 	type AgentTriggerProviderId,
 	type AgentTriggerValue,
@@ -93,6 +92,7 @@ export interface StudioScreenAssistantScreenContext {
 		| "trigger"
 		| "guardrail"
 		| "tools"
+		| "triggers"
 		| "skills"
 		| "apps"
 		| "knowledge"
@@ -445,17 +445,19 @@ export function normalizeAgentDraftPatch(value: unknown): AgentDraftPatch | null
 		);
 	}
 
-	// Automations: natural-language trigger phrases infer real rules; an explicit
-	// structured `automationRules` array (validated against the trigger catalog)
-	// overrides the inference.
+	// Automations. NB: this normalizer is stateless and `updateSessionAgentDraft`
+	// shallow-merges, so any `automationRules` it sets REPLACES the draft's array.
+	// The NL `triggers` phrases are therefore set on their own field only — never
+	// used to rebuild `automationRules` here, which would silently drop a draft's
+	// existing custom rules (their names/prompts/params). The editor derives rules
+	// from `triggers` when the draft has none yet; existing rules are preserved.
 	const triggers = normalizeTextArray(value.triggers);
 	if (triggers) {
 		patch.triggers = triggers;
-		const inferred = inferAutomationRules(triggers);
-		if (inferred) {
-			patch.automationRules = inferred;
-		}
 	}
+	// Explicit, fully-formed automation rules are a deliberate whole-array replace.
+	// The model is shown the draft's current trigger phrases in the screen snapshot
+	// so it can resend existing ones alongside additions when it intends to append.
 	const automationRules = normalizeAutomationRules(value.automationRules);
 	if (automationRules) {
 		patch.automationRules = automationRules;
@@ -940,6 +942,7 @@ function summarizeAgentDraft(
 		trigger: draft.trigger,
 		guardrail: draft.guardrail,
 		tools: draft.tools,
+		triggers: draft.triggers,
 		// Capability arrays + modes + avatar are surfaced so the model can make
 		// ADDITIVE edits: apply_agent_draft_patch replaces a field's whole array, so
 		// to "add a skill" the model must read the current names and resend them all.
