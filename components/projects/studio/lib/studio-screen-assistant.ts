@@ -5,7 +5,7 @@ import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 export const SCREEN_ASSISTANT_TARGET_ATTR = "data-screen-assistant-target";
 export const SCREEN_ASSISTANT_AGENT_FIELD_ATTR = "data-agent-field";
 
-export type StudioScreenAssistantCoordinateSpace = "screenshot" | "viewport";
+export type StudioScreenAssistantCoordinateSpace = "viewport";
 
 export interface StudioScreenAssistantPoint {
 	x: number;
@@ -19,6 +19,11 @@ export interface StudioScreenAssistantRect {
 	y: number;
 	width: number;
 	height: number;
+}
+
+export interface StudioScreenAssistantRegionPoint {
+	x: number;
+	y: number;
 }
 
 export interface StudioScreenAssistantTarget {
@@ -43,6 +48,15 @@ export interface StudioScreenAssistantPointerContext {
 
 export interface StudioScreenAssistantVisibleTarget extends StudioScreenAssistantTarget {
 	id: string;
+}
+
+export interface StudioScreenAssistantRegion {
+	createdAt: number;
+	id: string;
+	label: string;
+	path: StudioScreenAssistantRegionPoint[];
+	rect: StudioScreenAssistantRect;
+	targetHints: StudioScreenAssistantVisibleTarget[];
 }
 
 export interface StudioScreenAssistantScreenContext {
@@ -73,6 +87,7 @@ export interface StudioScreenAssistantScreenContext {
 }
 
 export interface StudioScreenAssistantSnapshot {
+	activeRegion?: StudioScreenAssistantRegion;
 	screenContext: StudioScreenAssistantScreenContext;
 	pointerContext: StudioScreenAssistantPointerContext | null;
 	visibleTargets: StudioScreenAssistantVisibleTarget[];
@@ -88,6 +103,7 @@ export interface StudioScreenAssistantResult {
 
 export interface StudioScreenAssistantSnapshotInput {
 	activeAgentDraft?: RovoDataParts["agent-result"] | null;
+	activeRegion?: StudioScreenAssistantRegion | null;
 	activePanel: string;
 	composer?: {
 		placeholder?: string;
@@ -156,9 +172,44 @@ function textMatchesSearch(candidate: unknown, query: string): boolean {
 }
 
 function targetMatchesSearch(target: StudioScreenAssistantTarget, query: string): boolean {
-	return [target.id, target.fieldId, target.label].some((candidate) =>
+	return [target.id, target.fieldId, target.label, ...getTargetSearchAliases(target)].some((candidate) =>
 		textMatchesSearch(candidate, query),
 	);
+}
+
+function labelReferencesActiveRegion(label: string | undefined): boolean {
+	const normalizedLabel = normalizeSearchText(label);
+	if (!normalizedLabel) {
+		return false;
+	}
+
+	return [
+		"this",
+		"this area",
+		"this part",
+		"highlighted area",
+		"highlighted part",
+		"painted area",
+		"painted part",
+		"selected area",
+		"selected part",
+		"region",
+	].some((candidate) => textMatchesSearch(candidate, normalizedLabel));
+}
+
+const SCREEN_ASSISTANT_FIELD_ALIASES: Record<string, readonly string[]> = {
+	avatar: ["agent avatar", "change agent avatar", "avatar picker", "profile avatar"],
+	name: ["agent name", "name field", "agent title"],
+	description: ["agent description", "description field"],
+	instructions: ["agent instructions", "instructions field"],
+};
+
+function getTargetSearchAliases(target: StudioScreenAssistantTarget): readonly string[] {
+	if (!target.fieldId) {
+		return [];
+	}
+
+	return SCREEN_ASSISTANT_FIELD_ALIASES[target.fieldId] ?? [];
 }
 
 function normalizeTextArray(value: unknown): string[] | undefined {
@@ -370,6 +421,16 @@ function slugifyTargetId(role: string, label: string): string {
 	return `auto:${base || role}`;
 }
 
+function getTargetIdForElement(
+	element: Element,
+	target = targetFromElement(element),
+): string | null {
+	if (!target) {
+		return null;
+	}
+	return target.id ?? (target.label ? slugifyTargetId(target.role ?? "element", target.label) : null);
+}
+
 export function getStudioScreenAssistantVisibleTargets(
 	limit = 60,
 ): StudioScreenAssistantVisibleTarget[] {
@@ -427,9 +488,7 @@ export function getStudioScreenAssistantVisibleTargets(
 		// Require something the model can refer to: a label, an explicit id, or a
 		// test id. Skip unlabeled structural noise.
 		const label = target.label;
-		const id =
-			target.id ??
-			(label ? slugifyTargetId(target.role ?? "element", label) : null);
+		const id = getTargetIdForElement(element, target);
 		if (!id || (!label && !target.id)) {
 			continue;
 		}
@@ -440,6 +499,7 @@ export function getStudioScreenAssistantVisibleTargets(
 }
 
 export function groundStudioScreenAssistantTarget(input: {
+	activeRegion?: StudioScreenAssistantRegion | null;
 	fieldId?: string;
 	id?: string;
 	label?: string;
@@ -472,11 +532,199 @@ export function groundStudioScreenAssistantTarget(input: {
 		return byLabel;
 	}
 
+	if (normalizedLabel && labelReferencesActiveRegion(normalizedLabel)) {
+		return input.activeRegion?.targetHints[0] ?? null;
+	}
+
 	if (hasExplicitLocator) {
 		return null;
 	}
 
 	return input.pointerTarget ?? null;
+}
+
+function escapeAttributeSelectorValue(value: string): string {
+	return value
+		.replace(/\\/gu, "\\\\")
+		.replace(/"/gu, '\\"')
+		.replace(/\n/gu, "\\a ");
+}
+
+function queryScreenAssistantTargetElement(id: string): Element | null {
+	if (typeof document === "undefined") {
+		return null;
+	}
+	const escapedId = escapeAttributeSelectorValue(id);
+	const directlyTagged = document.querySelector(
+		`[${SCREEN_ASSISTANT_TARGET_ATTR}="${escapedId}"], [data-testid="${escapedId}"], [id="${escapedId}"]`,
+	);
+	if (directlyTagged) {
+		return directlyTagged;
+	}
+
+	return Array.from(document.querySelectorAll(AUTO_TARGET_SELECTOR)).find((element) => (
+		isVisibleInViewport(element) && getTargetIdForElement(element) === id
+	)) ?? null;
+}
+
+function queryAgentFieldElement(fieldId: string): Element | null {
+	if (typeof document === "undefined") {
+		return null;
+	}
+	const escapedFieldId = escapeAttributeSelectorValue(fieldId);
+	return document.querySelector(
+		`[${SCREEN_ASSISTANT_AGENT_FIELD_ATTR}="${escapedFieldId}"], [${SCREEN_ASSISTANT_TARGET_ATTR}="${escapedFieldId}"]`,
+	);
+}
+
+function queryElementForGroundedTarget(target: StudioScreenAssistantTarget | null): Element | null {
+	if (!target) {
+		return null;
+	}
+	if (target.id) {
+		const byId = queryScreenAssistantTargetElement(target.id);
+		if (byId) {
+			return byId;
+		}
+	}
+	if (target.fieldId) {
+		return queryAgentFieldElement(target.fieldId);
+	}
+	return null;
+}
+
+function pickActivatedTarget(
+	target: StudioScreenAssistantTarget | null,
+): Pick<StudioScreenAssistantTarget, "fieldId" | "id" | "label"> | null {
+	if (!target) {
+		return null;
+	}
+	return {
+		...(target.fieldId ? { fieldId: target.fieldId } : {}),
+		...(target.id ? { id: target.id } : {}),
+		...(target.label ? { label: target.label } : {}),
+	};
+}
+
+export function activateStudioScreenAssistantTarget(input: {
+	fieldId?: string;
+	id?: string;
+	label?: string;
+	pointerTarget?: StudioScreenAssistantTarget | null;
+	visibleTargets: readonly StudioScreenAssistantVisibleTarget[];
+}): {
+	activated: Pick<StudioScreenAssistantTarget, "fieldId" | "id" | "label"> | null;
+	error?: string;
+	ok: boolean;
+} {
+	if (typeof document === "undefined") {
+		return { activated: null, error: "document_unavailable", ok: false };
+	}
+
+	const directElement =
+		input.id ? queryScreenAssistantTargetElement(input.id) : input.fieldId ? queryAgentFieldElement(input.fieldId) : null;
+	const grounded = directElement
+		? targetFromElement(directElement)
+		: groundStudioScreenAssistantTarget(input);
+	const element = directElement ?? queryElementForGroundedTarget(grounded);
+	if (!element) {
+		return { activated: null, error: "target_not_found", ok: false };
+	}
+
+	const scrollIntoView = (element as { scrollIntoView?: (options?: ScrollIntoViewOptions) => void }).scrollIntoView;
+	scrollIntoView?.call(element, { block: "center", inline: "nearest" });
+	const click = (element as { click?: () => void }).click;
+	if (typeof click !== "function") {
+		return {
+			activated: pickActivatedTarget(grounded),
+			error: "target_not_activatable",
+			ok: false,
+		};
+	}
+
+	click.call(element);
+	const activated = targetFromElement(element) ?? grounded;
+	return {
+		activated: pickActivatedTarget(activated),
+		ok: true,
+	};
+}
+
+export function getStudioScreenAssistantRegionRect(
+	path: readonly StudioScreenAssistantRegionPoint[],
+): StudioScreenAssistantRect | null {
+	const points = path.filter((point) => (
+		Number.isFinite(point.x) &&
+		Number.isFinite(point.y)
+	));
+	if (points.length < 2) {
+		return null;
+	}
+
+	let minX = points[0]?.x ?? 0;
+	let minY = points[0]?.y ?? 0;
+	let maxX = minX;
+	let maxY = minY;
+	for (const point of points) {
+		minX = Math.min(minX, point.x);
+		minY = Math.min(minY, point.y);
+		maxX = Math.max(maxX, point.x);
+		maxY = Math.max(maxY, point.y);
+	}
+
+	return {
+		x: minX,
+		y: minY,
+		width: maxX - minX,
+		height: maxY - minY,
+	};
+}
+
+function rectsIntersect(a: StudioScreenAssistantRect, b: StudioScreenAssistantRect): boolean {
+	const aRight = a.x + a.width;
+	const aBottom = a.y + a.height;
+	const bRight = b.x + b.width;
+	const bBottom = b.y + b.height;
+
+	return a.x <= bRight && aRight >= b.x && a.y <= bBottom && aBottom >= b.y;
+}
+
+export function getStudioScreenAssistantRegionTargetHints(input: {
+	rect: StudioScreenAssistantRect;
+	visibleTargets: readonly StudioScreenAssistantVisibleTarget[];
+}): StudioScreenAssistantVisibleTarget[] {
+	return input.visibleTargets.filter((target) => (
+		target.rect ? rectsIntersect(input.rect, target.rect) : false
+	));
+}
+
+export function createStudioScreenAssistantRegion(input: {
+	createdAt?: number;
+	id: string;
+	label?: string;
+	path: readonly StudioScreenAssistantRegionPoint[];
+	visibleTargets: readonly StudioScreenAssistantVisibleTarget[];
+}): StudioScreenAssistantRegion | null {
+	const rect = getStudioScreenAssistantRegionRect(input.path);
+	if (!rect || rect.width < 4 || rect.height < 4) {
+		return null;
+	}
+
+	const path = input.path
+		.filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y))
+		.map((point) => ({ x: point.x, y: point.y }));
+
+	return {
+		createdAt: input.createdAt ?? Date.now(),
+		id: input.id,
+		label: input.label ?? "Painted screen area",
+		path,
+		rect,
+		targetHints: getStudioScreenAssistantRegionTargetHints({
+			rect,
+			visibleTargets: input.visibleTargets,
+		}),
+	};
 }
 
 function summarizeAgentDraft(
@@ -503,12 +751,16 @@ function summarizeAgentDraft(
 
 export function createStudioScreenAssistantSnapshot({
 	activeAgentDraft,
+	activeRegion,
 	activePanel,
 	composer,
 	pointer,
 	selectedAgent,
 }: StudioScreenAssistantSnapshotInput): StudioScreenAssistantSnapshot {
+	const visibleTargets = getStudioScreenAssistantVisibleTargets();
+
 	return {
+		...(activeRegion ? { activeRegion } : {}),
 		screenContext: {
 			route: "/studio",
 			activePanel,
@@ -517,6 +769,6 @@ export function createStudioScreenAssistantSnapshot({
 			...(activeAgentDraft ? { activeAgentDraft: summarizeAgentDraft(activeAgentDraft) } : {}),
 		},
 		pointerContext: getStudioScreenAssistantPointerContext(pointer),
-		visibleTargets: getStudioScreenAssistantVisibleTargets(),
+		visibleTargets,
 	};
 }

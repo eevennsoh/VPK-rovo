@@ -9,10 +9,13 @@ import {
 	useRealtimeVoice,
 } from "@/components/projects/studio/hooks/use-realtime-voice";
 import {
+	activateStudioScreenAssistantTarget,
 	createStudioScreenAssistantSnapshot,
 	groundStudioScreenAssistantTarget,
 	normalizeAgentDraftPatch,
+	type StudioScreenAssistantRegion,
 	type StudioScreenAssistantSnapshot,
+	type StudioScreenAssistantVisibleTarget,
 } from "@/components/projects/studio/lib/studio-screen-assistant";
 import type {
 	ScreenAssistantAdapter,
@@ -53,6 +56,14 @@ export interface UseScreenAssistantResult {
 	/** Controlled composer text (used by set/submit composer defaults). */
 	composerText: string;
 	setComposerText: (text: string) => void;
+	/** Current painted screen region, if any. */
+	activeRegion: StudioScreenAssistantRegion | null;
+	/** Clear the current painted region. */
+	clearRegion: () => void;
+	/** Set the current painted region from the overlay. */
+	setActiveRegion: (region: StudioScreenAssistantRegion | null) => void;
+	/** Return visible targets for region target-hint calculation. */
+	getVisibleTargets: () => readonly StudioScreenAssistantVisibleTarget[];
 	/** Send composer/typed text into the Live chat session. */
 	sendText: (text: string) => void;
 	/** Drive the cursor state machine directly (offline harness). */
@@ -92,6 +103,7 @@ export function useScreenAssistant({
 	const [transcript, setTranscript] = useState<ScreenAssistantTranscriptEntry[]>([]);
 	const [liveUserTranscript, setLiveUserTranscript] = useState("");
 	const [composerText, setComposerText] = useState("");
+	const [activeRegion, setActiveRegion] = useState<StudioScreenAssistantRegion | null>(null);
 
 	// Stable refs so the screen-assistant tool executor (created with the
 	// realtime hook) can reach the latest values without re-creating the hook.
@@ -136,6 +148,12 @@ export function useScreenAssistant({
 		onActiveChangeRef.current?.(isClickyActive);
 	}, [isClickyActive]);
 
+	useEffect(() => {
+		if (!isClickyActive) {
+			setActiveRegion(null);
+		}
+	}, [isClickyActive]);
+
 	const appendTranscript = useCallback(
 		(role: ScreenAssistantTranscriptEntry["role"], content: string) => {
 			const trimmed = content.trim();
@@ -152,9 +170,11 @@ export function useScreenAssistant({
 	const getSnapshot = useCallback((): StudioScreenAssistantSnapshot => {
 		const fromAdapter = adapterRef.current?.getSnapshot;
 		if (fromAdapter) {
-			return fromAdapter();
+			const snapshot = fromAdapter();
+			return activeRegion ? { ...snapshot, activeRegion } : snapshot;
 		}
 		return createStudioScreenAssistantSnapshot({
+			activeRegion,
 			activePanel: "sandbox",
 			composer: {
 				placeholder: DEFAULT_COMPOSER_PLACEHOLDER,
@@ -162,7 +182,12 @@ export function useScreenAssistant({
 			},
 			pointer: pointerRef.current,
 		});
-	}, []);
+	}, [activeRegion]);
+
+	const getVisibleTargets = useCallback(
+		(): readonly StudioScreenAssistantVisibleTarget[] => getSnapshot().visibleTargets,
+		[getSnapshot],
+	);
 
 	const handleDelegateToRovo = useCallback((request: DelegationRequest) => {
 		const fromAdapter = adapterRef.current?.onDelegateToRovo;
@@ -198,7 +223,12 @@ export function useScreenAssistant({
 				clickyAddExchange({ role: "user", content: text });
 			}
 			appendTranscript("user", text);
-		}, [appendTranscript, clickyAddExchange, clickyStartProcessing]),
+			}, [appendTranscript, clickyAddExchange, clickyStartProcessing]),
+		onAssistantTextDelta: useCallback((payload: { displayOnly?: boolean; source?: "text" | "audio_transcript"; text?: string } | string) => {
+			const text = typeof payload === "string" ? payload : (payload.text ?? "");
+			if (!text || !isClickyActiveRef.current) return;
+			clickyStartSpeaking(text);
+			}, [clickyStartSpeaking]),
 		onAssistantTextCompleted: useCallback((payload: { text?: string } | string) => {
 			const text = typeof payload === "string" ? payload : (payload.text ?? "");
 			if (!text) return;
@@ -207,7 +237,7 @@ export function useScreenAssistant({
 				clickyStartSpeaking(text);
 			}
 			appendTranscript("assistant", text);
-		}, [appendTranscript, clickyAddExchange, clickyStartSpeaking]),
+			}, [appendTranscript, clickyAddExchange, clickyStartSpeaking]),
 		onToolCall: useCallback(
 			({ name, args, callId }: { name: string; args: Record<string, unknown>; callId: string }) => {
 				const respond = (output: unknown, createResponse?: boolean) =>
@@ -228,18 +258,35 @@ export function useScreenAssistant({
 							fieldId: typeof args.fieldId === "string" ? args.fieldId : undefined,
 							id: typeof args.targetId === "string" ? args.targetId : undefined,
 							label: typeof args.label === "string" ? args.label : undefined,
+							activeRegion: snapshot.activeRegion ?? null,
 							pointerTarget: snapshot.pointerContext?.target ?? null,
 							visibleTargets: snapshot.visibleTargets,
 						});
 						const point = viewportPointFromTarget(grounded);
 						const label = typeof args.label === "string" ? args.label : grounded?.label ?? "";
-						if (point && isClickyActiveRef.current) {
+						let pointingStarted = false;
+						if (point) {
+							if (!isClickyActiveRef.current) {
+								activateClicky();
+							}
 							clickyStartPointing(point, label);
+							pointingStarted = true;
 						}
 						respond({
-							ok: Boolean(point),
-							pointed: grounded ? { id: grounded.id, label: grounded.label } : null,
+							ok: pointingStarted,
+							pointed: pointingStarted && grounded ? { id: grounded.id, label: grounded.label } : null,
 						});
+						return;
+					}
+					case "activate_screen_target": {
+						const snapshot = getSnapshot();
+						respond(activateStudioScreenAssistantTarget({
+							fieldId: typeof args.fieldId === "string" ? args.fieldId : undefined,
+							id: typeof args.targetId === "string" ? args.targetId : undefined,
+							label: typeof args.label === "string" ? args.label : undefined,
+							pointerTarget: snapshot.pointerContext?.target ?? null,
+							visibleTargets: snapshot.visibleTargets,
+						}));
 						return;
 					}
 					case "set_composer_text": {
@@ -279,7 +326,7 @@ export function useScreenAssistant({
 						respond({ ok: false, error: "unknown_tool" });
 				}
 			},
-			[appendTranscript, clickyStartPointing, getSnapshot],
+			[activateClicky, appendTranscript, clickyStartPointing, getSnapshot],
 		),
 	});
 
@@ -330,6 +377,10 @@ export function useScreenAssistant({
 		setTranscript([]);
 		clicky.clearHistory();
 	}, [clicky]);
+
+	const clearRegion = useCallback(() => {
+		setActiveRegion(null);
+	}, []);
 
 	const simulate = useMemo(() => ({
 		listening: () => {
@@ -384,6 +435,10 @@ export function useScreenAssistant({
 		liveAssistantTranscript: realtime.modelTranscript,
 		composerText,
 		setComposerText,
+		activeRegion,
+		clearRegion,
+		setActiveRegion,
+		getVisibleTargets,
 		sendText,
 		simulate,
 	};

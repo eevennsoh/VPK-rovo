@@ -3269,22 +3269,40 @@ function AgentAvatarOptionPreview({ src }: Readonly<{ src: string }>) {
 	);
 }
 
+function getAgentAvatarOptionTargetId(
+	screenAssistantTargetPrefix: string | undefined,
+	groupId: string,
+	optionSrc: string,
+): string | undefined {
+	if (!screenAssistantTargetPrefix) {
+		return undefined;
+	}
+	const fileName = optionSrc.split("/").pop() ?? optionSrc;
+	const optionId = fileName.replace(/\.[^.]+$/u, "");
+	return `${screenAssistantTargetPrefix}:avatar:${groupId}:${optionId}`;
+}
+
 function AgentAvatarPickerMenu({
 	avatarSrc,
 	isAtlassianAvatar,
 	onAvatarChange,
+	screenAssistantTargetPrefix,
 }: Readonly<{
 	avatarSrc: string;
 	isAtlassianAvatar: boolean;
 	onAvatarChange: (avatarSrc: string) => void;
+	screenAssistantTargetPrefix?: string;
 }>) {
 	const [open, setOpen] = useState(false);
 	const selectedAvatarSrc = AGENT_AVATAR_OPTION_SRC_SET.has(avatarSrc) ? avatarSrc : "";
+	const avatarTargetId = screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:avatar` : undefined;
 
 	return (
 		<DropdownMenu open={open} onOpenChange={setOpen}>
 			<DropdownMenuTrigger
 				aria-label="Change agent avatar"
+				data-agent-field={avatarTargetId ? "avatar" : undefined}
+				data-screen-assistant-target={avatarTargetId}
 				render={(
 					<Button
 						className="group/avatar-picker relative h-12 w-[42px] overflow-visible rounded-xl border-0 bg-transparent p-0 hover:bg-transparent active:bg-transparent aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:text-text-subtle focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -3322,6 +3340,9 @@ function AgentAvatarPickerMenu({
 									<DropdownMenuRadioItem
 										aria-label={`Use ${option.label} avatar`}
 										className="group/avatar-option h-12 min-h-0 w-11 justify-center rounded-lg bg-transparent p-1! pr-1! pl-1! data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text active:bg-bg-neutral-subtle-pressed data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed [&_[data-slot=dropdown-menu-radio-item-indicator]]:hidden"
+										data-agent-avatar-group={group.id}
+										data-agent-avatar-src={option.src}
+										data-screen-assistant-target={getAgentAvatarOptionTargetId(screenAssistantTargetPrefix, group.id, option.src)}
 										key={option.src}
 										title={option.label}
 										value={option.src}
@@ -3343,9 +3364,11 @@ function AgentAvatarPickerMenu({
 function AgentProfileCover({
 	avatarSrc = AGENT_AVATAR_SRC,
 	onAvatarChange,
+	screenAssistantTargetPrefix,
 }: Readonly<{
 	avatarSrc?: string;
 	onAvatarChange?: (avatarSrc: string) => void;
+	screenAssistantTargetPrefix?: string;
 }>) {
 	const coverBackgroundColor = getAgentProfileCoverBackgroundColor(avatarSrc);
 	const isAtlassianAvatar = isAtlassianLogoSource(avatarSrc);
@@ -3375,6 +3398,7 @@ function AgentProfileCover({
 						avatarSrc={avatarSrc}
 						isAtlassianAvatar={isAtlassianAvatar}
 						onAvatarChange={onAvatarChange}
+						screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 					/>
 				) : (
 					<>
@@ -4097,7 +4121,7 @@ function AgentConfigProfile({
 			className="flex flex-col gap-4"
 			data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:profile` : undefined}
 		>
-			<AgentProfileCover avatarSrc={avatarSrc} onAvatarChange={onAvatarChange} />
+			<AgentProfileCover avatarSrc={avatarSrc} onAvatarChange={onAvatarChange} screenAssistantTargetPrefix={screenAssistantTargetPrefix} />
 			<div className="flex flex-col gap-1" data-agent-field="name">
 				{/* The cover/avatar and the description below stay put; only the name
 				    row (title + inline back-arrow on subagents) crossfades and slides

@@ -17,6 +17,7 @@ export interface RealtimeAssistantTextDelta {
 
 export interface RealtimeAssistantTextDeltaResult {
 	messageId: string | null;
+	shouldReplaceTranscript: boolean;
 	shouldEmitStart: boolean;
 	state: RealtimeAssistantTextStreamState;
 }
@@ -45,6 +46,36 @@ function resetAssistantTextBoundary(
 		...createRealtimeAssistantTextStreamState(),
 		itemId: itemId ?? null,
 		responseId: responseId ?? null,
+	};
+}
+
+function mergeAudioTranscriptWithTextDelta(
+	transcript: string,
+	delta: string,
+): {
+	nextSource: RealtimeAssistantTextSource;
+	transcript: string;
+} {
+	if (!transcript || delta.startsWith(transcript)) {
+		return { nextSource: "text", transcript: delta };
+	}
+
+	if (transcript.startsWith(delta) || transcript.includes(delta)) {
+		return { nextSource: "audio_transcript", transcript };
+	}
+
+	let overlap = 0;
+	const maxOverlap = Math.min(transcript.length, delta.length);
+	for (let length = maxOverlap; length > 0; length -= 1) {
+		if (transcript.endsWith(delta.slice(0, length))) {
+			overlap = length;
+			break;
+		}
+	}
+
+	return {
+		nextSource: "text",
+		transcript: `${transcript}${delta.slice(overlap)}`,
 	};
 }
 
@@ -80,8 +111,25 @@ export function reduceRealtimeAssistantTextDelta(
 	if (nextState.source === "text" && source === "audio_transcript") {
 		return {
 			messageId: nextState.itemId,
+			shouldReplaceTranscript: false,
 			shouldEmitStart: false,
 			state: nextState,
+		};
+	}
+
+	if (nextState.source === "audio_transcript" && source === "text") {
+		const merged = mergeAudioTranscriptWithTextDelta(nextState.transcript, delta);
+
+		return {
+			messageId: nextState.itemId,
+			shouldReplaceTranscript: true,
+			shouldEmitStart: false,
+			state: {
+				...nextState,
+				hasStarted: true,
+				source: merged.nextSource,
+				transcript: merged.transcript,
+			},
 		};
 	}
 
@@ -95,6 +143,7 @@ export function reduceRealtimeAssistantTextDelta(
 
 	return {
 		messageId: nextState.itemId,
+		shouldReplaceTranscript: false,
 		shouldEmitStart,
 		state: nextState,
 	};

@@ -35,6 +35,8 @@ function toRovoCursorState(state: ClickyState): RovoCursorState {
 
 interface ClickyCursorProps {
 	state: ClickyState;
+	/** True only during an active region-painting drag gesture. */
+	paintingActive?: boolean;
 	/** Rotation angle in degrees (tangent-following during flight). */
 	rotation?: number;
 	/** Scale factor (pulse during flight). */
@@ -43,13 +45,14 @@ interface ClickyCursorProps {
 
 export function ClickyCursor({
 	state,
+	paintingActive = false,
 	rotation = IDLE_ROTATION,
 	flightScale = 1,
 }: Readonly<ClickyCursorProps>) {
 	if (state === "off") return null;
 
-	const rovoState = toRovoCursorState(state);
-	const isPointer = rovoState === "cursor";
+	const rovoState = paintingActive ? "painting" : toRovoCursorState(state);
+	const isPointer = rovoState === "cursor" || rovoState === "painting";
 	// Only the pointer arrow follows the flight arc; the mic / spinner /
 	// equalizer glyphs stay upright. Normalize idle (-35) back to 0 so the arrow
 	// keeps its natural orientation, then rotate relative to that while pointing.

@@ -963,11 +963,12 @@ import SearchIcon from "@atlaskit/icon/core/search"
 
 	"rovo-cursor": {
 		description:
-			"An inline agent-presence indicator that swaps glyph per state: a charcoal pointer wrapped in a Rovo conic-gradient stroke (cursor), a rainbow-ringed microphone badge (typing), a blue text-insertion caret with a rainbow-bordered \"Rovo\" name pill (telepointer), a rainbow indeterminate spinner reused from `ui/spinner` (loading), and a 4-bar brand equalizer (speaking). The rainbow on `cursor`, `typing`, and `telepointer` can rotate or sit static via the `animated` prop, and all motion respects prefers-reduced-motion.",
+			"An inline agent-presence indicator that swaps glyph per state: a charcoal pointer wrapped in a Rovo conic-gradient stroke (cursor), a full rainbow pointer for active region painting (painting), a rainbow-ringed microphone badge (typing), a blue text-insertion caret with a rainbow-bordered \"Rovo\" name pill (telepointer), a rainbow indeterminate spinner reused from `ui/spinner` (loading), and a 4-bar brand equalizer (speaking). The cursor-to-painting swap uses Motion, the rainbow on `cursor`, `painting`, `typing`, and `telepointer` can rotate or sit static via the `animated` prop, and all motion respects prefers-reduced-motion.",
 		demoLayout: { previewContentWidth: "full" },
 		usage: `import { RovoCursor } from "@/components/ui-custom/rovo-cursor";
 
 <RovoCursor state="cursor" />
+<RovoCursor state="painting" />
 <RovoCursor state="typing" size={20} />
 <RovoCursor state="telepointer" size={20} />
 <RovoCursor state="loading" size={24} />
@@ -976,7 +977,7 @@ import SearchIcon from "@atlaskit/icon/core/search"
 		props: [
 			{
 				name: "state",
-				type: `"cursor" | "typing" | "telepointer" | "loading" | "speaking"`,
+				type: `"cursor" | "painting" | "typing" | "telepointer" | "loading" | "speaking"`,
 				default: `"cursor"`,
 				description: "Which animated state to render.",
 			},
@@ -991,7 +992,7 @@ import SearchIcon from "@atlaskit/icon/core/search"
 				type: "boolean",
 				default: "true",
 				description:
-					"Rotate the rainbow on the `cursor` arrow, `typing` ring, and `telepointer` border. The loading spinner and speaking equalizer always animate.",
+					"Animate the cursor-to-painting swap and rotate the rainbow on the `cursor` arrow, `typing` ring, and `telepointer` border. The loading spinner and speaking equalizer always animate.",
 			},
 			{
 				name: "aria-label",

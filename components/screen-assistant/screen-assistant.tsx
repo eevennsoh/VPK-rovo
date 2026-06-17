@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
+
 import { cn } from "@/lib/utils";
 import { ClickyOverlay } from "@/components/projects/studio/components/clicky/clicky-overlay";
+import { ScreenAssistantRegionOverlay } from "./screen-assistant-region-overlay";
 import { ScreenAssistantControls } from "./screen-assistant-controls";
 import { ScreenAssistantTranscript } from "./screen-assistant-transcript";
 import { useScreenAssistant } from "./use-screen-assistant";
@@ -37,6 +40,7 @@ export function ScreenAssistant({
 		defaultActive,
 		onActiveChange,
 	});
+	const [paintingActive, setPaintingActive] = useState(false);
 
 	const statusLabel = assistant.isRealtimeActive
 		? assistant.realtime.voiceState
@@ -49,11 +53,17 @@ export function ScreenAssistant({
 			{/* AI cursor companion overlay (fixed, pointer-events-none) */}
 			<ClickyOverlay
 				state={assistant.clicky.state}
+				paintingActive={paintingActive}
 				pointTarget={assistant.clicky.pointTarget}
 				responseText={assistant.clicky.responseText}
-				history={assistant.clicky.history}
-				screenshotDimensions={assistant.clicky.screenshotDimensions}
 				onReturnToIdle={assistant.clicky.returnToIdle}
+			/>
+			<ScreenAssistantRegionOverlay
+				active={assistant.isActive}
+				getVisibleTargets={assistant.getVisibleTargets}
+				onPaintingChange={setPaintingActive}
+				onRegionChange={assistant.setActiveRegion}
+				region={assistant.activeRegion}
 			/>
 
 			{(showControls || showTranscript) ? (

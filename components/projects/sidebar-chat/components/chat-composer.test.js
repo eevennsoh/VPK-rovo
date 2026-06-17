@@ -8,6 +8,7 @@ function readProjectFile(filePath) {
 }
 
 const CLICKY_VOICE_HOOK_SOURCE = readProjectFile("components/projects/rovo/hooks/use-clicky-voice.ts");
+const REALTIME_VOICE_HOOK_SOURCE = readProjectFile("components/projects/rovo/hooks/use-realtime-voice.ts");
 const LIVE_WAVEFORM_SOURCE = readProjectFile("components/ui-audio/live-waveform.tsx");
 const ROVO_CURSOR_SOURCE = readProjectFile("components/ui-custom/rovo-cursor.tsx");
 
@@ -58,6 +59,10 @@ test("compact chat can hide the AI cursor control without changing the default",
 	assert.match(sidebarPanel, /hideAiCursor=\{hideAiCursor\}/u);
 	assert.match(sidebarPanel, /clickyActive=\{!hideAiCursor && isClickyActive\}/u);
 	assert.match(sidebarPanel, /\{hideAiCursor \? null : \([\s\S]*<ClickyOverlay/u);
+	assert.match(sidebarPanel, /<ClickyOverlay[\s\S]*paintingActive=\{screenAssistantRegionPainting\}/u);
+	assert.match(sidebarPanel, /<ClickyOverlay[\s\S]*responseText=\{clicky\.responseText\}/u);
+	assert.match(sidebarPanel, /<ClickyOverlay[\s\S]*history=\{clicky\.history\}/u);
+	assert.match(sidebarPanel, /<ScreenAssistantRegionOverlay[\s\S]*active=\{!hideAiCursor && isClickyActive\}[\s\S]*onPaintingChange=\{setScreenAssistantRegionPainting\}[\s\S]*onRegionChange=\{setScreenAssistantRegion\}/u);
 	assert.match(sidebarComposer, /hideAiCursor\?: boolean;/u);
 	assert.match(sidebarComposer, /hideAiCursor = false/u);
 	assert.match(sidebarComposer, /clickyActive=\{!hideAiCursor && clickyActive\}/u);
@@ -70,6 +75,8 @@ test("compact chat cursor activation starts live voice while cursor deactivation
 	const realtimeToggleSource = sourceBetween(sidebarPanel, "const handleToggleRealtimeVoice", "const handleToggleClicky");
 	const clickyToggleSource = sourceBetween(sidebarPanel, "const handleToggleClicky", "// Cmd+Shift+K");
 	const keyboardShortcutSource = sourceBetween(sidebarPanel, "// Cmd+Shift+K", "const isStreamingLifecycleActive");
+	const endVoiceSessionSource = sourceBetween(REALTIME_VOICE_HOOK_SOURCE, 'if (message.name === "end_voice_session")', '} else if (message.name === "delegate_to_rovo")');
+	const panelEndVoiceSessionSource = sourceBetween(sidebarPanel, "onEndVoiceSession: useCallback", "onToolCall: useCallback");
 
 	assert.match(sidebarPanel, /activate: activateClicky,/u);
 	assert.match(sidebarPanel, /const startRealtimeVoice = useCallback\(\(\) => \{[\s\S]*realtimeTranscriptRef\.current = "";[\s\S]*realtime\.connect\(\);[\s\S]*\}, \[realtime\]\);/u);
@@ -85,8 +92,48 @@ test("compact chat cursor activation starts live voice while cursor deactivation
 	assert.match(keyboardShortcutSource, /if \(e\.key === "Escape" && isClickyActive\) \{[\s\S]*deactivateClicky\(\);/u);
 	assert.match(sidebarPanel, /onToggleClicky=\{handleToggleClicky\}/u);
 	assert.doesNotMatch(sidebarPanel, /toggleClicky/u);
-	assert.match(CLICKY_VOICE_HOOK_SOURCE, /Cursor deactivation must not stop/u);
+	assert.match(CLICKY_VOICE_HOOK_SOURCE, /Cursor deactivation must not tear down/u);
 	assert.doesNotMatch(CLICKY_VOICE_HOOK_SOURCE, /disconnectRealtime\(\)/u);
+	assert.match(REALTIME_VOICE_HOOK_SOURCE, /onEndVoiceSession\?: \(\) => void;/u);
+	assert.match(endVoiceSessionSource, /onEndVoiceSessionRef\.current\?\.\(\);[\s\S]*setTimeout\(\(\) => \{[\s\S]*disconnectRef\.current\(\);/u);
+	assert.match(panelEndVoiceSessionSource, /realtimeTranscriptRef\.current = "";[\s\S]*deactivateClicky\(\);/u);
+});
+
+test("compact chat streams realtime assistant text into the Clicky response panel", () => {
+	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const assistantDeltaSource = sourceBetween(sidebarPanel, "const handleRealtimeAssistantTextDelta", "const handleRealtimeAssistantTextCompleted");
+	const assistantCompletedSource = sourceBetween(sidebarPanel, "const handleRealtimeAssistantTextCompleted", "const handleRealtimeDelegateToRovo");
+
+	assert.match(sidebarPanel, /type RealtimeAssistantTextPayload/u);
+	assert.match(sidebarPanel, /const streamClickyAssistantText = useCallback/u);
+	assert.match(sidebarPanel, /if \(!isClickyActive\) \{[\s\S]*activateClicky\(\);[\s\S]*\}[\s\S]*clickyStartSpeaking\(text\);/u);
+	assert.match(assistantDeltaSource, /streamClickyAssistantText\(text\);/u);
+	assert.doesNotMatch(assistantDeltaSource, /if \(!isClickyActive\)/u);
+	assert.match(assistantCompletedSource, /if \(!text \|\| !streamClickyAssistantText\(text\)\) \{[\s\S]*return;/u);
+	assert.match(assistantCompletedSource, /clickyAddExchange\(\{ role: "assistant", content: text \}\);/u);
+	assert.match(sidebarPanel, /onAssistantTextDelta: handleRealtimeAssistantTextDelta/u);
+	assert.match(sidebarPanel, /onAssistantTextCompleted: handleRealtimeAssistantTextCompleted/u);
+});
+
+test("compact chat cursor voice uses structured screen tools instead of screenshot POINT parsing", () => {
+	const sidebarPanel = readProjectFile("components/projects/sidebar-chat/page.tsx");
+	const sidebarComposer = readProjectFile("components/projects/sidebar-chat/components/chat-composer.tsx");
+
+	assert.match(CLICKY_VOICE_HOOK_SOURCE, /get_screen_state/u);
+	assert.match(CLICKY_VOICE_HOOK_SOURCE, /point_at_target/u);
+	assert.match(CLICKY_VOICE_HOOK_SOURCE, /activate_screen_target/u);
+	assert.doesNotMatch(CLICKY_VOICE_HOOK_SOURCE, /sendImageInput|captureViewport|\[POINT/u);
+	assert.match(sidebarPanel, /createStudioScreenAssistantSnapshot/u);
+	assert.match(sidebarPanel, /activeRegion: screenAssistantRegion/u);
+	assert.match(sidebarPanel, /activeRegion: snapshot\.activeRegion \?\? null/u);
+	assert.match(sidebarPanel, /handleScreenAssistantToolCall/u);
+	assert.match(sidebarPanel, /onToolCall: useCallback/u);
+	assert.match(sidebarPanel, /sendFunctionCallOutputRef\.current = realtime\.sendFunctionCallOutput/u);
+	assert.match(sidebarPanel, /activateStudioScreenAssistantTarget\(\{/u);
+	assert.match(sidebarPanel, /screenAssistantTargetPrefix="sidebar-composer"/u);
+	assert.match(sidebarComposer, /screenAssistantTargetPrefix\?: string;/u);
+	assert.match(sidebarComposer, /data-screen-assistant-target=\{screenAssistantTargetPrefix\}/u);
+	assert.doesNotMatch(sidebarPanel, /parseClickyResponse|sendImageInput|clickyScreenshotDimensions/u);
 });
 
 test("compact chat composer padding can be overridden by opt-in surfaces", () => {
@@ -189,22 +236,46 @@ test("shared composer waveform uses live stream while listening and processing a
 	assert.doesNotMatch(source, /live-voice-cursor-active/u);
 	assert.match(source, /const ACTION_FRAME_CLASS_NAME = "flex h-9 shrink-0 items-center justify-center";/u);
 	assert.match(source, /function ComposerActionFrame/u);
-	assert.match(source, /className=\{cn\("relative flex h-9 w-\[68px\] items-center justify-center overflow-hidden rounded-\[8px\]", clickyActive \? "text-text-inverse" : undefined\)\}/u);
+	assert.doesNotMatch(source, /shouldShowRegionPaintControl/u);
+	assert.match(source, /"relative flex h-9 w-\[68px\] items-center justify-center overflow-hidden rounded-\[8px\]"/u);
 	assert.match(source, /<span aria-hidden="true" className="absolute inset-0 rounded-\[8px\] bg-bg-neutral" \/>/u);
 	assert.match(source, /"absolute top-0\.5 bottom-0\.5 rounded-md bg-bg-neutral-bold shadow-sm transition-all"[\s\S]*clickyActive \? "left-0\.5 right-0\.5" : "right-0\.5 w-8"/u);
 	assert.match(source, /<div className="relative z-10 flex h-8 w-16 items-center gap-0">/u);
+	assert.doesNotMatch(source, /aria-label="Paint screen area"/u);
 	assert.match(source, /<div className="flex h-9 items-center gap-1">[\s\S]*className="relative flex size-9 shrink-0 items-center justify-center rounded-md bg-transparent"[\s\S]*aria-label="Start live voice"/u);
 	assert.match(source, /className=\{cn\("flex h-9 min-w-0 shrink-0 items-center justify-end gap-1\.5", className\)\}/u);
 	assert.doesNotMatch(source, /className="flex h-8 w-16 overflow-hidden rounded-md bg-bg-neutral-bold text-text-inverse shadow-sm"/u);
-	assert.match(source, /import \{ RovoCursor \} from "@\/components\/ui-custom\/rovo-cursor";/u);
+	assert.doesNotMatch(source, /import \{ RovoCursor \} from "@\/components\/ui-custom\/rovo-cursor";/u);
 	assert.match(source, /aria-label="Rovo cursor"[\s\S]*aria-pressed=\{clickyActive\}[\s\S]*"group\/rovo-cursor-button flex size-8 shrink-0 items-center justify-center rounded-md/u);
 	assert.match(source, /clickyActive \? \([\s\S]*<RovoCursorTrackingIcon active \/>[\s\S]*\) : \(/u);
-	assert.match(source, /group-hover\/rovo-cursor-button:opacity-100 group-focus-visible\/rovo-cursor-button:opacity-100"[\s\S]*<RovoCursor state="cursor" size=\{16\} \/>/u);
+	assert.match(source, /clickyActive \? \([\s\S]*<RovoCursorTrackingIcon active \/>[\s\S]*\) : \([\s\S]*<RovoCursorTrackingIcon active=\{false\} \/>[\s\S]*\)/u);
+	assert.match(source, /<motion\.button[\s\S]*aria-label="Rovo cursor"/u);
+	assert.match(source, /whileHover="hover"/u);
+	assert.match(source, /whileTap="tap"/u);
+	assert.match(source, /variants=\{shouldReduceMotion \? ROVO_CURSOR_BUTTON_REDUCED_VARIANTS : ROVO_CURSOR_BUTTON_VARIANTS\}/u);
+	assert.match(source, /const ROVO_CURSOR_BUTTON_TRANSITION = \{ type: "spring", bounce: 0\.18, visualDuration: 0\.22 \} as const;/u);
+	assert.doesNotMatch(source, /ROVO_CURSOR_IDLE_ICON_VARIANTS|ROVO_CURSOR_PREVIEW_ICON_VARIANTS|ROVO_CURSOR_PREVIEW_ICON_REDUCED_VARIANTS/u);
+	assert.doesNotMatch(source, /<RovoCursor state="cursor" size=\{16\} \/>/u);
 	const cursorButtonStart = source.indexOf('aria-label="Rovo cursor"');
-	const cursorButtonSource = source.slice(cursorButtonStart, source.indexOf("</button>", cursorButtonStart));
+	const cursorButtonSource = source.slice(cursorButtonStart, source.indexOf("</motion.button>", cursorButtonStart));
 	assert.doesNotMatch(cursorButtonSource, /hover:bg-bg-neutral/u);
 	assert.doesNotMatch(cursorButtonSource, /active:bg-bg-neutral/u);
-	assert.match(ROVO_CURSOR_SOURCE, /const ARROW_STROKE_WIDTH = 2;/u);
+	assert.doesNotMatch(cursorButtonSource, /group-hover\/rovo-cursor-button/u);
+	assert.doesNotMatch(cursorButtonSource, /RovoCursor state="cursor"|data-rovo-cursor/u);
+	assert.match(ROVO_CURSOR_SOURCE, /const ARROW_STROKE_OUTSET_PX = 2;/u);
+	assert.match(ROVO_CURSOR_SOURCE, /const ARROW_STROKE_WIDTH = ARROW_STROKE_OUTSET_PX \* 2 \* \(ARROW_VIEWBOX \/ 16\);/u);
+	assert.match(ROVO_CURSOR_SOURCE, /import \{ token \} from "@\/lib\/tokens";/u);
+	assert.match(ROVO_CURSOR_SOURCE, /token\("color\.icon\.accent\.orange"\)[\s\S]*token\("color\.icon\.accent\.lime"\)[\s\S]*token\("color\.icon\.accent\.blue"\)[\s\S]*token\("color\.icon\.accent\.purple"\)/u);
+	assert.match(ROVO_CURSOR_SOURCE, /data-rovo-cursor-rainbow-stroke/u);
+	assert.match(ROVO_CURSOR_SOURCE, /data-rovo-cursor-body/u);
+	assert.match(ROVO_CURSOR_SOURCE, /className="bg-icon"/u);
+	assert.match(ROVO_CURSOR_SOURCE, /export type RovoCursorState = "cursor" \| "painting"/u);
+	assert.match(ROVO_CURSOR_SOURCE, /<AnimatePresence initial=\{false\} mode="popLayout">/u);
+	assert.match(ROVO_CURSOR_SOURCE, /data-rovo-cursor-mode-transition/u);
+	assert.match(ROVO_CURSOR_SOURCE, /state === "painting" \? \([\s\S]*<PaintingCursor/u);
+	assert.match(ROVO_CURSOR_SOURCE, /data-rovo-cursor-rainbow-fill/u);
+	assert.doesNotMatch(ROVO_CURSOR_SOURCE, /data-rovo-cursor-rainbow-halo/u);
+	assert.doesNotMatch(ROVO_CURSOR_SOURCE, /borderRadius: barWidth \/ 2/u);
 	assert.match(source, /aria-label="Stop live voice"[\s\S]*className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md p-0 text-text-inverse outline-none transition-colors hover:bg-bg-neutral-bold-hovered/u);
 	assert.match(source, /function ComposerVoiceWaveform/u);
 	assert.match(source, /barCount\?: 4 \| 8;/u);

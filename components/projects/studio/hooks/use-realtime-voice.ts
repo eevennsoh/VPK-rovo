@@ -46,6 +46,7 @@ export type RealtimeGenerationState =
 export const SCREEN_ASSISTANT_TOOL_NAMES = new Set<string>([
 	"get_screen_state",
 	"point_at_target",
+	"activate_screen_target",
 	"set_composer_text",
 	"submit_composer",
 	"apply_agent_draft_patch",
@@ -77,17 +78,22 @@ export interface UseRealtimeVoiceOptions {
 	onTextResponseStart?: (payload?: { messageId?: string }) => void;
 	onAssistantTextDelta?: (payload: {
 		delta?: string;
+		displayOnly?: boolean;
 		messageId?: string;
+		replace?: boolean;
+		source?: "text" | "audio_transcript";
 		text?: string;
 	} | string) => void;
 	onAssistantTextCompleted?: (payload: {
 		messageId?: string;
 		text?: string;
 	} | string) => void;
+	/** Called when the model explicitly ends the live voice session. */
+	onEndVoiceSession?: () => void;
 	/**
 	 * Called when the model invokes an app-owned screen-assistant tool
-	 * (get_screen_state, point_at_target, set_composer_text, submit_composer,
-	 * apply_agent_draft_patch). The executor runs the action and returns the
+	 * (get_screen_state, point_at_target, activate_screen_target,
+	 * set_composer_text, submit_composer, apply_agent_draft_patch). The executor runs the action and returns the
 	 * result via `sendFunctionCallOutput`.
 	 */
 	onToolCall?: (call: { name: string; args: Record<string, unknown>; callId: string }) => void;
@@ -256,6 +262,13 @@ interface ServerAudioTranscriptDelta {
 	responseId?: string;
 }
 
+interface ServerAudioTranscriptDone {
+	type: "audio_transcript_done";
+	transcript: string;
+	itemId?: string;
+	responseId?: string;
+}
+
 interface ServerTranscriptionDelta {
 	type: "transcription_delta";
 	delta: string;
@@ -300,6 +313,7 @@ type ServerMessage =
 	| ServerResponseCreated
 	| ServerTextDelta
 	| ServerAudioTranscriptDelta
+	| ServerAudioTranscriptDone
 	| ServerTranscriptionDelta
 	| ServerTranscriptionCompleted
 	| ServerSpeechStarted
@@ -587,6 +601,7 @@ export function useRealtimeVoice({
 	onTextResponseStart,
 	onAssistantTextDelta,
 	onAssistantTextCompleted,
+	onEndVoiceSession,
 	onToolCall,
 	chatMessages,
 	isGenerating = false,
@@ -686,6 +701,11 @@ export function useRealtimeVoice({
 	useEffect(() => {
 		onAssistantTextCompletedRef.current = onAssistantTextCompleted;
 	}, [onAssistantTextCompleted]);
+
+	const onEndVoiceSessionRef = useRef(onEndVoiceSession);
+	useEffect(() => {
+		onEndVoiceSessionRef.current = onEndVoiceSession;
+	}, [onEndVoiceSession]);
 
 	const onToolCallRef = useRef(onToolCall);
 	useEffect(() => {
@@ -1426,6 +1446,9 @@ export function useRealtimeVoice({
 					onAssistantTextDeltaRef.current?.({
 						delta: message.delta,
 						messageId: result.messageId ?? message.itemId,
+						replace: result.shouldReplaceTranscript,
+						source: "text",
+						text: result.state.transcript,
 					});
 					break;
 				}
@@ -1444,6 +1467,15 @@ export function useRealtimeVoice({
 					);
 					assistantTextStreamRef.current = result.state;
 					if (result.state.transcript === previousTranscript) {
+						if (message.delta && assistantTextStreamRef.current.source === "text") {
+							onAssistantTextDeltaRef.current?.({
+								delta: message.delta,
+								displayOnly: true,
+								messageId: result.messageId ?? message.itemId,
+								source: "audio_transcript",
+								text: `${previousTranscript}${message.delta}`,
+							});
+						}
 						break;
 					}
 					setGenerationState("generating");
@@ -1456,6 +1488,56 @@ export function useRealtimeVoice({
 					onAssistantTextDeltaRef.current?.({
 						delta: message.delta,
 						messageId: result.messageId ?? message.itemId,
+						replace: result.shouldReplaceTranscript,
+						source: "audio_transcript",
+						text: result.state.transcript,
+					});
+					break;
+				}
+
+				case "audio_transcript_done": {
+					markSpeechResponseStarted();
+					const transcript = message.transcript;
+					if (!transcript) {
+						break;
+					}
+					if (assistantTextStreamRef.current.source === "text") {
+						onAssistantTextDeltaRef.current?.({
+							delta: transcript,
+							displayOnly: true,
+							messageId: message.itemId ?? undefined,
+							replace: true,
+							source: "audio_transcript",
+							text: transcript,
+						});
+						break;
+					}
+					const previousState = assistantTextStreamRef.current;
+					if (previousState.transcript === transcript) {
+						break;
+					}
+					const messageId = message.itemId ?? previousState.itemId ?? null;
+					assistantTextStreamRef.current = {
+						...previousState,
+						hasStarted: true,
+						itemId: messageId,
+						responseId: message.responseId ?? previousState.responseId ?? null,
+						source: "audio_transcript",
+						transcript,
+					};
+					setGenerationState("generating");
+					if (!previousState.hasStarted) {
+						onTextResponseStartRef.current?.({
+							messageId: messageId ?? undefined,
+						});
+					}
+					setModelTranscript(transcript);
+					onAssistantTextDeltaRef.current?.({
+						delta: transcript,
+						messageId: messageId ?? undefined,
+						replace: Boolean(previousState.transcript),
+						source: "audio_transcript",
+						text: transcript,
 					});
 					break;
 				}
@@ -1593,10 +1675,11 @@ export function useRealtimeVoice({
 					markSpeechResponseStarted();
 					if (message.name === "end_voice_session") {
 						// Model decided to end the voice session — disconnect after goodbye audio
+						onEndVoiceSessionRef.current?.();
 						setTimeout(() => {
 							disconnectRef.current();
 						}, 1500);
-						} else if (message.name === "delegate_to_rovo") {
+					} else if (message.name === "delegate_to_rovo") {
 							// GPT called delegate_to_rovo — parse and forward to shell
 							try {
 								resetAssistantTextStream();

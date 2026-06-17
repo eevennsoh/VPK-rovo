@@ -7,6 +7,10 @@ const SHELL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-shell.tsx"),
 	"utf8",
 );
+const REGION_OVERLAY_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/screen-assistant/screen-assistant-region-overlay.tsx"),
+	"utf8",
+);
 const MESSAGES_SOURCE = fs.readFileSync(
 	path.join(__dirname, "rovo-app-messages.tsx"),
 	"utf8",
@@ -89,6 +93,34 @@ const ROVO_UI_MESSAGES_SOURCE = fs.readFileSync(
 );
 const REALTIME_VOICE_HOOK_SOURCE = fs.readFileSync(
 	path.join(__dirname, "..", "hooks", "use-realtime-voice.ts"),
+	"utf8",
+);
+const CLICKY_HOOK_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "hooks", "use-clicky.ts"),
+	"utf8",
+);
+const CLICKY_VOICE_HOOK_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "hooks", "use-clicky-voice.ts"),
+	"utf8",
+);
+const CLICKY_OVERLAY_SOURCE = fs.readFileSync(
+	path.join(__dirname, "clicky", "clicky-overlay.tsx"),
+	"utf8",
+);
+const CLICKY_RESPONSE_OVERLAY_SOURCE = fs.readFileSync(
+	path.join(__dirname, "clicky", "clicky-response-overlay.tsx"),
+	"utf8",
+);
+const CLICKY_SPEECH_BUBBLE_SOURCE = fs.readFileSync(
+	path.join(__dirname, "clicky", "clicky-speech-bubble.tsx"),
+	"utf8",
+);
+const CLICKY_CURSOR_SOURCE = fs.readFileSync(
+	path.join(__dirname, "clicky", "clicky-cursor.tsx"),
+	"utf8",
+);
+const ROVO_CURSOR_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/ui-custom/rovo-cursor.tsx"),
 	"utf8",
 );
 
@@ -362,9 +394,11 @@ test("Studio cursor activation starts live voice while cursor deactivation leave
 	const realtimeToggleSource = sourceBetween(SHELL_SOURCE, "const handleToggleRealtimeVoice", "const handleToggleClicky");
 	const clickyToggleSource = sourceBetween(SHELL_SOURCE, "const handleToggleClicky", "// Keyboard shortcuts for Rovo");
 	const keyboardShortcutSource = sourceBetween(SHELL_SOURCE, "// Keyboard shortcuts for Rovo", "const handleStartDictation");
+	const endVoiceSessionSource = sourceBetween(REALTIME_VOICE_HOOK_SOURCE, 'if (message.name === "end_voice_session")', '} else if (message.name === "delegate_to_rovo")');
+	const shellEndVoiceSessionSource = sourceBetween(SHELL_SOURCE, "onEndVoiceSession: useCallback", "onToolCall: useCallback");
 
 	assert.match(SHELL_SOURCE, /activate: activateClicky,/u);
-	assert.match(SHELL_SOURCE, /const startRealtimeVoice = useCallback\(\(\) => \{[\s\S]*manualVoiceStopRef\.current = false;[\s\S]*realtime\.connect\(\);[\s\S]*\}, \[realtime\]\);/u);
+	assert.match(SHELL_SOURCE, /const startRealtimeVoice = useCallback\(\(\) => \{[\s\S]*manualVoiceStopRef\.current = false;[\s\S]*activateClicky\(\);[\s\S]*realtime\.connect\(\);[\s\S]*\}, \[activateClicky, realtime\]\);/u);
 
 	assert.match(clickyToggleSource, /if \(isClickyActive\) \{[\s\S]*deactivateClicky\(\);[\s\S]*return;[\s\S]*\}/u);
 	assert.match(clickyToggleSource, /activateClicky\(\);[\s\S]*if \(realtime\.voiceState === "idle"\) \{[\s\S]*startRealtimeVoice\(\);[\s\S]*\}/u);
@@ -376,6 +410,12 @@ test("Studio cursor activation starts live voice while cursor deactivation leave
 	assert.match(keyboardShortcutSource, /if \(e\.key === "K" && e\.shiftKey && \(e\.metaKey \|\| e\.ctrlKey\)\) \{[\s\S]*handleToggleClicky\(\);/u);
 	assert.match(keyboardShortcutSource, /if \(e\.key === "Escape" && isClickyActive\) \{[\s\S]*deactivateClicky\(\);/u);
 	assert.doesNotMatch(SHELL_SOURCE, /toggleClicky/u);
+	assert.match(CLICKY_VOICE_HOOK_SOURCE, /started[\s\S]*voice first and then enabled the cursor/u);
+	assert.doesNotMatch(CLICKY_VOICE_HOOK_SOURCE, /connectedForClickyRef\.current &&[\s\S]*!hasInjectedPromptRef\.current/u);
+	assert.match(REALTIME_VOICE_HOOK_SOURCE, /onEndVoiceSession\?: \(\) => void;/u);
+	assert.match(endVoiceSessionSource, /onEndVoiceSessionRef\.current\?\.\(\);[\s\S]*setTimeout\(\(\) => \{[\s\S]*disconnectRef\.current\(\);/u);
+	assert.match(shellEndVoiceSessionSource, /manualVoiceStopRef\.current = true;[\s\S]*setVoiceTranscript\(null\);/u);
+	assert.doesNotMatch(shellEndVoiceSessionSource, /deactivateClicky\(\)/u);
 });
 
 test("Studio home starters frame agent building instead of generic one-off tasks", () => {
@@ -1022,7 +1062,62 @@ test("Chat greeting custom-agent starters prefer explicit icons and fall back to
 
 test("Studio screen assistant applies draft patches without publishing agents", () => {
 	assert.match(SHELL_SOURCE, /onToolCall: useCallback/u);
+	assert.match(SHELL_SOURCE, /handleScreenAssistantToolCall\(\{ args, callId, name \}, respond\);/u);
+	assert.match(REALTIME_VOICE_HOOK_SOURCE, /"activate_screen_target"/u);
 	assert.match(SHELL_SOURCE, /normalizeAgentDraftPatch/u);
+	assert.match(SHELL_SOURCE, /ScreenAssistantRegionOverlay/u);
+	assert.match(SHELL_SOURCE, /activeRegion: screenAssistantRegion/u);
+	assert.match(SHELL_SOURCE, /const \[screenAssistantRegionPainting, setScreenAssistantRegionPainting\] = useState\(false\);/u);
+	assert.match(SHELL_SOURCE, /<ClickyOverlay[\s\S]*paintingActive=\{screenAssistantRegionPainting\}/u);
+	assert.match(SHELL_SOURCE, /<ScreenAssistantRegionOverlay[\s\S]*onPaintingChange=\{setScreenAssistantRegionPainting\}/u);
+	assert.doesNotMatch(SHELL_SOURCE, /onStartScreenAssistantRegionPaint|screenAssistantRegionActive|isScreenAssistantRegionPaintMode/u);
+	assert.doesNotMatch(SHELL_SOURCE, /onPaintModeChange|paintMode=/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /paintingActive\?: boolean;/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /paintingActive=\{paintingActive\}/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /responseText\?: string \| null;/u);
+	assert.doesNotMatch(CLICKY_OVERLAY_SOURCE, /history\?: ReadonlyArray<ClickyExchange>;/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /const showResponseOverlay = Boolean\(responseText\) && isActive;/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /<ClickyResponseOverlay[\s\S]*text=\{responseText\}/u);
+	assert.match(SHELL_SOURCE, /responseText=\{clicky\.responseText\}/u);
+	assert.doesNotMatch(SHELL_SOURCE, /history=\{clicky\.history\}/u);
+	assert.match(CLICKY_CURSOR_SOURCE, /paintingActive \? "painting" : toRovoCursorState\(state\)/u);
+	assert.match(ROVO_CURSOR_SOURCE, /export type RovoCursorState = "cursor" \| "painting"/u);
+	assert.match(ROVO_CURSOR_SOURCE, /<AnimatePresence initial=\{false\} mode="popLayout">/u);
+	assert.match(ROVO_CURSOR_SOURCE, /data-rovo-cursor-mode-transition/u);
+	assert.match(ROVO_CURSOR_SOURCE, /state === "painting" \? \([\s\S]*<PaintingCursor/u);
+	assert.match(ROVO_CURSOR_SOURCE, /data-rovo-cursor-rainbow-fill/u);
+	assert.doesNotMatch(ROVO_CURSOR_SOURCE, /data-rovo-cursor-rainbow-halo/u);
+	assert.match(REGION_OVERLAY_SOURCE, /function getShortcutKeyStateFromEvent\(event: KeyboardEvent\): ShortcutKeyState/u);
+	assert.match(REGION_OVERLAY_SOURCE, /function isShortcutChordPressed\(state: ShortcutKeyState\): boolean/u);
+	assert.match(REGION_OVERLAY_SOURCE, /function shouldToggleShortcutPaint\([\s\S]*shortcutState: ShortcutKeyState,[\s\S]*shortcutArmed: boolean/u);
+	assert.match(REGION_OVERLAY_SOURCE, /onPaintingChange\?: \(painting: boolean\) => void;/u);
+	assert.match(REGION_OVERLAY_SOURCE, /onPaintingChange\?\.\(true\);/u);
+	assert.match(REGION_OVERLAY_SOURCE, /onPaintingChange\?\.\(false\);/u);
+	assert.match(REGION_OVERLAY_SOURCE, /const pressedShortcutKeysRef = useRef<ShortcutKeyState>\(\{ ctrl: false, shift: false \}\);/u);
+	assert.match(REGION_OVERLAY_SOURCE, /const shortcutArmedRef = useRef\(false\);/u);
+	assert.match(REGION_OVERLAY_SOURCE, /isShortcutChordPressed\(shortcutState\) &&[\s\S]*!event\.altKey &&[\s\S]*!event\.metaKey &&[\s\S]*!shortcutArmed &&[\s\S]*!event\.defaultPrevented/u);
+	assert.match(REGION_OVERLAY_SOURCE, /pressedShortcutKeysRef\.current = getShortcutKeyStateFromEvent\(event\);[\s\S]*shouldToggleShortcutPaint\(event, pressedShortcutKeysRef\.current, shortcutArmedRef\.current\)/u);
+	assert.match(REGION_OVERLAY_SOURCE, /shortcutArmedRef\.current = true;[\s\S]*if \(paintingRef\.current\) \{[\s\S]*finishPaint\(\);[\s\S]*\} else \{[\s\S]*beginPaint\(\);/u);
+	assert.match(REGION_OVERLAY_SOURCE, /const handleKeyUp = \(event: KeyboardEvent\) => \{[\s\S]*if \(!isShortcutChordPressed\(pressedShortcutKeysRef\.current\)\) \{[\s\S]*shortcutArmedRef\.current = false;/u);
+	assert.match(REGION_OVERLAY_SOURCE, /window\.addEventListener\("keyup", handleKeyUp, \{ capture: true \}\);/u);
+	assert.match(REGION_OVERLAY_SOURCE, /const handlePointerMove = \(event: PointerEvent\) => \{[\s\S]*latestPointerRef\.current = point;[\s\S]*if \(!paintingRef\.current\) \{/u);
+	assert.match(REGION_OVERLAY_SOURCE, /if \(!paintingRef\.current && !region\) \{/u);
+	assert.doesNotMatch(REGION_OVERLAY_SOURCE, /shouldStartShortcutPaint|beginPaint\(event\)|event\.button === 0|isRegionPaintArmedRef|regionPaintArmed|setRegionPaintArmedState/u);
+	assert.doesNotMatch(REGION_OVERLAY_SOURCE, /data-screen-assistant-region-paint-cue|Paint region|Paint off|REGION_PAINT_CUE/u);
+	assert.doesNotMatch(REGION_OVERLAY_SOURCE, /aria-label=\{`Paint screen area|data-screen-assistant-region-paint-target|paintMode/u);
+	assert.match(REGION_OVERLAY_SOURCE, /import \{ token \} from "@\/lib\/tokens";/u);
+	assert.match(REGION_OVERLAY_SOURCE, /const TIPTOUR_BRUSH_COLOR = token\("color\.border\.accent\.blue"\);/u);
+	assert.doesNotMatch(REGION_OVERLAY_SOURCE, /#4F8EF7/u);
+	assert.match(REGION_OVERLAY_SOURCE, /const TIPTOUR_BRUSH_POINT_LIMIT = 220;/u);
+	assert.match(REGION_OVERLAY_SOURCE, /const TIPTOUR_BRUSH_BAND_COUNT = 28;/u);
+	assert.match(REGION_OVERLAY_SOURCE, /const TIPTOUR_BRUSH_FADE_EXPONENT = 1\.8;/u);
+	assert.match(REGION_OVERLAY_SOURCE, /\{ key: "halo", lineWidth: 54, maxStrokeOpacity: 0\.11, postBlurRadius: 30 \}/u);
+	assert.match(REGION_OVERLAY_SOURCE, /\{ key: "bloom", lineWidth: 32, maxStrokeOpacity: 0\.26, postBlurRadius: 12 \}/u);
+	assert.match(REGION_OVERLAY_SOURCE, /\{ key: "core", lineWidth: 18, maxStrokeOpacity: 0\.72, postBlurRadius: 0 \}/u);
+	assert.match(REGION_OVERLAY_SOURCE, /function buildContinuousSmoothTrailPath/u);
+	assert.match(REGION_OVERLAY_SOURCE, /strokeLinecap="butt"/u);
+	assert.match(REGION_OVERLAY_SOURCE, /pathLength=\{1\}/u);
+	assert.doesNotMatch(REGION_OVERLAY_SOURCE, /fillPathData|rgb\(87 157 255|strokeLinecap="round"[\s\S]*strokeWidth=\{4\}/u);
 	assert.match(SHELL_SOURCE, /studioAgentRegistry\.updateSessionAgentDraft/u);
 	assert.match(LEFT_NAVIGATION_SOURCE, /data-screen-assistant-target=\{`top-navigation:\$\{product\}-logo`\}/u);
 	const pointAtTargetIndex = SHELL_SOURCE.indexOf('case "point_at_target":');
@@ -1032,9 +1127,27 @@ test("Studio screen assistant applies draft patches without publishing agents", 
 		SHELL_SOURCE.indexOf('case "set_composer_text":', pointAtTargetIndex),
 	);
 	assert.match(pointAtTargetSource, /const grounded = groundStudioScreenAssistantTarget/u);
+	assert.match(pointAtTargetSource, /activeRegion: snapshot\.activeRegion \?\? null/u);
 	assert.match(pointAtTargetSource, /const point = getViewportPointFromScreenAssistantTarget\(grounded\);/u);
-	assert.match(pointAtTargetSource, /if \(point && isClickyActive\) \{[\s\S]*clickyStartPointing\(point, label\);/u);
-	assert.match(pointAtTargetSource, /ok: Boolean\(point\)/u);
+	assert.match(pointAtTargetSource, /let pointingStarted = false;/u);
+	assert.match(pointAtTargetSource, /if \(point\) \{[\s\S]*if \(!isClickyActive\) \{[\s\S]*activateClicky\(\);[\s\S]*\}[\s\S]*clickyStartPointing\(point, label\);[\s\S]*pointingStarted = true;/u);
+	assert.match(pointAtTargetSource, /ok: pointingStarted/u);
+	assert.doesNotMatch(pointAtTargetSource, /ok: Boolean\(point\)/u);
+	const activateTargetIndex = SHELL_SOURCE.indexOf('case "activate_screen_target":');
+	assert.notEqual(activateTargetIndex, -1);
+	const activateTargetSource = SHELL_SOURCE.slice(
+		activateTargetIndex,
+		SHELL_SOURCE.indexOf('case "set_composer_text":', activateTargetIndex),
+	);
+	assert.match(activateTargetSource, /activateStudioScreenAssistantTarget\(\{/u);
+	assert.match(activateTargetSource, /id: typeof args\.targetId === "string" \? args\.targetId : undefined/u);
+	assert.match(activateTargetSource, /visibleTargets: snapshot\.visibleTargets/u);
+	assert.match(SHELL_SOURCE, /if \(!testWindow\.__VPK_E2E_SCREEN_ASSISTANT__\) \{/u);
+	assert.match(SHELL_SOURCE, /testWindow\.__vpkStudioScreenAssistantTest = \{/u);
+	assert.match(SHELL_SOURCE, /callTool: async \(\{ args = \{\}, name \}\) =>/u);
+	assert.match(CLICKY_HOOK_SOURCE, /stateRef\.current = nextState;[\s\S]*setState\(nextState\);[\s\S]*return true;/u);
+	assert.match(CLICKY_HOOK_SOURCE, /const startSpeaking = useCallback\(\(text: string\) => \{[\s\S]*if \(stateRef\.current === "off"\) \{[\s\S]*return;[\s\S]*setResponseText\(text\);[\s\S]*if \(stateRef\.current !== "pointing"\) \{[\s\S]*transition\("speaking"\);/u);
+	assert.match(CLICKY_HOOK_SOURCE, /const startPointing = useCallback\(\(target: ClickyPointTarget, text: string\) => \{[\s\S]*if \(stateRef\.current !== "off"\) \{[\s\S]*transition\("pointing"\);/u);
 	const applyAgentDraftPatchIndex = SHELL_SOURCE.indexOf('case "apply_agent_draft_patch":');
 	assert.notEqual(applyAgentDraftPatchIndex, -1);
 	const screenAssistantHandlerSource = SHELL_SOURCE.slice(
@@ -1043,10 +1156,59 @@ test("Studio screen assistant applies draft patches without publishing agents", 
 	);
 	assert.match(screenAssistantHandlerSource, /case "apply_agent_draft_patch"/u);
 	assert.match(screenAssistantHandlerSource, /activeSessionAgentEntry\.profile\.id/u);
+	assert.match(screenAssistantHandlerSource, /Object\.keys\(patch\)/u);
+	assert.match(screenAssistantHandlerSource, /streamClickyAssistantText\([\s\S]*Updated the instructions\./u);
+	assert.match(screenAssistantHandlerSource, /respond\(\{ appliedFields, ok \}\);/u);
 	assert.doesNotMatch(screenAssistantHandlerSource, /publishSessionAgent/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /data-screen-assistant-target="studio-agent-config-panel"/u);
 	assert.match(AGENT_BLOCK_SOURCE, /screenAssistantTargetPrefix/u);
+	assert.match(AGENT_BLOCK_SOURCE, /data-screen-assistant-target=\{avatarTargetId\}/u);
+	assert.match(AGENT_BLOCK_SOURCE, /getAgentAvatarOptionTargetId\(screenAssistantTargetPrefix, group\.id, option\.src\)/u);
 	assert.match(AGENT_BLOCK_SOURCE, /data-agent-field="instructions"/u);
+});
+
+test("Studio cursor overlay streams assistant text only through the cursor tooltip", () => {
+	const assistantDeltaSource = sourceBetween(SHELL_SOURCE, "const handleRealtimeAssistantTextDelta", "const handleRealtimeAssistantTextCompleted");
+	const realtimeTextDeltaPayloads = REALTIME_VOICE_HOOK_SOURCE.match(/text: result\.state\.transcript/g) ?? [];
+
+	assert.doesNotMatch(CLICKY_OVERLAY_SOURCE, /ClickyHistoryPanel/u);
+	assert.doesNotMatch(CLICKY_OVERLAY_SOURCE, /history=\{history\}/u);
+	assert.doesNotMatch(CLICKY_OVERLAY_SOURCE, /responseText=\{responseText\}[\s\S]*ClickyHistoryPanel/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /const WELCOME_MESSAGE = "Yo, let's cook";/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /const shouldShowWelcome = showWelcome && !showResponseOverlay && !isSpeaking;/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /const showStandaloneNavBubble = showNavBubble && !showResponseOverlay;/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /showStandaloneNavBubble \? <ClickySpeechBubble text=\{navPhrase\} opacity=\{bubbleOpacity\} \/> : null/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /<ClickySpeechBubble[\s\S]*placement="above"[\s\S]*text=\{WELCOME_MESSAGE\}/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /<ClickySpeechBubble[\s\S]*text=\{WELCOME_MESSAGE\}/u);
+	assert.match(CLICKY_SPEECH_BUBBLE_SOURCE, /above: \{ left: 18, top: -44, transformOrigin: "left bottom" \}/u);
+	assert.match(CLICKY_SPEECH_BUBBLE_SOURCE, /data-clicky-speech-bubble-placement=\{placement\}/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /ClickyResponseOverlay/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /showResponseOverlay/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /seedCursorPosition\(\);/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /latest streamed response text has had time to settle/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /\[isSpeaking, responseText, onReturnToIdle\]/u);
+	assert.match(SHELL_SOURCE, /responseText=\{clicky\.responseText\}/u);
+	assert.doesNotMatch(SHELL_SOURCE, /history=\{clicky\.history\}/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /NAV_PHRASES|right here|showNavBubble/u);
+	assert.match(CLICKY_OVERLAY_SOURCE, /<ClickyResponseOverlay[\s\S]*label=\{showNavBubble \? navPhrase : null\}[\s\S]*text=\{responseText\}/u);
+	assert.equal(realtimeTextDeltaPayloads.length, 2);
+	assert.match(REALTIME_VOICE_HOOK_SOURCE, /replace: result\.shouldReplaceTranscript/u);
+	assert.match(REALTIME_VOICE_HOOK_SOURCE, /displayOnly: true/u);
+	assert.match(REALTIME_VOICE_HOOK_SOURCE, /source: "audio_transcript"/u);
+	assert.match(assistantDeltaSource, /const text = typeof payload === "string" \? payload : \(payload\.text \?\? ""\);/u);
+	assert.match(assistantDeltaSource, /const replace = typeof payload === "string" \? false : payload\.replace === true;/u);
+	assert.match(assistantDeltaSource, /if \(text\) \{[\s\S]*streamClickyAssistantText\(text\);[\s\S]*\}[\s\S]*const messageId = typeof payload === "string" \? await ensureRealtimeAssistantMessage\(\)/u);
+	assert.match(assistantDeltaSource, /payload\.displayOnly === true[\s\S]*return;/u);
+	assert.match(assistantDeltaSource, /await updateRealtimeMessage\(messageId, replace \? text : delta, replace \? \{ replace: true \} : undefined\);/u);
+	assert.doesNotMatch(assistantDeltaSource, /isClickyActive && text/u);
+	assert.match(assistantDeltaSource, /\[ensureRealtimeAssistantMessage, streamClickyAssistantText, updateRealtimeMessage\]/u);
+	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /label\?: string \| null;/u);
+	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /const trimmedLabel = label\?\.trim\(\);/u);
+	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /data-clicky-response-overlay-label/u);
+	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /\{trimmedLabel\}/u);
+	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /const displayedText = useTypewriterText\(text\);/u);
+	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /\{displayedText\}[\s\S]*<\/div>/u);
+	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /window\.setInterval/u);
 });
 
 test("Studio clarification answers keep agent creation mode active", () => {
@@ -1175,7 +1337,8 @@ test("Studio re-selecting a custom agent edits it without selecting it for chat"
 });
 
 test("Studio composer opts into experimental dark composer CTAs", () => {
-	assert.match(COMPOSER_SOURCE, /screenAssistantTargetPrefix="studio-composer"/u);
+	assert.match(COMPOSER_SOURCE, /screenAssistantTargetPrefix = "studio-composer"/u);
+	assert.match(COMPOSER_SOURCE, /data-screen-assistant-target=\{screenAssistantTargetPrefix\}/u);
 	assert.match(COMPOSER_SOURCE, /className=\{cn\("relative z-10 mx-auto", fillWidth \? FLOATING_COMPOSER_SESSION_MAX_WIDTH_CLASS : FLOATING_COMPOSER_MAX_WIDTH_CLASS\)\}/u);
 	assert.match(COMPOSER_SOURCE, /experimentalDarkCta/u);
 	assert.doesNotMatch(COMPOSER_SOURCE, /voiceStartButtonClassName="bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed"/u);

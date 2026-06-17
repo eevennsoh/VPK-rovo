@@ -59,6 +59,7 @@ interface ChatComposerProps {
 	onReasoningChange?: (value: string) => void;
 	realtimeVoiceActive?: boolean;
 	realtimeVoiceState?: "idle" | "connecting" | "listening" | "speaking";
+	screenAssistantTargetPrefix?: string;
 	selectedReasoning?: string;
 	containerClassName?: string;
 	chatContextBar?: ChatContextBarDescriptor | null;
@@ -90,6 +91,7 @@ interface ChatComposerSendControlsProps {
 	prompt: string;
 	realtimeVoiceActive: boolean;
 	realtimeVoiceState: "idle" | "connecting" | "listening" | "speaking";
+	screenAssistantTargetPrefix?: string;
 	selectedReasoning: string;
 	webResultsEnabled: boolean;
 	onWebResultsChange: (value: boolean) => void;
@@ -121,6 +123,7 @@ function ChatComposerSendControls({
 	prompt,
 	realtimeVoiceActive,
 	realtimeVoiceState,
+	screenAssistantTargetPrefix,
 	selectedReasoning,
 	webResultsEnabled,
 	onWebResultsChange,
@@ -151,6 +154,7 @@ function ChatComposerSendControls({
 			open={open}
 			realtimeVoiceActive={realtimeVoiceActive}
 			realtimeVoiceState={realtimeVoiceState}
+			screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 			selectedReasoning={selectedReasoning}
 			webResultsEnabled={webResultsEnabled}
 			onWebResultsChange={onWebResultsChange}
@@ -158,7 +162,7 @@ function ChatComposerSendControls({
 	);
 }
 
-export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, directoryAutocompleteListVisible = false, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
+export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, queuedPrompts, experimentalDarkCta = false, hideAiCursor = false, hideSourceAndModelControls = false, micStream = null, dictationState = "idle", dictationTranscriptPreview = null, focusRequestKey, clickyActive = false, onPromptChange, onStartDictation, onStopDictation, onSubmit, onStop, onToggleClicky, onToggleRealtimeVoice, onRemoveQueuedPrompt, onReasoningChange, realtimeVoiceActive = false, realtimeVoiceState = "idle", screenAssistantTargetPrefix, selectedReasoning: controlledSelectedReasoning, containerClassName, chatContextBar, directoryAutocompleteListVisible = false, onContextBarOpenChange, onDirectoryAutocompleteChange, onDirectoryAutocompleteControllerChange }: Readonly<ChatComposerProps>): React.ReactElement {
 	const [localSelectedReasoning, setLocalSelectedReasoning] = useState(DEFAULT_REASONING_OPTION_ID);
 	const [webResultsEnabled, setWebResultsEnabled] = useState(false);
 	const [companyKnowledgeEnabled, setCompanyKnowledgeEnabled] = useState(true);
@@ -236,7 +240,12 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 				</div>
 			) : null}
 			<div className="chat-composer-surface relative z-10 mx-auto w-full max-w-[800px] rounded-xl border border-border bg-surface px-4 pb-2.5 pt-3.5" style={{ boxShadow: composerUpwardShadow }}>
-				<PromptInput allowOverflow onSubmit={onSubmit} className={`${composerPromptInputClassName} relative z-10`}>
+				<PromptInput
+					allowOverflow
+					data-screen-assistant-target={screenAssistantTargetPrefix}
+					onSubmit={onSubmit}
+					className={`${composerPromptInputClassName} relative z-10`}
+				>
 					<PendingAttachments />
 					<PromptInputBody>
 						<PromptInputTextarea
@@ -324,6 +333,7 @@ export default function ChatComposer({ prompt, isStreaming, hasInFlightTurn, que
 							prompt={prompt}
 							realtimeVoiceActive={realtimeVoiceActive}
 							realtimeVoiceState={realtimeVoiceState}
+							screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 							selectedReasoning={selectedReasoning}
 							webResultsEnabled={webResultsEnabled}
 							onWebResultsChange={setWebResultsEnabled}

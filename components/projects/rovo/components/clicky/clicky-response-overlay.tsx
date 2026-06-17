@@ -13,47 +13,78 @@ const OFFSET_X = 22;
 const OFFSET_Y = -6;
 const MAX_WIDTH = 340;
 const EDGE_PADDING = 20;
+const TYPEWRITER_INTERVAL_MS = 24;
+const TYPEWRITER_CHARS_PER_TICK = 2;
 
 interface ClickyResponseOverlayProps {
-	text: string;
 	cursorX: MotionValue<number>;
 	cursorY: MotionValue<number>;
+	label?: string | null;
 	opacity?: number;
+	text: string;
+}
+
+function useTypewriterText(text: string) {
+	const [displayedText, setDisplayedText] = useState("");
+	const displayedTextRef = useRef("");
+
+	useEffect(() => {
+		if (!text) {
+			displayedTextRef.current = "";
+			setDisplayedText("");
+			return;
+		}
+
+		let index = text.startsWith(displayedTextRef.current)
+			? displayedTextRef.current.length
+			: 0;
+
+		if (index >= text.length) {
+			displayedTextRef.current = text;
+			setDisplayedText(text);
+			return;
+		}
+
+		if (index > 0 && text.length - index <= TYPEWRITER_CHARS_PER_TICK * 2) {
+			displayedTextRef.current = text;
+			setDisplayedText(text);
+			return;
+		}
+
+		if (index === 0) {
+			displayedTextRef.current = "";
+			setDisplayedText("");
+		}
+
+		const interval = window.setInterval(() => {
+			index = Math.min(text.length, index + TYPEWRITER_CHARS_PER_TICK);
+			const nextText = text.slice(0, index);
+			displayedTextRef.current = nextText;
+			setDisplayedText(nextText);
+
+			if (index >= text.length) {
+				window.clearInterval(interval);
+			}
+		}, TYPEWRITER_INTERVAL_MS);
+
+		return () => window.clearInterval(interval);
+	}, [text]);
+
+	return displayedText;
 }
 
 export function ClickyResponseOverlay({
 	text,
 	cursorX,
 	cursorY,
+	label,
 	opacity = 1,
 }: Readonly<ClickyResponseOverlayProps>) {
 	const panelRef = useRef<HTMLDivElement>(null);
 	const [flipX, setFlipX] = useState(false);
 	const [flipY, setFlipY] = useState(false);
-
-	// Stream characters
-	const [displayState, setDisplayState] = useState(() => ({ displayedText: "", text }));
-	if (displayState.text !== text) {
-		setDisplayState({ displayedText: "", text });
-	}
-	const displayedText = displayState.text === text ? displayState.displayedText : "";
-
-	useEffect(() => {
-		if (!text) return;
-
-		let i = 0;
-		const interval = setInterval(() => {
-			i++;
-			if (i >= text.length) {
-				setDisplayState({ displayedText: text, text });
-				clearInterval(interval);
-			} else {
-				setDisplayState({ displayedText: text.slice(0, i), text });
-			}
-		}, 25);
-
-		return () => clearInterval(interval);
-	}, [text]);
+	const displayedText = useTypewriterText(text);
+	const trimmedLabel = label?.trim();
 
 	// Compute position with edge avoidance
 	const panelX = useTransform(cursorX, (cx) => {
@@ -83,12 +114,13 @@ export function ClickyResponseOverlay({
 		return () => { unsub(); unsub2(); };
 	}, [cursorX, cursorY]);
 
-	if (!displayedText) return null;
+	if (!text) return null;
 
 	return (
 		<motion.div
 			ref={panelRef}
 			className="fixed"
+			data-clicky-response-overlay
 			style={{
 				x: panelX,
 				y: panelY,
@@ -111,6 +143,15 @@ export function ClickyResponseOverlay({
 					lineHeight: "1.5",
 				}}
 			>
+				{trimmedLabel ? (
+					<div
+						className="mb-2 border-b border-white/10 pb-1.5 text-[12px] font-semibold leading-snug"
+						data-clicky-response-overlay-label
+						style={{ color: "rgba(236, 238, 237, 0.76)" }}
+					>
+						{trimmedLabel}
+					</div>
+				) : null}
 				{displayedText}
 			</div>
 		</motion.div>

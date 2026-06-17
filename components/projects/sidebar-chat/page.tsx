@@ -91,7 +91,15 @@ import { appendDictationTranscript, resolveComposerDictationState } from "@/lib/
 import { useClicky } from "@/components/projects/rovo/hooks/use-clicky";
 import { useClickyVoice } from "@/components/projects/rovo/hooks/use-clicky-voice";
 import { ClickyOverlay } from "@/components/projects/rovo/components/clicky/clicky-overlay";
-import { parseClickyResponse } from "@/components/projects/rovo/lib/clicky-point-parser";
+import { ScreenAssistantRegionOverlay } from "@/components/screen-assistant/screen-assistant-region-overlay";
+import {
+	activateStudioScreenAssistantTarget,
+	createStudioScreenAssistantSnapshot,
+	getStudioScreenAssistantVisibleTargets,
+	groundStudioScreenAssistantTarget,
+	type StudioScreenAssistantRegion,
+	type StudioScreenAssistantTarget,
+} from "@/components/projects/studio/lib/studio-screen-assistant";
 import styles from "./chat.module.css";
 
 export type { ChatSubmitInterceptOutcome } from "./hooks/use-chat-submit";
@@ -252,6 +260,17 @@ type RealtimeTranscriptPayload =
 			transcript?: string;
 	  };
 
+type RealtimeAssistantTextPayload =
+	| string
+	| {
+			delta?: string;
+			displayOnly?: boolean;
+			messageId?: string;
+			replace?: boolean;
+			source?: "text" | "audio_transcript";
+			text?: string;
+	  };
+
 function getSmartWidthClass(widthPx: number): SmartWidthClass {
 	if (widthPx <= COMPACT_CHAT_WIDTH_MAX) return "compact";
 	if (widthPx <= REGULAR_CHAT_WIDTH_MAX) return "regular";
@@ -285,6 +304,29 @@ function CustomAgentTabEmptyState({
 
 function isCustomAgentTabsProfile(agent: { byline?: string }): boolean {
 	return /\bcustom agent\b/iu.test(agent.byline ?? "");
+}
+
+type SidebarScreenAssistantToolCall = {
+	args: Record<string, unknown>;
+	callId: string;
+	name: string;
+};
+
+type SidebarScreenAssistantToolResponder = (output: unknown, createResponse?: boolean) => void;
+
+function getViewportPointFromScreenAssistantTarget(
+	target: StudioScreenAssistantTarget | null | undefined,
+): { x: number; y: number; label: string; coordinateSpace: "viewport" } | null {
+	if (!target?.rect) {
+		return null;
+	}
+
+	return {
+		x: target.rect.x + target.rect.width / 2,
+		y: target.rect.y + target.rect.height / 2,
+		label: target.label ?? target.fieldId ?? target.id ?? "Target",
+		coordinateSpace: "viewport",
+	};
 }
 
 export default function ChatPanel({
@@ -459,19 +501,30 @@ export default function ChatPanel({
 
 	// --- Rovo AI cursor companion (Clicky) ---
 	const clicky = useClicky();
-	const {
-		activate: activateClicky,
-		isActive: isClickyActive,
+		const {
+			activate: activateClicky,
+			isActive: isClickyActive,
 		deactivate: deactivateClicky,
 		startListening: clickyStartListening,
 		startProcessing: clickyStartProcessing,
 		startPointing: clickyStartPointing,
 		startSpeaking: clickyStartSpeaking,
 		returnToIdle: clickyReturnToIdle,
-		addExchange: clickyAddExchange,
-		screenshotDimensions: clickyScreenshotDimensions,
-		setScreenshotDimensions: clickySetScreenshotDimensions,
-	} = clicky;
+			addExchange: clickyAddExchange,
+		} = clicky;
+		const streamClickyAssistantText = useCallback((text: string) => {
+			if (!text.trim() || hideAiCursor) {
+				return false;
+			}
+
+			if (!isClickyActive) {
+				activateClicky();
+			}
+			clickyStartSpeaking(text);
+			return true;
+		}, [activateClicky, clickyStartSpeaking, hideAiCursor, isClickyActive]);
+		const [screenAssistantRegion, setScreenAssistantRegion] = useState<StudioScreenAssistantRegion | null>(null);
+		const [screenAssistantRegionPainting, setScreenAssistantRegionPainting] = useState(false);
 
 	useEffect(() => {
 		if (hideAiCursor && isClickyActive) {
@@ -479,8 +532,19 @@ export default function ChatPanel({
 		}
 	}, [deactivateClicky, hideAiCursor, isClickyActive]);
 
+	useEffect(() => {
+		if (hideAiCursor || !isClickyActive) {
+			setScreenAssistantRegion(null);
+			setScreenAssistantRegionPainting(false);
+		}
+	}, [hideAiCursor, isClickyActive]);
+
 	const realtimeTranscriptRef = useRef("");
 	const promptRef = useRef(prompt);
+	const screenAssistantPointerRef = useRef<{ x: number; y: number } | null>(null);
+	const sendFunctionCallOutputRef = useRef<
+		((payload: { callId: string; output: unknown; createResponse?: boolean }) => void) | null
+	>(null);
 	const dictationBaselineRef = useRef<string | null>(null);
 	const dictationCommittedTextRef = useRef<string | null>(null);
 	const isDictationActiveRef = useRef(false);
@@ -492,6 +556,23 @@ export default function ChatPanel({
 		promptRef.current = prompt;
 	}, [prompt]);
 
+	useEffect(() => {
+		const handlePointerMove = (event: PointerEvent) => {
+			screenAssistantPointerRef.current = {
+				x: event.clientX,
+				y: event.clientY,
+			};
+		};
+
+		window.addEventListener("pointermove", handlePointerMove, { passive: true });
+		return () => window.removeEventListener("pointermove", handlePointerMove);
+	}, []);
+
+	const getScreenAssistantVisibleTargets = useCallback(
+		() => getStudioScreenAssistantVisibleTargets(),
+		[],
+	);
+
 	const handleRealtimeSpeechStarted = useCallback(() => {
 		realtimeTranscriptRef.current = "";
 
@@ -500,7 +581,7 @@ export default function ChatPanel({
 			return;
 		}
 
-		// Clicky runs a private voice + screenshot loop; leave the composer untouched.
+		// The AI cursor runs a private voice loop; leave the composer untouched.
 		if (isClickyActive) {
 			clickyStartListening();
 			return;
@@ -561,30 +642,132 @@ export default function ChatPanel({
 
 		realtimeTranscriptRef.current = transcriptText;
 	}, [isClickyActive, clickyStartProcessing, clickyAddExchange, setPrompt]);
-	const handleRealtimeAssistantTextCompleted = useCallback((payload: { messageId?: string; text?: string } | string) => {
-		if (isDictationActiveRef.current) {
-			return;
-		}
 
-		// Only Clicky consumes the realtime model's own text response (POINT tags);
-		// normal voice mode delegates to the Rovo chat stream instead.
-		if (!isClickyActive) {
-			return;
-		}
+	const getScreenAssistantSnapshot = useCallback(() => {
+		return createStudioScreenAssistantSnapshot({
+			activeRegion: screenAssistantRegion,
+			activePanel: `sidebar-chat:${chatSurface}`,
+			composer: {
+				hasPrefill: Boolean(promptRef.current.trim()),
+				placeholder: "Ask Rovo",
+			},
+			pointer: screenAssistantPointerRef.current,
+			selectedAgent: {
+				id: selectedAgent.id,
+				name: selectedAgent.name,
+			},
+		});
+	}, [chatSurface, screenAssistantRegion, selectedAgent.id, selectedAgent.name]);
 
-		const text = typeof payload === "string" ? payload : (payload.text ?? "");
-		if (!text) {
-			return;
-		}
+	const handleScreenAssistantToolCall = useCallback(
+		(
+			{ name, args }: SidebarScreenAssistantToolCall,
+			respond: SidebarScreenAssistantToolResponder,
+		) => {
+			switch (name) {
+				case "get_screen_state": {
+					respond(getScreenAssistantSnapshot());
+					return;
+				}
+				case "point_at_target": {
+					const snapshot = getScreenAssistantSnapshot();
+					const grounded = groundStudioScreenAssistantTarget({
+						fieldId: typeof args.fieldId === "string" ? args.fieldId : undefined,
+							id: typeof args.targetId === "string" ? args.targetId : undefined,
+							label: typeof args.label === "string" ? args.label : undefined,
+							activeRegion: snapshot.activeRegion ?? null,
+							pointerTarget: snapshot.pointerContext?.target ?? null,
+							visibleTargets: snapshot.visibleTargets,
+						});
+					const point = getViewportPointFromScreenAssistantTarget(grounded);
+					const label = typeof args.label === "string" ? args.label : grounded?.label ?? "";
+					let pointingStarted = false;
+					if (point) {
+						if (!isClickyActive) {
+							activateClicky();
+						}
+						clickyStartPointing(point, label);
+						pointingStarted = true;
+					}
+					respond({
+						ok: pointingStarted,
+						pointed: pointingStarted && grounded ? { id: grounded.id, label: grounded.label } : null,
+					});
+					return;
+				}
+				case "activate_screen_target": {
+					const snapshot = getScreenAssistantSnapshot();
+					respond(activateStudioScreenAssistantTarget({
+						fieldId: typeof args.fieldId === "string" ? args.fieldId : undefined,
+						id: typeof args.targetId === "string" ? args.targetId : undefined,
+						label: typeof args.label === "string" ? args.label : undefined,
+						pointerTarget: snapshot.pointerContext?.target ?? null,
+						visibleTargets: snapshot.visibleTargets,
+					}));
+					return;
+				}
+				case "set_composer_text": {
+					const text = typeof args.text === "string" ? args.text : "";
+					promptRef.current = text;
+					setPrompt(text);
+					respond({ ok: Boolean(text) });
+					return;
+				}
+				case "submit_composer": {
+					const text = promptRef.current.trim();
+					if (text) {
+						void handleSubmit({ files: [], text });
+					}
+					respond({ ok: Boolean(text) });
+					return;
+				}
+				case "apply_agent_draft_patch": {
+					respond({ ok: false, error: "unsupported_surface" });
+					return;
+				}
+				default:
+					respond({ ok: false, error: "unknown_tool" });
+			}
+		},
+		[
+			activateClicky,
+			clickyStartPointing,
+			getScreenAssistantSnapshot,
+			handleSubmit,
+			isClickyActive,
+			setPrompt,
+		],
+	);
 
-		const parsed = parseClickyResponse(text, clickyScreenshotDimensions);
-		clickyAddExchange({ role: "assistant", content: parsed.text || text });
-		if (parsed.point) {
-			clickyStartPointing(parsed.point, parsed.text);
-		} else {
-			clickyStartSpeaking(text);
-		}
-	}, [isClickyActive, clickyScreenshotDimensions, clickyAddExchange, clickyStartPointing, clickyStartSpeaking]);
+		const handleRealtimeAssistantTextDelta = useCallback((payload: RealtimeAssistantTextPayload) => {
+			if (isDictationActiveRef.current) {
+				return;
+			}
+
+			// Only the AI cursor consumes the realtime model's own text response;
+			// normal voice mode delegates to the Rovo chat stream instead.
+			const text = typeof payload === "string" ? payload : (payload.text ?? "");
+			if (!text) {
+				return;
+			}
+
+			streamClickyAssistantText(text);
+		}, [streamClickyAssistantText]);
+
+		const handleRealtimeAssistantTextCompleted = useCallback((payload: { messageId?: string; text?: string } | string) => {
+			if (isDictationActiveRef.current) {
+				return;
+			}
+
+			// Only the AI cursor consumes the realtime model's own text response;
+			// normal voice mode delegates to the Rovo chat stream instead.
+			const text = typeof payload === "string" ? payload : (payload.text ?? "");
+			if (!text || !streamClickyAssistantText(text)) {
+				return;
+			}
+
+			clickyAddExchange({ role: "assistant", content: text });
+		}, [clickyAddExchange, streamClickyAssistantText]);
 	const handleRealtimeDelegateToRovo = useCallback(
 		(request: DelegationRequest) => {
 			if (isDictationActiveRef.current) {
@@ -621,22 +804,38 @@ export default function ChatPanel({
 		chatMessages: uiMessages,
 		isGenerating: isStreaming,
 		onDelegateToRovo: handleRealtimeDelegateToRovo,
-		onSpeechStarted: handleRealtimeSpeechStarted,
-		onSpeechTranscriptCompleted: handleRealtimeTranscriptCompleted,
-		onSpeechTranscriptDelta: handleRealtimeTranscript,
-		onAssistantTextCompleted: handleRealtimeAssistantTextCompleted,
+			onSpeechStarted: handleRealtimeSpeechStarted,
+			onSpeechTranscriptCompleted: handleRealtimeTranscriptCompleted,
+			onSpeechTranscriptDelta: handleRealtimeTranscript,
+			onAssistantTextDelta: handleRealtimeAssistantTextDelta,
+			onAssistantTextCompleted: handleRealtimeAssistantTextCompleted,
+		onEndVoiceSession: useCallback(() => {
+			realtimeTranscriptRef.current = "";
+			deactivateClicky();
+		}, [deactivateClicky]),
+		onToolCall: useCallback(
+			({ name, args, callId }: { name: string; args: Record<string, unknown>; callId: string }) => {
+				const respond = (output: unknown, createResponse?: boolean) =>
+					sendFunctionCallOutputRef.current?.({
+						callId,
+						output,
+						...(createResponse === false ? { createResponse: false } : {}),
+					});
+
+				handleScreenAssistantToolCall({ args, callId, name }, respond);
+			},
+			[handleScreenAssistantToolCall],
+		),
 	});
 
-	// --- Clicky voice bridge: connects realtime + injects prompt + sends screenshots ---
+	sendFunctionCallOutputRef.current = realtime.sendFunctionCallOutput;
+
+	// --- AI cursor voice bridge: connects realtime + injects tool-based prompt ---
 	useClickyVoice({
-		clickyState: clicky.state,
 		isClickyActive,
-		sendImageInput: realtime.sendImageInput,
 		isRealtimeConnected: realtime.isConnected,
 		connectRealtime: realtime.connect,
-		disconnectRealtime: realtime.disconnect,
 		injectContext: realtime.injectContext,
-		onScreenshotCaptured: clickySetScreenshotDimensions,
 	});
 	const isRealtimeVoiceActive = realtime.voiceState !== "idle";
 	const dictationState = resolveComposerDictationState({
@@ -1238,6 +1437,7 @@ export default function ChatPanel({
 						onReasoningChange={setSelectedReasoning}
 						realtimeVoiceActive={isRealtimeVoiceActive}
 						realtimeVoiceState={realtime.voiceState}
+						screenAssistantTargetPrefix="sidebar-composer"
 						selectedReasoning={selectedReasoning}
 						chatContextBar={chatContextBar}
 						directoryAutocompleteListVisible={shouldShowDirectoryAutocompleteList}
@@ -1413,15 +1613,21 @@ export default function ChatPanel({
 				chatPanelBody
 			)}
 			{hideAiCursor ? null : (
-				<ClickyOverlay
-					state={clicky.state}
-					pointTarget={clicky.pointTarget}
-					responseText={clicky.responseText}
-					history={clicky.history}
-					screenshotDimensions={clickyScreenshotDimensions}
-					onReturnToIdle={clickyReturnToIdle}
-				/>
+					<ClickyOverlay
+						state={clicky.state}
+						paintingActive={screenAssistantRegionPainting}
+						pointTarget={clicky.pointTarget}
+						responseText={clicky.responseText}
+						onReturnToIdle={clickyReturnToIdle}
+					/>
 			)}
+			<ScreenAssistantRegionOverlay
+				active={!hideAiCursor && isClickyActive}
+				getVisibleTargets={getScreenAssistantVisibleTargets}
+				onPaintingChange={setScreenAssistantRegionPainting}
+				onRegionChange={setScreenAssistantRegion}
+				region={screenAssistantRegion}
+			/>
 		</div>
 	);
 }
