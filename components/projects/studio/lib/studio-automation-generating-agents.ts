@@ -60,8 +60,8 @@ export function getStudioAutomationGeneratingAgents(
 			continue;
 		}
 
-		const latestCreateDraftEvent = createDraftEvents.at(-1);
-		if (!latestCreateDraftEvent || latestCreateDraftEvent.phase !== "start") {
+		const latestCreateDraftEvent = createDraftEvents[createDraftEvents.length - 1];
+		if (latestCreateDraftEvent.phase !== "start") {
 			return [];
 		}
 
