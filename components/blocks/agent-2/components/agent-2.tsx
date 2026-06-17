@@ -4685,7 +4685,12 @@ export const AgentConfigFields = memo(
 	({
 		className,
 		config,
-		avatarSrc,
+		// Mirror AgentHeader / AgentConfigProfile, which default to the same avatar.
+		// Without this, consumers that omit avatarSrc (e.g. the component demo) render
+		// the default profile avatar but leave the Flows/Subagents leading glyphs on
+		// the gray collection fallback — so the chip icons would mismatch the avatar's
+		// collection color. Defaulting here keeps the glyph hue in sync with the avatar.
+		avatarSrc = AGENT_AVATAR_SRC,
 		compactFooterBefore,
 		compactScrollAreaClassName,
 		hiddenConfigFields,
