@@ -47,7 +47,6 @@ import {
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
 import {
-	renderAgentTriggerProviderTileIcon,
 	TriggerPicker,
 	TriggerProviderSearchList,
 	type AgentAutomationRule,
@@ -1362,10 +1361,13 @@ function AgentCompactTriggerRow({
 			)}
 			elemBefore={
 				icon ? (
+					// The icon is a self-colored collection tile, so dim it via opacity
+					// when disabled — mirroring the subagent rows (`AgentCompactReferenceRow`)
+					// rather than recoloring the glyph, which the tile's `!` color overrides.
 					<span
 						className={cn(
 							"inline-flex size-6 shrink-0 items-center justify-center",
-							enabled ? "text-icon-subtle" : "text-icon-disabled",
+							enabled ? undefined : "opacity-(--opacity-disabled)",
 						)}
 					>
 						{icon}
@@ -1590,6 +1592,7 @@ function AgentCompactTriggersNavButton({
 	onAutomationRulesChange,
 	renderTrigger,
 	screenAssistantTargetId,
+	tagColor,
 }: Readonly<{
 	automationRules?: readonly AgentAutomationRule[];
 	item: AgentCompactConfigNavItem;
@@ -1606,6 +1609,10 @@ function AgentCompactTriggersNavButton({
 	// same dropdown.
 	renderTrigger?: ReactElement;
 	screenAssistantTargetId?: string;
+	// Agent collection color (derived from the avatar family). Tints each flow
+	// row's leading automation glyph so the list mirrors the flow summary chip and
+	// the subagent rows instead of the first trigger's provider logo.
+	tagColor?: TagColor;
 }>) {
 	const isEmpty = triggers.length === 0;
 	// Local enable/disable state keyed by row, mirroring the subagent switcher.
@@ -1700,12 +1707,28 @@ function AgentCompactTriggersNavButton({
 						<DropdownMenuGroup className="p-0">
 							{triggers.map((trigger, index) => {
 								const rule = automationRules?.[index];
-								const firstTrigger = rule?.triggers[0];
-								const providerIcon = firstTrigger ? renderAgentTriggerProviderTileIcon(firstTrigger) : undefined;
+								// Every flow row leads with the same automation glyph in a
+								// bordered tile, tinted by the agent's collection color — NOT
+								// the first trigger's provider logo. A flow can own multiple
+								// triggers, so a single provider mark would misrepresent it.
+								// This mirrors the flow summary chip and the subagent rows
+								// (see `renderAgentReferenceRowVisual`).
+								const automationIcon = (
+									<IconTile
+										aria-hidden
+										className={cn(
+											"border border-border bg-surface",
+											tagColor ? tagColorToMenuIconClassName[tagColor] : "text-icon-subtlest",
+										)}
+										icon={<AutomationIcon label="" size="small" />}
+										label=""
+										size="small"
+									/>
+								);
 								return (
 									<AgentCompactTriggerRow
 										key={`trigger-${trigger}-${index}`}
-										icon={providerIcon ?? undefined}
+										icon={automationIcon}
 										label={trigger}
 										enabled={(rule?.enabled !== false) && !disabledTriggers.has(index)}
 										onToggle={(enabled) => setTriggerEnabled(index, enabled)}
@@ -2223,6 +2246,7 @@ function AgentCompactEmptyConfigNav({
 									onEditTriggers?.(next ?? undefined);
 								}}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
+								tagColor={subagentTagColor}
 								triggers={serializeAgentAutomationRuleLabels(automationRules)}
 							/>
 						);
@@ -2986,6 +3010,7 @@ function AgentTriggerSummaryRow({
 											label={addLabel ?? "Edit"}
 										/>
 									}
+									tagColor={tagColor}
 									triggers={items}
 								/>
 							) : (
