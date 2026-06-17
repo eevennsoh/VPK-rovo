@@ -28,6 +28,7 @@ async function loadContextModule() {
 			buildStudioAgentCreationContinuationContext,
 			buildCreationTemplateContextFromAgent,
 			buildCreationTemplateContextFromStarter,
+			buildTemplateAgentResultFromAgent,
 			applyTemplateDefaultsToResult,
 			resolveTemplateConfigForResult,
 		} from "@/components/projects/studio/lib/studio-agent-creation-context";
@@ -293,6 +294,43 @@ test("buildCreationTemplateContextFromAgent distils labels, dedupes apps, and dr
 	});
 
 	assert.deepEqual(mod.buildCreationTemplateContextFromAgent({ name: "Bare" }), { name: "Bare" });
+});
+
+test("buildTemplateAgentResultFromAgent creates a local draft payload from template defaults", async () => {
+	const mod = await loadContextModule();
+	const result = mod.buildTemplateAgentResultFromAgent({
+		id: "decision-director",
+		name: "Decision Director",
+		description: "Review DACI decisions",
+		avatarSrc: "/avatar-agent/teamwork-agents/decision-director.svg",
+	});
+
+	assert.equal(result.action, "create");
+	assert.equal(result.agentId, "decision-director");
+	assert.equal(result.name, "Decision Director");
+	assert.equal(result.summary, "Review DACI decisions, close context gaps, and suggest the next decision-ready resources.");
+	assert.match(result.instructions, /@\[/u);
+	assert.ok(Array.isArray(result.conversationStarters) && result.conversationStarters.length > 0, "conversation starters attached");
+	assert.ok(Array.isArray(result.conversationStarterIcons) && result.conversationStarterIcons.length > 0, "starter icons attached");
+	assert.ok(Array.isArray(result.triggers) && result.triggers.length > 0, "triggers attached");
+	assert.equal(typeof result.memoryMode, "string");
+	assert.equal(typeof result.reasoningMode, "string");
+	assert.equal(typeof result.knowledgeMode, "string");
+	assert.ok(Array.isArray(result.tools) && result.tools.length > 0, "template tool defaults attached");
+	assert.ok(Array.isArray(result.skills) && result.skills.length > 0, "template skill defaults attached");
+	assert.ok(Array.isArray(result.knowledge) && result.knowledge.length > 0, "template knowledge defaults attached");
+	assert.ok(Array.isArray(result.subagents) && result.subagents.length > 0, "template subagent defaults attached");
+
+	const jiraOnlyResult = mod.buildTemplateAgentResultFromAgent({
+		id: "decision-director",
+		name: "Decision Director",
+	}, {
+		appIds: ["jira"],
+	});
+	assert.ok(jiraOnlyResult.tools?.some((name) => /Jira/u.test(name)), "selected Jira tool attached");
+	assert.ok(jiraOnlyResult.knowledge?.some((name) => /Jira/u.test(name)), "selected Jira knowledge attached");
+	assert.ok(!jiraOnlyResult.tools?.some((name) => /Confluence|Atlassian Home/u.test(name)), "unselected tools omitted");
+	assert.ok(!jiraOnlyResult.knowledge?.some((name) => /Confluence/u.test(name)), "unselected knowledge omitted");
 });
 
 test("buildCreationTemplateContextFromStarter enriches from the matching template config", async () => {

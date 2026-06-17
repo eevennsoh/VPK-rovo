@@ -5,6 +5,8 @@ import { useMemo } from "react";
 import {
 	AgentBrowserDialog,
 	type AgentBrowserAgent,
+	type AgentBrowserTemplateBuildOptions,
+	type AgentBrowserTemplateBuildResult,
 	type AgentBrowserVariant,
 	type AgentBrowserSidebarGroup,
 } from "@/components/blocks/agent-browser";
@@ -19,12 +21,19 @@ export type AgentsDirectoryAgent = AgentBrowserAgent;
 export type AgentsDirectoryTemplateAgent = AgentTemplatesAgent;
 export type AgentsDirectorySidebarGroup = AgentBrowserSidebarGroup;
 export type AgentsDirectoryVariant = AgentBrowserVariant;
+export type AgentsDirectoryTemplateBuildOptions = AgentBrowserTemplateBuildOptions;
+export type AgentsDirectoryTemplateBuildResult = AgentBrowserTemplateBuildResult;
 
 export interface AgentsDirectoryDialogProps {
 	agents: readonly AgentsDirectoryAgent[];
 	onCreateAgent?: () => void;
 	onSelectAgent?: (agent: AgentsDirectoryAgent) => void;
 	onSelectTemplateAgent?: (agent: AgentsDirectoryTemplateAgent) => void;
+	onBuildTemplateAgent?: (
+		agent: AgentsDirectoryTemplateAgent,
+		options: AgentsDirectoryTemplateBuildOptions
+	) => AgentsDirectoryTemplateBuildResult | null;
+	onOpenBuiltTemplateAgentConfig?: (profileId: string) => void;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	sessionAgents?: readonly AgentsDirectoryAgent[];
@@ -78,6 +87,8 @@ export function AgentsDirectoryDialog({
 	onCreateAgent,
 	onSelectAgent,
 	onSelectTemplateAgent,
+	onBuildTemplateAgent,
+	onOpenBuiltTemplateAgentConfig,
 	open,
 	onOpenChange,
 	sessionAgents = EMPTY_AGENTS_DIRECTORY_AGENTS,
@@ -107,6 +118,8 @@ export function AgentsDirectoryDialog({
 			agents={directoryAgents}
 			onSelectAgent={onSelectAgent}
 			onSelectTemplateAgent={onSelectTemplateAgent}
+			onBuildTemplateAgent={onBuildTemplateAgent}
+			onOpenBuiltTemplateAgentConfig={onOpenBuiltTemplateAgentConfig}
 			sidebarGroups={sidebarGroups}
 			templateAgents={directoryTemplateAgents}
 			initialTemplateCategory={initialTemplateCategory}

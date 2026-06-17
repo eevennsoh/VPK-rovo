@@ -4,5 +4,7 @@ export type {
 	AgentsDirectoryDialogProps,
 	AgentsDirectorySidebarGroup,
 	AgentsDirectoryTemplateAgent,
+	AgentsDirectoryTemplateBuildOptions,
+	AgentsDirectoryTemplateBuildResult,
 	AgentsDirectoryVariant,
 } from "./components/agents-directory";

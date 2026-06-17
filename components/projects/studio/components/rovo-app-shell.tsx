@@ -26,7 +26,7 @@ import {
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
 import { CreateButton } from "@/components/blocks/top-navigation/components/create-button";
-import { AgentsDirectoryDialog } from "@/components/blocks/agents-directory";
+import { AgentsDirectoryDialog, type AgentsDirectoryTemplateBuildOptions } from "@/components/blocks/agents-directory";
 import { inferAutomationRules } from "@/components/blocks/triggers/data/trigger-catalog";
 import { AGENT_TEMPLATES_CATEGORIES, AgentTemplatesDialog, type AgentTemplatesAgent } from "@/components/blocks/agent-templates";
 import {
@@ -95,6 +95,7 @@ import {
 	buildCreationTemplateContextFromStarter,
 	buildStudioAgentCreationContext,
 	buildStudioAgentCreationContinuationContext,
+	buildTemplateAgentResultFromAgent,
 	resolveTemplateConfigForResult,
 	type StudioCreationTemplateContext,
 } from "@/components/projects/studio/lib/studio-agent-creation-context";
@@ -2468,6 +2469,37 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		setIsSidebarAgentBrowserOpen(false);
 	}, [handleGallerySelect]);
 
+	const handleBuildTemplateAgent = useCallback((agent: AgentTemplatesAgent, options: AgentsDirectoryTemplateBuildOptions) => {
+		if (typeof studioAgentRegistry.registerCreatedAgentFromResult !== "function") {
+			return null;
+		}
+
+		const agentResult = buildTemplateAgentResultFromAgent(agent, {
+			appIds: options.connectApps ? options.appIds : [],
+		});
+		const registered = studioAgentRegistry.registerCreatedAgentFromResult(agentResult, {
+			preserveCurrentThread: true,
+			select: true,
+			sourceKey: `studio-template-setup:${agent.id}:${Date.now()}`,
+		});
+
+		return registered
+			? {
+					profileId: registered.id,
+					onCancel: () => studioAgentRegistry.removeSessionAgent(registered.id),
+				}
+			: null;
+	}, [studioAgentRegistry]);
+
+	const handleOpenBuiltTemplateAgentConfig = useCallback((profileId: string) => {
+		setActiveAgentConfigState({
+			profileId,
+			sourceMessageId: null,
+		});
+		setActiveAgentConfigView("configure");
+		setIsSidebarAgentBrowserOpen(false);
+	}, [setActiveAgentConfigState]);
+
 	const handleFocusStudioComposer = useCallback(() => {
 		setComposerFocusRequestKey((currentKey) => currentKey + 1);
 	}, []);
@@ -4709,6 +4741,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				agents={ROVO_DIRECTORY_AGENT_PROFILES}
 				onSelectAgent={handleSidebarBrowseAgentSelect}
 				onSelectTemplateAgent={handleTemplateAgentSelect}
+				onBuildTemplateAgent={handleBuildTemplateAgent}
+				onOpenBuiltTemplateAgentConfig={handleOpenBuiltTemplateAgentConfig}
 				sessionAgents={studioAgentRegistry.sessionAgentEntries.map((entry) => entry.profile)}
 				initialTemplateCategory={sidebarAgentBrowserInitialCategory}
 				variant="experimental"
