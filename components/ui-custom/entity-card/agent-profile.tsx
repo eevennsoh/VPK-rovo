@@ -260,7 +260,10 @@ export function EntityCardAgentProfile({
 
 			<div
 				className={cn(
-					"flex bg-surface px-3 pb-3",
+					// Match the card's own raised surface so the footer doesn't read as a
+					// second background band — `bg-surface` and `bg-surface-raised` diverge
+					// in dark mode (raised is lighter for elevation), which showed as a seam.
+					"flex bg-surface-raised px-3 pb-3",
 					// Chat reserves the input box's height; preview hugs the button.
 					variant === "preview" ? "" : "h-[60px] items-start",
 				)}
