@@ -102,6 +102,17 @@ interface RichTextEditorProps
 	showToolbar?: boolean;
 	showBubbleMenu?: boolean;
 	showFloatingMenu?: boolean;
+	/**
+	 * Controls how the toolbar is revealed.
+	 * - `"always"` (default): toolbar is always visible.
+	 * - `"hover"`: toolbar is hidden (but its space stays reserved, so there is
+	 *   no layout jump) and fades in when the pointer hovers anywhere in the
+	 *   editor, or when keyboard focus lands on a toolbar control. It is also
+	 *   sticky: once it pins to the top of the surrounding scroll container it
+	 *   reveals itself and follows the scroll (progressive enhancement via
+	 *   `scroll-state(stuck)`; degrades to hover-only where unsupported).
+	 */
+	toolbarReveal?: "always" | "hover";
 	"aria-label"?: string;
 }
 
@@ -336,6 +347,7 @@ export function RichTextEditor({
 	showToolbar = true,
 	showBubbleMenu = true,
 	showFloatingMenu = false,
+	toolbarReveal = "always",
 	"aria-label": ariaLabel,
 	...props
 }: Readonly<RichTextEditorProps>) {
@@ -731,19 +743,47 @@ export function RichTextEditor({
 	}
 
 	return (
-		<div className={cn("space-y-2", className)} {...props}>
+		<div className={cn("space-y-2", toolbarReveal === "hover" && "group", className)} {...props}>
 			{showToolbar && editor ? (
-				<RichTextEditorToolbar
-					editor={editor}
-					endSlot={toolbarEndSlot}
-					isMarkdownMode={isMarkdownMode}
-					mode={viewMode}
-					showDataFlowMode={Boolean(dataFlowConfig)}
-					onModeChange={handleModeChange}
-					onToggleMarkdownMode={handleToggleMarkdownMode}
-					onMarkdownFormat={handleMarkdownFormat}
-					onInsertReferenceOption={onInsertReferenceOption}
-				/>
+				<div
+					data-slot="rich-text-editor-toolbar"
+					className={cn(
+						// In hover mode the toolbar becomes a sticky scroll-state
+						// container: it pins to the top of the surrounding scroll
+						// container and the reveal child fades in once stuck (see
+						// `rich-text-editor.css`), so it follows the scroll.
+						toolbarReveal === "hover" &&
+							"sticky top-0 z-10 [container-type:scroll-state]",
+					)}
+				>
+					<div
+						data-slot="rich-text-editor-toolbar-reveal"
+						className={cn(
+							// Hidden by default (space stays reserved by the sticky
+							// parent above), revealed on hover/focus, and — via the
+							// scroll-state(stuck) rule in the CSS — while pinned.
+							// `relative` anchors the stuck ::before that fills any
+							// scroll-padding gap above the pinned bar (see CSS).
+							// `pb-2` gives the controls breathing room above the
+							// bottom divider so the bar isn't cramped against the
+							// content scrolling under it (matches the Figma spec).
+							toolbarReveal === "hover" &&
+								"relative bg-surface pb-2 opacity-0 transition-opacity duration-normal ease-out group-hover:opacity-100 focus-within:opacity-100 motion-reduce:transition-none",
+						)}
+					>
+						<RichTextEditorToolbar
+							editor={editor}
+							endSlot={toolbarEndSlot}
+							isMarkdownMode={isMarkdownMode}
+							mode={viewMode}
+							showDataFlowMode={Boolean(dataFlowConfig)}
+							onModeChange={handleModeChange}
+							onToggleMarkdownMode={handleToggleMarkdownMode}
+							onMarkdownFormat={handleMarkdownFormat}
+							onInsertReferenceOption={onInsertReferenceOption}
+						/>
+					</div>
+				</div>
 			) : null}
 			{toolbarBelowSlot ? (
 				<div data-slot="rich-text-editor-toolbar-below">

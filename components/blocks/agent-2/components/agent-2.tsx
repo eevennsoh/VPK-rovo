@@ -4078,6 +4078,7 @@ function AgentInstructionsComposer({
 				onViewModeChange={onViewModeChange}
 				suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
 				toolbarBelowSlot={toolbarBelowSlot}
+				toolbarReveal="hover"
 				value={instructions}
 				mentionSources={mentionSources}
 				mentionRemovalRequest={mentionRemovalRequest}
