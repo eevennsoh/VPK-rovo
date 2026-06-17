@@ -4,7 +4,7 @@
 
 // oxlint-disable react-doctor/jsx-no-jsx-as-prop -- These components intentionally use slot/render-node props for icons, triggers, and adornments.
 
-import { type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { type Dispatch, type KeyboardEvent, type MouseEvent, type SetStateAction, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import AlignTextLeftIcon from "@atlaskit/icon/core/align-text-left";
 import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
@@ -394,6 +394,13 @@ export function AppsDirectoryDialog({
 	);
 	const [activeCategory, setActiveCategory] = useState<string>("all");
 	const [query, setQuery] = useState("");
+	// Experimental-variant filters live on the dialog (not inside
+	// ExperimentalAppsDirectoryView) so they survive opening/closing an app's detail
+	// view — the view unmounts on detail navigation, mirroring how activeCategory persists.
+	const [experimentalMyApps, setExperimentalMyApps] = useState(false);
+	const [experimentalFavourites, setExperimentalFavourites] = useState(false);
+	const [experimentalCategories, setExperimentalCategories] = useState<readonly string[]>([]);
+	const [experimentalCompanies, setExperimentalCompanies] = useState<readonly string[]>([]);
 	const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
 	// Seed the detail view from `initialSelectedToolId` each time the dialog
 	// transitions to open, so callers can deep-link to a specific tool (e.g. a
@@ -543,9 +550,17 @@ export function AppsDirectoryDialog({
 				) : variant === "experimental" ? (
 					<ExperimentalAppsDirectoryView
 						addedIds={addedIds}
+						filterFavourites={experimentalFavourites}
+						filterMyApps={experimentalMyApps}
 						onSelectTool={handleSelectTool}
 						query={query}
+						selectedCategories={experimentalCategories}
+						selectedCompanies={experimentalCompanies}
+						setFilterFavourites={setExperimentalFavourites}
+						setFilterMyApps={setExperimentalMyApps}
 						setQuery={setQuery}
+						setSelectedCategories={setExperimentalCategories}
+						setSelectedCompanies={setExperimentalCompanies}
 						tools={directoryTools}
 					/>
 				) : (
@@ -817,24 +832,36 @@ function getExperimentalEmptyState(
 
 interface ExperimentalAppsDirectoryViewProps {
 	addedIds: ReadonlySet<string>;
+	filterFavourites: boolean;
+	filterMyApps: boolean;
 	onSelectTool: (tool: AppsDirectoryTool) => void;
 	query: string;
+	selectedCategories: readonly string[];
+	selectedCompanies: readonly string[];
+	setFilterFavourites: Dispatch<SetStateAction<boolean>>;
+	setFilterMyApps: Dispatch<SetStateAction<boolean>>;
 	setQuery: (query: string) => void;
+	setSelectedCategories: Dispatch<SetStateAction<readonly string[]>>;
+	setSelectedCompanies: Dispatch<SetStateAction<readonly string[]>>;
 	tools: readonly AppsDirectoryTool[];
 }
 
 function ExperimentalAppsDirectoryView({
 	addedIds,
+	filterFavourites,
+	filterMyApps,
 	onSelectTool,
 	query,
+	selectedCategories,
+	selectedCompanies,
+	setFilterFavourites,
+	setFilterMyApps,
 	setQuery,
+	setSelectedCategories,
+	setSelectedCompanies,
 	tools,
 }: Readonly<ExperimentalAppsDirectoryViewProps>) {
 	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
-	const [filterMyApps, setFilterMyApps] = useState(false);
-	const [filterFavourites, setFilterFavourites] = useState(false);
-	const [selectedCategories, setSelectedCategories] = useState<readonly string[]>([]);
-	const [selectedCompanies, setSelectedCompanies] = useState<readonly string[]>([]);
 
 	const categoryOptions = useMemo(() => getCategoryOptions(), []);
 	const companyOptions = useMemo(() => getCompanyOptions(tools), [tools]);

@@ -6,10 +6,12 @@
 
 import Image from "next/image";
 import {
+	type Dispatch,
 	type KeyboardEvent,
 	useMemo,
 	useState,
 	type MouseEvent,
+	type SetStateAction,
 } from "react";
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
@@ -303,6 +305,13 @@ export function SkillsDirectoryDialog({
 	);
 	const [activeItem, setActiveItem] = useState<string>(primaryItems[0]?.id ?? "all-skills");
 	const [query, setQuery] = useState("");
+	// Experimental-variant filters live on the dialog (not inside
+	// ExperimentalSkillsDirectoryView) so they survive Learn more → Back; the view
+	// unmounts while the detail page shows, mirroring how activeItem persists.
+	const [experimentalYourSkills, setExperimentalYourSkills] = useState(false);
+	const [experimentalFavourites, setExperimentalFavourites] = useState(false);
+	const [experimentalCollections, setExperimentalCollections] = useState<readonly string[]>([]);
+	const [experimentalCompanies, setExperimentalCompanies] = useState<readonly string[]>([]);
 	const [selectedDetailSkillId, setSelectedDetailSkillId] = useState<string | null>(null);
 	const [uncontrolledSelectedIds, setUncontrolledSelectedIds] = useState<readonly string[]>(defaultSelectedSkillIds);
 	const controlledSelection = typeof selectedSkillIds !== "undefined";
@@ -399,12 +408,20 @@ export function SkillsDirectoryDialog({
 					<>
 						{variant === "experimental" ? (
 							<ExperimentalSkillsDirectoryView
+								filterFavourites={experimentalFavourites}
+								filterYourSkills={experimentalYourSkills}
 								hasSelection={resolvedSelectedIds.length > 0}
 								onLearnMore={(skill) => setSelectedDetailSkillId(skill.id)}
 								onSelectSkill={handleSelectSkill}
 								query={query}
+								selectedCollections={experimentalCollections}
+								selectedCompanies={experimentalCompanies}
 								selectedIds={selectedIdSet}
+								setFilterFavourites={setExperimentalFavourites}
+								setFilterYourSkills={setExperimentalYourSkills}
 								setQuery={setQuery}
+								setSelectedCollections={setExperimentalCollections}
+								setSelectedCompanies={setExperimentalCompanies}
 								skills={directorySkills}
 							/>
 						) : (
@@ -1238,29 +1255,41 @@ function getExperimentalSkillsEmptyState(
 }
 
 interface ExperimentalSkillsDirectoryViewProps {
+	filterFavourites: boolean;
+	filterYourSkills: boolean;
 	hasSelection: boolean;
 	onLearnMore: (skill: SkillsDirectorySkill) => void;
 	onSelectSkill: (skill: SkillsDirectorySkill, checked?: boolean) => void;
 	query: string;
+	selectedCollections: readonly string[];
+	selectedCompanies: readonly string[];
 	selectedIds: ReadonlySet<string>;
+	setFilterFavourites: Dispatch<SetStateAction<boolean>>;
+	setFilterYourSkills: Dispatch<SetStateAction<boolean>>;
 	setQuery: (query: string) => void;
+	setSelectedCollections: Dispatch<SetStateAction<readonly string[]>>;
+	setSelectedCompanies: Dispatch<SetStateAction<readonly string[]>>;
 	skills: readonly SkillsDirectorySkill[];
 }
 
 function ExperimentalSkillsDirectoryView({
+	filterFavourites,
+	filterYourSkills,
 	hasSelection,
 	onLearnMore,
 	onSelectSkill,
 	query,
+	selectedCollections,
+	selectedCompanies,
 	selectedIds,
+	setFilterFavourites,
+	setFilterYourSkills,
 	setQuery,
+	setSelectedCollections,
+	setSelectedCompanies,
 	skills,
 }: Readonly<ExperimentalSkillsDirectoryViewProps>) {
 	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
-	const [filterYourSkills, setFilterYourSkills] = useState(false);
-	const [filterFavourites, setFilterFavourites] = useState(false);
-	const [selectedCollections, setSelectedCollections] = useState<readonly string[]>([]);
-	const [selectedCompanies, setSelectedCompanies] = useState<readonly string[]>([]);
 
 	const collectionOptions = useMemo(() => getSkillCollectionOptions(skills), [skills]);
 	const companyOptions = useMemo(() => getSkillCompanyOptions(skills), [skills]);
