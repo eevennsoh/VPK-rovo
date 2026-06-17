@@ -2501,6 +2501,16 @@ const tagColorToMenuIconClassName: Partial<Record<TagColor, string>> = {
 	yellowLight: "text-yellow-400 [&_svg]:text-yellow-400!",
 };
 
+// Single source of truth for the Flows and Subagents summary-chip leading-glyph
+// color: it ALWAYS follows the agent's collection color (derived from the avatar
+// family via `getTagColorForAgentAvatar`). When the agent has no recognized
+// collection family, fall back to the neutral gray collection so the glyph still
+// carries a collection color rather than inheriting the chip's text color. Both
+// rows route through this helper so the rule can never drift between them.
+function getAgentCollectionIconClassName(tagColor: TagColor | undefined): string {
+	return tagColorToMenuIconClassName[tagColor ?? "gray"] ?? tagColorToMenuIconClassName.gray ?? "";
+}
+
 // Resolves a configured Skills row item (a skill label) to its SkillTag color
 // (collection family) and leading icon by looking the label up in the skills
 // directory. Unknown labels fall back to the neutral "default" collection and
@@ -2931,7 +2941,7 @@ function AgentTriggerSummaryRow({
 							const automationIcon = (
 								<IconTile
 									aria-hidden
-									className={tagColor ? tagColorToMenuIconClassName[tagColor] : "text-inherit"}
+									className={getAgentCollectionIconClassName(tagColor)}
 									icon={<Icon aria-hidden render={<AutomationIcon label="" size="small" />} />}
 									label=""
 									size="xxsmall"
@@ -3243,15 +3253,15 @@ function AgentFilledConfigSummary({
 					items={subagentItems}
 					// Mirror the Apps/Flows treatment: the chip frame stays neutral gray
 					// (see `tagColor="gray"` below) while only the leading agent glyph
-					// carries the collection color. We color the icon explicitly via
-					// `tagColorToMenuIconClassName` (the `[&_svg]:…!` override beats the
-					// neutral leading-slot color) instead of relying on `text-inherit`,
-					// which would now resolve to gray. Falls back to inheriting the
-					// neutral chip color when the agent has no collection family.
+					// carries the collection color, resolved through the shared
+					// `getAgentCollectionIconClassName` (the `[&_svg]:…!` override beats the
+					// neutral leading-slot color). The glyph always follows the agent
+					// collection color, falling back to the neutral gray collection when the
+					// agent has no family.
 					itemElemBefore={() => (
 						<IconTile
 							aria-hidden
-							className={subagentTagColor ? tagColorToMenuIconClassName[subagentTagColor] : "text-inherit"}
+							className={getAgentCollectionIconClassName(subagentTagColor)}
 							icon={<Icon aria-hidden render={<AiAgentIcon label="" size="small" />} />}
 							label=""
 							size="xxsmall"
