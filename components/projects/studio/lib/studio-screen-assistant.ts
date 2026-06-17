@@ -421,6 +421,16 @@ function slugifyTargetId(role: string, label: string): string {
 	return `auto:${base || role}`;
 }
 
+function getTargetIdForElement(
+	element: Element,
+	target = targetFromElement(element),
+): string | null {
+	if (!target) {
+		return null;
+	}
+	return target.id ?? (target.label ? slugifyTargetId(target.role ?? "element", target.label) : null);
+}
+
 export function getStudioScreenAssistantVisibleTargets(
 	limit = 60,
 ): StudioScreenAssistantVisibleTarget[] {
@@ -478,9 +488,7 @@ export function getStudioScreenAssistantVisibleTargets(
 		// Require something the model can refer to: a label, an explicit id, or a
 		// test id. Skip unlabeled structural noise.
 		const label = target.label;
-		const id =
-			target.id ??
-			(label ? slugifyTargetId(target.role ?? "element", label) : null);
+		const id = getTargetIdForElement(element, target);
 		if (!id || (!label && !target.id)) {
 			continue;
 		}
@@ -546,9 +554,17 @@ function queryScreenAssistantTargetElement(id: string): Element | null {
 	if (typeof document === "undefined") {
 		return null;
 	}
-	return document.querySelector(
-		`[${SCREEN_ASSISTANT_TARGET_ATTR}="${escapeAttributeSelectorValue(id)}"]`,
+	const escapedId = escapeAttributeSelectorValue(id);
+	const directlyTagged = document.querySelector(
+		`[${SCREEN_ASSISTANT_TARGET_ATTR}="${escapedId}"], [data-testid="${escapedId}"], [id="${escapedId}"]`,
 	);
+	if (directlyTagged) {
+		return directlyTagged;
+	}
+
+	return Array.from(document.querySelectorAll(AUTO_TARGET_SELECTOR)).find((element) => (
+		isVisibleInViewport(element) && getTargetIdForElement(element) === id
+	)) ?? null;
 }
 
 function queryAgentFieldElement(fieldId: string): Element | null {
@@ -575,6 +591,19 @@ function queryElementForGroundedTarget(target: StudioScreenAssistantTarget | nul
 		return queryAgentFieldElement(target.fieldId);
 	}
 	return null;
+}
+
+function pickActivatedTarget(
+	target: StudioScreenAssistantTarget | null,
+): Pick<StudioScreenAssistantTarget, "fieldId" | "id" | "label"> | null {
+	if (!target) {
+		return null;
+	}
+	return {
+		...(target.fieldId ? { fieldId: target.fieldId } : {}),
+		...(target.id ? { id: target.id } : {}),
+		...(target.label ? { label: target.label } : {}),
+	};
 }
 
 export function activateStudioScreenAssistantTarget(input: {
@@ -607,7 +636,7 @@ export function activateStudioScreenAssistantTarget(input: {
 	const click = (element as { click?: () => void }).click;
 	if (typeof click !== "function") {
 		return {
-			activated: grounded ? { fieldId: grounded.fieldId, id: grounded.id, label: grounded.label } : null,
+			activated: pickActivatedTarget(grounded),
 			error: "target_not_activatable",
 			ok: false,
 		};
@@ -616,7 +645,7 @@ export function activateStudioScreenAssistantTarget(input: {
 	click.call(element);
 	const activated = targetFromElement(element) ?? grounded;
 	return {
-		activated: activated ? { fieldId: activated.fieldId, id: activated.id, label: activated.label } : null,
+		activated: pickActivatedTarget(activated),
 		ok: true,
 	};
 }

@@ -4,6 +4,7 @@ const test = require("node:test");
 const {
 	createStudioScreenAssistantRegion,
 	createStudioScreenAssistantSnapshot,
+	activateStudioScreenAssistantTarget,
 	getStudioScreenAssistantRegionRect,
 	getStudioScreenAssistantRegionTargetHints,
 	getStudioScreenAssistantPointerContext,
@@ -21,12 +22,16 @@ function createFakeElement({
 	x = 0,
 	y = 0,
 	tagName = "button",
+	onClick,
 }) {
 	return {
 		id,
 		innerText: text,
 		tagName: tagName.toUpperCase(),
 		textContent: text,
+		click() {
+			onClick?.();
+		},
 		getAttribute(name) {
 			return attrs[name] ?? null;
 		},
@@ -38,7 +43,38 @@ function createFakeElement({
 				y,
 			};
 		},
+		scrollIntoView() {},
 	};
+}
+
+function getFakeElementAttr(element, name) {
+	return element.getAttribute?.(name) ?? null;
+}
+
+function getQuotedAttributeValue(selector, attribute) {
+	const escapedAttribute = attribute.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+	const match = selector.match(new RegExp(`\\[${escapedAttribute}="([^"]+)"\\]`, "u"));
+	return match?.[1] ?? null;
+}
+
+function fakeElementMatchesSelector(element, selector) {
+	const screenTarget = getQuotedAttributeValue(selector, "data-screen-assistant-target");
+	if (screenTarget && getFakeElementAttr(element, "data-screen-assistant-target") === screenTarget) {
+		return true;
+	}
+
+	const testId = getQuotedAttributeValue(selector, "data-testid");
+	if (testId && getFakeElementAttr(element, "data-testid") === testId) {
+		return true;
+	}
+
+	const id = getQuotedAttributeValue(selector, "id");
+	if (id && element.id === id) {
+		return true;
+	}
+
+	const fieldId = getQuotedAttributeValue(selector, "data-agent-field");
+	return Boolean(fieldId && getFakeElementAttr(element, "data-agent-field") === fieldId);
 }
 
 function withFakeDom({ elements, pointerElement }, callback) {
@@ -50,6 +86,13 @@ function withFakeDom({ elements, pointerElement }, callback) {
 		innerWidth: 1280,
 		scrollX: 10,
 		scrollY: 20,
+		getComputedStyle() {
+			return {
+				display: "block",
+				opacity: "1",
+				visibility: "visible",
+			};
+		},
 	};
 	global.document = {
 		elementFromPoint() {
@@ -60,6 +103,9 @@ function withFakeDom({ elements, pointerElement }, callback) {
 		},
 		querySelectorAll() {
 			return elements;
+		},
+		querySelector(selector) {
+			return elements.find((element) => fakeElementMatchesSelector(element, selector)) ?? null;
 		},
 	};
 
@@ -322,6 +368,74 @@ test("grounds targets by id, field, and label", () => {
 		}),
 		null,
 	);
+});
+
+test("activates visible targets by every snapshot id source", () => {
+	const clicked = [];
+	const testIdElement = createFakeElement({
+		attrs: { "data-testid": "agent-menu-trigger" },
+		text: "Open agent menu",
+		x: 20,
+		y: 20,
+		onClick: () => clicked.push("testid"),
+	});
+	const domIdElement = createFakeElement({
+		id: "agent-help-link",
+		tagName: "a",
+		text: "Open help",
+		x: 20,
+		y: 60,
+		onClick: () => clicked.push("dom-id"),
+	});
+	const autoElement = createFakeElement({
+		text: "Open avatar picker",
+		x: 20,
+		y: 100,
+		onClick: () => clicked.push("auto"),
+	});
+
+	withFakeDom({ elements: [testIdElement, domIdElement, autoElement], pointerElement: null }, () => {
+		const visibleTargets = getStudioScreenAssistantVisibleTargets();
+		assert.deepEqual(
+			visibleTargets.map((target) => target.id),
+			["agent-menu-trigger", "agent-help-link", "auto:button-open-avatar-picker"],
+		);
+
+		assert.deepEqual(
+			activateStudioScreenAssistantTarget({ id: "agent-menu-trigger", visibleTargets }),
+			{
+				activated: {
+					id: "agent-menu-trigger",
+					label: "Open agent menu",
+				},
+				ok: true,
+			},
+		);
+		assert.deepEqual(
+			activateStudioScreenAssistantTarget({ id: "agent-help-link", visibleTargets }),
+			{
+				activated: {
+					id: "agent-help-link",
+					label: "Open help",
+				},
+				ok: true,
+			},
+		);
+		assert.deepEqual(
+			activateStudioScreenAssistantTarget({
+				id: "auto:button-open-avatar-picker",
+				visibleTargets,
+			}),
+			{
+				activated: {
+					label: "Open avatar picker",
+				},
+				ok: true,
+			},
+		);
+	});
+
+	assert.deepEqual(clicked, ["testid", "dom-id", "auto"]);
 });
 
 test("creates painted screen regions from freeform paths and target intersections", () => {
