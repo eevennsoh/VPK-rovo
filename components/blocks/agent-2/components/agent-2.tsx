@@ -3143,6 +3143,10 @@ function AgentFilledConfigSummary({
 					onItemClick={onOpenDirectory ? (item) => onOpenDirectory("apps", item) : undefined}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("apps", index) : undefined}
 					referenceCategory="app"
+					// App chips are brand-logo tags; without an explicit color they fall back
+					// to AgentReferenceChip's "blue" default (a blue chip border). Pin them to
+					// neutral gray so the logo carries the brand and the chip frame stays neutral.
+					tagColor="gray"
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:apps` : undefined}
 				/>
 			),
