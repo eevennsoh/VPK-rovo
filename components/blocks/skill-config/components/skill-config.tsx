@@ -4433,7 +4433,9 @@ export const AgentConfigFields = memo(
 					{/* Scrollable region: profile + instructions grow to fill, the
 					    sibling footer below stays anchored to the panel bottom. The
 					    bottom scroll mask fades content into the footer while there's
-					    more below, and clears once the region is scrolled to the end. */}
+					    more below, and clears once the region is scrolled to the end.
+					    Suppressed in the skill SKILL.md editor (`frontmatter.enabled`),
+					    where the fade isn't wanted over the editor body. */}
 					<div
 						ref={compactScrollOverflow.ref}
 						// `overflow-y-auto` forces `overflow-x` to compute to `auto`,
@@ -4446,7 +4448,7 @@ export const AgentConfigFields = memo(
 						// clip edge and re-clip their rings.
 						className={cn(
 							"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto",
-							compactScrollOverflow.showBottomScrollMask && "scroll-mask-bottom",
+							compactScrollOverflow.showBottomScrollMask && !frontmatter?.enabled && "scroll-mask-bottom",
 							compactScrollAreaClassName,
 						)}
 					>

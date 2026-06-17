@@ -676,6 +676,9 @@ export function RovoAppAgentConfigPanel({
 	// knowledge" flyout). Cleared on close so "Browse knowledge" opens the grid.
 	const [directoryKnowledgeAppId, setDirectoryKnowledgeAppId] = useState<string | null>(null);
 	const [directorySkillIds, setDirectorySkillIds] = useState<readonly string[]>([]);
+	// Skill to open the skills directory on (e.g. clicking a configured skill
+	// chip). Cleared on close so "Browse skills" opens the grid, not a detail view.
+	const [directorySelectedSkillId, setDirectorySelectedSkillId] = useState<string | null>(null);
 	const [isManageSubagentsOpen, setIsManageSubagentsOpen] = useState(false);
 
 	// Floating Rovo chat launcher for the agent config screen. studio surfaces
@@ -938,6 +941,18 @@ export function RovoAppAgentConfigPanel({
 				setDirectorySelectedAppId(matched?.id ?? null);
 			} else {
 				setDirectorySelectedAppId(null);
+			}
+		} else if (directory === "skills") {
+			// Skill chips pass a skill name; resolve it to the directory's skill id so
+			// the dialog opens directly on that skill's detail/config view.
+			if (selectedItem) {
+				const normalized = selectedItem.trim().toLowerCase();
+				const matched =
+					DEFAULT_SKILLS.find((skill) => skill.id === selectedItem) ??
+					DEFAULT_SKILLS.find((skill) => skill.name.trim().toLowerCase() === normalized);
+				setDirectorySelectedSkillId(matched?.id ?? null);
+			} else {
+				setDirectorySelectedSkillId(null);
 			}
 		}
 		setActiveDirectory(directory);
@@ -1605,8 +1620,15 @@ export function RovoAppAgentConfigPanel({
 				tools={DIRECTORY_APPS}
 			/>
 			<SkillsDirectoryDialog
+				key={`skills-${directorySelectedSkillId ?? "browse"}`}
+				initialDetailSkillId={directorySelectedSkillId}
 				onAddSkills={handleAddSkills}
-				onOpenChange={(open) => setActiveDirectory(open ? "skills" : null)}
+				onOpenChange={(open) => {
+					setActiveDirectory(open ? "skills" : null);
+					if (!open) {
+						setDirectorySelectedSkillId(null);
+					}
+				}}
 				onSelectedSkillIdsChange={setDirectorySkillIds}
 				open={activeDirectory === "skills"}
 				selectedSkillIds={directorySkillIds}

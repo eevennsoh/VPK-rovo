@@ -3157,7 +3157,8 @@ function AgentFilledConfigSummary({
 					// reference chip used by every other row.
 					renderItem={({ item, disabled, onClick, onRemove }) => {
 						const { color, icon } = getSkillTagPropsForLabel(item);
-						return (
+						const preview = getRichTextReferencePreview("skill", item);
+						const skillTag = (
 							<SkillTag
 								aria-disabled={disabled || undefined}
 								className={cn(disabled && "opacity-(--opacity-disabled)")}
@@ -3171,7 +3172,21 @@ function AgentFilledConfigSummary({
 								{item}
 							</SkillTag>
 						);
+						// Hovering a skill chip shows its entity card (icon, name,
+						// publisher, stats) — mirroring the app/knowledge reference
+						// chips — when the label resolves to a directory skill.
+						return preview ? (
+							<HoverCard>
+								<HoverCardTrigger closeDelay={80} delay={120} render={<span className="inline-flex max-w-full" />}>
+									{skillTag}
+								</HoverCardTrigger>
+								<RichTextReferencePreviewContent preview={preview} />
+							</HoverCard>
+						) : skillTag;
 					}}
+					// Clicking a skill chip opens the skills directory on that skill's
+					// detail/config view (its SKILL.md editor), mirroring the Apps row.
+					onItemClick={onOpenDirectory ? (item) => onOpenDirectory("skills", item) : undefined}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("skills", index) : undefined}
 					referenceCategory="skill"
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:skills` : undefined}
@@ -3203,6 +3218,9 @@ function AgentFilledConfigSummary({
 							renderTrigger={<AgentAddValueButton className={className} icon="add" label={label} />}
 						/>
 					) : undefined}
+					// Clicking a subagent chip opens that subagent (same select path as
+					// the collapsed-nav menu's onSelectSubagent), rather than a directory.
+					onItemClick={onSelectListItem ? (_item, index) => onSelectListItem("subagents", index) : undefined}
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("subagents", index) : undefined}
 					referenceCategory="subagent"
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}

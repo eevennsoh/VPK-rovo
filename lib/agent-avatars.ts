@@ -279,8 +279,15 @@ export function getAgentBannerColor(avatarSrc: string | null | undefined): Smart
 /**
  * Picks the cover banner for an agent: the COLOR comes from `avatarSrc`'s family
  * (so the banner matches the avatar's brand color, never grey), and the DESIGN is
- * chosen deterministically from `seed` (typically the agent's `agentId`) so the
- * same agent always shows the same banner and it never flickers between renders.
+ * chosen deterministically so the same agent always shows the same banner and it
+ * never flickers between renders.
+ *
+ * The design seed folds in BOTH `avatarSrc` and `seed` (typically the agent's
+ * `agentId`). Seeding on the avatar too means swapping the avatar — which also
+ * changes the color — moves the design as well, instead of leaving one design
+ * recolored across every color (the `agentId` alone is fixed while editing a
+ * single agent, so it can't vary the design as the avatar changes). The `agentId`
+ * term still gives two agents that share an avatar distinct designs.
  *
  * `seed` falls back to `avatarSrc` when an id isn't available; an empty seed
  * lands on the first design. The hash is shifted (`>>> 16`) before indexing so
@@ -296,7 +303,8 @@ export function getDeterministicAgentBannerSrc(
 	if (!normalizedSeed) {
 		return designs[0];
 	}
-	const hash = hashSeed(normalizedSeed);
+	const designSeed = `${avatarSrc?.trim() ?? ""}|${normalizedSeed}`;
+	const hash = hashSeed(designSeed);
 	const designIndex = (hash >>> 16) % designs.length;
 	return designs[designIndex] ?? designs[0];
 }

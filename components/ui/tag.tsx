@@ -262,7 +262,13 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 			) : null}
 			<span
 				className={cn(
-					"min-w-0 grow truncate whitespace-nowrap",
+					// `truncate` sets `overflow: hidden`, which clips vertically as well
+					// as horizontally. The Tag root's `leading-4` (16px) line box is too
+					// short for Atlassian Sans descenders, so `p`/`g`/`y` get sliced at
+					// the clip edge. Match the chip's 20px height (`h-5`) with `leading-5`
+					// so descenders have room; the glyph stays vertically centered (flex
+					// `items-center`) and left-aligned, so no alignment shifts.
+					"min-w-0 grow truncate whitespace-nowrap leading-5",
 					// Overlay-control tags fade the trailing edge of the *label itself*
 					// (mask to transparent) on hover/focus so the floating control stays
 					// legible. Masking the text — rather than painting a colored

@@ -105,6 +105,13 @@ export type {
 export interface SkillsDirectoryDialogProps {
 	agents?: readonly SkillsDirectoryAgent[];
 	defaultSelectedSkillIds?: readonly string[];
+	/**
+	 * Opens the dialog directly on this skill's detail/config view (the SKILL.md
+	 * editor) instead of the browse grid. Used when a configured Skills chip is
+	 * clicked to jump straight to that skill. Pair with a remount `key` so a new
+	 * value re-seeds the detail state on each open.
+	 */
+	initialDetailSkillId?: string | null;
 	onAddSkills?: (skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => void;
 	onCreateShareLink?: (skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => void;
 	onCreateSkill?: () => void;
@@ -268,6 +275,7 @@ function getDefaultFileTree(skill: SkillsDirectorySkill): readonly SkillsDirecto
 export function SkillsDirectoryDialog({
 	agents,
 	defaultSelectedSkillIds = [],
+	initialDetailSkillId = null,
 	onAddSkills,
 	onCreateShareLink,
 	onCreateSkill,
@@ -312,7 +320,10 @@ export function SkillsDirectoryDialog({
 	const [experimentalFavourites, setExperimentalFavourites] = useState(false);
 	const [experimentalCollections, setExperimentalCollections] = useState<readonly string[]>([]);
 	const [experimentalCompanies, setExperimentalCompanies] = useState<readonly string[]>([]);
-	const [selectedDetailSkillId, setSelectedDetailSkillId] = useState<string | null>(null);
+	// Seeded from `initialDetailSkillId` so a chip click can open the dialog
+	// straight on a skill's detail/config view. Callers remount via `key` when the
+	// seed changes, so this initializer re-runs for each newly opened skill.
+	const [selectedDetailSkillId, setSelectedDetailSkillId] = useState<string | null>(initialDetailSkillId);
 	const [uncontrolledSelectedIds, setUncontrolledSelectedIds] = useState<readonly string[]>(defaultSelectedSkillIds);
 	const controlledSelection = typeof selectedSkillIds !== "undefined";
 	const resolvedSelectedIds = controlledSelection ? selectedSkillIds : uncontrolledSelectedIds;
