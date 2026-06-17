@@ -2710,7 +2710,7 @@ function AgentFilledSummaryRow({
 
 	return (
 		<div
-			className="group/agent-row -mx-2 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered"
+			className="group/agent-row -mx-1 rounded-md px-1 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered"
 			data-agent-field={agentFieldName}
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
@@ -2871,7 +2871,7 @@ function AgentTriggerSummaryRow({
 
 	return (
 		<div
-			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-6"
+			className="group/agent-row -mx-1 flex flex-col gap-y-1 rounded-md px-1 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-6"
 			data-agent-field="trigger"
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
@@ -2892,17 +2892,20 @@ function AgentTriggerSummaryRow({
 							// Every automation chip leads with the same automation glyph,
 							// tinted by the agent's collection color — NOT the first
 							// trigger's provider mark. An automation can now own multiple
-							// triggers, so a single provider icon would misrepresent it;
-							// the collection-colored automation icon mirrors the subagent
-							// chip treatment (`AiAgentIcon` + `tagColor`). `text-inherit`
-							// lets the 12px glyph pick up the Tag's resolved color from the
-							// leading slot (e.g. lime), and the `IconTile`
-							// xxsmall/transparent wrap centers it like the latest Tag
+							// triggers, so a single provider icon would misrepresent it.
+							// The chip frame itself stays neutral gray (matching the Apps
+							// row); only the leading glyph carries the collection color, so
+							// we color the icon explicitly via `tagColorToMenuIconClassName`
+							// (the `[&_svg]:…!` override beats the neutral leading-slot
+							// color) instead of `text-inherit`, which would now resolve to
+							// gray. Falls back to inheriting the neutral chip color when the
+							// agent has no collection family. The `IconTile`
+							// xxsmall/transparent wrap centers the glyph like the latest Tag
 							// standard's other leading icons.
 							const automationIcon = (
 								<IconTile
 									aria-hidden
-									className="text-inherit"
+									className={tagColor ? tagColorToMenuIconClassName[tagColor] : "text-inherit"}
 									icon={<Icon aria-hidden render={<AutomationIcon label="" size="small" />} />}
 									label=""
 									size="xxsmall"
@@ -2922,7 +2925,7 @@ function AgentTriggerSummaryRow({
 											: undefined
 									}
 									onRemove={canRemoveInline ? () => handleRemoveAutomation(index) : undefined}
-									tagColor={tagColor}
+									tagColor="gray"
 								/>
 							);
 						})}
@@ -3771,7 +3774,7 @@ function AgentReasoningRow({
 }: Readonly<AgentReasoningRowProps>) {
 	return (
 		<div
-			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-6"
+			className="group/agent-row -mx-1 flex flex-col gap-y-1 rounded-md px-1 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-6"
 			data-agent-field="reasoning"
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
@@ -3966,7 +3969,7 @@ function AgentMemoryRow({
 }: Readonly<AgentMemoryRowProps>) {
 	return (
 		<div
-			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-6"
+			className="group/agent-row -mx-1 flex flex-col gap-y-1 rounded-md px-1 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-6"
 			data-agent-field="memory"
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
@@ -4149,7 +4152,7 @@ function AgentInstructionsComposer({
 			<RichTextEditor
 				aria-label="Agent instructions"
 				className="space-y-2"
-				contentClassName={cn("border-t border-dashed border-border", contentClassName)}
+				contentClassName={contentClassName}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
 				enableDirectoryAutocomplete
 				placeholder="Press / to help me create the agent, or start with a template"
@@ -4513,8 +4516,16 @@ function AgentCompactConfigPanel({
 				initial={false}
 				animate={{ height: stripRevealed ? "auto" : 0, opacity: stripRevealed ? 1 : 0 }}
 				transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0.4, 1, 0.6, 1] }}
+				// `overflow: hidden` drives the height-collapse animation, but it clips
+				// BOTH axes — and `overflow-x: visible` can't pair with `overflow-y:
+				// hidden` (it computes to `auto`, which still clips). The strip inside
+				// uses `-ml-4` to left-align its first item's text with the summary-row
+				// labels, so without room that first button's rounded/hover/focus-ring
+				// edge gets sheared here. `-mx-4 px-4` pushes this clip box out to the
+				// card's padding edge while keeping the content in place, so the bleed
+				// has room. Card padding is `px-4`, so this nets to the card border.
 				style={{ overflow: "hidden", willChange: "opacity" }}
-				className={hasRows ? "flex flex-col gap-2 pt-2" : "flex flex-col gap-2"}
+				className={hasRows ? "-mx-4 flex flex-col gap-2 px-4 pt-2" : "-mx-4 flex flex-col gap-2 px-4"}
 			>
 				{hasRows ? <div aria-hidden className="h-px bg-border" /> : null}
 				<AgentCompactEmptyConfigNav
