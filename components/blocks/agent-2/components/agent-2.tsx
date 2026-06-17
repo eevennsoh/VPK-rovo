@@ -533,6 +533,16 @@ export type AgentCompactHeaderNavItem = (typeof AGENT_COMPACT_HEADER_NAV_ITEMS)[
 export const AGENT_COMPACT_HEADER_DEFAULT_NAV_ITEMS = AGENT_COMPACT_HEADER_NAV_ITEMS.filter((item) => item.value !== "details");
 export const AGENT_COMPACT_HEADER_DETAILS_NAV_ITEM = AGENT_COMPACT_HEADER_NAV_ITEMS[0];
 
+// Secondary sections that start folded into the "…" overflow menu regardless of
+// available width. Primary sections (Insights, Evaluation) stay inline and still
+// width-overflow on top of these. Kept as a value Set rather than a per-item flag
+// so the `as const` literal union behind AgentCompactHeaderSection is preserved.
+const AGENT_COMPACT_HEADER_DEFAULT_COLLAPSED_SECTIONS: ReadonlySet<AgentCompactHeaderSection> = new Set([
+	"surfaces",
+	"users",
+	"access",
+]);
+
 const AGENT_COMPACT_HEADER_NAV_GAP = 4;
 const AGENT_COMPACT_HEADER_AVATAR_NAV_GAP = 8;
 const AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH = 24;
@@ -581,9 +591,20 @@ export function AgentCompactHeaderNav({
 }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const measureRef = useRef<HTMLDivElement>(null);
-	const [visibleCount, setVisibleCount] = useState<number>(items.length);
-	const visibleItems = items.slice(0, visibleCount);
-	const hiddenItems = items.slice(visibleCount);
+	// Sections that start folded into the "…" menu by default never render inline,
+	// so only the primary items participate in the width-fitting math below.
+	const primaryItems = useMemo(
+		() => items.filter((item) => !AGENT_COMPACT_HEADER_DEFAULT_COLLAPSED_SECTIONS.has(item.value)),
+		[items],
+	);
+	const defaultCollapsedItems = useMemo(
+		() => items.filter((item) => AGENT_COMPACT_HEADER_DEFAULT_COLLAPSED_SECTIONS.has(item.value)),
+		[items],
+	);
+	const [visibleCount, setVisibleCount] = useState<number>(primaryItems.length);
+	const visibleItems = primaryItems.slice(0, visibleCount);
+	// Width-overflowed primaries come first, then the always-collapsed sections.
+	const hiddenItems = [...primaryItems.slice(visibleCount), ...defaultCollapsedItems];
 
 	useLayoutEffect(() => {
 		const container = containerRef.current;
@@ -594,12 +615,16 @@ export function AgentCompactHeaderNav({
 
 		function recompute(): void {
 			const widths = Array.from(measure!.children).map((node) => (node as HTMLElement).offsetWidth);
+			// When sections are collapsed by default the "…" trigger is always
+			// present, so always reserve its width (computed once inside the
+			// helper) rather than only when the primaries overflow on their own.
 			setVisibleCount(
 				computeContextBarOverflow(
 					widths,
 					container!.clientWidth,
 					AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH,
 					AGENT_COMPACT_HEADER_NAV_GAP,
+					defaultCollapsedItems.length > 0,
 				),
 			);
 		}
@@ -608,7 +633,7 @@ export function AgentCompactHeaderNav({
 		const observer = new ResizeObserver(recompute);
 		observer.observe(container);
 		return () => observer.disconnect();
-	}, [items]);
+	}, [primaryItems, defaultCollapsedItems]);
 
 	return (
 		<div className="flex min-w-0 flex-1 items-center" style={{ gap: AGENT_COMPACT_HEADER_AVATAR_NAV_GAP }}>
@@ -633,7 +658,7 @@ export function AgentCompactHeaderNav({
 			>
 				<div aria-hidden className="pointer-events-none absolute top-0 left-0 h-0 w-0 overflow-clip">
 					<div className="invisible flex items-center" ref={measureRef} style={{ gap: AGENT_COMPACT_HEADER_NAV_GAP }}>
-						{items.map((item) => (
+						{primaryItems.map((item) => (
 							<AgentCompactHeaderNavButton
 								activeSection={activeSection}
 								item={item}
@@ -2580,6 +2605,7 @@ function AgentReferenceChip({
 			removeButtonLabel={`Remove ${label}`}
 			removeVariant="overlay"
 			type={elemBefore ? "default" : getRichTextMentionTagType(visual)}
+			variant="editor"
 		>
 			{label}
 		</Tag>
