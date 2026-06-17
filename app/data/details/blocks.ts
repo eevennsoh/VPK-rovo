@@ -511,6 +511,18 @@ const suggestedAgents: TWGAgentSuggestion[] = [
   partnerName="Atlassian"
   description="Proactively assists by automatically suggesting subtasks when you start adding one and providing comment summaries."
 />`,
+		examples: [
+			{
+				title: "Chat",
+				description: "Default footer with the AI input affordance for talking to the agent.",
+				demoSlug: "agent-profile-card-chat",
+			},
+			{
+				title: "Preview",
+				description: 'Footer swaps the chat box for a single "View agent" call-to-action button.',
+				demoSlug: "agent-profile-card-preview",
+			},
+		],
 		props: [
 			{
 				name: "name",
@@ -523,6 +535,43 @@ const suggestedAgents: TWGAgentSuggestion[] = [
 				type: "string",
 				default: '"Atlassian"',
 				description: "Partner or creator name shown below the agent name.",
+			},
+			{
+				name: "attributionKind",
+				type: '"company" | "team" | "person"',
+				default: '"company"',
+				description:
+					"Who published the agent. Drives the avatar badge: a company logo tile, a square team project tile, or a round person headshot.",
+			},
+			{
+				name: "partnerLogoSrc",
+				type: "string",
+				description:
+					"Logo or photo for the attribution badge (3p app tile, team project tile, or headshot). When omitted, a company falls back to the Atlassian glyph.",
+			},
+			{
+				name: "verified",
+				type: "boolean",
+				default: "true",
+				description: "Shows the verified check beside the partner name.",
+			},
+			{
+				name: "variant",
+				type: '"chat" | "preview"',
+				default: '"chat"',
+				description:
+					'Footer affordance. "chat" shows the AI input box; "preview" swaps it for a "View agent" call-to-action button.',
+			},
+			{
+				name: "previewActionLabel",
+				type: "string",
+				default: '"View agent"',
+				description: 'Visible label for the "preview" variant button.',
+			},
+			{
+				name: "onPreviewAction",
+				type: "() => void",
+				description: 'Called when the "preview" variant "View agent" button is selected.',
 			},
 			{
 				name: "description",

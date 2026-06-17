@@ -8,10 +8,17 @@ import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
 import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
 import AudioWaveformIcon from "@atlaskit/icon-lab/core/audio-waveform";
 
-import { Avatar, AvatarCompanyBadge, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+	Avatar,
+	AvatarCompanyBadge,
+	AvatarFallback,
+	AvatarImage,
+	AvatarProjectBadge,
+} from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { AtlassianLogo } from "@/components/ui/logo";
+import { AtlassianLogo, isAtlassianLogoSource } from "@/components/ui/logo";
+import { getDeterministicAgentBannerSrc } from "@/lib/agent-avatars";
 import { cn } from "@/lib/utils";
 
 const AGENT_CATEGORY_BANNER_COLOR: Record<string, string> = {
@@ -29,9 +36,40 @@ function getBannerColorFromAvatarSrc(src: string): string {
 	return (category && AGENT_CATEGORY_BANNER_COLOR[category]) ?? DEFAULT_BANNER_COLOR;
 }
 
+// The decorative avatar bleeding across the banner uses the container-less
+// ("unmasked") illustration so it floats on the smart-folder artwork without its
+// own hexagon tile — a solid tile would otherwise sit as a block on top of the
+// patterned backdrop. Mirrors agent-2's AgentProfileCover treatment.
+function getUnmaskedAvatarSrc(src: string): string {
+	return src.startsWith("/avatar-agent/")
+		? src.replace("/avatar-agent/", "/avatar-agent-unmasked/")
+		: src;
+}
+
+// How the agent is attributed below its name. Mirrors agent-card's
+// `attributionKind`: a first/third-party company (logo company badge), a team
+// (project tile badge), or a person (round photo badge).
+export type AgentProfileAttributionKind = "company" | "team" | "person";
+
 export interface EntityCardAgentProfileProps extends Omit<ComponentProps<"section">, "children"> {
 	name?: string;
 	partnerName?: string;
+	/** Who published the agent. Drives the avatar attribution badge. Defaults to `"company"`. */
+	attributionKind?: AgentProfileAttributionKind;
+	/**
+	 * Logo/photo for the attribution badge. A 3p app tile or company logo for
+	 * `"company"`, a project tile for `"team"`, a headshot for `"person"`. When
+	 * omitted, `"company"` falls back to the Atlassian glyph.
+	 */
+	partnerLogoSrc?: string;
+	/** Shows the verified check beside the partner name. Defaults to `true`. */
+	verified?: boolean;
+	/**
+	 * Footer affordance. `"chat"` (default) shows the AI input box for talking to
+	 * the agent; `"preview"` swaps it for a single "View agent" call-to-action
+	 * button that opens the agent.
+	 */
+	variant?: "chat" | "preview";
 	description?: string;
 	avatarSrc?: string;
 	coverSrc?: string;
@@ -43,16 +81,24 @@ export interface EntityCardAgentProfileProps extends Omit<ComponentProps<"sectio
 	moreActionLabel?: string;
 	swapActionLabel?: string;
 	voiceActionLabel?: string;
+	/** Visible label for the `"preview"` variant button. Defaults to `"View agent"`. */
+	previewActionLabel?: string;
 	onInputAction?: () => void;
 	onEditAction?: () => void;
 	onMoreAction?: () => void;
 	onSwapAction?: () => void;
 	onVoiceInput?: () => void;
+	/** Called when the `"preview"` variant "View agent" button is selected. */
+	onPreviewAction?: () => void;
 }
 
 export function EntityCardAgentProfile({
 	name = "Task Improver",
 	partnerName = "Atlassian",
+	attributionKind = "company",
+	partnerLogoSrc,
+	verified = true,
+	variant = "chat",
 	description = "Proactively assists by automatically suggesting subtasks when you start adding one and providing comment summaries.",
 	avatarSrc = "/avatar-agent/teamwork-agents/blocker-checker.svg",
 	coverSrc = avatarSrc,
@@ -64,11 +110,13 @@ export function EntityCardAgentProfile({
 	moreActionLabel,
 	swapActionLabel,
 	voiceActionLabel = "Start voice input",
+	previewActionLabel = "View agent",
 	onInputAction,
 	onEditAction,
 	onMoreAction,
 	onSwapAction,
 	onVoiceInput,
+	onPreviewAction,
 	className,
 	...props
 }: Readonly<EntityCardAgentProfileProps>): ReactElement {
@@ -77,6 +125,49 @@ export function EntityCardAgentProfile({
 	const resolvedEditActionLabel = editActionLabel ?? `Edit ${name}`;
 	const resolvedCoverBackgroundColor =
 		coverBackgroundColor ?? getBannerColorFromAvatarSrc(avatarSrc);
+	// Smart-folder cover artwork picked deterministically per agent; its color
+	// follows the avatar family so it matches the solid fallback shown until the
+	// SVG paints. Mirrors agent-2's AgentProfileCover backdrop.
+	const resolvedBannerSrc = getDeterministicAgentBannerSrc(avatarSrc, avatarSrc);
+	const isAtlassianCover = isAtlassianLogoSource(coverSrc);
+
+	// Attribution badge overlaid on the agent avatar. Mirrors agent-card's
+	// renderAvatarBadge: a company logo tile (Atlassian glyph when no logo is
+	// supplied), a square project tile for a team, or a round headshot for a
+	// person. The supplied assets are self-contained tiles, so `size-full
+	// object-cover` lets them fill the badge regardless of intrinsic size.
+	const renderAttributionBadge = () => {
+		if (attributionKind === "person") {
+			return partnerLogoSrc ? (
+				<AvatarProjectBadge className="rounded-full">
+					<Image alt="" aria-hidden className="size-full object-cover" height={40} src={partnerLogoSrc} width={40} />
+				</AvatarProjectBadge>
+			) : null;
+		}
+		if (attributionKind === "team") {
+			return partnerLogoSrc ? (
+				<AvatarProjectBadge>
+					<Image alt="" aria-hidden className="size-full object-cover" height={40} src={partnerLogoSrc} width={40} />
+				</AvatarProjectBadge>
+			) : null;
+		}
+		return (
+			<AvatarCompanyBadge>
+				{partnerLogoSrc ? (
+					<Image alt="" aria-hidden className="size-full object-cover" height={40} src={partnerLogoSrc} width={40} />
+				) : (
+					<AtlassianLogo
+						appearance="inverse"
+						label=""
+						name="atlassian"
+						shouldUseNewLogoDesign
+						size="xxsmall"
+						themeAware={false}
+					/>
+				)}
+			</AvatarCompanyBadge>
+		);
+	};
 
 	return (
 		<section
@@ -90,17 +181,26 @@ export function EntityCardAgentProfile({
 		>
 			<div
 				aria-hidden="true"
-				className="relative h-12 shrink-0 overflow-hidden"
-				style={{ backgroundColor: resolvedCoverBackgroundColor }}
+				className="relative h-12 shrink-0 overflow-hidden bg-cover bg-center"
+				style={{
+					backgroundColor: resolvedCoverBackgroundColor,
+					backgroundImage: `url("${resolvedBannerSrc}")`,
+				}}
 			>
-				<Image
-					alt=""
-					aria-hidden
-					className="absolute top-1/2 left-[76%] h-48 w-[168px] -translate-x-1/2 -translate-y-1/2 opacity-95"
-					height={192}
-					src={coverSrc}
-					width={168}
-				/>
+				{isAtlassianCover ? (
+					<span className="absolute top-1/2 left-[76%] -translate-x-1/2 -translate-y-1/2 opacity-95">
+						<AtlassianLogo label="" name="atlassian" size="xlarge" />
+					</span>
+				) : (
+					<Image
+						alt=""
+						aria-hidden
+						className="absolute top-1/2 left-[76%] h-48 w-[168px] -translate-x-1/2 -translate-y-1/2 opacity-95"
+						height={192}
+						src={getUnmaskedAvatarSrc(coverSrc)}
+						width={168}
+					/>
+				)}
 			</div>
 
 			<div className="flex flex-col gap-4 bg-surface-raised pt-6">
@@ -145,10 +245,12 @@ export function EntityCardAgentProfile({
 					<p className="flex items-center gap-1 text-xs leading-4 text-text-subtle">
 						<span>By</span>
 						<span className="truncate text-link">{partnerName}</span>
-						<Icon
-							className="text-icon-information"
-							render={<StatusVerifiedIcon label="Verified" size="small" color="currentColor" />}
-						/>
+						{verified ? (
+							<Icon
+								className="text-icon-information"
+								render={<StatusVerifiedIcon label="Verified" size="small" color="currentColor" />}
+							/>
+						) : null}
 					</p>
 				</div>
 				<p className="px-4 pb-4 text-sm leading-5 text-text">
@@ -156,33 +258,45 @@ export function EntityCardAgentProfile({
 				</p>
 			</div>
 
-			<div className="flex h-[60px] items-start bg-surface px-3 pb-3">
-				<div className="flex h-12 w-full items-center justify-between rounded-xl border border-border bg-bg-input px-3 shadow-[0px_-2px_25px_rgba(30,31,33,0.08)]">
-					{onInputAction ? (
-						<button
-							aria-label={inputActionLabel ?? inputPlaceholder}
-							className="min-w-0 flex-1 truncate rounded-md px-1.5 text-left text-sm leading-5 text-text-subtlest outline-none hover:text-text-subtle focus-visible:ring-2 focus-visible:ring-ring"
-							onClick={onInputAction}
-							type="button"
-						>
-							{inputPlaceholder}
-						</button>
-					) : (
-						<p className="min-w-0 flex-1 truncate px-1.5 text-left text-sm leading-5 text-text-subtlest">
-							{inputPlaceholder}
-						</p>
-					)}
-					<Button
-						aria-label={voiceActionLabel}
-						className="size-8 rounded-md p-0 text-icon-subtle"
-						onClick={onVoiceInput}
-						size="icon"
-						type="button"
-						variant="ghost"
-					>
-						<AudioWaveformIcon label="" size="small" />
+			<div
+				className={cn(
+					"flex bg-surface px-3 pb-3",
+					// Chat reserves the input box's height; preview hugs the button.
+					variant === "preview" ? "" : "h-[60px] items-start",
+				)}
+			>
+				{variant === "preview" ? (
+					<Button className="w-full" onClick={onPreviewAction} type="button" variant="outline">
+						{previewActionLabel}
 					</Button>
-				</div>
+				) : (
+					<div className="flex h-12 w-full items-center justify-between rounded-xl border border-border bg-bg-input px-3 shadow-[0px_-2px_25px_rgba(30,31,33,0.08)]">
+						{onInputAction ? (
+							<button
+								aria-label={inputActionLabel ?? inputPlaceholder}
+								className="min-w-0 flex-1 truncate rounded-md px-1.5 text-left text-sm leading-5 text-text-subtlest outline-none hover:text-text-subtle focus-visible:ring-2 focus-visible:ring-ring"
+								onClick={onInputAction}
+								type="button"
+							>
+								{inputPlaceholder}
+							</button>
+						) : (
+							<p className="min-w-0 flex-1 truncate px-1.5 text-left text-sm leading-5 text-text-subtlest">
+								{inputPlaceholder}
+							</p>
+						)}
+						<Button
+							aria-label={voiceActionLabel}
+							className="size-8 rounded-md p-0 text-icon-subtle"
+							onClick={onVoiceInput}
+							size="icon"
+							type="button"
+							variant="ghost"
+						>
+							<AudioWaveformIcon label="" size="small" />
+						</Button>
+					</div>
+				)}
 			</div>
 
 			<Avatar
@@ -201,16 +315,7 @@ export function EntityCardAgentProfile({
 			>
 				<AvatarImage alt={avatarAlt} src={avatarSrc} />
 				<AvatarFallback>{name.slice(0, 2)}</AvatarFallback>
-				<AvatarCompanyBadge>
-					<AtlassianLogo
-						appearance="inverse"
-						label=""
-						name="atlassian"
-						shouldUseNewLogoDesign
-						size="xxsmall"
-						themeAware={false}
-					/>
-				</AvatarCompanyBadge>
+				{renderAttributionBadge()}
 			</Avatar>
 		</section>
 	);
