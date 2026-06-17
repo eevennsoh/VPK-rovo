@@ -120,6 +120,21 @@ test("an explicit apps array weaves unified app chips, not duplicate facet chips
 	assert.doesNotMatch(out.instructions, /@\[knowledge:jira:all\]/u);
 });
 
+test("facet-derived apps do not weave unified app chips", async () => {
+	const { repairGeneratedAgentCatalog } = await loadRepair();
+
+	const out = repairGeneratedAgentCatalog({
+		tools: ["Jira"],
+		instructions: "Use it for triage.",
+	});
+
+	assert.deepEqual(out.apps, ["Jira"]);
+	assert.deepEqual(out.tools, ["Jira"]);
+	assert.match(out.instructions, /@\[tool:jira\]/u);
+	assert.doesNotMatch(out.instructions, /@\[app:jira\]/u);
+	assert.doesNotMatch(out.instructions, /@\[knowledge:jira:all\]/u);
+});
+
 test("de-dupes when a body token repeats a config entry", async () => {
 	const { repairGeneratedAgentCatalog } = await loadRepair();
 
