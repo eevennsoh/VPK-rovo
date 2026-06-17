@@ -4287,6 +4287,22 @@ const sources: TwgToolSource[] = [
 				description: "Shows the chevron affordance and enables collapsible content when children are provided.",
 			},
 			{
+				name: "showLoader",
+				type: "boolean",
+				default: "true",
+				description: "Shows the Teamwork Graph loader at the start of the banner.",
+			},
+			{
+				name: "chevronOpen",
+				type: "boolean",
+				description: "Controls the chevron orientation when the banner is used as an external trigger.",
+			},
+			{
+				name: "onBannerClick",
+				type: "() => void",
+				description: "Renders the banner as a button and calls this handler when no internal children are provided.",
+			},
+			{
 				name: "open",
 				type: "boolean",
 				description: "Controlled open state passed to the underlying Collapsible root.",
@@ -4308,7 +4324,7 @@ const sources: TwgToolSource[] = [
 			},
 		],
 		subComponents: [
-			{ name: "TwgTool", description: "Root trace row with rail icon, banner, source stack, and optional collapsible content." },
+			{ name: "TwgTool", description: "Root trace banner with Teamwork Graph loader, source stack, cycling byline, and optional collapsible content." },
 			{ name: "TwgToolSourceIcon", description: "Tile-backed 16px or 24px provider icon using Teamwork Graph, Atlassian product logos, or local third-party assets." },
 			{ name: "TwgToolSourceStack", description: "Right-aligned overlapping source icon stack with overflow count support." },
 		],

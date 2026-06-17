@@ -6265,9 +6265,9 @@ function buildStudioAutomationDiscoveryQuestionCardForRound({
 
 function getStudioAutomationDiscoveryQuestionIntro(round) {
 	if (round === "followup") {
-		return "I found five plausible repeated workflows and narrowed the strongest three. Before I create the drafts, I need one more boundary check so Studio knows what to create, skip, and defer.";
+		return "I have enough signal to draft a few agents, but I need one boundary check before I create anything. There are strong candidates for Loom distribution, inactive-agent lifecycle triage, and weekly synthesis, plus a few weaker patterns that should stay out of the first pass unless you want a broader exploration. Choose how strict the creation boundary should be and I will turn the strongest candidates into approval-gated Studio drafts.";
 	}
-	return "I found the automation-discovery brief. Before I create draft agents, I need three quick choices so the ranking matches your presentation goals.";
+	return "I can start that. Before I create any agents, I need to lock the decision frame so I do not turn noisy activity into the wrong drafts. The request spans Slack, Jira, Confluence, Loom, Figma, GitHub, and Teamwork Graph signals, which can point to different kinds of repeated work: distribution loops, lifecycle cleanup, weekly synthesis, and design feedback follow-up. Choose how Studio should rank the signals, which evidence should carry the most weight, and how conservative it should be before creating a draft. After that I will scan the work history, separate create, skip, and needs-evidence candidates, and build the strongest agent drafts.";
 }
 
 function getStudioAutomationDiscoveryQuestionStatus(round) {
@@ -6280,11 +6280,91 @@ function getStudioAutomationDiscoveryQuestionStatus(round) {
 		};
 	}
 	return {
-		content: "Waiting for your priority, source weighting, and confidence choices.",
-		label: "Asking clarification questions",
+		content: "Waiting for your priority, source weighting, and creation-confidence choices before scanning the full work history.",
+		label: "Waiting for your choices",
 		questions: ["priority", "source-weighting", "conservatism"],
 		reason: "studio_automation_discovery_demo_clarification",
 	};
+}
+
+function buildStudioAutomationDiscoveryInitialQuestionPreflightTrace(toolCallId) {
+	const traceId = `${toolCallId}-preflight`;
+	return [
+		{
+			toolName: "studio.scope_agent_discovery",
+			toolCallId: `${traceId}-scope`,
+			label: "Reviewing the request",
+			contentRows: [
+				{
+					content: "Reading the requested work window, source list, and intended output before touching recent activity.",
+					input: {
+						window: "last 30 days",
+						sources: ["Slack", "Jira", "Confluence", "Loom", "Figma", "GitHub"],
+						output: "agentic automation candidates",
+					},
+					outputPreview: "The request has enough source coverage to start discovery.",
+				},
+				{
+					content: "Checking whether Studio has enough direction to create agents immediately.",
+					input: {
+						decisionNeeded: ["ranking priority", "evidence weighting", "creation confidence"],
+					},
+					outputPreview: "Creation should wait until the ranking frame is clear.",
+				},
+			],
+			input: {
+				window: "last 30 days",
+				sources: ["Slack", "Jira", "Confluence", "Loom", "Figma", "GitHub"],
+			},
+			outputPreview: "Need three choices before creating drafts.",
+			delayMs: 900,
+		},
+		{
+			toolName: "studio.plan_source_scan",
+			toolCallId: `${traceId}-plan`,
+			label: "Planning the source scan",
+			contentRows: [
+				{
+					content: "Mapping the likely signal paths so the scan can separate recurring workflows from one-off collaboration.",
+					input: {
+						signals: ["distribution loops", "lifecycle cleanup", "weekly synthesis", "design follow-up"],
+					},
+					outputPreview: "Several plausible patterns may rank differently depending on your goal.",
+				},
+				{
+					content: "Holding the scan at the question step until you choose the ranking and confidence boundaries.",
+					input: {
+						nextStep: "ask_user_questions",
+					},
+					outputPreview: "Ready to ask for the missing context.",
+				},
+			],
+			input: {
+				task: "prepare source scan",
+			},
+			outputPreview: "Question mode is required before draft creation.",
+			delayMs: 1100,
+		},
+	];
+}
+
+async function writeStudioAutomationDiscoveryQuestionPreflightTrace({
+	round,
+	toolCallId,
+	writer,
+}) {
+	if (round !== "initial") {
+		return;
+	}
+
+	await writeGenericThinkingTraceSteps(
+		writer,
+		buildStudioAutomationDiscoveryInitialQuestionPreflightTrace(toolCallId),
+		{
+			defaultDelayMs: 900,
+			narrationRowDelayMs: 350,
+		},
+	);
 }
 
 function writeStudioAutomationDiscoveryQuestionCard({
@@ -6390,6 +6470,11 @@ function streamStudioAutomationDiscoveryQuestionCard({
 
 	const stream = createUIMessageStream({
 		execute: async ({ writer }) => {
+			await writeStudioAutomationDiscoveryQuestionPreflightTrace({
+				round,
+				toolCallId,
+				writer,
+			});
 			const didWriteQuestionCard = writeStudioAutomationDiscoveryQuestionCard({
 				round,
 				requestOrigin,
@@ -6400,7 +6485,7 @@ function streamStudioAutomationDiscoveryQuestionCard({
 			if (!didWriteQuestionCard) {
 				writeStudioAutomationDiscoveryText(
 					writer,
-					"I could not prepare the demo question card.",
+					"I could not prepare the question card.",
 				);
 			}
 			writer.write({
@@ -6508,7 +6593,7 @@ function streamStudioAutomationDiscoveryResult({
 		onError: (error) =>
 			error instanceof Error
 				? error.message
-				: "Failed to stream Studio automation discovery demo",
+				: "Failed to stream Studio agent discovery flow",
 	});
 
 	pipeUIMessageStreamToResponse({ response: res, stream });

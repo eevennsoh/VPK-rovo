@@ -60,6 +60,7 @@ interface ThreadMessageRootProps {
 		widget: { type: string; data: unknown },
 		message: RovoRenderableUIMessage
 	) => ReactNode;
+	getWidgetPosition?: (widgetType: string) => "before-content" | "after-content" | undefined;
 	children: ReactNode;
 }
 
@@ -69,6 +70,7 @@ function useThreadMessageDerived(
 	isThinkingLifecycleStreaming: boolean,
 	assistantStreamingRenderMode: "rich" | "text-first",
 	renderWidget: ThreadMessageRootProps["renderWidget"],
+	getWidgetPosition: ThreadMessageRootProps["getWidgetPosition"],
 ): ThreadMessageContextValue {
 	const rawMessageText = getMessageText(message);
 	const isStreaming = isMessageTextStreaming(message);
@@ -276,7 +278,10 @@ function useThreadMessageDerived(
 					message
 				) ?? null
 			: null;
-	const shouldRenderPlanWidgetFirst = widgetType === "plan";
+	const shouldRenderPlanWidgetFirst =
+		widgetType !== undefined
+			? getWidgetPosition?.(widgetType) === "before-content" || widgetType === "plan"
+			: false;
 	const hasRenderedWidget =
 		renderedWidget !== null && renderedWidget !== undefined;
 	const shouldSuppressQuestionCardText = shouldSuppressQuestionCardMessageText({
@@ -376,6 +381,7 @@ export function ThreadMessageRoot({
 	onSetEditingMessageId,
 	showUserMessagePromptActions = false,
 	renderWidget,
+	getWidgetPosition,
 	children,
 }: Readonly<ThreadMessageRootProps>): ReactNode {
 	const contextValue = useThreadMessageDerived(
@@ -384,6 +390,7 @@ export function ThreadMessageRoot({
 		isThinkingLifecycleStreaming,
 		assistantStreamingRenderMode,
 		renderWidget,
+		getWidgetPosition,
 	);
 
 	if (message.role === "user") {

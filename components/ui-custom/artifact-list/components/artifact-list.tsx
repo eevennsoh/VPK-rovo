@@ -3,10 +3,6 @@
 import { type ReactNode } from "react";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
-import {
-	HoverRevealActions,
-	hoverRevealRowClassName,
-} from "@/components/ui-custom/hover-reveal-row";
 import { Button } from "@/components/ui/button";
 import { Tile } from "@/components/ui/tile";
 import { token } from "@/lib/tokens";
@@ -104,7 +100,6 @@ function ArtifactListRow({
 			role={openOnRowClick ? "button" : undefined}
 			tabIndex={openOnRowClick ? 0 : undefined}
 			className={cn(
-				hoverRevealRowClassName,
 				"flex min-h-16 items-center gap-3 px-3 py-2 transition-colors hover:bg-surface-hovered",
 				openOnRowClick && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 				!isLast && "border-b border-border",
@@ -120,10 +115,7 @@ function ArtifactListRow({
 				: undefined}
 		>
 			<ArtifactListLeadingTile item={item} />
-			{/* Reserve right-padding on hover/focus so both lines truncate clear of the
-			    revealed "Open" button (a text button is wider than the hover-reveal-row
-			    primitive's 24px icon-button presets). */}
-			<div className="min-w-0 flex-1 pr-[92px] transition-[padding] duration-normal ease-out">
+			<div className="min-w-0 flex-1">
 				<p className="truncate text-sm font-medium leading-5 text-text">{item.title}</p>
 				<p className="flex items-center gap-1 text-xs leading-4">
 					<span className="shrink-0 text-text-subtle">{item.source}</span>
@@ -131,23 +123,18 @@ function ArtifactListRow({
 					<span className="min-w-0 truncate text-text-subtle">{item.owner}</span>
 				</p>
 			</div>
-			<HoverRevealActions
-				actionInsetClassName="right-3"
-				action={
-					<Button
-						className="whitespace-nowrap"
-						variant="outline"
-						size="default"
-						type="button"
-						onClick={(event) => {
-							event.stopPropagation();
-							handleOpen();
-						}}
-					>
-						{openLabel}
-					</Button>
-				}
-			/>
+			<Button
+				className="ml-auto shrink-0 whitespace-nowrap"
+				variant="outline"
+				size="default"
+				type="button"
+				onClick={(event) => {
+					event.stopPropagation();
+					handleOpen();
+				}}
+			>
+				{openLabel}
+			</Button>
 		</div>
 	);
 }

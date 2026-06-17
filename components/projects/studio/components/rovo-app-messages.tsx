@@ -169,14 +169,14 @@ const ROVO_APP_EMPTY_STATE_REDUCED_ITEM_VARIANTS = {
 	},
 } as const;
 type RovoAppEmptyStateItemVariants = typeof ROVO_APP_EMPTY_STATE_ITEM_VARIANTS | typeof ROVO_APP_EMPTY_STATE_REDUCED_ITEM_VARIANTS;
-const STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE = "studio-automation-artifact-list";
+export const STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE = "studio-automation-artifact-list";
 
 interface StudioAutomationArtifactListEntry {
 	item: ArtifactListItem;
 	agentResult: RovoDataParts["agent-result"];
 }
 
-interface StudioAutomationArtifactListPayload {
+export interface StudioAutomationArtifactListPayload {
 	type: typeof STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE;
 	title: string;
 	summary?: string;
@@ -193,7 +193,7 @@ function getString(value: unknown): string | null {
 	return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 
-function parseStudioAutomationArtifactListPayload(payload: unknown): StudioAutomationArtifactListPayload | null {
+export function parseStudioAutomationArtifactListPayload(payload: unknown): StudioAutomationArtifactListPayload | null {
 	const record = asRecord(payload);
 	if (!record || record.type !== STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE) {
 		return null;
@@ -235,7 +235,7 @@ function parseStudioAutomationArtifactListPayload(payload: unknown): StudioAutom
 	};
 }
 
-function StudioAutomationArtifactListWidget({
+export function StudioAutomationArtifactListWidget({
 	messageId,
 	onAgentResultSelect,
 	payload,
@@ -258,7 +258,7 @@ function StudioAutomationArtifactListWidget({
 			<ArtifactList
 				className="w-full max-w-3xl"
 				items={payload.agents.map((agent) => agent.item)}
-				openLabel="Open draft"
+				openLabel="View agent"
 				openOnRowClick
 				onOpen={(item) => {
 					const agent = agentByItemId.get(item.id);

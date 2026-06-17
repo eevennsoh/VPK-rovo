@@ -38,6 +38,11 @@ interface MessageBubbleProps {
 	onWidgetPrimaryAction?: (
 		payload: GenerativeWidgetPrimaryActionPayload
 	) => Promise<void> | void;
+	renderWidget?: (
+		widget: { type: string; data: unknown },
+		message: RovoRenderableUIMessage
+	) => ReactNode;
+	getWidgetPosition?: (widgetType: string) => "before-content" | "after-content" | undefined;
 	onBuildPlan?: (planWidget: ParsedPlanWidgetPayload) => Promise<void> | void;
 	resolvePlanBuildState?: (
 		planWidget: ParsedPlanWidgetPayload,
@@ -57,6 +62,8 @@ export default function MessageBubble({
 	onEditMessage,
 	onSetEditingMessageId,
 	onWidgetPrimaryAction,
+	renderWidget: renderCustomWidget,
+	getWidgetPosition,
 	onBuildPlan,
 	resolvePlanBuildState,
 }: Readonly<MessageBubbleProps>): ReactNode {
@@ -73,7 +80,7 @@ export default function MessageBubble({
 			part.data?.type === AGENT_EDIT_SUMMARY_WIDGET_TYPE,
 	);
 	const renderWidget =
-		enableSmartWidgets || hasPlanWidget || hasAgentEditSummaryWidget
+		enableSmartWidgets || hasPlanWidget || hasAgentEditSummaryWidget || renderCustomWidget
 			? (widget: { type: string; data: unknown }, widgetMessage: RovoRenderableUIMessage) => {
 					if (widget.type === "plan") {
 						const planWidget = parsePlanWidgetPayload(widget.data);
@@ -109,6 +116,11 @@ export default function MessageBubble({
 						return summaryPayload ? <AgentEditSummaryCard payload={summaryPayload} /> : null;
 					}
 
+					const customWidget = renderCustomWidget?.(widget, widgetMessage);
+					if (customWidget !== null && customWidget !== undefined) {
+						return customWidget;
+					}
+
 					if (!enableSmartWidgets) {
 						return null;
 					}
@@ -134,6 +146,7 @@ export default function MessageBubble({
 			onSetEditingMessageId={onSetEditingMessageId}
 			showUserMessagePromptActions
 			renderWidget={renderWidget}
+			getWidgetPosition={getWidgetPosition}
 		>
 			<ThreadMessage.Reasoning />
 			{showThinkingStatusSection ? <ThreadMessage.ThinkingStatus /> : null}

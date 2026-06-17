@@ -40,6 +40,7 @@ import {
 	getMessageArtifactResult,
 	hasTurnCompleteSignal,
 	isRenderableRovoUIMessage,
+	type RovoRenderableUIMessage,
 	type RovoDataParts,
 } from "@/lib/rovo-ui-messages";
 import { mergeRovoContextDescriptions } from "@/lib/rovo-context";
@@ -221,6 +222,11 @@ interface ChatPanelProps {
 	containerStyle?: CSSProperties;
 	onSurfaceSwitch?: ChatSurfaceSwitchHandler;
 	chatContextBar?: ChatContextBarDescriptor | null;
+	renderWidget?: (
+		widget: { type: string; data: unknown },
+		message: RovoRenderableUIMessage
+	) => ReactNode;
+	getWidgetPosition?: (widgetType: string) => "before-content" | "after-content" | undefined;
 	onArtifactResult?: (artifact: ArtifactResult) => void;
 	onArtifactDialogOpen?: (artifact: ArtifactResult) => void;
 	preserveFloatingSurfaceOnArtifactDialogOpen?: boolean;
@@ -359,6 +365,8 @@ export default function ChatPanel({
 	containerStyle,
 	onSurfaceSwitch,
 	chatContextBar,
+	renderWidget,
+	getWidgetPosition,
 	onArtifactResult,
 	onArtifactDialogOpen,
 	preserveFloatingSurfaceOnArtifactDialogOpen = false,
@@ -1316,6 +1324,8 @@ export default function ChatPanel({
 								}
 								onSetEditingMessageId={setEditingMessageId}
 								onWidgetPrimaryAction={handleWidgetPrimaryAction}
+								renderWidget={renderWidget}
+								getWidgetPosition={getWidgetPosition}
 								onBuildPlan={handleBuildPlan}
 								resolvePlanBuildState={resolvePlanBuildState}
 							/>
