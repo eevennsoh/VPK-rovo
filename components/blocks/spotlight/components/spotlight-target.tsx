@@ -143,6 +143,13 @@ function SpotlightTarget({
 					side={resolved.side}
 					align={resolved.align}
 					sideOffset={sideOffset}
+					// Keep the notch off the card's rounded corners. The card uses
+					// `rounded-lg` (8px) and the rotated-square notch is 12px (≈17px on the
+					// diagonal); the default 5px padding lets the notch ride onto the
+					// rounded corner when a tall/off-center anchor clamps it toward an end,
+					// where the negative-z tuck can't cover its inner half and it reads as a
+					// detached diamond. 16px keeps the whole notch on the straight edge.
+					arrowPadding={16}
 					className="isolate z-[200]"
 				>
 					<PopoverPrimitive.Popup
