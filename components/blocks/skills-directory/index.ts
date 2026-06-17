@@ -5,4 +5,5 @@ export type {
 	SkillsDirectoryPrimaryItem,
 	SkillsDirectorySidebarGroup,
 	SkillsDirectorySkill,
+	SkillsDirectoryVariant,
 } from "./components/skills-directory";

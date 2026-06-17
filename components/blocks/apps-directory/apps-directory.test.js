@@ -272,3 +272,117 @@ test("Apps Directory docs demo includes added and non-added detail states", () =
 		assert.equal(typeof tool.verified, "boolean", `tool ${tool.id} should have verified`);
 	}
 });
+
+test("Apps Directory exposes an opt-in experimental variation", () => {
+	const source = readProjectFile("components/blocks/apps-directory/components/apps-directory.tsx");
+	const indexSource = readProjectFile("components/blocks/apps-directory/index.ts");
+	const blocksSource = readProjectFile("app/data/details/blocks.ts");
+	const registrySource = readProjectFile("components/website/registry.ts");
+	const demoSource = readProjectFile("components/website/demos/blocks/apps-directory-demo.tsx");
+	const pageSource = readProjectFile("components/blocks/apps-directory/page.tsx");
+
+	// The component opts in via a variant prop and branches the list view; the
+	// default sidebar layout stays the fallback.
+	assert.match(source, /export type AppsDirectoryVariant = "default" \| "experimental";/u);
+	assert.match(source, /variant\?: AppsDirectoryVariant;/u);
+	assert.match(source, /variant = "default",/u);
+	assert.match(source, /variant === "experimental" \? \([\s\S]*<ExperimentalAppsDirectoryView/u);
+
+	// The variant type is part of the block's public API.
+	assert.match(indexSource, /AppsDirectoryVariant,/u);
+
+	// Docs expose both variants as examples plus a documented prop.
+	assert.match(blocksSource, /demoSlug: "apps-directory-demo-standard"/u);
+	assert.match(blocksSource, /demoSlug: "apps-directory-demo-experimental"/u);
+	assert.match(blocksSource, /name: "variant",[\s\S]*Opt-in layout variation/u);
+
+	// Both demos are registered and exported.
+	assert.match(registrySource, /"apps-directory-demo-standard": dynamic\([\s\S]*mod\.AppsDirectoryDemoStandard/u);
+	assert.match(registrySource, /"apps-directory-demo-experimental": dynamic\([\s\S]*mod\.AppsDirectoryDemoExperimental/u);
+	assert.match(demoSource, /export function AppsDirectoryDemoStandard/u);
+	assert.match(demoSource, /export function AppsDirectoryDemoExperimental/u);
+
+	// The docs page offers both entry points and a dedicated experimental page.
+	assert.match(pageSource, /export function AppsDirectoryExperimentalPage/u);
+	assert.match(pageSource, /variant="experimental"/u);
+	assert.match(pageSource, /Open standard directory/u);
+	assert.match(pageSource, /Open experimental directory/u);
+});
+
+test("Apps Directory experimental variation has searchable multi-select filters", () => {
+	const source = readProjectFile("components/blocks/apps-directory/components/apps-directory.tsx");
+
+	// The experimental view + its filter dropdown exist.
+	assert.match(source, /function ExperimentalAppsDirectoryView\(/u);
+	assert.match(source, /function ExperimentalFilterDropdown\(/u);
+
+	// Required popover/checkbox primitives are imported.
+	assert.match(source, /import \{ Checkbox \} from "@\/components\/ui\/checkbox";/u);
+	assert.match(source, /import \{ Popover, PopoverContent, PopoverTrigger \} from "@\/components\/ui\/popover";/u);
+
+	// No sidebar: a pinned search + filter header above a separate scroll region, so
+	// the controls stay reachable and only the results scroll (mask sits below them).
+	assert.match(source, /"flex shrink-0 flex-col gap-4 px-6 pt-1 pb-2"/u);
+	assert.match(source, /"flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-2 pb-8"/u);
+
+	// All four filter controls: My apps + Favourites toggles, Categories + Companies dropdowns.
+	assert.match(source, /Filter by my apps/u);
+	assert.match(source, /Favourites/u);
+	assert.match(source, /activeLabel="Filter by categories"[\s\S]*label="Categories"/u);
+	assert.match(source, /activeLabel="Filter by companies"[\s\S]*label="Companies"/u);
+
+	// The dropdown is a searchable multi-select with a selected-count badge.
+	assert.match(source, /placeholder="Search options"/u);
+	assert.match(source, /<Checkbox\s+checked=\{selectedValues\.includes\(option\.id\)\}/u);
+	assert.match(source, /\{selectedCount > 0 \? <Badge>\{selectedCount\}<\/Badge> : null\}/u);
+
+	// Reset clears filters, a result count is shown, and results stay a flat 2-col grid.
+	assert.match(source, /onClick=\{resetFilters\}/u);
+	assert.match(source, /Showing \{filteredTools\.length\.toLocaleString\("en-US"\)\} results/u);
+	assert.match(source, /<ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">/u);
+
+	// Company options derive from company-attributed publishers.
+	assert.match(source, /function getCompanyOptions\(/u);
+	assert.match(source, /if \(tool\.attributionKind !== "company"\) continue;/u);
+
+	// Results split into "My apps" / "Other apps" micro sections (agent-directory parity).
+	assert.match(source, /function ExperimentalAppsSection\(/u);
+	assert.match(source, /<h2 className="px-1\.5 text-xs font-semibold leading-4 text-text-subtlest">/u);
+	assert.match(source, /heading="My apps"/u);
+	assert.match(source, /heading="Other apps"/u);
+	assert.match(source, /const myApps = useMemo\(\(\) => filteredTools\.filter\(\(tool\) => addedIds\.has\(tool\.id\)\)/u);
+});
+
+test("Apps Directory experimental filters show one active facet at a time", () => {
+	const source = readProjectFile("components/blocks/apps-directory/components/apps-directory.tsx");
+
+	// Mirrors the experimental agent directory: engaging one filter hides the rest.
+	assert.match(source, /const showFacet = \(facet: string\) => activeFacet === null \|\| activeFacet === facet;/u);
+	assert.match(source, /\{showFacet\("myApps"\) \?/u);
+	assert.match(source, /\{showFacet\("favourites"\) \?/u);
+	assert.match(source, /\{showFacet\("categories"\) \?/u);
+	assert.match(source, /\{showFacet\("companies"\) \?/u);
+});
+
+test("Apps Directory experimental view has a filter-aware empty state", () => {
+	const source = readProjectFile("components/blocks/apps-directory/components/apps-directory.tsx");
+
+	assert.match(source, /function getExperimentalEmptyState\(/u);
+	assert.match(source, /title: "No apps added yet"/u);
+	assert.match(source, /title: "No favourite apps yet"/u);
+	assert.match(source, /title: "No apps match your filters"/u);
+	assert.match(source, /\{emptyState\.title\}/u);
+	assert.match(source, /\{emptyState\.description\}/u);
+});
+
+test("Experimental filter dropdown keeps an end gap inside the scroll list, not the popover", () => {
+	const source = readProjectFile("components/blocks/apps-directory/components/apps-directory.tsx");
+	const agentBrowserSource = readProjectFile("components/blocks/agent-browser/components/agent-browser.tsx");
+
+	// Parent popover drops its bottom padding; the option list owns the end gap so it
+	// scrolls with the results. Applied to both directories' shared dropdown shape.
+	for (const dropdownSource of [source, agentBrowserSource]) {
+		assert.match(dropdownSource, /className="w-72 gap-2 p-2 pb-0"/u);
+		assert.match(dropdownSource, /<ul className="flex flex-col gap-px pb-2">/u);
+	}
+});

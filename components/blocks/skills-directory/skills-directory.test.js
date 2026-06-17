@@ -304,3 +304,89 @@ test("Skills Directory demo and docs use skill-specific examples", () => {
 	assert.ok(categoryIds.has("content-and-communication"));
 	assert.ok(categoryIds.has("data-and-analytics"));
 });
+
+test("Skills Directory exposes an opt-in experimental variation", () => {
+	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory.tsx");
+	const indexSource = readProjectFile("components/blocks/skills-directory/index.ts");
+	const blocksSource = readProjectFile("app/data/details/blocks.ts");
+	const registrySource = readProjectFile("components/website/registry.ts");
+	const demoSource = readProjectFile("components/website/demos/blocks/skills-directory-demo.tsx");
+	const pageSource = readProjectFile("components/blocks/skills-directory/page.tsx");
+
+	// The component opts in via a variant prop and branches the list view; the
+	// default sidebar layout stays the fallback.
+	assert.match(source, /export type SkillsDirectoryVariant = "default" \| "experimental";/u);
+	assert.match(source, /variant\?: SkillsDirectoryVariant;/u);
+	assert.match(source, /variant = "default",/u);
+	assert.match(source, /variant === "experimental" \? \([\s\S]*<ExperimentalSkillsDirectoryView/u);
+
+	assert.match(indexSource, /SkillsDirectoryVariant,/u);
+
+	assert.match(blocksSource, /demoSlug: "skills-directory-demo-standard"/u);
+	assert.match(blocksSource, /demoSlug: "skills-directory-demo-experimental"/u);
+	assert.match(blocksSource, /name: "variant",[\s\S]*Opt-in layout variation/u);
+
+	assert.match(registrySource, /"skills-directory-demo-standard": dynamic\([\s\S]*mod\.SkillsDirectoryDemoStandard/u);
+	assert.match(registrySource, /"skills-directory-demo-experimental": dynamic\([\s\S]*mod\.SkillsDirectoryDemoExperimental/u);
+	assert.match(demoSource, /export function SkillsDirectoryDemoStandard/u);
+	assert.match(demoSource, /export function SkillsDirectoryDemoExperimental/u);
+
+	assert.match(pageSource, /export function SkillsDirectoryExperimentalPage/u);
+	assert.match(pageSource, /variant="experimental"/u);
+	assert.match(pageSource, /Open standard directory/u);
+	assert.match(pageSource, /Open experimental directory/u);
+});
+
+test("Skills Directory experimental variation has searchable multi-select filters", () => {
+	const source = readProjectFile("components/blocks/skills-directory/components/skills-directory.tsx");
+
+	assert.match(source, /function ExperimentalSkillsDirectoryView\(/u);
+	assert.match(source, /function ExperimentalSkillFilterDropdown\(/u);
+	assert.match(source, /import \{ Popover, PopoverContent, PopoverTrigger \} from "@\/components\/ui\/popover";/u);
+
+	// Pinned search + filter header above a separate scroll region (only results scroll).
+	assert.match(source, /"flex shrink-0 flex-col gap-4 px-6 pt-1 pb-2"/u);
+	assert.match(source, /"flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-2"/u);
+
+	// Filter controls: Your skills + Favourites toggles, Collections + Companies dropdowns.
+	// (Categories was intentionally removed.)
+	assert.match(source, /Filter by your skills/u);
+	assert.match(source, /Favourites/u);
+	assert.match(source, /activeLabel="Filter by collections"[\s\S]*label="Collections"/u);
+	assert.match(source, /activeLabel="Filter by companies"[\s\S]*label="Companies"/u);
+	assert.doesNotMatch(source, /label="Categories"/u);
+
+	// Single active facet at a time (agent/apps-directory parity).
+	assert.match(source, /const showFacet = \(facet: string\) => activeFacet === null \|\| activeFacet === facet;/u);
+	assert.match(source, /\{showFacet\("yourSkills"\) \?/u);
+	assert.match(source, /\{showFacet\("collections"\) \?/u);
+
+	// Searchable multi-select with a selected-count badge.
+	assert.match(source, /placeholder="Search options"/u);
+	assert.match(source, /<Checkbox\s+checked=\{selectedValues\.includes\(option\.id\)\}/u);
+	assert.match(source, /\{selectedCount > 0 \? <Badge>\{selectedCount\}<\/Badge> : null\}/u);
+
+	// Filter-aware empty state + a result count, reusing the shared SkillSection grid
+	// at a 3-column layout (the default view stays 2-column).
+	assert.match(source, /function getExperimentalSkillsEmptyState\(/u);
+	assert.match(source, /title: "No favourite skills yet"/u);
+	assert.match(source, /Showing \{filteredSkills\.length\.toLocaleString\("en-US"\)\} results/u);
+	assert.match(source, /gridClassName="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3"/u);
+	// Results are alphabetised so the grey-heavy catalog order doesn't front-load a
+	// block of grey tiles — the first rows stay multi-coloured by collection.
+	assert.match(source, /\.sort\(\(a, b\) => a\.name\.localeCompare\(b\.name, "en"\)\)/u);
+
+	// Results split into "My skills" / "Other skills" micro sections (agent-directory parity).
+	assert.match(source, /heading="My skills"/u);
+	assert.match(source, /heading="Other skills"/u);
+	assert.match(source, /const mySkills = useMemo\(\(\) => filteredSkills\.filter\(isYourSkill\)/u);
+	assert.match(source, /<h2 className="px-1\.5 text-xs font-semibold leading-4 text-text-subtlest">/u);
+
+	// Popover keeps the end gap inside the scroll list, not on the parent.
+	assert.match(source, /className="w-72 gap-2 p-2 pb-0"/u);
+	assert.match(source, /<ul className="flex flex-col gap-px pb-2">/u);
+
+	// Company options derive from non-self publishers.
+	assert.match(source, /function getSkillCompanyOptions\(/u);
+	assert.match(source, /if \(!id \|\| id === "you" \|\| byId\.has\(id\)\) continue;/u);
+});

@@ -863,6 +863,18 @@ const tools: AppsDirectoryTool[] = [
   onSelectTool={(tool) => console.log(tool.id)}
 />`,
 		demoLayout: { previewHeight: "fixed" },
+		examples: [
+			{
+				title: "Standard",
+				description: "Default sidebar directory with category navigation and company groups.",
+				demoSlug: "apps-directory-demo-standard",
+			},
+			{
+				title: "Experimental",
+				description: "Dense browse layout with full-width search and searchable multi-select filter dropdowns.",
+				demoSlug: "apps-directory-demo-experimental",
+			},
+		],
 		props: [
 			{
 				name: "tools",
@@ -921,6 +933,12 @@ const tools: AppsDirectoryTool[] = [
 				name: "title",
 				type: "string",
 				description: "Optional dialog title. Defaults to the apps directory title.",
+			},
+			{
+				name: "variant",
+				type: "\"default\" | \"experimental\"",
+				default: "\"default\"",
+				description: "Opt-in layout variation. The default sidebar directory remains unchanged.",
 			},
 		],
 	},
@@ -1051,11 +1069,29 @@ const skills: SkillsDirectorySkill[] = [
   onCreateSkill={() => console.log("new skill")}
 />`,
 		demoLayout: { previewHeight: "fixed" },
+		examples: [
+			{
+				title: "Standard",
+				description: "Default sidebar directory with collection, category, and company navigation.",
+				demoSlug: "skills-directory-demo-standard",
+			},
+			{
+				title: "Experimental",
+				description: "Dense browse layout with full-width search and searchable multi-select filter dropdowns.",
+				demoSlug: "skills-directory-demo-experimental",
+			},
+		],
 		props: [
 			{
 				name: "skills",
 				type: "readonly SkillsDirectorySkill[]",
 				description: "Skill catalog rendered in the grid. Defaults to the bundled demo skills.",
+			},
+			{
+				name: "variant",
+				type: "\"default\" | \"experimental\"",
+				default: "\"default\"",
+				description: "Opt-in layout variation. The default sidebar directory remains unchanged.",
 			},
 			{
 				name: "sessionSkills",

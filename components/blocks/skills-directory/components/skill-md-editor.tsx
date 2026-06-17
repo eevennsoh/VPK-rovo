@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import ClockIcon from "@atlaskit/icon/core/clock";
 import GlobeIcon from "@atlaskit/icon/core/globe";
+import PersonIcon from "@atlaskit/icon/core/person";
+import PersonAddIcon from "@atlaskit/icon/core/person-add";
 import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
 
 import {
@@ -115,32 +118,34 @@ export function SkillProfileCover({ skill }: Readonly<{ skill: SkillsDirectorySk
 	);
 }
 
-/** The "Created by ✓ / Added by / Last update" attribution row. */
+/**
+ * The "Created by ✓ / Added by / Last update" attribution, laid out as a single
+ * horizontal metadata row (icon + label) matching the entity-card footer style
+ * (12px, subtle grey, gap-4) rather than the old stacked label/value columns.
+ */
 export function SkillProfileMeta({ skill }: Readonly<{ skill: SkillsDirectorySkill }>) {
 	const lastUpdatedLabel = getSkillLastUpdatedLabel(skill);
 	return (
-		<div className="flex flex-wrap gap-x-8 gap-y-2">
-			<div className="flex flex-col">
-				<span className="flex items-center gap-1 text-sm font-semibold leading-5 text-text">
-					{getSkillCreatedBy(skill)}
-					{skill.verified ? (
-						<Icon
-							className="text-icon-information"
-							render={<StatusVerifiedIcon label="Verified" size="small" color="currentColor" />}
-						/>
-					) : null}
-				</span>
-				<span className="text-xs leading-4 text-text-subtlest">Created by</span>
-			</div>
-			<div className="flex flex-col">
-				<span className="text-sm font-semibold leading-5 text-text">{skill.addedBy ?? "You"}</span>
-				<span className="text-xs leading-4 text-text-subtlest">Added by</span>
-			</div>
+		<div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs leading-4 text-text-subtlest">
+			<span className="inline-flex items-center gap-1">
+				<Icon className="text-icon-subtlest" render={<PersonIcon label="" size="small" />} />
+				<span>Created by {getSkillCreatedBy(skill)}</span>
+				{skill.verified ? (
+					<Icon
+						className="text-icon-information"
+						render={<StatusVerifiedIcon label="Verified" size="small" color="currentColor" />}
+					/>
+				) : null}
+			</span>
+			<span className="inline-flex items-center gap-1">
+				<Icon className="text-icon-subtlest" render={<PersonAddIcon label="" size="small" />} />
+				<span>Added by {skill.addedBy ?? "You"}</span>
+			</span>
 			{lastUpdatedLabel ? (
-				<div className="flex flex-col">
-					<span className="text-sm font-semibold leading-5 text-text">{lastUpdatedLabel}</span>
-					<span className="text-xs leading-4 text-text-subtlest">Last update</span>
-				</div>
+				<span className="inline-flex items-center gap-1">
+					<Icon className="text-icon-subtlest" render={<ClockIcon label="" size="small" />} />
+					<span>{lastUpdatedLabel}</span>
+				</span>
 			) : null}
 		</div>
 	);

@@ -812,23 +812,13 @@ function ExperimentalAgentBrowser({
 	}
 
 	return (
-		<div
-			ref={contentOverflow.ref}
-			className={cn(
-				// overflow-y-auto forces overflow-x to compute to auto, so this scroll
-				// viewport clips anything painted outside its content box. pt-1 gives the
-				// search input's focus ring (ring-3) room at the top. px-6 clears the
-				// side reach. In Agents mode the grid scrolls here, so pb-6 gives the last
-				// row a 24px bottom gap (symmetric with px-6) plus room for its hover
-				// shadow. Templates mode owns its bottom spacing inside the carousel row
-				// instead (see ExperimentalTemplateMode), so no pb-6 there to avoid
-				// doubling it.
-				"flex h-full min-h-0 flex-col gap-4 overflow-y-auto px-6 pt-1",
-				templateModeActive ? null : "pb-6",
-				contentOverflow.showTopScrollMask ? "scroll-mask-top overscroll-contain" : null,
-			)}
-		>
-			<div className="flex items-center gap-3">
+		<div className="flex h-full min-h-0 flex-col">
+			{/* Pinned controls: the search + mode toggle and the active filter/category
+			    row stay put so the user can always search and refine; only the results
+			    below scroll. px-6 clears the card side reach, pt-1 the search focus ring,
+			    pb-4 spaces the controls from the results (matching the old gap-4 rhythm so
+			    the experimental dialog height lock still fits — see AgentBrowserDialog). */}
+			<div className="flex shrink-0 items-center gap-3 px-6 pt-1 pb-4">
 				<InputGroup className="flex-1">
 					<InputGroupAddon>
 						<SearchIcon label="" />
@@ -854,9 +844,9 @@ function ExperimentalAgentBrowser({
 				) : null}
 			</div>
 
-			{templateModeActive && activeTemplateCategoryOption ? (
-				<>
-					<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+			<div className="flex shrink-0 flex-col gap-3 px-6 pb-2 lg:flex-row lg:items-center lg:justify-between">
+				{templateModeActive && activeTemplateCategoryOption ? (
+					<>
 						<div
 							aria-label="Template categories"
 							className="relative -my-1 flex min-w-0 flex-wrap items-center gap-2 overflow-x-auto overflow-y-visible overscroll-x-contain py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -877,17 +867,9 @@ function ExperimentalAgentBrowser({
 						<p className="text-sm leading-5 text-text-subtle">
 							Showing {visibleTemplates.length.toLocaleString("en-US")} {visibleTemplates.length === 1 ? "template" : "templates"}
 						</p>
-					</div>
-					<ExperimentalTemplateMode
-						activeCategory={activeTemplateCategoryOption}
-						motionCustom={templateMotionCustom}
-						onSelectAgent={onSelectTemplateAgent}
-						templates={visibleTemplates}
-					/>
-				</>
-			) : (
-				<>
-					<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+					</>
+				) : (
+					<>
 						<div className="flex flex-wrap items-center gap-2">
 							{showFacet("myAgents") ? (
 								<Button
@@ -935,27 +917,47 @@ function ExperimentalAgentBrowser({
 						<p className="text-sm leading-5 text-text-subtle">
 							Showing {resultCount.toLocaleString("en-US")} results
 						</p>
-					</div>
+					</>
+				)}
+			</div>
 
-					{resultCount === 0 ? (
-						<p className="text-sm text-text-subtlest">
-							No agents match &ldquo;{query}&rdquo;.
-						</p>
-					) : (
-						<div className="flex flex-col gap-6">
-							{showMyAgents ? (
-								<ExperimentalAgentSection heading="My agents" agents={myAgents} onSelectAgent={onSelectAgent} />
-							) : null}
-							{showTeamAgents ? (
-								<ExperimentalAgentSection heading="By teams" agents={teamAgents} onSelectAgent={onSelectAgent} />
-							) : null}
-							{showCompanyAgents ? (
-								<ExperimentalAgentSection heading="By companies" agents={companyAgents} onSelectAgent={onSelectAgent} />
-							) : null}
-						</div>
-					)}
-				</>
-			)}
+			{/* Scroll region begins after the filters: only the results scroll, with the
+			    top fade mask sitting just below the pinned filter bar. Agents mode adds
+			    pb-6 for the last row's bottom gap + hover shadow; Templates mode owns its
+			    bottom spacing inside the carousel (see ExperimentalTemplateMode). */}
+			<div
+				ref={contentOverflow.ref}
+				className={cn(
+					"flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-2",
+					templateModeActive ? null : "pb-6",
+					contentOverflow.showTopScrollMask ? "scroll-mask-top overscroll-contain" : null,
+				)}
+			>
+				{templateModeActive && activeTemplateCategoryOption ? (
+					<ExperimentalTemplateMode
+						activeCategory={activeTemplateCategoryOption}
+						motionCustom={templateMotionCustom}
+						onSelectAgent={onSelectTemplateAgent}
+						templates={visibleTemplates}
+					/>
+				) : resultCount === 0 ? (
+					<p className="text-sm text-text-subtlest">
+						No agents match &ldquo;{query}&rdquo;.
+					</p>
+				) : (
+					<div className="flex flex-col gap-6">
+						{showMyAgents ? (
+							<ExperimentalAgentSection heading="My agents" agents={myAgents} onSelectAgent={onSelectAgent} />
+						) : null}
+						{showTeamAgents ? (
+							<ExperimentalAgentSection heading="By teams" agents={teamAgents} onSelectAgent={onSelectAgent} />
+						) : null}
+						{showCompanyAgents ? (
+							<ExperimentalAgentSection heading="By companies" agents={companyAgents} onSelectAgent={onSelectAgent} />
+						) : null}
+					</div>
+				)}
+			</div>
 		</div>
 	);
 }
@@ -1017,7 +1019,7 @@ function ExperimentalFilterDropdown({
 					)}
 				/>
 			</PopoverTrigger>
-			<PopoverContent align="start" className="w-72 gap-2 p-2">
+			<PopoverContent align="start" className="w-72 gap-2 p-2 pb-0">
 				<InputGroup className="pl-[7px]">
 					<InputGroupAddon className="w-4 p-0">
 						<SearchIcon label="" />
@@ -1036,7 +1038,7 @@ function ExperimentalFilterDropdown({
 							No options found.
 						</p>
 					) : (
-						<ul className="flex flex-col gap-px">
+						<ul className="flex flex-col gap-px pb-2">
 							{visibleOptions.map((option) => (
 								<li key={option.id}>
 									<label className="flex min-h-8 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm leading-5 text-text hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed">
