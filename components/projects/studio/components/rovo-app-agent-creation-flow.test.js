@@ -200,6 +200,33 @@ test("RovoAppShell seeds the published RFP Drafter into the default Studio landi
 	assert.doesNotMatch(rfpSeedSource, /setActiveAgentConfigState|setActiveAgentConfigView/u);
 });
 
+test("RovoAppShell settings reset clears Studio state and restores the fresh RFP Drafter", () => {
+	const resetSource = SHELL_SOURCE.slice(
+		SHELL_SOURCE.indexOf("const handleResetStudioDemo"),
+		SHELL_SOURCE.indexOf("const handleBrowseAgentTemplates"),
+	);
+
+	assert.match(SHELL_SOURCE, /const STUDIO_RFP_DEMO_RESET_ENDPOINT = "\/api\/agents\/rfp-demo\/reset";/u);
+	assert.match(SHELL_SOURCE, /resetStudioRfpDemoBackendState/u);
+	assert.match(resetSource, /await resetStudioRfpDemoBackendState\(\);/u);
+	assert.match(resetSource, /await chat\.deleteAllThreads\(\);/u);
+	assert.match(resetSource, /await studioAgentRegistry\.deleteAllThreads\(\);/u);
+	assert.match(resetSource, /creationTemplateRef\.current = null;/u);
+	assert.match(resetSource, /creationTemplateByThreadRef\.current = \{\};/u);
+	assert.match(resetSource, /setActiveAgentConfigState\(null\);/u);
+	assert.match(resetSource, /setActiveAgentConfigView\("configure"\);/u);
+	assert.match(resetSource, /studioAgentCreationThreadKeysRef\.current\.clear\(\);/u);
+	assert.match(resetSource, /setStudioAgentCreationThreadIds\(new Set<string>\(\)\);/u);
+	assert.match(resetSource, /studioAgentRegistry\.resetAgentToRovo\(\{ preserveCurrentThread: true \}\);/u);
+	assert.match(resetSource, /const seededEntry = resetSessionAgentsToStudioRfpDemoAgent\(\);/u);
+	assert.match(resetSource, /writeSessionAgentRecords\(\[toPersistedRecord\(seededEntry\)\]\);/u);
+	assert.match(resetSource, /window\.history\.pushState\(null, "", ROVO_APP_ROOT_PATH\);/u);
+	assert.match(SHELL_SOURCE, /settingsMenuItems=\{studioSettingsMenuItems\}/u);
+	assert.match(SHELL_SOURCE, /id: "reset-studio-demo"[\s\S]*label: isResettingStudioDemo \? "Resetting demo\.\.\." : "Reset demo"/u);
+	assert.match(SHELL_SOURCE, /for \(const entry of studioAgentRegistry\.sessionAgentEntries\) \{[\s\S]*studioAgentRegistry\.removeSessionAgent\(entry\.profile\.id\);[\s\S]*registerCreatedAgentFromResult\?\.\(STUDIO_RFP_DEMO_AGENT_RESULT/u);
+	assert.match(ROVO_CONTEXT_SOURCE, /deleteAllThreads,[\s\S]*adoptThreadMessages,/u);
+});
+
 test("RovoAppShell does not render the Hermes turn-state card", () => {
 	assert.doesNotMatch(SHELL_SOURCE, /Hermes turn state/u);
 	assert.doesNotMatch(SHELL_SOURCE, /Server-resolved skills and Hermes draft-review state/u);

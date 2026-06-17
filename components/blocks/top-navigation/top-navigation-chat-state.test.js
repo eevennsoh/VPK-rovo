@@ -84,6 +84,17 @@ test("top navigation block omits the theme toggle (matches the Figma cluster)", 
 	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /onToggleTheme \?/);
 });
 
+test("right navigation settings button can render optional dropdown actions", () => {
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /interface RightNavigationSettingsMenuItem/);
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /settingsMenuItems\?: ReadonlyArray<RightNavigationSettingsMenuItem>/);
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /const hasSettingsMenu = Boolean\(settingsMenuItems && settingsMenuItems\.length > 0\);/);
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /hasSettingsMenu \? \([\s\S]*<DropdownMenu>/u);
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /aria-label="Settings"[\s\S]*<DropdownMenuContent align="end" className="w-64">/u);
+	assert.match(RIGHT_NAVIGATION_ACTIONS_SOURCE, /onSelect=\{item\.onSelect\}/);
+	assert.match(RIGHT_NAVIGATION_SOURCE, /settingsMenuItems\?: ReadonlyArray<RightNavigationSettingsMenuItem>/);
+	assert.match(RIGHT_NAVIGATION_SOURCE, /settingsMenuItems=\{settingsMenuItems\}/);
+});
+
 test("top navigation auto-releases the pinned sidebar at small viewports", () => {
 	// A dedicated, well-named breakpoint drives the release (reusing the overflow
 	// breakpoint value so the sidebar un-pins exactly when the right cluster

@@ -85,10 +85,17 @@ import {
 import { buildComposerHermesContext, shouldResetComposerHermesSkillSelection } from "@/components/projects/studio/lib/rovo-app-hermes-skill-selection";
 import { getStudioAutomationGeneratingAgents } from "@/components/projects/studio/lib/studio-automation-generating-agents";
 import { useHermesEmbedEnabled } from "@/lib/hermes-feature-flags";
-import { buildRovoAppThreadPath } from "@/components/projects/studio/lib/rovo-app-thread-route-sync";
+import {
+	buildRovoAppThreadPath,
+	ROVO_APP_ROOT_PATH,
+} from "@/components/projects/studio/lib/rovo-app-thread-route-sync";
 import { createRovoAppUserMessage } from "@/components/projects/studio/lib/rovo-app-user-message";
 import { appendDictationTranscript, resolveComposerDictationState } from "@/lib/composer-dictation";
-import { readSessionAgentRecords } from "@/components/projects/studio/lib/studio-session-agent-storage";
+import {
+	readSessionAgentRecords,
+	toPersistedRecord,
+	writeSessionAgentRecords,
+} from "@/components/projects/studio/lib/studio-session-agent-storage";
 import {
 	applyTemplateDefaultsToResult,
 	buildCreationTemplateContextFromAgent,
@@ -143,6 +150,7 @@ import { useSidebarResize } from "@/components/projects/studio/hooks/use-sidebar
 import { useSidebarResize as useStudioAskRovoChatResize } from "@/components/projects/rovo/hooks/use-sidebar-resize";
 import ChatPanel, { type ChatPanelGreetingProps } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-chat/lib/chat-context-bar";
+import RefreshIcon from "@atlaskit/icon/core/refresh";
 import {
 	AGENT_EDIT_GREETING_HEADING,
 	AGENT_EDIT_GREETING_ILLUSTRATION_DARK_SRC,
@@ -244,6 +252,7 @@ const STUDIO_HOME_BENTO_VARIANTS = {
 } as const;
 
 const DEFAULT_COMPOSER_PLACEHOLDER = "Describe the agent you want to build";
+const STUDIO_RFP_DEMO_RESET_ENDPOINT = "/api/agents/rfp-demo/reset";
 const REALTIME_THREAD_SUMMARY_MAX_MESSAGES = 10;
 const REALTIME_RESULT_SUMMARY_MAX_CHARS = 500;
 const ROVO_APP_SPLIT_CHAT_PANEL_ID = "rovo-app-chat-pane";
@@ -295,6 +304,35 @@ function isStudioAutomationDiscoveryDemoPrompt(prompt: string): boolean {
 		/\bcreate\s+(?:an?\s+)?agents?\b/u.test(normalized);
 
 	return hasRecentWorkSignal && hasAutomationSignal && sourceMatches >= 3;
+}
+
+async function resetStudioRfpDemoBackendState(): Promise<void> {
+	const response = await fetch(STUDIO_RFP_DEMO_RESET_ENDPOINT, {
+		body: "{}",
+		headers: { "Content-Type": "application/json" },
+		method: "POST",
+	});
+
+	if (response.ok) {
+		return;
+	}
+
+	let message = `Request failed with status ${response.status}`;
+	try {
+		const payload = await response.json() as { error?: unknown; details?: unknown };
+		if (typeof payload.error === "string" && payload.error.trim()) {
+			message = payload.error.trim();
+		} else if (typeof payload.details === "string" && payload.details.trim()) {
+			message = payload.details.trim();
+		}
+	} catch {
+		const text = await response.text().catch(() => "");
+		if (text.trim()) {
+			message = text.trim();
+		}
+	}
+
+	throw new Error(message);
 }
 
 interface HomeStarterTemplate {
@@ -1778,6 +1816,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	// effect (declared after the onboarding-tour hook) can kick off the tour
 	// without the earlier create handler needing the tour controller in scope.
 	const [agentCreationTourSignal, setAgentCreationTourSignal] = useState(0);
+	const [isResettingStudioDemo, setIsResettingStudioDemo] = useState(false);
 	const openAgentCreationAskRovoChat = useCallback(() => {
 		// Keep the Ask Rovo panel on the default Rovo build helper.
 		studioAgentRegistry.resetAgentToRovo({ preserveCurrentThread: true });
@@ -1796,6 +1835,29 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		}
 		nav.openChat("sidebar");
 	}, [nav, studioAgentRegistry]);
+
+	const resetSessionAgentsToStudioRfpDemoAgent = useCallback(() => {
+		for (const entry of studioAgentRegistry.sessionAgentEntries) {
+			studioAgentRegistry.removeSessionAgent(entry.profile.id);
+		}
+
+		const registeredProfile = studioAgentRegistry.registerCreatedAgentFromResult?.(STUDIO_RFP_DEMO_AGENT_RESULT, {
+			preserveCurrentThread: true,
+			select: false,
+			sourceKey: STUDIO_RFP_DEMO_AGENT_SOURCE_KEY,
+		});
+		const profileId = registeredProfile?.id ?? STUDIO_RFP_DEMO_AGENT_PROFILE_ID;
+		let seededEntry = studioAgentRegistry.getSessionAgentEntry?.(profileId) ?? null;
+		if (seededEntry && seededEntry.publishedVersion === 0 && !seededEntry.publishedResult) {
+			studioAgentRegistry.commitSessionAgentPublishReady?.(profileId);
+			seededEntry =
+				studioAgentRegistry.publishSessionAgent?.(profileId) ??
+				studioAgentRegistry.getSessionAgentEntry?.(profileId) ??
+				seededEntry;
+		}
+		hasSeededStudioRfpDemoAgentRef.current = true;
+		return seededEntry;
+	}, [studioAgentRegistry]);
 
 	useEffect(() => {
 		if (
@@ -2415,6 +2477,83 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const studioAutomationGeneratingAgents = useMemo(() => (
 		getStudioAutomationGeneratingAgents(chat.messages)
 	), [chat.messages]);
+
+	const handleResetStudioDemo = useCallback(() => {
+		if (isResettingStudioDemo) {
+			return;
+		}
+
+		setIsResettingStudioDemo(true);
+		void (async () => {
+			try {
+				await resetStudioRfpDemoBackendState();
+				await chat.deleteAllThreads();
+				await studioAgentRegistry.deleteAllThreads();
+				setOptimisticUserMessage(null);
+				setCursorMode(false);
+				setGalleryExpanded(false);
+				setAgentTemplatesDialogOpen(false);
+				setAgentTemplatesInitialCategory(HOME_STARTER_DEFAULT_CATEGORY);
+				setIsSidebarAgentBrowserOpen(false);
+				setSidebarAgentBrowserInitialCategory(HOME_STARTER_DEFAULT_CATEGORY);
+				setComposerFocusRequestKey(0);
+				setPreviewPrompt(null);
+				setPrefillText(null);
+				creationTemplateRef.current = null;
+				creationTemplateByThreadRef.current = {};
+				setVoiceTranscript(null);
+				setIsDictationActive(false);
+				setDictationTranscriptPreview(null);
+				setScrollActiveTimelineSelection(null);
+				setScrollAnchorMessageId(null);
+				setScrollFollowMode("bottom");
+				setIsDefaultHomeSubmitTransition(false);
+				setDismissedBrowserArtifactKey(null);
+				studioAgentCreationThreadKeysRef.current.clear();
+				studioAgentCreationThreadTouchedAtRef.current.clear();
+				setStudioAgentCreationThreadIds(new Set<string>());
+				setActiveAgentConfigState(null);
+				setActiveAgentConfigView("configure");
+				setActivePendingSkillDraftIndex(0);
+				setActivePendingSkillDraftDetail(null);
+				clearHermesSkillSelection();
+				studioAgentRegistry.resetAgentToRovo({ preserveCurrentThread: true });
+				const seededEntry = resetSessionAgentsToStudioRfpDemoAgent();
+				if (seededEntry) {
+					writeSessionAgentRecords([toPersistedRecord(seededEntry)]);
+				}
+				if (!embedded && typeof window !== "undefined") {
+					window.history.pushState(null, "", ROVO_APP_ROOT_PATH);
+				}
+			} catch (error) {
+				console.error("[Studio] Failed to reset demo state:", error);
+			} finally {
+				setIsResettingStudioDemo(false);
+			}
+		})();
+	}, [
+		chat,
+		clearHermesSkillSelection,
+		embedded,
+		isResettingStudioDemo,
+		resetSessionAgentsToStudioRfpDemoAgent,
+		setActiveAgentConfigState,
+		studioAgentCreationThreadKeysRef,
+		studioAgentCreationThreadTouchedAtRef,
+		studioAgentRegistry,
+	]);
+
+	const studioSettingsMenuItems = useMemo(() => [
+		{
+			description: "Clear Studio threads and restore the fresh RFP Drafter",
+			disabled: isResettingStudioDemo,
+			elemBefore: <RefreshIcon label="" />,
+			id: "reset-studio-demo",
+			label: isResettingStudioDemo ? "Resetting demo..." : "Reset demo",
+			onSelect: handleResetStudioDemo,
+			variant: "destructive" as const,
+		},
+	], [handleResetStudioDemo, isResettingStudioDemo]);
 	const handledAgentResultKeysRef = useLazyRef<Set<string>>(() => new Set());
 	const previousTypedAnchorUserMessageIdRef = useRef<string | null>(null);
 	const typedScrollAnchorSourceRef = useRef<TypedScrollAnchorSource>("none");
@@ -5009,6 +5148,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							isChatOpen={nav.isSidebarChatOpen}
 							onToggleChat={handleToggleAskRovoChat}
 							onToggleTheme={nav.toggleTheme}
+							settingsMenuItems={studioSettingsMenuItems}
 						/>
 					</div>
 				) : null}
