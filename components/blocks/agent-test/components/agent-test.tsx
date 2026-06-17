@@ -3,7 +3,6 @@
 // oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
 // oxlint-disable react-doctor/no-multi-comp -- The test panel colocates the chat surface, header, and automation greeting subviews so they share one local contract.
 
-import Image from "next/image";
 import { Fragment, useEffect, useMemo, useState, type ReactElement } from "react";
 
 import { RovoChatProvider, useRovoChat, type StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
@@ -538,9 +537,9 @@ function buildAutomationRunMessages(
 	return [userMessage, assistantMessage];
 }
 
-// The "Automation" group rendered below the conversation starters in the chat
-// greeting. One row per automation rule; clicking a row runs its sample inline.
-function AgentTestAutomationGreetingSection({
+// Automation rows rendered directly after the conversation starters in the chat
+// greeting. Clicking a row runs its sample inline.
+function AgentTestAutomationGreetingRows({
 	automationRules,
 	onRunAutomation,
 }: Readonly<{
@@ -552,28 +551,7 @@ function AgentTestAutomationGreetingSection({
 	}
 
 	return (
-		<div className="flex flex-col gap-1">
-			{/* Group label mirrors the "Chat" label treatment in chat-greeting.tsx:
-			    a 32px spot illustration aligned to the row tile column (gap-3). */}
-			<div className="flex items-center gap-3 px-1.5 text-xs font-semibold leading-4 text-text-subtle">
-				<span className="block size-8 shrink-0">
-					<Image
-						alt=""
-						className="size-8 object-contain dark:hidden [[data-color-mode=dark]_&]:hidden"
-						height={32}
-						src="/illustration-spot/general/automation-2/light.svg"
-						width={32}
-					/>
-					<Image
-						alt=""
-						className="hidden size-8 object-contain dark:block [[data-color-mode=dark]_&]:block"
-						height={32}
-						src="/illustration-spot/general/automation-2/dark.svg"
-						width={32}
-					/>
-				</span>
-				Flows
-			</div>
+		<>
 			{automationRules.map((rule, ruleIndex) => (
 				<AgentTestAutomationGreetingRow
 					key={rule.id}
@@ -582,7 +560,7 @@ function AgentTestAutomationGreetingSection({
 					ruleIndex={ruleIndex}
 				/>
 			))}
-		</div>
+		</>
 	);
 }
 
@@ -644,11 +622,7 @@ function AgentTestChatPanel({
 			replaceMessages(messages);
 		}
 	}
-
-	// Only label the starter list with a "Chat" header when both groups are
-	// present, so a chat-only agent keeps its plain starter list.
-	const showStarterGroupLabel =
-		testAgentProfile.starters.length > 0 && automationRules.length > 0;
+	const shouldShowTestHeader = testAgentProfile.starters.length > 0 || automationRules.length > 0;
 
 	return (
 		<ChatPanel
@@ -664,9 +638,10 @@ function AgentTestChatPanel({
 			greeting={{
 				heading: testAgentProfile.name,
 				suggestions: testAgentProfile.starters,
-				showStarterGroupLabel,
+				showStarterGroupLabel: shouldShowTestHeader,
+				starterGroupLabel: "Test the following",
 				agentTestSection: (
-					<AgentTestAutomationGreetingSection
+					<AgentTestAutomationGreetingRows
 						automationRules={automationRules}
 						onRunAutomation={handleRunAutomation}
 					/>

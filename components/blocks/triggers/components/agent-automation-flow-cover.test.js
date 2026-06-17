@@ -12,6 +12,10 @@ const TEST_PANEL_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../../agent-test/components/agent-test.tsx"),
 	"utf8",
 );
+const TRIGGERS_PAGE_SOURCE = fs.readFileSync(
+	path.join(__dirname, "../page.tsx"),
+	"utf8",
+);
 
 const TRIGGER_CONFIG_SOURCE = fs.readFileSync(
 	path.join(__dirname, "../../trigger-config/components/trigger-config.tsx"),
@@ -27,6 +31,13 @@ test("AgentAutomationFlowCover owns the automation-to-agent visual treatment", (
 	assert.match(COMPONENT_SOURCE, /className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-border bg-bg-input px-1\.5 text-xs font-medium leading-4 text-text-subtle"/u);
 	assert.match(COMPONENT_SOURCE, /className="h-px w-6 shrink-0 bg-border"/u);
 	assert.match(COMPONENT_SOURCE, /icon=\{<GenerativeIndicatorIcon label="" size="small" \/>\}[\s\S]*size="small"[\s\S]*variant="gray"/u);
+	assert.match(COMPONENT_SOURCE, /function CompactFlowTile\([\s\S]*<Tile aria-hidden=\{true\} className="bg-surface" hasBorder label=\{label\} size="xxsmall" variant="transparent">/u);
+	assert.match(TRIGGERS_PAGE_SOURCE, /export function renderAgentTriggerProviderCompactTileIcon\(trigger: AgentTriggerValue\): ReactElement \| null/u);
+	assert.match(TRIGGERS_PAGE_SOURCE, /if \(visual\.kind === "icon"\) \{[\s\S]*<Tile aria-hidden=\{true\} className="bg-surface" hasBorder label=\{provider\.label\} size="xxsmall" variant="transparent">/u);
+	assert.match(TRIGGERS_PAGE_SOURCE, /return <RichTextMentionVisualMark label=\{provider\.label\} size="pill" visual=\{visual\} \/>;/u);
+	assert.match(COMPONENT_SOURCE, /if \(size === "compact"\) \{[\s\S]*className="inline-flex size-4 shrink-0 items-center justify-center"[\s\S]*renderAgentTriggerProviderCompactTileIcon\(trigger\)/u);
+	assert.match(COMPONENT_SOURCE, /if \(size === "compact"\) \{[\s\S]*className="inline-flex h-4 min-w-4 items-center justify-center rounded-full/u);
+	assert.match(COMPONENT_SOURCE, /if \(size === "compact"\) \{[\s\S]*<IconTile[\s\S]*icon=\{<GenerativeIndicatorIcon label="" size="small" \/>\}[\s\S]*label="Agent instructions"[\s\S]*size="xxsmall"[\s\S]*variant="gray"/u);
 });
 
 test("AgentProfileCover and AgentTestAutomationFlow use the same shared cover", () => {

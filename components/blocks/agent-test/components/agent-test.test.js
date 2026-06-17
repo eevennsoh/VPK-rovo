@@ -36,22 +36,22 @@ test("AgentTestPanel defaults to chat with a version + reset header (no testing-
 	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /onClick=\{onBack\}/u);
 });
 
-test("AgentTestPanel chat panel wires the grouped greeting (Chat + Automation)", () => {
+test("AgentTestPanel chat panel wires one greeting list for starters and flows", () => {
 	assert.match(AGENT_TEST_PANEL_SOURCE, /<ChatPanel[\s\S]*abortOnUnmount=\{false\}[\s\S]*showAgentTestControls[\s\S]*suppressCustomAgentTabs[\s\S]*hideHeader/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /containerClassName="h-full min-h-0 w-full overflow-visible"/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /composerContainerClassName="px-0"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /composerContainerClassName="px-0 \[&_\.chat-composer-surface\]:max-w-\[600px\]"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /conversationContentClassName="px-0 max-w-\[600px\]"/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /greeting=\{\{[\s\S]*heading: testAgentProfile\.name,[\s\S]*suggestions: testAgentProfile\.starters,[\s\S]*showStarterGroupLabel,[\s\S]*agentTestSection: \([\s\S]*<AgentTestAutomationGreetingSection/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /const shouldShowTestHeader = testAgentProfile\.starters\.length > 0 \|\| automationRules\.length > 0;/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /greeting=\{\{[\s\S]*heading: testAgentProfile\.name,[\s\S]*suggestions: testAgentProfile\.starters,[\s\S]*showStarterGroupLabel: shouldShowTestHeader,[\s\S]*starterGroupLabel: "Test the following",[\s\S]*agentTestSection: \([\s\S]*<AgentTestAutomationGreetingRows/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /greetingSelectedAgent=\{testAgentProfile\}/u);
-	// The "Chat" group label only shows when there are both starters and automations.
-	assert.match(AGENT_TEST_PANEL_SOURCE, /const showStarterGroupLabel =[\s\S]*testAgentProfile\.starters\.length > 0 && automationRules\.length > 0;/u);
 });
 
 test("AgentTestPanel surfaces automations in the greeting and runs them inline in chat", () => {
-	assert.match(AGENT_TEST_PANEL_SOURCE, /function AgentTestAutomationGreetingSection\(/u);
-	// Empty automations → no Automation group at all.
+	assert.match(AGENT_TEST_PANEL_SOURCE, /function AgentTestAutomationGreetingRows\(/u);
+	// Empty automations → no extra flow rows.
 	assert.match(AGENT_TEST_PANEL_SOURCE, /if \(automationRules\.length === 0\) \{[\s\S]*return null;/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /illustration-spot\/general\/automation-2\/light\.svg[\s\S]*Flows/u);
+	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /illustration-spot\/general\/automation-2/u);
+	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, />\s*Flows\s*</u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /import \{ AgentAutomationFlowCover \} from "@\/components\/blocks\/triggers\/components\/agent-automation-flow-cover";/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /function AgentTestAutomationFlow[\s\S]*<AgentAutomationFlowCover[\s\S]*rootElement="span"[\s\S]*triggers=\{rule\.triggers\}/u);
 	// Clicking a row injects a scripted user + assistant turn via replaceMessages.

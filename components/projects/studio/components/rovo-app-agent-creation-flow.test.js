@@ -1009,14 +1009,13 @@ test("Studio agent test conversation starters use contextual visual identity til
 test("Chat greeting custom-agent starters prefer explicit icons and fall back to AI chat", () => {
 	// Managed conversation starters pass explicit icon components from the
 	// config panel. Older/iconless starters keep the neutral "ai-chat" fallback.
-	assert.match(CHAT_GREETING_SOURCE, /const CUSTOM_AGENT_STARTER_ICON_NAME = "ai-chat";/u);
 	assert.match(CHAT_GREETING_SOURCE, /icon=\{suggestion\.icon\}/u);
 	assert.match(CHAT_GREETING_SOURCE, /iconColor=\{token\("color\.icon\.subtle"\)\}/u);
 	assert.doesNotMatch(CHAT_GREETING_SOURCE, /resolveConversationStarterVisualIdentity/u);
 	assert.doesNotMatch(CHAT_GREETING_SOURCE, /CardIdentityTile/u);
 	assert.match(
 		CHAT_GREETING_SOURCE,
-		/<VisualIdentityTile[\s\S]*visualIdentity=\{\{ iconName: CUSTOM_AGENT_STARTER_ICON_NAME, tileVariant: "gray" \}\}/u,
+		/<IconTile[\s\S]*className="border border-border bg-surface"[\s\S]*icon=\{<AiChatIcon color=\{token\("color\.icon\.subtle"\)\} label=\{suggestion\.label\} \/>\}[\s\S]*size="medium"/u,
 	);
 });
 

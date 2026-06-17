@@ -1521,7 +1521,7 @@ const [mode, setMode] = useState<AgentAccessMode>("requesting-user");
 	},
 	"agent-test": {
 		description:
-			"Agent “Test” experience for trying a draft (or a published version) before it ships. Opens straight into an interactive Chat session whose greeting groups the agent’s conversation starters under “Chat” and its configured automation rules under “Flows”; running a flow injects a sample event payload and callback result inline in the conversation. Switch between draft and published versions from the header.",
+			"Agent “Test” experience for trying a draft (or a published version) before it ships. Opens straight into an interactive Chat session whose greeting combines the agent’s conversation starters and configured automation flows under “Test the following”; running a flow injects a sample event payload and callback result inline in the conversation. Switch between draft and published versions from the header.",
 		importStatement: `import { AgentTestPanel } from "@/components/blocks/agent-test";`,
 		usage: `import { AgentTestPanel } from "@/components/blocks/agent-test";
 
@@ -1535,8 +1535,8 @@ const [mode, setMode] = useState<AgentAccessMode>("requesting-user");
 			{ name: "className", type: "string", description: "Additional classes applied to the outer container." },
 		],
 		examples: [
-			{ title: "With flows", description: "Chat greeting grouping conversation starters under “Chat” and each configured automation rule under “Flows”; running one shows its sample payload and callback inline.", demoSlug: "agent-test" },
-			{ title: "Chat only", description: "A draft with no automations — the greeting shows just the conversation starters, with no Flows group.", demoSlug: "agent-test-demo-chat-only" },
+			{ title: "With flows", description: "Chat greeting combining conversation starters and automation flows under “Test the following”; running one shows its sample payload and callback inline.", demoSlug: "agent-test" },
+			{ title: "Chat only", description: "A draft with no automations — the greeting shows “Test the following” above the conversation starters.", demoSlug: "agent-test-demo-chat-only" },
 		],
 	},
 	"agent-surfaces": {

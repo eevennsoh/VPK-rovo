@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Switch } from "@/components/ui/switch";
+import { Tile } from "@/components/ui/tile";
 import { RichTextCommandMenuSearchField, RichTextEditor } from "@/components/ui-custom/rich-text-editor";
 import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor/mention-visual";
 import type { RichTextMentionVisual } from "@/components/ui-custom/rich-text-editor/types";
@@ -175,6 +176,30 @@ export function renderAgentTriggerProviderChipIcon(trigger: AgentTriggerValue): 
 		return null;
 	}
 	return <RichTextMentionVisualMark label={provider.label} size="pill" visual={getTriggerProviderVisual(provider.icon)} />;
+}
+
+/**
+ * Compact 16px provider visual for dense flow covers. Keeps the shared logo
+ * rules from `RichTextMentionVisualMark size="pill"` for product/brand logos,
+ * but frames stroked trigger glyphs in the bordered `Tile` treatment so the
+ * compact flow cover remains a smaller version of the full tile flow.
+ */
+export function renderAgentTriggerProviderCompactTileIcon(trigger: AgentTriggerValue): ReactElement | null {
+	const provider = getTriggerProvider(trigger.providerId);
+	if (!provider) {
+		return null;
+	}
+	const visual = getTriggerProviderVisual(provider.icon);
+
+	if (visual.kind === "icon") {
+		return (
+			<Tile aria-hidden={true} className="bg-surface" hasBorder label={provider.label} size="xxsmall" variant="transparent">
+				{renderTriggerProviderIcon(provider.icon, "")}
+			</Tile>
+		);
+	}
+
+	return <RichTextMentionVisualMark label={provider.label} size="pill" visual={visual} />;
 }
 
 /**
