@@ -28,6 +28,8 @@ export interface EntityCardAppProps {
 	active?: boolean;
 	action?: ReactNode;
 	onMoreActions?: () => void;
+	/** Renders the persistent "added" check when the app is already on the agent. */
+	added?: boolean;
 	promptSuggestion?: string;
 	mentionHandle?: string;
 	className?: string;
@@ -43,6 +45,7 @@ export function EntityCardApp({
 	active = false,
 	action,
 	onMoreActions,
+	added = false,
 	promptSuggestion,
 	mentionHandle,
 	className,
@@ -85,6 +88,7 @@ export function EntityCardApp({
 
 	const header = (
 		<EntityCardHeader
+			added={added}
 			action={
 				action ?? (onMoreActions ? (
 					<EntityCardMoreButton active={active} label={`More actions for ${name}`} onClick={onMoreActions} />

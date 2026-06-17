@@ -666,7 +666,6 @@ export function RovoAppAgentConfigPanel({
 	const [activeCompactSection, setActiveCompactSection] = useState<AgentCompactHeaderSection | null>(null);
 	const [instructionsViewMode, setInstructionsViewMode] = useState<EditorToolbarViewMode>("rendered");
 	const lastCompactSectionRef = useRef<AgentCompactHeaderSection>("details");
-	const [directoryToolIds, setDirectoryToolIds] = useState<readonly string[]>([]);
 	// Tool to focus when the tools directory opens (e.g. clicking a tool chip).
 	// Cleared on close so a plain "Add" opens at the directory list instead.
 	const [directorySelectedToolId, setDirectorySelectedToolId] = useState<string | null>(null);
@@ -969,6 +968,41 @@ export function RovoAppAgentConfigPanel({
 			})
 			.filter((id): id is string => Boolean(id));
 	}, [activeConfig]);
+	// Tools already on the agent, as catalog ids — drives the Tools dialog's
+	// "added" check (and Add/Remove + "My tools" filter). Config-derived so the
+	// indicator survives reopen, mirroring addedAppIds.
+	const addedToolIds = useMemo(() => {
+		const catalog = [...DEMO_TOOLS, ...DEMO_SESSION_TOOLS];
+		return getListItems(activeConfig, "tools")
+			.map((name) => {
+				const normalized = name.trim().toLowerCase();
+				return catalog.find((tool) => tool.name.trim().toLowerCase() === normalized)?.id;
+			})
+			.filter((id): id is string => Boolean(id));
+	}, [activeConfig]);
+	// Skills already on the agent, as catalog ids — drives the persistent "added"
+	// check, distinct from the in-dialog multi-select (directorySkillIds).
+	const addedSkillIds = useMemo(() => {
+		return getListItems(activeConfig, "skills")
+			.map((name) => {
+				const normalized = name.trim().toLowerCase();
+				return DEFAULT_SKILLS.find((skill) => skill.name.trim().toLowerCase() === normalized)?.id;
+			})
+			.filter((id): id is string => Boolean(id));
+	}, [activeConfig]);
+	// Knowledge apps contributing knowledge to the agent — matched by the
+	// "<App> - all content" entry or any of the app's content names.
+	const addedKnowledgeAppIds = useMemo(() => {
+		const entries = getListItems(activeConfig, "knowledge").map((name) => name.trim().toLowerCase());
+		if (entries.length === 0) {
+			return [];
+		}
+		return DEFAULT_KNOWLEDGE_APPS.filter((app) => {
+			const appPrefix = `${app.name.trim().toLowerCase()} - `;
+			const contentNames = new Set(app.contents.map((content) => content.name.trim().toLowerCase()));
+			return entries.some((entry) => entry.startsWith(appPrefix) || contentNames.has(entry));
+		}).map((app) => app.id);
+	}, [activeConfig]);
 	const handleDirectoryAppIdsChange = useCallback(
 		(nextIds: readonly string[]) => {
 			const nextIdSet = new Set(nextIds);
@@ -1086,11 +1120,22 @@ export function RovoAppAgentConfigPanel({
 	);
 	const handleDirectoryToolIdsChange = useCallback(
 		(nextIds: readonly string[]) => {
-			const previousIds = new Set(directoryToolIds);
-			const addedIds = nextIds.filter((id) => !previousIds.has(id));
+			const nextIdSet = new Set(nextIds);
+			const previousIdSet = new Set(addedToolIds);
+			const addedIds = nextIds.filter((id) => !previousIdSet.has(id));
+			const removedIds = addedToolIds.filter((id) => !nextIdSet.has(id));
 			const toolsById = new Map([...DEMO_TOOLS, ...DEMO_SESSION_TOOLS].map((tool) => [tool.id, tool]));
 
-			setDirectoryToolIds(nextIds);
+			// Removing a tool strips its name from the canonical tools[]; without this,
+			// addedToolIds (derived from tools[]) would re-add it on the next render.
+			if (removedIds.length > 0) {
+				const removeNames = new Set(removedIds.map((id) => (toolsById.get(id)?.name ?? id).trim().toLowerCase()));
+				updateActiveConfig((config) => ({
+					...config,
+					tools: getListItems(config, "tools").filter((name) => !removeNames.has(name.trim().toLowerCase())),
+				}));
+			}
+
 			appendListValues(
 				"tools",
 				addedIds.map((toolId) => toolsById.get(toolId)?.name ?? toolId),
@@ -1100,7 +1145,7 @@ export function RovoAppAgentConfigPanel({
 				setActiveDirectory(null);
 			}
 		},
-		[appendListValues, directoryToolIds],
+		[addedToolIds, appendListValues, updateActiveConfig],
 	);
 	const handleAddSkills = useCallback(
 		(_skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => {
@@ -1587,6 +1632,7 @@ export function RovoAppAgentConfigPanel({
 				// plain "Browse knowledge" opens the grid, while picking an app in
 				// the "Add knowledge" flyout opens that app's content step.
 				key={`knowledge-${directoryKnowledgeAppId ?? "browse"}`}
+				addedAppIds={addedKnowledgeAppIds}
 				defaultSelectedAppId={directoryKnowledgeAppId}
 				open={activeDirectory === "knowledge"}
 				onOpenChange={(open) => {
@@ -1598,7 +1644,7 @@ export function RovoAppAgentConfigPanel({
 				onAddKnowledge={handleAddKnowledge}
 			/>
 			<ToolsDirectoryDialog
-				addedToolIds={directoryToolIds}
+				addedToolIds={addedToolIds}
 				initialSelectedToolId={directorySelectedToolId}
 				open={activeDirectory === "tools"}
 				onAddedToolIdsChange={handleDirectoryToolIdsChange}
@@ -1629,6 +1675,7 @@ export function RovoAppAgentConfigPanel({
 			/>
 			<SkillsDirectoryDialog
 				key={`skills-${directorySelectedSkillId ?? "browse"}`}
+				addedSkillIds={addedSkillIds}
 				variant="experimental"
 				initialDetailSkillId={directorySelectedSkillId}
 				onAddSkills={handleAddSkills}

@@ -58,6 +58,8 @@ export interface EntityCardSkillProps {
 	revealStatsOnHover?: boolean;
 	action?: ReactNode;
 	onMoreActions?: () => void;
+	/** Renders the persistent "added" check when the skill is already on the agent. */
+	added?: boolean;
 	density?: EntityCardDensity;
 	className?: string;
 }
@@ -115,6 +117,7 @@ export function EntityCardSkill({
 	revealStatsOnHover = false,
 	action,
 	onMoreActions,
+	added = false,
 	density = "directory",
 	className,
 }: Readonly<EntityCardSkillProps>) {
@@ -152,6 +155,7 @@ export function EntityCardSkill({
 	return (
 		<div data-slot="entity-card-skill" className={cn("contents", className)}>
 			<EntityCardHeader
+				added={added}
 				action={
 					action ?? (onMoreActions ? (
 						<EntityCardMoreButton label={`More actions for ${name}`} onClick={onMoreActions} />

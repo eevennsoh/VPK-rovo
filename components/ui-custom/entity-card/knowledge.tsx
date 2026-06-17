@@ -32,6 +32,8 @@ export interface EntityCardKnowledgeProps {
 	starCount?: number;
 	teammateCount?: number;
 	icon?: ReactNode;
+	/** Renders the persistent "added" check when the knowledge app is already on the agent. */
+	added?: boolean;
 	className?: string;
 }
 
@@ -44,6 +46,7 @@ export function EntityCardKnowledge({
 	starCount,
 	teammateCount,
 	icon,
+	added = false,
 	className,
 }: Readonly<EntityCardKnowledgeProps>) {
 	const bylinePublisher = publisher ?? providerName;
@@ -54,6 +57,7 @@ export function EntityCardKnowledge({
 		<div data-slot="entity-card-knowledge" className={cn("contents", className)}>
 			<div className="flex flex-col gap-2">
 				<EntityCardHeader
+					added={added}
 					byline={bylinePublisher ? <EntityCardByline publisher={bylinePublisher} verified={verified} /> : undefined}
 					leading={
 						icon ? (

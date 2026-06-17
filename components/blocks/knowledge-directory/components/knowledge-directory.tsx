@@ -41,6 +41,12 @@ export interface KnowledgeDirectoryAddPayload {
 }
 
 export interface KnowledgeDirectoryDialogProps {
+	/**
+	 * Knowledge apps already contributing knowledge to the agent, as ids. Drives
+	 * the persistent "added" check on each browse card so they can be scanned at
+	 * a glance.
+	 */
+	addedAppIds?: readonly string[];
 	apps?: readonly KnowledgeDirectoryApp[];
 	defaultSelectedAppId?: string | null;
 	defaultSelectedContentIds?: readonly string[];
@@ -112,6 +118,7 @@ function filterContent(
 }
 
 export function KnowledgeDirectoryDialog({
+	addedAppIds,
 	apps = DEFAULT_KNOWLEDGE_APPS,
 	defaultSelectedAppId = null,
 	defaultSelectedContentIds = EMPTY_CONTENT_IDS,
@@ -129,6 +136,7 @@ export function KnowledgeDirectoryDialog({
 	selectedMode,
 	title = "Browse knowledge",
 }: Readonly<KnowledgeDirectoryDialogProps>) {
+	const addedAppIdSet = useMemo(() => new Set(addedAppIds ?? []), [addedAppIds]);
 	const [appQuery, setAppQuery] = useState("");
 	const [contentQuery, setContentQuery] = useState("");
 	const [sortMode, setSortMode] = useState<SortMode>("latest");
@@ -252,6 +260,7 @@ export function KnowledgeDirectoryDialog({
 					/>
 				) : (
 					<BrowseAppsStep
+						addedAppIds={addedAppIdSet}
 						appQuery={appQuery}
 						apps={filteredApps}
 						onBrowseFiles={onBrowseFiles}
@@ -300,6 +309,7 @@ function KnowledgeDirectoryHeader({ onBack, title }: Readonly<KnowledgeDirectory
 }
 
 interface BrowseAppsStepProps {
+	addedAppIds: ReadonlySet<string>;
 	appQuery: string;
 	apps: readonly KnowledgeDirectoryApp[];
 	onBrowseFiles?: () => void;
@@ -310,6 +320,7 @@ interface BrowseAppsStepProps {
 }
 
 function BrowseAppsStep({
+	addedAppIds,
 	appQuery,
 	apps,
 	onBrowseFiles,
@@ -343,6 +354,7 @@ function BrowseAppsStep({
 						{apps.map((app) => (
 							<li key={app.id}>
 								<EntityCardKnowledgeCard
+									added={addedAppIds.has(app.id)}
 									description={app.description}
 									icon={getKnowledgeAppIcon(app)}
 									name={app.name}

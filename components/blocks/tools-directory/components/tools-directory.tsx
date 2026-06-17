@@ -571,7 +571,7 @@ function ToolsDirectoryView({
 					<ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
 						{filteredTools.map((tool) => (
 							<li key={tool.id}>
-								<ToolCard onSelectTool={onSelectTool} tool={tool} />
+								<ToolCard added={addedIds.has(tool.id)} onSelectTool={onSelectTool} tool={tool} />
 							</li>
 						))}
 					</ul>
@@ -582,17 +582,19 @@ function ToolsDirectoryView({
 }
 
 interface ToolCardProps {
+	added?: boolean;
 	onSelectTool: (tool: ToolsDirectoryTool) => void;
 	tool: ToolsDirectoryTool;
 }
 
-function ToolCard({ onSelectTool, tool }: Readonly<ToolCardProps>) {
+function ToolCard({ added = false, onSelectTool, tool }: Readonly<ToolCardProps>) {
 	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 	const selectTool = () => onSelectTool(tool);
 
 	return (
 		<EntityCardToolCard
 			active={moreMenuOpen}
+			added={added}
 			appLogo={getToolLogo(tool)}
 			className="min-h-[102px] hover:border-transparent"
 			description={tool.description ?? "Short description about the app."}
