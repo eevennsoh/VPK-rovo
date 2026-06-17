@@ -187,3 +187,78 @@ export function getDeterministicAgentAvatarSrc(seed: string | null | undefined):
 	const avatarIndex = (hash >>> 8) % group.length;
 	return group[avatarIndex] ?? FALLBACK_AVATAR_SRC;
 }
+
+// Cover-banner artwork for the agent profile/config cover, under
+// `/public/smart-folders`. Every agent's cover picks one of these so the banners
+// vary by design and color instead of all sharing one hardcoded artwork. The set
+// is the 40 cleanly-named `<design>-<color>.svg` files: 8 designs × 5 colors
+// (blue, gray, lime, orange, purple), evenly balanced so a flat pick already
+// gives each color the same odds. The legacy `*_yellow.svg` files use
+// inconsistent underscore naming and are intentionally excluded.
+export const SMART_FOLDER_BANNER_SRCS = [
+	"/smart-folders/abstract-blue.svg",
+	"/smart-folders/abstract-gray.svg",
+	"/smart-folders/abstract-lime.svg",
+	"/smart-folders/abstract-orange.svg",
+	"/smart-folders/abstract-purple.svg",
+	"/smart-folders/abstract-2-blue.svg",
+	"/smart-folders/abstract-2-gray.svg",
+	"/smart-folders/abstract-2-lime.svg",
+	"/smart-folders/abstract-2-orange.svg",
+	"/smart-folders/abstract-2-purple.svg",
+	"/smart-folders/cloud-blue.svg",
+	"/smart-folders/cloud-gray.svg",
+	"/smart-folders/cloud-lime.svg",
+	"/smart-folders/cloud-orange.svg",
+	"/smart-folders/cloud-purple.svg",
+	"/smart-folders/default-blue.svg",
+	"/smart-folders/default-gray.svg",
+	"/smart-folders/default-lime.svg",
+	"/smart-folders/default-orange.svg",
+	"/smart-folders/default-purple.svg",
+	"/smart-folders/default-2-blue.svg",
+	"/smart-folders/default-2-gray.svg",
+	"/smart-folders/default-2-lime.svg",
+	"/smart-folders/default-2-orange.svg",
+	"/smart-folders/default-2-purple.svg",
+	"/smart-folders/dev-blue.svg",
+	"/smart-folders/dev-gray.svg",
+	"/smart-folders/dev-lime.svg",
+	"/smart-folders/dev-orange.svg",
+	"/smart-folders/dev-purple.svg",
+	"/smart-folders/launch-blue.svg",
+	"/smart-folders/launch-gray.svg",
+	"/smart-folders/launch-lime.svg",
+	"/smart-folders/launch-orange.svg",
+	"/smart-folders/launch-purple.svg",
+	"/smart-folders/meetings-blue.svg",
+	"/smart-folders/meetings-gray.svg",
+	"/smart-folders/meetings-lime.svg",
+	"/smart-folders/meetings-orange.svg",
+	"/smart-folders/meetings-purple.svg",
+] as const;
+
+export type SmartFolderBannerSrc = (typeof SMART_FOLDER_BANNER_SRCS)[number];
+
+const FALLBACK_BANNER_SRC: SmartFolderBannerSrc = SMART_FOLDER_BANNER_SRCS[0];
+
+/**
+ * Deterministic banner picker, mirroring {@link getDeterministicAgentAvatarSrc}:
+ * the same `seed` (typically an agent's `agentId`) always returns the same cover
+ * banner, so every render of that agent agrees and the banner never flickers
+ * between re-renders. The 40 banners are color-balanced, so a flat hash index is
+ * enough — no family bucketing needed. An empty seed falls back to a stable
+ * default.
+ *
+ * The hash is shifted (`>>> 16`) before indexing so an agent's banner pick does
+ * not correlate with its avatar pick, even though both seed on the same id.
+ */
+export function getDeterministicAgentBannerSrc(seed: string | null | undefined): SmartFolderBannerSrc {
+	const normalizedSeed = seed?.trim();
+	if (!normalizedSeed) {
+		return FALLBACK_BANNER_SRC;
+	}
+	const hash = hashSeed(normalizedSeed);
+	const bannerIndex = (hash >>> 16) % SMART_FOLDER_BANNER_SRCS.length;
+	return SMART_FOLDER_BANNER_SRCS[bannerIndex] ?? FALLBACK_BANNER_SRC;
+}
