@@ -1245,11 +1245,15 @@ export function RovoAppAgentConfigPanel({
 	// requested by the persistent bar's "Talk to Rovo" action, which bumps the
 	// request key consumed as `startRealtimeVoiceRequestKey`.
 	const handleOpenFloatingRovoChat = useCallback(() => {
-		resetAgentToRovo();
+		// Preserve the current thread so opening Ask Rovo keeps the agent's
+		// generation conversation visible instead of resetting to the
+		// "Improve your agent?" greeting.
+		resetAgentToRovo({ preserveCurrentThread: true });
 		openChat("floating");
 	}, [openChat, resetAgentToRovo]);
 	const handleStartFloatingRovoVoice = useCallback(() => {
-		resetAgentToRovo();
+		// Same as the floating chat button: keep the generation conversation.
+		resetAgentToRovo({ preserveCurrentThread: true });
 		setFloatingLiveChatRequestKey((currentKey) => currentKey + 1);
 		openChat("floating");
 	}, [openChat, resetAgentToRovo]);

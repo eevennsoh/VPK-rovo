@@ -597,6 +597,48 @@ test("Studio lands generated agents in the Test tab and opens Ask Rovo", () => {
 	assert.match(SHELL_SOURCE, /const agentResultKey = `\$\{chat\.runtimeThreadId\}:\$\{message\.id\}:\$\{agentResult\.agentId\}:\$\{agentResult\.action\}`;[\s\S]*if \(generatedAgentTestViewKeysRef\.current\.has\(agentResultKey\)\) \{[\s\S]*break;[\s\S]*\}[\s\S]*generatedAgentTestViewKeysRef\.current\.add\(agentResultKey\);[\s\S]*if \(activeAgentConfigView !== "test"\) \{[\s\S]*setActiveAgentConfigView\("test"\);[\s\S]*openAgentCreationAskRovoChat\(\);[\s\S]*\}/u);
 });
 
+test("Studio agent config floating chat and voice preserve the generation conversation", () => {
+	// Opening Ask Rovo from the agent config/test screen must keep the agent's
+	// generation transcript visible instead of resetting to the "Improve your
+	// agent?" greeting, so both floating entry points pass preserveCurrentThread.
+	assert.match(
+		AGENT_CONFIG_PANEL_SOURCE,
+		/const handleOpenFloatingRovoChat = useCallback\(\(\) => \{[\s\S]*resetAgentToRovo\(\{ preserveCurrentThread: true \}\);[\s\S]*openChat\("floating"\);/u,
+	);
+	assert.match(
+		AGENT_CONFIG_PANEL_SOURCE,
+		/const handleStartFloatingRovoVoice = useCallback\(\(\) => \{[\s\S]*resetAgentToRovo\(\{ preserveCurrentThread: true \}\);[\s\S]*openChat\("floating"\);/u,
+	);
+	// A bare resetAgentToRovo() here would call resetChat() and wipe the
+	// conversation, so guard against regressing to it in this panel.
+	assert.doesNotMatch(AGENT_CONFIG_PANEL_SOURCE, /resetAgentToRovo\(\);/u);
+});
+
+test("Studio bridges the generation transcript into the Ask Rovo sidebar store", () => {
+	// The studio shell runs generation through its own useRovoApp chat store,
+	// which is separate from the RovoChatProvider context that the Ask Rovo
+	// sidebar (ChatPanel) reads. Opening the sidebar must adopt the generation
+	// thread (id + transcript) into the context, or the sidebar sees an empty
+	// thread and shows the "Improve your agent?" greeting instead of the
+	// conversation used to build the agent.
+	assert.match(
+		SHELL_SOURCE,
+		/const openAgentCreationAskRovoChat = useCallback\(\(\) => \{[\s\S]*const generationThreadId = chatRef\.current\?\.activeThreadId \?\? null;[\s\S]*const generationMessages = chatRef\.current\?\.messages;[\s\S]*if \(generationThreadId && generationMessages && generationMessages\.length > 0\) \{[\s\S]*studioAgentRegistry\.adoptThreadMessages\(generationThreadId, generationMessages\);[\s\S]*\}[\s\S]*nav\.openChat\("sidebar"\);/u,
+	);
+	// useRovoSelectedAgent must expose adoptThreadMessages so the shell registry
+	// can perform the bridge.
+	assert.match(
+		ROVO_CONTEXT_SOURCE,
+		/export function useRovoSelectedAgent\(\) \{[\s\S]*adoptThreadMessages,[\s\S]*\} = useRovoChat\(\);[\s\S]*return \{[\s\S]*adoptThreadMessages,[\s\S]*\};/u,
+	);
+	// adoptThreadMessages must pre-seed the persist key so the bridge never
+	// rewrites the adopted thread (the generation flow already owns it).
+	assert.match(
+		ROVO_CONTEXT_SOURCE,
+		/const adoptThreadMessages = useCallback\([\s\S]*setActiveThreadId\(threadId\);[\s\S]*lastPersistedThreadKeyRef\.current = buildCompactThreadPersistKey\(threadId, sanitized\);[\s\S]*setMessages\(sanitized\);/u,
+	);
+});
+
 test("RovoAppMessages renders the block agent result card after generation completes", () => {
 	assert.match(MESSAGES_SOURCE, /getMessageAgentResult/u);
 	assert.match(MESSAGES_SOURCE, /hasTurnCompleteSignal/u);

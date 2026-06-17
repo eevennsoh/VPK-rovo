@@ -1756,10 +1756,21 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	// without the earlier create handler needing the tour controller in scope.
 	const [agentCreationTourSignal, setAgentCreationTourSignal] = useState(0);
 	const openAgentCreationAskRovoChat = useCallback(() => {
-		// Preserve the current thread so the Rovo conversation that just
-		// generated the agent stays visible in the Ask Rovo panel instead of
-		// resetting to the "Improve your agent?" greeting.
+		// Keep the Ask Rovo panel on the default Rovo build helper.
 		studioAgentRegistry.resetAgentToRovo({ preserveCurrentThread: true });
+		// The studio shell runs generation through its own `useRovoApp` chat
+		// store, which is SEPARATE from the RovoChatProvider context the Ask Rovo
+		// sidebar reads. Without bridging, the sidebar sees an empty thread and
+		// falls back to the "Improve your agent?" greeting. Adopt the generation
+		// thread (its id + in-memory transcript) into the context so the sidebar
+		// shows the same conversation used to build the agent — matching what a
+		// page reload does, but without overwriting whatever Ask Rovo thread was
+		// previously active or creating a duplicate thread.
+		const generationThreadId = chatRef.current?.activeThreadId ?? null;
+		const generationMessages = chatRef.current?.messages;
+		if (generationThreadId && generationMessages && generationMessages.length > 0) {
+			studioAgentRegistry.adoptThreadMessages(generationThreadId, generationMessages);
+		}
 		nav.openChat("sidebar");
 	}, [nav, studioAgentRegistry]);
 

@@ -810,6 +810,7 @@ interface RovoChatContextType {
 	openCurrentThreadFullscreen: () => void;
 	currentThreadHasRichState: boolean;
 	replaceMessages: (messages: ReadonlyArray<RovoUIMessage>) => void;
+	adoptThreadMessages: (threadId: string, messages: ReadonlyArray<RovoUIMessage>) => void;
 	isStreaming: boolean;
 	isMediaGenerating: boolean;
 	hasInFlightTurn: boolean;
@@ -3401,6 +3402,40 @@ export function RovoChatProvider({
 		[cancelRetryTimer, clearMediaGenerating, clearSubmitPending, queueTick, setMessages]
 	);
 
+	// Point this context at an existing thread and display its messages WITHOUT
+	// re-persisting them. Used by the studio shell to surface a generation
+	// transcript (owned by a separate useRovoApp chat store) in the Ask Rovo
+	// sidebar: we adopt the generation thread's id and pre-seed the persist key
+	// so the persistence effect treats these messages as already-saved. This
+	// avoids overwriting whatever Ask Rovo thread happened to be active before,
+	// and avoids creating a duplicate thread — subsequent user edits append to
+	// the adopted (generation) thread, which legitimately owns this content.
+	const adoptThreadMessages = useCallback(
+		(threadId: string, messages: ReadonlyArray<RovoUIMessage>) => {
+			isCancellingRef.current = false;
+			cancelRetryTimer();
+			clearMediaGenerating();
+			clearSubmitPending();
+			retryCountRef.current = 0;
+			lastPromptRef.current = null;
+			queuedPromptsRef.current = [];
+			activePromptRef.current = null;
+			shouldFinalizeActivePromptRef.current = false;
+			hasTurnCompleteSignalRef.current = false;
+			isDispatchingPromptRef.current = false;
+			setQueuedPrompts([]);
+			setActivePrompt(null);
+			setSubmissionErrorMessage(null);
+			const sanitized = sanitizeRovoUiMessages([...messages]);
+			activeThreadIdRef.current = threadId;
+			setActiveThreadId(threadId);
+			lastPersistedThreadKeyRef.current = buildCompactThreadPersistKey(threadId, sanitized);
+			setMessages(sanitized);
+			queueTick();
+		},
+		[cancelRetryTimer, clearMediaGenerating, clearSubmitPending, queueTick, setMessages]
+	);
+
 	const queueCount = queuedPrompts.length;
 	const hasInFlightTurn =
 		isSubmitPending ||
@@ -3461,6 +3496,7 @@ export function RovoChatProvider({
 			openCurrentThreadFullscreen,
 			currentThreadHasRichState,
 			replaceMessages,
+			adoptThreadMessages,
 			isStreaming,
 			isMediaGenerating,
 			hasInFlightTurn,
@@ -3525,6 +3561,7 @@ export function RovoChatProvider({
 			openCurrentThreadFullscreen,
 			currentThreadHasRichState,
 			replaceMessages,
+			adoptThreadMessages,
 			isStreaming,
 			isMediaGenerating,
 			hasInFlightTurn,
@@ -3569,6 +3606,7 @@ export function useRovoSelectedAgent() {
 		publishSessionAgent,
 		removeSessionAgent,
 		resetAgentToRovo,
+		adoptThreadMessages,
 	} = useRovoChat();
 
 	return {
@@ -3585,5 +3623,12 @@ export function useRovoSelectedAgent() {
 		publishSessionAgent,
 		removeSessionAgent,
 		resetAgentToRovo,
+		// The studio shell drives generation through its own useRovoApp chat
+		// store, which is separate from this RovoChatProvider context that the
+		// Ask Rovo sidebar reads. Expose adoptThreadMessages so the shell can
+		// surface the generation transcript in the sidebar by adopting the
+		// generation thread (no overwrite of an existing Ask Rovo thread, no
+		// duplicate thread) after an agent is created.
+		adoptThreadMessages,
 	};
 }
