@@ -617,19 +617,25 @@ test("Studio agent config floating chat and voice preserve the generation conver
 test("Studio bridges the generation transcript into the Ask Rovo sidebar store", () => {
 	// The studio shell runs generation through its own useRovoApp chat store,
 	// which is separate from the RovoChatProvider context that the Ask Rovo
-	// sidebar (ChatPanel) reads. Opening the sidebar must copy the generation
-	// transcript into the context via replaceMessages, or the sidebar sees an
-	// empty thread and shows the "Improve your agent?" greeting instead of the
+	// sidebar (ChatPanel) reads. Opening the sidebar must adopt the generation
+	// thread (id + transcript) into the context, or the sidebar sees an empty
+	// thread and shows the "Improve your agent?" greeting instead of the
 	// conversation used to build the agent.
 	assert.match(
 		SHELL_SOURCE,
-		/const openAgentCreationAskRovoChat = useCallback\(\(\) => \{[\s\S]*const generationMessages = chatRef\.current\?\.messages;[\s\S]*if \(generationMessages && generationMessages\.length > 0\) \{[\s\S]*studioAgentRegistry\.replaceMessages\(generationMessages\);[\s\S]*\}[\s\S]*nav\.openChat\("sidebar"\);/u,
+		/const openAgentCreationAskRovoChat = useCallback\(\(\) => \{[\s\S]*const generationThreadId = chatRef\.current\?\.activeThreadId \?\? null;[\s\S]*const generationMessages = chatRef\.current\?\.messages;[\s\S]*if \(generationThreadId && generationMessages && generationMessages\.length > 0\) \{[\s\S]*studioAgentRegistry\.adoptThreadMessages\(generationThreadId, generationMessages\);[\s\S]*\}[\s\S]*nav\.openChat\("sidebar"\);/u,
 	);
-	// useRovoSelectedAgent must expose replaceMessages so the shell registry can
-	// perform the bridge.
+	// useRovoSelectedAgent must expose adoptThreadMessages so the shell registry
+	// can perform the bridge.
 	assert.match(
 		ROVO_CONTEXT_SOURCE,
-		/export function useRovoSelectedAgent\(\) \{[\s\S]*replaceMessages,[\s\S]*\} = useRovoChat\(\);[\s\S]*return \{[\s\S]*replaceMessages,[\s\S]*\};/u,
+		/export function useRovoSelectedAgent\(\) \{[\s\S]*adoptThreadMessages,[\s\S]*\} = useRovoChat\(\);[\s\S]*return \{[\s\S]*adoptThreadMessages,[\s\S]*\};/u,
+	);
+	// adoptThreadMessages must pre-seed the persist key so the bridge never
+	// rewrites the adopted thread (the generation flow already owns it).
+	assert.match(
+		ROVO_CONTEXT_SOURCE,
+		/const adoptThreadMessages = useCallback\([\s\S]*setActiveThreadId\(threadId\);[\s\S]*lastPersistedThreadKeyRef\.current = buildCompactThreadPersistKey\(threadId, sanitized\);[\s\S]*setMessages\(sanitized\);/u,
 	);
 });
 
