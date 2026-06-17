@@ -3832,13 +3832,22 @@ function AgentInstructionsComposer({
 			mentionInventoryCounts.set(key, next);
 		}
 	}, [config, inlineManagedReferenceKeys, mentionInventoryCounts, onAddListValues, onRemoveReferenceValue]);
+	// Stash for the typed custom prompt while the user is parked on "Run agent".
+	// Leaving for run-agent still clears the persisted instructions (so a Save in
+	// that mode carries no prompt), but we remember what was there so flipping
+	// back to "Pass a custom prompt" restores it verbatim instead of showing a
+	// blank editor.
+	const stashedCustomPromptRef = useRef("");
 	const handleRunPromptModeChange = useCallback((value: AgentRunPromptMode): void => {
 		setRunPromptMode(value);
 		if (value === "run-agent") {
+			stashedCustomPromptRef.current = instructions ?? "";
 			handleMentionInventoryChange([]);
 			onInstructionsChange?.("");
+		} else if (stashedCustomPromptRef.current.trim()) {
+			onInstructionsChange?.(stashedCustomPromptRef.current);
 		}
-	}, [handleMentionInventoryChange, onInstructionsChange]);
+	}, [handleMentionInventoryChange, instructions, onInstructionsChange]);
 	const showCustomPromptEditor = runPromptMode === "custom-prompt";
 
 	useEffect(() => {

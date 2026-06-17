@@ -6,6 +6,8 @@ import ToolsIcon from "@atlaskit/icon/core/tools";
 
 import type { FrontmatterEntries, FrontmatterValue } from "@/app/data/directory/skill-frontmatter";
 import { getDirectoryMentionItem } from "@/components/blocks/editor-palette/data/mention-sources";
+import { Icon } from "@/components/ui/icon";
+import { IconTile } from "@/components/ui/icon-tile";
 import { Input } from "@/components/ui/input";
 import { Tag, TagGroup } from "@/components/ui/tag";
 import { Textarea } from "@/components/ui/textarea";
@@ -190,7 +192,25 @@ export function FrontmatterNodeView({ node, updateAttributes, editor }: ReactNod
 																visual={visual}
 															/>
 														) : (
-															<ToolsIcon label="" size="small" />
+															// No directory visual resolved (e.g. a 3P tool
+															// like Splunk). Mirror the agent config panel
+															// reference chips (`AgentReferenceChip`): wrap the
+															// bare fallback icon in the `IconTile`
+															// xxsmall/transparent treatment so the glyph is
+															// normalized to the chip's 16px leading slot and
+															// centered. Rendering the raw `@atlaskit/icon`
+															// instead left-aligns a 12px glyph, which reads as
+															// a misaligned icon with an oversized gap.
+															// `text-inherit` lets it pick up the Tag color from
+															// the leading-slot wrapper.
+															<IconTile
+																aria-hidden
+																className="text-inherit"
+																icon={<Icon aria-hidden render={<ToolsIcon label="" size="small" />} />}
+																label=""
+																size="xxsmall"
+																variant="transparent"
+															/>
 														)
 													}
 													type={getRichTextMentionTagType(visual)}

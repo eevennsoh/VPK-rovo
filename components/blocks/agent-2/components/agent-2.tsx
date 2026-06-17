@@ -2708,8 +2708,8 @@ function AgentFilledSummaryRow({
 			data-agent-field={agentFieldName}
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
-			<div className="flex flex-col gap-y-1 sm:flex-row sm:items-center sm:gap-x-5">
-				<div className="sm:w-32 sm:shrink-0">
+			<div className="flex flex-col gap-y-1 sm:flex-row sm:items-center sm:gap-x-6">
+				<div className="sm:w-20 sm:shrink-0">
 					<AgentSectionLabel>{label}</AgentSectionLabel>
 				</div>
 				<div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -2865,11 +2865,11 @@ function AgentTriggerSummaryRow({
 
 	return (
 		<div
-			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-5"
+			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-6"
 			data-agent-field="trigger"
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
-			<div className="sm:w-32 sm:shrink-0">
+			<div className="sm:w-20 sm:shrink-0">
 				<AgentSectionLabel>Flows</AgentSectionLabel>
 			</div>
 			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
@@ -3761,11 +3761,11 @@ function AgentReasoningRow({
 }: Readonly<AgentReasoningRowProps>) {
 	return (
 		<div
-			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-5"
+			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-6"
 			data-agent-field="reasoning"
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
-			<div className="sm:w-32 sm:shrink-0">
+			<div className="sm:w-20 sm:shrink-0">
 				<AgentSectionLabel>Reasoning</AgentSectionLabel>
 			</div>
 			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
@@ -3956,11 +3956,11 @@ function AgentMemoryRow({
 }: Readonly<AgentMemoryRowProps>) {
 	return (
 		<div
-			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-5"
+			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-6"
 			data-agent-field="memory"
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
-			<div className="sm:w-32 sm:shrink-0">
+			<div className="sm:w-20 sm:shrink-0">
 				<AgentSectionLabel>Memory</AgentSectionLabel>
 			</div>
 			<div className="flex min-h-5 min-w-0 flex-1 flex-wrap items-center gap-1.5">
@@ -4447,7 +4447,17 @@ function AgentCompactConfigPanel({
 			)}
 			onPointerEnter={() => setStripHovered(true)}
 			onPointerLeave={() => setStripHovered(false)}
-			onFocusCapture={() => setStripFocused(true)}
+			onFocusCapture={(event) => {
+				// Only keyboard focus should latch the strip open (its sole purpose is
+				// keeping the hidden controls Tab-reachable). A mouse *click* on a strip
+				// control also focuses it; without the `:focus-visible` gate that focus
+				// would keep `stripFocused` true after the pointer leaves, stranding the
+				// card in its expanded state until the next click elsewhere.
+				const target = event.target;
+				if (target instanceof Element && target.matches(":focus-visible")) {
+					setStripFocused(true);
+				}
+			}}
 			onBlurCapture={(event) => {
 				if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
 					setStripFocused(false);

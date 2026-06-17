@@ -1196,7 +1196,14 @@ export function RovoAppAgentConfigPanel({
 		onTest(profileId);
 	}, [hasUpdateChanges, onCommitPublishReady, onTest, profileId]);
 	const [floatingLiveChatRequestKey, setFloatingLiveChatRequestKey] = useState(0);
+	// Opening the floating chat (button tap) must NOT start voice. Voice is only
+	// requested by the persistent bar's "Talk to Rovo" action, which bumps the
+	// request key consumed as `startRealtimeVoiceRequestKey`.
 	const handleOpenFloatingRovoChat = useCallback(() => {
+		resetAgentToRovo();
+		openChat("floating");
+	}, [openChat, resetAgentToRovo]);
+	const handleStartFloatingRovoVoice = useCallback(() => {
 		resetAgentToRovo();
 		setFloatingLiveChatRequestKey((currentKey) => currentKey + 1);
 		openChat("floating");
@@ -1217,10 +1224,10 @@ export function RovoAppAgentConfigPanel({
 				ariaLabel: "Talk to Rovo",
 				tooltipLabel: "Live chat",
 				icon: <AudioWaveformIcon label="" color="currentColor" />,
-				onClick: handleOpenFloatingRovoChat,
+				onClick: handleStartFloatingRovoVoice,
 			},
 		],
-	}), [handleOpenFloatingRovoChat]);
+	}), [handleStartFloatingRovoVoice]);
 
 	const activeHeaderSection: AgentCompactHeaderSection | null =
 		activeView === "insights"
@@ -1606,6 +1613,7 @@ export function RovoAppAgentConfigPanel({
 			/>
 			<AppsDirectoryDialog
 				key={`apps-${directorySelectedAppId ?? "browse"}`}
+				variant="experimental"
 				addedToolIds={addedAppIds}
 				initialSelectedToolId={directorySelectedAppId}
 				open={activeDirectory === "apps"}
@@ -1621,6 +1629,7 @@ export function RovoAppAgentConfigPanel({
 			/>
 			<SkillsDirectoryDialog
 				key={`skills-${directorySelectedSkillId ?? "browse"}`}
+				variant="experimental"
 				initialDetailSkillId={directorySelectedSkillId}
 				onAddSkills={handleAddSkills}
 				onOpenChange={(open) => {
