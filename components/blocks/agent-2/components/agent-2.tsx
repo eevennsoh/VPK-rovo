@@ -4336,7 +4336,18 @@ function AgentCompactConfigPanel({
 	const reduceMotion = useReducedMotion();
 	const [stripHovered, setStripHovered] = useState(false);
 	const [stripFocused, setStripFocused] = useState(false);
-	const stripRevealed = !hasRows || stripHovered || stripFocused;
+	// Touch devices have no persistent hover, so a hover-gated strip would strand the
+	// secondary controls with no tappable entry point. Keep it visible when the device
+	// lacks hover capability. Defaults to true (desktop) for SSR; corrected on mount.
+	const [canHover, setCanHover] = useState(true);
+	useEffect(() => {
+		const mql = window.matchMedia("(hover: hover)");
+		const onChange = () => setCanHover(mql.matches);
+		onChange();
+		mql.addEventListener("change", onChange);
+		return () => mql.removeEventListener("change", onChange);
+	}, []);
+	const stripRevealed = !hasRows || !canHover || stripHovered || stripFocused;
 
 	return (
 		<div
