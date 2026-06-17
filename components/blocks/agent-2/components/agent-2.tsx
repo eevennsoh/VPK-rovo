@@ -4046,7 +4046,7 @@ function AgentInstructionsComposer({
 			<RichTextEditor
 				aria-label="Agent instructions"
 				className="space-y-2"
-				contentClassName={cn("pt-2", contentClassName)}
+				contentClassName={contentClassName}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
 				enableDirectoryAutocomplete
 				placeholder="Press / to help me create the agent, or start with a template"
@@ -4348,7 +4348,10 @@ function AgentCompactConfigPanel({
 
 	return (
 		<div
-			className="mb-2 flex flex-col rounded-2xl border border-border px-4 py-2"
+			className={cn(
+				"mt-6 flex flex-col rounded-2xl border border-border px-4 pt-2",
+				stripRevealed ? "pb-2" : "pb-0",
+			)}
 			onPointerEnter={() => setStripHovered(true)}
 			onPointerLeave={() => setStripHovered(false)}
 			onFocusCapture={() => setStripFocused(true)}

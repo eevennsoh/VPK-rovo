@@ -197,9 +197,7 @@ export function getDeterministicAgentAvatarSrc(seed: string | null | undefined):
 //
 // Files are grouped by color subfolder (`/smart-folders/<color>/…`). Each color
 // ships the same 8 designs in the same order, so the hashed design index maps
-// consistently across colors. The `yellow` set is spelled with the underscore
-// filenames the assets actually ship with (`abstract_2_yellow.svg`), unlike the
-// hyphenated rest.
+// consistently across colors.
 const SMART_FOLDER_BANNER_SRCS_BY_COLOR = {
 	blue: [
 		"/smart-folders/blue/abstract-blue.svg",
@@ -242,14 +240,14 @@ const SMART_FOLDER_BANNER_SRCS_BY_COLOR = {
 		"/smart-folders/purple/meetings-purple.svg",
 	],
 	yellow: [
-		"/smart-folders/yellow/abstract_yellow.svg",
-		"/smart-folders/yellow/abstract_2_yellow.svg",
-		"/smart-folders/yellow/cloud_yellow.svg",
-		"/smart-folders/yellow/default_yellow.svg",
-		"/smart-folders/yellow/default_2_yellow.svg",
-		"/smart-folders/yellow/dev_yellow.svg",
-		"/smart-folders/yellow/launch_yellow.svg",
-		"/smart-folders/yellow/meetings_yellow.svg",
+		"/smart-folders/yellow/abstract-yellow.svg",
+		"/smart-folders/yellow/abstract-2-yellow.svg",
+		"/smart-folders/yellow/cloud-yellow.svg",
+		"/smart-folders/yellow/default-yellow.svg",
+		"/smart-folders/yellow/default-2-yellow.svg",
+		"/smart-folders/yellow/dev-yellow.svg",
+		"/smart-folders/yellow/launch-yellow.svg",
+		"/smart-folders/yellow/meetings-yellow.svg",
 	],
 } as const satisfies Record<string, readonly string[]>;
 
