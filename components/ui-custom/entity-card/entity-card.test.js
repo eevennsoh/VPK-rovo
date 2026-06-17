@@ -24,7 +24,10 @@ const AGENT_BROWSER_SOURCE = readFileSync(
 
 test("shell preserves the bordered surface and hover-elevation classes", () => {
 	assert.match(SHELL_SOURCE, /group\/card/u);
-	assert.match(SHELL_SOURCE, /rounded-md bg-surface p-4/u);
+	// Resting fill is the overlay surface so cards match their elevated container
+	// (modals/dialogs sit on surface-overlay); identical to `surface` in light mode
+	// but correctly lighter in dark mode. See #966-followup.
+	assert.match(SHELL_SOURCE, /rounded-md bg-surface-overlay p-4/u);
 	// Focus ring + border fade now key off the overlay select button's focus-visible
 	// state (via :has) instead of the article's own focus, since the article is no
 	// longer focusable — see the overlay-button regression test below (#709).

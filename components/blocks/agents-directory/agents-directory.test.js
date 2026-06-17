@@ -546,11 +546,12 @@ test("Agent Directory cards render the shared EntityCardAgentCard with overlay e
 	assert.match(interaction, /boxShadow: OVERLAY_SHADOW/u);
 	assert.doesNotMatch(interaction, /scale: 1\.006/u);
 	assert.match(interaction, /type: "spring",[\s\S]*bounce: 0\.16,[\s\S]*visualDuration: 0\.22/u);
-	assert.match(shell, /group\/card relative flex h-full w-full flex-col gap-3 rounded-md bg-surface p-4/u);
-	assert.match(shell, /after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-md after:border after:border-border/u);
+	assert.match(shell, /group\/card relative flex h-full w-full flex-col gap-3 rounded-md bg-surface-overlay p-4/u);
+	assert.match(shell, /after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-md after:border after:transition-colors/u);
+	assert.match(shell, /after:border-border hover:after:border-transparent has-\[\[data-slot=card-directory-select\]:focus-visible\]:after:border-transparent/u);
 	// Focus styling keys off the overlay select button's focus-visible (#709): the shared
 	// shell no longer makes the whole card a role="button", so nested controls stay valid.
-	assert.match(shell, /has-\[\[data-slot=card-directory-select\]:focus-visible\]:after:border-transparent has-\[\[data-slot=card-directory-select\]:focus-visible\]:ring-3 has-\[\[data-slot=card-directory-select\]:focus-visible\]:ring-ring\/50/u);
+	assert.match(shell, /has-\[\[data-slot=card-directory-select\]:focus-visible\]:ring-3 has-\[\[data-slot=card-directory-select\]:focus-visible\]:ring-ring\/50/u);
 	assert.match(shell, /willChange: "transform"/u);
 	assert.doesNotMatch(shell, /role="button"/u);
 	assert.match(shell, /data-slot="card-directory-select"[\s\S]*type="button"/u);
