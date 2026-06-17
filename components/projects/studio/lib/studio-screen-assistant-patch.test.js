@@ -127,11 +127,11 @@ test("builds automation rules from a validated structured triggers array", () =>
 	assert.equal(patch.automationRules[0].triggers[0].providerId, "jira");
 });
 
-test("infers automation rules from natural-language trigger phrases", () => {
+test("NL trigger phrases set the triggers field without clobbering automationRules", () => {
 	const patch = normalizeAgentDraftPatch({ triggers: ["When a Jira work item is created"] });
 	assert.deepEqual(patch.triggers, ["When a Jira work item is created"]);
-	// inference is best-effort; when it matches a provider/event it attaches rules.
-	if (patch.automationRules) {
-		assert.ok(patch.automationRules.length >= 1);
-	}
+	// The stateless normalizer must NOT rebuild automationRules from phrases —
+	// updateSessionAgentDraft shallow-merges, so that would drop a draft's existing
+	// custom rules. Only an explicit automationRules array replaces them.
+	assert.equal(patch.automationRules, undefined);
 });

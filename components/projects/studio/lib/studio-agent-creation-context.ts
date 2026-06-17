@@ -295,7 +295,7 @@ export function buildStudioAssistantKnowledgeContext(): string {
 			REASONING_MODE_VALUES.map((value) => `"${value}"`).join(", ") +
 			").",
 		"- conversationStarters (up to 3 short prompts) and the parallel conversationStarterIcons.",
-		'- triggers — natural-language phrases for when the agent runs automatically (e.g. "When a Jira work item is created", "Every weekday morning"); these become automation rules.',
+		'- triggers — natural-language phrases for when the agent runs automatically (e.g. "When a Jira work item is created", "Every weekday morning"); these set the trigger phrases. Existing automation rules are preserved — only send a full automationRules array when you intend to replace them.',
 		"- subagentPrompts — [{ triggerName, condition, config: { instructions, skills, tools, knowledge } }] for specialist sub-agents.",
 		"",
 		"After applying a patch, point_at_target the changed field so the user sees it. Field target ids (prefix studio-agent-config):",

@@ -80,6 +80,7 @@ import {
 	buildDeterministicTriggerThinkingParts,
 	DETERMINISTIC_TRIGGER_TRACE_INITIAL_DELAY_MS,
 	DETERMINISTIC_TRIGGER_TRACE_STAGE_DELAYS_MS,
+	mergeTriggerPhrasesIntoDraft,
 	planDeterministicAgentBuild,
 } from "@/components/projects/studio/lib/demo-agent-builder";
 import { buildComposerHermesContext, shouldResetComposerHermesSkillSelection } from "@/components/projects/studio/lib/rovo-app-hermes-skill-selection";
@@ -3179,10 +3180,28 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					let ok = false;
 					let appliedFields: string[] = [];
 					if (normalized && activeSessionAgentEntry) {
-						const patch =
+						let patch =
 							normalized.description && !normalized.summary
 								? { ...normalized, summary: normalized.description }
 								: normalized;
+						// Hydrate NL trigger phrases into automations here, where the current
+						// draft is available, so a "add a Jira trigger" request appends to the
+						// agent's existing automation rules instead of being a no-op (the editor
+						// reads automationRules before triggers). Skip when the model already
+						// sent an explicit automationRules array.
+						if (patch.triggers && !patch.automationRules) {
+							const mergedAutomations = mergeTriggerPhrasesIntoDraft(
+								activeSessionAgentEntry.draftResult,
+								patch.triggers,
+							);
+							if (mergedAutomations) {
+								patch = {
+									...patch,
+									automationRules: mergedAutomations.automationRules,
+									triggers: mergedAutomations.triggers,
+								};
+							}
+						}
 						const nextEntry = studioAgentRegistry.updateSessionAgentDraft?.(
 							activeSessionAgentEntry.profile.id,
 							patch,
