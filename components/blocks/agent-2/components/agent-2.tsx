@@ -616,18 +616,15 @@ export function AgentCompactHeaderNav({
 		function recompute(): void {
 			const widths = Array.from(measure!.children).map((node) => (node as HTMLElement).offsetWidth);
 			// When sections are collapsed by default the "…" trigger is always
-			// present, so reserve its width up front instead of letting the
-			// width-only fast path hand every primary item an inline slot.
-			const reservedForOverflow =
-				defaultCollapsedItems.length > 0
-					? AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH + AGENT_COMPACT_HEADER_NAV_GAP
-					: 0;
+			// present, so always reserve its width (computed once inside the
+			// helper) rather than only when the primaries overflow on their own.
 			setVisibleCount(
 				computeContextBarOverflow(
 					widths,
-					container!.clientWidth - reservedForOverflow,
+					container!.clientWidth,
 					AGENT_COMPACT_HEADER_NAV_OVERFLOW_WIDTH,
 					AGENT_COMPACT_HEADER_NAV_GAP,
+					defaultCollapsedItems.length > 0,
 				),
 			);
 		}

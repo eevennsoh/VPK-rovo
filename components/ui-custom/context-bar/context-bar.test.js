@@ -249,3 +249,18 @@ test("computeContextBarOverflow returns all items before measurement", async () 
 	assert.equal(computeContextBarOverflow([100, 100, 100], 0, 32, 8), 3);
 	assert.equal(computeContextBarOverflow([], 400, 32, 8), 0);
 });
+
+test("computeContextBarOverflow always reserves the overflow button when asked", async () => {
+	const { computeContextBarOverflow } = await loadOverflowModule();
+
+	// All 3 items (50px + gaps) fit in 200px on their own, but with an always-on
+	// overflow button the fast path must be skipped so its width is reserved once.
+	// Item 1: 50 + gap(8) + overflow(32) = 90 ≤ 200. Item 2: 108 + 8 + 32 = 148 ≤ 200.
+	// Item 3: 166 + 8 + 32 = 206 > 200 → only 2 fit beside the button.
+	assert.equal(computeContextBarOverflow([50, 50, 50], 200, 32, 8, true), 2);
+
+	// Regression for double-reserving: a single item that fits beside the button
+	// must not collapse to 0 just because the trigger is always present.
+	// 100 + gap(8) + overflow(32) = 140 ≤ 150 → the one item stays visible.
+	assert.equal(computeContextBarOverflow([100], 150, 32, 8, true), 1);
+});
