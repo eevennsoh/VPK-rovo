@@ -2181,11 +2181,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	}, [activeAgentConfig, activeSessionAgentEntry, setActiveAgentConfigState, studioAgentRegistry]);
 
 	useEffect(() => {
-		if (
-			!activeAgentConfig ||
-			!activeSessionAgentEntry ||
-			activeAgentConfigView === "test"
-		) {
+		if (!activeAgentConfig || !activeSessionAgentEntry) {
 			return;
 		}
 
@@ -2207,9 +2203,19 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					break;
 				}
 
+				// Record the key as soon as the completed result is observed —
+				// even when we're already in Test because a registration path
+				// (handleRegisterAgent) or the Test toggle put us there. Only the
+				// view-switch below is gated on "not already in test"; the key
+				// itself must always be marked seen. Otherwise the first time the
+				// user leaves Test this effect re-runs, finds the key unseen, and
+				// yanks them back into Test — remounting the chat and replaying the
+				// greeting (the "two clicks to leave Test" bug).
 				generatedAgentTestViewKeysRef.current.add(agentResultKey);
-				setActiveAgentConfigView("test");
-				openAgentCreationAskRovoChat();
+				if (activeAgentConfigView !== "test") {
+					setActiveAgentConfigView("test");
+					openAgentCreationAskRovoChat();
+				}
 				break;
 			}
 		}

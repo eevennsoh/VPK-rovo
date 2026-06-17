@@ -116,7 +116,7 @@ export function EntityCardApp({
 						</div>
 
 						<div className="flex flex-col gap-2 opacity-0 [grid-area:1/1] transition-opacity duration-fast ease-out group-hover/card:opacity-100 group-focus-within/card:opacity-100">
-							<p className="line-clamp-2 text-sm leading-5 text-text-subtle">
+							<p className="line-clamp-2 min-h-10 text-sm leading-5 text-text-subtle">
 								{`“${promptSuggestion}”`}
 							</p>
 							<p className="text-xs leading-4 text-text-subtlest">@ {mentionHandle}</p>

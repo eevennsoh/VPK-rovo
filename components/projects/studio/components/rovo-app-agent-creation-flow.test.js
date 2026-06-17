@@ -585,9 +585,16 @@ test("Studio lands generated agents in the Test tab and opens Ask Rovo", () => {
 	assert.match(SHELL_SOURCE, /const setActiveAgentConfigState = useCallback\(\(nextAgentConfig: typeof activeAgentConfig\) => \{[\s\S]*activeAgentConfigRef\.current = nextAgentConfig;[\s\S]*setActiveAgentConfig\(nextAgentConfig\);[\s\S]*\}, \[\]\);/u);
 	assert.match(SHELL_SOURCE, /const handleAgentRestoredFromUrl = useCallback\(\(agentId: string \| null\) => \{[\s\S]*if \(activeAgentConfigRef\.current\?\.profileId !== agentId\) \{[\s\S]*setActiveAgentConfigView\("configure"\);[\s\S]*\}[\s\S]*setActiveAgentConfigState\(agentId \? \{ profileId: agentId, sourceMessageId: null \} : null\);/u);
 	assert.match(SHELL_SOURCE, /if \(activeAgentConfig && !activeSessionAgentEntry\) \{[\s\S]*if \(studioAgentRegistry\.getSessionAgentEntry\?\.\(activeAgentConfig\.profileId\)\) \{[\s\S]*return;[\s\S]*\}[\s\S]*setActiveAgentConfigState\(null\);[\s\S]*setActiveAgentConfigView\("configure"\);/u);
-	assert.match(SHELL_SOURCE, /!activeAgentConfig \|\|[\s\S]*!activeSessionAgentEntry \|\|[\s\S]*activeAgentConfigView === "test"/u);
+	// The auto-test effect must NOT short-circuit while already in the Test view:
+	// it has to keep scanning so it can record the completed result's key. The
+	// guard is only the two presence checks.
+	assert.match(SHELL_SOURCE, /if \(!activeAgentConfig \|\| !activeSessionAgentEntry\) \{\n\t\t\treturn;\n\t\t\}\n\n\t\tfor \(const message of chat\.messages\.toReversed\(\)\) \{/u);
+	assert.doesNotMatch(SHELL_SOURCE, /!activeAgentConfig \|\|[\s\S]{0,80}!activeSessionAgentEntry \|\|[\s\S]{0,80}activeAgentConfigView === "test"/u);
 	assert.match(SHELL_SOURCE, /const isActiveGeneratedAgent =[\s\S]*message\.id === activeAgentConfig\.sourceMessageId \|\|[\s\S]*agentResult\.agentId === activeSessionAgentEntry\.sourceResult\.agentId \|\|[\s\S]*agentResult\.agentId === activeSessionAgentEntry\.draftResult\.agentId \|\|[\s\S]*agentResult\.agentId === activeSessionAgentEntry\.publishReadyResult\.agentId;/u);
-	assert.match(SHELL_SOURCE, /const agentResultKey = `\$\{chat\.runtimeThreadId\}:\$\{message\.id\}:\$\{agentResult\.agentId\}:\$\{agentResult\.action\}`;[\s\S]*if \(generatedAgentTestViewKeysRef\.current\.has\(agentResultKey\)\) \{[\s\S]*break;[\s\S]*\}[\s\S]*generatedAgentTestViewKeysRef\.current\.add\(agentResultKey\);[\s\S]*setActiveAgentConfigView\("test"\);[\s\S]*openAgentCreationAskRovoChat\(\);/u);
+	// The key is recorded unconditionally (so leaving Test never bounces back),
+	// while the actual view-switch + Ask Rovo open is gated on not already being
+	// in the Test view.
+	assert.match(SHELL_SOURCE, /const agentResultKey = `\$\{chat\.runtimeThreadId\}:\$\{message\.id\}:\$\{agentResult\.agentId\}:\$\{agentResult\.action\}`;[\s\S]*if \(generatedAgentTestViewKeysRef\.current\.has\(agentResultKey\)\) \{[\s\S]*break;[\s\S]*\}[\s\S]*generatedAgentTestViewKeysRef\.current\.add\(agentResultKey\);[\s\S]*if \(activeAgentConfigView !== "test"\) \{[\s\S]*setActiveAgentConfigView\("test"\);[\s\S]*openAgentCreationAskRovoChat\(\);[\s\S]*\}/u);
 });
 
 test("RovoAppMessages renders the block agent result card after generation completes", () => {

@@ -1419,16 +1419,18 @@ export function RovoAppAgentConfigPanel({
 								) : null}
 								<div
 									className={cn(
-										"mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-4",
+										"mx-auto flex h-full min-h-0 w-full flex-col px-4",
 										// Agent config takes its 24px top space inside the scroll
 										// region (compactScrollAreaClassName `pt-6`) so it collapses
 										// as soon as the content scrolls; access/surfaces/users keep
 										// the fixed `py-4` since they don't share that scroll area.
+										// The config fields read best in a narrower 800px column;
+										// access/surfaces/users keep the wider max-w-7xl shell.
 										activeCompactSection === "access" ||
 											activeCompactSection === "surfaces" ||
 											activeCompactSection === "users"
-											? "py-4"
-											: "",
+											? "max-w-7xl py-4"
+											: "max-w-[800px]",
 									)}
 								>
 									{activeCompactSection === "access" ? (
@@ -1470,10 +1472,25 @@ export function RovoAppAgentConfigPanel({
 											// flush at 16px from the panel edge (10px wrapper + 6px inset)
 											// while the focus-ring clip clearance is preserved. `pt-4`
 											// lives inside the scrollport so the 16px top gap shows at
-											// rest but scrolls away once the content scrolls (the wrapper
-											// drops its fixed py-4 for this branch). Scoped to this config
-											// branch only; access/surfaces/users keep px-4.
-											compactScrollAreaClassName="-ml-1.5 -mr-4 pr-4 pt-4"
+											// rest but content bleeds to the edges mid-scroll (the wrapper
+											// drops its fixed py-4 for this branch). The bottom gap is
+											// the subtle one: the scrollport's last child (the
+											// instructions composer) is `flex-1 min-h-0`, so when its
+											// content is tall its `<section>` box collapses to its 0%
+											// flex basis while the editor *content* overflows it visibly
+											// — that visible overflow is what actually scrolls. So none
+											// of these reach the real content end: `pb-4` on the
+											// scrollport (Chromium clips trailing padding-block-end in a
+											// flex-column scroller), an `::after` spacer (lands after the
+											// collapsed section box, mid-scroll), nor `pb-4` on the
+											// section itself (its padding rides the collapsed box, ~1300px
+											// above the fold — measured). The only element whose bottom IS
+											// the scroll-overflow boundary is the editor body
+											// (`.rich-text-editor-content`, the last/lowest child of the
+											// composer). padding-bottom there extends scrollHeight by 16px
+											// and only shows once scrolled to the end. Scoped to this
+											// config branch only; access/surfaces/users keep px-4.
+											compactScrollAreaClassName="-ml-1.5 -mr-4 pr-4 pt-4 [&_[data-agent-field=instructions]_.rich-text-editor-content]:pb-4"
 											idPrefix={`agent-${profileId}-${activeConfigId}`}
 											onTextChange={handleConfigTextChange}
 											onProfileTextChange={handleBaseTextChange}

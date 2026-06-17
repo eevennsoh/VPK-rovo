@@ -152,6 +152,12 @@ import {
 const AGENT_AVATAR_HEXAGON_PATH = "M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
 const AGENT_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg";
 const AGENT_AVATAR_OPTION_SRC_SET = new Set<string>(AGENT_AVATAR_OPTION_SRCS);
+// The default RFP Drafter demo agent gets a bespoke taller cover with artwork.
+// Gated on the agent id (mirrors RFP_DRAFTING_AGENT_ID in the projects layer)
+// rather than imported from there, so this reusable block never depends on
+// feature code. Other templates keep the standard solid-color cover.
+const RFP_DRAFTING_AGENT_ID = "rfp-drafting-agent";
+const RFP_DRAFTING_COVER_BACKGROUND_SRC = "/smart-folders/abstract-lime.svg";
 const DEFAULT_AGENT_PROFILE_COVER_COLOR = "#1868DB";
 const MAX_AGENT_CONVERSATION_STARTERS = 3;
 const AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS = {
@@ -3363,19 +3369,39 @@ function AgentAvatarPickerMenu({
 	);
 }
 
+// The large decorative avatar that bleeds across the banner uses the
+// container-less ("unmasked") illustration so it floats on the cover without its
+// own lime hexagon tile. These assets mirror the masked set one-for-one under
+// /avatar-agent-unmasked/. The small profile avatar below keeps its hexagon.
+function getUnmaskedAvatarSrc(avatarSrc: string): string {
+	return avatarSrc.startsWith("/avatar-agent/")
+		? avatarSrc.replace("/avatar-agent/", "/avatar-agent-unmasked/")
+		: avatarSrc;
+}
+
 function AgentProfileCover({
 	avatarSrc = AGENT_AVATAR_SRC,
 	onAvatarChange,
+	isRfpDrafter = false,
 }: Readonly<{
 	avatarSrc?: string;
 	onAvatarChange?: (avatarSrc: string) => void;
+	// The default RFP Drafter demo agent gets a taller cover with artwork; every
+	// other template keeps the standard 48px solid-color banner.
+	isRfpDrafter?: boolean;
 }>) {
 	const coverBackgroundColor = getAgentProfileCoverBackgroundColor(avatarSrc);
 	const isAtlassianAvatar = isAtlassianLogoSource(avatarSrc);
 
 	return (
 		<div className="relative overflow-hidden rounded-t-xl bg-surface text-text">
-			<div className="relative h-12 overflow-hidden" style={{ backgroundColor: coverBackgroundColor }}>
+			<div
+				className={cn("relative overflow-hidden bg-cover bg-center", isRfpDrafter ? "h-20" : "h-12")}
+				style={{
+					backgroundColor: coverBackgroundColor,
+					backgroundImage: isRfpDrafter ? `url("${RFP_DRAFTING_COVER_BACKGROUND_SRC}")` : undefined,
+				}}
+			>
 				{isAtlassianAvatar ? (
 					<span className="absolute top-1/2 left-[88%] -translate-x-1/2 -translate-y-1/2 opacity-95">
 						<AtlassianLogo name="atlassian" label="Atlassian" size="xlarge" />
@@ -3386,13 +3412,17 @@ function AgentProfileCover({
 						aria-hidden
 						className="absolute top-1/2 left-[88%] h-48 w-[168px] -translate-x-1/2 -translate-y-1/2 opacity-95"
 						height={192}
-						src={avatarSrc}
+						src={getUnmaskedAvatarSrc(avatarSrc)}
 						width={168}
 					/>
 				)}
 			</div>
 			<div aria-hidden className="h-6" />
-			<div className="absolute top-6 left-4 size-12">
+			{/* Avatar straddles the banner's bottom edge: top = bannerHeight − 24px
+			    (half the 48px avatar). 80px banner → top-14, 48px banner → top-6.
+			    The 24px overhang below the banner is constant, so the h-6 spacer
+			    above stays correct for both heights. */}
+			<div className={cn("absolute left-4 size-12", isRfpDrafter ? "top-14" : "top-6")}>
 				{onAvatarChange ? (
 					<AgentAvatarPickerMenu
 						avatarSrc={avatarSrc}
@@ -4120,7 +4150,11 @@ function AgentConfigProfile({
 			className="flex flex-col gap-4"
 			data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:profile` : undefined}
 		>
-			<AgentProfileCover avatarSrc={avatarSrc} onAvatarChange={onAvatarChange} />
+			<AgentProfileCover
+				avatarSrc={avatarSrc}
+				onAvatarChange={onAvatarChange}
+				isRfpDrafter={config.agentId === RFP_DRAFTING_AGENT_ID}
+			/>
 			<div className="flex flex-col gap-1" data-agent-field="name">
 				{/* The cover/avatar and the description below stay put; only the name
 				    row (title + inline back-arrow on subagents) crossfades and slides
