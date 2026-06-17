@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 type LegacyTagVariant = "success" | "removed" | "inprogress" | "new" | "moved";
 
-type TagVariant = "default" | "rounded" | LegacyTagVariant;
+type TagVariant = "default" | "rounded" | "editor" | LegacyTagVariant;
 
 type TagColor =
 	| "standard"
@@ -44,6 +44,7 @@ type TagType = "default" | "user" | "other" | "agent";
 const legacyVariantToColor: Record<TagVariant, TagColor> = {
 	default: "standard",
 	rounded: "standard",
+	editor: "standard",
 	success: "green",
 	removed: "red",
 	inprogress: "blue",
@@ -170,6 +171,11 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 	const isUserAvatarTag = hasAvatarTagStyles && type === "user";
 	const isOtherAvatarTag = hasAvatarTagStyles && type === "other";
 	const isRounded = shape === "rounded" || variant === "rounded";
+	// The "editor" variant drops the colored border stroke and swaps the surface
+	// from the hollow `bg-bg-neutral-subtle` to the solid `bg-bg-neutral` fill —
+	// matching the filled treatment used by SkillTag (`components/ui-custom/skill-tag`).
+	// The leading-icon accent color (`colorClasses.icon`) is preserved.
+	const isEditor = variant === "editor";
 	const isInteractive = Boolean(onClick);
 	const shouldShowVerifiedIcon = isOtherAvatarTag && isVerified;
 	const isOverlayRemove = Boolean(onRemove) && removeVariant === "overlay";
@@ -225,9 +231,9 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 			onClick={onClick}
 			style={resolvedStyle}
 			className={cn(
-				"group/tag relative inline-flex max-w-[11.25rem] min-w-0 shrink-0 self-start items-center border bg-bg-neutral-subtle text-xs leading-4 font-normal text-text transition-colors box-border",
+				"group/tag relative inline-flex max-w-[11.25rem] min-w-0 shrink-0 self-start items-center text-xs leading-4 font-normal text-text transition-colors box-border",
 				"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none",
-				colorClasses.border,
+				isEditor ? "border-0 bg-bg-neutral" : cn("border bg-bg-neutral-subtle", colorClasses.border),
 				cn(
 					"h-5",
 					// Front slot and avatar slot share one leading-padding/gap branch.
@@ -240,7 +246,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 					// otherwise keep the avatar-type defaults (user 6px, other 4px).
 					hasRemoveButton ? "pe-[4px]" : isUserAvatarTag ? "pe-1.5" : isAvatarType ? "pe-1" : "pe-[4px]",
 				),
-				isInteractive ? "cursor-pointer hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed" : "cursor-default",
+				isInteractive ? cn("cursor-pointer", isEditor ? "hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed" : "hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed") : "cursor-default",
 				disabled && "pointer-events-none opacity-(--opacity-disabled)",
 				className,
 			)}
@@ -294,7 +300,8 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 						disabled={disabled}
 						onClick={handleRemoveClick}
 						className={cn(
-							"inline-flex size-4 shrink-0 items-center justify-center border-0 bg-bg-neutral-subtle text-text transition-colors hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none",
+							"inline-flex size-4 shrink-0 items-center justify-center border-0 text-text transition-colors focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none",
+							isEditor ? "bg-bg-neutral hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed" : "bg-bg-neutral-subtle hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
 							removeButtonShapeClass,
 							removeButtonMarginClass,
 						)}
@@ -318,7 +325,8 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(function Tag({
 						}}
 						data-slot={overlayControl.slot}
 						className={cn(
-							"absolute end-px top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center border-0 bg-transparent text-text opacity-0 transition-[opacity,background-color] duration-fast ease-out hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none",
+							"absolute end-px top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center border-0 bg-transparent text-text opacity-0 transition-[opacity,background-color] duration-fast ease-out focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none",
+							isEditor ? "hover:bg-bg-neutral-hovered active:bg-bg-neutral-pressed" : "hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed",
 							removeButtonShapeClass,
 							"pointer-events-none group-hover/tag:pointer-events-auto group-hover/tag:opacity-100 group-focus-within/tag:pointer-events-auto group-focus-within/tag:opacity-100",
 						)}

@@ -5094,6 +5094,13 @@ const UI_VARIANT_DEMOS: Record<string, ComponentType> = {
       })),
     { ssr: false },
   ),
+  "tag-demo-editor-tag": dynamic(
+    () =>
+      import("./demos/ui/tag-demo").then((mod) => ({
+        default: mod.TagDemoEditorTag,
+      })),
+    { ssr: false },
+  ),
   "tag-demo-removable-overlay": dynamic(
     () =>
       import("./demos/ui/tag-demo").then((mod) => ({
