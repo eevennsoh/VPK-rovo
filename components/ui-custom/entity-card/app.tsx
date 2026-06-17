@@ -30,6 +30,14 @@ export interface EntityCardAppProps {
 	onMoreActions?: () => void;
 	/** Renders the persistent "added" check when the app is already on the agent. */
 	added?: boolean;
+	/** Swaps the leading logo for a 16×16 select checkbox on hover/select. */
+	selectable?: boolean;
+	/** Current selection state for the leading checkbox. */
+	selected?: boolean;
+	/** Toggles selection from the leading checkbox. */
+	onSelectedChange?: (checked: boolean) => void;
+	/** Accessible label for the leading checkbox (e.g. "Select {name}"). */
+	selectLabel?: string;
 	promptSuggestion?: string;
 	mentionHandle?: string;
 	className?: string;
@@ -46,6 +54,10 @@ export function EntityCardApp({
 	action,
 	onMoreActions,
 	added = false,
+	selectable = false,
+	selected = false,
+	onSelectedChange,
+	selectLabel,
 	promptSuggestion,
 	mentionHandle,
 	className,
@@ -95,6 +107,10 @@ export function EntityCardApp({
 				) : null)
 			}
 			reserveByline
+			onSelectedChange={onSelectedChange}
+			selectLabel={selectLabel}
+			selectable={selectable}
+			selected={selected}
 			leading={
 				<Tile isInset={false} label={name} size="medium" variant="transparent">
 					{appLogo}

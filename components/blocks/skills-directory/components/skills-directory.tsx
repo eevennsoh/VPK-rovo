@@ -16,6 +16,7 @@ import {
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CrossIcon from "@atlaskit/icon/core/cross";
+import DeleteIcon from "@atlaskit/icon/core/delete";
 import DownloadIcon from "@atlaskit/icon/core/download";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
@@ -52,6 +53,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SplitButton } from "@/components/ui/split-button";
+import { Switch } from "@/components/ui/switch";
 import {
 	EntityCardAddedCheck,
 	EntityCardShell,
@@ -122,11 +124,21 @@ export interface SkillsDirectoryDialogProps {
 	onAddSkills?: (skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => void;
 	onCreateShareLink?: (skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => void;
 	onCreateSkill?: () => void;
+	/**
+	 * Ids of skills currently disabled on the agent. When provided, the detail
+	 * header's disable Switch is controlled by this set (and `onToggleSkillEnabled`);
+	 * omit it to let the dialog manage a local, uncontrolled disabled state.
+	 */
+	disabledSkillIds?: readonly string[];
 	onDownloadSkills?: (skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => void;
 	onFavoriteSkills?: (skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => void;
 	onNewSkill?: () => void;
 	onOpenChange: (open: boolean) => void;
 	onOpenSkill?: (skill: SkillsDirectorySkill) => void;
+	/** Removes a skill from the agent (fired by the detail header's "Remove" button). */
+	onRemoveSkills?: (skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => void;
+	/** Toggles a skill's enabled state on the agent (fired by the detail header Switch). */
+	onToggleSkillEnabled?: (skill: SkillsDirectorySkill, enabled: boolean) => void;
 	onSelectAgent?: (agent: SkillsDirectoryAgent) => void;
 	onSelectedSkillIdsChange?: (skillIds: readonly string[]) => void;
 	onSelectSkill?: (skill: SkillsDirectorySkill) => void;
@@ -283,6 +295,7 @@ export function SkillsDirectoryDialog({
 	addedSkillIds,
 	agents,
 	defaultSelectedSkillIds = [],
+	disabledSkillIds,
 	initialDetailSkillId = null,
 	onAddSkills,
 	onCreateShareLink,
@@ -292,6 +305,8 @@ export function SkillsDirectoryDialog({
 	onNewSkill,
 	onOpenChange,
 	onOpenSkill,
+	onRemoveSkills,
+	onToggleSkillEnabled,
 	onSelectAgent,
 	onSelectedSkillIdsChange,
 	onSelectSkill,
@@ -333,6 +348,15 @@ export function SkillsDirectoryDialog({
 	// seed changes, so this initializer re-runs for each newly opened skill.
 	const [selectedDetailSkillId, setSelectedDetailSkillId] = useState<string | null>(initialDetailSkillId);
 	const [uncontrolledSelectedIds, setUncontrolledSelectedIds] = useState<readonly string[]>(defaultSelectedSkillIds);
+	// Per-skill enable/disable state for the detail view — mirrors the agent-2
+	// config toggle, where a configured skill can be parked disabled while staying
+	// on the agent until explicitly removed. Controlled by `disabledSkillIds` when
+	// the host wires it to the agent config; otherwise a local set (demo use). Keyed
+	// by skill id.
+	const [uncontrolledDisabledIds, setUncontrolledDisabledIds] = useState<readonly string[]>([]);
+	const controlledDisabled = typeof disabledSkillIds !== "undefined";
+	const resolvedDisabledIds = controlledDisabled ? disabledSkillIds : uncontrolledDisabledIds;
+	const disabledIdSet = useMemo(() => new Set(resolvedDisabledIds), [resolvedDisabledIds]);
 	const controlledSelection = typeof selectedSkillIds !== "undefined";
 	const resolvedSelectedIds = controlledSelection ? selectedSkillIds : uncontrolledSelectedIds;
 	const selectedIdSet = useMemo(() => new Set(resolvedSelectedIds), [resolvedSelectedIds]);
@@ -398,6 +422,36 @@ export function SkillsDirectoryDialog({
 		commitSelectedIds([]);
 	}
 
+	function handleToggleSkillEnabled(skill: SkillsDirectorySkill, enabled: boolean): void {
+		// Prefer the host-controlled callback (wires to the agent config); fall back
+		// to the local uncontrolled set when no callback is supplied.
+		if (onToggleSkillEnabled) {
+			onToggleSkillEnabled(skill, enabled);
+		}
+		if (!controlledDisabled) {
+			setUncontrolledDisabledIds((current) => {
+				const next = new Set(current);
+				if (enabled) {
+					next.delete(skill.id);
+				} else {
+					next.add(skill.id);
+				}
+				return [...next];
+			});
+		}
+	}
+
+	function handleRemoveSkill(skill: SkillsDirectorySkill): void {
+		// Drop the skill from the active selection, clear any local disabled state,
+		// notify the host so it can update the agent config, then return to the list.
+		commitSelectedIds(resolvedSelectedIds.filter((id) => id !== skill.id));
+		if (!controlledDisabled) {
+			setUncontrolledDisabledIds((current) => current.filter((id) => id !== skill.id));
+		}
+		onRemoveSkills?.([skill.id], [skill]);
+		setSelectedDetailSkillId(null);
+	}
+
 	const createSkillHandler = onCreateSkill ?? onNewSkill;
 
 	return (
@@ -408,11 +462,15 @@ export function SkillsDirectoryDialog({
 			>
 				{selectedDetailSkill ? (
 					<SkillDetailHeader
+						added={addedIdSet.has(selectedDetailSkill.id)}
+						enabled={!disabledIdSet.has(selectedDetailSkill.id)}
 						onBack={() => setSelectedDetailSkillId(null)}
 						onCreateShareLink={() => handleBulkAction(onCreateShareLink)}
 						onDownloadSkills={() => handleBulkAction(onDownloadSkills)}
 						onFavoriteSkills={() => handleBulkAction(onFavoriteSkills)}
 						onOpenSkill={() => onOpenSkill?.(selectedDetailSkill)}
+						onRemove={() => handleRemoveSkill(selectedDetailSkill)}
+						onToggleEnabled={(enabled) => handleToggleSkillEnabled(selectedDetailSkill, enabled)}
 						onTryInChat={() => onTryInChat?.(selectedDetailSkill)}
 						title={selectedDetailSkill.name}
 					/>
@@ -423,7 +481,11 @@ export function SkillsDirectoryDialog({
 					/>
 				)}
 				{selectedDetailSkill ? (
-					<SkillDetailView skill={selectedDetailSkill} onExit={() => setSelectedDetailSkillId(null)} />
+					<SkillDetailView
+						disabled={addedIdSet.has(selectedDetailSkill.id) && disabledIdSet.has(selectedDetailSkill.id)}
+						skill={selectedDetailSkill}
+						onExit={() => setSelectedDetailSkillId(null)}
+					/>
 				) : (
 					<>
 						{variant === "experimental" ? (
@@ -883,21 +945,33 @@ function SelectedSkillsToolbar({
 }
 
 interface SkillDetailHeaderProps {
+	/** Whether the skill is on the agent — gates the disable Switch + Remove button. */
+	added: boolean;
+	/** Whether the skill is enabled on the agent — drives the disable Switch. */
+	enabled: boolean;
 	onBack: () => void;
 	onCreateShareLink: () => void;
 	onDownloadSkills: () => void;
 	onFavoriteSkills: () => void;
 	onOpenSkill: () => void;
+	/** Removes the skill from the agent. */
+	onRemove: () => void;
+	/** Toggles the skill's enabled state on the agent. */
+	onToggleEnabled: (enabled: boolean) => void;
 	onTryInChat: () => void;
 	title: string;
 }
 
 function SkillDetailHeader({
+	added,
+	enabled,
 	onBack,
 	onCreateShareLink,
 	onDownloadSkills,
 	onFavoriteSkills,
 	onOpenSkill,
+	onRemove,
+	onToggleEnabled,
 	onTryInChat,
 	title,
 }: Readonly<SkillDetailHeaderProps>) {
@@ -919,6 +993,19 @@ function SkillDetailHeader({
 				</DialogTitle>
 			</div>
 			<div className="flex items-center gap-2">
+				{/* Enable/disable + Remove only apply to a skill already on the agent —
+				    they drive the agent config. Hidden for skills that are not added,
+				    mirroring the tools/apps detail headers. */}
+				{added ? (
+					<label className="flex items-center gap-2 text-sm leading-5 text-text-subtle">
+						<span aria-hidden>{enabled ? "Enabled" : "Disabled"}</span>
+						<Switch
+							aria-label={`${enabled ? "Disable" : "Enable"} ${title}`}
+							checked={enabled}
+							onCheckedChange={onToggleEnabled}
+						/>
+					</label>
+				) : null}
 				<DropdownMenu>
 					<DropdownMenuTrigger
 						render={
@@ -939,6 +1026,12 @@ function SkillDetailHeader({
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
+				{added ? (
+					<Button onClick={onRemove} type="button" variant="destructive">
+						<DeleteIcon label="" size="small" />
+						Remove
+					</Button>
+				) : null}
 				<SplitButton
 					items={[
 						{ label: "Open in new tab", onSelect: onOpenSkill },
@@ -960,8 +1053,12 @@ function SkillDetailHeader({
 	);
 }
 
-function SkillDetailView({ skill, onExit }: Readonly<{ skill: SkillsDirectorySkill; onExit: () => void }>) {
-	return <SkillDetailConfig key={skill.id} skill={skill} onExit={onExit} />;
+function SkillDetailView({
+	disabled = false,
+	skill,
+	onExit,
+}: Readonly<{ disabled?: boolean; skill: SkillsDirectorySkill; onExit: () => void }>) {
+	return <SkillDetailConfig key={skill.id} disabled={disabled} skill={skill} onExit={onExit} />;
 }
 
 const SKILL_DRAFT_KEY_PREFIX = "vpk:skill-draft:";
@@ -1033,7 +1130,11 @@ function validateSkillMd(skillMd: string): string {
  * State lives in the shared {@link useSkillMdDraft} hook (single source = the full
  * SKILL.md); this component layers persistence, validation, and the commit flow.
  */
-function SkillDetailConfig({ skill, onExit }: Readonly<{ skill: SkillsDirectorySkill; onExit: () => void }>) {
+function SkillDetailConfig({
+	disabled = false,
+	skill,
+	onExit,
+}: Readonly<{ disabled?: boolean; skill: SkillsDirectorySkill; onExit: () => void }>) {
 	const initialDraft = useMemo<SkillMdDraft>(
 		() => loadSkillDraft(skill.id) ?? { skillMd: getSkillMarkdown(skill), descriptionOverride: null },
 		[skill],
@@ -1066,7 +1167,16 @@ function SkillDetailConfig({ skill, onExit }: Readonly<{ skill: SkillsDirectoryS
 		<div className="flex min-h-0 min-w-0 flex-col overflow-hidden">
 			<div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
 				<SkillFileTreeSidebar skill={skill} />
-				<div className="flex min-h-0 min-w-0 flex-col overflow-hidden md:pl-4">
+				{/* Disabling the skill parks its editor off: only the config column goes
+				    inert + muted; the file-tree sidebar stays browsable. */}
+				<div
+					aria-disabled={disabled || undefined}
+					className={cn(
+						"flex min-h-0 min-w-0 flex-col overflow-hidden md:pl-4",
+						disabled && "opacity-(--opacity-disabled)",
+					)}
+					inert={disabled || undefined}
+				>
 					<Agent className="flex min-h-0 flex-1 flex-col bg-transparent">
 						<AgentContent className="flex min-h-0 flex-1 flex-col">
 							<AgentConfigFields

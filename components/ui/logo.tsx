@@ -190,6 +190,9 @@ export function CustomLogo({
 	// 3P marks get a bordered tile (swapping to the borderless glyph so borders
 	// don't double up); solid-fill 3P marks render bare.
 	const brand = src ? resolveBrandLogoPresentation(src) : null;
+	// Custom-app art (project avatars) are full-bleed square tiles, so soften the
+	// corners with the 8px (radius.large) tile radius. Brand marks are unaffected.
+	const isCustomAvatar = Boolean(src && src.startsWith("/avatar-project/"));
 	const shouldRenderBorderedTile = Boolean(brand?.hasBorder && isTileLogoSize(size));
 	const borderClassName =
 		brand?.hasBorder && !shouldRenderBorderedTile &&
@@ -213,7 +216,7 @@ export function CustomLogo({
 			aria-hidden
 			width={px}
 			height={px}
-			className="object-contain"
+			className={cn("object-contain", isCustomAvatar && "rounded-lg")}
 			style={{ width: px, height: px }}
 		/>
 	) : svg ? (

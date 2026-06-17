@@ -14,6 +14,12 @@ export interface EntityCardShellProps {
 	selectLabel?: string;
 	/** Keeps the hover visual treatment active while a child popup/menu is open. */
 	active?: boolean;
+	/**
+	 * Marks the card as selected — paints a persistent blue (`border-selected`)
+	 * border that stays put through hover/focus instead of fading like the
+	 * resting border. Pair with the leading checkbox swap on the card content.
+	 */
+	selected?: boolean;
 	className?: string;
 	children: ReactNode;
 }
@@ -29,6 +35,7 @@ export function EntityCardShell({
 	onSelect,
 	selectLabel = "Select item",
 	active = false,
+	selected = false,
 	className,
 	children,
 }: Readonly<EntityCardShellProps>) {
@@ -45,8 +52,14 @@ export function EntityCardShell({
 			// branch lifts every child to `z-10` (so nested controls stay clickable),
 			// which would otherwise let a full-bleed child (e.g. the expanded card's
 			// colored banner) paint over the top border edge.
-			"group/card relative flex h-full w-full flex-col gap-3 rounded-md bg-surface p-4 text-left outline-none after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-md after:border after:border-border after:transition-colors after:duration-fast after:ease-out hover:after:border-transparent has-[[data-slot=card-directory-select]:focus-visible]:after:border-transparent has-[[data-slot=card-directory-select]:focus-visible]:ring-3 has-[[data-slot=card-directory-select]:focus-visible]:ring-ring/50",
-			active && "after:border-transparent",
+			"group/card relative flex h-full w-full flex-col gap-3 rounded-md bg-surface p-4 text-left outline-none after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-md after:border after:transition-colors after:duration-fast after:ease-out has-[[data-slot=card-directory-select]:focus-visible]:ring-3 has-[[data-slot=card-directory-select]:focus-visible]:ring-ring/50",
+			// A selected card keeps a persistent blue border through hover/focus; the
+			// resting border instead fades to transparent on hover/focus so the
+			// elevation shadow reads as the only edge treatment.
+			selected
+				? "after:border-border-selected"
+				: "after:border-border hover:after:border-transparent has-[[data-slot=card-directory-select]:focus-visible]:after:border-transparent",
+			active && !selected && "after:border-transparent",
 			interactive && "cursor-pointer",
 			className,
 		),

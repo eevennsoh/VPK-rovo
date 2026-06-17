@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import PageIcon from "@atlaskit/icon/core/page";
 import SearchIcon from "@atlaskit/icon/core/search";
@@ -22,7 +23,12 @@ const KNOWLEDGE_DEMO_STATS = [
 	{ starCount: 124, verified: false, teammateCount: 18400 },
 ] as const;
 
-function DemoKnowledgeCard({ index = 0 }: Readonly<{ index?: number }>) {
+function DemoKnowledgeCard({
+	added = false,
+	index = 0,
+	onSelect,
+	selected,
+}: Readonly<{ added?: boolean; index?: number; onSelect?: (checked?: boolean) => void; selected?: boolean }>) {
 	const app = DEFAULT_KNOWLEDGE_APPS[index] ?? DEFAULT_KNOWLEDGE_APPS[0];
 
 	if (!app) {
@@ -33,15 +39,132 @@ function DemoKnowledgeCard({ index = 0 }: Readonly<{ index?: number }>) {
 
 	return (
 		<EntityCardKnowledgeCard
+			added={added}
 			description={app.description}
 			icon={getKnowledgeAppIcon(app)}
 			name={app.name}
-			onSelect={() => {}}
+			onSelect={onSelect ?? (() => {})}
 			publisher={app.providerName}
+			selected={selected}
 			starCount={stats.starCount}
 			verified={stats.verified}
 			teammateCount={stats.teammateCount}
 		/>
+	);
+}
+
+/**
+ * Added state — `added` renders a persistent blue success checkmark at the
+ * trailing edge of the header, marking an entity that is already on the agent.
+ * Unlike the hover/multi-select checkbox, it always shows and is not interactive.
+ */
+function AddedEntityCardsDemo() {
+	return (
+		<div className="flex flex-col gap-3">
+			<p className="text-sm font-semibold leading-5 text-text-subtle">Added</p>
+			<div className="columns-1 gap-3 sm:columns-2 [&>*]:mb-3 [&>*]:break-inside-avoid">
+				<EntityCardSkillCard
+					added
+					description="Create a new formatted, rich text document or page in Confluence."
+					icon={<PageIcon label="" />}
+					iconVariant="blue"
+					name="Create page"
+					onMoreActions={() => {}}
+					onSelect={() => {}}
+					publisher="Atlassian"
+					starCount={38}
+					verified
+					teammateCount={6273}
+				/>
+				<EntityCardAppCard
+					added
+					appLogo={<ConfluenceLogo size="medium" />}
+					description="Create, search, and update pages across your Confluence sites."
+					knowledgeCount={4}
+					name="Confluence"
+					onMoreActions={() => {}}
+					onSelect={() => {}}
+					teammateCount={258}
+					toolCount={36}
+				/>
+				<EntityCardToolCard
+					added
+					appLogo={<Image alt="" aria-hidden height={32} src="/3p/slack/32.svg" width={32} />}
+					description="Send messages and search conversations from your workspace."
+					name="Slack"
+					onMoreActions={() => {}}
+					onSelect={() => {}}
+					teammateCount={540}
+					toolCount={12}
+				/>
+				<DemoKnowledgeCard added />
+			</div>
+		</div>
+	);
+}
+
+/**
+ * Multi-select state — passing a `selected` boolean opts a directory card into
+ * select mode: the leading icon swaps to a 16×16 checkbox on hover and while
+ * selected, and the card gains a persistent blue selected border. `onSelect`
+ * toggles the state (fired by both the whole-card click and the checkbox).
+ */
+function SelectableEntityCardsDemo() {
+	const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(() => new Set(["create-page"]));
+
+	const toggle = (id: string) => {
+		setSelectedIds((current) => {
+			const next = new Set(current);
+			if (next.has(id)) {
+				next.delete(id);
+			} else {
+				next.add(id);
+			}
+			return next;
+		});
+	};
+
+	return (
+		<div className="flex flex-col gap-3">
+			<p className="text-sm font-semibold leading-5 text-text-subtle">Selectable</p>
+			<div className="columns-1 gap-3 sm:columns-2 [&>*]:mb-3 [&>*]:break-inside-avoid">
+				<EntityCardSkillCard
+					description="Create a new formatted, rich text document or page in Confluence."
+					icon={<PageIcon label="" />}
+					iconVariant="blue"
+					name="Create page"
+					onSelect={() => toggle("create-page")}
+					publisher="Atlassian"
+					selected={selectedIds.has("create-page")}
+					starCount={38}
+					verified
+					teammateCount={6273}
+				/>
+				<EntityCardAppCard
+					appLogo={<ConfluenceLogo size="medium" />}
+					description="Create, search, and update pages across your Confluence sites."
+					knowledgeCount={4}
+					name="Confluence"
+					onSelect={() => toggle("confluence-app")}
+					selected={selectedIds.has("confluence-app")}
+					teammateCount={258}
+					toolCount={36}
+				/>
+				<EntityCardToolCard
+					appLogo={<Image alt="" aria-hidden height={32} src="/3p/slack/32.svg" width={32} />}
+					description="Send messages and search conversations from your workspace."
+					name="Slack"
+					onSelect={() => toggle("slack-tool")}
+					selected={selectedIds.has("slack-tool")}
+					teammateCount={540}
+					toolCount={12}
+				/>
+				<DemoKnowledgeCard
+					onSelect={() => toggle("knowledge-0")}
+					selected={selectedIds.has("knowledge-0")}
+				/>
+			</div>
+		</div>
 	);
 }
 
@@ -98,6 +221,10 @@ export default function EntityCardDemo() {
 				/>
 				<DemoKnowledgeCard />
 			</div>
+
+			<SelectableEntityCardsDemo />
+
+			<AddedEntityCardsDemo />
 		</div>
 	);
 }

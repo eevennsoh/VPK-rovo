@@ -30,16 +30,25 @@ test("shell preserves the bordered surface and hover-elevation classes", () => {
 	// longer focusable — see the overlay-button regression test below (#709).
 	assert.match(SHELL_SOURCE, /has-\[\[data-slot=card-directory-select\]:focus-visible\]:ring-3 has-\[\[data-slot=card-directory-select\]:focus-visible\]:ring-ring\/50/u);
 	assert.match(SHELL_SOURCE, /willChange: "transform"/u);
-	// The border is an overlay pseudo-element that fades out on hover/focus so only the
-	// elevation shadow remains — never a persistent real border that survives hover.
+	// The resting border is an overlay pseudo-element that fades out on hover/focus so
+	// only the elevation shadow remains — never a persistent real border in the resting
+	// state. A *selected* card is the deliberate exception (see the selected-border test).
 	assert.doesNotMatch(SHELL_SOURCE, /\bborder border-border\b/u);
-	assert.match(SHELL_SOURCE, /after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-md after:border after:border-border/u);
-	assert.match(SHELL_SOURCE, /hover:after:border-transparent has-\[\[data-slot=card-directory-select\]:focus-visible\]:after:border-transparent/u);
+	assert.match(SHELL_SOURCE, /after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-md after:border after:transition-colors/u);
+	assert.match(SHELL_SOURCE, /after:border-border hover:after:border-transparent has-\[\[data-slot=card-directory-select\]:focus-visible\]:after:border-transparent/u);
 	assert.match(SHELL_SOURCE, /active = false/u);
-	assert.match(SHELL_SOURCE, /active && "after:border-transparent"/u);
+	assert.match(SHELL_SOURCE, /active && !selected && "after:border-transparent"/u);
 	assert.match(SHELL_SOURCE, /animate: active \? hoverAnimation : \{ boxShadow: "none" \}/u);
 	assert.doesNotMatch(SHELL_SOURCE, /hover:border-border-selected/u);
 	assert.doesNotMatch(SHELL_SOURCE, /hover:after:ring-border-selected/u);
+});
+
+test("shell paints a persistent blue border for a selected card (survives hover)", () => {
+	assert.match(SHELL_SOURCE, /selected\?: boolean/u);
+	assert.match(SHELL_SOURCE, /selected = false/u);
+	// Selected → blue border with NO hover-transparent fade. Resting → gray border that fades.
+	assert.match(SHELL_SOURCE, /selected\s*\n?\s*\?\s*"after:border-border-selected"/u);
+	assert.match(SHELL_SOURCE, /:\s*"after:border-border hover:after:border-transparent/u);
 });
 
 test("shell uses a dedicated overlay <button> for selection, not a role=button wrapper", () => {
@@ -112,8 +121,23 @@ test("parts carry data-slot attributes for the shared shell pieces", () => {
 test("header leading is optional and only renders the leading span when present", () => {
 	assert.match(PARTS_SOURCE, /leading\?: ReactNode/u);
 	assert.match(PARTS_SOURCE, /className="flex items-center gap-2"/u);
-	assert.match(PARTS_SOURCE, /\{leading \? <span className="inline-flex shrink-0 items-center leading-none">\{leading\}<\/span> : null\}/u);
+	// Non-selectable leading still renders the bare inline span verbatim.
+	assert.match(PARTS_SOURCE, /<span className="inline-flex shrink-0 items-center leading-none">\{leading\}<\/span>/u);
 	assert.doesNotMatch(PARTS_SOURCE, /items-start/u);
+});
+
+test("header swaps the leading visual for a default 16x16 checkbox in selectable mode", () => {
+	assert.match(PARTS_SOURCE, /import \{ Checkbox \} from "@\/components\/ui\/checkbox"/u);
+	assert.match(PARTS_SOURCE, /selectable\?: boolean/u);
+	assert.match(PARTS_SOURCE, /onSelectedChange\?: \(checked: boolean\) => void/u);
+	assert.match(PARTS_SOURCE, /<EntityCardSelectableLeading\b/u);
+	// Icon fades out on hover / while selected; the checkbox fades in.
+	assert.match(PARTS_SOURCE, /selected \? "opacity-0" : "opacity-100 group-hover\/card:opacity-0"/u);
+	assert.match(PARTS_SOURCE, /onCheckedChange=\{\(checked\) => onSelectedChange\?\.\(Boolean\(checked\)\)\}/u);
+	// Icon + checkbox share a fixed 32px box so the swap never shifts layout; the checkbox
+	// itself keeps its native 16x16 default (its className opens with opacity, not size-*).
+	assert.match(PARTS_SOURCE, /relative inline-flex size-8 shrink-0 items-center justify-center/u);
+	assert.match(PARTS_SOURCE, /<Checkbox\s+aria-label=\{label\}\s+checked=\{selected\}\s+className=\{cn\(\s*"opacity-0/u);
 });
 
 test("banner part draws the full-bleed cover and hexagon-outlined cover avatar", () => {
@@ -309,6 +333,20 @@ test("directory cards wrap entity-card content in the shared shell", () => {
 	assert.match(VARIANTS_SOURCE, /<EntityCardSkill\b/u);
 	assert.match(VARIANTS_SOURCE, /<EntityCardTool\b/u);
 	assert.match(VARIANTS_SOURCE, /<EntityCardKnowledge\b/u);
+});
+
+test("skill/app/tool/knowledge cards opt into multi-select when a `selected` boolean is passed", () => {
+	// `onSelect` toggles; `(checked?: boolean)` lets the checkbox forward its state.
+	assert.match(VARIANTS_SOURCE, /onSelect\?: \(checked\?: boolean\) => void/u);
+	// Multi-select mode (checkbox swap + blue border) is gated on `selected !== undefined`,
+	// so existing cards that pass only `onSelect` (open/navigate) keep today's behavior.
+	const gateCount = VARIANTS_SOURCE.match(/const selectable = selected !== undefined;/gu) ?? [];
+	assert.equal(gateCount.length, 4);
+	// Each selectable wrapper threads selection to BOTH the shell (border) and content (checkbox).
+	assert.match(VARIANTS_SOURCE, /onSelect=\{onSelect \? \(\) => onSelect\(\) : undefined\}\s*\n\s*selectLabel=\{selectLabel\}\s*\n\s*selected=\{selected\}/u);
+	assert.match(VARIANTS_SOURCE, /onSelectedChange=\{onSelect\}/u);
+	const labelCount = VARIANTS_SOURCE.match(/\$\{selected \? "Deselect" : "Select"\} \$\{name\}/gu) ?? [];
+	assert.equal(labelCount.length, 4);
 });
 
 test("agent-browser renders the shared EntityCardAgentCard (no inline card duplication)", () => {

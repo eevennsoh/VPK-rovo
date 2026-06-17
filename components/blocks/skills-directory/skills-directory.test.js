@@ -149,10 +149,25 @@ test("Skills Directory renders the skill detail view with the config screen and 
 	assert.match(source, /Try in chat/u);
 	// The "more actions" menu is the leftmost button of the right-hand CTA group (after Back, before Open).
 	assert.match(source, /onClick=\{onBack\}[\s\S]*aria-label="More skill actions"[\s\S]*<SplitButton/u);
+	// The detail header mirrors the agent-2 config feature: an enable/disable Switch
+	// and a destructive Remove button for the configured skill.
+	assert.match(source, /aria-label=\{`\$\{enabled \? "Disable" : "Enable"\} \$\{title\}`\}/u);
+	assert.match(source, /<Switch[\s\S]*checked=\{enabled\}[\s\S]*onCheckedChange=\{onToggleEnabled\}/u);
+	// Remove sits to the left of the "Open" split button, which precedes "Try in chat".
+	assert.match(source, /onClick=\{onRemove\} type="button" variant="destructive"[\s\S]*Remove[\s\S]*<SplitButton[\s\S]*onClick=\{onTryInChat\}[\s\S]*Try in chat/u);
+	// Disable + Remove are gated on `added` (only skills on the agent), and the disable
+	// state is controlled/persisted via the agent config — not local-cosmetic.
+	assert.match(source, /added \? \(\s*<label/u);
+	assert.match(source, /added \? \(\s*<Button onClick=\{onRemove\}/u);
+	assert.match(source, /onToggleSkillEnabled\?: \(skill: SkillsDirectorySkill, enabled: boolean\) => void/u);
+	assert.match(source, /const controlledDisabled = typeof disabledSkillIds !== "undefined"/u);
+	assert.match(source, /onToggleSkillEnabled\(skill, enabled\)/u);
+	// Disabling parks the editor column inert + muted (mirrors the apps detail path).
+	assert.match(source, /inert=\{disabled \|\| undefined\}/u);
 	assert.match(source, /function SkillDetailView/u);
 	// The detail view hosts the SKILL.md editor (frontmatter card enabled, no apps
 	// panel) seeded from the skill's full SKILL.md, committed via Save/Cancel.
-	assert.match(source, /<SkillDetailConfig key=\{skill\.id\} skill=\{skill\} onExit=\{onExit\} \/>/u);
+	assert.match(source, /<SkillDetailConfig key=\{skill\.id\} disabled=\{disabled\} skill=\{skill\} onExit=\{onExit\} \/>/u);
 	assert.match(source, /function SkillDetailConfig/u);
 	assert.match(source, /<AgentConfigFields/u);
 	assert.match(source, /frontmatter=\{\{ enabled: true \}\}/u);

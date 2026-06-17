@@ -1,6 +1,6 @@
 "use client";
 
-import { type MouseEvent, type ReactElement, type ReactNode } from "react";
+import { type KeyboardEvent, type MouseEvent, type ReactElement, type ReactNode } from "react";
 import Image from "next/image";
 import AiModelIcon from "@atlaskit/icon-lab/core/ai-model";
 import ArrowUpRightIcon from "@atlaskit/icon/core/arrow-up-right";
@@ -60,6 +60,7 @@ import TranslateIcon from "@atlaskit/icon/core/translate";
 import WarningIcon from "@atlaskit/icon/core/warning";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Icon } from "@/components/ui/icon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
@@ -95,9 +96,32 @@ export interface EntityCardHeaderProps {
 	 * Distinct from a hover/multi-select checkbox: this reflects committed state.
 	 */
 	added?: boolean;
+	/**
+	 * Marks the card as multi-selectable. When set, the leading visual swaps to a
+	 * 16×16 checkbox on card hover and while selected — the directory "select"
+	 * affordance. Pair with `selected` + `onSelectedChange`.
+	 */
+	selectable?: boolean;
+	/** Current selection state — drives the checkbox and its persistent reveal. */
+	selected?: boolean;
+	/** Toggles selection from the leading checkbox. */
+	onSelectedChange?: (checked: boolean) => void;
+	/** Accessible label for the leading checkbox (e.g. "Select Confluence"). */
+	selectLabel?: string;
 }
 
-export function EntityCardHeader({ leading, title, byline, reserveByline = false, action, added = false }: Readonly<EntityCardHeaderProps>) {
+export function EntityCardHeader({
+	leading,
+	title,
+	byline,
+	reserveByline = false,
+	action,
+	added = false,
+	selectable = false,
+	selected = false,
+	onSelectedChange,
+	selectLabel,
+}: Readonly<EntityCardHeaderProps>) {
 	return (
 		<div
 			// When `reserveByline` is set on a byline-less header, `min-h-9` (36px)
@@ -108,7 +132,15 @@ export function EntityCardHeader({ leading, title, byline, reserveByline = false
 			className={cn("flex items-center gap-2", reserveByline && !byline && "min-h-9")}
 			data-slot="card-directory-header"
 		>
-			{leading ? <span className="inline-flex shrink-0 items-center leading-none">{leading}</span> : null}
+			{leading ? (
+				selectable ? (
+					<EntityCardSelectableLeading label={selectLabel} onSelectedChange={onSelectedChange} selected={selected}>
+						{leading}
+					</EntityCardSelectableLeading>
+				) : (
+					<span className="inline-flex shrink-0 items-center leading-none">{leading}</span>
+				)
+			) : null}
 			<div className="min-w-0 flex-1">
 				<h3 className="truncate text-text" style={{ font: token("font.heading.xsmall") }}>
 					{title}
@@ -116,12 +148,65 @@ export function EntityCardHeader({ leading, title, byline, reserveByline = false
 				{byline ?? null}
 			</div>
 			{action || added ? (
-				<span className="flex shrink-0 items-center gap-1">
+				<span className="flex shrink-0 items-center gap-2">
 					{action ?? null}
 					{added ? <EntityCardAddedCheck /> : null}
 				</span>
 			) : null}
 		</div>
+	);
+}
+
+/**
+ * Leading visual for a multi-selectable directory card. The entity's icon/logo
+ * shows at rest and fades out on card hover (or while selected), revealing a
+ * centered 16×16 `Checkbox` that reflects and toggles selection. The icon and
+ * checkbox share a fixed 32px box so the swap never shifts layout.
+ *
+ * The checkbox sits above the shell's whole-card select `<button>`, so its
+ * click/keydown is stopped from bubbling — otherwise selection would toggle
+ * twice (once from the checkbox, once from the card button beneath it).
+ */
+function EntityCardSelectableLeading({
+	children,
+	label = "Select",
+	onSelectedChange,
+	selected = false,
+}: Readonly<{
+	children: ReactNode;
+	label?: string;
+	onSelectedChange?: (checked: boolean) => void;
+	selected?: boolean;
+}>) {
+	const stopPropagation = (event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>) => {
+		event.stopPropagation();
+	};
+
+	return (
+		<span className="relative inline-flex size-8 shrink-0 items-center justify-center leading-none">
+			<span
+				aria-hidden
+				className={cn(
+					"absolute inset-0 flex items-center justify-center transition-opacity duration-fast ease-out",
+					selected ? "opacity-0" : "opacity-100 group-hover/card:opacity-0",
+				)}
+			>
+				{children}
+			</span>
+			<Checkbox
+				aria-label={label}
+				checked={selected}
+				className={cn(
+					"opacity-0 transition-opacity duration-fast ease-out focus-visible:pointer-events-auto focus-visible:opacity-100",
+					selected
+						? "pointer-events-auto opacity-100"
+						: "pointer-events-none group-hover/card:pointer-events-auto group-hover/card:opacity-100",
+				)}
+				onCheckedChange={(checked) => onSelectedChange?.(Boolean(checked))}
+				onClick={stopPropagation}
+				onKeyDown={stopPropagation}
+			/>
+		</span>
 	);
 }
 
@@ -140,7 +225,7 @@ export function EntityCardAddedCheck({ label = "Added" }: Readonly<EntityCardAdd
 	return (
 		<Icon
 			className="text-icon-selected"
-			render={<StatusSuccessIcon label={label} size="small" color="currentColor" />}
+			render={<StatusSuccessIcon label={label} color="currentColor" />}
 		/>
 	);
 }
