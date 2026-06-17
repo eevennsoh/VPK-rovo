@@ -127,7 +127,8 @@ theme mode and ADS token resolution can change the final values.
   Keep it rare enough that it remains an action signal.
 - **Selected State** (`bg-bg-selected`, `text-text-selected`,
   `border-border-selected`): Use for pressed, expanded, selected, or active
-  controls when the state needs to persist.
+  controls when the state needs to persist. Keep the selected triad together:
+  selected background, selected text, and selected border or marker.
 
 ### Neutral
 
@@ -138,7 +139,8 @@ theme mode and ADS token resolution can change the final values.
 - **Overlay Surface** (`bg-surface-overlay`, `bg-popover`): Use for popovers,
   menus, floating panels, and dialogs.
 - **Sunken Surface** (`bg-surface-sunken`): Use for recessed containers,
-  preview wells, and scrollable regions that sit behind the main surface.
+  preview wells, and scrollable regions inside the main surface. Do not use it
+  as the default page background to create contrast against cards.
 - **Text Stack** (`text-text`, `text-text-subtle`,
   `text-text-subtlest`): Use the full text stack for hierarchy before adding
   decorative color.
@@ -152,12 +154,18 @@ theme mode and ADS token resolution can change the final values.
   `bg-bg-*`, `text-text-*`, `text-icon-*`, and `border-border-*` semantic
   families. Match status color to meaning; do not use status colors only for
   decoration.
+- **Success** is a semantic role, not a decorative green accent. Use the
+  success token family for completion states even when the visual hue appears
+  lime or green.
 - **Decorative accents** can use the mapped Tailwind hue scale, such as
   `bg-blue-400`, `text-purple-500`, or `bg-teal-50`, because those classes
   still resolve through ADS-compatible theme variables.
 - **Icon tiles** use the mapped variant set: gray, blue, teal, green, lime,
   yellow, orange, red, magenta, and purple. Use the bold variants only when
   the tile needs to carry strong categorization.
+- **Chart colors** are for data visualization. Use chart token mappings for
+  series and pair color with labels, legends, patterns, or shapes when meaning
+  must remain clear without color.
 
 ### Named rules
 
@@ -204,7 +212,54 @@ the interface into an unreadable state.
 dashboards use tighter type. Hero-scale typography belongs only to true hero or
 showcase surfaces.
 
-## 4. Elevation
+**The body-copy rule.** Paragraphs, descriptions, and list items use `text-text`
+by default. Reserve `text-text-subtle` for metadata, labels, captions, and
+secondary navigation.
+
+## 4. Content and interaction copy
+
+Interface copy should be active, short, plain, and specific. The words on a
+surface are part of its interaction design, so they should make the user's next
+step obvious without adding explanatory chrome.
+
+- **Case:** Use sentence case for product UI headings, buttons, tabs, menu
+  items, tooltips, empty states, tags, lozenges, badges, and table headers.
+  Preserve proper nouns such as Jira, Confluence, Trello, Atlassian, and VPK.
+- **Actions:** Buttons and calls to action use imperative verbs such as "Save",
+  "Delete", "Connect", or "Create agent". Avoid "Submit", "OK", "Click here",
+  and generic action labels that do not describe the result.
+- **Links:** Link text must describe the destination or action. Prefer "Learn
+  about permissions" over "Learn more".
+- **Errors:** Error copy names the reason and gives a recovery action. Avoid
+  vague fallback text such as "Something went wrong" when the failure mode is
+  knowable.
+- **Translation:** Leave room for strings to grow and avoid concatenating
+  sentence fragments in UI code. Longer translated labels must not break fixed
+  controls.
+
+## 5. Layout, shape, and focus
+
+Layout should use spacing, grouping, and component shape before decorative
+effects. Keep the root contract token-first, but apply the tokens through the
+repo's semantic Tailwind classes whenever a class exists.
+
+- **Spacing rhythm:** Start spacing, padding, margin, gap, and inset values on
+  the ADS 8px rhythm through classes mapped from `--ds-space-*`. Use smaller
+  steps for component interiors and larger steps for unrelated page regions.
+- **Relationship by proximity:** Related controls sit closer together than
+  unrelated groups. Avoid applying the same gap everywhere when hierarchy needs
+  to stay scannable.
+- **Radius by component intent:** Use the established shared primitive radius
+  first. Buttons and nav items stay in the medium radius family, inputs in the
+  large family, cards in the shared `rounded-xl` contract, avatars and pills in
+  the full radius family, and tile components in the tile radius family.
+- **Focus anatomy:** Focusable controls must keep a visible focused treatment:
+  a 2px focused border or ring, a small offset or gap from the component box,
+  and a ring radius that follows the component's own radius.
+- **Touch targets:** Interactive controls should keep at least a 32px target in
+  touch contexts, even when the visible glyph is smaller.
+
+## 6. Elevation
 
 VPK-rovo uses tonal layering first and shadow second. A surface should usually
 communicate hierarchy through semantic background, border, spacing, and state.
@@ -231,7 +286,11 @@ designed. Fix hierarchy, spacing, and content grouping first.
 use overlay elevation. Inline sections and ordinary page bands should usually
 remain unframed.
 
-## 5. Components
+**The plane-pairing rule.** Pair raised surfaces with raised shadow when they
+need movement or lift, and pair overlay surfaces with overlay shadow. Do not
+mix overlay shadow into ordinary inline content.
+
+## 7. Components
 
 Shared components should feel compact, predictable, and stateful. Product and
 art surfaces can style their own composition, but they should reuse these
@@ -243,14 +302,15 @@ component expectations unless a nested design file says otherwise.
   variants stay on the same radius family.
 - **Primary:** Use `bg-primary`, `text-primary-foreground`,
   `hover:bg-primary-hovered`, and pressed or expanded selected-state classes.
+  Do not use primary styling for more than one action in the same section.
 - **Secondary and outline:** Use neutral subtle backgrounds, semantic borders,
   and `text-text-subtle` rather than inventing low-contrast custom palettes.
 - **Ghost:** Use transparent rest state with neutral subtle hover and active
   backgrounds.
 - **Focus:** Preserve `focus-visible:border-ring` and
   `focus-visible:ring-ring/50` behavior.
-- **Icons:** Use Atlaskit icons first, icon-lab icons second, and product logos
-  from `@/components/ui/logo`.
+- **Icons:** Leading and trailing icons inherit `currentColor`; do not hardcode
+  their color apart from the button text role.
 
 ### Cards and containers
 
@@ -274,16 +334,50 @@ component expectations unless a nested design file says otherwise.
   for visual quietness.
 - **Disabled and read-only:** Disabled controls reduce opacity and block
   pointer interaction. Read-only controls should stay calm and non-interactive.
+- **Labels:** Every editable field needs a visible label. Placeholder text is a
+  hint, not a label.
 
 ### Navigation
 
 - **Style:** Navigation should be scannable before decorative. Use clear active
   states, compact gaps, and semantic text colors.
+- **Tabs:** Persistent tabs need selected text plus a selected underline,
+  marker, border, or background. A lone color change is not enough.
 - **Sidebars:** Use sidebar token aliases in shared sidebar primitives. Override
   motion easing with shared duration and easing tokens when needed.
 - **Route surfaces:** `app/` files are entrypoints. The durable visual design
   ownership usually lives in `components/projects/*`, `components/arts/*`,
   `components/blocks/*`, `components/ui/*`, or `components/website/*`.
+
+### Icons and icon buttons
+
+- **Source:** Use Atlaskit icons first, icon-lab icons second, and product logos
+  from `@/components/ui/logo`. Avoid Unicode arrows, HTML entities, emoji, or
+  handwritten glyphs for controls.
+- **Size:** Product UI icons default to 16px glyphs. For stronger emphasis,
+  place the glyph in a larger tile or button rather than scaling the glyph.
+- **Color:** Icons inherit `currentColor` from a semantic text or icon role.
+  Pair `text-text-subtle` with subtle icons and danger text with danger icons.
+- **Accessibility:** Icon-only buttons need an accessible name. Decorative icons
+  sitting beside visible text should be hidden from assistive technology.
+
+### Status and data primitives
+
+- **Section messages:** Use a semantic background, role icon, title, neutral
+  body text, and optional link-style actions. Use them for page-level or
+  request-level notices, not field validation.
+- **Tags:** Tags are decorative classification for categories, labels, and file
+  types. They should not communicate semantic status.
+- **Lozenges:** Lozenges communicate semantic status and should keep a visible
+  semantic border, not a fill-only pill treatment.
+- **Badges:** Badges are compact count primitives. Use neutral badges for
+  counts and semantic badges only when the count itself carries state.
+- **Tables:** Table cells use readable body text. Compact table density is for
+  dense read-only views, not a default way to compress complex interaction.
+- **Empty states:** Empty states need a sentence-case heading, useful body copy,
+  and a clear next-step action when one exists.
+- **Charts:** Use chart token mappings for series and include a label, legend,
+  pattern, or shape cue so data remains understandable without color alone.
 
 ### Motion and interaction
 
@@ -295,6 +389,11 @@ component expectations unless a nested design file says otherwise.
   panels that move together.
 - **Animated properties:** Animate opacity and transforms before layout
   properties. Avoid motion that changes layout in ways that break scanning.
+- **Reduced motion:** Respect `prefers-reduced-motion` by disabling
+  non-essential transitions or replacing them with instant state changes.
+- **Focus of motion:** Use one focal animation when multiple elements change.
+  Dense dashboards and repeated work surfaces should not run idle decorative
+  loops.
 
 ### Signature surfaces
 
@@ -303,7 +402,28 @@ work-focused register. Art surfaces under `components/arts/*` can be more
 expressive, but each art surface should own that expression in its nested
 component folder rather than leaking those choices into shared primitives.
 
-## 6. Do's and Don'ts
+## 8. Accessibility baseline
+
+Accessibility is part of the shared visual contract, not a late verification
+step. Shared primitives should make the accessible path the default path for
+feature code.
+
+- **Forms:** Editable fields need visible labels and associated helper or error
+  messaging. Do not use placeholders as the only label.
+- **Focus and keyboard:** Every interaction must be reachable by keyboard, with
+  visible focus and no keyboard trap. Escape should dismiss overlays where that
+  behavior is expected.
+- **Structure:** Pages use semantic landmarks, one `h1`, and headings that do
+  not skip levels.
+- **Status communication:** Do not rely on color alone. Pair semantic color
+  with an icon, label, shape, or message.
+- **Responsive access:** Interfaces must remain usable at 320px width and 200%
+  zoom without clipping critical content or hiding critical actions.
+- **Announcements:** Dynamic notices, inline validation, async errors, and toast
+  or flag content should use polite live regions. Use assertive announcements
+  only for urgent failures.
+
+## 9. Do's and Don'ts
 
 ### Do:
 
@@ -320,6 +440,11 @@ component folder rather than leaking those choices into shared primitives.
   item, modal, preview, tool, or overlay.
 - **Do** map Figma values to ADS spacing, radius, typography, shadow, and
   semantic color tokens during implementation.
+- **Do** use sentence case, descriptive links, visible field labels, accessible
+  icon-only buttons, and reason-plus-action error messages.
+- **Do** use section messages for page-level notices, lozenges for semantic
+  status, tags for decorative classification, badges for counts, and chart
+  tokens with non-color cues for data visualization.
 - **Do** let nested projects and art pieces carry their own mood while keeping
   the shared implementation contract intact.
 
@@ -337,5 +462,10 @@ component folder rather than leaking those choices into shared primitives.
   motion token class exists.
 - **Don't** hide focus rings, remove disabled states, or rely on color alone to
   communicate state.
+- **Don't** use `surface-sunken` as the page background, use accent ramps as
+  semantic status, use placeholders as labels, or use "Learn more" as a link
+  when the destination can be named.
+- **Don't** substitute Unicode arrows, emoji, HTML entities, or one-off SVG
+  glyphs for Atlaskit control icons.
 - **Don't** let one art surface's palette, shader, or motion language become a
   shared primitive unless it is intentionally extracted into the toolkit.
