@@ -39,6 +39,14 @@ const CHAT_PANEL_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/sidebar-chat/page.tsx"),
 	"utf8",
 );
+const MESSAGE_BUBBLE_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/sidebar-chat/components/message-bubble.tsx"),
+	"utf8",
+);
+const THREAD_MESSAGE_ROOT_SOURCE = fs.readFileSync(
+	path.join(process.cwd(), "components/projects/shared/thread-message/thread-message-root.tsx"),
+	"utf8",
+);
 const CHAT_GREETING_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/projects/sidebar-chat/components/chat-greeting.tsx"),
 	"utf8",
@@ -607,6 +615,20 @@ test("Studio agent results use guarded session-agent registration with preserve-
 	assert.doesNotMatch(SHELL_SOURCE, /rovo-app-agents-directory/u);
 });
 
+test("Studio automation artifact-list agents persist in the sidebar without auto-selection", () => {
+	assert.match(SHELL_SOURCE, /import \{ getAllDataParts, getLatestDataPart/u);
+	assert.match(SHELL_SOURCE, /function getStudioAutomationArtifactListAgents\(\s*message: Pick<RovoRenderableUIMessage, "parts">,[\s\S]*\): RovoDataParts\["agent-result"\]\[\] \{/u);
+	assert.match(SHELL_SOURCE, /const widgetParts = getAllDataParts\(message, "data-widget-data"\);/u);
+	assert.match(SHELL_SOURCE, /if \(widget\.type !== STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE\) \{[\s\S]*continue;[\s\S]*\}/u);
+	assert.match(SHELL_SOURCE, /const payload = parseStudioAutomationArtifactListPayload\(widget\.payload\);/u);
+	assert.match(SHELL_SOURCE, /return payload\.agents\.map\(\(agent\) => agent\.agentResult\);/u);
+	assert.match(SHELL_SOURCE, /const artifactListAgentResults = getStudioAutomationArtifactListAgents\(message\);/u);
+	assert.match(SHELL_SOURCE, /const agentResultKey = `\$\{chat\.runtimeThreadId\}:\$\{message\.id\}:\$\{agentResult\.agentId\}:\$\{agentResult\.action\}:artifact-list`;/u);
+	assert.match(SHELL_SOURCE, /const sourceKey = `studio-agent-result:\$\{chat\.activeThreadId \?\? chat\.runtimeThreadId\}:\$\{message\.id\}:\$\{agentResult\.agentId\}`;/u);
+	assert.match(SHELL_SOURCE, /studioAgentRegistry\.registerCreatedAgentFromResult\(agentResult, \{[\s\S]*preserveCurrentThread: true,[\s\S]*select: false,[\s\S]*sourceKey,[\s\S]*\}\);/u);
+	assert.match(SHELL_SOURCE, /if \(didRegisterAgent\) \{[\s\S]*unmarkStudioAgentCreationThread\(chat\.runtimeThreadId\);[\s\S]*unmarkStudioAgentCreationThread\(chat\.activeThreadId\);[\s\S]*break;[\s\S]*\}/u);
+});
+
 test("Studio custom agent config is not treated as the agents landing", () => {
 	assert.match(
 		SHELL_SOURCE,
@@ -704,6 +726,18 @@ test("Studio bridges the generation transcript into the Ask Rovo sidebar store",
 		ROVO_CONTEXT_SOURCE,
 		/const adoptThreadMessages = useCallback\([\s\S]*setActiveThreadId\(threadId\);[\s\S]*lastPersistedThreadKeyRef\.current = buildCompactThreadPersistKey\(threadId, sanitized\);[\s\S]*setMessages\(sanitized\);/u,
 	);
+	// The adopted transcript can include Studio-only data-widget parts. The
+	// generic Ask Rovo sidebar must receive a Studio render hook so the generated
+	// agents artifact list survives after clicking into an agent config.
+	assert.match(MESSAGES_SOURCE, /export const STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE = "studio-automation-artifact-list";/u);
+	assert.match(MESSAGES_SOURCE, /export function parseStudioAutomationArtifactListPayload/u);
+	assert.match(MESSAGES_SOURCE, /export function StudioAutomationArtifactListWidget/u);
+	assert.match(CHAT_PANEL_SOURCE, /renderWidget\?: \([\s\S]*widget: \{ type: string; data: unknown \},[\s\S]*message: RovoRenderableUIMessage/u);
+	assert.match(MESSAGE_BUBBLE_SOURCE, /const customWidget = renderCustomWidget\?\.\(widget, widgetMessage\);[\s\S]*if \(customWidget !== null && customWidget !== undefined\) \{[\s\S]*return customWidget;/u);
+	assert.match(THREAD_MESSAGE_ROOT_SOURCE, /getWidgetPosition\?: \(widgetType: string\) => "before-content" \| "after-content" \| undefined;/u);
+	assert.match(SHELL_SOURCE, /const renderStudioAskRovoWidget = useCallback\([\s\S]*widget\.type !== STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE[\s\S]*parseStudioAutomationArtifactListPayload\(widget\.data\)[\s\S]*<StudioAutomationArtifactListWidget[\s\S]*onAgentResultSelect=\{handleStudioAgentResultSelect\}/u);
+	assert.match(SHELL_SOURCE, /const getStudioAskRovoWidgetPosition = useCallback\([\s\S]*widgetType === STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE[\s\S]*\? "before-content" as const/u);
+	assert.match(SHELL_SOURCE, /<ChatPanel[\s\S]*renderWidget=\{renderStudioAskRovoWidget\}[\s\S]*getWidgetPosition=\{getStudioAskRovoWidgetPosition\}/u);
 });
 
 test("RovoAppMessages renders the block agent result card after generation completes", () => {

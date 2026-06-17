@@ -110,7 +110,7 @@ const BYLINE_TRANSITION = { duration: 0.2, ease: "easeOut" } as const;
  * The persistent byline on the active/last step keeps a fixed row height while
  * its text changes, so it stays put instead of flickering on every update.
  */
-function CyclingByline({ children }: Readonly<{ children: ReactNode }>) {
+export function CyclingByline({ children }: Readonly<{ children: ReactNode }>) {
 	const shouldReduceMotion = useReducedMotion();
 	const hasContent = children != null && children !== false;
 	const textKey = typeof children === "string" ? children : "byline";
@@ -249,7 +249,16 @@ export type ChainOfThoughtStepProps = ComponentProps<"div"> & {
 	defaultOpen?: boolean;
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
+	headerRender?: (context: ChainOfThoughtStepHeaderRenderContext) => ReactNode;
 };
+
+export interface ChainOfThoughtStepHeaderRenderContext {
+	hasExpandableContent: boolean;
+	isOpen: boolean;
+	resolvedDescription: ReactNode;
+	shouldShowDescription: boolean;
+	toggleOpen: () => void;
+}
 
 const stepStatusStyles = {
 	active: "text-text",
@@ -310,6 +319,7 @@ export const ChainOfThoughtStep = memo(
 		defaultOpen = false,
 		open,
 		onOpenChange,
+		headerRender,
 		children,
 		...props
 	}: ChainOfThoughtStepProps) => {
@@ -336,7 +346,13 @@ export const ChainOfThoughtStep = memo(
 			}
 		}, [defaultOpen, isControlled]);
 
-		const stepHeader = hasExpandableContent ? (
+		const stepHeader = headerRender ? headerRender({
+			hasExpandableContent,
+			isOpen,
+			resolvedDescription,
+			shouldShowDescription: shouldShowHeaderDescription,
+			toggleOpen: () => handleOpenChange(!isOpen),
+		}) : hasExpandableContent ? (
 			<button
 				type="button"
 				className="group/step flex w-full items-start text-left transition-colors hover:text-text"

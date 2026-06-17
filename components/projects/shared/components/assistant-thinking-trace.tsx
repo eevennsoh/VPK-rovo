@@ -203,9 +203,9 @@ const STUDIO_AUTOMATION_TOOL_CYCLE_DETAILS: Record<string, StudioAutomationToolC
 		title: "Cycling through three Studio drafts",
 		description: "Creating the Loom distribution, lifecycle triage, and weekly digest agents.",
 		sources: [
-			{ id: "loom-agent", label: "Loom Distribution Agent", provider: "twg", iconSrc: "/avatar-agent/teamwork-agents/transcript-insights-reporter.svg" },
-			{ id: "triage-agent", label: "Inactive Agent Triage Agent", provider: "twg", iconSrc: "/avatar-agent/teamwork-agents/work-organizer.svg" },
-			{ id: "digest-agent", label: "Weekly Sprint/Atlas Digest Agent", provider: "twg", iconSrc: "/avatar-agent/teamwork-agents/team-recap.svg" },
+			{ id: "loom-agent", label: "Loom Distribution Agent", provider: "twg", iconSrc: "/avatar-agent/product-agents/feedback-analyzer.svg" },
+			{ id: "triage-agent", label: "Inactive Agent Triage Agent", provider: "twg", iconSrc: "/avatar-agent/service-agents/service-triage.svg" },
+			{ id: "digest-agent", label: "Weekly Sprint/Atlas Digest Agent", provider: "twg", iconSrc: "/avatar-agent/strategy-agents/strategic-insight.svg" },
 		],
 	},
 };
@@ -270,6 +270,37 @@ function isStudioAutomationTwgToolCall(toolCall: ThinkingToolCallSummary): boole
 
 function getStudioAutomationToolCycleDetail(toolCall: ThinkingToolCallSummary): StudioAutomationToolCycleDetail | null {
 	return STUDIO_AUTOMATION_TOOL_CYCLE_DETAILS[toolCall.toolName] ?? null;
+}
+
+function getLatestThinkingDetailRowContent(
+	detailRows: readonly ThinkingNarrationDetailRow[] | undefined,
+): string | null {
+	const rows = detailRows ?? [];
+	for (let index = rows.length - 1; index >= 0; index -= 1) {
+		const content = rows[index]?.content.trim();
+		if (content) {
+			return content;
+		}
+	}
+	return null;
+}
+
+function getStudioAutomationToolByline({
+	detailRows,
+	fallback,
+	narration,
+	toolCall,
+}: Readonly<{
+	detailRows: readonly ThinkingNarrationDetailRow[] | undefined;
+	fallback: string;
+	narration: string[] | undefined;
+	toolCall: ThinkingToolCallSummary;
+}>): string {
+	const latestDetail = getLatestThinkingDetailRowContent(detailRows);
+	if (toolCall.state === "completed") {
+		return toolCall.outputPreview ?? latestDetail ?? fallback;
+	}
+	return latestDetail ?? getThinkingToolByline(toolCall, narration) ?? fallback;
 }
 
 function TraceStepsSection({
@@ -630,78 +661,46 @@ function ToolNarrationDisclosure({
 
 function StudioAutomationTwgTraceDetail({
 	detailRows,
-	toolCall,
 }: Readonly<{
 	detailRows: readonly ThinkingNarrationDetailRow[] | undefined;
-	toolCall: ThinkingToolCallSummary;
 }>): ReactNode {
 	const rows = (detailRows ?? []).filter((row) => row.content.trim().length > 0);
-	const status = toolStateToCoTStatus(toolCall.state);
 
 	return (
-		<div className="space-y-2">
-			<TwgTool
-				defaultOpen
-				description={toolCall.outputPreview ?? "Correlating source signals, collaborators, projects, and candidate workflows."}
-				showChevron={false}
-				sources={STUDIO_AUTOMATION_TWG_SOURCES}
-				status={status}
-				title="Correlating through Teamwork Graph"
-			/>
-			{rows.length > 0 ? (
-				<div className="ml-11 space-y-1 text-xs leading-5 text-text-subtle">
-					{rows.map((row, index) => (
-						<div key={`${index}-${row.content}`} className="rounded-md border border-border/60 bg-surface px-2.5 py-2">
-							<p>{row.content}</p>
-							{row.output !== undefined ? (
-								<p className="mt-1 text-text-subtlest">
-									{typeof row.output === "string" ? row.output : JSON.stringify(row.output)}
-								</p>
-							) : null}
-						</div>
-					))}
-				</div>
-			) : null}
+		<div className="space-y-1 text-xs leading-5 text-text-subtle">
+			{rows.map((row, index) => (
+				<p key={`${index}-${row.content}`}>
+					{row.content}
+					{row.output !== undefined ? (
+						<span className="block text-text-subtlest">
+							{typeof row.output === "string" ? row.output : JSON.stringify(row.output)}
+						</span>
+					) : null}
+				</p>
+			))}
 		</div>
 	);
 }
 
 function StudioAutomationToolCycleTraceDetail({
 	detailRows,
-	toolCall,
-	cycleDetail,
 }: Readonly<{
 	detailRows: readonly ThinkingNarrationDetailRow[] | undefined;
-	toolCall: ThinkingToolCallSummary;
-	cycleDetail: StudioAutomationToolCycleDetail;
 }>): ReactNode {
 	const rows = (detailRows ?? []).filter((row) => row.content.trim().length > 0);
-	const status = toolStateToCoTStatus(toolCall.state);
 
 	return (
-		<div className="space-y-2">
-			<TwgTool
-				defaultOpen
-				description={toolCall.state === "completed" ? toolCall.outputPreview ?? cycleDetail.description : cycleDetail.description}
-				showChevron={false}
-				sources={cycleDetail.sources}
-				status={status}
-				title={cycleDetail.title}
-			/>
-			{rows.length > 0 ? (
-				<div className="ml-11 space-y-1 text-xs leading-5 text-text-subtle">
-					{rows.map((row, index) => (
-						<div key={`${index}-${row.content}`} className="rounded-md border border-border/60 bg-surface px-2.5 py-2">
-							<p>{row.content}</p>
-							{row.output !== undefined ? (
-								<p className="mt-1 text-text-subtlest">
-									{typeof row.output === "string" ? row.output : JSON.stringify(row.output)}
-								</p>
-							) : null}
-						</div>
-					))}
-				</div>
-			) : null}
+		<div className="space-y-1 text-xs leading-5 text-text-subtle">
+			{rows.map((row, index) => (
+				<p key={`${index}-${row.content}`}>
+					{row.content}
+					{row.output !== undefined ? (
+						<span className="block text-text-subtlest">
+							{typeof row.output === "string" ? row.output : JSON.stringify(row.output)}
+						</span>
+					) : null}
+				</p>
+			))}
 		</div>
 	);
 }
@@ -732,32 +731,62 @@ function ThinkingToolCallStep({
 		input: toolCall.input,
 		mcpServer: toolCall.mcpServer,
 	});
+	const studioAutomationToolHeader = isStudioAutomationTwgTool
+		? {
+			description: getStudioAutomationToolByline({
+				detailRows,
+				fallback: "Correlating source signals, collaborators, projects, and candidate workflows.",
+				narration,
+				toolCall,
+			}),
+			sources: STUDIO_AUTOMATION_TWG_SOURCES,
+			title: "Correlating through Teamwork Graph",
+		}
+		: studioAutomationToolCycleDetail
+			? {
+				description: getStudioAutomationToolByline({
+					detailRows,
+					fallback: studioAutomationToolCycleDetail.description,
+					narration,
+					toolCall,
+				}),
+				sources: studioAutomationToolCycleDetail.sources,
+				title: studioAutomationToolCycleDetail.title,
+			}
+			: null;
 
 	return (
 		<ChainOfThoughtStep
 			key={`${messageId}-cot-tool-${toolCall.id}-${index}`}
 			collapsible
 			defaultOpen={isStudioAutomationTwgTool || Boolean(studioAutomationToolCycleDetail) || isToolCallStepOpenByDefault(toolCall.state)}
-			open={isStudioAutomationTwgTool ? true : open}
+			open={isStudioAutomationTwgTool || Boolean(studioAutomationToolCycleDetail) ? true : open}
 			onOpenChange={onOpenChange}
 			iconRender={renderResolvedToolIcon(resolvedToolIcon, {
 				className: "size-4",
 			})}
 			label={getThinkingToolTitle(toolCall)}
 			description={
-				toolCall.state === "completed"
+				studioAutomationToolHeader || toolCall.state === "completed"
 					? null
 					: getThinkingToolByline(toolCall, narration)
 			}
+			headerRender={studioAutomationToolHeader ? () => (
+				<TwgTool
+					description={studioAutomationToolHeader.description}
+					showChevron={false}
+					sources={studioAutomationToolHeader.sources}
+					status={status}
+					title={studioAutomationToolHeader.title}
+				/>
+			) : undefined}
 			status={status}
 		>
 			{isStudioAutomationTwgTool ? (
-				<StudioAutomationTwgTraceDetail detailRows={detailRows} toolCall={toolCall} />
+				<StudioAutomationTwgTraceDetail detailRows={detailRows} />
 			) : studioAutomationToolCycleDetail ? (
 				<StudioAutomationToolCycleTraceDetail
-					cycleDetail={studioAutomationToolCycleDetail}
 					detailRows={detailRows}
-					toolCall={toolCall}
 				/>
 			) : (
 				<ToolNarrationDisclosure detailRows={detailRows}>

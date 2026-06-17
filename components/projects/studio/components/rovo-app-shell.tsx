@@ -13,7 +13,7 @@
 
 import type { FileUIPart } from "ai";
 import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, type AnimationPlaybackControls } from "motion/react";
-import { type CSSProperties, type PointerEvent as ReactPointerEvent, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, ViewTransition } from "react";
+import { type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, ViewTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArtifactPanel } from "@/components/blocks/artifact";
@@ -36,7 +36,12 @@ import {
 import { RovoAppBrowserArtifact } from "@/components/projects/studio/components/rovo-app-browser-artifact";
 import { RovoAppComposer } from "@/components/projects/studio/components/rovo-app-composer";
 import { StudioAgentsSection } from "@/components/projects/studio/components/rovo-app-custom-agents-table";
-import { RovoAppMessages } from "@/components/projects/studio/components/rovo-app-messages";
+import {
+	parseStudioAutomationArtifactListPayload,
+	RovoAppMessages,
+	STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE,
+	StudioAutomationArtifactListWidget,
+} from "@/components/projects/studio/components/rovo-app-messages";
 import { RovoAppHermesSkillDraftBar } from "@/components/projects/studio/components/rovo-app-hermes-skill-draft-bar";
 import { RovoAppAgentConfigPanel, type AgentConfigView } from "@/components/projects/studio/components/rovo-app-agent-config-panel";
 import { AgentTestPanel } from "@/components/blocks/agent-test";
@@ -168,7 +173,7 @@ import { clamp, cn, createId } from "@/lib/utils";
 import { getRandomAgentAvatarSrc } from "@/lib/agent-avatars";
 import { getSkillIcon } from "@/lib/skill-icons";
 import { token } from "@/lib/tokens";
-import { getLatestDataPart, getLatestUserMessageId, getMessageAgentResult, getMessageArtifactResult, getMessageText, hasTurnCompleteSignal, type RovoDataParts } from "@/lib/rovo-ui-messages";
+import { getAllDataParts, getLatestDataPart, getLatestUserMessageId, getMessageAgentResult, getMessageArtifactResult, getMessageText, hasTurnCompleteSignal, type RovoDataParts, type RovoRenderableUIMessage } from "@/lib/rovo-ui-messages";
 import { getRovoAppArtifactKindLabel, getRovoAppArtifactTypeLabel, sortRovoAppArtifacts } from "@/components/projects/rovo/lib/rovo-app-artifacts";
 import { RovoAppHeader } from "@/components/projects/studio/components/rovo-app-header";
 import { ApprovalCard } from "@/components/blocks/approval-card/page";
@@ -187,6 +192,25 @@ import { ROVO_DIRECTORY_AGENT_PROFILES, getRovoAgentPromptContext, isRovoAgentPr
 interface RovoAppShellProps {
 	embedded?: boolean;
 	initialThreadId?: string | null;
+}
+
+function getStudioAutomationArtifactListAgents(
+	message: Pick<RovoRenderableUIMessage, "parts">,
+): RovoDataParts["agent-result"][] {
+	const widgetParts = getAllDataParts(message, "data-widget-data");
+	for (let index = widgetParts.length - 1; index >= 0; index -= 1) {
+		const widget = widgetParts[index].data;
+		if (widget.type !== STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE) {
+			continue;
+		}
+
+		const payload = parseStudioAutomationArtifactListPayload(widget.payload);
+		if (payload) {
+			return payload.agents.map((agent) => agent.agentResult);
+		}
+	}
+
+	return [];
 }
 
 const ROVO_APP_SIDEBAR_MOTION_DURATION = "--duration-medium";
@@ -2025,6 +2049,35 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			return true;
 		},
 		[chat.activeThreadId, chat.runtimeThreadId, openAgentCreationAskRovoChat, setActiveAgentConfigState, studioAgentRegistry],
+	);
+	const renderStudioAskRovoWidget = useCallback(
+		(widget: { type: string; data: unknown }, message: RovoRenderableUIMessage): ReactNode => {
+			if (widget.type !== STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE) {
+				return null;
+			}
+
+			const payload = parseStudioAutomationArtifactListPayload(widget.data);
+			if (!payload) {
+				return null;
+			}
+
+			return (
+				<StudioAutomationArtifactListWidget
+					messageId={message.id}
+					onAgentResultSelect={handleStudioAgentResultSelect}
+					payload={payload}
+				/>
+			);
+		},
+		[handleStudioAgentResultSelect],
+	);
+	const getStudioAskRovoWidgetPosition = useCallback(
+		(widgetType: string) => (
+			widgetType === STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE
+				? "before-content" as const
+				: undefined
+		),
+		[],
 	);
 
 	// "Start from scratch" — create a fresh, untitled session agent (no AI result
@@ -4080,6 +4133,53 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			}
 		}
 		}, [chat.activeThreadId, chat.messages, chat.runtimeThreadId, handledAgentResultKeysRef, handleStudioAgentResultSelect, unmarkStudioAgentCreationThread]);
+	useEffect(() => {
+		if (typeof studioAgentRegistry.registerCreatedAgentFromResult !== "function") {
+			return;
+		}
+
+		for (const message of chat.messages.toReversed()) {
+			if (!hasTurnCompleteSignal(message)) {
+				continue;
+			}
+
+			const artifactListAgentResults = getStudioAutomationArtifactListAgents(message);
+			if (artifactListAgentResults.length === 0) {
+				continue;
+			}
+
+			let didRegisterAgent = false;
+			for (const agentResult of artifactListAgentResults) {
+				if (!isGeneratedAgentResult(agentResult)) {
+					continue;
+				}
+
+				const agentResultKey = `${chat.runtimeThreadId}:${message.id}:${agentResult.agentId}:${agentResult.action}:artifact-list`;
+				if (handledAgentResultKeysRef.current.has(agentResultKey)) {
+					continue;
+				}
+
+				const sourceKey = `studio-agent-result:${chat.activeThreadId ?? chat.runtimeThreadId}:${message.id}:${agentResult.agentId}`;
+				const registered = studioAgentRegistry.registerCreatedAgentFromResult(agentResult, {
+					preserveCurrentThread: true,
+					select: false,
+					sourceKey,
+				});
+				if (!registered) {
+					continue;
+				}
+
+				handledAgentResultKeysRef.current.add(agentResultKey);
+				didRegisterAgent = true;
+			}
+
+			if (didRegisterAgent) {
+				unmarkStudioAgentCreationThread(chat.runtimeThreadId);
+				unmarkStudioAgentCreationThread(chat.activeThreadId);
+				break;
+			}
+		}
+	}, [chat.activeThreadId, chat.messages, chat.runtimeThreadId, handledAgentResultKeysRef, studioAgentRegistry, unmarkStudioAgentCreationThread]);
 	const timelineItems = useMemo(() => {
 		return deriveRovoAppTimelineItems(displayMessages);
 	}, [displayMessages]);
@@ -5274,6 +5374,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							chatContextBar={agentEditContextBar}
 							greeting={agentEditGreeting}
 							sendPromptOptions={agentEditSendPromptOptions}
+							renderWidget={renderStudioAskRovoWidget}
+							getWidgetPosition={getStudioAskRovoWidgetPosition}
 							onInterceptSubmit={handleAgentEditInterceptSubmit}
 							hideComposerSourceAndModelControls={Boolean(agentEditContextBar)}
 							// No left border here: the SidebarResizeHandle below paints the divider.
