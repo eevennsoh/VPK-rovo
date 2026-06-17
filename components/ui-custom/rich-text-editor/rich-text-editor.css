@@ -342,6 +342,47 @@
 	min-height: 200px;
 }
 
+/*
+ * Hover-reveal toolbar: when the sticky toolbar wrapper
+ * (`[data-slot="rich-text-editor-toolbar"]`, made a `container-type: scroll-state`
+ * container in hover mode) pins to the top of its scroll container, reveal the
+ * inner toolbar and keep it visible so it follows the scroll. Progressive
+ * enhancement — degrades to hover/focus-only reveal where container scroll-state
+ * queries are unsupported (Firefox/Safari). Unlayered so it beats Tailwind's
+ * `opacity-0` utility.
+ */
+@supports (container-type: scroll-state) {
+	@container scroll-state(stuck: top) {
+		[data-slot="rich-text-editor-toolbar-reveal"] {
+			opacity: 1;
+			/*
+			 * Read as a flush extension of the page header: a single hairline
+			 * divider below the bar separates it from the content scrolling
+			 * under it. Drawn as a box-shadow (not border-bottom) so sticking
+			 * doesn't add 1px and shift the layout.
+			 */
+			box-shadow: 0 1px 0 0 var(--ds-border, #091e4224);
+		}
+
+		/*
+		 * Fill any gap above the pinned bar with the surface colour so
+		 * scrolled content can't peek between it and the top of the scroll
+		 * container (e.g. when the scroll container has top padding, content
+		 * bleeds into that band). The fill extends upward and is clipped by
+		 * the scroll container's own overflow, so it covers exactly the gap
+		 * where one exists and is invisible where the bar pins flush.
+		 */
+		[data-slot="rich-text-editor-toolbar-reveal"]::before {
+			content: "";
+			position: absolute;
+			inset-inline: 0;
+			bottom: 100%;
+			height: 2rem;
+			background: var(--ds-surface, #fff);
+		}
+	}
+}
+
 .agent-instructions-tiptap-editor {
 	min-height: 128px;
 	color: var(--ds-text, #172b4d);

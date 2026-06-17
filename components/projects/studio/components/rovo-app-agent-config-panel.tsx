@@ -1470,10 +1470,13 @@ export function RovoAppAgentConfigPanel({
 											// cancels part of the shared px-4 wrapper. Combined with the
 											// scroll area's own px-1.5 ring-clearance inset, content lands
 											// flush at 16px from the panel edge (10px wrapper + 6px inset)
-											// while the focus-ring clip clearance is preserved. `pt-4`
-											// lives inside the scrollport so the 16px top gap shows at
+											// while the focus-ring clip clearance is preserved. `pt-2`
+											// lives inside the scrollport so an 8px top gap shows at
 											// rest but content bleeds to the edges mid-scroll (the wrapper
-											// drops its fixed py-4 for this branch). The bottom gap is
+											// drops its fixed py-4 for this branch). 8px also matches the
+											// sticky instructions toolbar's bottom padding, so once that
+											// toolbar pins it sits 8px below the header with symmetric
+											// top/bottom spacing. The bottom gap is
 											// the subtle one: the scrollport's last child (the
 											// instructions composer) is `flex-1 min-h-0`, so when its
 											// content is tall its `<section>` box collapses to its 0%
@@ -1490,7 +1493,7 @@ export function RovoAppAgentConfigPanel({
 											// composer). padding-bottom there extends scrollHeight by 16px
 											// and only shows once scrolled to the end. Scoped to this
 											// config branch only; access/surfaces/users keep px-4.
-											compactScrollAreaClassName="-ml-1.5 -mr-4 pr-4 pt-4 [&_[data-agent-field=instructions]_.rich-text-editor-content]:pb-4"
+											compactScrollAreaClassName="-ml-1.5 -mr-4 pr-4 pt-2 [&_[data-agent-field=instructions]_.rich-text-editor-content]:pb-4"
 											idPrefix={`agent-${profileId}-${activeConfigId}`}
 											onTextChange={handleConfigTextChange}
 											onProfileTextChange={handleBaseTextChange}
