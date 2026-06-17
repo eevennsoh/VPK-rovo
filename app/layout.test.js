@@ -117,6 +117,14 @@ test("RootLayout keeps the pre-hydration bootstrap out of the React script tree"
 	assert.doesNotMatch(ROOT_LAYOUT_SOURCE, /dangerouslySetInnerHTML=\{\{ __html: preHydrationScript \}\}/);
 });
 
+test("RootLayout keeps the skip link above fixed shell chrome", () => {
+	assert.match(
+		ROOT_LAYOUT_SOURCE,
+		/href="#main-content"\s+className="[^"]*focus:z-\[60\][^"]*"/,
+	);
+	assert.doesNotMatch(ROOT_LAYOUT_SOURCE, /href="#main-content"\s+className="[^"]*focus:z-50[^"]*"/);
+});
+
 test("RootLayout keeps the development stylesheet guard out of production pre-hydration output", () => {
 	assert.match(
 		ROOT_LAYOUT_SOURCE,
