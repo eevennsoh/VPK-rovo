@@ -113,7 +113,7 @@ export const jiraBoardSpec: Spec = {
 		},
 		issueIp1Priority: {
 			type: "Badge",
-			props: { text: "High", variant: "destructive" },
+			props: { text: "High", variant: "danger" },
 		},
 		issueIp1Tags: {
 			type: "TagGroup",
