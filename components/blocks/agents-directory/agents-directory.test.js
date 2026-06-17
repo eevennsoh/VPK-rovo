@@ -26,7 +26,7 @@ test("Agent Directory is exposed as a website block and used by Studio", () => {
 	);
 	assert.match(
 		readProjectFile("components/projects/studio/components/rovo-app-shell.tsx"),
-		/import \{ AgentsDirectoryDialog \} from "@\/components\/blocks\/agents-directory";/u,
+		/import \{ AgentsDirectoryDialog, type AgentsDirectoryTemplateBuildOptions \} from "@\/components\/blocks\/agents-directory";/u,
 	);
 });
 
@@ -244,6 +244,7 @@ test("Agent Directory experimental templates use the setup flow before opening c
 	assert.doesNotMatch(source, /import \{ TwgToolSourceIcon \} from "@\/components\/ui-custom\/twg-tool";/u);
 	assert.match(source, /import StatusSuccessIcon from "@atlaskit\/icon\/core\/status-success";/u);
 	assert.match(source, /export interface AgentBrowserTemplateBuildOptions/u);
+	assert.match(source, /export interface AgentBrowserTemplateBuildResult \{[\s\S]*profileId: string;[\s\S]*onCancel\?: \(\) => void;/u);
 	assert.match(source, /onBuildTemplateAgent\?: \([\s\S]*agent: AgentTemplatesAgent,[\s\S]*options: AgentBrowserTemplateBuildOptions[\s\S]*\) => AgentBrowserTemplateBuildResult \| null;/u);
 	assert.match(source, /onOpenBuiltTemplateAgentConfig\?: \(profileId: string\) => void;/u);
 	assert.match(source, /function ExperimentalTemplateSetupCard/u);
@@ -255,13 +256,16 @@ test("Agent Directory experimental templates use the setup flow before opening c
 	assert.doesNotMatch(source, /"Checking the generated config\."/u);
 	assert.match(source, /const AGENT_BROWSER_TEMPLATE_BUILD_STEP_DURATION_MS = 1400;/u);
 	assert.match(source, /byline: phase === "building" && index === activeIndex[\s\S]*AGENT_BROWSER_TEMPLATE_BUILD_STEP_BYLINES\[index\]/u);
-	assert.match(source, /const stepTimer = window\.setTimeout\(\(\) => \{[\s\S]*setPhase\("built"\);[\s\S]*setActiveBuildStep\(\(currentStep\) => Math\.min\([\s\S]*currentStep \+ 1,[\s\S]*AGENT_BROWSER_TEMPLATE_BUILD_STEP_LABELS\.length - 1,[\s\S]*\)\);[\s\S]*\}, AGENT_BROWSER_TEMPLATE_BUILD_STEP_DURATION_MS\);/u);
+	assert.match(source, /const stepTimer = window\.setTimeout\(\(\) => \{[\s\S]*const result = onBuildAgent\?\.\(agent, pendingBuildOptions \?\? \{[\s\S]*appIds: \[\],[\s\S]*connectApps: false,[\s\S]*\}\) \?\? \{ profileId: `demo-template-\$\{agent\.id\}` \};[\s\S]*setBuiltProfileId\(result\.profileId\);[\s\S]*setBuiltAgentCancel\(\(\) => result\.onCancel \?\? null\);[\s\S]*setPhase\("built"\);[\s\S]*setActiveBuildStep\(\(currentStep\) => Math\.min\([\s\S]*currentStep \+ 1,[\s\S]*AGENT_BROWSER_TEMPLATE_BUILD_STEP_LABELS\.length - 1,[\s\S]*\)\);[\s\S]*\}, AGENT_BROWSER_TEMPLATE_BUILD_STEP_DURATION_MS\);/u);
 	assert.match(source, /return \(\) => window\.clearTimeout\(stepTimer\);/u);
 	assert.match(source, /className="flex h-\[515px\] w-full flex-col rounded-\[16px\] border border-border bg-surface-raised p-5"/u);
 	assert.match(source, /const appListOverflow = useHasVerticalOverflow<HTMLDivElement>\(\);/u);
 	assert.match(source, /<div className="flex min-h-0 flex-1 flex-col">[\s\S]*Connect your apps[\s\S]*className=\{cn\([\s\S]*"mt-6 flex max-h-\[304px\] flex-col gap-1 overflow-y-auto pr-1",[\s\S]*appListOverflow\.showBottomScrollMask && "scroll-mask-bottom overscroll-contain"[\s\S]*ref=\{appListOverflow\.ref\}/u);
 	assert.match(source, /appSources\.length > 0 \? \([\s\S]*appSources\.map\(\(source\) => \{/u);
 	assert.match(source, /const \[selectedAppIds, setSelectedAppIds\] = useState<ReadonlySet<string>>\(\(\) => new Set\(\)\);/u);
+	assert.match(source, /const \[builtAgentCancel, setBuiltAgentCancel\] = useState<\(\(\) => void\) \| null>\(null\);/u);
+	assert.match(source, /const \[pendingBuildOptions, setPendingBuildOptions\] = useState<AgentBrowserTemplateBuildOptions \| null>\(null\);/u);
+	assert.match(source, /function handleCancel\(\) \{[\s\S]*builtAgentCancel\?\.\(\);[\s\S]*onCancel\(\);[\s\S]*\}/u);
 	assert.doesNotMatch(source, /buildProgressReady/u);
 	assert.match(source, /function handleToggleApp\(sourceId: string\) \{[\s\S]*const nextAppIds = new Set\(currentAppIds\);[\s\S]*nextAppIds\.has\(sourceId\)[\s\S]*nextAppIds\.delete\(sourceId\);[\s\S]*nextAppIds\.add\(sourceId\);/u);
 	assert.match(source, /const isSelected = selectedAppIds\.has\(source\.id\);/u);
@@ -269,8 +273,8 @@ test("Agent Directory experimental templates use the setup flow before opening c
 	assert.match(source, /<StatusSuccessIcon[\s\S]*color="currentColor"[\s\S]*label=""[\s\S]*size="small"[\s\S]*spacing="none"/u);
 	assert.match(source, /group-hover\/template-app-row:opacity-100 group-focus-visible\/template-app-row:opacity-100/u);
 	assert.match(source, /Continue[\s\S]*selectedAppCount > 0 \? <Badge variant="inverse">\{selectedAppCount\}<\/Badge> : null/u);
-	assert.match(source, /<Button onClick=\{onCancel\} type="button" variant="ghost">\s*Cancel\s*<\/Button>/u);
-	assert.match(source, /phase === "built" \? \([\s\S]*onClick=\{\(\) => builtProfileId \? onOpenBuiltAgent\(agent, builtProfileId\) : undefined\}[\s\S]*See agent[\s\S]*<Button onClick=\{onCancel\} type="button" variant="ghost">\s*Cancel\s*<\/Button>/u);
+	assert.match(source, /<Button onClick=\{handleCancel\} type="button" variant="ghost">\s*Cancel\s*<\/Button>/u);
+	assert.match(source, /phase === "built" \? \([\s\S]*onClick=\{\(\) => builtProfileId \? onOpenBuiltAgent\(agent, builtProfileId\) : undefined\}[\s\S]*See agent[\s\S]*<Button onClick=\{handleCancel\} type="button" variant="ghost">\s*Cancel\s*<\/Button>/u);
 	assert.doesNotMatch(source, /Open agent config/u);
 	assert.doesNotMatch(source, /Skip for now/u);
 	assert.doesNotMatch(source, /visibleAppSources/u);
@@ -295,8 +299,9 @@ test("Agent Directory experimental templates use the setup flow before opening c
 	assert.doesNotMatch(source, /currentSpinnerClassName=/u);
 	assert.doesNotMatch(source, /currentSpinnerSize=/u);
 	assert.doesNotMatch(source, /currentSpinnerVariant=/u);
-	assert.match(source, /<Button disabled type="button">[\s\S]*Building\.\.\.[\s\S]*<\/Button>[\s\S]*<Button onClick=\{onCancel\} type="button" variant="ghost">[\s\S]*Cancel[\s\S]*<\/Button>/u);
-	assert.match(source, /onBuildAgent\?\.\(agent, \{[\s\S]*appIds: appSources\.map\(\(source\) => source\.id\),[\s\S]*connectApps,/u);
+	assert.match(source, /<Button disabled type="button">[\s\S]*Building\.\.\.[\s\S]*<\/Button>[\s\S]*<Button onClick=\{handleCancel\} type="button" variant="ghost">[\s\S]*Cancel[\s\S]*<\/Button>/u);
+	assert.match(source, /const appIds = connectApps \? \[\.\.\.selectedAppIds\] : \[\];[\s\S]*setPendingBuildOptions\(\{[\s\S]*appIds,[\s\S]*connectApps: connectApps && appIds\.length > 0,/u);
+	assert.doesNotMatch(source, /appIds: appSources\.map\(\(source\) => source\.id\)/u);
 	assert.match(source, /if \(onOpenBuiltAgentConfig\) \{[\s\S]*onOpenBuiltAgentConfig\(profileId\);[\s\S]*return;[\s\S]*onSelectAgent\?\.\(agent\);/u);
 	assert.match(source, /<AgentTemplateSection[\s\S]*onSelectAgent=\{onSelectTemplateAgent\}/u);
 	assert.match(agentsDirectorySource, /onBuildTemplateAgent\?: \([\s\S]*agent: AgentsDirectoryTemplateAgent,[\s\S]*options: AgentsDirectoryTemplateBuildOptions/u);

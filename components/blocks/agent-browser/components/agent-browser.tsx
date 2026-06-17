@@ -101,6 +101,7 @@ export interface AgentBrowserTemplateBuildOptions {
 
 export interface AgentBrowserTemplateBuildResult {
 	profileId: string;
+	onCancel?: () => void;
 }
 
 export interface AgentBrowserProps {
@@ -1478,6 +1479,8 @@ function ExperimentalTemplateSetupCard({
 	const [phase, setPhase] = useState<ExperimentalTemplateSetupPhase>("connect");
 	const [activeBuildStep, setActiveBuildStep] = useState(0);
 	const [builtProfileId, setBuiltProfileId] = useState<string | null>(null);
+	const [builtAgentCancel, setBuiltAgentCancel] = useState<(() => void) | null>(null);
+	const [pendingBuildOptions, setPendingBuildOptions] = useState<AgentBrowserTemplateBuildOptions | null>(null);
 	const [selectedAppIds, setSelectedAppIds] = useState<ReadonlySet<string>>(() => new Set());
 	const appSources = agent.sources ?? [];
 	const selectedAppCount = selectedAppIds.size;
@@ -1494,6 +1497,18 @@ function ExperimentalTemplateSetupCard({
 
 		const stepTimer = window.setTimeout(() => {
 			if (activeBuildStep >= AGENT_BROWSER_TEMPLATE_BUILD_STEP_LABELS.length - 1) {
+				const result = onBuildAgent?.(agent, pendingBuildOptions ?? {
+					appIds: [],
+					connectApps: false,
+				}) ?? { profileId: `demo-template-${agent.id}` };
+
+				if (!result) {
+					setPhase("error");
+					return;
+				}
+
+				setBuiltProfileId(result.profileId);
+				setBuiltAgentCancel(() => result.onCancel ?? null);
 				setPhase("built");
 				return;
 			}
@@ -1505,22 +1520,23 @@ function ExperimentalTemplateSetupCard({
 		}, AGENT_BROWSER_TEMPLATE_BUILD_STEP_DURATION_MS);
 
 		return () => window.clearTimeout(stepTimer);
-	}, [activeBuildStep, phase]);
+	}, [activeBuildStep, agent, onBuildAgent, pendingBuildOptions, phase]);
 
 	function handleStartBuild(connectApps: boolean) {
-		const result = onBuildAgent?.(agent, {
-			appIds: appSources.map((source) => source.id),
-			connectApps,
-		}) ?? { profileId: `demo-template-${agent.id}` };
-
-		if (!result) {
-			setPhase("error");
-			return;
-		}
-
-		setBuiltProfileId(result.profileId);
+		const appIds = connectApps ? [...selectedAppIds] : [];
+		setPendingBuildOptions({
+			appIds,
+			connectApps: connectApps && appIds.length > 0,
+		});
+		setBuiltProfileId(null);
+		setBuiltAgentCancel(null);
 		setActiveBuildStep(0);
 		setPhase("building");
+	}
+
+	function handleCancel() {
+		builtAgentCancel?.();
+		onCancel();
 	}
 
 	function handleToggleApp(sourceId: string) {
@@ -1572,7 +1588,7 @@ function ExperimentalTemplateSetupCard({
 							>
 								See agent
 							</Button>
-							<Button onClick={onCancel} type="button" variant="ghost">
+							<Button onClick={handleCancel} type="button" variant="ghost">
 								Cancel
 							</Button>
 						</>
@@ -1585,7 +1601,7 @@ function ExperimentalTemplateSetupCard({
 							<Button disabled type="button">
 								Building...
 							</Button>
-							<Button onClick={onCancel} type="button" variant="ghost">
+							<Button onClick={handleCancel} type="button" variant="ghost">
 								Cancel
 							</Button>
 						</>
@@ -1660,7 +1676,7 @@ function ExperimentalTemplateSetupCard({
 					Continue
 					{selectedAppCount > 0 ? <Badge variant="inverse">{selectedAppCount}</Badge> : null}
 				</Button>
-				<Button onClick={onCancel} type="button" variant="ghost">
+				<Button onClick={handleCancel} type="button" variant="ghost">
 					Cancel
 				</Button>
 			</div>

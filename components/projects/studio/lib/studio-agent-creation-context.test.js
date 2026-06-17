@@ -320,6 +320,17 @@ test("buildTemplateAgentResultFromAgent creates a local draft payload from templ
 	assert.ok(Array.isArray(result.skills) && result.skills.length > 0, "template skill defaults attached");
 	assert.ok(Array.isArray(result.knowledge) && result.knowledge.length > 0, "template knowledge defaults attached");
 	assert.ok(Array.isArray(result.subagents) && result.subagents.length > 0, "template subagent defaults attached");
+
+	const jiraOnlyResult = mod.buildTemplateAgentResultFromAgent({
+		id: "decision-director",
+		name: "Decision Director",
+	}, {
+		appIds: ["jira"],
+	});
+	assert.ok(jiraOnlyResult.tools?.some((name) => /Jira/u.test(name)), "selected Jira tool attached");
+	assert.ok(jiraOnlyResult.knowledge?.some((name) => /Jira/u.test(name)), "selected Jira knowledge attached");
+	assert.ok(!jiraOnlyResult.tools?.some((name) => /Confluence|Atlassian Home/u.test(name)), "unselected tools omitted");
+	assert.ok(!jiraOnlyResult.knowledge?.some((name) => /Confluence/u.test(name)), "unselected knowledge omitted");
 });
 
 test("buildCreationTemplateContextFromStarter enriches from the matching template config", async () => {

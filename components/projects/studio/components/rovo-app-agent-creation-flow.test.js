@@ -530,7 +530,7 @@ test("Studio agent results use guarded session-agent registration with preserve-
 	assert.match(SHELL_SOURCE, /handledAgentResultKeysRef\.current\.add\(agentResultKey\);[\s\S]*unmarkStudioAgentCreationThread\(chat\.runtimeThreadId\);[\s\S]*unmarkStudioAgentCreationThread\(chat\.activeThreadId\);[\s\S]*break;/u);
 	assert.match(SHELL_SOURCE, /const unmarkStudioAgentCreationThread = useCallback[\s\S]*studioAgentCreationThreadKeysRef\.current\.delete\(threadId\);/u);
 	assert.doesNotMatch(SHELL_SOURCE, /!studioAgentCreationThreadKeysRef\.current\.has\(chat\.runtimeThreadId\) &&[\s\S]*return;[\s\S]*for \(const message of chat\.messages/u);
-	assert.match(SHELL_SOURCE, /import \{ AgentsDirectoryDialog \} from "@\/components\/blocks\/agents-directory";/u);
+	assert.match(SHELL_SOURCE, /import \{ AgentsDirectoryDialog, type AgentsDirectoryTemplateBuildOptions \} from "@\/components\/blocks\/agents-directory";/u);
 	assert.match(SHELL_SOURCE, /sessionAgentEntries=\{studioAgentRegistry\.sessionAgentEntries\}/u);
 	assert.match(SHELL_SOURCE, /sessionAgents=\{studioAgentRegistry\.sessionAgentEntries\.map\(\(entry\) => entry\.profile\)\}/u);
 	assert.match(SHELL_SOURCE, /agents=\{ROVO_DIRECTORY_AGENT_PROFILES\}/u);
@@ -655,7 +655,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_BLOCK_SOURCE, /const AGENT_AVATAR_PROFILE_COVER_COLORS: Record<string, string>/u);
 	assert.match(AGENT_BLOCK_SOURCE, /"product-agents": "#BF63F3"/u);
 	assert.match(AGENT_BLOCK_SOURCE, /function getAgentProfileCoverBackgroundColor\(avatarSrc: string \| undefined\): string/u);
-	assert.match(AGENT_BLOCK_SOURCE, /style=\{\{ backgroundColor: coverBackgroundColor \}\}/u);
+	assert.match(AGENT_BLOCK_SOURCE, /style=\{\{[\s\S]*backgroundColor: coverBackgroundColor,[\s\S]*backgroundImage: `url\("\$\{bannerSrc\}"\)`,[\s\S]*\}\}/u);
 	assert.match(AGENT_BLOCK_SOURCE, /Add flows for when this agent runs/u);
 	assert.match(AGENT_BLOCK_SOURCE, /Add prompts to help people start/u);
 	assert.match(AGENT_BLOCK_SOURCE, /knowledgeMode: KnowledgeModeValue;/u);
@@ -840,7 +840,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_TEST_PANEL_SOURCE, /buildAgentTestProfile\(entry, selectedResult, selectedOption\.label\)/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTestChatPanel[\s\S]*automationRules=\{automationRules\}[\s\S]*testAgentProfile=\{testAgentProfile\}/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /containerClassName="h-full min-h-0 w-full overflow-visible"/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /composerContainerClassName="px-0"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /composerContainerClassName="px-0 \[&_\.chat-composer-surface\]:max-w-\[600px\]"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /conversationContentClassName="px-0 max-w-\[600px\]"/u);
 	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /containerClassName="mx-auto h-full min-h-0 w-full max-w-\[800px\] overflow-visible"/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /containerStyle=\{\{ borderRadius: 0, borderWidth: 0, overflow: "visible" \}\}/u);
@@ -1047,9 +1047,10 @@ test("Studio threads template provenance into agent creation contexts", () => {
 
 test("Studio Agent Directory template setup builds a local draft before opening config", () => {
 	assert.match(SHELL_SOURCE, /buildTemplateAgentResultFromAgent/u);
-	assert.match(SHELL_SOURCE, /const handleBuildTemplateAgent = useCallback\(\(agent: AgentTemplatesAgent\) => \{/u);
+	assert.match(SHELL_SOURCE, /const handleBuildTemplateAgent = useCallback\(\(agent: AgentTemplatesAgent, options: AgentsDirectoryTemplateBuildOptions\) => \{/u);
+	assert.match(SHELL_SOURCE, /buildTemplateAgentResultFromAgent\(agent, \{[\s\S]*appIds: options\.connectApps \? options\.appIds : \[\],[\s\S]*\}\);/u);
 	assert.match(SHELL_SOURCE, /studioAgentRegistry\.registerCreatedAgentFromResult\(agentResult, \{[\s\S]*preserveCurrentThread: true,[\s\S]*select: true,[\s\S]*sourceKey: `studio-template-setup:\$\{agent\.id\}:\$\{Date\.now\(\)\}`/u);
-	assert.match(SHELL_SOURCE, /return registered \? \{ profileId: registered\.id \} : null;/u);
+	assert.match(SHELL_SOURCE, /return registered[\s\S]*\? \{[\s\S]*profileId: registered\.id,[\s\S]*onCancel: \(\) => studioAgentRegistry\.removeSessionAgent\(registered\.id\),[\s\S]*\}[\s\S]*: null;/u);
 	assert.match(SHELL_SOURCE, /const handleOpenBuiltTemplateAgentConfig = useCallback\(\(profileId: string\) => \{[\s\S]*setActiveAgentConfigState\(\{[\s\S]*profileId,[\s\S]*sourceMessageId: null,[\s\S]*\}\);[\s\S]*setActiveAgentConfigView\("configure"\);[\s\S]*setIsSidebarAgentBrowserOpen\(false\);/u);
 	assert.match(SHELL_SOURCE, /onBuildTemplateAgent=\{handleBuildTemplateAgent\}/u);
 	assert.match(SHELL_SOURCE, /onOpenBuiltTemplateAgentConfig=\{handleOpenBuiltTemplateAgentConfig\}/u);

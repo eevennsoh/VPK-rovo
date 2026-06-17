@@ -76,6 +76,10 @@ interface StarterTemplateLike {
 	};
 }
 
+export interface TemplateAgentResultBuildOptions {
+	appIds?: readonly string[];
+}
+
 /**
  * Distilled, transport-friendly snapshot of the template a user started from.
  * Carries just the provenance the model needs to ask template-aware questions
@@ -363,7 +367,37 @@ function fallbackConversationStarters(agent: TemplateAgentLike): readonly string
 	];
 }
 
-export function buildTemplateAgentResultFromAgent(agent: TemplateAgentLike): RovoDataParts["agent-result"] {
+function getSelectedTemplateAppIds(options: TemplateAgentResultBuildOptions | undefined): ReadonlySet<string> | undefined {
+	if (!options?.appIds) {
+		return undefined;
+	}
+
+	return new Set(options.appIds.map((id) => id.trim()).filter(Boolean));
+}
+
+function applySelectedTemplateApps(
+	result: RovoDataParts["agent-result"],
+	config: AgentTemplateConfig | undefined,
+	selectedAppIds: ReadonlySet<string> | undefined,
+): RovoDataParts["agent-result"] {
+	if (!config || !selectedAppIds) {
+		return result;
+	}
+
+	const selectedToolIds = config.toolIds.filter((id) => selectedAppIds.has(id));
+	const selectedKnowledgeIds = config.knowledgeIds.filter((id) => selectedAppIds.has(id));
+
+	return {
+		...result,
+		tools: resolveCatalogNames(selectedToolIds, "tool"),
+		knowledge: resolveCatalogNames(selectedKnowledgeIds.map((id) => `${id}:all`), "knowledge"),
+	};
+}
+
+export function buildTemplateAgentResultFromAgent(
+	agent: TemplateAgentLike,
+	options?: TemplateAgentResultBuildOptions,
+): RovoDataParts["agent-result"] {
 	const config = (agent.id ? getAgentTemplateConfigById(agent.id) : undefined) ?? findTemplateConfigByTitle(agent.name);
 	const description = config?.description ?? agent.description ?? `Generated from the ${agent.name} template.`;
 	const baseResult: RovoDataParts["agent-result"] = {
@@ -387,7 +421,11 @@ export function buildTemplateAgentResultFromAgent(agent: TemplateAgentLike): Rov
 		...(config?.knowledgeMode ? { knowledgeMode: config.knowledgeMode } : {}),
 	};
 
-	return applyTemplateDefaultsToResult(baseResult, config);
+	return applySelectedTemplateApps(
+		applyTemplateDefaultsToResult(baseResult, config),
+		config,
+		getSelectedTemplateAppIds(options),
+	);
 }
 
 /** Distil a Browse-all template agent into its creation-context provenance. */
