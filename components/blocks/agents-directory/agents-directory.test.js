@@ -252,10 +252,12 @@ test("Agent Directory experimental templates use the setup flow before opening c
 	assert.match(source, /type ExperimentalTemplateSetupPhase = "connect" \| "building" \| "built" \| "error";/u);
 	assert.match(source, /const AGENT_BROWSER_TEMPLATE_BUILD_STEP_LABELS = \[[\s\S]*"Review template",[\s\S]*"Connect apps",[\s\S]*"Apply instructions",[\s\S]*"Configure skills",[\s\S]*"Prepare knowledge",[\s\S]*"Create draft agent",[\s\S]*\] as const;/u);
 	assert.doesNotMatch(source, /"Finalize config"/u);
-	assert.match(source, /const AGENT_BROWSER_TEMPLATE_BUILD_STEP_BYLINES = \[[\s\S]*"Reading the template defaults\.",[\s\S]*"Preparing the selected app context\.",[\s\S]*"Adding the agent instructions\.",[\s\S]*"Attaching recommended skills\.",[\s\S]*"Preparing memory and knowledge settings\.",[\s\S]*"Creating the local draft profile\.",[\s\S]*\] as const;/u);
+	// Per-step bylines were removed so build-progress rows stay uniform height and
+	// the checkmark icons are evenly spaced in every phase.
+	assert.doesNotMatch(source, /AGENT_BROWSER_TEMPLATE_BUILD_STEP_BYLINES/u);
 	assert.doesNotMatch(source, /"Checking the generated config\."/u);
 	assert.match(source, /const AGENT_BROWSER_TEMPLATE_BUILD_STEP_DURATION_MS = 1400;/u);
-	assert.match(source, /byline: phase === "building" && index === activeIndex[\s\S]*AGENT_BROWSER_TEMPLATE_BUILD_STEP_BYLINES\[index\]/u);
+	assert.doesNotMatch(source, /byline: phase === "building" && index === activeIndex/u);
 	assert.match(source, /const stepTimer = window\.setTimeout\(\(\) => \{[\s\S]*const result = onBuildAgent\?\.\(agent, pendingBuildOptions \?\? \{[\s\S]*appIds: \[\],[\s\S]*connectApps: false,[\s\S]*\}\) \?\? \{ profileId: `demo-template-\$\{agent\.id\}` \};[\s\S]*setBuiltProfileId\(result\.profileId\);[\s\S]*setBuiltAgentCancel\(\(\) => result\.onCancel \?\? null\);[\s\S]*setPhase\("built"\);[\s\S]*setActiveBuildStep\(\(currentStep\) => Math\.min\([\s\S]*currentStep \+ 1,[\s\S]*AGENT_BROWSER_TEMPLATE_BUILD_STEP_LABELS\.length - 1,[\s\S]*\)\);[\s\S]*\}, AGENT_BROWSER_TEMPLATE_BUILD_STEP_DURATION_MS\);/u);
 	assert.match(source, /return \(\) => window\.clearTimeout\(stepTimer\);/u);
 	assert.match(source, /className="flex h-\[515px\] w-full flex-col rounded-\[16px\] border border-border bg-surface-raised p-5"/u);
@@ -290,7 +292,8 @@ test("Agent Directory experimental templates use the setup flow before opening c
 	assert.match(greetingPromptRowSource, /selected[\s\S]*\? "bg-bg-selected hover:bg-bg-selected-hovered active:bg-bg-selected-pressed"[\s\S]*: "hover:bg-bg-neutral-subtle-hovered"/u);
 	assert.match(greetingPromptRowSource, /aria-pressed=\{selected \|\| undefined\}/u);
 	assert.doesNotMatch(source, /<MotionConfig/u);
-	assert.match(source, /<ProgressTracker[\s\S]*aria-label=\{`\$\{agent\.name\} build progress`\}[\s\S]*className="template-build-progress-spinner gap-1\.5"[\s\S]*bylineClassName="text-xs leading-4 text-text-subtle"[\s\S]*labelClassName="text-sm leading-5"[\s\S]*steps=\{buildSteps\}/u);
+	assert.match(source, /<ProgressTracker[\s\S]*aria-label=\{`\$\{agent\.name\} build progress`\}[\s\S]*className="template-build-progress-spinner gap-1\.5"[\s\S]*labelClassName="text-sm leading-5"[\s\S]*steps=\{buildSteps\}/u);
+	assert.doesNotMatch(source, /bylineClassName=/u);
 	assert.match(tailwindThemeSource, /@utility template-build-progress-spinner/u);
 	assert.match(tailwindThemeSource, /@keyframes template-build-progress-spinner-rotate/u);
 	assert.match(tailwindThemeSource, /@keyframes template-build-progress-spinner-dash/u);
