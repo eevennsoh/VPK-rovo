@@ -3569,6 +3569,7 @@ export function useRovoSelectedAgent() {
 		publishSessionAgent,
 		removeSessionAgent,
 		resetAgentToRovo,
+		replaceMessages,
 	} = useRovoChat();
 
 	return {
@@ -3585,5 +3586,10 @@ export function useRovoSelectedAgent() {
 		publishSessionAgent,
 		removeSessionAgent,
 		resetAgentToRovo,
+		// The studio shell drives generation through its own useRovoApp chat
+		// store, which is separate from this RovoChatProvider context that the
+		// Ask Rovo sidebar reads. Expose replaceMessages so the shell can bridge
+		// the generation transcript into the sidebar after an agent is created.
+		replaceMessages,
 	};
 }
