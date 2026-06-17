@@ -6,10 +6,9 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
-import { BrandLogoMark } from "@/components/ui/logo-mark";
+import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import type { TagColor } from "@/components/ui/tag";
 import { resolveBrandLogoPresentation } from "@/app/data/directory/brand-logos";
-import { resolveAtlassianLogoBorder } from "@/components/ui/data/logo-usage";
 import { getDirectoryIcon } from "@/app/data/directory/visual";
 import type { DirectoryIconKey } from "@/app/data/directory/types";
 import { cn } from "@/lib/utils";
@@ -26,26 +25,6 @@ import type {
  * menu-row avatar, image, logo tile, and icon tile together.
  */
 export const MENU_VISUAL_TILE_SIZE = "medium" as const;
-
-// Rovo's brand marks ship NO solid background (like the Atlassian master logo),
-// so inline chips frame them in a transparent IconTile rather than letting a bare
-// glyph stretch edge-to-edge. `resolveAtlassianLogoBorder` already flags the
-// Atlassian master logo; this set adds the Rovo family on top.
-const BACKGROUNDLESS_LOGO_NAMES: ReadonlySet<AtlassianLogoName> = new Set([
-	"rovo",
-	"rovo-dev",
-	"rovo-dev-agent",
-]);
-
-/**
- * Whether a 1P logo lacks a solid background fill. Such marks (the Atlassian
- * master logo and the Rovo family) keep the transparent `IconTile` front-slot
- * treatment in inline chips; everything else ships a solid superellipse
- * background and fills the chip's 16px front slot bare.
- */
-function isBackgroundlessLogo(name: AtlassianLogoName): boolean {
-	return resolveAtlassianLogoBorder(name) || BACKGROUNDLESS_LOGO_NAMES.has(name);
-}
 
 // Maps an icon's ADS color token to the closest `Tag` color so that mention
 // tokens in the TipTap editor and reference chips in the agent config panel
@@ -204,7 +183,6 @@ export function RichTextMentionVisualMark({
 	const isMenu = size === "menu" || size === "menu-compact";
 	const isCompactMenu = size === "menu-compact";
 	const avatarSize = isCompactMenu ? "sm" : size === "menu" ? "default" : "xs";
-	const logoSize = "xxsmall";
 	const menuTileSize = isCompactMenu ? "small" : MENU_VISUAL_TILE_SIZE;
 	const menuLogoBoxClassName = isCompactMenu ? "size-6" : "size-8";
 
@@ -288,38 +266,12 @@ export function RichTextMentionVisualMark({
 			);
 		}
 
-		// Inline tag/pill chips follow the Tag front-slot convention (see
-		// `TagDemoFrontSlot` in tag-demo.tsx and /components/ui/tag): 1P product
-		// logos ship a solid superellipse background, so they fill the 16px front
-		// slot bare — the Tag wrapper's `[&>*]:size-full` stretches the xxsmall
-		// (16px) mark edge-to-edge with NO padding. The Atlassian master logo and
-		// the Rovo family have no solid background, so they keep the transparent
-		// `IconTile` treatment that insets + centers the mark inside the 16px box
-		// (the tile would otherwise clamp a solid-bg mark down to 10px, which read
-		// as an undersized, padded logo — the reported bug).
-		return isBackgroundlessLogo(visual.logoName) ? (
-			<IconTile
-				aria-hidden={true}
-				className={className}
-				icon={<AtlassianLogo name={visual.logoName} size={logoSize} themeAware label={label} />}
-				label={label}
-				size="xxsmall"
-				variant="transparent"
-			/>
-		) : (
-			// `AtlassianLogo` styles its own outer span, so we carry the caller's
-			// `className` on a thin wrapper that fills the front slot. The xxsmall
-			// (16px) mark then fills it edge-to-edge.
-			<span className={cn("inline-flex size-full items-center justify-center", className)}>
-				<AtlassianLogo
-					label={label}
-					name={visual.logoName}
-					size="xxsmall"
-					themeAware
-					withUsageBorder
-				/>
-			</span>
-		);
+		// Inline tag/pill chips route 1P logos through the shared AtlassianLogoMark
+		// chip frame — the same single-source-of-truth treatment as 2P/3P marks
+		// (BrandLogoMark frame="chip"): backgroundless marks (the Atlassian master
+		// logo + the Rovo family) inset to a centered 12px glyph, while solid product
+		// logos fill the 16px box bare.
+		return <AtlassianLogoMark className={className} frame="chip" label={label} name={visual.logoName} />;
 	}
 
 	if (visual.kind === "icon") {

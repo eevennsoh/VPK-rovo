@@ -12,7 +12,7 @@ const LOGO_DEMO_SOURCE = fs.readFileSync(
 test("Atlassian company logo uses the shared bordered Tile treatment", () => {
 	assert.match(LOGO_MARK_SOURCE, /export function AtlassianLogoMark/u);
 	assert.match(LOGO_MARK_SOURCE, /export function AtlassianLogoGlyph/u);
-	assert.match(LOGO_MARK_SOURCE, /className=\{cn\([\s\S]*\[\&>span\]:!size-full \[\&_svg\]:!size-full/u);
+	assert.match(LOGO_MARK_SOURCE, /className=\{cn\([\s\S]*\[&>span\]:!size-full \[&_svg\]:!size-full/u);
 	assert.match(LOGO_MARK_SOURCE, /<AtlassianLogo label="" name=\{name\} size=\{size\} themeAware \/>/u);
 	assert.match(LOGO_MARK_SOURCE, /const hasBorder = resolveAtlassianLogoBorder\(name\);/u);
 	assert.match(LOGO_MARK_SOURCE, /<Tile[\s\S]*hasBorder[\s\S]*size=\{size\}[\s\S]*variant="transparent"[\s\S]*<AtlassianLogo label="" name=\{name\} size=\{size\} themeAware \/>/u);

@@ -13,6 +13,7 @@ import FlagIcon from "@atlaskit/icon/core/flag";
 import { type ReactElement } from "react";
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
+import { AtlassianLogo, RovoColorIcon } from "@/components/ui/logo";
 
 function tileIcon(render: ReactElement) {
 	return <Icon aria-hidden render={render} />;
@@ -47,10 +48,22 @@ export function IconTileDemoSizes() {
 
 export function IconTileDemoTransparent() {
 	return (
-		<div className="flex items-end gap-3 text-icon-subtle">
-			<IconTile icon={tileIcon(<SearchIcon label="" size="small" />)} label="Search" variant="transparent" size="xxsmall" />
-			<IconTile icon={tileIcon(<HomeIcon label="" size="small" />)} label="Home" variant="transparent" size="small" />
-			<IconTile icon={tileIcon(<AddIcon label="" />)} label="Add" variant="transparent" size="medium" />
+		<div className="flex flex-col gap-4">
+			<div className="flex items-end gap-3 text-icon-subtle">
+				<IconTile icon={tileIcon(<SearchIcon label="" size="small" />)} label="Search" variant="transparent" size="xxsmall" />
+				<IconTile icon={tileIcon(<HomeIcon label="" size="small" />)} label="Home" variant="transparent" size="small" />
+				<IconTile icon={tileIcon(<AddIcon label="" />)} label="Add" variant="transparent" size="medium" />
+			</div>
+			{/* Logos: the transparent tile insets + centers a backgroundless mark to the
+			    tile's content scale — e.g. a 12px glyph in the xxsmall (16px) box. This
+			    is the treatment inline chips use for the Atlassian master logo and the
+			    Rovo family (see AtlassianLogoMark frame="chip"). */}
+			<div className="flex items-end gap-3">
+				<IconTile icon={<AtlassianLogo name="atlassian" label="Atlassian" size="xxsmall" themeAware />} label="Atlassian" variant="transparent" size="xxsmall" />
+				<IconTile icon={<RovoColorIcon aria-hidden />} label="Rovo" variant="transparent" size="xxsmall" />
+				<IconTile icon={<AtlassianLogo name="atlassian" label="Atlassian" size="small" themeAware />} label="Atlassian" variant="transparent" size="small" />
+				<IconTile icon={<RovoColorIcon aria-hidden />} label="Rovo" variant="transparent" size="medium" />
+			</div>
 		</div>
 	);
 }

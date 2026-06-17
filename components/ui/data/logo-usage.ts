@@ -76,3 +76,27 @@ export function resolveBrandLogoPresentation(src: string): BrandLogoPresentation
 export function resolveAtlassianLogoBorder(name: AtlassianLogoName): boolean {
 	return ONE_P_BORDER_BY_ID[name] ?? ONE_P.defaultHasBorder;
 }
+
+/**
+ * 1P marks that ship NO solid background fill beyond those already flagged
+ * bordered in `logo-usage.json`. The Rovo family marks are transparent like the
+ * Atlassian master logo, so inline chips inset + center them in the 16px box
+ * rather than stretching a bare glyph edge-to-edge.
+ */
+const BACKGROUNDLESS_ATLASSIAN_LOGO_NAMES: ReadonlySet<AtlassianLogoName> = new Set([
+	"rovo",
+	"rovo-dev",
+	"rovo-dev-agent",
+]);
+
+/**
+ * Whether a 1P logo lacks a solid background fill — true for the bordered marks
+ * (per `logo-usage.json`) and the Rovo family. Such marks get the inset chip
+ * treatment (a 12px glyph centered in the 16px box); solid-background product
+ * marks fill the box bare. Single source of truth for the inline-chip 1P logo
+ * sizing decision, shared by `AtlassianLogoMark frame="chip"` and the rich-text
+ * mention/reference chips.
+ */
+export function isBackgroundlessAtlassianLogo(name: AtlassianLogoName): boolean {
+	return resolveAtlassianLogoBorder(name) || BACKGROUNDLESS_ATLASSIAN_LOGO_NAMES.has(name);
+}

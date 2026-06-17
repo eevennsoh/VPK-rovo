@@ -7,8 +7,8 @@ import TagIcon from "@atlaskit/icon/core/tag";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
-import { AtlassianLogo, RovoColorIcon } from "@/components/ui/logo";
-import { BrandLogoMark } from "@/components/ui/logo-mark";
+import { RovoColorIcon } from "@/components/ui/logo";
+import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Tag, TagGroup } from "@/components/ui/tag";
 
 export default function TagDemo() {
@@ -63,7 +63,7 @@ export function TagDemoFrontSlot() {
 			<Tag
 				color="blue"
 				elemBefore={
-					<AtlassianLogo name="jira" label="Jira" size="xxsmall" withUsageBorder />
+					<AtlassianLogoMark frame="chip" name="jira" label="Jira" />
 				}
 			>
 				Jira
@@ -71,13 +71,7 @@ export function TagDemoFrontSlot() {
 			<Tag
 				color="purple"
 				elemBefore={
-					<IconTile
-						aria-hidden
-						icon={<AtlassianLogo name="atlassian" label="Atlassian" size="xxsmall" />}
-						label="Atlassian"
-						size="xxsmall"
-						variant="transparent"
-					/>
+					<AtlassianLogoMark frame="chip" name="atlassian" label="Atlassian" />
 				}
 			>
 				Atlassian
@@ -133,7 +127,7 @@ export function TagDemoEditorTag() {
 				variant="editor"
 				color="blue"
 				elemBefore={
-					<AtlassianLogo name="jira" label="Jira" size="xxsmall" withUsageBorder />
+					<AtlassianLogoMark frame="chip" name="jira" label="Jira" />
 				}
 			>
 				Jira
@@ -142,13 +136,7 @@ export function TagDemoEditorTag() {
 				variant="editor"
 				color="purple"
 				elemBefore={
-					<IconTile
-						aria-hidden
-						icon={<AtlassianLogo name="atlassian" label="Atlassian" size="xxsmall" />}
-						label="Atlassian"
-						size="xxsmall"
-						variant="transparent"
-					/>
+					<AtlassianLogoMark frame="chip" name="atlassian" label="Atlassian" />
 				}
 			>
 				Atlassian
