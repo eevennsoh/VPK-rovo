@@ -53,6 +53,7 @@ import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SplitButton } from "@/components/ui/split-button";
 import {
+	EntityCardAddedCheck,
 	EntityCardShell,
 	EntityCardDescription,
 	EntityCardFooter,
@@ -103,6 +104,12 @@ export type {
 } from "../data/sidebar-groups";
 
 export interface SkillsDirectoryDialogProps {
+	/**
+	 * Skills already added to the agent, as ids. Drives the persistent "added"
+	 * check on each card so committed skills can be scanned at a glance. Distinct
+	 * from `selectedSkillIds`, which is the in-dialog multi-select (checkbox) set.
+	 */
+	addedSkillIds?: readonly string[];
 	agents?: readonly SkillsDirectoryAgent[];
 	defaultSelectedSkillIds?: readonly string[];
 	/**
@@ -273,6 +280,7 @@ function getDefaultFileTree(skill: SkillsDirectorySkill): readonly SkillsDirecto
 }
 
 export function SkillsDirectoryDialog({
+	addedSkillIds,
 	agents,
 	defaultSelectedSkillIds = [],
 	initialDetailSkillId = null,
@@ -328,6 +336,7 @@ export function SkillsDirectoryDialog({
 	const controlledSelection = typeof selectedSkillIds !== "undefined";
 	const resolvedSelectedIds = controlledSelection ? selectedSkillIds : uncontrolledSelectedIds;
 	const selectedIdSet = useMemo(() => new Set(resolvedSelectedIds), [resolvedSelectedIds]);
+	const addedIdSet = useMemo(() => new Set(addedSkillIds ?? []), [addedSkillIds]);
 	const selectedSkills = useMemo(
 		() => getSelectedSkills(directorySkills, resolvedSelectedIds),
 		[directorySkills, resolvedSelectedIds],
@@ -419,6 +428,7 @@ export function SkillsDirectoryDialog({
 					<>
 						{variant === "experimental" ? (
 							<ExperimentalSkillsDirectoryView
+								addedIds={addedIdSet}
 								filterFavourites={experimentalFavourites}
 								filterYourSkills={experimentalYourSkills}
 								hasSelection={resolvedSelectedIds.length > 0}
@@ -437,6 +447,7 @@ export function SkillsDirectoryDialog({
 							/>
 						) : (
 							<SkillsDirectoryView
+								addedIds={addedIdSet}
 								activeItem={activeItem}
 								filteredSkills={filteredSkills}
 								hasSelection={resolvedSelectedIds.length > 0}
@@ -493,6 +504,7 @@ function SkillsDirectoryHeader({ onCreateSkill, title }: Readonly<SkillsDirector
 }
 
 interface SkillsDirectoryViewProps {
+	addedIds: ReadonlySet<string>;
 	activeItem: string;
 	filteredSkills: readonly SkillsDirectorySkill[];
 	hasSelection: boolean;
@@ -508,6 +520,7 @@ interface SkillsDirectoryViewProps {
 }
 
 function SkillsDirectoryView({
+	addedIds,
 	activeItem,
 	filteredSkills,
 	hasSelection,
@@ -572,6 +585,7 @@ function SkillsDirectoryView({
 					<p className="py-6 text-sm text-text-subtlest">No skills match &ldquo;{query}&rdquo;.</p>
 				) : (
 					<SkillSection
+						addedIds={addedIds}
 						onLearnMore={onLearnMore}
 						onSelectSkill={onSelectSkill}
 						selectedIds={selectedIds}
@@ -584,6 +598,7 @@ function SkillsDirectoryView({
 }
 
 interface SkillSectionProps {
+	addedIds: ReadonlySet<string>;
 	gridClassName?: string;
 	/** Optional micro section header (e.g. "My skills"); omit for a single unlabeled grid. */
 	heading?: string;
@@ -594,6 +609,7 @@ interface SkillSectionProps {
 }
 
 function SkillSection({
+	addedIds,
 	gridClassName = "grid grid-cols-1 gap-3 lg:grid-cols-2",
 	heading,
 	onLearnMore,
@@ -614,6 +630,7 @@ function SkillSection({
 					return (
 						<li key={skill.id}>
 							<SkillsDirectoryEntityCard
+								added={addedIds.has(skill.id)}
 								onLearnMore={() => onLearnMore(skill)}
 								onSelect={(checked) => onSelectSkill(skill, checked)}
 								selected={selected}
@@ -628,6 +645,8 @@ function SkillSection({
 }
 
 interface SkillsDirectoryEntityCardProps {
+	/** Skill is already on the agent — shows the persistent "added" check. */
+	added: boolean;
 	onLearnMore: () => void;
 	onSelect: (checked?: boolean) => void;
 	selected: boolean;
@@ -665,7 +684,7 @@ function SkillPublisherAvatar({ skill }: Readonly<{ skill: SkillsDirectorySkill 
 	return <BrandLogoMark src={src} size="xxsmall" transparent label={getSkillPublisherName(skill)} />;
 }
 
-function SkillsDirectoryEntityCard({ onLearnMore, onSelect, selected, skill }: Readonly<SkillsDirectoryEntityCardProps>) {
+function SkillsDirectoryEntityCard({ added, onLearnMore, onSelect, selected, skill }: Readonly<SkillsDirectoryEntityCardProps>) {
 	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 	const publisher = getSkillPublisherName(skill);
 
@@ -727,6 +746,7 @@ function SkillsDirectoryEntityCard({ onLearnMore, onSelect, selected, skill }: R
 						open={moreMenuOpen}
 						skillName={skill.name}
 					/>
+					{added ? <EntityCardAddedCheck /> : null}
 				</div>
 
 				<EntityCardDescription className="text-text">
@@ -1266,6 +1286,7 @@ function getExperimentalSkillsEmptyState(
 }
 
 interface ExperimentalSkillsDirectoryViewProps {
+	addedIds: ReadonlySet<string>;
 	filterFavourites: boolean;
 	filterYourSkills: boolean;
 	hasSelection: boolean;
@@ -1284,6 +1305,7 @@ interface ExperimentalSkillsDirectoryViewProps {
 }
 
 function ExperimentalSkillsDirectoryView({
+	addedIds,
 	filterFavourites,
 	filterYourSkills,
 	hasSelection,
@@ -1448,6 +1470,7 @@ function ExperimentalSkillsDirectoryView({
 					<div className="flex flex-col gap-6">
 						{mySkills.length > 0 ? (
 							<SkillSection
+								addedIds={addedIds}
 								gridClassName="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3"
 								heading="My skills"
 								onLearnMore={onLearnMore}
@@ -1458,6 +1481,7 @@ function ExperimentalSkillsDirectoryView({
 						) : null}
 						{otherSkills.length > 0 ? (
 							<SkillSection
+								addedIds={addedIds}
 								gridClassName="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3"
 								heading="Other skills"
 								onLearnMore={onLearnMore}

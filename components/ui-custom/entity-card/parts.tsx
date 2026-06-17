@@ -47,6 +47,7 @@ import ScalesIcon from "@atlaskit/icon/core/scales";
 import SearchIcon from "@atlaskit/icon/core/search";
 import ShieldIcon from "@atlaskit/icon/core/shield";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
 import StatusVerifiedIcon from "@atlaskit/icon/core/status-verified";
 import SubtasksIcon from "@atlaskit/icon/core/subtasks";
 import SupportIcon from "@atlaskit/icon/core/support";
@@ -88,9 +89,15 @@ export interface EntityCardHeaderProps {
 	reserveByline?: boolean;
 	/** Trailing action revealed on hover/focus (e.g. `EntityCardMoreButton`). */
 	action?: ReactNode;
+	/**
+	 * Marks the entity as already added to the agent — renders a persistent blue
+	 * success check at the trailing edge so added cards can be scanned at a glance.
+	 * Distinct from a hover/multi-select checkbox: this reflects committed state.
+	 */
+	added?: boolean;
 }
 
-export function EntityCardHeader({ leading, title, byline, reserveByline = false, action }: Readonly<EntityCardHeaderProps>) {
+export function EntityCardHeader({ leading, title, byline, reserveByline = false, action, added = false }: Readonly<EntityCardHeaderProps>) {
 	return (
 		<div
 			// When `reserveByline` is set on a byline-less header, `min-h-9` (36px)
@@ -108,8 +115,33 @@ export function EntityCardHeader({ leading, title, byline, reserveByline = false
 				</h3>
 				{byline ?? null}
 			</div>
-			{action ?? null}
+			{action || added ? (
+				<span className="flex shrink-0 items-center gap-1">
+					{action ?? null}
+					{added ? <EntityCardAddedCheck /> : null}
+				</span>
+			) : null}
 		</div>
+	);
+}
+
+export interface EntityCardAddedCheckProps {
+	/** Accessible status label announced for the indicator. */
+	label?: string;
+}
+
+/**
+ * Persistent "added" status indicator — a filled blue success check used in
+ * directory cards to show an entity is already on the agent. Colored with the
+ * `selected` token (the same #1868DB as `border-border-selected`) so the
+ * affordance reads as selection, not the semantic green success state.
+ */
+export function EntityCardAddedCheck({ label = "Added" }: Readonly<EntityCardAddedCheckProps>) {
+	return (
+		<Icon
+			className="text-icon-selected"
+			render={<StatusSuccessIcon label={label} size="small" color="currentColor" />}
+		/>
 	);
 }
 

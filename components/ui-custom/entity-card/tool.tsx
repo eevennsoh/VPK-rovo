@@ -26,6 +26,8 @@ export interface EntityCardToolProps {
 	active?: boolean;
 	action?: ReactNode;
 	onMoreActions?: () => void;
+	/** Renders the persistent "added" check when the tool is already on the agent. */
+	added?: boolean;
 	className?: string;
 }
 
@@ -38,6 +40,7 @@ export function EntityCardTool({
 	active = false,
 	action,
 	onMoreActions,
+	added = false,
 	className,
 }: Readonly<EntityCardToolProps>) {
 	const showTools = typeof toolCount === "number";
@@ -47,6 +50,7 @@ export function EntityCardTool({
 		<div data-slot="entity-card-tool" className={cn("contents", className)}>
 			<div className="flex flex-col gap-2">
 				<EntityCardHeader
+					added={added}
 					action={
 						action ?? (onMoreActions ? (
 							<EntityCardMoreButton active={active} label={`More actions for ${name}`} onClick={onMoreActions} />

@@ -708,7 +708,7 @@ function AppsDirectoryView({
 					<ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
 						{filteredTools.map((tool) => (
 							<li key={tool.id}>
-								<AppCard onSelectTool={onSelectTool} tool={tool} />
+								<AppCard added={addedIds.has(tool.id)} onSelectTool={onSelectTool} tool={tool} />
 							</li>
 						))}
 					</ul>
@@ -1005,7 +1005,7 @@ function ExperimentalAppsDirectoryView({
 				) : (
 					<div className="flex flex-col gap-6">
 						{myApps.length > 0 ? (
-							<ExperimentalAppsSection heading="My apps" onSelectTool={onSelectTool} tools={myApps} />
+							<ExperimentalAppsSection added heading="My apps" onSelectTool={onSelectTool} tools={myApps} />
 						) : null}
 						{otherApps.length > 0 ? (
 							<ExperimentalAppsSection heading="Other apps" onSelectTool={onSelectTool} tools={otherApps} />
@@ -1018,10 +1018,12 @@ function ExperimentalAppsDirectoryView({
 }
 
 function ExperimentalAppsSection({
+	added = false,
 	heading,
 	onSelectTool,
 	tools,
 }: Readonly<{
+	added?: boolean;
 	heading: string;
 	onSelectTool: (tool: AppsDirectoryTool) => void;
 	tools: readonly AppsDirectoryTool[];
@@ -1034,7 +1036,7 @@ function ExperimentalAppsSection({
 			<ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
 				{tools.map((tool) => (
 					<li key={tool.id}>
-						<AppCard onSelectTool={onSelectTool} tool={tool} />
+						<AppCard added={added} onSelectTool={onSelectTool} tool={tool} />
 					</li>
 				))}
 			</ul>
@@ -1146,11 +1148,12 @@ function ExperimentalFilterDropdown({
 }
 
 interface AppCardProps {
+	added?: boolean;
 	onSelectTool: (tool: AppsDirectoryTool) => void;
 	tool: AppsDirectoryTool;
 }
 
-function AppCard({ onSelectTool, tool }: Readonly<AppCardProps>) {
+function AppCard({ added = false, onSelectTool, tool }: Readonly<AppCardProps>) {
 	const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 	const knowledgeApp = getKnowledgeAppForTool(tool);
 	const selectTool = () => onSelectTool(tool);
@@ -1158,6 +1161,7 @@ function AppCard({ onSelectTool, tool }: Readonly<AppCardProps>) {
 	return (
 		<EntityCardAppCard
 			active={moreMenuOpen}
+			added={added}
 			appLogo={getToolLogo(tool)}
 			className="min-h-[102px] hover:border-transparent"
 			description={tool.description ?? "Short description about the app."}

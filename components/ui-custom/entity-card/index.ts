@@ -8,6 +8,7 @@ import { EntityCardShell } from "./card";
 import { EntityCardKnowledge } from "./knowledge";
 import { EntityCardObjectTile } from "./object-tile";
 import {
+	EntityCardAddedCheck,
 	EntityCardBanner,
 	EntityCardByline,
 	EntityCardCapabilities,
@@ -41,6 +42,8 @@ export { EntityCardApp, type EntityCardAppProps } from "./app";
 export { EntityCardKnowledge, type EntityCardKnowledgeProps } from "./knowledge";
 export { EntityCardObjectTile, type EntityCardObjectTileProps } from "./object-tile";
 export {
+	EntityCardAddedCheck,
+	type EntityCardAddedCheckProps,
 	EntityCardBanner,
 	type EntityCardBannerProps,
 	EntityCardByline,
@@ -111,4 +114,5 @@ export const EntityCard = {
 	Section: EntityCardSection,
 	Banner: EntityCardBanner,
 	Capabilities: EntityCardCapabilities,
+	AddedCheck: EntityCardAddedCheck,
 } as const;
