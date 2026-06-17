@@ -4247,7 +4247,7 @@ function AgentInstructionsComposer({
 			) : null}
 			<RichTextEditor
 				aria-label="Agent instructions"
-				className="space-y-2"
+				className="space-y-0"
 				contentClassName={contentClassName}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
 				enableDirectoryAutocomplete
@@ -4281,6 +4281,7 @@ function AgentInstructionsComposer({
 				suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
 				toolbarBelowSlot={toolbarBelowSlot}
 				toolbarReveal="hover"
+				padStuckToolbar
 				value={instructions}
 				mentionSources={mentionSources}
 				mentionRemovalRequest={mentionRemovalRequest}

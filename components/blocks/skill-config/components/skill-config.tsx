@@ -3753,8 +3753,10 @@ function AgentInstructionsComposer({
 			) : null}
 			<RichTextEditor
 				aria-label="Agent instructions"
-				// 16px gap below the editor toolbar (space between toolbar and content).
-				className="space-y-4"
+				// The 8px toolbar↔content gap lives on the reveal (`padStuckToolbar`) as
+				// surface, so the root carries no space-y — keeps the gap opaque and
+				// avoids a transparent band when the bar pins.
+				className="space-y-0"
 				contentClassName={cn("pt-2", contentClassName)}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
 				enableDirectoryAutocomplete
@@ -3770,6 +3772,8 @@ function AgentInstructionsComposer({
 				onViewModeChange={onViewModeChange}
 				suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
 				toolbarBelowSlot={toolbarBelowSlot}
+				toolbarReveal="hover"
+				padStuckToolbar
 				value={instructions}
 				mentionSources={mentionSources}
 				mentionRemovalRequest={mentionRemovalRequest}
@@ -4447,7 +4451,7 @@ export const AgentConfigFields = memo(
 						// because that would pull those full-width inputs back to the
 						// clip edge and re-clip their rings.
 						className={cn(
-							"flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto",
+							"flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto",
 							compactScrollOverflow.showBottomScrollMask && !frontmatter?.enabled && "scroll-mask-bottom",
 							compactScrollAreaClassName,
 						)}
@@ -4470,10 +4474,7 @@ export const AgentConfigFields = memo(
 							/>
 						</div>
 						<AgentInstructionsComposer
-							// 24px gap between the skill metadata row and the editor
-							// toolbar: the scroll container contributes 8px via `gap-2`,
-							// so add 16px here (8 + 16 = 24).
-							className="relative mt-4 flex min-h-0 flex-1 flex-col"
+							className="relative flex min-h-0 flex-1 flex-col"
 							config={config}
 							frontmatter={frontmatter}
 							contentClassName={cn("pt-0", isFilledConfig ? "min-h-[240px]" : "min-h-[2rem]")}
