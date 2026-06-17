@@ -335,3 +335,94 @@ test("generated scheduled automation carries a description and app-chip tokens",
 	// The short description stays plain text (no token markup leaking in).
 	assert.doesNotMatch(rule.description, /@\[app:/u);
 });
+
+test("avatar by option name → sets avatarSrc and the avatar kind", async () => {
+	const { classifyAgentBuildIntent, buildAgentUpdatePatch } = await loadModule();
+	const intent = classifyAgentBuildIntent("use the code reviewer avatar");
+	assert.ok(intent.isBuildIntent);
+	assert.ok(intent.kinds.includes("avatar"));
+	assert.ok(intent.avatarSrc && intent.avatarSrc.endsWith("code-reviewer.svg"), intent.avatarSrc ?? "null");
+
+	const patch = buildAgentUpdatePatch("use the code reviewer avatar", {});
+	assert.equal(patch.avatarSrc, intent.avatarSrc);
+});
+
+test("avatar by color family → picks that group's avatar", async () => {
+	const { classifyAgentBuildIntent } = await loadModule();
+	const intent = classifyAgentBuildIntent("make the avatar blue");
+	assert.ok(intent.kinds.includes("avatar"));
+	// Blue is the teamwork-agents group.
+	assert.ok(
+		intent.avatarSrc && intent.avatarSrc.startsWith("/avatar-agent/teamwork-agents/"),
+		intent.avatarSrc ?? "null",
+	);
+});
+
+test("memory on/off phrasing → memoryMode + mode kind", async () => {
+	const { classifyAgentBuildIntent, buildAgentUpdatePatch } = await loadModule();
+
+	const on = classifyAgentBuildIntent("turn on memory for this agent");
+	assert.ok(on.kinds.includes("mode"));
+	assert.equal(on.modeChanges.memoryMode, "on");
+	assert.equal(buildAgentUpdatePatch("turn on memory for this agent", {}).memoryMode, "on");
+
+	const off = classifyAgentBuildIntent("disable memory");
+	assert.equal(off.modeChanges.memoryMode, "off");
+});
+
+test("reasoning model phrasing → reasoningMode", async () => {
+	const { classifyAgentBuildIntent } = await loadModule();
+	assert.equal(classifyAgentBuildIntent("switch it to use opus").modeChanges.reasoningMode, "opus-4.6");
+	assert.equal(classifyAgentBuildIntent("use deep reasoning").modeChanges.reasoningMode, "deep-auto");
+	assert.equal(classifyAgentBuildIntent("run it on gemini").modeChanges.reasoningMode, "gemini-flash-3");
+});
+
+test("explicit knowledge mode phrasing → knowledgeMode", async () => {
+	const { classifyAgentBuildIntent } = await loadModule();
+	const intent = classifyAgentBuildIntent("set knowledge mode to none");
+	assert.ok(intent.kinds.includes("mode"));
+	assert.equal(intent.modeChanges.knowledgeMode, "none");
+});
+
+test("plain conversation is still not an avatar/mode build intent", async () => {
+	const { classifyAgentBuildIntent } = await loadModule();
+	const intent = classifyAgentBuildIntent("hello there, how are you today?");
+	assert.equal(intent.isBuildIntent, false);
+	assert.equal(intent.avatarSrc, null);
+	assert.equal(intent.modeChanges.memoryMode, undefined);
+});
+
+test("avatar resolution is scoped to the avatar clause (no cross-clause hijack)", async () => {
+	const { classifyAgentBuildIntent } = await loadModule();
+	const intent = classifyAgentBuildIntent("add a code reviewer skill and set the avatar to blue");
+	assert.ok(intent.kinds.includes("avatar"));
+	// "code reviewer" lives in the skill clause; the avatar clause asks for blue.
+	assert.ok(
+		intent.avatarSrc && intent.avatarSrc.startsWith("/avatar-agent/teamwork-agents/"),
+		intent.avatarSrc ?? "null",
+	);
+	// And the skill is still captured from its own clause.
+	assert.ok(intent.kinds.includes("skill"));
+});
+
+test("buildAgentEditSummaryPayload summarizes avatar + mode changes as rows", async () => {
+	const { classifyAgentBuildIntent, buildAgentEditSummaryPayload } = await loadModule();
+	const intent = classifyAgentBuildIntent("make the avatar blue and turn on memory");
+	const payload = buildAgentEditSummaryPayload(intent, "RFP Drafter");
+	assert.equal(payload.headline, "Updated RFP Drafter");
+	assert.equal(payload.agentName, "RFP Drafter");
+	const labels = payload.changes.map((c) => c.label);
+	assert.ok(labels.includes("Avatar"), labels.join(","));
+	assert.ok(labels.includes("Memory"), labels.join(","));
+	assert.equal(payload.changes.find((c) => c.label === "Memory").value, "On");
+	assert.match(payload.changes.find((c) => c.label === "Avatar").value, /^Blue · /);
+});
+
+test("buildAgentEditSummaryWidgetPart emits a collapsed-card widget part, null when empty", async () => {
+	const { classifyAgentBuildIntent, buildAgentEditSummaryWidgetPart } = await loadModule();
+	const part = buildAgentEditSummaryWidgetPart(classifyAgentBuildIntent("add the Jira skill"), "RFP Drafter");
+	assert.equal(part.type, "data-widget-data");
+	assert.equal(part.data.type, "agent-edit-summary");
+	assert.ok(part.data.payload.changes.length >= 1);
+	assert.equal(buildAgentEditSummaryWidgetPart(classifyAgentBuildIntent("hello there"), "RFP Drafter"), null);
+});

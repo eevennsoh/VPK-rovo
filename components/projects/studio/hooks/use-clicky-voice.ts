@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
+import { buildStudioAssistantKnowledgeContext } from "@/components/projects/studio/lib/studio-agent-creation-context";
+
 // ---------------------------------------------------------------------------
 // AI cursor system prompt — tool-based screen assistant (no screenshots).
 //
@@ -28,7 +30,7 @@ Always call get_screen_state BEFORE answering a question about "this", "here", w
 - activate_screen_target — click/open/pick/choose a known visible target from get_screen_state.
 - set_composer_text — set the agent-builder composer text (does not submit).
 - submit_composer — submit the composer's current text. Only call when the user clearly asks to send/submit.
-- apply_agent_draft_patch — update the session-local agent-builder draft with a safe patch.
+- apply_agent_draft_patch — configure the session-local agent-builder draft. Beyond text (name, description, instructions, byline, guardrail) you can set the agent's skills, apps, knowledge, subagents, avatarSrc, memoryMode/reasoningMode/knowledgeMode, conversationStarters, automation triggers, and subagentPrompts. See the [Studio product knowledge] block for every field and the real catalog of ids to choose from.
 - delegate_to_rovo — hand off heavier workspace/data/build tasks to Rovo.
 
 ## Rules
@@ -42,8 +44,11 @@ Always call get_screen_state BEFORE answering a question about "this", "here", w
 - Do not claim the cursor moved until point_at_target returns ok: true. If it returns ok: false, say you could not find that target.
 - Do not claim an activation happened until activate_screen_target returns ok: true. If it returns ok: false, say you could not activate that target.
 - Never publish or activate an agent. Only patch the session-local draft.
-- Allowed apply_agent_draft_patch fields: name, description, summary, instructions, contextDescription, trigger, guardrail, tools, conversationStarters, byline, avatarFallback, action. Never include agentId.
-- After acting, speak a short confirmation (e.g. "Done — I set the prompt.").`;
+- To configure capabilities (skills, apps, knowledge, subagents), modes, avatar, conversation starters, or automation triggers, prefer apply_agent_draft_patch using the real ids/values from the [Studio product knowledge] block — do not blindly click through pickers.
+- List fields REPLACE the whole array: first read screenContext.activeAgentDraft via get_screen_state, then send the existing items plus your additions so you never erase the user's current setup.
+- After apply_agent_draft_patch returns ok, call point_at_target at the changed field (e.g. fieldId "skills", "apps", "avatar", "memory", "reasoning") so the user sees what changed.
+- Never include agentId in a patch.
+- After acting, speak a short confirmation (e.g. "Done — I added the Jira skill.").`;
 
 export { CLICKY_SYSTEM_INSTRUCTIONS };
 
@@ -125,7 +130,11 @@ export function useClickyVoice({
 		) {
 			injectContext({
 				type: "initial_context",
-				content: CLICKY_SYSTEM_INSTRUCTIONS,
+				// Pair the behavior prompt with live product knowledge (catalog ids +
+				// editable fields + point targets) so the cursor can configure the whole
+				// agent, not just click visible controls. Built at inject time so the
+				// catalog reflects the current data layer.
+				content: `${CLICKY_SYSTEM_INSTRUCTIONS}\n\n${buildStudioAssistantKnowledgeContext()}`,
 			});
 			hasInjectedPromptRef.current = true;
 		}

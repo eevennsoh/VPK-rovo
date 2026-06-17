@@ -102,6 +102,7 @@ import {
 	buildCreationTemplateContextFromStarter,
 	buildStudioAgentCreationContext,
 	buildStudioAgentCreationContinuationContext,
+	buildStudioAssistantKnowledgeContext,
 	buildTemplateAgentResultFromAgent,
 	resolveTemplateConfigForResult,
 	type StudioCreationTemplateContext,
@@ -179,7 +180,7 @@ import { useDismissibleCards } from "@/components/projects/shared/hooks/use-dism
 import { approveSkillDraft, fetchSkillDraftDetail, fetchSkillDrafts, rejectSkillDraft } from "@/components/projects/control-plane/lib/control-plane-api";
 import type { HermesSkillDraftDetail, HermesSkillDraftSummary } from "@/lib/rovo-runtime-types";
 import type { RovoAppHermesContext } from "@/lib/rovo-app-types";
-import { getStudioSessionAgentDisplayName, useRovoSelectedAgent } from "@/app/contexts";
+import { getStudioSessionAgentDisplayName, useRovoSelectedAgent, type SendPromptOptions } from "@/app/contexts";
 import { ROVO_DIRECTORY_AGENT_PROFILES, getRovoAgentPromptContext, isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 
 interface RovoAppShellProps {
@@ -2242,6 +2243,17 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			suggestions: agentEditSuggestions,
 		};
 	}, [agentEditContextBar]);
+	// When the Ask Rovo sidebar is editing a studio agent, ride the shared product
+	// knowledge (catalog ids + editable fields) on every sidebar turn that falls
+	// through to the model, so typed requests understand the agent builder the same
+	// way the voice cursor does. Deterministic edits are intercepted before this
+	// reaches the backend; only model-backed turns carry it.
+	const agentEditSendPromptOptions = useMemo<SendPromptOptions | undefined>(() => {
+		if (!agentEditContextBar) {
+			return undefined;
+		}
+		return { contextDescription: buildStudioAssistantKnowledgeContext() };
+	}, [agentEditContextBar]);
 	// The Ask Rovo edit panel always talks to the default Rovo agent (it's a
 	// build/improve helper), so it renders as a plain default-Rovo chat without
 	// the custom-agent Chat / Trigger / Activity tab header. Those tabs belong to
@@ -3770,8 +3782,11 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									contextDescription,
 									messageId: assistantMessageId,
 									parts: buildDeterministicTriggerThinkingParts({
-										...(index === triggerTraceDelays.length - 1 && buildPlan.assistantReply
-											? { assistantReply: buildPlan.assistantReply }
+										...(index === triggerTraceDelays.length - 1
+											? {
+												...(buildPlan.assistantReply ? { assistantReply: buildPlan.assistantReply } : {}),
+												summaryWidgetPart: buildPlan.summaryWidgetPart,
+											}
 											: {}),
 										prompt: trimmedText,
 										startedAt: triggerTraceStartedAt,
@@ -3784,10 +3799,18 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						if (buildPlan.mode === "update" && openAgentEntry && buildPlan.patch) {
 							handleUpdateAgentDraft(openAgentEntry.profile.id, buildPlan.patch);
 						}
-						if (buildPlan.assistantReply && triggerAutomationNames.length === 0) {
-							await appendRealtimeMessage("assistant", buildPlan.assistantReply, {
-								contextDescription,
-							});
+						if (triggerAutomationNames.length === 0) {
+							// Collapsed change card instead of a plain text reply (fallback to text).
+							if (buildPlan.summaryWidgetPart) {
+								await appendRealtimeMessage("assistant", "", {
+									contextDescription,
+									parts: [buildPlan.summaryWidgetPart],
+								});
+							} else if (buildPlan.assistantReply) {
+								await appendRealtimeMessage("assistant", buildPlan.assistantReply, {
+									contextDescription,
+								});
+							}
 						}
 					} catch (error) {
 						if (fromDefaultHomeState) {
@@ -3909,7 +3932,13 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			const triggerAutomationNames = buildPlan.triggerAutomationNames ?? [];
 			if (triggerAutomationNames.length === 0) {
 				applyBuildPlan();
-				return { handled: true, assistantReply: buildPlan.assistantReply };
+				// Render a collapsed change card instead of a plain "Done — …" reply;
+				// fall back to text when there is nothing displayable to summarize.
+				return {
+					handled: true,
+					...(buildPlan.summaryWidgetPart ? { assistantParts: [buildPlan.summaryWidgetPart] } : {}),
+					assistantReply: buildPlan.assistantReply,
+				};
 			}
 			return {
 				handled: true,
@@ -3961,6 +3990,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						delayMs: DETERMINISTIC_TRIGGER_TRACE_STAGE_DELAYS_MS[3],
 						getAssistantParts: ({ startedAt }: { startedAt: Date }) => buildDeterministicTriggerThinkingParts({
 							assistantReply: buildPlan.assistantReply,
+							summaryWidgetPart: buildPlan.summaryWidgetPart,
 							prompt: trimmedText,
 							startedAt,
 							state: "complete",
@@ -5224,6 +5254,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							abortOnUnmount={false}
 							chatContextBar={agentEditContextBar}
 							greeting={agentEditGreeting}
+							sendPromptOptions={agentEditSendPromptOptions}
 							onInterceptSubmit={handleAgentEditInterceptSubmit}
 							hideComposerSourceAndModelControls={Boolean(agentEditContextBar)}
 							// No left border here: the SidebarResizeHandle below paints the divider.

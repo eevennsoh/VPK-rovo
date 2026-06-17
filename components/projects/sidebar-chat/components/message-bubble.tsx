@@ -13,6 +13,11 @@ import {
 	parsePlanWidgetPayload,
 	type ParsedPlanWidgetPayload,
 } from "@/components/projects/shared/lib/plan-widget";
+import { AgentEditSummaryCard } from "@/components/projects/shared/components/agent-edit-summary-card";
+import {
+	AGENT_EDIT_SUMMARY_WIDGET_TYPE,
+	parseAgentEditSummaryPayload,
+} from "@/components/projects/shared/lib/agent-edit-summary";
 
 interface PlanBuildState {
 	isBuildDisabled?: boolean;
@@ -60,8 +65,15 @@ export default function MessageBubble({
 			part.type === "data-widget-data" &&
 			part.data?.type === "plan",
 	);
+	// Deterministic agent-config edits emit a collapsed change card; render it
+	// regardless of enableSmartWidgets, the same way plan widgets always render.
+	const hasAgentEditSummaryWidget = message.parts.some(
+		(part) =>
+			part.type === "data-widget-data" &&
+			part.data?.type === AGENT_EDIT_SUMMARY_WIDGET_TYPE,
+	);
 	const renderWidget =
-		enableSmartWidgets || hasPlanWidget
+		enableSmartWidgets || hasPlanWidget || hasAgentEditSummaryWidget
 			? (widget: { type: string; data: unknown }, widgetMessage: RovoRenderableUIMessage) => {
 					if (widget.type === "plan") {
 						const planWidget = parsePlanWidgetPayload(widget.data);
@@ -90,6 +102,11 @@ export default function MessageBubble({
 								shouldAutoCollapse={buildState.isBuildDisabled === true}
 							/>
 						);
+					}
+
+					if (widget.type === AGENT_EDIT_SUMMARY_WIDGET_TYPE) {
+						const summaryPayload = parseAgentEditSummaryPayload(widget.data);
+						return summaryPayload ? <AgentEditSummaryCard payload={summaryPayload} /> : null;
 					}
 
 					if (!enableSmartWidgets) {
