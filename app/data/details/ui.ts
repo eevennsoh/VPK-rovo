@@ -5956,10 +5956,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
     props: [
       {
         name: "variant",
-        type: '"default" | "rounded"',
+        type: '"default" | "rounded" | "editor"',
         default: '"default"',
         description:
-          "Tag shape style. Legacy variant values are still supported for compatibility.",
+          "Tag style. 'editor' drops the border stroke and fills with the solid neutral surface (SkillTag-style) while keeping the leading-icon accent color. Legacy variant values are still supported for compatibility.",
       },
       {
         name: "color",
@@ -6015,6 +6015,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
         title: "Front slot",
         description: "Leading Atlassian product logo and 2P/3P public-logo examples using `elemBefore`.",
         demoSlug: "tag-demo-front-slot",
+      },
+      {
+        title: "Editor tag",
+        description:
+          "Same front-slot tags with `variant=\"editor\"`: the colored border stroke is removed and the surface is filled with the solid `bg-bg-neutral` color (matching SkillTag), while the leading-icon accent color is preserved.",
+        demoSlug: "tag-demo-editor-tag",
       },
       {
         title: "Removable (overlay)",

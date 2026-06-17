@@ -126,6 +126,79 @@ export function TagDemoFrontSlot() {
 	);
 }
 
+export function TagDemoEditorTag() {
+	return (
+		<div className="flex flex-wrap items-center gap-2">
+			<Tag
+				variant="editor"
+				color="blue"
+				elemBefore={
+					<AtlassianLogo name="jira" label="Jira" size="xxsmall" withUsageBorder />
+				}
+			>
+				Jira
+			</Tag>
+			<Tag
+				variant="editor"
+				color="purple"
+				elemBefore={
+					<IconTile
+						aria-hidden
+						icon={<AtlassianLogo name="atlassian" label="Atlassian" size="xxsmall" />}
+						label="Atlassian"
+						size="xxsmall"
+						variant="transparent"
+					/>
+				}
+			>
+				Atlassian
+			</Tag>
+			<Tag
+				variant="editor"
+				color="green"
+				elemBefore={
+					<IconTile
+						aria-hidden
+						icon={<RovoColorIcon aria-hidden />}
+						label="Rovo"
+						size="xxsmall"
+						variant="transparent"
+					/>
+				}
+			>
+				Rovo
+			</Tag>
+			<Tag variant="editor" color="orange" elemBefore={<BrandLogoMark frame="chip" src="/2p/appfire.png" label="Appfire" />}>
+				Appfire
+			</Tag>
+			<Tag variant="editor" color="teal" elemBefore={<BrandLogoMark frame="chip" src="/2p/adaptavist.png" label="Adaptavist" />}>
+				Adaptavist
+			</Tag>
+			<Tag variant="editor" color="purple" elemBefore={<BrandLogoMark frame="chip" src="/3p/figma/16.svg" label="Figma" />}>
+				Figma
+			</Tag>
+			<Tag variant="editor" color="green" elemBefore={<BrandLogoMark frame="chip" src="/3p/google-drive/16.svg" label="Google Drive" />}>
+				Drive
+			</Tag>
+			<Tag
+				variant="editor"
+				color="red"
+				elemBefore={
+					<IconTile
+						aria-hidden
+						icon={<Icon aria-hidden render={<LockIcon label="" size="small" />} />}
+						label=""
+						size="xxsmall"
+						variant="transparent"
+					/>
+				}
+			>
+				Restricted
+			</Tag>
+		</div>
+	);
+}
+
 export function TagDemoRemovableOverlay() {
 	const [tags, setTags] = useState(["Design", "Engineering", "Product marketing strategy"]);
 	if (tags.length === 0) return <p className="text-sm text-text-subtle">All tags removed</p>;
