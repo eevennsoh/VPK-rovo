@@ -73,7 +73,15 @@ import { Footer } from "@/components/ui-custom/footer";
 import { useClicky } from "@/components/projects/rovo/hooks/use-clicky";
 import { useClickyVoice } from "@/components/projects/rovo/hooks/use-clicky-voice";
 import { ClickyOverlay } from "@/components/projects/rovo/components/clicky/clicky-overlay";
-import { parseClickyResponse } from "@/components/projects/rovo/lib/clicky-point-parser";
+import { ScreenAssistantRegionOverlay } from "@/components/screen-assistant/screen-assistant-region-overlay";
+import {
+	activateStudioScreenAssistantTarget,
+	createStudioScreenAssistantSnapshot,
+	getStudioScreenAssistantVisibleTargets,
+	groundStudioScreenAssistantTarget,
+	type StudioScreenAssistantRegion,
+	type StudioScreenAssistantTarget,
+} from "@/components/projects/studio/lib/studio-screen-assistant";
 import { useSidebarResize } from "@/components/projects/rovo/hooks/use-sidebar-resize";
 import { clamp, cn, createId } from "@/lib/utils";
 import { token } from "@/lib/tokens";
@@ -190,7 +198,10 @@ type RealtimeAssistantTextPayload =
 	| string
 	| {
 			delta?: string;
+			displayOnly?: boolean;
 			messageId?: string;
+			replace?: boolean;
+			source?: "text" | "audio_transcript";
 			text?: string;
 	  };
 
@@ -203,7 +214,7 @@ type RealtimeAssistantTextCompletedPayload =
 
 type RealtimeVoiceShellOptions = Parameters<typeof useRealtimeVoice>[0] & {
 	onAssistantTextCompleted?: (payload: string | { messageId?: string; text?: string }) => void;
-	onAssistantTextDelta?: (payload: string | { delta?: string; messageId?: string; text?: string }) => void;
+	onAssistantTextDelta?: (payload: string | { delta?: string; displayOnly?: boolean; messageId?: string; replace?: boolean; source?: "text" | "audio_transcript"; text?: string }) => void;
 	onSpeechTranscriptCompleted?: (payload: string | { messageId?: string; transcript?: string; text?: string }) => void;
 	onSpeechTranscriptDelta?: (payload: string | { delta?: string; messageId?: string; text?: string }) => void;
 	onTextResponseStart?: (payload?: { messageId?: string }) => void;
@@ -220,6 +231,14 @@ type RealtimeVoiceShellResult = ReturnType<typeof useRealtimeVoice> & {
 	sessionKey?: string;
 	statusMessage?: string | null;
 };
+
+type RovoScreenAssistantToolCall = {
+	args: Record<string, unknown>;
+	callId: string;
+	name: string;
+};
+
+type RovoScreenAssistantToolResponder = (output: unknown, createResponse?: boolean) => void;
 
 type TypedScrollAnchorSource = "none" | "standard" | "realtime";
 
@@ -317,6 +336,21 @@ function resolveRealtimeSessionIdentity(realtime: RealtimeVoiceShellResult, acti
 	}
 
 	return realtime.voiceState !== "idle" ? `${activeThreadId ?? runtimeThreadId}:${realtime.voiceState}` : null;
+}
+
+function getViewportPointFromScreenAssistantTarget(
+	target: StudioScreenAssistantTarget | null | undefined,
+): { x: number; y: number; label: string; coordinateSpace: "viewport" } | null {
+	if (!target?.rect) {
+		return null;
+	}
+
+	return {
+		x: target.rect.x + target.rect.width / 2,
+		y: target.rect.y + target.rect.height / 2,
+		label: target.label ?? target.fieldId ?? target.id ?? "Target",
+		coordinateSpace: "viewport",
+	};
 }
 
 function RovoAppDirectoryAutocompleteShortcut({
@@ -642,6 +676,19 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const annotationContextRef = useRef<string | null>(null);
 	const realtimeInjectContextRef = useRef<((payload: RealtimeInjectContextPayload) => void) | null>(null);
 	const composerTextRef = useRef("");
+	const screenAssistantPointerRef = useRef<{ x: number; y: number } | null>(null);
+	const screenAssistantComposerRef = useRef<{
+		hasPrefill?: boolean;
+		placeholder?: string;
+	}>({
+		placeholder: DEFAULT_COMPOSER_PLACEHOLDER,
+	});
+	const sendFunctionCallOutputRef = useRef<
+		((payload: { callId: string; output: unknown; createResponse?: boolean }) => void) | null
+	>(null);
+	const handleComposerSubmitRef = useRef<
+		((payload: { files: FileUIPart[]; text: string }) => void | Promise<void>) | null
+	>(null);
 	const dictationBaselineRef = useRef<string | null>(null);
 	const dictationCommittedTextRef = useRef<string | null>(null);
 	const isDictationActiveRef = useRef(false);
@@ -672,6 +719,34 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const [scrollFollowMode, setScrollFollowMode] = useState<ConversationFollowMode>("bottom");
 	const [optimisticUserMessage, setOptimisticUserMessage] = useState<ReturnType<typeof createRovoAppUserMessage> | null>(null);
 	const [dismissedBrowserArtifactKey, setDismissedBrowserArtifactKey] = useState<string | null>(null);
+	const displayMessages = useMemo(() => {
+		if (!optimisticUserMessage) {
+			return chat.messages;
+		}
+
+		const optimisticText = getMessageText(optimisticUserMessage).trim();
+		const hasVisibleUserMessage = chat.messages.some((message) => {
+			if (message.role !== "user") {
+				return false;
+			}
+
+			if (message.id === optimisticUserMessage.id) {
+				return true;
+			}
+
+			return optimisticText.length > 0 && getMessageText(message).trim() === optimisticText;
+		});
+
+		return hasVisibleUserMessage ? chat.messages : [...chat.messages, optimisticUserMessage];
+	}, [chat.messages, optimisticUserMessage]);
+	const visibleMessages = useMemo(() => {
+		return displayMessages.filter((message) => {
+			return message.role === "user" || message.role === "assistant";
+		});
+	}, [displayMessages]);
+	const isArtifactOpen = chat.panelState !== "closed";
+	const hasActiveThreadRun = typeof chat.activeThreadId === "string" && chat.backgroundStreamThreadIds.has(chat.activeThreadId);
+	const showHomeState = !chat.isLoadingThread && !isArtifactOpen && !hasActiveThreadRun && visibleMessages.length === 0;
 	const realtimeUserMessageIdRef = useRef<string | null>(null);
 	const realtimeAssistantMessageIdRef = useRef<string | null>(null);
 	const realtimeAssistantMessagePromiseRef = useRef<Promise<string | null> | null>(null);
@@ -705,6 +780,18 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 	const handleComposerTextChange = useCallback((value: string) => {
 		composerTextRef.current = value;
+	}, []);
+
+	useEffect(() => {
+		const handlePointerMove = (event: PointerEvent) => {
+			screenAssistantPointerRef.current = {
+				x: event.clientX,
+				y: event.clientY,
+			};
+		};
+
+		window.addEventListener("pointermove", handlePointerMove, { passive: true });
+		return () => window.removeEventListener("pointermove", handlePointerMove);
 	}, []);
 
 	const handleRovoAppSuggestionSelect = useCallback(
@@ -954,9 +1041,132 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		startSpeaking: clickyStartSpeaking,
 		returnToIdle: clickyReturnToIdle,
 		addExchange: clickyAddExchange,
-		screenshotDimensions: clickyScreenshotDimensions,
-		setScreenshotDimensions: clickySetScreenshotDimensions,
 	} = clicky;
+	const streamClickyAssistantText = useCallback((text: string) => {
+		if (!text.trim()) {
+			return false;
+		}
+
+		if (!isClickyActive) {
+			activateClicky();
+		}
+		clickyStartSpeaking(text);
+		return true;
+	}, [activateClicky, clickyStartSpeaking, isClickyActive]);
+	const [screenAssistantRegion, setScreenAssistantRegion] = useState<StudioScreenAssistantRegion | null>(null);
+	const [screenAssistantRegionPainting, setScreenAssistantRegionPainting] = useState(false);
+
+	useEffect(() => {
+		if (!isClickyActive) {
+			setScreenAssistantRegion(null);
+			setScreenAssistantRegionPainting(false);
+		}
+	}, [isClickyActive]);
+
+	const getScreenAssistantVisibleTargets = useCallback(
+		() => getStudioScreenAssistantVisibleTargets(),
+		[],
+	);
+
+	const getScreenAssistantSnapshot = useCallback(() => {
+		const activePanel = showHomeState
+			? "home"
+			: chat.panelState === "preview"
+				? "artifact-preview"
+				: "chat";
+
+		return createStudioScreenAssistantSnapshot({
+			activeRegion: screenAssistantRegion,
+			activePanel,
+			composer: screenAssistantComposerRef.current,
+			pointer: screenAssistantPointerRef.current,
+			selectedAgent: {
+				id: selectedAgent.id,
+				name: selectedAgent.name,
+			},
+		});
+	}, [chat.panelState, screenAssistantRegion, selectedAgent.id, selectedAgent.name, showHomeState]);
+
+	const handleScreenAssistantToolCall = useCallback(
+		(
+			{ name, args }: RovoScreenAssistantToolCall,
+			respond: RovoScreenAssistantToolResponder,
+		) => {
+			switch (name) {
+				case "get_screen_state": {
+					respond(getScreenAssistantSnapshot());
+					return;
+				}
+				case "point_at_target": {
+					const snapshot = getScreenAssistantSnapshot();
+					const grounded = groundStudioScreenAssistantTarget({
+						fieldId: typeof args.fieldId === "string" ? args.fieldId : undefined,
+						id: typeof args.targetId === "string" ? args.targetId : undefined,
+						label: typeof args.label === "string" ? args.label : undefined,
+						activeRegion: snapshot.activeRegion ?? null,
+						pointerTarget: snapshot.pointerContext?.target ?? null,
+						visibleTargets: snapshot.visibleTargets,
+					});
+					const point = getViewportPointFromScreenAssistantTarget(grounded);
+					const label = typeof args.label === "string" ? args.label : grounded?.label ?? "";
+					let pointingStarted = false;
+					if (point) {
+						if (!isClickyActive) {
+							activateClicky();
+						}
+						clickyStartPointing(point, label);
+						pointingStarted = true;
+					}
+					respond({
+						ok: pointingStarted,
+						pointed: pointingStarted && grounded ? { id: grounded.id, label: grounded.label } : null,
+					});
+					return;
+				}
+				case "activate_screen_target": {
+					const snapshot = getScreenAssistantSnapshot();
+					respond(activateStudioScreenAssistantTarget({
+						fieldId: typeof args.fieldId === "string" ? args.fieldId : undefined,
+						id: typeof args.targetId === "string" ? args.targetId : undefined,
+						label: typeof args.label === "string" ? args.label : undefined,
+						pointerTarget: snapshot.pointerContext?.target ?? null,
+						visibleTargets: snapshot.visibleTargets,
+					}));
+					return;
+				}
+				case "set_composer_text": {
+					const text = typeof args.text === "string" ? args.text : "";
+					composerTextRef.current = text;
+					setPrefillText(text);
+					setVoiceTranscript(null);
+					respond({ ok: Boolean(text) });
+					return;
+				}
+				case "submit_composer": {
+					const text = composerTextRef.current.trim();
+					if (text) {
+						void handleComposerSubmitRef.current?.({ files: [], text });
+					}
+					respond({ ok: Boolean(text) });
+					return;
+				}
+				case "apply_agent_draft_patch": {
+					respond({ ok: false, error: "unsupported_surface" });
+					return;
+				}
+				default:
+					respond({ ok: false, error: "unknown_tool" });
+			}
+		},
+		[
+			activateClicky,
+			clickyStartPointing,
+			getScreenAssistantSnapshot,
+			isClickyActive,
+			setPrefillText,
+			setVoiceTranscript,
+		],
+	);
 
 	// --- Realtime voice (live conversation mode) ---
 		const realtime = useRealtimeVoice({
@@ -1044,40 +1254,40 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			// Live chat keeps these deltas out of the composer; dictation owns
 			// visible transcript preview and explicit accept/cancel behavior.
 			const text = typeof payload === "string" ? payload : (payload.text ?? payload.delta ?? "");
-				if (!text) {
-					return;
-				}
+			if (!text) {
+				return;
+			}
+
+			if (isDictationActiveRef.current) {
+				setDictationTranscriptPreview(text);
+				const nextText = appendDictationTranscript(dictationCommittedTextRef.current ?? dictationBaselineRef.current ?? "", text);
+				composerTextRef.current = nextText;
+				setVoiceTranscript(nextText);
+				setComposerFocusRequestKey((currentKey) => currentKey + 1);
+				return;
+			}
+
+			realtimeUserTranscriptHasDeltaRef.current = true;
+			}, []),
+		onSpeechTranscriptCompleted: useCallback(
+			async (payload: RealtimeSpeechTranscriptPayload) => {
+				const transcript = typeof payload === "string" ? payload : (payload.transcript ?? payload.text ?? "");
 
 				if (isDictationActiveRef.current) {
-					setDictationTranscriptPreview(text);
-					const nextText = appendDictationTranscript(dictationCommittedTextRef.current ?? dictationBaselineRef.current ?? "", text);
+					if (!transcript.trim()) {
+						return;
+					}
+
+					const nextText = appendDictationTranscript(dictationCommittedTextRef.current ?? dictationBaselineRef.current ?? "", transcript);
+					dictationCommittedTextRef.current = nextText;
 					composerTextRef.current = nextText;
+					setDictationTranscriptPreview(transcript);
 					setVoiceTranscript(nextText);
 					setComposerFocusRequestKey((currentKey) => currentKey + 1);
 					return;
 				}
 
-				realtimeUserTranscriptHasDeltaRef.current = true;
-			}, []),
-			onSpeechTranscriptCompleted: useCallback(
-				async (payload: RealtimeSpeechTranscriptPayload) => {
-					const transcript = typeof payload === "string" ? payload : (payload.transcript ?? payload.text ?? "");
-
-					if (isDictationActiveRef.current) {
-						if (!transcript.trim()) {
-							return;
-						}
-
-						const nextText = appendDictationTranscript(dictationCommittedTextRef.current ?? dictationBaselineRef.current ?? "", transcript);
-						dictationCommittedTextRef.current = nextText;
-						composerTextRef.current = nextText;
-						setDictationTranscriptPreview(transcript);
-						setVoiceTranscript(nextText);
-						setComposerFocusRequestKey((currentKey) => currentKey + 1);
-						return;
-					}
-
-					// Rovo: transition to processing and record user exchange
+				// Rovo: transition to processing and record user exchange
 				if (isClickyActive) {
 					clickyStartProcessing();
 					if (transcript) {
@@ -1109,81 +1319,102 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				setVoiceTranscript(null);
 			},
 			[appendRealtimeMessage, isClickyActive, clickyStartProcessing, clickyAddExchange],
-		),
-			onTextResponseStart: useCallback(
-				async (payload?: { messageId?: string }) => {
-					if (isDictationActiveRef.current) {
-						return;
-					}
+			),
+		onTextResponseStart: useCallback(
+			async (payload?: { messageId?: string }) => {
+				if (isDictationActiveRef.current) {
+					return;
+				}
 
-					if (typedScrollAnchorSourceRef.current === "realtime") {
+				if (typedScrollAnchorSourceRef.current === "realtime") {
 					realtimeTypedResponseStartedRef.current = true;
 				}
 				realtimeAssistantMessageIdRef.current = await ensureRealtimeAssistantMessage(payload?.messageId ?? null);
 			},
 			[ensureRealtimeAssistantMessage],
-		),
-			onAssistantTextDelta: useCallback(
-				async (payload: RealtimeAssistantTextPayload) => {
-					if (isDictationActiveRef.current) {
-						return;
-					}
+			),
+		onAssistantTextDelta: useCallback(
+			async (payload: RealtimeAssistantTextPayload) => {
+				if (isDictationActiveRef.current) {
+					return;
+				}
 
-					const delta = typeof payload === "string" ? payload : (payload.delta ?? payload.text ?? "");
+				const text = typeof payload === "string" ? payload : (payload.text ?? "");
+				const replace = typeof payload === "string" ? false : payload.replace === true;
+				const delta = typeof payload === "string" ? payload : (payload.delta ?? payload.text ?? "");
 				if (!delta) {
 					return;
 				}
 
-				const messageId = typeof payload === "string" ? await ensureRealtimeAssistantMessage() : await ensureRealtimeAssistantMessage(payload.messageId ?? null);
-				await updateRealtimeMessage(messageId, delta);
-			},
-			[ensureRealtimeAssistantMessage, updateRealtimeMessage],
-		),
-			onAssistantTextCompleted: useCallback(
-				async (payload: RealtimeAssistantTextCompletedPayload) => {
-					if (isDictationActiveRef.current) {
-						return;
-					}
+				if (text) {
+					streamClickyAssistantText(text);
+				}
 
-					const text = typeof payload === "string" ? payload : (payload.text ?? "");
+				if (typeof payload !== "string" && payload.displayOnly === true) {
+					return;
+				}
+
+				const messageId = typeof payload === "string" ? await ensureRealtimeAssistantMessage() : await ensureRealtimeAssistantMessage(payload.messageId ?? null);
+				await updateRealtimeMessage(messageId, replace ? text : delta, replace ? { replace: true } : undefined);
+			},
+			[ensureRealtimeAssistantMessage, updateRealtimeMessage, streamClickyAssistantText],
+			),
+		onAssistantTextCompleted: useCallback(
+			async (payload: RealtimeAssistantTextCompletedPayload) => {
+				if (isDictationActiveRef.current) {
+					return;
+				}
+
+				const text = typeof payload === "string" ? payload : (payload.text ?? "");
 				if (!text) {
 					return;
 				}
+
+				// Cursor companion: animate "speaking" while the assistant talks.
+				// Pointing is driven separately by the point_at_target tool.
+				streamClickyAssistantText(text);
+				clickyAddExchange({ role: "assistant", content: text });
 
 				const messageId = typeof payload === "string" ? await ensureRealtimeAssistantMessage() : await ensureRealtimeAssistantMessage(payload.messageId ?? null);
 				await updateRealtimeMessage(messageId, text, {
 					replace: true,
 				});
-
-				// Rovo: parse POINT tag and transition to speaking/pointing
-				if (isClickyActive) {
-					const parsed = parseClickyResponse(text, clickyScreenshotDimensions);
-					clickyAddExchange({ role: "assistant", content: parsed.text || text });
-					if (parsed.point) {
-						clickyStartPointing(parsed.point, parsed.text);
-					} else {
-						clickyStartSpeaking(text);
-					}
-				}
 			},
-			[ensureRealtimeAssistantMessage, updateRealtimeMessage, isClickyActive, clickyStartPointing, clickyStartSpeaking, clickyAddExchange, clickyScreenshotDimensions],
+			[ensureRealtimeAssistantMessage, updateRealtimeMessage, streamClickyAssistantText, clickyAddExchange],
+			),
+		onEndVoiceSession: useCallback(() => {
+			manualVoiceStopRef.current = true;
+			speechStartedAtRef.current = null;
+			realtimeUserMessageIdRef.current = null;
+			setVoiceTranscript(null);
+		}, []),
+		onToolCall: useCallback(
+			({ name, args, callId }: { name: string; args: Record<string, unknown>; callId: string }) => {
+				const respond = (output: unknown, createResponse?: boolean) =>
+					sendFunctionCallOutputRef.current?.({
+						callId,
+						output,
+						...(createResponse === false ? { createResponse: false } : {}),
+					});
+
+				handleScreenAssistantToolCall({ args, callId, name }, respond);
+			},
+			[handleScreenAssistantToolCall],
 		),
 		chatMessages: chat.messages,
 		isGenerating: chat.isStreaming,
 	} satisfies RealtimeVoiceShellOptions) as RealtimeVoiceShellResult;
 
+	sendFunctionCallOutputRef.current = realtime.sendFunctionCallOutput;
+
 	const isRealtimeActive = realtime.voiceState !== "idle";
 
 	// --- Rovo voice bridge ---
 	useClickyVoice({
-		clickyState: clicky.state,
 		isClickyActive,
-		sendImageInput: realtime.sendImageInput,
 		isRealtimeConnected: realtime.isConnected,
 		connectRealtime: realtime.connect,
-		disconnectRealtime: realtime.disconnect,
 		injectContext: realtime.injectContext,
-		onScreenshotCaptured: clickySetScreenshotDimensions,
 	});
 
 	const realtimeStatusMessage = resolveRealtimeStatusMessage(realtime);
@@ -1253,8 +1484,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		}
 
 		manualVoiceStopRef.current = false;
+		activateClicky();
 		realtime.connect();
-	}, [realtime]);
+	}, [activateClicky, realtime]);
 
 	const handleToggleRealtimeVoice = useCallback(() => {
 		if (realtime.voiceState === "idle") {
@@ -1370,7 +1602,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					queueTypedScrollAnchor("realtime", latestUserMessageIdBeforeSubmit);
 					resetRealtimeAssistantMessageState();
 
-					// Rovo: capture screenshot + transition to processing for text input
+					// Cursor companion: show processing for text input sent through voice mode.
 					if (isClickyActive) {
 						clickyAddExchange({ role: "user", content: text });
 						clickyStartProcessing();
@@ -1449,33 +1681,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			chat.shouldQueueNextSubmission,
 		],
 	);
+	handleComposerSubmitRef.current = handleComposerSubmit;
 
-	const displayMessages = useMemo(() => {
-		if (!optimisticUserMessage) {
-			return chat.messages;
-		}
-
-		const optimisticText = getMessageText(optimisticUserMessage).trim();
-		const hasVisibleUserMessage = chat.messages.some((message) => {
-			if (message.role !== "user") {
-				return false;
-			}
-
-			if (message.id === optimisticUserMessage.id) {
-				return true;
-			}
-
-			return optimisticText.length > 0 && getMessageText(message).trim() === optimisticText;
-		});
-
-		return hasVisibleUserMessage ? chat.messages : [...chat.messages, optimisticUserMessage];
-	}, [chat.messages, optimisticUserMessage]);
-
-	const visibleMessages = useMemo(() => {
-		return displayMessages.filter((message) => {
-			return message.role === "user" || message.role === "assistant";
-		});
-	}, [displayMessages]);
 	const timelineItems = useMemo(() => {
 		return deriveRovoAppTimelineItems(displayMessages);
 	}, [displayMessages]);
@@ -1578,8 +1785,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const selectedDocumentVersion = useMemo(() => {
 		return workspaceDocument?.versions.find((version) => version.id === chat.selectedVersionId) ?? workspaceDocument?.versions.at(-1) ?? null;
 	}, [chat.selectedVersionId, workspaceDocument]);
-	const isArtifactOpen = chat.panelState !== "closed";
-
 	// Derive the latest browser state from message data parts
 	const latestBrowserArtifact = useMemo(() => {
 		let browserState = null;
@@ -1643,8 +1848,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		hasWorkspaceDocument: Boolean(workspaceDocument),
 		panelState: chat.panelState,
 	});
-	const hasActiveThreadRun = typeof chat.activeThreadId === "string" && chat.backgroundStreamThreadIds.has(chat.activeThreadId);
-	const showHomeState = !chat.isLoadingThread && !isArtifactOpen && !hasActiveThreadRun && visibleMessages.length === 0;
 	const shouldShowDirectoryAutocompleteList =
 		showHomeState &&
 		directoryAutocompleteState !== null &&
@@ -1661,6 +1864,10 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		previewPrompt,
 		showHomeState,
 	});
+	screenAssistantComposerRef.current = {
+		hasPrefill: Boolean(voiceTranscript ?? prefillText),
+		placeholder: composerPreviewState.placeholder,
+	};
 	const canAnnotateWorkspaceDocument = workspaceDocument !== null;
 	const annotationState = useArtifactAnnotations({
 		active: cursorMode && isArtifactOpen && !chat.streamingArtifact && chat.artifactMode === "preview" && process.env.NODE_ENV === "development",
@@ -2167,6 +2374,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									queuedPrompts={chat.queuedPrompts}
 									realtimeVoiceActive={isRealtimeActive}
 									realtimeVoiceState={realtime.voiceState}
+									screenAssistantTargetPrefix="rovo-composer"
 									showBackgroundStop={chat.hasBackgroundDelegation}
 								/>
 								{showHomeState && shouldShowDirectoryAutocompleteList && directoryAutocompleteState ? (
@@ -2412,11 +2620,17 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			</div>
 			<ClickyOverlay
 				state={clicky.state}
+				paintingActive={screenAssistantRegionPainting}
 				pointTarget={clicky.pointTarget}
 				responseText={clicky.responseText}
-				history={clicky.history}
-				screenshotDimensions={clickyScreenshotDimensions}
 				onReturnToIdle={clickyReturnToIdle}
+			/>
+			<ScreenAssistantRegionOverlay
+				active={isClickyActive}
+				getVisibleTargets={getScreenAssistantVisibleTargets}
+				onPaintingChange={setScreenAssistantRegionPainting}
+				onRegionChange={setScreenAssistantRegion}
+				region={screenAssistantRegion}
 			/>
 		</SidebarProvider>
 	);

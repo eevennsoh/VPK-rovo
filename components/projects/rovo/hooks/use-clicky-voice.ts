@@ -1,73 +1,60 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
-import type { ClickyState } from "./use-clicky";
-import { captureViewport } from "@/components/projects/rovo/lib/clicky-screen-capture";
+import { useEffect, useRef } from "react";
 
 // ---------------------------------------------------------------------------
-// Clicky system prompt — adapted for the web context.
+// AI cursor system prompt — tool-based screen assistant (no screenshots).
+//
+// Grounding follows the openai/realtime-voice-component pattern: the model
+// reads STRUCTURED screen state via get_screen_state and acts through app-owned
+// tools, rather than relying on screenshot vision or embedded coordinate tags. The matching
+// tool schemas live in backend/lib/openai-realtime.js (SESSION_TOOLS) and are
+// executed by the shell's onToolCall handler.
 // ---------------------------------------------------------------------------
 
-const CLICKY_SYSTEM_INSTRUCTIONS = `You are Clicky, an AI cursor companion that lives on the user's screen. You can see what the user sees through screenshots and talk to them in real-time.
+const CLICKY_SYSTEM_INSTRUCTIONS = `You are an app-owned screen assistant that lives on the user's screen and talks to them in real time by voice.
 
-## Your personality
-- Helpful, concise, and friendly
-- Keep responses SHORT — 1-3 sentences max since you're speaking out loud
-- You're a companion cursor, not a long-form assistant
+## Personality
+- Helpful, concise, friendly. 1-3 sentences max — you are speaking out loud, not writing an essay.
+- You are a companion cursor, not a long-form assistant.
 
-## What you can do
-- See the user's screen via screenshots sent with each message
-- Point at specific elements on screen using the POINT tag
-- Answer questions about what's visible on screen
-- Help navigate UI, explain elements, identify issues
+## How you see the screen
+You CANNOT see images or screenshots. To understand what is on screen, call the get_screen_state tool. It returns the active route/panel, the composer text, what the pointer is over, a list of visible targets (each with id, label, and role), and an activeRegion when the user painted/highlighted part of the screen.
+Always call get_screen_state BEFORE answering a question about "this", "here", what is visible, or before pointing at / acting on a control. Reference only what get_screen_state actually reports — never invent UI that is not in the returned state.
 
-## Pointing at elements
-When you want to point at something on screen, append a coordinate tag at the very end of your response, AFTER your spoken text.
-
-The screenshot images are labeled with their pixel dimensions. Use those dimensions as the coordinate space.
-Origin (0,0) is the top-left corner. x increases rightward, y increases downward.
-
-FORMAT: [POINT:x,y:label] where x,y are integer pixel coordinates in the screenshot's coordinate space, and label is a short 1-3 word description.
-
-Only point when it adds value — not every response needs pointing.
-If pointing wouldn't help, just respond normally without a POINT tag.
-
-Examples:
-- "see that submit button right there? click it to save your changes. [POINT:450,320:Submit button]"
-- "the error message is right here. [POINT:200,150:Error toast]"
-- "html stands for hypertext markup language."
+## What you can do (app-owned tools)
+- get_screen_state — read the current structured screen state.
+- point_at_target — move the on-screen cursor to a visible target to direct attention. Identify it with a target id/fieldId/label from get_screen_state.
+- activate_screen_target — click/open/pick/choose a known visible target from get_screen_state.
+- set_composer_text — set the composer text (does not submit).
+- submit_composer — submit the composer's current text. Only call when the user clearly asks to send/submit.
+- apply_agent_draft_patch — update a session-local agent-builder draft when that surface supports one.
+- delegate_to_rovo — hand off heavier workspace/data/build tasks to Rovo.
 
 ## Rules
-- Be concise — you're speaking out loud, not writing an essay
-- Reference what you SEE on screen, not what you assume
-- If you can't see something clearly, say so
-- Don't hallucinate UI elements that aren't in the screenshot
-- When pointing, be precise — aim for the center of the element you're referencing`;
+- Point only when it adds value — not every answer needs pointing.
+- When the user asks where something is, asks you to show/point at something, or asks about a visible control, call get_screen_state, then call point_at_target with a target from that state.
+- When the user says "this area", "this part", "the highlighted part", or "the painted area", use activeRegion from get_screen_state. Prefer targetHints inside activeRegion for pointing.
+- When activeRegion.targetHints contains the Studio agent instructions field (fieldId "instructions" or targetId "studio-agent-config:instructions") and the user asks to update, rewrite, change, or replace "this", call apply_agent_draft_patch with patch.instructions. Treat patch.instructions as a complete replacement body for the instructions editor. If the user says "make this say X" or "replace this with X", use X as the entire instructions body; otherwise synthesize a concise complete Markdown instructions body from the request. Do not use set_composer_text for painted instructions updates.
+- When the user asks you to click, open, pick, choose, or activate a visible control, call get_screen_state, optionally point_at_target, then activate_screen_target.
+- Prefer targetId or fieldId from get_screen_state over freeform labels.
+- Never infer raw screen coordinates, screenshots, CUA actions, or arbitrary clicks from a painted region.
+- Do not claim the cursor moved until point_at_target returns ok: true. If it returns ok: false, say you could not find that target.
+- Do not claim an activation happened until activate_screen_target returns ok: true. If it returns ok: false, say you could not activate that target.
+- Never publish or activate an agent. Only patch session-local drafts when supported.
+- Allowed apply_agent_draft_patch fields: name, description, summary, instructions, contextDescription, trigger, guardrail, tools, conversationStarters, byline, avatarFallback, action. Never include agentId.
+- After acting, speak a short confirmation (e.g. "Done — I set the prompt.").`;
 
 export { CLICKY_SYSTEM_INSTRUCTIONS };
 
-// ---------------------------------------------------------------------------
-// Hook options
-// ---------------------------------------------------------------------------
-
 interface UseClickyVoiceOptions {
-	clickyState: ClickyState;
+	/** Whether the AI cursor companion is active. */
 	isClickyActive: boolean;
-	/** Send image input to the Realtime session. */
-	sendImageInput: (payload: {
-		image: string;
-		text?: string;
-		detail?: "low" | "high" | "auto";
-		clicky?: boolean;
-		systemPrompt?: string;
-	}) => void;
 	/** Whether the Realtime WebSocket is connected. */
 	isRealtimeConnected: boolean;
 	/** Connect to the Realtime voice session. */
 	connectRealtime: () => void;
-	/** Disconnect from the Realtime voice session. Live voice owners handle this directly. */
-	disconnectRealtime: () => void;
-	/** Inject context into the Realtime session (used for system prompt swap). */
+	/** Inject context into the Realtime session (used for the system prompt). */
 	injectContext: (data: {
 		type:
 			| "initial_context"
@@ -79,49 +66,53 @@ interface UseClickyVoiceOptions {
 			| "delegation_error";
 		content: string;
 	}) => void;
-	/** Called after a screenshot is captured, with the screenshot dimensions. */
-	onScreenshotCaptured?: (dims: { width: number; height: number }) => void;
 }
 
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
-
 /**
- * Bridges the Clicky state machine with the Realtime voice system.
+ * Bridges the AI cursor activation state with the Realtime voice session.
  *
- * - On activation: connects to Realtime, injects Clicky's system prompt
- * - On speech end (processing state): captures screenshot, sends as image
- * - On deactivation: clears Clicky prompt state without tearing down voice
+ * - On activation: connects to Realtime (if not already) and injects the
+ *   tool-based system prompt once.
+ * - The model grounds itself with get_screen_state and acts through app-owned
+ *   tools; there is no screenshot capture.
+ * - Cursor deactivation must not tear down a voice session the user started
+ *   separately.
  */
 export function useClickyVoice({
-	clickyState,
 	isClickyActive,
-	sendImageInput,
 	isRealtimeConnected,
 	connectRealtime,
 	injectContext,
-	onScreenshotCaptured,
 }: UseClickyVoiceOptions) {
 	const wasActiveRef = useRef(false);
 	const hasInjectedPromptRef = useRef(false);
+	const connectedForCursorRef = useRef(false);
 
-	// Connect Realtime when Clicky activates. Cursor deactivation must not stop
-	// a voice session; live voice controls own disconnect semantics.
+	// Inject the cursor prompt once connected, including when the user started
+	// voice first and then enabled the cursor.
 	useEffect(() => {
 		if (isClickyActive && !wasActiveRef.current) {
 			wasActiveRef.current = true;
 			hasInjectedPromptRef.current = false;
-			connectRealtime();
+			if (!isRealtimeConnected) {
+				connectedForCursorRef.current = true;
+				connectRealtime();
+			} else {
+				connectedForCursorRef.current = false;
+			}
 		} else if (!isClickyActive && wasActiveRef.current) {
 			wasActiveRef.current = false;
 			hasInjectedPromptRef.current = false;
+			connectedForCursorRef.current = false;
 		}
-	}, [isClickyActive, connectRealtime]);
+	}, [isClickyActive, isRealtimeConnected, connectRealtime]);
 
-	// Inject Clicky system prompt once connected
 	useEffect(() => {
-		if (isClickyActive && isRealtimeConnected && !hasInjectedPromptRef.current) {
+		if (
+			isClickyActive &&
+			isRealtimeConnected &&
+			!hasInjectedPromptRef.current
+		) {
 			injectContext({
 				type: "initial_context",
 				content: CLICKY_SYSTEM_INSTRUCTIONS,
@@ -129,35 +120,4 @@ export function useClickyVoice({
 			hasInjectedPromptRef.current = true;
 		}
 	}, [isClickyActive, isRealtimeConnected, injectContext]);
-
-	// Capture and send screenshot when entering "processing" state
-	const captureAndSend = useCallback(async () => {
-		const result = await captureViewport();
-		if (!result) return;
-
-		onScreenshotCaptured?.({ width: result.width, height: result.height });
-
-		sendImageInput({
-			image: result.base64,
-			text: `Screenshot of the current page (image dimensions: ${result.width}x${result.height} pixels). Use these dimensions as the coordinate space for any POINT tags.`,
-			detail: "auto",
-			clicky: true,
-			systemPrompt: CLICKY_SYSTEM_INSTRUCTIONS,
-		});
-	}, [sendImageInput, onScreenshotCaptured]);
-
-	useEffect(() => {
-		if (clickyState === "processing" && isRealtimeConnected) {
-			void captureAndSend();
-		}
-	}, [clickyState, isRealtimeConnected, captureAndSend]);
-
-	// Cleanup on unmount
-	useEffect(() => {
-		return () => {
-			if (wasActiveRef.current) {
-				wasActiveRef.current = false;
-			}
-		};
-	}, []);
 }

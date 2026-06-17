@@ -68,6 +68,15 @@ Exception: if the user asks to create/build/generate/write an artifact, document
 ## Steering active generation
 When results are being generated and the user gives modification instructions ("make it bigger", "add a chart", "change the color"), delegate those as well — Rovo will apply them as steers to the active generation.
 
+## Screen pointing
+When the user asks where something is, asks you to show them something, or asks you to point at something on the Studio screen, call get_screen_state first, then call point_at_target. Prefer the targetId or fieldId returned by get_screen_state over a freeform label. Only say you are pointing after point_at_target returns ok: true.
+
+When the user says "this", "this area", "this part", "the highlighted part", or "the painted area", call get_screen_state and use activeRegion. If activeRegion has targetHints, prefer those target ids or fieldIds when pointing. Do not infer raw screen coordinates, screenshots, CUA actions, or arbitrary clicks from a painted region.
+
+When activeRegion.targetHints contains the Studio agent instructions field (fieldId "instructions" or targetId "studio-agent-config:instructions") and the user asks to update, rewrite, change, or replace "this", call apply_agent_draft_patch with patch.instructions. Treat patch.instructions as a complete replacement body for the instructions editor. If the user says "make this say X" or "replace this with X", use X as the entire instructions body; otherwise synthesize a concise complete Markdown instructions body from the request. Do not use set_composer_text for painted instructions updates.
+
+When the user asks you to activate, click, open, pick, or choose a visible Studio control, call get_screen_state first, optionally call point_at_target to show what you will use, then call activate_screen_target. Prefer the targetId or fieldId returned by get_screen_state over a freeform label. Only say you clicked, opened, picked, or chose something after activate_screen_target returns ok: true.
+
 ## Ending the session
 When the user wants to end the voice conversation (e.g. "stop", "goodbye", "end call", "shut down", "that's all", "I'm done"), say a brief goodbye and call the end_voice_session function.
 
@@ -151,19 +160,24 @@ const SESSION_TOOLS = [
 		type: "function",
 		name: "get_screen_state",
 		description:
-			"Read the current Studio screen as structured state before answering or acting. " +
-			"Returns the active route/panel, composer text, what the pointer is over, and a " +
-			"list of visible targets (id, label, role) you can point at or act on. " +
-			"Call this first whenever the user asks about what is on screen, 'this', 'here', " +
-			"or refers to a control you need to locate.",
+				"Read the current Studio screen as structured state before answering or acting. " +
+				"Returns the active route/panel, composer text, what the pointer is over, and a " +
+				"list of visible targets (id, label, role) you can point at or act on. " +
+				"If the user painted or highlighted an area, the result includes activeRegion " +
+				"with its viewport rect, freeform path, and targetHints inside the region. " +
+				"Call this first whenever the user asks about what is on screen, 'this', 'here', " +
+				"or refers to a control you need to locate.",
 		parameters: { type: "object", properties: {}, required: [] },
 	},
 	{
 		type: "function",
 		name: "point_at_target",
 		description:
-			"Move the on-screen cursor to a visible target to direct the user's attention. " +
-			"Identify the target using one of the ids/labels returned by get_screen_state. " +
+				"Move the on-screen cursor to a visible target to direct the user's attention. " +
+				"Identify the target using one of the ids or fieldIds returned by get_screen_state; " +
+				"use labels only as a fallback when no stable id or fieldId is available. " +
+				"When the user refers to 'this area' or the painted/highlighted region, prefer " +
+				"targetHints from activeRegion. " +
 			"When the user asks where something is or asks you to point/show it, call this " +
 			"before claiming the cursor moved. Only say you are pointing after the tool " +
 			"returns ok: true; if it returns ok: false, say you could not find that target.",
@@ -172,6 +186,26 @@ const SESSION_TOOLS = [
 			properties: {
 				targetId: { type: "string", description: "The target.id from get_screen_state." },
 				fieldId: { type: "string", description: "The target.fieldId, when pointing at a form field." },
+				label: { type: "string", description: "Human label of the target, used as a fallback match." },
+			},
+			required: [],
+		},
+	},
+	{
+		type: "function",
+		name: "activate_screen_target",
+		description:
+			"Activate a known Studio screen target by clicking its real UI control. " +
+			"Identify the target using one of the ids or fieldIds returned by get_screen_state; " +
+			"use labels only as a fallback when no stable id or fieldId is available. " +
+			"Use this when the user asks you to click, open, pick, choose, or activate a visible " +
+			"Studio control. The browser executes the action and may scroll the tagged target into view. " +
+			"Only claim the action happened after this tool returns ok: true.",
+		parameters: {
+			type: "object",
+			properties: {
+				targetId: { type: "string", description: "The target.id from get_screen_state." },
+				fieldId: { type: "string", description: "The target.fieldId, when activating a form field." },
 				label: { type: "string", description: "Human label of the target, used as a fallback match." },
 			},
 			required: [],
@@ -205,7 +239,8 @@ const SESSION_TOOLS = [
 			"Update the session-local Studio agent-builder draft with a safe patch. " +
 			"Never publishes or activates an agent. Allowed fields only: name, description, " +
 			"summary, instructions, contextDescription, trigger, guardrail, tools, " +
-			"conversationStarters, byline, avatarFallback, action.",
+			"conversationStarters, byline, avatarFallback, action. When replacing a painted " +
+			"instructions field, send the full replacement Markdown body in patch.instructions.",
 		parameters: {
 			type: "object",
 			properties: {
@@ -321,6 +356,88 @@ function normalizeOpenAIEventType(type) {
 	}
 
 	return OPENAI_EVENT_ALIASES.get(type) ?? type;
+}
+
+function normalizeRealtimeTranscript(value) {
+	if (typeof value !== "string") {
+		return "";
+	}
+
+	return value.trim();
+}
+
+function collectContentPartTranscript(part, transcripts = []) {
+	if (!part || typeof part !== "object") {
+		return transcripts;
+	}
+
+	const directTranscript = normalizeRealtimeTranscript(part.transcript);
+	if (directTranscript) {
+		transcripts.push(directTranscript);
+	}
+
+	const text = normalizeRealtimeTranscript(part.text);
+	if (text) {
+		transcripts.push(text);
+	}
+
+	if (part.audio && typeof part.audio === "object") {
+		collectContentPartTranscript(part.audio, transcripts);
+	}
+
+	if (Array.isArray(part.content)) {
+		for (const childPart of part.content) {
+			collectContentPartTranscript(childPart, transcripts);
+		}
+	}
+
+	return transcripts;
+}
+
+function getContentPartTranscript(part) {
+	return collectContentPartTranscript(part).join("\n");
+}
+
+function getOutputItemTranscriptPayload(item, responseId) {
+	const content = Array.isArray(item?.content) ? item.content : [];
+	const transcripts = [];
+
+	for (const part of content) {
+		collectContentPartTranscript(part, transcripts);
+	}
+
+	if (transcripts.length === 0) {
+		return null;
+	}
+
+	return {
+		itemId: typeof item?.id === "string" ? item.id : undefined,
+		responseId,
+		transcript: transcripts.join("\n"),
+	};
+}
+
+function getResponseDoneTranscriptPayload(event) {
+	const response = event?.response;
+	const output = Array.isArray(response?.output) ? response.output : [];
+	const transcriptEntries = [];
+
+	for (const outputItem of output) {
+		const payload = getOutputItemTranscriptPayload(outputItem);
+		if (payload) {
+			transcriptEntries.push(payload);
+		}
+	}
+
+	if (transcriptEntries.length === 0) {
+		return null;
+	}
+
+	return {
+		itemId: transcriptEntries[0].itemId,
+		responseId: typeof response?.id === "string" ? response.id : event.response_id,
+		transcript: transcriptEntries.map(({ transcript }) => transcript).join("\n"),
+	};
 }
 
 function buildRealtimeSessionConfig({
@@ -648,9 +765,6 @@ class RealtimeSession {
 			case "text_message_from_user":
 				this._handleTextMessageFromUser(msg);
 				break;
-			case "image_message_from_user":
-				this._handleImageMessageFromUser(msg);
-				break;
 			case "response_create":
 				this._handleResponseCreate();
 				break;
@@ -959,55 +1073,6 @@ class RealtimeSession {
 		this._log("REALTIME", "Text message received from user");
 	}
 
-	/**
-	 * Handle an image message from the browser client.
-	 * Sends as a conversation item with input_image content part,
-	 * optionally accompanied by text.
-	 * @param {{ image: string, text?: string, detail?: "low"|"high"|"auto" }} msg
-	 */
-	_handleImageMessageFromUser(msg) {
-		if (!this.isReady || !this._openaiWs) {
-			return;
-		}
-
-		const image = typeof msg.image === "string" ? msg.image : "";
-		if (!image) {
-			return;
-		}
-
-		const content = [
-			{
-				type: "input_image",
-				image,
-				detail: msg.detail || "low",
-			},
-		];
-
-		// Append text part if provided
-		const text = typeof msg.text === "string" ? msg.text.trim() : "";
-		if (text) {
-			content.push({
-				type: "input_text",
-				text,
-			});
-		}
-
-		this._sendToOpenAI({
-			type: OPENAI_EVENT.CONVERSATION_ITEM_CREATE,
-			item: {
-				type: "message",
-				role: "user",
-				content,
-			},
-		});
-		this._sendToOpenAI({
-			type: OPENAI_EVENT.RESPONSE_CREATE,
-			response: {},
-		});
-		this._log("REALTIME", `Image message received from user (${image.length} chars, detail: ${msg.detail || "low"})`);
-	}
-
-
 	// ── OpenAI event handling ─────────────────────────────────────────────
 
 	_handleOpenAIMessage(data) {
@@ -1079,16 +1144,43 @@ class RealtimeSession {
 				});
 				break;
 
-			case OPENAI_EVENT.RESPONSE_AUDIO_TRANSCRIPT_DONE:
-				// Audio transcript complete
-				break;
+				case OPENAI_EVENT.RESPONSE_AUDIO_TRANSCRIPT_DONE:
+					this._sendToClient({
+						type: "audio_transcript_done",
+						transcript: event.transcript,
+						itemId: event.item_id,
+						responseId: event.response_id,
+					});
+					break;
 
-			case OPENAI_EVENT.RESPONSE_DONE:
-				this._activeResponseId = null;
-				this._sendToClient({
-					type: "response_done",
-					responseId: event.response?.id ?? event.response_id,
-				});
+				case OPENAI_EVENT.RESPONSE_CONTENT_PART_DONE: {
+					const transcript = getContentPartTranscript(event.part);
+					if (transcript) {
+						this._sendToClient({
+							type: "audio_transcript_done",
+							transcript,
+							itemId: event.item_id,
+							responseId: event.response_id,
+						});
+					}
+					break;
+				}
+
+				case OPENAI_EVENT.RESPONSE_DONE:
+					this._activeResponseId = null;
+					{
+						const transcriptPayload = getResponseDoneTranscriptPayload(event);
+						if (transcriptPayload) {
+							this._sendToClient({
+								type: "audio_transcript_done",
+								...transcriptPayload,
+							});
+						}
+					}
+					this._sendToClient({
+						type: "response_done",
+						responseId: event.response?.id ?? event.response_id,
+					});
 				// A tool output (or other request) arrived mid-response and deferred
 				// its response.create — now that the response is done, fire it.
 				if (this._pendingResponseCreate) {

@@ -70,6 +70,7 @@ export function ComposerCardBody({
 	previewPrompt,
 	realtimeVoiceActive,
 	realtimeVoiceState,
+	screenAssistantTargetPrefix,
 	showBackgroundStop,
 	submitDisabled,
 	textValue,
@@ -153,6 +154,7 @@ export function ComposerCardBody({
 			<PromptInput
 				allowOverflow
 				className={cn(composerPromptInputClassName, "relative z-10", composerHeight ? "flex h-full flex-col [&>[data-slot=input-group]]:h-full" : undefined)}
+				data-screen-assistant-target={screenAssistantTargetPrefix}
 				onSubmit={onPromptSubmit}
 			>
 				<PendingAttachments />
@@ -225,6 +227,7 @@ export function ComposerCardBody({
 						open={isAutoMenuOpen}
 						realtimeVoiceActive={realtimeVoiceActive}
 						realtimeVoiceState={realtimeVoiceState}
+						screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 						selectedReasoning={selectedReasoning}
 						showBackgroundStop={showBackgroundStop}
 						submitDisabled={submitDisabled}

@@ -5,14 +5,13 @@
 import { AnimatePresence, motion, useMotionValue, useSpring } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { ClickyState, ClickyPointTarget, ClickyExchange, ClickyScreenshotDimensions } from "@/components/projects/rovo/hooks/use-clicky";
+import type { ClickyState, ClickyPointTarget } from "@/components/projects/rovo/hooks/use-clicky";
 import { ClickyCursor } from "./clicky-cursor";
-import { ClickySpeechBubble } from "./clicky-speech-bubble";
 import { ClickyResponseOverlay } from "./clicky-response-overlay";
-import { ClickyHistoryPanel } from "./clicky-history-panel";
+import { ClickySpeechBubble } from "./clicky-speech-bubble";
 
 // ---------------------------------------------------------------------------
-// Constants — matched to reference Clicky (farzaa/clicky)
+// Cursor overlay constants
 // ---------------------------------------------------------------------------
 
 const TRACKING_OFFSET_X = 35;
@@ -28,17 +27,16 @@ const FLIGHT_MIN_S = 0.6;
 const FLIGHT_MAX_S = 1.4;
 const FLIGHT_SCALE_BOOST = 0.3;
 
-/** Hold time at target before fade-out (ms) */
+/** Hold time at target before return transition (ms) */
 const POINT_HOLD_MS = 3000;
 /** Bubble fade-out duration before return flight (ms) */
 const BUBBLE_FADE_MS = 500;
-const WELCOME_MESSAGE = "Yo, let's cook!";
+const RESPONSE_SETTLE_MS = 2400;
+const WELCOME_MESSAGE = "Yo, let's cook";
 const WELCOME_DISMISS_AFTER_TYPE_MS = 1600;
 const ROVO_CURSOR_TRIGGER_SELECTOR = 'button[aria-label="Rovo cursor"], button[aria-label="Rovo Cursor"]';
 /** Mouse movement threshold to interrupt return flight (px) */
 const RETURN_INTERRUPT_DISTANCE = 100;
-
-/** Random navigation phrases for the small blue bubble */
 const NAV_PHRASES = [
 	"right here!",
 	"this one!",
@@ -142,20 +140,19 @@ type FlightPhase =
 
 interface ClickyOverlayProps {
 	state: ClickyState;
+	/** True only while the user is actively painting a screen region. */
+	paintingActive?: boolean;
 	pointTarget?: ClickyPointTarget | null;
 	responseText?: string | null;
-	history?: ReadonlyArray<ClickyExchange>;
-	screenshotDimensions?: ClickyScreenshotDimensions | null;
 	/** Called when the pointing cycle completes (hold + return flight done). */
 	onReturnToIdle?: () => void;
 }
 
 export function ClickyOverlay({
 	state,
+	paintingActive = false,
 	pointTarget = null,
 	responseText = null,
-	history = [],
-	screenshotDimensions = null,
 	onReturnToIdle,
 }: Readonly<ClickyOverlayProps>) {
 	// The overlay is `position: fixed` and tracks the mouse in viewport
@@ -330,6 +327,12 @@ export function ClickyOverlay({
 	}, [isActive, seedCursorPosition]);
 
 	useEffect(() => {
+		if (isActive && !cursorPositionReady && responseText) {
+			seedCursorPosition();
+		}
+	}, [cursorPositionReady, isActive, responseText, seedCursorPosition]);
+
+	useEffect(() => {
 		return () => {
 			if (welcomeDismissTimerRef.current) {
 				clearTimeout(welcomeDismissTimerRef.current);
@@ -354,19 +357,10 @@ export function ClickyOverlay({
 			return clearAllTimers;
 		}
 
-		// Compute target in viewport-space
-		let targetX = pointTarget.x;
-		let targetY = pointTarget.y;
-		if (screenshotDimensions) {
-			const scaleX = window.innerWidth / screenshotDimensions.width;
-			const scaleY = window.innerHeight / screenshotDimensions.height;
-			targetX = pointTarget.x * scaleX;
-			targetY = pointTarget.y * scaleY;
-		}
-		targetX -= CURSOR_TIP_X;
-		targetY -= CURSOR_TIP_Y;
+		// Targets are resolved from DOM rects, so coordinates are viewport-space.
+		const targetX = pointTarget.x - CURSOR_TIP_X;
+		const targetY = pointTarget.y - CURSOR_TIP_Y;
 
-		// Pick a random nav phrase for the small bubble
 		const phrase = pickRandom(NAV_PHRASES);
 		queueMicrotask(() => {
 			setNavPhrase(phrase);
@@ -400,8 +394,8 @@ export function ClickyOverlay({
 					// Phase 2: Hold at target
 					holdTimerRef.current = setTimeout(() => {
 						// Phase 3: Fade out bubble
-						setFlightPhase("fading");
 						setBubbleOpacity(0);
+						setFlightPhase("fading");
 
 						fadeTimerRef.current = setTimeout(() => {
 							// Phase 4: Return flight to cursor
@@ -440,37 +434,49 @@ export function ClickyOverlay({
 		);
 
 		return () => clearAllTimers();
-	}, [isPointing, pointTarget, screenshotDimensions, x, y, springX, springY, clearAllTimers, onReturnToIdle]);
+	}, [isPointing, pointTarget, x, y, springX, springY, clearAllTimers, onReturnToIdle]);
 
-	// Speaking state — show bubble immediately, auto-dismiss
+	// Speaking state — show bubble immediately, then dismiss only after the
+	// latest streamed response text has had time to settle.
 	useEffect(() => {
-		if (isSpeaking) {
-			queueMicrotask(() => {
-				setFlightPhase("holding");
-				setBubbleOpacity(1);
-			});
-
-			holdTimerRef.current = setTimeout(() => {
-				setBubbleOpacity(0);
-				setFlightPhase("fading");
-
-				fadeTimerRef.current = setTimeout(() => {
-					setFlightPhase("idle");
-					onReturnToIdle?.();
-				}, BUBBLE_FADE_MS);
-			}, POINT_HOLD_MS);
-
-			return () => {
-				if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
-				if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
-			};
+		if (!isSpeaking) {
+			return;
 		}
-	}, [isSpeaking, onReturnToIdle]);
 
-	const showNavBubble = (flightPhase === "holding" || flightPhase === "fading") && isPointing;
-	const showResponseOverlay = (isPointing || isSpeaking) && responseText;
-	const shouldRenderOverlay = isActive && cursorPositionReady;
+		if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+		if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+		holdTimerRef.current = null;
+		fadeTimerRef.current = null;
+
+		queueMicrotask(() => {
+			setFlightPhase("holding");
+			setBubbleOpacity(1);
+		});
+
+		holdTimerRef.current = setTimeout(() => {
+			setBubbleOpacity(0);
+			setFlightPhase("fading");
+
+			fadeTimerRef.current = setTimeout(() => {
+				setFlightPhase("idle");
+				onReturnToIdle?.();
+			}, BUBBLE_FADE_MS);
+		}, RESPONSE_SETTLE_MS);
+
+		return () => {
+			if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+			if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+			holdTimerRef.current = null;
+			fadeTimerRef.current = null;
+		};
+	}, [isSpeaking, responseText, onReturnToIdle]);
+
+	const shouldRenderOverlay = isActive && (cursorPositionReady || Boolean(responseText));
 	const shouldUseFlightTransform = flightPhase === "flying" || flightPhase === "returning";
+	const showNavBubble = (flightPhase === "holding" || flightPhase === "fading") && isPointing;
+	const showResponseOverlay = Boolean(responseText) && isActive;
+	const showStandaloneNavBubble = showNavBubble && !showResponseOverlay;
+	const shouldShowWelcome = showWelcome && !showResponseOverlay && !isSpeaking;
 
 	if (!mounted) {
 		return null;
@@ -507,16 +513,16 @@ export function ClickyOverlay({
 					>
 						<ClickyCursor
 							state={state}
+							paintingActive={paintingActive}
 							rotation={shouldUseFlightTransform ? rotation : IDLE_ROTATION}
 							flightScale={shouldUseFlightTransform ? flightScale : 1}
 						/>
 
-						{/* Navigation phrase bubble */}
-						{showNavBubble ? <ClickySpeechBubble text={navPhrase} opacity={bubbleOpacity} /> : null}
+						{showStandaloneNavBubble ? <ClickySpeechBubble text={navPhrase} opacity={bubbleOpacity} /> : null}
 
 						{/* Welcome message */}
 						<AnimatePresence>
-							{showWelcome ? (
+							{shouldShowWelcome ? (
 								<motion.div
 									initial={{ opacity: 0 }}
 									animate={{ opacity: 1 }}
@@ -524,6 +530,7 @@ export function ClickyOverlay({
 									transition={{ duration: 0.5, ease: "easeOut" }}
 								>
 									<ClickySpeechBubble
+										placement="above"
 										text={WELCOME_MESSAGE}
 										typewriter
 										onTypewriterComplete={dismissWelcomeAfterTyping}
@@ -533,22 +540,17 @@ export function ClickyOverlay({
 						</AnimatePresence>
 					</motion.div>
 
-					{/* Response overlay (separate dark panel near cursor) */}
 					<AnimatePresence>
-						{showResponseOverlay ? (
+						{showResponseOverlay && responseText ? (
 							<ClickyResponseOverlay
-								text={responseText}
 								cursorX={springX}
 								cursorY={springY}
-								opacity={bubbleOpacity}
+								label={showNavBubble ? navPhrase : null}
+								opacity={1}
+								text={responseText}
 							/>
 						) : null}
 					</AnimatePresence>
-
-					{/* Conversation history panel */}
-					{history.length > 0 ? (
-						<ClickyHistoryPanel history={history} />
-					) : null}
 				</motion.div>
 			) : null}
 		</AnimatePresence>,

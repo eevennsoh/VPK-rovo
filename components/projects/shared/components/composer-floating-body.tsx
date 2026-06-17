@@ -84,6 +84,7 @@ export function ComposerFloatingBody({
 	prefillText,
 	realtimeVoiceActive,
 	realtimeVoiceState,
+	screenAssistantTargetPrefix = "studio-composer",
 	showBackgroundStop,
 	submitDisabled,
 	textValue,
@@ -127,7 +128,7 @@ export function ComposerFloatingBody({
 			<FloatingComposer
 				allowOverflow
 				className={cn("relative z-10 mx-auto", fillWidth ? FLOATING_COMPOSER_SESSION_MAX_WIDTH_CLASS : FLOATING_COMPOSER_MAX_WIDTH_CLASS)}
-				data-screen-assistant-target="studio-composer"
+				data-screen-assistant-target={screenAssistantTargetPrefix}
 				onSubmit={onPromptSubmit}
 				addButton={
 					<PromptInputButton size="icon-sm" variant="ghost" aria-label="Add">
@@ -150,7 +151,7 @@ export function ComposerFloatingBody({
 						onToggleRealtimeVoice={onToggleRealtimeVoice}
 						realtimeVoiceActive={realtimeVoiceActive}
 						realtimeVoiceState={realtimeVoiceState}
-						screenAssistantTargetPrefix="studio-composer"
+						screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 						showBackgroundStop={showBackgroundStop}
 						submitDisabled={submitDisabled}
 					/>

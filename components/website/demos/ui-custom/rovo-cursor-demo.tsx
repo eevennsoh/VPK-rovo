@@ -7,6 +7,7 @@ import { GUI } from "@/components/utils/gui";
 
 const STATE_OPTIONS = [
 	{ value: "cursor" as const, label: "cursor" },
+	{ value: "painting" as const, label: "painting" },
 	{ value: "telepointer" as const, label: "typing" },
 	{ value: "typing" as const, label: "talking" },
 	{ value: "loading" as const, label: "loading" },

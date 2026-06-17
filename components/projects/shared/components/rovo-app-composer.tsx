@@ -90,6 +90,7 @@ export interface RovoAppComposerProps {
 	previewPrompt?: string | null;
 	realtimeVoiceActive?: boolean;
 	realtimeVoiceState?: "idle" | "connecting" | "listening" | "speaking";
+	screenAssistantTargetPrefix?: string;
 	clickyActive?: boolean;
 	showBackgroundStop?: boolean;
 	submitDisabled?: boolean;
@@ -136,6 +137,7 @@ function RovoAppComposerInner({
 	previewPrompt = null,
 	realtimeVoiceActive = false,
 	realtimeVoiceState = "idle",
+	screenAssistantTargetPrefix,
 	clickyActive = false,
 	showBackgroundStop = false,
 	submitDisabled = false,
@@ -191,6 +193,7 @@ function RovoAppComposerInner({
 		prefillText,
 		realtimeVoiceActive,
 		realtimeVoiceState,
+		screenAssistantTargetPrefix,
 		showBackgroundStop,
 		submitDisabled,
 		textValue: controller.textInput.value,

@@ -1,4 +1,6 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const test = require("node:test");
 const WebSocket = require("ws");
 
@@ -8,6 +10,7 @@ const {
 	SESSION_STATE,
 } = require("./openai-realtime");
 const { getRealtimeConfig } = require("./ai-gateway-helpers");
+const SOURCE = fs.readFileSync(path.join(__dirname, "openai-realtime.js"), "utf8");
 
 function createReadySession() {
 	const openaiMessages = [];
@@ -93,6 +96,57 @@ test("system instructions force delegation for explicit artifact requests", () =
 	);
 });
 
+test("system instructions route screen pointing through structured tools", () => {
+	assert.match(
+		ROVO_SYSTEM_INSTRUCTIONS,
+		/When the user asks where something is, asks you to show them something, or asks you to point at something on the Studio screen/iu,
+	);
+	assert.match(
+		ROVO_SYSTEM_INSTRUCTIONS,
+		/call get_screen_state first, then call point_at_target/iu,
+	);
+	assert.match(
+		ROVO_SYSTEM_INSTRUCTIONS,
+		/this area.*activeRegion/isu,
+	);
+	assert.match(
+		ROVO_SYSTEM_INSTRUCTIONS,
+		/targetHints/iu,
+	);
+	assert.match(
+		ROVO_SYSTEM_INSTRUCTIONS,
+		/Do not infer raw screen coordinates, screenshots, CUA actions, or arbitrary clicks from a painted region/iu,
+	);
+	assert.match(
+		ROVO_SYSTEM_INSTRUCTIONS,
+		/activeRegion\.targetHints contains the Studio agent instructions field/iu,
+	);
+	assert.match(
+		ROVO_SYSTEM_INSTRUCTIONS,
+		/call apply_agent_draft_patch with patch\.instructions/iu,
+	);
+	assert.match(
+		ROVO_SYSTEM_INSTRUCTIONS,
+		/Treat patch\.instructions as a complete replacement body/iu,
+	);
+	assert.match(
+		ROVO_SYSTEM_INSTRUCTIONS,
+		/Do not use set_composer_text for painted instructions updates/iu,
+	);
+	assert.match(
+		ROVO_SYSTEM_INSTRUCTIONS,
+		/Prefer the targetId or fieldId returned by get_screen_state over a freeform label/iu,
+	);
+	assert.match(
+		ROVO_SYSTEM_INSTRUCTIONS,
+		/call get_screen_state first, optionally call point_at_target to show what you will use, then call activate_screen_target/iu,
+	);
+	assert.match(
+		ROVO_SYSTEM_INSTRUCTIONS,
+		/Only say you clicked, opened, picked, or chose something after activate_screen_target returns ok: true/iu,
+	);
+});
+
 test("relays a client function_call_output to OpenAI and requests a new response", () => {
 	const { session, openaiMessages } = createReadySession();
 
@@ -134,6 +188,12 @@ test("function_call_output can suppress the follow-up response", () => {
 		!openaiMessages.some((m) => m.type === "response.create"),
 		"expected no response.create when createResponse is false",
 	);
+});
+
+test("realtime relay does not keep the legacy cursor screenshot image path", () => {
+	assert.doesNotMatch(SOURCE, /image_message_from_user/u);
+	assert.doesNotMatch(SOURCE, /_handleImageMessageFromUser/u);
+	assert.doesNotMatch(SOURCE, /input_image/u);
 });
 
 test("accepts initial_context injections", () => {
@@ -263,6 +323,32 @@ test("session updates use the GA realtime audio session schema", () => {
 		rate: 24_000,
 	});
 	assert.equal(openaiMessages[0].session?.max_output_tokens, "inf");
+	const tools = openaiMessages[0].session?.tools ?? [];
+	const getScreenStateTool = tools.find((tool) => tool.name === "get_screen_state");
+	const pointAtTargetTool = tools.find((tool) => tool.name === "point_at_target");
+	const activateScreenTargetTool = tools.find((tool) => tool.name === "activate_screen_target");
+	const applyAgentDraftPatchTool = tools.find((tool) => tool.name === "apply_agent_draft_patch");
+	assert.ok(getScreenStateTool, "expected get_screen_state tool in realtime session");
+	assert.ok(pointAtTargetTool, "expected point_at_target tool in realtime session");
+	assert.ok(activateScreenTargetTool, "expected activate_screen_target tool in realtime session");
+	assert.ok(applyAgentDraftPatchTool, "expected apply_agent_draft_patch tool in realtime session");
+	assert.match(getScreenStateTool.description, /Call this first/u);
+	assert.match(getScreenStateTool.description, /activeRegion/u);
+	assert.match(getScreenStateTool.description, /targetHints/u);
+	assert.match(pointAtTargetTool.description, /ids or fieldIds returned by get_screen_state/u);
+	assert.match(pointAtTargetTool.description, /painted\/highlighted region/u);
+	assert.match(pointAtTargetTool.description, /targetHints/u);
+	assert.match(pointAtTargetTool.description, /labels only as a fallback/u);
+	assert.match(activateScreenTargetTool.description, /ids or fieldIds returned by get_screen_state/u);
+	assert.match(activateScreenTargetTool.description, /click, open, pick, choose, or activate/u);
+	assert.match(applyAgentDraftPatchTool.description, /Never publishes or activates an agent/u);
+	assert.match(applyAgentDraftPatchTool.description, /full replacement Markdown body in patch\.instructions/u);
+	assert.ok(pointAtTargetTool.parameters.properties.targetId);
+	assert.ok(pointAtTargetTool.parameters.properties.fieldId);
+	assert.ok(pointAtTargetTool.parameters.properties.label);
+	assert.ok(activateScreenTargetTool.parameters.properties.targetId);
+	assert.ok(activateScreenTargetTool.parameters.properties.fieldId);
+	assert.ok(activateScreenTargetTool.parameters.properties.label);
 	assert.equal("modalities" in openaiMessages[0].session, false);
 	assert.equal("input_audio_format" in openaiMessages[0].session, false);
 	assert.equal("output_audio_format" in openaiMessages[0].session, false);
@@ -619,6 +705,12 @@ test("modern realtime output delta events are normalized for the client", () => 
 		response_id: "response-2",
 	})));
 	session._handleOpenAIMessage(Buffer.from(JSON.stringify({
+		type: "response.output_audio_transcript.done",
+		transcript: "Hello there",
+		item_id: "assistant-item-2",
+		response_id: "response-2",
+	})));
+	session._handleOpenAIMessage(Buffer.from(JSON.stringify({
 		type: "response.done",
 		response: { id: "response-2" },
 	})));
@@ -645,8 +737,109 @@ test("modern realtime output delta events are normalized for the client", () => 
 			responseId: "response-2",
 		},
 		{
+			type: "audio_transcript_done",
+			transcript: "Hello there",
+			itemId: "assistant-item-2",
+			responseId: "response-2",
+		},
+		{
 			type: "response_done",
 			responseId: "response-2",
+		},
+	]);
+});
+
+test("content part transcript completion forwards audio transcript text", () => {
+	const { session, clientMessages } = createReadySession();
+
+	sendOpenAIEvent(session, {
+		type: "response.content_part.done",
+		response_id: "response-3",
+		item_id: "assistant-item-3",
+		part: {
+			type: "audio",
+			transcript: "Done, I updated the prompt.",
+		},
+	});
+
+	assert.deepEqual(clientMessages, [
+		{
+			type: "audio_transcript_done",
+			transcript: "Done, I updated the prompt.",
+			itemId: "assistant-item-3",
+			responseId: "response-3",
+		},
+	]);
+});
+
+test("response done forwards embedded audio transcript fallback", () => {
+	const { session, clientMessages } = createReadySession();
+
+	sendOpenAIEvent(session, {
+		type: "response.done",
+		response: {
+			id: "response-4",
+			output: [
+				{
+					id: "assistant-item-4",
+					type: "message",
+					content: [
+						{
+							type: "audio",
+							transcript: "I can see the text panel now.",
+						},
+					],
+				},
+			],
+		},
+	});
+
+	assert.deepEqual(clientMessages, [
+		{
+			type: "audio_transcript_done",
+			transcript: "I can see the text panel now.",
+			itemId: "assistant-item-4",
+			responseId: "response-4",
+		},
+		{
+			type: "response_done",
+			responseId: "response-4",
+		},
+	]);
+});
+
+test("response done forwards embedded output text fallback", () => {
+	const { session, clientMessages } = createReadySession();
+
+	sendOpenAIEvent(session, {
+		type: "response.done",
+		response: {
+			id: "response-5",
+			output: [
+				{
+					id: "assistant-item-5",
+					type: "message",
+					content: [
+						{
+							type: "output_text",
+							text: "Typing is visible in the panel.",
+						},
+					],
+				},
+			],
+		},
+	});
+
+	assert.deepEqual(clientMessages, [
+		{
+			type: "audio_transcript_done",
+			transcript: "Typing is visible in the panel.",
+			itemId: "assistant-item-5",
+			responseId: "response-5",
+		},
+		{
+			type: "response_done",
+			responseId: "response-5",
 		},
 	]);
 });

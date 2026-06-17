@@ -26,20 +26,7 @@ export interface ClickyExchange {
 	content: string;
 }
 
-export interface ClickyScreenshotDimensions {
-	width: number;
-	height: number;
-}
-
 export interface UseClickyOptions {
-	/** Called when Clicky wants to send a message (screenshot + transcript) to the LLM. */
-	onSendMessage?: (payload: {
-		transcript: string;
-		screenshotBase64: string;
-		screenshotWidth: number;
-		screenshotHeight: number;
-		history: ReadonlyArray<ClickyExchange>;
-	}) => void;
 	/** Called when Clicky state changes. */
 	onStateChange?: (state: ClickyState) => void;
 }
@@ -70,10 +57,6 @@ export interface UseClickyResult {
 	addExchange: (exchange: ClickyExchange) => void;
 	/** Clear history. */
 	clearHistory: () => void;
-	/** Screenshot dimensions from the last capture (for coordinate scaling). */
-	screenshotDimensions: ClickyScreenshotDimensions | null;
-	/** Store screenshot dimensions after capture. */
-	setScreenshotDimensions: (dims: ClickyScreenshotDimensions) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -93,7 +76,6 @@ export function useClicky({
 	const [pointTarget, setPointTarget] = useState<ClickyPointTarget | null>(null);
 	const [responseText, setResponseText] = useState<string | null>(null);
 	const [history, setHistory] = useState<ClickyExchange[]>([]);
-	const [screenshotDimensions, setScreenshotDimensionsState] = useState<ClickyScreenshotDimensions | null>(null);
 
 	const stateRef = useRef(state);
 	useEffect(() => {
@@ -105,16 +87,18 @@ export function useClicky({
 		onStateChangeRef.current = onStateChange;
 	}, [onStateChange]);
 
-	// Transition helper — validates transition and updates state
+	// Transition helper — validates transition and updates state/ref together.
 	const transition = useCallback((nextState: ClickyState) => {
-		setState((prev) => {
-			// "off" can only transition to "idle" (via activate)
-			// "any" can transition to "off" (via deactivate)
-			if (prev === "off" && nextState !== "idle" && nextState !== "off") {
-				return prev;
-			}
-			return nextState;
-		});
+		const currentState = stateRef.current;
+		// "off" can only transition to "idle" (via activate)
+		// "any" can transition to "off" (via deactivate)
+		if (currentState === "off" && nextState !== "idle" && nextState !== "off") {
+			return false;
+		}
+
+		stateRef.current = nextState;
+		setState(nextState);
+		return true;
 	}, []);
 
 	// Notify on state changes
@@ -132,7 +116,6 @@ export function useClicky({
 		setPointTarget(null);
 		setResponseText(null);
 		setHistory([]);
-		setScreenshotDimensionsState(null);
 		transition("off");
 	}, [transition]);
 
@@ -157,14 +140,18 @@ export function useClicky({
 	}, [transition]);
 
 	const startSpeaking = useCallback((text: string) => {
-		if (stateRef.current === "processing") {
-			setResponseText(text);
+		if (stateRef.current === "off") {
+			return;
+		}
+
+		setResponseText(text);
+		if (stateRef.current !== "pointing") {
 			transition("speaking");
 		}
 	}, [transition]);
 
 	const startPointing = useCallback((target: ClickyPointTarget, text: string) => {
-		if (stateRef.current === "processing") {
+		if (stateRef.current !== "off") {
 			setPointTarget(target);
 			setResponseText(text);
 			transition("pointing");
@@ -181,6 +168,9 @@ export function useClicky({
 
 	const addExchange = useCallback((exchange: ClickyExchange) => {
 		setHistory((prev) => {
+			if (stateRef.current === "off") {
+				return prev;
+			}
 			const next = [...prev, exchange];
 			if (next.length > MAX_HISTORY_LENGTH) {
 				return next.slice(next.length - MAX_HISTORY_LENGTH);
@@ -191,10 +181,6 @@ export function useClicky({
 
 	const clearHistory = useCallback(() => {
 		setHistory([]);
-	}, []);
-
-	const setScreenshotDimensions = useCallback((dims: ClickyScreenshotDimensions) => {
-		setScreenshotDimensionsState(dims);
 	}, []);
 
 	// Clean up on unmount
@@ -221,7 +207,5 @@ export function useClicky({
 		history,
 		addExchange,
 		clearHistory,
-		screenshotDimensions,
-		setScreenshotDimensions,
 	};
 }

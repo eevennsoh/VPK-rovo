@@ -59,6 +59,10 @@ const INCLUDED_TEST_FILES = new Set([
 	// Studio-only automation-discovery demo: custom ArtifactList widget and TWG
 	// trace wiring live under components/, so gate this focused source coverage.
 	"components/projects/studio/components/rovo-app-automation-discovery-widget.test.js",
+	// Clicky live-voice transcript streaming is shared by /studio and /rovo but
+	// implemented in route shells/hooks; keep this focused source contract gated
+	// without enabling broad drift-prone component source tests.
+	"components/projects/studio/lib/clicky-voice-streaming-source.test.js",
 	// Shared automation flow cover used by trigger config and the test landing
 	// page, so both surfaces keep the same trigger → agent visual treatment.
 	"components/blocks/triggers/components/agent-automation-flow-cover.test.js",

@@ -1,6 +1,7 @@
 import type { RovoDataParts, RovoUIMessage } from "@/lib/rovo-ui-messages";
 import type { DelegationRequest } from "@/components/projects/studio/hooks/use-realtime-voice";
 import type {
+	StudioScreenAssistantRegion,
 	StudioScreenAssistantSnapshot,
 	StudioScreenAssistantTarget,
 } from "@/components/projects/studio/lib/studio-screen-assistant";
@@ -80,4 +81,9 @@ export interface ScreenAssistantProps extends UseScreenAssistantOptions {
 	className?: string;
 }
 
-export type { StudioScreenAssistantSnapshot, StudioScreenAssistantTarget, DelegationRequest };
+export type {
+	StudioScreenAssistantRegion,
+	StudioScreenAssistantSnapshot,
+	StudioScreenAssistantTarget,
+	DelegationRequest,
+};

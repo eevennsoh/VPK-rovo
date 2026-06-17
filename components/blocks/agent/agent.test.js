@@ -93,6 +93,9 @@ test("Agent profile cover exposes a grouped avatar picker when profile avatar ed
 	assert.match(AGENT_SOURCE, /const AGENT_AVATAR_OPTION_SRC_SET = new Set<string>\(AGENT_AVATAR_OPTION_SRCS\);/u);
 	assert.match(AGENT_SOURCE, /function AgentAvatarPickerMenu/u);
 	assert.match(AGENT_SOURCE, /aria-label="Change agent avatar"/u);
+	assert.match(AGENT_SOURCE, /data-agent-field=\{avatarTargetId \? "avatar" : undefined\}/u);
+	assert.match(AGENT_SOURCE, /data-screen-assistant-target=\{avatarTargetId\}/u);
+	assert.match(AGENT_SOURCE, /return `\$\{screenAssistantTargetPrefix\}:avatar:\$\{groupId\}:\$\{optionId\}`;/u);
 	assert.match(AGENT_SOURCE, /data-agent-avatar-edit-cue/u);
 	assert.match(AGENT_SOURCE, /\{!open \? \(/u);
 	assert.doesNotMatch(AGENT_SOURCE, /open && "\[&_\[data-agent-avatar-edit-cue\]\]:opacity-100"/u);
@@ -105,6 +108,7 @@ test("Agent profile cover exposes a grouped avatar picker when profile avatar ed
 	assert.match(AGENT_SOURCE, /AGENT_AVATAR_OPTION_GROUPS\.map\(\(group\) =>/u);
 	assert.doesNotMatch(AGENT_SOURCE, /<DropdownMenuSeparator className="mx-1 my-2" \/>/u);
 	assert.match(AGENT_SOURCE, /<DropdownMenuRadioItem[\s\S]*aria-label=\{`Use \$\{option\.label\} avatar`\}[\s\S]*value=\{option\.src\}/u);
+	assert.match(AGENT_SOURCE, /data-screen-assistant-target=\{getAgentAvatarOptionTargetId\(screenAssistantTargetPrefix, group\.id, option\.src\)\}/u);
 	assert.match(AGENT_SOURCE, /function AgentAvatarOptionPreview/u);
 	assert.doesNotMatch(AGENT_SOURCE, /group-data-\[highlighted\]\/avatar-option:stroke-border/u);
 	assert.doesNotMatch(AGENT_SOURCE, /stroke-border-selected/u);
@@ -116,7 +120,7 @@ test("Agent profile cover exposes a grouped avatar picker when profile avatar ed
 	assert.match(AGENT_SOURCE, /data-checked:active:bg-bg-selected-pressed/u);
 	assert.match(AGENT_SOURCE, /onAvatarChange\?: \(avatarSrc: string\) => void;/u);
 	assert.match(AGENT_SOURCE, /onProfileAvatarChange\?: \(avatarSrc: string\) => void;/u);
-	assert.match(AGENT_SOURCE, /<AgentProfileCover avatarSrc=\{avatarSrc\} onAvatarChange=\{onAvatarChange\} \/>/u);
+	assert.match(AGENT_SOURCE, /<AgentProfileCover avatarSrc=\{avatarSrc\} onAvatarChange=\{onAvatarChange\} screenAssistantTargetPrefix=\{screenAssistantTargetPrefix\} \/>/u);
 	assert.match(AGENT_SOURCE, /onAvatarChange=\{onProfileAvatarChange\}/u);
 
 	const avatarAssetSrcs = listAgentAvatarAssetSrcs();
@@ -389,10 +393,10 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	assert.match(SKILL_TAG_SOURCE, /removeVariant = "inline"/u);
 	assert.match(SKILL_TAG_SOURCE, /isOverlayRemove/u);
 	assert.match(SKILL_TAG_SOURCE, /group\/skill-tag relative inline-flex/u);
-	assert.match(SKILL_TAG_SOURCE, /className=\{cn\([\s\S]*"relative z-\[1\] min-w-0 skew-x-12 truncate whitespace-nowrap"[\s\S]*isOverlayRemove && "group-hover\/skill-tag:\[mask-image:linear-gradient\(to_right,#000_calc\(100%-3rem\),transparent\)\]/u);
+	assert.match(SKILL_TAG_SOURCE, /className=\{cn\([\s\S]*"relative z-\[1\] min-w-0 skew-x-12 truncate whitespace-nowrap"[\s\S]*hasOverlayReveal && "group-hover\/skill-tag:\[mask-image:linear-gradient\(to_right,#000_calc\(100%-3rem\),transparent\)\]/u);
 	assert.doesNotMatch(SKILL_TAG_SOURCE, /SKILL_TAG_OVERLAY_LABEL_MASK_STYLE/u);
-	assert.match(SKILL_TAG_SOURCE, /className="pointer-events-none absolute inset-y-0 end-0 z-\[2\] w-12[\s\S]*from-bg-neutral from-55% to-transparent[\s\S]*data-slot="skill-tag-remove-overlay-scrim"/u);
-	assert.match(SKILL_TAG_SOURCE, /absolute end-1 top-1\/2 z-\[3\][\s\S]*data-slot="skill-tag-remove"/u);
+	assert.match(SKILL_TAG_SOURCE, /className="pointer-events-none absolute inset-y-0 end-0 z-\[2\] w-12[\s\S]*from-bg-neutral from-55% to-transparent[\s\S]*data-slot="skill-tag-overlay-scrim"/u);
+	assert.match(SKILL_TAG_SOURCE, /absolute end-1 top-1\/2 z-\[3\][\s\S]*data-slot=\{overlayControl\.slot\}/u);
 	assert.match(SKILL_TAG_SOURCE, /opacity-0[\s\S]*group-hover\/skill-tag:opacity-100/u);
 	assert.match(UI_CUSTOM_DETAILS_SOURCE, /name: "removeVariant"[\s\S]*type: '"inline" \| "overlay"'/u);
 	assert.match(UI_CUSTOM_DETAILS_SOURCE, /demoSlug: "skill-tag-demo-removable"/u);
@@ -980,7 +984,7 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /visualSrc/u);
 	assert.match(RICH_TEXT_EXTENSIONS_SOURCE, /data-type": "mention"/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ HoverCard, HoverCardTrigger \} from "@\/components\/ui\/hover-card";/u);
-	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ Tag \} from "@\/components\/ui\/tag";/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ Tag, type TagOverlayAction \} from "@\/components\/ui\/tag";/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ SkillTag, type SkillTagColor \} from "@\/components\/ui-custom\/skill-tag";/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ DEFAULT_SKILLS, getSkillCollectionId, getSkillIcon \} from "@\/app\/data\/directory\/skills";/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /getRichTextReferencePreview,[\s\S]*RichTextReferencePreviewContent/u);
@@ -988,7 +992,7 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const preview = isReferenceCategory\(category\) \? getRichTextReferencePreview\(category, label\) : undefined;/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /function getSkillMentionTagProps\(label: string\): \{ color: SkillTagColor; icon: ReactNode \}/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const skillTagProps = category === "skill" \? getSkillMentionTagProps\(label\) : undefined;/u);
-	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const tag = skillTagProps \? \([\s\S]*<SkillTag className="rich-text-mention-chip mx-0\.5" color=\{skillTagProps\.color\} icon=\{skillTagProps\.icon\}>[\s\S]*\{label\}[\s\S]*<\/SkillTag>[\s\S]*\) : \([\s\S]*<Tag[\s\S]*className="rich-text-mention-chip"[\s\S]*elemBefore=\{visual \? \(/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const tag = skillTagProps \? \([\s\S]*<SkillTag[\s\S]*className="rich-text-mention-chip mx-0\.5"[\s\S]*color=\{skillTagProps\.color\}[\s\S]*icon=\{skillTagProps\.icon\}[\s\S]*overlayAction=\{overlayAction\}[\s\S]*\{label\}[\s\S]*<\/SkillTag>[\s\S]*\) : \([\s\S]*<Tag[\s\S]*className="rich-text-mention-chip"[\s\S]*elemBefore=\{visual \? \(/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /<NodeViewWrapper[\s\S]*as="span"[\s\S]*className="rich-text-mention-node inline-flex"/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /\{preview \? \([\s\S]*<HoverCard>[\s\S]*<HoverCardTrigger closeDelay=\{80\} delay=\{120\} render=\{<span className="rich-text-mention-trigger-wrapper inline-flex max-w-full" \/>\}>[\s\S]*\{tag\}[\s\S]*<\/HoverCardTrigger>[\s\S]*<RichTextReferencePreviewContent preview=\{preview\} \/>[\s\S]*<\/HoverCard>[\s\S]*\) : tag\}/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /type=\{getRichTextMentionTagType\(visual\)\}/u);

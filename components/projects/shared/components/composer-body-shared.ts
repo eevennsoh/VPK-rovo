@@ -31,6 +31,7 @@ export interface ComposerBodyBaseProps {
 	prefillRequestKey: number;
 	realtimeVoiceActive: boolean;
 	realtimeVoiceState: "idle" | "connecting" | "listening" | "speaking";
+	screenAssistantTargetPrefix?: string;
 	showBackgroundStop: boolean;
 	submitDisabled: boolean;
 	textValue: string;

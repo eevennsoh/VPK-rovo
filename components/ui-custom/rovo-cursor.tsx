@@ -5,10 +5,11 @@
 import { memo } from "react";
 
 import MicrophoneIcon from "@atlaskit/icon/core/microphone";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
+import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -16,13 +17,13 @@ import { cn } from "@/lib/utils";
 // ---------------------------------------------------------------------------
 
 /**
- * Rovo brand color wheel as a conic gradient — the exact stops from Figma
- * (saffron → lime → blue → purple, starting at 90°). Painted through SVG masks
- * to produce the rainbow stroke around the cursor arrow and the rainbow ring
- * around the typing badge.
+ * Rovo brand color wheel as a conic gradient — mapped to ADS accent tokens
+ * (orange → lime → blue → purple, starting at 90°). Painted through SVG masks
+ * to produce the cursor accent stroke and the rainbow ring around the typing
+ * badge.
  */
 const ROVO_CONIC =
-	"conic-gradient(from 90deg, #FCA700 0deg, #FCA700 72.69deg, #6A9A23 72.73deg, #6A9A23 167.9deg, #1868DB 167.93deg, #1868DB 252.67deg, #AF59E1 252.7deg, #AF59E1 360deg)";
+	`conic-gradient(from 90deg, ${token("color.icon.accent.orange")} 0deg, ${token("color.icon.accent.orange")} 72.69deg, ${token("color.icon.accent.lime")} 72.73deg, ${token("color.icon.accent.lime")} 167.9deg, ${token("color.icon.accent.blue")} 167.93deg, ${token("color.icon.accent.blue")} 252.67deg, ${token("color.icon.accent.purple")} 252.7deg, ${token("color.icon.accent.purple")} 360deg)`;
 
 /** Pointer-arrow glyph (Figma viewBox 14.7568², centroid-weighted teardrop). */
 const ARROW_PATH =
@@ -56,6 +57,12 @@ const KEYFRAMES = `
 @keyframes rovo-cursor-spin { to { transform: rotate(360deg); } }
 `;
 
+const CURSOR_MODE_INITIAL = { opacity: 0, scale: 0.82, rotate: -10 } as const;
+const CURSOR_MODE_ANIMATE = { opacity: 1, scale: 1, rotate: 0 } as const;
+const CURSOR_MODE_EXIT = { opacity: 0, scale: 1.12, rotate: 8 } as const;
+const CURSOR_MODE_TRANSITION = { type: "spring", bounce: 0.16, visualDuration: 0.24 } as const;
+const CURSOR_MODE_REDUCED_TRANSITION = { duration: 0 } as const;
+
 /** Build a CSS `mask-image` value from an SVG path so a gradient can be clipped to its shape. */
 function maskOf(path: string, w: number, h: number) {
 	const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'><path d='${path}' fill='%23000'/></svg>`;
@@ -65,8 +72,7 @@ function maskOf(path: string, w: number, h: number) {
 /**
  * Build a CSS `mask-image` whose visible region is the SVG path *dilated* by a
  * stroke — i.e. the arrow's body plus a halo wide enough to host the rainbow
- * stroke. Stacked behind the charcoal-body mask, only the dilation ring shows
- * through, producing a crisp gradient outline around the arrow.
+ * bloom behind the full-shape gradient fill.
  *
  * The `pad` parameter expands the SVG `viewBox` on every side so the stroke
  * can render fully without being clipped by the viewBox edge. The caller is
@@ -81,11 +87,13 @@ function maskOfStroke(path: string, w: number, h: number, strokeWidth: number, p
 
 const ARROW_VIEWBOX = 14.7568;
 const ARROW_MASK = maskOf(ARROW_PATH, ARROW_VIEWBOX, ARROW_VIEWBOX);
-/** Rainbow outline width around the pointer arrow, in viewBox units. */
-const ARROW_STROKE_WIDTH = 2;
+/** Visible rainbow halo outset around the pointer arrow at the default 16px size. */
+const ARROW_STROKE_OUTSET_PX = 2;
+/** SVG stroke width is doubled so the halo expands around the arrow body. */
+const ARROW_STROKE_WIDTH = ARROW_STROKE_OUTSET_PX * 2 * (ARROW_VIEWBOX / 16);
 /** Padding (in viewBox units) added around the stroke mask so the dilated arrow
- * isn't clipped by the SVG viewBox; ½ stroke width plus a comfortable margin. */
-const ARROW_STROKE_PAD = 1;
+ * isn't clipped by the SVG viewBox; ½ stroke width equals the visible outset. */
+const ARROW_STROKE_PAD = ARROW_STROKE_WIDTH / 2;
 const ARROW_STROKE_MASK = maskOfStroke(
 	ARROW_PATH,
 	ARROW_VIEWBOX,
@@ -116,7 +124,7 @@ function maskStyle(image: string) {
 // Types
 // ---------------------------------------------------------------------------
 
-export type RovoCursorState = "cursor" | "typing" | "telepointer" | "loading" | "speaking";
+export type RovoCursorState = "cursor" | "painting" | "typing" | "telepointer" | "loading" | "speaking";
 
 export interface RovoCursorProps {
 	/** Which state to render. @default "cursor" */
@@ -127,10 +135,10 @@ export interface RovoCursorProps {
 	 */
 	size?: number;
 	/**
-	 * Animate the rainbow on the `cursor` arrow and `typing` ring (rotating
-	 * conic gradient). The loading spinner and speaking equalizer always animate
-	 * regardless of this flag, and motion is suppressed under
-	 * `prefers-reduced-motion`. @default true
+	 * Animate the cursor↔painting mode swap plus the rainbow on the `cursor`
+	 * accent, `painting` fill, `typing` ring, and `telepointer` pill. The
+	 * loading spinner and speaking equalizer always animate regardless of this
+	 * flag, and motion is suppressed under `prefers-reduced-motion`. @default true
 	 */
 	animated?: boolean;
 	/**
@@ -148,13 +156,15 @@ export interface RovoCursorProps {
 
 /**
  * RovoCursor — an inline agent-presence indicator that swaps glyph per state:
- * a charcoal pointer wrapped in a Rovo-gradient stroke (`cursor`), a
- * rainbow-ringed microphone badge (`typing`), a
- * blue text-insertion caret with a rainbow-bordered "Rovo" name pill
+ * a neutral pointer with a Rovo-gradient accent stroke (`cursor`), a full
+ * rainbow pointer for active region painting (`painting`), a rainbow-ringed
+ * microphone badge (`typing`), a blue text-insertion caret with a
+ * rainbow-bordered "Rovo" name pill
  * (`telepointer`), a rainbow indeterminate spinner (`loading`), and a 4-bar
- * brand equalizer (`speaking`). The rainbow on `cursor`, `typing`, and
- * `telepointer` can rotate (`animated`) or sit static. Motion is pure CSS and
- * honors `prefers-reduced-motion`.
+ * brand equalizer (`speaking`). The accent on `cursor`, `painting`,
+ * `typing`, and `telepointer` can rotate (`animated`) or sit static, and the
+ * cursor↔painting swap uses a small Motion transition. Motion honors
+ * `prefers-reduced-motion`.
  */
 export const RovoCursor = memo(
 	({
@@ -169,6 +179,7 @@ export const RovoCursor = memo(
 			? ({ role: "img", "aria-label": label } as const)
 			: ({ "aria-hidden": true } as const);
 		const scale = size / 16;
+		const cursorModeState = state === "cursor" || state === "painting" ? state : null;
 
 		return (
 			<>
@@ -179,7 +190,7 @@ export const RovoCursor = memo(
 					className={cn("inline-flex shrink-0 items-center justify-center", className)}
 					{...a11y}
 				>
-					{state === "cursor" ? <Cursor scale={scale} animated={animated} /> : null}
+					{cursorModeState ? <CursorMode state={cursorModeState} scale={scale} animated={animated} /> : null}
 					{state === "typing" ? <Typing scale={scale} animated={animated} /> : null}
 					{state === "telepointer" ? <Telepointer scale={scale} animated={animated} /> : null}
 					{state === "loading" ? <Loading scale={scale} /> : null}
@@ -196,11 +207,58 @@ RovoCursor.displayName = "RovoCursor";
 // State glyphs
 // ---------------------------------------------------------------------------
 
+function CursorMode({
+	state,
+	scale,
+	animated,
+}: Readonly<{ state: "cursor" | "painting"; scale: number; animated: boolean }>) {
+	const reducedMotion = useReducedMotion();
+	const shouldAnimateMode = animated && !reducedMotion;
+	const s = 16 * scale;
+
+	return (
+		<span
+			style={{
+				position: "relative",
+				display: "block",
+				width: s,
+				height: s,
+				overflow: "visible",
+			}}
+		>
+			<AnimatePresence initial={false} mode="popLayout">
+				<motion.span
+					key={state}
+					aria-hidden
+					data-rovo-cursor-mode-transition
+					initial={shouldAnimateMode ? CURSOR_MODE_INITIAL : CURSOR_MODE_ANIMATE}
+					animate={CURSOR_MODE_ANIMATE}
+					exit={shouldAnimateMode ? CURSOR_MODE_EXIT : CURSOR_MODE_ANIMATE}
+					transition={shouldAnimateMode ? CURSOR_MODE_TRANSITION : CURSOR_MODE_REDUCED_TRANSITION}
+					style={{
+						position: "absolute",
+						inset: 0,
+						display: "block",
+						transformOrigin: "30% 30%",
+						willChange: shouldAnimateMode ? "transform, opacity" : undefined,
+					}}
+				>
+					{state === "painting" ? (
+						<PaintingCursor scale={scale} animated={animated} />
+					) : (
+						<Cursor scale={scale} animated={animated} />
+					)}
+				</motion.span>
+			</AnimatePresence>
+		</span>
+	);
+}
+
 /**
- * Pointer arrow (16×16 at scale 1): charcoal body (`color.icon`) wrapped in a
- * Rovo-brand conic-gradient stroke. The stroke layer uses a dilated SVG mask,
- * the body uses the original mask, and stacking the two leaves a crisp rainbow
- * ring around the arrow.
+ * Pointer arrow (16×16 at scale 1): neutral body (`color.icon`) with a
+ * Rovo-brand conic-gradient accent stroke. The stroke layer uses a dilated SVG
+ * mask, the body uses the original mask, and stacking the two keeps the default
+ * pointer legible instead of turning the full cursor rainbow.
  */
 function Cursor({ scale, animated }: Readonly<{ scale: number; animated: boolean }>) {
 	const s = 16 * scale;
@@ -222,11 +280,10 @@ function Cursor({ scale, animated }: Readonly<{ scale: number; animated: boolean
 				overflow: "visible",
 			}}
 		>
-			{/* Rainbow stroke layer — the dilated mask sits in a span larger than
-			    the wrapper; a still-larger inner span carries the conic gradient
-			    and rotates so the rainbow sweeps around the arrow. */}
+			{/* Thin Rovo accent stroke — the neutral body below covers the center. */}
 			<span
 				aria-hidden
+				data-rovo-cursor-rainbow-stroke
 				style={{
 					position: "absolute",
 					top: strokeOffset,
@@ -247,7 +304,45 @@ function Cursor({ scale, animated }: Readonly<{ scale: number; animated: boolean
 					}}
 				/>
 			</span>
-			<span className="bg-icon" style={{ position: "absolute", inset: 0, ...bodyMask }} />
+			<span aria-hidden className="bg-icon" data-rovo-cursor-body style={{ position: "absolute", inset: 0, ...bodyMask }} />
+		</span>
+	);
+}
+
+/**
+ * Active region-painting pointer: the same arrow geometry as the default
+ * cursor, but restored to the full Rovo gradient fill so painting mode reads as
+ * a deliberate capability switch without affecting idle hover.
+ */
+function PaintingCursor({ scale, animated }: Readonly<{ scale: number; animated: boolean }>) {
+	const s = 16 * scale;
+	const fillMask = maskStyle(ARROW_MASK);
+	const gradientClassName = animated ? "motion-reduce:[animation:none]" : undefined;
+	const gradientStyle = {
+		position: "absolute",
+		inset: "-50%",
+		background: ROVO_CONIC,
+		animation: animated ? "rovo-cursor-spin 2.4s linear infinite" : undefined,
+		willChange: animated ? "transform" : undefined,
+	} as const;
+
+	return (
+		<span
+			style={{
+				position: "relative",
+				display: "block",
+				width: s,
+				height: s,
+				overflow: "visible",
+			}}
+		>
+			<span
+				aria-hidden
+				data-rovo-cursor-rainbow-fill
+				style={{ position: "absolute", inset: 0, ...fillMask }}
+			>
+				<span className={gradientClassName} style={gradientStyle} />
+			</span>
 		</span>
 	);
 }
@@ -404,10 +499,9 @@ function Loading({ scale }: Readonly<{ scale: number }>) {
  * the demo flipped to `state="speaking"` — and then loops through the
  * easing-based equalizer oscillation. We animate `height` directly (rather
  * than `scaleY`) so the min height can be floored at `barWidth`, guaranteeing
- * every bar always renders at least as tall as it is wide: with
- * `borderRadius: barWidth / 2`, that means a uniform pill cap on every bar at
- * every animation phase. Under `prefers-reduced-motion` the bars settle to a
- * steady mid-height with no loop.
+ * every bar always renders at least as tall as it is wide. The bars keep hard
+ * corners in every animation phase. Under `prefers-reduced-motion` the bars
+ * settle to a steady mid-height with no loop.
  */
 function Speaking({ scale }: Readonly<{ scale: number }>) {
 	const reduced = useReducedMotion();
@@ -428,7 +522,6 @@ function Speaking({ scale }: Readonly<{ scale: number }>) {
 						key={bar.color}
 						style={{
 							width: barWidth,
-							borderRadius: barWidth / 2,
 							backgroundColor: bar.color,
 						}}
 						initial={{ height: 0 }}

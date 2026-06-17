@@ -6,7 +6,7 @@
 
 import { cloneElement, useCallback, useEffect, useRef, useState, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
 import type { ChatStatus } from "ai";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import CustomizeMenu from "@/components/blocks/shared-ui/customize-menu";
 import { REASONING_OPTIONS } from "@/components/blocks/shared-ui/data/customize-menu-data";
 import {
@@ -14,7 +14,6 @@ import {
 	PromptInputButton,
 	PromptInputSubmit,
 } from "@/components/ui-custom/prompt-input";
-import { RovoCursor } from "@/components/ui-custom/rovo-cursor";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LiveWaveform } from "@/components/ui-audio/live-waveform";
@@ -32,6 +31,17 @@ const ROVO_COMPOSER_WAVEFORM_INTRO_MS = 500;
 const EXPERIMENTAL_DARK_CTA_CLASS_NAME = "bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
 const LIVE_VOICE_CTA_CLASS_NAME = "bg-bg-neutral-bold text-text-inverse hover:bg-bg-neutral-bold-hovered active:bg-bg-neutral-bold-pressed";
 const ACTION_FRAME_CLASS_NAME = "flex h-9 shrink-0 items-center justify-center";
+const ROVO_CURSOR_BUTTON_TRANSITION = { type: "spring", bounce: 0.18, visualDuration: 0.22 } as const;
+const ROVO_CURSOR_BUTTON_VARIANTS = {
+	rest: { transform: "scale(1)" },
+	hover: { transform: "scale(1.06)" },
+	tap: { transform: "scale(0.96)" },
+} as const;
+const ROVO_CURSOR_BUTTON_REDUCED_VARIANTS = {
+	rest: { transform: "scale(1)" },
+	hover: { transform: "scale(1)" },
+	tap: { transform: "scale(1)" },
+} as const;
 
 export type RovoComposerDictationState = "idle" | "recording" | "processing";
 
@@ -200,6 +210,7 @@ export function RovoComposerActionButton({
 	voiceStartButtonClassName,
 }: Readonly<RovoComposerActionButtonProps>): ReactElement {
 	const realtimeWaveformIntroTimeoutRef = useRef<number | null>(null);
+	const shouldReduceMotion = useReducedMotion();
 	const [isRealtimeWaveformIntroActive, setIsRealtimeWaveformIntroActive] = useState(false);
 	const [isDictationOptimisticActive, setIsDictationOptimisticActive] = useState(false);
 	const resolvedComposerBusy = isComposerBusy ?? (composerStatus === "submitted" || composerStatus === "streaming");
@@ -326,7 +337,12 @@ export function RovoComposerActionButton({
 						transition={{ type: "spring", bounce: 0, visualDuration: 0.15 }}
 						style={{ willChange: "transform, opacity" }}
 					>
-						<div className={cn("relative flex h-9 w-[68px] items-center justify-center overflow-hidden rounded-[8px]", clickyActive ? "text-text-inverse" : undefined)}>
+						<div
+							className={cn(
+								"relative flex h-9 w-[68px] items-center justify-center overflow-hidden rounded-[8px]",
+								clickyActive ? "text-text-inverse" : undefined,
+							)}
+						>
 							<span aria-hidden="true" className="absolute inset-0 rounded-[8px] bg-bg-neutral" />
 							<span
 								aria-hidden="true"
@@ -336,9 +352,10 @@ export function RovoComposerActionButton({
 								)}
 							/>
 							<div className="relative z-10 flex h-8 w-16 items-center gap-0">
-								<button
+								<motion.button
 									aria-label="Rovo cursor"
 									aria-pressed={clickyActive}
+									animate="rest"
 									className={cn(
 										"group/rovo-cursor-button flex size-8 shrink-0 items-center justify-center rounded-md border border-transparent p-0 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
 										clickyActive
@@ -346,22 +363,21 @@ export function RovoComposerActionButton({
 											: "text-icon-subtle",
 									)}
 									data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:cursor` : undefined}
+									initial="rest"
 									onClick={onToggleClicky}
+									style={{ willChange: shouldReduceMotion ? undefined : "transform" }}
+									transition={ROVO_CURSOR_BUTTON_TRANSITION}
 									type="button"
+									variants={shouldReduceMotion ? ROVO_CURSOR_BUTTON_REDUCED_VARIANTS : ROVO_CURSOR_BUTTON_VARIANTS}
+									whileHover="hover"
+									whileTap="tap"
 								>
 									{clickyActive ? (
 										<RovoCursorTrackingIcon active />
 									) : (
-										<span className="relative inline-flex size-4 items-center justify-center">
-											<span className="absolute inset-0 inline-flex items-center justify-center opacity-100 transition-opacity duration-fast ease-out group-hover/rovo-cursor-button:opacity-0 group-focus-visible/rovo-cursor-button:opacity-0">
-												<RovoCursorTrackingIcon active={false} />
-											</span>
-											<span className="absolute inset-0 inline-flex items-center justify-center opacity-0 transition-opacity duration-fast ease-out group-hover/rovo-cursor-button:opacity-100 group-focus-visible/rovo-cursor-button:opacity-100">
-												<RovoCursor state="cursor" size={16} />
-											</span>
-										</span>
+										<RovoCursorTrackingIcon active={false} />
 									)}
-								</button>
+								</motion.button>
 								<button
 									aria-label="Stop live voice"
 									className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md p-0 text-text-inverse outline-none transition-colors hover:bg-bg-neutral-bold-hovered focus-visible:ring-3 focus-visible:ring-ring/50 active:bg-bg-neutral-bold-pressed"
