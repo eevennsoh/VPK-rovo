@@ -1,7 +1,8 @@
 "use client";
 
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import ToolsIcon from "@atlaskit/icon/core/tools";
 
 import type { FrontmatterEntries, FrontmatterValue } from "@/app/data/directory/skill-frontmatter";
@@ -17,6 +18,7 @@ import {
 	RichTextMentionVisualMark,
 } from "./mention-visual";
 import type { RichTextMentionVisual, RichTextReferenceCategory } from "./types";
+import { FrontmatterPortalContext } from "./frontmatter-portal";
 
 const READONLY_KEYS = new Set(["name"]);
 
@@ -136,6 +138,7 @@ function FrontmatterScalarRow({
 export function FrontmatterNodeView({ node, updateAttributes, editor }: ReactNodeViewProps) {
 	const entries = asEntries(node.attrs.entries);
 	const editable = editor.isEditable;
+	const portalEl = use(FrontmatterPortalContext);
 
 	function setEntryValue(key: string, value: FrontmatterValue) {
 		updateAttributes({
@@ -154,12 +157,10 @@ export function FrontmatterNodeView({ node, updateAttributes, editor }: ReactNod
 		);
 	}
 
-	return (
-		<NodeViewWrapper
-			as="div"
-			contentEditable={false}
+	const card = (
+		<div
 			data-frontmatter-card=""
-			className="mb-3 overflow-hidden rounded-2xl border border-border"
+			className="mb-4 overflow-hidden rounded-2xl border border-border"
 		>
 			<dl className="grid grid-cols-[max-content_minmax(0,1fr)] items-start gap-x-6 gap-y-2 p-4 text-xs leading-4">
 				{entries.map((entry) => (
@@ -238,6 +239,21 @@ export function FrontmatterNodeView({ node, updateAttributes, editor }: ReactNod
 					</div>
 				))}
 			</dl>
+		</div>
+	);
+
+	// With a portal target (skill config renders one above the toolbar), render
+	// the card there and keep the node in the document via a hidden placeholder,
+	// so selection and the markdown round-trip are unaffected. Otherwise render
+	// the card inline as the editor's first node.
+	return (
+		<NodeViewWrapper
+			as="div"
+			contentEditable={false}
+			className={portalEl ? "hidden" : undefined}
+			aria-hidden={portalEl ? true : undefined}
+		>
+			{portalEl ? createPortal(card, portalEl) : card}
 		</NodeViewWrapper>
 	);
 }
