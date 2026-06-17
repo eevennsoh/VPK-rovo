@@ -8,6 +8,7 @@ const PHASE_KEYWORDS = [
 ];
 
 const JOIN_KEYWORDS = new Set(["launch", "deploy", "release", "announce", "ship", "publish"]);
+const PHASE_WORDS = new Set(PHASE_KEYWORDS.flat());
 
 const STOP_WORDS = new Set([
 	"a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
@@ -41,8 +42,7 @@ function classifyPhase(words) {
 }
 
 function extractSubjectWords(words) {
-	const allPhaseWords = new Set(PHASE_KEYWORDS.flat());
-	return words.filter((word) => !allPhaseWords.has(word) && !STOP_WORDS.has(word));
+	return words.filter((word) => !PHASE_WORDS.has(word) && !STOP_WORDS.has(word));
 }
 
 function hasSubjectOverlap(subjectA, subjectB) {
