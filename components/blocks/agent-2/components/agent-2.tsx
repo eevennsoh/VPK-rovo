@@ -2119,16 +2119,22 @@ function AgentCompactEmptyConfigNav({
 	}
 
 	return (
-		// `-ml-3` cancels the Menubar's `pl-1` (4px) + the first chip's `px-2` (8px)
+		// `-ml-4` cancels the Menubar's `pl-2` (8px) + the first chip's `px-2` (8px)
 		// so the leading chip's content left-aligns with the summary row labels above.
-		<div className="relative -ml-3 flex min-h-8 min-w-0 items-center">
+		// The `pl-2` (not `pl-1`) keeps the first item's rounded/hover/expanded
+		// background and 3px focus ring clear of the `overflow-x-auto` clip edge,
+		// which would otherwise shear the leading button's left side flat. (The
+		// sibling header nav fixes the same clip with `overflow-clip-margin`, but
+		// that only applies to `overflow: clip`, not the `auto` this scrolling strip
+		// needs.)
+		<div className="relative -ml-4 flex min-h-8 min-w-0 items-center">
 			<Menubar
 				// Override the shared Menubar's bordered/elevated chrome so the strip
 				// reads as one flat, connected surface (matching the prior loose-button
 				// look) while still giving us roving focus + arrow-key nav across items.
 				// When the container is too tight, the row scrolls horizontally and the
 				// shared scroll-mask fades whichever edge has more content.
-				className="relative -my-1 flex h-auto min-w-0 flex-1 items-center overflow-x-auto overflow-y-visible overscroll-x-contain rounded-none border-0 bg-transparent p-0 py-1 pl-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+				className="relative -my-1 flex h-auto min-w-0 flex-1 items-center overflow-x-auto overflow-y-visible overscroll-x-contain rounded-none border-0 bg-transparent p-0 py-1 pl-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 				ref={navOverflow.ref}
 				style={{
 					gap: AGENT_COMPACT_CONFIG_NAV_GAP,
@@ -4139,7 +4145,7 @@ function AgentInstructionsComposer({
 			<RichTextEditor
 				aria-label="Agent instructions"
 				className="space-y-2"
-				contentClassName={contentClassName}
+				contentClassName={cn("border-t border-dashed border-border", contentClassName)}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
 				enableDirectoryAutocomplete
 				placeholder="Press / to help me create the agent, or start with a template"
@@ -4442,7 +4448,7 @@ function AgentCompactConfigPanel({
 	return (
 		<div
 			className={cn(
-				"mt-6 flex flex-col rounded-2xl border border-border px-4 pt-2",
+				"mb-2 flex flex-col rounded-2xl border border-border px-4 pt-2",
 				stripRevealed ? "pb-2" : "pb-0",
 			)}
 			onPointerEnter={() => setStripHovered(true)}
