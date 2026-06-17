@@ -4328,8 +4328,39 @@ function AgentCompactConfigPanel({
 	const summaryHiddenConfigFields = new Set<AgentHideableConfigField>(hiddenConfigFields);
 	summaryHiddenConfigFields.add("conversationStarters");
 
+	// The secondary selector strip (divider + nav) is revealed on hover/focus so the
+	// resting card shows only the configured summary rows. We only gate it when there
+	// are summary rows to anchor the card — with no promoted rows the strip is the
+	// card's sole content, so it must stay visible. Pointer drives hover; focus-within
+	// (onFocusCapture/onBlurCapture) keeps the controls keyboard-reachable while hidden.
+	const reduceMotion = useReducedMotion();
+	const [stripHovered, setStripHovered] = useState(false);
+	const [stripFocused, setStripFocused] = useState(false);
+	// Touch devices have no persistent hover, so a hover-gated strip would strand the
+	// secondary controls with no tappable entry point. Keep it visible when the device
+	// lacks hover capability. Defaults to true (desktop) for SSR; corrected on mount.
+	const [canHover, setCanHover] = useState(true);
+	useEffect(() => {
+		const mql = window.matchMedia("(hover: hover)");
+		const onChange = () => setCanHover(mql.matches);
+		onChange();
+		mql.addEventListener("change", onChange);
+		return () => mql.removeEventListener("change", onChange);
+	}, []);
+	const stripRevealed = !hasRows || !canHover || stripHovered || stripFocused;
+
 	return (
-		<div className="mb-2 flex flex-col gap-2 rounded-2xl border border-border px-4 py-2">
+		<div
+			className="mb-2 flex flex-col rounded-2xl border border-border px-4 py-2"
+			onPointerEnter={() => setStripHovered(true)}
+			onPointerLeave={() => setStripHovered(false)}
+			onFocusCapture={() => setStripFocused(true)}
+			onBlurCapture={(event) => {
+				if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+					setStripFocused(false);
+				}
+			}}
+		>
 			{hasRows ? (
 				<AgentFilledConfigSummary
 					config={config}
@@ -4360,32 +4391,45 @@ function AgentCompactConfigPanel({
 					selectedListItemIndexByField={selectedListItemIndexByField}
 				/>
 			) : null}
-			{hasRows ? <div aria-hidden className="h-px bg-border" /> : null}
-			<AgentCompactEmptyConfigNav
-				avatarSrc={avatarSrc}
-				config={config}
-				hiddenConfigFields={hiddenConfigFields}
-				hiddenFieldNames={promotedFields}
-				onAddListValues={onAddListValues}
-				onAppendListItem={onAppendListItem}
-				onEditTriggers={onEditTriggers}
-				onManageTriggers={onManageTriggers}
-				onListItemChange={onListItemChange}
-				onManageSubagents={onManageSubagents}
-				onOpenDirectory={onOpenDirectory}
-				onRemoveListItem={onRemoveListItem}
-				onSelectListItem={onSelectListItem}
-				onToggleListItem={onToggleListItem}
-				onAutomationRulesChange={onAutomationRulesChange}
-				reasoningValue={reasoningValue}
-				onReasoningValueChange={setReasoningValue}
-				knowledgeMode={knowledgeMode}
-				onKnowledgeModeChange={setKnowledgeMode}
-				memoryMode={memoryMode}
-				onMemoryModeChange={setMemoryMode}
-				screenAssistantTargetPrefix={screenAssistantTargetPrefix}
-				selectedListItemIndexByField={selectedListItemIndexByField}
-			/>
+			<motion.div
+				// Reveal-on-hover collapsible: animate height 0 → auto + fade so the card
+				// grows to surface the secondary selectors (matches the Figma two-state
+				// spec). Kept mounted (not unmounted) so the controls stay in tab order;
+				// `pt-2`/divider live inside the animated region so the parent doesn't keep
+				// a residual gap while collapsed (flex `gap` wouldn't transition away).
+				initial={false}
+				animate={{ height: stripRevealed ? "auto" : 0, opacity: stripRevealed ? 1 : 0 }}
+				transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0.4, 1, 0.6, 1] }}
+				style={{ overflow: "hidden", willChange: "opacity" }}
+				className={hasRows ? "flex flex-col gap-2 pt-2" : "flex flex-col gap-2"}
+			>
+				{hasRows ? <div aria-hidden className="h-px bg-border" /> : null}
+				<AgentCompactEmptyConfigNav
+					avatarSrc={avatarSrc}
+					config={config}
+					hiddenConfigFields={hiddenConfigFields}
+					hiddenFieldNames={promotedFields}
+					onAddListValues={onAddListValues}
+					onAppendListItem={onAppendListItem}
+					onEditTriggers={onEditTriggers}
+					onManageTriggers={onManageTriggers}
+					onListItemChange={onListItemChange}
+					onManageSubagents={onManageSubagents}
+					onOpenDirectory={onOpenDirectory}
+					onRemoveListItem={onRemoveListItem}
+					onSelectListItem={onSelectListItem}
+					onToggleListItem={onToggleListItem}
+					onAutomationRulesChange={onAutomationRulesChange}
+					reasoningValue={reasoningValue}
+					onReasoningValueChange={setReasoningValue}
+					knowledgeMode={knowledgeMode}
+					onKnowledgeModeChange={setKnowledgeMode}
+					memoryMode={memoryMode}
+					onMemoryModeChange={setMemoryMode}
+					screenAssistantTargetPrefix={screenAssistantTargetPrefix}
+					selectedListItemIndexByField={selectedListItemIndexByField}
+				/>
+			</motion.div>
 		</div>
 	);
 }
