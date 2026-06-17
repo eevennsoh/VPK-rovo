@@ -798,6 +798,11 @@ function FloatingRovoButtonSurface({
 	});
 	const initializedPositionKeyRef = useRef<string | null>(null);
 	const skipNextSnapToGridRef = useRef(false);
+	// The button only leaves the bottom-right corner once the user has actually
+	// dragged it. Until then every re-measure (mount, onboarding expand/collapse,
+	// viewport/container resize) re-anchors to the default corner instead of
+	// snapping to the nearest grid cell, so it never drifts on its own.
+	const hasUserDraggedRef = useRef(false);
 	const dragPointerStartRef = useRef<FloatingRovoButtonDragStart | null>(null);
 	const suppressDragClickStateRef = useLazyRef<FloatingRovoButtonClickSuppressionState>(() =>
 		createInitialClickSuppressionState(),
@@ -873,13 +878,10 @@ function FloatingRovoButtonSurface({
 		return decision.suppress;
 	}, [clearDragClickSuppressionTimeout]);
 
-	useEffect(() => {
-		const positionKey = `${positioning}:${resolvedPlacement.right}:${resolvedPlacement.bottom}`;
-
-		if (initializedPositionKeyRef.current === positionKey) {
-			return;
-		}
-
+	// Re-measures and parks the button at its default home — the bottom-right
+	// corner (or the clamped `placement` when a consumer pins one). Clears any
+	// live drag offset so the button sits exactly on the origin.
+	const anchorToDefaultTarget = useCallback(() => {
 		const surface = surfaceRef.current;
 
 		if (!surface) {
@@ -896,9 +898,23 @@ function FloatingRovoButtonSurface({
 		setDragOrigin(target);
 		setDragConstraints(getFloatingRovoButtonDragConstraints(target, rect, space.width, space.height));
 		setBarSide(resolveFloatingRovoButtonBarSide(configuredBarSide, target.top, rect.height, space.height));
-		initializedPositionKeyRef.current = positionKey;
 		skipNextSnapToGridRef.current = true;
-	}, [buttonX, buttonY, configuredBarSide, placement, positioning, resolvedPlacement.bottom, resolvedPlacement.right]);
+	}, [buttonX, buttonY, configuredBarSide, placement, positioning]);
+
+	useEffect(() => {
+		const positionKey = `${positioning}:${resolvedPlacement.right}:${resolvedPlacement.bottom}`;
+
+		if (initializedPositionKeyRef.current === positionKey) {
+			return;
+		}
+
+		if (!surfaceRef.current) {
+			return;
+		}
+
+		anchorToDefaultTarget();
+		initializedPositionKeyRef.current = positionKey;
+	}, [anchorToDefaultTarget, positioning, resolvedPlacement.bottom, resolvedPlacement.right]);
 
 	useEffect(() => {
 		return () => {
@@ -964,8 +980,15 @@ function FloatingRovoButtonSurface({
 			return;
 		}
 
-		snapToNearestGridTarget();
-	}, [dragOrigin, onboardingOpen, snapToNearestGridTarget]);
+		// Onboarding expand/collapse changes the surface size. Re-fit to the
+		// nearest grid cell only if the user has positioned the button; otherwise
+		// keep it pinned to the default corner.
+		if (hasUserDraggedRef.current) {
+			snapToNearestGridTarget();
+		} else {
+			anchorToDefaultTarget();
+		}
+	}, [anchorToDefaultTarget, dragOrigin, onboardingOpen, snapToNearestGridTarget]);
 
 	useEffect(() => {
 		if (!dragOrigin) {
@@ -973,7 +996,13 @@ function FloatingRovoButtonSurface({
 		}
 
 		const handleResize = () => {
-			snapToNearestGridTarget();
+			// A resize never moves the button off the default corner unless the
+			// user has dragged it — then we keep it on the nearest grid cell.
+			if (hasUserDraggedRef.current) {
+				snapToNearestGridTarget();
+			} else {
+				anchorToDefaultTarget();
+			}
 		};
 
 		window.addEventListener("resize", handleResize);
@@ -981,7 +1010,7 @@ function FloatingRovoButtonSurface({
 		return () => {
 			window.removeEventListener("resize", handleResize);
 		};
-	}, [dragOrigin, snapToNearestGridTarget]);
+	}, [anchorToDefaultTarget, dragOrigin, snapToNearestGridTarget]);
 
 	const handleDragPointerDown = useCallback((event: ReactPointerEvent<HTMLElement>) => {
 		if (onboardingOpen || !dragOrigin) {
@@ -1031,6 +1060,9 @@ function FloatingRovoButtonSurface({
 			return;
 		}
 
+		// The user has intentionally moved the button; from now on resizes and
+		// onboarding toggles snap to the nearest grid cell instead of re-homing.
+		hasUserDraggedRef.current = true;
 		armDragClickSuppression();
 		setIsDragging(true);
 		buttonX.set(clampFloatingRovoButtonValue(start.offsetX + deltaX, dragConstraints.left, dragConstraints.right));
