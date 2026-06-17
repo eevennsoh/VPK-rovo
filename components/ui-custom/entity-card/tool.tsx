@@ -28,6 +28,14 @@ export interface EntityCardToolProps {
 	onMoreActions?: () => void;
 	/** Renders the persistent "added" check when the tool is already on the agent. */
 	added?: boolean;
+	/** Swaps the leading logo for a 16×16 select checkbox on hover/select. */
+	selectable?: boolean;
+	/** Current selection state for the leading checkbox. */
+	selected?: boolean;
+	/** Toggles selection from the leading checkbox. */
+	onSelectedChange?: (checked: boolean) => void;
+	/** Accessible label for the leading checkbox (e.g. "Select {name}"). */
+	selectLabel?: string;
 	className?: string;
 }
 
@@ -41,6 +49,10 @@ export function EntityCardTool({
 	action,
 	onMoreActions,
 	added = false,
+	selectable = false,
+	selected = false,
+	onSelectedChange,
+	selectLabel,
 	className,
 }: Readonly<EntityCardToolProps>) {
 	const showTools = typeof toolCount === "number";
@@ -61,6 +73,10 @@ export function EntityCardTool({
 					// title + byline header (so the cards line up) WITHOUT inserting a
 					// visible row — the logo + title stay vertically centered.
 					reserveByline
+					onSelectedChange={onSelectedChange}
+					selectLabel={selectLabel}
+					selectable={selectable}
+					selected={selected}
 					leading={
 						<Tile isInset={false} label={name} size="medium" variant="transparent">
 							{appLogo}

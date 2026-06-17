@@ -60,6 +60,14 @@ export interface EntityCardSkillProps {
 	onMoreActions?: () => void;
 	/** Renders the persistent "added" check when the skill is already on the agent. */
 	added?: boolean;
+	/** Swaps the leading icon for a 16×16 select checkbox on hover/select. */
+	selectable?: boolean;
+	/** Current selection state for the leading checkbox. */
+	selected?: boolean;
+	/** Toggles selection from the leading checkbox. */
+	onSelectedChange?: (checked: boolean) => void;
+	/** Accessible label for the leading checkbox (e.g. "Select {name}"). */
+	selectLabel?: string;
 	density?: EntityCardDensity;
 	className?: string;
 }
@@ -118,6 +126,10 @@ export function EntityCardSkill({
 	action,
 	onMoreActions,
 	added = false,
+	selectable = false,
+	selected = false,
+	onSelectedChange,
+	selectLabel,
 	density = "directory",
 	className,
 }: Readonly<EntityCardSkillProps>) {
@@ -162,6 +174,10 @@ export function EntityCardSkill({
 					) : null)
 				}
 				byline={publisher ? <EntityCardByline publisher={publisher} verified={verified} /> : undefined}
+				onSelectedChange={onSelectedChange}
+				selectLabel={selectLabel}
+				selectable={selectable}
+				selected={selected}
 				leading={
 					icon ? (
 						iconTile ? (

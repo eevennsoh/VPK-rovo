@@ -72,7 +72,12 @@ export function EntityCardAgentExpandedCard({
 
 export interface EntityCardAppCardProps extends EntityCardAppProps {
 	moreAction?: ReactNode;
-	onSelect?: () => void;
+	/**
+	 * Toggles selection. Pass `selected` alongside it to enter multi-select mode
+	 * (leading checkbox swap + persistent selected border); without `selected`
+	 * the whole-card click is a plain open/navigate action.
+	 */
+	onSelect?: (checked?: boolean) => void;
 }
 
 /** App directory card — app logo tile, tool/knowledge counts, and teammate usage. */
@@ -83,23 +88,37 @@ export function EntityCardAppCard({
 	name,
 	onMoreActions,
 	onSelect,
+	selected,
 	...entityProps
 }: Readonly<EntityCardAppCardProps>) {
+	const selectable = selected !== undefined;
+	const selectLabel = `${selected ? "Deselect" : "Select"} ${name}`;
 	return (
-		<EntityCardShell active={active} className={cn("gap-4", className)} onSelect={onSelect} selectLabel={`Select ${name}`}>
+		<EntityCardShell
+			active={active}
+			className={cn("gap-4", className)}
+			onSelect={onSelect ? () => onSelect() : undefined}
+			selectLabel={selectLabel}
+			selected={selected}
+		>
 			<EntityCardApp
 				{...entityProps}
 				active={active}
 				action={moreAction}
 				name={name}
 				onMoreActions={onMoreActions}
+				onSelectedChange={onSelect}
+				selectLabel={selectLabel}
+				selectable={selectable}
+				selected={selected}
 			/>
 		</EntityCardShell>
 	);
 }
 
 export interface EntityCardKnowledgeCardProps extends EntityCardKnowledgeProps {
-	onSelect?: () => void;
+	/** See `EntityCardAppCardProps.onSelect`. */
+	onSelect?: (checked?: boolean) => void;
 }
 
 /** Knowledge directory card — app identity, description, and provider metadata. */
@@ -107,21 +126,33 @@ export function EntityCardKnowledgeCard({
 	className,
 	name,
 	onSelect,
+	selected,
 	...entityProps
 }: Readonly<EntityCardKnowledgeCardProps>) {
+	const selectable = selected !== undefined;
+	const selectLabel = `${selected ? "Deselect" : "Select"} ${name}`;
 	return (
 		<EntityCardShell
 			className={cn("gap-4", className)}
-			onSelect={onSelect}
-			selectLabel={`Select ${name}`}
+			onSelect={onSelect ? () => onSelect() : undefined}
+			selectLabel={selectLabel}
+			selected={selected}
 		>
-			<EntityCardKnowledge {...entityProps} name={name} />
+			<EntityCardKnowledge
+				{...entityProps}
+				name={name}
+				onSelectedChange={onSelect}
+				selectLabel={selectLabel}
+				selectable={selectable}
+				selected={selected}
+			/>
 		</EntityCardShell>
 	);
 }
 
 export interface EntityCardSkillCardProps extends EntityCardSkillProps {
-	onSelect?: () => void;
+	/** See `EntityCardAppCardProps.onSelect`. */
+	onSelect?: (checked?: boolean) => void;
 }
 
 /** Skill directory card — icon tile, byline attribution, and usage stats. */
@@ -129,18 +160,34 @@ export function EntityCardSkillCard({
 	className,
 	name,
 	onSelect,
+	selected,
 	...entityProps
 }: Readonly<EntityCardSkillCardProps>) {
+	const selectable = selected !== undefined;
+	const selectLabel = `${selected ? "Deselect" : "Select"} ${name}`;
 	return (
-		<EntityCardShell className={className} onSelect={onSelect} selectLabel={`Select ${name}`}>
-			<EntityCardSkill {...entityProps} name={name} />
+		<EntityCardShell
+			className={className}
+			onSelect={onSelect ? () => onSelect() : undefined}
+			selectLabel={selectLabel}
+			selected={selected}
+		>
+			<EntityCardSkill
+				{...entityProps}
+				name={name}
+				onSelectedChange={onSelect}
+				selectLabel={selectLabel}
+				selectable={selectable}
+				selected={selected}
+			/>
 		</EntityCardShell>
 	);
 }
 
 export interface EntityCardToolCardProps extends EntityCardToolProps {
 	moreAction?: ReactNode;
-	onSelect?: () => void;
+	/** See `EntityCardAppCardProps.onSelect`. */
+	onSelect?: (checked?: boolean) => void;
 }
 
 /** Tool directory card — app logo tile, tool count, and teammate usage. */
@@ -151,16 +198,29 @@ export function EntityCardToolCard({
 	name,
 	onMoreActions,
 	onSelect,
+	selected,
 	...entityProps
 }: Readonly<EntityCardToolCardProps>) {
+	const selectable = selected !== undefined;
+	const selectLabel = `${selected ? "Deselect" : "Select"} ${name}`;
 	return (
-		<EntityCardShell active={active} className={cn("gap-4", className)} onSelect={onSelect} selectLabel={`Select ${name}`}>
+		<EntityCardShell
+			active={active}
+			className={cn("gap-4", className)}
+			onSelect={onSelect ? () => onSelect() : undefined}
+			selectLabel={selectLabel}
+			selected={selected}
+		>
 			<EntityCardTool
 				{...entityProps}
 				active={active}
 				action={moreAction}
 				name={name}
 				onMoreActions={onMoreActions}
+				onSelectedChange={onSelect}
+				selectLabel={selectLabel}
+				selectable={selectable}
+				selected={selected}
 			/>
 		</EntityCardShell>
 	);

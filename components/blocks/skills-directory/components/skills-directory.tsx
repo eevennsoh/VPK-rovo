@@ -16,6 +16,7 @@ import {
 import ArrowLeftIcon from "@atlaskit/icon/core/arrow-left";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import CrossIcon from "@atlaskit/icon/core/cross";
+import DeleteIcon from "@atlaskit/icon/core/delete";
 import DownloadIcon from "@atlaskit/icon/core/download";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PeopleGroupIcon from "@atlaskit/icon/core/people-group";
@@ -52,6 +53,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SplitButton } from "@/components/ui/split-button";
+import { Switch } from "@/components/ui/switch";
 import {
 	EntityCardAddedCheck,
 	EntityCardShell,
@@ -127,6 +129,8 @@ export interface SkillsDirectoryDialogProps {
 	onNewSkill?: () => void;
 	onOpenChange: (open: boolean) => void;
 	onOpenSkill?: (skill: SkillsDirectorySkill) => void;
+	/** Removes a skill from the agent (fired by the detail header's "Remove" button). */
+	onRemoveSkills?: (skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => void;
 	onSelectAgent?: (agent: SkillsDirectoryAgent) => void;
 	onSelectedSkillIdsChange?: (skillIds: readonly string[]) => void;
 	onSelectSkill?: (skill: SkillsDirectorySkill) => void;
@@ -292,6 +296,7 @@ export function SkillsDirectoryDialog({
 	onNewSkill,
 	onOpenChange,
 	onOpenSkill,
+	onRemoveSkills,
 	onSelectAgent,
 	onSelectedSkillIdsChange,
 	onSelectSkill,
@@ -333,6 +338,10 @@ export function SkillsDirectoryDialog({
 	// seed changes, so this initializer re-runs for each newly opened skill.
 	const [selectedDetailSkillId, setSelectedDetailSkillId] = useState<string | null>(initialDetailSkillId);
 	const [uncontrolledSelectedIds, setUncontrolledSelectedIds] = useState<readonly string[]>(defaultSelectedSkillIds);
+	// Per-skill enable/disable state for the detail view — mirrors the agent-2
+	// config toggle, where a configured skill can be parked disabled (muted) while
+	// staying on the agent until explicitly removed. Keyed by skill id.
+	const [disabledSkillIds, setDisabledSkillIds] = useState<ReadonlySet<string>>(() => new Set());
 	const controlledSelection = typeof selectedSkillIds !== "undefined";
 	const resolvedSelectedIds = controlledSelection ? selectedSkillIds : uncontrolledSelectedIds;
 	const selectedIdSet = useMemo(() => new Set(resolvedSelectedIds), [resolvedSelectedIds]);
@@ -398,6 +407,34 @@ export function SkillsDirectoryDialog({
 		commitSelectedIds([]);
 	}
 
+	function handleToggleSkillEnabled(skill: SkillsDirectorySkill, enabled: boolean): void {
+		setDisabledSkillIds((current) => {
+			const next = new Set(current);
+			if (enabled) {
+				next.delete(skill.id);
+			} else {
+				next.add(skill.id);
+			}
+			return next;
+		});
+	}
+
+	function handleRemoveSkill(skill: SkillsDirectorySkill): void {
+		// Drop the skill from the active selection and any local disabled state,
+		// notify the host, then return to the directory list.
+		commitSelectedIds(resolvedSelectedIds.filter((id) => id !== skill.id));
+		setDisabledSkillIds((current) => {
+			if (!current.has(skill.id)) {
+				return current;
+			}
+			const next = new Set(current);
+			next.delete(skill.id);
+			return next;
+		});
+		onRemoveSkills?.([skill.id], [skill]);
+		setSelectedDetailSkillId(null);
+	}
+
 	const createSkillHandler = onCreateSkill ?? onNewSkill;
 
 	return (
@@ -408,11 +445,14 @@ export function SkillsDirectoryDialog({
 			>
 				{selectedDetailSkill ? (
 					<SkillDetailHeader
+						enabled={!disabledSkillIds.has(selectedDetailSkill.id)}
 						onBack={() => setSelectedDetailSkillId(null)}
 						onCreateShareLink={() => handleBulkAction(onCreateShareLink)}
 						onDownloadSkills={() => handleBulkAction(onDownloadSkills)}
 						onFavoriteSkills={() => handleBulkAction(onFavoriteSkills)}
 						onOpenSkill={() => onOpenSkill?.(selectedDetailSkill)}
+						onRemove={() => handleRemoveSkill(selectedDetailSkill)}
+						onToggleEnabled={(enabled) => handleToggleSkillEnabled(selectedDetailSkill, enabled)}
 						onTryInChat={() => onTryInChat?.(selectedDetailSkill)}
 						title={selectedDetailSkill.name}
 					/>
@@ -883,21 +923,30 @@ function SelectedSkillsToolbar({
 }
 
 interface SkillDetailHeaderProps {
+	/** Whether the skill is enabled on the agent — drives the disable Switch. */
+	enabled: boolean;
 	onBack: () => void;
 	onCreateShareLink: () => void;
 	onDownloadSkills: () => void;
 	onFavoriteSkills: () => void;
 	onOpenSkill: () => void;
+	/** Removes the skill from the agent. */
+	onRemove: () => void;
+	/** Toggles the skill's enabled state on the agent. */
+	onToggleEnabled: (enabled: boolean) => void;
 	onTryInChat: () => void;
 	title: string;
 }
 
 function SkillDetailHeader({
+	enabled,
 	onBack,
 	onCreateShareLink,
 	onDownloadSkills,
 	onFavoriteSkills,
 	onOpenSkill,
+	onRemove,
+	onToggleEnabled,
 	onTryInChat,
 	title,
 }: Readonly<SkillDetailHeaderProps>) {
@@ -919,6 +968,17 @@ function SkillDetailHeader({
 				</DialogTitle>
 			</div>
 			<div className="flex items-center gap-2">
+				{/* Enable/disable this skill on the agent — mirrors the agent-2 config
+				    toggle: a disabled skill stays on the agent (still listed) but is
+				    parked off until re-enabled or removed. */}
+				<label className="flex items-center gap-2 text-sm leading-5 text-text-subtle">
+					<span aria-hidden>{enabled ? "Enabled" : "Disabled"}</span>
+					<Switch
+						aria-label={`${enabled ? "Disable" : "Enable"} ${title}`}
+						checked={enabled}
+						onCheckedChange={onToggleEnabled}
+					/>
+				</label>
 				<DropdownMenu>
 					<DropdownMenuTrigger
 						render={
@@ -939,6 +999,10 @@ function SkillDetailHeader({
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
+				<Button onClick={onRemove} type="button" variant="destructive">
+					<DeleteIcon label="" size="small" />
+					Remove
+				</Button>
 				<SplitButton
 					items={[
 						{ label: "Open in new tab", onSelect: onOpenSkill },

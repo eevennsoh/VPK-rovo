@@ -417,6 +417,9 @@ export function AppsDirectoryDialog({
 		() => new Set(defaultAddedToolIds),
 	);
 	const [permissionSelections, setPermissionSelections] = useState<Record<string, Record<string, boolean>>>({});
+	// Per-app enable/disable state for the detail header — mirrors the agent-2 config
+	// toggle: a disabled app stays added but is parked off until re-enabled or removed.
+	const [disabledToolIds, setDisabledToolIds] = useState<ReadonlySet<string>>(() => new Set());
 	// Per-app knowledge selection (All / Select content / None), mirrored up from
 	// the detail view so the header "Add to agent" can wire the chosen knowledge
 	// facet via onAddApp instead of always defaulting to "all content".
@@ -498,6 +501,26 @@ export function AppsDirectoryDialog({
 		const nextAddedIds = new Set(addedIds);
 		nextAddedIds.delete(tool.id);
 		commitAddedToolIds(nextAddedIds);
+		setDisabledToolIds((current) => {
+			if (!current.has(tool.id)) {
+				return current;
+			}
+			const next = new Set(current);
+			next.delete(tool.id);
+			return next;
+		});
+	}
+
+	function handleToggleToolEnabled(tool: AppsDirectoryTool, enabled: boolean): void {
+		setDisabledToolIds((current) => {
+			const next = new Set(current);
+			if (enabled) {
+				next.delete(tool.id);
+			} else {
+				next.add(tool.id);
+			}
+			return next;
+		});
 	}
 
 	function setPermission(tool: AppsDirectoryTool, permissionId: string, checked: boolean): void {
@@ -533,6 +556,12 @@ export function AppsDirectoryDialog({
 			>
 				<AppsDirectoryHeader
 					title={title ?? "Browse apps"}
+					enabled={selectedTool ? !disabledToolIds.has(selectedTool.id) : undefined}
+					onToggleEnabled={
+						selectedTool && addedIds.has(selectedTool.id)
+							? (enabled) => handleToggleToolEnabled(selectedTool, enabled)
+							: undefined
+					}
 					onBack={selectedTool ? () => setSelectedToolId(null) : undefined}
 					onAddTool={selectedTool && !addedIds.has(selectedTool.id) ? () => handleAddTool(selectedTool) : undefined}
 					onCreateTool={onCreateTool}
@@ -541,6 +570,7 @@ export function AppsDirectoryDialog({
 				{selectedTool ? (
 					<ToolDetailView
 						added={addedIds.has(selectedTool.id)}
+						disabled={addedIds.has(selectedTool.id) && disabledToolIds.has(selectedTool.id)}
 						onCheckGroup={(permissions) => checkPermissionGroup(selectedTool, permissions)}
 						onPermissionChange={(permissionId, checked) => setPermission(selectedTool, permissionId, checked)}
 						onKnowledgeSelectionChange={(selection) => handleKnowledgeSelectionChange(selectedTool.id, selection)}
@@ -582,14 +612,18 @@ export function AppsDirectoryDialog({
 }
 
 interface AppsDirectoryHeaderProps {
+	/** Whether the selected app is enabled — drives the disable Switch. */
+	enabled?: boolean;
 	onAddTool?: () => void;
 	onBack?: () => void;
 	onCreateTool?: () => void;
 	onRemoveTool?: () => void;
+	/** Toggles the app's enabled state on the agent. Presence renders the Switch. */
+	onToggleEnabled?: (enabled: boolean) => void;
 	title: string;
 }
 
-function AppsDirectoryHeader({ onAddTool, onBack, onCreateTool, onRemoveTool, title }: Readonly<AppsDirectoryHeaderProps>) {
+function AppsDirectoryHeader({ enabled = true, onAddTool, onBack, onCreateTool, onRemoveTool, onToggleEnabled, title }: Readonly<AppsDirectoryHeaderProps>) {
 	return (
 		<div className="flex items-center justify-between px-6 py-6">
 			<div className="flex min-w-0 items-center gap-2">
@@ -610,6 +644,17 @@ function AppsDirectoryHeader({ onAddTool, onBack, onCreateTool, onRemoveTool, ti
 				</DialogTitle>
 			</div>
 			<div className="flex items-center gap-2">
+				{onToggleEnabled ? (
+					// Enable/disable the added app — mirrors the agent-2 config toggle.
+					<label className="flex items-center gap-2 text-sm leading-5 text-text-subtle">
+						<span aria-hidden>{enabled ? "Enabled" : "Disabled"}</span>
+						<Switch
+							aria-label={`${enabled ? "Disable" : "Enable"} ${title}`}
+							checked={enabled}
+							onCheckedChange={onToggleEnabled}
+						/>
+					</label>
+				) : null}
 				{onRemoveTool ? (
 					<Button variant="destructive" onClick={onRemoveTool} type="button">
 						<DeleteIcon label="" size="small" />
@@ -1393,6 +1438,8 @@ function SidebarToolAvatar({ item }: Readonly<{ item: AgentBrowserSidebarItem }>
 
 interface ToolDetailViewProps {
 	added: boolean;
+	/** When true the app is disabled on the agent — the whole body is muted and made inert. */
+	disabled?: boolean;
 	onCheckGroup: (permissions: readonly AppsDirectoryPermission[]) => void;
 	onPermissionChange: (permissionId: string, checked: boolean) => void;
 	onKnowledgeSelectionChange?: (
@@ -1404,6 +1451,7 @@ interface ToolDetailViewProps {
 
 function ToolDetailView({
 	added,
+	disabled = false,
 	onCheckGroup,
 	onPermissionChange,
 	onKnowledgeSelectionChange,
@@ -1509,10 +1557,17 @@ function ToolDetailView({
 			</aside>
 			<div
 				ref={contentOverflow.ref}
+				// Only the configurable actions panel is disabled when the app is parked
+				// off — the left identity sidebar (avatar, name, links) stays active.
+				// `inert` removes this panel from tab order / pointer + a11y interaction;
+				// the muted opacity reads as disabled. Re-enable from the header switch.
+				aria-disabled={disabled || undefined}
 				className={cn(
 					"flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto px-6 pb-6 md:pl-4",
 					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
+					disabled && "opacity-(--opacity-disabled)",
 				)}
+				inert={disabled || undefined}
 			>
 				<div className="rounded-xl border border-border p-4 md:hidden">
 					<div className="flex items-start gap-4">
