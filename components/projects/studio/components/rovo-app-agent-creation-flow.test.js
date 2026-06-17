@@ -211,6 +211,8 @@ test("RovoAppShell settings reset clears Studio state and restores the fresh RFP
 	assert.match(resetSource, /await resetStudioRfpDemoBackendState\(\);/u);
 	assert.match(resetSource, /await chat\.deleteAllThreads\(\);/u);
 	assert.match(resetSource, /await studioAgentRegistry\.deleteAllThreads\(\);/u);
+	assert.match(resetSource, /creationTemplateRef\.current = null;/u);
+	assert.match(resetSource, /creationTemplateByThreadRef\.current = \{\};/u);
 	assert.match(resetSource, /setActiveAgentConfigState\(null\);/u);
 	assert.match(resetSource, /setActiveAgentConfigView\("configure"\);/u);
 	assert.match(resetSource, /studioAgentCreationThreadKeysRef\.current\.clear\(\);/u);

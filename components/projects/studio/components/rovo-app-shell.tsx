@@ -2499,6 +2499,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				setComposerFocusRequestKey(0);
 				setPreviewPrompt(null);
 				setPrefillText(null);
+				creationTemplateRef.current = null;
+				creationTemplateByThreadRef.current = {};
 				setVoiceTranscript(null);
 				setIsDictationActive(false);
 				setDictationTranscriptPreview(null);
