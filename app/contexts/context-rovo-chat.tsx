@@ -3606,6 +3606,7 @@ export function useRovoSelectedAgent() {
 		publishSessionAgent,
 		removeSessionAgent,
 		resetAgentToRovo,
+		deleteAllThreads,
 		adoptThreadMessages,
 	} = useRovoChat();
 
@@ -3623,6 +3624,7 @@ export function useRovoSelectedAgent() {
 		publishSessionAgent,
 		removeSessionAgent,
 		resetAgentToRovo,
+		deleteAllThreads,
 		// The studio shell drives generation through its own useRovoApp chat
 		// store, which is separate from this RovoChatProvider context that the
 		// Ask Rovo sidebar reads. Expose adoptThreadMessages so the shell can
