@@ -171,14 +171,6 @@ const AGENT_BROWSER_TEMPLATE_BUILD_STEP_LABELS = [
 	"Prepare knowledge",
 	"Create draft agent",
 ] as const;
-const AGENT_BROWSER_TEMPLATE_BUILD_STEP_BYLINES = [
-	"Reading the template defaults.",
-	"Preparing the selected app context.",
-	"Adding the agent instructions.",
-	"Attaching recommended skills.",
-	"Preparing memory and knowledge settings.",
-	"Creating the local draft profile.",
-] as const;
 const AGENT_BROWSER_TEMPLATE_BUILD_STEP_DURATION_MS = 1400;
 const NOOP_TEMPLATE_MORE_ACTIONS = () => undefined;
 // Presentation-only: the persistent Teamwork Graph card in the Templates carousel
@@ -1409,9 +1401,6 @@ function getExperimentalTemplateBuildSteps(
 	activeIndex: number,
 ): ProgressTrackerStep[] {
 	return AGENT_BROWSER_TEMPLATE_BUILD_STEP_LABELS.map((label, index) => ({
-		byline: phase === "building" && index === activeIndex
-			? AGENT_BROWSER_TEMPLATE_BUILD_STEP_BYLINES[index]
-			: undefined,
 		id: label.toLowerCase().replace(/\s+/gu, "-"),
 		label,
 		state: phase === "built" || index < activeIndex
@@ -1566,14 +1555,13 @@ function ExperimentalTemplateSetupCard({
 						{phase === "error"
 							? "We couldn't create this draft. Try again or start from another template."
 							: phase === "built"
-								? "Review the generated configuration before publishing."
-								: `Setting up ${agent.name} from this template.`}
+								? "Review agent before publishing."
+								: "Setting up your agent."}
 					</p>
 					<div className="mt-8">
 						<ProgressTracker
 							aria-label={`${agent.name} build progress`}
 							className="template-build-progress-spinner gap-1.5"
-							bylineClassName="text-xs leading-4 text-text-subtle"
 							labelClassName="text-sm leading-5"
 							steps={buildSteps}
 						/>
@@ -1621,7 +1609,7 @@ function ExperimentalTemplateSetupCard({
 					Connect your apps
 				</p>
 				<p className="mt-1 text-sm leading-5 text-text-subtle">
-					Pick the apps {agent.name} can draw on. You can adjust these later.
+					Pick your apps, you can adjust later too.
 				</p>
 				<div
 					className={cn(
