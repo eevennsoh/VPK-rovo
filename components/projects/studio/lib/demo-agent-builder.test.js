@@ -426,3 +426,31 @@ test("buildAgentEditSummaryWidgetPart emits a collapsed-card widget part, null w
 	assert.ok(part.data.payload.changes.length >= 1);
 	assert.equal(buildAgentEditSummaryWidgetPart(classifyAgentBuildIntent("hello there"), "RFP Drafter"), null);
 });
+
+test("mergeTriggerPhrasesIntoDraft appends to existing automations without clobbering", async () => {
+	const { mergeTriggerPhrasesIntoDraft } = await loadModule();
+	const existing = {
+		automationRules: [
+			{
+				id: "automation-1",
+				name: "Existing rule",
+				prompt: "keep me",
+				triggers: [{ id: "jira-status-changed-1", providerId: "jira", eventId: "status-changed" }],
+			},
+		],
+	};
+	const merged = mergeTriggerPhrasesIntoDraft(existing, ["When a Jira work item is created"]);
+	assert.ok(merged, "should merge a resolvable phrase");
+	assert.ok(
+		merged.automationRules.some((r) => r.name === "Existing rule" && r.prompt === "keep me"),
+		"existing custom rule preserved",
+	);
+	assert.ok(merged.automationRules.length >= 2, "a new rule was appended");
+	const ids = merged.automationRules.map((r) => r.id);
+	assert.equal(new Set(ids).size, ids.length, "automation rule ids stay unique");
+	const triggerIds = merged.automationRules.flatMap((r) => r.triggers.map((t) => t.id));
+	assert.equal(new Set(triggerIds).size, triggerIds.length, "trigger ids stay unique");
+	// The existing rule keeps its original id; appended rules get fresh ids.
+	assert.equal(merged.automationRules[0].id, "automation-1");
+	assert.equal(mergeTriggerPhrasesIntoDraft({}, []), null, "no phrases → null");
+});

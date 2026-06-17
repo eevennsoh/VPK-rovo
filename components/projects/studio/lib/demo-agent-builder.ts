@@ -760,6 +760,51 @@ export function buildAgentUpdatePatch(
 	return patch;
 }
 
+/**
+ * Additively merge natural-language trigger phrases into a draft's automation
+ * rules, preserving existing rules (names/prompts/params) and assigning unique
+ * trigger/rule ids. This is the stateful counterpart the screen-assistant shell
+ * calls: the stateless patch normalizer can only set phrase-only `triggers`
+ * (never rebuild `automationRules`, which would clobber on shallow-merge), so the
+ * shell hydrates them here where the current draft is available — the same merge
+ * `buildAgentUpdatePatch` performs for the deterministic planner. Returns the
+ * merged `automationRules` + derived `triggers` labels, or null when no phrase
+ * resolves to a real provider/event.
+ */
+export function mergeTriggerPhrasesIntoDraft(
+	currentDraft: Partial<AgentResult>,
+	triggerPhrases: readonly string[],
+): { automationRules: AgentAutomationRule[]; triggers: string[] } | null {
+	const definitions = inferTriggerDefinitions(triggerPhrases);
+	if (!definitions || definitions.length === 0) {
+		return null;
+	}
+	const existingRules = currentDraft.automationRules ?? [];
+	const existingTriggers = existingRules.flatMap((rule) => rule.triggers);
+	const usedIds = new Set(existingTriggers.map((definition) => definition.id));
+	const addedRules: AgentAutomationRule[] = [];
+	let automationRuleIndex = nextAutomationRuleIndex(existingRules);
+	for (const definition of definitions) {
+		const seenTriggers = [...existingTriggers, ...addedRules.flatMap((rule) => rule.triggers)];
+		let index = nextTriggerIndex(seenTriggers, definition.providerId, definition.eventId);
+		let value = createAgentTriggerValue(definition.providerId, definition.eventId, index);
+		while (value && usedIds.has(value.id)) {
+			index += 1;
+			value = createAgentTriggerValue(definition.providerId, definition.eventId, index);
+		}
+		if (value) {
+			usedIds.add(value.id);
+			addedRules.push(createAgentAutomationRule({ id: `automation-${automationRuleIndex}`, triggers: [value] }));
+			automationRuleIndex += 1;
+		}
+	}
+	if (addedRules.length === 0) {
+		return null;
+	}
+	const merged = [...existingRules, ...addedRules];
+	return { automationRules: merged, triggers: serializeAutomationRuleLabels(merged) };
+}
+
 function deriveAgentName(prompt: string): string {
 	const words = significantWords(prompt, 3).map(titleCase);
 	return words.length > 0 ? `${words.join(" ")} agent` : "Untitled agent";
