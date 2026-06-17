@@ -112,21 +112,26 @@ export function AtlassianLogoMark({
 }: Readonly<AtlassianLogoMarkProps>) {
 	if (frame === "chip") {
 		// Mirrors BrandLogoMark frame="chip": a fixed 16px box. Backgroundless 1P
-		// marks (the Atlassian master logo + the Rovo family) render as a centered
-		// 12px glyph — the IconTile-transparent inset treatment — while solid
-		// product marks (Jira, Confluence, …) fill the full box. No tile/border so
-		// they read as a bare mark mid-sentence.
+		// marks (the Atlassian master logo + the Rovo family) inset to a centered
+		// 12px glyph — the IconTile-transparent treatment — while solid product
+		// marks (Jira, Confluence, …) fill the full box. No tile/border so they
+		// read as a bare mark mid-sentence.
+		//
+		// The mark always renders at its native `xxsmall` (16px); only the
+		// backgroundless case is clamped down to 12px. Rendering a larger size and
+		// shrinking it via CSS left the glyph overflowing/misaligned in the chip, so
+		// we let the native 16px mark fill the box and clamp only when inset.
 		const isBackgroundless = isBackgroundlessAtlassianLogo(name);
 		return (
 			<span
 				aria-hidden="true"
 				className={cn(
-					"inline-flex size-4 shrink-0 items-center justify-center align-middle",
-					isBackgroundless ? "[&>span]:size-3! [&_svg]:size-3!" : "[&>span]:size-4! [&_svg]:size-4!",
+					"inline-flex size-4 shrink-0 items-center justify-center",
+					isBackgroundless && "[&>span]:size-3! [&_svg]:size-3!",
 					className,
 				)}
 			>
-				<AtlassianLogo label="" name={name} size={isBackgroundless ? "xxsmall" : "small"} themeAware />
+				<AtlassianLogo label="" name={name} size="xxsmall" themeAware />
 			</span>
 		);
 	}
