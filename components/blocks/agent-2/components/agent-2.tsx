@@ -148,16 +148,11 @@ import {
 	AGENT_AVATAR_OPTION_GROUPS,
 	AGENT_AVATAR_OPTION_SRCS,
 } from "@/components/blocks/agent-2/data/agent-avatar-options";
+import { getDeterministicAgentBannerSrc } from "@/lib/agent-avatars";
 
 const AGENT_AVATAR_HEXAGON_PATH = "M19.01 0.922148C20.24 0.212148 21.76 0.212148 23 0.922148L40 10.6921C41.24 11.4021 42.01 12.7321 42.01 14.1621V33.6721C42.01 35.1021 41.24 36.4221 40 37.1421L23 46.9121C21.77 47.6221 20.25 47.6221 19.01 46.9121L2.01 37.1321C0.77 36.4221 0 35.0921 0 33.6621V14.1621C0 12.7321 0.77 11.4121 2.01 10.6921L19.01 0.922148Z";
 const AGENT_AVATAR_SRC = "/avatar-agent/teamwork-agents/blocker-checker.svg";
 const AGENT_AVATAR_OPTION_SRC_SET = new Set<string>(AGENT_AVATAR_OPTION_SRCS);
-// The default RFP Drafter demo agent gets a bespoke taller cover with artwork.
-// Gated on the agent id (mirrors RFP_DRAFTING_AGENT_ID in the projects layer)
-// rather than imported from there, so this reusable block never depends on
-// feature code. Other templates keep the standard solid-color cover.
-const RFP_DRAFTING_AGENT_ID = "rfp-drafting-agent";
-const RFP_DRAFTING_COVER_BACKGROUND_SRC = "/smart-folders/abstract-lime.svg";
 const DEFAULT_AGENT_PROFILE_COVER_COLOR = "#1868DB";
 const MAX_AGENT_CONVERSATION_STARTERS = 3;
 const AGENT_PROFILE_INLINE_EDIT_MOTION_PROPS = {
@@ -3382,13 +3377,15 @@ function getUnmaskedAvatarSrc(avatarSrc: string): string {
 function AgentProfileCover({
 	avatarSrc = AGENT_AVATAR_SRC,
 	onAvatarChange,
-	isRfpDrafter = false,
+	bannerSrc,
 }: Readonly<{
 	avatarSrc?: string;
 	onAvatarChange?: (avatarSrc: string) => void;
-	// The default RFP Drafter demo agent gets a taller cover with artwork; every
-	// other template keeps the standard 48px solid-color banner.
-	isRfpDrafter?: boolean;
+	// Cover-banner artwork from `/smart-folders`, picked deterministically per
+	// agent so every cover shows a varied design + color (see
+	// getDeterministicAgentBannerSrc). The solid color below shows only until the
+	// artwork paints.
+	bannerSrc: string;
 }>) {
 	const coverBackgroundColor = getAgentProfileCoverBackgroundColor(avatarSrc);
 	const isAtlassianAvatar = isAtlassianLogoSource(avatarSrc);
@@ -3396,10 +3393,10 @@ function AgentProfileCover({
 	return (
 		<div className="relative overflow-hidden rounded-t-xl bg-surface text-text">
 			<div
-				className={cn("relative overflow-hidden bg-cover bg-center", isRfpDrafter ? "h-20" : "h-12")}
+				className="relative h-20 overflow-hidden bg-cover bg-center"
 				style={{
 					backgroundColor: coverBackgroundColor,
-					backgroundImage: isRfpDrafter ? `url("${RFP_DRAFTING_COVER_BACKGROUND_SRC}")` : undefined,
+					backgroundImage: `url("${bannerSrc}")`,
 				}}
 			>
 				{isAtlassianAvatar ? (
@@ -3419,10 +3416,9 @@ function AgentProfileCover({
 			</div>
 			<div aria-hidden className="h-6" />
 			{/* Avatar straddles the banner's bottom edge: top = bannerHeight − 24px
-			    (half the 48px avatar). 80px banner → top-14, 48px banner → top-6.
-			    The 24px overhang below the banner is constant, so the h-6 spacer
-			    above stays correct for both heights. */}
-			<div className={cn("absolute left-4 size-12", isRfpDrafter ? "top-14" : "top-6")}>
+			    (half the 48px avatar). The 80px banner puts it at top-14, and the
+			    24px overhang below the banner keeps the h-6 spacer above correct. */}
+			<div className="absolute top-14 left-4 size-12">
 				{onAvatarChange ? (
 					<AgentAvatarPickerMenu
 						avatarSrc={avatarSrc}
@@ -4153,7 +4149,7 @@ function AgentConfigProfile({
 			<AgentProfileCover
 				avatarSrc={avatarSrc}
 				onAvatarChange={onAvatarChange}
-				isRfpDrafter={config.agentId === RFP_DRAFTING_AGENT_ID}
+				bannerSrc={getDeterministicAgentBannerSrc(config.agentId ?? avatarSrc)}
 			/>
 			<div className="flex flex-col gap-1" data-agent-field="name">
 				{/* The cover/avatar and the description below stay put; only the name
