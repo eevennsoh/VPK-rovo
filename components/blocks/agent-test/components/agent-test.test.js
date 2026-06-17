@@ -68,6 +68,27 @@ test("AgentTestPanel surfaces automations in the greeting and runs them inline i
 	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /function AutomationTestEventRow/u);
 });
 
+test("AgentTestPanel reveals a hover Edit affordance that opens the trigger editor in situ", () => {
+	// The studio trigger dialog wrapper is wired in.
+	assert.match(AGENT_TEST_PANEL_SOURCE, /import \{ AgentTriggersDialog \} from "@\/components\/ui-custom\/agent-triggers-dialog";/u);
+	// The row hosts the run button + a hover-revealed Edit button, so it can no
+	// longer be a single <button> (no nested buttons). It is a group container.
+	assert.match(AGENT_TEST_PANEL_SOURCE, /<div className="group\/automation-row /u);
+	// Edit is a normal outline button labelled "Edit", collapsed (grid 0fr +
+	// opacity-0) at rest and revealed with an 8px gap (ml-2) on row hover or
+	// keyboard focus, with a descriptive aria-label.
+	assert.match(AGENT_TEST_PANEL_SOURCE, /aria-label=\{`Edit \$\{label\}`\}[\s\S]*size="compact"[\s\S]*variant="outline"[\s\S]*>\s*Edit\s*<\/Button>/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /grid-cols-\[0fr\][\s\S]*group-hover\/automation-row:grid-cols-\[1fr\]/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /group-hover\/automation-row:ml-2/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /group-focus-within\/automation-row:grid-cols-\[1fr\]/u);
+	// Clicking Edit opens the in-situ "Edit flow" dialog seeded with that rule;
+	// Save commits the edited rule into the editable local flows.
+	assert.match(AGENT_TEST_PANEL_SOURCE, /const \[editingRule, setEditingRule\] = useState<AgentAutomationRule \| null>\(null\);/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /function handleEditAutomation\([\s\S]*setEditingRule\(rule\);/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /function handleTriggersSave\([\s\S]*current\.map\(\(rule\) => \(rule\.id === automationRule\.id \? automationRule : rule\)\)/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTriggersDialog[\s\S]*automationRule=\{editingRule\}[\s\S]*onSave=\{handleTriggersSave\}[\s\S]*title="Edit flow"/u);
+});
+
 test("AgentTestPanel builds test profile data from the live draft", () => {
 	assert.match(AGENT_TEST_PANEL_SOURCE, /const id = `agent-test-\$\{entry\.profile\.id\}`;/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /function buildAgentTestProfile\([\s\S]*entry: StudioSessionAgentEntry,[\s\S]*result: RovoDataParts\["agent-result"\],[\s\S]*versionLabel: string,[\s\S]*\): RovoAgentProfile/u);
