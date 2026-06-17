@@ -1424,13 +1424,17 @@ export function RovoAppAgentConfigPanel({
 										// region (compactScrollAreaClassName `pt-6`) so it collapses
 										// as soon as the content scrolls; access/surfaces/users keep
 										// the fixed `py-4` since they don't share that scroll area.
-										// The config fields read best in a narrower 800px column;
+										// The config fields read best in a narrower 800px column,
+										// but that cap lives INSIDE the scroll region (centered on
+										// each scroll child via compactScrollAreaClassName) rather
+										// than on this wrapper, so the scrollable element spans the
+										// full panel width and the wheel works anywhere — not only
+										// over the centered column.
 										// access/surfaces/users keep the wider max-w-7xl shell.
-										activeCompactSection === "access" ||
+										(activeCompactSection === "access" ||
 											activeCompactSection === "surfaces" ||
-											activeCompactSection === "users"
-											? "max-w-7xl py-4"
-											: "max-w-[800px]",
+											activeCompactSection === "users") &&
+											"max-w-7xl py-4",
 									)}
 								>
 									{activeCompactSection === "access" ? (
@@ -1496,7 +1500,12 @@ export function RovoAppAgentConfigPanel({
 											// composer). padding-bottom there extends scrollHeight by 16px
 											// and only shows once scrolled to the end. Scoped to this
 											// config branch only; access/surfaces/users keep px-4.
-											compactScrollAreaClassName="-ml-1.5 -mr-4 pr-4 pt-2 [&>*:first-child]:mt-2 [&_[data-agent-field=instructions]_.rich-text-editor-content]:pb-4"
+											// The 800px reading-width cap now rides on the scroll
+											// content itself (`[&>*]:mx-auto [&>*]:w-full
+											// [&>*]:max-w-[800px]`) instead of the wrapper, so the
+											// scrollable element fills the panel and the content stays
+											// centered at 800px.
+											compactScrollAreaClassName="-ml-1.5 -mr-4 pr-4 pt-2 [&>*:first-child]:mt-2 [&>*]:mx-auto [&>*]:w-full [&>*]:max-w-[800px] [&_[data-agent-field=instructions]_.rich-text-editor-content]:pb-4"
 											idPrefix={`agent-${profileId}-${activeConfigId}`}
 											onTextChange={handleConfigTextChange}
 											onProfileTextChange={handleBaseTextChange}
