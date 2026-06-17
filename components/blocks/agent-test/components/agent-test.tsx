@@ -19,6 +19,7 @@ import {
 	type AgentAutomationRule,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/data/trigger-catalog";
+import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
 import ChatPanel, { type ChatPanelAgentVersionOption } from "@/components/projects/sidebar-chat/page";
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import { Badge } from "@/components/ui/badge";
@@ -541,9 +542,11 @@ function buildAutomationRunMessages(
 // greeting. Clicking a row runs its sample inline.
 function AgentTestAutomationGreetingRows({
 	automationRules,
+	onEditAutomation,
 	onRunAutomation,
 }: Readonly<{
 	automationRules: readonly AgentAutomationRule[];
+	onEditAutomation: (rule: AgentAutomationRule, ruleIndex: number) => void;
 	onRunAutomation: (rule: AgentAutomationRule, ruleIndex: number) => void;
 }>): ReactElement | null {
 	if (automationRules.length === 0) {
@@ -555,6 +558,7 @@ function AgentTestAutomationGreetingRows({
 			{automationRules.map((rule, ruleIndex) => (
 				<AgentTestAutomationGreetingRow
 					key={rule.id}
+					onEdit={() => onEditAutomation(rule, ruleIndex)}
 					onRun={() => onRunAutomation(rule, ruleIndex)}
 					rule={rule}
 					ruleIndex={ruleIndex}
@@ -565,10 +569,12 @@ function AgentTestAutomationGreetingRows({
 }
 
 function AgentTestAutomationGreetingRow({
+	onEdit,
 	onRun,
 	rule,
 	ruleIndex,
 }: Readonly<{
+	onEdit: () => void;
 	onRun: () => void;
 	rule: AgentAutomationRule;
 	ruleIndex: number;
@@ -576,28 +582,53 @@ function AgentTestAutomationGreetingRow({
 	const label = getAgentAutomationRuleLabel(rule, ruleIndex);
 	const hasTrigger = rule.triggers.length > 0;
 
+	// The row is no longer a single button: it now hosts the run button plus a
+	// hover-revealed Edit button. A nested `<button>` inside a `<button>` is
+	// invalid HTML, so the row wrapper is a `<div>` that owns the hover surface
+	// and the `group/automation-row` reveal context.
 	return (
-		<button
-			aria-label={`Test ${label}`}
-			className="flex w-full items-center gap-3 rounded-[12px] py-2 pl-1.5 pr-2 text-left transition-colors hover:bg-bg-neutral-subtle-hovered disabled:pointer-events-none disabled:opacity-(--opacity-disabled)"
-			disabled={!hasTrigger}
-			onClick={onRun}
-			type="button"
-		>
-			<IconTile
-				aria-hidden
-				className="shrink-0 border border-border bg-surface"
-				icon={<AutomationIcon color={token("color.icon.subtle")} label={label} />}
-				label={label}
-				size="medium"
-			/>
-			<span className="flex min-w-0 flex-1 items-center justify-between gap-3">
-				<span className="menu-row-title min-w-0 truncate text-left">{label}</span>
-				<span className="shrink-0">
-					<AgentTestAutomationFlow rule={rule} />
+		<div className="group/automation-row flex w-full items-center rounded-[12px] pl-1.5 pr-2 transition-colors hover:bg-bg-neutral-subtle-hovered">
+			<button
+				aria-label={`Test ${label}`}
+				className="flex min-w-0 flex-1 items-center gap-3 rounded-[12px] py-2 text-left outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-focused disabled:pointer-events-none disabled:opacity-(--opacity-disabled)"
+				disabled={!hasTrigger}
+				onClick={onRun}
+				type="button"
+			>
+				<IconTile
+					aria-hidden
+					className="shrink-0 border border-border bg-surface"
+					icon={<AutomationIcon color={token("color.icon.subtle")} label={label} />}
+					label={label}
+					size="medium"
+				/>
+				<span className="flex min-w-0 flex-1 items-center justify-between gap-3">
+					<span className="menu-row-title min-w-0 truncate text-left">{label}</span>
+					<span className="shrink-0">
+						<AgentTestAutomationFlow rule={rule} />
+					</span>
 				</span>
-			</span>
-		</button>
+			</button>
+			{/* Hover-revealed "Edit" affordance. A text button has an intrinsic
+			    width, so we animate it open with the `grid-cols-[0fr]→[1fr]` +
+			    `overflow-hidden` idiom (the transitionable way to collapse a
+			    variable-width element). `ml-0→ml-2` adds the 8px gap from the flow
+			    badge only once revealed, on row hover or keyboard focus. */}
+			<div className="ml-0 grid shrink-0 grid-cols-[0fr] opacity-0 transition-[grid-template-columns,opacity,margin] duration-normal ease-out group-hover/automation-row:ml-2 group-hover/automation-row:grid-cols-[1fr] group-hover/automation-row:opacity-100 group-focus-within/automation-row:ml-2 group-focus-within/automation-row:grid-cols-[1fr] group-focus-within/automation-row:opacity-100">
+				<div className="min-w-0 overflow-hidden">
+					<Button
+						aria-label={`Edit ${label}`}
+						className="pointer-events-none group-hover/automation-row:pointer-events-auto group-focus-within/automation-row:pointer-events-auto"
+						onClick={onEdit}
+						size="compact"
+						type="button"
+						variant="outline"
+					>
+						Edit
+					</Button>
+				</div>
+			</div>
+		</div>
 	);
 }
 
@@ -609,6 +640,13 @@ function AgentTestChatPanel({
 	testAgentProfile: RovoAgentProfile;
 }>): ReactElement {
 	const { selectedAgentId, selectAgent, replaceMessages } = useRovoChat();
+
+	// The greeting flows come from a read-only test fixture. We hold an editable
+	// local copy so the in-situ Edit dialog can commit changes; the whole panel
+	// remounts (keyed RovoChatProvider) whenever the fixture/version changes, so
+	// seeding from props once is correct without a sync effect.
+	const [rules, setRules] = useState<readonly AgentAutomationRule[]>(automationRules);
+	const [editingRule, setEditingRule] = useState<AgentAutomationRule | null>(null);
 
 	useEffect(() => {
 		if (selectedAgentId !== testAgentProfile.id) {
@@ -622,36 +660,63 @@ function AgentTestChatPanel({
 			replaceMessages(messages);
 		}
 	}
+
+	function handleEditAutomation(rule: AgentAutomationRule): void {
+		setEditingRule(rule);
+	}
+
+	function handleTriggersSave(automationRule: AgentAutomationRule): void {
+		setRules((current) =>
+			current.map((rule) => (rule.id === automationRule.id ? automationRule : rule)),
+		);
+	}
+
 	const shouldShowTestHeader = testAgentProfile.starters.length > 0 || automationRules.length > 0;
 
 	return (
-		<ChatPanel
-			onClose={() => {}}
-			abortOnUnmount={false}
-			containerClassName="h-full min-h-0 w-full overflow-visible"
-			containerStyle={{ borderRadius: 0, borderWidth: 0, overflow: "visible" }}
-			composerContainerClassName="px-0 [&_.chat-composer-surface]:max-w-[600px]"
-			composerReservesContextBarSpace
-			conversationContentClassName="px-0 max-w-[600px]"
-			showAgentTestControls
-			suppressCustomAgentTabs
-			greeting={{
-				heading: testAgentProfile.name,
-				suggestions: testAgentProfile.starters,
-				showStarterGroupLabel: shouldShowTestHeader,
-				starterGroupLabel: "Test the following",
-				agentTestSection: (
-					<AgentTestAutomationGreetingRows
-						automationRules={automationRules}
-						onRunAutomation={handleRunAutomation}
-					/>
-				),
-			}}
-			greetingSelectedAgent={testAgentProfile}
-			hideAiCursor
-			hideComposerSourceAndModelControls
-			hideHeader
-		/>
+		<>
+			<ChatPanel
+				onClose={() => {}}
+				abortOnUnmount={false}
+				containerClassName="h-full min-h-0 w-full overflow-visible"
+				containerStyle={{ borderRadius: 0, borderWidth: 0, overflow: "visible" }}
+				composerContainerClassName="px-0 [&_.chat-composer-surface]:max-w-[600px]"
+				composerReservesContextBarSpace
+				conversationContentClassName="px-0 max-w-[600px]"
+				showAgentTestControls
+				suppressCustomAgentTabs
+				greeting={{
+					heading: testAgentProfile.name,
+					suggestions: testAgentProfile.starters,
+					showStarterGroupLabel: shouldShowTestHeader,
+					starterGroupLabel: "Test the following",
+					agentTestSection: (
+						<AgentTestAutomationGreetingRows
+							automationRules={rules}
+							onEditAutomation={handleEditAutomation}
+							onRunAutomation={handleRunAutomation}
+						/>
+					),
+				}}
+				greetingSelectedAgent={testAgentProfile}
+				hideAiCursor
+				hideComposerSourceAndModelControls
+				hideHeader
+			/>
+			{editingRule ? (
+				<AgentTriggersDialog
+					automationRule={editingRule}
+					onOpenChange={(open) => {
+						if (!open) {
+							setEditingRule(null);
+						}
+					}}
+					onSave={handleTriggersSave}
+					open
+					title="Edit flow"
+				/>
+			) : null}
+		</>
 	);
 }
 
