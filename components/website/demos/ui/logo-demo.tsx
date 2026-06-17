@@ -388,7 +388,7 @@ export function LogoDemoInTag() {
 			</div>
 			<p className="text-xs text-text-subtle">
 				Inline chips (e.g. the agent config panel&apos;s tags): every mark is normalized to a 16px box.
-				Borderless 3P + 2P marks render as a centered 10px glyph (no tile); solid-fill 3P marks fill the box.
+				Borderless 3P + 2P marks render as a centered 12px glyph (no tile); solid-fill 3P marks fill the box.
 			</p>
 		</div>
 	);

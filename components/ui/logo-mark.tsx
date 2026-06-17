@@ -3,6 +3,7 @@
 import { Tile, type TileProps } from "@/components/ui/tile";
 import { AtlassianLogo, type AtlassianLogoName } from "@/components/ui/logo";
 import {
+	isBackgroundlessAtlassianLogo,
 	resolveAtlassianLogoBorder,
 	resolveBrandLogoPresentation,
 } from "@/components/ui/data/logo-usage";
@@ -27,7 +28,7 @@ import { cn } from "@/lib/utils";
  *   Bordered marks (bare 2P PNGs, white-tile 3P) sit on a surface tile and
  *   follow `Tile`'s inset child scale.
  * - `frame="chip"` — renders a fixed 16px box for inline chips. Solid-fill 3P
- *   marks fill the box; bordered marks render as a centered 10px glyph with no
+ *   marks fill the box; bordered marks render as a centered 12px glyph with no
  *   tile/border so they read as a bare mark mid-sentence.
  */
 
@@ -58,12 +59,18 @@ export interface AtlassianLogoMarkProps {
 	name: AtlassianLogoName;
 	/** Accessible label forwarded to the logo/tile wrapper. */
 	label: string;
-	/** `Tile`/logo size. */
+	/**
+	 * `"tile"` (default) for picker / menu rows; `"chip"` for inline tag/pill
+	 * chips. Mirrors {@link BrandLogoMarkProps.frame} so 1P and 2P/3P marks share
+	 * one inline-chip API. `"chip"` ignores `size`/`transparent`.
+	 */
+	frame?: "tile" | "chip";
+	/** `Tile`/logo size. Ignored for `frame="chip"`. */
 	size?: NonNullable<TileProps["size"]>;
 	/**
 	 * Drop the border + surface fill so the mark sits in a bare transparent `Tile`
 	 * (the `components/ui/tile#transparent` treatment). For low-chrome attribution
-	 * rows (skill / entity card publisher logos).
+	 * rows (skill / entity card publisher logos). `frame="tile"` only.
 	 */
 	transparent?: boolean;
 	className?: string;
@@ -98,10 +105,32 @@ export function AtlassianLogoGlyph({
 export function AtlassianLogoMark({
 	name,
 	label,
+	frame = "tile",
 	size = "medium",
 	className,
 	transparent = false,
 }: Readonly<AtlassianLogoMarkProps>) {
+	if (frame === "chip") {
+		// Mirrors BrandLogoMark frame="chip": a fixed 16px box. Backgroundless 1P
+		// marks (the Atlassian master logo + the Rovo family) render as a centered
+		// 12px glyph — the IconTile-transparent inset treatment — while solid
+		// product marks (Jira, Confluence, …) fill the full box. No tile/border so
+		// they read as a bare mark mid-sentence.
+		const isBackgroundless = isBackgroundlessAtlassianLogo(name);
+		return (
+			<span
+				aria-hidden="true"
+				className={cn(
+					"inline-flex size-4 shrink-0 items-center justify-center align-middle",
+					isBackgroundless ? "[&>span]:size-3! [&_svg]:size-3!" : "[&>span]:size-4! [&_svg]:size-4!",
+					className,
+				)}
+			>
+				<AtlassianLogo label="" name={name} size={isBackgroundless ? "xxsmall" : "small"} themeAware />
+			</span>
+		);
+	}
+
 	if (transparent) {
 		return (
 			<Tile
@@ -169,7 +198,7 @@ export function BrandLogoMark({
 					alt=""
 					aria-hidden
 					src={presentation.src}
-					className={cn("block object-contain", presentation.hasBorder ? "size-2.5" : "size-4")}
+					className={cn("block object-contain", presentation.hasBorder ? "size-3" : "size-4")}
 				/>
 			</span>
 		);

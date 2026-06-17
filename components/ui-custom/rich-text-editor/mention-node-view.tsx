@@ -107,12 +107,14 @@ export function RichTextMentionNodeView({ node, editor, getPos }: Readonly<React
 		<Tag
 			className="rich-text-mention-chip"
 			// Keep the chip frame neutral gray to match the agent config-panel
-			// reference chips (Flows/Apps/Skills/Subagents). The leading glyph still
-			// carries the collection color because `RichTextMentionVisualMark` applies
-			// `visual.iconColor` to its `IconTile` (a closer ancestor than the gray
-			// leading slot), and brand logos keep their own color — so only the frame
-			// goes neutral, not the icon.
+			// reference chips (Flows/Apps/Skills/Subagents). The `editor` variant
+			// drops the border for a solid neutral fill — the same treatment those
+			// config chips use. The leading glyph still carries the collection color
+			// because `RichTextMentionVisualMark` applies `visual.iconColor` to its
+			// `IconTile` (a closer ancestor than the gray leading slot), and brand
+			// logos keep their own color — so only the frame goes neutral, not the icon.
 			color="gray"
+			variant="editor"
 			elemBefore={visual ? (
 				<RichTextMentionVisualMark
 					category={category as RichTextMentionCategory}
