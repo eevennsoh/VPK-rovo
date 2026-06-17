@@ -993,10 +993,12 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /\{preview \? \([\s\S]*<HoverCard>[\s\S]*<HoverCardTrigger closeDelay=\{80\} delay=\{120\} render=\{<span className="rich-text-mention-trigger-wrapper inline-flex max-w-full" \/>\}>[\s\S]*\{tag\}[\s\S]*<\/HoverCardTrigger>[\s\S]*<RichTextReferencePreviewContent preview=\{preview\} \/>[\s\S]*<\/HoverCard>[\s\S]*\) : tag\}/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /type=\{getRichTextMentionTagType\(visual\)\}/u);
 	assert.doesNotMatch(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /className="rich-text-mention"/u);
-	// Mention tokens render with the visual-derived accent color (synced with the
-	// agent config-panel reference chips) rather than a hardcoded gray chip.
-	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /color=\{getRichTextMentionTagColor\(visual\)\}/u);
-	assert.doesNotMatch(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /color="gray"/u);
+	// Mention tokens render with a neutral gray chip frame to stay visually in
+	// sync with the agent config-panel reference chips (Flows/Apps/Skills/
+	// Subagents). The leading glyph still carries the collection color because
+	// `RichTextMentionVisualMark` applies `visual.iconColor` to the `IconTile`.
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /color="gray"/u);
+	assert.doesNotMatch(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /color=\{getRichTextMentionTagColor\(visual\)\}/u);
 	// Visual resolution falls back to the directory entry so a token shows the
 	// same icon/logo as its config-panel chip even when stored attrs lack one.
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /getDirectoryMentionItemOrFallback\(category, label\)\.visual/u);

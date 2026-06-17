@@ -13,7 +13,6 @@ import { Tag, TagGroup } from "@/components/ui/tag";
 import { Textarea } from "@/components/ui/textarea";
 
 import {
-	getRichTextMentionTagColor,
 	getRichTextMentionTagType,
 	RichTextMentionVisualMark,
 } from "./mention-visual";
@@ -183,7 +182,10 @@ export function FrontmatterNodeView({ node, updateAttributes, editor }: ReactNod
 											return (
 												<Tag
 													key={`${entry.key}-${item}-${index}`}
-													color={getRichTextMentionTagColor(visual)}
+													// Neutral gray frame to match the agent config-panel
+													// reference chips; the leading logo/icon keeps its
+													// collection color via `RichTextMentionVisualMark`.
+													color="gray"
 													elemBefore={
 														visual ? (
 															<RichTextMentionVisualMark

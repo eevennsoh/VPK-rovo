@@ -2710,7 +2710,7 @@ function AgentFilledSummaryRow({
 
 	return (
 		<div
-			className="group/agent-row -mx-1 rounded-md px-1 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered"
+			className="group/agent-row -mx-2 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered"
 			data-agent-field={agentFieldName}
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
@@ -2871,7 +2871,7 @@ function AgentTriggerSummaryRow({
 
 	return (
 		<div
-			className="group/agent-row -mx-1 flex flex-col gap-y-1 rounded-md px-1 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-6"
+			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-6"
 			data-agent-field="trigger"
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
@@ -3215,6 +3215,23 @@ function AgentFilledConfigSummary({
 					hideWhenEmpty={hideEmptyRows}
 					isItemDisabled={(item) => isAgentListItemDisabled(config, "subagents", item)}
 					items={subagentItems}
+					// Mirror the Apps/Flows treatment: the chip frame stays neutral gray
+					// (see `tagColor="gray"` below) while only the leading agent glyph
+					// carries the collection color. We color the icon explicitly via
+					// `tagColorToMenuIconClassName` (the `[&_svg]:…!` override beats the
+					// neutral leading-slot color) instead of relying on `text-inherit`,
+					// which would now resolve to gray. Falls back to inheriting the
+					// neutral chip color when the agent has no collection family.
+					itemElemBefore={() => (
+						<IconTile
+							aria-hidden
+							className={subagentTagColor ? tagColorToMenuIconClassName[subagentTagColor] : "text-inherit"}
+							icon={<Icon aria-hidden render={<AiAgentIcon label="" size="small" />} />}
+							label=""
+							size="xxsmall"
+							variant="transparent"
+						/>
+					)}
 					label="Subagents"
 					renderAddControl={subagentsNavItem ? ({ label, className }) => (
 						<AgentCompactSubagentsNavButton
@@ -3237,7 +3254,7 @@ function AgentFilledConfigSummary({
 					onRemoveItem={onRemoveListItem ? (index) => onRemoveListItem("subagents", index) : undefined}
 					referenceCategory="subagent"
 					screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:subagents` : undefined}
-					tagColor={subagentTagColor}
+					tagColor="gray"
 				/>
 			),
 		},
@@ -3774,7 +3791,7 @@ function AgentReasoningRow({
 }: Readonly<AgentReasoningRowProps>) {
 	return (
 		<div
-			className="group/agent-row -mx-1 flex flex-col gap-y-1 rounded-md px-1 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-6"
+			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-6"
 			data-agent-field="reasoning"
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
@@ -3969,7 +3986,7 @@ function AgentMemoryRow({
 }: Readonly<AgentMemoryRowProps>) {
 	return (
 		<div
-			className="group/agent-row -mx-1 flex flex-col gap-y-1 rounded-md px-1 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-6"
+			className="group/agent-row -mx-2 flex flex-col gap-y-1 rounded-md px-2 py-1 transition-colors hover:bg-bg-neutral-subtle-hovered sm:flex-row sm:items-center sm:gap-x-6"
 			data-agent-field="memory"
 			data-screen-assistant-target={screenAssistantTargetId}
 		>
@@ -4450,10 +4467,32 @@ function AgentCompactConfigPanel({
 		mql.addEventListener("change", onChange);
 		return () => mql.removeEventListener("change", onChange);
 	}, []);
-	const stripRevealed = !hasRows || !canHover || stripHovered || stripFocused;
+	// A menu opened from a strip control (e.g. the Memory/Reasoning dropdowns)
+	// renders its popup in a portal *outside* this card, so moving the pointer
+	// toward it fires `onPointerLeave` and collapses the strip out from under the
+	// open menu. While any menu is open its trigger button — which stays inside
+	// the card — carries `aria-expanded="true"`, so we observe that attribute on
+	// the card subtree and latch the strip open until the menu closes. This spans
+	// both the summary-row edit menus and the chip-strip menus without threading
+	// an open-state callback through every nav button.
+	const cardRef = useRef<HTMLDivElement | null>(null);
+	const [stripMenuOpen, setStripMenuOpen] = useState(false);
+	useEffect(() => {
+		const card = cardRef.current;
+		if (!card) {
+			return;
+		}
+		const update = () => setStripMenuOpen(card.querySelector('[aria-expanded="true"]') !== null);
+		const observer = new MutationObserver(update);
+		observer.observe(card, { subtree: true, attributes: true, attributeFilter: ["aria-expanded"] });
+		update();
+		return () => observer.disconnect();
+	}, []);
+	const stripRevealed = !hasRows || !canHover || stripHovered || stripFocused || stripMenuOpen;
 
 	return (
 		<div
+			ref={cardRef}
 			className={cn(
 				"mb-2 flex flex-col rounded-2xl border border-border px-4 pt-2",
 				stripRevealed ? "pb-2" : "pb-0",
