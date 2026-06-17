@@ -4,4 +4,5 @@ export type {
 	AppsDirectoryDialogProps,
 	AppsDirectorySidebarGroup,
 	AppsDirectoryTool,
+	AppsDirectoryVariant,
 } from "./components/apps-directory";

@@ -3,7 +3,11 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/blocks/skills-directory";
+import {
+	SkillsDirectoryDialog,
+	type SkillsDirectorySkill,
+	type SkillsDirectoryVariant,
+} from "@/components/blocks/skills-directory";
 
 const DEMO_SESSION_SKILLS: readonly SkillsDirectorySkill[] = [
 	{
@@ -46,14 +50,58 @@ const DEMO_SESSION_SKILLS: readonly SkillsDirectorySkill[] = [
 
 export default function SkillsDirectoryPage() {
 	const [open, setOpen] = useState(false);
+	const [variant, setVariant] = useState<SkillsDirectoryVariant>("default");
+
+	function openDirectory(nextVariant: SkillsDirectoryVariant) {
+		setVariant(nextVariant);
+		setOpen(true);
+	}
 
 	return (
-		<div className="flex min-h-screen items-center justify-center p-4">
-			<Button onClick={() => setOpen(true)}>Browse skills</Button>
+		<div className="flex min-h-screen items-center justify-center gap-3 p-4">
+			<Button onClick={() => openDirectory("default")} variant="outline">
+				Open standard directory
+			</Button>
+			<Button onClick={() => openDirectory("experimental")}>
+				Open experimental directory
+			</Button>
 			<SkillsDirectoryDialog
 				open={open}
 				onOpenChange={setOpen}
 				sessionSkills={DEMO_SESSION_SKILLS}
+				variant={variant}
+			/>
+		</div>
+	);
+}
+
+export function SkillsDirectoryExperimentalPage() {
+	const [open, setOpen] = useState(false);
+
+	return (
+		<SkillsDirectoryPageShell open={open} onOpenChange={setOpen} variant="experimental" />
+	);
+}
+
+function SkillsDirectoryPageShell({
+	open,
+	onOpenChange,
+	variant,
+}: Readonly<{
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	variant?: SkillsDirectoryVariant;
+}>) {
+	return (
+		<div className="flex min-h-screen items-center justify-center p-4">
+			<Button onClick={() => onOpenChange(true)}>
+				{variant === "experimental" ? "Open experimental directory" : "Open standard directory"}
+			</Button>
+			<SkillsDirectoryDialog
+				open={open}
+				onOpenChange={onOpenChange}
+				sessionSkills={DEMO_SESSION_SKILLS}
+				variant={variant}
 			/>
 		</div>
 	);

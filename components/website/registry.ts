@@ -6782,6 +6782,20 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
     () => import("./demos/blocks/apps-directory-demo"),
     { ssr: false },
   ),
+  "apps-directory-demo-standard": dynamic(
+    () =>
+      import("./demos/blocks/apps-directory-demo").then((mod) => ({
+        default: mod.AppsDirectoryDemoStandard,
+      })),
+    { ssr: false },
+  ),
+  "apps-directory-demo-experimental": dynamic(
+    () =>
+      import("./demos/blocks/apps-directory-demo").then((mod) => ({
+        default: mod.AppsDirectoryDemoExperimental,
+      })),
+    { ssr: false },
+  ),
   artifact: dynamic(() => import("./demos/blocks/artifact-demo"), {
     ssr: false,
   }),
@@ -6791,6 +6805,20 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
   ),
   "skills-directory": dynamic(
     () => import("./demos/blocks/skills-directory-demo"),
+    { ssr: false },
+  ),
+  "skills-directory-demo-standard": dynamic(
+    () =>
+      import("./demos/blocks/skills-directory-demo").then((mod) => ({
+        default: mod.SkillsDirectoryDemoStandard,
+      })),
+    { ssr: false },
+  ),
+  "skills-directory-demo-experimental": dynamic(
+    () =>
+      import("./demos/blocks/skills-directory-demo").then((mod) => ({
+        default: mod.SkillsDirectoryDemoExperimental,
+      })),
     { ssr: false },
   ),
   "smart-link": dynamic(() => import("./demos/blocks/smart-link-demo"), {

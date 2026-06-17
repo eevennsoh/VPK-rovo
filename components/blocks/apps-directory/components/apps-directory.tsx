@@ -45,6 +45,7 @@ import { APPS_DIRECTORY_CATEGORIES } from "@/components/blocks/apps-directory/da
 import { DEFAULT_APPS_DIRECTORY_SIDEBAR_GROUPS } from "@/components/blocks/apps-directory/data/sidebar-groups";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { resolveBrandLogoPresentation } from "@/components/ui/data/logo-usage";
 import {
@@ -57,6 +58,7 @@ import { Icon } from "@/components/ui/icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { AtlassianLogo, CustomLogo } from "@/components/ui/logo";
 import { AtlassianLogoGlyph, AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Tile } from "@/components/ui/tile";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -74,6 +76,8 @@ export type { ToolsDirectoryPermission as AppsDirectoryPermission } from "@/app/
 export type { DirectoryApp as AppsDirectoryTool } from "@/app/data/directory/apps";
 
 export type AppsDirectorySidebarGroup = AgentBrowserSidebarGroup;
+
+export type AppsDirectoryVariant = "default" | "experimental";
 
 export interface AppsDirectoryDialogProps {
 	addedToolIds?: readonly string[];
@@ -100,6 +104,12 @@ export interface AppsDirectoryDialogProps {
 	 * or closing clears it. Pass `null` to open at the directory list.
 	 */
 	initialSelectedToolId?: string | null;
+	/**
+	 * Opt-in layout variation. `"default"` keeps the left-sidebar directory.
+	 * `"experimental"` drops the sidebar and moves the category/company/added
+	 * filters into a horizontal dropdown row above a flat results grid.
+	 */
+	variant?: AppsDirectoryVariant;
 }
 
 const EMPTY_APPS_DIRECTORY_TOOLS: readonly AppsDirectoryTool[] = [];
@@ -376,6 +386,7 @@ export function AppsDirectoryDialog({
 	title,
 	tools,
 	initialSelectedToolId = null,
+	variant = "default",
 }: Readonly<AppsDirectoryDialogProps>) {
 	const directoryTools = useMemo(
 		() => [...tools, ...sessionTools],
@@ -529,6 +540,14 @@ export function AppsDirectoryDialog({
 						permissionSelections={permissionSelections[selectedTool.id] ?? {}}
 						tool={selectedTool}
 					/>
+				) : variant === "experimental" ? (
+					<ExperimentalAppsDirectoryView
+						addedIds={addedIds}
+						onSelectTool={handleSelectTool}
+						query={query}
+						setQuery={setQuery}
+						tools={directoryTools}
+					/>
 				) : (
 					<AppsDirectoryView
 						activeCategory={activeCategory}
@@ -681,6 +700,421 @@ function AppsDirectoryView({
 				)}
 			</div>
 		</div>
+	);
+}
+
+function createOptionId(label: string): string {
+	return label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function toggleSelectedValue(values: readonly string[], value: string): readonly string[] {
+	return values.includes(value)
+		? values.filter((current) => current !== value)
+		: [...values, value];
+}
+
+// Categories map straight from the catalog; they carry no avatar (text only).
+function getCategoryOptions(): readonly AgentBrowserSidebarItem[] {
+	return APPS_DIRECTORY_CATEGORIES.map((category) => ({ id: category.id, label: category.label }));
+}
+
+// Company options come from company-attributed apps grouped by publisher, mirroring
+// the experimental agent directory. The first matching app supplies the brand mark.
+function getCompanyOptions(tools: readonly AppsDirectoryTool[]): readonly AgentBrowserSidebarItem[] {
+	const order: string[] = [];
+	const byId = new Map<string, AgentBrowserSidebarItem>();
+
+	for (const tool of tools) {
+		if (tool.attributionKind !== "company") continue;
+
+		const label = derivePublisher(tool);
+		if (!label) continue;
+
+		const id = createOptionId(label);
+		if (byId.has(id)) continue;
+
+		order.push(id);
+		byId.set(id, { id, label, avatarSrc: tool.avatarSrc, logoName: tool.logoName });
+	}
+
+	return order.map((id) => byId.get(id)!);
+}
+
+interface ExperimentalAppsFilters {
+	myApps: boolean;
+	favourites: boolean;
+	categoryIds: readonly string[];
+	companyIds: readonly string[];
+}
+
+// Experimental counterpart to filterTools: the query haystack is identical, but the
+// sidebar's single active category becomes multi-select category + company facets
+// plus the My apps / Favourites toggles.
+function filterToolsExperimental(
+	tools: readonly AppsDirectoryTool[],
+	query: string,
+	filters: ExperimentalAppsFilters,
+	addedIds: ReadonlySet<string>,
+): readonly AppsDirectoryTool[] {
+	const normalizedQuery = query.trim().toLowerCase();
+	const categorySet = new Set(filters.categoryIds);
+	const companySet = new Set(filters.companyIds);
+
+	return tools.filter((tool) => {
+		if (filters.myApps && !addedIds.has(tool.id)) return false;
+		if (filters.favourites && !tool.favorite) return false;
+		if (categorySet.size > 0 && !(tool.categoryId && categorySet.has(tool.categoryId))) return false;
+		if (companySet.size > 0 && !companySet.has(createOptionId(derivePublisher(tool)))) return false;
+
+		if (!normalizedQuery) return true;
+
+		const category = APPS_DIRECTORY_CATEGORIES.find((item) => item.id === tool.categoryId);
+		const haystack = [
+			tool.name,
+			tool.byline,
+			tool.description,
+			tool.publisherName,
+			category?.label,
+			category?.description,
+		]
+			.filter(Boolean)
+			.join(" ")
+			.toLowerCase();
+
+		return haystack.includes(normalizedQuery);
+	});
+}
+
+// Filter-aware empty copy: a query miss, an empty My apps / Favourites facet, or a
+// filter combination with no matches each read differently.
+function getExperimentalEmptyState(
+	query: string,
+	filters: Pick<ExperimentalAppsFilters, "myApps" | "favourites">,
+): { title: string; description: string } {
+	if (query.trim()) {
+		return {
+			title: `No apps match “${query.trim()}”`,
+			description: "Try a different search or clear your filters.",
+		};
+	}
+	if (filters.myApps) {
+		return {
+			title: "No apps added yet",
+			description: "Apps you add to this agent will show up here.",
+		};
+	}
+	if (filters.favourites) {
+		return {
+			title: "No favourite apps yet",
+			description: "Apps you mark as favourite will show up here.",
+		};
+	}
+	return {
+		title: "No apps match your filters",
+		description: "Try removing a filter to see more apps.",
+	};
+}
+
+interface ExperimentalAppsDirectoryViewProps {
+	addedIds: ReadonlySet<string>;
+	onSelectTool: (tool: AppsDirectoryTool) => void;
+	query: string;
+	setQuery: (query: string) => void;
+	tools: readonly AppsDirectoryTool[];
+}
+
+function ExperimentalAppsDirectoryView({
+	addedIds,
+	onSelectTool,
+	query,
+	setQuery,
+	tools,
+}: Readonly<ExperimentalAppsDirectoryViewProps>) {
+	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	const [filterMyApps, setFilterMyApps] = useState(false);
+	const [filterFavourites, setFilterFavourites] = useState(false);
+	const [selectedCategories, setSelectedCategories] = useState<readonly string[]>([]);
+	const [selectedCompanies, setSelectedCompanies] = useState<readonly string[]>([]);
+
+	const categoryOptions = useMemo(() => getCategoryOptions(), []);
+	const companyOptions = useMemo(() => getCompanyOptions(tools), [tools]);
+
+	const filteredTools = useMemo(
+		() => filterToolsExperimental(
+			tools,
+			query,
+			{
+				myApps: filterMyApps,
+				favourites: filterFavourites,
+				categoryIds: selectedCategories,
+				companyIds: selectedCompanies,
+			},
+			addedIds,
+		),
+		[addedIds, filterFavourites, filterMyApps, query, selectedCategories, selectedCompanies, tools],
+	);
+
+	// Split results into the user's added apps and everything else, each under its
+	// own micro section header (mirrors the experimental agent directory).
+	const myApps = useMemo(() => filteredTools.filter((tool) => addedIds.has(tool.id)), [addedIds, filteredTools]);
+	const otherApps = useMemo(() => filteredTools.filter((tool) => !addedIds.has(tool.id)), [addedIds, filteredTools]);
+
+	const hasActiveFilters =
+		Boolean(query.trim()) ||
+		filterMyApps ||
+		filterFavourites ||
+		selectedCategories.length > 0 ||
+		selectedCompanies.length > 0;
+
+	const emptyState = getExperimentalEmptyState(query, {
+		myApps: filterMyApps,
+		favourites: filterFavourites,
+	});
+
+	// Single active facet at a time (mirrors the experimental agent directory):
+	// once one filter is engaged, the others are hidden until it is cleared.
+	const activeFacet = filterMyApps
+		? "myApps"
+		: filterFavourites
+			? "favourites"
+			: selectedCategories.length > 0
+				? "categories"
+				: selectedCompanies.length > 0
+					? "companies"
+					: null;
+	const showFacet = (facet: string) => activeFacet === null || activeFacet === facet;
+
+	function resetFilters() {
+		setQuery("");
+		setFilterMyApps(false);
+		setFilterFavourites(false);
+		setSelectedCategories([]);
+		setSelectedCompanies([]);
+	}
+
+	return (
+		<div className="flex h-full min-h-0 flex-col">
+			{/* Pinned controls: search + filters stay put so the user can always refine,
+			    while only the results below scroll. px-6 clears the card side reach,
+			    pt-1 clears the search focus ring, pb-4 separates the controls from the grid. */}
+			<div className="flex shrink-0 flex-col gap-4 px-6 pt-1 pb-2">
+				<InputGroup>
+					<InputGroupAddon>
+						<SearchIcon label="" />
+					</InputGroupAddon>
+					<InputGroupInput
+						aria-label="Search apps"
+						placeholder="Search for an app by name, or describe it"
+						value={query}
+						onChange={(event) => setQuery(event.target.value)}
+					/>
+				</InputGroup>
+				<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+					<div className="flex flex-wrap items-center gap-2">
+						{showFacet("myApps") ? (
+							<Button
+								aria-pressed={filterMyApps ? true : undefined}
+								onClick={() => setFilterMyApps((current) => !current)}
+								type="button"
+								variant="outline"
+							>
+								Filter by my apps
+							</Button>
+						) : null}
+						{showFacet("favourites") ? (
+							<Button
+								aria-pressed={filterFavourites ? true : undefined}
+								onClick={() => setFilterFavourites((current) => !current)}
+								type="button"
+								variant="outline"
+							>
+								Favourites
+							</Button>
+						) : null}
+						{showFacet("categories") ? (
+							<ExperimentalFilterDropdown
+								activeLabel="Filter by categories"
+								label="Categories"
+								onToggle={(value) => setSelectedCategories((current) => toggleSelectedValue(current, value))}
+								options={categoryOptions}
+								selectedValues={selectedCategories}
+							/>
+						) : null}
+						{showFacet("companies") ? (
+							<ExperimentalFilterDropdown
+								activeLabel="Filter by companies"
+								label="Companies"
+								onToggle={(value) => setSelectedCompanies((current) => toggleSelectedValue(current, value))}
+								options={companyOptions}
+								selectedValues={selectedCompanies}
+							/>
+						) : null}
+						{hasActiveFilters ? (
+							<Button type="button" variant="ghost" onClick={resetFilters}>
+								Reset
+							</Button>
+						) : null}
+					</div>
+					<p className="text-sm leading-5 text-text-subtle">
+						Showing {filteredTools.length.toLocaleString("en-US")} results
+					</p>
+				</div>
+			</div>
+			{/* Scroll region begins after the filters: overflow-y-auto clips outside its
+			    box (pb-8 clears the card hover shadow, px-6 the side reach), and the top
+			    fade mask now sits just below the pinned filter bar instead of over it. */}
+			<div
+				ref={contentOverflow.ref}
+				className={cn(
+					"flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-2 pb-8",
+					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
+				)}
+			>
+				{filteredTools.length === 0 ? (
+					<div className="flex flex-1 flex-col items-center justify-center gap-1 py-12 text-center">
+						<p className="text-sm font-medium leading-5 text-text">{emptyState.title}</p>
+						<p className="text-sm leading-5 text-text-subtlest">{emptyState.description}</p>
+					</div>
+				) : (
+					<div className="flex flex-col gap-6">
+						{myApps.length > 0 ? (
+							<ExperimentalAppsSection heading="My apps" onSelectTool={onSelectTool} tools={myApps} />
+						) : null}
+						{otherApps.length > 0 ? (
+							<ExperimentalAppsSection heading="Other apps" onSelectTool={onSelectTool} tools={otherApps} />
+						) : null}
+					</div>
+				)}
+			</div>
+		</div>
+	);
+}
+
+function ExperimentalAppsSection({
+	heading,
+	onSelectTool,
+	tools,
+}: Readonly<{
+	heading: string;
+	onSelectTool: (tool: AppsDirectoryTool) => void;
+	tools: readonly AppsDirectoryTool[];
+}>) {
+	return (
+		<section aria-label={heading} className="flex flex-col gap-2">
+			<h2 className="px-1.5 text-xs font-semibold leading-4 text-text-subtlest">
+				{heading}
+			</h2>
+			<ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+				{tools.map((tool) => (
+					<li key={tool.id}>
+						<AppCard onSelectTool={onSelectTool} tool={tool} />
+					</li>
+				))}
+			</ul>
+		</section>
+	);
+}
+
+interface ExperimentalFilterDropdownProps {
+	activeLabel: string;
+	label: string;
+	onToggle: (value: string) => void;
+	options: readonly AgentBrowserSidebarItem[];
+	selectedValues: readonly string[];
+}
+
+function ExperimentalFilterDropdown({
+	activeLabel,
+	label,
+	onToggle,
+	options,
+	selectedValues,
+}: Readonly<ExperimentalFilterDropdownProps>) {
+	const [open, setOpen] = useState(false);
+	const [query, setQuery] = useState("");
+	const visibleOptions = useMemo(() => {
+		const normalized = query.trim().toLowerCase();
+		return normalized
+			? options.filter((option) => option.label.toLowerCase().includes(normalized))
+			: options;
+	}, [options, query]);
+	const selectedCount = selectedValues.length;
+	const triggerLabel = selectedCount > 0 ? activeLabel : label;
+
+	function handleOpenChange(nextOpen: boolean) {
+		setOpen(nextOpen);
+		if (!nextOpen) {
+			setQuery("");
+		}
+	}
+
+	return (
+		<Popover open={open} onOpenChange={handleOpenChange}>
+			<PopoverTrigger
+				render={
+					<Button
+						aria-expanded={open}
+						aria-pressed={selectedCount > 0 ? true : undefined}
+						className="gap-2"
+						type="button"
+						variant="outline"
+					/>
+				}
+			>
+				<span>{triggerLabel}</span>
+				{selectedCount > 0 ? <Badge>{selectedCount}</Badge> : null}
+				<Icon
+					render={<ChevronDownIcon label="" size="small" color="currentColor" />}
+					className={cn(
+						"transition-transform duration-fast",
+						selectedCount > 0 || open
+							? "[&_svg]:text-icon-selected"
+							: "[&_svg]:text-icon-subtle",
+						open ? "rotate-180" : null,
+					)}
+				/>
+			</PopoverTrigger>
+			<PopoverContent align="start" className="w-72 gap-2 p-2 pb-0">
+				<InputGroup className="pl-[7px]">
+					<InputGroupAddon className="w-4 p-0">
+						<SearchIcon label="" />
+					</InputGroupAddon>
+					<InputGroupInput
+						aria-label={`Search ${label}`}
+						className="px-2"
+						placeholder="Search options"
+						value={query}
+						onChange={(event) => setQuery(event.target.value)}
+					/>
+				</InputGroup>
+				<div className="max-h-64 overflow-y-auto">
+					{visibleOptions.length === 0 ? (
+						<p className="px-2 py-3 text-sm text-text-subtlest">
+							No options found.
+						</p>
+					) : (
+						<ul className="flex flex-col gap-px pb-2">
+							{visibleOptions.map((option) => (
+								<li key={option.id}>
+									<label className="flex min-h-8 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm leading-5 text-text hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed">
+										<Checkbox
+											checked={selectedValues.includes(option.id)}
+											onCheckedChange={(checked) => {
+												if (checked === true || checked === false) {
+													onToggle(option.id);
+												}
+											}}
+										/>
+										<SidebarToolAvatar item={option} />
+										<span className="min-w-0 flex-1 truncate">{option.label}</span>
+									</label>
+								</li>
+							))}
+						</ul>
+					)}
+				</div>
+			</PopoverContent>
+		</Popover>
 	);
 }
 

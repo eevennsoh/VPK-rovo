@@ -48,6 +48,7 @@ import { Icon } from "@/components/ui/icon";
 import { IconTile } from "@/components/ui/icon-tile";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { AtlassianLogoMark, BrandLogoMark } from "@/components/ui/logo-mark";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SplitButton } from "@/components/ui/split-button";
 import {
 	EntityCardShell,
@@ -79,6 +80,7 @@ import {
 	getSkillPublisherName,
 	isSkillPublisherPerson,
 	slugifySkillName,
+	SKILL_COLLECTIONS,
 	type SkillCategory,
 	type SkillsDirectoryFileTreeItem,
 	type SkillsDirectorySkill,
@@ -91,6 +93,7 @@ import {
 } from "../data/sidebar-groups";
 
 export type SkillsDirectoryAgent = AgentBrowserAgent;
+export type SkillsDirectoryVariant = "default" | "experimental";
 export type { SkillsDirectorySkill } from "@/app/data/directory/skills";
 export type {
 	SkillsDirectoryPrimaryItem,
@@ -120,6 +123,12 @@ export interface SkillsDirectoryDialogProps {
 	sidebarGroups?: readonly SkillsDirectorySidebarGroup[];
 	skills?: readonly SkillsDirectorySkill[];
 	title?: string;
+	/**
+	 * Opt-in layout variation. `"default"` keeps the left-sidebar directory.
+	 * `"experimental"` drops the sidebar and moves the collection/category/company
+	 * filters into a horizontal dropdown row above a flat, scroll-masked grid.
+	 */
+	variant?: SkillsDirectoryVariant;
 }
 
 const EMPTY_SKILLS: readonly SkillsDirectorySkill[] = [];
@@ -277,6 +286,7 @@ export function SkillsDirectoryDialog({
 	sidebarGroups = DEFAULT_SKILLS_DIRECTORY_SIDEBAR_GROUPS,
 	skills,
 	title = "Browse all",
+	variant = "default",
 }: Readonly<SkillsDirectoryDialogProps>) {
 	const baseSkills = useMemo(
 		() => skills ?? agents?.map(normalizeAgentSkill) ?? DEFAULT_SKILLS,
@@ -375,6 +385,7 @@ export function SkillsDirectoryDialog({
 						onFavoriteSkills={() => handleBulkAction(onFavoriteSkills)}
 						onOpenSkill={() => onOpenSkill?.(selectedDetailSkill)}
 						onTryInChat={() => onTryInChat?.(selectedDetailSkill)}
+						title={selectedDetailSkill.name}
 					/>
 				) : (
 					<SkillsDirectoryHeader
@@ -386,20 +397,32 @@ export function SkillsDirectoryDialog({
 					<SkillDetailView skill={selectedDetailSkill} onExit={() => setSelectedDetailSkillId(null)} />
 				) : (
 					<>
-						<SkillsDirectoryView
-							activeItem={activeItem}
-							filteredSkills={filteredSkills}
-							hasSelection={resolvedSelectedIds.length > 0}
-							onLearnMore={(skill) => setSelectedDetailSkillId(skill.id)}
-							onSelectItem={setActiveItem}
-							onSelectSkill={handleSelectSkill}
-							primaryItems={primaryItems}
-							query={query}
-							selectedIds={selectedIdSet}
-							setQuery={setQuery}
-							sidebarGroups={sidebarGroups}
-							skills={directorySkills}
-						/>
+						{variant === "experimental" ? (
+							<ExperimentalSkillsDirectoryView
+								hasSelection={resolvedSelectedIds.length > 0}
+								onLearnMore={(skill) => setSelectedDetailSkillId(skill.id)}
+								onSelectSkill={handleSelectSkill}
+								query={query}
+								selectedIds={selectedIdSet}
+								setQuery={setQuery}
+								skills={directorySkills}
+							/>
+						) : (
+							<SkillsDirectoryView
+								activeItem={activeItem}
+								filteredSkills={filteredSkills}
+								hasSelection={resolvedSelectedIds.length > 0}
+								onLearnMore={(skill) => setSelectedDetailSkillId(skill.id)}
+								onSelectItem={setActiveItem}
+								onSelectSkill={handleSelectSkill}
+								primaryItems={primaryItems}
+								query={query}
+								selectedIds={selectedIdSet}
+								setQuery={setQuery}
+								sidebarGroups={sidebarGroups}
+								skills={directorySkills}
+							/>
+						)}
 						{resolvedSelectedIds.length > 0 ? (
 							<SelectedSkillsToolbar
 								count={resolvedSelectedIds.length}
@@ -533,6 +556,9 @@ function SkillsDirectoryView({
 }
 
 interface SkillSectionProps {
+	gridClassName?: string;
+	/** Optional micro section header (e.g. "My skills"); omit for a single unlabeled grid. */
+	heading?: string;
 	onLearnMore: (skill: SkillsDirectorySkill) => void;
 	onSelectSkill: (skill: SkillsDirectorySkill, checked?: boolean) => void;
 	selectedIds: ReadonlySet<string>;
@@ -540,14 +566,21 @@ interface SkillSectionProps {
 }
 
 function SkillSection({
+	gridClassName = "grid grid-cols-1 gap-3 lg:grid-cols-2",
+	heading,
 	onLearnMore,
 	onSelectSkill,
 	selectedIds,
 	skills,
 }: Readonly<SkillSectionProps>) {
 	return (
-		<section aria-label="Skills">
-			<ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+		<section aria-label={heading ?? "Skills"} className={cn(heading && "flex flex-col gap-2")}>
+			{heading ? (
+				<h2 className="px-1.5 text-xs font-semibold leading-4 text-text-subtlest">
+					{heading}
+				</h2>
+			) : null}
+			<ul className={gridClassName}>
 				{skills.map((skill) => {
 					const selected = selectedIds.has(skill.id);
 					return (
@@ -808,6 +841,7 @@ interface SkillDetailHeaderProps {
 	onFavoriteSkills: () => void;
 	onOpenSkill: () => void;
 	onTryInChat: () => void;
+	title: string;
 }
 
 function SkillDetailHeader({
@@ -817,17 +851,25 @@ function SkillDetailHeader({
 	onFavoriteSkills,
 	onOpenSkill,
 	onTryInChat,
+	title,
 }: Readonly<SkillDetailHeaderProps>) {
 	return (
 		<div className="flex items-center justify-between border-b border-border px-6 py-4">
-			<button
-				type="button"
-				className="flex items-center gap-2 text-xl font-semibold leading-6 text-text outline-none hover:text-text-subtle focus-visible:rounded-md focus-visible:ring-3 focus-visible:ring-ring/50"
-				onClick={onBack}
-			>
-				<ArrowLeftIcon label="" size="small" color="currentColor" />
-				Back
-			</button>
+			<div className="flex min-w-0 items-center gap-2">
+				<Button
+					aria-label="Back to skills"
+					className="-ml-2 text-icon-subtle"
+					onClick={onBack}
+					size="icon"
+					type="button"
+					variant="ghost"
+				>
+					<ArrowLeftIcon label="" color="currentColor" />
+				</Button>
+				<DialogTitle className="truncate text-xl font-semibold leading-6 text-text">
+					{title}
+				</DialogTitle>
+			</div>
 			<div className="flex items-center gap-2">
 				<DropdownMenu>
 					<DropdownMenuTrigger
@@ -1067,5 +1109,436 @@ function SkillFileTreeSidebar({ skill }: Readonly<{ skill: SkillsDirectorySkill 
 			</FileTree>
 		</aside>
 	);
+}
+
+// ---------------------------------------------------------------------------
+// Experimental variant: the sidebar's primary items + Collection/Category/Company
+// groups become a horizontal filter row of toggles and searchable multi-select
+// dropdowns, above a pinned-header + scroll-masked results grid (mirrors the
+// experimental apps/agent directories).
+// ---------------------------------------------------------------------------
+
+interface ExperimentalSkillFilterOption {
+	id: string;
+	label: string;
+	/** When set, renders the ADS brand logo instead of an `avatarSrc` image. */
+	logoName?: ReturnType<typeof getSkillPublisherLogoName>;
+	avatarSrc?: string;
+}
+
+function toggleSelectedValue(values: readonly string[], value: string): readonly string[] {
+	return values.includes(value)
+		? values.filter((current) => current !== value)
+		: [...values, value];
+}
+
+// Collections present in the catalog, in the canonical SKILL_COLLECTIONS order.
+function getSkillCollectionOptions(skills: readonly SkillsDirectorySkill[]): readonly ExperimentalSkillFilterOption[] {
+	const present = new Set(skills.map((skill) => getSkillCollectionId(skill)));
+	return Object.values(SKILL_COLLECTIONS)
+		.filter((collection) => present.has(collection.id))
+		.map((collection) => ({ id: collection.id, label: collection.label }));
+}
+
+// Company publishers present in the catalog (excludes self-authored "you" skills),
+// carrying each company's brand mark from the first matching skill.
+function getSkillCompanyOptions(skills: readonly SkillsDirectorySkill[]): readonly ExperimentalSkillFilterOption[] {
+	const order: string[] = [];
+	const byId = new Map<string, ExperimentalSkillFilterOption>();
+
+	for (const skill of skills) {
+		const id = skill.companyId;
+		if (!id || id === "you" || byId.has(id)) continue;
+
+		order.push(id);
+		byId.set(id, {
+			id,
+			label: getSkillPublisherName(skill),
+			logoName: getSkillPublisherLogoName(skill),
+			avatarSrc: getSkillPublisherAvatarSrc(skill),
+		});
+	}
+
+	return order.map((id) => byId.get(id)!);
+}
+
+interface ExperimentalSkillsFilters {
+	yourSkills: boolean;
+	favourites: boolean;
+	collectionIds: readonly string[];
+	companyIds: readonly string[];
+}
+
+// Experimental counterpart to filterSkills: the query haystack is identical, but
+// the single active sidebar item becomes independent multi-select facets plus the
+// Your skills / Favourites toggles.
+function filterSkillsExperimental(
+	skills: readonly SkillsDirectorySkill[],
+	query: string,
+	filters: ExperimentalSkillsFilters,
+): readonly SkillsDirectorySkill[] {
+	const normalizedQuery = query.trim().toLowerCase();
+	const collectionSet = new Set(filters.collectionIds);
+	const companySet = new Set(filters.companyIds);
+
+	return skills.filter((skill) => {
+		if (filters.yourSkills && !isYourSkill(skill)) return false;
+		if (filters.favourites && !skill.favorite) return false;
+		if (collectionSet.size > 0 && !collectionSet.has(getSkillCollectionId(skill))) return false;
+		if (companySet.size > 0 && !(skill.companyId && companySet.has(skill.companyId))) return false;
+
+		if (!normalizedQuery) return true;
+
+		const haystack = [
+			skill.name,
+			skill.description,
+			getSkillPublisherName(skill),
+			getSkillCategoryId(skill),
+			getSkillCollection(skill).label,
+			getSkillCollection(skill).description,
+			skill.collectionDescription,
+			skill.collectionProducts?.join(" "),
+			skill.companyId,
+			...(skill.tools ?? []).map((tool) => tool.name),
+		]
+			.filter(Boolean)
+			.join(" ")
+			.toLowerCase();
+
+		return haystack.includes(normalizedQuery);
+	});
+}
+
+function getExperimentalSkillsEmptyState(
+	query: string,
+	filters: Pick<ExperimentalSkillsFilters, "yourSkills" | "favourites">,
+): { title: string; description: string } {
+	if (query.trim()) {
+		return {
+			title: `No skills match “${query.trim()}”`,
+			description: "Try a different search or clear your filters.",
+		};
+	}
+	if (filters.yourSkills) {
+		return {
+			title: "No skills of yours yet",
+			description: "Skills you create or own will show up here.",
+		};
+	}
+	if (filters.favourites) {
+		return {
+			title: "No favourite skills yet",
+			description: "Skills you mark as favourite will show up here.",
+		};
+	}
+	return {
+		title: "No skills match your filters",
+		description: "Try removing a filter to see more skills.",
+	};
+}
+
+interface ExperimentalSkillsDirectoryViewProps {
+	hasSelection: boolean;
+	onLearnMore: (skill: SkillsDirectorySkill) => void;
+	onSelectSkill: (skill: SkillsDirectorySkill, checked?: boolean) => void;
+	query: string;
+	selectedIds: ReadonlySet<string>;
+	setQuery: (query: string) => void;
+	skills: readonly SkillsDirectorySkill[];
+}
+
+function ExperimentalSkillsDirectoryView({
+	hasSelection,
+	onLearnMore,
+	onSelectSkill,
+	query,
+	selectedIds,
+	setQuery,
+	skills,
+}: Readonly<ExperimentalSkillsDirectoryViewProps>) {
+	const contentOverflow = useHasVerticalOverflow<HTMLDivElement>();
+	const [filterYourSkills, setFilterYourSkills] = useState(false);
+	const [filterFavourites, setFilterFavourites] = useState(false);
+	const [selectedCollections, setSelectedCollections] = useState<readonly string[]>([]);
+	const [selectedCompanies, setSelectedCompanies] = useState<readonly string[]>([]);
+
+	const collectionOptions = useMemo(() => getSkillCollectionOptions(skills), [skills]);
+	const companyOptions = useMemo(() => getSkillCompanyOptions(skills), [skills]);
+
+	const filteredSkills = useMemo(
+		() => {
+			const matched = filterSkillsExperimental(skills, query, {
+				yourSkills: filterYourSkills,
+				favourites: filterFavourites,
+				collectionIds: selectedCollections,
+				companyIds: selectedCompanies,
+			});
+			// Alphabetical by name: the catalog front-loads grey (custom/marketplace)
+			// skills, so alphabetising interleaves the collection-coloured tiles and
+			// keeps the first rows multi-coloured rather than a block of grey.
+			return [...matched].sort((a, b) => a.name.localeCompare(b.name, "en"));
+		},
+		[filterFavourites, filterYourSkills, query, selectedCollections, selectedCompanies, skills],
+	);
+
+	// Split results into the user's own skills and everything else, each under its
+	// own micro section header (mirrors the experimental agent directory).
+	const mySkills = useMemo(() => filteredSkills.filter(isYourSkill), [filteredSkills]);
+	const otherSkills = useMemo(() => filteredSkills.filter((skill) => !isYourSkill(skill)), [filteredSkills]);
+
+	const hasActiveFilters =
+		Boolean(query.trim()) ||
+		filterYourSkills ||
+		filterFavourites ||
+		selectedCollections.length > 0 ||
+		selectedCompanies.length > 0;
+
+	const emptyState = getExperimentalSkillsEmptyState(query, {
+		yourSkills: filterYourSkills,
+		favourites: filterFavourites,
+	});
+
+	// Single active facet at a time (mirrors the experimental apps/agent directories):
+	// once one filter is engaged, the others are hidden until it is cleared.
+	const activeFacet = filterYourSkills
+		? "yourSkills"
+		: filterFavourites
+			? "favourites"
+			: selectedCollections.length > 0
+				? "collections"
+				: selectedCompanies.length > 0
+					? "companies"
+					: null;
+	const showFacet = (facet: string) => activeFacet === null || activeFacet === facet;
+
+	function resetFilters() {
+		setQuery("");
+		setFilterYourSkills(false);
+		setFilterFavourites(false);
+		setSelectedCollections([]);
+		setSelectedCompanies([]);
+	}
+
+	return (
+		<div className="flex h-full min-h-0 flex-col">
+			{/* Pinned controls: search + filters stay put so the user can always refine;
+			    only the results below scroll. px-6 clears the card side reach, pt-1 the
+			    search focus ring, pb-4 separates the controls from the grid. */}
+			<div className="flex shrink-0 flex-col gap-4 px-6 pt-1 pb-2">
+				<InputGroup>
+					<InputGroupAddon>
+						<SearchIcon label="" />
+					</InputGroupAddon>
+					<InputGroupInput
+						aria-label="Search skills"
+						placeholder="Search for a skill by name, or describe it"
+						value={query}
+						onChange={(event) => setQuery(event.target.value)}
+					/>
+				</InputGroup>
+				<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+					<div className="flex flex-wrap items-center gap-2">
+						{showFacet("yourSkills") ? (
+							<Button
+								aria-pressed={filterYourSkills ? true : undefined}
+								onClick={() => setFilterYourSkills((current) => !current)}
+								type="button"
+								variant="outline"
+							>
+								Filter by your skills
+							</Button>
+						) : null}
+						{showFacet("favourites") ? (
+							<Button
+								aria-pressed={filterFavourites ? true : undefined}
+								onClick={() => setFilterFavourites((current) => !current)}
+								type="button"
+								variant="outline"
+							>
+								Favourites
+							</Button>
+						) : null}
+						{showFacet("collections") ? (
+							<ExperimentalSkillFilterDropdown
+								activeLabel="Filter by collections"
+								label="Collections"
+								onToggle={(value) => setSelectedCollections((current) => toggleSelectedValue(current, value))}
+								options={collectionOptions}
+								selectedValues={selectedCollections}
+							/>
+						) : null}
+						{showFacet("companies") ? (
+							<ExperimentalSkillFilterDropdown
+								activeLabel="Filter by companies"
+								label="Companies"
+								onToggle={(value) => setSelectedCompanies((current) => toggleSelectedValue(current, value))}
+								options={companyOptions}
+								selectedValues={selectedCompanies}
+							/>
+						) : null}
+						{hasActiveFilters ? (
+							<Button type="button" variant="ghost" onClick={resetFilters}>
+								Reset
+							</Button>
+						) : null}
+					</div>
+					<p className="text-sm leading-5 text-text-subtle">
+						Showing {filteredSkills.length.toLocaleString("en-US")} results
+					</p>
+				</div>
+			</div>
+
+			{/* Scroll region begins after the filters: only the results scroll, with the
+			    top fade mask sitting just below the pinned filter bar. pb-8 clears the card
+			    hover shadow; pb-28 makes room for the floating selection toolbar. */}
+			<div
+				ref={contentOverflow.ref}
+				className={cn(
+					"flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-2",
+					hasSelection ? "pb-28" : "pb-8",
+					contentOverflow.showTopScrollMask && "scroll-mask-top overscroll-contain",
+				)}
+			>
+				{filteredSkills.length === 0 ? (
+					<div className="flex flex-1 flex-col items-center justify-center gap-1 py-12 text-center">
+						<p className="text-sm font-medium leading-5 text-text">{emptyState.title}</p>
+						<p className="text-sm leading-5 text-text-subtlest">{emptyState.description}</p>
+					</div>
+				) : (
+					<div className="flex flex-col gap-6">
+						{mySkills.length > 0 ? (
+							<SkillSection
+								gridClassName="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3"
+								heading="My skills"
+								onLearnMore={onLearnMore}
+								onSelectSkill={onSelectSkill}
+								selectedIds={selectedIds}
+								skills={mySkills}
+							/>
+						) : null}
+						{otherSkills.length > 0 ? (
+							<SkillSection
+								gridClassName="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3"
+								heading="Other skills"
+								onLearnMore={onLearnMore}
+								onSelectSkill={onSelectSkill}
+								selectedIds={selectedIds}
+								skills={otherSkills}
+							/>
+						) : null}
+					</div>
+				)}
+			</div>
+		</div>
+	);
+}
+
+interface ExperimentalSkillFilterDropdownProps {
+	activeLabel: string;
+	label: string;
+	onToggle: (value: string) => void;
+	options: readonly ExperimentalSkillFilterOption[];
+	selectedValues: readonly string[];
+}
+
+function ExperimentalSkillFilterDropdown({
+	activeLabel,
+	label,
+	onToggle,
+	options,
+	selectedValues,
+}: Readonly<ExperimentalSkillFilterDropdownProps>) {
+	const [open, setOpen] = useState(false);
+	const [query, setQuery] = useState("");
+	const visibleOptions = useMemo(() => {
+		const normalized = query.trim().toLowerCase();
+		return normalized
+			? options.filter((option) => option.label.toLowerCase().includes(normalized))
+			: options;
+	}, [options, query]);
+	const selectedCount = selectedValues.length;
+	const triggerLabel = selectedCount > 0 ? activeLabel : label;
+
+	function handleOpenChange(nextOpen: boolean) {
+		setOpen(nextOpen);
+		if (!nextOpen) {
+			setQuery("");
+		}
+	}
+
+	return (
+		<Popover open={open} onOpenChange={handleOpenChange}>
+			<PopoverTrigger
+				render={
+					<Button
+						aria-expanded={open}
+						aria-pressed={selectedCount > 0 ? true : undefined}
+						className="gap-2"
+						type="button"
+						variant="outline"
+					/>
+				}
+			>
+				<span>{triggerLabel}</span>
+				{selectedCount > 0 ? <Badge>{selectedCount}</Badge> : null}
+				<Icon
+					render={<ChevronDownIcon label="" size="small" color="currentColor" />}
+					className={cn(
+						"transition-transform duration-fast",
+						selectedCount > 0 || open ? "[&_svg]:text-icon-selected" : "[&_svg]:text-icon-subtle",
+						open ? "rotate-180" : null,
+					)}
+				/>
+			</PopoverTrigger>
+			<PopoverContent align="start" className="w-72 gap-2 p-2 pb-0">
+				<InputGroup className="pl-[7px]">
+					<InputGroupAddon className="w-4 p-0">
+						<SearchIcon label="" />
+					</InputGroupAddon>
+					<InputGroupInput
+						aria-label={`Search ${label}`}
+						className="px-2"
+						placeholder="Search options"
+						value={query}
+						onChange={(event) => setQuery(event.target.value)}
+					/>
+				</InputGroup>
+				<div className="max-h-64 overflow-y-auto">
+					{visibleOptions.length === 0 ? (
+						<p className="px-2 py-3 text-sm text-text-subtlest">No options found.</p>
+					) : (
+						<ul className="flex flex-col gap-px pb-2">
+							{visibleOptions.map((option) => (
+								<li key={option.id}>
+									<label className="flex min-h-8 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm leading-5 text-text hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed">
+										<Checkbox
+											checked={selectedValues.includes(option.id)}
+											onCheckedChange={(checked) => {
+												if (checked === true || checked === false) {
+													onToggle(option.id);
+												}
+											}}
+										/>
+										<ExperimentalSkillOptionAvatar option={option} />
+										<span className="min-w-0 flex-1 truncate">{option.label}</span>
+									</label>
+								</li>
+							))}
+						</ul>
+					)}
+				</div>
+			</PopoverContent>
+		</Popover>
+	);
+}
+
+function ExperimentalSkillOptionAvatar({ option }: Readonly<{ option: ExperimentalSkillFilterOption }>) {
+	if (option.logoName) {
+		return <AtlassianLogoMark name={option.logoName} size="small" transparent label={option.label} />;
+	}
+	if (option.avatarSrc) {
+		return <BrandLogoMark src={option.avatarSrc} size="small" transparent label={option.label} />;
+	}
+	return null;
 }
 
