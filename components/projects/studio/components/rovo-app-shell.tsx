@@ -95,6 +95,7 @@ import {
 	buildCreationTemplateContextFromStarter,
 	buildStudioAgentCreationContext,
 	buildStudioAgentCreationContinuationContext,
+	buildTemplateAgentResultFromAgent,
 	resolveTemplateConfigForResult,
 	type StudioCreationTemplateContext,
 } from "@/components/projects/studio/lib/studio-agent-creation-context";
@@ -2468,6 +2469,30 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		setIsSidebarAgentBrowserOpen(false);
 	}, [handleGallerySelect]);
 
+	const handleBuildTemplateAgent = useCallback((agent: AgentTemplatesAgent) => {
+		if (typeof studioAgentRegistry.registerCreatedAgentFromResult !== "function") {
+			return null;
+		}
+
+		const agentResult = buildTemplateAgentResultFromAgent(agent);
+		const registered = studioAgentRegistry.registerCreatedAgentFromResult(agentResult, {
+			preserveCurrentThread: true,
+			select: true,
+			sourceKey: `studio-template-setup:${agent.id}:${Date.now()}`,
+		});
+
+		return registered ? { profileId: registered.id } : null;
+	}, [studioAgentRegistry]);
+
+	const handleOpenBuiltTemplateAgentConfig = useCallback((profileId: string) => {
+		setActiveAgentConfigState({
+			profileId,
+			sourceMessageId: null,
+		});
+		setActiveAgentConfigView("configure");
+		setIsSidebarAgentBrowserOpen(false);
+	}, [setActiveAgentConfigState]);
+
 	const handleFocusStudioComposer = useCallback(() => {
 		setComposerFocusRequestKey((currentKey) => currentKey + 1);
 	}, []);
@@ -4709,6 +4734,8 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 				agents={ROVO_DIRECTORY_AGENT_PROFILES}
 				onSelectAgent={handleSidebarBrowseAgentSelect}
 				onSelectTemplateAgent={handleTemplateAgentSelect}
+				onBuildTemplateAgent={handleBuildTemplateAgent}
+				onOpenBuiltTemplateAgentConfig={handleOpenBuiltTemplateAgentConfig}
 				sessionAgents={studioAgentRegistry.sessionAgentEntries.map((entry) => entry.profile)}
 				initialTemplateCategory={sidebarAgentBrowserInitialCategory}
 				variant="experimental"

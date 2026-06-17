@@ -32,6 +32,7 @@ import {
 } from "@/app/data/directory";
 import { REASONING_MODE_VALUES } from "@/app/data/directory/agent-modes";
 import { extractInstructionTokens, resolveCatalogNames } from "@/app/data/directory/resolve-ids";
+import type { RovoDataParts } from "@/lib/rovo-ui-messages";
 
 /**
  * Allowed `reasoningMode` values come from the canonical data-layer source
@@ -56,6 +57,7 @@ interface TemplateAgentLike {
 	name: string;
 	description?: string;
 	categoryId?: string;
+	avatarSrc?: string;
 	sources?: ReadonlyArray<LabelledEntry>;
 	skills?: ReadonlyArray<LabelledEntry>;
 	capabilities?: ReadonlyArray<LabelledEntry>;
@@ -346,6 +348,46 @@ function findTemplateConfigByTitle(title: string | undefined): AgentTemplateConf
 	// Fall back to a kebab-cased id match (e.g. "Decision Director" -> "decision-director").
 	const slug = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 	return getAgentTemplateConfigById(slug);
+}
+
+function slugifyTemplateAgentName(name: string): string {
+	const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+	return slug || "template-agent";
+}
+
+function fallbackConversationStarters(agent: TemplateAgentLike): readonly string[] {
+	return [
+		`Summarize what ${agent.name} can help with`,
+		`Show the first setup checklist for ${agent.name}`,
+		`Draft a plan using ${agent.name}`,
+	];
+}
+
+export function buildTemplateAgentResultFromAgent(agent: TemplateAgentLike): RovoDataParts["agent-result"] {
+	const config = (agent.id ? getAgentTemplateConfigById(agent.id) : undefined) ?? findTemplateConfigByTitle(agent.name);
+	const description = config?.description ?? agent.description ?? `Generated from the ${agent.name} template.`;
+	const baseResult: RovoDataParts["agent-result"] = {
+		action: "create",
+		agentId: config?.id ?? agent.id ?? slugifyTemplateAgentName(agent.name),
+		byline: "Custom agent by You",
+		description,
+		instructions: config?.instructionsBody ?? config?.instructions ?? description,
+		name: config?.name ?? agent.name,
+		summary: description,
+		conversationStarters: config?.conversationStarters
+			? [...config.conversationStarters]
+			: [...fallbackConversationStarters(agent)],
+		...(config?.conversationStarterIcons && config.conversationStarterIcons.length > 0
+			? { conversationStarterIcons: [...config.conversationStarterIcons] }
+			: {}),
+		...(config?.triggers && config.triggers.length > 0 ? { triggers: [...config.triggers] } : {}),
+		...(config?.avatarSrc || agent.avatarSrc ? { avatarSrc: config?.avatarSrc ?? agent.avatarSrc } : {}),
+		...(config?.memoryMode ? { memoryMode: config.memoryMode } : {}),
+		...(config?.reasoningMode ? { reasoningMode: config.reasoningMode } : {}),
+		...(config?.knowledgeMode ? { knowledgeMode: config.knowledgeMode } : {}),
+	};
+
+	return applyTemplateDefaultsToResult(baseResult, config);
 }
 
 /** Distil a Browse-all template agent into its creation-context provenance. */

@@ -110,7 +110,7 @@ test("RovoAppShell starts Studio agent creation only from the default-agent home
 	assert.match(SHELL_SOURCE, /from "@\/components\/projects\/studio\/lib\/studio-agent-creation-context";/u);
 	assert.match(SHELL_SOURCE, /buildStudioAgentCreationContext\(text, creationTemplate\)/u);
 	assert.match(SHELL_SOURCE, /const isDefaultAgentHomeState = showHomeState && !isCustomAgentSelected && !shouldShowAgentConfigPane;/u);
-	assert.match(SHELL_SOURCE, /const shouldStartStudioAgentCreation = isDefaultAgentHomeStateRef\.current && !isRealtimeActive;/u);
+	assert.match(SHELL_SOURCE, /const shouldStartStudioAgentCreation =[\s\S]*isDefaultAgentHomeStateRef\.current &&[\s\S]*!isRealtimeActive &&[\s\S]*!isAutomationDiscoveryDemoPrompt;/u);
 	assert.match(SHELL_SOURCE, /\.\.\.\(shouldStartStudioAgentCreation \? \{ creationMode: "agent" as const \} : \{\}\)/u);
 	assert.ok((SHELL_SOURCE.match(/creationMode: "agent"/gu) ?? []).length >= 1);
 	assert.match(SHELL_SOURCE, /New-agent prompts fall through to the normal[\s\S]*model-backed creation flow/u);
@@ -1043,6 +1043,17 @@ test("Studio threads template provenance into agent creation contexts", () => {
 	assert.match(SHELL_SOURCE, /setAgentTemplatesDialogOpen\(false\);[\s\S]*setIsSidebarAgentBrowserOpen\(false\);/u);
 	assert.match(SHELL_SOURCE, /creationTemplateByThreadRef\.current\[chat\.runtimeThreadId\] = creationTemplate;/u);
 	assert.match(SHELL_SOURCE, /creationTemplateRef\.current = null;/u);
+});
+
+test("Studio Agent Directory template setup builds a local draft before opening config", () => {
+	assert.match(SHELL_SOURCE, /buildTemplateAgentResultFromAgent/u);
+	assert.match(SHELL_SOURCE, /const handleBuildTemplateAgent = useCallback\(\(agent: AgentTemplatesAgent\) => \{/u);
+	assert.match(SHELL_SOURCE, /studioAgentRegistry\.registerCreatedAgentFromResult\(agentResult, \{[\s\S]*preserveCurrentThread: true,[\s\S]*select: true,[\s\S]*sourceKey: `studio-template-setup:\$\{agent\.id\}:\$\{Date\.now\(\)\}`/u);
+	assert.match(SHELL_SOURCE, /return registered \? \{ profileId: registered\.id \} : null;/u);
+	assert.match(SHELL_SOURCE, /const handleOpenBuiltTemplateAgentConfig = useCallback\(\(profileId: string\) => \{[\s\S]*setActiveAgentConfigState\(\{[\s\S]*profileId,[\s\S]*sourceMessageId: null,[\s\S]*\}\);[\s\S]*setActiveAgentConfigView\("configure"\);[\s\S]*setIsSidebarAgentBrowserOpen\(false\);/u);
+	assert.match(SHELL_SOURCE, /onBuildTemplateAgent=\{handleBuildTemplateAgent\}/u);
+	assert.match(SHELL_SOURCE, /onOpenBuiltTemplateAgentConfig=\{handleOpenBuiltTemplateAgentConfig\}/u);
+	assert.match(SHELL_SOURCE, /const handleTemplateAgentSelect = useCallback\(\(agent: AgentTemplatesAgent\) => \{[\s\S]*handleGallerySelect\(/u);
 });
 
 test("Studio composer reveals 'Start from scratch' on hover, focus, or prompt value and lands on a blank untitled agent config", () => {

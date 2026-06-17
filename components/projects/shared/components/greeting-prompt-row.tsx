@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
  * chat, blocks chat demo, and the /rovo + /studio custom-agent empty states).
  *
  * Visual contract is the editor palette's command-menu option: a 44px grid row
- * (fixed 32px icon column, 12px gap, 6px horizontal padding), a `text-sm` /
+ * (fixed 32px icon column, 12px gap, 6px left padding, 14px right padding), a `text-sm` /
  * default-weight / 20px label, and a byline that reveals on hover/selection
  * (label slides up, description fades + slides in). The layout, typography,
  * copy-column sizing, and reveal motion are kept in lockstep with the palette's
@@ -72,6 +72,7 @@ export interface GreetingPromptRowProps {
 	visual?: ReactNode;
 	shortcut?: ReactNode;
 	active?: boolean;
+	selected?: boolean;
 	onClick?: () => void;
 	className?: string;
 	onFocus?: () => void;
@@ -121,19 +122,23 @@ export function GreetingPromptRow({
 	visual,
 	shortcut,
 	active = false,
+	selected = false,
 	onClick,
 	className,
 	onFocus,
 	onMouseEnter,
 }: Readonly<GreetingPromptRowProps>) {
 	// Mirrors `.rich-text-command-menu-item`: a CSS grid with a fixed 32px icon
-	// column, 12px gap, 6px horizontal padding, and a fixed 44px row height (no
+	// column, 12px gap, 6px left padding, 14px right padding, and a fixed 44px row height (no
 	// vertical padding — the 32px tile + `items-center` set the rhythm). The
 	// container uses a 12px corner radius and the same hover token as the
 	// palette row.
 	const buttonClassName = cn(
-		"grid h-11 w-full grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 rounded-[12px] px-1.5 text-left transition-colors hover:bg-bg-neutral-subtle-hovered",
-		active && "bg-bg-neutral-subtle-hovered",
+		"grid h-11 w-full grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 rounded-[12px] pl-1.5 pr-3.5 text-left transition-colors",
+		selected
+			? "bg-bg-selected hover:bg-bg-selected-hovered active:bg-bg-selected-pressed"
+			: "hover:bg-bg-neutral-subtle-hovered",
+		active && !selected && "bg-bg-neutral-subtle-hovered",
 		className,
 	);
 	const leadingVisual = (
@@ -149,7 +154,14 @@ export function GreetingPromptRow({
 	// Label-only row: no byline to reveal, so render a plain (cheaper) button.
 	if (!description) {
 		return (
-			<button className={buttonClassName} onClick={onClick} onFocus={onFocus} onMouseEnter={onMouseEnter} type="button">
+			<button
+				aria-pressed={selected || undefined}
+				className={buttonClassName}
+				onClick={onClick}
+				onFocus={onFocus}
+				onMouseEnter={onMouseEnter}
+				type="button"
+			>
 				{leadingVisual}
 				<span className={GREETING_COPY_CLASS}>
 					<span className={GREETING_LABEL_CLASS}>{label}</span>
@@ -166,6 +178,7 @@ export function GreetingPromptRow({
 	return (
 		<motion.button
 			animate={active ? "active" : "idle"}
+			aria-pressed={selected || undefined}
 			className={buttonClassName}
 			initial={false}
 			onClick={onClick}

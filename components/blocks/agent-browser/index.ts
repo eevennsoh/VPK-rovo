@@ -6,5 +6,7 @@ export type {
 	AgentBrowserProps,
 	AgentBrowserSidebarGroup,
 	AgentBrowserSidebarItem,
+	AgentBrowserTemplateBuildOptions,
+	AgentBrowserTemplateBuildResult,
 	AgentBrowserVariant,
 } from "./components/agent-browser";
