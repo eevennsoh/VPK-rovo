@@ -67,6 +67,7 @@ import {
 	AgentHeader,
 	AgentMoreOptionsMenu,
 	toggleAgentConfigDisabledItem,
+	type AgentConfigFormValue,
 	type AgentConfigListFieldName,
 	type AgentConfigTextFieldName,
 	type AgentHideableConfigField,
@@ -990,6 +991,15 @@ export function RovoAppAgentConfigPanel({
 			})
 			.filter((id): id is string => Boolean(id));
 	}, [activeConfig]);
+	// Skills parked disabled on the agent (config `disabledItems.skills`), as catalog
+	// ids — drives the detail header's disable Switch.
+	const disabledSkillIds = useMemo(() => {
+		const labels = new Set((activeConfig.disabledItems?.skills ?? []).map((name) => name.trim().toLowerCase()));
+		if (labels.size === 0) {
+			return [];
+		}
+		return DEFAULT_SKILLS.filter((skill) => labels.has(skill.name.trim().toLowerCase())).map((skill) => skill.id);
+	}, [activeConfig]);
 	// Knowledge apps contributing knowledge to the agent — matched by the
 	// "<App> - all content" entry or any of the app's content names.
 	const addedKnowledgeAppIds = useMemo(() => {
@@ -1153,6 +1163,32 @@ export function RovoAppAgentConfigPanel({
 			setActiveDirectory(null);
 		},
 		[appendListValues],
+	);
+	// Disable persists into the agent config's `disabledItems.skills` (same store the
+	// compact-nav row toggles use), so a parked skill stays added but off.
+	const handleToggleSkillEnabled = useCallback(
+		(skill: SkillsDirectorySkill, enabled: boolean) => {
+			updateActiveConfig((config) => toggleAgentConfigDisabledItem(config, "skills", skill.name, enabled));
+		},
+		[updateActiveConfig],
+	);
+	// Remove strips the skill from the canonical skills[] (and clears any disabled
+	// entry) so it is actually off the agent, not just deselected in the dialog.
+	const handleRemoveSkills = useCallback(
+		(_skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => {
+			const removeNames = new Set(skills.map((skill) => skill.name.trim().toLowerCase()));
+			updateActiveConfig((config) => {
+				const next = {
+					...config,
+					skills: getListItems(config, "skills").filter((name) => !removeNames.has(name.trim().toLowerCase())),
+				};
+				return skills.reduce<AgentConfigFormValue>(
+					(acc, skill) => toggleAgentConfigDisabledItem(acc, "skills", skill.name, true),
+					next,
+				);
+			});
+		},
+		[updateActiveConfig],
 	);
 
 	// Conversation starters are edited as a whole set in a dedicated dialog
@@ -1680,6 +1716,7 @@ export function RovoAppAgentConfigPanel({
 			<SkillsDirectoryDialog
 				key={`skills-${directorySelectedSkillId ?? "browse"}`}
 				addedSkillIds={addedSkillIds}
+				disabledSkillIds={disabledSkillIds}
 				variant="experimental"
 				initialDetailSkillId={directorySelectedSkillId}
 				onAddSkills={handleAddSkills}
@@ -1689,7 +1726,9 @@ export function RovoAppAgentConfigPanel({
 						setDirectorySelectedSkillId(null);
 					}
 				}}
+				onRemoveSkills={handleRemoveSkills}
 				onSelectedSkillIdsChange={setDirectorySkillIds}
+				onToggleSkillEnabled={handleToggleSkillEnabled}
 				open={activeDirectory === "skills"}
 				selectedSkillIds={directorySkillIds}
 				skills={DEFAULT_SKILLS}
