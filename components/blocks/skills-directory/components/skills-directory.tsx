@@ -1178,9 +1178,19 @@ function SkillDetailConfig({
 					inert={disabled || undefined}
 				>
 					<Agent className="flex min-h-0 flex-1 flex-col bg-transparent">
-						<AgentContent className="flex min-h-0 flex-1 flex-col">
+						{/* Drop the frame's vertical padding (keep px-6) so the 24px
+						    top/bottom rhythm rides INSIDE the scrollport instead of on
+						    this fixed frame: `pt-6` scrolls away for a full-bleed top,
+						    and the bottom gap only appears at the scroll end. The bottom
+						    padding must sit on the editor body (`.rich-text-editor-content`)
+						    — the instructions section is `flex-1 min-h-0` and collapses to
+						    a 0-basis box, so its overflowing editor body is the real
+						    scroll boundary; pb on the scrollport or section lands above
+						    the fold and never shows. */}
+						<AgentContent className="flex min-h-0 flex-1 flex-col py-0">
 							<AgentConfigFields
 								config={config}
+								compactScrollAreaClassName="pt-6 [&_[data-agent-field=instructions]_.rich-text-editor-content]:pb-6"
 								idPrefix={`skill-detail-${skill.id}`}
 								profileCover={<SkillProfileCover skill={skill} />}
 								profileMetaSlot={<SkillProfileMeta skill={skill} />}
