@@ -7058,6 +7058,20 @@ const BLOCK_DEMOS: Record<string, ComponentType> = {
 };
 
 const BLOCK_VARIANT_DEMOS: Record<string, ComponentType> = {
+  "agent-profile-card-chat": dynamic(
+    () =>
+      import("./demos/blocks/agent-profile-card-demo").then((mod) => ({
+        default: mod.AgentProfileCardChatExample,
+      })),
+    { ssr: false },
+  ),
+  "agent-profile-card-preview": dynamic(
+    () =>
+      import("./demos/blocks/agent-profile-card-demo").then((mod) => ({
+        default: mod.AgentProfileCardPreviewExample,
+      })),
+    { ssr: false },
+  ),
   "artifact-demo-code-preview": dynamic(
     () =>
       import("./demos/blocks/artifact-demo").then((mod) => ({
