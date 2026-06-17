@@ -4149,7 +4149,7 @@ function AgentConfigProfile({
 			<AgentProfileCover
 				avatarSrc={avatarSrc}
 				onAvatarChange={onAvatarChange}
-				bannerSrc={getDeterministicAgentBannerSrc(config.agentId ?? avatarSrc)}
+				bannerSrc={getDeterministicAgentBannerSrc(avatarSrc, config.agentId ?? avatarSrc)}
 			/>
 			<div className="flex flex-col gap-1" data-agent-field="name">
 				{/* The cover/avatar and the description below stay put; only the name
