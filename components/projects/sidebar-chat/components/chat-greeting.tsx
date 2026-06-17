@@ -5,15 +5,16 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 import type { ReactNode } from "react";
+import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import { token } from "@/lib/tokens";
 import Heading from "@/components/blocks/shared-ui/heading";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { ControlledRovoIllustration } from "@/components/ui-custom/rovo-illustration";
-import { VisualIdentityTile } from "@/components/projects/shared/components/visual-identity-tile";
 import { GreetingPromptRow } from "@/components/projects/shared/components/greeting-prompt-row";
 import { defaultSuggestions, type RovoSuggestion } from "@/lib/rovo-suggestions";
 import { isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 import { RichTextMentionVisualMark } from "@/components/ui-custom/rich-text-editor";
+import { IconTile } from "@/components/ui/icon-tile";
 import { Kbd } from "@/components/ui/kbd";
 import { ReturnIcon } from "@/components/ui/vpk-icons";
 import type { DirectoryAutocompleteState } from "@/lib/directory-autocomplete";
@@ -28,9 +29,6 @@ const MAX_MODE_HEADING = "Let's plan your next move";
 const MAX_MODE_ILLUSTRATION_SRC = "/illustration-ai/max/light.gif";
 const MAX_MODE_ILLUSTRATION_DARK_SRC = "/illustration-ai/max/dark.gif";
 const CHAT_GREETING_ILLUSTRATION_CLASS_NAME = "h-[67px] w-[74px]";
-// Custom-agent greeting prompts share one consistent "AI chat" glyph rather
-// than a per-prompt contextual icon. Maps to AiChatIcon via ICON_REGISTRY.
-const CUSTOM_AGENT_STARTER_ICON_NAME = "ai-chat";
 const CHAT_GREETING_MODE_TRANSITION = {
 	type: "spring",
 	bounce: 0,
@@ -136,14 +134,19 @@ interface ChatGreetingProps {
 	/** Optional custom suggestions list */
 	suggestions?: ReadonlyArray<RovoSuggestion>;
 	/**
-	 * Render a "Chat" group label above the custom-agent starter list. Used by
-	 * the agent test panel to separate starters from the automation group.
+	 * Render a group label above the custom-agent starter list. Custom-agent
+	 * branch only.
+	 */
+	starterGroupLabel?: string;
+	/**
+	 * Render `starterGroupLabel` above the custom-agent starter list. Used by
+	 * custom-agent surfaces that need a labeled prompt group.
 	 * Custom-agent branch only.
 	 */
 	showStarterGroupLabel?: boolean;
 	/**
-	 * Extra labeled section rendered below the custom-agent starter list (e.g.
-	 * the agent test "Automation" group). Custom-agent branch only.
+	 * Extra rows rendered in the custom-agent starter list (e.g. agent test
+	 * automation rows). Custom-agent branch only.
 	 */
 	agentTestSection?: ReactNode;
 	/** Composer-owned skill/tool autocomplete state for filtered empty-state rows. */
@@ -282,14 +285,14 @@ function CustomAgentStarterItem({
 			visual={
 				hasOwnVisual ? undefined : (
 					// Greeting prompts have no inherent icon, so use a single consistent
-					// "AI chat" glyph on the neutral surface treatment (bordered white
-					// tile + subtle icon) instead of a per-prompt contextual identity.
-					<VisualIdentityTile
+					// "AI chat" glyph on the same neutral surface treatment used by
+					// GreetingPromptVisual (bordered white tile + subtle icon).
+					<IconTile
+						aria-hidden={true}
 						className="border border-border bg-surface"
-						decorative
+						icon={<AiChatIcon color={token("color.icon.subtle")} label={suggestion.label} />}
 						label={suggestion.label}
 						size="medium"
-						visualIdentity={{ iconName: CUSTOM_AGENT_STARTER_ICON_NAME, tileVariant: "gray" }}
 					/>
 				)
 			}
@@ -297,17 +300,11 @@ function CustomAgentStarterItem({
 	);
 }
 
-// Small left-aligned group header for the custom-agent greeting (e.g. "Chat").
-// The icon is a 32px spot illustration that sits in the same 32px column as the
-// row tiles below it (gap-3 matches the rows). The agent test panel mirrors this
-// exact treatment for its "Flows" group label so the two groups read as a set.
-function GreetingGroupLabel({
-	icon,
-	label,
-}: Readonly<{ icon: ReactNode; label: string }>) {
+// Small left-aligned group header for custom-agent greeting surfaces that still
+// need a labeled prompt group.
+function GreetingGroupLabel({ label }: Readonly<{ label: string }>) {
 	return (
-		<div className="flex items-center gap-3 px-1.5 text-xs font-semibold leading-4 text-text-subtle">
-			{icon}
+		<div className="px-1.5 text-xs font-semibold leading-4 text-text-subtle">
 			{label}
 		</div>
 	);
@@ -321,6 +318,7 @@ function CustomAgentGreeting({
 	itemVariants,
 	onSuggestionClick,
 	showStarterGroupLabel = false,
+	starterGroupLabel = "Chat",
 }: Readonly<{
 	agent: RovoAgentProfile;
 	agentTestSection?: ReactNode;
@@ -329,6 +327,7 @@ function CustomAgentGreeting({
 	itemVariants: ChatGreetingItemVariants;
 	onSuggestionClick?: (suggestion: RovoSuggestion) => void;
 	showStarterGroupLabel?: boolean;
+	starterGroupLabel?: string;
 }>) {
 	const shouldShowHero = !isComposing || agent.starters.length === 0;
 	const activeContainerVariants = isComposing ? CHAT_GREETING_INSTANT_CONTAINER_VARIANTS : CHAT_GREETING_CONTAINER_VARIANTS;
@@ -378,27 +377,7 @@ function CustomAgentGreeting({
 				>
 					{showStarterGroupLabel ? (
 						<motion.div variants={activeItemVariants}>
-							<GreetingGroupLabel
-								icon={
-									<span className="block size-8 shrink-0">
-										<Image
-											alt=""
-											className="size-8 object-contain dark:hidden [[data-color-mode=dark]_&]:hidden"
-											height={32}
-											src="/illustration-spot/general/chat-6/light.svg"
-											width={32}
-										/>
-										<Image
-											alt=""
-											className="hidden size-8 object-contain dark:block [[data-color-mode=dark]_&]:block"
-											height={32}
-											src="/illustration-spot/general/chat-6/dark.svg"
-											width={32}
-										/>
-									</span>
-								}
-								label="Chat"
-							/>
+							<GreetingGroupLabel label={starterGroupLabel} />
 						</motion.div>
 					) : null}
 					{agent.starters.map((suggestion) => (
@@ -410,9 +389,7 @@ function CustomAgentGreeting({
 						</motion.div>
 					))}
 					{agentTestSection ? (
-						<motion.div className="mt-4" variants={activeItemVariants}>
-							{agentTestSection}
-						</motion.div>
+						agentTestSection
 					) : null}
 				</div>
 			</motion.div>
@@ -430,6 +407,7 @@ export default function ChatGreeting({
 	isAgentTest = false,
 	showHero = true,
 	showStarterGroupLabel = false,
+	starterGroupLabel,
 	agentTestSection,
 	suggestions,
 	directoryAutocompleteState = null,
@@ -492,6 +470,7 @@ export default function ChatGreeting({
 						key={`agent-${customAgent.id}`}
 						onSuggestionClick={onSuggestionClick}
 						showStarterGroupLabel={showStarterGroupLabel}
+						starterGroupLabel={starterGroupLabel}
 					/>
 				) : (
 					<motion.div

@@ -184,6 +184,15 @@ async function loadChatGreetingHarness() {
 					}));
 				}
 
+				export function renderCustomAgentTestGreeting() {
+					return renderToStaticMarkup(React.createElement(ChatGreeting, {
+						isAgentTest: true,
+						selectedAgent: getRovoAgentProfile(AI_INSIGHTS_AGENT_ID),
+						showStarterGroupLabel: true,
+						starterGroupLabel: "Test the following",
+					}));
+				}
+
 				export function renderComposingEmptyDirectoryGreeting() {
 					return renderToStaticMarkup(React.createElement(ChatGreeting, {
 						heading: "Improve your agent?",
@@ -344,10 +353,10 @@ test("ChatGreeting renders selected custom agent profile and three starters", as
 
 	assert.match(CHAT_GREETING_SOURCE, /function CustomAgentGreeting/u);
 	assert.match(CHAT_GREETING_SOURCE, /itemVariants: ChatGreetingItemVariants;/u);
-	assert.match(CHAT_GREETING_SOURCE, /isAgentTest \? "max-w-\[600px\]" : "max-w-\[800px\]"/u);
+	assert.match(CHAT_GREETING_SOURCE, /isAgentTest \? "items-start text-left" : "mx-auto max-w-\[800px\] items-center text-center"/u);
 	// Default (main Rovo App chat) renders the wide 800px custom-agent greeting.
 	assert.match(markup, /max-w-\[800px\]/u);
-	assert.doesNotMatch(markup, /max-w-\[600px\]/u);
+	assert.doesNotMatch(markup, /items-start text-left/u);
 	assert.match(CHAT_GREETING_SOURCE, /<motion\.div key=\{suggestion\.id\} variants=\{activeItemVariants\}>/u);
 	assert.match(CHAT_GREETING_SOURCE, /<AnimatePresence mode="wait">[\s\S]*customAgent \? \(/u);
 	assert.match(markup, /AI Insights Agent/u);
@@ -359,11 +368,21 @@ test("ChatGreeting renders selected custom agent profile and three starters", as
 	assert.equal((markup.match(/<button/g) ?? []).length, 3);
 });
 
-test("ChatGreeting renders the custom agent greeting at 600px in Test mode", async () => {
+test("ChatGreeting renders the custom agent greeting full-width in Test mode", async () => {
 	const harness = await loadChatGreetingHarness();
 	const markup = harness.renderCustomAgentGreeting(true);
 
-	// The Studio Test panel passes isAgentTest so the greeting narrows to 600px.
-	assert.match(markup, /max-w-\[600px\]/u);
+	// The Studio Test panel passes isAgentTest so the greeting fills the test panel.
+	assert.match(markup, /items-start text-left/u);
+	assert.match(markup, /flex max-w-full flex-col gap-1 w-full/u);
 	assert.doesNotMatch(markup, /max-w-\[800px\]/u);
+});
+
+test("ChatGreeting renders the agent-test starter group as a text-only header", async () => {
+	const harness = await loadChatGreetingHarness();
+	const markup = harness.renderCustomAgentTestGreeting();
+
+	assert.match(markup, /Test the following/u);
+	assert.doesNotMatch(markup, /illustration-spot\/general\/chat-6/u);
+	assert.doesNotMatch(CHAT_GREETING_SOURCE, /illustration-spot\/general\/chat-6/u);
 });

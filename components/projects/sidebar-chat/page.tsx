@@ -119,15 +119,19 @@ export interface ChatPanelGreetingProps {
 	showHero?: boolean;
 	suggestions?: ReadonlyArray<RovoSuggestion>;
 	/**
+	 * Opt-in (custom-agent greeting only): text for the optional group header
+	 * above the conversation-starter rows.
+	 */
+	starterGroupLabel?: string;
+	/**
 	 * Opt-in (custom-agent greeting only): label the conversation-starter list
-	 * with a "Chat" group header. Used by the agent test panel to separate
-	 * starters from the automation group rendered via `agentTestSection`.
+	 * with `starterGroupLabel`.
 	 */
 	showStarterGroupLabel?: boolean;
 	/**
-	 * Opt-in (custom-agent greeting only): extra labeled section rendered below
-	 * the conversation starters (e.g. the agent test "Automation" group). Kept as
-	 * an opaque node so automation/trigger specifics stay in the caller's domain.
+	 * Opt-in (custom-agent greeting only): extra rows rendered after the
+	 * conversation starters. Kept as an opaque node so automation/trigger
+	 * specifics stay in the caller's domain.
 	 */
 	agentTestSection?: ReactNode;
 }
@@ -1274,6 +1278,7 @@ export default function ChatPanel({
 							selectedAgent={greetingSelectedAgent ?? selectedAgent}
 							showHero={resolvedGreeting?.showHero}
 							showStarterGroupLabel={resolvedGreeting?.showStarterGroupLabel}
+							starterGroupLabel={resolvedGreeting?.starterGroupLabel}
 							agentTestSection={resolvedGreeting?.agentTestSection}
 							suggestions={resolvedGreeting?.suggestions}
 							directoryAutocompleteState={directoryAutocompleteState}

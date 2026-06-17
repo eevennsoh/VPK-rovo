@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 
-import { renderAgentTriggerProviderChipIcon, renderAgentTriggerProviderTileIcon, type AgentTriggerValue } from "@/components/blocks/triggers/page";
+import { renderAgentTriggerProviderCompactTileIcon, renderAgentTriggerProviderTileIcon, type AgentTriggerValue } from "@/components/blocks/triggers/page";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Tile } from "@/components/ui/tile";
 import AutomationIcon from "@atlaskit/icon/core/automation";
@@ -11,10 +11,25 @@ interface AgentAutomationFlowCoverProps {
 	"aria-hidden"?: boolean;
 	rootElement?: "div" | "span";
 	triggers: readonly AgentTriggerValue[];
-	// "compact" renders 16px provider tiles + a 16px target tile for dense
-	// surfaces like the agent test greeting flow rows; "default" keeps the 32px
-	// treatment used by trigger config and the picker cover.
+	// "compact" renders trigger providers as 16px bordered tiles for dense
+	// surfaces like the agent test greeting flow rows; the target keeps the
+	// compact IconTile treatment. "default" keeps the 32px treatment used by
+	// trigger config and the picker cover.
 	size?: "default" | "compact";
+}
+
+function CompactFlowTile({
+	icon,
+	label,
+}: Readonly<{
+	icon: ReactElement;
+	label: string;
+}>): ReactElement {
+	return (
+		<Tile aria-hidden={true} className="bg-surface" hasBorder label={label} size="xxsmall" variant="transparent">
+			{icon}
+		</Tile>
+	);
 }
 
 export function AgentAutomationFlowCover({
@@ -42,13 +57,19 @@ export function AgentAutomationFlowCover({
 								key={trigger.id}
 								className="inline-flex size-4 shrink-0 items-center justify-center"
 							>
-								{renderAgentTriggerProviderChipIcon(trigger) ?? <AutomationIcon label="" size="small" />}
+								{renderAgentTriggerProviderCompactTileIcon(trigger) ?? (
+									<CompactFlowTile
+										icon={<AutomationIcon label="" size="small" />}
+										label="Trigger"
+									/>
+								)}
 							</span>
 						))
 					) : (
-						<Tile aria-hidden={true} hasBorder label="Trigger" size="xxsmall" variant="blueSubtle">
-							<AutomationIcon label="" size="small" />
-						</Tile>
+						<CompactFlowTile
+							icon={<AutomationIcon label="" size="small" />}
+							label="Trigger"
+						/>
 					)}
 					{overflowCount > 0 ? (
 						<span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-border bg-bg-input px-1 text-[10px] font-medium leading-3 text-text-subtle">
@@ -57,9 +78,13 @@ export function AgentAutomationFlowCover({
 					) : null}
 				</span>
 				<span className="h-px w-4 shrink-0 bg-border" />
-				<Tile aria-hidden={true} hasBorder label="Agent instructions" size="xxsmall" variant="graySubtle">
-					<GenerativeIndicatorIcon label="" size="small" />
-				</Tile>
+				<IconTile
+					aria-hidden={true}
+					icon={<GenerativeIndicatorIcon label="" size="small" />}
+					label="Agent instructions"
+					size="xxsmall"
+					variant="gray"
+				/>
 			</Root>
 		);
 	}

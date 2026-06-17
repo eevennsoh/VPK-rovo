@@ -15,7 +15,7 @@ export default function AgentTestDemo() {
 }
 
 // A draft with no configured automations — the chat greeting shows just the
-// conversation starters, with no "Automation" group.
+// conversation starters.
 const NO_AUTOMATION_ENTRY = buildAgentTestDemoEntry({
 	...AGENT_TEST_DEMO_ENTRY.draftResult,
 	automationRules: [],
