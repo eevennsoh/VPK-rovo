@@ -1313,7 +1313,17 @@ test("Studio post-create onboarding uses a local Rovo Cursor tour instead of Spo
 	assert.match(SHELL_SOURCE, /const respond = \(assistantText: string\) => \{[\s\S]*appendAgentOnboardingGuideExchange\(text, assistantText\);[\s\S]*voiceText: assistantText/u);
 	assert.match(SHELL_SOURCE, /initialVoiceKey: activeSessionAgentEntry\?\.profile\.id \?\? "generated-agent",[\s\S]*initialVoiceText: getStudioAgentOnboardingGuideGreeting\(activeSessionAgentEntry\?\.profile\.name \?\? null\)/u);
 	assert.match(SHELL_SOURCE, /scriptedConversation=\{agentOnboardingScriptedConversation\}/u);
-	assert.match(SHELL_SOURCE, /const agentEditCards = useMemo\(\(\) => \{[\s\S]*generatedAgentResult: activeSessionAgentEntry\.sourceResult,[\s\S]*\}, \[activeSessionAgentEntry\]\);/u);
+	// The Ask Rovo "Edit agent" cards must gate the generated-agent result card to a
+	// fresh generation: `generatedAgentResult` is withheld (null) and the in-transcript
+	// card is restricted to the source message unless THIS session just generated the
+	// agent (`activeAgentConfig.sourceMessageId` non-null). Reopening an existing agent
+	// resets `sourceMessageId` to null, so the replayed "agent created" card is hidden.
+	assert.match(SHELL_SOURCE, /const agentEditCards = useMemo\(\(\) => \{[\s\S]*const freshGenerationMessageId = activeAgentConfig\?\.sourceMessageId \?\? null;[\s\S]*generatedAgentResult: freshGenerationMessageId \? activeSessionAgentEntry\.sourceResult : null,[\s\S]*restrictGeneratedAgentCardToMessageId: freshGenerationMessageId,[\s\S]*\}, \[activeSessionAgentEntry, activeAgentConfig\?\.sourceMessageId\]\);/u);
+	// ChatPanel honors the restriction: an in-transcript generated-agent card renders
+	// only when unrestricted (undefined → every non-studio consumer) or when the message
+	// id matches the fresh-generation source message.
+	assert.match(CHAT_PANEL_SOURCE, /restrictGeneratedAgentCardToMessageId\?: string \| null;/u);
+	assert.match(CHAT_PANEL_SOURCE, /const restrictGeneratedAgentCardToMessageId = cards\?\.restrictGeneratedAgentCardToMessageId;[\s\S]*const generatedAgentResult =[\s\S]*isGeneratedAgentResult\(agentResult\) &&[\s\S]*hasTurnCompleteSignal\(message\) &&[\s\S]*\(restrictGeneratedAgentCardToMessageId === undefined \|\|[\s\S]*message\.id === restrictGeneratedAgentCardToMessageId\)/u);
 	assert.match(SHELL_SOURCE, /<ChatPanel[\s\S]*cards=\{agentEditCards\}[\s\S]*scriptedConversation=\{agentOnboardingScriptedConversation\}/u);
 	assert.match(SHELL_SOURCE, /const \[agentOnboardingLiveVoiceRequestKey, setAgentOnboardingLiveVoiceRequestKey\] = useState\(0\);/u);
 	assert.match(SHELL_SOURCE, /setAgentOnboardingLiveVoiceRequestKey\(0\);[\s\S]*setAgentOnboardingLiveVoiceRequestKey\(\(currentKey\) => currentKey \+ 1\);/u);

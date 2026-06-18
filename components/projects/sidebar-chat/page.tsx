@@ -110,6 +110,17 @@ export type { ChatSubmitInterceptOutcome } from "./hooks/use-chat-submit";
 interface ChatPanelCardsProps {
 	generatedAgentResult?: RovoDataParts["agent-result"] | null;
 	generativeAnimation?: GenerativeCardAnimationProps;
+	/**
+	 * When provided, the panel only renders the *in-transcript* generated-agent
+	 * profile card for the message whose id matches. The studio Ask Rovo "Edit
+	 * agent" panel re-adopts an agent's original generation transcript when the
+	 * agent is reopened, which would otherwise replay the "agent created" card on
+	 * every view. The shell sets this to the id of the message that triggered THIS
+	 * session's fresh generation, and `null` when merely viewing an existing agent
+	 * (so the replayed card is suppressed). Omit it entirely — as every other
+	 * ChatPanel consumer does — to always render the card.
+	 */
+	restrictGeneratedAgentCardToMessageId?: string | null;
 }
 
 type GeneratedResult =
@@ -1604,11 +1615,21 @@ export default function ChatPanel({
 							/>
 						)}
 						renderTurnAfter={(turn) => {
+							// When the shell restricts generated-agent cards to a specific
+							// source message (studio "Edit agent" panel), only the message
+							// that triggered THIS session's fresh generation may render the
+							// card. `undefined` means "no restriction" (every other consumer)
+							// so the card always renders; `null` (viewing an existing agent)
+							// matches no message, suppressing the replayed generation card.
+							const restrictGeneratedAgentCardToMessageId = cards?.restrictGeneratedAgentCardToMessageId;
 							const generatedResults = turn.flatMap((message): GeneratedResult[] => {
 								const artifactResult = getMessageArtifactResult(message);
 								const agentResult = getMessageAgentResult(message);
 								const generatedAgentResult =
-									isGeneratedAgentResult(agentResult) && hasTurnCompleteSignal(message)
+									isGeneratedAgentResult(agentResult) &&
+									hasTurnCompleteSignal(message) &&
+									(restrictGeneratedAgentCardToMessageId === undefined ||
+										message.id === restrictGeneratedAgentCardToMessageId)
 										? agentResult
 										: null;
 								const results: GeneratedResult[] = [];

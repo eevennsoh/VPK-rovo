@@ -2391,10 +2391,18 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			return undefined;
 		}
 
+		// `sourceMessageId` is non-null only right after THIS session generated the
+		// agent; every URL-restore / in-page selection path resets it to null. So a
+		// freshly created agent surfaces its result card, while merely viewing an
+		// existing agent does not — both as the in-transcript card (gated by
+		// `restrictGeneratedAgentCardToMessageId`) and the fallback card (gated by
+		// withholding `generatedAgentResult` when not a fresh generation).
+		const freshGenerationMessageId = activeAgentConfig?.sourceMessageId ?? null;
 		return {
-			generatedAgentResult: activeSessionAgentEntry.sourceResult,
+			generatedAgentResult: freshGenerationMessageId ? activeSessionAgentEntry.sourceResult : null,
+			restrictGeneratedAgentCardToMessageId: freshGenerationMessageId,
 		};
-	}, [activeSessionAgentEntry]);
+	}, [activeSessionAgentEntry, activeAgentConfig?.sourceMessageId]);
 	// When the Ask Rovo sidebar is editing a studio agent, ride the shared product
 	// knowledge (catalog ids + editable fields) on every sidebar turn that falls
 	// through to the model, so typed requests understand the agent builder the same
