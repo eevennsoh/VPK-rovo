@@ -5024,7 +5024,10 @@ export const AgentConfigFields = memo(
 									exit={{ opacity: 0 }}
 									transition={{ duration: 0.2, ease: [0, 0.4, 0, 1] }}
 								>
-									<AgentCompactOperationsBento onDismiss={() => setIsOnboardingBentoDismissed(true)} />
+									<AgentCompactOperationsBento
+										onDismiss={() => setIsOnboardingBentoDismissed(true)}
+										onStartWithTemplate={onStartWithTemplate}
+									/>
 								</motion.div>
 							) : null}
 						</AnimatePresence>
