@@ -92,16 +92,16 @@ export function ManageTriggersDialog({
 			<DialogContent className="gap-0 overflow-hidden p-0" showCloseButton={false} size="md">
 				<div className="flex items-center justify-between gap-3 p-6">
 					<DialogTitle className="text-xl font-semibold leading-6 text-text">
-						Manage automations
+						Manage flows
 					</DialogTitle>
 					<div className="flex items-center gap-2">
 						{open ? (
 							<TriggerPicker
-								label="Add automation"
+								label="Add flow"
 								onSelectEvent={onAddAutomation}
 								trigger={
 									<Button type="button" variant="outline">
-										Add automation
+										Add flow
 									</Button>
 								}
 							/>
@@ -135,7 +135,7 @@ export function ManageTriggersDialog({
 									))
 								) : (
 									<div className="rounded-lg border border-dashed border-border bg-surface p-4 text-center text-sm text-text-subtlest">
-										No automations yet.
+										No flows yet.
 									</div>
 								)}
 							</div>
@@ -243,7 +243,7 @@ function ManageTriggersRow({
 			style={style}
 		>
 			<button
-				aria-label={`Reorder automation ${index + 1}`}
+				aria-label={`Reorder flow ${index + 1}`}
 				className="flex cursor-grab touch-none items-center rounded-md p-1 text-icon-subtlest transition-colors duration-normal hover:bg-bg-neutral-subtle-hovered hover:text-icon-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-selected active:cursor-grabbing"
 				ref={setActivatorNodeRef}
 				type="button"

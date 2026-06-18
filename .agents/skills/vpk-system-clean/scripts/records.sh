@@ -23,6 +23,7 @@ esac
 runs=$(grep -c "run start" "$LOG")
 resets=$(grep -c "restarted fseventsd" "$LOG")
 removals=$(grep -cE "removed .* \([0-9]+G\)" "$LOG")
+tmux_kills=$(grep -c "killed stale tmux session" "$LOG")
 
 # Total GB reclaimed: prefer the per-run "summary: freed NG" lines; if a log
 # predates summaries, fall back to summing individual "removed ... (NG)" lines.
@@ -38,6 +39,7 @@ print -- "── vpk-system-clean records ──"
 print -- "runs            : ${runs}   (first ${first:-—}, last ${last:-—})"
 print -- "caches removed  : ${removals}"
 print -- "GB reclaimed    : ~${total}G"
+print -- "stale tmux kills: ${tmux_kills}"
 print -- "fseventsd resets: ${resets}"
 
 print -- "\n── recent runs (last 8) ──"

@@ -18,7 +18,11 @@ interface AgentResultCardProps {
 }
 
 const RFP_DRAFTING_AGENT_ID = "rfp-drafting-agent";
-const DEFAULT_AGENT_PARTNER_NAME = "Atlassian";
+// Generated agents are authored by the person in the studio, so the card attributes
+// them to the studio owner (a person) rather than the Atlassian company. Mirrors the
+// owner identity used by the studio session storage and custom-agents table.
+const AGENT_CREATOR_NAME = "Venn Soh";
+const AGENT_CREATOR_AVATAR_SRC = "/avatar-user/venn/venn.png";
 
 // react-doctor-disable-next-line react-doctor/only-export-components -- This component module intentionally exports colocated non-component API used by consumers.
 export function isGeneratedAgentResult(
@@ -79,6 +83,7 @@ export function AgentResultCard({
 	return (
 		<div className={cn("pb-2", className)} data-testid="rovo-agent-result-card">
 			<AgentProfileCard
+				attributionKind="person"
 				avatarSrc={avatarSrc}
 				className="w-full"
 				coverSrc={avatarSrc}
@@ -88,10 +93,12 @@ export function AgentResultCard({
 				onEditAction={handleSelectAgent}
 				onPreviewAction={handleSelectAgent}
 				onSwapAction={handleSelectAgent}
-				partnerName={DEFAULT_AGENT_PARTNER_NAME}
-				previewActionLabel="View agent"
+				partnerLogoSrc={AGENT_CREATOR_AVATAR_SRC}
+				partnerName={AGENT_CREATOR_NAME}
+				previewActionLabel={`View ${displayName}`}
 				swapActionLabel="Chat with agent"
 				variant="preview"
+				verified={false}
 			/>
 		</div>
 	);

@@ -1205,11 +1205,6 @@ const skills: SkillsDirectorySkill[] = [
 				description: "Called by the skill info page Open split button.",
 			},
 			{
-				name: "onTryInChat",
-				type: "(skill: SkillsDirectorySkill) => void",
-				description: "Called by the skill info page Try in chat action.",
-			},
-			{
 				name: "onCreateSkill",
 				type: "() => void",
 				description: "Called by the New skill button.",

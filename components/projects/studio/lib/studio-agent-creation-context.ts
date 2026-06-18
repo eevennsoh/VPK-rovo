@@ -268,6 +268,44 @@ export function buildCatalogProjection(categoryIds?: readonly string[]): string 
 	].join("\n");
 }
 
+/**
+ * Product knowledge for the on-screen assistants (the voice cursor and the Ask
+ * Rovo sidebar) so they can configure the live agent draft the way a user would
+ * through the builder UI. Unlike the generation contexts above — which drive a
+ * one-shot `AGENT_RESULT` marker — this teaches the assistant the *editing*
+ * surface: which draft fields exist, how to set each with `apply_agent_draft_patch`,
+ * the screen-assistant target ids to point at, and the full catalog of real ids.
+ *
+ * It is the single source of truth reused by `use-clicky-voice` (Realtime voice)
+ * and the Ask Rovo sidebar request context, so both assistants share one mental
+ * model of the product.
+ */
+export function buildStudioAssistantKnowledgeContext(): string {
+	return [
+		"[Studio product knowledge]",
+		"You are assisting inside the Rovo Studio agent builder. The user is configuring ONE agent draft.",
+		"Read the draft via get_screen_state (screenContext.activeAgentDraft) and edit it via apply_agent_draft_patch.",
+		"apply_agent_draft_patch REPLACES each field you include — for any list field, read the current values first and send the COMPLETE desired array (existing items + your additions), or you will erase what is already there.",
+		"",
+		"Draft fields you can set:",
+		"- name, description, instructions, contextDescription, byline, guardrail — plain text. (instructions is a full Markdown replacement.)",
+		"- skills, apps, knowledge, subagents — arrays chosen from the [Catalog] below; pass catalog ids or display names. Unknown items are dropped.",
+		"- avatarSrc — an avatar option path like /avatar-agent/<group>/<name>.svg. The group also sets the accent color: dev-agents=Lime, product-agents=Purple, service-agents=Yellow, strategy-agents=Orange, teamwork-agents=Blue.",
+		'- memoryMode ("on"|"off"); knowledgeMode ("all"|"custom"|"none"); reasoningMode (one of ' +
+			REASONING_MODE_VALUES.map((value) => `"${value}"`).join(", ") +
+			").",
+		"- conversationStarters (up to 3 short prompts) and the parallel conversationStarterIcons.",
+		'- triggers — natural-language phrases for when the agent runs automatically (e.g. "When a Jira work item is created", "Every weekday morning"); these set the trigger phrases. Existing automation rules are preserved — only send a full automationRules array when you intend to replace them.',
+		"- subagentPrompts — [{ triggerName, condition, config: { instructions, skills, tools, knowledge } }] for specialist sub-agents.",
+		"",
+		"After applying a patch, point_at_target the changed field so the user sees it. Field target ids (prefix studio-agent-config):",
+		"- name → studio-agent-config:name; description → :description; instructions → :instructions; apps → :apps; skills → :skills; subagents → :subagents; memory → :memory; reasoning → :reasoning; avatar → :avatar; conversation starters → :conversation-starters.",
+		"",
+		buildCatalogProjection(),
+		"[End Studio product knowledge]",
+	].join("\n");
+}
+
 function dedupeLabels(entries: ReadonlyArray<LabelledEntry> | undefined): string[] | undefined {
 	if (!entries || entries.length === 0) {
 		return undefined;

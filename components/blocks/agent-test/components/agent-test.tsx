@@ -3,7 +3,7 @@
 // oxlint-disable react-doctor/no-event-handler -- Effects in this file bridge external systems, animation/media state, timers, or parent-controlled state rather than user event handlers.
 // oxlint-disable react-doctor/no-multi-comp -- The test panel colocates the chat surface, header, and automation greeting subviews so they share one local contract.
 
-import { Fragment, useEffect, useMemo, useState, type ReactElement } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 
 import { RovoChatProvider, useRovoChat, type StudioSessionAgentEntry } from "@/app/contexts/context-rovo-chat";
 import {
@@ -19,6 +19,7 @@ import {
 	type AgentAutomationRule,
 	type AgentTriggerValue,
 } from "@/components/blocks/triggers/data/trigger-catalog";
+import { AgentTriggersDialog } from "@/components/ui-custom/agent-triggers-dialog";
 import ChatPanel, { type ChatPanelAgentVersionOption } from "@/components/projects/sidebar-chat/page";
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-import { createAssistantTextMessage, type RovoDataParts, type RovoUIMessage } from "@/lib/rovo-ui-messages";
+import type { RovoDataParts, RovoUIMessage } from "@/lib/rovo-ui-messages";
 import { resolveConversationStarterVisualIdentity, type RovoSuggestion } from "@/lib/rovo-suggestions";
 import AutomationIcon from "@atlaskit/icon/core/automation";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
@@ -497,17 +498,35 @@ function getProviderSampleData(trigger: AgentTriggerValue): Record<string, unkno
 	}
 }
 
-// Builds the scripted user + assistant turn injected into the chat when an
-// automation is run inline. The assistant turn renders the sample event payload
-// and callback result as JSON code blocks. No backend is involved — the messages
-// are written directly into the conversation via `replaceMessages`.
-function buildAutomationRunMessages(
+interface AutomationRunFrame {
+	/** Delay (ms) to wait BEFORE applying this frame. */
+	delayMs: number;
+	parts: RovoUIMessage["parts"];
+}
+
+interface AutomationRunPlan {
+	userMessage: RovoUIMessage;
+	/** Stable id reused across every frame so the assistant message updates in place. */
+	assistantId: string;
+	frames: AutomationRunFrame[];
+}
+
+// Builds a staged playback for an inline automation test run. No backend is
+// involved — `handleRunAutomation` writes each frame into the conversation via
+// `replaceMessages`, reusing `assistantId` so the message updates in place. The
+// run replays realistically: a "Thought for Xs" chain whose tool calls appear
+// one at a time (receive the scheduled event → query Jira for lost/no-bid RFPs →
+// post the summary to Slack), then the human-friendly reply streams in. The
+// sample event payload + callback result are preserved as the first tool's
+// `input` and the last tool's `output`, so they live inside the collapsed
+// thought disclosure instead of as always-visible code blocks.
+function buildAutomationRunPlan(
 	rule: AgentAutomationRule,
 	ruleIndex: number,
-): RovoUIMessage[] {
+): AutomationRunPlan | null {
 	const trigger = rule.triggers[0];
 	if (!trigger) {
-		return [];
+		return null;
 	}
 
 	const label = getAgentAutomationRuleLabel(rule, ruleIndex);
@@ -517,33 +536,201 @@ function buildAutomationRunMessages(
 		role: "user",
 		parts: [{ type: "text", text: `Test "${label}"`, state: "done" }],
 	};
-	const assistantMessage = createAssistantTextMessage(
-		crypto.randomUUID(),
-		[
-			"**Sample event payload**",
-			"",
-			"```json",
-			JSON.stringify(result.payload, null, 2),
-			"```",
-			"",
-			"**Callback result**",
-			"",
-			"```json",
-			JSON.stringify(result.callback, null, 2),
-			"```",
-		].join("\n"),
-	);
 
-	return [userMessage, assistantMessage];
+	// Real wall-clock timestamps spanning ~the playback duration. They must track
+	// "now" (not a fixed past date): the live thinking lifecycle measures elapsed
+	// from the real clock, so a past startedAt would settle to a nonsense
+	// "Thought for N days". Built in a click handler, so no SSR hydration concern.
+	const baseTime = Date.now();
+	const startedAt = new Date(baseTime).toISOString();
+	const midAt = new Date(baseTime + 2700).toISOString();
+	const endAt = new Date(baseTime + 5300).toISOString();
+	const runId = crypto.randomUUID();
+	const receiveToolCallId = `automation-run-receive-${runId}`;
+	const findToolCallId = `automation-run-find-${runId}`;
+	const postToolCallId = `automation-run-post-${runId}`;
+	// Step (tool) labels — shown as the rows inside the trace.
+	const receiveLabel = "Reading the scheduled event";
+	const findLabel = "Finding lost / no-bid RFPs";
+	const postLabel = "Posting the summary to Slack";
+	// Header (parent) labels — the agent's intent per phase. Deliberately worded
+	// differently from the step labels above so the trace header never echoes the
+	// tool step that is currently running.
+	const receiveHeaderLabel = "Picking up the scheduled run";
+	const findHeaderLabel = "Reviewing this week's RFP outcomes";
+	const postHeaderLabel = "Sending the rollup to sales leadership";
+	const jql = 'project = "Enterprise RFP Response" AND status CHANGED TO ("Lost", "No Bid") DURING (-7d, now())';
+
+	const lostRfps = [
+		{ key: "RFP-318", account: "Northwind Logistics", outcome: "Lost" },
+		{ key: "RFP-302", account: "Cobalt Health", outcome: "No Bid" },
+		{ key: "RFP-289", account: "Meridian Bank", outcome: "Lost" },
+	];
+	const slackSummary = `*Weekly RFP outcomes — week ending Fri 12 Jun*\n• ${lostRfps
+		.map((item) => `${item.key} — ${item.account} (${item.outcome})`)
+		.join("\n• ")}`;
+
+	// The cumulative thinking chain, in display order. Frames reveal growing
+	// prefixes of this so each tool call appears (and completes) in turn.
+	const thinkingParts: RovoUIMessage["parts"] = [
+		// Phase 1 — receive the scheduled event (carries the sample payload).
+		{
+			type: "data-thinking-status",
+			data: {
+				label: receiveHeaderLabel,
+				content: `The "${label}" flow fired on schedule. Reading the event payload before running the agent instructions.`,
+				toolCallId: receiveToolCallId,
+				input: result.payload,
+				activity: "data",
+				source: "fallback",
+				timestamp: startedAt,
+			},
+		},
+		{
+			type: "data-thinking-event",
+			id: `${receiveToolCallId}-start`,
+			data: {
+				eventId: `${receiveToolCallId}-start`,
+				phase: "start",
+				toolName: "automation.receive_event",
+				label: receiveLabel,
+				toolCallId: receiveToolCallId,
+				input: result.payload,
+				timestamp: startedAt,
+			},
+		},
+		{
+			type: "data-thinking-event",
+			id: `${receiveToolCallId}-result`,
+			data: {
+				eventId: `${receiveToolCallId}-result`,
+				phase: "result",
+				toolName: "automation.receive_event",
+				label: receiveLabel,
+				toolCallId: receiveToolCallId,
+				output: { status: "received", automation: label },
+				outputPreview: "Scheduled event received.",
+				timestamp: startedAt,
+			},
+		},
+		// Phase 2 — query Jira for RFP work items that moved to Lost / No Bid.
+		{
+			type: "data-thinking-status",
+			data: {
+				label: findHeaderLabel,
+				content: "Searching the Enterprise RFP Response project for work items that moved to Lost or No Bid in the last 7 days.",
+				toolCallId: findToolCallId,
+				input: { jql, window: "Past 7 days" },
+				activity: "data",
+				source: "fallback",
+				timestamp: startedAt,
+			},
+		},
+		{
+			type: "data-thinking-event",
+			id: `${findToolCallId}-start`,
+			data: {
+				eventId: `${findToolCallId}-start`,
+				phase: "start",
+				toolName: "jira.search_work_items",
+				label: findLabel,
+				toolCallId: findToolCallId,
+				input: { jql },
+				timestamp: startedAt,
+			},
+		},
+		{
+			type: "data-thinking-event",
+			id: `${findToolCallId}-result`,
+			data: {
+				eventId: `${findToolCallId}-result`,
+				phase: "result",
+				toolName: "jira.search_work_items",
+				label: findLabel,
+				toolCallId: findToolCallId,
+				output: { matched: lostRfps.length, items: lostRfps },
+				outputPreview: `${lostRfps.length} RFPs moved to Lost or No Bid this week.`,
+				timestamp: midAt,
+			},
+		},
+		// Phase 3 — post the weekly summary to Slack (carries the callback).
+		{
+			type: "data-thinking-status",
+			data: {
+				label: postHeaderLabel,
+				content: "Composing the weekly summary and posting it to #sales-leadership.",
+				toolCallId: postToolCallId,
+				input: { channel: "#sales-leadership", summary: slackSummary },
+				activity: "results",
+				source: "fallback",
+				timestamp: midAt,
+			},
+		},
+		{
+			type: "data-thinking-event",
+			id: `${postToolCallId}-start`,
+			data: {
+				eventId: `${postToolCallId}-start`,
+				phase: "start",
+				toolName: "slack.send_message",
+				label: postLabel,
+				toolCallId: postToolCallId,
+				input: { channel: "#sales-leadership", text: slackSummary },
+				timestamp: midAt,
+			},
+		},
+		{
+			type: "data-thinking-event",
+			id: `${postToolCallId}-result`,
+			data: {
+				eventId: `${postToolCallId}-result`,
+				phase: "result",
+				toolName: "slack.send_message",
+				label: postLabel,
+				toolCallId: postToolCallId,
+				output: result.callback,
+				outputPreview: "Summary posted to #sales-leadership.",
+				timestamp: endAt,
+			},
+		},
+	];
+
+	const replyHeadline = `✅ Test run complete — the **${label}** flow works.`;
+	const replyBody = [
+		"Every Friday at 9 AM, this flow gives a summary of all RFP work items that moved to a **Lost** or **No Bid** status that week and posts that summary as a Slack message to **#sales-leadership**.",
+		"",
+		`In this run I found **${lostRfps.length}** RFPs that moved to Lost or No Bid in the past week (${lostRfps
+			.map((item) => item.key)
+			.join(", ")}) and posted the summary to #sales-leadership.`,
+	].join("\n");
+	const fullReply = `${replyHeadline}\n\n${replyBody}`;
+	const streamingText = (text: string): RovoUIMessage["parts"][number] => ({ type: "text", text, state: "streaming" });
+
+	const frames: AutomationRunFrame[] = [
+		// Tool calls appear (and complete) one phase at a time.
+		{ delayMs: 0, parts: thinkingParts.slice(0, 1) },
+		{ delayMs: 600, parts: thinkingParts.slice(0, 2) },
+		{ delayMs: 1100, parts: thinkingParts.slice(0, 5) },
+		{ delayMs: 1100, parts: thinkingParts.slice(0, 8) },
+		{ delayMs: 1000, parts: thinkingParts.slice(0, 9) },
+		// Reply streams in: headline first, then the body, then settle to done.
+		{ delayMs: 700, parts: [...thinkingParts, streamingText(replyHeadline)] },
+		{ delayMs: 450, parts: [...thinkingParts, streamingText(fullReply)] },
+		{ delayMs: 350, parts: [...thinkingParts, { type: "text", text: fullReply, state: "done" }] },
+	];
+
+	return { userMessage, assistantId: crypto.randomUUID(), frames };
 }
 
 // Automation rows rendered directly after the conversation starters in the chat
 // greeting. Clicking a row runs its sample inline.
 function AgentTestAutomationGreetingRows({
 	automationRules,
+	onEditAutomation,
 	onRunAutomation,
 }: Readonly<{
 	automationRules: readonly AgentAutomationRule[];
+	onEditAutomation: (rule: AgentAutomationRule, ruleIndex: number) => void;
 	onRunAutomation: (rule: AgentAutomationRule, ruleIndex: number) => void;
 }>): ReactElement | null {
 	if (automationRules.length === 0) {
@@ -555,6 +742,7 @@ function AgentTestAutomationGreetingRows({
 			{automationRules.map((rule, ruleIndex) => (
 				<AgentTestAutomationGreetingRow
 					key={rule.id}
+					onEdit={() => onEditAutomation(rule, ruleIndex)}
 					onRun={() => onRunAutomation(rule, ruleIndex)}
 					rule={rule}
 					ruleIndex={ruleIndex}
@@ -565,10 +753,12 @@ function AgentTestAutomationGreetingRows({
 }
 
 function AgentTestAutomationGreetingRow({
+	onEdit,
 	onRun,
 	rule,
 	ruleIndex,
 }: Readonly<{
+	onEdit: () => void;
 	onRun: () => void;
 	rule: AgentAutomationRule;
 	ruleIndex: number;
@@ -576,28 +766,53 @@ function AgentTestAutomationGreetingRow({
 	const label = getAgentAutomationRuleLabel(rule, ruleIndex);
 	const hasTrigger = rule.triggers.length > 0;
 
+	// The row is no longer a single button: it now hosts the run button plus a
+	// hover-revealed Edit button. A nested `<button>` inside a `<button>` is
+	// invalid HTML, so the row wrapper is a `<div>` that owns the hover surface
+	// and the `group/automation-row` reveal context.
 	return (
-		<button
-			aria-label={`Test ${label}`}
-			className="flex w-full items-center gap-3 rounded-[12px] py-2 pl-1.5 pr-2 text-left transition-colors hover:bg-bg-neutral-subtle-hovered disabled:pointer-events-none disabled:opacity-(--opacity-disabled)"
-			disabled={!hasTrigger}
-			onClick={onRun}
-			type="button"
-		>
-			<IconTile
-				aria-hidden
-				className="shrink-0 border border-border bg-surface"
-				icon={<AutomationIcon color={token("color.icon.subtle")} label={label} />}
-				label={label}
-				size="medium"
-			/>
-			<span className="flex min-w-0 flex-1 items-center justify-between gap-3">
-				<span className="menu-row-title min-w-0 truncate text-left">{label}</span>
-				<span className="shrink-0">
-					<AgentTestAutomationFlow rule={rule} />
+		<div className="group/automation-row flex w-full items-center rounded-[12px] pl-1.5 pr-2 transition-colors hover:bg-bg-neutral-subtle-hovered">
+			<button
+				aria-label={`Test ${label}`}
+				className="flex min-w-0 flex-1 items-center gap-3 rounded-[12px] py-2 text-left outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-focused disabled:pointer-events-none disabled:opacity-(--opacity-disabled)"
+				disabled={!hasTrigger}
+				onClick={onRun}
+				type="button"
+			>
+				<IconTile
+					aria-hidden
+					className="shrink-0 border border-border bg-surface"
+					icon={<AutomationIcon color={token("color.icon.subtle")} label={label} />}
+					label={label}
+					size="medium"
+				/>
+				<span className="flex min-w-0 flex-1 items-center justify-between gap-3">
+					<span className="menu-row-title min-w-0 truncate text-left">{label}</span>
+					<span className="shrink-0">
+						<AgentTestAutomationFlow rule={rule} />
+					</span>
 				</span>
-			</span>
-		</button>
+			</button>
+			{/* Hover-revealed "Edit" affordance. A text button has an intrinsic
+			    width, so we animate it open with the `grid-cols-[0fr]→[1fr]` +
+			    `overflow-hidden` idiom (the transitionable way to collapse a
+			    variable-width element). `ml-0→ml-2` adds the 8px gap from the flow
+			    badge only once revealed, on row hover or keyboard focus. */}
+			<div className="ml-0 grid shrink-0 grid-cols-[0fr] opacity-0 transition-[grid-template-columns,opacity,margin] duration-normal ease-out group-hover/automation-row:ml-2 group-hover/automation-row:grid-cols-[1fr] group-hover/automation-row:opacity-100 group-focus-within/automation-row:ml-2 group-focus-within/automation-row:grid-cols-[1fr] group-focus-within/automation-row:opacity-100">
+				<div className="min-w-0 overflow-hidden">
+					<Button
+						aria-label={`Edit ${label}`}
+						className="pointer-events-none group-hover/automation-row:pointer-events-auto group-focus-within/automation-row:pointer-events-auto"
+						onClick={onEdit}
+						size="compact"
+						type="button"
+						variant="outline"
+					>
+						Edit
+					</Button>
+				</div>
+			</div>
+		</div>
 	);
 }
 
@@ -610,48 +825,113 @@ function AgentTestChatPanel({
 }>): ReactElement {
 	const { selectedAgentId, selectAgent, replaceMessages } = useRovoChat();
 
+	// The greeting flows come from a read-only test fixture. We hold an editable
+	// local copy so the in-situ Edit dialog can commit changes; the whole panel
+	// remounts (keyed RovoChatProvider) whenever the fixture/version changes, so
+	// seeding from props once is correct without a sync effect.
+	const [rules, setRules] = useState<readonly AgentAutomationRule[]>(automationRules);
+	const [editingRule, setEditingRule] = useState<AgentAutomationRule | null>(null);
+	// Increments per run so a newer test run supersedes an in-flight frame loop.
+	const runTokenRef = useRef(0);
+	// Id of the assistant message currently "thinking" — drives the live
+	// morphing-Rovo trace (expanded) while frames play; null settles it collapsed.
+	const [thinkingMessageId, setThinkingMessageId] = useState<string | null>(null);
+
 	useEffect(() => {
 		if (selectedAgentId !== testAgentProfile.id) {
 			selectAgent(testAgentProfile.id, { preserveCurrentThread: true });
 		}
 	}, [selectAgent, selectedAgentId, testAgentProfile.id]);
 
-	function handleRunAutomation(rule: AgentAutomationRule, ruleIndex: number): void {
-		const messages = buildAutomationRunMessages(rule, ruleIndex);
-		if (messages.length > 0) {
-			replaceMessages(messages);
+	async function handleRunAutomation(rule: AgentAutomationRule, ruleIndex: number): Promise<void> {
+		const plan = buildAutomationRunPlan(rule, ruleIndex);
+		if (!plan) {
+			return;
+		}
+		// Supersede any in-flight run so a second click doesn't interleave frames.
+		const token = (runTokenRef.current += 1);
+		const { userMessage, assistantId, frames } = plan;
+		// Mark the turn as actively thinking → live morphing-Rovo trace (expanded).
+		setThinkingMessageId(assistantId);
+		try {
+			for (const frame of frames) {
+				if (frame.delayMs > 0) {
+					await new Promise((resolve) => window.setTimeout(resolve, frame.delayMs));
+				}
+				if (runTokenRef.current !== token) {
+					return;
+				}
+				replaceMessages([
+					userMessage,
+					{ id: assistantId, role: "assistant", parts: frame.parts },
+				]);
+			}
+		} finally {
+			// Settle the trace to collapsed once the run finishes — but only if a
+			// newer run hasn't taken over the thinking id.
+			if (runTokenRef.current === token) {
+				setThinkingMessageId(null);
+			}
 		}
 	}
+
+	function handleEditAutomation(rule: AgentAutomationRule): void {
+		setEditingRule(rule);
+	}
+
+	function handleTriggersSave(automationRule: AgentAutomationRule): void {
+		setRules((current) =>
+			current.map((rule) => (rule.id === automationRule.id ? automationRule : rule)),
+		);
+	}
+
 	const shouldShowTestHeader = testAgentProfile.starters.length > 0 || automationRules.length > 0;
 
 	return (
-		<ChatPanel
-			onClose={() => {}}
-			abortOnUnmount={false}
-			containerClassName="h-full min-h-0 w-full overflow-visible"
-			containerStyle={{ borderRadius: 0, borderWidth: 0, overflow: "visible" }}
-			composerContainerClassName="px-0 [&_.chat-composer-surface]:max-w-[600px]"
-			composerReservesContextBarSpace
-			conversationContentClassName="px-0 max-w-[600px]"
-			showAgentTestControls
-			suppressCustomAgentTabs
-			greeting={{
-				heading: testAgentProfile.name,
-				suggestions: testAgentProfile.starters,
-				showStarterGroupLabel: shouldShowTestHeader,
-				starterGroupLabel: "Test the following",
-				agentTestSection: (
-					<AgentTestAutomationGreetingRows
-						automationRules={automationRules}
-						onRunAutomation={handleRunAutomation}
-					/>
-				),
-			}}
-			greetingSelectedAgent={testAgentProfile}
-			hideAiCursor
-			hideComposerSourceAndModelControls
-			hideHeader
-		/>
+		<>
+			<ChatPanel
+				onClose={() => {}}
+				abortOnUnmount={false}
+				externalThinkingMessageId={thinkingMessageId}
+				containerClassName="h-full min-h-0 w-full overflow-visible"
+				containerStyle={{ borderRadius: 0, borderWidth: 0, overflow: "visible" }}
+				composerContainerClassName="px-0 [&_.chat-composer-surface]:max-w-[600px]"
+				composerReservesContextBarSpace
+				conversationContentClassName="px-0 max-w-[600px]"
+				showAgentTestControls
+				suppressCustomAgentTabs
+				greeting={{
+					heading: testAgentProfile.name,
+					suggestions: testAgentProfile.starters,
+					showStarterGroupLabel: shouldShowTestHeader,
+					starterGroupLabel: "Test the following",
+					agentTestSection: (
+						<AgentTestAutomationGreetingRows
+							automationRules={rules}
+							onEditAutomation={handleEditAutomation}
+							onRunAutomation={handleRunAutomation}
+						/>
+					),
+				}}
+				greetingSelectedAgent={testAgentProfile}
+				hideAiCursor
+				hideComposerSourceAndModelControls
+				hideHeader
+			/>
+			{editingRule ? (
+				<AgentTriggersDialog
+					automationRule={editingRule}
+					onOpenChange={(open) => {
+						if (!open) {
+							setEditingRule(null);
+						}
+					}}
+					onSave={handleTriggersSave}
+					open
+					title="Edit flow"
+				/>
+			) : null}
+		</>
 	);
 }
 

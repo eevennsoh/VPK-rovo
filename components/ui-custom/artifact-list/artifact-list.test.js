@@ -71,29 +71,27 @@ test("Artifact List metadata renders source • owner with the subtlest dot", ()
 	assert.match(source, /<span className="min-w-0 truncate text-text-subtle">\{item\.owner\}<\/span>/u);
 });
 
-test("Artifact List Open button is hover/focus-revealed and stays keyboard-reachable", () => {
+test("Artifact List Open button is a stable trailing action and stays keyboard-reachable", () => {
 	const source = readProjectFile(
 		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
-	const primitive = readProjectFile("components/ui-custom/hover-reveal-row.tsx");
 
-	// The row opts into the reveal group and renders the button through the
-	// reveal-actions overlay (a real, focusable Button — never inert/hidden).
-	assert.match(source, /hoverRevealRowClassName/u);
-	assert.match(source, /<HoverRevealActions[\s\S]*action=\{[\s\S]*<Button[\s\S]*className="whitespace-nowrap"[\s\S]*variant="outline"[\s\S]*size="default"[\s\S]*type="button"[\s\S]*event\.stopPropagation\(\);[\s\S]*handleOpen\(\);/u);
+	// The row renders the action as an in-flow trailing column so it cannot be
+	// clipped by the raised card's overflow boundary.
+	assert.match(source, /<Button[\s\S]*className="ml-auto shrink-0 whitespace-nowrap"[\s\S]*variant="outline"[\s\S]*size="default"[\s\S]*type="button"[\s\S]*event\.stopPropagation\(\);[\s\S]*handleOpen\(\);/u);
 	assert.match(source, /openOnRowClick\?: boolean;/u);
 	assert.doesNotMatch(source, /\binert\b/u);
-	// The primitive reveals on keyboard focus, not hover alone, so the button is
-	// reachable for keyboard users.
-	assert.match(primitive, /group-has-\[:focus-visible\]\/hover-reveal-row:opacity-100/u);
+	assert.doesNotMatch(source, /<HoverRevealActions/u);
 });
 
-test("Artifact List reserves room for the Open action at compact widths", () => {
+test("Artifact List text shrinks beside the trailing action at compact widths", () => {
 	const source = readProjectFile(
 		"components/ui-custom/artifact-list/components/artifact-list.tsx",
 	);
 
-	assert.match(source, /className="min-w-0 flex-1 pr-\[92px\] transition-\[padding\] duration-normal ease-out"/u);
+	assert.match(source, /className="min-w-0 flex-1"/u);
+	assert.match(source, /className="ml-auto shrink-0 whitespace-nowrap"/u);
+	assert.doesNotMatch(source, /pr-\[92px\]/u);
 	assert.doesNotMatch(source, /group-hover\/hover-reveal-row:pr-\[72px\]/u);
 });
 

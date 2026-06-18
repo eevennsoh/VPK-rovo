@@ -52,7 +52,7 @@ export function EntityCardShell({
 			// branch lifts every child to `z-10` (so nested controls stay clickable),
 			// which would otherwise let a full-bleed child (e.g. the expanded card's
 			// colored banner) paint over the top border edge.
-			"group/card relative flex h-full w-full flex-col gap-3 rounded-md bg-surface p-4 text-left outline-none after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-md after:border after:transition-colors after:duration-fast after:ease-out has-[[data-slot=card-directory-select]:focus-visible]:ring-3 has-[[data-slot=card-directory-select]:focus-visible]:ring-ring/50",
+			"group/card relative flex h-full w-full flex-col gap-3 rounded-md bg-surface-overlay p-4 text-left outline-none after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-md after:border after:transition-colors after:duration-fast after:ease-out has-[[data-slot=card-directory-select]:focus-visible]:ring-3 has-[[data-slot=card-directory-select]:focus-visible]:ring-ring/50",
 			// A selected card keeps a persistent blue border through hover/focus; the
 			// resting border instead fades to transparent on hover/focus so the
 			// elevation shadow reads as the only edge treatment.

@@ -85,7 +85,7 @@ export function FileTree({
     <FileTreeContext value={contextValue}>
       <div
         className={cn(
-          "rounded-lg bg-background font-mono text-sm",
+          "rounded-lg font-mono text-sm",
           className
         )}
         role="tree"

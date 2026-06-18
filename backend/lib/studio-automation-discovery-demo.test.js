@@ -83,10 +83,10 @@ test("detects dismissed clarification card prompts for the default-answer contin
 
 test("builds the initial clarification card with a unique demo session", () => {
 	const payload = buildStudioAutomationDiscoveryQuestionCardPayload({
-		toolCallId: "tool-demo",
+		toolCallId: "tool-initial",
 	});
 	const nextPayload = buildStudioAutomationDiscoveryQuestionCardPayload({
-		toolCallId: "tool-demo-next",
+		toolCallId: "tool-initial-next",
 	});
 
 	assert.equal(payload.type, "question-card");
@@ -101,8 +101,8 @@ test("builds the initial clarification card with a unique demo session", () => {
 		"source-weighting",
 		"conservatism",
 	]);
-	assert.equal(payload.toolCallId, "tool-demo");
-	assert.equal(payload.deferredToolCallId, "tool-demo");
+	assert.equal(payload.toolCallId, "tool-initial");
+	assert.equal(payload.deferredToolCallId, "tool-initial");
 });
 
 test("builds the follow-up clarification card with a unique demo session", () => {
@@ -279,16 +279,46 @@ test("widget payload carries three distinct generated agent results", () => {
 		"Lifecycle triage",
 		"Weekly synthesis and update drafting",
 	]);
+	assert.deepEqual(payload.agents.map((agent) => agent.agentResult.automationRules[0].name), [
+		"Distribute new design Looms",
+		"Triage agent-reaper-bot tickets",
+		"Draft weekly Studio digest",
+	]);
+	assert.deepEqual(payload.agents.map((agent) => agent.agentResult.automationRules[0].triggers.length), [2, 2, 2]);
+	assert.ok(payload.agents.every((agent) => agent.agentResult.automationRules[0].prompt.length > 180));
+	assert.deepEqual(payload.agents.map((agent) => agent.item.logoSrc), [
+		"/avatar-agent/product-agents/feedback-analyzer.svg",
+		"/avatar-agent/service-agents/service-triage.svg",
+		"/avatar-agent/strategy-agents/strategic-insight.svg",
+	]);
+	assert.deepEqual(payload.agents.map((agent) => agent.agentResult.avatarSrc), [
+		"/avatar-agent/product-agents/feedback-analyzer.svg",
+		"/avatar-agent/service-agents/service-triage.svg",
+		"/avatar-agent/strategy-agents/strategic-insight.svg",
+	]);
 	assert.ok(payload.agents[0].agentResult.apps.includes("loom"));
 	assert.ok(payload.agents[1].agentResult.apps.includes("jira"));
 	assert.ok(payload.agents[2].agentResult.apps.includes("calendar"));
+	assert.ok(payload.agents[0].agentResult.summary.includes("approve"));
+	assert.ok(payload.agents[1].agentResult.summary.includes("keep-list"));
+	assert.ok(payload.agents[2].agentResult.summary.includes("end of the week"));
+	assert.ok(payload.agents.every((agent) => agent.agentResult.conversationStarters.every((starter) => starter.length > 35)));
+	assert.ok(payload.agents.every((agent) => agent.agentResult.instructions.includes("## Output shape")));
+	assert.deepEqual(
+		payload.agents.map((agent) => agent.agentResult.sourceLabel),
+		[
+			"Generated from recent work patterns",
+			"Generated from recent work patterns",
+			"Generated from recent work patterns",
+		],
+	);
 	assert.ok(payload.skipped.some((item) => item.includes("Design support auto-replies")));
 	assert.ok(payload.needsEvidence.some((item) => item.includes("Design crit prep")));
 });
 
 test("visible demo copy uses second person instead of naming the current user", () => {
 	const visiblePayloads = [
-		buildStudioAutomationDiscoveryQuestionCardPayload({ toolCallId: "tool-demo" }),
+		buildStudioAutomationDiscoveryQuestionCardPayload({ toolCallId: "tool-initial" }),
 		buildStudioAutomationDiscoveryFollowupQuestionCardPayload({ toolCallId: "tool-followup" }),
 		buildStudioAutomationDiscoveryTrace(),
 		buildStudioAutomationDiscoveryWidgetPayload(),
@@ -296,6 +326,7 @@ test("visible demo copy uses second person instead of naming the current user", 
 	];
 
 	assert.doesNotMatch(JSON.stringify(visiblePayloads), /\bVenn\b|Venn's/u);
+	assert.doesNotMatch(JSON.stringify(visiblePayloads), /\bdemo\b/iu);
 	assert.match(buildStudioAutomationDiscoveryFinalText(), /your recent work patterns/u);
 	assert.match(buildStudioAutomationDiscoveryWidgetPayload().summary, /your recent work patterns/u);
 });

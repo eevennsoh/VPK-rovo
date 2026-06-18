@@ -142,7 +142,10 @@ test("RFP leadership Slack summary prompt adds a scheduled trigger to the open a
 		triggers: [],
 	});
 	assert.equal(directScheduleOutcome.handled, true);
-	assert.deepEqual(directScheduleOutcome.triggerAutomationNames, ["Send Slack Message Friday"]);
+	// A Friday-9am RFP/Slack request maps to the curated weekly-summary flow
+	// (nicer title + "Every Friday, 9am" schedule) instead of the terse generic
+	// derivation ("Send Slack Message Friday").
+	assert.deepEqual(directScheduleOutcome.triggerAutomationNames, ["Weekly RFP loss review for sales leadership"]);
 });
 
 test("tool mention resolves to an APP and populates both facets", async () => {
@@ -334,4 +337,123 @@ test("generated scheduled automation carries a description and app-chip tokens",
 
 	// The short description stays plain text (no token markup leaking in).
 	assert.doesNotMatch(rule.description, /@\[app:/u);
+});
+
+test("avatar by option name → sets avatarSrc and the avatar kind", async () => {
+	const { classifyAgentBuildIntent, buildAgentUpdatePatch } = await loadModule();
+	const intent = classifyAgentBuildIntent("use the code reviewer avatar");
+	assert.ok(intent.isBuildIntent);
+	assert.ok(intent.kinds.includes("avatar"));
+	assert.ok(intent.avatarSrc && intent.avatarSrc.endsWith("code-reviewer.svg"), intent.avatarSrc ?? "null");
+
+	const patch = buildAgentUpdatePatch("use the code reviewer avatar", {});
+	assert.equal(patch.avatarSrc, intent.avatarSrc);
+});
+
+test("avatar by color family → picks that group's avatar", async () => {
+	const { classifyAgentBuildIntent } = await loadModule();
+	const intent = classifyAgentBuildIntent("make the avatar blue");
+	assert.ok(intent.kinds.includes("avatar"));
+	// Blue is the teamwork-agents group.
+	assert.ok(
+		intent.avatarSrc && intent.avatarSrc.startsWith("/avatar-agent/teamwork-agents/"),
+		intent.avatarSrc ?? "null",
+	);
+});
+
+test("memory on/off phrasing → memoryMode + mode kind", async () => {
+	const { classifyAgentBuildIntent, buildAgentUpdatePatch } = await loadModule();
+
+	const on = classifyAgentBuildIntent("turn on memory for this agent");
+	assert.ok(on.kinds.includes("mode"));
+	assert.equal(on.modeChanges.memoryMode, "on");
+	assert.equal(buildAgentUpdatePatch("turn on memory for this agent", {}).memoryMode, "on");
+
+	const off = classifyAgentBuildIntent("disable memory");
+	assert.equal(off.modeChanges.memoryMode, "off");
+});
+
+test("reasoning model phrasing → reasoningMode", async () => {
+	const { classifyAgentBuildIntent } = await loadModule();
+	assert.equal(classifyAgentBuildIntent("switch it to use opus").modeChanges.reasoningMode, "opus-4.6");
+	assert.equal(classifyAgentBuildIntent("use deep reasoning").modeChanges.reasoningMode, "deep-auto");
+	assert.equal(classifyAgentBuildIntent("run it on gemini").modeChanges.reasoningMode, "gemini-flash-3");
+});
+
+test("explicit knowledge mode phrasing → knowledgeMode", async () => {
+	const { classifyAgentBuildIntent } = await loadModule();
+	const intent = classifyAgentBuildIntent("set knowledge mode to none");
+	assert.ok(intent.kinds.includes("mode"));
+	assert.equal(intent.modeChanges.knowledgeMode, "none");
+});
+
+test("plain conversation is still not an avatar/mode build intent", async () => {
+	const { classifyAgentBuildIntent } = await loadModule();
+	const intent = classifyAgentBuildIntent("hello there, how are you today?");
+	assert.equal(intent.isBuildIntent, false);
+	assert.equal(intent.avatarSrc, null);
+	assert.equal(intent.modeChanges.memoryMode, undefined);
+});
+
+test("avatar resolution is scoped to the avatar clause (no cross-clause hijack)", async () => {
+	const { classifyAgentBuildIntent } = await loadModule();
+	const intent = classifyAgentBuildIntent("add a code reviewer skill and set the avatar to blue");
+	assert.ok(intent.kinds.includes("avatar"));
+	// "code reviewer" lives in the skill clause; the avatar clause asks for blue.
+	assert.ok(
+		intent.avatarSrc && intent.avatarSrc.startsWith("/avatar-agent/teamwork-agents/"),
+		intent.avatarSrc ?? "null",
+	);
+	// And the skill is still captured from its own clause.
+	assert.ok(intent.kinds.includes("skill"));
+});
+
+test("buildAgentEditSummaryPayload summarizes avatar + mode changes as rows", async () => {
+	const { classifyAgentBuildIntent, buildAgentEditSummaryPayload } = await loadModule();
+	const intent = classifyAgentBuildIntent("make the avatar blue and turn on memory");
+	const payload = buildAgentEditSummaryPayload(intent, "RFP Drafter");
+	assert.equal(payload.headline, "Updated RFP Drafter");
+	assert.equal(payload.agentName, "RFP Drafter");
+	const labels = payload.changes.map((c) => c.label);
+	assert.ok(labels.includes("Avatar"), labels.join(","));
+	assert.ok(labels.includes("Memory"), labels.join(","));
+	assert.equal(payload.changes.find((c) => c.label === "Memory").value, "On");
+	assert.match(payload.changes.find((c) => c.label === "Avatar").value, /^Blue · /);
+});
+
+test("buildAgentEditSummaryWidgetPart emits a collapsed-card widget part, null when empty", async () => {
+	const { classifyAgentBuildIntent, buildAgentEditSummaryWidgetPart } = await loadModule();
+	const part = buildAgentEditSummaryWidgetPart(classifyAgentBuildIntent("add the Jira skill"), "RFP Drafter");
+	assert.equal(part.type, "data-widget-data");
+	assert.equal(part.data.type, "agent-edit-summary");
+	assert.ok(part.data.payload.changes.length >= 1);
+	assert.equal(buildAgentEditSummaryWidgetPart(classifyAgentBuildIntent("hello there"), "RFP Drafter"), null);
+});
+
+test("mergeTriggerPhrasesIntoDraft appends to existing automations without clobbering", async () => {
+	const { mergeTriggerPhrasesIntoDraft } = await loadModule();
+	const existing = {
+		automationRules: [
+			{
+				id: "automation-1",
+				name: "Existing rule",
+				prompt: "keep me",
+				triggers: [{ id: "jira-status-changed-1", providerId: "jira", eventId: "status-changed" }],
+			},
+		],
+	};
+	const merged = mergeTriggerPhrasesIntoDraft(existing, ["When a Jira work item is created"]);
+	assert.ok(merged, "should merge a resolvable phrase");
+	assert.ok(
+		merged.automationRules.some((r) => r.name === "Existing rule" && r.prompt === "keep me"),
+		"existing custom rule preserved",
+	);
+	assert.ok(merged.automationRules.length >= 2, "a new rule was appended");
+	const ids = merged.automationRules.map((r) => r.id);
+	assert.equal(new Set(ids).size, ids.length, "automation rule ids stay unique");
+	const triggerIds = merged.automationRules.flatMap((r) => r.triggers.map((t) => t.id));
+	assert.equal(new Set(triggerIds).size, triggerIds.length, "trigger ids stay unique");
+	// The existing rule keeps its original id; appended rules get fresh ids.
+	assert.equal(merged.automationRules[0].id, "automation-1");
+	assert.equal(mergeTriggerPhrasesIntoDraft({}, []), null, "no phrases → null");
 });

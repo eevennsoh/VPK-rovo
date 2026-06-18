@@ -236,11 +236,17 @@ const SESSION_TOOLS = [
 		type: "function",
 		name: "apply_agent_draft_patch",
 		description:
-			"Update the session-local Studio agent-builder draft with a safe patch. " +
-			"Never publishes or activates an agent. Allowed fields only: name, description, " +
-			"summary, instructions, contextDescription, trigger, guardrail, tools, " +
-			"conversationStarters, byline, avatarFallback, action. When replacing a painted " +
-			"instructions field, send the full replacement Markdown body in patch.instructions.",
+			"Configure the session-local Studio agent-builder draft with a safe patch. " +
+			"Never publishes or activates an agent. Allowed fields: name, description, summary, " +
+			"instructions, contextDescription, trigger, guardrail, byline, tools, " +
+			"conversationStarters, conversationStarterIcons, avatarFallback, action, plus the " +
+			"capability arrays skills/apps/knowledge/subagents (catalog ids or names), avatarSrc " +
+			"(an avatar option path), memoryMode/reasoningMode/knowledgeMode, triggers " +
+			"(natural-language automation phrases), automationRules, and subagentPrompts. List " +
+			"fields REPLACE the whole array — read the current draft first and resend existing " +
+			"items plus additions. When replacing a painted instructions field, send the full " +
+			"replacement Markdown body in patch.instructions. See the [Studio product knowledge] " +
+			"context for the real catalog of ids.",
 		parameters: {
 			type: "object",
 			properties: {

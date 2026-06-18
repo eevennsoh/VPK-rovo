@@ -13,6 +13,11 @@ import {
 	parsePlanWidgetPayload,
 	type ParsedPlanWidgetPayload,
 } from "@/components/projects/shared/lib/plan-widget";
+import { AgentEditSummaryCard } from "@/components/projects/shared/components/agent-edit-summary-card";
+import {
+	AGENT_EDIT_SUMMARY_WIDGET_TYPE,
+	parseAgentEditSummaryPayload,
+} from "@/components/projects/shared/lib/agent-edit-summary";
 
 interface PlanBuildState {
 	isBuildDisabled?: boolean;
@@ -33,6 +38,16 @@ interface MessageBubbleProps {
 	onWidgetPrimaryAction?: (
 		payload: GenerativeWidgetPrimaryActionPayload
 	) => Promise<void> | void;
+	/**
+	 * Opens the automation trigger/flow dialog from an agent-edit-summary card's
+	 * "Open" button. When omitted the card renders without the button.
+	 */
+	onOpenAgentEditSummary?: () => void;
+	renderWidget?: (
+		widget: { type: string; data: unknown },
+		message: RovoRenderableUIMessage
+	) => ReactNode;
+	getWidgetPosition?: (widgetType: string) => "before-content" | "after-content" | undefined;
 	onBuildPlan?: (planWidget: ParsedPlanWidgetPayload) => Promise<void> | void;
 	resolvePlanBuildState?: (
 		planWidget: ParsedPlanWidgetPayload,
@@ -52,6 +67,9 @@ export default function MessageBubble({
 	onEditMessage,
 	onSetEditingMessageId,
 	onWidgetPrimaryAction,
+	onOpenAgentEditSummary,
+	renderWidget: renderCustomWidget,
+	getWidgetPosition,
 	onBuildPlan,
 	resolvePlanBuildState,
 }: Readonly<MessageBubbleProps>): ReactNode {
@@ -60,8 +78,15 @@ export default function MessageBubble({
 			part.type === "data-widget-data" &&
 			part.data?.type === "plan",
 	);
+	// Deterministic agent-config edits emit a collapsed change card; render it
+	// regardless of enableSmartWidgets, the same way plan widgets always render.
+	const hasAgentEditSummaryWidget = message.parts.some(
+		(part) =>
+			part.type === "data-widget-data" &&
+			part.data?.type === AGENT_EDIT_SUMMARY_WIDGET_TYPE,
+	);
 	const renderWidget =
-		enableSmartWidgets || hasPlanWidget
+		enableSmartWidgets || hasPlanWidget || hasAgentEditSummaryWidget || renderCustomWidget
 			? (widget: { type: string; data: unknown }, widgetMessage: RovoRenderableUIMessage) => {
 					if (widget.type === "plan") {
 						const planWidget = parsePlanWidgetPayload(widget.data);
@@ -92,6 +117,21 @@ export default function MessageBubble({
 						);
 					}
 
+					if (widget.type === AGENT_EDIT_SUMMARY_WIDGET_TYPE) {
+						const summaryPayload = parseAgentEditSummaryPayload(widget.data);
+						return summaryPayload ? (
+							<AgentEditSummaryCard
+								payload={summaryPayload}
+								onOpen={onOpenAgentEditSummary}
+							/>
+						) : null;
+					}
+
+					const customWidget = renderCustomWidget?.(widget, widgetMessage);
+					if (customWidget !== null && customWidget !== undefined) {
+						return customWidget;
+					}
+
 					if (!enableSmartWidgets) {
 						return null;
 					}
@@ -117,6 +157,7 @@ export default function MessageBubble({
 			onSetEditingMessageId={onSetEditingMessageId}
 			showUserMessagePromptActions
 			renderWidget={renderWidget}
+			getWidgetPosition={getWidgetPosition}
 		>
 			<ThreadMessage.Reasoning />
 			{showThinkingStatusSection ? <ThreadMessage.ThinkingStatus /> : null}

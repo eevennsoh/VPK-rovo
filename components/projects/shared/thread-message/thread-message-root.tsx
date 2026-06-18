@@ -60,6 +60,7 @@ interface ThreadMessageRootProps {
 		widget: { type: string; data: unknown },
 		message: RovoRenderableUIMessage
 	) => ReactNode;
+	getWidgetPosition?: (widgetType: string) => "before-content" | "after-content" | undefined;
 	children: ReactNode;
 }
 
@@ -69,6 +70,7 @@ function useThreadMessageDerived(
 	isThinkingLifecycleStreaming: boolean,
 	assistantStreamingRenderMode: "rich" | "text-first",
 	renderWidget: ThreadMessageRootProps["renderWidget"],
+	getWidgetPosition: ThreadMessageRootProps["getWidgetPosition"],
 ): ThreadMessageContextValue {
 	const rawMessageText = getMessageText(message);
 	const isStreaming = isMessageTextStreaming(message);
@@ -276,7 +278,10 @@ function useThreadMessageDerived(
 					message
 				) ?? null
 			: null;
-	const shouldRenderPlanWidgetFirst = widgetType === "plan";
+	const shouldRenderPlanWidgetFirst =
+		widgetType !== undefined
+			? getWidgetPosition?.(widgetType) === "before-content" || widgetType === "plan"
+			: false;
 	const hasRenderedWidget =
 		renderedWidget !== null && renderedWidget !== undefined;
 	const shouldSuppressQuestionCardText = shouldSuppressQuestionCardMessageText({
@@ -376,6 +381,7 @@ export function ThreadMessageRoot({
 	onSetEditingMessageId,
 	showUserMessagePromptActions = false,
 	renderWidget,
+	getWidgetPosition,
 	children,
 }: Readonly<ThreadMessageRootProps>): ReactNode {
 	const contextValue = useThreadMessageDerived(
@@ -384,6 +390,7 @@ export function ThreadMessageRoot({
 		isThinkingLifecycleStreaming,
 		assistantStreamingRenderMode,
 		renderWidget,
+		getWidgetPosition,
 	);
 
 	if (message.role === "user") {
@@ -445,7 +452,15 @@ export function ThreadMessageRoot({
 
 	return (
 		<ThreadMessageContext value={contextValue}>
-			<UiMessage from="assistant" className="max-w-full">
+			<UiMessage
+				from="assistant"
+				className="max-w-full"
+				// Widget cards (plan, agent-edit-summary) stream in and expand
+				// after mount. `cv-auto` containment clips overflow at the
+				// contain-intrinsic-size estimate, scissoring the card's rounded
+				// corners — opt these messages out of containment.
+				contain={!contextValue.hasRenderedWidget}
+			>
 				{children}
 			</UiMessage>
 		</ThreadMessageContext>

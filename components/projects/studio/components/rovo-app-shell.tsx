@@ -13,7 +13,7 @@
 
 import type { FileUIPart } from "ai";
 import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, type AnimationPlaybackControls } from "motion/react";
-import { type CSSProperties, type PointerEvent as ReactPointerEvent, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, ViewTransition } from "react";
+import { type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, ViewTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArtifactPanel } from "@/components/blocks/artifact";
@@ -36,7 +36,12 @@ import {
 import { RovoAppBrowserArtifact } from "@/components/projects/studio/components/rovo-app-browser-artifact";
 import { RovoAppComposer } from "@/components/projects/studio/components/rovo-app-composer";
 import { StudioAgentsSection } from "@/components/projects/studio/components/rovo-app-custom-agents-table";
-import { RovoAppMessages } from "@/components/projects/studio/components/rovo-app-messages";
+import {
+	parseStudioAutomationArtifactListPayload,
+	RovoAppMessages,
+	STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE,
+	StudioAutomationArtifactListWidget,
+} from "@/components/projects/studio/components/rovo-app-messages";
 import { RovoAppHermesSkillDraftBar } from "@/components/projects/studio/components/rovo-app-hermes-skill-draft-bar";
 import { RovoAppAgentConfigPanel, type AgentConfigView } from "@/components/projects/studio/components/rovo-app-agent-config-panel";
 import { RovoCursorOnboardingTour } from "@/components/projects/studio/components/rovo-cursor-onboarding-tour";
@@ -68,21 +73,30 @@ import {
 	buildDeterministicTriggerThinkingParts,
 	DETERMINISTIC_TRIGGER_TRACE_INITIAL_DELAY_MS,
 	DETERMINISTIC_TRIGGER_TRACE_STAGE_DELAYS_MS,
+	mergeTriggerPhrasesIntoDraft,
 	planDeterministicAgentBuild,
 } from "@/components/projects/studio/lib/demo-agent-builder";
 import { buildComposerHermesContext, shouldResetComposerHermesSkillSelection } from "@/components/projects/studio/lib/rovo-app-hermes-skill-selection";
 import { getStudioAutomationGeneratingAgents } from "@/components/projects/studio/lib/studio-automation-generating-agents";
 import { useHermesEmbedEnabled } from "@/lib/hermes-feature-flags";
-import { buildRovoAppThreadPath } from "@/components/projects/studio/lib/rovo-app-thread-route-sync";
+import {
+	buildRovoAppThreadPath,
+	ROVO_APP_ROOT_PATH,
+} from "@/components/projects/studio/lib/rovo-app-thread-route-sync";
 import { createRovoAppUserMessage } from "@/components/projects/studio/lib/rovo-app-user-message";
 import { appendDictationTranscript, resolveComposerDictationState } from "@/lib/composer-dictation";
-import { readSessionAgentRecords } from "@/components/projects/studio/lib/studio-session-agent-storage";
+import {
+	readSessionAgentRecords,
+	toPersistedRecord,
+	writeSessionAgentRecords,
+} from "@/components/projects/studio/lib/studio-session-agent-storage";
 import {
 	applyTemplateDefaultsToResult,
 	buildCreationTemplateContextFromAgent,
 	buildCreationTemplateContextFromStarter,
 	buildStudioAgentCreationContext,
 	buildStudioAgentCreationContinuationContext,
+	buildStudioAssistantKnowledgeContext,
 	buildTemplateAgentResultFromAgent,
 	resolveTemplateConfigForResult,
 	type StudioCreationTemplateContext,
@@ -131,6 +145,7 @@ import { useSidebarResize } from "@/components/projects/studio/hooks/use-sidebar
 import { useSidebarResize as useStudioAskRovoChatResize } from "@/components/projects/rovo/hooks/use-sidebar-resize";
 import ChatPanel, { type ChatPanelGreetingProps, type ChatPanelScriptedConversation } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-chat/lib/chat-context-bar";
+import RefreshIcon from "@atlaskit/icon/core/refresh";
 import {
 	AGENT_EDIT_GREETING_HEADING,
 	AGENT_EDIT_GREETING_ILLUSTRATION_DARK_SRC,
@@ -146,7 +161,7 @@ import { clamp, cn, createId } from "@/lib/utils";
 import { getRandomAgentAvatarSrc } from "@/lib/agent-avatars";
 import { getSkillIcon } from "@/lib/skill-icons";
 import { token } from "@/lib/tokens";
-import { getLatestDataPart, getLatestUserMessageId, getMessageAgentResult, getMessageArtifactResult, getMessageText, hasTurnCompleteSignal, type RovoDataParts, type RovoUIMessage } from "@/lib/rovo-ui-messages";
+import { getAllDataParts, getLatestDataPart, getLatestUserMessageId, getMessageAgentResult, getMessageArtifactResult, getMessageText, hasTurnCompleteSignal, type RovoDataParts, type RovoRenderableUIMessage, type RovoUIMessage } from "@/lib/rovo-ui-messages";
 import { getRovoAppArtifactKindLabel, getRovoAppArtifactTypeLabel, sortRovoAppArtifacts } from "@/components/projects/rovo/lib/rovo-app-artifacts";
 import { RovoAppHeader } from "@/components/projects/studio/components/rovo-app-header";
 import { ApprovalCard } from "@/components/blocks/approval-card/page";
@@ -159,12 +174,31 @@ import { useDismissibleCards } from "@/components/projects/shared/hooks/use-dism
 import { approveSkillDraft, fetchSkillDraftDetail, fetchSkillDrafts, rejectSkillDraft } from "@/components/projects/control-plane/lib/control-plane-api";
 import type { HermesSkillDraftDetail, HermesSkillDraftSummary } from "@/lib/rovo-runtime-types";
 import type { RovoAppHermesContext } from "@/lib/rovo-app-types";
-import { getStudioSessionAgentDisplayName, useRovoSelectedAgent } from "@/app/contexts";
+import { getStudioSessionAgentDisplayName, useRovoSelectedAgent, type SendPromptOptions } from "@/app/contexts";
 import { ROVO_DIRECTORY_AGENT_PROFILES, getRovoAgentPromptContext, isRovoAgentProfile, type RovoAgentProfile } from "@/app/data/directory/agents";
 
 interface RovoAppShellProps {
 	embedded?: boolean;
 	initialThreadId?: string | null;
+}
+
+function getStudioAutomationArtifactListAgents(
+	message: Pick<RovoRenderableUIMessage, "parts">,
+): RovoDataParts["agent-result"][] {
+	const widgetParts = getAllDataParts(message, "data-widget-data");
+	for (let index = widgetParts.length - 1; index >= 0; index -= 1) {
+		const widget = widgetParts[index].data;
+		if (widget.type !== STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE) {
+			continue;
+		}
+
+		const payload = parseStudioAutomationArtifactListPayload(widget.payload);
+		if (payload) {
+			return payload.agents.map((agent) => agent.agentResult);
+		}
+	}
+
+	return [];
 }
 
 const ROVO_APP_SIDEBAR_MOTION_DURATION = "--duration-medium";
@@ -232,6 +266,7 @@ const STUDIO_HOME_BENTO_VARIANTS = {
 } as const;
 
 const DEFAULT_COMPOSER_PLACEHOLDER = "Describe the agent you want to build";
+const STUDIO_RFP_DEMO_RESET_ENDPOINT = "/api/agents/rfp-demo/reset";
 const REALTIME_THREAD_SUMMARY_MAX_MESSAGES = 10;
 const REALTIME_RESULT_SUMMARY_MAX_CHARS = 500;
 const ROVO_APP_SPLIT_CHAT_PANEL_ID = "rovo-app-chat-pane";
@@ -382,6 +417,35 @@ function isStudioAutomationDiscoveryDemoPrompt(prompt: string): boolean {
 		/\bcreate\s+(?:an?\s+)?agents?\b/u.test(normalized);
 
 	return hasRecentWorkSignal && hasAutomationSignal && sourceMatches >= 3;
+}
+
+async function resetStudioRfpDemoBackendState(): Promise<void> {
+	const response = await fetch(STUDIO_RFP_DEMO_RESET_ENDPOINT, {
+		body: "{}",
+		headers: { "Content-Type": "application/json" },
+		method: "POST",
+	});
+
+	if (response.ok) {
+		return;
+	}
+
+	let message = `Request failed with status ${response.status}`;
+	try {
+		const payload = await response.json() as { error?: unknown; details?: unknown };
+		if (typeof payload.error === "string" && payload.error.trim()) {
+			message = payload.error.trim();
+		} else if (typeof payload.details === "string" && payload.details.trim()) {
+			message = payload.details.trim();
+		}
+	} catch {
+		const text = await response.text().catch(() => "");
+		if (text.trim()) {
+			message = text.trim();
+		}
+	}
+
+	throw new Error(message);
 }
 
 interface HomeStarterTemplate {
@@ -1867,6 +1931,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	// effect (declared after the onboarding-tour hook) can kick off the tour
 	// without the earlier create handler needing the tour controller in scope.
 	const [agentCreationTourSignal, setAgentCreationTourSignal] = useState(0);
+	const [isResettingStudioDemo, setIsResettingStudioDemo] = useState(false);
 	const openAgentCreationAskRovoChat = useCallback(() => {
 		// Keep the Ask Rovo panel on the default Rovo build helper.
 		studioAgentRegistry.resetAgentToRovo({ preserveCurrentThread: true });
@@ -1885,6 +1950,29 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		}
 		nav.openChat("sidebar");
 	}, [nav, studioAgentRegistry]);
+
+	const resetSessionAgentsToStudioRfpDemoAgent = useCallback(() => {
+		for (const entry of studioAgentRegistry.sessionAgentEntries) {
+			studioAgentRegistry.removeSessionAgent(entry.profile.id);
+		}
+
+		const registeredProfile = studioAgentRegistry.registerCreatedAgentFromResult?.(STUDIO_RFP_DEMO_AGENT_RESULT, {
+			preserveCurrentThread: true,
+			select: false,
+			sourceKey: STUDIO_RFP_DEMO_AGENT_SOURCE_KEY,
+		});
+		const profileId = registeredProfile?.id ?? STUDIO_RFP_DEMO_AGENT_PROFILE_ID;
+		let seededEntry = studioAgentRegistry.getSessionAgentEntry?.(profileId) ?? null;
+		if (seededEntry && seededEntry.publishedVersion === 0 && !seededEntry.publishedResult) {
+			studioAgentRegistry.commitSessionAgentPublishReady?.(profileId);
+			seededEntry =
+				studioAgentRegistry.publishSessionAgent?.(profileId) ??
+				studioAgentRegistry.getSessionAgentEntry?.(profileId) ??
+				seededEntry;
+		}
+		hasSeededStudioRfpDemoAgentRef.current = true;
+		return seededEntry;
+	}, [studioAgentRegistry]);
 
 	useEffect(() => {
 		if (
@@ -2050,6 +2138,35 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			return true;
 		},
 		[chat.activeThreadId, chat.runtimeThreadId, openAgentCreationAskRovoChat, setActiveAgentConfigState, studioAgentRegistry],
+	);
+	const renderStudioAskRovoWidget = useCallback(
+		(widget: { type: string; data: unknown }, message: RovoRenderableUIMessage): ReactNode => {
+			if (widget.type !== STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE) {
+				return null;
+			}
+
+			const payload = parseStudioAutomationArtifactListPayload(widget.data);
+			if (!payload) {
+				return null;
+			}
+
+			return (
+				<StudioAutomationArtifactListWidget
+					messageId={message.id}
+					onAgentResultSelect={handleStudioAgentResultSelect}
+					payload={payload}
+				/>
+			);
+		},
+		[handleStudioAgentResultSelect],
+	);
+	const getStudioAskRovoWidgetPosition = useCallback(
+		(widgetType: string) => (
+			widgetType === STUDIO_AUTOMATION_ARTIFACT_LIST_TYPE
+				? "before-content" as const
+				: undefined
+		),
+		[],
 	);
 
 	// "Start from scratch" — create a fresh, untitled session agent (no AI result
@@ -2278,6 +2395,17 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			generatedAgentResult: activeSessionAgentEntry.sourceResult,
 		};
 	}, [activeSessionAgentEntry]);
+	// When the Ask Rovo sidebar is editing a studio agent, ride the shared product
+	// knowledge (catalog ids + editable fields) on every sidebar turn that falls
+	// through to the model, so typed requests understand the agent builder the same
+	// way the voice cursor does. Deterministic edits are intercepted before this
+	// reaches the backend; only model-backed turns carry it.
+	const agentEditSendPromptOptions = useMemo<SendPromptOptions | undefined>(() => {
+		if (!agentEditContextBar) {
+			return undefined;
+		}
+		return { contextDescription: buildStudioAssistantKnowledgeContext() };
+	}, [agentEditContextBar]);
 	// The Ask Rovo edit panel always talks to the default Rovo agent (it's a
 	// build/improve helper), so it renders as a plain default-Rovo chat without
 	// the custom-agent Chat / Trigger / Activity tab header. Those tabs belong to
@@ -2513,6 +2641,83 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 	const studioAutomationGeneratingAgents = useMemo(() => (
 		getStudioAutomationGeneratingAgents(chat.messages)
 	), [chat.messages]);
+
+	const handleResetStudioDemo = useCallback(() => {
+		if (isResettingStudioDemo) {
+			return;
+		}
+
+		setIsResettingStudioDemo(true);
+		void (async () => {
+			try {
+				await resetStudioRfpDemoBackendState();
+				await chat.deleteAllThreads();
+				await studioAgentRegistry.deleteAllThreads();
+				setOptimisticUserMessage(null);
+				setCursorMode(false);
+				setGalleryExpanded(false);
+				setAgentTemplatesDialogOpen(false);
+				setAgentTemplatesInitialCategory(HOME_STARTER_DEFAULT_CATEGORY);
+				setIsSidebarAgentBrowserOpen(false);
+				setSidebarAgentBrowserInitialCategory(HOME_STARTER_DEFAULT_CATEGORY);
+				setComposerFocusRequestKey(0);
+				setPreviewPrompt(null);
+				setPrefillText(null);
+				creationTemplateRef.current = null;
+				creationTemplateByThreadRef.current = {};
+				setVoiceTranscript(null);
+				setIsDictationActive(false);
+				setDictationTranscriptPreview(null);
+				setScrollActiveTimelineSelection(null);
+				setScrollAnchorMessageId(null);
+				setScrollFollowMode("bottom");
+				setIsDefaultHomeSubmitTransition(false);
+				setDismissedBrowserArtifactKey(null);
+				studioAgentCreationThreadKeysRef.current.clear();
+				studioAgentCreationThreadTouchedAtRef.current.clear();
+				setStudioAgentCreationThreadIds(new Set<string>());
+				setActiveAgentConfigState(null);
+				setActiveAgentConfigView("configure");
+				setActivePendingSkillDraftIndex(0);
+				setActivePendingSkillDraftDetail(null);
+				clearHermesSkillSelection();
+				studioAgentRegistry.resetAgentToRovo({ preserveCurrentThread: true });
+				const seededEntry = resetSessionAgentsToStudioRfpDemoAgent();
+				if (seededEntry) {
+					writeSessionAgentRecords([toPersistedRecord(seededEntry)]);
+				}
+				if (!embedded && typeof window !== "undefined") {
+					window.history.pushState(null, "", ROVO_APP_ROOT_PATH);
+				}
+			} catch (error) {
+				console.error("[Studio] Failed to reset demo state:", error);
+			} finally {
+				setIsResettingStudioDemo(false);
+			}
+		})();
+	}, [
+		chat,
+		clearHermesSkillSelection,
+		embedded,
+		isResettingStudioDemo,
+		resetSessionAgentsToStudioRfpDemoAgent,
+		setActiveAgentConfigState,
+		studioAgentCreationThreadKeysRef,
+		studioAgentCreationThreadTouchedAtRef,
+		studioAgentRegistry,
+	]);
+
+	const studioSettingsMenuItems = useMemo(() => [
+		{
+			description: "Clear Studio threads and restore the fresh RFP Drafter",
+			disabled: isResettingStudioDemo,
+			elemBefore: <RefreshIcon label="" />,
+			id: "reset-studio-demo",
+			label: isResettingStudioDemo ? "Resetting demo..." : "Reset demo",
+			onSelect: handleResetStudioDemo,
+			variant: "destructive" as const,
+		},
+	], [handleResetStudioDemo, isResettingStudioDemo]);
 	const handledAgentResultKeysRef = useLazyRef<Set<string>>(() => new Set());
 	const previousTypedAnchorUserMessageIdRef = useRef<string | null>(null);
 	const typedScrollAnchorSourceRef = useRef<TypedScrollAnchorSource>("none");
@@ -3126,10 +3331,28 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					let ok = false;
 					let appliedFields: string[] = [];
 					if (normalized && activeSessionAgentEntry) {
-						const patch =
+						let patch =
 							normalized.description && !normalized.summary
 								? { ...normalized, summary: normalized.description }
 								: normalized;
+						// Hydrate NL trigger phrases into automations here, where the current
+						// draft is available, so a "add a Jira trigger" request appends to the
+						// agent's existing automation rules instead of being a no-op (the editor
+						// reads automationRules before triggers). Skip when the model already
+						// sent an explicit automationRules array.
+						if (patch.triggers && !patch.automationRules) {
+							const mergedAutomations = mergeTriggerPhrasesIntoDraft(
+								activeSessionAgentEntry.draftResult,
+								patch.triggers,
+							);
+							if (mergedAutomations) {
+								patch = {
+									...patch,
+									automationRules: mergedAutomations.automationRules,
+									triggers: mergedAutomations.triggers,
+								};
+							}
+						}
 						const nextEntry = studioAgentRegistry.updateSessionAgentDraft?.(
 							activeSessionAgentEntry.profile.id,
 							patch,
@@ -3729,8 +3952,11 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 									contextDescription,
 									messageId: assistantMessageId,
 									parts: buildDeterministicTriggerThinkingParts({
-										...(index === triggerTraceDelays.length - 1 && buildPlan.assistantReply
-											? { assistantReply: buildPlan.assistantReply }
+										...(index === triggerTraceDelays.length - 1
+											? {
+												...(buildPlan.assistantReply ? { assistantReply: buildPlan.assistantReply } : {}),
+												summaryWidgetPart: buildPlan.summaryWidgetPart,
+											}
 											: {}),
 										prompt: trimmedText,
 										startedAt: triggerTraceStartedAt,
@@ -3743,10 +3969,18 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						if (buildPlan.mode === "update" && openAgentEntry && buildPlan.patch) {
 							handleUpdateAgentDraft(openAgentEntry.profile.id, buildPlan.patch);
 						}
-						if (buildPlan.assistantReply && triggerAutomationNames.length === 0) {
-							await appendRealtimeMessage("assistant", buildPlan.assistantReply, {
-								contextDescription,
-							});
+						if (triggerAutomationNames.length === 0) {
+							// Collapsed change card instead of a plain text reply (fallback to text).
+							if (buildPlan.summaryWidgetPart) {
+								await appendRealtimeMessage("assistant", "", {
+									contextDescription,
+									parts: [buildPlan.summaryWidgetPart],
+								});
+							} else if (buildPlan.assistantReply) {
+								await appendRealtimeMessage("assistant", buildPlan.assistantReply, {
+									contextDescription,
+								});
+							}
 						}
 					} catch (error) {
 						if (fromDefaultHomeState) {
@@ -3868,7 +4102,13 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			const triggerAutomationNames = buildPlan.triggerAutomationNames ?? [];
 			if (triggerAutomationNames.length === 0) {
 				applyBuildPlan();
-				return { handled: true, assistantReply: buildPlan.assistantReply };
+				// Render a collapsed change card instead of a plain "Done — …" reply;
+				// fall back to text when there is nothing displayable to summarize.
+				return {
+					handled: true,
+					...(buildPlan.summaryWidgetPart ? { assistantParts: [buildPlan.summaryWidgetPart] } : {}),
+					assistantReply: buildPlan.assistantReply,
+				};
 			}
 			return {
 				handled: true,
@@ -3920,6 +4160,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 						delayMs: DETERMINISTIC_TRIGGER_TRACE_STAGE_DELAYS_MS[3],
 						getAssistantParts: ({ startedAt }: { startedAt: Date }) => buildDeterministicTriggerThinkingParts({
 							assistantReply: buildPlan.assistantReply,
+							summaryWidgetPart: buildPlan.summaryWidgetPart,
 							prompt: trimmedText,
 							startedAt,
 							state: "complete",
@@ -3990,6 +4231,53 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			}
 		}
 		}, [chat.activeThreadId, chat.messages, chat.runtimeThreadId, handledAgentResultKeysRef, handleStudioAgentResultSelect, unmarkStudioAgentCreationThread]);
+	useEffect(() => {
+		if (typeof studioAgentRegistry.registerCreatedAgentFromResult !== "function") {
+			return;
+		}
+
+		for (const message of chat.messages.toReversed()) {
+			if (!hasTurnCompleteSignal(message)) {
+				continue;
+			}
+
+			const artifactListAgentResults = getStudioAutomationArtifactListAgents(message);
+			if (artifactListAgentResults.length === 0) {
+				continue;
+			}
+
+			let didRegisterAgent = false;
+			for (const agentResult of artifactListAgentResults) {
+				if (!isGeneratedAgentResult(agentResult)) {
+					continue;
+				}
+
+				const agentResultKey = `${chat.runtimeThreadId}:${message.id}:${agentResult.agentId}:${agentResult.action}:artifact-list`;
+				if (handledAgentResultKeysRef.current.has(agentResultKey)) {
+					continue;
+				}
+
+				const sourceKey = `studio-agent-result:${chat.activeThreadId ?? chat.runtimeThreadId}:${message.id}:${agentResult.agentId}`;
+				const registered = studioAgentRegistry.registerCreatedAgentFromResult(agentResult, {
+					preserveCurrentThread: true,
+					select: false,
+					sourceKey,
+				});
+				if (!registered) {
+					continue;
+				}
+
+				handledAgentResultKeysRef.current.add(agentResultKey);
+				didRegisterAgent = true;
+			}
+
+			if (didRegisterAgent) {
+				unmarkStudioAgentCreationThread(chat.runtimeThreadId);
+				unmarkStudioAgentCreationThread(chat.activeThreadId);
+				break;
+			}
+		}
+	}, [chat.activeThreadId, chat.messages, chat.runtimeThreadId, handledAgentResultKeysRef, studioAgentRegistry, unmarkStudioAgentCreationThread]);
 	const timelineItems = useMemo(() => {
 		return deriveRovoAppTimelineItems(displayMessages);
 	}, [displayMessages]);
@@ -4794,6 +5082,11 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 		<AgentTestPanel entry={activeSessionAgentEntry} />
 	) : null;
 
+	// Bridges the agent config's encapsulated automation dialog to the sibling
+	// Ask Rovo chat: the config panel registers its opener here, and the
+	// agent-edit-summary card's "Open" button invokes it via onOpenAgentEditSummary.
+	const automationDialogOpenerRef = useRef<(() => void) | null>(null);
+
 	const agentConfigPane = activeSessionAgentEntry ? (
 		<RovoAppAgentConfigPanel
 			activeView={activeAgentConfigView}
@@ -4808,6 +5101,9 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			onChatInterceptSubmit={handleAgentEditInterceptSubmit}
 			onUpdateDraft={handleUpdateAgentDraft}
 			onStartWithTemplate={handleStartAgentWithTemplate}
+			registerAutomationDialogOpener={(opener) => {
+				automationDialogOpenerRef.current = opener;
+			}}
 		/>
 	) : null;
 
@@ -5319,6 +5615,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							isChatOpen={nav.isSidebarChatOpen}
 							onToggleChat={handleToggleAskRovoChat}
 							onToggleTheme={nav.toggleTheme}
+							settingsMenuItems={studioSettingsMenuItems}
 						/>
 					</div>
 				) : null}
@@ -5395,7 +5692,11 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 							cards={agentEditCards}
 							chatContextBar={agentEditContextBar}
 							greeting={agentEditGreeting}
+							sendPromptOptions={agentEditSendPromptOptions}
+							renderWidget={renderStudioAskRovoWidget}
+							getWidgetPosition={getStudioAskRovoWidgetPosition}
 							onInterceptSubmit={handleAgentEditInterceptSubmit}
+							onOpenAgentEditSummary={() => automationDialogOpenerRef.current?.()}
 							scriptedConversation={agentOnboardingScriptedConversation}
 							startRealtimeVoiceRequestKey={agentOnboardingLiveVoiceRequestKey}
 							hideComposerSourceAndModelControls={Boolean(agentEditContextBar)}

@@ -24,6 +24,12 @@
 import { DIRECTORY_APPS } from "@/app/data/directory/apps";
 import { repairGeneratedAgentCatalog } from "@/app/data/directory/repair-agent-result";
 import { convertBareMentionsToTokens, resolveCatalogNames } from "@/app/data/directory/resolve-ids";
+import { AGENT_AVATAR_OPTION_GROUPS } from "@/components/blocks/agent-2/data/agent-avatar-options";
+import {
+	AGENT_EDIT_SUMMARY_WIDGET_TYPE,
+	type AgentEditSummaryChange,
+	type AgentEditSummaryPayload,
+} from "@/components/projects/shared/lib/agent-edit-summary";
 import {
 	createAgentAutomationRule,
 	createAgentTriggerValue,
@@ -45,7 +51,9 @@ export type AgentBuildIntentKind =
 	| "subagent"
 	| "starter"
 	| "instructions"
-	| "name";
+	| "name"
+	| "avatar"
+	| "mode";
 
 interface TriggerSpec {
 	providerId: TriggerProviderId;
@@ -72,6 +80,10 @@ export interface AgentBuildIntent {
 	instructionText: string | null;
 	/** New agent name when a rename was requested. */
 	nameHint: string | null;
+	/** Avatar option src when an avatar change was requested. */
+	avatarSrc: string | null;
+	/** Memory/reasoning/knowledge mode changes, when requested. */
+	modeChanges: Partial<Pick<AgentResult, "memoryMode" | "reasoningMode" | "knowledgeMode">>;
 }
 
 // ---------------------------------------------------------------------------
@@ -287,7 +299,55 @@ function deriveAutomationDescription(instruction: string): string {
 	return `${firstSentence.slice(0, 95).trimEnd()}…`;
 }
 
+// Hand-authored content for the canonical RFP Drafter demo flow — a weekly
+// Friday 9am Slack summary of lost / no-bid RFPs. The generic derivation would
+// produce a terse "Friday At 9am" name and a one-line prompt; this curates a
+// nicer title, description, the "Every Friday, 9am" schedule (via the
+// `weekly-friday-9am` catalog event), and a richer multi-line instruction body.
+const WEEKLY_RFP_SUMMARY_SPEC: TriggerSpec = {
+	providerId: "scheduled",
+	eventId: "weekly-friday-9am",
+	automationName: "Weekly RFP loss review for sales leadership",
+	description:
+		"Every Friday at 9 AM, summarize the RFP work items that moved to Lost or No Bid this week and post the rollup to #sales-leadership in Slack.",
+	prompt: [
+		"Every Friday at 9:00 AM, review the Enterprise RFP Response project in Jira and compile a summary of every RFP work item that moved to a **Lost** or **No Bid** status in the past 7 days.",
+		"",
+		"For each item, capture:",
+		"- the RFP name and Jira key,",
+		"- the account or customer,",
+		"- the outcome (Lost or No Bid),",
+		"- the deal size or contract value when known, and",
+		"- the recorded reason for the loss or no-bid decision.",
+		"",
+		"Then post the summary as a Slack message to **#sales-leadership**:",
+		"- lead with the total count and combined value of the week's losses,",
+		"- group the items by outcome (Lost vs No Bid),",
+		"- call out any recurring loss reasons or at-risk accounts, and",
+		"- keep it skimmable so leadership can review the week's results at a glance.",
+		"",
+		"If no RFPs moved to Lost or No Bid this week, post a short note confirming a clean week instead.",
+	].join("\n"),
+};
+
+// Detects the demo's signature weekly Friday-9am schedule so it maps to the
+// curated RFP summary spec above instead of the terse generic derivation. The
+// clause that reaches here is just the trigger cadence ("every Friday at 9am") —
+// the RFP/Slack intent lives in sibling clauses — so we key off the cadence.
+function isWeeklyRfpSummaryClause(clause: string): boolean {
+	return (
+		/\bfriday\b/i.test(clause) &&
+		/\b9\s*(?::00)?\s*(?:am|a\.m\.)\b|\b9:00\b/i.test(clause)
+	);
+}
+
 function deriveTriggerSpec(clause: string): TriggerSpec | null {
+	// Canonical RFP demo flow gets hand-authored title/description/prompt + the
+	// "Every Friday, 9am" schedule, rather than the terse generic derivation.
+	if (isWeeklyRfpSummaryClause(clause)) {
+		return WEEKLY_RFP_SUMMARY_SPEC;
+	}
+
 	// Name + description come from the plain instruction (token markup would
 	// corrupt the title/summary); the stored prompt gets `@name`/`/name`
 	// references rewritten into `@[app:id]` chips for the rule-builder editor.
@@ -434,6 +494,86 @@ function extractNameHint(clause: string): string | null {
 // Classification
 // ---------------------------------------------------------------------------
 
+/** Detects an avatar change: a named option ("code reviewer avatar") or a color
+ *  family ("make it blue"). Returns the chosen option src, or null. */
+function extractAvatarSrc(prompt: string): string | null {
+	// Scope to the clause(s) that actually mention the avatar, so an option label
+	// that collides with a skill/app phrase in another clause ("add a code reviewer
+	// skill and set the avatar to blue") can't hijack an explicit color request.
+	const avatarClauses = splitClauses(prompt).filter((clause) =>
+		/\b(avatar|glyph|icon|profile (?:picture|image|icon))\b/i.test(clause),
+	);
+	if (avatarClauses.length === 0) {
+		return null;
+	}
+	const lower = avatarClauses.join(" ").toLowerCase();
+	// 1) An explicit option label (longest first so "code reviewer" beats "code").
+	const labelled = AGENT_AVATAR_OPTION_GROUPS.flatMap((group) =>
+		group.options.map((option) => ({ label: option.label.toLowerCase(), src: option.src })),
+	).sort((a, b) => b.label.length - a.label.length);
+	for (const { label, src } of labelled) {
+		if (label.length >= 4 && lower.includes(label)) {
+			return src;
+		}
+	}
+	// 2) A color family — each group's label IS its color name (Lime/Purple/...).
+	for (const group of AGENT_AVATAR_OPTION_GROUPS) {
+		if (new RegExp(`\\b${group.label.toLowerCase()}\\b`).test(lower)) {
+			return group.options[0]?.src ?? null;
+		}
+	}
+	return null;
+}
+
+/** Detects memory/reasoning/knowledge mode changes from explicit phrasing. */
+function extractModeChanges(
+	prompt: string,
+): Partial<Pick<AgentResult, "memoryMode" | "reasoningMode" | "knowledgeMode">> {
+	const lower = prompt.toLowerCase();
+	const changes: Partial<Pick<AgentResult, "memoryMode" | "reasoningMode" | "knowledgeMode">> = {};
+
+	if (/\b(memory|remember)\b/.test(lower)) {
+		if (/\b(turn off|disable|without|stop|no longer|don'?t)\b[^.!?]*\b(memory|remember)/.test(lower)) {
+			changes.memoryMode = "off";
+		} else if (
+			/\b(turn on|enable|keep|use|with|add|retain|persist)\b[^.!?]*\b(memory|remember)/.test(lower) ||
+			/\bremember (?:across|between|things|context|me)/.test(lower)
+		) {
+			changes.memoryMode = "on";
+		}
+	}
+
+	const wantsReasoning =
+		/\b(reasoning|reason|model|think|thinking)\b/.test(lower) ||
+		/\b(use|switch to|run on|run it on)\b[^.!?]*\b(opus|sonnet|gpt|gemini)\b/.test(lower);
+	if (wantsReasoning) {
+		if (/\bopus\b/.test(lower)) changes.reasoningMode = "opus-4.6";
+		else if (/\bsonnet\b/.test(lower)) changes.reasoningMode = "sonnet-4.6";
+		else if (/\bgpt\b/.test(lower)) changes.reasoningMode = "gpt-5.4";
+		else if (/\bgemini\b/.test(lower)) changes.reasoningMode = "gemini-flash-3";
+		else if (/\bdeep\b/.test(lower)) changes.reasoningMode = "deep-auto";
+		else if (/\b(quick|fast)\b/.test(lower)) changes.reasoningMode = "quick-auto";
+	}
+
+	if (/\bknowledge mode\b/.test(lower) || /\bset knowledge to\b/.test(lower)) {
+		if (/\ball\b/.test(lower)) changes.knowledgeMode = "all";
+		else if (/\bcustom\b/.test(lower)) changes.knowledgeMode = "custom";
+		else if (/\bnone\b|\bno knowledge\b/.test(lower)) changes.knowledgeMode = "none";
+	}
+
+	return changes;
+}
+
+function hasModeChanges(
+	changes: Partial<Pick<AgentResult, "memoryMode" | "reasoningMode" | "knowledgeMode">>,
+): boolean {
+	return (
+		changes.memoryMode !== undefined ||
+		changes.reasoningMode !== undefined ||
+		changes.knowledgeMode !== undefined
+	);
+}
+
 export function classifyAgentBuildIntent(prompt: string): AgentBuildIntent {
 	const triggerSpecs: TriggerSpec[] = [];
 	const appNames: string[] = [];
@@ -475,6 +615,8 @@ export function classifyAgentBuildIntent(prompt: string): AgentBuildIntent {
 	const dedupedApps = unique(appNames);
 	const dedupedSkills = unique(skillNames);
 	const dedupedSubagents = unique(subagentNames);
+	const avatarSrc = extractAvatarSrc(prompt);
+	const modeChanges = extractModeChanges(prompt);
 
 	const kinds: AgentBuildIntentKind[] = [];
 	if (triggerSpecs.length > 0) kinds.push("trigger");
@@ -484,6 +626,8 @@ export function classifyAgentBuildIntent(prompt: string): AgentBuildIntent {
 	if (starterCount > 0) kinds.push("starter");
 	if (instructionText) kinds.push("instructions");
 	if (nameHint) kinds.push("name");
+	if (avatarSrc) kinds.push("avatar");
+	if (hasModeChanges(modeChanges)) kinds.push("mode");
 
 	return {
 		kinds,
@@ -495,6 +639,8 @@ export function classifyAgentBuildIntent(prompt: string): AgentBuildIntent {
 		starterCount,
 		instructionText,
 		nameHint,
+		avatarSrc,
+		modeChanges,
 	};
 }
 
@@ -652,7 +798,59 @@ export function buildAgentUpdatePatch(
 		patch.name = intent.nameHint;
 	}
 
+	if (intent.avatarSrc) {
+		patch.avatarSrc = intent.avatarSrc;
+	}
+
+	// Mode changes are scalar fields; assign whichever the prompt requested.
+	Object.assign(patch, intent.modeChanges);
+
 	return patch;
+}
+
+/**
+ * Additively merge natural-language trigger phrases into a draft's automation
+ * rules, preserving existing rules (names/prompts/params) and assigning unique
+ * trigger/rule ids. This is the stateful counterpart the screen-assistant shell
+ * calls: the stateless patch normalizer can only set phrase-only `triggers`
+ * (never rebuild `automationRules`, which would clobber on shallow-merge), so the
+ * shell hydrates them here where the current draft is available — the same merge
+ * `buildAgentUpdatePatch` performs for the deterministic planner. Returns the
+ * merged `automationRules` + derived `triggers` labels, or null when no phrase
+ * resolves to a real provider/event.
+ */
+export function mergeTriggerPhrasesIntoDraft(
+	currentDraft: Partial<AgentResult>,
+	triggerPhrases: readonly string[],
+): { automationRules: AgentAutomationRule[]; triggers: string[] } | null {
+	const definitions = inferTriggerDefinitions(triggerPhrases);
+	if (!definitions || definitions.length === 0) {
+		return null;
+	}
+	const existingRules = currentDraft.automationRules ?? [];
+	const existingTriggers = existingRules.flatMap((rule) => rule.triggers);
+	const usedIds = new Set(existingTriggers.map((definition) => definition.id));
+	const addedRules: AgentAutomationRule[] = [];
+	let automationRuleIndex = nextAutomationRuleIndex(existingRules);
+	for (const definition of definitions) {
+		const seenTriggers = [...existingTriggers, ...addedRules.flatMap((rule) => rule.triggers)];
+		let index = nextTriggerIndex(seenTriggers, definition.providerId, definition.eventId);
+		let value = createAgentTriggerValue(definition.providerId, definition.eventId, index);
+		while (value && usedIds.has(value.id)) {
+			index += 1;
+			value = createAgentTriggerValue(definition.providerId, definition.eventId, index);
+		}
+		if (value) {
+			usedIds.add(value.id);
+			addedRules.push(createAgentAutomationRule({ id: `automation-${automationRuleIndex}`, triggers: [value] }));
+			automationRuleIndex += 1;
+		}
+	}
+	if (addedRules.length === 0) {
+		return null;
+	}
+	const merged = [...existingRules, ...addedRules];
+	return { automationRules: merged, triggers: serializeAutomationRuleLabels(merged) };
 }
 
 function deriveAgentName(prompt: string): string {
@@ -713,6 +911,123 @@ export interface DeterministicAgentBuildOutcome {
 	assistantReply?: string;
 	/** Automation names when the deterministic edit includes trigger work. */
 	triggerAutomationNames?: readonly string[];
+	/**
+	 * Collapsed change-card part rendered in the transcript instead of the plain
+	 * `assistantReply` text. Null when the edit produced nothing displayable.
+	 */
+	summaryWidgetPart?: RovoUIMessage["parts"][number] | null;
+}
+
+const REASONING_MODE_LABELS: Record<string, string> = {
+	"quick-auto": "Quick",
+	"deep-auto": "Deep reasoning",
+	"gemini-flash-3": "Gemini Flash 3",
+	"gpt-5.4": "GPT-5.4",
+	"sonnet-4.6": "Claude Sonnet 4.6",
+	"opus-4.6": "Claude Opus 4.6",
+};
+
+/** Friendly "Color · Option" label for a chosen avatar src. */
+function describeAvatar(avatarSrc: string): string {
+	for (const group of AGENT_AVATAR_OPTION_GROUPS) {
+		const option = group.options.find((candidate) => candidate.src === avatarSrc);
+		if (option) {
+			return `${group.label} · ${option.label}`;
+		}
+	}
+	return "Updated";
+}
+
+/**
+ * Structured, per-field summary of a deterministic edit — the data behind the
+ * collapsed change card the sidebar shows instead of a plain text reply. Mirrors
+ * what {@link buildAssistantReplyText} narrates, but as label → value rows.
+ * Returns null when nothing displayable changed.
+ */
+export function buildAgentEditSummaryPayload(
+	intent: AgentBuildIntent,
+	agentName?: string,
+): AgentEditSummaryPayload | null {
+	const changes: AgentEditSummaryChange[] = [];
+
+	if (intent.triggerSpecs.length > 0) {
+		changes.push({
+			label: intent.triggerSpecs.length > 1 ? "Flows" : "Flow",
+			value: intent.triggerSpecs.map((spec) => spec.automationName).join(", "),
+		});
+	}
+	if (intent.appNames.length > 0) {
+		changes.push({ label: intent.appNames.length > 1 ? "Apps" : "App", value: intent.appNames.join(", ") });
+	}
+	if (intent.skillNames.length > 0) {
+		changes.push({ label: intent.skillNames.length > 1 ? "Skills" : "Skill", value: intent.skillNames.join(", ") });
+	}
+	if (intent.subagentNames.length > 0) {
+		changes.push({
+			label: intent.subagentNames.length > 1 ? "Subagents" : "Subagent",
+			value: intent.subagentNames.join(", "),
+		});
+	}
+	if (intent.avatarSrc) {
+		changes.push({ label: "Avatar", value: describeAvatar(intent.avatarSrc) });
+	}
+	if (intent.modeChanges.memoryMode) {
+		changes.push({ label: "Memory", value: intent.modeChanges.memoryMode === "on" ? "On" : "Off" });
+	}
+	if (intent.modeChanges.reasoningMode) {
+		changes.push({
+			label: "Reasoning",
+			value: REASONING_MODE_LABELS[intent.modeChanges.reasoningMode] ?? intent.modeChanges.reasoningMode,
+		});
+	}
+	if (intent.modeChanges.knowledgeMode) {
+		const knowledgeLabel = { all: "All", custom: "Custom", none: "None" }[intent.modeChanges.knowledgeMode];
+		changes.push({ label: "Knowledge", value: knowledgeLabel ?? intent.modeChanges.knowledgeMode });
+	}
+	if (intent.starterCount > 0) {
+		changes.push({ label: "Conversation starters", value: `+${intent.starterCount}` });
+	}
+	if (intent.instructionText) {
+		changes.push({ label: "Instructions", value: "Updated" });
+	}
+	if (intent.nameHint) {
+		changes.push({ label: "Name", value: intent.nameHint });
+	}
+
+	if (changes.length === 0) {
+		return null;
+	}
+
+	const summary =
+		changes.length === 1
+			? `${changes[0].label}: ${changes[0].value}`
+			: `${changes.length} changes · ${changes.map((change) => change.label).join(", ")}`;
+
+	return {
+		...(agentName ? { agentName } : {}),
+		headline: agentName ? `Updated ${agentName}` : "Agent updated",
+		summary,
+		changes,
+	};
+}
+
+/**
+ * The data-widget-data part that renders the collapsed change card in the
+ * transcript. Null when the intent produced no displayable change (callers fall
+ * back to the plain assistant reply).
+ */
+export function buildAgentEditSummaryWidgetPart(
+	intent: AgentBuildIntent,
+	agentName?: string,
+): RovoUIMessage["parts"][number] | null {
+	const payload = buildAgentEditSummaryPayload(intent, agentName);
+	if (!payload) {
+		return null;
+	}
+	return {
+		type: "data-widget-data",
+		data: { type: AGENT_EDIT_SUMMARY_WIDGET_TYPE, payload },
+	};
 }
 
 export const DETERMINISTIC_TRIGGER_TRACE_INITIAL_DELAY_MS = 3200;
@@ -740,6 +1055,7 @@ export function planDeterministicAgentBuild(
 		patch: buildAgentUpdatePatch(prompt, currentAgent, intent),
 		assistantReply,
 		triggerAutomationNames: intent.triggerSpecs.map((spec) => spec.automationName),
+		summaryWidgetPart: buildAgentEditSummaryWidgetPart(intent, currentAgent.name ?? undefined),
 	};
 }
 
@@ -749,6 +1065,7 @@ export function buildDeterministicTriggerThinkingParts({
 	prompt,
 	startedAt = now,
 	state,
+	summaryWidgetPart,
 	triggerAutomationNames,
 }: Readonly<{
 	assistantReply?: string;
@@ -756,9 +1073,14 @@ export function buildDeterministicTriggerThinkingParts({
 	prompt: string;
 	startedAt?: Date;
 	state: "thinking" | "review" | "schedule" | "delivery" | "save" | "complete";
+	/** Collapsed change card to emit at completion instead of plain text. */
+	summaryWidgetPart?: RovoUIMessage["parts"][number] | null;
 	triggerAutomationNames: readonly string[];
 }>): RovoUIMessage["parts"] {
 	if (triggerAutomationNames.length === 0) {
+		if (summaryWidgetPart) {
+			return [summaryWidgetPart];
+		}
 		return assistantReply
 			? [{ type: "text", text: assistantReply, state: "done" }]
 			: [];
@@ -1084,9 +1406,11 @@ export function buildDeterministicTriggerThinkingParts({
 				timestamp,
 			},
 		},
-		...(assistantReply
-			? [{ type: "text" as const, text: assistantReply, state: "done" as const }]
-			: []),
+		...(summaryWidgetPart
+			? [summaryWidgetPart]
+			: assistantReply
+				? [{ type: "text" as const, text: assistantReply, state: "done" as const }]
+				: []),
 		{
 			type: "data-turn-complete",
 			data: {
@@ -1106,6 +1430,8 @@ const KIND_PHRASES: Record<AgentBuildIntentKind, string> = {
 	starter: "conversation starters",
 	instructions: "the instructions",
 	name: "the name",
+	avatar: "the avatar",
+	mode: "the agent settings",
 };
 
 /** Believable assistant reply for the transcript after applying a build intent. */
@@ -1133,6 +1459,12 @@ export function buildAssistantReplyText(intent: AgentBuildIntent, agentIsOpen: b
 	}
 	if (intent.nameHint) {
 		parts.push(`renamed it to ${intent.nameHint}`);
+	}
+	if (intent.avatarSrc) {
+		parts.push("a new avatar");
+	}
+	if (hasModeChanges(intent.modeChanges)) {
+		parts.push("updated settings");
 	}
 
 	const summary =

@@ -6,7 +6,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useIsMounted } from "@/components/hooks/use-is-mounted";
 import { token } from "@/lib/tokens";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
-import { RightNavigationActions } from "./right-navigation-actions";
+import {
+	RightNavigationActions,
+	type RightNavigationSettingsMenuItem,
+} from "./right-navigation-actions";
 import { TOP_NAV_OVERFLOW_BREAKPOINT_PX } from "../layout-constants";
 
 type Product = "admin" | "agents" | "home" | "jira" | "confluence" | "rovo" | "search" | "studio";
@@ -20,6 +23,7 @@ interface RightNavigationProps {
 	onToggleChat: () => void;
 	/** When provided, renders a theme-toggle button. Omitted in the Figma cluster. */
 	onToggleTheme?: () => void;
+	settingsMenuItems?: ReadonlyArray<RightNavigationSettingsMenuItem>;
 }
 
 export function RightNavigation({
@@ -30,6 +34,7 @@ export function RightNavigation({
 	isChatOpen = false,
 	onToggleChat,
 	onToggleTheme,
+	settingsMenuItems,
 }: Readonly<RightNavigationProps>) {
 	const [isOverflowOpen, setIsOverflowOpen] = useState(false);
 	// Gate the responsive collapse on mount: `windowWidth` is 0 during SSR and the
@@ -64,6 +69,7 @@ export function RightNavigation({
 			isChatOpen={isChatOpen}
 			onToggleChat={onToggleChat}
 			onToggleTheme={onToggleTheme}
+			settingsMenuItems={settingsMenuItems}
 		/>
 	);
 

@@ -12,7 +12,11 @@
 #     caches are reclaimed even while OTHER worktrees keep a live build. This is
 #     the "prevention". The old all-or-nothing skip reclaimed nothing in
 #     practice, because a 24/7 box always has at least one server up somewhere.
-#  3. fseventsd LEAK: the FS-events daemon leaks CPU/RAM over long uptimes
+#  3. STALE TMUX SESSIONS: dev-tmux.sh leaves a vpk-dev-<worktree> session (with
+#     frontend, backend, and a Rovo port pool) alive per worktree. When a worktree
+#     is deleted the session is orphaned and keeps burning resources. Killed when
+#     its worktree path is gone AND no client is attached.
+#  4. fseventsd LEAK: the FS-events daemon leaks CPU/RAM over long uptimes
 #     (22GB seen). Restarted if ballooned (needs the sudoers rule from install).
 #
 # Safe unattended: never deletes a live build's cache, and only kills a server
@@ -105,7 +109,35 @@ for nx in ${(u)NEXT_DIRS}; do
 	fi
 done
 
-# --- 3. fseventsd reset --------------------------------------------------------
+# --- 3. stale tmux sessions ----------------------------------------------------
+# dev-tmux.sh names each session vpk-dev-<worktree> and points session_path at
+# the worktree root. When a worktree is deleted its session is orphaned: it keeps
+# a frontend, backend, and a pool of Rovo port processes alive against a path
+# that no longer exists. Kill those (skipping any session you're attached to —
+# never tear down a session in active use). Self-correcting: a live worktree's
+# path still exists, so it is never touched.
+tmux_action="not-checked"
+if command -v tmux >/dev/null 2>&1; then
+	stale_killed=0
+	while IFS='|' read -r sname spath sattached; do
+		[[ -n "$sname" ]] || continue
+		[[ "$sname" == vpk-dev-* ]] || continue
+		[[ -n "$spath" && -d "$spath" ]] && continue   # worktree still exists
+		if [[ "$sattached" == 1 ]]; then
+			log "kept tmux session $sname (orphaned path '$spath' but attached)"
+			continue
+		fi
+		if tmux kill-session -t "$sname" 2>/dev/null; then
+			stale_killed=$(( stale_killed + 1 ))
+			log "killed stale tmux session $sname (worktree path '$spath' gone)"
+		else
+			log "FAILED to kill tmux session $sname"
+		fi
+	done < <(tmux list-sessions -F '#{session_name}|#{session_path}|#{session_attached}' 2>/dev/null)
+	tmux_action="${stale_killed} stale session(s) killed"
+fi
+
+# --- 4. fseventsd reset --------------------------------------------------------
 fse_action="not-checked"
 fp=$(pgrep -x fseventsd | head -1)
 if [[ -n "$fp" ]]; then
@@ -121,5 +153,5 @@ if [[ -n "$fp" ]]; then
 	fi
 fi
 
-log "summary: killed ${killed} runaway server(s); freed ${freed}G from ${count} cache(s); fseventsd ${fse_action}"
+log "summary: killed ${killed} runaway server(s); freed ${freed}G from ${count} cache(s); tmux ${tmux_action}; fseventsd ${fse_action}"
 log "run done"

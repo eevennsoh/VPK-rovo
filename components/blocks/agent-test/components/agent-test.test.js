@@ -54,18 +54,49 @@ test("AgentTestPanel surfaces automations in the greeting and runs them inline i
 	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, />\s*Flows\s*</u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /import \{ AgentAutomationFlowCover \} from "@\/components\/blocks\/triggers\/components\/agent-automation-flow-cover";/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /function AgentTestAutomationFlow[\s\S]*<AgentAutomationFlowCover[\s\S]*rootElement="span"[\s\S]*triggers=\{rule\.triggers\}/u);
-	// Clicking a row injects a scripted user + assistant turn via replaceMessages.
-	assert.match(AGENT_TEST_PANEL_SOURCE, /import \{ createAssistantTextMessage, type RovoDataParts, type RovoUIMessage \} from "@\/lib\/rovo-ui-messages";/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /function buildAutomationRunMessages\(/u);
+	// Clicking a row plays a scripted user + assistant turn that streams in via
+	// staged replaceMessages calls (not an instant single dump).
+	assert.match(AGENT_TEST_PANEL_SOURCE, /import type \{ RovoDataParts, RovoUIMessage \} from "@\/lib\/rovo-ui-messages";/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /function buildAutomationRunPlan\(/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /const trigger = rule\.triggers\[0\];/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /const result = createAutomationTestResult\(rule, ruleIndex, trigger\);/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /replaceMessages\(messages\);/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /Sample event payload/u);
-	assert.match(AGENT_TEST_PANEL_SOURCE, /Callback result/u);
+	// Progressive playback: a stable assistant id, delayed frames, and a run token
+	// so a newer run supersedes an in-flight one.
+	assert.match(AGENT_TEST_PANEL_SOURCE, /const frames: AutomationRunFrame\[\]/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /runTokenRef/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /window\.setTimeout\(resolve, frame\.delayMs\)/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /replaceMessages\(\[\s*userMessage,/u);
+	// Tool calls + streamed reply; the payload/callback ride inside the thought.
+	assert.match(AGENT_TEST_PANEL_SOURCE, /toolName: "jira\.search_work_items"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /toolName: "slack\.send_message"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /state: "streaming"/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /input: result\.payload/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /output: result\.callback/u);
 	// The old standalone automation detail surface is gone.
 	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /AgentTestAutomationDetailView/u);
 	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /function AutomationTestCard/u);
 	assert.doesNotMatch(AGENT_TEST_PANEL_SOURCE, /function AutomationTestEventRow/u);
+});
+
+test("AgentTestPanel reveals a hover Edit affordance that opens the trigger editor in situ", () => {
+	// The studio trigger dialog wrapper is wired in.
+	assert.match(AGENT_TEST_PANEL_SOURCE, /import \{ AgentTriggersDialog \} from "@\/components\/ui-custom\/agent-triggers-dialog";/u);
+	// The row hosts the run button + a hover-revealed Edit button, so it can no
+	// longer be a single <button> (no nested buttons). It is a group container.
+	assert.match(AGENT_TEST_PANEL_SOURCE, /<div className="group\/automation-row /u);
+	// Edit is a normal outline button labelled "Edit", collapsed (grid 0fr +
+	// opacity-0) at rest and revealed with an 8px gap (ml-2) on row hover or
+	// keyboard focus, with a descriptive aria-label.
+	assert.match(AGENT_TEST_PANEL_SOURCE, /aria-label=\{`Edit \$\{label\}`\}[\s\S]*size="compact"[\s\S]*variant="outline"[\s\S]*>\s*Edit\s*<\/Button>/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /grid-cols-\[0fr\][\s\S]*group-hover\/automation-row:grid-cols-\[1fr\]/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /group-hover\/automation-row:ml-2/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /group-focus-within\/automation-row:grid-cols-\[1fr\]/u);
+	// Clicking Edit opens the in-situ "Edit flow" dialog seeded with that rule;
+	// Save commits the edited rule into the editable local flows.
+	assert.match(AGENT_TEST_PANEL_SOURCE, /const \[editingRule, setEditingRule\] = useState<AgentAutomationRule \| null>\(null\);/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /function handleEditAutomation\([\s\S]*setEditingRule\(rule\);/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /function handleTriggersSave\([\s\S]*current\.map\(\(rule\) => \(rule\.id === automationRule\.id \? automationRule : rule\)\)/u);
+	assert.match(AGENT_TEST_PANEL_SOURCE, /<AgentTriggersDialog[\s\S]*automationRule=\{editingRule\}[\s\S]*onSave=\{handleTriggersSave\}[\s\S]*title="Edit flow"/u);
 });
 
 test("AgentTestPanel builds test profile data from the live draft", () => {

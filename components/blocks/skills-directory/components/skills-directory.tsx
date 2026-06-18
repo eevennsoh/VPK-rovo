@@ -142,7 +142,6 @@ export interface SkillsDirectoryDialogProps {
 	onSelectAgent?: (agent: SkillsDirectoryAgent) => void;
 	onSelectedSkillIdsChange?: (skillIds: readonly string[]) => void;
 	onSelectSkill?: (skill: SkillsDirectorySkill) => void;
-	onTryInChat?: (skill: SkillsDirectorySkill) => void;
 	open: boolean;
 	primaryItems?: readonly SkillsDirectoryPrimaryItem[];
 	selectedSkillIds?: readonly string[];
@@ -310,7 +309,6 @@ export function SkillsDirectoryDialog({
 	onSelectAgent,
 	onSelectedSkillIdsChange,
 	onSelectSkill,
-	onTryInChat,
 	open,
 	primaryItems = DEFAULT_SKILLS_DIRECTORY_PRIMARY_ITEMS,
 	selectedSkillIds,
@@ -452,6 +450,12 @@ export function SkillsDirectoryDialog({
 		setSelectedDetailSkillId(null);
 	}
 
+	function handleAddSkill(skill: SkillsDirectorySkill): void {
+		// Notify the host so it can add the skill to the agent config. The detail
+		// stays open so the header flips to its added state (Remove + Switch).
+		onAddSkills?.([skill.id], [skill]);
+	}
+
 	const createSkillHandler = onCreateSkill ?? onNewSkill;
 
 	return (
@@ -471,7 +475,7 @@ export function SkillsDirectoryDialog({
 						onOpenSkill={() => onOpenSkill?.(selectedDetailSkill)}
 						onRemove={() => handleRemoveSkill(selectedDetailSkill)}
 						onToggleEnabled={(enabled) => handleToggleSkillEnabled(selectedDetailSkill, enabled)}
-						onTryInChat={() => onTryInChat?.(selectedDetailSkill)}
+						onAdd={() => handleAddSkill(selectedDetailSkill)}
 						title={selectedDetailSkill.name}
 					/>
 				) : (
@@ -949,6 +953,8 @@ interface SkillDetailHeaderProps {
 	added: boolean;
 	/** Whether the skill is enabled on the agent — drives the disable Switch. */
 	enabled: boolean;
+	/** Adds the skill to the agent. */
+	onAdd: () => void;
 	onBack: () => void;
 	onCreateShareLink: () => void;
 	onDownloadSkills: () => void;
@@ -958,13 +964,13 @@ interface SkillDetailHeaderProps {
 	onRemove: () => void;
 	/** Toggles the skill's enabled state on the agent. */
 	onToggleEnabled: (enabled: boolean) => void;
-	onTryInChat: () => void;
 	title: string;
 }
 
 function SkillDetailHeader({
 	added,
 	enabled,
+	onAdd,
 	onBack,
 	onCreateShareLink,
 	onDownloadSkills,
@@ -972,7 +978,6 @@ function SkillDetailHeader({
 	onOpenSkill,
 	onRemove,
 	onToggleEnabled,
-	onTryInChat,
 	title,
 }: Readonly<SkillDetailHeaderProps>) {
 	return (
@@ -1026,12 +1031,6 @@ function SkillDetailHeader({
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
-				{added ? (
-					<Button onClick={onRemove} type="button" variant="destructive">
-						<DeleteIcon label="" size="small" />
-						Remove
-					</Button>
-				) : null}
 				<SplitButton
 					items={[
 						{ label: "Open in new tab", onSelect: onOpenSkill },
@@ -1041,9 +1040,16 @@ function SkillDetailHeader({
 					onClick={onOpenSkill}
 					variant="outline"
 				/>
-				<Button onClick={onTryInChat} type="button">
-					Try in chat
-				</Button>
+				{added ? (
+					<Button onClick={onRemove} type="button" variant="destructive">
+						<DeleteIcon label="" size="small" />
+						Remove
+					</Button>
+				) : (
+					<Button onClick={onAdd} type="button">
+						Add to agent
+					</Button>
+				)}
 				<DialogClose render={<Button variant="ghost" size="icon" />}>
 					<CrossIcon label="" />
 					<span className="sr-only">Close</span>
@@ -1178,8 +1184,18 @@ function SkillDetailConfig({
 					inert={disabled || undefined}
 				>
 					<Agent className="flex min-h-0 flex-1 flex-col bg-transparent">
-						<AgentContent className="flex min-h-0 flex-1 flex-col">
+						{/* Drop the frame's vertical padding (keep px-6) so the 24px
+						    top/bottom rhythm rides INSIDE the scrollport instead of on
+						    this fixed frame: `pt-6` scrolls away for a full-bleed top,
+						    and the bottom gap only appears at the scroll end. The bottom
+						    padding must sit on the editor body (`.rich-text-editor-content`)
+						    — the instructions section is `flex-1 min-h-0` and collapses to
+						    a 0-basis box, so its overflowing editor body is the real
+						    scroll boundary; pb on the scrollport or section lands above
+						    the fold and never shows. */}
+						<AgentContent className="flex min-h-0 flex-1 flex-col py-0">
 							<AgentConfigFields
+								compactScrollAreaClassName="pt-6 [&_[data-agent-field=instructions]_.rich-text-editor-content]:pb-4"
 								config={config}
 								idPrefix={`skill-detail-${skill.id}`}
 								profileCover={<SkillProfileCover skill={skill} />}

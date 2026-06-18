@@ -35,9 +35,13 @@ test("AgentResultCard renders created agent profile description", () => {
 	assert.match(AGENT_RESULT_CARD_SOURCE, /function getAgentDisplayName\(agent: AgentResult\): string/u);
 	assert.match(AGENT_RESULT_CARD_SOURCE, /const RFP_DRAFTING_AGENT_ID = "rfp-drafting-agent";/u);
 	assert.match(AGENT_RESULT_CARD_SOURCE, /agent\.agentId === RFP_DRAFTING_AGENT_ID \? "RFP Drafter" : agent\.name/u);
+	// Generated agents are attributed to the studio owner (a person), not the
+	// Atlassian company, and the card uses the "preview" footer variant.
+	assert.match(AGENT_RESULT_CARD_SOURCE, /const AGENT_CREATOR_NAME = "Venn Soh";/u);
+	assert.match(AGENT_RESULT_CARD_SOURCE, /const AGENT_CREATOR_AVATAR_SRC = "\/avatar-user\/venn\/venn\.png";/u);
 	assert.match(
 		AGENT_RESULT_CARD_SOURCE,
-		/<AgentProfileCard[\s\S]*avatarSrc=\{avatarSrc\}[\s\S]*coverSrc=\{avatarSrc\}[\s\S]*description=\{description\}[\s\S]*name=\{displayName\}[\s\S]*editActionLabel=\{`Edit \$\{displayName\}`\}[\s\S]*onEditAction=\{handleSelectAgent\}[\s\S]*onPreviewAction=\{handleSelectAgent\}[\s\S]*onSwapAction=\{handleSelectAgent\}[\s\S]*partnerName=\{DEFAULT_AGENT_PARTNER_NAME\}[\s\S]*previewActionLabel="View agent"[\s\S]*swapActionLabel="Chat with agent"[\s\S]*variant="preview"[\s\S]*\/>/u,
+		/<AgentProfileCard[\s\S]*attributionKind="person"[\s\S]*avatarSrc=\{avatarSrc\}[\s\S]*coverSrc=\{avatarSrc\}[\s\S]*description=\{description\}[\s\S]*name=\{displayName\}[\s\S]*editActionLabel=\{`Edit \$\{displayName\}`\}[\s\S]*onEditAction=\{handleSelectAgent\}[\s\S]*onPreviewAction=\{handleSelectAgent\}[\s\S]*onSwapAction=\{handleSelectAgent\}[\s\S]*partnerLogoSrc=\{AGENT_CREATOR_AVATAR_SRC\}[\s\S]*partnerName=\{AGENT_CREATOR_NAME\}[\s\S]*previewActionLabel=\{`View \$\{displayName\}`\}[\s\S]*swapActionLabel="Chat with agent"[\s\S]*variant="preview"[\s\S]*verified=\{false\}[\s\S]*\/>/u,
 	);
 	assert.doesNotMatch(AGENT_RESULT_CARD_SOURCE, /onInputAction/u);
 	assert.doesNotMatch(AGENT_RESULT_CARD_SOURCE, /onVoiceInput/u);

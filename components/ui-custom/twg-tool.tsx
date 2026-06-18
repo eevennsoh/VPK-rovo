@@ -9,11 +9,12 @@ import {
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Icon } from "@/components/ui/icon";
-import { AtlassianLogo } from "@/components/ui/logo";
+import { CyclingByline } from "@/components/ui-custom/chain-of-thought";
 import {
 	TwgToolSourceStack,
 	type TwgToolSource,
 } from "@/components/ui-custom/twg-appstack";
+import { TWGLoader } from "@/components/ui-custom/twg-loader";
 import PatternTile, { type PatternStrokeOptions } from "@/components/website/demos/visual/pattern-tile";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,9 @@ export type TwgToolProps = Omit<ComponentProps<typeof Collapsible>, "children"> 
 	description?: ReactNode;
 	sources?: ReadonlyArray<TwgToolSource>;
 	showChevron?: boolean;
+	showLoader?: boolean;
+	chevronOpen?: boolean;
+	onBannerClick?: () => void;
 	children?: ReactNode;
 };
 
@@ -85,15 +89,25 @@ export function TwgTool({
 	className,
 	children,
 	description,
+	chevronOpen,
+	onBannerClick,
 	showChevron = true,
+	showLoader = true,
 	sources = [],
 	status = "active",
 	title = "Searching Teamwork Graph",
 	...props
 }: TwgToolProps) {
 	const hasExpandableContent = children != null && showChevron;
+	const shouldRenderButtonBanner = !hasExpandableContent && onBannerClick != null;
+	const shouldRotateChevron = chevronOpen ?? false;
 	const bannerContent = (
 		<>
+			{showLoader ? (
+				<span className="relative z-10 flex size-8 shrink-0 items-center justify-center">
+					<TWGLoader label="Teamwork Graph" size="small" />
+				</span>
+			) : null}
 			<span className="relative z-10 grid min-w-0 flex-1 gap-0.5 text-sm text-text-subtle">
 				<span className="inline-flex min-w-0 items-start gap-1.5">
 					<span className="min-w-0 truncate">{title}</span>
@@ -103,15 +117,17 @@ export function TwgTool({
 							render={<ChevronRightIcon label="" size="small" spacing="none" />}
 							className={cn(
 								"mt-0.5 size-4 shrink-0 text-icon-subtle transition-transform duration-medium",
-								hasExpandableContent && "group-data-[open]/twg:rotate-90"
+								hasExpandableContent
+									? "group-data-[open]/twg:rotate-90"
+									: shouldRotateChevron
+										? "rotate-90"
+										: null
 							)}
 						/>
 					) : null}
 				</span>
 				{description ? (
-					<span className="block min-h-4 overflow-hidden text-xs leading-4 text-text-subtle">
-						<span className="block truncate">{description}</span>
-					</span>
+					<CyclingByline>{description}</CyclingByline>
 				) : null}
 			</span>
 			<TwgToolSourceStack
@@ -127,44 +143,35 @@ export function TwgTool({
 			data-status={status}
 			{...props}
 		>
-			<div className="flex w-full items-stretch gap-1">
-				<div className="flex w-8 shrink-0 flex-col items-center">
-					<div className="w-px flex-1 bg-border" />
-					<div
-						className={cn(
-							"flex size-8 shrink-0 items-center justify-center",
-							status === "active" && "animate-pulse"
-						)}
-					>
-						<AtlassianLogo
-							name="jira-service-management"
-							label="Jira Service Management"
-							size="small"
-							themeAware={false}
-						/>
-					</div>
-					<div className="w-px flex-1 bg-border group-last/twg:bg-transparent" />
+			{hasExpandableContent ? (
+				<CollapsibleTrigger
+					className="relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken px-2 text-left outline-none transition-colors hover:bg-surface-raised-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3"
+				>
+					<TwgToolBannerBackground />
+					{bannerContent}
+				</CollapsibleTrigger>
+			) : shouldRenderButtonBanner ? (
+				<button
+					aria-expanded={chevronOpen}
+					className="relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken px-2 text-left outline-none transition-colors hover:bg-surface-raised-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3"
+					onClick={onBannerClick}
+					type="button"
+				>
+					<TwgToolBannerBackground />
+					{bannerContent}
+				</button>
+			) : (
+				<div
+					className="relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken px-2"
+				>
+					<TwgToolBannerBackground />
+					{bannerContent}
 				</div>
-				{hasExpandableContent ? (
-					<CollapsibleTrigger
-						className="relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken px-2 text-left outline-none transition-colors hover:bg-surface-raised-hovered focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3"
-					>
-						<TwgToolBannerBackground />
-						{bannerContent}
-					</CollapsibleTrigger>
-				) : (
-					<div
-						className="relative flex h-12 min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden rounded-lg bg-surface-sunken px-2"
-					>
-						<TwgToolBannerBackground />
-						{bannerContent}
-					</div>
-				)}
-			</div>
+			)}
 			{hasExpandableContent ? (
 				<CollapsibleContent
 					className={cn(
-						"ml-11 mt-2 overflow-hidden text-xs leading-5 text-text-subtle",
+						"mt-2 overflow-hidden text-xs leading-5 text-text-subtle",
 						"h-(--collapsible-panel-height) outline-none transition-[height,opacity] duration-medium ease-out data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0"
 					)}
 				>

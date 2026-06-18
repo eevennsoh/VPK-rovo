@@ -1616,6 +1616,13 @@ export function RovoChatProvider({
 
 			const next = [...previous, ...filtered];
 			sessionAgentEntriesRef.current = next;
+			// Rehydration writes the persisted agents back to storage unchanged;
+			// run that persist silently so a plain reload (no user edits) never
+			// flashes the "Saving…/Saved just now" indicator. Only set here, in
+			// the branch that actually changes the entries and re-triggers the
+			// debounced save effect, so the flag can't linger and swallow the
+			// user's next real save.
+			suppressNextSessionAgentSaveStatusRef.current = true;
 			return next;
 		});
 	}, []);
@@ -3606,6 +3613,7 @@ export function useRovoSelectedAgent() {
 		publishSessionAgent,
 		removeSessionAgent,
 		resetAgentToRovo,
+		deleteAllThreads,
 		adoptThreadMessages,
 	} = useRovoChat();
 
@@ -3623,6 +3631,7 @@ export function useRovoSelectedAgent() {
 		publishSessionAgent,
 		removeSessionAgent,
 		resetAgentToRovo,
+		deleteAllThreads,
 		// The studio shell drives generation through its own useRovoApp chat
 		// store, which is separate from this RovoChatProvider context that the
 		// Ask Rovo sidebar reads. Expose adoptThreadMessages so the shell can

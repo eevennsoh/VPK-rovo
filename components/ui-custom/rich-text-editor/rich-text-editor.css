@@ -70,6 +70,16 @@
 	margin-top: 0;
 }
 
+/*
+ * The frontmatter node is the document's structural first child (its card is
+ * portaled above the toolbar in skill config), so the heading/element right
+ * after it is the real first textual element. Drop its top margin so the body
+ * starts flush — same intent as the `:first-child` rule above.
+ */
+.tiptap-editor > .node-frontmatter + * {
+	margin-top: 0;
+}
+
 .tiptap-editor p {
 	margin-top: 0;
 	margin-bottom: 16px;

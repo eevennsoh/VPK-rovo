@@ -44,6 +44,29 @@ if [[ -n "$fp" ]]; then
 	print -- "RSS ${mb}MB$flag"
 fi
 
+print -- "\n── tmux dev sessions (vpk-dev-*) ──"
+if command -v tmux >/dev/null 2>&1; then
+	rows=( ${(f)"$(tmux list-sessions -F '#{session_name}|#{session_path}|#{session_attached}' 2>/dev/null | grep '^vpk-dev-')"} )
+	if (( ${#rows} )); then
+		for row in $rows; do
+			sname="${row%%|*}"; rest="${row#*|}"
+			spath="${rest%%|*}"; sattached="${rest##*|}"
+			att=""; [[ "$sattached" == 1 ]] && att=" (attached)"
+			if [[ -n "$spath" && -d "$spath" ]]; then
+				print -- "${sname}${att}  $spath"
+			else
+				flag="  ⚠ orphaned — worktree gone; sweep will kill it"
+				[[ "$sattached" == 1 ]] && flag="  ⚠ orphaned but attached — sweep keeps it"
+				print -- "${sname}${att}  ${spath:-?}$flag"
+			fi
+		done
+	else
+		print -- "(none running)"
+	fi
+else
+	print -- "(tmux not installed)"
+fi
+
 print -- "\n── .next caches ──"
 any=0
 for nx in ${(u)NEXT_DIRS}; do

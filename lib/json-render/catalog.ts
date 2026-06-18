@@ -129,11 +129,11 @@ export const catalog = defineCatalog(schema, {
 		Badge: {
 			props: z.object({
 				text: z.string(),
-				variant: z.enum(["default", "neutral", "secondary", "destructive", "danger", "success", "warning", "info", "information", "discovery", "outline"]).nullable(),
+				variant: z.enum(["neutral", "danger", "success", "warning", "information", "discovery", "inverse", "informationBold", "successBold", "dangerBold", "warningBold", "discoveryBold"]).nullable(),
 			}),
 			slots: [],
-			description: "Status badge for labels and counts",
-			example: { text: "New", variant: "default" },
+			description: "Status badge for labels and counts. Use the current ADS Badge appearances; legacy aliases are normalized only at render boundaries.",
+			example: { text: "New", variant: "neutral" },
 		},
 		Alert: {
 			props: z.object({

@@ -21,6 +21,10 @@ const INCLUDED_TEST_PREFIXES = [
 // test in `app/data/directory/agent-generation-e2e.test.js` cover this feature.
 const INCLUDED_TEST_FILES = new Set([
 	"components/projects/studio/lib/studio-agent-creation-context.test.js",
+	// Widened agent-draft patch contract used by the on-screen assistants (voice
+	// cursor + Ask Rovo sidebar). Bundles the real catalog via the directory
+	// harness, so gate it explicitly like its sibling above.
+	"components/projects/studio/lib/studio-screen-assistant-patch.test.js",
 	"components/projects/sidebar-chat/lib/agent-activity-timeline.test.js",
 	// Shared docs preview shell frame and sizing behavior.
 	// Components are not included wholesale, so keep this focused coverage gated.

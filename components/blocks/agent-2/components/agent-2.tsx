@@ -41,13 +41,13 @@ import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
 import { AgentUsers } from "@/components/blocks/agent-users";
 import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
 import { DEMO_AGENT_TEMPLATES } from "@/components/blocks/agent-templates/data/demo-template-agents";
+import { AgentCompactOperationsBento } from "@/components/blocks/agent-bento";
 import {
 	DEFAULT_STARTER_ICON,
 	getStarterIcon,
 	type StarterIconKey,
 } from "@/components/blocks/conversation-starters";
 import {
-	renderAgentTriggerProviderTileIcon,
 	TriggerPicker,
 	TriggerProviderSearchList,
 	type AgentAutomationRule,
@@ -1362,10 +1362,13 @@ function AgentCompactTriggerRow({
 			)}
 			elemBefore={
 				icon ? (
+					// The icon is a self-colored collection tile, so dim it via opacity
+					// when disabled — mirroring the subagent rows (`AgentCompactReferenceRow`)
+					// rather than recoloring the glyph, which the tile's `!` color overrides.
 					<span
 						className={cn(
 							"inline-flex size-6 shrink-0 items-center justify-center",
-							enabled ? "text-icon-subtle" : "text-icon-disabled",
+							enabled ? undefined : "opacity-(--opacity-disabled)",
 						)}
 					>
 						{icon}
@@ -1590,6 +1593,7 @@ function AgentCompactTriggersNavButton({
 	onAutomationRulesChange,
 	renderTrigger,
 	screenAssistantTargetId,
+	tagColor,
 }: Readonly<{
 	automationRules?: readonly AgentAutomationRule[];
 	item: AgentCompactConfigNavItem;
@@ -1606,6 +1610,10 @@ function AgentCompactTriggersNavButton({
 	// same dropdown.
 	renderTrigger?: ReactElement;
 	screenAssistantTargetId?: string;
+	// Agent collection color (derived from the avatar family). Tints each flow
+	// row's leading automation glyph so the list mirrors the flow summary chip and
+	// the subagent rows instead of the first trigger's provider logo.
+	tagColor?: TagColor;
 }>) {
 	const isEmpty = triggers.length === 0;
 	// Local enable/disable state keyed by row, mirroring the subagent switcher.
@@ -1700,12 +1708,28 @@ function AgentCompactTriggersNavButton({
 						<DropdownMenuGroup className="p-0">
 							{triggers.map((trigger, index) => {
 								const rule = automationRules?.[index];
-								const firstTrigger = rule?.triggers[0];
-								const providerIcon = firstTrigger ? renderAgentTriggerProviderTileIcon(firstTrigger) : undefined;
+								// Every flow row leads with the same automation glyph in a
+								// bordered tile, tinted by the agent's collection color — NOT
+								// the first trigger's provider logo. A flow can own multiple
+								// triggers, so a single provider mark would misrepresent it.
+								// This mirrors the flow summary chip and the subagent rows
+								// (see `renderAgentReferenceRowVisual`).
+								const automationIcon = (
+									<IconTile
+										aria-hidden
+										className={cn(
+											"border border-border bg-surface",
+											tagColor ? tagColorToMenuIconClassName[tagColor] : "text-icon-subtlest",
+										)}
+										icon={<AutomationIcon label="" size="small" />}
+										label=""
+										size="small"
+									/>
+								);
 								return (
 									<AgentCompactTriggerRow
 										key={`trigger-${trigger}-${index}`}
-										icon={providerIcon ?? undefined}
+										icon={automationIcon}
 										label={trigger}
 										enabled={(rule?.enabled !== false) && !disabledTriggers.has(index)}
 										onToggle={(enabled) => setTriggerEnabled(index, enabled)}
@@ -2223,6 +2247,7 @@ function AgentCompactEmptyConfigNav({
 									onEditTriggers?.(next ?? undefined);
 								}}
 								screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:trigger` : undefined}
+								tagColor={subagentTagColor}
 								triggers={serializeAgentAutomationRuleLabels(automationRules)}
 							/>
 						);
@@ -2986,6 +3011,7 @@ function AgentTriggerSummaryRow({
 											label={addLabel ?? "Edit"}
 										/>
 									}
+									tagColor={tagColor}
 									triggers={items}
 								/>
 							) : (
@@ -3452,14 +3478,26 @@ function AgentAvatarOptionPreview({ src }: Readonly<{ src: string }>) {
 	);
 }
 
+/**
+ * Stable screen-assistant target id for one avatar swatch, so the cursor can
+ * point at or click a specific option. Mirrors the trigger id
+ * (`<prefix>:avatar`) with the group id and the option's file slug appended.
+ */
+function getAgentAvatarOptionTargetId(prefix: string, groupId: string, src: string): string {
+	const optionId = src.split("/").pop()?.replace(/\.svg$/, "") ?? src;
+	return `${prefix}:avatar:${groupId}:${optionId}`;
+}
+
 function AgentAvatarPickerMenu({
 	avatarSrc,
 	isAtlassianAvatar,
 	onAvatarChange,
+	screenAssistantTargetPrefix,
 }: Readonly<{
 	avatarSrc: string;
 	isAtlassianAvatar: boolean;
 	onAvatarChange: (avatarSrc: string) => void;
+	screenAssistantTargetPrefix?: string;
 }>) {
 	const [open, setOpen] = useState(false);
 	const selectedAvatarSrc = AGENT_AVATAR_OPTION_SRC_SET.has(avatarSrc) ? avatarSrc : "";
@@ -3468,6 +3506,8 @@ function AgentAvatarPickerMenu({
 		<DropdownMenu open={open} onOpenChange={setOpen}>
 			<DropdownMenuTrigger
 				aria-label="Change agent avatar"
+				data-agent-field="avatar"
+				data-screen-assistant-target={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:avatar` : undefined}
 				render={(
 					<Button
 						className="group/avatar-picker relative h-12 w-[42px] overflow-visible rounded-xl border-0 bg-transparent p-0 hover:bg-transparent active:bg-transparent aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:text-text-subtle focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -3507,6 +3547,7 @@ function AgentAvatarPickerMenu({
 										className="group/avatar-option h-12 min-h-0 w-11 justify-center rounded-lg bg-transparent p-1! pr-1! pl-1! data-[highlighted]:bg-bg-neutral-subtle-hovered data-[highlighted]:text-text active:bg-bg-neutral-subtle-pressed data-checked:bg-bg-selected data-checked:text-text-selected data-checked:data-[highlighted]:bg-bg-selected-hovered data-checked:data-[highlighted]:text-text-selected data-checked:active:bg-bg-selected-pressed [&_[data-slot=dropdown-menu-radio-item-indicator]]:hidden"
 										key={option.src}
 										title={option.label}
+										data-screen-assistant-target={screenAssistantTargetPrefix ? getAgentAvatarOptionTargetId(screenAssistantTargetPrefix, group.id, option.src) : undefined}
 										value={option.src}
 									>
 										<AgentAvatarOptionPreview
@@ -3537,6 +3578,7 @@ function AgentProfileCover({
 	avatarSrc = AGENT_AVATAR_SRC,
 	onAvatarChange,
 	bannerSrc,
+	screenAssistantTargetPrefix,
 }: Readonly<{
 	avatarSrc?: string;
 	onAvatarChange?: (avatarSrc: string) => void;
@@ -3545,6 +3587,7 @@ function AgentProfileCover({
 	// getDeterministicAgentBannerSrc). The solid color below shows only until the
 	// artwork paints.
 	bannerSrc: string;
+	screenAssistantTargetPrefix?: string;
 }>) {
 	const coverBackgroundColor = getAgentProfileCoverBackgroundColor(avatarSrc);
 	const isAtlassianAvatar = isAtlassianLogoSource(avatarSrc);
@@ -3583,6 +3626,7 @@ function AgentProfileCover({
 						avatarSrc={avatarSrc}
 						isAtlassianAvatar={isAtlassianAvatar}
 						onAvatarChange={onAvatarChange}
+						screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 					/>
 				) : (
 					<>
@@ -4204,7 +4248,7 @@ function AgentInstructionsComposer({
 			) : null}
 			<RichTextEditor
 				aria-label="Agent instructions"
-				className="space-y-2"
+				className="space-y-0"
 				contentClassName={contentClassName}
 				editorClassName={cn("agent-instructions-tiptap-editor text-text", editorClassName)}
 				enableDirectoryAutocomplete
@@ -4238,6 +4282,7 @@ function AgentInstructionsComposer({
 				suggestionVariant={AGENT_INSTRUCTIONS_SUGGESTION_VARIANT}
 				toolbarBelowSlot={toolbarBelowSlot}
 				toolbarReveal="hover"
+				padStuckToolbar
 				value={instructions}
 				mentionSources={mentionSources}
 				mentionRemovalRequest={mentionRemovalRequest}
@@ -4310,6 +4355,7 @@ function AgentConfigProfile({
 				avatarSrc={avatarSrc}
 				onAvatarChange={onAvatarChange}
 				bannerSrc={getDeterministicAgentBannerSrc(avatarSrc, config.agentId ?? avatarSrc)}
+				screenAssistantTargetPrefix={screenAssistantTargetPrefix}
 			/>
 			<div className="flex flex-col gap-1" data-agent-field="name">
 				{/* The cover/avatar and the description below stay put; only the name
@@ -4659,6 +4705,13 @@ export interface AgentConfigFieldsProps extends ComponentProps<"div"> {
 	onAppendListItem?: (field: AgentConfigListFieldName) => void;
 	onConnectTrigger?: (trigger: AgentTriggerValue) => void;
 	onManageTriggers?: () => void;
+	/**
+	 * Registers an imperative opener for this config's automation dialog so a
+	 * sibling surface (e.g. the Ask Rovo sidebar's agent-edit-summary card) can
+	 * jump straight to the trigger/flow dialog. Called with the opener on mount
+	 * and `null` on unmount. The dialog state stays encapsulated here.
+	 */
+	registerAutomationDialogOpener?: (opener: (() => void) | null) => void;
 	onOpenDirectory?: (directory: AgentDirectoryKind, selectedItem?: string) => void;
 	// When provided, the empty-instructions "start with a template" link defers to
 	// the host (e.g. the Studio shell opens its Agent Directory on the first
@@ -4701,6 +4754,7 @@ export const AgentConfigFields = memo(
 		onConnectTrigger,
 		onInstructionsViewModeChange,
 		onManageTriggers,
+		registerAutomationDialogOpener,
 		onManageSubagents,
 		onOpenDirectory,
 		onProfileAvatarChange,
@@ -4726,6 +4780,9 @@ export const AgentConfigFields = memo(
 	}: Readonly<AgentConfigFieldsProps>) => {
 		const isFilledConfig = hasFilledAgentConfig(config);
 		const [mentionRemovalRequest, setMentionRemovalRequest] = useState<RichTextMentionRemovalRequest | null>(null);
+		// Onboarding bento dismissal ("Not now"). Local to the editor session so the
+		// tiles can be hidden without persisting a flag onto the agent config.
+		const [isOnboardingBentoDismissed, setIsOnboardingBentoDismissed] = useState(false);
 		const handleTextChange = useCallback((field: AgentConfigTextFieldName, value: string) => {
 			onTextChange?.(field, value);
 		}, [onTextChange]);
@@ -4831,6 +4888,27 @@ export const AgentConfigFields = memo(
 
 			setManageTriggersOpen(true);
 		}, [onManageTriggers]);
+		// Opens the flow config dialog directly for the most recently configured
+		// automation (the one the agent-edit-summary card refers to), instead of
+		// the manage-flows list. Falls back to a fresh flow when none exist.
+		const handleOpenAutomationFlowConfig = useCallback(() => {
+			const rules = currentAutomationRules;
+			if (rules.length > 0) {
+				handleEditTriggers(rules[rules.length - 1]);
+				return;
+			}
+			handleEditTriggers();
+		}, [currentAutomationRules, handleEditTriggers]);
+		// Hand the flow-config opener to a registered host so a sibling surface
+		// (the Ask Rovo agent-edit-summary card) can open it. Re-register whenever
+		// the opener identity changes and clear it on unmount.
+		useEffect(() => {
+			if (!registerAutomationDialogOpener) {
+				return;
+			}
+			registerAutomationDialogOpener(handleOpenAutomationFlowConfig);
+			return () => registerAutomationDialogOpener(null);
+		}, [registerAutomationDialogOpener, handleOpenAutomationFlowConfig]);
 		const handleAddAutomationFromManage = useCallback(
 			(providerId: Parameters<typeof createAgentTriggerValue>[0], eventId: string) => {
 				const next = createAutomationRuleFromEvent(providerId, eventId, currentAutomationRules);
@@ -4958,6 +5036,30 @@ export const AgentConfigFields = memo(
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 							showSectionLabel={false}
 						/>
+						{/*
+							Onboarding bento: on a brand-new, capability-empty base agent
+							(not a subagent), surface the "Start with these agent templates"
+							tiles pinned to the bottom of the config. The instructions
+							composer above is `flex-1` and absorbs free space, so this
+							`shrink-0` block lands flush at the scroll area's bottom. It
+							animates away once the agent gains its first capability
+							(`isFilledConfig`) or the user picks "Not now".
+						*/}
+						<AnimatePresence initial={false}>
+							{!isFilledConfig && !isSubagent && !isOnboardingBentoDismissed ? (
+								<motion.div
+									key="agent-onboarding-bento"
+									className="shrink-0"
+									exit={{ opacity: 0 }}
+									transition={{ duration: 0.2, ease: [0, 0.4, 0, 1] }}
+								>
+									<AgentCompactOperationsBento
+										onDismiss={() => setIsOnboardingBentoDismissed(true)}
+										onStartWithTemplate={onStartWithTemplate}
+									/>
+								</motion.div>
+							) : null}
+						</AnimatePresence>
 					</div>
 					{/* Optional caller-supplied slot rendered at the panel bottom. */}
 					{compactFooterBefore}
