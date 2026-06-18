@@ -839,7 +839,7 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ Memory \} from "@\/components\/blocks\/memory";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEFAULT_KNOWLEDGE_APPS \} from "@\/app\/data\/directory\/knowledge";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ SkillsDirectoryDialog, type SkillsDirectorySkill \} from "@\/components\/blocks\/skills-directory";/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEFAULT_SKILLS \} from "@\/app\/data\/directory\/skills";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEFAULT_SKILLS, slugifySkillName \} from "@\/app\/data\/directory\/skills";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ ToolsDirectoryDialog \} from "@\/components\/blocks\/tools-directory";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEMO_SESSION_TOOLS, DEMO_TOOLS \} from "@\/app\/data\/directory\/tools";/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ AgentInsights \} from "@\/components\/blocks\/agent-insights";/u);
@@ -854,7 +854,12 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleOpenDirectory = useCallback\(\(directory: AgentDirectoryKind, selectedItem\?: string\) => \{[\s\S]*setDirectorySelectedToolId\(matchedTool\?\.id \?\? null\);[\s\S]*setActiveDirectory\(directory\);[\s\S]*\}, \[\]\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddKnowledge = useCallback\([\s\S]*payload: KnowledgeDirectoryAddPayload[\s\S]*DEFAULT_KNOWLEDGE_APPS\.find[\s\S]*appendListValues\("knowledge"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleDirectoryToolIdsChange = useCallback\([\s\S]*const toolsById = new Map\(\[\.\.\.DEMO_TOOLS, \.\.\.DEMO_SESSION_TOOLS\][\s\S]*appendListValues\(\s*"tools"/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddSkills = useCallback\([\s\S]*skills: readonly SkillsDirectorySkill\[\][\s\S]*appendListValues\("skills", skills\.map\(\(skill\) => skill\.name\)\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /import \{ DEFAULT_SKILLS, slugifySkillName \} from "@\/app\/data\/directory\/skills";/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /function getSkillConfigLabel\(value: string\): string \{[\s\S]*return slugifySkillName\(value\);/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /const handleAddSkills = useCallback\([\s\S]*skills: readonly SkillsDirectorySkill\[\][\s\S]*appendListValues\("skills", skills\.map\(\(skill\) => getSkillConfigLabel\(skill\.name\)\)\);/u);
+	assert.match(AGENT_BLOCK_SOURCE, /import \{[\s\S]*slugifySkillName,[\s\S]*\} from "@\/app\/data\/directory\/skills";/u);
+	assert.match(AGENT_BLOCK_SOURCE, /function getSkillConfigItems\(items: readonly string\[\] \| undefined\): readonly string\[\] \{[\s\S]*\.map\(getSkillConfigLabel\)/u);
+	assert.match(AGENT_BLOCK_SOURCE, /const skillItems = getSkillConfigItems\(config\.skills\);/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<KnowledgeDirectoryDialog[\s\S]*open=\{activeDirectory === "knowledge"\}[\s\S]*onAddKnowledge=\{handleAddKnowledge\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<ToolsDirectoryDialog[\s\S]*addedToolIds=\{directoryToolIds\}[\s\S]*open=\{activeDirectory === "tools"\}[\s\S]*onAddedToolIdsChange=\{handleDirectoryToolIdsChange\}[\s\S]*sessionTools=\{DEMO_SESSION_TOOLS\}[\s\S]*tools=\{DEMO_TOOLS\}/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<SkillsDirectoryDialog[\s\S]*onAddSkills=\{handleAddSkills\}[\s\S]*open=\{activeDirectory === "skills"\}[\s\S]*selectedSkillIds=\{directorySkillIds\}[\s\S]*skills=\{DEFAULT_SKILLS\}/u);

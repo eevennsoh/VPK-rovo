@@ -35,6 +35,7 @@ export {
 	getSkillPublisherLogoName,
 	getSkillPublisherName,
 	isSkillPublisherPerson,
+	slugifySkillName,
 	ATLASSIAN_SKILL_COLLECTION_IDS,
 	SKILL_COLLECTIONS,
 	SKILL_SOURCE_ICON_COLOR,

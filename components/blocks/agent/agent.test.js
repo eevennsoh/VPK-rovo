@@ -986,11 +986,12 @@ test("Shared Tiptap extensions wire Markdown, mentions, and slash suggestions", 
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ HoverCard, HoverCardTrigger \} from "@\/components\/ui\/hover-card";/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ Tag, type TagOverlayAction \} from "@\/components\/ui\/tag";/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ SkillTag, type SkillTagColor \} from "@\/components\/ui-custom\/skill-tag";/u);
-	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ DEFAULT_SKILLS, getSkillCollectionId, getSkillIcon \} from "@\/app\/data\/directory\/skills";/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /import \{ DEFAULT_SKILLS, getSkillCollectionId, getSkillIcon, slugifySkillName \} from "@\/app\/data\/directory\/skills";/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /getRichTextReferencePreview,[\s\S]*RichTextReferencePreviewContent/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const REFERENCE_CATEGORIES:[\s\S]*"app"[\s\S]*"skill"[\s\S]*"tool"[\s\S]*"knowledge"/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const preview = isReferenceCategory\(category\) \? getRichTextReferencePreview\(category, label\) : undefined;/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /function getSkillMentionTagProps\(label: string\): \{ color: SkillTagColor; icon: ReactNode \}/u);
+	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const normalized = slugifySkillName\(label\);[\s\S]*entry\.id === normalized \|\| slugifySkillName\(entry\.name\) === normalized/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const skillTagProps = category === "skill" \? getSkillMentionTagProps\(label\) : undefined;/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /const tag = skillTagProps \? \([\s\S]*<SkillTag[\s\S]*className="rich-text-mention-chip mx-0\.5"[\s\S]*color=\{skillTagProps\.color\}[\s\S]*icon=\{skillTagProps\.icon\}[\s\S]*overlayAction=\{overlayAction\}[\s\S]*\{label\}[\s\S]*<\/SkillTag>[\s\S]*\) : \([\s\S]*<Tag[\s\S]*className="rich-text-mention-chip"[\s\S]*elemBefore=\{visual \? \(/u);
 	assert.match(RICH_TEXT_MENTION_NODE_VIEW_SOURCE, /<NodeViewWrapper[\s\S]*as="span"[\s\S]*className="rich-text-mention-node inline-flex"/u);
@@ -1101,8 +1102,9 @@ test("Slash command menu contains every toolbar command", () => {
 	// The picker drops already-configured rows by normalized label so an added
 	// app/skill cannot reappear in the inline "Add" search.
 	assert.match(EDITOR_PALETTE_SOURCE, /excludeLabels\?: readonly string\[\];/u);
-	assert.match(EDITOR_PALETTE_SOURCE, /function excludeItemsByLabel\([\s\S]*item\.label\.trim\(\)\.toLowerCase\(\)/u);
-	assert.match(EDITOR_PALETTE_SOURCE, /const sourceItems = excludeItemsByLabel\([\s\S]*excludeLabels,\s*\);/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /function getSearchPickerExcludeKey\(category: EditorPaletteSearchCategory, label: string\): string \{[\s\S]*category === "skill" \? slugifySkillName\(label\) : label\.trim\(\)\.toLowerCase\(\);/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /function excludeItemsByLabel\([\s\S]*category: EditorPaletteSearchCategory,[\s\S]*getSearchPickerExcludeKey\(category, item\.label\)/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /const sourceItems = excludeItemsByLabel\([\s\S]*category,[\s\S]*excludeLabels,\s*\);/u);
 	// The empty state now comes from the shared RichTextSuggestionEmptyState
 	// (in suggestion-menu.tsx); the page no longer owns a local copy or the
 	// @/components/ui/empty imports it required.
@@ -1118,7 +1120,7 @@ test("Slash command menu contains every toolbar command", () => {
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /SEARCH_EMPTY_ITEM_ID/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /function normalizeSearchPickerItem\([\s\S]*item: RichTextSuggestionMenuItem,[\s\S]*\): RichTextSuggestionMenuItem \{[\s\S]*return item\.persistentDescription[\s\S]*\? \{ \.\.\.item, persistentDescription: false \}[\s\S]*: item;/u);
 	assert.doesNotMatch(EDITOR_PALETTE_SOURCE, /persistentDescription: true/u);
-	assert.match(EDITOR_PALETTE_SOURCE, /const sourceItems = excludeItemsByLabel\(\s*\(itemsProp \?\? getMentionChildItems\(mentionSources, category\)\)\.map\(normalizeSearchPickerItem\),[\s\S]*excludeLabels,\s*\);/u);
+	assert.match(EDITOR_PALETTE_SOURCE, /const sourceItems = excludeItemsByLabel\(\s*\(itemsProp \?\? getMentionChildItems\(mentionSources, category\)\)\.map\(normalizeSearchPickerItem\),[\s\S]*category,[\s\S]*excludeLabels,\s*\);/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /const leadingRows = leadingItems\.map\(normalizeSearchPickerItem\);/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /const rows = items\.length > 0[\s\S]*\? \[\.\.\.leadingRows, \.\.\.items, browseAllItem\][\s\S]*: leadingRows;/u);
 	assert.match(EDITOR_PALETTE_SOURCE, /const firstItem = items\[0\] \?\? leadingRows\[0\];/u);

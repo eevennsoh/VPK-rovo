@@ -7,7 +7,7 @@ import PageIcon from "@atlaskit/icon/core/page";
 import SwapIcon from "@atlaskit/icon-lab/core/swap";
 import type { ReactNode } from "react";
 
-import { DEFAULT_SKILLS, getSkillCollectionId, getSkillIcon } from "@/app/data/directory/skills";
+import { DEFAULT_SKILLS, getSkillCollectionId, getSkillIcon, slugifySkillName } from "@/app/data/directory/skills";
 import { getDirectoryMentionItemOrFallback } from "@/components/blocks/editor-palette/data/mention-sources";
 import { HoverCard, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Tag, type TagOverlayAction } from "@/components/ui/tag";
@@ -63,7 +63,8 @@ function resolveMentionVisual(
 }
 
 function getSkillMentionTagProps(label: string): { color: SkillTagColor; icon: ReactNode } {
-	const skill = DEFAULT_SKILLS.find((entry) => entry.name === label);
+	const normalized = slugifySkillName(label);
+	const skill = DEFAULT_SKILLS.find((entry) => entry.id === normalized || slugifySkillName(entry.name) === normalized);
 	return {
 		color: skill ? getSkillCollectionId(skill) : "default",
 		icon: getSkillIcon(skill?.icon ?? "page"),

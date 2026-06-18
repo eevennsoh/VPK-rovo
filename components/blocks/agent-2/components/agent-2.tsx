@@ -143,6 +143,7 @@ import {
 	DEFAULT_SKILLS,
 	getSkillCollectionId,
 	getSkillIcon,
+	slugifySkillName,
 } from "@/app/data/directory/skills";
 import {
 	AGENT_AVATAR_OPTION_GROUPS,
@@ -270,7 +271,7 @@ function getAgentCompactEmptyConfigNavItems(config?: AgentConfigFormValue) {
 					count = getAgentAutomationItems(config).length;
 					break;
 				case "skills":
-					count = getNonEmptyConfigItems(config.skills).length;
+					count = getSkillConfigItems(config.skills).length;
 					break;
 				case "apps":
 					count = getNonEmptyConfigItems(config.apps).length;
@@ -355,11 +356,19 @@ function getNormalizedAgentReferenceValue(value: string): string {
 	return value.trim().toLowerCase();
 }
 
+function getSkillConfigLabel(value: string): string {
+	return slugifySkillName(value);
+}
+
+function getAgentConfigListLookupValue(field: AgentConfigListFieldName, value: string): string {
+	return field === "skills" ? getSkillConfigLabel(value) : getNormalizedAgentReferenceValue(value);
+}
+
 function getAgentReferenceKey(
 	field: AgentConfigReferenceListFieldName,
 	value: string,
 ): string {
-	return `${field}:${getNormalizedAgentReferenceValue(value)}`;
+	return `${field}:${getAgentConfigListLookupValue(field, value)}`;
 }
 
 function hasAgentReferenceValue(
@@ -367,9 +376,9 @@ function hasAgentReferenceValue(
 	field: AgentConfigReferenceListFieldName,
 	value: string,
 ): boolean {
-	const normalizedValue = getNormalizedAgentReferenceValue(value);
+	const normalizedValue = getAgentConfigListLookupValue(field, value);
 	return getNonEmptyConfigItems(config[field]).some(
-		(item) => getNormalizedAgentReferenceValue(item) === normalizedValue,
+		(item) => getAgentConfigListLookupValue(field, item) === normalizedValue,
 	);
 }
 
@@ -1214,11 +1223,16 @@ function useCompactNavMenuKeepOpen(controlled: boolean): {
 	};
 }
 
-// Memoize a trimmed Set of disabled labels for O(1) per-row lookups. The
-// collapsed-nav dropdowns receive the field's disabled labels (derived from the
-// persisted config) and match by label so the state survives reorder/removal.
-function useDisabledLabelSet(disabledItems: readonly string[] | undefined): ReadonlySet<string> {
-	return useMemo(() => new Set((disabledItems ?? []).map((entry) => entry.trim())), [disabledItems]);
+// Memoize disabled label keys for O(1) per-row lookups. The collapsed-nav
+// dropdowns receive the field's disabled labels (derived from the persisted
+// config) and match by field-specific key so the state survives reorder/removal.
+const trimDisabledLabel = (value: string) => value.trim();
+
+function useDisabledLabelSet(
+	disabledItems: readonly string[] | undefined,
+	normalize: (value: string) => string = trimDisabledLabel,
+): ReadonlySet<string> {
+	return useMemo(() => new Set((disabledItems ?? []).map(normalize)), [disabledItems, normalize]);
 }
 
 function AgentCompactSubagentsNavButton({
@@ -1783,7 +1797,10 @@ function AgentCompactDirectoryNavButton({
 	screenAssistantTargetId?: string;
 }>) {
 	const isEmpty = items.length === 0;
-	const disabledSet = useDisabledLabelSet(disabledItems);
+	const disabledSet = useDisabledLabelSet(
+		disabledItems,
+		directory === "skills" ? getSkillConfigLabel : undefined,
+	);
 	const addLabel = `Add ${item.label.toLowerCase()}`;
 	// Multi-select (skills): keep the menu open after each pick so several skills
 	// can be added in a row. Both the picker submenu and (for the controllable row
@@ -1878,7 +1895,7 @@ function AgentCompactDirectoryNavButton({
 								<AgentCompactReferenceRow
 									key={`${directory}-${value}-${index}`}
 									category={AGENT_REFERENCE_CATEGORY_BY_CONFIG_FIELD[directory]}
-									enabled={!disabledSet.has(value.trim())}
+									enabled={!disabledSet.has(directory === "skills" ? getSkillConfigLabel(value) : value.trim())}
 									label={value}
 									onClick={onSelectItem ? () => onSelectItem(value) : undefined}
 									onRemove={onRemoveItem ? () => onRemoveItem(index) : undefined}
@@ -2280,7 +2297,7 @@ function AgentCompactEmptyConfigNav({
 								browseLabel={`Browse ${item.label.toLowerCase()}`}
 								directory={directory}
 								item={item}
-								items={getNonEmptyConfigItems(config?.skills)}
+								items={getSkillConfigItems(config?.skills)}
 								key={item.agentFieldName}
 								onAddSearchItem={(searchItem) => {
 									if (searchItem.disabled) {
@@ -2342,8 +2359,15 @@ function getNonEmptyConfigItems(items: readonly string[] | undefined): readonly 
 		.filter(Boolean);
 }
 
-// Disabled-item lookups are label-keyed (trimmed) so they survive reordering and
-// removal of the underlying list. A missing field or label means "enabled".
+function getSkillConfigItems(items: readonly string[] | undefined): readonly string[] {
+	return getNonEmptyConfigItems(items)
+		.map(getSkillConfigLabel)
+		.filter(Boolean);
+}
+
+// Disabled-item lookups are label-keyed so they survive reordering and removal
+// of the underlying list. Skills use their kebab-case config key; other rows use
+// trimmed labels. A missing field or label means "enabled".
 function getDisabledItemLabels(
 	config: AgentConfigFormValue | undefined,
 	field: AgentConfigListFieldName,
@@ -2356,8 +2380,8 @@ function isAgentListItemDisabled(
 	field: AgentConfigListFieldName,
 	label: string,
 ): boolean {
-	const target = label.trim();
-	return getDisabledItemLabels(config, field).some((entry) => entry.trim() === target);
+	const target = getAgentConfigListLookupValue(field, label);
+	return getDisabledItemLabels(config, field).some((entry) => getAgentConfigListLookupValue(field, entry) === target);
 }
 
 // Pure reducer: returns a new config with `label` added to / removed from the
@@ -2371,12 +2395,12 @@ export function toggleAgentConfigDisabledItem(
 	label: string,
 	enabled: boolean,
 ): AgentConfigFormValue {
-	const target = label.trim();
+	const target = getAgentConfigListLookupValue(field, label);
 	if (!target) {
 		return config;
 	}
 	const current = getDisabledItemLabels(config, field);
-	const isCurrentlyDisabled = current.some((entry) => entry.trim() === target);
+	const isCurrentlyDisabled = current.some((entry) => getAgentConfigListLookupValue(field, entry) === target);
 	// No-op fast paths keep referential identity stable (avoids needless writes).
 	if (enabled && !isCurrentlyDisabled) {
 		return config;
@@ -2385,7 +2409,7 @@ export function toggleAgentConfigDisabledItem(
 		return config;
 	}
 	const nextField = enabled
-		? current.filter((entry) => entry.trim() !== target)
+		? current.filter((entry) => getAgentConfigListLookupValue(field, entry) !== target)
 		: [...current, target];
 	const nextDisabledItems: Partial<Record<AgentConfigListFieldName, readonly string[]>> = {
 		...config.disabledItems,
@@ -2540,8 +2564,13 @@ function getAgentCollectionIconClassName(tagColor: TagColor | undefined): string
 // (collection family) and leading icon by looking the label up in the skills
 // directory. Unknown labels fall back to the neutral "default" collection and
 // the page glyph so freshly added / off-directory skills still render a tag.
+function getSkillForConfigLabel(label: string) {
+	const normalized = getSkillConfigLabel(label);
+	return DEFAULT_SKILLS.find((entry) => entry.id === normalized || getSkillConfigLabel(entry.name) === normalized);
+}
+
 function getSkillTagPropsForLabel(label: string): { color: SkillTagColor; icon: ReactNode } {
-	const skill = DEFAULT_SKILLS.find((entry) => entry.name === label);
+	const skill = getSkillForConfigLabel(label);
 	return {
 		color: skill ? getSkillCollectionId(skill) : "default",
 		icon: getSkillIcon(skill?.icon ?? "page"),
@@ -3096,7 +3125,7 @@ function AgentFilledConfigSummary({
 }: Readonly<AgentFilledConfigSummaryProps>) {
 	const automationRules = getAgentAutomationRules(config);
 	const triggerItems = serializeAgentAutomationRuleLabels(automationRules);
-	const skillItems = getNonEmptyConfigItems(config.skills);
+	const skillItems = getSkillConfigItems(config.skills);
 	const appItems = getNonEmptyConfigItems(config.apps);
 	const subagentItems = getNonEmptyConfigItems(config.subagents);
 	// Subagent chips inherit the base agent's custom brand color (from its avatar
@@ -3232,7 +3261,8 @@ function AgentFilledConfigSummary({
 					// reference chip used by every other row.
 					renderItem={({ item, disabled, onClick, onRemove }) => {
 						const { color, icon } = getSkillTagPropsForLabel(item);
-						const preview = getRichTextReferencePreview("skill", item);
+						const skill = getSkillForConfigLabel(item);
+						const preview = getRichTextReferencePreview("skill", skill?.name ?? item);
 						const skillTag = (
 							<SkillTag
 								aria-disabled={disabled || undefined}
@@ -3414,7 +3444,7 @@ function AgentFilledConfigSummary({
 function hasFilledAgentConfig(config: AgentConfigFormValue): boolean {
 	return (
 		getAgentAutomationItems(config).length > 0 ||
-		getNonEmptyConfigItems(config.skills).length > 0 ||
+		getSkillConfigItems(config.skills).length > 0 ||
 		getNonEmptyConfigItems(config.tools).length > 0 ||
 		getNonEmptyConfigItems(config.subagents).length > 0 ||
 		getNonEmptyConfigItems(config.knowledge).length > 0 ||
@@ -4518,7 +4548,7 @@ function AgentCompactConfigPanel({
 	if (getNonEmptyConfigItems(config.apps).length > 0) {
 		promotedFields.add("apps");
 	}
-	if (getNonEmptyConfigItems(config.skills).length > 0) {
+	if (getSkillConfigItems(config.skills).length > 0) {
 		promotedFields.add("skills");
 	}
 	if (getNonEmptyConfigItems(config.subagents).length > 0 && !hiddenConfigFields?.has("subagents")) {
@@ -4790,7 +4820,7 @@ export const AgentConfigFields = memo(
 			(onProfileTextChange ?? onTextChange)?.(field, value);
 		}, [onProfileTextChange, onTextChange]);
 		const handleListItemChange = useCallback((field: AgentConfigListFieldName, index: number, value: string) => {
-			onListItemChange?.(field, index, value);
+			onListItemChange?.(field, index, field === "skills" ? getSkillConfigLabel(value) : value);
 		}, [onListItemChange]);
 		const handleRemoveListItem = useCallback((field: AgentConfigListFieldName, index: number) => {
 			const removedValue = config[field]?.[index]?.trim();
@@ -4805,12 +4835,12 @@ export const AgentConfigFields = memo(
 			}
 		}, [config, onRemoveListItem]);
 		const handleAddListValues = useCallback((field: AgentConfigReferenceListFieldName, values: readonly string[]) => {
-			onAddListValues?.(field, values);
+			onAddListValues?.(field, field === "skills" ? values.map(getSkillConfigLabel).filter(Boolean) : values);
 		}, [onAddListValues]);
 		const handleRemoveReferenceValue = useCallback((field: AgentConfigReferenceListFieldName, value: string) => {
-			const normalizedValue = getNormalizedAgentReferenceValue(value);
+			const normalizedValue = getAgentConfigListLookupValue(field, value);
 			const index = (config[field] ?? []).findIndex(
-				(item) => getNormalizedAgentReferenceValue(item) === normalizedValue,
+				(item) => getAgentConfigListLookupValue(field, item) === normalizedValue,
 			);
 
 			if (index < 0) {
