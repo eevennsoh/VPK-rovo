@@ -41,6 +41,7 @@ import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
 import { AgentUsers } from "@/components/blocks/agent-users";
 import { AgentTemplatesDialog } from "@/components/blocks/agent-templates";
 import { DEMO_AGENT_TEMPLATES } from "@/components/blocks/agent-templates/data/demo-template-agents";
+import { AgentCompactOperationsBento } from "@/components/blocks/agent-bento";
 import {
 	DEFAULT_STARTER_ICON,
 	getStarterIcon,
@@ -4771,6 +4772,9 @@ export const AgentConfigFields = memo(
 	}: Readonly<AgentConfigFieldsProps>) => {
 		const isFilledConfig = hasFilledAgentConfig(config);
 		const [mentionRemovalRequest, setMentionRemovalRequest] = useState<RichTextMentionRemovalRequest | null>(null);
+		// Onboarding bento dismissal ("Not now"). Local to the editor session so the
+		// tiles can be hidden without persisting a flag onto the agent config.
+		const [isOnboardingBentoDismissed, setIsOnboardingBentoDismissed] = useState(false);
 		const handleTextChange = useCallback((field: AgentConfigTextFieldName, value: string) => {
 			onTextChange?.(field, value);
 		}, [onTextChange]);
@@ -5003,6 +5007,30 @@ export const AgentConfigFields = memo(
 							screenAssistantTargetId={screenAssistantTargetPrefix ? `${screenAssistantTargetPrefix}:instructions` : undefined}
 							showSectionLabel={false}
 						/>
+						{/*
+							Onboarding bento: on a brand-new, capability-empty base agent
+							(not a subagent), surface the "Start with these agent templates"
+							tiles pinned to the bottom of the config. The instructions
+							composer above is `flex-1` and absorbs free space, so this
+							`shrink-0` block lands flush at the scroll area's bottom. It
+							animates away once the agent gains its first capability
+							(`isFilledConfig`) or the user picks "Not now".
+						*/}
+						<AnimatePresence initial={false}>
+							{!isFilledConfig && !isSubagent && !isOnboardingBentoDismissed ? (
+								<motion.div
+									key="agent-onboarding-bento"
+									className="shrink-0"
+									exit={{ opacity: 0 }}
+									transition={{ duration: 0.2, ease: [0, 0.4, 0, 1] }}
+								>
+									<AgentCompactOperationsBento
+										onDismiss={() => setIsOnboardingBentoDismissed(true)}
+										onStartWithTemplate={onStartWithTemplate}
+									/>
+								</motion.div>
+							) : null}
+						</AnimatePresence>
 					</div>
 					{/* Optional caller-supplied slot rendered at the panel bottom. */}
 					{compactFooterBefore}

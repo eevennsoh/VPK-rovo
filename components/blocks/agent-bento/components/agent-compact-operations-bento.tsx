@@ -176,6 +176,12 @@ function TemplatesHint({
 
 export interface AgentCompactOperationsBentoProps {
 	onDismiss?: () => void;
+	// When provided (e.g. the Studio shell), browsing or selecting a template
+	// defers to the host — which opens the Agents Directory and actually applies
+	// the chosen prompt to the agent — instead of the bento's built-in demo
+	// `AgentTemplatesDialog` (whose select handler only closes the dialog). Mirrors
+	// the "start with a template" link wiring in `AgentInstructionsComposer`.
+	onStartWithTemplate?: () => void;
 }
 
 /**
@@ -184,9 +190,19 @@ export interface AgentCompactOperationsBentoProps {
  * tiles in a `grid-cols-5` desktop grid that collapses to a horizontal carousel
  * below `lg`. Tiles open the full agent-templates dialog.
  */
-export function AgentCompactOperationsBento({ onDismiss }: Readonly<AgentCompactOperationsBentoProps>) {
+export function AgentCompactOperationsBento({ onDismiss, onStartWithTemplate }: Readonly<AgentCompactOperationsBentoProps>) {
 	const shouldReduceMotion = useReducedMotion();
 	const [browseOpen, setBrowseOpen] = useState(false);
+	// Tiles and "Browse all" defer to the host template flow when one is provided
+	// (Studio applies the selected prompt); otherwise they open the bento's own
+	// templates dialog (standalone doc-demo behavior).
+	const handleBrowseTemplates = useCallback(() => {
+		if (onStartWithTemplate) {
+			onStartWithTemplate();
+			return;
+		}
+		setBrowseOpen(true);
+	}, [onStartWithTemplate]);
 	const tileRefs = useRef<Array<HTMLButtonElement | null>>([]);
 	const handleBentoPointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
 		for (const tile of tileRefs.current) {
@@ -231,7 +247,7 @@ export function AgentCompactOperationsBento({ onDismiss }: Readonly<AgentCompact
 			exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
 			transition={{ duration: 0.24, ease: [0, 0.4, 0, 1] }}
 		>
-			<TemplatesHint onBrowseAll={() => setBrowseOpen(true)} onDismiss={onDismiss} />
+			<TemplatesHint onBrowseAll={handleBrowseTemplates} onDismiss={onDismiss} />
 			{/*
 				`-mt-2 pt-2` gives the masked content top headroom that nets to zero
 				visual shift: the bottom-fade mask clips its children to the box, so
@@ -262,7 +278,7 @@ export function AgentCompactOperationsBento({ onDismiss }: Readonly<AgentCompact
 								style={getCardStyle(accentColor)}
 								transition={{ duration: 0.2, ease: [0, 0.4, 0, 1] }}
 								whileTap={shouldReduceMotion ? undefined : { scale: 0.98, transition: { duration: 0.05 } }}
-								onClick={() => setBrowseOpen(true)}
+								onClick={handleBrowseTemplates}
 							>
 								<CardGlowLayers iconSrc={template.iconSrc} />
 								<span className="relative z-[3] inline-flex size-8 shrink-0 items-center justify-center transition-opacity duration-fast ease-out group-hover/agent-compact-bento-card:opacity-90">
