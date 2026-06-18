@@ -25,6 +25,7 @@ import {
 	type RichTextMentionSources,
 	type RichTextSuggestionMenuItem,
 } from "@/components/ui-custom/rich-text-editor";
+import { slugifySkillName } from "@/app/data/directory/skills";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -181,21 +182,26 @@ function normalizeSearchPickerItem(
 }
 
 /**
- * Drops rows whose label matches an already-configured value. Matching is
- * case-insensitive and trimmed to mirror the add handler's de-dupe
- * (`appendListValues`), so an item the agent already has never reappears in the
- * inline "Add" search.
+ * Drops rows whose label matches an already-configured value. Skills compare by
+ * kebab-case config label; other categories compare case-insensitive trimmed
+ * labels. This mirrors the add handler's de-dupe (`appendListValues`), so an
+ * item the agent already has never reappears in the inline "Add" search.
  */
+function getSearchPickerExcludeKey(category: EditorPaletteSearchCategory, label: string): string {
+	return category === "skill" ? slugifySkillName(label) : label.trim().toLowerCase();
+}
+
 function excludeItemsByLabel(
 	items: readonly RichTextSuggestionMenuItem[],
+	category: EditorPaletteSearchCategory,
 	excludeLabels: readonly string[],
 ): readonly RichTextSuggestionMenuItem[] {
 	if (excludeLabels.length === 0) {
 		return items;
 	}
 
-	const excluded = new Set(excludeLabels.map((label) => label.trim().toLowerCase()));
-	return items.filter((item) => !excluded.has(item.label.trim().toLowerCase()));
+	const excluded = new Set(excludeLabels.map((label) => getSearchPickerExcludeKey(category, label)));
+	return items.filter((item) => !excluded.has(getSearchPickerExcludeKey(category, item.label)));
 }
 
 export interface EditorPaletteSearchPickerProps {
@@ -251,6 +257,7 @@ export function EditorPaletteSearchPicker({
 	const pickerRef = useRef<HTMLDivElement | null>(null);
 	const sourceItems = excludeItemsByLabel(
 		(itemsProp ?? getMentionChildItems(mentionSources, category)).map(normalizeSearchPickerItem),
+		category,
 		excludeLabels,
 	);
 	const leadingRows = leadingItems.map(normalizeSearchPickerItem);

@@ -10,6 +10,7 @@ import {
 	getAppDirectoryVisual,
 	getPersonDirectoryVisual,
 	getSkillDirectoryVisual,
+	slugifySkillName,
 	getTeamDirectoryVisual,
 	getToolDirectoryVisual,
 	resolveDirectoryVisual,
@@ -156,7 +157,9 @@ export function getDirectoryMentionItem(
 	const normalizedLabel = normalizeLookupValue(label);
 
 	return EDITOR_PALETTE_MENTION_SOURCES[category]?.find(
-		(item) => normalizeLookupValue(item.label) === normalizedLabel,
+		(item) =>
+			normalizeLookupValue(item.label) === normalizedLabel ||
+			(category === "skill" && slugifySkillName(item.label) === slugifySkillName(label)),
 	);
 }
 

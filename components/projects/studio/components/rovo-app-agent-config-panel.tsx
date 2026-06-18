@@ -27,7 +27,7 @@ import { AgentInsights } from "@/components/blocks/agent-insights";
 import { AgentSurfaces } from "@/components/blocks/agent-surfaces";
 import { DEFAULT_KNOWLEDGE_APPS } from "@/app/data/directory/knowledge";
 import { SkillsDirectoryDialog, type SkillsDirectorySkill } from "@/components/blocks/skills-directory";
-import { DEFAULT_SKILLS } from "@/app/data/directory/skills";
+import { DEFAULT_SKILLS, slugifySkillName } from "@/app/data/directory/skills";
 import { ToolsDirectoryDialog } from "@/components/blocks/tools-directory";
 import { AppsDirectoryDialog, type AppsDirectoryAddPayload } from "@/components/blocks/apps-directory";
 import { DEMO_SESSION_TOOLS, DEMO_TOOLS } from "@/app/data/directory/tools";
@@ -104,6 +104,15 @@ import { getStudioAgentChangeSummary, type StudioAgentChangeSection, type Studio
 type AgentResult = RovoDataParts["agent-result"];
 export type AgentConfigView = "configure" | "insights" | "test";
 type PublishDropdownView = "summary" | "draftChanges" | "history" | "versionDetail";
+
+function getSkillConfigLabel(value: string): string {
+	return slugifySkillName(value);
+}
+
+function getSkillByConfigLabel(value: string): SkillsDirectorySkill | undefined {
+	const normalized = getSkillConfigLabel(value);
+	return DEFAULT_SKILLS.find((skill) => skill.id === normalized || getSkillConfigLabel(skill.name) === normalized);
+}
 
 const STUDIO_AGENT_PUBLISH_TOASTER_ID = "studio-agent-publish-toaster";
 const STUDIO_AGENT_PROFILE_BASE_PATH = "/agents";
@@ -825,15 +834,17 @@ export function RovoAppAgentConfigPanel({
 
 	const appendListValues = useCallback(
 		(field: AgentConfigListFieldName, values: readonly string[]) => {
-			const nextValues = values.map((value) => value.trim()).filter(Boolean);
+			const nextValues = values
+				.map((value) => field === "skills" ? getSkillConfigLabel(value) : value.trim())
+				.filter(Boolean);
 
 			if (nextValues.length === 0) {
 				return;
 			}
 
 			const current = getListItems(activeConfig, field);
-			const existing = new Set(current.map((value) => value.trim().toLowerCase()));
-			const additions = nextValues.filter((value) => !existing.has(value.toLowerCase()));
+			const existing = new Set(current.map((value) => field === "skills" ? getSkillConfigLabel(value) : value.trim().toLowerCase()));
+			const additions = nextValues.filter((value) => !existing.has(field === "skills" ? getSkillConfigLabel(value) : value.toLowerCase()));
 
 			if (additions.length === 0) {
 				return;
@@ -947,13 +958,13 @@ export function RovoAppAgentConfigPanel({
 				setDirectorySelectedAppId(null);
 			}
 		} else if (directory === "skills") {
-			// Skill chips pass a skill name; resolve it to the directory's skill id so
-			// the dialog opens directly on that skill's detail/config view.
+			// Skill chips pass the configured kebab-case label; older drafts may still
+			// pass a display name. Resolve either to the directory's skill id so the
+			// dialog opens directly on that skill's detail/config view.
 			if (selectedItem) {
-				const normalized = selectedItem.trim().toLowerCase();
 				const matched =
 					DEFAULT_SKILLS.find((skill) => skill.id === selectedItem) ??
-					DEFAULT_SKILLS.find((skill) => skill.name.trim().toLowerCase() === normalized);
+					getSkillByConfigLabel(selectedItem);
 				setDirectorySelectedSkillId(matched?.id ?? null);
 			} else {
 				setDirectorySelectedSkillId(null);
@@ -990,19 +1001,18 @@ export function RovoAppAgentConfigPanel({
 	const addedSkillIds = useMemo(() => {
 		return getListItems(activeConfig, "skills")
 			.map((name) => {
-				const normalized = name.trim().toLowerCase();
-				return DEFAULT_SKILLS.find((skill) => skill.name.trim().toLowerCase() === normalized)?.id;
+				return getSkillByConfigLabel(name)?.id;
 			})
 			.filter((id): id is string => Boolean(id));
 	}, [activeConfig]);
 	// Skills parked disabled on the agent (config `disabledItems.skills`), as catalog
 	// ids — drives the detail header's disable Switch.
 	const disabledSkillIds = useMemo(() => {
-		const labels = new Set((activeConfig.disabledItems?.skills ?? []).map((name) => name.trim().toLowerCase()));
+		const labels = new Set((activeConfig.disabledItems?.skills ?? []).map(getSkillConfigLabel));
 		if (labels.size === 0) {
 			return [];
 		}
-		return DEFAULT_SKILLS.filter((skill) => labels.has(skill.name.trim().toLowerCase())).map((skill) => skill.id);
+		return DEFAULT_SKILLS.filter((skill) => labels.has(getSkillConfigLabel(skill.name))).map((skill) => skill.id);
 	}, [activeConfig]);
 	// Knowledge apps contributing knowledge to the agent — matched by the
 	// "<App> - all content" entry or any of the app's content names.
@@ -1163,7 +1173,7 @@ export function RovoAppAgentConfigPanel({
 	);
 	const handleAddSkills = useCallback(
 		(_skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => {
-			appendListValues("skills", skills.map((skill) => skill.name));
+			appendListValues("skills", skills.map((skill) => getSkillConfigLabel(skill.name)));
 			setActiveDirectory(null);
 		},
 		[appendListValues],
@@ -1180,11 +1190,11 @@ export function RovoAppAgentConfigPanel({
 	// entry) so it is actually off the agent, not just deselected in the dialog.
 	const handleRemoveSkills = useCallback(
 		(_skillIds: readonly string[], skills: readonly SkillsDirectorySkill[]) => {
-			const removeNames = new Set(skills.map((skill) => skill.name.trim().toLowerCase()));
+			const removeNames = new Set(skills.map((skill) => getSkillConfigLabel(skill.name)));
 			updateActiveConfig((config) => {
 				const next = {
 					...config,
-					skills: getListItems(config, "skills").filter((name) => !removeNames.has(name.trim().toLowerCase())),
+					skills: getListItems(config, "skills").filter((name) => !removeNames.has(getSkillConfigLabel(name))),
 				};
 				return skills.reduce<AgentConfigFormValue>(
 					(acc, skill) => toggleAgentConfigDisabledItem(acc, "skills", skill.name, true),
