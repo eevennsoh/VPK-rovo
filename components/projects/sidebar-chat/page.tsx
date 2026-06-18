@@ -572,6 +572,7 @@ export default function ChatPanel({
 		setPrompt,
 		handleSubmit,
 		submitPrompt,
+		recordLocalAssistantTurn,
 		interceptSubmit,
 		abort,
 		uiMessages,
@@ -925,8 +926,7 @@ export default function ChatPanel({
 				return;
 			}
 
-			// Only the AI cursor consumes the realtime model's own text response;
-			// normal voice mode delegates to the Rovo chat stream instead.
+			// Stream direct realtime text into the cursor overlay as it arrives.
 			const text = typeof payload === "string" ? payload : (payload.text ?? "");
 			if (!text) {
 				return;
@@ -944,15 +944,28 @@ export default function ChatPanel({
 				return;
 			}
 
-			// Only the AI cursor consumes the realtime model's own text response;
-			// normal voice mode delegates to the Rovo chat stream instead.
+			// Realtime may answer directly without delegating to Rovo. Keep the
+			// audible/Clicky response, but also mirror that direct voice turn into
+			// compact chat history when we have the user's transcript.
 			const text = typeof payload === "string" ? payload : (payload.text ?? "");
-			if (!text || !streamClickyAssistantText(text)) {
+			const promptText = realtimeTranscriptRef.current.trim();
+			if (!text) {
 				return;
 			}
 
-			clickyAddExchange({ role: "assistant", content: text });
-		}, [clickyAddExchange, scriptedConversation, streamClickyAssistantText]);
+			const didStreamToClicky = streamClickyAssistantText(text);
+			if (promptText) {
+				realtimeTranscriptRef.current = "";
+				void recordLocalAssistantTurn({
+					assistantParts: [{ type: "text", text, state: "done" }],
+					promptText,
+				});
+			}
+
+			if (didStreamToClicky) {
+				clickyAddExchange({ role: "assistant", content: text });
+			}
+		}, [clickyAddExchange, recordLocalAssistantTurn, scriptedConversation, streamClickyAssistantText]);
 	const handleRealtimeDelegateToRovo = useCallback(
 		(request: DelegationRequest) => {
 			if (isDictationActiveRef.current) {

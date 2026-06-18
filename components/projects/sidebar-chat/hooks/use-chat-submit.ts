@@ -32,6 +32,11 @@ interface UseChatSubmitReturn {
 	setPrompt: (prompt: string) => void;
 	handleSubmit: (message: { text: string; files: FileUIPart[] }) => Promise<void>;
 	submitPrompt: (prompt: string, files?: ReadonlyArray<FileUIPart>) => Promise<void>;
+	recordLocalAssistantTurn: (params: {
+		assistantParts: RovoUIMessage["parts"];
+		files?: ReadonlyArray<FileUIPart>;
+		promptText: string;
+	}) => Promise<void>;
 	/**
 	 * Runs the deterministic submit interceptor against `text`. When the prompt
 	 * is a handled build intent, this aborts any in-flight turn, injects the user
@@ -226,6 +231,30 @@ export function useChatSubmit({
 		[injectLocalAssistantTurn, onInterceptSubmit]
 	);
 
+	const recordLocalAssistantTurn = useCallback(
+		async ({
+			assistantParts,
+			files = [],
+			promptText,
+		}: {
+			assistantParts: RovoUIMessage["parts"];
+			files?: ReadonlyArray<FileUIPart>;
+			promptText: string;
+		}) => {
+			const trimmedPrompt = promptText.trim();
+			if (!trimmedPrompt && files.length === 0) {
+				return;
+			}
+
+			await injectLocalAssistantTurn({
+				assistantParts,
+				files,
+				promptText: trimmedPrompt,
+			});
+		},
+		[injectLocalAssistantTurn],
+	);
+
 	const submitPrompt = useCallback(
 		async (nextPrompt: string, files: ReadonlyArray<FileUIPart> = []) => {
 			const promptText = nextPrompt.trim();
@@ -271,6 +300,7 @@ export function useChatSubmit({
 		setPrompt,
 		handleSubmit,
 		submitPrompt,
+		recordLocalAssistantTurn,
 		interceptSubmit,
 		abort,
 		uiMessages,
