@@ -360,7 +360,8 @@ test("Agent config renders filled summary rows once field data exists", () => {
 	assert.match(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /case "app":[\s\S]*findReferenceApp\(label\)[\s\S]*app\.hasToolFacet[\s\S]*kind: "tool"[\s\S]*getKnowledgeAppSmartLink/u);
 	assert.match(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /<EntityCard\.Skill[\s\S]*description=\{preview\.skill\.description\}/u);
 	assert.match(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /<EntityCard\.Tool[\s\S]*appLogo=\{getReferenceToolLogo\(preview\.tool\)\}/u);
-	assert.match(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /<SmartLinkCard item=\{preview\.item\} \/>/u);
+	assert.match(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /if \(preview\.kind === "knowledge"\)[\s\S]*className="w-80 border-0 bg-transparent p-0 text-text shadow-none"[\s\S]*<SmartLinkCard className="w-full" item=\{preview\.item\} \/>/u);
+	assert.doesNotMatch(RICH_TEXT_REFERENCE_PREVIEW_SOURCE, /if \(preview\.kind === "knowledge"\)[\s\S]*className="w-auto border-0 bg-transparent p-0 text-text shadow-none"/u);
 	assert.doesNotMatch(AGENT_SOURCE, /const \[previewOpen, setPreviewOpen\] = useState\(false\);/u);
 	assert.doesNotMatch(AGENT_SOURCE, /onMouseEnter=\{preview \? openPreview : undefined\}/u);
 	assert.match(AGENT_SOURCE, /const preview = getRichTextReferencePreview\(category, label\);/u);

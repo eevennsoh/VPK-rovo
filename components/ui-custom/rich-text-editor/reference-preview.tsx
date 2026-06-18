@@ -219,11 +219,11 @@ export function RichTextReferencePreviewContent({ preview }: Readonly<{ preview:
 		return (
 			<HoverCardContent
 				align="center"
-				className="w-auto border-0 bg-transparent p-0 text-text shadow-none"
+				className="w-80 border-0 bg-transparent p-0 text-text shadow-none"
 				side="top"
 				sideOffset={8}
 			>
-				<SmartLinkCard item={preview.item} />
+				<SmartLinkCard className="w-full" item={preview.item} />
 			</HoverCardContent>
 		);
 	}
