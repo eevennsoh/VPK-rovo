@@ -4776,7 +4776,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 					return respond("Done - I will tuck back into live chat. If you need help, you can always find me here.");
 				}
 				default:
-					return false;
+					return respond(`Try ${STUDIO_AGENT_ONBOARDING_GUIDE_SUPPORTED_COMMANDS} to control the tour.`);
 			}
 		},
 		[

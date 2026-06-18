@@ -761,13 +761,16 @@ export default function ChatPanel({
 				if (isScriptedConversationSubmitHandled(result)) {
 					realtimeTranscriptRef.current = "";
 					speakScriptedConversationVoiceText(result);
+					return;
 				}
+				realtimeTranscriptRef.current = transcriptText;
+				void handleSubmit({ files: [], text: transcriptText });
 			});
 			return;
 		}
 
 		realtimeTranscriptRef.current = transcriptText;
-	}, [clickyAddExchange, clickyStartProcessing, isClickyActive, scriptedConversation, setPrompt, speakScriptedConversationVoiceText]);
+	}, [clickyAddExchange, clickyStartProcessing, handleSubmit, isClickyActive, scriptedConversation, setPrompt, speakScriptedConversationVoiceText]);
 
 	const getScreenAssistantSnapshot = useCallback(() => {
 		return createStudioScreenAssistantSnapshot({

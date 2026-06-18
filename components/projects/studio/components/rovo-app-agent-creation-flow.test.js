@@ -1301,6 +1301,7 @@ test("Studio post-create onboarding uses a local Rovo Cursor tour instead of Spo
 	assert.match(SHELL_SOURCE, /These starter prompts are quick test cases/u);
 	assert.match(SHELL_SOURCE, /This is the activation checkpoint/u);
 	assert.match(SHELL_SOURCE, /return respond\(getStudioAgentOnboardingGuideStepNarration\(getStudioAgentOnboardingGuideStepByIndex\(nextStepIndex\)\)\);/u);
+	assert.match(SHELL_SOURCE, /return respond\(`Try \$\{STUDIO_AGENT_ONBOARDING_GUIDE_SUPPORTED_COMMANDS\} to control the tour\.`\);/u);
 	assert.doesNotMatch(SHELL_SOURCE, /Moving to step \$\{nextStepNumber\} of \$\{agentOnboardingTour\.total\}\. Say/u);
 	assert.doesNotMatch(SHELL_SOURCE, /getStudioAgentOnboardingGuideNextMessage/u);
 	assert.match(SHELL_SOURCE, /getStudioAgentOnboardingGuideGreeting\(activeSessionAgentEntry\?\.profile\.name \?\? null\)/u);
@@ -1381,7 +1382,7 @@ test("Studio post-create onboarding uses a local Rovo Cursor tour instead of Spo
 	assert.match(CHAT_PANEL_SOURCE, /const realMessages = uiMessages\.filter\(isRenderableRovoUIMessage\);[\s\S]*const scriptedMessages = scriptedConversation\?\.messages\.filter\(isRenderableRovoUIMessage\) \?\? \[\];[\s\S]*return \[\.\.\.realMessages, \.\.\.scriptedMessages\];/u);
 	assert.match(CHAT_PANEL_SOURCE, /if \(!scriptedConversation\) \{[\s\S]*sendRealtimePrompt\(\);[\s\S]*return;[\s\S]*\}[\s\S]*scriptedConversation\.onSubmit\(promptText\)[\s\S]*if \(!isScriptedConversationSubmitHandled\(result\)\) \{[\s\S]*sendRealtimePrompt\(\);[\s\S]*return;[\s\S]*\}[\s\S]*speakScriptedConversationVoiceText\(result\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /realtime\.connect\(isScriptedConversationActive \? \{ explicitResponseOnly: true \} : undefined\);/u);
-	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscriptCompleted", "const getScreenAssistantSnapshot"), /if \(isClickyActive\) \{[\s\S]*clickyAddExchange\(\{ role: "user", content: transcriptText \}\);[\s\S]*return;[\s\S]*\}[\s\S]*if \(scriptedConversation\) \{[\s\S]*speakScriptedConversationVoiceText\(result\);/u);
+	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscriptCompleted", "const getScreenAssistantSnapshot"), /if \(isClickyActive\) \{[\s\S]*clickyAddExchange\(\{ role: "user", content: transcriptText \}\);[\s\S]*return;[\s\S]*\}[\s\S]*if \(scriptedConversation\) \{[\s\S]*speakScriptedConversationVoiceText\(result\);[\s\S]*return;[\s\S]*handleSubmit\(\{ files: \[\], text: transcriptText \}\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /if \(scriptedConversation\) \{[\s\S]*return;[\s\S]*\}[\s\S]*streamClickyAssistantText\(text\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /isScriptedConversationActive \? null : getLatestQuestionCardPayload\(rawUiMessages\)/u);
 	assert.match(CHAT_PANEL_SOURCE, /hideAiCursor=\{hideAiCursor\}/u);
