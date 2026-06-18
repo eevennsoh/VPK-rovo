@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useState, type RefObject } from "react";
 
 import {
 	AGENT_ONBOARDING_TOUR_STEPS,
@@ -8,10 +8,9 @@ import {
 	type AgentOnboardingTourStep,
 } from "../data/agent-onboarding-tour";
 
-const GLOW_CLASS = "spotlight-anchor-glow";
-// ~0.5s at 60fps. Anchors mount slightly after the create turn completes (right
-// panel opens, result card + test view render), so we retry before giving up.
-const MAX_RESOLVE_FRAMES = 30;
+// ~3s at 60fps. Anchors mount after the create turn completes, the right panel
+// opens, and the test view hydrates; dev/HMR can easily take more than 0.5s.
+const MAX_RESOLVE_FRAMES = 180;
 
 type AnchorContainer = "right" | "center";
 
@@ -57,14 +56,6 @@ export function useAgentOnboardingTour<R extends HTMLElement, C extends HTMLElem
 	const [isActive, setIsActive] = useState(false);
 	const [stepIndex, setStepIndex] = useState(0);
 	const [anchorElement, setAnchorElement] = useState<HTMLElement | null>(null);
-	const glowingRef = useRef<HTMLElement | null>(null);
-
-	const clearGlow = useCallback(() => {
-		if (glowingRef.current) {
-			glowingRef.current.classList.remove(GLOW_CLASS);
-			glowingRef.current = null;
-		}
-	}, []);
 
 	const start = useCallback(() => {
 		setStepIndex(0);
@@ -80,12 +71,10 @@ export function useAgentOnboardingTour<R extends HTMLElement, C extends HTMLElem
 		setStepIndex((prev) => Math.max(0, prev - 1));
 	}, []);
 
-	// Resolve the active step's anchor element (retrying across frames while it
-	// mounts) and decorate it with the glow utility. If it never appears, skip to
-	// the next step or end the tour.
+	// Resolve the active step's anchor element, retrying across frames while it
+	// mounts. If it never appears, skip to the next step or end the tour.
 	useEffect(() => {
 		if (!isActive) {
-			clearGlow();
 			setAnchorElement(null);
 			return;
 		}
@@ -94,6 +83,8 @@ export function useAgentOnboardingTour<R extends HTMLElement, C extends HTMLElem
 		if (!step) {
 			return;
 		}
+
+		setAnchorElement(null);
 
 		const { container, selector } = ANCHOR_SELECTORS[step.anchorKey];
 		let frame = 0;
@@ -108,18 +99,13 @@ export function useAgentOnboardingTour<R extends HTMLElement, C extends HTMLElem
 			const root = container === "right" ? rightPanelRef.current : centerRef.current;
 			const element = root?.querySelector<HTMLElement>(selector) ?? null;
 			if (element) {
-				if (glowingRef.current !== element) {
-					clearGlow();
-					element.classList.add(GLOW_CLASS);
-					glowingRef.current = element;
-				}
+				element.scrollIntoView({ block: "center", inline: "nearest" });
 				setAnchorElement(element);
 				return;
 			}
 
 			frame += 1;
 			if (frame >= MAX_RESOLVE_FRAMES) {
-				clearGlow();
 				setAnchorElement(null);
 				setStepIndex((prev) => {
 					if (prev >= total - 1) {
@@ -139,10 +125,7 @@ export function useAgentOnboardingTour<R extends HTMLElement, C extends HTMLElem
 			cancelled = true;
 			cancelAnimationFrame(rafId);
 		};
-	}, [isActive, stepIndex, total, clearGlow, rightPanelRef, centerRef]);
-
-	// Belt-and-suspenders cleanup so a glow never outlives the component.
-	useEffect(() => clearGlow, [clearGlow]);
+	}, [isActive, stepIndex, total, rightPanelRef, centerRef]);
 
 	const step = isActive ? AGENT_ONBOARDING_TOUR_STEPS[stepIndex] ?? null : null;
 

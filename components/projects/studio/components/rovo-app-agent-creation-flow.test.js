@@ -123,6 +123,18 @@ const ROVO_CURSOR_SOURCE = fs.readFileSync(
 	path.join(process.cwd(), "components/ui-custom/rovo-cursor.tsx"),
 	"utf8",
 );
+const ROVO_CURSOR_ONBOARDING_TOUR_SOURCE = fs.readFileSync(
+	path.join(__dirname, "rovo-cursor-onboarding-tour.tsx"),
+	"utf8",
+);
+const AGENT_ONBOARDING_TOUR_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "data", "agent-onboarding-tour.ts"),
+	"utf8",
+);
+const AGENT_ONBOARDING_HOOK_SOURCE = fs.readFileSync(
+	path.join(__dirname, "..", "hooks", "use-agent-onboarding-tour.ts"),
+	"utf8",
+);
 
 function sourceBetween(source, startNeedle, endNeedle) {
 	const start = source.indexOf(startNeedle);
@@ -869,7 +881,8 @@ test("Studio agent config panel renders the shared block agent config fields", (
 		SHELL_SOURCE.indexOf("const agentEditContextBar = useMemo"),
 		SHELL_SOURCE.indexOf("// When the \"Edit agent\" context bar is active"),
 	);
-	assert.match(agentEditContextBarSource, /if \(!activeSessionAgentEntry \|\| isCustomAgentSelected\) \{[\s\S]*return null;[\s\S]*\}/u);
+	assert.match(agentEditContextBarSource, /if \(!activeSessionAgentEntry\) \{[\s\S]*return null;[\s\S]*\}/u);
+	assert.doesNotMatch(agentEditContextBarSource, /isCustomAgentSelected/u);
 	assert.match(SHELL_SOURCE, /<ChatPanel[\s\S]*onClose=\{nav\.toggleChat\}[\s\S]*abortOnUnmount=\{false\}[\s\S]*chatContextBar=\{agentEditContextBar\}[\s\S]*greeting=\{agentEditGreeting\}[\s\S]*containerStyle=\{\{ borderRadius: 0, borderWidth: 0 \}\}[\s\S]*\/>/u);
 	// The Ask Rovo edit panel always chats with the default Rovo agent (it's a
 	// build/improve helper), so it must render as a plain default-Rovo chat:
@@ -1208,6 +1221,113 @@ test("Studio cursor overlay streams assistant text only through the cursor toolt
 	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /const displayedText = useTypewriterText\(text\);/u);
 	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /\{displayedText\}[\s\S]*<\/div>/u);
 	assert.match(CLICKY_RESPONSE_OVERLAY_SOURCE, /window\.setInterval/u);
+});
+
+test("Studio post-create onboarding uses a local Rovo Cursor tour instead of Spotlight", () => {
+	assert.match(SHELL_SOURCE, /import \{ RovoCursorOnboardingTour \} from "@\/components\/projects\/studio\/components\/rovo-cursor-onboarding-tour";/u);
+	assert.doesNotMatch(SHELL_SOURCE, /SpotlightTarget|SpotlightCard|SpotlightPrimaryAction|SpotlightSecondaryAction/u);
+	assert.match(SHELL_SOURCE, /const STUDIO_LIVE_CHAT_ANCHOR_CANDIDATES = \[[\s\S]*root: "right",[\s\S]*"\[data-screen-assistant-target='sidebar-composer:voice'\]"[\s\S]*"\[data-screen-assistant-target='sidebar-composer'\] button\[aria-label='Stop live voice'\]"[\s\S]*"\[data-screen-assistant-target='sidebar-composer'\] button\[aria-label='Start live voice'\]"[\s\S]*root: "document"[\s\S]*\] as const;/u);
+	assert.doesNotMatch(SHELL_SOURCE, /root: "center"[\s\S]*STUDIO_LIVE_CHAT_ANCHOR_CANDIDATES/u);
+	assert.doesNotMatch(SHELL_SOURCE, /STUDIO_LIVE_CHAT_ANCHOR_CANDIDATES = \[[\s\S]*Rovo quick actions/u);
+	assert.match(SHELL_SOURCE, /const STUDIO_LIVE_CHAT_ANCHOR_RESOLVE_FRAMES = 180;/u);
+	assert.match(SHELL_SOURCE, /const STUDIO_AGENT_ONBOARDING_TOUR_PREVIEW_PARAM = "onboarding";/u);
+	assert.match(SHELL_SOURCE, /const STUDIO_AGENT_ONBOARDING_TOUR_PREVIEW_VALUE = "rovo-cursor";/u);
+	assert.match(SHELL_SOURCE, /const STUDIO_AGENT_ONBOARDING_GUIDE_SUPPORTED_COMMANDS = "\\"next\\", \\"go back\\", or \\"done\\"";/u);
+	assert.match(SHELL_SOURCE, /function resolveStudioAgentOnboardingGuideCommand\(text: string\): StudioAgentOnboardingGuideCommand/u);
+	assert.match(SHELL_SOURCE, /Congrats - \$\{subject\}\. This is step 1 of 4: the agent card is your home base/u);
+	assert.match(SHELL_SOURCE, /function getStudioAgentOnboardingGuideStepNarration\(step: AgentOnboardingTourStep \| null\): string/u);
+	assert.match(SHELL_SOURCE, /This side chat is for fast refinements/u);
+	assert.match(SHELL_SOURCE, /These starter prompts are quick test cases/u);
+	assert.match(SHELL_SOURCE, /This is the activation checkpoint/u);
+	assert.match(SHELL_SOURCE, /return respond\(getStudioAgentOnboardingGuideStepNarration\(getStudioAgentOnboardingGuideStepByIndex\(nextStepIndex\)\)\);/u);
+	assert.doesNotMatch(SHELL_SOURCE, /Moving to step \$\{nextStepNumber\} of \$\{agentOnboardingTour\.total\}\. Say/u);
+	assert.doesNotMatch(SHELL_SOURCE, /getStudioAgentOnboardingGuideNextMessage/u);
+	assert.match(SHELL_SOURCE, /getStudioAgentOnboardingGuideGreeting\(activeSessionAgentEntry\?\.profile\.name \?\? null\)/u);
+	assert.match(SHELL_SOURCE, /const respond = \(assistantText: string\) => \{[\s\S]*appendAgentOnboardingGuideExchange\(text, assistantText\);[\s\S]*voiceText: assistantText/u);
+	assert.match(SHELL_SOURCE, /initialVoiceKey: activeSessionAgentEntry\?\.profile\.id \?\? "generated-agent",[\s\S]*initialVoiceText: getStudioAgentOnboardingGuideGreeting\(activeSessionAgentEntry\?\.profile\.name \?\? null\)/u);
+	assert.match(SHELL_SOURCE, /scriptedConversation=\{agentOnboardingScriptedConversation\}/u);
+	assert.match(SHELL_SOURCE, /const agentEditCards = useMemo\(\(\) => \{[\s\S]*generatedAgentResult: activeSessionAgentEntry\.sourceResult,[\s\S]*\}, \[activeSessionAgentEntry\]\);/u);
+	assert.match(SHELL_SOURCE, /<ChatPanel[\s\S]*cards=\{agentEditCards\}[\s\S]*scriptedConversation=\{agentOnboardingScriptedConversation\}/u);
+	assert.match(SHELL_SOURCE, /const \[agentOnboardingLiveVoiceRequestKey, setAgentOnboardingLiveVoiceRequestKey\] = useState\(0\);/u);
+	assert.match(SHELL_SOURCE, /setAgentOnboardingLiveVoiceRequestKey\(0\);[\s\S]*setAgentOnboardingLiveVoiceRequestKey\(\(currentKey\) => currentKey \+ 1\);/u);
+	assert.match(SHELL_SOURCE, /startRealtimeVoiceRequestKey=\{agentOnboardingLiveVoiceRequestKey\}/u);
+	assert.match(SHELL_SOURCE, /setAgentOnboardingTourFinishRequestKey\(\(currentKey\) => currentKey \+ 1\);/u);
+	assert.match(SHELL_SOURCE, /const hasQueuedAgentOnboardingTourPreviewRef = useRef\(false\);/u);
+	assert.match(SHELL_SOURCE, /liveChatAnchorElement=\{liveChatAnchorElement\}/u);
+	assert.match(SHELL_SOURCE, /const getCandidateRoot = \(root: typeof STUDIO_LIVE_CHAT_ANCHOR_CANDIDATES\[number\]\["root"\]\) => \{[\s\S]*root === "right"[\s\S]*askRovoPanelRef\.current[\s\S]*return document;/u);
+	assert.match(SHELL_SOURCE, /for \(const candidate of STUDIO_LIVE_CHAT_ANCHOR_CANDIDATES\) \{[\s\S]*for \(const selector of candidate\.selectors\) \{[\s\S]*root\.querySelector<HTMLElement>\(selector\)/u);
+	assert.doesNotMatch(SHELL_SOURCE, /STUDIO_LIVE_CHAT_ANCHOR_SELECTORS[\s\S]*\.flatMap/u);
+	assert.match(SHELL_SOURCE, /<RovoCursorOnboardingTour[\s\S]*isActive=\{agentOnboardingTour\.isActive && Boolean\(agentOnboardingTour\.anchorElement\) && Boolean\(liveChatAnchorElement\)\}[\s\S]*finishRequestKey=\{agentOnboardingTourFinishRequestKey\}[\s\S]*onBack=\{backAgentOnboardingTourStep\}[\s\S]*onNext=\{handleAgentOnboardingTourNext\}[\s\S]*onDismiss=\{dismissAgentOnboardingTour\}/u);
+	assert.match(SHELL_SOURCE, /process\.env\.NODE_ENV === "production"[\s\S]*hasStartedAgentOnboardingTourPreviewRef\.current[\s\S]*params\.get\(STUDIO_AGENT_ONBOARDING_TOUR_PREVIEW_PARAM\) !== STUDIO_AGENT_ONBOARDING_TOUR_PREVIEW_VALUE/u);
+	assert.match(SHELL_SOURCE, /hasQueuedAgentOnboardingTourPreviewRef\.current = true;[\s\S]*setActiveAgentConfigView\("test"\);[\s\S]*openAgentCreationAskRovoChat\(\);[\s\S]*const startPreviewTour = \(\) => \{[\s\S]*frame < 4[\s\S]*hasStartedAgentOnboardingTourPreviewRef\.current = true;[\s\S]*hasQueuedAgentOnboardingTourPreviewRef\.current = false;[\s\S]*startAgentOnboardingTour\(\);/u);
+	assert.match(SHELL_SOURCE, /if \(!hasStartedAgentOnboardingTourPreviewRef\.current\) \{[\s\S]*hasQueuedAgentOnboardingTourPreviewRef\.current = false;/u);
+
+	assert.doesNotMatch(AGENT_ONBOARDING_TOUR_SOURCE, /SpotlightPlacement|placement:/u);
+	assert.match(AGENT_ONBOARDING_TOUR_SOURCE, /"agent-result-card"[\s\S]*"ask-rovo-composer"[\s\S]*"chat-starters"[\s\S]*"activate-button"/u);
+	assert.match(AGENT_ONBOARDING_HOOK_SOURCE, /const MAX_RESOLVE_FRAMES = 180;/u);
+	assert.match(AGENT_ONBOARDING_HOOK_SOURCE, /setAnchorElement\(null\);[\s\S]*const \{ container, selector \} = ANCHOR_SELECTORS\[step\.anchorKey\];/u);
+	assert.match(AGENT_ONBOARDING_HOOK_SOURCE, /const root = container === "right" \? rightPanelRef\.current : centerRef\.current;[\s\S]*const element = root\?\.querySelector<HTMLElement>\(selector\) \?\? null;/u);
+	assert.doesNotMatch(AGENT_ONBOARDING_HOOK_SOURCE, /document\.querySelector<HTMLElement>\(selector\)/u);
+	assert.match(AGENT_ONBOARDING_HOOK_SOURCE, /element\.scrollIntoView\(\{ block: "center", inline: "nearest" \}\);/u);
+	assert.match(AGENT_ONBOARDING_HOOK_SOURCE, /setStepIndex\(\(prev\) => \{[\s\S]*if \(prev >= total - 1\) \{[\s\S]*setIsActive\(false\);[\s\S]*return prev;[\s\S]*\}[\s\S]*return prev \+ 1;/u);
+	assert.doesNotMatch(AGENT_ONBOARDING_HOOK_SOURCE, /spotlight-anchor-glow|classList|GLOW_CLASS/u);
+
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /import \{ AnimatePresence, arc, motion, useReducedMotion, type Transition \} from "motion\/react";/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /FOCUSABLE_SELECTOR/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /areRectsEqual\(previousRects\.anchorRect, nextRects\.anchorRect\)/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /function doRectsOverlap\(a: ViewportRect, b: ViewportRect\): boolean/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /function expandRect\(rect: ViewportRect, amount: number\): ViewportRect/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /avoidRect: phase === "tour" \? liveChatRect : null/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /doRectsOverlap\(panelRect, expandRect\(avoidRect, PANEL_GAP\)\)/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /import \{ RovoCursor \} from "@\/components\/ui-custom\/rovo-cursor";/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /createPortal\([\s\S]*document\.body/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /useMemo\(\(\) => arc\(\{ strength: 0\.28, peak: 0\.42, direction: "cw", rotate: 0\.12 \}\), \[\]\)/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /useMemo\(\(\) => arc\(\{ strength: 0\.44, peak: 0\.48, direction: "ccw", rotate: 0\.18 \}\), \[\]\)/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /path: phase === "returning" \? finalPath : cursorPath/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /const FINAL_MESSAGE = "If you need help, you can always find me here\.";/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /const TOUR_PANEL_REVEAL_DELAY_MS = CURSOR_TOUR_TRANSITION_MS \+ PANEL_REVEAL_BUFFER_MS;/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /const FINAL_MESSAGE_DELAY_MS = CURSOR_RETURN_TRANSITION_MS \+ PANEL_REVEAL_BUFFER_MS;/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /const TYPEWRITER_INTERVAL_MS = 22;/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /setDisplayedText\(text\.slice\(0, index\)\);/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /finishRequestKey\?: number;/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /lastFinishRequestKeyRef\.current === finishRequestKey[\s\S]*startReturningPhase\(\);/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /const \[showTourPanel, setShowTourPanel\] = useState\(false\);/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /const showPanel = \(phase === "tour" && showTourPanel\) \|\| \(phase === "returning" && showFinalMessage\);/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /window\.setTimeout\(\(\) => setShowTourPanel\(true\), reducedMotion \? 0 : TOUR_PANEL_REVEAL_DELAY_MS\)/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /aria-describedby=\{bodyId\}[\s\S]*aria-labelledby=\{titleId\}/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /left: panelPosition\.x,[\s\S]*top: panelPosition\.y,/u);
+	assert.doesNotMatch(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /animate=\{\{ opacity: 1, scale: 1, x: panelPosition\.x, y: panelPosition\.y \}\}/u);
+	assert.equal((ROVO_CURSOR_ONBOARDING_TOUR_SOURCE.match(/\{stepIndex \+ 1\} of \{total\}/gu) ?? []).length, 1);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /<RovoCursor state="speaking" size=\{16\} \/>[\s\S]*\{stepIndex \+ 1\} of \{total\}/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /panelRef\.current\?\.focus\(\{ preventScroll: true \}\);/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /event\.key === "Escape"[\s\S]*onDismiss\(\);/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /event\.key !== "Tab"[\s\S]*focusableElements/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /aria-label="Dismiss onboarding"/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /\{isFirst \? null : \([\s\S]*data-rovo-cursor-onboarding-back[\s\S]*onClick=\{onBack\}/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /data-rovo-cursor-onboarding-next[\s\S]*onClick=\{handlePrimaryAction\}[\s\S]*\{isLast \? "Finish" : "Next"\}/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /window\.setTimeout\(onDismiss, \(reducedMotion \? 0 : FINAL_MESSAGE_DELAY_MS\) \+ FINAL_DISMISS_MS\)/u);
+	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /reducedMotion\s*\?\s*\{ duration: 0 \}/u);
+	assert.doesNotMatch(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /useClicky|useClickyVoice|useRealtimeVoice|submitPrompt|createRovoAppUserMessage|appendDictationTranscript/u);
+
+	assert.match(CHAT_PANEL_SOURCE, /export interface ChatPanelScriptedConversation \{[\s\S]*initialVoiceKey\?: string \| null;[\s\S]*initialVoiceText\?: string \| null;[\s\S]*messages: ReadonlyArray<RovoUIMessage>;[\s\S]*onSubmit: \(text: string\) => Promise<ChatPanelScriptedConversationSubmitResult> \| ChatPanelScriptedConversationSubmitResult;/u);
+	assert.match(CHAT_PANEL_SOURCE, /export interface ChatPanelScriptedConversationSubmitDetails \{[\s\S]*handled\?: boolean;[\s\S]*voiceText\?: string \| null;/u);
+	assert.match(CHAT_PANEL_SOURCE, /function getScriptedConversationVoiceText\(result: ChatPanelScriptedConversationSubmitResult\): string/u);
+	assert.match(CHAT_PANEL_SOURCE, /const speakScriptedConversationVoiceText = useCallback\(\(result: ChatPanelScriptedConversationSubmitResult\) => \{[\s\S]*sendRealtimeTextInputRef\.current\?\.\(\{[\s\S]*Speak much quicker than normal/u);
+	assert.match(CHAT_PANEL_SOURCE, /const lastScriptedInitialVoiceKeyRef = useRef<string \| null>\(null\);[\s\S]*const initialVoiceText = scriptedConversation\.initialVoiceText\?\.trim\(\) \?\? "";[\s\S]*speakScriptedConversationVoiceText\(\{ voiceText: initialVoiceText \}\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /const isScriptedConversationActive = scriptedConversation !== null;/u);
+	assert.match(CHAT_PANEL_SOURCE, /if \(!scriptedConversation\) \{[\s\S]*await handleSubmit\(\{ files, text \}\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /const result = await scriptedConversation\.onSubmit\(promptText\);[\s\S]*if \(!isScriptedConversationSubmitHandled\(result\)\) \{[\s\S]*await handleSubmit\(\{ files, text: promptText \}\);[\s\S]*setPrompt\(""\);[\s\S]*speakScriptedConversationVoiceText\(result\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /const realMessages = uiMessages\.filter\(isRenderableRovoUIMessage\);[\s\S]*const scriptedMessages = scriptedConversation\?\.messages\.filter\(isRenderableRovoUIMessage\) \?\? \[\];[\s\S]*return \[\.\.\.realMessages, \.\.\.scriptedMessages\];/u);
+	assert.match(CHAT_PANEL_SOURCE, /if \(!scriptedConversation\) \{[\s\S]*sendRealtimePrompt\(\);[\s\S]*return;[\s\S]*\}[\s\S]*scriptedConversation\.onSubmit\(promptText\)[\s\S]*if \(!isScriptedConversationSubmitHandled\(result\)\) \{[\s\S]*sendRealtimePrompt\(\);[\s\S]*return;[\s\S]*\}[\s\S]*speakScriptedConversationVoiceText\(result\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /realtime\.connect\(isScriptedConversationActive \? \{ explicitResponseOnly: true \} : undefined\);/u);
+	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscriptCompleted", "const getScreenAssistantSnapshot"), /if \(isClickyActive\) \{[\s\S]*clickyAddExchange\(\{ role: "user", content: transcriptText \}\);[\s\S]*return;[\s\S]*\}[\s\S]*if \(scriptedConversation\) \{[\s\S]*speakScriptedConversationVoiceText\(result\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /if \(scriptedConversation\) \{[\s\S]*return;[\s\S]*\}[\s\S]*streamClickyAssistantText\(text\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /isScriptedConversationActive \? null : getLatestQuestionCardPayload\(rawUiMessages\)/u);
+	assert.match(CHAT_PANEL_SOURCE, /hideAiCursor=\{hideAiCursor\}/u);
+	assert.match(CHAT_PANEL_SOURCE, /clickyActive=\{!hideAiCursor && \(isClickyActive \|\| isScriptedConversationActive\)\}/u);
+	assert.match(CHAT_PANEL_SOURCE, /onStartDictation=\{handleStartDictation\}/u);
+	assert.match(CHAT_PANEL_SOURCE, /onToggleRealtimeVoice=\{handleToggleRealtimeVoice\}/u);
+	assert.doesNotMatch(CHAT_PANEL_SOURCE, /hideAiCursor=\{hideAiCursor \|\| isScriptedConversationActive\}/u);
 });
 
 test("Studio clarification answers keep agent creation mode active", () => {

@@ -83,17 +83,15 @@ export function AgentResultCard({
 				className="w-full"
 				coverSrc={avatarSrc}
 				description={description}
-				inputActionLabel={`Chat with ${displayName}`}
-				inputPlaceholder={`Chat with ${displayName}`}
 				name={displayName}
 				editActionLabel={`Edit ${displayName}`}
 				onEditAction={handleSelectAgent}
-				onInputAction={handleSelectAgent}
+				onPreviewAction={handleSelectAgent}
 				onSwapAction={handleSelectAgent}
-				onVoiceInput={handleSelectAgent}
 				partnerName={DEFAULT_AGENT_PARTNER_NAME}
+				previewActionLabel="View agent"
 				swapActionLabel="Chat with agent"
-				voiceActionLabel={`Start voice input with ${displayName}`}
+				variant="preview"
 			/>
 		</div>
 	);

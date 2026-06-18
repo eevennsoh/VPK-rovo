@@ -464,6 +464,49 @@ test("transcription-only manual turns do not request a model response", (t) => {
 	assert.deepEqual(openaiMessages, []);
 });
 
+test("explicit-response-only manual turns wait for explicit text responses", (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	t.after(() => t.mock.timers.reset());
+	const { session, clientMessages, openaiMessages } = createReadySession();
+
+	session.handleClientMessage(JSON.stringify({
+		type: "session_update",
+		config: {
+			explicit_response_only: true,
+			turn_detection: {
+				type: "semantic_vad",
+				create_response: false,
+			},
+		},
+	}));
+	openaiMessages.length = 0;
+
+	sendOpenAIEvent(session, {
+		type: "conversation.item.input_audio_transcription.completed",
+		transcript: "next",
+	});
+
+	t.mock.timers.tick(800);
+
+	assert.deepEqual(clientMessages, [
+		{
+			type: "transcription_completed",
+			transcript: "next",
+		},
+	]);
+	assert.deepEqual(openaiMessages, []);
+
+	session.handleClientMessage(JSON.stringify({
+		type: "text_message_from_user",
+		text: "Read aloud exactly this onboarding guide response. Do not add any other words:\nMoving to step 2 of 4.",
+	}));
+
+	assert.equal(openaiMessages.length, 2);
+	assert.equal(openaiMessages[0].type, "conversation.item.create");
+	assert.equal(openaiMessages[0].item?.role, "user");
+	assert.equal(openaiMessages[1].type, "response.create");
+});
+
 test("transcription-only mode ignores explicit response_create fallback requests", () => {
 	const { session, openaiMessages, logEntries } = createReadySession();
 
