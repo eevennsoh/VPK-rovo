@@ -8,10 +8,6 @@ import {
 	type AgentOnboardingTourStep,
 } from "../data/agent-onboarding-tour";
 
-// ~3s at 60fps. Anchors mount after the create turn completes, the right panel
-// opens, and the test view hydrates; dev/HMR can easily take more than 0.5s.
-const MAX_RESOLVE_FRAMES = 180;
-
 type AnchorContainer = "right" | "center";
 
 // Each step resolves its live anchor from a stable selector scoped to one of the
@@ -72,7 +68,8 @@ export function useAgentOnboardingTour<R extends HTMLElement, C extends HTMLElem
 	}, []);
 
 	// Resolve the active step's anchor element, retrying across frames while it
-	// mounts. If it never appears, skip to the next step or end the tour.
+	// mounts. Missing anchors must not advance the tour; only an explicit next,
+	// back, or dismiss action is allowed to change steps.
 	useEffect(() => {
 		if (!isActive) {
 			setAnchorElement(null);
@@ -87,7 +84,6 @@ export function useAgentOnboardingTour<R extends HTMLElement, C extends HTMLElem
 		setAnchorElement(null);
 
 		const { container, selector } = ANCHOR_SELECTORS[step.anchorKey];
-		let frame = 0;
 		let rafId = 0;
 		let cancelled = false;
 
@@ -104,19 +100,6 @@ export function useAgentOnboardingTour<R extends HTMLElement, C extends HTMLElem
 				return;
 			}
 
-			frame += 1;
-			if (frame >= MAX_RESOLVE_FRAMES) {
-				setAnchorElement(null);
-				setStepIndex((prev) => {
-					if (prev >= total - 1) {
-						setIsActive(false);
-						return prev;
-					}
-					return prev + 1;
-				});
-				return;
-			}
-
 			rafId = requestAnimationFrame(resolve);
 		};
 
@@ -125,7 +108,7 @@ export function useAgentOnboardingTour<R extends HTMLElement, C extends HTMLElem
 			cancelled = true;
 			cancelAnimationFrame(rafId);
 		};
-	}, [isActive, stepIndex, total, rightPanelRef, centerRef]);
+	}, [isActive, stepIndex, rightPanelRef, centerRef]);
 
 	const step = isActive ? AGENT_ONBOARDING_TOUR_STEPS[stepIndex] ?? null : null;
 

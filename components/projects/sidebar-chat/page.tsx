@@ -176,6 +176,11 @@ export type ChatPanelScriptedConversationSubmitResult =
 	| ChatPanelScriptedConversationSubmitDetails
 	| void;
 
+const SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_MIN_MS = 2200;
+const SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_MAX_MS = 12000;
+const SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_PER_WORD_MS = 280;
+const SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_BUFFER_MS = 900;
+
 function isScriptedConversationSubmitHandled(result: ChatPanelScriptedConversationSubmitResult): boolean {
 	return result !== false && (
 		typeof result !== "object" ||
@@ -190,6 +195,15 @@ function getScriptedConversationVoiceText(result: ChatPanelScriptedConversationS
 	}
 
 	return result.voiceText.trim();
+}
+
+function getScriptedConversationVoiceSuppressionMs(text: string): number {
+	const wordCount = text.trim().split(/\s+/u).filter(Boolean).length;
+	const estimatedDuration = wordCount * SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_PER_WORD_MS + SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_BUFFER_MS;
+	return Math.min(
+		Math.max(estimatedDuration, SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_MIN_MS),
+		SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_MAX_MS,
+	);
 }
 
 interface ChatPanelProps {
@@ -564,13 +578,19 @@ export default function ChatPanel({
 	});
 	const isScriptedConversationActive = scriptedConversation !== null;
 	const sendRealtimeTextInputRef = useRef<UseRealtimeVoiceResult["sendTextInput"] | null>(null);
+	const realtimeVoiceStateRef = useRef<UseRealtimeVoiceResult["voiceState"]>("idle");
 	const lastScriptedInitialVoiceKeyRef = useRef<string | null>(null);
+	const scriptedConversationVoiceSuppressedUntilRef = useRef(0);
 	const speakScriptedConversationVoiceText = useCallback((result: ChatPanelScriptedConversationSubmitResult) => {
 		const voiceText = getScriptedConversationVoiceText(result);
 		if (!voiceText) {
 			return;
 		}
 
+		scriptedConversationVoiceSuppressedUntilRef.current = Math.max(
+			scriptedConversationVoiceSuppressedUntilRef.current,
+			Date.now() + getScriptedConversationVoiceSuppressionMs(voiceText),
+		);
 		void sendRealtimeTextInputRef.current?.({
 			text: `Speak much quicker than normal, with tight upbeat pacing. Read only this onboarding narration, without adding extra words:\n${voiceText}`,
 		});
@@ -578,6 +598,7 @@ export default function ChatPanel({
 	useEffect(() => {
 		if (!scriptedConversation) {
 			lastScriptedInitialVoiceKeyRef.current = null;
+			scriptedConversationVoiceSuppressedUntilRef.current = 0;
 			return;
 		}
 
@@ -714,6 +735,14 @@ export default function ChatPanel({
 			return;
 		}
 
+		if (
+			scriptedConversation &&
+			(Date.now() < scriptedConversationVoiceSuppressedUntilRef.current || realtimeVoiceStateRef.current === "speaking")
+		) {
+			realtimeTranscriptRef.current = "";
+			return;
+		}
+
 		if (isDictationActiveRef.current) {
 			setDictationTranscriptPreview(transcriptText);
 			const nextText = appendDictationTranscript(dictationCommittedTextRef.current ?? dictationBaselineRef.current ?? "", transcriptText);
@@ -724,7 +753,7 @@ export default function ChatPanel({
 		}
 
 		realtimeTranscriptRef.current = transcriptText;
-	}, [isClickyActive]);
+	}, [isClickyActive, scriptedConversation]);
 	const handleRealtimeTranscriptCompleted = useCallback((payload: RealtimeTranscriptPayload) => {
 		const transcriptText = getRealtimeTranscriptText(payload);
 
@@ -743,6 +772,14 @@ export default function ChatPanel({
 		}
 
 		if (!transcriptText.trim()) {
+			return;
+		}
+
+		if (
+			scriptedConversation &&
+			(Date.now() < scriptedConversationVoiceSuppressedUntilRef.current || realtimeVoiceStateRef.current === "speaking")
+		) {
+			realtimeTranscriptRef.current = "";
 			return;
 		}
 
@@ -981,6 +1018,7 @@ export default function ChatPanel({
 	});
 
 	sendRealtimeTextInputRef.current = realtime.sendTextInput;
+	realtimeVoiceStateRef.current = realtime.voiceState;
 	sendFunctionCallOutputRef.current = realtime.sendFunctionCallOutput;
 
 	// --- AI cursor voice bridge: connects realtime + injects tool-based prompt ---

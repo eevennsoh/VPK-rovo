@@ -1326,12 +1326,14 @@ test("Studio post-create onboarding uses a local Rovo Cursor tour instead of Spo
 
 	assert.doesNotMatch(AGENT_ONBOARDING_TOUR_SOURCE, /SpotlightPlacement|placement:/u);
 	assert.match(AGENT_ONBOARDING_TOUR_SOURCE, /"agent-result-card"[\s\S]*"ask-rovo-composer"[\s\S]*"chat-starters"[\s\S]*"activate-button"/u);
-	assert.match(AGENT_ONBOARDING_HOOK_SOURCE, /const MAX_RESOLVE_FRAMES = 180;/u);
 	assert.match(AGENT_ONBOARDING_HOOK_SOURCE, /setAnchorElement\(null\);[\s\S]*const \{ container, selector \} = ANCHOR_SELECTORS\[step\.anchorKey\];/u);
 	assert.match(AGENT_ONBOARDING_HOOK_SOURCE, /const root = container === "right" \? rightPanelRef\.current : centerRef\.current;[\s\S]*const element = root\?\.querySelector<HTMLElement>\(selector\) \?\? null;/u);
 	assert.doesNotMatch(AGENT_ONBOARDING_HOOK_SOURCE, /document\.querySelector<HTMLElement>\(selector\)/u);
 	assert.match(AGENT_ONBOARDING_HOOK_SOURCE, /element\.scrollIntoView\(\{ block: "center", inline: "nearest" \}\);/u);
-	assert.match(AGENT_ONBOARDING_HOOK_SOURCE, /setStepIndex\(\(prev\) => \{[\s\S]*if \(prev >= total - 1\) \{[\s\S]*setIsActive\(false\);[\s\S]*return prev;[\s\S]*\}[\s\S]*return prev \+ 1;/u);
+	assert.match(AGENT_ONBOARDING_HOOK_SOURCE, /Missing anchors must not advance the tour; only an explicit next,/u);
+	assert.match(AGENT_ONBOARDING_HOOK_SOURCE, /rafId = requestAnimationFrame\(resolve\);[\s\S]*return \(\) => \{[\s\S]*cancelAnimationFrame\(rafId\);/u);
+	assert.doesNotMatch(AGENT_ONBOARDING_HOOK_SOURCE, /MAX_RESOLVE_FRAMES/u);
+	assert.doesNotMatch(AGENT_ONBOARDING_HOOK_SOURCE, /setStepIndex\(\(prev\) => \{[\s\S]*return prev \+ 1;/u);
 	assert.doesNotMatch(AGENT_ONBOARDING_HOOK_SOURCE, /spotlight-anchor-glow|classList|GLOW_CLASS/u);
 
 	assert.match(ROVO_CURSOR_ONBOARDING_TOUR_SOURCE, /import \{ AnimatePresence, arc, motion, useReducedMotion, type Transition \} from "motion\/react";/u);
@@ -1374,15 +1376,23 @@ test("Studio post-create onboarding uses a local Rovo Cursor tour instead of Spo
 	assert.match(CHAT_PANEL_SOURCE, /export interface ChatPanelScriptedConversation \{[\s\S]*initialVoiceKey\?: string \| null;[\s\S]*initialVoiceText\?: string \| null;[\s\S]*messages: ReadonlyArray<RovoUIMessage>;[\s\S]*onSubmit: \(text: string\) => Promise<ChatPanelScriptedConversationSubmitResult> \| ChatPanelScriptedConversationSubmitResult;/u);
 	assert.match(CHAT_PANEL_SOURCE, /export interface ChatPanelScriptedConversationSubmitDetails \{[\s\S]*handled\?: boolean;[\s\S]*voiceText\?: string \| null;/u);
 	assert.match(CHAT_PANEL_SOURCE, /function getScriptedConversationVoiceText\(result: ChatPanelScriptedConversationSubmitResult\): string/u);
+	assert.match(CHAT_PANEL_SOURCE, /const SCRIPTED_CONVERSATION_VOICE_SUPPRESSION_MIN_MS = 2200;/u);
+	assert.match(CHAT_PANEL_SOURCE, /function getScriptedConversationVoiceSuppressionMs\(text: string\): number/u);
+	assert.match(CHAT_PANEL_SOURCE, /const realtimeVoiceStateRef = useRef<UseRealtimeVoiceResult\["voiceState"\]>\("idle"\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /const speakScriptedConversationVoiceText = useCallback\(\(result: ChatPanelScriptedConversationSubmitResult\) => \{[\s\S]*sendRealtimeTextInputRef\.current\?\.\(\{[\s\S]*Speak much quicker than normal/u);
+	assert.match(CHAT_PANEL_SOURCE, /scriptedConversationVoiceSuppressedUntilRef\.current = Math\.max\([\s\S]*Date\.now\(\) \+ getScriptedConversationVoiceSuppressionMs\(voiceText\)/u);
 	assert.match(CHAT_PANEL_SOURCE, /const lastScriptedInitialVoiceKeyRef = useRef<string \| null>\(null\);[\s\S]*const initialVoiceText = scriptedConversation\.initialVoiceText\?\.trim\(\) \?\? "";[\s\S]*speakScriptedConversationVoiceText\(\{ voiceText: initialVoiceText \}\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /scriptedConversationVoiceSuppressedUntilRef\.current = 0;/u);
 	assert.match(CHAT_PANEL_SOURCE, /const isScriptedConversationActive = scriptedConversation !== null;/u);
 	assert.match(CHAT_PANEL_SOURCE, /if \(!scriptedConversation\) \{[\s\S]*await handleSubmit\(\{ files, text \}\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /const result = await scriptedConversation\.onSubmit\(promptText\);[\s\S]*if \(!isScriptedConversationSubmitHandled\(result\)\) \{[\s\S]*await handleSubmit\(\{ files, text: promptText \}\);[\s\S]*setPrompt\(""\);[\s\S]*speakScriptedConversationVoiceText\(result\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /const realMessages = uiMessages\.filter\(isRenderableRovoUIMessage\);[\s\S]*const scriptedMessages = scriptedConversation\?\.messages\.filter\(isRenderableRovoUIMessage\) \?\? \[\];[\s\S]*return \[\.\.\.realMessages, \.\.\.scriptedMessages\];/u);
 	assert.match(CHAT_PANEL_SOURCE, /if \(!scriptedConversation\) \{[\s\S]*sendRealtimePrompt\(\);[\s\S]*return;[\s\S]*\}[\s\S]*scriptedConversation\.onSubmit\(promptText\)[\s\S]*if \(!isScriptedConversationSubmitHandled\(result\)\) \{[\s\S]*sendRealtimePrompt\(\);[\s\S]*return;[\s\S]*\}[\s\S]*speakScriptedConversationVoiceText\(result\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /realtime\.connect\(isScriptedConversationActive \? \{ explicitResponseOnly: true \} : undefined\);/u);
+	assert.match(CHAT_PANEL_SOURCE, /realtimeVoiceStateRef\.current = realtime\.voiceState;/u);
+	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscript = useCallback", "const handleRealtimeTranscriptCompleted"), /Date\.now\(\) < scriptedConversationVoiceSuppressedUntilRef\.current \|\| realtimeVoiceStateRef\.current === "speaking"[\s\S]*realtimeTranscriptRef\.current = "";[\s\S]*return;/u);
 	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscriptCompleted", "const getScreenAssistantSnapshot"), /if \(isClickyActive\) \{[\s\S]*clickyAddExchange\(\{ role: "user", content: transcriptText \}\);[\s\S]*return;[\s\S]*\}[\s\S]*if \(scriptedConversation\) \{[\s\S]*speakScriptedConversationVoiceText\(result\);[\s\S]*return;[\s\S]*handleSubmit\(\{ files: \[\], text: transcriptText \}\);/u);
+	assert.match(sourceBetween(CHAT_PANEL_SOURCE, "const handleRealtimeTranscriptCompleted", "const getScreenAssistantSnapshot"), /Date\.now\(\) < scriptedConversationVoiceSuppressedUntilRef\.current \|\| realtimeVoiceStateRef\.current === "speaking"[\s\S]*realtimeTranscriptRef\.current = "";[\s\S]*return;[\s\S]*if \(isClickyActive\)/u);
 	assert.match(CHAT_PANEL_SOURCE, /if \(scriptedConversation\) \{[\s\S]*return;[\s\S]*\}[\s\S]*streamClickyAssistantText\(text\);/u);
 	assert.match(CHAT_PANEL_SOURCE, /isScriptedConversationActive \? null : getLatestQuestionCardPayload\(rawUiMessages\)/u);
 	assert.match(CHAT_PANEL_SOURCE, /hideAiCursor=\{hideAiCursor\}/u);
