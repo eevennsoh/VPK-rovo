@@ -480,6 +480,21 @@ test("compact chat edit context blocks unmatched prompts from normal Rovo chat",
 	assert.ok(sendPromptIndex > requireInterceptIndex);
 });
 
+test("compact chat local intercept turns ensure a persisted thread before transcript injection", () => {
+	const submitHook = readProjectFile("components/projects/sidebar-chat/hooks/use-chat-submit.ts");
+	const context = readProjectFile("app/contexts/context-rovo-chat.tsx");
+	const localTurnIndex = submitHook.indexOf("const injectLocalAssistantTurn = useCallback(");
+	const replaceMessagesIndex = submitHook.indexOf("replaceMessages([...baseMessages, userMessage");
+	const ensureThreadIndex = submitHook.indexOf("await ensureThreadForLocalTurn(promptText || files[0]?.filename || \"New chat\")");
+
+	assert.match(context, /ensureThreadForLocalTurn: \(seedPrompt: string\) => Promise<string>;/u);
+	assert.match(context, /const ensureThreadForLocalTurn = useCallback\([\s\S]*await ensureCompactThread\(seedPrompt\);[\s\S]*void refreshThreads\(\);/u);
+	assert.match(submitHook, /ensureThreadForLocalTurn,\s*\} = useRovoChat\(\);/u);
+	assert.ok(localTurnIndex > -1);
+	assert.ok(ensureThreadIndex > localTurnIndex);
+	assert.ok(replaceMessagesIndex > ensureThreadIndex);
+});
+
 test("compact chat merges selected custom agent context before queueing prompts", () => {
 	const context = readProjectFile("app/contexts/context-rovo-chat.tsx");
 	const sendPromptIndex = context.indexOf("const sendPrompt = useCallback(");

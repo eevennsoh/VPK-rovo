@@ -80,6 +80,7 @@ import RovoFloatingChat from "@/components/projects/rovo-floating-chat/component
 import type { ChatPanelGreetingProps, ChatSubmitInterceptOutcome } from "@/components/projects/sidebar-chat/page";
 import type { ChatContextBarDescriptor } from "@/components/projects/sidebar-chat/lib/chat-context-bar";
 import { getStudioSessionAgentDisplayName, useRovoChat } from "@/app/contexts";
+import type { SendPromptOptions } from "@/app/contexts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -136,6 +137,7 @@ interface RovoAppAgentConfigPanelProps {
 	testPanel: ReactNode;
 	chatContextBar?: ChatContextBarDescriptor | null;
 	chatGreeting?: ChatPanelGreetingProps;
+	chatSendPromptOptions?: SendPromptOptions;
 	onChatInterceptSubmit?: (text: string) => ChatSubmitInterceptOutcome;
 	onUpdateDraft: (
 		profileId: string,
@@ -655,6 +657,7 @@ export function RovoAppAgentConfigPanel({
 	testPanel,
 	chatContextBar,
 	chatGreeting,
+	chatSendPromptOptions,
 	onChatInterceptSubmit,
 	onUpdateDraft,
 	onStartWithTemplate,
@@ -1691,6 +1694,7 @@ export function RovoAppAgentConfigPanel({
 						chatContextBar={chatContextBar}
 						greeting={chatGreeting}
 						hideComposerSourceAndModelControls={Boolean(chatContextBar)}
+						sendPromptOptions={chatSendPromptOptions}
 						onInterceptSubmit={onChatInterceptSubmit}
 						startRealtimeVoiceRequestKey={floatingLiveChatRequestKey}
 					/>

@@ -102,6 +102,7 @@ async function loadRovoFloatingChatHarness() {
 							"data-greeting-labels": props.greeting?.suggestions?.map((suggestion) => suggestion.label).join("|") ?? "",
 							"data-greeting-hero": String(props.greeting?.showHero),
 							"data-hide-composer-controls": String(props.hideComposerSourceAndModelControls),
+							"data-send-context": props.sendPromptOptions?.contextDescription ?? "",
 							"data-has-custom-agent-tabs": String(Boolean(props.customAgentTabs)),
 							"data-has-artifact-dialog-open": String(typeof props.onArtifactDialogOpen === "function"),
 							"data-has-intercept-submit": String(typeof props.onInterceptSubmit === "function"),
@@ -153,6 +154,14 @@ async function loadRovoFloatingChatHarness() {
 				export function renderFloatingChatWithHiddenComposerControls() {
 					return renderToStaticMarkup(React.createElement(RovoFloatingChat, {
 						hideComposerSourceAndModelControls: true,
+					}));
+				}
+
+				export function renderFloatingChatWithSendPromptOptions() {
+					return renderToStaticMarkup(React.createElement(RovoFloatingChat, {
+						sendPromptOptions: {
+							contextDescription: "Studio agent edit context",
+						},
 					}));
 				}
 
@@ -282,6 +291,15 @@ test("RovoFloatingChat forwards composer source and model control visibility to 
 	assert.match(hiddenControlsMarkup, /data-hide-composer-controls="true"/);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /hideComposerSourceAndModelControls\?: boolean;/u);
 	assert.match(ROVO_FLOATING_CHAT_SOURCE, /hideComposerSourceAndModelControls=\{hideComposerSourceAndModelControls\}/u);
+});
+
+test("RovoFloatingChat forwards send prompt options to the shared chat panel", async () => {
+	const harness = await loadRovoFloatingChatHarness();
+	const markup = harness.renderFloatingChatWithSendPromptOptions();
+
+	assert.match(markup, /data-send-context="Studio agent edit context"/);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /sendPromptOptions\?: SendPromptOptions;/u);
+	assert.match(ROVO_FLOATING_CHAT_SOURCE, /sendPromptOptions=\{sendPromptOptions\}/u);
 });
 
 test("RovoFloatingChat forwards deterministic submit interception to the shared chat panel", async () => {

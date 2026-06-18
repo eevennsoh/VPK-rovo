@@ -972,7 +972,9 @@ test("Studio agent config panel renders the shared block agent config fields", (
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /id: "agent-config-rovo-bar-voice"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /tooltipLabel: "Live chat"/u);
 	assert.match(AGENT_CONFIG_PANEL_SOURCE, /chatGreeting\?: ChatPanelGreetingProps;/u);
-	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<RovoFloatingChat[\s\S]*chatContextBar=\{chatContextBar\}[\s\S]*greeting=\{chatGreeting\}[\s\S]*hideComposerSourceAndModelControls=\{Boolean\(chatContextBar\)\}[\s\S]*onInterceptSubmit=\{onChatInterceptSubmit\}[\s\S]*startRealtimeVoiceRequestKey=\{floatingLiveChatRequestKey\}[\s\S]*\/>/u);
+	assert.match(SHELL_SOURCE, /<RovoAppAgentConfigPanel[\s\S]*chatSendPromptOptions=\{agentEditSendPromptOptions\}[\s\S]*onChatInterceptSubmit=\{handleAgentEditInterceptSubmit\}[\s\S]*\/>/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /chatSendPromptOptions\?: SendPromptOptions;/u);
+	assert.match(AGENT_CONFIG_PANEL_SOURCE, /<RovoFloatingChat[\s\S]*chatContextBar=\{chatContextBar\}[\s\S]*greeting=\{chatGreeting\}[\s\S]*hideComposerSourceAndModelControls=\{Boolean\(chatContextBar\)\}[\s\S]*sendPromptOptions=\{chatSendPromptOptions\}[\s\S]*onInterceptSubmit=\{onChatInterceptSubmit\}[\s\S]*startRealtimeVoiceRequestKey=\{floatingLiveChatRequestKey\}[\s\S]*\/>/u);
 	assert.match(SHELL_SOURCE, /<SidebarResizeHandle[\s\S]*side="left"[\s\S]*askRovoChatResize\.onResizeHandlePointerDown/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /export function AgentTestPanel/u);
 	assert.match(AGENT_TEST_PANEL_SOURCE, /aria-label="Agent test"/u);

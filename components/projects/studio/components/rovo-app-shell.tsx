@@ -2717,7 +2717,6 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 
 	const studioSettingsMenuItems = useMemo(() => [
 		{
-			description: "Clear Studio threads and restore the fresh RFP Drafter",
 			disabled: isResettingStudioDemo,
 			elemBefore: <RefreshIcon label="" />,
 			id: "reset-studio-demo",
@@ -5106,6 +5105,7 @@ export function RovoAppShell({ embedded = false, initialThreadId = null }: Reado
 			testPanel={agentConfigTestPanel}
 			chatContextBar={agentEditContextBar}
 			chatGreeting={agentEditGreeting}
+			chatSendPromptOptions={agentEditSendPromptOptions}
 			onChatInterceptSubmit={handleAgentEditInterceptSubmit}
 			onUpdateDraft={handleUpdateAgentDraft}
 			onStartWithTemplate={handleStartAgentWithTemplate}
